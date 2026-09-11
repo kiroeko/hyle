@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -8,19 +7,27 @@
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/visibility.h"
+#include "hyle/mem/allocator.h"
 
 namespace hyle::graph {
 
+namespace detail {
+struct GraphIdentity;
+struct GraphState;
+struct BuilderState;
+struct GraphAccess;
+} // namespace detail
+
 enum class ValueKind : std::uint8_t {
   kInput = 0,
-  kOutput,
+  kNodeOutput,
 };
 
-// Typed graph-local identity. Equality includes a private builder generation,
-// so an ID from another builder cannot accidentally bind a structurally similar
-// graph. ordinal() is diagnostic only and is never used without the generation.
+// Graph-local identity. The private generation prevents IDs from another
+// builder/graph being accepted merely because their ordinals happen to match.
+// ordinal() is useful for diagnostics; runtime binding remains O(1).
 class ValueId final {
- public:
+public:
   constexpr ValueId() noexcept = default;
 
   constexpr bool valid() const noexcept { return generation_ != 0; }
@@ -30,9 +37,8 @@ class ValueId final {
 
   friend constexpr bool operator==(ValueId, ValueId) noexcept = default;
 
- private:
-  friend class GraphBuilder;
-  friend class Graph;
+private:
+  friend struct detail::GraphIdentity;
   constexpr ValueId(std::uint64_t generation, ValueKind kind,
                     std::uint32_t ordinal) noexcept
       : generation_(generation), ordinal_(ordinal), kind_(kind) {}
@@ -43,7 +49,7 @@ class ValueId final {
 };
 
 class NodeId final {
- public:
+public:
   constexpr NodeId() noexcept = default;
 
   constexpr bool valid() const noexcept { return generation_ != 0; }
@@ -52,9 +58,8 @@ class NodeId final {
 
   friend constexpr bool operator==(NodeId, NodeId) noexcept = default;
 
- private:
-  friend class GraphBuilder;
-  friend class Graph;
+private:
+  friend struct detail::GraphIdentity;
   constexpr NodeId(std::uint64_t generation, std::uint32_t ordinal) noexcept
       : generation_(generation), ordinal_(ordinal) {}
 
@@ -62,74 +67,91 @@ class NodeId final {
   std::uint32_t ordinal_ = 0;
 };
 
+// Immutable, self-contained logical DAG metadata. Copies share one intrusive
+// state; no Graph owns tensor payload, Context, Queue or provider artifacts.
 class Graph final {
- public:
+public:
   Graph() noexcept = default;
+  HYLE_GRAPH_API Graph(const Graph &other) noexcept;
+  HYLE_GRAPH_API Graph &operator=(const Graph &other) noexcept;
+  HYLE_GRAPH_API Graph(Graph &&other) noexcept;
+  HYLE_GRAPH_API Graph &operator=(Graph &&other) noexcept;
+  HYLE_GRAPH_API ~Graph();
 
-  bool valid() const noexcept { return generation_ != 0; }
+  bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  std::size_t input_count() const noexcept { return input_count_; }
-  std::size_t node_count() const noexcept { return valid() ? 1 : 0; }
-  std::size_t output_count() const noexcept { return valid() ? 1 : 0; }
+  HYLE_GRAPH_API std::size_t value_count() const noexcept;
+  HYLE_GRAPH_API std::size_t input_count() const noexcept;
+  HYLE_GRAPH_API std::size_t node_count() const noexcept;
+  HYLE_GRAPH_API std::size_t output_count() const noexcept;
 
-  HYLE_GRAPH_API Result<ValueId> input_id(
-      std::size_t index = 0) const noexcept;
-  HYLE_GRAPH_API Result<const compute::TensorDesc&> input_description(
-      std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<ValueId> input_id(std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<const compute::TensorDesc &>
+  input_description(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<NodeId> node_id(std::size_t index = 0) const noexcept;
-  HYLE_GRAPH_API Result<const compute::Operation&> operation(
-      std::size_t index = 0) const noexcept;
-  HYLE_GRAPH_API Result<ValueId> output_id(std::size_t index = 0) const noexcept;
-  HYLE_GRAPH_API Result<const compute::TensorDesc&> output_description(
-      std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<const compute::Operation &>
+  operation(std::size_t node_index = 0) const noexcept;
+  HYLE_GRAPH_API Result<std::size_t>
+  node_input_count(std::size_t node_index) const noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  node_input(std::size_t node_index, std::size_t input_index) const noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  node_output(std::size_t node_index) const noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  output_id(std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<const compute::TensorDesc &>
+  output_description(std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<const compute::TensorDesc &>
+  value_description(ValueId value) const noexcept;
 
- private:
-  friend class GraphBuilder;
-  Graph(std::uint64_t generation, compute::Operation operation,
-        std::span<const compute::TensorDesc> inputs) noexcept;
-
-  std::uint64_t generation_ = 0;
-  compute::Operation operation_{compute::RmsNorm{}};
-  std::array<compute::TensorDesc, 2> inputs_{};
-  compute::TensorDesc output_{};
-  std::uint8_t input_count_ = 0;
+private:
+  friend struct detail::GraphAccess;
+  explicit Graph(detail::GraphState *state) noexcept : state_(state) {}
+  detail::GraphState *state_ = nullptr;
 };
 
-// Single-owner construction surface. v1 deliberately admits one typed
-// RMSNorm node, while IDs and immutable publication already have the shape a
-// multi-node DAG will extend. A failed mutator leaves the builder unchanged.
-class GraphBuilder final {
- public:
-  HYLE_GRAPH_API GraphBuilder() noexcept;
-  GraphBuilder(const GraphBuilder&) = delete;
-  GraphBuilder& operator=(const GraphBuilder&) = delete;
-  HYLE_GRAPH_API GraphBuilder(GraphBuilder&& other) noexcept;
-  HYLE_GRAPH_API GraphBuilder& operator=(GraphBuilder&& other) noexcept;
+struct GraphBuilderOptions final {
+  // Empty selects mem::system_allocator(). The backing must outlive the
+  // builder and every Graph published from it.
+  mem::AllocatorRef metadata_allocator{};
+};
 
-  bool valid() const noexcept { return generation_ != 0 && !finished_; }
+// Fallible, single-owner DAG construction. add() accepts only values already
+// produced by this builder, making cycles unrepresentable. A failed mutator
+// leaves logical content unchanged; capacity growth may remain reserved.
+class GraphBuilder final {
+public:
+  GraphBuilder() noexcept = default;
+  GraphBuilder(const GraphBuilder &) = delete;
+  GraphBuilder &operator=(const GraphBuilder &) = delete;
+  HYLE_GRAPH_API GraphBuilder(GraphBuilder &&other) noexcept;
+  HYLE_GRAPH_API GraphBuilder &operator=(GraphBuilder &&other) noexcept;
+  HYLE_GRAPH_API ~GraphBuilder();
+
+  HYLE_GRAPH_API static Result<GraphBuilder>
+  create(GraphBuilderOptions options = {}) noexcept;
+
+  bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
 
-  HYLE_GRAPH_API Result<ValueId> input(
-      compute::TensorDesc description) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(
-      compute::Operation operation, std::span<const ValueId> inputs) noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  input(compute::TensorDesc description) noexcept;
+  HYLE_GRAPH_API Result<ValueId> add(compute::Operation operation,
+                                     std::span<const ValueId> inputs) noexcept;
   HYLE_GRAPH_API Result<ValueId> add(compute::RmsNorm operation,
                                      ValueId input) noexcept;
   HYLE_GRAPH_API Result<ValueId> add(compute::RmsNorm operation, ValueId input,
                                      ValueId weight) noexcept;
+  HYLE_GRAPH_API Result<ValueId> add(compute::MatMul operation, ValueId left,
+                                     ValueId right) noexcept;
+  HYLE_GRAPH_API Result<ValueId> add(compute::SiluAndMul operation,
+                                     ValueId input) noexcept;
   HYLE_GRAPH_API Status output(ValueId value) noexcept;
   HYLE_GRAPH_API Result<Graph> finish() && noexcept;
 
- private:
-  bool owns_input(ValueId value) const noexcept;
-
-  std::uint64_t generation_ = 0;
-  compute::Operation operation_{compute::RmsNorm{}};
-  std::array<compute::TensorDesc, 2> inputs_{};
-  std::uint8_t input_count_ = 0;
-  bool has_node_ = false;
-  bool has_output_ = false;
-  bool finished_ = false;
+private:
+  explicit GraphBuilder(detail::BuilderState *state) noexcept : state_(state) {}
+  detail::BuilderState *state_ = nullptr;
 };
 
-}  // namespace hyle::graph
+} // namespace hyle::graph

@@ -2,7 +2,8 @@
 
 本页只裁决 2026-09-12 的 CPU one-op 纵切，不声称完整 Compute/Graph 或外部 backend 已完成。
 冻结合同是
-[`compute-graph-one-op-tax-p1-v1.json`](../../../../bench/contracts/compute-graph-one-op-tax-p1-v1.json)，
+[`compute-graph-one-op-tax-p1-v1.contract.json`](compute-graph-one-op-tax-p1-v1.contract.json)（v2 已从活动
+benchmark 目录迁入历史证据），
 候选产品字节为 `5c9dc1604e6daaec1d73062296f2a71d019e7b35`；其中相对前一提交只改变合同
 peer 身份的提交不改变产品实现。
 
@@ -61,7 +62,7 @@ b3c4f201e6d40e6fbbf7a16315680a207b008aac955a89a0b45bf878b9b53bbe
 
 ```powershell
 python scripts/hyle-perf.py verify `
-  --contract bench/contracts/compute-graph-one-op-tax-p1-v1.json `
+  --contract docs/implementation/evidence/performance/compute-graph-one-op-tax-p1-v1.contract.json `
   --manifest evidence/performance/compute-graph-one-op-tax-p1-v1-5c9dc160-w1-win/manifest.json
 ```
 

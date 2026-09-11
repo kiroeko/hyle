@@ -1,19 +1,185 @@
 #include "hyle/graph/executable.h"
 
+#include <algorithm>
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <new>
 #include <span>
 #include <utility>
 
+#include "graph_state.h"
 #include "plan_state.h"
 
 namespace hyle::graph {
+namespace {
 
-Executable::Executable(const Executable& other) noexcept : state_(other.state_) {
+Status plan_allocation_failure() noexcept {
+  return Status::ResourceExhausted("graph plan metadata allocation failed");
+}
+
+Status invocation_allocation_failure() noexcept {
+  return Status::ResourceExhausted("graph invocation allocation failed");
+}
+
+bool owns(const detail::PlanState &plan, ValueId value) noexcept {
+  if (!value.valid() ||
+      detail::GraphIdentity::generation(value) != plan.generation ||
+      value.ordinal() >= plan.descriptions.size()) {
+    return false;
+  }
+  const std::uint8_t role = plan.binding_roles[value.ordinal()];
+  const ValueKind expected = (role & detail::kExternalInput) != 0
+                                 ? ValueKind::kInput
+                                 : ValueKind::kNodeOutput;
+  return value.kind() == expected;
+}
+
+Status initialize_plan_metadata(detail::PlanState &plan,
+                                const detail::GraphState &graph) noexcept {
+  if (!plan.nodes.try_reserve(graph.nodes.size()) ||
+      !plan.input_ids.try_reserve(graph.inputs.size()) ||
+      !plan.output_ids.try_reserve(graph.outputs.size()) ||
+      !plan.descriptions.try_resize(graph.values.size()) ||
+      !plan.workspace_requests.try_resize(graph.values.size()) ||
+      !plan.binding_roles.try_resize(graph.values.size())) {
+    return plan_allocation_failure();
+  }
+
+  for (std::size_t index = 0; index < graph.values.size(); ++index) {
+    plan.descriptions[index] = graph.values[index].description;
+    plan.workspace_requests[index] = detail::kNoWorkspaceRequest;
+    plan.binding_roles[index] = 0;
+  }
+  for (std::uint32_t ordinal : graph.inputs) {
+    if (!plan.input_ids.try_push_back(detail::value_id(graph, ordinal))) {
+      return plan_allocation_failure();
+    }
+    plan.binding_roles[ordinal] |= detail::kExternalInput;
+  }
+  for (std::uint32_t ordinal : graph.outputs) {
+    if (!plan.output_ids.try_push_back(detail::value_id(graph, ordinal))) {
+      return plan_allocation_failure();
+    }
+    plan.binding_roles[ordinal] |= detail::kExternalOutput;
+  }
+  return Status::Ok();
+}
+
+Status prepare_nodes(detail::PlanState &plan, const detail::GraphState &graph,
+                     const compute::Context &context) noexcept {
+  for (const detail::NodeRecord &node : graph.nodes) {
+    std::array<compute::TensorDesc, 2> input_descriptions{};
+    std::array<std::uint32_t, 2> input_ordinals{};
+    for (std::size_t index = 0; index < node.input_count; ++index) {
+      const std::uint32_t ordinal = graph.edges[node.input_begin + index];
+      input_ordinals[index] = ordinal;
+      input_descriptions[index] = graph.values[ordinal].description;
+    }
+    const std::array output_descriptions{graph.values[node.output].description};
+    auto prepared =
+        compute::prepare(context, node.operation,
+                         std::span<const compute::TensorDesc>(
+                             input_descriptions.data(), node.input_count),
+                         output_descriptions);
+    if (!prepared)
+      return std::move(prepared).error();
+    if (!plan.nodes.try_emplace_back(
+            std::move(*prepared),
+            std::span<const std::uint32_t>(input_ordinals.data(),
+                                           node.input_count),
+            node.output)) {
+      return plan_allocation_failure();
+    }
+  }
+  return Status::Ok();
+}
+
+Status plan_workspace(detail::PlanState &plan,
+                      const detail::GraphState &graph) noexcept {
+  using LastUses = container::SmallVector<std::uint64_t, 16, mem::AllocatorRef>;
+  using Requests =
+      container::SmallVector<mem::LifetimeRequest, 8, mem::AllocatorRef>;
+
+  LastUses last_uses(plan.allocator);
+  Requests requests(plan.allocator);
+  if (!last_uses.try_resize(graph.values.size()) ||
+      !requests.try_reserve(graph.values.size())) {
+    return plan_allocation_failure();
+  }
+  for (std::size_t index = 0; index < last_uses.size(); ++index) {
+    last_uses[index] = 0;
+  }
+
+  for (std::size_t node_index = 0; node_index < graph.nodes.size();
+       ++node_index) {
+    const detail::NodeRecord &node = graph.nodes[node_index];
+    const std::uint64_t terminal = node_index + 1;
+    last_uses[node.output] = (std::max)(last_uses[node.output], terminal);
+    for (std::size_t input_index = 0; input_index < node.input_count;
+         ++input_index) {
+      const std::uint32_t input = graph.edges[node.input_begin + input_index];
+      last_uses[input] = (std::max)(last_uses[input], terminal);
+    }
+  }
+
+  for (std::size_t ordinal = 0; ordinal < graph.values.size(); ++ordinal) {
+    const detail::ValueRecord &value = graph.values[ordinal];
+    if (value.kind != ValueKind::kNodeOutput ||
+        (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
+      continue;
+    }
+    auto size = value.description.required_bytes();
+    if (!size)
+      return std::move(size).error();
+    if (requests.size() >= detail::kNoWorkspaceRequest) {
+      return Status::ResourceExhausted(
+          "graph workspace identity space is exhausted");
+    }
+    const std::uint32_t request = static_cast<std::uint32_t>(requests.size());
+    const std::uint64_t begin = value.producer;
+    const std::uint64_t end = (std::max)(begin + 1, last_uses[ordinal]);
+    if (!requests.try_push_back(mem::LifetimeRequest{
+            .resource_slot = 0,
+            .size = *size,
+            .alignment = 64,
+            .begin = begin,
+            .end = end,
+        })) {
+      return plan_allocation_failure();
+    }
+    plan.workspace_requests[ordinal] = request;
+  }
+
+  const std::array resources{mem::system_resource()};
+  const std::span<const mem::MemoryResourceRef> selected_resources =
+      requests.empty() ? std::span<const mem::MemoryResourceRef>{}
+                       : std::span<const mem::MemoryResourceRef>(resources);
+  auto lifetime_plan = mem::LifetimePlanner::build(
+      std::span<const mem::LifetimeRequest>(requests.data(), requests.size()),
+      selected_resources);
+  if (!lifetime_plan)
+    return std::move(lifetime_plan).error();
+
+  plan.workspace_plan = std::move(*lifetime_plan);
+  if (!requests.empty()) {
+    auto resource = plan.workspace_plan.resource_plan(0);
+    if (!resource)
+      return std::move(resource).error();
+    plan.workspace_bytes = resource->peak_bytes;
+    plan.workspace_backing_count = resource->backing_count;
+  }
+  return Status::Ok();
+}
+
+} // namespace
+
+Executable::Executable(const Executable &other) noexcept
+    : state_(other.state_) {
   detail::retain(state_);
 }
 
-Executable& Executable::operator=(const Executable& other) noexcept {
+Executable &Executable::operator=(const Executable &other) noexcept {
   if (state_ != other.state_) {
     detail::retain(other.state_);
     detail::release(state_);
@@ -22,11 +188,11 @@ Executable& Executable::operator=(const Executable& other) noexcept {
   return *this;
 }
 
-Executable::Executable(Executable&& other) noexcept : state_(other.state_) {
+Executable::Executable(Executable &&other) noexcept : state_(other.state_) {
   other.state_ = nullptr;
 }
 
-Executable& Executable::operator=(Executable&& other) noexcept {
+Executable &Executable::operator=(Executable &&other) noexcept {
   if (this != &other) {
     detail::release(state_);
     state_ = other.state_;
@@ -38,14 +204,30 @@ Executable& Executable::operator=(Executable&& other) noexcept {
 Executable::~Executable() { detail::release(state_); }
 
 std::size_t Executable::input_count() const noexcept {
-  return state_ != nullptr ? state_->input_count : 0;
+  return state_ != nullptr ? state_->input_ids.size() : 0;
+}
+
+std::size_t Executable::output_count() const noexcept {
+  return state_ != nullptr ? state_->output_ids.size() : 0;
+}
+
+std::size_t Executable::node_count() const noexcept {
+  return state_ != nullptr ? state_->nodes.size() : 0;
+}
+
+std::size_t Executable::workspace_bytes() const noexcept {
+  return state_ != nullptr ? state_->workspace_bytes : 0;
+}
+
+std::size_t Executable::workspace_backing_count() const noexcept {
+  return state_ != nullptr ? state_->workspace_backing_count : 0;
 }
 
 Result<ValueId> Executable::input_id(std::size_t index) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
-  if (index >= state_->input_count) {
+  if (index >= state_->input_ids.size()) {
     return std::unexpected(
         Status::OutOfRange("executable input index is out of range"));
   }
@@ -56,169 +238,244 @@ Result<ValueId> Executable::output_id(std::size_t index) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
-  if (index != 0) {
+  if (index >= state_->output_ids.size()) {
     return std::unexpected(
         Status::OutOfRange("executable output index is out of range"));
   }
-  return state_->output_id;
+  return state_->output_ids[index];
 }
 
 Result<Invocation> Executable::create_invocation() const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
-  return Invocation(state_);
+
+  const std::array resources{mem::system_resource()};
+  const std::span<const mem::MemoryResourceRef> selected_resources =
+      state_->workspace_plan.resource_count() == 0
+          ? std::span<const mem::MemoryResourceRef>{}
+          : std::span<const mem::MemoryResourceRef>(resources);
+  auto workspace = state_->workspace_plan.instantiate(selected_resources);
+  if (!workspace)
+    return std::unexpected(std::move(workspace).error());
+
+  void *storage = state_->allocator.allocate(sizeof(detail::InvocationState),
+                                             alignof(detail::InvocationState));
+  if (storage == nullptr) {
+    return std::unexpected(invocation_allocation_failure());
+  }
+  auto *invocation =
+      ::new (storage) detail::InvocationState(state_, std::move(*workspace));
+  const std::size_t value_count = state_->descriptions.size();
+  if (!invocation->readable.try_resize(value_count) ||
+      !invocation->writable.try_resize(value_count) ||
+      !invocation->bound.try_resize(value_count)) {
+    detail::destroy(invocation);
+    return std::unexpected(invocation_allocation_failure());
+  }
+  for (std::size_t ordinal = 0; ordinal < value_count; ++ordinal) {
+    invocation->bound[ordinal] = 0;
+    const std::uint32_t request = state_->workspace_requests[ordinal];
+    if (request == detail::kNoWorkspaceRequest)
+      continue;
+    auto storage_view = invocation->workspace.view(request);
+    if (!storage_view) {
+      Status error = std::move(storage_view).error();
+      detail::destroy(invocation);
+      return std::unexpected(std::move(error));
+    }
+    auto tensor = compute::TensorView::create(state_->descriptions[ordinal],
+                                              *storage_view);
+    if (!tensor) {
+      Status error = std::move(tensor).error();
+      detail::destroy(invocation);
+      return std::unexpected(std::move(error));
+    }
+    invocation->writable[ordinal] = *tensor;
+    invocation->readable[ordinal] = tensor->as_const();
+  }
+  return detail::InvocationAccess::adopt(invocation);
 }
 
-Invocation::Invocation(detail::PlanState* state) noexcept : state_(state) {
-  detail::retain(state_);
-}
-
-Invocation::Invocation(Invocation&& other) noexcept
-    : state_(other.state_), inputs_(other.inputs_), output_(other.output_),
-      input_mask_(other.input_mask_), output_bound_(other.output_bound_) {
+Invocation::Invocation(Invocation &&other) noexcept : state_(other.state_) {
   other.state_ = nullptr;
-  other.input_mask_ = 0;
-  other.output_bound_ = false;
 }
 
-Invocation& Invocation::operator=(Invocation&& other) noexcept {
+Invocation &Invocation::operator=(Invocation &&other) noexcept {
   if (this != &other) {
-    detail::release(state_);
+    detail::destroy(state_);
     state_ = other.state_;
-    inputs_ = other.inputs_;
-    output_ = other.output_;
-    input_mask_ = other.input_mask_;
-    output_bound_ = other.output_bound_;
     other.state_ = nullptr;
-    other.input_mask_ = 0;
-    other.output_bound_ = false;
   }
   return *this;
 }
 
-Invocation::~Invocation() { detail::release(state_); }
+Invocation::~Invocation() { detail::destroy(state_); }
 
 Status Invocation::bind(ValueId value,
                         compute::ConstTensorView tensor) noexcept {
-  if (state_ == nullptr) return Status::FailedPrecondition("invocation is invalid");
-  if (!tensor.valid()) return Status::InvalidArgument("tensor binding is invalid");
-  for (std::size_t index = 0; index < state_->input_count; ++index) {
-    if (value == state_->input_ids[index]) {
-      if (tensor.description() != state_->input_descs[index]) {
-        return Status::InvalidArgument(
-            "input tensor does not match the executable description");
-      }
-      inputs_[index] = tensor;
-      input_mask_ = static_cast<std::uint8_t>(input_mask_ | (1U << index));
-      return Status::Ok();
+  if (state_ == nullptr) {
+    return Status::FailedPrecondition("invocation is invalid");
+  }
+  if (!tensor.valid())
+    return Status::InvalidArgument("tensor binding is invalid");
+  const detail::PlanState &plan = *state_->plan;
+  if (!owns(plan, value)) {
+    return Status::InvalidArgument("value does not belong to this executable");
+  }
+  const std::size_t ordinal = value.ordinal();
+  if ((plan.binding_roles[ordinal] & detail::kExternalInput) == 0) {
+    if ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
+      return Status::InvalidArgument(
+          "graph output requires mutable tensor storage");
     }
+    return Status::InvalidArgument("internal graph values cannot be bound");
   }
-  if (value == state_->output_id) {
-    return Status::InvalidArgument("graph output requires mutable tensor storage");
+  if (tensor.description() != plan.descriptions[ordinal]) {
+    return Status::InvalidArgument(
+        "input tensor does not match the executable description");
   }
-  return Status::InvalidArgument("value does not belong to this executable");
+  state_->readable[ordinal] = tensor;
+  state_->bound[ordinal] = 1;
+  return Status::Ok();
 }
 
 Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
-  if (state_ == nullptr) return Status::FailedPrecondition("invocation is invalid");
-  if (!tensor.valid()) return Status::InvalidArgument("tensor binding is invalid");
-  if (value == state_->output_id) {
-    if (tensor.description() != state_->output_desc) {
+  if (state_ == nullptr) {
+    return Status::FailedPrecondition("invocation is invalid");
+  }
+  if (!tensor.valid())
+    return Status::InvalidArgument("tensor binding is invalid");
+  const detail::PlanState &plan = *state_->plan;
+  if (!owns(plan, value)) {
+    return Status::InvalidArgument("value does not belong to this executable");
+  }
+  const std::size_t ordinal = value.ordinal();
+  if ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
+    if (tensor.description() != plan.descriptions[ordinal]) {
       return Status::InvalidArgument(
           "output tensor does not match the executable description");
     }
-    output_ = tensor;
-    output_bound_ = true;
+    state_->writable[ordinal] = tensor;
+    state_->readable[ordinal] = tensor.as_const();
+    state_->bound[ordinal] = 1;
     return Status::Ok();
   }
-  return bind(value, tensor.as_const());
+  if ((plan.binding_roles[ordinal] & detail::kExternalInput) != 0) {
+    return bind(value, tensor.as_const());
+  }
+  return Status::InvalidArgument("internal graph values cannot be bound");
 }
 
 void Invocation::reset() noexcept {
-  inputs_ = {};
-  output_ = {};
-  input_mask_ = 0;
-  output_bound_ = false;
+  if (state_ == nullptr)
+    return;
+  for (ValueId value : state_->plan->input_ids) {
+    const std::size_t ordinal = value.ordinal();
+    state_->readable[ordinal] = {};
+    state_->bound[ordinal] = 0;
+  }
+  for (ValueId value : state_->plan->output_ids) {
+    const std::size_t ordinal = value.ordinal();
+    state_->readable[ordinal] = {};
+    state_->writable[ordinal] = {};
+    state_->bound[ordinal] = 0;
+  }
 }
 
-Result<compute::Completion> Invocation::submit(
-    compute::Queue& queue) const noexcept {
+Result<compute::Completion>
+Invocation::submit(compute::Queue &queue) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
-  const std::uint8_t required =
-      static_cast<std::uint8_t>((1U << state_->input_count) - 1U);
-  if (input_mask_ != required || !output_bound_) {
-    return std::unexpected(
-        Status::FailedPrecondition("invocation bindings are incomplete"));
+  const detail::PlanState &plan = *state_->plan;
+  for (ValueId value : plan.input_ids) {
+    if (state_->bound[value.ordinal()] == 0) {
+      return std::unexpected(Status::FailedPrecondition(
+          "invocation input bindings are incomplete"));
+    }
   }
-  return state_->prepared.submit(
-      queue,
-      std::span<const compute::ConstTensorView>(inputs_.data(),
-                                                state_->input_count),
-      std::span<const compute::TensorView>(&output_, 1));
+  for (ValueId value : plan.output_ids) {
+    if (state_->bound[value.ordinal()] == 0) {
+      return std::unexpected(Status::FailedPrecondition(
+          "invocation output bindings are incomplete"));
+    }
+  }
+
+  for (const detail::PlanNode &node : plan.nodes) {
+    std::array<compute::ConstTensorView, 2> inputs{};
+    for (std::size_t index = 0; index < node.input_count; ++index) {
+      inputs[index] = state_->readable[node.inputs[index]];
+    }
+    const compute::TensorView output = state_->writable[node.output];
+    auto completion =
+        node.prepared.submit(queue,
+                             std::span<const compute::ConstTensorView>(
+                                 inputs.data(), node.input_count),
+                             std::span<const compute::TensorView>(&output, 1));
+    if (!completion)
+      return std::unexpected(std::move(completion).error());
+    Status terminal = completion->wait();
+    if (!terminal.ok()) {
+      return compute::Completion::completed(std::move(terminal));
+    }
+  }
+  return compute::Completion::completed();
 }
 
-Result<CompiledGraph> compile(const Graph& graph,
-                              const compute::Context& context) noexcept {
+Result<CompiledGraph> compile(const Graph &graph,
+                              const compute::Context &context) noexcept {
   if (!graph.valid()) {
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
-  std::array<compute::TensorDesc, 2> input_descs{};
-  std::array<ValueId, 2> input_ids{};
-  for (std::size_t index = 0; index < graph.input_count(); ++index) {
-    auto description = graph.input_description(index);
-    if (!description) return std::unexpected(std::move(description).error());
-    auto id = graph.input_id(index);
-    if (!id) return std::unexpected(std::move(id).error());
-    input_descs[index] = *description;
-    input_ids[index] = *id;
+  if (!context.valid() || !context.is_open()) {
+    return std::unexpected(
+        Status::FailedPrecondition("compute context is invalid or closed"));
   }
-  auto output_desc = graph.output_description();
-  if (!output_desc) return std::unexpected(std::move(output_desc).error());
-  auto output_id = graph.output_id();
-  if (!output_id) return std::unexpected(std::move(output_id).error());
-  auto operation = graph.operation();
-  if (!operation) return std::unexpected(std::move(operation).error());
+  if (context.device().backend() != compute::BackendKind::kCpu) {
+    return std::unexpected(Status::Unimplemented(
+        "graph v2 currently supports only the CPU backend"));
+  }
+  const detail::GraphState *logical = detail::GraphAccess::state(graph);
+  if (logical == nullptr) {
+    return std::unexpected(Status::InvalidArgument("graph is invalid"));
+  }
 
-  std::array<compute::TensorDesc, 1> outputs{*output_desc};
-  auto prepared = compute::prepare(
-      context, *operation,
-      std::span<const compute::TensorDesc>(input_descs.data(),
-                                           graph.input_count()),
-      outputs);
-  if (!prepared) return std::unexpected(std::move(prepared).error());
-
-  mem::AllocatorRef allocator = context.metadata_allocator();
+  const mem::AllocatorRef allocator = context.metadata_allocator();
   if (!allocator.valid()) {
-    return std::unexpected(
-        Status::FailedPrecondition("compute context is invalid"));
+    return std::unexpected(Status::FailedPrecondition(
+        "compute context has no metadata allocator"));
   }
-  void* storage =
+  void *storage =
       allocator.allocate(sizeof(detail::PlanState), alignof(detail::PlanState));
-  if (storage == nullptr) {
-    return std::unexpected(
-        Status::ResourceExhausted("graph executable allocation failed"));
+  if (storage == nullptr)
+    return std::unexpected(plan_allocation_failure());
+  auto *plan =
+      ::new (storage) detail::PlanState(allocator, logical->generation);
+
+  Status status = initialize_plan_metadata(*plan, *logical);
+  if (status.ok())
+    status = prepare_nodes(*plan, *logical, context);
+  if (status.ok())
+    status = plan_workspace(*plan, *logical);
+  if (!status.ok()) {
+    detail::release(plan);
+    return std::unexpected(std::move(status));
   }
-  auto* state = ::new (storage) detail::PlanState(
-      allocator, std::move(*prepared),
-      std::span<const ValueId>(input_ids.data(), graph.input_count()), *output_id,
-      std::span<const compute::TensorDesc>(input_descs.data(),
-                                           graph.input_count()),
-      *output_desc);
 
   CompiledGraph result;
-  result.executable = detail::ExecutableAccess::adopt(state);
   result.report = CompileReport{
       .backend = context.device().backend(),
       .provider = compute::ProviderKind::kHyleNative,
-      .workspace_bytes = 0,
+      .workspace_bytes = plan->workspace_bytes,
+      .workspace_backing_count = plan->workspace_backing_count,
+      .node_count = plan->nodes.size(),
       .copy_bytes = 0,
       .synchronization_count = 0,
       .used_fallback = false,
   };
+  result.executable = detail::ExecutableAccess::adopt(plan);
   return result;
 }
 
-}  // namespace hyle::graph
+} // namespace hyle::graph

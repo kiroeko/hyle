@@ -1,74 +1,107 @@
-# HYLE Graph：何时编译一个可重复执行的计算图
+# HYLE Graph：何时编译可重复执行的计算 DAG
 
-> 当前页面描述正在收口的 CPU one-op C++ candidate，不签发多节点 compiler。精确施工状态见
-> [`module-status.json`](../implementation/module-status.json)。
+> 本页描述当前 CPU 多节点 C++ surface；施工资格只以
+> [`module-status.json`](../implementation/module-status.json) 为准。GPU provider、partition/fusion 与动态
+> shape 尚未签发。
 
-Graph 适合“先构造逻辑计算、冷路径编译一次、再为多个请求反复绑定 storage 并执行”的任务。如果程序
-只需要直接执行一个已知 operation 或工程 kernel，使用 [Compute](compute.md)，无需构图。Graph 不是
-Sched task graph，也不拥有模型循环、KV cache、batching、sampling 或 serving。
+Graph 适合“先定义一段模型无关计算，冷路径编译一次，再为不同请求绑定 storage 并反复执行”。如果只
+执行一个已知 operation 或工程 kernel，直接使用 [Compute](compute.md)。Graph 不是 Sched task graph，
+也不拥有模型循环、KV cache、batching、sampling 或 serving。
 
-## 四个生命周期对象
+## 生命周期和所有权
 
 ```text
 GraphBuilder -> immutable Graph
 Graph + Compute Context -> Executable + CompileReport
-Executable -> Invocation
+Executable -> one Invocation per concurrent run
 Invocation.bind(...) -> submit(Queue) -> Compute Completion
 ```
 
-- `GraphBuilder` 是单 owner 的构造器；失败的 mutator 不改变它。`finish()` 后得到自含逻辑元数据的 Graph。
-- `Executable` 是不可变、可复制和可跨线程共享的已编译 artifact。`CompileReport` 明示 backend/provider、
-  workspace、copy、同步和 fallback，而不是隐藏成本。
-- `Invocation` 是独占、move-only 的每次调用 binding 集；并发请求从同一个 Executable 各建一个
-  Invocation。异步 Completion 终态前不得 reset、rebind 或 resubmit。
-- `ValueId`/`NodeId` 只属于创建它们的 graph generation；跨 builder 使用会返回错误，而不是偶然按下标
-  命中另一个值。
+- `GraphBuilder::create()` 是可失败的单-owner 构造入口。输入和 node metadata 使用可注入 allocator；失败
+  的 mutator 不发布部分逻辑修改。
+- `ValueId`/`NodeId` 带 graph generation。一个 builder 的 ID 不能误用于另一个 builder；node 只能读取
+  已创建 value，因此循环不能被构造出来。
+- `Graph` 是不可变、可复制、可跨线程共享的逻辑元数据；它不拥有 tensor payload、Context 或 Queue。
+- `Executable` 是不可变、可共享的 prepared plan。它拥有每个 node 的 `PreparedOperation` 和一份 Mem
+  lifetime plan，不拥有每次请求的 bindings/workspace。
+- `Invocation` 是 move-only、单-owner 的每次运行状态。并发请求从同一 Executable 创建不同 Invocation；
+  `create_invocation()` 可以分配，稳定态 `bind/reset/submit` 不增长 metadata。
 
-## 当前 one-op 路线
+## 当前能表达什么
+
+| 能力 | 当前合同 |
+|---|---|
+| DAG | 任意数量的已支持 typed node；共享输入、分支和多个 published outputs |
+| op | Compute 当前的 `RmsNorm`、rank-2 `MatMul`、packed `SiluAndMul` |
+| shape/layout | static `TensorDesc`；MatMul 的物理权重方向由 stride 表达 |
+| compile | 每个 node prepare 一次；CPU topological plan；中间 tensor liveness 交给 Mem planner |
+| run | caller 绑定所有 graph inputs/outputs；内部中间值由每个 Invocation 独占 |
+| report | backend/provider、node 数、workspace bytes/backings、copy/sync/fallback |
+
+当前没有 graph-owned constants、symbolic dimensions、provider region partition、fusion、GPU copy/barrier、
+serialization/cache schema 或 control flow。权重目前作为普通 graph input 绑定；后续 provider packing 必须
+在 compile artifact 中显式拥有，不能藏在第一次 submit。
+
+## 自然的多节点路线
+
+下面构造 inference 常见的 `RMSNorm -> MatMul -> SwiGLU` 片段。存储中的权重是 `[2*ffn, hidden]`；逻辑
+MatMul 需要 `[hidden, 2*ffn]`，所以只转置 description，不搬数据。
 
 ```cpp
-#include "hyle/graph/executable.h"
+#include <hyle/graph/executable.h>
 
-hyle::graph::GraphBuilder builder;
-auto input_id = builder.input(desc);
-if (!input_id) return input_id.error();
-auto output_id = builder.add(hyle::compute::RmsNorm{}, *input_id);
-if (!output_id) return output_id.error();
-if (auto status = builder.output(*output_id); !status.ok()) return status;
+using namespace hyle::compute;
+using namespace hyle::graph;
+
+auto logical_weight_desc = stored_weight_desc.transposed();
+if (!logical_weight_desc) return logical_weight_desc.error();
+
+auto created = GraphBuilder::create();
+if (!created) return created.error();
+GraphBuilder builder = std::move(*created);
+
+auto x = builder.input(x_desc);
+auto norm_w = builder.input(norm_weight_desc);
+auto gate_up_w = builder.input(*logical_weight_desc);
+if (!x || !norm_w || !gate_up_w) return hyle::Status::InvalidArgument("input");
+
+auto normalized = builder.add(RmsNorm{}, *x, *norm_w);
+if (!normalized) return normalized.error();
+auto gate_up = builder.add(MatMul{}, *normalized, *gate_up_w);
+if (!gate_up) return gate_up.error();
+auto activated = builder.add(SiluAndMul{}, *gate_up);
+if (!activated) return activated.error();
+if (auto status = builder.output(*activated); !status.ok()) return status;
 
 auto graph = std::move(builder).finish();
 if (!graph) return graph.error();
-auto compiled = hyle::graph::compile(*graph, context);
+auto compiled = compile(*graph, context);
 if (!compiled) return compiled.error();
 
 auto invocation = compiled->executable.create_invocation();
 if (!invocation) return invocation.error();
-if (auto status = invocation->bind(*input_id, input_view); !status.ok()) {
-  return status;
-}
-if (auto status = invocation->bind(*output_id, output_view); !status.ok()) {
-  return status;
-}
-auto completion = invocation->submit(queue);
-if (!completion) return completion.error();
-return completion->wait();
+if (auto s = invocation->bind(*x, x_view); !s.ok()) return s;
+if (auto s = invocation->bind(*norm_w, norm_weight_view); !s.ok()) return s;
+if (auto s = invocation->bind(*gate_up_w, gate_up_weight_view); !s.ok()) return s;
+if (auto s = invocation->bind(*activated, output_view); !s.ok()) return s;
+auto done = invocation->submit(queue);
+if (!done) return done.error();
+return done->wait();
 ```
 
-当前 Graph 只接受一个 dense rank-1 f32 RMSNorm node，可选一个 weight input，并产生一个 output。compile
-准备一次 Compute operation；steady submit 只读取固定 binding slots，不重新遍历 Graph、选择 provider、
-分配或 JIT。当前 report 的 workspace/copy/synchronization 为零且不使用 fallback。
+## 成本与常见误用
 
-## 常见误用
+- compile 是冷路径：shape 复核、每节点 prepare 和 lifetime planning 均在这里发生。shape/layout 改变时
+  重新构图/编译；不要每次请求重新 compile。
+- `create_invocation()` 实例化 workspace；应按并发槽复用 Invocation。`reset()` 只清外部 bindings，保留
+  已规划 workspace。
+- published output 必须绑定 mutable `TensorView`；graph input 可绑定 const 或 mutable view；内部 value
+  不允许由 caller 覆盖绑定。
+- CPU 当前同步完成，但仍要检查 `Completion::wait()`。payload/resource/Queue 必须遵守 Compute 的终态
+  生命周期；未来异步 backend 不会因 CPU 的偶然同步语义而放宽合同。
+- CompileReport 当前 CPU 路线应报告零 copy、零显式 sync、无 fallback；不要忽略报告后猜测隐藏成本。
+- Graph 不启动 worker，也不依赖 Sched。需要请求调度、取消和服务 drain 时，在消费层组合它们。
 
-- 不要把 one-op API 当成完整 DAG compiler。fusion、partition、liveness、alias/workspace packing、GPU
-  capture 和 control flow 尚未实现。
-- 不要为单个直接 operation 强制构图；Graph 的价值来自未来多节点规划与重复执行，不来自包装层本身。
-- Graph/Executable 拥有元数据和 prepared artifact，不拥有绑定的 Mem payload。storage、resource、Context
-  和 Queue 必须满足 Compute Completion 的生命周期合同。
-- `reset()` 只清 binding，不能改变 Executable specialization。shape/layout 变化要重新构图或编译。
-- CPU queue 当前同步完成，但不要依赖“submit 返回就永远可复用”的偶然事实；异步 backend 会严格要求
-  Completion 终态。
-
-source、headers + static 和 headers + shared 都链接 `hyle::graph`；它会传递公开 Compute 合同，而不会
-把 Sched、通用 Container 或第三方 graph runtime 暴露给用户。三种交付都是 C++23 surface，不是
-Native FFI。
+source、headers + static、headers + shared 都选择 `hyle::graph`。公开 `GraphBuilderOptions` 可注入 Mem
+allocator，因此 Graph 的公开构建闭包包含 Compute、Error 和 Mem；Container/Util 只用于私有实现。
+三种交付均为 C++23 surface，不是 Native FFI，也不承诺跨工具链 C++ ABI。

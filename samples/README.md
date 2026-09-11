@@ -40,7 +40,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
 | [`package/process/cpp/`](package/process/cpp/) | process | source/static/shared 中启动当前 probe、取得 typed exit，并验证 runtime shutdown 与传递依赖 |
 | [`package/compute/cpp/`](package/compute/cpp/) | compute | source/static/shared 中显式 CPU Context/Queue、Mem tensor、prepared RMSNorm 与 typed host kernel |
-| [`package/graph/cpp/`](package/graph/cpp/) | graph | source/static/shared 中 one-op GraphBuilder、compile report、Executable/Invocation 与绑定提交 |
+| [`package/graph/cpp/`](package/graph/cpp/) | graph | source/static/shared 中多节点 GraphBuilder、workspace/report、Executable/Invocation 与绑定提交 |
 
 > 01-03 用源码 `add_subdirectory` 集成；04 及之后的编号示例与 `package/*/cpp` 用安装包集成。
 > `package/*/cpp` 是构建回归 fixture，不是额外的产品 API。

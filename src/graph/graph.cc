@@ -2,198 +2,321 @@
 
 #include <array>
 #include <atomic>
-#include <cmath>
+#include <limits>
+#include <new>
+#include <span>
 #include <utility>
+
+#include "graph_state.h"
 
 namespace hyle::graph {
 namespace {
 
 std::uint64_t next_generation() noexcept {
   static std::atomic<std::uint64_t> next{1};
-  const std::uint64_t generation =
-      next.fetch_add(1, std::memory_order_relaxed);
-  // Exhausting a 64-bit process-local identity space is not a recoverable
-  // runtime condition. Zero remains the invalid/moved-from sentinel.
-  return generation == 0
-             ? next.fetch_add(1, std::memory_order_relaxed)
-             : generation;
+  std::uint64_t generation = next.fetch_add(1, std::memory_order_relaxed);
+  // Zero is the invalid/moved-from sentinel. Wraparound would require more
+  // builders than a process can physically create, but keep the invariant
+  // explicit instead of ever publishing a forgeable invalid identity.
+  while (generation == 0) {
+    generation = next.fetch_add(1, std::memory_order_relaxed);
+  }
+  return generation;
 }
 
-}  // namespace
-
-Graph::Graph(std::uint64_t generation, compute::Operation operation,
-             std::span<const compute::TensorDesc> inputs) noexcept
-    : generation_(generation), operation_(operation), output_(inputs.front()),
-      input_count_(static_cast<std::uint8_t>(inputs.size())) {
-  for (std::size_t index = 0; index < inputs.size(); ++index) {
-    inputs_[index] = inputs[index];
-  }
+Status invalid_graph() noexcept {
+  return Status::FailedPrecondition("graph is invalid");
 }
 
-Result<ValueId> Graph::input_id(std::size_t index) const noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph is invalid"));
-  }
-  if (index >= input_count_) {
-    return std::unexpected(Status::OutOfRange("graph input index is out of range"));
-  }
-  return ValueId(generation_, ValueKind::kInput,
-                 static_cast<std::uint32_t>(index));
+Status invalid_builder() noexcept {
+  return Status::FailedPrecondition("graph builder is invalid");
 }
 
-Result<const compute::TensorDesc&> Graph::input_description(
-    std::size_t index) const noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph is invalid"));
-  }
-  if (index >= input_count_) {
-    return std::unexpected(Status::OutOfRange("graph input index is out of range"));
-  }
-  return inputs_[index];
+Status allocation_failure() noexcept {
+  return Status::ResourceExhausted("graph metadata allocation failed");
 }
 
-Result<NodeId> Graph::node_id(std::size_t index) const noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph is invalid"));
-  }
-  if (index != 0) {
-    return std::unexpected(Status::OutOfRange("graph node index is out of range"));
-  }
-  return NodeId(generation_, 0);
+bool fits_ordinal(std::size_t size) noexcept {
+  return size <= (std::numeric_limits<std::uint32_t>::max)();
 }
 
-Result<const compute::Operation&> Graph::operation(
-    std::size_t index) const noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph is invalid"));
-  }
-  if (index != 0) {
-    return std::unexpected(Status::OutOfRange("graph node index is out of range"));
-  }
-  return operation_;
+} // namespace
+
+Graph::Graph(const Graph &other) noexcept : state_(other.state_) {
+  detail::retain(state_);
 }
 
-Result<ValueId> Graph::output_id(std::size_t index) const noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph is invalid"));
-  }
-  if (index != 0) {
-    return std::unexpected(Status::OutOfRange("graph output index is out of range"));
-  }
-  return ValueId(generation_, ValueKind::kOutput, 0);
-}
-
-Result<const compute::TensorDesc&> Graph::output_description(
-    std::size_t index) const noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph is invalid"));
-  }
-  if (index != 0) {
-    return std::unexpected(Status::OutOfRange("graph output index is out of range"));
-  }
-  return output_;
-}
-
-GraphBuilder::GraphBuilder() noexcept : generation_(next_generation()) {}
-
-GraphBuilder::GraphBuilder(GraphBuilder&& other) noexcept
-    : generation_(other.generation_), operation_(other.operation_),
-      inputs_(other.inputs_), input_count_(other.input_count_),
-      has_node_(other.has_node_), has_output_(other.has_output_),
-      finished_(other.finished_) {
-  other.generation_ = 0;
-  other.input_count_ = 0;
-  other.has_node_ = false;
-  other.has_output_ = false;
-  other.finished_ = true;
-}
-
-GraphBuilder& GraphBuilder::operator=(GraphBuilder&& other) noexcept {
-  if (this != &other) {
-    generation_ = other.generation_;
-    operation_ = other.operation_;
-    inputs_ = other.inputs_;
-    input_count_ = other.input_count_;
-    has_node_ = other.has_node_;
-    has_output_ = other.has_output_;
-    finished_ = other.finished_;
-    other.generation_ = 0;
-    other.input_count_ = 0;
-    other.has_node_ = false;
-    other.has_output_ = false;
-    other.finished_ = true;
+Graph &Graph::operator=(const Graph &other) noexcept {
+  if (state_ != other.state_) {
+    detail::retain(other.state_);
+    detail::release(state_);
+    state_ = other.state_;
   }
   return *this;
 }
 
-Result<ValueId> GraphBuilder::input(
-    compute::TensorDesc description) noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph builder is invalid"));
+Graph::Graph(Graph &&other) noexcept : state_(other.state_) {
+  other.state_ = nullptr;
+}
+
+Graph &Graph::operator=(Graph &&other) noexcept {
+  if (this != &other) {
+    detail::release(state_);
+    state_ = other.state_;
+    other.state_ = nullptr;
   }
-  if (has_node_) {
-    return std::unexpected(Status::FailedPrecondition(
-        "graph inputs must be declared before the operation"));
+  return *this;
+}
+
+Graph::~Graph() { detail::release(state_); }
+
+std::size_t Graph::value_count() const noexcept {
+  return state_ != nullptr ? state_->values.size() : 0;
+}
+
+std::size_t Graph::input_count() const noexcept {
+  return state_ != nullptr ? state_->inputs.size() : 0;
+}
+
+std::size_t Graph::node_count() const noexcept {
+  return state_ != nullptr ? state_->nodes.size() : 0;
+}
+
+std::size_t Graph::output_count() const noexcept {
+  return state_ != nullptr ? state_->outputs.size() : 0;
+}
+
+Result<ValueId> Graph::input_id(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (index >= state_->inputs.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph input index is out of range"));
   }
+  return detail::value_id(*state_, state_->inputs[index]);
+}
+
+Result<const compute::TensorDesc &>
+Graph::input_description(std::size_t index) const noexcept {
+  auto id = input_id(index);
+  if (!id)
+    return std::unexpected(std::move(id).error());
+  return state_->values[id->ordinal()].description;
+}
+
+Result<NodeId> Graph::node_id(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (index >= state_->nodes.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph node index is out of range"));
+  }
+  return detail::GraphIdentity::node(state_->generation,
+                                     static_cast<std::uint32_t>(index));
+}
+
+Result<const compute::Operation &>
+Graph::operation(std::size_t node_index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (node_index >= state_->nodes.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph node index is out of range"));
+  }
+  return state_->nodes[node_index].operation;
+}
+
+Result<std::size_t>
+Graph::node_input_count(std::size_t node_index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (node_index >= state_->nodes.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph node index is out of range"));
+  }
+  return state_->nodes[node_index].input_count;
+}
+
+Result<ValueId> Graph::node_input(std::size_t node_index,
+                                  std::size_t input_index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (node_index >= state_->nodes.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph node index is out of range"));
+  }
+  const detail::NodeRecord &node = state_->nodes[node_index];
+  if (input_index >= node.input_count) {
+    return std::unexpected(
+        Status::OutOfRange("graph node input index is out of range"));
+  }
+  return detail::value_id(*state_,
+                          state_->edges[node.input_begin + input_index]);
+}
+
+Result<ValueId> Graph::node_output(std::size_t node_index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (node_index >= state_->nodes.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph node index is out of range"));
+  }
+  return detail::value_id(*state_, state_->nodes[node_index].output);
+}
+
+Result<ValueId> Graph::output_id(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (index >= state_->outputs.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph output index is out of range"));
+  }
+  return detail::value_id(*state_, state_->outputs[index]);
+}
+
+Result<const compute::TensorDesc &>
+Graph::output_description(std::size_t index) const noexcept {
+  auto id = output_id(index);
+  if (!id)
+    return std::unexpected(std::move(id).error());
+  return state_->values[id->ordinal()].description;
+}
+
+Result<const compute::TensorDesc &>
+Graph::value_description(ValueId value) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, value)) {
+    return std::unexpected(
+        Status::InvalidArgument("value does not belong to this graph"));
+  }
+  return state_->values[value.ordinal()].description;
+}
+
+GraphBuilder::GraphBuilder(GraphBuilder &&other) noexcept
+    : state_(other.state_) {
+  other.state_ = nullptr;
+}
+
+GraphBuilder &GraphBuilder::operator=(GraphBuilder &&other) noexcept {
+  if (this != &other) {
+    detail::destroy(state_);
+    state_ = other.state_;
+    other.state_ = nullptr;
+  }
+  return *this;
+}
+
+GraphBuilder::~GraphBuilder() { detail::destroy(state_); }
+
+Result<GraphBuilder>
+GraphBuilder::create(GraphBuilderOptions options) noexcept {
+  mem::AllocatorRef allocator = options.metadata_allocator;
+  if (!allocator.valid())
+    allocator = mem::system_allocator();
+  void *storage = allocator.allocate(sizeof(detail::BuilderState),
+                                     alignof(detail::BuilderState));
+  if (storage == nullptr)
+    return std::unexpected(allocation_failure());
+  auto *state =
+      ::new (storage) detail::BuilderState(next_generation(), allocator);
+  return GraphBuilder(state);
+}
+
+Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
   if (!description.valid()) {
     return std::unexpected(
         Status::InvalidArgument("graph input description is invalid"));
   }
-  if (input_count_ == inputs_.size()) {
+  auto bytes = description.required_bytes();
+  if (!bytes)
+    return std::unexpected(std::move(bytes).error());
+  if (!fits_ordinal(state_->values.size())) {
     return std::unexpected(
-        Status::Unimplemented("one-op graph supports at most two inputs"));
+        Status::ResourceExhausted("graph value identity space is exhausted"));
   }
-  const std::uint32_t index = input_count_;
-  inputs_[input_count_++] = description;
-  return ValueId(generation_, ValueKind::kInput, index);
-}
+  if (!state_->values.try_reserve(state_->values.size() + 1) ||
+      !state_->inputs.try_reserve(state_->inputs.size() + 1)) {
+    return std::unexpected(allocation_failure());
+  }
 
-bool GraphBuilder::owns_input(ValueId value) const noexcept {
-  return value.valid() && value.generation_ == generation_ &&
-         value.kind_ == ValueKind::kInput && value.ordinal_ < input_count_;
+  const std::uint32_t ordinal =
+      static_cast<std::uint32_t>(state_->values.size());
+  const bool value_added = state_->values.try_push_back(detail::ValueRecord{
+      .description = description,
+      .kind = ValueKind::kInput,
+      .producer = detail::kNoNode,
+  });
+  const bool input_added = state_->inputs.try_push_back(ordinal);
+  if (!value_added || !input_added) {
+    return std::unexpected(allocation_failure());
+  }
+  return detail::value_id(*state_, ordinal);
 }
 
 Result<ValueId> GraphBuilder::add(compute::Operation operation,
                                   std::span<const ValueId> inputs) noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph builder is invalid"));
-  }
-  if (has_node_) {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
+  if (inputs.empty() || inputs.size() > 2) {
     return std::unexpected(
-        Status::AlreadyExists("one-op graph already has an operation"));
+        Status::InvalidArgument("graph operation input count is unsupported"));
   }
-  if (inputs.size() != 1 && inputs.size() != 2) {
-    return std::unexpected(Status::InvalidArgument(
-        "RMSNorm graph operation requires one input and optional weight"));
-  }
-  if (inputs.size() != input_count_) {
-    return std::unexpected(Status::InvalidArgument(
-        "one-op graph must consume every declared input"));
-  }
-  for (const ValueId value : inputs) {
-    if (!owns_input(value)) {
-      return std::unexpected(Status::InvalidArgument(
-          "graph operation input belongs to another builder or role"));
-    }
-  }
-  if (inputs.front().ordinal_ != 0 ||
-      (inputs.size() == 2 && inputs[1].ordinal_ != 1)) {
-    return std::unexpected(Status::InvalidArgument(
-        "graph operation inputs are not in declaration order"));
-  }
-  if (inputs.size() == 2 && inputs_[1] != inputs_[0]) {
-    return std::unexpected(Status::InvalidArgument(
-        "RMSNorm weight description must match its input"));
-  }
-  if (!std::isfinite(operation.rms_norm().epsilon) ||
-      operation.rms_norm().epsilon < 0.0F) {
-    return std::unexpected(Status::InvalidArgument(
-        "RMSNorm epsilon must be finite and non-negative"));
+  if (!fits_ordinal(state_->nodes.size()) ||
+      !fits_ordinal(state_->values.size()) ||
+      state_->edges.size() >
+          (std::numeric_limits<std::uint32_t>::max)() - inputs.size()) {
+    return std::unexpected(
+        Status::ResourceExhausted("graph identity space is exhausted"));
   }
 
-  operation_ = operation;
-  has_node_ = true;
-  return ValueId(generation_, ValueKind::kOutput, 0);
+  std::array<compute::TensorDesc, 2> descriptions{};
+  for (std::size_t index = 0; index < inputs.size(); ++index) {
+    if (!detail::owns(*state_, inputs[index])) {
+      return std::unexpected(Status::InvalidArgument(
+          "operation input belongs to another builder"));
+    }
+    descriptions[index] = state_->values[inputs[index].ordinal()].description;
+  }
+  auto output = compute::infer_output_description(
+      operation,
+      std::span<const compute::TensorDesc>(descriptions.data(), inputs.size()));
+  if (!output)
+    return std::unexpected(std::move(output).error());
+
+  if (!state_->edges.try_reserve(state_->edges.size() + inputs.size()) ||
+      !state_->nodes.try_reserve(state_->nodes.size() + 1) ||
+      !state_->values.try_reserve(state_->values.size() + 1)) {
+    return std::unexpected(allocation_failure());
+  }
+
+  const std::uint32_t node_ordinal =
+      static_cast<std::uint32_t>(state_->nodes.size());
+  const std::uint32_t edge_begin =
+      static_cast<std::uint32_t>(state_->edges.size());
+  const std::uint32_t output_ordinal =
+      static_cast<std::uint32_t>(state_->values.size());
+  for (ValueId input_value : inputs) {
+    if (!state_->edges.try_push_back(input_value.ordinal())) {
+      return std::unexpected(allocation_failure());
+    }
+  }
+  if (!state_->nodes.try_push_back(detail::NodeRecord{
+          .operation = operation,
+          .input_begin = edge_begin,
+          .output = output_ordinal,
+          .input_count = static_cast<std::uint8_t>(inputs.size()),
+      }) ||
+      !state_->values.try_push_back(detail::ValueRecord{
+          .description = *output,
+          .kind = ValueKind::kNodeOutput,
+          .producer = node_ordinal,
+      })) {
+    return std::unexpected(allocation_failure());
+  }
+  return detail::value_id(*state_, output_ordinal);
 }
 
 Result<ValueId> GraphBuilder::add(compute::RmsNorm operation,
@@ -209,33 +332,56 @@ Result<ValueId> GraphBuilder::add(compute::RmsNorm operation,
   return add(compute::Operation(operation), inputs);
 }
 
+Result<ValueId> GraphBuilder::add(compute::MatMul operation, ValueId left,
+                                  ValueId right) noexcept {
+  const std::array inputs{left, right};
+  return add(compute::Operation(operation), inputs);
+}
+
+Result<ValueId> GraphBuilder::add(compute::SiluAndMul operation,
+                                  ValueId input_value) noexcept {
+  const std::array inputs{input_value};
+  return add(compute::Operation(operation), inputs);
+}
+
 Status GraphBuilder::output(ValueId value) noexcept {
-  if (!valid()) return Status::FailedPrecondition("graph builder is invalid");
-  if (!has_node_) {
-    return Status::FailedPrecondition("graph has no operation output");
+  if (state_ == nullptr)
+    return invalid_builder();
+  if (!detail::owns(*state_, value)) {
+    return Status::InvalidArgument("graph output belongs to another builder");
   }
-  if (has_output_) return Status::AlreadyExists("graph output is already set");
-  if (!value.valid() || value.generation_ != generation_ ||
-      value.kind_ != ValueKind::kOutput || value.ordinal_ != 0) {
+  if (value.kind() != ValueKind::kNodeOutput) {
     return Status::InvalidArgument(
-        "graph output belongs to another builder or role");
+        "a graph output must be produced by an operation");
   }
-  has_output_ = true;
+  for (std::uint32_t published : state_->outputs) {
+    if (published == value.ordinal()) {
+      return Status::AlreadyExists("graph output is already published");
+    }
+  }
+  if (!state_->outputs.try_push_back(value.ordinal())) {
+    return allocation_failure();
+  }
   return Status::Ok();
 }
 
 Result<Graph> GraphBuilder::finish() && noexcept {
-  if (!valid()) {
-    return std::unexpected(Status::FailedPrecondition("graph builder is invalid"));
-  }
-  if (!has_node_ || !has_output_) {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
+  if (state_->nodes.empty() || state_->outputs.empty()) {
     return std::unexpected(Status::FailedPrecondition(
-        "graph requires one operation and one published output"));
+        "graph requires at least one operation and published output"));
   }
-  Graph result(generation_, operation_,
-               std::span<const compute::TensorDesc>(inputs_.data(), input_count_));
-  finished_ = true;
-  return result;
+
+  const mem::AllocatorRef allocator = state_->allocator;
+  void *storage = allocator.allocate(sizeof(detail::GraphState),
+                                     alignof(detail::GraphState));
+  if (storage == nullptr)
+    return std::unexpected(allocation_failure());
+  auto *published = ::new (storage) detail::GraphState(*state_);
+  detail::destroy(state_);
+  state_ = nullptr;
+  return detail::GraphAccess::adopt(published);
 }
 
-}  // namespace hyle::graph
+} // namespace hyle::graph

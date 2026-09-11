@@ -49,7 +49,7 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 
 GPU staging、submission/completion lifetime 属于 Compute，不由 Mem 用“通用 pinned pool”猜测。
 Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；不理解 Tensor 的通用
-placement/instantiate 机制归 Mem。当前 CPU one-op candidate 已按这一边界组合 `BufferView`，GPU
+placement/instantiate 机制归 Mem。当前 CPU Graph slice 已按这一边界组合 `BufferView`，GPU
 provider 与多节点 planner 仍不得从这段边界说明中推断为已实现。
 
 Platform 的 `VmRegion` 仍是公开的低层 anonymous-address owner，适合自定义 allocator/JIT 或其它

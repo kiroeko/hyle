@@ -18,8 +18,9 @@
   artifacts；CompileReport 如实列出 workspace/copy/sync/fallback；
 - non-goals：通用 task graph、模型控制流、动态 batching/KV/sampling、外部 provider partition/fusion、
   GPU placement/copy、serialization/cache schema、Graph 自有 scheduler 或 Native FFI；
-- 直接依赖：公开 `core/error/compute`；内部只在审计证明语义吻合时使用 `mem` lifetime planning、
-  `container`/`util_core` metadata primitive，不能复制 allocator/container；Compute 永远不反向依赖 Graph；
+- 直接依赖：公开 `core/error/compute/mem`（公开 Builder options 暴露 `AllocatorRef`）；内部使用 `mem`
+  lifetime planning 与 `container`/`util_core` metadata primitive，不能复制 allocator/container；Compute
+  永远不反向依赖 Graph；
 - 直接消费者：Compute v2 CPU op catalog、独立 multi-op package sample、后续 ggml/oneDNN region 卡；
 - P0：compile 允许有界 allocation；记录 O(V+E) validate/plan、workspace packing 与 metadata；steady submit
   必须 O(V+bindings)、零 route search/JIT/packing/metadata allocation，且每节点至多一次预绑定调用；
@@ -125,3 +126,17 @@ auto done = invocation.submit(queue).value();
 G20--G27 可由已关闭的 Compute v2 合同、Mem lifetime planner、Container SmallVector 与 Util intrusive
 refcount 直接实现；这些是已有模块的正确复用，不需要新公开模块。允许 Graph 进入 `AUDITED`。若实现需要
 公开 graph_plan、隐藏 scheduler、per-submit allocation 或 provider-specific IR，立即停止并另立依赖卡。
+
+## 实现 checkpoint（2026-09-12）
+
+- 固定 one-op arrays 已替换为 allocator-owned value/node/edge/input/output records；Graph copy 共享不可变
+  intrusive state，ID generation 与拓扑约束在 builder 边界执行；
+- `compile()` 按拓扑逐 node prepare，并把未发布的 node outputs 转为 Mem `LifetimeRequest`；Executable
+  持有 immutable prepared/lifetime plan，每个 Invocation 独占 `PlannedBuffers` 与预定长 bindings；
+- steady `bind/reset/submit` 不增长 metadata；submit 不读取 logical Graph、不重新推 shape/选 route，并对
+  每个 node 恰好调用一次 PreparedOperation；
+- Windows selected Graph library、public-header self-containment 与 Graph tests 已通过；覆盖真实三节点片段、
+  分支/共享值/多输出、跨 builder ID、shape failure recovery、allocator OOM/finish retry、workspace/report、
+  reset/reuse、并发 Invocation、owner lifetime 和 steady metadata allocation；
+- v1 fixed-shape benchmark target 已退出活动 bench，冻结合同迁到历史 evidence。v2 P1、三平台、sanitizer、
+  red-team 与 source/static/shared 尚未执行，因此本 checkpoint 不构成 immutable candidate 或 `CLOSED`。

@@ -268,11 +268,12 @@ _hyle_declare_component(compute
   PRIVATE_DEPS math simd util_core
   PUBLIC_DEPS core error mem)
 # Graph owns logical tensor-DAG publication and compiled/invocation lifetimes.
-# Its public values name Compute and Error contracts; intrusive plan ownership
-# is private and no task scheduler/container enters the one-op closure.
+# Its public values name Compute and Error contracts. Growable cold metadata,
+# intrusive ownership and Mem lifetime/workspace planning are private factors;
+# no task scheduler becomes part of Graph's execution contract.
 _hyle_declare_component(graph
-  PRIVATE_DEPS util_core
-  PUBLIC_DEPS core error compute)
+  PRIVATE_DEPS container util_core
+  PUBLIC_DEPS core error compute mem)
 # Container's consumer-facing product remains one facade, while independent
 # factors own concurrency, handoff and text dependencies. Public include paths
 # intentionally remain hyle/container/*: these identities are maintenance and

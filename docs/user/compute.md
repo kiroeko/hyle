@@ -1,82 +1,80 @@
 # HYLE Compute：何时直接执行一个计算
 
-> 当前页面描述正在收口的 CPU one-op C++ candidate，不签发完整 Compute 或 GPU 能力。精确施工状态见
-> [`module-status.json`](../implementation/module-status.json)。
+> 本页描述当前 CPU C++ surface；施工资格只以
+> [`module-status.json`](../implementation/module-status.json) 为准。CUDA、Metal、Vulkan、HIP 与外部
+> providers 仍是后续独立纵切，枚举词汇不代表实现可用。
 
-当程序已经知道要执行哪个操作、在哪个设备执行，并希望重复使用同一 shape 的已准备路线时，使用
-Compute。若还需要跨节点拓扑、编译和可复用图执行物，使用 [Graph](graph.md)；模型加载、KV cache、
-batching、sampling 和 serving 属推理引擎，不属于本模块。
+当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
+使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
+sampling 和 serving 留在推理引擎。
 
-## 当前能做什么
+## 当前能力
 
-| 任务 | 公开形状 | 当前限制 |
+| 任务 | 公开形状 | 当前合同 |
 |---|---|---|
-| 发现执行设备 | `enumerate_devices` / `query_device` | 当前只枚举 CPU；枚举返回完整数量，短 buffer 不静默截断 |
-| 建立执行域 | `Device -> Context -> Queue` | CPU queue 在调用线程同步、按序执行；没有隐藏 worker/default device |
-| 描述和绑定 tensor | `TensorDesc` + `ConstTensorView` / `TensorView` | rank 至多 8；storage 借用 Mem `BufferView`；stride 以 element 为单位 |
-| 重复执行一个算子 | `prepare(...) -> PreparedOperation::submit(...)` | 当前正常 route 只有 dense rank-1 f32 RMSNorm，可选 f32 weight |
-| 直接工程 kernel | `submit_host(queue, callable, args...)` | CPU、`noexcept`、返回 `void` 或 `Status`，并在返回前完成 |
-| 取得终态 | `Completion` | CPU candidate 已经 terminal；仍须检查 `wait()`/`status()` |
+| 设备发现 | `enumerate_devices` / `query_device` | 当前只返回 CPU；短输出 span 不静默截断 |
+| 执行域 | `Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有隐藏 worker/default device |
+| tensor schema | `TensorDesc::dense/strided/permuted/transposed` | rank <= 8；stride 以 element 为单位；view 借用 Mem storage |
+| normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
+| matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
+| gated activation | `SiluAndMul` | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
+| 自定义 CPU 工作 | `submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
+| 稳定重复执行 | `prepare -> PreparedOperation::submit -> Completion` | prepare 固定 shape/provider route；submit 不重新推 shape/路由 |
 
-`BackendKind` 中的 CUDA、Metal、Vulkan 和 HIP 是稳定词汇，不表示对应实现已经编入产品。只以设备枚举、
-构建配置和模块状态判断可用能力。
+当前 operator catalog 有意只签发本轮真实 transformer 片段需要的三项，并非长期超集。f16/bf16、量化、
+batched MatMul、attention、RoPE、softmax、embedding、repack 与 provider fusion 必须在各自有限卡中加入，
+不能把 enum 预留写成已实现能力。
 
-## 正常路线
+## MatMul 权重形状
+
+不要增加 provider-specific `transpose_weight` 标志。若模型存储权重为连续 `[N,K]`，创建该 dense desc 后
+调用 `transposed()`，得到逻辑 `[K,N]` 和对应 stride；数据不移动。Compute 会在 prepare 冷路径选择相应
+route。普通连续 `[K,N]` 也直接受支持。
 
 ```cpp
-#include "hyle/compute/operation.h"
-#include "hyle/mem/buffer.h"
+auto stored = TensorDesc::dense(DataType::kFloat32, std::array{n, k});
+if (!stored) return stored.error();
+auto logical_weight = stored->transposed();
+if (!logical_weight) return logical_weight.error();
 
-using namespace hyle::compute;
-
-constexpr std::array<std::int64_t, 1> shape{4096};
-auto desc = TensorDesc::dense(DataType::kFloat32, shape);
-if (!desc) return desc.error();
-auto bytes = desc->required_bytes();
-if (!bytes) return bytes.error();
-
-auto input_storage = hyle::mem::Buffer::create(
-    hyle::mem::system_resource(), *bytes, 64);
-auto output_storage = hyle::mem::Buffer::create(
-    hyle::mem::system_resource(), *bytes, 64);
-if (!input_storage) return input_storage.error();
-if (!output_storage) return output_storage.error();
-
-auto input = ConstTensorView::create(*desc, input_storage->view());
-auto output = TensorView::create(*desc, output_storage->view());
-auto context = Context::create(Device::cpu());
-if (!input) return input.error();
+auto output = infer_output_description(
+    Operation(MatMul{}), std::array{activation_desc, *logical_weight});
 if (!output) return output.error();
-if (!context) return context.error();
-
-auto queue = context->create_queue();
-auto op = prepare(*context, RmsNorm{.epsilon = 1.0e-5F}, *desc, *desc);
-if (!queue) return queue.error();
-if (!op) return op.error();
-
-auto completion = op->submit(*queue, *input, *output);
-if (!completion) return completion.error();
-return completion->wait();
+auto prepared = prepare(context, MatMul{}, activation_desc,
+                        *logical_weight, *output);
 ```
 
-`prepare` 是冷路径：它验证 shape/layout 并固定 provider route。对同一描述反复执行时复用
-`PreparedOperation`，不要每次重建它。一次性调用 convenience 当前故意不存在，以免把冷路径伪装为
-廉价提交。
+## prepare 与 submit
 
-## 所有权、线程和失败
+`infer_output_description()` 是 direct Compute 与 Graph 共用的唯一 shape/layout 规则。`prepare()` 再核对
+调用方给出的 output desc，并把 provider/route 选择移出热路径。对同一描述反复执行时复用
+`PreparedOperation`；当前故意没有把 prepare 隐藏在一次性 convenience 中。
 
-- `Device` 是廉价值；`Context`、`Queue`、`PreparedOperation` 和 `Completion` 是显式生命周期对象。
-  Context 的 metadata allocator 必须活过从它保留的所有 handle。
-- Tensor view 不拥有 payload。Mem Buffer/resource 以及 Context 必须活到 Completion 终态；CPU 当前同步
-  完成也应按这条合同编写代码，才能迁移到异步 backend。
-- 不同 Queue 可以并发提交；同一个 Context 的 `close()`/析构不得与提交并发。Queue 是 move-only，关闭后
-  新提交返回 `FailedPrecondition`。
-- 参数、shape、range、alias 或 provider 支持问题在 admission 前由 `Result` 返回；工作已接纳后的失败由
-  Completion 的 terminal `Status` 返回。两层都要检查。
-- RMSNorm 允许 input/output 精确同址；拒绝部分重叠和 weight/output 重叠。当前路线不会隐藏 staging、
-  copy、线程切换或 provider fallback。
-- non-coherent resource 的 invalidate/flush 仍遵守 [Mem](mem.md) 合同；Compute 不把 native handle 当作
-  可解引用 host pointer。
+```cpp
+auto context = Context::create(Device::cpu());
+if (!context) return context.error();
+auto queue = context->create_queue();
+if (!queue) return queue.error();
 
-source、headers + static 和 headers + shared 都链接 `hyle::compute`。三者都是 C++23 surface，不是
+auto prepared = prepare(*context, RmsNorm{.epsilon = 1.0e-5F},
+                        input_desc, weight_desc, input_desc);
+if (!prepared) return prepared.error();
+auto done = prepared->submit(*queue, input_view, weight_view, output_view);
+if (!done) return done.error();       // admission failure
+return done->wait();                  // terminal failure
+```
+
+## 所有权、失败和限制
+
+- `Device` 是廉价值；`Context`、`Queue`、`PreparedOperation` 与 `Completion` 是显式生命周期对象。
+  Context metadata allocator 必须活过从它保留的 handles。
+- Tensor views 不拥有 payload。Mem Buffer/resource 以及 Queue 必须活到 Completion 终态。
+- admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
+  等失败由 Completion terminal `Status` 报告，两层都要检查。
+- RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
+  overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
+- 不同 Queue 可并发；`Context::close()`/析构不得与另一 handle 的 submit 并发。
+- 当前 route 不隐藏 staging、copy、线程切换、packing、JIT 或 provider fallback。
+
+source、headers + static、headers + shared 都选择 `hyle::compute`。三者是同一 C++23 source contract，不是
 Native FFI，也不承诺跨工具链 C++ ABI。
