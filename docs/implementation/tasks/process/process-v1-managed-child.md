@@ -1,6 +1,6 @@
 # Process v1：受管子进程生命周期
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -113,8 +113,8 @@ class ChildProcess { try_wait(); wait(...); request_termination(); force_kill_tr
 ```
 
 `arguments` 不含 argv[0]，实现始终把 executable 作为 argv[0]；这覆盖普通 direct-exec，不为 POSIX-only
-custom argv0 污染 portable API。`ProcessStdio::file` 借用 `FileHandle` 到同步 spawn 返回并在 child 侧复制/
-dup；不转移 caller owner。任一 `pipe()` 要求有效 `pipe_io/pipe_owner`，成功后分别通过
+custom argv0 污染 portable API。`ProcessStdio::file` 快照 native value；对应 native file 保持打开到同步
+spawn 返回，child 侧复制/dup，不转移 caller owner。任一 `pipe()` 要求有效 `pipe_io/pipe_owner`，成功后分别通过
 `stdin_pipe()`、`stdout_pipe()`、`stderr_pipe()` 返回 child-owned `LocalStream*`；merge 不制造第二条 pipe。
 所有状态查询与 wait 可并发，pipe 自身仍遵守 IO 的每方向单 in-flight 合同。
 
@@ -147,3 +147,26 @@ LocalStream、tree ownership、abandon/reap 和 runtime shutdown 的同合同入
 
 公开 API、OS carrier 和资源上限至此为 **PASS**，允许进入上述四批实现。correctness、平台、交付和红队尚未
 运行，不得提前写为通过；失败先检查 ownership/source，不增加第五批或反复采样寻找偶然 PASS。
+
+## 候选签署（`CANDIDATE`）
+
+- 不可变候选：`4f0529a8d75cf5df33c27c703645ff0b0060186f`；tree：
+  `ac91dbebfdcaa150fa1a7301dfe27a5d33c6b2ef`。四个冻结批次全部完成，没有加入 shell、PTY、restart、
+  resource policy、Native FFI 或第二 runtime。
+- API/正确性覆盖 exact/PATH、argv quoting/empty/Unicode、cwd、inherit+set/unset/replacement environment、
+  inherit/null/file/pipe/merge stdio、1 MiB 双向 pipe/backpressure/EOF、spawn failure、try/repeated wait、
+  deadline/cancel、typed exit、request/force、owner drop、release-to-reaper、runtime shutdown、12-thread spawn、
+  allocator failure、外部 child 不被抢收、无关 inheritable handle 不泄漏与 descendant tree kill。
+- 源码红队在成候选前修正：POSIX `SmallVector` move 后 argv/env pointer table 失效；Windows 极短 child 的
+  registered-wait publication race；Windows pipe 同步 terminal completion/EOF；测试 helper 的 CRT text mode；
+  Linux `closefrom` 与 macOS `CLOEXEC_DEFAULT` 继承白名单；root reap 后 process-group ID 重用窗口；以及
+  `ProcessStdio::file` 保存 owner 地址造成的悬空风险。最终形状只快照 native value，并明确 native file 的
+  spawn 生命周期。
+- Windows MSVC 19.50 为 18 个 process tests，Linux GCC 14 与两台 macOS AppleClang 各为 19 个，逐头均
+  通过。WSL ASan/UBSan 以 CTest 通过；TSan 因宿主 ASLR mapping 限制以
+  `setarch $(uname -m) -R .../hyle_process_test` 运行，19/19 通过且无 report。
+- Windows、Linux、Mac mini、MacBook Air 均通过 `process` source embedding、relocated shared、relocated
+  static consumer；中央 component contract 通过。P0 账单与上一节一致；没有完整同合同 peer，因此 P1
+  `NOT_APPLICABLE`，不得用 raw spawn 对完整 façade 排名。
+- candidate LOC：全库 `544,413`；自实现不含测试 `97,522`；Process 实现 `1,908`；io_core 实现
+  `11,570`。候选后只允许终局红队、说明、证据和状态；产品/API/算法变化必须退回 `AUDITED`。

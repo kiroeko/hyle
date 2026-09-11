@@ -1,6 +1,6 @@
 # IO Core v5：匿名本地字节流接管
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -47,3 +47,19 @@ OS owner 间的窄 C++ seam，不是 Native FFI。
 P0 账单：新增调用本身 O(1)、一次 backend bind、零 allocation/copy；既有 named adopt、connect、listen 和
 全部 read/write codegen 不变，LocalStream/LocalEndpoint layout 不变。源码审计结论 **PASS**，允许唯一产品
 批次修改 `local.h/local.cc` 与定向测试；correctness/三平台/交付结果仍待 G03 候选验证。
+
+## 候选签署（`CANDIDATE`）
+
+- 不可变候选：`4f0529a8d75cf5df33c27c703645ff0b0060186f`；tree：
+  `ac91dbebfdcaa150fa1a7301dfe27a5d33c6b2ef`。
+- `adopt_anonymous` 只增加一个 O(1) validation/bind 入口；既有 `LocalStream` layout、named endpoint 路线和
+  普通 read/write 路线没有字段或分支变化。Process 的 parent endpoint 在 POSIX socketpair 与 Windows
+  overlapped named-pipe 上直接使用既有 proactor。
+- 组合验证发现并修正一项既有 IOCP completion 分类缺陷：Windows `ReadFile`/`WriteFile` 同步返回 terminal
+  error 时，Proactor 现在以拥有的 synthetic operation completion 传递精确 native error，而不是误报 queue
+  admission failure；byte-mode pipe 的 `ERROR_BROKEN_PIPE` 在 LocalStream read 处映射为 clean EOF。
+- Windows、Linux、Mac mini、MacBook Air 的 process/header 组合测试通过；WSL ASan、UBSan、TSan 通过。
+  Windows/Linux/两台 macOS 的 `process` source embedding、relocated shared、relocated static consumer 全部
+  通过，证明 anonymous seam 没有泄漏为另一套产品或破坏 package closure。
+- 候选后只允许补 terminal 红队、证据与状态；若再改变 IO API、completion 算法或常态成本，退回
+  `AUDITED`。

@@ -215,9 +215,10 @@
     },
     {
       "module": "io_core",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md",
-      "summary": "io_core v5 AUDITED：冻结唯一 LocalStream::adopt_anonymous seam；不增伪 endpoint kind、对象字段、依赖或既有 transport 热路径成本。"
+      "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f",
+      "summary": "io_core v5 CANDIDATE：唯一 LocalStream::adopt_anonymous seam 与 Windows 同步 terminal completion 修正已通过三平台 process 组合、sanitizer 和三交付；候选后终局红队待签。"
     },
     {
       "module": "io_tls",
@@ -324,9 +325,10 @@
     },
     {
       "module": "process",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/process/process-v1-managed-child.md",
-      "summary": "process v1 AUDITED：显式 ProcessRuntime/ChildProcess、HYLE-native wait/pipe、三平台非轮询 reaper、tree termination 与四批有限实现已冻结；产品验证尚未运行。"
+      "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f",
+      "summary": "process v1 CANDIDATE：受管 child 的 argv/env/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、sanitizer 和 source/static/shared；候选后终局红队待签。"
     }
   ]
 }

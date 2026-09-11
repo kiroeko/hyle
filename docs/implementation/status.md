@@ -30,7 +30,7 @@
 | container | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container-v6 CLOSED：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | util_runtime | CLOSED | P0 / [PASS](evidence/performance/benchmarks-util.md) | [record](tasks/util/util-runtime-v5-blocker-resolution.md) | util-runtime v5 CLOSED：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。 |
 | sched | CLOSED | P1 / [PASS](tasks/sched/sched-v10-execution-priority.md) / 5% | [record](tasks/sched/sched-v10-execution-priority.md) | sched v10 CLOSED：三档非抢占 execution priority 覆盖 admission/yield/wake/pinned/TaskScope 全路径；三平台正确性/sanitizer/三交付、IO 直接消费者、易用性、红队和 W1-WIN 两条同合同产品路线的 5% P1 非劣门全部通过。 |
-| io_core | AUDITED | — | [record](tasks/io/io-core-v5-anonymous-stream-adopt.md) | io_core v5 AUDITED：冻结唯一 LocalStream::adopt_anonymous seam；不增伪 endpoint kind、对象字段、依赖或既有 transport 热路径成本。 |
+| io_core | CANDIDATE | — | [record](tasks/io/io-core-v5-anonymous-stream-adopt.md) | io_core v5 CANDIDATE：唯一 LocalStream::adopt_anonymous seam 与 Windows 同步 terminal completion 修正已通过三平台 process 组合、sanitizer 和三交付；候选后终局红队待签。 |
 | io_tls | CLOSED | P0 / [PASS](tasks/io/io-tls-v4-context-identity.md) | [record](tasks/io/io-tls-v4-context-identity.md) | io_tls v4 CLOSED：G06 HTTPS file-body 的 inline context identity seam 保持零字段、零符号和普通热路径零成本，通过三平台、sanitizer、三交付与红队。 |
 | io_http | CLOSED | P0 / [PASS](tasks/io/io-http-v3-file-body.md) | [record](tasks/io/io-http-v3-file-body.md) | io_http v3 CLOSED：file-region response 复用既有 framing；plain 委托 io_core、TLS 使用一次有界 scratch，状态/复用语义通过三平台、sanitizer、三交付和红队。 |
 | io_http2 | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。 |
@@ -41,7 +41,7 @@
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
 | io_watch | CLOSED | P0 / [PASS](tasks/io/io-watch-v2-recursive-tree.md) | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。 |
-| process | AUDITED | — | [record](tasks/process/process-v1-managed-child.md) | process v1 AUDITED：显式 ProcessRuntime/ChildProcess、HYLE-native wait/pipe、三平台非轮询 reaper、tree termination 与四批有限实现已冻结；产品验证尚未运行。 |
+| process | CANDIDATE | — | [record](tasks/process/process-v1-managed-child.md) | process v1 CANDIDATE：受管 child 的 argv/env/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、sanitizer 和 source/static/shared；候选后终局红队待签。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
