@@ -1,6 +1,6 @@
 # IO Core v5：匿名本地字节流接管
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -27,4 +27,23 @@
 - stop：若现有 Proactor 不能正确 bind POSIX socketpair 或 Windows overlapped named-pipe parent handle，则
   `BLOCKED` 并回到 G03 backend；不得降为 blocking file wrapper。
 
-本卡只登记窄重开。registry 进入 `SCOPED` 后进行一次 API/backend 审计，在 `AUDITED` 前不得改产品代码。
+## API/backend 审计（`AUDITED`）
+
+`LocalStream` 的 data path 只使用 `io_ / handle_ / owner_`；`endpoint_` 只用于已命名 transport 的观察、
+connect/listen 和 Unix path 生命周期。三平台 `Proactor::bind_handle + submit_read/submit_write` 已分别接受
+IOCP-compatible HANDLE 与 pollable POSIX fd，不要求地址存在。因而不增加伪 `LocalEndpointKind`，也不让
+anonymous endpoint 可被错误传给 connect/listen；冻结的唯一新增形状是：
+
+```cpp
+static Result<LocalStream> adopt_anonymous(
+    IoContext&, unsigned owner_worker, std::intptr_t native_handle) noexcept;
+```
+
+它接管 native handle，与既有 `adopt` 一样在 validation/bind 失败时关闭 handle；成功对象的
+`endpoint().valid()` 为 false，诚实表示没有可重连地址。handle 的创建方式和异步兼容性仍是调用方前置条件：
+POSIX 使用 nonblocking socket/pipe，Windows 使用 `FILE_FLAG_OVERLAPPED` named-pipe endpoint。这个入口是
+OS owner 间的窄 C++ seam，不是 Native FFI。
+
+P0 账单：新增调用本身 O(1)、一次 backend bind、零 allocation/copy；既有 named adopt、connect、listen 和
+全部 read/write codegen 不变，LocalStream/LocalEndpoint layout 不变。源码审计结论 **PASS**，允许唯一产品
+批次修改 `local.h/local.cc` 与定向测试；correctness/三平台/交付结果仍待 G03 候选验证。

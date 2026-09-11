@@ -215,9 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md",
-      "summary": "io_core v5 SCOPED：仅为 G03 重开 anonymous LocalStream adopt；不改既有 endpoint/transport 合同、依赖或普通热路径。"
+      "summary": "io_core v5 AUDITED：冻结唯一 LocalStream::adopt_anonymous seam；不增伪 endpoint kind、对象字段、依赖或既有 transport 热路径成本。"
     },
     {
       "module": "io_tls",
