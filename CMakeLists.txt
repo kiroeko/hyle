@@ -394,6 +394,12 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
         "${HYLE_XSIMD_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xsimd-upstream-LICENSE")
   endif()
 endif()
+if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN)
+  include(HyleComputeDependencies)
+  hyle_configure_compute_dependencies()
+else()
+  set(HYLE_COMPUTE_ONEDNN_ENABLED OFF)
+endif()
 # ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored build integration
 # currently covers x86_64 Windows/Linux/macOS and arm64 Linux/macOS.  The

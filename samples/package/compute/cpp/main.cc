@@ -1,5 +1,6 @@
 #include <hyle/compute/host_kernel.h>
 #include <hyle/compute/operation.h>
+#include <hyle/compute/providers/onednn.h>
 #include <hyle/mem/buffer.h>
 
 #include <array>
@@ -35,12 +36,14 @@ int main() {
   auto queue = context->create_queue();
   auto prepared = prepare(*context, RmsNorm{}, *description, *description);
   if (!queue || !prepared) return 4;
-  auto completion = prepared->submit(*queue, *input_view, *output_view);
+  auto invocation = prepared->create_invocation();
+  if (!invocation) return 5;
+  auto completion = invocation->submit(*queue, *input_view, *output_view);
   if (!completion || !completion->wait().ok() ||
       !output_buffer->view()
            .read(std::as_writable_bytes(std::span(output)))
            .ok()) {
-    return 5;
+    return 6;
   }
 
   float sum = 0.0F;
@@ -49,12 +52,19 @@ int main() {
       1.0F / std::sqrt(sum / static_cast<float>(input.size()) +
                        RmsNorm{}.epsilon);
   for (std::size_t index = 0; index < output.size(); ++index) {
-    if (std::abs(output[index] - input[index] * scale) > 1.0e-5F) return 6;
+    if (std::abs(output[index] - input[index] * scale) > 1.0e-5F) return 7;
   }
 
   int engineering_value = 40;
   auto host = submit_host(
       *queue,
       [](int& value) noexcept { value += 2; }, engineering_value);
-  return host && host->wait().ok() && engineering_value == 42 ? 0 : 7;
+  if (!host || !host->wait().ok() || engineering_value != 42) return 8;
+
+#if defined(HYLE_COMPUTE_ONEDNN)
+  if (onednn::version() != "3.13.2") return 9;
+  auto provider_context = Context::create(Device::cpu(), onednn::provider());
+  if (!provider_context) return 10;
+#endif
+  return 0;
 }

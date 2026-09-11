@@ -8,9 +8,14 @@
 
 #include "hyle/compute/completion.h"
 #include "hyle/compute/device.h"
+#include "hyle/compute/provider.h"
 #include "hyle/compute/tensor.h"
 
 namespace hyle::compute {
+
+namespace detail {
+struct PreparedState;
+}
 
 enum class OperationKind : std::uint8_t {
   kUnknown = 0,
@@ -52,14 +57,13 @@ private:
   RmsNorm rms_norm_{};
 };
 
-enum class ProviderKind : std::uint8_t {
-  kUnknown = 0,
-  kHyleNative,
-};
-
-HYLE_COMPUTE_API std::string_view provider_name(ProviderKind provider) noexcept;
 HYLE_COMPUTE_API std::string_view
 operation_name(OperationKind operation) noexcept;
+
+struct WorkspaceRequirement final {
+  std::size_t size = 0;
+  std::size_t alignment = 1;
+};
 
 // The single source of shape/layout rules shared by direct Compute and Graph.
 // Every v2 operation has exactly one output.
@@ -68,6 +72,7 @@ infer_output_description(Operation operation,
                          std::span<const TensorDesc> inputs) noexcept;
 
 class PreparedOperation;
+class OperationInvocation;
 
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
@@ -77,8 +82,9 @@ prepare(const Context &context, Operation operation,
 class PreparedOperation final {
 public:
   PreparedOperation() noexcept = default;
-  PreparedOperation(const PreparedOperation &) = delete;
-  PreparedOperation &operator=(const PreparedOperation &) = delete;
+  HYLE_COMPUTE_API PreparedOperation(const PreparedOperation &other) noexcept;
+  HYLE_COMPUTE_API PreparedOperation &
+  operator=(const PreparedOperation &other) noexcept;
   HYLE_COMPUTE_API PreparedOperation(PreparedOperation &&other) noexcept;
   HYLE_COMPUTE_API PreparedOperation &
   operator=(PreparedOperation &&other) noexcept;
@@ -86,59 +92,72 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  OperationKind kind() const noexcept {
-    return valid() ? operation_.kind() : OperationKind::kUnknown;
-  }
-  ProviderKind provider() const noexcept {
-    return valid() ? ProviderKind::kHyleNative : ProviderKind::kUnknown;
-  }
-  std::size_t input_count() const noexcept { return input_count_; }
-  std::size_t output_count() const noexcept { return valid() ? 1 : 0; }
+  HYLE_COMPUTE_API OperationKind kind() const noexcept;
+  HYLE_COMPUTE_API ProviderKind provider() const noexcept;
+  HYLE_COMPUTE_API bool used_fallback() const noexcept;
+  HYLE_COMPUTE_API WorkspaceRequirement
+  workspace_requirement() const noexcept;
+  HYLE_COMPUTE_API std::size_t input_count() const noexcept;
+  HYLE_COMPUTE_API std::size_t output_count() const noexcept;
   HYLE_COMPUTE_API Result<const TensorDesc &>
   input_description(std::size_t index = 0) const noexcept;
   HYLE_COMPUTE_API Result<const TensorDesc &>
   output_description(std::size_t index = 0) const noexcept;
 
-  HYLE_COMPUTE_API Result<Completion>
-  submit(Queue &queue, std::span<const ConstTensorView> inputs,
-         std::span<const TensorView> outputs) const noexcept;
-  HYLE_COMPUTE_API Result<Completion>
-  submit(Queue &queue, const ConstTensorView &input,
-         const TensorView &output) const noexcept;
-  HYLE_COMPUTE_API Result<Completion>
-  submit(Queue &queue, const ConstTensorView &input,
-         const ConstTensorView &weight,
-         const TensorView &output) const noexcept;
+  HYLE_COMPUTE_API Result<OperationInvocation>
+  create_invocation(mem::BufferView workspace = {}) const noexcept;
 
 private:
   friend HYLE_COMPUTE_API Result<PreparedOperation>
   prepare(const Context &, Operation, std::span<const TensorDesc>,
           std::span<const TensorDesc>) noexcept;
 
-  PreparedOperation(detail::ContextState *state, Operation operation,
-                    std::span<const TensorDesc> inputs, TensorDesc output,
-                    std::array<std::size_t, 3> parameters, float scalar,
-                    void (*route)(const float *, const float *, float *,
-                                  const std::array<std::size_t, 3> &,
-                                  float) noexcept) noexcept;
+  explicit PreparedOperation(detail::PreparedState *state) noexcept
+      : state_(state) {}
+
+  detail::PreparedState *state_ = nullptr;
+};
+
+// Exclusive mutable state for one execution lane. Create it once per
+// concurrent run, then rebind and submit repeatedly without provider search,
+// descriptor construction or workspace allocation.
+class OperationInvocation final {
+public:
+  OperationInvocation() noexcept = default;
+  OperationInvocation(const OperationInvocation &) = delete;
+  OperationInvocation &operator=(const OperationInvocation &) = delete;
+  HYLE_COMPUTE_API OperationInvocation(OperationInvocation &&other) noexcept;
+  HYLE_COMPUTE_API OperationInvocation &
+  operator=(OperationInvocation &&other) noexcept;
+  HYLE_COMPUTE_API ~OperationInvocation();
+
+  bool valid() const noexcept { return state_ != nullptr; }
+  explicit operator bool() const noexcept { return valid(); }
+  HYLE_COMPUTE_API ProviderKind provider() const noexcept;
+
+  HYLE_COMPUTE_API Result<Completion>
+  submit(Queue &queue, std::span<const ConstTensorView> inputs,
+         std::span<const TensorView> outputs) noexcept;
+  HYLE_COMPUTE_API Result<Completion>
+  submit(Queue &queue, const ConstTensorView &input,
+         const TensorView &output) noexcept;
+  HYLE_COMPUTE_API Result<Completion>
+  submit(Queue &queue, const ConstTensorView &input,
+         const ConstTensorView &weight, const TensorView &output) noexcept;
+
+private:
+  friend class PreparedOperation;
+  OperationInvocation(detail::PreparedState *state,
+                      void *provider_state) noexcept;
 
   Result<Completion>
   submit_impl(Queue &queue, const ConstTensorView *first,
               const ConstTensorView *second, std::size_t provided_input_count,
               const TensorView *output,
-              std::size_t provided_output_count) const noexcept;
+              std::size_t provided_output_count) noexcept;
 
-  using Route = void (*)(const float *, const float *, float *,
-                         const std::array<std::size_t, 3> &, float) noexcept;
-
-  detail::ContextState *state_ = nullptr;
-  Operation operation_{RmsNorm{}};
-  std::array<TensorDesc, 2> inputs_{};
-  TensorDesc output_{};
-  std::array<std::size_t, 3> parameters_{};
-  float scalar_ = 0.0F;
-  std::uint8_t input_count_ = 0;
-  Route route_ = nullptr;
+  detail::PreparedState *state_ = nullptr;
+  void *provider_state_ = nullptr;
 };
 
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,

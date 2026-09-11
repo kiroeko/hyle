@@ -81,7 +81,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **Vulkan / MoltenVK** | 正式保底 backend + renderer interop 参考 | llama.cpp 当前把 Vulkan 作为可构建、可运行的 GPU backend；HYLE 长期合同要覆盖 SPIR-V compute、queue/barrier/timeline、external memory/sync 和消费级设备。Windows/Linux 优先原生驱动；Apple 经 MoltenVK 翻译到 Metal，只签 portability，不替代 Apple 原生 Metal/MLX/MPS 路线 |
 | **OpenAI Jalapeño / InferenceX 结果** | 行业方向证据，不是 HYLE peer | inference-only 全栈 co-design 对 prefill/decode、KV locality、memory/network placement 与 latency-throughput-power Pareto 的公开案例；只使用其公开 workload/口径反查需求，不把厂商自测或封闭硬件当 HYLE SOTA 证明。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **Apple M5 Ultra** | 可获得统一内存平台方向，不是仅凭规格成立的性能 peer | 最高 512 GB unified memory、1.2 TB/s memory bandwidth 与 quad-die interconnect 使超出普通离散显存的本地量化模型成为正式 workload；HYLE 仍须实测 residency、跨 die locality、Metal/kernel 与端到端 token 指标。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
-| **oneDNN** | Compute 候选/参考 | Intel DL primitive、AMX/VNNI、runtime dispatch 与 JIT 的成熟来源；`compute` 重设计时再按具体 operator、artifact、threading 与 delivery 合同裁决是否借入，目前不是 HYLE 产品依赖 |
+| **oneDNN** | Compute 已锁定 provider + 后续参考 | v3.13.2 以独立可选 factor 借入 dense row-major f32 MatMul；显式 THREADPOOL executor、immutable primitive、per-run stream/memory 和 caller-owned scratchpad 已隔离。量化、其他 primitive 与 Graph partition 仍须逐卡裁决，不能从依赖存在推断已支持 |
 | **oneMath** | **仅参考（不借）** | Intel 数学（前 oneMKL）：BLAS/FFT。**SYCL 重依赖**（引它=引整条 SYCL/DPC++ 工具链），HYLE 已有 ggml BLAS；仅参考其 domain×device×library 三级分发表 |
 | **oneDAL** | **边界外**（深读校正）| 经典 ML（kmeans/PCA/knn/forest）是 L1/L2 应用层，非 infra 原语 |
 

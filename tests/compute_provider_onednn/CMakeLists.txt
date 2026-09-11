@@ -1,9 +1,12 @@
-# The AUDITED transition establishes ownership before provider product code is
-# added. The implementation commit replaces this empty aggregate with the
-# provider's public-header and correctness tests.
-add_custom_target(hyle_compute_provider_onednn_tests)
-set_target_properties(hyle_compute_provider_onednn_tests PROPERTIES
-  FOLDER "hyle/validation")
-if(TARGET hyle_tests)
-  add_dependencies(hyle_tests hyle_compute_provider_onednn_tests)
+hyle_add_header_self_contained_test(compute_provider_onednn
+  HEADER_DIR compute/providers
+  HEADERS onednn.h)
+
+if(HYLE_COMPUTE_ONEDNN_ENABLED)
+  hyle_add_test(compute_provider_onednn SOURCES onednn_provider_test.cc)
+  if(TARGET hyle_graph)
+    hyle_add_test(compute_provider_onednn NAME graph
+      SOURCES onednn_graph_test.cc
+      DEPS hyle_graph)
+  endif()
 endif()

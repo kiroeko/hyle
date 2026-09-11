@@ -13,6 +13,16 @@
       ] }
     },
     {
+      "name": "onednn", "class": "fetchcontent",
+      "repository": "https://github.com/oneapi-src/oneDNN.git", "version": "v3.13.2",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5", "git_tree": "7396fa9f41db34ffcd5de8f725aba138427f9595",
+      "archive": { "url": "https://codeload.github.com/oneapi-src/oneDNN/tar.gz/71094df451909e95ceeefc8f64c275cdcbbcdff5", "sha256": "719c827879851a9a5de2be20f424c830ccfc1d14ef00df80ece5ec407c747e1a" },
+      "expanded_tree_sha256": "7ee703ecda81e8246f1fecdf9ec1dac223d64b2f061902e82e8097d791e26e38",
+      "license": { "expression": "Apache-2.0", "files": [
+        { "root": "dependency", "path": "LICENSE", "sha256": "e9fc874fc09801b9acf3411ba72394098473704d832d713404b6c4861a086318" }
+      ] }
+    },
+    {
       "name": "nghttp2", "class": "fetchcontent",
       "repository": "https://github.com/nghttp2/nghttp2.git", "version": "v1.70.0",
       "revision": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2", "git_tree": "1325b520572d4d9f285f37585e6077a39b95bdd4",

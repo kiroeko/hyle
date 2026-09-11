@@ -87,7 +87,7 @@ public:
                              compute::TensorView tensor) noexcept;
   HYLE_GRAPH_API void reset() noexcept;
   HYLE_GRAPH_API Result<compute::Completion>
-  submit(compute::Queue &queue) const noexcept;
+  submit(compute::Queue &queue) noexcept;
 
 private:
   friend struct detail::InvocationAccess;

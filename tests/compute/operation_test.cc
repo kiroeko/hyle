@@ -321,7 +321,8 @@ TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {
       ConstTensorView::create(weight_desc, weight_buffer.view()).value();
   auto output_view =
       TensorView::create(input_desc, output_buffer.view()).value();
-  ASSERT_TRUE(prepared.submit(queue, input_view, weight_view, output_view)
+  auto invocation = prepared.create_invocation().value();
+  ASSERT_TRUE(invocation.submit(queue, input_view, weight_view, output_view)
                   ->wait()
                   .ok());
 
@@ -386,8 +387,11 @@ TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
   auto row_major = hyle::compute::prepare(context, MatMul{}, left_desc,
                                           right_desc, output_desc)
                        .value();
+  auto row_major_invocation = row_major.create_invocation().value();
   ASSERT_TRUE(
-      row_major.submit(queue, left_view, right_view, output_view)->wait().ok());
+      row_major_invocation.submit(queue, left_view, right_view, output_view)
+          ->wait()
+          .ok());
   EXPECT_EQ(read_floats(output_buffer.view(), expected.size()), expected);
 
   write_floats(right_buffer.view(), right_transposed);
@@ -396,7 +400,9 @@ TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
   auto transposed = hyle::compute::prepare(context, MatMul{}, left_desc,
                                            transposed_desc, output_desc)
                         .value();
-  ASSERT_TRUE(transposed.submit(queue, left_view, transposed_view, output_view)
+  auto transposed_invocation = transposed.create_invocation().value();
+  ASSERT_TRUE(transposed_invocation
+                  .submit(queue, left_view, transposed_view, output_view)
                   ->wait()
                   .ok());
   const auto actual = read_floats(output_buffer.view(), expected.size());
@@ -429,7 +435,8 @@ TEST(PreparedOperation, RunsPackedSiluAndMulAcrossRows) {
   auto prepared =
       hyle::compute::prepare(context, SiluAndMul{}, input_desc, output_desc)
           .value();
-  ASSERT_TRUE(prepared.submit(queue, input_view, output_view)->wait().ok());
+  auto invocation = prepared.create_invocation().value();
+  ASSERT_TRUE(invocation.submit(queue, input_view, output_view)->wait().ok());
   const auto actual = read_floats(output_buffer.view(), rows * hidden);
   for (std::size_t row = 0; row < rows; ++row) {
     for (std::size_t index = 0; index < hidden; ++index) {
@@ -473,7 +480,8 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
   PreparedOperation plain = hyle::compute::prepare(context, RmsNorm{epsilon},
                                                    description, description)
                                 .value();
-  auto completion = plain.submit(queue, input_view, output_view);
+  auto plain_invocation = plain.create_invocation().value();
+  auto completion = plain_invocation.submit(queue, input_view, output_view);
   ASSERT_TRUE(completion.has_value());
   ASSERT_TRUE(completion->wait().ok());
   const auto plain_output = read_floats(output_buffer.view(), input.size());
@@ -483,7 +491,9 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
       hyle::compute::prepare(context, RmsNorm{epsilon}, description,
                              description, description)
           .value();
-  completion = weighted.submit(queue, input_view, weight_view, output_view);
+  auto weighted_invocation = weighted.create_invocation().value();
+  completion = weighted_invocation.submit(queue, input_view, weight_view,
+                                           output_view);
   ASSERT_TRUE(completion.has_value());
   ASSERT_TRUE(completion->wait().ok());
   const auto weighted_output = read_floats(output_buffer.view(), input.size());
@@ -492,8 +502,8 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
   write_floats(input_buffer.view(), input);
   TensorView in_place_mutable =
       TensorView::create(description, input_buffer.view()).value();
-  completion =
-      plain.submit(queue, in_place_mutable.as_const(), in_place_mutable);
+  completion = plain_invocation.submit(queue, in_place_mutable.as_const(),
+                                       in_place_mutable);
   ASSERT_TRUE(completion.has_value());
   ASSERT_TRUE(completion->wait().ok());
   const auto in_place = read_floats(input_buffer.view(), input.size());
@@ -527,12 +537,13 @@ TEST(PreparedOperation, RejectsWrongBindingContextAndUnsafeAlias) {
   PreparedOperation prepared =
       hyle::compute::prepare(first, RmsNorm{}, description, description)
           .value();
+  auto invocation = prepared.create_invocation().value();
 
-  auto wrong_context = prepared.submit(wrong_queue, input, output);
+  auto wrong_context = invocation.submit(wrong_queue, input, output);
   ASSERT_FALSE(wrong_context.has_value());
   EXPECT_TRUE(wrong_context.error().IsInvalidArgument());
 
-  auto partial_alias = prepared.submit(first_queue, input, partial);
+  auto partial_alias = invocation.submit(first_queue, input, partial);
   ASSERT_FALSE(partial_alias.has_value());
   EXPECT_TRUE(partial_alias.error().IsInvalidArgument());
 
@@ -540,13 +551,14 @@ TEST(PreparedOperation, RejectsWrongBindingContextAndUnsafeAlias) {
       hyle::compute::prepare(first, RmsNorm{}, description, description,
                              description)
           .value();
+  auto weighted_invocation = weighted.create_invocation().value();
   auto weight_alias =
-      weighted.submit(first_queue, input, output.as_const(), output);
+      weighted_invocation.submit(first_queue, input, output.as_const(), output);
   ASSERT_FALSE(weight_alias.has_value());
   EXPECT_TRUE(weight_alias.error().IsInvalidArgument());
 
   ASSERT_TRUE(first.close().ok());
-  auto closed = prepared.submit(first_queue, input, output);
+  auto closed = invocation.submit(first_queue, input, output);
   ASSERT_FALSE(closed.has_value());
   EXPECT_TRUE(closed.error().IsFailedPrecondition());
 }
@@ -577,9 +589,10 @@ TEST(PreparedOperation,
   PreparedOperation prepared =
       hyle::compute::prepare(context, RmsNorm{}, description, description)
           .value();
+  auto invocation = prepared.create_invocation().value();
 
   resource.reset_counts();
-  auto completion = prepared.submit(queue, input_view, output_view);
+  auto completion = invocation.submit(queue, input_view, output_view);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->wait().ok());
   EXPECT_EQ(resource.invalidates(), 1);
@@ -588,13 +601,13 @@ TEST(PreparedOperation,
   EXPECT_EQ(resource.unmaps(), 2);
 
   resource.fail_mapping(true);
-  completion = prepared.submit(queue, input_view, output_view);
+  completion = invocation.submit(queue, input_view, output_view);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->wait().IsUnavailable());
 
   resource.fail_mapping(false);
   resource.fail_unmap(true);
-  completion = prepared.submit(queue, input_view, output_view);
+  completion = invocation.submit(queue, input_view, output_view);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->wait().IsUnavailable());
 }
@@ -621,7 +634,8 @@ TEST(PreparedOperation, RejectsStorageThatCpuCannotMap) {
   PreparedOperation prepared =
       hyle::compute::prepare(context, RmsNorm{}, description, description)
           .value();
-  auto rejected = prepared.submit(queue, input, output);
+  auto invocation = prepared.create_invocation().value();
+  auto rejected = invocation.submit(queue, input, output);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsFailedPrecondition());
   EXPECT_EQ(resource.maps(), 0);
@@ -636,16 +650,18 @@ TEST(PreparedOperation,
   TensorView output = TensorView::create(description, empty.view()).value();
   Queue queue;
   PreparedOperation prepared;
+  hyle::compute::OperationInvocation invocation;
   {
     Context context = Context::create(Device::cpu()).value();
     queue = context.create_queue().value();
     prepared =
         hyle::compute::prepare(context, RmsNorm{}, description, description)
             .value();
+    invocation = prepared.create_invocation().value();
   }
   EXPECT_TRUE(prepared.valid());
   EXPECT_FALSE(queue.is_open());
-  auto rejected = prepared.submit(queue, input, output);
+  auto rejected = invocation.submit(queue, input, output);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsFailedPrecondition());
 }

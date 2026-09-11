@@ -48,6 +48,8 @@ using ValueOrdinals =
     container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
 using BindingRoles =
     container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
+using OperationInvocations =
+    container::SmallVector<compute::OperationInvocation, 8, mem::AllocatorRef>;
 
 struct PlanState final : util::RefCounted<PlanState> {
   PlanState(mem::AllocatorRef allocator_value,
@@ -55,8 +57,9 @@ struct PlanState final : util::RefCounted<PlanState> {
       : allocator(allocator_value), generation(generation_value),
         nodes(allocator_value), input_ids(allocator_value),
         output_ids(allocator_value), descriptions(allocator_value),
-        workspace_requests(allocator_value), in_place_sources(allocator_value),
-        binding_roles(allocator_value) {}
+        workspace_requests(allocator_value),
+        operation_workspace_requests(allocator_value),
+        in_place_sources(allocator_value), binding_roles(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -71,6 +74,7 @@ struct PlanState final : util::RefCounted<PlanState> {
   ValueIds output_ids;
   TensorDescriptions descriptions;
   ValueOrdinals workspace_requests;
+  ValueOrdinals operation_workspace_requests;
   // For an externally bound output, identifies the sole external input that
   // may use the exact same byte range. All other output overlap is rejected.
   ValueOrdinals in_place_sources;
@@ -99,7 +103,7 @@ struct InvocationState final {
   InvocationState(PlanState *plan_value,
                   mem::PlannedBuffers workspace_value) noexcept
       : allocator(plan_value->allocator), plan(plan_value), readable(allocator),
-        writable(allocator), bound(allocator),
+        writable(allocator), bound(allocator), operations(allocator),
         workspace(std::move(workspace_value)) {
     retain(plan);
   }
@@ -117,6 +121,7 @@ struct InvocationState final {
   ReadableBindings readable;
   WritableBindings writable;
   BindingRoles bound;
+  OperationInvocations operations;
   mem::PlannedBuffers workspace{};
 };
 

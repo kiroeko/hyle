@@ -337,7 +337,7 @@ _hyle_declare_component(io_websocket
 # Compute never depends back on this implementation leaf.
 _hyle_declare_component(compute_provider_onednn
   PUBLIC_DEPS compute
-  PUBLIC_TYPE_DEPS compute)
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/onednn.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

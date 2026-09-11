@@ -100,7 +100,12 @@ auto context = hyle::compute::Context::create(
     hyle::compute::Device::cpu(), provider).value();
 auto prepared = hyle::compute::prepare(context, hyle::compute::MatMul{},
                                        a_desc, b_desc, c_desc).value();
-auto scratch = allocator.allocate(prepared.workspace_requirement()).value();
+const auto need = prepared.workspace_requirement();
+hyle::mem::Buffer scratch;
+if (need.size != 0) {
+  scratch = hyle::mem::Buffer::create(
+      hyle::mem::system_resource(), need.size, need.alignment).value();
+}
 auto invocation = prepared.create_invocation(scratch.view()).value();
 auto done = invocation.submit(queue, a, b, c).value();
 ```
@@ -119,8 +124,9 @@ tensor views 只借用到同步 Completion 终态。provider 内部 C handle 销
 
 - factor 真实边为 `compute_provider_onednn -> compute`（PUBLIC）；Compute/Graph semantic factor 不反向依赖
   provider。用户产品 `hyle::compute` 聚合 provider factor，`hyle::graph` 也聚合它以提供相同显式选择；
-- `HYLE_COMPUTE_ONEDNN=AUTO|ON|OFF` 只在相关产品 closure 中生效。OFF 不探测/下载且不定义 factory；
-  AUTO 在 oneDNN 支持的平台启用，ON 遇到不支持环境失败。factor identity/target 仍存在，方便依赖图稳定；
+- `HYLE_COMPUTE_ONEDNN=AUTO|ON|OFF` 只在相关产品 closure 中生效，默认 OFF，因而普通 Compute 配置不为
+  可选 provider 下载或编译数百个 vendor translation units。AUTO 在 oneDNN 支持的平台启用，ON 遇到
+  不支持环境失败；factor identity/target 仍存在，方便依赖图稳定；
 - provider public header 不暴露 `dnnl_*`。shared provider 私链静态 oneDNN 并隐藏 vendor symbols；static SDK
   导出所需静态 target/header metadata；source、static、shared 使用同一 HYLE C++ provider API；
 - oneDNN archive/hash、展开树、许可证、online/offline cache 由中央 lock/package registry 唯一登记。
@@ -147,6 +153,29 @@ tensor views 只借用到同步 Completion 终态。provider 内部 C handle 销
 5. 交付：只有 C++ provider；无 C/Native FFI、无 oneDNN 类型泄漏；
 6. 构建：一个可选 factor、一份 lock、一份 package registry 覆盖 source/static/shared；
 7. 易用：单 provider Context convenience、显式 threading/workspace 与 provider observer；坑写入 Compute guide。
+
+## 实施中证据（2026-09-12）
+
+- `Provider`、`ProviderList`、`ParallelExecutorRef`、单-provider `Context::create`、共享
+  `PreparedOperation` 与独占 `OperationInvocation` 已按 OD01--OD06 落地；空 executor 始终如实表现为
+  concurrency=1，不存在“宣称并行、实际串行”的配置；
+- oneDNN v3.13.2 已通过中央 dependency lock/source cache 获取，并在自己的 private target 中使用 C++17；
+  HYLE 产品 target 仍为 C++23。这样既不把 vendor 的 deprecated C++17 实现错误提升为 HYLE 公共语言合同，
+  也不降低 HYLE 用户 surface；
+- Windows targeted correctness：native Compute `29/29`、native Graph `20/20`、oneDNN provider `7/7`、
+  oneDNN Graph integration `1/1`。期间发现并修复 retained Executable 在 Context owner 析构后不能创建
+  Invocation 的生命周期回归；创建仍允许，但关闭后的 submit 正确失败。自定义同步 executor 也通过
+  oneDNN threadpool bridge 的真实 MatMul 路线被调用，不只测试了 adapter 本身；
+- `HYLE_COMPUTE_ONEDNN=OFF` 的 nested public header self-contained 通过，且 configure 明确跳过依赖下载；
+  offline dependency consumer/lock contract 通过；
+- 三交付首次完整运行证明 source embedding 和 relocated shared consumer，static oneDNN archive 也完整编译；
+  static 检查随后准确发现头目录被装成 `include/oneapi/oneapi`，同时发现 private provider SPI 泄漏。修正后
+  使用全新 staging 安装并实际移动前缀，source embedding、relocated shared 和 relocated static consumer 均重新
+  编译、链接、运行通过；static 仅包含正确的 `include/oneapi/dnnl` 开发闭包，shared 不安装 oneDNN headers，
+  两者都不再安装 private SPI。shared export hygiene 检查 6 个 HYLE libraries / 682 个导出，无 vendor 泄漏；
+- 当前仍是 `AUDITED`，不是 `CLOSED`：vendor steady-execute allocation probe、公平 direct-oneDNN wrapper P1、
+  source/static/shared relocatable consumer、shared export hygiene、Linux/macOS 与 sanitizer 资格尚未全部完成。
+  这些是本卡剩余验收项，不能用已有 correctness 冒充。
 
 ## Audit verdict
 

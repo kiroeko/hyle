@@ -65,6 +65,8 @@ set(_source_build "${_root}/source-build")
 file(MAKE_DIRECTORY "${_source_parent}")
 set(_source_expert_contract "")
 set(_source_extra_tests "")
+set(_source_feature_contract "")
+set(_selected_feature_args "")
 if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
   string(APPEND _source_expert_contract
     "add_library(hyle_selected_source_provider OBJECT \"${_sample}/expert_probe.cc\")\n"
@@ -82,6 +84,13 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
     "endif()\n")
   string(APPEND _source_extra_tests
     "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
+elseif(HYLE_SMOKE_COMPONENT STREQUAL "compute")
+  # The provider is deliberately opt-in for ordinary Compute consumers. This
+  # delivery smoke explicitly selects it so source/static/shared all prove the
+  # optional provider closure rather than silently exercising native-only CPU.
+  string(APPEND _source_feature_contract
+    "set(HYLE_COMPUTE_ONEDNN ON)\n")
+  list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=ON)
 endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -90,6 +99,7 @@ file(WRITE "${_source_parent}/CMakeLists.txt"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
+"${_source_feature_contract}"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "add_executable(hyle_selected_source_consumer \"${_sample}/main.cc\")\n"
 "target_link_libraries(hyle_selected_source_consumer PRIVATE hyle::${HYLE_SMOKE_COMPONENT})\n"
@@ -127,7 +137,8 @@ foreach(_linkage IN ITEMS shared static)
     -DHYLE_BUILD_TESTS=OFF
     -DHYLE_BUILD_BENCH=OFF
     -DHYLE_INSTALL=ON
-    -DHYLE_STATIC=${_static})
+    -DHYLE_STATIC=${_static}
+    ${_selected_feature_args})
   _hyle_selected_run("build ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
     "${CMAKE_COMMAND}" --build "${_sdk_build}" --config Release --parallel 2)
   _hyle_selected_run("install ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
@@ -161,6 +172,24 @@ foreach(_linkage IN ITEMS shared static)
           "installed ${_linkage} SIMD SDK lacks expert asset ${_expert_asset}")
       endif()
     endforeach()
+  elseif(HYLE_SMOKE_COMPONENT STREQUAL "compute")
+    if(EXISTS "${_staging}/include/hyle/compute/detail/provider.h")
+      message(FATAL_ERROR
+        "installed ${_linkage} Compute SDK leaked its private provider SPI")
+    endif()
+    if(NOT EXISTS "${_staging}/share/licenses/Hyle/oneDNN-LICENSE")
+      message(FATAL_ERROR
+        "installed ${_linkage} Compute SDK lacks oneDNN license payload")
+    endif()
+    if(_static)
+      if(NOT EXISTS "${_staging}/include/oneapi/dnnl/dnnl.h")
+        message(FATAL_ERROR
+          "installed static Compute SDK lacks oneDNN development closure")
+      endif()
+    elseif(EXISTS "${_staging}/include/oneapi")
+      message(FATAL_ERROR
+        "installed shared Compute SDK leaked private oneDNN headers")
+    endif()
   endif()
   file(RENAME "${_staging}" "${_prefix}" RESULT _relocate_result)
   if(NOT _relocate_result STREQUAL "0")

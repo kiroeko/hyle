@@ -1,8 +1,9 @@
 # HYLE Compute：异构执行与算子提供者架构
 
 > 决策状态：`ACCEPTED`。本文定义 Compute 的长期产品合同；实现当前是否可用只查
-> [`module-status.json`](../implementation/module-status.json)。当前 Compute 仍为 `AUDITED`，CPU
-> 纵切只证明已登记的算子与运行时合同，不能外推为完整算子目录或 GPU backend。被删除的旧实现只可从
+> [`module-status.json`](../implementation/module-status.json)。当前 Compute 仍为 `AUDITED`；CPU native
+> 纵切和独立 oneDNN row-major f32 MatMul provider 已进入实现/资格化，但不能外推为完整算子目录或 GPU
+> backend。被删除的旧实现只可从
 > Git 历史取得调查事实；历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
 
 ## 1. 产品承诺
@@ -29,7 +30,8 @@ compiled region，不拥有跨节点拓扑、全图 placement、liveness 和融�
 ```text
 Device -> Context -> Queue
 TensorDesc + Mem BufferView -> TensorView
-Operation -> PreparedOperation -> submit(bindings) -> Completion
+Operation -> PreparedOperation -> per-lane OperationInvocation
+OperationInvocation -> submit(bindings) -> Completion
 
 Module -> Kernel -> CommandList -> submit() -> Completion
 ```
@@ -38,13 +40,14 @@ Module -> Kernel -> CommandList -> submit() -> Completion
 - `Queue` 表达有序提交域；不能用全局默认 stream 隐藏 affinity 或同步。
 - `TensorDesc` 描述 dtype、shape、stride/layout 和必要的 quantization facts；`TensorView` 只把它与
   Mem storage 绑定，不拥有 payload。
-- `PreparedOperation` 把能力检查、provider 选择、layout/repack 决策和可能的编译移出热调用。
+- `PreparedOperation` 是可共享的不可变 artifact，把能力检查、provider 选择、layout/repack 决策和可能的
+  编译移出热调用；`OperationInvocation` 拥有一次并发 lane 的 stream、binding metadata 与 workspace。
 - `Module/Kernel/CommandList` 是原生或 HYLE kernel 的低层路线；Vulkan SPIR-V、CUDA/HIP
   module/kernel、Metal pipeline 和 CPU function target 都通过有类型的 backend extension 表达。
 - `Completion` 是提交后的生命周期边界。等待、轮询、callback 和 coroutine bridge 必须共享同一个
   完成状态，不能制造互不相认的 event。
 
-一次性 convenience 调用可以组合 prepare + submit，但必须在名称和文档中暴露它包含冷路径工作；
+一次性 convenience 调用将来可以组合 prepare + invocation + submit，但必须在名称和文档中暴露它包含冷路径工作；
 循环执行默认使用 prepared 形状。
 
 ### 2.2 Graph lowering

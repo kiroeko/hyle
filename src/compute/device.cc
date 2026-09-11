@@ -1,9 +1,27 @@
 #include "hyle/compute/device.h"
 
+#include <cstddef>
 #include <new>
 #include <utility>
 
 #include "context_state.h"
+#include "provider_internal.h"
+
+namespace hyle::compute::detail {
+
+void ContextState::destroy() noexcept {
+  for (std::size_t index = provider_count; index != 0; --index) {
+    ProviderSlot &slot = providers[index - 1];
+    const ProviderVTable *table = ProviderAccess::vtable(slot.provider);
+    if (table != nullptr && table->destroy_context != nullptr)
+      table->destroy_context(slot.state, allocator);
+  }
+  const mem::AllocatorRef owner = allocator;
+  this->~ContextState();
+  owner.deallocate(this, sizeof(ContextState), alignof(ContextState));
+}
+
+} // namespace hyle::compute::detail
 
 namespace hyle::compute {
 
@@ -86,7 +104,37 @@ Result<Context> Context::create(Device device, ContextOptions options) noexcept 
         Status::ResourceExhausted("compute context allocation failed"));
   }
   auto* state = ::new (storage) detail::ContextState(device, allocator);
+  for (const Provider &provider : options.providers.providers()) {
+    const detail::ProviderVTable *table =
+        detail::ProviderAccess::vtable(provider);
+    if (table == nullptr || table->create_context == nullptr ||
+        table->destroy_context == nullptr || table->prepare == nullptr) {
+      detail::release(state);
+      return std::unexpected(
+          Status::InvalidArgument("compute provider is incomplete"));
+    }
+    void *provider_state = nullptr;
+    Status status =
+        table->create_context(provider, device, allocator, &provider_state);
+    if (!status.ok()) {
+      detail::release(state);
+      return std::unexpected(std::move(status));
+    }
+    detail::ContextState::ProviderSlot &slot =
+        state->providers[state->provider_count++];
+    slot.provider = provider;
+    slot.state = provider_state;
+  }
   return Context(state);
+}
+
+Result<Context> Context::create(Device device, Provider provider) noexcept {
+  ContextOptions options;
+  if (!options.providers.add(provider)) {
+    return std::unexpected(
+        Status::InvalidArgument("compute provider is invalid"));
+  }
+  return create(device, options);
 }
 
 bool Context::is_open() const noexcept {

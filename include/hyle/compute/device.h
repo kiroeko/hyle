@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "hyle/compute/visibility.h"
+#include "hyle/compute/provider.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 
@@ -70,6 +71,9 @@ struct ContextOptions final {
   // outlive the Context and every Queue/PreparedOperation/Graph Executable or
   // Invocation whose metadata was created from it.
   mem::AllocatorRef metadata_allocator{};
+  // Ordered, explicit cold-path provider choices. Only Unimplemented advances
+  // to the next entry; HYLE-native is the unconditional final fallback.
+  ProviderList providers{};
 };
 
 struct QueueOptions final {};
@@ -81,12 +85,15 @@ struct ContextAccess;
 
 class Queue;
 class PreparedOperation;
+class OperationInvocation;
 
 // Owns one backend runtime/session. Destroying or closing the owner stops new
-// work through all borrowed/retained Queue and PreparedOperation handles. The
-// current CPU provider has no asynchronous in-flight work to drain and never hides a
-// wait here. close()/destruction must not race submission through another
-// handle; ordinary submissions on distinct queues may run concurrently.
+// submissions through all borrowed/retained handles. A retained prepared
+// artifact may still create its per-run state, but that state cannot submit
+// after the Context is closed. The current CPU provider has no asynchronous
+// in-flight work to drain and never hides a wait here. close()/destruction must
+// not race submission through another handle; ordinary submissions on distinct
+// queues may run concurrently.
 class HYLE_COMPUTE_API Context final {
 public:
   Context() noexcept = default;
@@ -98,6 +105,9 @@ public:
 
   static Result<Context> create(Device device,
                                 ContextOptions options = {}) noexcept;
+  // Natural single-provider convenience. Use ContextOptions when provider
+  // order or a metadata allocator must be configured explicitly.
+  static Result<Context> create(Device device, Provider provider) noexcept;
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
@@ -138,6 +148,7 @@ private:
 
   friend class Context;
   friend class PreparedOperation;
+  friend class OperationInvocation;
   friend struct detail::ContextAccess;
   detail::ContextState *state_ = nullptr;
   bool open_ = false;

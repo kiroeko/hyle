@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <utility>
 
 #include "hyle/compute/device.h"
@@ -11,14 +12,17 @@ struct ContextState final : util::RefCounted<ContextState> {
   ContextState(Device device_value, mem::AllocatorRef allocator_value) noexcept
       : device(device_value), allocator(allocator_value) {}
 
-  void destroy() noexcept {
-    const mem::AllocatorRef owner = allocator;
-    this->~ContextState();
-    owner.deallocate(this, sizeof(ContextState), alignof(ContextState));
-  }
+  void destroy() noexcept;
+
+  struct ProviderSlot final {
+    Provider provider{};
+    void *state = nullptr;
+  };
 
   Device device{};
   mem::AllocatorRef allocator{};
+  std::array<ProviderSlot, kMaxContextProviders> providers{};
+  std::size_t provider_count = 0;
   bool open = true;
 };
 

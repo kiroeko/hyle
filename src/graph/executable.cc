@@ -193,11 +193,16 @@ Status plan_workspace(detail::PlanState &plan,
   LastUses last_uses(plan.allocator);
   Requests requests(plan.allocator);
   if (!last_uses.try_resize(graph.values.size()) ||
-      !requests.try_reserve(graph.values.size())) {
+      !plan.operation_workspace_requests.try_resize(plan.nodes.size()) ||
+      !requests.try_reserve(graph.values.size() + plan.nodes.size())) {
     return plan_allocation_failure();
   }
   for (std::size_t index = 0; index < last_uses.size(); ++index) {
     last_uses[index] = 0;
+  }
+  for (std::size_t index = 0;
+       index < plan.operation_workspace_requests.size(); ++index) {
+    plan.operation_workspace_requests[index] = detail::kNoWorkspaceRequest;
   }
 
   for (std::size_t node_index = 0; node_index < graph.nodes.size();
@@ -255,6 +260,32 @@ Status plan_workspace(detail::PlanState &plan,
       return plan_allocation_failure();
     }
     plan.workspace_requests[ordinal] = request;
+  }
+
+  // Provider scratchpads are per Invocation, not shared prepared state. Node
+  // execution is ordered, so disjoint [node,node+1) requests may reuse one
+  // backing while every OperationInvocation retains its own stable view.
+  for (std::size_t node_index = 0; node_index < plan.nodes.size();
+       ++node_index) {
+    const compute::WorkspaceRequirement requirement =
+        plan.nodes[node_index].prepared.workspace_requirement();
+    if (requirement.size == 0)
+      continue;
+    if (requests.size() >= detail::kNoWorkspaceRequest) {
+      return Status::ResourceExhausted(
+          "graph workspace identity space is exhausted");
+    }
+    const std::uint32_t request = static_cast<std::uint32_t>(requests.size());
+    if (!requests.try_push_back(mem::LifetimeRequest{
+            .resource_slot = 0,
+            .size = requirement.size,
+            .alignment = requirement.alignment,
+            .begin = node_index,
+            .end = node_index + 1,
+        })) {
+      return plan_allocation_failure();
+    }
+    plan.operation_workspace_requests[node_index] = request;
   }
 
   const std::array resources{mem::system_resource()};
@@ -375,7 +406,8 @@ Result<Invocation> Executable::create_invocation() const noexcept {
   const std::size_t value_count = state_->descriptions.size();
   if (!invocation->readable.try_resize(value_count) ||
       !invocation->writable.try_resize(value_count) ||
-      !invocation->bound.try_resize(value_count)) {
+      !invocation->bound.try_resize(value_count) ||
+      !invocation->operations.try_reserve(state_->nodes.size())) {
     detail::destroy(invocation);
     return std::unexpected(invocation_allocation_failure());
   }
@@ -399,6 +431,32 @@ Result<Invocation> Executable::create_invocation() const noexcept {
     }
     invocation->writable[ordinal] = *tensor;
     invocation->readable[ordinal] = tensor->as_const();
+  }
+  for (std::size_t node_index = 0; node_index < state_->nodes.size();
+       ++node_index) {
+    mem::BufferView operation_workspace;
+    const std::uint32_t request =
+        state_->operation_workspace_requests[node_index];
+    if (request != detail::kNoWorkspaceRequest) {
+      auto view = invocation->workspace.view(request);
+      if (!view) {
+        Status error = std::move(view).error();
+        detail::destroy(invocation);
+        return std::unexpected(std::move(error));
+      }
+      operation_workspace = *view;
+    }
+    auto operation = state_->nodes[node_index].prepared.create_invocation(
+        operation_workspace);
+    if (!operation) {
+      Status error = std::move(operation).error();
+      detail::destroy(invocation);
+      return std::unexpected(std::move(error));
+    }
+    if (!invocation->operations.try_push_back(std::move(*operation))) {
+      detail::destroy(invocation);
+      return std::unexpected(invocation_allocation_failure());
+    }
   }
   return detail::InvocationAccess::adopt(invocation);
 }
@@ -498,7 +556,7 @@ void Invocation::reset() noexcept {
 }
 
 Result<compute::Completion>
-Invocation::submit(compute::Queue &queue) const noexcept {
+Invocation::submit(compute::Queue &queue) noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
@@ -516,17 +574,19 @@ Invocation::submit(compute::Queue &queue) const noexcept {
     }
   }
 
-  for (const detail::PlanNode &node : plan.nodes) {
+  for (std::size_t node_index = 0; node_index < plan.nodes.size();
+       ++node_index) {
+    const detail::PlanNode &node = plan.nodes[node_index];
     std::array<compute::ConstTensorView, 2> inputs{};
     for (std::size_t index = 0; index < node.input_count; ++index) {
       inputs[index] = state_->readable[node.inputs[index]];
     }
     const compute::TensorView output = state_->writable[node.output];
-    auto completion =
-        node.prepared.submit(queue,
-                             std::span<const compute::ConstTensorView>(
-                                 inputs.data(), node.input_count),
-                             std::span<const compute::TensorView>(&output, 1));
+    auto completion = state_->operations[node_index].submit(
+        queue,
+        std::span<const compute::ConstTensorView>(inputs.data(),
+                                                  node.input_count),
+        std::span<const compute::TensorView>(&output, 1));
     if (!completion)
       return std::unexpected(std::move(completion).error());
     Status terminal = completion->wait();
@@ -578,15 +638,26 @@ Result<CompiledGraph> compile(const Graph &graph,
   }
 
   CompiledGraph result;
+  compute::ProviderKind graph_provider = compute::ProviderKind::kUnknown;
+  bool used_fallback = false;
+  for (const detail::PlanNode &node : plan->nodes) {
+    const compute::ProviderKind node_provider = node.prepared.provider();
+    if (graph_provider == compute::ProviderKind::kUnknown) {
+      graph_provider = node_provider;
+    } else if (graph_provider != node_provider) {
+      graph_provider = compute::ProviderKind::kMixed;
+    }
+    used_fallback = used_fallback || node.prepared.used_fallback();
+  }
   result.report = CompileReport{
       .backend = context.device().backend(),
-      .provider = compute::ProviderKind::kHyleNative,
+      .provider = graph_provider,
       .workspace_bytes = plan->workspace_bytes,
       .workspace_backing_count = plan->workspace_backing_count,
       .node_count = plan->nodes.size(),
       .copy_bytes = 0,
       .synchronization_count = 0,
-      .used_fallback = false,
+      .used_fallback = used_fallback,
   };
   result.executable = detail::ExecutableAccess::adopt(plan);
   return result;

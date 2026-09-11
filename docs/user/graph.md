@@ -1,8 +1,9 @@
 # HYLE Graph：何时编译可重复执行的计算 DAG
 
 > 本页描述当前 CPU 多节点 C++ surface；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。GPU provider、partition/fusion 与动态
-> shape 尚未签发。
+> [`module-status.json`](../implementation/module-status.json) 为准。选择 oneDNN 时，当前 Graph 可把受支持的
+> 单个 row-major f32 MatMul node 交给该 provider；GPU provider、region partition/fusion 与动态 shape 尚未
+> 签发。
 
 Graph 适合“先定义一段模型无关计算，冷路径编译一次，再为不同请求绑定 storage 并反复执行”。如果只
 执行一个已知 operation 或工程 kernel，直接使用 [Compute](compute.md)。Graph 不是 Sched task graph，
@@ -34,11 +35,11 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 | DAG | 任意数量的已支持 typed node；共享输入、分支和多个 published outputs |
 | op | Compute 当前的 `RmsNorm`、rank-2 `MatMul`、packed `SiluAndMul` |
 | shape/layout | static `TensorDesc`；MatMul 的物理权重方向由 stride 表达 |
-| compile | 每个 node prepare 一次；CPU topological plan；中间 tensor liveness 交给 Mem planner |
-| run | caller 绑定所有 graph inputs/outputs；内部中间值由每个 Invocation 独占 |
+| compile | 每个 node prepare/provider route 一次；CPU topological plan；中间 tensor 与 provider scratchpad liveness 交给 Mem planner |
+| run | caller 绑定所有 graph inputs/outputs；内部中间值、provider run state 与 scratchpad 由每个 Invocation 独占 |
 | report | backend/provider、node 数、workspace bytes/backings、copy/sync/fallback |
 
-当前没有 graph-owned constants、symbolic dimensions、provider region partition、fusion、GPU copy/barrier、
+当前没有 graph-owned constants、symbolic dimensions、multi-node provider region partition、fusion、GPU copy/barrier、
 serialization/cache schema 或 control flow。权重目前作为普通 graph input 绑定；后续 provider packing 必须
 在 compile artifact 中显式拥有，不能藏在第一次 submit。
 
@@ -103,7 +104,9 @@ return done->wait();
   即使地址接近也会拒绝。同一大 backing 中互不重叠的 weight/input subview 是正常用法。
 - CPU 当前同步完成，但仍要检查 `Completion::wait()`。payload/resource/Queue 必须遵守 Compute 的终态
   生命周期；未来异步 backend 不会因 CPU 的偶然同步语义而放宽合同。
-- CompileReport 当前 CPU 路线应报告零 copy、零显式 sync、无 fallback；不要忽略报告后猜测隐藏成本。
+- CompileReport 区分 HYLE-native、oneDNN 与 mixed，并报告是否发生 provider fallback。当前 CPU 路线仍应为
+  零 copy、零显式 sync；不要忽略报告后猜测隐藏成本。oneDNN node 的 scratchpad 已计入同一 Mem workspace
+  plan，不需要用户另行分配。
 - Graph 不启动 worker，也不依赖 Sched。需要请求调度、取消和服务 drain 时，在消费层组合它们。
 
 source、headers + static、headers + shared 都选择 `hyle::graph`。公开 `GraphBuilderOptions` 可注入 Mem

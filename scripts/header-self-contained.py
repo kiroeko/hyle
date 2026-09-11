@@ -27,8 +27,12 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
         parser.error("--module must be a lowercase C identifier")
-    if args.header_dir and re.fullmatch(r"[a-z][a-z0-9_]*", args.header_dir) is None:
-        parser.error("--header-dir must be a lowercase C identifier")
+    if args.header_dir and re.fullmatch(
+        r"[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*", args.header_dir
+    ) is None:
+        parser.error(
+            "--header-dir must be a slash-separated lowercase C identifier path"
+        )
     return args
 
 

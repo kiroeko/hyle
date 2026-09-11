@@ -31,6 +31,8 @@ proprietary notice 只覆盖 HYLE 原创代码、文档和构建资产，不能�
 - `src/simd` 中尚存的 Highway integrated port 继续受其原许可证约束；SIMD 与 Container target TU
   直接编译的锁定 Highway 源码按 fetched product dependency 投影相应许可证；SIMD target TU 直接编译的
   锁定 xsimd 也属于当前 fetched product dependency。历史 JPEG XL math port 已删除；
+- 可选 Compute oneDNN factor 从中央 lock 获取 Apache-2.0 源码；static SDK 投影其开发闭包，shared SDK
+  私有链接实现，两种安装都必须带 `oneDNN-LICENSE`；
 - HYLE 可对周围原创代码和自己的修改采用 proprietary 条款，但不得删除第三方条件；
 - fetched/外部 backend 只有其二进制、传递依赖和 license payload 都进入 export graph 后，
   才能宣称 install package 可迁移。
