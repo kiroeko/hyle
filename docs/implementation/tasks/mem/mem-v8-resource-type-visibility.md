@@ -28,4 +28,12 @@
 |---|---|---|---|
 | M8-01 | public polymorphic type 的 RTTI/vtable 被 default-hidden | `class HYLE_MEM_API MemoryResource` | 三平台跨 factor 派生/链接；ABI size/alignment 不变 |
 
-公开能力、接口和性能合同继承 v7；本轮只纠正三种 C++ 交付本应一致的类型可见性。当前为 `SCOPED`。
+## AUDITED 裁决
+
+全量公开头/实现扫描确认 `MemoryResource` 是 Mem 唯一允许用户和其它 factor 跨 binary 派生的公开
+多态 extension base；`PmrResource` 只在调用方 TU 内派生标准 PMR，其他 pool/arena 类型不承担跨 DSO
+RTTI/vtable 身份。类级 default visibility 是该现有能力的必要交付语义，不是新增 API。
+
+有限改动冻结为：把 `HYLE_MEM_API` 移到 `MemoryResource` 类声明，并删除该类 out-of-line virtual 上
+重复的成员级标注；方法集合、顺序、签名与定义不动。该属性不占对象 storage、不增加 vtable slot，也
+不进入指令路径。当前进入 `AUDITED`，下一提交才允许修改公开头。

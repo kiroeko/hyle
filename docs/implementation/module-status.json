@@ -144,15 +144,15 @@
     },
     {
       "module": "mem",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/mem/mem-v8-resource-type-visibility.md",
-      "summary": "mem v8 SCOPED：default-hidden Mach-O 暴露公开多态 MemoryResource 缺少类型级 export；本轮只修复跨 shared-factor RTTI/vtable 可见性。"
+      "summary": "mem v8 AUDITED：MemoryResource 是唯一跨 shared-factor 派生的公开多态基类；有限修复为类级 export，API、layout、虚表和运行时成本不变。"
     },
     {
       "module": "mem_vm",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/mem_vm/mem-vm-v3-resource-visibility-replay.md",
-      "summary": "mem-vm v3 SCOPED：Mac default-hidden shared 链接无法解析下层 MemoryResource RTTI；本轮不改 VM 能力，只重放修正后的跨 factor 交付。"
+      "summary": "mem-vm v3 AUDITED：源码路径无独立缺陷；只继承 Mem 的公开类型可见性修复并重放跨 factor 三交付，不修改 VM API 或实现。"
     },
     {
       "module": "simd",

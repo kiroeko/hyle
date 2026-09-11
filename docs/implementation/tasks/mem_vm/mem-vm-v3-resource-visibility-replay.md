@@ -16,5 +16,8 @@
 - 验证/stop：三平台 link、Mem-vm correctness、selected Mem/Sched 交付和 export scan；若仍需改 Mem-vm
   源码则停止并重新审计有限改动。
 
-当前为 `SCOPED`。唯一候选路线是继承 Mem 的类级 export；不允许本模块复制基类或关闭 RTTI 来掩盖
-错误的 shared 边界。
+## AUDITED 裁决
+
+源码检查确认 `BorrowedMappedResource` 的继承、对象生命周期和 `mapped_resource()` 路线正确；链接失败
+完全由下层 public type visibility 解释，本模块没有第二个 FIX。进入 `AUDITED`，只继承 Mem v8 候选并
+重放验证；不允许复制基类、关闭 RTTI 或修改 Mem-vm 产品源码来掩盖错误边界。
