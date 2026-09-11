@@ -9,6 +9,8 @@
 - [任务入口](tasks/README.md)：进入当前 record；被替代的精确历史从 Git 恢复。
 - [性能结果](evidence/performance/README.md)：具备上下文的人读结果；原始数据位于仓库根级
   [`evidence/`](../../evidence/README.md)。
+- [正确性资格证据](evidence/correctness/README.md)：跨组件逐能力语义回映与 coverage discovery
+  解释；不创建第二套模块状态。
 
 ## 记录规则
 

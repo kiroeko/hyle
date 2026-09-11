@@ -86,7 +86,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 |---|---|---|---|
 | Q01 | 生成公开头、factor、测试和现有证据 inventory | 29 factor 无遗漏；孤儿公开头/测试显式报错 | `COMPLETE` |
 | Q02 | 建立 Linux line/branch discovery profile | 可复现、隔离 build、输出 zero-hit 清单；百分比不作 gate | `COMPLETE` |
-| Q03 | Wave A 语义矩阵与缺口测试 | 每个公开能力格为 PROVEN/NA 或诚实 UNPROVEN | `QUEUED` |
+| Q03 | Wave A 语义矩阵与缺口测试 | 每个公开能力格为 PROVEN/NA 或诚实 UNPROVEN | `COMPLETE` |
 | Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `QUEUED` |
@@ -142,3 +142,13 @@ source tree 与 gcov 版本，发现 54/110 executable lines、4/29 branches、6
 不形成 Core 缺陷或状态结论：其中包含纯编译期头和 abort 前无法写回 `.gcda` 的 fail-fast 路径，正是
 下一波逐能力语义回映要区分的仪器负空间。focused 聚合测试验证过滤第三方、跨 TU 合并、zero-hit range、
 function/branch 与 unobserved file 语义。
+
+## Q03 结果
+
+Wave A 的六个 factor 已完成逐能力回映，详见
+[`correctness/wave-a-2026-09`](../../evidence/correctness/wave-a-2026-09.md)。干净 HEAD tree 上的
+shipping run 为 19 个测试组、18 PASS/0 FAIL/1 个只适用于优化构建的合法 SKIP；独立 fault run 的
+Error/Time 为 5/5 PASS。旧 candidate 到当前 HEAD 的产品路径均无变化，Time 只增加边界测试，故历史
+三平台/结构证据可复用；当前 build/package 三交付、OS/ISA 专属路线和 sanitizer 仍明确留给 Q09，未
+写成伪 PASS。zero-hit 路径逐项归因为编译期头、平台/工具链分支、abort 无法 flush 或已覆盖能力的等价
+模板实例，没有发现产品 correctness defect，也没有触发任何模块 reopen。
