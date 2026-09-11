@@ -88,7 +88,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q02 | 建立 Linux line/branch discovery profile | 可复现、隔离 build、输出 zero-hit 清单；百分比不作 gate | `COMPLETE` |
 | Q03 | Wave A 语义矩阵与缺口测试 | 每个公开能力格为 PROVEN/NA 或诚实 UNPROVEN | `COMPLETE` |
 | Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
-| Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `QUEUED` |
+| Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `QUEUED` |
@@ -164,3 +164,16 @@ registry candidate 均无差异；shipping discovery 的 14/14 CTest group 全�
 本波未发现产品缺陷或 reopen trigger。12 个 unobserved product file 都是 façade、declaration、
 visibility 或 private include；Windows/macOS/ARM/多 NUMA backend、当前 build/package 三交付和适用
 sanitizer 仍诚实留给 Q09。覆盖率只作路径发现，没有被转换成 gate、API 改动或状态结论。
+
+## Q05 结果
+
+Wave C 的七个 factor 已完成逐能力回映，详见
+[`correctness/wave-c-2026-09`](../../evidence/correctness/wave-c-2026-09.md)。WSL shipping 整波
+21/21 group 通过，新增高风险测试的 Windows MSVC Release 回放 5/5 通过。审计补齐 assignment/OOM、
+构造回滚、并发异常解锁、确定性的 StringInterner generation、UTF 六方向容量和 metrics overflow 等
+直接证据；没有修改产品代码。
+
+本波 `DEFECT=0`，不触发模块 reopen。最终 discovery 观察 11,696/12,697 executable lines 与
+5,508/8,278 branches；49 个未观察 product file 已归因为 façade/template manifest 或非本机 ISA/backend，
+没有把覆盖率写成正确性分数。当前 sanitizer、non-host ISA、Trace ON、三平台最小 backend 和三种交付
+仍明确留给 Q09。

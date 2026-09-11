@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <future>
+#include <limits>
+#include <stdexcept>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -216,9 +218,12 @@ TEST(ConcurrentNodeHashMap, FallibleNodeAllocationLeavesMapUsable) {
   state.fail.store(true);
   Map::Accessor accessor;
   EXPECT_EQ(map.try_emplace(accessor, 1, 2), Map::InsertResult::kOutOfMemory);
+  EXPECT_EQ(map.try_insert_or_assign(accessor, 2, 3),
+            Map::InsertResult::kOutOfMemory);
   EXPECT_TRUE(map.empty());
   state.fail.store(false);
-  EXPECT_EQ(map.try_emplace(accessor, 1, 2), Map::InsertResult::kInserted);
+  EXPECT_EQ(map.try_insert_or_assign(accessor, 1, 2),
+            Map::InsertResult::kInserted);
 }
 
 TEST(ConcurrentNodeHashMap, TryReserveReportsFailureAndPreservesEntries) {
@@ -236,6 +241,7 @@ TEST(ConcurrentNodeHashMap, TryReserveReportsFailureAndPreservesEntries) {
 
   state.fail.store(true);
   EXPECT_FALSE(map.try_reserve(4096));
+  EXPECT_FALSE(map.try_reserve(std::numeric_limits<std::size_t>::max()));
   EXPECT_EQ(map.bucket_count(), old_buckets);
   Map::ConstAccessor found;
   ASSERT_TRUE(map.find(found, 7));
@@ -262,6 +268,24 @@ TEST(ConcurrentNodeHashMap, ForEachVisitsEveryStableNode) {
   EXPECT_EQ(sum, 999u * 1000u / 2u);
   map.clear();
   EXPECT_TRUE(map.empty());
+}
+
+TEST(ConcurrentNodeHashMap, MissesAndThrowingTraversalReleaseEveryLock) {
+  ConcurrentNodeHashMap<int, int> map(16);
+  ConcurrentNodeHashMap<int, int>::Accessor writer;
+  ASSERT_TRUE(map.emplace(writer, 7, 70));
+  writer.release();
+
+  ConcurrentNodeHashMap<int, int>::ConstAccessor missing;
+  EXPECT_FALSE(map.find(missing, 99));
+  EXPECT_FALSE(missing);
+  EXPECT_FALSE(map.erase(99));
+
+  EXPECT_THROW(
+      map.for_each([](int, int) { throw std::runtime_error("stop"); }),
+      std::runtime_error);
+  ASSERT_TRUE(map.find(missing, 7));
+  EXPECT_EQ(*missing, 70);
 }
 
 TEST(ConcurrentNodeHashSet, AccessorProtectsStableKeyAndOomIsRecoverable) {

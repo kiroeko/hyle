@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cstddef>
 #include <string>
 #include <thread>
 #include <vector>
@@ -15,7 +16,45 @@ using hyle::container::StringId;
 using hyle::container::make_string_interner;
 using hyle::container::StringView;
 using hyle::container::StringInterner;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
+
+namespace {
+
+struct ToggleInternerAllocatorState {
+  AllocatorRef backing = system_allocator();
+  bool fail = false;
+  std::size_t live_allocations = 0;
+};
+
+void* toggle_interner_allocate(void* raw, std::size_t size,
+                               std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleInternerAllocatorState*>(raw);
+  if (state->fail) return nullptr;
+  void* result = state->backing.allocate(size, alignment);
+  if (result != nullptr) ++state->live_allocations;
+  return result;
+}
+
+void toggle_interner_deallocate(void* raw, void* pointer, std::size_t size,
+                                std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleInternerAllocatorState*>(raw);
+  if (pointer != nullptr) --state->live_allocations;
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void* toggle_interner_reallocate(void* raw, void* pointer,
+                                 std::size_t old_size, std::size_t new_size,
+                                 std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleInternerAllocatorState*>(raw);
+  if (state->fail) return nullptr;
+  void* result = state->backing.reallocate(pointer, old_size, new_size,
+                                           alignment);
+  if (result != nullptr && pointer == nullptr) ++state->live_allocations;
+  return result;
+}
+
+}  // namespace
 
 TEST(StringInterner, AcquireAndLookup) {
   StringInterner buf(system_allocator());
@@ -127,17 +166,50 @@ TEST(StringInterner, PermanentInternDoesNotAccumulateHiddenReferences) {
 
 TEST(StringInterner, ReusedSlotRejectsStaleGeneration) {
   StringInterner buf(system_allocator());
-  const StringId old = buf.acquire(StringView{"first"});
-  ASSERT_FALSE(old.empty());
-  ASSERT_TRUE(buf.release(old));
+  const StringId stale = buf.acquire(StringView{"same-shard"});
+  ASSERT_FALSE(stale.empty());
+  ASSERT_TRUE(buf.release(stale));
 
-  const StringId current = buf.acquire(StringView{"second"});
+  // Reacquiring the same text deterministically selects the same shard. Its
+  // only free slot is reused while the generation keeps the stale ID invalid.
+  const StringId current = buf.acquire(StringView{"same-shard"});
   ASSERT_FALSE(current.empty());
-  EXPECT_NE(old.value, current.value);
-  EXPECT_EQ(buf.lookup(old).data(), nullptr);
-  EXPECT_FALSE(buf.retain(old));
-  EXPECT_FALSE(buf.release(old));
-  EXPECT_TRUE(buf.lookup(current) == StringView{"second"});
+  EXPECT_NE(stale, current);
+  EXPECT_EQ(buf.lookup(stale).data(), nullptr);
+  EXPECT_FALSE(buf.retain(stale));
+  EXPECT_FALSE(buf.release(stale));
+  EXPECT_TRUE(buf.lookup(current) == StringView{"same-shard"});
+}
+
+TEST(StringInterner, AllocationFailureIsRecoverableAndTeardownIsLeakFree) {
+  ToggleInternerAllocatorState state;
+  AllocatorRef allocator(&toggle_interner_allocate,
+                         &toggle_interner_deallocate,
+                         &toggle_interner_reallocate, &state);
+
+  state.fail = true;
+  {
+    StringInterner unavailable(allocator);
+    EXPECT_FALSE(unavailable.valid());
+    EXPECT_TRUE(unavailable.acquire("missing").empty());
+  }
+  EXPECT_EQ(state.live_allocations, 0u);
+  EXPECT_EQ(make_string_interner(allocator), nullptr);
+  EXPECT_EQ(state.live_allocations, 0u);
+
+  state.fail = false;
+  {
+    StringInterner interner(allocator);
+    ASSERT_TRUE(interner.valid());
+    state.fail = true;
+    EXPECT_TRUE(interner.acquire("first-allocation-fails").empty());
+    EXPECT_EQ(interner.size(), 0u);
+    state.fail = false;
+    const StringId id = interner.acquire("retry-succeeds");
+    ASSERT_FALSE(id.empty());
+    EXPECT_TRUE(interner.lookup(id) == StringView{"retry-succeeds"});
+  }
+  EXPECT_EQ(state.live_allocations, 0u);
 }
 
 TEST(StringInterner, InternManyReturnsStableViewsAndCanPrewarm) {

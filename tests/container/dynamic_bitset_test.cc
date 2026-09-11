@@ -5,8 +5,24 @@
 #include <vector>
 
 #include "hyle/container/dynamic_bitset.h"
+#include "hyle/mem/allocator.h"
 
 using hyle::container::DynamicBitSet;
+
+namespace {
+
+void* fail_allocate(void*, std::size_t, std::size_t) noexcept {
+  return nullptr;
+}
+
+void fail_deallocate(void*, void*, std::size_t, std::size_t) noexcept {}
+
+void* fail_reallocate(void*, void*, std::size_t, std::size_t,
+                      std::size_t) noexcept {
+  return nullptr;
+}
+
+}  // namespace
 
 TEST(DynamicBitSet, BoundaryBitsResizeAndPadding) {
   DynamicBitSet bits(130);
@@ -72,6 +88,55 @@ TEST(DynamicBitSet, CopyMoveAndAllEmptySemantics) {
   DynamicBitSet moved = std::move(copy);
   EXPECT_EQ(moved.count(), 76u);
   EXPECT_TRUE(copy.empty());
+}
+
+TEST(DynamicBitSet, CopyMoveAssignmentSwapAndSelfAssignmentPreserveValue) {
+  DynamicBitSet source(130);
+  source.set(0).set(64).set(129);
+
+  DynamicBitSet copy_target(7, true);
+  copy_target = source;
+  EXPECT_EQ(copy_target, source);
+  copy_target = copy_target;
+  EXPECT_EQ(copy_target, source);
+
+  DynamicBitSet move_target(3, true);
+  move_target = std::move(copy_target);
+  EXPECT_EQ(move_target, source);
+  EXPECT_TRUE(copy_target.empty());
+
+  DynamicBitSet other(5, true);
+  swap(move_target, other);
+  EXPECT_EQ(other, source);
+  EXPECT_EQ(move_target.size(), 5u);
+  EXPECT_TRUE(move_target.all());
+}
+
+TEST(DynamicBitSet, FallibleGrowthAndBothKernelSizesKeepStateAtomic) {
+  hyle::mem::AllocatorRef failing(&fail_allocate, &fail_deallocate,
+                                  &fail_reallocate, nullptr);
+  DynamicBitSet unavailable(failing);
+  EXPECT_FALSE(unavailable.try_reserve(64));
+  EXPECT_FALSE(unavailable.try_resize(64, true));
+  EXPECT_TRUE(unavailable.empty());
+
+  DynamicBitSet left(65);
+  DynamicBitSet right(65);
+  left.set(0).set(64);
+  right.set(0).set(1);
+  EXPECT_EQ((left & right).count(), 1u);
+  EXPECT_EQ((left | right).count(), 3u);
+  EXPECT_EQ((left ^ right).count(), 2u);
+  DynamicBitSet difference = left;
+  difference.and_not(right);
+  EXPECT_EQ(difference.count(), 1u);
+  EXPECT_TRUE(difference.test(64));
+
+  DynamicBitSet large(4099);
+  large.set();
+  EXPECT_TRUE(large.all());
+  large.flip();
+  EXPECT_TRUE(large.none());
 }
 
 TEST(DynamicBitSet, EqualityUsesLogicalValueNotReservedCapacity) {

@@ -63,6 +63,24 @@ TEST(MetricsValue, InvalidCounterAndIntegralGaugeArithmeticFailFast) {
         gauge.subtract(1);
       },
       "");
+  EXPECT_DEATH(
+      {
+        Gauge<std::int8_t> gauge(127);
+        gauge.add(1);
+      },
+      "");
+  EXPECT_DEATH(
+      {
+        Gauge<std::int8_t> gauge(127);
+        gauge.subtract(-1);
+      },
+      "");
+  EXPECT_DEATH(
+      {
+        Gauge<std::uint8_t> gauge(0);
+        gauge.subtract(1);
+      },
+      "");
 }
 
 TEST(MetricsHistogram, ValidatesFixedBounds) {
@@ -128,6 +146,14 @@ TEST(MetricsHistogram, MergesWorkerSnapshotsAndQueriesQuantileBucket) {
   EXPECT_TRUE(std::isinf(*merged.quantile_upper_bound(1.0)));
   EXPECT_EQ(merged.quantile_upper_bound(-0.1).error().code(),
             StatusCode::InvalidArgument);
+  EXPECT_EQ(merged.quantile_upper_bound(1.1).error().code(),
+            StatusCode::InvalidArgument);
+  EXPECT_EQ(merged
+                .quantile_upper_bound(
+                    std::numeric_limits<double>::quiet_NaN())
+                .error()
+                .code(),
+            StatusCode::InvalidArgument);
 
   FixedHistogram empty(*buckets);
   EXPECT_EQ(empty.snapshot().quantile_upper_bound(0.5).error().code(),
@@ -164,6 +190,9 @@ TEST(MetricsConcurrent, SharedValuesAndHistogramAreExactAfterQuiescence) {
   auto buckets = FixedBuckets<2>::create({1.0, 4.0});
   ASSERT_TRUE(buckets.has_value());
   ConcurrentFixedHistogram histogram(*buckets);
+
+  EXPECT_TRUE(histogram.observe(std::numeric_limits<double>::quiet_NaN(), 0));
+  EXPECT_FALSE(histogram.observe(std::numeric_limits<double>::infinity()));
 
   constexpr std::size_t kThreads = 4;
   constexpr std::size_t kIterations = 10'000;

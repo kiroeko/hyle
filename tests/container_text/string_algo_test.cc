@@ -357,3 +357,46 @@ TEST(StringAlgo, UtfSizeQueryAndFailureDoNotPartiallyWrite) {
   EXPECT_TRUE(utf16_to_utf8({}, {}).ok());
   EXPECT_TRUE(utf32_to_utf16({}, {}).ok());
 }
+
+TEST(StringAlgo, UtfMalformedInputsFailEveryConversionWithoutWriting) {
+  const std::array<char16_t, 1> malformed16 = {0xD800};
+  const std::array<char32_t, 1> malformed32 = {0x110000};
+  std::array<char, 8> bytes;
+  std::array<char16_t, 8> units16;
+  std::array<char32_t, 8> units32;
+  bytes.fill('x');
+  units16.fill(u'x');
+  units32.fill(U'x');
+
+  UtfResult result = utf16_to_utf8(malformed16, bytes);
+  EXPECT_EQ(result.status, UtfStatus::kSurrogate);
+  EXPECT_TRUE(std::all_of(bytes.begin(), bytes.end(),
+                          [](char value) { return value == 'x'; }));
+  result = utf16_to_utf32(malformed16, units32);
+  EXPECT_EQ(result.status, UtfStatus::kSurrogate);
+  EXPECT_TRUE(std::all_of(units32.begin(), units32.end(),
+                          [](char32_t value) { return value == U'x'; }));
+
+  result = utf32_to_utf8(malformed32, bytes);
+  EXPECT_EQ(result.status, UtfStatus::kTooLarge);
+  EXPECT_TRUE(std::all_of(bytes.begin(), bytes.end(),
+                          [](char value) { return value == 'x'; }));
+  result = utf32_to_utf16(malformed32, units16);
+  EXPECT_EQ(result.status, UtfStatus::kTooLarge);
+  EXPECT_TRUE(std::all_of(units16.begin(), units16.end(),
+                          [](char16_t value) { return value == u'x'; }));
+
+}
+
+TEST(StringAlgo, UtfEveryConversionReportsExactRequiredCapacity) {
+  const StringView utf8{"\xF0\x9F\x98\x80"};
+  const std::array<char16_t, 2> utf16 = {0xD83D, 0xDE00};
+  const std::array<char32_t, 1> utf32 = {0x1F600};
+
+  EXPECT_EQ(utf8_to_utf16(utf8, {}).output_count, 2u);
+  EXPECT_EQ(utf8_to_utf32(utf8, {}).output_count, 1u);
+  EXPECT_EQ(utf16_to_utf8(utf16, {}).output_count, 4u);
+  EXPECT_EQ(utf16_to_utf32(utf16, {}).output_count, 1u);
+  EXPECT_EQ(utf32_to_utf8(utf32, {}).output_count, 4u);
+  EXPECT_EQ(utf32_to_utf16(utf32, {}).output_count, 2u);
+}

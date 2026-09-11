@@ -4,6 +4,8 @@
 #include <chrono>
 #include <cstdint>
 #include <future>
+#include <limits>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -189,10 +191,14 @@ TEST(ConcurrentHashMap, FallibleInsertDoesNotStrandLockOrEntry) {
   Map::Accessor accessor;
   EXPECT_EQ(map.try_emplace(accessor, 1, 2), Map::InsertResult::kOutOfMemory);
   EXPECT_FALSE(accessor);
+  EXPECT_EQ(map.try_insert_or_assign(accessor, 2, 3),
+            Map::InsertResult::kOutOfMemory);
+  EXPECT_FALSE(accessor);
   EXPECT_TRUE(map.empty());
 
   state.fail.store(false);
-  EXPECT_EQ(map.try_emplace(accessor, 1, 2), Map::InsertResult::kInserted);
+  EXPECT_EQ(map.try_insert_or_assign(accessor, 1, 2),
+            Map::InsertResult::kInserted);
   EXPECT_EQ(*accessor, 2);
 }
 
@@ -229,6 +235,7 @@ TEST(ConcurrentHashMap, TryReserveReportsFailureAndPreservesEntries) {
 
   state.fail.store(true);
   EXPECT_FALSE(map.try_reserve(4096));
+  EXPECT_FALSE(map.try_reserve(std::numeric_limits<std::size_t>::max()));
   Map::ConstAccessor found;
   ASSERT_TRUE(map.find(found, 7));
   EXPECT_EQ(*found, 70);
@@ -236,6 +243,24 @@ TEST(ConcurrentHashMap, TryReserveReportsFailureAndPreservesEntries) {
 
   state.fail.store(false);
   EXPECT_TRUE(map.try_reserve(4096));
+}
+
+TEST(ConcurrentHashMap, MissesAndThrowingTraversalReleaseEveryLock) {
+  ConcurrentHashMap<int, int> map(8);
+  ConcurrentHashMap<int, int>::Accessor writer;
+  ASSERT_TRUE(map.emplace(writer, 7, 70));
+  writer.release();
+
+  ConcurrentHashMap<int, int>::ConstAccessor missing;
+  EXPECT_FALSE(map.find(missing, 99));
+  EXPECT_FALSE(missing);
+  EXPECT_FALSE(map.erase(99));
+
+  EXPECT_THROW(
+      map.for_each([](int, int) { throw std::runtime_error("stop"); }),
+      std::runtime_error);
+  ASSERT_TRUE(map.find(missing, 7));
+  EXPECT_EQ(*missing, 70);
 }
 
 TEST(ConcurrentFlatHashSet, MembershipHasSetSemanticsAndRecoverableOom) {

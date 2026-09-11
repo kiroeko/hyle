@@ -32,6 +32,40 @@ struct ShardedMoveOnly {
   int value;
 };
 
+struct FailNthAllocatorState {
+  AllocatorRef backing = system_allocator();
+  std::size_t attempts = 0;
+  std::size_t fail_on = 0;
+  std::size_t live_allocations = 0;
+};
+
+void* fail_nth_allocate(void* raw, std::size_t size,
+                        std::size_t alignment) noexcept {
+  auto* state = static_cast<FailNthAllocatorState*>(raw);
+  if (state->attempts++ == state->fail_on) return nullptr;
+  void* result = state->backing.allocate(size, alignment);
+  if (result != nullptr) ++state->live_allocations;
+  return result;
+}
+
+void fail_nth_deallocate(void* raw, void* pointer, std::size_t size,
+                         std::size_t alignment) noexcept {
+  auto* state = static_cast<FailNthAllocatorState*>(raw);
+  if (pointer != nullptr) --state->live_allocations;
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void* fail_nth_reallocate(void* raw, void* pointer, std::size_t old_size,
+                          std::size_t new_size,
+                          std::size_t alignment) noexcept {
+  auto* state = static_cast<FailNthAllocatorState*>(raw);
+  if (state->attempts++ == state->fail_on) return nullptr;
+  void* result = state->backing.reallocate(pointer, old_size, new_size,
+                                           alignment);
+  if (result != nullptr && pointer == nullptr) ++state->live_allocations;
+  return result;
+}
+
 }  // namespace
 
 // ---- single-thread structure ------------------------------------------------
@@ -147,6 +181,21 @@ TEST(ShardedQueue, MoveAssignablePayloadUsesNaturalPopShape) {
   ASSERT_TRUE(queue.try_pop(cursor, output));
   ASSERT_NE(output, nullptr);
   EXPECT_EQ(*output, 42);
+}
+
+TEST(ShardedQueue, PartialConstructionFailureReleasesEveryCompletedShard) {
+  FailNthAllocatorState state;
+  // Allocation 0 owns the shard array, allocation 1 owns shard 0's ring, and
+  // allocation 2 fails while constructing shard 1.
+  state.fail_on = 2;
+  AllocatorRef allocator(&fail_nth_allocate, &fail_nth_deallocate,
+                         &fail_nth_reallocate, &state);
+  {
+    ShardedQueue<int, AllocatorRef> queue(allocator, 4, 8);
+    EXPECT_FALSE(queue.valid());
+    EXPECT_EQ(queue.capacity(), 0u);
+  }
+  EXPECT_EQ(state.live_allocations, 0u);
 }
 
 // ---- MPMC conservation stress (the lock-free correctness gate) --------------

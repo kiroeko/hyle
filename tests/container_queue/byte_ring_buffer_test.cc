@@ -10,12 +10,24 @@
 #include <span>
 
 #include "hyle/container/byte_ring_buffer.h"
+#include "hyle/mem/allocator.h"
 
 namespace {
 using hyle::container::ByteRingBuffer;
 
 std::span<const std::byte> bytes(const char *text, std::size_t size) {
   return {reinterpret_cast<const std::byte *>(text), size};
+}
+
+void* fail_allocate(void*, std::size_t, std::size_t) noexcept {
+  return nullptr;
+}
+
+void fail_deallocate(void*, void*, std::size_t, std::size_t) noexcept {}
+
+void* fail_reallocate(void*, void*, std::size_t, std::size_t,
+                      std::size_t) noexcept {
+  return nullptr;
 }
 } // namespace
 
@@ -79,6 +91,31 @@ TEST(ByteRingBuffer, CopyAndMoveHaveIndependentStorage) {
   ByteRingBuffer moved = std::move(copy);
   EXPECT_TRUE(copy.empty());
   EXPECT_EQ(moved.size(), 7u);
+}
+
+TEST(ByteRingBuffer, AssignmentsAndFallibleReservePreserveState) {
+  ByteRingBuffer source(8);
+  source.write(bytes("payload", 7));
+
+  ByteRingBuffer copy_target(4);
+  copy_target.write(bytes("old", 3));
+  copy_target = source;
+  source.consume(2);
+  EXPECT_EQ(copy_target.size(), 7u);
+
+  ByteRingBuffer move_target(2);
+  move_target = std::move(copy_target);
+  EXPECT_TRUE(copy_target.empty());
+  std::array<std::byte, 7> copied{};
+  EXPECT_EQ(move_target.read(copied), copied.size());
+  EXPECT_EQ(std::memcmp(copied.data(), "payload", copied.size()), 0);
+
+  hyle::mem::AllocatorRef failing(&fail_allocate, &fail_deallocate,
+                                  &fail_reallocate, nullptr);
+  ByteRingBuffer unavailable(failing);
+  EXPECT_FALSE(unavailable.try_reserve(32));
+  EXPECT_EQ(unavailable.capacity(), 0u);
+  EXPECT_TRUE(unavailable.empty());
 }
 
 TEST(ByteRingBuffer, RandomTransfersMatchByteQueueModel) {
