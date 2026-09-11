@@ -3623,7 +3623,26 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       if (Impl::PendingOp* pending = impl_->pending_out.find(fd)) {
         Impl::PendingOp op = *pending;
         impl_->pending_out.erase(fd);
-        std::int64_t res = perform(fd, op);
+        std::int64_t res;
+        if (op.opcode == kPollWrite && err) {
+          // A readiness-only file-send wait has no byte syscall for perform()
+          // to expose the socket failure. Once kqueue reports terminal EOF or
+          // ERROR, retire the awaitable directly; re-running sendfile after
+          // consuming this one-shot event can otherwise return EAGAIN and arm
+          // a watch that will never fire. For socket filters EV_ERROR stores
+          // errno in data and EV_EOF may store it in fflags.
+          int event_error = 0;
+          if ((evs[i].flags & EV_ERROR) != 0 && evs[i].data > 0)
+            event_error = static_cast<int>(evs[i].data);
+          if (event_error == 0 && (evs[i].flags & EV_EOF) != 0 &&
+              evs[i].fflags != 0)
+            event_error = static_cast<int>(evs[i].fflags);
+          if (event_error == 0)
+            event_error = EPIPE;
+          res = -static_cast<std::int64_t>(event_error);
+        } else {
+          res = perform(fd, op);
+        }
         if (is_spurious(res)) {
           if (rearm(fd, EVFILT_WRITE))
             impl_->pending_out.insert_or_assign(fd, op);

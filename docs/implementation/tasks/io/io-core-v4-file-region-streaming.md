@@ -129,8 +129,10 @@ knob。源码账单已经给出算法差异，在实现正确性稳定前不运�
   `WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)` 取得的 overlapped `TransmitFile`，Linux/macOS 使用
   nonblocking `sendfile`，不可用时只分配一块 64 KiB scratch。所有路线保留 partial progress、typed EOF、
   cancel/deadline 和 owner/context 校验。
-- 源码红队修正了三项具体风险：Linux `sendfile` 不再继承进程级 `SIGPIPE` policy；io_uring poll 使用
-  portable-width `poll32_events`；`File` 与 `TcpStream` 除 worker number 外还必须共享同一 `IoContext`。
+- 源码/真机红队修正了四项具体风险：Linux `sendfile` 不再继承进程级 `SIGPIPE` policy；io_uring poll
+  使用 portable-width `poll32_events`；`File` 与 `TcpStream` 除 worker number 外还必须共享同一
+  `IoContext`；kqueue 的 readiness-only writable wait 在 `EV_EOF/EV_ERROR` 时直接退休，不能消费 terminal
+  event 后再次 arm 一个永不触发的 watch。
 - Windows/MSVC 19.50 shared Release 的定向 `file_region` 与 HTTP 组合测试通过；Linux/GCC 14 shared
   Release 的同组测试在默认 io_uring 和强制 epoll 下均通过。覆盖 zero/overflow、预取消/过期、短文件、
   peer reset、in-flight cancel、跨 context 预提交拒绝与 Linux `SIGPIPE` handler 不触发。
