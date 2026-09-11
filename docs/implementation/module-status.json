@@ -215,14 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-core-v4-file-region-streaming.md",
-      "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/io/io-core-v4-file-region-streaming.md"
-      },
-      "summary": "io_core v4 CLOSED：G06 file-region 的三平台 native fast path、有界 fallback、typed progress/cancel 通过三平台、sanitizer、三交付和红队；无同合同 peer，P0 结构成本通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md",
+      "summary": "io_core v5 SCOPED：仅为 G03 重开 anonymous LocalStream adopt；不改既有 endpoint/transport 合同、依赖或普通热路径。"
     },
     {
       "module": "io_tls",
