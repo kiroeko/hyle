@@ -17,8 +17,8 @@ if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where
   # fcontext (hence sched) exists. The root rejects io where it does not.
-  list(APPEND _io_sources io_context.cc tcp.cc udp.cc file.cc local.cc signal.cc
-       dns.cc)
+  list(APPEND _io_sources io_context.cc tcp.cc udp.cc file.cc file_region.cc
+       local.cc signal.cc dns.cc)
 endif()
 
 set(_io_module_options "")

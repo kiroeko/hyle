@@ -51,3 +51,13 @@ provider access、allocation 或 runtime dispatch。公开 `context()`/native so
 
 审计结论为 **PASS**，授权上述一个 header seam 与一个 io_http 调用点；correctness、交付与候选红队尚未
 运行，不能提前写 terminal verdict。
+
+## 候选实现 checkpoint（`WORKTREE`）
+
+- 允许的唯一 patch 已落地：一个 forward declaration、friend 和 header-inline detail overload；没有新增
+  字段、export symbol、provider call、allocation 或普通 TLS/HTTP 分支。
+- Windows/MSVC 19.50 与 Linux/GCC 14 的 TLS ON HTTPS file-body 测试均通过；Linux 同时覆盖默认
+  io_uring 与强制 epoll。测试用两个都拥有 worker 0 的独立 scheduler/context，确认在任何 response byte
+  写出前返回 `InvalidArgument`，不是依赖 timeout。
+- macOS、TLS ON 逐头和三交付仍待 immutable candidate；registry 继续保持 `AUDITED`。本轮只需 P0，前轮
+  TLS 性能证据不受影响且不重跑。

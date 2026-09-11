@@ -10,10 +10,10 @@ HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 
 DNS、signal、TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
 一套线程或 coroutine runtime。
 
-WebSocket 和 file-region streaming/HTTP file body 已进入
-[基础能力扩展范围](foundation-capability-expansion.md)，但在各自 closure round 完成前不属于当前公开 API。
-TLS credential source 已交付；recursive tree watch 的当前状态以 registry 为准。该决策同时明确
-file-region streaming 归 `io_core + io_http`，而不是制品发布语义不同的 `io_transfer`。
+WebSocket 已进入[基础能力扩展范围](foundation-capability-expansion.md)，但在自己的 closure round 完成前
+不属于当前公开 API。file-region streaming/HTTP file body、TLS credential source 与 recursive tree watch
+已经按各自 factor 交付；终态仍以 registry 为准。file-region streaming 归 `io_core + io_http`，而不是
+制品发布语义不同的 `io_transfer`。
 
 ```text
 Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/Transfer
@@ -35,9 +35,9 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 
 | factor | 责任 | 不拥有 |
 |---|---|---|
-| `io_core` | context、operation、buffer、TCP/UDP/local、file、DNS、signal、backend 与 Linux typed extension | TLS/HTTP 状态机、服务路由 |
+| `io_core` | context、operation、buffer、TCP/UDP/local、file、file-region→TCP、DNS、signal、backend 与 Linux typed extension | TLS/HTTP 状态机、服务路由 |
 | `io_tls` | provider-neutral config/context/session/stream 与 handshake/read/write/shutdown | socket runtime、HTTP |
-| `io_http` | HTTP/1 framing、head/body lifecycle、client/server connection | listener、routing、auth、batching |
+| `io_http` | HTTP/1 framing、head/body/file-body lifecycle、client/server connection | listener、path/MIME/Range policy、routing、auth、batching |
 | `io_http2` | HTTP/2 session/stream、HPACK/frame provider、flow control、RST/GOAWAY | transport event loop、gRPC policy |
 | `io_transfer` | local/HTTP(S) copy/download、resume、verify、temporary file 与 atomic publication | repository/model schema、credentials、archive |
 | `io_watch` | bounded exact/direct/tree change stream、root-relative path、coalescing、overflow/rescan、cancel/close | snapshot、debounce、content diff、TLS/config/model/shader reload policy |
@@ -65,6 +65,12 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 猜路线。direct/non-buffered I/O 是显式请求，alignment 合同不可满足时诚实失败，不静默变成 buffered。
 named shared storage 属于 Mem，原子 replace/同步文件机制属于 Platform FS，IO 只组合异步 workflow。
 
+`FileRegion` 是 caller-owned open file 内的稳定 offset/length value。`send_file_region` 要求 File 与
+TcpStream 共享 IoContext/owner，返回 partial progress；Windows 走 overlapped `TransmitFile`，Linux/macOS
+走 nonblocking `sendfile` + owner completion engine 的 writable wait。机制不适用时只有一个 64 KiB
+positional-read/write fallback，故空间 O(1)，但不冒充 zero-copy。deadline/cancel、short EOF、peer close
+和 direct alignment 都保留 typed 语义；默认 File/TcpStream layout 与普通 read/write 路线不增加 metadata。
+
 文件变化使用 parent/root 的原生 stream（Windows IOCP + `ReadDirectoryChangesW`、Linux inotify、macOS
 FSEvents），对外统一为 bounded borrowed batch。exact file 也观察 parent，才能跨 inode atomic replace；
 direct directory 与 recursive tree 是两个显式 target 语义，后者返回 root-relative path。Windows/macOS
@@ -86,8 +92,11 @@ plain TCP 与已经握手的 TLS 通过同一 transport abstraction 进入 HTTP 
 
 HTTP API 只负责 connection、framing、body 和 flow-control lifecycle。增量 reader/writer 是默认大消息
 形状；有界 `read_all` 是显式便利。writer 每次 await 完成后才拉下一块，不能建立不可见的无界发送
-队列。HTTP/2 可借 nghttp2 处理 HPACK/frame/state machine，但 transport、Scheduler、allocator 和
-application policy 仍由 HYLE/应用拥有。
+队列。HTTP/1 file-body overload 复用同一个 writer 状态机：plain transport 委托 io_core 的 kernel route，
+TLS 使用一次 64 KiB plaintext scratch；HEAD/bodyless status 不触碰 file，任何 post-header failure 都废弃
+connection reuse。path traversal、MIME、Range/conditional/cache 是服务 policy，不进入这个原子组合。
+HTTP/2 可借 nghttp2 处理 HPACK/frame/state machine，但 transport、Scheduler、allocator 和 application
+policy 仍由 HYLE/应用拥有。
 
 listener ownership、routing、middleware、authentication、request admission、dynamic batching、模型
 schema、graceful service policy 和 metrics policy 都属于上层 server/推理引擎；基础库不伪装成框架。

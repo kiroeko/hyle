@@ -93,3 +93,18 @@ nginx `5c812c034e6c` 与 Beast `cb94f33fcb13` 证明 plain file response 的 ker
 不允许加入 static-file server、path open、Range/MIME/ETag、client upload、HTTP/2 或 WebSocket。新增公开头只
 复用既有 `io_core` dependency；不增加 component edge、provider、开关或 binary。审计结论为 **PASS**，允许
 进入三项有限实现；correctness、交付、红队与候选性能尚未运行。
+
+## 候选实现 checkpoint（`WORKTREE`）
+
+- `G06-H01/H02/H03` 已落地：新增唯一 overload
+  `send_response(head, File&, FileRegion, options)`；它复用原 response state machine。plain TCP 委托
+  `io_core::send_file_region`，TLS 仅持有一块 64 KiB plaintext scratch；旧 span/source 热路径未改。
+- pre-wire 同时校验 worker 与精确 `IoContext` identity；HEAD/204/205/304 复用 suppressed writer，零 file
+  IO、零 scratch；header 发出后的短文件、取消、peer close 或 allocation failure 都 abandon connection，
+  不把半响应误作 keep-alive success。direct-file alignment 只在确实发送 body 时检查。
+- Windows/MSVC 19.50 shared Release 的 TLS OFF/ON 定向测试通过；Linux/GCC 14 shared Release 的 TLS
+  OFF/ON 测试在默认 io_uring 与强制 epoll 下通过。已覆盖 GET region、同连接 HEAD、204/205/304、短文件、
+  plain/TLS 跨 context 预 wire 拒绝，以及 TLS 64 KiB scratch OOM。
+- macOS、sanitizer、逐头与 source/static/shared 仍待 immutable candidate；registry 继续保持 `AUDITED`。
+  源码审计未找到能与完整 HYLE framing/backpressure/completion/teardown 等合同的 peer，P1 暂为
+  `NOT_APPLICABLE`，P0 成本账单无固定输项。

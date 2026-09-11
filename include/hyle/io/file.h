@@ -26,6 +26,21 @@
 
 namespace hyle::io {
 
+class File;
+class TcpStream;
+namespace detail {
+const IoContext *io_context_identity(const File &) noexcept;
+}
+
+// A stable, non-owning byte range inside an open file. The value is copied into
+// composed IO coroutine frames; it never extends the File lifetime by itself.
+struct FileRegion {
+  std::uint64_t offset = 0;
+  std::uint64_t length = 0;
+
+  constexpr bool empty() const noexcept { return length == 0; }
+};
+
 enum class FileAccess : std::uint8_t {
   kRead,
   kWrite,
@@ -236,6 +251,12 @@ public:
   CloseAwaitable close() noexcept { return CloseAwaitable{this}; }
 
 private:
+  friend const IoContext *
+  detail::io_context_identity(const File &) noexcept;
+  friend HYLE_IO_API sched::Task<TransferResult>
+  send_file_region(mem::AllocatorRef, TcpStream &, File &, FileRegion,
+                   OperationOptions) noexcept;
+
   HYLE_IO_API File(IoContext &io, platform::FileHandle &&handle,
                    unsigned owner_worker, bool native_async,
                    FileCacheMode cache, DirectIoAlignment alignment) noexcept;
@@ -249,6 +270,12 @@ private:
 
   friend struct OpenFileAwaitable;
 };
+
+namespace detail {
+inline const IoContext *io_context_identity(const File &file) noexcept {
+  return file.io_;
+}
+} // namespace detail
 
 // Owns the UTF-8 path across asynchronous open. The common short path remains
 // inline; long paths grow through IoContext's injected allocator rather than a
@@ -303,5 +330,16 @@ HYLE_IO_API sched::Task<BufferSequenceResult>
 write_all_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
              std::span<const ConstBuffer> buffers,
              OperationOptions options = {}) noexcept;
+
+// Send exactly one explicit region of an already-open file to a connected TCP
+// stream. The File and TcpStream stay caller-owned and must outlive the task;
+// both must be bound to the same owner worker. Native file-to-socket transfer is
+// used where its semantics hold, with one bounded scratch fallback otherwise.
+// A terminal result preserves bytes already submitted so callers may resume at
+// {region.offset + result.bytes, region.length - result.bytes}.
+HYLE_IO_API sched::Task<TransferResult>
+send_file_region(mem::AllocatorRef allocator, TcpStream &stream, File &file,
+                 FileRegion region,
+                 OperationOptions options = {}) noexcept;
 
 } // namespace hyle::io

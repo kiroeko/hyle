@@ -44,6 +44,13 @@
 
 namespace hyle::io {
 
+class File;
+class TcpStream;
+struct FileRegion;
+namespace detail {
+const IoContext *io_context_identity(const TcpStream &) noexcept;
+}
+
 struct TcpListenOptions {
   int backlog = 128;
   bool reuse_address = true;
@@ -320,6 +327,11 @@ class TcpStream {
 
  private:
   friend class TcpListener;
+  friend const IoContext *
+  detail::io_context_identity(const TcpStream &) noexcept;
+  friend HYLE_IO_API sched::Task<TransferResult>
+  send_file_region(mem::AllocatorRef, TcpStream &, File &, FileRegion,
+                   OperationOptions) noexcept;
 
   HYLE_IO_API TcpStream(IoContext& io, std::intptr_t fd,
                         unsigned owner_worker) noexcept;
@@ -328,6 +340,12 @@ class TcpStream {
   std::intptr_t fd_ = -1;
   unsigned owner_ = 0;
 };
+
+namespace detail {
+inline const IoContext *io_context_identity(const TcpStream &stream) noexcept {
+  return stream.io_;
+}
+} // namespace detail
 
 namespace detail {
 

@@ -163,6 +163,17 @@ class Proactor {
   HYLE_IO_API bool submit_send(std::intptr_t fd, const void* buf,
                                std::uint32_t len, std::uint32_t flags,
                                std::uint64_t user_data) noexcept;
+  // Private file-region mechanisms used by the typed io_core composition.
+  // submit_send_file is a real overlapped TransmitFile operation on Windows;
+  // POSIX invokes nonblocking sendfile directly and submits only the writable
+  // readiness wait below. Neither function is a supported raw user API.
+  HYLE_IO_API bool submit_send_file(std::intptr_t socket,
+                                    std::intptr_t file,
+                                    std::uint64_t offset,
+                                    std::uint32_t length,
+                                    std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_poll_write(std::intptr_t socket,
+                                     std::uint64_t user_data) noexcept;
   // Stream scatter/gather. The typed facade fixes flags at zero so every
   // backend can use its true readv/writev or WSARecv/WSASend operation.
   HYLE_IO_API bool submit_recv_buffers(

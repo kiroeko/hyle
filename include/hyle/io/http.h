@@ -12,6 +12,7 @@
 #include "hyle/container/string_view.h"
 #include "hyle/error/result.h"
 #include "hyle/io/buffer.h"
+#include "hyle/io/file.h"
 #include "hyle/io/operation.h"
 #include "hyle/io/tcp.h"
 #include "hyle/io/tls.h"
@@ -440,6 +441,7 @@ public:
   }
 
 private:
+  friend class detail::HttpConnectionAccess;
   friend class detail::Http2SessionAccess;
   friend HYLE_IO_HTTP_API sched::Task<TransferResult>
   detail::http_transport_read(mem::AllocatorRef, HttpTransport &,
@@ -489,6 +491,10 @@ HYLE_IO_HTTP_API sched::Task<Status>
 http_server_send_source(mem::AllocatorRef, HttpServerConnection &,
                         const HttpResponseHead &, HttpBodySource,
                         OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<Status>
+http_server_send_file(mem::AllocatorRef, HttpServerConnection &,
+                      const HttpResponseHead &, File &, FileRegion,
+                      OperationOptions) noexcept;
 
 class HttpServerConnection {
 public:
@@ -544,6 +550,12 @@ public:
                                     OperationOptions options = {}) noexcept {
     return http_server_send_source(allocator_, *this, head, body, options);
   }
+  sched::Task<Status> send_response(const HttpResponseHead &head, File &file,
+                                    FileRegion region,
+                                    OperationOptions options = {}) noexcept {
+    return http_server_send_file(allocator_, *this, head, file, region,
+                                 options);
+  }
   HYLE_IO_HTTP_API sched::Task<Status>
   close(OperationOptions options = {}) noexcept;
 
@@ -569,6 +581,10 @@ private:
   http_server_send_source(mem::AllocatorRef, HttpServerConnection &,
                           const HttpResponseHead &, HttpBodySource,
                           OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<Status>
+  http_server_send_file(mem::AllocatorRef, HttpServerConnection &,
+                        const HttpResponseHead &, File &, FileRegion,
+                        OperationOptions) noexcept;
 
   struct Impl;
   HttpServerConnection(mem::AllocatorRef allocator, HttpLimits limits,

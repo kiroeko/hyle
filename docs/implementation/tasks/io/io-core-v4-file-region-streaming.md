@@ -103,7 +103,9 @@ send_file_region(mem::AllocatorRef, TcpStream&, File&, FileRegion,
 | macOS plain TCP | 非阻塞 Darwin `sendfile`，读取 `len` 中的 partial；`EAGAIN` 用 kqueue write filter 后重试 | 与 Linux 相同；无 payload copy；文件页由 kernel 路由 | O(bytes/chunk)，无 busy poll；支持 |
 | portable fallback | 一次分配 64 KiB scratch；每块 positional read，再把同一块完整写出 | O(1) bounded storage、每字节一次 userspace copy；无逐块 scratch 分配；file offload 沿既有 pool | O(n)，取消/deadline 在块边界检查且 socket wait 使用原 budget；支持 |
 
-native 不支持的已知 errno 才切 fallback；真实 file/socket 错误不伪装为“不支持”。direct/unbuffered file 若
+native 不支持的已知 errno 才切 fallback；Windows `TransmitFile` 对越过 EOF/部分 provider 限制返回
+`WSAEINVAL`，该值同样退到 positional-read 路径，由后者区分短文件与真实 file/socket 错误。其他真实
+错误不伪装为“不支持”。direct/unbuffered file 若
 native 机制拒绝且 region 不满足 direct alignment，则 typed `Unimplemented/InvalidArgument`，不能偷偷改成
 buffered IO。一次 native success 或 poll completion都必须先核对 reported bytes 不超过请求。默认
 `File`/`TcpStream` layout 不变；新增 detail submit 只扩 backend seam，不给用户暴露 syscall。
@@ -113,10 +115,25 @@ buffered IO。一次 native success 或 poll completion都必须先核对 report
 | ID | 已证问题 | 唯一允许改动 | 验收 |
 |---|---|---|---|
 | `G06-C01` | 两个原子不能表达 region owner/progress | `FileRegion` + `send_file_region`，完整 validation/partial/EOF | zero/overflow/short file/wrong owner/peer close |
-| `G06-C02` | 无 OS fast path 和背压等待 | IOCP `TransmitFile`；POSIX `sendfile` + private writable wait；一次 scratch fallback | 无 busy loop、cancel/deadline retirement、native/fallback 差分 |
+| `G06-C02` | 无 OS fast path 和背压等待；Linux `sendfile` 没有 `MSG_NOSIGNAL` 参数，不能继承普通 socket write 的逐调用抑制 | IOCP `TransmitFile`；POSIX `sendfile` + private writable wait；Linux 每次同步 syscall 在当前线程短暂 block/drain 自身新产生的 `SIGPIPE` 后立即恢复 mask；一次 scratch fallback | 无 busy loop、无进程级 signal policy、cancel/deadline retirement、native/fallback 差分 |
 | `G06-C03` | 新公共 journey 尚无交付与说明 | 定向 unit/header/source-static-shared、三平台/sanitizer、user/architecture 文档 | 预声明矩阵诚实裁决 |
 
 不允许第四个产品批次；不得加入 path API、MIME/Range、TLS、file cache、第二 event loop 或 benchmark-only
 knob。源码账单已经给出算法差异，在实现正确性稳定前不运行 P1；候选时仅当能构造完整同合同 peer 才运行
 一次。审计结论为 **PASS**，允许进入上述有限实现；全部 correctness/交付/性能结果仍未运行，不能提前写
 成通过。
+
+## 候选实现 checkpoint（`WORKTREE`）
+
+- `G06-C01/C02` 已落地：公开 `FileRegion` 与 `send_file_region`；Windows 使用运行时
+  `WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)` 取得的 overlapped `TransmitFile`，Linux/macOS 使用
+  nonblocking `sendfile`，不可用时只分配一块 64 KiB scratch。所有路线保留 partial progress、typed EOF、
+  cancel/deadline 和 owner/context 校验。
+- 源码红队修正了三项具体风险：Linux `sendfile` 不再继承进程级 `SIGPIPE` policy；io_uring poll 使用
+  portable-width `poll32_events`；`File` 与 `TcpStream` 除 worker number 外还必须共享同一 `IoContext`。
+- Windows/MSVC 19.50 shared Release 的定向 `file_region` 与 HTTP 组合测试通过；Linux/GCC 14 shared
+  Release 的同组测试在默认 io_uring 和强制 epoll 下均通过。覆盖 zero/overflow、预取消/过期、短文件、
+  peer reset、in-flight cancel、跨 context 预提交拒绝与 Linux `SIGPIPE` handler 不触发。
+- macOS、sanitizer、逐头和 source/static/shared 仍待 immutable candidate 后完成；因此本节不是 terminal
+  verdict，registry 继续保持 `AUDITED`。源码 preflight 没有发现完整同合同 strong peer，当前 P1 为
+  `NOT_APPLICABLE`，不得用 raw syscall 与完整 typed coroutine 排名。

@@ -104,6 +104,32 @@ auto closed = co_await file.close();
 选择 `FileCacheMode::kDirect`，随后用 `direct_alignment().accepts(...)` 校验 buffer、
 offset 和 length；平台无法兑现时 open 会诚实失败，不静默降为 buffered。
 
+### 已打开文件的一段直接发到 TCP
+
+发送 model sidecar、asset pack 中的一段或其它已知 offset/length 的文件数据时，不要在应用里重复写
+read/write/partial-progress 循环：
+
+```cpp
+hyle::io::FileRegion region{.offset = model_offset, .length = model_bytes};
+auto sent = co_await hyle::io::send_file_region(
+    alloc, stream, file, region, operation);
+if (!sent.ok()) {
+  // sent.bytes 是已经提交的前缀；只有协议允许恢复时，才从
+  // region.offset + sent.bytes 继续。
+  handle(sent.status, sent.bytes);
+}
+```
+
+`File`、`TcpStream` 和 task 必须属于同一个 `IoContext`/owner worker，并活到 await 完成。Windows 使用
+overlapped `TransmitFile`，Linux/macOS 使用 nonblocking `sendfile`；机制不适用时才退到一次 64 KiB
+scratch 的 positional-read/write 路线。这个 fallback 仍是 O(1) storage，但不再声称 zero-copy。
+deadline/cancel 贯穿 socket wait；短文件返回 `DataLoss` 并保留 partial bytes，peer close 返回 typed
+network failure。Linux 实现局部抑制本次 `sendfile` 产生的 `SIGPIPE`，不会改进程级 signal policy。
+
+direct file 的 fallback 仍要求 region 和 64 KiB block 满足 `direct_alignment()`；无法满足就明确失败，
+不会偷偷重开 buffered file。只想把文件复制/下载并原子发布到另一个 path 时，仍应使用第 5 节
+`TransferPlan`，它与 file-to-socket 是不同生命周期。
+
 命名共享 storage 属于 Mem：使用 `mem::SharedMapping::create/open/unlink`；IO 只负责建立在
 它之上的 namespace/handle transfer、notification 或异步协议。跨进程数据结构只能保存
 offset/POD，不能保存本进程裸指针。详见 [Mem 指南](mem.md)。
@@ -215,6 +241,27 @@ auto response = co_await client.request(
 if (!response) co_return;
 auto body = co_await response->body.read_all(64 * 1024, budget);
 ```
+
+server 已有一个打开的 `File` 和明确区域时，可让 HTTP 自己拥有固定长度 framing、失败后的连接废弃以及
+plain/TLS 路由：
+
+```cpp
+hyle::io::HttpResponseHead head;
+head.status = 200;
+auto status = co_await connection.send_response(
+    head, file, hyle::io::FileRegion{offset, length}, budget);
+```
+
+plain TCP body 委托上一节的 kernel file-region 路线；TLS 必须读取 plaintext 并加密，因此只保留一块
+64 KiB scratch，再走现有 TLS writer，不把它宣传为 zero-copy。`HEAD` 与 204/205/304 使用同一个 HTTP
+body-suppression 状态机，不读取文件。响应头一旦发出，短文件、cancel、deadline、OOM 或 peer failure
+都不能回滚；连接会被标记为不可复用，调用方应记录返回的 `Status`，不能在同一 connection 上继续发
+第二个 response。
+
+选择规则很简单：小而固定的内存 body 用 span；运行时生成的 token/SSE 用 `HttpBodySource` 或
+`HttpBodyWriter`；已打开文件的确定区域用 file overload。path 安全、MIME、Range/conditional request、
+cache、目录索引和 routing 仍是应用或 `hyle-service` policy，不能把未经验证的 URL path 直接交给
+`open_file`。
 
 client 默认验证系统信任链；verifying client 必须给 `server_name`，它同时用于
 SNI 与证书 DNS/IP identity 校验。自签测试或明确的机会式加密必须显式设置

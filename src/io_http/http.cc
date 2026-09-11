@@ -6,12 +6,24 @@
 #include <new>
 #include <utility>
 
+#include "hyle/sched/cancel.h"
+
 #include "picohttpparser.h"
 
 namespace hyle::io {
 namespace {
 
 constexpr std::uint32_t kInitialBufferBytes = 4096;
+constexpr std::size_t kFileBodyScratchBytes = 64u * 1024u;
+
+Status operation_budget_status(const OperationOptions &options) noexcept {
+  if (options.cancel != nullptr && options.cancel->is_cancelled())
+    return Status::Cancelled("HTTP file response cancelled");
+  if (options.deadline.has_value() &&
+      *options.deadline <= time::monotonic_now())
+    return Status::DeadlineExceeded("HTTP file response deadline expired");
+  return {};
+}
 
 template <class T> Result<T> http_failure(Status status) noexcept {
   return make_unexpected(std::move(status));
@@ -706,6 +718,49 @@ public:
 
   static bool writer_has_written(const HttpBodyWriter &writer) noexcept {
     return writer.state_ != nullptr && writer.state_->wrote_body;
+  }
+
+  static TcpStream *plain_stream(HttpTransport &transport) noexcept {
+    return std::get_if<TcpStream>(&transport.stream_);
+  }
+
+  static bool shares_context(HttpTransport &transport,
+                             const File &file) noexcept {
+    if (const auto *tcp = std::get_if<TcpStream>(&transport.stream_))
+      return io_context_identity(*tcp) == io_context_identity(file);
+#if defined(HYLE_IO_TLS)
+    if (const auto *tls = std::get_if<TlsStream>(&transport.stream_))
+      return io_context_identity(*tls) == io_context_identity(file);
+#endif
+    return false;
+  }
+
+  static Status account_file_body(HttpBodyWriter &writer,
+                                  std::uint64_t bytes) noexcept {
+    HttpWriteState *state = writer.state_;
+    if (state == nullptr || !state->active || state->abandoned ||
+        state->generation != writer.generation_)
+      return Status::FailedPrecondition("HTTP body writer is not active");
+    if (state->busy)
+      return Status::FailedPrecondition(
+          "only one HTTP body write may be in flight");
+    if (state->framing != WriteFraming::kFixed ||
+        !state->remaining_bytes.has_value())
+      return Status::Internal("HTTP file body requires fixed framing");
+    if (bytes > *state->remaining_bytes)
+      return Status::Internal("HTTP file send exceeded declared length");
+    *state->remaining_bytes -= bytes;
+    state->wrote_body = state->wrote_body || bytes != 0;
+    return {};
+  }
+
+  static void abandon_writer(HttpBodyWriter &writer) noexcept {
+    HttpWriteState *state = writer.state_;
+    if (state != nullptr && state->active &&
+        state->generation == writer.generation_)
+      writer_abandoned(*state);
+    writer.state_ = nullptr;
+    writer.generation_ = 0;
   }
 
   static void disarm_writer(HttpBodyWriter &writer,
@@ -2373,6 +2428,147 @@ sched::Task<Status> http_server_send_fixed(mem::AllocatorRef allocator,
   }
   auto finish = http_body_finish(allocator, writer, {}, options);
   if (!finish.valid()) {
+    co_return Status::ResourceExhausted(
+        "HTTP response-finish coroutine allocation failed");
+  }
+  co_return co_await finish;
+}
+
+sched::Task<Status> http_server_send_file(mem::AllocatorRef allocator,
+                                          HttpServerConnection &connection,
+                                          const HttpResponseHead &head,
+                                          File &file, FileRegion region,
+                                          OperationOptions options) noexcept {
+  constexpr std::uint64_t kLargestFileOffset =
+      static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)());
+  HttpServerConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->request_active)
+    co_return Status::FailedPrecondition("HTTP server has no active request");
+  if (!file.valid())
+    co_return Status::FailedPrecondition("HTTP response file is not open");
+  if (file.owner_worker() != impl->transport.owner_worker() ||
+      !detail::HttpConnectionAccess::shares_context(impl->transport, file))
+    co_return Status::InvalidArgument(
+        "HTTP transport and file must share one IoContext owner");
+  if (region.offset > kLargestFileOffset ||
+      region.length > kLargestFileOffset - region.offset)
+    co_return Status::OutOfRange("HTTP response file region overflows");
+
+  Status budget = operation_budget_status(options);
+  if (!budget.ok())
+    co_return budget;
+
+  auto start = http_server_start_response(allocator, connection, head,
+                                          region.length, options);
+  if (!start.valid())
+    co_return Status::ResourceExhausted(
+        "HTTP response-start coroutine allocation failed");
+  Result<HttpBodyWriter> result = co_await start;
+  if (!result)
+    co_return std::move(result).error();
+  HttpBodyWriter writer = std::move(*result);
+
+  if (detail::HttpConnectionAccess::writer_suppressed(writer)) {
+    auto finish = http_body_finish(allocator, writer, {}, options);
+    if (!finish.valid())
+      co_return Status::ResourceExhausted(
+          "HTTP response-finish coroutine allocation failed");
+    co_return co_await finish;
+  }
+
+  if (TcpStream *plain =
+          detail::HttpConnectionAccess::plain_stream(impl->transport)) {
+    auto send = send_file_region(allocator, *plain, file, region, options);
+    if (!send.valid()) {
+      detail::HttpConnectionAccess::abandon_writer(writer);
+      co_return Status::ResourceExhausted(
+          "HTTP file-region coroutine allocation failed");
+    }
+    TransferResult sent = co_await send;
+    if (!sent.ok() || sent.bytes != region.length) {
+      detail::HttpConnectionAccess::abandon_writer(writer);
+      if (!sent.ok())
+        co_return std::move(sent.status);
+      co_return Status::DataLoss("HTTP file body ended before declared length");
+    }
+    Status accounted =
+        detail::HttpConnectionAccess::account_file_body(writer, sent.bytes);
+    if (!accounted.ok()) {
+      detail::HttpConnectionAccess::abandon_writer(writer);
+      co_return accounted;
+    }
+  } else {
+    if (file.cache_mode() == FileCacheMode::kDirect) {
+      const DirectIoAlignment alignment = file.direct_alignment();
+      if (kFileBodyScratchBytes % alignment.length_alignment != 0 ||
+          region.offset % alignment.offset_alignment != 0 ||
+          region.length % alignment.length_alignment != 0) {
+        detail::HttpConnectionAccess::abandon_writer(writer);
+        co_return Status::InvalidArgument(
+            "direct HTTP file body violates bounded TLS fallback alignment");
+      }
+    }
+    const std::size_t scratch_alignment =
+        file.cache_mode() == FileCacheMode::kDirect
+            ? std::max(file.direct_alignment().memory_alignment,
+                       alignof(std::max_align_t))
+            : alignof(std::max_align_t);
+    detail::StagingBuffer scratch;
+    if (!scratch.allocate(allocator, kFileBodyScratchBytes,
+                          scratch_alignment)) {
+      detail::HttpConnectionAccess::abandon_writer(writer);
+      co_return Status::ResourceExhausted(
+          "HTTP TLS file-body allocation failed");
+    }
+
+    std::uint64_t done = 0;
+    while (done < region.length) {
+      budget = operation_budget_status(options);
+      if (!budget.ok()) {
+        detail::HttpConnectionAccess::abandon_writer(writer);
+        co_return budget;
+      }
+      const std::size_t requested = static_cast<std::size_t>(
+          std::min<std::uint64_t>(region.length - done, kFileBodyScratchBytes));
+      auto bytes = std::span<std::byte>(
+          static_cast<std::byte *>(scratch.data()), requested);
+      TransferResult read =
+          co_await file.read_some_at(region.offset + done, bytes);
+      if (!read.ok() || read.eof || read.bytes == 0) {
+        detail::HttpConnectionAccess::abandon_writer(writer);
+        if (!read.ok())
+          co_return std::move(read.status);
+        co_return Status::DataLoss(
+            "EOF before HTTP file body reached declared length");
+      }
+      if (read.bytes > requested) {
+        detail::HttpConnectionAccess::abandon_writer(writer);
+        co_return Status::Internal("HTTP file read exceeded scratch buffer");
+      }
+
+      budget = operation_budget_status(options);
+      if (!budget.ok()) {
+        detail::HttpConnectionAccess::abandon_writer(writer);
+        co_return budget;
+      }
+      auto write = http_body_write(
+          allocator, writer,
+          std::span<const std::byte>(bytes.data(), read.bytes), options);
+      if (!write.valid()) {
+        detail::HttpConnectionAccess::abandon_writer(writer);
+        co_return Status::ResourceExhausted(
+            "HTTP file-body coroutine allocation failed");
+      }
+      Status written = co_await write;
+      if (!written.ok())
+        co_return written;
+      done += read.bytes;
+    }
+  }
+
+  auto finish = http_body_finish(allocator, writer, {}, options);
+  if (!finish.valid()) {
+    detail::HttpConnectionAccess::abandon_writer(writer);
     co_return Status::ResourceExhausted(
         "HTTP response-finish coroutine allocation failed");
   }

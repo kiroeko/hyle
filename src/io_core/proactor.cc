@@ -64,10 +64,11 @@ struct Proactor::Impl {
   bool wsa_started = false;
   LPFN_ACCEPTEX acceptex = nullptr;
   LPFN_CONNECTEX connectex = nullptr;
+  LPFN_TRANSMITFILE transmitfile = nullptr;
 
   enum OpKind : int {
-    kRead, kWrite, kRecv, kSend, kAccept, kConnect, kRecvFrom, kSendTo,
-    kPipeAccept, kDirectoryChanges,
+    kRead, kWrite, kRecv, kSend, kSendFile, kAccept, kConnect, kRecvFrom,
+    kSendTo, kPipeAccept, kDirectoryChanges, kSynthetic,
     kFileMeta  // io-05: open/close/statx/fsync/fallocate done SYNCHRONOUSLY here
                // (no async form on IOCP) then posted with the result already in
                // syn_result -- reap skips GetOverlappedResult for these.
@@ -296,7 +297,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     out[i].user_data = op->user_data;
     out[i].flags = 0;
     out[i].buffer_id = 0;
-    if (op->kind == Impl::kFileMeta) {
+    if (op->kind == Impl::kFileMeta || op->kind == Impl::kSynthetic) {
       // io-05: the syscall already ran at submit; hand back its stored 64-bit
       // result (fd/0/-errno) untouched -- no GetOverlappedResult (there was no
       // real overlapped IO). This is the open/close/statx/fsync/fallocate path.
@@ -310,7 +311,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     // dwNumberOfBytesTransferred alone can't distinguish 0-byte EOF from failure.
     BOOL rok;
     DWORD completion_error = ERROR_SUCCESS;
-    if (op->kind == Impl::kRecvFrom) {
+    if (op->kind == Impl::kRecvFrom || op->kind == Impl::kSendFile) {
       rok = ::WSAGetOverlappedResult(
           reinterpret_cast<SOCKET>(op->handle), &op->ov, &xfer, FALSE,
           &op->socket_flags);
@@ -555,6 +556,58 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
   impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_send_file(std::intptr_t socket, std::intptr_t file,
+                                std::uint64_t offset, std::uint32_t length,
+                                std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || length == 0) return false;
+  const SOCKET native_socket = static_cast<SOCKET>(socket);
+  const bool has_transmitfile =
+      load_ext_fn(native_socket, WSAID_TRANSMITFILE,
+                  reinterpret_cast<void**>(&impl_->transmitfile));
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(socket);
+  op->kind = Impl::kSendFile;
+  op->ov.Offset = static_cast<DWORD>(offset & 0xffffffffull);
+  op->ov.OffsetHigh = static_cast<DWORD>(offset >> 32);
+  impl_->link(op);
+  if (!has_transmitfile) {
+    op->kind = Impl::kSynthetic;
+    op->syn_result = neg_err(ERROR_NOT_SUPPORTED);
+    if (::PostQueuedCompletionStatus(impl_->port, 0, 0, &op->ov) != 0)
+      return true;
+    impl_->unlink(op);
+    impl_->recycle(op);
+    return false;
+  }
+  const BOOL ok = impl_->transmitfile(native_socket,
+                                      reinterpret_cast<HANDLE>(file), length,
+                                      0, &op->ov, nullptr, 0);
+  const DWORD error = ok ? ERROR_SUCCESS
+                         : static_cast<DWORD>(::WSAGetLastError());
+  if (ok || error == ERROR_IO_PENDING) return true;
+
+  // Preserve a real synchronous provider error as a completion so the typed
+  // layer can distinguish an unsupported native route from queue admission
+  // failure and select its bounded fallback. The already-owned IoOp remains
+  // linked until this synthetic completion is reaped.
+  op->kind = Impl::kSynthetic;
+  op->syn_result = neg_err(error);
+  if (::PostQueuedCompletionStatus(impl_->port, 0, 0, &op->ov) != 0)
+    return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_poll_write(std::intptr_t,
+                                 std::uint64_t) noexcept {
+  // IOCP TransmitFile is a true proactor operation and never needs a separate
+  // readiness watch.
   return false;
 }
 
@@ -1013,6 +1066,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 #  include <sys/epoll.h>
 #  include <sys/eventfd.h>
 #  include <sys/mman.h>
+#  include <poll.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>   // io-05: fstat + struct stat (statx synthesis)
 #  include <sys/syscall.h>
@@ -1040,6 +1094,7 @@ static_assert(offsetof(detail::NativeBuffer, length) ==
 // Private readiness-backend tags. Native io_uring submissions below still use
 // IORING_OP_RECVMSG/SENDMSG; these values only tell epoll's inline performer
 // that PendingOp.buf is an iovec array rather than one byte buffer.
+constexpr std::uint8_t kPollWrite = 253;
 constexpr std::uint8_t kRecvMsgBuffers = 254;
 constexpr std::uint8_t kSendMsgBuffers = 255;
 
@@ -1625,7 +1680,9 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     // Perform the ready op inline and synthesize its result. The op tag says
     // which syscall. Shared by both directions (read-side / write-side).
     auto perform = [](int fd, const Impl::PendingOp& op) -> std::int64_t {
-      if (op.opcode == IORING_OP_WRITEV) {
+      if (op.opcode == kPollWrite) {
+        return 0;
+      } else if (op.opcode == IORING_OP_WRITEV) {
         ssize_t written = ::writev(fd, static_cast<const iovec*>(op.buf),
                                    static_cast<int>(op.len));
         return written < 0 ? -errno : static_cast<std::int64_t>(written);
@@ -2106,7 +2163,15 @@ bool submit_one(int ring_fd, unsigned sq_entries, unsigned* sq_pending,
   s.off = off;
   s.addr = addr;
   s.len = len;
-  s.rw_flags = static_cast<int>(op_flags);  // union: msg_flags/accept_flags too
+  if (opcode == IORING_OP_POLL_ADD) {
+    // poll32_events is the portable-width member of this union. Assigning
+    // rw_flags happens to work on little-endian hosts but corrupts the event
+    // mask on big-endian targets.
+    s.poll32_events = op_flags;
+  } else {
+    s.rw_flags =
+        static_cast<int>(op_flags);  // union: msg_flags/accept_flags too
+  }
   s.ioprio = ioprio;                        // multishot bits (accept/recv), else 0
   s.user_data = user_data;
   // publish SQ tail (store_release pairs with kernel load_acquire); the enter
@@ -2673,6 +2738,28 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
                     safe_flags);
 }
 
+bool Proactor::submit_send_file(std::intptr_t, std::intptr_t,
+                                std::uint64_t, std::uint32_t,
+                                std::uint64_t) noexcept {
+  // Linux sendfile is issued synchronously on the nonblocking socket by the
+  // typed composition. Only EAGAIN needs a ring-owned readiness operation.
+  return false;
+}
+
+bool Proactor::submit_poll_write(std::intptr_t socket,
+                                 std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    return epoll_arm(impl_, static_cast<int>(socket), EPOLLOUT, kPollWrite,
+                     nullptr, 0, user_data);
+  }
+  return submit_one(
+      impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight,
+      impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+      IORING_OP_POLL_ADD, static_cast<std::int32_t>(socket), 0, 0, 0,
+      user_data, POLLOUT);
+}
+
 bool Proactor::submit_send_buffers(std::intptr_t fd,
                                    detail::NativeBuffer* buffers,
                                    std::uint32_t count,
@@ -3180,6 +3267,7 @@ enum : std::uint8_t {
   IORING_OP_SEND = 8,
   IORING_OP_READV = 9,
   IORING_OP_WRITEV = 10,
+  kPollWrite = 253,
   kRecvMsgBuffers = 254,
   kSendMsgBuffers = 255,
 };
@@ -3405,7 +3493,9 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   // Perform the ready op inline and synthesize its result. The op tag says which
   // syscall. Shared by both directions -- IDENTICAL to the epoll branch's perform.
   auto perform = [](int fd, const Impl::PendingOp& op) -> std::int64_t {
-    if (op.opcode == IORING_OP_WRITEV) {
+    if (op.opcode == kPollWrite) {
+      return 0;
+    } else if (op.opcode == IORING_OP_WRITEV) {
       ssize_t written = ::writev(fd, static_cast<const iovec*>(op.buf),
                                  static_cast<int>(op.len));
       return written < 0 ? -errno : static_cast<std::int64_t>(written);
@@ -3726,6 +3816,21 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
   return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_WRITE,
                          IORING_OP_SEND, const_cast<void*>(buf), len, nullptr, 0,
                          nullptr, flags, user_data);
+}
+
+bool Proactor::submit_send_file(std::intptr_t, std::intptr_t,
+                                std::uint64_t, std::uint32_t,
+                                std::uint64_t) noexcept {
+  // macOS sendfile is issued synchronously on the nonblocking socket by the
+  // typed composition. Only EAGAIN needs a kqueue-owned readiness operation.
+  return false;
+}
+
+bool Proactor::submit_poll_write(std::intptr_t socket,
+                                 std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return epoll_arm(impl_, static_cast<int>(socket), EVFILT_WRITE, kPollWrite,
+                   nullptr, 0, user_data);
 }
 
 bool Proactor::submit_send_buffers(std::intptr_t fd,

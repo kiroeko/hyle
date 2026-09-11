@@ -35,6 +35,11 @@ HYLE_IO_TLS_API bool tls_available() noexcept;
 
 #if defined(HYLE_IO_TLS)
 
+class TlsStream;
+namespace detail {
+const IoContext *io_context_identity(const TlsStream &) noexcept;
+}
+
 enum class TlsVersion : std::uint8_t {
   kProviderDefault,
   kTls12,
@@ -271,6 +276,8 @@ public:
   HYLE_IO_TLS_API Result<TlsSession> take_session() const noexcept;
 
 private:
+  friend const IoContext *
+  detail::io_context_identity(const TlsStream &) noexcept;
   friend HYLE_IO_TLS_API sched::Task<Status>
   tls_handshake(mem::AllocatorRef, TlsStream &, OperationOptions) noexcept;
   friend HYLE_IO_TLS_API sched::Task<TransferResult>
@@ -298,6 +305,12 @@ private:
   bool server_ = false;
   bool handshake_complete_ = false;
 };
+
+namespace detail {
+inline const IoContext *io_context_identity(const TlsStream &stream) noexcept {
+  return io_context_identity(stream.socket_);
+}
+} // namespace detail
 
 enum class TlsShutdownMode : std::uint8_t {
   // Send close_notify and return after the ciphertext has reached the socket.
