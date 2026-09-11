@@ -254,13 +254,14 @@ mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完�
 - latency distribution 报 median 与适用 tail；吞吐不能抵偿 tail、内存、错误率或公平性退化。
 - 不从多个平台、规模、order 或 shape 中挑最好项。每个必需 stratum 先判，再按预声明规则合成。
 
-结果是三条独立轴，不是一张混合“五态”表：
+结果至少是四条独立轴，不是一张混合“五态”表：
 
 | 轴 | 值 | 含义 |
 |---|---|---|
 | comparability | `COMPARABLE | NOT_COMPARABLE` | 两侧语义合同能否合理对齐 |
 | qualification | `QUALIFIED | DIAGNOSTIC` | 当前机器、harness、controls 是否有资格影响产品 |
-| exact performance | `WIN | PARITY | LOSE | INCONCLUSIVE` | 统计区间相对预声明 material band 的位置 |
+| v1 material-band performance | `WIN | PARITY | LOSE | INCONCLUSIVE` | 统计区间相对预声明 practical band 的位置；旧字段名为 `exact_verdict` |
+| directional result | `WIN | LOSS | INCONCLUSIVE` | 统计区间相对 ratio `1.0` 的方向；不使用 material margin 改名 |
 
 comparison class 是这三轴之前的命题分类；只有 `SAME_CONTRACT + COMPARABLE + QUALIFIED` 才能产生
 peer non-inferiority/SOTA verdict。`NATURAL_ROUTE` 即使统计清晰也只形成 route-level 结论。
@@ -272,7 +273,7 @@ peer non-inferiority/SOTA verdict。`NATURAL_ROUTE` 即使统计清晰也只形�
 | Verdict | 含义 |
 |---|---|
 | `WIN` | CI 完全高于 `1+m` |
-| `PARITY` | CI 完全位于 reciprocal band 内 |
+| `PARITY` | CI 完全位于 reciprocal band 内；仅是 v1 material-band 分类 |
 | `LOSE` | CI 完全低于 `1/(1+m)` |
 | `INCONCLUSIVE` | CI 跨越 exact verdict 边界，不能判方向 |
 
@@ -280,10 +281,15 @@ non-inferiority 是独立单边门，固定为 `PASS | FAIL | UNRESOLVED | N/A`�
 才 `PASS`；任一 material `FAIL` 即失败；功效不足为 `UNRESOLVED`。`NOT_COMPARABLE`、
 `DIAGNOSTIC` 和 `INCONCLUSIVE` 各留在自己的轴上，不能被平局或单边门覆盖。
 
+当前竞争性总账另行导出方向：全部适用 strata 的 CI 下界均高于 1 才为 `WIN`，上界均低于 1 才为
+`LOSS`；任一层跨 1、缺失、方向翻转或 controls 不足均为 `INCONCLUSIVE`。稳定 1% `LOSS` 可以同时
+拥有 5% non-inferiority `PASS`，两者回答不同问题。用户级 `PARITY` 不是 v1 字段的机械拷贝；它只在
+无固定方向且双边 practical-equivalence 已证明，或执行热路/codegen 等价时使用。
+
 ### 6.1 固定方向点值复核
 
 若一个 HYLE/peer 行在全部必需 order/placement/allocation strata 的中位 `advantage_ratio` 都小于 1，
-人读报告必须复核并解释该固定方向，**不论幅度多小、exact verdict 是否仍为 `PARITY`、单边门是否为
+人读报告必须复核并解释该固定方向，**不论幅度多小、v1 material-band verdict 是否仍为 `PARITY`、单边门是否为
 `PASS`**。这是一项防止 margin 掩盖系统性问题的审计触发器，不是新的统计 verdict，也不能把“全部点值
 小于 1”直接改写成 `LOSE`。
 
@@ -292,7 +298,8 @@ holdout 方向，最后做一次复杂度、资源账单或相关热路 codegen/
 一种可读类别：同合同且找到产品机制、自然路线承担额外语义、仪器/代码或数据布局分辨率内未找到机制、
 或保留的未归因 diagnostic。只有[第 7 节](#7-哪些结果可以改产品)的机制钥匙和消费钥匙同时成立，
 才触发产品修改或重开；否则保留点值与调查事实，不通过追加样本、第五种姿势或 benchmark 专用 API
-追逐方向。
+追逐方向。若 CI 已在全部层稳定低于 1，全库总账必须写 `LOSS`；若只是中位数同向而 CI 仍跨 1，则写
+`INCONCLUSIVE`，不能猜成 loss，也不能因 5% 门通过写成用户级 parity。
 
 旧工具的 `RIVAL/BASELINE` throughput ratio 小于 1 才有利于 HYLE；它属于 legacy raw 格式，必须
 由 adapter 取倒数并标注来源，不能与当前 `advantage_ratio` 混列。

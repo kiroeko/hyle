@@ -26,6 +26,11 @@
 - [性能计时前完成边界与执行拓扑预审](project/performance-preflight-topology-2026-09.md)；
 - [真实 workload paired interleaving](project/performance-workload-interleaving-2026-09.md)。
 
+当前全库性能工作：
+
+- [全库性能定位与差距消除](project/full-library-performance-positioning-2026-09.md)：区分方向、实用
+  materiality 与产品行动，清点全部 CLOSED factor 的去重性能事实，并只定向处理真实固定劣势。
+
 任务结束后只保留当前状态链仍引用、或被长期 architecture/developer/user 文档引用的记录。被替代的
 完整 Jira 式历史由 Git 保存，不用导航页和兼容跳转页维持第二套当前事实：
 

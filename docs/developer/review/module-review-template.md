@@ -88,7 +88,8 @@ P1/P2 只能在本节和 correctness 实现固定以后开始。
 | engineering_performance | | |
 
 性能记录还需写清：peer/version、同合同证明、normal/holdout shape、A/B 与 B/A、空白对照、有效样本、
-机制解释和固定阈值。原始结果放 evidence，不粘贴成长篇 task。
+相对 1.0 的 `WIN/LOSS/INCONCLUSIVE` 方向、独立的 practical/non-inferiority gate、机制解释和固定阈值。
+稳定小幅 loss 不得被阈值改名为 parity。原始结果放 evidence，不粘贴成长篇 task。
 
 P1/P2 benchmark 构造前先填写：真实 consumer 与 peer 的 owner/lifetime/concurrency/error/progress
 合同和源码锚点，并说明双方自然 API 为什么可比；计时前再填写两侧从 admission 到 owner return 的逐阶段

@@ -79,6 +79,8 @@ concurrency 或复杂度机制，不得仅因最先在某个产品中发现就�
 - consumer/replay 仍须区分自然产品路线与同语义实现比较；只有逐项通过语义等价门的后者才能签
   peer non-inferiority，前者只回答用户采用当前自然路线会发生什么。
 - 性能结论绑定 capability、contract、hardware、delivery 与 candidate，不宣称模块全局 SOTA。
+- 稳定方向与实用阈值分别报告：低于 material margin 的固定 loss 仍是 loss，只是不自动授权产品改动；
+  5% 非劣门不得冒充 parity 或 SOTA。
 - 未知或仪器不合格时写 `INCONCLUSIVE/DIAGNOSTIC`，不能解释成平局或选择有利姿势。
 
 ## 7. Correctness 与验证

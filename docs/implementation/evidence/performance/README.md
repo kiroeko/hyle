@@ -35,3 +35,9 @@ registry 的 `performance.evidence` 路径是当前工程证据的唯一选择�
 
 被新 candidate 替代的旧报告不保留在当前导航中；精确历史由 Git 恢复。一次无机制的微小固定方向
 不能覆盖当前同合同证据，也不能自动成为产品缺陷。
+
+跨模块回答“已经证明赢、平、未知或输在哪里”时，使用
+[`full-library-scorecard.md`](full-library-scorecard.md)；其机器源为
+[`full-library-scorecard.json`](full-library-scorecard.json)，并由
+`python scripts/check-performance-scorecard.py` 检查是否覆盖全部当前 `CLOSED` factor。该账本只汇总
+registry 已选择的证据，不取得模块状态授权，也不把多个 factor 共用的同一 workload 重复计胜。

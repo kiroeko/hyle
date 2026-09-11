@@ -12,7 +12,7 @@ adapter 和窄的结构 validator，但不得复制 runner，亦不得改变统�
 
 1. comparability：`COMPARABLE | NOT_COMPARABLE`；
 2. qualification：`QUALIFIED | DIAGNOSTIC`；
-3. performance：`WIN | PARITY | LOSE | INCONCLUSIVE`。
+3. material-band performance：`WIN | PARITY | LOSE | INCONCLUSIVE`。
 
 同合同的单边 non-inferiority 门另记为
 `PASS | FAIL | UNRESOLVED | N/A`。`NOT_COMPARABLE` 不是统计结果；缺失资格也不能伪装成
@@ -33,6 +33,12 @@ adapter 和窄的结构 validator，但不得复制 runner，亦不得改变统�
 required strata 逐项裁决。exact verdict 只有在各 stratum 一致时合成；`WIN + PARITY` 所表达的
 “没有输”由 non-inferiority gate 表达，不强行合成成某个 exact verdict。
 
+`exact_verdict` 是 v1 已冻结的字段名，但它实际回答“置信区间相对 practical band 在哪里”，不能作为
+ratio `1.0` 的方向标签。全库竞争性 scorecard 必须另从逐 stratum CI 导出 `directional_result`：全部
+适用 CI 下界高于 1 为 `WIN`，全部上界低于 1 为 `LOSS`，其余为 `INCONCLUSIVE`；顺序或 placement
+方向不一致同样为 `INCONCLUSIVE`。稳定 `LOSS` 不因仍在 5% band 内改名为 `PARITY`。旧 summary 与
+manifest 保持原字节，不回写这一派生字段。
+
 ## 2. 产品阈值与仪器分辨率
 
 每个合同在运行前声明 material margin `M`。仪器用 A/A、known-delta 和实际样本证明当前
@@ -43,7 +49,8 @@ CPU v1 的 timer-floor `20x` 门不是另一个 material margin，也不是“�
 更早的一道 harness 资格筛选：被测 pair 的较快一侧仍须至少达到同一 measurement batch 下保守空
 harness floor 的 20 倍。未过该门时，仪器明确回答“当前计费边界太接近地板”，而不是回答谁快。
 
-- 测不到低于 `M` 的差异不是失败；单边最坏界仍在 `M` 内即可通过 non-inferiority。
+- 测不到低于 `M` 的差异不是工程门失败；单边最坏界仍在 `M` 内即可通过 non-inferiority，但方向仍
+  必须独立报告。
 - 允许超过 `M` 且 power 不足时才是 `UNRESOLVED`。
 - 稳定 `LOSE` 只有同时具备机制证据和消费影响，才能改变产品 API、layout 或常态 metadata。
 

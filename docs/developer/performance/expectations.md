@@ -34,7 +34,7 @@ P1/P2 的工程性能 `PASS` 是模块进入 `CLOSED` 的硬门；缺资格或�
 阻塞已经满足的工程门。完整状态规则见
 [模块重构与收口协议](../review/module-closure-methodology.md)。
 
-## 三个独立结果与统一方向
+## 独立结果与统一方向
 
 在以下三轴之前先冻结 comparison class：`NATURAL_ROUTE` 比较同一用户任务下各库最自然的产品路线，
 `SAME_CONTRACT` 只比较语义、生命周期、进展与计费边界已经对齐的实现，
@@ -45,10 +45,16 @@ P1/P2 的工程性能 `PASS` 是模块进入 `CLOSED` 的硬门；缺资格或�
 
 - comparability：`COMPARABLE | NOT_COMPARABLE`；
 - qualification：`QUALIFIED | DIAGNOSTIC`；
-- exact performance：`WIN | PARITY | LOSE | INCONCLUSIVE`。
+- v1 material-band performance：`WIN | PARITY | LOSE | INCONCLUSIVE`；这是相对 practical band 的
+  历史字段，不是 ratio `1.0` 的纯方向；
+- directional result：`WIN | LOSS | INCONCLUSIVE`，由全部适用 strata 的置信区间相对 `1.0`
+  独立导出。
 
-单边 non-inferiority 另记 `PASS | FAIL | UNRESOLVED | N/A`。不能把 `NOT_COMPARABLE`、仪器
-`DIAGNOSTIC` 或统计 `INCONCLUSIVE` 互相冒充。
+单边 non-inferiority 另记 `PASS | FAIL | UNRESOLVED | N/A`，双边 practical equivalence 也独立记录。
+不能把 `NOT_COMPARABLE`、仪器 `DIAGNOSTIC`、方向 `INCONCLUSIVE` 或 material gate 互相冒充。
+稳定在 1 下方的 1% 差距仍报告 `LOSS`，即使 5% non-inferiority 为 `PASS`；它只表示产品行动优先级
+可能较低。用户级 `PARITY` 只用于无固定方向且通过双边 practical-equivalence，或热路径/codegen 已
+证明等价的情况。
 
 统一 `advantage_ratio > 1` 永远有利于 HYLE：higher-is-better 用 `candidate/peer`，
 lower-is-better 用 `peer/candidate`。给定预声明 margin `m`，双边等价带为
@@ -62,8 +68,8 @@ lower-is-better 用 `peer/candidate`。给定预声明 margin `m`，双边等价
 性能。
 
 合同无法对齐时分别报告绝对成本和必要语义税，不把功能更少的一方宣称为 SOTA。P1 默认 5% 是
-普通工程行动阈值，不是所有产品、指标或发布声明的自然常数；P2 可以用消费者预算预声明不同
-阈值。
+普通工程行动与 non-inferiority 阈值，不是性能方向、所有产品、指标或发布声明的自然常数；P2 可以
+用消费者预算预声明不同阈值。通过这个门只能写“在该预算内不劣”，不能抹去固定方向。
 完全没有同合同 peer 时，P1 必须预先声明真实 consumer 的 latency/throughput/resource 预算；通过
 该预算可以签工程 `PASS`，但 comparability 保持 `NOT_COMPARABLE`，不得产生 peer/SOTA 声明。
 
