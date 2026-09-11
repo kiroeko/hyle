@@ -272,13 +272,15 @@
     },
     {
       "module": "compute",
-      "state": "QUEUED",
-      "summary": "实现尚不完整；前置与真实 consumer slice 建立前保持可变。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-v1-clean-foundation.md",
+      "summary": "compute v1 SCOPED：旧实现不兼容且不作新设计输入；本轮先清除旧产品面，并建立 CPU Device/Context/Queue/Completion、prepared RMSNorm 与 typed host custom-kernel 的最小直接执行纵切。"
     },
     {
       "module": "graph",
-      "state": "QUEUED",
-      "summary": "实现尚不完整；前置与真实 consumer slice 建立前保持可变。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/graph-v1-clean-dag.md",
+      "summary": "graph v1 SCOPED：删除旧 TaskGraph/parallel/data-parallel 产品面，以 Compute one-op 建立 GraphBuilder、Graph、Executable、Invocation 与 Completion 的最小计算 DAG 纵切。"
     },
     {
       "module": "container_concurrent",
