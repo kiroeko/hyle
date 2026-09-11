@@ -137,12 +137,28 @@ hyle::sched::Task<int> run_model_lifecycle(
       result->status = std::move(opened).error();
     } else {
       hyle::io::File file = std::move(*opened);
+      hyle::io::OperationOptions read_options;
+      // Windows IOCP and Linux io_uring can retire a bounded native file
+      // operation. macOS deliberately offloads regular-file IO because kqueue
+      // is a readiness API; asking that path for a cancellable deadline must
+      // return Unimplemented. Select the strongest portable contract through
+      // the public capability instead of guessing from the operating system.
+      if (io->capabilities(kOwner).has(
+              hyle::io::IoCapability::kAsyncFileData)) {
+        read_options.deadline = hyle::time::deadline_after(5s);
+      }
       auto read = co_await hyle::io::read_exact_at(
-          allocator, file, 0, file_bytes,
-          {.deadline = hyle::time::deadline_after(5s)});
-      result->async_file_observed =
-          read.ok() && read.bytes == file_bytes.size() &&
-          std::memcmp(file_bytes.data(), kPayload.data(), kPayload.size()) == 0;
+          allocator, file, 0, file_bytes, read_options);
+      if (!read.ok()) {
+        result->status = std::move(read.status);
+      } else if (read.bytes != file_bytes.size() ||
+                 std::memcmp(file_bytes.data(), kPayload.data(),
+                             kPayload.size()) != 0) {
+        result->status =
+            hyle::Status::DataLoss("published model read did not match source");
+      } else {
+        result->async_file_observed = true;
+      }
       result->status.Update(co_await file.close());
     }
   }

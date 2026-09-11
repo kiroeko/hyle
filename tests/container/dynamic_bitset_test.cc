@@ -97,7 +97,11 @@ TEST(DynamicBitSet, CopyMoveAssignmentSwapAndSelfAssignmentPreserveValue) {
   DynamicBitSet copy_target(7, true);
   copy_target = source;
   EXPECT_EQ(copy_target, source);
-  copy_target = copy_target;
+  // Keep this a real runtime self-assignment without spelling the same
+  // overloaded-assignment operand twice: current AppleClang diagnoses the
+  // latter as a test-source warning under the project's WERROR contract.
+  DynamicBitSet* const self = &copy_target;
+  copy_target = *self;
   EXPECT_EQ(copy_target, source);
 
   DynamicBitSet move_target(3, true);

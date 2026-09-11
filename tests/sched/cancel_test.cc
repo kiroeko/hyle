@@ -158,7 +158,11 @@ TEST(Cancel, CopyAssignmentReleasesOldTreeAndSupportsSelfAssignment) {
   first.cancel();
   EXPECT_FALSE(assigned.is_cancelled());
 
-  assigned = assigned;
+  // Exercise runtime self-assignment through an alias. Spelling
+  // `assigned = assigned` is rejected by current AppleClang under WERROR,
+  // before the ownership contract can be tested.
+  CancelToken* const self = &assigned;
+  assigned = *self;
   second.cancel();
   EXPECT_TRUE(assigned.is_cancelled());
 

@@ -109,6 +109,13 @@ auto closed = co_await file.close();
 选择 `FileCacheMode::kDirect`，随后用 `direct_alignment().accepts(...)` 校验 buffer、
 offset 和 length；平台无法兑现时 open 会诚实失败，不静默降为 buffered。
 
+一个例外是 **file data 的 deadline/cancel**：只有
+`io.capabilities(owner).has(IoCapability::kAsyncFileData)` 时，内核操作才可被可靠退役。epoll/kqueue
+等 fallback 会把普通文件操作卸载到 blocking pool，但不能安全中断已经进入内核的 `pread/pwrite`；此时
+传入 deadline/cancel 会明确返回 `Unimplemented`，不会静默忽略预算。需要可移植 fallback 时不传这两个
+字段，并用 task/服务层硬 timeout 管理整体生命周期；必须逐操作可取消时，应把该 capability 作为部署前置
+条件。
+
 ### 已打开文件的一段直接发到 TCP
 
 发送 model sidecar、asset pack 中的一段或其它已知 offset/length 的文件数据时，不要在应用里重复写

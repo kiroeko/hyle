@@ -133,6 +133,15 @@ function(hyle_apply_sanitizer target)
   else()
     message(FATAL_ERROR "hyle_apply_sanitizer: unhandled HYLE_SANITIZER='${HYLE_SANITIZER}'")
   endif()
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC PR 109224 misidentifies the allocator-first coroutine promise
+    # placement new as mismatched with the required usual sized delete. Keep
+    # the diagnostic visible, but do not let this compiler-model bug make every
+    # otherwise valid ASan/UBSan/TSan + WERROR build impossible. Ordinary
+    # sanitizer=off shipping builds retain the strict warning contract.
+    target_compile_options(${target} PRIVATE
+      "$<$<COMPILE_LANGUAGE:CXX>:-Wno-error=mismatched-new-delete>")
+  endif()
   target_compile_options(${target} PRIVATE ${flags})
   target_link_options(${target} PRIVATE ${flags})
 endfunction()
