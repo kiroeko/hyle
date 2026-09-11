@@ -340,9 +340,9 @@
     },
     {
       "module": "io_websocket",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md",
-      "summary": "io_websocket v2 SCOPED：Wave E 复现 GCC 14.2 shared/WERROR 因两个 coroutine frame allocator 参数被误判 unused 而无法源码交付；仅允许零运行语义的定向修复与回归。"
+      "summary": "io_websocket v2 AUDITED：确认两个 allocator 参数必须保留以选择 coroutine frame allocation；仅允许在私有 body 显式消费参数，不改变 API、算法、状态机或运行成本。"
     }
   ]
 }

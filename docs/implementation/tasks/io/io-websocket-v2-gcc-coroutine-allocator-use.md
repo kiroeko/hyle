@@ -21,5 +21,23 @@
 - stop / blocker：若消除 warning 必须改变 coroutine allocator 签名或运行语义，退回 `AUDITED` 重新裁决；
   不以放宽 `unused-parameter` 结束本轮。
 
-当前状态为 `SCOPED`。[旧 v1 terminal record](io-websocket-v1-rfc6455.md) 保持历史事实，本卡只处理
-上述可复现源码交付缺陷。
+## 审计与有限改动集
+
+`sched::Task` 的 promise 通过 `PromiseAllocBase::operator new(size_t, AllocatorRef, ...)` 从 coroutine
+函数的第一个参数取得 frame allocator；因此不能删除、改型或绕过该参数。GCC 14 已在生成的 frame
+allocation 中使用它，却不把这种隐式使用计入 `-Wunused-parameter`。两个失败函数的 body 都会把后续
+异步子任务的 allocation failure 转为 typed `Status`，问题仅是源码交付 warning。
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| `W02-01` | `read_exact` / `write_frame` 的 frame allocator 被 GCC 判为 body-unused | 在两个私有 body 中加入显式、可优化掉的 `(void)allocator`；不改签名或调用 | GCC WERROR 编译通过；优化代码、API/layout/状态机不变 |
+
+明确拒绝全局关闭 `unused-parameter`、修改 coverage 工具规避本组件、删除 allocator 参数或改用默认 heap。
+公开 C++ API、ownership、failure、并发、teardown、默认值和 source/static/shared component 名称全部沿用 v1。
+P0 账单没有新增 allocation、copy、atomic、lock、syscall 或常驻 metadata；不适用新的 P1。
+
+七问差量：第三方路径、功能范围、下层复用、Native FFI、交付拓扑和 guide 均不变；唯一失败的是 GCC
+源码/WERROR 交付。修复只表达现有 coroutine allocator 合同，不产生 benchmark 入口或消费者迁移。
+
+当前状态为 `AUDITED`。[旧 v1 terminal record](io-websocket-v1-rfc6455.md) 保持历史事实，本卡只允许
+`W02-01`。
