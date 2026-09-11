@@ -94,3 +94,18 @@ TEST(FiberGuard, MoveFiberKeepsStack) {
   EXPECT_TRUE(f2.done());
   EXPECT_EQ(v, 100);
 }
+
+TEST(FiberGuard, MoveAssignmentTransfersAnUnstartedStack) {
+  int value = 0;
+  Fiber source(kDefaultStackSize, &mark_entry, &value);
+  Fiber holder = std::move(source);
+
+  source = std::move(holder);
+  EXPECT_TRUE(source.has_stack_guard());
+  EXPECT_EQ(holder.stack_size(), 0u);
+
+  source.resume();
+  source.resume();
+  EXPECT_TRUE(source.done());
+  EXPECT_EQ(value, 100);
+}

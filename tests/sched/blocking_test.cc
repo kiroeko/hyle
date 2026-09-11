@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <limits>
 #include <thread>
 #include <vector>
 
@@ -23,16 +24,21 @@ using hyle::sched::spawn_blocking;
 
 namespace {
 struct AllocationCounts {
+  std::atomic<std::size_t> attempts{0};
   std::atomic<std::size_t> allocations{0};
   std::atomic<std::size_t> frees{0};
+  std::size_t fail_on = (std::numeric_limits<std::size_t>::max)();
 };
 
 void* counting_alloc(void* raw, std::size_t size,
                      std::size_t alignment) noexcept {
+  auto* counts = static_cast<AllocationCounts*>(raw);
+  const std::size_t attempt =
+      counts->attempts.fetch_add(1, std::memory_order_relaxed);
+  if (attempt == counts->fail_on) return nullptr;
   void* pointer = system_allocator().allocate(size, alignment);
   if (pointer != nullptr) {
-    static_cast<AllocationCounts*>(raw)->allocations.fetch_add(
-        1, std::memory_order_relaxed);
+    counts->allocations.fetch_add(1, std::memory_order_relaxed);
   }
   return pointer;
 }
@@ -79,6 +85,19 @@ TEST(Blocking, RecoverableConstructionRejectsInvalidOrMissingResources) {
   BlockingPool no_metadata(failing, 1, std::chrono::seconds(1), &status);
   EXPECT_TRUE(status.IsResourceExhausted());
   EXPECT_FALSE(no_metadata.valid());
+}
+
+TEST(Blocking, RecoverableConstructionRollsBackBookkeepingOom) {
+  AllocationCounts counts;
+  counts.fail_on = 1;  // implementation succeeds; bounded handle reserve fails
+  AllocatorRef allocator(&counting_alloc, &counting_free, &counting_realloc,
+                         &counts);
+  hyle::Status status;
+  BlockingPool pool(allocator, 2, std::chrono::seconds(1), &status);
+  EXPECT_FALSE(pool.valid());
+  EXPECT_TRUE(status.IsResourceExhausted());
+  EXPECT_EQ(counts.allocations.load(std::memory_order_relaxed),
+            counts.frees.load(std::memory_order_relaxed));
 }
 
 TEST(Blocking, InjectedAllocatorOwnsPoolBookkeepingAndJobs) {
@@ -142,6 +161,42 @@ TEST(Blocking, AllocationFailureBecomesResourceExhausted) {
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsResourceExhausted());
   pool.shutdown();
+}
+
+TEST(Blocking, SubmissionValidationAndEveryOwnershipFailureAreTyped) {
+  BlockingPool pool(system_allocator(), 1);
+  auto invalid_allocator =
+      spawn_blocking(pool, AllocatorRef{}, [] { return 1; });
+  auto invalid_result = invalid_allocator.join();
+  ASSERT_FALSE(invalid_result.has_value());
+  EXPECT_TRUE(invalid_result.error().IsInvalidArgument());
+
+  AllocationCounts job_oom;
+  job_oom.fail_on = 1;  // JoinState succeeds; job allocation fails.
+  AllocatorRef failing_job(&counting_alloc, &counting_free, &counting_realloc,
+                           &job_oom);
+  auto exhausted = spawn_blocking(pool, failing_job, [] { return 2; });
+  auto exhausted_result = exhausted.join();
+  ASSERT_FALSE(exhausted_result.has_value());
+  EXPECT_TRUE(exhausted_result.error().IsResourceExhausted());
+  EXPECT_EQ(job_oom.allocations.load(std::memory_order_relaxed),
+            job_oom.frees.load(std::memory_order_relaxed));
+
+  pool.shutdown();
+  AllocationCounts rejected_counts;
+  AllocatorRef rejected_allocator(&counting_alloc, &counting_free,
+                                  &counting_realloc, &rejected_counts);
+  std::atomic<bool> ran{false};
+  auto rejected = spawn_blocking(pool, rejected_allocator, [&] {
+    ran.store(true, std::memory_order_release);
+    return 3;
+  });
+  auto rejected_result = rejected.join();
+  ASSERT_FALSE(rejected_result.has_value());
+  EXPECT_TRUE(rejected_result.error().IsCancelled());
+  EXPECT_FALSE(ran.load(std::memory_order_acquire));
+  EXPECT_EQ(rejected_counts.allocations.load(std::memory_order_relaxed),
+            rejected_counts.frees.load(std::memory_order_relaxed));
 }
 
 // THE core value: a fiber offloads a BLOCKING call and the worker stays free. One
@@ -252,6 +307,10 @@ TEST(Blocking, ShutdownCancelsQueued) {
   std::vector<JoinHandle<int>> queued;
   for (int i = 0; i < 5; ++i)
     queued.push_back(spawn_blocking(pool, system_allocator(), [] { return 2; }));
+  std::atomic<bool> void_ran{false};
+  auto queued_void = spawn_blocking(pool, system_allocator(), [&] {
+    void_ran.store(true, std::memory_order_release);
+  });
   std::this_thread::sleep_for(std::chrono::milliseconds(5));  // ensure they're queued
   pool.shutdown();  // busy finishes; queued (unstarted) get cancelled
   auto rb = busy.join();
@@ -262,6 +321,10 @@ TEST(Blocking, ShutdownCancelsQueued) {
     if (!r.has_value() && r.error().IsCancelled()) ++cancelled;
   }
   EXPECT_GT(cancelled, 0);  // at least some queued tasks were cancelled
+  auto void_result = queued_void.join();
+  ASSERT_FALSE(void_result.has_value());
+  EXPECT_TRUE(void_result.error().IsCancelled());
+  EXPECT_FALSE(void_ran.load(std::memory_order_acquire));
 }
 
 TEST(Blocking, ConcurrentShutdownCallsAreCompletionBarriers) {
@@ -308,6 +371,31 @@ TEST(Blocking, CancelRequestSkipsQueuedClosureBeforeItStarts) {
     std::this_thread::yield();
   auto queued = spawn_blocking(pool, system_allocator(), [&] {
     queued_ran.store(true, std::memory_order_release);
+  });
+  queued.request_cancel();
+  release_busy.store(true, std::memory_order_release);
+  EXPECT_TRUE(busy.join().has_value());
+  auto result = queued.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsCancelled());
+  EXPECT_FALSE(queued_ran.load(std::memory_order_acquire));
+}
+
+TEST(Blocking, CancelRequestSkipsQueuedValueClosureBeforeItStarts) {
+  BlockingPool pool(system_allocator(), 1);
+  std::atomic<bool> busy_started{false};
+  std::atomic<bool> release_busy{false};
+  std::atomic<bool> queued_ran{false};
+  auto busy = spawn_blocking(pool, system_allocator(), [&] {
+    busy_started.store(true, std::memory_order_release);
+    while (!release_busy.load(std::memory_order_acquire))
+      std::this_thread::yield();
+  });
+  while (!busy_started.load(std::memory_order_acquire))
+    std::this_thread::yield();
+  auto queued = spawn_blocking(pool, system_allocator(), [&] {
+    queued_ran.store(true, std::memory_order_release);
+    return 7;
   });
   queued.request_cancel();
   release_busy.store(true, std::memory_order_release);

@@ -25,6 +25,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_ROOT = SCRIPT_DIR.parent
 REGISTRY = "docs/implementation/module-status.json"
 INVENTORY_SCRIPT = SCRIPT_DIR / "correctness-inventory.py"
+GCC14_CXX_COVERAGE_FLAGS = (
+    "--coverage -fprofile-abs-path -O0 -g "
+    "-Wno-error=mismatched-new-delete"
+)
 
 
 class CoverageError(RuntimeError):
@@ -405,7 +409,12 @@ def run_coverage(args, root: Path, factors: list[str]) -> dict:
         "-DHYLE_INSTALL=OFF",
         "-DHYLE_WERROR=ON",
         "-DCMAKE_C_FLAGS=" + coverage_flags,
-        "-DCMAKE_CXX_FLAGS=" + coverage_flags,
+        # GCC PR 109224 is a GCC 14 false positive for the idiomatic templated
+        # coroutine allocation function paired with the usual sized delete.
+        # Keep the warning visible, but do not let this discovery-only profile
+        # turn it into an unrelated build failure. All other warnings remain
+        # errors, and ordinary shipping builds retain their full WERROR gate.
+        "-DCMAKE_CXX_FLAGS=" + GCC14_CXX_COVERAGE_FLAGS,
         "-DCMAKE_EXE_LINKER_FLAGS=--coverage",
         "-DCMAKE_SHARED_LINKER_FLAGS=--coverage",
     ]

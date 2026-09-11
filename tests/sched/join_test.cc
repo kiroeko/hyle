@@ -394,6 +394,68 @@ TEST(Join, ScheduledTaskFailureAndClosedAdmissionAreStructured) {
   scheduler.shutdown();
 }
 
+TEST(Join, ScheduledTaskValidationErrorsAreTypedForVoidAndValue) {
+  hyle::Status construction;
+  Scheduler invalid(0, system_allocator(), 64, &construction);
+  ASSERT_FALSE(invalid.valid());
+  auto invalid_scheduler =
+      schedule_task(invalid, system_allocator(), []() noexcept {});
+  auto invalid_scheduler_result = invalid_scheduler.join();
+  ASSERT_FALSE(invalid_scheduler_result.has_value());
+  EXPECT_TRUE(invalid_scheduler_result.error().IsInvalidArgument());
+
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto invalid_priority = schedule_task(
+      scheduler, system_allocator(), []() noexcept { return 1; },
+      hyle::sched::ExecutionOptions{
+          static_cast<hyle::sched::ExecutionPriority>(255)});
+  auto invalid_priority_result = invalid_priority.join();
+  ASSERT_FALSE(invalid_priority_result.has_value());
+  EXPECT_TRUE(invalid_priority_result.error().IsInvalidArgument());
+
+  auto unsupported_priority = schedule_task(
+      scheduler, system_allocator(), []() noexcept { return 2; },
+      hyle::sched::ExecutionOptions{hyle::sched::ExecutionPriority::kHigh});
+  auto unsupported_priority_result = unsupported_priority.join();
+  ASSERT_FALSE(unsupported_priority_result.has_value());
+  EXPECT_TRUE(unsupported_priority_result.error().IsInvalidArgument());
+
+  auto invalid_allocator =
+      schedule_task(scheduler, AllocatorRef{}, []() noexcept { return 3; });
+  auto invalid_allocator_result = invalid_allocator.join();
+  ASSERT_FALSE(invalid_allocator_result.has_value());
+  EXPECT_TRUE(invalid_allocator_result.error().IsInvalidArgument());
+  scheduler.shutdown();
+}
+
+TEST(Join, ScheduledVoidTaskCancelledBeforeStartNeverRuns) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  std::atomic<bool> blocker_started{false};
+  std::atomic<bool> release_blocker{false};
+  ASSERT_TRUE(
+      scheduler
+          .schedule([&]() noexcept {
+            blocker_started.store(true, std::memory_order_release);
+            while (!release_blocker.load(std::memory_order_acquire))
+              std::this_thread::yield();
+          })
+          .ok());
+  while (!blocker_started.load(std::memory_order_acquire))
+    std::this_thread::yield();
+
+  std::atomic<bool> ran{false};
+  auto handle = schedule_task(scheduler, system_allocator(), [&]() noexcept {
+    ran.store(true, std::memory_order_release);
+  });
+  handle.request_cancel();
+  release_blocker.store(true, std::memory_order_release);
+  auto result = handle.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsCancelled());
+  EXPECT_FALSE(ran.load(std::memory_order_acquire));
+  scheduler.shutdown();
+}
+
 TEST(Join, ScheduledTaskSupportsDynamicTypedFanout) {
   constexpr int kTasks = 64;
   Scheduler scheduler(4, system_allocator(), 256);

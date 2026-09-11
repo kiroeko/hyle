@@ -713,6 +713,13 @@ TEST(TaskScope, AdmittedChildMayAddADescendantBeforeClose) {
 }
 
 TEST(TaskScope, CreationAndPreAdmissionFailuresAreTyped) {
+  hyle::Status invalid_scheduler_status;
+  Scheduler invalid_scheduler(0, system_allocator(), 64,
+                              &invalid_scheduler_status);
+  auto invalid_scope = TaskScope::create(invalid_scheduler, system_allocator());
+  ASSERT_FALSE(invalid_scope.has_value());
+  EXPECT_TRUE(invalid_scope.error().IsInvalidArgument());
+
   Scheduler scheduler(1, system_allocator(), 64);
   auto no_allocator = TaskScope::create(scheduler, AllocatorRef{});
   ASSERT_FALSE(no_allocator.has_value());
@@ -722,9 +729,62 @@ TEST(TaskScope, CreationAndPreAdmissionFailuresAreTyped) {
   ASSERT_FALSE(no_cancel_tree.has_value());
   EXPECT_TRUE(no_cancel_tree.error().IsResourceExhausted());
 
+  auto invalid_priority = TaskScope::create(
+      scheduler, system_allocator(),
+      hyle::sched::TaskScopeOptions{
+          static_cast<hyle::sched::ExecutionPriority>(255)});
+  ASSERT_FALSE(invalid_priority.has_value());
+  EXPECT_TRUE(invalid_priority.error().IsInvalidArgument());
+  auto unsupported_priority = TaskScope::create(
+      scheduler, system_allocator(),
+      hyle::sched::TaskScopeOptions{hyle::sched::ExecutionPriority::kHigh});
+  ASSERT_FALSE(unsupported_priority.has_value());
+  EXPECT_TRUE(unsupported_priority.error().IsInvalidArgument());
+
   auto created = TaskScope::create(scheduler, system_allocator());
   ASSERT_TRUE(created.has_value());
   TaskScope scope = *std::move(created);
+
+  auto small_stack = scope.spawn(
+      value_task(system_allocator(), 1),
+      hyle::sched::FiberLaunchOptions{std::nullopt, 1});
+  auto small_stack_result = small_stack.join();
+  ASSERT_FALSE(small_stack_result.has_value());
+  EXPECT_TRUE(small_stack_result.error().IsInvalidArgument());
+  auto invalid_spawn_priority = scope.spawn(
+      value_task(system_allocator(), 2),
+      hyle::sched::FiberLaunchOptions{
+          static_cast<hyle::sched::ExecutionPriority>(255),
+          hyle::sched::kDefaultStackSize});
+  auto invalid_spawn_priority_result = invalid_spawn_priority.join();
+  ASSERT_FALSE(invalid_spawn_priority_result.has_value());
+  EXPECT_TRUE(invalid_spawn_priority_result.error().IsInvalidArgument());
+  auto unsupported_spawn_priority = scope.spawn(
+      value_task(system_allocator(), 3),
+      hyle::sched::FiberLaunchOptions{hyle::sched::ExecutionPriority::kHigh,
+                                     hyle::sched::kDefaultStackSize});
+  auto unsupported_spawn_priority_result = unsupported_spawn_priority.join();
+  ASSERT_FALSE(unsupported_spawn_priority_result.has_value());
+  EXPECT_TRUE(unsupported_spawn_priority_result.error().IsInvalidArgument());
+
+  EXPECT_TRUE(scope
+                  .add(status_task(system_allocator(), Status{}),
+                       hyle::sched::FiberLaunchOptions{std::nullopt, 1})
+                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      scope
+          .add(status_task(system_allocator(), Status{}),
+               hyle::sched::FiberLaunchOptions{
+                   static_cast<hyle::sched::ExecutionPriority>(255),
+                   hyle::sched::kDefaultStackSize})
+          .IsInvalidArgument());
+  EXPECT_TRUE(
+      scope
+          .add(status_task(system_allocator(), Status{}),
+               hyle::sched::FiberLaunchOptions{
+                   hyle::sched::ExecutionPriority::kHigh,
+                   hyle::sched::kDefaultStackSize})
+          .IsInvalidArgument());
   auto no_frame = scope.spawn(value_task(failing_allocator(), 42));
   auto frame_result = no_frame.join();
   ASSERT_FALSE(frame_result.has_value());
@@ -821,12 +881,15 @@ TEST(TaskScope, WorkerQueueSaturationIsAggregatedAndDoesNotLeakCount) {
   scheduler.shutdown();
 }
 
-TEST(TaskScope, MoveTransfersOwnerAndMovedFromCallsAreTyped) {
+TEST(TaskScope, MoveConstructionAndAssignmentTransferTheOnlyOwner) {
   Scheduler scheduler(1, system_allocator(), 64);
   auto created = TaskScope::create(scheduler, system_allocator());
   ASSERT_TRUE(created.has_value());
   TaskScope source = *std::move(created);
-  TaskScope destination = std::move(source);
+  auto destination_result = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(destination_result.has_value());
+  TaskScope destination = *std::move(destination_result);
+  destination = std::move(source);
   EXPECT_FALSE(source.valid());
   EXPECT_TRUE(destination.valid());
   EXPECT_FALSE(source.cancellation_token().valid());

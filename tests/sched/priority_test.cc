@@ -236,6 +236,16 @@ Task<void> record_task_priority(AllocatorRef, TaskPriorityRecord* record) {
   co_return;
 }
 
+Task<hyle::Status> record_status_task_priority(
+    AllocatorRef, TaskPriorityRecord* record) {
+  record->first.store(static_cast<int>(current_execution_priority()),
+                      std::memory_order_release);
+  Fiber::yield();
+  record->second.store(static_cast<int>(current_execution_priority()),
+                       std::memory_order_release);
+  co_return hyle::Status{};
+}
+
 Task<int> return_task_priority(AllocatorRef) {
   Fiber::yield();
   co_return static_cast<int>(current_execution_priority());
@@ -318,6 +328,23 @@ TEST(SchedulerPriority, DefaultModeRejectsExplicitNonNormalPriority) {
           .schedule(&no_op, nullptr,
                     ExecutionOptions{static_cast<ExecutionPriority>(255)})
           .IsInvalidArgument());
+
+  Fiber fiber(hyle::sched::kDefaultStackSize, &no_op, nullptr);
+  EXPECT_TRUE(
+      scheduler.spawn_on(0, nullptr, ExecutionOptions{}).IsInvalidArgument());
+  EXPECT_TRUE(
+      scheduler.spawn_on(1, &fiber, ExecutionOptions{}).IsInvalidArgument());
+  EXPECT_TRUE(
+      scheduler
+          .spawn_on(0, &fiber,
+                    ExecutionOptions{static_cast<ExecutionPriority>(255)})
+          .IsInvalidArgument());
+  EXPECT_TRUE(
+      scheduler
+          .spawn_on(0, &fiber, ExecutionOptions{ExecutionPriority::kHigh})
+          .IsInvalidArgument());
+  ASSERT_TRUE(scheduler.spawn(&fiber));
+  scheduler.drain();
   scheduler.shutdown();
 }
 
@@ -586,6 +613,26 @@ TEST(SchedulerPriority, PinnedPlacementAndPriorityAreOrthogonal) {
   scheduler.drain();
   EXPECT_EQ(record.worker.load(), 1);
   EXPECT_EQ(record.priority.load(), static_cast<int>(ExecutionPriority::kHigh));
+
+  PinnedRecord raw_record;
+  Fiber raw(hyle::sched::kDefaultStackSize, &record_pinned, &raw_record);
+  ASSERT_TRUE(
+      scheduler
+          .spawn_on(1, &raw, ExecutionOptions{ExecutionPriority::kLow})
+          .ok());
+  scheduler.drain();
+  EXPECT_EQ(raw_record.worker.load(), 1);
+  EXPECT_EQ(raw_record.priority.load(),
+            static_cast<int>(ExecutionPriority::kLow));
+
+  auto typed = hyle::sched::spawn_task_on(
+      scheduler, 1, system_allocator(),
+      return_task_priority(system_allocator()),
+      FiberLaunchOptions{ExecutionPriority::kHigh,
+                         hyle::sched::kDefaultStackSize});
+  auto typed_result = typed.join();
+  ASSERT_TRUE(typed_result.has_value());
+  EXPECT_EQ(*typed_result, static_cast<int>(ExecutionPriority::kHigh));
   scheduler.shutdown();
 }
 
@@ -599,6 +646,7 @@ TEST(SchedulerPriority, TaskScopeDefaultAndPerChildOverridePersistAcrossYield) {
   TaskPriorityRecord overridden;
   TaskPriorityRecord added_inherited;
   TaskPriorityRecord added_overridden;
+  TaskPriorityRecord added_status_overridden;
   auto high = scope.spawn(record_task_priority(system_allocator(), &inherited));
   auto low = scope.spawn(record_task_priority(system_allocator(), &overridden),
                          FiberLaunchOptions{ExecutionPriority::kLow,
@@ -612,6 +660,13 @@ TEST(SchedulerPriority, TaskScopeDefaultAndPerChildOverridePersistAcrossYield) {
                FiberLaunchOptions{ExecutionPriority::kLow,
                                   hyle::sched::kDefaultStackSize})
           .ok());
+  ASSERT_TRUE(
+      scope
+          .add(record_status_task_priority(system_allocator(),
+                                           &added_status_overridden),
+               FiberLaunchOptions{ExecutionPriority::kLow,
+                                  hyle::sched::kDefaultStackSize})
+          .ok());
   EXPECT_TRUE(scope.join().ok());
   EXPECT_TRUE(high.join().has_value());
   EXPECT_TRUE(low.join().has_value());
@@ -622,7 +677,8 @@ TEST(SchedulerPriority, TaskScopeDefaultAndPerChildOverridePersistAcrossYield) {
   }
   for (std::atomic<int>* value :
        {&overridden.first, &overridden.second, &added_overridden.first,
-        &added_overridden.second}) {
+        &added_overridden.second, &added_status_overridden.first,
+        &added_status_overridden.second}) {
     EXPECT_EQ(value->load(), static_cast<int>(ExecutionPriority::kLow));
   }
   scheduler.shutdown();

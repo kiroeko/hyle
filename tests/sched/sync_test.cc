@@ -2,6 +2,8 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <thread>
@@ -55,6 +57,43 @@ struct ThrowOnCopy {
   int value;
 };
 
+struct FailNthAllocation {
+  std::size_t attempts = 0;
+  std::size_t allocations = 0;
+  std::size_t frees = 0;
+  std::size_t fail_on = (std::numeric_limits<std::size_t>::max)();
+};
+
+void *fail_nth_alloc(void *raw, std::size_t size,
+                     std::size_t alignment) noexcept {
+  auto *state = static_cast<FailNthAllocation *>(raw);
+  if (state->attempts++ == state->fail_on)
+    return nullptr;
+  void *pointer = system_allocator().allocate(size, alignment);
+  if (pointer != nullptr)
+    ++state->allocations;
+  return pointer;
+}
+
+void fail_nth_free(void *raw, void *pointer, std::size_t size,
+                   std::size_t alignment) noexcept {
+  auto *state = static_cast<FailNthAllocation *>(raw);
+  if (pointer != nullptr)
+    ++state->frees;
+  system_allocator().deallocate(pointer, size, alignment);
+}
+
+void *fail_nth_realloc(void *, void *pointer, std::size_t old_size,
+                       std::size_t new_size,
+                       std::size_t alignment) noexcept {
+  return system_allocator().reallocate(pointer, old_size, new_size, alignment);
+}
+
+hyle::mem::AllocatorRef fail_nth_allocator(FailNthAllocation *state) noexcept {
+  return hyle::mem::AllocatorRef(&fail_nth_alloc, &fail_nth_free,
+                                 &fail_nth_realloc, state);
+}
+
 TEST(Sync, AllocationFailuresAreRecoverable) {
   hyle::mem::AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
   hyle::Status channel_status;
@@ -75,6 +114,59 @@ TEST(Sync, AllocationFailuresAreRecoverable) {
   Channel<int> invalid(system_allocator(), 0, &invalid_capacity);
   EXPECT_FALSE(invalid.valid());
   EXPECT_TRUE(invalid_capacity.IsInvalidArgument());
+}
+
+TEST(Sync, InvalidAllocatorsAndOversizedMessageRingsAreRejected) {
+  hyle::Status status;
+  Channel<int> no_allocator(hyle::mem::AllocatorRef{}, 4, &status);
+  EXPECT_FALSE(no_allocator.valid());
+  EXPECT_TRUE(status.IsInvalidArgument());
+  auto no_oneshot =
+      hyle::sched::try_make_oneshot<int>(hyle::mem::AllocatorRef{});
+  ASSERT_FALSE(no_oneshot.has_value());
+  EXPECT_TRUE(no_oneshot.error().IsInvalidArgument());
+  auto no_watch =
+      hyle::sched::try_make_watch<int>(hyle::mem::AllocatorRef{}, 1);
+  ASSERT_FALSE(no_watch.has_value());
+  EXPECT_TRUE(no_watch.error().IsInvalidArgument());
+  auto no_broadcast =
+      hyle::sched::try_make_broadcast<int>(hyle::mem::AllocatorRef{}, 1);
+  ASSERT_FALSE(no_broadcast.has_value());
+  EXPECT_TRUE(no_broadcast.error().IsInvalidArgument());
+
+  auto invalid_try_send = no_allocator.try_send(1);
+  ASSERT_FALSE(invalid_try_send.has_value());
+  EXPECT_EQ(invalid_try_send.error().reason(), ChannelSendFailure::kInvalid);
+  auto invalid_send_for = no_allocator.send_for(2, hyle::time::Duration::zero());
+  ASSERT_FALSE(invalid_send_for.has_value());
+  EXPECT_EQ(invalid_send_for.error().reason(), ChannelSendFailure::kInvalid);
+  EXPECT_FALSE(no_allocator.try_recv().has_value());
+  EXPECT_FALSE(
+      no_allocator.recv_for(hyle::time::Duration::zero()).has_value());
+  no_allocator.close();
+
+  constexpr std::size_t kTooManyWords =
+      (std::numeric_limits<std::size_t>::max)() / sizeof(std::uint64_t) + 1;
+  Channel<std::uint64_t> oversized(system_allocator(), kTooManyWords, &status);
+  EXPECT_FALSE(oversized.valid());
+  EXPECT_TRUE(status.IsInvalidArgument());
+  auto broadcast =
+      hyle::sched::try_make_broadcast<std::uint64_t>(system_allocator(),
+                                                     kTooManyWords);
+  ASSERT_FALSE(broadcast.has_value());
+  EXPECT_TRUE(broadcast.error().IsInvalidArgument());
+}
+
+TEST(Sync, BroadcastConstructionRollsBackEveryPartialAllocation) {
+  for (std::size_t fail_on : {1u, 2u}) {
+    FailNthAllocation state;
+    state.fail_on = fail_on;
+    auto result =
+        hyle::sched::try_make_broadcast<int>(fail_nth_allocator(&state), 8);
+    ASSERT_FALSE(result.has_value()) << fail_on;
+    EXPECT_TRUE(result.error().IsResourceExhausted()) << fail_on;
+    EXPECT_EQ(state.allocations, state.frees) << fail_on;
+  }
 }
 
 // Spawn `bodies.size()` fibers on a `workers`-wide scheduler and block until
@@ -388,6 +480,20 @@ TEST(Sync, ChannelTryAndTimedPathsDistinguishFullEmptyAndClosed) {
   EXPECT_EQ(closed_send.error().reason(), ChannelSendFailure::kClosed);
   EXPECT_EQ(closed_send.error().value(), 10);
   EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kClosed);
+
+  Ch timed(system_allocator(), 2);
+  EXPECT_TRUE(timed.send_for(11, hyle::time::Duration::zero()).has_value());
+  auto natural = timed.recv_for(hyle::time::Duration::zero());
+  ASSERT_TRUE(natural.has_value());
+  EXPECT_EQ(*natural, 11);
+  EXPECT_TRUE(timed.send_for(12, hyle::time::Duration::zero()).has_value());
+  EXPECT_EQ(timed.recv_for(out, hyle::time::Duration::zero()),
+            Ch::RecvStatus::kValue);
+  EXPECT_EQ(out, 12);
+  timed.close();
+  auto timed_closed = timed.send_for(13, hyle::time::Duration::zero());
+  ASSERT_FALSE(timed_closed.has_value());
+  EXPECT_EQ(timed_closed.error().reason(), ChannelSendFailure::kClosed);
 }
 
 TEST(Sync, ChannelNaturalReceiveReturnsTypedErrorsAndMoveOnlyValue) {
@@ -413,6 +519,89 @@ TEST(Sync, ChannelNaturalReceiveReturnsTypedErrorsAndMoveOnlyValue) {
   auto closed = ch.recv();
   ASSERT_FALSE(closed.has_value());
   EXPECT_TRUE(closed.error().IsCancelled());
+}
+
+namespace {
+struct ChannelCloseProbe {
+  Channel<int> *channel = nullptr;
+  std::atomic<bool> entered{false};
+  std::atomic<int> outcome{-1};
+  std::atomic<int> returned_value{-1};
+};
+
+void blocked_channel_sender(void *raw) noexcept {
+  auto *probe = static_cast<ChannelCloseProbe *>(raw);
+  probe->entered.store(true, std::memory_order_release);
+  auto result = probe->channel->send(42);
+  if (!result) {
+    probe->outcome.store(static_cast<int>(result.error().reason()),
+                         std::memory_order_release);
+    probe->returned_value.store(result.error().value(),
+                                std::memory_order_release);
+  }
+}
+
+void blocked_channel_receiver(void *raw) noexcept {
+  auto *probe = static_cast<ChannelCloseProbe *>(raw);
+  probe->entered.store(true, std::memory_order_release);
+  auto result = probe->channel->recv();
+  probe->outcome.store(
+      result ? 0 : static_cast<int>(result.error().code()),
+      std::memory_order_release);
+}
+
+struct BufferedValue {
+  explicit BufferedValue(std::atomic<int> *destroyed) noexcept
+      : destroyed(destroyed) {}
+  BufferedValue(BufferedValue &&other) noexcept
+      : destroyed(std::exchange(other.destroyed, nullptr)) {}
+  BufferedValue &operator=(BufferedValue &&) = delete;
+  BufferedValue(const BufferedValue &) = delete;
+  BufferedValue &operator=(const BufferedValue &) = delete;
+  ~BufferedValue() {
+    if (destroyed != nullptr)
+      destroyed->fetch_add(1, std::memory_order_relaxed);
+  }
+  std::atomic<int> *destroyed;
+};
+} // namespace
+
+TEST(Sync, ChannelCloseWakesBlockedSenderAndReceiver) {
+  Channel<int> full(system_allocator(), 1);
+  ASSERT_TRUE(full.send(1).has_value());
+  Channel<int> empty(system_allocator(), 1);
+  ChannelCloseProbe sender{&full};
+  ChannelCloseProbe receiver{&empty};
+  Fiber send_fiber(kDefaultStackSize, &blocked_channel_sender, &sender);
+  Fiber recv_fiber(kDefaultStackSize, &blocked_channel_receiver, &receiver);
+  Scheduler scheduler(1, system_allocator(), 16);
+  ASSERT_TRUE(scheduler.spawn(&send_fiber));
+  ASSERT_TRUE(scheduler.spawn(&recv_fiber));
+  while (!sender.entered.load(std::memory_order_acquire) ||
+         !receiver.entered.load(std::memory_order_acquire)) {
+    std::this_thread::yield();
+  }
+
+  full.close();
+  empty.close();
+  EXPECT_TRUE(scheduler.drain_for(2s));
+  EXPECT_EQ(sender.outcome.load(std::memory_order_acquire),
+            static_cast<int>(ChannelSendFailure::kClosed));
+  EXPECT_EQ(sender.returned_value.load(std::memory_order_acquire), 42);
+  EXPECT_EQ(receiver.outcome.load(std::memory_order_acquire),
+            static_cast<int>(hyle::StatusCode::Cancelled));
+  scheduler.shutdown();
+}
+
+TEST(Sync, ChannelDestroysValuesStillBufferedAtTeardown) {
+  std::atomic<int> destroyed{0};
+  {
+    Channel<BufferedValue> channel(system_allocator(), 2);
+    EXPECT_TRUE(channel.try_send(BufferedValue(&destroyed)).has_value());
+    EXPECT_TRUE(channel.try_send(BufferedValue(&destroyed)).has_value());
+    EXPECT_EQ(destroyed.load(std::memory_order_relaxed), 0);
+  }
+  EXPECT_EQ(destroyed.load(std::memory_order_relaxed), 2);
 }
 
 namespace {
@@ -798,6 +987,27 @@ TEST(Sync, SemaphoreTryAcquireCounts) {
   EXPECT_TRUE(unavailable.error().IsUnavailable());
   s.release(3);
   EXPECT_EQ(s.available(), 3u);
+}
+
+TEST(Sync, WaitGroupAndSemaphoreRejectCounterOverflowAndUnderflow) {
+  WaitGroup empty;
+  EXPECT_FALSE(empty.try_done());
+  EXPECT_FALSE(empty.try_add(-1));
+
+  WaitGroup full((std::numeric_limits<long>::max)());
+  EXPECT_FALSE(full.try_add(1));
+
+  Semaphore semaphore((std::numeric_limits<std::size_t>::max)());
+  EXPECT_FALSE(semaphore.try_release(1));
+  EXPECT_EQ(semaphore.available(),
+            (std::numeric_limits<std::size_t>::max)());
+  EXPECT_TRUE(
+      semaphore.try_acquire((std::numeric_limits<std::size_t>::max)()));
+  EXPECT_EQ(semaphore.available(), 0u);
+
+  auto unavailable = semaphore.try_acquire_guard();
+  ASSERT_FALSE(unavailable.has_value());
+  EXPECT_TRUE(unavailable.error().IsUnavailable());
 }
 
 TEST(Sync, SemaphoreTimedAcquireSupportsImmediateSuccessAndTimeout) {
@@ -1325,6 +1535,73 @@ TEST(Sync, BroadcastTryRecvReportsEmptyLagAndClose) {
   auto closed = rx.try_recv();
   ASSERT_FALSE(closed.has_value());
   EXPECT_TRUE(closed.error().status().IsCancelled());
+}
+
+struct BroadcastCloseArg {
+  hyle::sched::BroadcastReceiver<int> rx;
+  std::atomic<bool> returned{false};
+  std::atomic<bool> cancelled{false};
+};
+
+void broadcast_close_body(void *p) noexcept {
+  auto *a = static_cast<BroadcastCloseArg *>(p);
+  auto result = a->rx.recv();
+  a->cancelled.store(!result.has_value() &&
+                         result.error().status().IsCancelled(),
+                     std::memory_order_release);
+  a->returned.store(true, std::memory_order_release);
+}
+
+TEST(Sync, BroadcastLastSenderDropWakesBlockedReceiver) {
+  auto [tx, rx] = make_broadcast<int>(system_allocator(), 2);
+  auto arg = std::make_unique<BroadcastCloseArg>();
+  arg->rx = std::move(rx);
+  auto fiber = std::make_unique<Fiber>(kDefaultStackSize, &broadcast_close_body,
+                                      arg.get());
+  Scheduler scheduler(1, system_allocator(), 64);
+  ASSERT_TRUE(scheduler.spawn(fiber.get()));
+  std::this_thread::sleep_for(10ms);
+  EXPECT_FALSE(arg->returned.load(std::memory_order_acquire));
+  tx = {};
+  scheduler.drain();
+  EXPECT_TRUE(arg->returned.load(std::memory_order_acquire));
+  EXPECT_TRUE(arg->cancelled.load(std::memory_order_acquire));
+  scheduler.shutdown();
+}
+
+TEST(Sync, MessagingStatesReleaseRetainedValuesOnLastHandle) {
+  std::weak_ptr<int> oneshot_value;
+  {
+    auto [tx, rx] = make_oneshot<std::shared_ptr<int>>(system_allocator());
+    auto value = std::make_shared<int>(1);
+    oneshot_value = value;
+    ASSERT_TRUE(tx.send(value).has_value());
+    value.reset();
+    EXPECT_FALSE(oneshot_value.expired());
+  }
+  EXPECT_TRUE(oneshot_value.expired());
+
+  std::weak_ptr<int> watch_value;
+  {
+    auto value = std::make_shared<int>(2);
+    watch_value = value;
+    auto handles =
+        make_watch<std::shared_ptr<int>>(system_allocator(), std::move(value));
+    EXPECT_FALSE(watch_value.expired());
+  }
+  EXPECT_TRUE(watch_value.expired());
+
+  std::weak_ptr<int> broadcast_value;
+  {
+    auto [tx, rx] =
+        make_broadcast<std::shared_ptr<int>>(system_allocator(), 2);
+    auto value = std::make_shared<int>(3);
+    broadcast_value = value;
+    tx.send(value);
+    value.reset();
+    EXPECT_FALSE(broadcast_value.expired());
+  }
+  EXPECT_TRUE(broadcast_value.expired());
 }
 
 TEST(Sync, MessagingCopyFailureDoesNotStrandMonitor) {

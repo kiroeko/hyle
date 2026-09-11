@@ -21,6 +21,8 @@ def load_tool():
 
 def main() -> None:
     tool = load_tool()
+    if "-Wno-error=mismatched-new-delete" not in tool.GCC14_CXX_COVERAGE_FLAGS:
+        raise AssertionError("GCC 14 coroutine coverage workaround drifted")
     root = Path("/repo")
     payloads = [{
         "current_working_directory": "/build",

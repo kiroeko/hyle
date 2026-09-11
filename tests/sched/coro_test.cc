@@ -25,6 +25,8 @@ namespace {
 // A Task coroutine: FIRST param must be the allocator (frame allocated from it).
 Task<int> add_coro(AllocatorRef, int a, int b) { co_return a + b; }
 
+Task<void> no_op_coro(AllocatorRef) { co_return; }
+
 // A coroutine that suspends its fiber once (via co_await), then returns. The
 // Waker it captures is published so a foreign thread can wake it.
 struct WaitBox {
@@ -76,6 +78,21 @@ TEST(Coro, TaskReturnsValueFrameFromAllocator) {
   }
   EXPECT_TRUE(d->finished.load());
   EXPECT_EQ(d->result.load(), 42);
+}
+
+TEST(Coro, VoidTaskEmptyMoveAndCompletionLifecycleIsExplicit) {
+  Task<void> task;
+  EXPECT_FALSE(task.valid());
+  EXPECT_TRUE(task.done());
+
+  Task<void> pending = no_op_coro(system_allocator());
+  EXPECT_TRUE(pending.valid());
+  EXPECT_FALSE(pending.done());
+  task = std::move(pending);
+  EXPECT_FALSE(pending.valid());
+  task.resume();
+  EXPECT_TRUE(task.done());
+  task.result();
 }
 
 // The core sched-06 claim: co_await inside a coroutine suspends the FIBER; a

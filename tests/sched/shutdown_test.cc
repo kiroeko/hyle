@@ -9,6 +9,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/time/clock.h"
 
 // sched-08 graceful shutdown: two-phase drain for long-lived (server) fibers that
 // never finish on their own. begin_shutdown() flips a flat "not accepting" flag +
@@ -297,5 +298,26 @@ TEST(Shutdown, DrainForTimesOutOnStuckFiber) {
 
   // Release it so teardown can finish (real code would abandon it at process exit).
   keep_going->store(false, std::memory_order_release);
+  sched.shutdown();
+}
+
+TEST(Shutdown, DrainUntilUsesAnAbsoluteMonotonicDeadline) {
+  Scheduler sched(1, system_allocator(), 64);
+  EXPECT_TRUE(sched.drain_until(hyle::time::MonotonicTimePoint{}));
+
+  std::atomic<bool> keep_going{true};
+  struct Context {
+    std::atomic<bool>* keep_going;
+  } context{&keep_going};
+  auto entry = +[](void* raw) noexcept {
+    auto* state = static_cast<Context*>(raw);
+    while (state->keep_going->load(std::memory_order_acquire)) Fiber::yield();
+  };
+  Fiber fiber(kDefaultStackSize, entry, &context);
+  ASSERT_TRUE(sched.spawn(&fiber));
+  EXPECT_FALSE(sched.drain_until(hyle::time::monotonic_now() + 20ms));
+
+  keep_going.store(false, std::memory_order_release);
+  EXPECT_TRUE(sched.drain_until(hyle::time::monotonic_now() + 2s));
   sched.shutdown();
 }

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <span>
 #include <thread>
@@ -52,6 +53,39 @@ struct WorkerHookProbe {
   std::atomic<unsigned> starts[4]{};
   std::atomic<unsigned> stops[4]{};
 };
+
+struct ToggleAllocatorState {
+  std::atomic<bool> fail{false};
+  std::atomic<std::size_t> allocations{0};
+  std::atomic<std::size_t> frees{0};
+};
+
+void* toggle_alloc(void* raw, std::size_t size,
+                   std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw);
+  if (state->fail.load(std::memory_order_acquire)) return nullptr;
+  void* pointer = system_allocator().allocate(size, alignment);
+  if (pointer != nullptr)
+    state->allocations.fetch_add(1, std::memory_order_relaxed);
+  return pointer;
+}
+
+void toggle_free(void* raw, void* pointer, std::size_t size,
+                 std::size_t alignment) noexcept {
+  if (pointer != nullptr) {
+    static_cast<ToggleAllocatorState*>(raw)->frees.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  system_allocator().deallocate(pointer, size, alignment);
+}
+
+void* toggle_realloc(void* raw, void* pointer, std::size_t old_size,
+                     std::size_t new_size,
+                     std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw);
+  if (state->fail.load(std::memory_order_acquire)) return nullptr;
+  return system_allocator().reallocate(pointer, old_size, new_size, alignment);
+}
 
 void worker_start_hook(void* raw, unsigned worker) noexcept {
   auto* probe = static_cast<WorkerHookProbe*>(raw);
@@ -303,6 +337,50 @@ TEST(Scheduler, OwningCallableConveniencesSupportMoveOnlyCaptures) {
   scheduler.drain();
   EXPECT_EQ(result.load(std::memory_order_relaxed), 31);
   EXPECT_EQ(observed_worker.load(std::memory_order_acquire), 1);
+}
+
+TEST(Scheduler, OwningCallableValidationOomAndRejectionReleaseState) {
+  hyle::Status construction;
+  Scheduler invalid(0, system_allocator(), 64, &construction);
+  EXPECT_TRUE(invalid.schedule([]() noexcept {}).IsInvalidArgument());
+
+  ToggleAllocatorState state;
+  hyle::mem::AllocatorRef allocator(&toggle_alloc, &toggle_free,
+                                    &toggle_realloc, &state);
+  Scheduler scheduler(1, allocator, 64);
+  EXPECT_EQ(scheduler.fiber_stack_pool(12345), nullptr);
+  EXPECT_TRUE(
+      scheduler.spawn_detached_on(1, []() noexcept {}).IsInvalidArgument());
+  EXPECT_TRUE(
+      scheduler
+          .schedule([]() noexcept {},
+                    hyle::sched::ExecutionOptions{
+                        static_cast<hyle::sched::ExecutionPriority>(255)})
+          .IsInvalidArgument());
+  EXPECT_TRUE(
+      scheduler
+          .schedule([]() noexcept {},
+                    hyle::sched::ExecutionOptions{
+                        hyle::sched::ExecutionPriority::kHigh})
+          .IsInvalidArgument());
+
+  state.fail.store(true, std::memory_order_release);
+  EXPECT_TRUE(scheduler.schedule([]() noexcept {}).IsResourceExhausted());
+  state.fail.store(false, std::memory_order_release);
+
+  std::size_t allocations = state.allocations.load(std::memory_order_relaxed);
+  std::size_t frees = state.frees.load(std::memory_order_relaxed);
+  EXPECT_TRUE(scheduler.spawn_detached([]() noexcept {}, 1).IsInvalidArgument());
+  EXPECT_EQ(state.allocations.load(std::memory_order_relaxed), allocations + 1);
+  EXPECT_EQ(state.frees.load(std::memory_order_relaxed), frees + 1);
+
+  scheduler.begin_shutdown();
+  allocations = state.allocations.load(std::memory_order_relaxed);
+  frees = state.frees.load(std::memory_order_relaxed);
+  EXPECT_TRUE(scheduler.schedule([]() noexcept {}).IsCancelled());
+  EXPECT_EQ(state.allocations.load(std::memory_order_relaxed), allocations + 1);
+  EXPECT_EQ(state.frees.load(std::memory_order_relaxed), frees + 1);
+  scheduler.shutdown();
 }
 
 TEST(Scheduler, InlineScheduleMultiProducerConservesEveryTask) {

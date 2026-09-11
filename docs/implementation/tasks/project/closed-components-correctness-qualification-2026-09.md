@@ -89,7 +89,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q03 | Wave A 语义矩阵与缺口测试 | 每个公开能力格为 PROVEN/NA 或诚实 UNPROVEN | `COMPLETE` |
 | Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
-| Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `QUEUED` |
+| Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `QUEUED` |
 | Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `QUEUED` |
@@ -143,6 +143,12 @@ source tree 与 gcov 版本，发现 54/110 executable lines、4/29 branches、6
 下一波逐能力语义回映要区分的仪器负空间。focused 聚合测试验证过滤第三方、跨 TU 合并、zero-hit range、
 function/branch 与 unobserved file 语义。
 
+Q06 首次覆盖 Sched 时，GCC 14.2 在 `-O0 --coverage` 对标准 coroutine allocator 形状触发了已知
+[GCC PR 109224](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109224)：templated placement-like
+`operator new(size_t, Args...)` 与 coroutine 实际要求的 usual sized delete 被误报为 mismatch。coverage
+profile 只把这一条 C++ warning 从 error 降为可见 warning；普通 WERROR/shipping build、其他 warning 和
+产品代码均不变。这样既不伪修 promise allocation，也不让 discovery 仪器阻塞合法模块。
+
 ## Q03 结果
 
 Wave A 的六个 factor 已完成逐能力回映，详见
@@ -177,3 +183,16 @@ Wave C 的七个 factor 已完成逐能力回映，详见
 5,508/8,278 branches；49 个未观察 product file 已归因为 façade/template manifest 或非本机 ISA/backend，
 没有把覆盖率写成正确性分数。当前 sanitizer、non-host ISA、Trace ON、三平台最小 backend 和三种交付
 仍明确留给 Q09。
+
+## Q06 结果
+
+Sched 已完成逐公开能力回映，详见
+[`correctness/wave-d-2026-09`](../../evidence/correctness/wave-d-2026-09.md)。本轮补齐 Scheduler/BlockingPool/
+Cancel/Task/Join/TaskScope 的分阶段失败与 ownership、消息原语 close/blocked wake/retained-value teardown、
+同步计数边界、priority/bulk/deadline 等高风险证据，没有修改产品代码。
+
+清空旧 profile 后，WSL 公开头与运行时 2/2 group、运行时 253/253 GoogleTest 通过；Windows MSVC 19.50
+Release shared/WERROR 的同两组也通过。最终 discovery 为 3,880/4,163 executable lines、
+1,805/2,457 branches；唯二零命中执行函数是私有 Sched↔IO attach/detach，依法由 Q07 的 `IoContext`
+公共组合闭合，不用私有测试伪造证据。本波 `DEFECT=0`，Sched 不触发 reopen；sanitizer、macOS 与完整
+三交付矩阵仍诚实保留给 Q09。

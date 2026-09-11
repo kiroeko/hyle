@@ -35,6 +35,35 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
                    std::size_t) noexcept {
   return nullptr;
 }
+
+struct FailNthAllocation {
+  std::size_t attempts = 0;
+  std::size_t allocations = 0;
+  std::size_t frees = 0;
+  std::size_t fail_on = 0;
+};
+
+void* fail_nth_alloc(void* raw, std::size_t size,
+                     std::size_t alignment) noexcept {
+  auto* state = static_cast<FailNthAllocation*>(raw);
+  if (state->attempts++ == state->fail_on) return nullptr;
+  void* pointer = system_allocator().allocate(size, alignment);
+  if (pointer != nullptr) ++state->allocations;
+  return pointer;
+}
+
+void fail_nth_free(void* raw, void* pointer, std::size_t size,
+                   std::size_t alignment) noexcept {
+  auto* state = static_cast<FailNthAllocation*>(raw);
+  if (pointer != nullptr) ++state->frees;
+  system_allocator().deallocate(pointer, size, alignment);
+}
+
+void* fail_nth_realloc(void*, void* pointer, std::size_t old_size,
+                       std::size_t new_size,
+                       std::size_t alignment) noexcept {
+  return system_allocator().reallocate(pointer, old_size, new_size, alignment);
+}
 }  // namespace
 
 // sched-07 cancellation-tree tests. The tree ops (derive/cancel/propagate/re-parent/
@@ -65,6 +94,35 @@ TEST(Cancel, InvalidAndExhaustedAllocatorsAreRecoverable) {
   EXPECT_FALSE(is_cancel_requested());
 }
 
+TEST(Cancel, InvalidDeriveAndEveryAllocationStageAreRecoverable) {
+  auto invalid = CancelToken{}.try_derive();
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+
+  for (std::size_t fail_on : {1u, 2u}) {
+    FailNthAllocation state;
+    state.fail_on = fail_on;
+    AllocatorRef allocator(&fail_nth_alloc, &fail_nth_free,
+                           &fail_nth_realloc, &state);
+    {
+      auto root_result = CancelToken::try_create_root(allocator);
+      if (fail_on == 1) {
+        ASSERT_FALSE(root_result.has_value());
+        EXPECT_TRUE(root_result.error().IsResourceExhausted());
+      } else {
+        ASSERT_TRUE(root_result.has_value());
+        CancelToken root = *std::move(root_result);
+        auto child = root.try_derive();
+        ASSERT_FALSE(child.has_value());
+        EXPECT_TRUE(child.error().IsResourceExhausted());
+        root.cancel();
+        EXPECT_TRUE(root.is_cancelled());
+      }
+    }
+    EXPECT_EQ(state.allocations, state.frees) << fail_on;
+  }
+}
+
 TEST(Cancel, ScopePublishesOnWorkerStackWithoutAFiber) {
   CancelToken token = CancelToken::root(system_allocator());
   token.cancel();
@@ -89,6 +147,24 @@ TEST(Cancel, CopiesShareOneThreadSafeCancellationState) {
   canceller.join();
   EXPECT_TRUE(root.is_cancelled());
   EXPECT_TRUE(copy.is_cancelled());
+}
+
+TEST(Cancel, CopyAssignmentReleasesOldTreeAndSupportsSelfAssignment) {
+  CancelToken first = CancelToken::root(system_allocator());
+  CancelToken second = CancelToken::root(system_allocator());
+  CancelToken assigned = first.derive();
+
+  assigned = second;
+  first.cancel();
+  EXPECT_FALSE(assigned.is_cancelled());
+
+  assigned = assigned;
+  second.cancel();
+  EXPECT_TRUE(assigned.is_cancelled());
+
+  CancelToken empty;
+  assigned = empty;
+  EXPECT_FALSE(assigned.valid());
 }
 
 // Cancelling a parent cascades to a derived child.

@@ -209,6 +209,24 @@ Task<int> probe_root_participation(
   co_return status.ok() ? 0 : -1;
 }
 
+Task<int> probe_sibling_admission(hyle::mem::AllocatorRef,
+                                  Scheduler* scheduler,
+                                  std::atomic<unsigned>* hits,
+                                  std::size_t count) noexcept {
+  BulkExecuteOptions options;
+  options.grain_size = 1;
+  options.max_concurrency = 2;
+  Status status = bulk_execute(
+      *scheduler, 0, count,
+      [hits](std::size_t begin, std::size_t end) noexcept {
+        for (std::size_t i = begin; i < end; ++i) {
+          hits[i].fetch_add(1, std::memory_order_relaxed);
+        }
+      },
+      options);
+  co_return status.ok() ? 0 : -1;
+}
+
 TEST(BulkExecute, SameSchedulerFiberParticipatesWithoutAWorkerHandoff) {
   Scheduler scheduler(1, system_allocator(), 32);
   std::atomic<unsigned> root_calls{0};
@@ -221,6 +239,22 @@ TEST(BulkExecute, SameSchedulerFiberParticipatesWithoutAWorkerHandoff) {
   EXPECT_EQ(*result, 0);
   EXPECT_EQ(root_calls.load(std::memory_order_relaxed), 17u);
   EXPECT_EQ(total_calls.load(std::memory_order_relaxed), 17u);
+  scheduler.shutdown();
+}
+
+TEST(BulkExecute, SameSchedulerFiberSchedulesSiblingAndConservesRange) {
+  Scheduler scheduler(2, system_allocator(), 32);
+  constexpr std::size_t kCount = 257;
+  std::vector<std::atomic<unsigned>> hits(kCount);
+  auto task = probe_sibling_admission(system_allocator(), &scheduler,
+                                      hits.data(), kCount);
+  auto handle = spawn_task(scheduler, system_allocator(), std::move(task));
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value()) << result.error().message();
+  EXPECT_EQ(*result, 0);
+  for (std::size_t i = 0; i < kCount; ++i) {
+    EXPECT_EQ(hits[i].load(std::memory_order_relaxed), 1u) << i;
+  }
   scheduler.shutdown();
 }
 
