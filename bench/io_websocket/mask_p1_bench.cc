@@ -60,8 +60,11 @@ void run_case(std::size_t size, const char *title, bool peer_first) {
   }
 
   ankerl::nanobench::Bench bench;
-  bench.title(title)
-      .unit("frame")
+  bench
+      .title(title)
+      // The common runner parses op/s; batch=32 makes one reported operation
+      // one complete frame rather than one byte or one lambda invocation.
+      .unit("op")
       .batch(rounds)
       .minEpochIterations(1)
       .minEpochTime(std::chrono::milliseconds(2))
