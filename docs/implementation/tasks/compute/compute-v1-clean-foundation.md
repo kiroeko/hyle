@@ -81,7 +81,7 @@ memory factories、`GgmlBackend`/`FfnBlock` 重复或越过 owner；`KernelArgs`
 | C04 | 旧 kernel 参数把 storage 退化为 `void*` | 全新实现 `DataType/TensorDesc/ConstTensorView/TensorView`，直接组合 Mem views | rank/overflow/stride/size/domain/alias 边界测试 | 完成实现；Windows rank/zero/scalar/overflow/stride/range/alias 测试通过 |
 | C05 | 热路混合 route、compile、launch | 全新实现 typed RMSNorm descriptor、capability、`PreparedOperation` 与 SIMD/reference routes | prepare 后零 heap、零 route search；完整数值/失败差分 | 完成实现：prepare 缓存 route/count，submit 复用 SIMD；数值、weighted、in-place、coherence/provider failure 通过 |
 | C06 | 无模型偏置的 custom compute 只有裸参数袋 | 提供 CPU-only typed host submit；语义明确为 return 前完成 | compile-time misuse 与 SAXPY journey | 完成实现；nothrow void/Status callable、同步完成和 closed-queue 测试通过 |
-| C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 进行中：新需求测试与 header isolation 在 Windows 通过；Linux/macOS 与 sanitizers 待跑 |
+| C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 完成：Windows/MSVC、macOS ARM64/AppleClang 21 和 WSL/GCC 14 的 unit/header 全过；WSL ASan、UBSan、TSan 各 2/2 Compute 门通过且无报告 |
 | C08 | 旧 sample、setup、package smoke 和 guide 宣称旧功能 | 重写 Compute 用户页、package consumer 和选择/限制说明 | source/static/shared consumer 使用同一 API | 完成：独立用户页与 package consumer 使用同一 prepared RMSNorm/typed-host API；Windows source、可搬迁 shared、可搬迁 static 均编译运行通过，shared export hygiene 通过（5 库、659 exports） |
 | C09 | 没有同合同 one-op 抽象成本结论 | API 稳定后做 P0 静态账单、短 preflight 与一次 P1 | 不存在无法解释的 material 固定输 | 待处理 |
 
