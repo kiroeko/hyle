@@ -237,9 +237,9 @@
     },
     {
       "module": "io_http",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-http-v4-upgrade-handoff.md",
-      "summary": "io_http v4 SCOPED：G04 所需协议无关 Upgrade handoff 已冻结为唯一改动；transport、prefetched bytes、borrow invalidation 与失败原子性待源码审计。"
+      "summary": "io_http v4 AUDITED：协议无关 HttpUpgradeStream、server 原子 accept 与 client request/take 两阶段 API 已冻结；普通 HTTP 热路径零成本，进入四项有限 FIX。"
     },
     {
       "module": "io_http2",
@@ -335,9 +335,9 @@
     },
     {
       "module": "io_websocket",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-websocket-v1-rfc6455.md",
-      "summary": "io_websocket v1 SCOPED：G04 RFC 6455 journey、负空间、同层 P1 与四批实现预算已冻结；公开 streaming/control/close、SHA-1、UTF-8 和 mask 形状待审计。"
+      "summary": "io_websocket v1 AUDITED：message-first 流式 API、RFC handshake/frame/control/close 状态机、duplex gate 与 secure masking 成本合同已冻结，进入六项有限 FIX。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # HTTP v4：协议升级连接交接
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -47,3 +47,71 @@
 4. `io_websocket` 如何消费 seam 而不迫使 `io_http` 在公开面知道 WebSocket 类型？
 
 本卡只冻结问题、范围和预算；registry 为 `SCOPED` 时只允许审计，不允许修改产品代码。
+
+## 能力与公开面审计（`AUDITED`）
+
+源码回映确认 server/client parser 都在消费 head 后把同一次 transport read 的余量保存在各自 `wire`，而
+`HttpTransport` 已经统一 plain/TLS byte transport。缺口不是第二套 parser，而是一个拥有 transport 与这段
+余量的协议无关 owner。最终 API 冻结为：
+
+```cpp
+class HttpUpgradeStream {                 // move-only owner
+  bool valid() const noexcept;
+  bool encrypted() const noexcept;
+  StringView negotiated_protocol() const noexcept;
+  unsigned owner_worker() const noexcept;
+  Task<TransferResult> read_some(span<byte>, OperationOptions = {});
+  Task<TransferResult> write_some(span<const byte>, OperationOptions = {});
+  Task<BufferSequenceResult> write_all(span<const ConstBuffer>,
+                                       OperationOptions = {});
+  Task<Status> shutdown(OperationOptions = {});
+};
+
+Task<Result<HttpUpgradeStream>>
+HttpServerConnection::accept_upgrade(HttpIncomingRequest&&, StringView protocol,
+                                     span<const HttpHeader> response_headers,
+                                     OperationOptions = {});
+Task<Result<HttpIncomingResponse>>
+HttpClientConnection::request_upgrade(const HttpRequestHead&, StringView protocol,
+                                      OperationOptions = {});
+Result<HttpUpgradeStream>
+HttpClientConnection::take_upgrade(HttpIncomingResponse&&, StringView protocol);
+```
+
+server API 检查同 owner 的 completed body、HTTP/1.1 `Connection: Upgrade` 与请求的 protocol token，预留
+handoff state 后才发送 101；写失败仍由原 HTTP owner 负责关闭，成功才令原 connection 和 borrow 失效。
+client 的第一步返回普通 response，应用/协议层可检查 101 专用 headers；第二步只接受同 owner 的 101、
+completed body 与匹配的 `Connection`/`Upgrade`，再做唯一 ownership 迁移。非 101 仍可按普通 HTTP body
+读取/关闭，不因一次升级尝试丢失诊断。
+
+`HttpUpgradeStream` 的私有 state O(1) 接管 `GrowBuffer` allocation，不复制 prefetched bytes；读取先顺序
+排空余量，再直接读 transport。公开类型不泄漏 TCP/TLS variant、buffer allocator 或 WebSocket 状态。
+普通 `HttpServerConnection`/`HttpClientConnection`、head POD、parser 分支与对象 layout 都不改变。
+
+## 冻结有限改动集与 P0 账单
+
+| ID | 已证问题 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| `G04-H01` | transport 与 prefetched bytes 无统一 owner | `HttpUpgradeStream`，O(1) buffer ownership transfer | zero/one/multiple prefix、plain/TLS、move/destroy |
+| `G04-H02` | server 不能合法发送 101 并原子交接 | 专用 `accept_upgrade`；生成 Connection/Upgrade，不放宽普通 header API | active body/stale borrow/write failure/success invalidation |
+| `G04-H03` | client 不能发 Upgrade 或在 101 后交接 | `request_upgrade` + `take_upgrade` 两阶段 | rejection body 保留、101 headers、wrong owner/protocol |
+| `G04-H04` | 公开/构建/使用文档无升级路线 | 定向测试、guide、component/package wiring | source/static/shared、直接 custom-protocol consumer |
+
+P0：普通 HTTP 路线新增成本为 **零字段、零分支、零 allocation、零 syscall**。升级路线每连接一次：已有
+HTTP head parse/write，加一次小 state allocation；transport、wire allocation 与 prefix 原地移动，handoff
+O(1)，后续 prefix 每 byte 恰好读一次，随后与原 transport 相同。公开 vector write 是既有 transport helper
+的 owner-safe 暴露，不新增 payload copy。不存在把 raw socket 与完整 HTTP handoff 排名的 P1。
+
+## Owner 七问预裁决
+
+1. 能力：只补 RFC 9110 通用 Upgrade ownership seam；WebSocket、CONNECT/H2/H3 与服务策略不下沉。
+2. 依赖：继续只复用 Core/Error/IO Core/TLS/Mem/Sched/Time；HTTP 不依赖新协议。
+3. 形状：专用 opt-in API，不给普通 head 增加 `upgrade` 字段或 benchmark 参数；两阶段 client 保留 rejection。
+4. 性能：O(1) owner move、零 prefix copy；普通 HTTP 热路径和 layout 无变化。
+5. 正确性：同-owner generation、body completion、header token、allocation-before-commit 与 move-after-write 保证
+   不产生双 owner、悬空 reader 或丢失 prefetched bytes。
+6. 交付：`HttpUpgradeStream` 属于既有 `io_http` artifact，无新 provider、option、第三方或 Native FFI。
+7. 文档：用户指南明确 Upgrade 是 byte-stream 交接；RFC 6455 由 `io_websocket`，route/auth 由应用拥有。
+
+审计裁决为 **PASS**，只允许上述四项进入实现；原 SCOPED 问题已全部落到明确 ownership、失败原子性和
+成本合同。产品验证尚未运行，不能提前写 PASS。
