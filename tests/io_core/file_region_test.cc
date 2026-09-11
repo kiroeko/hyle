@@ -20,6 +20,7 @@
 #include <winsock2.h>
 #else
 #include <sys/socket.h>
+#include <unistd.h>
 #endif
 #if defined(__linux__)
 #include <csignal>
@@ -222,10 +223,13 @@ void run_region_case(std::uint16_t port, FileHandle &file, FileRegion region,
 struct PeerCloseResult {
   std::atomic<bool> server_ready{false};
   std::atomic<bool> server_accepted{false};
+  std::atomic<bool> client_ready{false};
+  std::atomic<bool> client_connected{false};
   std::atomic<bool> peer_closed{false};
   std::atomic<bool> server_done{false};
   std::atomic<StatusCode> status{StatusCode::Unknown};
   std::atomic<std::size_t> sent{0};
+  TcpStream client;
 };
 
 struct CancelInFlightResult {
@@ -287,6 +291,17 @@ void reset_connection_on_close(TcpStream &stream) noexcept {
 #endif
 }
 
+void close_native_stream(TcpStream &stream) noexcept {
+  const std::intptr_t native = stream.release_native_handle();
+#if defined(_WIN32)
+  if (native >= 0)
+    (void)::closesocket(static_cast<SOCKET>(native));
+#else
+  if (native >= 0)
+    (void)::close(static_cast<int>(native));
+#endif
+}
+
 Task<int> peer_close_server(AllocatorRef allocator, IoContext *io,
                             TcpListener *listener, FileHandle *file_owner,
                             PeerCloseResult *result) {
@@ -323,20 +338,17 @@ Task<int> peer_close_client(AllocatorRef allocator, IoContext *io,
   (void)allocator;
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened) {
-    result->peer_closed.store(true, std::memory_order_release);
+    result->client_ready.store(true, std::memory_order_release);
     co_return 0;
   }
-  {
-    TcpStream stream = std::move(*opened);
-    Status connected =
-        co_await stream.connect(Endpoint::loopback(AddressFamily::kIpv4, port));
-    if (connected.ok()) {
-      while (!result->server_ready.load(std::memory_order_acquire))
-        Fiber::yield();
-      reset_connection_on_close(stream);
-    }
+  TcpStream stream = std::move(*opened);
+  Status connected =
+      co_await stream.connect(Endpoint::loopback(AddressFamily::kIpv4, port));
+  if (connected.ok()) {
+    result->client = std::move(stream);
+    result->client_connected.store(true, std::memory_order_release);
   }
-  result->peer_closed.store(true, std::memory_order_release);
+  result->client_ready.store(true, std::memory_order_release);
   co_return 0;
 }
 
@@ -432,7 +444,19 @@ TEST(IoFileRegion, PeerResetReturnsTypedFailureWithoutProcessSignal) {
   Fiber client_fiber(kDefaultStackSize, &drive_entry, &client);
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  std::thread closer([&] {
+    while (!result.server_ready.load(std::memory_order_acquire) ||
+           !result.client_ready.load(std::memory_order_acquire))
+      std::this_thread::yield();
+    if (result.server_accepted.load(std::memory_order_acquire) &&
+        result.client_connected.load(std::memory_order_acquire)) {
+      reset_connection_on_close(result.client);
+      close_native_stream(result.client);
+    }
+    result.peer_closed.store(true, std::memory_order_release);
+  });
   scheduler.drain();
+  closer.join();
   scheduler.shutdown();
   std::remove(path.c_str());
 
@@ -442,6 +466,7 @@ TEST(IoFileRegion, PeerResetReturnsTypedFailureWithoutProcessSignal) {
 #endif
   EXPECT_TRUE(result.server_done.load(std::memory_order_acquire));
   EXPECT_TRUE(result.server_accepted.load(std::memory_order_acquire));
+  EXPECT_TRUE(result.client_connected.load(std::memory_order_acquire));
   EXPECT_NE(result.status.load(std::memory_order_acquire), StatusCode::Ok);
   EXPECT_LT(result.sent.load(std::memory_order_acquire), kPeerCloseBytes);
 }
