@@ -1,6 +1,6 @@
 # HTTP v4：协议升级连接交接
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -115,3 +115,14 @@ O(1)，后续 prefix 每 byte 恰好读一次，随后与原 transport 相同。
 
 审计裁决为 **PASS**，只允许上述四项进入实现；原 SCOPED 问题已全部落到明确 ownership、失败原子性和
 成本合同。产品验证尚未运行，不能提前写 PASS。
+
+## Immutable candidate
+
+产品 candidate 为 `f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7`。`HttpUpgradeStream`、server
+`accept_upgrade` 与 client `request_upgrade/take_upgrade` 已按四项 ledger 实现；普通 HTTP connection/head
+没有增加字段，prefix allocation 与 transport 都以 move 接管，不复制 parser 已读 bytes。
+
+进入 candidate 前，Windows MSVC 19.50 shared/TLS-OFF 的定向 Upgrade `3/3 PASS`；相同产品树在
+OpenSSL 3.6.3 TLS-ON WebSocket 组合路径通过。校验失败、unfinished body、非 101 与 prefetched first bytes
+均已有直接测试。完整三平台、三交付、sanitizer、直接 consumer 和终局红队仍在候选验证阶段；未完成前
+不能写 CLOSED。

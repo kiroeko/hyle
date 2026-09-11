@@ -237,9 +237,10 @@
     },
     {
       "module": "io_http",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-http-v4-upgrade-handoff.md",
-      "summary": "io_http v4 AUDITED：协议无关 HttpUpgradeStream、server 原子 accept 与 client request/take 两阶段 API 已冻结；普通 HTTP 热路径零成本，进入四项有限 FIX。"
+      "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7",
+      "summary": "io_http v4 CANDIDATE：协议无关 Upgrade ownership handoff 已固定在 f231b6f4；进入三平台、三交付、sanitizer、直接 consumer 与终局红队验证。"
     },
     {
       "module": "io_http2",
@@ -335,9 +336,10 @@
     },
     {
       "module": "io_websocket",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-websocket-v1-rfc6455.md",
-      "summary": "io_websocket v1 AUDITED：message-first 流式 API、RFC handshake/frame/control/close 状态机、duplex gate 与 secure masking 成本合同已冻结，进入六项有限 FIX。"
+      "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7",
+      "summary": "io_websocket v1 CANDIDATE：RFC 6455 message owner、duplex/control/close 与 secure mask 已固定在 f231b6f4；进入完整候选验证与一次性 P1。"
     }
   ]
 }

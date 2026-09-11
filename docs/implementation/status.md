@@ -32,7 +32,7 @@
 | sched | CLOSED | P1 / [PASS](tasks/sched/sched-v10-execution-priority.md) / 5% | [record](tasks/sched/sched-v10-execution-priority.md) | sched v10 CLOSED：三档非抢占 execution priority 覆盖 admission/yield/wake/pinned/TaskScope 全路径；三平台正确性/sanitizer/三交付、IO 直接消费者、易用性、红队和 W1-WIN 两条同合同产品路线的 5% P1 非劣门全部通过。 |
 | io_core | CLOSED | P0 / [PASS](tasks/io/io-core-v5-anonymous-stream-adopt.md) | [record](tasks/io/io-core-v5-anonymous-stream-adopt.md) | io_core v5 CLOSED：唯一 LocalStream::adopt_anonymous seam 与 Windows 同步 terminal completion 修正已通过四平台环境、sanitizer、三交付和终局红队；既有 transport/layout/普通 I/O 热路径不变。 |
 | io_tls | CLOSED | P0 / [PASS](tasks/io/io-tls-v4-context-identity.md) | [record](tasks/io/io-tls-v4-context-identity.md) | io_tls v4 CLOSED：G06 HTTPS file-body 的 inline context identity seam 保持零字段、零符号和普通热路径零成本，通过三平台、sanitizer、三交付与红队。 |
-| io_http | AUDITED | — | [record](tasks/io/io-http-v4-upgrade-handoff.md) | io_http v4 AUDITED：协议无关 HttpUpgradeStream、server 原子 accept 与 client request/take 两阶段 API 已冻结；普通 HTTP 热路径零成本，进入四项有限 FIX。 |
+| io_http | CANDIDATE | — | [record](tasks/io/io-http-v4-upgrade-handoff.md) | io_http v4 CANDIDATE：协议无关 Upgrade ownership handoff 已固定在 f231b6f4；进入三平台、三交付、sanitizer、直接 consumer 与终局红队验证。 |
 | io_http2 | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。 |
 | io_transfer | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-transfer-v1.md) | io_transfer v1 CLOSED：可靠 local/HTTP(S) transfer、resume、checksum 与 atomic publish 通过三平台、sanitizer、三交付、易用性和红队；P1 的 local publish 非劣、Range resume 双顺序 WIN，5% 门全过。 |
 | compute | QUEUED | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
@@ -42,7 +42,7 @@
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
 | io_watch | CLOSED | P0 / [PASS](tasks/io/io-watch-v2-recursive-tree.md) | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。 |
 | process | CLOSED | P0 / [PASS](tasks/process/process-v1-managed-child.md) | [record](tasks/process/process-v1-managed-child.md) | process v1 CLOSED：受管 child 的 argv/env/cwd/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、三 sanitizer、三交付和终局红队；P0 成本与平台限制已如实记录。 |
-| io_websocket | AUDITED | — | [record](tasks/io/io-websocket-v1-rfc6455.md) | io_websocket v1 AUDITED：message-first 流式 API、RFC handshake/frame/control/close 状态机、duplex gate 与 secure masking 成本合同已冻结，进入六项有限 FIX。 |
+| io_websocket | CANDIDATE | — | [record](tasks/io/io-websocket-v1-rfc6455.md) | io_websocket v1 CANDIDATE：RFC 6455 message owner、duplex/control/close 与 secure mask 已固定在 f231b6f4；进入完整候选验证与一次性 P1。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

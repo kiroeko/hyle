@@ -1,6 +1,6 @@
 # WebSocket v1：RFC 6455 双向消息连接
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -146,3 +146,17 @@ borrow/deadline/close 陷阱。
 
 审计裁决为 **PASS**。SCOPED 五问已固定为上述 API/state/cost 合同，只允许六项 FIX；产品测试、性能与红队
 尚未运行，不能提前写 PASS。
+
+## Immutable candidate
+
+产品 candidate 为 `f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7`。六项 ledger 已实现：协议无关
+HTTP handoff、client/server handshake、caller-buffer message streaming、fragment/control/typed close、duplex
+gate，以及每连接安全种子派生的 client mask keys。实现边界为公开 `websocket.h` 与私有 RFC state/SHA-1/
+ChaCha/mask core，不引入 Asio、cpp-httplib 或第二 runtime。
+
+进入 candidate 前的 Windows MSVC 19.50 shared 定向结果为：TLS-OFF WebSocket `8/8 PASS`、Upgrade
+`3/3 PASS`；OpenSSL 3.6.3 TLS-ON WebSocket `9/9 PASS`。覆盖 RFC accept vector、同包首帧、fragment +
+control interleave、126/65536 长度、mask/role/canonical length、UTF-8、frame/message caps、subprotocol/
+extension rejection、close、同方向误用、OOM coroutine、deadline 与 cancel。模块实现代码为 **2,077 行**
+（`scripts/loc-report.py --module io-websocket --commit f231b6f4... --self-check`）。完整三平台、三交付、
+sanitizer、P1 与终局红队仍待候选验证，不能提前写 CLOSED。
