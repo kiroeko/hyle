@@ -52,7 +52,89 @@
 
 Git 历史负责恢复旧字节；历史 ggml storage 缺陷只通过架构页和既有调查记录保留。
 
+## 能力与形状审计
+
+| 能力族 | 层级 | 准入旅程/来源 | 语义与生命周期 | 原子分解/应用边界 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|---|---|---|
+| CPU device discovery | 原子机制 | direct RMSNorm 与工程 custom kernel | `Device` 是无 owner 的稳定描述；本轮恰有一个 CPU device，枚举不得静默截断 | Platform 提供 host facts；Compute 只形成执行设备身份 | 全新实现 | `MISSING` | `FIX` |
+| Context / Queue / Completion | 复合功能 | 重复 prepare/submit 与显式 teardown | `Context`/`Queue` 拥有 runtime；`Completion` 保住 in-flight 状态；close/drain 可观察 | 不含 fiber/coroutine 调度策略 | 全新实现 | `MISSING` | `FIX` |
+| tensor schema | 原子机制 | 推理 normalization 与工程数组 kernel | 固定上限 rank、显式 dtype/shape/element-stride；desc 拥有元数据，view 借用 storage | 不包含模型 tensor、KV policy 或第三方对象 | 全新实现 | `MISSING` | `FIX` |
+| Mem storage binding | 原子机制 | caller-owned input/output | `TensorView` 组合 desc 与 `mem::BufferView`；不复制、不接管、不伪造 native pointer | allocation/map/coherence 仍由 Mem 拥有 | 全新实现 | `MISSING` | `FIX` |
+| operation schema / capability | 原子机制 | ggml/llama.cpp 等反复使用的 RMSNorm | operation 是有类型值；unsupported 在 prepare 冷路径报告 | 本轮只接纳 f32 dense row RMSNorm；不是完整 catalog | 全新实现 | `MISSING` | `FIX` |
+| prepared RMSNorm | 复合功能 | 同一 shape 重复执行 | prepare 固定 route/shape/epsilon；submit 只检查 bindings 并调用预绑定 route | CPU reference 用于差分；HYLE SIMD 为正常 route | 全新实现 | `MISSING` | `FIX` |
+| typed host custom kernel | 原子机制 | SAXPY 类正交工程计算 | 函数和参数类型在模板边界成立；本轮 CPU queue 同步完成，不持有 caller callable | 不建立字符串 registry、裸参数袋或 Graph | 全新实现 | `MISSING` | `FIX` |
+| diagnostics | 复合功能 | 用户解释 selected route | device/backend/provider、workspace 与同步属性可查询 | tracing 属 Obs；CompileReport 属 Graph | 最小结构化属性 | `MISSING` | `FIX` |
+| GPU/backend/provider islands | 复合功能 | CUDA、Apple、Vulkan、HIP 后续纵切 | 各自独立 owner、依赖、完成和失败合同 | 不可借旧宏或旧 vtable 冒充 | 后续独立轮 | `OUT_OF_SCOPE` | `DEFER` |
+
+旧公开入口已全部回映：`Device/Stream/Event` 只有设备与完成意图可进入新能力族；`DevicePool`、compute
+memory factories、`GgmlBackend`/`FfnBlock` 重复或越过 owner；`KernelArgs`、`BufferBinding`、
+`SpecConstant`、`SpirvBlob` 把多后端细节焊在无类型参数袋中；`gpu_poll_*` 是 process-global runtime。
+它们没有一个可以原样 `KEEP`。旧 host ops 的算术结果只可作为独立差分输入，不是实现来源。
+
+### 有限改动集
+
+| ID | 问题与证据 | 允许改动 | 验收 | 结果 |
+|---|---|---|---|---|
+| C01 | 9 个旧公开头、8 个实现 TU、旧 tests/bench/sample 反向定义产品 | 删除全部旧字节；不建 legacy/reference/compat 目录 | 全树负扫描无旧 API/target/test/sample | 待处理 |
+| C02 | registry 为待建，中央 CMake 却构造旧 product，并下载 ggml/Vulkan/CUDA 依赖 | 把 manifest、root dependency gate、package/CI/setup 合同改为新 CPU factor；后续 backend 不提前下载 | `compute` 精确选择只取得声明依赖，旧 option 不再是产品入口 | 待处理 |
+| C03 | 旧全局 stream/poller 无显式 owner 与有界 teardown | 全新实现 CPU `Device/Context/Queue/Completion` 和 close/drain | 生命周期、move、并发 Context、迟到 completion 测试 | 待处理 |
+| C04 | 旧 kernel 参数把 storage 退化为 `void*` | 全新实现 `DataType/TensorDesc/ConstTensorView/TensorView`，直接组合 Mem views | rank/overflow/stride/size/domain/alias 边界测试 | 待处理 |
+| C05 | 热路混合 route、compile、launch | 全新实现 typed RMSNorm descriptor、capability、`PreparedOperation` 与 SIMD/reference routes | prepare 后零 heap、零 route search；完整数值/失败差分 | 待处理 |
+| C06 | 无模型偏置的 custom compute 只有裸参数袋 | 提供 CPU-only typed host submit；语义明确为 return 前完成 | compile-time misuse 与 SAXPY journey | 待处理 |
+| C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 待处理 |
+| C08 | 旧 sample、setup、package smoke 和 guide 宣称旧功能 | 重写 Compute 用户页、package consumer 和选择/限制说明 | source/static/shared consumer 使用同一 API | 待处理 |
+| C09 | 没有同合同 one-op 抽象成本结论 | API 稳定后做 P0 静态账单、短 preflight 与一次 P1 | 不存在无法解释的 material 固定输 | 待处理 |
+
+本轮不保留任何旧实现以等待未来比较；若后续 GPU/provider 需要某段算法，只能从 Git 提取事实并在新
+backend closure card 中重新审计，不能把旧 TU 恢复进产品树。
+
+### API / usability freeze
+
+普通 C++ 路线固定为下列语义；精确 overload 可在 C01--C06 内作至多两轮纠正，但不得改回旧对象：
+
+```cpp
+auto context = HYLE_TRY(hyle::compute::Context::create(
+    hyle::compute::Device::cpu()));
+auto queue = HYLE_TRY(context.create_queue());
+auto desc = HYLE_TRY(hyle::compute::TensorDesc::dense(
+    hyle::compute::DataType::kFloat32, shape));
+auto prepared = HYLE_TRY(context.prepare(
+    hyle::compute::RmsNorm{.epsilon = 1e-5F}, {desc}, {desc}));
+auto completion = HYLE_TRY(prepared.submit(
+    queue, input_views, output_views));
+HYLE_TRY(completion.wait());
+```
+
+- `Device` 可复制且不拥有 runtime；`Context`、`Queue`、`PreparedOperation`、`Completion` 为显式对象，
+  owner 被销毁或 close 后的新操作失败，析构不做无界隐藏等待。
+- `TensorDesc` 自含固定 rank 元数据；`TensorView` 借用 Mem storage，Buffer/resource/context 必须活到
+  Completion 终态。错误 dtype、rank、shape、stride、byte range、storage domain 和 alias 在提交前返回
+  `Status`，不依赖 assert。
+- 普通重复路线是 prepare-once/submit-many；一次性 convenience 若以后加入，名称必须披露冷路径。
+- CPU v1 queue 是 caller-thread、in-order、同步完成：无 heap、lock、atomic、thread handoff 或隐藏 copy；
+  `Completion` 仍作为统一生命周期结果。typed host submit 同样在返回前运行，因此不捕获 callable。
+- prepared submit 允许一次预绑定函数调用；不允许 provider 搜索、JIT、元数据分配、字符串 lookup 或
+  storage mapping。RMSNorm 接受 dense contiguous f32 row，允许 input/output 完全同址，不允许其它 overlap。
+- 默认 device 只可由显式 `Device::cpu()` 取得；本轮不提供环境相关 `default_device()`。缺能力返回
+  `Unimplemented/FailedPrecondition`，OOM 保留 `ResourceExhausted`。
+- source/static/shared 都以 `hyle::compute` product 和公开头发现；Native FFI 为 N/A。
+
+## 七问
+
+1. 第三方路径：首轮没有新第三方；正常 RMSNorm 复用已关闭 HYLE SIMD，reference route 为 HYLE 测试
+   代码。ggml/CUDA/Vulkan 旧依赖从 active gate 移除，未来各自锁版本、许可证和 fallback。
+2. 功能完整：首轮覆盖一个真实推理 op 与一个正交 custom-kernel journey，并建立以后扩 catalog/backend
+   所需生命周期；完整 op 集和 GPU 明确不冒充完成。
+3. 内部复用：Error 表达失败，Mem 拥有 storage，SIMD 提供叶子核，Platform 只在设备事实确需时私有
+   使用；不再复制 allocator、poller、scheduler 或 status。
+4. 性能：设备/desc 检查为 O(rank)，RMSNorm 为 O(n)/O(1) workspace；prepared steady 路径零常态分配、
+   零搜索、零 handoff。P1 在 candidate 后按同一 SIMD route 做 one-op dispatch 税。
+5. FFI：旧 C/Native FFI 不存在；旧 C++ ABI 不兼容且完全删除。跨语言 runtime 本轮 N/A。
+6. 构建：C02/C08 必须证明精确 source、installed static/shared；旧可选 backend 宏不进入产物 identity。
+7. 易用：对象顺序对应用户任务，错误与 owner 明示；guide 必须同时给 prepared 正常路线、typed host
+   路线、in-place 规则、storage lifetime 与同步 CPU 限制。
+
 ## 当前状态
 
-当前为 `SCOPED`。本卡尚未授权产品修改；下一步只做能力/入口/依赖审计并冻结有限
-`KEEP/FIX/BORROW/DELETE` 集，随后才能进入 `AUDITED`。
+当前审计已完成，有限改动集与 API 形状已冻结；registry 同步进入 `AUDITED` 后才授权 C01--C09，范围外
+发现必须退回本卡而不能顺手实现。

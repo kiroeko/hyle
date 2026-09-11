@@ -272,15 +272,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v1-clean-foundation.md",
-      "summary": "compute v1 SCOPED：旧实现不兼容且不作新设计输入；本轮先清除旧产品面，并建立 CPU Device/Context/Queue/Completion、prepared RMSNorm 与 typed host custom-kernel 的最小直接执行纵切。"
+      "summary": "compute v1 AUDITED：旧实现已逐入口裁决为删除，有限 C01-C09 集冻结；从空白实现 CPU Device/Context/Queue/Completion、Mem tensor binding、prepared RMSNorm 与 typed host custom-kernel。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v1-clean-dag.md",
-      "summary": "graph v1 SCOPED：删除旧 TaskGraph/parallel/data-parallel 产品面，以 Compute one-op 建立 GraphBuilder、Graph、Executable、Invocation 与 Completion 的最小计算 DAG 纵切。"
+      "summary": "graph v1 AUDITED：旧 TaskGraph/parallel/data-parallel 全部裁决为删除，有限 G01-G08 集冻结；从空白实现 one-op GraphBuilder/Graph/Executable/Invocation。"
     },
     {
       "module": "container_concurrent",
