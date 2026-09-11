@@ -915,6 +915,8 @@ sched::Task<Status> read_exact(mem::AllocatorRef allocator,
                                detail::WebSocketState &state,
                                std::span<std::byte> output,
                                OperationOptions operation) noexcept {
+  // The promise consumes this argument when allocating the coroutine frame.
+  (void)allocator;
   std::size_t offset = 0;
   while (offset != output.size()) {
     auto task = state.stream.read_some(output.subspan(offset), operation);
@@ -943,6 +945,8 @@ sched::Task<Status>
 write_frame(mem::AllocatorRef allocator, detail::WebSocketState &state,
             std::uint8_t opcode, bool final, std::span<const std::byte> payload,
             bool internal_control, OperationOptions operation) noexcept {
+  // The promise consumes this argument when allocating the coroutine frame.
+  (void)allocator;
   if (state.failed || state.received_close || !state.stream.valid()) {
     co_return Status::FailedPrecondition(
         "WebSocket connection is not writable");

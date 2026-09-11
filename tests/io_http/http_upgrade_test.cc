@@ -72,6 +72,8 @@ Task<bool> write_text(AllocatorRef allocator, TcpStream &stream,
 
 Task<bool> read_head(AllocatorRef allocator, TcpStream &stream,
                      std::string &output) {
+  // The promise consumes this argument when allocating the coroutine frame.
+  (void)allocator;
   std::array<std::byte, 512> buffer{};
   while (output.find("\r\n\r\n") == std::string::npos && output.size() < 4096) {
     hyle::io::TransferResult read =
