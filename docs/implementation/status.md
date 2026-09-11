@@ -43,7 +43,7 @@
 | io_watch | CLOSED | P0 / [PASS](tasks/io/io-watch-v2-recursive-tree.md) | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。 |
 | process | CLOSED | P0 / [PASS](tasks/process/process-v1-managed-child.md) | [record](tasks/process/process-v1-managed-child.md) | process v1 CLOSED：受管 child 的 argv/env/cwd/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、三 sanitizer、三交付和终局红队；P0 成本与平台限制已如实记录。 |
 | io_websocket | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md) | io_websocket v2 CLOSED：两个私有 coroutine 显式保留 frame allocator 使用；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本及 v1 P1 结论不变。 |
-| compute_provider_onednn | QUEUED | — | — | 已登记 oneDNN CPU provider 内部因子身份；尚未冻结 provider SPI、线程/packing/workspace owner、可选依赖和三交付合同，QUEUED 不下载或编译 oneDNN。 |
+| compute_provider_onednn | SCOPED | — | [record](tasks/compute/compute-provider-onednn-v1.md) | compute_provider_onednn v1 SCOPED：以 Compute v2 普通 MatMul 的源码 P0 缺口启动；范围限显式 provider SPI、dense f32 MatMul、caller-owned scratchpad、诚实线程/packing/workspace 与可选三交付，AUDITED 前不改产品。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

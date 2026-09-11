@@ -354,8 +354,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "QUEUED",
-      "summary": "已登记 oneDNN CPU provider 内部因子身份；尚未冻结 provider SPI、线程/packing/workspace owner、可选依赖和三交付合同，QUEUED 不下载或编译 oneDNN。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v1.md",
+      "summary": "compute_provider_onednn v1 SCOPED：以 Compute v2 普通 MatMul 的源码 P0 缺口启动；范围限显式 provider SPI、dense f32 MatMul、caller-owned scratchpad、诚实线程/packing/workspace 与可选三交付，AUDITED 前不改产品。"
     }
   ]
 }
