@@ -310,6 +310,10 @@ _hyle_declare_component(io_watch
   PUBLIC_TYPE_DEPS io_core mem
   SPLIT_PUBLIC_HEADERS hyle/io/watch.h)
 
+# Reserved by G03. A QUEUED identity deliberately has no target metadata or
+# consumer-facing product until its own closure round freezes the public shape.
+_hyle_declare_component(process QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

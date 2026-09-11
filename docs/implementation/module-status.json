@@ -326,6 +326,11 @@
         "evidence": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md"
       },
       "summary": "io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。"
+    },
+    {
+      "module": "process",
+      "state": "QUEUED",
+      "summary": "G03 managed process 的 component identity 已保留；尚未冻结依赖、公开 API 或 target，不进入任何 consumer product。"
     }
   ]
 }
