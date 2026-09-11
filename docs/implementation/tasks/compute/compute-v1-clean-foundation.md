@@ -142,3 +142,34 @@ sanitizer、source/static/shared、红队与 P1 事实见本卡及
 [`benchmarks-compute-graph`](../../evidence/performance/benchmarks-compute-graph.md)。本卡只终结清洁 CPU
 one-op foundation；完整算子目录和异构 provider 必须由新的有限卡合法重开，不能把本轮称为完整
 Compute 产品。
+
+## Terminal record（2026-09-12）
+
+- candidate：`5c9dc1604e6daaec1d73062296f2a71d019e7b35`；tree：
+  `add3629707ab890ca7ee2c76e9dc3d773b20f9b3`；候选之后只有 benchmark peer 身份、证据和状态文档变化；
+- 终局范围：只签发 CPU one-op foundation，不签发完整算子目录或任一异构 backend/provider；
+- LOC：Compute 实现 `1,122` 行 / `10` files；候选全库 `554,435` 行，自实现不含测试 `96,718` 行，
+  均由 `loc-report.py --commit 5c9dc160 --self-check` 取得。
+
+| 关闭门 | 结论 | 终局事实 |
+|---|---|---|
+| scope | `PASS` | C01--C09 全部完成；旧资产只留 Git 历史，本轮边界没有扩成完整 Compute |
+| architecture | `PASS` | Device/Context/Queue/Completion、显式 Mem binding、typed Operation/PreparedOperation 与 host escape hatch 符合接受的 Compute 架构 |
+| correctness | `PASS` | Windows/MSVC、WSL/GCC 14、macOS/AppleClang 的 unit/header 全过；当前候选 WSL ASan/UBSan 全过，TSan 在禁用 ASLR 后 23/23 全过且无报告 |
+| delivery | `PASS` | `compute` 精确 product 的 source、relocated installed shared、relocated installed static consumer 全过；无 Native FFI |
+| usability_docs | `PASS` | package sample 与 guide 覆盖 prepare-once/submit-many、typed host、in-place、borrow lifetime、同步 CPU 限制和错误恢复 |
+| red_team | `PASS` | 终局负扫描无旧 DevicePool/GgmlBackend/KernelArgs/gpu poller；steady 路无隐藏 allocation/search/JIT/copy；没有 benchmark-only 公开入口 |
+| engineering_performance | `PASS` | P0 成本账单成立；同合同 Graph/Compute P1 非劣门通过。Compute/direct 只作不同安全语义的 diagnostic，不伪造胜负 |
+
+终局验证使用当前候选产品字节：Windows 的 Compute/Graph 精确 unit/header，以及 Compute selected-product
+source/shared/static relocated smoke 全过；MacBook Air 四项定向测试 4/4；WSL ASan 与 UBSan 各 4/4。
+WSL TSan 的 PIE 在默认 ASLR 下曾在 `main` 前报 instrument 自身 `unexpected memory mapping`，同一二进制以
+`setarch x86_64 -R` 运行后 Compute 23/23、Graph 14/14 全过；这不是产品竞态报告。
+
+P1 合同、原始 bundle、hash 与精确重放见
+[`benchmarks-compute-graph`](../../evidence/performance/benchmarks-compute-graph.md)：Graph/Compute 四个
+99.26% CI 全跨 `1.0` 且落在 5% 等价带，方向为 `PARITY`、工程门为 `PASS`。终局红队没有发现需要把
+候选退回 `AUDITED` 的产品问题。
+
+合法重开条件：真实 multi-op/算子目录卡；任一具名 provider/backend 卡；可复现 correctness、lifetime、
+delivery 缺陷；或同合同合格证据显示 material 回归。one-op `CLOSED` 不能被解释为完整 Compute 已完成。

@@ -272,17 +272,27 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-v1-clean-foundation.md",
       "candidate": "5c9dc1604e6daaec1d73062296f2a71d019e7b35",
-      "summary": "compute v1 CANDIDATE：旧实现已彻底删除；从空白实现的 CPU Device/Context/Queue/Completion、Mem tensor binding、prepared RMSNorm 与 typed host custom-kernel 已完成三平台、sanitizer、三交付和 one-op P1，等待终局记录。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      },
+      "summary": "compute v1 one-op CLOSED：旧实现已彻底删除；从空白实现的 CPU Device/Context/Queue/Completion、Mem tensor binding、prepared RMSNorm 与 typed host custom-kernel 已通过三平台、sanitizer、三交付、终局红队和同合同 P1。本状态不声称完整算子目录或异构 provider。"
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/graph-v1-clean-dag.md",
       "candidate": "5c9dc1604e6daaec1d73062296f2a71d019e7b35",
-      "summary": "graph v1 CANDIDATE：旧 TaskGraph/parallel/data-parallel 已彻底删除；从空白实现的 one-op GraphBuilder/Graph/Executable/Invocation 已完成三平台、sanitizer、三交付和同合同 P1，等待终局记录。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      },
+      "summary": "graph v1 one-op CLOSED：旧 TaskGraph/parallel/data-parallel 已彻底删除；从空白实现的 one-op GraphBuilder/Graph/Executable/Invocation 已通过三平台、sanitizer、三交付、终局红队和同合同 P1。本状态不声称 multi-op compiler/plan 或 provider 已完成。"
     },
     {
       "module": "container_concurrent",

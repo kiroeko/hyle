@@ -122,3 +122,29 @@ auto completion = HYLE_TRY(invocation.submit(queue));
 sanitizer、source/static/shared、红队与 P1 事实见本卡及
 [`benchmarks-compute-graph`](../../evidence/performance/benchmarks-compute-graph.md)。本卡只终结清洁 one-op
 Graph 生命周期；multi-op compiler/plan 必须由新的有限卡合法重开，不能让 one-op 状态冒充完整 Graph。
+
+## Terminal record（2026-09-12）
+
+- candidate：`5c9dc1604e6daaec1d73062296f2a71d019e7b35`；tree：
+  `add3629707ab890ca7ee2c76e9dc3d773b20f9b3`；候选后无 Graph 产品字节变化；
+- 终局范围：只签发 one-op RMSNorm Graph 生命周期和抽象税，不签发 multi-op compiler、partition、
+  placement、liveness、workspace 或外部 provider；
+- LOC：Graph 实现 `649` 行 / `6` files；候选全库 `554,435` 行，自实现不含测试 `96,718` 行。
+
+| 关闭门 | 结论 | 终局事实 |
+|---|---|---|
+| scope | `PASS` | G01--G08 全部完成，旧通用 TaskGraph/parallel 资产完全删除且未复制成 legacy/reference |
+| architecture | `PASS` | typed identity、single-owner builder、immutable Graph/Executable 与 per-run Invocation 的 owner 边界完整 |
+| correctness | `PASS` | Windows、WSL、macOS unit/header 全过；当前候选 ASan/UBSan 全过，TSan 禁用 ASLR 后 Graph 14/14 全过 |
+| delivery | `PASS` | `graph` 精确 product 的 source、relocated shared、relocated static consumer 全过且闭包不含旧 sched/container Graph 依赖 |
+| usability_docs | `PASS` | package sample 与 guide 给出完整 build→compile→bind→submit 旅程、并发 Invocation 和 one-op 限制 |
+| red_team | `PASS` | 旧 TaskGraph/parallel/data-parallel 负扫描为零；submit 不遍历 logical Graph、不 prepare、不分配、不搜索 provider；公开 API 无 benchmark seam |
+| engineering_performance | `PASS` | P0 为 O(bindings+rank+n)、零 steady allocation/search/JIT；同合同 Graph/Compute P1 四个 strata 全部 5% 非劣且方向 `PARITY` |
+
+终局验证复用同一候选：Windows Graph selected-product 的 source/shared/static relocated smoke 全过；MacBook
+Air 与 WSL 四项精确 test 4/4；WSL ASan/UBSan 4/4，TSan 的默认 PIE/ASLR instrument 冲突以
+`setarch x86_64 -R` 排除后 14/14 全过且没有竞态报告。P1 原始 bundle 和 hash 见
+[`benchmarks-compute-graph`](../../evidence/performance/benchmarks-compute-graph.md)。
+
+合法重开条件：具名 multi-op compiler/transformer 纵切；partition/provider/backend；可复现 correctness、
+lifetime、delivery 缺陷；或合格同合同证据显示 material 回归。one-op `CLOSED` 不允许冒充完整 Graph。
