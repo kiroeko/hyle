@@ -1,9 +1,9 @@
 # HYLE Compute：异构执行与算子提供者架构
 
 > 决策状态：`ACCEPTED`。本文定义 Compute 的长期产品合同；实现当前是否可用只查
-> [`module-status.json`](../implementation/module-status.json)。`compute` 仍为 `QUEUED` 时，现有头、源码、
-> CMake 开关、旧 task 和 benchmark 都只是待审资产，不是用户承诺。本文出现的类型名表示必须存在的
-> 语义角色；精确 C++ 拼写在新一轮 `AUDITED` 后冻结。
+> [`module-status.json`](../implementation/module-status.json)。当前 CPU one-op 纵切正在独立收口，不能
+> 把它外推为完整算子目录或 GPU backend。旧实现、旧 task 和 benchmark 只在 Git 历史中作为调查输入，
+> 不是用户承诺。
 
 ## 1. 产品承诺
 

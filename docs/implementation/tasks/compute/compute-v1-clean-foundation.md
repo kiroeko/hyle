@@ -76,13 +76,13 @@ memory factories、`GgmlBackend`/`FfnBlock` 重复或越过 owner；`KernelArgs`
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
 | C01 | 9 个旧公开头、8 个实现 TU、旧 tests/bench/sample 反向定义产品 | 删除全部旧字节；不建 legacy/reference/compat 目录 | 全树负扫描无旧 API/target/test/sample | 完成：`f5581e82` 删除 14,756 行，Git 历史是唯一字节来源 |
-| C02 | registry 为待建，中央 CMake 却构造旧 product，并下载 ggml/Vulkan/CUDA 依赖 | 把 manifest、root dependency gate、package/CI/setup 合同改为新 CPU factor；后续 backend 不提前下载 | `compute` 精确选择只取得声明依赖，旧 option 不再是产品入口 | 进行中：CPU factor/product 已登记，Windows exact-factor configure/build 通过；三种 package journey 待 C08 |
+| C02 | registry 为待建，中央 CMake 却构造旧 product，并下载 ggml/Vulkan/CUDA 依赖 | 把 manifest、root dependency gate、package/CI/setup 合同改为新 CPU factor；后续 backend 不提前下载 | `compute` 精确选择只取得声明依赖，旧 option 不再是产品入口 | 完成：CPU factor/product 已登记；Windows exact-factor 与精确 product 的 source/static/shared 闭包通过，不存在旧 backend/provider gate |
 | C03 | 旧全局 stream/poller 无显式 owner 与有界 teardown | 全新实现 CPU `Device/Context/Queue/Completion` 和 close/drain | 生命周期、move、并发 Context、迟到 completion 测试 | 完成实现；Windows move/close/retained-handle/OOM 测试通过，跨平台矩阵待 C07 |
 | C04 | 旧 kernel 参数把 storage 退化为 `void*` | 全新实现 `DataType/TensorDesc/ConstTensorView/TensorView`，直接组合 Mem views | rank/overflow/stride/size/domain/alias 边界测试 | 完成实现；Windows rank/zero/scalar/overflow/stride/range/alias 测试通过 |
 | C05 | 热路混合 route、compile、launch | 全新实现 typed RMSNorm descriptor、capability、`PreparedOperation` 与 SIMD/reference routes | prepare 后零 heap、零 route search；完整数值/失败差分 | 完成实现：prepare 缓存 route/count，submit 复用 SIMD；数值、weighted、in-place、coherence/provider failure 通过 |
 | C06 | 无模型偏置的 custom compute 只有裸参数袋 | 提供 CPU-only typed host submit；语义明确为 return 前完成 | compile-time misuse 与 SAXPY journey | 完成实现；nothrow void/Status callable、同步完成和 closed-queue 测试通过 |
 | C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 进行中：新需求测试与 header isolation 在 Windows 通过；Linux/macOS 与 sanitizers 待跑 |
-| C08 | 旧 sample、setup、package smoke 和 guide 宣称旧功能 | 重写 Compute 用户页、package consumer 和选择/限制说明 | source/static/shared consumer 使用同一 API | 待处理 |
+| C08 | 旧 sample、setup、package smoke 和 guide 宣称旧功能 | 重写 Compute 用户页、package consumer 和选择/限制说明 | source/static/shared consumer 使用同一 API | 完成：独立用户页与 package consumer 使用同一 prepared RMSNorm/typed-host API；Windows source、可搬迁 shared、可搬迁 static 均编译运行通过，shared export hygiene 通过（5 库、659 exports） |
 | C09 | 没有同合同 one-op 抽象成本结论 | API 稳定后做 P0 静态账单、短 preflight 与一次 P1 | 不存在无法解释的 material 固定输 | 待处理 |
 
 本轮不保留任何旧实现以等待未来比较；若后续 GPU/provider 需要某段算法，只能从 Git 提取事实并在新

@@ -2,8 +2,8 @@
 
 > 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及当前
 > provider-neutral Buffer、mapping、transient BufferPool 和 tensor-free lifetime planner 路线。
-> Compute/Graph 尚未成为受支持用户面；本页不会把它们的旧 provider、kernel 或 graph 原型写成
-> shipping 能力。
+> Tensor 描述、operation 和 execution 由 [Compute](compute.md) 拥有，DAG 与 compiled artifact 由
+> [Graph](graph.md) 拥有；本页只解释它们共同依赖的 storage/lifetime 边界。
 > 适用于 C++23 source/static/shared 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)。
 
@@ -47,9 +47,10 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 大块、THP/NUMA placement | `LargeMapping` | large 表示 owner 尺寸，不把 THP hint 冒充显式 huge-page guarantee；requested 与 accepted policy 可分别查询 |
 | fiber stack | `FiberStack` / `FiberStackPool` | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
 
-未来 GPU staging、submission/completion lifetime 属于 Compute，不由 Mem 用“通用 pinned pool”猜测。
-未来 Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；不理解 Tensor 的通用
-placement/instantiate 机制归 Mem。两项都是模块边界说明，不表示今天已有可用 Compute/Graph API。
+GPU staging、submission/completion lifetime 属于 Compute，不由 Mem 用“通用 pinned pool”猜测。
+Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；不理解 Tensor 的通用
+placement/instantiate 机制归 Mem。当前 CPU one-op candidate 已按这一边界组合 `BufferView`，GPU
+provider 与多节点 planner 仍不得从这段边界说明中推断为已实现。
 
 Platform 的 `VmRegion` 仍是公开的低层 anonymous-address owner，适合自定义 allocator/JIT 或其它
 自建 storage owner；file/shared/anonymous storage mapping 则只有本表中的 Mem owner。已有
@@ -134,9 +135,9 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。
 
-当前 HYLE 没有已验收的 device/pinned/managed provider。外部或未来 provider 可以通过
+当前 HYLE 没有已验收的 device/pinned/managed memory provider。外部或未来 provider 可以通过
 `MemoryResourceRef` seam 复用本节 owner/view/pool/planner，但它必须自己文档化 device identity、
-coherence、native handle 与 completion lifetime；不要调用仓库中 QUEUED Compute 的旧头来推断合同。
+coherence、native handle 与 completion lifetime；Compute 的 CPU device 不等于新增一种 Mem resource。
 
 模型分片、超过单次 provider allocation 上限的 storage，或必须保留每段 provider identity 时，
 使用 `CompositeBuffer`，不要先拼成一个临时连续 buffer：

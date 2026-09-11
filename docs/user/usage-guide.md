@@ -47,8 +47,8 @@ target_link_libraries(my_app PRIVATE hyle::container)
 精确版本；patch 版本、headers 与 artifact 是同一个 C++ 构建合同。
 
 已验收产品中的 TLS、HTTP/2 和 trace 等昂贵能力默认关闭，相应 cache 选项只在 owner/gate 成立时
-出现。源码树里仍可见的 CUDA、ggml、Vulkan 选项属于 QUEUED Compute 的旧 baseline，不是可依赖的
-用户能力；新 Compute 开工后会按 backend/provider factor 重新定义。当前 trace 只有 Tracy。
+出现。当前 Compute candidate 只有不增加可选依赖的 CPU 实现；CUDA、Metal/MLX、Vulkan、HIP 和
+第三方 provider 只有各自通过独立能力、交付与性能审计后才会产生配置项。当前 trace 只有 Tracy。
 
 ## 选择模块
 
@@ -68,7 +68,8 @@ target_link_libraries(my_app PRIVATE hyle::container)
 | 异步文件、网络和 protocol 机制 | [io](io.md) |
 | CPU task/fiber runtime、结构化任务、同步与消息 | [sched](sched.md) |
 | 本地 child process、stdio pipe、等待、tree termination 与 reap | [process](process.md) |
-| device/backend/operator 与 graph | compute/graph 尚未完成，不作为已支持用户面 |
+| 显式 CPU execution、tensor binding、prepared RMSNorm 或 typed host kernel | [compute](compute.md)；当前是收口中的 one-op candidate，状态以 registry 为准 |
+| 可复用 one-op 逻辑计算图与执行物 | [graph](graph.md)；当前不是多节点 compiler，状态以 registry 为准 |
 
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有
 回答这些问题，请把它当作文档缺陷，不要从 benchmark 名称反推产品 API。

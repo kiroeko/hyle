@@ -29,6 +29,8 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [sched](sched.md)：CPU task/fiber runtime、结构化任务、同步与消息
 - [io](io.md)
 - [process](process.md)：受管本地 child、stdio、等待、tree termination 与可靠 reap
+- [compute](compute.md)：显式 CPU execution、tensor binding、prepared operation 与 typed host kernel
+- [graph](graph.md)：逻辑计算图、冷编译、可共享 Executable 与独占 Invocation
 
 未列在上述模块指南中的组件可能还没有经过审查的正常用户 journey；以施工状态和实际用户页为准。
 仓库中的 header、sample 或历史任务不能替代用户合同。模块进入 `CLOSED` 前必须补齐适用的正常

@@ -72,7 +72,7 @@ Invocation，反而把 Sched 和 Container 强制泄漏给 Graph。因此没有�
 | G04 | 没有 compile artifact 或诊断 | 实现 CPU compile、CompileReport、immutable Executable、独占 Invocation | provider/workspace/copy/sync 可枚举，partial failure 可清理 | 完成实现：report 明示 CPU/HYLE-native/零 workspace-copy-sync，copyable artifact、OOM/lifetime 测试通过 |
 | G05 | 没有与 Compute 共用的运行合同 | one-op plan 直接持有 `PreparedOperation` 并提交 bindings | steady 不读 Graph、不 search/allocate/prepare | 完成实现：plan 直接拥有 PreparedOperation，Invocation 仅固定 slot bind 后转交 submit |
 | G06 | 旧测试无法迁移为证据 | 重新建立 correctness/OOM/lifetime/concurrency/reset 测试 | 预声明 CPU matrix 全部有 verdict | 进行中：Windows header/结构/数值/OOM/lifetime/reset/two-thread Invocation 通过；Linux/macOS/sanitizer 待跑 |
-| G07 | 旧文档/sample/package 没有新用户 journey | 新 Graph guide 与 source/static/shared consumer | 三交付同 API，误用有诊断 | 待处理 |
+| G07 | 旧文档/sample/package 没有新用户 journey | 新 Graph guide 与 source/static/shared consumer | 三交付同 API，误用有诊断 | 完成：独立用户页与 package consumer 覆盖 builder/compile/report/bind/submit；Windows source、可搬迁 shared、可搬迁 static 均编译运行通过，shared export hygiene 通过（6 库、691 exports） |
 | G08 | Graph 税未量化 | candidate 后做 P0、one-op A/A preflight 与一次 P1 | 无无法解释的 material fixed loss | 待处理 |
 
 ### API / usability freeze

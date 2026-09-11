@@ -139,11 +139,26 @@ foreach(_linkage IN ITEMS shared static)
     LIST_DIRECTORIES FALSE
     "${_focused_probe_root}/*/CMakeLists.txt")
   list(SORT _focused_probe_cmake_files)
+  string(REPLACE "," ";" _hyle_closed_product_list "${_components}")
   foreach(_focused_probe_cmake IN LISTS _focused_probe_cmake_files)
     get_filename_component(_focused_probe_source
       "${_focused_probe_cmake}" DIRECTORY)
     file(RELATIVE_PATH _focused_probe_name
       "${_focused_probe_root}" "${_focused_probe_source}")
+    string(REPLACE "\\" "/" _focused_probe_path "${_focused_probe_name}")
+    string(REPLACE "/" ";" _focused_probe_parts "${_focused_probe_path}")
+    list(GET _focused_probe_parts 0 _focused_probe_product)
+    # A small number of focused probes exercise a product's internal factor
+    # journey while still consuming only the public product facade.
+    if(_focused_probe_product STREQUAL "util_core")
+      set(_focused_probe_product "util")
+    endif()
+    if(NOT _focused_probe_product IN_LIST _hyle_closed_product_list)
+      message(STATUS
+        "skip focused probe '${_focused_probe_name}': product "
+        "'${_focused_probe_product}' is not in this CLOSED SDK")
+      continue()
+    endif()
     string(REPLACE "\\" "-" _focused_probe_id "${_focused_probe_name}")
     string(REPLACE "/" "-" _focused_probe_id "${_focused_probe_id}")
     set(_focused_probe_build
@@ -163,5 +178,6 @@ foreach(_linkage IN ITEMS shared static)
       "${CMAKE_CTEST_COMMAND}" --test-dir "${_focused_probe_build}"
       -C Release --output-on-failure)
   endforeach()
+  unset(_hyle_closed_product_list)
 
 endforeach()
