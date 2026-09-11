@@ -41,7 +41,7 @@
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
 | io_watch | CLOSED | P0 / [PASS](tasks/io/io-watch-v2-recursive-tree.md) | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。 |
-| process | SCOPED | — | [record](tasks/process/process-v1-managed-child.md) | process v1 SCOPED：G03 的真实 journey、负空间、三平台/三交付验证与四批实现预算已冻结；公开 owner、reaper、pipe seam 和 termination 形状待源码审计。 |
+| process | AUDITED | — | [record](tasks/process/process-v1-managed-child.md) | process v1 AUDITED：显式 ProcessRuntime/ChildProcess、HYLE-native wait/pipe、三平台非轮询 reaper、tree termination 与四批有限实现已冻结；产品验证尚未运行。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

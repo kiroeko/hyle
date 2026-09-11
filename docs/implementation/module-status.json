@@ -329,9 +329,9 @@
     },
     {
       "module": "process",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/process/process-v1-managed-child.md",
-      "summary": "process v1 SCOPED：G03 的真实 journey、负空间、三平台/三交付验证与四批实现预算已冻结；公开 owner、reaper、pipe seam 和 termination 形状待源码审计。"
+      "summary": "process v1 AUDITED：显式 ProcessRuntime/ChildProcess、HYLE-native wait/pipe、三平台非轮询 reaper、tree termination 与四批有限实现已冻结；产品验证尚未运行。"
     }
   ]
 }
