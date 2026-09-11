@@ -203,15 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
-      "candidate": "a9847b9cebe373fe9daae68ae8ae7ab152560616",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
-        "material_margin_pct": 5
-      },
-      "summary": "sched v10 CLOSED：三档非抢占 execution priority 覆盖 admission/yield/wake/pinned/TaskScope 全路径；三平台正确性/sanitizer/三交付、IO 直接消费者、易用性、红队和 W1-WIN 两条同合同产品路线的 5% P1 非劣门全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/sched/sched-v11-private-fcontext-export.md",
+      "summary": "sched v11 SCOPED：现有 Windows shared artifact 意外导出三个内部 fcontext 汇编入口；本轮只收紧私有链接边界，公开 C++ API、调度算法和运行时成本不变。"
     },
     {
       "module": "io_core",

@@ -26,6 +26,11 @@
 - [性能计时前完成边界与执行拓扑预审](project/performance-preflight-topology-2026-09.md)；
 - [真实 workload paired interleaving](project/performance-workload-interleaving-2026-09.md)。
 
+当前构建/交付审查：
+
+- [共享库导出边界 v13](project/build-system-v13-shared-export-hygiene.md)：清除意外内部 C/汇编导出，
+  并把显式 C++ export-only 变为 shared artifact 机械合同。
+
 当前全库性能工作：
 
 - [全库性能定位与差距消除](project/full-library-performance-positioning-2026-09.md)：区分方向、实用
