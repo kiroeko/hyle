@@ -144,15 +144,17 @@
     },
     {
       "module": "mem",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/mem/mem-v8-resource-type-visibility.md",
-      "summary": "mem v8 AUDITED：MemoryResource 是唯一跨 shared-factor 派生的公开多态基类；有限修复为类级 export，API、layout、虚表和运行时成本不变。"
+      "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
+      "summary": "mem v8 CANDIDATE：MemoryResource 类级 export 已修复 default-hidden shared 类型身份；三平台完整下游交付通过，API、layout、虚表、算法和运行时成本不变。"
     },
     {
       "module": "mem_vm",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/mem_vm/mem-vm-v3-resource-visibility-replay.md",
-      "summary": "mem-vm v3 AUDITED：源码路径无独立缺陷；只继承 Mem 的公开类型可见性修复并重放跨 factor 三交付，不修改 VM API 或实现。"
+      "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
+      "summary": "mem-vm v3 CANDIDATE：源码无独立修改；继承 Mem 类型可见性修复后，三平台跨 factor source/static/shared 交付闭包通过。"
     },
     {
       "module": "simd",
@@ -191,9 +193,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v11-private-fcontext-export.md",
-      "summary": "sched v11 AUDITED：fcontext 修复本身已通过 Windows/Linux；Mac 发现下层 Mem 类型可见性缺口，待该依赖修复后重新签完整闭包 candidate。"
+      "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
+      "summary": "sched v11 CANDIDATE：三平台三交付与实际共享导出扫描通过；Windows raw fcontext 不再公开，依赖闭包的 Mem 类型身份也已修复。"
     },
     {
       "module": "io_core",

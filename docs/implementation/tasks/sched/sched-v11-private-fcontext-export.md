@@ -79,3 +79,14 @@ MacBook Air 候选后交付首次运行在链接下层 `mem_vm` 时发现 `Memor
 fcontext 修复或 Sched 算法缺陷，但 candidate 的完整依赖闭包尚不能在 default-hidden Mach-O 下交付，
 因此依法由 `CANDIDATE` 退回 `AUDITED`。修复由 Mem v8 与 Mem-vm v3 独立卡拥有；完成后 Sched 需基于
 新依赖提交重新签 candidate，不得沿用 `e07c025e` 的跨平台结论。
+
+### 完整依赖闭包重新签发
+
+- immutable product/build candidate：`ad5bff895125fb0d95281b36559010435c3d7892`；
+- Sched 的 fcontext 修复仍是 `e07c025e` 中唯一产品 seam 变化；新候选只纳入已依法修复的 Mem 类型
+  可见性依赖；
+- Windows、Linux GCC 14、MacBook Air arm64 的 Sched source/static/shared relocated consumer 全部
+  通过；Windows Sched correctness 通过；
+- shared artifact 实扫分别覆盖 Windows 8 DLL/492 exports、Linux 8 ELF/535 exports、macOS 8
+  dylib/533 exports，均未发现 raw fcontext、`mi_*` 或旧 plain `hyle_*` C 入口；
+- candidate 后只允许补全量 package、红队、文档和 terminal 状态证据。

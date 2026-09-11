@@ -21,3 +21,13 @@
 源码检查确认 `BorrowedMappedResource` 的继承、对象生命周期和 `mapped_resource()` 路线正确；链接失败
 完全由下层 public type visibility 解释，本模块没有第二个 FIX。进入 `AUDITED`，只继承 Mem v8 候选并
 重放验证；不允许复制基类、关闭 RTTI 或修改 Mem-vm 产品源码来掩盖错误边界。
+
+## Candidate
+
+- immutable dependency-closure candidate：`ad5bff895125fb0d95281b36559010435c3d7892`；
+- 本模块产品源码、公开 API、layout、mapping 生命周期、算法和常态成本没有变化；
+- Windows Mem-vm correctness 通过；Windows、Linux GCC 14、MacBook Air arm64 的 Sched
+  source/static/shared relocated consumer 均成功跨过本模块；
+- default-hidden Mac shared 构建已证明 `BorrowedMappedResource` 可以沿公开 Mem 基类完成 RTTI/vtable
+  链接；
+- candidate 后只允许补 terminal 证据、文档与状态。

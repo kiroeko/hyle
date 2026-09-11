@@ -37,3 +37,13 @@ RTTI/vtable 身份。类级 default visibility 是该现有能力的必要交付
 有限改动冻结为：把 `HYLE_MEM_API` 移到 `MemoryResource` 类声明，并删除该类 out-of-line virtual 上
 重复的成员级标注；方法集合、顺序、签名与定义不动。该属性不占对象 storage、不增加 vtable slot，也
 不进入指令路径。当前进入 `AUDITED`，下一提交才允许修改公开头。
+
+## Candidate
+
+- immutable product/build candidate：`ad5bff895125fb0d95281b36559010435c3d7892`；
+- `MemoryResource` 改为类级 `HYLE_MEM_API`，冗余成员级标注已删除；公开方法、虚表顺序、对象
+  layout、资源算法和常态成本不变；
+- Windows Mem/Mem-vm correctness 与 Sched correctness 通过；Windows、Linux GCC 14、MacBook Air
+  arm64 的 Sched source/static/shared relocated consumer 均通过；
+- MacBook Air 上原先的 `typeinfo for hyle::mem::MemoryResource` 跨 factor 链接失败已消失；
+- candidate 后只允许补 terminal 证据、文档与状态，不再修改产品实现。
