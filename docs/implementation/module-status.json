@@ -337,6 +337,11 @@
         "evidence": "docs/implementation/tasks/process/process-v1-managed-child.md"
       },
       "summary": "process v1 CLOSED：受管 child 的 argv/env/cwd/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、三 sanitizer、三交付和终局红队；P0 成本与平台限制已如实记录。"
+    },
+    {
+      "module": "io_websocket",
+      "state": "QUEUED",
+      "summary": "G04 WebSocket 的 component identity 已保留；尚未冻结依赖、公开 API 或 target，不进入 io 产品 façade。"
     }
   ]
 }

@@ -317,6 +317,10 @@ _hyle_declare_component(process
   PRIVATE_DEPS container container_intrusive platform_thread util_core
   PUBLIC_DEPS core error time platform_fs mem sched io_core)
 
+# Reserved by G04. A QUEUED identity deliberately has no target metadata or
+# consumer-facing product until its closure round freezes the protocol shape.
+_hyle_declare_component(io_websocket QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
