@@ -137,6 +137,10 @@ refcount 直接实现；这些是已有模块的正确复用，不需要新公�
   每个 node 恰好调用一次 PreparedOperation；
 - Windows selected Graph library、public-header self-containment 与 Graph tests 已通过；覆盖真实三节点片段、
   分支/共享值/多输出、跨 builder ID、shape failure recovery、allocator OOM/finish retry、workspace/report、
-  reset/reuse、并发 Invocation、owner lifetime 和 steady metadata allocation；
-- v1 fixed-shape benchmark target 已退出活动 bench，冻结合同迁到历史 evidence。v2 P1、三平台、sanitizer、
-  red-team 与 source/static/shared 尚未执行，因此本 checkpoint 不构成 immutable candidate 或 `CLOSED`。
+  reset/reuse、并发 Invocation、owner lifetime、零尺寸 workspace、发布后继续消费的中间值、跨 Context Queue
+  和 steady metadata allocation；
+- Windows `graph` selected-product smoke 的 source embedding、重定位 installed shared、重定位 installed static
+  consumer 均编译并实际运行；shared 扫描 7 个 HYLE libraries / 754 exports 通过；产品 API/算法候选固定为
+  `39bbb3be235317f4b0e70736a4d1f0112f2c359a`；
+- v1 fixed-shape benchmark target 已退出活动 bench，冻结合同迁到历史 evidence。v2 P1、Linux/macOS、
+  sanitizer 与终局 red-team 尚未执行，因此本 checkpoint 不构成 `CLOSED`。

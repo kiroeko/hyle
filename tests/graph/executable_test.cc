@@ -462,4 +462,72 @@ TEST(Invocation, PlanAndRunStateRetainTheirContextOwnedArtifacts) {
   EXPECT_TRUE(invocation.valid());
 }
 
+TEST(Invocation, ZeroExtentIntermediateWorkspaceRemainsAValidRun) {
+  const LogicalGraph logical = make_transformer_graph(0, 4, 4);
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  CompiledGraph compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.node_count, 3u);
+
+  Invocation invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input = make_tensor(matrix(0, 4));
+  OwnedTensor norm = make_tensor(row(4));
+  OwnedTensor weight = make_tensor(matrix(8, 4).transposed().value());
+  OwnedTensor output = make_tensor(matrix(0, 4));
+  const std::array<float, 4> norm_values{1, 1, 1, 1};
+  const std::array<float, 32> weight_values{};
+  write(norm, norm_values);
+  write(weight, weight_values);
+  ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.inputs[1], norm.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.inputs[2], weight.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion.has_value());
+  EXPECT_TRUE(completion->wait().ok());
+}
+
+TEST(Invocation, PublishedIntermediateCanFeedALaterNode) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc description = row(4);
+  const ValueId input = builder.input(description).value();
+  const ValueId first = builder.add(RmsNorm{}, input).value();
+  const ValueId second = builder.add(RmsNorm{}, first).value();
+  ASSERT_TRUE(builder.output(first).ok());
+  ASSERT_TRUE(builder.output(second).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  CompiledGraph compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_EQ(compiled.report.workspace_bytes, 0u);
+  Invocation invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input_tensor = make_tensor(description);
+  OwnedTensor first_tensor = make_tensor(description);
+  OwnedTensor second_tensor = make_tensor(description);
+  const std::array<float, 4> values{1, 2, 3, 4};
+  write(input_tensor, values);
+  ASSERT_TRUE(invocation.bind(input, input_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(first, first_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(second, second_tensor.view).ok());
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion.has_value());
+  EXPECT_TRUE(completion->wait().ok());
+}
+
+TEST(Invocation, RejectsAQueueFromAnotherContext) {
+  const LogicalGraph logical = make_rms_graph(row(4));
+  Context first = Context::create(Device::cpu()).value();
+  Context second = Context::create(Device::cpu()).value();
+  Queue wrong_queue = second.create_queue().value();
+  Invocation invocation = hyle::graph::compile(logical.graph, first)
+                              ->executable.create_invocation()
+                              .value();
+  OwnedTensor input = make_tensor(row(4));
+  OwnedTensor output = make_tensor(row(4));
+  ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
+  EXPECT_TRUE(invocation.submit(wrong_queue).error().IsInvalidArgument());
+}
+
 } // namespace
