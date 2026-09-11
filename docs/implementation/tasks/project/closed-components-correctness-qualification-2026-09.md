@@ -87,7 +87,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q01 | 生成公开头、factor、测试和现有证据 inventory | 29 factor 无遗漏；孤儿公开头/测试显式报错 | `COMPLETE` |
 | Q02 | 建立 Linux line/branch discovery profile | 可复现、隔离 build、输出 zero-hit 清单；百分比不作 gate | `COMPLETE` |
 | Q03 | Wave A 语义矩阵与缺口测试 | 每个公开能力格为 PROVEN/NA 或诚实 UNPROVEN | `COMPLETE` |
-| Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `QUEUED` |
+| Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `QUEUED` |
@@ -152,3 +152,15 @@ Error/Time 为 5/5 PASS。旧 candidate 到当前 HEAD 的产品路径均无变�
 三平台/结构证据可复用；当前 build/package 三交付、OS/ISA 专属路线和 sanitizer 仍明确留给 Q09，未
 写成伪 PASS。zero-hit 路径逐项归因为编译期头、平台/工具链分支、abort 无法 flush 或已覆盖能力的等价
 模板实例，没有发现产品 correctness defect，也没有触发任何模块 reopen。
+
+## Q04 结果
+
+Wave B 的七个 factor 已完成逐能力回映，详见
+[`correctness/wave-b-2026-09`](../../evidence/correctness/wave-b-2026-09.md)。当前公开头与实现相对各自
+registry candidate 均无差异；shipping discovery 的 14/14 CTest group 全部通过。独立 fault build
+暴露出单体 Mem executable 在 gcov 下不能在 120 秒内作为一个测试原子运行；该部分结果被作废，清空
+计数后以相同硬 timeout 运行完整 Platform/Platform-fs 与 17 个 Mem 故障/诊断用例，全部通过。
+
+本波未发现产品缺陷或 reopen trigger。12 个 unobserved product file 都是 façade、declaration、
+visibility 或 private include；Windows/macOS/ARM/多 NUMA backend、当前 build/package 三交付和适用
+sanitizer 仍诚实留给 Q09。覆盖率只作路径发现，没有被转换成 gate、API 改动或状态结论。
