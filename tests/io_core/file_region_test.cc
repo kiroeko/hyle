@@ -220,6 +220,8 @@ void run_region_case(std::uint16_t port, FileHandle &file, FileRegion region,
 }
 
 struct PeerCloseResult {
+  std::atomic<bool> server_ready{false};
+  std::atomic<bool> server_accepted{false};
   std::atomic<bool> peer_closed{false};
   std::atomic<bool> server_done{false};
   std::atomic<StatusCode> status{StatusCode::Unknown};
@@ -289,12 +291,22 @@ Task<int> peer_close_server(AllocatorRef allocator, IoContext *io,
                             TcpListener *listener, FileHandle *file_owner,
                             PeerCloseResult *result) {
   auto accepted = co_await listener->accept(kOwner);
-  if (!accepted)
+  if (!accepted) {
+    result->status.store(accepted.error().code(), std::memory_order_release);
+    result->server_ready.store(true, std::memory_order_release);
+    result->server_done.store(true, std::memory_order_release);
     co_return 0;
+  }
+  result->server_accepted.store(true, std::memory_order_release);
   auto adopted = File::adopt(*io, kOwner, std::move(*file_owner));
-  if (!adopted)
+  if (!adopted) {
+    result->status.store(adopted.error().code(), std::memory_order_release);
+    result->server_ready.store(true, std::memory_order_release);
+    result->server_done.store(true, std::memory_order_release);
     co_return 0;
+  }
   File file = std::move(*adopted);
+  result->server_ready.store(true, std::memory_order_release);
   while (!result->peer_closed.load(std::memory_order_acquire))
     Fiber::yield();
 
@@ -318,8 +330,11 @@ Task<int> peer_close_client(AllocatorRef allocator, IoContext *io,
     TcpStream stream = std::move(*opened);
     Status connected =
         co_await stream.connect(Endpoint::loopback(AddressFamily::kIpv4, port));
-    if (connected.ok())
+    if (connected.ok()) {
+      while (!result->server_ready.load(std::memory_order_acquire))
+        Fiber::yield();
       reset_connection_on_close(stream);
+    }
   }
   result->peer_closed.store(true, std::memory_order_release);
   co_return 0;
@@ -426,6 +441,7 @@ TEST(IoFileRegion, PeerResetReturnsTypedFailureWithoutProcessSignal) {
   EXPECT_EQ(g_file_region_sigpipe, 0);
 #endif
   EXPECT_TRUE(result.server_done.load(std::memory_order_acquire));
+  EXPECT_TRUE(result.server_accepted.load(std::memory_order_acquire));
   EXPECT_NE(result.status.load(std::memory_order_acquire), StatusCode::Ok);
   EXPECT_LT(result.sent.load(std::memory_order_acquire), kPeerCloseBytes);
 }
