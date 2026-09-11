@@ -1,5 +1,6 @@
 hyle_ensure_module_test_target(io_tls)
 hyle_add_header_self_contained_test(io_tls HEADER_DIR io HEADERS tls.h)
+hyle_add_test(io_tls NAME feature SOURCES feature_test.cc)
 
 if(HYLE_IO_TLS_ENABLED)
   hyle_add_test(io_tls SOURCES tls_test.cc DEPS hyle_sched)
