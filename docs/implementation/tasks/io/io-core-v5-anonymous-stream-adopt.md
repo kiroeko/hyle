@@ -1,6 +1,6 @@
 # IO Core v5：匿名本地字节流接管
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -63,3 +63,10 @@ P0 账单：新增调用本身 O(1)、一次 backend bind、零 allocation/copy�
   通过，证明 anonymous seam 没有泄漏为另一套产品或破坏 package closure。
 - 候选后只允许补 terminal 红队、证据与状态；若再改变 IO API、completion 算法或常态成本，退回
   `AUDITED`。
+
+## 终局红队与裁决（`CLOSED`）
+
+候选后按 ownership、OOM、并发、依赖、交付差异、性能比较与文档误导逐项检查。未发现 anonymous handle
+接管、IOCP completion 修正或公开 IO 合同的新问题；Process 终局红队发现的 POSIX file-stdio `dup2` 来源
+别名只属于调用方的 spawn action 编排，不改变本 seam。候选 tree 保持不变，P0、四平台环境、sanitizer、
+source/static/shared 和中央组件合同证据有效，`io_core` v5 裁决为 **CLOSED**。

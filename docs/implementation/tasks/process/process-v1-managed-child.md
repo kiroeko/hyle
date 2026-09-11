@@ -1,6 +1,6 @@
 # Process v1：受管子进程生命周期
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -170,3 +170,15 @@ LocalStream、tree ownership、abandon/reap 和 runtime shutdown 的同合同入
   `NOT_APPLICABLE`，不得用 raw spawn 对完整 façade 排名。
 - candidate LOC：全库 `544,413`；自实现不含测试 `97,522`；Process 实现 `1,908`；io_core 实现
   `11,570`。候选后只允许终局红队、说明、证据和状态；产品/API/算法变化必须退回 `AUDITED`。
+
+## 首个候选的终局红队裁决（退回 `AUDITED`）
+
+终局源码检查构造出一个合法公开调用：`ProcessStdio::file()` 的 POSIX native fd 可以是 `0/1/2`，同时另一
+个较早 slot 也可被重定向。当前 file actions 按 stdin、stdout、stderr 顺序执行 `dup2`，因此较早 action
+可能覆盖较后 action 原本要读取的 stdio fd；例如 stdin→null、stdout→调用方 fd 0 会把 stdout 错接到
+null。这是 API/ownership 正确性缺陷，不是性能样本波动。
+
+按候选不可变合同，`4f0529a8` 保留为被反证的历史候选，本轮退回 `AUDITED`。冻结唯一纠正：在 POSIX
+parent 侧先把每个 `file()` 来源 duplicate 到大于 stderr 的 CLOEXEC fd，并由既有 temporary owner/closefrom
+路径管理；公开 API、对象 layout、carrier、依赖和正常复杂度均不变。只补覆盖 `0/1/2` 来源别名的回归，重跑
+Process 定向测试、sanitizer 与三交付；不重跑无关 IO 或 P1。

@@ -215,10 +215,14 @@
     },
     {
       "module": "io_core",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md",
       "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f",
-      "summary": "io_core v5 CANDIDATE：唯一 LocalStream::adopt_anonymous seam 与 Windows 同步 terminal completion 修正已通过三平台 process 组合、sanitizer 和三交付；候选后终局红队待签。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md"
+      },
+      "summary": "io_core v5 CLOSED：唯一 LocalStream::adopt_anonymous seam 与 Windows 同步 terminal completion 修正已通过四平台环境、sanitizer、三交付和终局红队；既有 transport/layout/普通 I/O 热路径不变。"
     },
     {
       "module": "io_tls",
@@ -325,10 +329,9 @@
     },
     {
       "module": "process",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/process/process-v1-managed-child.md",
-      "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f",
-      "summary": "process v1 CANDIDATE：受管 child 的 argv/env/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、sanitizer 和 source/static/shared；候选后终局红队待签。"
+      "summary": "process v1 AUDITED：首个候选的终局红队发现 POSIX file-stdio 来源为 0/1/2 时存在 dup2 顺序别名；冻结一次来源 duplicate 修正及定向回归，其他 API/backend/验证结果保持有效。"
     }
   ]
 }
