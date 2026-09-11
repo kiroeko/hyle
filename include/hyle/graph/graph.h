@@ -90,13 +90,13 @@ public:
   input_description(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<NodeId> node_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<const compute::Operation &>
-  operation(std::size_t node_index = 0) const noexcept;
+  operation(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<std::size_t>
-  node_input_count(std::size_t node_index) const noexcept;
+  node_input_count(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
-  node_input(std::size_t node_index, std::size_t input_index) const noexcept;
-  HYLE_GRAPH_API Result<ValueId>
-  node_output(std::size_t node_index) const noexcept;
+  node_input(NodeId node, std::size_t input_index) const noexcept;
+  HYLE_GRAPH_API Result<ValueId> node_output(NodeId node) const noexcept;
+  HYLE_GRAPH_API Result<NodeId> producer(ValueId value) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
   output_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<const compute::TensorDesc &>

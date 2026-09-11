@@ -14,6 +14,7 @@
 namespace hyle::graph::detail {
 
 inline constexpr std::uint32_t kNoWorkspaceRequest = UINT32_MAX;
+inline constexpr std::uint32_t kNoInPlaceSource = UINT32_MAX;
 inline constexpr std::uint8_t kExternalInput = 1u << 0;
 inline constexpr std::uint8_t kExternalOutput = 1u << 1;
 
@@ -54,7 +55,8 @@ struct PlanState final : util::RefCounted<PlanState> {
       : allocator(allocator_value), generation(generation_value),
         nodes(allocator_value), input_ids(allocator_value),
         output_ids(allocator_value), descriptions(allocator_value),
-        workspace_requests(allocator_value), binding_roles(allocator_value) {}
+        workspace_requests(allocator_value), in_place_sources(allocator_value),
+        binding_roles(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -69,6 +71,9 @@ struct PlanState final : util::RefCounted<PlanState> {
   ValueIds output_ids;
   TensorDescriptions descriptions;
   ValueOrdinals workspace_requests;
+  // For an externally bound output, identifies the sole external input that
+  // may use the exact same byte range. All other output overlap is rejected.
+  ValueOrdinals in_place_sources;
   BindingRoles binding_roles;
   mem::LifetimePlan workspace_plan{};
   std::size_t workspace_bytes = 0;

@@ -26,7 +26,7 @@ HYLE_COMPUTE_API std::string_view backend_name(BackendKind backend) noexcept;
 // value; Device factories/enumeration expose only implementations compiled
 // into the selected product.
 class Device final {
- public:
+public:
   constexpr Device() noexcept = default;
 
   static constexpr Device cpu() noexcept {
@@ -42,7 +42,7 @@ class Device final {
 
   friend constexpr bool operator==(Device, Device) noexcept = default;
 
- private:
+private:
   constexpr Device(BackendKind backend, std::uint32_t ordinal) noexcept
       : backend_(backend), ordinal_(ordinal) {}
 
@@ -57,17 +57,18 @@ struct DeviceProperties final {
   bool asynchronous_queues = false;
 };
 
-// Buffer-fill discovery: returns the full count and writes at most output.size()
-// entries. An empty span is a count-only query, so truncation is always visible
-// as returned_count > output.size().
-HYLE_COMPUTE_API Result<std::size_t> enumerate_devices(
-    std::span<Device> output = {}) noexcept;
+// Buffer-fill discovery: returns the full count and writes at most
+// output.size() entries. An empty span is a count-only query, so truncation is
+// always visible as returned_count > output.size().
+HYLE_COMPUTE_API Result<std::size_t>
+enumerate_devices(std::span<Device> output = {}) noexcept;
 HYLE_COMPUTE_API Result<DeviceProperties> query_device(Device device) noexcept;
 
 struct ContextOptions final {
   // Empty selects mem::system_allocator(). This allocation is cold context
   // metadata, never a submit-path fallback. A custom allocator backing must
-  // outlive the Context and every Queue/PreparedOperation retained from it.
+  // outlive the Context and every Queue/PreparedOperation/Graph Executable or
+  // Invocation whose metadata was created from it.
   mem::AllocatorRef metadata_allocator{};
 };
 
@@ -76,23 +77,23 @@ struct QueueOptions final {};
 namespace detail {
 struct ContextState;
 struct ContextAccess;
-}
+} // namespace detail
 
 class Queue;
 class PreparedOperation;
 
 // Owns one backend runtime/session. Destroying or closing the owner stops new
-// work through all borrowed/retained Queue and PreparedOperation handles. CPU
-// v1 has no asynchronous in-flight work to drain and therefore never hides a
+// work through all borrowed/retained Queue and PreparedOperation handles. The
+// current CPU provider has no asynchronous in-flight work to drain and never hides a
 // wait here. close()/destruction must not race submission through another
 // handle; ordinary submissions on distinct queues may run concurrently.
 class HYLE_COMPUTE_API Context final {
- public:
+public:
   Context() noexcept = default;
-  Context(const Context&) = delete;
-  Context& operator=(const Context&) = delete;
-  Context(Context&& other) noexcept;
-  Context& operator=(Context&& other) noexcept;
+  Context(const Context &) = delete;
+  Context &operator=(const Context &) = delete;
+  Context(Context &&other) noexcept;
+  Context &operator=(Context &&other) noexcept;
   ~Context();
 
   static Result<Context> create(Device device,
@@ -106,22 +107,23 @@ class HYLE_COMPUTE_API Context final {
   Result<Queue> create_queue(QueueOptions options = {}) const noexcept;
   Status close() noexcept;
 
- private:
-  explicit Context(detail::ContextState* state) noexcept : state_(state) {}
+private:
+  explicit Context(detail::ContextState *state) noexcept : state_(state) {}
 
   friend struct detail::ContextAccess;
-  detail::ContextState* state_ = nullptr;
+  detail::ContextState *state_ = nullptr;
 };
 
-// Move-only ordered submission domain. CPU v1 executes on the caller thread;
-// this is a semantic queue, not a hidden worker or process-global scheduler.
+// Move-only ordered submission domain. The current CPU provider executes on the
+// caller thread; this is a semantic queue, not a hidden worker or process-global
+// scheduler.
 class HYLE_COMPUTE_API Queue final {
- public:
+public:
   Queue() noexcept = default;
-  Queue(const Queue&) = delete;
-  Queue& operator=(const Queue&) = delete;
-  Queue(Queue&& other) noexcept;
-  Queue& operator=(Queue&& other) noexcept;
+  Queue(const Queue &) = delete;
+  Queue &operator=(const Queue &) = delete;
+  Queue(Queue &&other) noexcept;
+  Queue &operator=(Queue &&other) noexcept;
   ~Queue();
 
   bool valid() const noexcept { return state_ != nullptr; }
@@ -130,15 +132,15 @@ class HYLE_COMPUTE_API Queue final {
   Device device() const noexcept;
   Status close() noexcept;
 
- private:
-  explicit Queue(detail::ContextState* state) noexcept
+private:
+  explicit Queue(detail::ContextState *state) noexcept
       : state_(state), open_(true) {}
 
   friend class Context;
   friend class PreparedOperation;
   friend struct detail::ContextAccess;
-  detail::ContextState* state_ = nullptr;
+  detail::ContextState *state_ = nullptr;
   bool open_ = false;
 };
 
-}  // namespace hyle::compute
+} // namespace hyle::compute

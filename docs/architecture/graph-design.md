@@ -1,9 +1,10 @@
 # HYLE Graph：计算 DAG、编译与可复用执行计划
 
 > 决策状态：`ACCEPTED`。本文定义 Graph 的长期产品合同；当前实现状态只查
-> [`module-status.json`](../implementation/module-status.json)。one-op v1 已独立签发，当前多节点 CPU
-> slice 按有限 v2 卡推进。旧 `TaskGraph`、parallel/data-parallel API、旧任务和 benchmark 已退出产品树，
-> 只可从 Git 历史取得调查事实；本页不签发用户可用性，也不要求兼容旧头。
+> [`module-status.json`](../implementation/module-status.json)。当前 Graph 仍为 `AUDITED`，多节点 CPU
+> 纵切只证明本轮登记的 DAG/Executable/Invocation 合同。旧 `TaskGraph`、parallel/data-parallel API 与
+> benchmark 已退出产品树；被删除的旧字节只可从 Git 历史取得调查事实，历史 task/evidence 不是当前
+> 设计输入、实现模板或用户承诺。本页不签发用户可用性，也不要求兼容旧头。
 
 ## 1. Graph 解决什么问题
 
@@ -80,7 +81,7 @@ oneDNN 的 compiled partition/scratchpad 和真实推理引擎的 graph capture/
 
 ## 4. IR 的最小完整语义
 
-Graph v1 是有限计算 DAG，不是任意控制流 IR。它必须能表达：
+HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同必须能表达：
 
 - 多输入/输出 operation，显式常量与 external binding；
 - static shape 和带约束的 symbolic dimension；编译结果按明确 shape signature specialization；

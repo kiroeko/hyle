@@ -101,15 +101,20 @@ TEST(GraphBuilder, BuildsNaturalMultiNodeTransformerFragment) {
   EXPECT_EQ(graph.output_description().value(), activation);
   EXPECT_EQ(graph.value_description(projected).value(), matrix(2, 8));
 
-  EXPECT_EQ(graph.operation(0)->kind(), OperationKind::kRmsNorm);
-  EXPECT_EQ(graph.operation(1)->kind(), OperationKind::kMatMul);
-  EXPECT_EQ(graph.operation(2)->kind(), OperationKind::kSiluAndMul);
-  EXPECT_EQ(graph.node_input_count(0).value(), 2u);
-  EXPECT_EQ(graph.node_input(0, 0).value(), input);
-  EXPECT_EQ(graph.node_input(0, 1).value(), weight);
-  EXPECT_EQ(graph.node_output(0).value(), normalized);
-  EXPECT_EQ(graph.node_output(1).value(), projected);
-  EXPECT_EQ(graph.node_output(2).value(), activated);
+  const auto norm_node = graph.node_id(0).value();
+  const auto matmul_node = graph.node_id(1).value();
+  const auto activation_node = graph.node_id(2).value();
+  EXPECT_EQ(graph.operation(norm_node)->kind(), OperationKind::kRmsNorm);
+  EXPECT_EQ(graph.operation(matmul_node)->kind(), OperationKind::kMatMul);
+  EXPECT_EQ(graph.operation(activation_node)->kind(),
+            OperationKind::kSiluAndMul);
+  EXPECT_EQ(graph.node_input_count(norm_node).value(), 2u);
+  EXPECT_EQ(graph.node_input(norm_node, 0).value(), input);
+  EXPECT_EQ(graph.node_input(norm_node, 1).value(), weight);
+  EXPECT_EQ(graph.node_output(norm_node).value(), normalized);
+  EXPECT_EQ(graph.node_output(matmul_node).value(), projected);
+  EXPECT_EQ(graph.node_output(activation_node).value(), activated);
+  EXPECT_EQ(graph.producer(normalized).value(), norm_node);
   EXPECT_EQ(input.kind(), ValueKind::kInput);
   EXPECT_EQ(normalized.kind(), ValueKind::kNodeOutput);
 }
@@ -128,8 +133,8 @@ TEST(GraphBuilder, SupportsBranchesSharedValuesAndMultipleOutputs) {
   EXPECT_EQ(graph.input_count(), 3u);
   EXPECT_EQ(graph.node_count(), 2u);
   EXPECT_EQ(graph.output_count(), 2u);
-  EXPECT_EQ(graph.node_input(0, 0).value(), input);
-  EXPECT_EQ(graph.node_input(1, 0).value(), input);
+  EXPECT_EQ(graph.node_input(graph.node_id(0).value(), 0).value(), input);
+  EXPECT_EQ(graph.node_input(graph.node_id(1).value(), 0).value(), input);
   EXPECT_EQ(graph.output_id(0).value(), first);
   EXPECT_EQ(graph.output_id(1).value(), second);
   EXPECT_EQ(graph.output_description(0).value(), matrix(2, 3));
@@ -241,12 +246,20 @@ TEST(Graph, InvalidOutOfRangeAndForeignQueriesAreRecoverable) {
   Graph graph = std::move(builder).finish().value();
   EXPECT_TRUE(graph.input_id(1).error().IsOutOfRange());
   EXPECT_TRUE(graph.node_id(1).error().IsOutOfRange());
-  EXPECT_TRUE(graph.node_input(0, 1).error().IsOutOfRange());
+  const auto node = graph.node_id().value();
+  EXPECT_TRUE(graph.node_input(node, 1).error().IsOutOfRange());
+  EXPECT_TRUE(graph.producer(input).error().IsFailedPrecondition());
   EXPECT_TRUE(graph.output_id(1).error().IsOutOfRange());
 
   GraphBuilder other = GraphBuilder::create().value();
   const auto foreign = other.input(row(4)).value();
+  const auto foreign_output = other.add(RmsNorm{}, foreign).value();
+  ASSERT_TRUE(other.output(foreign_output).ok());
+  Graph other_graph = std::move(other).finish().value();
+  const auto foreign_node = other_graph.node_id().value();
   EXPECT_TRUE(graph.value_description(foreign).error().IsInvalidArgument());
+  EXPECT_TRUE(graph.operation(foreign_node).error().IsInvalidArgument());
+  EXPECT_TRUE(graph.producer(foreign_output).error().IsInvalidArgument());
 }
 
 } // namespace

@@ -1,5 +1,9 @@
 # Graph v1：清洁计算 DAG 与 one-op Executable 纵切
 
+> **历史终局记录。** 本卡只记录已发生的 v1 纵切和删除裁决，不授权恢复任何旧源码、API、测试或
+> benchmark，也不是当前 Graph 的实现模板。当前状态与工作范围只查
+> [`module-status.json`](../../module-status.json)及其所指向的活动记录；旧产品字节只存在于 Git 历史。
+
 ## Closure card
 
 - component / owner：`graph` / Graph；round=`graph-v1-clean-dag`；

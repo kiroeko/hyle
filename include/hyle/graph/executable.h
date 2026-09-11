@@ -25,7 +25,7 @@ class Invocation;
 // hides copies, synchronization or fallback behind this report.
 struct CompileReport final {
   compute::BackendKind backend = compute::BackendKind::kUnknown;
-  compute::ProviderKind provider = compute::ProviderKind::kHyleNative;
+  compute::ProviderKind provider = compute::ProviderKind::kUnknown;
   std::size_t workspace_bytes = 0;
   std::size_t workspace_backing_count = 0;
   std::size_t node_count = 0;
@@ -66,7 +66,10 @@ private:
 
 // Exclusive mutable run state: external bindings plus one Mem lifetime-plan
 // instance. Creation may allocate; bind/reset/submit never grow metadata,
-// search a provider, JIT, pack weights, or allocate workspace.
+// search a provider, JIT, pack weights, or allocate workspace. bind() checks
+// the candidate against already-bound external outputs (and, for a new output,
+// external inputs), so all bindings together cost O(inputs*outputs+outputs^2)
+// in the worst case while repeated submit remains O(nodes+bindings).
 class Invocation final {
 public:
   Invocation() noexcept = default;

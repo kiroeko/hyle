@@ -67,7 +67,8 @@ return done->wait();                  // terminal failure
 ## 所有权、失败和限制
 
 - `Device` 是廉价值；`Context`、`Queue`、`PreparedOperation` 与 `Completion` 是显式生命周期对象。
-  Context metadata allocator 必须活过从它保留的 handles。
+  Context metadata allocator 必须活过从它保留的 handles，以及由该 Context 编译出的 Graph
+  Executable/Invocation。
 - Tensor views 不拥有 payload。Mem Buffer/resource 以及 Queue 必须活到 Completion 终态。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。

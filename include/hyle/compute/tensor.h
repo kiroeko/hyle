@@ -28,8 +28,9 @@ enum class DataType : std::uint8_t {
 HYLE_COMPUTE_API std::size_t data_type_size(DataType type) noexcept;
 
 // Self-contained logical tensor description. Strides are in elements, not
-// bytes. Negative strides are deliberately rejected in v1; zero strides can
-// describe broadcast inputs but are not accepted by the first RMSNorm route.
+// bytes. Negative strides are deliberately outside the current public contract;
+// zero strides can describe broadcast inputs but are accepted only by operations
+// whose prepared route declares broadcast support.
 class HYLE_COMPUTE_API TensorDesc final {
  public:
   TensorDesc() noexcept = default;

@@ -515,6 +515,60 @@ TEST(Invocation, PublishedIntermediateCanFeedALaterNode) {
   EXPECT_TRUE(completion->wait().ok());
 }
 
+TEST(Invocation, AllowsOnlyLifetimeSafeExactExternalInPlaceAlias) {
+  const TensorDesc description = row(4);
+  const LogicalGraph safe = make_rms_graph(description);
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  Invocation invocation = hyle::graph::compile(safe.graph, context)
+                              ->executable.create_invocation()
+                              .value();
+  OwnedTensor shared = make_tensor(description);
+  const std::array<float, 4> values{1, 2, 3, 4};
+  write(shared, values);
+  ASSERT_TRUE(invocation.bind(safe.inputs[0], shared.view).ok());
+  ASSERT_TRUE(invocation.bind(safe.outputs[0], shared.view).ok());
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+
+  Buffer partial_storage =
+      Buffer::create(hyle::mem::system_resource(), 5 * sizeof(float), 64)
+          .value();
+  TensorView partial_input =
+      TensorView::create(
+          description,
+          partial_storage.view().subview(0, 4 * sizeof(float)).value())
+          .value();
+  TensorView partial_output =
+      TensorView::create(description,
+                         partial_storage.view()
+                             .subview(sizeof(float), 4 * sizeof(float))
+                             .value())
+          .value();
+  invocation.reset();
+  ASSERT_TRUE(invocation.bind(safe.inputs[0], partial_input).ok());
+  EXPECT_TRUE(
+      invocation.bind(safe.outputs[0], partial_output).IsInvalidArgument());
+}
+
+TEST(Invocation, RejectsExternalAliasWhileTheInputRemainsLive) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc description = row(4);
+  const ValueId input = builder.input(description).value();
+  const ValueId early = builder.add(RmsNorm{}, input).value();
+  const ValueId late = builder.add(RmsNorm{}, input).value();
+  ASSERT_TRUE(builder.output(early).ok());
+  ASSERT_TRUE(builder.output(late).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = Context::create(Device::cpu()).value();
+  Invocation invocation = hyle::graph::compile(graph, context)
+                              ->executable.create_invocation()
+                              .value();
+  OwnedTensor shared = make_tensor(description);
+  ASSERT_TRUE(invocation.bind(input, shared.view).ok());
+  EXPECT_TRUE(invocation.bind(early, shared.view).IsInvalidArgument());
+}
+
 TEST(Invocation, RejectsAQueueFromAnotherContext) {
   const LogicalGraph logical = make_rms_graph(row(4));
   Context first = Context::create(Device::cpu()).value();

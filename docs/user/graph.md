@@ -19,8 +19,8 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 
 - `GraphBuilder::create()` 是可失败的单-owner 构造入口。输入和 node metadata 使用可注入 allocator；失败
   的 mutator 不发布部分逻辑修改。
-- `ValueId`/`NodeId` 带 graph generation。一个 builder 的 ID 不能误用于另一个 builder；node 只能读取
-  已创建 value，因此循环不能被构造出来。
+- `ValueId`/`NodeId` 带 graph generation。一个 builder/graph 的 ID 不能误用于另一个实例；Graph 的
+  node 查询也接收 `NodeId` 而不是把裸下标当身份。node 只能读取已创建 value，因此循环不能被构造出来。
 - `Graph` 是不可变、可复制、可跨线程共享的逻辑元数据；它不拥有 tensor payload、Context 或 Queue。
 - `Executable` 是不可变、可共享的 prepared plan。它拥有每个 node 的 `PreparedOperation` 和一份 Mem
   lifetime plan，不拥有每次请求的 bindings/workspace。
@@ -94,9 +94,13 @@ return done->wait();
 - compile 是冷路径：shape 复核、每节点 prepare 和 lifetime planning 均在这里发生。shape/layout 改变时
   重新构图/编译；不要每次请求重新 compile。
 - `create_invocation()` 实例化 workspace；应按并发槽复用 Invocation。`reset()` 只清外部 bindings，保留
-  已规划 workspace。
+  已规划 workspace。一次完整绑定的 alias 校验最坏为
+  `O(inputs*outputs + outputs^2)`，不分配；随后重复 `submit()` 仍为 O(nodes+bindings)。
 - published output 必须绑定 mutable `TensorView`；graph input 可绑定 const 或 mutable view；内部 value
   不允许由 caller 覆盖绑定。
+- 不同 published outputs 不得重叠，output 与仍存活的 external input 也不得重叠。当前唯一允许的跨 value
+  alias 是 RMSNorm output 与其已经到最后一次读取的第一输入**精确同一 byte range**；partial overlap
+  即使地址接近也会拒绝。同一大 backing 中互不重叠的 weight/input subview 是正常用法。
 - CPU 当前同步完成，但仍要检查 `Completion::wait()`。payload/resource/Queue 必须遵守 Compute 的终态
   生命周期；未来异步 backend 不会因 CPU 的偶然同步语义而放宽合同。
 - CompileReport 当前 CPU 路线应报告零 copy、零显式 sync、无 fallback；不要忽略报告后猜测隐藏成本。

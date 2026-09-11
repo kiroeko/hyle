@@ -35,6 +35,93 @@ bool owns(const detail::PlanState &plan, ValueId value) noexcept {
   return value.kind() == expected;
 }
 
+struct ByteRange final {
+  mem::MemoryResourceRef resource{};
+  void *handle = nullptr;
+  std::size_t offset = 0;
+  std::size_t size = 0;
+};
+
+ByteRange byte_range(mem::ConstBufferView view) noexcept {
+  return {view.resource(), view.native_handle(), view.offset(), view.size()};
+}
+
+ByteRange byte_range(mem::BufferView view) noexcept {
+  return {view.resource(), view.native_handle(), view.offset(), view.size()};
+}
+
+bool same_allocation(const ByteRange &left, const ByteRange &right) noexcept {
+  return left.resource == right.resource && left.handle == right.handle;
+}
+
+bool equal_range(const ByteRange &left, const ByteRange &right) noexcept {
+  return same_allocation(left, right) && left.offset == right.offset &&
+         left.size == right.size;
+}
+
+bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
+  if (!same_allocation(left, right) || left.size == 0 || right.size == 0)
+    return false;
+  if (left.offset <= right.offset)
+    return right.offset - left.offset < left.size;
+  return left.offset - right.offset < right.size;
+}
+
+bool allows_exact_in_place(const detail::PlanState &plan, std::size_t left,
+                           std::size_t right) noexcept {
+  return (plan.in_place_sources[left] == right ||
+          plan.in_place_sources[right] == left);
+}
+
+ByteRange bound_range(const detail::InvocationState &invocation,
+                      std::size_t ordinal) noexcept {
+  const std::uint8_t role = invocation.plan->binding_roles[ordinal];
+  if ((role & detail::kExternalOutput) != 0)
+    return byte_range(invocation.writable[ordinal].storage());
+  return byte_range(invocation.readable[ordinal].storage());
+}
+
+Status validate_external_alias(const detail::InvocationState &invocation,
+                               std::size_t ordinal,
+                               ByteRange candidate) noexcept {
+  const detail::PlanState &plan = *invocation.plan;
+  const bool candidate_is_output =
+      (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0;
+
+  auto check = [&](ValueId other_value) noexcept -> Status {
+    const std::size_t other = other_value.ordinal();
+    if (other == ordinal || invocation.bound[other] == 0)
+      return Status::Ok();
+    const bool other_is_output =
+        (plan.binding_roles[other] & detail::kExternalOutput) != 0;
+    if (!candidate_is_output && !other_is_output)
+      return Status::Ok();
+    const ByteRange existing = bound_range(invocation, other);
+    if (!overlaps(candidate, existing))
+      return Status::Ok();
+    if (equal_range(candidate, existing) &&
+        allows_exact_in_place(plan, ordinal, other)) {
+      return Status::Ok();
+    }
+    return Status::InvalidArgument(
+        "external graph tensor bindings overlap unsafely");
+  };
+
+  if (candidate_is_output) {
+    for (ValueId input : plan.input_ids) {
+      Status status = check(input);
+      if (!status.ok())
+        return status;
+    }
+  }
+  for (ValueId output : plan.output_ids) {
+    Status status = check(output);
+    if (!status.ok())
+      return status;
+  }
+  return Status::Ok();
+}
+
 Status initialize_plan_metadata(detail::PlanState &plan,
                                 const detail::GraphState &graph) noexcept {
   if (!plan.nodes.try_reserve(graph.nodes.size()) ||
@@ -42,6 +129,7 @@ Status initialize_plan_metadata(detail::PlanState &plan,
       !plan.output_ids.try_reserve(graph.outputs.size()) ||
       !plan.descriptions.try_resize(graph.values.size()) ||
       !plan.workspace_requests.try_resize(graph.values.size()) ||
+      !plan.in_place_sources.try_resize(graph.values.size()) ||
       !plan.binding_roles.try_resize(graph.values.size())) {
     return plan_allocation_failure();
   }
@@ -49,6 +137,7 @@ Status initialize_plan_metadata(detail::PlanState &plan,
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
     plan.descriptions[index] = graph.values[index].description;
     plan.workspace_requests[index] = detail::kNoWorkspaceRequest;
+    plan.in_place_sources[index] = detail::kNoInPlaceSource;
     plan.binding_roles[index] = 0;
   }
   for (std::uint32_t ordinal : graph.inputs) {
@@ -120,6 +209,23 @@ Status plan_workspace(detail::PlanState &plan,
          ++input_index) {
       const std::uint32_t input = graph.edges[node.input_begin + input_index];
       last_uses[input] = (std::max)(last_uses[input], terminal);
+    }
+  }
+
+  // The current catalog has one legal alias: an externally bound RMSNorm
+  // output may exactly reuse its first external input after that input's final
+  // read. Partial overlap and all other cross-value aliases remain invalid.
+  for (std::size_t node_index = 0; node_index < graph.nodes.size();
+       ++node_index) {
+    const detail::NodeRecord &node = graph.nodes[node_index];
+    if (node.operation.kind() != compute::OperationKind::kRmsNorm ||
+        (plan.binding_roles[node.output] & detail::kExternalOutput) == 0) {
+      continue;
+    }
+    const std::uint32_t input = graph.edges[node.input_begin];
+    if ((plan.binding_roles[input] & detail::kExternalInput) != 0 &&
+        last_uses[input] == node_index + 1) {
+      plan.in_place_sources[node.output] = input;
     }
   }
 
@@ -335,6 +441,10 @@ Status Invocation::bind(ValueId value,
     return Status::InvalidArgument(
         "input tensor does not match the executable description");
   }
+  Status alias =
+      validate_external_alias(*state_, ordinal, byte_range(tensor.storage()));
+  if (!alias.ok())
+    return alias;
   state_->readable[ordinal] = tensor;
   state_->bound[ordinal] = 1;
   return Status::Ok();
@@ -356,6 +466,10 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
       return Status::InvalidArgument(
           "output tensor does not match the executable description");
     }
+    Status alias =
+        validate_external_alias(*state_, ordinal, byte_range(tensor.storage()));
+    if (!alias.ok())
+      return alias;
     state_->writable[ordinal] = tensor;
     state_->readable[ordinal] = tensor.as_const();
     state_->bound[ordinal] = 1;

@@ -261,7 +261,10 @@ _hyle_declare_component(io_transfer
   PUBLIC_DEPS core error io_core io_tls mem sched container_text
   PUBLIC_TYPE_DEPS io_tls
   SPLIT_PUBLIC_HEADERS hyle/io/transfer.h)
-# Compute v1 is the dependency-light CPU execution/operation factor. Public
+# Compute is the dependency-light execution/operation factor. The current
+# implementation starts with a synchronous CPU provider; backend/provider
+# extensions remain module-owned rather than changing this public dependency
+# boundary. Public
 # tensor bindings directly expose Error and Mem types; checked shape arithmetic,
 # intrusive runtime ownership and the selected SIMD leaf route remain private.
 _hyle_declare_component(compute

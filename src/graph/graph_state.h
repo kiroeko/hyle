@@ -128,6 +128,11 @@ inline bool owns(const GraphState &state, ValueId value) noexcept {
          value.kind() == state.values[value.ordinal()].kind;
 }
 
+inline bool owns(const GraphState &state, NodeId node) noexcept {
+  return node.valid() && GraphIdentity::generation(node) == state.generation &&
+         node.ordinal() < state.nodes.size();
+}
+
 inline bool owns(const BuilderState &state, ValueId value) noexcept {
   return value.valid() &&
          GraphIdentity::generation(value) == state.generation &&

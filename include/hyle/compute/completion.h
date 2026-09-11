@@ -6,7 +6,8 @@
 
 namespace hyle::compute {
 
-// Terminal state returned by a Queue submission. CPU v1 completes work before
+// Terminal state returned by a Queue submission. The current CPU provider
+// completes work before
 // submit returns, but callers still use the same object/lifetime boundary that
 // asynchronous backends will implement. An invalid/moved-from Completion is a
 // programming-state error, not a successful no-op.

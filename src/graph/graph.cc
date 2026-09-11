@@ -116,52 +116,66 @@ Result<NodeId> Graph::node_id(std::size_t index) const noexcept {
 }
 
 Result<const compute::Operation &>
-Graph::operation(std::size_t node_index) const noexcept {
+Graph::operation(NodeId node) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_graph());
-  if (node_index >= state_->nodes.size()) {
+  if (!detail::owns(*state_, node)) {
     return std::unexpected(
-        Status::OutOfRange("graph node index is out of range"));
+        Status::InvalidArgument("node does not belong to this graph"));
   }
-  return state_->nodes[node_index].operation;
+  return state_->nodes[node.ordinal()].operation;
 }
 
-Result<std::size_t>
-Graph::node_input_count(std::size_t node_index) const noexcept {
+Result<std::size_t> Graph::node_input_count(NodeId node) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_graph());
-  if (node_index >= state_->nodes.size()) {
+  if (!detail::owns(*state_, node)) {
     return std::unexpected(
-        Status::OutOfRange("graph node index is out of range"));
+        Status::InvalidArgument("node does not belong to this graph"));
   }
-  return state_->nodes[node_index].input_count;
+  return state_->nodes[node.ordinal()].input_count;
 }
 
-Result<ValueId> Graph::node_input(std::size_t node_index,
+Result<ValueId> Graph::node_input(NodeId node,
                                   std::size_t input_index) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_graph());
-  if (node_index >= state_->nodes.size()) {
+  if (!detail::owns(*state_, node)) {
     return std::unexpected(
-        Status::OutOfRange("graph node index is out of range"));
+        Status::InvalidArgument("node does not belong to this graph"));
   }
-  const detail::NodeRecord &node = state_->nodes[node_index];
-  if (input_index >= node.input_count) {
+  const detail::NodeRecord &record = state_->nodes[node.ordinal()];
+  if (input_index >= record.input_count) {
     return std::unexpected(
         Status::OutOfRange("graph node input index is out of range"));
   }
   return detail::value_id(*state_,
-                          state_->edges[node.input_begin + input_index]);
+                          state_->edges[record.input_begin + input_index]);
 }
 
-Result<ValueId> Graph::node_output(std::size_t node_index) const noexcept {
+Result<ValueId> Graph::node_output(NodeId node) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_graph());
-  if (node_index >= state_->nodes.size()) {
+  if (!detail::owns(*state_, node)) {
     return std::unexpected(
-        Status::OutOfRange("graph node index is out of range"));
+        Status::InvalidArgument("node does not belong to this graph"));
   }
-  return detail::value_id(*state_, state_->nodes[node_index].output);
+  return detail::value_id(*state_, state_->nodes[node.ordinal()].output);
+}
+
+Result<NodeId> Graph::producer(ValueId value) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, value)) {
+    return std::unexpected(
+        Status::InvalidArgument("value does not belong to this graph"));
+  }
+  const std::uint32_t producer = state_->values[value.ordinal()].producer;
+  if (producer == detail::kNoNode) {
+    return std::unexpected(
+        Status::FailedPrecondition("graph input has no producer node"));
+  }
+  return detail::GraphIdentity::node(state_->generation, producer);
 }
 
 Result<ValueId> Graph::output_id(std::size_t index) const noexcept {

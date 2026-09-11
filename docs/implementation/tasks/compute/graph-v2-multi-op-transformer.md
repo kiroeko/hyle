@@ -69,7 +69,7 @@
 | G23 | one-op `Graph` inline value | `FIX` | immutable、copyable shared metadata state；不拥有 tensor payload/provider artifact |
 | G24 | one prepared artifact plan | `FIX` | compile 按 builder topological order prepare all nodes，形成 immutable `Executable` |
 | G25 | no intermediate storage | `BORROW` | 使用 Mem `LifetimePlanner/LifetimePlan/PlannedBuffers`；每个 Invocation 独占实例，不复制 arena 算法 |
-| G26 | fixed Invocation bindings | `FIX` | create 时分配完整 binding/workspace metadata；bind/reset/submit 后不增长、不查 hash、不分配 |
+| G26 | fixed Invocation bindings | `FIX` | create 时分配完整 binding/workspace metadata；bind 做不分配的 external alias 校验，reset/submit 不增长、不查 hash、不分配 |
 | G27 | branch/shared value DAG | `FIX` | node 只能读取此前创建的 ValueId，因此 cycle 不可表示；共享值和多 published output 合法 |
 | G28 | public `graph_plan`/scheduler | `REJECT` | plan 是 Executable 内部 factor；Graph 不创建线程池、task graph 或 model scheduler |
 | G29 | provider partition/fusion/serialization | `DEFER` | CPU multi-op 先闭环；后续 region/provider 卡扩 CompileReport，不改变 owner 分层 |
@@ -87,7 +87,8 @@
 
 中间 value 的 lifetime 为 producer node 到最后 consumer（半开区间）；published graph output 永远由 caller
 绑定，不放入内部 workspace。v2 操作均禁止任意 partial alias，因此 planner 只做 non-alias reusable slots；
-未来原生 in-place op 必须显式产生 alias request，不能靠地址偶合。
+external bindings 在 bind 时按真实 backing/offset 检查，只允许到达最后一次读取的 RMSNorm 第一输入与其
+output 精确同址。未来原生 in-place op 必须显式产生 alias request，不能靠地址偶合。
 
 ### 自然 C++ journey
 
@@ -115,8 +116,10 @@ auto done = invocation.submit(queue).value();
 ### P0/P1 preflight
 
 - compile 逐 node 恰好一次 shape validation/prepare，liveness 与 plan 为 O(V+E)，可在冷路径有界分配；
-- create-invocation 允许 workspace/binding allocation；steady bind 为 O(1) ordinal index，submit 为 O(V)，
-  每节点一次预绑定调用且零 route search/JIT/packing/metadata allocation；
+- create-invocation 允许 workspace/binding allocation；bind 的 typed ordinal lookup 为 O(1)，为保证跨节点
+  alias 正确性还会与已绑定 external output/input 做比较，完整绑定最坏
+  O(inputs*outputs+outputs^2) 且零 allocation；submit 为 O(V)，每节点一次预绑定调用且零
+  route search/JIT/packing/metadata allocation；
 - P1 使用完全相同的 PreparedOperation、TensorView、workspace owner、Queue 与 completion boundary，对比
   Graph Invocation 和手写 direct sequence；compile/create/bind 在测量外，禁止苹果/橘子对比；
 - Graph overhead 与算子 leaf throughput 分开报告，不能用大型 MatMul 淹没 per-node tax。
@@ -144,3 +147,13 @@ refcount 直接实现；这些是已有模块的正确复用，不需要新公�
   `39bbb3be235317f4b0e70736a4d1f0112f2c359a`；
 - v1 fixed-shape benchmark target 已退出活动 bench，冻结合同迁到历史 evidence。v2 P1、Linux/macOS、
   sanitizer 与终局 red-team 尚未执行，因此本 checkpoint 不构成 `CLOSED`。
+
+### 红队纠正 checkpoint（2026-09-12）
+
+- 公开 node 查询已从裸 `size_t` 统一为 generation-aware `NodeId`，并补 `producer(ValueId)`；避免一边声明
+  typed identity、一边仍让跨 Graph 下标成为隐式身份；
+- 补齐整图 external alias 检查：逐 op 检查不足以阻止 output 提前覆盖仍被后续 node 读取的 graph input。
+  现在只放行 lifetime 已结束的 RMSNorm 精确原地复用，partial/output-output/仍存活 input overlap 均拒绝；
+- Windows/Linux/两台 Apple Silicon 的 Compute/Graph public-header 与功能测试已通过；WSL ASan、UBSan、
+  TSan 的定向 Compute/Graph 测试已通过。上述红队产品纠正发生在最终 candidate 之前，需对修正后的字节
+  重新跑定向候选门；P1 仍未执行。

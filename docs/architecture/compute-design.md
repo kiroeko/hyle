@@ -1,9 +1,9 @@
 # HYLE Compute：异构执行与算子提供者架构
 
 > 决策状态：`ACCEPTED`。本文定义 Compute 的长期产品合同；实现当前是否可用只查
-> [`module-status.json`](../implementation/module-status.json)。CPU foundation v1 已独立签发，当前 CPU
-> operator slice 按有限 v2 卡推进；不能把它外推为完整算子目录或 GPU backend。旧实现、旧 task 和 benchmark 只在 Git 历史中作为调查输入，
-> 不是用户承诺。
+> [`module-status.json`](../implementation/module-status.json)。当前 Compute 仍为 `AUDITED`，CPU
+> 纵切只证明已登记的算子与运行时合同，不能外推为完整算子目录或 GPU backend。被删除的旧实现只可从
+> Git 历史取得调查事实；历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
 
 ## 1. 产品承诺
 
