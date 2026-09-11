@@ -351,6 +351,11 @@
         "material_margin_pct": 5
       },
       "summary": "io_websocket v2 CLOSED：两个私有 coroutine 显式保留 frame allocator 使用；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本及 v1 P1 结论不变。"
+    },
+    {
+      "module": "compute_provider_onednn",
+      "state": "QUEUED",
+      "summary": "已登记 oneDNN CPU provider 内部因子身份；尚未冻结 provider SPI、线程/packing/workspace owner、可选依赖和三交付合同，QUEUED 不下载或编译 oneDNN。"
     }
   ]
 }
