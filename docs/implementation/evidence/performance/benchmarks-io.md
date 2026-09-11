@@ -2,10 +2,49 @@
 
 
 > 本页当前签发 `io_core-v1`、`io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress`、
-> `io_http2-v2-owner-progress-cost`、`io-transfer-v1` 与 `io-watch-v1` 的工程性能结论。`io_tls-v1`、
+> `io_http2-v2-owner-progress-cost`、`io-transfer-v1`、`io-watch-v1` 与 `io_websocket-v1` 的工程性能结论。`io_tls-v1`、
 > `io_http-v1` 与旧 io 聚合数据均是
 > 历史事实，不再是对应活动轮的当前性能签名；当前结论也不能扩大成完整服务器、
 > 全平台或全操作 SOTA。
+
+## 2026-09-11 `io_websocket-v1` 当前工程证据（`PASS`）
+
+产品 candidate/tree 为 `f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7` /
+`92527b98fa55f841bcadbd5476bbfd9f385648d2`；性能 harness/contract 固定在 `d4cb26ac`，peer 是
+source-pinned Boost.Beast `cb94f33fcb13e90922905c2d8105508e71fa6db4`。候选后的提交只增加测试、
+文档和性能合同，没有改变 `include/hyle/**` 或 `src/**` 产品 tree。
+
+合同只比较 WebSocket client 每帧必经的同步 mask primitive：双方接收相同的独立 mutable buffer、已生成的
+4-byte key，并在返回前完成全部 XOR；两侧都计 key-word preparation，不计 random、const-payload copy、
+header、IO、allocation 或 scheduler。它没有拿完整 HYLE lifecycle 与 Beast 的裸算法、也没有拿 HYLE IO
+runtime 与 Asio 排名。每次 measurement 都处理 32 个完整 frame，buffer 初始化和 warmup 不计。
+
+advantage 为 HYLE/Beast op/s；W1-WIN、MSVC 19.50、Release/static、portable ISA，每个顺序 15 个独立进程，
+置信水平 99.26%，固定 5% non-inferiority margin：
+
+| workload / order | HYLE / Beast op/s | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 124 B / candidate-first | 142,722,293.60 / 71,116,186.13 | 2.00494 / [1.99310, 2.01978] | `WIN` | `PASS` |
+| 124 B / peer-first | 142,783,133.70 / 70,862,562.57 | 2.00777 / [2.00131, 2.05187] | `WIN` | `PASS` |
+| 4 KiB / candidate-first | 7,386,827.01 / 2,404,012.69 | 3.06308 / [3.04065, 3.13991] | `WIN` | `PASS` |
+| 4 KiB / peer-first | 7,369,509.76 / 2,409,758.08 | 3.06203 / [3.04322, 3.07951] | `WIN` | `PASS` |
+| 64 KiB / candidate-first | 483,018.87 / 143,295.80 | 3.35409 / [3.31818, 3.42902] | `WIN` | `PASS` |
+| 64 KiB / peer-first | 480,264.15 / 143,807.30 | 3.33139 / [3.31647, 3.38852] | `WIN` | `PASS` |
+| 1 MiB / candidate-first | 29,753.60 / 9,070.81 | 3.28054 / [3.22018, 3.33747] | `WIN` | `PASS` |
+| 1 MiB / peer-first | 29,553.01 / 9,049.01 | 3.29071 / [3.25901, 3.30886] | `WIN` | `PASS` |
+
+A/A、5%/10% known-delta、timer floor、artifact/build/consumer/source/peer provenance 与采样稳定性全部
+`PASS`；严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`。唯一有效 bundle
+位于 [`io-websocket-mask-p1-v1-d4cb26ac-qualified`](../../../../evidence/performance/io-websocket-mask-p1-v1-d4cb26ac-qualified/)；
+manifest、summary、controls SHA-256 依次为
+`755FC522B66FFF53853D853D95BD08692950939897B85036F097220ACE34604E`、
+`389815146FE1E07EBC8B7F6B4358EE50B5B902B978495E955F8FBE00DA808469`、
+`8C9F271FB62F075A6C9E383C98AAE714C79A2808F1CE4EB6F0AF8BF783C6865D`。
+
+一次 preflight 因 harness 输出 `frame/s` 而不符合冻结的 `op/s` 单位，在采样前 fail-closed；修正报告单位后，
+一次诊断因把 evidence 放在 source tree 内导致 `inputs_stable=false` 而失格。两次都未被采纳；随后使用 source
+外 fresh build/evidence 路径产生上述唯一资格化 bundle，未追加样本寻找 PASS。这里证明的是四种正常 frame
+尺寸下 mask core 的同合同工程结果，不外推为完整 WebSocket server、TLS、网络吞吐或所有平台的普遍倍率。
 
 ## 2026-09-10 `io-watch-v1` 当前工程证据（`PASS`）
 

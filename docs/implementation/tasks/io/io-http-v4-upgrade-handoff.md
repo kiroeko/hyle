@@ -1,6 +1,6 @@
 # HTTP v4：协议升级连接交接
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -124,5 +124,42 @@ O(1)，后续 prefix 每 byte 恰好读一次，随后与原 transport 相同。
 
 进入 candidate 前，Windows MSVC 19.50 shared/TLS-OFF 的定向 Upgrade `3/3 PASS`；相同产品树在
 OpenSSL 3.6.3 TLS-ON WebSocket 组合路径通过。校验失败、unfinished body、非 101 与 prefetched first bytes
-均已有直接测试。完整三平台、三交付、sanitizer、直接 consumer 和终局红队仍在候选验证阶段；未完成前
-不能写 CLOSED。
+均已有直接测试。该候选提交时完整三平台、三交付、sanitizer、直接 consumer 和终局红队尚待验证；
+最终结果见下节。
+
+## 候选验证与终局红队
+
+验证始终使用产品 candidate `f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7`（tree
+`92527b98fa55f841bcadbd5476bbfd9f385648d2`）；候选后只补测试、consumer sample、证据和文档：
+
+| gate | 实际结果 |
+|---|---|
+| Windows | MSVC 19.50、Release、TLS-OFF Upgrade `3/3 PASS`；OpenSSL 3.6.3 TLS-ON 的 Upgrade/WebSocket 组合通过 |
+| Linux | WSL EXT4、GCC 14.2、Release、OpenSSL 3.0.13 TLS-ON，Upgrade 与 WebSocket 定向套件通过 |
+| macOS | MacBook Air / AppleClang 21、OpenSSL 3.6.1 TLS-ON，Upgrade、WebSocket 与逐头通过；另一台 Mac mini 缺 CMake，只作为额外环境缺口，不替代也不否定已通过的 macOS gate |
+| sanitizer | exact candidate 的 WSL ASan、UBSan、TSan（`setarch x86_64 -R`）均通过 Upgrade/WebSocket 组合，无报告 |
+| delivery | Windows source embedding、relocated static SDK、relocated shared SDK 均通过；sample 直接引用并调用 WebSocket 二进制边界 |
+| P0 | 普通 HTTP layout/parser/hot path 零字段、零分支、零 allocation/syscall 增量；handoff 以 move 接管 transport 与 prefix allocation，O(1)、零 prefix copy |
+| docs / consumer | 公开 Upgrade 与 WebSocket recipe、failure atomicity、borrow/lazy-task、plain/TLS 和非目标均已说明 |
+
+终局红队逐项检查双 owner、unfinished body、stale borrow、101 写失败、非 101 rejection、prefix 丢失、协议
+反向依赖、普通 HTTP 常态税和苹果/橘子对比。server 只有 101 成功发送后才 commit move；client 只有同 owner、
+body complete、101 与 token 匹配后才接管；失败前原 HTTP owner 仍可关闭/响应，成功后源 connection invalid。
+`io_http` 不知道 WebSocket 类型，直接 consumer 只通过公开 `HttpUpgradeStream` seam 组合。未发现需退回
+`AUDITED` 的产品问题，红队为 `PASS`。
+
+## Closure decision
+
+scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering performance 七门均为
+`PASS`，`io_http` v4 裁决为 **CLOSED**。本轮只增加 HTTP/1.1 协议无关 Upgrade ownership handoff；不把
+WebSocket、CONNECT、HTTP/2/3 extended CONNECT、route/auth 或 Native FFI 塞进 HTTP owner。
+
+限制：成功 Upgrade 后旧 HTTP view/body 全部失效；lazy task 借用 connection、incoming object 与 header
+storage 到 await 完成；发送 101 后 transport failure 不能回滚为 HTTP。重开只由可复现 ownership/prefix/
+failure-atomicity/UB 缺陷、真实 consumer 证明的常用 Upgrade 能力缺口、公开 API/layout/算法/交付变化，或
+合格证据证明普通 HTTP 路线出现 material regression 触发。
+
+统一 LOC 工具在 candidate 上 `--self-check PASS`：全库 548,931 行，自实现不含测试 100,234 行，
+`io_http` 实现 **4,252 行**。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

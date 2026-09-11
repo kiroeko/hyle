@@ -489,7 +489,7 @@ TEST(IoWebSocket, RfcHandshakePreservesPrefetchedFirstFrame) {
   EXPECT_TRUE(result->client_ok.load(std::memory_order_acquire));
 }
 
-constexpr std::array<StringView, 5> kRejectedHandshakes{
+constexpr std::array<StringView, 7> kRejectedHandshakes{
     "GET / HTTP/1.1\r\nHost: localhost\r\n"
     "Upgrade: websocket\r\nConnection: Upgrade\r\n"
     "Sec-WebSocket-Version: 12\r\n"
@@ -511,7 +511,16 @@ constexpr std::array<StringView, 5> kRejectedHandshakes{
     "Upgrade: websocket\r\nConnection: Upgrade\r\n"
     "Sec-WebSocket-Version: 13\r\n"
     "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
-    "Sec-WebSocket-Protocol: invalid protocol\r\n\r\n"};
+    "Sec-WebSocket-Protocol: invalid protocol\r\n\r\n",
+    "GET / HTTP/1.1\r\nHost: localhost\r\n"
+    "Upgrade: websocket\r\nConnection: Upgrade\r\n"
+    "Sec-WebSocket-Version: 13\r\nSec-WebSocket-Version: 13\r\n"
+    "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+    "GET / HTTP/1.1\r\nHost: localhost\r\n"
+    "Upgrade: websocket\r\nConnection: Upgrade\r\n"
+    "Sec-WebSocket-Version: 13\r\n"
+    "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+    "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n"};
 
 Task<int> handshake_rejection_server(AllocatorRef allocator,
                                      TcpListener *listener,
@@ -613,7 +622,7 @@ struct BadFrame {
   std::uint64_t max_message_bytes = 1024;
 };
 
-constexpr std::array<BadFrame, 5> kBadFrames{
+constexpr std::array<BadFrame, 8> kBadFrames{
     BadFrame{{std::byte{0x81}, std::byte{0x02}, static_cast<std::byte>('h'),
               static_cast<std::byte>('i')},
              4},
@@ -634,7 +643,23 @@ constexpr std::array<BadFrame, 5> kBadFrames{
     BadFrame{{std::byte{0x88}, std::byte{0x82}, std::byte{0x01},
               std::byte{0x02}, std::byte{0x03}, std::byte{0x04},
               std::byte{0x02}, std::byte{0xef}},
-             8}};
+             8},
+    // A 64-bit payload length with its forbidden high bit set.
+    BadFrame{{std::byte{0x82}, std::byte{0xff}, std::byte{0x80},
+              std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+              std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+              std::byte{0x01}},
+             10},
+    // A non-canonical 64-bit representation of a one-byte payload.
+    BadFrame{{std::byte{0x82}, std::byte{0xff}, std::byte{0x00},
+              std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+              std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+              std::byte{0x01}},
+             10},
+    // A continuation frame is invalid when no fragmented message is active.
+    BadFrame{{std::byte{0x80}, std::byte{0x80}, std::byte{0x01},
+              std::byte{0x02}, std::byte{0x03}, std::byte{0x04}},
+             6}};
 
 Task<int> frame_rejection_server(AllocatorRef allocator, TcpListener *listener,
                                  std::atomic<unsigned> *rejected) {

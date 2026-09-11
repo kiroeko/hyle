@@ -1,0 +1,37 @@
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | WebSocket mask control-size 124B
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|   100.0% |                     |               14.41 |       69,377,898.79 |    2.6% |      0.14 | `Boost.Beast RFC frame mask`
+|   204.8% |    201.8% .. 208.3% |                6.96 |      143,752,237.18 |    1.6% |      0.07 | `HYLE RFC frame mask`
+
+  Summary
+    `HYLE RFC frame mask` ran 2.05x faster than `Boost.Beast RFC frame mask`
+    95% CI [2.02 .. 2.08], 52 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | WebSocket mask token/audio chunk 4KiB
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------
+|   100.0% |                     |              415.31 |        2,407,857.98 |    1.2% |      0.12 | `Boost.Beast RFC frame mask`
+|   306.1% |    302.6% .. 314.4% |              134.86 |        7,415,013.18 |    2.3% |      0.04 | `HYLE RFC frame mask`
+
+  Summary
+    `HYLE RFC frame mask` ran 3.06x faster than `Boost.Beast RFC frame mask`
+    95% CI [3.03 .. 3.14], 52 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | WebSocket mask binary chunk 64KiB
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:----------------------------------
+|   100.0% |                     |            6,942.81 |          144,033.85 |    1.4% |      0.12 | `Boost.Beast RFC frame mask`
+|   332.2% |    326.8% .. 343.4% |            2,093.44 |          477,683.24 |    1.6% |      0.04 | `HYLE RFC frame mask`
+
+  Summary
+    `HYLE RFC frame mask` ran 3.32x faster than `Boost.Beast RFC frame mask`
+    95% CI [3.27 .. 3.43], 52 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | WebSocket mask large frame 1MiB
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------
+|   100.0% |                     |          113,331.25 |            8,823.69 |    1.1% |      0.19 | `Boost.Beast RFC frame mask`
+|   328.2% |    324.8% .. 330.6% |           34,429.69 |           29,044.70 |    1.7% |      0.06 | `HYLE RFC frame mask`
+
+  Summary
+    `HYLE RFC frame mask` ran 3.28x faster than `Boost.Beast RFC frame mask`
+    95% CI [3.25 .. 3.31], 52 paired rounds, interleaved
+# HYLE_IO_WEBSOCKET_MASK_RUN execution_order=peer-first run_nonce=2e6238a540f9fe88d199b33dfc4cf343

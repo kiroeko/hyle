@@ -3,6 +3,7 @@
 #include <hyle/io/http.h>
 #include <hyle/io/transfer.h>
 #include <hyle/io/watch.h>
+#include <hyle/io/websocket.h>
 #if defined(HYLE_IO_TLS)
 #include <hyle/io/tls.h>
 #endif
@@ -68,9 +69,18 @@ int main() {
       !empty_watcher.close().ok())
     return 9;
 
+  // WebSocket is an independent protocol factor carried by the public IO
+  // product. Exercise out-of-line owner operations so installed static and
+  // shared consumers prove the new binary boundary, not merely header
+  // presence.
+  hyle::io::WebSocketConnection empty_websocket;
+  if (empty_websocket.valid() || empty_websocket.is_client() ||
+      !empty_websocket.selected_subprotocol().empty())
+    return 10;
+
 #if defined(HYLE_IO_TLS)
   if (!hyle::io::tls_available())
-    return 10;
+    return 11;
   constexpr auto pem_source =
       hyle::io::TlsCredentialSource::pem("embedded PEM bytes");
   static_assert(pem_source.kind() == hyle::io::TlsCredentialSourceKind::kPem);
@@ -86,12 +96,12 @@ int main() {
       hyle::io::TlsPrivateKeyPassword::callback(password_callback);
   if (callback_password.kind() !=
       hyle::io::TlsPrivateKeyPasswordKind::kCallback)
-    return 11;
+    return 12;
   hyle::io::TlsClientOptions tls_options;
   tls_options.verify = hyle::io::TlsVerifyMode::kNone;
   auto tls_context = hyle::io::TlsContext::make_client(tls_options);
   if (!tls_context.has_value() || !tls_context->valid())
-    return 12;
+    return 13;
 #endif
   return 0;
 }

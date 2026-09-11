@@ -1,6 +1,6 @@
 # WebSocket v1：RFC 6455 双向消息连接
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -159,8 +159,8 @@ ChaCha/mask core，不引入 Asio、cpp-httplib 或第二 runtime。
 `3/3 PASS`；OpenSSL 3.6.3 TLS-ON WebSocket `9/9 PASS`。覆盖 RFC accept vector、同包首帧、fragment +
 control interleave、126/65536 长度、mask/role/canonical length、UTF-8、frame/message caps、subprotocol/
 extension rejection、close、同方向误用、OOM coroutine、deadline 与 cancel。模块实现代码为 **2,077 行**
-（`scripts/loc-report.py --module io-websocket --commit f231b6f4... --self-check`）。完整三平台、三交付、
-sanitizer、P1 与终局红队仍待候选验证，不能提前写 CLOSED。
+（`scripts/loc-report.py --module io-websocket --commit f231b6f4... --self-check`）。该候选提交时完整三平台、
+三交付、sanitizer、P1 与终局红队尚待验证；最终结果见下节。
 
 ### P1 sampling preflight
 
@@ -178,3 +178,50 @@ WebSocket client 每帧必经的 component replay，不把 HYLE runtime 与 Asio
 - harness 使用 nanobench `compare()` 的共同 iteration count 与 cyclic interleave；candidate-first/peer-first
   两个固定 stratum、A/A、5%/10% known delta 与 batch-matched timer floor 在唯一 n=15 qualification 中执行。
   5% 是预冻结 material/NI margin；固定输先读上述源码/codegen，不追加样本找 PASS。
+
+## 候选验证与唯一 P1 收据
+
+所有产品验证基于 candidate `f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7`（tree
+`92527b98fa55f841bcadbd5476bbfd9f385648d2`）；候选 archive SHA-256 为
+`7AD4C4599C863F8AEA92D893847DF32DB87DDDBDACF5AA6B35E739C0C2ABA303`：
+
+- Windows MSVC 19.50：Release TLS-OFF 逐头与 WebSocket `8/8 PASS`；OpenSSL 3.6.3 TLS-ON `9/9 PASS`；
+  候选后测试证据把 WebSocket 专属 malformed handshake 从 5 种扩到 7 种、bad frame 从 5 种扩到 8 种，
+  定向套件仍通过；
+- WSL EXT4 / GCC 14.2 / OpenSSL 3.0.13 TLS-ON：Release 逐头、Upgrade、WebSocket 全过；ASan、UBSan、
+  TSan（`setarch x86_64 -R`）均通过 Upgrade/WebSocket 组合且无报告；
+- MacBook Air / AppleClang 21 / OpenSSL 3.6.1 TLS-ON：逐头、Upgrade、WebSocket 全过，覆盖 kqueue/ARM；
+  Homebrew OpenSSL 的 dylib 最低 OS 版本高于配置的 deployment target，运行主机满足该版本且测试通过，
+  这是环境包警告而非产品失败；额外 Mac mini 因未安装 CMake 未承担 gate；
+- Windows `io` source embedding、relocated static SDK、relocated shared SDK 均通过；consumer sample 直接
+  include/调用 WebSocket out-of-line symbol，证明不是只验证 HTTP 聚合。
+
+唯一资格化 P1 位于
+[`io-websocket-mask-p1-v1-d4cb26ac-qualified`](../../evidence/performance/benchmarks-io.md#2026-09-11-io_websocket-v1-当前工程证据pass)。
+W1-WIN、MSVC 19.50、Release/static、portable ISA、n=15、99.26% CI；124 B、4 KiB、64 KiB、1 MiB
+四档在 candidate-first 与 peer-first 两个顺序均为 `WIN`，advantage 分别约 2.00x、3.06x、3.33--3.35x、
+3.28--3.29x，固定 5% NI 全部 `PASS`。A/A、known-delta、timer floor、provenance 和 input stability 全过，
+strict verifier 为 `QUALIFIED`。一次错误单位和一次 source-tree evidence 路径分别在资格门 fail-closed，均未
+被采纳；没有追加样本寻找 PASS。
+
+## 终局红队与 Closure decision
+
+红队回映全部公开入口与 RFC owner state，检查了握手重复/非法头、prefetched first frame、canonical 16/64-bit
+length、role masking、unexpected continuation、UTF-8 跨 chunk、fragment/control interleave、frame/message cap、
+OOM、deadline/cancel、同方向误用、close 幂等与 TLS 组合。普通用户只面对 message-first caller-buffer API；
+frame、SHA-1、ChaCha 与 mask core 不泄漏为 benchmark API。read 与 write state 独立，control write 经 fiber-aware
+gate 串行，不产生 frame byte interleave；client 每连接一次 secure seed、每 frame O(1) key 派生，server 写走
+vector，client 的 bounded copy+xor 是 RFC 语义成本。没有第二 runtime、隐藏 allocation/syscall、未映射入口、
+苹果/橘子性能比较或需要退回产品候选的问题，红队为 `PASS`。
+
+scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering performance 七门均为
+`PASS`，`io_websocket` v1 裁决为 **CLOSED**。明确不包含 extension/permessage-deflate、HTTP/2/3 WebSocket、
+proxy、route/auth/JSON、reconnect/heartbeat、rooms/pubsub 或 Native FFI；这些不能通过绕过 mask、UTF-8、close
+和 backpressure 来伪实现。
+
+重开只由可复现 RFC/security/ownership/OOM/cancel/close/UB 缺陷、真实 consumer 证明的常用协议能力缺口、
+公开 API/layout/算法/provider/交付变化，或合格同合同证据证明 material regression/更优复杂度档触发。
+统一 LOC 工具在 candidate 上 `--self-check PASS`：全库 548,931 行，自实现不含测试 100,234 行，
+`io_websocket` 实现 **2,077 行**。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

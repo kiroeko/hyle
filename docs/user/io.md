@@ -456,7 +456,10 @@ for (;;) {
 
 client 负责先完成 TCP 连接，以及 `wss` 所需 TLS handshake；然后把已连接的 `HttpTransport` 移入
 `WebSocketConnection::connect()`，并提供非空 authority/target。DNS、proxy、认证与 reconnect policy 不会
-被协议对象暗中接管。
+被协议对象暗中接管。`connect()` 同样返回 lazy task：options 中的 authority/target/origin、headers 与
+subprotocol spans 都是借用，必须活到 await 完成。`send_text()`、`send_binary()` 和
+`WebSocketMessageWriter::write()` 也会借用 payload 到各自 await 完成；不能把临时字符串或随后改写的 buffer
+传给一个尚未驱动的 task。
 
 选择和陷阱：
 

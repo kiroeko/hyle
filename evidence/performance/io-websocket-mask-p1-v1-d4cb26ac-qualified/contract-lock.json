@@ -1,0 +1,472 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "io_websocket",
+      "delivery_shape": "source",
+      "entrypoint": "src/io_websocket/websocket_mask_internal.h",
+      "revision": "runtime-bound",
+      "target": "hyle_io_websocket"
+    },
+    "claim": "P1 engineering non-inferiority of HYLE RFC 6455 client-frame payload masking against Boost.Beast under identical generated-key, mutable-buffer and completion contracts",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "comparison_contract": {
+        "comparison_class": "SAME_CONTRACT",
+        "provenance_class": "NORTH_STAR_JOURNEY",
+        "semantic_matrix": "bench/io_websocket/consumer_shapes_v1.json",
+        "semantic_matrix_sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+      },
+      "factor_owners": {
+        "websocket-mask-124b": "io_websocket",
+        "websocket-mask-1m": "io_websocket",
+        "websocket-mask-4k": "io_websocket",
+        "websocket-mask-64k": "io_websocket"
+      },
+      "runner": {
+        "cmake": {
+          "cache": {
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BENCH_BOOST": "ON",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_DEV_FACTORS": "io_websocket",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_IO_TLS": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF",
+            "HYLE_WERROR": "ON"
+          },
+          "peer_cache": {
+            "boost-beast": "HYLE_BOOST_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST"
+        ],
+        "executables": [
+          {
+            "id": "io-websocket-mask-primary",
+            "measurement_batch": 32,
+            "stem": "hyle_io_websocket_mask_p1_bench",
+            "target": "hyle_io_websocket_mask_p1_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_IO_WEBSOCKET_MASK_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "websocket-mask-124b",
+                "title": "WebSocket mask control-size 124B"
+              },
+              {
+                "id": "websocket-mask-4k",
+                "title": "WebSocket mask token/audio chunk 4KiB"
+              },
+              {
+                "id": "websocket-mask-64k",
+                "title": "WebSocket mask binary chunk 64KiB"
+              },
+              {
+                "id": "websocket-mask-1m",
+                "title": "WebSocket mask large frame 1MiB"
+              }
+            ]
+          }
+        ],
+        "profiles": {
+          "W1-WIN": {
+            "architecture": "x64",
+            "cache": {},
+            "compiler_id": "MSVC",
+            "compiler_version_prefix": "19.50",
+            "generator": "Visual Studio 18 2026"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "windows"
+      ],
+      "certification_platforms": [
+        "windows"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WIN"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "io-websocket-mask-p1-v1",
+    "module": "io_websocket",
+    "peers": [
+      {
+        "configuration": {
+          "algorithm": "boost::beast::websocket::detail::prepare_key plus mask_inplace",
+          "delivery_shape": "clean source-pinned Boost headers",
+          "source": "C:/public/project-hyle/boost at the declared revision"
+        },
+        "id": "boost-beast",
+        "revision": "cb94f33fcb13e90922905c2d8105508e71fa6db4"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "execution_order": "candidate-first"
+        },
+        "id": "candidate-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "execution_order": "peer-first"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "peer-first",
+        "target_variant": "primary"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "key-word preparation per frame",
+          "in-place repeating-key XOR",
+          "constant observable buffer address"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "network/websocket/control-and-small-message-frame",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "websocket-mask-124b",
+        "input": {
+          "distribution": "deterministic nonzero bytes and fixed four-byte key",
+          "scale": {
+            "frame_bytes": 124,
+            "frames_per_measurement": 32
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one small RFC 6455 client frame",
+          "derivation": "Control-sized and short text messages expose the fixed cost of the mandatory masking operation",
+          "frequency": 1,
+          "unit": "masked-frame-payload-byte",
+          "value": 124
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "HYLE receives one generated four-byte key and masks one caller-owned mutable 124-byte frame payload in place",
+          "equivalence": "Both charge key-word preparation and every payload byte through synchronous completion; neither charges randomness, immutable-payload copy, frame header, IO, allocation or scheduler work",
+          "peer": "Boost.Beast receives the same generated key, prepares its word form and masks an independent caller-owned mutable 124-byte frame payload in place"
+        },
+        "pair": {
+          "candidate": "HYLE RFC frame mask",
+          "peer": "Boost.Beast RFC frame mask"
+        },
+        "peer_id": "boost-beast",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_websocket/consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Prepare and apply one four-byte RFC 6455 key to a 124-byte mutable payload and complete all XOR stores before return",
+        "setup": "Equal independent buffers are allocated and initialized outside measurement; warmup precedes paired rows",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "key-word preparation per frame",
+          "in-place repeating-key XOR",
+          "constant observable buffer address"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/websocket/token-audio-chunk",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "websocket-mask-4k",
+        "input": {
+          "distribution": "deterministic nonzero bytes and fixed four-byte key",
+          "scale": {
+            "frame_bytes": 4096,
+            "frames_per_measurement": 32
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one realtime token/audio WebSocket frame",
+          "derivation": "vLLM and SGLang realtime sessions carry bounded text/audio chunks over WebSocket",
+          "frequency": 1,
+          "unit": "masked-frame-payload-byte",
+          "value": 4096
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "HYLE masks each generated-key 4 KiB mutable realtime payload in place",
+          "equivalence": "Both charge identical key preparation, byte transformation, ownership and synchronous completion",
+          "peer": "Boost.Beast prepares the same key and masks an independent 4 KiB mutable payload in place"
+        },
+        "pair": {
+          "candidate": "HYLE RFC frame mask",
+          "peer": "Boost.Beast RFC frame mask"
+        },
+        "peer_id": "boost-beast",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_websocket/consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Prepare and apply one four-byte RFC 6455 key to a 4096-byte mutable payload and complete all XOR stores before return",
+        "setup": "Equal independent buffers are allocated and initialized outside measurement; warmup precedes paired rows",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "key-word preparation per frame",
+          "in-place repeating-key XOR",
+          "constant observable buffer address"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/websocket-binary-multimodal-chunk",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "websocket-mask-64k",
+        "input": {
+          "distribution": "deterministic nonzero bytes and fixed four-byte key",
+          "scale": {
+            "frame_bytes": 65536,
+            "frames_per_measurement": 32
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one binary multimodal WebSocket frame",
+          "derivation": "Realtime multimodal and browser-devtools sessions commonly carry medium binary chunks",
+          "frequency": 1,
+          "unit": "masked-frame-payload-byte",
+          "value": 65536
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "HYLE masks each generated-key 64 KiB mutable binary payload in place",
+          "equivalence": "Both charge identical key preparation, byte transformation, ownership and synchronous completion",
+          "peer": "Boost.Beast prepares the same key and masks an independent 64 KiB mutable payload in place"
+        },
+        "pair": {
+          "candidate": "HYLE RFC frame mask",
+          "peer": "Boost.Beast RFC frame mask"
+        },
+        "peer_id": "boost-beast",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_websocket/consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Prepare and apply one four-byte RFC 6455 key to a 65536-byte mutable payload and complete all XOR stores before return",
+        "setup": "Equal independent buffers are allocated and initialized outside measurement; warmup precedes paired rows",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "key-word preparation per frame",
+          "in-place repeating-key XOR",
+          "constant observable buffer address"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "rendering-inference/websocket-large-binary-frame",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "websocket-mask-1m",
+        "input": {
+          "distribution": "deterministic nonzero bytes and fixed four-byte key",
+          "scale": {
+            "frame_bytes": 1048576,
+            "frames_per_measurement": 32
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one explicitly configured large binary WebSocket frame",
+          "derivation": "Rendering and model tooling can choose a large frame cap; this holdout prevents a cache-small-only implementation",
+          "frequency": 1,
+          "unit": "masked-frame-payload-byte",
+          "value": 1048576
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "HYLE masks each generated-key 1 MiB mutable large-frame payload in place",
+          "equivalence": "Both charge identical key preparation, byte transformation, ownership and synchronous completion",
+          "peer": "Boost.Beast prepares the same key and masks an independent 1 MiB mutable payload in place"
+        },
+        "pair": {
+          "candidate": "HYLE RFC frame mask",
+          "peer": "Boost.Beast RFC frame mask"
+        },
+        "peer_id": "boost-beast",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_websocket/consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Prepare and apply one four-byte RFC 6455 key to a 1048576-byte mutable payload and complete all XOR stores before return",
+        "setup": "Equal independent buffers are allocated and initialized outside measurement; warmup precedes paired rows",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "f4ddcabddb584e337225adeaa8416b463a42940c4f83f010b31db888ca65db9d",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

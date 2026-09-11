@@ -1,0 +1,850 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\build-g04-websocket-p1-qualified\\CMakeCache.txt",
+        "sha256": "6d56f053a64d0383e054e909a980b4b690f13b9bf28b3392a0bfe99ac44c4061"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\build-g04-websocket-p1-qualified\\bin\\Release\\hyle_perf_control_bench.exe",
+        "sha256": "5cd6e890599ff227672886126d273c8336d46fc456ee5749e160f734f9b1d241"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\build-g04-websocket-p1-qualified\\bin\\Release\\hyle_io_websocket_mask_p1_bench.exe",
+        "sha256": "26482cd0b32a11dbc4d033919b4d29e0bf6b1c1272457365a6a3691ead8aeff0"
+      },
+      "id": "io-websocket-mask-primary"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "x64",
+      "build_stdout_sha256": "0f6e37122bf8982ce3d914ca331c1bcc157e2b9d376fe0fc1c3f051bd28e9ba0",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo",
+        "CMAKE_GENERATOR": "Visual Studio 18 2026",
+        "CMAKE_GENERATOR_PLATFORM": "x64",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "6d56f053a64d0383e054e909a980b4b690f13b9bf28b3392a0bfe99ac44c4061",
+      "compiler": {
+        "compiler_id": "MSVC",
+        "compiler_version": "19.50.35728.0"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "ae5f3c6e7c63c18a2103569710be400cfc9951582d9b847480ae149fab36c511",
+      "generator": "Visual Studio 18 2026",
+      "machine_profile": "W1-WIN",
+      "requested_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_BENCH_BOOST": "ON",
+        "HYLE_BOOST_DIR": "C:\\hyle-scratch\\boost-g04-peer",
+        "HYLE_BUILD_BENCH": "ON",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_DEV_FACTORS": "io_websocket",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_IO_TLS": "OFF",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TEST_INSTRUMENTATION": "OFF",
+        "HYLE_TRACE": "OFF",
+        "HYLE_WERROR": "ON"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "hyle_io_websocket_mask_p1_bench",
+        "hyle_perf_control_bench"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+        "compiler_frontend_variant": "MSVC",
+        "compiler_id": "MSVC",
+        "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+        "compiler_target": "unknown",
+        "compiler_version": "19.50.35728.0",
+        "formal_identity_complete": true,
+        "linker_id": "MSVC",
+        "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+        "linker_version": "14.50.35728.0",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "windows-sdk:10.0.26100.0",
+        "stdlib": "msvc-stl:14.50.35717/v145",
+        "system_name": "Windows",
+        "system_processor": "AMD64",
+        "system_version": "10.0.26200"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\contract-lock.json",
+    "sha256": "a767aa6813538baf2726e6363c86352f7fa09933f858101035f3da17339405b8"
+  },
+  "contract_sha256": "f4ddcabddb584e337225adeaa8416b463a42940c4f83f010b31db888ca65db9d",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9789133594932591,
+                1.0161880942699766
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9989812336619435,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9922063591418481,
+                1.011848796892092
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.000448587257238,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0341386735972522,
+              1.0596178938004501
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0461661086452354,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0409113128360543,
+              1.064750880978795
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0554945505253184,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0731516082851267,
+              1.1269186102061697
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1000545889490374,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0962255817125,
+              1.108913714564739
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0996820024174687,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 7.00634240282811,
+            "conservative_floor_ns_per_op": 0.006353829723134421,
+            "gate": "PASS",
+            "id": "websocket-mask-124b",
+            "measurement_batch": 32,
+            "observed_multiple": 1102.6959657602843,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.006250941757622871,
+                "peer_median_ns_per_op": 0.006353829723134421
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.006162887868519495,
+                "peer_median_ns_per_op": 0.006153491668618571
+              }
+            },
+            "peer_median_ns_per_op": 14.082352509102392
+          },
+          {
+            "candidate_median_ns_per_op": 135.6147081061781,
+            "conservative_floor_ns_per_op": 0.006353829723134421,
+            "gate": "PASS",
+            "id": "websocket-mask-4k",
+            "measurement_batch": 32,
+            "observed_multiple": 21343.77438734347,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.006250941757622871,
+                "peer_median_ns_per_op": 0.006353829723134421
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.006162887868519495,
+                "peer_median_ns_per_op": 0.006153491668618571
+              }
+            },
+            "peer_median_ns_per_op": 415.6296786267827
+          },
+          {
+            "candidate_median_ns_per_op": 2077.2235427410455,
+            "conservative_floor_ns_per_op": 0.006353829723134421,
+            "gate": "PASS",
+            "id": "websocket-mask-64k",
+            "measurement_batch": 32,
+            "observed_multiple": 326924.6475362462,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.006250941757622871,
+                "peer_median_ns_per_op": 0.006353829723134421
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.006162887868519495,
+                "peer_median_ns_per_op": 0.006153491668618571
+              }
+            },
+            "peer_median_ns_per_op": 6953.828008441548
+          },
+          {
+            "candidate_median_ns_per_op": 33706.248907353736,
+            "conservative_floor_ns_per_op": 0.006353829723134421,
+            "gate": "PASS",
+            "id": "websocket-mask-1m",
+            "measurement_batch": 32,
+            "observed_multiple": 5304871.294335857,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.006250941757622871,
+                "peer_median_ns_per_op": 0.006353829723134421
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.006162887868519495,
+                "peer_median_ns_per_op": 0.006153491668618571
+              }
+            },
+            "peer_median_ns_per_op": 110496.87268471209
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\control-observations.json",
+      "sha256": "c43b1e5238f8970771e65b01af9ced2affa1fb174276beafe5da8d3bd4249429"
+    },
+    "controls_file": {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\controls.json",
+      "sha256": "8c9f271fb62f075a6c9e383c98aae714c79a2808f1ce4eb6f0af8bf783c6865d"
+    },
+    "created_at_utc": "2026-09-11T04:46:07.784115+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\host-probe.json",
+      "sha256": "255d0aa26725905c67c4428a7aaafc5e1fea268d4a250ce1d6351494913dde70"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "websocket-mask-124b",
+        "provenance_file": {
+          "path": "C:\\public\\project-hyle\\hyle\\bench\\io_websocket\\consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "provenance_path": "bench/io_websocket/consumer_shapes_v1.json",
+        "tier": "replay"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "websocket-mask-4k",
+        "provenance_file": {
+          "path": "C:\\public\\project-hyle\\hyle\\bench\\io_websocket\\consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "provenance_path": "bench/io_websocket/consumer_shapes_v1.json",
+        "tier": "replay"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "websocket-mask-64k",
+        "provenance_file": {
+          "path": "C:\\public\\project-hyle\\hyle\\bench\\io_websocket\\consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "provenance_path": "bench/io_websocket/consumer_shapes_v1.json",
+        "tier": "replay"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "websocket-mask-1m",
+        "provenance_file": {
+          "path": "C:\\public\\project-hyle\\hyle\\bench\\io_websocket\\consumer_shapes_v1.json",
+          "sha256": "763b5a9800aa66e535f783afb8d953ecca8fbdf32f0df91c744ac4a5289cf52e"
+        },
+        "provenance_path": "bench/io_websocket/consumer_shapes_v1.json",
+        "tier": "replay"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "websocket-mask-124b",
+        "websocket-mask-4k",
+        "websocket-mask-64k",
+        "websocket-mask-1m"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw-log-index.json",
+      "sha256": "c7d8d2566e7b8acb7b7682125309ee6514860f473d2dccbdfc744162a0c563a4"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "f5e81530b7766d190979bb08d8f44c3da7ab77799bd5d8c8124a2147b24401a2",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "affinity_mask": "0x4",
+      "applied_by": "benchmark-child-launcher",
+      "child_canary": {
+        "affinity_mask": "0x4",
+        "environment": "windows",
+        "gate": "PASS",
+        "mechanism": "inherited-process-policy-canary",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "cpu_set_id": 258,
+      "environment": "windows",
+      "launcher_applied": true,
+      "logical_cpu": 2,
+      "observed_affinity_mask": "0x4",
+      "previous_affinity_mask": "0xffffffff",
+      "priority": "above-normal",
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "W1-WIN",
+    "physical_host_identity": {
+      "environment": "windows",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WIN",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "registration_state": "REGISTERED_MATCH",
+      "required_host_facts_match": true,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": true,
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_source": "windows-machine-guid-sha256"
+    },
+    "platform": "windows",
+    "probe_sha256": "255d0aa26725905c67c4428a7aaafc5e1fea268d4a250ce1d6351494913dde70",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-09-11T04:38:49.696202+00:00",
+      "environment": "windows",
+      "mutex_key": "W1",
+      "owner_token_sha256": "f207f0e779e6907449e5e46376cbc6f214710221072cae186fa17181ac1a2a69",
+      "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+      "physical_host_id": "W1",
+      "pid": 58136,
+      "profile_id": "W1-WIN",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 120,
+    "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\observations.jsonl",
+    "sha256": "663b63979480acca7d606f4a1e20f3b09d1c60d539164fb3c4004d41a5a6c438"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "boost-beast",
+      "remote": "C:\\public\\project-hyle\\boost",
+      "revision": "cb94f33fcb13e90922905c2d8105508e71fa6db4",
+      "tree": "a937e0f99c16e55467464a22eeafc6f84acc974a"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-01.log",
+      "sha256": "2d753c054916d6e62e9e6a5e305899dd74805133d13ea52c225d54b864510f79"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-02.log",
+      "sha256": "692cc7b2a0b3082615211d3e7ae5f2942cc1437c1cb9d3bb7792aabc4da02d4c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-03.log",
+      "sha256": "61652c6c5491d2479d633b7063899419bf1e538f193bac00bab1feed108ea0b0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-04.log",
+      "sha256": "ed8b91358774891ea111cacf983e205f8a4fba27584463cedaae1432c16aa194"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-05.log",
+      "sha256": "df4448a7759697d7d8ca40f3d28c81a6d8b4ec12c560e1eb06c9789e4ac0371b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-06.log",
+      "sha256": "305d92407aa412f02a325219fb7fd42e323c951eca212a474ac68b5ebd54b913"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-07.log",
+      "sha256": "71158ca12ce5a28bfafb3d1ff8ed1b3b52a96aad50678bc08e911ed52deed611"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-08.log",
+      "sha256": "449cf0c054ef66d728ed1f9debd5ab80fa7f1442cfd4e460f6b9eaa8ea2053a1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-09.log",
+      "sha256": "28d7c95c083cf058b9f2ea06cf32b7f9e9b38a15c509a42d64686c781ca6dbf5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-10.log",
+      "sha256": "583d9bb47a0f32358f0906c7533cd4d2e35032fae6daba75ea9c1ea9e47da9ce"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-11.log",
+      "sha256": "4d4ad73a65631548bc4c2d62bf158d58860149d1fb602cad46b114e5e17b9a52"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-12.log",
+      "sha256": "2eeb93045fab0a2e33265bae2b3ede8042fc187529d3a00bc6afa4a3ba05913a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-13.log",
+      "sha256": "3c3a720636332ec48fef89ae48a89f621249344d944421af6f1b79cc658d8f14"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-14.log",
+      "sha256": "22dd3fdd289d05718f8f3c354ba18002a02c89ba8cce99d70b323a2b34f1800f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-15.log",
+      "sha256": "f41767c9b21e31e33f6de2239ef25e0c44794b8fdc2f8f3ce5d114d2ab82154d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-01.log",
+      "sha256": "c80b534d10d3cffb0396d44fc5db12a659d7758bd66526c0a7ab31d291290603"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-02.log",
+      "sha256": "54a9bf5613b9de513c5ff4006953951730f2caa40048d4eb62a638fbfdead656"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-03.log",
+      "sha256": "365745b7c3ef7db0cdf6819fb0549a2656a1695760691e8eda4db013d6b169e8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-04.log",
+      "sha256": "adafa9a6b8c7ef7cc044057e8147ab40523554021afc2486e9a86ef7d3339a9c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-05.log",
+      "sha256": "e8a96f683c311aabc335e95206a33c03864a5f697255a6ecd69c77bd66bbbbab"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-06.log",
+      "sha256": "e80bf7f0ded4df0a383a60c064cd118e26a79a40ef6b7c2332a668a386d31685"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-07.log",
+      "sha256": "4c226f6650e6c5e4579b3d1369f92a2775c218e7b68481f0010e7cdec38b1e8e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-08.log",
+      "sha256": "19edca8eede0f66961e71d44a38eff9fdc0eb319a2b5c55c1e8bd12df50a8e87"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-09.log",
+      "sha256": "b48df0c5b2ed0833e73ba19c12ddcd3bf8f647dfd2dc5b3b0160567cc9dc0b4f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-10.log",
+      "sha256": "5062143ac36c0bfa9fb7f5767c3fa98d47fe652178e651b439ff56d5591317ff"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-11.log",
+      "sha256": "dd711b938acad2bbda7b6700c89c3af2d31ad398908115f4a27d0ac9fb40aeff"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-12.log",
+      "sha256": "5c1ff7348945968a537ca5a0a205eb85fdfd8fa8302941f9fd2818e1a0fe6b60"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-13.log",
+      "sha256": "d0430b07ce5810e0ba049e974e5ed30f78f4dd23b197651d2daf57040184ddfd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-14.log",
+      "sha256": "b4946ced9fcaabcad6f749dfe3e3cb00af3d451372e0d7518f0298c44a054df1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-15.log",
+      "sha256": "50e2af09562cf7cd875fc3e428f1fc8eefacd80c7020e8dd95ac774e085c9926"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-01.log",
+      "sha256": "4ddfeec71ce282d59b95668f1dd753890af67908e0556c471fa00413c42d85d8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-02.log",
+      "sha256": "1ede4f0b5e53c3a7ce82273b08b83671684bf25271ab0f77652aa4ecb77d24b4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-03.log",
+      "sha256": "847acc74d470dd8379e6b7a22e25957d8f1c3136021cbe8077a2fadf0da13d32"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-04.log",
+      "sha256": "994d432fa3b48bf7bbfb133daa77b7f943f2822997ede749c02c1269965e8fa6"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-05.log",
+      "sha256": "de8296db12c096681fb696a6da855e9c539855b0b780dbaa4ecec14f70f6d412"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-06.log",
+      "sha256": "cab9d6d8b9fb84195d13d29befac528438ed704546c304780bfdeadaae1c0da4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-07.log",
+      "sha256": "7d56eb5ad9f4378386cf34559977e5937751721fb7124bc79f4c4cc37518ea2b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-08.log",
+      "sha256": "1205a0a2257f5638c3b0c17aaad7e1c77c2bfb8b1369e117be52dfd61d00ba70"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-09.log",
+      "sha256": "486a245370c84b5672b364c0d8e19ee173dfd4d8d33f9ad144753dc728f2bf42"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-10.log",
+      "sha256": "ea719fbcd9f31f265df3d56dc45053a22a9f299ef57082373683a126c45dae02"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-11.log",
+      "sha256": "993f99d614adb7c17246aeddfd99ae54c25afd346b86c91150449a7e50346a70"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-12.log",
+      "sha256": "96c8974347df40e08a78b5bcff2bf36fb7bdf9a844e2a6433d5d5d0c287ae671"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-13.log",
+      "sha256": "1ee777c4b85984e84e73872d7d2c52f7c78a8d4a7a27a106ad9fe48c095607d7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-14.log",
+      "sha256": "cdae98a672fdd54cca87afc5b7a2a1c3894d4fe1536d42d253afdca371dcca44"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-15.log",
+      "sha256": "86098fa5b091a3ad9c4cca3d049e572e35d11f53ffec9a1a31eecdee953d04fd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-01.log",
+      "sha256": "a536d16c860958caeff6a415195503d37ef64e77ad20573ee77e2d5871ea8ebf"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-02.log",
+      "sha256": "881063939dd6eea0e6331d771a0139b8d4528f0999d95ef92ea84b37235a9284"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-03.log",
+      "sha256": "dd2db06feddb946217224410e0f919da252eb4c1fa6e072cb10c35c244303186"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-04.log",
+      "sha256": "96efe80c8c2779757bb6a499f521b5bd2e99a484fab43a64e336626113fb84ea"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-05.log",
+      "sha256": "6dcd34d815a33c176b1ca95bd53645cda2023f16187737661a62bc8e2fa73016"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-06.log",
+      "sha256": "6add57a4d8282c31884312d4dc612ddd220cce65a7e930c1b8910e88e5e92bf7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-07.log",
+      "sha256": "f5d58b859898fc484d58062a12b1d1bc3a96212cd69339a7c257d5689683bd7c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-08.log",
+      "sha256": "c3453a0b95a681d2aa7f086bf761ad21f15f8904e06924f53186eec088293a7a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-09.log",
+      "sha256": "7389999aaf66b89883f6efeb5df25af5dea0bc5a415cfd7f178a25f73736f99d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-10.log",
+      "sha256": "b07ca75d98ee6c0af77b216b3c9435e35003094eb1c1148cf66e572981329daf"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-11.log",
+      "sha256": "f5b31f31b3593236d7a7c51f8df0d5881c18c8ef85440929b5afec3e1e79f5d5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-12.log",
+      "sha256": "4c21b166a8584fc9942c7fd37832fd1b0e72d712b695f5e074c77a3eda93794a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-13.log",
+      "sha256": "84e921a3da0a8becd594a341d931b194af32ecb08cb86854e65b6e0c1f5a98ee"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-14.log",
+      "sha256": "a07d745bb0c046fa1ffcae31ac3d8a1dfe3be332c3c7548b89324fcc59d8bc4c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-15.log",
+      "sha256": "b29248fab03a4affc263f6709d4dfe374022167dc31ea2f678914cb0433c3453"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "git@github.com:axiomates/hyle.git",
+    "revision": "d4cb26ac430146b5a39540a537003f9047823ce4",
+    "tree": "987d70453851ccd5f7f63616a4ee7a54713595a5"
+  },
+  "summary": {
+    "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\summary.json",
+    "sha256": "389815146fe1e07ebc8b7f6b4358ee50b5b902b978495e955f8fbe00da808469"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 5,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "MSVC",
+        "compiler_matches_profile": true,
+        "compiler_version": "19.50.35728.0",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "MSVC",
+        "expected_compiler_version_prefix": "19.50",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+          "compiler_frontend_variant": "MSVC",
+          "compiler_id": "MSVC",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+          "compiler_target": "unknown",
+          "compiler_version": "19.50.35728.0",
+          "formal_identity_complete": true,
+          "linker_id": "MSVC",
+          "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+          "linker_version": "14.50.35728.0",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "windows-sdk:10.0.26100.0",
+          "stdlib": "msvc-stl:14.50.35717/v145",
+          "system_name": "Windows",
+          "system_processor": "AMD64",
+          "system_version": "10.0.26200"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    }
+  ]
+}

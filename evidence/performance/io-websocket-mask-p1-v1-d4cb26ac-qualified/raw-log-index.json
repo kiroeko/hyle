@@ -1,0 +1,699 @@
+{
+  "entries": [
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-01.log",
+        "sha256": "2d753c054916d6e62e9e6a5e305899dd74805133d13ea52c225d54b864510f79"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "39196eb86744d4c673099236d4539055",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-02.log",
+        "sha256": "692cc7b2a0b3082615211d3e7ae5f2942cc1437c1cb9d3bb7792aabc4da02d4c"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "db4c8e25767c27f043949a9574e8a32a",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-03.log",
+        "sha256": "61652c6c5491d2479d633b7063899419bf1e538f193bac00bab1feed108ea0b0"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "0990d74329875f5e75a62b99c1be56fb",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-04.log",
+        "sha256": "ed8b91358774891ea111cacf983e205f8a4fba27584463cedaae1432c16aa194"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "7ca922c44c569c5568a87093c0960afd",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-05.log",
+        "sha256": "df4448a7759697d7d8ca40f3d28c81a6d8b4ec12c560e1eb06c9789e4ac0371b"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "a89213e776d907a8b7e98f536fd7386b",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-06.log",
+        "sha256": "305d92407aa412f02a325219fb7fd42e323c951eca212a474ac68b5ebd54b913"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "1ea02807aa88d52bceab703358b1956f",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-07.log",
+        "sha256": "71158ca12ce5a28bfafb3d1ff8ed1b3b52a96aad50678bc08e911ed52deed611"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "d8511cdb9138d139fb8df0b9a9dcefcd",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-08.log",
+        "sha256": "449cf0c054ef66d728ed1f9debd5ab80fa7f1442cfd4e460f6b9eaa8ea2053a1"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "c20ca95f76bd9feeb9094500a3cf512a",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-09.log",
+        "sha256": "28d7c95c083cf058b9f2ea06cf32b7f9e9b38a15c509a42d64686c781ca6dbf5"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "863de14780d2306ecf4de9ac1ed09c88",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-10.log",
+        "sha256": "583d9bb47a0f32358f0906c7533cd4d2e35032fae6daba75ea9c1ea9e47da9ce"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "616e1d7a80f9afcaee52a58c8d6d9625",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-11.log",
+        "sha256": "4d4ad73a65631548bc4c2d62bf158d58860149d1fb602cad46b114e5e17b9a52"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "68e305142d2dcbcf949ed08a1479a55d",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-12.log",
+        "sha256": "2eeb93045fab0a2e33265bae2b3ede8042fc187529d3a00bc6afa4a3ba05913a"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "09e7a337f09a70cf604582b2bd0de361",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-13.log",
+        "sha256": "3c3a720636332ec48fef89ae48a89f621249344d944421af6f1b79cc658d8f14"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "fd21427d26e89a85ca6af087b7a580db",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-14.log",
+        "sha256": "22dd3fdd289d05718f8f3c354ba18002a02c89ba8cce99d70b323a2b34f1800f"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "15c5cd30eb962c458221a49563d7d202",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-candidate-first-io-websocket-mask-primary-run-15.log",
+        "sha256": "f41767c9b21e31e33f6de2239ef25e0c44794b8fdc2f8f3ce5d114d2ab82154d"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "a7bd43570cb44205fd3577e38afc2f6f",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-01.log",
+        "sha256": "c80b534d10d3cffb0396d44fc5db12a659d7758bd66526c0a7ab31d291290603"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "8b5c8b6e47cb2b104933a5b498c2376a",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-02.log",
+        "sha256": "54a9bf5613b9de513c5ff4006953951730f2caa40048d4eb62a638fbfdead656"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "f74ab2d3803345152eb58c185cd65d1b",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-03.log",
+        "sha256": "365745b7c3ef7db0cdf6819fb0549a2656a1695760691e8eda4db013d6b169e8"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "70d9e4e085e5725f4aa2290ae6c19410",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-04.log",
+        "sha256": "adafa9a6b8c7ef7cc044057e8147ab40523554021afc2486e9a86ef7d3339a9c"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "083cfc8af3245bffa1f8ffb9d66297d1",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-05.log",
+        "sha256": "e8a96f683c311aabc335e95206a33c03864a5f697255a6ecd69c77bd66bbbbab"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "8dc7a4b0621c10ff4f23a68bd7d565ba",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-06.log",
+        "sha256": "e80bf7f0ded4df0a383a60c064cd118e26a79a40ef6b7c2332a668a386d31685"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "1b72ab771d26cfe0c1e673e125ed00f3",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-07.log",
+        "sha256": "4c226f6650e6c5e4579b3d1369f92a2775c218e7b68481f0010e7cdec38b1e8e"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "af09424c7daf4d4a1dd1a1875dee9340",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-08.log",
+        "sha256": "19edca8eede0f66961e71d44a38eff9fdc0eb319a2b5c55c1e8bd12df50a8e87"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "7179841968a80a680c68854f23b6aa4e",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-09.log",
+        "sha256": "b48df0c5b2ed0833e73ba19c12ddcd3bf8f647dfd2dc5b3b0160567cc9dc0b4f"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "d163fbace0527327450d751bf2afcc39",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-10.log",
+        "sha256": "5062143ac36c0bfa9fb7f5767c3fa98d47fe652178e651b439ff56d5591317ff"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "ce5df8417bf0c401c141c9169204f945",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-11.log",
+        "sha256": "dd711b938acad2bbda7b6700c89c3af2d31ad398908115f4a27d0ac9fb40aeff"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "2e6238a540f9fe88d199b33dfc4cf343",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-12.log",
+        "sha256": "5c1ff7348945968a537ca5a0a205eb85fdfd8fa8302941f9fd2818e1a0fe6b60"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "f958602c0652cc0dd70d79b86056656b",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-13.log",
+        "sha256": "d0430b07ce5810e0ba049e974e5ed30f78f4dd23b197651d2daf57040184ddfd"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ce4f66c550dde345fff67657082f5ac5",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-14.log",
+        "sha256": "b4946ced9fcaabcad6f749dfe3e3cb00af3d451372e0d7518f0298c44a054df1"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "e5b83f4162dc5dfd102f4d848faf0e5c",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-websocket-mask-primary",
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\product-peer-first-io-websocket-mask-primary-run-15.log",
+        "sha256": "50e2af09562cf7cd875fc3e428f1fc8eefacd80c7020e8dd95ac774e085c9926"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "776c4a1de6cf46e938f76b2357b457e7",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-01.log",
+        "sha256": "4ddfeec71ce282d59b95668f1dd753890af67908e0556c471fa00413c42d85d8"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "62e6f60fd6c83932fe6fd26656f80b27",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-02.log",
+        "sha256": "1ede4f0b5e53c3a7ce82273b08b83671684bf25271ab0f77652aa4ecb77d24b4"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "afde2e4f0c4034454ba8c355961feaa2",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-03.log",
+        "sha256": "847acc74d470dd8379e6b7a22e25957d8f1c3136021cbe8077a2fadf0da13d32"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "2daa5364507ecde4daf429aefc6e27a4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-04.log",
+        "sha256": "994d432fa3b48bf7bbfb133daa77b7f943f2822997ede749c02c1269965e8fa6"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "afef77507d9c85a4b6fbd298d771a5d3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-05.log",
+        "sha256": "de8296db12c096681fb696a6da855e9c539855b0b780dbaa4ecec14f70f6d412"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "55d5112520ad5d3f94ddfcc45c7e1da9",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-06.log",
+        "sha256": "cab9d6d8b9fb84195d13d29befac528438ed704546c304780bfdeadaae1c0da4"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "4c79bad14c0d9fb959e7537aeadf87d8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-07.log",
+        "sha256": "7d56eb5ad9f4378386cf34559977e5937751721fb7124bc79f4c4cc37518ea2b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "9344e30fa3a2004277d64d60aff93634",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-08.log",
+        "sha256": "1205a0a2257f5638c3b0c17aaad7e1c77c2bfb8b1369e117be52dfd61d00ba70"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "4a78b79e1c750639f20b2828827440d8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-09.log",
+        "sha256": "486a245370c84b5672b364c0d8e19ee173dfd4d8d33f9ad144753dc728f2bf42"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "7b923c45551f542e3e2fb12f1896c233",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-10.log",
+        "sha256": "ea719fbcd9f31f265df3d56dc45053a22a9f299ef57082373683a126c45dae02"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "8a1391f2e0b7ce827ddcfd0d7489d4e4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-11.log",
+        "sha256": "993f99d614adb7c17246aeddfd99ae54c25afd346b86c91150449a7e50346a70"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "7cf4f8053e3c2227feba7bf286e0dd81",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-12.log",
+        "sha256": "96c8974347df40e08a78b5bcff2bf36fb7bdf9a844e2a6433d5d5d0c287ae671"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "3a7522ae0612348b9d9055b24a3f828d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-13.log",
+        "sha256": "1ee777c4b85984e84e73872d7d2c52f7c78a8d4a7a27a106ad9fe48c095607d7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "1aaf4546f55c17d3bdfb72af738e1772",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-14.log",
+        "sha256": "cdae98a672fdd54cca87afc5b7a2a1c3894d4fe1536d42d253afdca371dcca44"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "08005b544718ced9e18173332303de2c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-candidate-first-run-15.log",
+        "sha256": "86098fa5b091a3ad9c4cca3d049e572e35d11f53ffec9a1a31eecdee953d04fd"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "142bc18c5ace479922cc4f5e3a79c77a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-01.log",
+        "sha256": "a536d16c860958caeff6a415195503d37ef64e77ad20573ee77e2d5871ea8ebf"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "1aa32f06a329d31d8fdb6bbc89a3e068",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-02.log",
+        "sha256": "881063939dd6eea0e6331d771a0139b8d4528f0999d95ef92ea84b37235a9284"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "402f2376e982a45c2e7c0d4e18b8d209",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-03.log",
+        "sha256": "dd2db06feddb946217224410e0f919da252eb4c1fa6e072cb10c35c244303186"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "409cb4e1336d9acc3c636c1f623a1111",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-04.log",
+        "sha256": "96efe80c8c2779757bb6a499f521b5bd2e99a484fab43a64e336626113fb84ea"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "91f540aa79a6b8a1bb0a58feb73d151b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-05.log",
+        "sha256": "6dcd34d815a33c176b1ca95bd53645cda2023f16187737661a62bc8e2fa73016"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "8f05eede1002c8794d3536244b35d423",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-06.log",
+        "sha256": "6add57a4d8282c31884312d4dc612ddd220cce65a7e930c1b8910e88e5e92bf7"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "c4b220468dd3594c2f0f30a16e5ddd42",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-07.log",
+        "sha256": "f5d58b859898fc484d58062a12b1d1bc3a96212cd69339a7c257d5689683bd7c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "2ac91d9332df4616f45b1cfb6ce35828",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-08.log",
+        "sha256": "c3453a0b95a681d2aa7f086bf761ad21f15f8904e06924f53186eec088293a7a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "8ee308a898e993a2220debfcd207ff21",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-09.log",
+        "sha256": "7389999aaf66b89883f6efeb5df25af5dea0bc5a415cfd7f178a25f73736f99d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "8f5704bb37b2965f136e99b0d542869c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-10.log",
+        "sha256": "b07ca75d98ee6c0af77b216b3c9435e35003094eb1c1148cf66e572981329daf"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "da1d864ded852aa71d1d0d7cd80e5cac",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-11.log",
+        "sha256": "f5b31f31b3593236d7a7c51f8df0d5881c18c8ef85440929b5afec3e1e79f5d5"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "2c5f88bb999ebfa28cc1b797c9668a13",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-12.log",
+        "sha256": "4c21b166a8584fc9942c7fd37832fd1b0e72d712b695f5e074c77a3eda93794a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "192903f536f207ee6c84a5e652ba3839",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-13.log",
+        "sha256": "84e921a3da0a8becd594a341d931b194af32ecb08cb86854e65b6e0c1f5a98ee"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "a63f8b5fc6299f3f6fb421e7375c6323",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-14.log",
+        "sha256": "a07d745bb0c046fa1ffcae31ac3d8a1dfe3be332c3c7548b89324fcc59d8bc4c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "48e7d51c3c286a7bb39a657836265f5a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\evidence\\io-websocket-mask-p1-v1-d4cb26ac-qualified\\raw\\n-15\\control-peer-first-run-15.log",
+        "sha256": "b29248fab03a4affc263f6709d4dfe374022167dc31ea2f678914cb0433c3453"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "f481998c80ee0b2b991906cc38ef1cfa",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}
