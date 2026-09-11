@@ -13,6 +13,7 @@ endif()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiClosedProducts.cmake")
 
 function(_hyle_product_shape_run label)
   execute_process(
@@ -31,15 +32,9 @@ endif()
 
 set(_hyle_build "${HYLE_SMOKE_ROOT}/product-shape")
 file(REMOVE_RECURSE "${_hyle_build}")
-# Only roots whose production-layout contract has already closed belong here.
-# Their dependency closure necessarily pulls in some evolving modules (notably
-# container through util). Passing this smoke proves those transitive seams are
-# healthy; it does not certify the evolving module's complete product surface.
-# Keep the strictly closed modules as product roots rather than spelling the
-# transitive graph by hand, so the smoke also proves that the central component
-# manifest resolves the real shipping closure correctly.
-set(_hyle_shipping_roots core util obs time)
-list(JOIN _hyle_shipping_roots "," _hyle_shipping_components)
+# Qualify exactly the public products whose complete factor closure is CLOSED.
+# The projection also fails when a CLOSED factor has no such product route.
+hyle_ci_closed_product_csv(_hyle_shipping_components)
 _hyle_product_shape_run("configure production-shape tests"
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}" -B "${_hyle_build}"
   ${_hyle_generator_args}

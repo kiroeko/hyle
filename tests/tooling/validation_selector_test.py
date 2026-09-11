@@ -633,8 +633,16 @@ class RepositoryContractTest(unittest.TestCase):
         self.assertIn("scripts/validation-select.py run", routine)
         self.assertNotIn("--target hyle_tests", routine)
         self.assertNotIn("HYLE_COMPONENTS=all", routine)
-        full = workflow.split("  platform-and-package-smoke:", 1)[1].split("    strategy:", 1)[0]
-        self.assertIn("if: github.event_name == 'workflow_dispatch'", full)
+        full_job = workflow.split("  platform-and-package-smoke:", 1)[1].split("  linux-aarch64-cross:", 1)[0]
+        self.assertIn("if: github.event_name == 'workflow_dispatch'", full_job)
+        self.assertIn("--print-closed-products", full_job)
+        self.assertIn("HYLE_COMPONENTS=${{ env.HYLE_CI_CLOSED_PRODUCTS }}", full_job)
+        self.assertNotIn("HYLE_COMPONENTS=all", full_job)
+
+        aarch64_job = workflow.split("  linux-aarch64-cross:", 1)[1].split("  windows-clangcl-foundation:", 1)[0]
+        self.assertIn("--print-closed-products", aarch64_job)
+        self.assertIn("HYLE_COMPONENTS=${{ env.HYLE_CI_CLOSED_PRODUCTS }}", aarch64_job)
+        self.assertNotIn("HYLE_COMPONENTS=all", aarch64_job)
 
 
 if __name__ == "__main__":

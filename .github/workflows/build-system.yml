@@ -116,6 +116,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Project all CLOSED product roots
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import sys
+
+          products = subprocess.check_output(
+              [sys.executable, "scripts/correctness-inventory.py",
+               "--revision", "HEAD", "--check", "--print-closed-products"],
+              text=True,
+          ).strip()
+          if not products:
+              raise SystemExit("CLOSED product projection is empty")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"HYLE_CI_CLOSED_PRODUCTS={products}\n")
+
       - name: Restore locked dependency sources
         uses: actions/cache@v5
         with:
@@ -143,11 +160,11 @@ jobs:
             exit 1
           fi
 
-      - name: Configure all CPU modules (Unix)
+      - name: Configure all CLOSED CPU products (Unix)
         if: runner.os != 'Windows'
         run: >-
           ./scripts/hyle-unix.sh cmake --preset ${{ env.HYLE_CI_PRESET }}
-          -DHYLE_COMPONENTS=all
+          -DHYLE_COMPONENTS=${{ env.HYLE_CI_CLOSED_PRODUCTS }}
           -DHYLE_BUILD_TESTS=ON
           -DHYLE_TEST_INSTRUMENTATION=OFF
           -DHYLE_BUILD_BENCH=OFF
@@ -159,11 +176,11 @@ jobs:
           -DHYLE_COMPUTE_GGML=OFF
           -DHYLE_COMPUTE_VULKAN=OFF
 
-      - name: Configure all CPU modules (Windows selected MSVC)
+      - name: Configure all CLOSED CPU products (Windows selected MSVC)
         if: runner.os == 'Windows'
         run: >-
           ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
-          -DHYLE_COMPONENTS=all
+          -DHYLE_COMPONENTS=${{ env.HYLE_CI_CLOSED_PRODUCTS }}
           -DHYLE_BUILD_TESTS=ON
           -DHYLE_TEST_INSTRUMENTATION=OFF
           -DHYLE_BUILD_BENCH=OFF
@@ -175,19 +192,19 @@ jobs:
           -DHYLE_COMPUTE_GGML=OFF
           -DHYLE_COMPUTE_VULKAN=OFF
 
-      - name: Build all CPU module tests (Unix)
+      - name: Build all CLOSED CPU product tests (Unix)
         if: runner.os != 'Windows'
         run: cmake --build --preset ${{ env.HYLE_CI_PRESET }} --target hyle_tests --parallel 2
 
-      - name: Build all CPU module tests (Windows selected MSVC)
+      - name: Build all CLOSED CPU product tests (Windows selected MSVC)
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --target hyle_tests --parallel 2
 
-      - name: Run all CPU module tests (Unix)
+      - name: Run all CLOSED CPU product tests (Unix)
         if: runner.os != 'Windows'
         run: ctest --preset ${{ env.HYLE_CI_PRESET }} --output-on-failure
 
-      - name: Run all CPU module tests (Windows selected MSVC)
+      - name: Run all CLOSED CPU product tests (Windows selected MSVC)
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 
@@ -237,7 +254,7 @@ jobs:
           -P cmake/HyleCiSourcePackageSmoke.cmake
 
   linux-aarch64-cross:
-    name: Linux AArch64 all-component cross build
+    name: Linux AArch64 CLOSED-product cross build
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -246,6 +263,23 @@ jobs:
       HYLE_DEP_SOURCE_CACHE: ${{ github.workspace }}/../hyle-dependency-sources
     steps:
       - uses: actions/checkout@v7
+
+      - name: Project all CLOSED product roots
+        shell: python
+        run: |
+          import os
+          import subprocess
+          import sys
+
+          products = subprocess.check_output(
+              [sys.executable, "scripts/correctness-inventory.py",
+               "--revision", "HEAD", "--check", "--print-closed-products"],
+              text=True,
+          ).strip()
+          if not products:
+              raise SystemExit("CLOSED product projection is empty")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"HYLE_CI_CLOSED_PRODUCTS={products}\n")
 
       - name: Restore locked dependency sources
         uses: actions/cache@v5
@@ -259,9 +293,9 @@ jobs:
           sudo apt-get install -y gcc-14-aarch64-linux-gnu g++-14-aarch64-linux-gnu
 
       - name: Configure without target execution
-        run: cmake --preset linux-aarch64-cross
+        run: cmake --preset linux-aarch64-cross -DHYLE_COMPONENTS=${{ env.HYLE_CI_CLOSED_PRODUCTS }}
 
-      - name: Build all CPU component artifacts
+      - name: Build all CLOSED CPU product artifacts
         run: cmake --build --preset linux-aarch64-cross --parallel 2
 
   windows-clangcl-foundation:

@@ -65,6 +65,14 @@ def _dependency_closure(graph: dict, roots: list[str]) -> set[str]:
     return closure
 
 
+def closed_product_names(inventory: dict) -> list[str]:
+    """Return public product roots whose complete factor closure is CLOSED."""
+    return [
+        row["product"] for row in inventory["products"]
+        if row["all_factors_closed"]
+    ]
+
+
 def build_inventory(root: Path, revision: str) -> dict:
     selector = _load_selector()
     snapshot = selector.Snapshot(root, revision)
@@ -187,14 +195,23 @@ def build_inventory(root: Path, revision: str) -> dict:
         })
 
     products = []
+    closed_product_factor_union: set[str] = set()
     for name, roots in graph["products"].items():
         closure = _dependency_closure(graph, roots)
+        all_factors_closed = closure <= closed_set
+        if all_factors_closed:
+            closed_product_factor_union.update(closure)
         products.append({
             "product": name,
             "factor_roots": roots,
             "factor_closure": sorted(closure),
-            "all_factors_closed": closure <= closed_set,
+            "all_factors_closed": all_factors_closed,
             "non_closed_factors": sorted(closure - closed_set),
+        })
+    for factor in sorted(closed_set - closed_product_factor_union):
+        issues.append({
+            "kind": "closed_factor_missing_from_closed_product",
+            "factor": factor,
         })
 
     # Cross-factor public journeys are project-owned evidence.  Keep them out
@@ -266,8 +283,16 @@ def main() -> int:
                         help="HYLE checkout (default: repository containing this script)")
     parser.add_argument("--revision", default="HEAD",
                         help="Git commit/ref, or WORKTREE (default: HEAD)")
-    parser.add_argument("--output", type=Path,
-                        help="write JSON here instead of stdout")
+    output_mode = parser.add_mutually_exclusive_group()
+    output_mode.add_argument("--output", type=Path,
+                             help="write JSON here instead of stdout")
+    output_mode.add_argument(
+        "--print-closed-products", action="store_true",
+        help=(
+            "print a comma-separated list of public products whose complete "
+            "factor closure is CLOSED instead of the JSON inventory"
+        ),
+    )
     parser.add_argument("--check", action="store_true",
                         help="return nonzero when ownership/registration issues exist")
     args = parser.parse_args()
@@ -278,7 +303,10 @@ def main() -> int:
         print(f"correctness inventory failed: {error}", file=sys.stderr)
         return 2
 
-    payload = json.dumps(inventory, indent=2, sort_keys=False) + "\n"
+    if args.print_closed_products:
+        payload = ",".join(closed_product_names(inventory)) + "\n"
+    else:
+        payload = json.dumps(inventory, indent=2, sort_keys=False) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(payload, encoding="utf-8")

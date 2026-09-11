@@ -24,6 +24,11 @@ private completion engine select ─┼─ Linux: io_uring, unavailable时降为
 操作。后端能力通过 `IoContext` 的 typed capability 查询观察；不能用操作系统
 名字猜 Linux 是否真的取得 io_uring。
 
+`TcpStream::release_native_handle()` 与 `UdpSocket::release_native_handle()` 只转移最终关闭责任，调用前
+必须保证没有在途操作。POSIX 上可以把返回的 descriptor 再交给 `adopt()`；Windows socket 则在整个
+native lifetime 内仍绑定原 IOCP，不能再次关联到同一个或另一个 `IoContext`，应在原 context 存活期间
+完成必要的 host 交接并最终 `closesocket`。不要把 ownership release 理解为跨 shard/backend 迁移。
+
 IOCP/io_uring 是完成式后端，不做 fd hash lookup。epoll/kqueue 必须把 readiness
 还原成 completion，内部用 HYLE `FlatHashMap<int, PendingOp>` 保存读写两侧；
 这是实现细节，用户不需要提供 map，也不会因此把 SIMD 宏或 ISA flag 带进调用方。

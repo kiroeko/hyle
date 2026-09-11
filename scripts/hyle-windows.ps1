@@ -94,6 +94,24 @@ function Get-LatestSupportedVs2022Toolset {
     }
 }
 
+function Get-HyleClosedProducts {
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if (-not $python) {
+        throw 'CLOSED-product qualification requires Python on PATH.'
+    }
+    $inventory = Join-Path $sourceDir 'scripts\correctness-inventory.py'
+    $products = & $python.Source $inventory --root $sourceDir --revision WORKTREE `
+        --check --print-closed-products
+    if ($LASTEXITCODE -ne 0) {
+        throw "Cannot project CLOSED HYLE products (exit $LASTEXITCODE)."
+    }
+    $result = ($products -join "`n").Trim()
+    if ($result -notmatch '^[a-z0-9_]+(,[a-z0-9_]+)*$') {
+        throw "Invalid CLOSED HYLE product projection: '$result'"
+    }
+    return $result
+}
+
 $installation = & $vswhere -latest -products * `
     -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
     -property installationPath
@@ -274,9 +292,10 @@ switch ($Action) {
         }
         $packageBuild = Join-Path $SmokeRoot 'package-driver'
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiSourcePackageSmoke.cmake'
+        $closedProducts = Get-HyleClosedProducts
         & cmake -S $sourceDir -B $packageBuild -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
-            -DHYLE_COMPONENTS=all `
+            "-DHYLE_COMPONENTS=$closedProducts" `
             -DHYLE_BUILD_TESTS=OFF `
             -DHYLE_BUILD_BENCH=OFF `
             -DHYLE_IO_TLS=OFF `

@@ -408,7 +408,7 @@ TEST(IoTcp, ResolvesIpv4AndIpv6Literals) {
   EXPECT_FALSE(Endpoint::parse("localhost", 80).has_value());
 }
 
-TEST(IoTcp, AdoptReleaseAndMoveKeepExactlyOneNativeOwner) {
+TEST(IoTcp, AdoptMoveAndReleaseKeepExactlyOneNativeOwner) {
   Scheduler scheduler(1, system_allocator(), 64);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
@@ -424,18 +424,27 @@ TEST(IoTcp, AdoptReleaseAndMoveKeepExactlyOneNativeOwner) {
     EXPECT_EQ(adopted->owner_worker(), kOwner);
     EXPECT_TRUE(adopted->set_keepalive(false).ok());
 
-    const std::intptr_t released = adopted->release_native_handle();
-    ASSERT_GE(released, 0);
+    TcpStream owner;
+    owner = std::move(*adopted);
+    EXPECT_TRUE(owner.valid());
     EXPECT_FALSE(adopted->valid());
-    EXPECT_EQ(adopted->native_handle(), -1);
+    EXPECT_TRUE(owner.set_keepalive().ok());
 
+    const std::intptr_t released = owner.release_native_handle();
+    ASSERT_GE(released, 0);
+    EXPECT_FALSE(owner.valid());
+    EXPECT_EQ(owner.native_handle(), -1);
+
+#if defined(_WIN32)
+    // Windows binds a socket to one IOCP for its complete native lifetime.
+    // Ownership release is valid, but the same socket cannot be associated a
+    // second time even with the same port. Close the transferred owner here.
+    close_native_socket(released);
+#else
     auto readopted = TcpStream::adopt(io, kOwner, released);
     ASSERT_TRUE(readopted.has_value()) << readopted.error().message();
-    TcpStream owner;
-    owner = std::move(*readopted);
-    EXPECT_TRUE(owner.valid());
-    EXPECT_FALSE(readopted->valid());
-    EXPECT_TRUE(owner.set_keepalive().ok());
+    EXPECT_TRUE(readopted->valid());
+#endif
   }
   close_native_socket(pair.peer);
   scheduler.shutdown();

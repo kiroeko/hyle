@@ -110,6 +110,11 @@ PR/main CI 运行 Linux change-impact 合同。Windows、macOS、AArch64 cross�
 feature 矩阵由显式 full workflow 运行；sanitizer、真实 GPU 与 SVE/RVV 执行仍按模块风险和机器合同
 调度，不能由一次 all-components compile 冒充。
 
+横向 CLOSED 资格与发布 smoke 不使用手写产品名单，也不把仍为 `QUEUED` 的产品混入 verdict；它从
+中央 factor/product 图与唯一 lifecycle registry 投影完整依赖闭包均为 `CLOSED` 的公开产品，并机械
+验证这些产品的 factor union 没有漏掉任何 CLOSED owner。一般开发者仍可显式选择 `all` 构建当前整个
+源码树，但这种构建不构成 CLOSED 产品资格证据。
+
 每个 session 使用独占绝对 build/scratch 目录，不复用另一会话或另一工具链的 CMake cache。产品交付
 使用 selected-component smoke 同时验证 source/static/shared 及 relocated consumer；factor 维护只跑
 自己的 target、适用消费者和 card 预声明风险。

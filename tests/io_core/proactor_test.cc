@@ -1038,15 +1038,19 @@ TEST(Proactor, RealFileReadWriteRoundTrip) {
   ::DeleteFileA(path);
 }
 
-// A bad handle fails the submit synchronously (no completion is ever queued),
-// so submit_read returns false -- distinct from an IO error, which would submit
-// fine and surface a negative result at reap.
-TEST(Proactor, RealFileReadBadHandleSubmitFails) {
+// Once admission owns an operation slot, even a synchronous ReadFile failure is
+// delivered through the same completion contract as an asynchronous failure.
+// false remains reserved for a request that was never admitted.
+TEST(Proactor, RealFileReadBadHandleCompletesWithNativeError) {
   Proactor p;
   ASSERT_TRUE(p.init());
   char buf[8] = {};
-  EXPECT_FALSE(p.submit_read(reinterpret_cast<std::intptr_t>(INVALID_HANDLE_VALUE),
-                             buf, sizeof(buf), 0, 0x333));
+  ASSERT_TRUE(p.submit_read(reinterpret_cast<std::intptr_t>(INVALID_HANDLE_VALUE),
+                            buf, sizeof(buf), 0, 0x333));
+  Completion completion{};
+  ASSERT_EQ(p.reap(&completion, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(completion.user_data, 0x333u);
+  EXPECT_LT(completion.result, 0);
 }
 
 TEST(Proactor, DirectoryChangesCompleteAndRearmIocp) {

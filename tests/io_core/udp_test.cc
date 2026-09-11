@@ -177,29 +177,38 @@ TEST(IoUdp, InvalidContextReturnsTypedSetupFailure) {
   scheduler.shutdown();
 }
 
-TEST(IoUdp, ReleaseReadoptAndMoveKeepExactlyOneNativeOwner) {
+TEST(IoUdp, MoveAndReleaseKeepExactlyOneNativeOwner) {
   Scheduler scheduler(1, system_allocator(), 64);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
 
   {
-    auto opened = UdpSocket::open(io, kOwner);
+    auto opened = UdpSocket::bind(
+        io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, 0));
     ASSERT_TRUE(opened.has_value()) << opened.error().message();
     EXPECT_TRUE(opened->valid());
     EXPECT_EQ(opened->owner_worker(), kOwner);
 
-    const std::intptr_t released = opened->release_native_handle();
-    ASSERT_GE(released, 0);
+    UdpSocket owner;
+    owner = std::move(*opened);
+    EXPECT_TRUE(owner.valid());
     EXPECT_FALSE(opened->valid());
-    EXPECT_EQ(opened->native_handle(), -1);
+    EXPECT_TRUE(owner.local_endpoint().has_value());
 
+    const std::intptr_t released = owner.release_native_handle();
+    ASSERT_GE(released, 0);
+    EXPECT_FALSE(owner.valid());
+    EXPECT_EQ(owner.native_handle(), -1);
+
+#if defined(_WIN32)
+    // A Windows socket stays associated with its original IOCP until close;
+    // release transfers ownership but cannot make it adoptable a second time.
+    EXPECT_EQ(::closesocket(static_cast<SOCKET>(released)), 0);
+#else
     auto adopted = UdpSocket::adopt(io, kOwner, released);
     ASSERT_TRUE(adopted.has_value()) << adopted.error().message();
-    UdpSocket owner;
-    owner = std::move(*adopted);
-    EXPECT_TRUE(owner.valid());
-    EXPECT_FALSE(adopted->valid());
-    EXPECT_TRUE(owner.local_endpoint().has_value());
+    EXPECT_TRUE(adopted->valid());
+#endif
   }
   scheduler.shutdown();
 }

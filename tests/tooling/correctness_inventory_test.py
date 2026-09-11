@@ -62,6 +62,39 @@ def main() -> None:
     if products["graph"]["all_factors_closed"]:
         raise AssertionError("QUEUED Graph must not be reported as qualified")
 
+    closed_products = tool.closed_product_names(report)
+    if "compute" in closed_products or "graph" in closed_products:
+        raise AssertionError("a QUEUED product leaked into the CLOSED product projection")
+    projected_factors = {
+        factor
+        for row in report["products"]
+        if row["all_factors_closed"]
+        for factor in row["factor_closure"]
+    }
+    if projected_factors != set(factors):
+        raise AssertionError(
+            "CLOSED product projection does not cover the exact CLOSED factor set: "
+            f"projected={sorted(projected_factors)!r}, factors={sorted(factors)!r}"
+        )
+
+    for relative in (
+        "cmake/HyleCiProductShapeSmoke.cmake",
+        "cmake/HyleCiPackageSmoke.cmake",
+        "cmake/HyleCiSourcePackageSmoke.cmake",
+    ):
+        smoke = (root / relative).read_text(encoding="utf-8")
+        if "HyleCiClosedProducts.cmake" not in smoke:
+            raise AssertionError(f"{relative} bypasses the CLOSED product projection")
+        if "HYLE_COMPONENTS=all" in smoke:
+            raise AssertionError(f"{relative} still admits QUEUED products")
+
+    windows_driver = (root / "scripts/hyle-windows.ps1").read_text(encoding="utf-8")
+    source_action = windows_driver.split("'SourcePackageSmoke' {", 1)[1]
+    if "Get-HyleClosedProducts" not in source_action:
+        raise AssertionError("Windows source-package driver bypasses CLOSED projection")
+    if "HYLE_COMPONENTS=all" in source_action:
+        raise AssertionError("Windows source-package driver still admits QUEUED products")
+
 
 if __name__ == "__main__":
     main()

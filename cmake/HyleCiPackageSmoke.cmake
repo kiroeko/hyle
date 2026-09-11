@@ -1,5 +1,5 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
-# shared and static all-product CPU SDKs, then configures/builds/runs
+# shared and static all-CLOSED-product CPU SDKs, then configures/builds/runs
 # source-independent consumers against each install prefix. The general sample
 # exercises the native mem C++ API and every exported target; module-owned
 # focused probes under samples/package are discovered automatically and
@@ -18,6 +18,8 @@ endif()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiClosedProducts.cmake")
+hyle_ci_closed_product_csv(_hyle_closed_products)
 
 file(STRINGS "${HYLE_SOURCE_DIR}/include/hyle/version.h"
   _hyle_version_lines REGEX
@@ -67,7 +69,7 @@ foreach(_linkage IN ITEMS shared static)
   else()
     set(_static OFF)
   endif()
-  set(_components all)
+  set(_components "${_hyle_closed_products}")
   set(_build "${HYLE_SMOKE_ROOT}/package-${_linkage}")
   set(_prefix "${HYLE_SMOKE_ROOT}/prefix-${_linkage}")
   set(_consumer "${HYLE_SMOKE_ROOT}/consumer-${_linkage}")

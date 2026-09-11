@@ -1,6 +1,6 @@
 # End-to-end verification for HYLE's complete-source delivery shape: generate
 # from a clean Git commit, validate digest/manifest/legal payload, extract, then
-# configure and build the current all-component CPU graph from the archive
+# configure and build the current all-CLOSED-product CPU graph from the archive
 # without the checkout.
 
 cmake_minimum_required(VERSION 3.25)
@@ -11,6 +11,8 @@ foreach(_required IN ITEMS HYLE_SOURCE_DIR HYLE_PACKAGE_BUILD HYLE_SMOKE_ROOT)
   endif()
   get_filename_component(${_required} "${${_required}}" ABSOLUTE)
 endforeach()
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiClosedProducts.cmake")
+hyle_ci_closed_product_csv(_hyle_closed_products)
 
 function(_hyle_source_run label)
   execute_process(
@@ -95,7 +97,7 @@ _hyle_source_run("configure extracted source package"
   "${CMAKE_COMMAND}" -S "${_source_root}" -B "${_consumer_build}"
   ${_generator_args}
   -DCMAKE_BUILD_TYPE=Release
-  -DHYLE_COMPONENTS=all
+  -DHYLE_COMPONENTS=${_hyle_closed_products}
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_WERROR=ON

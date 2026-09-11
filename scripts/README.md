@@ -10,7 +10,7 @@
 |---|---|---|
 | 按 Git 影响选择验证 | `validation-select.py plan/run` | 文档/测试不触发产品全量门；产品 owner 必须先处于 `AUDITED`；P1 只接受显式冻结卡 |
 | 校验/投影模块状态 | `check-module-closure.py` | `module-status.json` 是唯一状态；registry 改动必须传 `--previous-ref` |
-| 盘点正确性证据入口 | `correctness-inventory.py` | 生成 CLOSED factor 的公开头/测试/record 清单；计数只用于发现漏项 |
+| 盘点正确性证据入口 | `correctness-inventory.py` | 生成 CLOSED factor 的公开头/测试/record 清单；`--print-closed-products` 从中央图和 registry 投影资格验证产品；计数只用于发现漏项 |
 | 查找未触达产品路径 | `correctness-coverage.py` | 在独占 GCC 14 build 中生成 line/branch discovery；不得把百分比写成正确性 verdict |
 | 校验文档 | `check-docs.py` | 四类目录、相对链接、退役 FFI 和从 `docs/README.md` 可达性 |
 | 统计代码 | `loc-report.py` | 全库、自实现不含测试、单 factor 或 registry 状态集合；支持 immutable commit |

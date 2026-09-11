@@ -25,15 +25,17 @@
 ## 当前基线事实
 
 - 29 个 `CLOSED` factor 都有独立测试目录；仓库中共有 173 个非 `compute/graph` C/C++ 测试翻译单元、
-  61,483 行翻译单元源码和约 2,057 个 GoogleTest declaration；另有 5 个测试支撑头/片段。table/property case 会让实际输入多于
-  declaration；这些数字都不代表覆盖充分。
+  63,057 行翻译单元源码和 2,094 个 GoogleTest declaration；另有 5 条 project-owned public journey，
+  共 1,082 行和 5 个 declaration。table/property case 会让实际输入多于 declaration；这些数字都不
+  代表覆盖充分。
 - 当前没有统一的仓库级 line/branch coverage 入口。首次 instrumentation 只用于发现 zero-hit
   产品路径和未触达分支，不设“达到某百分比即正确”的门。
 - push/PR CI 使用 change-impact selector；三平台全 CPU 测试、package 与 product-shape smoke 只由
   `workflow_dispatch` 运行。这符合日常避免费时全测的原则。
-- `HyleCiProductShapeSmoke.cmake` 仍只选择 `core,util,obs,time`，是旧阶段遗留的 shipping-layout
-  覆盖缺口。本轮应由中央产品图投影全部已实现且 owner 为 `CLOSED` 的非 Compute/Graph 产品，避免
-  再手写一份会漂移的产品名单。
+- Q09 baseline 的 `HyleCiProductShapeSmoke.cmake` 仍只选择 `core,util,obs,time`，是旧阶段遗留的
+  shipping-layout 覆盖缺口；package/source/full CI 又用 `all` 把 `QUEUED` 的 Compute/Graph 混入。
+  Q09 必须由中央产品图和唯一 registry 投影“完整 factor closure 全为 `CLOSED`”的产品，且验证其
+  factor union 恰好覆盖 29 项，不能再手写第二份产品名单。
 
 ## 固定语义矩阵
 
@@ -92,12 +94,32 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `COMPLETE` |
-| Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `QUEUED` |
+| Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `IN_PROGRESS` |
 | Q10 | 终局红队与裁决 | 无伪 PROVEN；缺陷均定向处理；文档/工具合同一致 | `QUEUED` |
 
 每个 factor 的静态审计以一个工作批次为预算：一旦所有公开能力已经映射，停止继续枚举。每个新发现
 测试缺口最多先选择一种最能反证风险的技术，不为同一事实机械叠加 table/property/fuzz/stress。若同一
 缺陷经过三轮修正仍未解决，或必须改变产品合同，立即按模块协议裁决，不在横向任务内无限施工。
+
+## Q09 冻结风险矩阵
+
+Q09 不重跑“平台 × sanitizer × linkage × feature”的笛卡尔积，只在会改变语义风险的边界各取一次
+最强证据：
+
+| 风险 | 固定路线 | 不重复证明的内容 |
+|---|---|---|
+| CLOSED 资格根 | inventory 从中央 factor/product 图与 registry 投影完整 closure 均 `CLOSED` 的公开产品；其 union 必须恰好为 29 factor | 不维护手写产品列表，不把 `compute/graph` 的构建结果记入本资格 |
+| Windows native | W1-WIN，MSVC Release/shared/WERROR，feature-off 全 CLOSED product tests；Q08 同候选 TLS+HTTP2 journey 可复用 | 不在 static SDK 中再跑整套 factor tests |
+| Linux memory/UB | W1-WSL 原生 ext4，分别用 ASan、UBSan 跑全部 CLOSED 产品的 factor/project correctness tests | coverage 与 sanitizer 不互相冒充；不在 `/mnt/c` 构建 |
+| Linux races | W1-WSL TSan 只跑 `mem_reclaim/obs/container_concurrent/container_queue/util_core/sched/io/process` 的真实共享状态或异步生命周期用例 | 不跑纯值类型、编译期头和无共享状态算法；TSan 不证明 standalone-fence 算法 |
+| macOS native | MacBook Air Apple Silicon 上跑 feature-off 全 CLOSED product tests，重点观察 kqueue/watch/process/VM/NEON/fcontext | 第二台 Mac 只在第一台不可用或 backend 反证需要时使用，不复制相同门 |
+| source | Windows/WSL 的 source product-shape + 从干净 commit 生成、解包并独立构建完整 source delivery | 不把 build tree 偶然可链接冒充 source consumer |
+| static/shared | W1-WIN 各安装一次全部 CLOSED 产品 SDK，移动 prefix 后运行通用及 module-owned focused consumers | 不为每个 factor 单独重建两套 SDK |
+| CI | focused 工具测试证明 full workflow 使用同一 CLOSED 投影、只由 `workflow_dispatch` 跑完整矩阵、普通 push 仍走 change impact 且不触发 P1 | feature adapter/Compute/Graph 专项 job 不作为本项目资格证据 |
+
+任一路线复现产品 correctness/security/UB/lifetime/concurrency 缺陷时暂停对应 factor，依法定向 reopen；
+环境、仪器或交付脚本缺陷只修 Q09 工具并重跑受影响路线。每条命令有 CTest/CI 外层硬 timeout；相同
+候选、同平台、同风险已经由更强路线证明时不得为了“全排列”重复执行。
 
 ## 预声明验证
 
