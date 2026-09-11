@@ -31,3 +31,25 @@
 - default-hidden Mac shared 构建已证明 `BorrowedMappedResource` 可以沿公开 Mem 基类完成 RTTI/vtable
   链接；
 - candidate 后只允许补 terminal 证据、文档与状态。
+
+## 验证
+
+| Gate | 适用风险与命令/证据 | Verdict |
+|---|---|---|
+| scope | 本模块产品源码与公开头零变化，只回放下层 Mem 修复 | PASS |
+| architecture | `BorrowedMappedResource` 继续作为私有 adapter，公开抽象仍由 Mem 单点拥有 | PASS |
+| correctness | Windows Mem-vm correctness 通过；既有 mapping 生命周期与故障测试未受影响 | PASS |
+| delivery | Windows、Linux GCC 14、MacBook Air arm64 的 Sched source/static/shared 闭包均跨过 Mem-vm | PASS |
+| usability_docs | Mapping、FileMapping、SharedMapping 与 LargeMapping 的用户选择和 API 均未改变 | PASS |
+| red_team | 没有复制基类、关闭 RTTI、增加 trampoline 或修改本模块可见性来掩盖下层缺陷 | PASS |
+| engineering_performance | P0：本模块无代码变化；v2 的同合同 P1 证据继续有效 | PASS |
+
+## 红队与裁决
+
+- 反证：default-hidden Mac shared 链接是最强跨 factor 检查；下层修复后原样 Mem-vm 源码即可通过，证明
+  owner 与依赖方向正确；
+- 未决限制：平台 VM 能力差异和共享 C++ 工具链要求沿用 v2 已披露合同；
+- reopen triggers：新的真实平台/consumer 暴露 mapping 正确性、生命周期、交付或 material 性能问题；
+- LOC（candidate）：全库 560,631；自实现不含测试 100,233；Mem-vm compiled 实现 1,318；
+- 最终状态与理由：`CLOSED`。本模块没有独立产品缺陷，所依赖的公开类型身份已由 owner 修复并经三平台
+  完整交付回放确认。

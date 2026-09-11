@@ -90,3 +90,26 @@ fcontext 修复或 Sched 算法缺陷，但 candidate 的完整依赖闭包尚�
 - shared artifact 实扫分别覆盖 Windows 8 DLL/492 exports、Linux 8 ELF/535 exports、macOS 8
   dylib/533 exports，均未发现 raw fcontext、`mi_*` 或旧 plain `hyle_*` C 入口；
 - candidate 后只允许补全量 package、红队、文档和 terminal 状态证据。
+
+## 验证
+
+| Gate | 适用风险与命令/证据 | Verdict |
+|---|---|---|
+| scope | Sched 产品 seam 只把 Windows MASM `EXPORT` 改为 object 内 `PUBLIC`；公开 API 与汇编代码不变 | PASS |
+| architecture | raw fcontext 只供 `hyle_sched` 内部切换，用户仍只经公开 C++ Scheduler/Fiber/Task API | PASS |
+| correctness | Windows Release Sched correctness 通过；三平台真实 Sched consumer 均能创建、运行和关闭 | PASS |
+| delivery | Windows、Linux GCC 14、macOS arm64 的 source/static/shared relocated consumer 全过 | PASS |
+| usability_docs | source/static/shared 都使用相同 C++ API；shared 不再暗示可调用内部 C/汇编入口 | PASS |
+| red_team | 三种 artifact 格式实扫无 raw fcontext、`mi_*` 或旧 plain `hyle_*`；公开 C++ symbols 不做脆弱白名单 | PASS |
+| engineering_performance | P0：汇编指令、call edge 与对象均未变，只删除 export-directory metadata；v10 P1 证据继续有效 | PASS |
+
+## 红队与裁决
+
+- 反证：Windows object 检查证明 `PUBLIC` 保留同 DLL external resolution 且移除 `/EXPORT` directive；
+  Linux/Mach-O 使用实际安装产物而非源码字符串判断；
+- 未决限制：共享 SDK 是同工具链 C++ 交付，不承诺稳定 C++ ABI 或跨语言调用；
+- reopen triggers：artifact 再次出现 raw C/assembly/vendor export；真实 source/static/shared consumer 链接
+  失败；Sched API、汇编指令或运行时路径变化；
+- LOC（candidate）：全库 560,631；自实现不含测试 100,233；Sched 实现 7,099；
+- 最终状态与理由：`CLOSED`。意外公开入口已从 PE 移除，Unix 默认隐藏也已落地；三平台三交付和实际
+  export table 全部闭合，且没有运行时语义或成本变化。

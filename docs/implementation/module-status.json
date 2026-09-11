@@ -144,17 +144,27 @@
     },
     {
       "module": "mem",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/mem/mem-v8-resource-type-visibility.md",
       "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
-      "summary": "mem v8 CANDIDATE：MemoryResource 类级 export 已修复 default-hidden shared 类型身份；三平台完整下游交付通过，API、layout、虚表、算法和运行时成本不变。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v7.md",
+        "material_margin_pct": 5
+      },
+      "summary": "mem v8 CLOSED：MemoryResource 类级 export 已修复 default-hidden shared 类型身份；三平台完整下游交付通过，API、layout、虚表、算法和运行时成本不变，v7 P1 证据继续有效。"
     },
     {
       "module": "mem_vm",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/mem_vm/mem-vm-v3-resource-visibility-replay.md",
       "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
-      "summary": "mem-vm v3 CANDIDATE：源码无独立修改；继承 Mem 类型可见性修复后，三平台跨 factor source/static/shared 交付闭包通过。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md",
+        "material_margin_pct": 5
+      },
+      "summary": "mem-vm v3 CLOSED：源码无独立修改；继承 Mem 类型可见性修复后，三平台跨 factor source/static/shared 交付闭包通过，v2 P1 证据继续有效。"
     },
     {
       "module": "simd",
@@ -193,10 +203,15 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/sched/sched-v11-private-fcontext-export.md",
       "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
-      "summary": "sched v11 CANDIDATE：三平台三交付与实际共享导出扫描通过；Windows raw fcontext 不再公开，依赖闭包的 Mem 类型身份也已修复。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
+        "material_margin_pct": 5
+      },
+      "summary": "sched v11 CLOSED：三平台三交付与实际共享导出扫描通过；Windows raw fcontext 不再公开，依赖闭包的 Mem 类型身份已修复，v10 P1 证据继续有效。"
     },
     {
       "module": "io_core",

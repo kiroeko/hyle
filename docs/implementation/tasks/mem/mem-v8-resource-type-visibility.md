@@ -47,3 +47,27 @@ RTTI/vtable 身份。类级 default visibility 是该现有能力的必要交付
   arm64 的 Sched source/static/shared relocated consumer 均通过；
 - MacBook Air 上原先的 `typeinfo for hyle::mem::MemoryResource` 跨 factor 链接失败已消失；
 - candidate 后只允许补 terminal 证据、文档与状态，不再修改产品实现。
+
+## 验证
+
+| Gate | 适用风险与命令/证据 | Verdict |
+|---|---|---|
+| scope | candidate 相对 baseline 只改 `resource.h` 的类型可见性；方法集合、实现和依赖不变 | PASS |
+| architecture | `MemoryResource` 是 Mem 唯一公开、可跨 factor 派生的多态 extension base；类型级 export 与其真实语义一致 | PASS |
+| correctness | Windows Mem/Mem-vm correctness 全过；方法、虚表与 allocator 路径未改 | PASS |
+| delivery | Windows、Linux GCC 14、MacBook Air arm64 的 Sched source/static/shared relocated consumer 全过 | PASS |
+| usability_docs | 用户仍使用同一个 `MemoryResource`/`MemoryResourceRef` API；不新增模式、开关或迁移负担 | PASS |
+| red_team | 全量 Mem public type/派生扫描没有发现第二个缺标的跨 DSO extension base；Mac 原始失败由同一回归闭合 | PASS |
+| engineering_performance | P0：visibility 不占对象字段、不增加虚表项或指令；v7 的 P1 运行时证据因算法字节未改而继续有效 | PASS |
+
+## 红队与裁决
+
+- 反证：在 default-hidden Mach-O 上用真实 `BorrowedMappedResource` 派生链，而非人为 RTTI probe；原失败
+  能稳定复现，类级 export 后 source/static/shared 同时通过。Windows/ELF/Mach-O artifact 扫描也没有
+  因修复产生 plain-C 或 vendor 导出；
+- 未决限制：共享 C++ SDK 仍要求兼容工具链/运行库；这不是稳定 Native FFI；
+- reopen triggers：新的公开跨 factor 派生类型出现同类链接失败；`MemoryResource` 的 API/layout/虚表或
+  调用成本变化；真实 consumer 发现资源生命周期缺陷；
+- LOC（candidate）：全库 560,631；自实现不含测试 100,233；Mem 实现 8,263；
+- 最终状态与理由：`CLOSED`。唯一可复现 shared 类型身份缺陷已在三平台真实下游闭包中消失，且没有
+  改变 Mem 的功能、形状、算法或性能合同。
