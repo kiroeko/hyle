@@ -2,7 +2,8 @@
 
 > 本页描述当前 CPU C++ surface；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。HYLE-native 始终可用；选择
-> `HYLE_COMPUTE_ONEDNN=ON` 时另有显式 oneDNN MatMul provider。CUDA、Metal、Vulkan、HIP 与其他
+> `HYLE_COMPUTE_ONEDNN=ON` 时可以构建显式 oneDNN MatMul provider，但该可选 factor 当前因 vendor
+> warm execute 隐藏分配而 `BLOCKED`，尚未取得稳态性能资格。CUDA、Metal、Vulkan、HIP 与其他
 > providers 仍是后续独立纵切，枚举词汇不代表实现可用。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
@@ -121,7 +122,10 @@ if (!invocation) return invocation.error();
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；`Context::close()`/析构不得与另一 handle 的 submit 并发。
 - HYLE-native route 不隐藏 staging、copy、线程切换、packing 或 JIT。oneDNN 的 primitive/JIT/metadata 只在
-  Context/prepare/invocation 冷路径创建；scratchpad 由调用方显式提供，provider fallback 只在 prepare 发生。
+  Context/prepare/invocation 冷路径由 HYLE 创建；scratchpad 由调用方显式提供，provider fallback 只在
+  prepare 发生。当前锁定 oneDNN 自身仍会在每次 `brg_matmul` execute 创建内部 metadata，因此不能把
+  `HYLE_COMPUTE_ONEDNN=ON` 当作零分配 steady-path 承诺；需要该承诺时使用 native route，直到 registry
+  中该 factor 恢复并关闭。
 
 source、headers + static、headers + shared 都选择 `hyle::compute`。三者是同一 C++23 source contract，不是
 Native FFI，也不承诺跨工具链 C++ ABI。

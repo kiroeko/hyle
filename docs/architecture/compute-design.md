@@ -2,8 +2,8 @@
 
 > 决策状态：`ACCEPTED`。本文定义 Compute 的长期产品合同；实现当前是否可用只查
 > [`module-status.json`](../implementation/module-status.json)。当前 Compute 仍为 `AUDITED`；CPU native
-> 纵切和独立 oneDNN row-major f32 MatMul provider 已进入实现/资格化，但不能外推为完整算子目录或 GPU
-> backend。被删除的旧实现只可从
+> 纵切已经进入实现，独立 oneDNN row-major f32 MatMul factor 因 vendor warm execute 隐藏分配而
+> `BLOCKED`，不能外推为完整算子目录、合格 provider 或 GPU backend。被删除的旧实现只可从
 > Git 历史取得调查事实；历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
 
 ## 1. 产品承诺

@@ -173,12 +173,34 @@ tensor views 只借用到同步 Completion 终态。provider 内部 C handle 销
   使用全新 staging 安装并实际移动前缀，source embedding、relocated shared 和 relocated static consumer 均重新
   编译、链接、运行通过；static 仅包含正确的 `include/oneapi/dnnl` 开发闭包，shared 不安装 oneDNN headers，
   两者都不再安装 private SPI。shared export hygiene 检查 6 个 HYLE libraries / 682 个导出，无 vendor 泄漏；
-- 当前仍是 `AUDITED`，不是 `CLOSED`：vendor steady-execute allocation probe、公平 direct-oneDNN wrapper P1、
-  source/static/shared relocatable consumer、shared export hygiene、Linux/macOS 与 sanitizer 资格尚未全部完成。
-  这些是本卡剩余验收项，不能用已有 correctness 冒充。
+- source/static/shared relocatable consumer、shared export hygiene 已通过；Linux/macOS、sanitizer 与公平
+  direct-oneDNN wrapper P1 尚未执行。但 P0 已先命中本卡预声明的停止线，因此这些后续验证不再继续，
+  不能靠计时或扩大平台矩阵掩盖结构 blocker。
+
+### P0 blocker：oneDNN steady execute 隐藏分配（2026-09-12）
+
+- 对 shipping pin `v3.13.2` 的实际 descriptor 查询表明，`M={1,4,32}`、`K=N=4096` 以及
+  `K=5120,N=13824` 六个 row-major f32 形状在 W1-WIN 全部选择 `brg_matmul:avx2`；查询到的
+  scratchpad 为 `10368` 或 `4204800` bytes，均已由 HYLE 的显式 workspace 覆盖；
+- 但锁定源码
+  `src/cpu/x64/matmul/brgemm_matmul.cpp:622-623` 在每次 `execute_body()` 中无条件执行
+  `std::make_shared<brg_matmul_exec_ctx_t>`。该 per-execute context 又在同文件 `1731`、`1813`、`1878`
+  构造或扩展三个 `std::vector`；这些 metadata 不来自 user scratchpad，也没有公开 allocator/precreated
+  execution-context seam；
+- 因此当前 provider 只能证明“零 HYLE 分配”，不能满足本卡冻结的“整个 steady submit 零隐藏分配”。
+  这是源码确定的机制差异，不是微基准噪声；按照停止合同，本轮进入 `BLOCKED`，不运行 P1 寻找假通过；
+- blocker 仅属于可选 `compute_provider_onednn` factor。默认 OFF 的 HYLE-native Compute/Graph 没有这条
+  allocation，且 provider 失败/未启用时仍在 prepare 冷路径走 native fallback；不得据此恢复任何旧
+  Compute/Graph 实现。
+
+精确恢复条件：锁定一个提供 caller-owned/precreated execution metadata 的 oneDNN revision，或维护一份
+有明确升级策略的最小 provider patch/等价成熟 route；在上述六个正常形状和至少一个反偏置形状上用
+allocation probe 证明 warm `dnnl_primitive_execute` 零动态分配，随后回到 `SCOPED` 重新冻结版本、维护成本、
+三交付与 P1。仅升级版本、减少分配次数或把 5% timing 门跑过都不满足恢复条件。
 
 ## Audit verdict
 
-`OD01--OD10` 是有限且可实施的 provider seam；`OD11--OD13` 划清负空间。允许
-`compute_provider_onednn` 进入 `AUDITED`，并依法修改 Compute/Graph 的 artifact/run-state 合同。任何
-submit 时隐藏分配、全局线程/registry、provider 反向依赖或 vendor 类型泄漏立即触发本卡停止线。
+`OD01--OD10` 已证明 provider seam 与三交付形状成立，`OD11--OD13` 划清负空间；但 shipping oneDNN 的
+`brg_matmul` 已实际触发“submit 时隐藏分配”停止线。本轮终局为 `BLOCKED`，不能签发 provider 性能资格。
+已经形成的通用 Provider、artifact/run-state 与 Graph workspace 合同属于清洁新架构，可继续由 native 与
+后续独立 provider 复用；oneDNN factor 本身只按上述恢复条件重启。
