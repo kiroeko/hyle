@@ -1,6 +1,6 @@
 # IO HTTP v3：文件区域响应体
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -94,7 +94,7 @@ nginx `5c812c034e6c` 与 Beast `cb94f33fcb13` 证明 plain file response 的 ker
 复用既有 `io_core` dependency；不增加 component edge、provider、开关或 binary。审计结论为 **PASS**，允许
 进入三项有限实现；correctness、交付、红队与候选性能尚未运行。
 
-## 候选实现 checkpoint（`WORKTREE`）
+## 候选签署（`CANDIDATE`）
 
 - `G06-H01/H02/H03` 已落地：新增唯一 overload
   `send_response(head, File&, FileRegion, options)`；它复用原 response state machine。plain TCP 委托
@@ -105,6 +105,11 @@ nginx `5c812c034e6c` 与 Beast `cb94f33fcb13` 证明 plain file response 的 ker
 - Windows/MSVC 19.50 shared Release 的 TLS OFF/ON 定向测试通过；Linux/GCC 14 shared Release 的 TLS
   OFF/ON 测试在默认 io_uring 与强制 epoll 下通过。已覆盖 GET region、同连接 HEAD、204/205/304、短文件、
   plain/TLS 跨 context 预 wire 拒绝，以及 TLS 64 KiB scratch OOM。
-- macOS、sanitizer、逐头与 source/static/shared 仍待 immutable candidate；registry 继续保持 `AUDITED`。
-  源码审计未找到能与完整 HYLE framing/backpressure/completion/teardown 等合同的 peer，P1 暂为
-  `NOT_APPLICABLE`，P0 成本账单无固定输项。
+- 不可变候选是 `d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d`。产品实现最后改变于
+  `65b7dc8c699cbedaf2a9311943241db600224dcd`；后续仅有测试协调与 optional-factor fixture 修正。
+- Windows、Linux io_uring/epoll、两台 macOS 的 plain/TLS file-body correctness 均通过；WSL
+  ASan/UBSan/TSan 各 `19/19 PASS`；Windows source/relocated shared/relocated static 的 `io` 直接消费
+  全部通过，TLS ON/OFF 与 HTTP2 ON/OFF factor 组合没有被本轮破坏。
+- 源码 preflight 未找到能与完整 HYLE framing、request retirement、backpressure、completion 和 teardown
+  同合同的 peer，P1 为 `NOT_APPLICABLE`；P0 成本账单没有固定输项。terminal 红队与中央状态迁移仍须在
+  下一提交签署，本节不提前声明 `CLOSED`。

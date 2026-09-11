@@ -1,6 +1,6 @@
 # IO Core v4：异步文件区域流送
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -123,7 +123,7 @@ knob。源码账单已经给出算法差异，在实现正确性稳定前不运�
 一次。审计结论为 **PASS**，允许进入上述有限实现；全部 correctness/交付/性能结果仍未运行，不能提前写
 成通过。
 
-## 候选实现 checkpoint（`WORKTREE`）
+## 候选签署（`CANDIDATE`）
 
 - `G06-C01/C02` 已落地：公开 `FileRegion` 与 `send_file_region`；Windows 使用运行时
   `WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)` 取得的 overlapped `TransmitFile`，Linux/macOS 使用
@@ -136,6 +136,12 @@ knob。源码账单已经给出算法差异，在实现正确性稳定前不运�
 - Windows/MSVC 19.50 shared Release 的定向 `file_region` 与 HTTP 组合测试通过；Linux/GCC 14 shared
   Release 的同组测试在默认 io_uring 和强制 epoll 下均通过。覆盖 zero/overflow、预取消/过期、短文件、
   peer reset、in-flight cancel、跨 context 预提交拒绝与 Linux `SIGPIPE` handler 不触发。
-- macOS、sanitizer、逐头和 source/static/shared 仍待 immutable candidate 后完成；因此本节不是 terminal
-  verdict，registry 继续保持 `AUDITED`。源码 preflight 没有发现完整同合同 strong peer，当前 P1 为
-  `NOT_APPLICABLE`，不得用 raw syscall 与完整 typed coroutine 排名。
+- 不可变候选是 `d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d`。产品实现最后改变于
+  `65b7dc8c699cbedaf2a9311943241db600224dcd`；其后的提交只纠正测试协调和 optional-factor test
+  discoverability，没有改变公开合同、算法、对象布局或正常产品成本。
+- 候选验证已经覆盖 Windows/MSVC 19.50、Linux/GCC 14 的 io_uring/epoll、两台 macOS/AppleClang；
+  WSL ASan、UBSan、TSan 各 `19/19 PASS`。Windows `io` selected-component smoke 的 source、relocated
+  shared、relocated static 三种消费全部通过；TLS/HTTP2 的 ON/OFF factor query 和直接测试也通过。
+- 源码 preflight 没有发现能与完整 typed coroutine、owner、cancel/deadline、partial progress 和 teardown
+  同合同的 strong peer，因此 P1 为 `NOT_APPLICABLE`；不得用 raw `sendfile` 对完整 façade 排名。terminal
+  红队与中央状态迁移仍须在下一提交签署，本节不提前声明 `CLOSED`。

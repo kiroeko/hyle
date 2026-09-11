@@ -1,6 +1,6 @@
 # IO TLS v4：组合层 context identity
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -52,12 +52,16 @@ provider access、allocation 或 runtime dispatch。公开 `context()`/native so
 审计结论为 **PASS**，授权上述一个 header seam 与一个 io_http 调用点；correctness、交付与候选红队尚未
 运行，不能提前写 terminal verdict。
 
-## 候选实现 checkpoint（`WORKTREE`）
+## 候选签署（`CANDIDATE`）
 
 - 允许的唯一 patch 已落地：一个 forward declaration、friend 和 header-inline detail overload；没有新增
   字段、export symbol、provider call、allocation 或普通 TLS/HTTP 分支。
 - Windows/MSVC 19.50 与 Linux/GCC 14 的 TLS ON HTTPS file-body 测试均通过；Linux 同时覆盖默认
   io_uring 与强制 epoll。测试用两个都拥有 worker 0 的独立 scheduler/context，确认在任何 response byte
   写出前返回 `InvalidArgument`，不是依赖 timeout。
-- macOS、TLS ON 逐头和三交付仍待 immutable candidate；registry 继续保持 `AUDITED`。本轮只需 P0，前轮
-  TLS 性能证据不受影响且不重跑。
+- 不可变候选是 `d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d`；产品 seam 最后改变于
+  `a0665181a84db771002256b9906bcf5cd60f3b19`，后续产品改动均在 io_core backend，未改变 TLS seam。
+- Windows、Linux io_uring/epoll 与两台 macOS 的 TLS ON HTTPS file-body 路线通过；TLS OFF/ON factor
+  query、WSL ASan/UBSan/TSan 各 `19/19 PASS`，Windows `io` source/shared/static 消费全部通过。
+- 本轮只需 P0：header-inline accessor 为零字段、零符号、零 provider call，普通 TLS 路线不引用它；前轮
+  TLS 性能证据不受影响且不重跑。terminal 红队与中央状态迁移仍须在下一提交签署。
