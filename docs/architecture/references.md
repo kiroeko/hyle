@@ -1,6 +1,9 @@
 # HYLE 参考库映射
 
-> 参考项目均已 clone 到 `C:\public\project-hyle\`（与 hyle 并列）。本表把每个库映射到 HYLE 模块，标注**借**（vendored 依赖/adapter 对接）、**参考**（读设计、不依赖）或 **ROUTED**（消费方直接采用成熟路线），及开工优先级。
+> 有本地源码的参考项目位于 `C:\public\project-hyle\`（与 hyle 并列）；其余链接官方设计/API。
+> 裁决必须记录所读 commit 或文档版本，不能把 sibling checkout 的当前 HEAD 当永久事实。本表把每个库
+> 映射到 HYLE 模块，并标注**借**（vendored 依赖/adapter 对接）、**参考**（读设计、不依赖）或
+> **ROUTED**（消费方直接采用成熟路线）。
 >
 > 角色定义：**借** = 进 HYLE 构建（封 adapter 或 vendored）；**参考** = 读其设计/代码，自己实现，不引入依赖；**ROUTED** = 不进 HYLE 构建，由消费方拥有依赖和领域合同。
 
@@ -24,8 +27,8 @@
 | sched | marl、folly fibers、tokio、seastar、oneTBB/taskflow | fiber/work-stealing、同步/取消/关闭、blocking 与 oversubscription |
 | io | liburing、tokio-uring、seastar、Asio、libuv、libevent | proactor 生命周期、四后端语义、deadline/cancel、文件/网络与 backpressure |
 | simd | Highway、xsimd、simdutf、SLEEF、oneDNN | 用户 batch/kernel 面、dispatch/type/dtype/math/sort/search、精度与原生复杂度 |
-| compute | ggml、llama.cpp、ds4、vLLM、SGLang、oneDNN、Kompute、vitamin-cuda | 真实推理 shape、device/stream/buffer/completion、CPU/GPU 算子、Vulkan/CUDA 和隐藏运行时 |
-| graph | oneTBB、taskflow、Eigen、OpenVDB | DAG 增量重算、fork-join/scan/sort、确定性与 CAD/CAE 真消费者 |
+| compute | ggml、llama.cpp、ds4、vLLM、SGLang、MLX、oneDNN、CUDA/ROCm/Vulkan、Kompute | device/context/queue/completion、operator provider、storage/interop、kernel 与隐藏运行时 |
+| graph | ggml/llama.cpp、oneDNN Graph、ONNX Runtime、TensorRT、PJRT/IREE、vLLM/SGLang | logical graph、provider partition、compiled artifact、workspace、shape specialization 与 replay |
 
 对照结论必须落在对应 [architecture](./)、[用户指南](../user/) 或
 [实现证据](../implementation/evidence/)；这里仅维护“应该读谁、读什么”。参考库的名声、代码量
@@ -69,6 +72,13 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **ds4** | 真实消费参考 | 紧凑 CPU/统一内存量化推理路径；用于发现行算子、内存、top-k 和数据布局需求，不自动作性能 peer |
 | **vLLM** | 真实消费参考 | runtime、CPU offload/custom-op、paged KV、sampling 与 serving 需求；GPU/Triton/tensor fusion 形状必须归到正确 owner |
 | **SGLang** | 真实消费参考 | serving/kernel registry、attention、MoE、sampling、speculative decoding 需求；用于发现语义族，不机械复制 Python/GPU API |
+| **Metal** | Apple 主要 backend 参考 | Apple 的低层 graphics/compute API；HYLE 只借 compute resource/queue/pipeline/sync/interop，不承接 raster/present。见 [Metal overview](https://developer.apple.com/metal/) |
+| **MPS / MPSGraph** | Apple provider 候选 | MPS 是优化 primitive，MPSGraph 是[符号计算图](https://developer.apple.com/documentation/metalperformanceshadersgraph/mpsgraph)；按 region 能力、artifact/workspace owner 与 command queue 互操作逐项审计 |
+| **MLX** | Apple 首个资格化的 provider/interop 候选 | 审计 Apple Silicon [unified memory](https://ml-explore.github.io/mlx/build/html/usage/unified_memory.html)、Metal stream 与 [compiled execution](https://ml-explore.github.io/mlx/build/html/usage/compile.html)；MLX 有完整 C++ API，是上层 runtime/provider，不能与 Metal backend 混成一个枚举或直接泄漏其类型 |
+| **Core ML** | 高层 routed runtime 参考 | [Core ML](https://developer.apple.com/documentation/coreml/) 以模型为单位并可使用 CPU/GPU/Neural Engine；首轮不把它伪装成低层 op provider，只有模型级委托保留所需控制且有真实纵切时才建 adapter |
+| **CUDA / NVIDIA libraries** | NVIDIA 主要 backend/provider 参考 | device/context/stream/event、graph capture、external memory、kernel/module 与 vendor op；每项借用分别登记 allocation、threading、license 和 delivery，不用“CUDA available”代替算子证据 |
+| **ROCm / HIP** | 必须补齐的 AMD backend/provider 参考 | 当前 HYLE 没有合格 HIP 实现；按 device/module/queue/completion、VMM、graph 和 operator 能力建立独立资格，不把 CUDA 源码宏替换或 Vulkan fallback 冒充 ROCm 支持 |
+| **Vulkan / MoltenVK** | 正式保底 backend + renderer interop 参考 | llama.cpp 当前把 Vulkan 作为可构建、可运行的 GPU backend；HYLE 长期合同要覆盖 SPIR-V compute、queue/barrier/timeline、external memory/sync 和消费级设备。Windows/Linux 优先原生驱动；Apple 经 MoltenVK 翻译到 Metal，只签 portability，不替代 Apple 原生 Metal/MLX/MPS 路线 |
 | **OpenAI Jalapeño / InferenceX 结果** | 行业方向证据，不是 HYLE peer | inference-only 全栈 co-design 对 prefill/decode、KV locality、memory/network placement 与 latency-throughput-power Pareto 的公开案例；只使用其公开 workload/口径反查需求，不把厂商自测或封闭硬件当 HYLE SOTA 证明。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **Apple M5 Ultra** | 可获得统一内存平台方向，不是仅凭规格成立的性能 peer | 最高 512 GB unified memory、1.2 TB/s memory bandwidth 与 quad-die interconnect 使超出普通离散显存的本地量化模型成为正式 workload；HYLE 仍须实测 residency、跨 die locality、Metal/kernel 与端到端 token 指标。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **oneDNN** | Compute 候选/参考 | Intel DL primitive、AMX/VNNI、runtime dispatch 与 JIT 的成熟来源；`compute` 重设计时再按具体 operator、artifact、threading 与 delivery 合同裁决是否借入，目前不是 HYLE 产品依赖 |
@@ -155,55 +165,69 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **OpenSSL** | 借核(io TLS) | provider 机制承载证书、会话、ALPN 与已准入 file/borrowed PEM/password credential source；HYLE 拥有 opaque context、secret lifetime、错误和 Scheduler transport，不泄漏 provider 类型 |
 | **nghttp2** | **借核(io HTTP/2)** | 中央 lock 固定 `v1.70.0` commit；只构建静态 libnghttp2 protocol core，借 HTTP/2 frame/HPACK/stream/flow-control，自写 allocator、caps 与 over-co_await transport，不取其 event loop/应用层 |
 
-### graph/（Tier 6，编排 + 数据并行）
+### graph/（计算 DAG、编译与可复用执行物）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **oneTBB** | **参考（设计,不借运行时）** | 数据并行的成熟设计参考：`blocked_range`(grainsize + 递归 split)、`parallel_reduce`(reduction_tree_node + **deterministic** 双档)、`parallel_scan`(两趟)。**不借其 task arena/调度器**(双调度器红线)；运行仍归 HYLE sched |
-| **taskflow** | 参考 | 现代 C++ 的 DAG + 数据并行一体框架(`tf::Taskflow` 依赖图 + for_each/reduce/scan + subflow 动态图)，适合对拍 HYLE DAG 编排与数据并行的 API 形态；调度仍归 HYLE sched |
-| **eigen** | **参考（数值/几何消费,按需）** | 稠密/稀疏线代（matmul/分解/迭代求解器 CG/BiCGSTAB）的成熟参考。`EIGEN_GEMM_THREADPOOL` 暴露 `pool->NumThreads()` 路径，但未来 HYLE adapter 仍须实证任务提交接口和所有权，不能类比 ggml 的不可注入 `set_threadpool`。由具名数值或几何消费者触发，不以库名代替性能结论 |
-| **openvdb** | **参考（批处理/稀疏网格）** | 工业级稀疏体素/网格数据结构和 NanoVDB host-buffer 资源形状；只读其数据结构、分块遍历与 buffer ownership，TBB 并行不进入 HYLE runtime。完整几何/体数据消费者仍由 Graph/Compute 后续任务绑定 |
+| **ggml / llama.cpp** | 真实 C++ 实现与消费参考 | backend graph plan、scheduler reserve/split/allocate/async compute、ubatch graph rebuild/reuse 与 buffer ownership；用于验证轻量本地推理形状，不把 ggml IR 直接改名为 HYLE Graph |
+| **oneDNN Graph** | 成熟 provider/partition 参考 | [partition](https://uxlfoundation.github.io/oneDNN/v3.9/group_dnnl_graph_api_partition.html) 是 op 与 logical tensor 的编译/执行单元，compiled partition 与 [caller scratchpad](https://uxlfoundation.github.io/oneDNN/dev_guide_graph_scratchpad.html) 分离；用于约束 region、artifact 与 workspace 生命周期 |
+| **ONNX Runtime** | provider partition 参考 | [Execution Provider](https://onnxruntime.ai/docs/reference/high-level-design.html) 先声明 capability、再把支持的 subgraph 编译为 fused node；HYLE 同样在冷路径 partition，但不复制 ONNX schema/session 产品 |
+| **TensorRT** | compiled artifact / invocation 参考 | [NetworkDefinition -> Engine -> ExecutionContext](https://docs.nvidia.com/deeplearning/tensorrt/latest/_static/python-api/coreConcepts.html) 区分逻辑网络、不可变可共享 engine 与每次运行 context；用于约束 Executable/Invocation，不作为唯一 NVIDIA 路线 |
+| **PJRT / IREE** | runtime 边界参考 | [PJRT](https://openxla.org/xla/pjrt/cpp_api_overview) 区分 executable、loaded executable、buffer/device；[IREE invocation model](https://iree.dev/developers/design-docs/invocation-execution-model/) 区分 program/executable/context 与 HAL command；用于防止 Graph 吞掉 backend runtime |
+| **vLLM / SGLang** | shape specialization/capture 消费参考 | compile cache、piecewise/full CUDA graph、attention backend 与 breakable region 证明同一逻辑模型需要多个 shape/provider specialization；模型 batching/capture policy 仍归引擎 |
+| **MLX / MPSGraph** | Apple compiled graph 候选参考 | 对账 lazy/symbolic graph、compile/replay、unified-memory 与 Metal command/stream；若作为 HYLE provider，其 artifact 留在 provider island，不把其数组 owner 冒充 Mem Buffer |
+| **oneTBB / taskflow** | 仅作相邻领域参考 | parallel-for/reduce/scan 与 callable task DAG 属未来 `parallel`/`graph_incremental` 候选，不再定义 HYLE 计算 Graph；只有独立非计算消费者才能重新准入 |
+| **OpenVDB / renderer compute pipeline** | 泛化纵切 | 稀疏网格、资源 upload、Vulkan compute pass 与 delayed completion 防止 Graph 只适配 Transformer；raster/present/render-graph policy 留渲染产品 |
 
 ## 阅读优先级（按问题域）
 
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
-- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考）、Cycles/OpenVDB/Kompute（渲染与资源形状）、oneDNN/oneMath（Intel CPU/数学后端参考）、Seastar/libuv/nginx（异步服务与 IO）。
+- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考），Apple MLX-first + 原生
+  Metal custom-kernel/interop 与 NVIDIA CUDA + vendor providers（两条主要平台栈），Vulkan/MoltenVK（正式消费级
+  保底/renderer 路线），HIP/ROCm（待补齐覆盖），oneDNN、ONNX
+  Runtime、TensorRT、PJRT/IREE（provider/compiled graph 参考），Seastar/libuv/nginx（异步服务与 IO）。
 - **按真实消费者裁决**：本页 `ROUTED` 表中的格式、标识、codec、Unicode 与 IPC 库由消费方直接选择；
   Tracy 与 nghttp2 是已经审查的产品机制；oneTBB/taskflow、Eigen/OpenVDB 继续作设计/消费参考。
   oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
-借**多年解决的通用难题**（Highway 数学/向量机制、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 自有容器算法/API、sched 调度、HYLE SIMD 产品合同与缺口组合）。container 的 byte-hash core、UTF-8 validate/count 以及 target-bound string/bitset register lowering 分别借 wyhash/XXH3、simdutf 与锁定 Highway，并不等于把容器 ownership/布局交给外部 runtime。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+借**多年解决的通用难题**（Highway 数学/向量机制、合格 provider 算子、boost.context 汇编、
+liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 算法/API、sched、Graph 编译组合、HYLE
+胜出 kernel）。ggml、MLX、oneDNN 等只是候选 provider，必须连同 copy、layout、线程和生命周期在真实
+region 上裁决，不能按库名预先写成“必借”。所有借入第三方一律封 adapter、不外露其类型。
 
-### 关键区分：加速库分两类，只借第一类（这是 oneTBB 为何边界外的原因）
+### 关键区分：叶子计算与运行时接管
 
 | 类 | 是什么 | 例 | HYLE |
 |---|---|---|---|
-| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic；部分库仍自带不可替换的内部并行 | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、Highway 数学/向量机制、ggml 算子、XXH3 | ✅ **借**（每个 adapter 明确线程所有权；不能一概声称注入 HYLE pool）|
-| **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | ❌ **不借**（这是 HYLE 自己的活）|
+| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic；部分库仍自带不可替换的内部并行 | oneDNN、MLX provider、Metal/CUDA kernels、Highway、ggml、XXH3 | ✅ **逐能力裁决后借**（每个 adapter 明确线程、storage 与 completion；不能一概声称注入 HYLE pool）|
+| **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | 默认 `ROUTED`；只有不可拆的 provider region 有真实 material 价值时才隔离接入，不成为第二个公共 runtime |
 
 **oneTBB 确实是加速库——但它加速的是"运行时层"，恰是 HYLE 要独占的那一层。** 它的 `parallel_for` 离不开 task arena（自带 work-stealing 调度器）；引它 = HYLE fiber 调度器 + TBB 调度器**两套在同一批核上抢线程、过度订阅、cache 争抢**——正是 HYLE 存在要消灭的"双调度器阻抗失配"（同拒 boost.fiber/asio 的理由）。所以 oneTBB scheduler/queue、oneDPL **边界外**；只 oneTBB 的 allocator pool 设计作 mem/ 参考。
 
-**那 CPU 数据并行（matmul 等铺满多核）靠谁？** 三层，都不需要 TBB：
-1. **借来的算子必须逐库明确并行所有权**：ggml 的 `set_threadpool` 只接受 ggml 自己创建的
-   threadpool，不是 HYLE scheduler 注入点。HYLE 对不可合批的小任务用 `n_threads=1` 后自行铺并发；
-   对能合批的大 graph 才让 ggml 自有并行独占该次计算，并从 blocking pool 提交。oneDNN 等未来 adapter
-   也必须实证其注入接口，不能从函数名类推。
-2. **HYLE 自有 kernel 的数据并行**：work-stealing 调度器做 fork-join / parallel-for——**一个调度器同时干 IO 并发(fiber)和 CPU 数据并行**，这正是 work-stealing 的本职。
-3. **指令级加速**：当前借锁定 Highway 数学/向量机制，按需借 oneDNN 的 AMX kernel（第一类），不借 TBB；xsimd 保持独立 peer。
+**CPU 数据并行怎样组合？** HYLE-native kernel 使用 HYLE Sched；第三方 provider 必须声明能否注入外部
+线程池、限制线程数或只能自管。Graph compiler 按 region 大小、外层并发和 handoff 成本选择路线，禁止
+默认把 provider 多线程嵌入 HYLE 多 worker。`n_threads=1`、独占 region 或 blocking isolation 都是需由
+workload 裁决的策略，不写成适用于所有 shape 的永久规则。指令级仍使用 SIMD/ISA provider，不因线程
+选择而改变 operator 语义。
 
-### 隐藏运行时清单（引依赖前必查，防"悄悄混进第二个运行时"）
+### 隐藏运行时清单（引依赖前必查）
 
-凡库**自带线程/事件循环/调度器/控制流接管**的，都是红线——只借它的"叶子计算"，不借它的运行时。检测法：源码搜 `pthread_create`/`std::thread`；看它有没有要你 `run()`/`loop()`/`executor`/`pool`；看它装不装 signal handler/timer（撞 HYLE time/）。
+凡库自带线程、event loop、scheduler 或 graph runtime，都必须进入 capability/cost/teardown 合同。优先
+借叶子计算；若成熟 provider 只有连 runtime 才能提供 material 优势，可以作为 region island 接入，但
+必须由 HYLE Sched 进行资源 admission/隔离，禁止无界嵌套和隐藏 shutdown。检查源码中的线程创建、
+`run/loop/executor/pool`、signal/timer、全局 cache 与 allocator。
 
 | 隐藏运行时来源 | 处置 |
 |---|---|
 | 并行框架（TBB/OpenMP/oneDPL）| 边界外；数据并行用 HYLE 调度器 |
 | 异步/IO 运行时（asio/libuv/seastar 整框架）| 只借 syscall 层（liburing），事件循环自造 |
 | 分配器后台线程（mimalloc/jemalloc 的 purge 线程）| 配置关掉或纳管，别让它自起线程 |
-| ggml 内部线程 | 不伪造注入：小任务 `n_threads=1` + HYLE 外层并发；合批大 graph 才使用 ggml 自有并行并由 blocking pool 隔离 |
+| ggml 内部线程 | 不伪造注入；adapter 复验当前 threadpool API，按 region/外层并发选择限线程、独占或隔离，并把决策写入 compile report |
 | 其他算子库内部线程（如未来 oneDNN） | adapter 落地前逐项验证外部 pool 接口；无证据不得宣称已注入 HYLE scheduler |
 | 日志/profiler 异步刷盘（spdlog async / tracy server）| 借设计不借库，或用 HYLE 调度器驱动 |
 | 协程库自带调度器 | 只用语言级 `co_await`，调度归 HYLE sched |
 
-**铁律**：HYLE 必须独占所有 OS 线程与控制流——每个 OS 线程要么是 HYLE worker、要么归 HYLE blocking 池管。加任何依赖前先问：**它起线程吗？它想接管控制流吗？** 是 → 只借计算、运行时留在门外。
+**铁律**：HYLE 必须能解释并约束所有线程与控制流。HYLE-native 路线使用 HYLE Sched；provider-owned
+线程必须显式登记、配置或隔离，并在 plan/report 中可见。无法解释资源上限、嵌套、取消和 shutdown 的
+runtime 不得进入产品。

@@ -1,97 +1,79 @@
-# 借 ggml 算子的显存归属边界：host 归 HYLE，device 归 ggml
+# ggml provider 的 storage 与执行边界
 
-> **一句话**：用 ggml 算子算 AI 时，**host 内存归 HYLE（用 mem 喂入/取出），device 显存归 ggml（它自己 gallocr 管理）**——就像 llama.cpp。想要显存完全自管 + 零拷贝，那是 compute-04/06 自造 kernel 的领域，不是借 ggml 的领域。
->
-> 这条边界不是设计偏好，是 **ggml CUDA 后端的结构性能力约束**，经本仓库 compute-05 实现期的 gdb 逐行调试坐实（下有铁证）。写这篇专文，是因为它直接决定"HYLE 显存自管抽象"的适用范围，值得单独讲透、供后续所有借 ggml 的里程碑（compute-05/07/08）遵循。
+> 本页记录一条长期 adapter 规则，不选择 Compute 的唯一实现。`compute` 当前是否可用只查
+> [`module-status.json`](../implementation/module-status.json)。旧 compute-05 调试证明“伪造 ggml device
+> buffer metadata”不可接受，但当时的 ggml/CUDA 行为不是所有版本、backend 和 provider 的永久事实。
 
-## 0. 结论先行（要遵守的规则）
+## 稳定结论
 
-| 数据 | 归谁管 | 怎么做 |
-|---|---|---|
-| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE host RAM** | 当前由 `mem::AllocatorRef` 或 host/pinned `mem::Buffer` 提供，再经 `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入；未来异步上传由 Compute `StagingRing` 持有 pinned Mem slot 与 Event |
-| **ggml 算子计算用的 device 显存**（输入/中间/结果 tensor 的 buffer） | **ggml**（`ggml_gallocr` / backend buffer） | ggml 自己 cudaMalloc + 图内复用；HYLE 不碰 |
-| **ggml 算子的 host 输出** | **HYLE mem** | `ggml_backend_tensor_get(tensor, hyle_host_ptr, …)` 拷出 |
-| **HYLE 自造 kernel（compute-04 NVRTC / 06 SPIR-V）的显存** | **HYLE**（Compute resource + Mem `Buffer/View`） | Compute provider 分配，kernel 直接接收 Mem view——**真零拷贝**（已验证 Host/CUDA/Vulkan） |
-| **非 ggml 的 device 数据**（KV-cache、CAD 网格、BVH、CAE 刚度矩阵） | **HYLE** | HYLE 显存管理，与 ggml 无关 |
+借第三方算子时，HYLE 不能假定自己拥有对方内部的 device storage、allocator、stream、graph capture
+或线程池。对每个锁定 provider/backend 组合必须逐项确认：
 
-**要点**：借 ggml，就接受 ggml 管它算子用的那段显存。你的 mem 抽象在 **host 侧全程有效**（喂入/取出都是 HYLE mem 的地盘），在 **device 侧退让给 ggml**——但仅限"ggml 算子正在用的那段"。HYLE 显存自管在 compute-04/06（**一切非 AI 的通用 GPU 计算**：普通 CUDA vecadd/reduce/scan + ② CAD/CAE 几何/网格/SpMV）上完整成立——ggml 只是"AI 推理算子多"，不是通用 GPU 计算框架。
+1. 能否从 caller-owned memory 创建合法 tensor/buffer；
+2. import 是借用、接管还是复制，owner 必须活多久；
+3. host-visible、pinned、device-local 与 unified storage 分别支持什么；
+4. queue/stream 和 completion 能否导入、导出或等待；
+5. layout/repack、upload/download 和同步发生在哪里；
+6. graph allocator、packed constants、workspace 与 provider context 由谁销毁；
+7. CPU、CUDA、Metal、Vulkan、HIP 等 backend 是否有不同限制。
 
-## 1. 为什么 device 侧不能自管——ggml CUDA 结构性否决外部显存
+只有 provider 的公开 API 明确支持且有正常/失败/销毁测试时，才能把 external memory 写成零拷贝。
+设置内部字段、伪造 dummy buffer、依赖未公开 layout 或把 native address 塞进不透明 handle 都属于拒绝路线。
 
-最初 compute-05 的愿景（compute-design 早期发现 2）是：**HYLE 自己 cudaMalloc 的显存，直接当 ggml tensor 的 `->data`，让 ggml 算子零拷贝地在上面算**。这在 CPU 后端成立，但在 **CUDA 后端被 ggml 结构性否决**：
+## 两种合法形状
 
-**铁证 1 —— CUDA 后端明确不支持外部指针建 buffer**（`ggml-cuda.cu:5032`）：
-```cpp
-/* .buffer_from_host_ptr = */ false,   // CUDA device caps
-```
-对比 CPU 后端有 `ggml_backend_cpu_buffer_from_ptr(ptr, size)`（`ggml-backend.h:430`）能零拷贝包外部内存——**CUDA 没有等价物**。ggml 官方 device 能力表里，CUDA 的 `buffer_from_host_ptr` 就是 false。想把一块 HYLE 显存"注册"成 ggml buffer，无公开 API。
+### Provider-owned island
 
-**铁证 2 —— 硬凿"注入 `->data` + 造假 buffer 元数据"在多算子图必崩**（gdb 逐行坐实）：
-试过绕过——给 tensor 挂一个 size-0 dummy buffer（`ggml_backend_buft_alloc_buffer(buft, 0)`）拿元数据、`->data` 注入 HYLE 显存。单算子侥幸能跑，但**多算子合批 + 不同形状必段错误**：
-- 崩溃点 `ggml-cuda.cu:1924` `const bool src1_on_device = id == src1_ctx->device;`
-- 根因：`src1->buffer->context == NULL`。`cudaMalloc(&p, 0)` 返回 null，size-0 dummy 的 base 是 nil；多个输入共享这个 dummy 时，`ggml_gallocr_alloc_graph` 处理把共享 dummy 的 context 弄丢；varied 形状走通用 `ggml_cuda_op_mul_mat` 路径读 `src1_ctx->device` → 空解引用。
-- （uniform 形状走 cuBLAS batched 路径不读该字段，所以"单发/同形状能跑"是假象，掩盖了结构问题。）
-- 全过程见 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)。
+若 provider 必须拥有 allocation 或 graph allocator，Graph compiler 把相应 region 编译成一个 provider
+island：
 
-**结论**：ggml 的显存模型是它算子正确性的一部分——tensor 的 buffer 必须由 ggml 自己分配管理（gallocr），算子内核依赖 buffer 的 context/device 元数据、图内显存复用、padding 等一整套。**"外部显存注入"在 CUDA 上不是"没找对 API"，是 ggml 明确不支持。** llama.cpp 在 GPU 上也从不注入外部显存——权重加载时拷进 ggml 显存一次、常驻复用（`llama-model.cpp:1570` `ggml_backend_alloc_ctx_tensors_from_buft` = 真 buffer），激活走 gallocr。
-
-## 2. 为什么 host 侧完全归 HYLE——ggml 对 host 源指针零约束
-
-好消息：**数据进出 ggml 显存的入口，对 host 指针没有任何要求**。
-
-**铁证 3 ——`tensor_set` 就是一次裸 `cudaMemcpyHostToDevice`**（`ggml-cuda.cu:688`）：
-```cpp
-static void ggml_backend_cuda_buffer_set_tensor(..., const void * data, ...) {
-    cudaMemcpyAsync((char*)tensor->data + offset, data, size, cudaMemcpyHostToDevice, ...);
-}
-```
-那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host
-指针都行，所以可以来自 HYLE `mem::AllocatorRef`，也可以来自 Compute
-`host_memory_resource(device)` 创建并显式 map 的 Mem `Buffer`。Mem view 将 backend native handle
-与 host mapping 分开并显式提供 flush/invalidate；provider artifact 属 Compute，storage owner/view
-语义属 Mem。`tensor_get`（取出）同理。
-
-**数据流（每段谁管，清清楚楚）**：
-```
-HYLE mem 管的 host 数据                    ← HYLE mem 抽象，我们说了算
-   │  ggml_backend_tensor_set(data = HYLE host 指针)
-   │  = cudaMemcpyHostToDevice(任意 host 指针 → 显存)
-   ▼
-ggml gallocr 分配的 device 显存             ← ggml 管（CUDA 上必须）
-   │  ggml 算子在这上面算（cuBLAS/自有 kernel）
-   ▼
-ggml 结果显存
-   │  ggml_backend_tensor_get(data = HYLE host 指针)
-   ▼
-HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
+```text
+HYLE/Mem input
+  -> explicit upload/repack
+  -> provider-owned tensors + compiled region + workspace
+  -> explicit download/repack
+  -> HYLE/Mem output
 ```
 
-**性能接口点**：pinned host RAM 只有在 copy 真异步、slot 保持到 Event completion、并有至少两个
-在途 slot 时才能形成 overlap。Mem Buffer 的 native/mapped/coherence 合同已闭合，但当前 bridge
-没有 staging ring；event-driven `StagingRing` 等真实 overlap 消费者出现后再接入，不用裸 host
-allocator 或 `ConcurrentBlockPool(cudaMallocHost)` 代替 completion ownership。
+`graph::Executable` 持有该 island 的不可变 artifact；`Invocation` 持有每次执行状态；Compute Completion
+决定 ingress/egress、workspace 和外部 Buffer 何时可复用。CompileReport 必须列出边界 copy、同步和
+provider ownership，cost model 也必须把它们计入，不能只比较 island 内的 kernel。
 
-## 3. 边界不模糊——两种 kernel 来路对应两种显存归属
+### Supported external-memory interop
 
-这条边界和 compute-design「发现 5：三层 × 两条 kernel 来路矩阵」严丝合缝：
+若 provider 明确接受 caller storage，Compute 用 backend-specific typed adapter 把 Mem Buffer 与 provider
+对象绑定，并保存 resource/device/offset/size/coherence identity。owner 和 view 活到所有 completion 结束。
+CPU `buffer_from_ptr`、Vulkan external memory/semaphore、CUDA IPC/external memory、Metal no-copy/shared
+storage 或 MLX interop 都要按各自公开合同审计，不能从其中一条路线类推另一条。
 
-| kernel 来路 | 显存归属 | 零拷贝? |
-|---|---|---|
-| **借 ggml 算子**（AI：matmul/attn/…） | device 归 ggml（gallocr），host 归 HYLE mem | device 侧否；host 侧是 HYLE mem |
-| **HYLE 自造 kernel**（compute-04 NVRTC / 06 SPIR-V：普通 CUDA 计算 + 几何核/网格/SpMV） | 全归 HYLE（Compute provider + Mem Buffer/View） | **是**，kernel 直接在 HYLE storage 上算（已验证） |
+## 历史证据怎样使用
 
-**所以 HYLE 显存自管抽象没有名存实亡**——它在自造 kernel 路径完整成立（服务**一切非 AI 的通用 GPU 计算**：普通 CUDA 数值 kernel + 北极星② CAD/CAE 的几何/网格/求解核），只是在"借 ggml 算 AI"这条路上，device 侧让位给 ggml。这是**借 vs 造**的本质分工：借人家的 AI 算子，就用人家的显存规矩；要跑 ggml 给不了的任何 GPU 计算（哪怕只是 vecadd），就自造 kernel、显存全 HYLE 自管。
+旧 ggml CUDA bridge 曾尝试让 HYLE allocation 冒充 ggml tensor buffer。单节点或一致 shape 可以偶然
+通过，多节点 varied-shape 路径在 gallocr/metadata 使用中崩溃；关掉 CUDA graph 也不能消除问题。这个
+调查的永久价值是：
 
-## 4. 对 compute-05 及后续的落地约束
+- synthetic metadata 通过 smoke test 不证明 ownership 合法；
+- 单 op 成功不证明 multi-op graph、varied shape 和销毁正确；
+- CPU external pointer 能工作不证明 CUDA/HIP/Metal/Vulkan 能工作；
+- adapter 必须以 provider 公布的 import/create/allocate API 为边界。
 
-- **compute-05 ggml_bridge**：matmul（及后续算子）走 `ggml_gallocr` 分配 device buffer + `tensor_set`(host in) / `tensor_get`(host out)。当前 host 数据来自普通 HYLE mem；若未来实测需要异步 pinned overlap，由 compute staging ring 接入。合批同理（一图多算子，gallocr 一次分配、一次提交）。**不注入外部显存**。
-- **compute-07 CPU 算子后端**：CPU 后端 ggml 支持 `buffer_from_ptr`，host 侧可真零拷贝（HYLE mem 直接当 tensor buffer）——CPU 路径比 CUDA 宽松，届时可用。
-- **compute-08 HIP/Metal**：HIP 大概率同 CUDA（不支持外部指针）；Metal 待查。默认按"device 归 ggml"设计。
-- **权重常驻**：若某消费者要反复用同一批权重（推理），权重拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），不是每次推理都拷。这是初始化成本，非热路径成本。
+完整复现和当时版本事实保留在
+[ggml 零拷贝调查日志](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)。新 Compute 任务只把它当
+回归用例来源，仍须绑定新的 ggml commit、backend、driver 和公开 API 重新验证。
+当轮范围、版本和结果见历史事实记录 [compute-05 ggml bridge](../implementation/tasks/compute/compute-05-ggml-bridge.md)；
+该记录不授权恢复旧实现或旧 API。
 
-## 5. 参考
+## 对新架构的约束
 
-- ggml 铁证：`ggml-cuda.cu:5032`（CUDA `buffer_from_host_ptr=false`）、`:688`（tensor_set = 裸 cudaMemcpyHostToDevice，host 源无约束）、`:1924`（注入 dummy 的崩溃点）、`ggml-backend.h:430`（CPU `buffer_from_ptr` 存在、CUDA 无）。
-- llama.cpp 铁证：`llama-model.cpp:1555`（CPU/mmap 权重 `buffer_from_host_ptr` 零拷贝）、`:1570`（GPU 权重 `alloc_ctx_tensors_from_buft` 真 buffer + 拷入）。
-- 调试血泪：[`../debug/ggml-zerocopy-null-buffer-hunt.md`](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)。
-- 关联：[`compute-design.md`](compute-design.md) 发现 2/5/7/9 + compute-05 定案；[`../milestones/compute-05-ggml-bridge.md`](../implementation/tasks/compute/compute-05-ggml-bridge.md)。
+- ggml 是候选 `compute_provider_ggml`，不是 Compute 本身；用户普通 API 不出现 ggml 类型。
+- 同一 Graph 可以把部分 region 给 ggml、部分给 HYLE native 或其他 provider；选择发生在编译阶段。
+- provider-owned storage 不削弱 Mem 的 owner/view 价值：Graph boundary、host mapping、external buffer、
+  composite shard 与 HYLE native region 仍使用 Mem；provider island 如实保留自己的 owner。
+- 若跨 island copy 使 ggml 路线整体更慢，应选择另一 provider 或扩大合法 region，而不是伪造零拷贝。
+- provider 的自有线程/stream/graph capture 必须在 capability 与 cost 中声明，并由 Sched/Graph 避免
+  nested oversubscription；HYLE 不假装能注入一个 provider 并未接受的线程池。
+- ggml 升级若改变 buffer import、allocator、threading、graph capture 或 completion 行为，会触发该
+  provider factor 的定向重审，不自动重开无关 Compute/Graph 因子。
+
+总的所有权规则见 [Compute 设计](compute-design.md#5-storage同步与生命周期)；region、Executable 与
+Invocation 的关系见 [Graph 设计](graph-design.md#3-四个生命周期对象)。

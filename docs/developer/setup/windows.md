@@ -135,13 +135,13 @@ clang-cl --version  # 必须为 18+
 wrapper 只验证并使用已安装的 frontend，不替用户安装 LLVM；不要让 `windows-clangcl` 复用任何 cl.exe
 build tree。
 
-IO/compute 的 TLS、HTTP/2、CUDA、ggml、Vulkan 都默认 OFF，且仅在 owner 组件被选时声明；trace
-默认 OFF，开启时从共享源码 cache 自动取得锁定 Tracy；`HYLE_TRACY_DIR` 只用于显式受审源码覆盖，
-没有 `HYLE_TRACE_BACKEND`。
+IO 的 TLS/HTTP2 和 trace 默认 OFF，并只在 owner 闭包中声明。旧 Compute 的 CUDA/ggml/Vulkan gate
+也默认 OFF，但 Compute 仍为 `QUEUED`；这些名字只用于 baseline，不冻结新架构的 feature 设计。
 
-- 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`（如 `hyle_compute_ggml_bridge_test`）。
+- 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`。旧
+  `hyle_compute_ggml_bridge_test` 只用于 QUEUED asset baseline。
 - MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。
-- **首次编 ggml + CUDA 较慢**（编 ggml-cuda 的 MMQ kernel 等）；已 `GGML_CUDA_FA=OFF` 跳掉 ~120 个 FlashAttention 实例省时间。
+- 复现旧 ggml + CUDA baseline 会编译大量 vendor kernel，应使用任务专属 build，不能混入普通回归。
 
 ## 五、测试
 
@@ -177,7 +177,8 @@ ASan dynamic runtime/thunk，生成可符号化调试信息，并把 runtime DLL
 `clang_rt.asan_dynamic-*`。若父工程预先提供 `GTest::gtest_main`，该 GoogleTest 也必须由父工程
 按相同 ASan/MSVC STL 注解形状构建。
 
-- **GPU 测试（compute）**：CUDA runtime DLL 需在 PATH。toolkit 的 `bin` 通常已入 PATH（`where nvcc` 命中即可）。`hyle_compute_ggml_bridge_test` 在 RTX 4070 上跑零拷贝 matmul。
+- **旧 Compute GPU baseline**：只有新 Compute task 明确要求时才运行；CUDA runtime DLL 需在 PATH。
+  旧 bridge 的结果不证明新架构或零拷贝合同。
 - **TLS 测试**：需 OpenSSL DLL 在 PATH，见第七节。
 
 ## 六、性能测试（bench）
@@ -225,10 +226,10 @@ set PATH=C:\public\vcpkg\installed\x64-windows\bin;%PATH%
 cd build\bin && hyle_io_tls_test.exe
 ```
 
-### CUDA（GPU 后端）
+### CUDA（QUEUED Compute baseline）
 
 - 装 CUDA Toolkit **13.3**（本仓库统一版本）到 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`，确保 `bin` 入 PATH + `CUDA_PATH` 指 v13.3。
-- 需要 CUDA 的本机构建用 `windows-cuda`（或显式传 `HYLE_COMPUTE_CUDA=ON`）；本机 preset 使用
-  `CMAKE_CUDA_ARCHITECTURES=native`，SDK 则必须写明确 architecture 列表。
+- `windows-cuda` 或旧 `HYLE_COMPUTE_CUDA=ON` 只用于待审资产的隔离复现；未来 CUDA factor 的 option、
+  architecture、runtime 与 packaging 合同由新的 closure card 决定。
 - ⚠️ 某 shell 看不到 nvcc = 该 shell 在装 CUDA 前启动的 stale-env，新开 shell 即正常。
 - cuDNN/TensorRT 当前里程碑不需要，见 [`dependencies.md`](dependencies.md)。

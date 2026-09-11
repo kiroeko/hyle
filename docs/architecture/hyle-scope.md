@@ -31,7 +31,7 @@ HYLE 关注四类可以重复利用的加速：
 | OS 与资源 | platform, time, mem, obs | 平台机制、时钟/定时、host memory、可观测机制 |
 | 数据与计算 | container_intrusive, container, util, simd, math | 轻量侵入式与完整数据结构、通用 runtime 工具、向量与少量标量补位 |
 | 执行与 I/O | sched, io | 任务/纤程/协程、取消/唤醒、文件/网络/protocol 机制 |
-| 异构与编排 | compute, graph | device/backend/operator 执行与通用依赖/数据并行机制 |
+| 异构计算与编排 | compute, graph | device/backend/provider 与直接 op/kernel 执行；逻辑计算 DAG、编译和可复用 Executable |
 | 贯穿合同 | build/package | 组件闭包、依赖、feature、三种 C++ 交付与验证 |
 
 精确依赖与重审顺序见 [roadmap](roadmap.md)。模块名不是能力准入理由；每项能力仍需真实任务、

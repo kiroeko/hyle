@@ -184,7 +184,7 @@ invariant 与 visibility 基础，sink 注册的可恢复失败使用 error 的 
 stderr/debugger writer 直接拥有 TTY 和 debugger OS 交互，因为
 platform 没有此抽象、obs 与 platform 同处底层且这正是 sink 的 I/O 职责，不能为消除一个
 局部 syscall 制造 `obs -> platform` 依赖。trace gate 是 header/CMake 横切 seam，不让
-mem/sched/io/compute 反向链接 log runtime。
+mem/sched/io 以及未来 Compute 反向链接 log runtime。
 typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期存储，因此无需依赖完整 Mem 产品或
 分配器；异步拥有型复制与队列由 application adapter 自己选择 allocator。区间控制仍使用标准
 `steady_clock` 类型并提供 caller-supplied monotonic-ns seam；Time 依赖来自公开 wall timestamp value，
@@ -197,7 +197,7 @@ limiter，但普通 message path 不读取 wall/monotonic clock，也不自动�
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
 基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
 属于不可恢复合同失败，io benchmark stats 只属于显式 benchmark 输出，均不应迁移成普通
-log。trace 的真实消费者仍是 mem/sched/io/compute。
+log。trace 的当前消费者是 mem/sched/io；Compute 接入要等其新 factor 正式施工，不能拿旧 hook 当证明。
 
 与 Abseil/Folly 对账后保留同步借用 record、同步 handler/flush、递归抑制、进程期 registry、作用域
 注册与调用点采样，并补齐 logger-neutral category/event、typed scalar、correlation、显式 source 与

@@ -47,8 +47,8 @@
   TLS credential source 和三档非抢占 execution priority 已进入当前[扩展范围](foundation-capability-expansion.md)，
   不是 WATCH；request/tenant/KV/admission priority 仍是应用策略；
 - JSON/schema、URL/UUID、摘要、压缩/archive、完整 Unicode、一般 IPC 与领域格式已有具名成熟路线；
-- model/KV/sampling/material/auth/router 等应用策略，以及 Compute/Graph 尚未设计的 tensor/device/DAG
-  能力，分别属于 `APPLICATION` 或 `OWNER_BLOCKED`；
+- model/KV/sampling/material/auth/router 等应用策略，以及 Compute/Graph 已有架构合同但尚未实现的
+  tensor/device/DAG 能力，分别属于 `APPLICATION` 或 `OWNER_BLOCKED`；
 - 已经落地的 Util owning creator、Result reference、checked scalar math、Obs metrics、SIMD route 等不再保留
   “曾经待办”的兼容叙述，历史由 Git 和对应 terminal record 追溯。
 

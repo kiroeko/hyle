@@ -375,7 +375,7 @@ message 会复制文本；动态文本按 Tracy 的 16-bit 长度边界安全截
 多个 DLL/plugin 各自静态链接会得到多个互不相认的 Tracy singleton，不属于受支持形状。此类 host
 必须使用 shared `hyle_obs`，不能把“每个 image 一个”描述成 process-unique。
 
-极热的 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io/compute 也走同一条
+极热的 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io，以及未来重构后的 Compute，也走同一条
 native trace seam。
 
 ## 7. 常见误用

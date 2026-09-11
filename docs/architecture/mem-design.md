@@ -25,9 +25,10 @@ Mem 是 HYLE 唯一 storage-semantics owner，目标产品面同时覆盖：
 `FileHandle` 与其它 OS mechanism；Mem 唯一拥有 anonymous/file/shared storage mapping 及统一
 owner/view/resource 语义。需要 `BufferView`、跨 provider 组合或 residency 的用户走 Mem；自建
 allocator/JIT owner 才直接组合 Platform `VmRegion`，已有 `FileHandle` 可 move 给 Mem
-`FileMapping`。两层不是两套 storage policy。Compute 保留 Device/Stream/Event、backend allocation artifact 和有序 async operation；IO 保留
-namespace/handle transfer/async protocol；Graph 把 DAG/tensor 事实翻译成 Mem planner 不理解业务语义的
-interval/resource/alias 请求。依赖方向固定为：
+`FileMapping`。两层不是两套 storage policy。未来 Compute 保留 Device/Context/Queue/Completion、
+backend/provider allocation artifact 和有序 async operation；IO 保留 namespace/handle transfer/async
+protocol；Graph 把 DAG/tensor 事实翻译成 Mem planner 不理解业务语义的 interval/resource/alias 请求。
+长期依赖方向固定为：
 
 ```text
 compute | graph | io  --->  Mem product
@@ -37,7 +38,7 @@ compute | graph | io  --->  Mem product
 ```
 
 Mem 不包含 Device/Stream/Event/Tensor/KV/model policy，也不把 device memory 塞进 host
-`AllocatorRef`。Compute 向 Mem 注入长寿命 provider，并以类型化 adapter 对 Mem `BufferView`
+`AllocatorRef`。未来 Compute 向 Mem 注入长寿命 provider，并以类型化 adapter 对 Mem `BufferView`
 做 async copy/submit；Mem 不用 `void* stream`、函数注册表或隐藏 staging 反向模拟 completion。
 `mem_reclaim` 不分配 payload，也不是并发容器；它负责 read-mostly publication 的 reader lifetime，
 Container 负责把该机制组合进自己的旧 table 生命周期。
@@ -80,15 +81,15 @@ GPU completion 属 Compute/Sched owner 组合，不反向塞进 Mem。历史恢�
 
 | 能力 | 当前生产消费者 | 真实合同 |
 |---|---|---|
-| `AllocatorRef` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringInterner、graph 临时容器、ggml bridge job/frame | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败，消费者当前混用 Status/失败 handle/fail-fast（graph parallel 临时数组仍 fail-fast），不能伪称已有统一 OOM 策略 |
+| `AllocatorRef` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringInterner 等已实现消费者 | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败；QUEUED 的 Compute/Graph 旧调用不作为当前能力证明 |
 | `SystemAllocator` 类型 | HYLE containers 的默认模板参数 | 外部默认容器零 vtable；内部关键路径多显式用 `AllocatorRef` |
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
 | `LargeMapping` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
-| graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | phase scratch 继续用 arena；Graph 产生 interval/alias 事实，通用 packing/placement 语义归 Mem planner |
+| 未来 Graph compilation/invocation 临时区 | 当前无已验收生产创建点 | compiler scratch 可用 arena；Graph 产生 interval/alias/resource facts，通用 packing/placement 语义归 Mem planner |
 | `PooledArena` / `StackArena` / `GrowableObjectPool` | 无生产调用 | 面向外部 infra 用户的 C++ 公开能力；Native FFI 为 `N/A` |
 | `ConcurrentBlockPool` / `BlockPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
 | `ObjectPool<T>` / `ObjectPoolCache<T>` | 无生产实例 | typed hard core + 显式 cache，已实现并测试 |
-| compute device/host/managed providers 与 `DevicePool` | 当前无生产创建点 | Mem 已拥有 Buffer/View/pool 语义；Compute 只提供 process-lifetime provider artifact、device identity、kernel binding 与 async ordering |
+| 未来 compute host-visible/device/managed provider | 当前无已验收创建点 | Mem 已拥有 Buffer/View/pool 语义；Compute 提供 context-owned provider artifact、device identity、kernel binding 与 async ordering；不预留旧 `DevicePool` 形状 |
 
 内部系统已经坐实“通用 allocator + fiber stack”，但 HYLE 是公开 infra 库，其他能力是否保留必须再看成熟库的广泛用户形状，不能只按内部调用计数裁剪。
 
@@ -98,13 +99,13 @@ GPU completion 属 Compute/Sched owner 组合，不反向塞进 Mem。历史恢�
 
 1. aligned 通用 C allocator；C 返回空，C++ typed/PMR/allocator-template/RAII 适配边界可抛 `bad_alloc`。
 2. remote free：分配线程与释放线程不同，不能假设 thread-affine。
-3. owned request/frame region：大量小对象，individual free 无效，clear/destroy 整批释放；Folly `Arena` 的 min-block growth、usage 与 hard size limit 是直接参考，HYLE graph evaluation 已提供内部 workload。
+3. owned request/frame/compiler phase region：大量小对象，individual free 无效，clear/destroy 整批释放；Folly `Arena` 的 min-block growth、usage 与 hard size limit 是直接参考。
 4. 固定容量共享池：耗尽必须可观察；hard quota 与 thread-cache soft limit 必须是不同类型/名称。
 5. typed pool 的 RAII Loan/return 是稳定易用性需求；Reconstruct/Preserve 在 marl 与 Folly expensive-context pool 中都有实证，但并不自动证明每个 bounded pool 都必须同时支持两种 policy。
 6. external fixed buffer：oneTBB `fixed_pool` 证明 embedded/realtime/调用方自有 storage 的需求，但它是可 individual free 的 variable-size pool，不能与 bump Arena 混为一谈。
 7. strict byte limit 的强证据首先是 `Arena(size_limit)`；通用 sized-free `QuotaAllocator` 是进一步外推，不能冒充成熟库共同基线。
 8. explicit NUMA/hugepage policy：capability query、失败降级或显式报错，不承诺自动迁移。
-9. tensor-free lifetime packing 进入 Mem，Graph 仍拥有 DAG 推导；GPU staging ring 属拥有 completion 生命周期的 Compute，不进入 Mem。
+9. tensor-free lifetime packing 进入 Mem，Graph 仍拥有 DAG 推导；GPU staging owner 属拥有 Completion 生命周期的 Compute，不进入 Mem。
 
 ### 2.3 参考能力逐项处置
 
@@ -249,8 +250,8 @@ owned growable `Arena` 已提供：
 - 单线程默认，不偷偷加锁。
 
 `FixedArena(span<byte>)` 是 external-storage bump 机制：无隐藏 payload 分配、无增长、无 fallback。
-HYLE graph evaluation 的逐次 evaluate 临时数组是
-phase-lifetime workload；Graph 生成 liveness/alias facts，Mem planner 拥有通用 measure/placement。
+compiler/evaluation 的逐阶段临时数组是典型 phase-lifetime workload；未来 Graph 生成
+liveness/alias/resource facts，Mem planner 拥有通用 measure/placement。
 
 ### 7.3 `StackArena`
 
@@ -368,13 +369,13 @@ shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/
 - `FiberStackPool` 保留且是当前内部刚需；capacity 是真实 clamp 后的 retention 上限，0 禁用
   cache，`trim/clear` 是冷回收。Scheduler 在全部 fiber drain、worker join 后 clear 三个 tier，
   这是不会与 release 竞争的 owner-level 回收点；不在普通 idle 热路周期扫描。
-- graph 可直接消费通用 arena；它把 worst-case/liveness/alias/resource 翻译为
+- Graph compiler 可直接消费通用 arena；它把 worst-case/liveness/alias/resource 翻译为
   `LifetimeRequest`，并在 build 时借给 planner 稠密 `MemoryResourceRef` 以读取 alignment 与单次 allocation
   上限。Mem planner 负责 tensor-free measure/placement/instantiate，模型/KV 策略仍在上层；一个 alias
   root 不跨 physical backing，placement 使用 resource-local backing index + local offset。
 - pinned/device/managed 通过开放 `MemoryResourceRef` 进入 Mem `Buffer/View` 语义；
-  native-handle/mapped-pointer 不混同，non-coherent 路线显式 flush/invalidate。`StagingRing`
-  要同时持有 Event/backpressure，仍归 `compute/`。
+  native-handle/mapped-pointer 不混同，non-coherent 路线显式 flush/invalidate。持有 Queue/Completion 与
+  backpressure 的 staging owner 仍归未来 Compute。
 - io provided-buffer ring 归 `io/`。
 - 闭合 `MemorySpace/BufferKind`、把 unified/device memory 塞进 host `AllocatorRef`、自动 NUMA
   迁移、soft limit 冒充 hard quota 均否决。
@@ -390,7 +391,7 @@ shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/
 | mapping/residency | `VirtualMapping`、`FileMapping`、`SharedMapping` | owner 在 Mem；anonymous/range control 与 `FileHandle` 复用 Platform，file/shared native mapping 由 `mem_vm` 实现；不默认 prefault/lock/grow |
 | host/device/custom storage | `MemoryResource`、`MemoryResourceRef`、properties/domain/stats | provider 开放；不用闭合 kind；ref 一字且借用 provider |
 | persistent/imported/composite bytes | `Buffer`、`BufferView`、`ConstBufferView`、`HostMapping`、`CompositeBuffer` | owner/view 分开；view 四字 O(1) subview；opaque handle 不冒充 host pointer |
-| sync data/coherence | view 上 `read/write/fill/copy/map/flush/invalidate` | 无 hidden staging；非 coherent 明示；async ordering 由 Compute/IO typed adapter 组合 |
+| sync data/coherence | view 上 `read/write/fill/copy/map/flush/invalidate` | 无 hidden staging；非 coherent 明示；async ordering 由 IO 或未来 Compute typed adapter 组合 |
 | transient storage reuse | `BufferPool` / `BufferLease` | resource-aware reuse/trim/stats；lease 归还前已等待 completion |
 | worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；resource/backing/local-offset 三层；有限 provider allocation 上限可拆多个 backing；plan/instantiate 分开；O((N+E) log N) / O(N) scratch+metadata；无 Tensor |
 | quota/pressure/diagnostics | allocator/resource stats、quota、leak tracker、system snapshot | opt-in 热路税；partial inventory 可观察；soft retention 不冒充 hard admission |
@@ -453,4 +454,4 @@ implementation task/evidence 和 Git 中。
 - marl BoundedPool / PoolPolicy / Loan
 - TLSF two-level bitmap mapping；Boost.Interprocess `rbtree_best_fit` 作为 O(log N) 备选形状对照
 - AMD VMA/D3D12MA virtual allocator；Sebastian Aaltonen OffsetAllocator
-- ggml gallocr 与 llama.cpp pinned upload ring
+- ggml backend allocator/graph plan 与 llama.cpp upload buffer 生命周期

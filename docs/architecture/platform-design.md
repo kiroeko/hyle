@@ -443,7 +443,7 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 | timer queue/deadline policy | `time` / `sched` | platform 只提供 timed wait 机制 |
 | thread pool/task/fiber/coroutine | `sched` | placement、取消、stealing 与结构化生命周期是调度策略 |
 | async file/network、watcher、shared-memory channel | `io` | completion、backpressure 与跨进程同步 |
-| VRAM/pinned/staging/coherence | `compute` | device/backend/event 生命周期 |
+| VRAM/pinned/staging/coherence | `compute` | device/backend/Queue/Completion 生命周期 |
 | path lexical/string owner | `container` | 不需要 OS，且 platform 不能反向依赖容器 |
 | subprocess lifecycle | 独立 `process` 产品/factor | Platform 只提供当前进程与 OS 原子；argv/env/stdio/wait/tree/reap 由 Process 组合，避免反向依赖 |
 | sandbox 与共享内存 channel policy | 真实消费者驱动的独立 owner | Process 不把 sandbox、lease/ack 或 supervisor policy 伪装成 spawn 参数 |

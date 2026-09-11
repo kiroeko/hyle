@@ -141,9 +141,10 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 预发布 `0.y.z` 包只接受完整精确版本；`find_package(Hyle 0.y.z EXACT ...)` 中 patch 也属于构建
 合同，shared loader identity 同样使用完整版本。1.0 后才按 major compatibility 演进。
 
-IO TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭，并且只有 owner 组件/gate
-成立时才出现对应 cache 项。需要某项能力时显式开启；当前 trace 只有 Tracy，不存在
-`HYLE_TRACE_BACKEND` 选择项。
+当前已验收产品中的 IO TLS、HTTP/2 和 trace 等昂贵能力默认关闭，并且只有 owner 组件/gate
+成立时才出现对应 cache 项。源码树里的 CUDA、ggml、Vulkan gate 只用于 `QUEUED` Compute 旧资产的
+具名 baseline/audit，不是发布能力；新 Compute 会按 backend/provider factor 重新冻结配置合同。当前
+trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 
 ## 5. 配置合同
 
@@ -152,7 +153,8 @@ IO TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭，�
 - HYLE commit/version、目标平台与架构；
 - compiler、stdlib/runtime、Debug/Release、static/shared；
 - 选择的组件与解析闭包；
-- baseline/native/exact ISA 和 CUDA/Vulkan/ggml/HTTP/TLS 等可选 backend；
+- baseline/native/exact ISA、HTTP/TLS/trace 等已选择 feature；若任务专门归档 `QUEUED` Compute 旧
+  baseline，另记录 CUDA/Vulkan/ggml gate，且不得把它列为 shipping capability；
 - 依赖 lock/来源、许可证清单与 package hash；
 - 已执行的 source/static/shared consumer smoke。
 

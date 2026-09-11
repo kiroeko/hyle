@@ -22,7 +22,8 @@ HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低�
 - Error 统一可恢复失败，Platform 统一 OS/硬件事实与机制；
 - Mem、Time、Obs、Util、Container、SIMD/Math 提供可组合基础能力；
 - Sched 与 IO 组合底层机制；
-- Compute 与 Graph 最终承载计算后端和编排，但在 registry 为 `QUEUED` 时旧实现只作需求输入；
+- Compute 最终承载 device/backend/provider 与直接 op/kernel 执行；Graph 承载逻辑计算 DAG、编译、
+  partition 和可复用 Executable。两者在 registry 为 `QUEUED` 时，旧实现只作需求输入；
 - 模型格式、tokenizer、KV/批处理和 serving policy 属推理引擎；材质、场景、渲染算法和窗口/present
   policy 属渲染产品；通用资源 ownership、异构 copy/completion 与调度机制仍须在正确 HYLE owner 审计；
 - source、static、shared 都是 C++ 交付，Native FFI 只由真实外语消费者触发。
@@ -36,7 +37,8 @@ HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低�
 内部 factor 是依赖、构建、测试和状态 owner；用户选择的是较少、稳定的问题域 façade。façade 没有
 自己的源码、状态或人工依赖表，只从中央声明投影一个或多个 factor root，再解析传递闭包。因此
 `container_intrusive`、`timer_queue`、`platform_fs`、`mem_vm` 等小 factor 可以防环和减少内部闭包，
-用户仍只需理解 Container、Time、Platform、Mem 等产品。
+用户仍只需理解 Container、Time、Platform、Mem 等产品。`graph_plan` 同样是 Graph 内部的热执行因子，
+用户取得的是 `graph::Executable/Invocation`，不会多出一个含义模糊的 Plan 产品。
 
 中央声明同时投影：
 
@@ -51,6 +53,25 @@ HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低�
 
 Highway、mimalloc、OpenSSL 等是模块拥有的外部实现，不是 HYLE factor。多个 factor 可以共享一个
 build-only 外部 target；除非公开类型或链接合同泄露该依赖，否则不能据此制造内部模块边。
+
+### Compute 与 Graph 的固定关系
+
+Compute 和 Graph 是两个公开产品，不是三套平级 runtime：
+
+```text
+direct consumer -> Compute op/kernel -> backend/provider
+Graph IR -> Graph compiler -> internal graph plan -> Compute compiled regions
+```
+
+Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass 的用户不取得图编译器。Graph
+依赖 Compute 的 operation/provider 合同，但 provider 选择、全图 placement、copy/sync、liveness 与 alias
+由 Graph compile 决定。编译结果公开为不可变可共享的 `graph::Executable`，每次运行状态放在独占的
+`graph::Invocation`。详细合同见 [Compute 设计](compute-design.md)与 [Graph 设计](graph-design.md)。
+
+Apple Silicon 栈（MLX-first provider + 原生 Metal backend/custom-kernel escape hatch）和 NVIDIA 栈
+（CUDA backend + 经审计的 vendor/ggml/HYLE provider）是首要优化目标。Vulkan 是面向广泛消费级设备与
+renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 走 MoltenVK portability；它不
+是实验，也不替代 Apple 原生性能路线。HIP/ROCm 是必须明确补齐和真机资格化的覆盖缺口。
 
 ## 依赖审查
 
@@ -75,7 +96,8 @@ owner 是否放错、公开面是否泄漏机制，以及能否提取满足质�
 实际施工顺序由中央图的拓扑、registry 中的活动状态和真实 blocker 决定，不在 architecture 维护一份
 容易过期的编号队列。对一个问题域的典型顺序是：底层 factor → 产品 façade 所需其余 factor → 直接
 消费者回放。Compute 与 Graph 只有在真实推理或异构资源纵切、能力边界和新 closure card 成立后才从
-`QUEUED` 进入施工。
+`QUEUED` 进入施工；它们采用“最小 Compute 合同 -> one-op Graph -> multi-op CPU -> 主要设备 ->
+Vulkan/HIP”的共同纵切，不先各自造完大全套再尝试拼接。
 
 `CLOSED` 模块只因可复现 correctness/security/lifetime 缺陷、真实消费者证明的常用能力缺口、相关
 依赖升级、公开合同/算法/交付变化，或合格同合同证据的 material 回归而重开。形成 trigger 和新 record

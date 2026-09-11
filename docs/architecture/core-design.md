@@ -54,9 +54,9 @@ Core 是 HYLE 组件图最底层的 C++ header-only 组件。它只承载两类�
 hyle::core ──PUBLIC──► every component whose public headers consume Core
 ```
 
-`core` 自身没有 HYLE 依赖。当前所有真实公开头消费者——`container_intrusive`、`util_core`、
-`error`、`obs`、`math`、`time`、`platform`、`mem`、`simd`、`container`、`util`、`sched`、`io`、
-`compute`、`graph`——都直接声明 `PUBLIC core`。例如 `math` 的 unchecked scalar helpers 公开使用
+`core` 自身没有 HYLE 依赖。中央组件图中当前登记的公开头消费者——`container_intrusive`、`util_core`、
+`error`、`obs`、`math`、`time`、`platform`、`mem`、`simd`、`container`、`util`、`sched`、`io`，以及仍为
+`QUEUED` 的 `compute`/`graph` 旧资产——都直接声明 `PUBLIC core`。例如 `math` 的 unchecked scalar helpers 公开使用
 `HYLE_FATAL_ASSERT`，因此 `math -> PUBLIC core` 是真实 source/package 合同，不是为了构造顺序保留的
 伪依赖。
 

@@ -52,13 +52,13 @@ export PATH=/usr/local/cuda/bin:$PATH   # 非交互 shell 缺 cuda bin（见下 
 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
-  -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-14 \
-  -DHYLE_COMPUTE_CUDA=ON
+  -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_GGML=OFF \
+  -DHYLE_COMPUTE_VULKAN=OFF
 cmake --build build
 ```
 
-- 这条命令使用默认 `all` + tests，显式开启 CUDA；TLS、HTTP/2、ggml、Vulkan 和 trace 仍保持
-  默认 `OFF`。首次配置只通过 FetchContent 取得 googletest，CUDA Toolkit 由系统安装提供。
+- 这条命令使用默认 `all` + tests，但显式关闭 QUEUED Compute 的旧 backend gates；TLS、HTTP/2 和
+  trace 仍保持默认 `OFF`。首次配置只通过 FetchContent 取得 googletest。
   显式开启 HTTP/2、ggml 或 Vulkan 后才会取得各自的锁定源码。删除 build 只删除本 build 的
   binary/subbuild；共享源码保留，toolchain 状态不会跨 build 混用。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
@@ -71,8 +71,8 @@ cd /root/hyle
 ctest --test-dir build --output-on-failure   # 全部
 ```
 
-- **GPU 测试**：WSL 有 CUDA 直通（RTX 4070）。只有配置时另加
-  `-DHYLE_COMPUTE_GGML=ON` 才会生成 `hyle_compute_ggml_bridge_test` 并真跑零拷贝 matmul；运行前
+- **旧 Compute GPU baseline**：WSL 有 CUDA 直通（RTX 4070）。只有 Compute 重构 task 明确要求复现
+  旧资产时，才另开隔离 build 并显式设置旧 CUDA/ggml gates；结果不能签发新产品能力，运行前仍需
   `export PATH=/usr/local/cuda/bin:$PATH`。
 
 ## 五、TSan（lock-free / 并发改动必过）
@@ -91,9 +91,8 @@ setarch -R ./build-tsan/bin/hyle_sched_test    # -R 关 ASLR，稳定 TSan
   `-fsanitize=thread` 编译；并发压力测试直接使用 shipping
   `system_allocator()`，不再绕到 malloc。旧版的启动断言和回收地址假 race 已在升级复验中消失，
   因此新的 sanitizer 报告不能按历史 KI-2/KI-3 自动忽略，必须按真实缺陷调查。
-- **TSan 用无 CUDA 构建更干净**（CUDA + TSan 不合）：显式设置
-  `-DHYLE_COMPUTE_CUDA=OFF`。若该轮还要验证 ggml bridge，再加 `-DHYLE_COMPUTE_GGML=ON`，此时
-  ggml 保持 CPU-only；TSan 只验 HYLE 的 host 侧协调（spawn_blocking/fiber 唤醒）。
+- **TSan 用无 CUDA 构建**（CUDA + TSan 不合）：显式设置 `-DHYLE_COMPUTE_CUDA=OFF`。旧 ggml bridge
+  只有在 Compute closure card 具名要求时才进入单独 baseline，不能顺手扩大普通 sanitizer 闭包。
 
 ## 六、性能测试（bench）
 

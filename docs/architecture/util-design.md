@@ -142,8 +142,9 @@ template/cast、ScopeGuard 或编译期 type-name 机械翻译成动态符号。
 
 ## 内部采用与依赖检查
 
-mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle_util_core` factor 的
-SpinLock/cpu_relax。`FunctionRef` 与 `NotNull` 是供后续 owner 在自己的语义轮采用的公开词汇，
+mem 的短固定状态/指针转移与 sched 等待细节显式依赖 `hyle_util_core` factor 的 SpinLock/cpu_relax；
+旧 graph 资产也曾把它用于首错槽，但新 Graph 仍须在自己的审计轮重新裁决。`FunctionRef` 与 `NotNull`
+是供后续 owner 在自己的语义轮采用的公开词汇，
 不得把 stored/asynchronous callback 或 nullable pointer 机械迁移成不同合同。会 allocate/rehash/执行
 未知用户代码的 mem LeakTracker 与 container ConcurrentVector 使用 mutex。Registry runtime 显式链接
 core、error、mem、container 和 container_text；

@@ -46,8 +46,9 @@ target_link_libraries(my_app PRIVATE hyle::container)
 安装只含所选组件闭包拥有的公开头，不保证未请求模块的头可见。预发布 `0.y.z` 必须请求完整
 精确版本；patch 版本、headers 与 artifact 是同一个 C++ 构建合同。
 
-TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭；相应 cache 选项只在 owner
-组件/gate 成立时出现。需要时显式开启。当前 trace 只有 Tracy，不存在 backend selector。
+已验收产品中的 TLS、HTTP/2 和 trace 等昂贵能力默认关闭，相应 cache 选项只在 owner/gate 成立时
+出现。源码树里仍可见的 CUDA、ggml、Vulkan 选项属于 QUEUED Compute 的旧 baseline，不是可依赖的
+用户能力；新 Compute 开工后会按 backend/provider factor 重新定义。当前 trace 只有 Tracy。
 
 ## 选择模块
 

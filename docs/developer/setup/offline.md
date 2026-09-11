@@ -39,9 +39,9 @@ benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免产品输
 | `simd`，或任何传递依赖它的组件 | `highway/`、`xsimd/` |
 | `HYLE_BUILD_TESTS=ON` | `googletest/` |
 | 有 sched/fcontext 且 `HYLE_IO_HTTP2=ON` | `nghttp2/` |
-| 有 sched/fcontext 且 `HYLE_COMPUTE_GGML=ON` | `ggml/` |
-| `HYLE_COMPUTE_VULKAN=ON` 的产品库 | `vulkan_headers/`、`volk/` |
-| Vulkan 且 tests/bench 打开 | 再加 `glslang/` |
+| QUEUED Compute 旧 `HYLE_COMPUTE_GGML=ON` baseline | `ggml/` |
+| QUEUED Compute 旧 `HYLE_COMPUTE_VULKAN=ON` baseline | `vulkan_headers/`、`volk/` |
+| 上述旧 Vulkan baseline 且 tests/bench 打开 | 再加 `glslang/` |
 | `HYLE_TRACE=ON` | `tracy/`（映射为 `HYLE_TRACY_DIR`） |
 
 目录名必须使用中央 lock 的 `name`；FetchContent 项与声明名一致，Tracy 则是映射到
@@ -216,7 +216,7 @@ Homebrew cellar 目录不是可迁移 SDK 包。若要 TLS/Vulkan 等可选能�
 
 ## 最小、确定的离线验收
 
-下面验证中央 manifest 当前登记的全部 HYLE 产品及其 factor 闭包（其中包含 header-only
+下面验证中央 manifest 当前登记的全部 target 及其 factor 闭包（其中包含 header-only
 `util_core` 与 `container_intrusive` 内部 factor）的 CPU 基线，不启用需要系统 SDK
 或额外协议/计算后端的 feature；
 因为全组件包含 `simd` 且 tests 打开，逐项 override bundle 需要 `deps/highway/`、`deps/xsimd/` 与
@@ -246,8 +246,8 @@ scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 ```
 
 制作不含测试的 CPU SDK 时可设 `HYLE_BUILD_TESTS=OFF`，此时连 googletest/Python 也不需要。若启用
-HTTP/2、ggml、Vulkan、TLS 或 CUDA，按上表补齐源码目录和系统 SDK，并把相应开关明确设为 `ON`；
-正式离线产品不要依赖 `AUTO` 随机器偶然降级。
+HTTP/2 或 TLS 时，按上表补齐依赖并把开关明确设为 `ON`。ggml/Vulkan/CUDA 目前只为具名 Compute
+baseline task 开启；未来 backend/provider 的离线合同以其新 factor closure card 为准。
 
 OpenSSL、CUDA Toolkit、Vulkan loader/ICD/driver 是环境 SDK 或运行时，不是会被 HYLE 编译进产品的
 源码 checkout，因此不写伪 commit、也不放进 `deps/`。它们必须由已审查的离线安装介质、toolchain/

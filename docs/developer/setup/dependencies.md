@@ -9,20 +9,21 @@
 | C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
 | **Highway** | **自动拉取**（FetchContent） | 选择 `simd` 或 `container` 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `18e449b6…`；只执行 HYLE 自己的 target/package 集成 |
 | **xsimd** | **自动拉取**（FetchContent） | 选择 `simd` 时与 Highway 一起取得；严格离线 cache/bundle 缺源码则配置失败 | lock pin `3b3151ff…`；用于锁定的 SIMD provider 路由 |
-| **ggml** | **自动拉取**（FetchContent） | compute + sched/fcontext 且启用 bridge 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `v0.21.0` |
+| **ggml** | **QUEUED Compute 的锁定候选源码** | 只有旧 compute gate 或未来经审计的 provider 选择它时取得；不是当前受支持产品要求 | lock pin `v0.21.0`，新 provider 开工前必须重验版本/API |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
 | **nghttp2** | **自动拉取**（FetchContent） | io + sched/fcontext 且启用 HTTP/2 时取得 | lock pin `v1.70.0` |
-| **volk + Vulkan-Headers** | **按需拉取**（FetchContent，compute-06） | 仅 `HYLE_COMPUTE_VULKAN=ON` 时取得；此时缺网且无离线源码会配置失败 | 同属 `vulkan-sdk-1.4.357.0`，lock 内两个精确 commit |
-| **glslang** | 测试/benchmark shader 工具 | Vulkan 已开启且 compute tests/bench 打开时才拉取；生产 SDK 不需要 | 同属 `vulkan-sdk-1.4.357.0` |
+| **volk + Vulkan-Headers** | **QUEUED Compute 的锁定候选源码** | 旧 Vulkan gate 开启时取得；正式 Vulkan backend 重构后仍须按新 factor/版本重新裁决 | 同属 `vulkan-sdk-1.4.357.0`，lock 内两个精确 commit |
+| **glslang** | 旧 Compute 测试/benchmark shader 工具 | 旧 Vulkan tests/bench 打开时才拉取；不证明未来生产 SDK 需要它 | 同属 `vulkan-sdk-1.4.357.0` |
 | **Tracy** | 启用 trace 时自动取得的外部源码树 | `HYLE_TRACE=ON` 才取得并编译；任意/脏/被改写的覆盖源码会配置失败 | lock pin `v0.14.1`；`HYLE_TRACY_DIR` 仍可显式覆盖 |
-| **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），不改变其他已配置能力 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
+| **Vulkan loader + ICD/driver** | 未来正式 Vulkan backend 的宿主运行时 | 旧实现无 loader 时不可用；新合同要求明确 capability/失败，不继承旧 null-vtable 语义 | 由宿主 SDK/driver 提供，不进入源码 lock |
 | **OpenSSL 3.0+** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失或低于 3.0 即配置失败 | `find_package(OpenSSL 3.0 QUIET)` |
-| **CUDA Toolkit** | 可选能力 | `HYLE_COMPUTE_CUDA=AUTO/OFF` 可只用 host；ON 时缺失即配置失败 | `find_package(CUDAToolkit QUIET)` |
-| **cuDNN / TensorRT** | 可选能力（更后） | 当前里程碑不依赖，完全可不装 | 手动 `-I/-L`（未来算子/推理路径） |
+| **CUDA Toolkit** | 未来主要 CUDA backend 的宿主 SDK | 旧 gate 可探测它；新 CUDA factor 尚未签发，普通已支持组件不需要 | `find_package(CUDAToolkit)` 候选，精确合同待审 |
+| **Metal SDK + Apple providers** | 未来 Apple 主要路线 | Metal SDK 随 Apple toolchain；MLX 是首个待资格化 provider，当前尚未签发；MPSGraph/MPS 后续逐能力审计，Core ML 暂属模型级 routed runtime | 宿主 SDK + 可能的锁定 MLX provider source |
+| **ROCm / HIP SDK** | 必须补齐的 AMD 路线 | 当前无合格实现；不能用 Vulkan 或 CUDA 宏替换冒充 | 宿主 SDK/toolchain，精确发现合同待审 |
 
-**"可选能力 = 可选依赖"铁律**：OpenSSL/CUDA 都是 `AUTO|ON|OFF`。AUTO 找到就启用、找不到降级；
-ON 要求能力存在，否则配置失败；OFF 连依赖都不探测。只有本地探索适合 AUTO，正式 SDK/CI 应写死 ON/OFF，
-避免构建机环境暗中改变产物。
+**“可选能力 = 可选依赖”铁律**：已签发 feature 的 ON 要求依赖存在，OFF 不探测；正式 SDK/CI 写死
+能力集合，避免环境暗中改变产物。QUEUED Compute 的现有选项只是待迁移 baseline，不为新架构冻结名称、
+默认值或降级语义。
 
 ---
 
@@ -156,9 +157,8 @@ cmake -C hyle-offline-deps.cmake \
 override 也不能自我声明为已证明。
 完整准备命令和风险边界见 [`offline.md`](offline.md)。
 `HYLE_BUILD_TESTS=OFF` 且不触达 Tracy 的 core/error-only 选择允许没有 `deps/`；这不是降级，所需
-源码集合为空且断网门仍为 ON。后来启用 tests、trace，或显式开启 HTTP/2、ggml、Vulkan 等
-FetchContent feature 时，对应预期本地路径缺失会立即失败；只选择默认 feature-OFF 的 io/compute
-根不会取得这些可选依赖。
+源码集合为空且断网门仍为 ON。后来启用 tests、trace 或 HTTP/2 时，对应预期本地路径缺失会立即失败；
+ggml/Vulkan 只有具名 QUEUED Compute baseline 才应开启。
 
 OpenSSL、CUDA Toolkit、Vulkan loader/driver 属于宿主 SDK/运行时：它们由 `find_package()`、toolchain、
 sysroot 或 driver 提供，不能用某个源码 commit 冒充机器环境 pin。正式构建应固定 feature ON/OFF，并在
@@ -167,18 +167,18 @@ sysroot 或 driver 提供，不能用某个源码 commit 冒充机器环境 pin�
 从零准备 Windows/Linux/macOS 工具链、系统 SDK、依赖介质并做真实断网验收，见
 [`offline.md`](offline.md)。
 
-**ggml 的构建开关（HYLE 强制设定，见 `HyleComputeDependencies.cmake`）**：只构建私有 PIC 静态 CPU +
-可选 CUDA
-闭包；关闭 OpenMP、BLAS/Accelerate、Metal/Vulkan/RPC、tests/examples、backend dynamic load、
-FA/NCCL/ccache，避免引入 HYLE 不消费的运行时。`GGML_CUDA` 跟随最终启用的 CUDA 能力。
-普通源码构建 `HYLE_COMPUTE_GGML_NATIVE=ON` 偏向本机性能；`HYLE_INSTALL=ON` 默认 OFF，x86 使用
-SSE4.2 baseline。已知部署 CPU 用 `HYLE_SIMD_EXACT_TARGET=AVX2/AVX512` 同步提高 HYLE 与 ggml ISA。
+### QUEUED Compute 的旧依赖门
 
-**关掉 ggml（无 compute 需求时）**：`-DHYLE_COMPUTE_GGML=OFF` → 不拉 ggml、不编 ggml_bridge，compute 其余（01–04）照编。
-io 与 compute 的当前公开头都暴露 sched 类型，因此中央组件图无条件把 sched/fcontext 纳入这两个
-产品根。目标平台没有已接线的 fcontext 时，选择 io、compute 或 graph 会在 feature 探测前直接配置
-失败；`OFF` 只关闭相应可选 backend，不能生成删掉 sched 公开依赖的 host-only/stub SDK。未来若要
-交付 raw proactor 或 host-only compute，必须先拆出拥有独立公开头与 consumer journey 的真实组件。
+`HyleComputeDependencies.cmake`、`HYLE_COMPUTE_GGML[_NATIVE]`、`HYLE_COMPUTE_CUDA` 与
+`HYLE_COMPUTE_VULKAN` 当前描述旧实现的可复现 baseline。它们可以在资产审计中显式打开，但不能用于
+宣传当前 Compute 支持，也不冻结未来 factor 或 option 形状。旧 graph/compute target 对 Sched/fcontext
+的公开依赖同样待重构；新设计要求 direct Compute core 不因 coroutine convenience 强制取得 Sched。
+
+新架构将 Apple 的 MLX-first provider + 原生 Metal backend/custom-kernel escape hatch 与 NVIDIA 的
+CUDA backend + providers 作为主要路线；Vulkan 是正式消费级保底路线，Apple 经 MoltenVK 只作
+portability；另有明确的
+HIP/ROCm 缺口。每个 backend/provider factor 只有在 closure card 完成 capability、ownership、threading、
+source/static/shared 与真机资格后，才会在本页升级为正常安装说明。
 
 ---
 
@@ -196,17 +196,17 @@ TLS 是三态能力，当前默认 `OFF`：`AUTO` 自动发现 OpenSSL 3.0+，`O
 
 ---
 
-## CUDA Toolkit（compute GPU 后端，可选）
+## CUDA Toolkit（QUEUED Compute baseline）
 
-`HYLE_COMPUTE_CUDA=AUTO` 时 CMake 自动发现 Toolkit；`ON` 要求找到；`OFF` 不运行依赖探测、不启用
-CUDA language，只编 host fallback。最终启用时才编 `cuda_backend.cu` 并链接 CUDA runtime/driver/NVRTC。
-普通本机构建未指定时使用 `CMAKE_CUDA_ARCHITECTURES=native`；`HYLE_INSTALL=ON` 的 CUDA SDK 必须
-显式给出目标，例如 `-DCMAKE_CUDA_ARCHITECTURES='80;86;89'` 或 `all-major`，否则配置拒绝。
+旧 `HYLE_COMPUTE_CUDA=AUTO|ON|OFF` 仍可用于复现待审源码；它不是新 CUDA backend 的已接受配置
+合同。运行旧资产需要匹配的 CUDA runtime/driver/NVRTC，安装型 artifact 仍必须显式记录 architecture。
 
 - **本仓库统一 CUDA 13.3**（RTX 4070 / sm_89）。Windows toolkit 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`；WSL 在 `/usr/local/cuda-13.3`（软链 `/usr/local/cuda`）。装法见平台文件。
 - **编译/链接不需要 PATH**（CMake 走 `find_package`）；**运行 GPU 测试**要 CUDA runtime DLL 在 PATH（Windows）。
-- **mac 无 NVIDIA GPU** → CUDA 后端 `#if` 门控编不进，走 host / 未来 Metal。
+- **mac 无 NVIDIA GPU**；未来主要路线是 MLX-first provider + 原生 Metal backend/custom-kernel
+  escape hatch。
 
-## cuDNN / TensorRT（更后，当前可不装）
+## cuDNN / TensorRT（当前不属于产品依赖）
 
-**compute-01～05 不依赖 cuDNN/TensorRT**——它们是未来算子/推理图优化路径的加速档。当前完全可以不装。装齐的机器信息见 `reference_cuda_env`（cuDNN 9.24 / TensorRT 11.1，Win + WSL 均已装并端到端验证）。要用时按那里的 `-I/-L/-l` 指路。
+当前已支持 HYLE 组件不需要 cuDNN/TensorRT。未来只有具名 CUDA provider task 裁决为 `BORROW` 后，
+才增加版本、发现、license、artifact 和 runtime 说明；本机装有 SDK 不是准入证据。

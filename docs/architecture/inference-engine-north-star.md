@@ -53,7 +53,7 @@ source/static/shared 交付本身不要求制造 FFI parity。
 
 ## 3. 基础模块与推理引擎的边界
 
-| 领域 | HYLE 应提供的机制 | 应留在 compute / 推理引擎的策略与语义 |
+| 领域 | HYLE 应提供的机制 | 应留在相邻 owner / 推理引擎的策略与语义 |
 |---|---|---|
 | core | 编译器合同、稳定的编译期 cache-layout、极小的无所有权 primitive、产品身份 | 模型常量、token/layer 元数据、为单个 kernel 定制的公共入口 |
 | error | 统一 `Status/Result`、context、OS/backend 错误映射 | 模型格式错误分类、对用户的恢复与重试策略 |
@@ -63,16 +63,16 @@ source/static/shared 交付本身不要求制造 FFI parity。
 | container/util | 通用连续、flat、queue、bitset、registry 等数据结构与工具 | 词表、token 表、模型 registry 语义和模型专用索引 |
 | sched | task/fiber/coroutine、waker、取消、work stealing、blocking handoff | continuous batching、admission、优先级、公平与多模型仲裁策略 |
 | simd | 通用 lane、dtype conversion、bitpack 和可复用向量原语 | 与具体量化块绑定的 fused dequant-dot/GEMM 和模型布局 |
-| compute | device/buffer/stream/event、backend adapter、算子/kernel 执行、量化算子与 repack | 模型拓扑、layer 构图、KV 语义、采样和推理循环 |
+| compute | device/context/queue/completion、storage bridge、backend/provider、直接算子/kernel、量化计算与 repack | 跨节点 topology/placement/liveness 归 Graph；模型、KV、采样和服务策略归引擎 |
 | io | 文件、socket、proactor、异步读写和取消机制 | GGUF 等格式语义、HTTP endpoint、路由、请求 schema 与 serving 策略 |
 | obs | 低成本 log/trace/counter 机制及 sink 接缝 | 指标命名、告警、采样策略和产品 dashboard |
-| graph | 有独立消费者时保留通用任务 DAG/数据并行机制 | 推理 operator graph 的构建、融合和执行计划归 compute/引擎；不能因同名而下沉 |
+| graph | 模型无关计算 DAG、shape/layout、provider partition、fusion/copy/sync、liveness/alias、Executable/Invocation | 模型 layer 构图、KV/batch/sampling/循环停止归引擎；task runtime 和通用 parallel algorithms 不因同名进入 Graph |
 | build/package | 组件闭包、依赖锁、ISA/backend 组合、source/static/shared 交付 | 模型资产发布、服务部署和应用配置 |
 
 两个边界尤其不得混淆：
 
-- device buffer、stream 和算子执行属于 compute；host allocator 不能假装统一管理第三方 backend
-  的 device memory。借 ggml 时继续遵守
+- device storage artifact、queue 和算子执行属于 Compute；host allocator 不能假装统一管理第三方
+  backend 的 device memory。借 ggml 时继续遵守
   [`borrowing-ggml-memory-model`](./borrowing-ggml-memory-model.md) 的所有权边界。
 - KV-cache 是推理状态管理策略。mem 可以提供适合它的 backing、pool、NUMA 和 lifetime 原语，
   但不得公开 `KVCache`、sequence 或 token 形状。
@@ -82,18 +82,18 @@ source/static/shared 交付本身不要求制造 FFI parity。
 北极星不能假定所有模型都按固定数量、互不共享参数的 Transformer 层顺序执行。recurrent-depth、
 looped、hybrid 和其他 adaptive-compute 模型可能重复同一参数块、携带跨轮状态，并让不同请求或 token
 使用不同计算深度。当前没有已锁定的 Astra 公开架构或 HYLE 真实 recurrent 模型消费者，因此这项的
-provenance 是 `PROVISIONAL_ARCHETYPE`，需求等级是 `GENERALIZATION_GATE`：它约束 Compute/引擎
-设计不得封死，但不授权重开底层模块或立即增加公共 API。背景与证据边界见
+provenance 是 `PROVISIONAL_ARCHETYPE`，需求等级是 `GENERALIZATION_GATE`：它约束
+Compute/Graph/引擎设计不得封死，但不授权重开底层模块或立即增加公共 API。背景与证据边界见
 [`motivation`](motivation.md#2026-09-的模型架构信号推理深度可能与输出长度解耦)。
 
 | Concern | HYLE / engine 必须保留的能力 | 不能提前下沉的策略 |
 |---|---|---|
-| 重复执行 | Compute/引擎能把计算区域编译一次并低开销重复；可用 backend 上避免逐轮 host rebuild/round-trip | 模型的循环次数、停止判据和训练时 depth schedule |
+| 重复执行 | Graph 把计算区域编译成可复用 Executable，Compute 低开销重复提交；避免逐轮 host rebuild/route/round-trip | 模型的循环次数、停止判据和训练时 depth schedule |
 | 数据寿命 | 区分循环不变量、loop-carried owner state 与单轮临时值；重复期间不做无关 allocation/copy | `token`、具体 recurrent-state/KV cell 布局与模型专用压缩 |
 | 权重局部性 | backend 能表达常驻/复用意图并测量真实 residency、搬运和 working set | 假定共享参数一定留在 cache，或把某台设备的 storage mode 变成通用 API |
 | 动态深度 | Sched/引擎能对仍活跃的工作重聚批、压缩 active set，并维持取消和 deadline | batch/admission/fairness 及逐模型计算预算策略 |
 | 可观察性 | Obs seam 能承载迭代分布、阶段耗时、资源与停止原因；安全边界不把可见 CoT 当完整内部状态 | 模型专用 probe 名称、推理内容解释器和产品监控策略 |
-| 图边界 | inference operator loop 暂归 Compute/引擎的执行计划；若出现独立通用消费者，再审可复用 region/control-flow primitive | 仅因存在循环就让当前面向 CAD/CAE 的 Graph 产品接管推理拓扑 |
+| 图边界 | 有限 operator DAG、compiled region 和 Invocation 归 Graph；引擎可以重复提交并重聚 active set | 把模型循环/停止策略塞进 Graph，或把通用 task DAG/parallel-for 与计算图焊成一个类型 |
 
 性能比较必须锁定模型/checkpoint、量化、输入、输出质量、backend、batch、深度策略和计费边界。
 `tokens/s` 不能单独裁决 recurrent 与固定深度模型；至少同时报告 loops/token 或等价计算预算、
@@ -114,6 +114,7 @@ TTFT/ITL、质量、bytes/token、峰值/常驻状态、batch 利用率和 joule
 | 连续批处理 | 混合 prompt/output 长度；稳态与突发到达；不同并发度 | requests/s、tokens/s、TTFT/ITL tail、公平性、deferred/backpressure | sched/mem/compute |
 | KV 生命周期 replay | 会话加入/退出、共享前缀、fork/copy、回收、容量不足 | bytes/token、峰值 committed、碎片、分配/回收 tail、泄漏 | 引擎策略消费 mem 原语 |
 | Backend handoff | CPU-only、部分/全部 offload；同步与可重叠传输 | copy bytes、同步次数、overlap、CPU busy、device idle | compute/sched/platform |
+| Graph compile/replay | one-op、多 region、shape specialization、并发 Invocation 与重复 decode | compile time、steady submit 税、workspace、copy/sync、cache hit、fallback | graph/compute/mem |
 | 取消与关闭 | 排队、prefill、decode 中取消；backend failure；有界 drain | cancel latency、迟到 completion、泄漏、drain 时间、错误保真 | error/time/sched/compute |
 | 构建与交付 | source embed、installed static/shared；baseline、native/exact ISA；可选 backend | 可构建/运行、组件闭包、artifact 依赖、可复现性 | build/package + 被测模块 |
 
@@ -181,7 +182,7 @@ CPU/GPU handoff 和跨 die 行为。统一地址空间不得被记作“天然�
 
 1. 从 workload manifest 抽取本模块消费者 trace；
 2. 完成需求等级、合同卡、语法消费者和语义重复账本；
-3. 裁决 public/internal/compute/engine/不做，再对账成熟库；
+3. 裁决 public/internal/compute/graph/engine/不做，再对账成熟库；
 4. 先修类型、ownership、复杂度和依赖，再做 codegen/常数优化；
 5. 冻结 candidate，运行模块门、真实消费者门和留出门；
 6. 只有全部适用门通过才签署；未知或未解释 material loss 保持黄色。

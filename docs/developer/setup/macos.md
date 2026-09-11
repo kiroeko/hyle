@@ -1,6 +1,7 @@
 # macOS 环境准备（Apple Silicon）
 
-> ARM/NEON + kqueue 真机验证平台。**无 NVIDIA GPU → CUDA 后端不编，走 CPU/host**（未来 Metal）。
+> ARM/NEON + kqueue 真机验证平台。**无 NVIDIA GPU → CUDA 后端不编**；未来主要 GPU 路线是原生
+> Metal backend；推理纵切首先资格化 MLX provider，再审计 MPSGraph/MPS。
 > 覆盖：构建 / 测试 / 性能测试 + 依赖。本仓库有两个独立 Apple Silicon 验证环境：MacBook Air
 > `Mac16,12`（`ssh kiro@172.22.10.198`）与 Mac mini `Mac16,10`
 >（`ssh kiro@172.22.10.107`）。`M1-MAC` 性能 profile 当前只指前者；后者在单独登记身份前只作
@@ -48,13 +49,14 @@ scripts/hyle-unix.sh /opt/homebrew/bin/cmake --preset macos
 scripts/hyle-unix.sh /opt/homebrew/bin/cmake --build --preset macos --parallel 2
 ```
 
-- 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2、ggml、Vulkan、CUDA 和 trace 都是
-  `OFF`，首次配置只通过 FetchContent 取得 googletest。显式开启 HTTP/2、ggml 或 Vulkan 后才会把
-  对应锁定源码放到 `$HOME/Library/Caches/hyle/dependencies/v1`（或显式
+- 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2、trace 和 QUEUED Compute 的旧
+  ggml/Vulkan/CUDA gate 都是 `OFF`，首次配置只通过 FetchContent 取得 googletest。显式开启 HTTP/2
+  或在具名 Compute baseline 中开启 ggml/Vulkan，才会把对应锁定源码放到
+  `$HOME/Library/Caches/hyle/dependencies/v1`（或显式
   `HYLE_DEP_SOURCE_CACHE`）。每个 build tree 的 `_deps` 只保存自己的 binary/subbuild；删掉 build
   不会删源码，后续 build 不重新下载。
-- CUDA 保持 `OFF`，配置不会探测 Toolkit；ggml 默认也不构建。显式开启 ggml 时，macOS 形状是
-  CPU-only，且不构建未消费的 Metal/BLAS backend。
+- CUDA 保持 `OFF`，配置不会探测 Toolkit；ggml 默认也不构建。旧 baseline 显式开启 ggml 时，macOS
+  形状是 CPU-only，且不构建未消费的 Metal/BLAS backend；这不代表未来 MLX-first 路线的交付合同。
 
 ## 三、测试
 
@@ -100,11 +102,12 @@ scripts/fetch-bench-vendors.sh
 - **OpenSSL**：`brew install openssl@3`，配置时 `-DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
 - **CUDA**：mac 无 NVIDIA GPU，不适用。
 
-## 七、可选 Vulkan/MoltenVK 实验环境
+## 七、QUEUED Vulkan 资产的 MoltenVK 验证环境
 
-Apple 无原生 Vulkan；MoltenVK 是 Vulkan-over-Metal ICD。未来 Compute 重新开工时可以用 volk 动态取得
-`libvulkan.dylib`，再由 loader 路由到 MoltenVK。`compute` 当前仍为 `QUEUED`，下面只说明怎样准备和
-探测这个可选实验环境，不构成后端正确性或交付结论。
+Vulkan 是未来 Compute 面向消费级设备的正式保底路线，不是实验产品；但 Apple 的主要路线是
+MLX-first provider + 原生 Metal backend/custom-kernel escape hatch，macOS 上的 Vulkan 只能经 MoltenVK 等
+translation layer。`compute` 当前仍为 `QUEUED`，
+所以下面只复现旧 Vulkan 资产的 portability 环境，不构成新 backend 正确性、性能或交付结论。
 
 **装（brew，一次）**：
 
@@ -143,6 +146,9 @@ cd ~/hyle
 - ⚠️ **loader 找不到 ICD**（vulkaninfo 报 0 device / 测试 SKIP）时，显式指 ICD：
   `export VK_ICD_FILENAMES=$(ls /opt/homebrew/Cellar/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json | head -1)`。
   brew 装完通常已把 manifest 放进 loader 默认搜索路径（`/opt/homebrew/etc/vulkan/icd.d` / `/opt/homebrew/share/vulkan/icd.d`），无需手设。
-- ⚠️ **portability 扩展（HYLE 代码侧，已在 `vulkan_backend.cc` 处理，无需手动配）**：MoltenVK 是 *portability* 驱动，`vkCreateInstance` 若不开 `VK_KHR_portability_enumeration`（instance 扩展 + `ENUMERATE_PORTABILITY` flag）会直接返 `VK_ERROR_INCOMPATIBLE_DRIVER(-9)`，创建 VkDevice 又须启用 `VK_KHR_portability_subset`（spec 强制）。HYLE 后端**运行时探测这两个扩展、advertise 才启用**（一份代码通吃 mac + Win/WSL discrete GPU）。记录于此以防将来重构 instance/device 创建时误删——ICD 设对了但测试仍 SKIP，先查这里。
-- ⚠️ **MoltenVK 不支持全部 Vulkan 特性**（它是 Metal 子集映射）——compute-06 的 storage buffer + push constant + compute dispatch 都在支持范围内；将来用到 MoltenVK 缺的扩展需查其 [支持矩阵](https://github.com/KhronosGroup/MoltenVK)。
+- ⚠️ **portability 扩展（旧资产行为）**：`vulkan_backend.cc` 会探测
+  `VK_KHR_portability_enumeration/subset`。新 Vulkan factor 可以复用这条已知事实，但仍须重新验证
+  instance/device、driver 和失败语义。
+- ⚠️ **MoltenVK 不支持全部 Vulkan 特性**；旧 storage-buffer/push-constant dispatch 可作回归输入，
+  新能力仍须查其[支持矩阵](https://github.com/KhronosGroup/MoltenVK)并单独资格化。
 - 未装 MoltenVK 时：`volkInitialize()` 找不到 loader → Vulkan 后端 `vulkan_vtable()` 返回 null → `hyle_compute_vulkan_test` 运行时 `GTEST_SKIP`（不崩，优雅降级）。
