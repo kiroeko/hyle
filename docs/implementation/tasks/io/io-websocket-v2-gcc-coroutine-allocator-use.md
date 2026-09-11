@@ -1,5 +1,7 @@
 # WebSocket v2：GCC coroutine allocator 源码交付修复
 
+<!-- MODULE CLOSURE RECORD: CLOSED -->
+
 ## Closure card
 
 - component / owner / round：`io_websocket` / IO maintainers / `io-websocket-v2-gcc-coroutine-allocator-use`；
@@ -55,3 +57,26 @@ P0 账单没有新增 allocation、copy、atomic、lock、syscall 或常驻 meta
 - candidate LOC：全库 556,948，自实现不含测试 100,236，`io_websocket` 实现 2,079 行。
 
 当前进入 `CANDIDATE`；后续只允许本卡的终局文档、治理与证据，不再修改产品字节。
+
+## 终局红队与裁决
+
+红队逐字审查 candidate diff：两个产品语句都是对既有 coroutine frame allocator 参数的 discarded-value
+表达式；不会读取 allocator state、分配、抛异常或改变控制流。参数仍是 promise allocation 的首参数，
+没有退回默认 heap；测试夹具修复不进入任何产品 target。没有公共头、ABI/layout、协议状态、dependency、
+component export、默认值、文档用法或 benchmark shape 变化。
+
+| Gate | 证据 | Verdict |
+|---|---|---|
+| scope | 唯一可复现 GCC/WERROR 交付缺陷与 `W02-01` 一一对应 | `PASS` |
+| architecture | coroutine allocator ownership 与 v1 不变 | `PASS` |
+| correctness | WebSocket/Upgrade Linux 3/3、Windows 3/3，公开协议状态机未改 | `PASS` |
+| delivery | GCC 14.2 和 MSVC 19.50 shared/WERROR 均编译；旧 source/static/shared topology 不变 | `PASS` |
+| usability_docs | 公共 API 与 guide 无差量，不制造新选项 | `PASS` |
+| red_team | 未通过全局 suppression、默认 heap 或测试绕过隐藏问题 | `PASS` |
+| engineering_performance | P0 为零新增运行指令/成本；v1 同产品算法的已资格化 P1 继续适用 | `PASS` |
+
+`io_websocket` v2 裁决为 **CLOSED**。限制和能力边界继续由 v1 terminal record 定义。重开仅由新的可复现
+correctness/security/UB/lifetime/交付缺陷、真实消费者证明的 MUST、公开合同/算法/依赖变化或合格同合同
+material regression 触发；coverage 百分比和重复复检不是 trigger。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

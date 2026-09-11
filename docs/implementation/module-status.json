@@ -340,10 +340,15 @@
     },
     {
       "module": "io_websocket",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md",
       "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99",
-      "summary": "io_websocket v2 CANDIDATE：两个私有 coroutine 已显式消费 frame allocator 参数；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本不变。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 5
+      },
+      "summary": "io_websocket v2 CLOSED：两个私有 coroutine 显式保留 frame allocator 使用；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本及 v1 P1 结论不变。"
     }
   ]
 }
