@@ -60,8 +60,8 @@ storage 或 MLX interop 都要按各自公开合同审计，不能从其中一�
 完整复现和当时版本事实保留在
 [ggml 零拷贝调查日志](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)。新 Compute 任务只把它当
 回归用例来源，仍须绑定新的 ggml commit、backend、driver 和公开 API 重新验证。
-当轮范围、版本和结果见历史事实记录 [compute-05 ggml bridge](../implementation/tasks/compute/compute-05-ggml-bridge.md)；
-该记录不授权恢复旧实现或旧 API。
+被删除的旧 adapter、测试与施工计划只从 Git 历史取得；本页与上面的调试日志已经保留新 provider
+仍需继承的全部长期约束，不授权恢复旧实现或旧 API。
 
 ## 对新架构的约束
 

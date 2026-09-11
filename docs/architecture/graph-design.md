@@ -1,8 +1,8 @@
 # HYLE Graph：计算 DAG、编译与可复用执行计划
 
 > 决策状态：`ACCEPTED`。本文定义 Graph 的长期产品合同；当前实现状态只查
-> [`module-status.json`](../implementation/module-status.json)。当前 one-op 纵切正在独立收口，不能
-> 外推为多节点编译器。旧 `TaskGraph`、parallel/data-parallel API、旧任务和 benchmark 已退出产品树，
+> [`module-status.json`](../implementation/module-status.json)。one-op v1 已独立签发，后续多节点编译器
+> 仍按有限卡推进。旧 `TaskGraph`、parallel/data-parallel API、旧任务和 benchmark 已退出产品树，
 > 只可从 Git 历史取得调查事实；本页不签发用户可用性，也不要求兼容旧头。
 
 ## 1. Graph 解决什么问题

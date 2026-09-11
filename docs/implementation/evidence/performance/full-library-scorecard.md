@@ -1,18 +1,18 @@
 # HYLE 全库性能账本（2026-09-12）
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
-[`module-status.json`](../../module-status.json) 中当前 31 个 `CLOSED` factor；Compute/Graph 只以已经签发的
-CPU one-op v1 参加，不能据此推导 multi-op 或异构 provider 已完成。它不是第二套模块状态，也不授予
-HYLE 一个跨平台、跨能力的永久 SOTA 标签。
+[`module-status.json`](../../module-status.json) 中当前 29 个 `CLOSED` factor；Compute/Graph 的 one-op v1
+已有 terminal evidence，但当前已为 multi-op v2 合法重开，因此暂不参加当前排名。它不是第二套模块
+状态，也不授予 HYLE 一个跨平台、跨能力的永久 SOTA 标签。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。53 个去重合同组的严格方向为：
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。52 个去重合同组的严格方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
 | `WIN` | 23 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
-| `PARITY` | 3 | 没有固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
+| `PARITY` | 2 | 没有固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
 | `INCONCLUSIVE` | 16 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
 | `N/A` | 11 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
 | `LOSS` | 0 个聚合合同 | 不能解释成“未测 API 也都不慢”；见下方 WSL watcher 的固定负向 strata |
@@ -42,7 +42,6 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | model-cache LRU | `1.222x` 到 `1.273x` | Abseil，同 OOM/rollback/weight/limit 合同 |
 | typed unbounded MPMC | `1.261x` 到 `1.289x` | oneTBB，同 allocator/OOM/FIFO/drain 合同 |
 | scheduler request fan-out | `1.646x` 到 `1.663x` | Marl，同 worker/input/compute/completion 边界 |
-| one-op Graph abstraction | 四个 order/placement strata 均为 `PARITY`，5% 非劣门通过 | 同一个 HYLE Compute PreparedOperation、Queue、TensorViews 与 Completion；compile/bind 不计入 steady submit |
 | HTTP/1 fragmented stream | 约 `3.03x` | Boost.Beast，完整 public transport + HTTP lifecycle；不是裸 parser |
 | HTTP/2 small multiplex | `1.466x` 到 `1.478x` | nghttp2，同 session/body/window/flow-control 生命周期 |
 | WebSocket masking | `2.005x` 到 `3.354x`，覆盖 124 B 到 1 MiB | Boost.Beast，同 RFC mask state 与完整 buffer |
@@ -74,7 +73,6 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | 4096 f32 RMSNorm 的 one-op Graph/Compute 抽象税 | multi-op plan、完整算子目录、partition/provider、GPU 与端到端推理 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线

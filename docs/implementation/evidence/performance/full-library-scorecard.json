@@ -4,7 +4,7 @@
   "registry": "docs/implementation/module-status.json",
   "baseline": "bbd1eebada1be72d5b33c07e8c0763b16196d3fb",
   "ratio_definition": "greater than one favors the shipped HYLE route",
-  "excluded_modules": [],
+  "excluded_modules": ["compute", "graph"],
   "peer_freshness": [
     {"peer": "Highway", "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2", "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2", "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"},
     {"peer": "xsimd", "locked": "3b3151ff665514a00a437cc985f47b7de99b772b", "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b", "disposition": "current"},
@@ -32,8 +32,6 @@
     {"module": "container", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-lru", "container-utf"]},
     {"module": "util_runtime", "candidate": "7019998034f8025890770fad04406dc5ef2d6194", "claims": ["util-runtime-structural"]},
     {"module": "sched", "candidate": "ad5bff895125fb0d95281b36559010435c3d7892", "claims": ["sched-fanout", "sched-completion"]},
-    {"module": "compute", "candidate": "5c9dc1604e6daaec1d73062296f2a71d019e7b35", "claims": ["compute-graph-one-op-tax"]},
-    {"module": "graph", "candidate": "5c9dc1604e6daaec1d73062296f2a71d019e7b35", "claims": ["compute-graph-one-op-tax"]},
     {"module": "io_core", "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f", "claims": ["io-core-anonymous-adopt", "http1-small", "http1-fragmented"]},
     {"module": "io_tls", "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d", "claims": ["io-tls-identity", "tls-handshake", "tls-small-record"]},
     {"module": "io_http", "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7", "claims": ["io-http-upgrade", "http1-small", "http1-fragmented"]},
@@ -47,21 +45,6 @@
     {"module": "io_websocket", "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99", "claims": ["websocket-mask"]}
   ],
   "claims": [
-    {
-      "id": "compute-graph-one-op-tax", "modules": ["compute", "graph"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "PARITY",
-      "parity_basis": "all four 99.26% confidence intervals cross 1.0 and remain inside the predeclared 5% equivalence band",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "one precompiled 4096-element f32 RMSNorm submitted through a bound one-node Graph Invocation",
-      "contract": "same PreparedOperation, Queue, TensorViews, storage and terminal Completion; graph compile, invocation creation and binding remain outside timing",
-      "peer": "direct HYLE Compute PreparedOperation submission", "scale": "4096 contiguous f32 elements, one synchronous CPU submission",
-      "absolute": "Graph 1.664-1.689 M op/s; direct Compute 1.680-1.694 M op/s across four order and placement strata",
-      "ratio_ci": "medians 0.987856-0.997144; 99.26% CI envelope 0.976131-1.030857, every interval crosses 1",
-      "sensitivity": "four execution-order and function-placement strata are all PARITY; A/A, known-delta and timer-floor controls pass",
-      "mechanism": "fixed binding-mask validation and one retained PreparedOperation dispatch; no graph traversal, allocation, search or JIT in steady submit",
-      "limitations": "W1-WIN CPU one-op only; the lower-level Compute/direct-SIMD diagnostic has weaker safety semantics and is deliberately not ranked",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-compute-graph.md", "evidence/performance/compute-graph-one-op-tax-p1-v1-5c9dc160-w1-win/summary.json"]
-    },
     {
       "id": "core-structural", "modules": ["core"], "kind": "P0_STRUCTURAL",
       "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
