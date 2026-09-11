@@ -24,8 +24,8 @@
 
 当前入口只交付 C++23：源码嵌入、静态 SDK、共享 SDK 使用同一 factor DAG 与产品 façade。根级普通
 开关只有 tests/bench/install/static/werror；昂贵 feature 由 owner gate 采用 `AUTO/ON/OFF` 或显式
-`ON/OFF`，没有退役 C API/FFI option、target、header 或 package metadata。`HYLE_ABI_VERSION` 只用于
-shared loader 的 `SOVERSION`，0.x 使用完整项目版本，不代表 C ABI 或跨工具链稳定 C++ ABI。
+`ON/OFF`，没有退役 C API/FFI option、target、header 或 package metadata。shared loader 身份由内部
+`HYLE_SHARED_SOVERSION` 表达，0.x 使用完整项目版本，不代表 C ABI 或跨工具链稳定 C++ ABI。
 
 | ID | 已证实问题 | 有限修复 | 验收 |
 |---|---|---|---|
@@ -34,6 +34,7 @@ shared loader 的 `SOVERSION`，0.x 使用完整项目版本，不代表 C ABI �
 | BV13-03 | 没有 artifact 级回归门 | 增加跨 PE/ELF/Mach-O 的受限 plain-C export 检查，并接入 selected 与 whole-package shared smoke | 旧 `hyle_*`、vendored `mi_*`、raw fcontext 复活时 fail closed |
 | BV13-04 | 交付文档未明确默认隐藏与 artifact 门 | 校准 architecture、Native FFI policy、user distribution | 用户不把 shared C++ SDK 误认成 FFI；维护者知道私有 seam 要求 |
 | BV13-05 | 全 CLOSED package smoke 仍传入三个已不存在的 Compute 开关，CMake 报 unused-variable warning | 删除 smoke 自身的陈旧参数，不恢复或重造 Compute 开关 | 等价干净 configure 无 unused-variable warning |
+| BV13-06 | 内部 loader 变量仍名为 `HYLE_ABI_VERSION`，易被误读成稳定 C/Native ABI | 无行为改为 `HYLE_SHARED_SOVERSION` | target 的 `VERSION/SOVERSION` 值不变；旧名称零残留 |
 
 检查器只拒绝项目明确不应公开的 plain C symbol，不冻结编译器修饰后的 C++ symbol 集；HYLE 仍未承诺
 稳定 C++ ABI。Sched 的 module seam 改动由独立的 `sched-v11-private-fcontext-export` 合法重开卡承接，
@@ -50,6 +51,8 @@ shared loader 的 `SOVERSION`，0.x 使用完整项目版本，不代表 C ABI �
   raw fcontext 与 signal-handler 入口，不对白名单化编译器修饰后的 C++ ABI；
 - selected 与全 CLOSED package shared smoke 已接入该门；全包 smoke 中三个已经不存在的 Compute 参数已
   删除，未恢复伪开关。
+- shared loader identity 的内部变量已改名为 `HYLE_SHARED_SOVERSION`；0.x 仍取完整项目版本，产物名称
+  和 loader 行为不变。
 
 ### 验证与裁决
 

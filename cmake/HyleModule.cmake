@@ -351,7 +351,7 @@ function(hyle_add_module name)
       CXX_VISIBILITY_PRESET hidden
       VISIBILITY_INLINES_HIDDEN YES
       VERSION "${PROJECT_VERSION}"
-      SOVERSION "${HYLE_ABI_VERSION}")
+      SOVERSION "${HYLE_SHARED_SOVERSION}")
   endif()
 endfunction()
 

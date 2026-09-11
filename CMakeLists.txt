@@ -62,9 +62,9 @@ unset(_hyle_version_PATCH)
 # the full version is the honest loader identity; after 1.0 the conventional
 # major-only identity applies.
 if(PROJECT_VERSION_MAJOR EQUAL 0)
-  set(HYLE_ABI_VERSION "${PROJECT_VERSION}")
+  set(HYLE_SHARED_SOVERSION "${PROJECT_VERSION}")
 else()
-  set(HYLE_ABI_VERSION "${PROJECT_VERSION_MAJOR}")
+  set(HYLE_SHARED_SOVERSION "${PROJECT_VERSION_MAJOR}")
 endif()
 
 set(HYLE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
