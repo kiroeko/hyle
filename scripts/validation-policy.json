@@ -25,6 +25,10 @@
       "tests": ["tests/tooling/correctness_inventory_test.py"]
     },
     {
+      "paths": ["scripts/correctness-coverage.py", "tests/tooling/correctness_coverage_test.py"],
+      "tests": ["tests/tooling/correctness_coverage_test.py"]
+    },
+    {
       "paths": ["scripts/check-module-closure.py", "tests/tooling/check_module_closure_test.py"],
       "tests": ["tests/tooling/check_module_closure_test.py"]
     },

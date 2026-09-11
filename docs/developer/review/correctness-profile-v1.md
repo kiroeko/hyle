@@ -55,6 +55,26 @@ source bundle 没有 `.git` 时只验证当前文件与 registry 结构，不冒
 “所有直接消费者”不是默认命令：底层组件可能扇出全库。closure card 必须按公开头暴露、语义调用、
 本轮 diff 和失败半径选择代表集，并列出未选消费者及理由；否则一次 P0 回放会退化成全库验收。
 
+### 项目级 coverage discovery
+
+横向正确性资格审计可以使用统一的 GCC 14 line/branch 探照灯，但不能给公共 CMake 增加 shipping
+coverage option，也不能让一次低层 factor 调查顺带运行全库 tooling、benchmark 或消费者。维护入口是：
+
+```text
+python scripts/correctness-coverage.py run \
+  --build-dir <全新且独占的绝对目录> \
+  --output <scratch>/coverage.json \
+  --factors core,error --parallel 2 --test-timeout 120
+```
+
+该命令只运行所选 factor label，默认验证 `HYLE_TEST_INSTRUMENTATION=OFF` 的 shipping layout；需要
+fault seam 时另用 `--instrumentation fault` 的全新 build。每项测试和整个 configure/build/collect 阶段
+都有硬 timeout。报告恒为 `DISCOVERY_ONLY`，列出 executable zero-hit 行/分支、zero-hit function 和本次
+build 未观察到的产品文件：模板未实例化、编译期宏、平台分支或 abort 前无法 flush gcov 都可能进入这些
+集合，因此每项必须回到语义矩阵解释，禁止设置“覆盖率达到 N% 即 PROVEN”的门。原始 JSON/log 留在
+scratch；task 只保存与 commit/tree、工具版本和命令绑定的摘要。`run` 在 configure 前把 source tree、
+factor 和逐产品文件 hash 写入 build；`collect` 只接受该 binding，不能拿当前工作树替旧 build 归因。
+
 ## 证据复用与新鲜度
 
 旧证据仅在以下条件同时成立时可复用：产品候选文件与公开合同未变；相关 compiler/dependency/build

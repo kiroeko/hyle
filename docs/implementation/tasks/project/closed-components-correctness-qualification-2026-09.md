@@ -85,7 +85,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | ID | 工作 | 完成判据 | 当前状态 |
 |---|---|---|---|
 | Q01 | 生成公开头、factor、测试和现有证据 inventory | 29 factor 无遗漏；孤儿公开头/测试显式报错 | `COMPLETE` |
-| Q02 | 建立 Linux line/branch discovery profile | 可复现、隔离 build、输出 zero-hit 清单；百分比不作 gate | `QUEUED` |
+| Q02 | 建立 Linux line/branch discovery profile | 可复现、隔离 build、输出 zero-hit 清单；百分比不作 gate | `COMPLETE` |
 | Q03 | Wave A 语义矩阵与缺口测试 | 每个公开能力格为 PROVEN/NA 或诚实 UNPROVEN | `QUEUED` |
 | Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `QUEUED` |
 | Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `QUEUED` |
@@ -125,3 +125,20 @@ factor CMake fragment 列出的 SIMD 源，分别被 SVE/RVV QEMU driver 直接�
 14 product 和旧 reverse-consumer 集。断言已按中央图精确更新为 31 factor、15 product，并补入
 `process`/`io_websocket` 的真实传播边；41 项 selector 测试通过。inventory 及其测试只选择两个 focused
 Python suite、docs 与 closure gate，选择 factor 数为 0；它没有借维护改动触发全库 native build。
+首个 Core coverage probe 还发现 closure focused test 硬编码了治理迁移时的 26 CLOSED / 2 QUEUED，
+当前 registry 合法增长到 29 CLOSED 后因此让 full CTest 失败。该重复状态真相已删除；测试继续验证 schema、
+候选 identity、退役术语和完整状态迁移，而当前分布只由 registry 决定。
+
+## Q02 结果
+
+`correctness-coverage.py` 已提供 `run`（全新 configure/build/factor-only ctest/collect）和 `collect`（已有
+GCC coverage build）两条路线。它固定 GCC 14 JSON、line+branch、独占非空目录拒绝、默认并行度 2、
+per-test 120 秒与 phase 1,800 秒硬 timeout；shipping 与 fault instrumentation 必须分开构建。公开 CMake
+没有新增 coverage option，普通用户和发布 artifact 不受影响。configure 前会绑定 source tree、factor
+与逐产品文件 hash；`collect` 拒绝没有该身份的旧 build，不能把当前工作树冒充构建输入。
+
+WSL Core 端到端探针从零配置、构建并只运行 6 个 `core` label 测试，ctest 实耗 1.67 秒；报告绑定
+source tree 与 gcov 版本，发现 54/110 executable lines、4/29 branches、6 个本 build 未观察文件。该低点
+不形成 Core 缺陷或状态结论：其中包含纯编译期头和 abort 前无法写回 `.gcda` 的 fail-fast 路径，正是
+下一波逐能力语义回映要区分的仪器负空间。focused 聚合测试验证过滤第三方、跨 TU 合并、zero-hit range、
+function/branch 与 unobserved file 语义。

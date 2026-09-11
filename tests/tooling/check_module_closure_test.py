@@ -76,9 +76,9 @@ def main() -> None:
     errors = checker.validate_registry(canonical, root)
     if errors:
         raise AssertionError(f"canonical registry rejected: {errors!r}")
-    states = [item["state"] for item in canonical["modules"]]
-    if states.count("CLOSED") != 26 or states.count("QUEUED") != 2:
-        raise AssertionError(f"unexpected canonical state distribution: {states!r}")
+    # The registry is the state authority.  This test exercises its schema and
+    # transitions; hard-coding a second copy of the current state distribution
+    # makes a legitimate component closure break an unrelated tooling fixture.
     serialized = repr(canonical)
     for retired in (
         "VERIFIED",
