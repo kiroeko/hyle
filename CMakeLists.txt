@@ -300,7 +300,6 @@ include(HyleSanitizers)
 include(HyleModule)
 include(HylePackageRegistry)
 include(HyleIsa)
-include(HyleShader)
 include(HyleTrace)    # obs-02: HYLE_TRACE gate + optional tracy backend (default OFF)
 include(HyleTesting)  # HYLE_TESTING gate: optional test-only instrumentation
 
@@ -396,11 +395,6 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
         "${HYLE_XSIMD_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xsimd-upstream-LICENSE")
   endif()
 endif()
-if(HYLE_BUILD_COMPUTE)
-  include(HyleComputeDependencies)
-  hyle_configure_compute_dependencies()
-endif()
-
 # ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored build integration
 # currently covers x86_64 Windows/Linux/macOS and arm64 Linux/macOS.  The

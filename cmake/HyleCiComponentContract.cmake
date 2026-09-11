@@ -123,8 +123,7 @@ _hyle_contract_run("explicit-empty component selection" FALSE
   -DHYLE_COMPONENTS:STRING=
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
-  -DHYLE_IO_TLS=OFF
-  -DHYLE_COMPUTE_CUDA=OFF)
+  -DHYLE_IO_TLS=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "HYLE_COMPONENTS is explicitly empty")
   message(FATAL_ERROR
     "explicit-empty selection failed for the wrong reason:\n"
@@ -227,8 +226,7 @@ _hyle_contract_run("Core rejects unconsumed trace feature" FALSE
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_INSTALL=ON
-  -DHYLE_IO_TLS=OFF
-  -DHYLE_COMPUTE_CUDA=OFF)
+  -DHYLE_IO_TLS=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "selected component closure has no trace-aware")
   message(FATAL_ERROR
@@ -347,8 +345,7 @@ foreach(_core_linkage IN ITEMS shared static)
     -DHYLE_BUILD_BENCH=OFF
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${_core_static}
-    -DHYLE_IO_TLS=OFF
-    -DHYLE_COMPUTE_CUDA=OFF)
+    -DHYLE_IO_TLS=OFF)
   _hyle_contract_run("install isolated ${_core_linkage} Core SDK" TRUE
     "${CMAKE_COMMAND}" --install "${_core_sdk_build}" --config Release)
   file(RENAME "${_core_sdk_staging_prefix}" "${_core_sdk_prefix}"
@@ -528,10 +525,7 @@ _hyle_contract_run("maintainer all selects every implemented IO factor" TRUE
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_INSTALL=OFF
   -DHYLE_IO_TLS=OFF
-  -DHYLE_IO_HTTP2=OFF
-  -DHYLE_COMPUTE_CUDA=OFF
-  -DHYLE_COMPUTE_VULKAN=OFF
-  -DHYLE_COMPUTE_GGML=OFF)
+  -DHYLE_IO_HTTP2=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "resolved='[^']*io_tls[^']*io_http[^']*io_http2[^']*io_transfer")
   message(FATAL_ERROR
@@ -653,7 +647,6 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_IO_TLS OFF)\n"
-"set(HYLE_COMPUTE_CUDA OFF)\n"
 "set(HYLE_SANITIZER NONE)\n"
 "set(HYLE_DEP_SOURCE_CACHE \"${HYLE_SMOKE_ROOT}/shared-source-cache\")\n"
 "set(HYLE_DEP_BUILD_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
@@ -790,9 +783,6 @@ file(WRITE "${_transport_source}/CMakeLists.txt"
 "set(HYLE_INSTALL OFF)\n"
 "set(HYLE_IO_TLS OFF)\n"
 "set(HYLE_IO_HTTP2 OFF)\n"
-"set(HYLE_COMPUTE_CUDA OFF)\n"
-"set(HYLE_COMPUTE_GGML OFF)\n"
-"set(HYLE_COMPUTE_VULKAN OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "include(\"${_hyle_direct_public_edge_helper}\")\n"
 "get_directory_property(_hyle_fcontext_supported\n"
@@ -908,9 +898,6 @@ file(WRITE "${_first_declare_parent}/CMakeLists.txt"
 "set(HYLE_INSTALL OFF)\n"
 "set(HYLE_IO_TLS OFF)\n"
 "set(HYLE_IO_HTTP2 OFF)\n"
-"set(HYLE_COMPUTE_CUDA OFF)\n"
-"set(HYLE_COMPUTE_GGML OFF)\n"
-"set(HYLE_COMPUTE_VULKAN OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n")
 _hyle_contract_run("locked source overrides arbitrary first declaration" TRUE
   "${CMAKE_COMMAND}" -S "${_first_declare_parent}"

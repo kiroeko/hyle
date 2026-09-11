@@ -13,7 +13,7 @@
 3. **受锁源码闭包**：首选搬运联网准备机用 `HyleDependencyCacheTool.cmake sync` 生成的完整共享源码
    cache；也可把 lock commit 的干净 Git checkout，或 lock 内官方 archive 的原样展开树，放在 HYLE
    根目录内的 `deps/<lock-name>/`，由 `hyle-offline-deps.cmake` 验证并映射；
-4. **系统 SDK/运行时**：OpenSSL、CUDA Toolkit/driver、Vulkan loader/ICD 等。这些由
+4. **系统 SDK/运行时**：OpenSSL 及未来 GPU backend 的 SDK/driver 等。这些由
    `find_package()`、toolchain/sysroot 或运行环境提供，不属于 FetchContent bundle。
 
 选择 `simd` 或 `container` 时必须提供锁定 Highway；选择 `simd` 还必须提供锁定 xsimd。它们是由
@@ -39,9 +39,6 @@ benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免产品输
 | `simd`，或任何传递依赖它的组件 | `highway/`、`xsimd/` |
 | `HYLE_BUILD_TESTS=ON` | `googletest/` |
 | 有 sched/fcontext 且 `HYLE_IO_HTTP2=ON` | `nghttp2/` |
-| QUEUED Compute 旧 `HYLE_COMPUTE_GGML=ON` baseline | `ggml/` |
-| QUEUED Compute 旧 `HYLE_COMPUTE_VULKAN=ON` baseline | `vulkan_headers/`、`volk/` |
-| 上述旧 Vulkan baseline 且 tests/bench 打开 | 再加 `glslang/` |
 | `HYLE_TRACE=ON` | `tracy/`（映射为 `HYLE_TRACY_DIR`） |
 
 目录名必须使用中央 lock 的 `name`；FetchContent 项与声明名一致，Tracy 则是映射到
@@ -55,10 +52,6 @@ hyle/
     xsimd/
     googletest/
     nghttp2/
-    ggml/
-    vulkan_headers/
-    volk/
-    glslang/
     tracy/            # 仅 trace 构建
 ```
 
@@ -103,18 +96,9 @@ manifest。两种形状都核对许可证；通过后才设置标准
 
 ### 首选：校验并展开官方 archive（离线机无需 Git）
 
-从 lock 读取 `archive.url`、`archive.sha256` 和 `expanded_tree_sha256`。先下载 archive 并核对传输
-SHA-256，再把唯一的顶层目录剥掉，原样展开到 `deps/<lock-name>/`。下面 ggml 命令只展示
-2026-08-25 当前 lock 的介质制作形状；lock 改动后必须重新读取值，不能把文档示例当第二份 pin：
-
-```bash
-curl -L -o ggml.tar.gz \
-  https://codeload.github.com/ggml-org/ggml/tar.gz/8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b
-echo '3623ae4195577c11795f035baa602fcb282b80aa9d91be024874b5023eb1d0b5  ggml.tar.gz' \
-  | sha256sum --check
-mkdir -p deps/ggml
-tar -xzf ggml.tar.gz --strip-components=1 -C deps/ggml
-```
+从 lock 读取所需依赖的 `archive.url`、`archive.sha256` 和 `expanded_tree_sha256`。先下载 archive 并
+核对传输 SHA-256，再把唯一的顶层目录剥掉，原样展开到 `deps/<lock-name>/`。不要把文档示例写成
+第二份 pin；优先在联网准备机运行 `HyleDependencyCacheTool.cmake sync`，再搬运它生成并验证的目录。
 
 不要在展开后运行格式化、换行转换、补文件或删“无用”目录。manifest 以排序后的三类记录计算：目录；
 `path-hex + raw-file-SHA256`；`path-hex + original-relative-link-target-hex`。路径和链接目标拒绝控制字符，
@@ -122,21 +106,15 @@ tar -xzf ggml.tar.gz --strip-components=1 -C deps/ggml
 增加/删除/改写文件、增加空目录或改变 symlink 都会失败。mtime、owner 和 Unix mode 不进入展开树 hash，
 以便同一官方 archive 可在 Windows/Unix 复证；这些传输元数据仍由 archive SHA-256 保护。
 
-ggml 当前官方 archive 含安全相对链接 `.pi/SYSTEM.md -> gg/SYSTEM.md`。Windows 上须使用能保留 symlink
-的文件系统/解包工具；若安全策略把它扁平化或禁止创建，展开树会按设计不匹配，此时改用下节精确 Git
-checkout，不要手工伪造。传输前后还应对整个介质 manifest 再做 SHA-256。
-
 ### 备选：精确干净 Git checkout
 
-从 lock 读取每项 `repository` 和 `revision`，克隆后 detach 到精确 commit并保留 `.git`。例如：
+从 lock 读取每项 `repository` 和 `revision`，克隆后 detach 到精确 commit 并保留 `.git`。对每个目录运行：
 
 ```bash
-git clone https://github.com/ggml-org/ggml.git deps/ggml
-git -C deps/ggml checkout --detach 8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b
-git -C deps/ggml rev-parse HEAD
-git -C deps/ggml rev-parse 'HEAD^{tree}'
-git -C deps/ggml status --porcelain=v1 --untracked-files=all
-git -C deps/ggml ls-files --others --ignored --exclude-standard
+git -C deps/<lock-name> rev-parse HEAD
+git -C deps/<lock-name> rev-parse 'HEAD^{tree}'
+git -C deps/<lock-name> status --porcelain=v1 --untracked-files=all
+git -C deps/<lock-name> ls-files --others --ignored --exclude-standard
 ```
 
 后两条必须都输出空字符串。ignored generated/cache 文件仍可能被上游 CMake glob 或 include 优先级
@@ -226,9 +204,7 @@ Homebrew cellar 目录不是可迁移 SDK 包。若要 TLS/Vulkan 等可选能�
 cmake -C hyle-offline-deps.cmake --preset linux \
   -DHYLE_COMPONENTS=all -DHYLE_BUILD_TESTS=ON \
   -DHYLE_BUILD_BENCH=OFF -DHYLE_INSTALL=OFF -DHYLE_WERROR=ON \
-  -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=OFF \
-  -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_GGML=OFF \
-  -DHYLE_COMPUTE_VULKAN=OFF
+  -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=OFF
 cmake --build --preset linux --target hyle_tests --parallel 2
 ctest --preset linux --output-on-failure
 ```
@@ -239,17 +215,16 @@ Windows Ninja 的等价入口：
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
   -C hyle-offline-deps.cmake -DHYLE_COMPONENTS=all -DHYLE_BUILD_TESTS=ON `
   -DHYLE_BUILD_BENCH=OFF -DHYLE_INSTALL=OFF -DHYLE_WERROR=ON `
-  -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=OFF `
-  -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_GGML=OFF -DHYLE_COMPUTE_VULKAN=OFF
+  -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=OFF
 scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --target hyle_tests --parallel 2
 scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 ```
 
 制作不含测试的 CPU SDK 时可设 `HYLE_BUILD_TESTS=OFF`，此时连 googletest/Python 也不需要。若启用
-HTTP/2 或 TLS 时，按上表补齐依赖并把开关明确设为 `ON`。ggml/Vulkan/CUDA 目前只为具名 Compute
-baseline task 开启；未来 backend/provider 的离线合同以其新 factor closure card 为准。
+HTTP/2 或 TLS 时，按上表补齐依赖并把开关明确设为 `ON`。未来 backend/provider 的离线合同只在其
+factor closure card 通过后加入。
 
-OpenSSL、CUDA Toolkit、Vulkan loader/ICD/driver 是环境 SDK 或运行时，不是会被 HYLE 编译进产品的
+OpenSSL 及未来 GPU SDK/driver 是环境 SDK 或运行时，不是会被 HYLE 编译进产品的
 源码 checkout，因此不写伪 commit、也不放进 `deps/`。它们必须由已审查的离线安装介质、toolchain/
 sysroot/`CMAKE_PREFIX_PATH` 提供，并在验收记录实际版本。Tracy 不同：`TracyClient.cpp` 会直接编入
 HYLE，所以属于 lock 管理的源码依赖，不能接受任意 `HYLE_TRACY_DIR`。

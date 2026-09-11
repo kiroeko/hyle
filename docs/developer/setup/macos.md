@@ -1,7 +1,6 @@
 # macOS 环境准备（Apple Silicon）
 
-> ARM/NEON + kqueue 真机验证平台。**无 NVIDIA GPU → CUDA 后端不编**；未来主要 GPU 路线是原生
-> Metal backend；推理纵切首先资格化 MLX provider，再审计 MPSGraph/MPS。
+> ARM/NEON + kqueue 真机验证平台。
 > 覆盖：构建 / 测试 / 性能测试 + 依赖。本仓库有两个独立 Apple Silicon 验证环境：MacBook Air
 > `Mac16,12`（`ssh kiro@172.22.10.198`）与 Mac mini `Mac16,10`
 >（`ssh kiro@172.22.10.107`）。`M1-MAC` 性能 profile 当前只指前者；后者在单独登记身份前只作
@@ -31,7 +30,7 @@ ssh -i C:\Users\kiro\.ssh\codex_mac_172_22_10_107_win kiro@172.22.10.107
 | Ninja *或* make | 二选一 | `brew install ninja`（若无 ninja 用 `-G "Unix Makefiles"`） |
 
 - clang 在 `/Library/Developer/CommandLineTools/usr/bin/clang{,++}`。
-- 选择 `platform`（以及依赖它的 mem/simd/container/sched/compute）时，macOS deployment target
+- 选择 `platform`（以及依赖它的 mem/simd/container/sched）时，macOS deployment target
   必须 ≥14.4；Parker/address wait 使用该版本才公开的系统接口。HYLE 顶层构建未指定时默认
   14.4；嵌入父工程时请在 `add_subdirectory(hyle)` 前设置
   `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` 或更高，低版本会在 configure 阶段明确失败。
@@ -49,14 +48,11 @@ scripts/hyle-unix.sh /opt/homebrew/bin/cmake --preset macos
 scripts/hyle-unix.sh /opt/homebrew/bin/cmake --build --preset macos --parallel 2
 ```
 
-- 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2、trace 和 QUEUED Compute 的旧
-  ggml/Vulkan/CUDA gate 都是 `OFF`，首次配置只通过 FetchContent 取得 googletest。显式开启 HTTP/2
-  或在具名 Compute baseline 中开启 ggml/Vulkan，才会把对应锁定源码放到
+- 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2 和 trace 都是 `OFF`。首次配置通过
+  FetchContent 取得所选闭包与 googletest 的锁定源码。显式开启 HTTP/2 才会把 nghttp2 放到
   `$HOME/Library/Caches/hyle/dependencies/v1`（或显式
   `HYLE_DEP_SOURCE_CACHE`）。每个 build tree 的 `_deps` 只保存自己的 binary/subbuild；删掉 build
   不会删源码，后续 build 不重新下载。
-- CUDA 保持 `OFF`，配置不会探测 Toolkit；ggml 默认也不构建。旧 baseline 显式开启 ggml 时，macOS
-  形状是 CPU-only，且不构建未消费的 Metal/BLAS backend；这不代表未来 MLX-first 路线的交付合同。
 
 ## 三、测试
 
@@ -100,55 +96,3 @@ scripts/fetch-bench-vendors.sh
 ## 六、可选依赖
 
 - **OpenSSL**：`brew install openssl@3`，配置时 `-DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
-- **CUDA**：mac 无 NVIDIA GPU，不适用。
-
-## 七、QUEUED Vulkan 资产的 MoltenVK 验证环境
-
-Vulkan 是未来 Compute 面向消费级设备的正式保底路线，不是实验产品；但 Apple 的主要路线是
-MLX-first provider + 原生 Metal backend/custom-kernel escape hatch，macOS 上的 Vulkan 只能经 MoltenVK 等
-translation layer。`compute` 当前仍为 `QUEUED`，
-所以下面只复现旧 Vulkan 资产的 portability 环境，不构成新 backend 正确性、性能或交付结论。
-
-**装（brew，一次）**：
-
-```bash
-/opt/homebrew/bin/brew install molten-vk vulkan-loader vulkan-tools
-```
-
-- `molten-vk` → `/opt/homebrew/lib/libMoltenVK.dylib` + ICD manifest `…/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json`。
-- `vulkan-loader` → `/opt/homebrew/lib/libvulkan.dylib`（volk dlopen 的就是它）。
-- `vulkan-tools` → `vulkaninfo`（验证用）。
-- HYLE 侧 **Vulkan-Headers + volk 仍走锁定 FetchContent**（source 在共享 cache，binary/subbuild 在当前
-  build 的 `_deps`）；
-  glslang 仅在 tests/benchmark 配置中生成测试 shader。brew 只提供 **loader + MoltenVK ICD**
-  （driver 层，HYLE 不 vendor），不提供编译期头。
-
-**验证 MoltenVK 通**（应枚举出 Apple GPU、driverID = MoltenVK）：
-
-```bash
-/opt/homebrew/bin/vulkaninfo --summary | grep -E "deviceName|driverName"
-#   deviceName = Apple M4
-#   driverName = MoltenVK
-```
-
-**跑 HYLE Vulkan 测试**：
-
-```bash
-export PATH=/opt/homebrew/bin:$PATH
-cd ~/hyle
-/opt/homebrew/bin/cmake --preset macos -B build-macos-vulkan \
-  -DHYLE_COMPUTE_VULKAN=ON
-/opt/homebrew/bin/cmake --build build-macos-vulkan \
-  --target hyle_compute_vulkan_test --parallel 2
-./build-macos-vulkan/bin/hyle_compute_vulkan_test  # VulkanCompute.SaxpyEndToEnd
-```
-
-- ⚠️ **loader 找不到 ICD**（vulkaninfo 报 0 device / 测试 SKIP）时，显式指 ICD：
-  `export VK_ICD_FILENAMES=$(ls /opt/homebrew/Cellar/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json | head -1)`。
-  brew 装完通常已把 manifest 放进 loader 默认搜索路径（`/opt/homebrew/etc/vulkan/icd.d` / `/opt/homebrew/share/vulkan/icd.d`），无需手设。
-- ⚠️ **portability 扩展（旧资产行为）**：`vulkan_backend.cc` 会探测
-  `VK_KHR_portability_enumeration/subset`。新 Vulkan factor 可以复用这条已知事实，但仍须重新验证
-  instance/device、driver 和失败语义。
-- ⚠️ **MoltenVK 不支持全部 Vulkan 特性**；旧 storage-buffer/push-constant dispatch 可作回归输入，
-  新能力仍须查其[支持矩阵](https://github.com/KhronosGroup/MoltenVK)并单独资格化。
-- 未装 MoltenVK 时：`volkInitialize()` 找不到 loader → Vulkan 后端 `vulkan_vtable()` 返回 null → `hyle_compute_vulkan_test` 运行时 `GTEST_SKIP`（不崩，优雅降级）。

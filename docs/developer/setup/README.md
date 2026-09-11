@@ -10,15 +10,15 @@
 
 | 平台 | 文件 | 角色 |
 |---|---|---|
-| Windows（MSVC / clang-cl） | [`windows.md`](windows.md) | MSVC 主构建 + clang-cl 可移植性门；CUDA 真机只用于具名 Compute baseline |
+| Windows（MSVC / clang-cl） | [`windows.md`](windows.md) | MSVC 主构建 + clang-cl 可移植性门 |
 | Linux / WSL（GCC14） | [`linux-wsl.md`](linux-wsl.md) | **lock-free TSan 唯一闸门**；Linux 执行环境与 GPU 路径；不是独立物理性能机；9p 铁律 |
-| macOS（Apple Silicon） | [`macos.md`](macos.md) | ARM/NEON + kqueue 真机；CUDA-free，可复现 QUEUED Vulkan/MoltenVK 资产 |
+| macOS（Apple Silicon） | [`macos.md`](macos.md) | ARM/NEON + kqueue 真机 |
 
 依赖（跨平台，可选能力）单独一文件：
 
 | 主题 | 文件 |
 |---|---|
-| 外部依赖（OpenSSL / CUDA / ggml / nghttp2 / Vulkan / googletest）怎么装、哪些必需哪些可选 | [`dependencies.md`](dependencies.md) |
+| 外部依赖（OpenSSL / nghttp2 / Highway / xsimd / googletest）怎么装、哪些必需哪些可选 | [`dependencies.md`](dependencies.md) |
 | 无网/隔离网机器怎样准备工具链、SDK 与完整依赖源码包 | [`offline.md`](offline.md) |
 
 ## 最小心智模型（读任何平台文件前先懂这个）
@@ -26,14 +26,13 @@
 HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 1. **硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）**：C++ 编译器（GCC14+ / Clang18+ / MSVC19.43+）、CMake 3.25+、一个 CMake generator，以及所选组件需要的汇编器（MASM/GAS）。根 `project()` 只启用 CXX；`HYLE_BUILD_TESTS=OFF` 时只有所选闭包含 mem/mimalloc 才按需要求 C 编译器。开启测试会进入 GoogleTest 自己的 CMake project，并可能同时探测 C frontend。Ninja 只是可选 generator；Visual Studio/Unix Makefiles/Xcode 也可用。这些**不自动装**，人得先装好——见各平台文件第一节。
-2. **自动拉取（联网自动，无需人工）**：Highway、xsimd、`googletest`、`nghttp2`、`ggml`、
-   Vulkan-Headers、volk、glslang 和按需 Tracy 由所选组件/feature 触发——新机器首次 `cmake` 会自动
+2. **自动拉取（联网自动，无需人工）**：Highway、xsimd、`googletest`、`nghttp2` 和按需 Tracy
+   由所选组件/feature 触发——新机器首次 `cmake` 会自动
    取得到跨 build 的 `HYLE_DEP_SOURCE_CACHE`；当前 build 的 `_deps` 只保存 binary/subbuild
    （[`dependencies.md` §FetchContent](dependencies.md)）。离线时搬运同一工具生成的完整 cache，或用
    根目录 `hyle-offline-deps.cmake` 注入逐项已审查源码。
-3. **可选能力（显式契约）**：已验收 IO 的 TLS 使用 `AUTO|ON|OFF`、HTTP/2 使用 `ON|OFF`。旧
-   Compute 树仍可能声明 CUDA/ggml/Vulkan gate，但 `compute` 当前为 `QUEUED`，它们只用于新一轮
-   baseline/audit，不能当成受支持产品能力或未来 option 设计。`HYLE_TRACE` 只在所选闭包有 trace
+3. **可选能力（显式契约）**：已验收 IO 的 TLS 使用 `AUTO|ON|OFF`、HTTP/2 使用 `ON|OFF`。
+   `HYLE_TRACE` 只在所选闭包有 trace
    consumer 时出现，`HYLE_TRACY_DIR` 是 trace 开启后才出现的可选受审源码覆盖；正式 CI/交付必须
    写死已验收能力集合。
 
@@ -47,9 +46,8 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
   build tree 复用且不重新下载。隔离网交付由发行方搬运该受管 cache，或准备可审计的
   `deps/<FetchContent-name>/` 源码闭包。
 - **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装 SDK/MSVC ABI 环境；Linux/WSL/macOS 的 `scripts/hyle-unix.sh` 只从已安装 compiler 中选择并预检 floor，再原样执行给它的命令。两者都不安装或持久修改系统工具链。
-- **第 3 类中的系统 SDK 不自动**：OpenSSL 及未来受审 backend 所需的 CUDA Toolkit/driver 等重量级、
-  机器相关依赖只按具名任务安装；HTTP/2 源码和 QUEUED Compute baseline 所需的 ggml/Vulkan 源码仍按
-  第 2 类取得。文档给出确切边界（[`dependencies.md`](dependencies.md)）。
+- **第 3 类中的系统 SDK 不自动**：OpenSSL 及未来受审 backend 所需的 GPU SDK/driver 等重量级、
+  机器相关依赖只按具名任务安装。文档给出确切边界（[`dependencies.md`](dependencies.md)）。
 
 ## 验证一切就绪（各平台通用终点）
 
@@ -65,9 +63,8 @@ scripts/hyle-unix.sh ctest --preset <linux|macos>
 cmake --preset <windows-vs2026|windows>
 ```
 
-这些 preset 的开发 feature contract 相同：顶层默认选择 `HYLE_COMPONENTS=all`；已验收的昂贵
-TLS/HTTP2/trace feature，以及只供 QUEUED Compute baseline 使用的 CUDA/ggml/Vulkan gate 都保持
-默认 OFF，所以是 CPU baseline。它们不强迫 Unix 使用 Ninja。父工程若通过 `add_subdirectory()` 嵌入 HYLE，则必须在调用前显式设置
+这些 preset 的开发 feature contract 相同：顶层默认选择 `HYLE_COMPONENTS=all`；昂贵的
+TLS/HTTP2/trace feature 默认 OFF。它们不强迫 Unix 使用 Ninja。父工程若通过 `add_subdirectory()` 嵌入 HYLE，则必须在调用前显式设置
 `HYLE_COMPONENTS`，不会继承顶层的隐式 `all`。
 
 普通测试默认 `HYLE_TEST_INSTRUMENTATION=OFF`，因此验证 shipping layout/hot path；只有要覆盖
@@ -78,8 +75,7 @@ cache 轮流改值来冒充两份证据。
 MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`；安装 clang-cl 18+ 后可用同一 wrapper +
 `windows-clangcl` 在独立 build tree 做可移植性复核。
 
-- 看配置日志确认已选择 owner 的可选能力状态；旧 Compute gate 即使仍可见，也不能解读为 shipping
-  capability。
+- 看配置日志确认已选择 owner 的可选能力状态。
 - lock-free 改动**必须**过 WSL TSan（[`linux-wsl.md`](linux-wsl.md)）。
 - 性能数字**必须**在原生文件系统（非 9p / 非网络盘）跑，见各平台「性能测试」节。
 - correctness、engineering 与 formal 的机器角色以

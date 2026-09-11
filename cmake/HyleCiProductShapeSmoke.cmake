@@ -44,8 +44,7 @@ _hyle_product_shape_run("configure production-shape tests"
   -DHYLE_TEST_INSTRUMENTATION=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_WERROR=ON
-  -DHYLE_IO_TLS=OFF
-  -DHYLE_COMPUTE_CUDA=OFF)
+  -DHYLE_IO_TLS=OFF)
 _hyle_product_shape_run("build production-shape tests"
   "${CMAKE_COMMAND}" --build "${_hyle_build}" --config Release
   --target hyle_tests

@@ -145,14 +145,14 @@
       "id": "buffer-view-range-fill-64",
       "tier": "consumer",
       "gate_role": "product",
-      "consumer_key": "compute/kernel/nonzero-buffer-view",
-      "provenance": {"path": "include/hyle/compute/kernel.h", "sha256": "23901a56949f18666a811ee838f4667e50b02271e91de062e98de4b50a7b4459"},
+      "consumer_key": "mem/buffer/nonzero-buffer-view",
+      "provenance": {"path": "include/hyle/mem/buffer.h", "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"},
       "ownership_topology": {
         "candidate": "One HYLE Buffer owner lends checked BufferView subviews and the public view dispatches one synchronous fill to its resource",
         "peer": "A fused lower-bound helper borrows the same owner and performs the same validity/range/overflow Status checks before the identical one resource fill dispatch",
         "equivalence": "Owner, native handle, offsets, sizes, error categories, provider calls, touched bytes and teardown are identical; only materialization of the public view Result is under test"
       },
-      "material_contribution": {"frequency": 64, "value": 1, "unit": "validated-buffer-range-operation", "budget": 5, "denominator": "one 256 KiB transient buffer range-fill batch", "derivation": "The typed Compute shell consumes Mem views with native handle/offset/size; 3-4 KiB ranges are an ordinary scratch-clear shape rather than a sub-nanosecond accessor microbenchmark"},
+      "material_contribution": {"frequency": 64, "value": 1, "unit": "validated-buffer-range-operation", "budget": 5, "denominator": "one 256 KiB transient buffer range-fill batch", "derivation": "The public Mem buffer contract exposes views with resource identity/native handle/offset/size; 3-4 KiB ranges are an ordinary scratch-clear shape rather than a sub-nanosecond accessor microbenchmark"},
       "semantic_contract": "Validate and synchronously fill 64 non-zero 3-4 KiB ranges of one warm resource Buffer",
       "comparability": "COMPARABLE",
       "peer_id": "hyle-lower-bound",

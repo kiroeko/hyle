@@ -1,7 +1,7 @@
 # Linux correctness + package/install/downstream smoke for locked optional
-# product sources.  Unlike the cross-platform CPU package smoke, this enables
-# the private ggml/nghttp2/Vulkan closure once per CI revision and exercises its
-# real module adapters before producing static/shared SDKs.  A separate small
+# product sources. Unlike the cross-platform CPU package smoke, this enables
+# the private nghttp2 closure once per CI revision and exercises its real IO
+# adapter before producing static/shared SDKs. A separate small
 # obs-only shape compiles and consumes the exact locked Tracy trace-on surface.
 # The ordinary shared-source resolver prepares every official archive and
 # expanded tree. This smoke deliberately does not carry a second downloader:
@@ -51,7 +51,7 @@ set(_hyle_feature_smoke_dependencies "")
 if(HYLE_FEATURE_SMOKE_SCOPE STREQUAL "all" OR
    HYLE_FEATURE_SMOKE_SCOPE STREQUAL "adapters")
   list(APPEND _hyle_feature_smoke_dependencies
-    highway ggml nghttp2 vulkan_headers volk glslang googletest)
+    highway nghttp2 googletest)
 endif()
 if(HYLE_FEATURE_SMOKE_SCOPE STREQUAL "all" OR
    HYLE_FEATURE_SMOKE_SCOPE STREQUAL "trace")
@@ -69,8 +69,8 @@ if(DEFINED HYLE_SMOKE_GENERATOR AND
 endif()
 
 # Package-only probes prove closure/export mechanics, but they cannot detect an
-# adapter that still compiles while misusing the upgraded library.  Build and
-# run exactly the three real feature-owned tests once; do not replicate the
+# adapter that still compiles while misusing the upgraded library. Build and
+# run the real feature-owned test once; do not replicate the
 # complete heavy test tree for both static and shared package shapes.
 function(_hyle_feature_smoke_correctness)
   set(_build "${HYLE_SMOKE_ROOT}/feature-correctness-build")
@@ -80,7 +80,7 @@ function(_hyle_feature_smoke_correctness)
     "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}" -B "${_build}"
     ${_generator_args}
     -DCMAKE_BUILD_TYPE=Release
-    -DHYLE_COMPONENTS=io,compute
+    -DHYLE_COMPONENTS=io
     -DHYLE_BUILD_TESTS=ON
     -DHYLE_TEST_INSTRUMENTATION=OFF
     -DHYLE_BUILD_BENCH=OFF
@@ -89,25 +89,16 @@ function(_hyle_feature_smoke_correctness)
     -DHYLE_WERROR=ON
     -DHYLE_IO_TLS=OFF
     -DHYLE_IO_HTTP2=ON
-    -DHYLE_COMPUTE_CUDA=OFF
-    -DHYLE_COMPUTE_GGML=ON
-    -DHYLE_COMPUTE_GGML_NATIVE=OFF
-    -DHYLE_COMPUTE_VULKAN=ON
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
     -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=${_highway_source}
-    -DFETCHCONTENT_SOURCE_DIR_GGML=${_ggml_source}
     -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source}
-    -DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=${_vulkan_headers_source}
-    -DFETCHCONTENT_SOURCE_DIR_VOLK=${_volk_source}
-    -DFETCHCONTENT_SOURCE_DIR_GLSLANG=${_glslang_source}
     -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${_googletest_source})
   _hyle_feature_smoke_run("build locked feature adapter tests"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2
-    --target hyle_io_http2_test hyle_compute_ggml_bridge_test
-             hyle_compute_vulkan_test)
+    --target hyle_io_http2_test)
   _hyle_feature_smoke_run("run locked feature adapter tests"
     "${CMAKE_CTEST_COMMAND}" --test-dir "${_build}" -C Release
-    -R "^(hyle_io_http2_test|hyle_compute_ggml_bridge_test|hyle_compute_vulkan_test)$"
+    -R "^hyle_io_http2_test$"
     --output-on-failure)
 endfunction()
 
@@ -124,7 +115,7 @@ function(_hyle_feature_smoke_shape shape is_static)
     ${_generator_args}
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX=${_prefix}
-    -DHYLE_COMPONENTS=io,compute
+    -DHYLE_COMPONENTS=io
     -DHYLE_BUILD_TESTS=OFF
     -DHYLE_BUILD_BENCH=OFF
     -DHYLE_INSTALL=ON
@@ -132,22 +123,9 @@ function(_hyle_feature_smoke_shape shape is_static)
     -DHYLE_WERROR=ON
     -DHYLE_IO_TLS=OFF
     -DHYLE_IO_HTTP2=ON
-    -DHYLE_COMPUTE_CUDA=OFF
-    -DHYLE_COMPUTE_GGML=ON
-    -DHYLE_COMPUTE_GGML_NATIVE=OFF
-    -DHYLE_COMPUTE_VULKAN=ON
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
     -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=${_highway_source}
-    -DFETCHCONTENT_SOURCE_DIR_GGML=${_ggml_source}
-    -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source}
-    -DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=${_vulkan_headers_source}
-    -DFETCHCONTENT_SOURCE_DIR_VOLK=${_volk_source})
-
-  if(IS_DIRECTORY "${_build}/_deps/glslang-build" OR
-     IS_DIRECTORY "${_build}/_deps/glslang-subbuild")
-    message(FATAL_ERROR
-      "Feature package smoke fetched test-only glslang in a production SDK build")
-  endif()
+    -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source})
 
   _hyle_feature_smoke_run("build locked ${shape} feature SDK"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2)
@@ -161,19 +139,10 @@ function(_hyle_feature_smoke_shape shape is_static)
   set(_prefix "${_relocated_prefix}")
 
   set(_required_installs
-    "bin/hyle_shader.py"
-    "share/licenses/Hyle/ggml-LICENSE"
-    "share/licenses/Hyle/nghttp2-LICENSE"
-    "share/licenses/Hyle/volk-LICENSE.md"
-    "share/licenses/Hyle/Vulkan-Headers/LICENSE.md"
-    "share/licenses/Hyle/Vulkan-Headers/Apache-2.0.txt"
-    "share/licenses/Hyle/Vulkan-Headers/MIT.txt")
+    "share/licenses/Hyle/nghttp2-LICENSE")
   set(_static_development_installs
-    "include/ggml.h"
     "include/nghttp2/nghttp2.h"
-    "include/nghttp2/nghttp2ver.h"
-    "include/hyle/vendor/volk/volk.h"
-    "include/hyle/vendor/volk/vulkan/vulkan.h")
+    "include/nghttp2/nghttp2ver.h")
   if(is_static)
     list(APPEND _required_installs ${_static_development_installs})
   endif()
@@ -191,35 +160,25 @@ function(_hyle_feature_smoke_shape shape is_static)
       endif()
     endforeach()
   endif()
-  file(GLOB_RECURSE _installed_entries LIST_DIRECTORIES TRUE
-    RELATIVE "${_prefix}" "${_prefix}/*")
-  foreach(_installed_entry IN LISTS _installed_entries)
-    string(TOLOWER "${_installed_entry}" _installed_entry_lower)
-    if(_installed_entry_lower MATCHES "glslang")
-      message(FATAL_ERROR
-        "Test-only glslang leaked into the production SDK: ${_installed_entry}")
-    endif()
-  endforeach()
-
   file(MAKE_DIRECTORY "${_consumer_source}")
   file(WRITE "${_consumer_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_locked_feature_consumer LANGUAGES CXX)\n"
-"find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS io compute)\n"
+"find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS io)\n"
 "if(NOT Hyle_STATIC STREQUAL \"${is_static}\")\n"
 "  message(FATAL_ERROR \"installed linkage mismatch: Hyle_STATIC=\${Hyle_STATIC}\")\n"
 "endif()\n"
-"foreach(_feature IN ITEMS io_http2 compute_ggml compute_vulkan)\n"
+"foreach(_feature IN ITEMS io_http2)\n"
 "  if(NOT _feature IN_LIST Hyle_AVAILABLE_FEATURES)\n"
 "    message(FATAL_ERROR \"missing installed HYLE feature: \${_feature}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_target IN ITEMS hyle::io hyle::compute)\n"
+"foreach(_target IN ITEMS hyle::io)\n"
 "  if(NOT TARGET \${_target})\n"
 "    message(FATAL_ERROR \"missing installed HYLE target: \${_target}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_target IN ITEMS hyle::_nghttp2_static hyle::_ggml hyle::_ggml_base hyle::_ggml_cpu hyle::_volk)\n"
+"foreach(_target IN ITEMS hyle::_nghttp2_static)\n"
 "  if(${is_static} AND NOT TARGET \${_target})\n"
 "    message(FATAL_ERROR \"static SDK omitted private closure target: \${_target}\")\n"
 "  elseif(NOT ${is_static} AND TARGET \${_target})\n"
@@ -228,17 +187,13 @@ function(_hyle_feature_smoke_shape shape is_static)
 "endforeach()\n"
 "add_executable(hyle_locked_feature_consumer main.cc)\n"
 "target_compile_features(hyle_locked_feature_consumer PRIVATE cxx_std_23)\n"
-"target_link_libraries(hyle_locked_feature_consumer PRIVATE hyle::io hyle::compute)\n"
+"target_link_libraries(hyle_locked_feature_consumer PRIVATE hyle::io)\n"
 "hyle_stage_runtime_dependencies(hyle_locked_feature_consumer)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_locked_feature_consumer COMMAND hyle_locked_feature_consumer)\n")
   file(WRITE "${_consumer_source}/main.cc"
 "#include <hyle/io/http2.h>\n"
 "#include <hyle/mem/allocator.h>\n"
-"#include <hyle/compute/device.h>\n"
-"#include <hyle/compute/ggml_bridge.h>\n"
-"#include <cstddef>\n"
-"#include <cstring>\n"
 "#if !defined(HYLE_IO_HTTP2)\n"
 "#error installed io_http2 feature did not propagate its public compile contract\n"
 "#endif\n"
@@ -246,16 +201,6 @@ function(_hyle_feature_smoke_shape shape is_static)
 "  auto client = hyle::io::Http2ClientSession::create(\n"
 "      hyle::mem::system_allocator(), hyle::io::TcpStream{});\n"
 "  if (client.has_value()) return 1;\n"
-"  hyle::compute::Device devices[32];\n"
-"  const auto count = hyle::compute::enumerate(devices, 32);\n"
-"  if (count == 0 || hyle::compute::enumerate(nullptr, 7) != count) return 2;\n"
-"  const hyle::compute::Device* host = nullptr;\n"
-"  for (std::size_t i = 0; i < count && i < 32; ++i) {\n"
-"    if (std::strcmp(devices[i].backend(), \"host\") == 0) host = &devices[i];\n"
-"  }\n"
-"  if (host == nullptr) return 3;\n"
-"  auto backend = hyle::compute::GgmlBackend::create(*host, 1);\n"
-"  if (!backend.has_value() || !backend->valid()) return 4;\n"
 "  return 0;\n"
 "}\n")
 
@@ -294,10 +239,7 @@ function(_hyle_feature_smoke_tracy shape is_static)
     -DHYLE_TRACE=ON
     -DHYLE_TRACY_DIR=${_tracy_source}
     -DHYLE_IO_TLS=OFF
-    -DHYLE_IO_HTTP2=OFF
-    -DHYLE_COMPUTE_CUDA=OFF
-    -DHYLE_COMPUTE_GGML=OFF
-    -DHYLE_COMPUTE_VULKAN=OFF)
+    -DHYLE_IO_HTTP2=OFF)
   _hyle_feature_smoke_run("build locked Tracy ${shape} SDK"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2)
   _hyle_feature_smoke_run("install locked Tracy ${shape} SDK"

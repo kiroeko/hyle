@@ -1,7 +1,7 @@
 # Linux / WSL 环境准备（GCC14 + Sanitizer）
 
 > **lock-free 代码的 TSan 唯一闸门在这**（Windows 跑不了 TSan）。本仓库开发用 WSL Ubuntu 24.04。
-> 覆盖：构建 / 测试 / 性能测试 + TSan + 9p 铁律 + 依赖（OpenSSL、CUDA）。
+> 覆盖：构建 / 测试 / 性能测试 + TSan + 9p 铁律 + 依赖（OpenSSL）。
 > 无网机器的 repository mirror、依赖介质与断网验收见 [`offline.md`](offline.md)。
 
 ## 一、硬门槛
@@ -48,18 +48,14 @@ Windows 共享同一物理主机，不是独立性能机，也不能替代 nativ
 
 ```bash
 cd /root/hyle   # 原生 ext4，不是 /mnt/c
-export PATH=/usr/local/cuda/bin:$PATH   # 非交互 shell 缺 cuda bin（见下 CUDA 节）
 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
-  -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_GGML=OFF \
-  -DHYLE_COMPUTE_VULKAN=OFF
+  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 cmake --build build
 ```
 
-- 这条命令使用默认 `all` + tests，但显式关闭 QUEUED Compute 的旧 backend gates；TLS、HTTP/2 和
-  trace 仍保持默认 `OFF`。首次配置只通过 FetchContent 取得 googletest。
-  显式开启 HTTP/2、ggml 或 Vulkan 后才会取得各自的锁定源码。删除 build 只删除本 build 的
+- 这条命令使用默认 `all` + tests；TLS、HTTP/2 和 trace 保持默认 `OFF`。首次配置只通过
+  FetchContent 取得所选闭包与 googletest 的锁定源码。显式开启 HTTP/2 才会取得 nghttp2。删除 build 只删除本 build 的
   binary/subbuild；共享源码保留，toolchain 状态不会跨 build 混用。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
 
@@ -70,10 +66,6 @@ cd /root/hyle
 ./build/bin/hyle_sched_test        # 单个
 ctest --test-dir build --output-on-failure   # 全部
 ```
-
-- **旧 Compute GPU baseline**：WSL 有 CUDA 直通（RTX 4070）。只有 Compute 重构 task 明确要求复现
-  旧资产时，才另开隔离 build 并显式设置旧 CUDA/ggml gates；结果不能签发新产品能力，运行前仍需
-  `export PATH=/usr/local/cuda/bin:$PATH`。
 
 ## 五、TSan（lock-free / 并发改动必过）
 
@@ -91,8 +83,6 @@ setarch -R ./build-tsan/bin/hyle_sched_test    # -R 关 ASLR，稳定 TSan
   `-fsanitize=thread` 编译；并发压力测试直接使用 shipping
   `system_allocator()`，不再绕到 malloc。旧版的启动断言和回收地址假 race 已在升级复验中消失，
   因此新的 sanitizer 报告不能按历史 KI-2/KI-3 自动忽略，必须按真实缺陷调查。
-- **TSan 用无 CUDA 构建**（CUDA + TSan 不合）：显式设置 `-DHYLE_COMPUTE_CUDA=OFF`。旧 ggml bridge
-  只有在 Compute closure card 具名要求时才进入单独 baseline，不能顺手扩大普通 sanitizer 闭包。
 
 ## 六、性能测试（bench）
 
@@ -122,8 +112,3 @@ sudo apt install libssl-dev          # 24.04 上 3.0.13
 CC=gcc-14 CXX=g++-14 cmake --preset linux -B build-linux-tls \
   -DHYLE_COMPONENTS=io -DHYLE_IO_TLS=ON
 ```
-
-### CUDA（GPU 后端）
-- 本仓库统一 **CUDA 13.3**，WSL 装 toolkit 用 NVIDIA `wsl-ubuntu` apt 源（toolkit-only，别装会毁 GPU 直通的 Linux 驱动）。`nvcc` 在 `/usr/local/cuda-13.3/bin`（软链 `/usr/local/cuda`）。
-- ⚠️ **非交互 login shell（`wsl.exe -e bash -lc`）PATH 里没有 nvcc**——用绝对路径 `/usr/local/cuda/bin/nvcc` 或先 `export PATH=/usr/local/cuda/bin:$PATH`。
-- cuDNN/TensorRT 在 `cuda/repos/ubuntu2404` 源（当前里程碑不需要），装法与 apt pin 见 `reference_cuda_env`。

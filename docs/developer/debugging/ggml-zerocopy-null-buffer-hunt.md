@@ -2,7 +2,10 @@
 
 > 调查日志（已结案）。这是 compute-05 找回正确设计的**决定性调试**——历时两阶段、5+ 次失败尝试、裸 ggml 最小复现 + WSL gdb 逐行坐实，最终**推翻了 compute-design 发现 2「HYLE 显存零拷贝注入 ggml 算子」的整个愿景**，定下 [`../architecture/borrowing-ggml-memory-model.md`](../../architecture/borrowing-ggml-memory-model.md) 的边界：**host 归 HYLE、device 归 ggml，就像 llama.cpp。**
 >
-> 关联：[`ggml_bridge.cc`](../../../src/compute/ggml_bridge.cc)、[`ggml_bridge_test.cc`](../../../tests/compute/ggml_bridge_test.cc)、compute-design「发现 2」（被本篇彻底修正）、[`../architecture/borrowing-ggml-memory-model.md`](../../architecture/borrowing-ggml-memory-model.md)（本篇结论的正式化）。
+> 关联：旧实现只在 Git 基线 `1621b284` 中保留，可用
+> `git show 1621b284:src/compute/ggml_bridge.cc` 与
+> `git show 1621b284:tests/compute/ggml_bridge_test.cc` 查阅；正式边界见
+> [`borrowing-ggml-memory-model.md`](../../architecture/borrowing-ggml-memory-model.md)。
 
 ## 0. 结论先行
 

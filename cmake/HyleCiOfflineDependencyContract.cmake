@@ -35,10 +35,6 @@ configure_file("${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake"
 set(_locked_consumer_specs
   "cmake/HyleSimdDependencies.cmake|highway"
   "cmake/HyleSimdDependencies.cmake|xsimd"
-  "cmake/HyleComputeDependencies.cmake|ggml"
-  "cmake/HyleComputeDependencies.cmake|vulkan_headers"
-  "cmake/HyleComputeDependencies.cmake|volk"
-  "cmake/HyleComputeDependencies.cmake|glslang"
   "cmake/HyleIoDependencies.cmake|nghttp2"
   "tests/CMakeLists.txt|googletest")
 foreach(_spec IN LISTS _locked_consumer_specs)

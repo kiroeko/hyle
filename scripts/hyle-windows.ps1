@@ -299,10 +299,7 @@ switch ($Action) {
             -DHYLE_BUILD_TESTS=OFF `
             -DHYLE_BUILD_BENCH=OFF `
             -DHYLE_IO_TLS=OFF `
-            -DHYLE_IO_HTTP2=OFF `
-            -DHYLE_COMPUTE_CUDA=OFF `
-            -DHYLE_COMPUTE_GGML=OFF `
-            -DHYLE_COMPUTE_VULKAN=OFF
+            -DHYLE_IO_HTTP2=OFF
         if ($LASTEXITCODE -eq 0) {
             & cmake "-DHYLE_SOURCE_DIR=$sourceDir" `
                 "-DHYLE_PACKAGE_BUILD=$packageBuild" `

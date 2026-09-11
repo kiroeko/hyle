@@ -13,10 +13,10 @@
       "fact": "The relocated C++ journey uses Heap allocator injection, BufferPool reuse, mapping and LifetimePlan through the public Mem facade."
     },
     {
-      "role": "compute-buffer-view-consumer",
-      "path": "include/hyle/compute/kernel.h",
-      "sha256": "23901a56949f18666a811ee838f4667e50b02271e91de062e98de4b50a7b4459",
-      "fact": "The typed kernel shell consumes Buffer, BufferView and ConstBufferView and preserves native handle, offset and size without owning storage."
+      "role": "public-buffer-view-product",
+      "path": "include/hyle/mem/buffer.h",
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c",
+      "fact": "The public BufferView and ConstBufferView preserve resource identity, native handle, offset and size without owning storage."
     },
     {
       "role": "fixed-external-scratch-product",

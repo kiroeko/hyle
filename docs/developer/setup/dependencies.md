@@ -9,21 +9,14 @@
 | C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
 | **Highway** | **自动拉取**（FetchContent） | 选择 `simd` 或 `container` 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `18e449b6…`；只执行 HYLE 自己的 target/package 集成 |
 | **xsimd** | **自动拉取**（FetchContent） | 选择 `simd` 时与 Highway 一起取得；严格离线 cache/bundle 缺源码则配置失败 | lock pin `3b3151ff…`；用于锁定的 SIMD provider 路由 |
-| **ggml** | **QUEUED Compute 的锁定候选源码** | 只有旧 compute gate 或未来经审计的 provider 选择它时取得；不是当前受支持产品要求 | lock pin `v0.21.0`，新 provider 开工前必须重验版本/API |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
 | **nghttp2** | **自动拉取**（FetchContent） | io + sched/fcontext 且启用 HTTP/2 时取得 | lock pin `v1.70.0` |
-| **volk + Vulkan-Headers** | **QUEUED Compute 的锁定候选源码** | 旧 Vulkan gate 开启时取得；正式 Vulkan backend 重构后仍须按新 factor/版本重新裁决 | 同属 `vulkan-sdk-1.4.357.0`，lock 内两个精确 commit |
-| **glslang** | 旧 Compute 测试/benchmark shader 工具 | 旧 Vulkan tests/bench 打开时才拉取；不证明未来生产 SDK 需要它 | 同属 `vulkan-sdk-1.4.357.0` |
 | **Tracy** | 启用 trace 时自动取得的外部源码树 | `HYLE_TRACE=ON` 才取得并编译；任意/脏/被改写的覆盖源码会配置失败 | lock pin `v0.14.1`；`HYLE_TRACY_DIR` 仍可显式覆盖 |
-| **Vulkan loader + ICD/driver** | 未来正式 Vulkan backend 的宿主运行时 | 旧实现无 loader 时不可用；新合同要求明确 capability/失败，不继承旧 null-vtable 语义 | 由宿主 SDK/driver 提供，不进入源码 lock |
 | **OpenSSL 3.0+** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失或低于 3.0 即配置失败 | `find_package(OpenSSL 3.0 QUIET)` |
-| **CUDA Toolkit** | 未来主要 CUDA backend 的宿主 SDK | 旧 gate 可探测它；新 CUDA factor 尚未签发，普通已支持组件不需要 | `find_package(CUDAToolkit)` 候选，精确合同待审 |
-| **Metal SDK + Apple providers** | 未来 Apple 主要路线 | Metal SDK 随 Apple toolchain；MLX 是首个待资格化 provider，当前尚未签发；MPSGraph/MPS 后续逐能力审计，Core ML 暂属模型级 routed runtime | 宿主 SDK + 可能的锁定 MLX provider source |
-| **ROCm / HIP SDK** | 必须补齐的 AMD 路线 | 当前无合格实现；不能用 Vulkan 或 CUDA 宏替换冒充 | 宿主 SDK/toolchain，精确发现合同待审 |
 
 **“可选能力 = 可选依赖”铁律**：已签发 feature 的 ON 要求依赖存在，OFF 不探测；正式 SDK/CI 写死
-能力集合，避免环境暗中改变产物。QUEUED Compute 的现有选项只是待迁移 baseline，不为新架构冻结名称、
-默认值或降级语义。
+能力集合，避免环境暗中改变产物。尚未实现的 backend/provider 不提供预留开关或恒失败 target；待其
+独立 closure card 审计后再登记依赖。
 
 ---
 
@@ -40,10 +33,12 @@ SHA-256，in-tree snapshot 登记 vendored content tree，修改后并入产品�
 
 - Highway `18e449b6…`（`simd` 与选定 `container` kernel 的直接产品源码）；
 - xsimd `3b3151ff…`（`simd` 的锁定 provider 源码）；
-- ggml `v0.21.0`；
 - nghttp2 `v1.70.0`；
-- Vulkan-Headers、volk、glslang 同一 `vulkan-sdk-1.4.357.0` train；
 - googletest `v1.18.0`。
+
+中央 lock 可能暂存未来 Compute backend/provider 的候选身份，但没有 active consumer 的条目不是产品
+依赖，也不应加入普通离线 bundle。采用前必须由对应 factor 重新核对上游版本、API、许可证和展开树；
+setup 文档不会把候选 pin 当作已支持能力。
 
 在线取得使用 lock 中的官方 codeload archive，并由 CMake `URL_HASH SHA256=...` 在展开前验证；commit
 仍是源码身份，archive SHA-256 是传输身份，两者不能互相代替。in-tree 快照（mimalloc `v3.5.1`、
@@ -87,7 +82,7 @@ binary/subbuild 只进入当前 build 的 `HYLE_DEP_BUILD_DIR`。删除 build tr
 **离线/已审查源码**：用 FetchContent 标准 override 给每个依赖注入源码，而不是共享另一个 build tree：
 
 ```bash
-cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
+cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=/approved/highway
 ```
 
 这个标准变量不是绕过 lock 的后门：全部 locked consumer 都经统一 wrapper，在 `MakeAvailable` 前接受两种且仅两种
@@ -96,7 +91,7 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
 “第一次声明胜出”也不能绕过：wrapper 会复验 `MakeAvailable` 实际使用的 source，父工程同名预声明若
 不是 locked identity，整个 HYLE configure 失败。父 CMake/toolchain 是可执行信任根；这里保证最终产品
 不能带着错误身份成功生成，并不把父脚本当成可沙箱执行的数据。其他名字同理：
-`HIGHWAY`、`XSIMD`、`GOOGLETEST`、`NGHTTP2`、`VOLK`、`VULKAN_HEADERS`、`GLSLANG`。
+`HIGHWAY`、`XSIMD`、`GOOGLETEST`、`NGHTTP2`。
 benchmark 对手的 sibling checkout 根使用环境变量 `HYLE_BENCH_DEPS_DIR`；它刻意不是
 `HYLE_DEP_SOURCE_CACHE` 或 `HYLE_DEP_BUILD_DIR`，也不参与产品 dependency population。仓库内旧
 `.deps/` 已删除；不要恢复一个同时装 source/build/subbuild 的模糊目录。
@@ -134,12 +129,8 @@ hyle-offline-deps.cmake
 deps/
   highway/         # 选择 simd 或 container 时需要
   xsimd/           # 选择 simd 时需要
-  ggml/
   nghttp2/
-  vulkan_headers/
-  volk/
   googletest/       # 构建 tests 时需要
-  glslang/          # 构建 compute tests/bench 时需要
   tracy/            # 仅 HYLE_TRACE=ON 时需要
 ```
 
@@ -148,7 +139,7 @@ cmake -C hyle-offline-deps.cmake \
   -S hyle-<version>-source -B build -DHYLE_COMPONENTS=all
 ```
 
-目录名必须使用 lock 名，例如 `vulkan_headers` 而不是 `Vulkan-Headers`。脚本强制
+目录名必须使用中央 lock 的精确小写 `name`。脚本强制
 `FETCHCONTENT_FULLY_DISCONNECTED=ON` 与 `FETCHCONTENT_UPDATES_DISCONNECTED=ON`；缺少已启用 feature 的
 源码会直接失败，不会回退联网。lock 的 expanded-tree hash 使官方 codeload 解压目录无需携带 `.git`；
 传输 archive 仍先核对其独立 SHA-256。只有组织使用不同但由外部系统独立证明的展开源码时，才可在 preload
@@ -157,30 +148,14 @@ cmake -C hyle-offline-deps.cmake \
 override 也不能自我声明为已证明。
 完整准备命令和风险边界见 [`offline.md`](offline.md)。
 `HYLE_BUILD_TESTS=OFF` 且不触达 Tracy 的 core/error-only 选择允许没有 `deps/`；这不是降级，所需
-源码集合为空且断网门仍为 ON。后来启用 tests、trace 或 HTTP/2 时，对应预期本地路径缺失会立即失败；
-ggml/Vulkan 只有具名 QUEUED Compute baseline 才应开启。
+源码集合为空且断网门仍为 ON。后来启用 tests、trace 或 HTTP/2 时，对应预期本地路径缺失会立即失败。
 
-OpenSSL、CUDA Toolkit、Vulkan loader/driver 属于宿主 SDK/运行时：它们由 `find_package()`、toolchain、
+OpenSSL 及未来 GPU backend 使用的 SDK/driver 属于宿主 SDK/运行时：它们由 `find_package()`、toolchain、
 sysroot 或 driver 提供，不能用某个源码 commit 冒充机器环境 pin。正式构建应固定 feature ON/OFF，并在
 构建证明中记录实际发现版本；这类 SDK 不放进 FetchContent source bundle。
 
 从零准备 Windows/Linux/macOS 工具链、系统 SDK、依赖介质并做真实断网验收，见
 [`offline.md`](offline.md)。
-
-### QUEUED Compute 的旧依赖门
-
-`HyleComputeDependencies.cmake`、`HYLE_COMPUTE_GGML[_NATIVE]`、`HYLE_COMPUTE_CUDA` 与
-`HYLE_COMPUTE_VULKAN` 当前描述旧实现的可复现 baseline。它们可以在资产审计中显式打开，但不能用于
-宣传当前 Compute 支持，也不冻结未来 factor 或 option 形状。旧 graph/compute target 对 Sched/fcontext
-的公开依赖同样待重构；新设计要求 direct Compute core 不因 coroutine convenience 强制取得 Sched。
-
-新架构将 Apple 的 MLX-first provider + 原生 Metal backend/custom-kernel escape hatch 与 NVIDIA 的
-CUDA backend + providers 作为主要路线；Vulkan 是正式消费级保底路线，Apple 经 MoltenVK 只作
-portability；另有明确的
-HIP/ROCm 缺口。每个 backend/provider factor 只有在 closure card 完成 capability、ownership、threading、
-source/static/shared 与真机资格后，才会在本页升级为正常安装说明。
-
----
 
 ## OpenSSL（io-08 TLS，可选）
 
@@ -193,20 +168,3 @@ TLS 是三态能力，当前默认 `OFF`：`AUTO` 自动发现 OpenSSL 3.0+，`O
   `AUTO`，但正式 SDK/CI 应固定为 `ON` 或 `OFF`。
 - **Windows**：无系统级 MSVC OpenSSL 开发库，用 **vcpkg**（详见 [`windows.md`](windows.md) 依赖节）。
 - 运行 TLS 测试要 OpenSSL 的 DLL 在 PATH（Windows）——见平台文件。
-
----
-
-## CUDA Toolkit（QUEUED Compute baseline）
-
-旧 `HYLE_COMPUTE_CUDA=AUTO|ON|OFF` 仍可用于复现待审源码；它不是新 CUDA backend 的已接受配置
-合同。运行旧资产需要匹配的 CUDA runtime/driver/NVRTC，安装型 artifact 仍必须显式记录 architecture。
-
-- **本仓库统一 CUDA 13.3**（RTX 4070 / sm_89）。Windows toolkit 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`；WSL 在 `/usr/local/cuda-13.3`（软链 `/usr/local/cuda`）。装法见平台文件。
-- **编译/链接不需要 PATH**（CMake 走 `find_package`）；**运行 GPU 测试**要 CUDA runtime DLL 在 PATH（Windows）。
-- **mac 无 NVIDIA GPU**；未来主要路线是 MLX-first provider + 原生 Metal backend/custom-kernel
-  escape hatch。
-
-## cuDNN / TensorRT（当前不属于产品依赖）
-
-当前已支持 HYLE 组件不需要 cuDNN/TensorRT。未来只有具名 CUDA provider task 裁决为 `BORROW` 后，
-才增加版本、发现、license、artifact 和 runtime 说明；本机装有 SDK 不是准入证据。

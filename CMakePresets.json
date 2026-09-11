@@ -93,20 +93,9 @@
       }
     },
     {
-      "name": "windows-cuda",
-      "displayName": "Windows local CUDA development",
-      "description": "Explicit local-GPU build. native is correct here because this is not an installable SDK; packages must name their CUDA architectures.",
-      "inherits": "windows-ninja",
-      "binaryDir": "${sourceDir}/build-windows-cuda",
-      "cacheVariables": {
-        "HYLE_COMPUTE_CUDA": "ON",
-        "CMAKE_CUDA_ARCHITECTURES": "native"
-      }
-    },
-    {
       "name": "package-feature-shared",
-      "displayName": "Portable feature SDK (shared, CUDA-free)",
-      "description": "Deterministic all-component SDK input: tests/bench, trace, sanitizer, TLS, CUDA, native ggml tuning, and exact-ISA specialization are explicitly OFF; HTTP/2, ggml, and Vulkan are explicitly ON.",
+      "displayName": "Portable feature SDK (shared)",
+      "description": "Deterministic all-component SDK input: tests/bench, trace, sanitizer, TLS, and exact-ISA specialization are explicitly OFF; HTTP/2 is explicitly ON.",
       "binaryDir": "${sourceDir}/build-package-feature-shared",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -119,11 +108,7 @@
         "HYLE_TRACE": "OFF",
         "HYLE_SIMD_EXACT_TARGET": "",
         "HYLE_IO_TLS": "OFF",
-        "HYLE_IO_HTTP2": "ON",
-        "HYLE_COMPUTE_CUDA": "OFF",
-        "HYLE_COMPUTE_GGML": "ON",
-        "HYLE_COMPUTE_GGML_NATIVE": "OFF",
-        "HYLE_COMPUTE_VULKAN": "ON"
+        "HYLE_IO_HTTP2": "ON"
       }
     },
     {
@@ -178,10 +163,7 @@
         "HYLE_BUILD_BENCH": "OFF",
         "HYLE_WERROR": "ON",
         "HYLE_IO_TLS": "OFF",
-        "HYLE_IO_HTTP2": "OFF",
-        "HYLE_COMPUTE_CUDA": "OFF",
-        "HYLE_COMPUTE_GGML": "OFF",
-        "HYLE_COMPUTE_VULKAN": "OFF"
+        "HYLE_IO_HTTP2": "OFF"
       }
     }
   ],
@@ -195,7 +177,6 @@
     { "name": "win", "configurePreset": "win", "configuration": "Release" },
     { "name": "wsl", "configurePreset": "wsl", "configuration": "Release" },
     { "name": "wsl-tsan", "configurePreset": "wsl-tsan", "configuration": "RelWithDebInfo" },
-    { "name": "windows-cuda", "configurePreset": "windows-cuda", "configuration": "Release" },
     { "name": "package-feature-shared", "configurePreset": "package-feature-shared", "configuration": "Release" },
     { "name": "package-feature-static", "configurePreset": "package-feature-static", "configuration": "Release" },
     { "name": "bench", "configurePreset": "bench", "configuration": "Release" },

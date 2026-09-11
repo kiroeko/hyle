@@ -34,7 +34,6 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`04_prebuilt_lib/`](04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
 | [`05_installed_sdk/`](05_installed_sdk/) | 构建/集成 | source-independent C++ package consumer：普通 mem/STL/PMR journey 与全部 advertised imported targets |
 | [`06_installed_io_http2/`](06_installed_io_http2/) | io + HTTP/2 | source-independent C++ feature consumer：原生 HTTP/2 seam 与 static/shared 私有协议依赖闭包 |
-| [`07_installed_compute/`](07_installed_compute/) | compute C++ API | 消费 CPU/CUDA、shared/static compute package；枚举真实 backend，并验证 ggml/volk/CUDA 传递闭包无需源码 checkout |
 | [`08_inference_service/`](08_inference_service/) | platform + mem + util + sched + io + simd + obs | 公开 C++ API 的真实 HTTP 服务纵切：模型映射、backend 选择、REST/SSE、指标与关闭；用假计算暴露仍需用户手写的通用胶水 |
 | [`package/container/intrusive/cpp/`](package/container/intrusive/cpp/) | container / intrusive journey | source-independent C++ package consumer：通过 `hyle::container` 使用 auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |

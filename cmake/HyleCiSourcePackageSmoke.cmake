@@ -102,10 +102,7 @@ _hyle_source_run("configure extracted source package"
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_WERROR=ON
   -DHYLE_IO_TLS=OFF
-  -DHYLE_IO_HTTP2=OFF
-  -DHYLE_COMPUTE_CUDA=OFF
-  -DHYLE_COMPUTE_GGML=OFF
-  -DHYLE_COMPUTE_VULKAN=OFF)
+  -DHYLE_IO_HTTP2=OFF)
 _hyle_source_run("build extracted source package"
   "${CMAKE_COMMAND}" --build "${_consumer_build}" --config Release
   --parallel 2)
