@@ -261,10 +261,14 @@ _hyle_declare_component(io_transfer
   PUBLIC_DEPS core error io_core io_tls mem sched container_text
   PUBLIC_TYPE_DEPS io_tls
   SPLIT_PUBLIC_HEADERS hyle/io/transfer.h)
-# The legacy Compute/Graph products were deliberately removed before the clean
-# rebuild. Keep their append-only identities reserved, but do not manufacture
-# targets or consumer products until the audited replacement sources exist.
-_hyle_declare_component(compute QUEUED)
+# Compute v1 is the dependency-light CPU execution/operation factor. Public
+# tensor bindings directly expose Error and Mem types; checked shape arithmetic,
+# intrusive runtime ownership and the selected SIMD leaf route remain private.
+_hyle_declare_component(compute
+  PRIVATE_DEPS math simd util_core
+  PUBLIC_DEPS core error mem)
+# Graph remains deliberately absent until its clean tensor-DAG vertical slice
+# exists; retaining the append-only identity does not manufacture a target.
 _hyle_declare_component(graph QUEUED)
 # Container's consumer-facing product remains one facade, while independent
 # factors own concurrency, handoff and text dependencies. Public include paths
@@ -381,6 +385,7 @@ _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
+_hyle_declare_product(compute FACTORS compute)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream

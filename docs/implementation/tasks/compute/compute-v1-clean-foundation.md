@@ -21,8 +21,8 @@
   custom-kernel direct path；为 one-op Graph 暴露稳定的窄编译/提交合同；
 - non-goals：兼容旧 Device/Stream/Event/DevicePool/GgmlBackend/Kernel API；完整算子目录；CUDA、Metal、
   MLX、MPSGraph、Vulkan、HIP/ROCm；Graph 多节点编译；Native FFI；重开已关闭依赖；
-- 直接依赖：候选为 `core`、`error`、`mem`，`platform`/`simd` 只在实现确实需要时登记窄 PRIVATE 边；
-  不因 coroutine convenience 公开依赖 Sched；
+- 直接依赖：公开边为 `core`、`error`、`mem`；实现边为 `math`、`simd`、`util_core`，分别复用 checked
+  shape 算术、叶子核和 intrusive runtime ownership；不因 coroutine convenience 公开依赖 Sched；
 - 直接消费者：本轮 `graph` one-op 纵切及独立 source/static/shared C++ consumer；
 - 性能 tier 与原因：`P1`；RMSNorm 叶子与 prepared-submit dispatch 是真实重复热路，先做 P0 静态成本，
   再与相同 storage/layout/precision 的直接 SIMD/native route 对拍；
@@ -75,13 +75,13 @@ memory factories、`GgmlBackend`/`FfnBlock` 重复或越过 owner；`KernelArgs`
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| C01 | 9 个旧公开头、8 个实现 TU、旧 tests/bench/sample 反向定义产品 | 删除全部旧字节；不建 legacy/reference/compat 目录 | 全树负扫描无旧 API/target/test/sample | 待处理 |
-| C02 | registry 为待建，中央 CMake 却构造旧 product，并下载 ggml/Vulkan/CUDA 依赖 | 把 manifest、root dependency gate、package/CI/setup 合同改为新 CPU factor；后续 backend 不提前下载 | `compute` 精确选择只取得声明依赖，旧 option 不再是产品入口 | 待处理 |
-| C03 | 旧全局 stream/poller 无显式 owner 与有界 teardown | 全新实现 CPU `Device/Context/Queue/Completion` 和 close/drain | 生命周期、move、并发 Context、迟到 completion 测试 | 待处理 |
-| C04 | 旧 kernel 参数把 storage 退化为 `void*` | 全新实现 `DataType/TensorDesc/ConstTensorView/TensorView`，直接组合 Mem views | rank/overflow/stride/size/domain/alias 边界测试 | 待处理 |
-| C05 | 热路混合 route、compile、launch | 全新实现 typed RMSNorm descriptor、capability、`PreparedOperation` 与 SIMD/reference routes | prepare 后零 heap、零 route search；完整数值/失败差分 | 待处理 |
-| C06 | 无模型偏置的 custom compute 只有裸参数袋 | 提供 CPU-only typed host submit；语义明确为 return 前完成 | compile-time misuse 与 SAXPY journey | 待处理 |
-| C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 待处理 |
+| C01 | 9 个旧公开头、8 个实现 TU、旧 tests/bench/sample 反向定义产品 | 删除全部旧字节；不建 legacy/reference/compat 目录 | 全树负扫描无旧 API/target/test/sample | 完成：`f5581e82` 删除 14,756 行，Git 历史是唯一字节来源 |
+| C02 | registry 为待建，中央 CMake 却构造旧 product，并下载 ggml/Vulkan/CUDA 依赖 | 把 manifest、root dependency gate、package/CI/setup 合同改为新 CPU factor；后续 backend 不提前下载 | `compute` 精确选择只取得声明依赖，旧 option 不再是产品入口 | 进行中：CPU factor/product 已登记，Windows exact-factor configure/build 通过；三种 package journey 待 C08 |
+| C03 | 旧全局 stream/poller 无显式 owner 与有界 teardown | 全新实现 CPU `Device/Context/Queue/Completion` 和 close/drain | 生命周期、move、并发 Context、迟到 completion 测试 | 完成实现；Windows move/close/retained-handle/OOM 测试通过，跨平台矩阵待 C07 |
+| C04 | 旧 kernel 参数把 storage 退化为 `void*` | 全新实现 `DataType/TensorDesc/ConstTensorView/TensorView`，直接组合 Mem views | rank/overflow/stride/size/domain/alias 边界测试 | 完成实现；Windows rank/zero/scalar/overflow/stride/range/alias 测试通过 |
+| C05 | 热路混合 route、compile、launch | 全新实现 typed RMSNorm descriptor、capability、`PreparedOperation` 与 SIMD/reference routes | prepare 后零 heap、零 route search；完整数值/失败差分 | 完成实现：prepare 缓存 route/count，submit 复用 SIMD；数值、weighted、in-place、coherence/provider failure 通过 |
+| C06 | 无模型偏置的 custom compute 只有裸参数袋 | 提供 CPU-only typed host submit；语义明确为 return 前完成 | compile-time misuse 与 SAXPY journey | 完成实现；nothrow void/Status callable、同步完成和 closed-queue 测试通过 |
+| C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 进行中：新需求测试与 header isolation 在 Windows 通过；Linux/macOS 与 sanitizers 待跑 |
 | C08 | 旧 sample、setup、package smoke 和 guide 宣称旧功能 | 重写 Compute 用户页、package consumer 和选择/限制说明 | source/static/shared consumer 使用同一 API | 待处理 |
 | C09 | 没有同合同 one-op 抽象成本结论 | API 稳定后做 P0 静态账单、短 preflight 与一次 P1 | 不存在无法解释的 material 固定输 | 待处理 |
 
@@ -98,8 +98,8 @@ auto context = HYLE_TRY(hyle::compute::Context::create(
 auto queue = HYLE_TRY(context.create_queue());
 auto desc = HYLE_TRY(hyle::compute::TensorDesc::dense(
     hyle::compute::DataType::kFloat32, shape));
-auto prepared = HYLE_TRY(context.prepare(
-    hyle::compute::RmsNorm{.epsilon = 1e-5F}, {desc}, {desc}));
+auto prepared = HYLE_TRY(hyle::compute::prepare(
+    context, hyle::compute::RmsNorm{.epsilon = 1e-5F}, desc, desc));
 auto completion = HYLE_TRY(prepared.submit(
     queue, input_views, output_views));
 HYLE_TRY(completion.wait());
@@ -113,8 +113,9 @@ HYLE_TRY(completion.wait());
 - 普通重复路线是 prepare-once/submit-many；一次性 convenience 若以后加入，名称必须披露冷路径。
 - CPU v1 queue 是 caller-thread、in-order、同步完成：无 heap、lock、atomic、thread handoff 或隐藏 copy；
   `Completion` 仍作为统一生命周期结果。typed host submit 同样在返回前运行，因此不捕获 callable。
-- prepared submit 允许一次预绑定函数调用；不允许 provider 搜索、JIT、元数据分配、字符串 lookup 或
-  storage mapping。RMSNorm 接受 dense contiguous f32 row，允许 input/output 完全同址，不允许其它 overlap。
+- prepared submit 允许一次预绑定函数调用；不允许 provider 搜索、JIT、元数据分配、字符串 lookup、隐藏
+  staging 或 copy。CPU 路线仍通过 Mem 的显式 host map/coherence 合同取得存储。RMSNorm 接受 dense
+  contiguous f32 row，允许 input/output 完全同址，不允许其它 overlap。
 - 默认 device 只可由显式 `Device::cpu()` 取得；本轮不提供环境相关 `default_device()`。缺能力返回
   `Unimplemented/FailedPrecondition`，OOM 保留 `ResourceExhausted`。
 - source/static/shared 都以 `hyle::compute` product 和公开头发现；Native FFI 为 N/A。

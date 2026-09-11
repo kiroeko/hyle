@@ -74,10 +74,9 @@ include(HyleTargetPlatform)
 include(HyleDependencyVersions)
 include(HyleDependencyCache)
 
-# Resolve platform capability before the component graph. The current public
-# io/compute/graph surfaces expose sched types, so selecting any of them also
-# selects sched. A future review may split genuinely sched-free product roots;
-# the present graph must not advertise a partial shape its headers cannot ship.
+# Resolve platform capability before the component graph. Sched and its current
+# IO consumers require fcontext; the clean Compute CPU factor is deliberately
+# sched-free and Graph remains unimplemented.
 set(HYLE_FCONTEXT_SUPPORTED FALSE)
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(MSVC OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
