@@ -60,6 +60,7 @@ constexpr std::uint16_t kHandshakeRejectionPort = 54536;
 constexpr std::uint16_t kFrameRejectionPort = 54537;
 constexpr std::uint16_t kDeadlinePort = 54539;
 constexpr std::uint16_t kCancelPort = 54540;
+constexpr std::uint16_t kAbandonPort = 54541;
 #if defined(HYLE_IO_TLS)
 constexpr std::uint16_t kTlsPort = 54538;
 #endif
@@ -75,6 +76,8 @@ void drive_entry(void *context) noexcept {
 struct JourneyResult {
   std::atomic<bool> server_ok{false};
   std::atomic<bool> client_ok{false};
+  std::atomic<bool> server_owner_ok{false};
+  std::atomic<bool> client_owner_ok{false};
   std::atomic<unsigned> client_ping_callbacks{0};
   std::atomic<unsigned> server_pong_callbacks{0};
 };
@@ -147,8 +150,10 @@ Task<int> journey_server(AllocatorRef allocator, TcpListener *listener,
   if (!upgraded)
     co_return 0;
   WebSocketConnection socket = std::move(*upgraded);
-  if (socket.selected_subprotocol() != "hyle.tokens.v1")
+  if (socket.selected_subprotocol() != "hyle.tokens.v1" ||
+      socket.owner_worker() != kOwner || socket.is_client())
     co_return 0;
+  result->server_owner_ok.store(true, std::memory_order_release);
 
   std::array<std::byte, 8192> input{};
   std::array<std::size_t, 3> expected_sizes{6, 126, 65536};
@@ -238,9 +243,16 @@ Task<int> journey_client(AllocatorRef allocator, IoContext *io,
     co_return 0;
   WebSocketConnection socket = std::move(*connected);
   if (!socket.is_client() ||
-      socket.selected_subprotocol() != "hyle.tokens.v1") {
+      socket.selected_subprotocol() != "hyle.tokens.v1" ||
+      socket.owner_worker() != kOwner) {
     co_return 0;
   }
+  result->client_owner_ok.store(true, std::memory_order_release);
+
+  static constexpr std::array<std::byte, 1> kUnsolicitedPong{
+      static_cast<std::byte>('u')};
+  if (!(co_await socket.pong(kUnsolicitedPong)).ok())
+    co_return 0;
 
   // Validation before a first frame is recoverable: convenience helpers must
   // not poison a healthy connection merely because caller input is too large.
@@ -270,15 +282,19 @@ Task<int> journey_client(AllocatorRef allocator, IoContext *io,
   if (!writer_result)
     co_return 0;
   auto writer = std::move(*writer_result);
+  *writer_result = std::move(writer);
+  if (writer.valid() || !writer_result->valid())
+    co_return 0;
   if (socket.start_message(WebSocketMessageType::kBinary))
     co_return 0;
   Status competing_ping = co_await socket.ping();
   if (competing_ping.code() != StatusCode::FailedPrecondition)
     co_return 0;
-  if (!(co_await writer.write(std::span<const std::byte>(text).first(2), false))
+  if (!(co_await writer_result->write(
+            std::span<const std::byte>(text).first(2), false))
            .ok() ||
-      !(co_await writer.write(std::span<const std::byte>(text).subspan(2),
-                              true))
+      !(co_await writer_result->write(
+            std::span<const std::byte>(text).subspan(2), true))
            .ok()) {
     co_return 0;
   }
@@ -330,8 +346,10 @@ TEST(IoWebSocket, StreamingMaskLengthsControlAndClose) {
 
   EXPECT_TRUE(result->server_ok.load(std::memory_order_acquire));
   EXPECT_TRUE(result->client_ok.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->server_owner_ok.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->client_owner_ok.load(std::memory_order_acquire));
   EXPECT_EQ(result->client_ping_callbacks.load(std::memory_order_acquire), 1u);
-  EXPECT_EQ(result->server_pong_callbacks.load(std::memory_order_acquire), 1u);
+  EXPECT_EQ(result->server_pong_callbacks.load(std::memory_order_acquire), 2u);
 }
 
 struct PrefetchResult {
@@ -795,6 +813,7 @@ struct BudgetResult {
   std::atomic<bool> client_ready{false};
   std::atomic<bool> done{false};
   std::atomic<StatusCode> status{StatusCode::Unknown};
+  bool abandon_writer = false;
   WebSocketConnection held_server;
 };
 
@@ -839,6 +858,18 @@ Task<int> budget_client(AllocatorRef allocator, IoContext *io,
     co_return 0;
   WebSocketConnection socket = std::move(*connected);
   result->client_ready.store(true, std::memory_order_release);
+  if (result->abandon_writer) {
+    {
+      auto writer = socket.start_message(WebSocketMessageType::kBinary);
+      if (!writer || !writer->valid())
+        co_return 0;
+    }
+    result->status.store(socket.valid() ? StatusCode::Unknown
+                                        : StatusCode::FailedPrecondition,
+                         std::memory_order_release);
+    result->done.store(true, std::memory_order_release);
+    co_return 0;
+  }
   std::array<std::byte, 8> bytes{};
   Result<hyle::io::WebSocketReadResult> read =
       co_await socket.read_some(bytes, options);
@@ -907,6 +938,17 @@ TEST(IoWebSocket, ReadCancellationSettlesAStalledPeer) {
   EXPECT_TRUE(result.done.load(std::memory_order_acquire));
   EXPECT_EQ(result.status.load(std::memory_order_acquire),
             StatusCode::Cancelled);
+}
+
+TEST(IoWebSocket, DroppingUnfinishedWriterInvalidatesConnection) {
+  BudgetResult result;
+  result.abandon_writer = true;
+  run_budget_case(kAbandonPort, {}, result, nullptr);
+  EXPECT_TRUE(result.server_ready.load(std::memory_order_acquire));
+  EXPECT_TRUE(result.client_ready.load(std::memory_order_acquire));
+  EXPECT_TRUE(result.done.load(std::memory_order_acquire));
+  EXPECT_EQ(result.status.load(std::memory_order_acquire),
+            StatusCode::FailedPrecondition);
 }
 
 #if defined(HYLE_IO_TLS)

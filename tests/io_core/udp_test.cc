@@ -105,20 +105,17 @@ Task<int> client_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
       std::memory_order_release);
 #endif
   static const char kMsg[] = "udp-wrapper-echo";
-  const ConstBuffer output[] = {{kMsg, 3}, {kMsg + 3, sizeof(kMsg) - 3}};
   auto sent = co_await sock->send_to(
-      std::span<const ConstBuffer>{output},
+      std::as_bytes(std::span{kMsg, sizeof(kMsg)}),
       Endpoint::loopback(AddressFamily::kIpv4, kPort));
   if (!sent.ok()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
-  const MutableBuffer input[] = {
-      {r->client_got, 2}, {r->client_got + 2, sizeof(kMsg) - 2}};
-  auto received =
-      co_await sock->receive_from(std::span<const MutableBuffer>{input});
+  auto received = co_await sock->receive_from(
+      std::as_writable_bytes(std::span{r->client_got, sizeof(kMsg)}));
   r->client_recv.store(received.ok()
-                           ? static_cast<std::int64_t>(received.progress.bytes)
+                           ? static_cast<std::int64_t>(received.bytes)
                            : -1,
                        std::memory_order_release);
   r->client_done.store(true, std::memory_order_release);
@@ -177,6 +174,33 @@ TEST(IoUdp, InvalidContextReturnsTypedSetupFailure) {
   auto opened = UdpSocket::open(invalid, kOwner);
   ASSERT_FALSE(opened.has_value());
   EXPECT_TRUE(opened.error().IsFailedPrecondition());
+  scheduler.shutdown();
+}
+
+TEST(IoUdp, ReleaseReadoptAndMoveKeepExactlyOneNativeOwner) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+
+  {
+    auto opened = UdpSocket::open(io, kOwner);
+    ASSERT_TRUE(opened.has_value()) << opened.error().message();
+    EXPECT_TRUE(opened->valid());
+    EXPECT_EQ(opened->owner_worker(), kOwner);
+
+    const std::intptr_t released = opened->release_native_handle();
+    ASSERT_GE(released, 0);
+    EXPECT_FALSE(opened->valid());
+    EXPECT_EQ(opened->native_handle(), -1);
+
+    auto adopted = UdpSocket::adopt(io, kOwner, released);
+    ASSERT_TRUE(adopted.has_value()) << adopted.error().message();
+    UdpSocket owner;
+    owner = std::move(*adopted);
+    EXPECT_TRUE(owner.valid());
+    EXPECT_FALSE(adopted->valid());
+    EXPECT_TRUE(owner.local_endpoint().has_value());
+  }
   scheduler.shutdown();
 }
 

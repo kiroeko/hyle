@@ -301,6 +301,36 @@ TEST(Process, SpawnWaitAndRepeatedObservation) {
   EXPECT_TRUE(runtime.shutdown().ok());
 }
 
+TEST(Process, MoveAssignmentTransfersRuntimeAndChildOwnership) {
+  auto first_runtime = ProcessRuntime::create();
+  auto second_runtime = ProcessRuntime::create();
+  ASSERT_TRUE(first_runtime.has_value());
+  ASSERT_TRUE(second_runtime.has_value());
+  ProcessRuntime runtime = std::move(*first_runtime);
+  runtime = std::move(*second_runtime);
+  EXPECT_FALSE(second_runtime->valid());
+  ASSERT_TRUE(runtime.valid());
+  EXPECT_TRUE(runtime.accepting());
+
+  const std::array<std::string_view, 2> sleeping_arguments{"sleep", "30000"};
+  const std::array<std::string_view, 2> exiting_arguments{"exit", "11"};
+  auto sleeping = runtime.spawn(helper_options(sleeping_arguments));
+  auto exiting = runtime.spawn(helper_options(exiting_arguments));
+  ASSERT_TRUE(sleeping.has_value());
+  ASSERT_TRUE(exiting.has_value());
+
+  ChildProcess owner = std::move(*sleeping);
+  owner = std::move(*exiting);
+  EXPECT_FALSE(exiting->valid());
+  ASSERT_TRUE(owner.valid());
+  auto exit = owner.wait();
+  ASSERT_TRUE(exit.has_value()) << exit.error().message();
+  EXPECT_EQ(exit->kind, ProcessExitKind::kExited);
+  EXPECT_EQ(exit->exit_code, 11u);
+  EXPECT_TRUE(runtime.shutdown().ok());
+  EXPECT_EQ(runtime.active_processes(), 0u);
+}
+
 TEST(Process, DeadlineCancelsOnlyTheWait) {
   auto runtime_result = ProcessRuntime::create();
   ASSERT_TRUE(runtime_result.has_value());

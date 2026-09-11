@@ -150,7 +150,11 @@ TEST(IoSignal, FactoryRejectsDuplicateAndInvalidOwnership) {
 
       SignalSet moved = std::move(*first);
       EXPECT_TRUE(moved.valid());
-      EXPECT_EQ(moved.interest(),
+      EXPECT_FALSE(first->valid());
+      *first = std::move(moved);
+      EXPECT_FALSE(moved.valid());
+      EXPECT_TRUE(first->valid());
+      EXPECT_EQ(first->interest(),
                 SignalInterest::kInterrupt | SignalInterest::kTerminate);
     }
     scheduler.shutdown();

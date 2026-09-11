@@ -40,6 +40,7 @@
 // (shard-per-core) so the connection's io stays on its core.
 
 using hyle::io::IoContext;
+using hyle::io::AddressFamily;
 using hyle::io::ConstBuffer;
 using hyle::io::Endpoint;
 using hyle::io::MutableBuffer;
@@ -405,6 +406,64 @@ TEST(IoTcp, ResolvesIpv4AndIpv6Literals) {
   EXPECT_TRUE(Endpoint::parse("127.0.0.1", 80).has_value());
   EXPECT_TRUE(Endpoint::parse("::1", 443).has_value());
   EXPECT_FALSE(Endpoint::parse("localhost", 80).has_value());
+}
+
+TEST(IoTcp, AdoptReleaseAndMoveKeepExactlyOneNativeOwner) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+
+  NativeSocketPair pair = make_native_socket_pair();
+  ASSERT_GE(pair.owned, 0);
+  ASSERT_GE(pair.peer, 0);
+  {
+    auto adopted = TcpStream::adopt(io, kOwner, pair.owned);
+    pair.owned = -1;
+    ASSERT_TRUE(adopted.has_value()) << adopted.error().message();
+    EXPECT_TRUE(adopted->valid());
+    EXPECT_EQ(adopted->owner_worker(), kOwner);
+    EXPECT_TRUE(adopted->set_keepalive(false).ok());
+
+    const std::intptr_t released = adopted->release_native_handle();
+    ASSERT_GE(released, 0);
+    EXPECT_FALSE(adopted->valid());
+    EXPECT_EQ(adopted->native_handle(), -1);
+
+    auto readopted = TcpStream::adopt(io, kOwner, released);
+    ASSERT_TRUE(readopted.has_value()) << readopted.error().message();
+    TcpStream owner;
+    owner = std::move(*readopted);
+    EXPECT_TRUE(owner.valid());
+    EXPECT_FALSE(readopted->valid());
+    EXPECT_TRUE(owner.set_keepalive().ok());
+  }
+  close_native_socket(pair.peer);
+  scheduler.shutdown();
+}
+
+TEST(IoTcp, ListenerMoveAssignmentClosesTheReplacedOwner) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  {
+    auto first = TcpListener::bind(
+        io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, 0));
+    auto second = TcpListener::bind(
+        io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, 0));
+    ASSERT_TRUE(first.has_value()) << first.error().message();
+    ASSERT_TRUE(second.has_value()) << second.error().message();
+    TcpListener owner = std::move(*first);
+    const auto replacement_endpoint = second->local_endpoint();
+    ASSERT_TRUE(replacement_endpoint.has_value());
+    owner = std::move(*second);
+    EXPECT_FALSE(second->valid());
+    EXPECT_TRUE(owner.valid());
+    EXPECT_EQ(owner.owner_worker(), kOwner);
+    auto actual_endpoint = owner.local_endpoint();
+    ASSERT_TRUE(actual_endpoint.has_value());
+    EXPECT_EQ(*actual_endpoint, *replacement_endpoint);
+  }
+  scheduler.shutdown();
 }
 
 TEST(IoTcp, ListenerAcceptEchoRoundTrip) {

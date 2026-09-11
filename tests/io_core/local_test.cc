@@ -17,7 +17,9 @@
 #include "hyle/time/clock.h"
 
 #if !defined(_WIN32)
+#  include <sys/socket.h>
 #  include <sys/stat.h>
+#  include <unistd.h>
 #endif
 
 using hyle::io::ConstBuffer;
@@ -174,6 +176,77 @@ TEST(IoLocal, EndpointFactoriesOwnAndRejectInvalidNames) {
   EXPECT_FALSE(LocalEndpoint::unix_path("").has_value());
   EXPECT_FALSE(LocalEndpoint::unix_path(std::string_view{"bad\0name", 8})
                    .has_value());
+}
+
+#if !defined(_WIN32)
+TEST(IoLocal, AnonymousAdoptReleaseAndMoveKeepOneNativeOwner) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+  {
+    auto metadata = LocalEndpoint::unix_path("owned-metadata.sock");
+    ASSERT_TRUE(metadata.has_value());
+    auto adopted = LocalStream::adopt(io, kOwner, sockets[0], *metadata);
+    sockets[0] = -1;
+    ASSERT_TRUE(adopted.has_value()) << adopted.error().message();
+    EXPECT_TRUE(adopted->valid());
+    EXPECT_EQ(adopted->owner_worker(), kOwner);
+    EXPECT_EQ(adopted->endpoint().name(), "owned-metadata.sock");
+
+    const std::intptr_t released = adopted->release_native_handle();
+    ASSERT_GE(released, 0);
+    EXPECT_FALSE(adopted->valid());
+
+    auto readopted = LocalStream::adopt_anonymous(io, kOwner, released);
+    ASSERT_TRUE(readopted.has_value()) << readopted.error().message();
+    LocalStream owner;
+    owner = std::move(*readopted);
+    EXPECT_TRUE(owner.valid());
+    EXPECT_FALSE(readopted->valid());
+    EXPECT_TRUE(owner.shutdown_write().ok());
+    EXPECT_TRUE(owner.close().ok());
+  }
+  ASSERT_EQ(::close(sockets[1]), 0);
+  scheduler.shutdown();
+}
+#endif
+
+TEST(IoLocal, ListenerMoveAssignmentClosesTheReplacedOwner) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  const std::string first_name = unique_local_name();
+  const std::string second_name = unique_local_name();
+  auto first_endpoint = native_endpoint(first_name);
+  auto second_endpoint = native_endpoint(second_name);
+  ASSERT_TRUE(first_endpoint.has_value());
+  ASSERT_TRUE(second_endpoint.has_value());
+  LocalListenOptions options;
+#if !defined(_WIN32)
+  options.replace_existing_socket = true;
+#endif
+  {
+    auto first =
+        LocalListener::bind(io, kOwner, *first_endpoint, options);
+    auto second =
+        LocalListener::bind(io, kOwner, *second_endpoint, options);
+    ASSERT_TRUE(first.has_value()) << first.error().message();
+    ASSERT_TRUE(second.has_value()) << second.error().message();
+    LocalListener owner = std::move(*first);
+    owner = std::move(*second);
+    EXPECT_FALSE(second->valid());
+    EXPECT_TRUE(owner.valid());
+    EXPECT_EQ(owner.endpoint().name(), second_endpoint->name());
+    EXPECT_TRUE(owner.close().ok());
+  }
+#if !defined(_WIN32)
+  EXPECT_EQ(std::fopen(first_name.c_str(), "rb"), nullptr);
+  EXPECT_EQ(std::fopen(second_name.c_str(), "rb"), nullptr);
+#endif
+  scheduler.shutdown();
 }
 
 TEST(IoLocal, VectorRoundTripUsesNativeLocalTransport) {

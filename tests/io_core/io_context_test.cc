@@ -123,6 +123,9 @@ TEST(IoContext, ExposesTypedBackendSnapshotWithoutRawDriverAccess) {
   EXPECT_EQ(context.capabilities(context.num_workers()).backend,
             hyle::io::IoBackend::kNone);
 #if HYLE_OS_LINUX
+  hyle::io::IoUringExtension empty_extension;
+  EXPECT_FALSE(empty_extension.valid());
+  EXPECT_EQ(empty_extension.owner_worker(), 0u);
   EXPECT_EQ(context.io_uring().valid(),
             capabilities.backend == hyle::io::IoBackend::kIoUring);
 #endif

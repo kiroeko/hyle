@@ -551,9 +551,18 @@ Task<int> exercise_root_and_move(AllocatorRef allocator, IoContext* io,
     co_return 0;
   }
   FileWatcher source = std::move(*made);
-  FileWatcher watcher = std::move(source);
-  outcome->moved_from_inert = !source.valid() && source.close().ok() &&
-                              watcher.valid();
+  FileWatcher moved = std::move(source);
+  auto replacement_made = FileWatcher::create(allocator, *io, kOwner, target);
+  if (!replacement_made.has_value()) {
+    outcome->status = std::move(replacement_made).error();
+    outcome->status.Update(moved.close());
+    co_return 0;
+  }
+  FileWatcher watcher = std::move(*replacement_made);
+  watcher = std::move(moved);
+  outcome->moved_from_inert =
+      !source.valid() && source.close().ok() && !moved.valid() &&
+      moved.close().ok() && watcher.valid();
 
   outcome->status = hyle::platform::remove_directory(root.c_str());
   if (!outcome->status.ok()) {

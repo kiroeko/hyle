@@ -62,10 +62,16 @@ std::string temp_path() {
 Task<int> file_coro(AllocatorRef allocator, IoContext *io, const char *path,
                     FileResult *result) {
   static constexpr char kMessage[] = "hyle-file-io-roundtrip";
-  auto opened = co_await open_file(
+  auto requested = open_file(
       *io, kOwner, path,
       FileOpenOptions{
           .access = FileAccess::kReadWrite, .create = true, .truncate = true});
+  auto moved = std::move(requested);
+  auto operation = open_file(
+      *io, kOwner, "hyle-file-replaced-awaitable.tmp",
+      FileOpenOptions{.access = FileAccess::kRead});
+  operation = std::move(moved);
+  auto opened = co_await operation;
   if (!opened.has_value()) {
     result->done.store(true, std::memory_order_release);
     co_return 0;

@@ -91,6 +91,36 @@ TEST(IoDns, ResolvesLocalhostAndOwnsHostInput) {
   }
 }
 
+TEST(IoDns, HandleStateAndMovePreserveSingleJoinOwnership) {
+  DnsRuntime runtime;
+
+  hyle::io::ResolveHandle empty;
+  EXPECT_FALSE(empty.valid());
+  EXPECT_FALSE(empty.is_finished());
+  empty.request_cancel();
+  empty.detach();
+
+  auto immediate = resolve(runtime.io, system_allocator(), "", 80);
+  EXPECT_TRUE(immediate.valid());
+  EXPECT_TRUE(immediate.is_finished());
+
+  hyle::io::ResolveHandle moved(std::move(immediate));
+  EXPECT_FALSE(immediate.valid());
+  EXPECT_TRUE(moved.valid());
+  EXPECT_TRUE(moved.is_finished());
+
+  hyle::io::ResolveHandle assigned;
+  assigned = std::move(moved);
+  EXPECT_FALSE(moved.valid());
+  EXPECT_TRUE(assigned.valid());
+
+  auto result = assigned.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsInvalidArgument());
+  EXPECT_FALSE(assigned.valid());
+  EXPECT_FALSE(assigned.is_finished());
+}
+
 TEST(IoDns, RejectsEmptyAndEmbeddedNullHost) {
   DnsRuntime runtime;
   auto empty =

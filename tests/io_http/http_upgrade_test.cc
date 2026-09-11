@@ -121,6 +121,11 @@ Task<int> server_handoff_server(AllocatorRef allocator, TcpListener *listener,
   if (!upgraded || http.valid() || incoming.body.valid())
     co_return 0;
   HttpUpgradeStream stream = std::move(*upgraded);
+  if (!stream.valid() || stream.encrypted() ||
+      !stream.negotiated_protocol().empty() ||
+      stream.owner_worker() != kOwner) {
+    co_return 0;
+  }
   std::array<std::byte, 4> prefix{};
   hyle::io::TransferResult read =
       co_await stream.read_some(prefix, test_operation());
@@ -242,6 +247,11 @@ Task<int> client_handoff_client(AllocatorRef allocator, IoContext *io,
   if (!upgraded || http.valid() || response.body.valid())
     co_return 0;
   HttpUpgradeStream stream_owner = std::move(*upgraded);
+  if (!stream_owner.valid() || stream_owner.encrypted() ||
+      !stream_owner.negotiated_protocol().empty() ||
+      stream_owner.owner_worker() != kOwner) {
+    co_return 0;
+  }
   std::array<std::byte, 5> prefix{};
   hyle::io::TransferResult read =
       co_await stream_owner.read_some(prefix, test_operation());

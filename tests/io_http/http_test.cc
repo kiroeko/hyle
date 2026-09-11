@@ -36,6 +36,7 @@ using hyle::io::HttpLimits;
 using hyle::io::HttpRequestHead;
 using hyle::io::HttpResponseHead;
 using hyle::io::HttpServerConnection;
+using hyle::io::HttpTransport;
 using hyle::io::IoContext;
 using hyle::io::OperationOptions;
 using hyle::io::TcpListener;
@@ -143,11 +144,36 @@ AllocatorRef tracking_allocator(ByteTrackingAllocator &state) noexcept {
 struct JourneyResult {
   std::atomic<bool> server_done{false};
   std::atomic<bool> client_done{false};
+  std::atomic<bool> server_contract{false};
+  std::atomic<bool> client_contract{false};
+  std::atomic<bool> body_contract{false};
   std::atomic<int> served{0};
   std::atomic<int> statuses[4]{};
   char bodies[4][128]{};
   char posted[128]{};
   std::atomic<bool> trailer_seen{false};
+};
+
+struct SingleChunkSource {
+  StringView payload{};
+  bool emitted = false;
+
+  Task<Result<HttpBodyChunk>> next(AllocatorRef allocator,
+                                   OperationOptions options) noexcept {
+    return next_impl(allocator, this, options);
+  }
+
+private:
+  static Task<Result<HttpBodyChunk>> next_impl(AllocatorRef,
+                                               SingleChunkSource *self,
+                                               OperationOptions) noexcept {
+    if (self->emitted) {
+      co_return hyle::make_unexpected(
+          Status::FailedPrecondition("single chunk source already consumed"));
+    }
+    self->emitted = true;
+    co_return HttpBodyChunk{bytes(self->payload), {}, true};
+  }
 };
 
 struct TokenSource {
@@ -190,21 +216,43 @@ Task<int> journey_server(AllocatorRef allocator, TcpListener *listener,
     result->server_done.store(true, std::memory_order_release);
     co_return 0;
   }
-  auto made = HttpServerConnection::create(allocator, std::move(*accepted));
+  HttpTransport transport(std::move(*accepted));
+  if (!transport.valid() || transport.encrypted() ||
+      !transport.negotiated_protocol().empty() ||
+      transport.owner_worker() != kOwner) {
+    result->server_done.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  auto made = HttpServerConnection::create(allocator, std::move(transport));
   if (!made) {
     result->server_done.store(true, std::memory_order_release);
     co_return 0;
   }
   HttpServerConnection connection = std::move(*made);
+  *made = std::move(connection);
+  connection = std::move(*made);
+  result->server_contract.store(connection.valid() &&
+                                    connection.owner_worker() == kOwner,
+                                std::memory_order_release);
 
   for (int index = 0; index < 4; ++index) {
     auto incoming_result = co_await connection.read_request();
     if (!incoming_result || !incoming_result->has_value())
       break;
     auto incoming = std::move(incoming_result->value());
+    const bool post_body_before =
+        incoming.head.method() != "POST" ||
+        (incoming.body.valid() && !incoming.body.done() &&
+         incoming.body.remaining() == std::optional<std::uint64_t>{13});
     auto body_result = co_await incoming.body.read_all(1024);
     if (!body_result)
       break;
+    if (incoming.head.method() == "POST") {
+      result->body_contract.store(
+          post_body_before && incoming.body.valid() && incoming.body.done() &&
+              incoming.body.remaining() == std::optional<std::uint64_t>{0},
+          std::memory_order_release);
+    }
 
     const int served = result->served.fetch_add(1, std::memory_order_relaxed);
     if (incoming.head.method() == "POST") {
@@ -252,12 +300,22 @@ Task<int> journey_client(AllocatorRef allocator, IoContext *io,
     result->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
-  auto made = HttpClientConnection::create(allocator, std::move(stream));
+  HttpTransport transport(std::move(stream));
+  if (!transport.valid() || transport.encrypted() ||
+      !transport.negotiated_protocol().empty() ||
+      transport.owner_worker() != kOwner) {
+    result->client_done.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  auto made = HttpClientConnection::create(allocator, std::move(transport));
   if (!made) {
     result->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
   HttpClientConnection connection = std::move(*made);
+  result->client_contract.store(connection.valid() &&
+                                    connection.owner_worker() == kOwner,
+                                std::memory_order_release);
 
   const StringView methods[] = {"GET", "POST", "GET", "GET"};
   const StringView targets[] = {"/", "/echo", "/stream", "/stream"};
@@ -268,8 +326,12 @@ Task<int> journey_client(AllocatorRef allocator, IoContext *io,
     request.authority = "127.0.0.1";
     const StringView request_body =
         index == 1 ? StringView("the-post-body") : StringView{};
-    auto response_result =
-        co_await connection.request(request, bytes(request_body));
+    SingleChunkSource source{request_body};
+    Result<HttpIncomingResponse> response_result =
+        index == 1
+            ? co_await connection.request(
+                  request, HttpBodySource::from(source, request_body.size()))
+            : co_await connection.request(request, bytes(request_body));
     if (!response_result)
       break;
     HttpIncomingResponse response = std::move(*response_result);
@@ -333,6 +395,9 @@ TEST(IoHttp, FixedStreamingTrailersAndKeepAlive) {
 
   EXPECT_TRUE(result->server_done.load(std::memory_order_acquire));
   EXPECT_TRUE(result->client_done.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->server_contract.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->client_contract.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->body_contract.load(std::memory_order_acquire));
   EXPECT_EQ(result->served.load(std::memory_order_acquire), 4);
   for (const auto &status : result->statuses)
     EXPECT_EQ(status.load(), 200);
@@ -348,6 +413,7 @@ TEST(IoHttp, FixedStreamingTrailersAndKeepAlive) {
 struct ContinueResult {
   std::atomic<bool> server_saw_expect{false};
   std::atomic<bool> client_writer_disarmed{false};
+  std::atomic<bool> client_writer_contract{false};
   std::atomic<int> status{0};
   char request_body[64]{};
 };
@@ -441,10 +507,19 @@ Task<int> early_response_client(AllocatorRef allocator, IoContext *io,
   if (!started)
     co_return 0;
   auto writer = std::move(*started);
-  auto decision = co_await connection.wait_for_continue(writer);
+  const bool remaining =
+      writer.valid() &&
+      writer.remaining() == std::optional<std::uint64_t>{4096};
+  *started = std::move(writer);
+  const bool moved = !writer.valid() && started->valid() &&
+                     started->remaining() ==
+                         std::optional<std::uint64_t>{4096};
+  auto decision = co_await connection.wait_for_continue(*started);
   if (!decision || !decision->has_value())
     co_return 0;
-  result->client_writer_disarmed.store(!writer.valid(),
+  result->client_writer_contract.store(remaining && moved,
+                                        std::memory_order_release);
+  result->client_writer_disarmed.store(!started->valid(),
                                        std::memory_order_release);
   result->status.store(decision->value().head.status(),
                        std::memory_order_release);
@@ -489,6 +564,7 @@ TEST(IoHttp, ExpectContinueReturnsEarlyFinalWithoutSendingBody) {
   ContinueResult result;
   run_continue_case(54421, true, result);
   EXPECT_TRUE(result.server_saw_expect.load(std::memory_order_acquire));
+  EXPECT_TRUE(result.client_writer_contract.load(std::memory_order_acquire));
   EXPECT_TRUE(result.client_writer_disarmed.load(std::memory_order_acquire));
   EXPECT_EQ(result.status.load(std::memory_order_acquire), 413);
   EXPECT_STREQ(result.request_body, "");

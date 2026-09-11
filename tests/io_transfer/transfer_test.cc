@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -35,7 +36,9 @@ using hyle::io::HttpServerConnection;
 using hyle::io::HttpTransferSource;
 using hyle::io::IoContext;
 using hyle::io::LocalTransferSource;
+using hyle::io::KeptTransferPartial;
 using hyle::io::TcpListener;
+using hyle::io::TransferCheckpoint;
 using hyle::io::TransferDisposition;
 using hyle::io::TransferExecution;
 using hyle::io::TransferOptions;
@@ -45,6 +48,7 @@ using hyle::io::TransferProgress;
 using hyle::io::TransferProgressObserver;
 using hyle::io::TransferReport;
 using hyle::io::TransferResumeMismatchPolicy;
+using hyle::io::TransferSourceKind;
 using hyle::io::TransferVerifier;
 #if defined(HYLE_IO_TLS)
 using hyle::io::tls_handshake;
@@ -135,6 +139,7 @@ std::span<const std::byte> byte_view(std::string_view value) noexcept {
 
 enum class HttpScenarioMode {
   kFull,
+  kStatus,
   kRedirectThenFull,
   kRedirectLoop,
   kRange,
@@ -148,6 +153,7 @@ enum class HttpScenarioMode {
 struct HttpScenario {
   HttpScenarioMode mode = HttpScenarioMode::kFull;
   std::string_view payload;
+  int response_status = 200;
   std::string_view etag = "\"hyle-transfer-etag\"";
   std::string_view expected_if_range = "\"hyle-transfer-etag\"";
   std::string_view content_range_override{};
@@ -195,6 +201,14 @@ Task<int> serve_http(AllocatorRef allocator, TcpListener *listener,
 
     HttpResponseHead response;
     response.keep_alive = false;
+    if (scenario->mode == HttpScenarioMode::kStatus) {
+      response.status = scenario->response_status;
+      scenario->status = co_await connection.send_response(
+          response, std::span<const std::byte>{});
+      if (!scenario->status.ok())
+        co_return 0;
+      continue;
+    }
     if ((scenario->mode == HttpScenarioMode::kRedirectThenFull && index == 0) ||
         scenario->mode == HttpScenarioMode::kRedirectLoop ||
         scenario->mode == HttpScenarioMode::kUnsupportedRedirect) {
@@ -456,13 +470,23 @@ TEST(IoTransferPlan, OwnsConfigurationAndRejectsUnsafeUrlShapes) {
   ASSERT_TRUE(plan.has_value()) << plan.error().message();
   source.assign("mutated");
   destination.assign("mutated");
+  EXPECT_TRUE(plan->valid());
+  EXPECT_EQ(plan->source_kind(), TransferSourceKind::kLocalFile);
   EXPECT_EQ(plan->source(), "source.bin");
   EXPECT_EQ(plan->destination(), "destination.bin");
+  EXPECT_EQ(plan->options().limits.buffer_bytes, 1024u * 1024u);
 
-  EXPECT_TRUE(TransferPlan::http(system_allocator(),
+  auto http = TransferPlan::http(system_allocator(),
                                  {"https://example.com/model.gguf"},
-                                 {"model.gguf"})
-                  .has_value());
+                                 {"model.gguf"});
+  ASSERT_TRUE(http.has_value());
+  EXPECT_EQ(http->source_kind(), TransferSourceKind::kHttp);
+  TransferPlan moved = std::move(*plan);
+  EXPECT_FALSE(plan->valid());
+  *http = std::move(moved);
+  EXPECT_FALSE(moved.valid());
+  EXPECT_EQ(http->source_kind(), TransferSourceKind::kLocalFile);
+  EXPECT_EQ(http->source(), "source.bin");
   auto credentials = TransferPlan::http(
       system_allocator(), {"https://token@example.com/model"}, {"model"});
   EXPECT_FALSE(credentials.has_value());
@@ -533,11 +557,21 @@ TEST(IoTransferLocal, RetainedCheckpointResumesAndRehashesPrefix) {
   ASSERT_EQ(first.disposition, TransferDisposition::kPartialRetained);
   ASSERT_TRUE(first.checkpoint.valid());
   ASSERT_TRUE(first.checkpoint.resumable());
+  EXPECT_EQ(first.checkpoint.source_kind(), TransferSourceKind::kLocalFile);
+  EXPECT_EQ(first.checkpoint.source(), source);
+  EXPECT_EQ(first.checkpoint.destination(), destination);
+  EXPECT_FALSE(first.checkpoint.partial_path().empty());
+  EXPECT_EQ(first.checkpoint.expected_bytes(),
+            std::optional<std::uint64_t>{payload.size()});
   const std::uint64_t prefix = first.checkpoint.partial_bytes();
   EXPECT_GE(prefix, 8u);
   EXPECT_FALSE(hyle::platform::exists(destination.c_str()).value_or(false));
 
-  auto resumed = TransferPlan::resume(std::move(first.checkpoint));
+  TransferCheckpoint checkpoint;
+  checkpoint = std::move(first.checkpoint);
+  EXPECT_FALSE(first.checkpoint.valid());
+  ASSERT_TRUE(checkpoint.resumable());
+  auto resumed = TransferPlan::resume(std::move(checkpoint));
   ASSERT_TRUE(resumed.has_value()) << resumed.error().message();
   FnvVerifier verifier{.expected = FnvVerifier::digest(payload),
                        .expected_size = payload.size()};
@@ -826,10 +860,13 @@ TEST(IoTransferLocal, KeepPartialExplicitlyTransfersCleanupOwnership) {
   {
     auto kept = report.checkpoint.keep_partial();
     ASSERT_TRUE(kept.has_value()) << kept.error().message();
-    ASSERT_TRUE(kept->valid());
-    ASSERT_FALSE(kept->path().empty());
-    EXPECT_STREQ(kept->c_str(), kept->path().c_str());
-    path.assign(kept->path().data(), kept->path().size());
+    KeptTransferPartial owner;
+    owner = std::move(*kept);
+    EXPECT_FALSE(kept->valid());
+    ASSERT_TRUE(owner.valid());
+    ASSERT_FALSE(owner.path().empty());
+    EXPECT_STREQ(owner.c_str(), owner.path().c_str());
+    path.assign(owner.path().data(), owner.path().size());
   }
   EXPECT_FALSE(report.checkpoint.valid());
   // KeptTransferPartial owns only the stable path value. Once keep_partial()
@@ -921,6 +958,43 @@ TEST(IoTransferHttp, RejectsUnsupportedAbsoluteRedirectScheme) {
   EXPECT_EQ(report.disposition, TransferDisposition::kPartialDiscarded);
   EXPECT_FALSE(report.checkpoint.valid());
   EXPECT_FALSE(hyle::platform::exists(destination.c_str()).value_or(false));
+}
+
+TEST(IoTransferHttp, MapsUnusableResponseStatusWithoutPublishing) {
+  struct Case {
+    int http_status;
+    hyle::StatusCode expected;
+  };
+  constexpr std::array cases{
+      Case{401, hyle::StatusCode::Unauthenticated},
+      Case{403, hyle::StatusCode::PermissionDenied},
+      Case{404, hyle::StatusCode::NotFound},
+      Case{503, hyle::StatusCode::Unavailable},
+      Case{429, hyle::StatusCode::ResourceExhausted},
+      Case{400, hyle::StatusCode::FailedPrecondition},
+  };
+
+  std::uint16_t port = 54582;
+  for (const Case &test : cases) {
+    const std::string destination =
+        unique_path("hyle_transfer_http_status_failure");
+    const std::string url =
+        "http://127.0.0.1:" + std::to_string(port) + "/model.bin";
+    TransferOptions options;
+    options.partial_on_failure = TransferPartialPolicy::kDiscard;
+    auto plan =
+        TransferPlan::http(system_allocator(), {url}, {destination}, options);
+    ASSERT_TRUE(plan.has_value()) << plan.error().message();
+    HttpScenario scenario{.mode = HttpScenarioMode::kStatus,
+                          .payload = {},
+                          .response_status = test.http_status};
+    TransferReport report =
+        run_http_transfer(std::move(*plan), {}, scenario, port++);
+    EXPECT_EQ(report.status.code(), test.expected) << test.http_status;
+    EXPECT_EQ(report.disposition, TransferDisposition::kPartialDiscarded);
+    EXPECT_FALSE(report.checkpoint.valid());
+    EXPECT_FALSE(hyle::platform::exists(destination.c_str()).value_or(false));
+  }
 }
 
 #if defined(HYLE_IO_TLS)

@@ -90,7 +90,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q04 | Wave B 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
-| Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `QUEUED` |
+| Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `QUEUED` |
 | Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `QUEUED` |
 | Q10 | 终局红队与裁决 | 无伪 PROVEN；缺陷均定向处理；文档/工具合同一致 | `QUEUED` |
@@ -196,3 +196,20 @@ Release shared/WERROR 的同两组也通过。最终 discovery 为 3,880/4,163 e
 1,805/2,457 branches；唯二零命中执行函数是私有 Sched↔IO attach/detach，依法由 Q07 的 `IoContext`
 公共组合闭合，不用私有测试伪造证据。本波 `DEFECT=0`，Sched 不触发 reopen；sanitizer、macOS 与完整
 三交付矩阵仍诚实保留给 Q09。
+
+## Q07 结果
+
+IO/Process 八个 factor 已完成逐公开能力回映，详见
+[`correctness/wave-e-2026-09`](../../evidence/correctness/wave-e-2026-09.md)。最终 WSL feature-off
+shipping discovery 的 31/31 group 通过；feature-on 的 TLS/HTTP/HTTP2/Transfer/WebSocket 16/16 group
+通过。后续只按 change impact 回放新增 Transfer HTTP status taxonomy 1/1，没有为单项测试改动重复运行整波。
+
+审计补齐 DNS、TCP/UDP/local、File awaitable、HTTP transport/body/source/writer/Upgrade、Transfer
+Plan/Checkpoint/HTTP failure、Watch、WebSocket 和 Process 的 move/ownership/failure/teardown 直接证据。
+最终 discovery 为 6,950/8,825 executable lines、3,552/6,514 branches；8 个未观察文件均路由到
+feature-on 或 Q09 native backend，没有用比例签署正确性。
+
+本波发现一项 GCC 14.2 source/shared WERROR 产品交付缺陷，已依法定向 reopen、修复并重新关闭
+`io_websocket`；当前未修复 `DEFECT=0`，其余 factor 不触发 reopen。Windows/macOS native backend、
+Linux fallback、适用 sanitizer、三交付及 CI product-shape 保留为 `UNPROVEN(Q09)`；五条跨模块组合留给
+Q08。
