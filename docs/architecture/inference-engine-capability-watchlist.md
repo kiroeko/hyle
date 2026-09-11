@@ -34,7 +34,7 @@
 | `CONTAINER-W03` | 多 owner 需要 generation-safe dense slot/handle table | StringInterner/RangeAllocator/HTTP owner各有专用 generation；SGLang NodeRef 也检测 reuse | 两个 owner 能由同一 create/get/erase/reuse/stale 与 address-stability 合同替换，并证明 metadata/性能收益 |
 | `UTIL-W01` | native plugin 动态 load/register/quiesce/unload/reload | Platform DynLib + startup/freeze Registry；完整 manager 是独立 owner | 两个 native plugin consumer 的 library/object/callback 排空、并发 reader、失败与 rollback 旅程 |
 | `SCHED-W02` | request/trace/allocator context 随 fiber migration 自动传播 | 显式参数；CancelScope 只有专用 context | 两个 C++ consumer 证明显式传递重复且易错，并冻结 nesting/destruction/跨 worker 语义 |
-| `IPC-W01` | fixed-membership single-writer/N-reader shared-memory broadcast channel | 一般 IPC 走 Boost.Interprocess/ZeroMQ；HYLE 只有 SharedMapping storage 与 LocalStream | 冻结 borrow/ack、slot reuse、跨进程 wake、reader crash/lease 和 coordinator shutdown；G03 后取得三平台共同 trace |
+| `IPC-W01` | fixed-membership single-writer/N-reader shared-memory broadcast channel | 一般 IPC 走 Boost.Interprocess/ZeroMQ；HYLE 已有 SharedMapping、LocalStream 与 managed Process 生命周期 | 冻结 borrow/ack、slot reuse、跨进程 wake、reader crash/lease 和 coordinator shutdown；仍需取得三平台共同 trace |
 | `OBS-W01` | 不引入第二 runtime 的 async log/exporter/OTel/Prometheus adapter | 同步 sink/value 接宿主 logger/telemetry | 一个窄 adapter 的 owning queue、copy、flush/drain/backpressure/error 旅程，且 producer 默认成本不变 |
 | `TLS-W01` | cipher suite、provider/HSM 或证书选择 policy customization | 安全默认 + 外部 TLS termination；file/borrowed PEM/password credential source 已归 G07 | 第二个无需泄漏 OpenSSL string/type 的 consumer，以及安全 profile、reload、兼容和三交付合同 |
 | `IO-W01` | QUIC/HTTP/3 或 gRPC transport | 成熟 QUIC/gRPC runtime；HTTP/1/2 与 schema 保持分层 | 具名 C++ consumer、单一 event-loop integration、cancel/backpressure/0-RTT/security 与 package 路线 |

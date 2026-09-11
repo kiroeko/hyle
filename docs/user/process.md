@@ -71,6 +71,10 @@ child 更久。
 - HYLE 不解析引号、重定向、变量展开或 pipeline；需要 shell 时由应用显式启动 shell，并承担注入风险。
 - `kPath` 使用 host 的 PATH search mechanism，不承诺由本次 replacement environment 中的 PATH 改写查找。
 - POSIX 环境继承从 process-global `environ` 取快照；应用不能在另一个线程并发修改全局环境。
+- Linux 后端需要 `pidfd_open`；内核不支持时会终止并收回刚启动的 child，再返回 typed `Unimplemented`，
+  不会静默退化为轮询或 process-global `SIGCHLD` handler。
+- `inherit()` 遵守 host 的现有标准流状态：POSIX 上关闭的标准 fd 仍关闭；Windows 缺失/无效的标准 handle
+  会绑定到 `NUL`，避免向 `CreateProcessW` 传入无效 `STARTF_USESTDHANDLES` 值。
 - Process group/Job 只管理本次 child tree；不会 `waitpid(-1)` 或抢收应用自行创建的进程。
 - Process 是生命周期原子，不提供 restart、readiness、health check 或 worker pool policy；这些由推理引擎、
   服务 supervisor 或将来的组合层负责。

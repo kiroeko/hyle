@@ -329,10 +329,14 @@
     },
     {
       "module": "process",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/process/process-v1-managed-child.md",
       "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739",
-      "summary": "process v1 CANDIDATE：POSIX file-stdio 的 0/1/2 来源别名已在 spawn action 前安全快照；受管 child 全能力通过四平台定向回归、三 sanitizer 与 Linux/双 macOS 三交付复验，等待一次终局红队。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/process/process-v1-managed-child.md"
+      },
+      "summary": "process v1 CLOSED：受管 child 的 argv/env/cwd/stdio、HYLE-native wait/pipe、三平台非轮询 reap 与 tree termination 已通过四平台环境、三 sanitizer、三交付和终局红队；P0 成本与平台限制已如实记录。"
     }
   ]
 }

@@ -44,9 +44,11 @@ wait 的取消或 deadline 只取消该次等待，不终止 child。合作退�
 | Windows | suspended `CreateProcessW` + restricted handle list，先加入 kill-on-close Job 再 resume | registered wait 投递到 runtime 的单一 IOCP carrier |
 
 每个 runtime 只有一个非轮询 carrier thread，而不是每 child 一个等待线程或占用 BlockingPool worker。
-spawn 为 O(argv bytes + environment bytes)，Windows replacement/inherited environment 为生成稳定 environment
-block 所需的 O(n log n) sort；注册、一次退出通知、cached try-wait 和完成后的重复 wait 均为 O(1)。常驻
-状态与 child 数线性，pipe payload 直接走 IO proactor，不增加 adapter copy。
+argv copy 为 O(argv bytes)；环境编辑的精确上界为 O(inherited entries × edits + edits² + copied bytes)，
+Windows 为生成稳定 environment block 另做 O(items log items) sort。环境是 spawn 冷控制面，常见 edits 很小；
+若未来真实消费者证明大规模 edit list 成为热点，再以独立 trigger 建索引，不能把当前成本误写成无条件线性。
+注册、一次退出通知、cached try-wait 和完成后的重复 wait 均为 O(1)。常驻状态与 child 数线性，pipe payload
+直接走 IO proactor，不增加 adapter copy。
 
 Raw `posix_spawn`/`CreateProcessW` 不具备同一 argv/env/stdio/tree/reap/wait 合同，不能用来对完整 Process
 façade 做性能排名。这个控制路径优先以 thread/handle/allocation/syscall 上限和复杂度作 P0 裁决；只有出现

@@ -25,7 +25,7 @@ ggml/llama.cpp、ds4、vLLM、SGLang 的推理基座为主需求锚，并用渲�
 |---|---|---|---|
 | `G01` | bulk Base64/Base64URL size、caller-buffer encode/decode 与明确校验策略 | `container_text`；`BORROW` 已锁定 simdutf algorithm core | 公开 `<hyle/container/base64.h>` 路线已交付；后续 G04 直接复用，不复制 codec |
 | `G02` | runtime-sized structured task scope：动态 spawn、cancel、close、join/drain | `sched`；`SELF`，复用现有 Task/JoinHandle/CancelToken | 已交付 `TaskScope`；普通 spawn 不承担 tracking 成本 |
-| `G03` | managed child process：spawn、stdio、async wait、timeout/cancel、tree termination、reap | 新 `process` factor/product；HYLE 拥有语义和 scheduler-native lifecycle，OS mechanism 自有 | 只有零散 OS/IO 原子，用户必须重写最易出错的生命周期 |
+| `G03` | managed child process：spawn、stdio、async wait、timeout/cancel、tree termination、reap | `process` factor/product；HYLE 拥有语义和 scheduler-native lifecycle，OS mechanism 自有 | 已交付 `ProcessRuntime`/`ChildProcess`、三平台非轮询 carrier、HYLE async pipe、tree termination 与可靠 reap |
 | `G04` | WebSocket client/server handshake、HTTP handoff、message/frame/control/close | 新 `io_websocket` factor + 定向重开 `io_http`；协议状态机归 HYLE | HTTP 101 与预读残留字节不能安全移交，且没有 RFC 6455 owner |
 | `G05` | recursive directory-tree change stream | `io_watch`；`SELF` 三平台 backend | 已交付显式 `directory_tree`、root-relative batch、rescan/cap 与三平台 backend |
 | `G06` | async file-region to byte-stream + HTTP file body，支持时走 kernel fast path | `io_core` + `io_http`；`SELF` OS fast path 和 portable fallback | 已交付 `FileRegion/send_file_region` 与 HTTP file-body；plain 使用三平台 native fast path，TLS/unsupported 使用一次有界 fallback |
@@ -153,14 +153,14 @@ request priority、KV/preemption 和 cache-aware policy 只是 consumer evidence
 
 | 候选 | 当前裁决 | 晋级所需稳定事实 |
 |---|---|---|
-| fixed-membership shared-memory broadcast channel | `WATCH`；一般 IPC `ROUTED` 到 Boost.Interprocess/ZeroMQ | 冻结单 writer/N reader、borrow/ack、slot reuse、跨进程 wake、reader crash/lease、coordinator shutdown；G03 process 完成后做一条跨三平台原型 trace |
+| fixed-membership shared-memory broadcast channel | `WATCH`；一般 IPC `ROUTED` 到 Boost.Interprocess/ZeroMQ | Process 生命周期已就位；仍须取得单 writer/N reader 的 borrow/ack、slot reuse、跨进程 wake、reader crash/lease、coordinator shutdown 三平台共同 trace |
 | generic generational SlotMap | `WATCH` | 至少两个 HYLE owner 能被同一 create/get/erase/reuse/stale/address-stability 合同替换；StringInterner 的专用 generation 和 Clay HashMap 不能单独证明 |
 | generic trie/radix/Aho storage | `WATCH` / domain owner | llama.cpp symbol automaton 与 SGLang token/LRU radix 的 alphabet、failure output、eviction、build/persist 尚无共同最小合同 |
 | mutable owning segmented byte chain | `WATCH` | WebSocket/HTTP/resource 两条实际 glue trace 证明 CompositeBuffer、ByteRingBuffer 和 borrowed sequences 产生 material copy 或 lifetime 缺陷 |
 
 共享内存 channel 的用途已经明确为推理 worker 间的大块一写多读广播；缺的不是名字，而是跨平台 wake、
-死亡 reader 和 coordinator 的可验证合同。它不会被遗忘，也不会在 process 生命周期尚未成立时照抄一份
-vLLM ring。SlotMap 与 trie 同理：专用实现可以继续存在，公共泛型只有在真正消除两个 owner 的重复实现时
+死亡 reader 和 coordinator 的可验证合同。Process 生命周期现已成立，但这仍不等于 channel 协议已经被
+证明，不能直接照抄一份 vLLM ring。SlotMap 与 trie 同理：专用实现可以继续存在，公共泛型只有在真正消除两个 owner 的重复实现时
 才准入。
 
 ## 实施顺序

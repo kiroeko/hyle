@@ -445,7 +445,8 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 | async file/network、watcher、shared-memory channel | `io` | completion、backpressure 与跨进程同步 |
 | VRAM/pinned/staging/coherence | `compute` | device/backend/event 生命周期 |
 | path lexical/string owner | `container` | 不需要 OS，且 platform 不能反向依赖容器 |
-| subprocess lifecycle、sandbox 与 IPC channel | 独立未来模块或真实消费者驱动 | 当前进程启动 priority 已是窄机制；spawn/wait/kill/quoting/sandbox 是另一套生命周期 |
+| subprocess lifecycle | 独立 `process` 产品/factor | Platform 只提供当前进程与 OS 原子；argv/env/stdio/wait/tree/reap 由 Process 组合，避免反向依赖 |
+| sandbox 与共享内存 channel policy | 真实消费者驱动的独立 owner | Process 不把 sandbox、lease/ack 或 supervisor policy 伪装成 spawn 参数 |
 
 最后一行是扩展纪律：platform 可以很强，但不能成为“所有和 OS 有关东西”的杂物间。只有
 多个基础库用户反复需要、能形成跨平台诚实合同、且归不到已有高层生命周期 owner 的机制，

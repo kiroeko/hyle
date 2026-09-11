@@ -1,6 +1,6 @@
 # Process v1：受管子进程生命周期
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -196,3 +196,21 @@ Process 定向测试、sanitizer 与三交付；不重跑无关 IO 或 P1。
   复验通过；Windows 产品分支未改变，既有三交付证据保持有效。
 - 候选 LOC：全库 `544,539`；自实现不含测试 `97,551`；Process 实现 `1,937`。候选后只允许终局红队、
   说明、证据与状态；再次改变产品/API/算法必须退回 `AUDITED`。
+
+## 终局红队与裁决（`CLOSED`）
+
+修正候选后重新按公开入口、ownership/OOM、并发/取消/关闭、OS inheritance/reap、依赖/交付、性能比较和
+文档误导逐项反证。`file(fd 0/1/2)` action alias 已由新回归锁住；没有发现未映射入口、隐藏线程/轮询、
+外部 child 抢收、第二 runtime、Native FFI、benchmark-only shape 或新的产品缺陷。候选提交后的 diff 只有
+状态与说明，`fc08ce90` tree 保持不可变。
+
+性能裁决为 **P0 PASS**：每 runtime 一个 carrier thread；每 child O(1) state 与固定数量 native handles；
+cached try/repeated wait O(1)，pipe payload 不增加 adapter copy。环境编辑是冷控制面，当前精确上界为
+O(inherited entries × edits + edits² + copied bytes)，Windows 另有稳定 environment block 的 O(items log items)
+排序；文档不再把它误写成无条件线性。没有完整同生命周期 peer，P1 为 `NOT_APPLICABLE`，raw spawn 不可
+替代完整 façade 作排名。
+
+七门结论均为 **PASS**：功能/API、correctness、四平台环境、ASan/UBSan/TSan、source/static/shared、依赖与
+构建合同、文档/易用性及终局红队均已完成。保留的明确限制是 Linux 需要 pidfd、Windows 无 portable
+cooperative termination、POSIX 全局环境不可并发修改，以及 shell/PTY/sandbox/restart 属于上层。Process v1
+裁决为 **CLOSED**；新增这些相邻能力或改变 lifecycle/常态成本必须走新的 reopen trigger。
