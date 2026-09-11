@@ -272,15 +272,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v2-cpu-operator-catalog.md",
-      "summary": "compute v2 SCOPED：以 normalization→matmul→gated activation 的真实 CPU 纵切审计 typed 算子目录、自然 C++ 形状和同合同性能；v1 one-op terminal 仍是历史证据，不授权恢复旧实现。"
+      "summary": "compute v2 AUDITED：真实引擎与 ggml/oneDNN 对账已冻结 row-wise RMSNorm、逻辑 MatMul、packed SiluAndMul、tensor permutation 与唯一 shape inference；允许从清洁 v1 基线实现，不恢复旧实现。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v2-multi-op-transformer.md",
-      "summary": "graph v2 SCOPED：以 normalization→matmul→gated activation 和正交分支 DAG 审计 multi-op IR、compile、liveness/alias/workspace 与 Invocation；v1 one-op terminal 仍是历史证据。"
+      "summary": "graph v2 AUDITED：dynamic typed DAG、immutable Graph/Executable、per-run Invocation 与 Mem lifetime workspace 的 owner/失败/复杂度已冻结；允许实现 multi-op CPU 纵切，不恢复旧 task-graph 形状。"
     },
     {
       "module": "container_concurrent",

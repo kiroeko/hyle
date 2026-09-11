@@ -41,3 +41,87 @@
 2. 对 ggml graph、oneDNN graph/partition、ONNX Runtime execution plan 及四个真实引擎的形状对账；
 3. 现有 one-op 入口向多节点形状的逐项迁移裁决；
 4. 有限 `KEEP/FIX/BORROW/DEFER/REJECT` ledger 和自然 C++ journey。
+
+## AUDITED IR、owner 与执行计划裁决（2026-09-12）
+
+### 对账输入
+
+- ggml `e91ded11bdcd` 将 logical graph、backend split、graph allocator 和 CPU work buffer 分开；
+  `ggml_gallocr_reserve/alloc_graph` 证明中间值 lifetime planning 是 compile/prepare 事实，不应在每次 node
+  submit 临时分配；
+- llama.cpp `e71b80510c84` 的 `llm_graph_context::build_ffn` 与模型实现反复产生共享输入、分支 MatMul、
+  gated activation 和下游节点，否决固定 decoder 顺序表；
+- oneDNN `6b7f1fbbb18e` gated-MLP 以 logical tensors/ops 构图、finalize/partition/compile 后重复 execute，
+  combined weight 仍由 logical stride/offset 表达；
+- vLLM `51da0ca66c80`、SGLang `dcebe8c4733a` 与 ds4 `f62ca29a3087` 的执行层都区分 immutable
+  kernel/model artifacts 与 per-request buffers/streams；模型特有 scheduler、KV 与 batch 状态不属于 Graph；
+- ONNX Runtime 的 immutable execution-plan/per-run frame 模式只作 owner 交叉验证；本轮不借其 schema、
+  allocator 或 provider ABI。
+
+### 迁移与有限 ledger
+
+| ID | v1/候选形状 | 裁决 | v2 合同 |
+|---|---|---|---|
+| G20 | fixed two inputs/one node/one output arrays | `REPLACE` | allocator-owned growable value/node/edge/output metadata；不保留 fixed fast façade |
+| G21 | `ValueKind::kOutput` 同时表示 node result | `FIX` | ID 表示 graph input 或 node output；“published output”是独立 graph role，不制造第二个 value |
+| G22 | builder accepts only RMSNorm | `FIX` | generic typed `Operation` + typed conveniences；每次 add 调 Compute 唯一 shape inference |
+| G23 | one-op `Graph` inline value | `FIX` | immutable、copyable shared metadata state；不拥有 tensor payload/provider artifact |
+| G24 | one prepared artifact plan | `FIX` | compile 按 builder topological order prepare all nodes，形成 immutable `Executable` |
+| G25 | no intermediate storage | `BORROW` | 使用 Mem `LifetimePlanner/LifetimePlan/PlannedBuffers`；每个 Invocation 独占实例，不复制 arena 算法 |
+| G26 | fixed Invocation bindings | `FIX` | create 时分配完整 binding/workspace metadata；bind/reset/submit 后不增长、不查 hash、不分配 |
+| G27 | branch/shared value DAG | `FIX` | node 只能读取此前创建的 ValueId，因此 cycle 不可表示；共享值和多 published output 合法 |
+| G28 | public `graph_plan`/scheduler | `REJECT` | plan 是 Executable 内部 factor；Graph 不创建线程池、task graph 或 model scheduler |
+| G29 | provider partition/fusion/serialization | `DEFER` | CPU multi-op 先闭环；后续 region/provider 卡扩 CompileReport，不改变 owner 分层 |
+
+### Owner 与失败矩阵
+
+| 对象 | 拥有 | 借用/不拥有 | 失败和线程合同 |
+|---|---|---|---|
+| `GraphBuilder` | 可增长 metadata 与 allocator ref | input payload、Context | single-owner；mutator OOM/invalid ID/shape 失败保持逻辑内容不变 |
+| `Graph` | immutable value/node/edge/output metadata | payload、Context/provider | copyable read-only；跨线程共享；查询 out-of-range 可恢复 |
+| `compile()` | 临时 validate/liveness requests | Graph + Context | O(V+E)；任一 prepare/planner/OOM 失败不发布半个 Executable |
+| `Executable` | prepared operations、binding schema、immutable lifetime plan、Context retention | per-run payload/workspace | copyable read-only；跨线程共享；报告精确 workspace/copy/sync/fallback |
+| `Invocation` | 每次运行 binding slots 与 `PlannedBuffers` | caller input/output views、Queue | move-only/single-owner；不同 Invocation 可并发；create 可 OOM，steady bind/reset/submit 不分配 |
+| `Completion` | Compute/provider terminal state | bound payload 至终态 | CPU v2 同步；未来异步不得削弱 no-reset-before-terminal 合同 |
+
+中间 value 的 lifetime 为 producer node 到最后 consumer（半开区间）；published graph output 永远由 caller
+绑定，不放入内部 workspace。v2 操作均禁止任意 partial alias，因此 planner 只做 non-alias reusable slots；
+未来原生 in-place op 必须显式产生 alias request，不能靠地址偶合。
+
+### 自然 C++ journey
+
+```cpp
+auto builder = GraphBuilder::create().value();
+auto x = builder.input(x_desc).value();
+auto norm_w = builder.input(norm_weight_desc).value();
+auto gate_up_w = builder.input(gate_up_weight_desc).value();
+auto norm = builder.add(RmsNorm{.epsilon = 1e-5F}, x, norm_w).value();
+auto gate_up = builder.add(MatMul{}, norm, gate_up_w).value();
+auto activated = builder.add(SiluAndMul{}, gate_up).value();
+builder.output(activated).value();
+auto graph = std::move(builder).finish().value();
+auto compiled = compile(graph, context).value();
+auto invocation = compiled.executable.create_invocation().value();
+invocation.bind(x, x_view).value();
+invocation.bind(norm_w, norm_weight_view).value();
+invocation.bind(gate_up_w, gate_up_weight_view).value();
+invocation.bind(activated, output_view).value();
+auto done = invocation.submit(queue).value();
+```
+
+正交测试构造一份共享 input 的两分支 DAG 并发布两个 output；这保证 IR 不是为三节点 benchmark 定制。
+
+### P0/P1 preflight
+
+- compile 逐 node 恰好一次 shape validation/prepare，liveness 与 plan 为 O(V+E)，可在冷路径有界分配；
+- create-invocation 允许 workspace/binding allocation；steady bind 为 O(1) ordinal index，submit 为 O(V)，
+  每节点一次预绑定调用且零 route search/JIT/packing/metadata allocation；
+- P1 使用完全相同的 PreparedOperation、TensorView、workspace owner、Queue 与 completion boundary，对比
+  Graph Invocation 和手写 direct sequence；compile/create/bind 在测量外，禁止苹果/橘子对比；
+- Graph overhead 与算子 leaf throughput 分开报告，不能用大型 MatMul 淹没 per-node tax。
+
+## Audit verdict
+
+G20--G27 可由已关闭的 Compute v2 合同、Mem lifetime planner、Container SmallVector 与 Util intrusive
+refcount 直接实现；这些是已有模块的正确复用，不需要新公开模块。允许 Graph 进入 `AUDITED`。若实现需要
+公开 graph_plan、隐藏 scheduler、per-submit allocation 或 provider-specific IR，立即停止并另立依赖卡。

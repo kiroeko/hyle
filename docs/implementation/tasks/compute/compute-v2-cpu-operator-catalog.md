@@ -41,3 +41,83 @@
 2. 每个现有与候选 Operation 入口的需求回映；
 3. 有限 `KEEP/FIX/BORROW/DEFER/REJECT` ledger；
 4. 自然 C++ 调用草图以及同合同性能 preflight 计划。
+
+## AUDITED 能力与形状裁决（2026-09-12）
+
+### 真实消费与成熟实现对账
+
+本轮审计使用以下本地、可复现源码身份，而不是旧 HYLE benchmark：
+
+- ggml `e91ded11bdcd` 与 llama.cpp `e71b80510c84`：`ggml_rms_norm` 沿 row、
+  `ggml_mul_mat` 的推理权重按 `[out, in]` 物理布局读取，图上再组合 SiLU 与 multiply；
+- vLLM `51da0ca66c80`：`hw_agnostic/layers/layernorm.py` 明确 RMSNorm 沿最后一维且
+  weight 为 `[hidden]`；`activation.py::SiluAndMul` 明确 packed-halves
+  `silu(x[..., :d]) * x[..., d:]`；
+- SGLang `dcebe8c4733a`：CPU MoE reference 为 `a @ w1.T -> SiluAndMul -> ... @ w2.T`，
+  Triton route 同样以 `[rows, 2*hidden]` packed 输入工作；
+- ds4 `f62ca29a3087`：公开/内部 kernel 同时存在 rows RMSNorm、普通/量化 MatMul 与
+  gate/up/SwiGLU fusion；这些证明算子族稳定，但模型、量化格式和专名不进入本轮公开合同；
+- oneDNN `6b7f1fbbb18e`：Graph gated-MLP 样例以通用 MatMul、Sigmoid/Multiply 和 strided
+  logical tensor 组合，并允许 combined gate/up weight 通过 stride/offset 零拷贝解释。
+
+审计因此否决 v1 的“rank-1 且 weight 与输入完整同形”限制。它只满足单行验证，不满足正常推理
+consumer。转置也不是 MatMul 的布尔属性：逻辑 shape 与 element stride 已足够表达，公开 tensor
+提供 permutation convenience，provider 可在 prepare 冷路径识别布局。
+
+### 有限能力 ledger
+
+| ID | 能力 | 裁决 | 本轮精确合同 |
+|---|---|---|---|
+| C20 | tensor axis permutation | `FIX` | `TensorDesc::permuted()` 与二维 `transposed()` 只重排自含 shape/stride，O(rank)、零分配、零 copy |
+| C21 | row-wise RMSNorm | `FIX` | dense f32 input/output `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row 复用 SIMD，允许 exact in-place |
+| C22 | ordinary MatMul | `FIX` | dense f32 rank-2 A `[M,K]`、C `[M,N]`；B 为逻辑 `[K,N]`，支持 dense row-major 或 dense `[N,K]` 的 transpose view；无 bias/packing/隐藏 copy |
+| C23 | packed SiluAndMul | `FIX` | dense f32 input `[...,2d]`、output `[...,d]`；按最后一维两半解释并逐 row 复用 `simd::swiglu_f32_batch` |
+| C24 | single-output shape inference | `FIX` | `infer_output_description(Operation, inputs)` 是 Graph 与 direct consumer 的唯一 shape 规则；失败不修改 caller 状态 |
+| C25 | typed Operation / PreparedOperation | `FIX` | 三种 descriptor 都是无 provider pointer 的小值；prepare 固定 kind/layout/count/route，submit 不再假定 RMSNorm |
+| C26 | f16/bf16 storage | `DEFER` | SIMD 已有 leaf，但 MatMul/provider/accumulation 合同尚未同卡闭环；不得只为扩大 enum 宣称支持 |
+| C27 | fused add-RMSNorm、bias/epilogue、separate-input SwiGLU | `DEFER` | 是稳定候选，但不是证明 multi-op Graph 所必需；后续按真实 fusion/provider 卡进入 |
+| C28 | quantized/indirect/batched MatMul、attention/RoPE/MoE | `DEFER` | 由后续量化、provider 与算子目录卡分别所有，不污染普通 MatMul |
+| C29 | provider-specific transpose/layout flag | `REJECT` | 使用 TensorDesc stride/permutation；不得把 cuBLAS/ggml/oneDNN 选择泄漏进公共 op |
+
+### 所有权、失败与复杂度
+
+| 对象/阶段 | owner 与 lifetime | 可失败事实 | 复杂度/热路约束 |
+|---|---|---|---|
+| `TensorDesc` permutation | self-contained value；不持有 storage | invalid/duplicate axis、rank mismatch | O(rank)，零分配/复制 |
+| shape inference | 借用 descriptor span，仅返回一个 value | dtype/rank/shape/layout/overflow/epsilon | O(rank)，冷路径 |
+| `PreparedOperation` | retain Context；拥有 descriptor/route/预计算维度，不拥有 tensor payload | unsupported contract/OOM 只在 prepare 前或 context state | fixed metadata；prepare 可检查，submit 不搜索 route |
+| submit bindings | 借用 caller Mem views 到 Completion 终态 | context/queue、shape、domain、mapping/coherence、unsafe alias | O(rank+bindings)+算子本体；零常态 heap/JIT/packing/copy |
+
+MatMul 对转置 weight view 走连续 K dot；普通 row-major B 走连续 N accumulation。两者是同一逻辑 API 的
+两种真实 layout route，不是 benchmark-only fast entry。空 extent 成功且不解引用空 storage；任一非空
+dimension/byte乘法溢出必须在冷路径报告。
+
+### 自然 C++ journey
+
+```cpp
+auto x = TensorDesc::dense(DataType::kFloat32, std::array{rows, hidden}).value();
+auto stored_w =
+    TensorDesc::dense(DataType::kFloat32, std::array{2 * ffn, hidden}).value();
+auto logical_w = stored_w.transposed().value(); // [hidden, 2*ffn], zero-copy view
+auto projected = infer_output_description(MatMul{}, std::array{x, logical_w}).value();
+auto gated = infer_output_description(SiluAndMul{}, std::array{projected}).value();
+auto prepared = prepare(context, MatMul{}, x, logical_w, projected).value();
+```
+
+同一 `Operation` 与 descriptor 直接交给 Graph；用户不构造 string 属性、raw kernel 参数、provider node
+或输出 shape 的第二份规则。
+
+### 性能 preflight
+
+- RMSNorm：`rows={1,4,32}`、`hidden={256,4096}`，和直接调用同一 HYLE SIMD row kernel 对齐；
+- SiluAndMul：相同 row/hidden，和直接 `simd::swiglu_f32_batch` 对齐；
+- MatMul：decode `M=1/4` 与短 prefill `M=32`，`K/N` 使用 transformer 常见量级；分别测 row-major B
+  与 `[N,K]` transpose view，peer 必须同为单线程 f32、同 layout、同 prepare/completion 边界；
+- 不把 HYLE 的 shape/alias/storage 安全合同与 raw pointer leaf 混成胜负；leaf 与完整 prepared API 分层
+  报告。正式 P1 只在 immutable candidate 后执行一次。
+
+## Audit verdict
+
+`C20--C25` 构成一个有限、模型无关且可由当前依赖实现的 CPU 产品增量；没有新质因数或反向依赖。
+允许状态进入 `AUDITED` 并修改 Compute 产品。实现若要求隐藏 packing、引入 provider 专名或扩大到
+`C26--C28`，必须停下另立卡。
