@@ -10,6 +10,9 @@
 
 当前跨产品能力审计事实：
 
+- [CLOSED 组件全库正确性资格审计](project/closed-components-correctness-qualification-2026-09.md)：
+  当前 29 个已关闭 factor 的逐能力语义证据、coverage discovery、跨模块 public journey 与平台/
+  sanitizer/交付资格；不创建第二套模块状态；
 - [HYLE 能力族深度复审](project/hyle-capability-family-deep-audit-2026-09.md)：当前 27 个已实现 factor 的
   能力族、已交付头反向追溯、四纵切与缺口/路由结论；
 - [HYLE 范围重定标与全组件能力扫描](project/hyle-scope-capability-audit-2026-09.md)：此前 factor 粒度的

@@ -209,6 +209,7 @@ class ImpactTest(unittest.TestCase):
             {
                 "container_queue", "sched", "io_core", "io_tls", "io_http",
                 "io_http2", "io_transfer", "io_watch", "compute", "graph",
+                "process", "io_websocket",
             },
         )
         self.assertIn("headers:container_queue", self.selected(plan))
@@ -224,7 +225,7 @@ class ImpactTest(unittest.TestCase):
             set(plan["selected_factors"]),
             {
                 "container_text", "util_runtime", "io_tls", "io_http",
-                "io_http2", "io_transfer", "io_watch",
+                "io_http2", "io_transfer", "io_watch", "io_websocket",
             },
         )
 
@@ -282,6 +283,7 @@ class ImpactTest(unittest.TestCase):
             {
                 "container_queue", "sched", "container_text", "util_runtime",
                 "io_tls", "io_http", "io_transfer", "io_watch",
+                "io_websocket",
             },
         )
         self.assertEqual(len(plan["changes"]), 3)
@@ -617,8 +619,8 @@ class RepositoryContractTest(unittest.TestCase):
     def test_central_graph_covers_tracked_product_ownership(self):
         snapshot = selector.Snapshot(ROOT, "HEAD")
         graph = selector.project_graph(snapshot)
-        self.assertEqual(len(graph["factors"]), 29)
-        self.assertEqual(len(graph["products"]), 14)
+        self.assertEqual(len(graph["factors"]), 31)
+        self.assertEqual(len(graph["products"]), 15)
         exceptions = {"include/hyle/version.h", "include/hyle/visibility.h"}
         missing = [p for p in snapshot.files if p.startswith(("src/", "include/hyle/"))
                    and Path(p).suffix in selector.NATIVE and p not in exceptions and not selector.owner(p, graph)]
