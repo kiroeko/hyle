@@ -18,8 +18,9 @@
   submit；内部 plan 不成为第三个公开产品；
 - non-goals：兼容 TaskGraph/parallel_for/reduce/scan/sort/data-parallel；多节点 fusion/partition/liveness；
   arbitrary control flow；模型循环；GPU capture；完整 serialization；Native FFI；
-- 直接依赖：新 Compute operation/execution 合同、`core`、`error`、`mem`；只有公开类型或实现确需时才
-  登记其它边，首轮不公开依赖 Sched/Container；
+- 直接依赖：公开边为新 Compute operation/execution 合同、`core`、`error`；实现边仅为 `util_core` 的
+  intrusive plan ownership。Mem storage 由 Compute 公开合同承载，Graph 不重复登记或解释；首轮不依赖
+  Sched/Container；
 - 直接消费者：独立 C++ one-op graph consumer；后续 multi-op CPU round；
 - 性能 tier 与原因：`P1`；steady Invocation submit 必须对同一 PreparedOperation 做 one-op 税基线，
   compile/cold 与 replay/warm 分开；
@@ -65,12 +66,12 @@ Invocation，反而把 Sched 和 Container 强制泄漏给 Graph。因此没有�
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| G01 | 3 个旧公开头、3 个实现 TU 与 tests 证明的是 callable task graph | 全量删除，不保留 legacy/reference/compat | 全树负扫描无 TaskGraph/parallel/data-parallel 入口 | 待处理 |
-| G02 | 中央组件图把旧 Graph 公开依赖 sched/container，且 product 与状态冲突 | 重建为直接依赖 Compute/Error/Mem/Core 的新 factor/product | 精确选择无 sched/container 闭包 | 待处理 |
-| G03 | 没有逻辑计算 IR | 实现 typed IDs、GraphBuilder、immutable Graph、one-op structure/shape validation | invalid ID/cycle/shape/output/finish 原子性测试 | 待处理 |
-| G04 | 没有 compile artifact 或诊断 | 实现 CPU compile、CompileReport、immutable Executable、独占 Invocation | provider/workspace/copy/sync 可枚举，partial failure 可清理 | 待处理 |
-| G05 | 没有与 Compute 共用的运行合同 | one-op plan 直接持有 `PreparedOperation` 并提交 bindings | steady 不读 Graph、不 search/allocate/prepare | 待处理 |
-| G06 | 旧测试无法迁移为证据 | 重新建立 correctness/OOM/lifetime/concurrency/reset 测试 | 预声明 CPU matrix 全部有 verdict | 待处理 |
+| G01 | 3 个旧公开头、3 个实现 TU 与 tests 证明的是 callable task graph | 全量删除，不保留 legacy/reference/compat | 全树负扫描无 TaskGraph/parallel/data-parallel 入口 | 完成：旧字节随 `f5581e82` 删除，当前 Graph 树负扫描为零 |
+| G02 | 中央组件图把旧 Graph 公开依赖 sched/container，且 product 与状态冲突 | 重建为直接依赖 Compute/Error/Mem/Core 的新 factor/product | 精确选择无 sched/container 闭包 | 完成实现：实际公开边 `core/error/compute`、私有 `util_core`；Windows exact-factor 闭包不含 sched/container |
+| G03 | 没有逻辑计算 IR | 实现 typed IDs、GraphBuilder、immutable Graph、one-op structure/shape validation | invalid ID/cycle/shape/output/finish 原子性测试 | 完成实现：generation-aware IDs、原子 mutator/finish、shape/output/cross-builder 测试通过；cycle 在 one-op typed API 中不可表示 |
+| G04 | 没有 compile artifact 或诊断 | 实现 CPU compile、CompileReport、immutable Executable、独占 Invocation | provider/workspace/copy/sync 可枚举，partial failure 可清理 | 完成实现：report 明示 CPU/HYLE-native/零 workspace-copy-sync，copyable artifact、OOM/lifetime 测试通过 |
+| G05 | 没有与 Compute 共用的运行合同 | one-op plan 直接持有 `PreparedOperation` 并提交 bindings | steady 不读 Graph、不 search/allocate/prepare | 完成实现：plan 直接拥有 PreparedOperation，Invocation 仅固定 slot bind 后转交 submit |
+| G06 | 旧测试无法迁移为证据 | 重新建立 correctness/OOM/lifetime/concurrency/reset 测试 | 预声明 CPU matrix 全部有 verdict | 进行中：Windows header/结构/数值/OOM/lifetime/reset/two-thread Invocation 通过；Linux/macOS/sanitizer 待跑 |
 | G07 | 旧文档/sample/package 没有新用户 journey | 新 Graph guide 与 source/static/shared consumer | 三交付同 API，误用有诊断 | 待处理 |
 | G08 | Graph 税未量化 | candidate 后做 P0、one-op A/A preflight 与一次 P1 | 无无法解释的 material fixed loss | 待处理 |
 

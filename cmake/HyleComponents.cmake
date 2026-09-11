@@ -267,9 +267,12 @@ _hyle_declare_component(io_transfer
 _hyle_declare_component(compute
   PRIVATE_DEPS math simd util_core
   PUBLIC_DEPS core error mem)
-# Graph remains deliberately absent until its clean tensor-DAG vertical slice
-# exists; retaining the append-only identity does not manufacture a target.
-_hyle_declare_component(graph QUEUED)
+# Graph owns logical tensor-DAG publication and compiled/invocation lifetimes.
+# Its public values name Compute and Error contracts; intrusive plan ownership
+# is private and no task scheduler/container enters the one-op closure.
+_hyle_declare_component(graph
+  PRIVATE_DEPS util_core
+  PUBLIC_DEPS core error compute)
 # Container's consumer-facing product remains one facade, while independent
 # factors own concurrency, handoff and text dependencies. Public include paths
 # intentionally remain hyle/container/*: these identities are maintenance and
@@ -386,6 +389,7 @@ _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS compute)
+_hyle_declare_product(graph FACTORS graph)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream
