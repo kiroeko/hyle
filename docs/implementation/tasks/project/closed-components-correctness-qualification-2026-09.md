@@ -24,9 +24,9 @@
 
 ## 当前基线事实
 
-- 29 个 `CLOSED` factor 都有独立测试目录；仓库中共有 173 个非 `compute/graph` C/C++ 测试翻译单元、
-  63,057 行翻译单元源码和 2,094 个 GoogleTest declaration；另有 5 条 project-owned public journey，
-  共 1,082 行和 5 个 declaration。table/property case 会让实际输入多于 declaration；这些数字都不
+- 29 个 `CLOSED` factor 都有独立测试目录；终局候选共有 173 个非 `compute/graph` C/C++ 测试翻译单元、
+  63,087 行翻译单元源码和 2,094 个 GoogleTest declaration；另有 5 条 project-owned public journey，
+  共 1,098 行和 5 个 declaration。table/property case 会让实际输入多于 declaration；这些数字都不
   代表覆盖充分。
 - 当前没有统一的仓库级 line/branch coverage 入口。首次 instrumentation 只用于发现 zero-hit
   产品路径和未触达分支，不设“达到某百分比即正确”的门。
@@ -94,8 +94,8 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `COMPLETE` |
-| Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `IN_PROGRESS` |
-| Q10 | 终局红队与裁决 | 无伪 PROVEN；缺陷均定向处理；文档/工具合同一致 | `QUEUED` |
+| Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `COMPLETE` |
+| Q10 | 终局红队与裁决 | 无伪 PROVEN；缺陷均定向处理；文档/工具合同一致 | `COMPLETE` |
 
 每个 factor 的静态审计以一个工作批次为预算：一旦所有公开能力已经映射，停止继续枚举。每个新发现
 测试缺口最多先选择一种最能反证风险的技术，不为同一事实机械叠加 table/property/fuzz/stress。若同一
@@ -251,3 +251,31 @@ CTest 硬 timeout，适用操作另有 deadline/cancel。测试只经产品 faç
 
 Q08 当前产品 `DEFECT=0`，没有触发模块 reopen。跨平台 backend、sanitizer、三交付与 CI 仍为 Q09，
 本阶段没有把一次 Windows shared run 外推成这些格的 `PROVEN`。
+
+## Q09 结果
+
+平台、sanitizer 与交付矩阵已完成，详见
+[`correctness/platform-delivery-2026-09`](../../evidence/correctness/platform-delivery-2026-09.md)。中央
+投影得到 13 个公开根，其 closure union 精确覆盖 29 个 `CLOSED` factor；Windows Release/shared、
+MacBook Air ARM64、Linux ASan 58/58、UBSan 58/58、定向 TSan 30/30、最终 complete-source archive，
+以及 relocated static/shared SDK consumers 均通过。
+
+本轮纠正三条 Windows IO 平台假设、两条 AppleClang self-assignment 测试表达、model-file journey 的
+async-file capability 选择与错误传播，并解除 GCC 14 sanitizer 对合法 coroutine placement-new 的已知
+误报阻塞。这些均为测试、工具或文档缺陷；没有复现新的产品缺陷，因此没有触发模块 reopen。
+
+GitHub Actions run `34590263514` 在执行任何 step 前被账户 billing/spending limit 拒绝。hosted CI 与其中
+Linux AArch64 cross execution 依法保留 `UNPROVEN`，不伪装成 workflow/product FAIL；本地 selector、
+YAML、PowerShell 和中央投影合同已通过。Q10 只做终局证据红队与裁决，不再重跑已通过的矩阵。
+
+## Q10 结果
+
+终局红队详见
+[`correctness/final-adjudication-2026-09`](../../evidence/correctness/final-adjudication-2026-09.md)。
+29 factor / 185 public header 的范围、五波语义账本、五条 public journey、当前产品源码漂移、registry
+reopen 链、平台/sanitizer/交付证据与全部剩余 `UNPROVEN` 已逐项反证。baseline 后唯一产品源码变化是
+已依法重新关闭的 WebSocket coroutine allocator 修复；其余变更是测试、仪器、构建资格或事实文档。
+
+当前未修复产品 `DEFECT=0`，没有伪 `PROVEN`，也没有第二套模块状态。本项目资格任务裁决
+`COMPLETE`；GitHub hosted execution/Linux AArch64 及少量不能安全注入的 OS 稀有失败继续诚实保留
+`UNPROVEN`，等待外部条件或具体缺陷触发，而不阻挡当前已执行范围的结案。
