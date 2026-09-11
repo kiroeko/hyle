@@ -54,6 +54,12 @@ implementation seam，不是原子产品能力，也不应由 public header 或 
 6. source/static/shared 均需继续链接；shared 额外验证 export table。
 7. C++ 用户入口不变；分发文档明确 shared SDK 不是 FFI。
 
-## 当前阶段
+## AUDITED 裁决
 
-`SCOPED`：触发、有限改动、预算和停止条件已冻结；尚未修改产品 build seam。
+Windows x64 MASM 的 `EXPORT` 会把 procedure 写入 object 的 linker directive；`PUBLIC` 只让同一 DLL
+内的 C++ object 可解析符号。对同一 vendored `jump_x86_64_ms_pe_masm.asm` 的独立编译反证显示，
+`PUBLIC` object 保留 external `jump_fcontext`，且不再产生 `/EXPORT:jump_fcontext` directive。ELF 源码
+已对三项入口声明 `.hidden`，Mach-O 源码已声明 `.private_extern`，没有第二处产品算法缺口。
+
+有限改动集冻结为唯一 S11-01；状态进入 `AUDITED`，下一提交才允许修改产品 build seam。公开 API、
+汇编指令、调用约定、模块依赖和性能 workload 均不改变。
