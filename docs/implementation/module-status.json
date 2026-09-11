@@ -329,8 +329,9 @@
     },
     {
       "module": "process",
-      "state": "QUEUED",
-      "summary": "G03 managed process 的 component identity 已保留；尚未冻结依赖、公开 API 或 target，不进入任何 consumer product。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/process/process-v1-managed-child.md",
+      "summary": "process v1 SCOPED：G03 的真实 journey、负空间、三平台/三交付验证与四批实现预算已冻结；公开 owner、reaper、pipe seam 和 termination 形状待源码审计。"
     }
   ]
 }
