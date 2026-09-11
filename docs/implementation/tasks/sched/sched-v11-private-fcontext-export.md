@@ -37,7 +37,7 @@ implementation seam，不是原子产品能力，也不应由 public header 或 
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| S11-01 | Windows MASM `PROC EXPORT` 写入 PE export directive | `BOOST_CONTEXT_EXPORT=PUBLIC` | 同 object 中符号仍 external，且无 `/EXPORT` directive；三交付通过 | 待实施 |
+| S11-01 | Windows MASM `PROC EXPORT` 写入 PE export directive | `BOOST_CONTEXT_EXPORT=PUBLIC` | 同 object 中符号仍 external，且无 `/EXPORT` directive；三交付通过 | 已完成 |
 
 ### API / usability freeze
 
@@ -63,3 +63,14 @@ Windows x64 MASM 的 `EXPORT` 会把 procedure 写入 object 的 linker directiv
 
 有限改动集冻结为唯一 S11-01；状态进入 `AUDITED`，下一提交才允许修改产品 build seam。公开 API、
 汇编指令、调用约定、模块依赖和性能 workload 均不改变。
+
+## Candidate
+
+- immutable product/build candidate：`e07c025ee7f97e7f132b2daf42abaa5ac23bfb63`；
+- `BOOST_CONTEXT_EXPORT` 已从 MASM `EXPORT` 改为 `PUBLIC`；fcontext 三个汇编源文件和 C++ 调用方没有
+  字节改动，公开 API、layout、算法、指令路径和常态成本不变；
+- build v13 同时令 compiled shared factor 默认 hidden，并让显式 `HYLE_*_API` 保持 public；
+- Windows MSVC Release 的 Sched correctness 通过；selected Sched source/static/shared relocated consumer
+  全部通过；shared SDK 实际扫描 8 个 HYLE DLL、492 个导出，未发现 raw fcontext、`mi_*` 或 plain
+  `hyle_*` C 符号；
+- candidate 后只允许补跨平台交付、红队、文档和 terminal 状态证据。

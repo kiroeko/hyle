@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v11-private-fcontext-export.md",
-      "summary": "sched v11 AUDITED：MASM PUBLIC 已证明可保留 DLL 内链接且不生成 PE export directive；有限改动仅收紧三个内部 fcontext 入口，公开 API、指令和成本不变。"
+      "candidate": "e07c025ee7f97e7f132b2daf42abaa5ac23bfb63",
+      "summary": "sched v11 CANDIDATE：Windows 三交付与 8 个 DLL 的实际导出扫描已证明 fcontext 仍可内部链接且不再公开；等待 Unix 默认隐藏和全包回归后终局裁决。"
     },
     {
       "module": "io_core",
