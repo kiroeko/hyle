@@ -340,15 +340,9 @@
     },
     {
       "module": "io_websocket",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-websocket-v1-rfc6455.md",
-      "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
-        "material_margin_pct": 5
-      },
-      "summary": "io_websocket v1 CLOSED：RFC 6455 client/server、caller-buffer streaming、fragment/control/typed close、limits 与 plain/TLS 通过三平台、sanitizer、三交付和红队；同合同 mask 四档双顺序均 WIN，5% P1 门全过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md",
+      "summary": "io_websocket v2 SCOPED：Wave E 复现 GCC 14.2 shared/WERROR 因两个 coroutine frame allocator 参数被误判 unused 而无法源码交付；仅允许零运行语义的定向修复与回归。"
     }
   ]
 }
