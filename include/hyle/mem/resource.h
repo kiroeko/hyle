@@ -104,12 +104,12 @@ struct ResourceHostMapping {
 // MemoryResourceRef/Buffer/View and in-flight use. Independent allocations may
 // be used concurrently. Mutating/map/control operations on one allocation are
 // externally synchronized unless a typed provider promises more.
-class MemoryResource {
+class HYLE_MEM_API MemoryResource {
  public:
   MemoryResource() noexcept = default;
   MemoryResource(const MemoryResource&) = delete;
   MemoryResource& operator=(const MemoryResource&) = delete;
-  HYLE_MEM_API virtual ~MemoryResource();
+  virtual ~MemoryResource();
 
   virtual std::string_view name() const noexcept = 0;
   virtual MemoryProperties properties() const noexcept = 0;
@@ -120,33 +120,30 @@ class MemoryResource {
   // Synchronous range operations. Providers can override native routes. The
   // base implementation uses a direct host mapping when available and never
   // allocates a staging buffer.
-  HYLE_MEM_API virtual Status read(void* native_handle, std::size_t offset,
-                                   std::span<std::byte> destination) noexcept;
-  HYLE_MEM_API virtual Status write(
-      void* native_handle, std::size_t offset,
-      std::span<const std::byte> source) noexcept;
-  HYLE_MEM_API virtual Status fill(void* native_handle, std::size_t offset,
-                                   std::size_t size, std::byte value) noexcept;
-  HYLE_MEM_API virtual Status copy(
+  virtual Status read(void* native_handle, std::size_t offset,
+                      std::span<std::byte> destination) noexcept;
+  virtual Status write(void* native_handle, std::size_t offset,
+                       std::span<const std::byte> source) noexcept;
+  virtual Status fill(void* native_handle, std::size_t offset,
+                      std::size_t size, std::byte value) noexcept;
+  virtual Status copy(
       void* destination_handle, std::size_t destination_offset,
       MemoryResource& source_resource, void* source_handle,
       std::size_t source_offset, std::size_t size) noexcept;
 
-  HYLE_MEM_API virtual Result<ResourceHostMapping> map_host(
+  virtual Result<ResourceHostMapping> map_host(
       void* native_handle, std::size_t offset, std::size_t size,
       HostAccess access) noexcept;
-  HYLE_MEM_API virtual Status unmap_host(void* native_handle, void* token,
-                                        std::size_t offset,
-                                        std::size_t size,
-                                        HostAccess access) noexcept;
-  HYLE_MEM_API virtual Status flush(void* native_handle, std::size_t offset,
-                                    std::size_t size) noexcept;
-  HYLE_MEM_API virtual Status invalidate(void* native_handle,
-                                         std::size_t offset,
-                                         std::size_t size) noexcept;
+  virtual Status unmap_host(void* native_handle, void* token,
+                            std::size_t offset, std::size_t size,
+                            HostAccess access) noexcept;
+  virtual Status flush(void* native_handle, std::size_t offset,
+                       std::size_t size) noexcept;
+  virtual Status invalidate(void* native_handle, std::size_t offset,
+                            std::size_t size) noexcept;
 
-  HYLE_MEM_API virtual Result<ResourceStats> stats() const noexcept;
-  HYLE_MEM_API virtual Status trim() noexcept;
+  virtual Result<ResourceStats> stats() const noexcept;
+  virtual Status trim() noexcept;
 };
 
 // One-word, non-owning resource reference. Default construction is an explicit
