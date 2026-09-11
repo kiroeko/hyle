@@ -264,6 +264,19 @@ Status validate_local_buffers(
   return Status{};
 }
 
+TransferResult local_read_result(std::int64_t result,
+                                 const char* operation) noexcept {
+#if HYLE_OS_WINDOWS
+  // A byte-mode named/anonymous pipe reports peer closure as
+  // ERROR_BROKEN_PIPE rather than a successful zero-byte ReadFile. It is the
+  // stream EOF condition, not a FailedPrecondition on the local owner.
+  if (result == -static_cast<std::int64_t>(ERROR_BROKEN_PIPE))
+    return TransferResult{0, Status{}, true};
+#endif
+  return detail::transfer_from_native(result, detail::kFileNativeDomain,
+                                      operation, true);
+}
+
 } // namespace
 
 Result<LocalEndpoint> LocalEndpoint::make(LocalEndpointKind kind,
@@ -354,6 +367,38 @@ Result<LocalStream> LocalStream::adopt(IoContext& io, unsigned owner_worker,
     return make_unexpected(std::move(status));
   }
   return LocalStream(io, native_handle, owner_worker, endpoint);
+}
+
+Result<LocalStream>
+LocalStream::adopt_anonymous(IoContext& io, unsigned owner_worker,
+                             std::intptr_t native_handle) noexcept {
+  if (!io.valid()) {
+    close_local_handle(native_handle);
+    return make_unexpected(Status::FailedPrecondition(
+        "anonymous local adopt requires a valid IoContext"));
+  }
+  if (owner_worker >= io.num_workers()) {
+    close_local_handle(native_handle);
+    return make_unexpected(Status::OutOfRange(
+        "anonymous local stream owner is outside IoContext"));
+  }
+  bool invalid_handle = native_handle < 0;
+#if HYLE_OS_WINDOWS
+  invalid_handle = invalid_handle || native_handle == 0;
+#endif
+  if (invalid_handle) {
+    close_local_handle(native_handle);
+    return make_unexpected(Status::InvalidArgument(
+        "anonymous local adopt requires a valid native handle"));
+  }
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker,
+                                            native_handle)) {
+    Status status =
+        local_native_error("associate anonymous local stream with IO shard");
+    close_local_handle(native_handle);
+    return make_unexpected(std::move(status));
+  }
+  return LocalStream(io, native_handle, owner_worker, LocalEndpoint{});
 }
 
 std::intptr_t LocalStream::release_native_handle() noexcept {
@@ -535,9 +580,7 @@ bool LocalStream::ReadSomeAwaitable::await_suspend(
 
 TransferResult LocalStream::ReadSomeAwaitable::await_resume() noexcept {
   if (immediate_ready) return std::move(immediate);
-  return detail::transfer_from_native(state.await_resume(),
-                                      detail::kFileNativeDomain,
-                                      "local stream read", true);
+  return local_read_result(state.await_resume(), "local stream read");
 }
 
 bool LocalStream::WriteSomeAwaitable::await_ready() noexcept {
@@ -627,9 +670,8 @@ bool LocalStream::ReadBuffersAwaitable::await_suspend(
 
 BufferSequenceResult LocalStream::ReadBuffersAwaitable::await_resume() noexcept {
   if (!immediate_ready) {
-    TransferResult transfer = detail::transfer_from_native(
-        state.await_resume(), detail::kFileNativeDomain, "local vectored read",
-        true);
+    TransferResult transfer =
+        local_read_result(state.await_resume(), "local vectored read");
     if (transfer.bytes > buffers.total_size()) {
       return BufferSequenceResult{
           {}, Status::Internal("local read exceeded requested bytes"), false};

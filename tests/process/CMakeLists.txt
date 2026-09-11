@@ -1,0 +1,15 @@
+hyle_add_header_self_contained_test(process)
+hyle_add_test(process SOURCES process_test.cc)
+
+add_executable(hyle_process_child_helper process_child_helper.cc)
+set_target_properties(hyle_process_child_helper PROPERTIES
+  FOLDER "hyle/tests/process"
+  HYLE_TEST_MODULE "process")
+target_compile_features(hyle_process_child_helper PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_process_child_helper)
+hyle_apply_sanitizer(hyle_process_child_helper)
+
+target_compile_definitions(hyle_process_test PRIVATE
+  HYLE_PROCESS_TEST_HELPER_PATH="$<TARGET_FILE:hyle_process_child_helper>")
+add_dependencies(hyle_process_test hyle_process_child_helper)
+add_dependencies(hyle_process_tests hyle_process_child_helper)

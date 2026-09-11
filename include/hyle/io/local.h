@@ -94,6 +94,16 @@ class LocalStream {
   adopt(IoContext& io, unsigned owner_worker, std::intptr_t native_handle,
         const LocalEndpoint& endpoint) noexcept;
 
+  // Adopt an already-created anonymous local byte stream into one IO shard.
+  // This is the process/IPC seam for a POSIX nonblocking socket/pipe or a
+  // Windows FILE_FLAG_OVERLAPPED pipe endpoint. Ownership transfers on every
+  // path: validation/bind failure closes `native_handle`, and success leaves
+  // close/destruction responsible for it. Unlike adopt(endpoint), this stream
+  // has no reconnectable address, so endpoint().valid() is false.
+  HYLE_IO_API static Result<LocalStream>
+  adopt_anonymous(IoContext& io, unsigned owner_worker,
+                  std::intptr_t native_handle) noexcept;
+
   bool valid() const noexcept { return handle_ >= 0; }
   explicit operator bool() const noexcept { return valid(); }
   std::intptr_t native_handle() const noexcept { return handle_; }

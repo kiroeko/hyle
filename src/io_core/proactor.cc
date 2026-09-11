@@ -157,6 +157,20 @@ struct Proactor::Impl {
       inflight = op->next;
     if (op->next != nullptr) op->next->prev = op->prev;
   }
+
+  // Some Windows devices (notably a named pipe whose writers have closed)
+  // report a terminal result synchronously instead of returning
+  // ERROR_IO_PENDING. That is a completed operation, not a queue-admission
+  // failure. Preserve the ordinary completion path and token ownership by
+  // posting the already-owned IoOp back through this IOCP.
+  bool post_synchronous_result(IoOp* op, std::int64_t result) noexcept {
+    op->kind = kSynthetic;
+    op->syn_result = result;
+    if (::PostQueuedCompletionStatus(port, 0, 0, &op->ov) != 0) return true;
+    unlink(op);
+    recycle(op);
+    return false;
+  }
 };
 
 Proactor::~Proactor() {
@@ -451,10 +465,10 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
   BOOL ok = ::ReadFile(op->handle, buf, len, nullptr, &op->ov);
   // Async success queues a completion too (we don't set SKIP_ON_SUCCESS), so only
   // a synchronous failure that ISN'T "pending" means the op won't complete.
-  if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
-  impl_->unlink(op);
-  impl_->recycle(op);
-  return false;
+  if (ok) return true;
+  const DWORD error = ::GetLastError();
+  if (error == ERROR_IO_PENDING) return true;
+  return impl_->post_synchronous_result(op, neg_err(error));
 }
 
 bool Proactor::submit_directory_changes(
@@ -496,10 +510,10 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
   op->ov.OffsetHigh = static_cast<DWORD>(offset >> 32);
   impl_->link(op);
   BOOL ok = ::WriteFile(op->handle, buf, len, nullptr, &op->ov);
-  if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
-  impl_->unlink(op);
-  impl_->recycle(op);
-  return false;
+  if (ok) return true;
+  const DWORD error = ::GetLastError();
+  if (error == ERROR_IO_PENDING) return true;
+  return impl_->post_synchronous_result(op, neg_err(error));
 }
 
 bool Proactor::submit_read_buffers(std::intptr_t,

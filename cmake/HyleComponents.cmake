@@ -310,9 +310,12 @@ _hyle_declare_component(io_watch
   PUBLIC_TYPE_DEPS io_core mem
   SPLIT_PUBLIC_HEADERS hyle/io/watch.h)
 
-# Reserved by G03. A QUEUED identity deliberately has no target metadata or
-# consumer-facing product until its own closure round freezes the public shape.
-_hyle_declare_component(process QUEUED)
+# Managed child-process lifecycle is a composition factor above the scheduler
+# and byte-stream substrate. Public configuration names allocator, file, wait,
+# cancellation and LocalStream types; container/thread helpers remain private.
+_hyle_declare_component(process
+  PRIVATE_DEPS container container_intrusive platform_thread util_core
+  PUBLIC_DEPS core error time platform_fs mem sched io_core)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -373,6 +376,7 @@ _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch)
+_hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS compute)
 _hyle_declare_product(graph FACTORS graph)
 

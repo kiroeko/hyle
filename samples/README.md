@@ -39,6 +39,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`package/container/intrusive/cpp/`](package/container/intrusive/cpp/) | container / intrusive journey | source-independent C++ package consumer：通过 `hyle::container` 使用 auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
+| [`package/process/cpp/`](package/process/cpp/) | process | source/static/shared 中启动当前 probe、取得 typed exit，并验证 runtime shutdown 与传递依赖 |
 
 > 01-03 用源码 `add_subdirectory` 集成；04-07 与 `package/*/cpp` 用安装包集成。
 > `package/*/cpp` 是构建回归 fixture，不是额外的产品 API。
