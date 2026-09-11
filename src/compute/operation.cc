@@ -78,15 +78,6 @@ bool overlaps(const ByteRange& left, const ByteRange& right) noexcept {
   return left.offset - right.offset < right.size;
 }
 
-bool host_accessible(mem::ConstBufferView view) noexcept {
-  return view.resource().properties().has(mem::MemoryProperty::kHostAccessible);
-}
-
-bool coherent(mem::ConstBufferView view) noexcept {
-  return view.resource().properties().has(
-      mem::MemoryProperty::kHostDeviceCoherent);
-}
-
 bool aligned_for_float(const void* address) noexcept {
   return address == nullptr ||
          reinterpret_cast<std::uintptr_t>(address) % alignof(float) == 0;
@@ -253,6 +244,16 @@ Result<PreparedOperation> prepare(const Context& context, RmsNorm operation,
 Result<Completion> PreparedOperation::submit(
     Queue& queue, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) const noexcept {
+  return submit_impl(queue, inputs.empty() ? nullptr : &inputs.front(),
+                     inputs.size() > 1 ? &inputs[1] : nullptr, inputs.size(),
+                     outputs.empty() ? nullptr : &outputs.front(),
+                     outputs.size());
+}
+
+Result<Completion> PreparedOperation::submit_impl(
+    Queue& queue, const ConstTensorView* input,
+    const ConstTensorView* weight, std::size_t provided_input_count,
+    const TensorView* output, std::size_t provided_output_count) const noexcept {
   if (!valid()) {
     return std::unexpected(
         Status::FailedPrecondition("prepared operation is invalid"));
@@ -267,25 +268,29 @@ Result<Completion> PreparedOperation::submit(
     return std::unexpected(Status::InvalidArgument(
         "queue and prepared operation belong to different contexts"));
   }
-  if (inputs.size() != input_count_ || outputs.size() != 1) {
+  if (provided_input_count != input_count_ || provided_output_count != 1) {
     return std::unexpected(Status::InvalidArgument(
         "RMSNorm binding count does not match the prepared operation"));
   }
-  for (std::size_t index = 0; index < inputs.size(); ++index) {
-    if (!inputs[index].valid() ||
-        inputs[index].description() != inputs_[index]) {
-      return std::unexpected(Status::InvalidArgument(
-          "RMSNorm input binding does not match its prepared description"));
-    }
+  if (input == nullptr || !input->valid() ||
+      input->description() != inputs_[0]) {
+    return std::unexpected(Status::InvalidArgument(
+        "RMSNorm input binding does not match its prepared description"));
   }
-  if (!outputs.front().valid() ||
-      outputs.front().description() != output_) {
+  if (input_count_ == 2 &&
+      (weight == nullptr || !weight->valid() ||
+       weight->description() != inputs_[1])) {
+    return std::unexpected(Status::InvalidArgument(
+        "RMSNorm input binding does not match its prepared description"));
+  }
+  if (output == nullptr || !output->valid() ||
+      output->description() != output_) {
     return std::unexpected(Status::InvalidArgument(
         "RMSNorm output binding does not match its prepared description"));
   }
 
-  const mem::ConstBufferView input_storage = inputs.front().storage();
-  const mem::BufferView output_storage = outputs.front().storage();
+  const mem::ConstBufferView input_storage = input->storage();
+  const mem::BufferView output_storage = output->storage();
   const ByteRange input_range = byte_range(input_storage);
   const ByteRange output_range = byte_range(output_storage);
   const bool in_place = equal_range(input_range, output_range);
@@ -296,14 +301,24 @@ Result<Completion> PreparedOperation::submit(
 
   mem::ConstBufferView weight_storage;
   if (input_count_ == 2) {
-    weight_storage = inputs[1].storage();
+    weight_storage = weight->storage();
     if (overlaps(byte_range(weight_storage), output_range)) {
       return std::unexpected(Status::InvalidArgument(
           "RMSNorm weight and output storage must not overlap"));
     }
   }
-  if (!host_accessible(input_storage) || !host_accessible(output_storage) ||
-      (input_count_ == 2 && !host_accessible(weight_storage))) {
+  const mem::MemoryProperties input_properties =
+      input_storage.resource().properties();
+  const mem::MemoryProperties output_properties =
+      output_storage.resource().properties();
+  mem::MemoryProperties weight_properties{};
+  if (input_count_ == 2) {
+    weight_properties = weight_storage.resource().properties();
+  }
+  if (!input_properties.has(mem::MemoryProperty::kHostAccessible) ||
+      !output_properties.has(mem::MemoryProperty::kHostAccessible) ||
+      (input_count_ == 2 &&
+       !weight_properties.has(mem::MemoryProperty::kHostAccessible))) {
     return std::unexpected(Status::FailedPrecondition(
         "CPU RMSNorm requires host-accessible tensor storage"));
   }
@@ -311,11 +326,12 @@ Result<Completion> PreparedOperation::submit(
   // The submission is admitted after every cheap contract check. Provider
   // map/coherence failures below are terminal Completion results, matching the
   // same lifecycle boundary future asynchronous backends use.
-  if (!coherent(input_storage)) {
+  if (!input_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     Status status = input_storage.invalidate();
     if (!status.ok()) return completed_failure(std::move(status));
   }
-  if (input_count_ == 2 && !coherent(weight_storage)) {
+  if (input_count_ == 2 &&
+      !weight_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     Status status = weight_storage.invalidate();
     if (!status.ok()) return completed_failure(std::move(status));
   }
@@ -385,7 +401,7 @@ Result<Completion> PreparedOperation::submit(
          operation_.rms_norm().epsilon);
 
   Status terminal = Status::Ok();
-  if (!coherent(output_storage)) {
+  if (!output_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     preserve_first_error(terminal, output_mapping.flush());
   }
   preserve_first_error(terminal, output_mapping.close());
@@ -394,20 +410,17 @@ Result<Completion> PreparedOperation::submit(
   return Completion::completed(std::move(terminal));
 }
 
-Result<Completion> PreparedOperation::submit(Queue& queue,
-                                              ConstTensorView input,
-                                              TensorView output) const noexcept {
-  const std::array inputs{input};
-  const std::array outputs{output};
-  return submit(queue, inputs, outputs);
+Result<Completion> PreparedOperation::submit(
+    Queue& queue, const ConstTensorView& input,
+    const TensorView& output) const noexcept {
+  return submit_impl(queue, &input, nullptr, 1, &output, 1);
 }
 
 Result<Completion> PreparedOperation::submit(
-    Queue& queue, ConstTensorView input, ConstTensorView weight,
-    TensorView output) const noexcept {
-  const std::array inputs{input, weight};
-  const std::array outputs{output};
-  return submit(queue, inputs, outputs);
+    Queue& queue, const ConstTensorView& input,
+    const ConstTensorView& weight,
+    const TensorView& output) const noexcept {
+  return submit_impl(queue, &input, &weight, 2, &output, 1);
 }
 
 }  // namespace hyle::compute

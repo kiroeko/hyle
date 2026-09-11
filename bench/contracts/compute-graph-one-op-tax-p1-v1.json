@@ -1,0 +1,206 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "compute-graph-one-op-tax-p1-v1",
+  "module": "graph",
+  "claim": "P1 engineering evidence for the bounded abstraction cost of a prepared Compute RMSNorm over the same public Mem mapping plus HYLE SIMD route, and of a pre-bound one-node Graph Invocation over that same PreparedOperation, using one normal 4096-element inference row",
+  "candidate": {
+    "target": "hyle_graph",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "graph",
+    "entrypoint": "include/hyle/compute/operation.h and include/hyle/graph/executable.h"
+  },
+  "peers": [
+    {
+      "id": "hyle-direct-mem-simd",
+      "revision": "runtime-bound",
+      "configuration": {
+        "role": "same-product lower abstraction tier, not an external SOTA peer",
+        "delivery_shape": "source",
+        "route": "the same system Buffer storage is mapped through public Mem and passed to the same hyle::simd::rms_norm_f32 route",
+        "semantic_delta": "the direct consumer owns mapping/error plumbing and does not receive Compute tensor, alias or queue validation"
+      }
+    },
+    {
+      "id": "hyle-compute-prepared",
+      "revision": "runtime-bound",
+      "configuration": {
+        "role": "same-product immediate lower abstraction tier, not an external SOTA peer",
+        "delivery_shape": "source",
+        "route": "the exact PreparedOperation, Queue, TensorView storage and Completion boundary held by the compiled one-node Graph plan",
+        "semantic_delta": "Graph additionally owns immutable plan identity and verifies its fixed binding set"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "compute-prepared-rmsnorm-f32-4096",
+      "tier": "consumer",
+      "gate_role": "diagnostic",
+      "consumer_key": "package/compute/prepared-rmsnorm",
+      "provenance": {
+        "path": "samples/package/compute/cpp/main.cc",
+        "sha256": "5ded662deebe8cb7e584825c1296a416449ba6d96f5f5f85ca154a36ecfc88e5"
+      },
+      "ownership_topology": {
+        "candidate": "One warmed CPU PreparedOperation validates one borrowed input/output TensorView pair, maps the caller-owned system Buffers, invokes the selected HYLE SIMD RMSNorm route and returns an already-terminal Completion",
+        "peer": "The same thread directly maps the same caller-owned system Buffers through public Mem, invokes the same HYLE SIMD RMSNorm route and closes both mappings",
+        "equivalence": "Arithmetic, 4096-element f32 input, output address, Mem resource, SIMD route, precision, synchronization and process are identical; this is a disclosed abstraction-cost ladder because Compute additionally guarantees descriptor, alias, context and queue validation"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4096,
+        "unit": "f32-row-element",
+        "budget": 5,
+        "denominator": "one normal prepared RMSNorm inference row",
+        "derivation": "A 4096-wide normalization row is a common transformer hidden dimension and keeps the fixed contract tax in its normal consumer denominator"
+      },
+      "semantic_contract": "Execute one warmed, allocation-free f32 RMSNorm over 4096 elements from caller-owned host Buffer storage, observe all map/close failures and finish at the synchronous completion boundary",
+      "comparability": "NOT_COMPARABLE",
+      "peer_id": "hyle-direct-mem-simd",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic positive f32 values repeated modulo 127", "scale": {"elements": 4096, "bytes_per_tensor": 16384}},
+      "setup": "Context, Queue, descriptions, Buffers, views and PreparedOperation are created and warmed before epochs; both rows overwrite the same output Buffer sequentially",
+      "charged_phases": ["public Mem input/output mapping", "one hyle::simd::rms_norm_f32 call", "mapping close", "candidate-only fixed tensor/alias/context/queue validation and Completion observation"],
+      "pair": {"candidate": "HYLE Compute PreparedOperation N=4096", "peer": "HYLE direct Mem+SIMD N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "graph-invocation-rmsnorm-f32-4096",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "package/graph/one-node-invocation",
+      "provenance": {
+        "path": "samples/package/graph/cpp/main.cc",
+        "sha256": "3b43335fb414d88cbf8ccdf5ff35220f4ed3cfb6e5344494df3dfe90f9335a87"
+      },
+      "ownership_topology": {
+        "candidate": "One pre-bound exclusive Graph Invocation verifies its fixed binding mask and submits the PreparedOperation retained by its immutable shared plan",
+        "peer": "The exact same PreparedOperation is submitted directly with the same Queue, TensorViews, storage and Completion observation",
+        "equivalence": "Both execute the identical prepared artifact and all Compute validation/arithmetic; Graph alone adds the promised plan and binding-completeness semantics, so the result is an explicit composition-tax measurement rather than an unrelated peer claim"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4096,
+        "unit": "f32-row-element",
+        "budget": 5,
+        "denominator": "one pre-bound one-node Graph invocation",
+        "derivation": "The package Graph journey is the first executable inference slice; compile and bind are correctly excluded from submit-many steady state"
+      },
+      "semantic_contract": "Submit one pre-bound, allocation-free one-node RMSNorm Graph over a 4096-element f32 row and observe the same synchronous Completion as direct Compute",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-compute-prepared",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "the exact same deterministic input and output Buffer used by the Compute row", "scale": {"nodes": 1, "bindings": 2, "elements": 4096}},
+      "setup": "Graph construction, compile, plan allocation, Invocation creation and both bindings occur before epochs; submit reads no logical Graph and performs no allocation or route search",
+      "charged_phases": ["fixed binding-mask check", "one PreparedOperation submit", "one synchronous Completion observation"],
+      "pair": {"candidate": "HYLE Graph Invocation N=4096", "peer": "HYLE Compute PreparedOperation N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "graph",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "hyle-direct-mem-simd": "HYLE_COMPUTE_GRAPH_DIRECT_DIR",
+          "hyle-compute-prepared": "HYLE_COMPUTE_GRAPH_PREPARED_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "compute-graph-one-op-primary",
+          "target": "hyle_graph_one_op_tax_bench",
+          "stem": "hyle_graph_one_op_tax_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_COMPUTE_GRAPH_ONE_OP_RUN "],
+          "workloads": [
+            {"id": "compute-prepared-rmsnorm-f32-4096", "title": "compute prepared RMSNorm f32 N=4096"},
+            {"id": "graph-invocation-rmsnorm-f32-4096", "title": "graph invocation RMSNorm f32 N=4096"}
+          ]
+        },
+        {
+          "id": "compute-graph-one-op-placement",
+          "target": "hyle_graph_one_op_tax_bench_placement",
+          "stem": "hyle_graph_one_op_tax_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_COMPUTE_GRAPH_ONE_OP_RUN "],
+          "workloads": [
+            {"id": "compute-prepared-rmsnorm-f32-4096", "title": "compute prepared RMSNorm f32 N=4096"},
+            {"id": "graph-invocation-rmsnorm-f32-4096", "title": "graph invocation RMSNorm f32 N=4096"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

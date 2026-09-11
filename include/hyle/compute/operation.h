@@ -77,10 +77,12 @@ class PreparedOperation final {
       Queue& queue, std::span<const ConstTensorView> inputs,
       std::span<const TensorView> outputs) const noexcept;
   HYLE_COMPUTE_API Result<Completion> submit(
-      Queue& queue, ConstTensorView input, TensorView output) const noexcept;
+      Queue& queue, const ConstTensorView& input,
+      const TensorView& output) const noexcept;
   HYLE_COMPUTE_API Result<Completion> submit(
-      Queue& queue, ConstTensorView input, ConstTensorView weight,
-      TensorView output) const noexcept;
+      Queue& queue, const ConstTensorView& input,
+      const ConstTensorView& weight,
+      const TensorView& output) const noexcept;
 
  private:
   friend HYLE_COMPUTE_API Result<PreparedOperation> prepare(
@@ -90,6 +92,11 @@ class PreparedOperation final {
   PreparedOperation(detail::ContextState* state, Operation operation,
                     std::span<const TensorDesc> inputs,
                     TensorDesc output) noexcept;
+
+  Result<Completion> submit_impl(
+      Queue& queue, const ConstTensorView* input,
+      const ConstTensorView* weight, std::size_t provided_input_count,
+      const TensorView* output, std::size_t provided_output_count) const noexcept;
 
   using Route = void (*)(const float*, const float*, float*, std::size_t,
                          float) noexcept;

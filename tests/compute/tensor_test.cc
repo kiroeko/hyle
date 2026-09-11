@@ -34,6 +34,27 @@ TEST(TensorDesc, DenseOwnsCanonicalShapeStrideAndByteFacts) {
   EXPECT_TRUE(description.is_dense());
 }
 
+TEST(TensorDesc, EqualityUsesEveryLogicalShapeAndStrideFact) {
+  const std::array<std::int64_t, 2> shape{2, 3};
+  const TensorDesc dense =
+      TensorDesc::dense(DataType::kFloat32, shape).value();
+  const TensorDesc same =
+      TensorDesc::dense(DataType::kFloat32, shape).value();
+  const std::array<std::int64_t, 2> padded_strides{4, 1};
+  const TensorDesc padded = TensorDesc::strided(
+                                DataType::kFloat32, shape, padded_strides)
+                                .value();
+  const std::array<std::int64_t, 2> other_shape{3, 2};
+  const TensorDesc other =
+      TensorDesc::dense(DataType::kFloat32, other_shape).value();
+
+  EXPECT_EQ(dense, same);
+  EXPECT_NE(dense, padded);
+  EXPECT_NE(dense, other);
+  EXPECT_NE(dense,
+            TensorDesc::dense(DataType::kFloat64, shape).value());
+}
+
 TEST(TensorDesc, ScalarsAndZeroExtentsHaveExplicitStorageSemantics) {
   TensorDesc scalar = TensorDesc::dense(DataType::kFloat64, {}).value();
   EXPECT_EQ(scalar.rank(), 0u);

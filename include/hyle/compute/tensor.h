@@ -55,8 +55,17 @@ class HYLE_COMPUTE_API TensorDesc final {
   Result<std::size_t> required_bytes() const noexcept;
   bool is_dense() const noexcept;
 
-  friend bool operator==(const TensorDesc&, const TensorDesc&) noexcept =
-      default;
+  friend constexpr bool operator==(const TensorDesc& left,
+                                   const TensorDesc& right) noexcept {
+    if (left.type_ != right.type_ || left.rank_ != right.rank_) return false;
+    for (std::size_t index = 0; index < left.rank_; ++index) {
+      if (left.dimensions_[index] != right.dimensions_[index] ||
+          left.strides_[index] != right.strides_[index]) {
+        return false;
+      }
+    }
+    return true;
+  }
 
  private:
   DataType type_ = DataType::kUnknown;
