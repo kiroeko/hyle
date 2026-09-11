@@ -11,6 +11,7 @@
 - [Wave C：Obs / SIMD / Container / Util-runtime](wave-c-2026-09.md)。
 - [Wave D：Sched](wave-d-2026-09.md)。
 - [Wave E：IO / Process](wave-e-2026-09.md)。
+- [跨模块公开 API 旅程](public-journeys-2026-09.md)：数据准备、异步运行时、模型文件、服务连接与工作进程。
 
 原始 coverage JSON 和构建日志位于产生它们的隔离 scratch build；仓库只保留可重复命令、输入
 commit/tree、摘要和逐风险解释。覆盖率只用于发现没有触达的路径，逐能力 verdict 必须由语义测试、

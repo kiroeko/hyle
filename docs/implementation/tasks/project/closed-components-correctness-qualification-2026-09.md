@@ -91,7 +91,7 @@ fuzz、网络和并发测试必须有硬 timeout；超时是确定失败，不�
 | Q05 | Wave C 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q06 | Wave D 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
 | Q07 | Wave E 语义矩阵与缺口测试 | 同上 | `COMPLETE` |
-| Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `QUEUED` |
+| Q08 | 五条跨模块 journey | public API、失败/取消/teardown 均可观察且有 timeout | `COMPLETE` |
 | Q09 | 平台、sanitizer、三交付与 CI 收束 | 风险最小充分矩阵通过；无笛卡尔积式重复 | `QUEUED` |
 | Q10 | 终局红队与裁决 | 无伪 PROVEN；缺陷均定向处理；文档/工具合同一致 | `QUEUED` |
 
@@ -213,3 +213,19 @@ feature-on 或 Q09 native backend，没有用比例签署正确性。
 `io_websocket`；当前未修复 `DEFECT=0`，其余 factor 不触发 reopen。Windows/macOS native backend、
 Linux fallback、适用 sanitizer、三交付及 CI product-shape 保留为 `UNPROVEN(Q09)`；五条跨模块组合留给
 Q08。
+
+## Q08 结果
+
+五条 project-owned public journey 已完成，详见
+[`correctness/public-journeys-2026-09`](../../evidence/correctness/public-journeys-2026-09.md)。它们在同一个
+Windows MSVC 19.50 Release/shared/WERROR、TLS+HTTP2 ON 的干净产品闭包中 **5/5 PASS**，每项有 60 秒
+CTest 硬 timeout，适用操作另有 deadline/cancel。测试只经产品 façade 和公开 C++ API；project tests
+由 inventory 单独报告，不归功给任何 factor。
+
+本轮纠正了一个测试合同错误：WebSocket framed read 被 cancel 后可能已消费半个 frame，连接必须终止，
+不能要求它继续复用并完成 clean close。最终纵切使用一条连接证明正常 close、另一条证明 cancel 后确定失效
+和 peer teardown；用户指南同步说明。模型文件的 Windows local Transfer 也没有把 deadline 强加给非
+`OVERLAPPED` adopted handle，而是分别观察原子发布 failure、原生 File/Watch budget 与全测试硬 timeout。
+
+Q08 当前产品 `DEFECT=0`，没有触发模块 reopen。跨平台 backend、sanitizer、三交付与 CI 仍为 Q09，
+本阶段没有把一次 Windows shared run 外推成这些格的 `PROVEN`。
