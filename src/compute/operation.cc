@@ -1,45 +1,162 @@
 #include "hyle/compute/operation.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <span>
+#include <string_view>
 #include <utility>
 
 #include "context_state.h"
+#include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
 #include "hyle/simd/math.h"
+#include "hyle/simd/ops.h"
 
 namespace hyle::compute {
 namespace {
 
-void run_rms_norm(const float* input, const float*, float* output,
-                  std::size_t count, float epsilon) noexcept {
-  simd::rms_norm_f32(input, output, count, epsilon);
+using Parameters = std::array<std::size_t, 3>;
+using Route = void (*)(const float*, const float*, float*, const Parameters&,
+                       float) noexcept;
+
+void run_rms_norm(const float* input, const float* weight, float* output,
+                  const Parameters& parameters, float epsilon) noexcept {
+  const std::size_t rows = parameters[0];
+  const std::size_t hidden = parameters[1];
+  if (hidden == 0) return;
+  for (std::size_t row = 0; row < rows; ++row) {
+    const float* row_input = input + row * hidden;
+    float* row_output = output + row * hidden;
+    if (weight == nullptr) {
+      simd::rms_norm_f32(row_input, row_output, hidden, epsilon);
+    } else {
+      simd::rms_norm_f32(row_input, weight, row_output, hidden, epsilon);
+    }
+  }
 }
 
-void run_weighted_rms_norm(const float* input, const float* weight,
-                           float* output, std::size_t count,
-                           float epsilon) noexcept {
-  simd::rms_norm_f32(input, weight, output, count, epsilon);
+void run_silu_and_mul(const float* input, const float*, float* output,
+                      const Parameters& parameters, float) noexcept {
+  const std::size_t rows = parameters[0];
+  const std::size_t hidden = parameters[1];
+  if (hidden == 0) return;
+  for (std::size_t row = 0; row < rows; ++row) {
+    const float* gate = input + row * hidden * 2;
+    const float* value = gate + hidden;
+    simd::swiglu_f32_batch(gate, value, output + row * hidden, hidden);
+  }
 }
 
-Status validate_rms_tensor(const TensorDesc& description,
-                           std::string_view role) noexcept {
+// B is a logical [K,N] view over physically contiguous [N,K] weights. Each
+// output is therefore one contiguous SIMD dot, the normal inference layout.
+void run_matmul_transposed_weight(const float* left, const float* right,
+                                  float* output,
+                                  const Parameters& parameters,
+                                  float) noexcept {
+  const std::size_t rows = parameters[0];
+  const std::size_t inner = parameters[1];
+  const std::size_t columns = parameters[2];
+  if (rows == 0 || columns == 0) return;
+  if (inner == 0) {
+    std::fill_n(output, rows * columns, 0.0F);
+    return;
+  }
+  for (std::size_t row = 0; row < rows; ++row) {
+    const float* left_row = left + row * inner;
+    float* output_row = output + row * columns;
+    for (std::size_t column = 0; column < columns; ++column) {
+      output_row[column] =
+          simd::dot(left_row, right + column * inner, inner);
+    }
+  }
+}
+
+// Ordinary row-major B keeps N contiguous. Accumulate a small output tile so
+// each B row is streamed once and output is written once, without packing.
+void run_matmul_row_major(const float* left, const float* right, float* output,
+                          const Parameters& parameters, float) noexcept {
+  constexpr std::size_t kColumnBlock = 32;
+  const std::size_t rows = parameters[0];
+  const std::size_t inner = parameters[1];
+  const std::size_t columns = parameters[2];
+  if (rows == 0 || columns == 0) return;
+  if (inner == 0) {
+    std::fill_n(output, rows * columns, 0.0F);
+    return;
+  }
+  for (std::size_t row = 0; row < rows; ++row) {
+    const float* left_row = left + row * inner;
+    float* output_row = output + row * columns;
+    for (std::size_t first = 0; first < columns; first += kColumnBlock) {
+      const std::size_t count =
+          (std::min)(kColumnBlock, columns - first);
+      std::array<float, kColumnBlock> accumulators{};
+      for (std::size_t k = 0; k < inner; ++k) {
+        const float scale = left_row[k];
+        const float* right_row = right + k * columns + first;
+        for (std::size_t lane = 0; lane < count; ++lane) {
+          accumulators[lane] += scale * right_row[lane];
+        }
+      }
+      std::copy_n(accumulators.data(), count, output_row + first);
+    }
+  }
+}
+
+Status validate_dense_f32(const TensorDesc& description) noexcept {
   if (!description.valid()) {
-    return Status::InvalidArgument(role == "output"
-                                       ? "RMSNorm output is invalid"
-                                       : "RMSNorm input is invalid");
+    return Status::InvalidArgument("operation tensor description is invalid");
   }
   if (description.data_type() != DataType::kFloat32) {
-    return Status::Unimplemented("RMSNorm v1 requires float32 tensors");
-  }
-  if (description.rank() != 1) {
-    return Status::Unimplemented("RMSNorm v1 requires one-dimensional rows");
+    return Status::Unimplemented("CPU operation requires float32 tensors");
   }
   if (!description.is_dense()) {
-    return Status::Unimplemented("RMSNorm v1 requires dense tensors");
+    return Status::Unimplemented("CPU operation requires dense tensors");
   }
   return Status::Ok();
+}
+
+bool is_transposed_dense_matrix(const TensorDesc& description) noexcept {
+  if (!description.valid() || description.rank() != 2) return false;
+  const auto dimensions = description.dimensions();
+  const auto strides = description.element_strides();
+  return strides[0] == 1 && strides[1] == dimensions[0];
+}
+
+bool is_supported_matmul_right(const TensorDesc& description) noexcept {
+  return description.is_dense() || is_transposed_dense_matrix(description);
+}
+
+Result<std::size_t> outer_count(const TensorDesc& description) noexcept {
+  std::size_t result = 1;
+  const auto dimensions = description.dimensions();
+  for (std::size_t axis = 0; axis + 1 < dimensions.size(); ++axis) {
+    auto value = math::try_integer_cast<std::size_t>(dimensions[axis]);
+    if (!value) {
+      return std::unexpected(
+          Status::OutOfRange("tensor dimension exceeds size_t"));
+    }
+    auto next = math::try_multiply(result, *value);
+    if (!next) {
+      return std::unexpected(
+          Status::OutOfRange("tensor row count overflows size_t"));
+    }
+    result = *next;
+  }
+  return result;
+}
+
+Result<std::size_t> dimension(const TensorDesc& description,
+                              std::size_t axis) noexcept {
+  auto result = math::try_integer_cast<std::size_t>(
+      description.dimensions()[axis]);
+  if (!result) {
+    return std::unexpected(
+        Status::OutOfRange("tensor dimension exceeds size_t"));
+  }
+  return *result;
 }
 
 struct ByteRange final {
@@ -105,18 +222,108 @@ std::string_view operation_name(OperationKind operation) noexcept {
   switch (operation) {
     case OperationKind::kRmsNorm:
       return "rms-norm";
+    case OperationKind::kMatMul:
+      return "matmul";
+    case OperationKind::kSiluAndMul:
+      return "silu-and-mul";
   }
   return "unknown";
 }
 
+Result<TensorDesc> infer_output_description(
+    Operation operation, std::span<const TensorDesc> inputs) noexcept {
+  switch (operation.kind()) {
+    case OperationKind::kRmsNorm: {
+      if (inputs.size() != 1 && inputs.size() != 2) {
+        return std::unexpected(Status::InvalidArgument(
+            "RMSNorm requires one input and optional weight"));
+      }
+      const RmsNorm& rms_norm = *operation.rms_norm();
+      if (!std::isfinite(rms_norm.epsilon) || rms_norm.epsilon < 0.0F) {
+        return std::unexpected(Status::InvalidArgument(
+            "RMSNorm epsilon must be finite and non-negative"));
+      }
+      Status status = validate_dense_f32(inputs[0]);
+      if (!status.ok()) return std::unexpected(std::move(status));
+      if (inputs[0].rank() == 0) {
+        return std::unexpected(
+            Status::InvalidArgument("RMSNorm input requires rank >= 1"));
+      }
+      if (inputs.size() == 2) {
+        status = validate_dense_f32(inputs[1]);
+        if (!status.ok()) return std::unexpected(std::move(status));
+        if (inputs[1].rank() != 1 ||
+            inputs[1].dimensions()[0] != inputs[0].dimensions().back()) {
+          return std::unexpected(Status::InvalidArgument(
+              "RMSNorm weight must be a dense [hidden] tensor"));
+        }
+      }
+      return inputs[0];
+    }
+
+    case OperationKind::kMatMul: {
+      if (inputs.size() != 2) {
+        return std::unexpected(
+            Status::InvalidArgument("MatMul requires exactly two inputs"));
+      }
+      Status status = validate_dense_f32(inputs[0]);
+      if (!status.ok()) return std::unexpected(std::move(status));
+      if (!inputs[1].valid() ||
+          inputs[1].data_type() != DataType::kFloat32) {
+        return std::unexpected(
+            Status::Unimplemented("CPU MatMul requires float32 tensors"));
+      }
+      if (inputs[0].rank() != 2 || inputs[1].rank() != 2) {
+        return std::unexpected(
+            Status::Unimplemented("CPU MatMul v2 requires rank-2 tensors"));
+      }
+      if (!is_supported_matmul_right(inputs[1])) {
+        return std::unexpected(Status::Unimplemented(
+            "CPU MatMul right operand requires row-major or transposed-dense layout"));
+      }
+      if (inputs[0].dimensions()[1] != inputs[1].dimensions()[0]) {
+        return std::unexpected(Status::InvalidArgument(
+            "MatMul inner dimensions do not match"));
+      }
+      const std::array<std::int64_t, 2> output_shape{
+          inputs[0].dimensions()[0], inputs[1].dimensions()[1]};
+      return TensorDesc::dense(DataType::kFloat32, output_shape);
+    }
+
+    case OperationKind::kSiluAndMul: {
+      if (inputs.size() != 1) {
+        return std::unexpected(Status::InvalidArgument(
+            "SiluAndMul requires exactly one packed input"));
+      }
+      Status status = validate_dense_f32(inputs[0]);
+      if (!status.ok()) return std::unexpected(std::move(status));
+      if (inputs[0].rank() == 0) {
+        return std::unexpected(
+            Status::InvalidArgument("SiluAndMul input requires rank >= 1"));
+      }
+      const auto dimensions = inputs[0].dimensions();
+      if ((dimensions.back() & 1) != 0) {
+        return std::unexpected(Status::InvalidArgument(
+            "SiluAndMul packed dimension must be even"));
+      }
+      std::array<std::int64_t, kMaxTensorRank> output_shape{};
+      std::copy(dimensions.begin(), dimensions.end(), output_shape.begin());
+      output_shape[dimensions.size() - 1] /= 2;
+      return TensorDesc::dense(
+          DataType::kFloat32,
+          std::span(output_shape.data(), dimensions.size()));
+    }
+  }
+  return std::unexpected(Status::Unimplemented("operation kind is unknown"));
+}
+
 PreparedOperation::PreparedOperation(
     detail::ContextState* state, Operation operation,
-    std::span<const TensorDesc> inputs, TensorDesc output) noexcept
+    std::span<const TensorDesc> inputs, TensorDesc output,
+    std::array<std::size_t, 3> parameters, float scalar, Route route) noexcept
     : state_(state), operation_(operation), output_(output),
-      element_count_(static_cast<std::size_t>(
-          inputs.front().dimensions().front())),
-      input_count_(static_cast<std::uint8_t>(inputs.size())),
-      route_(inputs.size() == 1 ? &run_rms_norm : &run_weighted_rms_norm) {
+      parameters_(parameters), scalar_(scalar),
+      input_count_(static_cast<std::uint8_t>(inputs.size())), route_(route) {
   for (std::size_t index = 0; index < inputs.size(); ++index) {
     inputs_[index] = inputs[index];
   }
@@ -125,11 +332,12 @@ PreparedOperation::PreparedOperation(
 
 PreparedOperation::PreparedOperation(PreparedOperation&& other) noexcept
     : state_(other.state_), operation_(other.operation_), inputs_(other.inputs_),
-      output_(other.output_), element_count_(other.element_count_),
-      input_count_(other.input_count_),
+      output_(other.output_), parameters_(other.parameters_),
+      scalar_(other.scalar_), input_count_(other.input_count_),
       route_(other.route_) {
   other.state_ = nullptr;
-  other.element_count_ = 0;
+  other.parameters_ = {};
+  other.scalar_ = 0.0F;
   other.input_count_ = 0;
   other.route_ = nullptr;
 }
@@ -142,11 +350,13 @@ PreparedOperation& PreparedOperation::operator=(
     operation_ = other.operation_;
     inputs_ = other.inputs_;
     output_ = other.output_;
-    element_count_ = other.element_count_;
+    parameters_ = other.parameters_;
+    scalar_ = other.scalar_;
     input_count_ = other.input_count_;
     route_ = other.route_;
     other.state_ = nullptr;
-    other.element_count_ = 0;
+    other.parameters_ = {};
+    other.scalar_ = 0.0F;
     other.input_count_ = 0;
     other.route_ = nullptr;
   }
@@ -192,37 +402,57 @@ Result<PreparedOperation> prepare(
   if (!state->open) {
     return std::unexpected(Status::FailedPrecondition("context is closed"));
   }
-  if (inputs.size() != 1 && inputs.size() != 2) {
-    return std::unexpected(
-        Status::InvalidArgument("RMSNorm requires one input and optional weight"));
-  }
   if (outputs.size() != 1) {
-    return std::unexpected(
-        Status::InvalidArgument("RMSNorm requires exactly one output"));
-  }
-  if (!std::isfinite(operation.rms_norm().epsilon) ||
-      operation.rms_norm().epsilon < 0.0F) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm epsilon must be finite and non-negative"));
+        "prepared operation requires exactly one output"));
   }
 
-  for (const TensorDesc& input : inputs) {
-    Status status = validate_rms_tensor(input, "input");
-    if (!status.ok()) return std::unexpected(std::move(status));
-  }
-  Status output_status = validate_rms_tensor(outputs.front(), "output");
-  if (!output_status.ok()) {
-    return std::unexpected(std::move(output_status));
-  }
-  if (inputs.front() != outputs.front()) {
+  auto inferred = infer_output_description(operation, inputs);
+  if (!inferred) return std::unexpected(std::move(inferred).error());
+  if (outputs[0] != *inferred) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm input and output descriptions must match"));
+        "operation output description does not match inferred shape"));
   }
-  if (inputs.size() == 2 && inputs[1] != inputs.front()) {
-    return std::unexpected(Status::InvalidArgument(
-        "RMSNorm weight description must match the input"));
+
+  Parameters parameters{};
+  float scalar = 0.0F;
+  Route route = nullptr;
+  switch (operation.kind()) {
+    case OperationKind::kRmsNorm: {
+      auto rows = outer_count(inputs[0]);
+      auto hidden = dimension(inputs[0], inputs[0].rank() - 1);
+      if (!rows) return std::unexpected(std::move(rows).error());
+      if (!hidden) return std::unexpected(std::move(hidden).error());
+      parameters = {*rows, *hidden, 0};
+      scalar = operation.rms_norm()->epsilon;
+      route = &run_rms_norm;
+      break;
+    }
+    case OperationKind::kMatMul: {
+      auto rows = dimension(inputs[0], 0);
+      auto inner = dimension(inputs[0], 1);
+      auto columns = dimension(inputs[1], 1);
+      if (!rows) return std::unexpected(std::move(rows).error());
+      if (!inner) return std::unexpected(std::move(inner).error());
+      if (!columns) return std::unexpected(std::move(columns).error());
+      parameters = {*rows, *inner, *columns};
+      route = inputs[1].is_dense() ? &run_matmul_row_major
+                                   : &run_matmul_transposed_weight;
+      break;
+    }
+    case OperationKind::kSiluAndMul: {
+      auto rows = outer_count(inputs[0]);
+      auto packed = dimension(inputs[0], inputs[0].rank() - 1);
+      if (!rows) return std::unexpected(std::move(rows).error());
+      if (!packed) return std::unexpected(std::move(packed).error());
+      parameters = {*rows, *packed / 2, 0};
+      route = &run_silu_and_mul;
+      break;
+    }
   }
-  return PreparedOperation(state, operation, inputs, outputs.front());
+
+  return PreparedOperation(state, operation, inputs, outputs[0], parameters,
+                           scalar, route);
 }
 
 Result<PreparedOperation> prepare(const Context& context, RmsNorm operation,
@@ -241,6 +471,22 @@ Result<PreparedOperation> prepare(const Context& context, RmsNorm operation,
   return prepare(context, Operation(operation), inputs, outputs);
 }
 
+Result<PreparedOperation> prepare(const Context& context, MatMul operation,
+                                  TensorDesc left, TensorDesc right,
+                                  TensorDesc output) noexcept {
+  const std::array inputs{left, right};
+  const std::array outputs{output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
+Result<PreparedOperation> prepare(const Context& context,
+                                  SiluAndMul operation, TensorDesc input,
+                                  TensorDesc output) noexcept {
+  const std::array inputs{input};
+  const std::array outputs{output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
 Result<Completion> PreparedOperation::submit(
     Queue& queue, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) const noexcept {
@@ -251,8 +497,8 @@ Result<Completion> PreparedOperation::submit(
 }
 
 Result<Completion> PreparedOperation::submit_impl(
-    Queue& queue, const ConstTensorView* input,
-    const ConstTensorView* weight, std::size_t provided_input_count,
+    Queue& queue, const ConstTensorView* first,
+    const ConstTensorView* second, std::size_t provided_input_count,
     const TensorView* output, std::size_t provided_output_count) const noexcept {
   if (!valid()) {
     return std::unexpected(
@@ -270,77 +516,82 @@ Result<Completion> PreparedOperation::submit_impl(
   }
   if (provided_input_count != input_count_ || provided_output_count != 1) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm binding count does not match the prepared operation"));
+        "binding count does not match the prepared operation"));
   }
-  if (input == nullptr || !input->valid() ||
-      input->description() != inputs_[0]) {
+  if (first == nullptr || !first->valid() ||
+      first->description() != inputs_[0]) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm input binding does not match its prepared description"));
+        "first input binding does not match its prepared description"));
   }
   if (input_count_ == 2 &&
-      (weight == nullptr || !weight->valid() ||
-       weight->description() != inputs_[1])) {
+      (second == nullptr || !second->valid() ||
+       second->description() != inputs_[1])) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm input binding does not match its prepared description"));
+        "second input binding does not match its prepared description"));
   }
   if (output == nullptr || !output->valid() ||
       output->description() != output_) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm output binding does not match its prepared description"));
+        "output binding does not match its prepared description"));
   }
 
-  const mem::ConstBufferView input_storage = input->storage();
+  const mem::ConstBufferView first_storage = first->storage();
   const mem::BufferView output_storage = output->storage();
-  const ByteRange input_range = byte_range(input_storage);
+  const ByteRange first_range = byte_range(first_storage);
   const ByteRange output_range = byte_range(output_storage);
-  const bool in_place = equal_range(input_range, output_range);
-  if (overlaps(input_range, output_range) && !in_place) {
+  const bool in_place = operation_.kind() == OperationKind::kRmsNorm &&
+                        equal_range(first_range, output_range);
+  if (overlaps(first_range, output_range) && !in_place) {
     return std::unexpected(Status::InvalidArgument(
-        "RMSNorm input and output may only overlap by exact in-place alias"));
+        "operation input and output have an unsafe overlap"));
   }
 
-  mem::ConstBufferView weight_storage;
+  mem::ConstBufferView second_storage;
+  ByteRange second_range{};
+  bool shared_inputs = false;
   if (input_count_ == 2) {
-    weight_storage = weight->storage();
-    if (overlaps(byte_range(weight_storage), output_range)) {
+    second_storage = second->storage();
+    second_range = byte_range(second_storage);
+    if (overlaps(second_range, output_range)) {
       return std::unexpected(Status::InvalidArgument(
-          "RMSNorm weight and output storage must not overlap"));
+          "operation second input and output have an unsafe overlap"));
     }
+    shared_inputs = equal_range(first_range, second_range);
   }
-  const mem::MemoryProperties input_properties =
-      input_storage.resource().properties();
+
+  const mem::MemoryProperties first_properties =
+      first_storage.resource().properties();
   const mem::MemoryProperties output_properties =
       output_storage.resource().properties();
-  mem::MemoryProperties weight_properties{};
+  mem::MemoryProperties second_properties{};
   if (input_count_ == 2) {
-    weight_properties = weight_storage.resource().properties();
+    second_properties = second_storage.resource().properties();
   }
-  if (!input_properties.has(mem::MemoryProperty::kHostAccessible) ||
+  if (!first_properties.has(mem::MemoryProperty::kHostAccessible) ||
       !output_properties.has(mem::MemoryProperty::kHostAccessible) ||
       (input_count_ == 2 &&
-       !weight_properties.has(mem::MemoryProperty::kHostAccessible))) {
+       !second_properties.has(mem::MemoryProperty::kHostAccessible))) {
     return std::unexpected(Status::FailedPrecondition(
-        "CPU RMSNorm requires host-accessible tensor storage"));
+        "CPU operation requires host-accessible tensor storage"));
   }
 
-  // The submission is admitted after every cheap contract check. Provider
-  // map/coherence failures below are terminal Completion results, matching the
-  // same lifecycle boundary future asynchronous backends use.
-  if (!input_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
-    Status status = input_storage.invalidate();
+  // Admission ends here. Mapping/coherence failures are terminal Completion
+  // values, preserving the same boundary future asynchronous providers use.
+  if (!first_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
+    Status status = first_storage.invalidate();
     if (!status.ok()) return completed_failure(std::move(status));
   }
-  if (input_count_ == 2 &&
-      !weight_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
-    Status status = weight_storage.invalidate();
+  if (input_count_ == 2 && !shared_inputs &&
+      !second_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
+    Status status = second_storage.invalidate();
     if (!status.ok()) return completed_failure(std::move(status));
   }
 
-  mem::HostMapping input_mapping;
-  mem::HostMapping weight_mapping;
+  mem::HostMapping first_mapping;
+  mem::HostMapping second_mapping;
   mem::HostMapping output_mapping;
-  const float* input_data = nullptr;
-  const float* weight_data = nullptr;
+  const float* first_data = nullptr;
+  const float* second_data = nullptr;
   float* output_data = nullptr;
 
   if (in_place) {
@@ -350,63 +601,66 @@ Result<Completion> PreparedOperation::submit_impl(
     auto writable = output_mapping.writable_bytes();
     if (!writable) return completed_failure(std::move(writable).error());
     output_data = reinterpret_cast<float*>(writable->data());
-    input_data = output_data;
+    first_data = output_data;
   } else {
-    auto mapping = input_storage.map_host();
+    auto mapping = first_storage.map_host();
     if (!mapping) return completed_failure(std::move(mapping).error());
-    input_mapping = std::move(*mapping);
-    input_data = reinterpret_cast<const float*>(input_mapping.bytes().data());
+    first_mapping = std::move(*mapping);
+    first_data = reinterpret_cast<const float*>(first_mapping.bytes().data());
   }
 
   if (input_count_ == 2) {
-    auto mapping = weight_storage.map_host();
-    if (!mapping) {
-      input_mapping.close().IgnoreError();
-      output_mapping.close().IgnoreError();
-      return completed_failure(std::move(mapping).error());
+    if (shared_inputs && !in_place) {
+      second_data = first_data;
+    } else {
+      auto mapping = second_storage.map_host();
+      if (!mapping) {
+        first_mapping.close().IgnoreError();
+        output_mapping.close().IgnoreError();
+        return completed_failure(std::move(mapping).error());
+      }
+      second_mapping = std::move(*mapping);
+      second_data =
+          reinterpret_cast<const float*>(second_mapping.bytes().data());
     }
-    weight_mapping = std::move(*mapping);
-    weight_data =
-        reinterpret_cast<const float*>(weight_mapping.bytes().data());
   }
 
   if (!in_place) {
     auto mapping = output_storage.map_host(mem::HostAccess::kWrite);
     if (!mapping) {
-      weight_mapping.close().IgnoreError();
-      input_mapping.close().IgnoreError();
+      second_mapping.close().IgnoreError();
+      first_mapping.close().IgnoreError();
       return completed_failure(std::move(mapping).error());
     }
     output_mapping = std::move(*mapping);
     auto writable = output_mapping.writable_bytes();
     if (!writable) {
       output_mapping.close().IgnoreError();
-      weight_mapping.close().IgnoreError();
-      input_mapping.close().IgnoreError();
+      second_mapping.close().IgnoreError();
+      first_mapping.close().IgnoreError();
       return completed_failure(std::move(writable).error());
     }
     output_data = reinterpret_cast<float*>(writable->data());
   }
 
-  if (!aligned_for_float(input_data) || !aligned_for_float(weight_data) ||
+  if (!aligned_for_float(first_data) || !aligned_for_float(second_data) ||
       !aligned_for_float(output_data)) {
     output_mapping.close().IgnoreError();
-    weight_mapping.close().IgnoreError();
-    input_mapping.close().IgnoreError();
+    second_mapping.close().IgnoreError();
+    first_mapping.close().IgnoreError();
     return completed_failure(Status::FailedPrecondition(
-        "CPU RMSNorm tensor mapping is not aligned for float32"));
+        "CPU operation tensor mapping is not aligned for float32"));
   }
 
-  route_(input_data, weight_data, output_data, element_count_,
-         operation_.rms_norm().epsilon);
+  route_(first_data, second_data, output_data, parameters_, scalar_);
 
   Status terminal = Status::Ok();
   if (!output_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     preserve_first_error(terminal, output_mapping.flush());
   }
   preserve_first_error(terminal, output_mapping.close());
-  preserve_first_error(terminal, weight_mapping.close());
-  preserve_first_error(terminal, input_mapping.close());
+  preserve_first_error(terminal, second_mapping.close());
+  preserve_first_error(terminal, first_mapping.close());
   return Completion::completed(std::move(terminal));
 }
 
@@ -417,10 +671,10 @@ Result<Completion> PreparedOperation::submit(
 }
 
 Result<Completion> PreparedOperation::submit(
-    Queue& queue, const ConstTensorView& input,
-    const ConstTensorView& weight,
+    Queue& queue, const ConstTensorView& first,
+    const ConstTensorView& second,
     const TensorView& output) const noexcept {
-  return submit_impl(queue, &input, &weight, 2, &output, 1);
+  return submit_impl(queue, &first, &second, 2, &output, 1);
 }
 
 }  // namespace hyle::compute

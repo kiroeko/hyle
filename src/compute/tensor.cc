@@ -104,6 +104,47 @@ Result<TensorDesc> TensorDesc::strided(
   return result;
 }
 
+Result<TensorDesc> TensorDesc::permuted(
+    std::span<const std::size_t> axes) const noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("tensor description is invalid"));
+  }
+  if (axes.size() != rank_) {
+    return std::unexpected(Status::InvalidArgument(
+        "tensor permutation rank does not match the description"));
+  }
+
+  std::array<bool, kMaxTensorRank> seen{};
+  std::array<std::int64_t, kMaxTensorRank> dimensions{};
+  std::array<std::int64_t, kMaxTensorRank> strides{};
+  for (std::size_t destination = 0; destination < axes.size(); ++destination) {
+    const std::size_t source = axes[destination];
+    if (source >= rank_ || seen[source]) {
+      return std::unexpected(Status::InvalidArgument(
+          "tensor permutation contains an invalid or duplicate axis"));
+    }
+    seen[source] = true;
+    dimensions[destination] = dimensions_[source];
+    strides[destination] = strides_[source];
+  }
+  return strided(type_, std::span(dimensions.data(), rank_),
+                 std::span(strides.data(), rank_));
+}
+
+Result<TensorDesc> TensorDesc::transposed() const noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("tensor description is invalid"));
+  }
+  if (rank_ != 2) {
+    return std::unexpected(
+        Status::InvalidArgument("matrix transpose requires rank 2"));
+  }
+  constexpr std::array<std::size_t, 2> axes{1, 0};
+  return permuted(axes);
+}
+
 Result<std::size_t> TensorDesc::element_count() const noexcept {
   if (!valid()) {
     return std::unexpected(

@@ -22,11 +22,13 @@ using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
 using hyle::compute::Device;
+using hyle::compute::MatMul;
 using hyle::compute::OperationKind;
 using hyle::compute::PreparedOperation;
 using hyle::compute::ProviderKind;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
+using hyle::compute::SiluAndMul;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::mem::Buffer;
@@ -44,6 +46,12 @@ using hyle::mem::ResourceHostMapping;
 TensorDesc row_description(std::size_t count) {
   const std::array<std::int64_t, 1> shape{
       static_cast<std::int64_t>(count)};
+  return TensorDesc::dense(DataType::kFloat32, shape).value();
+}
+
+TensorDesc matrix_description(std::size_t rows, std::size_t columns) {
+  const std::array<std::int64_t, 2> shape{
+      static_cast<std::int64_t>(rows), static_cast<std::int64_t>(columns)};
   return TensorDesc::dense(DataType::kFloat32, shape).value();
 }
 
@@ -205,12 +213,11 @@ TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
   ASSERT_FALSE(shape.has_value());
   EXPECT_TRUE(shape.error().IsInvalidArgument());
 
-  const std::array<std::int64_t, 2> matrix_shape{2, 4};
-  const TensorDesc matrix =
-      TensorDesc::dense(DataType::kFloat32, matrix_shape).value();
-  auto rank = hyle::compute::prepare(context, RmsNorm{}, matrix, matrix);
+  const TensorDesc scalar =
+      TensorDesc::dense(DataType::kFloat32, {}).value();
+  auto rank = hyle::compute::prepare(context, RmsNorm{}, scalar, scalar);
   ASSERT_FALSE(rank.has_value());
-  EXPECT_TRUE(rank.error().IsUnimplemented());
+  EXPECT_TRUE(rank.error().IsInvalidArgument());
 
   const std::array<std::int64_t, 1> shape8{8};
   const std::array<std::int64_t, 1> broadcast_stride{0};
@@ -225,6 +232,203 @@ TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
   auto closed = hyle::compute::prepare(context, RmsNorm{}, row, row);
   ASSERT_FALSE(closed.has_value());
   EXPECT_TRUE(closed.error().IsFailedPrecondition());
+}
+
+TEST(OperationShape, InfersNaturalInferenceShapesAndRejectsMismatches) {
+  const TensorDesc rows = matrix_description(3, 8);
+  const TensorDesc weight = row_description(8);
+  EXPECT_EQ(hyle::compute::infer_output_description(
+                hyle::compute::Operation(RmsNorm{}),
+                std::array{rows, weight})
+                .value(),
+            rows);
+
+  const TensorDesc left = matrix_description(3, 8);
+  const TensorDesc right = matrix_description(8, 10);
+  const TensorDesc expected = matrix_description(3, 10);
+  EXPECT_EQ(hyle::compute::infer_output_description(
+                hyle::compute::Operation(MatMul{}),
+                std::array{left, right})
+                .value(),
+            expected);
+
+  const TensorDesc stored_weight = matrix_description(10, 8);
+  const TensorDesc logical_weight = stored_weight.transposed().value();
+  EXPECT_EQ(hyle::compute::infer_output_description(
+                hyle::compute::Operation(MatMul{}),
+                std::array{left, logical_weight})
+                .value(),
+            expected);
+
+  const TensorDesc packed = matrix_description(3, 20);
+  EXPECT_EQ(hyle::compute::infer_output_description(
+                hyle::compute::Operation(SiluAndMul{}),
+                std::array{packed})
+                .value(),
+            expected);
+
+  EXPECT_TRUE(hyle::compute::infer_output_description(
+                  hyle::compute::Operation(MatMul{}),
+                  std::array{left, matrix_description(7, 10)})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(hyle::compute::infer_output_description(
+                  hyle::compute::Operation(SiluAndMul{}),
+                  std::array{matrix_description(3, 9)})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(hyle::compute::infer_output_description(
+                  hyle::compute::Operation(RmsNorm{}),
+                  std::array{rows, row_description(7)})
+                  .error()
+                  .IsInvalidArgument());
+}
+
+TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {
+  constexpr std::size_t row_count = 2;
+  constexpr std::size_t hidden = 4;
+  const std::vector<float> input{1, 2, 3, 4, -2, 1, 0.5F, 3};
+  const std::vector<float> weight{0.5F, 1, 1.5F, -2};
+  const TensorDesc input_desc = matrix_description(row_count, hidden);
+  const TensorDesc weight_desc = row_description(hidden);
+  Buffer input_buffer = Buffer::create(hyle::mem::system_resource(),
+                                       input.size() * sizeof(float))
+                            .value();
+  Buffer weight_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        weight.size() * sizeof(float))
+                             .value();
+  Buffer output_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        input.size() * sizeof(float))
+                             .value();
+  write_floats(input_buffer.view(), input);
+  write_floats(weight_buffer.view(), weight);
+
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  PreparedOperation prepared = hyle::compute::prepare(
+      context, RmsNorm{}, input_desc, weight_desc, input_desc).value();
+  auto input_view =
+      ConstTensorView::create(input_desc, input_buffer.view()).value();
+  auto weight_view =
+      ConstTensorView::create(weight_desc, weight_buffer.view()).value();
+  auto output_view =
+      TensorView::create(input_desc, output_buffer.view()).value();
+  ASSERT_TRUE(prepared.submit(queue, input_view, weight_view, output_view)
+                  ->wait()
+                  .ok());
+
+  const auto actual = read_floats(output_buffer.view(), input.size());
+  for (std::size_t row = 0; row < row_count; ++row) {
+    expect_rms_norm(std::span(input).subspan(row * hidden, hidden), weight,
+                    std::span(actual).subspan(row * hidden, hidden),
+                    RmsNorm{}.epsilon);
+  }
+}
+
+TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
+  constexpr std::size_t rows = 2;
+  constexpr std::size_t inner = 3;
+  constexpr std::size_t columns = 4;
+  const std::vector<float> left{1, 2, 3, -1, 0.5F, 4};
+  const std::vector<float> right_row_major{
+      1, 2, 3, 4,
+      5, 6, 7, 8,
+      9, 10, 11, 12};
+  std::vector<float> right_transposed(columns * inner);
+  for (std::size_t k = 0; k < inner; ++k) {
+    for (std::size_t column = 0; column < columns; ++column) {
+      right_transposed[column * inner + k] =
+          right_row_major[k * columns + column];
+    }
+  }
+  std::vector<float> expected(rows * columns, 0.0F);
+  for (std::size_t row = 0; row < rows; ++row) {
+    for (std::size_t column = 0; column < columns; ++column) {
+      for (std::size_t k = 0; k < inner; ++k) {
+        expected[row * columns + column] +=
+            left[row * inner + k] * right_row_major[k * columns + column];
+      }
+    }
+  }
+
+  const TensorDesc left_desc = matrix_description(rows, inner);
+  const TensorDesc right_desc = matrix_description(inner, columns);
+  const TensorDesc physical_desc = matrix_description(columns, inner);
+  const TensorDesc transposed_desc = physical_desc.transposed().value();
+  const TensorDesc output_desc = matrix_description(rows, columns);
+  Buffer left_buffer = Buffer::create(hyle::mem::system_resource(),
+                                      left.size() * sizeof(float)).value();
+  Buffer right_buffer = Buffer::create(hyle::mem::system_resource(),
+                                       right_row_major.size() * sizeof(float))
+                            .value();
+  Buffer output_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        expected.size() * sizeof(float)).value();
+  write_floats(left_buffer.view(), left);
+
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  auto left_view =
+      ConstTensorView::create(left_desc, left_buffer.view()).value();
+  auto output_view =
+      TensorView::create(output_desc, output_buffer.view()).value();
+
+  write_floats(right_buffer.view(), right_row_major);
+  auto right_view =
+      ConstTensorView::create(right_desc, right_buffer.view()).value();
+  auto row_major = hyle::compute::prepare(
+      context, MatMul{}, left_desc, right_desc, output_desc).value();
+  ASSERT_TRUE(row_major.submit(queue, left_view, right_view, output_view)
+                  ->wait()
+                  .ok());
+  EXPECT_EQ(read_floats(output_buffer.view(), expected.size()), expected);
+
+  write_floats(right_buffer.view(), right_transposed);
+  auto transposed_view =
+      ConstTensorView::create(transposed_desc, right_buffer.view()).value();
+  auto transposed = hyle::compute::prepare(
+      context, MatMul{}, left_desc, transposed_desc, output_desc).value();
+  ASSERT_TRUE(transposed.submit(queue, left_view, transposed_view, output_view)
+                  ->wait()
+                  .ok());
+  const auto actual = read_floats(output_buffer.view(), expected.size());
+  for (std::size_t index = 0; index < expected.size(); ++index) {
+    EXPECT_NEAR(actual[index], expected[index],
+                std::abs(expected[index]) * 2.0e-6F + 1.0e-6F);
+  }
+}
+
+TEST(PreparedOperation, RunsPackedSiluAndMulAcrossRows) {
+  constexpr std::size_t rows = 2;
+  constexpr std::size_t hidden = 3;
+  const std::vector<float> packed{
+      -1, 0, 2, 3, 4, -2,
+      0.5F, -3, 1, -1, 2, 0.25F};
+  const TensorDesc input_desc = matrix_description(rows, hidden * 2);
+  const TensorDesc output_desc = matrix_description(rows, hidden);
+  Buffer input_buffer = Buffer::create(hyle::mem::system_resource(),
+                                       packed.size() * sizeof(float)).value();
+  Buffer output_buffer = Buffer::create(
+      hyle::mem::system_resource(), rows * hidden * sizeof(float)).value();
+  write_floats(input_buffer.view(), packed);
+  auto input_view =
+      ConstTensorView::create(input_desc, input_buffer.view()).value();
+  auto output_view =
+      TensorView::create(output_desc, output_buffer.view()).value();
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  auto prepared = hyle::compute::prepare(
+      context, SiluAndMul{}, input_desc, output_desc).value();
+  ASSERT_TRUE(prepared.submit(queue, input_view, output_view)->wait().ok());
+  const auto actual = read_floats(output_buffer.view(), rows * hidden);
+  for (std::size_t row = 0; row < rows; ++row) {
+    for (std::size_t index = 0; index < hidden; ++index) {
+      const float gate = packed[row * hidden * 2 + index];
+      const float value = packed[row * hidden * 2 + hidden + index];
+      const float expected = gate / (1.0F + std::exp(-gate)) * value;
+      EXPECT_NEAR(actual[row * hidden + index], expected,
+                  std::abs(expected) * 5.0e-5F + 2.0e-6F);
+    }
+  }
 }
 
 TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {

@@ -40,6 +40,16 @@ class HYLE_COMPUTE_API TensorDesc final {
       DataType type, std::span<const std::int64_t> dimensions,
       std::span<const std::int64_t> element_strides) noexcept;
 
+  // Return a logical view description with axes reordered. No storage is
+  // moved: dimensions and element strides are permuted together. `axes` must
+  // contain every source axis exactly once.
+  Result<TensorDesc> permuted(
+      std::span<const std::size_t> axes) const noexcept;
+
+  // Natural rank-2 convenience for matrix weights stored in the opposite
+  // orientation. Equivalent to permuted({1, 0}).
+  Result<TensorDesc> transposed() const noexcept;
+
   bool valid() const noexcept { return type_ != DataType::kUnknown; }
   explicit operator bool() const noexcept { return valid(); }
   DataType data_type() const noexcept { return type_; }

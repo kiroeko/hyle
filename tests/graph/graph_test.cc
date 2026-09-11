@@ -49,7 +49,8 @@ TEST(GraphBuilder, PublishesAnImmutableTypedOneOpGraph) {
   EXPECT_EQ(graph.input_description().value(), row(32));
   EXPECT_EQ(graph.output_description().value(), row(32));
   EXPECT_EQ(graph.operation()->kind(), OperationKind::kRmsNorm);
-  EXPECT_FLOAT_EQ(graph.operation()->rms_norm().epsilon, 1.0e-6F);
+  ASSERT_NE(graph.operation()->rms_norm(), nullptr);
+  EXPECT_FLOAT_EQ(graph.operation()->rms_norm()->epsilon, 1.0e-6F);
   EXPECT_TRUE(graph.node_id()->valid());
 }
 

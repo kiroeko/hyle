@@ -14,25 +14,40 @@ namespace hyle::compute {
 
 enum class OperationKind : std::uint8_t {
   kRmsNorm = 0,
+  kMatMul,
+  kSiluAndMul,
 };
 
 struct RmsNorm final {
   float epsilon = 1.0e-5F;
 };
 
+// Logical rank-2 matrix multiplication: A[M,K] * B[K,N] -> C[M,N].
+// Physical orientation is described by TensorDesc strides, not flags here.
+struct MatMul final {};
+
+// Packed SwiGLU used by current inference engines:
+// input[..., 2*d] -> silu(input[..., :d]) * input[..., d:].
+struct SiluAndMul final {};
+
 // Typed operation value. The public shape grows by adding typed descriptors,
 // never a string property bag or a provider-specific node pointer.
 class Operation final {
  public:
   constexpr explicit Operation(RmsNorm rms_norm) noexcept
-      : rms_norm_(rms_norm) {}
+      : kind_(OperationKind::kRmsNorm), rms_norm_(rms_norm) {}
+  constexpr explicit Operation(MatMul) noexcept
+      : kind_(OperationKind::kMatMul) {}
+  constexpr explicit Operation(SiluAndMul) noexcept
+      : kind_(OperationKind::kSiluAndMul) {}
 
-  constexpr OperationKind kind() const noexcept {
-    return OperationKind::kRmsNorm;
+  constexpr OperationKind kind() const noexcept { return kind_; }
+  constexpr const RmsNorm* rms_norm() const noexcept {
+    return kind_ == OperationKind::kRmsNorm ? &rms_norm_ : nullptr;
   }
-  constexpr const RmsNorm& rms_norm() const noexcept { return rms_norm_; }
 
  private:
+  OperationKind kind_ = OperationKind::kRmsNorm;
   RmsNorm rms_norm_{};
 };
 
@@ -44,6 +59,11 @@ HYLE_COMPUTE_API std::string_view provider_name(
     ProviderKind provider) noexcept;
 HYLE_COMPUTE_API std::string_view operation_name(
     OperationKind operation) noexcept;
+
+// The single source of shape/layout rules shared by direct Compute and Graph.
+// Every v2 operation has exactly one output.
+HYLE_COMPUTE_API Result<TensorDesc> infer_output_description(
+    Operation operation, std::span<const TensorDesc> inputs) noexcept;
 
 class PreparedOperation;
 
@@ -91,21 +111,25 @@ class PreparedOperation final {
 
   PreparedOperation(detail::ContextState* state, Operation operation,
                     std::span<const TensorDesc> inputs,
-                    TensorDesc output) noexcept;
+                    TensorDesc output, std::array<std::size_t, 3> parameters,
+                    float scalar, void (*route)(
+                        const float*, const float*, float*,
+                        const std::array<std::size_t, 3>&, float) noexcept) noexcept;
 
   Result<Completion> submit_impl(
-      Queue& queue, const ConstTensorView* input,
-      const ConstTensorView* weight, std::size_t provided_input_count,
+      Queue& queue, const ConstTensorView* first,
+      const ConstTensorView* second, std::size_t provided_input_count,
       const TensorView* output, std::size_t provided_output_count) const noexcept;
 
-  using Route = void (*)(const float*, const float*, float*, std::size_t,
-                         float) noexcept;
+  using Route = void (*)(const float*, const float*, float*,
+                         const std::array<std::size_t, 3>&, float) noexcept;
 
   detail::ContextState* state_ = nullptr;
   Operation operation_{RmsNorm{}};
   std::array<TensorDesc, 2> inputs_{};
   TensorDesc output_{};
-  std::size_t element_count_ = 0;
+  std::array<std::size_t, 3> parameters_{};
+  float scalar_ = 0.0F;
   std::uint8_t input_count_ = 0;
   Route route_ = nullptr;
 };
@@ -116,5 +140,11 @@ HYLE_COMPUTE_API Result<PreparedOperation> prepare(
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(
     const Context& context, RmsNorm operation, TensorDesc input,
     TensorDesc weight, TensorDesc output) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation> prepare(
+    const Context& context, MatMul operation, TensorDesc left,
+    TensorDesc right, TensorDesc output) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation> prepare(
+    const Context& context, SiluAndMul operation, TensorDesc input,
+    TensorDesc output) noexcept;
 
 }  // namespace hyle::compute

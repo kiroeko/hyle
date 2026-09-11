@@ -79,6 +79,49 @@ TEST(TensorDesc, StridedAndBroadcastDescriptionsReportPhysicalExtent) {
   EXPECT_FALSE(broadcast.is_dense());
 }
 
+TEST(TensorDesc, PermutationDescribesZeroCopyLogicalViews) {
+  const std::array<std::int64_t, 3> shape{2, 3, 4};
+  const TensorDesc dense =
+      TensorDesc::dense(DataType::kFloat32, shape).value();
+  const std::array<std::size_t, 3> axes{2, 0, 1};
+  const TensorDesc permuted = dense.permuted(axes).value();
+  const std::array<std::int64_t, 3> expected_shape{4, 2, 3};
+  const std::array<std::int64_t, 3> expected_strides{1, 12, 4};
+  EXPECT_TRUE(std::ranges::equal(permuted.dimensions(), expected_shape));
+  EXPECT_TRUE(
+      std::ranges::equal(permuted.element_strides(), expected_strides));
+  EXPECT_EQ(permuted.required_bytes(), dense.required_bytes());
+  EXPECT_FALSE(permuted.is_dense());
+
+  const std::array<std::int64_t, 2> matrix_shape{7, 11};
+  const TensorDesc matrix =
+      TensorDesc::dense(DataType::kFloat32, matrix_shape).value();
+  const TensorDesc transposed = matrix.transposed().value();
+  const std::array<std::int64_t, 2> transposed_shape{11, 7};
+  const std::array<std::int64_t, 2> transposed_strides{1, 11};
+  EXPECT_TRUE(
+      std::ranges::equal(transposed.dimensions(), transposed_shape));
+  EXPECT_TRUE(
+      std::ranges::equal(transposed.element_strides(), transposed_strides));
+  EXPECT_EQ(transposed.required_bytes(), matrix.required_bytes());
+}
+
+TEST(TensorDesc, RejectsInvalidPermutationsAndNonMatrixTranspose) {
+  const TensorDesc invalid;
+  EXPECT_TRUE(invalid.permuted({}).error().IsFailedPrecondition());
+
+  const std::array<std::int64_t, 3> shape{2, 3, 4};
+  const TensorDesc tensor =
+      TensorDesc::dense(DataType::kFloat32, shape).value();
+  const std::array<std::size_t, 2> short_axes{0, 1};
+  EXPECT_TRUE(tensor.permuted(short_axes).error().IsInvalidArgument());
+  const std::array<std::size_t, 3> duplicate_axes{0, 0, 2};
+  EXPECT_TRUE(tensor.permuted(duplicate_axes).error().IsInvalidArgument());
+  const std::array<std::size_t, 3> out_of_range_axes{0, 1, 3};
+  EXPECT_TRUE(tensor.permuted(out_of_range_axes).error().IsInvalidArgument());
+  EXPECT_TRUE(tensor.transposed().error().IsInvalidArgument());
+}
+
 TEST(TensorDesc, RejectsInvalidAndUnrepresentableSchemas) {
   const std::array<std::int64_t, 1> one{1};
   auto unknown = TensorDesc::dense(DataType::kUnknown, one);
