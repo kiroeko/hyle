@@ -13,7 +13,7 @@
   "peers": [
     {
       "id": "hyle-direct-mem-simd",
-      "revision": "runtime-bound",
+      "revision": "982309c3431d7440b505482d98f3dc2f23570044",
       "configuration": {
         "role": "same-product lower abstraction tier, not an external SOTA peer",
         "delivery_shape": "source",
@@ -23,7 +23,7 @@
     },
     {
       "id": "hyle-compute-prepared",
-      "revision": "runtime-bound",
+      "revision": "982309c3431d7440b505482d98f3dc2f23570044",
       "configuration": {
         "role": "same-product immediate lower abstraction tier, not an external SOTA peer",
         "delivery_shape": "source",
