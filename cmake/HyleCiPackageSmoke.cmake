@@ -87,10 +87,7 @@ foreach(_linkage IN ITEMS shared static)
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${_static}
     -DHYLE_IO_TLS=OFF
-    -DHYLE_IO_HTTP2=OFF
-    -DHYLE_COMPUTE_CUDA=OFF
-    -DHYLE_COMPUTE_GGML=OFF
-    -DHYLE_COMPUTE_VULKAN=OFF)
+    -DHYLE_IO_HTTP2=OFF)
   _hyle_smoke_run("build ${_linkage} SDK"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2)
   _hyle_smoke_run("install ${_linkage} SDK"
