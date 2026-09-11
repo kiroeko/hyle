@@ -1,6 +1,6 @@
 # IO TLS v4：组合层 context identity
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -64,4 +64,17 @@ provider access、allocation 或 runtime dispatch。公开 `context()`/native so
 - Windows、Linux io_uring/epoll 与两台 macOS 的 TLS ON HTTPS file-body 路线通过；TLS OFF/ON factor
   query、WSL ASan/UBSan/TSan 各 `19/19 PASS`，Windows `io` source/shared/static 消费全部通过。
 - 本轮只需 P0：header-inline accessor 为零字段、零符号、零 provider call，普通 TLS 路线不引用它；前轮
-  TLS 性能证据不受影响且不重跑。terminal 红队与中央状态迁移仍须在下一提交签署。
+  TLS 性能证据不受影响且不重跑。候选签署时尚未声明 terminal 结果；最终裁决见下节。
+
+## Terminal verification and verdict（`CLOSED`）
+
+不可变候选为 `d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d`，候选后无产品漂移。Windows、Linux
+io_uring/epoll、MacBook Air 与 Mac mini 的 HTTPS file-body same/different-context 路线通过；不同 context
+在任何 wire/file IO 前返回 typed `InvalidArgument`。TLS OFF/ON factor query、WSL ASan/UBSan/TSan 各
+`19/19 PASS`，Windows source/shared/static `io` 直接消费全部通过。
+
+候选后红队确认该 seam 仍是 header-inline friend/accessor：无对象字段、导出符号、provider/native handle、
+allocation、runtime dispatch 或普通 TLS 热路径引用；它只复用 io_core 已有 context identity。P0 因而
+**PASS**，P1 不适用且前轮 TLS 数据不重跑。七门均 **PASS**，本轮 `CLOSED`。只有 identity seam 产生
+可复现 lifetime/context 缺陷，或组合消费者无法保持零字段/零符号边界时重开。候选 LOC：`io_tls` 自实现、
+不含测试 `1,539` 行。

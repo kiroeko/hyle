@@ -1,6 +1,6 @@
 # IO HTTP v3：文件区域响应体
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -111,5 +111,25 @@ nginx `5c812c034e6c` 与 Beast `cb94f33fcb13` 证明 plain file response 的 ker
   ASan/UBSan/TSan 各 `19/19 PASS`；Windows source/relocated shared/relocated static 的 `io` 直接消费
   全部通过，TLS ON/OFF 与 HTTP2 ON/OFF factor 组合没有被本轮破坏。
 - 源码 preflight 未找到能与完整 HYLE framing、request retirement、backpressure、completion 和 teardown
-  同合同的 peer，P1 为 `NOT_APPLICABLE`；P0 成本账单没有固定输项。terminal 红队与中央状态迁移仍须在
-  下一提交签署，本节不提前声明 `CLOSED`。
+  同合同的 peer，P1 为 `NOT_APPLICABLE`；P0 成本账单没有固定输项。候选签署时尚未声明 terminal 结果；
+  最终裁决见下节。
+
+## Terminal verification and verdict（`CLOSED`）
+
+不可变候选为 `d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d`，候选后无产品漂移。Windows/MSVC
+19.50、Linux/GCC 14 的 io_uring/epoll、MacBook Air 与 Mac mini/AppleClang 21 均通过 plain/TLS 的 GET
+file-region、HEAD/bodyless、短文件与跨 context 用例；WSL ASan、UBSan、TSan 的 TLS ON 组合各
+`19/19 PASS`。Windows `io` source、relocated shared、relocated static consumer 以及 TLS/HTTP2 OFF/ON
+factor 组合全部通过；公开头、用户指南、架构页和文档链接门通过。
+
+候选后红队确认 file overload 只调用既有 response writer：pre-wire validation 在 header 前完成；HEAD、
+204/205/304 不读 file 或分配 body scratch；plain 路线只把 body progress 交给 io_core；TLS 只持有一块
+64 KiB scratch；任何 header 后的 short read、cancel、peer close、OOM 或 write failure 都令 writer/
+connection 不可复用。没有第二份 parser、framing 状态机、route policy 或 benchmark 入口。
+
+工程性能为 **P0 PASS**：plain body 保持 kernel file-send 的零 payload userspace copy；TLS 为加密所需的
+O(n) 一次有界 scratch 路线；旧 span/source 热路径的 layout 和分支不变。完整同 framing、request-body
+retirement、backpressure、completion 与 teardown 的 peer 不存在，P1 为 `NOT_APPLICABLE`，不使用 raw
+sendfile 制造苹果对橘子的排名。七门均 **PASS**，本轮 `CLOSED`。只有可复现 HTTP state/reuse 缺陷、真实
+消费者证明另一个通用 opened-file journey，或同合同 material 回归才重开；static-file route、path/MIME/
+Range/cache 仍归服务层。候选 LOC：`io_http` 自实现、不含测试 `3,646` 行。

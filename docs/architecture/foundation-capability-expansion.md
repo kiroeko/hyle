@@ -28,7 +28,7 @@ ggml/llama.cpp、ds4、vLLM、SGLang 的推理基座为主需求锚，并用渲�
 | `G03` | managed child process：spawn、stdio、async wait、timeout/cancel、tree termination、reap | 新 `process` factor/product；HYLE 拥有语义和 scheduler-native lifecycle，OS mechanism 自有 | 只有零散 OS/IO 原子，用户必须重写最易出错的生命周期 |
 | `G04` | WebSocket client/server handshake、HTTP handoff、message/frame/control/close | 新 `io_websocket` factor + 定向重开 `io_http`；协议状态机归 HYLE | HTTP 101 与预读残留字节不能安全移交，且没有 RFC 6455 owner |
 | `G05` | recursive directory-tree change stream | `io_watch`；`SELF` 三平台 backend | 已交付显式 `directory_tree`、root-relative batch、rescan/cap 与三平台 backend |
-| `G06` | async file-region to byte-stream + HTTP file body，支持时走 kernel fast path | `io_core` + `io_http`；`SELF` OS fast path 和 portable fallback | 只能由用户手写 read/write loop；现有 `io_transfer` 不是该任务 owner |
+| `G06` | async file-region to byte-stream + HTTP file body，支持时走 kernel fast path | `io_core` + `io_http`；`SELF` OS fast path 和 portable fallback | 已交付 `FileRegion/send_file_region` 与 HTTP file-body；plain 使用三平台 native fast path，TLS/unsupported 使用一次有界 fallback |
 | `G07` | TLS credential source closure：file/borrowed PEM、encrypted-key password/callback | `io_tls`；`BORROW` OpenSSL credential mechanism，HYLE 拥有 provider-neutral C++ 形状 | 已交付 file/borrowed PEM、encrypted-key password/callback、client/server identity 与 mTLS |
 | `G08` | opt-in low/normal/high non-preemptive execution priority | `sched`；`SELF`，独立于 OS thread priority 和应用 request policy | 已交付 opt-in 三档、继承/覆盖和全 wake/admission 路由；默认 normal-only 成本隔离 |
 

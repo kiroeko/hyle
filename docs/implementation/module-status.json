@@ -215,24 +215,36 @@
     },
     {
       "module": "io_core",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-core-v4-file-region-streaming.md",
       "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d",
-      "summary": "io_core v4 CANDIDATE：G06 file-region 的三平台 native fast path、有界 fallback、typed progress/cancel 与直接消费者已在不可变候选完成；terminal 红队待签。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-core-v4-file-region-streaming.md"
+      },
+      "summary": "io_core v4 CLOSED：G06 file-region 的三平台 native fast path、有界 fallback、typed progress/cancel 通过三平台、sanitizer、三交付和红队；无同合同 peer，P0 结构成本通过。"
     },
     {
       "module": "io_tls",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-tls-v4-context-identity.md",
       "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d",
-      "summary": "io_tls v4 CANDIDATE：G06 HTTPS file-body 使用零字段、零符号的 inline context identity seam，在三平台和三交付完成验证；terminal 红队待签。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-tls-v4-context-identity.md"
+      },
+      "summary": "io_tls v4 CLOSED：G06 HTTPS file-body 的 inline context identity seam 保持零字段、零符号和普通热路径零成本，通过三平台、sanitizer、三交付与红队。"
     },
     {
       "module": "io_http",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-http-v3-file-body.md",
       "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d",
-      "summary": "io_http v3 CANDIDATE：单一 file-region response overload 复用既有 framing；plain 委托 io_core、TLS 使用一次有界 scratch，三平台和三交付已验证；terminal 红队待签。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-http-v3-file-body.md"
+      },
+      "summary": "io_http v3 CLOSED：file-region response 复用既有 framing；plain 委托 io_core、TLS 使用一次有界 scratch，状态/复用语义通过三平台、sanitizer、三交付和红队。"
     },
     {
       "module": "io_http2",

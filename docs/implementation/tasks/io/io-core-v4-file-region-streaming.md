@@ -1,6 +1,6 @@
 # IO Core v4：异步文件区域流送
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -143,5 +143,28 @@ knob。源码账单已经给出算法差异，在实现正确性稳定前不运�
   WSL ASan、UBSan、TSan 各 `19/19 PASS`。Windows `io` selected-component smoke 的 source、relocated
   shared、relocated static 三种消费全部通过；TLS/HTTP2 的 ON/OFF factor query 和直接测试也通过。
 - 源码 preflight 没有发现能与完整 typed coroutine、owner、cancel/deadline、partial progress 和 teardown
-  同合同的 strong peer，因此 P1 为 `NOT_APPLICABLE`；不得用 raw `sendfile` 对完整 façade 排名。terminal
-  红队与中央状态迁移仍须在下一提交签署，本节不提前声明 `CLOSED`。
+  同合同的 strong peer，因此 P1 为 `NOT_APPLICABLE`；不得用 raw `sendfile` 对完整 façade 排名。候选
+  签署时尚未声明 terminal 结果；最终裁决见下节。
+
+## Terminal verification and verdict（`CLOSED`）
+
+不可变候选保持为 `d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d`；候选签署后的改动只有本节、
+范围状态与中央 registry，没有产品漂移。实际验证如下：
+
+| 门 | 实际结果 |
+|---|---|
+| correctness / platforms | W1-WIN MSVC 19.50 shared Release 的 `file_region` 与 plain/TLS HTTP 组合通过；W1-WSL GCC 14 shared Release 在 io_uring 与强制 epoll 下通过；MacBook Air 与 Mac mini AppleClang 21 shared/TLS ON 均通过 `file_region` 与 HTTP file-body |
+| sanitizers | W1-WSL 的 ASan、UBSan、TSan Debug/TLS ON 各 `19/19 PASS`；GCC coroutine allocation 的 `-Wmismatched-new-delete` 是 sanitizer 构建中既有编译器建模 warning，没有 runtime report，也未改变候选 |
+| delivery / factors | `scripts/hyle-windows.ps1 -Action SelectedComponentSmoke -Component io` 的 source、relocated shared、relocated static consumer 全部通过；TLS/HTTP2 OFF/ON capability query 与启用后的直接测试通过 |
+| headers / docs | `file.h`、`tcp.h` 自包含检查通过；detail proactor 随产品和直接测试编译；IO user/architecture 文档、220 Markdown/833 links 检查通过 |
+| performance | `P0 PASS`：native 路线每 chunk 零 payload userspace copy、零新增常态 allocation；fallback 恰好一块 64 KiB allocation，O(n) read/write；旧 read/write 路线无新增字段或分支。P1 `NOT_APPLICABLE`，因为没有同 owner/cancel/progress/teardown 合同 peer |
+
+候选后源码红队逐项检查 Windows synthetic completion/`CancelIoEx` retirement、Linux per-call `SIGPIPE`
+mask/drain、io_uring/epoll writable wait、Darwin partial 与 kqueue terminal event、精确 `IoContext` owner、短文件、
+overflow、cancel/deadline 和 fallback scratch lifetime，没有发现未提交 operation、busy poll、进程级 signal
+policy、隐藏逐块 allocation 或 benchmark-only public knob。native sendfile 仍不承诺 cold-file latency；不支持的
+provider、TLS 与合法 fallback 场景明确走 bounded copy，这不是 zero-copy 宣称。
+
+七门结论均为 **PASS**，本轮 `CLOSED`。仅当出现可复现 progress/lifetime/OS backend 缺陷、真实消费者证明
+需要另一种 byte-stream owner，或同合同证据显示 material 回归时重开；whole-file/path/MIME/Range/cache
+策略仍不构成 io_core trigger。候选 LOC：`io_core` 自实现、不含测试 `11,522` 行。
