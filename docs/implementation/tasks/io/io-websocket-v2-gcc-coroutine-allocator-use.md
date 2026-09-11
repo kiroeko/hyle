@@ -41,3 +41,17 @@ P0 账单没有新增 allocation、copy、atomic、lock、syscall 或常驻 meta
 
 当前状态为 `AUDITED`。[旧 v1 terminal record](io-websocket-v1-rfc6455.md) 保持历史事实，本卡只允许
 `W02-01`。
+
+## Immutable candidate
+
+产品 candidate 为 `35af7e364a5b0ff5bcada42e975375f4ce141b99`（tree
+`e1f68b2194cdaf09ec0da73b1a3b6d9c9db268e7`）。`W02-01` 已按审计实现；同一提交还修正 HTTP Upgrade
+测试夹具里的同类显式参数使用，不改变 `io_http` 产品字节。
+
+- GCC 14.2 coverage/shared/WERROR：`hyle_io_websocket` 与测试编译通过；WebSocket runtime/逐头 2/2，
+  HTTP Upgrade 1/1；
+- Windows MSVC 19.50 Release/shared/WERROR：上述三组 3/3；
+- 公开 API、layout、协议算法、ownership 和常态成本均未变化；旧 P1 仍适用且不重跑；
+- candidate LOC：全库 556,948，自实现不含测试 100,236，`io_websocket` 实现 2,079 行。
+
+当前进入 `CANDIDATE`；后续只允许本卡的终局文档、治理与证据，不再修改产品字节。
