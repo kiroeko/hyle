@@ -1,5 +1,10 @@
-# SCOPED audit-only factor. The empty target makes identity and exact-factor
-# selection executable without pretending that a oneDNN Graph provider,
-# dependency, public API or product capability has already been admitted.
-# Product code is forbidden until the registry advances to AUDITED.
-hyle_add_module(graph_provider_onednn)
+if(HYLE_COMPUTE_ONEDNN_ENABLED)
+  hyle_add_module(graph_provider_onednn SOURCES onednn_region_provider.cc)
+  target_include_directories(hyle_graph_provider_onednn PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../compute_provider_onednn")
+  target_compile_definitions(hyle_graph_provider_onednn
+    PUBLIC HYLE_GRAPH_ONEDNN=1)
+else()
+  hyle_add_module(graph_provider_onednn OPTIONAL_ABSENT)
+endif()

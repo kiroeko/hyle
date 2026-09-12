@@ -345,10 +345,13 @@ _hyle_declare_component(compute_provider_onednn
 # audit freezes those facts and advances the component to AUDITED.
 _hyle_declare_component(compute_provider_ggml)
 
-# Resumed SCOPED identity for a lightweight Graph-only oneDNN BRGEMM region.
-# It does not revive the allocating oneDNN Graph public API and owns no
-# dependency, public header, product projection or feature before AUDITED.
-_hyle_declare_component(graph_provider_onednn)
+# Graph-only oneDNN BRGEMM region.  Its public factory remains provider-erased;
+# Graph/SIMD and the private BRGEMM mechanism are implementation dependencies,
+# so Compute never acquires a reverse Graph edge.
+_hyle_declare_component(graph_provider_onednn
+  PRIVATE_DEPS compute_ops error graph math mem simd compute_provider_onednn
+  PUBLIC_DEPS core compute
+  SPLIT_PUBLIC_HEADERS hyle/graph/providers/onednn.h)
 
 # Provider-neutral Tensor/Operation schema. Public include paths stay in the
 # hyle::compute product namespace; this factor does not acquire Mem, runtime,
@@ -437,7 +440,8 @@ _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS
   compute compute_backend_cpu compute_provider_native compute_provider_onednn)
 _hyle_declare_product(graph FACTORS
-  graph compute_backend_cpu compute_provider_native compute_provider_onednn)
+  graph compute_backend_cpu compute_provider_native compute_provider_onednn
+  graph_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream

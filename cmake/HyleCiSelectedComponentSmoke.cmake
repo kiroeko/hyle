@@ -85,10 +85,11 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
     "endif()\n")
   string(APPEND _source_extra_tests
     "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
-elseif(HYLE_SMOKE_COMPONENT STREQUAL "compute")
-  # The provider is deliberately opt-in and x64-only. Native x64 smokes select
-  # it so all delivery forms prove the optional closure; native ARM smokes
-  # explicitly keep it OFF and prove the honest HYLE-native product instead.
+elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
+  # The provider is deliberately opt-in and x64-only. Native x64 Compute and
+  # Graph smokes select it so all delivery forms prove the optional closure;
+  # native ARM smokes explicitly keep it OFF and prove the honest HYLE-native
+  # product instead.
   # This driver runs in `cmake -P` script mode, where
   # CMAKE_HOST_SYSTEM_PROCESSOR is not initialized. Query the host explicitly;
   # otherwise every native x64 smoke silently exercises the OFF branch and the
@@ -189,27 +190,27 @@ foreach(_linkage IN ITEMS shared static)
           "installed ${_linkage} SIMD SDK lacks expert asset ${_expert_asset}")
       endif()
     endforeach()
-  elseif(HYLE_SMOKE_COMPONENT STREQUAL "compute")
+  elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
     if(EXISTS "${_staging}/include/hyle/compute/detail/provider.h")
       message(FATAL_ERROR
-        "installed ${_linkage} Compute SDK leaked its private provider SPI")
+        "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK leaked its private provider SPI")
     endif()
     if(_compute_onednn_selected)
       if(NOT EXISTS "${_staging}/share/licenses/Hyle/oneDNN-LICENSE")
         message(FATAL_ERROR
-          "installed ${_linkage} Compute SDK lacks oneDNN license payload")
+          "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK lacks oneDNN license payload")
       endif()
       if(_static AND
          (NOT EXISTS "${_staging}/include/oneapi/dnnl/dnnl.h" OR
           NOT EXISTS "${_staging}/include/oneapi/dnnl/dnnl_ukernel.h"))
         message(FATAL_ERROR
-          "installed static Compute SDK lacks oneDNN ukernel development closure")
+          "installed static ${HYLE_SMOKE_COMPONENT} SDK lacks oneDNN ukernel development closure")
       endif()
     endif()
     if((NOT _compute_onednn_selected OR NOT _static) AND
        EXISTS "${_staging}/include/oneapi")
       message(FATAL_ERROR
-        "installed ${_linkage} Compute SDK leaked private oneDNN headers")
+        "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK leaked private oneDNN headers")
     endif()
   endif()
   file(RENAME "${_staging}" "${_prefix}" RESULT _relocate_result)
