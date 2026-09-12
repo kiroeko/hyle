@@ -80,8 +80,18 @@ placement 或 operator catalog。
 
 ## Candidate
 
-- 尚未实现。
+- commit：`fd4ef058b8cee328717432a3ef3465c998865427`；
+- public API / SPI：`RegionSelectionPolicy` 由含糊的 `kConservative` 改为结构优先与严格估值两个显式
+  策略；`RegionCostFacts::estimated_net_savings_ns` 改为 optional，region extension identity 升为 v3；
+- 算法与常态成本：cold compile 的 interval DP 使用策略相关 lexicographic score，仍为
+  `O(Q log Q)`；Invocation、plan step、submit、对象布局和 steady allocation/copy/dispatch 均未改变；
+- 直接消费者：test provider 已覆盖 unknown/zero/positive、overlap/adjacent/provider-order/dispatch 和
+  旧 extension 隔离；oneDNN MLP prototype 已删除伪造 `1 ns`，改为诚实 unknown；
+- candidate 后仅允许补本卡预声明的交付、P0、红队和文档证据。公开合同、score 顺序或 product shape
+  再变化必须退回 `AUDITED`。
 
 ## 红队与裁决
 
-- 当前状态：`AUDITED`；等待 G50--G54 实现和预声明验证。
+- 当前状态：`CANDIDATE`；G50--G54 已实现，Windows Graph/oneDNN 定向 correctness 与 public-header
+  self-containment 通过。仍待 exact-candidate source/static/shared、P0 静态账单、终局红队与跨平台回放，
+  不能提前写成 `CLOSED`。

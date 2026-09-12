@@ -278,9 +278,10 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v5-region-admission.md",
-      "summary": "graph v5 AUDITED：首个真实 region preflight 证明跨机器硬编码正纳秒 admission 不成立；G50--G54 已冻结为 optional estimate、显式结构优先/严格估值两策略与确定性 O(Q log Q) 选择。实现前不扩大算子目录，steady plan/submit 不变。"
+      "candidate": "fd4ef058b8cee328717432a3ef3465c998865427",
+      "summary": "graph v5 CANDIDATE：optional estimate、结构优先/严格估值策略与确定性 O(Q log Q) 选择已实现；oneDNN prototype 不再伪造 1ns。Windows 定向 correctness/header 通过，exact-candidate 三交付、P0、红队和跨平台回放仍待完成。"
     },
     {
       "module": "container_concurrent",
