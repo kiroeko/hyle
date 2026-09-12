@@ -1,6 +1,6 @@
 # HYLE Graph：何时编译可重复执行的计算 DAG
 
-> 本页描述当前 Graph v3 CPU 实现检查点；施工资格只以
+> 本页描述当前 Graph v4 CPU 实现检查点；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。Graph v3 的通用 IR、region partition、
 > ordered submission、可枚举报告、策略预算和异步 Invocation 生命周期已经进入实现检查点，但生产
 > multi-op provider 尚未签发；选择 oneDNN 时仍只执行受支持的单个 row-major f32 MatMul node。真实
@@ -142,7 +142,10 @@ return done->wait();
 - CPU 当前同步完成，但仍要检查 `Completion::wait()`。异步运行期间 Invocation、provider state 和 workspace
   由最终 Completion 保活；丢弃 pending Completion 不会隐藏等待，也不能提前释放状态，backend 必须在真实
   终态回调释放。Tensor payload/resource 与 Queue 仍是 caller borrow，必须自行活到终态。
-- CompileReport 可区分 HYLE-native、oneDNN 与 mixed，并逐 step 披露 fallback 原因、copy/sync/dispatch、workspace 与并发限制等成本；
+- CompileReport 可区分 HYLE-native、oneDNN 与 mixed，并逐 step 披露 fallback 原因、copy/sync/dispatch、workspace 与并发限制等成本。`persistent_bytes` 是 optional：
+  `nullopt` 表示 opaque provider 无法报告，值 0 才表示精确没有常驻字节；不要把未知量用于容量承诺。
+  `dispatch_count` 统计 backend execution episode：一次同步 CPU executor fan-out 或一次设备 command launch
+  计一次，worker/task/SIMD chunk 不重复计数；
   report 副本不保活 heavyweight Executable artifact。当前 CPU 路线仍应为零 copy、零显式 sync；oneDNN
   node scratchpad 已计入同一 Mem workspace plan，不需要用户另行分配。
 - Graph 不启动 worker，也不依赖 Sched。需要请求调度、取消和服务 drain 时，在消费层组合它们。

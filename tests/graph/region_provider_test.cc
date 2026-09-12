@@ -479,6 +479,7 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
   EXPECT_EQ(fallback->kind, CompileStepKind::kOperationFallback);
   EXPECT_EQ(fallback->fallback_reason,
             CompileFallbackReason::kNoEligibleRegion);
+  EXPECT_FALSE(fallback->persistent_bytes.has_value());
 
   auto invocation = compiled.executable.create_invocation().value();
   OwnedTensor input = make_tensor(row(8));
@@ -598,7 +599,8 @@ TEST(GraphRegions, DetailedReportOwnsAndEnumeratesTheCompiledPlan) {
   EXPECT_EQ(step->provider.id, kRegionProviderId);
   EXPECT_EQ(step->node_begin, 0u);
   EXPECT_EQ(step->node_count, 2u);
-  EXPECT_EQ(step->persistent_bytes, 128u);
+  ASSERT_TRUE(step->persistent_bytes.has_value());
+  EXPECT_EQ(*step->persistent_bytes, 128u);
   EXPECT_EQ(step->copy_bytes, 64u);
   EXPECT_EQ(step->synchronization_count, 2u);
   EXPECT_EQ(step->dispatch_count, 3u);
@@ -609,6 +611,34 @@ TEST(GraphRegions, DetailedReportOwnsAndEnumeratesTheCompiledPlan) {
 
   retained = {};
   EXPECT_EQ(probe.destroy_prepared_count, 1u);
+}
+
+TEST(GraphRegions, CostFactsPreserveUnknownAndExactZero) {
+  const NegationGraph logical = make_negations(2);
+
+  RegionProbe unknown_probe;
+  Context unknown_context = make_context(unknown_probe);
+  auto unknown = hyle::graph::compile(logical.graph, unknown_context).value();
+  auto unknown_step = unknown.report.step(0);
+  ASSERT_TRUE(unknown_step.has_value()) << unknown_step.error().message();
+  EXPECT_FALSE(unknown_step->persistent_bytes.has_value());
+
+  RegionProbe zero_probe;
+  zero_probe.artifact_properties.persistent_bytes = 0;
+  Context zero_context = make_context(zero_probe);
+  auto zero = hyle::graph::compile(logical.graph, zero_context).value();
+  auto zero_step = zero.report.step(0);
+  ASSERT_TRUE(zero_step.has_value()) << zero_step.error().message();
+  ASSERT_TRUE(zero_step->persistent_bytes.has_value());
+  EXPECT_EQ(*zero_step->persistent_bytes, 0u);
+}
+
+TEST(GraphRegions, RegionExtensionVersionDoesNotAliasTheV1Table) {
+  constexpr hyle::compute::ProviderExtensionId previous_version{
+      0x48594c4547524150ULL, 0x48524547494f4e31ULL, 1};
+  EXPECT_EQ(query_extension(nullptr, previous_version), nullptr);
+  EXPECT_EQ(query_extension(nullptr, hyle::graph::kRegionProviderExtensionId),
+            &kRegionVTable);
 }
 
 TEST(GraphRegions, RollsBackPartiallyCreatedProviderState) {

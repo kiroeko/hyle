@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 
 #include "hyle/compute/prepared_operation.h"
@@ -14,7 +15,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 1};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 2};
 
 // Half-open contiguous range in Graph's canonical topological node order.
 // Restricting the first contract to intervals makes deterministic weighted
@@ -33,16 +34,20 @@ struct RegionNodeRange final {
 // Comparable cold-path facts for the exact static graph specialization. Net
 // savings is relative to the provider's natural single-op fallback sequence
 // and drives conservative selection. The remaining fields make hidden costs
-// visible to policy/reporting; zero means none, not "unknown". A provider that
-// cannot defend positive savings should not emit the proposal under the
+// visible to policy/reporting. An absent optional means that the provider
+// cannot report the estimate; an engaged zero means exact none. A provider
+// that cannot defend positive savings should not emit the proposal under the
 // default conservative policy.
 struct RegionCostFacts final {
   std::uint64_t estimated_net_savings_ns = 0;
-  std::uint64_t estimated_compile_ns = 0;
-  std::size_t persistent_bytes = 0;
-  std::size_t workspace_bytes = 0;
+  std::optional<std::uint64_t> estimated_compile_ns{};
+  std::optional<std::size_t> persistent_bytes{};
+  std::optional<std::size_t> workspace_bytes{};
   std::size_t boundary_copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
+  // Number of backend execution episodes: one synchronous CPU executor
+  // fan-out or one device command launch counts as one. Workers, tasks,
+  // vector chunks and leaf calls do not count separately.
   std::uint32_t dispatch_count = 1;
   bool blocks_host = false;
   bool uses_private_threads = false;
@@ -99,7 +104,9 @@ struct RegionCompileRequest final {
 
 struct RegionArtifactProperties final {
   compute::WorkspaceRequirement workspace{};
-  std::size_t persistent_bytes = 0;
+  // nullopt means that opaque provider-owned code/metadata bytes are not
+  // reportable. An engaged zero means that the artifact has none.
+  std::optional<std::size_t> persistent_bytes{};
   // Packing is an additional provider-owned representation. Graph v3 keeps
   // every source ConstantBinding borrowed because aggregate counts do not
   // identify which source could be released.
@@ -107,6 +114,7 @@ struct RegionArtifactProperties final {
   std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
+  // Exact backend execution episodes per submit; see RegionCostFacts.
   std::uint32_t dispatch_count = 1;
   bool blocks_host = false;
   bool uses_private_threads = false;

@@ -134,7 +134,10 @@ backend command；Invocation 只填充运行时 slots。
 - plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入，只返回最后一个 prefix Completion；
   host wait 只在合同要求时出现，可由 queue/event 表达的 dependency 不退化成同步 round-trip；
 - CompileReport 独立拥有轻量 metadata，并逐 step 枚举 kind、fallback reason、node range、device/provider/version、constant
-  borrow/额外 packed ownership、copy/sync/dispatch、workspace、persistent bytes 和 threading/blocking/concurrent-invocation fact；
+  borrow/额外 packed ownership、copy/sync/dispatch、workspace、persistent bytes 和 threading/blocking/concurrent-invocation fact。
+  opaque provider 无法报告的 compile/persistent/workspace estimate 及 artifact persistent bytes 必须为
+  `nullopt`，不能伪装成 0；显式 0 才是精确 none。dispatch 是 backend execution episode：一次同步 CPU
+  executor fan-out 或一次 device command launch 计一次，worker/task/chunk/leaf call 不分别计数；
   v3 不因 aggregate packed count 缩短 source borrow，复制 report 也不保活重型 Executable artifact。
 
 复杂度基线：图结构验证、拓扑和 liveness 应为 `O(V + E)`；在 `P` 个已登记 provider 上的 capability

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 
 #include "hyle/compute/completion.h"
@@ -42,7 +43,8 @@ enum class CompileFallbackReason : std::uint8_t {
 
 // One immutable step in the exact emitted execution plan. Copy/repack/barrier
 // kinds are reserved by the accepted plan contract and appear only when an
-// implementation actually emits such a step; zero never means "unknown".
+// implementation actually emits such a step. Optional facts distinguish an
+// opaque provider's unknown value from an exact zero.
 struct CompileStepReport final {
   CompileStepKind kind = CompileStepKind::kOperationFallback;
   CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
@@ -50,12 +52,15 @@ struct CompileStepReport final {
   std::uint32_t node_begin = 0;
   std::uint32_t node_count = 0;
   compute::WorkspaceRequirement workspace{};
-  std::size_t persistent_bytes = 0;
+  std::optional<std::size_t> persistent_bytes{};
   std::size_t borrowed_constant_count = 0;
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
+  // Backend execution episodes per submit: one synchronous CPU executor
+  // fan-out or one device command launch counts as one. Workers/tasks/chunks
+  // do not count separately. A non-materializing metadata step reports zero.
   std::uint32_t dispatch_count = 1;
   bool blocks_host = false;
   bool uses_private_threads = false;
