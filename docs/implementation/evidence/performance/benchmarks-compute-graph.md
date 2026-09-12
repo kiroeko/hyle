@@ -115,3 +115,50 @@ python scripts/hyle-perf.py verify `
 
 本行只证明完整 HYLE oneDNN warm provider 边界在该 x64 serial prefill 合同上没有 material 税；decode
 由 HYLE native 路由、并行 executor、其他 shape/dtype、region partition 和 GPU provider 都必须独立裁决。
+
+## Graph v2 三节点 composition-tax P1
+
+[`graph-multi-op-tax-p1-v1`](../../../../bench/contracts/graph-multi-op-tax-p1-v1.json) 测量公开 Graph
+真正承诺的组合成本，而不重新裁决三个 leaf kernel。candidate 是预编译、预绑定的三节点
+RMSNorm → transpose-view MatMul → packed SiluAndMul `Invocation`；peer 是完全相同三类 HYLE-native
+`PreparedOperation` 在同一 Context/Queue、TensorDesc、输入/权重和同步 Completion 边界上的手写 direct
+sequence。Graph 每个 Invocation 拥有 Mem lifetime workspace，direct caller 拥有等价的两个预分配中间
+Buffer；两者的分配、首次触碰、prepare、compile/create/bind 和 correctness warmup 均在计时外，且独立
+交叉 execution order、allocation order 与函数 placement。这是同一用户任务的 ownership 差异，而不是
+伪称同一地址。
+
+W1-WIN、MSVC 19.50、Release、static、portable ISA、LTO off 的 engineering qualification 在 `n=15`
+按规则停止：
+
+- decode `1x256x512` 的八个 median ratio 为 `0.993344--1.014139`，八行均为
+  `PARITY`、non-inferiority=`PASS`，99.26% CI 总范围 `0.968427--1.037414`；
+- anti-bias small-batch `4x64x128` 的八个 ratio 为 `0.993931--1.004974`，八行均为
+  `PARITY/PASS`，CI 总范围 `0.969289--1.045389`；
+- A/A、5%/10% known-delta、timer-floor、placement、fresh build、artifact identity、输入与 host stability
+  全部 PASS；没有触发 `n=31`；
+- 一个 placement/candidate-first/peer-allocation-first 行有极窄的正向 CI，其余方向跨顺序或覆盖 1，故
+  只签发 combined practical `PARITY` 和 5% non-inferiority，不宣称稳定方向性 WIN。
+
+首次完整 diagnostic 虽然产品与 controls 全过，但因调用者把输出写进未忽略源码树并错误要求未预钉死的
+formal toolchain，runner 正确 fail closed；它没有进入样本补充或产品裁决。有效 bundle 保存于
+[`graph-multi-op-tax-p1-v1-eb740c2e-w1-win`](../../../../evidence/performance/graph-multi-op-tax-p1-v1-eb740c2e-w1-win/)；
+contract-lock / manifest / summary / controls / observations SHA-256 分别为：
+
+```text
+fc7a512e5dc724a3d9ec835d2fc41eb13c77da78bc23207350e727a83e37e10c
+06a47f0ddd0258b6fde66c41b3ae576a7ca46bc7a3fe4e034519da5ea0b38eee
+23be70ccbc66d62957b7936d5d5b78c160eae1f89c86661ccdfdc7321101f89f
+beae4c0e84afbb599170a601c1d6b150b70a216d7c5a94cb62006b0cb457e506
+e85e754985086eecb381e9e110f1b114eac2aa8895c6a9ff75464a3ed6f5722f
+```
+
+严格重放命令返回 `QUALIFIED`、`CURRENT`、`EXACT`、`paths_verified=true`：
+
+```powershell
+python scripts/hyle-perf.py verify `
+  --contract bench/contracts/graph-multi-op-tax-p1-v1.json `
+  --manifest evidence/performance/graph-multi-op-tax-p1-v1-eb740c2e-w1-win/manifest.json
+```
+
+本行证明当前 CPU 三节点纵切的 Graph steady composition tax 没有 material 固定劣化；它不证明完整
+operator catalog、provider partition、异步/GPU graph 或端到端 Transformer 已完成。

@@ -231,3 +231,23 @@ peer-first 后约为 `0.978/1.000`。单次 nanobench 快照存在明显顺序�
 机制差异；因此不依据该点值改产品，并进入预声明的 8 strata、`n=15` 正式测量。placement 与 allocation
 order 必须在正式合同中同时覆盖，若 instrument controls 或 5% non-inferiority 门失败则停止，不追加姿势
 寻找 PASS。
+
+### P1 qualification checkpoint（2026-09-12）
+
+- 第一次完整采样的 16/16 产品 strata、全部公共 controls 与 5% non-inferiority 实际均通过，但调用把
+  output 写进未忽略的 canonical source tree 并误带 `--formal`：因此 `source.clean=false`，且 W1 工程
+  profile 没有预声明发布级 formal toolchain pin。runner 正确返回 `DIAGNOSTIC/FAIL`；该 bundle 只留在
+  `.scratch`，不补样本、不修改产品、不作为证据；
+- 修正仅是把 output 放入忽略的 `.scratch` 并恢复既有 W1 engineering claim；合同、benchmark、产品、
+  样本数和机器均未改变。第二次 fresh build 在 `n=15` 按规则停止，manifest replay 为
+  `QUALIFIED/CURRENT/EXACT/paths_verified=true`；
+- decode 的 8 个 median ratio 为 `0.993344--1.014139`，全部 `PARITY/PASS`，99.26% CI 总范围
+  `0.968427--1.037414`；small-batch 为 `0.993931--1.004974`，全部 `PARITY/PASS`，CI 总范围
+  `0.969289--1.045389`；
+- A/A、5%/10% known-delta、timer-floor、placement、artifact identity、build contract、candidate/peer/
+  host/input stability 全部 PASS。只有一个 placement stratum 的 CI 下界微高于 1，方向不跨执行/分配顺序
+  保持，因此只签发 combined `PARITY` 与 5% non-inferiority，不宣称 Graph 比 direct sequence 更快。
+
+版本化 bundle 为
+[`graph-multi-op-tax-p1-v1-eb740c2e-w1-win`](../../../../evidence/performance/graph-multi-op-tax-p1-v1-eb740c2e-w1-win/)；
+本结果只关闭 multi-op composition-tax 性能项，不替代三平台 correctness、sanitizer、三交付和终局红队。

@@ -1,0 +1,442 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "graph",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/graph/executable.h",
+      "revision": "runtime-bound",
+      "target": "hyle_graph"
+    },
+    "claim": "P1 engineering non-inferiority for one pre-bound three-node HYLE Graph Invocation against the exact same three HYLE Compute PreparedOperations submitted as a direct sequence, under the same tensor, queue, arithmetic and synchronous completion contract",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      },
+      {
+        "id": "placement",
+        "kind": "placement",
+        "parameters": {}
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "BUILD_SHARED_LIBS": "OFF",
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_DEV_FACTORS": "graph",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF"
+          },
+          "peer_cache": {
+            "hyle-compute-direct-sequence": "HYLE_GRAPH_DIRECT_SEQUENCE_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+          "HYLE_BENCH_APPLE_QOS",
+          "HYLE_PERF_APPLE_QOS"
+        ],
+        "executables": [
+          {
+            "id": "graph-multi-op-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_multi_op_tax_bench",
+            "target": "hyle_graph_multi_op_tax_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_GRAPH_MULTI_OP_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "decode-rms-matmul-swiglu-f32-1x256x512",
+                "title": "graph multi-op decode f32 rows=1 hidden=256 ffn=512"
+              },
+              {
+                "id": "small-batch-rms-matmul-swiglu-f32-4x64x128",
+                "title": "graph multi-op small batch f32 rows=4 hidden=64 ffn=128"
+              }
+            ]
+          },
+          {
+            "id": "graph-multi-op-placement",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_multi_op_tax_bench_placement",
+            "target": "hyle_graph_multi_op_tax_bench_placement",
+            "target_variant": "placement",
+            "telemetry_prefixes": [
+              "# HYLE_GRAPH_MULTI_OP_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "decode-rms-matmul-swiglu-f32-1x256x512",
+                "title": "graph multi-op decode f32 rows=1 hidden=256 ffn=512"
+              },
+              {
+                "id": "small-batch-rms-matmul-swiglu-f32-4x64x128",
+                "title": "graph multi-op small batch f32 rows=4 hidden=64 ffn=128"
+              }
+            ]
+          }
+        ],
+        "profiles": {
+          "W1-WIN": {
+            "architecture": "x64",
+            "cache": {},
+            "compiler_id": "MSVC",
+            "compiler_version_prefix": "19.50",
+            "generator": "Visual Studio 18 2026"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "windows"
+      ],
+      "certification_platforms": [
+        "windows"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WIN"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "graph-multi-op-tax-p1-v1",
+    "module": "graph",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "source",
+          "role": "same-product immediate lower abstraction tier, not an external SOTA peer",
+          "route": "the exact HYLE-native PreparedOperation and OperationInvocation implementations fixed by the Compute v2 candidate",
+          "semantic_delta": "the direct caller owns two equivalent preallocated intermediate Buffers and manually submits and waits for three operations; Graph owns the equivalent per-Invocation Mem lifetime workspace, fixed binding mask and immutable three-node plan"
+        },
+        "id": "hyle-compute-direct-sequence",
+        "revision": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "id": "primary-candidate-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "primary-candidate-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "id": "placement-candidate-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "placement-candidate-first-peer-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-peer-allocation-first",
+        "target_variant": "placement"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "three public OperationInvocation submissions using the fixed HYLE-native routes",
+          "one synchronous Completion observation after every node",
+          "for Graph, one complete fixed external-binding mask scan, one three-node plan walk, bounded two-input TensorView staging and one final already-terminal Completion construction"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/decode/rmsnorm-projection-gated-activation",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "decode-rms-matmul-swiglu-f32-1x256x512",
+        "input": {
+          "distribution": "deterministic finite signed float32 activation and projection weights plus positive RMSNorm weights, initialized and first-touched outside measurement",
+          "scale": {
+            "ffn": 512,
+            "hidden": 256,
+            "nodes_per_callback": 3,
+            "rows": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one decode-shaped RMSNorm, transpose-view MatMul and packed SiluAndMul invocation",
+          "derivation": "The five reviewed inference sources all retain this normalization, projection and gated-activation composition; reduced but nontrivial dimensions keep fixed Graph bookkeeping visible instead of hiding it under a large matrix",
+          "frequency": 1,
+          "unit": "complete-three-operation-fragment",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "One immutable shared Executable retains the three PreparedOperations; one exclusive pre-bound Invocation owns its Mem lifetime workspace and submits the fixed plan with caller-owned input, weight and output TensorViews",
+          "equivalence": "Both sides use separately but identically initialized 64-byte-aligned storage, the same Context and Queue, the same descriptions and HYLE-native SIMD arithmetic routes, one wait after each synchronous operation and one terminal success result; construction, preparation, allocation, binding, warmup and first touch are outside measurement, while route allocation order is crossed independently from execution order",
+          "peer": "The same process retains the same three PreparedOperation kinds and separate OperationInvocations; the caller owns two equivalent preallocated intermediate Buffers plus its output Buffer and submits the operations in the same dependency order"
+        },
+        "pair": {
+          "candidate": "HYLE Graph decode 1x256x512",
+          "peer": "HYLE direct decode 1x256x512"
+        },
+        "peer_id": "hyle-compute-direct-sequence",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/graph/consumer_shapes_v2.json",
+          "sha256": "3b352a778a969d62b8a0e4d513027eabd0240beb895be52782a86a09ecb52dbb"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Execute one warmed allocation-free float32 RMSNorm over [1,256] with a [256] weight, one [1,256] by logical [256,1024] transpose-view MatMul, and one packed SiluAndMul to [1,512], returning after the third synchronous Completion",
+        "setup": "Context, Queue, descriptions, Buffers, PreparedOperations, logical Graph, compile, Invocation creation, binding and one correctness-checked warm execution occur before nanobench",
+        "tier": "consumer"
+      },
+      {
+        "charged_phases": [
+          "three public OperationInvocation submissions using the fixed HYLE-native routes",
+          "one synchronous Completion observation after every node",
+          "for Graph, one complete fixed external-binding mask scan, one three-node plan walk, bounded two-input TensorView staging and one final already-terminal Completion construction"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/small-batch/rmsnorm-projection-gated-activation",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "small-batch-rms-matmul-swiglu-f32-4x64x128",
+        "input": {
+          "distribution": "the same deterministic finite float32 families and initialization policy as the decode row",
+          "scale": {
+            "ffn": 128,
+            "hidden": 64,
+            "nodes_per_callback": 3,
+            "rows": 4
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one small-batch RMSNorm, transpose-view MatMul and packed SiluAndMul invocation",
+          "derivation": "This orthogonal small-batch shape preserves the same consumer task while preventing one long matrix kernel from masking a per-node or per-binding Graph regression",
+          "frequency": 1,
+          "unit": "complete-three-operation-fragment",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "One immutable shared Executable retains the three PreparedOperations; one exclusive pre-bound Invocation owns its Mem lifetime workspace and submits the fixed plan with caller-owned input, weight and output TensorViews",
+          "equivalence": "The ownership, completion, storage, arithmetic and setup equivalence is identical to the decode row; only the shape changes to make fixed Graph bookkeeping a larger fraction of the complete public task",
+          "peer": "The same process retains the same three PreparedOperation kinds and separate OperationInvocations; the caller owns two equivalent preallocated intermediate Buffers plus its output Buffer and submits the operations in the same dependency order"
+        },
+        "pair": {
+          "candidate": "HYLE Graph small batch 4x64x128",
+          "peer": "HYLE direct small batch 4x64x128"
+        },
+        "peer_id": "hyle-compute-direct-sequence",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/graph/consumer_shapes_v2.json",
+          "sha256": "3b352a778a969d62b8a0e4d513027eabd0240beb895be52782a86a09ecb52dbb"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Execute one warmed allocation-free float32 RMSNorm over [4,64] with a [64] weight, one [4,64] by logical [64,256] transpose-view MatMul, and one packed SiluAndMul to [4,128], returning after the third synchronous Completion",
+        "setup": "The same cold-path exclusion and correctness-checked warmup contract as the decode row",
+        "tier": "consumer"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "12c80cfe4e4f9fa6e9453c3304242a6353a31a7f31e9cec653739478ed599fdf",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

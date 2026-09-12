@@ -1,0 +1,11 @@
+
+| relative |               ns/op |                op/s |    err% |     total | graph multi-op decode f32 rows=1 hidden=256 ffn=512
+|---------:|--------------------:|--------------------:|--------:|----------:|:----------------------------------------------------
+|   100.0% |            9,184.57 |          108,878.30 |    2.4% |      0.10 | `HYLE Graph decode 1x256x512`
+|    99.4% |            9,235.42 |          108,278.79 |    2.5% |      0.10 | `HYLE direct decode 1x256x512`
+
+| relative |               ns/op |                op/s |    err% |     total | graph multi-op small batch f32 rows=4 hidden=64 ffn=128
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------------------
+|   100.0% |            4,437.17 |          225,368.88 |    4.0% |      0.10 | `HYLE Graph small batch 4x64x128`
+|   103.1% |            4,303.49 |          232,369.54 |    1.0% |      0.10 | `HYLE direct small batch 4x64x128`
+# HYLE_GRAPH_MULTI_OP_RUN execution_order=candidate-first allocation_order=peer-first apple_qos=not-applicable qos_ok=not-applicable affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=f5755444353474f568c1d054b0efa705

@@ -1,0 +1,1779 @@
+{
+  "entries": [
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-01.log",
+        "sha256": "d8775fed5db48db3859f7c5bf8517afb843d96c79cac892edfb050de69430997"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "4e9786ea10acb98a0a3eb54542fcd358",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-02.log",
+        "sha256": "e9ac3b0c0fc2ada3b649fc91af2484ad46e495556997d64d75cf0f77e5c0196f"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "802c8af65a19b0d842b47da3ef7df819",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-03.log",
+        "sha256": "7f043d07674e9efb9b085dee4c5e844cb6d8ede009ba3fee5d5c5bcbdfc6617c"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "36144a28e3c591f34abf81dea8f70b6e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-04.log",
+        "sha256": "70f9351bbc0fc40d1a72147880685d1cbc2f49b013f63de0c0c9e20bde1d8133"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "130b99bdcab13c58a5f5853da73d550d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-05.log",
+        "sha256": "a824ff4b0dc147a6876029d1477fc8b9dc359489be121c8a28650d2cf314eafb"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "d8738911aa55828416c7ea42e3aa776e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-06.log",
+        "sha256": "94651aa24e430ca99cc839e10758a2dc12bd99fa1a596df24905ef12c3bbe2ea"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "87ebd24b907f7b76c15611e9b2dfb8a5",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-07.log",
+        "sha256": "33e083acaf844d61d32ba6c81e01731c10e2bbbc90cda292f0e6e078853cac70"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "578d126f85bd062a0656d5693b76db65",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-08.log",
+        "sha256": "eb51ee55e837ffbce8f8e1686929b1493c2b07e93bd5e8b25999b72d7f5bcae3"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "ebe2ad1f609fdada122bc59b21f1bd87",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-09.log",
+        "sha256": "fc15c90caa8f8e36be02fe1498ef2f5275b30345ca690c79d595c66a601aa391"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "1b9ea3c5e1e99013179112c09640dcf2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-10.log",
+        "sha256": "1ad4b95ada305333c4fc6266a4f59b208f898cc3bd1881f4523b98a30d4b004b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "f200081f3d304ef2fe5003205cbddbca",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-11.log",
+        "sha256": "7812148a4f453e7aec89cf44f71f4c483c3c114b3925c316a028e7223826c69a"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "4ec949392059d42bd3ccfc68776d7633",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-12.log",
+        "sha256": "777bdfbdde698c530a58e27fd4dbc4df0a541ea27076c72dac1ae801764eebb1"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "7605dda10d105ac8cdae9dd38342a6f0",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-13.log",
+        "sha256": "a4bda3fca879332124878fc90090552cf609e47d519a20034037dfcad1d49f5b"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "9ab816653e29fb281a55cae155218e26",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-14.log",
+        "sha256": "26d3e1912563bbf0400c3472bc0033a9e4819b73f7e5f4a1187f52dde85fae59"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "6d95cdd72ba345d53ad003b2c72a357f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-multi-op-primary-run-15.log",
+        "sha256": "55082ed9d116802ed0fb420ad449735c3c920a70264127ab1fcf50849f90a8f1"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "4e8c8c02c48a2643092920760291c36f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-01.log",
+        "sha256": "2eaa516fd9b9d9454bcdb76e1b7c36b4a2a9897238c79d971f9756bd2724e0df"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "8a3a21bc42091122c51ebb74e510349f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-02.log",
+        "sha256": "630875a693135e7c88f429079293ec68804e65c2b897f56ec07414a352082b27"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "c7cda10971228260dcc4c2daf4625618",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-03.log",
+        "sha256": "989e1f5f34279b995ffaea7903e2ce911bb204af39ef52d171a85dc9be499c56"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "a5ae0a141af8abf06496caf370b28023",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-04.log",
+        "sha256": "9363cdf43b7408e05a2060db0392a85ef7cb66528de2b594a686ac09621c6a23"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "fdbe97c307f76bb4cadb4f6538dd8dfa",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-05.log",
+        "sha256": "4397818fdaa0365e999023947fc1669bb03ac69af99a745137e8c24eae140c46"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "84ce7a65b7eb794b5bf4e87d17bd27f8",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-06.log",
+        "sha256": "a5751db358815d80a06fc490c6729d38a3f56006b1a165dae8e19a42b751225a"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "b521a45bdce7cd73ef40d62605380205",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-07.log",
+        "sha256": "fc5ce0368145f1b1e67eda971a47a02468923569c91a9b737274df048f956f21"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "996b88de16d348ff1e74e08e08299191",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-08.log",
+        "sha256": "311770dccb7f8fafc7f4e8a17b43fd3fcde0cccd65d857d5fd353b6c199a9b43"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "373092c8340a0793256a637d64e0894b",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-09.log",
+        "sha256": "f249339d11a93f1f3ae6348fadf0fc069ed6e9b6dbd5e8287e40e71308ab4ee7"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "f8b22bb1ac0675468a6d62600401690d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-10.log",
+        "sha256": "d326fb5b628ba3f4c43a2d620c7363ab9999837224e306550b859587dcb4a79c"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "e87a0abe126e4e9fa47fd0bb62bb3715",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-11.log",
+        "sha256": "ffee491684bd64b924cebaec7ebb1167507c00ccc808700151b1cdef6ec813b3"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "a1368def2b0112d8ba805e0bfdec4c65",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-12.log",
+        "sha256": "e55d249c9c21ca60ac2985733ef7620f3de8cc76c4ba43cac9403b5cfb075885"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "d0f2eaafc1f2409b97fbb19924a3dea1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-13.log",
+        "sha256": "6725e47ac5d6de291a8b5bcf7cf713347a811d11002851e63a9b140b5965cfdd"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "9a8cc2052400c7140eb0a9312843f65d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-14.log",
+        "sha256": "327a8b177a8c572214dbb665f5782954d8ef8a244c864ebe01653a403a4ee500"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "d94dcd7fcead38f4baebccde0d922dca",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-multi-op-primary-run-15.log",
+        "sha256": "6d5b585886c86bd1b37da33cbe40f012f57b1d5b9ffcb5bb6777c77bd90e7040"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "b458017b7d7b0403b828e270e04c5862",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-01.log",
+        "sha256": "4375cfa10ca654722c7d386ca815eb011bcbd94ab94b9fc30a5018985c4db1a3"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "f36f10945e37c7a039ca6b412a001c51",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-02.log",
+        "sha256": "57883989ec2ff3d8eed3f7836eee55c7fa1ce56e8f046bd1a81ddc644a983dc0"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "f3f75bc3c5f370387eb1f7d9408fb66c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-03.log",
+        "sha256": "90a753bdbfa84dea7881c8adc0f46114e686e4292fc7ea7870998ff7f86321af"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "dbdfad9ae107dc95e99480d65b97d787",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-04.log",
+        "sha256": "9c33ea745028db6293f35c178afa3bb169c9f955a881c3c653bf4e1e0c75b910"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "e63d50bb8b37fd84649e805d1a011663",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-05.log",
+        "sha256": "848be01210db8c6c386e8f57e9ae2df3eaf2c6325c0877e22935c3a53c4b6eff"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "0b508fad0b7045c4c31aba81cc5cbef8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-06.log",
+        "sha256": "e936ed042e7b7b6b0fbbe15ab37bf69c7a9581dd5fcbeaba1591bd373b5cef3f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "4e4f03254bf5f9846a913ea27521af2e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-07.log",
+        "sha256": "4984fd148678899f3ea4cf6fcc92105055d77e7d7a105990655c3a53a29d310e"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "2b97fd95b4d68e49c434137efa0eb21a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-08.log",
+        "sha256": "e9af2306fcb4b217566470fbb2beea7c0cbf5e9d2a36db4df299dd1e3afdd2ea"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "9cc3ea6f798d778749bc6d953756d57b",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-09.log",
+        "sha256": "4cb0a9b13027f3b2c0a8e9b5d50f58f4cf1963b42e46c29e45c2902134db4713"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "b723c2ff28290d3f03a629a1c2b486fa",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-10.log",
+        "sha256": "f75de53513604bc5efec2d50fe0e6d12d06668096dd3f2d986273b1189db10ec"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "fcfa49341ed2ecb42d8290cee496b423",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-11.log",
+        "sha256": "42f412ae69ceee3266004da404316a23ea13576dab606850a8b53b47c87e4ef3"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "b3ef869ccaf5506e2a8ca04e100f55d5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-12.log",
+        "sha256": "6774b023431ee3f808b07caa9e601e312d4ef9a636f2a980af01824123a91fec"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "8bee73b5c353fca1bdc864e96d24103c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-13.log",
+        "sha256": "2e34e0c2ec40a1843d8e5bd672ccd43f969f0da12540f067f8a823f156d59324"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "8709138620bd9b678609578ed0f195f8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-14.log",
+        "sha256": "c0203f84d8d4a39bed0455ebe744ad75e1cf5308e873a6d25a3f71383fcd1d9a"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "b67a13f4302f9cccc5d58b46973d24dc",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-multi-op-primary-run-15.log",
+        "sha256": "17e987da7a23d0ae9eda7f6e95c69b18680ff1fee67c6d36a8e5ae1a33f576e5"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "88b417223e63e9d944978a75162d2262",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-01.log",
+        "sha256": "56424e8d26f9af20a156dd5c2f799acf4624404ff6dfca1391af49217cd260e0"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "635cfe79f65760cc3ecc1830a4a356e5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-02.log",
+        "sha256": "24af512a2535e2b94bd8bb6c5ce6c6446b22dc494c777943ccda038026912f9e"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "a43377d10c177b8b78e7ddc9f98333e7",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-03.log",
+        "sha256": "bf64ff4ec53c75a6e4520540237e1950977aadea54c374f2fb735fafa7ad4741"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "5a1006a8122ce86bf776e39f72a29ee5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-04.log",
+        "sha256": "d639f4018bfb03f797e2914c2a63a273f154ffab22d47f94cbc6eb3148f288b0"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "89117af0555e2a2f5b91acea0b62bfb2",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-05.log",
+        "sha256": "eb8e641046b9c14b69cbffffe2ff7691338f5f9fd11185e16dfaa2d5e7051bf3"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "01f51210364df7b528e4626cf1861509",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-06.log",
+        "sha256": "9fa3ce92ce741c8b8f0b58617bd1262b7c678f9046cc376f5d170c2ee1b0ff46"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "ba255c22627d6390bb09efd0ed91601d",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-07.log",
+        "sha256": "5aacd5f1f452e129562731b8ab6b4e22c20658942e57a5dc60019a7ea70af450"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "326c92d96cce1d2c13fb9f9e856265d8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-08.log",
+        "sha256": "4f201b29efd911a8269133530398e34277496afac3614fee9d9e4a4eaaac7f57"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "1c4200431f6de49172ed1b90ab25011f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-09.log",
+        "sha256": "c465ce48289e856696459ed4050ffe018a3b7c9b263d5cb657a306439c6913e5"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "8beb4861276ae964e0f26664c49360b7",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-10.log",
+        "sha256": "046804cb71cbb0795a897f0f81ee9f54a6b7242e4cbe1c480dbe0f0649169b5e"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "2d7a502fb19235d5f7f465910bfd709e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-11.log",
+        "sha256": "70495c7e80a24619856db46e36611c3ea93d849da9b6d5d4f70e396d590db571"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "e299b60e67654c6ae9c654649d1042cb",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-12.log",
+        "sha256": "ce0a7f5c5ec9e13dca1a1b53f5af7b7f543849413f76aa043cf0459e0d0d1816"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "84a2521999e1039e07f46139c4803d51",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-13.log",
+        "sha256": "af6ca1fa72e6bb2dc0e1074741192106d1b75ab950a11a3f77d2c1802f724798"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "2ceca6925ee605ea75cbb3ae9c4838c4",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-14.log",
+        "sha256": "ea4eb581b0d9e5741ffbc40b5e7fbfd8d4b62392af614fbec6fd4c8b6db18413"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "f1e53c8c8a82146f7408c7d0533c9825",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-multi-op-primary-run-15.log",
+        "sha256": "b3713b03fed79065784230940b259bb00a54aac4691f4741dec034757acb3de3"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "0c75aff9d3c1fcaadaf1145496be7a40",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-01.log",
+        "sha256": "24d460c5f376bc23dbbf4065e2a7802d8ba2a00e5631bd858dd6d7133796485f"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "ceeb780542f622aa1ef03280de279c1a",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-02.log",
+        "sha256": "6afcb04bdafd66e8cb2278a2e79ec2283ce48fa9d0c303ef3945485e82b0b511"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "d7d3431a60e58fb1b1eea622c48c12b7",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-03.log",
+        "sha256": "2bb7940ac620ee753b39759c67c675b542079614f02a8f186113ffa42f93259d"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "f3b68156782651ec8b9bcb298945a4d7",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-04.log",
+        "sha256": "accaedda2b0ca10cb3e621edfa47ee31153987fabf76adaf432a2d703b956e5e"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "b4b568dafa7f18c7407ab6f923b9ffb7",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-05.log",
+        "sha256": "f3fc5fdb3b7154cdcf12f6bb138881532a953d74e760f308b7833a4ec025da4a"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "21bf67231bdecb9c4d004842e0c670bd",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-06.log",
+        "sha256": "309a688d3f25e0a4563163068538b90b8e3eb736b3ac0d1506931ce8b0120e9f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "8fec1d5c46cea58d41409156b5899c19",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-07.log",
+        "sha256": "d0c69b71c9756c3888fb980df46cb6a15e14bc5bc9c66c2fc38fbcb925b3dda6"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "5ef65ffc853c4f3736eca7c619158ac8",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-08.log",
+        "sha256": "bf529eb768bffa1408824e6bb150bb47509dce35fbed1e6ad2b352be4faca80e"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "5bac222e6aac351fe83b3e2e3b199cfa",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-09.log",
+        "sha256": "f4ef0f8c40f74da1ce9da0265c3e561845748de597b5aaad4ea82a214f965262"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "175f05dae1c04658e5482137ac01945a",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-10.log",
+        "sha256": "4a61ec94c87f41a43a53e9545dbec58bc4cd05004caf547be4fcdbf67a5a898c"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "2d7f1746ffe3eadb8bdc7a4127f27d0e",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-11.log",
+        "sha256": "693e225e956d14e100f46902db63a0e8895e7a742538ded771cb76fa4d9447ec"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "dea872b2041bfb064a47db2694329ba2",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-12.log",
+        "sha256": "6aa24a43b0e6f99cf2f7bee60a72c582a0e514b8b0c83e9f5c2f14ef90d26b0c"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "77f02665d00924782df8d1cdbfd980c5",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-13.log",
+        "sha256": "ff86a7b0dffe255245bc51e47b39a5df402d886ff4991362cdee0be5497b35ca"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "3cef50f6e99efbb7de9b9c92be4f8196",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-14.log",
+        "sha256": "e8da14ce89c8b8663871c9a1d02298827c1cc7291f80c0e030b58d7d24139bcf"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "cff3d421a8ed3530d636d29f51274282",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-multi-op-placement-run-15.log",
+        "sha256": "061ed94ce28a283aaf43c91e04b86707de3b192e4244fdd74392455c98164524"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "2bdf481805849674f01bec3de0959fb9",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-01.log",
+        "sha256": "25e255d77b4c83ba50da5fd082a1bede29a6d88c27aca537104f40441fe209c0"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "884f64e8bcf3e1cee8f171c2a4bb93cf",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-02.log",
+        "sha256": "213860ec93fc340bf14ae740076764f726e476339d2fad18a6e37ef1dc19d443"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "e5968e5fa36139e0b2074075d734e4c1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-03.log",
+        "sha256": "2d5efc8f20c3e15926ba52b638b7245402c0bb3e470dcc2d35808ab24418801e"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "2e16ab1f4829512687e25fc32e9778ed",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-04.log",
+        "sha256": "6c3eda2a14266e6fbb90dd49510093ff8cbc0fd85494f1a9d2506f6e7d4cd481"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "e7af266ca9b1375dbbef0a14462b9114",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-05.log",
+        "sha256": "f9c1e294f1dec84b1e39996b81c9df9ade81812f7ef84069def7c411748af598"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "7ab0ee76625ba2091f43a1250379c3f1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-06.log",
+        "sha256": "d6dcaf54aa43dc909e843e82e851c3ab309b0dd637a9768a560ec7c6d061f337"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "51e00cffad1bf1dd864f51669096f592",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-07.log",
+        "sha256": "28eedff6985af2e9d2505a279cd303bd97725a558d07d4a3eebeba2544f15972"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "1268a8c6ca99755e98d8c805ef45a41d",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-08.log",
+        "sha256": "8cdddda99e4f2753aa805c8807a6ab0f17c9688340d5ed43a39e6caf180dd25a"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "0b98d78a0e9a249b55fda1ace5eb426f",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-09.log",
+        "sha256": "bfc778c7ea74463565d2285c7b7599d450636f2c2aee09b0e119953177d3bb19"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "f5755444353474f568c1d054b0efa705",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-10.log",
+        "sha256": "7f8b9c550193b221def72a5d0c184d6339bc26123ef07e34f2c24f2d2f07796b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "73d60355442a15cba71479d8efff3859",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-11.log",
+        "sha256": "4d3644ae1d61fd1ab44fe611ea7f2545befc24045b1d09d75aa058f4e4d60c20"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "4d7231fc37641ffb8e88c4c8bb186684",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-12.log",
+        "sha256": "8f71721a1c4d27817d8fd9543e2734f42a6311021659030f524ca82882231517"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "1ef6156359e7882d6910daa981159f35",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-13.log",
+        "sha256": "1982a074e20400acf6c52b6a5e57139ff7f09e2fff27ade8796962737470b0a1"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "f71cf3e62132de1ee96d44dde2ccec33",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-14.log",
+        "sha256": "b1eedc7d056965d3f8503b95f32ed458c665403338c00a4bed3f7d8279040b85"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "a1be19d44a17130a6b8d8f1aa574feb8",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-multi-op-placement-run-15.log",
+        "sha256": "44bb21aacadee564a58fe110f2bc03444bfbd5db1453a4550f605ad07f65a8fb"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "a48834de76df35c21df707528fe2ad0b",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-01.log",
+        "sha256": "28cc96d6cc362ed752155ac9d528cd77f5cf829ea6f0fcd044ed36b14985a0f9"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "26d6d204239ded549f8e505a3756d6f2",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-02.log",
+        "sha256": "225a2d0cf33f782061da96ad8e11eb9084c3ccf89b82087f81060aa810f6a84e"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "111292d544b0b209eea2a0d8c5fe3c24",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-03.log",
+        "sha256": "3353de150b3d4626a9fdfae2e610a628d58e1d3f96b67b019af911c8fbd1f410"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "b632fcad6ab6283a8d7b89f773bdea26",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-04.log",
+        "sha256": "bdbd79ce3e57851ef522130ab2f5483f7edc98e6ed6ddb3ef5e7d4db96c620aa"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "18bb6642c0b089ebc7be13cb18dde5c7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-05.log",
+        "sha256": "60259ed7f2a06ed852ecb5fae563f3b9f3f0c4a8c7b73509966db33a4436dd52"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "b3b427b5d6a66f10a37716d27699b121",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-06.log",
+        "sha256": "e1713444d937cec48725fe446f6383599dc3d2af0f9ec0cb2598d1a9df1786af"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "ae252d5e0222bc10bc31a3eaf31e239c",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-07.log",
+        "sha256": "02d691286b9b172b26c2dd389d59f53faf0a2f27aeb3453616094854dfcb776c"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "ed5468fb02eccaaffaa0e33c0d092cdb",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-08.log",
+        "sha256": "c5a3de378edccd2b2283fc1fc7cc0893bfa064ae797bc87985bcab2ba63da9f6"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "b40669e2ab36ff4de70aac95081c4d33",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-09.log",
+        "sha256": "3f03d4f91cbe5fe5fe94680cd0eabcec30b6fb106ebc37d7971f975f921b73af"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "47050d8e287a2e28d51ca0c63628b040",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-10.log",
+        "sha256": "75f50714297c0e4c1003acd2ba3b5367f2b240dab8d71003c35c936f2ad4dfca"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "8992d6d1e8dfdd5fc858ad2463811070",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-11.log",
+        "sha256": "24c69a1a7382b019d1d03c784e5383bf0947e561fa8539207918a8012db7295a"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "b8bf4e9c5b09870615c4ee23e181fd45",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-12.log",
+        "sha256": "37ab17914cd8285244cf752c0b0117dc5aebca787ce796b5fb8dd94a3b6b9123"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "db7920c3023d33a0355334ca23059d8f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-13.log",
+        "sha256": "f7128317e652c74992d6200730959a66f96cec733d33220362f8921d349e95c0"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "b33fd01902b2b4f32ba0e28a0f7a49d9",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-14.log",
+        "sha256": "4a4b1a2671379912f09b899cea18879bbc067c607eaeec6066510fc405059500"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "698e5f02215d9085f025aa9c04e3f7b8",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-multi-op-placement-run-15.log",
+        "sha256": "487cd52ed5632d60afa81fd49da3c16c9ca45cf02e5dcec68d712cc102e295f5"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "fcd8321c1d6b2b5f3c545a797b33d1a2",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-01.log",
+        "sha256": "5411861913cfe9c3d6345eb47096e5cc4fc3e9381da28164cdb4632af22f1e01"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "9dcab1ee72ee8861116f68a253a0ed89",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-02.log",
+        "sha256": "7f00ae5683da78e44297128decf749727bbdadef663187b11cf92cf3787d2d2e"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "36c7ade7afbd65bafda66a06227ef702",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-03.log",
+        "sha256": "5ee1838fb1b8f72ddccc79b9f3ee68a385d8613c4996fa9bb49089528d05b124"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "b27d8d2200fcd9c29cf4f184da6dd4bc",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-04.log",
+        "sha256": "9dfc6b2146d0335127e985222cf21418c7dc756ca8b46317411c5a60cb737edb"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "8a4649900cdc7b45555f4dcc6b575c69",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-05.log",
+        "sha256": "df20f98c60e44a815516cac35b8f8c350aa8420e79d49f44795176f3b2087ad2"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "516d1f199bacf1b2b978b5d2fd125d88",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-06.log",
+        "sha256": "a1efe41b21d9a337a07422d7734de17b3475d07610cef599b8c97d611652368f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "7c3b19fde0b8f03d2f892baa231c8dc7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-07.log",
+        "sha256": "1f6957e1bc10d980abcf26ffa759ec234c1b13db3223d440961c3f7be6f7aaeb"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "99b8b9f472c0d54bdbebf3e1f9acccf6",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-08.log",
+        "sha256": "efda231be43bbe680cd210c6fd34aed8c7f51d6c8fc40d5ec8fbe688b43658dc"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "b8f7b3488010cf3248c115861abbf1ce",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-09.log",
+        "sha256": "85447e333c01cdae89ea5cdb3a6c001b7e59d8b154815cf1be60876716d74757"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "3925c5479c55e4492bc627565680f48c",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-10.log",
+        "sha256": "2629f638907329c5f664a0a0111ec2d4687e2302821d18aa611f44285e046fd2"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "c82db9077f518eb9974cedc8b0d5362a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-11.log",
+        "sha256": "e93e6dcb7fab2e457f181853933aaa8fc68a7d77925ac99b50f5cd434e964950"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "f718f1ae8fcbeb6a5c029a7ad95e8653",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-12.log",
+        "sha256": "bfbe5de65b50e9ce72e6da678f6792bb6efd0e62e3e943a5901b7158afff2de8"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "c39162c64e6e64104f710ea65a1b8725",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-13.log",
+        "sha256": "f1eb895eff7199b836d0ced37b89bc616a6ae7d631f643b81467aef727faaaa0"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ef6c9d2ac02551fe80df20414fe2da36",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-14.log",
+        "sha256": "8144d894794c9d9aa128fe56ad41ca755c400916a1685f640aa8ad7caf92d333"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "b6cf051886835da3dce0f73fa94cd285",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "graph-multi-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-multi-op-placement-run-15.log",
+        "sha256": "d5b0199fad852591c7bd9bcc7bcf04b4e3809e2d40d6f5c984a946f19d68d34d"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "1dcb530b6d356ef77f10e5b2c63a0987",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-01.log",
+        "sha256": "7fe76600667e1a1f93bb47c15ee08754df0a9ce06ffe85f088c7ab42824b9fd3"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "277fa060d95757f48ba6b1d6ef2fffde",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-02.log",
+        "sha256": "8c4b2567f5025c2d569872823c19d62eb680d5a0d94bb6e0695a7564440fcd7b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "6a700ab2081229c18d027baa52b30ad8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-03.log",
+        "sha256": "bdf77a65c35584d6d044aa1dd75bb97bb56e7b65cf1b5e9936de2435c352ccd9"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "5567a71f98cd9f2ca31ccfffcad50e5c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-04.log",
+        "sha256": "47fd93498cf4531b32736ddd9ffc269fce01bba536ec5359d2b8b3d7d821cfb4"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "e3b985f1b1ccc1f23826b2fdcf8ac5dd",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-05.log",
+        "sha256": "386da34e25c31e82e82eb16cb13185de3082f384c32630d7cb64dd0e8028a042"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "52de08b8f8931b7a573179f58d9c1105",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-06.log",
+        "sha256": "51c12230a000f85cb74fd2fd230274b97afbe1210e94b759c76823241502a490"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "e1140ccb73e0631ad93ce967ba0ae127",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-07.log",
+        "sha256": "4494367982446f1d7fca40226fafbb7b4b904bbfa437cfb482a342ec05539670"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "8a6df61b5fe19dcae2c39c85322ce5f8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-08.log",
+        "sha256": "a09f3a3d892f9258415bdb28832c4ed832e4388f0df1137bd2410c73f5d8c228"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "0b89ea013751fda221f8b09488f8cc66",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-09.log",
+        "sha256": "bf23b4b16a2b4c8f88481b01f02db1ac4c4840bd39a8ded63dc1ea4439884722"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "74be00cfd057ef9cb8fb76da6d621d73",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-10.log",
+        "sha256": "6737721abd3ccb3cee62cdb709a971bc05cb04bb0ff90f5b6f6d7c8987c258e7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "71148c4854597976b6b27a9c89409ece",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-11.log",
+        "sha256": "159120953bdb8ea76d62201af844f5167edf53292515c7b8a0aa716f1596bd38"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "abbeb35007dfa21b96dff0925fa072f0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-12.log",
+        "sha256": "c1e66301ab9291a41bd52cd4767b1609d6692db3933263edb1933ce976878909"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "594e5f25ede3ce090efb14a3ac1fefeb",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-13.log",
+        "sha256": "2cf1b319292b98ad71f04bb7318b7b92d1adf92548d2fbbb3da12b2568bee78d"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "95f870447fedc907a112164629f02dd0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-14.log",
+        "sha256": "e32c2d303073ae60288dc8f80e305838992ff4438b43cf2c0ce1201ea4e400e2"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "1b9f0a7db216f48858369595180f8a0c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-candidate-first-run-15.log",
+        "sha256": "162c7aba155c284c49e4d970a37db4fd455804695c478e3df491efe1212fead3"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "d7c06a56faf5cd2351bb65e4960f9495",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-01.log",
+        "sha256": "6b12349d4ea0f1b5d82c058252f06e9a5f1ab5920c27144a9f884f0bfd1caeec"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "452075136f1c4f8b95945d49f6360dac",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-02.log",
+        "sha256": "a3bd406a07e4c294b900236662f44b23cd6041985784cc69325fa35f4e002109"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "a01e64df3b5aba5ffc9dfbab5c020eba",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-03.log",
+        "sha256": "6f1601ac8b79b8c3c11f525438bf8454114e0c049627bb4d89e31c434bbdd46a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "016636734f8a80fe469d2f62e36a2d87",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-04.log",
+        "sha256": "f2bfca2214e911473a5e1dc1931803b799d6df85aad5f394e3a441001cea0362"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "a8967c5446f61adc9d75a7b81972bd86",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-05.log",
+        "sha256": "1fcd6a50486371a1b23910c978d4ad2dd80ffc5a5b3bbbc48a529b48c770ea6d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "93f29503833e8bc21f9154dba06cfe43",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-06.log",
+        "sha256": "93db540c3b868e5d99e5ae711bb9eb067e2c9b6408019cfaa30799417da9a407"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "3398a30a95f4cf3515a8538af9dfae0a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-07.log",
+        "sha256": "69e6ebaf4059e4be65d71aad65bc1a0559db0105c2283f00976569f2996404ac"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "c3052aa68840fedbc66039443e023ef2",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-08.log",
+        "sha256": "d845cd6b520e9a295b87a2006c4198fb8d2ca67e44f3fa99046d9361064cd6d8"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "8c54fdfc1df8af42868f6196cb0efe98",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-09.log",
+        "sha256": "9d397f7a737a68d863dd00096e62faf388536a48ef736f42c5be25d790e7904a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "84c4c88a1dc906f499d205af310b1ed2",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-10.log",
+        "sha256": "12321f369a4d937c0b3685a5574c5aa1b1545f9b53baf75bc8c25b2b586574c6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "25a601b5b58f61a945f3e3639721e35d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-11.log",
+        "sha256": "98b52a02572892cb4bb33bfd0179eff36adc1d0e9686a452db5ddfbe8dbb23b1"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "f05352654694b0393dec24dc7a8d70c8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-12.log",
+        "sha256": "957fb5f0e4cbb51499bb103c3199539902460344c828d92c3784ce41c0e12d0d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "1053de0dd27eae76a50b01a535473b4a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-13.log",
+        "sha256": "7bac20911d53ecb109ee53eb8ab48a87c5ccc2f2e54c10b754bbe5119b1d970e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "adfb9aed79fa5e0bb4d3e1868ea1c2fe",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-14.log",
+        "sha256": "8a35659bee8bdb985eefdaa35de4e48322ce2ca29cd3d1a73d7bf256cdb16cc4"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "fea92b1239b2a767cc322412cad0cfb7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\graph-multi-op-tax-p1-v1-eb740c2e-qualified\\raw\\n-15\\control-peer-first-run-15.log",
+        "sha256": "26da16c68920d3df0016a32a0cec80ee73efc2d2449bd199baa24321a3b3cd63"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "bd3d332beafcc35149e0ca7b718bbef0",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}
