@@ -354,13 +354,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v1.md",
-      "blocked_from": "AUDITED",
-      "blocker": "锁定的 oneDNN v3.13.2 brg_matmul 在每次 warm execute 中无条件创建 shared execution context，并可能扩展其 vector metadata；这绕过 caller-owned scratchpad，违反 steady submit 零隐藏分配合同。",
-      "blocker_owner": "compute_provider_onednn owner 与 upstream oneDNN",
-      "resume_condition": "锁定具有 caller-owned/precreated execution metadata 的 oneDNN revision，或审计一份可维护的最小 provider patch/等价成熟 route；allocation probe 必须在登记的正常和反偏置形状上证明 warm execute 零动态分配，再从 SCOPED 重启。",
-      "summary": "compute_provider_onednn v1 BLOCKED：Provider/API、correctness 和三交付形状成立，但实际 brg_matmul 路线每次 execute 隐藏分配 execution context/vector metadata，命中预声明 P0 停止线；native Compute/Graph 不受影响。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v2-ukernel-resume.md",
+      "summary": "compute_provider_onednn v2 SCOPED：锁定版本的 x64 实验 BRGEMM ukernel 提供冷生成、caller scratchpad 和源码无 warm heap 的等价成熟 route，满足 v1 恢复条件；先审计实际 allocation、并发/tiling、x64-only capability 与三交付，AUDITED 前不改产品。"
     }
   ]
 }
