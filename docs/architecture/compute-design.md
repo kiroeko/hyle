@@ -288,7 +288,8 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
 2. **Compute core**：先完成 CPU Device/Context/Queue/Completion、Mem resource bridge、typed native
    kernel 和 explicit shutdown；清除对 Sched 的无条件公开依赖。
 3. **Compute ops**：冻结最小 Tensor/Operation/PreparedOperation 合同，以一个 CPU reference op 和一个
-   HYLE SIMD/native op 证明 direct path。
+   HYLE SIMD/native op 证明 direct path。这里的产物是 typed schema 和少量**架构探针**，不是提前填满
+   CPU kernel catalog；只实现随后 runtime/Graph 纵切实际需要的最小算子集合。
 4. **立即接 Graph 纵切**：Graph 只做一个节点也能编译为 `Executable` 并通过 `Invocation` 运行；此时
    验出抽象税，而不是等 Compute 大全套完成后才发现形状不合。
 5. **多节点 CPU slice**：以量化模型中的 normalization → matmul → gated activation 为首个真实片段，
@@ -300,6 +301,14 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
    external memory/sync 与 Windows/Linux 消费级设备；MoltenVK 只签 portability 证据。
 8. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
    invocation、取消/drain 和 source/static/shared 交付门。
+9. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
+   证明上述对象与执行合同不再需要改写后，才按推理热路径与正交工程 workload 系统补齐 CPU 算子；
+   每条新 route 复用既有 plan/provider seam，不借“补算子”重新设计 runtime。
+
+因此本顺序不是“先造所有算子，再看它们能否组成图”，也不是脱离执行负载追求抽象意义上的完整 Graph。
+在第 3--8 步，每条纵切只补充用于验证 ownership、layout、partition、workspace、completion 或异步语义的
+最少算子；目录式 CPU kernel 填充必须等待这些结构经真实消费链压实。进度报告也必须把“schema 已定义”、
+“已有 executable route”和“系统性 catalog 完成”分开，不能用前两者冒充第三者。
 
 每一步都先创建合法 closure card 并完成 `SCOPED -> AUDITED`，只实现冻结的有限 `FIX/BORROW/DELETE`
 集合；未达到下一步所需的 lifecycle、correctness 或 P0 成本结构就停止为 `BLOCKED`，不靠扩 benchmark

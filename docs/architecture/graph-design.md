@@ -206,6 +206,12 @@ provider/backend workload 上形成可解释收益。
 7. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
    Graph 产品资格。
 
+上述步骤中的算子只作为真实纵切的最小架构探针：先用 gated MLP 检验常量、分支、region、workspace 与
+liveness，再用 attention/decode 检验动态 binding、resource state、异步 completion 与重复执行。它们不
+授权在 Graph 合同稳定前横向填充整个 CPU kernel catalog。反过来，Graph 也不能只靠 fake provider 或
+单节点测试宣称完整；至少一个成熟 provider 的真实多算子 region 和一条真实异步 backend 纵切通过后，
+才算具备承载后续算子扩展的稳定底座。
+
 每一步都有独立 closure card、固定 consumer slice 和停止预算。one-op lifecycle、P0 成本或三种 C++ 交付
 未通过时，不得用“后面完整 graph 会摊薄”进入下一步；provider region 不成立时也不得扩大 operator
 catalog 掩盖根因。
