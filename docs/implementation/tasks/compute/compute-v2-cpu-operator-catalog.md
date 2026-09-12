@@ -170,3 +170,26 @@ LOC 自检为全库 `563,541` 行、自实现不含测试 `99,071` 行、Compute
 这只允许进入 `CANDIDATE`，不构成关闭：本卡预声明的最终 shipping native route P1、当前候选的定向
 source/static/shared 复核、终局七问与红队仍须完成。若 P1 证明 M=32 native route 存在 material 固定输且
 不能由已关闭 provider 的自然选择边界诚实解决，依法退回 `AUDITED`；不得放宽门或用 decode 胜利平均。
+
+## Final CPU route P1 preflight（2026-09-12）
+
+正式合同为 [`compute-cpu-route-p1-v1`](../../../../bench/contracts/compute-cpu-route-p1-v1.json)，真实形状
+账本为 [`consumer_shapes_v1.json`](../../../../bench/compute/consumer_shapes_v1.json)。它不再把完整 Compute
+安全合同与裸指针 GEMM 混成一个胜负：candidate 是显式启用已关闭 oneDNN provider 的普通 Compute
+Context，peer 是 provider-empty 的同一 Compute v2 candidate；两侧使用完全相同的 Tensor/Buffer/Queue/
+PreparedOperation/Invocation/Completion、串行执行和独立同值 storage。
+
+- row-major `M=1/4,K=N=1024` 与 physical `[N,K]` transpose-view `M=1` 应在 prepare 时选择同一
+  HYLE-native/SIMD body；这三行验证 provider fallback 在 steady path 没有扫描或抽象税；
+- row-major `M=32,K=512,N=1024` 是此前暴露 10.4%--16.1% native loss 的精确机制行；oneDNN-enabled
+  candidate 必须在 prepare 时选择已经独立证明对 direct ukernel 5% 非劣的 BRGEMM provider；
+- allocation order、execution order 与函数 placement 独立交叉，共 8 strata；四行都必须通过固定 5%
+  non-inferiority，方向无论大小都进入总账；
+- RMSNorm 与 SiluAndMul 不重复裁决 leaf：当前 Compute candidate 直接调用已关闭 SIMD 的
+  `rms_norm_f32` 与 `swiglu_f32_batch`，后者已经在锁定 Highway 同合同上通过 P1；当前 Graph v2 P1 又以
+  同一 Compute PreparedOperation 对拍完整三算子 fragment。这里复用两个既有证据层，不把完整安全 API
+  对裸 pointer leaf 的额外语义写成 loss 或 win。
+
+一次非资格化 dual-order/placement 预检确认四个 operation 都选择预期 route、输出在声明容差内一致；
+M=32 的 selected/native op/s 比约 `1.05--1.11`，其余同 body 行随单次顺序在约 `0.95--1.05` 内翻转。
+这只证明合同可以进入一次 `n=15` qualification，不用于修改产品或签发结论。

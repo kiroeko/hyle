@@ -1,0 +1,20 @@
+{
+  "schema": "hyle.compute-route.consumer-shapes/v1",
+  "id": "compute-cpu-route-ledger-v1",
+  "reviewed_sources": [
+    {"name": "ggml", "revision": "e91ded11bdcd"},
+    {"name": "llama.cpp", "revision": "e71b80510c84"},
+    {"name": "vLLM", "revision": "51da0ca66c80"},
+    {"name": "SGLang", "revision": "dcebe8c4733a"},
+    {"name": "ds4", "revision": "f62ca29a3087"}
+  ],
+  "task": "repeated prepared dense float32 CPU matrix multiplication with explicit provider ordering",
+  "shapes": [
+    {"id": "decode-row-major-m1", "rows": 1, "inner": 1024, "columns": 1024, "layout": "row-major"},
+    {"id": "decode-row-major-m4", "rows": 4, "inner": 1024, "columns": 1024, "layout": "row-major"},
+    {"id": "short-prefill-row-major-m32", "rows": 32, "inner": 512, "columns": 1024, "layout": "row-major"},
+    {"id": "decode-transposed-weight-m1", "rows": 1, "inner": 1024, "columns": 1024, "layout": "physical [N,K], logical transposed [K,N]"}
+  ],
+  "route_contract": "An x86-64 product explicitly configured with the oneDNN provider uses HYLE-native for M<16 and transposed weights, and oneDNN BRGEMM for supported M>=16 row-major shapes. Provider choice, JIT and workspace allocation occur before repeated submit.",
+  "comparison": "Selected and forced-native arms use the same public HYLE Compute Tensor/Context/Queue/PreparedOperation/Invocation/Completion contract, independent but identically initialized caller buffers, serial execution and no hidden packing or copy. Allocation and execution order are crossed independently."
+}
