@@ -369,6 +369,11 @@
       "summary": "compute_provider_ggml v1 BLOCKED：HYLE block storage 与 Graph region 前置已经解除，但锁定/当前 ggml CPU runtime 仍在 context/threadpool 创建失败时 abort，且无持久 pool 时每次 submit 隐藏创建 disposable pool；空 factor 继续不进入产品。"
     },
     {
+      "module": "graph_provider_onednn",
+      "state": "QUEUED",
+      "summary": "graph_provider_onednn 已登记为 oneDNN Graph 多算子 region 的独立内部 identity；尚未 scope，不声明依赖、公开头、feature、产品能力或构建成本。"
+    },
+    {
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",

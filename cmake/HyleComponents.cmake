@@ -344,6 +344,11 @@ _hyle_declare_component(compute_provider_onednn
 # audit freezes those facts and advances the component to AUDITED.
 _hyle_declare_component(compute_provider_ggml)
 
+# Reserved identity for the heavyweight oneDNN Graph region adapter. It is
+# distinct from the lightweight BRGEMM single-operation provider so selecting
+# one does not silently impose the other's dependency/build contract.
+_hyle_declare_component(graph_provider_onednn QUEUED)
+
 # Provider-neutral Tensor/Operation schema. Public include paths stay in the
 # hyle::compute product namespace; this factor does not acquire Mem, runtime,
 # SIMD, Graph or provider implementations.
