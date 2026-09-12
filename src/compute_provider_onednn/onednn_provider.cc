@@ -1,141 +1,32 @@
 #include "hyle/compute/providers/onednn.h"
 
-#include <algorithm>
 #include <array>
-#include <atomic>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <new>
 #include <span>
 #include <utility>
 
-#include "oneapi/dnnl/dnnl_ukernel.h"
+#include "brgemm_internal.h"
 #include "provider_internal.h"
-
-#if !defined(DNNL_EXPERIMENTAL_UKERNEL)
-#error "HYLE's oneDNN provider requires the locked BRGEMM ukernel API"
-#endif
 
 namespace hyle::compute::onednn {
 namespace {
 
-static_assert(DNNL_VERSION_MAJOR == 3 && DNNL_VERSION_MINOR == 13 &&
-                  DNNL_VERSION_PATCH == 2,
-              "update the HYLE oneDNN provider identity with its source lock");
-
-inline constexpr std::size_t kCacheLine = 64;
-inline constexpr std::size_t kMinParallelTileColumns = 64;
 inline constexpr std::size_t kNativeSerialRowCutoff = 16;
-
-bool try_align_scratchpad(std::size_t size, std::size_t *aligned) noexcept {
-  constexpr std::size_t kPadding = kCacheLine - 1;
-  if (aligned == nullptr ||
-      size > (std::numeric_limits<std::size_t>::max)() - kPadding) {
-    return false;
-  }
-  *aligned = (size + kPadding) & ~kPadding;
-  return true;
-}
-
-bool is_cache_aligned(const void *pointer) noexcept {
-  return (reinterpret_cast<std::uintptr_t>(pointer) & (kCacheLine - 1)) == 0;
-}
-
-Status translate_status(dnnl_status_t status, const char *operation) noexcept {
-  switch (status) {
-  case dnnl_success:
-    return Status::Ok();
-  case dnnl_out_of_memory:
-    return Status::ResourceExhausted(operation);
-  case dnnl_invalid_arguments:
-  case dnnl_invalid_graph:
-  case dnnl_invalid_graph_op:
-  case dnnl_invalid_shape:
-  case dnnl_invalid_data_type:
-    return Status::InvalidArgument(operation);
-  case dnnl_unimplemented:
-  case dnnl_last_impl_reached:
-  case dnnl_not_required:
-    return Status::Unimplemented(operation);
-  case dnnl_runtime_error:
-    return Status::Internal(operation);
-  }
-  return Status::Internal(operation);
-}
 
 struct OneDnnContext final {
   ParallelExecutorRef executor{};
 };
 
-struct OneDnnPlan final {
+struct OneDnnPrepared final {
   OneDnnContext *context = nullptr;
-  dnnl_brgemm_t base_kernel = nullptr;
-  dnnl_brgemm_t wide_kernel = nullptr;
-  std::size_t rows = 0;
-  std::size_t inner = 0;
-  std::size_t columns = 0;
-  std::size_t task_count = 1;
-  std::size_t base_columns = 0;
-  std::size_t wide_task_count = 0;
-  std::size_t scratch_stride = 0;
-  std::size_t scratchpad_size = 0;
+  internal::BrgemmPlan *brgemm = nullptr;
 };
 
 struct OneDnnInvocation final {
   mem::HostMapping scratchpad_mapping{};
   std::byte *scratchpad = nullptr;
 };
-
-void destroy_kernel(dnnl_brgemm_t &kernel) noexcept {
-  if (kernel != nullptr) {
-    dnnl_brgemm_destroy(kernel);
-    kernel = nullptr;
-  }
-}
-
-Status create_kernel(dnnl_brgemm_t *output, std::size_t rows, std::size_t inner,
-                     std::size_t tile_columns, std::size_t leading_columns,
-                     std::size_t *scratchpad_size) noexcept {
-  if (output == nullptr || scratchpad_size == nullptr)
-    return Status::InvalidArgument("oneDNN ukernel output is null");
-  *output = nullptr;
-  *scratchpad_size = 0;
-
-  dnnl_brgemm_t kernel = nullptr;
-  Status status = translate_status(
-      dnnl_brgemm_create(&kernel, static_cast<dnnl_dim_t>(rows),
-                         static_cast<dnnl_dim_t>(tile_columns),
-                         static_cast<dnnl_dim_t>(inner), 1,
-                         static_cast<dnnl_dim_t>(inner),
-                         static_cast<dnnl_dim_t>(leading_columns),
-                         static_cast<dnnl_dim_t>(leading_columns), dnnl_f32,
-                         dnnl_f32, dnnl_f32),
-      "oneDNN cannot create this BRGEMM ukernel");
-  if (status.ok()) {
-    status = translate_status(dnnl_brgemm_set_add_C(kernel, 0),
-                              "oneDNN rejected overwrite output semantics");
-  }
-  if (status.ok()) {
-    status = translate_status(dnnl_brgemm_finalize(kernel),
-                              "oneDNN cannot finalize this BRGEMM ukernel");
-  }
-  if (status.ok()) {
-    status = translate_status(dnnl_brgemm_generate(kernel),
-                              "oneDNN cannot generate this BRGEMM ukernel");
-  }
-  if (status.ok()) {
-    status = translate_status(
-        dnnl_brgemm_get_scratchpad_size(kernel, scratchpad_size),
-        "oneDNN did not expose its BRGEMM scratchpad requirement");
-  }
-  if (!status.ok()) {
-    destroy_kernel(kernel);
-    return status;
-  }
-  *output = kernel;
-  return Status::Ok();
-}
 
 bool is_row_major_f32_matrix(const TensorDesc &description) noexcept {
   return description.valid() && description.data_type() == DataType::kFloat32 &&
@@ -172,13 +63,13 @@ void destroy_context(void *context_value,
 }
 
 void destroy_prepared(void *state, mem::AllocatorRef allocator) noexcept {
-  auto *plan = static_cast<OneDnnPlan *>(state);
-  if (plan == nullptr)
+  auto *prepared = static_cast<OneDnnPrepared *>(state);
+  if (prepared == nullptr)
     return;
-  destroy_kernel(plan->wide_kernel);
-  destroy_kernel(plan->base_kernel);
-  plan->~OneDnnPlan();
-  allocator.deallocate(plan, sizeof(OneDnnPlan), alignof(OneDnnPlan));
+  internal::destroy_brgemm_plan(prepared->brgemm, allocator);
+  prepared->~OneDnnPrepared();
+  allocator.deallocate(prepared, sizeof(OneDnnPrepared),
+                       alignof(OneDnnPrepared));
 }
 
 Status create_invocation(void *prepared_value, mem::AllocatorRef allocator,
@@ -187,9 +78,9 @@ Status create_invocation(void *prepared_value, mem::AllocatorRef allocator,
   if (invocation_output == nullptr)
     return Status::InvalidArgument("oneDNN invocation output is null");
   *invocation_output = nullptr;
-  auto *plan = static_cast<OneDnnPlan *>(prepared_value);
-  if (plan == nullptr || plan->context == nullptr ||
-      plan->base_kernel == nullptr || plan->scratchpad_size == 0) {
+  auto *prepared = static_cast<OneDnnPrepared *>(prepared_value);
+  if (prepared == nullptr || prepared->context == nullptr ||
+      prepared->brgemm == nullptr) {
     return Status::Internal("oneDNN BRGEMM plan is invalid");
   }
 
@@ -208,12 +99,11 @@ Status create_invocation(void *prepared_value, mem::AllocatorRef allocator,
     auto bytes = invocation->scratchpad_mapping.writable_bytes();
     if (!bytes) {
       status = std::move(bytes).error();
-    } else if (bytes->size() < plan->scratchpad_size ||
-               !is_cache_aligned(bytes->data())) {
-      status = Status::InvalidArgument(
-          "oneDNN workspace must satisfy its size and 64-byte alignment");
     } else {
-      invocation->scratchpad = bytes->data();
+      status = internal::validate_brgemm_scratchpad(
+          prepared->brgemm, bytes->data(), bytes->size());
+      if (status.ok())
+        invocation->scratchpad = bytes->data();
     }
   }
 
@@ -239,73 +129,23 @@ void destroy_invocation(void *invocation_value,
                        alignof(OneDnnInvocation));
 }
 
-struct ExecutionEpisode final {
-  OneDnnPlan *plan = nullptr;
-  OneDnnInvocation *invocation = nullptr;
-  const float *left = nullptr;
-  const float *right = nullptr;
-  float *output = nullptr;
-  std::atomic<int> first_error{static_cast<int>(dnnl_success)};
-};
-
-void execute_tile(void *episode_value, std::size_t index,
-                  std::size_t count) noexcept {
-  auto &episode = *static_cast<ExecutionEpisode *>(episode_value);
-  OneDnnPlan &plan = *episode.plan;
-  if (count != plan.task_count || index >= count)
-    return;
-
-  const bool wide = index < plan.wide_task_count;
-  const std::size_t first_column =
-      wide ? index * (plan.base_columns + 1)
-           : plan.wide_task_count * (plan.base_columns + 1) +
-                 (index - plan.wide_task_count) * plan.base_columns;
-  const dnnl_brgemm_t kernel = wide ? plan.wide_kernel : plan.base_kernel;
-  std::byte *scratchpad =
-      episode.invocation->scratchpad + index * plan.scratch_stride;
-  const std::array<dnnl_dim_t, 2> offsets{0, 0};
-
-  dnnl_status_t status = dnnl_brgemm_set_hw_context(kernel);
-  if (status == dnnl_success) {
-    status = dnnl_brgemm_execute(kernel, episode.left,
-                                 episode.right + first_column, offsets.data(),
-                                 episode.output + first_column, scratchpad);
-    const dnnl_status_t release = dnnl_brgemm_release_hw_context();
-    if (status == dnnl_success)
-      status = release;
-  }
-  if (status != dnnl_success) {
-    int expected = static_cast<int>(dnnl_success);
-    episode.first_error.compare_exchange_strong(
-        expected, static_cast<int>(status), std::memory_order_relaxed,
-        std::memory_order_relaxed);
-  }
-}
-
 Status execute_mapped(void *prepared_value, void *invocation_value,
                       std::span<const void *const> inputs,
                       std::span<void *const> outputs) noexcept {
-  auto *plan = static_cast<OneDnnPlan *>(prepared_value);
+  auto *prepared = static_cast<OneDnnPrepared *>(prepared_value);
   auto *invocation = static_cast<OneDnnInvocation *>(invocation_value);
-  if (plan == nullptr || invocation == nullptr ||
+  if (prepared == nullptr || prepared->context == nullptr ||
+      prepared->brgemm == nullptr || invocation == nullptr ||
       invocation->scratchpad == nullptr || inputs.size() != 2 ||
       outputs.size() != 1 || inputs[0] == nullptr || inputs[1] == nullptr ||
       outputs[0] == nullptr) {
     return Status::Internal("oneDNN BRGEMM execution state is invalid");
   }
-
-  ExecutionEpisode episode{
-      .plan = plan,
-      .invocation = invocation,
-      .left = static_cast<const float *>(inputs[0]),
-      .right = static_cast<const float *>(inputs[1]),
-      .output = static_cast<float *>(outputs[0]),
-  };
-  plan->context->executor.parallel_for(plan->task_count, &execute_tile,
-                                       &episode);
-  return translate_status(static_cast<dnnl_status_t>(episode.first_error.load(
-                              std::memory_order_relaxed)),
-                          "oneDNN BRGEMM execution failed");
+  return internal::execute_brgemm(prepared->brgemm, prepared->context->executor,
+                                  static_cast<const float *>(inputs[0]),
+                                  static_cast<const float *>(inputs[1]),
+                                  static_cast<float *>(outputs[0]),
+                                  invocation->scratchpad);
 }
 
 void preserve_first_error(Status &terminal, Status candidate) noexcept {
@@ -431,10 +271,8 @@ Status prepare(void *context_value, Operation operation,
   const std::size_t rows = static_cast<std::size_t>(left[0]);
   const std::size_t inner = static_cast<std::size_t>(left[1]);
   const std::size_t columns = static_cast<std::size_t>(right[1]);
-  const std::size_t max_tasks_by_width =
-      (std::max)(std::size_t{1}, columns / kMinParallelTileColumns);
-  const std::size_t task_count =
-      (std::min)(context->executor.concurrency(), max_tasks_by_width);
+  const std::size_t task_count = internal::recommended_brgemm_task_count(
+      columns, context->executor.concurrency());
 
   // The HYLE-native 1/4-row kernels have a structurally cheaper decode route.
   // A real external executor may still make independent N tiles worthwhile.
@@ -443,60 +281,29 @@ Status prepare(void *context_value, Operation operation,
         "small serial MatMul remains on the HYLE-native decode route");
   }
 
-  const std::size_t base_columns = columns / task_count;
-  const std::size_t wide_task_count = columns % task_count;
-  std::size_t base_scratchpad = 0;
-  dnnl_brgemm_t base_kernel = nullptr;
-  Status status = create_kernel(&base_kernel, rows, inner, base_columns,
-                                columns, &base_scratchpad);
-  dnnl_brgemm_t wide_kernel = nullptr;
-  std::size_t wide_scratchpad = 0;
-  if (status.ok() && wide_task_count != 0) {
-    status = create_kernel(&wide_kernel, rows, inner, base_columns + 1, columns,
-                           &wide_scratchpad);
-  }
-  if (!status.ok()) {
-    destroy_kernel(wide_kernel);
-    destroy_kernel(base_kernel);
+  internal::BrgemmPlan *brgemm = nullptr;
+  Status status = internal::create_brgemm_plan(
+      internal::BrgemmShape{.rows = rows, .inner = inner, .columns = columns},
+      task_count, allocator, &brgemm);
+  if (!status.ok())
     return status;
-  }
 
-  const std::size_t per_task_scratchpad =
-      (std::max)(base_scratchpad, wide_scratchpad);
-  std::size_t scratch_stride = 0;
-  if (!try_align_scratchpad((std::max)(per_task_scratchpad, std::size_t{1}),
-                            &scratch_stride) ||
-      task_count > (std::numeric_limits<std::size_t>::max)() / scratch_stride) {
-    destroy_kernel(wide_kernel);
-    destroy_kernel(base_kernel);
-    return Status::OutOfRange("oneDNN MatMul workspace size overflows size_t");
-  }
-  const std::size_t scratchpad_size = task_count * scratch_stride;
-
-  void *storage = allocator.allocate(sizeof(OneDnnPlan), alignof(OneDnnPlan));
+  void *storage =
+      allocator.allocate(sizeof(OneDnnPrepared), alignof(OneDnnPrepared));
   if (storage == nullptr) {
-    destroy_kernel(wide_kernel);
-    destroy_kernel(base_kernel);
-    return Status::ResourceExhausted("oneDNN MatMul plan allocation failed");
+    internal::destroy_brgemm_plan(brgemm, allocator);
+    return Status::ResourceExhausted(
+        "oneDNN prepared wrapper allocation failed");
   }
-  auto *plan = ::new (storage) OneDnnPlan{
+  auto *prepared = ::new (storage) OneDnnPrepared{
       .context = context,
-      .base_kernel = base_kernel,
-      .wide_kernel = wide_kernel,
-      .rows = rows,
-      .inner = inner,
-      .columns = columns,
-      .task_count = task_count,
-      .base_columns = base_columns,
-      .wide_task_count = wide_task_count,
-      .scratch_stride = scratch_stride,
-      .scratchpad_size = scratchpad_size,
+      .brgemm = brgemm,
   };
   prepared_output->vtable = &kPreparedVTable;
-  prepared_output->state = plan;
+  prepared_output->state = prepared;
   prepared_output->workspace = WorkspaceRequirement{
-      .size = scratchpad_size,
-      .alignment = kCacheLine,
+      .size = internal::brgemm_scratchpad_size(brgemm),
+      .alignment = internal::kBrgemmWorkspaceAlignment,
   };
   return Status::Ok();
 }

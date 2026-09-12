@@ -336,6 +336,7 @@ _hyle_declare_component(io_websocket
 # provider-erased Compute value; no oneDNN type enters the product contract and
 # Compute never depends back on this implementation leaf.
 _hyle_declare_component(compute_provider_onednn
+  PRIVATE_DEPS error mem
   PUBLIC_DEPS compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/onednn.h)
 

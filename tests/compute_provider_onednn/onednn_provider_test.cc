@@ -12,6 +12,7 @@
 
 #include <gtest/gtest.h>
 
+#include "brgemm_internal.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
@@ -35,9 +36,11 @@ using hyle::mem::Buffer;
 
 struct AllocatorProbe final {
   AllocatorRef backing = hyle::mem::system_allocator();
+  std::atomic<std::size_t> attempts{0};
   std::atomic<std::size_t> allocations{0};
   std::atomic<std::size_t> deallocations{0};
   std::atomic<bool> fail{false};
+  std::atomic<std::size_t> fail_at_attempt{0};
 };
 
 struct ParallelProbe final {
@@ -63,7 +66,8 @@ bool probe_in_parallel(void *state) noexcept {
 void *probe_allocate(void *state, std::size_t size,
                      std::size_t alignment) noexcept {
   auto &probe = *static_cast<AllocatorProbe *>(state);
-  if (probe.fail.load())
+  const std::size_t attempt = probe.attempts.fetch_add(1) + 1;
+  if (probe.fail.load() || attempt == probe.fail_at_attempt.load())
     return nullptr;
   void *result = probe.backing.allocate(size, alignment);
   if (result != nullptr)
@@ -113,6 +117,32 @@ Context create_context() {
       .value();
 }
 
+struct BrgemmPlanOwner final {
+  hyle::compute::onednn::internal::BrgemmPlan *plan = nullptr;
+  AllocatorRef allocator{};
+
+  ~BrgemmPlanOwner() {
+    hyle::compute::onednn::internal::destroy_brgemm_plan(plan, allocator);
+  }
+};
+
+struct PairPostProbe final {
+  std::size_t calls = 0;
+  std::size_t rows = 0;
+  std::size_t leading_columns = 0;
+  hyle::compute::onednn::internal::BrgemmTaskRange range{};
+};
+
+void record_pair_post(
+    void *context, std::size_t rows, std::size_t leading_columns,
+    hyle::compute::onednn::internal::BrgemmTaskRange range) noexcept {
+  auto &probe = *static_cast<PairPostProbe *>(context);
+  ++probe.calls;
+  probe.rows = rows;
+  probe.leading_columns = leading_columns;
+  probe.range = range;
+}
+
 TEST(OneDnnProvider, ExposesStableIdentity) {
   const auto provider = hyle::compute::onednn::provider();
   EXPECT_TRUE(provider.valid());
@@ -129,6 +159,70 @@ TEST(OneDnnProvider, ExposesStableIdentity) {
 
   const hyle::compute::ParallelExecutorRef serial(nullptr, 8, nullptr);
   EXPECT_EQ(serial.concurrency(), 1U);
+}
+
+TEST(OneDnnProvider, InternalPlanExecutesSharedLeftPairInOneEpisode) {
+  namespace internal = hyle::compute::onednn::internal;
+  constexpr std::size_t rows = 2;
+  constexpr std::size_t inner = 3;
+  constexpr std::size_t columns = 4;
+  const AllocatorRef plan_allocator = hyle::mem::system_allocator();
+  BrgemmPlanOwner owner{.allocator = plan_allocator};
+  ASSERT_TRUE(internal::create_brgemm_plan(
+                  {.rows = rows, .inner = inner, .columns = columns}, 1,
+                  plan_allocator, &owner.plan)
+                  .ok());
+  ASSERT_NE(owner.plan, nullptr);
+  EXPECT_EQ(internal::brgemm_task_count(owner.plan), 1u);
+
+  const std::size_t scratchpad_size =
+      internal::brgemm_scratchpad_size(owner.plan);
+  ASSERT_GT(scratchpad_size, 0u);
+  Buffer scratchpad =
+      Buffer::create(hyle::mem::system_resource(), scratchpad_size,
+                     internal::kBrgemmWorkspaceAlignment)
+          .value();
+  auto mapping = scratchpad.view().map_host(hyle::mem::HostAccess::kReadWrite);
+  ASSERT_TRUE(mapping.has_value()) << mapping.error().message();
+  auto scratch_bytes = mapping->writable_bytes();
+  ASSERT_TRUE(scratch_bytes.has_value()) << scratch_bytes.error().message();
+  ASSERT_TRUE(internal::validate_brgemm_scratchpad(
+                  owner.plan, scratch_bytes->data(), scratch_bytes->size())
+                  .ok());
+  EXPECT_TRUE(internal::validate_brgemm_scratchpad(
+                  owner.plan, scratch_bytes->data(), scratch_bytes->size() - 1)
+                  .IsInvalidArgument());
+
+  constexpr std::array<float, rows * inner> left{1, 2, 3, 4, 5, 6};
+  constexpr std::array<float, inner * columns> first_right{1, 0, 0, 1, 0, 1,
+                                                           1, 0, 1, 1, 0, 0};
+  constexpr std::array<float, inner * columns> second_right{2, 0, 1, 0, 0, 2,
+                                                            0, 1, 1, 0, 2, 0};
+  std::array<float, rows * columns> first_output{};
+  std::array<float, rows * columns> second_output{};
+  PairPostProbe post{};
+  ParallelProbe executor_probe{};
+  const hyle::compute::ParallelExecutorRef executor(
+      &executor_probe, 1, &probe_parallel_for, &probe_in_parallel);
+  ASSERT_TRUE(internal::execute_brgemm_pair(
+                  owner.plan, executor, left.data(), first_right.data(),
+                  second_right.data(), first_output.data(),
+                  second_output.data(), scratch_bytes->data(),
+                  &record_pair_post, &post)
+                  .ok());
+
+  EXPECT_EQ(first_output,
+            (std::array<float, rows * columns>{4, 5, 2, 1, 10, 11, 5, 4}));
+  EXPECT_EQ(second_output,
+            (std::array<float, rows * columns>{5, 4, 7, 2, 14, 10, 16, 5}));
+  EXPECT_EQ(post.calls, 1u);
+  EXPECT_EQ(post.rows, rows);
+  EXPECT_EQ(post.leading_columns, columns);
+  EXPECT_EQ(post.range.first_column, 0u);
+  EXPECT_EQ(post.range.column_count, columns);
+  EXPECT_EQ(executor_probe.episodes.load(), 1u);
+  EXPECT_EQ(executor_probe.tasks.load(), 1u);
+  EXPECT_TRUE(mapping->close().ok());
 }
 
 TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
@@ -430,6 +524,15 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
     EXPECT_TRUE(failed_prepare.error().IsResourceExhausted());
 
     probe.fail = false;
+    probe.fail_at_attempt = probe.attempts.load() + 2;
+    auto failed_wrapper = hyle::compute::prepare(context, MatMul{}, description,
+                                                 description, description);
+    ASSERT_FALSE(failed_wrapper.has_value());
+    EXPECT_TRUE(failed_wrapper.error().IsResourceExhausted());
+    EXPECT_EQ(failed_wrapper.error().message(),
+              "oneDNN prepared wrapper allocation failed");
+    probe.fail_at_attempt = 0;
+
     PreparedOperation prepared =
         hyle::compute::prepare(context, MatMul{}, description, description,
                                description)

@@ -1,5 +1,7 @@
 if(HYLE_COMPUTE_ONEDNN_ENABLED)
-  hyle_add_module(compute_provider_onednn SOURCES onednn_provider.cc)
+  hyle_add_module(compute_provider_onednn SOURCES
+    brgemm_internal.cc
+    onednn_provider.cc)
   target_include_directories(hyle_compute_provider_onednn PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute")
   target_link_libraries(hyle_compute_provider_onednn PRIVATE dnnl)

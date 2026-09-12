@@ -5,6 +5,8 @@ hyle_add_header_self_contained_test(compute_provider_onednn
 if(HYLE_COMPUTE_ONEDNN_ENABLED AND TARGET hyle_compute_backend_cpu)
   hyle_add_test(compute_provider_onednn SOURCES onednn_provider_test.cc
     DEPS hyle_compute_backend_cpu)
+  target_include_directories(hyle_compute_provider_onednn_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute_provider_onednn")
   if(TARGET hyle_compute_provider_native)
     hyle_add_test(compute_provider_onednn NAME composition
       SOURCES onednn_composition_test.cc
