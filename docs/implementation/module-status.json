@@ -272,14 +272,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md",
-      "candidate": "ada35161916d4e7b89ccabe846897cbea9a43808",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md"
-      },
-      "summary": "compute v3 CLOSED：provider-neutral plain/block/opaque storage、byte-strided TensorDesc、安全 view/fallback 已完成四机 correctness、sanitizers、Compute/Graph 三种 C++ 交付、文档/红队和 O(rank<=8) 零常态动态成本 P0；本轮不冒充完整算子或异步 GPU backend。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-v4-runtime-extensibility.md",
+      "summary": "compute v4 因真实异步/GPU consumer 证明 Completion、device storage、provider identity/list 与 close/drain 合同缺失而合法重开；当前仅冻结审计范围，v3 storage 证据继续保留但不冒充完整 Compute。"
     },
     {
       "module": "graph",
@@ -380,6 +375,11 @@
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/compute-provider-ggml-v1.md",
       "summary": "compute_provider_ggml v1 已完成首遍源码审计并产生 Compute block storage 与 Graph constant/region 两个有序前置 trigger；当前保持 SCOPED 空 factor，没有依赖、公开头、产品投影、构建开关或已承诺能力。"
+    },
+    {
+      "module": "compute_ops",
+      "state": "QUEUED",
+      "summary": "为 provider-neutral Tensor/Operation schema 与公共算子合同保留内部 factor 身份；当前没有 target、依赖、公开头、产品投影或已承诺能力。"
     }
   ]
 }
