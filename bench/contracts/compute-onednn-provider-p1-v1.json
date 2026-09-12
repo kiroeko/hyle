@@ -276,7 +276,7 @@
           "HYLE_BUILD_BENCH": "ON",
           "HYLE_BUILD_TESTS": "OFF",
           "HYLE_COMPUTE_ONEDNN": "ON",
-          "HYLE_DEV_FACTORS": "compute_provider_onednn",
+          "HYLE_DEV_FACTORS": "compute_provider_onednn;compute_backend_cpu",
           "HYLE_INSTALL": "OFF",
           "HYLE_SANITIZER": "off",
           "HYLE_SIMD_EXACT_TARGET": "",
