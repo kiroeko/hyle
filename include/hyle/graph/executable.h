@@ -119,9 +119,15 @@ struct ConstantBinding final {
 
 enum class RegionSelectionPolicy : std::uint8_t {
   kDisabled = 0,
-  // Accept only proposals with a positive provider-declared net saving after
-  // boundary copies, synchronization, dispatch and thread handoff.
-  kConservative,
+  // Region providers are explicitly installed in Context. Prefer a
+  // deterministic maximum-coverage set, then fewer backend execution
+  // episodes, then earlier provider order. A provider may omit a timing
+  // estimate, but an explicit zero estimate is not selected.
+  kPreferProviderRegions,
+  // Accept only proposals with a positive provider-declared portable net
+  // saving estimate. This is for deployments that require quantified cost
+  // evidence rather than explicit provider opt-in.
+  kRequireEstimatedBenefit,
 };
 
 enum class OperationFallbackPolicy : std::uint8_t {
@@ -147,7 +153,8 @@ enum class OutputOwnership : std::uint8_t {
 
 struct CompileOptions final {
   std::span<const ConstantBinding> constants{};
-  RegionSelectionPolicy region_selection = RegionSelectionPolicy::kConservative;
+  RegionSelectionPolicy region_selection =
+      RegionSelectionPolicy::kPreferProviderRegions;
   OperationFallbackPolicy operation_fallback = OperationFallbackPolicy::kAllow;
   // Hard cold-path budget across all configured providers. Exhaustion fails
   // compilation instead of silently changing the selected plan.

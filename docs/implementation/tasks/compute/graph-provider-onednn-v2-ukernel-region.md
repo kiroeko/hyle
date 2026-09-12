@@ -74,7 +74,7 @@
 ### 边界与自然形状
 
 - Graph-only provider 必须是一个独立 `compute::Provider` 值：其 single-op `prepare` 返回
-  `Unimplemented`，只通过 Graph v2 extension 提供 region。公开入口冻结为
+  `Unimplemented`，只通过 Graph v3 extension 提供 region。公开入口冻结为
   `hyle::graph::onednn::provider({.executor=...})`；它不要求用户构造 oneDNN 类型，也不让 Compute
   获取 Graph 依赖；
 - 精确 pattern 为四个连续拓扑 node：两个共享 activation 的 dense row-major f32 MatMul、一个
@@ -110,7 +110,7 @@
 
 | ID | 问题与证据 | 允许改动 | 验收 |
 |---|---|---|---|
-| GP20 | 无真实生产 region provider | 新增公开 factory、Provider context 与精确 extension v2 | 普通 Context provider sequence 自然组合，single-op 不截流 |
+| GP20 | 无真实生产 region provider | 新增公开 factory、Provider context 与精确 extension v3 | 普通 Context provider sequence 自然组合，single-op 不截流 |
 | GP21 | pattern 可能吞掉外部 use | O(V+E) use/publish 扫描，只提案精确四节点形状 | 正反例、分支/published/extra-use fallback |
 | GP22 | 不能复制 single-op BRGEMM | 私有依赖 OD40--OD44 seam，两个 plan、共享 gate/up artifact | 不含 dnnl 头/handle，无第二份 tiling/JIT owner |
 | GP23 | 中间值与 scratch owner 缺失 | 一个 64-byte aligned caller workspace，两个 MxH buffer + 复用 scratch | overflow/OOM/alignment/lifetime/concurrent Invocation |

@@ -103,8 +103,9 @@ HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同�
 
 1. **validate/canonicalize**：检查拓扑、shape、dtype、alias、side effect 和输出；
 2. **infer/normalize**：传播 shape/layout 约束，把等价 operation 变成稳定形式；
-3. **capability match**：询问每个 Compute provider 对 op 或 region 的真实支持与成本；
-4. **partition/place**：选择成本有效的 regions 与 devices，不机械追求节点数最大的 partition；
+3. **capability match**：询问每个 Compute provider 对 op 或 region 的真实支持、结构成本和可选量化估值；
+4. **partition/place**：按调用方选择的 admission 策略选择 regions 与 devices，不把不可移植的计时常数
+   冒充通用性能 oracle；
 5. **materialize boundaries**：插入明确的 copy、repack、barrier 和 provider handoff；
 6. **liveness/alias/workspace**：把 tensor facts 转成 Mem `LifetimePlanner` 能理解的 interval/resource 请求；
 7. **lower/compile**：取得 provider artifact、native command/capture 或 HYLE kernel route；
@@ -116,8 +117,11 @@ packing。Provider 的 `supports(op)` 不是“选它一定更快”。无法覆
 
 首个 provider-neutral region 合同只接受 canonical topological order 上的连续半开区间。provider 经
 Compute Context 的对象局部、精确版本 extension 提案，Graph 在有限预算内做确定性的 weighted-interval
-选择；预算耗尽是显式失败，不是截断。非连续 subgraph、跨设备 partition 或不同成本单位必须建立新版
-合同，不能悄悄改变当前 route 语义。
+选择；预算耗尽是显式失败，不是截断。调用方显式安装 region provider 本身就是 opt-in：默认结构策略
+先最大化 region 覆盖节点，再最小化 backend execution episode，并以 Context provider 顺序稳定裁决。
+provider 若能给出面向当前 specialization 且可移植的正净收益估值，严格策略才以该估值作为 admission
+和首要 score；unknown 与精确零必须保持可区分，不能用某次微基准的 `1 ns` 填空。非连续 subgraph、
+跨设备 partition 或不同成本单位必须建立新版合同，不能悄悄改变当前 route 语义。
 
 ONNX Runtime 的 execution-provider partition、oneDNN 的 partition/compiled partition、TensorRT 的
 network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作为该流水线的独立参照；HYLE

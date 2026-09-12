@@ -15,7 +15,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 2};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 3};
 
 // Half-open contiguous range in Graph's canonical topological node order.
 // Restricting the first contract to intervals makes deterministic weighted
@@ -31,15 +31,14 @@ struct RegionNodeRange final {
   }
 };
 
-// Comparable cold-path facts for the exact static graph specialization. Net
-// savings is relative to the provider's natural single-op fallback sequence
-// and drives conservative selection. The remaining fields make hidden costs
-// visible to policy/reporting. An absent optional means that the provider
-// cannot report the estimate; an engaged zero means exact none. A provider
-// that cannot defend positive savings should not emit the proposal under the
-// default conservative policy.
+// Cold-path facts for the exact static graph specialization. Net savings is
+// relative to the provider's natural single-op fallback sequence when the
+// provider has a portable estimate; nullopt means unknown and an engaged zero
+// means exact no saving. Unknown estimates remain useful under the explicit
+// provider-region policy and are never converted into benchmark-derived
+// constants. The remaining fields expose hidden costs to policy/reporting.
 struct RegionCostFacts final {
-  std::uint64_t estimated_net_savings_ns = 0;
+  std::optional<std::uint64_t> estimated_net_savings_ns{};
   std::optional<std::uint64_t> estimated_compile_ns{};
   std::optional<std::size_t> persistent_bytes{};
   std::optional<std::size_t> workspace_bytes{};

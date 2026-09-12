@@ -262,6 +262,7 @@ struct RegionExtension final {
 struct RegionCandidate final {
   RegionProposal proposal{};
   std::uint32_t extension_index = 0;
+  std::uint32_t provider_index = 0;
   std::uint32_t proposal_order = 0;
 };
 
@@ -361,8 +362,12 @@ Status discover_region_candidates(const Graph &published_graph,
         return Status::InvalidArgument(
             "provider proposed an invalid graph region interval");
       }
-      if (options.region_selection == RegionSelectionPolicy::kConservative &&
-          proposal.cost.estimated_net_savings_ns == 0) {
+      const std::optional<std::uint64_t> estimate =
+          proposal.cost.estimated_net_savings_ns;
+      if ((estimate.has_value() && *estimate == 0) ||
+          (options.region_selection ==
+               RegionSelectionPolicy::kRequireEstimatedBenefit &&
+           !estimate.has_value())) {
         continue;
       }
       if (proposal.cost.dispatch_count == 0) {
@@ -371,6 +376,7 @@ Status discover_region_candidates(const Graph &published_graph,
       }
       if (!candidates.try_push_back(RegionCandidate{
               proposal, static_cast<std::uint32_t>(extension_index),
+              extensions[extension_index].provider_index,
               static_cast<std::uint32_t>(candidates.size())})) {
         return plan_allocation_failure();
       }
@@ -381,8 +387,10 @@ Status discover_region_candidates(const Graph &published_graph,
 }
 
 struct RegionSelectionScore final {
-  std::uint64_t savings = 0;
+  std::uint64_t estimated_savings = 0;
   std::uint64_t covered_nodes = 0;
+  std::uint64_t dispatches = 0;
+  std::uint64_t provider_rank_cost = 0;
 };
 
 template <class Unsigned>
@@ -391,14 +399,27 @@ Unsigned saturating_add(Unsigned left, Unsigned right) noexcept {
   return right > limit - left ? limit : left + right;
 }
 
-bool better_score(RegionSelectionScore left,
-                  RegionSelectionScore right) noexcept {
-  return left.savings > right.savings ||
-         (left.savings == right.savings &&
-          left.covered_nodes > right.covered_nodes);
+template <class Unsigned>
+Unsigned saturating_multiply(Unsigned left, Unsigned right) noexcept {
+  const Unsigned limit = (std::numeric_limits<Unsigned>::max)();
+  return right != 0 && left > limit / right ? limit : left * right;
+}
+
+bool better_score(RegionSelectionScore left, RegionSelectionScore right,
+                  RegionSelectionPolicy policy) noexcept {
+  if (policy == RegionSelectionPolicy::kRequireEstimatedBenefit &&
+      left.estimated_savings != right.estimated_savings) {
+    return left.estimated_savings > right.estimated_savings;
+  }
+  if (left.covered_nodes != right.covered_nodes)
+    return left.covered_nodes > right.covered_nodes;
+  if (left.dispatches != right.dispatches)
+    return left.dispatches < right.dispatches;
+  return left.provider_rank_cost < right.provider_rank_cost;
 }
 
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
+                      RegionSelectionPolicy policy,
                       RegionCandidates &selected) noexcept {
   std::sort(
       candidates.begin(), candidates.end(),
@@ -437,14 +458,24 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
         static_cast<std::size_t>(previous_end - candidates.begin());
     predecessors[index] = static_cast<std::uint32_t>(previous_count);
     RegionSelectionScore include = scores[previous_count];
-    include.savings = saturating_add(
-        include.savings,
-        candidates[index].proposal.cost.estimated_net_savings_ns);
+    include.estimated_savings = saturating_add(
+        include.estimated_savings,
+        candidates[index].proposal.cost.estimated_net_savings_ns.value_or(0));
     include.covered_nodes = saturating_add(
         include.covered_nodes,
         static_cast<std::uint64_t>(candidates[index].proposal.nodes.count));
+    include.dispatches =
+        saturating_add(include.dispatches,
+                       static_cast<std::uint64_t>(
+                           candidates[index].proposal.cost.dispatch_count));
+    include.provider_rank_cost = saturating_add(
+        include.provider_rank_cost,
+        saturating_multiply(
+            static_cast<std::uint64_t>(candidates[index].provider_index) + 1,
+            static_cast<std::uint64_t>(
+                candidates[index].proposal.nodes.count)));
     const RegionSelectionScore exclude = scores[index];
-    if (better_score(include, exclude)) {
+    if (better_score(include, exclude, policy)) {
       scores[index + 1] = include;
       take[index] = 1;
     } else {
@@ -662,7 +693,8 @@ Status prepare_steps(detail::PlanState &plan, const Graph &published_graph,
                                  plan.allocator, extensions, candidates);
   if (!status.ok())
     return status;
-  status = select_regions(candidates, plan.allocator, selected);
+  status = select_regions(candidates, plan.allocator, options.region_selection,
+                          selected);
   if (!status.ok())
     return status;
   if (options.operation_fallback == OperationFallbackPolicy::kReject) {
@@ -1719,7 +1751,10 @@ Result<CompiledGraph> compile(const Graph &graph,
         Status::FailedPrecondition("compute context is invalid or closed"));
   }
   if (options.region_selection != RegionSelectionPolicy::kDisabled &&
-      options.region_selection != RegionSelectionPolicy::kConservative) {
+      options.region_selection !=
+          RegionSelectionPolicy::kPreferProviderRegions &&
+      options.region_selection !=
+          RegionSelectionPolicy::kRequireEstimatedBenefit) {
     return std::unexpected(
         Status::InvalidArgument("graph region selection policy is invalid"));
   }

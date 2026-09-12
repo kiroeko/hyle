@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -65,6 +66,8 @@ enum class ProposalMode : std::uint8_t {
 
 struct RegionProbe final {
   ProposalMode mode = ProposalMode::kPairs;
+  std::optional<std::uint64_t> proposal_savings = 10;
+  std::uint32_t proposal_dispatch_count = 1;
   std::size_t propose_count = 0;
   std::size_t compile_count = 0;
   std::size_t single_prepare_count = 0;
@@ -194,10 +197,12 @@ bool is_negation(const Graph &graph, std::size_t node_index) {
 }
 
 Status add_proposal(RegionProposalWriter &writer, std::uint32_t begin,
-                    std::uint32_t count, std::uint64_t savings) noexcept {
+                    std::uint32_t count, std::optional<std::uint64_t> savings,
+                    std::uint32_t dispatch_count = 1) noexcept {
   return writer.add(RegionProposal{
       .nodes = RegionNodeRange{begin, count},
-      .cost = {.estimated_net_savings_ns = savings},
+      .cost = {.estimated_net_savings_ns = savings,
+               .dispatch_count = dispatch_count},
       .route = (static_cast<std::uint64_t>(begin) << 32) | count,
   });
 }
@@ -222,7 +227,8 @@ Status propose_regions(void *context, const Graph &graph,
     if (!is_negation(graph, index) || !is_negation(graph, index + 1))
       continue;
     Status status =
-        add_proposal(writer, static_cast<std::uint32_t>(index), 2, 10);
+        add_proposal(writer, static_cast<std::uint32_t>(index), 2,
+                     probe.proposal_savings, probe.proposal_dispatch_count);
     if (!status.ok())
       return status;
     ++index;
@@ -435,6 +441,13 @@ Context make_context(RegionProbe &probe) {
       .value();
 }
 
+Context make_context(RegionProbe &first, RegionProbe &second) {
+  const std::array providers{region_provider(first), region_provider(second),
+                             hyle::compute::native::provider()};
+  return Context::create(hyle::compute::cpu::device(), {.providers = providers})
+      .value();
+}
+
 TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   RegionProbe probe;
   const NegationGraph logical = make_negations(2);
@@ -500,11 +513,89 @@ TEST(GraphRegions,
   RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
   const NegationGraph logical = make_negations(3);
   Context context = make_context(probe);
-  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          CompileOptions{.region_selection =
+                             RegionSelectionPolicy::kRequireEstimatedBenefit})
+          .value();
   EXPECT_EQ(compiled.report.step_count(), 2u);
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
+}
+
+TEST(GraphRegions, DefaultPolicyAcceptsUnknownEstimateAsExplicitOptIn) {
+  RegionProbe probe{.proposal_savings = std::nullopt};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.single_prepare_count, 0u);
+}
+
+TEST(GraphRegions, StrictPolicyRejectsUnknownEstimate) {
+  RegionProbe probe{.proposal_savings = std::nullopt};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          CompileOptions{.region_selection =
+                             RegionSelectionPolicy::kRequireEstimatedBenefit})
+          .value();
+  EXPECT_EQ(compiled.report.region_count(), 0u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
+  EXPECT_EQ(probe.compile_count, 0u);
+  EXPECT_EQ(probe.single_prepare_count, 2u);
+}
+
+TEST(GraphRegions, ExplicitZeroEstimateIsNotSelectedByDefault) {
+  RegionProbe probe{.proposal_savings = 0};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 0u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
+  EXPECT_EQ(probe.compile_count, 0u);
+}
+
+TEST(GraphRegions, DefaultPolicyUsesEarlierProviderAsTheFinalTieBreak) {
+  RegionProbe first{.proposal_savings = std::nullopt};
+  RegionProbe second{.proposal_savings = std::nullopt};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(first, second);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(first.compile_count, 1u);
+  EXPECT_EQ(second.compile_count, 0u);
+}
+
+TEST(GraphRegions, DefaultPolicyPrefersFewerDispatchEpisodesBeforeProvider) {
+  RegionProbe first{.proposal_savings = std::nullopt,
+                    .proposal_dispatch_count = 2};
+  RegionProbe second{.proposal_savings = std::nullopt,
+                     .proposal_dispatch_count = 1};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(first, second);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(first.compile_count, 0u);
+  EXPECT_EQ(second.compile_count, 1u);
+}
+
+TEST(GraphRegions, RejectsAnUnknownRegionSelectionPolicy) {
+  RegionProbe probe;
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      CompileOptions{.region_selection =
+                         static_cast<RegionSelectionPolicy>(0xff)});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsInvalidArgument());
+  EXPECT_EQ(probe.propose_count, 0u);
 }
 
 TEST(GraphRegions, DisabledPolicyUsesOnlyExplicitSingleOperationFallback) {
@@ -634,9 +725,12 @@ TEST(GraphRegions, CostFactsPreserveUnknownAndExactZero) {
 }
 
 TEST(GraphRegions, RegionExtensionVersionDoesNotAliasTheV1Table) {
-  constexpr hyle::compute::ProviderExtensionId previous_version{
+  constexpr hyle::compute::ProviderExtensionId version_one{
       0x48594c4547524150ULL, 0x48524547494f4e31ULL, 1};
-  EXPECT_EQ(query_extension(nullptr, previous_version), nullptr);
+  constexpr hyle::compute::ProviderExtensionId version_two{
+      0x48594c4547524150ULL, 0x48524547494f4e31ULL, 2};
+  EXPECT_EQ(query_extension(nullptr, version_one), nullptr);
+  EXPECT_EQ(query_extension(nullptr, version_two), nullptr);
   EXPECT_EQ(query_extension(nullptr, hyle::graph::kRegionProviderExtensionId),
             &kRegionVTable);
 }

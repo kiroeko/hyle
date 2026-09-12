@@ -1,6 +1,6 @@
 # HYLE Graph：何时编译可重复执行的计算 DAG
 
-> 本页描述当前 Graph v4 CPU 实现检查点；施工资格只以
+> 本页描述当前 Graph v5 CPU 实现检查点；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。Graph v3 的通用 IR、region partition、
 > ordered submission、可枚举报告、策略预算和异步 Invocation 生命周期已经进入实现检查点，但生产
 > multi-op provider 尚未签发；选择 oneDNN 时仍只执行受支持的单个 row-major f32 MatMul node。真实
@@ -49,8 +49,13 @@ schema 或通用 control flow。constant payload 默认由 Executable 借用；�
 
 ## Region 选择不是运行时搜索
 
-默认 `RegionSelectionPolicy::kConservative` 只考虑 provider 对当前静态 Graph 声明为正净收益的连续拓扑
-区间；Graph 冷路径确定性选择不重叠组合。`max_region_proposals` 与
+调用方把 region provider 显式放入 Compute Context，本身就是选择这些 route 的 opt-in。默认
+`RegionSelectionPolicy::kPreferProviderRegions` 接受没有可移植计时估值的正确提案，并在冷路径依次按
+“覆盖更多逻辑节点、较少 backend execution episode、Context 中更早的 provider”确定不重叠组合；这只是
+结构与优先级裁决，不是 Graph 宣称该 route 在所有机器上更快。若部署方只接受 provider 能为当前静态
+specialization 给出正净收益估值的 route，显式选择
+`RegionSelectionPolicy::kRequireEstimatedBenefit`。`nullopt` 表示估值未知，显式 `0` 表示确定没有净收益，
+两者不会互相冒充。`max_region_proposals` 与
 `max_region_proposals_per_provider` 分别是全局和单 provider 硬预算，耗尽会返回
 `ResourceExhausted`，不会截断候选后悄悄生成另一份计划。需要严格逐算子调试时可选择 `kDisabled`；
 必须取得完整 fused/captured artifact 的调用方可设
