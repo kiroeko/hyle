@@ -14,13 +14,13 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/device.h"
+#include "../common/perf_process.h"
+#include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
-#include "../common/perf_process.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -86,10 +86,10 @@ AaRoute aa_route_requested() {
     return AaRoute::kNone;
   }
   const std::string_view requested(value);
-  const AaRoute route = requested == "selected"
-                            ? AaRoute::kSelected
-                            : (requested == "native" ? AaRoute::kNative
-                                                       : AaRoute::kNone);
+  const AaRoute route =
+      requested == "selected"
+          ? AaRoute::kSelected
+          : (requested == "native" ? AaRoute::kNative : AaRoute::kNone);
   if (route == AaRoute::kNone)
     fail("HYLE_BENCH_AA_ROUTE must be selected or native");
   release();
@@ -150,9 +150,8 @@ private:
 class MatrixOutput final {
 public:
   explicit MatrixOutput(MatrixShape shape) : size_(shape.rows * shape.columns) {
-    output_ = take(hyle::mem::Buffer::create(
-                       hyle::mem::system_resource(), size_ * sizeof(float),
-                       kAlignment),
+    output_ = take(hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                             size_ * sizeof(float), kAlignment),
                    "allocate output matrix");
     output_mapping_ =
         take(output_.view().map_host(hyle::mem::HostAccess::kReadWrite),
@@ -182,25 +181,24 @@ public:
                 MatrixOutput &output_storage)
       : shape_(shape), output_storage_(&output_storage),
         left_description_(matrix(shape.rows, shape.inner)),
-        stored_right_description_(matrix(
-            shape.transposed_weight ? shape.columns : shape.inner,
-            shape.transposed_weight ? shape.inner : shape.columns)),
+        stored_right_description_(
+            matrix(shape.transposed_weight ? shape.columns : shape.inner,
+                   shape.transposed_weight ? shape.inner : shape.columns)),
         right_description_(shape.transposed_weight
                                ? take(stored_right_description_.transposed(),
                                       "transpose weight description")
                                : stored_right_description_),
         output_description_(matrix(shape.rows, shape.columns)) {
     if (selected_route) {
-      hyle::compute::ContextOptions options;
-      if (!options.providers.add(hyle::compute::onednn::provider()))
-        fail("configure selected Compute provider");
-      context_ = take(hyle::compute::Context::create(
-                          hyle::compute::Device::cpu(), options),
-                      "create selected Compute context");
-    } else {
+      const std::array providers{hyle::compute::onednn::provider(),
+                                 hyle::compute::native::provider()};
+      const hyle::compute::ContextOptions options{.providers = providers};
       context_ = take(
-          hyle::compute::Context::create(hyle::compute::Device::cpu()),
-          "create native Compute context");
+          hyle::compute::Context::create(hyle::compute::cpu::device(), options),
+          "create selected Compute context");
+    } else {
+      context_ = take(hyle::compute::cpu::create_context(),
+                      "create native Compute context");
     }
     queue_ = take(context_.create_queue(), "create Compute queue");
     prepared_ = take(hyle::compute::prepare(
@@ -210,33 +208,28 @@ public:
 
     const bool expect_onednn =
         selected_route && !shape.transposed_weight && shape.rows >= 16;
-    const auto expected = expect_onednn
-                              ? hyle::compute::ProviderKind::kOneDnn
-                              : hyle::compute::ProviderKind::kHyleNative;
-    if (prepared_.provider() != expected)
+    const auto expected = expect_onednn ? hyle::compute::onednn::kProviderId
+                                        : hyle::compute::native::kProviderId;
+    if (prepared_.provider().id != expected)
       fail("select expected Compute route");
-    if (selected_route && !expect_onednn && !prepared_.used_fallback())
-      fail("report selected-route native fallback");
-    if ((!selected_route || expect_onednn) && prepared_.used_fallback())
-      fail("report unexpected Compute fallback");
 
     const auto requirement = prepared_.workspace_requirement();
     if (requirement.size != 0) {
-      workspace_ = take(hyle::mem::Buffer::create(
-                            hyle::mem::system_resource(), requirement.size,
-                            requirement.alignment),
+      workspace_ = take(hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                                  requirement.size,
+                                                  requirement.alignment),
                         "allocate Compute workspace");
     }
     invocation_ = take(prepared_.create_invocation(workspace_.view()),
                        "create Compute invocation");
-    left_ = take(hyle::compute::ConstTensorView::create(
-                     left_description_, inputs.left_view()),
+    left_ = take(hyle::compute::ConstTensorView::create(left_description_,
+                                                        inputs.left_view()),
                  "create left tensor view");
-    right_ = take(hyle::compute::ConstTensorView::create(
-                      right_description_, inputs.right_view()),
+    right_ = take(hyle::compute::ConstTensorView::create(right_description_,
+                                                         inputs.right_view()),
                   "create right tensor view");
-    output_ = take(hyle::compute::TensorView::create(
-                       output_description_, output_storage_->view()),
+    output_ = take(hyle::compute::TensorView::create(output_description_,
+                                                     output_storage_->view()),
                    "create output tensor view");
   }
 
@@ -282,15 +275,15 @@ struct MatMulPair final {
              bool peer_allocation_first)
       : inputs(shape), output(shape) {
     if (peer_allocation_first) {
-      peer = std::make_unique<MatMulHarness>(shape, peer_selected, inputs,
-                                             output);
-      candidate = std::make_unique<MatMulHarness>(
-          shape, candidate_selected, inputs, output);
+      peer =
+          std::make_unique<MatMulHarness>(shape, peer_selected, inputs, output);
+      candidate = std::make_unique<MatMulHarness>(shape, candidate_selected,
+                                                  inputs, output);
     } else {
-      candidate = std::make_unique<MatMulHarness>(
-          shape, candidate_selected, inputs, output);
-      peer = std::make_unique<MatMulHarness>(shape, peer_selected, inputs,
-                                             output);
+      candidate = std::make_unique<MatMulHarness>(shape, candidate_selected,
+                                                  inputs, output);
+      peer =
+          std::make_unique<MatMulHarness>(shape, peer_selected, inputs, output);
     }
   }
 };
@@ -329,7 +322,7 @@ void measure_matmul(MatrixShape shape, const char *title,
 
   pair.candidate->run();
   const std::vector<float> candidate_output(pair.output.values().begin(),
-                                             pair.output.values().end());
+                                            pair.output.values().end());
   pair.peer->run();
   verify_equal(candidate_output, pair.output.values());
 
@@ -352,9 +345,8 @@ void measure_matmul(MatrixShape shape, const char *title,
       .minEpochIterations(1)
       .minEpochTime(std::chrono::milliseconds(4))
       .performanceCounters(false);
-  run_pair(
-      bench, peer_first, candidate_name, peer_name,
-      HarnessRunner{pair.candidate.get()}, HarnessRunner{pair.peer.get()});
+  run_pair(bench, peer_first, candidate_name, peer_name,
+           HarnessRunner{pair.candidate.get()}, HarnessRunner{pair.peer.get()});
 }
 
 } // namespace
@@ -384,28 +376,24 @@ int main() {
       affinity.topology, affinity.cpu, affinity.ok,
       hyle::bench::perf::run_nonce());
 
-  measure_matmul(
-      {1, 1024, 1024, false},
-      "compute route row-major MatMul M=1 K=1024 N=1024",
-      "HYLE selected MatMul M=1 K=1024 N=1024",
-      "HYLE native MatMul M=1 K=1024 N=1024", peer_first,
-      peer_allocation_first, aa_route);
-  measure_matmul(
-      {4, 1024, 1024, false},
-      "compute route row-major MatMul M=4 K=1024 N=1024",
-      "HYLE selected MatMul M=4 K=1024 N=1024",
-      "HYLE native MatMul M=4 K=1024 N=1024", peer_first,
-      peer_allocation_first, aa_route);
-  measure_matmul(
-      {32, 512, 1024, false},
-      "compute route row-major MatMul M=32 K=512 N=1024",
-      "HYLE selected MatMul M=32 K=512 N=1024",
-      "HYLE native MatMul M=32 K=512 N=1024", peer_first,
-      peer_allocation_first, aa_route);
-  measure_matmul(
-      {1, 1024, 1024, true},
-      "compute route transposed-weight MatMul M=1 K=1024 N=1024",
-      "HYLE selected transposed MatMul M=1 K=1024 N=1024",
-      "HYLE native transposed MatMul M=1 K=1024 N=1024", peer_first,
-      peer_allocation_first, aa_route);
+  measure_matmul({1, 1024, 1024, false},
+                 "compute route row-major MatMul M=1 K=1024 N=1024",
+                 "HYLE selected MatMul M=1 K=1024 N=1024",
+                 "HYLE native MatMul M=1 K=1024 N=1024", peer_first,
+                 peer_allocation_first, aa_route);
+  measure_matmul({4, 1024, 1024, false},
+                 "compute route row-major MatMul M=4 K=1024 N=1024",
+                 "HYLE selected MatMul M=4 K=1024 N=1024",
+                 "HYLE native MatMul M=4 K=1024 N=1024", peer_first,
+                 peer_allocation_first, aa_route);
+  measure_matmul({32, 512, 1024, false},
+                 "compute route row-major MatMul M=32 K=512 N=1024",
+                 "HYLE selected MatMul M=32 K=512 N=1024",
+                 "HYLE native MatMul M=32 K=512 N=1024", peer_first,
+                 peer_allocation_first, aa_route);
+  measure_matmul({1, 1024, 1024, true},
+                 "compute route transposed-weight MatMul M=1 K=1024 N=1024",
+                 "HYLE selected transposed MatMul M=1 K=1024 N=1024",
+                 "HYLE native transposed MatMul M=1 K=1024 N=1024", peer_first,
+                 peer_allocation_first, aa_route);
 }

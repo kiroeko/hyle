@@ -4,14 +4,14 @@
 #include <cstddef>
 #include <utility>
 
-#include "hyle/compute/device.h"
+#include "hyle/compute/backends/cpu.h"
 
 namespace {
 
-using hyle::compute::BackendKind;
 using hyle::compute::Context;
 using hyle::compute::ContextOptions;
 using hyle::compute::Device;
+using hyle::compute::DeviceClass;
 using hyle::compute::Queue;
 using hyle::mem::AllocatorRef;
 
@@ -22,57 +22,68 @@ struct AllocatorProbe final {
   bool fail = false;
 };
 
-void* probe_allocate(void* opaque, std::size_t size,
+void *probe_allocate(void *opaque, std::size_t size,
                      std::size_t alignment) noexcept {
-  auto& probe = *static_cast<AllocatorProbe*>(opaque);
-  if (probe.fail) return nullptr;
-  void* result = probe.backing.allocate(size, alignment);
-  if (result != nullptr) ++probe.allocations;
+  auto &probe = *static_cast<AllocatorProbe *>(opaque);
+  if (probe.fail)
+    return nullptr;
+  void *result = probe.backing.allocate(size, alignment);
+  if (result != nullptr)
+    ++probe.allocations;
   return result;
 }
 
-void probe_deallocate(void* opaque, void* pointer, std::size_t size,
+void probe_deallocate(void *opaque, void *pointer, std::size_t size,
                       std::size_t alignment) noexcept {
-  auto& probe = *static_cast<AllocatorProbe*>(opaque);
-  if (pointer != nullptr) ++probe.deallocations;
+  auto &probe = *static_cast<AllocatorProbe *>(opaque);
+  if (pointer != nullptr)
+    ++probe.deallocations;
   probe.backing.deallocate(pointer, size, alignment);
 }
 
-void* probe_reallocate(void* opaque, void* pointer, std::size_t old_size,
-                       std::size_t new_size,
-                       std::size_t alignment) noexcept {
-  auto& probe = *static_cast<AllocatorProbe*>(opaque);
-  if (probe.fail) return nullptr;
+void *probe_reallocate(void *opaque, void *pointer, std::size_t old_size,
+                       std::size_t new_size, std::size_t alignment) noexcept {
+  auto &probe = *static_cast<AllocatorProbe *>(opaque);
+  if (probe.fail)
+    return nullptr;
   return probe.backing.reallocate(pointer, old_size, new_size, alignment);
 }
 
-AllocatorRef probe_allocator(AllocatorProbe& probe) noexcept {
+AllocatorRef probe_allocator(AllocatorProbe &probe) noexcept {
   return AllocatorRef(&probe_allocate, &probe_deallocate, &probe_reallocate,
                       &probe);
 }
 
-TEST(Device, CpuDiscoveryUsesExplicitBufferFillSemantics) {
-  auto count = hyle::compute::enumerate_devices();
+TEST(Device, CpuDiscoveryIsScopedToTheExplicitBackend) {
+  const auto backend = hyle::compute::cpu::backend();
+  ASSERT_TRUE(backend.valid());
+  EXPECT_EQ(backend.id(), hyle::compute::cpu::kBackendId);
+  EXPECT_EQ(backend.name(), "cpu");
+  EXPECT_EQ(backend.device_class(), DeviceClass::kCpu);
+
+  auto count = backend.device_count();
   ASSERT_TRUE(count.has_value());
   EXPECT_EQ(*count, 1u);
 
-  std::array<Device, 1> devices{};
-  count = hyle::compute::enumerate_devices(devices);
-  ASSERT_TRUE(count.has_value());
-  EXPECT_EQ(*count, 1u);
-  EXPECT_EQ(devices.front(), Device::cpu());
+  auto discovered = backend.device(0);
+  ASSERT_TRUE(discovered.has_value());
+  EXPECT_EQ(*discovered, hyle::compute::cpu::device());
+  auto out_of_range = backend.device(1);
+  ASSERT_FALSE(out_of_range.has_value());
+  EXPECT_TRUE(out_of_range.error().IsOutOfRange());
 
-  auto properties = hyle::compute::query_device(devices.front());
+  auto properties = discovered->properties();
   ASSERT_TRUE(properties.has_value());
-  EXPECT_EQ(properties->device, Device::cpu());
+  EXPECT_EQ(properties->backend, hyle::compute::cpu::kBackendId);
+  EXPECT_EQ(properties->device_class, DeviceClass::kCpu);
+  EXPECT_EQ(properties->backend_name, "cpu");
   EXPECT_EQ(properties->name, "HYLE host CPU");
   EXPECT_TRUE(properties->unified_memory);
   EXPECT_FALSE(properties->asynchronous_queues);
-  EXPECT_EQ(hyle::compute::backend_name(BackendKind::kCpu), "cpu");
 
-  auto invalid = hyle::compute::query_device(Device{});
+  auto invalid = Device{}.properties();
   ASSERT_FALSE(invalid.has_value());
-  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  EXPECT_TRUE(invalid.error().IsFailedPrecondition());
 }
 
 TEST(Context, ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation) {
@@ -80,7 +91,8 @@ TEST(Context, ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation) {
   Queue queue;
   {
     auto created = Context::create(
-        Device::cpu(), ContextOptions{.metadata_allocator = probe_allocator(probe)});
+        hyle::compute::cpu::device(),
+        ContextOptions{.metadata_allocator = probe_allocator(probe)});
     ASSERT_TRUE(created.has_value()) << created.error().message();
     Context context = std::move(*created);
     EXPECT_EQ(probe.allocations, 1u);
@@ -89,11 +101,12 @@ TEST(Context, ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation) {
     auto queue_result = context.create_queue();
     ASSERT_TRUE(queue_result.has_value());
     queue = std::move(*queue_result);
+    EXPECT_EQ(probe.allocations, 2u);
     EXPECT_TRUE(queue.is_open());
-    EXPECT_EQ(queue.device(), Device::cpu());
+    EXPECT_EQ(queue.device(), hyle::compute::cpu::device());
 
     Context moved = std::move(context);
-    EXPECT_FALSE(context.valid());  // NOLINT(bugprone-use-after-move)
+    EXPECT_FALSE(context.valid()); // NOLINT(bugprone-use-after-move)
     EXPECT_TRUE(queue.is_open());
     EXPECT_TRUE(moved.close().ok());
     EXPECT_FALSE(queue.is_open());
@@ -101,7 +114,7 @@ TEST(Context, ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation) {
   }
   EXPECT_EQ(probe.deallocations, 0u);
   queue = Queue{};
-  EXPECT_EQ(probe.deallocations, 1u);
+  EXPECT_EQ(probe.deallocations, 2u);
 }
 
 TEST(Context, RejectsInvalidDeviceAndReportsMetadataOom) {
@@ -112,27 +125,28 @@ TEST(Context, RejectsInvalidDeviceAndReportsMetadataOom) {
   AllocatorProbe probe;
   probe.fail = true;
   auto oom = Context::create(
-      Device::cpu(), ContextOptions{.metadata_allocator = probe_allocator(probe)});
+      hyle::compute::cpu::device(),
+      ContextOptions{.metadata_allocator = probe_allocator(probe)});
   ASSERT_FALSE(oom.has_value());
   EXPECT_TRUE(oom.error().IsResourceExhausted());
   EXPECT_EQ(probe.allocations, 0u);
 }
 
 TEST(Context, MoveAssignmentClosesTheReplacedRuntime) {
-  Context first = Context::create(Device::cpu()).value();
+  Context first = Context::create(hyle::compute::cpu::device()).value();
   Queue first_queue = first.create_queue().value();
-  Context second = Context::create(Device::cpu()).value();
+  Context second = Context::create(hyle::compute::cpu::device()).value();
   Queue second_queue = second.create_queue().value();
 
   second = std::move(first);
   EXPECT_TRUE(second.is_open());
   EXPECT_TRUE(first_queue.is_open());
   EXPECT_FALSE(second_queue.is_open());
-  EXPECT_FALSE(first.valid());  // NOLINT(bugprone-use-after-move)
+  EXPECT_FALSE(first.valid()); // NOLINT(bugprone-use-after-move)
 }
 
 TEST(Queue, CloseIsLocalButContextCloseInvalidatesEveryQueue) {
-  Context context = Context::create(Device::cpu()).value();
+  Context context = Context::create(hyle::compute::cpu::device()).value();
   Queue first = context.create_queue().value();
   Queue second = context.create_queue().value();
 
@@ -152,11 +166,11 @@ TEST(Queue, InvalidAndMovedFromOperationsAreObservable) {
   EXPECT_FALSE(invalid.is_open());
   EXPECT_TRUE(invalid.close().IsFailedPrecondition());
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = Context::create(hyle::compute::cpu::device()).value();
   Queue original = context.create_queue().value();
   Queue moved = std::move(original);
-  EXPECT_FALSE(original.valid());  // NOLINT(bugprone-use-after-move)
+  EXPECT_FALSE(original.valid()); // NOLINT(bugprone-use-after-move)
   EXPECT_TRUE(moved.is_open());
 }
 
-}  // namespace
+} // namespace

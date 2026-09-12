@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -20,9 +21,7 @@ using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::ContextOptions;
 using hyle::compute::DataType;
-using hyle::compute::Device;
 using hyle::compute::MatMul;
-using hyle::compute::ProviderKind;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::graph::GraphBuilder;
@@ -48,12 +47,13 @@ TEST(OneDnnGraph, PlansProviderScratchpadAndExecutesWithoutHiddenFallback) {
   ASSERT_TRUE(builder.output(output).ok());
   auto graph = std::move(builder).finish().value();
 
-  ContextOptions options;
-  ASSERT_TRUE(options.providers.add(hyle::compute::onednn::provider()));
-  Context context = Context::create(Device::cpu(), options).value();
+  const std::array providers{hyle::compute::onednn::provider()};
+  Context context =
+      Context::create(hyle::compute::cpu::device(), {.providers = providers})
+          .value();
   auto compiled = hyle::graph::compile(graph, context).value();
-  EXPECT_EQ(compiled.report.provider, ProviderKind::kOneDnn);
-  EXPECT_FALSE(compiled.report.used_fallback);
+  EXPECT_EQ(compiled.report.provider.id, hyle::compute::onednn::kProviderId);
+  EXPECT_FALSE(compiled.report.mixed_providers);
   EXPECT_EQ(compiled.report.node_count, 1U);
   EXPECT_EQ(compiled.report.copy_bytes, 0U);
   EXPECT_EQ(compiled.report.synchronization_count, 0U);

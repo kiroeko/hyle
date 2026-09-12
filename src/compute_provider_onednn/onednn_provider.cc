@@ -143,13 +143,13 @@ bool is_row_major_f32_matrix(const TensorDesc &description) noexcept {
          description.is_dense();
 }
 
-Status create_context(const Provider &provider_value, Device device,
+Status create_context(const Provider &provider_value, Device device, void *,
                       mem::AllocatorRef allocator,
                       void **context_output) noexcept {
   if (context_output == nullptr)
     return Status::InvalidArgument("oneDNN context output is null");
   *context_output = nullptr;
-  if (device != Device::cpu())
+  if (device.device_class() != DeviceClass::kCpu)
     return Status::Unimplemented("oneDNN provider requires a CPU device");
 
   void *storage =
@@ -282,9 +282,9 @@ void execute_tile(void *episode_value, std::size_t index,
   }
 }
 
-Status execute(void *prepared_value, void *invocation_value,
-               std::span<const void *const> inputs,
-               std::span<void *const> outputs) noexcept {
+Status execute_mapped(void *prepared_value, void *invocation_value,
+                      std::span<const void *const> inputs,
+                      std::span<void *const> outputs) noexcept {
   auto *plan = static_cast<OneDnnPlan *>(prepared_value);
   auto *invocation = static_cast<OneDnnInvocation *>(invocation_value);
   if (plan == nullptr || invocation == nullptr ||
@@ -308,11 +308,86 @@ Status execute(void *prepared_value, void *invocation_value,
                           "oneDNN BRGEMM execution failed");
 }
 
+void preserve_first_error(Status &terminal, Status candidate) noexcept {
+  if (terminal.ok() && !candidate.ok())
+    terminal = std::move(candidate);
+}
+
+Result<Completion> submit(void *prepared_value, void *invocation_value, Queue &,
+                          std::span<const ConstTensorView> inputs,
+                          std::span<const TensorView> outputs) noexcept {
+  if (inputs.size() != 2 || outputs.size() != 1) {
+    return Completion::completed(
+        Status::Internal("oneDNN binding count is invalid"));
+  }
+
+  const mem::ConstBufferView left_storage = inputs[0].storage();
+  const mem::ConstBufferView right_storage = inputs[1].storage();
+  const mem::BufferView output_storage = outputs[0].storage();
+  const mem::MemoryProperties left_properties =
+      left_storage.resource().properties();
+  const mem::MemoryProperties right_properties =
+      right_storage.resource().properties();
+  const mem::MemoryProperties output_properties =
+      output_storage.resource().properties();
+
+  if (!left_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
+    Status status = left_storage.invalidate();
+    if (!status.ok())
+      return Completion::completed(std::move(status));
+  }
+  if (!right_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
+    Status status = right_storage.invalidate();
+    if (!status.ok())
+      return Completion::completed(std::move(status));
+  }
+
+  auto left_result = left_storage.map_host();
+  if (!left_result)
+    return Completion::completed(std::move(left_result).error());
+  mem::HostMapping left = std::move(*left_result);
+  auto right_result = right_storage.map_host();
+  if (!right_result) {
+    left.close().IgnoreError();
+    return Completion::completed(std::move(right_result).error());
+  }
+  mem::HostMapping right = std::move(*right_result);
+  auto output_result = output_storage.map_host(mem::HostAccess::kWrite);
+  if (!output_result) {
+    right.close().IgnoreError();
+    left.close().IgnoreError();
+    return Completion::completed(std::move(output_result).error());
+  }
+  mem::HostMapping output = std::move(*output_result);
+  auto writable = output.writable_bytes();
+  if (!writable) {
+    Status terminal = std::move(writable).error();
+    output.close().IgnoreError();
+    right.close().IgnoreError();
+    left.close().IgnoreError();
+    return Completion::completed(std::move(terminal));
+  }
+
+  const std::array<const void *, 2> mapped_inputs{left.bytes().data(),
+                                                  right.bytes().data()};
+  const std::array<void *, 1> mapped_outputs{writable->data()};
+  Status terminal = execute_mapped(prepared_value, invocation_value,
+                                   mapped_inputs, mapped_outputs);
+  if (terminal.ok() &&
+      !output_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
+    preserve_first_error(terminal, output.flush());
+  }
+  preserve_first_error(terminal, output.close());
+  preserve_first_error(terminal, right.close());
+  preserve_first_error(terminal, left.close());
+  return Completion::completed(std::move(terminal));
+}
+
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_prepared,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .execute = &execute,
+    .submit = &submit,
 };
 
 Status prepare(void *context_value, Operation operation,
@@ -422,8 +497,9 @@ Status prepare(void *context_value, Operation operation,
 }
 
 const detail::ProviderVTable kProviderVTable{
-    .kind = ProviderKind::kOneDnn,
-    .name = "onednn",
+    .identity = ProviderIdentity{.id = kProviderId,
+                                 .name = "onednn",
+                                 .version = "3.13.2"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .prepare = &prepare,

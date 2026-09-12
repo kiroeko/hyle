@@ -274,13 +274,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v4-runtime-extensibility.md",
-      "summary": "compute v4 AUDITED：runtime 的开放 Backend/Provider identity、Mem resource bridge、异步 Completion、Queue/Context close-drain 与 CPU/native 因子迁移已冻结为 R40--R51；尚未修改产品代码。"
+      "summary": "compute v4 AUDITED：R40--R51 的开放 Backend/Provider、显式 provider sequence、独立 Queue/Context 与 immediate/async Completion 第一实现检查点已通过 Windows 定向测试和三种交付；真实异步生命周期、三平台/sanitizer、P0 与全部 provider/Graph 仍未完成。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v3-constants-regions.md",
-      "summary": "graph v3 AUDITED：单 Context 的 logical constants、零/多输出、alias/effect/control edges、provider-neutral region partition 与可枚举 plan/report 已冻结为 G30--G41；尚未修改产品代码。"
+      "summary": "graph v3 AUDITED：现有单节点纵切已迁移开放 provider identity 并通过 Windows 兼容回归；G30--G41 的 constants、多输出、effect/control、region partition、workspace/liveness 与完整 report 尚未实现。"
     },
     {
       "module": "container_concurrent",
@@ -356,7 +356,7 @@
       "module": "compute_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-onednn-v3-runtime-replay.md",
-      "summary": "compute_provider_onednn v3 AUDITED：D30--D34 仅迁移开放 identity、CPU binding submit、显式 fallback sequence 与 factor 边；既有 BRGEMM primitive、tile 阈值和 kernel P1 形状保持不变。"
+      "summary": "compute_provider_onednn v3 AUDITED：D30--D34 已迁移开放 identity、CPU binding/submit、显式 fallback sequence 与 factor 边，Windows 定向测试及三种交付通过；BRGEMM 算法不变，尚待 runtime terminal、三平台/sanitizer/export/P0 回放。"
     },
     {
       "module": "compute_provider_ggml",
@@ -374,13 +374,13 @@
       "module": "compute_backend_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backend-cpu-v1-factor.md",
-      "summary": "compute_backend_cpu v1 AUDITED：显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource 与 typed host-kernel 迁移已冻结为 B10--B16；尚未修改产品代码。"
+      "summary": "compute_backend_cpu v1 AUDITED：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现并通过 Windows 三交付；依赖 runtime 终局证据后才能关闭。"
     },
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：显式 native Provider、19-family CPU reference、现有 whole-row SIMD/fat-kernel 复用与七条有限 P1 热路已冻结为 N10--N16；尚未修改产品代码。"
+      "summary": "compute_provider_native v1 AUDITED：N10--N16 的显式 provider 与 factor 迁移已实现，现有 RMSNorm/MatMul/packed-SiLU 三类可执行并通过 Windows 三交付；仍为 3/19，其他 16 类 reference、三平台/sanitizer 与七条 P1 未完成。"
     }
   ]
 }

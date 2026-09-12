@@ -3,7 +3,8 @@ if(HYLE_STATIC AND HYLE_COMPUTE_ONEDNN_ENABLED)
     # This product-level route ledger compares two public Compute contexts.
     # The optional provider and SIMD leaf remain separately owned factors.
     target_link_libraries(${target} PRIVATE
-      hyle_compute_provider_onednn hyle_simd nanobench)
+      hyle_compute_provider_onednn hyle_compute_provider_native
+      hyle_simd nanobench)
     set_property(TARGET ${target}
       PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(${target})

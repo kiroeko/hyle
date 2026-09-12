@@ -1,49 +1,142 @@
 #pragma once
 
-#include <array>
-#include <utility>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 
+#include "backend_internal.h"
 #include "hyle/compute/device.h"
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::compute::detail {
 
+class AdmissionGate final {
+public:
+  bool try_enter() noexcept {
+    std::uint32_t value = state_.load(std::memory_order_acquire);
+    while ((value & kClosed) == 0) {
+      if ((value & kCountMask) == kCountMask)
+        return false;
+      if (state_.compare_exchange_weak(value, value + 1,
+                                       std::memory_order_acquire,
+                                       std::memory_order_relaxed)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void leave() noexcept {
+    const std::uint32_t previous =
+        state_.fetch_sub(1, std::memory_order_release);
+    if ((previous & kCountMask) == 1)
+      state_.notify_all();
+  }
+
+  void close() noexcept {
+    state_.fetch_or(kClosed, std::memory_order_acq_rel);
+    state_.notify_all();
+  }
+
+  bool is_open() const noexcept {
+    return (state_.load(std::memory_order_acquire) & kClosed) == 0;
+  }
+
+  void wait_idle() const noexcept {
+    std::uint32_t value = state_.load(std::memory_order_acquire);
+    while ((value & kCountMask) != 0) {
+      state_.wait(value, std::memory_order_acquire);
+      value = state_.load(std::memory_order_acquire);
+    }
+  }
+
+private:
+  static constexpr std::uint32_t kClosed = std::uint32_t{1} << 31;
+  static constexpr std::uint32_t kCountMask = kClosed - 1;
+  mutable std::atomic<std::uint32_t> state_{0};
+};
+
 struct ContextState final : util::RefCounted<ContextState> {
-  ContextState(Device device_value, mem::AllocatorRef allocator_value) noexcept
-      : device(device_value), allocator(allocator_value) {}
-
-  void destroy() noexcept;
-
   struct ProviderSlot final {
     Provider provider{};
     void *state = nullptr;
   };
 
+  ContextState(Device device_value, mem::AllocatorRef allocator_value,
+               std::size_t allocation_size_value,
+               std::size_t provider_offset_value,
+               std::size_t provider_capacity_value,
+               const BackendVTable *backend_vtable_value) noexcept
+      : device(device_value), allocator(allocator_value),
+        allocation_size(allocation_size_value),
+        provider_offset(provider_offset_value),
+        provider_capacity(provider_capacity_value),
+        backend_vtable(backend_vtable_value) {}
+
+  ProviderSlot *providers() noexcept {
+    auto *bytes = reinterpret_cast<std::byte *>(this);
+    return reinterpret_cast<ProviderSlot *>(bytes + provider_offset);
+  }
+  const ProviderSlot *providers() const noexcept {
+    auto *bytes = reinterpret_cast<const std::byte *>(this);
+    return reinterpret_cast<const ProviderSlot *>(bytes + provider_offset);
+  }
+
+  void destroy() noexcept;
+
   Device device{};
   mem::AllocatorRef allocator{};
-  std::array<ProviderSlot, kMaxContextProviders> providers{};
+  std::size_t allocation_size = 0;
+  std::size_t provider_offset = 0;
+  std::size_t provider_capacity = 0;
   std::size_t provider_count = 0;
-  bool open = true;
+  const BackendVTable *backend_vtable = nullptr;
+  void *backend_state = nullptr;
+  bool backend_initialized = false;
+  AdmissionGate admission{};
+};
+
+struct QueueState final : util::RefCounted<QueueState> {
+  QueueState(ContextState *context_value, void *backend_state_value) noexcept
+      : context(context_value), backend_state(backend_state_value) {
+    context->incref();
+  }
+
+  void destroy() noexcept;
+
+  ContextState *context = nullptr;
+  void *backend_state = nullptr;
+  AdmissionGate admission{};
 };
 
 struct ContextAccess final {
-  static ContextState* state(const Context& context) noexcept {
+  static ContextState *state(const Context &context) noexcept {
     return context.state_;
   }
-
-  static ContextState* state(const Queue& queue) noexcept {
-    return queue.state_;
+  static QueueState *state(const Queue &queue) noexcept { return queue.state_; }
+  static void *backend_context(const Context &context) noexcept {
+    return context.state_ != nullptr ? context.state_->backend_state : nullptr;
   }
-
-  static bool queue_open(const Queue& queue) noexcept { return queue.open_; }
+  static void *backend_queue(const Queue &queue) noexcept {
+    return queue.state_ != nullptr ? queue.state_->backend_state : nullptr;
+  }
 };
 
-inline void retain(ContextState* state) noexcept {
-  if (state != nullptr) state->incref();
+inline void retain(ContextState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+inline void release(ContextState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
+inline void retain(QueueState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+inline void release(QueueState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
 }
 
-inline void release(ContextState* state) noexcept {
-  if (state != nullptr) state->decref();
-}
-
-}  // namespace hyle::compute::detail
+} // namespace hyle::compute::detail

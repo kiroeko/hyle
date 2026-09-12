@@ -3,7 +3,13 @@ hyle_add_header_self_contained_test(compute_provider_onednn
   HEADERS onednn.h)
 
 if(HYLE_COMPUTE_ONEDNN_ENABLED)
-  hyle_add_test(compute_provider_onednn SOURCES onednn_provider_test.cc)
+  hyle_add_test(compute_provider_onednn SOURCES onednn_provider_test.cc
+    DEPS hyle_compute_backend_cpu)
+  if(TARGET hyle_compute_provider_native)
+    hyle_add_test(compute_provider_onednn NAME composition
+      SOURCES onednn_composition_test.cc
+      DEPS hyle_compute_provider_native)
+  endif()
   # The executable must own oneDNN's object code so its global-new probe sees
   # vendor allocations. Shared-library builds retain the ordinary product
   # tests above; the static qualification shape is run explicitly once per
@@ -11,11 +17,12 @@ if(HYLE_COMPUTE_ONEDNN_ENABLED)
   if(HYLE_STATIC)
     hyle_add_test(compute_provider_onednn NAME allocation
       SOURCES onednn_allocation_test.cc
+      DEPS hyle_compute_backend_cpu
       NO_AUTORUN)
   endif()
   if(TARGET hyle_graph)
     hyle_add_test(compute_provider_onednn NAME graph
       SOURCES onednn_graph_test.cc
-      DEPS hyle_graph)
+      DEPS hyle_graph hyle_compute_backend_cpu)
   endif()
 endif()

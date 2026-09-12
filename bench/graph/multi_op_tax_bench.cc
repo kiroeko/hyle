@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/device.h"
+#include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
@@ -172,8 +172,8 @@ public:
           bool peer_allocation_first)
       : rows_(rows), hidden_(hidden), ffn_(ffn),
         descriptions_(make_descriptions(rows, hidden, ffn)),
-        context_(take_or_abort(Context::create(hyle::compute::Device::cpu()),
-                               "CPU context")),
+        context_(
+            take_or_abort(hyle::compute::cpu::create_context(), "CPU context")),
         queue_(take_or_abort(context_.create_queue(), "CPU queue")),
         input_(make_tensor(descriptions_.activation)),
         norm_weight_(make_tensor(descriptions_.norm_weight)),
@@ -287,8 +287,8 @@ private:
     auto compiled =
         take_or_abort(hyle::graph::compile(graph, context_), "graph compile");
     if (compiled.report.node_count != 3 ||
-        compiled.report.provider != hyle::compute::ProviderKind::kHyleNative ||
-        compiled.report.copy_bytes != 0 ||
+        compiled.report.provider.id != hyle::compute::native::kProviderId ||
+        compiled.report.mixed_providers || compiled.report.copy_bytes != 0 ||
         compiled.report.synchronization_count != 0) {
       fail_setup("unexpected compiled route");
     }

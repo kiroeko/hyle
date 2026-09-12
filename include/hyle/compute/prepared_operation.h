@@ -13,8 +13,9 @@
 namespace hyle::compute {
 
 namespace detail {
+struct InvocationState;
 struct PreparedState;
-}
+} // namespace detail
 
 struct WorkspaceRequirement final {
   std::size_t size = 0;
@@ -43,8 +44,7 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
   HYLE_COMPUTE_API OperationKind kind() const noexcept;
-  HYLE_COMPUTE_API ProviderKind provider() const noexcept;
-  HYLE_COMPUTE_API bool used_fallback() const noexcept;
+  HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
   HYLE_COMPUTE_API WorkspaceRequirement workspace_requirement() const noexcept;
   HYLE_COMPUTE_API std::size_t input_count() const noexcept;
   HYLE_COMPUTE_API std::size_t output_count() const noexcept;
@@ -82,7 +82,7 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  HYLE_COMPUTE_API ProviderKind provider() const noexcept;
+  HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
 
   HYLE_COMPUTE_API Result<Completion>
   submit(Queue &queue, std::span<const ConstTensorView> inputs,
@@ -97,17 +97,10 @@ public:
 
 private:
   friend class PreparedOperation;
-  OperationInvocation(detail::PreparedState *state,
-                      void *provider_state) noexcept;
+  explicit OperationInvocation(detail::InvocationState *state) noexcept
+      : state_(state) {}
 
-  Result<Completion> submit_impl(Queue &queue, const ConstTensorView *first,
-                                 const ConstTensorView *second,
-                                 std::size_t provided_input_count,
-                                 const TensorView *output,
-                                 std::size_t provided_output_count) noexcept;
-
-  detail::PreparedState *state_ = nullptr;
-  void *provider_state_ = nullptr;
+  detail::InvocationState *state_ = nullptr;
 };
 
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,

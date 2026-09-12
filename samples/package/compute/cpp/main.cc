@@ -1,6 +1,8 @@
-#include <hyle/compute/host_kernel.h>
+#include <hyle/compute/cpu.h>
 #include <hyle/compute/operation.h>
+#include <hyle/compute/prepared_operation.h>
 #include <hyle/compute/providers/onednn.h>
+#include <hyle/compute/tensor.h>
 #include <hyle/mem/buffer.h>
 
 #include <array>
@@ -31,7 +33,7 @@ int main() {
 
   auto input_view = ConstTensorView::create(*description, input_buffer->view());
   auto output_view = TensorView::create(*description, output_buffer->view());
-  auto context = Context::create(Device::cpu());
+  auto context = cpu::create_context();
   if (!input_view || !output_view || !context)
     return 3;
   auto queue = context->create_queue();
@@ -60,7 +62,7 @@ int main() {
   }
 
   int engineering_value = 40;
-  auto host = submit_host(
+  auto host = cpu::submit_host(
       *queue, [](int &value) noexcept { value += 2; }, engineering_value);
   if (!host || !host->wait().ok() || engineering_value != 42)
     return 8;
@@ -68,7 +70,7 @@ int main() {
 #if defined(HYLE_COMPUTE_ONEDNN)
   if (onednn::version() != "3.13.2")
     return 9;
-  auto provider_context = Context::create(Device::cpu(), onednn::provider());
+  auto provider_context = Context::create(cpu::device(), onednn::provider());
   if (!provider_context)
     return 10;
 
@@ -113,8 +115,7 @@ int main() {
       prepare(*provider_context, MatMul{}, *left_description,
               *right_description, *result_description);
   if (!provider_queue || !provider_prepared ||
-      provider_prepared->provider() != ProviderKind::kOneDnn ||
-      provider_prepared->used_fallback()) {
+      provider_prepared->provider().id != onednn::kProviderId) {
     return 13;
   }
   const auto requirement = provider_prepared->workspace_requirement();

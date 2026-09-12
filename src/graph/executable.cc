@@ -606,7 +606,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(
         Status::FailedPrecondition("compute context is invalid or closed"));
   }
-  if (context.device().backend() != compute::BackendKind::kCpu) {
+  if (context.device().device_class() != compute::DeviceClass::kCpu) {
     return std::unexpected(Status::Unimplemented(
         "graph v2 currently supports only the CPU backend"));
   }
@@ -638,26 +638,28 @@ Result<CompiledGraph> compile(const Graph &graph,
   }
 
   CompiledGraph result;
-  compute::ProviderKind graph_provider = compute::ProviderKind::kUnknown;
-  bool used_fallback = false;
+  compute::ProviderIdentity graph_provider{};
+  bool mixed_providers = false;
   for (const detail::PlanNode &node : plan->nodes) {
-    const compute::ProviderKind node_provider = node.prepared.provider();
-    if (graph_provider == compute::ProviderKind::kUnknown) {
+    const compute::ProviderIdentity node_provider = node.prepared.provider();
+    if (mixed_providers) {
+      continue;
+    } else if (!graph_provider.valid()) {
       graph_provider = node_provider;
-    } else if (graph_provider != node_provider) {
-      graph_provider = compute::ProviderKind::kMixed;
+    } else if (graph_provider.id != node_provider.id) {
+      graph_provider = {};
+      mixed_providers = true;
     }
-    used_fallback = used_fallback || node.prepared.used_fallback();
   }
   result.report = CompileReport{
-      .backend = context.device().backend(),
+      .backend = context.device().backend_id(),
       .provider = graph_provider,
       .workspace_bytes = plan->workspace_bytes,
       .workspace_backing_count = plan->workspace_backing_count,
       .node_count = plan->nodes.size(),
       .copy_bytes = 0,
       .synchronization_count = 0,
-      .used_fallback = used_fallback,
+      .mixed_providers = mixed_providers,
   };
   result.executable = detail::ExecutableAccess::adopt(plan);
   return result;

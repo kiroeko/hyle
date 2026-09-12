@@ -4,7 +4,7 @@ if(HYLE_STATIC AND HYLE_COMPUTE_ONEDNN_ENABLED)
     # BRGEMM ukernel used by the provider. It remains benchmark-only and never
     # changes the public Compute dependency surface.
     target_link_libraries(${target} PRIVATE
-      hyle_compute_provider_onednn nanobench dnnl)
+      hyle_compute_provider_onednn hyle_compute_backend_cpu nanobench dnnl)
     set_property(TARGET ${target}
       PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(${target})

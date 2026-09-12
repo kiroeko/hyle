@@ -7,6 +7,9 @@
 
 namespace hyle::compute::onednn {
 
+inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
+                                        0x4f4e45444e4e0001ULL};
+
 struct Options final {
   // Empty is an explicit caller-thread serial executor. A non-empty backing is
   // borrowed through every Context/artifact/invocation made from the provider.

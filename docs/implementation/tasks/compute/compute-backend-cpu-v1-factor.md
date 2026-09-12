@@ -55,3 +55,18 @@ P0 冻结成本：backend()/device() O(1) 无分配；device 枚举 O(N_cpu_devi
 CPU hook 不再分配；Queue 创建一次冷 metadata 分配；host submit O(1)，只支付通用 admission 的一次 atomic
 读取，immediate completion 不分配/加锁/syscall。没有独立 P1：若通用 Queue/Completion 无法得到相同
 codegen，问题归 Compute runtime 卡。
+
+## Implementation checkpoint（2026-09-12）
+
+- B10--B16 已按审计边界物理迁移：`cpu::backend()` / `cpu::device()` / `cpu::memory_resource()`、自然的
+  `cpu::create_context()` 与 typed `cpu::submit_host()` 均由本 factor 拥有；通用 Compute 不再私藏 CPU
+  factory 或 host callable；
+- CPU backend 复用 Platform properties 与 Mem system resource，只实现 caller-thread ordered queue；create、
+  close、drain 和 immediate completion 没有另造线程池、storage 或错误系统；`cpu::device()` 直接构造已知
+  有效的小值，不在 `noexcept` convenience 中通过 `Result::value()` 引入无意义的失败/异常路径；
+- Windows factor header/test、Compute 聚合、oneDNN/native 直接 consumer，以及 source/static/shared package
+  consumer 已通过。静态链接还发现并修复 benchmark/test 对 CPU/native factor 的遗漏真实依赖；CPU
+  backend 由真实组合者声明，不再反向挂在可接受任意 CPU-class Device 的 oneDNN Provider 上。
+
+本卡仍为 `AUDITED`：它依赖的 Compute runtime 尚未取得异步生命周期、三平台/sanitizer 与 P0 终局证据，
+因此当前实现检查点不能单独 `CLOSED`。

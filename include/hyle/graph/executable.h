@@ -24,14 +24,14 @@ class Invocation;
 // Cold-path facts for the exact artifact returned by compile(). CPU v2 never
 // hides copies, synchronization or fallback behind this report.
 struct CompileReport final {
-  compute::BackendKind backend = compute::BackendKind::kUnknown;
-  compute::ProviderKind provider = compute::ProviderKind::kUnknown;
+  compute::BackendId backend{};
+  compute::ProviderIdentity provider{};
   std::size_t workspace_bytes = 0;
   std::size_t workspace_backing_count = 0;
   std::size_t node_count = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
-  bool used_fallback = false;
+  bool mixed_providers = false;
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned

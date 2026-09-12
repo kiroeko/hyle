@@ -15,7 +15,7 @@
 
 #include "oneapi/dnnl/dnnl_ukernel.h"
 
-#include "hyle/compute/device.h"
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/compute/tensor.h"
@@ -165,19 +165,16 @@ public:
       : left_description_(matrix(kRows, kInner)),
         right_description_(matrix(kInner, kColumns)),
         output_description_(matrix(kRows, kColumns)) {
-    hyle::compute::ContextOptions options;
-    if (!options.providers.add(hyle::compute::onednn::provider()))
-      fail("configure HYLE oneDNN provider");
-    context_ = take(
-        hyle::compute::Context::create(hyle::compute::Device::cpu(), options),
-        "create HYLE Compute context");
+    context_ =
+        take(hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                            hyle::compute::onednn::provider()),
+             "create HYLE Compute context");
     queue_ = take(context_.create_queue(), "create HYLE Compute queue");
     prepared_ = take(hyle::compute::prepare(
                          context_, hyle::compute::MatMul{}, left_description_,
                          right_description_, output_description_),
                      "prepare HYLE oneDNN MatMul");
-    if (prepared_.provider() != hyle::compute::ProviderKind::kOneDnn ||
-        prepared_.used_fallback()) {
+    if (prepared_.provider().id != hyle::compute::onednn::kProviderId) {
       fail("select HYLE oneDNN MatMul route");
     }
     const auto requirement = prepared_.workspace_requirement();

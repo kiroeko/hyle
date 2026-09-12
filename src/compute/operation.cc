@@ -1,226 +1,121 @@
 #include "hyle/compute/prepared_operation.h"
 
-#include <algorithm>
 #include <array>
-#include <cmath>
-#include <cstdint>
+#include <cstddef>
+#include <limits>
+#include <memory>
 #include <new>
 #include <span>
-#include <string_view>
 #include <utility>
 
+#include "backend_internal.h"
 #include "context_state.h"
-#include "hyle/math/scalar.h"
-#include "hyle/mem/resource.h"
-#include "hyle/simd/fat_kernel.h"
-#include "hyle/simd/math.h"
-#include "hyle/simd/ops.h"
-#include "matmul_kernels.h"
 #include "prepared_state.h"
 
 namespace hyle::compute {
 namespace {
 
-using Parameters = detail::NativeParameters;
-using Route = detail::NativeRoute;
+constexpr std::size_t kInlineInferredOutputs = 4;
 
-void run_rms_norm(const float *input, const float *weight, float *output,
-                  const Parameters &parameters, float epsilon) noexcept {
-  const std::size_t rows = parameters[0];
-  const std::size_t hidden = parameters[1];
-  if (hidden == 0)
-    return;
-  for (std::size_t row = 0; row < rows; ++row) {
-    const float *row_input = input + row * hidden;
-    float *row_output = output + row * hidden;
-    if (weight == nullptr) {
-      simd::rms_norm_f32(row_input, row_output, hidden, epsilon);
-    } else {
-      simd::rms_norm_f32(row_input, weight, row_output, hidden, epsilon);
-    }
-  }
+constexpr std::size_t align_up(std::size_t value,
+                               std::size_t alignment) noexcept {
+  return (value + alignment - 1) & ~(alignment - 1);
 }
 
-void run_silu_and_mul(const float *input, const float *, float *output,
-                      const Parameters &parameters, float) noexcept {
-  const std::size_t rows = parameters[0];
-  const std::size_t hidden = parameters[1];
-  if (hidden == 0)
-    return;
-  for (std::size_t row = 0; row < rows; ++row) {
-    const float *gate = input + row * hidden * 2;
-    const float *value = gate + hidden;
-    simd::swiglu_f32_batch(gate, value, output + row * hidden, hidden);
-  }
-}
-
-// B is a logical [K,N] view over physically contiguous [N,K] weights. Each
-// output is therefore one contiguous SIMD dot, the normal inference layout.
-void run_matmul_transposed_weight(const float *left, const float *right,
-                                  float *output, const Parameters &parameters,
-                                  float) noexcept {
-  const std::size_t rows = parameters[0];
-  const std::size_t inner = parameters[1];
-  const std::size_t columns = parameters[2];
-  if (rows == 0 || columns == 0)
-    return;
-  if (inner == 0) {
-    std::fill_n(output, rows * columns, 0.0F);
-    return;
-  }
-  for (std::size_t row = 0; row < rows; ++row) {
-    const float *left_row = left + row * inner;
-    float *output_row = output + row * columns;
-    for (std::size_t column = 0; column < columns; ++column) {
-      output_row[column] = simd::dot(left_row, right + column * inner, inner);
-    }
-  }
-}
-
-Route select_row_major_matmul() noexcept {
-#if HYLE_ARCH_X64
-  return HYLE_SIMD_SELECT_FAT_KERNEL(
-      &detail::run_matmul_row_major_scalar, &detail::run_matmul_row_major_sse4,
-      &detail::run_matmul_row_major_avx2, &detail::run_matmul_row_major_avx512);
-#elif HYLE_ARCH_ARM64
-  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_matmul_row_major_scalar,
-                                     &detail::run_matmul_row_major_neon,
-                                     &detail::run_matmul_row_major_sve);
-#elif HYLE_ARCH_RISCV64
-  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_matmul_row_major_scalar,
-                                     &detail::run_matmul_row_major_rvv);
-#else
-  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_matmul_row_major_scalar);
-#endif
-}
-
-Status validate_logical_f32(const TensorDesc &description) noexcept {
-  if (!description.valid()) {
-    return Status::InvalidArgument("operation tensor description is invalid");
-  }
-  if (description.data_type() != DataType::kFloat32) {
-    return Status::Unimplemented(
-        "operation currently requires float32 logical tensors");
-  }
-  return Status::Ok();
-}
-
-Status validate_dense_f32(const TensorDesc &description) noexcept {
-  Status status = validate_logical_f32(description);
-  if (!status.ok())
-    return status;
-  if (!description.is_plain()) {
-    return Status::Unimplemented(
-        "HYLE-native operation requires plain tensor storage");
-  }
-  if (!description.is_dense()) {
-    return Status::Unimplemented(
-        "HYLE-native operation requires dense tensors");
-  }
-  return Status::Ok();
-}
-
-bool is_transposed_dense_matrix(const TensorDesc &description) noexcept {
-  if (!description.valid() || !description.is_plain() ||
-      description.rank() != 2)
-    return false;
-  const auto dimensions = description.dimensions();
-  const auto strides = description.byte_strides();
-  const auto row_bytes = math::try_multiply(
-      dimensions[0], static_cast<std::int64_t>(sizeof(float)));
-  return row_bytes.has_value() &&
-         strides[0] == static_cast<std::int64_t>(sizeof(float)) &&
-         strides[1] == *row_bytes;
-}
-
-bool is_supported_matmul_right(const TensorDesc &description) noexcept {
-  return description.is_plain() &&
-         (description.is_dense() || is_transposed_dense_matrix(description));
-}
-
-Result<std::size_t> outer_count(const TensorDesc &description) noexcept {
-  std::size_t result = 1;
-  const auto dimensions = description.dimensions();
-  for (std::size_t axis = 0; axis + 1 < dimensions.size(); ++axis) {
-    auto value = math::try_integer_cast<std::size_t>(dimensions[axis]);
-    if (!value) {
-      return std::unexpected(
-          Status::OutOfRange("tensor dimension exceeds size_t"));
-    }
-    auto next = math::try_multiply(result, *value);
-    if (!next) {
-      return std::unexpected(
-          Status::OutOfRange("tensor row count overflows size_t"));
-    }
-    result = *next;
-  }
-  return result;
-}
-
-Result<std::size_t> dimension(const TensorDesc &description,
-                              std::size_t axis) noexcept {
-  auto result =
-      math::try_integer_cast<std::size_t>(description.dimensions()[axis]);
-  if (!result) {
+Result<std::size_t>
+prepared_allocation_size(std::size_t input_count,
+                         std::size_t output_count) noexcept {
+  constexpr std::size_t descriptor_alignment = alignof(TensorDesc);
+  static_assert((descriptor_alignment & (descriptor_alignment - 1)) == 0);
+  static_assert(alignof(detail::PreparedState) >= descriptor_alignment);
+  const std::size_t offset =
+      align_up(sizeof(detail::PreparedState), descriptor_alignment);
+  if (input_count > (std::numeric_limits<std::size_t>::max)() - output_count) {
     return std::unexpected(
-        Status::OutOfRange("tensor dimension exceeds size_t"));
+        Status::OutOfRange("prepared descriptor count overflows"));
   }
-  return *result;
+  const std::size_t count = input_count + output_count;
+  if (count > ((std::numeric_limits<std::size_t>::max)() - offset) /
+                  sizeof(TensorDesc)) {
+    return std::unexpected(
+        Status::OutOfRange("prepared descriptor storage overflows"));
+  }
+  return offset + count * sizeof(TensorDesc);
 }
 
-Status validate_native_operation(Operation operation,
+Status validate_inferred_outputs(Operation operation,
                                  std::span<const TensorDesc> inputs,
-                                 std::span<const TensorDesc> outputs) noexcept {
-  if (outputs.size() != 1)
-    return Status::InvalidArgument("native operation requires one output");
+                                 std::span<const TensorDesc> outputs,
+                                 mem::AllocatorRef allocator) noexcept {
+  std::array<TensorDesc, kInlineInferredOutputs> local{};
+  TensorDesc *inferred = local.data();
+  bool allocated = false;
+  std::size_t bytes = 0;
+  if (outputs.size() > local.size()) {
+    if (outputs.size() >
+        (std::numeric_limits<std::size_t>::max)() / sizeof(TensorDesc)) {
+      return Status::OutOfRange("inferred output storage overflows");
+    }
+    bytes = outputs.size() * sizeof(TensorDesc);
+    void *storage = allocator.allocate(bytes, alignof(TensorDesc));
+    if (storage == nullptr)
+      return Status::ResourceExhausted("output inference allocation failed");
+    inferred = static_cast<TensorDesc *>(storage);
+    for (std::size_t index = 0; index < outputs.size(); ++index)
+      std::construct_at(inferred + index);
+    allocated = true;
+  }
 
-  switch (operation.kind()) {
-  case OperationKind::kRmsNorm: {
-    Status status = validate_dense_f32(inputs[0]);
-    if (!status.ok())
-      return status;
-    if (inputs.size() == 2) {
-      status = validate_dense_f32(inputs[1]);
-      if (!status.ok())
-        return status;
+  Status status = infer_output_descriptions(
+      operation, inputs, std::span<TensorDesc>(inferred, outputs.size()));
+  if (status.ok()) {
+    for (std::size_t index = 0; index < outputs.size(); ++index) {
+      if (outputs[index] != inferred[index]) {
+        status = Status::InvalidArgument(
+            "operation output description does not match inferred shape");
+        break;
+      }
     }
-    return validate_dense_f32(outputs[0]);
   }
-  case OperationKind::kMatMul: {
-    if (inputs.size() != 2 || inputs[0].rank() != 2 || inputs[1].rank() != 2) {
-      return Status::Unimplemented(
-          "current native MatMul route requires rank-2 inputs");
-    }
-    Status status = validate_dense_f32(inputs[0]);
-    if (!status.ok())
-      return status;
-    status = validate_logical_f32(inputs[1]);
-    if (!status.ok())
-      return status;
-    if (!is_supported_matmul_right(inputs[1])) {
-      return Status::Unimplemented(
-          "HYLE-native MatMul right operand requires plain row-major or "
-          "transposed-dense storage");
-    }
-    return validate_dense_f32(outputs[0]);
+  if (allocated) {
+    for (std::size_t index = outputs.size(); index != 0; --index)
+      std::destroy_at(inferred + index - 1);
+    allocator.deallocate(inferred, bytes, alignof(TensorDesc));
   }
-  case OperationKind::kGatedActivation: {
-    const GatedActivation *gated = operation.get_if<GatedActivation>();
-    if (gated == nullptr || gated->activation != GatedActivationKind::kSilu ||
-        gated->inputs != GatedInputKind::kPackedHalves || inputs.size() != 1) {
-      return Status::Unimplemented(
-          "current native gated route supports packed SiLU only");
-    }
-    Status status = validate_dense_f32(inputs[0]);
-    if (!status.ok())
-      return status;
-    return validate_dense_f32(outputs[0]);
+  return status;
+}
+
+Result<detail::PreparedState *>
+make_prepared_state(detail::ContextState *context, Operation operation,
+                    std::span<const TensorDesc> inputs,
+                    std::span<const TensorDesc> outputs,
+                    ProviderIdentity provider,
+                    detail::ProviderPrepared provider_prepared) noexcept {
+  auto bytes = prepared_allocation_size(inputs.size(), outputs.size());
+  if (!bytes) {
+    provider_prepared.vtable->destroy_prepared(provider_prepared.state,
+                                               context->allocator);
+    return std::unexpected(std::move(bytes).error());
   }
-  default:
-    return Status::Unimplemented(
-        "operation has no current native executable route");
+  void *storage =
+      context->allocator.allocate(*bytes, alignof(detail::PreparedState));
+  if (storage == nullptr) {
+    provider_prepared.vtable->destroy_prepared(provider_prepared.state,
+                                               context->allocator);
+    return std::unexpected(
+        Status::ResourceExhausted("prepared operation allocation failed"));
   }
-  return Status::Unimplemented("operation kind is unknown");
+  constexpr std::size_t descriptor_offset =
+      align_up(sizeof(detail::PreparedState), alignof(TensorDesc));
+  auto *state = ::new (storage)
+      detail::PreparedState(context, operation, provider, *bytes,
+                            descriptor_offset, inputs.size(), outputs.size());
+  for (std::size_t index = 0; index < inputs.size(); ++index)
+    std::construct_at(state->inputs() + index, inputs[index]);
+  for (std::size_t index = 0; index < outputs.size(); ++index)
+    std::construct_at(state->outputs() + index, outputs[index]);
+  state->provider_prepared = provider_prepared;
+  return state;
 }
 
 struct ByteRange final {
@@ -231,47 +126,99 @@ struct ByteRange final {
 };
 
 ByteRange byte_range(mem::ConstBufferView view) noexcept {
-  return ByteRange{view.resource(), view.native_handle(), view.offset(),
-                   view.size()};
+  return {view.resource(), view.native_handle(), view.offset(), view.size()};
 }
-
 ByteRange byte_range(mem::BufferView view) noexcept {
-  return ByteRange{view.resource(), view.native_handle(), view.offset(),
-                   view.size()};
+  return {view.resource(), view.native_handle(), view.offset(), view.size()};
 }
-
 bool same_allocation(const ByteRange &left, const ByteRange &right) noexcept {
   return left.resource == right.resource && left.handle == right.handle;
 }
-
 bool equal_range(const ByteRange &left, const ByteRange &right) noexcept {
   return same_allocation(left, right) && left.offset == right.offset &&
          left.size == right.size;
 }
-
+bool contains(const ByteRange &outer, const ByteRange &inner) noexcept {
+  return same_allocation(outer, inner) && inner.offset >= outer.offset &&
+         inner.offset - outer.offset <= outer.size &&
+         inner.size <= outer.size - (inner.offset - outer.offset);
+}
 bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
-  if (!same_allocation(left, right) || left.size == 0 || right.size == 0) {
+  if (!same_allocation(left, right) || left.size == 0 || right.size == 0)
     return false;
-  }
-  if (left.offset <= right.offset) {
+  if (left.offset <= right.offset)
     return right.offset - left.offset < left.size;
-  }
   return left.offset - right.offset < right.size;
 }
 
-bool aligned_for_storage(const void *address, std::size_t alignment) noexcept {
-  return address == nullptr ||
-         (alignment != 0 &&
-          (reinterpret_cast<std::uintptr_t>(address) & (alignment - 1)) == 0);
+Status validate_aliases(Operation operation,
+                        std::span<const ConstTensorView> inputs,
+                        std::span<const TensorView> outputs) noexcept {
+  const OperationTraits traits = operation_traits(operation);
+  for (std::size_t left = 0; left < outputs.size(); ++left) {
+    const ByteRange output = byte_range(outputs[left].storage());
+    // Empty tensors touch no byte. Several valid zero-sized allocations use a
+    // null native handle, which is not a unique allocation identity and must
+    // therefore never manufacture an alias conflict between unrelated views.
+    if (output.size == 0)
+      continue;
+    for (std::size_t right = left + 1; right < outputs.size(); ++right) {
+      if (overlaps(output, byte_range(outputs[right].storage()))) {
+        return Status::InvalidArgument(
+            "operation output bindings overlap unsafely");
+      }
+    }
+    bool aliases_input0 = false;
+    for (std::size_t input_index = 0; input_index < inputs.size();
+         ++input_index) {
+      const ByteRange input = byte_range(inputs[input_index].storage());
+      if (!overlaps(input, output) && !equal_range(input, output))
+        continue;
+      bool allowed = false;
+      switch (traits.alias) {
+      case AliasPolicy::kNone:
+        break;
+      case AliasPolicy::kMayAliasInput0:
+        allowed = input_index == 0 && equal_range(input, output);
+        break;
+      case AliasPolicy::kMayAliasAnyInput:
+        allowed = equal_range(input, output);
+        break;
+      case AliasPolicy::kMustAliasInput0:
+        allowed = input_index == 0 && contains(input, output);
+        aliases_input0 = aliases_input0 || allowed;
+        break;
+      }
+      if (!allowed) {
+        return Status::InvalidArgument(
+            "operation input and output bindings overlap unsafely");
+      }
+    }
+    if (traits.alias == AliasPolicy::kMustAliasInput0 && !aliases_input0) {
+      return Status::InvalidArgument(
+          "view output must alias storage from its first input");
+    }
+  }
+  return Status::Ok();
 }
 
-void preserve_first_error(Status &terminal, Status candidate) noexcept {
-  if (terminal.ok() && !candidate.ok())
-    terminal = std::move(candidate);
-}
-
-Result<Completion> completed_failure(Status status) noexcept {
-  return Completion::completed(std::move(status));
+Status
+validate_binding_resources(const detail::ContextState &context,
+                           std::span<const ConstTensorView> inputs,
+                           std::span<const TensorView> outputs) noexcept {
+  for (const ConstTensorView &input : inputs) {
+    Status status = context.backend_vtable->validate_resource(
+        context.device, input.storage().resource());
+    if (!status.ok())
+      return status;
+  }
+  for (const TensorView &output : outputs) {
+    Status status = context.backend_vtable->validate_resource(
+        context.device, output.storage().resource());
+    if (!status.ok())
+      return status;
+  }
+  return Status::Ok();
 }
 
 } // namespace
@@ -312,12 +259,8 @@ OperationKind PreparedOperation::kind() const noexcept {
   return state_ != nullptr ? state_->operation.kind() : OperationKind::kUnknown;
 }
 
-ProviderKind PreparedOperation::provider() const noexcept {
-  return state_ != nullptr ? state_->provider : ProviderKind::kUnknown;
-}
-
-bool PreparedOperation::used_fallback() const noexcept {
-  return state_ != nullptr && state_->fallback;
+ProviderIdentity PreparedOperation::provider() const noexcept {
+  return state_ != nullptr ? state_->provider : ProviderIdentity{};
 }
 
 WorkspaceRequirement PreparedOperation::workspace_requirement() const noexcept {
@@ -330,33 +273,29 @@ std::size_t PreparedOperation::input_count() const noexcept {
 }
 
 std::size_t PreparedOperation::output_count() const noexcept {
-  return state_ != nullptr ? 1 : 0;
+  return state_ != nullptr ? state_->output_count : 0;
 }
 
 Result<const TensorDesc &>
 PreparedOperation::input_description(std::size_t index) const noexcept {
-  if (!valid()) {
+  if (!valid())
     return std::unexpected(
         Status::FailedPrecondition("prepared operation is invalid"));
-  }
-  if (index >= state_->input_count) {
+  if (index >= state_->input_count)
     return std::unexpected(
         Status::OutOfRange("prepared input index is out of range"));
-  }
-  return state_->inputs[index];
+  return state_->inputs()[index];
 }
 
 Result<const TensorDesc &>
 PreparedOperation::output_description(std::size_t index) const noexcept {
-  if (!valid()) {
+  if (!valid())
     return std::unexpected(
         Status::FailedPrecondition("prepared operation is invalid"));
-  }
-  if (index != 0) {
+  if (index >= state_->output_count)
     return std::unexpected(
         Status::OutOfRange("prepared output index is out of range"));
-  }
-  return state_->output;
+  return state_->outputs()[index];
 }
 
 Result<PreparedOperation>
@@ -364,29 +303,29 @@ prepare(const Context &context, Operation operation,
         std::span<const TensorDesc> inputs,
         std::span<const TensorDesc> outputs) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
-  if (state == nullptr) {
+  if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
-  }
-  if (!state->open) {
+  if (!state->admission.try_enter())
     return std::unexpected(Status::FailedPrecondition("context is closed"));
-  }
-  if (outputs.size() != 1) {
-    return std::unexpected(Status::InvalidArgument(
-        "prepared operation requires exactly one output"));
-  }
+  struct ContextAdmissionGuard final {
+    detail::AdmissionGate *gate = nullptr;
+    ~ContextAdmissionGuard() { gate->leave(); }
+  } admission_guard{&state->admission};
 
-  TensorDesc inferred;
-  Status inference = infer_output_descriptions(
-      operation, inputs, std::span<TensorDesc>(&inferred, 1));
+  const OperationTraits traits = operation_traits(operation);
+  if (!operation.valid() || !traits.inputs.accepts(inputs.size()) ||
+      outputs.size() != traits.outputs) {
+    return std::unexpected(Status::InvalidArgument(
+        "operation binding arity does not match its schema"));
+  }
+  Status inference =
+      validate_inferred_outputs(operation, inputs, outputs, state->allocator);
   if (!inference.ok())
     return std::unexpected(std::move(inference));
-  if (outputs[0] != inferred) {
-    return std::unexpected(Status::InvalidArgument(
-        "operation output description does not match inferred shape"));
-  }
 
+  const detail::ContextState::ProviderSlot *slots = state->providers();
   for (std::size_t index = 0; index < state->provider_count; ++index) {
-    detail::ContextState::ProviderSlot &slot = state->providers[index];
+    const detail::ContextState::ProviderSlot &slot = slots[index];
     const detail::ProviderVTable *table =
         detail::ProviderAccess::vtable(slot.provider);
     detail::ProviderPrepared provider_prepared{};
@@ -401,7 +340,7 @@ prepare(const Context &context, Operation operation,
         provider_prepared.vtable->destroy_prepared == nullptr ||
         provider_prepared.vtable->create_invocation == nullptr ||
         provider_prepared.vtable->destroy_invocation == nullptr ||
-        provider_prepared.vtable->execute == nullptr ||
+        provider_prepared.vtable->submit == nullptr ||
         provider_prepared.workspace.alignment == 0 ||
         (provider_prepared.workspace.alignment &
          (provider_prepared.workspace.alignment - 1)) != 0) {
@@ -413,84 +352,14 @@ prepare(const Context &context, Operation operation,
       return std::unexpected(
           Status::Internal("compute provider returned an invalid artifact"));
     }
-    void *storage = state->allocator.allocate(sizeof(detail::PreparedState),
-                                              alignof(detail::PreparedState));
-    if (storage == nullptr) {
-      provider_prepared.vtable->destroy_prepared(provider_prepared.state,
-                                                 state->allocator);
-      return std::unexpected(
-          Status::ResourceExhausted("prepared operation allocation failed"));
-    }
-    auto *prepared = ::new (storage) detail::PreparedState(
-        state, operation, inputs, outputs[0], table->kind, false);
-    prepared->provider_prepared = provider_prepared;
-    return PreparedOperation(prepared);
+    auto prepared = make_prepared_state(state, operation, inputs, outputs,
+                                        table->identity, provider_prepared);
+    if (!prepared)
+      return std::unexpected(std::move(prepared).error());
+    return PreparedOperation(*prepared);
   }
-
-  Status native_support = validate_native_operation(operation, inputs, outputs);
-  if (!native_support.ok())
-    return std::unexpected(std::move(native_support));
-
-  Parameters parameters{};
-  float scalar = 0.0F;
-  Route route = nullptr;
-  switch (operation.kind()) {
-  case OperationKind::kRmsNorm: {
-    auto rows = outer_count(inputs[0]);
-    auto hidden = dimension(inputs[0], inputs[0].rank() - 1);
-    if (!rows)
-      return std::unexpected(std::move(rows).error());
-    if (!hidden)
-      return std::unexpected(std::move(hidden).error());
-    parameters = {*rows, *hidden, 0};
-    scalar = operation.get_if<RmsNorm>()->epsilon;
-    route = &run_rms_norm;
-    break;
-  }
-  case OperationKind::kMatMul: {
-    auto rows = dimension(inputs[0], 0);
-    auto inner = dimension(inputs[0], 1);
-    auto columns = dimension(inputs[1], 1);
-    if (!rows)
-      return std::unexpected(std::move(rows).error());
-    if (!inner)
-      return std::unexpected(std::move(inner).error());
-    if (!columns)
-      return std::unexpected(std::move(columns).error());
-    parameters = {*rows, *inner, *columns};
-    route = inputs[1].is_dense() ? select_row_major_matmul()
-                                 : &run_matmul_transposed_weight;
-    break;
-  }
-  case OperationKind::kGatedActivation: {
-    auto rows = outer_count(inputs[0]);
-    auto packed = dimension(inputs[0], inputs[0].rank() - 1);
-    if (!rows)
-      return std::unexpected(std::move(rows).error());
-    if (!packed)
-      return std::unexpected(std::move(packed).error());
-    parameters = {*rows, *packed / 2, 0};
-    route = &run_silu_and_mul;
-    break;
-  }
-  default:
-    return std::unexpected(
-        Status::Unimplemented("operation has no current native route"));
-  }
-
-  void *storage = state->allocator.allocate(sizeof(detail::PreparedState),
-                                            alignof(detail::PreparedState));
-  if (storage == nullptr) {
-    return std::unexpected(
-        Status::ResourceExhausted("prepared operation allocation failed"));
-  }
-  auto *prepared = ::new (storage) detail::PreparedState(
-      state, operation, inputs, outputs[0], ProviderKind::kHyleNative,
-      state->provider_count != 0);
-  prepared->parameters = parameters;
-  prepared->scalar = scalar;
-  prepared->native_route = route;
-  return PreparedOperation(prepared);
+  return std::unexpected(Status::Unimplemented(
+      "no configured compute provider supports this operation"));
 }
 
 Result<PreparedOperation> prepare(const Context &context, RmsNorm operation,
@@ -527,287 +396,139 @@ Result<PreparedOperation> prepare(const Context &context,
 
 Result<OperationInvocation>
 PreparedOperation::create_invocation(mem::BufferView workspace) const noexcept {
-  if (state_ == nullptr) {
+  if (state_ == nullptr)
     return std::unexpected(
         Status::FailedPrecondition("prepared operation is invalid"));
-  }
   const WorkspaceRequirement requirement = workspace_requirement();
   if (requirement.size != 0) {
-    if (!workspace.valid() || workspace.size() < requirement.size) {
+    if (!workspace.valid() || workspace.size() < requirement.size ||
+        workspace.offset() % requirement.alignment != 0) {
       return std::unexpected(Status::InvalidArgument(
-          "operation workspace is absent or smaller than required"));
+          "operation workspace does not satisfy size/alignment"));
     }
-    const mem::MemoryProperties properties = workspace.resource().properties();
-    if (!properties.has(mem::MemoryProperty::kHostAccessible)) {
-      return std::unexpected(Status::FailedPrecondition(
-          "CPU operation workspace must be host-accessible"));
-    }
+    Status resource = state_->context->backend_vtable->validate_resource(
+        state_->context->device, workspace.resource());
+    if (!resource.ok())
+      return std::unexpected(std::move(resource));
   }
 
   void *provider_state = nullptr;
   const detail::ProviderPrepared &provider = state_->provider_prepared;
-  if (provider.vtable != nullptr) {
-    Status status = provider.vtable->create_invocation(
-        provider.state, state_->allocator, workspace, &provider_state);
-    if (!status.ok())
-      return std::unexpected(std::move(status));
-  }
-  return OperationInvocation(state_, provider_state);
-}
+  Status status = provider.vtable->create_invocation(
+      provider.state, state_->allocator, workspace, &provider_state);
+  if (!status.ok())
+    return std::unexpected(std::move(status));
 
-OperationInvocation::OperationInvocation(detail::PreparedState *state,
-                                         void *provider_state) noexcept
-    : state_(state), provider_state_(provider_state) {
-  detail::retain(state_);
+  void *storage = state_->allocator.allocate(sizeof(detail::InvocationState),
+                                             alignof(detail::InvocationState));
+  if (storage == nullptr) {
+    provider.vtable->destroy_invocation(provider_state, state_->allocator);
+    return std::unexpected(
+        Status::ResourceExhausted("operation invocation allocation failed"));
+  }
+  auto *invocation =
+      ::new (storage) detail::InvocationState(state_, provider_state);
+  return OperationInvocation(invocation);
 }
 
 OperationInvocation::OperationInvocation(OperationInvocation &&other) noexcept
-    : state_(other.state_), provider_state_(other.provider_state_) {
+    : state_(other.state_) {
   other.state_ = nullptr;
-  other.provider_state_ = nullptr;
 }
 
 OperationInvocation &
 OperationInvocation::operator=(OperationInvocation &&other) noexcept {
   if (this != &other) {
-    if (state_ != nullptr && state_->provider_prepared.vtable != nullptr) {
-      state_->provider_prepared.vtable->destroy_invocation(provider_state_,
-                                                           state_->allocator);
-    }
-    detail::release(state_);
+    if (state_ != nullptr)
+      state_->destroy();
     state_ = other.state_;
-    provider_state_ = other.provider_state_;
     other.state_ = nullptr;
-    other.provider_state_ = nullptr;
   }
   return *this;
 }
 
 OperationInvocation::~OperationInvocation() {
-  if (state_ != nullptr && state_->provider_prepared.vtable != nullptr) {
-    state_->provider_prepared.vtable->destroy_invocation(provider_state_,
-                                                         state_->allocator);
-  }
-  detail::release(state_);
+  if (state_ != nullptr)
+    state_->destroy();
 }
 
-ProviderKind OperationInvocation::provider() const noexcept {
-  return state_ != nullptr ? state_->provider : ProviderKind::kUnknown;
+ProviderIdentity OperationInvocation::provider() const noexcept {
+  return state_ != nullptr ? state_->prepared->provider : ProviderIdentity{};
 }
 
 Result<Completion>
 OperationInvocation::submit(Queue &queue,
                             std::span<const ConstTensorView> inputs,
                             std::span<const TensorView> outputs) noexcept {
-  return submit_impl(queue, inputs.empty() ? nullptr : &inputs.front(),
-                     inputs.size() > 1 ? &inputs[1] : nullptr, inputs.size(),
-                     outputs.empty() ? nullptr : &outputs.front(),
-                     outputs.size());
-}
-
-Result<Completion> OperationInvocation::submit_impl(
-    Queue &queue, const ConstTensorView *first, const ConstTensorView *second,
-    std::size_t provided_input_count, const TensorView *output,
-    std::size_t provided_output_count) noexcept {
-  if (!valid()) {
+  if (!valid())
     return std::unexpected(
-        Status::FailedPrecondition("prepared operation is invalid"));
-  }
-  if (!queue.valid()) {
+        Status::FailedPrecondition("operation invocation is invalid"));
+  if (!queue.valid())
     return std::unexpected(Status::FailedPrecondition("queue is invalid"));
-  }
-  if (!queue.open_ || !queue.state_->open) {
-    return std::unexpected(Status::FailedPrecondition("queue is closed"));
-  }
-  if (queue.state_ != state_->context) {
+  detail::PreparedState &prepared = *state_->prepared;
+  detail::QueueState *queue_state = detail::ContextAccess::state(queue);
+  if (queue_state->context != prepared.context) {
     return std::unexpected(Status::InvalidArgument(
         "queue and operation invocation belong to different contexts"));
   }
-  if (provided_input_count != state_->input_count ||
-      provided_output_count != 1) {
+  if (inputs.size() != prepared.input_count ||
+      outputs.size() != prepared.output_count) {
     return std::unexpected(Status::InvalidArgument(
         "binding count does not match the prepared operation"));
   }
-  if (first == nullptr || !first->valid() ||
-      first->description() != state_->inputs[0]) {
-    return std::unexpected(Status::InvalidArgument(
-        "first input binding does not match its prepared description"));
-  }
-  if (state_->input_count == 2 &&
-      (second == nullptr || !second->valid() ||
-       second->description() != state_->inputs[1])) {
-    return std::unexpected(Status::InvalidArgument(
-        "second input binding does not match its prepared description"));
-  }
-  if (output == nullptr || !output->valid() ||
-      output->description() != state_->output) {
-    return std::unexpected(Status::InvalidArgument(
-        "output binding does not match its prepared description"));
-  }
-
-  const mem::ConstBufferView first_storage = first->storage();
-  const mem::BufferView output_storage = output->storage();
-  const ByteRange first_range = byte_range(first_storage);
-  const ByteRange output_range = byte_range(output_storage);
-  const bool in_place = state_->operation.kind() == OperationKind::kRmsNorm &&
-                        equal_range(first_range, output_range);
-  if (overlaps(first_range, output_range) && !in_place) {
-    return std::unexpected(Status::InvalidArgument(
-        "operation input and output have an unsafe overlap"));
-  }
-
-  mem::ConstBufferView second_storage;
-  ByteRange second_range{};
-  bool shared_inputs = false;
-  if (state_->input_count == 2) {
-    second_storage = second->storage();
-    second_range = byte_range(second_storage);
-    if (overlaps(second_range, output_range)) {
+  for (std::size_t index = 0; index < inputs.size(); ++index) {
+    if (!inputs[index].valid() ||
+        inputs[index].description() != prepared.inputs()[index]) {
       return std::unexpected(Status::InvalidArgument(
-          "operation second input and output have an unsafe overlap"));
-    }
-    shared_inputs = equal_range(first_range, second_range);
-  }
-
-  const mem::MemoryProperties first_properties =
-      first_storage.resource().properties();
-  const mem::MemoryProperties output_properties =
-      output_storage.resource().properties();
-  mem::MemoryProperties second_properties{};
-  if (state_->input_count == 2) {
-    second_properties = second_storage.resource().properties();
-  }
-  if (!first_properties.has(mem::MemoryProperty::kHostAccessible) ||
-      !output_properties.has(mem::MemoryProperty::kHostAccessible) ||
-      (state_->input_count == 2 &&
-       !second_properties.has(mem::MemoryProperty::kHostAccessible))) {
-    return std::unexpected(Status::FailedPrecondition(
-        "CPU operation requires host-accessible tensor storage"));
-  }
-
-  // Admission ends here. Mapping/coherence failures are terminal Completion
-  // values, preserving the same boundary future asynchronous providers use.
-  if (!first_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
-    Status status = first_storage.invalidate();
-    if (!status.ok())
-      return completed_failure(std::move(status));
-  }
-  if (state_->input_count == 2 && !shared_inputs &&
-      !second_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
-    Status status = second_storage.invalidate();
-    if (!status.ok())
-      return completed_failure(std::move(status));
-  }
-
-  mem::HostMapping first_mapping;
-  mem::HostMapping second_mapping;
-  mem::HostMapping output_mapping;
-  const float *first_data = nullptr;
-  const float *second_data = nullptr;
-  float *output_data = nullptr;
-
-  if (in_place) {
-    auto mapping = output_storage.map_host(mem::HostAccess::kReadWrite);
-    if (!mapping)
-      return completed_failure(std::move(mapping).error());
-    output_mapping = std::move(*mapping);
-    auto writable = output_mapping.writable_bytes();
-    if (!writable)
-      return completed_failure(std::move(writable).error());
-    output_data = reinterpret_cast<float *>(writable->data());
-    first_data = output_data;
-  } else {
-    auto mapping = first_storage.map_host();
-    if (!mapping)
-      return completed_failure(std::move(mapping).error());
-    first_mapping = std::move(*mapping);
-    first_data = reinterpret_cast<const float *>(first_mapping.bytes().data());
-  }
-
-  if (state_->input_count == 2) {
-    if (shared_inputs && !in_place) {
-      second_data = first_data;
-    } else {
-      auto mapping = second_storage.map_host();
-      if (!mapping) {
-        first_mapping.close().IgnoreError();
-        output_mapping.close().IgnoreError();
-        return completed_failure(std::move(mapping).error());
-      }
-      second_mapping = std::move(*mapping);
-      second_data =
-          reinterpret_cast<const float *>(second_mapping.bytes().data());
+          "input binding does not match its prepared description"));
     }
   }
-
-  if (!in_place) {
-    auto mapping = output_storage.map_host(mem::HostAccess::kWrite);
-    if (!mapping) {
-      second_mapping.close().IgnoreError();
-      first_mapping.close().IgnoreError();
-      return completed_failure(std::move(mapping).error());
+  for (std::size_t index = 0; index < outputs.size(); ++index) {
+    if (!outputs[index].valid() ||
+        outputs[index].description() != prepared.outputs()[index]) {
+      return std::unexpected(Status::InvalidArgument(
+          "output binding does not match its prepared description"));
     }
-    output_mapping = std::move(*mapping);
-    auto writable = output_mapping.writable_bytes();
-    if (!writable) {
-      output_mapping.close().IgnoreError();
-      second_mapping.close().IgnoreError();
-      first_mapping.close().IgnoreError();
-      return completed_failure(std::move(writable).error());
-    }
-    output_data = reinterpret_cast<float *>(writable->data());
   }
+  Status resource =
+      validate_binding_resources(*prepared.context, inputs, outputs);
+  if (!resource.ok())
+    return std::unexpected(std::move(resource));
+  Status alias = validate_aliases(prepared.operation, inputs, outputs);
+  if (!alias.ok())
+    return std::unexpected(std::move(alias));
 
-  const bool first_aligned =
-      aligned_for_storage(first_data, state_->inputs[0].required_alignment());
-  const bool second_aligned =
-      state_->input_count != 2 ||
-      aligned_for_storage(second_data, state_->inputs[1].required_alignment());
-  const bool output_aligned =
-      aligned_for_storage(output_data, state_->output.required_alignment());
-  if (!first_aligned || !second_aligned || !output_aligned) {
-    output_mapping.close().IgnoreError();
-    second_mapping.close().IgnoreError();
-    first_mapping.close().IgnoreError();
-    return completed_failure(Status::FailedPrecondition(
-        "CPU operation tensor mapping does not satisfy its format alignment"));
-  }
+  Status admission = queue.begin_submission();
+  if (!admission.ok())
+    return std::unexpected(std::move(admission));
+  struct AdmissionGuard final {
+    Queue *queue = nullptr;
+    ~AdmissionGuard() { CpuQueueAccess::end(*queue); }
+  } guard{&queue};
 
-  Status terminal = Status::Ok();
-  if (state_->provider_prepared.vtable != nullptr) {
-    const std::array<const void *, 2> provider_inputs{first_data, second_data};
-    const std::array<void *, 1> provider_outputs{output_data};
-    terminal = state_->provider_prepared.vtable->execute(
-        state_->provider_prepared.state, provider_state_,
-        std::span<const void *const>(provider_inputs.data(),
-                                     state_->input_count),
-        provider_outputs);
-  } else {
-    state_->native_route(first_data, second_data, output_data,
-                         state_->parameters, state_->scalar);
+  auto completion = prepared.provider_prepared.vtable->submit(
+      prepared.provider_prepared.state, state_->provider_state, queue, inputs,
+      outputs);
+  if (completion && !completion->valid()) {
+    return std::unexpected(
+        Status::Internal("compute provider returned an invalid completion"));
   }
-
-  if (terminal.ok() &&
-      !output_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
-    preserve_first_error(terminal, output_mapping.flush());
-  }
-  preserve_first_error(terminal, output_mapping.close());
-  preserve_first_error(terminal, second_mapping.close());
-  preserve_first_error(terminal, first_mapping.close());
-  return Completion::completed(std::move(terminal));
+  return completion;
 }
 
 Result<Completion>
 OperationInvocation::submit(Queue &queue, const ConstTensorView &input,
                             const TensorView &output) noexcept {
-  return submit_impl(queue, &input, nullptr, 1, &output, 1);
+  return submit(queue, std::span<const ConstTensorView>(&input, 1),
+                std::span<const TensorView>(&output, 1));
 }
 
 Result<Completion>
 OperationInvocation::submit(Queue &queue, const ConstTensorView &first,
                             const ConstTensorView &second,
                             const TensorView &output) noexcept {
-  return submit_impl(queue, &first, &second, 2, &output, 1);
+  const std::array inputs{first, second};
+  return submit(queue, inputs, std::span<const TensorView>(&output, 1));
 }
 
 } // namespace hyle::compute

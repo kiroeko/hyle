@@ -12,7 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include "hyle/compute/device.h"
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
@@ -24,10 +24,8 @@ using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::ContextOptions;
 using hyle::compute::DataType;
-using hyle::compute::Device;
 using hyle::compute::MatMul;
 using hyle::compute::PreparedOperation;
-using hyle::compute::ProviderKind;
 using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
@@ -110,21 +108,22 @@ std::vector<float> read_floats(hyle::mem::ConstBufferView source,
 }
 
 Context create_context() {
-  ContextOptions options;
-  EXPECT_TRUE(options.providers.add(hyle::compute::onednn::provider()));
-  return Context::create(Device::cpu(), options).value();
+  return Context::create(hyle::compute::cpu::device(),
+                         hyle::compute::onednn::provider())
+      .value();
 }
 
 TEST(OneDnnProvider, ExposesStableIdentity) {
   const auto provider = hyle::compute::onednn::provider();
   EXPECT_TRUE(provider.valid());
-  EXPECT_EQ(provider.kind(), ProviderKind::kOneDnn);
+  EXPECT_EQ(provider.id(), hyle::compute::onednn::kProviderId);
   EXPECT_EQ(provider.name(), "onednn");
   EXPECT_EQ(hyle::compute::onednn::version(), "3.13.2");
 
-  auto context = Context::create(Device::cpu(), provider);
+  auto context = Context::create(hyle::compute::cpu::device(), provider);
   EXPECT_TRUE(context.has_value());
-  auto invalid = Context::create(Device::cpu(), hyle::compute::Provider{});
+  auto invalid =
+      Context::create(hyle::compute::cpu::device(), hyle::compute::Provider{});
   ASSERT_FALSE(invalid.has_value());
   EXPECT_TRUE(invalid.error().IsInvalidArgument());
 
@@ -173,8 +172,7 @@ TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
       hyle::compute::prepare(context, MatMul{}, left_description,
                              right_description, output_description)
           .value();
-  EXPECT_EQ(prepared.provider(), ProviderKind::kOneDnn);
-  EXPECT_FALSE(prepared.used_fallback());
+  EXPECT_EQ(prepared.provider().id, hyle::compute::onednn::kProviderId);
 
   const auto requirement = prepared.workspace_requirement();
   Buffer workspace;
@@ -206,7 +204,7 @@ TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
   }
 }
 
-TEST(OneDnnProvider, LeavesContiguousKWeightsOnHyleNativeFallback) {
+TEST(OneDnnProvider, RejectsContiguousKWeightsWithoutAnotherProvider) {
   constexpr std::int64_t rows = 2;
   constexpr std::int64_t inner = 3;
   constexpr std::int64_t columns = 4;
@@ -216,12 +214,10 @@ TEST(OneDnnProvider, LeavesContiguousKWeightsOnHyleNativeFallback) {
   const TensorDesc output = matrix(rows, columns);
 
   Context context = create_context();
-  PreparedOperation prepared =
-      hyle::compute::prepare(context, MatMul{}, left, logical_weights, output)
-          .value();
-  EXPECT_EQ(prepared.provider(), ProviderKind::kHyleNative);
-  EXPECT_TRUE(prepared.used_fallback());
-  EXPECT_EQ(prepared.workspace_requirement().size, 0U);
+  auto prepared =
+      hyle::compute::prepare(context, MatMul{}, left, logical_weights, output);
+  ASSERT_FALSE(prepared.has_value());
+  EXPECT_TRUE(prepared.error().IsUnimplemented());
 }
 
 TEST(OneDnnProvider, RejectsEncodedWeightsBeforeCallingOneDnn) {
@@ -268,7 +264,7 @@ TEST(OneDnnProvider, UsesTheBorrowedSynchronousExecutor) {
   const hyle::compute::ParallelExecutorRef executor(
       &probe, 4, &probe_parallel_for, &probe_in_parallel);
   auto context =
-      Context::create(Device::cpu(),
+      Context::create(hyle::compute::cpu::device(),
                       hyle::compute::onednn::provider({.executor = executor}))
           .value();
   auto queue = context.create_queue().value();
@@ -300,17 +296,16 @@ TEST(OneDnnProvider, UsesTheBorrowedSynchronousExecutor) {
     EXPECT_EQ(observed, static_cast<float>(inner));
 }
 
-TEST(OneDnnProvider, LeavesSmallSerialDecodeOnHyleNativeFallback) {
+TEST(OneDnnProvider, RejectsSmallSerialDecodeWithoutAnotherProvider) {
   Context context = create_context();
   for (const std::int64_t rows : {1, 4}) {
     const TensorDesc left = matrix(rows, 17);
     const TensorDesc right = matrix(17, 65);
     const TensorDesc output = matrix(rows, 65);
-    PreparedOperation prepared =
-        hyle::compute::prepare(context, MatMul{}, left, right, output).value();
-    EXPECT_EQ(prepared.provider(), ProviderKind::kHyleNative);
-    EXPECT_TRUE(prepared.used_fallback());
-    EXPECT_EQ(prepared.workspace_requirement().size, 0U);
+    auto prepared =
+        hyle::compute::prepare(context, MatMul{}, left, right, output);
+    ASSERT_FALSE(prepared.has_value());
+    EXPECT_TRUE(prepared.error().IsUnimplemented());
   }
 }
 
@@ -321,7 +316,7 @@ TEST(OneDnnProvider, ValidatesCallerOwnedWorkspaceSizeAndAlignment) {
       hyle::compute::prepare(context, MatMul{}, description, description,
                              description)
           .value();
-  ASSERT_EQ(prepared.provider(), ProviderKind::kOneDnn);
+  ASSERT_EQ(prepared.provider().id, hyle::compute::onednn::kProviderId);
   const auto requirement = prepared.workspace_requirement();
   ASSERT_GT(requirement.size, 1U);
   ASSERT_EQ(requirement.alignment, 64U);
@@ -343,16 +338,15 @@ TEST(OneDnnProvider, ValidatesCallerOwnedWorkspaceSizeAndAlignment) {
   EXPECT_TRUE(prepared.create_invocation(exact_view).has_value());
 }
 
-TEST(OneDnnProvider, LeavesUnsupportedAndEmptyOperationsOnNativeFallback) {
+TEST(OneDnnProvider, RejectsUnsupportedEmptyOperationsWithoutAnotherProvider) {
   const TensorDesc empty_left = matrix(0, 3);
   const TensorDesc right = matrix(3, 4);
   const TensorDesc empty_output = matrix(0, 4);
   Context context = create_context();
-  PreparedOperation prepared =
-      hyle::compute::prepare(context, MatMul{}, empty_left, right, empty_output)
-          .value();
-  EXPECT_EQ(prepared.provider(), ProviderKind::kHyleNative);
-  EXPECT_TRUE(prepared.used_fallback());
+  auto prepared = hyle::compute::prepare(context, MatMul{}, empty_left, right,
+                                         empty_output);
+  ASSERT_FALSE(prepared.has_value());
+  EXPECT_TRUE(prepared.error().IsUnimplemented());
 }
 
 TEST(OneDnnProvider, SharesPreparedArtifactAcrossIndependentInvocations) {
@@ -423,8 +417,10 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
   {
     ContextOptions options;
     options.metadata_allocator = allocator(probe);
-    ASSERT_TRUE(options.providers.add(hyle::compute::onednn::provider()));
-    Context context = Context::create(Device::cpu(), options).value();
+    const std::array providers{hyle::compute::onednn::provider()};
+    options.providers = providers;
+    Context context =
+        Context::create(hyle::compute::cpu::device(), options).value();
     const TensorDesc description = matrix(16, 16);
 
     probe.fail = true;

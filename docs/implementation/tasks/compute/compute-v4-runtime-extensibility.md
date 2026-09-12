@@ -120,3 +120,22 @@ CPU 执行轴与 HYLE native kernels 分别由已登记的 `compute_backend_cpu`
 本轮 Runtime FIX 为 R40--R51；R52--R54 明确不进入本候选。P0 账单目标是：provider/device 枚举 O(N)
 冷路径；Context create O(P) 且一次 metadata allocation；prepare O(P)；prepared submit O(bindings) + 一次
 预绑定 dispatch；poll/wait O(1)，不含设备实际等待时间。
+
+## Implementation checkpoint（2026-09-12）
+
+- R40--R51 的第一份产品实现已落地：开放 `BackendId` / `ProviderId`、type-erased Backend/Device、任意长度且
+  在 Context create 时复制的显式 provider sequence、独立 Context/Queue state、move-only immediate/async
+  Completion，以及返回 Completion 的 prepared submit 均已替换旧封闭 runtime；
+- Context 的 provider metadata 保持一次 allocation；provider context 创建失败按已成功项逆序回滚。测试用
+  六个 provider 明确越过旧四槽上限，并销毁原始配置后验证 Context 仍只引用自己的副本；
+- Completion 的 immediate success/error 与模拟 async pending/poll/wait/cancel/move/destroy 已覆盖。共享因子
+  测试发现其内部 factory 原先没有跨 DLL export，现由 `CompletionAccess::make` 的 out-of-line Compute symbol
+  修复；provider create hook 也改为接收 Context 拥有的 Provider 副本，不能保留调用方临时配置；`prepare()`
+  取得 Context admission token 后才进入 provider 冷路径，不再以非原子的 `is_open()` 检查和 close 竞争；
+- Windows 上 15 项 Compute/Graph 定向测试，以及独立 source、relocated static、relocated shared Compute
+  consumer 均通过；旧 `ProviderKind`、`ProviderList<4>`、`Device::cpu()`、通用 `submit_host()` 和
+  `host_kernel.h` 产品入口已无代码消费者。
+
+这不是 terminal record，状态保持 `AUDITED`。真正异步 backend 的 late-completion 保活、close/drain 与
+device-loss/error injection，sanitizers、Linux/两台 Apple、shared export hygiene、P0 codegen 账单，以及依赖
+本 runtime 的全部 v1 provider/Graph 仍待完成；不能用 CPU immediate 模拟测试替代异构生命周期资格。

@@ -16,8 +16,9 @@
   文档与 source/static/shared 投影；确认 v2 BRGEMM 算法和选择阈值没有无关变化；
 - non-goals：增加新 oneDNN primitive、改变 BRGEMM tiling、重新跑无产品漂移的完整 P1、CUDA/Metal/Vulkan、
   Native FFI；HIP/ROCm 无限期不在当前产品线；
-- 直接依赖 / 直接消费者：公开依赖 Compute，CPU backend 是私有运行时事实；直接消费者为 Compute/Graph
-  CPU 产品与 package sample；
+- 直接依赖 / 直接消费者：只公开依赖 Compute；它接受符合通用合同的 CPU-class Device，不依赖某个具体
+  backend target。CPU 产品、测试和 benchmark 作为真实消费者显式组合 CPU backend；直接消费者为
+  Compute/Graph CPU 产品与 package sample；
 - 性能 tier 与原因：`P0` 合同回放；若迁移改变已计时 execute 路径或常态 allocation/copy/dispatch，才对
   不可变候选重跑原 v2 P1；
 - 调查与纠正预算：一次 vtable/API 迁移、每个 correctness defect 最多两轮；不得借机扩展算子目录；
@@ -62,3 +63,18 @@ BRGEMM plan、kernel 与 tile arithmetic 不改；prepare 仍是冷路径。exec
 这点，v2 的 kernel P1 不因 owner 搬迁失效；若出现额外 dispatch/mapping，则必须重跑原同合同 P1。
 
 本轮 `FIX` 仅 D30--D34；不增加 primitive、不调整阈值、不为 HIP/ROCm 建立任何代码或构建入口。
+
+## Implementation checkpoint（2026-09-12）
+
+- D30--D34 已迁移到开放 runtime：公开稳定 ProviderId，显式 CPU device/context binding，provider 自己验证并
+  map CPU-accessible TensorView，submit 返回 immediate Completion；调用方显式排 `{onednn, native}`，不再
+  依赖固定枚举、四槽列表或隐藏 fallback；
+- v2 BRGEMM plan、ukernel、tile 阈值和 caller workspace 没有改动。六个实际 inference shape 的 allocation
+  测试继续证明 warm submit 零 global allocation；single-provider、unsupported fallback、identity/version、
+  composition 与 Graph consumer 均通过；
+- Windows shared 定向测试、benchmark 静态编译，以及 source/static/shared package consumer 已通过。静态
+  编译暴露并修复 benchmark 对 CPU/native consumer factor 的漏链；oneDNN target 本身不再用虚假私有边
+  携带具体 CPU backend，避免共享库环境偶然解析符号或掩盖组合责任。
+
+本卡仍为 `AUDITED`：Compute runtime 候选尚未 terminal，三平台/sanitizer/export hygiene 与最终 P0 diff
+仍需回放。只有确认 execute 没有新增常态 dispatch/mapping 成本后，才可依法继承 v2 kernel P1 证据。

@@ -2,17 +2,16 @@
 
 #include <type_traits>
 
-#include "hyle/compute/host_kernel.h"
+#include "hyle/compute/backends/cpu.h"
 
 namespace {
 
 using hyle::Status;
 using hyle::compute::Context;
-using hyle::compute::Device;
 using hyle::compute::Queue;
 
 struct NothrowVoidKernel final {
-  void operator()(int* value, int increment) const noexcept {
+  void operator()(int *value, int increment) const noexcept {
     *value += increment;
   }
 };
@@ -29,32 +28,35 @@ struct ThrowingKernel final {
 };
 
 template <class Function, class... Args>
-concept HostSubmittable = requires(Queue& queue, Function&& function,
-                                   Args&&... args) {
-  hyle::compute::submit_host(queue, static_cast<Function&&>(function),
-                             static_cast<Args&&>(args)...);
-};
+concept HostSubmittable =
+    requires(Queue &queue, Function &&function, Args &&...args) {
+      hyle::compute::cpu::submit_host(queue, static_cast<Function &&>(function),
+                                      static_cast<Args &&>(args)...);
+    };
 
-static_assert(HostSubmittable<NothrowVoidKernel, int*, int>);
+static_assert(HostSubmittable<NothrowVoidKernel, int *, int>);
 static_assert(HostSubmittable<NothrowStatusKernel, bool>);
 static_assert(!HostSubmittable<ThrowingKernel>);
 
 TEST(HostKernel, TypedVoidAndStatusCallablesCompleteSynchronously) {
-  Context context = Context::create(Device::cpu()).value();
+  Context context = Context::create(hyle::compute::cpu::device()).value();
   Queue queue = context.create_queue().value();
   int value = 4;
 
-  auto first = hyle::compute::submit_host(queue, NothrowVoidKernel{}, &value, 7);
+  auto first =
+      hyle::compute::cpu::submit_host(queue, NothrowVoidKernel{}, &value, 7);
   ASSERT_TRUE(first.has_value());
   EXPECT_EQ(value, 11);
-  EXPECT_TRUE(first->ready());
+  EXPECT_EQ(first->poll().value(), hyle::compute::CompletionPoll::kComplete);
   EXPECT_TRUE(first->wait().ok());
 
   auto second =
-      hyle::compute::submit_host(queue, NothrowStatusKernel{}, false);
+      hyle::compute::cpu::submit_host(queue, NothrowStatusKernel{}, false);
   ASSERT_TRUE(second.has_value());
-  EXPECT_TRUE(second->ready());
-  EXPECT_TRUE(second->status().IsInvalidArgument());
+  auto poll = second->poll();
+  ASSERT_FALSE(poll.has_value());
+  EXPECT_TRUE(poll.error().IsInvalidArgument());
+  EXPECT_TRUE(second->wait().IsInvalidArgument());
 }
 
 TEST(HostKernel, ClosedAndInvalidQueuesRejectBeforeInvoking) {
@@ -62,15 +64,15 @@ TEST(HostKernel, ClosedAndInvalidQueuesRejectBeforeInvoking) {
   const auto kernel = [&calls]() noexcept { ++calls; };
 
   Queue invalid;
-  auto rejected = hyle::compute::submit_host(invalid, kernel);
+  auto rejected = hyle::compute::cpu::submit_host(invalid, kernel);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsFailedPrecondition());
   EXPECT_EQ(calls, 0);
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = Context::create(hyle::compute::cpu::device()).value();
   Queue queue = context.create_queue().value();
   ASSERT_TRUE(queue.close().ok());
-  rejected = hyle::compute::submit_host(queue, kernel);
+  rejected = hyle::compute::cpu::submit_host(queue, kernel);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsFailedPrecondition());
   EXPECT_EQ(calls, 0);
@@ -79,10 +81,10 @@ TEST(HostKernel, ClosedAndInvalidQueuesRejectBeforeInvoking) {
 TEST(Completion, MoveMakesTheSourceInvalid) {
   auto completion = hyle::compute::Completion::completed();
   auto moved = std::move(completion);
-  EXPECT_FALSE(completion.valid());  // NOLINT(bugprone-use-after-move)
+  EXPECT_FALSE(completion.valid()); // NOLINT(bugprone-use-after-move)
   EXPECT_TRUE(completion.wait().IsFailedPrecondition());
-  EXPECT_TRUE(moved.ready());
+  EXPECT_EQ(moved.poll().value(), hyle::compute::CompletionPoll::kComplete);
   EXPECT_TRUE(moved.wait().ok());
 }
 
-}  // namespace
+} // namespace

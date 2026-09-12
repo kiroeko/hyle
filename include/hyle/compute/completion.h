@@ -1,59 +1,52 @@
 #pragma once
 
-#include <utility>
-
-#include "hyle/error/status.h"
+#include "hyle/compute/visibility.h"
+#include "hyle/error/result.h"
 
 namespace hyle::compute {
 
-// Terminal state returned by a Queue submission. The current CPU provider
-// completes work before
-// submit returns, but callers still use the same object/lifetime boundary that
-// asynchronous backends will implement. An invalid/moved-from Completion is a
-// programming-state error, not a successful no-op.
+enum class CompletionPoll : unsigned char {
+  kPending = 0,
+  kComplete,
+};
+
+namespace detail {
+struct CompletionAccess;
+struct CompletionVTable;
+} // namespace detail
+
+// Move-only terminal owner returned after a Queue accepts work. Immediate CPU
+// completions stay inline; asynchronous implementations own their event state
+// through a static vtable. Destroying a Completion never performs a hidden
+// wait, so a backend must keep late work and required runtime state safe.
 class [[nodiscard]] Completion final {
- public:
+public:
   Completion() noexcept = default;
-  Completion(const Completion&) = delete;
-  Completion& operator=(const Completion&) = delete;
+  Completion(const Completion &) = delete;
+  Completion &operator=(const Completion &) = delete;
+  HYLE_COMPUTE_API Completion(Completion &&other) noexcept;
+  HYLE_COMPUTE_API Completion &operator=(Completion &&other) noexcept;
+  HYLE_COMPUTE_API ~Completion();
 
-  Completion(Completion&& other) noexcept
-      : terminal_(std::move(other.terminal_)), valid_(other.valid_) {
-    other.valid_ = false;
-  }
-
-  Completion& operator=(Completion&& other) noexcept {
-    if (this != &other) {
-      terminal_ = std::move(other.terminal_);
-      valid_ = other.valid_;
-      other.valid_ = false;
-    }
-    return *this;
-  }
-
-  static Completion completed(Status terminal = Status::Ok()) noexcept {
-    return Completion(std::move(terminal));
-  }
+  HYLE_COMPUTE_API static Completion
+  completed(Status terminal = Status::Ok()) noexcept;
 
   bool valid() const noexcept { return valid_; }
   explicit operator bool() const noexcept { return valid(); }
-  bool ready() const noexcept { return valid_; }
+  HYLE_COMPUTE_API Result<CompletionPoll> poll() const noexcept;
+  HYLE_COMPUTE_API Status wait() const noexcept;
+  HYLE_COMPUTE_API Status request_cancel() noexcept;
 
-  Status wait() const noexcept {
-    if (!valid_) {
-      return Status::FailedPrecondition("completion is invalid");
-    }
-    return terminal_;
-  }
+private:
+  Completion(const detail::CompletionVTable *vtable, void *state) noexcept;
+  explicit Completion(Status terminal) noexcept;
+  void reset() noexcept;
 
-  Status status() const noexcept { return wait(); }
-
- private:
-  explicit Completion(Status terminal) noexcept
-      : terminal_(std::move(terminal)), valid_(true) {}
-
+  friend struct detail::CompletionAccess;
+  const detail::CompletionVTable *vtable_ = nullptr;
+  void *state_ = nullptr;
   Status terminal_{};
   bool valid_ = false;
 };
 
-}  // namespace hyle::compute
+} // namespace hyle::compute

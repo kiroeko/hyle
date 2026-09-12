@@ -1,13 +1,10 @@
 # HYLE Compute：何时直接执行一个计算
 
 > 本页描述当前 CPU C++ surface；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。HYLE-native 始终可用；选择
-> `HYLE_COMPUTE_ONEDNN=ON` 时可以在 x86-64 构建显式 oneDNN MatMul provider。该可选 factor 已
-> `CLOSED`：BRGEMM ukernel 已通过 Windows/Linux 正确性与三交付、暖执行零分配、Linux sanitizers、
-> 正式 P1、两台 Apple ARM 负能力、离线依赖/许可证和终局红队。Apple Silicon 等 AArch64 目标会关闭
-> 该 factor 并
-> 使用 HYLE-native；CUDA、Metal、Vulkan 与其他已准入 providers 仍是后续独立纵切。HIP/ROCm 当前
-> 无限期不纳入产品，也没有可启用的空开关。
+> [`module-status.json`](../implementation/module-status.json) 为准。默认 CPU façade 使用 HYLE-native；
+> 选择 `HYLE_COMPUTE_ONEDNN=ON` 时，受支持的 x86-64 构建还提供显式 oneDNN MatMul provider。
+> CUDA、Apple MLX/Metal、Vulkan/SPIR-V 与其他已准入 provider 是后续独立纵切。HIP/ROCm 当前无限期
+> 不纳入产品，也没有 component、空实现或可启用的构建开关。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
@@ -17,15 +14,15 @@ sampling 和 serving 留在推理引擎。
 
 | 任务 | 公开形状 | 当前合同 |
 |---|---|---|
-| 设备发现 | `enumerate_devices` / `query_device` | 当前只返回 CPU；短输出 span 不静默截断 |
-| 执行域 | `Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有隐藏 worker/default device |
+| 设备发现 | `Backend::device_count/device` | 每个显式 backend 只枚举自己的设备；`cpu::device()` 直接取得唯一 CPU |
+| 执行域 | `Backend -> Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有全局 registry、隐藏 worker 或默认设备 |
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
 | operation schema | 19 个 typed family + inline custom | 可做 arity/shape/layout/alias/effect/precision 检查；schema 存在不等于已有可执行 provider |
 | normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
-| 自定义 CPU 工作 | `submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
-| provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，HYLE-native 是最终 fallback |
+| 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
+| provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，不存在隐式 fallback |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
@@ -103,7 +100,7 @@ auto prepared = prepare(context, MatMul{}, activation_desc,
 有明确 owner。
 
 ```cpp
-auto context = Context::create(Device::cpu());
+auto context = cpu::create_context();
 if (!context) return context.error();
 auto queue = context->create_queue();
 if (!queue) return queue.error();
@@ -130,7 +127,7 @@ executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-nativ
 ```cpp
 #include <hyle/compute/providers/onednn.h>
 
-auto context = Context::create(Device::cpu(), onednn::provider());
+auto context = Context::create(cpu::device(), onednn::provider());
 if (!context) return context.error();
 auto prepared = prepare(*context, MatMul{}, a_desc, b_desc, c_desc);
 if (!prepared) return prepared.error();
@@ -147,11 +144,27 @@ auto invocation = prepared->create_invocation(scratch.view());
 if (!invocation) return invocation.error();
 ```
 
+上例只有 oneDNN；不支持的形状会返回 `Unimplemented`。需要回落到 native 时必须把顺序写出来：
+
+```cpp
+#include <array>
+#include <hyle/compute/cpu.h>
+#include <hyle/compute/providers/onednn.h>
+
+const std::array providers{onednn::provider(), native::provider()};
+auto context = Context::create(
+    cpu::device(), ContextOptions{.providers = providers});
+```
+
+`Context::create()` 在冷路径把完整 provider 序列复制到 context 自己的一次 metadata allocation；输入
+span 只需活到调用返回。序列没有人为四项上限，也不会自动追加 native。通过
+`PreparedOperation::provider()` 返回的开放 `ProviderIdentity` 可以检查实际路线；是否发生组合回落由
+调用方给定的顺序和最终 identity 共同解释，不再用固定枚举或含义模糊的 `used_fallback` 标志。
+
 默认 oneDNN executor 是调用线程串行执行；HYLE 不偷偷创建线程池。已有同步线程池的程序可通过
 `onednn::Options::executor` 传入借用的 `ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部
 任务、不得失败或抛异常，并在嵌套调用时保证进展；executor backing 必须活过由 provider 创建的 Context
-及其 retained artifacts。要多个 provider 时用 `ContextOptions::providers.add()` 明确顺序；列表最多四项，
-`add()` 返回 `false` 表示无效或已满，不能忽略。
+及其 retained artifacts。
 
 并行分片由 HYLE 在 prepare 冷路径决定，不是 oneDNN 的隐藏线程池：正常 tile 宽度至少为 64 columns，
 任务数不超过 executor concurrency，并且至多生成 base/base+1 两种预编译 kernel。每个任务使用独占、
@@ -161,14 +174,19 @@ if (!invocation) return invocation.error();
 该选项默认 `OFF`，所以普通 Compute 配置不会下载或编译 oneDNN。构建时
 `HYLE_COMPUTE_ONEDNN=ON` 在受支持的 x86-64 目标强制启用，在 AArch64 等不支持目标会明确配置失败；
 `AUTO` 只适合本地探索并在不支持目标关闭能力。可复现的 x86-64 oneDNN 制品应显式选择 `ON`，不需要
-它的制品保持 `OFF`。`PreparedOperation::provider()`、`used_fallback()` 与
-`workspace_requirement()` 可解释实际路线。oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
+它的制品保持 `OFF`。`PreparedOperation::provider()` 与 `workspace_requirement()` 可解释实际路线。
+oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 
 ## 所有权、失败和限制
 
-- `Device` 是廉价值；`Context`、`Queue`、`PreparedOperation`、`OperationInvocation` 与 `Completion` 是
-  显式生命周期对象。Context metadata allocator 必须活过从它保留的 handles，以及由该 Context 编译出的
-  Graph Executable/Invocation。
+- `Backend`、`Device` 和 `Provider` 是廉价、可复制的进程内值；它们以开放的双字 ID 标识实现，不要求
+  修改中央枚举。`Context`、`Queue`、`OperationInvocation` 与 `Completion` 是 move-only；
+  `PreparedOperation` 可复制共享。
+- `Context::close()` 与 `Queue::close()` 原子地停止新 admission；`drain()` 显式等待已接纳工作。析构只
+  close/release，不把等待藏进析构路径。CPU completion 当前立即终态；异步 backend 可返回真正的
+  poll/wait/cancel completion。
+- Context metadata allocator 必须活过从它保留的 handles，以及由该 Context 编译出的 Graph
+  Executable/Invocation。
 - `PreparedOperation` 可复制并跨线程共享；`OperationInvocation` 不可复制，也不得被两个并发 submit 共用。
   Context 关闭后 retained artifact 仍可创建 invocation，但任何 submit 都会失败。
 - Tensor views 不拥有 payload。Mem Buffer/resource 以及 Queue 必须活到 Completion 终态。
@@ -178,7 +196,8 @@ if (!invocation) return invocation.error();
   等失败由 Completion terminal `Status` 报告，两层都要检查。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
-- 不同 Queue 可并发；`Context::close()`/析构不得与另一 handle 的 submit 并发。
+- 不同 Queue 可并发；close 与 submit 的 admission 有明确原子边界。调用方仍必须保证同一个
+  `OperationInvocation` 不被并发 submit，并让 payload/workspace 活到 Completion 终态。
 - HYLE-native route 不隐藏 staging、copy、线程切换、packing 或 JIT。oneDNN BRGEMM handle 只在 prepare
   冷路径 finalize/generate；每个 Invocation 映射调用方 workspace，steady submit 不创建 descriptor、
   stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前闭包的六个推理形状

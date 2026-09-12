@@ -1,6 +1,7 @@
 if(HYLE_STATIC)
   function(_hyle_configure_graph_multi_op_bench target)
-    target_link_libraries(${target} PRIVATE hyle_graph nanobench)
+    target_link_libraries(${target} PRIVATE
+      hyle_graph hyle_compute_provider_native nanobench)
     set_property(TARGET ${target}
       PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(${target})

@@ -1,3 +1,4 @@
+#include <hyle/compute/cpu.h>
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
 
@@ -60,14 +61,14 @@ int main() {
     return 7;
   auto logical = std::move(builder).finish();
 
-  auto context = Context::create(Device::cpu());
+  auto context = cpu::create_context();
   if (!logical || !context)
     return 8;
   auto queue = context->create_queue();
   auto compiled = compile(*logical, *context);
   if (!queue || !compiled || compiled->report.node_count != 3 ||
       compiled->report.workspace_bytes == 0 ||
-      compiled->report.copy_bytes != 0 || compiled->report.used_fallback) {
+      compiled->report.copy_bytes != 0 || compiled->report.mixed_providers) {
     return 9;
   }
 

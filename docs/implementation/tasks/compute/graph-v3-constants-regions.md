@@ -113,3 +113,11 @@ v3 FIX 为 G30--G41；symbolic dimension、跨 Device QueueSet、serialization/c
 每次 O(1)，submit O(R+X)（regions + boundary steps）且零 metadata allocation。候选 P1 只比较：同一
 prepared artifacts 的 direct sequence、单-op fallback plan、以及首个真实 ggml/oneDNN multi-op region；
 compile/create/bind 均在 steady timing 外，同 storage/layout/threading/completion，不做苹果对橘子。
+
+## Runtime compatibility checkpoint（2026-09-12）
+
+Graph v2 的现有单节点 executable 已迁移到开放 ProviderId、显式 CPU Context 与 `mixed_providers` report
+语义；Windows Graph/oneDNN consumer 和 source package smoke 通过。这只是解除 Compute v4 的编译阻塞，
+没有实现 G30--G41：constant/multi-output/general arity、effect/control edge、region partition、完整 report、
+workspace/liveness 与最终 Completion sequence 仍是本卡后续工作。因此 Graph 保持 `AUDITED`，不得把兼容
+迁移或旧单节点测试记作 v3 进度完成。

@@ -13,6 +13,7 @@
 
 #include <gtest/gtest.h>
 
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
@@ -168,7 +169,7 @@ TEST(OneDnnAllocation, WarmSubmitHasNoGlobalNewAcrossInferenceShapes) {
   const hyle::compute::ParallelExecutorRef executor(nullptr, 4,
                                                     &serial_parallel_for);
   auto context = hyle::compute::Context::create(
-                     hyle::compute::Device::cpu(),
+                     hyle::compute::cpu::device(),
                      hyle::compute::onednn::provider({.executor = executor}))
                      .value();
   auto queue = context.create_queue().value();
@@ -181,7 +182,7 @@ TEST(OneDnnAllocation, WarmSubmitHasNoGlobalNewAcrossInferenceShapes) {
                                            left_description, right_description,
                                            output_description)
                         .value();
-    ASSERT_EQ(prepared.provider(), hyle::compute::ProviderKind::kOneDnn);
+    ASSERT_EQ(prepared.provider().id, hyle::compute::onednn::kProviderId);
 
     auto left =
         hyle::mem::Buffer::create(hyle::mem::system_resource(),

@@ -191,10 +191,19 @@ def main() -> int:
     module_dir = include_dir / "hyle" / header_dir
     if args.header:
         selected_headers = []
+        resolved_module_dir = module_dir.resolve()
         for name in args.header:
-            if Path(name).name != name or not name.endswith(".h"):
-                raise RuntimeError(f"invalid public header basename: {name}")
-            selected = module_dir / name
+            relative = Path(name)
+            if (relative.is_absolute() or relative.suffix != ".h" or
+                    any(part in ("", ".", "..") for part in relative.parts)):
+                raise RuntimeError(f"invalid public header path: {name}")
+            selected = (module_dir / relative).resolve()
+            try:
+                selected.relative_to(resolved_module_dir)
+            except ValueError as error:
+                raise RuntimeError(
+                    f"public header escapes its selected directory: {name}"
+                ) from error
             if not selected.is_file():
                 raise RuntimeError(f"selected public header does not exist: {selected}")
             selected_headers.append(selected)

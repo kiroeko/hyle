@@ -18,9 +18,10 @@ struct ProviderPreparedVTable final {
                               void **invocation) noexcept = nullptr;
   void (*destroy_invocation)(void *invocation,
                              mem::AllocatorRef allocator) noexcept = nullptr;
-  Status (*execute)(void *prepared, void *invocation,
-                    std::span<const void *const> inputs,
-                    std::span<void *const> outputs) noexcept = nullptr;
+  Result<Completion> (*submit)(void *prepared, void *invocation, Queue &queue,
+                               std::span<const ConstTensorView> inputs,
+                               std::span<const TensorView> outputs) noexcept =
+      nullptr;
 };
 
 struct ProviderPrepared final {
@@ -30,10 +31,9 @@ struct ProviderPrepared final {
 };
 
 struct ProviderVTable final {
-  ProviderKind kind = ProviderKind::kUnknown;
-  std::string_view name{};
+  ProviderIdentity identity{};
   Status (*create_context)(const Provider &provider, Device device,
-                           mem::AllocatorRef allocator,
+                           void *backend_context, mem::AllocatorRef allocator,
                            void **context) noexcept = nullptr;
   void (*destroy_context)(void *context,
                           mem::AllocatorRef allocator) noexcept = nullptr;

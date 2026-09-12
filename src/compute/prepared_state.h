@@ -1,29 +1,40 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
+#include <memory>
 #include <span>
 
 #include "context_state.h"
 #include "hyle/util/ref_counted.h"
-#include "native_route.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::detail {
 
 struct PreparedState final : util::RefCounted<PreparedState> {
   PreparedState(ContextState *context_value, Operation operation_value,
-                std::span<const TensorDesc> input_values,
-                TensorDesc output_value, ProviderKind provider_value,
-                bool fallback_value) noexcept
+                ProviderIdentity provider_value,
+                std::size_t allocation_size_value,
+                std::size_t descriptor_offset_value,
+                std::size_t input_count_value,
+                std::size_t output_count_value) noexcept
       : allocator(context_value->allocator), context(context_value),
-        operation(operation_value), output(output_value),
-        provider(provider_value), fallback(fallback_value),
-        input_count(static_cast<std::uint8_t>(input_values.size())) {
-    for (std::size_t index = 0; index < input_values.size(); ++index)
-      inputs[index] = input_values[index];
+        operation(operation_value), provider(provider_value),
+        allocation_size(allocation_size_value),
+        descriptor_offset(descriptor_offset_value),
+        input_count(input_count_value), output_count(output_count_value) {
     detail::retain(context);
   }
+
+  TensorDesc *inputs() noexcept {
+    auto *bytes = reinterpret_cast<std::byte *>(this);
+    return reinterpret_cast<TensorDesc *>(bytes + descriptor_offset);
+  }
+  const TensorDesc *inputs() const noexcept {
+    auto *bytes = reinterpret_cast<const std::byte *>(this);
+    return reinterpret_cast<const TensorDesc *>(bytes + descriptor_offset);
+  }
+  TensorDesc *outputs() noexcept { return inputs() + input_count; }
+  const TensorDesc *outputs() const noexcept { return inputs() + input_count; }
 
   void destroy() noexcept {
     if (provider_prepared.vtable != nullptr &&
@@ -31,24 +42,26 @@ struct PreparedState final : util::RefCounted<PreparedState> {
       provider_prepared.vtable->destroy_prepared(provider_prepared.state,
                                                  allocator);
     }
+    for (std::size_t index = output_count; index != 0; --index)
+      std::destroy_at(outputs() + index - 1);
+    for (std::size_t index = input_count; index != 0; --index)
+      std::destroy_at(inputs() + index - 1);
     ContextState *retained_context = context;
     const mem::AllocatorRef owner = allocator;
+    const std::size_t bytes = allocation_size;
     this->~PreparedState();
     detail::release(retained_context);
-    owner.deallocate(this, sizeof(PreparedState), alignof(PreparedState));
+    owner.deallocate(this, bytes, alignof(PreparedState));
   }
 
   mem::AllocatorRef allocator{};
   ContextState *context = nullptr;
-  Operation operation{RmsNorm{}};
-  std::array<TensorDesc, 2> inputs{};
-  TensorDesc output{};
-  NativeParameters parameters{};
-  float scalar = 0.0F;
-  ProviderKind provider = ProviderKind::kUnknown;
-  bool fallback = false;
-  std::uint8_t input_count = 0;
-  NativeRoute native_route = nullptr;
+  Operation operation{};
+  ProviderIdentity provider{};
+  std::size_t allocation_size = 0;
+  std::size_t descriptor_offset = 0;
+  std::size_t input_count = 0;
+  std::size_t output_count = 0;
   ProviderPrepared provider_prepared{};
 };
 
@@ -56,10 +69,35 @@ inline void retain(PreparedState *state) noexcept {
   if (state != nullptr)
     state->incref();
 }
-
 inline void release(PreparedState *state) noexcept {
   if (state != nullptr)
     state->decref();
 }
+
+struct InvocationState final {
+  InvocationState(PreparedState *prepared_value,
+                  void *provider_state_value) noexcept
+      : prepared(prepared_value), provider_state(provider_state_value) {
+    detail::retain(prepared);
+  }
+
+  void destroy() noexcept {
+    PreparedState *owner_prepared = prepared;
+    const mem::AllocatorRef allocator = owner_prepared->allocator;
+    if (owner_prepared->provider_prepared.vtable != nullptr &&
+        owner_prepared->provider_prepared.vtable->destroy_invocation !=
+            nullptr) {
+      owner_prepared->provider_prepared.vtable->destroy_invocation(
+          provider_state, allocator);
+    }
+    this->~InvocationState();
+    allocator.deallocate(this, sizeof(InvocationState),
+                         alignof(InvocationState));
+    detail::release(owner_prepared);
+  }
+
+  PreparedState *prepared = nullptr;
+  void *provider_state = nullptr;
+};
 
 } // namespace hyle::compute::detail

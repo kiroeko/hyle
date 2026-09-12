@@ -183,7 +183,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
 - **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考），Apple MLX-first + 原生
   Metal custom-kernel/interop 与 NVIDIA CUDA + vendor providers（两条主要平台栈），Vulkan/MoltenVK（正式消费级
-  保底/renderer 路线），HIP/ROCm（待补齐覆盖），oneDNN、ONNX
+  保底/renderer 路线），HIP/ROCm（当前无限期 defer；只在有 AMD 设备、明确 consumer 和维护预算时
+  重新准入），oneDNN、ONNX
   Runtime、TensorRT、PJRT/IREE（provider/compiled graph 参考），Seastar/libuv/nginx（异步服务与 IO）。
 - **按真实消费者裁决**：本页 `ROUTED` 表中的格式、标识、codec、Unicode 与 IPC 库由消费方直接选择；
   Tracy 与 nghttp2 是已经审查的产品机制；oneTBB/taskflow、Eigen/OpenVDB 继续作设计/消费参考。

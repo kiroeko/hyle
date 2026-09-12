@@ -271,7 +271,7 @@ _hyle_declare_component(io_transfer
 # prepare-time fat-kernel selector includes the canonical CPU feature seam;
 # SIMD remains the sole ISA requirement/selection authority.
 _hyle_declare_component(compute
-  PRIVATE_DEPS math platform simd util_core
+  PRIVATE_DEPS util_core
   PUBLIC_DEPS core error mem compute_ops)
 # Graph owns logical tensor-DAG publication and compiled/invocation lifetimes.
 # Its public values name Compute and Error contracts. Growable cold metadata,
@@ -358,11 +358,18 @@ _hyle_declare_component(compute_ops
     hyle/compute/tensor_desc.h
     hyle/compute/operation.h)
 
-# Active SCOPED identities for the CPU implementation split. Both targets stay
-# empty and have no dependency/product projection until their finite audits
-# reach AUDITED.
-_hyle_declare_component(compute_backend_cpu)
-_hyle_declare_component(compute_provider_native)
+# Explicit CPU execution axis and HYLE reference/optimized operation provider.
+# Their public include paths remain under Compute; factor names are maintenance
+# identities rather than extra products shown to ordinary users.
+_hyle_declare_component(compute_backend_cpu
+  PUBLIC_DEPS compute mem
+  SPLIT_PUBLIC_HEADERS hyle/compute/backends/cpu.h)
+_hyle_declare_component(compute_provider_native
+  PRIVATE_DEPS math mem platform simd
+  PUBLIC_DEPS compute compute_backend_cpu
+  SPLIT_PUBLIC_HEADERS
+    hyle/compute/providers/native.h
+    hyle/compute/cpu.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -424,8 +431,10 @@ _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
-_hyle_declare_product(compute FACTORS compute compute_provider_onednn)
-_hyle_declare_product(graph FACTORS graph compute_provider_onednn)
+_hyle_declare_product(compute FACTORS
+  compute compute_backend_cpu compute_provider_native compute_provider_onednn)
+_hyle_declare_product(graph FACTORS
+  graph compute_backend_cpu compute_provider_native compute_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream

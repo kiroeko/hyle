@@ -77,3 +77,17 @@ artifact metadata，Invocation create 可分配一次 lane state，submit 不分
 P1 不铺 19 行纳秒测试，只冻结七个真实高权重合同：RMSNorm、MatMul decode、MatMul short-prefill、RoPE、
 gated MLP、softmax/top-k 与分块 SDPA 纵切；peer 优先 ggml/oneDNN 的同 dtype/layout/threading 路线。
 没有 profile 权重的 reference family只做 codegen/P0 与正确性，不以“未测即 SOTA”关闭。
+
+## Implementation checkpoint（2026-09-12）
+
+- N10--N16 的结构迁移已完成：native 是普通显式 Provider，CPU convenience 显式组合它；原有 RMSNorm、
+  rank-2 MatMul 与 packed SiLU gated-activation 的 validation、artifact、reference/SIMD 路线已从通用
+  `operation.cc` 搬入本 factor；
+- prepare 保存精确 input/output descriptor spans，submit 接收预绑定 TensorView spans 与具体 Queue；旧固定
+  2-input/1-output runtime state、隐藏 native fallback 与裸 host-pointer provider vtable 已删除；
+- Windows factor tests、oneDNN 显式 `{onednn, native}` 组合、Graph 兼容纵切，以及 source/static/shared
+  Compute consumer 已通过。
+
+本卡仍为 `AUDITED`，且当前 family 进度必须按 **3/19 executable** 计算。其余 16 个 family 的正确 CPU
+reference、逐 op shape/dtype/layout/alias/error 测试、七条有限 P1、三平台与 sanitizer 尚未实现；schema
+存在不能冒充 native provider 已支持执行。

@@ -1,99 +1,123 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
 
-#include "hyle/compute/visibility.h"
 #include "hyle/compute/provider.h"
+#include "hyle/compute/visibility.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::compute {
 
-enum class BackendKind : std::uint8_t {
-  kUnknown = 0,
-  kCpu,
-  kCuda,
-  kMetal,
-  kVulkan,
-  kHip,
-};
-
-HYLE_COMPUTE_API std::string_view backend_name(BackendKind backend) noexcept;
-
-// Cheap, non-owning identity. A backend appears here only as a vocabulary
-// value; Device factories/enumeration expose only implementations compiled
-// into the selected product.
-class Device final {
-public:
-  constexpr Device() noexcept = default;
-
-  static constexpr Device cpu() noexcept {
-    return Device(BackendKind::kCpu, 0);
-  }
+struct BackendId final {
+  std::uint64_t namespace_id = 0;
+  std::uint64_t backend_id = 0;
 
   constexpr bool valid() const noexcept {
-    return backend_ != BackendKind::kUnknown;
+    return namespace_id != 0 || backend_id != 0;
   }
-  constexpr explicit operator bool() const noexcept { return valid(); }
-  constexpr BackendKind backend() const noexcept { return backend_; }
-  constexpr std::uint32_t ordinal() const noexcept { return ordinal_; }
+  friend constexpr bool operator==(BackendId, BackendId) noexcept = default;
+};
 
-  friend constexpr bool operator==(Device, Device) noexcept = default;
-
-private:
-  constexpr Device(BackendKind backend, std::uint32_t ordinal) noexcept
-      : backend_(backend), ordinal_(ordinal) {}
-
-  BackendKind backend_ = BackendKind::kUnknown;
-  std::uint32_t ordinal_ = 0;
+enum class DeviceClass : std::uint8_t {
+  kUnknown = 0,
+  kCpu,
+  kGpu,
+  kAccelerator,
 };
 
 struct DeviceProperties final {
-  Device device{};
+  BackendId backend{};
+  DeviceClass device_class = DeviceClass::kUnknown;
+  std::string_view backend_name{};
   std::string_view name{};
   bool unified_memory = false;
   bool asynchronous_queues = false;
 };
 
-// Buffer-fill discovery: returns the full count and writes at most
-// output.size() entries. An empty span is a count-only query, so truncation is
-// always visible as returned_count > output.size().
-HYLE_COMPUTE_API Result<std::size_t>
-enumerate_devices(std::span<Device> output = {}) noexcept;
-HYLE_COMPUTE_API Result<DeviceProperties> query_device(Device device) noexcept;
-
-struct ContextOptions final {
-  // Empty selects mem::system_allocator(). This allocation is cold context
-  // metadata, never a submit-path fallback. A custom allocator backing must
-  // outlive the Context and every Queue/PreparedOperation/Graph Executable or
-  // Invocation whose metadata was created from it.
-  mem::AllocatorRef metadata_allocator{};
-  // Ordered, explicit cold-path provider choices. Only Unimplemented advances
-  // to the next entry; HYLE-native is the unconditional final fallback.
-  ProviderList providers{};
-};
-
-struct QueueOptions final {};
-
-namespace detail {
-struct ContextState;
-struct ContextAccess;
-} // namespace detail
-
+class Backend;
+class Device;
+class Context;
 class Queue;
 class PreparedOperation;
 class OperationInvocation;
 
-// Owns one backend runtime/session. Destroying or closing the owner stops new
-// submissions through all borrowed/retained handles. A retained prepared
-// artifact may still create its per-run state, but that state cannot submit
-// after the Context is closed. The current CPU provider has no asynchronous
-// in-flight work to drain and never hides a wait here. close()/destruction must
-// not race submission through another handle; ordinary submissions on distinct
-// queues may run concurrently.
+namespace detail {
+struct BackendAccess;
+struct BackendVTable;
+struct ContextAccess;
+struct ContextState;
+struct DeviceAccess;
+struct QueueState;
+} // namespace detail
+
+// Explicit backend factory value. Backends enumerate only their own devices;
+// HYLE has no process-global registry and selecting a product does not scan
+// every compiled implementation.
+class Backend final {
+public:
+  constexpr Backend() noexcept = default;
+
+  constexpr bool valid() const noexcept { return vtable_ != nullptr; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  HYLE_COMPUTE_API BackendId id() const noexcept;
+  HYLE_COMPUTE_API std::string_view name() const noexcept;
+  HYLE_COMPUTE_API DeviceClass device_class() const noexcept;
+  HYLE_COMPUTE_API Result<std::size_t> device_count() const noexcept;
+  HYLE_COMPUTE_API Result<Device> device(std::size_t index) const noexcept;
+
+private:
+  friend struct detail::BackendAccess;
+  static constexpr std::size_t kInlineBytes = sizeof(void *) * 4;
+
+  const detail::BackendVTable *vtable_ = nullptr;
+  alignas(void *) std::array<std::byte, kInlineBytes> payload_{};
+};
+
+// Small copyable process-local device identity. The inline payload is owned by
+// its typed backend factory; querying/copying a Device never allocates.
+class Device final {
+public:
+  constexpr Device() noexcept = default;
+
+  constexpr bool valid() const noexcept { return vtable_ != nullptr; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  HYLE_COMPUTE_API BackendId backend_id() const noexcept;
+  HYLE_COMPUTE_API std::string_view backend_name() const noexcept;
+  HYLE_COMPUTE_API DeviceClass device_class() const noexcept;
+  HYLE_COMPUTE_API Result<DeviceProperties> properties() const noexcept;
+
+  friend HYLE_COMPUTE_API bool operator==(const Device &left,
+                                          const Device &right) noexcept;
+
+private:
+  friend struct detail::DeviceAccess;
+  static constexpr std::size_t kInlineBytes = sizeof(void *) * 6;
+
+  const detail::BackendVTable *vtable_ = nullptr;
+  alignas(void *) std::array<std::byte, kInlineBytes> payload_{};
+};
+
+struct ContextOptions final {
+  // Empty selects mem::system_allocator(). This allocation is cold context
+  // metadata, never a submit-path fallback. The backing must outlive Context
+  // and every retained Queue/artifact/invocation created from it.
+  mem::AllocatorRef metadata_allocator{};
+  // Borrowed only for create(). Context copies the exact sequence into one
+  // cold allocation. An empty sequence is valid for raw backend/host work but
+  // cannot prepare an Operation.
+  std::span<const Provider> providers{};
+};
+
+struct QueueOptions final {};
+
+// Owns one backend session. close() stops admission but never hides a wait;
+// drain() explicitly waits backend work accepted before its synchronization
+// point. Queue and Completion retain the backend state they require.
 class HYLE_COMPUTE_API Context final {
 public:
   Context() noexcept = default;
@@ -105,8 +129,6 @@ public:
 
   static Result<Context> create(Device device,
                                 ContextOptions options = {}) noexcept;
-  // Natural single-provider convenience. Use ContextOptions when provider
-  // order or a metadata allocator must be configured explicitly.
   static Result<Context> create(Device device, Provider provider) noexcept;
 
   bool valid() const noexcept { return state_ != nullptr; }
@@ -116,6 +138,7 @@ public:
   mem::AllocatorRef metadata_allocator() const noexcept;
   Result<Queue> create_queue(QueueOptions options = {}) const noexcept;
   Status close() noexcept;
+  Status drain() noexcept;
 
 private:
   explicit Context(detail::ContextState *state) noexcept : state_(state) {}
@@ -124,9 +147,9 @@ private:
   detail::ContextState *state_ = nullptr;
 };
 
-// Move-only ordered submission domain. The current CPU provider executes on the
-// caller thread; this is a semantic queue, not a hidden worker or process-global
-// scheduler.
+// Move-only ordered submission domain. close() is local to this Queue;
+// Context::close() stops every queue in the context. Destruction closes and
+// releases without waiting; call drain() when quiescence is required.
 class HYLE_COMPUTE_API Queue final {
 public:
   Queue() noexcept = default;
@@ -141,17 +164,29 @@ public:
   bool is_open() const noexcept;
   Device device() const noexcept;
   Status close() noexcept;
+  Status drain() noexcept;
 
 private:
-  explicit Queue(detail::ContextState *state) noexcept
-      : state_(state), open_(true) {}
+  explicit Queue(detail::QueueState *state) noexcept : state_(state) {}
+
+  Status begin_submission() noexcept;
+  void end_submission() noexcept;
 
   friend class Context;
-  friend class PreparedOperation;
   friend class OperationInvocation;
   friend struct detail::ContextAccess;
-  detail::ContextState *state_ = nullptr;
-  bool open_ = false;
+  friend struct CpuQueueAccess;
+  detail::QueueState *state_ = nullptr;
+};
+
+// Private implementation bridge used by the typed CPU header. It is named in
+// the public C++ binary surface only because the callable itself remains in the
+// consumer TU; users do not construct this type.
+struct CpuQueueAccess final {
+  static Status begin(Queue &queue) noexcept {
+    return queue.begin_submission();
+  }
+  static void end(Queue &queue) noexcept { queue.end_submission(); }
 };
 
 } // namespace hyle::compute

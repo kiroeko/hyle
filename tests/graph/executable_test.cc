@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include "hyle/compute/cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
 
@@ -19,7 +21,6 @@ namespace {
 using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
-using hyle::compute::Device;
 using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::Queue;
@@ -241,7 +242,7 @@ AllocatorRef probe_allocator(AllocatorProbe &probe) noexcept {
 
 TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   CompiledGraph compiled = hyle::graph::compile(logical.graph, context).value();
 
   EXPECT_TRUE(compiled.executable.valid());
@@ -250,8 +251,8 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_EQ(compiled.executable.node_count(), 3u);
   EXPECT_EQ(compiled.executable.input_id(1).value(), logical.inputs[1]);
   EXPECT_EQ(compiled.executable.output_id().value(), logical.outputs[0]);
-  EXPECT_EQ(compiled.report.backend, hyle::compute::BackendKind::kCpu);
-  EXPECT_EQ(compiled.report.provider, hyle::compute::ProviderKind::kHyleNative);
+  EXPECT_EQ(compiled.report.backend, hyle::compute::cpu::kBackendId);
+  EXPECT_EQ(compiled.report.provider.id, hyle::compute::native::kProviderId);
   EXPECT_EQ(compiled.report.node_count, 3u);
   EXPECT_GT(compiled.report.workspace_bytes, 0u);
   EXPECT_GT(compiled.report.workspace_backing_count, 0u);
@@ -261,7 +262,7 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
             compiled.executable.workspace_backing_count());
   EXPECT_EQ(compiled.report.copy_bytes, 0u);
   EXPECT_EQ(compiled.report.synchronization_count, 0u);
-  EXPECT_FALSE(compiled.report.used_fallback);
+  EXPECT_FALSE(compiled.report.mixed_providers);
 
   Executable copied = compiled.executable;
   Executable moved = std::move(copied);
@@ -274,7 +275,7 @@ TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
   constexpr std::size_t kHidden = 4;
   constexpr std::size_t kFfn = 4;
   const LogicalGraph logical = make_transformer_graph(kRows, kHidden, kFfn);
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   Invocation invocation = hyle::graph::compile(logical.graph, context)
                               ->executable.create_invocation()
@@ -318,7 +319,7 @@ TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
 
 TEST(Invocation, ExecutesSharedInputBranchesWithIndependentOutputs) {
   const LogicalGraph logical = make_branch_graph();
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   Invocation invocation = hyle::graph::compile(logical.graph, context)
                               ->executable.create_invocation()
@@ -347,7 +348,7 @@ TEST(Invocation, ExecutesSharedInputBranchesWithIndependentOutputs) {
 TEST(Invocation, RejectsForeignInternalConstOutputAndWrongShapeBindings) {
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
   const LogicalGraph other = make_rms_graph(matrix(2, 4));
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Invocation invocation = hyle::graph::compile(logical.graph, context)
                               ->executable.create_invocation()
                               .value();
@@ -368,7 +369,7 @@ TEST(Invocation, RejectsForeignInternalConstOutputAndWrongShapeBindings) {
 }
 
 TEST(GraphCompile, ReportsInvalidClosedAndMetadataAllocationFailures) {
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   EXPECT_TRUE(
       hyle::graph::compile(Graph{}, context).error().IsInvalidArgument());
 
@@ -379,10 +380,9 @@ TEST(GraphCompile, ReportsInvalidClosedAndMetadataAllocationFailures) {
                   .IsFailedPrecondition());
 
   AllocatorProbe probe;
-  Context oom_context =
-      Context::create(Device::cpu(),
-                      {.metadata_allocator = probe_allocator(probe)})
-          .value();
+  Context oom_context = hyle::compute::cpu::create_context(
+                            {.metadata_allocator = probe_allocator(probe)})
+                            .value();
   probe.fail = true;
   auto oom = hyle::graph::compile(logical.graph, oom_context);
   ASSERT_FALSE(oom.has_value());
@@ -414,7 +414,7 @@ TEST(GraphCompile, DefersEncodedWeightExecutionToAFutureProvider) {
   ASSERT_TRUE(builder.output(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   auto compiled = hyle::graph::compile(graph, context);
   ASSERT_FALSE(compiled.has_value());
   EXPECT_TRUE(compiled.error().IsUnimplemented());
@@ -422,8 +422,8 @@ TEST(GraphCompile, DefersEncodedWeightExecutionToAFutureProvider) {
 
 TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
   AllocatorProbe probe;
-  Context context = Context::create(Device::cpu(), {.metadata_allocator =
-                                                        probe_allocator(probe)})
+  Context context = hyle::compute::cpu::create_context(
+                        {.metadata_allocator = probe_allocator(probe)})
                         .value();
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
 
@@ -452,8 +452,8 @@ TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
 
 TEST(Invocation, SubmitDoesNotAllocatePlanMetadata) {
   AllocatorProbe probe;
-  Context context = Context::create(Device::cpu(), {.metadata_allocator =
-                                                        probe_allocator(probe)})
+  Context context = hyle::compute::cpu::create_context(
+                        {.metadata_allocator = probe_allocator(probe)})
                         .value();
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
   Executable executable =
@@ -482,7 +482,7 @@ TEST(Invocation, SubmitDoesNotAllocatePlanMetadata) {
 TEST(Invocation, DistinctInvocationsRunConcurrentlyFromOneExecutable) {
   constexpr std::size_t kCount = 256;
   const LogicalGraph logical = make_rms_graph(row(kCount));
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Executable executable =
       hyle::graph::compile(logical.graph, context)->executable;
   std::atomic<int> failures{0};
@@ -515,10 +515,9 @@ TEST(Invocation, PlanAndRunStateRetainTheirContextOwnedArtifacts) {
   AllocatorProbe probe;
   Executable retained;
   {
-    Context context =
-        Context::create(Device::cpu(),
-                        {.metadata_allocator = probe_allocator(probe)})
-            .value();
+    Context context = hyle::compute::cpu::create_context(
+                          {.metadata_allocator = probe_allocator(probe)})
+                          .value();
     const LogicalGraph logical = make_rms_graph(row(8));
     retained = hyle::graph::compile(logical.graph, context)->executable;
   }
@@ -530,7 +529,7 @@ TEST(Invocation, PlanAndRunStateRetainTheirContextOwnedArtifacts) {
 
 TEST(Invocation, ZeroExtentIntermediateWorkspaceRemainsAValidRun) {
   const LogicalGraph logical = make_transformer_graph(0, 4, 4);
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   CompiledGraph compiled = hyle::graph::compile(logical.graph, context).value();
   EXPECT_EQ(compiled.report.node_count, 3u);
@@ -563,7 +562,7 @@ TEST(Invocation, PublishedIntermediateCanFeedALaterNode) {
   ASSERT_TRUE(builder.output(second).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   CompiledGraph compiled = hyle::graph::compile(graph, context).value();
   EXPECT_EQ(compiled.report.workspace_bytes, 0u);
@@ -584,7 +583,7 @@ TEST(Invocation, PublishedIntermediateCanFeedALaterNode) {
 TEST(Invocation, AllowsOnlyLifetimeSafeExactExternalInPlaceAlias) {
   const TensorDesc description = row(4);
   const LogicalGraph safe = make_rms_graph(description);
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   Invocation invocation = hyle::graph::compile(safe.graph, context)
                               ->executable.create_invocation()
@@ -626,7 +625,7 @@ TEST(Invocation, RejectsExternalAliasWhileTheInputRemainsLive) {
   ASSERT_TRUE(builder.output(late).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Invocation invocation = hyle::graph::compile(graph, context)
                               ->executable.create_invocation()
                               .value();
@@ -637,8 +636,8 @@ TEST(Invocation, RejectsExternalAliasWhileTheInputRemainsLive) {
 
 TEST(Invocation, RejectsAQueueFromAnotherContext) {
   const LogicalGraph logical = make_rms_graph(row(4));
-  Context first = Context::create(Device::cpu()).value();
-  Context second = Context::create(Device::cpu()).value();
+  Context first = hyle::compute::cpu::create_context().value();
+  Context second = hyle::compute::cpu::create_context().value();
   Queue wrong_queue = second.create_queue().value();
   Invocation invocation = hyle::graph::compile(logical.graph, first)
                               ->executable.create_invocation()

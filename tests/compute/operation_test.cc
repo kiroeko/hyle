@@ -10,7 +10,9 @@
 #include <utility>
 #include <vector>
 
+#include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
 
@@ -21,12 +23,10 @@ using hyle::Status;
 using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
-using hyle::compute::Device;
 using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::OperationKind;
 using hyle::compute::PreparedOperation;
-using hyle::compute::ProviderKind;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
 using hyle::compute::StorageFormat;
@@ -184,24 +184,23 @@ private:
 TEST(PreparedOperation, ExposesColdRouteAndShapeDiagnostics) {
   PreparedOperation invalid;
   EXPECT_EQ(invalid.kind(), OperationKind::kUnknown);
-  EXPECT_EQ(invalid.provider(), ProviderKind::kUnknown);
+  EXPECT_FALSE(invalid.provider().valid());
   EXPECT_EQ(hyle::compute::operation_name(invalid.kind()), "unknown");
-  EXPECT_EQ(hyle::compute::provider_name(invalid.provider()), "unknown");
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   const TensorDesc description = row_description(8);
   PreparedOperation prepared =
       hyle::compute::prepare(context, RmsNorm{}, description, description)
           .value();
 
   EXPECT_EQ(prepared.kind(), OperationKind::kRmsNorm);
-  EXPECT_EQ(prepared.provider(), ProviderKind::kHyleNative);
+  EXPECT_EQ(prepared.provider().id, hyle::compute::native::kProviderId);
   EXPECT_EQ(prepared.input_count(), 1u);
   EXPECT_EQ(prepared.output_count(), 1u);
   EXPECT_EQ(prepared.input_description().value(), description);
   EXPECT_EQ(prepared.output_description().value(), description);
   EXPECT_EQ(hyle::compute::operation_name(prepared.kind()), "rms-norm");
-  EXPECT_EQ(hyle::compute::provider_name(prepared.provider()), "hyle-native");
+  EXPECT_EQ(prepared.provider().name, "hyle-native");
 
   auto bad_input = prepared.input_description(1);
   ASSERT_FALSE(bad_input.has_value());
@@ -212,7 +211,7 @@ TEST(PreparedOperation, ExposesColdRouteAndShapeDiagnostics) {
 }
 
 TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   const TensorDesc row = row_description(8);
   const TensorDesc other = row_description(7);
 
@@ -315,7 +314,7 @@ TEST(PreparedOperation, LeavesValidEncodedWeightsForAQualifiedProvider) {
   ASSERT_TRUE(inferred.has_value()) << inferred.error().message();
   EXPECT_EQ(*inferred, output);
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   auto native = hyle::compute::prepare(context, MatMul{}, left, right, output);
   ASSERT_FALSE(native.has_value());
   EXPECT_TRUE(native.error().IsUnimplemented());
@@ -340,7 +339,7 @@ TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {
   write_floats(input_buffer.view(), input);
   write_floats(weight_buffer.view(), weight);
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation prepared =
       hyle::compute::prepare(context, RmsNorm{}, input_desc, weight_desc,
@@ -405,7 +404,7 @@ TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
                              .value();
   write_floats(left_buffer.view(), left);
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   auto left_view =
       ConstTensorView::create(left_desc, left_buffer.view()).value();
@@ -454,7 +453,7 @@ TEST(PreparedOperation, RowMajorMatMulCoversEveryNativeTileAndTail) {
       Shape{10, 13, 31}, Shape{17, 15, 35}, Shape{32, 17, 67}, Shape{9, 0, 21},
   };
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   for (const Shape shape : shapes) {
     SCOPED_TRACE(::testing::Message() << "M=" << shape.rows << " K="
@@ -541,7 +540,7 @@ TEST(PreparedOperation, RunsPackedSiluGatedActivationAcrossRows) {
       ConstTensorView::create(input_desc, input_buffer.view()).value();
   auto output_view =
       TensorView::create(output_desc, output_buffer.view()).value();
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, GatedActivation{}, input_desc,
                                          output_desc)
@@ -586,7 +585,7 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
   TensorView output_view =
       TensorView::create(description, output_buffer.view()).value();
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation plain = hyle::compute::prepare(context, RmsNorm{epsilon},
                                                    description, description)
@@ -641,8 +640,8 @@ TEST(PreparedOperation, RejectsWrongBindingContextAndUnsafeAlias) {
           .value();
   TensorView output = TensorView::create(description, separate.view()).value();
 
-  Context first = Context::create(Device::cpu()).value();
-  Context second = Context::create(Device::cpu()).value();
+  Context first = hyle::compute::cpu::create_context().value();
+  Context second = hyle::compute::cpu::create_context().value();
   Queue first_queue = first.create_queue().value();
   Queue wrong_queue = second.create_queue().value();
   PreparedOperation prepared =
@@ -695,7 +694,7 @@ TEST(PreparedOperation,
                          storage.view().subview(bytes, bytes).value())
           .value();
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation prepared =
       hyle::compute::prepare(context, RmsNorm{}, description, description)
@@ -739,7 +738,7 @@ TEST(PreparedOperation, RejectsAnActuallyMisalignedHostMapping) {
       TensorView::create(description,
                          storage.view().subview(bytes, bytes).value())
           .value();
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   auto invocation =
       hyle::compute::prepare(context, RmsNorm{}, description, description)
@@ -768,7 +767,7 @@ TEST(PreparedOperation, RejectsStorageThatCpuCannotMap) {
                          buffer.view().subview(bytes, bytes).value())
           .value();
 
-  Context context = Context::create(Device::cpu()).value();
+  Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation prepared =
       hyle::compute::prepare(context, RmsNorm{}, description, description)
@@ -791,7 +790,7 @@ TEST(PreparedOperation,
   PreparedOperation prepared;
   hyle::compute::OperationInvocation invocation;
   {
-    Context context = Context::create(Device::cpu()).value();
+    Context context = hyle::compute::cpu::create_context().value();
     queue = context.create_queue().value();
     prepared =
         hyle::compute::prepare(context, RmsNorm{}, description, description)

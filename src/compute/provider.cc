@@ -4,28 +4,20 @@
 
 namespace hyle::compute {
 
-ProviderKind Provider::kind() const noexcept {
+ProviderIdentity Provider::identity() const noexcept {
   const detail::ProviderVTable *table = detail::ProviderAccess::vtable(*this);
-  return table != nullptr ? table->kind : ProviderKind::kUnknown;
+  return table != nullptr ? table->identity : ProviderIdentity{};
 }
+
+ProviderId Provider::id() const noexcept { return identity().id; }
 
 std::string_view Provider::name() const noexcept {
-  const detail::ProviderVTable *table = detail::ProviderAccess::vtable(*this);
-  return table != nullptr ? table->name : std::string_view{"unknown"};
+  const ProviderIdentity value = identity();
+  return value.valid() ? value.name : std::string_view{"unknown"};
 }
 
-std::string_view provider_name(ProviderKind provider) noexcept {
-  switch (provider) {
-  case ProviderKind::kHyleNative:
-    return "hyle-native";
-  case ProviderKind::kOneDnn:
-    return "onednn";
-  case ProviderKind::kMixed:
-    return "mixed";
-  case ProviderKind::kUnknown:
-    break;
-  }
-  return "unknown";
+std::string_view Provider::version() const noexcept {
+  return identity().version;
 }
 
 } // namespace hyle::compute
