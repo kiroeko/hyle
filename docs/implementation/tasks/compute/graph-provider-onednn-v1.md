@@ -70,6 +70,39 @@
 本卡只授权审计。`AUDITED` 前不得添加 provider 产品实现、依赖、公开头、feature、benchmark 或 Graph
 产品改动；空 factor target 只使 component identity 和 exact-factor selection 可执行。
 
+## Source audit 与可执行探针（2026-09-13）
+
+- 锁定 oneDNN 3.13.2 源码与 `C:/public/project-hyle/oneDNN` 当前 main
+  `6b7f1fbbb18e868b687994ac3c1739530f7a68a6` 保持相同执行形状。公开
+  `dnnl_graph_compiled_partition_execute_v2()` 在
+  `src/graph/interface/partition.cpp` 每次创建 `ins`、`outs` 两个 `std::vector<tensor_t>` 并分别
+  `reserve()`；公开 API 没有 caller-owned/precreated metadata seam；
+- f32 CPU gated-MLP pattern 会选择 `gated_mlp_base_t`，CPU 不走 GPU-only gated-MLP primitive，而回落
+  `larger_partition_kernel_t`。其 `execute_impl()` 在每次执行都
+  `std::make_shared<scratchpad_t>`；即使调用方传入 user scratchpad，shared control block 仍已分配，随后
+  `prolong_scratchpad_lifetime()` 才因 user-managed 直接返回。首线程的 execution-args TLS 初始化还另有
+  warmable allocation；
+- 以 `ONEDNN_BUILD_GRAPH=ON`、`ENABLE_PRIMITIVE=ALL`、CPU `SEQ`、GPU `NONE`、user concurrent
+  execution 构建官方 `graph-gated-mlp-cpp`，Windows x64 的 `f32 mb=1, ic=64, oc=128` 成功形成一个
+  partition 并运行；bf16/f16 在该机器如实返回 unsupported。由此排除“CPU 没有真实 region”，但不能
+  排除固定的 steady metadata allocation；
+- 该定向构建的 `dnnl.lib` archive 为 1,249,833,896 bytes，官方示例可执行文件为 30,519,296 bytes。
+  数字不等同最终 HYLE 安装体积，却证明 Graph 全量构建不能偷偷替换现有轻量 BRGEMM factor；
+- oneDNN C API 的 status/fallible 形状、显式 user scratchpad 和同步 CPU stream 可以映射 HYLE
+  failure/lifetime；阻塞只来自公开 execute 的固定 allocation 与由此产生的热路径/维护合同。借用 private
+  `compiled_partition_t` 仍不能绕过 `larger_partition_kernel_t` 的 `make_shared`；直接修改共享 `.deps`
+  源码也违反依赖资源与可重复构建边界。
+
+上述事实命中预声明 stop 条件。P1/P2 不启动：计时快慢不能推翻源码已证明的常态分配，也不能授权私有
+ABI 或临时修改 cached source。
+
+## Audit verdict
+
+v1 的“直接适配 oneDNN Graph 公共 API”路线为 `BLOCKED`，不是 Graph 通用 runtime 的 blocker。恢复只有
+两类合法入口：未来精确 oneDNN 版本提供 precreated execute metadata；或新的有限卡先审计 HYLE-owned、
+build-local 且可升级的 source patch / 现有 oneDNN BRGEMM ukernel compiled-region 路线。后一条必须如实
+报告内部 dispatch，不得把一次 HYLE submit 写成一次硬件 dispatch，也不得让 Graph/Compute 反向依赖叶子。
+
 ## Candidate
 
 - commit：尚无；
@@ -79,8 +112,12 @@
 
 ## 红队与裁决
 
-- 红队反证与处理：待 AUDITED 后执行；
-- 未决限制：上述七项尚未完成；
-- reopen triggers：不适用，组件尚未关闭；
+- 红队反证与处理：以公开 API 足够、user scratchpad 等于零分配、一个 partition 等于一个硬件 dispatch
+  三个反命题检查源码；前两者被 `partition.cpp`/`large_partition.cpp` 反证，第三者由 CPU
+  `larger_partition_kernel_t` 的多 primitive loop 反证，均已写入 BLOCKED 边界；
+- 未决限制：公开执行 API 的固定 metadata allocation；未授权 source patch 或 private execute ABI；
+- reopen triggers：按 registry 的唯一 resume condition：新 oneDNN seam，或先有独立审计的 build-local
+  source-patch / BRGEMM ukernel region 路线；
 - LOC：终局统计；
-- 最终状态与理由：`SCOPED`；已冻结有限审计范围、预算与停止线，尚未批准产品实现。
+- 最终状态与理由：`BLOCKED`；真实 CPU region 功能成立，但公开路径命中 steady allocation 停止线，
+  当前空 factor 不声明依赖、API、feature 或产品能力。

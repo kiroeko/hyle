@@ -370,9 +370,13 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/graph-provider-onednn-v1.md",
-      "summary": "graph_provider_onednn v1 已冻结 oneDNN Graph CPU gated-MLP 多节点 region 的审计范围、真实/反偏置纵切、预算与停止线；当前只有空内部 factor target，不声明依赖、公开头、产品投影、feature 或已承诺能力。"
+      "blocked_from": "SCOPED",
+      "blocker": "oneDNN 3.13.2 与当前 main 的公开 Graph execute 每次构造 input/output vectors，CPU larger-partition 即使使用 user scratchpad 仍每次 make_shared scratchpad wrapper；无法满足 HYLE steady submit 无隐藏 metadata allocation 合同。",
+      "blocker_owner": "upstream oneDNN Graph execute API，或未来独立审计的 HYLE oneDNN ukernel/source-patch region 路线",
+      "resume_condition": "精确 oneDNN 版本提供 caller-owned/precreated execute metadata 和 user-scratchpad wrapper seam，或新 closure card 先审计并冻结不修改共享依赖源码的最小 ukernel/source-patch region、升级维护、并发、OOM、三交付与性能合同。",
+      "summary": "graph_provider_onednn v1 BLOCKED：官方 f32 CPU gated-MLP 能形成并执行一个 partition，但锁定版与当前 main 的公开执行路线固定产生多次 steady metadata allocation；空 factor 不进入 Graph 产品。"
     },
     {
       "module": "compute_ops",
