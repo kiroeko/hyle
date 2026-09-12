@@ -640,6 +640,12 @@ function(hyle_add_fat_kernel)
   endif()
 
   hyle_add_dispatched_kernel(HIGHWAY XSIMD ${ARGN})
+  # The generated fixed-target TUs are safe only while the baseline selector
+  # cannot absorb their wider instructions through IPO/LTO. Make that a helper
+  # invariant for every owning module instead of relying on each caller to
+  # remember SIMD's private build rule.
+  set_target_properties(${ARG_TARGET} PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION OFF)
   if(_exact_target)
     string(TOUPPER "${_exact_target}" _exact)
     target_compile_definitions(${ARG_TARGET} PRIVATE

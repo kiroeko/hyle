@@ -12,16 +12,17 @@
 #include "context_state.h"
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
+#include "hyle/simd/fat_kernel.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/ops.h"
+#include "matmul_kernels.h"
 #include "prepared_state.h"
 
 namespace hyle::compute {
 namespace {
 
-using Parameters = std::array<std::size_t, 3>;
-using Route = void (*)(const float *, const float *, float *,
-                       const Parameters &, float) noexcept;
+using Parameters = detail::NativeParameters;
+using Route = detail::NativeRoute;
 
 void run_rms_norm(const float *input, const float *weight, float *output,
                   const Parameters &parameters, float epsilon) noexcept {
@@ -76,36 +77,21 @@ void run_matmul_transposed_weight(const float *left, const float *right,
   }
 }
 
-// Ordinary row-major B keeps N contiguous. Accumulate a small output tile so
-// each B row is streamed once and output is written once, without packing.
-void run_matmul_row_major(const float *left, const float *right, float *output,
-                          const Parameters &parameters, float) noexcept {
-  constexpr std::size_t kColumnBlock = 32;
-  const std::size_t rows = parameters[0];
-  const std::size_t inner = parameters[1];
-  const std::size_t columns = parameters[2];
-  if (rows == 0 || columns == 0)
-    return;
-  if (inner == 0) {
-    std::fill_n(output, rows * columns, 0.0F);
-    return;
-  }
-  for (std::size_t row = 0; row < rows; ++row) {
-    const float *left_row = left + row * inner;
-    float *output_row = output + row * columns;
-    for (std::size_t first = 0; first < columns; first += kColumnBlock) {
-      const std::size_t count = (std::min)(kColumnBlock, columns - first);
-      std::array<float, kColumnBlock> accumulators{};
-      for (std::size_t k = 0; k < inner; ++k) {
-        const float scale = left_row[k];
-        const float *right_row = right + k * columns + first;
-        for (std::size_t lane = 0; lane < count; ++lane) {
-          accumulators[lane] += scale * right_row[lane];
-        }
-      }
-      std::copy_n(accumulators.data(), count, output_row + first);
-    }
-  }
+Route select_row_major_matmul() noexcept {
+#if HYLE_ARCH_X64
+  return HYLE_SIMD_SELECT_FAT_KERNEL(
+      &detail::run_matmul_row_major_scalar, &detail::run_matmul_row_major_sse4,
+      &detail::run_matmul_row_major_avx2, &detail::run_matmul_row_major_avx512);
+#elif HYLE_ARCH_ARM64
+  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_matmul_row_major_scalar,
+                                     &detail::run_matmul_row_major_neon,
+                                     &detail::run_matmul_row_major_sve);
+#elif HYLE_ARCH_RISCV64
+  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_matmul_row_major_scalar,
+                                     &detail::run_matmul_row_major_rvv);
+#else
+  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_matmul_row_major_scalar);
+#endif
 }
 
 Status validate_dense_f32(const TensorDesc &description) noexcept {
@@ -396,7 +382,7 @@ Result<const TensorDesc &>
 PreparedOperation::output_description(std::size_t index) const noexcept {
   if (!valid()) {
     return std::unexpected(
-        Status::FailedPrecondition("operation invocation is invalid"));
+        Status::FailedPrecondition("prepared operation is invalid"));
   }
   if (index != 0) {
     return std::unexpected(
@@ -434,9 +420,9 @@ prepare(const Context &context, Operation operation,
     const detail::ProviderVTable *table =
         detail::ProviderAccess::vtable(slot.provider);
     detail::ProviderPrepared provider_prepared{};
-    Status provider_status = table->prepare(slot.state, operation, inputs,
-                                             outputs, state->allocator,
-                                             &provider_prepared);
+    Status provider_status =
+        table->prepare(slot.state, operation, inputs, outputs, state->allocator,
+                       &provider_prepared);
     if (provider_status.IsUnimplemented())
       continue;
     if (!provider_status.ok())
@@ -462,8 +448,8 @@ prepare(const Context &context, Operation operation,
     if (storage == nullptr) {
       provider_prepared.vtable->destroy_prepared(provider_prepared.state,
                                                  state->allocator);
-      return std::unexpected(Status::ResourceExhausted(
-          "prepared operation allocation failed"));
+      return std::unexpected(
+          Status::ResourceExhausted("prepared operation allocation failed"));
     }
     auto *prepared = ::new (storage) detail::PreparedState(
         state, operation, inputs, outputs[0], table->kind, false);
@@ -498,7 +484,7 @@ prepare(const Context &context, Operation operation,
     if (!columns)
       return std::unexpected(std::move(columns).error());
     parameters = {*rows, *inner, *columns};
-    route = inputs[1].is_dense() ? &run_matmul_row_major
+    route = inputs[1].is_dense() ? select_row_major_matmul()
                                  : &run_matmul_transposed_weight;
     break;
   }
@@ -610,8 +596,8 @@ OperationInvocation &
 OperationInvocation::operator=(OperationInvocation &&other) noexcept {
   if (this != &other) {
     if (state_ != nullptr && state_->provider_prepared.vtable != nullptr) {
-      state_->provider_prepared.vtable->destroy_invocation(
-          provider_state_, state_->allocator);
+      state_->provider_prepared.vtable->destroy_invocation(provider_state_,
+                                                           state_->allocator);
     }
     detail::release(state_);
     state_ = other.state_;

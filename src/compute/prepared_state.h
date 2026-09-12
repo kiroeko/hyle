@@ -1,19 +1,15 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 
 #include "context_state.h"
-#include "provider_internal.h"
 #include "hyle/util/ref_counted.h"
+#include "native_route.h"
+#include "provider_internal.h"
 
 namespace hyle::compute::detail {
-
-using NativeRoute = void (*)(const float *, const float *, float *,
-                             const std::array<std::size_t, 3> &,
-                             float) noexcept;
 
 struct PreparedState final : util::RefCounted<PreparedState> {
   PreparedState(ContextState *context_value, Operation operation_value,
@@ -47,7 +43,7 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   Operation operation{RmsNorm{}};
   std::array<TensorDesc, 2> inputs{};
   TensorDesc output{};
-  std::array<std::size_t, 3> parameters{};
+  NativeParameters parameters{};
   float scalar = 0.0F;
   ProviderKind provider = ProviderKind::kUnknown;
   bool fallback = false;

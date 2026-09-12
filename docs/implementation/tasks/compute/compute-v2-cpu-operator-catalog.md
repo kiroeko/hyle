@@ -19,7 +19,8 @@
   kind；为 Graph v2 暴露稳定描述和执行入口；
 - non-goals：完整公共 op 超集、quantized matmul、attention/RoPE/embedding、模型/KV/batching/sampling、
   外部 ggml/oneDNN provider、CUDA/Metal/MLX/Vulkan/HIP、异步 queue、Native FFI；这些必须另开有限卡；
-- 直接依赖：沿用 `core/error/mem` 公开边与 `math/simd/util_core` 实现边；不新增 Sched 或 Graph 反向边；
+- 直接依赖：沿用 `core/error/mem` 公开边与 `math/simd/util_core` 实现边；fat-kernel selector 直接读取
+  Platform 的规范 CPU facts，因此 `platform` 也是显式实现边；不新增 Sched 或 Graph 反向边；
 - 直接消费者：Graph v2 multi-op fragment 与独立 direct-Compute package sample；
 - P0：逐 op 记录复杂度、读写量、SIMD route、packing/workspace、allocation、alias check 与调用边界；
 - P1：候选后只对最终 shipping CPU route 做一次同合同测试。MatMul/SiluMul 选择至少一个当前成熟实现作
@@ -130,3 +131,23 @@ scratchpad 与并发 run-state，不回写本卡的算子语义。为支持 prov
 inline native state 调整为可复制的不可变 shared artifact，实际 submit 移到每次运行独占的
 `OperationInvocation`；native route 也走同一公开形状。此项不是兼容层或 benchmark API，而是异步/第三方
 provider 都需要的 ownership 修正。
+
+## Native row-major MatMul checkpoint（2026-09-12）
+
+旧 v1 scalar tile 没有被包装或保留。普通 row-major f32 路线现由 Compute 自己拥有矩阵语义，并复用
+SIMD/Platform 已冻结的编译期 fat-kernel 与一次 ISA 选择设施：每个 ISA body 直接编入 `hyle_compute`，
+`prepare()` 只选择一次固定签名函数指针；steady submit 不探测、不路由、不 packing、不申请 workspace，
+也没有跨模块 vector ABI。
+
+实现采用成熟 AVX2 BRGEMM 同类的 6-row × 2-vector 寄存器块（12 accumulator、2 B、1 reusable A），
+4-row × 2-vector 与 1-row × 4-vector 处理正常 decode/余数；B 地址使用 pointer induction，prefill 路线以
+64 个 f32 column 的 N block 完成所有 row tile，再前进到下一 B slab。反汇编确认 AVX2 K 内环没有
+accumulator spill 或每步整数乘法。`hyle_add_fat_kernel()` 同时把 IPO/LTO 隔离提升为中央 helper 的不变量，
+Compute 因直接使用 CPU selector 在中央组件图声明 `platform` 私有边。
+
+Windows correctness 新增 deterministic differential matrix，覆盖 1/4/6-row tile、组合余数、SIMD/N-block
+尾部和 `K=0`，所选 Compute 测试为 1/1 PASS。一次非资格化 dual-order 诊断表明 decode `M=1/4` 已
+明显优于同 API 的 oneDNN，而 `M=32,K=512,N=1024` 从旧 native 的约 6.7--6.9x 落后缩到约
+1.27--1.44x；异构核/频率漂移仍会放大单次值，因此这些数字只证明根因修正有效，不是 P1 证据。
+正式 P1 必须由项目仪器固定 P-core、记录 affinity/frequency 并在 immutable candidate 后执行；M=32
+固定输项在此之前保持公开，不能以 5% 误差或被 BLOCKED 的 oneDNN provider 冒充通过。

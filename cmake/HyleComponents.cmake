@@ -266,9 +266,12 @@ _hyle_declare_component(io_transfer
 # extensions remain module-owned rather than changing this public dependency
 # boundary. Public
 # tensor bindings directly expose Error and Mem types; checked shape arithmetic,
-# intrusive runtime ownership and the selected SIMD leaf route remain private.
+# intrusive runtime ownership, Platform facts and the selected SIMD leaf route
+# remain private. Platform is a direct implementation edge because Compute's
+# prepare-time fat-kernel selector includes the canonical CPU feature seam;
+# SIMD remains the sole ISA requirement/selection authority.
 _hyle_declare_component(compute
-  PRIVATE_DEPS math simd util_core
+  PRIVATE_DEPS math platform simd util_core
   PUBLIC_DEPS core error mem)
 # Graph owns logical tensor-DAG publication and compiled/invocation lifetimes.
 # Its public values name Compute and Error contracts. Growable cold metadata,

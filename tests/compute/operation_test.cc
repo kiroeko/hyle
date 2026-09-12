@@ -412,6 +412,86 @@ TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
   }
 }
 
+TEST(PreparedOperation, RowMajorMatMulCoversEveryNativeTileAndTail) {
+  struct Shape final {
+    std::size_t rows;
+    std::size_t inner;
+    std::size_t columns;
+  };
+  constexpr std::array shapes{
+      Shape{1, 5, 37},   Shape{4, 7, 19},   Shape{6, 9, 23},   Shape{7, 11, 29},
+      Shape{10, 13, 31}, Shape{17, 15, 35}, Shape{32, 17, 67}, Shape{9, 0, 21},
+  };
+
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  for (const Shape shape : shapes) {
+    SCOPED_TRACE(::testing::Message() << "M=" << shape.rows << " K="
+                                      << shape.inner << " N=" << shape.columns);
+    std::vector<float> left(shape.rows * shape.inner);
+    std::vector<float> right(shape.inner * shape.columns);
+    for (std::size_t index = 0; index < left.size(); ++index) {
+      left[index] =
+          static_cast<float>(static_cast<int>(index % 19) - 9) / 32.0F;
+    }
+    for (std::size_t index = 0; index < right.size(); ++index) {
+      right[index] =
+          static_cast<float>(static_cast<int>(index % 23) - 11) / 64.0F;
+    }
+    std::vector<float> expected(shape.rows * shape.columns, 0.0F);
+    for (std::size_t row = 0; row < shape.rows; ++row) {
+      for (std::size_t column = 0; column < shape.columns; ++column) {
+        for (std::size_t k = 0; k < shape.inner; ++k) {
+          expected[row * shape.columns + column] +=
+              left[row * shape.inner + k] * right[k * shape.columns + column];
+        }
+      }
+    }
+
+    const TensorDesc left_desc = matrix_description(shape.rows, shape.inner);
+    const TensorDesc right_desc =
+        matrix_description(shape.inner, shape.columns);
+    const TensorDesc output_desc =
+        matrix_description(shape.rows, shape.columns);
+    Buffer left_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        left.size() * sizeof(float), 64)
+                             .value();
+    Buffer right_buffer = Buffer::create(hyle::mem::system_resource(),
+                                         right.size() * sizeof(float), 64)
+                              .value();
+    Buffer output_buffer = Buffer::create(hyle::mem::system_resource(),
+                                          expected.size() * sizeof(float), 64)
+                               .value();
+    write_floats(left_buffer.view(), left);
+    write_floats(right_buffer.view(), right);
+    std::vector<float> poison(expected.size(),
+                              std::numeric_limits<float>::quiet_NaN());
+    write_floats(output_buffer.view(), poison);
+
+    const ConstTensorView left_view =
+        ConstTensorView::create(left_desc, left_buffer.view()).value();
+    const ConstTensorView right_view =
+        ConstTensorView::create(right_desc, right_buffer.view()).value();
+    const TensorView output_view =
+        TensorView::create(output_desc, output_buffer.view()).value();
+    PreparedOperation prepared =
+        hyle::compute::prepare(context, MatMul{}, left_desc, right_desc,
+                               output_desc)
+            .value();
+    auto invocation = prepared.create_invocation().value();
+    auto completion =
+        invocation.submit(queue, left_view, right_view, output_view);
+    ASSERT_TRUE(completion.has_value());
+    ASSERT_TRUE(completion->wait().ok());
+
+    const auto actual = read_floats(output_buffer.view(), expected.size());
+    for (std::size_t index = 0; index < expected.size(); ++index) {
+      EXPECT_NEAR(actual[index], expected[index],
+                  std::abs(expected[index]) * 3.0e-5F + 3.0e-6F);
+    }
+  }
+}
+
 TEST(PreparedOperation, RunsPackedSiluAndMulAcrossRows) {
   constexpr std::size_t rows = 2;
   constexpr std::size_t hidden = 3;
@@ -492,8 +572,8 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
                              description, description)
           .value();
   auto weighted_invocation = weighted.create_invocation().value();
-  completion = weighted_invocation.submit(queue, input_view, weight_view,
-                                           output_view);
+  completion =
+      weighted_invocation.submit(queue, input_view, weight_view, output_view);
   ASSERT_TRUE(completion.has_value());
   ASSERT_TRUE(completion->wait().ok());
   const auto weighted_output = read_floats(output_buffer.view(), input.size());
