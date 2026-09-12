@@ -44,7 +44,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | model-cache LRU | `1.222x` 到 `1.273x` | Abseil，同 OOM/rollback/weight/limit 合同 |
 | typed unbounded MPMC | `1.261x` 到 `1.289x` | oneTBB，同 allocator/OOM/FIFO/drain 合同 |
 | scheduler request fan-out | `1.646x` 到 `1.663x` | Marl，同 worker/input/compute/completion 边界 |
-| oneDNN provider boundary | x64 f32 BRGEMM 八个 strata 全部 5% `PARITY` | 同一 oneDNN ukernel、caller storage/scratch 与完成边界；只比较 HYLE provider seam 的抽象税 |
+| oneDNN provider boundary | v4 x64 f32 BRGEMM 的 8/8 strata 通过 5% 非劣门；7 项 `PARITY`、1 项 `INCONCLUSIVE`，median `0.9904–1.0207` | 同一 oneDNN ukernel、caller storage/scratch 与完成边界；只比较 HYLE provider seam 的抽象税，不把非劣冒充全面胜利 |
 | HTTP/1 fragmented stream | 约 `3.03x` | Boost.Beast，完整 public transport + HTTP lifecycle；不是裸 parser |
 | HTTP/2 small multiplex | `1.466x` 到 `1.478x` | nghttp2，同 session/body/window/flow-control 生命周期 |
 | WebSocket masking | `2.005x` 到 `3.354x`，覆盖 124 B 到 1 MiB | Boost.Beast，同 RFC mask state 与完整 buffer |
@@ -76,7 +76,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | 当前账本只保留已关闭的 oneDNN provider boundary；旧 CPU route 与三节点 composition-tax 证据已随两模块重开退出当前账本 | dtype/量化/attention、ggml region、并行 executor、GPU backend/provider 与跨 provider graph 均待新候选 |
+| Compute / Graph | 当前账本保留 v4 oneDNN provider-boundary 检查点；旧 CPU route 与三节点 composition-tax 证据已随两模块重开退出当前账本 | 两模块仍为 `AUDITED`；真实 multi-op region、dtype/量化/attention、并行 executor、GPU backend/provider 与跨 provider graph 均待新候选 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线

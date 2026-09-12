@@ -80,29 +80,29 @@ TensorView/resource/alias/Queue 检查、host mapping、provider dispatch、Stat
 allocation 和 warmup 对两侧都在测量外。shape 为真实 short-prefill projection：
 `A[32,4096] * B[4096,4096] -> C[32,4096]`。
 
-产品实现候选是 `71f9de0c`；有效 run 的 clean source 是只多一份失格说明的 `5e078305`。W1-WIN、
-MSVC 19.50、Release、static、LTO off 的 engineering qualification 在 n=15 按规则停止：
+v4 把同一 kernel mechanism 抽到未安装的内部 seam，产品实现检查点为 `6306ab2f`；性能合同补齐
+benchmark 直接使用的 CPU backend factor 后，clean source 为 `f130c42e`。W1-WIN、MSVC 19.50、
+Release、static、LTO off 的 engineering qualification 在 n=15 按规则停止：
 
 - 八个执行顺序 × 构造顺序 × placement strata 的 candidate/peer median ratio 为
-  `0.9925--1.0134`；八行都是 `PARITY`，combined non-inferiority=`PASS`；
-- 所有 99.26% CI 的总范围为 `0.9573--1.0485`，仍完整位于 5% 等价带
-  `[0.95238,1.05]`；没有通过换方向或追加样本把结果挑到绿色；
+  `0.9904--1.0207`；八行 non-inferiority 全部 `PASS`；
+- 七行 exact verdict 为 `PARITY`；一行的 99.26% CI 为 `0.9751--1.0534`，跨越等价带上界，诚实记为
+  `INCONCLUSIVE`，因此 combined exact verdict 也是 `INCONCLUSIVE`，而不是把它改名为平局或胜利；
 - A/A、5%/10% known-delta、timer-floor、placement、artifact identity 和 build contract 全部 PASS，
   candidate/peer/host/artifact 在运行前后保持稳定；
-- 首次误带 `--formal` 的调用因 W1 尚未预钉死 Formal toolchain 正确 fail closed，只是无资格
-  diagnostic；没有拿它补样本、修改产品或反向登记 observed toolchain。随后按文档要求运行普通
-  engineering qualification，才产生本结论。
+- 一个短 probe 在计时前发现旧合同只选择 provider factor，却漏选 benchmark 自身直接调用的 CPU
+  backend；合同只补 `compute_backend_cpu` maintenance root，没有给 shipping provider 增加产品依赖。
 
 原始 bundle 保存在
-[`compute-onednn-provider-p1-v1-5e078305-w1-win`](../../../../evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/)；
+[`compute-onednn-provider-p1-v1-f130c42e-w1-win`](../../../../evidence/performance/compute-onednn-provider-p1-v1-f130c42e-w1-win/)；
 contract / manifest / summary / controls / observations SHA-256 分别为：
 
 ```text
-999761c7f2295397b24c5461eb2b01bffe2e10fc588bf0a240e427322284aaa8
-861c706e99afe1d24666a4c607eb182c00db0786b71843ea6ab0e05336fef9cf
-fc8a4a545dc508cfbed4eb05d1c151a9df6579e77135759d2d3a482a5d363973
-20e018ea8a3cd5dbc90b6f3aa51d40151b519f683e5f138f6507cc87c6a3f285
-d1546eddbf86c350bf3e8148faae3bc1a456236aaf12f095d2ffe12357e070ff
+9a928c1e86dda310a1981be9a384c0a3fd9d13a28873188a5af3649a58c86635
+55bf11e85429215174e2d947b0a7e27a7c99d0b59e81902be89b7f7dde367be3
+658436546f53d1b993269213174fa5815b1197e537f10fff2e5c7328121be10d
+3618f964f970a7297ba1dfc8e4bb74c2b166ce4d06c04384531813896686754a
+0b5eb7237650ae846749fc6200a78404c4aed958c5f0cc26b1f2f1a922ac5b51
 ```
 
 严格重放命令返回 `QUALIFIED`、`CURRENT`、`EXACT`、`paths_verified=true`：
@@ -110,7 +110,7 @@ d1546eddbf86c350bf3e8148faae3bc1a456236aaf12f095d2ffe12357e070ff
 ```powershell
 python scripts/hyle-perf.py verify `
   --contract bench/contracts/compute-onednn-provider-p1-v1.json `
-  --manifest evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/manifest.json
+  --manifest evidence/performance/compute-onednn-provider-p1-v1-f130c42e-w1-win/manifest.json
 ```
 
 本行只证明完整 HYLE oneDNN warm provider 边界在该 x64 serial prefill 合同上没有 material 税；decode

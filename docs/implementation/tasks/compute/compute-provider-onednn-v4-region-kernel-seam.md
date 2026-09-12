@@ -37,29 +37,44 @@ Graph region 的 gate/up 具有完全相同 shape，可共用一个 immutable pl
 连续执行两组权重；down 使用第二个 plan。公开 `ParallelExecutorRef` 已明确同步、不可失败、支持嵌套进展，
 不需要新线程抽象。
 
-| ID | 问题与证据 | 允许改动 | 验收 |
-|---|---|---|---|
-| OD40 | BRGEMM mechanism 被封在匿名 namespace | 新建未安装 `brgemm_internal.h/.cc`，用 opaque plan 和 POD task range 隔离 dnnl | Graph consumer 不 include dnnl；一个 artifact owner |
-| OD41 | direct plan 把 executor context 与 kernel artifact 混在一起 | kernel plan 只保存 immutable shape/tile/JIT；execute 显式接收已借用 executor | direct 生命周期与 task 数不变 |
-| OD42 | gate/up 若分别调用 single-op submit 会重复 mapping 与 executor fan-out | 私有 seam提供同 plan、共享 left 的 pair-task execute；不包含 activation/Graph 类型 | 一次 hardware context 内两次 BRGEMM，warm 零分配 |
-| OD43 | shared Graph provider 必须调用 mechanism | 只导出未安装 header 声明的 C++ 符号；中央图登记单向 PRIVATE 边 | PE/ELF/Mach-O 无 C/FFI 入口，installed shared 可装载 |
-| OD44 | refactor 可能漂移既有路由 | direct provider 保留 M<16、N tile、workspace、map/flush 与 Completion 逻辑；增加差分/codegen 回放 | 原测试、allocation 和 P0 账单一致 |
+| ID | 问题与证据 | 允许改动 | 验收 | 当前结果 |
+|---|---|---|---|---|
+| OD40 | BRGEMM mechanism 被封在匿名 namespace | 新建未安装 `brgemm_internal.h/.cc`，用 opaque plan 和 POD task range 隔离 dnnl | Graph consumer 不 include dnnl；一个 artifact owner | 已在 `6306ab2f` 抽取；真实 Graph consumer 待 GP20--GP26 |
+| OD41 | direct plan 把 executor context 与 kernel artifact 混在一起 | kernel plan 只保存 immutable shape/tile/JIT；execute 显式接收已借用 executor | direct 生命周期与 task 数不变 | 已完成；原 route/task/workspace tests 通过 |
+| OD42 | gate/up 若分别调用 single-op submit 会重复 mapping 与 executor fan-out | 私有 seam提供同 plan、共享 left 的 pair-task execute；不包含 activation/Graph 类型 | 一次 hardware context 内两次 BRGEMM，warm 零分配 | pair 差分、task range 与单 episode test 通过 |
+| OD43 | shared Graph provider 必须调用 mechanism | 只导出未安装 header 声明的 C++ 符号；中央图登记单向 PRIVATE 边 | PE/ELF/Mach-O 无 C/FFI 入口，installed shared 可装载 | shared producer 已通过；installed Graph consumer 待 GP26 |
+| OD44 | refactor 可能漂移既有路由 | direct provider 保留 M<16、N tile、workspace、map/flush 与 Completion 逻辑；增加差分/codegen 回放 | 原测试、allocation 和 P0 账单一致 | 11 个 provider tests、六 shape warm allocation 与新 P1 通过 |
 
 公开 C++ API、默认值、对象布局和用户文档不变。本卡只准入 OD40--OD44；量化、post-op、packing 或新的
 route policy 都不属于本轮。`compute_provider_onednn` 保持 `AUDITED`，允许下一提交修改其产品实现。
 
-## Candidate
+## 实现检查点（尚非 lifecycle Candidate）
 
-- commit：尚无；
-- public API/layout/算法/常态成本变化：公开面应为零；内部 mechanism 待实现；
+- 产品提交：`6306ab2f058d9df1daadb06bb3d3a34603df6a5f`；P1 合同依赖选择修正在
+  `f130c42ef09ae0bc4763eb6b4101623ac0cd8826`；
+- public API/layout/算法/常态成本变化：公开面、路由、tile、scratch、mapping 与 Completion 不变；冷路径
+  多一个小型 wrapper allocation，失败时先销毁已生成 plan；warm submit 每 episode 多一条同 factor 的
+  非虚内部调用边，不增加 allocation、search、JIT、copy、lock 或 task；
 - 直接消费者迁移：待 `graph_provider_onednn` 实现；
-- candidate 后仅证据/文档变化：尚未进入候选。
+- lifecycle Candidate：尚未进入；OD43 的真实 shared consumer 与 Graph 直接边仍待完成。
+
+Windows shared 定向 provider/header/composition 为 `3/3 PASS`；新增 fault injection 精确命中 plan 已创建、
+prepared wrapper 分配失败的路径，终局 allocation/deallocation 相等。static allocation probe 在六个推理
+shape 上仍为 warm `global new=0`。由于源码 call graph 确实改变，未沿用 v2 P1：新鲜 W1-WIN、MSVC
+19.50、Release/static/LTO-off 的 n=15 回放中，八个交叉 strata 的 median ratio 为
+`0.9904--1.0207`，全部 5% non-inferiority `PASS`；七项 `PARITY`，一项方向 `INCONCLUSIVE`，没有固定
+loss。A/A、known-delta、timer-floor、placement、artifact/build identity 全部通过。证据位于
+[`compute-onednn-provider-p1-v1-f130c42e-w1-win`](../../../../evidence/performance/compute-onednn-provider-p1-v1-f130c42e-w1-win/)。
+
+首次短 probe 在计时前暴露合同只选择 provider factor、却漏选 benchmark 直接调用的 CPU backend；
+`f130c42e` 只把 `compute_backend_cpu` 加入 `HYLE_DEV_FACTORS`，没有向 shipping provider 增加错误产品边。
 
 ## 红队与裁决
 
 - 红队重点：私有 ABI 是否意外安装、Graph 反向依赖、两份 oneDNN registration、single-op codegen 漂移；
-- 未决限制：实现与验证尚未进行；
+- 已排除：公开头/dnnl 泄漏、direct route/task/workspace 漂移、pair 每 task 两次 hardware-context、第二次
+  metadata allocation OOM 泄漏、warm allocation 与 material provider 边界税；
+- 未决限制：真实 Graph source/static/shared consumer、Linux/sanitizer 与 Graph 组合红队；
 - reopen triggers：不适用，当前仍为 `AUDITED`；
 - LOC：终局统计；
 - 最终状态：`AUDITED`。
-
