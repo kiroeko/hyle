@@ -6,8 +6,9 @@
 - baseline commit：`98295cc24d28f35437b51b0ef1fdf1ee76872d5a`；上一轮已关闭的 storage
   合同与证据保存在 [`compute-v3-block-storage-format`](compute-v3-block-storage-format.md)，本轮不回写
   该历史记录；
-- trigger 与证据：当前公开 `Completion` 对任意有效对象都立即 ready，`TensorView` 只能绑定 host
-  `mem::BufferView`，`ProviderKind` 是封闭枚举且 `ProviderList` 固定最多四项。与此同时，已接受的
+- trigger 与证据：当前公开 `Completion` 对任意有效对象都立即 ready；`TensorView` 已能绑定 provider-neutral
+  `mem::BufferView`，但 Compute 没有 backend resource factory、queue copy/sync 或 resource/device compatibility
+  合同；`ProviderKind` 是封闭枚举且 `ProviderList` 固定最多四项。与此同时，已接受的
   Compute 架构和 ggml、llama.cpp、vLLM、SGLang、ds4 的真实 GPU/异步路线都要求 device-owned
   storage、异步终态、显式 provider/backend identity 与有界关闭。这是现有公开合同缺失，而不是
   benchmark 输赢；
@@ -65,3 +66,57 @@
    构建投影。
 
 AUDITED 前不改 Compute 产品代码、公开头、依赖或 backend/provider 实现。
+
+## AUDITED 结论（2026-09-12）
+
+### 对账结论
+
+- ggml `e91ded11bdcd` 把 backend/device、buffer type/buffer、stream/event、async tensor copy 与 graph plan
+  分开；CUDA 13.3 的 stream/event 和 Vulkan timeline 都证明“有效 completion 恒 ready”不能承载真实提交；
+- oneDNN `6b7f1fbbb18e`、vLLM `51da0ca66c80`、SGLang `dcebe8c4733a` 与 ds4
+  `f62ca29a3087` 均把可共享编译 artifact 与 per-stream/per-request mutable state 分开；
+- Mem 已提供开放 `MemoryResourceRef`、opaque `Buffer/View`、host mapping、coherence 与 domain identity。
+  因而本轮**不再发明 Compute Storage 类**；缺口是 backend 暴露资源并让 Queue/Provider 正确解释它。
+
+### 有限入口与 owner ledger
+
+| ID | 当前形状 | 裁决 | 冻结合同 |
+|---|---|---|---|
+| R40 | vendor 名称组成的封闭 `BackendKind` | `REPLACE` | 开放 `BackendId` + 通用 `DeviceClass`；CUDA/Metal 等 identity 由 typed backend factory 提供 |
+| R41 | `Device::cpu()` 与只返回一项的全局枚举 | `MOVE` | CPU factory 进入 `compute_backend_cpu`；每个显式 `Backend` 枚举自己的 Device，不使用全局静态注册 |
+| R42 | Device 只有 kind/ordinal | `REPLACE` | 小型 copyable type-erased Device，保存静态 backend vtable + inline identity payload；复制、查询不分配 |
+| R43 | TensorDesc/StorageFormat 混在 runtime target | `MOVE` | schema 进入 `compute_ops`；头路径仍保持 `hyle/compute/*`，用户不接触内部 factor 名 |
+| R44 | TensorView 绑定 `mem::BufferView` | `KEEP/FIX` | 保留四字 borrowed resource view；prepare/submit 校验 resource domain、device、range、alignment；不复制 payload |
+| R45 | `ProviderList<4>` | `REPLACE` | `ContextOptions` 借用任意长度 `span<const Provider>`；create 冷路径一次性复制，steady path 无 allocation/search |
+| R46 | `ProviderKind`/`kMixed` | `REPLACE` | 开放 `ProviderId` 与 name/version；单 artifact 返回精确 identity，Graph report 自己枚举多个 provider |
+| R47 | Context 内固定四槽 | `REPLACE` | Context state 与精确 provider slots 一次分配；创建失败逆序回滚，不依赖 Container |
+| R48 | inline terminal-only Completion | `REPLACE` | move-only immediate/async type erasure；`poll()` 返回 pending/success/error，`wait()` 返回终态，`request_cancel()` best effort |
+| R49 | Context/Queue 共用一个 bool state | `FIX` | 独立 ref-counted backend context/queue state；atomic admission；`close()` 不再接收，`drain()` 显式等待 |
+| R50 | provider `execute()` 同步返回 Status | `REPLACE` | prepared submit 接收具体 Queue/bindings并返回 Completion；同一 ordered queue 不逐 node host-wait |
+| R51 | `submit_host()` 位于通用 runtime | `MOVE` | caller-thread typed escape hatch 进入 CPU backend；仍不保留 callable、不分配、不抛异常 |
+| R52 | 公共通用 `Module/Kernel/CommandList` 长期占位 | `DEFER/REFINE` | 共用 lifecycle 只到 Queue/Completion；CUDA/Metal/Vulkan/HIP 分别提供 typed module/kernel/interop extension，首个 backend 证明共同形状后才上提 |
+| R53 | callback/coroutine bridge | `DEFER` | 核心只 poll/wait/cancel；需要时登记 `compute_sched`，避免 Compute 强制依赖 Sched |
+| R54 | 一次性 prepare+submit convenience | `DEFER` | prepared 是正常热路；真实一次性 consumer 出现后以显式 cold-work 名称补充，不污染本轮 |
+
+`Provider` 本身继续是显式、copyable、inline 配置值；其 vtable 只在 context/prepare 冷路径调用。可选 Graph
+region 能力通过对象局部的具名 extension query 暴露，不使用 process-global registry，也不让 Compute
+依赖 Graph。普通 built-in `Operation` 不因 provider 扩展支付字符串查找。
+
+### 生命周期与错误矩阵
+
+- Context owner 析构等价于 close + release，**不 drain**；Queue 析构 close + release，**不隐藏等待**。
+  Queue/Prepared artifact/Completion 各自保活所需 backend state，迟到完成后才允许最终释放；
+- `Queue::drain()` 只等待该 queue 先前接受的工作；`Context::drain()` 等待其所有 backend work。close 与
+  drain 可分开调用；设备不支持抢占时 cancel 返回 `Unimplemented`，但 borrow 仍活到真实终态；
+- submit 前错误（invalid binding、wrong device/domain、closed queue、OOM）直接返回 unexpected Status；
+  已接受工作的终态错误只从 Completion 观察。device loss 必须成为 terminal error，不能永久 pending；
+- CPU immediate completion 完整 inline，不分配、不加锁、不做 atomic；异步 completion 允许使用 backend
+  event/pool，但常态 HYLE wrapper 不额外分配，具体成本由 backend 卡签发。
+
+### 冻结实现边界
+
+`compute` component 作为历史稳定 identity 承担概念上的 `compute_core`，不再另造同义 component。
+CPU 执行轴与 HYLE native kernels 分别由已登记的 `compute_backend_cpu`、`compute_provider_native` 承担。
+本轮 Runtime FIX 为 R40--R51；R52--R54 明确不进入本候选。P0 账单目标是：provider/device 枚举 O(N)
+冷路径；Context create O(P) 且一次 metadata allocation；prepare O(P)；prepared submit O(bindings) + 一次
+预绑定 dispatch；poll/wait O(1)，不含设备实际等待时间。

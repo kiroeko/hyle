@@ -36,3 +36,44 @@
 5. CPU product façade、可选 oneDNN 顺序与 source/static/shared 构建投影。
 
 AUDITED 前不移动或增加 native kernel 产品代码。
+
+## AUDITED 结论（2026-09-12）
+
+### 入口与路线裁决
+
+| ID | 当前形状 | 裁决 | 冻结合同 |
+|---|---|---|---|
+| N10 | native 是 Context 隐藏的最终 fallback | `REPLACE` | `native::provider()` 是普通显式 Provider；没有特殊枚举或无法禁用的隐藏 fallback |
+| N11 | 三项 validation/kernel 位于 `operation.cc` | `MOVE` | schema validation 归 compute_ops；CPU capability/prepare/reference/optimized route 归本 factor |
+| N12 | `PreparedState` 固定 2 input/1 output | `REPLACE` | prepare 冷路径保存精确 descriptor arrays；Invocation 预建 bindings，submit 不增长 metadata |
+| N13 | provider execute 只收裸 host pointers | `REPLACE` | 先验证 CPU-accessible domain并显式 map/resolve；opaque/device storage 返回 Unimplemented 供其他 provider |
+| N14 | RMSNorm/Silu whole-row SIMD | `KEEP/MOVE` | 每 row 一次现有 SIMD entry；不在 element loop 再 dispatch |
+| N15 | MatMul 两条 HYLE route | `KEEP/MOVE` | transpose-weight dot 与 fixed-target row-major kernel保留；general batch/stride 由 prepare 选择 tiled/reference route |
+| N16 | 没有普通 CPU journey | `FIX` | `hyle/compute/cpu.h` 聚合 CPU backend + native provider，并提供 `cpu::create_context()`；高级用户仍可显式排 provider sequence |
+
+### v1 family 实现账本
+
+`compute_ops` v1 的 19 个 family 全部必须有 CPU reference 才能宣称进入 Compute 产品；优化只复用已经
+关闭的 SIMD 能力，不为 benchmark 发明第二套 public shape：
+
+- direct SIMD whole-row：Cast 的 f32/f16/bf16/fp8 路线，Unary 的 GELU/SiLU/Tanh 等已存在 batch 路线，
+  Binary add/multiply，RMSNorm/LayerNorm，Softmax/LogSoftmax，TopK 与 dot-based MatMul；
+- fixed-target Compute kernel：保留现有 row-major MatMul；batch/stride 在一次 prepare 后落到固定 callable；
+- reference/tiled CPU：View、Copy/Fill、其余 Cast/Unary/Binary/Select/Reduce、Gather/Scatter/Concat、RoPE、
+  SDPA 和 SIMD 暂无同合同入口的边界形状；reference 不是性能宣传，但提供 differential oracle 与 fallback；
+- SDPA reference 采用分块 online-softmax，workspace 与 O(B*H*Q*K) 时间、O(tile) 额外空间显式；不得先
+  materialize 完整 attention matrix 再把内存成本藏起来。TopK 复用 SIMD selection 时保持冻结 tie/index
+  语义，否则走 reference。
+
+公开依赖冻结为 `compute` + `compute_backend_cpu`；私有依赖 `compute_ops`、Math、Platform、SIMD。
+`native::provider()` 是小型无 owner 配置值；`cpu::create_context()` 只在这个聚合 factor 中出现，因此 CPU
+backend 不反向依赖算子 provider。oneDNN fallback 示例必须显式传 `{onednn, native}`，顺序在 Context
+create 后固定。
+
+### 性能任务冻结
+
+P0 对每 family 登记 exact arity walk、mapping、workspace 与循环复杂度；prepare 可分配一次 descriptor/
+artifact metadata，Invocation create 可分配一次 lane state，submit 不分配、不锁、不选 ISA/provider。
+P1 不铺 19 行纳秒测试，只冻结七个真实高权重合同：RMSNorm、MatMul decode、MatMul short-prefill、RoPE、
+gated MLP、softmax/top-k 与分块 SDPA 纵切；peer 优先 ggml/oneDNN 的同 dtype/layout/threading 路线。
+没有 profile 权重的 reference family只做 codegen/P0 与正确性，不以“未测即 SOTA”关闭。

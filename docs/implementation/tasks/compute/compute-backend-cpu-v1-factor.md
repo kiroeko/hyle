@@ -33,3 +33,25 @@
 4. source/static/shared 与 Compute product façade 的唯一投影。
 
 AUDITED 前不移动 CPU 产品代码或添加依赖。
+
+## AUDITED 结论（2026-09-12）
+
+| ID | 当前入口 | 裁决 | v1 形状 |
+|---|---|---|---|
+| B10 | `Device::cpu()` | `REPLACE/MOVE` | `compute::cpu::backend()` 返回显式 Backend；`backend.device(0)` 与 `cpu::device()` 是零分配 convenience |
+| B11 | 全局 `enumerate_devices()` | `DELETE` | 无静态注册；`Backend::device_count/device(index)` 只枚举该显式 backend |
+| B12 | `query_device(Device)` | `MOVE` | `Device::properties()` 经其 backend vtable 查询，非法/过期 identity 返回 typed error |
+| B13 | Context 内没有 backend state | `FIX` | CPU create/destroy hooks 无额外 runtime allocation；通用 Context state 保留 Device 与 provider slots |
+| B14 | Queue 只是 Context borrow | `FIX` | 通用 QueueState 独立 owner；CPU queue handle 为空，caller-thread ordered submit，drain 为 O(1) |
+| B15 | 无 backend resource factory | `FIX` | `cpu::memory_resource(Device)` 明确返回 `mem::system_resource()`；domain/properties 不复制实现 |
+| B16 | `submit_host()` 在 core | `MOVE` | 迁入 `hyle/compute/backends/cpu.h`；类型化 callable 在返回前执行，不保留、不分配 |
+
+CPU backend 不拥有 ParallelExecutor：那是 native/oneDNN provider 的算子内并行策略。它也不把 Platform
+CPU topology 复制成第二份 device 探测；properties 复用 Platform 已关闭事实。公开依赖冻结为 `compute`，
+私有依赖为 Platform；Mem 通过 Compute 的公开 storage contract 到达。产品 façade 最终包含本 factor，
+但 exact `compute` runtime factor 可在 GPU-only 维护构建中独立存在。
+
+P0 冻结成本：backend()/device() O(1) 无分配；device 枚举 O(N_cpu_devices)=O(1)；Context 通用一次分配，
+CPU hook 不再分配；Queue 创建一次冷 metadata 分配；host submit O(1)，只支付通用 admission 的一次 atomic
+读取，immediate completion 不分配/加锁/syscall。没有独立 P1：若通用 Queue/Completion 无法得到相同
+codegen，问题归 Compute runtime 卡。

@@ -272,15 +272,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v4-runtime-extensibility.md",
-      "summary": "compute v4 因真实异步/GPU consumer 证明 Completion、device storage、provider identity/list 与 close/drain 合同缺失而合法重开；当前仅冻结审计范围，v3 storage 证据继续保留但不冒充完整 Compute。"
+      "summary": "compute v4 AUDITED：runtime 的开放 Backend/Provider identity、Mem resource bridge、异步 Completion、Queue/Context close-drain 与 CPU/native 因子迁移已冻结为 R40--R51；尚未修改产品代码。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v3-constants-regions.md",
-      "summary": "graph v3 因 compute_ops 多输出与真实推理 constant/region consumer 证明现有单输出、无常量、无 effect/region IR 不足而合法重开；当前仅冻结审计范围，v2 CPU 多节点证据保留但不冒充完整异构 Graph。"
+      "summary": "graph v3 AUDITED：单 Context 的 logical constants、零/多输出、alias/effect/control edges、provider-neutral region partition 与可枚举 plan/report 已冻结为 G30--G41；尚未修改产品代码。"
     },
     {
       "module": "container_concurrent",
@@ -372,21 +372,21 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "summary": "compute_ops v1 已冻结 typed Tensor/Operation schema 与真实推理/正交数值算子目录的审计范围；当前只有空内部 factor，没有依赖、公开头、产品投影或已承诺新算子。"
+      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同、19 个必须取得 native reference 的 public family 及后续 provider-sensitive 批次已经冻结；尚未修改产品代码。"
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backend-cpu-v1-factor.md",
-      "summary": "compute_backend_cpu v1 已冻结 CPU device/context/queue/resource 执行轴的迁移审计范围；当前只有空 factor，没有依赖、公开头、产品投影或已承诺 backend 能力。"
+      "summary": "compute_backend_cpu v1 AUDITED：显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource 与 typed host-kernel 迁移已冻结为 B10--B16；尚未修改产品代码。"
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 已冻结 reference/HYLE SIMD operator provider 的迁移与首批算子审计范围；当前只有空 factor，没有依赖、公开头、产品投影或已承诺新算子。"
+      "summary": "compute_provider_native v1 AUDITED：显式 native Provider、19-family CPU reference、现有 whole-row SIMD/fat-kernel 复用与七条有限 P1 热路已冻结为 N10--N16；尚未修改产品代码。"
     }
   ]
 }

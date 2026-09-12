@@ -30,7 +30,7 @@
 - non-goals：一次复制 ggml/PyTorch 的全部 op 枚举、训练/backward/optimizer、模型 layer/KV/page table/
   sampling/batching/serving policy、provider kernel 性能、Graph topology/partition、backend runtime、Native FFI、
   字符串或裸 `void *` custom-op 属性、为未实现能力预留成功 stub；
-- 直接依赖 / 直接消费者：候选公开依赖 Core/Error/Mem，私有依赖 Math 做 checked shape arithmetic；不依赖
+- 直接依赖 / 直接消费者：候选公开依赖 Core/Error，私有依赖 Math 做 checked shape arithmetic；不依赖 Mem、
   Compute runtime、SIMD、Graph 或具体 provider。直接消费者为 `compute`、Graph IR、HYLE-native、oneDNN、
   ggml 及后续 backend/provider factors；
 - 性能 tier 与原因：schema 本轮为 `P0`；要求 validation/inference 对 rank 不超过 8 为有界 O(rank)，常见
@@ -76,3 +76,78 @@
 7. 首批 `MUST` 的实际数量与分批顺序；未实现条目不得仅添加 enum 或文档承诺。
 
 AUDITED 前不移动现有 Tensor/Operation 产品代码，不增加算子、依赖、公开头或产品投影。
+
+## AUDITED 结论（2026-09-12）
+
+### 来源对账与准入边界
+
+定向扫描绑定 ggml `e91ded11bdcd`、llama.cpp `e71b80510c84`、vLLM `51da0ca66c80`、SGLang
+`dcebe8c4733a`、ds4 `f62ca29a3087` 与 oneDNN `6b7f1fbbb18e`。共同高频机制是 tensor view/materialize、
+elementwise/reduction、normalization/gated activation、dense/blocked linear、embedding/gather、RoPE、
+softmax/attention、selection/top-k；MoE、vision 与 recurrent 也真实存在，但其 packed layout/state policy
+尚不能在一张 v1 卡内自然定型。
+
+准入规则冻结为：一个 public operation 必须有完整 typed schema、shape/arity/alias/effect/precision 合同，
+并在同轮至少取得一个可执行 provider（本轮为 native reference）；只加 enum、名字或恒失败 stub 不算能力。
+provider-specific packed artifact 可以由普通 operation + `StorageFormatId` 匹配；模型 layer、KV/page-table、
+expert/sampling/batching policy 不进入本因子。
+
+### Schema 入口 ledger
+
+| ID | 当前形状 | 裁决 | 冻结合同 |
+|---|---|---|---|
+| O10 | TensorDesc/StorageFormat 在 runtime target | `MOVE` | `data_type.h`、`tensor_desc.h` 与 schema-only `operation.h` 归 `compute_ops`；include namespace 仍为 `hyle::compute` |
+| O11 | dtype 缺 bool/fp8/常用 16/32/64 unsigned | `FIX` | 补 Bool、FP8 E4M3FN/E5M2、Int16/UInt16/UInt32/UInt64；sub-byte quantization 仍用 blocked format，不伪造 scalar byte size |
+| O12 | 默认 Operation 实际是 RMSNorm，payload 只存一个字段 | `REPLACE` | 默认 invalid；built-in 为 enum + 固定 inline typed payload，普通构造/copy 无 heap、vtable、string 或 registry |
+| O13 | 单一 `infer_output_description()` | `REPLACE` | `output_count()` + caller-owned exact-span `infer_output_descriptions()`；保留显式 `infer_single_output()` convenience |
+| O14 | alias/effect/precision 分散在 kernel/Graph | `FIX` | `operation_traits()` 返回 arity、output alias allowance、purity/effect 和 accumulation policy；provider 只能收窄不能放宽 |
+| O15 | descriptor view 与 material copy 混淆 | `FIX` | View operation 明确为零 kernel alias；Copy/Cast/Repack 是 material operation；TensorDesc convenience 只描述布局，不暗搬 bytes |
+| O16 | 无 typed custom operation | `FIX` | opt-in inline、trivially-copyable custom descriptor + 稳定 OperationId/静态 vtable；shape/traits 只在冷路径调用，无全局注册和裸 callable |
+| O17 | PreparedOperation/Invocation 混在 schema header | `MOVE` | runtime 类型移到 `prepared_operation.h` 并由 `compute` 拥有；Graph IR 只取得 schema factor |
+
+Operation 的 built-in payload 上限冻结为 48 bytes、对齐不超过 `max_align_t`，完整 value 目标不超过 64 bytes；
+超出者必须把大 immutable metadata 作为显式 tensor/input，而不是扩大每个 node 或隐藏 allocation。rank 继续
+固定最多 8；本轮 static shapes 足够形成按 signature specialization，symbolic algebra 留给有具体 dynamic
+consumer 的 Graph 后续卡。
+
+### v1 必须交付的可执行目录
+
+下表每行都是一个 operation family，而不是 benchmark 档位；family 的 typed mode 不膨胀成字符串 op。
+
+| 批次 | family | v1 最小完整语义 / native reference |
+|---|---|---|
+| A | `View` | reshape、单轴 slice、permute、broadcast；输出显式 alias 输入，零 kernel |
+| A | `Copy` / `Fill` / `Cast` | plain/strided copy，typed scalar fill，已登记 scalar dtype 转换；无隐藏 staging |
+| A | `Unary` | Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/Relu/Gelu/GeluTanh/Silu |
+| A | `Binary` / `Select` | Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；typed boolean select |
+| A | `Reduce` | Sum/Mean/Min/Max，axis bitset 与 keep-dim；明确 accumulation dtype |
+| B | `RmsNorm` / `LayerNorm` | optional scale/bias，最后一轴逐 row；允许 provider 支持精确 in-place |
+| B | `MatMul` | rank>=2、batch broadcast、stride 表达物理方向；bias/epilogue 由 Graph region 融合，不塞 flag |
+| B | `GatedActivation` | packed halves 或两个显式输入；SiLU/GELU/GELU-tanh gate |
+| B | `Gather` / `Scatter` | arbitrary axis，i32/i64 indices，checked 与显式 unchecked policy；Scatter assign/add |
+| B | `Concat` | 同 dtype/layout 的任意输入数、显式 axis |
+| C | `RoPE` | interleaved/half-split pair layout、rotary dimension、positions 与 frequency tensor 均显式 |
+| C | `Softmax` | axis、scale、普通/additive/boolean mask；log-softmax 为 typed mode |
+| C | `TopK` | values + i32 indices 两输出，largest/smallest、sorted 与稳定 tie 语义显式 |
+| C | `ScaledDotProductAttention` | Q/K/V + optional mask，causal/scale/layout 显式；KV cache policy 和 paged storage 不下沉 |
+
+以上共 **19 个 public OperationKind family（不含 invalid/custom）**，其中 family 内含多个 typed mode；
+`SiluAndMul` 被自然的 `GatedActivation` 取代，原三项不是并列保留的兼容别名。A/B/C 是同一 v1 closure
+内的施工顺序：只有相应 schema、native reference、差分测试和 direct/Graph journey 同时成立才对用户宣称。
+
+### 明确后续而非 v1 stub 的目录
+
+| family | 当前裁决 | 恢复 trigger |
+|---|---|---|
+| quantize/dequantize/repack 与 blocked MatMul | `DEFER` 到 ggml/provider storage 卡 | 锁定 format factory、scale/zero tensor 与 provider 可执行路线 |
+| grouped MatMul、expert permutation/combine | `DEFER` 到 MoE slice | 至少两引擎的同一模型无关数据合同可复用 |
+| convolution/pooling | `DEFER` 到 vision/audio slice | ggml + 第二个消费纵切冻结 layout/padding 语义 |
+| SSM/selective scan/recurrent convolution | `DEFER` 到 recurrent slice | vLLM/SGLang/ds4 的 state owner 与 chunk contract 对齐 |
+| sort/argsort 全集 | `DEFER` | TopK 不能覆盖的真实 Compute consumer；普通容器排序不搬入 Compute |
+
+### P0 与构建边界
+
+schema validation/inference 为 O(rank + inputs + outputs)，rank<=8；built-in Operation 构造/copy/name/traits
+为 O(1)，不分配、不加锁、不查 hash/string。custom vtable 只在 build/prepare 冷路径一次。`compute_ops`
+最终 `PUBLIC_DEPS core error`、`PRIVATE_DEPS math`；不依赖 Mem/Compute/SIMD/Graph/provider。公开头使用独立
+visibility owner，但 Compute 产品 façade 聚合后，用户仍只 include `hyle/compute/*`。

@@ -60,3 +60,56 @@
 7. 现有入口逐项 `KEEP/MOVE/REPLACE/DELETE`，以及 source/static/shared 与 factor-only 构建投影。
 
 AUDITED 前不改 Graph 产品代码、公开头、依赖、benchmark 或 provider 实现。
+
+## AUDITED 结论（2026-09-12）
+
+### 来源与边界
+
+ggml `e91ded11bdcd` 的 logical cgraph/backend split/gallocr、oneDNN `6b7f1fbbb18e` 的 partition + compiled
+partition，以及 llama.cpp/vLLM/SGLang/ds4 的 immutable model artifacts 与 per-request state 共同确认：
+Graph 必须拥有 logical constant、多输出、provider region 和显式 plan step，但不应吸收模型 scheduler、
+KV policy 或 backend native handles。v3 冻结为**单 Context/Device、一个或多个 provider、一个 ordered Queue**；
+跨设备 placement/transfer 在首个 GPU backend 有真资源后另卡审计，不能用 host-only伪接口预演。
+
+### 入口与 IR ledger
+
+| ID | 当前形状 | 裁决 | v3 冻结合同 |
+|---|---|---|---|
+| G30 | `ValueKind` 只有 input/node output | `FIX` | 增加 logical constant role；Graph 仍不持有 payload |
+| G31 | `GraphBuilder::add()` 返回单 ValueId | `REPLACE` | general `add_node()` 返回 NodeId，随后 O(1) `result(node,index)`；single-output typed convenience 返回 ValueId |
+| G32 | node 固定最多 2 input/1 output | `REPLACE` | allocator-owned edge/output ranges；arity 来自 compute_ops，compile 后固定且 steady path不增长 |
+| G33 | `output(ValueId)` 只接受 node output | `RENAME/FIX` | `publish(ValueId)` 可发布合法 input/constant/node result；避免与 node result 概念混名 |
+| G34 | 无 constant payload seam | `FIX` | Builder 只声明 `constant(TensorDesc)`；CompileOptions 传精确 ConstantBinding，Executable 按 report 明示 borrow 或 packed owner |
+| G35 | alias 由 RMSNorm 特判 | `REPLACE` | 使用 operation traits + liveness；view alias/in-place candidate/禁止 overlap 统一规划，provider 只能收窄 |
+| G36 | 无 side-effect/control edge | `FIX` | pure 为默认；effect/resource-write node 必须 `depends_on()` 或数据依赖，缺少顺序即 finish/compile 失败 |
+| G37 | 每 node 独立 prepare | `FIX` | 先查询 provider region proposals，再以确定性 cost 选择不重叠 regions；剩余 node 回落单-op artifact |
+| G38 | submit 每节点 host wait | `DELETE` | 同一 ordered Queue 连续提交 plan steps，只返回代表整个 sequence 的最终 Completion |
+| G39 | CompileReport 只有一个 ProviderKind | `REPLACE` | copyable report view 枚举 region/provider/version、node range、workspace、packed/borrowed constants、copy/sync/fallback |
+| G40 | compile 只接 Context，无选项 | `FIX` | `CompileOptions` 包含 constant bindings、fallback/optimization policy 和显式预算；provider 来源仍是 Context 冻结序列 |
+| G41 | Executable/Invocation owner 分离 | `KEEP/FIX` | Executable 保活 artifacts/packed constants；Invocation 独占 mutable bindings/workspace并禁止 in-flight reset/reuse |
+
+ConstantBinding 默认是显式 borrow，source storage 必须活过 Executable 与其全部 in-flight completions；若
+provider 打包/复制，report 必须给出 bytes、owner 和 source borrow 是否解除。Graph 不用 `shared_ptr<void>`
+掩盖所有权，也不把权重伪装成每次 Invocation input。
+
+### Region 与 plan 合同
+
+- Compute Provider 保持单一显式对象。Graph 通过该对象的局部、具名 region-extension query 取得编译接口；
+  不使用进程注册表，Compute core 不包含 Graph 类型，也不反向依赖 Graph；
+- provider 对 immutable Graph view 提交候选 region、支持约束与可比较 cost facts；Graph 决定 partition，
+  provider 只编译获选 region。`supports()` 不等于必选，copy/repack/sync/packing/JIT 均计入冷/热成本；
+- v3 计划 step 只有 `Region`、`Copy/Repack`、`Barrier` 三类。每个 Region 是一个预绑定 submit callable；
+  steady path 不遍历原始 DAG、不查 provider、不推 shape、不 JIT；
+- deterministic fallback 是拓扑顺序单-op regions。compile/partition 目标 O(P*(V+E)+Q log Q)，其中 P 是
+  显式 provider 数、Q 是有限 proposals；每 provider 和全局 proposal 数都有 CompileOptions 预算；
+- Graph v3 不拆 `graph_ir/graph_compile/graph_plan` 独立 component：目前只有同一 Graph product 消费，代码/
+  依赖隔离收益尚不足以抵消三个状态 owner。职责仍在源码目录内分层；首次重型 compiler 依赖或独立
+  plan consumer 是新的 factorization trigger。
+
+### 正确性、性能和后续边界
+
+v3 FIX 为 G30--G41；symbolic dimension、跨 Device QueueSet、serialization/cache ABI 与通用 control flow
+明确不进入本候选。P0：validate/infer/liveness O(V+E)，constant binding O(C)，Invocation bind O(B) 总表后
+每次 O(1)，submit O(R+X)（regions + boundary steps）且零 metadata allocation。候选 P1 只比较：同一
+prepared artifacts 的 direct sequence、单-op fallback plan、以及首个真实 ggml/oneDNN multi-op region；
+compile/create/bind 均在 steady timing 外，同 storage/layout/threading/completion，不做苹果对橘子。
