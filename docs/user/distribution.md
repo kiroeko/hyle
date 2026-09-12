@@ -149,7 +149,8 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 source/static/shared 都通过同一个
 `hyle::compute::onednn::provider()` C++ 入口使用：static SDK 传递锁定 oneDNN archive/header 闭包，shared
 SDK 把其实现私有链接进 provider shared library，二者都安装 Apache-2.0 notice。CUDA、Metal/MLX、
-Vulkan、HIP 或其他第三方 provider 仍须在独立 factor 具备实现、依赖 owner、三交付验证与性能结论后登记。
+Vulkan 或其他第三方 provider 仍须在独立 factor 具备实现、依赖 owner、三交付验证与性能结论后登记。
+HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
 当前 trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 
 ## 5. 配置合同

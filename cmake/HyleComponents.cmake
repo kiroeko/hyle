@@ -355,7 +355,8 @@ _hyle_declare_component(compute_ops
   PUBLIC_DEPS core error
   SPLIT_PUBLIC_HEADERS
     hyle/compute/ops_visibility.h
-    hyle/compute/tensor_desc.h)
+    hyle/compute/tensor_desc.h
+    hyle/compute/operation.h)
 
 # Active SCOPED identities for the CPU implementation split. Both targets stay
 # empty and have no dependency/product projection until their finite audits

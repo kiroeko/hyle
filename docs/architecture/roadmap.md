@@ -72,7 +72,8 @@ Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass
 Apple Silicon 栈（MLX-first provider + 原生 Metal backend/custom-kernel escape hatch）和 NVIDIA 栈
 （CUDA backend + 经审计的 vendor/ggml/HYLE provider）是首要优化目标。Vulkan 是面向广泛消费级设备与
 renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 走 MoltenVK portability；它不
-是实验，也不替代 Apple 原生性能路线。HIP/ROCm 是必须明确补齐和真机资格化的覆盖缺口。
+是实验，也不替代 Apple 原生性能路线。HIP/ROCm 在没有 AMD 真机、明确消费者与维护预算的情况下
+无限期不纳入当前产品，不创建空 backend 或构建开关；Vulkan 不冒充 ROCm 资格。
 
 ## 依赖审查
 
@@ -97,7 +98,7 @@ owner 是否放错、公开面是否泄漏机制，以及能否提取满足质�
 实际施工顺序由中央图的拓扑、registry 中的活动状态和真实 blocker 决定，不在 architecture 维护一份
 容易过期的编号队列。对一个问题域的典型顺序是：底层 factor → 产品 façade 所需其余 factor → 直接
 消费者回放。Compute 与 Graph 的每个新纵切都必须先有真实推理或异构资源任务、能力边界和 closure
-card；它们采用“最小 Compute 合同 -> one-op Graph -> multi-op CPU -> 主要设备 -> Vulkan/HIP”的
+card；它们采用“最小 Compute 合同 -> one-op Graph -> multi-op CPU -> 主要设备 -> Vulkan”的
 共同纵切，不先各自造完大全套再尝试拼接。
 
 `CLOSED` 模块只因可复现 correctness/security/lifetime 缺陷、真实消费者证明的常用能力缺口、相关

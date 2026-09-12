@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "hyle/compute/device.h"
-#include "hyle/compute/operation.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
 

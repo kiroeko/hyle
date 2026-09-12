@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/operation.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
 

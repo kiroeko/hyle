@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "hyle/container/small_vector.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"

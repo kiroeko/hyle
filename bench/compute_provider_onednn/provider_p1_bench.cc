@@ -16,7 +16,7 @@
 #include "oneapi/dnnl/dnnl_ukernel.h"
 
 #include "hyle/compute/device.h"
-#include "hyle/compute/operation.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"

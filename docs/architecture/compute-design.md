@@ -10,7 +10,7 @@
 
 Compute 是 HYLE 的**异构执行层**。它让 C++ 消费者可以：
 
-1. 发现并选择 CPU、CUDA、Metal、Vulkan、HIP/ROCm 等计算设备，建立显式执行上下文；
+1. 发现并选择 CPU、CUDA、Metal、Vulkan 等计算设备，建立显式执行上下文；
 2. 在不经过 Graph 的情况下直接准备并执行一个算子或原生 kernel；
 3. 让 Graph 编译器把一段逻辑计算交给最合适的 HYLE 或第三方 provider；
 4. 显式管理 queue、storage、copy、同步、完成和 native interop，而不隐藏昂贵工作；
@@ -44,7 +44,7 @@ Module -> Kernel -> CommandList -> submit() -> Completion
   `TensorView` 只把描述与 Mem storage 绑定，不拥有 payload。
 - `PreparedOperation` 是可共享的不可变 artifact，把能力检查、provider 选择、layout/repack 决策和可能的
   编译移出热调用；`OperationInvocation` 拥有一次并发 lane 的 stream、binding metadata 与 workspace。
-- `Module/Kernel/CommandList` 是原生或 HYLE kernel 的低层路线；Vulkan SPIR-V、CUDA/HIP
+- `Module/Kernel/CommandList` 是原生或 HYLE kernel 的低层路线；Vulkan SPIR-V、CUDA
   module/kernel、Metal pipeline 和 CPU function target 都通过有类型的 backend extension 表达。
 - `Completion` 是提交后的生命周期边界。等待、轮询、callback 和 coroutine bridge 必须共享同一个
   完成状态，不能制造互不相认的 event。
@@ -67,7 +67,7 @@ prepare/compile 阶段，不在 element、lane 或每次节点执行中反复裁
 
 | 角色 | 回答的问题 | 例子 |
 |---|---|---|
-| backend | 设备、context、queue、memory、module、同步和 native handle 怎样工作 | CPU、CUDA、Metal、Vulkan、HIP/ROCm |
+| backend | 设备、context、queue、memory、module、同步和 native handle 怎样工作 | CPU、CUDA、Metal、Vulkan；合同允许以后加入新的 backend |
 | provider | 哪些 op/region 能以何种 layout、精度和成本在该 backend 上执行 | HYLE native、ggml、oneDNN、MLX、MPSGraph、vendor library |
 
 Provider 必须声明而不能让调用方猜测：
@@ -94,8 +94,11 @@ Provider 可以自行拥有 device allocation 或 graph allocator。HYLE 必须�
 | 主要 | Apple 原生 Metal | **MLX（首个资格化 provider）**、HYLE Metal kernel、MPS/MPSGraph、Accelerate/BNNS | 推理纵切优先证明 MLX region；原生 Metal 保留 custom/best-of kernel、资源互操作和缺口路线；不同层不得混成一个 backend |
 | 主要 | NVIDIA CUDA | HYLE CUDA kernel、cuBLAS/cuDNN/TensorRT、ggml 等 | 覆盖消费级 RTX 与可用数据中心形状，按完整 region 成本裁决 provider |
 | 正式保底、次要优化 | 原生 Vulkan；Apple 上经 MoltenVK | HYLE SPIR-V kernel、ggml Vulkan 等 | 给广泛消费级 GPU 和 renderer interop 一条共同路线；MoltenVK 只签 Apple portability，不替代原生 Metal 性能路线 |
-| 必须补齐的覆盖缺口 | AMD HIP/ROCm | HYLE HIP kernel、rocBLAS/MIOpen、ggml 等 | 当前没有合格实现；不能用 Vulkan 存在来假装已覆盖 ROCm 生态 |
 | 基线 | CPU | HYLE SIMD/native、oneDNN、ggml；Apple 可含 Accelerate/BNNS | 三平台 correctness、fallback、provider contract 和可重复性能基线；不是“只剩 CPU 时才用”的 stub |
+
+AMD HIP/ROCm **无限期不进入当前产品线**：没有 component、CMake gate、空 target 或恒失败 stub，Vulkan
+只提供跨厂商保底而不冒充 ROCm。只有同时具备可持续使用的 AMD 真机、明确消费者和维护预算，才以新的
+closure card 恢复 HIP backend/provider 调研；通用 backend 扩展合同为这次恢复保留空间，但不构成承诺。
 
 ### 4.1 施工包不能隐藏 SIMD
 
@@ -108,14 +111,13 @@ prepare-time route。把它只写成“Compute 算子目录”会错误隐藏 HY
 |---|---|---|---|
 | CPU 执行 | CPU backend + HYLE-native provider | Platform + Mem + **HYLE SIMD** | 内建的 reference/fallback/best-of 路线；当前归 `compute`，不因任务可见性虚构新 factor |
 | CPU 借入 | oneDNN provider | oneDNN x64 BRGEMM ukernel | 可选 MatMul provider；不是 CPU backend，也不替代 native/SIMD |
-| 跨后端借入 | ggml provider islands | ggml CPU/CUDA/Metal/Vulkan/HIP 等各自 backend | 每种 backend 分别审计，不能把“ggml provider”写成 CPU-only 单项 |
+| 跨后端借入 | ggml provider islands | ggml CPU/CUDA/Metal/Vulkan 等已准入 backend | 每种 backend 分别审计，不能把“ggml provider”写成 CPU-only 单项 |
 | Apple | Metal backend + MLX/MPS/HYLE/ggml providers | Apple runtime 与 HYLE custom kernels | MLX-first，但保留 native Metal escape hatch |
 | NVIDIA | CUDA backend + vendor/HYLE/ggml providers | CUDA runtime、vendor libraries、custom kernels | provider 选择按完整 region 成本 |
 | 可移植 GPU | Vulkan backend + HYLE SPIR-V/ggml provider | Vulkan；Apple portability 使用 MoltenVK | 正式保底，不冒充原生 Metal 性能 |
-| AMD | HIP backend + vendor/HYLE/ggml providers | HIP/ROCm | 独立真机资格，不能由 CUDA/Vulkan 结果代签 |
 | 图编译 | Graph IR/compiler/plan | 上述 prepared op/region | 横跨所有 backend/provider，拥有 partition、placement、copy/sync 和 workspace |
 
-因此阶段清单应写成“CPU backend/HYLE-native-SIMD → oneDNN/ggml CPU region → Apple/CUDA/Vulkan/HIP
+因此阶段清单应写成“CPU backend/HYLE-native-SIMD → oneDNN/ggml CPU region → Apple/CUDA/Vulkan
 backend-provider 组合 → 跨 provider Graph”，而不是把 oneDNN、ggml 与整个 GPU backend 放在同一级。
 当前状态仍只从 registry 和各 closure card 读取，本表不复制完成百分比。
 
@@ -203,7 +205,7 @@ HYLE::compute                         # 用户产品 façade
   compute_core                        # Device/Context/Queue/Completion/kernel/interop
   compute_ops                         # Tensor/Operation 描述与公共算子合同
   compute_sched                       # 可选 Scheduler/coroutine completion bridge
-  compute_backend_cpu|cuda|metal|vulkan|hip
+  compute_backend_cpu|cuda|metal|vulkan
   compute_provider_native|ggml|onednn|mlx|mpsgraph|vendor
 
 graph_ir -> compute_ops
@@ -241,7 +243,7 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 - feature 集合必须确定产物 identity；正式构建不能依赖 `AUTO` 让机器环境悄悄改变 provider。
 - capability query、compile report 和 tracing 能解释选了谁、为何 fallback、插入了哪些 copy/sync、需要
   多少 workspace；关闭 Obs 时热路径不支付诊断成本。
-- native interop 使用 backend-specific typed extension；普通 API 不泄漏 CUDA/Vulkan/Metal/HIP/MLX/ggml 类型。
+- native interop 使用 backend-specific typed extension；普通 API 不泄漏 CUDA/Vulkan/Metal/MLX/ggml 类型。
 - 不提供训练、自动微分、分布式 collective runtime、模型 zoo、render graph、窗口/present 或 serving。
 
 ## 10. 开工顺序
@@ -263,9 +265,7 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
    matmul、repack 和异构 partition。Core ML 不进入首轮低层路线。
 7. **Vulkan slice**：同一 graph/op 合同落到 SPIR-V，验证 native device、buffer、timeline completion、
    external memory/sync 与 Windows/Linux 消费级设备；MoltenVK 只签 portability 证据。
-8. **HIP/ROCm slice**：补齐 AMD device/module/queue/completion 和 provider 路线；没有真机与 ROCm
-   qualification 时保持明确未认证，不能降级为 CUDA 宏替换即宣称支持。
-9. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
+8. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
    invocation、取消/drain 和 source/static/shared 交付门。
 
 每一步都先创建合法 closure card 并完成 `SCOPED -> AUDITED`，只实现冻结的有限 `FIX/BORROW/DELETE`

@@ -13,7 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/compute/device.h"
-#include "hyle/compute/operation.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"

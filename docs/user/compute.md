@@ -6,7 +6,8 @@
 > `CLOSED`：BRGEMM ukernel 已通过 Windows/Linux 正确性与三交付、暖执行零分配、Linux sanitizers、
 > 正式 P1、两台 Apple ARM 负能力、离线依赖/许可证和终局红队。Apple Silicon 等 AArch64 目标会关闭
 > 该 factor 并
-> 使用 HYLE-native；CUDA、Metal、Vulkan、HIP 与其他 providers 仍是后续独立纵切。
+> 使用 HYLE-native；CUDA、Metal、Vulkan 与其他已准入 providers 仍是后续独立纵切。HIP/ROCm 当前
+> 无限期不纳入产品，也没有可启用的空开关。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、

@@ -193,7 +193,8 @@ provider/backend workload 上形成可解释收益。
    同时保留原生 Metal custom-kernel/interop 和 MPSGraph/MPS 候选；Core ML 留在模型级 routed runtime
    边界；
 6. 再落到正式支持的 Vulkan SPIR-V，验证消费级设备与 renderer 的 external memory/semaphore handoff；
-7. 补齐 HIP/ROCm track，再扩 attention、quantized layout 和重复 decode。
+7. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
+   Graph 产品资格。
 
 每一步都有独立 closure card、固定 consumer slice 和停止预算。one-op lifecycle、P0 成本或三种 C++ 交付
 未通过时，不得用“后面完整 graph 会摊薄”进入下一步；provider region 不成立时也不得扩大 operator

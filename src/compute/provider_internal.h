@@ -5,7 +5,7 @@
 #include <string_view>
 #include <type_traits>
 
-#include "hyle/compute/operation.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 
 namespace hyle::compute::detail {
