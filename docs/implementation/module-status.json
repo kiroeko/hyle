@@ -280,7 +280,7 @@
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v4-real-provider-cost-truth.md",
-      "summary": "graph v4 AUDITED：真实 oneDNN provider 暴露的 unknown-vs-zero persistent/estimate 与 CPU dispatch 语义缺口已冻结为 G42--G45；G30--G41 实现保持，下一提交只修冷 report/SPI v2，不扩大算子目录。真实 multi-op region、P1、Linux/两台 Apple、sanitizer 和终局红队仍未完成。"
+      "summary": "graph v4 AUDITED：G42--G45 冷成本事实合同已固定在 2a2a133e；optional 区分 unknown/exact-zero，region SPI 升至 v2，dispatch 统一为 backend execution episode，Windows Graph/逐头/三交付/P0/红队通过且未改 steady submit。真实 multi-op region、P1、Linux/两台 Apple、sanitizer 和终局红队仍未完成；不扩大算子目录。"
     },
     {
       "module": "container_concurrent",

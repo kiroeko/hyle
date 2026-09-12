@@ -66,16 +66,25 @@ Graph 保持 `AUDITED`，本卡只授权 G42--G45。
 
 ## Candidate
 
-- commit：尚无；
-- public API/layout/算法/常态成本变化：冷 report/SPI schema 待实现；partition/submit 不变；
-- 直接消费者迁移：test provider 与真实 oneDNN region 待迁移；
-- candidate 后仅证据/文档变化：尚未进入候选。
+- commit：`2a2a133e3e4fe60561efe00ad2c225866ce86a5f`；
+- public API/layout/算法/常态成本变化：`RegionCostFacts` 的 compile/persistent/workspace estimate、
+  `RegionArtifactProperties::persistent_bytes` 与 `CompileStepReport::persistent_bytes` 已改为 optional；region
+  extension 精确升至 v2。partition/selection/Invocation/submit 未改，optional 只存在于 compile/report 冷对象；
+- 直接消费者迁移：测试 provider 已迁移并覆盖 unknown/exact-zero/known、fallback unknown 和 v1 mismatch；
+  真实 oneDNN region 将直接实现 v2，不保留 v1 adapter；
+- candidate 后仅证据/文档变化：Windows Graph 逐头、Graph/region tests、源码嵌入、installed shared/static
+  独立 consumer 与 shared export hygiene 均已回放；后续 Graph 产品实现不得改写本候选合同。
 
 ## 红队与裁决
 
-- 红队重点：optional 是否被热路径读取、旧 extension version、unknown 被聚合成 zero；
-- 未决限制：实现和验证尚未进行；
+- 红队结果：`Invocation::submit`、内部 plan step 和 workspace 未取得 optional 字段；只有 compile 生成
+  `CompileReport` 时复制 artifact fact。v1 ID 查询明确失败，fallback 保持 unknown，known zero 不被折叠；
+- P0：产品提交没有修改 `src/graph`，steady call graph、allocation、workspace 与分支不变；新增状态只在
+  proposal/artifact/report 冷 metadata；
+- Windows 验证：Graph 3/3（含逐头）通过；source embedding、installed shared/static Graph consumer 均编译
+  运行通过；shared hygiene 检查 10 个 HYLE libraries / 911 exports；closure/docs/diff 通过；
+- 未决限制：本卡 G42--G45 已完成；真实 multi-op provider、跨平台/sanitizer 与 Graph 终局资格由当前
+  `graph_provider_onednn` 及 Graph 总闭包继续承担，不能用本候选冒充 Graph CLOSED；
 - reopen triggers：不适用，当前为 `AUDITED`；
 - LOC：终局统计；
-- 最终状态：`AUDITED`。
-
+- 最终状态：`AUDITED`（G42--G45 候选已固定，Graph 总闭包继续施工）。
