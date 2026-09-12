@@ -279,9 +279,10 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v2-multi-op-transformer.md",
-      "summary": "graph v2 AUDITED：dynamic typed DAG、immutable Graph/Executable、per-run Invocation 与 Mem lifetime workspace 的 owner/失败/复杂度已冻结；允许实现 multi-op CPU 纵切，不恢复旧 task-graph 形状。"
+      "candidate": "df6981ad942c7e9f3620785af2a730079b6b1433",
+      "summary": "graph v2 CANDIDATE：G20--G27 的 dynamic typed DAG、immutable Graph/Executable、per-run Invocation、external alias 与 Mem lifetime workspace 已固定且候选后产品无漂移；待候选验证、multi-op P1 和终局红队。"
     },
     {
       "module": "container_concurrent",

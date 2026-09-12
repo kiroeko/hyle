@@ -172,3 +172,16 @@ stream/memory handles/scratchpad 不能放在它或 `Executable` 中。Graph 的
 `UINT32_MAX` 保留为“没有 producer”的哨兵。现在二者使用独立判定：value identity 仍可使用完整
 `uint32_t` 空间，node identity 在产生保留值之前返回 `ResourceExhausted`；编译期边界断言无需构造数十亿
 节点即可锁住该不变量。修正不改变正常图的布局、复杂度或常态执行成本。
+
+## Candidate checkpoint（2026-09-12）
+
+红队纠正后的不可变 Graph v2 产品候选为
+`df6981ad942c7e9f3620785af2a730079b6b1433`。它固定 G20--G27 的 dynamic typed DAG、generation-aware
+ValueId/NodeId、immutable shared Graph/Executable、per-run Invocation、完整 external alias 检查、Mem
+lifetime workspace 与 O(V+E) compile/submit 结构。当前 HEAD 相对该候选的 `include/hyle/graph` 与
+`src/graph` 差异为空；后续 Compute provider、测试、证据、状态和文档没有改写 Graph 产品。
+
+候选 LOC 自检为全库 `563,481` 行、自实现不含测试 `99,014` 行、Graph 实现 `1,414` 行。这只允许
+进入 `CANDIDATE`：修正后候选的三平台 correctness/header、WSL sanitizers、source/static/shared、三节点
+Graph 对同一 PreparedOperation direct sequence 的 P1 composition-tax、终局七问与红队仍须逐项签发；
+旧 one-op v1 receipt 不继承到本轮。
