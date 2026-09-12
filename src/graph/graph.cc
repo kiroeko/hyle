@@ -36,9 +36,19 @@ Status allocation_failure() noexcept {
   return Status::ResourceExhausted("graph metadata allocation failed");
 }
 
-bool fits_ordinal(std::size_t size) noexcept {
+constexpr bool fits_value_ordinal(std::size_t size) noexcept {
   return size <= (std::numeric_limits<std::uint32_t>::max)();
 }
+
+constexpr bool fits_node_ordinal(std::size_t size) noexcept {
+  // UINT32_MAX is reserved as ValueRecord::producer's "no producer" value.
+  return size < (std::numeric_limits<std::uint32_t>::max)();
+}
+
+static_assert(fits_value_ordinal(
+    static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)())));
+static_assert(!fits_node_ordinal(
+    static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)())));
 
 } // namespace
 
@@ -247,7 +257,7 @@ Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
   auto bytes = description.required_bytes();
   if (!bytes)
     return std::unexpected(std::move(bytes).error());
-  if (!fits_ordinal(state_->values.size())) {
+  if (!fits_value_ordinal(state_->values.size())) {
     return std::unexpected(
         Status::ResourceExhausted("graph value identity space is exhausted"));
   }
@@ -278,8 +288,8 @@ Result<ValueId> GraphBuilder::add(compute::Operation operation,
     return std::unexpected(
         Status::InvalidArgument("graph operation input count is unsupported"));
   }
-  if (!fits_ordinal(state_->nodes.size()) ||
-      !fits_ordinal(state_->values.size()) ||
+  if (!fits_node_ordinal(state_->nodes.size()) ||
+      !fits_value_ordinal(state_->values.size()) ||
       state_->edges.size() >
           (std::numeric_limits<std::uint32_t>::max)() - inputs.size()) {
     return std::unexpected(

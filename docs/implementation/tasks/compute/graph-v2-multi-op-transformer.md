@@ -165,3 +165,10 @@ stream/memory handles/scratchpad 不能放在它或 `Executable` 中。Graph 的
 保存 shared `PreparedOperation`；每个 Graph `Invocation` 创建对应的 Compute `OperationInvocation`，并把
 其 scratchpad request 与 tensor intermediates 一起交给 Mem LifetimePlanner。steady submit 仍为每 node
 一次已裁决调用，不搜索 provider、不创建 descriptor、不分配；CompileReport 对混合 provider如实报告。
+
+### Identity exhaustion follow-up（2026-09-12）
+
+红队复核发现 node ordinal 与 value ordinal 原先共用 `UINT32_MAX` 上界判定，但 node producer 字段把
+`UINT32_MAX` 保留为“没有 producer”的哨兵。现在二者使用独立判定：value identity 仍可使用完整
+`uint32_t` 空间，node identity 在产生保留值之前返回 `ResourceExhausted`；编译期边界断言无需构造数十亿
+节点即可锁住该不变量。修正不改变正常图的布局、复杂度或常态执行成本。
