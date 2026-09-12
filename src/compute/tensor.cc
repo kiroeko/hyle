@@ -44,6 +44,14 @@ Status validate_strides(std::span<const std::int64_t> dimensions,
   return Status::Ok();
 }
 
+bool has_zero_extent(std::span<const std::int64_t> dimensions) noexcept {
+  for (const std::int64_t dimension : dimensions) {
+    if (dimension == 0)
+      return true;
+  }
+  return false;
+}
+
 Result<std::int64_t> stride_as_int64(std::size_t stride) noexcept {
   const auto converted = math::try_integer_cast<std::int64_t>(stride);
   if (!converted) {
@@ -164,6 +172,10 @@ TensorDesc::dense(DataType type,
     return std::unexpected(std::move(validation));
 
   std::array<std::int64_t, kMaxTensorRank> byte_strides{};
+  if (has_zero_extent(dimensions)) {
+    return strided_bytes(type, dimensions,
+                         std::span(byte_strides.data(), dimensions.size()));
+  }
   std::size_t stride = data_type_size(type);
   for (std::size_t index = dimensions.size(); index != 0; --index) {
     const std::size_t position = index - 1;
@@ -244,6 +256,10 @@ TensorDesc::blocked_dense(DataType logical_type,
   }
 
   std::array<std::int64_t, kMaxTensorRank> byte_strides{};
+  if (has_zero_extent(dimensions)) {
+    return blocked_strided(logical_type, dimensions, format, block_axis,
+                           std::span(byte_strides.data(), dimensions.size()));
+  }
   std::size_t stride = format.bytes_per_block();
   for (std::size_t index = dimensions.size(); index != 0; --index) {
     const std::size_t position = index - 1;

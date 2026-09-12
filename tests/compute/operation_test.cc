@@ -123,9 +123,13 @@ public:
     if (fail_mapping_) {
       return std::unexpected(Status::Unavailable("test mapping failed"));
     }
-    return ResourceHostMapping{
-        size == 0 ? nullptr : static_cast<std::byte *>(native_handle) + offset,
-        nullptr};
+    std::byte *data = nullptr;
+    if (size != 0) {
+      data = static_cast<std::byte *>(native_handle) + offset;
+      if (misaligned_mapping_)
+        ++data;
+    }
+    return ResourceHostMapping{data, nullptr};
   }
 
   Status unmap_host(void *, void *, std::size_t, std::size_t,
@@ -156,6 +160,7 @@ public:
   void fail_unmap(bool value) noexcept { fail_unmap_ = value; }
   void host_accessible(bool value) noexcept { host_accessible_ = value; }
   void coherent(bool value) noexcept { coherent_ = value; }
+  void misaligned_mapping(bool value) noexcept { misaligned_mapping_ = value; }
   std::span<std::byte> storage() noexcept { return storage_; }
   int maps() const noexcept { return maps_; }
   int unmaps() const noexcept { return unmaps_; }
@@ -169,6 +174,7 @@ private:
   bool fail_unmap_ = false;
   bool host_accessible_ = true;
   bool coherent_ = true;
+  bool misaligned_mapping_ = false;
   int maps_ = 0;
   int unmaps_ = 0;
   int flushes_ = 0;
@@ -715,6 +721,34 @@ TEST(PreparedOperation,
   completion = invocation.submit(queue, input_view, output_view);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->wait().IsUnavailable());
+}
+
+TEST(PreparedOperation, RejectsAnActuallyMisalignedHostMapping) {
+  constexpr std::size_t count = 8;
+  const std::size_t bytes = count * sizeof(float);
+  const TensorDesc description = row_description(count);
+  InstrumentedResource resource;
+  resource.misaligned_mapping(true);
+  Buffer storage =
+      Buffer::create(MemoryResourceRef(resource), bytes * 2, 64).value();
+  ConstTensorView input =
+      ConstTensorView::create(description,
+                              storage.view().subview(0, bytes).value())
+          .value();
+  TensorView output =
+      TensorView::create(description,
+                         storage.view().subview(bytes, bytes).value())
+          .value();
+  Context context = Context::create(Device::cpu()).value();
+  Queue queue = context.create_queue().value();
+  auto invocation =
+      hyle::compute::prepare(context, RmsNorm{}, description, description)
+          ->create_invocation()
+          .value();
+
+  auto completion = invocation.submit(queue, input, output);
+  ASSERT_TRUE(completion.has_value());
+  EXPECT_TRUE(completion->wait().IsFailedPrecondition());
 }
 
 TEST(PreparedOperation, RejectsStorageThatCpuCannotMap) {

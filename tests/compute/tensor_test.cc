@@ -66,6 +66,17 @@ TEST(TensorDesc, ScalarsAndZeroExtentsHaveExplicitStorageSemantics) {
   EXPECT_EQ(empty.element_count().value(), 0u);
   EXPECT_EQ(empty.required_bytes().value(), 0u);
   EXPECT_TRUE(empty.is_dense());
+
+  const std::array<std::int64_t, 3> extreme_empty{
+      0, (std::numeric_limits<std::int64_t>::max)(),
+      (std::numeric_limits<std::int64_t>::max)()};
+  TensorDesc safe_empty =
+      TensorDesc::dense(DataType::kFloat64, extreme_empty).value();
+  const std::array<std::int64_t, 3> zero_strides{};
+  EXPECT_TRUE(std::ranges::equal(safe_empty.byte_strides(), zero_strides));
+  EXPECT_EQ(safe_empty.element_count().value(), 0u);
+  EXPECT_EQ(safe_empty.required_bytes().value(), 0u);
+  EXPECT_TRUE(safe_empty.is_dense());
 }
 
 TEST(TensorDesc, StridedAndBroadcastDescriptionsReportPhysicalExtent) {
