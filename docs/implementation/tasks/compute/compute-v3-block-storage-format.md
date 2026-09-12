@@ -192,3 +192,83 @@ checkout：
 CV3-01--07 已全部处理，公开 API、对象布局、算法和常态成本在候选提交停止变化。候选阶段仍需完成 Linux
 与两台 Apple 的 source/shared/static relocated delivery 回放、终局七问/红队、治理 checker 与 terminal
 签发；这些验证不得据点值继续调整候选产品。
+
+## 跨平台交付收尾（2026-09-12）
+
+不可变候选 `ada35161916d4e7b89ccabe846897cbea9a43808` 随后以 exact Git archive 在 Linux 和两台
+Apple 机器上完成预声明回放；远程临时目录没有反向覆盖 Windows canonical checkout：
+
+- Linux GCC 14.2 的 Compute source embedding、relocated installed shared、relocated installed static
+  consumer 全部运行通过；shared export hygiene 检查 6 个 HYLE library、756 个 export；x64 static SDK
+  携带 oneDNN 开发头、静态库与许可证，shared SDK 不泄漏 provider 私有 SPI；
+- MacBook Air（AppleClang 21.0.0.21000334）与 Mac mini（AppleClang 21.0.0.21000101）的 Compute
+  source/shared/static relocated consumer 全部运行通过；ARM 上 oneDNN provider 按能力合同关闭且没有下载；
+- 因本候选迁移了 Graph 保存的 Tensor metadata，Windows、Linux 与两台 Apple 又分别运行同候选的
+  selected-Graph source/shared/static relocated consumer，全部通过；oneDNN 保持关闭，未形成 Graph 产品
+  reopen trigger；
+- oneDNN 的 `ONEDNN_ENABLE_PRIMITIVE=MATMUL` 限制最终可用 primitive，但其上游 CMake 仍以单体 source
+  glob 编译较宽的 CPU/x64 源集。这解释了 x64 三交付的构建时长，不表示 HYLE 暴露额外算子，也不构成
+  storage candidate 的运行时成本或产品缺陷。
+
+## 七问终局答案
+
+1. **第三方路径**：本轮没有新增直接第三方、下载、许可证或公开 vendor 类型。Compute 仍通过已关闭的
+   Mem/Platform/SIMD 等 HYLE factor 间接取得其合法实现；可选 oneDNN 继续由独立 factor 拥有，ARM 自动
+   关闭，关闭时不下载。
+2. **功能完整**：本轮精确关闭 logical dtype 与 physical storage 的分离：plain byte-strided、一个逻辑轴
+   fixed-block 和不可通用解释的 opaque exact-extent 三档均可自然构造、比较、置换、计算 bytes 并绑定
+   borrowed view。scale/zero、量化公式、多 buffer sparse schema、常量 binding 和 provider region 有明确
+   后续 owner。它不冒充完整 Compute 算子目录；当前内建算子仍只有 RMSNorm、MatMul 与 SiluAndMul。
+3. **内部复用**：checked arithmetic 复用 Math，storage/view/resource 复用 Mem，失败复用 Error，ISA 与
+   whole-row kernel 复用 Platform/SIMD；没有私造 allocator、format registry、string identity 或 Graph
+   lifetime planner。
+4. **性能**：所有 layout 构造、比较、置换、span 与 alignment 检查最坏 `O(rank<=8)`；descriptor 无 heap、
+   lock、atomic、syscall、vtable 或 registry，submit alignment 使用 power-of-two mask，不做整数除法。
+   本轮 metadata 不进入 element loop，因而按预声明 `P0` 签发，不制造没有产品意义的纳秒 P1。
+5. **接口与易用性**：普通用户继续用 `TensorDesc::dense()`；provider author 才使用 typed
+   `StorageFormat::blocked/opaque()` 与明确的 byte-stride 入口。旧含混 element-stride API 已删除，没有
+   compatibility alias、magic dtype、隐藏 padding/copy 或 Native FFI。
+6. **构建交付**：没有新增 target、feature switch 或内部依赖边。Windows、Linux、MacBook Air、Mac mini
+   的 Compute 与定向 Graph source/shared/static relocated consumer 均通过；x64 oneDNN 静态开发闭包与
+   shared export hygiene 成立，ARM 负能力成立。
+7. **文档与状态**：Compute/Graph 用户指南和 Compute 架构页均使用 logical dtype + physical byte-layout
+   词汇，说明 block divisibility、opaque 限制、provider owner 与无隐藏成本。当前状态只由 registry 指向
+   本 terminal record；后续算子、异步 backend、constant/region 和 GPU 能力不能由本卡推断为已交付。
+
+## Terminal record（2026-09-12）
+
+不可变 Compute v3 产品候选为 `ada35161916d4e7b89ccabe846897cbea9a43808`。候选到终局的
+`include/hyle/compute`、`src/compute`、`include/hyle/graph`、`src/graph` 与相关测试产品差异为空；候选后
+只更新状态和证据文字，没有根据验证结果回写 API、layout、算法或常态 metadata。
+
+| Gate | 候选绑定证据 | Verdict |
+|---|---|---|
+| scope | CT30--CT38 全部完成，CT39 明确 routed；普通 scalar 与独立非 ggml codec 两条 journey 都成立 | `PASS` |
+| architecture | logical/physical 分层、typed provider identity owner、Mem storage 与 Graph metadata 边界成立；无新依赖或反向边 | `PASS` |
+| correctness | 四机 Compute/Graph 定向套件、block/opaque/permutation/overflow/alignment/view/fallback 边界以及 Linux ASan/UBSan 全过；本 ledger 无共享可变状态，TSan 为 `NOT_APPLICABLE` | `PASS` |
+| delivery | 四机 Compute source/shared/static relocated consumer 全过；四机 Graph metadata 三交付回放全过；x64 vendor 开发闭包与 shared export hygiene 成立 | `PASS` |
+| usability_docs | scalar 默认路径不增加概念；高级 storage 入口有 typed 示例、精确 owner/限制和可诊断失败；用户/架构文档一致 | `PASS` |
+| red_team | 复核旧 element-stride 残留、benchmark seam、格式身份、算术、padding、alias/alignment、provider fallback、vendor 泄漏与 Graph reopen 条件，未发现候选产品反证 | `PASS` |
+| engineering_performance | `sizeof(StorageFormat)=40`、`sizeof(TensorDesc)=184<=192`，均 trivially copyable；全部 descriptor 工作 `O(rank<=8)` 且无常态动态成本，预声明 P0 通过 | `PASS` |
+
+代表性验证结果：
+
+```text
+Windows/Linux/MacBook Air/Mac mini:
+cmake -DHYLE_SMOKE_COMPONENT=compute -P cmake/HyleCiSelectedComponentSmoke.cmake
+cmake -DHYLE_SMOKE_COMPONENT=graph -P cmake/HyleCiSelectedComponentSmoke.cmake
+
+Windows/Linux/Apple targeted suites:
+Compute 36/36, Graph 23/23; Windows oneDNN 10/10
+Linux ASan/UBSan: Compute 36/36, Graph 23/23, zero reports
+```
+
+公开限制：这次只签发 provider-neutral tensor storage，不扩张既有同步 CPU backend 或三算子目录。异步
+Completion/backend、开放 provider identity、完整推理算子目录、Graph constant/region、ggml 量化路线及
+CUDA/Metal/Vulkan/HIP 必须由后续真实纵切重新 scope；它们不是本卡的隐含承诺。只有可复现
+correctness/security/lifetime/storage 缺陷、真实 consumer 证明本 owner 下的新 physical-format 能力、相关
+依赖升级、公开合同/算法/交付变化，或合格证据显示 material regression 才重开本轮。
+
+七门全部 `PASS`，Compute v3 storage-format 纵切裁决为 **`CLOSED`**。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

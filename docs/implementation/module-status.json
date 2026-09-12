@@ -272,10 +272,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md",
       "candidate": "ada35161916d4e7b89ccabe846897cbea9a43808",
-      "summary": "compute v3 CANDIDATE：provider-neutral plain/block/opaque storage、byte-strided TensorDesc、安全 view/fallback 与七项有限施工集已完成；四机 correctness、sanitizers、Windows 三交付和 P0 通过，候选固定后继续 Linux/Apple 三交付与终局签发。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md"
+      },
+      "summary": "compute v3 CLOSED：provider-neutral plain/block/opaque storage、byte-strided TensorDesc、安全 view/fallback 已完成四机 correctness、sanitizers、Compute/Graph 三种 C++ 交付、文档/红队和 O(rank<=8) 零常态动态成本 P0；本轮不冒充完整算子或异步 GPU backend。"
     },
     {
       "module": "graph",
