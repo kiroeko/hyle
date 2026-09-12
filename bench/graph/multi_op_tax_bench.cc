@@ -31,11 +31,11 @@ using hyle::Status;
 using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
+using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::OperationInvocation;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
-using hyle::compute::SiluAndMul;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::graph::GraphBuilder;
@@ -243,32 +243,33 @@ private:
     route.projected = make_tensor(descriptions_.projected);
     route.output = make_tensor(descriptions_.output);
 
-    auto rms = take_or_abort(
-        hyle::compute::prepare(context_, RmsNorm{}, descriptions_.activation,
-                               descriptions_.norm_weight,
-                               descriptions_.normalized),
-        "direct RMSNorm prepare");
+    auto rms = take_or_abort(hyle::compute::prepare(context_, RmsNorm{},
+                                                    descriptions_.activation,
+                                                    descriptions_.norm_weight,
+                                                    descriptions_.normalized),
+                             "direct RMSNorm prepare");
     auto matmul = take_or_abort(
         hyle::compute::prepare(context_, MatMul{}, descriptions_.normalized,
                                descriptions_.logical_weight,
                                descriptions_.projected),
         "direct MatMul prepare");
     auto swiglu = take_or_abort(
-        hyle::compute::prepare(context_, SiluAndMul{},
+        hyle::compute::prepare(context_, GatedActivation{},
                                descriptions_.projected, descriptions_.output),
-        "direct SiluAndMul prepare");
-    route.rms = take_or_abort(rms.create_invocation(),
-                              "direct RMSNorm invocation");
-    route.matmul = take_or_abort(matmul.create_invocation(),
-                                 "direct MatMul invocation");
-    route.swiglu = take_or_abort(swiglu.create_invocation(),
-                                 "direct SiluAndMul invocation");
+        "direct packed SiLU GatedActivation prepare");
+    route.rms =
+        take_or_abort(rms.create_invocation(), "direct RMSNorm invocation");
+    route.matmul =
+        take_or_abort(matmul.create_invocation(), "direct MatMul invocation");
+    route.swiglu =
+        take_or_abort(swiglu.create_invocation(),
+                      "direct packed SiLU GatedActivation invocation");
     return route;
   }
 
   GraphRoute make_graph() {
-    GraphBuilder builder = take_or_abort(GraphBuilder::create(),
-                                         "graph builder");
+    GraphBuilder builder =
+        take_or_abort(GraphBuilder::create(), "graph builder");
     const auto input = take_or_abort(builder.input(descriptions_.activation),
                                      "graph activation input");
     const auto norm_weight = take_or_abort(
@@ -279,12 +280,12 @@ private:
         builder.add(RmsNorm{}, input, norm_weight), "graph RMSNorm node");
     const auto projected = take_or_abort(
         builder.add(MatMul{}, normalized, matrix_weight), "graph MatMul node");
-    const auto output = take_or_abort(
-        builder.add(SiluAndMul{}, projected), "graph SiluAndMul node");
+    const auto output = take_or_abort(builder.add(GatedActivation{}, projected),
+                                      "graph GatedActivation node");
     require_ok(builder.output(output), "graph published output");
     auto graph = take_or_abort(std::move(builder).finish(), "logical graph");
-    auto compiled = take_or_abort(hyle::graph::compile(graph, context_),
-                                  "graph compile");
+    auto compiled =
+        take_or_abort(hyle::graph::compile(graph, context_), "graph compile");
     if (compiled.report.node_count != 3 ||
         compiled.report.provider != hyle::compute::ProviderKind::kHyleNative ||
         compiled.report.copy_bytes != 0 ||
@@ -298,12 +299,11 @@ private:
                                      "graph invocation");
     require_ok(route.invocation.bind(input, input_.view.as_const()),
                "graph activation binding");
-    require_ok(route.invocation.bind(norm_weight,
-                                     norm_weight_.view.as_const()),
+    require_ok(route.invocation.bind(norm_weight, norm_weight_.view.as_const()),
                "graph norm binding");
-    require_ok(route.invocation.bind(matrix_weight,
-                                     matrix_weight_.view.as_const()),
-               "graph matrix binding");
+    require_ok(
+        route.invocation.bind(matrix_weight, matrix_weight_.view.as_const()),
+        "graph matrix binding");
     require_ok(route.invocation.bind(output, route.output.view),
                "graph output binding");
     return route;
@@ -313,8 +313,8 @@ private:
     const auto graph_values = read_tensor(graph_->output, rows_ * ffn_);
     const auto direct_values = read_tensor(direct_->output, rows_ * ffn_);
     for (std::size_t index = 0; index < graph_values.size(); ++index) {
-      const float tolerance = std::abs(direct_values[index]) * 1.0e-6F +
-                              1.0e-7F;
+      const float tolerance =
+          std::abs(direct_values[index]) * 1.0e-6F + 1.0e-7F;
       if (std::abs(graph_values[index] - direct_values[index]) > tolerance)
         fail_setup("Graph and direct outputs differ");
     }
@@ -334,8 +334,7 @@ private:
 };
 
 void run_workload(Fixture &fixture, bool peer_first, std::string_view title,
-                  std::string_view candidate_name,
-                  std::string_view peer_name) {
+                  std::string_view candidate_name, std::string_view peer_name) {
   nb::Bench bench;
   bench.title(std::string(title))
       .relative(true)
@@ -346,7 +345,8 @@ void run_workload(Fixture &fixture, bool peer_first, std::string_view title,
         const auto ok = fixture.run_graph();
         nb::doNotOptimizeAway(ok);
       },
-      peer_name, [&] {
+      peer_name,
+      [&] {
         const auto ok = fixture.run_direct();
         nb::doNotOptimizeAway(ok);
       });
@@ -355,10 +355,10 @@ void run_workload(Fixture &fixture, bool peer_first, std::string_view title,
 } // namespace
 
 int main() {
-  const auto qos = hyle::bench::perf::configure_thread_qos(
-      "HYLE_BENCH_APPLE_QOS");
-  const auto affinity = hyle::bench::perf::configure_thread_affinity(
-      "HYLE_PERF_CALLER_CPU");
+  const auto qos =
+      hyle::bench::perf::configure_thread_qos("HYLE_BENCH_APPLE_QOS");
+  const auto affinity =
+      hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
   const bool peer_first = environment_present("HYLE_BENCH_RIVAL_FIRST");
   const bool peer_allocation_first =
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
@@ -375,8 +375,7 @@ int main() {
   Fixture decode(1, 256, 512, peer_allocation_first);
   run_workload(decode, peer_first,
                "graph multi-op decode f32 rows=1 hidden=256 ffn=512",
-               "HYLE Graph decode 1x256x512",
-               "HYLE direct decode 1x256x512");
+               "HYLE Graph decode 1x256x512", "HYLE direct decode 1x256x512");
 
   Fixture small_batch(4, 64, 128, peer_allocation_first);
   run_workload(small_batch, peer_first,

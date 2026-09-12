@@ -33,7 +33,7 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 | 能力 | 当前合同 |
 |---|---|
 | DAG | 任意数量的已支持 typed node；共享输入、分支和多个 published outputs |
-| op | Compute 当前的 `RmsNorm`、rank-2 `MatMul`、packed `SiluAndMul` |
+| op | Compute 当前可执行的 `RmsNorm`、rank-2 `MatMul`、packed SiLU `GatedActivation`；Graph 可保存其他 typed schema，但 compile 会返回 `Unimplemented` |
 | shape/layout | static `TensorDesc`；byte stride、block axis 与 opaque identity 随 value 原样保留；MatMul 的物理权重方向由 descriptor 表达 |
 | compile | 每个 node prepare/provider route 一次；CPU topological plan；中间 tensor 与 provider scratchpad liveness 交给 Mem planner |
 | run | caller 绑定所有 graph inputs/outputs；内部中间值、provider run state 与 scratchpad 由每个 Invocation 独占 |
@@ -70,7 +70,7 @@ auto normalized = builder.add(RmsNorm{}, *x, *norm_w);
 if (!normalized) return normalized.error();
 auto gate_up = builder.add(MatMul{}, *normalized, *gate_up_w);
 if (!gate_up) return gate_up.error();
-auto activated = builder.add(SiluAndMul{}, *gate_up);
+auto activated = builder.add(GatedActivation{}, *gate_up);
 if (!activated) return activated.error();
 if (auto status = builder.output(*activated); !status.ok()) return status;
 

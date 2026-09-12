@@ -304,7 +304,7 @@ Result<ValueId> GraphBuilder::add(compute::Operation operation,
     }
     descriptions[index] = state_->values[inputs[index].ordinal()].description;
   }
-  auto output = compute::infer_output_description(
+  auto output = compute::infer_single_output(
       operation,
       std::span<const compute::TensorDesc>(descriptions.data(), inputs.size()));
   if (!output)
@@ -362,7 +362,7 @@ Result<ValueId> GraphBuilder::add(compute::MatMul operation, ValueId left,
   return add(compute::Operation(operation), inputs);
 }
 
-Result<ValueId> GraphBuilder::add(compute::SiluAndMul operation,
+Result<ValueId> GraphBuilder::add(compute::GatedActivation operation,
                                   ValueId input_value) noexcept {
   const std::array inputs{input_value};
   return add(compute::Operation(operation), inputs);

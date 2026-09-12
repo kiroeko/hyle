@@ -20,17 +20,19 @@ sampling 和 serving 留在推理引擎。
 | 设备发现 | `enumerate_devices` / `query_device` | 当前只返回 CPU；短输出 span 不静默截断 |
 | 执行域 | `Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有隐藏 worker/default device |
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
+| operation schema | 19 个 typed family + inline custom | 可做 arity/shape/layout/alias/effect/precision 检查；schema 存在不等于已有可执行 provider |
 | normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
-| gated activation | `SiluAndMul` | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
+| gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
 | 自定义 CPU 工作 | `submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
 | provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，HYLE-native 是最终 fallback |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
-当前 operator catalog 有意只签发本轮真实 transformer 片段需要的三项，并非长期超集。Tensor schema 已能
-描述 block/opaque storage，但这不等于已有量化 kernel。f16/bf16、量化、
-batched MatMul、attention、RoPE、softmax、embedding、repack 与 provider fusion 必须在各自有限卡中加入，
-不能把 enum 预留写成已实现能力。
+公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
+gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
+**当前可执行 provider 仍只签发 RMSNorm、rank-2 MatMul 和 packed SiLU GatedActivation 三项。** Tensor
+schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 family 调用 `prepare()` 会诚实返回
+`Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
 
 ## 普通、block 与 opaque storage
 
@@ -84,7 +86,7 @@ if (!stored) return stored.error();
 auto logical_weight = stored->transposed();
 if (!logical_weight) return logical_weight.error();
 
-auto output = infer_output_description(
+auto output = infer_single_output(
     Operation(MatMul{}), std::array{activation_desc, *logical_weight});
 if (!output) return output.error();
 auto prepared = prepare(context, MatMul{}, activation_desc,
@@ -93,7 +95,8 @@ auto prepared = prepare(context, MatMul{}, activation_desc,
 
 ## prepare、invocation 与 submit
 
-`infer_output_description()` 是 direct Compute 与 Graph 共用的唯一 shape/layout 规则。`prepare()` 再核对
+`infer_output_descriptions()` 是 direct Compute 与 Graph 共用的 shape/layout 规则；单输出 operation 可用
+`infer_single_output()`。`prepare()` 再核对
 调用方给出的 output desc，并把 provider/route 选择移出热路径。对同一描述反复执行时共享
 `PreparedOperation`，为每个并发执行 lane 创建并复用一个 move-only `OperationInvocation`。当前故意
 没有把 prepare 或 invocation 创建隐藏在一次性 convenience 中，因为 provider workspace 和并发状态必须
@@ -120,7 +123,7 @@ return done->wait();                  // terminal failure
 当前 oneDNN provider 只接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
 物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K 权重会诚实回落到 HYLE-native SIMD route。RMSNorm、
-SiluAndMul、零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
+packed SiLU GatedActivation、零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
 executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-native kernel；传入真实并行 executor
 时，oneDNN 可以把 N 维拆成互不重叠的连续 tile。
 

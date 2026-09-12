@@ -187,6 +187,10 @@ Status validate_native_operation(Operation operation,
     return validate_dense_f32(outputs[0]);
   }
   case OperationKind::kMatMul: {
+    if (inputs.size() != 2 || inputs[0].rank() != 2 || inputs[1].rank() != 2) {
+      return Status::Unimplemented(
+          "current native MatMul route requires rank-2 inputs");
+    }
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())
       return status;
@@ -200,14 +204,21 @@ Status validate_native_operation(Operation operation,
     }
     return validate_dense_f32(outputs[0]);
   }
-  case OperationKind::kSiluAndMul: {
+  case OperationKind::kGatedActivation: {
+    const GatedActivation *gated = operation.get_if<GatedActivation>();
+    if (gated == nullptr || gated->activation != GatedActivationKind::kSilu ||
+        gated->inputs != GatedInputKind::kPackedHalves || inputs.size() != 1) {
+      return Status::Unimplemented(
+          "current native gated route supports packed SiLU only");
+    }
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())
       return status;
     return validate_dense_f32(outputs[0]);
   }
-  case OperationKind::kUnknown:
-    break;
+  default:
+    return Status::Unimplemented(
+        "operation has no current native executable route");
   }
   return Status::Unimplemented("operation kind is unknown");
 }
@@ -364,10 +375,12 @@ prepare(const Context &context, Operation operation,
         "prepared operation requires exactly one output"));
   }
 
-  auto inferred = infer_output_description(operation, inputs);
-  if (!inferred)
-    return std::unexpected(std::move(inferred).error());
-  if (outputs[0] != *inferred) {
+  TensorDesc inferred;
+  Status inference = infer_output_descriptions(
+      operation, inputs, std::span<TensorDesc>(&inferred, 1));
+  if (!inference.ok())
+    return std::unexpected(std::move(inference));
+  if (outputs[0] != inferred) {
     return std::unexpected(Status::InvalidArgument(
         "operation output description does not match inferred shape"));
   }
@@ -430,7 +443,7 @@ prepare(const Context &context, Operation operation,
     if (!hidden)
       return std::unexpected(std::move(hidden).error());
     parameters = {*rows, *hidden, 0};
-    scalar = operation.rms_norm()->epsilon;
+    scalar = operation.get_if<RmsNorm>()->epsilon;
     route = &run_rms_norm;
     break;
   }
@@ -449,7 +462,7 @@ prepare(const Context &context, Operation operation,
                                  : &run_matmul_transposed_weight;
     break;
   }
-  case OperationKind::kSiluAndMul: {
+  case OperationKind::kGatedActivation: {
     auto rows = outer_count(inputs[0]);
     auto packed = dimension(inputs[0], inputs[0].rank() - 1);
     if (!rows)
@@ -460,8 +473,9 @@ prepare(const Context &context, Operation operation,
     route = &run_silu_and_mul;
     break;
   }
-  case OperationKind::kUnknown:
-    return std::unexpected(Status::Unimplemented("operation kind is unknown"));
+  default:
+    return std::unexpected(
+        Status::Unimplemented("operation has no current native route"));
   }
 
   void *storage = state->allocator.allocate(sizeof(detail::PreparedState),
@@ -503,8 +517,8 @@ Result<PreparedOperation> prepare(const Context &context, MatMul operation,
   return prepare(context, Operation(operation), inputs, outputs);
 }
 
-Result<PreparedOperation> prepare(const Context &context, SiluAndMul operation,
-                                  TensorDesc input,
+Result<PreparedOperation> prepare(const Context &context,
+                                  GatedActivation operation, TensorDesc input,
                                   TensorDesc output) noexcept {
   const std::array inputs{input};
   const std::array outputs{output};

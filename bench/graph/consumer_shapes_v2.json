@@ -3,8 +3,8 @@
   "sources": [
     {"name": "ggml", "revision": "e91ded11bdcd", "shape": "immutable graph nodes with per-run tensor storage and backend execution"},
     {"name": "llama.cpp", "revision": "e71b80510c84", "shape": "decode rows flowing through normalization, projection and gated activation"},
-    {"name": "vllm", "revision": "51da0ca66c80", "shape": "RMSNorm and packed SiluAndMul around reusable matrix artifacts"},
-    {"name": "sglang", "revision": "dcebe8c4733a", "shape": "a @ w1.T followed by packed SiluAndMul in CPU reference paths"},
+    {"name": "vllm", "revision": "51da0ca66c80", "shape": "RMSNorm and packed SiLU GatedActivation around reusable matrix artifacts"},
+    {"name": "sglang", "revision": "dcebe8c4733a", "shape": "a @ w1.T followed by packed SiLU GatedActivation in CPU reference paths"},
     {"name": "ds4", "revision": "f62ca29a3087", "shape": "row RMSNorm, projection and gate/up activation with immutable model weights"}
   ],
   "workloads": [

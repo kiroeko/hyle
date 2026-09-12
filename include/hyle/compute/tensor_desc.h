@@ -35,6 +35,43 @@ enum class DataType : std::uint8_t {
 
 HYLE_COMPUTE_OPS_API std::size_t data_type_size(DataType type) noexcept;
 
+// Provider-neutral logical shape. The rank marker distinguishes an invalid
+// default value from a valid scalar (rank zero). It intentionally carries no
+// dtype, layout, stride, storage or ownership.
+class HYLE_COMPUTE_OPS_API TensorShape final {
+public:
+  constexpr TensorShape() noexcept = default;
+
+  static Result<TensorShape>
+  create(std::span<const std::int64_t> dimensions) noexcept;
+  static TensorShape scalar() noexcept;
+
+  constexpr bool valid() const noexcept { return rank_plus_one_ != 0; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::size_t rank() const noexcept {
+    return valid() ? static_cast<std::size_t>(rank_plus_one_ - 1) : 0;
+  }
+  constexpr std::span<const std::int64_t> dimensions() const noexcept {
+    return {dimensions_.data(), rank()};
+  }
+  Result<std::size_t> element_count() const noexcept;
+
+  friend constexpr bool operator==(const TensorShape &left,
+                                   const TensorShape &right) noexcept {
+    if (left.rank_plus_one_ != right.rank_plus_one_)
+      return false;
+    for (std::size_t index = 0; index < left.rank(); ++index) {
+      if (left.dimensions_[index] != right.dimensions_[index])
+        return false;
+    }
+    return true;
+  }
+
+private:
+  std::array<std::int64_t, kMaxTensorRank> dimensions_{};
+  std::uint8_t rank_plus_one_ = 0;
+};
+
 enum class StorageFormatKind : std::uint8_t {
   kPlain = 0,
   kBlocked,
@@ -187,6 +224,7 @@ private:
 
 static_assert(std::is_trivially_copyable_v<StorageFormatId>);
 static_assert(std::is_trivially_copyable_v<StorageFormat>);
+static_assert(std::is_trivially_copyable_v<TensorShape>);
 static_assert(std::is_trivially_copyable_v<TensorDesc>);
 static_assert(sizeof(TensorDesc) <= 192);
 

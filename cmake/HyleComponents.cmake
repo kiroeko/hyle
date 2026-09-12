@@ -279,7 +279,7 @@ _hyle_declare_component(compute
 # no task scheduler becomes part of Graph's execution contract.
 _hyle_declare_component(graph
   PRIVATE_DEPS container util_core
-  PUBLIC_DEPS core error compute mem)
+  PUBLIC_DEPS core error compute_ops compute mem)
 # Container's consumer-facing product remains one facade, while independent
 # factors own concurrency, handoff and text dependencies. Public include paths
 # intentionally remain hyle/container/*: these identities are maintenance and

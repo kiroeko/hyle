@@ -101,6 +101,56 @@ std::size_t data_type_size(DataType type) noexcept {
   return 0;
 }
 
+Result<TensorShape>
+TensorShape::create(std::span<const std::int64_t> dimensions) noexcept {
+  if (dimensions.size() > kMaxTensorRank) {
+    return std::unexpected(
+        Status::InvalidArgument("tensor shape rank exceeds kMaxTensorRank"));
+  }
+  TensorShape result;
+  for (std::size_t index = 0; index < dimensions.size(); ++index) {
+    if (dimensions[index] < 0) {
+      return std::unexpected(
+          Status::InvalidArgument("tensor shape dimension is negative"));
+    }
+    result.dimensions_[index] = dimensions[index];
+  }
+  result.rank_plus_one_ = static_cast<std::uint8_t>(dimensions.size() + 1);
+  return result;
+}
+
+TensorShape TensorShape::scalar() noexcept {
+  TensorShape result;
+  result.rank_plus_one_ = 1;
+  return result;
+}
+
+Result<std::size_t> TensorShape::element_count() const noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("tensor shape is invalid"));
+  }
+  for (const std::int64_t dimension : dimensions()) {
+    if (dimension == 0)
+      return std::size_t{0};
+  }
+  std::size_t count = 1;
+  for (const std::int64_t dimension : dimensions()) {
+    auto extent = math::try_integer_cast<std::size_t>(dimension);
+    if (!extent) {
+      return std::unexpected(
+          Status::OutOfRange("tensor shape dimension exceeds size_t"));
+    }
+    auto next = math::try_multiply(count, *extent);
+    if (!next) {
+      return std::unexpected(
+          Status::OutOfRange("tensor shape element count overflows size_t"));
+    }
+    count = *next;
+  }
+  return count;
+}
+
 Result<StorageFormat> StorageFormat::blocked(StorageFormatId id,
                                              std::size_t elements_per_block,
                                              std::size_t bytes_per_block,

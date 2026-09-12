@@ -13,11 +13,11 @@ namespace {
 
 using hyle::Status;
 using hyle::compute::DataType;
+using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::Operation;
 using hyle::compute::OperationKind;
 using hyle::compute::RmsNorm;
-using hyle::compute::SiluAndMul;
 using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
@@ -88,7 +88,7 @@ TEST(GraphBuilder, BuildsNaturalMultiNodeTransformerFragment) {
   const auto normalized = builder.add(RmsNorm{}, input, weight).value();
   const auto projected =
       builder.add(MatMul{}, normalized, matrix_weight).value();
-  const auto activated = builder.add(SiluAndMul{}, projected).value();
+  const auto activated = builder.add(GatedActivation{}, projected).value();
   ASSERT_TRUE(builder.output(activated).ok());
 
   Graph graph = std::move(builder).finish().value();
@@ -109,7 +109,7 @@ TEST(GraphBuilder, BuildsNaturalMultiNodeTransformerFragment) {
   EXPECT_EQ(graph.operation(norm_node)->kind(), OperationKind::kRmsNorm);
   EXPECT_EQ(graph.operation(matmul_node)->kind(), OperationKind::kMatMul);
   EXPECT_EQ(graph.operation(activation_node)->kind(),
-            OperationKind::kSiluAndMul);
+            OperationKind::kGatedActivation);
   EXPECT_EQ(graph.node_input_count(norm_node).value(), 2u);
   EXPECT_EQ(graph.node_input(norm_node, 0).value(), input);
   EXPECT_EQ(graph.node_input(norm_node, 1).value(), weight);

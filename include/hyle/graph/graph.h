@@ -144,7 +144,7 @@ public:
                                      ValueId weight) noexcept;
   HYLE_GRAPH_API Result<ValueId> add(compute::MatMul operation, ValueId left,
                                      ValueId right) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(compute::SiluAndMul operation,
+  HYLE_GRAPH_API Result<ValueId> add(compute::GatedActivation operation,
                                      ValueId input) noexcept;
   HYLE_GRAPH_API Status output(ValueId value) noexcept;
   HYLE_GRAPH_API Result<Graph> finish() && noexcept;

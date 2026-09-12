@@ -69,7 +69,7 @@ oneDNN MatMul provider。CUDA、Metal/MLX、Vulkan 和其他 provider 只有各�
 | 异步文件、网络和 protocol 机制 | [io](io.md) |
 | CPU task/fiber runtime、结构化任务、同步与消息 | [sched](sched.md) |
 | 本地 child process、stdio pipe、等待、tree termination 与 reap | [process](process.md) |
-| 显式 CPU execution、tensor binding、prepared RMSNorm/MatMul/SiluAndMul 或 typed host kernel | [compute](compute.md)；状态以 registry 为准 |
+| 显式 CPU execution、tensor binding、prepared RMSNorm/MatMul/packed SiLU GatedActivation 或 typed host kernel | [compute](compute.md)；状态以 registry 为准 |
 | 可复用 typed 多节点计算 DAG、workspace plan 与独占 Invocation | [graph](graph.md)；当前是 CPU static-shape slice，状态以 registry 为准 |
 
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有

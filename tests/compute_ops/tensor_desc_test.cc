@@ -4,16 +4,18 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 #include "hyle/compute/tensor_desc.h"
 
 namespace {
 
+using hyle::compute::data_type_size;
 using hyle::compute::DataType;
 using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
-using hyle::compute::data_type_size;
+using hyle::compute::TensorShape;
 
 TEST(ComputeOpsTensorDesc, CoversEveryPublicScalarWidth) {
   EXPECT_EQ(data_type_size(DataType::kBool), 1u);
@@ -64,9 +66,8 @@ TEST(ComputeOpsTensorDesc, KeepsBlockedEncodingSeparateFromLogicalType) {
 
 TEST(ComputeOpsTensorDesc, RejectsSchemasThatCannotBeRepresented) {
   constexpr std::array<std::int64_t, 1> shape{4};
-  EXPECT_TRUE(TensorDesc::dense(DataType::kUnknown, shape)
-                  .error()
-                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      TensorDesc::dense(DataType::kUnknown, shape).error().IsInvalidArgument());
 
   constexpr std::array<std::int64_t, 9> excessive_rank{};
   EXPECT_TRUE(TensorDesc::dense(DataType::kFloat32, excessive_rank)
@@ -74,4 +75,16 @@ TEST(ComputeOpsTensorDesc, RejectsSchemasThatCannotBeRepresented) {
                   .IsInvalidArgument());
 }
 
-}  // namespace
+TEST(ComputeOpsTensorDesc,
+     ZeroExtentMakesElementCountZeroBeforeMultiplication) {
+  constexpr std::array<std::int64_t, 3> dimensions{
+      (std::numeric_limits<std::int64_t>::max)(),
+      (std::numeric_limits<std::int64_t>::max)(), 0};
+  auto shape = TensorShape::create(dimensions);
+  ASSERT_TRUE(shape.has_value()) << shape.error().message();
+  auto count = shape->element_count();
+  ASSERT_TRUE(count.has_value()) << count.error().message();
+  EXPECT_EQ(*count, 0u);
+}
+
+} // namespace

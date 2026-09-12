@@ -36,7 +36,7 @@ struct ValueRecord final {
 };
 
 struct NodeRecord final {
-  compute::Operation operation{compute::RmsNorm{}};
+  compute::Operation operation{};
   std::uint32_t input_begin = 0;
   std::uint32_t output = 0;
   std::uint8_t input_count = 0;

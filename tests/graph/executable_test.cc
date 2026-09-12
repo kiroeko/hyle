@@ -20,10 +20,10 @@ using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
 using hyle::compute::Device;
+using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
-using hyle::compute::SiluAndMul;
 using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
@@ -89,7 +89,7 @@ LogicalGraph make_transformer_graph(std::size_t rows, std::size_t hidden,
       builder.add(RmsNorm{}, result.inputs[0], result.inputs[1]).value();
   const ValueId projected =
       builder.add(MatMul{}, normalized, result.inputs[2]).value();
-  const ValueId activated = builder.add(SiluAndMul{}, projected).value();
+  const ValueId activated = builder.add(GatedActivation{}, projected).value();
   result.intermediates = {normalized, projected};
   result.outputs.push_back(activated);
   EXPECT_TRUE(builder.output(activated).ok());

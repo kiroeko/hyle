@@ -171,10 +171,10 @@
         "value": 1,
         "unit": "complete-three-operation-fragment",
         "budget": 5,
-        "denominator": "one decode-shaped RMSNorm, transpose-view MatMul and packed SiluAndMul invocation",
+        "denominator": "one decode-shaped RMSNorm, transpose-view MatMul and packed SiLU GatedActivation invocation",
         "derivation": "The five reviewed inference sources all retain this normalization, projection and gated-activation composition; reduced but nontrivial dimensions keep fixed Graph bookkeeping visible instead of hiding it under a large matrix"
       },
-      "semantic_contract": "Execute one warmed allocation-free float32 RMSNorm over [1,256] with a [256] weight, one [1,256] by logical [256,1024] transpose-view MatMul, and one packed SiluAndMul to [1,512], returning after the third synchronous Completion",
+      "semantic_contract": "Execute one warmed allocation-free float32 RMSNorm over [1,256] with a [256] weight, one [1,256] by logical [256,1024] transpose-view MatMul, and one packed SiLU GatedActivation to [1,512], returning after the third synchronous Completion",
       "comparability": "COMPARABLE",
       "peer_id": "hyle-compute-direct-sequence",
       "metric": {
@@ -245,10 +245,10 @@
         "value": 1,
         "unit": "complete-three-operation-fragment",
         "budget": 5,
-        "denominator": "one small-batch RMSNorm, transpose-view MatMul and packed SiluAndMul invocation",
+        "denominator": "one small-batch RMSNorm, transpose-view MatMul and packed SiLU GatedActivation invocation",
         "derivation": "This orthogonal small-batch shape preserves the same consumer task while preventing one long matrix kernel from masking a per-node or per-binding Graph regression"
       },
-      "semantic_contract": "Execute one warmed allocation-free float32 RMSNorm over [4,64] with a [64] weight, one [4,64] by logical [64,256] transpose-view MatMul, and one packed SiluAndMul to [4,128], returning after the third synchronous Completion",
+      "semantic_contract": "Execute one warmed allocation-free float32 RMSNorm over [4,64] with a [64] weight, one [4,64] by logical [64,256] transpose-view MatMul, and one packed SiLU GatedActivation to [4,128], returning after the third synchronous Completion",
       "comparability": "COMPARABLE",
       "peer_id": "hyle-compute-direct-sequence",
       "metric": {

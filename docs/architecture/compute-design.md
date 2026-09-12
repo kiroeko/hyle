@@ -140,6 +140,30 @@ resource/queue interop 和 provider 边界由 HYLE Metal 路线承接。选择�
 并计算 ownership、copy、graph capture、线程和 source/static/shared 交付成本；“MLX-first”不是未经
 测量就强制所有 op 经 MLX。
 
+### 4.3 NVIDIA 的默认不是“裸 CUDA kernel”
+
+CUDA backend 只拥有 device、context、stream、event、module、memory 与 native interop；它不是与
+cuBLAS/cuDNN 竞争的另一套算子库。NVIDIA 正式构建的默认算子路线采用 **vendor-first、HYLE
+best-of/escape-hatch**：
+
+- 普通 GEMM、batched GEMM 与受支持 epilogue 首先资格化 cuBLASLt/cuBLAS。cuBLASLt 的 algorithm
+  heuristic 只在 prepare/compile 冷路径查询并缓存到 artifact，不允许每次 submit 重新搜索；
+- 受支持的 SDPA/normalization 等完整 primitive 优先资格化 cuDNN，而不是把几个 HYLE 小 kernel
+  拼成一个必然增加 launch 和中间流量的默认实现；
+- HYLE CUDA kernel 承接 vendor primitive 不表达的量化格式、融合、layout、极小 decode shape、interop
+  约束，以及同合同证据明确胜出的路线。CUTLASS/CuTe 可以作为这些 kernel 的私有实现底座，不成为
+  另一套公开 Tensor/Operation API；
+- ggml 等 provider 仍可竞争完整 region。选择必须计入 repack、workspace、launch、同步、capture 与
+  中间 tensor 流量，不能因为 provider 名称或单 kernel 峰值硬编码胜者；
+- direct `prepare` 与 Graph compile 完成选择后，热路径只执行预绑定 artifact。用户可以要求特定
+  provider、确定性或禁止 fallback，但普通用户不应被迫手选 cuBLAS handle 或 CUDA kernel。
+
+因此“CUDA 为默认”表示默认使用 CUDA **平台栈**；在这条栈内，成熟 NVIDIA library 是常规首选，HYLE
+只在功能缺口、跨算子收益或可复现的同合同胜利上替换它。相关能力边界以
+[cuBLASLt](https://docs.nvidia.com/cuda/cublas/) 和
+[cuDNN Frontend Attention](https://docs.nvidia.com/deeplearning/cudnn/frontend/latest/operations/Attention.html)
+的锁定版本重新审计，不能把当前厂商支持矩阵当永久事实。
+
 Vulkan compute 不是只为 benchmark 保留的“可选图形 API”。它服务：
 
 - Windows/Linux 上的跨厂商 compute；

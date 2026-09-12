@@ -22,13 +22,13 @@ using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
 using hyle::compute::Device;
+using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::OperationKind;
 using hyle::compute::PreparedOperation;
 using hyle::compute::ProviderKind;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
-using hyle::compute::SiluAndMul;
 using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
@@ -254,7 +254,7 @@ TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
 TEST(OperationShape, InfersNaturalInferenceShapesAndRejectsMismatches) {
   const TensorDesc rows = matrix_description(3, 8);
   const TensorDesc weight = row_description(8);
-  EXPECT_EQ(hyle::compute::infer_output_description(
+  EXPECT_EQ(hyle::compute::infer_single_output(
                 hyle::compute::Operation(RmsNorm{}), std::array{rows, weight})
                 .value(),
             rows);
@@ -262,7 +262,7 @@ TEST(OperationShape, InfersNaturalInferenceShapesAndRejectsMismatches) {
   const TensorDesc left = matrix_description(3, 8);
   const TensorDesc right = matrix_description(8, 10);
   const TensorDesc expected = matrix_description(3, 10);
-  EXPECT_EQ(hyle::compute::infer_output_description(
+  EXPECT_EQ(hyle::compute::infer_single_output(
                 hyle::compute::Operation(MatMul{}), std::array{left, right})
                 .value(),
             expected);
@@ -270,32 +270,32 @@ TEST(OperationShape, InfersNaturalInferenceShapesAndRejectsMismatches) {
   const TensorDesc stored_weight = matrix_description(10, 8);
   const TensorDesc logical_weight = stored_weight.transposed().value();
   EXPECT_EQ(
-      hyle::compute::infer_output_description(
-          hyle::compute::Operation(MatMul{}), std::array{left, logical_weight})
+      hyle::compute::infer_single_output(hyle::compute::Operation(MatMul{}),
+                                         std::array{left, logical_weight})
           .value(),
       expected);
 
   const TensorDesc packed = matrix_description(3, 20);
-  EXPECT_EQ(hyle::compute::infer_output_description(
-                hyle::compute::Operation(SiluAndMul{}), std::array{packed})
+  EXPECT_EQ(hyle::compute::infer_single_output(
+                hyle::compute::Operation(GatedActivation{}), std::array{packed})
                 .value(),
             expected);
 
-  EXPECT_TRUE(hyle::compute::infer_output_description(
+  EXPECT_TRUE(hyle::compute::infer_single_output(
                   hyle::compute::Operation(MatMul{}),
                   std::array{left, matrix_description(7, 10)})
                   .error()
                   .IsInvalidArgument());
-  EXPECT_TRUE(hyle::compute::infer_output_description(
-                  hyle::compute::Operation(SiluAndMul{}),
+  EXPECT_TRUE(hyle::compute::infer_single_output(
+                  hyle::compute::Operation(GatedActivation{}),
                   std::array{matrix_description(3, 9)})
                   .error()
                   .IsInvalidArgument());
-  EXPECT_TRUE(hyle::compute::infer_output_description(
-                  hyle::compute::Operation(RmsNorm{}),
-                  std::array{rows, row_description(7)})
-                  .error()
-                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      hyle::compute::infer_single_output(hyle::compute::Operation(RmsNorm{}),
+                                         std::array{rows, row_description(7)})
+          .error()
+          .IsInvalidArgument());
 }
 
 TEST(PreparedOperation, LeavesValidEncodedWeightsForAQualifiedProvider) {
@@ -310,7 +310,7 @@ TEST(PreparedOperation, LeavesValidEncodedWeightsForAQualifiedProvider) {
           .value();
   const TensorDesc output = matrix_description(2, 4);
 
-  auto inferred = hyle::compute::infer_output_description(
+  auto inferred = hyle::compute::infer_single_output(
       hyle::compute::Operation(MatMul{}), std::array{left, right});
   ASSERT_TRUE(inferred.has_value()) << inferred.error().message();
   EXPECT_EQ(*inferred, output);
@@ -523,7 +523,7 @@ TEST(PreparedOperation, RowMajorMatMulCoversEveryNativeTileAndTail) {
   }
 }
 
-TEST(PreparedOperation, RunsPackedSiluAndMulAcrossRows) {
+TEST(PreparedOperation, RunsPackedSiluGatedActivationAcrossRows) {
   constexpr std::size_t rows = 2;
   constexpr std::size_t hidden = 3;
   const std::vector<float> packed{-1,   0,  2, 3,  4, -2,
@@ -543,9 +543,9 @@ TEST(PreparedOperation, RunsPackedSiluAndMulAcrossRows) {
       TensorView::create(output_desc, output_buffer.view()).value();
   Context context = Context::create(Device::cpu()).value();
   Queue queue = context.create_queue().value();
-  auto prepared =
-      hyle::compute::prepare(context, SiluAndMul{}, input_desc, output_desc)
-          .value();
+  auto prepared = hyle::compute::prepare(context, GatedActivation{}, input_desc,
+                                         output_desc)
+                      .value();
   auto invocation = prepared.create_invocation().value();
   ASSERT_TRUE(invocation.submit(queue, input_view, output_view)->wait().ok());
   const auto actual = read_floats(output_buffer.view(), rows * hidden);

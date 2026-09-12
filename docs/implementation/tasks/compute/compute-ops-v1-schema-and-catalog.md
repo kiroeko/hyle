@@ -151,3 +151,16 @@ schema validation/inference 为 O(rank + inputs + outputs)，rank<=8；built-in 
 为 O(1)，不分配、不加锁、不查 hash/string。custom vtable 只在 build/prepare 冷路径一次。`compute_ops`
 最终 `PUBLIC_DEPS core error`、`PRIVATE_DEPS math`；不依赖 Mem/Compute/SIMD/Graph/provider。公开头使用独立
 visibility owner，但 Compute 产品 façade 聚合后，用户仍只 include `hyle/compute/*`。
+
+## Implementation checkpoint（2026-09-12）
+
+- `TensorShape`、`TensorDesc` 与 `Operation` schema 已物理归入 `compute_ops`；runtime artifact 留在
+  `prepared_operation.h` / `compute`，Graph 公开边已显式声明 `compute_ops`，不存在经 `compute` 偶然取得
+  schema 的隐式依赖；
+- 19 个 built-in family、inline typed custom descriptor、exact output span、traits 和纯 shape inference 已实现；
+  Windows factor-only、Compute 聚合与 Graph consumer 测试通过。广播 span 生命周期、RoPE 负轴、零 extent
+  乘法顺序和未知 enum mode 的红队缺陷已在本 checkpoint 修复；
+- 这不是 terminal record，也不改变 `AUDITED`：除 RMSNorm、rank-2 MatMul 和 packed SiLU
+  GatedActivation 外，其他 family 尚未取得 native executable route；三平台/property/sanitizer 与完整
+  direct/Graph journey 仍按 closure card 待执行。用户文档将“可描述”与“可执行”分开，不把 schema
+  存在宣称成 kernel 支持。
