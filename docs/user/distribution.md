@@ -142,9 +142,10 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 合同，shared loader identity 同样使用完整版本。1.0 后才按 major compatibility 演进。
 
 当前已验收产品中的 IO TLS、HTTP/2 和 trace 等昂贵能力默认关闭，并且只有 owner 组件/gate
-成立时才出现对应 cache 项。Compute/Graph 产品包含独立 oneDNN CPU provider factor；
+成立时才出现对应 cache 项。Compute/Graph 产品包含独立的 x86-64 oneDNN CPU provider factor；
 `HYLE_COMPUTE_ONEDNN=ON|OFF|AUTO` 只在选择这些产品时出现，默认 OFF，因而普通 Compute 构建既不下载
-也不编译 oneDNN。需要该 provider 的正式制品必须显式选择 ON；AUTO 只用于开发机探索。开启后
+也不编译 oneDNN。需要该 provider 的 x86-64 制品必须显式选择 ON；AArch64 的 ON 明确失败，AUTO 会
+关闭该能力并保留 native Compute；AUTO 只用于开发机探索。开启后
 source/static/shared 都通过同一个
 `hyle::compute::onednn::provider()` C++ 入口使用：static SDK 传递锁定 oneDNN archive/header 闭包，shared
 SDK 把其实现私有链接进 provider shared library，二者都安装 Apache-2.0 notice。CUDA、Metal/MLX、

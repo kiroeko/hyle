@@ -43,6 +43,7 @@ struct AllocatorProbe final {
 struct ParallelProbe final {
   std::atomic<std::size_t> episodes{0};
   std::atomic<std::size_t> tasks{0};
+  bool in_parallel = false;
 };
 
 void probe_parallel_for(void *state, std::size_t count,
@@ -55,7 +56,9 @@ void probe_parallel_for(void *state, std::size_t count,
     task(task_context, index, count);
 }
 
-bool probe_in_parallel(void *) noexcept { return false; }
+bool probe_in_parallel(void *state) noexcept {
+  return static_cast<ParallelProbe *>(state)->in_parallel;
+}
 
 void *probe_allocate(void *state, std::size_t size,
                      std::size_t alignment) noexcept {
@@ -77,8 +80,7 @@ void probe_deallocate(void *state, void *pointer, std::size_t size,
 }
 
 void *probe_reallocate(void *state, void *pointer, std::size_t old_size,
-                       std::size_t new_size,
-                       std::size_t alignment) noexcept {
+                       std::size_t new_size, std::size_t alignment) noexcept {
   auto &probe = *static_cast<AllocatorProbe *>(state);
   return probe.backing.reallocate(pointer, old_size, new_size, alignment);
 }
@@ -95,9 +97,7 @@ TensorDesc matrix(std::int64_t rows, std::int64_t columns) {
 
 void write_floats(hyle::mem::BufferView destination,
                   std::span<const float> values) {
-  ASSERT_TRUE(destination
-                  .write(std::as_bytes(values))
-                  .ok());
+  ASSERT_TRUE(destination.write(std::as_bytes(values)).ok());
 }
 
 std::vector<float> read_floats(hyle::mem::ConstBufferView source,
@@ -131,13 +131,15 @@ TEST(OneDnnProvider, ExposesStableIdentity) {
 }
 
 TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
-  constexpr std::size_t rows = 3;
+  constexpr std::size_t rows = 16;
   constexpr std::size_t inner = 5;
   constexpr std::size_t columns = 4;
-  const std::vector<float> left{
-      1, 2, 3, 4, 5, -1, 0.5F, 2, -3, 4, 0, 1, -2, 3, 0.25F};
-  const std::vector<float> right{
-      1, 2, 3, 4, 5, 6, 7, 8, -1, 2, -3, 4, 0.5F, -2, 1, 3, 4, 0, 2, -1};
+  std::vector<float> left(rows * inner);
+  std::vector<float> right(inner * columns);
+  for (std::size_t index = 0; index < left.size(); ++index)
+    left[index] = static_cast<float>(static_cast<int>(index % 11) - 5) * 0.25F;
+  for (std::size_t index = 0; index < right.size(); ++index)
+    right[index] = static_cast<float>(static_cast<int>(index % 7) - 3) * 0.5F;
   std::vector<float> expected(rows * columns, 0.0F);
   for (std::size_t row = 0; row < rows; ++row) {
     for (std::size_t column = 0; column < columns; ++column) {
@@ -151,18 +153,15 @@ TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
   const TensorDesc left_description = matrix(rows, inner);
   const TensorDesc right_description = matrix(inner, columns);
   const TensorDesc output_description = matrix(rows, columns);
-  Buffer left_buffer =
-      Buffer::create(hyle::mem::system_resource(),
-                     left.size() * sizeof(float), 64)
-          .value();
-  Buffer right_buffer =
-      Buffer::create(hyle::mem::system_resource(),
-                     right.size() * sizeof(float), 64)
-          .value();
-  Buffer output_buffer =
-      Buffer::create(hyle::mem::system_resource(),
-                     expected.size() * sizeof(float), 64)
-          .value();
+  Buffer left_buffer = Buffer::create(hyle::mem::system_resource(),
+                                      left.size() * sizeof(float), 64)
+                           .value();
+  Buffer right_buffer = Buffer::create(hyle::mem::system_resource(),
+                                       right.size() * sizeof(float), 64)
+                            .value();
+  Buffer output_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        expected.size() * sizeof(float), 64)
+                             .value();
   write_floats(left_buffer.view(), left);
   write_floats(right_buffer.view(), right);
 
@@ -192,7 +191,8 @@ TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
       ConstTensorView::create(right_description, right_buffer.view()).value();
   auto output_view =
       TensorView::create(output_description, output_buffer.view()).value();
-  auto completion = invocation.submit(queue, left_view, right_view, output_view);
+  auto completion =
+      invocation.submit(queue, left_view, right_view, output_view);
   ASSERT_TRUE(completion.has_value());
   ASSERT_TRUE(completion->wait().ok());
 
@@ -223,30 +223,36 @@ TEST(OneDnnProvider, LeavesContiguousKWeightsOnHyleNativeFallback) {
 }
 
 TEST(OneDnnProvider, UsesTheBorrowedSynchronousExecutor) {
-  constexpr std::size_t extent = 64;
-  const TensorDesc description = matrix(extent, extent);
-  const std::vector<float> values(extent * extent, 1.0F);
+  constexpr std::size_t rows = 7;
+  constexpr std::size_t inner = 17;
+  constexpr std::size_t columns = 257;
+  const TensorDesc left_description = matrix(rows, inner);
+  const TensorDesc right_description = matrix(inner, columns);
+  const TensorDesc output_description = matrix(rows, columns);
+  const std::vector<float> left_values(rows * inner, 1.0F);
+  const std::vector<float> right_values(inner * columns, 1.0F);
   Buffer left = Buffer::create(hyle::mem::system_resource(),
-                               values.size() * sizeof(float), 64)
+                               left_values.size() * sizeof(float), 64)
                     .value();
   Buffer right = Buffer::create(hyle::mem::system_resource(),
-                                values.size() * sizeof(float), 64)
+                                right_values.size() * sizeof(float), 64)
                      .value();
   Buffer output = Buffer::create(hyle::mem::system_resource(),
-                                 values.size() * sizeof(float), 64)
+                                 rows * columns * sizeof(float), 64)
                       .value();
-  write_floats(left.view(), values);
-  write_floats(right.view(), values);
+  write_floats(left.view(), left_values);
+  write_floats(right.view(), right_values);
 
-  ParallelProbe probe;
+  ParallelProbe probe{.in_parallel = true};
   const hyle::compute::ParallelExecutorRef executor(
       &probe, 4, &probe_parallel_for, &probe_in_parallel);
-  auto context = Context::create(
-      Device::cpu(), hyle::compute::onednn::provider({.executor = executor}))
-                     .value();
+  auto context =
+      Context::create(Device::cpu(),
+                      hyle::compute::onednn::provider({.executor = executor}))
+          .value();
   auto queue = context.create_queue().value();
-  auto prepared = hyle::compute::prepare(context, MatMul{}, description,
-                                         description, description)
+  auto prepared = hyle::compute::prepare(context, MatMul{}, left_description,
+                                         right_description, output_description)
                       .value();
   Buffer workspace;
   const auto requirement = prepared.workspace_requirement();
@@ -256,18 +262,64 @@ TEST(OneDnnProvider, UsesTheBorrowedSynchronousExecutor) {
                     .value();
   }
   auto invocation = prepared.create_invocation(workspace.view()).value();
-  auto left_view = ConstTensorView::create(description, left.view()).value();
-  auto right_view = ConstTensorView::create(description, right.view()).value();
-  auto output_view = TensorView::create(description, output.view()).value();
+  auto left_view =
+      ConstTensorView::create(left_description, left.view()).value();
+  auto right_view =
+      ConstTensorView::create(right_description, right.view()).value();
+  auto output_view =
+      TensorView::create(output_description, output.view()).value();
   auto completion =
       invocation.submit(queue, left_view, right_view, output_view);
   ASSERT_TRUE(completion.has_value());
   ASSERT_TRUE(completion->wait().ok());
 
   EXPECT_GT(probe.episodes.load(), 0U);
-  EXPECT_GT(probe.tasks.load(), 0U);
-  for (float observed : read_floats(output.view(), values.size()))
-    EXPECT_EQ(observed, static_cast<float>(extent));
+  EXPECT_EQ(probe.tasks.load(), 4U);
+  for (float observed : read_floats(output.view(), rows * columns))
+    EXPECT_EQ(observed, static_cast<float>(inner));
+}
+
+TEST(OneDnnProvider, LeavesSmallSerialDecodeOnHyleNativeFallback) {
+  Context context = create_context();
+  for (const std::int64_t rows : {1, 4}) {
+    const TensorDesc left = matrix(rows, 17);
+    const TensorDesc right = matrix(17, 65);
+    const TensorDesc output = matrix(rows, 65);
+    PreparedOperation prepared =
+        hyle::compute::prepare(context, MatMul{}, left, right, output).value();
+    EXPECT_EQ(prepared.provider(), ProviderKind::kHyleNative);
+    EXPECT_TRUE(prepared.used_fallback());
+    EXPECT_EQ(prepared.workspace_requirement().size, 0U);
+  }
+}
+
+TEST(OneDnnProvider, ValidatesCallerOwnedWorkspaceSizeAndAlignment) {
+  const TensorDesc description = matrix(32, 32);
+  Context context = create_context();
+  PreparedOperation prepared =
+      hyle::compute::prepare(context, MatMul{}, description, description,
+                             description)
+          .value();
+  ASSERT_EQ(prepared.provider(), ProviderKind::kOneDnn);
+  const auto requirement = prepared.workspace_requirement();
+  ASSERT_GT(requirement.size, 1U);
+  ASSERT_EQ(requirement.alignment, 64U);
+
+  Buffer storage =
+      Buffer::create(hyle::mem::system_resource(), requirement.size + 64, 64)
+          .value();
+  auto too_small_view = storage.view().subview(0, requirement.size - 1).value();
+  auto too_small = prepared.create_invocation(too_small_view);
+  ASSERT_FALSE(too_small.has_value());
+  EXPECT_TRUE(too_small.error().IsInvalidArgument());
+
+  auto misaligned_view = storage.view().subview(1, requirement.size).value();
+  auto misaligned = prepared.create_invocation(misaligned_view);
+  ASSERT_FALSE(misaligned.has_value());
+  EXPECT_TRUE(misaligned.error().IsInvalidArgument());
+
+  auto exact_view = storage.view().subview(0, requirement.size).value();
+  EXPECT_TRUE(prepared.create_invocation(exact_view).has_value());
 }
 
 TEST(OneDnnProvider, LeavesUnsupportedAndEmptyOperationsOnNativeFallback) {
@@ -296,25 +348,22 @@ TEST(OneDnnProvider, SharesPreparedArtifactAcrossIndependentInvocations) {
   auto run = [&](const PreparedOperation &artifact, float value) {
     const std::vector<float> left(extent * extent, value);
     const std::vector<float> right(extent * extent, 1.0F);
-    Buffer left_buffer =
-        Buffer::create(hyle::mem::system_resource(),
-                       left.size() * sizeof(float), 64)
-            .value();
-    Buffer right_buffer =
-        Buffer::create(hyle::mem::system_resource(),
-                       right.size() * sizeof(float), 64)
-            .value();
-    Buffer output_buffer =
-        Buffer::create(hyle::mem::system_resource(),
-                       extent * extent * sizeof(float), 64)
-            .value();
+    Buffer left_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        left.size() * sizeof(float), 64)
+                             .value();
+    Buffer right_buffer = Buffer::create(hyle::mem::system_resource(),
+                                         right.size() * sizeof(float), 64)
+                              .value();
+    Buffer output_buffer = Buffer::create(hyle::mem::system_resource(),
+                                          extent * extent * sizeof(float), 64)
+                               .value();
     write_floats(left_buffer.view(), left);
     write_floats(right_buffer.view(), right);
     Buffer workspace;
     const auto requirement = artifact.workspace_requirement();
     if (requirement.size != 0) {
-      workspace = Buffer::create(hyle::mem::system_resource(),
-                                 requirement.size, requirement.alignment)
+      workspace = Buffer::create(hyle::mem::system_resource(), requirement.size,
+                                 requirement.alignment)
                       .value();
     }
     auto invocation = artifact.create_invocation(workspace.view());
@@ -326,14 +375,13 @@ TEST(OneDnnProvider, SharesPreparedArtifactAcrossIndependentInvocations) {
       ++failures;
       return;
     }
-    auto completion = invocation->submit(*queue, *left_view, *right_view,
-                                         *output_view);
+    auto completion =
+        invocation->submit(*queue, *left_view, *right_view, *output_view);
     if (!completion || !completion->wait().ok()) {
       ++failures;
       return;
     }
-    const auto actual =
-        read_floats(output_buffer.view(), extent * extent);
+    const auto actual = read_floats(output_buffer.view(), extent * extent);
     for (float observed : actual) {
       if (observed != value * static_cast<float>(extent)) {
         ++failures;
@@ -356,11 +404,11 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
     options.metadata_allocator = allocator(probe);
     ASSERT_TRUE(options.providers.add(hyle::compute::onednn::provider()));
     Context context = Context::create(Device::cpu(), options).value();
-    const TensorDesc description = matrix(4, 4);
+    const TensorDesc description = matrix(16, 16);
 
     probe.fail = true;
-    auto failed_prepare = hyle::compute::prepare(
-        context, MatMul{}, description, description, description);
+    auto failed_prepare = hyle::compute::prepare(context, MatMul{}, description,
+                                                 description, description);
     ASSERT_FALSE(failed_prepare.has_value());
     EXPECT_TRUE(failed_prepare.error().IsResourceExhausted());
 
@@ -372,8 +420,8 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
     Buffer workspace;
     const auto requirement = prepared.workspace_requirement();
     if (requirement.size != 0) {
-      workspace = Buffer::create(hyle::mem::system_resource(),
-                                 requirement.size, requirement.alignment)
+      workspace = Buffer::create(hyle::mem::system_resource(), requirement.size,
+                                 requirement.alignment)
                       .value();
     }
     probe.fail = true;

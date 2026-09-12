@@ -2,7 +2,7 @@ include_guard(GLOBAL)
 
 if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN)
   hyle_auto_feature_option(HYLE_COMPUTE_ONEDNN
-    "Build the oneDNN CPU MatMul provider" DEFAULT OFF)
+    "Build the x64 oneDNN BRGEMM MatMul provider" DEFAULT OFF)
 else()
   set(HYLE_COMPUTE_ONEDNN OFF)
 endif()
@@ -10,7 +10,7 @@ endif()
 function(hyle_configure_compute_dependencies)
   set(_supported FALSE)
   if(CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux|Darwin)$" AND
-     HYLE_TARGET_PROCESSOR MATCHES "^(x86_64|aarch64)$")
+     HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
     set(_supported TRUE)
   endif()
 
@@ -46,19 +46,21 @@ function(hyle_configure_compute_dependencies)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     # HYLE owns execution policy and packaging. oneDNN contributes only the
-    # static CPU MatMul implementation and exposes no process-global pool or
-    # primitive cache.
+    # sequential x64 BRGEMM ukernel implementation; HYLE partitions independent
+    # output-column tiles through the caller's explicit executor. The locked
+    # experimental API is private and must be re-audited on every upgrade.
     set(ONEDNN_LIBRARY_TYPE STATIC CACHE STRING "" FORCE)
     set(ONEDNN_BUILD_GRAPH OFF CACHE BOOL "" FORCE)
     set(ONEDNN_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(ONEDNN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(ONEDNN_BUILD_DOC OFF CACHE BOOL "" FORCE)
-    set(ONEDNN_CPU_RUNTIME THREADPOOL CACHE STRING "" FORCE)
+    set(ONEDNN_CPU_RUNTIME SEQ CACHE STRING "" FORCE)
     set(ONEDNN_GPU_RUNTIME NONE CACHE STRING "" FORCE)
     set(ONEDNN_ENABLE_WORKLOAD INFERENCE CACHE STRING "" FORCE)
     set(ONEDNN_ENABLE_PRIMITIVE MATMUL CACHE STRING "" FORCE)
     set(ONEDNN_ENABLE_PRIMITIVE_CACHE OFF CACHE BOOL "" FORCE)
     set(ONEDNN_ENABLE_CONCURRENT_EXEC ON CACHE BOOL "" FORCE)
+    set(ONEDNN_EXPERIMENTAL_UKERNEL ON CACHE BOOL "" FORCE)
     set(ONEDNN_ENABLE_JIT_PROFILING OFF CACHE BOOL "" FORCE)
     set(ONEDNN_ENABLE_ITT_TASKS OFF CACHE BOOL "" FORCE)
     set(ONEDNN_VERBOSE OFF CACHE BOOL "" FORCE)
@@ -81,5 +83,5 @@ function(hyle_configure_compute_dependencies)
   set(HYLE_ONEDNN_BINARY_DIR "${onednn_BINARY_DIR}" PARENT_SCOPE)
   set(HYLE_COMPUTE_ONEDNN_ENABLED ON PARENT_SCOPE)
   message(STATUS
-    "HYLE: oneDNN ${HYLE_DEP_ONEDNN_VERSION} -- explicit CPU MatMul provider enabled")
+    "HYLE: oneDNN ${HYLE_DEP_ONEDNN_VERSION} -- x64 BRGEMM ukernel provider enabled")
 endfunction()

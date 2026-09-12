@@ -67,6 +67,7 @@ set(_source_expert_contract "")
 set(_source_extra_tests "")
 set(_source_feature_contract "")
 set(_selected_feature_args "")
+set(_compute_onednn_selected FALSE)
 if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
   string(APPEND _source_expert_contract
     "add_library(hyle_selected_source_provider OBJECT \"${_sample}/expert_probe.cc\")\n"
@@ -85,12 +86,21 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
   string(APPEND _source_extra_tests
     "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
 elseif(HYLE_SMOKE_COMPONENT STREQUAL "compute")
-  # The provider is deliberately opt-in for ordinary Compute consumers. This
-  # delivery smoke explicitly selects it so source/static/shared all prove the
-  # optional provider closure rather than silently exercising native-only CPU.
-  string(APPEND _source_feature_contract
-    "set(HYLE_COMPUTE_ONEDNN ON)\n")
-  list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=ON)
+  # The provider is deliberately opt-in and x64-only. Native x64 smokes select
+  # it so all delivery forms prove the optional closure; native ARM smokes
+  # explicitly keep it OFF and prove the honest HYLE-native product instead.
+  string(TOLOWER "${CMAKE_HOST_SYSTEM_PROCESSOR}" _hyle_smoke_host_processor)
+  if(_hyle_smoke_host_processor MATCHES "^(amd64|x86_64|x64)$")
+    set(_compute_onednn_selected TRUE)
+    string(APPEND _source_feature_contract
+      "set(HYLE_COMPUTE_ONEDNN ON)\n")
+    list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=ON)
+  else()
+    string(APPEND _source_feature_contract
+      "set(HYLE_COMPUTE_ONEDNN OFF)\n")
+    list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=OFF)
+  endif()
+  unset(_hyle_smoke_host_processor)
 endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -177,18 +187,22 @@ foreach(_linkage IN ITEMS shared static)
       message(FATAL_ERROR
         "installed ${_linkage} Compute SDK leaked its private provider SPI")
     endif()
-    if(NOT EXISTS "${_staging}/share/licenses/Hyle/oneDNN-LICENSE")
-      message(FATAL_ERROR
-        "installed ${_linkage} Compute SDK lacks oneDNN license payload")
-    endif()
-    if(_static)
-      if(NOT EXISTS "${_staging}/include/oneapi/dnnl/dnnl.h")
+    if(_compute_onednn_selected)
+      if(NOT EXISTS "${_staging}/share/licenses/Hyle/oneDNN-LICENSE")
         message(FATAL_ERROR
-          "installed static Compute SDK lacks oneDNN development closure")
+          "installed ${_linkage} Compute SDK lacks oneDNN license payload")
       endif()
-    elseif(EXISTS "${_staging}/include/oneapi")
+      if(_static AND
+         (NOT EXISTS "${_staging}/include/oneapi/dnnl/dnnl.h" OR
+          NOT EXISTS "${_staging}/include/oneapi/dnnl/dnnl_ukernel.h"))
+        message(FATAL_ERROR
+          "installed static Compute SDK lacks oneDNN ukernel development closure")
+      endif()
+    endif()
+    if((NOT _compute_onednn_selected OR NOT _static) AND
+       EXISTS "${_staging}/include/oneapi")
       message(FATAL_ERROR
-        "installed shared Compute SDK leaked private oneDNN headers")
+        "installed ${_linkage} Compute SDK leaked private oneDNN headers")
     endif()
   endif()
   file(RENAME "${_staging}" "${_prefix}" RESULT _relocate_result)

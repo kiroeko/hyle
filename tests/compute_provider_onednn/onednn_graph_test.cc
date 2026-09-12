@@ -34,7 +34,7 @@ TensorDesc matrix(std::int64_t rows, std::int64_t columns) {
 }
 
 TEST(OneDnnGraph, PlansProviderScratchpadAndExecutesWithoutHiddenFallback) {
-  constexpr std::size_t rows = 2;
+  constexpr std::size_t rows = 16;
   constexpr std::size_t inner = 3;
   constexpr std::size_t columns = 4;
   const TensorDesc left_description = matrix(rows, inner);
@@ -58,30 +58,35 @@ TEST(OneDnnGraph, PlansProviderScratchpadAndExecutesWithoutHiddenFallback) {
   EXPECT_EQ(compiled.report.copy_bytes, 0U);
   EXPECT_EQ(compiled.report.synchronization_count, 0U);
 
-  const std::array<float, rows * inner> left_values{1, 2, 3, -1, 0.5F, 4};
-  const std::array<float, inner * columns> right_values{
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+  std::array<float, rows * inner> left_values{};
+  std::array<float, inner * columns> right_values{};
+  for (std::size_t index = 0; index < left_values.size(); ++index)
+    left_values[index] =
+        static_cast<float>(static_cast<int>(index % 9) - 4) * 0.25F;
+  for (std::size_t index = 0; index < right_values.size(); ++index)
+    right_values[index] =
+        static_cast<float>(static_cast<int>(index % 5) - 2) * 0.5F;
   std::array<float, rows * columns> expected{};
   for (std::size_t row = 0; row < rows; ++row) {
     for (std::size_t column = 0; column < columns; ++column) {
       for (std::size_t k = 0; k < inner; ++k) {
         expected[row * columns + column] +=
-            left_values[row * inner + k] *
-            right_values[k * columns + column];
+            left_values[row * inner + k] * right_values[k * columns + column];
       }
     }
   }
 
-  Buffer left_buffer = Buffer::create(hyle::mem::system_resource(),
-                                      sizeof(left_values), 64)
-                           .value();
-  Buffer right_buffer = Buffer::create(hyle::mem::system_resource(),
-                                       sizeof(right_values), 64)
-                            .value();
-  Buffer output_buffer = Buffer::create(hyle::mem::system_resource(),
-                                        sizeof(expected), 64)
-                             .value();
-  ASSERT_TRUE(left_buffer.view().write(std::as_bytes(std::span(left_values))).ok());
+  Buffer left_buffer =
+      Buffer::create(hyle::mem::system_resource(), sizeof(left_values), 64)
+          .value();
+  Buffer right_buffer =
+      Buffer::create(hyle::mem::system_resource(), sizeof(right_values), 64)
+          .value();
+  Buffer output_buffer =
+      Buffer::create(hyle::mem::system_resource(), sizeof(expected), 64)
+          .value();
+  ASSERT_TRUE(
+      left_buffer.view().write(std::as_bytes(std::span(left_values))).ok());
   ASSERT_TRUE(
       right_buffer.view().write(std::as_bytes(std::span(right_values))).ok());
   auto left_view =

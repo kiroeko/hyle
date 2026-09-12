@@ -118,3 +118,34 @@ scratch、task count、tile 和 completion；两侧同样 charge set/release har
 不改变普通 Compute/Graph 语义的实现集。允许进入 `AUDITED` 并修改 provider/CMake/tests；任何 vendor
 patch、ARM execute、公开 tiling knob、K-partition reduction、weight packing 或新 dtype 必须停下另立卡。
 
+## 实现 checkpoint（2026-09-12）
+
+- provider 产品实现已删除 engine/descriptor/primitive/stream/memory/threadpool bridge，改为 plan-owned
+  x64 BRGEMM base/wide kernel、Invocation-owned caller scratch mapping 和每 task 的 stack offsets；默认串行
+  `M<16` 在 prepare 时回落 native，显式 executor 按 N 维形成至多 concurrency 个均衡连续 tile；
+- oneDNN 构建已改为 x64-only、`SEQ` runtime、`ONEDNN_EXPERIMENTAL_UKERNEL=ON`，仍保持精确
+  v3.13.2 lock、static/MatMul-only/cache-off/concurrent-exec；static SDK 检查同时要求普通 C header 与
+  `dnnl_ukernel.h`，shared SDK 继续禁止 vendor header 泄漏；
+- 中央组件审计曾拒绝 provider 直接包含 Mem alignment header。实现改用固定 64-byte ukernel 私有算术，
+  因而实际依赖仍为 `compute_provider_onednn -> compute`，没有为了两行算术扩大产品闭包；
+- W1-WIN/MSVC Release 的 shared 定向 provider/header/Graph 为 3/3 PASS；覆盖 16-row serial ukernel、
+  `7x17x257` 的四任务 base/wide 分片与 nested-progress executor、M=1/4 serial native fallback、transpose/
+  empty fallback、workspace 缺失/不足/未对齐、metadata OOM、同 artifact 并发 Invocation 和 Graph scratch
+  planning；static provider/header 为 2/2 PASS；
+- static 产品专用、默认不随 ctest 自动执行的分配探针在完整 HYLE
+  `OperationInvocation::submit()+Completion::wait()` 边界运行六个
+  `M={1,4,32} x {4096x4096,5120x13824}` 形状，全部 `global new=0`，一次运行约 2.0 秒；这补强了裸
+  ukernel prototype，不用 shared-DLL 符号解析伪造零分配；
+- Compute package sample 已扩为真正 prepare/allocate-workspace/submit/verify 的 oneDNN MatMul consumer；
+  selected-component smoke 仅在 native x64 强开 provider，native ARM 明确 OFF 并验证 HYLE-native 产品，
+  不再让 x64-only factor 阻断 Apple Compute 交付。
+- 正式 P1 已冻结为 `compute-onednn-provider-p1-v1`：同一进程内用独立但同值的 caller-owned storage、
+  相同 `M=32,K=N=4096` row-major f32 shape、full-N 预生成 kernel、scratch、串行 task 与 hardware-context
+  边界，对比完整公开 HYLE submit/wait 和 direct oneDNN C ukernel；双执行顺序、双构造顺序与代码布局
+  扰动均为必需 strata。合同 schema、精确 v3.13.2 peer lock 与两个 benchmark target 已通过编译；一次
+  unmanaged 冒烟中完整 HYLE 边约慢 3%，只证明仪器能运行且候选落在 5% 门附近，不是资格化结果，
+  不进入性能总账。
+
+本 checkpoint 尚不是 immutable candidate 或终局：source/static/shared relocation、Linux x64、Apple ARM
+negative capability、sanitizer、shared export/license、正式 P1、文档检查和终局 red-team 尚未全部执行，
+registry 保持 `AUDITED`。

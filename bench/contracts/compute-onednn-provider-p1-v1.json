@@ -1,0 +1,356 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "compute-onednn-provider-p1-v1",
+  "module": "compute_provider_onednn",
+  "claim": "P1 engineering non-inferiority for the complete warm HYLE Compute oneDNN-provider MatMul boundary against the identical pre-generated oneDNN BRGEMM ukernel under the same serial execution, storage and completion contract",
+  "candidate": {
+    "target": "hyle_compute_provider_onednn",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "compute_provider_onednn",
+    "entrypoint": "include/hyle/compute/providers/onednn.h"
+  },
+  "peers": [
+    {
+      "id": "onednn",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "configuration": {
+        "delivery_shape": "static library built from the pinned clean source checkout",
+        "algorithm": "experimental x64 float32 BRGEMM ukernel with overwrite-output semantics",
+        "source_file": "src/cpu/x64/brgemm/brgemm.cpp",
+        "version": "v3.13.2"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "short-prefill-f32-matmul-32x4096x4096",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/dense-projection",
+      "provenance": {
+        "path": "bench/compute_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "7da7e86402abd0ada6d615bdbb80d10bf94a7960575ff048485bae2ace665c73"
+      },
+      "ownership_topology": {
+        "candidate": "Caller-owned HYLE Buffers, TensorViews, Queue, prepared artifact, invocation and workspace are created once; each charged episode performs one public submit and waits for its synchronous Completion",
+        "peer": "The same caller-owned HYLE Buffer storage backs one independently generated direct oneDNN BRGEMM artifact and scratch mapping; each charged episode performs one set/execute/release sequence and checks terminal status",
+        "equivalence": "Both sides own separate but identically initialized 64-byte-aligned matrices and scratch, use one serial full-N kernel with the same leading dimensions and overwrite semantics, and retain all setup state for the process"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1073741824,
+        "unit": "floating-point operation",
+        "budget": 5,
+        "denominator": "one M=32, K=4096, N=4096 transformer projection",
+        "derivation": "The reviewed inference engines repeatedly execute dense projection families over short-prefill row batches and 4096-wide hidden states; this gate isolates only the provider-boundary tax on that stable shape"
+      },
+      "semantic_contract": "Overwrite C[32,4096] with row-major float32 A[32,4096] multiplied by row-major float32 B[4096,4096], using one pre-generated serial BRGEMM kernel and caller-owned scratch",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 32,
+          "inner": 4096,
+          "columns": 4096,
+          "matmuls_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map, prepare/JIT and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete matrix multiplication",
+        "one oneDNN hardware-context set and release",
+        "terminal status checking and one observable output read",
+        "for HYLE, the normal public tensor mapping, binding validation, provider dispatch and synchronous Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN provider M=32 K=4096 N=4096",
+        "peer": "direct oneDNN BRGEMM M=32 K=4096 N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows"
+    ],
+    "certification_platforms": [
+      "windows"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "OFF",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPUTE_ONEDNN": "ON",
+          "HYLE_DEV_FACTORS": "compute_provider_onednn",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "onednn": "FETCHCONTENT_SOURCE_DIR_ONEDNN"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "compute-onednn-provider-primary",
+          "target": "hyle_compute_onednn_provider_bench",
+          "stem": "hyle_compute_onednn_provider_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_COMPUTE_ONEDNN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "short-prefill-f32-matmul-32x4096x4096",
+              "title": "oneDNN BRGEMM provider wrapper M=32 K=4096 N=4096"
+            }
+          ]
+        },
+        {
+          "id": "compute-onednn-provider-placement",
+          "target": "hyle_compute_onednn_provider_bench_placement",
+          "stem": "hyle_compute_onednn_provider_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_COMPUTE_ONEDNN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "short-prefill-f32-matmul-32x4096x4096",
+              "title": "oneDNN BRGEMM provider wrapper M=32 K=4096 N=4096"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        }
+      ]
+    }
+  }
+}

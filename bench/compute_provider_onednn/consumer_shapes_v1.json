@@ -1,0 +1,47 @@
+{
+  "schema": "hyle.compute-onednn.consumer-shapes/v1",
+  "id": "compute-onednn-prefill-matmul-v1",
+  "classification": "NORTH_STAR_JOURNEY",
+  "reference_snapshots": {
+    "llama.cpp": "e71b80510c848c00175924ecf3c40333ccae8eb5",
+    "ggml": "e91ded11bdcd78c42f9c8d3978ff6686eb4c1226",
+    "ds4": "f62ca29a308724cde5bc99134ede19104b2a3260",
+    "sglang": "dcebe8c4733a5cb802fb679e0c8fbb886e2801b0",
+    "vllm": "51da0ca66c8065619c79e35dff97aa99aeaf5644"
+  },
+  "admission": {
+    "capability": "prepared dense row-major float32 CPU MatMul",
+    "consumer": "a short-prefill projection over a transformer hidden-state block",
+    "shape": {
+      "rows": 32,
+      "inner": 4096,
+      "columns": 4096
+    },
+    "provider": "oneDNN v3.13.2 experimental x64 BRGEMM ukernel",
+    "public_journey": "hyle::compute::prepare(MatMul) followed by a reusable OperationInvocation submit and Completion wait"
+  },
+  "equivalence": {
+    "candidate": "the complete public HYLE Compute oneDNN-provider warm submit boundary",
+    "peer": "a noinline direct adapter over the identical pre-generated oneDNN BRGEMM ukernel",
+    "shared": [
+      "one caller thread pinned to the same logical CPU",
+      "float32 M=32, K=4096, N=4096 row-major matrices",
+      "overwrite-output semantics and no post-op",
+      "one pre-generated full-N BRGEMM artifact",
+      "caller-owned 64-byte-aligned input, output and scratch storage",
+      "one sequential execute with hardware-context set and release",
+      "all allocation, descriptor construction, JIT generation and warmup outside measurement"
+    ],
+    "candidate_only_charged": [
+      "public queue and tensor-binding validation",
+      "HYLE host-storage mapping",
+      "provider vtable dispatch and typed Status/Completion mapping"
+    ],
+    "interpretation": "This is a wrapper-tax non-inferiority row. It does not compare two different kernels, packing policies, layouts or threading strategies and cannot establish that oneDNN beats HYLE-native MatMul."
+  },
+  "negative_space": [
+    "decode M=1 and M=4 use the independently justified HYLE-native serial route and are not averaged into this result",
+    "parallel executor tiling is a separate execution-policy question and is not mixed into the serial wrapper-tax gate",
+    "f16, bf16, quantized weights, persistent packing, epilogues and graph partitioning require later finite cards"
+  ]
+}
