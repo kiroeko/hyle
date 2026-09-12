@@ -354,9 +354,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-onednn-v2-ukernel-resume.md",
-      "summary": "compute_provider_onednn v2 SCOPED：锁定版本的 x64 实验 BRGEMM ukernel 提供冷生成、caller scratchpad 和源码无 warm heap 的等价成熟 route，满足 v1 恢复条件；先审计实际 allocation、并发/tiling、x64-only capability 与三交付，AUDITED 前不改产品。"
+      "summary": "compute_provider_onednn v2 AUDITED：实际构建、正确性、六形状 allocation probe 与源码确认 x64 BRGEMM ukernel 可解除 warm allocation blocker；已冻结私有 full/tail artifact、caller scratch、N-tile executor、native decode fallback、x64-only capability 及删除旧 primitive 路线的有限实现集。"
     }
   ]
 }
