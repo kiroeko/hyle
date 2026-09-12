@@ -375,6 +375,16 @@
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
       "summary": "compute_ops v1 已冻结 typed Tensor/Operation schema 与真实推理/正交数值算子目录的审计范围；当前只有空内部 factor，没有依赖、公开头、产品投影或已承诺新算子。"
+    },
+    {
+      "module": "compute_backend_cpu",
+      "state": "QUEUED",
+      "summary": "已预留 CPU device/context/queue/resource backend 因子身份；当前没有 closure card、依赖、源码、target、公开头、产品投影或已承诺能力。"
+    },
+    {
+      "module": "compute_provider_native",
+      "state": "QUEUED",
+      "summary": "已预留 HYLE reference/SIMD native operator provider 因子身份；当前没有 closure card、依赖、源码、target、公开头、产品投影或已承诺能力。"
     }
   ]
 }

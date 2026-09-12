@@ -352,6 +352,13 @@ _hyle_declare_component(compute_provider_ggml)
 # projection until its finite ledger reaches AUDITED.
 _hyle_declare_component(compute_ops)
 
+# Reserved identities for the audited Compute split. Runtime-neutral Compute
+# must not force a CPU backend or HYLE SIMD/native kernels into future
+# CUDA/Metal-only products. QUEUED reservations own no source, dependency,
+# header, target or product projection until their own closure cards advance.
+_hyle_declare_component(compute_backend_cpu QUEUED)
+_hyle_declare_component(compute_provider_native QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

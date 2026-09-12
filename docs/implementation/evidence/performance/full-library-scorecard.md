@@ -2,7 +2,7 @@
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 [`module-status.json`](../../module-status.json) 中当前 30 个 `CLOSED` factor；正在重构的 Compute、Graph、
-`compute_ops` 与待其前置完成的 ggml provider 被明确排除。它不是第二套模块状态，也不授予 HYLE 一个
+`compute_ops`、两个刚预留的 CPU 实现因子与待其前置完成的 ggml provider 被明确排除。它不是第二套模块状态，也不授予 HYLE 一个
 跨平台、跨能力的永久 SOTA 标签。旧 Compute/Graph claim 仍保存在历史 evidence 中，但在新候选签发前
 不属于当前产品性能账本。
 

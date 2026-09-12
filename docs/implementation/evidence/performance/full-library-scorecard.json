@@ -4,7 +4,7 @@
   "registry": "docs/implementation/module-status.json",
   "baseline": "bbd1eebada1be72d5b33c07e8c0763b16196d3fb",
   "ratio_definition": "greater than one favors the shipped HYLE route",
-  "excluded_modules": ["compute", "graph", "compute_provider_ggml", "compute_ops"],
+  "excluded_modules": ["compute", "graph", "compute_provider_ggml", "compute_ops", "compute_backend_cpu", "compute_provider_native"],
   "peer_freshness": [
     {"peer": "Highway", "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2", "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2", "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"},
     {"peer": "xsimd", "locked": "3b3151ff665514a00a437cc985f47b7de99b772b", "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b", "disposition": "current"},
