@@ -286,10 +286,11 @@ private:
     auto graph = take_or_abort(std::move(builder).finish(), "logical graph");
     auto compiled =
         take_or_abort(hyle::graph::compile(graph, context_), "graph compile");
-    if (compiled.report.node_count != 3 ||
-        compiled.report.provider.id != hyle::compute::native::kProviderId ||
-        compiled.report.mixed_providers || compiled.report.copy_bytes != 0 ||
-        compiled.report.synchronization_count != 0) {
+    if (compiled.report.node_count() != 3 ||
+        compiled.report.provider().id != hyle::compute::native::kProviderId ||
+        compiled.report.mixed_providers() ||
+        compiled.report.copy_bytes() != 0 ||
+        compiled.report.synchronization_count() != 0) {
       fail_setup("unexpected compiled route");
     }
 

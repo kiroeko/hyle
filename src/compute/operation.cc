@@ -10,6 +10,8 @@
 
 #include "backend_internal.h"
 #include "context_state.h"
+#include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "prepared_state.h"
 
 namespace hyle::compute {
@@ -20,6 +22,15 @@ constexpr std::size_t kInlineInferredOutputs = 4;
 constexpr std::size_t align_up(std::size_t value,
                                std::size_t alignment) noexcept {
   return (value + alignment - 1) & ~(alignment - 1);
+}
+
+void mark_operation_terminal(void *opaque, const Status &) noexcept {
+  static_cast<detail::InvocationState *>(opaque)->in_flight.store(
+      false, std::memory_order_release);
+}
+
+void release_operation_lifetime(void *opaque) noexcept {
+  detail::release(static_cast<detail::InvocationState *>(opaque));
 }
 
 Result<std::size_t>
@@ -607,33 +618,88 @@ OperationInvocation::OperationInvocation(OperationInvocation &&other) noexcept
 OperationInvocation &
 OperationInvocation::operator=(OperationInvocation &&other) noexcept {
   if (this != &other) {
-    if (state_ != nullptr)
-      state_->destroy();
+    detail::release(state_);
     state_ = other.state_;
     other.state_ = nullptr;
   }
   return *this;
 }
 
-OperationInvocation::~OperationInvocation() {
-  if (state_ != nullptr)
-    state_->destroy();
-}
+OperationInvocation::~OperationInvocation() { detail::release(state_); }
 
 ProviderIdentity OperationInvocation::provider() const noexcept {
   return state_ != nullptr ? state_->prepared->provider : ProviderIdentity{};
+}
+
+bool OperationInvocation::in_flight() const noexcept {
+  return state_ != nullptr && state_->in_flight.load(std::memory_order_acquire);
 }
 
 Result<Completion>
 OperationInvocation::submit(Queue &queue,
                             std::span<const ConstTensorView> inputs,
                             std::span<const TensorView> outputs) noexcept {
-  if (!valid())
+  if (state_ == nullptr) {
     return std::unexpected(
         Status::FailedPrecondition("operation invocation is invalid"));
+  }
+  bool idle = false;
+  if (!state_->in_flight.compare_exchange_strong(
+          idle, true, std::memory_order_acq_rel, std::memory_order_acquire)) {
+    return std::unexpected(Status::FailedPrecondition(
+        "operation invocation already has work in flight"));
+  }
+  struct RunRollback final {
+    detail::InvocationState *state = nullptr;
+    bool armed = true;
+    ~RunRollback() {
+      if (armed)
+        state->in_flight.store(false, std::memory_order_release);
+    }
+    void disarm() noexcept { armed = false; }
+  } rollback{state_};
+
+  auto sequence = detail::QueueSequence::begin(queue);
+  if (!sequence)
+    return std::unexpected(std::move(sequence).error());
+  auto completion = detail::OperationInvocationAccess::submit(*this, *sequence,
+                                                              inputs, outputs);
+  if (!completion)
+    return std::unexpected(std::move(completion).error());
+  if (!detail::CompletionAccess::has_async_state(*completion)) {
+    state_->in_flight.store(false, std::memory_order_release);
+    rollback.disarm();
+    return completion;
+  }
+
+  detail::retain(state_);
+  state_->completion_lifetime = detail::CompletionLifetime{
+      .state = state_,
+      .terminal = &mark_operation_terminal,
+      .release = &release_operation_lifetime,
+  };
+  Status attached = detail::CompletionAccess::attach_lifetime(
+      *completion, state_->completion_lifetime);
+  if (!attached.ok())
+    return std::unexpected(std::move(attached));
+  rollback.disarm();
+  return completion;
+}
+
+Result<Completion> detail::OperationInvocationAccess::submit(
+    OperationInvocation &invocation, detail::QueueSequence &sequence,
+    std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  if (!invocation.valid())
+    return std::unexpected(
+        Status::FailedPrecondition("operation invocation is invalid"));
+  if (!sequence.valid())
+    return std::unexpected(
+        Status::FailedPrecondition("compute queue sequence is invalid"));
+  Queue &queue = sequence.queue();
   if (!queue.valid())
     return std::unexpected(Status::FailedPrecondition("queue is invalid"));
-  detail::PreparedState &prepared = *state_->prepared;
+  detail::PreparedState &prepared = *invocation.state_->prepared;
   detail::QueueState *queue_state = detail::ContextAccess::state(queue);
   if (queue_state->context != prepared.context) {
     return std::unexpected(Status::InvalidArgument(
@@ -666,17 +732,9 @@ OperationInvocation::submit(Queue &queue,
   if (!alias.ok())
     return std::unexpected(std::move(alias));
 
-  Status admission = queue.begin_submission();
-  if (!admission.ok())
-    return std::unexpected(std::move(admission));
-  struct AdmissionGuard final {
-    Queue *queue = nullptr;
-    ~AdmissionGuard() { CpuQueueAccess::end(*queue); }
-  } guard{&queue};
-
   auto completion = prepared.provider_prepared.vtable->submit(
-      prepared.provider_prepared.state, state_->provider_state, queue, inputs,
-      outputs);
+      prepared.provider_prepared.state, invocation.state_->provider_state,
+      queue, inputs, outputs);
   if (completion && !completion->valid()) {
     return std::unexpected(
         Status::Internal("compute provider returned an invalid completion"));

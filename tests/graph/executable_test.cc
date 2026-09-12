@@ -41,6 +41,7 @@ using hyle::graph::Executable;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
 using hyle::graph::Invocation;
+using hyle::graph::OutputOwnership;
 using hyle::graph::ValueId;
 using hyle::mem::AllocatorRef;
 using hyle::mem::Buffer;
@@ -144,6 +145,13 @@ std::vector<float> read(const OwnedTensor &tensor, std::size_t count) {
   EXPECT_TRUE(tensor.buffer.view()
                   .read(std::as_writable_bytes(std::span(result)))
                   .ok());
+  return result;
+}
+
+std::vector<float> read(ConstTensorView tensor, std::size_t count) {
+  std::vector<float> result(count);
+  EXPECT_TRUE(
+      tensor.storage().read(std::as_writable_bytes(std::span(result))).ok());
   return result;
 }
 
@@ -258,18 +266,18 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_EQ(compiled.executable.node_count(), 3u);
   EXPECT_EQ(compiled.executable.input_id(1).value(), logical.inputs[1]);
   EXPECT_EQ(compiled.executable.output_id().value(), logical.outputs[0]);
-  EXPECT_EQ(compiled.report.backend, hyle::compute::cpu::kBackendId);
-  EXPECT_EQ(compiled.report.provider.id, hyle::compute::native::kProviderId);
-  EXPECT_EQ(compiled.report.node_count, 3u);
-  EXPECT_GT(compiled.report.workspace_bytes, 0u);
-  EXPECT_GT(compiled.report.workspace_backing_count, 0u);
-  EXPECT_EQ(compiled.report.workspace_bytes,
+  EXPECT_EQ(compiled.report.backend(), hyle::compute::cpu::kBackendId);
+  EXPECT_EQ(compiled.report.provider().id, hyle::compute::native::kProviderId);
+  EXPECT_EQ(compiled.report.node_count(), 3u);
+  EXPECT_GT(compiled.report.workspace_bytes(), 0u);
+  EXPECT_GT(compiled.report.workspace_backing_count(), 0u);
+  EXPECT_EQ(compiled.report.workspace_bytes(),
             compiled.executable.workspace_bytes());
-  EXPECT_EQ(compiled.report.workspace_backing_count,
+  EXPECT_EQ(compiled.report.workspace_backing_count(),
             compiled.executable.workspace_backing_count());
-  EXPECT_EQ(compiled.report.copy_bytes, 0u);
-  EXPECT_EQ(compiled.report.synchronization_count, 0u);
-  EXPECT_FALSE(compiled.report.mixed_providers);
+  EXPECT_EQ(compiled.report.copy_bytes(), 0u);
+  EXPECT_EQ(compiled.report.synchronization_count(), 0u);
+  EXPECT_FALSE(compiled.report.mixed_providers());
 
   Executable copied = compiled.executable;
   Executable moved = std::move(copied);
@@ -298,10 +306,10 @@ TEST(GraphCompile, BindsBorrowedConstantsOnceForRepeatedInvocations) {
       hyle::graph::compile(graph, context,
                            CompileOptions{.constants = bindings})
           .value();
-  EXPECT_EQ(compiled.report.constant_count, 1u);
-  EXPECT_EQ(compiled.report.borrowed_constant_count, 1u);
-  EXPECT_EQ(compiled.report.packed_constant_count, 0u);
-  EXPECT_EQ(compiled.report.packed_constant_bytes, 0u);
+  EXPECT_EQ(compiled.report.constant_count(), 1u);
+  EXPECT_EQ(compiled.report.borrowed_constant_count(), 1u);
+  EXPECT_EQ(compiled.report.packed_constant_count(), 0u);
+  EXPECT_EQ(compiled.report.packed_constant_bytes(), 0u);
 
   Invocation invocation = compiled.executable.create_invocation().value();
   EXPECT_TRUE(invocation.bind(weight_id, weight.view).IsInvalidArgument());
@@ -319,7 +327,7 @@ TEST(GraphCompile, BindsBorrowedConstantsOnceForRepeatedInvocations) {
     expected[index] = input_values[index] * factor * weight_values[index];
   expect_near(read(output, 4), expected);
 
-  invocation.reset();
+  ASSERT_TRUE(invocation.reset().ok());
   ASSERT_TRUE(invocation.bind(input_id, input.view).ok());
   ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
@@ -369,10 +377,13 @@ TEST(GraphCompile, ExecutesPublishedConstantWithoutRuntimeRebinding) {
   CompiledGraph compiled =
       hyle::graph::compile(graph, context, CompileOptions{.constants = binding})
           .value();
+  EXPECT_EQ(compiled.executable.output_ownership().value(),
+            OutputOwnership::kSourceAlias);
   Invocation invocation = compiled.executable.create_invocation().value();
   Queue queue = context.create_queue().value();
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
-  invocation.reset();
+  EXPECT_TRUE(invocation.output(constant_id).has_value());
+  ASSERT_TRUE(invocation.reset().ok());
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
 }
 
@@ -414,7 +425,7 @@ TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
       input_values, norm_values, matrix_values, kRows, kHidden, kFfn);
   expect_near(read(output, kRows * kFfn), expected);
 
-  invocation.reset();
+  ASSERT_TRUE(invocation.reset().ok());
   EXPECT_TRUE(invocation.submit(queue).error().IsFailedPrecondition());
   ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
   ASSERT_TRUE(invocation.bind(logical.inputs[1], norm_weight.view).ok());
@@ -638,7 +649,7 @@ TEST(Invocation, ZeroExtentIntermediateWorkspaceRemainsAValidRun) {
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   CompiledGraph compiled = hyle::graph::compile(logical.graph, context).value();
-  EXPECT_EQ(compiled.report.node_count, 3u);
+  EXPECT_EQ(compiled.report.node_count(), 3u);
 
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor input = make_tensor(matrix(0, 4));
@@ -671,7 +682,7 @@ TEST(Invocation, PublishedIntermediateCanFeedALaterNode) {
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   CompiledGraph compiled = hyle::graph::compile(graph, context).value();
-  EXPECT_EQ(compiled.report.workspace_bytes, 0u);
+  EXPECT_EQ(compiled.report.workspace_bytes(), 0u);
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor input_tensor = make_tensor(description);
   OwnedTensor first_tensor = make_tensor(description);
@@ -715,7 +726,7 @@ TEST(Invocation, AllowsOnlyLifetimeSafeExactExternalInPlaceAlias) {
                              .subview(sizeof(float), 4 * sizeof(float))
                              .value())
           .value();
-  invocation.reset();
+  ASSERT_TRUE(invocation.reset().ok());
   ASSERT_TRUE(invocation.bind(safe.inputs[0], partial_input).ok());
   EXPECT_TRUE(
       invocation.bind(safe.outputs[0], partial_output).IsInvalidArgument());
@@ -734,7 +745,7 @@ TEST(GraphCompile, ReusesInternalStorageForLifetimeSafeInPlaceOperations) {
 
   Context context = hyle::compute::cpu::create_context().value();
   CompiledGraph compiled = hyle::graph::compile(graph, context).value();
-  EXPECT_EQ(compiled.report.workspace_bytes,
+  EXPECT_EQ(compiled.report.workspace_bytes(),
             description.required_bytes().value());
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor input_tensor = make_tensor(description);
@@ -760,7 +771,7 @@ TEST(Invocation, ResolvesAnInternalSliceViewWithoutMaterializingIt) {
 
   Context context = hyle::compute::cpu::create_context().value();
   CompiledGraph compiled = hyle::graph::compile(graph, context).value();
-  EXPECT_EQ(compiled.report.workspace_bytes, 0u);
+  EXPECT_EQ(compiled.report.workspace_bytes(), 0u);
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor input_tensor = make_tensor(input_description);
   OwnedTensor output_tensor = make_tensor(matrix(1, 3));
@@ -773,7 +784,50 @@ TEST(Invocation, ResolvesAnInternalSliceViewWithoutMaterializingIt) {
   expect_near(read(output_tensor, 3), std::array<float, 3>{-4, -5, -6});
 }
 
-TEST(Invocation, RequiresAPublishedViewToBindItsInferredSubrange) {
+TEST(Invocation, OwnsAPublishedViewRootedInPrivateWorkspace) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc input_description = row(6);
+  const ValueId input = builder.input(input_description).value();
+  const ValueId internal = builder.add(Unary{UnaryKind::kNeg}, input).value();
+  const ValueId output =
+      builder.add(View::slice(0, 2, 3).value(), internal).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = hyle::compute::cpu::create_context().value();
+  auto compile_result = hyle::graph::compile(graph, context);
+  ASSERT_TRUE(compile_result.has_value()) << compile_result.error().message();
+  CompiledGraph compiled = std::move(*compile_result);
+  auto ownership = compiled.executable.output_ownership();
+  ASSERT_TRUE(ownership.has_value()) << ownership.error().message();
+  EXPECT_EQ(*ownership, OutputOwnership::kInvocation);
+  EXPECT_EQ(compiled.report.invocation_owned_output_count(), 1u);
+  EXPECT_EQ(compiled.report.workspace_bytes(),
+            input_description.required_bytes().value());
+
+  auto created = compiled.executable.create_invocation();
+  ASSERT_TRUE(created.has_value()) << created.error().message();
+  Invocation invocation = std::move(*created);
+  EXPECT_TRUE(invocation.output(output).error().IsFailedPrecondition());
+  OwnedTensor input_tensor = make_tensor(input_description);
+  OwnedTensor rejected_output = make_tensor(row(3));
+  write(input_tensor, std::array<float, 6>{1, 2, 3, 4, 5, 6});
+  ASSERT_TRUE(invocation.bind(input, input_tensor.view).ok());
+  EXPECT_TRUE(
+      invocation.bind(output, rejected_output.view).IsFailedPrecondition());
+  Queue queue = context.create_queue().value();
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  auto owned = invocation.output(output);
+  ASSERT_TRUE(owned.has_value()) << owned.error().message();
+  EXPECT_EQ(read(*owned, 3), (std::vector<float>{-3, -4, -5}));
+
+  ASSERT_TRUE(invocation.reset().ok());
+  EXPECT_TRUE(invocation.output(output).error().IsFailedPrecondition());
+}
+
+TEST(Invocation, PublishedViewReusesItsSourceBinding) {
   GraphBuilder builder = GraphBuilder::create().value();
   const TensorDesc input_description = matrix(2, 3);
   const ValueId input = builder.input(input_description).value();
@@ -783,10 +837,14 @@ TEST(Invocation, RequiresAPublishedViewToBindItsInferredSubrange) {
   Graph graph = std::move(builder).finish().value();
 
   Context context = hyle::compute::cpu::create_context().value();
-  Invocation invocation = hyle::graph::compile(graph, context)
-                              ->executable.create_invocation()
-                              .value();
+  CompiledGraph compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_EQ(compiled.executable.output_ownership().value(),
+            OutputOwnership::kSourceAlias);
+  ASSERT_EQ(compiled.report.step_count(), 1u);
+  EXPECT_EQ(compiled.report.step(0)->dispatch_count, 0u);
+  Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor storage = make_tensor(input_description);
+  write(storage, std::array<float, 6>{1, 2, 3, 4, 5, 6});
   const std::size_t row_bytes = 3 * sizeof(float);
   TensorView second_row =
       TensorView::create(
@@ -794,17 +852,20 @@ TEST(Invocation, RequiresAPublishedViewToBindItsInferredSubrange) {
           storage.buffer.view().subview(row_bytes, row_bytes).value())
           .value();
   ASSERT_TRUE(invocation.bind(input, storage.view).ok());
-  ASSERT_TRUE(invocation.bind(output, second_row).ok());
+  EXPECT_TRUE(invocation.bind(output, second_row).IsFailedPrecondition());
   Queue queue = context.create_queue().value();
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  auto derived = invocation.output(output);
+  ASSERT_TRUE(derived.has_value()) << derived.error().message();
+  EXPECT_EQ(read(*derived, 3), (std::vector<float>{4, 5, 6}));
 
-  invocation.reset();
+  ASSERT_TRUE(invocation.reset().ok());
   TensorView wrong =
       TensorView::create(matrix(1, 3),
                          storage.buffer.view().subview(0, row_bytes).value())
           .value();
   ASSERT_TRUE(invocation.bind(input, storage.view).ok());
-  EXPECT_TRUE(invocation.bind(output, wrong).IsInvalidArgument());
+  EXPECT_TRUE(invocation.bind(output, wrong).IsFailedPrecondition());
 }
 
 TEST(GraphCompile, DoesNotInPlaceABroadcastProviderRoute) {

@@ -1,10 +1,12 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <memory>
 #include <span>
 
 #include "context_state.h"
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/util/ref_counted.h"
 #include "provider_internal.h"
 
@@ -74,7 +76,7 @@ inline void release(PreparedState *state) noexcept {
     state->decref();
 }
 
-struct InvocationState final {
+struct InvocationState final : util::RefCounted<InvocationState> {
   InvocationState(PreparedState *prepared_value,
                   void *provider_state_value) noexcept
       : prepared(prepared_value), provider_state(provider_state_value) {
@@ -98,6 +100,18 @@ struct InvocationState final {
 
   PreparedState *prepared = nullptr;
   void *provider_state = nullptr;
+  CompletionLifetime completion_lifetime{};
+  std::atomic<bool> in_flight{false};
 };
+
+inline void retain(InvocationState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+
+inline void release(InvocationState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
 
 } // namespace hyle::compute::detail

@@ -12,6 +12,7 @@ enum class CompletionPoll : unsigned char {
 
 namespace detail {
 struct CompletionAccess;
+struct CompletionLifetime;
 struct CompletionVTable;
 } // namespace detail
 
@@ -40,12 +41,16 @@ public:
 private:
   Completion(const detail::CompletionVTable *vtable, void *state) noexcept;
   explicit Completion(Status terminal) noexcept;
+  void settle(Status terminal) const noexcept;
+  Status attach_lifetime(detail::CompletionLifetime &lifetime) noexcept;
+  void append_terminal(Status terminal) noexcept;
   void reset() noexcept;
 
   friend struct detail::CompletionAccess;
-  const detail::CompletionVTable *vtable_ = nullptr;
-  void *state_ = nullptr;
-  Status terminal_{};
+  mutable const detail::CompletionVTable *vtable_ = nullptr;
+  mutable void *state_ = nullptr;
+  mutable Status terminal_{};
+  mutable detail::CompletionLifetime *lifetime_ = nullptr;
   bool valid_ = false;
 };
 

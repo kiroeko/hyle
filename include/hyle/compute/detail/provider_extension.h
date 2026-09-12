@@ -8,6 +8,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 struct ProviderExtensionAccess;
+class QueueSequence;
 
 // Internal copyable capability handle. It retains the exact Context/provider
 // state so a compiled artifact cannot dangle when the caller releases its
@@ -70,6 +71,12 @@ struct ProviderExtensionAccess final {
          std::span<const ConstTensorView> inputs,
          std::span<const TensorView> outputs,
          ProviderExtensionSubmitFn function, void *call_context) noexcept;
+
+  HYLE_COMPUTE_API static Result<Completion> submit_admitted(
+      const ProviderExtensionRef &extension, QueueSequence &sequence,
+      std::span<const ConstTensorView> inputs,
+      std::span<const TensorView> outputs, ProviderExtensionSubmitFn function,
+      void *call_context) noexcept;
 };
 
 } // namespace hyle::compute::detail

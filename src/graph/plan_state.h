@@ -1,11 +1,14 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <utility>
 
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/executable.h"
@@ -20,6 +23,9 @@ inline constexpr std::uint32_t kNoInPlaceSource = UINT32_MAX;
 inline constexpr std::uint8_t kExternalInput = 1u << 0;
 inline constexpr std::uint8_t kExternalOutput = 1u << 1;
 inline constexpr std::uint8_t kConstant = 1u << 2;
+inline constexpr std::uint8_t kInvocationOwnedOutput = 1u << 3;
+inline constexpr std::uint8_t kRetainedOutputRoot = 1u << 4;
+inline constexpr std::uint8_t kSourceAliasedOutput = 1u << 5;
 
 class PreparedRegion;
 
@@ -38,7 +44,7 @@ public:
 
   bool valid() const noexcept { return prepared_ != nullptr; }
   Result<compute::Completion>
-  submit(compute::Queue &queue,
+  submit(compute::detail::QueueSequence &sequence,
          std::span<const compute::ConstTensorView> inputs,
          std::span<const compute::TensorView> outputs) noexcept;
 
@@ -107,7 +113,7 @@ public:
   Result<RegionInvocation>
   create_invocation(mem::BufferView workspace) const noexcept;
   Result<compute::Completion>
-  submit(void *invocation, compute::Queue &queue,
+  submit(void *invocation, compute::detail::QueueSequence &sequence,
          std::span<const compute::ConstTensorView> inputs,
          std::span<const compute::TensorView> outputs) const noexcept;
 
@@ -151,13 +157,14 @@ inline void RegionInvocation::reset() noexcept {
 }
 
 inline Result<compute::Completion> RegionInvocation::submit(
-    compute::Queue &queue, std::span<const compute::ConstTensorView> inputs,
+    compute::detail::QueueSequence &sequence,
+    std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
   if (!valid()) {
     return std::unexpected(
         Status::FailedPrecondition("graph region invocation is invalid"));
   }
-  return prepared_->submit(state_, queue, inputs, outputs);
+  return prepared_->submit(state_, sequence, inputs, outputs);
 }
 
 inline Result<RegionInvocation>
@@ -194,7 +201,7 @@ PreparedRegion::create_invocation(mem::BufferView workspace) const noexcept {
 }
 
 inline Result<compute::Completion> PreparedRegion::submit(
-    void *invocation, compute::Queue &queue,
+    void *invocation, compute::detail::QueueSequence &sequence,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) const noexcept {
   struct Episode final {
@@ -203,8 +210,8 @@ inline Result<compute::Completion> PreparedRegion::submit(
     std::span<const compute::ConstTensorView> inputs{};
     std::span<const compute::TensorView> outputs{};
   } episode{this, invocation, inputs, outputs};
-  return compute::detail::ProviderExtensionAccess::submit(
-      extension_, queue, inputs, outputs,
+  return compute::detail::ProviderExtensionAccess::submit_admitted(
+      extension_, sequence, inputs, outputs,
       +[](void *, const void *, void *opaque,
           compute::Queue &submitted_queue) noexcept
           -> Result<compute::Completion> {
@@ -225,11 +232,13 @@ struct PlanStep final {
   PlanStep(compute::PreparedOperation prepared_value,
            std::uint32_t node_begin_value, std::uint32_t input_begin_value,
            std::uint32_t input_count_value, std::uint32_t output_begin_value,
-           std::uint32_t output_count_value, bool materializes_value) noexcept
+           std::uint32_t output_count_value, bool materializes_value,
+           CompileFallbackReason fallback_reason_value) noexcept
       : operation(std::move(prepared_value)), node_begin(node_begin_value),
         input_begin(input_begin_value), output_begin(output_begin_value),
         input_count(input_count_value), output_count(output_count_value),
-        materializes(materializes_value) {}
+        materializes(materializes_value),
+        fallback_reason(fallback_reason_value) {}
 
   PlanStep(PreparedRegion region_value, std::uint32_t node_begin_value,
            std::uint32_t node_count_value, std::uint32_t input_begin_value,
@@ -264,6 +273,7 @@ struct PlanStep final {
   std::uint32_t output_count = 0;
   PlanStepKind kind = PlanStepKind::kOperation;
   bool materializes = true;
+  CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
 };
 
 using PlanSteps = container::SmallVector<PlanStep, 8, mem::AllocatorRef>;
@@ -284,6 +294,8 @@ using ReadableBindings =
     container::SmallVector<compute::ConstTensorView, 16, mem::AllocatorRef>;
 using WritableBindings =
     container::SmallVector<compute::TensorView, 16, mem::AllocatorRef>;
+using CompileStepReports =
+    container::SmallVector<CompileStepReport, 8, mem::AllocatorRef>;
 
 struct PlanState final : util::RefCounted<PlanState> {
   PlanState(mem::AllocatorRef allocator_value,
@@ -341,7 +353,46 @@ inline void release(PlanState *state) noexcept {
     state->decref();
 }
 
-struct InvocationState final {
+struct ReportState final : util::RefCounted<ReportState> {
+  explicit ReportState(mem::AllocatorRef allocator_value) noexcept
+      : allocator(allocator_value), steps(allocator_value) {}
+
+  void destroy() noexcept {
+    const mem::AllocatorRef owner = allocator;
+    this->~ReportState();
+    owner.deallocate(this, sizeof(ReportState), alignof(ReportState));
+  }
+
+  mem::AllocatorRef allocator{};
+  CompileStepReports steps;
+  compute::BackendId backend{};
+  compute::ProviderIdentity provider{};
+  std::size_t workspace_bytes = 0;
+  std::size_t workspace_backing_count = 0;
+  std::size_t node_count = 0;
+  std::size_t region_count = 0;
+  std::size_t fallback_operation_count = 0;
+  std::size_t constant_count = 0;
+  std::size_t borrowed_constant_count = 0;
+  std::size_t packed_constant_count = 0;
+  std::size_t packed_constant_bytes = 0;
+  std::size_t invocation_owned_output_count = 0;
+  std::size_t copy_bytes = 0;
+  std::uint32_t synchronization_count = 0;
+  bool mixed_providers = false;
+};
+
+inline void retain(ReportState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+
+inline void release(ReportState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
+
+struct InvocationState final : util::RefCounted<InvocationState> {
   InvocationState(PlanState *plan_value,
                   mem::PlannedBuffers workspace_value) noexcept
       : allocator(plan_value->allocator), plan(plan_value), readable(allocator),
@@ -370,11 +421,33 @@ struct InvocationState final {
   StepInvocations invocations;
   ReadableBindings submission_inputs;
   WritableBindings submission_outputs;
+  compute::detail::CompletionLifetime completion_lifetime{};
+  // Only one run may use mutable bindings/provider invocation state at a time.
+  // A Completion lifetime attachment returns this flag to idle at the true
+  // terminal point and retains the state if the public Invocation is released.
+  std::atomic<bool> in_flight{false};
+  std::atomic<bool> outputs_ready{false};
 };
+
+inline void retain(InvocationState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+
+inline void release(InvocationState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
 
 struct ExecutableAccess final {
   static Executable adopt(PlanState *state) noexcept {
     return Executable(state);
+  }
+};
+
+struct CompileReportAccess final {
+  static CompileReport adopt(ReportState *state) noexcept {
+    return CompileReport(state);
   }
 };
 
@@ -383,10 +456,5 @@ struct InvocationAccess final {
     return Invocation(state);
   }
 };
-
-inline void destroy(InvocationState *state) noexcept {
-  if (state != nullptr)
-    state->destroy();
-}
 
 } // namespace hyle::graph::detail

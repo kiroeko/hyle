@@ -107,6 +107,10 @@ struct QueueState final : util::RefCounted<QueueState> {
   ContextState *context = nullptr;
   void *backend_state = nullptr;
   AdmissionGate admission{};
+  // Submission calls on one ordered Queue are a single-producer domain.  The
+  // flag is held only while recording/enqueuing a command sequence, never for
+  // asynchronous device execution.
+  std::atomic_flag submitting = ATOMIC_FLAG_INIT;
 };
 
 struct ContextAccess final {

@@ -163,3 +163,31 @@ Graph runtime/plan 缺口。
 G37 的中立 partition/artifact 机制已实现，但 Graph 仍是 `AUDITED`：G38 ordered sequence Completion、G39
 逐 step/region report、G40 policy/per-provider budget，以及 G41 in-flight/reuse/runtime-owned output 尚未完成；
 首个真实 oneDNN/ggml region 和公平 P1 也仍是终局必要证据。
+
+## G38--G41 runtime/diagnostic implementation checkpoint（2026-09-13）
+
+- G38：Invocation 先解析全部 view/alias 与 step binding，再取得同一 Queue 的一个连续 submission
+  sequence；所有 materializing step 只做 non-blocking poll 以捕获同步终态，不再逐节点 wait，最终只返回
+  覆盖完整已接纳 prefix 的 Completion。后段同步拒绝会附着到已接纳前缀，不能把异步工作伪装成普通
+  `Result` 失败后提前释放；
+- G39：`CompileReport` 现在是独立 copyable owner，不借用也不保活重型 Executable artifact。O(1)
+  `step(index)` 返回 kind、provider/version、node range、workspace、persistent bytes、packed/borrowed
+  constants、copy/sync、fallback reason、dispatch count 与 host/private-thread/concurrent-invocation facts；
+  聚合统计仍为 O(1)，非物化 View 如实报告零 dispatch；
+- G40：constant bindings、conservative/disabled region policy、allow/reject operation fallback，以及全局和
+  per-provider proposal 硬预算均进入 `CompileOptions`。任一 proposal writer 超限显式
+  `ResourceExhausted`，reject-fallback 下未被 region 覆盖的节点显式 `Unimplemented`；
+- G41：Invocation 有跨 terminal 的 in-flight 状态，bind/reset/resubmit 在运行中失败；最终 Completion
+  保活 Invocation、workspace 与 provider run state，pending handle 被丢弃也延迟到 backend 真终态释放。
+  发布的 required View 若根在 private workspace，不再 compile 失败：该 root 以 Mem `kOutput` placement
+  保留，`output_ownership()` 披露 Invocation owner，成功终态后由 `output()` 借出；若根是 input/constant，
+  则披露 source alias 并直接复用已有 source binding，不要求用户重复绑定同一切片。调用方要求自有目的地
+  时必须在图中显式增加 Copy。实现过程中同时修正 non-zero slice alias 被错误强制 64-byte 对齐的问题；
+- Windows tests 覆盖两段模拟 async region 无 host wait、abandoned completion、tail reject、两级预算、
+  reject fallback、report 独立 lifetime/逐 step facts、source-alias/运行时-owned slice output 和 reset/reuse。
+  Graph 的 source embedding、installed/relocated shared 与 static package consumer 全部通过；shared export
+  hygiene 扫描 11 个 HYLE libraries/913 exports 通过。
+
+G30--G41 的通用 CPU/runtime 形状至此全部进入实现候选，但 Graph 继续保持 `AUDITED`。终局仍需首个真实
+oneDNN 或 ggml multi-op region、公平 direct-sequence P1、Linux/两台 Apple、sanitizer、逐头与最后红队；
+在这些完成前不得用本 checkpoint 冒充 `CLOSED`，也不扩大 CPU 算子目录。

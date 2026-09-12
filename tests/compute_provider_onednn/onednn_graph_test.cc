@@ -52,11 +52,11 @@ TEST(OneDnnGraph, PlansProviderScratchpadAndExecutesWithoutHiddenFallback) {
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();
   auto compiled = hyle::graph::compile(graph, context).value();
-  EXPECT_EQ(compiled.report.provider.id, hyle::compute::onednn::kProviderId);
-  EXPECT_FALSE(compiled.report.mixed_providers);
-  EXPECT_EQ(compiled.report.node_count, 1U);
-  EXPECT_EQ(compiled.report.copy_bytes, 0U);
-  EXPECT_EQ(compiled.report.synchronization_count, 0U);
+  EXPECT_EQ(compiled.report.provider().id, hyle::compute::onednn::kProviderId);
+  EXPECT_FALSE(compiled.report.mixed_providers());
+  EXPECT_EQ(compiled.report.node_count(), 1U);
+  EXPECT_EQ(compiled.report.copy_bytes(), 0U);
+  EXPECT_EQ(compiled.report.synchronization_count(), 0U);
 
   std::array<float, rows * inner> left_values{};
   std::array<float, inner * columns> right_values{};

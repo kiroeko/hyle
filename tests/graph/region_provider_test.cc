@@ -9,7 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "completion_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/buffer.h"
@@ -31,9 +33,13 @@ using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::compute::Unary;
 using hyle::compute::UnaryKind;
+using hyle::graph::CompileFallbackReason;
 using hyle::graph::CompileOptions;
+using hyle::graph::CompileReport;
+using hyle::graph::CompileStepKind;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
+using hyle::graph::OperationFallbackPolicy;
 using hyle::graph::ProviderRegionPrepared;
 using hyle::graph::RegionCompileRequest;
 using hyle::graph::RegionNodeRange;
@@ -53,6 +59,8 @@ enum class ProposalMode : std::uint8_t {
   kOverflow,
   kCompileFailure,
   kInvocationFailure,
+  kAsyncPairs,
+  kAsyncRejectSecond,
 };
 
 struct RegionProbe final {
@@ -63,7 +71,15 @@ struct RegionProbe final {
   std::size_t create_invocation_count = 0;
   std::size_t destroy_invocation_count = 0;
   std::size_t submit_count = 0;
+  std::size_t submit_attempt_count = 0;
+  std::size_t completion_poll_count = 0;
+  std::size_t completion_wait_count = 0;
+  std::size_t completion_destroy_count = 0;
   std::size_t destroy_prepared_count = 0;
+  std::size_t completed_prefix = 0;
+  bool cancelled = false;
+  hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
+  hyle::graph::RegionArtifactProperties artifact_properties{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
 };
@@ -79,6 +95,60 @@ struct RegionPlan final {
 
 struct RegionRun final {
   RegionProbe *probe = nullptr;
+  std::size_t completion_ordinal = 0;
+};
+
+Status async_terminal(const RegionProbe &probe) noexcept {
+  return probe.cancelled ? Status::Cancelled("region sequence was cancelled")
+                         : Status::Ok();
+}
+
+void destroy_async_completion(
+    void *state, hyle::compute::detail::CompletionLifetime lifetime) noexcept {
+  auto &run = *static_cast<RegionRun *>(state);
+  ++run.probe->completion_destroy_count;
+  if (!lifetime.valid())
+    return;
+  if (run.probe->completed_prefix < run.completion_ordinal) {
+    run.probe->abandoned_lifetime = lifetime;
+    return;
+  }
+  const Status terminal = async_terminal(*run.probe);
+  lifetime.terminal(lifetime.state, terminal);
+  lifetime.release(lifetime.state);
+}
+
+Result<hyle::compute::CompletionPoll>
+poll_async_completion(void *state) noexcept {
+  auto &run = *static_cast<RegionRun *>(state);
+  ++run.probe->completion_poll_count;
+  if (run.probe->completed_prefix < run.completion_ordinal)
+    return hyle::compute::CompletionPoll::kPending;
+  const Status terminal = async_terminal(*run.probe);
+  if (!terminal.ok())
+    return std::unexpected(terminal);
+  return hyle::compute::CompletionPoll::kComplete;
+}
+
+Status wait_async_completion(void *state) noexcept {
+  auto &run = *static_cast<RegionRun *>(state);
+  ++run.probe->completion_wait_count;
+  run.probe->completed_prefix = run.probe->submit_count;
+  return async_terminal(*run.probe);
+}
+
+Status cancel_async_completion(void *state) noexcept {
+  auto &run = *static_cast<RegionRun *>(state);
+  run.probe->cancelled = true;
+  run.probe->completed_prefix = run.probe->submit_count;
+  return Status::Ok();
+}
+
+const hyle::compute::detail::CompletionVTable kAsyncCompletionVTable{
+    .destroy = &destroy_async_completion,
+    .poll = &poll_async_completion,
+    .wait = &wait_async_completion,
+    .request_cancel = &cancel_async_completion,
 };
 
 TensorDesc row(std::int64_t size) {
@@ -166,7 +236,7 @@ Status create_region_invocation(void *prepared, AllocatorRef allocator,
   void *storage = allocator.allocate(sizeof(RegionRun), alignof(RegionRun));
   if (storage == nullptr)
     return Status::ResourceExhausted("region invocation allocation failed");
-  *output = ::new (storage) RegionRun{plan.probe};
+  *output = ::new (storage) RegionRun{plan.probe, 0};
   ++plan.probe->create_invocation_count;
   if (plan.probe->mode == ProposalMode::kInvocationFailure) {
     return Status::Internal("injected region invocation failure");
@@ -203,6 +273,19 @@ Result<Completion> submit_region(void *prepared, void *invocation, Queue &,
   auto &plan = *static_cast<RegionPlan *>(prepared);
   if (invocation == nullptr || inputs.size() != 1 || outputs.size() != 1)
     return Completion::completed(Status::Internal("region binding mismatch"));
+  if (plan.probe->mode == ProposalMode::kAsyncPairs ||
+      plan.probe->mode == ProposalMode::kAsyncRejectSecond) {
+    ++plan.probe->submit_attempt_count;
+    if (plan.probe->mode == ProposalMode::kAsyncRejectSecond &&
+        plan.probe->submit_attempt_count == 2) {
+      return std::unexpected(
+          Status::Unavailable("injected second-region rejection"));
+    }
+    auto &run = *static_cast<RegionRun *>(invocation);
+    run.completion_ordinal = ++plan.probe->submit_count;
+    return hyle::compute::detail::CompletionAccess::make(
+        &kAsyncCompletionVTable, &run);
+  }
   auto input_mapping = inputs[0].storage().map_host();
   if (!input_mapping)
     return Completion::completed(std::move(input_mapping).error());
@@ -271,7 +354,7 @@ Status compile_region(void *context, const RegionCompileRequest &request,
   *output = ProviderRegionPrepared{
       .vtable = &kPreparedRegionVTable,
       .state = plan,
-      .properties = {},
+      .properties = probe.artifact_properties,
   };
   ++probe.compile_count;
   probe.compiled_begin = request.nodes.begin;
@@ -357,12 +440,12 @@ TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
-  EXPECT_EQ(compiled.report.node_count, 2u);
-  EXPECT_EQ(compiled.report.step_count, 1u);
-  EXPECT_EQ(compiled.report.region_count, 1u);
-  EXPECT_EQ(compiled.report.fallback_operation_count, 0u);
-  EXPECT_EQ(compiled.report.provider.id, kRegionProviderId);
-  EXPECT_EQ(compiled.report.workspace_bytes, 0u);
+  EXPECT_EQ(compiled.report.node_count(), 2u);
+  EXPECT_EQ(compiled.report.step_count(), 1u);
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 0u);
+  EXPECT_EQ(compiled.report.provider().id, kRegionProviderId);
+  EXPECT_EQ(compiled.report.workspace_bytes(), 0u);
   EXPECT_EQ(probe.single_prepare_count, 0u);
 
   auto invocation = compiled.executable.create_invocation().value();
@@ -384,13 +467,18 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
   const NegationGraph logical = make_negations(2, true);
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
-  EXPECT_EQ(compiled.report.node_count, 3u);
-  EXPECT_EQ(compiled.report.step_count, 2u);
-  EXPECT_EQ(compiled.report.region_count, 1u);
-  EXPECT_EQ(compiled.report.fallback_operation_count, 1u);
-  EXPECT_TRUE(compiled.report.mixed_providers);
-  EXPECT_FALSE(compiled.report.provider.valid());
+  EXPECT_EQ(compiled.report.node_count(), 3u);
+  EXPECT_EQ(compiled.report.step_count(), 2u);
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
+  EXPECT_TRUE(compiled.report.mixed_providers());
+  EXPECT_FALSE(compiled.report.provider().valid());
   EXPECT_EQ(probe.single_prepare_count, 1u);
+  auto fallback = compiled.report.step(1);
+  ASSERT_TRUE(fallback.has_value());
+  EXPECT_EQ(fallback->kind, CompileStepKind::kOperationFallback);
+  EXPECT_EQ(fallback->fallback_reason,
+            CompileFallbackReason::kNoEligibleRegion);
 
   auto invocation = compiled.executable.create_invocation().value();
   OwnedTensor input = make_tensor(row(8));
@@ -412,8 +500,8 @@ TEST(GraphRegions,
   const NegationGraph logical = make_negations(3);
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
-  EXPECT_EQ(compiled.report.step_count, 2u);
-  EXPECT_EQ(compiled.report.region_count, 1u);
+  EXPECT_EQ(compiled.report.step_count(), 2u);
+  EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
 }
@@ -427,11 +515,15 @@ TEST(GraphRegions, DisabledPolicyUsesOnlyExplicitSingleOperationFallback) {
           logical.graph, context,
           CompileOptions{.region_selection = RegionSelectionPolicy::kDisabled})
           .value();
-  EXPECT_EQ(compiled.report.step_count, 2u);
-  EXPECT_EQ(compiled.report.region_count, 0u);
-  EXPECT_EQ(compiled.report.fallback_operation_count, 2u);
+  EXPECT_EQ(compiled.report.step_count(), 2u);
+  EXPECT_EQ(compiled.report.region_count(), 0u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
   EXPECT_EQ(probe.propose_count, 0u);
   EXPECT_EQ(probe.single_prepare_count, 2u);
+  auto fallback = compiled.report.step(0);
+  ASSERT_TRUE(fallback.has_value());
+  EXPECT_EQ(fallback->fallback_reason,
+            CompileFallbackReason::kRegionSelectionDisabled);
 }
 
 TEST(GraphRegions, ProposalBudgetExhaustionFailsInsteadOfChangingThePlan) {
@@ -444,6 +536,79 @@ TEST(GraphRegions, ProposalBudgetExhaustionFailsInsteadOfChangingThePlan) {
   EXPECT_TRUE(compiled.error().IsResourceExhausted());
   EXPECT_EQ(probe.compile_count, 0u);
   EXPECT_EQ(probe.single_prepare_count, 0u);
+}
+
+TEST(GraphRegions, PerProviderProposalBudgetIsAlsoAHardLimit) {
+  RegionProbe probe{.mode = ProposalMode::kOverflow};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      CompileOptions{.max_region_proposals = 4,
+                     .max_region_proposals_per_provider = 1});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsResourceExhausted());
+  EXPECT_EQ(probe.compile_count, 0u);
+}
+
+TEST(GraphRegions, RejectFallbackPolicyRequiresCompleteRegionCoverage) {
+  RegionProbe probe;
+  Context context = make_context(probe);
+  const NegationGraph complete = make_negations(2);
+  EXPECT_TRUE(
+      hyle::graph::compile(complete.graph, context,
+                           CompileOptions{.operation_fallback =
+                                              OperationFallbackPolicy::kReject})
+          .has_value());
+
+  const NegationGraph partial = make_negations(2, true);
+  auto rejected = hyle::graph::compile(
+      partial.graph, context,
+      CompileOptions{.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
+}
+
+TEST(GraphRegions, DetailedReportOwnsAndEnumeratesTheCompiledPlan) {
+  RegionProbe probe;
+  probe.artifact_properties = {
+      .persistent_bytes = 128,
+      .copy_bytes = 64,
+      .synchronization_count = 2,
+      .dispatch_count = 3,
+      .blocks_host = true,
+      .uses_private_threads = true,
+      .supports_concurrent_invocations = false,
+  };
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  CompileReport retained = compiled.report;
+  compiled.report = {};
+  compiled.executable = {};
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+
+  ASSERT_TRUE(retained.valid());
+  ASSERT_EQ(retained.step_count(), 1u);
+  EXPECT_EQ(retained.copy_bytes(), 64u);
+  EXPECT_EQ(retained.synchronization_count(), 2u);
+  auto step = retained.step(0);
+  ASSERT_TRUE(step.has_value()) << step.error().message();
+  EXPECT_EQ(step->kind, CompileStepKind::kProviderRegion);
+  EXPECT_EQ(step->provider.id, kRegionProviderId);
+  EXPECT_EQ(step->node_begin, 0u);
+  EXPECT_EQ(step->node_count, 2u);
+  EXPECT_EQ(step->persistent_bytes, 128u);
+  EXPECT_EQ(step->copy_bytes, 64u);
+  EXPECT_EQ(step->synchronization_count, 2u);
+  EXPECT_EQ(step->dispatch_count, 3u);
+  EXPECT_TRUE(step->blocks_host);
+  EXPECT_TRUE(step->uses_private_threads);
+  EXPECT_FALSE(step->supports_concurrent_invocations);
+  EXPECT_TRUE(retained.step(1).error().IsOutOfRange());
+
+  retained = {};
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
 }
 
 TEST(GraphRegions, RollsBackPartiallyCreatedProviderState) {
@@ -495,6 +660,81 @@ TEST(GraphRegions, InvocationRetainsItsCompiledRegionAndWorkspaceOwner) {
   invocation = {};
   EXPECT_EQ(probe.destroy_invocation_count, 1u);
   EXPECT_EQ(probe.destroy_prepared_count, 1u);
+}
+
+TEST(GraphRegions,
+     OrderedSequenceDoesNotHostWaitAndRetainsInvocationUntilTerminal) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  const NegationGraph logical = make_negations(4);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.step_count(), 2u);
+  ASSERT_EQ(compiled.report.region_count(), 2u);
+
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+
+  auto submitted = invocation.submit(queue);
+  ASSERT_TRUE(submitted.has_value()) << submitted.error().message();
+  EXPECT_EQ(probe.submit_count, 2u);
+  EXPECT_EQ(probe.completion_wait_count, 0u);
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_TRUE(invocation.reset().IsFailedPrecondition());
+  EXPECT_TRUE(
+      invocation.bind(logical.input, input.view).IsFailedPrecondition());
+  EXPECT_TRUE(invocation.submit(queue).error().IsFailedPrecondition());
+  auto pending = submitted->poll();
+  ASSERT_TRUE(pending.has_value());
+  EXPECT_EQ(*pending, hyle::compute::CompletionPoll::kPending);
+  EXPECT_TRUE(submitted->wait().ok());
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_EQ(probe.completion_wait_count, 1u);
+  EXPECT_EQ(probe.completion_destroy_count, 2u);
+  ASSERT_TRUE(invocation.reset().ok());
+
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Completion abandoned = invocation.submit(queue).value();
+  EXPECT_EQ(probe.submit_count, 4u);
+  invocation = {};
+  EXPECT_EQ(probe.destroy_invocation_count, 0u);
+  abandoned = {};
+  ASSERT_TRUE(probe.abandoned_lifetime.valid());
+  EXPECT_EQ(probe.destroy_invocation_count, 0u);
+
+  probe.completed_prefix = probe.submit_count;
+  const Status terminal = async_terminal(probe);
+  probe.abandoned_lifetime.terminal(probe.abandoned_lifetime.state, terminal);
+  probe.abandoned_lifetime.release(probe.abandoned_lifetime.state);
+  probe.abandoned_lifetime = {};
+  EXPECT_EQ(probe.destroy_invocation_count, 2u);
+}
+
+TEST(GraphRegions, RejectedTailIsReportedAfterTheAcceptedAsyncPrefix) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncRejectSecond};
+  const NegationGraph logical = make_negations(4);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_EQ(probe.submit_attempt_count, 2u);
+  EXPECT_EQ(probe.submit_count, 1u);
+  EXPECT_EQ(probe.completion_wait_count, 0u);
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_TRUE(completion->wait().IsUnavailable());
+  EXPECT_EQ(probe.completion_wait_count, 1u);
+  EXPECT_FALSE(invocation.in_flight());
 }
 
 } // namespace

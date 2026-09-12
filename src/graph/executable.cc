@@ -10,6 +10,8 @@
 #include <utility>
 
 #include "graph_state.h"
+#include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "plan_state.h"
 
 namespace hyle::graph {
@@ -21,6 +23,16 @@ Status plan_allocation_failure() noexcept {
 
 Status invocation_allocation_failure() noexcept {
   return Status::ResourceExhausted("graph invocation allocation failed");
+}
+
+void mark_invocation_terminal(void *opaque, const Status &terminal) noexcept {
+  auto *state = static_cast<detail::InvocationState *>(opaque);
+  state->outputs_ready.store(terminal.ok(), std::memory_order_release);
+  state->in_flight.store(false, std::memory_order_release);
+}
+
+void release_invocation_lifetime(void *opaque) noexcept {
+  detail::release(static_cast<detail::InvocationState *>(opaque));
 }
 
 bool owns(const detail::PlanState &plan, ValueId value) noexcept {
@@ -273,8 +285,15 @@ Status discover_region_candidates(const Graph &published_graph,
     return Status::InvalidArgument(
         "enabled graph region selection requires a non-zero proposal budget");
   }
+  if (options.max_region_proposals_per_provider == 0) {
+    return Status::InvalidArgument(
+        "enabled graph region selection requires a non-zero per-provider "
+        "proposal budget");
+  }
   if (options.max_region_proposals >
-      (std::numeric_limits<std::uint32_t>::max)()) {
+          (std::numeric_limits<std::uint32_t>::max)() ||
+      options.max_region_proposals_per_provider >
+          (std::numeric_limits<std::uint32_t>::max)()) {
     return Status::OutOfRange(
         "graph region proposal budget exceeds the supported identity space");
   }
@@ -308,8 +327,11 @@ Status discover_region_candidates(const Graph &published_graph,
   std::size_t used = 0;
   for (std::size_t extension_index = 0; extension_index < extensions.size();
        ++extension_index) {
-    RegionProposalWriter writer(std::span<RegionProposal>(storage).subspan(
-        used, storage.size() - used));
+    const std::size_t remaining = storage.size() - used;
+    const std::size_t provider_capacity =
+        (std::min)(remaining, options.max_region_proposals_per_provider);
+    RegionProposalWriter writer(
+        std::span<RegionProposal>(storage).subspan(used, provider_capacity));
     struct Episode final {
       const Graph *graph = nullptr;
       RegionProposalWriter *writer = nullptr;
@@ -449,7 +471,8 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
 Status append_operation_step(detail::PlanState &plan,
                              const detail::GraphState &graph,
                              const compute::Context &context,
-                             std::uint32_t node_index) noexcept {
+                             std::uint32_t node_index,
+                             CompileFallbackReason fallback_reason) noexcept {
   using Descriptions =
       container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
   Descriptions input_descriptions(plan.allocator);
@@ -485,9 +508,10 @@ Status append_operation_step(detail::PlanState &plan,
       compute::operation_traits(node.operation).materializes;
   const std::uint32_t step_index =
       static_cast<std::uint32_t>(plan.steps.size());
-  if (!plan.steps.try_emplace_back(
-          std::move(*prepared), node_index, plan_input_begin, node.input_count,
-          plan_output_begin, node.output_count, materializes)) {
+  if (!plan.steps.try_emplace_back(std::move(*prepared), node_index,
+                                   plan_input_begin, node.input_count,
+                                   plan_output_begin, node.output_count,
+                                   materializes, fallback_reason)) {
     return plan_allocation_failure();
   }
   plan.node_steps[node_index] = step_index;
@@ -583,6 +607,7 @@ Status append_region_step(
       table->destroy_invocation == nullptr || table->submit == nullptr ||
       workspace.alignment == 0 ||
       (workspace.alignment & (workspace.alignment - 1)) != 0 ||
+      provider_prepared.properties.dispatch_count == 0 ||
       provider_prepared.properties.packed_constant_count >
           options.constants.size()) {
     if (table != nullptr && table->destroy_prepared != nullptr)
@@ -640,6 +665,34 @@ Status prepare_steps(detail::PlanState &plan, const Graph &published_graph,
   status = select_regions(candidates, plan.allocator, selected);
   if (!status.ok())
     return status;
+  if (options.operation_fallback == OperationFallbackPolicy::kReject) {
+    std::size_t covered_nodes = 0;
+    for (const RegionCandidate &candidate : selected) {
+      covered_nodes = saturating_add(
+          covered_nodes,
+          static_cast<std::size_t>(candidate.proposal.nodes.count));
+    }
+    if (covered_nodes != graph.nodes.size()) {
+      return Status::Unimplemented(
+          "graph specialization requires a single-operation fallback");
+    }
+  }
+
+  container::SmallVector<std::int64_t, 32, mem::AllocatorRef>
+      eligible_region_coverage(plan.allocator);
+  if (!eligible_region_coverage.try_resize(graph.nodes.size() + 1))
+    return plan_allocation_failure();
+  for (std::int64_t &count : eligible_region_coverage)
+    count = 0;
+  for (const RegionCandidate &candidate : candidates) {
+    ++eligible_region_coverage[candidate.proposal.nodes.begin];
+    --eligible_region_coverage[static_cast<std::size_t>(
+        candidate.proposal.nodes.end())];
+  }
+  for (std::size_t index = 1; index < eligible_region_coverage.size();
+       ++index) {
+    eligible_region_coverage[index] += eligible_region_coverage[index - 1];
+  }
 
   container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> last_consumers(
       plan.allocator);
@@ -678,7 +731,13 @@ Status prepare_steps(detail::PlanState &plan, const Graph &published_graph,
       ++selection_index;
       continue;
     }
-    status = append_operation_step(plan, graph, context, node_index);
+    const CompileFallbackReason reason =
+        options.region_selection == RegionSelectionPolicy::kDisabled
+            ? CompileFallbackReason::kRegionSelectionDisabled
+            : (eligible_region_coverage[node_index] == 0
+                   ? CompileFallbackReason::kNoEligibleRegion
+                   : CompileFallbackReason::kRegionNotSelected);
+    status = append_operation_step(plan, graph, context, node_index, reason);
     if (!status.ok())
       return status;
     ++node_index;
@@ -771,11 +830,14 @@ Status plan_workspace(detail::PlanState &plan,
         const std::uint32_t input = graph.edges[node.input_begin];
         plan.alias_sources[output] = input;
         plan.alias_offsets[output] = support->byte_offset;
-        if ((plan.binding_roles[output] & detail::kExternalOutput) != 0 &&
-            !has_external_storage_root(plan, input)) {
-          return Status::Unimplemented(
-              "a published view of private workspace needs a runtime-owned "
-              "output contract");
+        if ((plan.binding_roles[output] & detail::kExternalOutput) != 0) {
+          if (has_external_storage_root(plan, input)) {
+            plan.binding_roles[output] |= detail::kSourceAliasedOutput;
+          } else {
+            plan.binding_roles[output] |= detail::kInvocationOwnedOutput;
+            plan.binding_roles[alias_root(plan, input)] |=
+                detail::kRetainedOutputRoot;
+          }
         }
         continue;
       }
@@ -817,7 +879,8 @@ Status plan_workspace(detail::PlanState &plan,
     const detail::ValueRecord &value = graph.values[ordinal];
     if (value.kind != ValueKind::kNodeOutput ||
         plan.value_materialized[ordinal] == 0 ||
-        (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
+        ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0 &&
+         (plan.binding_roles[ordinal] & detail::kInvocationOwnedOutput) == 0)) {
       continue;
     }
     auto size = value.description.required_bytes();
@@ -849,12 +912,22 @@ Status plan_workspace(detail::PlanState &plan,
     if (!requests.try_push_back(mem::LifetimeRequest{
             .resource_slot = 0,
             .size = *size,
-            .alignment = (std::max)(std::size_t{64},
-                                    value.description.required_alignment()),
+            // A derived view only promises its tensor's required alignment;
+            // forcing the root's preferred 64-byte kernel alignment onto a
+            // non-zero slice offset would reject otherwise valid aliases.
+            .alignment =
+                alias_request == mem::kNoLifetimeAlias
+                    ? (std::max)(std::size_t{64},
+                                 value.description.required_alignment())
+                    : value.description.required_alignment(),
             .begin = begin,
             .end = end,
             .alias_of = alias_request,
             .alias_offset = plan.alias_offsets[ordinal],
+            .flags =
+                (plan.binding_roles[ordinal] & detail::kRetainedOutputRoot) != 0
+                    ? mem::LifetimeFlag::kOutput
+                    : mem::LifetimeFlag::kNone,
         })) {
       return plan_allocation_failure();
     }
@@ -910,7 +983,212 @@ Status plan_workspace(detail::PlanState &plan,
   return Status::Ok();
 }
 
+std::size_t step_constant_count(const detail::PlanState &plan,
+                                const detail::PlanStep &step) noexcept {
+  std::size_t count = 0;
+  for (std::size_t index = 0; index < step.input_count; ++index) {
+    const std::uint32_t ordinal = plan.node_inputs[step.input_begin + index];
+    if ((plan.binding_roles[ordinal] & detail::kConstant) != 0)
+      ++count;
+  }
+  return count;
+}
+
+Result<CompileReport> build_report(const detail::PlanState &plan,
+                                   const compute::Context &context) noexcept {
+  void *storage = plan.allocator.allocate(sizeof(detail::ReportState),
+                                          alignof(detail::ReportState));
+  if (storage == nullptr)
+    return std::unexpected(plan_allocation_failure());
+  auto *state = ::new (storage) detail::ReportState(plan.allocator);
+  if (!state->steps.try_resize(plan.steps.size())) {
+    detail::release(state);
+    return std::unexpected(plan_allocation_failure());
+  }
+
+  state->backend = context.device().backend_id();
+  state->workspace_bytes = plan.workspace_bytes;
+  state->workspace_backing_count = plan.workspace_backing_count;
+  state->node_count = plan.logical_node_count;
+  state->region_count = plan.region_count;
+  state->constant_count = plan.constant_ids.size();
+  // PlanState conservatively keeps every compile-time binding because the v1
+  // provider contract reports packed counts, not exact constant identities.
+  state->borrowed_constant_count = plan.constant_ids.size();
+
+  for (ValueId output : plan.output_ids) {
+    if ((plan.binding_roles[output.ordinal()] &
+         detail::kInvocationOwnedOutput) != 0) {
+      ++state->invocation_owned_output_count;
+    }
+  }
+
+  for (std::size_t index = 0; index < plan.steps.size(); ++index) {
+    const detail::PlanStep &step = plan.steps[index];
+    CompileStepReport step_report{
+        .kind = step.kind == detail::PlanStepKind::kRegion
+                    ? CompileStepKind::kProviderRegion
+                    : CompileStepKind::kOperationFallback,
+        .fallback_reason = step.fallback_reason,
+        .provider = step.provider(),
+        .node_begin = step.node_begin,
+        .node_count = step.node_count,
+        .workspace = step.workspace_requirement(),
+        .borrowed_constant_count = step_constant_count(plan, step),
+        .dispatch_count = step.materializes ? 1u : 0u,
+    };
+    if (step.kind == detail::PlanStepKind::kRegion) {
+      const RegionArtifactProperties properties = step.region.properties();
+      if (properties.packed_constant_count >
+          step_report.borrowed_constant_count) {
+        detail::release(state);
+        return std::unexpected(Status::Internal(
+            "graph region packed more constants than its boundary contains"));
+      }
+      step_report.persistent_bytes = properties.persistent_bytes;
+      step_report.packed_constant_count = properties.packed_constant_count;
+      step_report.packed_constant_bytes = properties.packed_constant_bytes;
+      step_report.copy_bytes = properties.copy_bytes;
+      step_report.synchronization_count = properties.synchronization_count;
+      step_report.dispatch_count = properties.dispatch_count;
+      step_report.blocks_host = properties.blocks_host;
+      step_report.uses_private_threads = properties.uses_private_threads;
+      step_report.supports_concurrent_invocations =
+          properties.supports_concurrent_invocations;
+      state->packed_constant_count = saturating_add(
+          state->packed_constant_count, step_report.packed_constant_count);
+      state->packed_constant_bytes = saturating_add(
+          state->packed_constant_bytes, step_report.packed_constant_bytes);
+      state->copy_bytes =
+          saturating_add(state->copy_bytes, step_report.copy_bytes);
+      state->synchronization_count = saturating_add(
+          state->synchronization_count, step_report.synchronization_count);
+    } else {
+      ++state->fallback_operation_count;
+    }
+    state->steps[index] = step_report;
+
+    if (!state->mixed_providers) {
+      if (!state->provider.valid()) {
+        state->provider = step_report.provider;
+      } else if (state->provider.id != step_report.provider.id ||
+                 state->provider.version != step_report.provider.version) {
+        state->provider = {};
+        state->mixed_providers = true;
+      }
+    }
+  }
+  return detail::CompileReportAccess::adopt(state);
+}
+
 } // namespace
+
+CompileReport::CompileReport(const CompileReport &other) noexcept
+    : state_(other.state_) {
+  detail::retain(state_);
+}
+
+CompileReport &CompileReport::operator=(const CompileReport &other) noexcept {
+  if (state_ != other.state_) {
+    detail::retain(other.state_);
+    detail::release(state_);
+    state_ = other.state_;
+  }
+  return *this;
+}
+
+CompileReport::CompileReport(CompileReport &&other) noexcept
+    : state_(other.state_) {
+  other.state_ = nullptr;
+}
+
+CompileReport &CompileReport::operator=(CompileReport &&other) noexcept {
+  if (this != &other) {
+    detail::release(state_);
+    state_ = other.state_;
+    other.state_ = nullptr;
+  }
+  return *this;
+}
+
+CompileReport::~CompileReport() { detail::release(state_); }
+
+compute::BackendId CompileReport::backend() const noexcept {
+  return state_ != nullptr ? state_->backend : compute::BackendId{};
+}
+
+compute::ProviderIdentity CompileReport::provider() const noexcept {
+  return state_ != nullptr ? state_->provider : compute::ProviderIdentity{};
+}
+
+std::size_t CompileReport::workspace_bytes() const noexcept {
+  return state_ != nullptr ? state_->workspace_bytes : 0;
+}
+
+std::size_t CompileReport::workspace_backing_count() const noexcept {
+  return state_ != nullptr ? state_->workspace_backing_count : 0;
+}
+
+std::size_t CompileReport::node_count() const noexcept {
+  return state_ != nullptr ? state_->node_count : 0;
+}
+
+std::size_t CompileReport::step_count() const noexcept {
+  return state_ != nullptr ? state_->steps.size() : 0;
+}
+
+std::size_t CompileReport::region_count() const noexcept {
+  return state_ != nullptr ? state_->region_count : 0;
+}
+
+std::size_t CompileReport::fallback_operation_count() const noexcept {
+  return state_ != nullptr ? state_->fallback_operation_count : 0;
+}
+
+std::size_t CompileReport::constant_count() const noexcept {
+  return state_ != nullptr ? state_->constant_count : 0;
+}
+
+std::size_t CompileReport::borrowed_constant_count() const noexcept {
+  return state_ != nullptr ? state_->borrowed_constant_count : 0;
+}
+
+std::size_t CompileReport::packed_constant_count() const noexcept {
+  return state_ != nullptr ? state_->packed_constant_count : 0;
+}
+
+std::size_t CompileReport::packed_constant_bytes() const noexcept {
+  return state_ != nullptr ? state_->packed_constant_bytes : 0;
+}
+
+std::size_t CompileReport::invocation_owned_output_count() const noexcept {
+  return state_ != nullptr ? state_->invocation_owned_output_count : 0;
+}
+
+std::size_t CompileReport::copy_bytes() const noexcept {
+  return state_ != nullptr ? state_->copy_bytes : 0;
+}
+
+std::uint32_t CompileReport::synchronization_count() const noexcept {
+  return state_ != nullptr ? state_->synchronization_count : 0;
+}
+
+bool CompileReport::mixed_providers() const noexcept {
+  return state_ != nullptr && state_->mixed_providers;
+}
+
+Result<CompileStepReport>
+CompileReport::step(std::size_t index) const noexcept {
+  if (state_ == nullptr) {
+    return std::unexpected(
+        Status::FailedPrecondition("compile report is invalid"));
+  }
+  if (index >= state_->steps.size()) {
+    return std::unexpected(
+        Status::OutOfRange("compile report step index is out of range"));
+  }
+  return state_->steps[index];
+}
 
 Executable::Executable(const Executable &other) noexcept
     : state_(other.state_) {
@@ -991,6 +1269,21 @@ Result<ValueId> Executable::output_id(std::size_t index) const noexcept {
   return state_->output_ids[index];
 }
 
+Result<OutputOwnership>
+Executable::output_ownership(std::size_t index) const noexcept {
+  auto value = output_id(index);
+  if (!value)
+    return std::unexpected(std::move(value).error());
+  const std::uint8_t role = state_->binding_roles[value->ordinal()];
+  if ((role & detail::kInvocationOwnedOutput) != 0)
+    return OutputOwnership::kInvocation;
+  if ((role & (detail::kSourceAliasedOutput | detail::kExternalInput |
+               detail::kConstant)) != 0) {
+    return OutputOwnership::kSourceAlias;
+  }
+  return OutputOwnership::kCaller;
+}
+
 Result<Invocation> Executable::create_invocation() const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
@@ -1019,7 +1312,7 @@ Result<Invocation> Executable::create_invocation() const noexcept {
       !invocation->invocations.try_reserve(state_->steps.size()) ||
       !invocation->submission_inputs.try_resize(state_->node_inputs.size()) ||
       !invocation->submission_outputs.try_resize(state_->node_outputs.size())) {
-    detail::destroy(invocation);
+    detail::release(invocation);
     return std::unexpected(invocation_allocation_failure());
   }
   for (std::size_t ordinal = 0; ordinal < value_count; ++ordinal) {
@@ -1030,14 +1323,14 @@ Result<Invocation> Executable::create_invocation() const noexcept {
     auto storage_view = invocation->workspace.view(request);
     if (!storage_view) {
       Status error = std::move(storage_view).error();
-      detail::destroy(invocation);
+      detail::release(invocation);
       return std::unexpected(std::move(error));
     }
     auto tensor = compute::TensorView::create(state_->descriptions[ordinal],
                                               *storage_view);
     if (!tensor) {
       Status error = std::move(tensor).error();
-      detail::destroy(invocation);
+      detail::release(invocation);
       return std::unexpected(std::move(error));
     }
     invocation->writable[ordinal] = *tensor;
@@ -1056,7 +1349,7 @@ Result<Invocation> Executable::create_invocation() const noexcept {
       auto view = invocation->workspace.view(request);
       if (!view) {
         Status error = std::move(view).error();
-        detail::destroy(invocation);
+        detail::release(invocation);
         return std::unexpected(std::move(error));
       }
       step_workspace = *view;
@@ -1068,7 +1361,7 @@ Result<Invocation> Executable::create_invocation() const noexcept {
         auto created = step.region.create_invocation(step_workspace);
         if (!created) {
           Status error = std::move(created).error();
-          detail::destroy(invocation);
+          detail::release(invocation);
           return std::unexpected(std::move(error));
         }
         created_step.region = std::move(*created);
@@ -1076,14 +1369,14 @@ Result<Invocation> Executable::create_invocation() const noexcept {
         auto created = step.operation.create_invocation(step_workspace);
         if (!created) {
           Status error = std::move(created).error();
-          detail::destroy(invocation);
+          detail::release(invocation);
           return std::unexpected(std::move(error));
         }
         created_step.operation = std::move(*created);
       }
     }
     if (!invocation->invocations.try_push_back(std::move(created_step))) {
-      detail::destroy(invocation);
+      detail::release(invocation);
       return std::unexpected(invocation_allocation_failure());
     }
   }
@@ -1096,19 +1389,23 @@ Invocation::Invocation(Invocation &&other) noexcept : state_(other.state_) {
 
 Invocation &Invocation::operator=(Invocation &&other) noexcept {
   if (this != &other) {
-    detail::destroy(state_);
+    detail::release(state_);
     state_ = other.state_;
     other.state_ = nullptr;
   }
   return *this;
 }
 
-Invocation::~Invocation() { detail::destroy(state_); }
+Invocation::~Invocation() { detail::release(state_); }
 
 Status Invocation::bind(ValueId value,
                         compute::ConstTensorView tensor) noexcept {
   if (state_ == nullptr) {
     return Status::FailedPrecondition("invocation is invalid");
+  }
+  if (state_->in_flight.load(std::memory_order_acquire)) {
+    return Status::FailedPrecondition(
+        "invocation bindings cannot change while work is in flight");
   }
   if (!tensor.valid())
     return Status::InvalidArgument("tensor binding is invalid");
@@ -1119,6 +1416,11 @@ Status Invocation::bind(ValueId value,
   const std::size_t ordinal = value.ordinal();
   if ((plan.binding_roles[ordinal] & detail::kConstant) != 0)
     return Status::InvalidArgument("graph constants are bound at compile time");
+  if ((plan.binding_roles[ordinal] &
+       (detail::kInvocationOwnedOutput | detail::kSourceAliasedOutput)) != 0) {
+    return Status::FailedPrecondition(
+        "graph output storage is fixed by its compiled ownership policy");
+  }
   if ((plan.binding_roles[ordinal] & detail::kExternalInput) == 0) {
     if ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
       return Status::InvalidArgument(
@@ -1143,6 +1445,10 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
   if (state_ == nullptr) {
     return Status::FailedPrecondition("invocation is invalid");
   }
+  if (state_->in_flight.load(std::memory_order_acquire)) {
+    return Status::FailedPrecondition(
+        "invocation bindings cannot change while work is in flight");
+  }
   if (!tensor.valid())
     return Status::InvalidArgument("tensor binding is invalid");
   const detail::PlanState &plan = *state_->plan;
@@ -1153,6 +1459,11 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
   if ((plan.binding_roles[ordinal] & detail::kConstant) != 0)
     return Status::InvalidArgument("graph constants are bound at compile time");
   if ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
+    if ((plan.binding_roles[ordinal] & (detail::kInvocationOwnedOutput |
+                                        detail::kSourceAliasedOutput)) != 0) {
+      return Status::FailedPrecondition(
+          "graph output storage is fixed by its compiled ownership policy");
+    }
     if (tensor.description() != plan.descriptions[ordinal]) {
       return Status::InvalidArgument(
           "output tensor does not match the executable description");
@@ -1172,9 +1483,18 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
   return Status::InvalidArgument("internal graph values cannot be bound");
 }
 
-void Invocation::reset() noexcept {
+bool Invocation::in_flight() const noexcept {
+  return state_ != nullptr && state_->in_flight.load(std::memory_order_acquire);
+}
+
+Status Invocation::reset() noexcept {
   if (state_ == nullptr)
-    return;
+    return Status::FailedPrecondition("invocation is invalid");
+  if (state_->in_flight.load(std::memory_order_acquire)) {
+    return Status::FailedPrecondition(
+        "invocation cannot reset while work is in flight");
+  }
+  state_->outputs_ready.store(false, std::memory_order_release);
   for (ValueId value : state_->plan->input_ids) {
     const std::size_t ordinal = value.ordinal();
     state_->readable[ordinal] = {};
@@ -1188,12 +1508,60 @@ void Invocation::reset() noexcept {
     state_->writable[ordinal] = {};
     state_->bound[ordinal] = 0;
   }
+  return Status::Ok();
+}
+
+Result<compute::ConstTensorView>
+Invocation::output(ValueId value) const noexcept {
+  if (state_ == nullptr) {
+    return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
+  }
+  if (state_->in_flight.load(std::memory_order_acquire)) {
+    return std::unexpected(Status::FailedPrecondition(
+        "graph outputs are unavailable while work is in flight"));
+  }
+  if (!state_->outputs_ready.load(std::memory_order_acquire)) {
+    return std::unexpected(Status::FailedPrecondition(
+        "graph outputs require a successful completed submission"));
+  }
+  const detail::PlanState &plan = *state_->plan;
+  if (!owns(plan, value)) {
+    return std::unexpected(
+        Status::InvalidArgument("value does not belong to this executable"));
+  }
+  const std::size_t ordinal = value.ordinal();
+  if ((plan.binding_roles[ordinal] & detail::kExternalOutput) == 0) {
+    return std::unexpected(
+        Status::InvalidArgument("value is not a published graph output"));
+  }
+  if (!state_->readable[ordinal].valid()) {
+    return std::unexpected(
+        Status::Internal("published graph output has no readable storage"));
+  }
+  return state_->readable[ordinal];
 }
 
 Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
+  bool idle = false;
+  if (!state_->in_flight.compare_exchange_strong(
+          idle, true, std::memory_order_acq_rel, std::memory_order_acquire)) {
+    return std::unexpected(
+        Status::FailedPrecondition("invocation already has work in flight"));
+  }
+  state_->outputs_ready.store(false, std::memory_order_release);
+  struct RunRollback final {
+    detail::InvocationState *state = nullptr;
+    bool armed = true;
+    ~RunRollback() {
+      if (armed)
+        state->in_flight.store(false, std::memory_order_release);
+    }
+    void disarm() noexcept { armed = false; }
+  } rollback{state_};
+
   const detail::PlanState &plan = *state_->plan;
   for (ValueId value : plan.input_ids) {
     if (state_->bound[value.ordinal()] == 0) {
@@ -1202,12 +1570,18 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
     }
   }
   for (ValueId value : plan.output_ids) {
-    if (state_->bound[value.ordinal()] == 0) {
+    const std::size_t ordinal = value.ordinal();
+    if ((plan.binding_roles[ordinal] & (detail::kInvocationOwnedOutput |
+                                        detail::kSourceAliasedOutput)) == 0 &&
+        state_->bound[ordinal] == 0) {
       return std::unexpected(Status::FailedPrecondition(
           "invocation output bindings are incomplete"));
     }
   }
 
+  // Resolve every non-materializing view and construct every step's binding
+  // spans before accepting any Queue work.  A malformed alias or missing
+  // internal binding therefore cannot strand an already-submitted prefix.
   for (std::size_t step_index = 0; step_index < plan.steps.size();
        ++step_index) {
     const detail::PlanStep &step = plan.steps[step_index];
@@ -1233,7 +1607,10 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
             plan.descriptions[output], *storage);
         if (!derived)
           return std::unexpected(std::move(derived).error());
-        if ((plan.binding_roles[output] & detail::kExternalOutput) != 0) {
+        if ((plan.binding_roles[output] & detail::kSourceAliasedOutput) != 0) {
+          state_->readable[output] = *derived;
+        } else if ((plan.binding_roles[output] & detail::kExternalOutput) !=
+                   0) {
           if (!equal_range(byte_range(derived->storage()),
                            byte_range(state_->writable[output].storage()))) {
             return std::unexpected(Status::InvalidArgument(
@@ -1246,35 +1623,89 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
       continue;
     }
     for (std::size_t index = 0; index < step.input_count; ++index) {
-      state_->submission_inputs[step.input_begin + index] =
+      const compute::ConstTensorView binding =
           state_->readable[plan.node_inputs[step.input_begin + index]];
+      if (!binding.valid()) {
+        return std::unexpected(Status::Internal(
+            "materializing graph step has no readable input storage"));
+      }
+      state_->submission_inputs[step.input_begin + index] = binding;
     }
     for (std::size_t index = 0; index < step.output_count; ++index) {
-      state_->submission_outputs[step.output_begin + index] =
+      const compute::TensorView binding =
           state_->writable[plan.node_outputs[step.output_begin + index]];
+      if (!binding.valid()) {
+        return std::unexpected(Status::Internal(
+            "materializing graph step has no writable output storage"));
+      }
+      state_->submission_outputs[step.output_begin + index] = binding;
     }
+  }
+
+  compute::Completion final_completion = compute::Completion::completed();
+  if (!plan.steps.empty()) {
+    auto sequence = compute::detail::QueueSequence::begin(queue);
+    if (!sequence)
+      return std::unexpected(std::move(sequence).error());
+
+    bool accepted_prefix = false;
     const auto all_inputs = std::span<const compute::ConstTensorView>(
         state_->submission_inputs.data(), state_->submission_inputs.size());
     const auto all_outputs = std::span<const compute::TensorView>(
         state_->submission_outputs.data(), state_->submission_outputs.size());
-    const auto step_inputs =
-        all_inputs.subspan(step.input_begin, step.input_count);
-    const auto step_outputs =
-        all_outputs.subspan(step.output_begin, step.output_count);
-    Result<compute::Completion> completion =
-        step.kind == detail::PlanStepKind::kRegion
-            ? state_->invocations[step_index].region.submit(queue, step_inputs,
-                                                            step_outputs)
-            : state_->invocations[step_index].operation.submit(
-                  queue, step_inputs, step_outputs);
-    if (!completion)
-      return std::unexpected(std::move(completion).error());
-    Status terminal = completion->wait();
-    if (!terminal.ok()) {
-      return compute::Completion::completed(std::move(terminal));
+    for (std::size_t step_index = 0; step_index < plan.steps.size();
+         ++step_index) {
+      const detail::PlanStep &step = plan.steps[step_index];
+      if (!step.materializes)
+        continue;
+      const auto step_inputs =
+          all_inputs.subspan(step.input_begin, step.input_count);
+      const auto step_outputs =
+          all_outputs.subspan(step.output_begin, step.output_count);
+      Result<compute::Completion> completion =
+          step.kind == detail::PlanStepKind::kRegion
+              ? state_->invocations[step_index].region.submit(
+                    *sequence, step_inputs, step_outputs)
+              : compute::detail::OperationInvocationAccess::submit(
+                    state_->invocations[step_index].operation, *sequence,
+                    step_inputs, step_outputs);
+      if (!completion) {
+        Status rejected = std::move(completion).error();
+        if (!accepted_prefix)
+          return std::unexpected(std::move(rejected));
+        compute::detail::CompletionAccess::append_terminal(final_completion,
+                                                           std::move(rejected));
+        break;
+      }
+      accepted_prefix = true;
+      // A non-blocking observation catches synchronous CPU/provider failure
+      // before a dependent command is submitted.  Pending work continues on
+      // the ordered Queue; there is deliberately no host wait here.
+      auto observed = completion->poll();
+      final_completion = std::move(*completion);
+      if (!observed)
+        break;
     }
   }
-  return compute::Completion::completed();
+
+  if (!compute::detail::CompletionAccess::has_async_state(final_completion)) {
+    mark_invocation_terminal(state_, final_completion.wait());
+    rollback.disarm();
+    return final_completion;
+  }
+
+  detail::retain(state_);
+  state_->completion_lifetime = compute::detail::CompletionLifetime{
+      .state = state_,
+      .terminal = &mark_invocation_terminal,
+      .release = &release_invocation_lifetime,
+  };
+  Status attached = compute::detail::CompletionAccess::attach_lifetime(
+      final_completion, state_->completion_lifetime);
+  if (!attached.ok())
+    return std::unexpected(std::move(attached));
+  rollback.disarm();
+  return final_completion;
 }
 
 Result<CompiledGraph> compile(const Graph &graph,
@@ -1286,6 +1717,16 @@ Result<CompiledGraph> compile(const Graph &graph,
   if (!context.valid() || !context.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute context is invalid or closed"));
+  }
+  if (options.region_selection != RegionSelectionPolicy::kDisabled &&
+      options.region_selection != RegionSelectionPolicy::kConservative) {
+    return std::unexpected(
+        Status::InvalidArgument("graph region selection policy is invalid"));
+  }
+  if (options.operation_fallback != OperationFallbackPolicy::kAllow &&
+      options.operation_fallback != OperationFallbackPolicy::kReject) {
+    return std::unexpected(
+        Status::InvalidArgument("graph operation fallback policy is invalid"));
   }
   if (context.device().device_class() != compute::DeviceClass::kCpu) {
     return std::unexpected(Status::Unimplemented(
@@ -1319,52 +1760,14 @@ Result<CompiledGraph> compile(const Graph &graph,
     detail::release(plan);
     return std::unexpected(std::move(status));
   }
+  auto report = build_report(*plan, context);
+  if (!report) {
+    detail::release(plan);
+    return std::unexpected(std::move(report).error());
+  }
 
   CompiledGraph result;
-  compute::ProviderIdentity graph_provider{};
-  bool mixed_providers = false;
-  std::size_t packed_constant_count = 0;
-  std::size_t packed_constant_bytes = 0;
-  std::size_t copy_bytes = 0;
-  std::uint32_t synchronization_count = 0;
-  for (const detail::PlanStep &step : plan->steps) {
-    const compute::ProviderIdentity node_provider = step.provider();
-    if (step.kind == detail::PlanStepKind::kRegion) {
-      const RegionArtifactProperties properties = step.region.properties();
-      packed_constant_count = saturating_add(packed_constant_count,
-                                             properties.packed_constant_count);
-      packed_constant_bytes = saturating_add(packed_constant_bytes,
-                                             properties.packed_constant_bytes);
-      copy_bytes = saturating_add(copy_bytes, properties.copy_bytes);
-      synchronization_count = saturating_add(synchronization_count,
-                                             properties.synchronization_count);
-    }
-    if (mixed_providers) {
-      continue;
-    } else if (!graph_provider.valid()) {
-      graph_provider = node_provider;
-    } else if (graph_provider.id != node_provider.id) {
-      graph_provider = {};
-      mixed_providers = true;
-    }
-  }
-  result.report = CompileReport{
-      .backend = context.device().backend_id(),
-      .provider = graph_provider,
-      .workspace_bytes = plan->workspace_bytes,
-      .workspace_backing_count = plan->workspace_backing_count,
-      .node_count = plan->logical_node_count,
-      .step_count = plan->steps.size(),
-      .region_count = plan->region_count,
-      .fallback_operation_count = plan->steps.size() - plan->region_count,
-      .constant_count = plan->constant_ids.size(),
-      .borrowed_constant_count = plan->constant_ids.size(),
-      .packed_constant_count = packed_constant_count,
-      .packed_constant_bytes = packed_constant_bytes,
-      .copy_bytes = copy_bytes,
-      .synchronization_count = synchronization_count,
-      .mixed_providers = mixed_providers,
-  };
+  result.report = std::move(*report);
   result.executable = detail::ExecutableAccess::adopt(plan);
   return result;
 }

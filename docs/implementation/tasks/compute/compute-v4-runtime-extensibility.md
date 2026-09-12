@@ -161,3 +161,28 @@ device-loss/error injection，sanitizers、Linux/两台 Apple、shared export hy
 - Windows shared 构建中的 provider extension owner-retention、错误版本、跨 Context Queue、close admission
   与 Graph region 调用测试通过。它解除 Graph G37 的 runtime blocker，但真实异步 backend 的 late
   completion 资格仍属于 R48--R50 终局验证，Compute 继续保持 `AUDITED`。
+
+## Ordered sequence 与 late-lifetime checkpoint（2026-09-13）
+
+- `Queue` 现有 admission 上增加仅覆盖 host enqueue 的单-producer sequence guard。direct operation 仍每次
+  自动打开一个 sequence；Graph 可在同一 guard 中连续调用已 admission 的 operation/region bridge，从而
+  不插入逐 step host wait，也不允许另一个 producer 把命令插到 plan 中间；
+- provider submit 的冻结语义已写入单-op 与 region SPI：成功 Completion 代表截至本命令的完整 ordered
+  Queue prefix，同步 `Result` 错误表示本命令没有接纳工作。Graph 因此只保留最终 prefix Completion；若
+  后段同步拒绝，则在已接纳前缀的 Completion 上追加错误而不丢弃 work；
+- Completion 可附着一个位于被保活 owner 内的内部 lifetime record。正常 poll/wait 观察终态时先销毁
+  provider completion state，再调用 terminal/release；用户直接丢弃 pending handle 时则把 record 交给
+  backend，由 backend 在真实终态后释放。public Completion 只新增一个 attachment pointer，不为 direct
+  CPU 路线增加 heap allocation、lock 或三字 callback 常态字段；
+- direct `OperationInvocation` 也以同一附件保活 provider invocation，并以 `in_flight()`/重叠 submit 拒绝
+  防止一个 mutable lane 被并行复用；Graph 的内部 admitted submit 则由最外层 Graph Invocation 一次性保活，
+  不为每个 step 重复加引用。inline-terminal CPU completion 在内部可直接识别，因此不做 execution-owner
+  引用交接，不为同步热路径增加一对原子 refcount；
+- Windows 模拟异步 region 已验证无逐 step wait、pending handle 遗弃、Invocation handle 先销毁、terminal
+  error/cancel、同步 tail rejection 和 exactly-once release；模拟 direct async operation 也验证外层 handle
+  先销毁和重叠 submit。Compute 选择产品的 Windows source、installed/relocated shared 与 static consumer
+  均通过。真实 CUDA/Metal/Vulkan backend 仍须在各自卡证明 event 销毁与 late callback 实现符合该合同；
+  这份模拟证据不替代真设备资格。
+
+本 checkpoint 完成 R48--R50 的通用组合机制，但 Compute 仍为 `AUDITED`：真实异步 backend、Linux/两台
+Apple、sanitizer、P0 codegen 与异构 provider 交付回放尚未完成。

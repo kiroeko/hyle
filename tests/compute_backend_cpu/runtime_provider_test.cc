@@ -5,9 +5,13 @@
 #include <cstdint>
 #include <span>
 
+#include "completion_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/mem/buffer.h"
 #include "provider_internal.h"
 
 namespace {
@@ -91,6 +95,141 @@ hyle::compute::Provider make_provider(ProviderProbe &probe,
                                       std::size_t index) noexcept {
   return hyle::compute::detail::ProviderAccess::make(
       &kProviderVTable, ProviderPayload{&probe, index});
+}
+
+struct AsyncOperationProbe final {
+  bool complete = false;
+  bool cancelled = false;
+  std::size_t submit_count = 0;
+  std::size_t completion_destroy_count = 0;
+  std::size_t invocation_destroy_count = 0;
+  hyle::compute::detail::CompletionLifetime abandoned{};
+};
+
+hyle::Status create_async_context(const hyle::compute::Provider &provider,
+                                  hyle::compute::Device, void *,
+                                  hyle::mem::AllocatorRef,
+                                  void **context) noexcept {
+  *context =
+      hyle::compute::detail::ProviderAccess::payload<AsyncOperationProbe *>(
+          provider);
+  return hyle::Status::Ok();
+}
+
+void destroy_async_context(void *, hyle::mem::AllocatorRef) noexcept {}
+
+void destroy_async_prepared(void *, hyle::mem::AllocatorRef) noexcept {}
+
+hyle::compute::AliasSupport async_alias_support(void *, std::size_t,
+                                                std::size_t) noexcept {
+  return {};
+}
+
+hyle::Status create_async_invocation(void *prepared, hyle::mem::AllocatorRef,
+                                     hyle::mem::BufferView,
+                                     void **invocation) noexcept {
+  *invocation = prepared;
+  return hyle::Status::Ok();
+}
+
+void destroy_async_invocation(void *invocation,
+                              hyle::mem::AllocatorRef) noexcept {
+  ++static_cast<AsyncOperationProbe *>(invocation)->invocation_destroy_count;
+}
+
+void destroy_async_operation_completion(
+    void *state, hyle::compute::detail::CompletionLifetime lifetime) noexcept {
+  auto &probe = *static_cast<AsyncOperationProbe *>(state);
+  ++probe.completion_destroy_count;
+  if (!lifetime.valid())
+    return;
+  if (!probe.complete) {
+    probe.abandoned = lifetime;
+    return;
+  }
+  const hyle::Status terminal =
+      probe.cancelled ? hyle::Status::Cancelled("async operation cancelled")
+                      : hyle::Status::Ok();
+  lifetime.terminal(lifetime.state, terminal);
+  lifetime.release(lifetime.state);
+}
+
+hyle::Result<hyle::compute::CompletionPoll>
+poll_async_operation(void *state) noexcept {
+  auto &probe = *static_cast<AsyncOperationProbe *>(state);
+  if (!probe.complete)
+    return hyle::compute::CompletionPoll::kPending;
+  if (probe.cancelled) {
+    return std::unexpected(
+        hyle::Status::Cancelled("async operation cancelled"));
+  }
+  return hyle::compute::CompletionPoll::kComplete;
+}
+
+hyle::Status wait_async_operation(void *state) noexcept {
+  auto &probe = *static_cast<AsyncOperationProbe *>(state);
+  probe.complete = true;
+  return probe.cancelled ? hyle::Status::Cancelled("async operation cancelled")
+                         : hyle::Status::Ok();
+}
+
+hyle::Status cancel_async_operation(void *state) noexcept {
+  auto &probe = *static_cast<AsyncOperationProbe *>(state);
+  probe.cancelled = true;
+  probe.complete = true;
+  return hyle::Status::Ok();
+}
+
+const hyle::compute::detail::CompletionVTable kAsyncOperationCompletionVTable{
+    .destroy = &destroy_async_operation_completion,
+    .poll = &poll_async_operation,
+    .wait = &wait_async_operation,
+    .request_cancel = &cancel_async_operation,
+};
+
+hyle::Result<hyle::compute::Completion>
+submit_async_operation(void *, void *invocation, hyle::compute::Queue &,
+                       std::span<const hyle::compute::ConstTensorView>,
+                       std::span<const hyle::compute::TensorView>) noexcept {
+  auto &probe = *static_cast<AsyncOperationProbe *>(invocation);
+  ++probe.submit_count;
+  return hyle::compute::detail::CompletionAccess::make(
+      &kAsyncOperationCompletionVTable, &probe);
+}
+
+const hyle::compute::detail::ProviderPreparedVTable kAsyncPreparedVTable{
+    .destroy_prepared = &destroy_async_prepared,
+    .alias_support = &async_alias_support,
+    .create_invocation = &create_async_invocation,
+    .destroy_invocation = &destroy_async_invocation,
+    .submit = &submit_async_operation,
+};
+
+hyle::Status prepare_async_operation(
+    void *context, hyle::compute::Operation,
+    std::span<const hyle::compute::TensorDesc>,
+    std::span<const hyle::compute::TensorDesc>, hyle::mem::AllocatorRef,
+    hyle::compute::detail::ProviderPrepared *prepared) noexcept {
+  *prepared = hyle::compute::detail::ProviderPrepared{
+      .vtable = &kAsyncPreparedVTable,
+      .state = context,
+  };
+  return hyle::Status::Ok();
+}
+
+const hyle::compute::detail::ProviderVTable kAsyncProviderVTable{
+    .identity = {.id = {0x5445535400000002ULL, 0x4153594e43000001ULL},
+                 .name = "test-async-operation",
+                 .version = "1"},
+    .create_context = &create_async_context,
+    .destroy_context = &destroy_async_context,
+    .prepare = &prepare_async_operation,
+};
+
+hyle::compute::Provider
+make_async_provider(AsyncOperationProbe &probe) noexcept {
+  return hyle::compute::detail::ProviderAccess::make(&kAsyncProviderVTable,
+                                                     &probe);
 }
 
 hyle::Status observe_probe_extension(void *, const void *interface_value,
@@ -236,6 +375,70 @@ TEST(RuntimeProviders, ContextCreationRollsBackInReverseOrder) {
   ASSERT_EQ(probe.destroy_count, 2u);
   EXPECT_EQ(probe.destroyed[0], 1u);
   EXPECT_EQ(probe.destroyed[1], 0u);
+}
+
+TEST(RuntimeProviders, OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime) {
+  ProviderProbe probe;
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_provider(probe, 0))
+                     .value();
+  auto queue = context.create_queue().value();
+  {
+    auto first = hyle::compute::detail::QueueSequence::begin(queue);
+    ASSERT_TRUE(first.has_value()) << first.error().message();
+    auto overlapping = hyle::compute::detail::QueueSequence::begin(queue);
+    ASSERT_FALSE(overlapping.has_value());
+    EXPECT_TRUE(overlapping.error().IsFailedPrecondition());
+  }
+  EXPECT_TRUE(hyle::compute::detail::QueueSequence::begin(queue).has_value());
+}
+
+TEST(RuntimeProviders,
+     DirectAsyncCompletionRetainsAndSerializesItsOperationInvocation) {
+  AsyncOperationProbe probe;
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_async_provider(probe))
+                     .value();
+  auto queue = context.create_queue().value();
+  const std::array<std::int64_t, 1> shape{4};
+  auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
+          .value();
+  auto prepared =
+      hyle::compute::prepare(
+          context, hyle::compute::Unary{hyle::compute::UnaryKind::kNeg},
+          description)
+          .value();
+  auto input_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 4 * sizeof(float))
+          .value();
+  auto output_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 4 * sizeof(float))
+          .value();
+  auto input =
+      hyle::compute::ConstTensorView::create(description, input_buffer.view())
+          .value();
+  auto output =
+      hyle::compute::TensorView::create(description, output_buffer.view())
+          .value();
+  auto invocation = prepared.create_invocation().value();
+
+  auto completion = invocation.submit(queue, input, output);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_TRUE(
+      invocation.submit(queue, input, output).error().IsFailedPrecondition());
+  invocation = {};
+  EXPECT_EQ(probe.invocation_destroy_count, 0u);
+  *completion = {};
+  EXPECT_TRUE(probe.abandoned.valid());
+  EXPECT_EQ(probe.invocation_destroy_count, 0u);
+
+  probe.complete = true;
+  probe.abandoned.terminal(probe.abandoned.state, hyle::Status::Ok());
+  probe.abandoned.release(probe.abandoned.state);
+  probe.abandoned = {};
+  EXPECT_EQ(probe.invocation_destroy_count, 1u);
 }
 
 } // namespace

@@ -100,11 +100,16 @@ struct RegionCompileRequest final {
 struct RegionArtifactProperties final {
   compute::WorkspaceRequirement workspace{};
   std::size_t persistent_bytes = 0;
+  // Packing is an additional provider-owned representation. Graph v3 keeps
+  // every source ConstantBinding borrowed because aggregate counts do not
+  // identify which source could be released.
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
+  std::uint32_t dispatch_count = 1;
   bool blocks_host = false;
+  bool uses_private_threads = false;
   bool supports_concurrent_invocations = true;
 };
 
@@ -119,6 +124,10 @@ struct ProviderRegionPreparedVTable final {
                               void **invocation) noexcept = nullptr;
   void (*destroy_invocation)(void *invocation,
                              mem::AllocatorRef allocator) noexcept = nullptr;
+  // Success returns a Completion for the complete ordered Queue prefix through
+  // this region. Dropping an earlier Completion must not cancel that prefix or
+  // prevent a later prefix Completion from reporting an earlier backend
+  // failure. A synchronous Result error means this region accepted no work.
   Result<compute::Completion> (*submit)(
       void *prepared, void *invocation, compute::Queue &queue,
       std::span<const compute::ConstTensorView> inputs,

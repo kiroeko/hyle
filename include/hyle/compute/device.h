@@ -53,6 +53,7 @@ struct ContextAccess;
 struct ContextState;
 struct DeviceAccess;
 struct ProviderExtensionAccess;
+class QueueSequence;
 struct QueueState;
 } // namespace detail
 
@@ -179,6 +180,7 @@ private:
   friend class OperationInvocation;
   friend struct detail::ContextAccess;
   friend struct detail::ProviderExtensionAccess;
+  friend class detail::QueueSequence;
   friend struct CpuQueueAccess;
   detail::QueueState *state_ = nullptr;
 };

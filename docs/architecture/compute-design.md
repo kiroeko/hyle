@@ -37,7 +37,9 @@ Module -> Kernel -> CommandList -> submit() -> Completion
 ```
 
 - `Device` 是可复制的能力描述，不拥有 runtime；`Context` 拥有 backend/provider 会话。
-- `Queue` 表达有序提交域；不能用全局默认 stream 隐藏 affinity 或同步。
+- `Queue` 表达有序、单 producer 的提交域；不能用全局默认 stream 隐藏 affinity 或同步。Graph 等组合者
+  可取得一个短生命周期 submission-sequence guard，使一组命令连续录入；guard 只覆盖 host enqueue，
+  绝不持有到设备执行结束。
 - `TensorDesc` 把 logical dtype/shape 与 physical storage format/byte layout 分开；fixed block encoding
   使用开放数值 identity，无法通用解释的 packed layout 使用 opaque identity + exact extent。
   scale/zero/bias 和量化公式属于 typed operation/provider inputs，不进入 storage descriptor；
@@ -47,7 +49,8 @@ Module -> Kernel -> CommandList -> submit() -> Completion
 - `Module/Kernel/CommandList` 是原生或 HYLE kernel 的低层路线；Vulkan SPIR-V、CUDA
   module/kernel、Metal pipeline 和 CPU function target 都通过有类型的 backend extension 表达。
 - `Completion` 是提交后的生命周期边界。等待、轮询、callback 和 coroutine bridge 必须共享同一个
-  完成状态，不能制造互不相认的 event。
+  完成状态，不能制造互不相认的 event。一个成功 submit 返回的 Completion 覆盖完整 ordered Queue prefix；
+  销毁 pending handle 不等待，但 backend 必须把附着的 execution owner 保活到真实终态。
 
 一次性 convenience 调用将来可以组合 prepare + invocation + submit，但必须在名称和文档中暴露它包含冷路径工作；
 循环执行默认使用 prepared 形状。
@@ -188,8 +191,14 @@ Mem 是 storage-semantics owner；Compute 是 device/provider artifact 与异步
 - Queue/Completion 决定 Buffer、workspace、packed constants 和 staging slot 何时可复用。
 
 任何异步 submit 的输入、输出、kernel argument backing 和 provider state 都必须活到 Completion 终态。
+direct `OperationInvocation` 和 Graph Invocation 都由最终 Completion 保活到真实终态，并在此期间拒绝复用；
+Tensor payload、外借 workspace 与 Queue 仍由调用方保活，不能因为 C++ handle 被移动或销毁就推断设备工作结束。
 取消是“请求停止”，不是“立即可回收”；不支持抢占的设备仍需 drain 迟到完成。Context 的关闭是显式
 `close/drain` 旅程，析构不能偷偷做无界等待，也不能在 work in flight 时释放 backend state。
+
+组合 plan 不以逐命令 `wait()` 建依赖。同一 Queue 的命令按录入顺序建立设备依赖，只保留最后一个 prefix
+Completion；中间 handle 可释放，但其工作和错误必须被后续 prefix completion 覆盖。若后一命令在已有前缀
+之后同步拒绝，组合者返回前缀 Completion 并追加该拒绝状态，而不是丢失已接纳工作或提前释放 workspace。
 
 Storage domain 至少区分普通 host、backend-visible/pinned host、device-local 和 managed/unified。
 unsupported 必须返回明确能力错误；不能把普通 host RAM 冒充 pinned，把 unified address 冒充零复制，

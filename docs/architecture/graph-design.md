@@ -71,7 +71,9 @@ Invocation.bind(...) -> submit(...) -> compute::Completion
 
 - 每次并发执行独占的可变对象；绑定 inputs/outputs、动态 dimension values、workspace 和 provider state。
 - 默认非线程安全，但可在上次 Completion 结束后 reset/reuse；并发请求各用一个 Invocation。
-- submit 后所有 borrow 和 workspace 活到 Completion 终态。取消不允许提前复用。
+- submit 后所有 borrow 和 workspace 活到 Completion 终态；in-flight 时 bind/reset/resubmit 明确失败，取消
+  不允许提前复用。发布的零拷贝 view 若根在私有 workspace，由 Invocation 持有并在成功终态后借出；需要
+  caller destination 时用显式 Copy。
 - Provider 若需要串行 context，Graph 必须在 report 中声明并由 queue/resource admission 表达，不能藏在
   process-global mutex 中。
 
@@ -129,8 +131,11 @@ backend command；Invocation 只填充运行时 slots。
 - prepare 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、不打包常量；
 - workspace layout 对固定 specialization 不变；允许 caller/pool 预留，正常 replay 零 heap allocation；
 - per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
-- host wait 只在合同要求时出现；可由 queue/event 表达的 dependency 不退化成同步 round-trip；
-- plan 必须可枚举 step、device、provider、copy bytes、workspace 与 serialization constraint，便于归因。
+- plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入，只返回最后一个 prefix Completion；
+  host wait 只在合同要求时出现，可由 queue/event 表达的 dependency 不退化成同步 round-trip；
+- CompileReport 独立拥有轻量 metadata，并逐 step 枚举 kind、fallback reason、node range、device/provider/version、constant
+  borrow/额外 packed ownership、copy/sync/dispatch、workspace、persistent bytes 和 threading/blocking/concurrent-invocation fact；
+  v3 不因 aggregate packed count 缩短 source borrow，复制 report 也不保活重型 Executable artifact。
 
 复杂度基线：图结构验证、拓扑和 liveness 应为 `O(V + E)`；在 `P` 个已登记 provider 上的 capability
 matching 应有明确上界，不得随运行次数重复。更复杂的 partition/cost search 若采用启发式，必须登记

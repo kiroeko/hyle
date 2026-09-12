@@ -9,6 +9,7 @@
 #include "backend_internal.h"
 #include "context_state.h"
 #include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::detail {
@@ -234,10 +235,27 @@ Result<Completion> detail::ProviderExtensionAccess::submit(
     std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs, ProviderExtensionSubmitFn function,
     void *call_context) noexcept {
+  auto sequence = detail::QueueSequence::begin(queue);
+  if (!sequence)
+    return std::unexpected(std::move(sequence).error());
+  return submit_admitted(extension, *sequence, inputs, outputs, function,
+                         call_context);
+}
+
+Result<Completion> detail::ProviderExtensionAccess::submit_admitted(
+    const detail::ProviderExtensionRef &extension,
+    detail::QueueSequence &sequence, std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs, ProviderExtensionSubmitFn function,
+    void *call_context) noexcept {
   if (!extension.valid() || function == nullptr) {
     return std::unexpected(Status::InvalidArgument(
         "compute provider extension submit is invalid"));
   }
+  if (!sequence.valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("compute queue sequence is invalid"));
+  }
+  Queue &queue = sequence.queue();
   detail::QueueState *queue_state = detail::ContextAccess::state(queue);
   if (queue_state == nullptr || queue_state->context != extension.owner_) {
     return std::unexpected(Status::InvalidArgument(
@@ -263,13 +281,13 @@ Result<Completion> detail::ProviderExtensionAccess::submit(
     if (!status.ok())
       return std::unexpected(std::move(status));
   }
-  Status admission = queue.begin_submission();
-  if (!admission.ok())
-    return std::unexpected(std::move(admission));
-  auto result = function(extension.provider_context_, extension.interface_,
-                         call_context, queue);
-  queue.end_submission();
-  return result;
+  auto completion = function(extension.provider_context_, extension.interface_,
+                             call_context, queue);
+  if (completion && !completion->valid()) {
+    return std::unexpected(Status::Internal(
+        "compute provider extension returned an invalid completion"));
+  }
+  return completion;
 }
 
 BackendId Backend::id() const noexcept {
@@ -508,12 +526,51 @@ Status Queue::begin_submission() noexcept {
     state_->context->admission.leave();
     return Status::FailedPrecondition("queue is closed");
   }
+  if (state_->submitting.test_and_set(std::memory_order_acquire)) {
+    state_->admission.leave();
+    state_->context->admission.leave();
+    return Status::FailedPrecondition(
+        "ordered queue already has an active submission sequence");
+  }
   return Status::Ok();
 }
 
 void Queue::end_submission() noexcept {
+  state_->submitting.clear(std::memory_order_release);
   state_->admission.leave();
   state_->context->admission.leave();
+}
+
+detail::QueueSequence::QueueSequence(QueueSequence &&other) noexcept
+    : queue_(other.queue_) {
+  other.queue_ = nullptr;
+}
+
+detail::QueueSequence &
+detail::QueueSequence::operator=(QueueSequence &&other) noexcept {
+  if (this != &other) {
+    reset();
+    queue_ = other.queue_;
+    other.queue_ = nullptr;
+  }
+  return *this;
+}
+
+detail::QueueSequence::~QueueSequence() { reset(); }
+
+Result<detail::QueueSequence>
+detail::QueueSequence::begin(Queue &queue) noexcept {
+  Status status = queue.begin_submission();
+  if (!status.ok())
+    return std::unexpected(std::move(status));
+  return QueueSequence(&queue);
+}
+
+void detail::QueueSequence::reset() noexcept {
+  if (queue_ != nullptr) {
+    queue_->end_submission();
+    queue_ = nullptr;
+  }
 }
 
 } // namespace hyle::compute

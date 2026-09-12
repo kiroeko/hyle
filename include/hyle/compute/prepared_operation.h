@@ -14,6 +14,7 @@ namespace hyle::compute {
 
 namespace detail {
 struct InvocationState;
+struct OperationInvocationAccess;
 struct PreparedState;
 } // namespace detail
 
@@ -82,7 +83,9 @@ private:
 
 // Exclusive mutable state for one execution lane. Create it once per
 // concurrent run, then rebind and submit repeatedly without provider search,
-// descriptor construction or workspace allocation.
+// descriptor construction or workspace allocation. A pending Completion
+// retains the provider invocation even if this handle is released; the caller
+// still owns tensor payload, external workspace and Queue lifetimes.
 class OperationInvocation final {
 public:
   OperationInvocation() noexcept = default;
@@ -96,6 +99,7 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
   HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
+  HYLE_COMPUTE_API bool in_flight() const noexcept;
 
   HYLE_COMPUTE_API Result<Completion>
   submit(Queue &queue, std::span<const ConstTensorView> inputs,
@@ -117,6 +121,7 @@ public:
 
 private:
   friend class PreparedOperation;
+  friend struct detail::OperationInvocationAccess;
   explicit OperationInvocation(detail::InvocationState *state) noexcept
       : state_(state) {}
 
