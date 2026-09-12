@@ -2,7 +2,10 @@
 # so GPU-only maintenance builds do not acquire SIMD kernels.
 include(HyleDispatch)
 
-hyle_add_module(compute_provider_native SOURCES native_provider.cc transform.cc)
+hyle_add_module(compute_provider_native SOURCES
+  cast.cc
+  native_provider.cc
+  transform.cc)
 target_include_directories(hyle_compute_provider_native PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute")
 

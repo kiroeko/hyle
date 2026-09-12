@@ -111,6 +111,8 @@ HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Copy operation, TensorDesc input) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
                                                    Fill operation) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Cast operation, TensorDesc input) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
                                                    RmsNorm operation,
                                                    TensorDesc input,

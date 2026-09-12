@@ -93,17 +93,8 @@ Result<Completion> submit_copy(const NativePlan &,
   }
 
   const auto dimensions = input_desc.dimensions();
-  const auto strides = input_desc.byte_strides();
   for (std::size_t linear = 0; linear < *elements; ++linear) {
-    std::size_t remaining = linear;
-    std::size_t source_offset = 0;
-    for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
-      const std::size_t axis = dimensions.size() - 1 - reverse;
-      const std::size_t extent = static_cast<std::size_t>(dimensions[axis]);
-      const std::size_t coordinate = remaining % extent;
-      remaining /= extent;
-      source_offset += coordinate * static_cast<std::size_t>(strides[axis]);
-    }
+    const std::size_t source_offset = logical_byte_offset(input_desc, linear);
     std::memcpy(destination + linear * element_size, source + source_offset,
                 element_size);
   }

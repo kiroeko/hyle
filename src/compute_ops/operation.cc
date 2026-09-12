@@ -770,6 +770,13 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
             DataType::kUnknown,
             true};
   case OperationKind::kCast:
+    return {{1, 1},
+            1,
+            AliasPolicy::kNone,
+            EffectKind::kPure,
+            PrecisionPolicy::kExact,
+            DataType::kUnknown,
+            true};
   case OperationKind::kUnary:
     return {{1, 1},
             1,

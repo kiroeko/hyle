@@ -374,6 +374,12 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
+  case OperationKind::kCast: {
+    Status status = internal::prepare_cast(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   case OperationKind::kRmsNorm: {
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())

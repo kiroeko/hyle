@@ -20,6 +20,7 @@ sampling 和 serving 留在推理引擎。
 | operation schema | 19 个 typed family + inline custom | 可做 arity/shape/layout/alias/effect/precision 检查；schema 存在不等于已有可执行 provider |
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
+| 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
 | normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
@@ -29,11 +30,11 @@ sampling 和 serving 留在推理引擎。
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
 gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
-**当前可执行 provider 签发 View、Copy、Fill、RMSNorm、rank-2 MatMul 和 packed SiLU
-GatedActivation 六项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 13 个
+**当前可执行 provider 签发 View、Copy、Fill、Cast、RMSNorm、rank-2 MatMul 和 packed SiLU
+GatedActivation 七项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 12 个
 family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
 
-## View、Copy 与 Fill
+## View、Copy、Fill 与 Cast
 
 `View` 是显式零 kernel operation：prepare 推导新的 descriptor，submit 只验证输出 Mem view 是否指向输入
 allocation 的正确 byte offset。reshape、permute 和 broadcast 从输入起点开始；slice 输出应使用由
@@ -45,7 +46,14 @@ zero-stride broadcast）输入按 logical coordinates materialize 为 dense 输�
 encoding，也不隐藏 repack 或 staging。`Fill` 没有输入，根据 `TensorShape`、`DataType` 和精确 typed
 `ScalarValue` 写输出；低精度浮点用 `ScalarValue::from_bits()` 明确传 storage bits。
 
-这三个单输出 operation 提供会自动推导输出 descriptor 的 typed prepare，Fill 也有自然的零输入 submit：
+`Cast` 当前执行推理常用的五种浮点 storage：f32、IEEE f16、bf16、OCP E4M3FN 和 E5M2，任意两种都可互转；
+同 dtype Cast 等价于 materializing Copy。窄化继承 SIMD 的 round-to-nearest-even、FP8 finite saturation 和
+NaN mapping 合同。连续输入只做一次 whole-buffer SIMD 调用；plain strided 输入使用相同 scalar oracle
+materialize，byte stride 无须满足 C++ 类型对齐。Cast 始终是 out-of-place；即使输入输出 dtype 等宽，也不能
+绑定重叠 storage，避免 strided 输入覆盖尚未读取的数据。整数/Bool/f64 Cast 的溢出、NaN-to-int 和越界语义尚未
+冻结，因此 Native provider 明确返回 `Unimplemented`，不会借 C++ `static_cast` 偶然定义公共行为。
+
+这四个单输出 operation 提供会自动推导输出 descriptor 的 typed prepare，Fill 也有自然的零输入 submit：
 
 ```cpp
 auto slice = View::slice(/* axis = */ 1, /* start = */ 4,
@@ -54,6 +62,9 @@ if (!slice) return slice.error();
 auto prepared_view = prepare(context, *slice, input_desc);
 
 auto prepared_copy = prepare(context, Copy{}, strided_desc);
+
+auto prepared_cast =
+    prepare(context, Cast{.output_type = DataType::kBFloat16}, f32_desc);
 
 auto shape = TensorShape::create(std::array<std::int64_t, 2>{2, 8});
 if (!shape) return shape.error();

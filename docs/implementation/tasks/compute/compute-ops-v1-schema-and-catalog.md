@@ -117,7 +117,7 @@ shapes 足够形成按 signature specialization，symbolic algebra 留给有具�
 | 批次 | family | v1 最小完整语义 / native reference |
 |---|---|---|
 | A | `View` | reshape、单轴 slice、permute、broadcast；输出显式 alias 输入，零 kernel |
-| A | `Copy` / `Fill` / `Cast` | plain/strided copy，typed scalar fill，已登记 scalar dtype 转换；无隐藏 staging |
+| A | `Copy` / `Fill` / `Cast` | plain/strided copy，typed scalar fill，已登记 scalar dtype 的 out-of-place 转换；无隐藏 staging |
 | A | `Unary` | Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/Relu/Gelu/GeluTanh/Silu |
 | A | `Binary` / `Select` | Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；typed boolean select |
 | A | `Reduce` | Sum/Mean/Min/Max，axis bitset 与 keep-dim；明确 accumulation dtype |
@@ -160,7 +160,7 @@ visibility owner，但 Compute 产品 façade 聚合后，用户仍只 include `
 - 19 个 built-in family、inline typed custom descriptor、exact output span、traits 和纯 shape inference 已实现；
   Windows factor-only、Compute 聚合与 Graph consumer 测试通过。广播 span 生命周期、RoPE 负轴、零 extent
   乘法顺序和未知 enum mode 的红队缺陷已在本 checkpoint 修复；
-- 这不是 terminal record，也不改变 `AUDITED`：View、Copy、Fill、RMSNorm、rank-2 MatMul 和 packed SiLU
-  GatedActivation 已取得 native executable route，其他 13 个 family 尚未取得；三平台/property/sanitizer 与完整
+- 这不是 terminal record，也不改变 `AUDITED`：View、Copy、Fill、Cast、RMSNorm、rank-2 MatMul 和 packed
+  SiLU GatedActivation 已取得 native executable route，其他 12 个 family 尚未取得；三平台/property/sanitizer 与完整
   direct/Graph journey 仍按 closure card 待执行。用户文档将“可描述”与“可执行”分开，不把 schema
   存在宣称成 kernel 支持。

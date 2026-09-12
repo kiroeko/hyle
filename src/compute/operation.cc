@@ -392,6 +392,16 @@ Result<PreparedOperation> prepare(const Context &context,
   return prepare(context, Operation(operation), inputs, outputs);
 }
 
+Result<PreparedOperation> prepare(const Context &context, Cast operation,
+                                  TensorDesc input) noexcept {
+  const std::array inputs{input};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
 Result<PreparedOperation> prepare(const Context &context, RmsNorm operation,
                                   TensorDesc input,
                                   TensorDesc output) noexcept {

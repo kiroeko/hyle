@@ -75,6 +75,7 @@ TEST(OperationCatalog, HasNineteenTypedBuiltinFamiliesAndInvalidDefault) {
   EXPECT_EQ(operation_traits(operations[0]).alias,
             AliasPolicy::kMustAliasInput0);
   EXPECT_FALSE(operation_traits(operations[0]).materializes);
+  EXPECT_EQ(operation_traits(operations[3]).alias, AliasPolicy::kNone);
 }
 
 TEST(OperationViews, InferReshapeSlicePermutationAndBroadcastWithoutKernel) {
