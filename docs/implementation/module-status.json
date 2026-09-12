@@ -272,9 +272,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md",
-      "summary": "compute v3 由真实量化 provider journey 重开：本轮只审计 provider-neutral logical dtype / physical block storage format、byte layout 与安全 TensorView；当前 v2 能力仍存在，但新产品合同尚未裁决。"
+      "summary": "compute v3 AUDITED：已冻结 provider-neutral plain/block/opaque storage format、byte-strided TensorDesc、安全 view/fallback 与七项有限施工集；不引入 ggml 枚举、owner、vtable、registry 或新依赖。"
     },
     {
       "module": "graph",
