@@ -251,7 +251,7 @@ bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
 bool aligned_for_storage(const void *address, std::size_t alignment) noexcept {
   return address == nullptr ||
          (alignment != 0 &&
-          reinterpret_cast<std::uintptr_t>(address) % alignment == 0);
+          (reinterpret_cast<std::uintptr_t>(address) & (alignment - 1)) == 0);
 }
 
 void preserve_first_error(Status &terminal, Status candidate) noexcept {
