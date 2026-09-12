@@ -402,6 +402,37 @@ Result<PreparedOperation> prepare(const Context &context, Cast operation,
   return prepare(context, Operation(operation), inputs, outputs);
 }
 
+Result<PreparedOperation> prepare(const Context &context, Unary operation,
+                                  TensorDesc input) noexcept {
+  const std::array inputs{input};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
+Result<PreparedOperation> prepare(const Context &context, Binary operation,
+                                  TensorDesc left, TensorDesc right) noexcept {
+  const std::array inputs{left, right};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
+Result<PreparedOperation> prepare(const Context &context, Select operation,
+                                  TensorDesc condition, TensorDesc when_true,
+                                  TensorDesc when_false) noexcept {
+  const std::array inputs{condition, when_true, when_false};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
 Result<PreparedOperation> prepare(const Context &context, RmsNorm operation,
                                   TensorDesc input,
                                   TensorDesc output) noexcept {
@@ -573,6 +604,13 @@ OperationInvocation::submit(Queue &queue, const ConstTensorView &first,
                             const ConstTensorView &second,
                             const TensorView &output) noexcept {
   const std::array inputs{first, second};
+  return submit(queue, inputs, std::span<const TensorView>(&output, 1));
+}
+
+Result<Completion> OperationInvocation::submit(
+    Queue &queue, const ConstTensorView &first, const ConstTensorView &second,
+    const ConstTensorView &third, const TensorView &output) noexcept {
+  const std::array inputs{first, second, third};
   return submit(queue, inputs, std::span<const TensorView>(&output, 1));
 }
 

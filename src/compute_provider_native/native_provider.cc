@@ -380,6 +380,15 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
+  case OperationKind::kUnary:
+  case OperationKind::kBinary:
+  case OperationKind::kSelect: {
+    Status status =
+        internal::prepare_elementwise(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   case OperationKind::kRmsNorm: {
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())

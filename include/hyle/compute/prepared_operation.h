@@ -96,6 +96,11 @@ public:
                                              const ConstTensorView &input,
                                              const ConstTensorView &weight,
                                              const TensorView &output) noexcept;
+  HYLE_COMPUTE_API Result<Completion> submit(Queue &queue,
+                                             const ConstTensorView &first,
+                                             const ConstTensorView &second,
+                                             const ConstTensorView &third,
+                                             const TensorView &output) noexcept;
 
 private:
   friend class PreparedOperation;
@@ -113,6 +118,15 @@ HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
                                                    Fill operation) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Cast operation, TensorDesc input) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Unary operation, TensorDesc input) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
+                                                   Binary operation,
+                                                   TensorDesc left,
+                                                   TensorDesc right) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Select operation, TensorDesc condition,
+        TensorDesc when_true, TensorDesc when_false) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
                                                    RmsNorm operation,
                                                    TensorDesc input,

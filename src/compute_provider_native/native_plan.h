@@ -14,10 +14,13 @@ struct NativePlan;
 using SubmitRoute = Result<Completion> (*)(
     const NativePlan &plan, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept;
-using LinearTransformRoute = void (*)(const void *source, void *destination,
-                                      std::size_t count) noexcept;
-using ScalarTransformRoute = void (*)(const std::byte *source,
-                                      std::byte *destination) noexcept;
+using LinearElementwiseRoute = void (*)(const void *first, const void *second,
+                                        const void *third, void *output,
+                                        std::size_t count) noexcept;
+using ScalarElementwiseRoute = void (*)(const std::byte *first,
+                                        const std::byte *second,
+                                        const std::byte *third,
+                                        std::byte *output) noexcept;
 
 // Cold prepared metadata shared by the native operation families. A family
 // selects one submit route during prepare; submit never searches by kind or
@@ -28,8 +31,8 @@ struct NativePlan final {
   float scalar = 0.0F;
   std::uint64_t scalar_bits = 0;
   detail::NativeRoute route = nullptr;
-  LinearTransformRoute linear_transform_route = nullptr;
-  ScalarTransformRoute scalar_transform_route = nullptr;
+  LinearElementwiseRoute linear_elementwise_route = nullptr;
+  ScalarElementwiseRoute scalar_elementwise_route = nullptr;
   SubmitRoute submit_route = nullptr;
 };
 
@@ -67,6 +70,32 @@ inline std::size_t logical_byte_offset(const TensorDesc &description,
   return offset;
 }
 
+// Map one dense output coordinate back into a broadcast-compatible input.
+// The schema has already proved rank and dimension compatibility.
+inline std::size_t
+logical_broadcast_byte_offset(const TensorDesc &input,
+                              std::span<const std::int64_t> output_dimensions,
+                              std::size_t linear_index) noexcept {
+  std::size_t offset = 0;
+  const auto input_dimensions = input.dimensions();
+  const auto input_strides = input.byte_strides();
+  for (std::size_t reverse = 0; reverse < output_dimensions.size(); ++reverse) {
+    const std::size_t output_axis = output_dimensions.size() - 1 - reverse;
+    const std::size_t output_extent =
+        static_cast<std::size_t>(output_dimensions[output_axis]);
+    const std::size_t coordinate = linear_index % output_extent;
+    linear_index /= output_extent;
+    if (reverse >= input_dimensions.size())
+      continue;
+    const std::size_t input_axis = input_dimensions.size() - 1 - reverse;
+    if (input_dimensions[input_axis] != 1) {
+      offset +=
+          coordinate * static_cast<std::size_t>(input_strides[input_axis]);
+    }
+  }
+  return offset;
+}
+
 Status prepare_transform(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,
@@ -74,5 +103,9 @@ Status prepare_transform(Operation operation,
 Status prepare_cast(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs,
                     NativePlan &plan) noexcept;
+Status prepare_elementwise(Operation operation,
+                           std::span<const TensorDesc> inputs,
+                           std::span<const TensorDesc> outputs,
+                           NativePlan &plan) noexcept;
 
 } // namespace hyle::compute::native::internal

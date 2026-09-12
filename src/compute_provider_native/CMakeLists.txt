@@ -4,6 +4,7 @@ include(HyleDispatch)
 
 hyle_add_module(compute_provider_native SOURCES
   cast.cc
+  elementwise.cc
   native_provider.cc
   transform.cc)
 target_include_directories(hyle_compute_provider_native PRIVATE

@@ -274,7 +274,7 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v4-runtime-extensibility.md",
-      "summary": "compute v4 AUDITED：R40--R51 的开放 Backend/Provider、显式 provider sequence、独立 Queue/Context 与 immediate/async Completion 第一实现检查点已通过 Windows 定向测试和三种交付；View/Copy/Fill/Cast typed prepare 与零输入 submit 已接入，真实异步生命周期、三平台/sanitizer、P0 与全部 provider/Graph 仍未完成。"
+      "summary": "compute v4 AUDITED：R40--R51 的开放 Backend/Provider、显式 provider sequence、独立 Queue/Context 与 immediate/async Completion 第一实现检查点已通过 Windows 定向测试和三种交付；View/Copy/Fill/Cast/Unary/Binary/Select typed prepare 与零/三输入 submit 已接入，真实异步生命周期、三平台/sanitizer、P0 与全部 provider/Graph 仍未完成。"
     },
     {
       "module": "graph",
@@ -368,7 +368,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 7 个已有 native executable route，其余 12 个及终局验证尚未完成。"
+      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 10 个已有 native executable route，其余 9 个及终局验证尚未完成。"
     },
     {
       "module": "compute_backend_cpu",
@@ -380,7 +380,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：N10--N16 已实现；View/Copy/Fill/Cast transform 与既有 RMSNorm/MatMul/packed-SiLU 共 7/19 类可执行，Windows 定向测试通过；其他 12 类 reference、三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。"
+      "summary": "compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select 与既有 RMSNorm/MatMul/packed-SiLU 共 10/19 类可执行，Windows 定向测试通过；其他 9 类 reference、三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。"
     }
   ]
 }

@@ -21,6 +21,9 @@ sampling 和 serving 留在推理引擎。
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
+| 单目计算/激活 | `Unary` | f32 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU；dense 一次 SIMD，plain stride 可 materialize |
+| 双目计算 | `Binary` | f32 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
+| 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
 | normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
@@ -30,8 +33,8 @@ sampling 和 serving 留在推理引擎。
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
 gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
-**当前可执行 provider 签发 View、Copy、Fill、Cast、RMSNorm、rank-2 MatMul 和 packed SiLU
-GatedActivation 七项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 12 个
+**当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、RMSNorm、rank-2 MatMul 和
+packed SiLU GatedActivation 十项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 9 个
 family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
 
 ## View、Copy、Fill 与 Cast
@@ -77,6 +80,26 @@ auto invocation = prepared_fill->create_invocation();
 if (!invocation) return invocation.error();
 auto done = invocation->submit(queue, output_view);
 ```
+
+## Elementwise 与广播
+
+`Unary`、`Binary` 与 `Select` 的 typed `prepare()` 都会推导 dense 输出，不要求调用者重复写 output descriptor。
+Unary/Binary 当前 arithmetic route 是 f32；Select 不做数值转换，因此可选择全部已登记的普通 1/2/4/8-byte
+scalar storage。Binary 和 Select 使用 NumPy-style 尾轴对齐广播，输入也可携带普通 byte stride；输出始终
+materialize 为 dense storage。
+
+```cpp
+auto activated = prepare(context, Unary{UnaryKind::kSilu}, logits_desc);
+auto residual = prepare(context, Binary{BinaryKind::kAdd}, hidden_desc,
+                        residual_desc);
+auto chosen = prepare(context, Select{}, condition_desc, true_desc,
+                      false_desc);
+```
+
+dense、等形路线可让 output 精确 alias 任一由 operation traits 允许的输入；provider 此时只建立一个
+read-write mapping。广播或 strided 输入不能 alias 输出，因为逐坐标 materialization 可能覆盖尚未读取的
+元素。partial overlap 在通用 runtime 更早被拒绝。`Minimum/Maximum` 使用 `std::fmin/std::fmax` 语义：单侧
+NaN 选择另一侧数值，并保留 IEEE signed-zero 规则；它们不是由某条 ISA 的偶然 min/max 行为定义。
 
 ## 普通、block 与 opaque storage
 

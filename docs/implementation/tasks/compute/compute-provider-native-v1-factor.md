@@ -96,7 +96,12 @@ gated MLP、softmax/top-k 与分块 SDPA 纵切；peer 优先 ggml/oneDNN 的同
   copy，合法的非自然对齐 stride 不触发 C++ UB。Cast 明确为 out-of-place；旧 schema 允许 input/output
   等范围 alias 会令 strided materialization 覆盖尚未读取的元素，现已收紧并有回归。整数/Bool/f64 转换的越界/NaN/overflow 语义没有在 v1
   card 冻结，因此继续返回 `Unimplemented`，不以实现语言的偶然规则冒充产品合同。
+- `Unary` 的 12 个 f32 mode、`Binary` 的 6 个 f32 mode 与 `Select` 已取得 executable route。dense 等形
+  arithmetic 每个 tensor 只调用一次现有 SIMD；NumPy-style broadcast 与任意 plain stride 走有界 rank 的
+  scalar reference，不在 element loop 做 ISA/provider dispatch。Select 对全部 1/2/4/8-byte scalar branch
+  原样选择 bits。dense 等形输入可精确 alias 输出，映射只打开一次；broadcast/strided alias 会覆盖尚未读取
+  数据，因此 submit 明确拒绝。`Minimum/Maximum` 冻结为 `fmin/fmax` 的 NaN 与 signed-zero 语义。
 
-本卡仍为 `AUDITED`，且当前 family 进度必须按 **7/19 executable** 计算。其余 12 个 family 的正确 CPU
+本卡仍为 `AUDITED`，且当前 family 进度必须按 **10/19 executable** 计算。其余 9 个 family 的正确 CPU
 reference、逐 op shape/dtype/layout/alias/error 测试、七条有限 P1、三平台与 sanitizer 尚未实现；schema
 存在不能冒充 native provider 已支持执行。

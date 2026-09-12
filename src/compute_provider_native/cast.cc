@@ -15,8 +15,8 @@ namespace hyle::compute::native::internal {
 namespace {
 
 template <class Source, class Destination>
-void convert_linear(const void *source, void *destination,
-                    std::size_t count) noexcept {
+void convert_linear(const void *source, const void *, const void *,
+                    void *destination, std::size_t count) noexcept {
   if constexpr (std::is_same_v<Source, Destination>) {
     std::copy_n(static_cast<const Source *>(source), count,
                 static_cast<Destination *>(destination));
@@ -57,7 +57,8 @@ template <class Value> Value encode(float value) noexcept {
 }
 
 template <class Source, class Destination>
-void convert_scalar(const std::byte *source, std::byte *destination) noexcept {
+void convert_scalar(const std::byte *source, const std::byte *,
+                    const std::byte *, std::byte *destination) noexcept {
   // Public byte strides need not preserve natural C++ alignment. Keep the
   // reference materializer defined for those legitimate layouts.
   Source input{};
@@ -70,8 +71,8 @@ template <class Source>
 bool select_destination(DataType destination, NativePlan &plan) noexcept {
 #define HYLE_NATIVE_SELECT_CAST(data_type, cpp_type)                           \
   case DataType::data_type:                                                    \
-    plan.linear_transform_route = &convert_linear<Source, cpp_type>;           \
-    plan.scalar_transform_route = &convert_scalar<Source, cpp_type>;           \
+    plan.linear_elementwise_route = &convert_linear<Source, cpp_type>;         \
+    plan.scalar_elementwise_route = &convert_scalar<Source, cpp_type>;         \
     return true
 
   switch (destination) {
@@ -109,8 +110,8 @@ Result<Completion> submit_cast(const NativePlan &plan,
                                std::span<const ConstTensorView> inputs,
                                std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 1 || outputs.size() != 1 ||
-      plan.linear_transform_route == nullptr ||
-      plan.scalar_transform_route == nullptr) {
+      plan.linear_elementwise_route == nullptr ||
+      plan.scalar_elementwise_route == nullptr) {
     return completed(Status::Internal("native cast plan is invalid"));
   }
   const std::size_t elements = plan.parameters[0];
@@ -158,15 +159,16 @@ Result<Completion> submit_cast(const NativePlan &plan,
   }
 
   if (plan.parameters[1] != 0) {
-    plan.linear_transform_route(source, destination, elements);
+    plan.linear_elementwise_route(source, nullptr, nullptr, destination,
+                                  elements);
   } else {
     const TensorDesc &description = inputs[0].description();
     const std::size_t destination_size =
         data_type_size(outputs[0].description().data_type());
     for (std::size_t linear = 0; linear < elements; ++linear) {
-      plan.scalar_transform_route(source +
-                                      logical_byte_offset(description, linear),
-                                  destination + linear * destination_size);
+      plan.scalar_elementwise_route(
+          source + logical_byte_offset(description, linear), nullptr, nullptr,
+          destination + linear * destination_size);
     }
   }
 

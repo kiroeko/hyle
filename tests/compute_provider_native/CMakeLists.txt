@@ -4,4 +4,5 @@ hyle_add_header_self_contained_test(compute_provider_native
 hyle_add_test(compute_provider_native SOURCES
   ../compute/operation_test.cc
   cast_test.cc
+  elementwise_test.cc
   transform_test.cc)
