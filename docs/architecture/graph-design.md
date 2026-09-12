@@ -1,10 +1,10 @@
 # HYLE Graph：计算 DAG、编译与可复用执行计划
 
 > 决策状态：`ACCEPTED`。本文定义 Graph 的长期产品合同；当前实现状态只查
-> [`module-status.json`](../implementation/module-status.json)。当前 Graph 仍为 `AUDITED`，多节点 CPU
-> 纵切只证明本轮登记的 DAG/Executable/Invocation 合同。旧 `TaskGraph`、parallel/data-parallel API 与
-> benchmark 已退出产品树；被删除的旧字节只可从 Git 历史取得调查事实，历史 task/evidence 不是当前
-> 设计输入、实现模板或用户承诺。本页不签发用户可用性，也不要求兼容旧头。
+> [`module-status.json`](../implementation/module-status.json)。每轮纵切只证明其 closure card 登记的
+> DAG/Executable/Invocation 合同。旧 `TaskGraph`、parallel/data-parallel API 与 benchmark 已退出产品树；
+> 被删除的旧字节只可从 Git 历史取得调查事实，历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
+> 本页不签发用户可用性，也不要求兼容旧头。
 
 ## 1. Graph 解决什么问题
 
@@ -174,8 +174,11 @@ Graph 至少要用三种不同层级验证：
 unsupported op、OOM、provider failure、device loss、取消、迟到 completion、并发 Invocation、重复 reset、
 partial compile failure 和销毁顺序。
 
-Graph 的价值不要求每个 node 都由 HYLE kernel 获胜。它必须证明选择和组合没有 material 税，并在至少
-一个真实 multi-op workload 上通过减少 submission、copy、repack、allocation 或同步形成可解释收益。
+Graph 的价值不要求每个 node 都由 HYLE kernel 获胜。基础 Graph factor 必须先证明选择和组合没有
+material 税。减少 submission、copy、repack、allocation 或同步的收益，只能在 provider region、fusion
+或跨设备 copy planning 已进入相应 closure card 后测量；没有这些变换的 CPU direct-composition 纵切不得
+为了制造 `WIN` 改变接口或测试边界。长期 Graph 产品在进入完整发布裁决前，仍须在至少一个真实 multi-op
+provider/backend workload 上形成可解释收益。
 
 ## 10. 首轮纵切和停止点
 

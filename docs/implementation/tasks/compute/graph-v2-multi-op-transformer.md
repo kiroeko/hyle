@@ -251,3 +251,73 @@ order 必须在正式合同中同时覆盖，若 instrument controls 或 5% non-
 版本化 bundle 为
 [`graph-multi-op-tax-p1-v1-eb740c2e-w1-win`](../../../../evidence/performance/graph-multi-op-tax-p1-v1-eb740c2e-w1-win/)；
 本结果只关闭 multi-op composition-tax 性能项，不替代三平台 correctness、sanitizer、三交付和终局红队。
+
+## 七问终局答案
+
+1. **第三方路径**：`graph` factor 没有直接第三方依赖或 vendor 类型；它只通过公开 Compute 合同持有
+   prepared artifact。Graph 产品 façade 可选择已经独立关闭的 oneDNN provider，但 Graph IR、编译器、
+   workspace 和 Invocation 不依赖 oneDNN/ggml/CUDA/Metal/Vulkan/HIP 实现细节。
+2. **功能完整**：本轮完整拥有 dynamic typed DAG、多输入/多输出、分支与共享值、不可表示环的拓扑构建、
+   shape/layout propagation、CPU liveness/workspace planning、外部 alias 校验、CompileReport、共享
+   Executable 和每次运行独占 Invocation。provider partition/fusion、GPU placement/copy、动态 shape、控制流、
+   serialization/cache schema 与模型 scheduler 是明确未冒充完成的后续卡，不是本轮遗漏入口。
+3. **内部复用**：公开边只指向 `core/error/compute/mem`；growable metadata 和 intrusive owner 私下复用
+   `container/util_core`，中间存储直接复用 Mem `LifetimePlanner/PlannedBuffers`。Graph 没有复制 allocator、
+   tensor、error、queue、scheduler、refcount 或 lifetime planner，也没有让 Compute 反向依赖 Graph。
+4. **性能**：compile 为 O(V+E) 且允许有界冷路径分配；create/bind 在 steady execute 外完成。submit 为
+   O(nodes+bindings)，每 node 一次已经 prepare 的调用，零 heap、route search、JIT、packing、tensor-byte
+   copy、Graph lock/wake/syscall。正式三算子 P1 的 16/16 strata 全部为 `PARITY/PASS` 并通过固定 5%
+   non-inferiority；本轮没有 region/fusion，因而不虚报 Graph 胜过相同 direct sequence。
+5. **交付边界**：公开面只有自然 C++23 `GraphBuilder -> Graph -> compile -> Executable -> Invocation`；
+   ID 带 graph generation，昂贵 compile/create 与重复 submit 分离，没有旧 TaskGraph、Native FFI、vendor
+   handle、benchmark knob 或固定三节点 façade。
+6. **构建交付**：中央 component graph 是唯一依赖真相，`src/graph/CMakeLists.txt` 只登记产品源码。
+   Windows、Linux、MacBook Air、Mac mini 均通过 source embedding、relocated installed shared 和 relocated
+   installed static consumer；shared export hygiene 未泄漏 C/vendor/私有入口。
+7. **易用与文档**：公开 guide 给出构图、compile、workspace、bind、重复 submit 的完整 journey，并明确
+   ID origin、output publication、alias、Invocation 单 owner、并发和当前 CPU/算子限制。架构文档只保存长期
+   决策，当前状态只由 registry 指向本记录，未把历史 benchmark 或未来 backend 写成已交付能力。
+
+## Terminal record（2026-09-12）
+
+不可变产品候选为 `df6981ad942c7e9f3620785af2a730079b6b1433`。候选到终局的
+`include/hyle/graph` 与 `src/graph` 差异为空；候选后的唯一 Graph 代码增量是测试中逐个 compile metadata
+allocation failure 的故障注入扫点，不改变公开 API、layout、算法、常态 metadata 或交付依赖。
+
+| Gate | 候选绑定证据 | Verdict |
+|---|---|---|
+| scope | G20--G27 全部完成；G28 拒绝，G29 依法留给独立 provider/region 卡；正交分支/共享值 journey 证明产品不是 transformer benchmark 顺序表 | `PASS` |
+| architecture | immutable Graph/Executable 与 per-run Invocation 分离；Compute prepared artifact、Mem lifetime plan、Container/Util metadata 各有唯一 owner；无反向依赖或第三公开 Plan 产品 | `PASS` |
+| correctness | Windows、Linux、两台 Apple Silicon 的 public-header 与 Graph 套件通过；branch、共享值、多输出、ID origin/exhaustion、shape recovery、alias/liveness、并发 Invocation、reset/reuse、owner lifetime、跨 Context Queue、workspace alignment/shortage 均覆盖 | `PASS` |
+| delivery | 四台验证机的 source/shared/static relocated consumer 全过；Windows shared 扫描 7 个 HYLE libraries、771 exports，无私有或 vendor 泄漏 | `PASS` |
+| usability_docs | Graph user guide、架构决策、本卡与公开声明共同说明完整 C++ journey、owner、成本和限制；状态只查 registry | `PASS` |
+| red_team | 有界复核全部公开入口、OOM/rollback、销毁序、并发、alias、partial compile、依赖、benchmark seam 和苹果/橘子风险；补齐每一个实际 compile allocation 点失败后立即重试的扫点，未发现候选产品反证 | `PASS` |
+| engineering_performance | P0 成本结构通过；`graph-multi-op-tax-p1-v1` 为 `QUALIFIED/CURRENT/EXACT`，16/16 `PARITY` 且固定 5% non-inferiority 全过 | `PASS` |
+
+代表性验证与结果：
+
+```text
+python scripts/hyle-perf.py verify --contract bench/contracts/graph-multi-op-tax-p1-v1.json --manifest evidence/performance/graph-multi-op-tax-p1-v1-eb740c2e-w1-win/manifest.json
+ctest --test-dir <graph-targeted> -L graph --output-on-failure
+ctest --test-dir <linux-asan|ubsan|tsan> -L graph --output-on-failure
+cmake -DHYLE_SMOKE_COMPONENT=graph -P cmake/HyleCiSelectedComponentSmoke.cmake
+python scripts/check-shared-export-hygiene.py --root <relocated-shared-sdk>
+```
+
+Windows fresh candidate 测试为 `2/2 PASS`；Linux ASan、UBSan、TSan 在新增 exhaustive OOM sweep 后各为
+`2/2 PASS`，零 report。MacBook Air 与 Mac mini 的 exact-source Graph/header 各为 `2/2 PASS`；四台机器
+的三交付均实际构建并运行多节点 Graph consumer。远程/WSL 副本只用于验证，没有反向覆盖 Windows
+canonical checkout。
+
+公开限制：本轮只有同步 CPU execution 与 RMSNorm、MatMul、SiluAndMul；compile/create 可分配，
+Invocation 为 single-owner，多个 Invocation 才可并发；caller 绑定的 payload、Queue 和 Context 必须满足
+文档寿命；provider failure 后 output 可以部分写入。只有可复现 correctness/security/lifetime/alias 缺陷、
+真实消费者要求本模块 owner 下的 provider partition/fusion、GPU placement/copy、动态 shape/serialization，
+公开合同/算法/交付变化、相关依赖升级，或合格同合同证据显示 material regression 才能重开；后续 epic
+能力必须建立新 closure card，不能回写本 terminal record。
+
+`python scripts/loc-report.py --module graph --commit df6981ad942c --self-check` 为 `PASS`：候选全库
+`563,481` 行、自实现不含测试 `99,014` 行、Graph 实现 `1,414` 行。七门全部 `PASS`，Graph v2 裁决为
+**`CLOSED`**。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

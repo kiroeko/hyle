@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <thread>
 #include <utility>
@@ -192,13 +193,23 @@ struct AllocatorProbe final {
   AllocatorRef backing = hyle::mem::system_allocator();
   std::atomic<std::size_t> allocations{0};
   std::atomic<std::size_t> deallocations{0};
+  std::atomic<std::size_t> attempts{0};
+  std::atomic<std::size_t> fail_on_attempt{
+      (std::numeric_limits<std::size_t>::max)()};
   std::atomic<bool> fail{false};
 };
+
+bool should_fail(AllocatorProbe &probe) noexcept {
+  if (probe.fail.load())
+    return true;
+  const std::size_t attempt = probe.attempts.fetch_add(1);
+  return attempt == probe.fail_on_attempt.load();
+}
 
 void *probe_allocate(void *opaque, std::size_t size,
                      std::size_t alignment) noexcept {
   auto &probe = *static_cast<AllocatorProbe *>(opaque);
-  if (probe.fail.load())
+  if (should_fail(probe))
     return nullptr;
   void *result = probe.backing.allocate(size, alignment);
   if (result != nullptr)
@@ -217,7 +228,7 @@ void probe_free(void *opaque, void *pointer, std::size_t size,
 void *probe_reallocate(void *opaque, void *pointer, std::size_t old_size,
                        std::size_t new_size, std::size_t alignment) noexcept {
   auto &probe = *static_cast<AllocatorProbe *>(opaque);
-  if (probe.fail.load())
+  if (should_fail(probe))
     return nullptr;
   return probe.backing.reallocate(pointer, old_size, new_size, alignment);
 }
@@ -382,6 +393,37 @@ TEST(GraphCompile, ReportsInvalidClosedAndMetadataAllocationFailures) {
   auto invocation = executable.create_invocation();
   ASSERT_FALSE(invocation.has_value());
   EXPECT_TRUE(invocation.error().IsResourceExhausted());
+}
+
+TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
+  AllocatorProbe probe;
+  Context context =
+      Context::create(Device::cpu(),
+                      {.metadata_allocator = probe_allocator(probe)})
+          .value();
+  const LogicalGraph logical = make_transformer_graph(2, 4, 4);
+
+  probe.attempts = 0;
+  {
+    auto successful = hyle::graph::compile(logical.graph, context);
+    ASSERT_TRUE(successful.has_value());
+  }
+  const std::size_t compile_attempts = probe.attempts.load();
+  ASSERT_GT(compile_attempts, 1u);
+
+  for (std::size_t failure = 0; failure < compile_attempts; ++failure) {
+    probe.attempts = 0;
+    probe.fail_on_attempt = failure;
+    auto failed = hyle::graph::compile(logical.graph, context);
+    ASSERT_FALSE(failed.has_value()) << "allocation attempt " << failure;
+    EXPECT_TRUE(failed.error().IsResourceExhausted())
+        << "allocation attempt " << failure;
+
+    probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
+    probe.attempts = 0;
+    auto retried = hyle::graph::compile(logical.graph, context);
+    ASSERT_TRUE(retried.has_value()) << "allocation attempt " << failure;
+  }
 }
 
 TEST(Invocation, SubmitDoesNotAllocatePlanMetadata) {
