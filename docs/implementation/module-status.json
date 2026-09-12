@@ -378,8 +378,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "QUEUED",
-      "summary": "为经审计的 ggml compiled-region provider 保留组件身份；当前没有 target、依赖、公开头、产品投影、构建开关或已承诺能力。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-provider-ggml-v1.md",
+      "summary": "compute_provider_ggml v1 已冻结 CPU compiled-region 审计范围、真实/反偏置纵切、预算和停止线；当前只有空内部 factor target，没有依赖、公开头、产品投影、构建开关或已承诺能力。"
     }
   ]
 }

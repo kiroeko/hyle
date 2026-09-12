@@ -342,10 +342,10 @@ _hyle_declare_component(compute_provider_onednn
   PUBLIC_DEPS compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/onednn.h)
 
-# Reserved identity for a future audited ggml compiled-region provider.
-# QUEUED factors intentionally have no target, dependencies, headers, product
-# projection or feature switch until their own closure card reaches AUDITED.
-_hyle_declare_component(compute_provider_ggml QUEUED)
+# Active SCOPED identity for the ggml compiled-region provider audit.  It owns
+# no product capability, dependency, public header or feature switch until the
+# audit freezes those facts and advances the component to AUDITED.
+_hyle_declare_component(compute_provider_ggml)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
