@@ -127,6 +127,17 @@ HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Select operation, TensorDesc condition,
         TensorDesc when_true, TensorDesc when_false) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Reduce operation, TensorDesc input) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, LayerNorm operation, TensorDesc input) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
+                                                   LayerNorm operation,
+                                                   TensorDesc input,
+                                                   TensorDesc scale) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, LayerNorm operation, TensorDesc input,
+        TensorDesc scale, TensorDesc bias) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
                                                    RmsNorm operation,
                                                    TensorDesc input,

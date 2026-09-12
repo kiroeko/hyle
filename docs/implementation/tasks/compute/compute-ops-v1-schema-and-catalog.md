@@ -161,6 +161,7 @@ visibility owner，但 Compute 产品 façade 聚合后，用户仍只 include `
   Windows factor-only、Compute 聚合与 Graph consumer 测试通过。广播 span 生命周期、RoPE 负轴、零 extent
   乘法顺序和未知 enum mode 的红队缺陷已在本 checkpoint 修复；
 - 这不是 terminal record，也不改变 `AUDITED`：View、Copy、Fill、Cast、Unary、Binary、Select、RMSNorm、
-  rank-2 MatMul 和 packed SiLU GatedActivation 已取得 native executable route，其他 9 个 family 尚未取得；三平台/property/sanitizer 与完整
+  Reduce、RMSNorm、LayerNorm、rank-2 MatMul 和 packed SiLU GatedActivation 已取得 native executable route，
+  其他 7 个 family 尚未取得；三平台/property/sanitizer 与完整
   direct/Graph journey 仍按 closure card 待执行。用户文档将“可描述”与“可执行”分开，不把 schema
   存在宣称成 kernel 支持。

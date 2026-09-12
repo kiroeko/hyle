@@ -389,6 +389,20 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
+  case OperationKind::kReduce: {
+    Status status =
+        internal::prepare_reduction(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
+  case OperationKind::kLayerNorm: {
+    Status status =
+        internal::prepare_layer_norm(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   case OperationKind::kRmsNorm: {
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())

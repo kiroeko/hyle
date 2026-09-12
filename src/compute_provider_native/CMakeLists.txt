@@ -6,6 +6,8 @@ hyle_add_module(compute_provider_native SOURCES
   cast.cc
   elementwise.cc
   native_provider.cc
+  normalization.cc
+  reduction.cc
   transform.cc)
 target_include_directories(hyle_compute_provider_native PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute")

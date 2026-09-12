@@ -24,7 +24,8 @@ sampling 和 serving 留在推理引擎。
 | 单目计算/激活 | `Unary` | f32 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU；dense 一次 SIMD，plain stride 可 materialize |
 | 双目计算 | `Binary` | f32 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
 | 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
-| normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
+| reduction | `Reduce` | f32 Sum/Mean/Min/Max；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
+| normalization | `RmsNorm` / `LayerNorm` | dense f32 `[..., hidden]`；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；逐 row、允许精确 input/output in-place |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
@@ -33,8 +34,8 @@ sampling 和 serving 留在推理引擎。
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
 gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
-**当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、RMSNorm、rank-2 MatMul 和
-packed SiLU GatedActivation 十项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 9 个
+**当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、
+rank-2 MatMul 和 packed SiLU GatedActivation 十二项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 7 个
 family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
 
 ## View、Copy、Fill 与 Cast
@@ -100,6 +101,26 @@ dense、等形路线可让 output 精确 alias 任一由 operation traits 允许
 read-write mapping。广播或 strided 输入不能 alias 输出，因为逐坐标 materialization 可能覆盖尚未读取的
 元素。partial overlap 在通用 runtime 更早被拒绝。`Minimum/Maximum` 使用 `std::fmin/std::fmax` 语义：单侧
 NaN 选择另一侧数值，并保留 IEEE signed-zero 规则；它们不是由某条 ISA 的偶然 min/max 行为定义。
+
+## Reduction 与 LayerNorm
+
+`Reduce` 的 typed `prepare()` 根据 axis 和 `keep_dimensions` 推导 dense output。当前 Native route 支持 f32
+Sum/Mean/Minimum/Maximum；任意普通 byte-strided input 都按逻辑坐标读取，dense reduce-all 和最后一轴
+Sum/Mean 走已有 SIMD reduction。空集合约定为 Sum=0、Mean=NaN、Minimum=+infinity、Maximum=-infinity；
+Min/Max 遇到任一 NaN 会传播 NaN。Reduce 不允许 output alias input。
+
+`LayerNorm` 对最后一轴逐 row 计算，可不带参数、只带 scale，或同时带 scale+bias；三种 typed prepare 都
+自动推导与 input 同形的 dense output。output 可以精确 alias input，但不能 alias scale/bias。当前只签发
+dense f32 storage 与 f32 accumulation；f16/bf16 等窄 storage 由后续 provider 资格化，不发生隐藏 Cast。
+
+```cpp
+auto reduced = prepare(context,
+                       Reduce{.kind = ReductionKind::kMean,
+                              .axes = Axes::all()},
+                       input_desc);
+auto normalized = prepare(context, LayerNorm{.epsilon = 1.0e-5F},
+                          input_desc, scale_desc, bias_desc);
+```
 
 ## 普通、block 与 opaque storage
 

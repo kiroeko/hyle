@@ -11,6 +11,11 @@
 namespace hyle::compute::native::internal {
 
 struct NativePlan;
+enum class ReductionRoute : std::uint8_t {
+  kGeneral = 0,
+  kAllDense,
+  kLastAxisDense,
+};
 using SubmitRoute = Result<Completion> (*)(
     const NativePlan &plan, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept;
@@ -30,6 +35,9 @@ struct NativePlan final {
   detail::NativeParameters parameters{};
   float scalar = 0.0F;
   std::uint64_t scalar_bits = 0;
+  ReductionKind reduction_kind = ReductionKind::kSum;
+  ReductionRoute reduction_route = ReductionRoute::kGeneral;
+  std::uint8_t reduction_axes_mask = 0;
   detail::NativeRoute route = nullptr;
   LinearElementwiseRoute linear_elementwise_route = nullptr;
   ScalarElementwiseRoute scalar_elementwise_route = nullptr;
@@ -107,5 +115,13 @@ Status prepare_elementwise(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,
                            NativePlan &plan) noexcept;
+Status prepare_reduction(Operation operation,
+                         std::span<const TensorDesc> inputs,
+                         std::span<const TensorDesc> outputs,
+                         NativePlan &plan) noexcept;
+Status prepare_layer_norm(Operation operation,
+                          std::span<const TensorDesc> inputs,
+                          std::span<const TensorDesc> outputs,
+                          NativePlan &plan) noexcept;
 
 } // namespace hyle::compute::native::internal

@@ -45,9 +45,9 @@
 | io_websocket | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md) | io_websocket v2 CLOSED：两个私有 coroutine 显式保留 frame allocator 使用；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本及 v1 P1 结论不变。 |
 | compute_provider_onednn | AUDITED | — | [record](tasks/compute/compute-provider-onednn-v3-runtime-replay.md) | compute_provider_onednn v3 AUDITED：D30--D34 已迁移开放 identity、CPU binding/submit、显式 fallback sequence 与 factor 边，Windows 定向测试及三种交付通过；BRGEMM 算法不变，尚待 runtime terminal、三平台/sanitizer/export/P0 回放。 |
 | compute_provider_ggml | SCOPED | — | [record](tasks/compute/compute-provider-ggml-v1.md) | compute_provider_ggml v1 已完成首遍源码审计并产生 Compute block storage 与 Graph constant/region 两个有序前置 trigger；当前保持 SCOPED 空 factor，没有依赖、公开头、产品投影、构建开关或已承诺能力。 |
-| compute_ops | AUDITED | — | [record](tasks/compute/compute-ops-v1-schema-and-catalog.md) | compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 10 个已有 native executable route，其余 9 个及终局验证尚未完成。 |
+| compute_ops | AUDITED | — | [record](tasks/compute/compute-ops-v1-schema-and-catalog.md) | compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 12 个已有 native executable route，其余 7 个及终局验证尚未完成。 |
 | compute_backend_cpu | AUDITED | — | [record](tasks/compute/compute-backend-cpu-v1-factor.md) | compute_backend_cpu v1 AUDITED：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现并通过 Windows 三交付；依赖 runtime 终局证据后才能关闭。 |
-| compute_provider_native | AUDITED | — | [record](tasks/compute/compute-provider-native-v1-factor.md) | compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select 与既有 RMSNorm/MatMul/packed-SiLU 共 10/19 类可执行，Windows 定向测试通过；其他 9 类 reference、三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。 |
+| compute_provider_native | AUDITED | — | [record](tasks/compute/compute-provider-native-v1-factor.md) | compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select、Reduce、RMSNorm/LayerNorm、MatMul 与 packed-SiLU 共 12/19 类可执行，Windows 定向测试通过；先转去完成 Graph v3 合同，再由真实图缺口驱动其他 7 类；三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

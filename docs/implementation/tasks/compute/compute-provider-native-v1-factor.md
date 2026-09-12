@@ -101,7 +101,16 @@ gated MLP、softmax/top-k 与分块 SDPA 纵切；peer 优先 ggml/oneDNN 的同
   scalar reference，不在 element loop 做 ISA/provider dispatch。Select 对全部 1/2/4/8-byte scalar branch
   原样选择 bits。dense 等形输入可精确 alias 输出，映射只打开一次；broadcast/strided alias 会覆盖尚未读取
   数据，因此 submit 明确拒绝。`Minimum/Maximum` 冻结为 `fmin/fmax` 的 NaN 与 signed-zero 语义。
+- `Reduce` 的 Sum/Mean/Minimum/Maximum 已覆盖任意 axis 集、负 axis、keep-dim、dense output 与普通 byte-
+  strided f32 input；dense reduce-all/最后一轴 Sum/Mean 直接复用整段 SIMD reduction，其余走同语义 scalar
+  oracle。空 reduction 的 identity、Mean NaN、first NaN propagation 与 signed zero 已固定；submit 为
+  O(input elements * bounded rank + output elements)、O(1)，不分配、不锁、不重新选择路线。
+- `LayerNorm` 已覆盖 dense f32 `[..., hidden]` 的 non-affine、scale-only、scale+bias 与 input/output 精确
+  in-place；每 row 复用已冻结 SIMD primitive，scale-only 由 normalization 后的整 row multiply 组合，不在
+  element loop 做 dispatch。typed prepare 自动推导输出，参数 storage 不得 alias output；空 hidden 是 no-op。
 
-本卡仍为 `AUDITED`，且当前 family 进度必须按 **10/19 executable** 计算。其余 9 个 family 的正确 CPU
+本卡仍为 `AUDITED`，且当前 family 进度必须按 **12/19 executable** 计算。现有 12 个代表 family 已足够
+支撑 Graph v3 的真实多节点纵切；因此暂停横向补齐 Native 目录，先完成 constant/general arity/effect/
+region/partition/liveness/workspace/report 等 Graph 合同，之后再由真实图缺口驱动其余 7 个 family。剩余
 reference、逐 op shape/dtype/layout/alias/error 测试、七条有限 P1、三平台与 sanitizer 尚未实现；schema
 存在不能冒充 native provider 已支持执行。

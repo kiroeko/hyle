@@ -368,7 +368,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 10 个已有 native executable route，其余 9 个及终局验证尚未完成。"
+      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 12 个已有 native executable route，其余 7 个及终局验证尚未完成。"
     },
     {
       "module": "compute_backend_cpu",
@@ -380,7 +380,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select 与既有 RMSNorm/MatMul/packed-SiLU 共 10/19 类可执行，Windows 定向测试通过；其他 9 类 reference、三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。"
+      "summary": "compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select、Reduce、RMSNorm/LayerNorm、MatMul 与 packed-SiLU 共 12/19 类可执行，Windows 定向测试通过；先转去完成 Graph v3 合同，再由真实图缺口驱动其他 7 类；三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。"
     }
   ]
 }
