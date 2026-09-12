@@ -175,6 +175,79 @@ patch、ARM execute、公开 tiling knob、K-partition reduction、weight packin
 - 正式 P1、Windows 定向 correctness/allocation 和 Windows 三交付已经完成，有限 OD2-01--OD2-08
   产品实现集没有未处理项，因此依法进入 `CANDIDATE`，不再以验证结果微调产品。
 
-本轮尚未终局：Linux x64 correctness/package/sanitizer、Apple ARM negative capability、离线 lock/license
-复核和终局 red-team 仍待执行；这些适用风险项没有结果前不能写成 `PASS`，registry 保持
-`CANDIDATE`，而不是 `CLOSED`。
+候选后的剩余验证现已完成；它们没有修改公开 API、layout、算法、常态 metadata、依赖版本或产品
+源码。终局只补充候选绑定证据、状态和文档，不重新运行已经完成的 P1。
+
+## 七问终局答案
+
+1. **第三方路径**：唯一产品第三方是私有、锁定的 oneDNN v3.13.2
+   `71094df45190`，Apache-2.0；lock、archive/hash、source cache、online/offline 和许可证投影均由中央
+   dependency contract 管理。provider 仅在 x86-64 可构建，ARM 的 `AUTO` 诚实关闭，显式 `ON` 在
+   configure 期给出不支持诊断；oneDNN 升级会触发源码、符号、六形状分配和交付重审。
+2. **功能完整**：本 factor 精确拥有 fixed-shape、dense row-major f32 MatMul 的 x64 BRGEMM provider，
+   覆盖真实 short-prefill 与普通 GEMM；串行 `M<16`、transpose、empty 和不支持形状沿同一个公开
+   ordered-provider journey 回到 HYLE-native/SIMD。量化、f16/bf16、post-op、persistent packing、ARM
+   provider 和 region partition 是已登记的独立后续能力，不被本 factor 冒充为已支持。
+3. **内部复用**：直接复用 Compute 的 Tensor/Operation、Provider、PreparedOperation、Invocation、
+   Completion、typed Status 和 native fallback，没有另建 tensor、queue、error、thread pool 或 runtime。
+   私有 ukernel 所需固定 64-byte scratch 算术不泄漏为公共内存机制，也不为两行局部算术扩大到 Mem
+   依赖。
+4. **性能**：prepare 冷路径承担 capability、JIT、kernel generation 和 scratch sizing；warm submit 为
+   O(MKN)+O(task count)，零 heap、packing、copy、JIT、descriptor/stream 创建和 provider search。
+   W1-WIN 同一 oneDNN ukernel 的完整 HYLE wrapper 对 direct C ukernel 的八个 order/placement strata
+   全为 `PARITY`，ratio `0.9925--1.0134`，99.26% CI 总范围 `0.9573--1.0485`，固定 5% non-inferiority
+   全部 `PASS`；它只签 serial f32 short-prefill，不外推到 decode、并行或其他 dtype/backend。
+5. **交付边界**：只有 C++ `onednn::provider()`；公开头不出现 oneDNN 类型，没有历史 C/Native FFI。
+   shared export 实测拒绝 `hyle_*` C 入口、`dnnl_*`、mimalloc 和 raw fcontext 符号。
+6. **构建交付**：Windows 与 Linux x64 的 source embedding、relocated shared、relocated static consumer
+   都实际选择并执行 oneDNN provider；MacBook Air 与 Mac mini 的 source/shared/static 均验证 ARM
+   feature-off native 产品，显式 feature-on 均按合同失败。static SDK 携带所需 ukernel headers/library/
+   license，shared SDK 不泄漏 vendor headers/symbols；离线正负合同通过。
+7. **易用与文档**：用户只需显式构造 provider、放入 Context、prepare、按报告申请 workspace 后 submit；
+   provider 的 x64/f32/layout 范围、executor 借用寿命、64-byte workspace、同步完成、partial-output failure
+   和 native fallback 均在 Compute guide 与公开声明附近说明，没有公开 tiling 或 benchmark knob。
+
+## Terminal record（2026-09-12）
+
+不可变产品候选是 `71f9de0cce8e6dd93a1bf3b2c6eb8f1e1f1b2cdb`。候选到终局的
+`include/`、`src/` 与产品依赖配置差异为空；唯一 CMake 差异是 selected-component 测试脚本的 script-mode
+host 探测修正，不改变 shipping target。适用验证如下：
+
+| Gate | 候选绑定证据 | Verdict |
+|---|---|---|
+| scope | OD2-01--OD2-08 全部完成；未增加公开 operation、vendor 类型或测试入口 | `PASS` |
+| architecture | `compute_provider_onednn -> compute` 唯一 HYLE 边；plan-owned immutable ukernel、invocation-owned run state/workspace、ordered native fallback | `PASS` |
+| correctness | Windows/MSVC 与 Linux/GCC 14 provider/header/Graph、六形状 warm allocation probe；Linux ASan 使用默认 fat SIMD，UBSan/TSan 使用 exact scalar SIMD 且同一 x64 oneDNN JIT 路线，均零 report；同 artifact 并发 invocation 与 nested executor 通过 | `PASS` |
+| delivery | Windows/Linux selected Compute source/shared/static relocated consumers通过；两台 Apple ARM 的三交付 feature-off 通过、feature-on 明确失败；实际导出、offline lock/license 正负合同通过 | `PASS` |
+| usability_docs | Compute user guide、distribution 与本卡描述完整公开 journey、owner、workspace、fallback 和限制 | `PASS` |
+| red_team | 有界复核 ownership、destroy order、同 artifact concurrency、tile/scratch 隔离、AMX thread context、OOM/overflow、partial output、vendor leakage 和 benchmark seam；未发现候选产品反证 | `PASS` |
+| engineering_performance | P0 成本结构通过；`compute-onednn-provider-p1-v1` 为 `QUALIFIED/CURRENT/EXACT`，8/8 `PARITY` 且固定 5% non-inferiority 全过 | `PASS` |
+
+代表性维护命令/receipt：
+
+```text
+cmake -DHYLE_SMOKE_COMPONENT=compute -P cmake/HyleCiSelectedComponentSmoke.cmake
+ctest --test-dir <linux-targeted> -L compute_provider_onednn --output-on-failure
+ctest --test-dir <linux-asan|ubsan|tsan> -R 'hyle_(compute_provider_onednn|graph)_test' --output-on-failure
+cmake -P cmake/HyleCiOfflineDependencyContract.cmake
+python scripts/hyle-perf.py verify --contract bench/contracts/compute-onednn-provider-p1-v1.json --manifest evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/manifest.json
+```
+
+Linux selected smoke 通过完整 source/shared/static relocated consumer；定向 provider/header/Graph 为
+`3/3 PASS`，六形状 allocation 为 `1/1 PASS`，ASan/UBSan/TSan 的 provider+Graph 各 `2/2 PASS`。
+MacBook Air `Mac16,12` 与 Mac mini `Mac16,10` 的 exact archive selected smoke 均通过三交付，且
+`HYLE_COMPUTE_ONEDNN=ON` 都以 `unsupported for Darwin/aarch64` 明确失败。远程副本只用于验证，没有
+反向覆盖 Windows canonical checkout。
+
+公开限制：本 factor 不提供 ARM、quantized、f16/bf16、post-op、persistent packing、通用并行 reduction
+或 region fusion；`dnnl_ukernel.h` 是精确 pin 下的私有 experimental dependency；Options 中 executor 是
+borrow，必须活过 Context；每次 invocation 需要报告大小且 64-byte aligned 的 caller workspace；backend
+failure 后 output 可以部分写入。只有 oneDNN 升级或 C API/source 变化、真实消费者需要本 factor 范围内
+缺失的 dtype/layout/region、可复现 correctness/lifetime/export 问题、公开合同/算法/交付改变，或合格同
+合同证据显示 material regression 才能重开。
+
+`python scripts/loc-report.py --module compute_provider_onednn --commit 71f9de0c --self-check --json`
+为 `PASS`：候选全库 `564,724` 行、自实现不含测试 `99,000` 行、本 factor 实现 `393` 行。七门全部
+`PASS`，`compute_provider_onednn` v2 裁决为 **`CLOSED`**。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
