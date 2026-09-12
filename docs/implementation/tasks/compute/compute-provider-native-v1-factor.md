@@ -114,3 +114,10 @@ gated MLP、softmax/top-k 与分块 SDPA 纵切；peer 优先 ggml/oneDNN 的同
 region/partition/liveness/workspace/report 等 Graph 合同，之后再由真实图缺口驱动其余 7 个 family。剩余
 reference、逐 op shape/dtype/layout/alias/error 测试、七条有限 P1、三平台与 sanitizer 尚未实现；schema
 存在不能冒充 native provider 已支持执行。
+
+### Apple portability checkpoint（2026-09-13）
+
+Graph v5 的真实 Apple 回放在 `submit_copy` 中发现一个只被 MSVC/GCC 漏报的未使用局部变量；它不参与
+strided copy 的地址计算，也不属于任何公开合同。该变量已删除，Windows 的 Native provider 与 Graph
+定向测试通过。此修正只解除 AppleClang `-Werror` 编译阻塞，不增加 family、不改变 route、复杂度、布局
+或 steady path；Apple 候选回放的最终结果仍由对应 Graph 记录签发。

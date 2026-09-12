@@ -92,7 +92,6 @@ Result<Completion> submit_copy(const NativePlan &,
         "CPU copy mapping does not satisfy tensor alignment"));
   }
 
-  const auto dimensions = input_desc.dimensions();
   for (std::size_t linear = 0; linear < *elements; ++linear) {
     const std::size_t source_offset = logical_byte_offset(input_desc, linear);
     std::memcpy(destination + linear * element_size, source + source_offset,
