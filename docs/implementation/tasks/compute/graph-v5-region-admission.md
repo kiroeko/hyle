@@ -92,6 +92,28 @@ placement 或 operator catalog。
 
 ## 红队与裁决
 
-- 当前状态：`CANDIDATE`；G50--G54 已实现，Windows Graph/oneDNN 定向 correctness 与 public-header
-  self-containment 通过。仍待 exact-candidate source/static/shared、P0 静态账单、终局红队与跨平台回放，
-  不能提前写成 `CLOSED`。
+- G50--G54 均已实现。终局验证载体为 `e0b0eb68`；从产品候选 `fd4ef058` 到该载体，
+  `include/hyle/graph`、`src/graph` 与 `tests/graph` 的 diff 为空。载体只叠加了独立的可选 compiled-factor
+  构建修正和一个 Native provider AppleClang 告警修正，不改变 Graph 候选。
+- 红队逐项复核 invalid enum、unknown/zero/positive estimate、全局/逐 provider 预算、相邻与重叠区间、
+  provider/dispatch tie-break、extension v1/v2 隔离、partial compile rollback 和异步 prefix lifetime，未发现
+  候选后产品缺陷。被策略明确排除的 zero/unknown proposal 不贡献 cost；所有可能进入选择集的 proposal
+  都先验证非零 dispatch。排序键、DP 排除优先和 route/proposal order 共同给出重复编译稳定结果。
+- P0 静态账单：变化只发生在 compile 冷路径。proposal discovery 仍为 `O(P+Q)`，排序与 predecessor
+  查找仍为 `O(Q log Q)`，DP 与回溯仍为 `O(Q)`；新增成本是一项候选 provider index、每个 DP score 的
+  dispatch/provider-rank 字段和 optional estimate 判别。没有新增 allocation site、锁、atomic、syscall、
+  JIT、copy 或 host wait。Invocation、prepared step 与 submit 路径没有产品 diff，因此不运行 P1，也不把
+  先前随顺序反转的短微基准写成性能结论。
+
+| 门 | 精确结果 | 裁决 |
+|---|---|---|
+| Windows correctness/header | MSVC 19.50，Graph executable/region 与逐头通过 | `PASS` |
+| Windows 三交付 | selected `graph` source、relocated shared、relocated static consumer 通过；shared export hygiene 为 10 个 HYLE library / 911 exports | `PASS` |
+| WSL sanitizer | GCC 14.2，ASan 与 UBSan 各自 Graph header/IR/executable `3/3 PASS`，零 report | `PASS` |
+| TSan | 本轮只改编译期、函数局部 selection state；steady 并发对象和异步提交无 diff | `NOT_APPLICABLE` |
+| Apple portability | 同一 SHA-256=`EAB9FE16D8578CDDDB5B86CACA90286D470DED1419837BA2DBDB5DD79832F990` 源码归档；MacBook Air AppleClang 21.0.0.21000334 与 Mac mini 21.0.0.21000101 均 WERROR、Graph `3/3 PASS` | `PASS` |
+| 文档/治理 | docs、closure、diff 检查通过；unknown 不再伪装成 benchmark ns | `PASS` |
+
+终局裁决：`CLOSED`。本轮只关闭可移植 region admission 与确定性 interval selection；它不证明真实异步
+backend、跨设备 placement/copy/sync、symbolic specialization 或宽算子目录已完成。后续必须先按新的
+Runtime/Graph 纵切建立独立 closure card，不能借本记录横向扩充 CPU 算子。

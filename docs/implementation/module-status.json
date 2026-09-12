@@ -278,10 +278,14 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/graph-v5-region-admission.md",
       "candidate": "fd4ef058b8cee328717432a3ef3465c998865427",
-      "summary": "graph v5 CANDIDATE：optional estimate、结构优先/严格估值策略与确定性 O(Q log Q) 选择已实现；oneDNN prototype 不再伪造 1ns。Windows 定向 correctness/header 通过，exact-candidate 三交付、P0、红队和跨平台回放仍待完成。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/graph-v5-region-admission.md"
+      },
+      "summary": "graph v5 CLOSED：optional estimate、结构优先/严格估值策略与确定性 O(Q log Q) region 选择已完成；Windows 三交付、WSL ASan/UBSan、两台 Apple WERROR 回放、P0、文档和红队全部通过，steady Invocation/submit 无产品 diff。"
     },
     {
       "module": "container_concurrent",
