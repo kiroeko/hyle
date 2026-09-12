@@ -360,9 +360,13 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/compute-provider-ggml-v1.md",
-      "summary": "compute_provider_ggml v1 已完成首遍源码审计并产生 Compute block storage 与 Graph constant/region 两个有序前置 trigger；当前保持 SCOPED 空 factor，没有依赖、公开头、产品投影、构建开关或已承诺能力。"
+      "blocked_from": "SCOPED",
+      "blocker": "ggml v0.21.0 与 v0.23.0 的公开 CPU graph API 都不能提供 fallible non-aborting caller-owned context/threadpool；不传 pool 又会在每次 submit 隐藏创建 disposable threadpool。",
+      "blocker_owner": "upstream ggml CPU runtime API，或未来单独登记的 HYLE source-patch factor",
+      "resume_condition": "精确 ggml 版本提供可验证的 fallible non-aborting caller-owned context/threadpool/plan seam，或独立 source-patch factor 先完成维护、升级、OOM、并发与三交付审计。",
+      "summary": "compute_provider_ggml v1 BLOCKED：HYLE block storage 与 Graph region 前置已经解除，但锁定/当前 ggml CPU runtime 仍在 context/threadpool 创建失败时 abort，且无持久 pool 时每次 submit 隐藏创建 disposable pool；空 factor 继续不进入产品。"
     },
     {
       "module": "compute_ops",

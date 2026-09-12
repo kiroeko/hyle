@@ -92,3 +92,37 @@ Tensor storage 描述；再由独立 Graph v3 卡增加 constant intent/binding 
 本记录已完成第一遍源码审计并产生有证据的下层 reopen trigger。`compute_provider_ggml` 仍是空的内部
 factor target；不存在可调用能力，也不计入 `hyle::compute` / `hyle::graph`。能力表、有限 `FIX` ledger、
 API freeze、七问、candidate 和验证结果要在有序前置合同关闭后填写，不能用空 wrapper 预判。
+
+## 前置完成后的阻塞裁决（2026-09-13）
+
+Compute v3 的 block storage 与 Graph v3 的 constant/region seam 已进入当前实现，原先两个 HYLE 前置缺口
+已经解除。第二遍审计同时检查 dependency lock 中的 ggml `v0.21.0` / `8599e0ea3756`，以及干净参考仓的
+ggml `v0.23.0` / `e91ded11bdcd`。二者都能表达 HYLE 需要的 byte-stride/block weight、CPU
+`buffer_from_ptr`、RMSNorm/MatMul/SwiGLU 和 caller-supplied `ggml_cplan::work_data`；Tensor/Graph schema
+因此不再是 blocker。
+
+阻塞位于 ggml CPU runtime 的公开 owner/failure 合同：
+
+1. `ggml_init()` 即使收到 caller-owned arena，也始终用内部 `GGML_MALLOC` 创建 `ggml_context`；该 allocator
+   在失败时调用 `GGML_ABORT`。全局 abort callback 只先收到文本，随后仍无条件 `abort()`，adapter 无法把
+   正常 OOM 转成 HYLE `Status`；
+2. `ggml_threadpool_new()` 内部调用 `ggml_aligned_malloc` 创建 pool/workers，当前实现随后直接解引用返回值，
+   没有 caller allocator 或 fallible create 结果。多线程创建失败还走 `GGML_ASSERT`；
+3. 不传持久 threadpool 时，`ggml_graph_compute()` 在**每次 submit**创建并销毁 disposable threadpool；这会
+   隐藏 allocation、thread lifecycle 和潜在 syscall，违反本卡 steady contract；
+4. 高层 CPU `graph_plan_create` 自行 `new` plan/work buffer，并且只浅拷贝 `ggml_cgraph`。它既不能使用 Graph
+   分配给 Invocation 的 workspace，也不能独立解决 graph/tensor metadata 与并发 Invocation 的生命周期；
+5. 包含 `ggml-impl.h`、手工构造 `ggml_cgraph`/threadpool，或复制 CPU kernel 可以绕开部分问题，但会依赖
+   私有 layout/静态函数并形成 HYLE 自己维护的 ggml fork。这不是本卡准入的“可升级第三方 region
+   provider”，也会重演旧 synthetic metadata bridge，故明确 `REJECT`。
+
+因此当前公开 ggml API 无法同时兑现“可恢复运营失败”“并发 Invocation owner 明确”和“steady submit
+不隐藏分配/建线程”三项已接受的 Compute/Graph 合同。将线程数降为 1 也不解决 context/pool allocation 与
+disposable-pool 问题；把冷路径 abort 写成限制会破坏 HYLE 工程章程的 OOM/failure 门，而不是诚实的可选
+性能取舍。
+
+本组件从 `SCOPED` 裁决为 **`BLOCKED`**，`blocked_from=SCOPED`。它仍保持空 factor：不下载、不链接、不
+导出 header、不进入 product façade。恢复条件是一个新的精确 ggml 版本提供可验证的 fallible、non-aborting
+caller-owned context/threadpool/plan seam，或者 HYLE 另行登记并审计一个明确维护成本、升级策略和三交付
+合同的 source patch factor；恢复后必须重新从 `SCOPED` 冻结有限实现集。Graph 的真实 multi-op region
+资格转交 oneDNN Graph 独立 factor，不让本 blocker 污染 Compute/Graph 主闭包。
