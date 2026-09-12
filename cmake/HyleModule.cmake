@@ -137,6 +137,20 @@ function(hyle_validate_final_module_graph)
       endforeach()
     endforeach()
     list(REMOVE_DUPLICATES _actual_dependencies)
+    get_target_property(_optional_absent hyle_${_name}
+      HYLE_OPTIONAL_ABSENT)
+    if(_optional_absent)
+      # An explicitly absent optional implementation has no PRIVATE link
+      # edges. Add only the manifest's private names to the validation view:
+      # real PUBLIC edges must still exist and any unexpected real edge still
+      # fails the ordinary exact-graph check below.
+      string(TOUPPER "${_name}" _component_upper)
+      foreach(_private_dependency IN LISTS
+          _HYLE_PRIVATE_DEPS_${_component_upper})
+        list(APPEND _actual_dependencies hyle_${_private_dependency})
+      endforeach()
+      list(REMOVE_DUPLICATES _actual_dependencies)
+    endif()
     _hyle_validate_module_dependencies(
       "${_name}" ${_actual_dependencies})
     list(REMOVE_DUPLICATES _actual_public_dependencies)
@@ -146,6 +160,9 @@ function(hyle_validate_final_module_graph)
     string(TOUPPER "${_name}" _component_upper)
     set(_expected_build_dependencies
       "${_HYLE_PRIVATE_BUILD_DEPS_${_component_upper}}")
+    if(_optional_absent)
+      set(_expected_build_dependencies "")
+    endif()
     set(_actual_build_dependencies "")
     get_target_property(_direct_links hyle_${_name} LINK_LIBRARIES)
     foreach(_build_dependency IN LISTS HYLE_KNOWN_BUILD_DEPENDENCIES)
@@ -166,6 +183,8 @@ function(hyle_validate_final_module_graph)
         "component manifest; target has '${_actual_build_dependencies}', "
         "manifest declares '${_expected_build_dependencies}'")
     endif()
+    unset(_optional_absent)
+    unset(_private_dependency)
   endforeach()
 endfunction()
 
@@ -195,7 +214,7 @@ function(_hyle_module_uses_gate name token out_var)
   set(${out_var} "${_hyle_gate_used}" PARENT_SCOPE)
 endfunction()
 
-# hyle_add_module(<name> [TRACE] [TESTING] [SOURCES ...])
+# hyle_add_module(<name> [TRACE] [TESTING] [OPTIONAL_ABSENT] [SOURCES ...])
 # Declares an internal HYLE factor as `hyle_<name>` with conventional
 # include dirs, manifest-derived internal links, warnings, sanitizer flags, and
 # a tri-state export macro. TRACE/TESTING are explicit opt-ins and must match the
@@ -203,9 +222,11 @@ endfunction()
 # acquiring an unrelated profiler runtime or test ABI. External links stay in the
 # owning module CMakeLists via ordinary target_link_libraries(). Consumer aliases
 # are created separately by hyle_add_product_facades(); a factor must never link
-# a product facade.
+# a product facade. OPTIONAL_ABSENT is only for the OFF/unsupported branch of a
+# normally compiled optional factor: it keeps identity/public dependencies but
+# deliberately has no implementation or private implementation links.
 function(hyle_add_module name)
-  cmake_parse_arguments(ARG "TRACE;TESTING" "" "SOURCES" ${ARGN})
+  cmake_parse_arguments(ARG "TRACE;TESTING;OPTIONAL_ABSENT" "" "SOURCES" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "hyle_add_module(${name}): unrecognized arguments: "
@@ -215,6 +236,15 @@ function(hyle_add_module name)
     message(FATAL_ERROR
       "hyle_add_module(${name}): keywords missing values: "
       "${ARG_KEYWORDS_MISSING_VALUES}")
+  endif()
+  if(ARG_OPTIONAL_ABSENT AND ARG_SOURCES)
+    message(FATAL_ERROR
+      "hyle_add_module(${name} OPTIONAL_ABSENT): SOURCES are contradictory")
+  endif()
+  if(ARG_OPTIONAL_ABSENT AND (ARG_TRACE OR ARG_TESTING))
+    message(FATAL_ERROR
+      "hyle_add_module(${name} OPTIONAL_ABSENT): TRACE/TESTING require an "
+      "implementation")
   endif()
 
   string(TOUPPER "${name}" _hyle_component_upper)
@@ -319,7 +349,8 @@ function(hyle_add_module name)
       target_compile_definitions(${target} PUBLIC "HYLE_STATIC")
     endif()
   else()
-    if(_hyle_private_dependencies OR _hyle_private_build_dependencies)
+    if((_hyle_private_dependencies OR _hyle_private_build_dependencies) AND
+       NOT ARG_OPTIONAL_ABSENT)
       message(FATAL_ERROR
         "hyle_add_module(${name}): header-only modules cannot have PRIVATE "
         "product/build dependencies: ${_hyle_private_dependencies};"
@@ -332,6 +363,9 @@ function(hyle_add_module name)
     target_link_libraries(${target} INTERFACE
       ${_hyle_public_dependencies}
       ${_hyle_module_contract_targets})
+    if(ARG_OPTIONAL_ABSENT)
+      set_target_properties(${target} PROPERTIES HYLE_OPTIONAL_ABSENT TRUE)
+    endif()
   endif()
 
   unset(_hyle_module_contract_targets)

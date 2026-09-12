@@ -19,5 +19,5 @@ if(HYLE_COMPUTE_ONEDNN_ENABLED)
       "${HYLE_ONEDNN_SOURCE_DIR}/include/oneapi|${HYLE_INSTALL_INCLUDEDIR}"
       "${HYLE_ONEDNN_BINARY_DIR}/include/oneapi|${HYLE_INSTALL_INCLUDEDIR}")
 else()
-  hyle_add_module(compute_provider_onednn)
+  hyle_add_module(compute_provider_onednn OPTIONAL_ABSENT)
 endif()
