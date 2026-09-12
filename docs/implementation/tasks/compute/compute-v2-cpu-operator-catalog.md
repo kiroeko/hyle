@@ -193,3 +193,27 @@ PreparedOperation/Invocation/Completion、串行执行和独立同值 storage。
 一次非资格化 dual-order/placement 预检确认四个 operation 都选择预期 route、输出在声明容差内一致；
 M=32 的 selected/native op/s 比约 `1.05--1.11`，其余同 body 行随单次顺序在约 `0.95--1.05` 内翻转。
 这只证明合同可以进入一次 `n=15` qualification，不用于修改产品或签发结论。
+
+## P1 evidence correction（2026-09-12）
+
+`compute-cpu-route-p1-v1` 的一次采样虽通过通用 qualification controls，但工程 verdict 为
+`INCONCLUSIVE`。随后按性能证据标准复核 benchmark 源码，确认它把两侧分别交给两个连续的
+`Bench::run()`，而不是同 iteration count、cyclic interleave 的 `Bench::compare()`；同时它只使用通用
+算术 A/A，没有运行完整 Compute workload 的同路线 A/A。v1 因此违反测量前硬门，保留为失败事实，
+不得用于阻塞产品、签 non-inferiority，或靠追加样本寻找 PASS。
+
+纠正后的新实验是
+[`compute-cpu-route-p1-v2`](../../../../bench/contracts/compute-cpu-route-p1-v2.json)：
+
+- 两侧依次覆盖同一组 caller-owned input/output tensor；Context、prepared artifact 和 invocation 仍独立，
+  因而测到的是真实 route/algorithm 差异，不是两份 4 MiB 权重与输出地址的 cache/page-color 差异；
+- 八个完整 warm operation 交替执行，正式行使用同一 `HarnessRunner` 类型和
+  `Bench::compare()`；104 个 paired rounds、4 ms epoch 只提高进程内分辨率，不改变 5% 门；
+- `HYLE_BENCH_AA_ROUTE={native,selected}` 可把两行替换为同一完整产品 route。独立 validator 在
+  primary/placement、双执行顺序、双 artifact allocation 顺序共 16 个进程形状上覆盖全部四个矩阵；
+  当前短预检全部 PASS，64 个 ratio 位于 `0.9771..1.0279`，没有 material 固定位置偏差；
+- `M=1/4` 与 transpose-view M=1 在 prepare 后执行同一 native function pointer，P0 已证明 steady path
+  没有 provider search；它们在 v2 中只保留为 mechanism diagnostic。唯一产品门是会实际改变算法的
+  `M=32,K=512,N=1024` selected-oneDNN 与 forced-native 同合同路线。
+
+以上只修复证据命题和仪器，不改变 Compute candidate 产品字节。v2 尚未运行 qualified P1。

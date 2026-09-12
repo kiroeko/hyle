@@ -12,6 +12,7 @@
 #include <span>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "hyle/compute/device.h"
 #include "hyle/compute/operation.h"
@@ -66,6 +67,35 @@ bool environment_present(const char *name) {
 #endif
 }
 
+enum class AaRoute { kNone, kSelected, kNative };
+
+AaRoute aa_route_requested() {
+  const char *value = nullptr;
+#if defined(_WIN32)
+  char *storage = nullptr;
+  std::size_t size = 0;
+  if (_dupenv_s(&storage, &size, "HYLE_BENCH_AA_ROUTE") == 0)
+    value = storage;
+  const auto release = [&] { std::free(storage); };
+#else
+  value = std::getenv("HYLE_BENCH_AA_ROUTE");
+  const auto release = [] {};
+#endif
+  if (value == nullptr) {
+    release();
+    return AaRoute::kNone;
+  }
+  const std::string_view requested(value);
+  const AaRoute route = requested == "selected"
+                            ? AaRoute::kSelected
+                            : (requested == "native" ? AaRoute::kNative
+                                                       : AaRoute::kNone);
+  if (route == AaRoute::kNone)
+    fail("HYLE_BENCH_AA_ROUTE must be selected or native");
+  release();
+  return route;
+}
+
 hyle::compute::TensorDesc matrix(std::size_t rows, std::size_t columns) {
   const std::array dimensions{static_cast<std::int64_t>(rows),
                               static_cast<std::int64_t>(columns)};
@@ -74,9 +104,9 @@ hyle::compute::TensorDesc matrix(std::size_t rows, std::size_t columns) {
               "create matrix description");
 }
 
-class MatrixStorage final {
+class MatrixInputs final {
 public:
-  explicit MatrixStorage(MatrixShape shape) : shape_(shape) {
+  explicit MatrixInputs(MatrixShape shape) {
     left_ = take(hyle::mem::Buffer::create(
                      hyle::mem::system_resource(),
                      shape.rows * shape.inner * sizeof(float), kAlignment),
@@ -85,64 +115,73 @@ public:
                       hyle::mem::system_resource(),
                       shape.inner * shape.columns * sizeof(float), kAlignment),
                   "allocate right matrix");
-    output_ = take(hyle::mem::Buffer::create(
-                       hyle::mem::system_resource(),
-                       shape.rows * shape.columns * sizeof(float), kAlignment),
-                   "allocate output matrix");
     left_mapping_ =
         take(left_.view().map_host(hyle::mem::HostAccess::kReadWrite),
              "map left matrix");
     right_mapping_ =
         take(right_.view().map_host(hyle::mem::HostAccess::kReadWrite),
              "map right matrix");
-    output_mapping_ =
-        take(output_.view().map_host(hyle::mem::HostAccess::kReadWrite),
-             "map output matrix");
 
     auto left_bytes = take(left_mapping_.writable_bytes(), "write left matrix");
     auto right_bytes =
         take(right_mapping_.writable_bytes(), "write right matrix");
-    auto output_bytes =
-        take(output_mapping_.writable_bytes(), "write output matrix");
-    left_data_ = reinterpret_cast<float *>(left_bytes.data());
-    right_data_ = reinterpret_cast<float *>(right_bytes.data());
-    output_data_ = reinterpret_cast<float *>(output_bytes.data());
+    auto *left_data = reinterpret_cast<float *>(left_bytes.data());
+    auto *right_data = reinterpret_cast<float *>(right_bytes.data());
     for (std::size_t index = 0; index < shape.rows * shape.inner; ++index) {
-      left_data_[index] =
+      left_data[index] =
           static_cast<float>(static_cast<int>(index % 23) - 11) / 64.0F;
     }
     for (std::size_t index = 0; index < shape.inner * shape.columns; ++index) {
-      right_data_[index] =
+      right_data[index] =
           static_cast<float>(static_cast<int>(index % 29) - 14) / 64.0F;
     }
-    std::fill_n(output_data_, shape.rows * shape.columns, 0.0F);
   }
 
   hyle::mem::BufferView left_view() noexcept { return left_.view(); }
   hyle::mem::BufferView right_view() noexcept { return right_.view(); }
-  hyle::mem::BufferView output_view() noexcept { return output_.view(); }
-  float *output_data() noexcept { return output_data_; }
-  std::span<const float> output() const noexcept {
-    return {output_data_, shape_.rows * shape_.columns};
+
+private:
+  hyle::mem::Buffer left_;
+  hyle::mem::Buffer right_;
+  hyle::mem::HostMapping left_mapping_;
+  hyle::mem::HostMapping right_mapping_;
+};
+
+class MatrixOutput final {
+public:
+  explicit MatrixOutput(MatrixShape shape) : size_(shape.rows * shape.columns) {
+    output_ = take(hyle::mem::Buffer::create(
+                       hyle::mem::system_resource(), size_ * sizeof(float),
+                       kAlignment),
+                   "allocate output matrix");
+    output_mapping_ =
+        take(output_.view().map_host(hyle::mem::HostAccess::kReadWrite),
+             "map output matrix");
+    auto output_bytes =
+        take(output_mapping_.writable_bytes(), "write output matrix");
+    output_data_ = reinterpret_cast<float *>(output_bytes.data());
+    std::fill_n(output_data_, size_, 0.0F);
+  }
+
+  hyle::mem::BufferView view() noexcept { return output_.view(); }
+  float *data() noexcept { return output_data_; }
+  std::span<const float> values() const noexcept {
+    return {output_data_, size_};
   }
 
 private:
-  MatrixShape shape_;
-  hyle::mem::Buffer left_;
-  hyle::mem::Buffer right_;
+  std::size_t size_ = 0;
   hyle::mem::Buffer output_;
-  hyle::mem::HostMapping left_mapping_;
-  hyle::mem::HostMapping right_mapping_;
   hyle::mem::HostMapping output_mapping_;
-  float *left_data_ = nullptr;
-  float *right_data_ = nullptr;
   float *output_data_ = nullptr;
 };
 
 class MatMulHarness final {
 public:
-  MatMulHarness(MatrixShape shape, bool selected_route)
-      : shape_(shape), storage_(shape), left_description_(matrix(shape.rows, shape.inner)),
+  MatMulHarness(MatrixShape shape, bool selected_route, MatrixInputs &inputs,
+                MatrixOutput &output_storage)
+      : shape_(shape), output_storage_(&output_storage),
+        left_description_(matrix(shape.rows, shape.inner)),
         stored_right_description_(matrix(
             shape.transposed_weight ? shape.columns : shape.inner,
             shape.transposed_weight ? shape.inner : shape.columns)),
@@ -191,13 +230,13 @@ public:
     invocation_ = take(prepared_.create_invocation(workspace_.view()),
                        "create Compute invocation");
     left_ = take(hyle::compute::ConstTensorView::create(
-                     left_description_, storage_.left_view()),
+                     left_description_, inputs.left_view()),
                  "create left tensor view");
     right_ = take(hyle::compute::ConstTensorView::create(
-                      right_description_, storage_.right_view()),
+                      right_description_, inputs.right_view()),
                   "create right tensor view");
     output_ = take(hyle::compute::TensorView::create(
-                       output_description_, storage_.output_view()),
+                       output_description_, output_storage_->view()),
                    "create output tensor view");
   }
 
@@ -207,14 +246,12 @@ public:
       fail("submit Compute MatMul", submitted.error().message());
     require(submitted->wait(), "wait for Compute MatMul");
     nb::doNotOptimizeAway(
-        storage_.output_data()[shape_.columns * (shape_.rows - 1) + 17]);
+        output_storage_->data()[shape_.columns * (shape_.rows - 1) + 17]);
   }
-
-  std::span<const float> output() const noexcept { return storage_.output(); }
 
 private:
   MatrixShape shape_;
-  MatrixStorage storage_;
+  MatrixOutput *output_storage_ = nullptr;
   hyle::compute::TensorDesc left_description_;
   hyle::compute::TensorDesc stored_right_description_;
   hyle::compute::TensorDesc right_description_;
@@ -229,17 +266,31 @@ private:
   hyle::compute::TensorView output_;
 };
 
-struct MatMulPair final {
-  std::unique_ptr<MatMulHarness> selected;
-  std::unique_ptr<MatMulHarness> native;
+struct HarnessRunner final {
+  MatMulHarness *harness = nullptr;
 
-  MatMulPair(MatrixShape shape, bool native_allocation_first) {
-    if (native_allocation_first) {
-      native = std::make_unique<MatMulHarness>(shape, false);
-      selected = std::make_unique<MatMulHarness>(shape, true);
+  void operator()() const noexcept { harness->run(); }
+};
+
+struct MatMulPair final {
+  MatrixInputs inputs;
+  MatrixOutput output;
+  std::unique_ptr<MatMulHarness> candidate;
+  std::unique_ptr<MatMulHarness> peer;
+
+  MatMulPair(MatrixShape shape, bool candidate_selected, bool peer_selected,
+             bool peer_allocation_first)
+      : inputs(shape), output(shape) {
+    if (peer_allocation_first) {
+      peer = std::make_unique<MatMulHarness>(shape, peer_selected, inputs,
+                                             output);
+      candidate = std::make_unique<MatMulHarness>(
+          shape, candidate_selected, inputs, output);
     } else {
-      selected = std::make_unique<MatMulHarness>(shape, true);
-      native = std::make_unique<MatMulHarness>(shape, false);
+      candidate = std::make_unique<MatMulHarness>(
+          shape, candidate_selected, inputs, output);
+      peer = std::make_unique<MatMulHarness>(shape, peer_selected, inputs,
+                                             output);
     }
   }
 };
@@ -259,31 +310,51 @@ template <class Candidate, class Peer>
 void run_pair(nb::Bench &bench, bool peer_first, const char *candidate_name,
               const char *peer_name, Candidate &&candidate, Peer &&peer) {
   if (peer_first) {
-    bench.run(peer_name, std::forward<Peer>(peer));
-    bench.run(candidate_name, std::forward<Candidate>(candidate));
+    (void)bench.compare(peer_name, std::forward<Peer>(peer), candidate_name,
+                        std::forward<Candidate>(candidate));
   } else {
-    bench.run(candidate_name, std::forward<Candidate>(candidate));
-    bench.run(peer_name, std::forward<Peer>(peer));
+    (void)bench.compare(candidate_name, std::forward<Candidate>(candidate),
+                        peer_name, std::forward<Peer>(peer));
   }
 }
 
 void measure_matmul(MatrixShape shape, const char *title,
                     const char *candidate_name, const char *peer_name,
-                    bool peer_first, bool peer_allocation_first) {
-  MatMulPair pair(shape, peer_allocation_first);
-  pair.selected->run();
-  pair.native->run();
-  verify_equal(pair.selected->output(), pair.native->output());
+                    bool peer_first, bool peer_allocation_first,
+                    AaRoute aa_route) {
+  const bool candidate_selected = aa_route != AaRoute::kNative;
+  const bool peer_selected = aa_route == AaRoute::kSelected;
+  MatMulPair pair(shape, candidate_selected, peer_selected,
+                  peer_allocation_first);
+
+  pair.candidate->run();
+  const std::vector<float> candidate_output(pair.output.values().begin(),
+                                             pair.output.values().end());
+  pair.peer->run();
+  verify_equal(candidate_output, pair.output.values());
+
+  // Alternate complete warm operations so neither row inherits a one-sided
+  // code/data/cache phase before the paired measurement starts.
+  for (std::size_t warmup = 0; warmup < 8; ++warmup) {
+    if ((warmup & 1U) == 0) {
+      pair.candidate->run();
+      pair.peer->run();
+    } else {
+      pair.peer->run();
+      pair.candidate->run();
+    }
+  }
 
   nb::Bench bench;
   bench.title(title)
-      .relative(true)
       .batch(1)
+      .epochs(104)
       .minEpochIterations(1)
-      .minEpochTime(std::chrono::milliseconds(8));
+      .minEpochTime(std::chrono::milliseconds(4))
+      .performanceCounters(false);
   run_pair(
       bench, peer_first, candidate_name, peer_name,
-      [&] { pair.selected->run(); }, [&] { pair.native->run(); });
+      HarnessRunner{pair.candidate.get()}, HarnessRunner{pair.peer.get()});
 }
 
 } // namespace
@@ -296,13 +367,18 @@ int main() {
   const bool peer_first = environment_present("HYLE_BENCH_RIVAL_FIRST");
   const bool peer_allocation_first =
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
+  const AaRoute aa_route = aa_route_requested();
   std::fprintf(
       stderr,
       "# HYLE_COMPUTE_ROUTE_RUN execution_order=%s allocation_order=%s "
-      "provider_version=%.*s apple_qos=%s qos_ok=%s affinity_topology=%s "
-      "caller_cpu=%s affinity_ok=%s run_nonce=%s\n",
+      "aa_route=%s paired_mode=nanobench-compare provider_version=%.*s "
+      "apple_qos=%s qos_ok=%s affinity_topology=%s caller_cpu=%s "
+      "affinity_ok=%s run_nonce=%s\n",
       peer_first ? "peer-first" : "candidate-first",
       peer_allocation_first ? "peer-first" : "candidate-first",
+      aa_route == AaRoute::kSelected
+          ? "selected"
+          : (aa_route == AaRoute::kNative ? "native" : "none"),
       static_cast<int>(hyle::compute::onednn::version().size()),
       hyle::compute::onednn::version().data(), qos.name, qos.ok,
       affinity.topology, affinity.cpu, affinity.ok,
@@ -313,23 +389,23 @@ int main() {
       "compute route row-major MatMul M=1 K=1024 N=1024",
       "HYLE selected MatMul M=1 K=1024 N=1024",
       "HYLE native MatMul M=1 K=1024 N=1024", peer_first,
-      peer_allocation_first);
+      peer_allocation_first, aa_route);
   measure_matmul(
       {4, 1024, 1024, false},
       "compute route row-major MatMul M=4 K=1024 N=1024",
       "HYLE selected MatMul M=4 K=1024 N=1024",
       "HYLE native MatMul M=4 K=1024 N=1024", peer_first,
-      peer_allocation_first);
+      peer_allocation_first, aa_route);
   measure_matmul(
       {32, 512, 1024, false},
       "compute route row-major MatMul M=32 K=512 N=1024",
       "HYLE selected MatMul M=32 K=512 N=1024",
       "HYLE native MatMul M=32 K=512 N=1024", peer_first,
-      peer_allocation_first);
+      peer_allocation_first, aa_route);
   measure_matmul(
       {1, 1024, 1024, true},
       "compute route transposed-weight MatMul M=1 K=1024 N=1024",
       "HYLE selected transposed MatMul M=1 K=1024 N=1024",
       "HYLE native transposed MatMul M=1 K=1024 N=1024", peer_first,
-      peer_allocation_first);
+      peer_allocation_first, aa_route);
 }

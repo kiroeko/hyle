@@ -16,5 +16,6 @@
     {"id": "decode-transposed-weight-m1", "rows": 1, "inner": 1024, "columns": 1024, "layout": "physical [N,K], logical transposed [K,N]"}
   ],
   "route_contract": "An x86-64 product explicitly configured with the oneDNN provider uses HYLE-native for M<16 and transposed weights, and oneDNN BRGEMM for supported M>=16 row-major shapes. Provider choice, JIT and workspace allocation occur before repeated submit.",
-  "comparison": "Selected and forced-native arms use the same public HYLE Compute Tensor/Context/Queue/PreparedOperation/Invocation/Completion contract, independent but identically initialized caller buffers, serial execution and no hidden packing or copy. Allocation and execution order are crossed independently."
+  "comparison": "Selected and forced-native arms use the same public HYLE Compute Tensor/Context/Queue/PreparedOperation/Invocation/Completion contract and the same caller-owned input/output tensors, serial execution and no hidden packing or copy. Each route overwrites the shared output and correctness is checked before timing. Complete warm operations alternate before timing; nanobench compare gives both rows one calibrated iteration count and cyclic paired interleaving. Artifact allocation and declared first-row order are crossed independently.",
+  "workload_matched_control": "Before product sampling, HYLE_BENCH_AA_ROUTE=selected and =native replace both timed rows with the same complete public route for every shape while retaining storage, warmup, execution-order and placement topology."
 }
