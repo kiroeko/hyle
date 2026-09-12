@@ -211,7 +211,9 @@ M=32 的 selected/native op/s 比约 `1.05--1.11`，其余同 body 行随单次�
   `Bench::compare()`；104 个 paired rounds、4 ms epoch 只提高进程内分辨率，不改变 5% 门；
 - `HYLE_BENCH_AA_ROUTE={native,selected}` 可把两行替换为同一完整产品 route。独立 validator 在
   primary/placement、双执行顺序、双 artifact allocation 顺序共 16 个进程形状上覆盖全部四个矩阵；
-  当前短预检全部 PASS，64 个 ratio 位于 `0.9771..1.0279`，没有 material 固定位置偏差；
+  它按 route/shape 检查 overall、execution-order、allocation-order 与 placement 各因子中位数均在 5%
+  band，并以 10% 拒绝单进程 gross instability，不能让某个靠近 5% 边界的短样本冒充固定偏差。当前
+  短预检全部 PASS；最近一次 raw ratio 位于约 `0.972..1.053`，所有因子中位数仍在 5% 内；
 - `M=1/4` 与 transpose-view M=1 在 prepare 后执行同一 native function pointer，P0 已证明 steady path
   没有 provider search；它们在 v2 中只保留为 mechanism diagnostic。唯一产品门是会实际改变算法的
   `M=32,K=512,N=1024` selected-oneDNN 与 forced-native 同合同路线。

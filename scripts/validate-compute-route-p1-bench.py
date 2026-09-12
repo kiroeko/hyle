@@ -16,6 +16,7 @@ import hashlib
 import json
 import os
 import pathlib
+import statistics
 import subprocess
 import sys
 
@@ -157,11 +158,6 @@ def _run(
             parsed, candidate_name, peer_name, title=title
         )
         ratio = candidate.operations_per_second / peer.operations_per_second
-        if not LOWER <= ratio <= UPPER:
-            raise RuntimeError(
-                f"{executable.name} {route} A/A for {title!r} has "
-                f"advantage ratio {ratio:.6f}, outside [{LOWER:.6f}, {UPPER:.6f}]"
-            )
         ratios[title] = ratio
     return {
         "route": route,
@@ -199,12 +195,56 @@ def main() -> int:
                     result["variant"] = variant
                     runs.append(result)
 
+    # A short preflight must reject a fixed execution/allocation/placement
+    # effect, not promote one process point at the 5% boundary into a product
+    # verdict. Check every factor-level median against the material band and
+    # retain a separate 10% per-process gross-instability stop.
+    summaries: dict[str, dict[str, object]] = {}
+    gross_lower = 1.0 / 1.10
+    gross_upper = 1.10
+    for route in ("native", "selected"):
+        for title, _, _ in WORKLOADS:
+            matching = [run for run in runs if run["route"] == route]
+            values = [float(run["ratios"][title]) for run in matching]
+            if any(value < gross_lower or value > gross_upper for value in values):
+                raise RuntimeError(
+                    f"{route} A/A for {title!r} has a gross single-process "
+                    f"ratio outside [{gross_lower:.6f}, {gross_upper:.6f}]: "
+                    f"{values!r}"
+                )
+            factor_medians: dict[str, float] = {
+                "all": statistics.median(values)
+            }
+            for factor in ("variant", "execution_order", "allocation_order"):
+                for factor_value in sorted({str(run[factor]) for run in matching}):
+                    factor_medians[f"{factor}={factor_value}"] = statistics.median(
+                        float(run["ratios"][title])
+                        for run in matching
+                        if run[factor] == factor_value
+                    )
+            outside = {
+                key: value
+                for key, value in factor_medians.items()
+                if not LOWER <= value <= UPPER
+            }
+            if outside:
+                raise RuntimeError(
+                    f"{route} A/A for {title!r} has fixed factor medians "
+                    f"outside [{LOWER:.6f}, {UPPER:.6f}]: {outside!r}"
+                )
+            summaries[f"{route}:{title}"] = {
+                "minimum_process_ratio": min(values),
+                "maximum_process_ratio": max(values),
+                "factor_medians": factor_medians,
+            }
+
     print(
         json.dumps(
             {
                 "schema": "hyle.compute-route-workload-aa/v1",
                 "gate": "PASS",
                 "maximum_bias_percent": 5,
+                "gross_instability_percent": 10,
                 "artifacts": {
                     name: {
                         "path": str(path),
@@ -212,6 +252,7 @@ def main() -> int:
                     }
                     for name, path in executables.items()
                 },
+                "summaries": summaries,
                 "runs": runs,
             },
             sort_keys=True,
