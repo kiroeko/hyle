@@ -13,13 +13,15 @@
 namespace hyle::compute::detail {
 namespace {
 
-// Six rows by two SIMD vectors is the largest ordinary f32 outer-product tile
-// that fits the 16-register AVX2/SSE floor without spilling: 12 accumulators,
-// two B vectors and one reusable A broadcast. It is also the mature BRGEMM
-// register-balance used by oneDNN's AVX2 blocking calculation. The caller may
-// bound the column range so all row tiles consume a B slab while it remains in
-// private cache.
-HWY_INLINE void matmul_rows6(const float *left, const float *right,
+// The 16-register AVX2/SSE floor favors the same 3-row by 4-vector balance as
+// oneDNN's ordinary f32 BRGEMM heuristic: 12 accumulators, three A broadcasts
+// and one rotating B load. Keeping four B vectors in flight would spill, so B
+// is deliberately loaded one vector at a time while each A broadcast is reused
+// four times. The caller bounds the column range so every row tile consumes a
+// B slab while it remains in private cache. Unlike oneDNN's register-controlled
+// JIT, this portable C++ body does not force a K unroll that makes MSVC spill
+// the accumulators.
+HWY_INLINE void matmul_rows3(const float *left, const float *right,
                              float *output, std::size_t inner,
                              std::size_t columns, std::size_t first_column,
                              std::size_t last_column) noexcept {
@@ -29,104 +31,85 @@ HWY_INLINE void matmul_rows6(const float *left, const float *right,
   const std::size_t lanes = hn::Lanes(d);
   std::size_t column = first_column;
 
-  for (; column + lanes * 2 <= last_column; column += lanes * 2) {
+  for (; column + lanes * 4 <= last_column; column += lanes * 4) {
     V c00 = hn::Zero(d);
     V c01 = hn::Zero(d);
+    V c02 = hn::Zero(d);
+    V c03 = hn::Zero(d);
     V c10 = hn::Zero(d);
     V c11 = hn::Zero(d);
+    V c12 = hn::Zero(d);
+    V c13 = hn::Zero(d);
     V c20 = hn::Zero(d);
     V c21 = hn::Zero(d);
-    V c30 = hn::Zero(d);
-    V c31 = hn::Zero(d);
-    V c40 = hn::Zero(d);
-    V c41 = hn::Zero(d);
-    V c50 = hn::Zero(d);
-    V c51 = hn::Zero(d);
+    V c22 = hn::Zero(d);
+    V c23 = hn::Zero(d);
     const float *right_row = right + column;
     for (std::size_t k = 0; k < inner; ++k, right_row += columns) {
-      const V b0 = hn::LoadU(d, right_row);
-      const V b1 = hn::LoadU(d, right_row + lanes);
-      V a = hn::Set(d, left[k]);
-      c00 = hn::MulAdd(a, b0, c00);
-      c01 = hn::MulAdd(a, b1, c01);
-      a = hn::Set(d, left[inner + k]);
-      c10 = hn::MulAdd(a, b0, c10);
-      c11 = hn::MulAdd(a, b1, c11);
-      a = hn::Set(d, left[inner * 2 + k]);
-      c20 = hn::MulAdd(a, b0, c20);
-      c21 = hn::MulAdd(a, b1, c21);
-      a = hn::Set(d, left[inner * 3 + k]);
-      c30 = hn::MulAdd(a, b0, c30);
-      c31 = hn::MulAdd(a, b1, c31);
-      a = hn::Set(d, left[inner * 4 + k]);
-      c40 = hn::MulAdd(a, b0, c40);
-      c41 = hn::MulAdd(a, b1, c41);
-      a = hn::Set(d, left[inner * 5 + k]);
-      c50 = hn::MulAdd(a, b0, c50);
-      c51 = hn::MulAdd(a, b1, c51);
+      const V a0 = hn::Set(d, left[k]);
+      const V a1 = hn::Set(d, left[inner + k]);
+      const V a2 = hn::Set(d, left[inner * 2 + k]);
+      V b = hn::LoadU(d, right_row);
+      c00 = hn::MulAdd(a0, b, c00);
+      c10 = hn::MulAdd(a1, b, c10);
+      c20 = hn::MulAdd(a2, b, c20);
+      b = hn::LoadU(d, right_row + lanes);
+      c01 = hn::MulAdd(a0, b, c01);
+      c11 = hn::MulAdd(a1, b, c11);
+      c21 = hn::MulAdd(a2, b, c21);
+      b = hn::LoadU(d, right_row + lanes * 2);
+      c02 = hn::MulAdd(a0, b, c02);
+      c12 = hn::MulAdd(a1, b, c12);
+      c22 = hn::MulAdd(a2, b, c22);
+      b = hn::LoadU(d, right_row + lanes * 3);
+      c03 = hn::MulAdd(a0, b, c03);
+      c13 = hn::MulAdd(a1, b, c13);
+      c23 = hn::MulAdd(a2, b, c23);
     }
     hn::StoreU(c00, d, output + column);
     hn::StoreU(c01, d, output + column + lanes);
+    hn::StoreU(c02, d, output + column + lanes * 2);
+    hn::StoreU(c03, d, output + column + lanes * 3);
     hn::StoreU(c10, d, output + columns + column);
     hn::StoreU(c11, d, output + columns + column + lanes);
+    hn::StoreU(c12, d, output + columns + column + lanes * 2);
+    hn::StoreU(c13, d, output + columns + column + lanes * 3);
     hn::StoreU(c20, d, output + columns * 2 + column);
     hn::StoreU(c21, d, output + columns * 2 + column + lanes);
-    hn::StoreU(c30, d, output + columns * 3 + column);
-    hn::StoreU(c31, d, output + columns * 3 + column + lanes);
-    hn::StoreU(c40, d, output + columns * 4 + column);
-    hn::StoreU(c41, d, output + columns * 4 + column + lanes);
-    hn::StoreU(c50, d, output + columns * 5 + column);
-    hn::StoreU(c51, d, output + columns * 5 + column + lanes);
+    hn::StoreU(c22, d, output + columns * 2 + column + lanes * 2);
+    hn::StoreU(c23, d, output + columns * 2 + column + lanes * 3);
   }
 
   for (; column + lanes <= last_column; column += lanes) {
     V c0 = hn::Zero(d);
     V c1 = hn::Zero(d);
     V c2 = hn::Zero(d);
-    V c3 = hn::Zero(d);
-    V c4 = hn::Zero(d);
-    V c5 = hn::Zero(d);
     const float *right_row = right + column;
     for (std::size_t k = 0; k < inner; ++k, right_row += columns) {
       const V b = hn::LoadU(d, right_row);
       c0 = hn::MulAdd(hn::Set(d, left[k]), b, c0);
       c1 = hn::MulAdd(hn::Set(d, left[inner + k]), b, c1);
       c2 = hn::MulAdd(hn::Set(d, left[inner * 2 + k]), b, c2);
-      c3 = hn::MulAdd(hn::Set(d, left[inner * 3 + k]), b, c3);
-      c4 = hn::MulAdd(hn::Set(d, left[inner * 4 + k]), b, c4);
-      c5 = hn::MulAdd(hn::Set(d, left[inner * 5 + k]), b, c5);
     }
     hn::StoreU(c0, d, output + column);
     hn::StoreU(c1, d, output + columns + column);
     hn::StoreU(c2, d, output + columns * 2 + column);
-    hn::StoreU(c3, d, output + columns * 3 + column);
-    hn::StoreU(c4, d, output + columns * 4 + column);
-    hn::StoreU(c5, d, output + columns * 5 + column);
   }
 
   for (; column < last_column; ++column) {
     float c0 = 0.0F;
     float c1 = 0.0F;
     float c2 = 0.0F;
-    float c3 = 0.0F;
-    float c4 = 0.0F;
-    float c5 = 0.0F;
     const float *right_value = right + column;
     for (std::size_t k = 0; k < inner; ++k, right_value += columns) {
       const float b = *right_value;
       c0 += left[k] * b;
       c1 += left[inner + k] * b;
       c2 += left[inner * 2 + k] * b;
-      c3 += left[inner * 3 + k] * b;
-      c4 += left[inner * 4 + k] * b;
-      c5 += left[inner * 5 + k] * b;
     }
     output[column] = c0;
     output[columns + column] = c1;
     output[columns * 2 + column] = c2;
-    output[columns * 3 + column] = c3;
-    output[columns * 4 + column] = c4;
-    output[columns * 5 + column] = c5;
   }
 }
 
@@ -220,6 +203,82 @@ HWY_INLINE void matmul_rows4(const float *left, const float *right,
   }
 }
 
+// A two-row tail keeps the same four-vector N width as the prefill kernel.
+// Sharing each B load across both remaining rows avoids falling back to two
+// independent GEMV passes for common blocks such as M=32 (10*3+2).
+HWY_INLINE void matmul_rows2(const float *left, const float *right,
+                             float *output, std::size_t inner,
+                             std::size_t columns, std::size_t first_column,
+                             std::size_t last_column) noexcept {
+  namespace hn = hwy::HWY_NAMESPACE;
+  const hn::ScalableTag<float> d;
+  using V = decltype(hn::Zero(d));
+  const std::size_t lanes = hn::Lanes(d);
+  std::size_t column = first_column;
+
+  for (; column + lanes * 4 <= last_column; column += lanes * 4) {
+    V c00 = hn::Zero(d);
+    V c01 = hn::Zero(d);
+    V c02 = hn::Zero(d);
+    V c03 = hn::Zero(d);
+    V c10 = hn::Zero(d);
+    V c11 = hn::Zero(d);
+    V c12 = hn::Zero(d);
+    V c13 = hn::Zero(d);
+    const float *right_row = right + column;
+    for (std::size_t k = 0; k < inner; ++k, right_row += columns) {
+      const V a0 = hn::Set(d, left[k]);
+      const V a1 = hn::Set(d, left[inner + k]);
+      V b = hn::LoadU(d, right_row);
+      c00 = hn::MulAdd(a0, b, c00);
+      c10 = hn::MulAdd(a1, b, c10);
+      b = hn::LoadU(d, right_row + lanes);
+      c01 = hn::MulAdd(a0, b, c01);
+      c11 = hn::MulAdd(a1, b, c11);
+      b = hn::LoadU(d, right_row + lanes * 2);
+      c02 = hn::MulAdd(a0, b, c02);
+      c12 = hn::MulAdd(a1, b, c12);
+      b = hn::LoadU(d, right_row + lanes * 3);
+      c03 = hn::MulAdd(a0, b, c03);
+      c13 = hn::MulAdd(a1, b, c13);
+    }
+    hn::StoreU(c00, d, output + column);
+    hn::StoreU(c01, d, output + column + lanes);
+    hn::StoreU(c02, d, output + column + lanes * 2);
+    hn::StoreU(c03, d, output + column + lanes * 3);
+    hn::StoreU(c10, d, output + columns + column);
+    hn::StoreU(c11, d, output + columns + column + lanes);
+    hn::StoreU(c12, d, output + columns + column + lanes * 2);
+    hn::StoreU(c13, d, output + columns + column + lanes * 3);
+  }
+
+  for (; column + lanes <= last_column; column += lanes) {
+    V c0 = hn::Zero(d);
+    V c1 = hn::Zero(d);
+    const float *right_row = right + column;
+    for (std::size_t k = 0; k < inner; ++k, right_row += columns) {
+      const V b = hn::LoadU(d, right_row);
+      c0 = hn::MulAdd(hn::Set(d, left[k]), b, c0);
+      c1 = hn::MulAdd(hn::Set(d, left[inner + k]), b, c1);
+    }
+    hn::StoreU(c0, d, output + column);
+    hn::StoreU(c1, d, output + columns + column);
+  }
+
+  for (; column < last_column; ++column) {
+    float c0 = 0.0F;
+    float c1 = 0.0F;
+    const float *right_value = right + column;
+    for (std::size_t k = 0; k < inner; ++k, right_value += columns) {
+      const float b = *right_value;
+      c0 += left[k] * b;
+      c1 += left[inner + k] * b;
+    }
+    output[column] = c0;
+    output[columns + column] = c1;
+  }
+}
+
 HWY_INLINE void matmul_row1(const float *left, const float *right,
                             float *output, std::size_t inner,
                             std::size_t columns, std::size_t first_column,
@@ -300,12 +359,19 @@ void HYLE_COMPUTE_CAT(run_matmul_row_major_, HYLE_SIMD_VARIANT_SUFFIX)(
   for (std::size_t first = 0; first < columns; first += column_chunk) {
     const std::size_t last = (std::min)(columns, first + column_chunk);
     std::size_t row = 0;
-    for (; row + 6 <= rows; row += 6) {
-      matmul_rows6(left + row * inner, right, output + row * columns, inner,
-                   columns, first, last);
+    if (rows >= 16) {
+      for (; row + 3 <= rows; row += 3) {
+        matmul_rows3(left + row * inner, right, output + row * columns, inner,
+                     columns, first, last);
+      }
+    } else {
+      for (; row + 4 <= rows; row += 4) {
+        matmul_rows4(left + row * inner, right, output + row * columns, inner,
+                     columns, first, last);
+      }
     }
-    for (; row + 4 <= rows; row += 4) {
-      matmul_rows4(left + row * inner, right, output + row * columns, inner,
+    for (; row + 2 <= rows; row += 2) {
+      matmul_rows2(left + row * inner, right, output + row * columns, inner,
                    columns, first, last);
     }
     for (; row < rows; ++row) {

@@ -139,15 +139,18 @@ SIMD/Platform 已冻结的编译期 fat-kernel 与一次 ISA 选择设施：每�
 `prepare()` 只选择一次固定签名函数指针；steady submit 不探测、不路由、不 packing、不申请 workspace，
 也没有跨模块 vector ABI。
 
-实现采用成熟 AVX2 BRGEMM 同类的 6-row × 2-vector 寄存器块（12 accumulator、2 B、1 reusable A），
-4-row × 2-vector 与 1-row × 4-vector 处理正常 decode/余数；B 地址使用 pointer induction，prefill 路线以
-64 个 f32 column 的 N block 完成所有 row tile，再前进到下一 B slab。反汇编确认 AVX2 K 内环没有
-accumulator spill 或每步整数乘法。`hyle_add_fat_kernel()` 同时把 IPO/LTO 隔离提升为中央 helper 的不变量，
-Compute 因直接使用 CPU selector 在中央组件图声明 `platform` 私有边。
+源码复核纠正了早先对 oneDNN AVX2 BRGEMM blocking 的误读：oneDNN 3.13.2 对普通 f32 AVX2 选择的
+主 balance 是 3-row × 4-vector，而不是 6-row × 2-vector。HYLE 因此使用同为 12 accumulator 的 3×4
+prefill tile、2×4 尾 tile，以及既有 4×2/1×4 decode/小矩阵路线；B 地址使用 pointer induction，prefill
+路线以 64 个 f32 column 的 N block 完成所有 row tile，再前进到下一 B slab。曾尝试的强制 K×4 展开被
+MSVC 生成的 accumulator stack spill 明确否决并删除；最终 AVX2 3×4 与 2×4 K 热循环反汇编均为零
+vector stack access。`hyle_add_fat_kernel()` 同时把 IPO/LTO 隔离提升为中央 helper 的不变量，Compute 因
+直接使用 CPU selector 在中央组件图声明 `platform` 私有边。
 
-Windows correctness 新增 deterministic differential matrix，覆盖 1/4/6-row tile、组合余数、SIMD/N-block
-尾部和 `K=0`，所选 Compute 测试为 1/1 PASS。一次非资格化 dual-order 诊断表明 decode `M=1/4` 已
-明显优于同 API 的 oneDNN，而 `M=32,K=512,N=1024` 从旧 native 的约 6.7--6.9x 落后缩到约
-1.27--1.44x；异构核/频率漂移仍会放大单次值，因此这些数字只证明根因修正有效，不是 P1 证据。
-正式 P1 必须由项目仪器固定 P-core、记录 affinity/frequency 并在 immutable candidate 后执行；M=32
-固定输项在此之前保持公开，不能以 5% 误差或被 BLOCKED 的 oneDNN provider 冒充通过。
+Windows correctness 的 deterministic differential matrix 覆盖 1/4/6-row tile、组合余数、SIMD/N-block
+尾部和 `K=0`，所选 Compute 测试为 1/1 PASS。Windows i9-13900K 固定 logical CPU 2 的一次非资格化
+dual-order 诊断中，同一公开 API、layout、workspace 与 completion 下，native 在 `M=1/4,K=N=1024`
+两种顺序均领先 oneDNN；`M=32,K=512,N=1024` 则仍约慢 10.4%--16.1%。相比改动前约慢 27%--44%，
+这只证明 tile/codegen 根因修正有效，不是 P1 或 parity 证据。正式 P1 必须由项目仪器记录 affinity/frequency
+并在 immutable candidate 后执行；M=32 固定输项在此之前保持公开，不能以 5% 误差或被 BLOCKED 的
+oneDNN provider 冒充通过。
