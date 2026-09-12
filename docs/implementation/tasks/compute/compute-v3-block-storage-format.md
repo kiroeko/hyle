@@ -156,3 +156,39 @@ auto logical_weight = physical.transposed().value();
 
 审计结论：范围、API 和有限 ledger 已冻结，进入 `AUDITED`。CV3-01--07 全部完成并通过预声明验证后才形成
 candidate；实现若证明需要 owner/vtable/多 block axis，退回 `SCOPED`，不能顺手扩张。
+
+## Implementation checkpoint（2026-09-12）
+
+- CV3-01--03：`StorageFormatId`、plain/block/opaque `StorageFormat`、统一 byte-stride `TensorDesc`、
+  checked required-bytes/permutation/alignment 与精确收窄的 borrowed TensorView 已完成；旧
+  `TensorDesc::strided()` / `element_strides()` 没有兼容残留；
+- CV3-04--06：native route 只接收它实际理解的 plain layout；合法 encoded weight 保持逻辑 shape 并以
+  `Unimplemented` 继续 provider fallback；oneDNN 在调用 vendor API 前拒绝 non-plain layout；Graph 只复制
+  descriptor，并把内部 workspace alignment 提升到 descriptor requirement，没有加入 constant/region 能力；
+- CV3-07：Compute/Graph user guide 与 Compute architecture 已改成 logical dtype + physical byte-layout
+  词汇，明确 block divisibility、opaque 限制、typed-provider owner、无隐藏 padding/copy 与当前没有量化
+  kernel；新入口在 `bench/` 中没有引用；
+- 红队把 submit 时最多三次 alignment `%` 改为 power-of-two bit mask。StorageFormat factory 已保证该前提，
+  因而这只是消除真实调用边界整数除法，不增加 metadata、分支、公开 knob 或 benchmark shape；
+- immutable product candidate 为 `ada35161916d4e7b89ccabe846897cbea9a43808`。从 baseline 到该提交的产品
+  改动只落在有限 ledger 指定的 Compute、oneDNN predicate 与 Graph metadata replay；没有新增 target、
+  option、第三方依赖或 FFI。
+
+## Candidate validation checkpoint（2026-09-12）
+
+候选形成前完成的验证如下；远程与 WSL checkout 只接收 exact archive，没有反向覆盖 Windows canonical
+checkout：
+
+| 风险 | 候选绑定结果 |
+|---|---|
+| correctness / boundary | Windows 与 Linux Compute `36/36`、Graph `23/23`；Windows oneDNN provider `10/10`；两台 Apple Silicon Compute `36/36`、Graph `23/23` |
+| sanitizer | WSL GCC 14 ASan 与 UBSan 的 Compute `36/36`、Graph `23/23`，零 report；本轮没有共享可变状态或并发算法变化，TSan 对 CV3 ledger `NOT_APPLICABLE` |
+| public headers | MSVC 逐头编译 Compute `7/7`、oneDNN provider `1/1`；Linux/Apple 对应 header test 随定向套件通过 |
+| source/shared/static | Windows Compute direct-source、relocated shared、relocated static consumer 全部运行通过；shared 扫描 6 个 HYLE libraries / 700 exports，未泄漏 HYLE C、oneDNN、mimalloc 或私有 provider SPI；static 带 ukernel headers/library/license，shared 不泄漏 vendor headers |
+| new installed API | 独立 consumer 在 relocated shared/static SDK 上分别构造 block 与 opaque format，验证 required bytes、alignment、transpose 后 block-axis identity并运行通过；不可整除 block extent 正确返回 `InvalidArgument`，不隐式 padding |
+| Graph replay | Windows 官方 selected-Graph source/shared/static relocated consumers 全部运行通过；没有形成 Graph 产品 reopen trigger |
+| P0 | MSVC x64 `sizeof(StorageFormat)=40`、`sizeof(TensorDesc)=184 <= 192`，三种 value 均 trivially copyable；构造、比较、permutation、required-bytes 最坏 `O(rank<=8)`；无 heap、lock、atomic、syscall、vtable、registry；HYLE Compute Release 命令为 `/O2 /Ob2 /DNDEBUG` |
+
+CV3-01--07 已全部处理，公开 API、对象布局、算法和常态成本在候选提交停止变化。候选阶段仍需完成 Linux
+与两台 Apple 的 source/shared/static relocated delivery 回放、终局七问/红队、治理 checker 与 terminal
+签发；这些验证不得据点值继续调整候选产品。

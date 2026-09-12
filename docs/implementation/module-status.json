@@ -272,9 +272,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md",
-      "summary": "compute v3 AUDITED：已冻结 provider-neutral plain/block/opaque storage format、byte-strided TensorDesc、安全 view/fallback 与七项有限施工集；不引入 ggml 枚举、owner、vtable、registry 或新依赖。"
+      "candidate": "ada35161916d4e7b89ccabe846897cbea9a43808",
+      "summary": "compute v3 CANDIDATE：provider-neutral plain/block/opaque storage、byte-strided TensorDesc、安全 view/fallback 与七项有限施工集已完成；四机 correctness、sanitizers、Windows 三交付和 P0 通过，候选固定后继续 Linux/Apple 三交付与终局签发。"
     },
     {
       "module": "graph",
