@@ -69,6 +69,74 @@
 本卡只授权审计。进入 `AUDITED` 并冻结有限 ledger 前，不添加产品源、依赖、公开头、feature、benchmark
 或 Graph 修改；v1 的 oneDNN Graph public-API blocker 仍是历史事实，不因本次恢复被改写。
 
+## AUDITED 结论（2026-09-13）
+
+### 边界与自然形状
+
+- Graph-only provider 必须是一个独立 `compute::Provider` 值：其 single-op `prepare` 返回
+  `Unimplemented`，只通过 Graph v2 extension 提供 region。公开入口冻结为
+  `hyle::graph::onednn::provider({.executor=...})`；它不要求用户构造 oneDNN 类型，也不让 Compute
+  获取 Graph 依赖；
+- 精确 pattern 为四个连续拓扑 node：两个共享 activation 的 dense row-major f32 MatMul、一个
+  `GatedActivation{kSilu,kSeparate}`、一个 consuming gated result 的 dense row-major f32 MatMul。gate/up/
+  gated 中间值必须各只有区间内唯一 consumer 且未 publish；其它 layout/dtype/attribute/额外 consumer
+  均不提案并自然 fallback；
+- provider context 保存 borrowed `ParallelExecutorRef` 与 Context metadata allocator。propose 用一次临时
+  `value_count` 计数表和一次 O(V+E) 扫描验证 consumer/publish 约束，OOM 显式失败；不要求 Graph 增加
+  benchmark-oriented reverse index；
+- gate/up shape 相同，共用一个 immutable BRGEMM plan；down 使用第二个。每个 Invocation workspace 为
+  两个对齐的 `M*H*f32` buffer 加 `max(gate_up_scratch, down_scratch)`，SwiGLU 原地覆盖 gate buffer；所有
+  加法、乘法和对齐先检查 overflow；
+- gate/up 在一个同步 executor episode 中按 N tile 执行，同一 task 在一次 oneDNN hardware context 内完成
+  两次 BRGEMM，再逐 row 调用 `simd::swiglu_f32_batch`；barrier 后 down 在第二个 episode 执行。worker 数
+  不计为 dispatch，因此 artifact `dispatch_count=2`、`blocks_host=true`、`uses_private_threads=false`；
+- submit 只映射四个只读边界 tensor、一个输出和一次 Invocation workspace；non-coherent input 先
+  invalidate、output 成功后 flush，所有 mapping 按 first-error 顺序 close。steady path不分配、不 JIT、不
+  搜索、不 copy；同 Executable 的不同 Invocation 具有独占 workspace，可并发；
+- oneDNN 不公开 JIT bytes，proposal 的 compile/persistent/workspace estimate 与 artifact persistent fact
+  必须使用 Graph v4 的 unknown 语义，不能填零。`estimated_net_savings_ns` 在 candidate 前由同 leaf、同
+  mapping/completion 的短 preflight 冻结为保守下界；无法证明为正就不提案并按 stop 条件阻塞。
+
+### 能力与动作
+
+| 能力族 | 层级 | 路线 | 覆盖 | 动作 |
+|---|---|---|---|---|
+| gated f32 MLP region | 复合机制 | 2 个 BRGEMM plan + HYLE SIMD + Graph workspace | `MISSING` | `BORROW/FIX` |
+| region-only C++ provider | 原子配置 | 小型 Provider 值、borrowed executor、对象局部 extension | `MISSING` | `FIX` |
+| 其它 dtype/layout/quant/attention | 其它能力族 | native/未来 provider 或 unsupported | `OUT_OF_SCOPE` | `DEFER` |
+
+### 有限改动集
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| GP20 | 无真实生产 region provider | 新增公开 factory、Provider context 与精确 extension v2 | 普通 Context provider sequence 自然组合，single-op 不截流 |
+| GP21 | pattern 可能吞掉外部 use | O(V+E) use/publish 扫描，只提案精确四节点形状 | 正反例、分支/published/extra-use fallback |
+| GP22 | 不能复制 single-op BRGEMM | 私有依赖 OD40--OD44 seam，两个 plan、共享 gate/up artifact | 不含 dnnl 头/handle，无第二份 tiling/JIT owner |
+| GP23 | 中间值与 scratch owner 缺失 | 一个 64-byte aligned caller workspace，两个 MxH buffer + 复用 scratch | overflow/OOM/alignment/lifetime/concurrent Invocation |
+| GP24 | 多节点 submit 必须减少边界 | gate/up+SwiGLU 与 down 两个 executor episode；一次边界 mapping/Completion | warm allocation/JIT/copy=0，dispatch=2，scalar differential |
+| GP25 | cost/report 不能伪造 | 采用 Graph v4 optional facts；P1 preflight 冻结正 net-savings，P2 对完整 MLP | report 真值、双顺序、正常/holdout 5% NI |
+| GP26 | 可选交付尚无 owner | public=`compute`；private=`graph,simd,compute_provider_onednn`；同一 oneDNN option/lock/package owner | OFF 不下载，ON 三交付，Apple AUTO/OFF + native fallback |
+
+### API / usability freeze
+
+```cpp
+const std::array providers{
+    hyle::graph::onednn::provider({.executor = executor}),
+    hyle::compute::onednn::provider({.executor = executor}),
+    hyle::compute::native::provider({.executor = executor}),
+};
+auto context = hyle::compute::Context::create(
+    hyle::compute::cpu::device(), {.providers = providers});
+```
+
+Graph region、oneDNN single-op 与 native fallback 都由调用方显式排序；没有进程注册表或隐藏线程池。
+executor backing 必须活过 Context 及其 artifacts/invocations。Graph-only provider 不可单独执行 operation；
+不支持的图只返回 `Unimplemented` 给冷路径选择，不在 submit 时改变路线。
+
+审计没有要求新的 semantic factor：BRGEMM 只有一个 mechanism owner 和一个直接私有消费者，单向内部 seam
+足够；另造公共/common product 会增加身份而不改善生命周期。`graph_provider_onednn` 现可进入 `AUDITED`，
+实现只限 GP20--GP26，并以前置 Graph v4 与 Compute oneDNN v4 ledger 为约束。
+
 ## Candidate
 
 - commit：尚无；
@@ -82,4 +150,5 @@
 - 未决限制：上述七项；
 - reopen triggers：不适用，当前为 blocker 恢复审计；
 - LOC：终局统计；
-- 最终状态与理由：`SCOPED`；恢复事实成立，但尚未批准实现或产品能力。
+- 最终状态与理由：`AUDITED`；公开形状、依赖、workspace、执行 episode、错误/并发与有限 GP20--GP26
+  已冻结，允许实现；v1 的 oneDNN Graph API blocker 仍然有效且未被绕过。
