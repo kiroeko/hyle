@@ -45,7 +45,7 @@
   warm allocation=0、dispatch/copy/sync/report truth、nested executor、逐头、Windows/WSL/Apple 适用格、
   ASan/UBSan、source/static/shared、exact factor/product selection、offline lock/license、P0/P1/P2 和红队；
 - stop / blocker 条件：若 region 必须复制既有 single-op provider 的可漂移实现、需要 Graph/Compute
-  反向依赖、不能给出正的可解释 net savings、warm path 分配/JIT/隐藏 copy、内部 dispatch 无法如实报告，
+  反向依赖、不能在 Graph v5 的显式结构策略或严格估值策略下诚实 admission、warm path 分配/JIT/隐藏 copy、内部 dispatch 无法如实报告，
   或任一正常/holdout shape 在公平 P2 material 固定输且无有限根因，则精确 BLOCKED；不得用测试 provider、
   苹果对橘子、强制 selection 或单个大 GEMM 胜利冒充 region 成立。
 
@@ -94,8 +94,9 @@
   invalidate、output 成功后 flush，所有 mapping 按 first-error 顺序 close。steady path不分配、不 JIT、不
   搜索、不 copy；同 Executable 的不同 Invocation 具有独占 workspace，可并发；
 - oneDNN 不公开 JIT bytes，proposal 的 compile/persistent/workspace estimate 与 artifact persistent fact
-  必须使用 Graph v4 的 unknown 语义，不能填零。`estimated_net_savings_ns` 在 candidate 前由同 leaf、同
-  mapping/completion 的短 preflight 冻结为保守下界；无法证明为正就不提案并按 stop 条件阻塞。
+  必须使用 Graph v5 的 unknown 语义，不能填零。短 preflight 已证明执行顺序足以使微小点值反转；本
+  provider 不伪造可移植的正纳秒值，默认结构策略根据四节点覆盖、两个 execution episode 与零 copy/sync
+  接纳，严格估值策略下自然不被选择。
 
 ### 能力与动作
 
@@ -114,7 +115,7 @@
 | GP22 | 不能复制 single-op BRGEMM | 私有依赖 OD40--OD44 seam，两个 plan、共享 gate/up artifact | 不含 dnnl 头/handle，无第二份 tiling/JIT owner |
 | GP23 | 中间值与 scratch owner 缺失 | 一个 64-byte aligned caller workspace，两个 MxH buffer + 复用 scratch | overflow/OOM/alignment/lifetime/concurrent Invocation |
 | GP24 | 多节点 submit 必须减少边界 | gate/up+SwiGLU 与 down 两个 executor episode；一次边界 mapping/Completion | warm allocation/JIT/copy=0，dispatch=2，scalar differential |
-| GP25 | cost/report 不能伪造 | 采用 Graph v4 optional facts；P1 preflight 冻结正 net-savings，P2 对完整 MLP | report 真值、双顺序、正常/holdout 5% NI |
+| GP25 | cost/report 不能伪造 | 采用 Graph v5 optional estimate 与结构 admission；P1 只检验抽象非劣和完整 MLP，不写回纳秒常数 | report 真值、双顺序、正常/holdout 5% NI |
 | GP26 | 可选交付尚无 owner | public=`compute`；private=`graph,simd,compute_provider_onednn`；同一 oneDNN option/lock/package owner | OFF 不下载，ON 三交付，Apple AUTO/OFF + native fallback |
 
 ### API / usability freeze

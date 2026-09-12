@@ -30,6 +30,8 @@
 
 - [共享库导出边界 v13](project/build-system-v13-shared-export-hygiene.md)：清除意外内部 C/汇编导出，
   并把显式 C++ export-only 变为 shared artifact 机械合同。
+- [可选 compiled factor 的缺席投影](build/build-optional-compiled-factor-v1.md)：让 OFF 状态保留组件身份与
+  公开闭包，但不制造空 DLL、私有实现边或依赖下载。
 
 当前全库性能工作：
 

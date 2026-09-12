@@ -279,8 +279,8 @@
     {
       "module": "graph",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/graph-v4-real-provider-cost-truth.md",
-      "summary": "graph v4 AUDITED：G42--G45 冷成本事实合同已固定在 2a2a133e；optional 区分 unknown/exact-zero，region SPI 升至 v2，dispatch 统一为 backend execution episode，Windows Graph/逐头/三交付/P0/红队通过且未改 steady submit。真实 multi-op region、P1、Linux/两台 Apple、sanitizer 和终局红队仍未完成；不扩大算子目录。"
+      "record": "docs/implementation/tasks/compute/graph-v5-region-admission.md",
+      "summary": "graph v5 AUDITED：首个真实 region preflight 证明跨机器硬编码正纳秒 admission 不成立；G50--G54 已冻结为 optional estimate、显式结构优先/严格估值两策略与确定性 O(Q log Q) 选择。实现前不扩大算子目录，steady plan/submit 不变。"
     },
     {
       "module": "container_concurrent",
