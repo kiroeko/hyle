@@ -145,6 +145,12 @@ patch、ARM execute、公开 tiling knob、K-partition reduction、weight packin
   扰动均为必需 strata。合同 schema、精确 v3.13.2 peer lock 与两个 benchmark target 已通过编译；一次
   unmanaged 冒烟中完整 HYLE 边约慢 3%，只证明仪器能运行且候选落在 5% 门附近，不是资格化结果，
   不进入性能总账。
+- immutable candidate `71f9de0c` 的首次 runner 调用误带 `--formal`。W1-WIN profile 明确尚未预钉死
+  Formal compiler/linker/SDK/std library 八项身份，因而 `build-contract` 正确 fail closed，bundle 只能为
+  `DIAGNOSTIC`。该无资格 bundle 的 8/8 产品 strata 均为 `PARITY` 且非劣门 PASS，A/A、5%/10%
+  known-delta、timer-floor 与 placement 也全部 PASS，但不能据此签发 P1。它没有形成产品 FAIL、没有改变
+  candidate，也没有触发性能调参；依照 instrument v1 第 8、9 节，只允许保留原因并以普通 engineering
+  `qualify-platform` 重做，不能把观察到的工具链身份事后登记为 Formal expected。
 
 本 checkpoint 尚不是 immutable candidate 或终局：source/static/shared relocation、Linux x64、Apple ARM
 negative capability、sanitizer、shared export/license、正式 P1、文档检查和终局 red-team 尚未全部执行，
