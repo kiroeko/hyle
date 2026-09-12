@@ -34,7 +34,7 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 |---|---|
 | DAG | 任意数量的已支持 typed node；共享输入、分支和多个 published outputs |
 | op | Compute 当前的 `RmsNorm`、rank-2 `MatMul`、packed `SiluAndMul` |
-| shape/layout | static `TensorDesc`；MatMul 的物理权重方向由 stride 表达 |
+| shape/layout | static `TensorDesc`；byte stride、block axis 与 opaque identity 随 value 原样保留；MatMul 的物理权重方向由 descriptor 表达 |
 | compile | 每个 node prepare/provider route 一次；CPU topological plan；中间 tensor 与 provider scratchpad liveness 交给 Mem planner |
 | run | caller 绑定所有 graph inputs/outputs；内部中间值、provider run state 与 scratchpad 由每个 Invocation 独占 |
 | report | backend/provider、node 数、workspace bytes/backings、copy/sync/fallback |
@@ -94,6 +94,9 @@ return done->wait();
 
 - compile 是冷路径：shape 复核、每节点 prepare 和 lifetime planning 均在这里发生。shape/layout 改变时
   重新构图/编译；不要每次请求重新 compile。
+- Graph 可以保存合法的 block/opaque TensorDesc，但不会假装 CPU native 已能执行它。若当前 Context 没有
+  理解该 encoding 的 provider，compile 返回 `Unimplemented`；不会静默解码、复制或把压缩 bytes 当作
+  plain scalar storage。常量 binding 与 region provider 属于后续 Graph 合同，当前权重仍是显式输入。
 - `create_invocation()` 实例化 workspace；应按并发槽复用 Invocation。`reset()` 只清外部 bindings，保留
   已规划 workspace。一次完整绑定的 alias 校验最坏为
   `O(inputs*outputs + outputs^2)`，不分配；随后重复 `submit()` 仍为 O(nodes+bindings)。

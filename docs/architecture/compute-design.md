@@ -38,8 +38,10 @@ Module -> Kernel -> CommandList -> submit() -> Completion
 
 - `Device` 是可复制的能力描述，不拥有 runtime；`Context` 拥有 backend/provider 会话。
 - `Queue` 表达有序提交域；不能用全局默认 stream 隐藏 affinity 或同步。
-- `TensorDesc` 描述 dtype、shape、stride/layout 和必要的 quantization facts；`TensorView` 只把它与
-  Mem storage 绑定，不拥有 payload。
+- `TensorDesc` 把 logical dtype/shape 与 physical storage format/byte layout 分开；fixed block encoding
+  使用开放数值 identity，无法通用解释的 packed layout 使用 opaque identity + exact extent。
+  scale/zero/bias 和量化公式属于 typed operation/provider inputs，不进入 storage descriptor；
+  `TensorView` 只把描述与 Mem storage 绑定，不拥有 payload。
 - `PreparedOperation` 是可共享的不可变 artifact，把能力检查、provider 选择、layout/repack 决策和可能的
   编译移出热调用；`OperationInvocation` 拥有一次并发 lane 的 stream、binding metadata 与 workspace。
 - `Module/Kernel/CommandList` 是原生或 HYLE kernel 的低层路线；Vulkan SPIR-V、CUDA/HIP
@@ -166,6 +168,12 @@ Mem 是 storage-semantics owner；Compute 是 device/provider artifact 与异步
 Storage domain 至少区分普通 host、backend-visible/pinned host、device-local 和 managed/unified。
 unsupported 必须返回明确能力错误；不能把普通 host RAM 冒充 pinned，把 unified address 冒充零复制，
 也不能把共享物理内存的 host/device budget 重复相加。
+
+Tensor 的 physical-format identity 不等于 backend memory identity。Plain Tensor 以 logical scalar width 和
+byte stride 表达；单轴 fixed-block Tensor 记录 elements/block、bytes/block、alignment 与 block axis；更复杂
+格式只暴露 opaque identity 和 exact bytes。通用层不得为了识别格式引入字符串查找、全局 registry、owner
+或虚调用。格式专属 factory、alignment 终检与 scale/zero 等关联 tensor 由 typed provider extension 拥有。
+未知但结构合法的 encoding 是 provider fallback 的 `Unimplemented`，不是 schema corruption。
 
 ## 6. Operator 面与可扩展性
 

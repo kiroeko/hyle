@@ -28,6 +28,8 @@ using hyle::compute::Device;
 using hyle::compute::MatMul;
 using hyle::compute::PreparedOperation;
 using hyle::compute::ProviderKind;
+using hyle::compute::StorageFormat;
+using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::mem::AllocatorRef;
@@ -220,6 +222,25 @@ TEST(OneDnnProvider, LeavesContiguousKWeightsOnHyleNativeFallback) {
   EXPECT_EQ(prepared.provider(), ProviderKind::kHyleNative);
   EXPECT_TRUE(prepared.used_fallback());
   EXPECT_EQ(prepared.workspace_requirement().size, 0U);
+}
+
+TEST(OneDnnProvider, RejectsEncodedWeightsBeforeCallingOneDnn) {
+  constexpr StorageFormatId codec{0x48594c45U, 37U};
+  const StorageFormat blocked =
+      StorageFormat::blocked(codec, 32, 18, 2).value();
+  const TensorDesc left = matrix(16, 64);
+  const std::array<std::int64_t, 2> stored_shape{32, 64};
+  const TensorDesc right =
+      TensorDesc::blocked_dense(DataType::kFloat32, stored_shape, blocked)
+          ->transposed()
+          .value();
+  const TensorDesc output = matrix(16, 32);
+
+  Context context = create_context();
+  auto prepared =
+      hyle::compute::prepare(context, MatMul{}, left, right, output);
+  ASSERT_FALSE(prepared.has_value());
+  EXPECT_TRUE(prepared.error().IsUnimplemented());
 }
 
 TEST(OneDnnProvider, UsesTheBorrowedSynchronousExecutor) {

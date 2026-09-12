@@ -94,29 +94,48 @@ Route select_row_major_matmul() noexcept {
 #endif
 }
 
-Status validate_dense_f32(const TensorDesc &description) noexcept {
+Status validate_logical_f32(const TensorDesc &description) noexcept {
   if (!description.valid()) {
     return Status::InvalidArgument("operation tensor description is invalid");
   }
   if (description.data_type() != DataType::kFloat32) {
-    return Status::Unimplemented("CPU operation requires float32 tensors");
+    return Status::Unimplemented(
+        "operation currently requires float32 logical tensors");
+  }
+  return Status::Ok();
+}
+
+Status validate_dense_f32(const TensorDesc &description) noexcept {
+  Status status = validate_logical_f32(description);
+  if (!status.ok())
+    return status;
+  if (!description.is_plain()) {
+    return Status::Unimplemented(
+        "HYLE-native operation requires plain tensor storage");
   }
   if (!description.is_dense()) {
-    return Status::Unimplemented("CPU operation requires dense tensors");
+    return Status::Unimplemented(
+        "HYLE-native operation requires dense tensors");
   }
   return Status::Ok();
 }
 
 bool is_transposed_dense_matrix(const TensorDesc &description) noexcept {
-  if (!description.valid() || description.rank() != 2)
+  if (!description.valid() || !description.is_plain() ||
+      description.rank() != 2)
     return false;
   const auto dimensions = description.dimensions();
-  const auto strides = description.element_strides();
-  return strides[0] == 1 && strides[1] == dimensions[0];
+  const auto strides = description.byte_strides();
+  const auto row_bytes = math::try_multiply(
+      dimensions[0], static_cast<std::int64_t>(sizeof(float)));
+  return row_bytes.has_value() &&
+         strides[0] == static_cast<std::int64_t>(sizeof(float)) &&
+         strides[1] == *row_bytes;
 }
 
 bool is_supported_matmul_right(const TensorDesc &description) noexcept {
-  return description.is_dense() || is_transposed_dense_matrix(description);
+  return description.is_plain() &&
+         (description.is_dense() || is_transposed_dense_matrix(description));
 }
 
 Result<std::size_t> outer_count(const TensorDesc &description) noexcept {
@@ -147,6 +166,50 @@ Result<std::size_t> dimension(const TensorDesc &description,
         Status::OutOfRange("tensor dimension exceeds size_t"));
   }
   return *result;
+}
+
+Status validate_native_operation(Operation operation,
+                                 std::span<const TensorDesc> inputs,
+                                 std::span<const TensorDesc> outputs) noexcept {
+  if (outputs.size() != 1)
+    return Status::InvalidArgument("native operation requires one output");
+
+  switch (operation.kind()) {
+  case OperationKind::kRmsNorm: {
+    Status status = validate_dense_f32(inputs[0]);
+    if (!status.ok())
+      return status;
+    if (inputs.size() == 2) {
+      status = validate_dense_f32(inputs[1]);
+      if (!status.ok())
+        return status;
+    }
+    return validate_dense_f32(outputs[0]);
+  }
+  case OperationKind::kMatMul: {
+    Status status = validate_dense_f32(inputs[0]);
+    if (!status.ok())
+      return status;
+    status = validate_logical_f32(inputs[1]);
+    if (!status.ok())
+      return status;
+    if (!is_supported_matmul_right(inputs[1])) {
+      return Status::Unimplemented(
+          "HYLE-native MatMul right operand requires plain row-major or "
+          "transposed-dense storage");
+    }
+    return validate_dense_f32(outputs[0]);
+  }
+  case OperationKind::kSiluAndMul: {
+    Status status = validate_dense_f32(inputs[0]);
+    if (!status.ok())
+      return status;
+    return validate_dense_f32(outputs[0]);
+  }
+  case OperationKind::kUnknown:
+    break;
+  }
+  return Status::Unimplemented("operation kind is unknown");
 }
 
 struct ByteRange final {
@@ -185,9 +248,10 @@ bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
   return left.offset - right.offset < right.size;
 }
 
-bool aligned_for_float(const void *address) noexcept {
+bool aligned_for_storage(const void *address, std::size_t alignment) noexcept {
   return address == nullptr ||
-         reinterpret_cast<std::uintptr_t>(address) % alignof(float) == 0;
+         (alignment != 0 &&
+          reinterpret_cast<std::uintptr_t>(address) % alignment == 0);
 }
 
 void preserve_first_error(Status &terminal, Status candidate) noexcept {
@@ -229,7 +293,7 @@ infer_output_description(Operation operation,
       return std::unexpected(Status::InvalidArgument(
           "RMSNorm epsilon must be finite and non-negative"));
     }
-    Status status = validate_dense_f32(inputs[0]);
+    Status status = validate_logical_f32(inputs[0]);
     if (!status.ok())
       return std::unexpected(std::move(status));
     if (inputs[0].rank() == 0) {
@@ -237,16 +301,16 @@ infer_output_description(Operation operation,
           Status::InvalidArgument("RMSNorm input requires rank >= 1"));
     }
     if (inputs.size() == 2) {
-      status = validate_dense_f32(inputs[1]);
+      status = validate_logical_f32(inputs[1]);
       if (!status.ok())
         return std::unexpected(std::move(status));
       if (inputs[1].rank() != 1 ||
           inputs[1].dimensions()[0] != inputs[0].dimensions().back()) {
         return std::unexpected(Status::InvalidArgument(
-            "RMSNorm weight must be a dense [hidden] tensor"));
+            "RMSNorm weight must be a logical [hidden] tensor"));
       }
     }
-    return inputs[0];
+    return TensorDesc::dense(DataType::kFloat32, inputs[0].dimensions());
   }
 
   case OperationKind::kMatMul: {
@@ -254,21 +318,15 @@ infer_output_description(Operation operation,
       return std::unexpected(
           Status::InvalidArgument("MatMul requires exactly two inputs"));
     }
-    Status status = validate_dense_f32(inputs[0]);
+    Status status = validate_logical_f32(inputs[0]);
     if (!status.ok())
       return std::unexpected(std::move(status));
-    if (!inputs[1].valid() || inputs[1].data_type() != DataType::kFloat32) {
-      return std::unexpected(
-          Status::Unimplemented("CPU MatMul requires float32 tensors"));
-    }
+    status = validate_logical_f32(inputs[1]);
+    if (!status.ok())
+      return std::unexpected(std::move(status));
     if (inputs[0].rank() != 2 || inputs[1].rank() != 2) {
       return std::unexpected(
-          Status::Unimplemented("CPU MatMul v2 requires rank-2 tensors"));
-    }
-    if (!is_supported_matmul_right(inputs[1])) {
-      return std::unexpected(
-          Status::Unimplemented("CPU MatMul right operand requires row-major "
-                                "or transposed-dense layout"));
+          Status::Unimplemented("MatMul v2 requires rank-2 tensors"));
     }
     if (inputs[0].dimensions()[1] != inputs[1].dimensions()[0]) {
       return std::unexpected(
@@ -284,7 +342,7 @@ infer_output_description(Operation operation,
       return std::unexpected(Status::InvalidArgument(
           "SiluAndMul requires exactly one packed input"));
     }
-    Status status = validate_dense_f32(inputs[0]);
+    Status status = validate_logical_f32(inputs[0]);
     if (!status.ok())
       return std::unexpected(std::move(status));
     if (inputs[0].rank() == 0) {
@@ -456,6 +514,10 @@ prepare(const Context &context, Operation operation,
     prepared->provider_prepared = provider_prepared;
     return PreparedOperation(prepared);
   }
+
+  Status native_support = validate_native_operation(operation, inputs, outputs);
+  if (!native_support.ok())
+    return std::unexpected(std::move(native_support));
 
   Parameters parameters{};
   float scalar = 0.0F;
@@ -783,13 +845,19 @@ Result<Completion> OperationInvocation::submit_impl(
     output_data = reinterpret_cast<float *>(writable->data());
   }
 
-  if (!aligned_for_float(first_data) || !aligned_for_float(second_data) ||
-      !aligned_for_float(output_data)) {
+  const bool first_aligned =
+      aligned_for_storage(first_data, state_->inputs[0].required_alignment());
+  const bool second_aligned =
+      state_->input_count != 2 ||
+      aligned_for_storage(second_data, state_->inputs[1].required_alignment());
+  const bool output_aligned =
+      aligned_for_storage(output_data, state_->output.required_alignment());
+  if (!first_aligned || !second_aligned || !output_aligned) {
     output_mapping.close().IgnoreError();
     second_mapping.close().IgnoreError();
     first_mapping.close().IgnoreError();
     return completed_failure(Status::FailedPrecondition(
-        "CPU operation tensor mapping is not aligned for float32"));
+        "CPU operation tensor mapping does not satisfy its format alignment"));
   }
 
   Status terminal = Status::Ok();

@@ -18,6 +18,8 @@ using hyle::compute::Operation;
 using hyle::compute::OperationKind;
 using hyle::compute::RmsNorm;
 using hyle::compute::SiluAndMul;
+using hyle::compute::StorageFormat;
+using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
@@ -139,6 +141,28 @@ TEST(GraphBuilder, SupportsBranchesSharedValuesAndMultipleOutputs) {
   EXPECT_EQ(graph.output_id(1).value(), second);
   EXPECT_EQ(graph.output_description(0).value(), matrix(2, 3));
   EXPECT_EQ(graph.output_description(1).value(), matrix(2, 5));
+}
+
+TEST(GraphBuilder, PreservesProviderNeutralBlockedWeightMetadata) {
+  constexpr StorageFormatId codec{0x48594c45U, 41U};
+  const StorageFormat blocked =
+      StorageFormat::blocked(codec, 32, 18, 2).value();
+  const TensorDesc activation = matrix(2, 64);
+  const std::array<std::int64_t, 2> stored_shape{8, 64};
+  const TensorDesc weight =
+      TensorDesc::blocked_dense(DataType::kFloat32, stored_shape, blocked)
+          ->transposed()
+          .value();
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto input = builder.input(activation).value();
+  const auto encoded_weight = builder.input(weight).value();
+  const auto product = builder.add(MatMul{}, input, encoded_weight).value();
+  ASSERT_TRUE(builder.output(product).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  EXPECT_EQ(graph.value_description(encoded_weight).value(), weight);
+  EXPECT_EQ(graph.value_description(product).value(), matrix(2, 8));
 }
 
 TEST(GraphBuilder, RejectsForeignIdsAndShapeErrorsWithoutLogicalMutation) {

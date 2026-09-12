@@ -29,6 +29,8 @@ using hyle::compute::ProviderKind;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
 using hyle::compute::SiluAndMul;
+using hyle::compute::StorageFormat;
+using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::mem::Buffer;
@@ -231,9 +233,9 @@ TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
   const std::array<std::int64_t, 1> shape8{8};
   const std::array<std::int64_t, 1> broadcast_stride{0};
   const TensorDesc broadcast =
-      TensorDesc::strided(DataType::kFloat32, shape8, broadcast_stride).value();
-  auto layout =
-      hyle::compute::prepare(context, RmsNorm{}, broadcast, broadcast);
+      TensorDesc::strided_bytes(DataType::kFloat32, shape8, broadcast_stride)
+          .value();
+  auto layout = hyle::compute::prepare(context, RmsNorm{}, broadcast, row);
   ASSERT_FALSE(layout.has_value());
   EXPECT_TRUE(layout.error().IsUnimplemented());
 
@@ -288,6 +290,29 @@ TEST(OperationShape, InfersNaturalInferenceShapesAndRejectsMismatches) {
                   std::array{rows, row_description(7)})
                   .error()
                   .IsInvalidArgument());
+}
+
+TEST(PreparedOperation, LeavesValidEncodedWeightsForAQualifiedProvider) {
+  constexpr StorageFormatId codec{0x48594c45U, 31U};
+  const StorageFormat blocked =
+      StorageFormat::blocked(codec, 32, 18, 2).value();
+  const TensorDesc left = matrix_description(2, 64);
+  const std::array<std::int64_t, 2> stored_shape{4, 64};
+  const TensorDesc right =
+      TensorDesc::blocked_dense(DataType::kFloat32, stored_shape, blocked)
+          ->transposed()
+          .value();
+  const TensorDesc output = matrix_description(2, 4);
+
+  auto inferred = hyle::compute::infer_output_description(
+      hyle::compute::Operation(MatMul{}), std::array{left, right});
+  ASSERT_TRUE(inferred.has_value()) << inferred.error().message();
+  EXPECT_EQ(*inferred, output);
+
+  Context context = Context::create(Device::cpu()).value();
+  auto native = hyle::compute::prepare(context, MatMul{}, left, right, output);
+  ASSERT_FALSE(native.has_value());
+  EXPECT_TRUE(native.error().IsUnimplemented());
 }
 
 TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {

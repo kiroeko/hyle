@@ -139,7 +139,8 @@ Status create_kernel(dnnl_brgemm_t *output, std::size_t rows, std::size_t inner,
 
 bool is_row_major_f32_matrix(const TensorDesc &description) noexcept {
   return description.valid() && description.data_type() == DataType::kFloat32 &&
-         description.rank() == 2 && description.is_dense();
+         description.is_plain() && description.rank() == 2 &&
+         description.is_dense();
 }
 
 Status create_context(const Provider &provider_value, Device device,

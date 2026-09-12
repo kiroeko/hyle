@@ -18,7 +18,7 @@ sampling 和 serving 留在推理引擎。
 |---|---|---|
 | 设备发现 | `enumerate_devices` / `query_device` | 当前只返回 CPU；短输出 span 不静默截断 |
 | 执行域 | `Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有隐藏 worker/default device |
-| tensor schema | `TensorDesc::dense/strided/permuted/transposed` | rank <= 8；stride 以 element 为单位；view 借用 Mem storage |
+| tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
 | normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `SiluAndMul` | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
@@ -26,15 +26,56 @@ sampling 和 serving 留在推理引擎。
 | provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，HYLE-native 是最终 fallback |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
-当前 operator catalog 有意只签发本轮真实 transformer 片段需要的三项，并非长期超集。f16/bf16、量化、
+当前 operator catalog 有意只签发本轮真实 transformer 片段需要的三项，并非长期超集。Tensor schema 已能
+描述 block/opaque storage，但这不等于已有量化 kernel。f16/bf16、量化、
 batched MatMul、attention、RoPE、softmax、embedding、repack 与 provider fusion 必须在各自有限卡中加入，
 不能把 enum 预留写成已实现能力。
+
+## 普通、block 与 opaque storage
+
+普通用户继续用 `TensorDesc::dense()`；它现在返回 byte stride，例如 dense f32 `[2,3]` 的 stride 是
+`[12,4]`。非连续普通 storage 使用名称明确的 `strided_bytes()`。旧的 `strided()` /
+`element_strides()` 已删除，没有把旧名称悄悄改成新单位的兼容层。
+
+固定块压缩权重由 provider 的 typed factory 创建 `StorageFormat`，再传给 `blocked_dense()`。下面只是说明
+通用 seam；产品代码应使用 provider 发布的具名 identity，而不是散落 magic numbers：
+
+```cpp
+constexpr StorageFormatId codec_id{vendor_namespace, format_value};
+auto format = StorageFormat::blocked(codec_id,
+                                     /* elements_per_block = */ 32,
+                                     /* bytes_per_block = */ 18,
+                                     /* alignment = */ 2);
+if (!format) return format.error();
+
+auto stored = TensorDesc::blocked_dense(
+    DataType::kFloat32, std::array{n, k}, *format);
+if (!stored) return stored.error();
+auto logical_weight = stored->transposed();  // logical [k,n]，不搬数据
+```
+
+`DataType::kFloat32` 在这里表示解码后的数学 element，不表示每个 element 占四个物理 bytes。format 独立
+给出 block elements、block bytes、alignment 与稳定的两字 identity。block axis 的 byte stride 每次推进
+一个完整 block；其他轴推进一个逻辑坐标。该轴长度必须能整除 block size；`required_bytes()` 和
+`transposed()/permuted()` 会一起处理 block axis。
+
+不能由通用 Compute 解释的 vendor-packed、tile 或 sparse descriptor 使用 `StorageFormat::opaque()` 与
+`TensorDesc::opaque()`，并显式给出精确 byte extent。Opaque tensor 没有可公开读取的 stride，也拒绝通用
+`permuted()`；只有理解该 identity 的 typed provider 才能构造另一个被证明等价的 view。scale、zero、bias、
+group size 和量化公式不是 storage format 属性，它们是具体 operation/provider 的独立 typed inputs。
+
+`TensorView::create()` 会把传入 Mem view 收窄到 `required_bytes()`，并拒绝明显不满足格式 alignment 的
+subview offset。普通 host route 映射后还会检查实际地址；设备 native handle 的最终 alignment 必须由能
+解释它的 provider 检查。TensorDesc 不拥有 storage，不保存字符串、vtable、动态内存或进程全局 registry。
+合法但当前 route 不理解的 encoding 返回 `Unimplemented`，从而允许有序 provider fallback；格式参数本身
+畸形则在构造时返回 `InvalidArgument`/`OutOfRange`。
 
 ## MatMul 权重形状
 
 不要增加 provider-specific `transpose_weight` 标志。若模型存储权重为连续 `[N,K]`，创建该 dense desc 后
-调用 `transposed()`，得到逻辑 `[K,N]` 和对应 stride；数据不移动。Compute 会在 prepare 冷路径选择相应
-route。普通连续 `[K,N]` 也直接受支持。
+调用 `transposed()`，得到逻辑 `[K,N]` 和对应 byte stride；数据不移动。Compute 会在 prepare 冷路径选择
+相应 route。普通连续 `[K,N]` 也直接受支持。Block-compressed `[N,K]` 使用上一节相同的 transpose 方式；
+当前 HYLE-native 与 oneDNN 不解释它，只有以后显式加入的量化 provider 会接收。
 
 ```cpp
 auto stored = TensorDesc::dense(DataType::kFloat32, std::array{n, k});
@@ -75,7 +116,8 @@ return done->wait();                  // terminal failure
 
 ## 何时选 oneDNN
 
-当前 oneDNN provider 只接收 dense row-major f32 rank-2 MatMul。它适合普通 `[M,K] * [K,N]`；模型常见的
+当前 oneDNN provider 只接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
+`[M,K] * [K,N]`；模型常见的
 物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K 权重会诚实回落到 HYLE-native SIMD route。RMSNorm、
 SiluAndMul、零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
 executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-native kernel；传入真实并行 executor
@@ -126,6 +168,8 @@ if (!invocation) return invocation.error();
 - `PreparedOperation` 可复制并跨线程共享；`OperationInvocation` 不可复制，也不得被两个并发 submit 共用。
   Context 关闭后 retained artifact 仍可创建 invocation，但任何 submit 都会失败。
 - Tensor views 不拥有 payload。Mem Buffer/resource 以及 Queue 必须活到 Completion 终态。
+- `StorageFormatId` 是跨 source/static/shared 稳定的数值 identity，不是 Native FFI 承诺。自定义 provider
+  应以自己的 typed factory 统一发布 identity；同一 identity 不得在升级后改变物理解释。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output

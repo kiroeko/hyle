@@ -200,8 +200,8 @@ Status plan_workspace(detail::PlanState &plan,
   for (std::size_t index = 0; index < last_uses.size(); ++index) {
     last_uses[index] = 0;
   }
-  for (std::size_t index = 0;
-       index < plan.operation_workspace_requests.size(); ++index) {
+  for (std::size_t index = 0; index < plan.operation_workspace_requests.size();
+       ++index) {
     plan.operation_workspace_requests[index] = detail::kNoWorkspaceRequest;
   }
 
@@ -253,7 +253,8 @@ Status plan_workspace(detail::PlanState &plan,
     if (!requests.try_push_back(mem::LifetimeRequest{
             .resource_slot = 0,
             .size = *size,
-            .alignment = 64,
+            .alignment = (std::max)(std::size_t{64},
+                                    value.description.required_alignment()),
             .begin = begin,
             .end = end,
         })) {
@@ -555,8 +556,7 @@ void Invocation::reset() noexcept {
   }
 }
 
-Result<compute::Completion>
-Invocation::submit(compute::Queue &queue) noexcept {
+Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }

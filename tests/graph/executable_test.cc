@@ -24,6 +24,8 @@ using hyle::compute::MatMul;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
 using hyle::compute::SiluAndMul;
+using hyle::compute::StorageFormat;
+using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::graph::CompiledGraph;
@@ -395,12 +397,34 @@ TEST(GraphCompile, ReportsInvalidClosedAndMetadataAllocationFailures) {
   EXPECT_TRUE(invocation.error().IsResourceExhausted());
 }
 
+TEST(GraphCompile, DefersEncodedWeightExecutionToAFutureProvider) {
+  constexpr StorageFormatId codec{0x48594c45U, 43U};
+  const StorageFormat blocked =
+      StorageFormat::blocked(codec, 32, 18, 2).value();
+  const std::array<std::int64_t, 2> stored_shape{8, 64};
+  const TensorDesc weight =
+      TensorDesc::blocked_dense(DataType::kFloat32, stored_shape, blocked)
+          ->transposed()
+          .value();
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId input = builder.input(matrix(2, 64)).value();
+  const ValueId encoded_weight = builder.input(weight).value();
+  const ValueId output = builder.add(MatMul{}, input, encoded_weight).value();
+  ASSERT_TRUE(builder.output(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = Context::create(Device::cpu()).value();
+  auto compiled = hyle::graph::compile(graph, context);
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsUnimplemented());
+}
+
 TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
   AllocatorProbe probe;
-  Context context =
-      Context::create(Device::cpu(),
-                      {.metadata_allocator = probe_allocator(probe)})
-          .value();
+  Context context = Context::create(Device::cpu(), {.metadata_allocator =
+                                                        probe_allocator(probe)})
+                        .value();
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
 
   probe.attempts = 0;
