@@ -96,7 +96,29 @@ Provider 可以自行拥有 device allocation 或 graph allocator。HYLE 必须�
 | 必须补齐的覆盖缺口 | AMD HIP/ROCm | HYLE HIP kernel、rocBLAS/MIOpen、ggml 等 | 当前没有合格实现；不能用 Vulkan 存在来假装已覆盖 ROCm 生态 |
 | 基线 | CPU | HYLE SIMD/native、oneDNN、ggml；Apple 可含 Accelerate/BNNS | 三平台 correctness、fallback、provider contract 和可重复性能基线；不是“只剩 CPU 时才用”的 stub |
 
-### 4.1 Apple 各层的边界
+### 4.1 施工包不能隐藏 SIMD
+
+进度清单必须把产品纵切与实现底座分开。`simd` 是已经独立关闭的 CPU 叶组件；Compute 不重新实现它，
+但 **HYLE-native CPU provider** 仍是一项显式施工包：它负责把 Tensor/Operation 的 shape、layout、alias、
+precision 和 completion 合同映射到 SIMD whole-row/fixed-kernel 路线，并拥有 tiling、tail、fallback 与
+prepare-time route。把它只写成“Compute 算子目录”会错误隐藏 HYLE 自有算力路线。
+
+| 层 | 施工包 | 直接实现底座 | 边界 |
+|---|---|---|---|
+| CPU 执行 | CPU backend + HYLE-native provider | Platform + Mem + **HYLE SIMD** | 内建的 reference/fallback/best-of 路线；当前归 `compute`，不因任务可见性虚构新 factor |
+| CPU 借入 | oneDNN provider | oneDNN x64 BRGEMM ukernel | 可选 MatMul provider；不是 CPU backend，也不替代 native/SIMD |
+| 跨后端借入 | ggml provider islands | ggml CPU/CUDA/Metal/Vulkan/HIP 等各自 backend | 每种 backend 分别审计，不能把“ggml provider”写成 CPU-only 单项 |
+| Apple | Metal backend + MLX/MPS/HYLE/ggml providers | Apple runtime 与 HYLE custom kernels | MLX-first，但保留 native Metal escape hatch |
+| NVIDIA | CUDA backend + vendor/HYLE/ggml providers | CUDA runtime、vendor libraries、custom kernels | provider 选择按完整 region 成本 |
+| 可移植 GPU | Vulkan backend + HYLE SPIR-V/ggml provider | Vulkan；Apple portability 使用 MoltenVK | 正式保底，不冒充原生 Metal 性能 |
+| AMD | HIP backend + vendor/HYLE/ggml providers | HIP/ROCm | 独立真机资格，不能由 CUDA/Vulkan 结果代签 |
+| 图编译 | Graph IR/compiler/plan | 上述 prepared op/region | 横跨所有 backend/provider，拥有 partition、placement、copy/sync 和 workspace |
+
+因此阶段清单应写成“CPU backend/HYLE-native-SIMD → oneDNN/ggml CPU region → Apple/CUDA/Vulkan/HIP
+backend-provider 组合 → 跨 provider Graph”，而不是把 oneDNN、ggml 与整个 GPU backend 放在同一级。
+当前状态仍只从 registry 和各 closure card 读取，本表不复制完成百分比。
+
+### 4.2 Apple 各层的边界
 
 - **Metal** 是 Apple GPU 的底层图形与计算 API。HYLE 只拥有其中的 compute pipeline、resource、queue、
   synchronization、profiling 和 native interop；raster、swapchain 和 present 不进入 Compute。
