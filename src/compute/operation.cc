@@ -362,6 +362,36 @@ prepare(const Context &context, Operation operation,
       "no configured compute provider supports this operation"));
 }
 
+Result<PreparedOperation> prepare(const Context &context, View operation,
+                                  TensorDesc input) noexcept {
+  const std::array inputs{input};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
+Result<PreparedOperation> prepare(const Context &context, Copy operation,
+                                  TensorDesc input) noexcept {
+  const std::array inputs{input};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
+Result<PreparedOperation> prepare(const Context &context,
+                                  Fill operation) noexcept {
+  const std::array<TensorDesc, 0> inputs{};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs);
+}
+
 Result<PreparedOperation> prepare(const Context &context, RmsNorm operation,
                                   TensorDesc input,
                                   TensorDesc output) noexcept {
@@ -514,6 +544,11 @@ OperationInvocation::submit(Queue &queue,
         Status::Internal("compute provider returned an invalid completion"));
   }
   return completion;
+}
+
+Result<Completion>
+OperationInvocation::submit(Queue &queue, const TensorView &output) noexcept {
+  return submit(queue, {}, std::span<const TensorView>(&output, 1));
 }
 
 Result<Completion>

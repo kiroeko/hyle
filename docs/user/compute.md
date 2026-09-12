@@ -18,6 +18,8 @@ sampling 和 serving 留在推理引擎。
 | 执行域 | `Backend -> Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有全局 registry、隐藏 worker 或默认设备 |
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
 | operation schema | 19 个 typed family + inline custom | 可做 arity/shape/layout/alias/effect/precision 检查；schema 存在不等于已有可执行 provider |
+| 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
+| materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | normalization | `RmsNorm` | dense f32 `[..., hidden]`；可选 dense f32 weight `[hidden]`；逐 row |
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
@@ -27,9 +29,43 @@ sampling 和 serving 留在推理引擎。
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
 gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
-**当前可执行 provider 仍只签发 RMSNorm、rank-2 MatMul 和 packed SiLU GatedActivation 三项。** Tensor
-schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 family 调用 `prepare()` 会诚实返回
-`Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
+**当前可执行 provider 签发 View、Copy、Fill、RMSNorm、rank-2 MatMul 和 packed SiLU
+GatedActivation 六项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 13 个
+family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
+
+## View、Copy 与 Fill
+
+`View` 是显式零 kernel operation：prepare 推导新的 descriptor，submit 只验证输出 Mem view 是否指向输入
+allocation 的正确 byte offset。reshape、permute 和 broadcast 从输入起点开始；slice 输出应使用由
+`start * input.byte_strides()[axis]` 得到的 subview。不要给 slice 随便绑定一个“同样大小且位于输入内”的
+区间，provider 会拒绝它。空 view 不触碰任何 byte，因此不要求制造虚假的非空 alias。
+
+`Copy` 是 material operation。dense 输入直接复用 Mem resource 的 range-copy 路线；plain strided（包括
+zero-stride broadcast）输入按 logical coordinates materialize 为 dense 输出。它不接收 block/opaque
+encoding，也不隐藏 repack 或 staging。`Fill` 没有输入，根据 `TensorShape`、`DataType` 和精确 typed
+`ScalarValue` 写输出；低精度浮点用 `ScalarValue::from_bits()` 明确传 storage bits。
+
+这三个单输出 operation 提供会自动推导输出 descriptor 的 typed prepare，Fill 也有自然的零输入 submit：
+
+```cpp
+auto slice = View::slice(/* axis = */ 1, /* start = */ 4,
+                         /* count = */ 8);
+if (!slice) return slice.error();
+auto prepared_view = prepare(context, *slice, input_desc);
+
+auto prepared_copy = prepare(context, Copy{}, strided_desc);
+
+auto shape = TensorShape::create(std::array<std::int64_t, 2>{2, 8});
+if (!shape) return shape.error();
+auto prepared_fill = prepare(
+    context, Fill{.output_shape = *shape,
+                  .output_type = DataType::kFloat32,
+                  .value = ScalarValue(0.0F)});
+if (!prepared_fill) return prepared_fill.error();
+auto invocation = prepared_fill->create_invocation();
+if (!invocation) return invocation.error();
+auto done = invocation->submit(queue, output_view);
+```
 
 ## 普通、block 与 opaque storage
 
@@ -93,8 +129,8 @@ auto prepared = prepare(context, MatMul{}, activation_desc,
 ## prepare、invocation 与 submit
 
 `infer_output_descriptions()` 是 direct Compute 与 Graph 共用的 shape/layout 规则；单输出 operation 可用
-`infer_single_output()`。`prepare()` 再核对
-调用方给出的 output desc，并把 provider/route 选择移出热路径。对同一描述反复执行时共享
+`infer_single_output()`。通用 span 入口的 `prepare()` 再核对调用方给出的 output desc；已经交付的 typed
+convenience 可直接推导 output desc。两者都把 provider/route 选择移出热路径。对同一描述反复执行时共享
 `PreparedOperation`，为每个并发执行 lane 创建并复用一个 move-only `OperationInvocation`。当前故意
 没有把 prepare 或 invocation 创建隐藏在一次性 convenience 中，因为 provider workspace 和并发状态必须
 有明确 owner。

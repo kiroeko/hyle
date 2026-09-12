@@ -88,6 +88,8 @@ public:
   submit(Queue &queue, std::span<const ConstTensorView> inputs,
          std::span<const TensorView> outputs) noexcept;
   HYLE_COMPUTE_API Result<Completion> submit(Queue &queue,
+                                             const TensorView &output) noexcept;
+  HYLE_COMPUTE_API Result<Completion> submit(Queue &queue,
                                              const ConstTensorView &input,
                                              const TensorView &output) noexcept;
   HYLE_COMPUTE_API Result<Completion> submit(Queue &queue,
@@ -103,6 +105,12 @@ private:
   detail::InvocationState *state_ = nullptr;
 };
 
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, View operation, TensorDesc input) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Copy operation, TensorDesc input) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
+                                                   Fill operation) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation> prepare(const Context &context,
                                                    RmsNorm operation,
                                                    TensorDesc input,

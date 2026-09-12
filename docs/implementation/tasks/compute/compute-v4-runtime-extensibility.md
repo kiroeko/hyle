@@ -134,7 +134,10 @@ CPU 执行轴与 HYLE native kernels 分别由已登记的 `compute_backend_cpu`
   取得 Context admission token 后才进入 provider 冷路径，不再以非原子的 `is_open()` 检查和 close 竞争；
 - Windows 上 15 项 Compute/Graph 定向测试，以及独立 source、relocated static、relocated shared Compute
   consumer 均通过；旧 `ProviderKind`、`ProviderList<4>`、`Device::cpu()`、通用 `submit_host()` 和
-  `host_kernel.h` 产品入口已无代码消费者。
+  `host_kernel.h` 产品入口已无代码消费者；
+- 已交付的单输出 transform 提供只做 cold output inference 的 typed `prepare()`；Fill 另提供自然的零输入
+  `OperationInvocation::submit(queue, output)`。这不是 R54 所排除的 prepare+submit 一次性隐藏路径：artifact、
+  invocation、workspace 与 completion owner 仍全部显式。
 
 这不是 terminal record，状态保持 `AUDITED`。真正异步 backend 的 late-completion 保活、close/drain 与
 device-loss/error injection，sanitizers、Linux/两台 Apple、shared export hygiene、P0 codegen 账单，以及依赖

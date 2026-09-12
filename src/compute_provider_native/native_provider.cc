@@ -17,21 +17,20 @@
 #include "hyle/simd/fat_kernel.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/ops.h"
+#include "native_plan.h"
 
 namespace hyle::compute::native {
 namespace {
 
 using Parameters = detail::NativeParameters;
 using Route = detail::NativeRoute;
+using internal::aligned_for_storage;
+using internal::completed;
+using internal::NativePlan;
+using internal::preserve_first_error;
 
 struct NativeContext final {
   ParallelExecutorRef executor{};
-};
-
-struct NativePlan final {
-  Parameters parameters{};
-  float scalar = 0.0F;
-  Route route = nullptr;
 };
 
 void run_rms_norm(const float *input, const float *weight, float *output,
@@ -206,25 +205,12 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
 
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
 
-void preserve_first_error(Status &terminal, Status candidate) noexcept {
-  if (terminal.ok() && !candidate.ok())
-    terminal = std::move(candidate);
-}
-
-bool aligned_for_storage(const void *address, std::size_t alignment) noexcept {
-  return address == nullptr ||
-         (alignment != 0 &&
-          (reinterpret_cast<std::uintptr_t>(address) & (alignment - 1)) == 0);
-}
-
-Result<Completion> submit(void *prepared_value, void *, Queue &,
-                          std::span<const ConstTensorView> inputs,
-                          std::span<const TensorView> outputs) noexcept {
-  auto *plan = static_cast<NativePlan *>(prepared_value);
-  if (plan == nullptr || plan->route == nullptr || inputs.empty() ||
-      inputs.size() > 2 || outputs.size() != 1) {
-    return Completion::completed(
-        Status::Internal("native execution state is invalid"));
+Result<Completion> submit_float(const NativePlan &plan,
+                                std::span<const ConstTensorView> inputs,
+                                std::span<const TensorView> outputs) noexcept {
+  if (plan.route == nullptr || inputs.empty() || inputs.size() > 2 ||
+      outputs.size() != 1) {
+    return completed(Status::Internal("native float plan is invalid"));
   }
 
   const mem::ConstBufferView first_storage = inputs[0].storage();
@@ -256,13 +242,13 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
   if (!first_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     Status status = first_storage.invalidate();
     if (!status.ok())
-      return Completion::completed(std::move(status));
+      return completed(std::move(status));
   }
   if (inputs.size() == 2 && !shared_inputs &&
       !second_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     Status status = second_storage.invalidate();
     if (!status.ok())
-      return Completion::completed(std::move(status));
+      return completed(std::move(status));
   }
 
   mem::HostMapping first_mapping;
@@ -275,17 +261,17 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
   if (in_place) {
     auto mapping = output_storage.map_host(mem::HostAccess::kReadWrite);
     if (!mapping)
-      return Completion::completed(std::move(mapping).error());
+      return completed(std::move(mapping).error());
     output_mapping = std::move(*mapping);
     auto writable = output_mapping.writable_bytes();
     if (!writable)
-      return Completion::completed(std::move(writable).error());
+      return completed(std::move(writable).error());
     output_data = reinterpret_cast<float *>(writable->data());
     first_data = output_data;
   } else {
     auto mapping = first_storage.map_host();
     if (!mapping)
-      return Completion::completed(std::move(mapping).error());
+      return completed(std::move(mapping).error());
     first_mapping = std::move(*mapping);
     first_data = reinterpret_cast<const float *>(first_mapping.bytes().data());
   }
@@ -298,7 +284,7 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
       if (!mapping) {
         first_mapping.close().IgnoreError();
         output_mapping.close().IgnoreError();
-        return Completion::completed(std::move(mapping).error());
+        return completed(std::move(mapping).error());
       }
       second_mapping = std::move(*mapping);
       second_data =
@@ -311,7 +297,7 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
     if (!mapping) {
       second_mapping.close().IgnoreError();
       first_mapping.close().IgnoreError();
-      return Completion::completed(std::move(mapping).error());
+      return completed(std::move(mapping).error());
     }
     output_mapping = std::move(*mapping);
     auto writable = output_mapping.writable_bytes();
@@ -319,7 +305,7 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
       output_mapping.close().IgnoreError();
       second_mapping.close().IgnoreError();
       first_mapping.close().IgnoreError();
-      return Completion::completed(std::move(writable).error());
+      return completed(std::move(writable).error());
     }
     output_data = reinterpret_cast<float *>(writable->data());
   }
@@ -336,19 +322,29 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
     output_mapping.close().IgnoreError();
     second_mapping.close().IgnoreError();
     first_mapping.close().IgnoreError();
-    return Completion::completed(Status::FailedPrecondition(
+    return completed(Status::FailedPrecondition(
         "CPU operation tensor mapping does not satisfy its format alignment"));
   }
 
-  plan->route(first_data, second_data, output_data, plan->parameters,
-              plan->scalar);
+  plan.route(first_data, second_data, output_data, plan.parameters,
+             plan.scalar);
   Status terminal = Status::Ok();
   if (!output_properties.has(mem::MemoryProperty::kHostDeviceCoherent))
     preserve_first_error(terminal, output_mapping.flush());
   preserve_first_error(terminal, output_mapping.close());
   preserve_first_error(terminal, second_mapping.close());
   preserve_first_error(terminal, first_mapping.close());
-  return Completion::completed(std::move(terminal));
+  return completed(std::move(terminal));
+}
+
+Result<Completion> submit(void *prepared_value, void *, Queue &,
+                          std::span<const ConstTensorView> inputs,
+                          std::span<const TensorView> outputs) noexcept {
+  auto *plan = static_cast<NativePlan *>(prepared_value);
+  if (plan == nullptr || plan->submit_route == nullptr) {
+    return completed(Status::Internal("native execution state is invalid"));
+  }
+  return plan->submit_route(*plan, inputs, outputs);
 }
 
 const detail::ProviderPreparedVTable kPreparedVTable{
@@ -367,10 +363,17 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
   if (outputs.size() != 1)
     return Status::Unimplemented("native route requires one output");
 
-  Parameters parameters{};
-  float scalar = 0.0F;
-  Route route = nullptr;
+  NativePlan plan{};
   switch (operation.kind()) {
+  case OperationKind::kView:
+  case OperationKind::kCopy:
+  case OperationKind::kFill: {
+    Status status =
+        internal::prepare_transform(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   case OperationKind::kRmsNorm: {
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())
@@ -389,9 +392,10 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return std::move(rows).error();
     if (!hidden)
       return std::move(hidden).error();
-    parameters = {*rows, *hidden, 0};
-    scalar = operation.get_if<RmsNorm>()->epsilon;
-    route = &run_rms_norm;
+    plan.parameters = {*rows, *hidden, 0};
+    plan.scalar = operation.get_if<RmsNorm>()->epsilon;
+    plan.route = &run_rms_norm;
+    plan.submit_route = &submit_float;
     break;
   }
   case OperationKind::kMatMul: {
@@ -420,9 +424,10 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return std::move(inner).error();
     if (!columns)
       return std::move(columns).error();
-    parameters = {*rows, *inner, *columns};
-    route = inputs[1].is_dense() ? select_row_major_matmul()
-                                 : &run_matmul_transposed_weight;
+    plan.parameters = {*rows, *inner, *columns};
+    plan.route = inputs[1].is_dense() ? select_row_major_matmul()
+                                      : &run_matmul_transposed_weight;
+    plan.submit_route = &submit_float;
     break;
   }
   case OperationKind::kGatedActivation: {
@@ -444,8 +449,9 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return std::move(rows).error();
     if (!packed)
       return std::move(packed).error();
-    parameters = {*rows, *packed / 2, 0};
-    route = &run_silu_and_mul;
+    plan.parameters = {*rows, *packed / 2, 0};
+    plan.route = &run_silu_and_mul;
+    plan.submit_route = &submit_float;
     break;
   }
   default:
@@ -456,10 +462,9 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
   void *storage = allocator.allocate(sizeof(NativePlan), alignof(NativePlan));
   if (storage == nullptr)
     return Status::ResourceExhausted("native plan allocation failed");
-  auto *plan = ::new (storage)
-      NativePlan{.parameters = parameters, .scalar = scalar, .route = route};
+  auto *prepared = ::new (storage) NativePlan(plan);
   prepared_output->vtable = &kPreparedVTable;
-  prepared_output->state = plan;
+  prepared_output->state = prepared;
   prepared_output->workspace = {};
   return Status::Ok();
 }

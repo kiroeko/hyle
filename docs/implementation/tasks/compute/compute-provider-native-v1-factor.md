@@ -86,8 +86,12 @@ gated MLP、softmax/top-k 与分块 SDPA 纵切；peer 优先 ggml/oneDNN 的同
 - prepare 保存精确 input/output descriptor spans，submit 接收预绑定 TensorView spans 与具体 Queue；旧固定
   2-input/1-output runtime state、隐藏 native fallback 与裸 host-pointer provider vtable 已删除；
 - Windows factor tests、oneDNN 显式 `{onednn, native}` 组合、Graph 兼容纵切，以及 source/static/shared
-  Compute consumer 已通过。
+  Compute consumer 已通过；
+- `View`、`Copy`、`Fill` 已作为第一批 transform 路线实现：View 是严格校验 inferred byte offset 的零 kernel；
+  dense Copy 复用 Mem resource copy，plain strided Copy 做 logical materialization；Fill 写入全部 scalar dtype 的
+  精确 bits。三者在 prepare 冷路径选定直接 submit function，不在热路径按 kind 搜索，也不增长 metadata；
+  transform 实现已从 provider orchestration 拆到独立内部单元，并有 typed prepare/零输入 submit 旅程。
 
-本卡仍为 `AUDITED`，且当前 family 进度必须按 **3/19 executable** 计算。其余 16 个 family 的正确 CPU
+本卡仍为 `AUDITED`，且当前 family 进度必须按 **6/19 executable** 计算。其余 13 个 family 的正确 CPU
 reference、逐 op shape/dtype/layout/alias/error 测试、七条有限 P1、三平台与 sanitizer 尚未实现；schema
 存在不能冒充 native provider 已支持执行。
