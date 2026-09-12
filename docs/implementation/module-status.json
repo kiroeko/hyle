@@ -354,9 +354,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-provider-onednn-v2-ukernel-resume.md",
-      "summary": "compute_provider_onednn v2 AUDITED：实际构建、正确性、六形状 allocation probe 与源码确认 x64 BRGEMM ukernel 可解除 warm allocation blocker；已冻结私有 full/tail artifact、caller scratch、N-tile executor、native decode fallback、x64-only capability 及删除旧 primitive 路线的有限实现集。"
+      "candidate": "71f9de0cce8e6dd93a1bf3b2c6eb8f1e1f1b2cdb",
+      "summary": "compute_provider_onednn v2 CANDIDATE：x64 BRGEMM ukernel 产品形状固定；定向 correctness、六形状 warm 零分配、正式 8/8 P1 非劣与 Windows source/relocated shared/relocated static 交付通过，待 Linux、Apple 负能力、sanitizer 与终局红队。"
     }
   ]
 }

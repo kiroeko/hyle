@@ -70,6 +70,7 @@ def main() -> None:
                 "jump_fcontext",
                 "hyle_status_create",
                 "mi_malloc",
+                "dnnl_brgemm_execute",
             ),
         )
         result = checker.scan_binary(dirty)
@@ -82,6 +83,7 @@ def main() -> None:
             "jump_fcontext",
             "hyle_status_create",
             "mi_malloc",
+            "dnnl_brgemm_execute",
         }
         assert checker.main(["--root", str(root)]) == 1
 

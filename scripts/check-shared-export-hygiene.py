@@ -3,8 +3,8 @@
 
 This is intentionally not a C++ ABI whitelist. HYLE's supported shared product
 surface is the explicitly annotated, compiler-mangled C++ API. While Native FFI
-is N/A, project-prefixed C entry points, vendored allocator symbols and raw
-fcontext procedures must remain implementation details.
+is N/A, project-prefixed C entry points, vendored allocator/provider symbols and
+raw fcontext procedures must remain implementation details.
 """
 
 from __future__ import annotations
@@ -206,6 +206,8 @@ def forbidden_reason(symbol: str) -> str | None:
         return "plain HYLE C entry while Native FFI is N/A"
     if name.startswith("mi_"):
         return "vendored mimalloc entry"
+    if name.startswith("dnnl_"):
+        return "vendored oneDNN entry"
     return None
 
 

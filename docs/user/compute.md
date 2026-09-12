@@ -3,8 +3,9 @@
 > 本页描述当前 CPU C++ surface；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。HYLE-native 始终可用；选择
 > `HYLE_COMPUTE_ONEDNN=ON` 时可以在 x86-64 构建显式 oneDNN MatMul provider。该可选 factor 当前为
-> `AUDITED`：BRGEMM ukernel 替换候选已通过定向正确性与暖执行零分配检查，但 source/static/shared 和
-> 正式 P1 尚未全部签发，因此还不是 `CLOSED` 能力。Apple Silicon 等 AArch64 目标会关闭该 factor 并
+> `CANDIDATE`：BRGEMM ukernel 已通过定向正确性、暖执行零分配、正式 P1 以及 Windows
+> source/static/shared 交付，但 Linux/Apple/sanitizer 和终局红队尚未全部签发，因此还不是 `CLOSED`
+> 能力。Apple Silicon 等 AArch64 目标会关闭该 factor 并
 > 使用 HYLE-native；CUDA、Metal、Vulkan、HIP 与其他 providers 仍是后续独立纵切。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，

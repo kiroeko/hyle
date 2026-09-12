@@ -1,6 +1,6 @@
 # Compute oneDNN provider v2：BRGEMM ukernel 恢复轮
 
-## Closure card（SCOPED）
+## Closure card（CANDIDATE）
 
 - component / owner / round / kind：`compute_provider_onednn` / Compute /
   `compute-provider-onednn-v2-ukernel-resume` / `RESUME`；
@@ -159,6 +159,22 @@ patch、ARM execute、公开 tiling knob、K-partition reduction、weight packin
   [`compute-onednn-provider-p1-v1-5e078305-w1-win`](../../../../evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/)；
   这只签发 x64 serial prefill provider 边界，不继承到 decode、并行 executor 或其他 dtype/backend。
 
-本 checkpoint 尚不是 immutable candidate 或终局：source/static/shared relocation、Linux x64、Apple ARM
-negative capability、sanitizer、shared export/license、文档检查和终局 red-team 尚未全部执行，
-registry 保持 `AUDITED`。
+## Candidate checkpoint（2026-09-12）
+
+- immutable product candidate：`71f9de0cce8e6dd93a1bf3b2c6eb8f1e1f1b2cdb`。它固定 provider API、
+  x64 BRGEMM 算法、artifact/workspace layout、native fallback 与常态成本；后续 harness、状态、证据和
+  文档修正不改变该产品 candidate；
+- Windows/MSVC 19.50 的修正版 selected-component smoke 已明确探测 `AMD64`，三个 cache 都记录
+  `HYLE_COMPUTE_ONEDNN=ON` 与 `DNNL_CPU_RUNTIME=SEQ`。source、relocated shared、relocated static
+  consumer 均实际创建 oneDNN Context、准备 16x4x4 MatMul、确认 provider identity/no fallback 并验证
+  数值，全部 PASS；static SDK 带 `dnnl.lib`、ukernel headers 与 oneDNN license，shared SDK 不泄漏
+  vendor headers；
+- shared-export hygiene 已增加 `dnnl_*` 负合同。实际 source build 的 12 个 HYLE libraries/1364 exports
+  与 installed shared build 的 6 个 HYLE libraries/682 exports 均通过，无 HYLE C、mimalloc、oneDNN 或
+  raw fcontext 实现符号泄漏；
+- 正式 P1、Windows 定向 correctness/allocation 和 Windows 三交付已经完成，有限 OD2-01--OD2-08
+  产品实现集没有未处理项，因此依法进入 `CANDIDATE`，不再以验证结果微调产品。
+
+本轮尚未终局：Linux x64 correctness/package/sanitizer、Apple ARM negative capability、离线 lock/license
+复核和终局 red-team 仍待执行；这些适用风险项没有结果前不能写成 `PASS`，registry 保持
+`CANDIDATE`，而不是 `CLOSED`。

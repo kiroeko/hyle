@@ -89,7 +89,14 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "compute")
   # The provider is deliberately opt-in and x64-only. Native x64 smokes select
   # it so all delivery forms prove the optional closure; native ARM smokes
   # explicitly keep it OFF and prove the honest HYLE-native product instead.
-  string(TOLOWER "${CMAKE_HOST_SYSTEM_PROCESSOR}" _hyle_smoke_host_processor)
+  # This driver runs in `cmake -P` script mode, where
+  # CMAKE_HOST_SYSTEM_PROCESSOR is not initialized. Query the host explicitly;
+  # otherwise every native x64 smoke silently exercises the OFF branch and the
+  # optional provider is never present in any of the three delivery forms.
+  cmake_host_system_information(
+    RESULT _hyle_smoke_host_processor QUERY OS_PLATFORM)
+  string(TOLOWER "${_hyle_smoke_host_processor}"
+         _hyle_smoke_host_processor)
   if(_hyle_smoke_host_processor MATCHES "^(amd64|x86_64|x64)$")
     set(_compute_onednn_selected TRUE)
     string(APPEND _source_feature_contract
