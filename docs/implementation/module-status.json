@@ -354,15 +354,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v2-ukernel-resume.md",
-      "candidate": "71f9de0cce8e6dd93a1bf3b2c6eb8f1e1f1b2cdb",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      },
-      "summary": "compute_provider_onednn v2 CLOSED：x64 dense f32 MatMul 的 BRGEMM ukernel provider 已完成三平台能力边界、Windows/Linux 三交付、Linux sanitizers、两台 Apple ARM 负能力、离线依赖/许可证、导出、红队及同一 ukernel 完整边界 8/8 P1 非劣验证。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v3-runtime-replay.md",
+      "summary": "compute_provider_onednn v3 SCOPED：Compute v4 的开放 identity、显式 provider sequence、Queue/Completion 与 binding submit 合同构成直接依赖变化；本轮只迁移并回放既有 BRGEMM provider，不扩大 primitive 范围。"
     },
     {
       "module": "compute_provider_ggml",
