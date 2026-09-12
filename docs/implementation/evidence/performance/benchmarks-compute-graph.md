@@ -162,3 +162,51 @@ python scripts/hyle-perf.py verify `
 
 本行证明当前 CPU 三节点纵切的 Graph steady composition tax 没有 material 固定劣化；它不证明完整
 operator catalog、provider partition、异步/GPU graph 或端到端 Transformer 已完成。
+
+## Compute v2 shipping CPU route P1
+
+[`compute-cpu-route-p1-v2`](../../../../bench/contracts/compute-cpu-route-p1-v2.json) 验证用户实际得到的
+CPU route selection，而不是把完整 Compute API 与裸 kernel 作苹果/橘子式排名。candidate 是启用已关闭
+oneDNN provider 的 Compute v2，peer 是强制 native 的同一产品；两侧使用相同公开 Tensor/Buffer/Queue/
+PreparedOperation/Invocation/Completion、caller-owned 输入输出、串行执行和精度合同。prepare、allocation、
+首次触碰和 warmup 都在计时外，Context/prepared artifact/run-state 仍各自独立。
+
+旧 v1 工程采样在源码复核时被判为无资格证据：它连续调用两次 `Bench::run()`，没有使用同 iteration
+count 的 cyclic paired `Bench::compare()`，也没有完整 Compute workload A/A。该失败事实保留在 closure
+card，但不得阻塞产品、签 non-inferiority 或靠追加样本寻找 PASS。v2 改为同一 `HarnessRunner` 类型、
+104 paired rounds、4 ms epoch、八次交替 warm operation，并在执行顺序、artifact allocation order 和函数
+placement 上运行完整同 route A/A validator。
+
+W1-WIN、MSVC 19.50、Release、static、portable ISA、LTO off 的唯一正式 qualification 在 `n=15` 停止，
+总资格门与性能门均为 `PASS`：
+
+| workload | 八个 point ratio / 99.26% CI 总范围 | 严格结果 | 产品含义 |
+|---|---|---|---|
+| row-major f32 MatMul `M=1,K=N=1024` | `0.99612--1.00697` / `0.97052--1.02849` | `PARITY`，NI `PASS` | selected 与 forced route 使用同一 native body，无 material 选择税 |
+| row-major f32 MatMul `M=4,K=N=1024` | `0.99780--1.00263` / `0.99476--1.00642` | `PARITY`，NI `PASS` | 同上 |
+| row-major f32 MatMul `M=32,K=512,N=1024` | `1.06388--1.07328` / `1.04308--1.08762` | combined `INCONCLUSIVE`，NI `PASS` | 每个 stratum CI lower 均大于 1；selected oneDNN 稳定优于 forced native，但两个 CI 与 5% material boundary 相交 |
+| transpose-view f32 MatMul `M=1,K=N=1024` | `0.99440--0.99995` / `0.98274--1.01221` | `PARITY`，NI `PASS` | 两侧执行同一 native function pointer；无可归因固定损失 |
+
+A/A、5%/10% known delta、timer floor、placement、artifact identity、fresh build、input/host stability 以及
+workload-specific A/A validator 全部 PASS；没有触发 `n=31`。原始 bundle 保存在
+[`compute-cpu-route-p1-v2-1e9c37f5-w1-win`](../../../../evidence/performance/compute-cpu-route-p1-v2-1e9c37f5-w1-win/)；
+contract-lock / manifest / summary / controls / observations SHA-256 分别为：
+
+```text
+4ddce6166464bf121bca2e1115a1350cc654098ff1f642207530836f9a22f023
+c0c72dd121eec7f0cca59bf96272a07d0c726af0858a2cbb58b09ea153cf3f7d
+a1fcc51d68013b6caafd3fc19117c4550dbb38e1a805632f1e0c7632661e2ae8
+d13d5cee99c90cea62ec004494683d29167c5061d286ceb5c0ec77319242a96e
+53e7c9e5c7646968790cef0f77b5598b2ea6ac8d69b6e0e79171d587fee4abd4
+```
+
+严格重放命令返回 `QUALIFIED`、`CURRENT`、`EXACT`、`paths_verified=true`：
+
+```powershell
+python scripts/hyle-perf.py verify `
+  --contract bench/contracts/compute-cpu-route-p1-v2.json `
+  --manifest evidence/performance/compute-cpu-route-p1-v2-1e9c37f5-w1-win/manifest.json
+```
+
+本结论只裁决当前 f32 CPU shipping route：RMSNorm 与 SiluAndMul 复用已关闭 SIMD leaf 证据；其他 dtype、
+量化算子、region provider、并行 executor 和 GPU backend 必须在各自合同中裁决。

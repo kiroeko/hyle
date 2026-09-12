@@ -1,0 +1,1227 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-build\\CMakeCache.txt",
+        "sha256": "9976d785e61b3be754fc9750dba1f386886de16e63ee534984ff3e6d0cad7e0b"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-build\\bin\\Release\\hyle_perf_control_bench.exe",
+        "sha256": "68f81ba2ce8c8c46411f04dbedeb5a44c9e0c81470bc01fa0f28d93366c5fb0a"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-build\\bin\\Release\\hyle_compute_route_bench_placement.exe",
+        "sha256": "25a2ed4daa4787a1fafee4bf649bc523cfe5bdd9179140ef0133aaaee1446f70"
+      },
+      "id": "compute-route-placement"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-build\\bin\\Release\\hyle_compute_route_bench.exe",
+        "sha256": "324ca31d886eddf517e5a6bef11fe9a0eecb6fad10b3db0022e692c19320c7c3"
+      },
+      "id": "compute-route-primary"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "x64",
+      "build_stdout_sha256": "2b462167b88b642dad182c8d6ca416e3fe948960c5b11ffd84c3d85eb1b63767",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo",
+        "CMAKE_GENERATOR": "Visual Studio 18 2026",
+        "CMAKE_GENERATOR_PLATFORM": "x64",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "9976d785e61b3be754fc9750dba1f386886de16e63ee534984ff3e6d0cad7e0b",
+      "compiler": {
+        "compiler_id": "MSVC",
+        "compiler_version": "19.50.35728.0"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "89410aa8584ad897b328ff2aa2752b27337897acf398b95912f55aa21f90be61",
+      "generator": "Visual Studio 18 2026",
+      "machine_profile": "W1-WIN",
+      "requested_cache": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "FETCHCONTENT_SOURCE_DIR_ONEDNN": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-peers\\onednn-v3.13.2",
+        "HYLE_BUILD_BENCH": "ON",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_COMPONENTS": "compute",
+        "HYLE_COMPUTE_NATIVE_SOURCE_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-peers\\hyle-compute-native-d6a93086",
+        "HYLE_COMPUTE_ONEDNN": "ON",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TEST_INSTRUMENTATION": "OFF",
+        "HYLE_TRACE": "OFF"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "hyle_compute_route_bench",
+        "hyle_compute_route_bench_placement",
+        "hyle_perf_control_bench"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+        "compiler_frontend_variant": "MSVC",
+        "compiler_id": "MSVC",
+        "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+        "compiler_target": "unknown",
+        "compiler_version": "19.50.35728.0",
+        "formal_identity_complete": true,
+        "linker_id": "MSVC",
+        "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+        "linker_version": "14.50.35728.0",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "windows-sdk:10.0.26100.0",
+        "stdlib": "msvc-stl:14.50.35717/v145",
+        "system_name": "Windows",
+        "system_processor": "AMD64",
+        "system_version": "10.0.26200"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\contract-lock.json",
+    "sha256": "4ddce6166464bf121bca2e1115a1350cc654098ff1f642207530836f9a22f023"
+  },
+  "contract_sha256": "be3405809c83241eb6809315b0d67472b3ac2e0ce770c1b791f30aee2ca74151",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9903414799030872,
+                1.0242737313088266
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.002755016993362,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.982062218721932,
+                1.0052745599730517
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9970155130905127,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.035191620129065,
+              1.0596773128076693
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0389314282539919,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.043832191605482,
+              1.0587832869724298
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0517113452882119,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0968561977352478,
+              1.1161651050802028
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1096071892640726,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0813092266190316,
+              1.1060663149061454
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1003383249814014,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 91693.3939206205,
+            "conservative_floor_ns_per_op": 0.19783444797008928,
+            "gate": "PASS",
+            "id": "decode-row-major-f32-matmul-m1-k1024-n1024",
+            "measurement_batch": 1,
+            "observed_multiple": 463072.83509867266,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.19710511645490367,
+                "peer_median_ns_per_op": 0.19783444797008928
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.19637207710001897,
+                "peer_median_ns_per_op": 0.19640994123485173
+              }
+            },
+            "peer_median_ns_per_op": 91611.7587016901
+          },
+          {
+            "candidate_median_ns_per_op": 152410.44744020136,
+            "conservative_floor_ns_per_op": 0.19783444797008928,
+            "gate": "PASS",
+            "id": "decode-row-major-f32-matmul-m4-k1024-n1024",
+            "measurement_batch": 1,
+            "observed_multiple": 770393.8773253706,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.19710511645490367,
+                "peer_median_ns_per_op": 0.19783444797008928
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.19637207710001897,
+                "peer_median_ns_per_op": 0.19640994123485173
+              }
+            },
+            "peer_median_ns_per_op": 152411.14432552987
+          },
+          {
+            "candidate_median_ns_per_op": 284205.61606350454,
+            "conservative_floor_ns_per_op": 0.19783444797008928,
+            "gate": "PASS",
+            "id": "short-prefill-row-major-f32-matmul-m32-k512-n1024",
+            "measurement_batch": 1,
+            "observed_multiple": 1436583.0570946562,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.19710511645490367,
+                "peer_median_ns_per_op": 0.19783444797008928
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.19637207710001897,
+                "peer_median_ns_per_op": 0.19640994123485173
+              }
+            },
+            "peer_median_ns_per_op": 304120.53552873916
+          },
+          {
+            "candidate_median_ns_per_op": 66404.96907500143,
+            "conservative_floor_ns_per_op": 0.19783444797008928,
+            "gate": "PASS",
+            "id": "decode-transposed-weight-f32-matmul-m1-k1024-n1024",
+            "measurement_batch": 1,
+            "observed_multiple": 334398.31986717234,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.19710511645490367,
+                "peer_median_ns_per_op": 0.19783444797008928
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.19637207710001897,
+                "peer_median_ns_per_op": 0.19640994123485173
+              }
+            },
+            "peer_median_ns_per_op": 66155.50701304738
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\control-observations.json",
+      "sha256": "d9f1fa3cfe4c18281cfdae82990a2c7c366a6317c38b9d2742deb2653b5d89ab"
+    },
+    "controls_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\controls.json",
+      "sha256": "d13d5cee99c90cea62ec004494683d29167c5061d286ceb5c0ec77319242a96e"
+    },
+    "created_at_utc": "2026-09-12T07:41:21.997942+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\host-probe.json",
+      "sha256": "98c5cc76a852b5a5dbd5ac5806ced6153e7f64eff1e4d15d8b676b57fd38240e"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      },
+      {
+        "gate": "PASS",
+        "id": "compute-route-workload-aa"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "short-prefill-row-major-f32-matmul-m32-k512-n1024",
+        "provenance_file": {
+          "path": "C:\\public\\project-hyle\\hyle\\bench\\compute\\consumer_shapes_v1.json",
+          "sha256": "184b0fdad6bc1f580a1edc89acdd95e2b3e566686d547a88aaeb5fa64a7bdfbf"
+        },
+        "provenance_path": "bench/compute/consumer_shapes_v1.json",
+        "tier": "consumer"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "short-prefill-row-major-f32-matmul-m32-k512-n1024"
+      ],
+      "excluded": [
+        {
+          "id": "decode-row-major-f32-matmul-m1-k1024-n1024",
+          "reason": "mechanism-diagnostic-only"
+        },
+        {
+          "id": "decode-row-major-f32-matmul-m4-k1024-n1024",
+          "reason": "mechanism-diagnostic-only"
+        },
+        {
+          "id": "decode-transposed-weight-f32-matmul-m1-k1024-n1024",
+          "reason": "mechanism-diagnostic-only"
+        }
+      ]
+    },
+    "raw_log_index_file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw-log-index.json",
+      "sha256": "a19d8085fdb130d687e540d63b28885bf2b1909278e455cbf46ba01e92f96ced"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "f5e81530b7766d190979bb08d8f44c3da7ab77799bd5d8c8124a2147b24401a2",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "affinity_mask": "0x4",
+      "applied_by": "benchmark-child-launcher",
+      "child_canary": {
+        "affinity_mask": "0x4",
+        "environment": "windows",
+        "gate": "PASS",
+        "mechanism": "inherited-process-policy-canary",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "cpu_set_id": 258,
+      "environment": "windows",
+      "launcher_applied": true,
+      "logical_cpu": 2,
+      "observed_affinity_mask": "0x4",
+      "previous_affinity_mask": "0xffffffff",
+      "priority": "above-normal",
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "W1-WIN",
+    "physical_host_identity": {
+      "environment": "windows",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WIN",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "registration_state": "REGISTERED_MATCH",
+      "required_host_facts_match": true,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": true,
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_source": "windows-machine-guid-sha256"
+    },
+    "platform": "windows",
+    "probe_sha256": "98c5cc76a852b5a5dbd5ac5806ced6153e7f64eff1e4d15d8b676b57fd38240e",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-09-12T07:20:52.477533+00:00",
+      "environment": "windows",
+      "mutex_key": "W1",
+      "owner_token_sha256": "2b4bbc8b8fd3e418a7df2471e1e81300cce29b897fc9e2c2afb8dd0edf550e6d",
+      "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+      "physical_host_id": "W1",
+      "pid": 6060,
+      "profile_id": "W1-WIN",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 480,
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\observations.jsonl",
+    "sha256": "53e7c9e5c7646968790cef0f77b5598b2ea6ac8d69b6e0e79171d587fee4abd4"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "hyle-native",
+      "remote": "C:/public/project-hyle/hyle/.",
+      "revision": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902",
+      "tree": "72a547b8ec8ea3387465aff2e4a7dc7006b49896"
+    },
+    {
+      "clean": true,
+      "id": "onednn",
+      "remote": "https://github.com/uxlfoundation/oneDNN.git",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "tree": "7396fa9f41db34ffcd5de8f725aba138427f9595"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-01.log",
+      "sha256": "8e0b07b2ea249e9b783ee40025bc1187533efdfeb1cc6d90de649be1a14c8209"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-02.log",
+      "sha256": "35cf6470bdef5c2c77d5211aa28b83acef1fa91252348aca926c9ee855d18ec8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-03.log",
+      "sha256": "46b3c9c9b740b8e1772898628d0c66dc9d906749a47cabec0074930caad6d42b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-04.log",
+      "sha256": "64f946f7c55378cbcea1f245c2adbc8680101329879caad643461e838f0650a9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-05.log",
+      "sha256": "e41b83a589e9dfa7385de4daaeea178aa6debdd9d90cd913ae6d104e5a763a5f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-06.log",
+      "sha256": "10c3af2e5b14fea4ad67b306df2de3bb2281ffab1f3c87c8b4683f5c20ac23c4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-07.log",
+      "sha256": "9e99e67a62741bca512ae4b906f9702d2b2d9c1592c4913da2e2f0bd5fc7ad3c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-08.log",
+      "sha256": "1493bf02856b396494036b946ad80d9b187ee5978c88c64e0187fca715e44998"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-09.log",
+      "sha256": "a2a6063670cb54e0f4c2f676c6328d95734eeab62af461d8276da4868d836586"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-10.log",
+      "sha256": "d0999d9469523d20741617187ef749df088fc03e2908a551c99dbb0b4b968e46"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-11.log",
+      "sha256": "b42ace362e8a83312fa84a9f65595471bde0a85e94cb16c185a5d890eb73e16c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-12.log",
+      "sha256": "8bb9dc1ed2a919b1f8f1c489af89810761045d56bbde2861d77efcaf4e3a69e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-13.log",
+      "sha256": "0a375ffbef7f06635505ec41e1206b06eba24b33d6e63bcc6276d226ab467c13"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-14.log",
+      "sha256": "4f86dcc2813b0eea3f80032428d46308b8d1cfd3733b4b8a9abafc8a4aaeb6f0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-route-primary-run-15.log",
+      "sha256": "a445eda4a7ce95b1db1ccde5ebcf60e5a44b26d0a0d8f76e851aff83e85bbdb2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-01.log",
+      "sha256": "f52c90b133d1ffdbbf9475f94cdf541c3fb224bc8c19f76f16648ed4626d5505"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-02.log",
+      "sha256": "6c381937128154ee6789a9e6a273664676be0cd27895a4e85d545047b3749be5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-03.log",
+      "sha256": "4a5f7e5ee7713878e1bc1d6e0292c3a34afca99e39281dae97d6b070e10ea639"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-04.log",
+      "sha256": "a30b688703a47bded7c8d68bacdd158d1aa778c2b12104f4c51c572b65b858bf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-05.log",
+      "sha256": "545ad3ed8c88aeff71522a7991b161894885927736a7fbaaa49d03b2d3afd2fb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-06.log",
+      "sha256": "fd6d7fbc380c5d3e1e8b2035aa0986c5b5d95aef838a8b4480524ef64439d107"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-07.log",
+      "sha256": "ccb684f852d4df69389e53e8dad421873b06ab26a2568f26221160bf1aabb6cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-08.log",
+      "sha256": "ad4ff0eec3e51f0d3583296155f70aa98e1449df8cd3819dccae3887416aea00"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-09.log",
+      "sha256": "ef974d1e6e1b943df7cc52669fdbc77e8965cc5ac5167eeadcb6a38f73b5b82b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-10.log",
+      "sha256": "b76ea2b8d63d462ebf5fb2454305a950bef7525223a6dc85d963f0fd80f1e69d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-11.log",
+      "sha256": "a90e0409ceca23d48bd59ceec61e11d8e1bcf28649aeeb10e6892092cad936b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-12.log",
+      "sha256": "db1c5de215c2e0aa21298f822505094a55f4d1d714336613bdc0deca791a1cfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-13.log",
+      "sha256": "f5baaddbe83c6ccdf89f4cb744d037f116cc9df8be1804277e4cac5c119c29b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-14.log",
+      "sha256": "136e31585e0ff536dcb00001163cabaf7a9f3ce6ba81a9eb7281c65fa2ae5b28"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-route-primary-run-15.log",
+      "sha256": "007c4cfbfd90acd40db220d9a7ef18a6f4c709262d5a41c473634b3860c710d5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-01.log",
+      "sha256": "52a3b51d0be2cde4d7c2f918731659724128ada36b549e044c6f5c505fc15f2e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-02.log",
+      "sha256": "c812089202ad7aadd9b372188cac93525baa63e6af884a0c535be30884d8ee3b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-03.log",
+      "sha256": "0b4c2a731921950fdf881e1007a456e2a2dfb3dd6caf4acffa9e355f25fccb2b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-04.log",
+      "sha256": "d4ffb076d6c729bea3aff50111d9794b913b1afb0a97acd657133439a7362d1b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-05.log",
+      "sha256": "b7c170a7a53e2e222b67d550c4115e2d9e73956c7fe245d5323253f0b42c1e5b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-06.log",
+      "sha256": "b11bdb9b70b24342931118011fb671e92379451c202fd152571db87d64cbc96a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-07.log",
+      "sha256": "53646a8dff3f865b38b545b4918658d8c2cb550109f1b0741b49acd6afedde98"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-08.log",
+      "sha256": "52f6b52c3d498587330943b874383196a25e1d3172fdefdbdf7e47ed51c8584b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-09.log",
+      "sha256": "d9616ba76b72ddb3ca61551ec1f2f9d3514fce5f926504788ebcb6a6410a1614"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-10.log",
+      "sha256": "87e204e3ceb2cc2a7f1cab08048504dfea6d124d011fa87ad73370fe101f5dad"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-11.log",
+      "sha256": "267d02095b3838d9385199175877721a67b5b638c2603466a650ce228d40e637"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-12.log",
+      "sha256": "0b7e9ffca07c1cda350a73c8715cdd3f7e29547d835ab6493b188b910530bd88"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-13.log",
+      "sha256": "f23e9afb0cf28ccaf4373db2379c9f4ad4524d6ca75dfdb1741c4a0c67d9ae72"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-14.log",
+      "sha256": "11aa474648dd1a314b43041e9ae2b2d446979c7e67a76ba723d5919f07af35a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-route-primary-run-15.log",
+      "sha256": "0ce5902223f5111d173d9ca771fe47428747f04c440c5e9ec7d7d8f65a2d20ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-01.log",
+      "sha256": "7503e9664819000a3a0174e1f1262f808f7f5be1351f3b408baa650f44d70b1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-02.log",
+      "sha256": "6f651f568f5a1cc52aa442e1ca0683b054753c9f9dbaeb309051ddee4fb42986"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-03.log",
+      "sha256": "4ff4fe2d6abd50b81116cb8ca3379d2166a94e77a435e67b80cc75506cbd7039"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-04.log",
+      "sha256": "21eee3fa97951c3e4fae647652f379b03dc92a1b83084d4211cb302876eef609"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-05.log",
+      "sha256": "581fbab879b637a2866fd5415d29f465aa59b737f2fbadb27db54243f2ec38a3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-06.log",
+      "sha256": "241035aee0ee81e30ca1d50138501600588f0bcd7446e665d139066c52eb44e6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-07.log",
+      "sha256": "a37c3e428b4a0328d340909f8241a8e70096e8ef3d2de5e2b5df354948045d02"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-08.log",
+      "sha256": "b6267706f9603b6796825ebdfc01e785cc41acd3a6fc186e1b6ab330fd47e13c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-09.log",
+      "sha256": "e0662a33e8b4b72a21500f1a79db67e7f5c94bebf22a3ad12768dd85ab81aa8d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-10.log",
+      "sha256": "cc24cf8a84e40639d892d95eeb908c2412070f26f71aa705f43bfc56bfd7a461"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-11.log",
+      "sha256": "a06d7dd18273442af252d8bf3cb1d9ebac1d9f8b28ff502249e13b0aabed77bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-12.log",
+      "sha256": "b1bad7da919f9a60aded983c65a5e35ff87faa605cb4679e2af5f941d212ca8d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-13.log",
+      "sha256": "8e632a24a25d8ab7cb00f4221d4e1c78a7fff934d80018b521a8b92062854d7e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-14.log",
+      "sha256": "2538249a04569e8f676e6ef0165e1c592028150505d4b4bc29028054fd679056"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-route-primary-run-15.log",
+      "sha256": "ece9c33682ac50869221ceb2b8ba8efb9e87df6c617b4e5a834f772e827522b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-01.log",
+      "sha256": "9cca38d0765bcacbcb552b98d5ff32831eaa9eb2c375598468f3ce9c3118151b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-02.log",
+      "sha256": "f2ccf5657a7b81c60867551ff8f205f28dff23be48029c113ada15ae03958d99"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-03.log",
+      "sha256": "321e29fe9a2ad930fac684a17c7d49a938c527f1528c7e389f284630e9c7d9a4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-04.log",
+      "sha256": "691dcc4bde389f6035f2ea1eef715ff78f75251edfa8644c4c05d6eb53993e54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-05.log",
+      "sha256": "8d1db23ce18fe1de5ba7368588fecb451d6364cad2464d44fc85d1f2844b4aa3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-06.log",
+      "sha256": "d1e92a55656d9df7144afc308ce212d266a3f42494e78805a6bfc8f4afd991a7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-07.log",
+      "sha256": "bb1c39b8852a90f1e6382ba57692524cddc3c71066a6edc463e1e9b8dc494915"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-08.log",
+      "sha256": "f79138a3ab9934904ca49d3ac0a02117968a236df7f738cef0df34332e6302ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-09.log",
+      "sha256": "0cb204ffe0d2aa20e1a16b7b35d68a8550ab20613622e37052bb17a6c2835105"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-10.log",
+      "sha256": "5a351223d084882ca2dfc03b7967c3bd176550ad5a13b51565cc70b4e82b514a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-11.log",
+      "sha256": "8924a84e722c4ca74f41fabb6a03447e312fea4997a3582794fdb7ed62ebc78f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-12.log",
+      "sha256": "01b6d7725686a5aea698b94307d90f9de66dde30e6dc0f8e971caadd2649d14d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-13.log",
+      "sha256": "3939e03191010b650c371c5472df01a17d5b9dde2db0a6e4047b37b09fd1b5ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-14.log",
+      "sha256": "3ee0bced8f2783647cac117247ae3f5ceb74c074d90d48afbc552c23541f2d62"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-route-placement-run-15.log",
+      "sha256": "d50f4ede4a15a4ac43b2b6c27a865e242c13b596752b82f19e9a44fc85a02118"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-01.log",
+      "sha256": "427dd740542528242df9441eb034d13769da1c9ae97e9d0e2e40ff0c5aac5199"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-02.log",
+      "sha256": "b43c4c1ba9c0bc0805a5964a6dc63d315a0c351f5ff579474f1cbe6936ddf9e6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-03.log",
+      "sha256": "97393f29dc10c4452bdcdfd128dc780af54044e2c7ad8e2b359e29b86f057ba3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-04.log",
+      "sha256": "ab16684502f15eaee59edd9943fe73a78ae8d9047457b75ac44d6a3eadfe6f91"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-05.log",
+      "sha256": "c766922774c1f495ca8ae0ce6a9e6ab6ae43856674bab7bc143ae96bda55b91d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-06.log",
+      "sha256": "784207138edeeb3a9cbed405d63c4a56150fae91851e5b8dfb8749fd6c8042d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-07.log",
+      "sha256": "aaae1be335fba8b5d4971ef015a6617788881aa75760c05de113a7da475ba172"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-08.log",
+      "sha256": "1cad7f03db45824bc36244fe817d04b6dc4a984142f7fd6354cdd28a45be5d29"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-09.log",
+      "sha256": "fc9138745dda7ed54a96b9e4da10835b107d5b071e7c5e876171b8e6284807ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-10.log",
+      "sha256": "1a501ee6c4a40972bddeab7a82194a665851f09026791bfe3d879c1cab1d8f46"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-11.log",
+      "sha256": "75e226e04c08516a48f76c8dac496346960cb0ac0f96528d5631d69836ce5f59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-12.log",
+      "sha256": "cd91aed228025eb9fe280a3d4801d6229b7afb2503e70acc2c1030c2ec48d1b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-13.log",
+      "sha256": "07abe658176643429f7bf7ea1bb939451b7eb1e4e896309904a71f57fc22c2f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-14.log",
+      "sha256": "df1abc1d275e04832128306b9618b1757b0c557fbb1dc81990263e5e992d9ed6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-route-placement-run-15.log",
+      "sha256": "b22a7044bcd95a6c3f1e15370838f08d2b839c3167dbc675ec1f9a241ed12ace"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-01.log",
+      "sha256": "823045615e4b1b393ad0f324b810bf3613cbc2986bb6fa534ca5e1872480bca7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-02.log",
+      "sha256": "af276d9dbbd7ca409afee77c1acd2a7f2e61a46c81df9ece96fb63886bdb596a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-03.log",
+      "sha256": "a3b7f12fc462a247b0fa2a9001b3d3996c6317cb57a3e2214391d8fb4fc604f4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-04.log",
+      "sha256": "985492b7cd80a151930a2dde01a5bf624aafe5e6c79a8f59ad6c3adef5593190"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-05.log",
+      "sha256": "9791bfb565e608764c7ad4edd0f85d5cb038531799486b41711c4de4dff02062"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-06.log",
+      "sha256": "e5b53c042ed2e3d81f370573d55f61be0f75f5630d46235d82aef9df53bc87d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-07.log",
+      "sha256": "15ca615a1aa3481ef16b18d704461317ded362a3845bd221b6fdffac8e4a16d8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-08.log",
+      "sha256": "c4c85b90655a6ba4756c1a9717625a9e154b3f046359acb365214048f3f17472"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-09.log",
+      "sha256": "c56fa7020f8fb8fbfa6f71bb3ad142542335cd6274da421388b680c76c3e1470"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-10.log",
+      "sha256": "3b6bcc6586ccd8f5161dbea6c976d54ff8218f2a6c5a2562eb10072d3936e54a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-11.log",
+      "sha256": "de4dd5d01c4a52df2607b7ff99fe8e6bd624d18786772d4a3d3a8bc52c8bed1b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-12.log",
+      "sha256": "73bcaab605e0e8e90d4b92ba9a38306de84f84213cd5d43f61adcf98480b3cab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-13.log",
+      "sha256": "e4db5831ca9fe9d2282b58882c964237cea7917320f95508d49c2dbe4535a70b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-14.log",
+      "sha256": "481b040108bd99e7f1891779b1167d51d937dbae59c22343874dad8430bd3fc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-route-placement-run-15.log",
+      "sha256": "8556336437c9f498d2df972958e36f6cae8338f938c0e5cd64c52520c9c47700"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-01.log",
+      "sha256": "cb261432a669aab395f76b735fea8873c72904ec50f845ee744275733043cb0e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-02.log",
+      "sha256": "9a069c1e3b672ac524b8395dcdb8f24884611f966446cc0c74f99b487bf23608"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-03.log",
+      "sha256": "ce88a36fb12845c48660b44f29da737513b5fb1140e1b1278c993cc5a94b7ada"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-04.log",
+      "sha256": "94726a4c1f5920d8ab9aa14aa88a75899e2e67e11de5542ff4e8a3a2bd57e93f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-05.log",
+      "sha256": "9a36504a85275e0d6daebae18404bd2fedb3079f2a26f67d91013e072e060bbb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-06.log",
+      "sha256": "52c8e34cd6ba6ae082965ac29ea9f4c625ddeeb0d68fc0fe68c51c0c3e2a6356"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-07.log",
+      "sha256": "09c0e3b3a8d59ebbf9e9ca51590dd1c9ef5baa43a91eed447393428190ff1424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-08.log",
+      "sha256": "2ef77de24a96cc1deae4b2eda7494a77f723909eb5e35147a839ce17ac85e732"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-09.log",
+      "sha256": "821c1ec2611f52561e30a9bde252303799fa3f3c268e9f7e75083f5ef3f99615"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-10.log",
+      "sha256": "f322e697caea076d1d59b8a3fcc570803376be28b34291aed47aeefcd887ac02"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-11.log",
+      "sha256": "7b1d2bf3c01cb9df9130171d900687cf61c8908619733dc7709f2f445b385ee9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-12.log",
+      "sha256": "8fedc8a0503f69b466e1d3d7319bef6da9c0a54c8e50eebf76f6684c247e83da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-13.log",
+      "sha256": "304c8701022ebd5d6e434a506519b10ab07ec08e9f82506460cfb3a4f2343167"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-14.log",
+      "sha256": "7ae1d67afed10c76b0d233cc0a987c42c9bd31a4f0c968ed9f3dacd69b237453"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-route-placement-run-15.log",
+      "sha256": "03f7826d9add6f12e3ab5263e2528e7be157d9da4684d253a350bc5b36689216"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-01.log",
+      "sha256": "1dcf34ccccfc5d8055f1196a774262b7e7fb8971b3fb9c326d4ac52e7d6df30c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-02.log",
+      "sha256": "f8202ddaac2204bb522e43816416b1334c76aaf11f6ecc1e07508b3f0fcb3e9b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-03.log",
+      "sha256": "fe7c8d0e869bae55607a42a49e64099748738ae49bfcb065be43cbe434966f93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-04.log",
+      "sha256": "09d4b4d2d69a1bbdff39b6e27b85900715d65f2006d8e5c35ee2657a87fb208e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-05.log",
+      "sha256": "1001415cfd6cf0aa1c181f7268fab16880eec58cfe84d2e224243f648075902d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-06.log",
+      "sha256": "0dc3aa62b0ee0c58f52d62d5f86c5aaeff6b2db23e10438471eeef723b2e59a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-07.log",
+      "sha256": "a4804501ef1f811bb3b425d0a07ce59ffe5939786c75bec5349909974d61417c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-08.log",
+      "sha256": "fd208dfbacefc6c2b1cf9530522373725325587534798f840bc0fe595c12ce44"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-09.log",
+      "sha256": "7cffff73176b4b5fb2077b1bb01253adaaa53253b461c618f482146458ab45be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-10.log",
+      "sha256": "63544b312057acfe045cadc39a5b292451e66218e5529d8edcfdb529e7ed8daf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-11.log",
+      "sha256": "f8357ae3d1d453132fc0522005eb42bfcc69259994a0618745df29e4faeef663"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-12.log",
+      "sha256": "d4bbaa8f82f1a59e7e06772e492c2022ff63805742ff167cc607926bc5fcb4dd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-13.log",
+      "sha256": "2766c5af3e0a62753a5c08811e423c732f7282739b4f4ca436aa06cfb0df7e74"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-14.log",
+      "sha256": "e15a5f644ca5e26d2144ceac6f34fa80f8ffbe907745bd67f7e59d4b80268cd0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-candidate-first-run-15.log",
+      "sha256": "10df5ffde8499133bea674ebf98f1d977f09b15a97781c70c267d2e049c417c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-01.log",
+      "sha256": "f106924bb774e9cc543d8b0c3ecd287a55f54919c6b1d322c0dc4e3b2a64d8d7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-02.log",
+      "sha256": "27d7f1cd42c5f8505f1a1deb6b06f72f6c71461a516e5fe6c0ef682917431769"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-03.log",
+      "sha256": "580fa4542b0098eea4de1bce8a98e3296084ddca446ec2e7fb34e1649007a4b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-04.log",
+      "sha256": "cf3898ced530deffe0de5f88584fdf1a60c1c279875aaeaca858e6832a27716e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-05.log",
+      "sha256": "b488319a59ba302fc55373237d25dc5eb2bdf109cf85523809eb72674253dcf0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-06.log",
+      "sha256": "f6b650bc729b9f23bba2c51e47ffe548e611036ffd8c914e405e0a14b6914fb5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-07.log",
+      "sha256": "bb6d9728804645af43d48ea39c1ea4359143133eae3f75baebc1da1075f0b6ec"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-08.log",
+      "sha256": "0e77deee9b0a93f56582cb4a8d337c9a6b1bf7ecdecd3588b0b4a03b6db00abd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-09.log",
+      "sha256": "4e92ef49a83ccf75658bdd3a247cc61531c1a467cf62029ea99c0b69cc995e7e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-10.log",
+      "sha256": "5b0f8005892f621b4b22ea3fb389cfd9be029c01fe5922e2e8c535cbc9b74371"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-11.log",
+      "sha256": "177f747da24c41c3acf6829781d25e99eea4f1b41211722e19821c26ae3c313b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-12.log",
+      "sha256": "e33cbe136d32b014b2672183ac4af0bf78d9f1838663a0a2323fc59a00246746"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-13.log",
+      "sha256": "99c17136ac8f86acbc33a5cdd3f5c4d2cf98a82febaed09a07292cf69e8487b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-14.log",
+      "sha256": "0b14ad85b247472b6e0331e986735056b93f1e72cb636e01e3a06248f33d491c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\raw\\n-15\\control-peer-first-run-15.log",
+      "sha256": "30e670735cbd44c90659e4a0482cfc66f1b5a06df70919e0ba60d365e8d0dc9e"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "git@github.com:axiomates/hyle.git",
+    "revision": "1e9c37f5184711c8aaad0523880ff5f714dfed33",
+    "tree": "15ac92a95758c66bb2543eb71e955be42a612126"
+  },
+  "summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\summary.json",
+    "sha256": "a1fcc51d68013b6caafd3fc19117c4550dbb38e1a805632f1e0c7632661e2ae8"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "MSVC",
+        "compiler_matches_profile": true,
+        "compiler_version": "19.50.35728.0",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "MSVC",
+        "expected_compiler_version_prefix": "19.50",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+          "compiler_frontend_variant": "MSVC",
+          "compiler_id": "MSVC",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+          "compiler_target": "unknown",
+          "compiler_version": "19.50.35728.0",
+          "formal_identity_complete": true,
+          "linker_id": "MSVC",
+          "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+          "linker_version": "14.50.35728.0",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "windows-sdk:10.0.26100.0",
+          "stdlib": "msvc-stl:14.50.35717/v145",
+          "system_name": "Windows",
+          "system_processor": "AMD64",
+          "system_version": "10.0.26200"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    },
+    {
+      "details": {
+        "exit_code": 0,
+        "kind": "command",
+        "log": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-cpu-route-p1-v2-engineering-evidence\\validators\\compute-route-workload-aa.log",
+        "log_sha256": "539525f4de91ddc4c48da8c9bc3ea59d61478ed344dff7123032e4cd2883c1a7"
+      },
+      "gate": "PASS",
+      "id": "compute-route-workload-aa"
+    }
+  ]
+}

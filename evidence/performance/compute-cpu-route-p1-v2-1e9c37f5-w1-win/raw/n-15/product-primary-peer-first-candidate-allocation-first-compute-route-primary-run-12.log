@@ -1,0 +1,37 @@
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | compute route row-major MatMul M=1 K=1024 N=1024
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:-------------------------------------------------
+|   100.0% |                     |           92,420.24 |           10,820.14 |    6.1% |      0.40 | `HYLE native MatMul M=1 K=1024 N=1024`
+|   100.1% |     98.9% .. 103.6% |           90,266.67 |           11,078.29 |    7.2% |      0.40 | `HYLE selected MatMul M=1 K=1024 N=1024`
+
+  Summary
+    no difference resolved between `HYLE native MatMul M=1 K=1024 N=1024` and `HYLE selected MatMul M=1 K=1024 N=1024`
+    ratio 1.00x, 95% CI [0.99 .. 1.04], 104 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | compute route row-major MatMul M=4 K=1024 N=1024
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:-------------------------------------------------
+|   100.0% |                     |          153,073.53 |            6,532.81 |    1.4% |      0.55 | `HYLE native MatMul M=4 K=1024 N=1024`
+|    99.6% |     98.6% .. 100.4% |          153,879.41 |            6,498.60 |    1.8% |      0.56 | `HYLE selected MatMul M=4 K=1024 N=1024`
+
+  Summary
+    no difference resolved between `HYLE native MatMul M=4 K=1024 N=1024` and `HYLE selected MatMul M=4 K=1024 N=1024`
+    ratio 1.00x, 95% CI [0.99 .. 1.00], 104 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | compute route row-major MatMul M=32 K=512 N=1024
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:-------------------------------------------------
+|   100.0% |                     |          300,400.00 |            3,328.89 |    3.1% |      0.54 | `HYLE native MatMul M=32 K=512 N=1024`
+|   104.9% |    103.0% .. 106.6% |          288,267.65 |            3,469.00 |    4.3% |      0.53 | `HYLE selected MatMul M=32 K=512 N=1024`
+
+  Summary
+    `HYLE selected MatMul M=32 K=512 N=1024` ran 1.05x faster than `HYLE native MatMul M=32 K=512 N=1024`
+    95% CI [1.03 .. 1.07], 104 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | compute route transposed-weight MatMul M=1 K=1024 N=1024
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------------------------------
+|   100.0% |                     |           65,526.81 |           15,260.93 |    6.1% |      0.47 | `HYLE native transposed MatMul M=1 K=1024 N=1024`
+|    98.9% |     96.0% .. 100.5% |           66,364.49 |           15,068.30 |    5.0% |      0.48 | `HYLE selected transposed MatMul M=1 K=1024 N=1024`
+
+  Summary
+    no difference resolved between `HYLE native transposed MatMul M=1 K=1024 N=1024` and `HYLE selected transposed MatMul M=1 K=1024 N=1024`
+    ratio 0.99x, 95% CI [0.96 .. 1.00], 104 paired rounds, interleaved
+# HYLE_COMPUTE_ROUTE_RUN execution_order=peer-first allocation_order=candidate-first aa_route=none paired_mode=nanobench-compare provider_version=3.13.2 apple_qos=not-applicable qos_ok=not-applicable affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=b0d31bf0d2f3efcac7500c4fde5a698b

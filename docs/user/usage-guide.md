@@ -47,8 +47,9 @@ target_link_libraries(my_app PRIVATE hyle::container)
 精确版本；patch 版本、headers 与 artifact 是同一个 C++ 构建合同。
 
 已验收产品中的 TLS、HTTP/2 和 trace 等昂贵能力默认关闭，相应 cache 选项只在 owner/gate 成立时
-出现。当前 Compute candidate 只有不增加可选依赖的 CPU 实现；CUDA、Metal/MLX、Vulkan、HIP 和
-第三方 provider 只有各自通过独立能力、交付与性能审计后才会产生配置项。当前 trace 只有 Tracy。
+出现。当前 Compute 提供不增加可选依赖的 HYLE-native CPU 路线；x86-64 可显式选择已经独立验收的
+oneDNN MatMul provider。CUDA、Metal/MLX、Vulkan、HIP 和其他 provider 只有各自通过独立能力、交付与
+性能审计后才会产生配置项。当前 trace 只有 Tracy。
 
 ## 选择模块
 

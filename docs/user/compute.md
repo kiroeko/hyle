@@ -133,7 +133,7 @@ if (!invocation) return invocation.error();
 - 不同 Queue 可并发；`Context::close()`/析构不得与另一 handle 的 submit 并发。
 - HYLE-native route 不隐藏 staging、copy、线程切换、packing 或 JIT。oneDNN BRGEMM handle 只在 prepare
   冷路径 finalize/generate；每个 Invocation 映射调用方 workspace，steady submit 不创建 descriptor、
-  stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前候选的六个推理形状
+  stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前闭包的六个推理形状
   已证明 warm `submit()+wait()` 无 C++ 动态分配；适用性能与三交付证据已经由 registry 所指 terminal
   record 签发。
 - oneDNN ukernel C API 在锁定版本中仍标记 experimental。它完全私有于 provider，并由精确版本断言保护；

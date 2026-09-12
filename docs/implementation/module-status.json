@@ -272,10 +272,15 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-v2-cpu-operator-catalog.md",
       "candidate": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902",
-      "summary": "compute v2 CANDIDATE：C20--C25 的 Tensor/Operation/PreparedOperation 与 HYLE-native SIMD 路线已固定并由 Graph 直接消费；候选后产品无漂移，待同合同 native P1、候选交付复核与终局红队。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      },
+      "summary": "compute v2 CLOSED：CPU Device/Context/Queue、Tensor/Mem bridge、RMSNorm/MatMul/SiluAndMul、typed host kernel、prepared artifact/per-run invocation 与 HYLE-native/oneDNN 选择已完成四机正确性、sanitizer、三种 C++ 交付、红队及同合同 CPU route 5% P1 非劣门。"
     },
     {
       "module": "graph",

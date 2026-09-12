@@ -218,4 +218,96 @@ M=32 的 selected/native op/s 比约 `1.05--1.11`，其余同 body 行随单次�
   没有 provider search；它们在 v2 中只保留为 mechanism diagnostic。唯一产品门是会实际改变算法的
   `M=32,K=512,N=1024` selected-oneDNN 与 forced-native 同合同路线。
 
-以上只修复证据命题和仪器，不改变 Compute candidate 产品字节。v2 尚未运行 qualified P1。
+以上只修复证据命题和仪器，不改变 Compute candidate 产品字节。
+
+## Final CPU route P1 verdict（2026-09-12）
+
+`compute-cpu-route-p1-v2` 在 W1-WIN、MSVC 19.50、Release、static、portable ISA、LTO off 的一次
+engineering qualification 中于 `n=15` 按规则停止；`qualification_gate=PASS`、
+`performance_gate=PASS`，没有运行 `n=31`，artifact identity、fresh-build contract、完整 workload A/A、
+5%/10% known delta、timer floor、placement、host/input stability 全部 PASS：
+
+- row-major `M=1` 的八个 point ratio 为 `0.99612--1.00697`，99.26% CI 总范围
+  `0.97052--1.02849`，combined=`PARITY`、5% non-inferiority=`PASS`；
+- row-major `M=4` 的八个 point ratio 为 `0.99780--1.00263`，CI 总范围
+  `0.99476--1.00642`，combined=`PARITY/PASS`；
+- short-prefill `M=32,K=512,N=1024` 的 shipping selected-oneDNN route 相对 forced-native 八个
+  point ratio 为 `1.06388--1.07328`，全部 CI lower 均大于 1；两个 CI 与 5% material boundary 相交，
+  因而严格 combined exact verdict 保持 `INCONCLUSIVE`，但方向稳定有利且 5% non-inferiority=`PASS`；
+- transpose-view `M=1` 的八个 point ratio 为 `0.99440--0.99995`，CI 总范围
+  `0.98274--1.01221`，combined=`PARITY/PASS`。该行两侧在 prepare 后执行同一 native function pointer，
+  点值的小幅同向漂移没有形成可归因的产品机制。
+
+完整 bundle 保存在
+[`compute-cpu-route-p1-v2-1e9c37f5-w1-win`](../../../../evidence/performance/compute-cpu-route-p1-v2-1e9c37f5-w1-win/)；
+严格 `hyle-perf verify` 返回 `QUALIFIED`、`CURRENT`、`EXACT`、`paths_verified=true`。结果证明 shipping
+选择边界修复了此前 M32 native 固定输项，同时没有给 decode 或 transpose fallback 增加 material steady
+tax；它不把同函数体诊断行宣传为外部 SOTA 胜负。
+
+## 七问终局答案
+
+1. **第三方路径**：`compute` factor 本身没有直接 vendor dependency 或 vendor public type；它通过已关闭的
+   Mem/Platform/SIMD 等 HYLE factor 间接取得 mimalloc、Highway/xsimd 的合法实现。x64 oneDNN 是独立、
+   可关闭的 `compute_provider_onednn` factor；关闭它时不下载、不编译、不导出恒失败 stub，启用时仍只向
+   Compute 返回 type-erased `Provider` 值。
+2. **功能完整**：C20--C25 完整拥有 CPU Device/Context/Queue/Completion、Mem storage bridge、rank<=8
+   TensorDesc/view、row-wise RMSNorm、普通和 transpose-view MatMul、packed SiluAndMul、唯一 shape inference、
+   prepared artifact/per-run invocation 与 typed host-kernel escape hatch。f16/bf16、量化、attention/RoPE、
+   embedding、batched MatMul、region fusion 与 GPU backend 是明确后续纵切，不是当前 CPU 卡冒充的能力。
+3. **内部复用**：公开边只指向 `core/error/mem`；实现边复用 `math/platform/simd/util_core`。错误、allocator、
+   Buffer/mapping/coherence、refcount、ISA facts 与 whole-row kernels 均有既有 owner；Compute 没有复制这些
+   机制，也没有反向依赖 Graph、Sched 或可选 provider。
+4. **性能**：shape inference/prepare 是 O(rank) 冷路径；provider/ISA 选择、JIT 与 workspace 决策只在
+   prepare。warm submit 为 O(rank+bindings+算子本体)，零常态 heap、route search、JIT、packing、隐藏 copy、
+   thread handoff 或 syscall。正式 P1 的全部行通过 5% non-inferiority；同 native decode/transpose 为
+   `PARITY`，M32 shipping selected-oneDNN 对 forced-native 八个 point ratio 为 `1.06388--1.07328`。
+5. **接口与易用性**：公开面是自然 C++23 typed value/RAII journey；direct 用户不必构造 Graph，重复执行
+   明确分开 `prepare -> create_invocation -> submit -> Completion`，昂贵阶段和 workspace owner 可见。
+   没有旧 C API/Native FFI、字符串属性袋、裸 `void*` 用户入口、provider-specific transpose flag、
+   benchmark knob 或固定 transformer façade。
+6. **构建交付**：中央 component graph 是唯一内部依赖真相，`src/compute/CMakeLists.txt` 只登记源码和
+   fat-kernel body；oneDNN 拥有自己的 target、开关、离线依赖、静态开发闭包与许可证。Windows 的 source、
+   relocated installed shared、relocated installed static consumer 均实际执行通过；shared export hygiene
+   扫描 6 个 HYLE libraries、682 个 exports，无私有/vendor/C ABI 泄漏。
+7. **文档与状态**：用户指南说明何时用 Compute/Graph、MatMul layout、provider/executor、owner、失败边界、
+   性能限制和三种交付；架构页只保存长期 backend/provider 决策，不复制易过时进度。当前状态只由 registry
+   指向本 terminal record，性能总账保留完整 bundle、严格方向与未覆盖能力。
+
+## Terminal record（2026-09-12）
+
+不可变 Compute v2 产品候选为 `d6a93086b4cdeb6b412f62c103ff9fb5d61f8902`。候选到终局的
+`include/hyle/compute`、`src/compute`、Compute tests 与中央 component/link graph 差异为空；候选后的变更
+只增加已独立关闭的 optional provider、Graph consumer、package sample、benchmark 纠正、证据和文档，
+没有根据 P1 回写 API、layout、算法或常态 metadata。
+
+| Gate | 候选绑定证据 | Verdict |
+|---|---|---|
+| scope | C20--C25 全部完成；C26--C28 明确交给后续 dtype/量化/operator/provider 卡，C29 拒绝；direct host-kernel 正交 journey 证明产品不是三算子 benchmark façade | `PASS` |
+| architecture | backend/provider 两轴、immutable prepared artifact/per-run invocation、Mem storage 与 Completion lifetime 分层成立；依赖无环且没有 Graph/Sched 反向边 | `PASS` |
+| correctness | Windows、Linux、MacBook Air、Mac mini 的 Compute public-header 与功能测试通过；zero extent/overflow、shape/layout/dtype、alias、coherence/mapping failure、OOM/rollback、move/close、跨 Context、reference differential 与 native tile/tail 均覆盖；WSL ASan/UBSan/TSan 零 report | `PASS` |
+| delivery | Windows source embedding、relocated shared、relocated static consumer 全过；三者实际运行 native 与 oneDNN 路线，shared 6 libraries/682 exports 通过卫生检查，static dev/license closure 完整 | `PASS` |
+| usability_docs | `Device -> Context -> Queue`、Tensor/Mem bridge、direct prepare/invocation、typed host kernel、oneDNN 选择与限制均有可编译 journey；无伪 C ABI 或隐藏昂贵 convenience | `PASS` |
+| red_team | 有界复核公开入口、ownership、销毁序、并发声明、provider failure、OOM、alias、storage domain、组件边、导出、旧入口、benchmark seam 和苹果/橘子风险；只发现并纠正 v1 测量仪器及过时状态文字，未发现候选产品反证 | `PASS` |
+| engineering_performance | P0 成本结构通过；`compute-cpu-route-p1-v2` 为 `QUALIFIED/CURRENT/EXACT`，完整 workload A/A 与全部 controls 通过，所有产品行 5% non-inferiority=`PASS` | `PASS` |
+
+代表性验证与结果：
+
+```text
+python scripts/hyle-perf.py verify --contract bench/contracts/compute-cpu-route-p1-v2.json --manifest evidence/performance/compute-cpu-route-p1-v2-1e9c37f5-w1-win/manifest.json
+cmake -DHYLE_SOURCE_DIR=C:/public/project-hyle/hyle -DHYLE_SMOKE_ROOT=C:/public/project-hyle/hyle/.scratch/compute-v2-delivery -DHYLE_SMOKE_COMPONENT=compute -P cmake/HyleCiSelectedComponentSmoke.cmake
+python scripts/loc-report.py --module compute --commit d6a93086b4cdeb6b412f62c103ff9fb5d61f8902 --self-check
+```
+
+严格性能重放为 `QUALIFIED/CURRENT/EXACT/paths_verified=true`；selected-product smoke 返回
+`source, shared, static, relocated consumers` 全部 PASS；LOC self-check 为全库 `563,541` 行、自实现不含
+测试 `99,071` 行、Compute 实现 `2,246` 行。
+
+公开限制：当前只有同步 CPU execution 与 f32 RMSNorm/MatMul/SiluAndMul；Queue 不拥有 worker，caller
+payload、workspace、provider executor backing 与 allocator 必须满足指南寿命；provider terminal failure 后
+output 可以部分写入。只有可复现 correctness/security/lifetime/alias 缺陷、真实消费者要求当前 owner 下的
+新 CPU dtype/op/fusion、公开合同/算法/交付变化、相关依赖升级，或合格同合同证据显示 material regression
+才重开本卡；ggml region 与每个 GPU backend/provider 必须建立自己的 closure card，不能回写本记录。
+
+七门全部 `PASS`，Compute v2 CPU 纵切裁决为 **`CLOSED`**。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
