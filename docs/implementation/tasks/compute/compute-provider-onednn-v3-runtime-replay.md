@@ -36,3 +36,29 @@
 5. Compute v4 改动对 v2 候选性能证据的实际失效范围。
 
 `AUDITED` 前不修改 `compute_provider_onednn` 产品代码。
+
+## AUDITED 结论（2026-09-12）
+
+源码回放确认 v2 的 BRGEMM plan、tile 选择、caller-supplied workspace 和同步 executor 均可原样保留；失效的
+只是 Compute runtime 边界。oneDNN `3.13.2` 仍由 dependency lock 与本 factor 独占交付，公开头不泄漏
+oneDNN 类型。新 runtime 的 backend resource validation 先拒绝不属于 CPU device 的 storage，provider 再
+显式 map 精确 bindings；不能继续依赖旧 `operation.cc` 的隐藏 host-pointer 转换。
+
+### 有限改动集
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| D30 | 封闭 `ProviderKind::kOneDnn` 无版本身份 | 在 typed header 暴露稳定 `ProviderId`；vtable 返回 id/name/locked version | Provider、PreparedOperation 与 Graph report 可观察精确 identity，无 mixed 伪 identity |
+| D31 | provider context 用 `Device::cpu()` 比较旧枚举 | 改为新 Device/CPU backend 合同并保持非 CPU 为 `Unimplemented` | 非 CPU 不创建 oneDNN state，CPU 设备正常 |
+| D32 | execute 接收通用 runtime 预映射的裸指针 | provider submit 接受 Queue 与 TensorView spans，自行做 CPU-accessible mapping/coherence，再返回 immediate Completion | submit 无 heap、provider search 或隐藏 copy；失败边界与 Completion 合同一致 |
+| D33 | 测试依赖固定 `ProviderList<4>` 与隐藏 native fallback | 改成 caller-owned provider span `{onednn, native}`；单 provider 与无 provider 语义分别验证 | 只有 `Unimplemented` 才前进，artifact identity 精确 |
+| D34 | build graph 尚未表达 CPU runtime 事实 | 增加实际最小 factor 边和新公开 header owner；回放三交付与 exports | source/static/shared 都从同一产品 façade 取得完整闭包 |
+
+### P0 裁决
+
+BRGEMM plan、kernel 与 tile arithmetic 不改；prepare 仍是冷路径。execute 新增的 TensorView 检查和 mapping
+取代旧 Compute runtime 中同一段工作，不是叠加层；provider 内仍只有固定 2 input/1 output stack metadata、
+一次同步 executor episode 和 immediate Completion，零新增常态 heap/lock/syscall/copy。若最终 diff 证实
+这点，v2 的 kernel P1 不因 owner 搬迁失效；若出现额外 dispatch/mapping，则必须重跑原同合同 P1。
+
+本轮 `FIX` 仅 D30--D34；不增加 primitive、不调整阈值、不为 HIP/ROCm 建立任何代码或构建入口。

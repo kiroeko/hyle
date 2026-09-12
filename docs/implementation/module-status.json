@@ -354,9 +354,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-onednn-v3-runtime-replay.md",
-      "summary": "compute_provider_onednn v3 SCOPED：Compute v4 的开放 identity、显式 provider sequence、Queue/Completion 与 binding submit 合同构成直接依赖变化；本轮只迁移并回放既有 BRGEMM provider，不扩大 primitive 范围。"
+      "summary": "compute_provider_onednn v3 AUDITED：D30--D34 仅迁移开放 identity、CPU binding submit、显式 fallback sequence 与 factor 边；既有 BRGEMM primitive、tile 阈值和 kernel P1 形状保持不变。"
     },
     {
       "module": "compute_provider_ggml",
