@@ -390,8 +390,8 @@ TEST(NativeElementwise, RejectsUnsafeStridedAliasAndUnsupportedArithmeticType) {
           .value();
   auto invocation = prepared.create_invocation().value();
   auto completion = invocation.submit(queue, input, output);
-  ASSERT_TRUE(completion.has_value());
-  EXPECT_TRUE(completion->wait().IsInvalidArgument());
+  ASSERT_FALSE(completion.has_value());
+  EXPECT_TRUE(completion.error().IsInvalidArgument());
 
   const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
   auto unsupported_unary =

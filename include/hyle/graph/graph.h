@@ -1,8 +1,12 @@
 #pragma once
 
+#include <array>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <type_traits>
+#include <utility>
 
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
@@ -20,6 +24,7 @@ struct GraphAccess;
 
 enum class ValueKind : std::uint8_t {
   kInput = 0,
+  kConstant,
   kNodeOutput,
 };
 
@@ -82,12 +87,17 @@ public:
   explicit operator bool() const noexcept { return valid(); }
   HYLE_GRAPH_API std::size_t value_count() const noexcept;
   HYLE_GRAPH_API std::size_t input_count() const noexcept;
+  HYLE_GRAPH_API std::size_t constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
   HYLE_GRAPH_API std::size_t output_count() const noexcept;
 
   HYLE_GRAPH_API Result<ValueId> input_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<const compute::TensorDesc &>
   input_description(std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  constant_id(std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<const compute::TensorDesc &>
+  constant_description(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<NodeId> node_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<const compute::Operation &>
   operation(NodeId node) const noexcept;
@@ -95,7 +105,14 @@ public:
   node_input_count(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
   node_input(NodeId node, std::size_t input_index) const noexcept;
-  HYLE_GRAPH_API Result<ValueId> node_output(NodeId node) const noexcept;
+  HYLE_GRAPH_API Result<std::size_t>
+  node_dependency_count(NodeId node) const noexcept;
+  HYLE_GRAPH_API Result<NodeId>
+  node_dependency(NodeId node, std::size_t dependency_index) const noexcept;
+  HYLE_GRAPH_API Result<std::size_t>
+  node_output_count(NodeId node) const noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  result(NodeId node, std::size_t output_index = 0) const noexcept;
   HYLE_GRAPH_API Result<NodeId> producer(ValueId value) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
   output_id(std::size_t index = 0) const noexcept;
@@ -116,9 +133,10 @@ struct GraphBuilderOptions final {
   mem::AllocatorRef metadata_allocator{};
 };
 
-// Fallible, single-owner DAG construction. add() accepts only values already
-// produced by this builder, making cycles unrepresentable. A failed mutator
-// leaves logical content unchanged; capacity growth may remain reserved.
+// Fallible, single-owner DAG construction. add_node() accepts only values
+// already produced by this builder, making cycles unrepresentable. A failed
+// mutator leaves logical content unchanged; capacity growth may remain
+// reserved.
 class GraphBuilder final {
 public:
   GraphBuilder() noexcept = default;
@@ -136,17 +154,30 @@ public:
 
   HYLE_GRAPH_API Result<ValueId>
   input(compute::TensorDesc description) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(compute::Operation operation,
-                                     std::span<const ValueId> inputs) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(compute::RmsNorm operation,
-                                     ValueId input) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(compute::RmsNorm operation, ValueId input,
-                                     ValueId weight) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(compute::MatMul operation, ValueId left,
-                                     ValueId right) noexcept;
-  HYLE_GRAPH_API Result<ValueId> add(compute::GatedActivation operation,
-                                     ValueId input) noexcept;
-  HYLE_GRAPH_API Status output(ValueId value) noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  constant(compute::TensorDesc description) noexcept;
+  HYLE_GRAPH_API Result<NodeId>
+  add_node(compute::Operation operation,
+           std::span<const ValueId> inputs) noexcept;
+  HYLE_GRAPH_API Result<ValueId>
+  result(NodeId node, std::size_t output_index = 0) const noexcept;
+  HYLE_GRAPH_API Status depends_on(NodeId node, NodeId prerequisite) noexcept;
+  template <class Descriptor, class... Inputs>
+    requires std::constructible_from<compute::Operation, Descriptor> &&
+             (std::same_as<std::remove_cvref_t<Inputs>, ValueId> && ...)
+  Result<ValueId> add(Descriptor operation, Inputs... inputs) noexcept {
+    const compute::Operation erased(std::move(operation));
+    if (compute::operation_traits(erased).outputs != 1) {
+      return std::unexpected(Status::InvalidArgument(
+          "multi-output operation requires add_node() and result()"));
+    }
+    const std::array<ValueId, sizeof...(Inputs)> values{inputs...};
+    auto node = add_node(erased, values);
+    if (!node)
+      return std::unexpected(std::move(node).error());
+    return result(*node);
+  }
+  HYLE_GRAPH_API Status publish(ValueId value) noexcept;
   HYLE_GRAPH_API Result<Graph> finish() && noexcept;
 
 private:

@@ -1,6 +1,6 @@
 # HYLE Graph：何时编译可重复执行的计算 DAG
 
-> 本页描述当前 CPU 多节点 C++ surface；施工资格只以
+> 本页描述当前 Graph v3 CPU 实现检查点；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。选择 oneDNN 时，当前 Graph 可把受支持的
 > 单个 row-major f32 MatMul node 交给该 provider；GPU provider、region partition/fusion 与动态 shape 尚未
 > 签发。
@@ -32,16 +32,18 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 
 | 能力 | 当前合同 |
 |---|---|
-| DAG | 任意数量的已支持 typed node；共享输入、分支和多个 published outputs |
-| op | Compute 当前可执行的 `RmsNorm`、rank-2 `MatMul`、packed SiLU `GatedActivation`；Graph 可保存其他 typed schema，但 compile 会返回 `Unimplemented` |
+| DAG | 任意数量的 typed node；共享输入、分支、显式 control dependency 和多个 published outputs |
+| value | graph input、compile-time constant 或 node result；input/constant 本身也可 publish |
+| node | 通用 span arity；`add_node()` + `result(node,index)` 表达零/多输出，单输出 typed `add()` 保留自然短路径 |
+| op | Native 当前可执行 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、rank-2 MatMul 与 packed SiLU GatedActivation；其他合法 schema 在无 provider 时返回 `Unimplemented` |
 | shape/layout | static `TensorDesc`；byte stride、block axis 与 opaque identity 随 value 原样保留；MatMul 的物理权重方向由 descriptor 表达 |
-| compile | 每个 node prepare/provider route 一次；CPU topological plan；中间 tensor 与 provider scratchpad liveness 交给 Mem planner |
+| compile | constant 一次绑定；每个 material node prepare/provider route 一次；中间 tensor、provider scratchpad、view alias 与安全 in-place liveness 交给 Mem planner |
 | run | caller 绑定所有 graph inputs/outputs；内部中间值、provider run state 与 scratchpad 由每个 Invocation 独占 |
-| report | backend/provider、node 数、workspace bytes/backings、copy/sync/fallback |
+| report | 当前报告 backend/provider、node/constant 数、borrowed/packed constant 和 workspace/copy/sync 摘要；逐 region 明细仍待 G37--G40 |
 
-当前没有 graph-owned constants、symbolic dimensions、multi-node provider region partition、fusion、GPU copy/barrier、
-serialization/cache schema 或 control flow。权重目前作为普通 graph input 绑定；后续 provider packing 必须
-在 compile artifact 中显式拥有，不能藏在第一次 submit。
+当前没有 symbolic dimensions、multi-node provider region partition、fusion、GPU copy/barrier、
+serialization/cache schema 或通用 control flow。constant payload 默认由 Executable 借用；后续 provider packing
+必须在 compile artifact 中显式拥有并写入 report，不能藏在第一次 submit。
 
 ## 自然的多节点路线
 
@@ -62,8 +64,8 @@ if (!created) return created.error();
 GraphBuilder builder = std::move(*created);
 
 auto x = builder.input(x_desc);
-auto norm_w = builder.input(norm_weight_desc);
-auto gate_up_w = builder.input(*logical_weight_desc);
+auto norm_w = builder.constant(norm_weight_desc);
+auto gate_up_w = builder.constant(*logical_weight_desc);
 if (!x || !norm_w || !gate_up_w) return hyle::Status::InvalidArgument("input");
 
 auto normalized = builder.add(RmsNorm{}, *x, *norm_w);
@@ -72,18 +74,20 @@ auto gate_up = builder.add(MatMul{}, *normalized, *gate_up_w);
 if (!gate_up) return gate_up.error();
 auto activated = builder.add(GatedActivation{}, *gate_up);
 if (!activated) return activated.error();
-if (auto status = builder.output(*activated); !status.ok()) return status;
+if (auto status = builder.publish(*activated); !status.ok()) return status;
 
 auto graph = std::move(builder).finish();
 if (!graph) return graph.error();
-auto compiled = compile(*graph, context);
+std::array constants{
+    ConstantBinding{*norm_w, norm_weight_view},
+    ConstantBinding{*gate_up_w, gate_up_weight_view},
+};
+auto compiled = compile(*graph, context, CompileOptions{.constants = constants});
 if (!compiled) return compiled.error();
 
 auto invocation = compiled->executable.create_invocation();
 if (!invocation) return invocation.error();
 if (auto s = invocation->bind(*x, x_view); !s.ok()) return s;
-if (auto s = invocation->bind(*norm_w, norm_weight_view); !s.ok()) return s;
-if (auto s = invocation->bind(*gate_up_w, gate_up_weight_view); !s.ok()) return s;
 if (auto s = invocation->bind(*activated, output_view); !s.ok()) return s;
 auto done = invocation->submit(queue);
 if (!done) return done.error();
@@ -94,17 +98,23 @@ return done->wait();
 
 - compile 是冷路径：shape 复核、每节点 prepare 和 lifetime planning 均在这里发生。shape/layout 改变时
   重新构图/编译；不要每次请求重新 compile。
+- `constant()` 只声明逻辑 value；`compile()` 要求每项恰好一个 `ConstantBinding`，拒绝遗漏、重复、异图
+  ID 或错误 descriptor。默认是 borrow，payload 必须活过 Executable 及其全部 completion；不要把 request
+  input 假装成 constant，也不要在 source 失效后继续复用 Executable。
 - Graph 可以保存合法的 block/opaque TensorDesc，但不会假装 CPU native 已能执行它。若当前 Context 没有
   理解该 encoding 的 provider，compile 返回 `Unimplemented`；不会静默解码、复制或把压缩 bytes 当作
-  plain scalar storage。常量 binding 与 region provider 属于后续 Graph 合同，当前权重仍是显式输入。
+  plain scalar storage。
 - `create_invocation()` 实例化 workspace；应按并发槽复用 Invocation。`reset()` 只清外部 bindings，保留
   已规划 workspace。一次完整绑定的 alias 校验最坏为
   `O(inputs*outputs + outputs^2)`，不分配；随后重复 `submit()` 仍为 O(nodes+bindings)。
 - published output 必须绑定 mutable `TensorView`；graph input 可绑定 const 或 mutable view；内部 value
   不允许由 caller 覆盖绑定。
-- 不同 published outputs 不得重叠，output 与仍存活的 external input 也不得重叠。当前唯一允许的跨 value
-  alias 是 RMSNorm output 与其已经到最后一次读取的第一输入**精确同一 byte range**；partial overlap
-  即使地址接近也会拒绝。同一大 backing 中互不重叠的 weight/input subview 是正常用法。
+- 不同 published outputs 不得无计划地重叠，output 与仍存活的 external input 也不得重叠。operation traits
+  只给 alias 上界，真正选中的 PreparedOperation 还会按 provider/shape/layout 收窄；例如 dense Unary 可以
+  原地，而广播 Binary 不会被误规划成原地。可物化算子的 optional in-place 只发生在输入最后一次读取且
+  description 相同时；View 则按推导出的 offset 传播零物化 subrange。其他 partial overlap 一律拒绝。
+- `depends_on(node, prerequisite)` 只接受更早的 node；纯 node 可不写控制边。有外部副作用的 custom node
+  必须形成显式或数据依赖链，否则 `finish()` 失败。它不是用来把整个 DAG 手工串行化的顺序 API。
 - CPU 当前同步完成，但仍要检查 `Completion::wait()`。payload/resource/Queue 必须遵守 Compute 的终态
   生命周期；未来异步 backend 不会因 CPU 的偶然同步语义而放宽合同。
 - CompileReport 区分 HYLE-native、oneDNN 与 mixed，并报告是否发生 provider fallback。当前 CPU 路线仍应为

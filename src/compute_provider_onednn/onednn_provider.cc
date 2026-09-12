@@ -383,8 +383,13 @@ Result<Completion> submit(void *prepared_value, void *invocation_value, Queue &,
   return Completion::completed(std::move(terminal));
 }
 
+AliasSupport alias_support(void *, std::size_t, std::size_t) noexcept {
+  return {};
+}
+
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_prepared,
+    .alias_support = &alias_support,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
     .submit = &submit,

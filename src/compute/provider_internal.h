@@ -13,6 +13,8 @@ namespace hyle::compute::detail {
 struct ProviderPreparedVTable final {
   void (*destroy_prepared)(void *state,
                            mem::AllocatorRef allocator) noexcept = nullptr;
+  AliasSupport (*alias_support)(void *prepared, std::size_t output_index,
+                                std::size_t input_index) noexcept = nullptr;
   Status (*create_invocation)(void *prepared, mem::AllocatorRef allocator,
                               mem::BufferView workspace,
                               void **invocation) noexcept = nullptr;

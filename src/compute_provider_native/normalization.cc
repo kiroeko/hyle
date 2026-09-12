@@ -211,6 +211,7 @@ Status prepare_layer_norm(Operation operation,
     return Status::OutOfRange("LayerNorm hidden dimension exceeds size_t");
   plan.parameters = {*rows, *hidden, 0};
   plan.scalar = normalization->epsilon;
+  plan.alias_input_mask = 1;
   plan.submit_route = &submit_layer_norm;
   return Status::Ok();
 }

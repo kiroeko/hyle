@@ -38,20 +38,32 @@ struct ValueRecord final {
 struct NodeRecord final {
   compute::Operation operation{};
   std::uint32_t input_begin = 0;
-  std::uint32_t output = 0;
-  std::uint8_t input_count = 0;
+  std::uint32_t output_begin = 0;
+  std::uint32_t dependency_begin = 0;
+  std::uint32_t dependency_count = 0;
+  std::uint16_t input_count = 0;
+  std::uint8_t output_count = 0;
+};
+
+struct ControlEdgeRecord final {
+  std::uint32_t node = 0;
+  std::uint32_t prerequisite = 0;
 };
 
 using ValueRecords = container::SmallVector<ValueRecord, 8, mem::AllocatorRef>;
 using NodeRecords = container::SmallVector<NodeRecord, 8, mem::AllocatorRef>;
 using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
+using ControlEdgeRecords =
+    container::SmallVector<ControlEdgeRecord, 8, mem::AllocatorRef>;
 
 struct BuilderState final {
   BuilderState(std::uint64_t generation_value,
                mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), generation(generation_value),
         values(allocator_value), nodes(allocator_value), edges(allocator_value),
-        inputs(allocator_value), outputs(allocator_value) {}
+        inputs(allocator_value), constants(allocator_value),
+        outputs(allocator_value), control_edges(allocator_value),
+        dependencies(allocator_value) {}
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
@@ -59,7 +71,10 @@ struct BuilderState final {
   NodeRecords nodes;
   Ordinals edges;
   Ordinals inputs;
+  Ordinals constants;
   Ordinals outputs;
+  ControlEdgeRecords control_edges;
+  Ordinals dependencies;
 };
 
 struct GraphState final : util::RefCounted<GraphState> {
@@ -67,7 +82,9 @@ struct GraphState final : util::RefCounted<GraphState> {
       : allocator(builder.allocator), generation(builder.generation),
         values(std::move(builder.values)), nodes(std::move(builder.nodes)),
         edges(std::move(builder.edges)), inputs(std::move(builder.inputs)),
-        outputs(std::move(builder.outputs)) {}
+        constants(std::move(builder.constants)),
+        outputs(std::move(builder.outputs)),
+        dependencies(std::move(builder.dependencies)) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -81,7 +98,9 @@ struct GraphState final : util::RefCounted<GraphState> {
   NodeRecords nodes;
   Ordinals edges;
   Ordinals inputs;
+  Ordinals constants;
   Ordinals outputs;
+  Ordinals dependencies;
 };
 
 struct GraphAccess final {
@@ -138,6 +157,11 @@ inline bool owns(const BuilderState &state, ValueId value) noexcept {
          GraphIdentity::generation(value) == state.generation &&
          value.ordinal() < state.values.size() &&
          value.kind() == state.values[value.ordinal()].kind;
+}
+
+inline bool owns(const BuilderState &state, NodeId node) noexcept {
+  return node.valid() && GraphIdentity::generation(node) == state.generation &&
+         node.ordinal() < state.nodes.size();
 }
 
 } // namespace hyle::graph::detail

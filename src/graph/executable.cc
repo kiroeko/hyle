@@ -29,9 +29,11 @@ bool owns(const detail::PlanState &plan, ValueId value) noexcept {
     return false;
   }
   const std::uint8_t role = plan.binding_roles[value.ordinal()];
-  const ValueKind expected = (role & detail::kExternalInput) != 0
-                                 ? ValueKind::kInput
-                                 : ValueKind::kNodeOutput;
+  const ValueKind expected =
+      (role & detail::kExternalInput) != 0
+          ? ValueKind::kInput
+          : ((role & detail::kConstant) != 0 ? ValueKind::kConstant
+                                             : ValueKind::kNodeOutput);
   return value.kind() == expected;
 }
 
@@ -67,15 +69,31 @@ bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
   return left.offset - right.offset < right.size;
 }
 
-bool allows_exact_in_place(const detail::PlanState &plan, std::size_t left,
-                           std::size_t right) noexcept {
-  return (plan.in_place_sources[left] == right ||
-          plan.in_place_sources[right] == left);
+bool matches_alias_range(ByteRange source, ByteRange output,
+                         std::size_t byte_offset) noexcept {
+  return same_allocation(source, output) && output.offset >= source.offset &&
+         output.offset - source.offset == byte_offset &&
+         byte_offset <= source.size && output.size <= source.size - byte_offset;
+}
+
+bool matches_planned_alias(const detail::PlanState &plan,
+                           std::size_t left_ordinal, ByteRange left,
+                           std::size_t right_ordinal,
+                           ByteRange right) noexcept {
+  if (plan.alias_sources[left_ordinal] == right_ordinal) {
+    return matches_alias_range(right, left, plan.alias_offsets[left_ordinal]);
+  }
+  if (plan.alias_sources[right_ordinal] == left_ordinal) {
+    return matches_alias_range(left, right, plan.alias_offsets[right_ordinal]);
+  }
+  return false;
 }
 
 ByteRange bound_range(const detail::InvocationState &invocation,
                       std::size_t ordinal) noexcept {
   const std::uint8_t role = invocation.plan->binding_roles[ordinal];
+  if ((role & detail::kConstant) != 0)
+    return byte_range(invocation.readable[ordinal].storage());
   if ((role & detail::kExternalOutput) != 0)
     return byte_range(invocation.writable[ordinal].storage());
   return byte_range(invocation.readable[ordinal].storage());
@@ -99,8 +117,7 @@ Status validate_external_alias(const detail::InvocationState &invocation,
     const ByteRange existing = bound_range(invocation, other);
     if (!overlaps(candidate, existing))
       return Status::Ok();
-    if (equal_range(candidate, existing) &&
-        allows_exact_in_place(plan, ordinal, other)) {
+    if (matches_planned_alias(plan, ordinal, candidate, other, existing)) {
       return Status::Ok();
     }
     return Status::InvalidArgument(
@@ -110,6 +127,11 @@ Status validate_external_alias(const detail::InvocationState &invocation,
   if (candidate_is_output) {
     for (ValueId input : plan.input_ids) {
       Status status = check(input);
+      if (!status.ok())
+        return status;
+    }
+    for (ValueId constant : plan.constant_ids) {
+      Status status = check(constant);
       if (!status.ok())
         return status;
     }
@@ -126,10 +148,15 @@ Status initialize_plan_metadata(detail::PlanState &plan,
                                 const detail::GraphState &graph) noexcept {
   if (!plan.nodes.try_reserve(graph.nodes.size()) ||
       !plan.input_ids.try_reserve(graph.inputs.size()) ||
+      !plan.constant_ids.try_reserve(graph.constants.size()) ||
+      !plan.constant_bindings.try_resize(graph.constants.size()) ||
       !plan.output_ids.try_reserve(graph.outputs.size()) ||
+      !plan.node_inputs.try_reserve(graph.edges.size()) ||
+      !plan.node_outputs.try_reserve(graph.values.size()) ||
       !plan.descriptions.try_resize(graph.values.size()) ||
       !plan.workspace_requests.try_resize(graph.values.size()) ||
-      !plan.in_place_sources.try_resize(graph.values.size()) ||
+      !plan.alias_sources.try_resize(graph.values.size()) ||
+      !plan.alias_offsets.try_resize(graph.values.size()) ||
       !plan.binding_roles.try_resize(graph.values.size())) {
     return plan_allocation_failure();
   }
@@ -137,7 +164,8 @@ Status initialize_plan_metadata(detail::PlanState &plan,
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
     plan.descriptions[index] = graph.values[index].description;
     plan.workspace_requests[index] = detail::kNoWorkspaceRequest;
-    plan.in_place_sources[index] = detail::kNoInPlaceSource;
+    plan.alias_sources[index] = detail::kNoInPlaceSource;
+    plan.alias_offsets[index] = 0;
     plan.binding_roles[index] = 0;
   }
   for (std::uint32_t ordinal : graph.inputs) {
@@ -145,6 +173,12 @@ Status initialize_plan_metadata(detail::PlanState &plan,
       return plan_allocation_failure();
     }
     plan.binding_roles[ordinal] |= detail::kExternalInput;
+  }
+  for (std::uint32_t ordinal : graph.constants) {
+    if (!plan.constant_ids.try_push_back(detail::value_id(graph, ordinal))) {
+      return plan_allocation_failure();
+    }
+    plan.binding_roles[ordinal] |= detail::kConstant;
   }
   for (std::uint32_t ordinal : graph.outputs) {
     if (!plan.output_ids.try_push_back(detail::value_id(graph, ordinal))) {
@@ -155,33 +189,110 @@ Status initialize_plan_metadata(detail::PlanState &plan,
   return Status::Ok();
 }
 
+Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
+                      CompileOptions options) noexcept {
+  if (options.constants.size() != graph.constants.size()) {
+    return Status::InvalidArgument(
+        "compile requires exactly one binding for every graph constant");
+  }
+  using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
+  using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
+  Ordinals slots(plan.allocator);
+  Flags seen(plan.allocator);
+  if (!slots.try_resize(graph.values.size()) ||
+      !seen.try_resize(graph.constants.size())) {
+    return plan_allocation_failure();
+  }
+  for (std::size_t index = 0; index < slots.size(); ++index)
+    slots[index] = detail::kNoWorkspaceRequest;
+  for (std::size_t index = 0; index < graph.constants.size(); ++index) {
+    slots[graph.constants[index]] = static_cast<std::uint32_t>(index);
+    seen[index] = 0;
+  }
+
+  for (const ConstantBinding &binding : options.constants) {
+    if (!detail::owns(graph, binding.value) ||
+        binding.value.kind() != ValueKind::kConstant) {
+      return Status::InvalidArgument(
+          "constant binding does not belong to this graph");
+    }
+    const std::uint32_t slot = slots[binding.value.ordinal()];
+    if (slot == detail::kNoWorkspaceRequest || seen[slot] != 0)
+      return Status::InvalidArgument("constant binding is duplicated");
+    if (!binding.tensor.valid() ||
+        binding.tensor.description() !=
+            graph.values[binding.value.ordinal()].description) {
+      return Status::InvalidArgument(
+          "constant binding does not match its graph description");
+    }
+    plan.constant_bindings[slot] = binding.tensor;
+    seen[slot] = 1;
+  }
+  for (std::uint8_t present : seen) {
+    if (present == 0)
+      return Status::InvalidArgument("graph constant binding is missing");
+  }
+  return Status::Ok();
+}
+
 Status prepare_nodes(detail::PlanState &plan, const detail::GraphState &graph,
                      const compute::Context &context) noexcept {
+  using Descriptions =
+      container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
+  Descriptions input_descriptions(plan.allocator);
+  Descriptions output_descriptions(plan.allocator);
   for (const detail::NodeRecord &node : graph.nodes) {
-    std::array<compute::TensorDesc, 2> input_descriptions{};
-    std::array<std::uint32_t, 2> input_ordinals{};
+    input_descriptions.clear();
+    output_descriptions.clear();
+    if (!input_descriptions.try_resize(node.input_count) ||
+        !output_descriptions.try_resize(node.output_count)) {
+      return plan_allocation_failure();
+    }
+    const std::uint32_t plan_input_begin =
+        static_cast<std::uint32_t>(plan.node_inputs.size());
+    const std::uint32_t plan_output_begin =
+        static_cast<std::uint32_t>(plan.node_outputs.size());
     for (std::size_t index = 0; index < node.input_count; ++index) {
       const std::uint32_t ordinal = graph.edges[node.input_begin + index];
-      input_ordinals[index] = ordinal;
       input_descriptions[index] = graph.values[ordinal].description;
+      if (!plan.node_inputs.try_push_back(ordinal))
+        return plan_allocation_failure();
     }
-    const std::array output_descriptions{graph.values[node.output].description};
-    auto prepared =
-        compute::prepare(context, node.operation,
-                         std::span<const compute::TensorDesc>(
-                             input_descriptions.data(), node.input_count),
-                         output_descriptions);
+    for (std::size_t index = 0; index < node.output_count; ++index) {
+      const std::uint32_t ordinal =
+          node.output_begin + static_cast<std::uint32_t>(index);
+      output_descriptions[index] = graph.values[ordinal].description;
+      if (!plan.node_outputs.try_push_back(ordinal))
+        return plan_allocation_failure();
+    }
+    auto prepared = compute::prepare(context, node.operation,
+                                     input_descriptions, output_descriptions);
     if (!prepared)
       return std::move(prepared).error();
-    if (!plan.nodes.try_emplace_back(
-            std::move(*prepared),
-            std::span<const std::uint32_t>(input_ordinals.data(),
-                                           node.input_count),
-            node.output)) {
+    const bool materializes =
+        compute::operation_traits(node.operation).materializes;
+    if (!plan.nodes.try_emplace_back(std::move(*prepared), plan_input_begin,
+                                     node.input_count, plan_output_begin,
+                                     node.output_count, materializes)) {
       return plan_allocation_failure();
     }
   }
   return Status::Ok();
+}
+
+std::uint32_t alias_root(const detail::PlanState &plan,
+                         std::uint32_t value) noexcept {
+  while (plan.alias_sources[value] != detail::kNoInPlaceSource)
+    value = plan.alias_sources[value];
+  return value;
+}
+
+bool has_external_storage_root(const detail::PlanState &plan,
+                               std::uint32_t value) noexcept {
+  const std::uint32_t root = alias_root(plan, value);
+  const std::uint8_t role = plan.binding_roles[root];
+  return (role & (detail::kExternalInput | detail::kExternalOutput |
+                  detail::kConstant)) != 0;
 }
 
 Status plan_workspace(detail::PlanState &plan,
@@ -209,7 +320,12 @@ Status plan_workspace(detail::PlanState &plan,
        ++node_index) {
     const detail::NodeRecord &node = graph.nodes[node_index];
     const std::uint64_t terminal = node_index + 1;
-    last_uses[node.output] = (std::max)(last_uses[node.output], terminal);
+    for (std::size_t output_index = 0; output_index < node.output_count;
+         ++output_index) {
+      const std::uint32_t output =
+          node.output_begin + static_cast<std::uint32_t>(output_index);
+      last_uses[output] = (std::max)(last_uses[output], terminal);
+    }
     for (std::size_t input_index = 0; input_index < node.input_count;
          ++input_index) {
       const std::uint32_t input = graph.edges[node.input_begin + input_index];
@@ -217,20 +333,72 @@ Status plan_workspace(detail::PlanState &plan,
     }
   }
 
-  // The current catalog has one legal alias: an externally bound RMSNorm
-  // output may exactly reuse its first external input after that input's final
-  // read. Partial overlap and all other cross-value aliases remain invalid.
+  // The schema supplies only a broad permission. A prepared provider narrows
+  // it for the selected route and layout. Required view aliases preserve
+  // storage without consuming the source; optional in-place aliases require
+  // equal descriptions and the source's final read.
   for (std::size_t node_index = 0; node_index < graph.nodes.size();
        ++node_index) {
     const detail::NodeRecord &node = graph.nodes[node_index];
-    if (node.operation.kind() != compute::OperationKind::kRmsNorm ||
-        (plan.binding_roles[node.output] & detail::kExternalOutput) == 0) {
+    const compute::OperationTraits traits =
+        compute::operation_traits(node.operation);
+    const compute::AliasPolicy alias = traits.alias;
+    if (alias == compute::AliasPolicy::kNone || node.input_count == 0)
       continue;
-    }
-    const std::uint32_t input = graph.edges[node.input_begin];
-    if ((plan.binding_roles[input] & detail::kExternalInput) != 0 &&
-        last_uses[input] == node_index + 1) {
-      plan.in_place_sources[node.output] = input;
+    for (std::size_t output_index = 0; output_index < node.output_count;
+         ++output_index) {
+      const std::uint32_t output =
+          node.output_begin + static_cast<std::uint32_t>(output_index);
+      if (alias == compute::AliasPolicy::kMustAliasInput0) {
+        auto support =
+            plan.nodes[node_index].prepared.alias_support(output_index, 0);
+        if (!support || !support->supported) {
+          return Status::Internal(
+              "prepared provider omitted a required graph alias");
+        }
+        const std::uint32_t input = graph.edges[node.input_begin];
+        plan.alias_sources[output] = input;
+        plan.alias_offsets[output] = support->byte_offset;
+        if ((plan.binding_roles[output] & detail::kExternalOutput) != 0 &&
+            !has_external_storage_root(plan, input)) {
+          return Status::Unimplemented(
+              "a published view of private workspace needs a runtime-owned "
+              "output contract");
+        }
+        continue;
+      }
+
+      const bool output_is_external =
+          (plan.binding_roles[output] & detail::kExternalOutput) != 0;
+      const std::size_t candidate_count =
+          alias == compute::AliasPolicy::kMayAliasAnyInput ? node.input_count
+                                                           : std::size_t{1};
+      for (std::size_t input_index = 0; input_index < candidate_count;
+           ++input_index) {
+        const std::uint32_t input = graph.edges[node.input_begin + input_index];
+        auto support = plan.nodes[node_index].prepared.alias_support(
+            output_index, input_index);
+        if (!support)
+          return std::move(support).error();
+        if (!support->supported || support->byte_offset != 0)
+          continue;
+        const bool input_is_external =
+            (plan.binding_roles[input] & detail::kExternalInput) != 0;
+        const bool internal_pair =
+            !output_is_external && !input_is_external &&
+            graph.values[input].kind == ValueKind::kNodeOutput &&
+            (plan.binding_roles[input] & detail::kExternalOutput) == 0 &&
+            !has_external_storage_root(plan, input);
+        const bool external_pair = output_is_external && input_is_external;
+        if ((internal_pair || external_pair) &&
+            last_uses[input] == node_index + 1 &&
+            graph.values[input].description ==
+                graph.values[output].description) {
+          plan.alias_sources[output] = input;
+          plan.alias_offsets[output] = 0;
+          break;
+        }
+      }
     }
   }
 
@@ -250,6 +418,19 @@ Status plan_workspace(detail::PlanState &plan,
     const std::uint32_t request = static_cast<std::uint32_t>(requests.size());
     const std::uint64_t begin = value.producer;
     const std::uint64_t end = (std::max)(begin + 1, last_uses[ordinal]);
+    const std::uint32_t alias_source = plan.alias_sources[ordinal];
+    const std::uint32_t alias_request =
+        alias_source == detail::kNoInPlaceSource
+            ? mem::kNoLifetimeAlias
+            : plan.workspace_requests[alias_source];
+    if (alias_source != detail::kNoInPlaceSource &&
+        alias_request == detail::kNoWorkspaceRequest) {
+      const bool materializes = plan.nodes[value.producer].materializes;
+      if (!materializes &&
+          has_external_storage_root(plan, static_cast<std::uint32_t>(ordinal)))
+        continue;
+      return Status::Internal("graph internal alias source has no workspace");
+    }
     if (!requests.try_push_back(mem::LifetimeRequest{
             .resource_slot = 0,
             .size = *size,
@@ -257,6 +438,8 @@ Status plan_workspace(detail::PlanState &plan,
                                     value.description.required_alignment()),
             .begin = begin,
             .end = end,
+            .alias_of = alias_request,
+            .alias_offset = plan.alias_offsets[ordinal],
         })) {
       return plan_allocation_failure();
     }
@@ -268,6 +451,8 @@ Status plan_workspace(detail::PlanState &plan,
   // backing while every OperationInvocation retains its own stable view.
   for (std::size_t node_index = 0; node_index < plan.nodes.size();
        ++node_index) {
+    if (!plan.nodes[node_index].materializes)
+      continue;
     const compute::WorkspaceRequirement requirement =
         plan.nodes[node_index].prepared.workspace_requirement();
     if (requirement.size == 0)
@@ -408,7 +593,9 @@ Result<Invocation> Executable::create_invocation() const noexcept {
   if (!invocation->readable.try_resize(value_count) ||
       !invocation->writable.try_resize(value_count) ||
       !invocation->bound.try_resize(value_count) ||
-      !invocation->operations.try_reserve(state_->nodes.size())) {
+      !invocation->operations.try_reserve(state_->nodes.size()) ||
+      !invocation->submission_inputs.try_resize(state_->node_inputs.size()) ||
+      !invocation->submission_outputs.try_resize(state_->node_outputs.size())) {
     detail::destroy(invocation);
     return std::unexpected(invocation_allocation_failure());
   }
@@ -433,6 +620,11 @@ Result<Invocation> Executable::create_invocation() const noexcept {
     invocation->writable[ordinal] = *tensor;
     invocation->readable[ordinal] = tensor->as_const();
   }
+  for (std::size_t index = 0; index < state_->constant_ids.size(); ++index) {
+    const std::size_t ordinal = state_->constant_ids[index].ordinal();
+    invocation->readable[ordinal] = state_->constant_bindings[index];
+    invocation->bound[ordinal] = 1;
+  }
   for (std::size_t node_index = 0; node_index < state_->nodes.size();
        ++node_index) {
     mem::BufferView operation_workspace;
@@ -447,14 +639,18 @@ Result<Invocation> Executable::create_invocation() const noexcept {
       }
       operation_workspace = *view;
     }
-    auto operation = state_->nodes[node_index].prepared.create_invocation(
-        operation_workspace);
-    if (!operation) {
-      Status error = std::move(operation).error();
-      detail::destroy(invocation);
-      return std::unexpected(std::move(error));
+    compute::OperationInvocation operation;
+    if (state_->nodes[node_index].materializes) {
+      auto created = state_->nodes[node_index].prepared.create_invocation(
+          operation_workspace);
+      if (!created) {
+        Status error = std::move(created).error();
+        detail::destroy(invocation);
+        return std::unexpected(std::move(error));
+      }
+      operation = std::move(*created);
     }
-    if (!invocation->operations.try_push_back(std::move(*operation))) {
+    if (!invocation->operations.try_push_back(std::move(operation))) {
       detail::destroy(invocation);
       return std::unexpected(invocation_allocation_failure());
     }
@@ -489,6 +685,8 @@ Status Invocation::bind(ValueId value,
     return Status::InvalidArgument("value does not belong to this executable");
   }
   const std::size_t ordinal = value.ordinal();
+  if ((plan.binding_roles[ordinal] & detail::kConstant) != 0)
+    return Status::InvalidArgument("graph constants are bound at compile time");
   if ((plan.binding_roles[ordinal] & detail::kExternalInput) == 0) {
     if ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
       return Status::InvalidArgument(
@@ -520,6 +718,8 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
     return Status::InvalidArgument("value does not belong to this executable");
   }
   const std::size_t ordinal = value.ordinal();
+  if ((plan.binding_roles[ordinal] & detail::kConstant) != 0)
+    return Status::InvalidArgument("graph constants are bound at compile time");
   if ((plan.binding_roles[ordinal] & detail::kExternalOutput) != 0) {
     if (tensor.description() != plan.descriptions[ordinal]) {
       return Status::InvalidArgument(
@@ -550,6 +750,8 @@ void Invocation::reset() noexcept {
   }
   for (ValueId value : state_->plan->output_ids) {
     const std::size_t ordinal = value.ordinal();
+    if ((state_->plan->binding_roles[ordinal] & detail::kConstant) != 0)
+      continue;
     state_->readable[ordinal] = {};
     state_->writable[ordinal] = {};
     state_->bound[ordinal] = 0;
@@ -577,16 +779,55 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
   for (std::size_t node_index = 0; node_index < plan.nodes.size();
        ++node_index) {
     const detail::PlanNode &node = plan.nodes[node_index];
-    std::array<compute::ConstTensorView, 2> inputs{};
-    for (std::size_t index = 0; index < node.input_count; ++index) {
-      inputs[index] = state_->readable[node.inputs[index]];
+    if (!node.materializes) {
+      for (std::size_t output_index = 0; output_index < node.output_count;
+           ++output_index) {
+        const std::uint32_t output =
+            plan.node_outputs[node.output_begin + output_index];
+        const std::uint32_t source = plan.alias_sources[output];
+        if (source == detail::kNoInPlaceSource ||
+            !state_->readable[source].valid()) {
+          return std::unexpected(Status::Internal(
+              "non-materializing graph output has no readable source"));
+        }
+        auto bytes = plan.descriptions[output].required_bytes();
+        if (!bytes)
+          return std::unexpected(std::move(bytes).error());
+        auto storage = state_->readable[source].storage().subview(
+            plan.alias_offsets[output], *bytes);
+        if (!storage)
+          return std::unexpected(std::move(storage).error());
+        auto derived = compute::ConstTensorView::create(
+            plan.descriptions[output], *storage);
+        if (!derived)
+          return std::unexpected(std::move(derived).error());
+        if ((plan.binding_roles[output] & detail::kExternalOutput) != 0) {
+          if (!equal_range(byte_range(derived->storage()),
+                           byte_range(state_->writable[output].storage()))) {
+            return std::unexpected(Status::InvalidArgument(
+                "published graph view does not bind its inferred storage"));
+          }
+        } else {
+          state_->readable[output] = *derived;
+        }
+      }
+      continue;
     }
-    const compute::TensorView output = state_->writable[node.output];
+    for (std::size_t index = 0; index < node.input_count; ++index) {
+      state_->submission_inputs[node.input_begin + index] =
+          state_->readable[plan.node_inputs[node.input_begin + index]];
+    }
+    for (std::size_t index = 0; index < node.output_count; ++index) {
+      state_->submission_outputs[node.output_begin + index] =
+          state_->writable[plan.node_outputs[node.output_begin + index]];
+    }
+    const auto all_inputs = std::span<const compute::ConstTensorView>(
+        state_->submission_inputs.data(), state_->submission_inputs.size());
+    const auto all_outputs = std::span<const compute::TensorView>(
+        state_->submission_outputs.data(), state_->submission_outputs.size());
     auto completion = state_->operations[node_index].submit(
-        queue,
-        std::span<const compute::ConstTensorView>(inputs.data(),
-                                                  node.input_count),
-        std::span<const compute::TensorView>(&output, 1));
+        queue, all_inputs.subspan(node.input_begin, node.input_count),
+        all_outputs.subspan(node.output_begin, node.output_count));
     if (!completion)
       return std::unexpected(std::move(completion).error());
     Status terminal = completion->wait();
@@ -598,7 +839,8 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
 }
 
 Result<CompiledGraph> compile(const Graph &graph,
-                              const compute::Context &context) noexcept {
+                              const compute::Context &context,
+                              CompileOptions options) noexcept {
   if (!graph.valid()) {
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
@@ -629,6 +871,8 @@ Result<CompiledGraph> compile(const Graph &graph,
 
   Status status = initialize_plan_metadata(*plan, *logical);
   if (status.ok())
+    status = bind_constants(*plan, *logical, options);
+  if (status.ok())
     status = prepare_nodes(*plan, *logical, context);
   if (status.ok())
     status = plan_workspace(*plan, *logical);
@@ -657,6 +901,10 @@ Result<CompiledGraph> compile(const Graph &graph,
       .workspace_bytes = plan->workspace_bytes,
       .workspace_backing_count = plan->workspace_backing_count,
       .node_count = plan->nodes.size(),
+      .constant_count = plan->constant_ids.size(),
+      .borrowed_constant_count = plan->constant_ids.size(),
+      .packed_constant_count = 0,
+      .packed_constant_bytes = 0,
       .copy_bytes = 0,
       .synchronization_count = 0,
       .mixed_providers = mixed_providers,

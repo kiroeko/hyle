@@ -137,7 +137,11 @@ CPU 执行轴与 HYLE native kernels 分别由已登记的 `compute_backend_cpu`
   `host_kernel.h` 产品入口已无代码消费者；
 - 已交付的单输出 transform 与 elementwise family 提供只做 cold output inference 的 typed `prepare()`；Fill
   另提供自然的零输入 submit，Select 另提供自然的三输入 submit。这不是 R54 所排除的 prepare+submit 一次性隐藏路径：artifact、
-  invocation、workspace 与 completion owner 仍全部显式。
+  invocation、workspace 与 completion owner 仍全部显式；
+- Graph G35 证明仅靠 operation schema 的 alias 上界不足以规划具体 artifact：例如 Binary 语义允许 alias，
+  Native 广播路线却不能安全原地执行。R50 的 prepared provider 合同因此补充冷路径
+  `alias_support(output,input)` refinement，返回当前 shape/layout 的支持与 view byte offset。Compute submit
+  也在接收工作前复核该结果；普通不重叠绑定不新增 vtable 调用，Graph compile 后的 steady route 不搜索。
 
 这不是 terminal record，状态保持 `AUDITED`。真正异步 backend 的 late-completion 保活、close/drain 与
 device-loss/error injection，sanitizers、Linux/两台 Apple、shared export hygiene、P0 codegen 账单，以及依赖

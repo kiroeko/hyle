@@ -44,7 +44,7 @@ TEST(OneDnnGraph, PlansProviderScratchpadAndExecutesWithoutHiddenFallback) {
   const auto left = builder.input(left_description).value();
   const auto right = builder.input(right_description).value();
   const auto output = builder.add(MatMul{}, left, right).value();
-  ASSERT_TRUE(builder.output(output).ok());
+  ASSERT_TRUE(builder.publish(output).ok());
   auto graph = std::move(builder).finish().value();
 
   const std::array providers{hyle::compute::onednn::provider()};

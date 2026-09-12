@@ -495,6 +495,10 @@ Status prepare_elementwise(Operation operation,
   plan.parameters[0] = *elements;
   plan.parameters[1] = linear ? 1 : 0;
   plan.parameters[2] = data_type_size(outputs[0].data_type());
+  if (linear) {
+    plan.alias_input_mask = static_cast<std::uint8_t>(
+        (std::uint8_t{1} << static_cast<std::uint8_t>(inputs.size())) - 1);
+  }
   plan.submit_route = &submit_elementwise;
   return Status::Ok();
 }

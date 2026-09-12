@@ -193,6 +193,8 @@ Status prepare_transform(Operation operation,
       byte_offset = *offset;
     }
     plan.parameters[0] = byte_offset;
+    plan.alias_input0_offset = byte_offset;
+    plan.alias_input_mask = 1;
     plan.submit_route = &submit_view;
     return Status::Ok();
   }

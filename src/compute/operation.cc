@@ -151,10 +151,17 @@ bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
   return left.offset - right.offset < right.size;
 }
 
-Status validate_aliases(Operation operation,
+bool matches_alias_offset(const ByteRange &input, const ByteRange &output,
+                          std::size_t byte_offset) noexcept {
+  return same_allocation(input, output) && output.offset >= input.offset &&
+         output.offset - input.offset == byte_offset &&
+         byte_offset <= input.size && output.size <= input.size - byte_offset;
+}
+
+Status validate_aliases(const detail::PreparedState &prepared,
                         std::span<const ConstTensorView> inputs,
                         std::span<const TensorView> outputs) noexcept {
-  const OperationTraits traits = operation_traits(operation);
+  const OperationTraits traits = operation_traits(prepared.operation);
   for (std::size_t left = 0; left < outputs.size(); ++left) {
     const ByteRange output = byte_range(outputs[left].storage());
     // Empty tensors touch no byte. Several valid zero-sized allocations use a
@@ -175,17 +182,26 @@ Status validate_aliases(Operation operation,
       if (!overlaps(input, output) && !equal_range(input, output))
         continue;
       bool allowed = false;
+      const AliasSupport provider_support =
+          prepared.provider_prepared.vtable->alias_support(
+              prepared.provider_prepared.state, left, input_index);
       switch (traits.alias) {
       case AliasPolicy::kNone:
         break;
       case AliasPolicy::kMayAliasInput0:
-        allowed = input_index == 0 && equal_range(input, output);
+        allowed = input_index == 0 && equal_range(input, output) &&
+                  provider_support.supported &&
+                  provider_support.byte_offset == 0;
         break;
       case AliasPolicy::kMayAliasAnyInput:
-        allowed = equal_range(input, output);
+        allowed = equal_range(input, output) && provider_support.supported &&
+                  provider_support.byte_offset == 0;
         break;
       case AliasPolicy::kMustAliasInput0:
-        allowed = input_index == 0 && contains(input, output);
+        allowed =
+            input_index == 0 && contains(input, output) &&
+            provider_support.supported &&
+            matches_alias_offset(input, output, provider_support.byte_offset);
         aliases_input0 = aliases_input0 || allowed;
         break;
       }
@@ -298,6 +314,22 @@ PreparedOperation::output_description(std::size_t index) const noexcept {
   return state_->outputs()[index];
 }
 
+Result<AliasSupport>
+PreparedOperation::alias_support(std::size_t output_index,
+                                 std::size_t input_index) const noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("prepared operation is invalid"));
+  }
+  if (output_index >= state_->output_count ||
+      input_index >= state_->input_count) {
+    return std::unexpected(
+        Status::OutOfRange("prepared alias index is out of range"));
+  }
+  return state_->provider_prepared.vtable->alias_support(
+      state_->provider_prepared.state, output_index, input_index);
+}
+
 Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
         std::span<const TensorDesc> inputs,
@@ -338,6 +370,7 @@ prepare(const Context &context, Operation operation,
       return std::unexpected(std::move(provider_status));
     if (provider_prepared.vtable == nullptr ||
         provider_prepared.vtable->destroy_prepared == nullptr ||
+        provider_prepared.vtable->alias_support == nullptr ||
         provider_prepared.vtable->create_invocation == nullptr ||
         provider_prepared.vtable->destroy_invocation == nullptr ||
         provider_prepared.vtable->submit == nullptr ||
@@ -351,6 +384,29 @@ prepare(const Context &context, Operation operation,
       }
       return std::unexpected(
           Status::Internal("compute provider returned an invalid artifact"));
+    }
+    if (traits.alias == AliasPolicy::kMustAliasInput0 && inputs.empty()) {
+      provider_prepared.vtable->destroy_prepared(provider_prepared.state,
+                                                 state->allocator);
+      return std::unexpected(Status::Internal(
+          "compute provider accepted an impossible required alias"));
+    }
+    if (traits.alias == AliasPolicy::kMustAliasInput0) {
+      for (std::size_t output_index = 0; output_index < outputs.size();
+           ++output_index) {
+        const AliasSupport support = provider_prepared.vtable->alias_support(
+            provider_prepared.state, output_index, 0);
+        auto input_bytes = inputs[0].required_bytes();
+        auto output_bytes = outputs[output_index].required_bytes();
+        if (!support.supported || !input_bytes || !output_bytes ||
+            support.byte_offset > *input_bytes ||
+            *output_bytes > *input_bytes - support.byte_offset) {
+          provider_prepared.vtable->destroy_prepared(provider_prepared.state,
+                                                     state->allocator);
+          return std::unexpected(Status::Internal(
+              "compute provider cannot satisfy required output alias"));
+        }
+      }
     }
     auto prepared = make_prepared_state(state, operation, inputs, outputs,
                                         table->identity, provider_prepared);
@@ -606,7 +662,7 @@ OperationInvocation::submit(Queue &queue,
       validate_binding_resources(*prepared.context, inputs, outputs);
   if (!resource.ok())
     return std::unexpected(std::move(resource));
-  Status alias = validate_aliases(prepared.operation, inputs, outputs);
+  Status alias = validate_aliases(prepared, inputs, outputs);
   if (!alias.ok())
     return std::unexpected(std::move(alias));
 

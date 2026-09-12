@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "hyle/compute/completion.h"
 #include "hyle/compute/device.h"
@@ -29,9 +30,26 @@ struct CompileReport final {
   std::size_t workspace_bytes = 0;
   std::size_t workspace_backing_count = 0;
   std::size_t node_count = 0;
+  std::size_t constant_count = 0;
+  std::size_t borrowed_constant_count = 0;
+  std::size_t packed_constant_count = 0;
+  std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
   bool mixed_providers = false;
+};
+
+// A constant binding is borrowed by the resulting Executable unless its
+// CompileReport says that a provider packed and took ownership of a copy. The
+// source storage must otherwise outlive the Executable and every completion
+// submitted from it.
+struct ConstantBinding final {
+  ValueId value{};
+  compute::ConstTensorView tensor{};
+};
+
+struct CompileOptions final {
+  std::span<const ConstantBinding> constants{};
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned
@@ -102,6 +120,7 @@ struct CompiledGraph final {
 };
 
 HYLE_GRAPH_API Result<CompiledGraph>
-compile(const Graph &graph, const compute::Context &context) noexcept;
+compile(const Graph &graph, const compute::Context &context,
+        CompileOptions options = {}) noexcept;
 
 } // namespace hyle::graph

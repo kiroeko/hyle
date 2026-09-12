@@ -347,8 +347,23 @@ Result<Completion> submit(void *prepared_value, void *, Queue &,
   return plan->submit_route(*plan, inputs, outputs);
 }
 
+AliasSupport alias_support(void *prepared_value, std::size_t output_index,
+                           std::size_t input_index) noexcept {
+  const auto *plan = static_cast<const NativePlan *>(prepared_value);
+  if (plan == nullptr || output_index != 0 || input_index >= 8 ||
+      (plan->alias_input_mask &
+       (std::uint8_t{1} << static_cast<std::uint8_t>(input_index))) == 0) {
+    return {};
+  }
+  return AliasSupport{
+      .supported = true,
+      .byte_offset = input_index == 0 ? plan->alias_input0_offset : 0,
+  };
+}
+
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_prepared,
+    .alias_support = &alias_support,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
     .submit = &submit,
@@ -423,6 +438,7 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
       return std::move(hidden).error();
     plan.parameters = {*rows, *hidden, 0};
     plan.scalar = operation.get_if<RmsNorm>()->epsilon;
+    plan.alias_input_mask = 1;
     plan.route = &run_rms_norm;
     plan.submit_route = &submit_float;
     break;

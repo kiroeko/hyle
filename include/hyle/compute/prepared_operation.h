@@ -22,6 +22,16 @@ struct WorkspaceRequirement final {
   std::size_t alignment = 1;
 };
 
+// Provider-specific refinement of the broad alias permission declared by the
+// operation schema. byte_offset is relative to the selected input storage;
+// optional in-place aliases use zero, while a non-materializing view may name
+// a proper subrange. Querying this is cold planning work and adds no submit
+// dispatch.
+struct AliasSupport final {
+  bool supported = false;
+  std::size_t byte_offset = 0;
+};
+
 class PreparedOperation;
 class OperationInvocation;
 
@@ -52,6 +62,9 @@ public:
   input_description(std::size_t index = 0) const noexcept;
   HYLE_COMPUTE_API Result<const TensorDesc &>
   output_description(std::size_t index = 0) const noexcept;
+  HYLE_COMPUTE_API Result<AliasSupport>
+  alias_support(std::size_t output_index,
+                std::size_t input_index) const noexcept;
 
   HYLE_COMPUTE_API Result<OperationInvocation>
   create_invocation(mem::BufferView workspace = {}) const noexcept;

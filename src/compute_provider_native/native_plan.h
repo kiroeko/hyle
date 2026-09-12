@@ -42,6 +42,8 @@ struct NativePlan final {
   LinearElementwiseRoute linear_elementwise_route = nullptr;
   ScalarElementwiseRoute scalar_elementwise_route = nullptr;
   SubmitRoute submit_route = nullptr;
+  std::size_t alias_input0_offset = 0;
+  std::uint8_t alias_input_mask = 0;
 };
 
 inline void preserve_first_error(Status &terminal, Status candidate) noexcept {

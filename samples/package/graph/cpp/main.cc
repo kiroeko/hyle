@@ -57,7 +57,7 @@ int main() {
   if (!projected)
     return 6;
   auto output_id = builder.add(SiluAndMul{}, *projected);
-  if (!output_id || !builder.output(*output_id).ok())
+  if (!output_id || !builder.publish(*output_id).ok())
     return 7;
   auto logical = std::move(builder).finish();
 

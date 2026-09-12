@@ -282,7 +282,7 @@ private:
         builder.add(MatMul{}, normalized, matrix_weight), "graph MatMul node");
     const auto output = take_or_abort(builder.add(GatedActivation{}, projected),
                                       "graph GatedActivation node");
-    require_ok(builder.output(output), "graph published output");
+    require_ok(builder.publish(output), "graph published output");
     auto graph = take_or_abort(std::move(builder).finish(), "logical graph");
     auto compiled =
         take_or_abort(hyle::graph::compile(graph, context_), "graph compile");

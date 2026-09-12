@@ -52,6 +52,9 @@ TEST(NativeTransform, ValidatesAndExecutesZeroKernelSliceView) {
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, slice, input_desc).value();
   ASSERT_EQ(prepared.output_description().value(), output_descriptions[0]);
+  const auto alias = prepared.alias_support(0, 0).value();
+  EXPECT_TRUE(alias.supported);
+  EXPECT_EQ(alias.byte_offset, sizeof(std::int32_t));
   auto invocation = prepared.create_invocation().value();
   ASSERT_TRUE(invocation
                   .submit(queue, std::span<const ConstTensorView>(&input, 1),
@@ -66,8 +69,8 @@ TEST(NativeTransform, ValidatesAndExecutesZeroKernelSliceView) {
   auto rejected =
       invocation.submit(queue, std::span<const ConstTensorView>(&input, 1),
                         std::span<const TensorView>(&wrong, 1));
-  ASSERT_TRUE(rejected.has_value());
-  EXPECT_TRUE(rejected->wait().IsInvalidArgument());
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
 }
 
 TEST(NativeTransform, MaterializesPlainStridedCopy) {

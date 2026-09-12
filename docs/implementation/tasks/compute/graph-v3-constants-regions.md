@@ -121,3 +121,22 @@ Graph v2 的现有单节点 executable 已迁移到开放 ProviderId、显式 CP
 没有实现 G30--G41：constant/multi-output/general arity、effect/control edge、region partition、完整 report、
 workspace/liveness 与最终 Completion sequence 仍是本卡后续工作。因此 Graph 保持 `AUDITED`，不得把兼容
 迁移或旧单节点测试记作 v3 进度完成。
+
+## IR、constant 与 alias implementation checkpoint（2026-09-13）
+
+- G30--G34 已落地：Graph 有独立 constant role、通用 `add_node()`/`result()` 零至多输出形状、任意合法
+  input arity、可发布任意 value，以及 compile-time 精确 constant binding。当前 artifact 明确借用 payload，
+  report 的 packed 数为零；Invocation reset 不清 constant；
+- G36 的结构合同已落地：`depends_on()` 只建立指向更早 node 的显式控制边，finish 以 O(V+E) 分组去重；
+  external-side-effect nodes 必须经 data/control dependency 形成链，缺失顺序不能靠 builder 插入次序蒙混；
+- G35 已移除 RMSNorm 特判。Graph 先用 operation traits 给 alias 上界，再查询具体 PreparedOperation 对当前
+  provider/shape/layout 的 refinement；Native 广播/strided elementwise 不再被误判为可原地，dense Unary、
+  normalization 等仍可在最后一次读取时复用 Mem lifetime backing。View 携带 byte offset，在外部 storage
+  或内部 workspace 上零物化传播；当前公开 view 若根在不可见的 private workspace，compile 明确返回
+  `Unimplemented`，等待 G41 统一裁决 runtime-owned output，而不是隐藏 copy；
+- Windows 的 Compute/Graph/Native 11 项定向测试已覆盖 constant lifetime、TopK 两输出、零输出 effect、
+  分支、内部 exact in-place、slice subrange 及广播 alias 反例。G37 region partition、G38 最终 sequence
+  completion、G39 完整逐 region report、G40 policy/budget 与 G41 in-flight/runtime-owned lifetime 尚未完成。
+
+这仍是 `AUDITED` 中间候选，不能签发 Graph v3 `CLOSED`；下一实现边界是 G37，不继续用 CPU 算子数量掩盖
+Graph runtime/plan 缺口。

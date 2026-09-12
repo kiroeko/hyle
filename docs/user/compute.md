@@ -190,6 +190,11 @@ convenience 可直接推导 output desc。两者都把 provider/route 选择移�
 没有把 prepare 或 invocation 创建隐藏在一次性 convenience 中，因为 provider workspace 和并发状态必须
 有明确 owner。
 
+图编译器或手工 workspace planner 可在冷路径调用
+`PreparedOperation::alias_support(output_index, input_index)`。公共 operation traits 只是语义允许的上界；
+该查询给出当前 provider、shape 和 layout 真正支持的输入输出 alias 及相对 byte offset。普通调用者无需为
+每次 submit 查询它，runtime 仍会在接收工作前验证实际绑定。
+
 ```cpp
 auto context = cpu::create_context();
 if (!context) return context.error();

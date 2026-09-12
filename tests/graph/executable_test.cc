@@ -18,6 +18,8 @@
 
 namespace {
 
+using hyle::compute::Binary;
+using hyle::compute::BinaryKind;
 using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
@@ -29,7 +31,12 @@ using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
+using hyle::compute::Unary;
+using hyle::compute::UnaryKind;
+using hyle::compute::View;
 using hyle::graph::CompiledGraph;
+using hyle::graph::CompileOptions;
+using hyle::graph::ConstantBinding;
 using hyle::graph::Executable;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
@@ -67,7 +74,7 @@ LogicalGraph make_rms_graph(TensorDesc description, bool weighted = false) {
   } else {
     output = builder.add(RmsNorm{}, result.inputs[0]).value();
   }
-  EXPECT_TRUE(builder.output(output).ok());
+  EXPECT_TRUE(builder.publish(output).ok());
   result.outputs.push_back(output);
   result.graph = std::move(builder).finish().value();
   return result;
@@ -93,7 +100,7 @@ LogicalGraph make_transformer_graph(std::size_t rows, std::size_t hidden,
   const ValueId activated = builder.add(GatedActivation{}, projected).value();
   result.intermediates = {normalized, projected};
   result.outputs.push_back(activated);
-  EXPECT_TRUE(builder.output(activated).ok());
+  EXPECT_TRUE(builder.publish(activated).ok());
   result.graph = std::move(builder).finish().value();
   return result;
 }
@@ -108,8 +115,8 @@ LogicalGraph make_branch_graph() {
       builder.add(MatMul{}, result.inputs[0], result.inputs[1]).value());
   result.outputs.push_back(
       builder.add(MatMul{}, result.inputs[0], result.inputs[2]).value());
-  EXPECT_TRUE(builder.output(result.outputs[0]).ok());
-  EXPECT_TRUE(builder.output(result.outputs[1]).ok());
+  EXPECT_TRUE(builder.publish(result.outputs[0]).ok());
+  EXPECT_TRUE(builder.publish(result.outputs[1]).ok());
   result.graph = std::move(builder).finish().value();
   return result;
 }
@@ -270,6 +277,105 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_TRUE(moved.create_invocation().has_value());
 }
 
+TEST(GraphCompile, BindsBorrowedConstantsOnceForRepeatedInvocations) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto input_id = builder.input(row(4)).value();
+  const auto weight_id = builder.constant(row(4)).value();
+  const auto output_id = builder.add(RmsNorm{}, input_id, weight_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  OwnedTensor input = make_tensor(row(4));
+  OwnedTensor weight = make_tensor(row(4));
+  OwnedTensor output = make_tensor(row(4));
+  const std::array<float, 4> input_values{1, -2, 3, -4};
+  const std::array<float, 4> weight_values{1, 0.5F, -1, 2};
+  write(input, input_values);
+  write(weight, weight_values);
+  const std::array bindings{ConstantBinding{weight_id, weight.view.as_const()}};
+  Context context = hyle::compute::cpu::create_context().value();
+  CompiledGraph compiled =
+      hyle::graph::compile(graph, context,
+                           CompileOptions{.constants = bindings})
+          .value();
+  EXPECT_EQ(compiled.report.constant_count, 1u);
+  EXPECT_EQ(compiled.report.borrowed_constant_count, 1u);
+  EXPECT_EQ(compiled.report.packed_constant_count, 0u);
+  EXPECT_EQ(compiled.report.packed_constant_bytes, 0u);
+
+  Invocation invocation = compiled.executable.create_invocation().value();
+  EXPECT_TRUE(invocation.bind(weight_id, weight.view).IsInvalidArgument());
+  ASSERT_TRUE(invocation.bind(input_id, input.view).ok());
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+
+  float square_sum = 0.0F;
+  for (float value : input_values)
+    square_sum += value * value;
+  const float factor = 1.0F / std::sqrt(square_sum / 4.0F + RmsNorm{}.epsilon);
+  std::array<float, 4> expected{};
+  for (std::size_t index = 0; index < expected.size(); ++index)
+    expected[index] = input_values[index] * factor * weight_values[index];
+  expect_near(read(output, 4), expected);
+
+  invocation.reset();
+  ASSERT_TRUE(invocation.bind(input_id, input.view).ok());
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+}
+
+TEST(GraphCompile, RejectsMissingForeignAndMismatchedConstantBindings) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto input_id = builder.input(row(4)).value();
+  const auto constant_id = builder.constant(row(4)).value();
+  const auto output_id = builder.add(RmsNorm{}, input_id, constant_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  Graph graph = std::move(builder).finish().value();
+  Context context = hyle::compute::cpu::create_context().value();
+  EXPECT_TRUE(hyle::graph::compile(graph, context).error().IsInvalidArgument());
+
+  OwnedTensor correct = make_tensor(row(4));
+  OwnedTensor wrong = make_tensor(row(3));
+  const std::array wrong_shape{
+      ConstantBinding{constant_id, wrong.view.as_const()}};
+  EXPECT_TRUE(hyle::graph::compile(graph, context,
+                                   CompileOptions{.constants = wrong_shape})
+                  .error()
+                  .IsInvalidArgument());
+
+  GraphBuilder foreign_builder = GraphBuilder::create().value();
+  const auto foreign = foreign_builder.constant(row(4)).value();
+  ASSERT_TRUE(foreign_builder.publish(foreign).ok());
+  Graph foreign_graph = std::move(foreign_builder).finish().value();
+  static_cast<void>(foreign_graph);
+  const std::array foreign_binding{
+      ConstantBinding{foreign, correct.view.as_const()}};
+  EXPECT_TRUE(hyle::graph::compile(graph, context,
+                                   CompileOptions{.constants = foreign_binding})
+                  .error()
+                  .IsInvalidArgument());
+}
+
+TEST(GraphCompile, ExecutesPublishedConstantWithoutRuntimeRebinding) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto constant_id = builder.constant(row(4)).value();
+  ASSERT_TRUE(builder.publish(constant_id).ok());
+  Graph graph = std::move(builder).finish().value();
+  OwnedTensor constant = make_tensor(row(4));
+  const std::array binding{
+      ConstantBinding{constant_id, constant.view.as_const()}};
+  Context context = hyle::compute::cpu::create_context().value();
+  CompiledGraph compiled =
+      hyle::graph::compile(graph, context, CompileOptions{.constants = binding})
+          .value();
+  Invocation invocation = compiled.executable.create_invocation().value();
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  invocation.reset();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+}
+
 TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
   constexpr std::size_t kRows = 2;
   constexpr std::size_t kHidden = 4;
@@ -411,7 +517,7 @@ TEST(GraphCompile, DefersEncodedWeightExecutionToAFutureProvider) {
   const ValueId input = builder.input(matrix(2, 64)).value();
   const ValueId encoded_weight = builder.input(weight).value();
   const ValueId output = builder.add(MatMul{}, input, encoded_weight).value();
-  ASSERT_TRUE(builder.output(output).ok());
+  ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
   Context context = hyle::compute::cpu::create_context().value();
@@ -558,8 +664,8 @@ TEST(Invocation, PublishedIntermediateCanFeedALaterNode) {
   const ValueId input = builder.input(description).value();
   const ValueId first = builder.add(RmsNorm{}, input).value();
   const ValueId second = builder.add(RmsNorm{}, first).value();
-  ASSERT_TRUE(builder.output(first).ok());
-  ASSERT_TRUE(builder.output(second).ok());
+  ASSERT_TRUE(builder.publish(first).ok());
+  ASSERT_TRUE(builder.publish(second).ok());
   Graph graph = std::move(builder).finish().value();
 
   Context context = hyle::compute::cpu::create_context().value();
@@ -615,14 +721,128 @@ TEST(Invocation, AllowsOnlyLifetimeSafeExactExternalInPlaceAlias) {
       invocation.bind(safe.outputs[0], partial_output).IsInvalidArgument());
 }
 
+TEST(GraphCompile, ReusesInternalStorageForLifetimeSafeInPlaceOperations) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc description = row(4);
+  const ValueId input = builder.input(description).value();
+  const ValueId negated = builder.add(Unary{UnaryKind::kNeg}, input).value();
+  const ValueId magnitude =
+      builder.add(Unary{UnaryKind::kAbs}, negated).value();
+  const ValueId output = builder.add(Unary{UnaryKind::kNeg}, magnitude).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = hyle::compute::cpu::create_context().value();
+  CompiledGraph compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_EQ(compiled.report.workspace_bytes,
+            description.required_bytes().value());
+  Invocation invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input_tensor = make_tensor(description);
+  OwnedTensor output_tensor = make_tensor(description);
+  const std::array<float, 4> values{-1, 2, -3, 4};
+  write(input_tensor, values);
+  ASSERT_TRUE(invocation.bind(input, input_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(output, output_tensor.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  expect_near(read(output_tensor, 4), std::array<float, 4>{-1, -2, -3, -4});
+}
+
+TEST(Invocation, ResolvesAnInternalSliceViewWithoutMaterializingIt) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc input_description = matrix(2, 3);
+  const ValueId input = builder.input(input_description).value();
+  const ValueId slice =
+      builder.add(View::slice(0, 1, 1).value(), input).value();
+  const ValueId output = builder.add(Unary{UnaryKind::kNeg}, slice).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = hyle::compute::cpu::create_context().value();
+  CompiledGraph compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_EQ(compiled.report.workspace_bytes, 0u);
+  Invocation invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input_tensor = make_tensor(input_description);
+  OwnedTensor output_tensor = make_tensor(matrix(1, 3));
+  const std::array<float, 6> values{1, 2, 3, 4, 5, 6};
+  write(input_tensor, values);
+  ASSERT_TRUE(invocation.bind(input, input_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(output, output_tensor.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  expect_near(read(output_tensor, 3), std::array<float, 3>{-4, -5, -6});
+}
+
+TEST(Invocation, RequiresAPublishedViewToBindItsInferredSubrange) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc input_description = matrix(2, 3);
+  const ValueId input = builder.input(input_description).value();
+  const ValueId output =
+      builder.add(View::slice(0, 1, 1).value(), input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = hyle::compute::cpu::create_context().value();
+  Invocation invocation = hyle::graph::compile(graph, context)
+                              ->executable.create_invocation()
+                              .value();
+  OwnedTensor storage = make_tensor(input_description);
+  const std::size_t row_bytes = 3 * sizeof(float);
+  TensorView second_row =
+      TensorView::create(
+          matrix(1, 3),
+          storage.buffer.view().subview(row_bytes, row_bytes).value())
+          .value();
+  ASSERT_TRUE(invocation.bind(input, storage.view).ok());
+  ASSERT_TRUE(invocation.bind(output, second_row).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+
+  invocation.reset();
+  TensorView wrong =
+      TensorView::create(matrix(1, 3),
+                         storage.buffer.view().subview(0, row_bytes).value())
+          .value();
+  ASSERT_TRUE(invocation.bind(input, storage.view).ok());
+  EXPECT_TRUE(invocation.bind(output, wrong).IsInvalidArgument());
+}
+
+TEST(GraphCompile, DoesNotInPlaceABroadcastProviderRoute) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId input = builder.input(row(4)).value();
+  const ValueId scalar = builder.input(row(1)).value();
+  const ValueId first = builder.add(Unary{UnaryKind::kNeg}, input).value();
+  const ValueId sum =
+      builder.add(Binary{BinaryKind::kAdd}, first, scalar).value();
+  const ValueId output = builder.add(Unary{UnaryKind::kNeg}, sum).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = hyle::compute::cpu::create_context().value();
+  Invocation invocation = hyle::graph::compile(graph, context)
+                              ->executable.create_invocation()
+                              .value();
+  OwnedTensor input_tensor = make_tensor(row(4));
+  OwnedTensor scalar_tensor = make_tensor(row(1));
+  OwnedTensor output_tensor = make_tensor(row(4));
+  write(input_tensor, std::array<float, 4>{1, 2, 3, 4});
+  write(scalar_tensor, std::array<float, 1>{10});
+  ASSERT_TRUE(invocation.bind(input, input_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(scalar, scalar_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(output, output_tensor.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  expect_near(read(output_tensor, 4), std::array<float, 4>{-9, -8, -7, -6});
+}
+
 TEST(Invocation, RejectsExternalAliasWhileTheInputRemainsLive) {
   GraphBuilder builder = GraphBuilder::create().value();
   const TensorDesc description = row(4);
   const ValueId input = builder.input(description).value();
   const ValueId early = builder.add(RmsNorm{}, input).value();
   const ValueId late = builder.add(RmsNorm{}, input).value();
-  ASSERT_TRUE(builder.output(early).ok());
-  ASSERT_TRUE(builder.output(late).ok());
+  ASSERT_TRUE(builder.publish(early).ok());
+  ASSERT_TRUE(builder.publish(late).ok());
   Graph graph = std::move(builder).finish().value();
 
   Context context = hyle::compute::cpu::create_context().value();
