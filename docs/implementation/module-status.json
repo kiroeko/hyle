@@ -279,10 +279,15 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/graph-v2-multi-op-transformer.md",
       "candidate": "df6981ad942c7e9f3620785af2a730079b6b1433",
-      "summary": "graph v2 CANDIDATE：G20--G27 的 dynamic typed DAG、immutable Graph/Executable、per-run Invocation、external alias 与 Mem lifetime workspace 已固定且候选后产品无漂移；待候选验证、multi-op P1 和终局红队。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      },
+      "summary": "graph v2 CLOSED：dynamic typed 多节点 DAG、immutable Graph/Executable、per-run Invocation、external alias 与 Mem lifetime workspace 已完成四机正确性、sanitizer、三种 C++ 交付、红队及同合同三算子 composition-tax 5% P1 非劣门。"
     },
     {
       "module": "container_concurrent",
