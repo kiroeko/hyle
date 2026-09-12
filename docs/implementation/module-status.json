@@ -370,8 +370,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "QUEUED",
-      "summary": "graph_provider_onednn 已登记为 oneDNN Graph 多算子 region 的独立内部 identity；尚未 scope，不声明依赖、公开头、feature、产品能力或构建成本。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/graph-provider-onednn-v1.md",
+      "summary": "graph_provider_onednn v1 已冻结 oneDNN Graph CPU gated-MLP 多节点 region 的审计范围、真实/反偏置纵切、预算与停止线；当前只有空内部 factor target，不声明依赖、公开头、产品投影、feature 或已承诺能力。"
     },
     {
       "module": "compute_ops",
