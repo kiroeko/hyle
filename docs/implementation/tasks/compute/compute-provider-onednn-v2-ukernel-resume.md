@@ -151,7 +151,14 @@ patch、ARM execute、公开 tiling knob、K-partition reduction、weight packin
   known-delta、timer-floor 与 placement 也全部 PASS，但不能据此签发 P1。它没有形成产品 FAIL、没有改变
   candidate，也没有触发性能调参；依照 instrument v1 第 8、9 节，只允许保留原因并以普通 engineering
   `qualify-platform` 重做，不能把观察到的工具链身份事后登记为 Formal expected。
+- 随后的普通 engineering qualification 绑定 clean source `5e078305`（产品字节仍为 `71f9de0c`）与 clean
+  oneDNN `71094df45190`，在 W1-WIN/MSVC 19.50、Release/static/LTO-off 下于 n=15 按停止规则结束：8/8
+  strata 的 median candidate/peer ratio 为 `0.9925--1.0134`，全部 99.26% CI 落在 5% 等价带内，combined
+  verdict=`PARITY`、non-inferiority=`PASS`；A/A、5%/10% known-delta、timer-floor、placement、artifact
+  identity 与 build contract 全部 PASS。有效 bundle 已严格重放为 `QUALIFIED/CURRENT/EXACT`，保存在
+  [`compute-onednn-provider-p1-v1-5e078305-w1-win`](../../../../evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/)；
+  这只签发 x64 serial prefill provider 边界，不继承到 decode、并行 executor 或其他 dtype/backend。
 
 本 checkpoint 尚不是 immutable candidate 或终局：source/static/shared relocation、Linux x64、Apple ARM
-negative capability、sanitizer、shared export/license、正式 P1、文档检查和终局 red-team 尚未全部执行，
+negative capability、sanitizer、shared export/license、文档检查和终局 red-team 尚未全部执行，
 registry 保持 `AUDITED`。

@@ -1,0 +1,1779 @@
+{
+  "entries": [
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-01.log",
+        "sha256": "6847cc5d333916be0a8304e6d31ef18a6d6578ddfb3b295626292cc0f6d13078"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "3f653b47fbf2eb3fc96f23b519377627",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-02.log",
+        "sha256": "b892d10f65ff44915729497a28901515b96f55290c785e75f73f1c73b7f0a881"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "96a124d970a62d469d32a329d17b6e7f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-03.log",
+        "sha256": "7ed0283e5059f09118a335ed28610cef751b85bf520053cac7c78dca62dea54f"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "546bb0a6c0e1d973242ee99bda56785f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-04.log",
+        "sha256": "65962d01efa29bf466a48d2860e61607d6d1fbd15e98f40836d1dd26ce252fb7"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "70e0f551fb348b940f2b0e962cedccb9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-05.log",
+        "sha256": "e94a47f0a07979ed2a4775579e57380af1b257b62886ea4eaf85f5ff2e4b4190"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "58297305808b5bac3900faccd1fe215d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-06.log",
+        "sha256": "d58f08ac81c4c2100b167aadc5f09adbd29c8157eee4cb7103a92b6ce47d513f"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "22b63de632a1b1336603220b7006286f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-07.log",
+        "sha256": "c394200007415e3f7ddecd737940b96077d0223ae58a887a68c63e8902fe02c6"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "8fee36e3c00bfbf2c373b4cea68b41b9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-08.log",
+        "sha256": "b1c6d5d57e47d0671addac21b759eb6a82ca3d8a94beee7b93563b6112b234b2"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "176ba721928736b56e5976e7ab9b0ce2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-09.log",
+        "sha256": "4975cb40802ae3791e22fd3dfc5af3e824d83561fa06cb7d874176ff0d7d91c8"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "badf850540d104586f50f9cf178be154",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-10.log",
+        "sha256": "02649806042f3e67fbd75b88e3fc7d440f217f3e9b44d505b2e5f5b20aba8283"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "59004075533c88cfdcbfb7402b9598db",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-11.log",
+        "sha256": "15c459aa158843335bfb8b39cf299da0003cc1eb3c280efc7573076ec816009b"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "f5cd24de6d1b3f1195ab48a66c470407",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-12.log",
+        "sha256": "62d66bfe2be12b69522b66dde7e660cee6805e9f2e33dd40362f9ef6ef076c70"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "53b1090e8a72c1697548ecbf0f3f230b",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-13.log",
+        "sha256": "41bb600d8bcbafbdacf8b25e616c9085936eab19ae79569ac116276cfa938b00"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "b0f12ad706b7d97be73929471d952ea2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-14.log",
+        "sha256": "89de3fb5903bfdfde843c03d4c8f82410cc36c442827fc944b375e4871375a31"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "3b967836ed237b454ad8a6c96bfb430f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-compute-onednn-provider-primary-run-15.log",
+        "sha256": "26aa84547bc8a518160b7d869748d211203c766b23f899470fadd9fe88071ced"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "490fc06cb1456b21f41a711b09ed56f9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-01.log",
+        "sha256": "ca0881ea0bea1398c70fbcee3a642344b36fb387f2c333a0fc9b95e72180afc8"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "2454e1b2cf2a26a155a13ff5d1af7c87",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-02.log",
+        "sha256": "b9252a978b1fa01bd65f877c8e318a732fdd27df67b24c01ebf3e36f2422fa13"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "862c595722ef987d8f064aedd76231ce",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-03.log",
+        "sha256": "bcb39f01fc36b11352a6a40ef2a529d24cf12b6fd7c4ea61b0351768287e52c7"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "c8bd4a2867396e69da8a01bdd3004526",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-04.log",
+        "sha256": "70b2fb0ff48bece5011c9708497f299ed1c102a9af4377daca70488fdd963e61"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "697bc97ef3efbbe62e179043a2875726",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-05.log",
+        "sha256": "47c6a9154e73031a123e2741ba3a08f8f6b92277d75b74c3de794b81e377ab97"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "e8f9651971230eb05eeb8612aff052c0",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-06.log",
+        "sha256": "e1d68bcacd81029d0349d4b0557651623daa5077332d2ef621b024ea53ed8289"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "ca934e62228f4f1dd2a5e9a2b855d0ae",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-07.log",
+        "sha256": "7dbc83f6a60e61ff148dc6aeec456aee16de1c43f38f4fe28c763995c3ca7fb0"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "91b511e1b37ea95a56dc345663e88edf",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-08.log",
+        "sha256": "5c36c912fd824d610e898806b08dc6b0a6b3b984ed7437570f33ef3ccf0dc1cc"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "0fa64c99316cb024e1336a32d0c38c15",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-09.log",
+        "sha256": "18d65fab4bbc1c956cf06b41a03f163d5e67d256f2daeaf2dab097624de0019f"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "f4d803525a03b060924a8ab495c7a0bd",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-10.log",
+        "sha256": "cdda213b8434dca8855daa18ae6ac519751882ac2247cd8de49364b89523dd13"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "9bf6e90719284ed9195616d4a00d34ab",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-11.log",
+        "sha256": "98843f7b6350aa08a4cd7fbe1475752b4d97c1e6e91dda35fba4866b2b21c6e2"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "7dac0f0625483f9f39f088be97bce207",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-12.log",
+        "sha256": "1149eb21192d478b0d2e22c37183eb1b4adece783d6160eed0f3caa27a2eb61d"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "90169852849c216d855282460dca00b7",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-13.log",
+        "sha256": "5e5603fdc3454e498b889270884a3f94aad8ee2785457cece6caf424d25943c4"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "bb33cb27299ca4eaaa5a283265505fef",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-14.log",
+        "sha256": "710318faad453555eb6b3446f6a3d08167d2923ffe53e064375206ff80292bff"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "6078b3a92bf11aa8cf7339eaa20602c2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-compute-onednn-provider-primary-run-15.log",
+        "sha256": "3d213631d1df931e5797cb6e33f4775a957c633deac5830fd274994abf9eb4c3"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "b0ef824238771f2975ca4a284c5b5149",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-01.log",
+        "sha256": "41d07b5be8e1a8700df50c84bb14569ca960a1cee8d70b6c83891cac9bea8c64"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "1477d1229ce6e8241bd37aa9fd7ed2d3",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-02.log",
+        "sha256": "13fb708891206a801258e67a4f40474691b85dcae784ad75c4a0b25130f44052"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "d39a00926ec829c80634f84a70b4ba72",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-03.log",
+        "sha256": "501a325cef033b2636ee0d74070dfa67802874b4bab0aae09c4acc899f6fbd70"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "94ac4b313c3050a6a3cba0db28e57b01",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-04.log",
+        "sha256": "4206c9eaddbf1eba2e100cb553281f02d6ca53f0e4ad3feb135a4d53873a3646"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "597122a37374c4e984e074f30d35563f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-05.log",
+        "sha256": "609749dd4d03f372390cdb0561a5d5bac82245d4d58eb6c6b9d52a7b0f6fef85"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "7ab6caf0b4b02a867a493204fbf8f444",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-06.log",
+        "sha256": "47ea6e32139093b86c667ae06c928621d86b5cbce9b480c93278a1589c5a08e5"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "fdd53dc1fe833f5bdd9b8f466c03fbf8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-07.log",
+        "sha256": "885817a63693c09c93ebabb784290d7464e534bf849190f7bc2471feba091faa"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "c171db8a30b85f89f389018d23fead43",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-08.log",
+        "sha256": "ff07b6b105889848f6525439dd4f034b01283ce204912d16f5b7032e29320c30"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "aa77add7955589fcfeb7d2c6825d38b4",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-09.log",
+        "sha256": "5819d363631020df787df2767b79588c00e5c4769128a9e33b35e8d78554c44a"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "303cc5436b7a95693a28d83f35fbc1d3",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-10.log",
+        "sha256": "2e4357f745e4df6daa24676a329262fc500ef5984df432057bd1ddcce8def25f"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "8839efeca22f3bd3df7763be0f4af63a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-11.log",
+        "sha256": "9f9bc558606df4990942e62ce4f555650db0afc166b63d1bfa9264ec8a8bbe09"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "1bf0ec1d24ab8b0605a181a3940905e3",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-12.log",
+        "sha256": "9a713e0a4f7c2a010fcc18c41c1f98f0c88579ec99fbd5b3ed2a5398a08a55c8"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "babe8dcdec39d9556a4056e0adb92585",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-13.log",
+        "sha256": "256b5c111e6ed97576a494c2ecdeddf9ce352bec1f593b87a965f95f45dadfd5"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "b84e4aa08a58bf0d98991f8aa143370f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-14.log",
+        "sha256": "31ab9918ef0d9b3e2e2f935b67bbe8740ee7a1911ab226a2813079f1e4bb1f37"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "8b0e689e28346e2114545e9d5aaf1e60",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-compute-onednn-provider-primary-run-15.log",
+        "sha256": "ec8de59c6454d6aa2d3d173ddbf615c26cd53e6e21af7b3102af73f98b21a2f1"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "073555cf067c5f0585bef2f4645de6fe",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-01.log",
+        "sha256": "caf44de8ac8e02719c28c42c4edc1a5410baa9d2d5da9df4c95bdf64708c650e"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "377242f1ead44e6a7ab96eed81144aef",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-02.log",
+        "sha256": "b64c3f2f3293c2be1898e405b3cc3b3071e6c67e1bc3e50b50728c3c8e03b5b2"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "46b6921ac056eb95bc6aab198f4150bb",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-03.log",
+        "sha256": "83f0d947dae4414ff242c79627cb5ca83fd104d87bea89b2ce23b9cf789140ce"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "b65ab752a16d06f026809b13a8237c5f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-04.log",
+        "sha256": "e3dc673699b77cfd73f066a21cdf80b5f32598f933db630e184a1e6c9a82f236"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "80d7c8c6bedad5e2751538d6b6b5a65c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-05.log",
+        "sha256": "0104800884a2d9407f1970d8050cbd7d87b744765e77ad99ecb7a2729d49c6d2"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "f86e45bc87944e1eb57580ef69e5f8eb",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-06.log",
+        "sha256": "207a680498de312b7b0d58a1ecbd8f3b180ea8795d061085281c9fcc81a9ffcd"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "479e013d290ca99e2df13e045a5bb80f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-07.log",
+        "sha256": "3c680695d5477e76688e9dded4b6c8a5e590bdeaac5c01498f1d95d9b5a9f4c8"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "93d3d626484446c0212e01b99f1c20ee",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-08.log",
+        "sha256": "a793049110daa0abe76bea69c8ac8136e8be584ef2d1f2d8a8a870f3b9922687"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "a0369b670ca7bc7b0f8d02a3b9b1ecad",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-09.log",
+        "sha256": "0bd5cf30db43aaa6881c7adaad5eb1d34ef01f41ecc269d5ebbfc9d176e04b44"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "d84fb319ed438cb40585e5656529ad4f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-10.log",
+        "sha256": "bc2f082ba9d93f5349f9fd9c870668a1060f4acb6fccd9877e1cfc87073a876c"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "14527f8c83eeef6d186edf1a76663cbc",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-11.log",
+        "sha256": "26fe76c7ca2669ae857179d892173206e1dcd76fdece043211cb4b358e3d7543"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "f87dc9f1af93cf2614e0287e89a16409",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-12.log",
+        "sha256": "3e0d5a9898330ebd3b6b5ef6d34000405ba0100993cde407838ac1b1886b0c25"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "bebf1b5841746c2847074da27ef79a25",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-13.log",
+        "sha256": "b0a5c0724be3a616cb73072223f001853b96b260224efbdf8c47993be1d2a797"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "7eccc963617e69942320fc57f25e9858",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-14.log",
+        "sha256": "ff510d6f82436455c03be78050451c2c0ab18d06f2a39c5100dd2b0e2fdf598f"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "b597bf8bb30a149781b018b007c69311",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-compute-onednn-provider-primary-run-15.log",
+        "sha256": "c9362de746832dc49dd95fbe365bf315775891e1803ea28b4a2f14b146848229"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "f9ce28cb1eda8c7d37a6f4cc46f178d5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-01.log",
+        "sha256": "cda26090e49646636a055509ba384bfffd56a5cd7a2b879af87a378a693ac022"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "cc621f383224f6cdaf96a7bd3c639965",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-02.log",
+        "sha256": "c8491d6b3c9786df5fde9caa9dcbcefad7dfbc543cc646a0979299a3173cb3f5"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "da195515cba55b933c881c0990d98a48",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-03.log",
+        "sha256": "71b6d726a70259e576aa75f78777d4082e91761f52151c109d7c7285ef221416"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "ec0f926b10453b722cc05d6e5d4cbd1c",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-04.log",
+        "sha256": "f659e26a5693328d0009284c3b233f1f68e9759633fb6a830b1db10626587308"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "2b0154a1580371385447fe0efa62a40c",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-05.log",
+        "sha256": "315ca37e0d0ac8ec9beba13a990d8e5f05ec1b0e775eb64d2434419a35435a9e"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "e81d5eb8c6393b646f746182a45e2fd2",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-06.log",
+        "sha256": "d8991f201880a3da253947c41b53e3bd1391f813028483b05abc1011342cad2c"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "fa4d2c3f10843e724f2bc77025369cca",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-07.log",
+        "sha256": "ea630c30ccb774ec26e1a77598a7d6af0dbc9f463117a191c2affed8d389d8cd"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "f0e2329fd4e50a68a024a3368f511946",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-08.log",
+        "sha256": "d2107dfadcaf584da27821b375b35e34d20238984a14a5aa0dc53084ee71c0b3"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "24d9e2dbccdc524f815160b9f89af01a",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-09.log",
+        "sha256": "662d54bf9b7f1ad30bce21f2e60cb897b742415381e042f5a35c9ab0a0d17f15"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "ed2165c76195cb0622c1a14bf8558fbe",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-10.log",
+        "sha256": "94d02e51a99a399f8edd459f24db3e6c5ce82bb59514c50442133d83d6a51a1f"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "4023ab7cd507d957410791a4bd5b69f4",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-11.log",
+        "sha256": "31b644dd640f6a27306083fedda37444b05758e0ff1db43a4e19d4e11e6de1f9"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "5d2be6b4ae6c2aedae43d390e97e3b53",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-12.log",
+        "sha256": "bfcd039b1644f249516f9516a577a3494e2bbeefca5d6b75fb8ad9d6974cfb8c"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "d8f04aa24c49aebf3a16a880430c677b",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-13.log",
+        "sha256": "3679e5a15aa14f884100077b575bde900f8c62a25ac28da3a1e0cc34f8a1cb58"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "522a0618852cc2422106bab3c352adbf",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-14.log",
+        "sha256": "b92fcd2a4df2d056b7d0ff8e96b5c3a53bcb487edbd3c137d928b6851f7d122f"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "c8c52877889f24b27b9bfcd6f24e6bd1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-compute-onednn-provider-placement-run-15.log",
+        "sha256": "3251d70213103953ac4e630b020c9bd3d14c950eb40420f54f8dc3d81e7d74d9"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "5ddbff3a2d3aa3c6f06dbe2994e53b0f",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-01.log",
+        "sha256": "29e109eb3d78d33619116f441f309abcc88e76ef7c83aa9f8a360462d05e86c1"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "bfc923019064397699e7669c4d4e1fc3",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-02.log",
+        "sha256": "933e9f25112159a88f7c206d8ac30cf6d5f3a72602b7cc04890e766917e2fdb5"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "76d73b4a42e61a957d92177367a8fad7",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-03.log",
+        "sha256": "ea3a5ad30fa956aa7b4e42e989b5bf5a8ddf579370fe56cdc4d2d32a3014b478"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "254685fa4b40b1e4238fdd7f44a783ca",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-04.log",
+        "sha256": "ce7aae70528c96c959810e6eb27dd5bbffbf82eda3847f7e488498fad27ae217"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "efd61d3bdcbde5ab5f6e5abc06e675b9",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-05.log",
+        "sha256": "d414b42e0b235998279c186d214fdcb907c22abffb1c4dc382c2987cfc8747f6"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "91c33463af5d3a84582aa949b542a40c",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-06.log",
+        "sha256": "cde3edb7b60fdcf0ab301d6609f53ee2e9e7743e55fe216eaeeeb7efa57dee67"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "458c99cad05dd8dfbe2fd2c2f72e31c3",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-07.log",
+        "sha256": "a3e1e19dedde3a1fc64213c635018896a72bea118dddad02e4608e64676edf3d"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "fc1e876a22928c9fc07ebfe19b3a5b7a",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-08.log",
+        "sha256": "a5b1a324e56a8e8db339ac566a43b38483f7855a2b7c764955843188597fb0d7"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "04ca806a478081e934c8c7974d58b2db",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-09.log",
+        "sha256": "bac2c275a386cb70a4acf2bebd164bb7cc88772b3f450966c7ddb8d63ca2b247"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "81d0e9cdb349b28eee3db02ecec7dd33",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-10.log",
+        "sha256": "2b037c7e3aa0639c908aa08d1430a918edc7a1f86a180e31c7cdda757ed2fdf7"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "006c0a60da8cce95e669d7d3f99c19b9",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-11.log",
+        "sha256": "216b8b315148c33203e2c964bf84b3d8976de6f28593b3f74d0d4575e685fba2"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "c20e0e549907bdc7526516c47ac7d53e",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-12.log",
+        "sha256": "ddb80d7b9c86531c3afcef50c9c5d546bd0fa9c6c9872cd272f2aa28f2551a74"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "4fc0022402ec585565b4a930cd382829",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-13.log",
+        "sha256": "199d19655fae124b681626b6126fdd1a75b3f78766714797a94b2073bed01767"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "b6a53fdaa78fe6831a26678ecbda75f1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-14.log",
+        "sha256": "7829e4bf826f73cb043aedd85893ec02934b9546f24c67f2a06f7f2ec87d2006"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "22300e38e42286c35e38bcaa33520b30",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-compute-onednn-provider-placement-run-15.log",
+        "sha256": "ebd0f980a6d8be9054f6d4ac22d0a90258e54d23db51be4915900e9ed4478a4c"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "ebdafffb5e4d00bc6a0bef5e38841f60",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-01.log",
+        "sha256": "7ab47847ccd5dc75379b1c7efd17d5366af6794fd9243de3fc49cdac821191b4"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "dec9a0dfa9cf00f71c256ab92e1f85dd",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-02.log",
+        "sha256": "84b462b3cfe435c0f61379d5d51eecf076f1641278c8bdae6bbd7a63a02504ce"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "4cfa675cf2aaf753e17164f348236d93",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-03.log",
+        "sha256": "4a2ca479a521b2dc4db9f4306aae91b152a1738e27dc0351e3415f7d0428e9a0"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "237c92a193c436d81232c1fb6314db58",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-04.log",
+        "sha256": "7740b2b563f8587c661d2f67af80119a5194e5c5bf0f0dfbfa7dd4a5060b831b"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "0237b30f73a9ac2689e4b38c59644e6f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-05.log",
+        "sha256": "351bab0083d14c6fc93c08f8395116c2939792b70811b8af8335adf9060be991"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "2c14c55a935e31c97845b4d8e99095ae",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-06.log",
+        "sha256": "bcb8adc13cc87e9759194f073b283352656c6dd06a765b07eeae6a68aa0cf0bf"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "eb654f4f5dc3feb74cf562cec5bb02da",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-07.log",
+        "sha256": "f1184d6a217762d075004230eaa332c6e12aea52cf36dbf49413e68fe43f8679"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "2a02f622d4f4e3fa4527921334cacb57",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-08.log",
+        "sha256": "d8db2b944e5db49ab1b9f2f9fcad116fe7d9483fe4c43462f977a6cc2f2cb799"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "1320b16259f9f26e14b08e11bffa7aa7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-09.log",
+        "sha256": "791d7b2ea2b744eadab73368ef49a12b2439a8c6f24832824f2fe17d81e92aea"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "f175c7556aa1b3d1d9c56276289f15a0",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-10.log",
+        "sha256": "235b471b9b1e49be967a7f81f7158c0c02155665b7426d32d5a83deb40d00fe2"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "b5adbb35337d22f778c5e629a5cd3678",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-11.log",
+        "sha256": "6e5b299acc386a09a9b3dd1f54f82d700fb969b7ab89e78f630335f1239c16c4"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "04ee7689c7e66007e6561bd4a01f5d89",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-12.log",
+        "sha256": "d63bcbffe327be82b937dd0e3af06f05ca261064b5fd9e8975144990341843c7"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "c1f430be1d1e8f50187327b62c21d85d",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-13.log",
+        "sha256": "aadbee828599d63e9330fcddec42e8eb9f2768e22f2a49eded2915beca53b5d4"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "abe24ab9e015d0e55009f1648be19e0b",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-14.log",
+        "sha256": "4ee6b5ce65fe45c020752328606481e2018e553d9a83c4a7dd3dbf6799965cb4"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "d3666b0fc5361cd89d4b299ef968e5b0",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-compute-onednn-provider-placement-run-15.log",
+        "sha256": "86ef2d1a8dcb3a0ee30af4bcf54581efc751fb9a3d4c17b7b1fc6ba76b19e315"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "d5e776508db79f65dac332e6711486f7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-01.log",
+        "sha256": "7bdadad1bd6aa65a6fcf61d5a69fdf906d4e641141832dc91ae484f9f25e05dd"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "1215efa254062409f48b09cac3b54056",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-02.log",
+        "sha256": "2105b23e359f82c6df6ccf73f8f2bf0cc39ee63239614cf29ab9030a08e48303"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "26db6338d197048d87d3dcd8454cbf64",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-03.log",
+        "sha256": "2cf78a4198848e0d4a9351e8a8ac40ae054a20bb230ab1bee44655abb8f516fe"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "09b9b6251fb041a3cadfb7adede3dbc1",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-04.log",
+        "sha256": "167e8977c274750419d8b98821cbe987ed08b5c3cabd484c9323adeea8e82a11"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "52b38c5062adc7ef3ddb2d99eceb789e",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-05.log",
+        "sha256": "1f96721c31e3e8caa07b12fa5f5ea8b9aa2dfe22b90c40ac2daba7650df481b7"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "f1e1294b9a5449168b8e8840c5acab5a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-06.log",
+        "sha256": "bfff7353dc2eda5df1ef60dea813bd34ae45bd2f8abde4f75e1b9f7eda124e68"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "eecffcd4814ce0ba617b279acb6e99dd",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-07.log",
+        "sha256": "b8834abbca0eb716bf0c67708bd657856284b379628e54395d83387c34f7853a"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "d3bf968205c1acf44db124c96c9784ef",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-08.log",
+        "sha256": "d86ea7aa590e2b6090b37e6191ab2b3e543a3c1baf79f40266243ee125951e59"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "0221ca7f0bd78b879755c22844250b26",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-09.log",
+        "sha256": "4786a034202eac9e0dd1a33379aeb77dece234c98bbfed5876683d3825fc5ca3"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "d90e3e204e35cdd3178a06d62cf7519b",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-10.log",
+        "sha256": "862ff9065af21bfe1fb15d51b7a1bdb7dcc317936d5f16a65eafebc5d4c8f828"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "4cf6d728286f43ac8aa0b58a672afa3c",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-11.log",
+        "sha256": "956b8020e1de3631c1a6054d26de20d36a854287acfe545b62d8c95215d0a7f5"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "f02889ee20150f64284d5a184ec60432",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-12.log",
+        "sha256": "deac92f765ed4f5fca3054f5c332040a5638f21ba2ef500d8c8facfb93dcab49"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "056aa9cc209525c7ac47b98a5e43c8d5",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-13.log",
+        "sha256": "dff290cb2241cbf7d907dfc8717dd98fa86bdd4ef68e29d70f6581281a7bca4d"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "d70967ed1f9c5df941c6f7abc1f98e67",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-14.log",
+        "sha256": "51bed21d801f1658932bf320fcc6daf87dcae0691b28d5b5f6d185166c0339be"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "0c220b5ef1d45221e5c256ca3f1e3ff0",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "compute-onednn-provider-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-compute-onednn-provider-placement-run-15.log",
+        "sha256": "b3c3bd88910178326fc374513055ad10acad5dcdaf3564034687d95c3cabc491"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "49c1719c58e2459ba1f3649dbcad0050",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-01.log",
+        "sha256": "e2017d52a6a058a287d372cceb8bef9f4d58dee738bf30e0edf8311ee7a67497"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "6121bd3047aeffbb9c99d0cb55195887",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-02.log",
+        "sha256": "4ece5ec91308f4a567534cc36a7734bd87653c0d5dae3e019190ea0f5195ea42"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "880d58bac5e18485674210089388a099",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-03.log",
+        "sha256": "9c707507f5dd7263dcc15ca4f724726979aaf01a1b50565ad87eb542bfb78acb"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "c21b40d9cc0e011be670656d5a9dd727",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-04.log",
+        "sha256": "b1e8376b7fa55faa02bee2387c363afe1fdc1ddb9340b5acc91d34415e8ff1b7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "9830afe86206c26bef364c94c17ff904",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-05.log",
+        "sha256": "5c4d015b3fb2e9882060d4ddf384436eac34d2030c38531b2d20e9965793783d"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "6040103455282c7c6013e68730c2a4d2",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-06.log",
+        "sha256": "bdb7da5559777b7d508dbe44fa634b2eaeaec35fee2a2fe0355a5a45ae7ce1cf"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "2deacecc22271e4478bd7256e3da4187",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-07.log",
+        "sha256": "501a062f31de3b5e5d82d4a1cb58ded021b8cb8d19a1250012eb6fca6f1ce28e"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "9fac9c51bc6db52f8b566904085ebce5",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-08.log",
+        "sha256": "1708537670ea0e4150c38bb5b794aa0fa34a4c0164a32c1db062940a4dda5c4f"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "d21d1694b1217f80b9eec1c35a103c4b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-09.log",
+        "sha256": "8262a99e9c2c4063bc079b07802bf75318981562badc4822d0c810ab7fd0fc20"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "f241d69c453f51a44615eff4d70e0e6d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-10.log",
+        "sha256": "a286a911b449e8fc2177d6a444161953cad05db6a03aa905b5e0250ac95b6149"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "e4f2680ffaae938b5ac173fd4b6fdf24",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-11.log",
+        "sha256": "8b88c233db32a846992e1adc8c6980db4ae2d635f10f7ccb3aead77d1bc2136a"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "35737642ca3f1425841aff803fadccf8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-12.log",
+        "sha256": "2759aa87a1d3262bed1c9df7d5d26bd74380b4b46c189df3da88f348ccde84a7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "9aa0175cc2ed98d297f55327b559a08a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-13.log",
+        "sha256": "68e98f90afe69f6d626745862dff02854417b8ea06fef613db077211fa5b9b28"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "f5c5e81337d45fa99e6a391d3fb73a94",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-14.log",
+        "sha256": "0ce561c69b4d1e5fd7f8d193346acdd25a4b53edd1bc092005bb0589d3e256b8"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "176e12fc3dcb7db10ea44e6df0f5fcc7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-candidate-first-run-15.log",
+        "sha256": "1643df39e8eb2935e1f914415548f533553225c2c7d22c5fee3f1b642d2ac2ef"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "8fabed1107629566a08b8c132f39d406",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-01.log",
+        "sha256": "f270a0892b75aacfbb81f2cf3cfc1a6f29e3cbdeab33abb3e967aa28b0c0f7c1"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "eb765d222ef99faccd3b573938bc3dc0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-02.log",
+        "sha256": "85e8ee5643a3c9c06ef86217228747fc8e1a1b4745b41f91a6e0a63c9b441530"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "68d5ae6f5d9af215c5443298e7154f37",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-03.log",
+        "sha256": "c23b77a090edb50b4e5447196719dc04eaeed66a61537f2b483186b055b511c4"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "a1bf59bc97c8cd5053d9b31080e070d3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-04.log",
+        "sha256": "6eb843bcad48caf10a5a5ac0ec724ddbd00237bc60a64841770bd01f14647e2f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "e948ff7ece7b2d42a286e89649cc2310",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-05.log",
+        "sha256": "5d32cd961bcc2c0d9ce4fad1f65d9c3df5509ec116959b1258e38e39da2cd1c0"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "097155ec35e40b287fa9fcc2f40568bf",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-06.log",
+        "sha256": "fefe0bf2f6e6c94f6337accb1a2c14c177a331ccf0ac1a6ca523f0d12800cda5"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "344cddc88137101cc1da74f9c1695355",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-07.log",
+        "sha256": "1cf5f285de7a6eb98a1894f9021f6a9eb7a2b1b46f6273ba69e83f3021feb835"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "ba03c6ad29fcfbf0318b24d2b8856751",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-08.log",
+        "sha256": "b3ea5bfcce7cef36e8adfd2f40918fa74ea1ccebea1613d58ad5ec9e2d31dd03"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "ebc088089bffe2442bd2aaf6268c139e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-09.log",
+        "sha256": "9684e59f322aeb05a33d653c1171d4e80b0fd2d5fd19c38e1ee6eb94df9350d6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "f4958c9577d3ea32bde92a6128c87590",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-10.log",
+        "sha256": "21ba5570132f262b3888176a0a857947ef27d9577e4862c8152e10cb2cbe920d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "4f6969b6b635975b1830198f8d0e3ab4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-11.log",
+        "sha256": "3b9c9ca5c4dff140cf6e643f8ec273fb910dc49d6773e87029cebf529bb955ea"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "dafdfd027e53729826e83a630969bc7d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-12.log",
+        "sha256": "5e11cf1792775d0ceb7c4d7fb78f90addde78ed7b927009c42647c6923b4a921"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "a4fc7938b1fcb64be8e48f11bc250db3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-13.log",
+        "sha256": "022b2888005ec16740c6b5b22f7dad99294622fcaeb0c78c76bae79997009eb6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "09ee762b318da88c9e41a09174cd9dc1",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-14.log",
+        "sha256": "3b331e60abfee69679e64497534fad4511735895854b972eb936ac18b2ab12bb"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "9d90f420235685ec27d0d2f370250294",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-onednn-provider-p1-engineering-evidence\\raw\\n-15\\control-peer-first-run-15.log",
+        "sha256": "abd724ef7a4b935c90b7fd62290a253103b820f1225b896c4a16b299b68b7956"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "f46b022fe5a5b11f3cbd3c92c2ef9a04",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

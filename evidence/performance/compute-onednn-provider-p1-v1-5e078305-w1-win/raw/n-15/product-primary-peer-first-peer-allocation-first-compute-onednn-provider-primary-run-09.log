@@ -1,0 +1,6 @@
+
+| relative |               ns/op |                op/s |    err% |     total | oneDNN BRGEMM provider wrapper M=32 K=4096 N=4096
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------------
+|   100.0% |       93,176,600.00 |               10.73 |    1.1% |      1.03 | `direct oneDNN BRGEMM M=32 K=4096 N=4096`
+|   101.3% |       92,017,400.00 |               10.87 |    3.4% |      1.02 | `HYLE oneDNN provider M=32 K=4096 N=4096`
+# HYLE_COMPUTE_ONEDNN_RUN execution_order=peer-first allocation_order=peer-first shape=32x4096x4096 provider_version=3.13.2 tasks=1 apple_qos=not-applicable qos_ok=not-applicable affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=d84fb319ed438cb40585e5656529ad4f

@@ -1,0 +1,166 @@
+[
+  {
+    "details": {
+      "kind": "aa",
+      "maximum_bias_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9891018602065278,
+              1.0123640279801946
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0045306457720808,
+            "sample_count": 15
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        },
+        "peer-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9914015463448316,
+              1.0232944419889594
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0023224265430295,
+            "sample_count": 15
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        }
+      }
+    },
+    "gate": "PASS",
+    "id": "aa"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.025,
+        1.075
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.0345599113001875,
+            1.0579924944614827
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.04271226542995,
+          "sample_count": 15
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.037714735980528,
+            1.064557998750606
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.0448896630694469,
+          "sample_count": 15
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta5"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.05,
+        1.15
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 10.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.092239633526191,
+            1.1111396802925952
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.1023401234957828,
+          "sample_count": 15
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0701406070092876,
+            1.1027213238790115
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.0981429815765293,
+          "sample_count": 15
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta10"
+  },
+  {
+    "details": {
+      "kind": "timer-floor",
+      "minimum_workload_floor_multiple": 20.0,
+      "workloads": [
+        {
+          "candidate_median_ns_per_op": 94073377.23424271,
+          "conservative_floor_ns_per_op": 0.1993050354086527,
+          "gate": "PASS",
+          "id": "short-prefill-f32-matmul-32x4096x4096",
+          "measurement_batch": 1,
+          "observed_multiple": 470237553.6335521,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19491878495220294,
+              "peer_median_ns_per_op": 0.19593489171298992
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.1993050354086527,
+              "peer_median_ns_per_op": 0.1983873432620425
+            }
+          },
+          "peer_median_ns_per_op": 93720712.27741331
+        }
+      ]
+    },
+    "gate": "PASS",
+    "id": "timer-floor"
+  },
+  {
+    "details": {
+      "kind": "placement",
+      "target_variants": [
+        "placement",
+        "primary"
+      ]
+    },
+    "gate": "PASS",
+    "id": "placement"
+  }
+]

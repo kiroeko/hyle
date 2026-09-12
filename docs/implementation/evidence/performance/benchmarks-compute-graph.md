@@ -1,7 +1,7 @@
-# Compute / Graph CPU one-op 性能证据
+# Compute / Graph CPU 性能证据
 
-本页只裁决 2026-09-12 的 CPU one-op 纵切，不声称完整 Compute/Graph 或外部 backend 已完成。
-冻结合同是
+本页分别裁决 2026-09-12 的 CPU one-op 抽象税与 x64 oneDNN provider 边界，不声称完整 Compute/Graph、
+完整算子目录或 GPU backend 已完成。one-op 冻结合同是
 [`compute-graph-one-op-tax-p1-v1.contract.json`](compute-graph-one-op-tax-p1-v1.contract.json)（v2 已从活动
 benchmark 目录迁入历史证据），
 候选产品字节为 `5c9dc1604e6daaec1d73062296f2a71d019e7b35`；其中相对前一提交只改变合同
@@ -69,3 +69,49 @@ python scripts/hyle-perf.py verify `
 本轮结论只证明：正常 one-op 行上 Graph 组合税没有 material 固定劣化，Compute 安全层有约几十纳秒、
 已经分解且不会被伪装成同合同胜负的固定成本。后续 multi-op、provider、GPU 与端到端推理必须建立各自
 合同，不能继承本页 verdict。
+
+## x64 oneDNN provider P1
+
+[`compute-onednn-provider-p1-v1`](../../../../bench/contracts/compute-onednn-provider-p1-v1.json) 不把
+HYLE native kernel 和 oneDNN 算法混成一场胜负。两侧都是 oneDNN v3.13.2 同参数、预生成的 x64 f32
+BRGEMM ukernel，使用独立但同值的 64-byte-aligned caller storage、相同 caller scratch、串行 full-N
+执行、overwrite output 和 hardware-context set/release。candidate 额外且完整计入普通用户真正支付的
+TensorView/resource/alias/Queue 检查、host mapping、provider dispatch、Status 与 Completion；prepare、JIT、
+allocation 和 warmup 对两侧都在测量外。shape 为真实 short-prefill projection：
+`A[32,4096] * B[4096,4096] -> C[32,4096]`。
+
+产品实现候选是 `71f9de0c`；有效 run 的 clean source 是只多一份失格说明的 `5e078305`。W1-WIN、
+MSVC 19.50、Release、static、LTO off 的 engineering qualification 在 n=15 按规则停止：
+
+- 八个执行顺序 × 构造顺序 × placement strata 的 candidate/peer median ratio 为
+  `0.9925--1.0134`；八行都是 `PARITY`，combined non-inferiority=`PASS`；
+- 所有 99.26% CI 的总范围为 `0.9573--1.0485`，仍完整位于 5% 等价带
+  `[0.95238,1.05]`；没有通过换方向或追加样本把结果挑到绿色；
+- A/A、5%/10% known-delta、timer-floor、placement、artifact identity 和 build contract 全部 PASS，
+  candidate/peer/host/artifact 在运行前后保持稳定；
+- 首次误带 `--formal` 的调用因 W1 尚未预钉死 Formal toolchain 正确 fail closed，只是无资格
+  diagnostic；没有拿它补样本、修改产品或反向登记 observed toolchain。随后按文档要求运行普通
+  engineering qualification，才产生本结论。
+
+原始 bundle 保存在
+[`compute-onednn-provider-p1-v1-5e078305-w1-win`](../../../../evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/)；
+contract / manifest / summary / controls / observations SHA-256 分别为：
+
+```text
+999761c7f2295397b24c5461eb2b01bffe2e10fc588bf0a240e427322284aaa8
+861c706e99afe1d24666a4c607eb182c00db0786b71843ea6ab0e05336fef9cf
+fc8a4a545dc508cfbed4eb05d1c151a9df6579e77135759d2d3a482a5d363973
+20e018ea8a3cd5dbc90b6f3aa51d40151b519f683e5f138f6507cc87c6a3f285
+d1546eddbf86c350bf3e8148faae3bc1a456236aaf12f095d2ffe12357e070ff
+```
+
+严格重放命令返回 `QUALIFIED`、`CURRENT`、`EXACT`、`paths_verified=true`：
+
+```powershell
+python scripts/hyle-perf.py verify `
+  --contract bench/contracts/compute-onednn-provider-p1-v1.json `
+  --manifest evidence/performance/compute-onednn-provider-p1-v1-5e078305-w1-win/manifest.json
+```
+
+本行只证明完整 HYLE oneDNN warm provider 边界在该 x64 serial prefill 合同上没有 material 税；decode
+由 HYLE native 路由、并行 executor、其他 shape/dtype、region partition 和 GPU provider 都必须独立裁决。
