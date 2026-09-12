@@ -154,3 +154,19 @@ dual-order 诊断中，同一公开 API、layout、workspace 与 completion 下�
 这只证明 tile/codegen 根因修正有效，不是 P1 或 parity 证据。正式 P1 必须由项目仪器记录 affinity/frequency
 并在 immutable candidate 后执行；M=32 固定输项在此之前保持公开，不能以 5% 误差或被 BLOCKED 的
 oneDNN provider 冒充通过。
+
+## Candidate checkpoint（2026-09-12）
+
+不可变 Compute v2 产品候选为 `d6a93086b4cdeb6b412f62c103ff9fb5d61f8902`。它固定 C20--C25 的
+Tensor permutation、row-wise RMSNorm、普通/transpose-view MatMul、packed SiluAndMul、唯一 shape
+inference、prepared artifact/run-state owner 和 HYLE-native SIMD MatMul route。当前 HEAD 相对该候选的
+`include/hyle/compute` 与 `src/compute` 差异为空；后续提交只改变 Graph、可选 provider、测试、证据、
+状态和文档，没有用 oneDNN P1 结果回写 native 产品。
+
+Graph v2 已直接消费同一 Operation/shape-inference/prepared-invocation 合同，Windows、Linux 与两台 Apple
+Silicon 的 Compute/Graph 定向 correctness/header 以及 WSL ASan/UBSan/TSan 已覆盖当前产品字节。候选
+LOC 自检为全库 `563,541` 行、自实现不含测试 `99,071` 行、Compute 实现 `2,246` 行。
+
+这只允许进入 `CANDIDATE`，不构成关闭：本卡预声明的最终 shipping native route P1、当前候选的定向
+source/static/shared 复核、终局七问与红队仍须完成。若 P1 证明 M=32 native route 存在 material 固定输且
+不能由已关闭 provider 的自然选择边界诚实解决，依法退回 `AUDITED`；不得放宽门或用 decode 胜利平均。

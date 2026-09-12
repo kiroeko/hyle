@@ -272,9 +272,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-v2-cpu-operator-catalog.md",
-      "summary": "compute v2 AUDITED：清洁实现已交付 row-wise RMSNorm、逻辑 MatMul、packed SiluAndMul、tensor permutation 与唯一 shape inference；native row-major MatMul 已接入 prepare-time 无成本 ISA 路由并完成 tile/tail differential correctness，正式 P1 与其余算子目录仍未签发。"
+      "candidate": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902",
+      "summary": "compute v2 CANDIDATE：C20--C25 的 Tensor/Operation/PreparedOperation 与 HYLE-native SIMD 路线已固定并由 Graph 直接消费；候选后产品无漂移，待同合同 native P1、候选交付复核与终局红队。"
     },
     {
       "module": "graph",

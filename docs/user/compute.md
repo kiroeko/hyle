@@ -2,10 +2,10 @@
 
 > 本页描述当前 CPU C++ surface；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。HYLE-native 始终可用；选择
-> `HYLE_COMPUTE_ONEDNN=ON` 时可以在 x86-64 构建显式 oneDNN MatMul provider。该可选 factor 当前为
-> `CANDIDATE`：BRGEMM ukernel 已通过定向正确性、暖执行零分配、正式 P1 以及 Windows
-> source/static/shared 交付，但 Linux/Apple/sanitizer 和终局红队尚未全部签发，因此还不是 `CLOSED`
-> 能力。Apple Silicon 等 AArch64 目标会关闭该 factor 并
+> `HYLE_COMPUTE_ONEDNN=ON` 时可以在 x86-64 构建显式 oneDNN MatMul provider。该可选 factor 已
+> `CLOSED`：BRGEMM ukernel 已通过 Windows/Linux 正确性与三交付、暖执行零分配、Linux sanitizers、
+> 正式 P1、两台 Apple ARM 负能力、离线依赖/许可证和终局红队。Apple Silicon 等 AArch64 目标会关闭
+> 该 factor 并
 > 使用 HYLE-native；CUDA、Metal、Vulkan、HIP 与其他 providers 仍是后续独立纵切。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
@@ -134,7 +134,8 @@ if (!invocation) return invocation.error();
 - HYLE-native route 不隐藏 staging、copy、线程切换、packing 或 JIT。oneDNN BRGEMM handle 只在 prepare
   冷路径 finalize/generate；每个 Invocation 映射调用方 workspace，steady submit 不创建 descriptor、
   stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前候选的六个推理形状
-  已证明 warm `submit()+wait()` 无 C++ 动态分配；正式性能与三交付承诺仍以 registry 最终关闭为准。
+  已证明 warm `submit()+wait()` 无 C++ 动态分配；适用性能与三交付证据已经由 registry 所指 terminal
+  record 签发。
 - oneDNN ukernel C API 在锁定版本中仍标记 experimental。它完全私有于 provider，并由精确版本断言保护；
   用户不应直接依赖其 header 或 ABI。升级 oneDNN 必须重做源码、符号、分配和正确性审计。
 
