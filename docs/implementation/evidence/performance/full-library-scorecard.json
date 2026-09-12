@@ -4,7 +4,7 @@
   "registry": "docs/implementation/module-status.json",
   "baseline": "bbd1eebada1be72d5b33c07e8c0763b16196d3fb",
   "ratio_definition": "greater than one favors the shipped HYLE route",
-  "excluded_modules": ["compute_provider_ggml"],
+  "excluded_modules": ["compute", "compute_provider_ggml"],
   "peer_freshness": [
     {"peer": "Highway", "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2", "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2", "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"},
     {"peer": "xsimd", "locked": "3b3151ff665514a00a437cc985f47b7de99b772b", "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b", "disposition": "current"},
@@ -43,9 +43,8 @@
     {"module": "io_watch", "candidate": "fa5718715aaf7a9d867e0ef9ce81f435b8f5b116", "claims": ["io-watch-recursive", "io-watch-exact-file", "io-watch-directory-burst"]},
     {"module": "process", "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739", "claims": ["process-structural"]},
     {"module": "io_websocket", "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99", "claims": ["websocket-mask"]},
-    {"module": "compute", "candidate": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902", "claims": ["compute-native-route-tax", "compute-onednn-short-prefill-selection"]},
     {"module": "graph", "candidate": "df6981ad942c7e9f3620785af2a730079b6b1433", "claims": ["graph-multi-op-tax"]},
-    {"module": "compute_provider_onednn", "candidate": "71f9de0cce8e6dd93a1bf3b2c6eb8f1e1f1b2cdb", "claims": ["compute-onednn-boundary", "compute-onednn-short-prefill-selection"]}
+    {"module": "compute_provider_onednn", "candidate": "71f9de0cce8e6dd93a1bf3b2c6eb8f1e1f1b2cdb", "claims": ["compute-onednn-boundary"]}
   ],
   "claims": [
     {
@@ -579,35 +578,6 @@
       "ratio_ci": "2.005-3.354; every qualified interval lies above 1.993", "sensitivity": "win holds across sizes and both orders",
       "mechanism": "whole-buffer vectorized mask path with one state update", "limitations": "masking kernel, not complete WebSocket server throughput",
       "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-websocket-mask-p1-v1-d4cb26ac-qualified/summary.json"]
-    },
-    {
-      "id": "compute-native-route-tax", "modules": ["compute"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "PARITY",
-      "parity_basis": "all M1/M4/transpose strata pass the 5% equivalence and non-inferiority gates while both sides execute the same prepared native function pointer",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "decode row-major M=1/M=4 and transpose-view M=1 f32 MatMul through the complete prepared Compute journey",
-      "contract": "provider-enabled selection versus forced-native with identical Tensor, Buffer, Queue, invocation, completion, storage and serial execution boundaries",
-      "peer": "the same Compute v2 candidate forced to HYLE-native", "scale": "M=1/4,K=N=1024 row-major and M=1,K=N=1024 transpose-view",
-      "absolute": "M1 about 10.6-11.1 K op/s; M4 about 6.53-6.58 K; transpose about 14.9-15.4 K on both routes",
-      "ratio_ci": "point ratios 0.99440-1.00697; aggregate 99.26% CI envelope 0.97052-1.02849",
-      "sensitivity": "execution order, artifact allocation order and function placement all crossed; workload-matched A/A passed",
-      "mechanism": "prepare-time provider rejection stores the same HYLE-native function pointer; steady submit performs no provider search",
-      "limitations": "W1-WIN serial f32 engineering evidence; not a claim for other dtype, shape, parallel executor or backend",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-compute-graph.md", "evidence/performance/compute-cpu-route-p1-v2-1e9c37f5-w1-win/summary.json"]
-    },
-    {
-      "id": "compute-onednn-short-prefill-selection", "modules": ["compute", "compute_provider_onednn"], "kind": "ROUTE_POLICY",
-      "comparison": "PROVIDER_SELECTION", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "short-prefill dense f32 projection through the complete prepared Compute route",
-      "contract": "selected oneDNN BRGEMM versus forced HYLE-native with identical public Tensor, storage, invocation, completion and serial execution contracts",
-      "peer": "the same Compute v2 candidate forced to HYLE-native", "scale": "M=32,K=512,N=1024",
-      "absolute": "selected 3473.96-3578.08 op/s; forced native 3253.90-3330.49 op/s",
-      "ratio_ci": "point ratios 1.06388-1.07328; every stratum CI lower is above 1, total CI envelope 1.04308-1.08762",
-      "sensitivity": "direction holds across both execution orders, both artifact allocation orders and both placements; two intervals cross the 5% material boundary",
-      "mechanism": "prepare selects the already-qualified oneDNN BRGEMM artifact for this row-major prefill shape",
-      "limitations": "directional WIN, while the strict combined material-band label remains INCONCLUSIVE; W1-WIN serial f32 only",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-compute-graph.md", "evidence/performance/compute-cpu-route-p1-v2-1e9c37f5-w1-win/summary.json"]
     },
     {
       "id": "compute-onednn-boundary", "modules": ["compute_provider_onednn"], "kind": "P1_WORKLOAD",

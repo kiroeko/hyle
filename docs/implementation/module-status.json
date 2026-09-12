@@ -272,15 +272,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-v2-cpu-operator-catalog.md",
-      "candidate": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      },
-      "summary": "compute v2 CLOSED：CPU Device/Context/Queue、Tensor/Mem bridge、RMSNorm/MatMul/SiluAndMul、typed host kernel、prepared artifact/per-run invocation 与 HYLE-native/oneDNN 选择已完成四机正确性、sanitizer、三种 C++ 交付、红队及同合同 CPU route 5% P1 非劣门。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-v3-block-storage-format.md",
+      "summary": "compute v3 由真实量化 provider journey 重开：本轮只审计 provider-neutral logical dtype / physical block storage format、byte layout 与安全 TensorView；当前 v2 能力仍存在，但新产品合同尚未裁决。"
     },
     {
       "module": "graph",
@@ -380,7 +374,7 @@
       "module": "compute_provider_ggml",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/compute-provider-ggml-v1.md",
-      "summary": "compute_provider_ggml v1 已冻结 CPU compiled-region 审计范围、真实/反偏置纵切、预算和停止线；当前只有空内部 factor target，没有依赖、公开头、产品投影、构建开关或已承诺能力。"
+      "summary": "compute_provider_ggml v1 已完成首遍源码审计并产生 Compute block storage 与 Graph constant/region 两个有序前置 trigger；当前保持 SCOPED 空 factor，没有依赖、公开头、产品投影、构建开关或已承诺能力。"
     }
   ]
 }

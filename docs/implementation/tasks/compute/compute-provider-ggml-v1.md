@@ -62,8 +62,33 @@
 
 AUDITED 前不得添加 ggml 源码依赖、公开头、产品 façade 投影、feature switch、测试专用操作或 provider 实现。
 
+## SCOPED 源码事实与有序前置条件（2026-09-12）
+
+- ggml `ggml_tensor` 用 byte stride `nb[]`、`ggml_blck_size(type)` 与 `ggml_type_size(type)` 表达 block
+  storage；`ggml_row_size()` 明确要求连续维可被 block size 整除。ds4 也直接按 block-elements、block-bytes
+  和 row-bytes 校验 Q4/Q8/K/IQ 权重；这不是测试形状，而是两份真实引擎的持久权重合同；
+- 当前 HYLE `TensorDesc` 把 `DataType` 同时当逻辑 scalar 与物理 element size，stride 以 element 计，
+  `required_bytes()` 只能计算普通标量 storage。因此它无法无损表示同一个逻辑 f32 MatMul 权重的 Q4_0、
+  Q4_K、IQ2 等不同物理编码，也不能靠谎报 `UInt8` 修复；
+- ggml CPU 的高层 `ggml_backend_graph_plan_create()` 在冷路径用 `new` 拥有 work buffer，且只浅拷贝
+  `ggml_cgraph`；但公开 `ggml_graph_plan()` / `ggml_graph_compute()` 允许 caller 提供 `work_data`。因此
+  HYLE 可以保留 ggml metadata/tensor 生命周期并把 per-invocation work buffer 纳入 Mem，而不是接受热路径
+  隐藏分配；
+- ggml CPU threadpool 在一个 pool 中保存当前 cgraph/cplan，不能未经额外 owner 证明就宣称共享 pool 可并发
+  执行多个 Invocation。首个实现必须把 serial 与每-invocation pool 做成显式档位；HYLE `ParallelExecutorRef`
+  不能伪装成 ggml threadpool；
+- vLLM/SGLang 的 fused gate-up、SwiGLU 与量化 scale tensor，以及 llama.cpp 的 `build_ffn()` 证明 region
+  API 应保持 typed op/value 组合；不能引入 `QwenFfn`、GGUF loader 或字符串属性袋；
+- CPU 与 CUDA/Metal/Vulkan/HIP 的 ggml buffer、queue、completion 和依赖不同。本 identity 只承载 CPU
+  Compute leaf；Graph region adapter 和每个 GPU carrier 在需要时使用独立 factor，不能让 `hyle::compute`
+  反向取得 Graph 或所有 GPU 依赖。
+
+由此形成两个顺序明确的真实 reopen trigger：先由 `compute-v3-block-storage-format` 修复 provider-neutral
+Tensor storage 描述；再由独立 Graph v3 卡增加 constant intent/binding 与 provider-neutral region partition。
+两项关闭前，本卡保持 `SCOPED`，但这不是外部 blocker：可以按依赖顺序继续施工。
+
 ## 当前状态
 
-本记录只冻结审计问题、预算和停止线。`compute_provider_ggml` 仍是空的内部 factor target；不存在可调用能力，
-也不计入 `hyle::compute` / `hyle::graph`。能力表、有限 `FIX` ledger、API freeze、七问、candidate 和验证结果
-将在审计得到源码事实后填写，不能由本 SCOPED 卡预判。
+本记录已完成第一遍源码审计并产生有证据的下层 reopen trigger。`compute_provider_ggml` 仍是空的内部
+factor target；不存在可调用能力，也不计入 `hyle::compute` / `hyle::graph`。能力表、有限 `FIX` ledger、
+API freeze、七问、candidate 和验证结果要在有序前置合同关闭后填写，不能用空 wrapper 预判。
