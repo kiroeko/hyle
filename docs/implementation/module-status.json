@@ -278,15 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/graph-v2-multi-op-transformer.md",
-      "candidate": "df6981ad942c7e9f3620785af2a730079b6b1433",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      },
-      "summary": "graph v2 CLOSED：dynamic typed 多节点 DAG、immutable Graph/Executable、per-run Invocation、external alias 与 Mem lifetime workspace 已完成四机正确性、sanitizer、三种 C++ 交付、红队及同合同三算子 composition-tax 5% P1 非劣门。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/graph-v3-constants-regions.md",
+      "summary": "graph v3 因 compute_ops 多输出与真实推理 constant/region consumer 证明现有单输出、无常量、无 effect/region IR 不足而合法重开；当前仅冻结审计范围，v2 CPU 多节点证据保留但不冒充完整异构 Graph。"
     },
     {
       "module": "container_concurrent",
