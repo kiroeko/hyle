@@ -120,8 +120,10 @@ auto done = invocation.submit(queue).value();
   alias 正确性还会与已绑定 external output/input 做比较，完整绑定最坏
   O(inputs*outputs+outputs^2) 且零 allocation；submit 为 O(V)，每节点一次预绑定调用且零
   route search/JIT/packing/metadata allocation；
-- P1 使用完全相同的 PreparedOperation、TensorView、workspace owner、Queue 与 completion boundary，对比
-  Graph Invocation 和手写 direct sequence；compile/create/bind 在测量外，禁止苹果/橘子对比；
+- P1 使用完全相同的 PreparedOperation 类型、TensorView 描述、Queue、算术路线与 completion boundary，
+  对比 Graph Invocation 和手写 direct sequence；Graph 依法拥有隐藏的 per-Invocation `PlannedBuffers`，
+  direct consumer 依法拥有等价的两个预分配中间 Buffer，因此不伪称同一地址/公开 owner，而是把分配、
+  首次触碰、compile/create/bind 全部移到测量外并交叉 allocation order，禁止苹果/橘子对比；
 - Graph overhead 与算子 leaf throughput 分开报告，不能用大型 MatMul 淹没 per-node tax。
 
 ## Audit verdict
@@ -185,3 +187,47 @@ lifetime workspace 与 O(V+E) compile/submit 结构。当前 HEAD 相对该候�
 进入 `CANDIDATE`：修正后候选的三平台 correctness/header、WSL sanitizers、source/static/shared、三节点
 Graph 对同一 PreparedOperation direct sequence 的 P1 composition-tax、终局七问与红队仍须逐项签发；
 旧 one-op v1 receipt 不继承到本轮。
+
+## Multi-op P1 preflight（2026-09-12）
+
+正式合同为 [`graph-multi-op-tax-p1-v1`](../../../../bench/contracts/graph-multi-op-tax-p1-v1.json)，
+consumer shape provenance 固定在
+[`consumer_shapes_v2.json`](../../../../bench/graph/consumer_shapes_v2.json)。两条产品 workload 是五个已审
+推理来源共同拥有的 RMSNorm → transpose-view MatMul → packed SiluAndMul；`1x256x512` 保留 decode
+形状，`4x64x128` 是让固定 Graph bookkeeping 不被大矩阵掩盖的正交 small-batch 形状。
+
+### 同合同与时序账单
+
+| 阶段 | Graph candidate | direct Compute peer | 计时 |
+|---|---|---|---|
+| Context/Queue、Buffer 初始化/首次触碰 | caller 创建并 warm | 同一 caller 创建并 warm | 不计 |
+| prepare/Graph compile | 三个相同种类的 HYLE-native `PreparedOperation` 固定在 immutable plan | 三个相同种类的 `PreparedOperation` 固定在 direct route | 不计 |
+| workspace/output | Invocation 创建时实例化 Mem lifetime workspace，caller output 独立持有 | caller 预分配两个等价中间 Buffer 和独立 output | 不计；交叉分配顺序 |
+| bind | 四个 external value 一次绑定 | 三个 `OperationInvocation` 已持有，参数在 submit 传入 | 不计 |
+| steady execute | `Invocation::submit` 扫描 3 inputs/1 output，顺序提交并等待 3 个 node，返回 terminal Completion | 按同一依赖顺序提交并等待同三个 operation | `CHARGED` |
+
+`src/graph/executable.cc::Invocation::submit` 是 candidate 边界：只读取固定 binding arrays 和三个
+`PlanNode`，每个 node 构造最多两个栈上 input view，调用一次已经创建的 `OperationInvocation::submit` 并
+等待同一同步 Completion。`bench/graph/multi_op_tax_bench.cc::Fixture::run_direct` 是 peer 边界：对相同
+Queue/input/weight descriptions 顺序调用 RMSNorm、MatMul、SiluAndMul 并逐次等待。两侧都在第三个
+operation 完成后返回；没有把 direct 的错误、mapping 或 completion 成本漏到计时外。
+
+### 静态成本账单
+
+| 成本 | Graph 增量 | direct peer | 结论 |
+|---|---|---|---|
+| 复杂度 | `O(bindings + nodes)`，本合同 4+3 | `O(nodes)`，本合同 3 | Graph 承诺本身 |
+| allocation / free | 0 | 0 | setup/warmup 后 steady path 均为零 |
+| route search / JIT / packing | 0 | 0 | prepare/compile 已裁决 HYLE-native 路线 |
+| atomic / lock / wake / syscall | 除三次相同 Compute submit 外为 0 | 三次相同 Compute submit | 无 Graph 新增同步机制 |
+| copy | 最多两个 input `TensorView` 的栈上值复制/node | typed arguments 的栈上传递 | 不复制 tensor bytes |
+| 常驻 metadata | immutable plan、binding mask、per-node invocation | 三个 direct invocation 与 caller workspace owner | 都在测量前固定 |
+
+### 极短 diagnostic
+
+Windows W1 P-core、MSVC Release/static/portable、LTO off 的 primary target 已成功编译并完成两条 workload
+的 correctness warmup。candidate-first 快照中 Graph/direct 的 op/s ratio 约为 `1.049/1.055`；换成
+peer-first 后约为 `0.978/1.000`。单次 nanobench 快照存在明显顺序噪声，但没有发现固定超过 5% 的反向
+机制差异；因此不依据该点值改产品，并进入预声明的 8 strata、`n=15` 正式测量。placement 与 allocation
+order 必须在正式合同中同时覆盖，若 instrument controls 或 5% non-inferiority 门失败则停止，不追加姿势
+寻找 PASS。
