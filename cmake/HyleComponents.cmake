@@ -344,9 +344,9 @@ _hyle_declare_component(compute_provider_onednn
 # audit freezes those facts and advances the component to AUDITED.
 _hyle_declare_component(compute_provider_ggml)
 
-# BLOCKED audit-only identity for the heavyweight oneDNN Graph public-API
-# adapter. It remains distinct from the lightweight BRGEMM provider and owns
-# no dependency, public header, product projection or feature while blocked.
+# Resumed SCOPED identity for a lightweight Graph-only oneDNN BRGEMM region.
+# It does not revive the allocating oneDNN Graph public API and owns no
+# dependency, public header, product projection or feature before AUDITED.
 _hyle_declare_component(graph_provider_onednn)
 
 # Provider-neutral Tensor/Operation schema. Public include paths stay in the

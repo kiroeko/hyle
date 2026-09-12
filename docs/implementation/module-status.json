@@ -370,13 +370,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/graph-provider-onednn-v1.md",
-      "blocked_from": "SCOPED",
-      "blocker": "oneDNN 3.13.2 与当前 main 的公开 Graph execute 每次构造 input/output vectors，CPU larger-partition 即使使用 user scratchpad 仍每次 make_shared scratchpad wrapper；无法满足 HYLE steady submit 无隐藏 metadata allocation 合同。",
-      "blocker_owner": "upstream oneDNN Graph execute API，或未来独立审计的 HYLE oneDNN ukernel/source-patch region 路线",
-      "resume_condition": "精确 oneDNN 版本提供 caller-owned/precreated execute metadata 和 user-scratchpad wrapper seam，或新 closure card 先审计并冻结不修改共享依赖源码的最小 ukernel/source-patch region、升级维护、并发、OOM、三交付与性能合同。",
-      "summary": "graph_provider_onednn v1 BLOCKED：官方 f32 CPU gated-MLP 能形成并执行一个 partition，但锁定版与当前 main 的公开执行路线固定产生多次 steady metadata allocation；空 factor 不进入 Graph 产品。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/graph-provider-onednn-v2-ukernel-region.md",
+      "summary": "graph_provider_onednn v2 已依据 v1 blocker 恢复为有限审计：只评估已验证零热分配的 oneDNN x64 BRGEMM ukernel + HYLE SIMD gated activation 所组成的真实 Graph-only MLP region；当前仍为空 factor，不承诺依赖、API、feature 或产品能力。"
     },
     {
       "module": "compute_ops",
