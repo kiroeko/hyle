@@ -112,6 +112,11 @@ Partition 成本必须覆盖跨 region copy/sync、layout conversion、thread ha
 packing。Provider 的 `supports(op)` 不是“选它一定更快”。无法覆盖的 node 必须回到已登记 fallback 或使
 编译失败；不能在运行时突然下载依赖、切 backend 或用 host scalar 静默求值。
 
+首个 provider-neutral region 合同只接受 canonical topological order 上的连续半开区间。provider 经
+Compute Context 的对象局部、精确版本 extension 提案，Graph 在有限预算内做确定性的 weighted-interval
+选择；预算耗尽是显式失败，不是截断。非连续 subgraph、跨设备 partition 或不同成本单位必须建立新版
+合同，不能悄悄改变当前 route 语义。
+
 ONNX Runtime 的 execution-provider partition、oneDNN 的 partition/compiled partition、TensorRT 的
 network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作为该流水线的独立参照；HYLE
 不复制它们的 public API，也不把其中任何一个强行定为唯一执行引擎。

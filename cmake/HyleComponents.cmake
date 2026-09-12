@@ -261,22 +261,19 @@ _hyle_declare_component(io_transfer
   PUBLIC_DEPS core error io_core io_tls mem sched container_text
   PUBLIC_TYPE_DEPS io_tls
   SPLIT_PUBLIC_HEADERS hyle/io/transfer.h)
-# Compute is the dependency-light execution/operation factor. The current
-# implementation starts with a synchronous CPU provider; backend/provider
-# extensions remain module-owned rather than changing this public dependency
-# boundary. Public
-# tensor bindings directly expose Error and Mem types; checked shape arithmetic,
-# intrusive runtime ownership, Platform facts and the selected SIMD leaf route
-# remain private. Platform is a direct implementation edge because Compute's
-# prepare-time fat-kernel selector includes the canonical CPU feature seam;
-# SIMD remains the sole ISA requirement/selection authority.
+# Compute is the backend/provider-neutral runtime factor. Optional typed
+# capabilities use its versioned object-local extension bridge without making
+# Compute depend on Graph or any implementation leaf. Public tensor bindings
+# expose Error and Mem types; schema remains in compute_ops and backend/native
+# implementations remain independent factors.
 _hyle_declare_component(compute
   PRIVATE_DEPS util_core
   PUBLIC_DEPS core error mem compute_ops)
-# Graph owns logical tensor-DAG publication and compiled/invocation lifetimes.
-# Its public values name Compute and Error contracts. Growable cold metadata,
-# intrusive ownership and Mem lifetime/workspace planning are private factors;
-# no task scheduler becomes part of Graph's execution contract.
+# Graph owns logical tensor-DAG publication, provider-region partition and
+# compiled/invocation lifetimes. Its public values name Compute and Error
+# contracts. Growable cold metadata, intrusive ownership and Mem
+# lifetime/workspace planning are private factors; no task scheduler becomes
+# part of Graph's execution contract.
 _hyle_declare_component(graph
   PRIVATE_DEPS container util_core
   PUBLIC_DEPS core error compute_ops compute mem)

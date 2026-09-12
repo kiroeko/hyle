@@ -44,6 +44,12 @@ struct ProviderVTable final {
                     std::span<const TensorDesc> outputs,
                     mem::AllocatorRef allocator,
                     ProviderPrepared *prepared) noexcept = nullptr;
+  // Optional object-local extension lookup. A successful query returns a
+  // static interface table for the exact requested ID/version; nullptr means
+  // unsupported. The returned table must remain valid while this provider
+  // implementation is loaded.
+  const void *(*query_extension)(void *context,
+                                 ProviderExtensionId id) noexcept = nullptr;
 };
 
 struct ProviderAccess final {

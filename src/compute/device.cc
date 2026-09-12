@@ -8,6 +8,7 @@
 
 #include "backend_internal.h"
 #include "context_state.h"
+#include "hyle/compute/detail/provider_extension.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::detail {
@@ -115,6 +116,161 @@ create_context_state(Device device, ContextOptions options,
 } // namespace hyle::compute::detail
 
 namespace hyle::compute {
+
+detail::ProviderExtensionRef::ProviderExtensionRef(
+    detail::ContextState *owner, void *provider_context,
+    const void *interface_value, ProviderExtensionId id,
+    ProviderIdentity provider) noexcept
+    : owner_(owner), provider_context_(provider_context),
+      interface_(interface_value), id_(id), provider_(provider) {
+  detail::retain(owner_);
+}
+
+detail::ProviderExtensionRef::ProviderExtensionRef(
+    const detail::ProviderExtensionRef &other) noexcept
+    : owner_(other.owner_), provider_context_(other.provider_context_),
+      interface_(other.interface_), id_(other.id_), provider_(other.provider_) {
+  detail::retain(owner_);
+}
+
+detail::ProviderExtensionRef &detail::ProviderExtensionRef::operator=(
+    const detail::ProviderExtensionRef &other) noexcept {
+  if (this != &other) {
+    detail::retain(other.owner_);
+    detail::release(owner_);
+    owner_ = other.owner_;
+    provider_context_ = other.provider_context_;
+    interface_ = other.interface_;
+    id_ = other.id_;
+    provider_ = other.provider_;
+  }
+  return *this;
+}
+
+detail::ProviderExtensionRef::ProviderExtensionRef(
+    detail::ProviderExtensionRef &&other) noexcept
+    : owner_(other.owner_), provider_context_(other.provider_context_),
+      interface_(other.interface_), id_(other.id_), provider_(other.provider_) {
+  other.owner_ = nullptr;
+  other.provider_context_ = nullptr;
+  other.interface_ = nullptr;
+  other.id_ = {};
+  other.provider_ = {};
+}
+
+detail::ProviderExtensionRef &detail::ProviderExtensionRef::operator=(
+    detail::ProviderExtensionRef &&other) noexcept {
+  if (this != &other) {
+    detail::release(owner_);
+    owner_ = other.owner_;
+    provider_context_ = other.provider_context_;
+    interface_ = other.interface_;
+    id_ = other.id_;
+    provider_ = other.provider_;
+    other.owner_ = nullptr;
+    other.provider_context_ = nullptr;
+    other.interface_ = nullptr;
+    other.id_ = {};
+    other.provider_ = {};
+  }
+  return *this;
+}
+
+detail::ProviderExtensionRef::~ProviderExtensionRef() {
+  detail::release(owner_);
+}
+
+Result<detail::ProviderExtensionRef>
+detail::ProviderExtensionAccess::query(const Context &context,
+                                       std::size_t provider_index,
+                                       ProviderExtensionId id) noexcept {
+  detail::ContextState *state = detail::ContextAccess::state(context);
+  if (state == nullptr)
+    return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  if (!id.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("compute provider extension id is invalid"));
+  }
+  if (provider_index >= state->provider_count) {
+    return std::unexpected(
+        Status::OutOfRange("compute provider index is out of range"));
+  }
+  if (!state->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  const detail::ContextState::ProviderSlot &slot =
+      state->providers()[provider_index];
+  const detail::ProviderVTable *table =
+      detail::ProviderAccess::vtable(slot.provider);
+  const void *interface_value = table->query_extension != nullptr
+                                    ? table->query_extension(slot.state, id)
+                                    : nullptr;
+  Result<detail::ProviderExtensionRef> result =
+      interface_value != nullptr
+          ? Result<detail::ProviderExtensionRef>(detail::ProviderExtensionRef(
+                state, slot.state, interface_value, id, table->identity))
+          : Result<detail::ProviderExtensionRef>(
+                std::unexpected(Status::Unimplemented(
+                    "compute provider does not implement this extension")));
+  state->admission.leave();
+  return result;
+}
+
+Status detail::ProviderExtensionAccess::call(
+    const detail::ProviderExtensionRef &extension,
+    ProviderExtensionCallFn function, void *call_context) noexcept {
+  if (!extension.valid() || function == nullptr)
+    return Status::InvalidArgument(
+        "compute provider extension call is invalid");
+  if (!extension.owner_->admission.try_enter())
+    return Status::FailedPrecondition("compute context is closed");
+  const Status result =
+      function(extension.provider_context_, extension.interface_, call_context);
+  extension.owner_->admission.leave();
+  return result;
+}
+
+Result<Completion> detail::ProviderExtensionAccess::submit(
+    const detail::ProviderExtensionRef &extension, Queue &queue,
+    std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs, ProviderExtensionSubmitFn function,
+    void *call_context) noexcept {
+  if (!extension.valid() || function == nullptr) {
+    return std::unexpected(Status::InvalidArgument(
+        "compute provider extension submit is invalid"));
+  }
+  detail::QueueState *queue_state = detail::ContextAccess::state(queue);
+  if (queue_state == nullptr || queue_state->context != extension.owner_) {
+    return std::unexpected(Status::InvalidArgument(
+        "queue and provider extension belong to different contexts"));
+  }
+  for (const ConstTensorView &input : inputs) {
+    if (!input.valid()) {
+      return std::unexpected(
+          Status::InvalidArgument("provider extension input is invalid"));
+    }
+    Status status = extension.owner_->backend_vtable->validate_resource(
+        extension.owner_->device, input.storage().resource());
+    if (!status.ok())
+      return std::unexpected(std::move(status));
+  }
+  for (const TensorView &output : outputs) {
+    if (!output.valid()) {
+      return std::unexpected(
+          Status::InvalidArgument("provider extension output is invalid"));
+    }
+    Status status = extension.owner_->backend_vtable->validate_resource(
+        extension.owner_->device, output.storage().resource());
+    if (!status.ok())
+      return std::unexpected(std::move(status));
+  }
+  Status admission = queue.begin_submission();
+  if (!admission.ok())
+    return std::unexpected(std::move(admission));
+  auto result = function(extension.provider_context_, extension.interface_,
+                         call_context, queue);
+  queue.end_submission();
+  return result;
+}
 
 BackendId Backend::id() const noexcept {
   return vtable_ != nullptr ? vtable_->id : BackendId{};
@@ -237,6 +393,23 @@ Device Context::device() const noexcept {
 
 mem::AllocatorRef Context::metadata_allocator() const noexcept {
   return state_ != nullptr ? state_->allocator : mem::AllocatorRef{};
+}
+
+std::size_t Context::provider_count() const noexcept {
+  return state_ != nullptr ? state_->provider_count : 0;
+}
+
+Result<ProviderIdentity>
+Context::provider_identity(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  if (index >= state_->provider_count) {
+    return std::unexpected(
+        Status::OutOfRange("compute provider index is out of range"));
+  }
+  const detail::ProviderVTable *table =
+      detail::ProviderAccess::vtable(state_->providers()[index].provider);
+  return table->identity;
 }
 
 Result<Queue> Context::create_queue(QueueOptions options) const noexcept {

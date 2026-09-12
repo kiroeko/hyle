@@ -1,9 +1,9 @@
 # HYLE Graph：何时编译可重复执行的计算 DAG
 
 > 本页描述当前 Graph v3 CPU 实现检查点；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。选择 oneDNN 时，当前 Graph 可把受支持的
-> 单个 row-major f32 MatMul node 交给该 provider；GPU provider、region partition/fusion 与动态 shape 尚未
-> 签发。
+> [`module-status.json`](../implementation/module-status.json) 为准。Graph 已有 provider-neutral region
+> partition/artifact 机制，但当前仍只有合同测试 provider；选择 oneDNN 时只签发受支持的单个 row-major
+> f32 MatMul node。真实 oneDNN/ggml multi-op region、GPU provider 与 dynamic shape 尚未签发。
 
 Graph 适合“先定义一段模型无关计算，冷路径编译一次，再为不同请求绑定 storage 并反复执行”。如果只
 执行一个已知 operation 或工程 kernel，直接使用 [Compute](compute.md)。Graph 不是 Sched task graph，
@@ -23,8 +23,8 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 - `ValueId`/`NodeId` 带 graph generation。一个 builder/graph 的 ID 不能误用于另一个实例；Graph 的
   node 查询也接收 `NodeId` 而不是把裸下标当身份。node 只能读取已创建 value，因此循环不能被构造出来。
 - `Graph` 是不可变、可复制、可跨线程共享的逻辑元数据；它不拥有 tensor payload、Context 或 Queue。
-- `Executable` 是不可变、可共享的 prepared plan。它拥有每个 node 的 `PreparedOperation` 和一份 Mem
-  lifetime plan，不拥有每次请求的 bindings/workspace。
+- `Executable` 是不可变、可共享的 prepared plan。它拥有获选 provider-region artifact、其余 node 的
+  单-op `PreparedOperation` 和一份 Mem lifetime plan，不拥有每次请求的 bindings/workspace。
 - `Invocation` 是 move-only、单-owner 的每次运行状态。并发请求从同一 Executable 创建不同 Invocation；
   `create_invocation()` 可以分配，稳定态 `bind/reset/submit` 不增长 metadata。
 
@@ -37,13 +37,23 @@ Invocation.bind(...) -> submit(Queue) -> Compute Completion
 | node | 通用 span arity；`add_node()` + `result(node,index)` 表达零/多输出，单输出 typed `add()` 保留自然短路径 |
 | op | Native 当前可执行 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、rank-2 MatMul 与 packed SiLU GatedActivation；其他合法 schema 在无 provider 时返回 `Unimplemented` |
 | shape/layout | static `TensorDesc`；byte stride、block axis 与 opaque identity 随 value 原样保留；MatMul 的物理权重方向由 descriptor 表达 |
-| compile | constant 一次绑定；每个 material node prepare/provider route 一次；中间 tensor、provider scratchpad、view alias 与安全 in-place liveness 交给 Mem planner |
+| compile | constant 一次绑定；provider 冷路径提出 region，Graph 确定性选不重叠区间并只编译获选 artifact；其余 node 单-op fallback；中间 tensor、scratchpad、view alias 与安全 in-place liveness 交给 Mem planner |
 | run | caller 绑定所有 graph inputs/outputs；内部中间值、provider run state 与 scratchpad 由每个 Invocation 独占 |
-| report | 当前报告 backend/provider、node/constant 数、borrowed/packed constant 和 workspace/copy/sync 摘要；逐 region 明细仍待 G37--G40 |
+| report | 当前报告 logical node、plan step、region/fallback、provider、constant 和 workspace/copy/sync 聚合摘要；逐 region/port 明细仍待 G39 |
 
-当前没有 symbolic dimensions、multi-node provider region partition、fusion、GPU copy/barrier、
-serialization/cache schema 或通用 control flow。constant payload 默认由 Executable 借用；后续 provider packing
+当前没有已签发的生产 multi-op region/fusion、symbolic dimensions、GPU copy/barrier、serialization/cache
+schema 或通用 control flow。constant payload 默认由 Executable 借用；后续 provider packing
 必须在 compile artifact 中显式拥有并写入 report，不能藏在第一次 submit。
+
+## Region 选择不是运行时搜索
+
+默认 `RegionSelectionPolicy::kConservative` 只考虑 provider 对当前静态 Graph 声明为正净收益的连续拓扑
+区间；Graph 冷路径确定性选择不重叠组合。`max_region_proposals` 是硬预算，耗尽会返回
+`ResourceExhausted`，不会截断候选后悄悄生成另一份计划。需要严格逐算子调试时可选择 `kDisabled`。
+
+region 内部临时 value 由 provider artifact 管理，Graph 只为边界 value 和 provider 声明的每次运行
+workspace 规划 backing。当前没有生产 provider 因此默认行为仍是单-op fallback；存在 region 机制并不代表
+oneDNN、ggml 或未来 GPU 路线已经通过正确性/性能资格。
 
 ## 自然的多节点路线
 

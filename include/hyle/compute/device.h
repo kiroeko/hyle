@@ -52,6 +52,7 @@ struct BackendVTable;
 struct ContextAccess;
 struct ContextState;
 struct DeviceAccess;
+struct ProviderExtensionAccess;
 struct QueueState;
 } // namespace detail
 
@@ -136,6 +137,8 @@ public:
   bool is_open() const noexcept;
   Device device() const noexcept;
   mem::AllocatorRef metadata_allocator() const noexcept;
+  std::size_t provider_count() const noexcept;
+  Result<ProviderIdentity> provider_identity(std::size_t index) const noexcept;
   Result<Queue> create_queue(QueueOptions options = {}) const noexcept;
   Status close() noexcept;
   Status drain() noexcept;
@@ -175,6 +178,7 @@ private:
   friend class Context;
   friend class OperationInvocation;
   friend struct detail::ContextAccess;
+  friend struct detail::ProviderExtensionAccess;
   friend struct CpuQueueAccess;
   detail::QueueState *state_ = nullptr;
 };

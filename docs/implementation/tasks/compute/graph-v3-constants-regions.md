@@ -140,3 +140,26 @@ workspace/liveness 与最终 Completion sequence 仍是本卡后续工作。因�
 
 这仍是 `AUDITED` 中间候选，不能签发 Graph v3 `CLOSED`；下一实现边界是 G37，不继续用 CPU 算子数量掩盖
 Graph runtime/plan 缺口。
+
+## G37 provider-region implementation checkpoint（2026-09-13）
+
+- Graph 现在从 Context 的显式 provider 序列查询精确版本的、对象局部 region extension。provider 对
+  immutable Graph 提交**连续拓扑区间**候选；Graph 以 `estimated_net_savings_ns`、覆盖 node 数和稳定
+  provider/route 顺序做确定性的 weighted-interval selection，复杂度为 O(P*(V+E)+Q log Q)；
+- `CompileOptions::max_region_proposals` 是全局硬预算。预算耗尽、非法区间、零 dispatch 或 malformed
+  artifact 都使 compile 显式失败，不静默截断或改变 fallback；保守策略只接受 provider 能声明正净收益的
+  proposal，disabled 策略完全不查询 region；每 provider 的独立预算仍归 G40；
+- 获选区间只编译一次 `ProviderRegionPrepared`，未获选 node 继续走明确的单-op fallback。内部 plan 已从
+  node 数组改成 operation/region step；region 内部 value 不由 Graph 重复分配，边界 value 与每 Invocation
+  scratchpad 仍统一进入 Mem lifetime plan；
+- compiled region 的 provider Context owner、prepared artifact、per-Invocation state 与 workspace 已分离。
+  红队发现并修正 workspace 早于 invocation state 析构的问题；provider compile/create 的部分构造失败均
+  对称 rollback；Invocation 即使在调用方释放 Executable handle 后仍保活 plan/artifact；
+- Windows shared 纵切以两个 fused negation node 验证单 region、region+Native fallback、重叠候选选择、
+  policy disabled、proposal budget exhaustion、失败回滚与 owner lifetime；现有 oneDNN 单-op Graph 路线也
+  通过回归；Graph 的 source embedding、installed/relocated shared 与 static consumer 也全部通过。该测试
+  provider 只证明中立合同，不冒充真实 oneDNN/ggml multi-op region 的性能资格。
+
+G37 的中立 partition/artifact 机制已实现，但 Graph 仍是 `AUDITED`：G38 ordered sequence Completion、G39
+逐 step/region report、G40 policy/per-provider budget，以及 G41 in-flight/reuse/runtime-owned output 尚未完成；
+首个真实 oneDNN/ggml region 和公平 P1 也仍是终局必要证据。

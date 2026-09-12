@@ -56,7 +56,7 @@ int main() {
   auto projected = builder.add(MatMul{}, *normalized, *weight_id);
   if (!projected)
     return 6;
-  auto output_id = builder.add(SiluAndMul{}, *projected);
+  auto output_id = builder.add(GatedActivation{}, *projected);
   if (!output_id || !builder.publish(*output_id).ok())
     return 7;
   auto logical = std::move(builder).finish();

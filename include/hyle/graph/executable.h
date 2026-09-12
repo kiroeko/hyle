@@ -30,6 +30,9 @@ struct CompileReport final {
   std::size_t workspace_bytes = 0;
   std::size_t workspace_backing_count = 0;
   std::size_t node_count = 0;
+  std::size_t step_count = 0;
+  std::size_t region_count = 0;
+  std::size_t fallback_operation_count = 0;
   std::size_t constant_count = 0;
   std::size_t borrowed_constant_count = 0;
   std::size_t packed_constant_count = 0;
@@ -48,8 +51,19 @@ struct ConstantBinding final {
   compute::ConstTensorView tensor{};
 };
 
+enum class RegionSelectionPolicy : std::uint8_t {
+  kDisabled = 0,
+  // Accept only proposals with a positive provider-declared net saving after
+  // boundary copies, synchronization, dispatch and thread handoff.
+  kConservative,
+};
+
 struct CompileOptions final {
   std::span<const ConstantBinding> constants{};
+  RegionSelectionPolicy region_selection = RegionSelectionPolicy::kConservative;
+  // Hard cold-path budget across all configured providers. Exhaustion fails
+  // compilation instead of silently changing the selected plan.
+  std::size_t max_region_proposals = 4096;
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned
@@ -69,6 +83,8 @@ public:
   HYLE_GRAPH_API std::size_t input_count() const noexcept;
   HYLE_GRAPH_API std::size_t output_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
+  HYLE_GRAPH_API std::size_t step_count() const noexcept;
+  HYLE_GRAPH_API std::size_t region_count() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API Result<ValueId> input_id(std::size_t index = 0) const noexcept;

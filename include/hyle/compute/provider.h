@@ -31,6 +31,22 @@ struct ProviderIdentity final {
   }
 };
 
+// Stable identity for an optional provider-owned capability. The version is
+// part of the identity: consumers never reinterpret an interface table from a
+// different contract version. Extension lookup is explicit and cold-path;
+// normal operation preparation does not search this namespace.
+struct ProviderExtensionId final {
+  std::uint64_t namespace_id = 0;
+  std::uint64_t extension_id = 0;
+  std::uint32_t version = 0;
+
+  constexpr bool valid() const noexcept {
+    return (namespace_id != 0 || extension_id != 0) && version != 0;
+  }
+  friend constexpr bool operator==(ProviderExtensionId,
+                                   ProviderExtensionId) noexcept = default;
+};
+
 using ParallelTaskFn = void (*)(void *task_context, std::size_t index,
                                 std::size_t count) noexcept;
 using ParallelForFn = void (*)(void *executor_context, std::size_t count,

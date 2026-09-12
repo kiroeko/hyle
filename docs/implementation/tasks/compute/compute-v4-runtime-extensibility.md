@@ -146,3 +146,18 @@ CPU 执行轴与 HYLE native kernels 分别由已登记的 `compute_backend_cpu`
 这不是 terminal record，状态保持 `AUDITED`。真正异步 backend 的 late-completion 保活、close/drain 与
 device-loss/error injection，sanitizers、Linux/两台 Apple、shared export hygiene、P0 codegen 账单，以及依赖
 本 runtime 的全部 v1 provider/Graph 仍待完成；不能用 CPU immediate 模拟测试替代异构生命周期资格。
+
+## Object-local provider extension checkpoint（2026-09-13）
+
+- Compute runtime 增加具名、精确版本的 provider extension identity，以及只供 factor 间使用的
+  `compute/detail/provider_extension.h` bridge。查询发生在 Context/Graph compile 冷路径；普通
+  `prepare()`/`submit()` 不查 extension，也没有进程全局 registry；
+- extension handle 保活创建它的精确 Context/provider state，但所有 call/submit 仍经过 Context/Queue
+  admission。submit 同时验证 Queue 属于同一 Context、全部 Tensor storage 属于同一 backend/device；关闭
+  Context 后 retention 不会错误授予新工作；
+- 普通用户只看到 `Context::provider_count()` 与 `provider_identity()` 诊断。原始 extension query/call 没有
+  暴露成半截公共 API；Graph region、后续 CUDA/Metal/Vulkan typed factor 在内部 bridge 上建立自己的类型
+  安全 façade；
+- Windows shared 构建中的 provider extension owner-retention、错误版本、跨 Context Queue、close admission
+  与 Graph region 调用测试通过。它解除 Graph G37 的 runtime blocker，但真实异步 backend 的 late
+  completion 资格仍属于 R48--R50 终局验证，Compute 继续保持 `AUDITED`。
