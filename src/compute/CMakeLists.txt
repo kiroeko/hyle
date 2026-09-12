@@ -3,7 +3,7 @@
 # optional providers are added as separate implementation factors.
 include(HyleDispatch)
 
-hyle_add_module(compute SOURCES device.cc provider.cc tensor.cc operation.cc)
+hyle_add_module(compute SOURCES device.cc provider.cc tensor_view.cc operation.cc)
 
 # Compute owns matrix semantics; SIMD owns the one-time ISA decision and the
 # locked provider/compiler machinery. Generated fixed-target TUs place the

@@ -272,7 +272,7 @@ _hyle_declare_component(io_transfer
 # SIMD remains the sole ISA requirement/selection authority.
 _hyle_declare_component(compute
   PRIVATE_DEPS math platform simd util_core
-  PUBLIC_DEPS core error mem)
+  PUBLIC_DEPS core error mem compute_ops)
 # Graph owns logical tensor-DAG publication and compiled/invocation lifetimes.
 # Its public values name Compute and Error contracts. Growable cold metadata,
 # intrusive ownership and Mem lifetime/workspace planning are private factors;
@@ -347,10 +347,15 @@ _hyle_declare_component(compute_provider_onednn
 # audit freezes those facts and advances the component to AUDITED.
 _hyle_declare_component(compute_provider_ggml)
 
-# Active SCOPED identity for the provider-neutral Tensor/Operation schema
-# audit. The empty factor has no dependency, public header or product
-# projection until its finite ledger reaches AUDITED.
-_hyle_declare_component(compute_ops)
+# Provider-neutral Tensor/Operation schema. Public include paths stay in the
+# hyle::compute product namespace; this factor does not acquire Mem, runtime,
+# SIMD, Graph or provider implementations.
+_hyle_declare_component(compute_ops
+  PRIVATE_DEPS math
+  PUBLIC_DEPS core error
+  SPLIT_PUBLIC_HEADERS
+    hyle/compute/ops_visibility.h
+    hyle/compute/tensor_desc.h)
 
 # Active SCOPED identities for the CPU implementation split. Both targets stay
 # empty and have no dependency/product projection until their finite audits

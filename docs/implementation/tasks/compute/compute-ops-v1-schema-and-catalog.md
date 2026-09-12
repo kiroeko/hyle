@@ -105,10 +105,10 @@ expert/sampling/batching policy 不进入本因子。
 | O16 | 无 typed custom operation | `FIX` | opt-in inline、trivially-copyable custom descriptor + 稳定 OperationId/静态 vtable；shape/traits 只在冷路径调用，无全局注册和裸 callable |
 | O17 | PreparedOperation/Invocation 混在 schema header | `MOVE` | runtime 类型移到 `prepared_operation.h` 并由 `compute` 拥有；Graph IR 只取得 schema factor |
 
-Operation 的 built-in payload 上限冻结为 48 bytes、对齐不超过 `max_align_t`，完整 value 目标不超过 64 bytes；
-超出者必须把大 immutable metadata 作为显式 tensor/input，而不是扩大每个 node 或隐藏 allocation。rank 继续
-固定最多 8；本轮 static shapes 足够形成按 signature specialization，symbolic algebra 留给有具体 dynamic
-consumer 的 Graph 后续卡。
+Operation 使用无 heap 的 typed variant；尺寸由 rank-8 `TensorShape` 等自然 schema 决定，不为了微基准
+强压到 64 bytes。真正大的 immutable metadata 仍必须作为显式 tensor/input，不能隐藏 allocation 或 owner。
+Operation 只在 build/prepare 冷路径存取，prepared hot path 不复制它。rank 继续固定最多 8；本轮 static
+shapes 足够形成按 signature specialization，symbolic algebra 留给有具体 dynamic consumer 的 Graph 后续卡。
 
 ### v1 必须交付的可执行目录
 

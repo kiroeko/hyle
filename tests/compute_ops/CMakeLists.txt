@@ -1,0 +1,2 @@
+hyle_add_header_self_contained_test(compute_ops)
+hyle_add_test(compute_ops SOURCES tensor_desc_test.cc)

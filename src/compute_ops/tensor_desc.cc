@@ -1,4 +1,4 @@
-#include "hyle/compute/tensor.h"
+#include "hyle/compute/tensor_desc.h"
 
 #include <limits>
 #include <utility>
@@ -72,35 +72,29 @@ validate_materialized_description(const TensorDesc &description) noexcept {
   return Status::Ok();
 }
 
-Status validate_view_alignment(const TensorDesc &description,
-                               std::size_t storage_offset,
-                               std::size_t required_bytes) noexcept {
-  if (required_bytes == 0)
-    return Status::Ok();
-  const std::size_t alignment = description.required_alignment();
-  if (alignment == 0 || storage_offset % alignment != 0) {
-    return Status::InvalidArgument(
-        "tensor storage offset does not satisfy its format alignment");
-  }
-  return Status::Ok();
-}
-
 } // namespace
 
 std::size_t data_type_size(DataType type) noexcept {
   switch (type) {
-  case DataType::kFloat16:
-  case DataType::kBFloat16:
-    return 2;
-  case DataType::kFloat32:
-  case DataType::kInt32:
-    return 4;
-  case DataType::kFloat64:
-  case DataType::kInt64:
-    return 8;
+  case DataType::kBool:
+  case DataType::kFloat8E4M3FN:
+  case DataType::kFloat8E5M2:
   case DataType::kInt8:
   case DataType::kUInt8:
     return 1;
+  case DataType::kFloat16:
+  case DataType::kBFloat16:
+  case DataType::kInt16:
+  case DataType::kUInt16:
+    return 2;
+  case DataType::kFloat32:
+  case DataType::kInt32:
+  case DataType::kUInt32:
+    return 4;
+  case DataType::kFloat64:
+  case DataType::kInt64:
+  case DataType::kUInt64:
+    return 8;
   case DataType::kUnknown:
     break;
   }
@@ -503,61 +497,6 @@ bool TensorDesc::is_dense() const noexcept {
     return false;
   const auto canonical = blocked_dense(type_, dimensions(), format_);
   return canonical.has_value() && *canonical == *this;
-}
-
-Result<ConstTensorView>
-ConstTensorView::create(TensorDesc description,
-                        mem::ConstBufferView storage) noexcept {
-  if (!description.valid()) {
-    return std::unexpected(
-        Status::InvalidArgument("tensor description is invalid"));
-  }
-  if (!storage.valid()) {
-    return std::unexpected(
-        Status::InvalidArgument("tensor storage is invalid"));
-  }
-  auto required = description.required_bytes();
-  if (!required)
-    return std::unexpected(std::move(required).error());
-  if (*required > storage.size()) {
-    return std::unexpected(
-        Status::OutOfRange("tensor storage is smaller than its description"));
-  }
-  Status alignment =
-      validate_view_alignment(description, storage.offset(), *required);
-  if (!alignment.ok())
-    return std::unexpected(std::move(alignment));
-  auto exact = storage.subview(0, *required);
-  if (!exact)
-    return std::unexpected(std::move(exact).error());
-  return ConstTensorView(description, *exact);
-}
-
-Result<TensorView> TensorView::create(TensorDesc description,
-                                      mem::BufferView storage) noexcept {
-  if (!description.valid()) {
-    return std::unexpected(
-        Status::InvalidArgument("tensor description is invalid"));
-  }
-  if (!storage.valid()) {
-    return std::unexpected(
-        Status::InvalidArgument("tensor storage is invalid"));
-  }
-  auto required = description.required_bytes();
-  if (!required)
-    return std::unexpected(std::move(required).error());
-  if (*required > storage.size()) {
-    return std::unexpected(
-        Status::OutOfRange("tensor storage is smaller than its description"));
-  }
-  Status alignment =
-      validate_view_alignment(description, storage.offset(), *required);
-  if (!alignment.ok())
-    return std::unexpected(std::move(alignment));
-  auto exact = storage.subview(0, *required);
-  if (!exact)
-    return std::unexpected(std::move(exact).error());
-  return TensorView(description, *exact);
 }
 
 } // namespace hyle::compute
