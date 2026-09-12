@@ -45,7 +45,7 @@
 | io_websocket | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md) | io_websocket v2 CLOSED：两个私有 coroutine 显式保留 frame allocator 使用；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本及 v1 P1 结论不变。 |
 | compute_provider_onednn | CLOSED | P1 / [PASS](evidence/performance/benchmarks-compute-graph.md) / 5% | [record](tasks/compute/compute-provider-onednn-v2-ukernel-resume.md) | compute_provider_onednn v2 CLOSED：x64 dense f32 MatMul 的 BRGEMM ukernel provider 已完成三平台能力边界、Windows/Linux 三交付、Linux sanitizers、两台 Apple ARM 负能力、离线依赖/许可证、导出、红队及同一 ukernel 完整边界 8/8 P1 非劣验证。 |
 | compute_provider_ggml | SCOPED | — | [record](tasks/compute/compute-provider-ggml-v1.md) | compute_provider_ggml v1 已完成首遍源码审计并产生 Compute block storage 与 Graph constant/region 两个有序前置 trigger；当前保持 SCOPED 空 factor，没有依赖、公开头、产品投影、构建开关或已承诺能力。 |
-| compute_ops | QUEUED | — | — | 为 provider-neutral Tensor/Operation schema 与公共算子合同保留内部 factor 身份；当前没有 target、依赖、公开头、产品投影或已承诺能力。 |
+| compute_ops | SCOPED | — | [record](tasks/compute/compute-ops-v1-schema-and-catalog.md) | compute_ops v1 已冻结 typed Tensor/Operation schema 与真实推理/正交数值算子目录的审计范围；当前只有空内部 factor，没有依赖、公开头、产品投影或已承诺新算子。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

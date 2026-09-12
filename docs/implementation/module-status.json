@@ -378,8 +378,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "QUEUED",
-      "summary": "为 provider-neutral Tensor/Operation schema 与公共算子合同保留内部 factor 身份；当前没有 target、依赖、公开头、产品投影或已承诺能力。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
+      "summary": "compute_ops v1 已冻结 typed Tensor/Operation schema 与真实推理/正交数值算子目录的审计范围；当前只有空内部 factor，没有依赖、公开头、产品投影或已承诺新算子。"
     }
   ]
 }

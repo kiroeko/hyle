@@ -347,10 +347,10 @@ _hyle_declare_component(compute_provider_onednn
 # audit freezes those facts and advances the component to AUDITED.
 _hyle_declare_component(compute_provider_ggml)
 
-# Reserved identity for the provider-neutral Tensor/Operation schema factor.
-# It remains dependency- and target-free until its own closure card freezes
-# the split from the existing Compute runtime factor.
-_hyle_declare_component(compute_ops QUEUED)
+# Active SCOPED identity for the provider-neutral Tensor/Operation schema
+# audit. The empty factor has no dependency, public header or product
+# projection until its finite ledger reaches AUDITED.
+_hyle_declare_component(compute_ops)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
