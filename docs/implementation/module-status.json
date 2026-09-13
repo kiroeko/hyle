@@ -272,17 +272,26 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md",
       "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "summary": "compute v6 CANDIDATE：C60--C67 已完成，provider resource proposal/exact prepare、shared Queue 与 delegated island ownership 通过三平台 sanitizer/定向测试和三交付；候选固定在 7718b163，待终局红队。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md"
+      },
+      "summary": "compute v6 CLOSED：provider resource proposal/exact prepare、shared Queue 与 delegated island ownership 通过三平台、sanitizer、三交付、易用性与终局红队；shared steady 路线无新增搜索、分配或 runtime-mode 分派。"
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/graph-v7-execution-lanes-and-islands.md",
       "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "summary": "graph v7 CANDIDATE：G70--G81 的 target/storage/lane 三轴、HB-safe workspace/budget、跨 lane dependency 与 delegated island 已完成；三平台、三交付及当前 CUDA P2 WIN/PASS，候选固定在 7718b163，待终局红队。"
+      "performance": {
+        "tier": "P2",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      },
+      "summary": "graph v7 CLOSED：target/storage/lane 三轴、HB-safe workspace/budget、跨 lane dependency 与 delegated island 通过三平台、sanitizer、三交付、易用性和红队；CUDA 跨域完整 replay 的八格 P2 均 WIN/PASS。"
     },
     {
       "module": "container_concurrent",
@@ -390,10 +399,15 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v1-async-runtime.md",
       "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "summary": "compute_backend_cuda v1 CANDIDATE：CU10--CU23 的 CUDA 13.3 explicit-context runtime、stable resources、event Completion/reaper、typed interop、single-queue capture 与 CUDA-on 三交付已完成；当前 P1 PARITY/PASS，候选固定在 7718b163，待终局红队。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      },
+      "summary": "compute_backend_cuda v1 CLOSED：CUDA 13.3 explicit-context runtime、stable resources、event Completion/reaper、typed interop、single-queue capture 与 CUDA-on 三交付通过正确性、易用性和红队；等价 Runtime copy/event P1 八格 PARITY/PASS。"
     },
     {
       "module": "compute_provider_native",

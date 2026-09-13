@@ -1,9 +1,9 @@
 # HYLE Compute：何时直接执行一个计算
 
-> 本页描述当前 CPU operation surface 与 CUDA runtime 检查点；施工资格只以
+> 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。默认 CPU façade 使用 HYLE-native；
 > 选择 `HYLE_COMPUTE_ONEDNN=ON` 时，受支持的 x86-64 构建还提供显式 oneDNN MatMul provider。
-> CUDA factor 已提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
+> 已关闭的 CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时，但尚未签发通用 CUDA operation provider。Apple MLX/Metal、Vulkan/SPIR-V
 > 与其它 provider 是后续独立纵切。HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 

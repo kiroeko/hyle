@@ -1,11 +1,11 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
-> 本页描述当前 Graph v7 **运行时骨架检查点**。Graph 的施工状态仍是 `AUDITED`，只以
+> 本页描述已经关闭的 Graph v7 **运行时基础**。当前状态仍只以
 > [`module-status.json`](../implementation/module-status.json) 为准；本文不把尚未完成的算子/provider 广度
 > 写成已交付。当前已经实现 symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
-> delegated provider island、segment 调度及显式 replay 准备。真实 CUDA 多 lane/capture 资格以及生产级
-> GPU operation provider 仍在本轮后续纵切。
+> delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
+> event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -29,7 +29,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 - `Invocation` 是 move-only 的单次并发 lane，独占 bindings、workspace、Completion/capture slots 和 replay
   route。同一个 Executable 的并发请求必须使用不同 Invocation。
 
-## 当前骨架能力
+## 当前运行时能力
 
 | 能力 | 当前合同 |
 |---|---|

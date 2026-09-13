@@ -270,7 +270,7 @@ factor 同一提交序列可构造；再 CU12--CU19 真异步纵切；随后 Gra
 CU21--CU23。若 reaper 无法在 abandon 路径做到零 allocation/零 wait，或 installed package 不能自然传播
 Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `void*` façade 绕过。
 
-### 实施进度（非 terminal verdict）
+### 候选与终局证据
 
 - CU10--CU11 已形成候选：CUDA 是用户安装的 system SDK；`OFF` 不探测，`ON` 要求 13.3+，`AUTO`
   仅在开发配置中探测并清晰报告版本/路径或 optional-absent；package registry 可为所有 linkage 投影
@@ -295,8 +295,28 @@ Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `vo
   八个 strata ratio=`0.98967--1.02142`，全部 `PARITY/PASS`，综合 exact=`PARITY`、NI=`PASS`；A/A、
   5%/10% known-delta、timer floor、placement、artifact/build identity 全过。retained bundle 见
   [`compute-cuda-runtime-p1-v1-7718b163-w1-win`](../../../../evidence/performance/compute-cuda-runtime-p1-v1-7718b163-w1-win/)；
-  当前只待终局红队与状态签发，因此组件保持 `AUDITED`。
 - 同一 `4d674113` git archive 在 MacBook Air 与 Mac mini 上验证了 CUDA 负能力：`OFF` 不探测，`AUTO`
   明确报告找不到 CUDA Toolkit 13.3+ 并继续配置，显式 `ON` 则在 `FindCUDAToolkit` 处因找不到 `nvcc`
   清晰失败；两机 portable Compute/Graph 六组测试及 Graph 三交付均通过。该事实不替代 Windows RTX 4070
-  的 CUDA-on 三交付、loss/race 或 P1；当前只待终局红队。
+  的 CUDA-on 三交付、loss/race 或 P1。
+
+### 终局红队、限制与重开条件
+
+- red team：Runtime/Driver API owner、primary/execution context、owned/borrowed/adopted stream、event slot
+  generation、reaper handoff、Context/Queue/resource teardown、capture abort/destroy、错误 native identity 与
+  CMake package propagation 均逐项回查；未发现隐藏 `cudaSetDevice`、device-wide synchronize、每 submit
+  allocation、host callback、provider search 或默认 stream；
+- correctness/delivery：Windows 真机覆盖 kernel、双 stream import、pending abandon、并发 reaper、异步迟到
+  failure、capture 与 CUDA-on 三交付；Linux/Apple 覆盖 portable product/sanitizer 与 OFF/AUTO/ON 诊断。
+  物理拔卡没有被伪称已执行；独立 context-poison probe 验证的是同一 terminal failure/lifetime 通道；
+- performance：P0 为 O(1) host enqueue、零 warm allocation/search/host wait；P1 与完全相同 stream/event/copy
+  合同八行均 `PARITY/PASS`，不存在固定同向损失；
+- 七门全部 `PASS`；候选是 `7718b163946104989c9a000f19fd01f454211d36`；
+- 限制：要求用户安装 CUDA Toolkit 13.3+；当前只支持同 Context device/pinned/managed transfer、typed submit
+  与 single-queue capture，不提供 multi-stream capture、NCCL、cuBLAS/cuDNN 算子、默认 device/stream 或 CUDA
+  12.x 兼容承诺；
+- 重开：受支持 CUDA 版本升级改变 execution-context/stream/event 合同；可复现 device-loss/teardown/UAF/
+  error-mapping 缺陷；source/static/shared 传播回归；或同合同证据显示 material wrapper 税；
+- LOC：candidate 上 `compute_backend_cuda` implementation `1,884` 行；自实现不含测试全库 `116,292` 行。
+
+`compute_backend_cuda` v1 本轮 `CLOSED`。

@@ -116,7 +116,7 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 除 G70--G81 外不允许扩张 operation schema/catalog、模型 runtime、公开 FFI 或无关模块。最小 probe 验证后
 逐项 `KEEP_PRIVATE/DELETE`；不能用 probe 数量提高算子完成度。
 
-## 实现检查点（2026-09-13，尚非 candidate）
+## 实现与资格化事实（candidate `7718b163`）
 
 - G70--G75 已进入产品实现：公开环境分别声明 execution target、storage domain 与 execution lane；physical
   value 只按真实 storage residence 建模，target/lane 改变本身不再制造 copy；compute/transfer/communication
@@ -135,8 +135,7 @@ auto done = HYLE_TRY(invocation.submit(bindings));
   planner。新增边数、最终 peak 和 segment dependency 均可查询；预算本来足够或低于单 chain 峰值的边界
   有定向测试；
 - Windows 当前 Graph/oneDNN/CPU 七组定向目标通过，并覆盖 exact region input/output/workspace、真实 boundary
-  copy、provider-owned workspace、resource-route fallback 与 budget serialization。这仍不是 G70--G81
-  终局证据；
+  copy、provider-owned workspace、resource-route fallback 与 budget serialization；
 - 2026-09-14 的 Linux 资格回放在 Ubuntu 24.04/GCC 14 上通过 `hyle_graph_test`、
   `hyle_graph_executable_test`、`hyle_compute_test`、`hyle_compute_ops_test`、
   `hyle_compute_backend_cpu_test` 与 `hyle_compute_provider_native_test` 的 ASan、UBSan 和 TSan；TSan 使用
@@ -155,9 +154,8 @@ auto done = HYLE_TRY(invocation.submit(bindings));
   未产生 segment 的 compute lane 不要求 Queue；transfer lane 的两个 copy segments 能 cold capture、以
   hybrid plan 重放。独立 backend probe 证明同 Context 两条 stream 以 CUDA event 非阻塞导入 Completion，
   延迟 producer 写入可由 consumer stream 正确观察；
-- CUDA Graph P2 纵切已迁移到 target/storage/lane v7 合同并完成一次功能回放；同一 4 MiB
-  CUDA→CPU Unary→CUDA 语义可运行，但该单样本不冒充正式 P2 签名，正式结论仍须走冻结合同的双顺序、
-  placement 与 control strata；
+- CUDA Graph P2 纵切已迁移到 target/storage/lane v7 合同；同一 4 MiB CUDA→CPU Unary→CUDA 语义先完成
+  功能回放，随后由下述冻结合同正式签发；
 - CUDA factor 的 bounded loss/race probes 已通过：typed asynchronous terminal failure 与并发
   wait/abandon/drain/reaper 均有真机回放；Graph 产品根的 CUDA-on source embedding、安装并重定位后的
   shared/static SDK 也全部通过，三种 consumer 均实际运行 CUDA async fill，而非只检查符号；
@@ -166,10 +164,9 @@ auto done = HYLE_TRY(invocation.submit(bindings));
   `1.24305--1.26042`，全部 `WIN/PASS`，综合 exact=`WIN`、NI=`PASS`；所有 controls 与 identity 门通过。
   retained bundle 见
   [`graph-cuda-pipeline-p2-v1-7718b163-w1-win`](../../../../evidence/performance/graph-cuda-pipeline-p2-v1-7718b163-w1-win/)；
-- 剩余硬门只剩 Compute/Graph/CUDA 终局红队、文档与状态签发；一般 multi-stream capture 与 CUDA
-  operation provider 不冒充本轮基础资格。
+- 一般 multi-stream capture 与 CUDA operation provider 不冒充本轮基础资格。
 
-## 七问（AUDITED）
+## 七问（CLOSED）
 
 1. 第三方：Graph 本体不链接第三方；上述版本只提供设计/consumer 证据，具体 provider 各自拥有依赖。
 2. 功能：三轴、资源约束、partial-order workspace、single-lane convenience 与 delegated island 覆盖推理和
@@ -181,5 +178,18 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 7. 易用：普通用户只给 Context/resource/Queue；高级用户显式 targets/storage/lanes/budget，并从 report 看全部
    copy、wait、serialization 和 island。
 
-本卡已在任何 v7 产品修改前完成审计纠正；`graph` 保持 `AUDITED`。G70--G81 形成 candidate 前，不运行算子
-breadth 工作，也不把 mock provider 当作 Apple/CUDA 完整资格。
+## 终局红队、限制与重开条件
+
+- red team：所有公开 entry 回映用户任务；旧 domain identity 已从当前 public/user/architecture surface 清除；
+  Graph 不私造 allocator/event/threadpool，不依赖 Sched，不在 steady submit 搜索 provider 或分配 Graph
+  metadata。workspace reuse 只发生在 happens-before 可证路径，host wait 是 cold-selected report fact；
+- performance：P0 单 lane 是一个 segment/QueueSequence、零 Graph allocation；正式 CUDA P2 在八个 strata
+  全部 `WIN/PASS`，但只签发该完整跨域用户任务，不外推为 leaf kernel 或任意 DAG 胜率；
+- 七门全部 `PASS`；候选是 `7718b163946104989c9a000f19fd01f454211d36`；
+- 限制：当前 DAG 没有任意 `if/while`、模型/KV/batching/sampling 策略；capture 只承诺 shared single-queue
+  segment；delegated mock 不冒充正式 MLX，CUDA runtime 不冒充 CUDA operation provider；
+- 重开：真实 provider 证明三轴、dependency 或 island seam 无法表达；可复现 schedule/workspace/lifetime
+  错误；公开 Graph 合同变化；或合格同合同证据证明 material plan/replay 税；
+- LOC：candidate 上 `graph` implementation `8,454` 行；自实现不含测试全库 `116,292` 行。
+
+`graph` v7 本轮 `CLOSED`。后续算子与 provider 只扩 typed op/region，不以此重开基础 plan/runtime。

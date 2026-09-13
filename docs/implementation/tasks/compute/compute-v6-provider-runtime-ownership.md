@@ -92,7 +92,7 @@ policy 在 admission 前 host-wait，provider 不得偷偷等待。
 除 C60--C67 外不允许扩张 operation schema/catalog、Graph placement 算法、公开 FFI 或无关模块。最小私有
 probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 MLX 实现属于后续独立 factor。
 
-## 实现检查点（2026-09-13，尚非 candidate）
+## 实现与资格化事实（candidate `7718b163`）
 
 - C60--C63 已进入产品实现：provider 先做 allocation-free proposal，再接收 exact resource prepare；prepared
   artifact 固化每个 binding/workspace resource、runtime mode、workspace owner 与可得的完整 persistent-byte
@@ -110,11 +110,10 @@ probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 
   region 与 Graph 的精确资源选择已通过 Windows 定向测试；Graph 现以 synthetic lane 执行 delegated operation/
   region，并完成 shared↔delegated、delegated↔delegated endpoint import、显式 host-wait、取消、异步失败和
   abandon 保活。Graph-only borrowed submit 把 Completion 的唯一 lifetime attachment 留给整次 Graph Invocation，
-  避免子 invocation 被保活但 tensor/workspace 提前释放。C67 三交付仍须随 Graph G70--G81 完成，因此本卡
-  保持 `AUDITED`。
+  避免子 invocation 被保活但 tensor/workspace 提前释放。C67 已随 Graph G70--G81 的三交付完成；
 
-当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及相关逐头目标；这只
-是施工检查点，不替代终局三平台、sanitizer、三交付和 P0 裁决。
+当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及相关逐头目标；以下三平台、
+sanitizer、三交付和 P0 事实共同构成终局证据。
 
 2026-09-14 的 Linux 资格回放在 Ubuntu 24.04/GCC 14 上通过 `hyle_graph_test`、
 `hyle_graph_executable_test`、`hyle_compute_test`、`hyle_compute_ops_test`、
@@ -124,7 +123,7 @@ shared/static C++ consumer 和 shared export hygiene（11 个 HYLE library、902
 `SelectedComponentSmoke(graph)` 又从下游产品根验证了同一 Compute façade/provider seam。C67 的 Windows
 三交付已经兑现。同一 `4d674113` git archive 又在 MacBook Air 与 Mac mini（macOS 26.6.2、AppleClang 21、
 ARM64）通过六组 Compute/Graph 定向测试，以及 Graph source/shared/static 安装、搬迁和独立 consumer；
-Apple portable 交付门已兑现，最终 P0/红队仍是终局门槛。
+Apple portable 交付门已兑现；`4d674113..7718b163` 没有修改任何 `include/` 或 `src/` 产品文件。
 
 shared-only P0 复核确认两层边界没有被 delegated SPI 污染：公开 direct `OperationInvocation::submit()` 由
 冷 prepare 保证只能持有 shared artifact，release code 以该不变量直接调用 `shared_submit`，不做 runtime
@@ -138,7 +137,7 @@ W1-WIN/CUDA 13.3 又从 Graph 产品根通过 CUDA-on source embedding、安装�
 三种独立下游 consumer 均经公开 Compute façade 创建 CUDA Context/Queue/resource、执行 async fill 并等待
 终态。由此 C67 不只覆盖 portable/oneDNN 形状，也覆盖 optional system-SDK factor 的真实传播与运行。
 
-## 七问（AUDITED）
+## 七问（CLOSED）
 
 1. 第三方：本体不新增第三方；锁定源码/官方文档只证明 seam，真正依赖由具体 provider factor 拥有。
 2. 功能：resource-aware shared route 与 delegated ownership 都可表达；模型策略和算子 breadth 明确在外。
@@ -148,5 +147,17 @@ W1-WIN/CUDA 13.3 又从 Graph 产品根通过 CUDA-on source embedding、安装�
 6. 构建：Compute core 不链接 MLX；具体 provider 才拥有依赖、版本、许可证和开关。
 7. 易用：direct 用户提供实际 TensorView/resource 后 prepare；Graph 用户从 report 看 island、copy 和 host wait。
 
-本卡已在任何 v6 产品修改前完成审计纠正；`compute` 保持 `AUDITED`。完成 C60--C67 前不得形成 candidate，
-也不得横向填充算子目录。
+## 终局红队、限制与重开条件
+
+- red team：逐项回查公开头、实现、用户/架构文档和中央 component graph；没有遗留旧 `ExecutionDomain`、
+  C/Native FFI、benchmark-only public entry、热路径 provider 搜索、隐藏 allocation/copy/wait 或反向 Graph
+  依赖。shared steady route 仍只使用冷绑定函数；delegated route 每 island 一个 Completion；
+- 七门：scope、architecture、correctness、delivery、usability/docs、red team 与 P0 engineering performance
+  全部 `PASS`。候选是 `7718b163946104989c9a000f19fd01f454211d36`；
+- 限制：本轮只关闭 provider-neutral runtime ownership/resource seam。真实 MLX/Metal provider、算子 breadth、
+  模型策略和 Native FFI 不在本组件范围；mock delegated provider 只证明 seam，不冒充 Apple 产品资格；
+- 重开：真实 delegated provider 无法在不隐藏 copy/wait 的前提下使用该 seam；可复现 ownership/lifetime/
+  resource correctness 缺陷；公开 runtime 合同变化；或合格同合同证据证明 material shared/delegated 税；
+- LOC：统一工具在 candidate 上报告 `compute` implementation `5,511` 行，自实现不含测试全库 `116,292` 行。
+
+`compute` v6 本轮 `CLOSED`。后续 operation/provider factor 可以通过现有 seam 扩展，不因此重开本 runtime。
