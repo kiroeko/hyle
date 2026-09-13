@@ -252,5 +252,6 @@ Compute v5 的 runtime 主干现已由 Graph v6 实际消费，但本节不替�
   纵切通过；oneDNN Compute provider 11/11、composition 1/1、Graph consumer 1/1 也已回放；
 - W1-WIN 的 `compute` 直接源码、shared SDK、static SDK 及 relocation 后 installed consumer 全部通过，证明
   backend SPI 仍只留在实现闭包，optional oneDNN 许可证与 static development closure 完整。compute 仍保持
-  `AUDITED`，等待 immutable candidate 后按本卡完成 sanitizer、跨平台、P0 与必要 P1；不因本检查点扩展
-  CPU 算子目录。
+  `AUDITED`；
+- WSL GCC 14 的 CUDA/oneDNN-OFF portable shape 已通过 Compute/CPU backend 定向测试与逐头检查；同一目标的
+  ASan、UBSan、TSan 均通过。还需 Apple portability、P0 与必要 P1，且不因本检查点扩展 CPU 算子目录。

@@ -318,5 +318,8 @@ host wait 在取得 destination Queue single-producer admission 前执行，避�
 - W1-WIN 的 `compute` 与 `graph` 均已通过直接源码、shared SDK、static SDK 及 relocation 后 installed
   consumer；Graph consumer 同时覆盖 native 三算子执行与 oneDNN gated-MLP region，安装树没有泄漏 private
   provider SPI；
-- 本轮尚未形成跨平台 immutable candidate，也未执行 closure card 的 WSL/macOS、sanitizer 及必要 P1/P2，
-  因此 registry 继续保持 `AUDITED`。这些门应在基础实现不再变化后一次运行，不因文档或状态维护重复启动。
+- WSL GCC 14 的 CUDA/oneDNN-OFF Release、Compute/Graph 逐头及直接 owner/consumer 测试通过；ASan、UBSan、
+  TSan 四组直接目标均通过。首次回放发现 optional-absent CUDA placeholder target 被测试误认为真实实现，已将
+  `cuda_graph_test.cc` 接线改为要求 `HYLE_COMPUTE_CUDA_ENABLED`，随后 CUDA-OFF 构建通过；
+- 本轮尚未形成完整跨平台 immutable candidate，也未执行 macOS 与必要 P1/P2，因此 registry 继续保持
+  `AUDITED`。这些门应在基础实现不再变化后一次运行，不因文档或状态维护重复启动。
