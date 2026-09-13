@@ -39,6 +39,9 @@ struct NativePlan final {
   ReductionKind reduction_kind = ReductionKind::kSum;
   ReductionRoute reduction_route = ReductionRoute::kGeneral;
   std::uint8_t reduction_axes_mask = 0;
+  std::size_t axis = 0;
+  IndexBoundsPolicy index_bounds = IndexBoundsPolicy::kChecked;
+  ScatterKind scatter_kind = ScatterKind::kAssign;
   detail::NativeRoute route = nullptr;
   LinearElementwiseRoute linear_elementwise_route = nullptr;
   ScalarElementwiseRoute scalar_elementwise_route = nullptr;
@@ -129,5 +132,9 @@ Status prepare_layer_norm(Operation operation,
                           std::span<const TensorDesc> inputs,
                           std::span<const TensorDesc> outputs,
                           NativePlan &plan) noexcept;
+Status prepare_indexing(Operation operation,
+                        std::span<const TensorDesc> inputs,
+                        std::span<const TensorDesc> outputs,
+                        NativePlan &plan) noexcept;
 
 } // namespace hyle::compute::native::internal

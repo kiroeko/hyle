@@ -382,8 +382,8 @@ constexpr ProviderRuntimeProperties kRuntimeProperties{
 Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
                   std::span<const TensorDesc> outputs,
                   NativePlan &plan) noexcept {
-  if (outputs.size() != 1)
-    return Status::Unimplemented("native route requires one output");
+  if (outputs.size() != operation_traits(operation).outputs)
+    return Status::Internal("native route output arity is invalid");
 
   plan = {};
   switch (operation.kind()) {
@@ -504,6 +504,15 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     plan.parameters = {*rows, *packed / 2, 0};
     plan.route = &run_silu_and_mul;
     plan.submit_route = &submit_float;
+    break;
+  }
+  case OperationKind::kGather:
+  case OperationKind::kScatter:
+  case OperationKind::kConcat: {
+    Status status =
+        internal::prepare_indexing(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
     break;
   }
   default:

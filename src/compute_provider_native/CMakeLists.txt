@@ -5,6 +5,7 @@ include(HyleDispatch)
 hyle_add_module(compute_provider_native SOURCES
   cast.cc
   elementwise.cc
+  indexing.cc
   native_provider.cc
   normalization.cc
   reduction.cc

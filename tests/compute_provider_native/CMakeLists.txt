@@ -5,6 +5,7 @@ hyle_add_test(compute_provider_native SOURCES
   ../compute/operation_test.cc
   cast_test.cc
   elementwise_test.cc
+  indexing_test.cc
   normalization_test.cc
   reduction_test.cc
   transform_test.cc)

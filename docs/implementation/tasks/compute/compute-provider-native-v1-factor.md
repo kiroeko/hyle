@@ -121,3 +121,16 @@ Graph v5 的真实 Apple 回放在 `submit_copy` 中发现一个只被 MSVC/GCC 
 strided copy 的地址计算，也不属于任何公开合同。该变量已删除，Windows 的 Native provider 与 Graph
 定向测试通过。此修正只解除 AppleClang `-Werror` 编译阻塞，不增加 family、不改变 route、复杂度、布局
 或 steady path；Apple 候选回放的最终结果仍由对应 Graph 记录签发。
+
+### Indexing checkpoint（2026-09-14）
+
+- `Gather`、`Scatter` 与 `Concat` 已取得 native executable route，当前 family 进度为 **15/19**；
+- Gather 对 dense source 以 `prefix × index` 次连续 suffix-block copy 执行，覆盖 embedding/token row gather；
+  plain strided source 保留 O(output-elements × bounded-rank) reference。checked 模式在写 output 前完整扫描
+  indices，越界不产生部分写；unchecked 明确把范围作为调用方前置条件；
+- Scatter 先 materialize input0，再按 updates 的确定逻辑顺序 assign 或 f32 add；exact dense input0/output 可
+  原地执行，非一致 layout 不宣称 alias。Concat 对 variadic dense inputs 逐 prefix 复制连续 axis×suffix 块，
+  strided inputs 走同语义 reference；三条 submit 路线均无 allocation、provider/ISA search 或隐藏线程；
+- W1-WIN/MSVC 19.50 factor-only WERROR 构建、逐头与 Native 定向测试通过，覆盖 dense suffix gather、越界
+  预检、Scatter assign/add/exact alias 和 middle-axis variadic Concat。完整 product delivery、三平台、
+  sanitizer 与 P1 仍等 19/19 candidate 后按卡片一次执行。

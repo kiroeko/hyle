@@ -165,3 +165,7 @@ visibility owner，但 Compute 产品 façade 聚合后，用户仍只 include `
   其他 7 个 family 尚未取得；三平台/property/sanitizer 与完整
   direct/Graph journey 仍按 closure card 待执行。用户文档将“可描述”与“可执行”分开，不把 schema
   存在宣称成 kernel 支持。
+
+2026-09-14 的 Native indexing checkpoint 已为 Gather、Scatter 与 Concat 增加可执行 CPU reference，目录
+进度更新为 **15/19 executable**。`compute_ops` 自身 schema/API 没有因此变化；余下未执行 family 是 RoPE、
+Softmax、TopK 与 ScaledDotProductAttention，仍不得把可描述冒充可执行。
