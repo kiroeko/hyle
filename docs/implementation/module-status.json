@@ -272,9 +272,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v7-typed-operation-facade.md",
-      "summary": "compute v7 SCOPED：19-family schema/Native 扩展后，公开 typed prepare/submit façade 仍停在早期目录；本轮只补完整、自然、零 steady-cost 的 C++ convenience，不改 schema、provider 或 Graph 算法。"
+      "summary": "compute v7 AUDITED：19-family typed prepare 与 Concat/TopK/masked-SDPA submit 缺口已对账；有限修正只用 rank-bounded stack descriptor/span 转发现有 generic runtime，删除冲突的早期 RMSNorm/Gated 显式-output 语义，不改 provider steady path。"
     },
     {
       "module": "graph",
