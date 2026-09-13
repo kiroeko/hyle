@@ -39,7 +39,7 @@
   "artifacts": {"validators": ["artifact-identity", "build-contract"]},
   "hosts": {"allowed_platforms": ["windows"], "certification_platforms": ["windows"], "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}},
   "extensions": {"runner": {
-    "schema": "hyle.perf.nanobench-runner/v1", "sampling_topology": "single-logical-cpu",
+    "schema": "hyle.perf.nanobench-runner/v1", "sampling_topology": "n-worker-physical-cores", "sampling_worker_count": 4,
     "cmake": {"cache": {"BUILD_SHARED_LIBS": "OFF", "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF", "HYLE_BUILD_BENCH": "ON", "HYLE_BUILD_TESTS": "OFF", "HYLE_COMPUTE_CUDA": "ON", "HYLE_DEV_FACTORS": "compute_backend_cuda", "HYLE_INSTALL": "OFF", "HYLE_SANITIZER": "off", "HYLE_SIMD_EXACT_TARGET": "", "HYLE_STATIC": "ON", "HYLE_TEST_INSTRUMENTATION": "OFF", "HYLE_TRACE": "OFF"}, "peer_cache": {"cuda-runtime-raw-adapter": "HYLE_COMPUTE_CUDA_RAW_SOURCE_DIR"}},
     "profiles": {"W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}},
     "executables": [

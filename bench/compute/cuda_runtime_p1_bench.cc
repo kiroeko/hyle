@@ -59,6 +59,21 @@ bool environment_present(const char *name) {
 #endif
 }
 
+const char *environment_value(const char *name) noexcept {
+  const char *value = std::getenv(name);
+  return value != nullptr && value[0] != '\0' ? value : "not-applicable";
+}
+
+std::size_t worker_count(const char *workers) noexcept {
+  if (workers == nullptr || workers[0] == '\0' ||
+      std::string_view(workers) == "not-applicable")
+    return 0;
+  std::size_t count = 1;
+  for (const char *cursor = workers; *cursor != '\0'; ++cursor)
+    count += *cursor == ',' ? 1U : 0U;
+  return count;
+}
+
 template <class Candidate, class Peer>
 void run_pair(nb::Bench &bench, bool peer_first,
               std::string_view candidate_name, Candidate &&candidate,
@@ -214,14 +229,18 @@ int main() {
   const bool peer_first = environment_present("HYLE_BENCH_RIVAL_FIRST");
   const bool peer_allocation_first =
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
+  const char *workers = environment_value("HYLE_PERF_WORKER_CPUS");
   std::fprintf(
       stderr,
       "# HYLE_COMPUTE_CUDA_RUNTIME_RUN execution_order=%s "
       "allocation_order=%s affinity_topology=%s caller_cpu=%s affinity_ok=%s "
+      "worker_count=%zu worker_cpus=%s parent_mask=%s priority=%s "
       "run_nonce=%s\n",
       peer_first ? "peer-first" : "candidate-first",
       peer_allocation_first ? "peer-first" : "candidate-first",
-      affinity.topology, affinity.cpu, affinity.ok,
+      affinity.topology, affinity.cpu, affinity.ok, worker_count(workers),
+      workers, environment_value("HYLE_PERF_PARENT_MASK"),
+      environment_value("HYLE_PERF_PRIORITY"),
       hyle::bench::perf::run_nonce());
 
   Fixture fixture(peer_allocation_first);
