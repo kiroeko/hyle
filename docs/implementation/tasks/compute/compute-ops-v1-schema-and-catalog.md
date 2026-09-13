@@ -189,3 +189,8 @@ fallback。`compute_ops` 保持 `AUDITED`，等待完整 direct/Graph、三平�
 - Windows MSVC 19.50 Release/WERROR 的 `hyle_compute_ops_test`、Native provider 与 Graph 定向纵切通过；
 - 本 factor 是描述/验证层，P0 为固定 rank<=8 的 O(rank) shape/alias 检查，P1 不适用。候选后只补三平台、
   sanitizer、source/static/shared、逐头和红队；若 schema、API 或算法需改，退回 `AUDITED`。
+
+候选后红队未发现 schema/API 缺陷，但证明 Native 对已合法的 batch-broadcast
+`MatMul` 和 GatedActivation 档位覆盖不完整。因此本 factor 保持同一不可变 schema 候选，
+但“19/19 executable”不再被当作族内语义完整性证据；其 terminal 验收等待 Native 的 N18/N19
+有限修正和 direct/Graph 回归。

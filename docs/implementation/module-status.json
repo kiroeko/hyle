@@ -385,7 +385,7 @@
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
       "candidate": "ca59798143345ef54ac8fa293d2eec799e721aa5",
-      "summary": "compute_ops v1 CANDIDATE：19 个 typed public family、shape/layout/alias/effect/precision schema 与 19/19 Native executable 纵切已固定；待三平台、sanitizer、三交付和终局红队。"
+      "summary": "compute_ops v1 CANDIDATE：19 个 typed public family 及 shape/layout/alias/effect/precision schema 已固定；候选后红队发现 Native 对已合法 MatMul batch-broadcast 与 GatedActivation 档位覆盖不完整，schema 本身不变，待 provider 修正后完成终局验证。"
     },
     {
       "module": "compute_backend_cpu",
@@ -412,10 +412,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "candidate": "ca59798143345ef54ac8fa293d2eec799e721aa5",
-      "summary": "compute_provider_native v1 CANDIDATE：19/19 family、分块 online-softmax SDPA 与借用 executor fan-out 已固定；Windows WERROR direct/Graph 定向验证通过且未触发底层重开，待三平台、sanitizer、三交付、七条 P1 与终局红队。"
+      "summary": "compute_provider_native v1 AUDITED：首候选后红队证明 19/19 family 计数掩盖了两个已冻结的常用档位缺口：rank>=2 batch-broadcast MatMul 与 separate/GELU/GELU-tanh GatedActivation。有限修正仅补这两族的 f32 Native route 及 direct/Graph 回归；不重开底层模块。"
     },
     {
       "module": "compute_sched",

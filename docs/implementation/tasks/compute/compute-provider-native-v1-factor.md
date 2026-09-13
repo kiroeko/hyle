@@ -194,3 +194,17 @@ RoPE vector blocks/tail 与 strided materialization、additive/all-masked Softma
 - Windows MSVC 19.50 Release/WERROR 的 `hyle_compute_provider_native_test`、`hyle_compute_ops_test`、
   `hyle_graph_test` 与 `hyle_graph_executable_test` 通过。候选后只运行预声明的三平台、sanitizer、三交付、
   七条 P1 与一遍红队；任何产品修正先退回 `AUDITED`。
+
+## 首候选撤回：族内档位覆盖（2026-09-14）
+
+终局红队把“family 有一条可执行路线”与本卡已冻结的“v1 最小完整语义”逐项对账，
+确认 `ca59798143345ef54ac8fa293d2eec799e721aa5` 不能作为 Native 终局候选：
+
+| ID | 可复现问题 | 有限修正 | 验收 |
+|---|---|---|---|
+| N18 | `MatMul` schema 公开承诺 `[...,M,K] * [...,K,N]` 与 NumPy batch broadcast，Native 却在 rank 不等于 2 时直接 `Unimplemented` | 在 prepare 冷路固定 batch broadcast 索引与 dense/transposed-weight route；submit 对每个逻辑 batch 调用已有 kernel，无 metadata allocation 或 route search | rank-3/rank-4、左/右/双边 broadcast、零 batch、转置权重、overflow 与 Graph 纵切 |
+| N19 | `GatedActivation` schema 已接受 packed/separate 与 SiLU/GELU/GELU-tanh，Native 只接受 packed SiLU | 复用已冻结 SIMD activation/binary row primitives，在 prepare 固定六种 f32 route；不增加 `fast/light` API | 两种 input owner × 三种 activation、in-place/overlap 边界、tail/special-value 差分与 Graph 纵切 |
+
+`compute_ops` 的 typed schema 和 Graph 产品算法未发现需要修改；只有
+`compute_provider_native` 从 `CANDIDATE` 返回 `AUDITED`。先前已通过的跨平台、sanitizer 与交付
+回放是历史证据，新产品候选必须重跑受 N18/N19 影响的正确性、交付、红队和预声明 P1。
