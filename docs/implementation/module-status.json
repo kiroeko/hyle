@@ -272,14 +272,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md",
-      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md"
-      },
-      "summary": "compute v6 CLOSED：provider resource proposal/exact prepare、shared Queue 与 delegated island ownership 通过三平台、sanitizer、三交付、易用性与终局红队；shared steady 路线无新增搜索、分配或 runtime-mode 分派。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-v7-typed-operation-facade.md",
+      "summary": "compute v7 SCOPED：19-family schema/Native 扩展后，公开 typed prepare/submit façade 仍停在早期目录；本轮只补完整、自然、零 steady-cost 的 C++ convenience，不改 schema、provider 或 Graph 算法。"
     },
     {
       "module": "graph",
