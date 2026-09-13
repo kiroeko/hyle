@@ -285,3 +285,7 @@ Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `vo
 - CUDA target 的 compute/transfer lane 也已在 Graph 使用同一 device storage 资格化，未使用 lane 不产生假
   Queue 要求。一般 multi-stream capture 仍明确 unsupported；CU21 剩余 loss/race、CU22 三交付、CU23
   P0/P1/终局红队尚未完成，因此组件保持 `AUDITED`。
+- 同一 `4d674113` git archive 在 MacBook Air 与 Mac mini 上验证了 CUDA 负能力：`OFF` 不探测，`AUTO`
+  明确报告找不到 CUDA Toolkit 13.3+ 并继续配置，显式 `ON` 则在 `FindCUDAToolkit` 处因找不到 `nvcc`
+  清晰失败；两机 portable Compute/Graph 六组测试及 Graph 三交付均通过。该事实不替代 Windows RTX 4070
+  的 CUDA-on 三交付、loss/race、P1 与终局红队。

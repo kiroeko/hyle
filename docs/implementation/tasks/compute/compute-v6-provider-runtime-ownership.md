@@ -122,7 +122,9 @@ probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 
 data race。Windows `SelectedComponentSmoke(compute)` 已通过 source embedding、安装并重定位后的
 shared/static C++ consumer 和 shared export hygiene（11 个 HYLE library、902 个导出符号）；
 `SelectedComponentSmoke(graph)` 又从下游产品根验证了同一 Compute façade/provider seam。C67 的 Windows
-三交付已经兑现，Apple 交付与最终 P0/红队仍是终局门槛。
+三交付已经兑现。同一 `4d674113` git archive 又在 MacBook Air 与 Mac mini（macOS 26.6.2、AppleClang 21、
+ARM64）通过六组 Compute/Graph 定向测试，以及 Graph source/shared/static 安装、搬迁和独立 consumer；
+Apple portable 交付门已兑现，最终 P0/红队仍是终局门槛。
 
 shared-only P0 复核确认两层边界没有被 delegated SPI 污染：公开 direct `OperationInvocation::submit()` 由
 冷 prepare 保证只能持有 shared artifact，release code 以该不变量直接调用 `shared_submit`，不做 runtime

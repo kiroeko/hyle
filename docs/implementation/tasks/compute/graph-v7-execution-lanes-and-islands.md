@@ -144,6 +144,10 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - Windows `SelectedComponentSmoke(graph)` 已通过 source embedding、安装并重定位后的 shared/static C++
   consumer，以及 shared export hygiene（14 个 HYLE library、1088 个导出符号）。这证明 G81 的 Windows
   三交付形状，不替代 Apple 交付或 CUDA factor 的独立资格；
+- 同一 `4d674113` git archive 已在 MacBook Air 与 Mac mini（macOS 26.6.2、AppleClang 21、ARM64）完成
+  六组 Compute/Graph 定向测试；两机的 `SelectedComponentSmoke(graph)` 也都通过 source embedding、
+  安装并重定位后的 shared/static consumer。ARM 产品自然选择 native provider，oneDNN/CUDA 均未污染
+  portable Graph closure；
 - shared-only P0 结构复核通过：普通三节点单 lane 仍为一个 shared segment、一次 QueueSequence
   finalization、零 delegated/serialization/dependency，并由既有 metadata allocator 探针覆盖 steady submit
   零 Graph allocation；owner 判别按 segment 而非 node。旧 v2 P1 不换 revision 冒充当前证据；
@@ -154,9 +158,8 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - CUDA Graph P2 纵切已迁移到 target/storage/lane v7 合同并完成一次功能回放；同一 4 MiB
   CUDA→CPU Unary→CUDA 语义可运行，但该单样本不冒充正式 P2 签名，正式结论仍须走冻结合同的双顺序、
   placement 与 control strata；
-- 剩余硬门是两台 Apple 的通用语义/交付验证、CUDA factor 的 loss/race/P1/终局红队，以及 Graph 当前
-  revision 的正式 P2 和终局文档/状态签发；一般 multi-stream capture 与 CUDA operation provider 不冒充
-  本轮基础资格。
+- 剩余硬门是 CUDA factor 的 loss/race/P1/终局红队与 CUDA-on 三交付，以及 Graph 当前 revision 的正式
+  P2 和终局文档/状态签发；一般 multi-stream capture 与 CUDA operation provider 不冒充本轮基础资格。
 
 ## 七问（AUDITED）
 
