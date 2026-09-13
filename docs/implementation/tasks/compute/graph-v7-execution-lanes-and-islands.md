@@ -140,7 +140,12 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - shared-only P0 结构复核通过：普通三节点单 lane 仍为一个 shared segment、一次 QueueSequence
   finalization、零 delegated/serialization/dependency，并由既有 metadata allocator 探针覆盖 steady submit
   零 Graph allocation；owner 判别按 segment 而非 node。旧 v2 P1 不换 revision 冒充当前证据；
-- 剩余硬门是真实 CUDA 同 storage 多 lane/capture 探针，以及故障、sanitizer、三平台和三交付验证。
+- RTX 4070/CUDA 13.3 真机纵切通过：一个 CUDA target 的 compute/transfer lanes 共用一个 device storage，
+  未产生 segment 的 compute lane 不要求 Queue；transfer lane 的两个 copy segments 能 cold capture、以
+  hybrid plan 重放。独立 backend probe 证明同 Context 两条 stream 以 CUDA event 非阻塞导入 Completion，
+  延迟 producer 写入可由 consumer stream 正确观察；
+- 剩余硬门是故障注入、sanitizer、三平台和三交付验证；一般 multi-stream capture 与 CUDA operation
+  provider 不冒充本轮基础资格。
 
 ## 七问（AUDITED）
 

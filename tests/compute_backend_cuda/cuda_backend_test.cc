@@ -1,11 +1,14 @@
 #include <array>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 
 #include <gtest/gtest.h>
 
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/error/status.h"
 
@@ -133,6 +136,81 @@ TEST(CudaBackend, QueueTransferNativeSubmitAndMemoryRoundTrip) {
   ASSERT_TRUE(filled.has_value()) << filled.error().message();
   ASSERT_TRUE(filled->wait().ok());
   EXPECT_TRUE(queue->drain().ok());
+}
+
+TEST(CudaBackend, TwoQueuesImportACompletionWithoutAHostBarrier) {
+  auto device = cuda::device(0);
+  ASSERT_TRUE(device.has_value()) << device.error().message();
+  int clock_rate_khz = 0;
+  ASSERT_EQ(cudaDeviceGetAttribute(&clock_rate_khz, cudaDevAttrClockRate, 0),
+            cudaSuccess);
+  ASSERT_GT(clock_rate_khz, 0);
+  auto context = Context::create(*device);
+  ASSERT_TRUE(context.has_value()) << context.error().message();
+  auto producer = context->create_queue();
+  auto consumer = context->create_queue();
+  ASSERT_TRUE(producer.has_value()) << producer.error().message();
+  ASSERT_TRUE(consumer.has_value()) << consumer.error().message();
+  ASSERT_TRUE(producer->reserve_completions(1).ok());
+  ASSERT_TRUE(consumer->reserve_completions(2).ok());
+
+  auto resident =
+      cuda::MemoryResource::create(*context, cuda::MemoryKind::kDevice);
+  auto pinned =
+      cuda::MemoryResource::create(*context, cuda::MemoryKind::kPinnedHost);
+  ASSERT_TRUE(resident.has_value()) << resident.error().message();
+  ASSERT_TRUE(pinned.has_value()) << pinned.error().message();
+  auto device_word = mem::Buffer::create(resident->ref(), sizeof(unsigned int));
+  auto host_word = mem::Buffer::create(pinned->ref(), sizeof(unsigned int));
+  ASSERT_TRUE(device_word.has_value()) << device_word.error().message();
+  ASSERT_TRUE(host_word.has_value()) << host_word.error().message();
+  auto pointer = cuda::pointer<unsigned int>(device_word->view());
+  ASSERT_TRUE(pointer.has_value()) << pointer.error().message();
+
+  constexpr unsigned int kExpected = 0x71c0ffeeu;
+  const unsigned long long delay_clocks =
+      static_cast<unsigned long long>(clock_rate_khz) * 4u;
+  auto source = cuda::submit(*producer, [&](cudaStream_t stream) noexcept {
+    return launch_delayed_store_kernel(stream, *pointer, delay_clocks,
+                                       kExpected);
+  });
+  ASSERT_TRUE(source.has_value()) << source.error().message();
+
+  using hyle::compute::detail::QueueDependencyRoute;
+  using hyle::compute::detail::QueueSequence;
+  auto route = QueueSequence::dependency_route(*consumer, *producer);
+  ASSERT_TRUE(route.has_value()) << route.error().message();
+  EXPECT_EQ(*route, QueueDependencyRoute::kDeviceWait);
+  auto endpoint = QueueSequence::completion_endpoint(*producer);
+  ASSERT_TRUE(endpoint.has_value()) << endpoint.error().message();
+  auto importable = QueueSequence::can_import_endpoint(*consumer, *endpoint);
+  ASSERT_TRUE(importable.has_value()) << importable.error().message();
+  EXPECT_TRUE(*importable);
+
+  auto sequence = QueueSequence::begin(*consumer);
+  ASSERT_TRUE(sequence.has_value()) << sequence.error().message();
+  auto waited = sequence->enqueue_wait(*source);
+  ASSERT_TRUE(waited.status.ok()) << waited.status.message();
+  EXPECT_TRUE(waited.accepted);
+  sequence->record(std::move(waited));
+  auto imported = sequence->finish();
+  ASSERT_TRUE(imported.has_value()) << imported.error().message();
+
+  // The host has not waited for either prefix. Queue ordering makes this copy
+  // observe the producer store only if the imported event was recorded on the
+  // consumer stream correctly.
+  auto downloaded =
+      copy_async(*consumer, host_word->view(), device_word->view());
+  ASSERT_TRUE(downloaded.has_value()) << downloaded.error().message();
+  ASSERT_TRUE(downloaded->wait().ok());
+  unsigned int observed = 0;
+  ASSERT_TRUE(host_word
+                  ->read(0, std::as_writable_bytes(
+                                std::span<unsigned int>(&observed, 1)))
+                  .ok());
+  EXPECT_EQ(observed, kExpected);
+  EXPECT_TRUE(source->wait().ok());
+  EXPECT_TRUE(imported->wait().ok());
 }
 
 TEST(CudaBackend, BorrowedStreamUsesExactContextAndIsNotDestroyed) {

@@ -49,6 +49,8 @@ CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=A
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context
 的非默认 stream，并通过 `cuda::submit()` 录入 typed stream command。Graph 可在冷路径 capture 兼容的
 CUDA command/copy segment；这不意味着 `prepare(cuda_context, MatMul{...})` 已有可执行 CUDA route。
+同一 CUDA Context 的不同 Queue 可以用 device event 导入另一个 Queue 的 Completion prefix，不阻塞提交
+线程；跨 context/backend 不会伪装成这条路线，Graph 只能依显式策略选择 host wait 或拒绝。
 
 ## Queue、byte transfer 与 Completion
 

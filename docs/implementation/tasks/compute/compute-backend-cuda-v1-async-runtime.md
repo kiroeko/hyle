@@ -278,8 +278,10 @@ Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `vo
 - CU12--CU19 已形成 Windows 真机候选：显式 device/context、owned/borrowed/adopted stream、event
   Completion、idle-park/abandon-poll reaper、device/pinned/managed resource、同步与异步 transfer、typed
   submit/pointer、ExternalBuffer borrow/adopt 均已实现；
-- CU21 的首批真机覆盖已通过 RTX 4070：`.cu` kernel 纵切、三种 resource、stream ownership、active
-  external capture 拒绝和 pending Completion abandon。它们只是施工回归，不代替 candidate 后一次完整
-  CU21--CU23；
-- CU20 的 Graph-owned single-queue capture/replay，以及 CU21 剩余 multi-queue/loss/race、CU22 三交付与
-  用户文档、CU23 P0/P1/终局红队尚未完成，因此组件保持 `AUDITED`。
+- CU20 与 CU21 的当前真机纵切已通过 RTX 4070/CUDA 13.3：`.cu` kernel、三种 resource、stream
+  ownership、active external capture 拒绝、pending Completion abandon、Graph-owned single-queue
+  capture/hybrid replay，以及同 Context 双 stream 的 event import。双 stream probe 不做 host wait：延迟
+  producer store 后，consumer stream 通过 imported prefix 再 copy 并观察到正确值；
+- CUDA target 的 compute/transfer lane 也已在 Graph 使用同一 device storage 资格化，未使用 lane 不产生假
+  Queue 要求。一般 multi-stream capture 仍明确 unsupported；CU21 剩余 loss/race、CU22 三交付、CU23
+  P0/P1/终局红队尚未完成，因此组件保持 `AUDITED`。

@@ -5,7 +5,7 @@
 > 写成已交付。当前已经实现 symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。真实 CUDA 多 lane/capture 资格以及生产级
-> GPU provider 仍在本轮后续纵切。
+> GPU operation provider 仍在本轮后续纵切。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -213,7 +213,10 @@ submission admission 时等待上游。`ReplayReport` 提供四类 dependency �
 
 `kPreferCapture` 在不支持、不安全或 delegated 的 segment 上保留普通 route，最终可报告 `kCommands`、
 `kCaptured` 或 `kHybrid`；`kRequireCapture` 遇到任一 delegated 或不能 capture 的 command segment 就失败。
-真实 CUDA 多 lane/capture 仍是当前 closure 的待验证硬门，不能从 mock/CPU 测试外推资格。
+当前 RTX 4070 纵切已验证：同一 CUDA target 的 compute/transfer lane 共用一个 device storage identity，只有
+实际产生 segment 的 lane 要求 Queue；兼容 CUDA stream 可用 event 非阻塞导入前缀，单 Queue 的兼容 copy
+segment 可 cold capture 并 warm replay。它不代表尚未实现的 CUDA operation provider，也不承诺一般
+multi-stream capture。
 
 ## 冷路径、热路径与调度取舍
 
