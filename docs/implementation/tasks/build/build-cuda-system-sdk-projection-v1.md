@@ -30,3 +30,13 @@
 HYLE static archive 把实现依赖传给最终 linker 时追加。二者由同一 module-owned registry 合并、去重并在
 `HyleTargets.cmake` 前解析，不增加 CUDA 特判。CUDA Toolkit 是机器 SDK，不属于 FetchContent lock 或
 `HYLE_DEP_SOURCE_CACHE`；HYLE 不安装其 headers/runtime/license。只授权四项有限 FIX，完成即关闭本 task。
+
+## 实施进度（非 terminal verdict）
+
+- `HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 已接入所选 factor；默认 `OFF`，`ON` 用
+  `find_package(CUDAToolkit 13.3 REQUIRED)`，`AUTO` 用 QUIET 探测。配置日志报告模式、版本和 Toolkit
+  根目录；AUTO-absent 成功关闭能力，ON-absent 只有权威 REQUIRED 错误；
+- package registry 的通用 `FIND_DEPENDENCIES` 字段及正负合同已实现，CUDA owner 登记
+  `CUDAToolkit|13.3`。未选 CUDA 的 Core 和默认 Compute 配置均未探测 SDK；
+- Windows source/shared 真机目标与逐头测试已经通过；static、installed shared/static relocation、OFF/ON
+  package smoke、用户/离线/许可文档尚待候选后一次执行，因此本横向 task 仍未 terminal close。

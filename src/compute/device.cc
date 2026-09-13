@@ -120,6 +120,26 @@ create_context_state(Device device, ContextOptions options,
 
 namespace hyle::compute {
 
+void detail::retain(ContextState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+
+void detail::release(ContextState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
+
+void detail::retain(QueueState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+
+void detail::release(QueueState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
+
 detail::BackendExtensionRef::BackendExtensionRef(
     detail::ContextState *owner, const void *interface_value,
     BackendExtensionId id, BackendId backend) noexcept
@@ -612,6 +632,40 @@ Result<Queue> Context::create_queue(QueueOptions options) const noexcept {
   }
   auto *queue = ::new (storage) detail::QueueState(state_, backend_queue);
   state_->admission.leave();
+  return Queue(queue);
+}
+
+Result<Queue> detail::ContextAccess::create_queue(
+    const Context &context, BackendQueueCreateFn create,
+    void *call_context) noexcept {
+  ContextState *state = context.state_;
+  if (state == nullptr)
+    return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  if (create == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("backend queue factory is null"));
+  }
+  if (!state->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+
+  void *storage = state->allocator.allocate(sizeof(QueueState),
+                                             alignof(QueueState));
+  if (storage == nullptr) {
+    state->admission.leave();
+    return std::unexpected(
+        Status::ResourceExhausted("compute queue allocation failed"));
+  }
+  void *backend_queue = nullptr;
+  Status status = create(state->backend_state, state->allocator, call_context,
+                         &backend_queue);
+  if (!status.ok()) {
+    state->allocator.deallocate(storage, sizeof(QueueState),
+                                alignof(QueueState));
+    state->admission.leave();
+    return std::unexpected(std::move(status));
+  }
+  auto *queue = ::new (storage) QueueState(state, backend_queue);
+  state->admission.leave();
   return Queue(queue);
 }
 

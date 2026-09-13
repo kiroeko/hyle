@@ -114,6 +114,10 @@ struct QueueState final : util::RefCounted<QueueState> {
 };
 
 struct ContextAccess final {
+  using BackendQueueCreateFn = Status (*)(
+      void *backend_context, mem::AllocatorRef allocator,
+      void *call_context, void **backend_queue) noexcept;
+
   static ContextState *state(const Context &context) noexcept {
     return context.state_;
   }
@@ -124,23 +128,23 @@ struct ContextAccess final {
   static void *backend_queue(const Queue &queue) noexcept {
     return queue.state_ != nullptr ? queue.state_->backend_state : nullptr;
   }
+
+  // Internal typed-backend seam for an imported/adopted queue whose creation
+  // needs vendor arguments not present in the backend-neutral QueueOptions.
+  // It preserves the exact allocation, admission and lifetime path used by
+  // Context::create_queue; the callback must not publish its backend object on
+  // failure.
+  HYLE_COMPUTE_API static Result<Queue>
+  create_queue(const Context &context, BackendQueueCreateFn create,
+               void *call_context) noexcept;
 };
 
-inline void retain(ContextState *state) noexcept {
-  if (state != nullptr)
-    state->incref();
-}
-inline void release(ContextState *state) noexcept {
-  if (state != nullptr)
-    state->decref();
-}
-inline void retain(QueueState *state) noexcept {
-  if (state != nullptr)
-    state->incref();
-}
-inline void release(QueueState *state) noexcept {
-  if (state != nullptr)
-    state->decref();
-}
+// Cross-factor ownership bridges. Keep final destruction inside the Compute
+// binary: an implementation DLL may retain Context/Queue state, but must not
+// instantiate a call to the factor-private destroy() symbol.
+HYLE_COMPUTE_API void retain(ContextState *state) noexcept;
+HYLE_COMPUTE_API void release(ContextState *state) noexcept;
+HYLE_COMPUTE_API void retain(QueueState *state) noexcept;
+HYLE_COMPUTE_API void release(QueueState *state) noexcept;
 
 } // namespace hyle::compute::detail

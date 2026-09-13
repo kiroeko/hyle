@@ -400,6 +400,12 @@ if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN)
 else()
   set(HYLE_COMPUTE_ONEDNN_ENABLED OFF)
 endif()
+if(HYLE_BUILD_COMPUTE_BACKEND_CUDA)
+  include(HyleCudaDependencies)
+  hyle_configure_cuda_dependency()
+else()
+  set(HYLE_COMPUTE_CUDA_ENABLED OFF)
+endif()
 # ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored build integration
 # currently covers x86_64 Windows/Linux/macOS and arm64 Linux/macOS.  The

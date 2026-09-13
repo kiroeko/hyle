@@ -93,7 +93,7 @@ endfunction()
 
 function(hyle_register_package_dependency)
   cmake_parse_arguments(ARG "" "NAME;OWNER"
-    "FEATURES;EXPORT_TARGETS;STATIC_EXPORT_TARGETS;STATIC_FIND_DEPENDENCIES;LOCKED_DEPENDENCIES;RUNTIME_FILE_SPECS;DEVELOPMENT_FILE_SPECS;STATIC_DEVELOPMENT_FILE_SPECS;DEVELOPMENT_DIRECTORY_SPECS;STATIC_DEVELOPMENT_DIRECTORY_SPECS;DEVELOPMENT_PROGRAM_SPECS"
+    "FEATURES;EXPORT_TARGETS;STATIC_EXPORT_TARGETS;FIND_DEPENDENCIES;STATIC_FIND_DEPENDENCIES;LOCKED_DEPENDENCIES;RUNTIME_FILE_SPECS;DEVELOPMENT_FILE_SPECS;STATIC_DEVELOPMENT_FILE_SPECS;DEVELOPMENT_DIRECTORY_SPECS;STATIC_DEVELOPMENT_DIRECTORY_SPECS;DEVELOPMENT_PROGRAM_SPECS"
     ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -163,7 +163,7 @@ function(hyle_register_package_dependency)
 
   string(TOUPPER "${ARG_NAME}" _key)
   foreach(_field IN ITEMS OWNER FEATURES EXPORT_TARGETS STATIC_EXPORT_TARGETS
-      STATIC_FIND_DEPENDENCIES LOCKED_DEPENDENCIES
+      FIND_DEPENDENCIES STATIC_FIND_DEPENDENCIES LOCKED_DEPENDENCIES
       RUNTIME_FILE_SPECS DEVELOPMENT_FILE_SPECS
       STATIC_DEVELOPMENT_FILE_SPECS DEVELOPMENT_DIRECTORY_SPECS
       STATIC_DEVELOPMENT_DIRECTORY_SPECS DEVELOPMENT_PROGRAM_SPECS)
@@ -193,6 +193,17 @@ function(hyle_package_collect_registry out_targets out_features out_find_depende
     endif()
 
     _hyle_package_dependency_property("${_dependency}" EXPORT_TARGETS _dependency_targets)
+    _hyle_package_dependency_property(
+      "${_dependency}" FIND_DEPENDENCIES _common_find_dependencies)
+    foreach(_find_dependency IN LISTS _common_find_dependencies)
+      if(NOT _find_dependency MATCHES
+         "^[A-Za-z0-9_+.-]+(\\|[0-9][A-Za-z0-9_.-]*)?$")
+        message(FATAL_ERROR
+          "Package dependency '${_dependency}' has invalid find_dependency spec "
+          "'${_find_dependency}'")
+      endif()
+    endforeach()
+    list(APPEND _find_dependencies ${_common_find_dependencies})
     if(HYLE_STATIC)
       _hyle_package_dependency_property(
         "${_dependency}" STATIC_EXPORT_TARGETS _static_targets)

@@ -256,6 +256,12 @@ graph_sched -> graph_plan + compute_sched + sched       # 可选运行时组合
 bridge factor。可选 provider/backend 各自拥有外部依赖和 feature 开关，未选择时不下载、不编译、
 不导出恒定失败 stub。Compute 永远不依赖 Graph。
 
+Compute/Graph 的真实纵切也是底层合同的消费者验收。若它证明 Mem、Sched、Platform 或其它已关闭
+factor 缺少必要原子能力、所有权语义或自然调用形状，必须以该可复现 consumer journey 建立精确
+reopen trigger，先修正真正的 owner，再回放受影响的直接消费者；不得为了保住旧状态而在
+Compute/Graph 私造 allocator、scheduler、platform probe 或同义 lifetime 层。反过来，尚未被具体纵切
+需要的便利功能不构成重开理由，也不能借 Compute/Graph 施工顺手扩张底层模块。
+
 内部 factor 是否按上图拆成独立状态 owner，要在开工 baseline 审计中逐项满足
 [质因数判据](capability-factorization.md)；用户始终只选择 `hyle::compute`，不会被迫理解 provider target。
 

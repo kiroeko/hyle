@@ -58,7 +58,7 @@ function(hyle_ensure_module_test_target module)
 endfunction()
 
 function(hyle_add_header_self_contained_test module)
-  cmake_parse_arguments(ARG "" "HEADER_DIR" "HEADERS" ${ARGN})
+  cmake_parse_arguments(ARG "" "HEADER_DIR" "HEADERS;EXTRA_INCLUDE_DIRS" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "hyle_add_header_self_contained_test(${module}): unrecognized arguments: "
@@ -98,6 +98,10 @@ function(hyle_add_header_self_contained_test module)
   foreach(_hyle_header IN LISTS ARG_HEADERS)
     list(APPEND _hyle_header_args --header "${_hyle_header}")
   endforeach()
+  foreach(_hyle_extra_include_dir IN LISTS ARG_EXTRA_INCLUDE_DIRS)
+    list(APPEND _hyle_header_args
+      --extra-include-dir "${_hyle_extra_include_dir}")
+  endforeach()
   add_test(NAME hyle_${module}_header_self_contained_test
            COMMAND "${Python3_EXECUTABLE}"
                    "${HYLE_SOURCE_DIR}/scripts/header-self-contained.py"
@@ -115,6 +119,7 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_vs_value)
   unset(_hyle_header_args)
   unset(_hyle_header)
+  unset(_hyle_extra_include_dir)
 endfunction()
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(NAME hyle_bench_stat_parser_test

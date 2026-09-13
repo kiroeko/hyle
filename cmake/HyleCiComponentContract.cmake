@@ -1164,10 +1164,11 @@ file(WRITE "${_package_registry_projection}"
 "include(HylePackageRegistry)\n"
 "hyle_register_package_dependency(\n"
 "  NAME demo OWNER foundation FEATURES demo_feature\n"
+"  FIND_DEPENDENCIES CUDAToolkit|13.3\n"
 "  STATIC_FIND_DEPENDENCIES Threads OpenSSL|3.0)\n"
 "hyle_package_collect_registry(_targets _features _find_dependencies)\n"
 "if(_targets OR NOT _features STREQUAL \"demo_feature\" OR\n"
-"   NOT _find_dependencies STREQUAL \"Threads;OpenSSL|3.0\")\n"
+"   NOT _find_dependencies STREQUAL \"CUDAToolkit|13.3;Threads;OpenSSL|3.0\")\n"
 "  message(FATAL_ERROR \"unexpected registry projection\")\n"
 "endif()\n")
 _hyle_contract_run("package dependency registry projection" TRUE

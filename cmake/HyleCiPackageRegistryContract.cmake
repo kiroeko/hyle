@@ -56,14 +56,39 @@ set(_positive "${_root}/positive.cmake")
 file(WRITE "${_positive}" "${_fixture_prefix}"
 "set(HYLE_DEP_DEMO_CLASS in_tree)\n"
 "hyle_register_package_dependency(\n"
-"  NAME demo OWNER foundation LOCKED_DEPENDENCIES demo\n"
+"  NAME demo OWNER foundation FIND_DEPENDENCIES CUDAToolkit|13.3\n"
+"  STATIC_FIND_DEPENDENCIES Threads LOCKED_DEPENDENCIES demo\n"
 "  RUNTIME_FILE_SPECS \"${_locked_license_cmake}|share/licenses/Hyle|demo-LICENSE\")\n"
 "_hyle_package_dependency_property(demo LOCKED_DEPENDENCIES _locked)\n"
 "if(NOT _locked STREQUAL \"demo\")\n"
 "  message(FATAL_ERROR \"locked dependency was not retained\")\n"
+"endif()\n"
+"set(HYLE_STATIC OFF)\n"
+"hyle_package_collect_registry(_targets _features _shared_find)\n"
+"if(NOT _shared_find STREQUAL \"CUDAToolkit|13.3\")\n"
+"  message(FATAL_ERROR \"common dependency was not projected for shared delivery\")\n"
+"endif()\n"
+"set(HYLE_STATIC ON)\n"
+"hyle_package_collect_registry(_targets _features _static_find)\n"
+"if(NOT _static_find STREQUAL \"CUDAToolkit|13.3;Threads\")\n"
+"  message(FATAL_ERROR \"common/static dependencies were not merged\")\n"
 "endif()\n")
 _hyle_registry_contract_run(
   "locked package registry projection" TRUE "" "${_positive}")
+
+set(_invalid_find_dependency "${_root}/invalid-find-dependency.cmake")
+file(WRITE "${_invalid_find_dependency}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"list(APPEND CMAKE_MODULE_PATH \"${_source_dir}/cmake\")\n"
+"set(HYLE_KNOWN_COMPONENTS core)\n"
+"set(HYLE_STATIC OFF)\n"
+"include(HylePackageRegistry)\n"
+"hyle_register_package_dependency(\n"
+"  NAME demo OWNER foundation FIND_DEPENDENCIES \"CUDA Toolkit|13.3\")\n"
+"hyle_package_collect_registry(_targets _features _find_dependencies)\n")
+_hyle_registry_contract_run(
+  "invalid common find dependency" FALSE "invalid find_dependency spec"
+  "${_invalid_find_dependency}")
 
 set(_duplicate_owner "${_root}/duplicate-lock-owner.cmake")
 file(WRITE "${_duplicate_owner}" "${_fixture_prefix}"

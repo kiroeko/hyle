@@ -119,9 +119,11 @@ CUDA 源码、公开头、CMake option、Toolkit discovery、测试或产品 fa�
    `cudaExecutionCtxStreamCreate(..., cudaStreamNonBlocking, priority=0)`；全部热命令传非空 stream。只有
    allocation/event-slot 创建、pointer/context validation 等冷调用允许 Driver push/pop，且精确恢复原
    `CUcontext`；
-2. **通用/typed seam**：Compute v5 的 base vtable 只增加每个 backend 都必须兑现的 sequence begin/finish；
-   transfer、compatible wait 与 query 留在 versioned object-local extension。CUDA stream/context/pointer、
-   import/adopt 与 native callback 只在 `<hyle/compute/backends/cuda.h>`；
+2. **通用/typed seam**：Compute v5 的 base vtable 增加每个 backend 都必须如实兑现的 sequence
+   begin/finish、transfer properties、copy/fill 与 compatible wait；不支持路线明确返回
+   `Unimplemented`，不能用 optional extension 让 Graph 猜基础顺序能力。CUDA stream/context/pointer、
+   import/adopt、capture 与 native callback 仍只在 typed/object-local extension 及
+   `<hyle/compute/backends/cuda.h>`；
 3. **storage owner**：一个 move-only、pimpl-stable `cuda::MemoryResource` 拥有 device/pinned-host/managed 三种
    resource implementation并 retained exact Context。它返回普通 `mem::MemoryResourceRef`，Buffer/View layout
    不变；resource owner 必须晚于 Buffer 与 in-flight work 销毁，live allocation 违反顺序时 fail-fast；
@@ -147,8 +149,9 @@ CUDA 源码、公开头、CMake option、Toolkit discovery、测试或产品 fa�
    `prepare_replay` 冷路径完成 begin/end/instantiate，且 bindings、workspace、event slots 已稳定；warm
    submit 只 `cudaGraphLaunch` 后 record segment event。v1 的 multi-queue capture 为 unsupported，prefer
    显式回退 commands，require 明确失败；capture 内不 query event、不加 host callback、不 allocation；
-10. **build/package**：选中 factor 时才声明 `HYLE_COMPUTE_CUDA=AUTO|ON|OFF`，默认 AUTO；OFF 不探测，ON
-    缺 13.3 Toolkit 硬失败，AUTO 找不到则 `OPTIONAL_ABSENT`。使用 `find_package(CUDAToolkit 13.3)`，不
+10. **build/package**：选中 Compute/Graph 产品或该 factor 时才声明
+    `HYLE_COMPUTE_CUDA=OFF|ON|AUTO`，默认 OFF；OFF 不探测，ON 缺 13.3 Toolkit 硬失败，AUTO 找不到则
+    `OPTIONAL_ABSENT`，且只供开发机探索，不签正式制品。使用 `find_package(CUDAToolkit 13.3)`，不
     FetchContent、不进入共享源码 cache，也不要求 HYLE 本体启用 CUDA language；只有 `.cu` probe/consumer
     自己启用。enabled target public 传递 `CUDA::cudart` 和 headers、private 使用 driver；安装包必须
     `find_dependency(CUDAToolkit 13.3)`。NVIDIA SDK/runtime/driver 由机器提供，HYLE 不复制进离线 source
@@ -214,7 +217,7 @@ unsafe borrowed-view constructor。最终逐头测试与 guide 必须使用上�
 
 | ID | owner | 冻结改动 |
 |---|---|---|
-| CU10 | build/CUDA factor | 建立 optional factor 目录/target/header ownership，加入 Compute/Graph product roots；AUTO/ON/OFF 与 13.3 discovery |
+| CU10 | build/CUDA factor | 建立 optional factor 目录/target/header ownership，加入 Compute/Graph product roots；默认 OFF、显式 ON、开发用 AUTO 与 13.3+ discovery |
 | CU11 | build/package 独立任务 | package registry 增加所有 linkage 适用的 `FIND_DEPENDENCIES`，installed CUDA feature 找到 Toolkit 后再载入 targets |
 | CU12 | CUDA | Backend/Device properties、0/N/ordinal/multi-device、Runtime/Driver 错误映射与 primary context owner |
 | CU13 | CUDA | owned non-blocking Queue、borrow/adopt stream、exact context/device/flags/owner validation |
@@ -244,7 +247,8 @@ unsafe borrowed-view constructor。最终逐头测试与 guide 必须使用上�
   borrowed stream 从不销毁。primary ref 在所有 Queue/resource state 之后释放；
 - direct steady submit 的 host 成本为一次通用 admission、一次 extension call、consumer CUDA calls、一次
   `cudaEventRecord`；无 `cudaSetDevice`、context push/pop、HYLE heap、provider search、host callback 或
-  host wait。Graph N commands 同一 segment 仍只有一次 record；
+  host wait。Graph N commands 同一 segment 仍只有一次 record；reaper thread 在没有 abandoned pending
+  work 时无限期 park，不按 timer 空醒；
 - `reserve_completions(n)` 与 resource allocation 是冷路径，允许 O(n) event/metadata 与 vendor calls；copy/
   fill host enqueue O(1)，device work O(bytes)；reaper 成本只由用户主动 abandon pending handle 触发；
 - P1 只比较相同 non-blocking stream、相同 pinned/device buffers、相同 event boundary 的 direct CUDA 调用与
@@ -265,3 +269,17 @@ CUDA factor 可进入 `AUDITED`。实施顺序必须是：先完成 Compute v5 C
 factor 同一提交序列可构造；再 CU12--CU19 真异步纵切；随后 Graph v6/CU20；candidate 后只运行一次
 CU21--CU23。若 reaper 无法在 abandon 路径做到零 allocation/零 wait，或 installed package 不能自然传播
 Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `void*` façade 绕过。
+
+### 实施进度（非 terminal verdict）
+
+- CU10--CU11 已形成候选：CUDA 是用户安装的 system SDK；`OFF` 不探测，`ON` 要求 13.3+，`AUTO`
+  仅在开发配置中探测并清晰报告版本/路径或 optional-absent；package registry 可为所有 linkage 投影
+  `find_dependency(CUDAToolkit 13.3)`；
+- CU12--CU19 已形成 Windows 真机候选：显式 device/context、owned/borrowed/adopted stream、event
+  Completion、idle-park/abandon-poll reaper、device/pinned/managed resource、同步与异步 transfer、typed
+  submit/pointer、ExternalBuffer borrow/adopt 均已实现；
+- CU21 的首批真机覆盖已通过 RTX 4070：`.cu` kernel 纵切、三种 resource、stream ownership、active
+  external capture 拒绝和 pending Completion abandon。它们只是施工回归，不代替 candidate 后一次完整
+  CU21--CU23；
+- CU20 的 Graph-owned single-queue capture/replay，以及 CU21 剩余 multi-queue/loss/race、CU22 三交付与
+  用户文档、CU23 P0/P1/终局红队尚未完成，因此组件保持 `AUDITED`。

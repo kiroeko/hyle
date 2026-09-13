@@ -371,10 +371,14 @@ _hyle_declare_component(compute_backend_cpu
   PUBLIC_DEPS compute mem
   SPLIT_PUBLIC_HEADERS hyle/compute/backends/cpu.h)
 
-# Reserved identity for the first real asynchronous accelerator backend.
-# QUEUED means it deliberately owns no sources, dependency, public header,
-# package projection or feature switch until its closure audit freezes them.
-_hyle_declare_component(compute_backend_cuda)
+# Audited identity for the first real asynchronous accelerator backend.  Its
+# implementation is optional because CUDA is a machine-supplied SDK, while the
+# factor's internal dependency closure remains explicit before implementation.
+_hyle_declare_component(compute_backend_cuda
+  PRIVATE_DEPS core platform_thread util_core
+  PUBLIC_DEPS compute error mem
+  PUBLIC_TYPE_DEPS compute error mem
+  SPLIT_PUBLIC_HEADERS hyle/compute/backends/cuda.h)
 
 _hyle_declare_component(compute_provider_native
   PRIVATE_DEPS math mem platform simd
@@ -444,10 +448,11 @@ _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS
-  compute compute_backend_cpu compute_provider_native compute_provider_onednn)
+  compute compute_backend_cpu compute_backend_cuda compute_provider_native
+  compute_provider_onednn)
 _hyle_declare_product(graph FACTORS
-  graph compute_backend_cpu compute_provider_native compute_provider_onednn
-  graph_provider_onednn)
+  graph compute_backend_cpu compute_backend_cuda compute_provider_native
+  compute_provider_onednn graph_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream

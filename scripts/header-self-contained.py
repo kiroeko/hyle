@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--header-dir", default="")
     parser.add_argument("--header", action="append", default=[])
     parser.add_argument("--include-dir", required=True, type=Path)
+    parser.add_argument("--extra-include-dir", action="append", default=[], type=Path)
     parser.add_argument("--cxx", required=True)
     parser.add_argument("--cxx-compiler-id", required=True)
     parser.add_argument("--cxx-frontend", default="")
@@ -41,6 +42,7 @@ def compile_header(
     compiler_id: str,
     frontend: str,
     include_dir: Path,
+    extra_include_dirs: list[Path],
     header: str,
     language: str,
     work_dir: Path,
@@ -73,9 +75,13 @@ def compile_header(
         command.append("/EHsc")
         if compiler_id == "MSVC":
             command.append("/Zc:__cplusplus")
+        for extra_include_dir in extra_include_dirs:
+            command.append(f"/I{extra_include_dir}")
     else:
         standard = "-std=c++23"
         command = [compiler, standard, "-fsyntax-only", f"-I{include_dir}"]
+        for extra_include_dir in extra_include_dirs:
+            command.append(f"-I{extra_include_dir}")
         if sysroot:
             command.extend(["-isysroot", sysroot])
         command.append(str(source))
@@ -184,6 +190,7 @@ def main() -> int:
             raise RuntimeError(f"could not discover the macOS SDK: {result.stderr}")
         sysroot = result.stdout.strip()
     include_dir = args.include_dir.resolve()
+    extra_include_dirs = [path.resolve() for path in args.extra_include_dir]
     compiler_env = visual_studio_environment(
         args.vs_instance, args.vs_platform, args.vs_toolset_version, args.cxx
     )
@@ -227,6 +234,7 @@ def main() -> int:
                 args.cxx_compiler_id,
                 args.cxx_frontend,
                 include_dir,
+                extra_include_dirs,
                 header,
                 "c++",
                 work_dir,
