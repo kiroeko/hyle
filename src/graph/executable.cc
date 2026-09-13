@@ -2710,11 +2710,23 @@ Status schedule_steps(detail::PlanState &plan,
   using Edges = container::SmallVector<std::uint64_t, 32, mem::AllocatorRef>;
   constexpr std::uint32_t kNone = detail::kNoNode;
   const std::size_t step_count = plan.steps.size();
-  for (detail::PlanStep &step : plan.steps) {
+  if (step_count >= kNone) {
+    return Status::ResourceExhausted(
+        "graph scheduled-step identity space is exhausted");
+  }
+  for (std::size_t step_index = 0; step_index < step_count; ++step_index) {
+    detail::PlanStep &step = plan.steps[step_index];
+    if (step.schedule_identity == kNone)
+      step.schedule_identity = static_cast<std::uint32_t>(step_index);
     if (!step.target.valid() || step.target.ordinal() >= plan.targets.size())
       return Status::Internal("prepared graph step has an invalid target");
     if (step.runtime_properties().mode ==
         compute::ProviderRuntimeMode::kDelegated) {
+      if (step.lane.valid() && step.lane.ordinal() < plan.lanes.size() &&
+          plan.lanes[step.lane.ordinal()].runtime_mode ==
+              compute::ProviderRuntimeMode::kDelegated) {
+        continue;
+      }
       if (plan.lanes.size() >= detail::kNoNode ||
           !plan.lanes.try_push_back(detail::ExecutionLaneRecord{
               .target = step.target,
@@ -2763,25 +2775,34 @@ Status schedule_steps(detail::PlanState &plan,
   }
   if (step_count <= 1 || plan.lanes.size() <= 1)
     return Status::Ok();
-  if (step_count >= kNone) {
-    return Status::ResourceExhausted(
-        "graph scheduled-step identity space is exhausted");
-  }
-  if (plan.node_inputs.size() > SIZE_MAX - graph.dependencies.size()) {
+  if (plan.node_inputs.size() > SIZE_MAX - graph.dependencies.size() ||
+      plan.node_inputs.size() + graph.dependencies.size() >
+          SIZE_MAX - plan.serialization_edges.size()) {
     return Status::ResourceExhausted(
         "graph scheduling dependency capacity overflows");
   }
 
   Ordinals producers(plan.allocator);
+  Ordinals identity_steps(plan.allocator);
   Edges edges(plan.allocator);
   if (!producers.try_resize(plan.instance_values.size()) ||
-      !edges.try_reserve(plan.node_inputs.size() + graph.dependencies.size())) {
+      !identity_steps.try_resize(step_count) ||
+      !edges.try_reserve(plan.node_inputs.size() + graph.dependencies.size() +
+                         plan.serialization_edges.size())) {
     return plan_allocation_failure();
   }
   for (std::uint32_t &producer : producers)
     producer = kNone;
+  for (std::uint32_t &step : identity_steps)
+    step = kNone;
   for (std::size_t step_index = 0; step_index < step_count; ++step_index) {
     const detail::PlanStep &step = plan.steps[step_index];
+    if (step.schedule_identity >= step_count ||
+        identity_steps[step.schedule_identity] != kNone) {
+      return Status::Internal("graph scheduled-step identity is invalid");
+    }
+    identity_steps[step.schedule_identity] =
+        static_cast<std::uint32_t>(step_index);
     for (std::size_t output_index = 0; output_index < step.output_count;
          ++output_index) {
       producers[plan.node_outputs[step.output_begin + output_index]] =
@@ -2824,6 +2845,22 @@ Status schedule_steps(detail::PlanState &plan,
       }
     }
   }
+  for (const std::uint64_t stable_edge : plan.serialization_edges) {
+    const std::uint32_t source_identity =
+        static_cast<std::uint32_t>(stable_edge >> 32);
+    const std::uint32_t destination_identity =
+        static_cast<std::uint32_t>(stable_edge);
+    if (source_identity >= identity_steps.size() ||
+        destination_identity >= identity_steps.size() ||
+        identity_steps[source_identity] == kNone ||
+        identity_steps[destination_identity] == kNone) {
+      return Status::Internal("graph serialization edge identity is invalid");
+    }
+    Status status = add_edge(identity_steps[source_identity],
+                             identity_steps[destination_identity]);
+    if (!status.ok())
+      return status;
+  }
   std::sort(edges.begin(), edges.end());
   auto unique_end = std::unique(edges.begin(), edges.end());
   if (!edges.try_resize(static_cast<std::size_t>(unique_end - edges.begin())))
@@ -2858,9 +2895,9 @@ Status schedule_steps(detail::PlanState &plan,
   for (const std::uint64_t edge : edges) {
     const std::uint32_t source = static_cast<std::uint32_t>(edge >> 32);
     const std::uint32_t destination = static_cast<std::uint32_t>(edge);
-    if (source >= destination || destination >= step_count) {
-      return Status::Internal(
-          "prepared graph steps are not in topological order");
+    if (source >= step_count || destination >= step_count ||
+        source == destination) {
+      return Status::Internal("prepared graph step dependency is invalid");
     }
     ++outgoing_begin[source + 1];
     ++indegree[destination];
@@ -2961,11 +2998,13 @@ Status build_segments(detail::PlanState &plan,
   plan.completion_segments.clear();
   plan.required_queue_count = 0;
   Ordinals producers(plan.allocator);
+  Ordinals identity_steps(plan.allocator);
   Ordinals last_lane_segment(plan.allocator);
   Edges edges(plan.allocator);
   if (!plan.segments.try_reserve(plan.steps.size()) ||
       !plan.step_segments.try_resize(plan.steps.size()) ||
       !producers.try_resize(plan.instance_values.size()) ||
+      !identity_steps.try_resize(plan.steps.size()) ||
       !last_lane_segment.try_resize(plan.lanes.size()) ||
       !plan.lane_segment_counts.try_resize(plan.lanes.size())) {
     return plan_allocation_failure();
@@ -2974,6 +3013,8 @@ Status build_segments(detail::PlanState &plan,
     segment = detail::kNoNode;
   for (std::uint32_t &producer : producers)
     producer = detail::kNoNode;
+  for (std::uint32_t &step : identity_steps)
+    step = detail::kNoNode;
   for (std::uint32_t &segment : last_lane_segment)
     segment = detail::kNoNode;
   for (std::uint32_t &count : plan.lane_segment_counts)
@@ -3021,6 +3062,14 @@ Status build_segments(detail::PlanState &plan,
     for (std::size_t step = segment.step_begin; step < end; ++step)
       plan.step_segments[step] = static_cast<std::uint32_t>(segment_index);
     ++plan.lane_segment_counts[segment.lane.ordinal()];
+  }
+  for (std::size_t step = 0; step < plan.steps.size(); ++step) {
+    const std::uint32_t identity = plan.steps[step].schedule_identity;
+    if (identity >= identity_steps.size() ||
+        identity_steps[identity] != detail::kNoNode) {
+      return Status::Internal("graph scheduled-step identity is invalid");
+    }
+    identity_steps[identity] = static_cast<std::uint32_t>(step);
   }
   for (std::size_t lane = 0; lane < plan.lane_segment_counts.size(); ++lane) {
     if (plan.lane_segment_counts[lane] != 0 &&
@@ -3096,6 +3145,27 @@ Status build_segments(detail::PlanState &plan,
       }
     }
   }
+  for (const std::uint64_t stable_edge : plan.serialization_edges) {
+    const std::uint32_t source_identity =
+        static_cast<std::uint32_t>(stable_edge >> 32);
+    const std::uint32_t destination_identity =
+        static_cast<std::uint32_t>(stable_edge);
+    if (source_identity >= identity_steps.size() ||
+        destination_identity >= identity_steps.size()) {
+      return Status::Internal("graph serialization edge identity is invalid");
+    }
+    const std::uint32_t source_step = identity_steps[source_identity];
+    const std::uint32_t destination_step =
+        identity_steps[destination_identity];
+    if (source_step == detail::kNoNode ||
+        destination_step == detail::kNoNode) {
+      return Status::Internal("graph serialization edge step is unavailable");
+    }
+    Status status = add_edge(plan.step_segments[destination_step],
+                             plan.step_segments[source_step]);
+    if (!status.ok())
+      return status;
+  }
 
   std::sort(edges.begin(), edges.end());
   auto unique_end = std::unique(edges.begin(), edges.end());
@@ -3156,11 +3226,38 @@ bool has_external_storage_root(const detail::PlanState &plan,
                   detail::kConstant)) != 0;
 }
 
+void reset_workspace_decisions(detail::PlanState &plan) noexcept {
+  plan.workspace_plan = {};
+  plan.workspace_bytes = 0;
+  plan.workspace_backing_count = 0;
+  plan.supports_concurrent_invocations = true;
+  plan.serialization_edge_count = plan.serialization_edges.size();
+  for (std::size_t index = 0; index < plan.alias_sources.size(); ++index) {
+    plan.alias_sources[index] = detail::kNoInPlaceSource;
+    plan.alias_offsets[index] = 0;
+    plan.instance_roles[index] &= static_cast<std::uint8_t>(
+        ~(detail::kInvocationOwnedOutput | detail::kRetainedOutputRoot));
+  }
+  for (std::uint8_t &role : plan.binding_roles) {
+    role &= static_cast<std::uint8_t>(
+        ~(detail::kInvocationOwnedOutput | detail::kSourceAliasedOutput));
+  }
+  for (std::uint32_t &request : plan.workspace_requests)
+    request = detail::kNoWorkspaceRequest;
+  plan.step_workspace_requests.clear();
+  plan.storage_workspace_slots.clear();
+  plan.workspace_resources.clear();
+  plan.workspace_storage.clear();
+}
+
 Status plan_workspace(detail::PlanState &plan,
-                      const detail::GraphState &graph) noexcept {
+                      const detail::GraphState &graph,
+                      bool &reschedule_requested) noexcept {
   using LastUses = container::SmallVector<std::uint64_t, 16, mem::AllocatorRef>;
   using Requests =
       container::SmallVector<mem::LifetimeRequest, 8, mem::AllocatorRef>;
+
+  reschedule_requested = false;
 
   LastUses last_uses(plan.allocator);
   detail::ValueOrdinals producer_steps(plan.allocator);
@@ -3344,10 +3441,11 @@ Status plan_workspace(detail::PlanState &plan,
   // backing while every operation/region invocation retains a stable view.
   for (std::size_t step_index = 0; step_index < plan.steps.size();
        ++step_index) {
-    if (plan.steps[step_index].kind == detail::PlanStepKind::kRegion &&
+    if ((plan.steps[step_index].kind == detail::PlanStepKind::kRegion ||
+         plan.steps[step_index].kind == detail::PlanStepKind::kOperation) &&
         !plan.steps[step_index]
-             .region.properties()
-             .runtime.supports_concurrent_invocations) {
+             .runtime_properties()
+             .supports_concurrent_invocations) {
       plan.supports_concurrent_invocations = false;
     }
     if (!plan.steps[step_index].emits_command())
@@ -3387,6 +3485,7 @@ Status plan_workspace(detail::PlanState &plan,
   detail::ValueOrdinals group_storage(plan.allocator);
   detail::ValueOrdinals group_chain(plan.allocator);
   detail::ValueOrdinals group_start_segment(plan.allocator);
+  detail::ValueOrdinals chain_head(plan.allocator);
   detail::ValueOrdinals chain_tail(plan.allocator);
   detail::ValueOrdinals chain_storage(plan.allocator);
   detail::BindingRoles group_present(plan.allocator);
@@ -3567,6 +3666,7 @@ Status plan_workspace(detail::PlanState &plan,
 
   detail::ValueOrdinals groups(plan.allocator);
   if (!groups.try_reserve(request_count) ||
+      !chain_head.try_reserve(request_count) ||
       !chain_tail.try_reserve(request_count) ||
       !chain_storage.try_reserve(request_count)) {
     return plan_allocation_failure();
@@ -3602,6 +3702,7 @@ Status plan_workspace(detail::PlanState &plan,
     }
     if (selected == detail::kNoWorkspaceRequest) {
       if (chain_tail.size() >= detail::kNoWorkspaceRequest ||
+          !chain_head.try_push_back(root) ||
           !chain_tail.try_push_back(root) ||
           !chain_storage.try_push_back(group_storage[root]) ||
           !plan.workspace_resources.try_push_back(
@@ -3634,9 +3735,13 @@ Status plan_workspace(detail::PlanState &plan,
   plan.workspace_bytes = 0;
   plan.workspace_backing_count = 0;
   U64s storage_peaks(plan.allocator);
-  if (!storage_peaks.try_resize(plan.storage_domains.size()))
+  U64s chain_peaks(plan.allocator);
+  if (!storage_peaks.try_resize(plan.storage_domains.size()) ||
+      !chain_peaks.try_resize(chain_tail.size()))
     return plan_allocation_failure();
   for (std::uint64_t &peak : storage_peaks)
+    peak = 0;
+  for (std::uint64_t &peak : chain_peaks)
     peak = 0;
   if (!requests.empty()) {
     for (std::size_t index = 0; index < plan.workspace_plan.resource_count();
@@ -3648,6 +3753,7 @@ Status plan_workspace(detail::PlanState &plan,
           saturating_add(plan.workspace_bytes, resource->peak_bytes);
       plan.workspace_backing_count =
           saturating_add(plan.workspace_backing_count, resource->backing_count);
+      chain_peaks[index] = resource->peak_bytes;
       const std::uint32_t storage = plan.workspace_storage[index];
       storage_peaks[storage] =
           saturating_add(storage_peaks[storage],
@@ -3656,13 +3762,147 @@ Status plan_workspace(detail::PlanState &plan,
   }
   for (std::size_t storage = 0; storage < plan.storage_domains.size();
        ++storage) {
-    if (storage_peaks[storage] >
-        plan.storage_domains[storage].workspace_budget_bytes) {
+    if (storage_peaks[storage] <=
+        plan.storage_domains[storage].workspace_budget_bytes)
+      continue;
+    if (plan.workspace_reuse != WorkspaceReusePolicy::kAllowSerialization) {
       return Status::ResourceExhausted(
-          plan.workspace_reuse == WorkspaceReusePolicy::kAllowSerialization
-              ? "graph workspace budget requires unavailable serialization"
-              : "graph workspace budget is exceeded by the existing order");
+          "graph workspace budget is exceeded by the existing order");
     }
+    if (!precise_happens_before) {
+      return Status::ResourceExhausted(
+          "graph workspace serialization exceeds the bounded happens-before "
+          "analysis");
+    }
+
+    auto segment_before = [&](std::uint32_t source,
+                              std::uint32_t destination) noexcept {
+      if (source == destination)
+        return true;
+      if (source >= segment_count || destination >= segment_count)
+        return false;
+      const std::uint32_t source_lane =
+          plan.segments[source].lane.ordinal();
+      const std::uint32_t destination_lane =
+          plan.segments[destination].lane.ordinal();
+      if (source_lane == destination_lane) {
+        return segment_sequence[source] < segment_sequence[destination];
+      }
+      return segment_sequence[source] <=
+             clocks[static_cast<std::size_t>(destination) * lane_count +
+                    source_lane];
+    };
+    auto command_identity = [&](std::uint32_t segment,
+                                bool first) noexcept -> Result<std::uint32_t> {
+      if (segment >= plan.segments.size()) {
+        return std::unexpected(Status::Internal(
+            "graph serialization segment is out of range"));
+      }
+      const detail::PlanSegment &record = plan.segments[segment];
+      const std::size_t end = record.step_begin + record.step_count;
+      if (first) {
+        for (std::size_t step = record.step_begin; step < end; ++step) {
+          if (plan.steps[step].emits_command())
+            return plan.steps[step].schedule_identity;
+        }
+      } else {
+        for (std::size_t step = end; step > record.step_begin; --step) {
+          if (plan.steps[step - 1].emits_command())
+            return plan.steps[step - 1].schedule_identity;
+        }
+      }
+      return std::unexpected(
+          Status::Internal("graph serialization segment has no command"));
+    };
+
+    Words proposed(plan.allocator);
+    Words best_edges(plan.allocator);
+    auto propose_chain_order = [&](std::size_t source_chain,
+                                   std::size_t destination_chain) noexcept
+        -> Result<bool> {
+      proposed.clear();
+      const std::uint32_t source_root = chain_tail[source_chain];
+      const std::uint32_t destination_root = chain_head[destination_chain];
+      const std::uint32_t destination =
+          group_start_segment[destination_root];
+      auto destination_identity = command_identity(destination, true);
+      if (!destination_identity)
+        return std::unexpected(std::move(destination_identity).error());
+      const auto [use_begin, use_end] = group_uses(source_root);
+      for (auto use = use_begin; use != use_end; ++use) {
+        const std::uint32_t source = static_cast<std::uint32_t>(*use);
+        if (source == destination || segment_before(source, destination))
+          continue;
+        if (segment_before(destination, source))
+          return false;
+        auto source_identity = command_identity(source, false);
+        if (!source_identity)
+          return std::unexpected(std::move(source_identity).error());
+        const std::uint64_t edge =
+            (static_cast<std::uint64_t>(*source_identity) << 32) |
+            *destination_identity;
+        if (std::find(plan.serialization_edges.begin(),
+                      plan.serialization_edges.end(), edge) !=
+                plan.serialization_edges.end() ||
+            std::find(proposed.begin(), proposed.end(), edge) !=
+                proposed.end()) {
+          continue;
+        }
+        if (!proposed.try_push_back(edge))
+          return std::unexpected(plan_allocation_failure());
+      }
+      return !proposed.empty();
+    };
+
+    std::uint64_t best_saving = 0;
+    for (std::size_t left = 0; left < chain_tail.size(); ++left) {
+      if (chain_storage[left] != storage)
+        continue;
+      for (std::size_t right = left + 1; right < chain_tail.size(); ++right) {
+        if (chain_storage[right] != storage)
+          continue;
+        const std::uint64_t saving =
+            (std::min)(chain_peaks[left], chain_peaks[right]);
+        if (saving < best_saving)
+          continue;
+        auto feasible = propose_chain_order(left, right);
+        if (!feasible)
+          return std::move(feasible).error();
+        if (!*feasible) {
+          feasible = propose_chain_order(right, left);
+          if (!feasible)
+            return std::move(feasible).error();
+        }
+        if (!*feasible)
+          continue;
+        if (saving == best_saving && !best_edges.empty())
+          continue;
+        if (!best_edges.try_resize(proposed.size()))
+          return plan_allocation_failure();
+        std::copy(proposed.begin(), proposed.end(), best_edges.begin());
+        best_saving = saving;
+      }
+    }
+    if (best_edges.empty()) {
+      return Status::ResourceExhausted(
+          "graph workspace budget cannot be satisfied by safe bounded "
+          "serialization");
+    }
+    if (plan.serialization_edges.size() >
+            SIZE_MAX - best_edges.size() ||
+        !plan.serialization_edges.try_reserve(
+            plan.serialization_edges.size() + best_edges.size())) {
+      return plan_allocation_failure();
+    }
+    for (const std::uint64_t edge : best_edges) {
+      if (!plan.serialization_edges.try_push_back(edge))
+        return plan_allocation_failure();
+    }
+    std::sort(plan.serialization_edges.begin(),
+              plan.serialization_edges.end());
+    plan.serialization_edge_count = plan.serialization_edges.size();
+    reschedule_requested = true;
+    return Status::Ok();
   }
   return Status::Ok();
 }
@@ -3789,6 +4029,7 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
   state->node_count = plan.logical_node_count;
   state->segment_count = plan.segments.size();
   state->segment_dependency_count = plan.segment_dependencies.size();
+  state->serialization_edge_count = plan.serialization_edge_count;
   state->region_count = plan.region_count;
   state->constant_count = plan.constant_ids.size();
   state->supports_concurrent_invocations = plan.supports_concurrent_invocations;
@@ -4095,6 +4336,10 @@ std::size_t CompileReport::command_segment_count() const noexcept {
 
 std::size_t CompileReport::delegated_segment_count() const noexcept {
   return state_ != nullptr ? state_->delegated_segment_count : 0;
+}
+
+std::size_t CompileReport::serialization_edge_count() const noexcept {
+  return state_ != nullptr ? state_->serialization_edge_count : 0;
 }
 
 std::size_t CompileReport::capturable_segment_count() const noexcept {
@@ -5739,8 +5984,32 @@ Result<CompiledGraph> compile(const Graph &graph,
     status = schedule_steps(*plan, *concrete);
   if (status.ok())
     status = build_segments(*plan, *concrete);
-  if (status.ok())
-    status = plan_workspace(*plan, *concrete);
+  if (status.ok()) {
+    if (plan->instance_values.size() > SIZE_MAX - plan->steps.size()) {
+      status = Status::ResourceExhausted(
+          "graph workspace serialization round budget overflows");
+    } else {
+      const std::size_t maximum_serialization_rounds =
+          plan->instance_values.size() + plan->steps.size();
+      std::size_t serialization_round = 0;
+      while (status.ok()) {
+        reset_workspace_decisions(*plan);
+        bool reschedule_requested = false;
+        status = plan_workspace(*plan, *concrete, reschedule_requested);
+        if (!status.ok() || !reschedule_requested)
+          break;
+        if (serialization_round++ >= maximum_serialization_rounds) {
+          status = Status::ResourceExhausted(
+              "graph workspace serialization exhausted its deterministic "
+              "round budget");
+          break;
+        }
+        status = schedule_steps(*plan, *concrete);
+        if (status.ok())
+          status = build_segments(*plan, *concrete);
+      }
+    }
+  }
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));

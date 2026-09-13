@@ -495,6 +495,9 @@ struct PlanStep final {
   StorageDomainId source_storage{};
   StorageDomainId destination_storage{};
   std::size_t copy_bytes = 0;
+  // Stable identity across cold re-scheduling. Serialization edges name this
+  // ordinal rather than the current PlanSteps position.
+  std::uint32_t schedule_identity = kNoNode;
 };
 
 using PlanSteps = container::SmallVector<PlanStep, 8, mem::AllocatorRef>;
@@ -597,6 +600,7 @@ struct PlanState final : util::RefCounted<PlanState> {
         storage_domains(allocator_value), targets(allocator_value),
         lanes(allocator_value), steps(allocator_value),
         segments(allocator_value), segment_dependencies(allocator_value),
+        serialization_edges(allocator_value),
         step_segments(allocator_value),
         terminal_segments(allocator_value),
         completion_segments(allocator_value),
@@ -630,6 +634,10 @@ struct PlanState final : util::RefCounted<PlanState> {
   PlanSteps steps;
   PlanSegments segments;
   ValueOrdinals segment_dependencies;
+  // Packed stable step identities: source in the high word, destination in
+  // the low word. These are explicit memory-for-concurrency tradeoff edges.
+  container::SmallVector<std::uint64_t, 4, mem::AllocatorRef>
+      serialization_edges;
   ValueOrdinals step_segments;
   // Logical DAG sinks are report facts. Runtime completion must additionally
   // observe the latest ordered prefix from every active execution lane so a
@@ -731,6 +739,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   std::size_t segment_dependency_count = 0;
   std::size_t command_segment_count = 0;
   std::size_t delegated_segment_count = 0;
+  std::size_t serialization_edge_count = 0;
   std::size_t capturable_segment_count = 0;
   std::size_t region_count = 0;
   std::size_t fallback_operation_count = 0;

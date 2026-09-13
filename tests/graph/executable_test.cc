@@ -596,6 +596,132 @@ TEST(GraphCompile,
   expect_near(read(second_destination, 4), std::array<float, 4>{5, 6, 7, 8});
 }
 
+TEST(GraphCompile, MakesWorkspaceSerializationAnExplicitBudgetTradeoff) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId first_input = builder.input(row(8)).value();
+  const ValueId second_input = builder.input(row(8)).value();
+  const ValueId first_middle =
+      builder.add(Unary{UnaryKind::kNeg}, first_input).value();
+  const ValueId second_middle =
+      builder.add(Unary{UnaryKind::kNeg}, second_input).value();
+  const ValueId first_output =
+      builder.add(Unary{UnaryKind::kNeg}, first_middle).value();
+  const ValueId second_output =
+      builder.add(Unary{UnaryKind::kNeg}, second_middle).value();
+  ASSERT_TRUE(builder.publish(first_output).ok());
+  ASSERT_TRUE(builder.publish(second_output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context first = hyle::compute::cpu::create_context().value();
+  Context second = hyle::compute::cpu::create_context().value();
+  const auto host = hyle::mem::system_resource();
+  const std::array targets{
+      hyle::graph::ExecutionTarget{
+          .context = &first,
+          .default_storage = hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{
+          .context = &second,
+          .default_storage = hyle::graph::StorageDomainId{0}},
+  };
+  const std::array lanes{
+      hyle::graph::ExecutionLane{
+          .target = hyle::graph::ExecutionTargetId{0},
+          .role = hyle::graph::ExecutionLaneRole::kCompute},
+      hyle::graph::ExecutionLane{
+          .target = hyle::graph::ExecutionTargetId{1},
+          .role = hyle::graph::ExecutionLaneRole::kCompute},
+  };
+  const std::array placements{
+      NodePlacement{.node = graph.node_id(0).value(),
+                    .target = hyle::graph::ExecutionTargetId{0},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = graph.node_id(1).value(),
+                    .target = hyle::graph::ExecutionTargetId{1},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = graph.node_id(2).value(),
+                    .target = hyle::graph::ExecutionTargetId{0},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = graph.node_id(3).value(),
+                    .target = hyle::graph::ExecutionTargetId{1},
+                    .strength = PlacementStrength::kRequired},
+  };
+  const std::array resources{
+      ExternalResourceContract{
+          .value = first_input, .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{
+          .value = second_input, .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{
+          .value = first_output, .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{
+          .value = second_output, .storage = hyle::graph::StorageDomainId{0}},
+  };
+  auto compile_with_budget = [&](std::size_t budget,
+                                 hyle::graph::WorkspaceReusePolicy policy) {
+    const std::array storage_domains{hyle::graph::StorageDomain{
+        .resource = host, .workspace_budget_bytes = budget}};
+    return hyle::graph::compile(
+        graph,
+        hyle::graph::CompileEnvironment{
+            .storage_domains = storage_domains,
+            .targets = targets,
+            .lanes = lanes,
+        },
+        CompileOptions{.node_placements = placements,
+                       .external_resources = resources,
+                       .workspace_reuse = policy});
+  };
+
+  auto concurrent = compile_with_budget(
+      32, hyle::graph::WorkspaceReusePolicy::kExistingOrderOnly);
+  ASSERT_FALSE(concurrent.has_value());
+  EXPECT_TRUE(concurrent.error().IsResourceExhausted());
+
+  auto impossible = compile_with_budget(
+      31, hyle::graph::WorkspaceReusePolicy::kAllowSerialization);
+  ASSERT_FALSE(impossible.has_value());
+  EXPECT_TRUE(impossible.error().IsResourceExhausted());
+
+  auto unconstrained = compile_with_budget(
+      64, hyle::graph::WorkspaceReusePolicy::kAllowSerialization);
+  ASSERT_TRUE(unconstrained.has_value()) << unconstrained.error().message();
+  EXPECT_EQ(unconstrained->report.workspace_bytes(), 64u);
+  EXPECT_EQ(unconstrained->report.serialization_edge_count(), 0u);
+  EXPECT_EQ(unconstrained->report.segment_dependency_count(), 0u);
+
+  auto serialized = compile_with_budget(
+      32, hyle::graph::WorkspaceReusePolicy::kAllowSerialization);
+  ASSERT_TRUE(serialized.has_value()) << serialized.error().message();
+  EXPECT_EQ(serialized->report.workspace_bytes(), 32u);
+  EXPECT_EQ(serialized->report.serialization_edge_count(), 1u);
+  EXPECT_EQ(serialized->report.segment_dependency_count(), 1u);
+
+  OwnedTensor first_source = make_tensor(row(8));
+  OwnedTensor second_source = make_tensor(row(8));
+  OwnedTensor first_destination = make_tensor(row(8));
+  OwnedTensor second_destination = make_tensor(row(8));
+  const std::array<float, 8> first_values{1, 2, 3, 4, 5, 6, 7, 8};
+  const std::array<float, 8> second_values{9, 10, 11, 12, 13, 14, 15, 16};
+  write(first_source, first_values);
+  write(second_source, second_values);
+  Invocation invocation = serialized->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(first_input, first_source.view).ok());
+  ASSERT_TRUE(invocation.bind(second_input, second_source.view).ok());
+  ASSERT_TRUE(invocation.bind(first_output, first_destination.view).ok());
+  ASSERT_TRUE(invocation.bind(second_output, second_destination.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      QueueBinding{.lane = hyle::graph::ExecutionLaneId{0},
+                   .queue = &first_queue},
+      QueueBinding{.lane = hyle::graph::ExecutionLaneId{1},
+                   .queue = &second_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  expect_near(read(first_destination, 8), first_values);
+  expect_near(read(second_destination, 8), second_values);
+}
+
 TEST(GraphCompile, BindsBorrowedConstantsOnceForRepeatedInvocations) {
   GraphBuilder builder = GraphBuilder::create().value();
   const auto input_id = builder.input(row(4)).value();

@@ -3,9 +3,9 @@
 > 本页描述当前 Graph v7 **运行时骨架检查点**。Graph 的施工状态仍是 `AUDITED`，只以
 > [`module-status.json`](../implementation/module-status.json) 为准；本文不把尚未完成的算子/provider 广度
 > 写成已交付。当前已经实现 symbolic specialization，execution target / storage domain / execution lane
-> 三轴 placement，真实跨 storage copy，partial-order workspace，shared Queue 与 delegated provider island、
-> segment 调度及显式 replay 准备。硬预算序列化、真实 CUDA 多 lane/capture 资格以及生产级 GPU provider
-> 仍在本轮后续纵切。
+> 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
+> delegated provider island、segment 调度及显式 replay 准备。真实 CUDA 多 lane/capture 资格以及生产级
+> GPU provider 仍在本轮后续纵切。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -42,7 +42,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和稳定 target/storage 顺序确定性选择；prepare 尝试有硬预算 |
 | region partition | provider 在冷路径提出连续 region；Graph 按覆盖、dispatch 数和 provider 顺序确定性选择并只编译胜出 artifact |
 | boundary | canonical tensor 只有在真实 storage residence 改变时才产生 `Copy`；换 target 或 lane 本身不复制 |
-| memory plan | 每个 `(logical value, storage)` 是一个 physical instance；Mem lifetime planner 只复用 happens-before 已证明有序的 lifetime |
+| memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
 | replay | `prepare_replay()` 冷验证 bindings、transfer、Queue 与 delegated endpoint identity、dependency route 和 Completion 容量 |
 | capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；capture 只适用于 shared Queue segment，delegated island 不能伪装成 Queue capture |
@@ -154,6 +154,26 @@ required 或 preferred。required route 不可执行时 compile
 Graph 从偶然地址猜 host/device locality。普通 canonical boundary 使用 Compute byte transfer，不隐藏
 pageable staging、repack 或同步 copy。
 
+每个 `StorageDomain::workspace_budget_bytes` 都是硬上限。默认
+`WorkspaceReusePolicy::kExistingOrderOnly` 保留原有并发；若现有 partial order 下的峰值超过预算，compile
+返回 `ResourceExhausted`。只有调用者显式选择 `kAllowSerialization` 时，compiler 才会在有界、精确的
+happens-before 分析内给独立 lane 加顺序边并重新规划 workspace：
+
+```cpp
+auto compiled = compile(
+    graph, environment,
+    CompileOptions{.workspace_reuse =
+                       WorkspaceReusePolicy::kAllowSerialization});
+if (!compiled) return compiled.error();
+
+// 非零表示为了预算牺牲了多少条原有并发关系；实际 peak 仍看
+// workspace_bytes() 和各 storage report。
+const auto added_order = compiled->report.serialization_edge_count();
+```
+
+该选项不会保证任何预算都可满足：预算小于单条不可拆 lifetime、分析规模超过内部硬界或不存在无环排序时仍
+失败。预算本来足够时不会加边，`serialization_edge_count()` 为零。
+
 ## 冷态 replay 路由
 
 多 active shared lane 必须显式准备 Queue 集合；synthetic delegated lane 不接受 QueueBinding：
@@ -199,7 +219,8 @@ submission admission 时等待上游。`ReplayReport` 提供四类 dependency �
 
 - compile 做 shape concrete 化、provider proposal/exact prepare、region 选择、target/storage placement、
   boundary materialization、lane scheduling、happens-before、liveness/alias/workspace；复杂度有显式预算，不读取历史 benchmark 常数作为 placement
-  oracle。
+  oracle。`kAllowSerialization` 的额外搜索只在冷编译且实际超过 storage hard budget 时发生；warm path
+  只消费已经固化的 segment dependency。
 - `create_invocation()` 实例化 workspace、provider invocation、预定长 metadata，并固定 delegated endpoint；应按服务并发槽创建并复用。
 - `prepare_replay()` 做 Queue/endpoint/transfer/dependency/capture 资格化；bind、reset 或稳定地址变化会使其失效。
 - warm `submit()` 只遍历 emitted steps、segment dependencies 与 bindings：不遍历原始 DAG、不推 shape、
@@ -215,7 +236,8 @@ submission admission 时等待上游。`ReplayReport` 提供四类 dependency �
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
 - operation fallback、provider region 和真实 copy step；
-- shared/delegated segment、dependency、potential synchronization 和 concurrent-invocation 能力；
+- shared/delegated segment、dependency、为 workspace budget 新增的 serialization edge、potential
+  synchronization 和 concurrent-invocation 能力；
 - provider/version、dispatch、workspace、persistent/packed/borrowed bytes 与 blocking/threading fact。
 
 `persistent_bytes == nullopt` 表示 provider 无法报告，不是零。`delegated_segment_count()` 是 provider-owned

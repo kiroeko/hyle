@@ -130,10 +130,15 @@ auto done = HYLE_TRY(invocation.submit(bindings));
   shared↔delegated 与 delegated↔delegated 依赖在冷路径按 exact endpoint 选择 ordered、non-blocking import 或
   可拒绝 host wait；取消、异步失败、丢弃 pending handle、独立 delegated sinks 与整次 Invocation/workspace
   保活均有定向覆盖。shared segment 仍走原 QueueSequence，delegated 每 island 只返回一个真实 Completion；
+- G77 已进入产品实现：默认 `ExistingOrderOnly` 在独立 lane 的 workspace 峰值超出 storage hard budget 时
+  失败；显式 `AllowSerialization` 才会用稳定 step identity 添加无环顺序边、重新调度并重新运行 lifetime
+  planner。新增边数、最终 peak 和 segment dependency 均可查询；预算本来足够或低于单 chain 峰值的边界
+  有定向测试；
 - Windows 当前 Graph/oneDNN/CPU 七组定向目标通过，并覆盖 exact region input/output/workspace、真实 boundary
-  copy、provider-owned workspace 与 resource-route fallback。这仍不是 G70--G81 终局证据；
-- 剩余硬门是 G77 的 `AllowSerialization` 可见加边、shared-only P0 短路径复核、真实 CUDA 同 storage 多
-  lane/capture 探针，以及故障、sanitizer、三平台和三交付验证。
+  copy、provider-owned workspace、resource-route fallback 与 budget serialization。这仍不是 G70--G81
+  终局证据；
+- 剩余硬门是 shared-only P0 短路径复核、真实 CUDA 同 storage 多 lane/capture 探针，以及故障、sanitizer、
+  三平台和三交付验证。
 
 ## 七问（AUDITED）
 

@@ -390,6 +390,9 @@ public:
   HYLE_GRAPH_API std::size_t segment_dependency_count() const noexcept;
   HYLE_GRAPH_API std::size_t command_segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t delegated_segment_count() const noexcept;
+  // Ordering edges added only under kAllowSerialization to satisfy an exact
+  // storage budget. Zero means Graph preserved the pre-existing concurrency.
+  HYLE_GRAPH_API std::size_t serialization_edge_count() const noexcept;
   HYLE_GRAPH_API std::size_t capturable_segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t physical_value_count() const noexcept;
   HYLE_GRAPH_API std::size_t region_count() const noexcept;
