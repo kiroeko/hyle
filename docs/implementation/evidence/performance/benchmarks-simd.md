@@ -1,11 +1,36 @@
 # SIMD 工程性能证据
 
 
-> 当前产品状态只看 [`module-status.json`](../../module-status.json)。本页首先记录 SIMD v6
-> 推理整行合同的当前有限工程证据，随后保留 v3 路由基线；两者都不承诺“全部操作、全部 CPU、
+> 当前产品状态只看 [`module-status.json`](../../module-status.json)。本页首先记录 SIMD v7
+> Compute-real row primitive 和 v6 推理整行合同的当前有限工程证据，随后保留 v3 路由基线；它们都不承诺“全部操作、全部 CPU、
 > 全部编译器均为 SOTA”。架构与停止规则见
 > [`simd-design`](../../../architecture/simd-design.md) 和
-> [`SIMD v6 closure card`](../../tasks/simd/simd-v6-provider-consumer-replay.md)。
+> [`SIMD v7 closure card`](../../tasks/simd/simd-v7-compute-row-primitives.md)。
+
+## SIMD v7：Compute-real row primitive（`QUALIFIED/PASS`）
+
+Compute Native 的 dense f32 consumer 触发了四项可复用连续 row 合同：full-precision reciprocal-sqrt、IEEE
+number-min/max、byte-bool value select，以及传播 NaN 并确定 signed zero 的 extrema reduction。普通 fat
+artifact 每个完整 row 只有一次缓存后的 target function-pointer hop，exact artifact 直接调用；无逐元素
+dispatch、临时 buffer、allocation、lock 或 syscall。
+
+W1-WIN、MSVC 19.50、Release exact AVX2 static、LTO off。唯一正式 P1 使用 31 个独立进程样本、双顺序与双
+placement；这是合同预声明 `[15,31]` schedule 在一次 qualification 内的自动扩样。比较对象是相同语义、ISA、
+storage/output 与 noinline whole-row 边界的 direct locked-Highway lowering；scalar 只作正确性 oracle。
+`advantage ratio > 1` 有利于 HYLE：
+
+| workload | 四个 median ratio 范围 | exact | 5% non-inferiority |
+|---|---:|---|---|
+| exact reciprocal-sqrt f32 / 4096 | `0.99699–1.00098` | `PARITY` | `PASS` |
+| number-min f32 / 11008 | `1.00744–1.00880` | `PARITY` | `PASS` |
+| byte-bool select f32 / 4096 | `1.02182–1.02624` | `PARITY` | `PASS` |
+| propagating-min f32 / 4096 | `0.99640–1.00962` | `PARITY` | `PASS` |
+
+A/A、5%/10% known-delta、timer-floor、placement、artifact/build/host/input/provenance gates 全部通过；deep
+verifier 为 `QUALIFIED/CURRENT/EXACT`。外部 bundle 路径与 SHA-256、三平台 correctness/sanitizer/交付以及
+AppleClang 本地常量池标签误报的独立修复，均记录在
+[`SIMD v7 closure card`](../../tasks/simd/simd-v7-compute-row-primitives.md)。结论是新增自然入口没有 material
+中间层税；不能据此宣称未测 SIMD operation 或所有 ISA 均为 SOTA。
 
 ## SIMD v6：修正后推理整行回放（`QUALIFIED/PASS`）
 

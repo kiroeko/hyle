@@ -168,10 +168,15 @@
     },
     {
       "module": "simd",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/simd/simd-v7-compute-row-primitives.md",
       "candidate": "c033ca40d3f119912927c52954079d8c01d6ec12",
-      "summary": "simd-v7 CANDIDATE：Compute 驱动的 exact reciprocal-sqrt、number min/max、byte-bool select 与零常态符号税的 extrema 已完成；fat/exact/Native 定向门及 P1 adapter 通过，候选固定为 c033ca40，待唯一正式 P1、三平台/三交付和终局红队。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-simd.md",
+        "material_margin_pct": 5
+      },
+      "summary": "simd-v7 CLOSED：Compute 驱动的 exact reciprocal-sqrt、number min/max、byte-bool select 与确定 signed-zero extrema 已交付；三平台 correctness/sanitizer、source/static/shared、零额外 exact route codegen、终局红队和一次正式同合同 P1 全部通过，四组 row 均为 PARITY/5% NI PASS。"
     },
     {
       "module": "container",

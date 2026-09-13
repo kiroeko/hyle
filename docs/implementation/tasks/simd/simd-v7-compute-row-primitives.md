@@ -139,3 +139,64 @@ placement 执行一次完整 qualification。
    与 exact/fat artifact。
 7. 易用：三组名称、alias、NaN/zero 和 dense/fallback 选型已冻结；guide 必须把 full-precision 与 approximate
    以及 pairwise/reduction 的差异写清。
+
+## 终局验证与裁决（CLOSED）
+
+不可变产品候选仍为 `c033ca40d3f119912927c52954079d8c01d6ec12`，tree 为
+`fdcfb2aaef604fe97956f2d82485dbf5dd71a15d`。候选后的构建选择器修复、codegen checker 修复和本节事实记录
+都没有改变产品 tree，也没有重新生成性能样本。
+
+### 正确性、平台与交付
+
+| 环境 | 回放 | 结果 |
+|---|---|---|
+| W1-WIN / MSVC 19.50 / Release | `simd`、`compute_provider_native` 及真实启用 oneDNN 的反向 consumer | `PASS` |
+| WSL Ubuntu 24.04 / GCC 14.2 / Release | SIMD + Native 定向六项 | `6/6 PASS` |
+| WSL / GCC 14.2 / Debug ASan | 同一定向六项 | `6/6 PASS`，零报告 |
+| WSL / GCC 14.2 / Debug UBSan | 同一定向六项 | `6/6 PASS`，零报告 |
+| MacBook Air / AppleClang 21.0.0.21000334 | NEON SIMD、route/winner/ordering/codegen 与 Native | `6/6 PASS` |
+| Mac mini / AppleClang 21.0.0.21000101 | 同上、独立 Apple Silicon 回放 | `6/6 PASS` |
+| WSL | 搬迁后的 SIMD source/static/shared consumers | `PASS` |
+| MacBook Air | 搬迁后的 SIMD source/static/shared consumers | `PASS` |
+
+两台 Mac 使用同一 `git archive`，SHA-256 为
+`2f0aec109b1b5651b70732d011161532b3645d28256da1ba5fc1cea8c92e6646`。MacBook Air 的旧 codegen checker
+曾把两份 202 条相同指令中的本地常量池名 `LCPI26_0/LCPI27_0` 误报为差异；独立工具任务
+[`AppleClang 本地常量池标签归一化`](../project/simd-codegen-local-pool-normalization-2026-09.md) 只去掉函数局部
+序号、保留 relocation 类型/槽号/外部边，并在原 object 上确认 15 组 direct/routed 均为零额外指令。
+TSan 为 `NOT_APPLICABLE`：本轮四组同步 row primitive 不建立共享状态、线程或同步关系；线程安全风险由调用者
+拥有的互不冲突 ranges 决定。
+
+### 唯一正式 P1
+
+正式 bundle 位于
+`C:\h7v3\d3ef870fbb3b46a3e909\p1-evidence`。manifest SHA-256 为
+`9bcadd0a9493254cd526e0d0b7136c8fabe44918cbe15c860655891b10f07393`，summary SHA-256 为
+`fec71c1c08018e3e7f46e5a87d6ead7ac39247212c998f2b661649233b8cfd85`；deep verifier 为
+`QUALIFIED/CURRENT/EXACT`。合同按预声明的 `[15,31]` schedule 在同一次 qualification 内从 15 自动扩到
+31 个独立进程样本；这不是第二次 P1。
+
+所有 A/A、5%/10% known-delta、timer-floor、placement、artifact、build、host、input 与 provenance control
+均为 `PASS`。下表是四个 order/placement strata 的 median advantage ratio 范围；大于 1 有利于 HYLE：
+
+| workload | ratio 范围 | exact | 5% non-inferiority |
+|---|---:|---|---|
+| exact reciprocal-sqrt f32 / 4096 | `0.99699–1.00098` | `PARITY` | `PASS` |
+| number-min f32 / 11008 | `1.00744–1.00880` | `PARITY` | `PASS` |
+| byte-bool select f32 / 4096 | `1.02182–1.02624` | `PARITY` | `PASS` |
+| propagating-min f32 / 4096 | `0.99640–1.00962` | `PARITY` | `PASS` |
+
+比较双方使用相同 storage、输出、精确数值/NaN/signed-zero 合同、AVX2 ISA、noinline whole-row 边界与计费
+范围；scalar 只作 correctness oracle，不进入性能排名。因此这里没有把 approximate rsqrt、不同 NaN 语义或
+逐元素调用拿来作苹果对橘子式比较。
+
+### 红队结论
+
+终局源码审计未发现未登记 allocation、copy、lock、syscall、逐元素 dispatch 或 Tensor policy 泄漏。新普通
+入口只有一次缓存后的 whole-row route，exact TU 仍直接绑定单档 symbol；tail、零长度 null、完整 value-input
+alias、非零 condition byte、NaN/Inf/subnormal/signed zero 均由逐 runtime differential 覆盖。Compute 只在已经
+证明 dense/同形的 f32 row 上使用新入口，strided/broadcast/其他 dtype 保持原 owner 与 fallback。
+
+S7-F1--F5、七问和所有适用 gate 均为 `PASS`，没有 blocker 或残留产品改动；SIMD v7 因此裁决为
+`CLOSED`。这只签发四个 Compute-real row 合同和既有 route 的继承，不外推为每个 SIMD operation、ISA、编译器
+或规模都独立战胜 Highway/xsimd。

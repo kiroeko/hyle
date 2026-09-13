@@ -1,28 +1,28 @@
-# HYLE 全库性能账本（2026-09-12）
+# HYLE 全库性能账本（2026-09-14）
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
-[`module-status.json`](../../module-status.json) 中当前 30 个 `CLOSED` factor；正在重构的 Compute、Graph、
-`compute_ops`、两个刚预留的 CPU 实现因子与待其前置完成的 ggml provider 被明确排除。它不是第二套模块状态，也不授予 HYLE 一个
-跨平台、跨能力的永久 SOTA 标签。旧 Compute/Graph claim 仍保存在历史 evidence 中，但在新候选签发前
-不属于当前产品性能账本。
+[`module-status.json`](../../module-status.json) 中当前 33 个 `CLOSED` factor。Compute/Graph runtime 基础与
+CPU/CUDA backend factor 已进入账本；仍在施工的 `compute_ops`、Native/oneDNN/ggml provider、
+oneDNN graph provider 与 `compute_sched` 被明确排除。它不是第二套模块状态，也不授予 HYLE 一个跨平台、
+跨能力的永久 SOTA 标签。被重开的旧 provider claim 仍保存在历史 evidence 中，但不属于当前产品性能账本。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 53 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 56 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
-| `WIN` | 23 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
-| `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
+| `WIN` | 24 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
+| `PARITY` | 4 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
 | `INCONCLUSIVE` | 16 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 11 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
+| `N/A` | 12 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
 | `LOSS` | 0 个聚合合同 | 不能解释成“未测 API 也都不慢”；见下方 WSL watcher 的固定负向 strata |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-16 个 claim 在仓库中保留完整机器 bundle，19 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，11 个是 P0 结构证明。后两类不能承担最强宣传声明。
+17 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，12 个是 P0 结构证明。后两类不能承担最强宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -44,7 +44,9 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | model-cache LRU | `1.222x` 到 `1.273x` | Abseil，同 OOM/rollback/weight/limit 合同 |
 | typed unbounded MPMC | `1.261x` 到 `1.289x` | oneTBB，同 allocator/OOM/FIFO/drain 合同 |
 | scheduler request fan-out | `1.646x` 到 `1.663x` | Marl，同 worker/input/compute/completion 边界 |
-| oneDNN provider boundary | v4 x64 f32 BRGEMM 的 8/8 strata 通过 5% 非劣门；7 项 `PARITY`、1 项 `INCONCLUSIVE`，median `0.9904–1.0207` | 同一 oneDNN ukernel、caller storage/scratch 与完成边界；只比较 HYLE provider seam 的抽象税，不把非劣冒充全面胜利 |
+| SIMD Compute rows | exact rsqrt、number-min、byte-select、propagating-min 的 16 个 strata 全部 `PARITY/PASS`；median `0.9964–1.0262` | 同一 locked-Highway lowering、精确数值/NaN/signed-zero、ISA、storage 与 whole-row 边界 |
+| CUDA runtime boundary | 1 MiB D2D copy 的 8/8 strata `PARITY/PASS`；median `0.9897–1.0214` | 同一 CUDA stream/buffer/event/terminal wait，HYLE 侧包含公开验证与 Completion slot |
+| Graph CUDA→CPU→CUDA replay | `1.243x–1.260x`，八个 99.26% CI 全部高于 1 | 同一 4 MiB 跨域任务；收益来自编译计划复用与 prevalidated enqueue，不是 leaf kernel |
 | HTTP/1 fragmented stream | 约 `3.03x` | Boost.Beast，完整 public transport + HTTP lifecycle；不是裸 parser |
 | HTTP/2 small multiplex | `1.466x` 到 `1.478x` | nghttp2，同 session/body/window/flow-control 生命周期 |
 | WebSocket masking | `2.005x` 到 `3.354x`，覆盖 124 B 到 1 MiB | Boost.Beast，同 RFC mask state 与完整 buffer |
@@ -76,7 +78,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | 当前账本保留 v4 oneDNN provider-boundary 检查点；旧 CPU route 与三节点 composition-tax 证据已随两模块重开退出当前账本 | 两模块仍为 `AUDITED`；真实 multi-op region、dtype/量化/attention、并行 executor、GPU backend/provider 与跨 provider graph 均待新候选 |
+| Compute / Graph | CPU runtime 为 P0；CUDA runtime 为 P1 parity；一个 CUDA→CPU→CUDA Graph P2 为 `1.243x–1.260x WIN` | operation catalog、Native/oneDNN/ggml provider、并行 executor/`compute_sched`、Apple provider 与更多跨-provider 图仍在施工；旧 oneDNN provider claim 在其重开期间退出当前账本 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线
@@ -109,8 +111,8 @@ SIMD NEON KV64 曾有约 `27%` LOSS，后续以 `DupOdd` 修正，当前同合�
 
 当前最接近真实纵切的合格证据是完整 public transport + HTTP/1 request/streaming response + body
 validation + connection retirement：128×1 KiB 为 `INCONCLUSIVE` 且 5% NI 通过，16×64 KiB fragmented
-为约 `3.03x WIN`。TLS、HTTP/2、Range resume、Sched fan-out、model-cache LRU、Mem range/VM 与三个推理
-SIMD row 也使用真实消费者形状，而非单指令纳秒循环。
+为约 `3.03x WIN`。TLS、HTTP/2、Range resume、Sched fan-out、model-cache LRU、Mem range/VM，以及 SIMD
+推理/Compute row 也使用真实消费者形状，而非单指令纳秒循环。
 
 但这些仍不是完整推理引擎：上一轮曾验证 CPU RMSNorm → MatMul → SiluAndMul 多算子纵切；Compute 与
 Graph 已因真实能力缺口重开，所以该结果现在只是历史基线，不代表当前候选。项目仍未把 model open/map、
