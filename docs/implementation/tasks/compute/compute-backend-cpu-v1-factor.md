@@ -68,5 +68,17 @@ codegen，问题归 Compute runtime 卡。
   consumer 已通过。静态链接还发现并修复 benchmark/test 对 CPU/native factor 的遗漏真实依赖；CPU
   backend 由真实组合者声明，不再反向挂在可接受任意 CPU-class Device 的 oneDNN Provider 上。
 
-本卡仍为 `AUDITED`：它依赖的 Compute runtime 尚未取得异步生命周期、三平台/sanitizer 与 P0 终局证据，
-因此当前实现检查点不能单独 `CLOSED`。
+## Candidate（2026-09-14）
+
+- 前置 `compute` v6 已在 `7718b163946104989c9a000f19fd01f454211d36` 通过异步生命周期、三平台、
+  sanitizer、三交付、P0 与终局红队并关闭；原有前置阻塞已经解除；
+- `compute_backend_cpu` 的公开头、实现和组件边在该不可变提交后没有变化，因此本 factor 与 Compute
+  runtime 使用同一产品候选 `7718b163946104989c9a000f19fd01f454211d36`，后续只允许补证据和记录；
+- Windows 已有 factor 定向测试、逐头和 Compute source/static/shared 消费；Linux GCC 14 的
+  ASan/UBSan/TSan 与两台 Apple Silicon 的 portable Compute/Graph 回放均实际包含
+  `hyle_compute_backend_cpu_test`，不以只编译 runtime 代替 factor 验证；
+- P0 继续冻结为：CPU backend/device convenience 零分配；Context/Queue 只支付通用 runtime 的冷 metadata；
+  caller-thread submit 不创建线程、不分配、不加锁、不做 syscall/provider search，并在返回前完成 callable。
+
+本卡进入 `CANDIDATE`。终局只回放已声明的 factor correctness、交付和红队，不重新运行 Compute/CUDA/Graph
+已经对同一产品候选签发的昂贵 P1/P2。

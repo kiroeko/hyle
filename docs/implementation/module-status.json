@@ -393,9 +393,10 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backend-cpu-v1-factor.md",
-      "summary": "compute_backend_cpu v1 AUDITED：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现并通过 Windows 三交付；依赖 runtime 终局证据后才能关闭。"
+      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
+      "summary": "compute_backend_cpu v1 CANDIDATE：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现；前置 runtime 已关闭，同一 7718b163 产品候选进入 factor 终局回放。"
     },
     {
       "module": "compute_backend_cuda",
