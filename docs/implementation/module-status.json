@@ -278,9 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v6-runtime-specialization-placement.md",
-      "summary": "graph v6 SCOPED：以四个真实推理 runtime 与 renderer 反偏置纵切审计 bounded symbolic specialization、多 Context/Device placement、显式 copy/repack/event、多域 workspace、真异步 replay/capture 和 Graph 内部质因数边界；审计冻结前不改产品，也不扩 CPU 算子目录。"
+      "summary": "graph v6 AUDITED：G55--G65 冻结 bounded symbols/单-specialization Executable、显式 domains/resource/placement、真实 copy/repack/sync、多域 liveness、segment Completion、多 Queue replay/capture 与完整 report；只实现 Runtime/Graph 主干探针，不扩算子目录。"
     },
     {
       "module": "container_concurrent",

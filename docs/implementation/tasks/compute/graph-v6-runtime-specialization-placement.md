@@ -88,3 +88,178 @@
 
 本卡只授权审计。进入 `AUDITED` 并冻结能力表、入口 ledger、API/usability 和有限 FIX 集前，不修改
 `include/hyle/graph`、`src/graph`、Compute/backend 产品代码、公开构建投影或 benchmark。
+
+## AUDITED 结论（2026-09-13）
+
+### 真实 runtime 对账
+
+- ggml `e91ded11bdcd` 的 scheduler 显式保存 backend 顺序、split、copy slots 与
+  `events[backend][copy]`，reserve/alloc 与 compute_async 分离；它证明 Graph 必须拥有 placement、boundary
+  storage 和 event plan，但具体 stream/event 仍由 backend 拥有；
+- llama.cpp `e71b80510c84` 的模型 runtime 重复构图/执行并使用 ggml backend scheduler；vLLM
+  `51da0ca66c80` 的 `BatchDescriptor`、full/piecewise CUDA graph 与 graph pool，以及 SGLang
+  `dcebe8c4733a` 的 decode/extend capture/replay，都把 shape signature、稳定地址与每 lane mutable state
+  分开；一个无界、进程全局 specialization cache 不是 Graph 基础能力；
+- ds4 `f62ca29a3087` 的显式 stream、分层 device placement、stream-owned scratch 与 capture-safe allocation
+  证明 workspace owner、queue affinity 和 capture 时点必须可见；不能在首次 warm submit 才偷偷分配；
+- renderer/codec 纵切同样需要 external host/device binding、upload/compute/download、跨 queue dependency 和
+  native interop，因此以下 API 不是 transformer 专用形状。
+
+### 能力与形状审计
+
+| 能力族 | 层级 | 冻结语义/边界 | 当前 | 动作 |
+|---|---|---|---|---|
+| bounded shape symbols | 原子机制 | graph-local `DimensionId`，positive min/max/multiple；复用同 ID 表达相等，只支持常量或单 symbol extent | MISSING | FIX |
+| logical TensorSpec | 原子机制 | symbolic dense/blocked-dense；concrete TensorDesc 仍支持任意已签 layout；opaque/任意 symbolic stride 必须 provider-typed | MISSING | FIX |
+| concrete specialization | 复合功能 | compile 时 exact-once 绑定全部 symbol并 overflow-safe 生成 TensorDesc/稳定 signature；一个 Executable 只绑定一个 signature | MISSING | FIX |
+| explicit execution domains | 原子机制 | borrowed Context + workspace MemoryResourceRef 的有序 span；无全局 registry，Executable 通过 artifacts/extensions 保活 Context | MISSING | FIX |
+| external resource contract | 原子机制 | input/output/constant 冷路径声明 domain/resource；Invocation 可换 allocation，不可换不兼容 resource domain | MISSING | FIX |
+| deterministic placement | 复合功能 | required/preferred constraint、input locality、environment order；逐候选 prepare，Unimplemented 才 fallback，硬预算内确定 | MISSING | FIX |
+| provider region partition | 复合功能 | 在 concrete specialization 与单 domain 连续区间上复用 v5 deterministic admission；不跨 domain 猜 vendor region | COMPLETE | KEEP/FIX |
+| explicit boundary plan | 复合功能 | copy/repack/device-wait/host-barrier 都是 report/plan step；copy 用 Compute byte transfer，repack 用明确 operation/provider | MISSING | FIX |
+| per-domain liveness/alias | 复合功能 | 每 `(logical value, domain)` 是物理 instance；各 domain 独立 Mem LifetimePlan，alias 不跨 domain/resource | PARTIAL | FIX |
+| immutable Executable / exclusive Invocation | 复合功能 | Executable 固定 signature/domains/artifacts；Invocation 独占 bindings、workspace、events/capture state | PARTIAL | FIX |
+| multi-queue replay | 复合功能 | submit 接 domain->Queue bindings；每 queue segment 一次 prefix Completion，兼容 device wait，显式 host barrier fallback | MISSING | FIX |
+| stable-address capture | 复合功能 | bindings/workspace/queues 完整后显式 prepare replay；prefer/require capture 可区分，地址变化需重 prepare | MISSING | FIX |
+| terminal aggregation | 复合功能 | 最终 Completion 保活全部 segment prefix/Invocation，聚合 late error/cancel；abandon 不 host-wait | MISSING | FIX |
+| arbitrary control flow/cache | 应用策略 | recurrent/speculative/continuous batching 由引擎选择并重复 Executable；无 process-global specialization cache | OUT_OF_SCOPE | REJECT |
+
+这组能力已覆盖主纵切和正交纵切；算子 breadth、KV manager、batch admission、sampling 和模型循环没有
+被伪装成 Graph 缺口。当前 `kCopy/kRepack/kBarrier` 只占枚举不算实现，必须由 G60 的真实 emitted step
+替换；当前 concrete/single-context/single-queue overload 只能作为自然 convenience，不能冒充完整路线。
+
+### 冻结公开形状
+
+```cpp
+auto batch = HYLE_TRY(builder.dimension({.minimum = 1, .maximum = 64,
+                                         .multiple_of = 1}));
+auto tokens = HYLE_TRY(builder.dimension({.minimum = 1, .maximum = 4096,
+                                          .multiple_of = 1}));
+auto input = HYLE_TRY(builder.input(
+    TensorSpec::dense(DataType::kFloat16, {Dimension(batch), Dimension(tokens),
+                                           Dimension::fixed(hidden)})));
+
+ExecutionDomain domains[]{
+    {.context = &cpu_context, .workspace_resource = host_resource},
+    {.context = &cuda_context, .workspace_resource = device_resource},
+};
+ShapeBinding shape[]{ {batch, 1}, {tokens, decode_tokens} };
+ExternalResourceContract external[]{
+    {.value = input, .domain = ExecutionDomainId{1},
+     .resource = device_resource},
+};
+auto compiled = HYLE_TRY(graph::compile(
+    graph, CompileEnvironment{domains},
+    CompileOptions{.shape = shape, .external_resources = external}));
+
+auto invocation = HYLE_TRY(compiled.executable.create_invocation());
+HYLE_TRY(invocation.bind(input, input_view));
+QueueBinding queues[]{ {ExecutionDomainId{0}, &cpu_queue},
+                       {ExecutionDomainId{1}, &cuda_queue} };
+HYLE_TRY(invocation.prepare_replay(queues, ReplayMode::kPreferCapture));
+auto done = HYLE_TRY(invocation.submit(queues));
+```
+
+名字和语义冻结如下：
+
+- `DimensionId/DimensionBounds/Dimension/TensorSpec/ShapeBinding` 属 Graph IR；相同 ID 表达相等，不引入
+  任意 affine solver。batch、token、active-token 等调用方可直接定义为独立 symbol；复杂模型关系由构图者
+  展开或按另一 signature 编译；
+- `ExecutionDomainId` 是本次 CompileEnvironment 的有序 ordinal；`ExecutionDomain` 借用 Context 和稳定
+  workspace resource。环境只在 compile 调用期间借用 span，Executable 内部保活已选 artifact/extension，
+  但 resource provider 仍须先于 Executable/Invocation 及其 Buffer；
+- `NodePlacement` 与 `ValuePlacement` 分别表达 required/preferred domain；external resource contract 必须
+  可唯一解析。没有约束时按输入 locality、最少 direct boundary、环境顺序稳定裁决，不使用旧 benchmark ns；
+- 每个 Executable 只持有一个 concrete `SpecializationSignature`。Graph 不拥有无界 cache；vLLM/SGLang
+  风格的 batch descriptor -> executable map 留给引擎，HYLE 提供可比较/哈希的自含 signature；
+- `QueueBinding` 在 submit/prepare 期间借用 Queue，必须与 domain Context 精确匹配。单 domain overload
+  `compile(graph, context, ...)` / `submit(queue)` 保留为静态 CPU/简单设备 convenience，并路由同一实现；
+- `prepare_replay()` 是显式冷路径：预留 completion slots、冻结地址/queue identity，并按
+  `kCommands/kPreferCapture/kRequireCapture` 准备 backend capture。普通 command replay 不需要 capture；
+  require 不支持时明确失败。reset/rebind 若改变稳定地址会使 capture 失效，不能静默回退；
+- `Invocation::submit()` 不重新 specialization、placement、prepare provider、分配 workspace/event 或 JIT。
+
+### placement、boundary 与 plan 算法
+
+1. validate/canonicalize 为 `O(V+E)`；shape binding 按 symbol ordinal 建 fixed array，检查 missing/duplicate、
+   bounds、multiple、乘法/stride/bytes overflow；
+2. 外部 resource 与 required constraints 先固定。每个 topo node 对 D 个 domain 按 required、preferred、
+   已在该域的输入数、boundary 数、环境 ordinal 排稳定候选；调用该 Context 的 prepare/region capability，
+   只把 `Unimplemented` 当不支持，其它错误终止。总 prepare 尝试硬上界 `V*D`，region proposal 继续受现有
+   global/per-provider budget；
+3. 一条 edge 跨 domain 时产生目标域物理 instance和显式 Copy；若布局不同则必须有明确 Repack op/provider，
+   不能把转换藏在 copy。compatible queue wait 由 Compute backend contract 录入；否则计划标记 HostBarrier；
+4. liveness 在每个 domain 对其物理 instances 单独运行 Mem LifetimePlanner，复杂度总计 `O(V+E)`；alias
+   仅在相同 resource/domain、provider 明确支持且 last-use 成立时选择；
+5. plan 按 domain/queue segment 预绑定 command；同 queue 连续 step 只 finish 一次。多 queue completion
+   state 和 dependency slots 在 create/prepare replay 冷路径一次分配，最终 Completion 聚合 O(Q+S)，不按
+   node 分配 event；
+6. placement 是有界确定性启发式，不声称求解一般 DAG 全局最优。CompileReport 必须披露 constraint、
+   fallback、boundary 和 host barrier，使消费方可选择更强 provider/显式 placement。
+
+### 有限入口与实现 ledger
+
+| ID | 当前形状 | 裁决 | 冻结改动 |
+|---|---|---|---|
+| G55 | Graph value 只存 concrete TensorDesc | REPLACE | 增加 symbol/TensorSpec；concrete overload 路由 fixed spec |
+| G56 | compile 没有 specialization identity | FIX | exact ShapeBinding -> concrete desc + self-contained SpecializationSignature；Executable 单 signature |
+| G57 | compile 只借一个 Context | REPLACE | CompileEnvironment 的显式有序 domains；保留单 domain convenience |
+| G58 | 无 placement constraint/算法 | FIX | Node/Value required/preferred + deterministic bounded placement，拒绝 timing oracle |
+| G59 | external bind 没有 resource contract | FIX | compile-time ExternalResourceContract；Invocation bind 校验 exact compatible domain/resource |
+| G60 | Copy/Repack/Barrier 只有 report enum | FIX | 真 plan step、目标域物理 instance、copy bytes、device wait/host barrier；无隐藏 staging |
+| G61 | 单一 workspace LifetimePlan | REPLACE | per-domain plan/backing/report；跨域 instance 不 alias |
+| G62 | Invocation 只接一个 Queue | REPLACE | domain QueueBinding span、segment prefix 和最终聚合；单 queue overload 路由同一路径 |
+| G63 | 无稳定 replay/capture 阶段 | FIX | 显式 `prepare_replay` + ReplayMode；cold reserve/capture，warm submit 不分配/JIT |
+| G64 | CompileReport 只有单 backend/provider 汇总 | FIX | signature、domain、placement、physical instance、transfer/sync/barrier/capture/concurrency facts |
+| G65 | Graph 覆盖每-step Completion | REPLACE | 消费 Compute v5 EnqueueResult/QueueSequence finish；event 数按 segment |
+| G66 | graph_ir/compile/plan 立即拆 target | DEFER | 概念职责明确，但当前 public symbol/owner/consumer 同轮强耦合；候选前只在源码形成边界，不为目录制造身份 |
+| G67 | wide operator catalog | REJECT | 只使用 gated MLP、byte transfer、typed no-op 与 decode/prefill signature 验证主干 |
+
+实现限 G55--G65；G66 只有当源码形成不同直接依赖、测试 owner 与独立 consumer 后才登记 component，不能
+为了与架构图同名先造空 target。G67 不产生算子代码。
+
+### CompileReport 真值扩展
+
+每个 report 必须可查询：specialization signature；domain count 和每域 Device/Backend、workspace/persistent
+bytes、queue/capture 要求；每 step 的 node range、kind、domain、provider、输入/输出物理 instance、copy
+bytes、source/destination domain、transfer mode、device wait/host barrier、dispatch、blocking/threading 和
+concurrent-invocation 能力。未知 estimate 仍用 optional，不写 0；复制 report 不保活 Context/provider
+artifact/resource owner。
+
+### P0 与公平性能边界
+
+- compile：`O(V+E+V*D*provider-attempt + Q log Q)`，所有预算显式有界；允许冷 allocation/JIT/packing；
+- create/prepare replay：O(values+steps+domains)，一次 workspace/event/capture allocation；
+- warm submit：O(bindings+steps+dependency edges+segments)，零 Graph heap/provider search/shape inference/JIT/
+  hidden copy/hidden host wait；event/finalization O(segments)，不是 O(nodes)；
+- P1 比较同一 TensorDesc/storage/queue/completion 边界的 direct sequence；P2 比较同一 placement/copy/sync/
+  completion 的 transformer fragment。CPU 裸函数、CUDA kernel-only 或不同 pageable/pinned host 合同不得
+  与完整 Graph 比较。
+
+### 七问
+
+1. **第三方路径**：Graph 本体不直接依赖 CUDA/oneDNN/ggml；具体 factor 经 Compute extension 提供。四个
+   consumer revision 固定，fallback 与版本进入 report。
+2. **功能完整**：bounded specialization、显式 domains/placement/boundary、多域 workspace、多 queue replay/
+   capture 和聚合覆盖两条纵切；模型循环/cache/policy 明确留给引擎。
+3. **内部复用**：Error、Mem LifetimePlanner/Buffer、Compute v5 queue/completion/transfer/provider 全部复用；
+   不私造 event、allocator、scheduler 或 vendor registry。
+4. **性能**：冷/热复杂度、event 数和预算已固定；candidate 后只对真 backend 做同合同 P1/P2，不用算子
+   差异掩盖 Graph 税。
+5. **交付边界**：Native FFI N/A，旧 callable TaskGraph/C ABI 不恢复；公开仅 C++ Graph façade。
+6. **构建交付**：Graph 通用 factor 不链接 vendor backend；source/static/shared 和选择 product 必须从相同
+   component graph取得可选实现闭包。G66 当前不制造空 factor。
+7. **易用与文档**：静态单域保留短路径；动态/异构用户显式看到 shape、resource、domain、queue、capture
+   和 lifetime，不需要理解内部 plan。guide 必须分别给出两条 recipe 与 host-barrier/capture 坑。
+
+### AUDITED 有限 FIX 与停止点
+
+1. 先消费 Compute v5，完成 G65 和现有单域 direct/region 回归；
+2. 实现 G55--G61 的 IR/compile/per-domain plan，并只用 CPU+mock second domain 验证全部错误/rollback；
+3. 实现 G62--G64 的多 queue completion、prepare replay 与 report；mock 不能签真实 async/capture；
+4. 以真 CUDA backend 跑 CPU<->CUDA copy + typed command + copy，以及 decode/prefill 两个 signature；
+5. 冻结 candidate 后才运行三交付、四机通用门、sanitizer、P0和一次适用 P1/P2。
+
+任何新 operator、无界 cache、控制流、模型/KV/batching 或 benchmark 专用 placement 都越出本轮。若 CUDA
+factor 尚未可用，只精确阻塞真异步/capture slice，不缩成 fake backend 后宣称 Graph 完整。审计完成，
+`graph` 可以进入 `AUDITED`，但产品修改仍须等待 Compute v5 的基础 SPI 同轮可编译迁移。
