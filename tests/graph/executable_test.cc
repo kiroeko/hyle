@@ -323,6 +323,14 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
             compiled.executable.workspace_bytes());
   EXPECT_EQ(compiled.report.workspace_backing_count(),
             compiled.executable.workspace_backing_count());
+  EXPECT_EQ(compiled.report.segment_count(), 1u);
+  EXPECT_EQ(compiled.report.command_segment_count(), 1u);
+  EXPECT_EQ(compiled.report.delegated_segment_count(), 0u);
+  EXPECT_EQ(compiled.report.serialization_edge_count(), 0u);
+  EXPECT_EQ(compiled.report.segment_dependency_count(), 0u);
+  ASSERT_EQ(compiled.report.lane_count(), 1u);
+  EXPECT_EQ(compiled.report.lane(0)->runtime_mode,
+            hyle::compute::ProviderRuntimeMode::kSharedQueue);
   EXPECT_EQ(compiled.report.copy_bytes(), 0u);
   EXPECT_EQ(compiled.report.synchronization_count(), 0u);
   EXPECT_FALSE(compiled.report.mixed_providers());

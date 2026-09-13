@@ -137,8 +137,10 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - Windows 当前 Graph/oneDNN/CPU 七组定向目标通过，并覆盖 exact region input/output/workspace、真实 boundary
   copy、provider-owned workspace、resource-route fallback 与 budget serialization。这仍不是 G70--G81
   终局证据；
-- 剩余硬门是 shared-only P0 短路径复核、真实 CUDA 同 storage 多 lane/capture 探针，以及故障、sanitizer、
-  三平台和三交付验证。
+- shared-only P0 结构复核通过：普通三节点单 lane 仍为一个 shared segment、一次 QueueSequence
+  finalization、零 delegated/serialization/dependency，并由既有 metadata allocator 探针覆盖 steady submit
+  零 Graph allocation；owner 判别按 segment 而非 node。旧 v2 P1 不换 revision 冒充当前证据；
+- 剩余硬门是真实 CUDA 同 storage 多 lane/capture 探针，以及故障、sanitizer、三平台和三交付验证。
 
 ## 七问（AUDITED）
 

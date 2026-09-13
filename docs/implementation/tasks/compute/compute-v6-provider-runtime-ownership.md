@@ -116,6 +116,14 @@ probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 
 当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及相关逐头目标；这只
 是施工检查点，不替代终局三平台、sanitizer、三交付和 P0 裁决。
 
+shared-only P0 复核确认两层边界没有被 delegated SPI 污染：公开 direct `OperationInvocation::submit()` 由
+冷 prepare 保证只能持有 shared artifact，release code 以该不变量直接调用 `shared_submit`，不做 runtime
+mode 搜索或动态分派；Graph 的普通单 target/storage/lane 三节点计划仍折叠为一个 shared segment、一个
+QueueSequence finalization、零 delegated segment、零 serialization edge 和零 dependency。Graph 只在每个
+预编译 segment 边界判别一次 shared/delegated owner，不按 node 判别；已有 steady-submit metadata allocator
+探针继续证明零新增 Graph allocation。旧 P1 bundle 不冒充当前 v7 revision，正式 P1 只在完整 candidate 后
+运行一次。
+
 ## 七问（AUDITED）
 
 1. 第三方：本体不新增第三方；锁定源码/官方文档只证明 seam，真正依赖由具体 provider factor 拥有。
