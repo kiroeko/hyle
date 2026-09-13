@@ -375,10 +375,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/graph-provider-onednn-v2-ukernel-region.md",
+      "blocked_from": "CANDIDATE",
+      "blocker": "W1-WIN qualified P1/P2 的最小 decode fused-boundary 行在 3/8 strata 的 99.26% CI 下界略穿过固定 5% 非劣界限，combined engineering performance 为 INCONCLUSIVE；源码账单未发现可依法为本 benchmark 单独修复的产品错误。",
+      "blocker_owner": "Graph runtime/plan 的通用 warmed-submit 成本合同，以及 graph_provider_onednn 的 5% P1 gate",
+      "resume_condition": "后续 Runtime/Graph 因动态 specialization、真实异步 backend、跨设备 placement/copy/sync 或 capture/replay 的真实消费者需求形成新 candidate，并自然改变 common submit path 后，重新从 SCOPED 审计本 factor；追加样本、放宽 margin 或 oneDNN 专用 fast path 不构成恢复。",
       "candidate": "49dcaa09139f79848af6ece1289e15739556ed9a",
-      "summary": "graph_provider_onednn v2 CANDIDATE：GP20--GP26 的精确四节点 dense-f32 gated MLP region 已实现；Windows 12 项行为测试及 source/relocated shared/relocated static Graph 消费全部通过。qualified P1/P2、WSL sanitizer/package、两台 Apple 可选能力回放、终局 P0 与红队仍待完成。"
+      "summary": "graph_provider_onednn v2 BLOCKED：精确四节点 dense-f32 gated MLP region 的 Windows correctness/三交付已通过；qualified P1/P2 中三个 workload 8/8 PARITY/PASS，但最小 decode fused-boundary 有 3/8 strata 的 CI 略穿 5% 非劣门，工程性能保持 INCONCLUSIVE。后续只可由真实 Runtime/Graph 主干变化恢复，不为 benchmark 特判。"
     },
     {
       "module": "compute_ops",

@@ -170,6 +170,35 @@ executor backing 必须活过 Context 及其 artifacts/invocations。Graph-only 
   和红队；
 - reopen triggers：不适用，当前为 blocker 恢复审计；
 - LOC：终局统计；
-- 当前状态与理由：`CANDIDATE`；GP20--GP26 已在不可变产品提交中实现，Windows 行为与三交付通过；
+- candidate checkpoint：GP20--GP26 已在不可变产品提交中实现，Windows 行为与三交付通过；
   v1 的 oneDNN Graph API blocker 仍然有效且未被绕过。其余预声明 gate 未完成，不能提前写成
   `CLOSED`。
+
+## 终局资格化与 BLOCKED 裁决（2026-09-13）
+
+- 唯一 qualified W1-WIN 运行使用锁定 oneDNN 3.13.2、MSVC 19.50、Release static、portable ISA、
+  LTO off，并完成预声明的 `n=15 -> n=31`。artifact/build identity、consumer provenance、A/A、5%/10%
+  known-delta、timer-floor、placement 和 host/input stability 全部通过；bundle 与完整方向记录归档在
+  [`benchmarks-compute-graph.md`](../../evidence/performance/benchmarks-compute-graph.md#graph-onednn-gated-mlp-region-p1p2)；
+- decode natural-sequence、short-prefill fused-boundary 与 short-prefill natural-sequence 三个 workload
+  都是八个 strata `PARITY`、non-inferiority=`PASS`。这证明完整自然 region 任务没有 material fixed loss，
+  也没有把逐 op mapping/submission 成本偷偷从 Graph 一侧移走；
+- 最小 decode fused-boundary 的八个 median ratio 为 `0.9622--0.9817`。五行是 `PARITY/PASS`，三行
+  99.26% CI 下界 `0.9444--0.9495` 略穿过固定 5% 非劣界限，因此 combined exact=`INCONCLUSIVE`、
+  engineering non-inferiority=`UNRESOLVED`。总 qualification gate 是 `PASS`，总 performance gate 是
+  `INCONCLUSIVE`；不能把它改名为 parity 或继续追加样本寻找 PASS；
+- 一次源码/P0 根因账单没有发现错误 kernel、allocation、JIT、copy 或 route search。相对 direct fused
+  peer，Graph 必须额外完成 in-flight 原子 admission/terminal、external binding 完整性检查、五个
+  `TensorView` staging、queue sequence、region vtable 与 Completion poll/settle。约 3% 中位方向来自当前
+  通用 Graph 安全/组合语义；没有真实 consumer 依据允许增加 benchmark-only one-step fast path；
+- 因工程性能门没有得到明确 `PASS`，本 factor 从 `CANDIDATE` 转为 `BLOCKED`，
+  `blocked_from=CANDIDATE`。WSL sanitizer/package、两台 Apple 可选能力和终局独立红队在该终局 blocker
+  后不再运行，也没有被写成 PASS；Windows 已取得的 correctness/三交付证据仍保留为事实；
+- blocker owner：Graph runtime/plan 的通用 warmed-submit 成本合同，以及本 factor 的 5% P1 gate；
+- resume condition：后续 Runtime/Graph 主干必须因动态 specialization、真实异步 backend、跨设备
+  placement/copy/sync 或 capture/replay 等真实消费者需求形成新的产品 candidate；若该架构工作自然改变
+  common submit path，才可重新从 `SCOPED` 审计本 factor、重建不可变 candidate 并运行一次新 P1。仅有
+  更多样本、放宽 margin、删除安全检查或增加一条 oneDNN 专用 fast path 不构成恢复条件。
+
+本 blocker 只属于可选 `graph_provider_onednn` 叶子，不阻塞 Compute/Graph 主干、CUDA/Metal/Vulkan
+backend 或其它 provider 的合法施工；也不授权继续扩大 CPU 算子目录来摊薄固定成本。
