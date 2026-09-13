@@ -70,6 +70,12 @@ Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass
 由 Graph compile 决定。编译结果公开为不可变可共享的 `graph::Executable`，每次运行状态放在独占的
 `graph::Invocation`。详细合同见 [Compute 设计](compute-design.md)与 [Graph 设计](graph-design.md)。
 
+异构资源固定分成 device/context、storage domain 和 execution lane 三条轴：值 placement 与 workspace
+按 domain/resource 规划，命令按 lane/Queue 排序；同一 domain 可以有多条 compute/copy/capture lane。
+`execution lane` 是 Compute core 与 Graph plan 的共同语义，不单独制造用户产品或 factor。Provider 则
+明确分为使用 HYLE Queue/resource 的 shared-runtime 路线，以及自有 allocator/stream/context、通过显式
+boundary 与 Completion bridge 接入的 delegated-runtime island；每个 delegated provider 仍是独立 factor。
+
 Apple Silicon 栈（MLX-first provider + 原生 Metal backend/custom-kernel escape hatch）和 NVIDIA 栈
 （CUDA backend + 经审计的 vendor/ggml/HYLE provider）是首要优化目标。Vulkan 是面向广泛消费级设备与
 renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 走 MoltenVK portability；它不

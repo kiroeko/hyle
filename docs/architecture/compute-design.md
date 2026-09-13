@@ -37,7 +37,8 @@ typed backend Module/Kernel + Queue -> submit() -> Completion
 ```
 
 - `Device` 是可复制的能力描述，不拥有 runtime；`Context` 拥有 backend/provider 会话。
-- `Queue` 表达有序、单 producer 的提交域；不能用全局默认 stream 隐藏 affinity 或同步。Graph 等组合者
+- `Queue` 表达一个有序、单 producer 的**执行 lane**；同一 Context 和同一 storage domain 可以建立多个
+  Queue，用于计算、copy、capture 或独立并发请求。不能用全局默认 stream 隐藏 affinity 或同步。Graph 等组合者
   可取得一个短生命周期 submission-sequence guard，使一组命令连续录入；guard 只覆盖 host enqueue，
   绝不持有到设备执行结束。
 - `TensorDesc` 把 logical dtype/shape 与 physical storage format/byte layout 分开；fixed block encoding
@@ -88,6 +89,43 @@ Provider 必须声明而不能让调用方猜测：
 Provider 可以自行拥有 device allocation 或 graph allocator。HYLE 必须如实保留这个 owner；不能把
 一个伪造的 `BufferView` 当成零拷贝。ggml CUDA 的历史调查只证明这种风险真实存在，见
 [ggml provider 的 storage 约束](borrowing-ggml-memory-model.md)；adapter 开工时仍须对锁定版本复验。
+
+### 3.1 设备、storage domain 与 execution lane 是三条正交轴
+
+异构运行时不能用一个 `domain` 同时表示“在哪里存”“由谁执行”和“按什么时间线提交”。长期合同明确
+区分：
+
+| 轴 | 身份与 owner | 典型实例 |
+|---|---|---|
+| device/context | backend runtime、能力和 native interop | CPU context、CUDA context、Metal device |
+| storage domain | allocation、可见性、coherence 和 budget | host、pinned host、device-local、managed/unified |
+| execution lane | 一个 ordered Queue/timeline 及其用途 | compute stream、copy stream、capture stream、CPU caller lane |
+
+一个 storage domain 可以被同一 Context 的多个 lane 访问；一个 lane 也可以合法读写多个兼容 resource。
+Graph 的值 placement 首先选择 storage domain，step scheduling 再选择 execution lane。不能通过复制
+storage domain 来伪造多 stream，因为那会错误复制 workspace、liveness 和物理值身份。Queue/lane 不拥有
+tensor payload，storage domain 也不暗示一个唯一 Queue。
+
+普通用户仍只需建立一条默认 lane。多 lane 只能在 compile/prepare 冷路径形成并写入 report；它不得让
+单 Queue 路线增加每 step 搜索、动态分配或隐藏同步。通用 Queue 选项只接纳至少两个正式 backend 共享且
+语义一致的属性；vendor-specific priority、capture、engine 或 native stream 参数继续放在 typed backend
+extension 中。
+
+### 3.2 Provider 的两种诚实运行模式
+
+Provider 在同一 capability/compile 协议下必须声明其执行资源属于哪一种模式：
+
+1. **shared-runtime provider**：使用 HYLE Context、MemoryResource 和 Queue 录入命令，例如 HYLE native、
+   共享 CPU executor 的 oneDNN，以及确实能借入 HYLE stream 的 provider；
+2. **delegated-runtime island**：provider 自己拥有 allocator、stream、graph/context 或线程 runtime，例如
+   不能自然借入 HYLE Queue 的 MLX/第三方完整 region runtime。Graph 只通过显式 boundary binding、copy/
+   interop、依赖和 Completion bridge 调用该 island。
+
+两种模式共享 operation/region、layout、precision、failure 和诊断语言，但不能共享一份虚假的资源所有权。
+compiled artifact 必须保活真实 runtime owner，并报告输入输出 residence、可否零拷贝、host blocking、内部
+线程、并发 invocation、capture、取消和 drain。delegated island 不得忽略传入 HYLE Queue 后在另一条未知
+stream 偷跑，也不得把 provider completion 当作已经加入 HYLE timeline；无法建立明确 bridge 时该 route
+就是不支持。
 
 ## 4. 平台栈与优先级
 
@@ -252,6 +290,10 @@ graph_plan -> compute + mem                            # 当前为 Graph 内部�
 graph_sched -> graph_plan + compute_sched + sched      # 未来可选运行时组合
 ```
 
+`execution lane` 是 Compute core 的资源语义、也是 Graph plan 的调度维度，不满足独立用户产品、依赖 owner
+或测试 owner，当前不拆成 `compute_lane` factor。每个 delegated provider 仍按其外部依赖、runtime owner、
+构建开关和测试资格建立独立 provider factor，不能做一个聚合所有第三方 runtime 的万能 adapter target。
+
 `compute_core` 不因 coroutine convenience 强制公开依赖 Sched；需要 `co_await`/task 组合的用户取得窄的
 bridge factor。可选 provider/backend 各自拥有外部依赖和 feature 开关，未选择时不下载、不编译、
 不导出恒定失败 stub。Compute 永远不依赖 Graph。
@@ -272,7 +314,8 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 1. prepare/compile 后的 submit 不做 provider 搜索、shape inference、JIT、常量 packing 或无关 allocation；
 2. direct static kernel 可编译期路由，prepared op/region 至多支付一次预绑定调用边界，不按 element 分发；
 3. provider 选择同时计入 kernel、layout/repack、copy、同步、thread handoff 和 workspace，不能只比 kernel；
-4. host/device transfer 可批处理并与计算重叠时应显式表达，不通过隐藏 staging 制造假零拷贝；
+4. host/device transfer 可批处理并与计算重叠时应以独立 execution lane 和显式依赖表达，不通过隐藏
+   staging 或复制 storage domain 制造假零拷贝；
 5. provider 自有线程必须可配置或在 region 级隔离，禁止与 HYLE workers 无界嵌套造成 oversubscription；
 6. compile latency、warm execution、steady throughput、tail、peak/resident memory、copy bytes 与能耗分别报告。
 
@@ -305,22 +348,38 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
    验出抽象税，而不是等 Compute 大全套完成后才发现形状不合。
 5. **多节点 CPU slice**：以量化模型中的 normalization → matmul → gated activation 为首个真实片段，
    加 liveness/alias/workspace、ggml/oneDNN 候选 provider 和直接路线对拍。
-6. **主要平台 slice**：NVIDIA 走 CUDA backend 与合格 CUDA providers；Apple 先资格化 MLX region，
-   同轮建立原生 Metal custom-kernel/interop 路线并审计 MPSGraph/MPS；随后扩 attention、quantized
-   matmul、repack 和异构 partition。Core ML 不进入首轮低层路线。
-7. **Vulkan slice**：同一 graph/op 合同落到 SPIR-V，验证 native device、buffer、timeline completion、
+6. **异步资源探针**：先在 CUDA 走通同一 storage domain 上的 copy lane → compute lane → copy lane，
+   覆盖 device dependency、Completion 聚合和 capture/replay；它是 execution-lane 合同的验收，不是提前
+   扩大 CUDA 算子目录。
+7. **主要平台 slice**：NVIDIA 走 CUDA backend 与合格 CUDA providers；Apple 先资格化 MLX delegated
+   region，验证 provider-owned runtime 的 boundary/completion bridge；同轮建立原生 Metal custom-kernel/
+   interop 路线并审计 MPSGraph/MPS；随后扩 attention、quantized matmul、repack 和异构 partition。Core ML
+   不进入首轮低层路线。
+8. **Vulkan slice**：同一 graph/op 合同落到 SPIR-V，验证 native device、buffer、timeline completion、
    external memory/sync 与 Windows/Linux 消费级设备；MoltenVK 只签 portability 证据。
-8. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
+9. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
    invocation、取消/drain 和 source/static/shared 交付门。
-9. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
+10. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
    证明上述对象与执行合同不再需要改写后，才按推理热路径与正交工程 workload 系统补齐 CPU 算子；
    每条新 route 复用既有 plan/provider seam，不借“补算子”重新设计 runtime。
 
 因此本顺序不是“先造所有算子，再看它们能否组成图”，也不是脱离执行负载追求抽象意义上的完整 Graph。
-在第 3--8 步，每条纵切只补充用于验证 ownership、layout、partition、workspace、completion 或异步语义的
+在第 3--9 步，每条纵切只补充用于验证 ownership、layout、partition、workspace、completion 或异步语义的
 最少算子；目录式 CPU kernel 填充必须等待这些结构经真实消费链压实。进度报告也必须把“schema 已定义”、
 “已有 executable route”和“系统性 catalog 完成”分开，不能用前两者冒充第三者。
 
 每一步都先创建合法 closure card 并完成 `SCOPED -> AUDITED`，只实现冻结的有限 `FIX/BORROW/DELETE`
 集合；未达到下一步所需的 lifecycle、correctness 或 P0 成本结构就停止为 `BLOCKED`，不靠扩 benchmark
 或继续研究掩盖状态。
+
+## 11. 架构稳定条件
+
+本轮跨 ggml/llama.cpp、vLLM、SGLang、ds4、oneDNN、ONNX Runtime、TensorRT、IREE、PJRT 与
+ExecuTorch 的调查只签发上述边界，不把任何 peer 的完整 runtime 复制为 HYLE 产品。实现必须先通过四个
+架构探针：CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 domain 多 lane/capture、
+Apple delegated MLX region + 原生 Metal interop。
+
+这些探针通过并形成候选后，只有下列新事实允许重开 Compute 架构：真实探针与合同矛盾；第二个独立
+消费者需要现有 ownership/concurrency/control seam 无法表达的机制；正式 backend API 使合同不可实现；
+或合格同合同证据证明 material 热路径成本根因位于公共抽象。新增 operation、模型或 provider 若能进入
+现有 typed operation/region/backend extension，不构成架构重开理由。

@@ -70,7 +70,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> compute::Completio
 
 ### `Invocation`
 
-- 每次并发执行独占的可变对象；绑定 inputs/outputs、workspace、Queue route、completion/capture state 和
+- 每次并发执行独占的可变对象；绑定 inputs/outputs、workspace、execution-lane route、completion/capture state 和
   provider run state。symbol 在 compile 时已经固定，不在 warm invocation 中变化。
 - 默认非线程安全，但可在上次 Completion 结束后 reset/reuse；并发请求各用一个 Invocation。
 - submit 后所有 borrow 和 workspace 活到 Completion 终态；in-flight 时 bind/reset/resubmit 明确失败，取消
@@ -98,7 +98,28 @@ HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同�
 
 首轮不提供任意 `if/while`、递归图或模型脚本解释器。recurrent-depth、speculative 和 adaptive compute
 先由引擎重复提交一个或多个 Executable，并负责 active-set、停止与重聚批。Graph 必须让这种 replay
-低成本且 state binding 显式；只有第二个通用消费者证明 region/control-flow primitive 必要时才扩 IR。
+低成本且 state binding 显式。内部 IR 从首轮起使用可嵌套的 typed region 边界，而不是把所有 node 永久
+焊死为只能存在于顶层：v1 region 只承载 provider partition，不签发公开控制流。只有第二个独立通用消费者
+或真实 recurrent/device-loop 纵切证明必要时，才以新版本增加 counted loop/conditional region；不得为此
+把 Graph 变成脚本 VM，也不得要求已有有限 DAG 改写。
+
+### 4.1 Resource domain 与 execution lane
+
+Graph 分别规划“值在哪里”和“step 沿哪条时间线执行”：
+
+- `ExecutionDomain` 绑定 Compute Context、workspace resource 和 storage-locality 合同；value placement、
+  liveness、alias 与 workspace 都按 domain/resource 推导；
+- `ExecutionLane` 绑定一个 domain 与一个 ordered execution endpoint；shared-runtime lane 在
+  `prepare_replay` 时绑定调用方提供的 exact Queue，delegated-runtime lane 则由 provider artifact/invocation
+  保活其私有 timeline，并暴露明确的 dependency/Completion bridge；同一 domain 可以有 compute、copy 或
+  独立并发 lane；
+- compile 决定每个 segment 的 lane identity、运行模式和依赖。Graph 不创建全局 stream、线程池或 Queue，
+  也不要求 delegated runtime 伪造 HYLE Queue；
+- 默认环境为每个 active domain 建一条 lane，保持普通 CPU/单 stream 用户的紧凑路径。多 lane 只在其
+  copy/overlap/capture 收益和额外 memory/event 成本都能写入 CompileReport 时启用。
+
+因此不能把两个 Queue 表达成两个假的 storage domain，也不能从 Queue 地址反推 tensor residence。跨 lane
+依赖优先成为 device wait/timeline edge；只有显式 policy 允许时才退到 report 中可见的 host wait。
 
 ## 5. 编译流水线
 
@@ -107,12 +128,13 @@ HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同�
 1. **validate/canonicalize**：检查拓扑、shape、dtype、alias、side effect 和输出；
 2. **infer/normalize**：传播 shape/layout 约束，把等价 operation 变成稳定形式；
 3. **capability match**：询问每个 Compute provider 对 op 或 region 的真实支持、结构成本和可选量化估值；
-4. **partition/place**：按调用方选择的 admission 策略选择 regions 与 devices，不把不可移植的计时常数
+4. **partition/place**：按调用方选择的 admission 策略选择 regions 与 storage domains，不把不可移植的计时常数
    冒充通用性能 oracle；
 5. **materialize boundaries**：为跨 domain canonical tensor 插入真实 copy；同步表示为 segment dependency，
    而不是虚构 barrier step。只有版本化 provider layout 合同能证明两端含义时才插入真实 repack；
 6. **liveness/alias/workspace**：把 tensor facts 转成 Mem `LifetimePlanner` 能理解的 interval/resource 请求；
-7. **lower/compile**：取得 provider artifact、native command/capture 或 HYLE kernel route；
+7. **schedule/lower/compile**：在 domain placement 固定后选择 execution lanes，建立跨 lane dependency，
+   再取得 provider artifact、native command/capture 或 HYLE kernel route；
 8. **emit plan/report**：生成不可变 graph plan 与可诊断 compile report。
 
 Partition 成本必须覆盖跨 region copy/sync、layout conversion、thread handoff、workspace、首次编译和常量
@@ -127,6 +149,11 @@ provider 若能给出面向当前 specialization 且可移植的正净收益估�
 和首要 score；unknown 与精确零必须保持可区分，不能用某次微基准的 `1 ns` 填空。非连续 subgraph、
 跨设备 partition 或不同成本单位必须建立新版合同，不能悄悄改变当前 route 语义。
 
+Region proposal/artifact 同时声明 shared-runtime 或 delegated-runtime 模式。前者必须能在所选 HYLE Queue
+sequence 中录入；后者必须给出 provider-owned invocation/timeline、边界 tensor residence、输入依赖消费和
+完成导出合同。Graph 把 delegated region 视为显式 island segment，在两端物化必要 copy/interop 和同步；
+不得让 adapter 忽略 HYLE Queue 后在未知 stream 执行，也不得把一次 host API 返回误作设备完成。
+
 ONNX Runtime 的 execution-provider partition、oneDNN 的 partition/compiled partition、TensorRT 的
 network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作为该流水线的独立参照；HYLE
 不复制它们的 public API，也不把其中任何一个强行定为唯一执行引擎。
@@ -134,18 +161,20 @@ network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作�
 ## 6. Plan 的热路径合同
 
 内部 graph plan 是已经排好序的 region/copy/dependency/workspace 程序。每个 step 持有预绑定 callable
-或 backend command；Invocation 只填充运行时 slots。Plan 冷生成使用确定性 Kahn 调度：每个 domain 保持
-ready FIFO，并尽量延续当前 domain，以减少不必要的 segment/finalization；这是有界结构启发式，不宣称
+或 backend command；Invocation 只填充运行时 slots。Plan 冷生成使用确定性 Kahn 调度：每个 lane 保持
+ready FIFO，并尽量延续当前 lane，以减少不必要的 segment/finalization；domain 负责 storage locality，
+lane 负责执行顺序；这是有界结构启发式，不宣称
 求解一般 DAG 的全局最优设备并行调度。
 
 - `prepare_replay` 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、
   不打包常量，也不再查询 transfer/dependency capability；
 - workspace layout 对固定 specialization 不变；允许 caller/pool 预留，正常 replay 零 heap allocation；
 - per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
-- plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入；provider/region step 只返回接纳事实，
+- plan 在同一 execution lane 的 ordered Queue 上以一个不中断 submission sequence 录入；provider/region step 只返回接纳事实，
   sequence 在 segment 边界一次 finalizes 为 prefix Completion，不按 node 创建再覆盖 event。多 Queue plan
   保存各 segment 前缀。`prepare_replay` 按 exact Queue identity 把 dependency 固定为 ordered Queue、同步
-  source、device wait 或 host wait；host wait 只作为 `ReplayReport` 明示且可由 policy 拒绝的不兼容
+  source、device wait 或 host wait；同一 domain 的不同 lane 也必须走该依赖模型，不能因共享内存而假设
+  已同步。host wait 只作为 `ReplayReport` 明示且可由 policy 拒绝的不兼容
   fallback，并在取得 destination Queue admission 前完成。可由 queue/event 表达的 dependency 不退化成
   同步 round-trip；
 - CompileReport 独立拥有轻量 metadata，并逐 step 枚举 kind、fallback reason、node range、device/provider/version、constant
@@ -195,7 +224,8 @@ Graph 至少要用三种不同层级验证：
 
 1. **one-op 税**：Graph Executable 对同一 PreparedOperation 的额外 steady 成本；同 buffer/layout/queue；
 2. **multi-op 收益**：真实 region 的 submission、fusion、workspace reuse、copy/sync 与 direct sequence 对比；
-3. **消费者纵切**：量化 transformer block 的 prefill/decode，以及 Vulkan compute 的资源流水线。
+3. **消费者纵切**：量化 transformer block 的 prefill/decode、CUDA 同 domain 多 lane copy/compute capture，
+   以及 Vulkan compute 的资源流水线。
 
 每项都记录 compile/cold 与 execution/warm 两种边界，不能把 compile amortize 后与 peer 每次 prepare 对比，
 也不能把 HYLE external storage 与 peer 内部 cache 混为同合同。正确性覆盖 shape/stride/zero-size、alias、
@@ -217,11 +247,12 @@ provider/backend workload 上形成可解释收益。
 2. 加 HYLE SIMD/native provider，证明同一 Graph 无需改写即可选择另一实现；
 3. 扩为 normalization → matmul → gated activation，接 Mem liveness/workspace；
 4. 接 ggml/oneDNN region，验证 provider-owned allocation/threading 的诚实边界；
-5. 优先落到两条主平台栈：NVIDIA 的 CUDA backend/providers；Apple 先资格化 MLX compiled region，
+5. 先用 NVIDIA CUDA 验证同一 storage domain 的 copy lane → compute lane → copy lane、设备依赖和 capture；
+6. 再完成两条主平台栈：NVIDIA 的 CUDA backend/providers；Apple 先资格化 delegated MLX compiled region，
    同时保留原生 Metal custom-kernel/interop 和 MPSGraph/MPS 候选；Core ML 留在模型级 routed runtime
    边界；
-6. 再落到正式支持的 Vulkan SPIR-V，验证消费级设备与 renderer 的 external memory/semaphore handoff；
-7. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
+7. 再落到正式支持的 Vulkan SPIR-V，验证消费级设备与 renderer 的 external memory/semaphore handoff；
+8. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
    Graph 产品资格。
 
 上述步骤中的算子只作为真实纵切的最小架构探针：先用 gated MLP 检验常量、分支、region、workspace 与
@@ -233,3 +264,14 @@ liveness，再用 attention/decode 检验动态 binding、resource state、异�
 每一步都有独立 closure card、固定 consumer slice 和停止预算。one-op lifecycle、P0 成本或三种 C++ 交付
 未通过时，不得用“后面完整 graph 会摊薄”进入下一步；provider region 不成立时也不得扩大 operator
 catalog 掩盖根因。
+
+## 11. 架构稳定条件
+
+Graph 架构只在四条探针上接受或反证：CPU one-op 抽象税、CPU multi-op region/workspace、CUDA 同 domain
+多 lane/capture、Apple delegated MLX region 与原生 Metal interop。探针只允许修正它直接反证的 seam，
+不能借机横向增加 operation catalog 或模型 runtime。
+
+形成候选后，只有真实纵切与合同矛盾、第二个独立消费者需要现有 ownership/concurrency/control-flow
+机制无法表达的能力、正式 backend/provider 无法实现合同，或合格证据证明 material 热路径税来自 Graph
+抽象，才允许重开架构。新的 op、shape bucket 或 provider 若能表示为既有 typed node/region/specialization，
+只新增 route，不重开 Graph 生命周期和资源模型。
