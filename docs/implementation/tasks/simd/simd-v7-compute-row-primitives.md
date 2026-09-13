@@ -119,6 +119,11 @@ smoke：四项 correctness oracle 均通过，但 select 等点值随执行顺�
 verdict，也没有据此改变产品；正式 P1 只允许在不可变 candidate 上以 15 个独立进程、双顺序和双
 placement 执行一次完整 qualification。
 
+产品/API/算法/P1 输入已固定为 commit
+`c033ca40d3f119912927c52954079d8c01d6ec12` / tree
+`fdcfb2aaef604fe97956f2d82485dbf5dd71a15d`。此后只允许候选绑定的 P1、跨平台/交付/消毒器回放、
+终局红队和事实文档；若发现产品缺陷必须退回 `AUDITED`，不得在 `CANDIDATE` 上继续调形状。
+
 ## 七问（AUDITED）
 
 1. 第三方：Highway/xsimd 均由中央 lock/cache 管理，Apache-2.0/BSD-3-Clause 归档随安装；本轮只使用

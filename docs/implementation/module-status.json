@@ -168,9 +168,10 @@
     },
     {
       "module": "simd",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/simd/simd-v7-compute-row-primitives.md",
-      "summary": "simd-v7 AUDITED：锁定 full-precision f32 reciprocal-sqrt、IEEE number fmin/fmax、byte-bool f32 select 与 propagating extrema signed-zero 修复；Highway 提供七档 lowering，HYLE 只补语义 adapter，有限 S7-F1..F5 已冻结。"
+      "candidate": "c033ca40d3f119912927c52954079d8c01d6ec12",
+      "summary": "simd-v7 CANDIDATE：Compute 驱动的 exact reciprocal-sqrt、number min/max、byte-bool select 与零常态符号税的 extrema 已完成；fat/exact/Native 定向门及 P1 adapter 通过，候选固定为 c033ca40，待唯一正式 P1、三平台/三交付和终局红队。"
     },
     {
       "module": "container",
