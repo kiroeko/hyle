@@ -370,9 +370,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-provider-onednn-v3-sequence-spi.md",
-      "summary": "graph_provider_onednn v3 SCOPED：Compute v5/Graph v6 已自然改变 common submit path，依法恢复后只审计 region 的 EnqueueResult/segment-finalization 迁移；不改 kernel/layout/算子，也不重跑旧 per-step P1。"
+      "summary": "graph_provider_onednn v3 AUDITED：OR60--OR62 冻结 region EnqueueResult、首次实际执行 acceptance 与 extension version 迁移；公开 factory/kernel/layout 不变，P0 消除每-region Completion，P1 等完整 Runtime/Graph candidate。"
     },
     {
       "module": "compute_ops",
