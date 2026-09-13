@@ -8,4 +8,5 @@ hyle_add_test(compute_provider_native SOURCES
   indexing_test.cc
   normalization_test.cc
   reduction_test.cc
-  transform_test.cc)
+  transform_test.cc
+  transformer_test.cc)

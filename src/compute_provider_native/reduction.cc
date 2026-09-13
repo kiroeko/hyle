@@ -117,16 +117,15 @@ submit_reduction(const NativePlan &plan,
   if ((plan.reduction_kind == ReductionKind::kSum ||
        plan.reduction_kind == ReductionKind::kMean) &&
       plan.reduction_route == ReductionRoute::kAllDense) {
-    output_data[0] =
-        input_elements == 0 ? 0.0F : simd::sum(dense_input, input_elements);
+    output_data[0] = simd::sum(dense_input, input_elements);
   } else if ((plan.reduction_kind == ReductionKind::kSum ||
               plan.reduction_kind == ReductionKind::kMean) &&
              plan.reduction_route == ReductionRoute::kLastAxisDense) {
     for (std::size_t row = 0; row < output_elements; ++row) {
-      output_data[row] = reduced_elements == 0
-                             ? 0.0F
-                             : simd::sum(dense_input + row * reduced_elements,
-                                         reduced_elements);
+      const float *row_input =
+          dense_input == nullptr ? nullptr
+                                 : dense_input + row * reduced_elements;
+      output_data[row] = simd::sum(row_input, reduced_elements);
     }
   } else {
     const TensorDesc &input_description = inputs[0].description();

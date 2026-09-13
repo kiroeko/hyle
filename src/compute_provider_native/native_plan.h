@@ -20,6 +20,9 @@ enum class ReductionRoute : std::uint8_t {
 using SubmitRoute = detail::EnqueueResult (*)(
     const NativePlan &plan, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept;
+using WorkspaceSubmitRoute = detail::EnqueueResult (*)(
+    const NativePlan &plan, std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs, mem::BufferView workspace) noexcept;
 using LinearElementwiseRoute = void (*)(const void *first, const void *second,
                                         const void *third, void *output,
                                         std::size_t count) noexcept;
@@ -27,6 +30,9 @@ using ScalarElementwiseRoute = void (*)(const std::byte *first,
                                         const std::byte *second,
                                         const std::byte *third,
                                         std::byte *output) noexcept;
+using RopeKernelRoute = void (*)(const float *input, const float *frequencies,
+                                 float *output, std::size_t pairs,
+                                 float position) noexcept;
 
 // Cold prepared metadata shared by the native operation families. A family
 // selects one submit route during prepare; submit never searches by kind or
@@ -40,12 +46,24 @@ struct NativePlan final {
   ReductionRoute reduction_route = ReductionRoute::kGeneral;
   std::uint8_t reduction_axes_mask = 0;
   std::size_t axis = 0;
+  std::size_t count = 0;
+  std::size_t rotary_dimensions = 0;
+  std::size_t sequence_axis = 0;
   IndexBoundsPolicy index_bounds = IndexBoundsPolicy::kChecked;
   ScatterKind scatter_kind = ScatterKind::kAssign;
+  RopeLayout rope_layout = RopeLayout::kInterleaved;
+  SoftmaxKind softmax_kind = SoftmaxKind::kSoftmax;
+  MaskKind mask_kind = MaskKind::kNone;
+  bool largest = true;
+  bool sorted = true;
+  bool stable = true;
+  WorkspaceRequirement workspace{};
   detail::NativeRoute route = nullptr;
   LinearElementwiseRoute linear_elementwise_route = nullptr;
   ScalarElementwiseRoute scalar_elementwise_route = nullptr;
+  RopeKernelRoute rope_kernel_route = nullptr;
   SubmitRoute submit_route = nullptr;
+  WorkspaceSubmitRoute workspace_submit_route = nullptr;
   std::size_t alias_input0_offset = 0;
   std::uint8_t alias_input_mask = 0;
 };
@@ -136,5 +154,9 @@ Status prepare_indexing(Operation operation,
                         std::span<const TensorDesc> inputs,
                         std::span<const TensorDesc> outputs,
                         NativePlan &plan) noexcept;
+Status prepare_transformer(Operation operation,
+                           std::span<const TensorDesc> inputs,
+                           std::span<const TensorDesc> outputs,
+                           NativePlan &plan) noexcept;
 
 } // namespace hyle::compute::native::internal

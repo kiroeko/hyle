@@ -1326,6 +1326,12 @@ Status infer_output_descriptions(const Operation &operation,
       first = std::unexpected(std::move(axis).error());
       break;
     }
+    if (inputs[0].dimensions()[*axis] >
+        static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max())) {
+      first = std::unexpected(Status::OutOfRange(
+          "TopK selected dimension cannot be represented by i32 indices"));
+      break;
+    }
     auto count = math::try_integer_cast<std::int64_t>(top_k.count);
     if (!count || *count > inputs[0].dimensions()[*axis]) {
       first = std::unexpected(

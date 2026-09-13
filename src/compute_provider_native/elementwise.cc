@@ -9,6 +9,7 @@
 #include <span>
 #include <utility>
 
+#include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/ops.h"
@@ -216,9 +217,14 @@ submit_elementwise(const NativePlan &plan,
   for (const ConstTensorView &input : inputs)
     aliases_output =
         aliases_output || same_storage_range(input.storage(), output_storage);
-  if (aliases_output && plan.parameters[1] == 0) {
-    return completed(Status::InvalidArgument(
-        "broadcast or strided elementwise input cannot alias its output"));
+  if (aliases_output) {
+    for (std::size_t index = 0; index < inputs.size(); ++index) {
+      if (same_storage_range(inputs[index].storage(), output_storage) &&
+          (plan.alias_input_mask & (std::uint8_t{1} << index)) == 0) {
+        return completed(Status::InvalidArgument(
+            "broadcast or strided elementwise input cannot alias its output"));
+      }
+    }
   }
 
   for (std::size_t index = 0; index < inputs.size(); ++index) {
@@ -308,11 +314,21 @@ submit_elementwise(const NativePlan &plan,
         "CPU elementwise mapping does not satisfy tensor alignment"));
   }
 
-  const void *second = inputs.size() > 1 ? source_data[1] : nullptr;
-  const void *third = inputs.size() > 2 ? source_data[2] : nullptr;
-  if (plan.parameters[1] != 0) {
-    plan.linear_elementwise_route(source_data[0], second, third, output_data,
-                                  elements);
+  const std::size_t linear_chunk = plan.parameters[1];
+  if (linear_chunk != 0) {
+    const auto output_dimensions = outputs[0].description().dimensions();
+    for (std::size_t base = 0; base < elements; base += linear_chunk) {
+      std::array<const std::byte *, 3> logical{};
+      for (std::size_t index = 0; index < inputs.size(); ++index) {
+        logical[index] = source_data[index] + logical_broadcast_byte_offset(
+                                                  inputs[index].description(),
+                                                  output_dimensions, base);
+      }
+      plan.linear_elementwise_route(
+          logical[0], inputs.size() > 1 ? logical[1] : nullptr,
+          inputs.size() > 2 ? logical[2] : nullptr,
+          output_data + base * plan.parameters[2], linear_chunk);
+    }
   } else {
     const auto output_dimensions = outputs[0].description().dimensions();
     const std::size_t output_element_size = plan.parameters[2];
@@ -412,6 +428,40 @@ bool dense_same_shape(const TensorDesc &input,
          std::ranges::equal(input.dimensions(), output.dimensions());
 }
 
+std::size_t dense_broadcast_suffix(
+    std::span<const TensorDesc> inputs,
+    const TensorDesc &output) noexcept {
+  if (!output.is_dense())
+    return 0;
+  for (const TensorDesc &input : inputs) {
+    if (!input.is_dense())
+      return 0;
+  }
+
+  const auto output_dimensions = output.dimensions();
+  std::size_t chunk = 1;
+  for (std::size_t reverse = 0; reverse < output_dimensions.size(); ++reverse) {
+    const std::size_t output_axis = output_dimensions.size() - 1 - reverse;
+    const std::int64_t output_extent = output_dimensions[output_axis];
+    bool all_match = true;
+    for (const TensorDesc &input : inputs) {
+      if (reverse >= input.rank() ||
+          input.dimensions()[input.rank() - 1 - reverse] != output_extent) {
+        all_match = false;
+        break;
+      }
+    }
+    if (!all_match)
+      break;
+    const auto next = math::try_multiply(
+        chunk, static_cast<std::size_t>(output_extent));
+    if (!next)
+      return 0;
+    chunk = *next;
+  }
+  return chunk > 1 ? chunk : 0;
+}
+
 Status validate_plain_f32(const TensorDesc &description) noexcept {
   if (description.data_type() != DataType::kFloat32 ||
       !description.is_plain()) {
@@ -433,6 +483,7 @@ Status prepare_elementwise(Operation operation,
   }
 
   bool linear = false;
+  std::size_t broadcast_chunk = 0;
   switch (operation.kind()) {
   case OperationKind::kUnary: {
     if (inputs.size() != 1)
@@ -465,6 +516,8 @@ Status prepare_elementwise(Operation operation,
       return Status::InvalidArgument("native Binary kind is invalid");
     linear = dense_same_shape(inputs[0], outputs[0]) &&
              dense_same_shape(inputs[1], outputs[0]);
+    if (!linear)
+      broadcast_chunk = dense_broadcast_suffix(inputs, outputs[0]);
     break;
   }
   case OperationKind::kSelect: {
@@ -493,11 +546,18 @@ Status prepare_elementwise(Operation operation,
   if (!elements)
     return std::move(elements).error();
   plan.parameters[0] = *elements;
-  plan.parameters[1] = linear ? 1 : 0;
+  plan.parameters[1] = linear ? *elements : broadcast_chunk;
   plan.parameters[2] = data_type_size(outputs[0].data_type());
   if (linear) {
     plan.alias_input_mask = static_cast<std::uint8_t>(
         (std::uint8_t{1} << static_cast<std::uint8_t>(inputs.size())) - 1);
+  } else if (broadcast_chunk != 0) {
+    for (std::size_t index = 0; index < inputs.size(); ++index) {
+      if (dense_same_shape(inputs[index], outputs[0])) {
+        plan.alias_input_mask = static_cast<std::uint8_t>(
+            plan.alias_input_mask | (std::uint8_t{1} << index));
+      }
+    }
   }
   plan.submit_route = &submit_elementwise;
   return Status::Ok();

@@ -223,6 +223,14 @@ TEST(OperationTransformer, CoversRoPESoftmaxTopKAndAttentionShapes) {
       infer_output_descriptions(top_k, std::array{hidden}, top_k_outputs).ok());
   EXPECT_EQ(top_k_outputs[0], tensor(DataType::kFloat32, 2, 7, 4, 5));
   EXPECT_EQ(top_k_outputs[1], tensor(DataType::kInt32, 2, 7, 4, 5));
+
+  constexpr std::int64_t too_wide =
+      static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()) + 1;
+  const TensorDesc wide = tensor(DataType::kFloat32, 1, too_wide);
+  EXPECT_TRUE(infer_output_descriptions(
+                  Operation(TopK{.count = 1, .axis = -1}),
+                  std::array{wide}, top_k_outputs)
+                  .IsOutOfRange());
   EXPECT_TRUE(infer_single_output(top_k, std::array{hidden})
                   .error()
                   .IsFailedPrecondition());

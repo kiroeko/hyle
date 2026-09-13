@@ -169,3 +169,8 @@ visibility owner，但 Compute 产品 façade 聚合后，用户仍只 include `
 2026-09-14 的 Native indexing checkpoint 已为 Gather、Scatter 与 Concat 增加可执行 CPU reference，目录
 进度更新为 **15/19 executable**。`compute_ops` 自身 schema/API 没有因此变化；余下未执行 family 是 RoPE、
 Softmax、TopK 与 ScaledDotProductAttention，仍不得把可描述冒充可执行。
+
+同日的 transformer checkpoint 已为 RoPE、Softmax/LogSoftmax 与 TopK 增加 native executable route，目录
+进度更新为 **18/19 executable**；只剩 ScaledDotProductAttention。TopK schema 同时补上 i32 index 输出的
+axis 上界检查。该修正属于已有 typed contract 的完整性，不增加 family 或隐藏策略；`compute_ops` 仍保持
+`AUDITED`，等待 19/19 direct/Graph journey 和终局验证。

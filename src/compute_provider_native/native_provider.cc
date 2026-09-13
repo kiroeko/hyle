@@ -33,6 +33,10 @@ struct NativeContext final {
   ParallelExecutorRef executor{};
 };
 
+struct NativeInvocation final {
+  mem::BufferView workspace{};
+};
+
 void run_rms_norm(const float *input, const float *weight, float *output,
                   const Parameters &parameters, float epsilon) noexcept {
   const std::size_t rows = parameters[0];
@@ -195,15 +199,34 @@ void destroy_prepared(void *state, mem::AllocatorRef allocator) noexcept {
   allocator.deallocate(plan, sizeof(NativePlan), alignof(NativePlan));
 }
 
-Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
+Status create_invocation(void *prepared_value, mem::AllocatorRef allocator,
+                         mem::BufferView workspace,
                          void **output) noexcept {
   if (output == nullptr)
     return Status::InvalidArgument("native invocation output is null");
   *output = nullptr;
+  const auto *plan = static_cast<const NativePlan *>(prepared_value);
+  if (plan == nullptr)
+    return Status::Internal("native prepared plan is null");
+  if (plan->workspace_submit_route == nullptr)
+    return Status::Ok();
+  void *storage =
+      allocator.allocate(sizeof(NativeInvocation), alignof(NativeInvocation));
+  if (storage == nullptr)
+    return Status::ResourceExhausted(
+        "native invocation workspace state allocation failed");
+  *output = ::new (storage) NativeInvocation{.workspace = workspace};
   return Status::Ok();
 }
 
-void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
+void destroy_invocation(void *value, mem::AllocatorRef allocator) noexcept {
+  auto *invocation = static_cast<NativeInvocation *>(value);
+  if (invocation == nullptr)
+    return;
+  invocation->~NativeInvocation();
+  allocator.deallocate(invocation, sizeof(NativeInvocation),
+                       alignof(NativeInvocation));
+}
 
 detail::EnqueueResult submit_float(const NativePlan &plan,
                                 std::span<const ConstTensorView> inputs,
@@ -337,12 +360,21 @@ detail::EnqueueResult submit_float(const NativePlan &plan,
   return completed(std::move(terminal));
 }
 
-detail::EnqueueResult submit(void *prepared_value, void *, Queue &,
+detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
+                          Queue &,
                           std::span<const ConstTensorView> inputs,
                           std::span<const TensorView> outputs) noexcept {
   auto *plan = static_cast<NativePlan *>(prepared_value);
-  if (plan == nullptr || plan->submit_route == nullptr) {
+  if (plan == nullptr ||
+      (plan->submit_route == nullptr && plan->workspace_submit_route == nullptr)) {
     return completed(Status::Internal("native execution state is invalid"));
+  }
+  if (plan->workspace_submit_route != nullptr) {
+    auto *invocation = static_cast<NativeInvocation *>(invocation_value);
+    if (invocation == nullptr)
+      return completed(Status::Internal("native workspace state is invalid"));
+    return plan->workspace_submit_route(*plan, inputs, outputs,
+                                        invocation->workspace);
   }
   return plan->submit_route(*plan, inputs, outputs);
 }
@@ -515,6 +547,15 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
+  case OperationKind::kRoPE:
+  case OperationKind::kSoftmax:
+  case OperationKind::kTopK: {
+    Status status =
+        internal::prepare_transformer(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   default:
     return Status::Unimplemented(
         "operation has no current HYLE native executable route");
@@ -560,7 +601,7 @@ Status propose(
       .workspace_resource = detail::ResourceBindingRequirement{
           .required_properties = mem::MemoryProperty::kHostAccessible,
       },
-      .workspace = WorkspaceRequirement{},
+      .workspace = plan.workspace,
       .persistent_bytes = sizeof(NativePlan),
   };
   return Status::Ok();
@@ -589,7 +630,7 @@ Status prepare(void *, const detail::ProviderPrepareRequest &request,
   auto *prepared = ::new (storage) NativePlan(plan);
   prepared_output->vtable = &kPreparedVTable;
   prepared_output->state = prepared;
-  prepared_output->workspace = {};
+  prepared_output->workspace = plan.workspace;
   prepared_output->runtime = kRuntimeProperties;
   prepared_output->persistent_bytes = sizeof(NativePlan);
   return Status::Ok();

@@ -31,6 +31,9 @@ sampling 和 serving 留在推理引擎。
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
 | 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 当前为 f32，并可精确原地更新 input0 |
 | 张量拼接 | `Concat` | 同 dtype/rank 的 variadic plain inputs，沿显式 axis 产生 dense output；dense 输入按连续后缀块复制 |
+| 旋转位置编码 | `RoPE` | dense/strided f32 data、i32/i64 positions、显式 frequency tensor；支持 interleaved/half-split 与未旋转 tail，dense route 冷选择 fat kernel |
+| 概率归一化 | `Softmax` | f32 任意 axis、scale、LogSoftmax，以及可广播 Bool/additive mask；允许精确 input/output in-place；无有效值的 row 产生 NaN |
+| 候选筛选 | `TopK` | f32 任意 axis，largest/smallest、sorted/stable 语义，返回 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
 | CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |
 | byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
@@ -43,8 +46,9 @@ sampling 和 serving 留在推理引擎。
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
 gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
 **当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、
-rank-2 MatMul 和 packed SiLU GatedActivation 十二项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 7 个
-family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
+rank-2 MatMul、packed SiLU GatedActivation、Gather、Scatter、Concat、RoPE、Softmax 和 TopK 共十八项。**
+Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；当前只有 SDPA 尚无 native executable
+route，调用 `prepare()` 会诚实返回 `Unimplemented`，直至其实现与正确性证据同时交付。
 
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。

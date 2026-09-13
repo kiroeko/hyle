@@ -50,6 +50,7 @@ AUDITED 前不移动或增加 native kernel 产品代码。
 | N14 | RMSNorm/Silu whole-row SIMD | `KEEP/MOVE` | 每 row 一次现有 SIMD entry；不在 element loop 再 dispatch |
 | N15 | MatMul 两条 HYLE route | `KEEP/MOVE` | transpose-weight dot 与 fixed-target row-major kernel保留；general batch/stride 由 prepare 选择 tiled/reference route |
 | N16 | 没有普通 CPU journey | `FIX` | `hyle/compute/cpu.h` 聚合 CPU backend + native provider，并提供 `cpu::create_context()`；高级用户仍可显式排 provider sequence |
+| N17 | `native::Options::executor` 被 Context 保存但未参与 prepare/submit | `FIX` | prepare 把借用 executor 固定进 immutable plan；只对有足够工作量的独立 row/tile 做一次同步 fan-out，嵌套执行安全退化，空 executor 保持 caller-thread 串行 |
 
 ### v1 family 实现账本
 
@@ -134,3 +135,32 @@ strided copy 的地址计算，也不属于任何公开合同。该变量已删�
 - W1-WIN/MSVC 19.50 factor-only WERROR 构建、逐头与 Native 定向测试通过，覆盖 dense suffix gather、越界
   预检、Scatter assign/add/exact alias 和 middle-axis variadic Concat。完整 product delivery、三平台、
   sanitizer 与 P1 仍等 19/19 candidate 后按卡片一次执行。
+
+### Transformer checkpoint 与下层复用门（2026-09-14）
+
+- `RoPE`、`Softmax/LogSoftmax` 与 `TopK` 已取得 native executable route，目录进度为
+  **18/19 executable**；只剩 `ScaledDotProductAttention`。RoPE 覆盖 interleaved/half-split、显式
+  i32/i64 positions、dense fat-kernel 与 plain-strided fallback；Softmax 覆盖 axis、scale、boolean/additive
+  broadcast mask、log mode 与 exact alias；TopK 覆盖任意 axis、largest/smallest、稳定 index、双输出和
+  caller-owned workspace。TopK schema 先拒绝无法由 i32 输出表示的 axis；undefined all-masked softmax
+  明确产生 NaN，而不是伪造概率；
+- RoPE 的 sin/cos 与 pair rotation 是 tensor/layout 融合路线，使用 Compute 私有、prepare 时一次选择的
+  Highway fat kernel；它不是把模型 layout 下沉为通用 SIMD API。TopK 复用现有 SIMD selection，Softmax
+  的自然 dense row 复用现有 SIMD；common dense trailing broadcast 也按完整连续 suffix 复用一次
+  SIMD whole-row route；
+- Mem 继续拥有 storage/map/coherence/copy/workspace，Math 继续拥有 checked size arithmetic，Platform/SIMD
+  继续拥有 ISA fat selection；Graph 的 growable metadata、workspace/lifetime 和 intrusive owner 分别复用
+  Container、Mem 与 Util-core。固定 rank/小型 descriptor 的 `std::array`、compile 冷路径排序和已映射连续
+  bytes 的 `memcpy` 有不同 layout/lifetime/owner 合同，不为形式统一替换；
+- 当前真实 consumer 暴露了 SIMD 的四组候选通用缺口：row `rsqrt`、同语义 elementwise
+  `fmin/fmax/select`、以及同时满足 Compute NaN propagation 与 signed-zero 合同的 extrema reduction。
+  现有 `simd::min_value/max_value` 在 signed zero 上不等价，已通过定向差分排除直接复用。它们必须形成
+  独立 SIMD reopen card、冻结公共语义后才能实现；不得在本 factor 私造第二套普通 row primitive；
+- `native::Options::executor` 当前仍只被 Context 保存、未被 immutable plan/submit 消费，这是 N17 的真实
+  API/性能缺口。先在本 factor 消费既有 `ParallelExecutorRef`；只有适配 Sched persistent workers 时证明
+  缺少可复用机制，才以该 journey 重开 Sched。预留的 `compute_sched` 只拥有可选 bridge，不替 Native
+  provider 隐藏创建线程池。
+
+本 checkpoint 的 Windows factor-only WERROR 构建、逐头、schema/native 定向测试通过；新增验证覆盖
+RoPE vector blocks/tail 与 strided materialization、additive/all-masked Softmax，以及 TopK i32 axis 上界。
+三平台、sanitizer、三交付、七条 P1、N17 和 SDPA 仍待 candidate 阶段统一完成，因此本卡保持 `AUDITED`。
