@@ -278,14 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/graph-v5-region-admission.md",
-      "candidate": "fd4ef058b8cee328717432a3ef3465c998865427",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/graph-v5-region-admission.md"
-      },
-      "summary": "graph v5 CLOSED：optional estimate、结构优先/严格估值策略与确定性 O(Q log Q) region 选择已完成；Windows 三交付、WSL ASan/UBSan、两台 Apple WERROR 回放、P0、文档和红队全部通过，steady Invocation/submit 无产品 diff。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/graph-v6-runtime-specialization-placement.md",
+      "summary": "graph v6 SCOPED：以四个真实推理 runtime 与 renderer 反偏置纵切审计 bounded symbolic specialization、多 Context/Device placement、显式 copy/repack/event、多域 workspace、真异步 replay/capture 和 Graph 内部质因数边界；审计冻结前不改产品，也不扩 CPU 算子目录。"
     },
     {
       "module": "container_concurrent",
