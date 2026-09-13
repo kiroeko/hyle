@@ -186,3 +186,23 @@ device-loss/error injection，sanitizers、Linux/两台 Apple、shared export hy
 
 本 checkpoint 完成 R48--R50 的通用组合机制，但 Compute 仍为 `AUDITED`：真实异步 backend、Linux/两台
 Apple、sanitizer、P0 codegen 与异构 provider 交付回放尚未完成。
+
+## 真实异步 backend 触发的新一轮边界（2026-09-13）
+
+CUDA v1 与 Graph v6 的具名审计证明，本轮冻结账本不能继续原样实施：
+
+- `ProviderPreparedVTable::submit` 和 region SPI 要求**每个**已接纳 step 返回可独立 `poll/wait` 的终态
+  `Completion`。同步 CPU provider 可以廉价满足，但 CUDA/Metal/Vulkan 的普通实现若诚实满足，就必须为
+  Graph 中的每个 op/region 记录一个 event；若返回 inline success，又会把“命令已录入”谎报成“设备工作已
+  终态”。ggml 的实际 scheduler 只在 split/依赖边界预留并 record/wait event，而不是为每个 node 生产
+  用户 completion；
+- `BackendVTable` 只有 create/destroy/drain，没有对象局部 extension、queue-prefix finalization、异步
+  transfer 或设备侧 dependency wait。Graph 因而只能直接依赖 CUDA，或者私造第二套 backend runtime；
+- R52 明确不在 v4 的有限 FIX 集中。把上述能力悄悄追加到 R40--R51 会违反“新能力重新 scope”的规则，
+  也无法先冻结 provider/backend/Graph 三方共同使用的 owner 与成本合同。
+
+因此 v4 从 `AUDITED` 进入 `BLOCKED`，只表示这一轮有限账本被真 backend 证据耗尽，不否定已完成的
+R40--R51 检查点。精确恢复条件是建立 Compute v5 successor card，裁决 sequence 只在边界生成一个
+Completion、backend-neutral 对象局部 command extension、跨 Queue dependency 和 typed native seam；完成
+新的能力/API/owner 审计后回到 `SCOPED -> AUDITED`。不得用每 step event、假 inline Completion 或 Graph
+私有 CUDA 分支绕过。

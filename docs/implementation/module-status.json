@@ -272,9 +272,13 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/compute-v4-runtime-extensibility.md",
-      "summary": "compute v4 AUDITED：R40--R51 runtime spine、12 个 Native CPU family、对象局部 provider extension，以及 direct/Graph ordered Queue sequence、prefix Completion 与 invocation late-lifetime attachment 已进入 Windows 实现检查点；选择产品三交付通过。真实异步 backend、Linux/两台 Apple、sanitizer、P0 与异构 provider/Graph 闭包仍未完成。"
+      "blocked_from": "AUDITED",
+      "blocker": "真 CUDA/Graph 审计证明每-step terminal Completion 会强迫每个设备 step 记录 event 或谎报终态，且现有 BackendVTable 无对象局部 command extension、queue-prefix finalization 或设备侧 dependency wait；这些能力被 v4 R52 排除，不能偷加进 R40--R51。",
+      "blocker_owner": "Compute runtime 的 provider submission、QueueSequence finalization 与 backend command-extension 共同合同",
+      "resume_condition": "建立 Compute v5 successor closure card，冻结每个 queue sequence 只在边界产生 Completion、backend-neutral 对象局部 command extension、跨 Queue dependency 与 typed native seam 的有限审计账本。",
+      "summary": "compute v4 BLOCKED：R40--R51 检查点保留，但真 CUDA/Graph 证明 per-step Completion 与缺失 backend command seam 不能承载低成本异步 plan；须由 Compute v5 重新 scope，禁止每步 event、假终态或 Graph 私造 runtime。"
     },
     {
       "module": "graph",
