@@ -1,10 +1,11 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
-> 本页描述当前 Graph v6 **运行时骨架检查点**。Graph 的施工状态仍是 `AUDITED`，只以
+> 本页描述当前 Graph v7 **运行时骨架检查点**。Graph 的施工状态仍是 `AUDITED`，只以
 > [`module-status.json`](../implementation/module-status.json) 为准；本文不把尚未完成的算子/provider 广度
-> 写成已交付。当前已经实现 symbolic specialization、多 execution domain、placement、真实跨域 copy、
-> per-domain workspace、segment 调度、显式 replay 准备、dependency route 和 CUDA command capture；生产级
-> GPU 算子 provider 与完整 transformer 算子目录仍在后续纵切。
+> 写成已交付。当前已经实现 symbolic specialization，execution target / storage domain / execution lane
+> 三轴 placement，真实跨 storage copy，partial-order workspace，shared Queue 与 delegated provider island、
+> segment 调度及显式 replay 准备。硬预算序列化、真实 CUDA 多 lane/capture 资格以及生产级 GPU provider
+> 仍在本轮后续纵切。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -35,21 +36,23 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | DAG | typed、多输入/输出 node；共享 value、分支、多个 published output 与显式 control dependency |
 | shape | concrete `TensorDesc`，或带 min/max/multiple 约束的 graph-local symbol；同一 `DimensionId` 表示相等约束 |
 | specialization | `compile()` 要求每个 symbol 恰好绑定一次；一个 Executable 对应一个 collision-safe `SpecializationSignature` |
-| execution domain | 调用方显式提供有序的 `Context + workspace MemoryResourceRef`；没有进程全局 device/provider registry |
-| placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和 domain 顺序确定性选择；prepare 尝试有硬预算 |
+| execution target | `Context` 是执行者；node placement 只选择 target，不把 allocator 或 Queue 混入 identity |
+| storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
+| execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
+| placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和稳定 target/storage 顺序确定性选择；prepare 尝试有硬预算 |
 | region partition | provider 在冷路径提出连续 region；Graph 按覆盖、dispatch 数和 provider 顺序确定性选择并只编译胜出 artifact |
-| boundary | 跨 domain 的 canonical tensor 产生真实 `Copy` step；同步是 segment dependency，不制造虚假的 barrier step |
-| memory plan | 每个 `(logical value, domain)` 是独立 physical instance；各 domain 独立使用 Mem lifetime planner，alias 不跨 domain/resource |
-| scheduling | 在 plan 冷生成期做确定性 Kahn 调度；每个 domain 保持 ready FIFO，并尽量连续录入当前 domain，减少可避免的 Queue segment |
-| replay | `prepare_replay()` 冷验证全部 bindings、transfer capability、Queue identity、dependency route 和 Completion 容量 |
-| capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；允许 command/captured 混合 plan，地址或 binding 改变后必须重新 prepare |
-| report | `CompileReport` 给出 immutable plan 事实；`ReplayReport` 给出绑定具体 Queue 后的 transfer、device wait 和 host wait 事实 |
+| boundary | canonical tensor 只有在真实 storage residence 改变时才产生 `Copy`；换 target 或 lane 本身不复制 |
+| memory plan | 每个 `(logical value, storage)` 是一个 physical instance；Mem lifetime planner 只复用 happens-before 已证明有序的 lifetime |
+| scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
+| replay | `prepare_replay()` 冷验证 bindings、transfer、Queue 与 delegated endpoint identity、dependency route 和 Completion 容量 |
+| capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；capture 只适用于 shared Queue segment，delegated island 不能伪装成 Queue capture |
+| report | `CompileReport` 分列 target/storage/lane/segment/runtime owner；`ReplayReport` 给出 exact endpoint 后的 ordered/imported/host-wait 事实 |
 
 Provider-private layout 只能留在一个 region 内，公开 region boundary 当前必须回到 canonical `TensorDesc`。
 因此 Graph 不伪造一个没有 layout producer/consumer 合同的通用 `Repack` step；将来某个真实 provider 需要
 跨 region opaque layout handoff 时，必须先增加有版本的 boundary-layout 合同和可执行 repack owner。
 
-## 单 domain：自然短路径
+## 单 target/storage/lane：自然短路径
 
 固定 shape、单 Context 的调用不需要显式写 environment 或 replay options：
 
@@ -87,7 +90,7 @@ if (auto status = invocation->bind(*x, input_view); !status.ok()) return status;
 if (auto status = invocation->bind(*output, output_view); !status.ok())
   return status;
 
-// 单 active domain 会自动走同一套 cold prepare；后续相同 Queue 可直接复用。
+// 单 active shared lane 会自动走同一套 cold prepare；后续相同 Queue 可直接复用。
 auto done = invocation->submit(queue);
 if (!done) return done.error();
 return done->wait();
@@ -96,7 +99,7 @@ return done->wait();
 `constant()` 只声明逻辑 value；`CompileOptions::constants` 提供 payload。当前 Executable 保守借用所有
 constant source，即使 provider 另有 packed representation，源 storage 仍须活过 Executable 及其全部提交。
 
-## Symbol 与多 domain
+## Symbol 与多 target/storage/lane
 
 symbolic graph 在 compile 时产生 concrete specialization；Graph 本身不维护无界 cache。推理引擎可用
 `SpecializationSignature` 管理 decode/prefill 等有限 Executable 集合：
@@ -109,40 +112,57 @@ auto spec = TensorSpec::dense(DataType::kFloat16, logical_shape);
 auto input = builder.input(*spec);
 // ... add operations and finish the Graph ...
 
-const std::array domains{
-    ExecutionDomain{.context = &cpu_context,
-                    .workspace_resource = host_resource},
-    ExecutionDomain{.context = &cuda_context,
-                    .workspace_resource = device_resource},
+const std::array storage{
+    StorageDomain{.resource = host_resource},
+    StorageDomain{.resource = device_resource,
+                  .workspace_budget_bytes = device_budget},
+};
+const std::array targets{
+    ExecutionTarget{.context = &cpu_context,
+                    .default_storage = StorageDomainId{0}},
+    ExecutionTarget{.context = &cuda_context,
+                    .default_storage = StorageDomainId{1}},
+};
+const std::array lanes{
+    ExecutionLane{.target = ExecutionTargetId{0},
+                  .role = ExecutionLaneRole::kCompute},
+    ExecutionLane{.target = ExecutionTargetId{1},
+                  .role = ExecutionLaneRole::kCompute},
+    ExecutionLane{.target = ExecutionTargetId{1},
+                  .role = ExecutionLaneRole::kTransfer},
 };
 const std::array shape{ShapeBinding{*batch, 1}};
 const std::array resources{
     ExternalResourceContract{.value = *input,
-                             .domain = ExecutionDomainId{1},
-                             .resource = device_resource},
+                             .storage = StorageDomainId{1}},
 };
-auto compiled = compile(graph, CompileEnvironment{.domains = domains},
+auto compiled = compile(graph,
+                        CompileEnvironment{.storage_domains = storage,
+                                           .targets = targets,
+                                           .lanes = lanes},
                         CompileOptions{.shape = shape,
                                        .external_resources = resources});
 ```
 
-`NodePlacement`/`ValuePlacement` 可以表达 required 或 preferred domain。required route 不可执行时 compile
+`NodePlacement` 选择 target，`ValuePlacement` 与 `ExternalResourceContract` 选择 storage；前两者可以表达
+required 或 preferred。required route 不可执行时 compile
 失败；preferred route 不可执行时按稳定候选顺序继续。只有 `Unimplemented` 表示候选不支持，OOM、损坏
 状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts`、`max_region_proposals` 和
 `max_region_proposals_per_provider` 都是硬预算，耗尽会失败而不是改变计划。
 
-跨域 external value 应提供 `ExternalResourceContract`，让 compiler 能选择真实 transfer route；不能让
+非默认 storage 的 external value 应提供 `ExternalResourceContract`，让 compiler 能选择真实 transfer route；不能让
 Graph 从偶然地址猜 host/device locality。普通 canonical boundary 使用 Compute byte transfer，不隐藏
 pageable staging、repack 或同步 copy。
 
 ## 冷态 replay 路由
 
-多 active domain 必须显式准备 Queue 集合：
+多 active shared lane 必须显式准备 Queue 集合；synthetic delegated lane 不接受 QueueBinding：
 
 ```cpp
 const std::array queues{
-    QueueBinding{.domain = ExecutionDomainId{0}, .queue = &cpu_queue},
-    QueueBinding{.domain = ExecutionDomainId{1}, .queue = &cuda_queue},
+    QueueBinding{.lane = ExecutionLaneId{0}, .queue = &cpu_queue},
+    QueueBinding{.lane = ExecutionLaneId{1}, .queue = &cuda_compute_queue},
+    QueueBinding{.lane = ExecutionLaneId{2}, .queue = &cuda_copy_queue},
 };
 
 auto status = invocation.prepare_replay(
@@ -159,28 +179,29 @@ return done->wait();
 
 `prepare_replay()` 是冷态 commit point。在任何 segment 提交前，它会：
 
-1. 验证全部 external bindings、resource domain 与 Queue/Context identity；
+1. 验证全部 external bindings、exact resource 与 Queue/target identity；
 2. 对每个真实 copy 查询 immediate/queued-direct/peer capability；
-3. 把每条 segment dependency 固定成 ordered Queue、同步 source、device wait 或 host wait；
+3. 取得 shared Queue 和 delegated provider 的 exact completion endpoint，把每条 dependency 固定成
+   ordered endpoint、同步 source、非阻塞 imported wait 或 host wait；
 4. 按物理 Queue 汇总并预留 Completion slots；
 5. 按 replay mode 建立 command、capture 或 hybrid route。
 
 默认 `HostWaitPolicy::kAllow` 允许不兼容 backend 的显式 host fallback；延迟敏感部署应选择 `kReject`，在
-进入 warm path 前拒绝这种 topology。host wait 不会藏在 report 里，也不会在持有 destination Queue 的
-single-producer admission 时等待上游。`ReplayReport` 提供四类 dependency 数和三类 transfer 数；
+进入 warm path 前拒绝这种 topology。host wait 不会藏在 report 里，也不会在持有 destination Queue/provider
+submission admission 时等待上游。`ReplayReport` 提供四类 dependency 数和三类 transfer 数；
 `dependency_route(segment, index)` 可查询精确边。
 
-`kPreferCapture` 在不支持或不安全的 segment 上保留 command route，最终可报告 `kCommands`、`kCaptured`
-或 `kHybrid`；`kRequireCapture` 遇到任一 command segment 不能 capture 就失败。当前真机纵切已验证 CUDA
-copy segment 的 capture/replay，但这不等于 CUDA 已有完整算子 provider。
+`kPreferCapture` 在不支持、不安全或 delegated 的 segment 上保留普通 route，最终可报告 `kCommands`、
+`kCaptured` 或 `kHybrid`；`kRequireCapture` 遇到任一 delegated 或不能 capture 的 command segment 就失败。
+真实 CUDA 多 lane/capture 仍是当前 closure 的待验证硬门，不能从 mock/CPU 测试外推资格。
 
 ## 冷路径、热路径与调度取舍
 
-- compile 做 shape concrete 化、provider prepare/region 选择、placement、boundary materialization、
-  liveness/alias/workspace 和 plan scheduling；复杂度有显式预算，不读取历史 benchmark 常数作为 placement
+- compile 做 shape concrete 化、provider proposal/exact prepare、region 选择、target/storage placement、
+  boundary materialization、lane scheduling、happens-before、liveness/alias/workspace；复杂度有显式预算，不读取历史 benchmark 常数作为 placement
   oracle。
-- `create_invocation()` 分配每 lane workspace 和预定长 metadata；应按服务并发槽创建并复用。
-- `prepare_replay()` 做 Queue/transfer/dependency/capture 资格化；bind、reset 或稳定地址变化会使其失效。
+- `create_invocation()` 实例化 workspace、provider invocation、预定长 metadata，并固定 delegated endpoint；应按服务并发槽创建并复用。
+- `prepare_replay()` 做 Queue/endpoint/transfer/dependency/capture 资格化；bind、reset 或稳定地址变化会使其失效。
 - warm `submit()` 只遍历 emitted steps、segment dependencies 与 bindings：不遍历原始 DAG、不推 shape、
   不搜索 provider、不 JIT、不增长 Graph heap、不重新查询 transfer/dependency capability。backend
   finalization/event 数按 segment 增长，不按 node 增长。
@@ -191,27 +212,28 @@ copy segment 的 capture/replay，但这不等于 CUDA 已有完整算子 provid
 
 `CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
 
-- specialization、domain/device/backend 与每域 workspace/queue/capture 需求；
+- specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
 - operation fallback、provider region 和真实 copy step；
-- segment、dependency、potential synchronization 和 concurrent-invocation 能力；
+- shared/delegated segment、dependency、potential synchronization 和 concurrent-invocation 能力；
 - provider/version、dispatch、workspace、persistent/packed/borrowed bytes 与 blocking/threading fact。
 
-`persistent_bytes == nullopt` 表示 provider 无法报告，不是零。CompileReport 中的
-`kQueueBindingDependent` 也不是已经发生 host wait；具体 Queue 绑定后的真实路线只看 `ReplayReport`。
+`persistent_bytes == nullopt` 表示 provider 无法报告，不是零。`delegated_segment_count()` 是 provider-owned
+island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDependent` 也不是已经发生 host wait；
+具体 Queue/provider endpoint 固定后的真实路线只看 `ReplayReport`。
 
 ## 所有权与常见陷阱
 
-- `ExecutionDomain` 的 Context 会被 plan 内部 artifact 保活；`MemoryResourceRef` 的 provider 仍是 caller
+- `ExecutionTarget` 的 Context 会被 plan 内部 artifact 保活；`StorageDomain` 中 `MemoryResourceRef` 的 provider 仍是 caller
   borrow，必须活过 Executable、Invocation 和全部 in-flight work。
-- Tensor view 不拥有 payload。输入、输出、Queue、external resource 与 native kernel 参数都必须活到
-  Completion 真终态；丢弃 pending Completion 不会隐式等待。
+- Tensor view 不拥有 payload。输入、输出、shared Queue、external resource 与 native kernel 参数都必须活到
+  Completion 真终态；delegated provider invocation 由 Graph Completion 保活，丢弃 pending Completion 不会隐式等待。
 - 普通 materialized published output 绑定 mutable `TensorView`。source alias 或 Invocation-owned output
   不接受重新绑定；成功完成后用 `Invocation::output()` 取得借用 view。
 - `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。bind/reset 后 replay route
-  失效，多 domain 必须重新 `prepare_replay()`。
+  失效，多 shared lane 必须重新 `prepare_replay()`。
 - 不同 published outputs，以及 output 与仍存活 input，不得绕过 plan 形成危险 overlap。只在相同
-  domain/resource、最后一次读取且 provider 明确允许时选择 in-place；其它 partial overlap 被拒绝。
+  storage/resource、最后一次读取且 provider 明确允许时选择 in-place；其它 partial overlap 被拒绝。
 - 外部副作用 node 必须用数据依赖或 `depends_on()` 排序。纯 node 不要为了“看起来顺序一致”手工串行化。
 - Graph 可以保存合法 blocked/opaque TensorDesc，但没有理解该 encoding 的 provider 时 compile 会返回
   `Unimplemented`，不会把压缩 bytes 当普通 scalar storage。

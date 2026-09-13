@@ -1329,26 +1329,6 @@ detail::OperationInvocationAccess::submit_delegated_prevalidated(
         Status::FailedPrecondition("operation invocation is invalid"));
   }
   detail::InvocationState &state = *invocation.state_;
-  detail::PreparedState &prepared = *state.prepared;
-  const detail::ProviderPrepared &provider = prepared.provider_prepared;
-  if (provider.runtime.mode != ProviderRuntimeMode::kDelegated ||
-      provider.vtable == nullptr ||
-      provider.vtable->delegated_submit == nullptr) {
-    return std::unexpected(Status::FailedPrecondition(
-        "operation invocation is not delegated"));
-  }
-  if (inputs.size() != prepared.input_count ||
-      outputs.size() != prepared.output_count) {
-    return std::unexpected(
-        Status::Internal("prevalidated delegated bindings are invalid"));
-  }
-  if (!prepared.context->admission.try_enter()) {
-    return std::unexpected(Status::FailedPrecondition("context is closed"));
-  }
-  struct ContextAdmissionGuard final {
-    detail::AdmissionGate *gate = nullptr;
-    ~ContextAdmissionGuard() { gate->leave(); }
-  } admission_guard{&prepared.context->admission};
 
   bool idle = false;
   if (!state.in_flight.compare_exchange_strong(
@@ -1366,8 +1346,8 @@ detail::OperationInvocationAccess::submit_delegated_prevalidated(
     void disarm() noexcept { armed = false; }
   } rollback{&state};
 
-  auto completion = provider.vtable->delegated_submit(
-      provider.state, state.provider_state, dependencies, inputs, outputs);
+  auto completion = submit_delegated_borrowed_prevalidated(
+      invocation, dependencies, inputs, outputs);
   if (!completion)
     return std::unexpected(std::move(completion).error());
   if (!completion->valid()) {
@@ -1393,6 +1373,49 @@ detail::OperationInvocationAccess::submit_delegated_prevalidated(
     return std::unexpected(std::move(attached));
   }
   rollback.disarm();
+  return completion;
+}
+
+Result<Completion>
+detail::OperationInvocationAccess::submit_delegated_borrowed_prevalidated(
+    OperationInvocation &invocation,
+    std::span<const CompletionDependency> dependencies,
+    std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  if (!invocation.valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("operation invocation is invalid"));
+  }
+  detail::InvocationState &state = *invocation.state_;
+  detail::PreparedState &prepared = *state.prepared;
+  const detail::ProviderPrepared &provider = prepared.provider_prepared;
+  if (provider.runtime.mode != ProviderRuntimeMode::kDelegated ||
+      provider.vtable == nullptr ||
+      provider.vtable->delegated_submit == nullptr) {
+    return std::unexpected(Status::FailedPrecondition(
+        "operation invocation is not delegated"));
+  }
+  if (inputs.size() != prepared.input_count ||
+      outputs.size() != prepared.output_count) {
+    return std::unexpected(
+        Status::Internal("prevalidated delegated bindings are invalid"));
+  }
+  if (!prepared.context->admission.try_enter()) {
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  }
+  struct ContextAdmissionGuard final {
+    detail::AdmissionGate *gate = nullptr;
+    ~ContextAdmissionGuard() { gate->leave(); }
+  } admission_guard{&prepared.context->admission};
+
+  auto completion = provider.vtable->delegated_submit(
+      provider.state, state.provider_state, dependencies, inputs, outputs);
+  if (!completion)
+    return std::unexpected(std::move(completion).error());
+  if (!completion->valid()) {
+    return std::unexpected(
+        Status::Internal("delegated provider returned an invalid completion"));
+  }
   return completion;
 }
 

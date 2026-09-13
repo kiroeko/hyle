@@ -828,14 +828,25 @@ wait_completion_impl(void *queue,
   return compute::detail::EnqueueResult::accepted_command(status(result));
 }
 
-bool can_wait_queue_impl(void *destination_queue, BackendId source_backend,
-                         void *source_queue) noexcept {
-  const auto *destination =
-      static_cast<const cuda::detail::QueueState *>(destination_queue);
+compute::detail::CompletionEndpoint
+completion_endpoint_impl(void *source_queue) noexcept {
   const auto *source =
       static_cast<const cuda::detail::QueueState *>(source_queue);
-  return destination != nullptr && source_backend == kBackendId &&
-         source != nullptr && source->context == destination->context;
+  return source == nullptr
+             ? compute::detail::CompletionEndpoint{}
+             : compute::detail::CompletionEndpoint{
+                   .authority = &kCompletionVTable,
+                   .identity = source->context,
+               };
+}
+
+bool can_wait_endpoint_impl(
+    void *destination_queue,
+    compute::detail::CompletionEndpoint source) noexcept {
+  const auto *destination =
+      static_cast<const cuda::detail::QueueState *>(destination_queue);
+  return destination != nullptr && source.authority == &kCompletionVTable &&
+         source.identity == destination->context;
 }
 
 inline constexpr BackendExtensionId kCudaExtensionId{0x48594c4500000001ULL,
@@ -1040,7 +1051,8 @@ const compute::detail::BackendVTable kBackendVTable{
     .copy_async = &copy_async_impl,
     .fill_async = &fill_async_impl,
     .wait_completion = &wait_completion_impl,
-    .can_wait_queue = &can_wait_queue_impl,
+    .completion_endpoint = &completion_endpoint_impl,
+    .can_wait_endpoint = &can_wait_endpoint_impl,
     .query_extension = &query_extension_impl,
     .drain_context = &drain_context_impl,
     .drain_queue = &drain_queue_impl,

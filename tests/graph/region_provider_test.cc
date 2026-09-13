@@ -99,6 +99,8 @@ struct RegionProbe final {
   std::size_t completed_prefix = 0;
   bool cancelled = false;
   bool terminal_failure = false;
+  bool asynchronous_backend = false;
+  bool delegated_single = false;
   bool transfer_supported = true;
   bool dependency_wait_supported = true;
   bool capture_supported = false;
@@ -396,50 +398,33 @@ AliasSupport region_alias_support(void *, std::size_t, std::size_t) noexcept {
   return {};
 }
 
-hyle::compute::detail::EnqueueResult
-submit_region(void *prepared, void *invocation, Queue &,
-              std::span<const ConstTensorView> inputs,
-              std::span<const TensorView> outputs) noexcept {
+Status execute_region(void *prepared, void *invocation,
+                      std::span<const ConstTensorView> inputs,
+                      std::span<const TensorView> outputs) noexcept {
   auto &plan = *static_cast<RegionPlan *>(prepared);
   if (invocation == nullptr || inputs.size() != 1 || outputs.size() != 1)
-    return hyle::compute::detail::EnqueueResult::accepted_command(
-        Status::Internal("region binding mismatch"));
-  if (plan.probe->mode == ProposalMode::kAsyncPairs ||
-      plan.probe->mode == ProposalMode::kAsyncRejectSecond) {
-    if (plan.probe->capture_active)
-      return hyle::compute::detail::EnqueueResult::accepted_command();
-    ++plan.probe->submit_attempt_count;
-    if (plan.probe->mode == ProposalMode::kAsyncRejectSecond &&
-        plan.probe->submit_attempt_count == 2) {
-      return hyle::compute::detail::EnqueueResult::rejected(
-          Status::Unavailable("injected second-region rejection"));
-    }
-  }
+    return Status::Internal("region binding mismatch");
   auto input_mapping = inputs[0].storage().map_host();
   if (!input_mapping)
-    return hyle::compute::detail::EnqueueResult::accepted_command(
-        std::move(input_mapping).error());
+    return std::move(input_mapping).error();
   auto output_mapping =
       outputs[0].storage().map_host(hyle::mem::HostAccess::kWrite);
   if (!output_mapping) {
     input_mapping->close().IgnoreError();
-    return hyle::compute::detail::EnqueueResult::accepted_command(
-        std::move(output_mapping).error());
+    return std::move(output_mapping).error();
   }
   auto writable = output_mapping->writable_bytes();
   if (!writable) {
     Status error = std::move(writable).error();
     output_mapping->close().IgnoreError();
     input_mapping->close().IgnoreError();
-    return hyle::compute::detail::EnqueueResult::accepted_command(
-        std::move(error));
+    return error;
   }
   const std::span<const std::byte> source = input_mapping->bytes();
   if (source.size() != writable->size() || source.size() % sizeof(float) != 0) {
     output_mapping->close().IgnoreError();
     input_mapping->close().IgnoreError();
-    return hyle::compute::detail::EnqueueResult::accepted_command(
-        Status::Internal("region byte size mismatch"));
+    return Status::Internal("region byte size mismatch");
   }
   const auto input_values =
       std::span(reinterpret_cast<const float *>(source.data()),
@@ -455,8 +440,69 @@ submit_region(void *prepared, void *invocation, Queue &,
   if (terminal.ok() && !input_close.ok())
     terminal = input_close;
   ++plan.probe->submit_count;
+  return terminal;
+}
+
+hyle::compute::detail::EnqueueResult
+submit_region(void *prepared, void *invocation, Queue &,
+              std::span<const ConstTensorView> inputs,
+              std::span<const TensorView> outputs) noexcept {
+  auto &plan = *static_cast<RegionPlan *>(prepared);
+  if (plan.probe->mode == ProposalMode::kAsyncPairs ||
+      plan.probe->mode == ProposalMode::kAsyncRejectSecond) {
+    if (plan.probe->capture_active)
+      return hyle::compute::detail::EnqueueResult::accepted_command();
+    ++plan.probe->submit_attempt_count;
+    if (plan.probe->mode == ProposalMode::kAsyncRejectSecond &&
+        plan.probe->submit_attempt_count == 2) {
+      return hyle::compute::detail::EnqueueResult::rejected(
+          Status::Unavailable("injected second-region rejection"));
+    }
+  }
   return hyle::compute::detail::EnqueueResult::accepted_command(
-      std::move(terminal));
+      execute_region(prepared, invocation, inputs, outputs));
+}
+
+Result<Completion> submit_delegated_region(
+    void *prepared, void *invocation,
+    std::span<const hyle::compute::detail::CompletionDependency> dependencies,
+    std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  auto &plan = *static_cast<RegionPlan *>(prepared);
+  for (const auto dependency : dependencies) {
+    if (!dependency.pending() ||
+        dependency.vtable != &kAsyncCompletionVTable) {
+      return std::unexpected(Status::Unimplemented(
+          "delegated test region cannot import this completion"));
+    }
+    ++plan.probe->device_wait_count;
+  }
+  ++plan.probe->submit_attempt_count;
+  Status terminal = execute_region(prepared, invocation, inputs, outputs);
+  if (!terminal.ok())
+    return Completion::completed(std::move(terminal));
+  return hyle::compute::detail::CompletionAccess::make(
+      &kAsyncCompletionVTable, plan.probe);
+}
+
+hyle::compute::detail::CompletionEndpoint
+delegated_region_endpoint(void *, void *invocation) noexcept {
+  auto *run = static_cast<RegionRun *>(invocation);
+  return run == nullptr
+             ? hyle::compute::detail::CompletionEndpoint{}
+             : hyle::compute::detail::CompletionEndpoint{
+                   .authority = &kAsyncCompletionVTable,
+                   .identity = run,
+               };
+}
+
+bool delegated_region_can_import(
+    void *, void *invocation,
+    hyle::compute::detail::CompletionEndpoint source) noexcept {
+  auto *run = static_cast<RegionRun *>(invocation);
+  return run != nullptr && run->probe->dependency_wait_supported &&
+         source.authority == &kAsyncCompletionVTable &&
+         source.identity != nullptr;
 }
 
 const hyle::graph::ProviderRegionPreparedVTable kPreparedRegionVTable{
@@ -465,6 +511,17 @@ const hyle::graph::ProviderRegionPreparedVTable kPreparedRegionVTable{
     .create_invocation = &create_region_invocation,
     .destroy_invocation = &destroy_region_invocation,
     .shared_submit = &submit_region,
+};
+
+const hyle::graph::ProviderRegionPreparedVTable kDelegatedRegionVTable{
+    .destroy_prepared = &destroy_region_prepared,
+    .alias_support = &region_alias_support,
+    .create_invocation = &create_region_invocation,
+    .destroy_invocation = &destroy_region_invocation,
+    .shared_submit = nullptr,
+    .delegated_submit = &submit_delegated_region,
+    .endpoint = &delegated_region_endpoint,
+    .can_import_endpoint = &delegated_region_can_import,
 };
 
 Status propose_region_resources(
@@ -530,7 +587,10 @@ Status compile_region(void *context, const RegionCompileRequest &request,
   auto *plan = ::new (storage)
       RegionPlan{.probe = &probe, .negation_count = request.nodes.count};
   *output = ProviderRegionPrepared{
-      .vtable = &kPreparedRegionVTable,
+      .vtable = probe.artifact_properties.runtime.mode ==
+                        hyle::compute::ProviderRuntimeMode::kDelegated
+                    ? &kDelegatedRegionVTable
+                    : &kPreparedRegionVTable,
       .state = plan,
       .properties = probe.artifact_properties,
   };
@@ -628,6 +688,18 @@ const hyle::compute::detail::ProviderPreparedVTable kUnaryPreparedVTable{
     .delegated_submit = nullptr,
 };
 
+const hyle::compute::detail::ProviderPreparedVTable
+    kDelegatedUnaryPreparedVTable{
+        .destroy_prepared = &destroy_region_prepared,
+        .alias_support = &region_alias_support,
+        .create_invocation = &create_region_invocation,
+        .destroy_invocation = &destroy_region_invocation,
+        .shared_submit = nullptr,
+        .delegated_submit = &submit_delegated_region,
+        .endpoint = &delegated_region_endpoint,
+        .can_import_endpoint = &delegated_region_can_import,
+    };
+
 Status propose_single(
     void *context, Operation operation, std::span<const TensorDesc> inputs,
     std::span<const TensorDesc> outputs,
@@ -659,7 +731,10 @@ Status propose_single(
   }
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = effect ? 1u : 2u,
-      .runtime = effect ? kEffectRuntime : kUnaryRuntime,
+      .runtime = effect ? kEffectRuntime
+                        : (probe.delegated_single
+                               ? probe.artifact_properties.runtime
+                               : kUnaryRuntime),
       .workspace = hyle::compute::WorkspaceRequirement{},
   };
   return Status::Ok();
@@ -693,10 +768,13 @@ Status prepare_single(
       return Status::ResourceExhausted("unary plan allocation failed");
     auto *plan = ::new (storage) RegionPlan{&probe, 1};
     *prepared = hyle::compute::detail::ProviderPrepared{
-        .vtable = &kUnaryPreparedVTable,
+        .vtable = probe.delegated_single ? &kDelegatedUnaryPreparedVTable
+                                         : &kUnaryPreparedVTable,
         .state = plan,
         .workspace = {},
-        .runtime = kUnaryRuntime,
+        .runtime = probe.delegated_single
+                       ? probe.artifact_properties.runtime
+                       : kUnaryRuntime,
     };
     return Status::Ok();
   }
@@ -882,12 +960,23 @@ hyle::compute::detail::EnqueueResult async_wait_completion(
   return hyle::compute::detail::EnqueueResult::accepted_command();
 }
 
-bool can_async_wait_queue(void *destination_queue,
-                          hyle::compute::BackendId source_backend,
-                          void *source_queue) noexcept {
+hyle::compute::detail::CompletionEndpoint
+async_completion_endpoint(void *source_queue) noexcept {
+  return source_queue == nullptr
+             ? hyle::compute::detail::CompletionEndpoint{}
+             : hyle::compute::detail::CompletionEndpoint{
+                   .authority = &kAsyncCompletionVTable,
+                   .identity = source_queue,
+               };
+}
+
+bool can_async_wait_endpoint(
+    void *destination_queue,
+    hyle::compute::detail::CompletionEndpoint source) noexcept {
   auto *destination = static_cast<RegionProbe *>(destination_queue);
-  return destination != nullptr && source_backend == kAsyncBackendId &&
-         source_queue != nullptr && destination->dependency_wait_supported;
+  return destination != nullptr &&
+         source.authority == &kAsyncCompletionVTable &&
+         source.identity != nullptr && destination->dependency_wait_supported;
 }
 
 struct MockCapturedCommands final {
@@ -1004,7 +1093,8 @@ const hyle::compute::detail::BackendVTable kAsyncBackendVTable{
     .copy_async = &async_copy,
     .fill_async = &async_fill,
     .wait_completion = &async_wait_completion,
-    .can_wait_queue = &can_async_wait_queue,
+    .completion_endpoint = &async_completion_endpoint,
+    .can_wait_endpoint = &can_async_wait_endpoint,
     .query_extension = &query_async_extension,
     .drain_context = &drain_async,
     .drain_queue = &drain_async,
@@ -1053,7 +1143,8 @@ NegationGraph make_negations(std::size_t count, bool finish_with_abs = false) {
 Context make_context(RegionProbe &probe) {
   const std::array providers{region_provider(probe),
                              hyle::compute::native::provider()};
-  const bool asynchronous = probe.mode == ProposalMode::kAsyncPairs ||
+  const bool asynchronous = probe.asynchronous_backend ||
+                            probe.mode == ProposalMode::kAsyncPairs ||
                             probe.mode == ProposalMode::kAsyncRejectSecond;
   return Context::create(asynchronous ? async_device(probe)
                                       : hyle::compute::cpu::device(),
@@ -1066,6 +1157,17 @@ Context make_context(RegionProbe &first, RegionProbe &second) {
                              hyle::compute::native::provider()};
   return Context::create(hyle::compute::cpu::device(), {.providers = providers})
       .value();
+}
+
+void use_delegated_runtime(RegionProbe &probe) noexcept {
+  probe.artifact_properties.runtime = {
+      .mode = hyle::compute::ProviderRuntimeMode::kDelegated,
+      .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+      .blocks_host = false,
+      .uses_private_threads = true,
+      .supports_concurrent_invocations = true,
+      .capture_compatible = false,
+  };
 }
 
 TEST(GraphRegions, ExecutesNonMaterializingExternalEffectSteps) {
@@ -1119,6 +1221,262 @@ TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   EXPECT_EQ(read(output, values.size()),
             std::vector<float>(values.begin(), values.end()));
   EXPECT_EQ(probe.submit_count, 1u);
+}
+
+TEST(GraphRegions,
+     DelegatedRegionRunsWithoutAQueueAndRetainsTheWholeInvocation) {
+  RegionProbe probe;
+  use_delegated_runtime(probe);
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.delegated_segment_count(), 1u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 0u);
+  ASSERT_EQ(compiled.report.lane_count(), 2u);
+  EXPECT_FALSE(compiled.report.lane(0)->queue_required);
+  EXPECT_EQ(compiled.report.lane(1)->runtime_mode,
+            hyle::compute::ProviderRuntimeMode::kDelegated);
+  EXPECT_FALSE(compiled.report.lane(1)->queue_required);
+  EXPECT_FALSE(compiled.executable.requires_queue(
+                   hyle::graph::ExecutionLaneId{1})
+                   .value());
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  EXPECT_TRUE(invocation
+                  .prepare_replay(
+                      {}, {.mode = hyle::graph::ReplayMode::kRequireCapture})
+                  .IsUnimplemented());
+  ASSERT_TRUE(invocation.prepare_replay({}).ok());
+
+  auto completion = invocation.submit();
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_EQ(completion->poll().value(),
+            hyle::compute::CompletionPoll::kPending);
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+
+  auto cancelled = invocation.submit().value();
+  EXPECT_TRUE(cancelled.request_cancel().ok());
+  EXPECT_TRUE(cancelled.wait().IsCancelled());
+  EXPECT_FALSE(invocation.in_flight());
+  probe.cancelled = false;
+
+  probe.terminal_failure = true;
+  EXPECT_TRUE(invocation.submit()->wait().IsInternal());
+  EXPECT_FALSE(invocation.in_flight());
+  probe.terminal_failure = false;
+
+  Completion abandoned = invocation.submit().value();
+  invocation = {};
+  EXPECT_EQ(probe.destroy_invocation_count, 0u);
+  abandoned = {};
+  ASSERT_TRUE(probe.abandoned_lifetime.valid());
+  EXPECT_EQ(probe.destroy_invocation_count, 0u);
+  finish_abandoned_prefix(probe);
+  EXPECT_EQ(probe.destroy_invocation_count, 1u);
+}
+
+TEST(GraphRegions, DelegatedSingleOperationUsesTheGraphLifetimeOwner) {
+  RegionProbe probe;
+  use_delegated_runtime(probe);
+  probe.delegated_single = true;
+  probe.required_resource = hyle::mem::system_resource();
+  const NegationGraph logical = make_negations(1);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 0u);
+  ASSERT_EQ(compiled.report.step_count(), 1u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 0u);
+  EXPECT_EQ(compiled.report.step(0)->runtime.mode,
+            hyle::compute::ProviderRuntimeMode::kDelegated);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  const std::array<float, 8> expected{4, 3, 2, 1, -1, -2, -3, -4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto completion = invocation.submit();
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_EQ(read(output, expected.size()),
+            std::vector<float>(expected.begin(), expected.end()));
+}
+
+TEST(GraphRegions, ImportsASharedQueuePrefixIntoADelegatedRegion) {
+  RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
+  probe.asynchronous_backend = true;
+  probe.required_resource = hyle::mem::system_resource();
+  use_delegated_runtime(probe);
+  const NegationGraph logical = make_negations(3);
+  Context context = make_context(probe);
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          CompileOptions{.region_selection =
+                             RegionSelectionPolicy::kRequireEstimatedBenefit})
+          .value();
+  ASSERT_EQ(compiled.report.step_count(), 2u);
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 1u);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  const std::array<float, 8> expected{4, 3, 2, 1, -1, -2, -3, -4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.prepare_replay(
+                            std::array{hyle::graph::QueueBinding{
+                                .lane = hyle::graph::ExecutionLaneId{0},
+                                .queue = &queue}})
+                  .ok());
+  const auto replay = invocation.replay_report().value();
+  EXPECT_EQ(replay.device_wait_dependency_count, 1u);
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_EQ(probe.device_wait_count, 1u);
+  EXPECT_EQ(read(output, expected.size()),
+            std::vector<float>(expected.begin(), expected.end()));
+}
+
+TEST(GraphRegions, ImportsADelegatedRegionIntoASharedQueue) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  use_delegated_runtime(probe);
+  const NegationGraph logical = make_negations(2, true);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.step_count(), 2u);
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 1u);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  const std::array<float, 8> expected{4, 3, 2, 1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_EQ(probe.device_wait_count, 1u);
+  EXPECT_EQ(read(output, expected.size()),
+            std::vector<float>(expected.begin(), expected.end()));
+}
+
+TEST(GraphRegions, ChainsDelegatedRegionsWithOneProviderDependency) {
+  RegionProbe probe;
+  use_delegated_runtime(probe);
+  const NegationGraph logical = make_negations(4);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 2u);
+  EXPECT_EQ(compiled.report.delegated_segment_count(), 2u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 0u);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  ASSERT_TRUE(invocation.prepare_replay({}).ok());
+  EXPECT_EQ(invocation.replay_report()->device_wait_dependency_count, 1u);
+  auto completion = invocation.submit();
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_EQ(probe.device_wait_count, 1u);
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+}
+
+TEST(GraphRegions, ExposesADelegatedHostWaitBeforeAcceptingAnyWork) {
+  RegionProbe probe;
+  probe.dependency_wait_supported = false;
+  use_delegated_runtime(probe);
+  const NegationGraph logical = make_negations(4);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+
+  EXPECT_TRUE(invocation
+                  .prepare_replay(
+                      {}, {.host_wait = hyle::graph::HostWaitPolicy::kReject})
+                  .IsUnimplemented());
+  EXPECT_EQ(probe.submit_count, 0u);
+  ASSERT_TRUE(invocation.prepare_replay({}).ok());
+  EXPECT_EQ(invocation.replay_report()->host_wait_dependency_count, 1u);
+  EXPECT_EQ(invocation.replay_report()->device_wait_dependency_count, 0u);
+  auto completion = invocation.submit();
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_EQ(probe.device_wait_count, 0u);
+  EXPECT_GE(probe.completion_wait_count, 2u);
+}
+
+TEST(GraphRegions, KeepsIndependentDelegatedTerminalEpisodesDistinct) {
+  RegionProbe probe;
+  use_delegated_runtime(probe);
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId first_input = builder.input(row(8)).value();
+  const ValueId second_input = builder.input(row(8)).value();
+  ValueId first_output = builder.add(Unary{UnaryKind::kNeg}, first_input).value();
+  first_output = builder.add(Unary{UnaryKind::kNeg}, first_output).value();
+  ValueId second_output =
+      builder.add(Unary{UnaryKind::kNeg}, second_input).value();
+  second_output = builder.add(Unary{UnaryKind::kNeg}, second_output).value();
+  ASSERT_TRUE(builder.publish(first_output).ok());
+  ASSERT_TRUE(builder.publish(second_output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 2u);
+  ASSERT_EQ(compiled.report.segment_dependency_count(), 0u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 0u);
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor first_source = make_tensor(row(8));
+  OwnedTensor second_source = make_tensor(row(8));
+  OwnedTensor first_destination = make_tensor(row(8));
+  OwnedTensor second_destination = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(first_input, first_source.view).ok());
+  ASSERT_TRUE(invocation.bind(second_input, second_source.view).ok());
+  ASSERT_TRUE(invocation.bind(first_output, first_destination.view).ok());
+  ASSERT_TRUE(invocation.bind(second_output, second_destination.view).ok());
+
+  auto completion = invocation.submit();
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_EQ(probe.submit_count, 2u);
+  EXPECT_EQ(probe.completion_wait_count, 2u);
 }
 
 TEST(GraphRegions, SelectsExactBoundaryAndWorkspaceResourcesForARegion) {

@@ -150,7 +150,8 @@ enum class ReplayMode : std::uint8_t {
 
 enum class HostWaitPolicy : std::uint8_t {
   // Permit prepare_replay() to select an explicit host wait when the exact
-  // destination Queue cannot consume a source Queue's asynchronous prefix.
+  // destination Queue or delegated island cannot consume the source
+  // endpoint's asynchronous prefix.
   kAllow = 0,
   // Reject such a Queue topology during cold preparation. This is useful for
   // latency-sensitive deployments that require fully device-ordered replay.
@@ -174,8 +175,8 @@ enum class ReplayDependencyRoute : std::uint8_t {
   kOrderedQueue = 0,
   // The source backend completes every Queue prefix before returning it.
   kSynchronousSource,
-  // The destination Queue consumes the source completion without blocking
-  // the submitting host thread.
+  // The destination Queue or delegated provider consumes the source
+  // completion without blocking the submitting host thread.
   kDeviceWait,
   // Replay explicitly waits on the host before submitting the destination
   // segment. This route is visible and can be rejected through ReplayOptions.
@@ -296,6 +297,10 @@ struct CompileLaneReport final {
   ExecutionLaneId lane{};
   ExecutionTargetId target{};
   ExecutionLaneRole role = ExecutionLaneRole::kCompute;
+  // Shared lanes require an exact caller Queue. Delegated lanes are emitted
+  // by Graph for provider-owned runtime islands and never accept QueueBinding.
+  compute::ProviderRuntimeMode runtime_mode =
+      compute::ProviderRuntimeMode::kSharedQueue;
   // Conservative Queue Completion capacity needed by one in-flight
   // Invocation. Deployments sharing a Queue across N concurrent lanes can
   // reserve N times this value before entering their warm path.
@@ -320,10 +325,13 @@ struct CompilePhysicalValueReport final {
   bool workspace_backed = false;
 };
 
-// A Queue segment is the unit of finalization and optional command capture.
+// An execution segment is the unit of finalization. Shared segments may use
+// Queue command capture; delegated segments are provider-owned islands.
 // Dependencies are queried through CompileReport::segment_dependency().
 struct CompileSegmentReport final {
   ExecutionLaneId lane{};
+  compute::ProviderRuntimeMode runtime_mode =
+      compute::ProviderRuntimeMode::kSharedQueue;
   std::uint32_t step_begin = 0;
   std::uint32_t step_count = 0;
   std::uint32_t dependency_begin = 0;
@@ -335,15 +343,16 @@ struct CompileSegmentReport final {
 };
 
 enum class CompileDependencyRoute : std::uint8_t {
-  // Both segments belong to one domain and therefore use the same ordered
-  // Queue; no explicit wait is emitted.
+  // Both segments belong to one exact ordered execution endpoint; no explicit
+  // wait is emitted.
   kOrderedQueue = 0,
   // The source domain's Queue completes inline, so a cross-domain data/control
   // edge needs no runtime wait even when Queue objects differ.
   kSourceCompletesInline,
-  // The concrete Queue bindings decide the route. Reusing one Queue needs no
-  // explicit wait; otherwise prepare_replay() fixes either a device-side or
-  // explicit host wait before steady execution begins.
+  // Exact Queue/provider endpoints decide the route. Reusing one endpoint
+  // needs no explicit wait; otherwise prepare_replay() fixes either a
+  // non-blocking imported wait or an explicit host wait before steady
+  // execution begins.
   kQueueBindingDependent,
 };
 
@@ -380,6 +389,7 @@ public:
   HYLE_GRAPH_API std::size_t segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t segment_dependency_count() const noexcept;
   HYLE_GRAPH_API std::size_t command_segment_count() const noexcept;
+  HYLE_GRAPH_API std::size_t delegated_segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t capturable_segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t physical_value_count() const noexcept;
   HYLE_GRAPH_API std::size_t region_count() const noexcept;

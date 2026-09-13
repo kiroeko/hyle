@@ -672,6 +672,94 @@ compute::Queue *candidate_queue(std::span<const QueueBinding> queues,
   return nullptr;
 }
 
+bool shared_lane(const detail::PlanState &plan,
+                 ExecutionLaneId lane) noexcept {
+  return lane.valid() && lane.ordinal() < plan.lanes.size() &&
+         plan.lanes[lane.ordinal()].runtime_mode ==
+             compute::ProviderRuntimeMode::kSharedQueue;
+}
+
+Result<std::size_t>
+delegated_step_index(const detail::PlanState &plan,
+                     const detail::PlanSegment &segment) noexcept {
+  if (!segment.lane.valid() || segment.lane.ordinal() >= plan.lanes.size() ||
+      plan.lanes[segment.lane.ordinal()].runtime_mode !=
+          compute::ProviderRuntimeMode::kDelegated) {
+    return std::unexpected(
+        Status::Internal("graph delegated segment has an invalid lane"));
+  }
+  std::size_t selected = SIZE_MAX;
+  const std::size_t end = segment.step_begin + segment.step_count;
+  for (std::size_t step_index = segment.step_begin; step_index < end;
+       ++step_index) {
+    const detail::PlanStep &step = plan.steps[step_index];
+    if (!step.emits_command())
+      continue;
+    if (step.lane != segment.lane ||
+        step.runtime_properties().mode !=
+            compute::ProviderRuntimeMode::kDelegated ||
+        selected != SIZE_MAX) {
+      return std::unexpected(Status::Internal(
+          "graph delegated segment does not own exactly one command"));
+    }
+    selected = step_index;
+  }
+  if (selected == SIZE_MAX) {
+    return std::unexpected(
+        Status::Internal("graph delegated segment has no command"));
+  }
+  return selected;
+}
+
+bool delegated_can_import_endpoint(
+    detail::InvocationState &invocation,
+    const detail::PlanSegment &segment,
+    compute::detail::CompletionEndpoint source) noexcept {
+  auto selected = delegated_step_index(*invocation.plan, segment);
+  if (!selected)
+    return false;
+  const detail::PlanStep &step = invocation.plan->steps[*selected];
+  if (step.kind == detail::PlanStepKind::kRegion) {
+    return invocation.invocations[*selected].region.can_import_endpoint(source);
+  }
+  if (step.kind == detail::PlanStepKind::kOperation) {
+    return compute::detail::OperationInvocationAccess::can_import_endpoint(
+        invocation.invocations[*selected].operation, source);
+  }
+  return false;
+}
+
+Result<compute::Completion> submit_delegated_segment(
+    detail::InvocationState &invocation,
+    const detail::PlanSegment &segment,
+    std::span<const compute::detail::CompletionDependency>
+        dependencies) noexcept {
+  auto selected = delegated_step_index(*invocation.plan, segment);
+  if (!selected)
+    return std::unexpected(std::move(selected).error());
+  const detail::PlanStep &step = invocation.plan->steps[*selected];
+  const auto all_inputs = std::span<const compute::ConstTensorView>(
+      invocation.submission_inputs.data(), invocation.submission_inputs.size());
+  const auto all_outputs = std::span<const compute::TensorView>(
+      invocation.submission_outputs.data(),
+      invocation.submission_outputs.size());
+  const auto inputs = all_inputs.subspan(step.input_begin, step.input_count);
+  const auto outputs =
+      all_outputs.subspan(step.output_begin, step.output_count);
+  if (step.kind == detail::PlanStepKind::kRegion) {
+    return invocation.invocations[*selected].region.submit_delegated(
+        dependencies, inputs, outputs);
+  }
+  if (step.kind == detail::PlanStepKind::kOperation) {
+    return compute::detail::OperationInvocationAccess::
+        submit_delegated_borrowed_prevalidated(
+            invocation.invocations[*selected].operation, dependencies, inputs,
+            outputs);
+  }
+  return std::unexpected(
+      Status::Internal("graph delegated step kind is invalid"));
+}
+
 Status validate_transfer_routes(detail::InvocationState &invocation,
                                 std::span<const QueueBinding> queues,
                                 ReplayReport &report) noexcept {
@@ -723,51 +811,65 @@ prepare_dependency_routes(detail::InvocationState &invocation,
   for (std::size_t segment_index = 0; segment_index < plan.segments.size();
        ++segment_index) {
     const detail::PlanSegment &segment = plan.segments[segment_index];
-    compute::Queue *destination = candidate_queue(queues, segment.lane);
+    const bool destination_shared = shared_lane(plan, segment.lane);
+    compute::Queue *destination =
+        destination_shared ? candidate_queue(queues, segment.lane) : nullptr;
     const std::size_t dependency_end =
         segment.dependency_begin + segment.dependency_count;
     for (std::size_t dependency_index = segment.dependency_begin;
          dependency_index < dependency_end; ++dependency_index) {
       const std::uint32_t source_segment =
           plan.segment_dependencies[dependency_index];
-      if (source_segment >= segment_index || destination == nullptr) {
+      if (source_segment >= segment_index ||
+          (destination_shared && destination == nullptr)) {
         return std::unexpected(
             Status::Internal("compiled graph dependency is invalid"));
       }
+      const detail::PlanSegment &source_record = plan.segments[source_segment];
+      const bool source_shared = shared_lane(plan, source_record.lane);
       compute::Queue *source =
-          candidate_queue(queues, plan.segments[source_segment].lane);
-      if (source == nullptr) {
+          source_shared ? candidate_queue(queues, source_record.lane) : nullptr;
+      if (source_shared && source == nullptr) {
         return std::unexpected(
             Status::Internal("compiled graph dependency source is invalid"));
       }
 
       ReplayDependencyRoute route = ReplayDependencyRoute::kOrderedQueue;
-      if (source == destination) {
+      const compute::detail::CompletionEndpoint source_endpoint =
+          invocation.candidate_lane_endpoints[source_record.lane.ordinal()];
+      const compute::detail::CompletionEndpoint destination_endpoint =
+          invocation.candidate_lane_endpoints[segment.lane.ordinal()];
+      if ((source_shared && destination_shared && source == destination) ||
+          (source_endpoint.valid() &&
+           source_endpoint == destination_endpoint)) {
         ++report.ordered_dependency_count;
+      } else if (!source_endpoint.valid()) {
+        route = ReplayDependencyRoute::kSynchronousSource;
+        ++report.synchronous_source_dependency_count;
       } else {
-        auto selected = compute::detail::QueueSequence::dependency_route(
-            *destination, *source);
-        if (!selected) {
-          return std::unexpected(std::move(selected).error().WithContext(
-              "selecting graph Queue dependency route"));
+        bool non_blocking = false;
+        if (destination_shared) {
+          auto accepted = compute::detail::QueueSequence::can_import_endpoint(
+              *destination, source_endpoint);
+          if (!accepted) {
+            return std::unexpected(std::move(accepted).error().WithContext(
+                "selecting graph completion dependency route"));
+          }
+          non_blocking = *accepted;
+        } else {
+          non_blocking = delegated_can_import_endpoint(invocation, segment,
+                                                       source_endpoint);
         }
-        switch (*selected) {
-        case compute::detail::QueueDependencyRoute::kNoWait:
-          route = ReplayDependencyRoute::kSynchronousSource;
-          ++report.synchronous_source_dependency_count;
-          break;
-        case compute::detail::QueueDependencyRoute::kDeviceWait:
+        if (non_blocking) {
           route = ReplayDependencyRoute::kDeviceWait;
           ++report.device_wait_dependency_count;
-          break;
-        case compute::detail::QueueDependencyRoute::kHostWait:
+        } else {
           if (host_wait_policy == HostWaitPolicy::kReject) {
             return std::unexpected(Status::Unimplemented(
-                "graph Queue topology requires a rejected host wait"));
+                "graph execution topology requires a rejected host wait"));
           }
           route = ReplayDependencyRoute::kHostWait;
           ++report.host_wait_dependency_count;
-          break;
         }
       }
       invocation.candidate_dependency_routes[dependency_index] = route;
@@ -2611,13 +2713,32 @@ Status schedule_steps(detail::PlanState &plan,
   for (detail::PlanStep &step : plan.steps) {
     if (!step.target.valid() || step.target.ordinal() >= plan.targets.size())
       return Status::Internal("prepared graph step has an invalid target");
+    if (step.runtime_properties().mode ==
+        compute::ProviderRuntimeMode::kDelegated) {
+      if (plan.lanes.size() >= detail::kNoNode ||
+          !plan.lanes.try_push_back(detail::ExecutionLaneRecord{
+              .target = step.target,
+              .role = ExecutionLaneRole::kCompute,
+              .runtime_mode = compute::ProviderRuntimeMode::kDelegated,
+          })) {
+        return plan.lanes.size() >= detail::kNoNode
+                   ? Status::ResourceExhausted(
+                         "graph delegated lane identity space is exhausted")
+                   : plan_allocation_failure();
+      }
+      step.lane = ExecutionLaneId{
+          static_cast<std::uint32_t>(plan.lanes.size() - 1)};
+      continue;
+    }
     const ExecutionLaneRole preferred_role =
         step.kind == detail::PlanStepKind::kCopy
             ? ExecutionLaneRole::kTransfer
             : ExecutionLaneRole::kCompute;
     std::uint32_t selected = kNone;
     for (std::size_t lane = 0; lane < plan.lanes.size(); ++lane) {
-      if (plan.lanes[lane].target == step.target &&
+      if (plan.lanes[lane].runtime_mode ==
+              compute::ProviderRuntimeMode::kSharedQueue &&
+          plan.lanes[lane].target == step.target &&
           plan.lanes[lane].role == preferred_role) {
         selected = static_cast<std::uint32_t>(lane);
         break;
@@ -2625,7 +2746,9 @@ Status schedule_steps(detail::PlanState &plan,
     }
     if (selected == kNone && preferred_role != ExecutionLaneRole::kCompute) {
       for (std::size_t lane = 0; lane < plan.lanes.size(); ++lane) {
-        if (plan.lanes[lane].target == step.target &&
+        if (plan.lanes[lane].runtime_mode ==
+                compute::ProviderRuntimeMode::kSharedQueue &&
+            plan.lanes[lane].target == step.target &&
             plan.lanes[lane].role == ExecutionLaneRole::kCompute) {
           selected = static_cast<std::uint32_t>(lane);
           break;
@@ -2899,8 +3022,13 @@ Status build_segments(detail::PlanState &plan,
       plan.step_segments[step] = static_cast<std::uint32_t>(segment_index);
     ++plan.lane_segment_counts[segment.lane.ordinal()];
   }
-  for (std::uint32_t count : plan.lane_segment_counts)
-    plan.required_queue_count += count != 0 ? 1u : 0u;
+  for (std::size_t lane = 0; lane < plan.lane_segment_counts.size(); ++lane) {
+    if (plan.lane_segment_counts[lane] != 0 &&
+        plan.lanes[lane].runtime_mode ==
+            compute::ProviderRuntimeMode::kSharedQueue) {
+      ++plan.required_queue_count;
+    }
+  }
 
   for (std::size_t index = 0; index < plan.steps.size(); ++index) {
     const detail::PlanStep &step = plan.steps[index];
@@ -3629,10 +3757,20 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         .lane = ExecutionLaneId{static_cast<std::uint32_t>(index)},
         .target = lane.target,
         .role = lane.role,
-        .completion_slots_per_invocation = plan.lane_segment_counts[index],
-        .queue_required = plan.lane_segment_counts[index] != 0,
-        .asynchronous_queue = properties->asynchronous_queues,
-        .capture_supported = *capture,
+        .runtime_mode = lane.runtime_mode,
+        .completion_slots_per_invocation =
+            lane.runtime_mode == compute::ProviderRuntimeMode::kSharedQueue
+                ? plan.lane_segment_counts[index]
+                : 0,
+        .queue_required =
+            lane.runtime_mode == compute::ProviderRuntimeMode::kSharedQueue &&
+            plan.lane_segment_counts[index] != 0,
+        .asynchronous_queue =
+            lane.runtime_mode == compute::ProviderRuntimeMode::kSharedQueue &&
+            properties->asynchronous_queues,
+        .capture_supported =
+            lane.runtime_mode == compute::ProviderRuntimeMode::kSharedQueue &&
+            *capture,
     };
     if (plan.lane_segment_counts[index] == 0) {
       continue;
@@ -3691,6 +3829,8 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         state->lanes[segment.lane.ordinal()].capture_supported;
     state->segments[index] = CompileSegmentReport{
         .lane = segment.lane,
+        .runtime_mode =
+            plan.lanes[segment.lane.ordinal()].runtime_mode,
         .step_begin = segment.step_begin,
         .step_count = segment.step_count,
         .dependency_begin = segment.dependency_begin,
@@ -3703,6 +3843,12 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         .capture_supported = capture_supported,
     };
     state->command_segment_count += contains_commands ? 1u : 0u;
+    state->delegated_segment_count +=
+        contains_commands &&
+                plan.lanes[segment.lane.ordinal()].runtime_mode ==
+                    compute::ProviderRuntimeMode::kDelegated
+            ? 1u
+            : 0u;
     state->capturable_segment_count += capture_supported ? 1u : 0u;
     const std::size_t dependency_end =
         segment.dependency_begin + segment.dependency_count;
@@ -3711,7 +3857,9 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
       const std::uint32_t source = plan.segment_dependencies[dependency];
       const std::uint32_t source_lane = plan.segments[source].lane.ordinal();
       if (source_lane != segment.lane.ordinal() &&
-          state->lanes[source_lane].asynchronous_queue) {
+          (state->lanes[source_lane].runtime_mode ==
+               compute::ProviderRuntimeMode::kDelegated ||
+           state->lanes[source_lane].asynchronous_queue)) {
         state->synchronization_count =
             saturating_add(state->synchronization_count, std::uint32_t{1});
       }
@@ -3945,6 +4093,10 @@ std::size_t CompileReport::command_segment_count() const noexcept {
   return state_ != nullptr ? state_->command_segment_count : 0;
 }
 
+std::size_t CompileReport::delegated_segment_count() const noexcept {
+  return state_ != nullptr ? state_->delegated_segment_count : 0;
+}
+
 std::size_t CompileReport::capturable_segment_count() const noexcept {
   return state_ != nullptr ? state_->capturable_segment_count : 0;
 }
@@ -4078,7 +4230,11 @@ CompileReport::segment_dependency(std::size_t segment_index,
   const ExecutionLaneId source_lane = state_->segments[source].lane;
   CompileDependencyRoute route = CompileDependencyRoute::kOrderedQueue;
   if (source_lane != segment.lane) {
-    route = state_->lanes[source_lane.ordinal()].asynchronous_queue
+    const CompileLaneReport &source_report =
+        state_->lanes[source_lane.ordinal()];
+    route = (source_report.runtime_mode ==
+                 compute::ProviderRuntimeMode::kDelegated ||
+             source_report.asynchronous_queue)
                 ? CompileDependencyRoute::kQueueBindingDependent
                 : CompileDependencyRoute::kSourceCompletesInline;
   }
@@ -4231,7 +4387,9 @@ Executable::requires_queue(ExecutionLaneId lane) const noexcept {
     return std::unexpected(
         Status::OutOfRange("execution lane is out of range"));
   }
-  return state_->lane_segment_counts[lane.ordinal()] != 0;
+  return state_->lane_segment_counts[lane.ordinal()] != 0 &&
+         state_->lanes[lane.ordinal()].runtime_mode ==
+             compute::ProviderRuntimeMode::kSharedQueue;
 }
 
 std::size_t Executable::region_count() const noexcept {
@@ -4324,6 +4482,10 @@ Result<Invocation> Executable::create_invocation() const noexcept {
           state_->segment_dependencies.size()) ||
       !invocation->candidate_dependency_routes.try_resize(
           state_->segment_dependencies.size()) ||
+      !invocation->lane_endpoints.try_resize(state_->lanes.size()) ||
+      !invocation->candidate_lane_endpoints.try_resize(state_->lanes.size()) ||
+      !invocation->completion_dependencies.try_resize(
+          state_->segment_dependencies.size()) ||
       !invocation->aggregate_segments.try_resize(state_->lanes.size()) ||
       !invocation->aggregate_children.try_resize(state_->lanes.size())) {
     detail::release(invocation);
@@ -4360,6 +4522,8 @@ Result<Invocation> Executable::create_invocation() const noexcept {
   for (std::size_t index = 0; index < invocation->queues.size(); ++index) {
     invocation->queues[index] = nullptr;
     invocation->queue_seen[index] = 0;
+    invocation->lane_endpoints[index] = {};
+    invocation->candidate_lane_endpoints[index] = {};
   }
   for (std::size_t index = 0; index < state_->constant_ids.size(); ++index) {
     const std::size_t logical = state_->constant_ids[index].ordinal();
@@ -4407,6 +4571,39 @@ Result<Invocation> Executable::create_invocation() const noexcept {
       detail::release(invocation);
       return std::unexpected(invocation_allocation_failure());
     }
+  }
+  // A delegated endpoint is an invocation-local ordered execution identity.
+  // Resolve it once, after every provider invocation exists, so replay
+  // preparation can qualify all cross-island edges without a warm lookup.
+  for (std::size_t step_index = 0; step_index < state_->steps.size();
+       ++step_index) {
+    const detail::PlanStep &step = state_->steps[step_index];
+    if (!step.emits_command() ||
+        step.runtime_properties().mode !=
+            compute::ProviderRuntimeMode::kDelegated) {
+      continue;
+    }
+    if (!step.lane.valid() || step.lane.ordinal() >= state_->lanes.size() ||
+        invocation->lane_endpoints[step.lane.ordinal()].valid()) {
+      detail::release(invocation);
+      return std::unexpected(Status::Internal(
+          "graph delegated invocation has an invalid execution lane"));
+    }
+    compute::detail::CompletionEndpoint endpoint{};
+    if (step.kind == detail::PlanStepKind::kRegion) {
+      endpoint = invocation->invocations[step_index].region.delegated_endpoint();
+    } else if (step.kind == detail::PlanStepKind::kOperation) {
+      endpoint =
+          compute::detail::OperationInvocationAccess::delegated_endpoint(
+              invocation->invocations[step_index].operation);
+    }
+    if (!endpoint.valid()) {
+      detail::release(invocation);
+      return std::unexpected(Status::Internal(
+          "delegated provider returned an invalid execution endpoint"));
+    }
+    invocation->lane_endpoints[step.lane.ordinal()] = endpoint;
+    invocation->candidate_lane_endpoints[step.lane.ordinal()] = endpoint;
   }
   return detail::InvocationAccess::adopt(invocation);
 }
@@ -4595,9 +4792,10 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       return Status::InvalidArgument("graph replay queue binding is invalid");
     }
     const std::size_t lane = binding.lane.ordinal();
-    if (state_->plan->lane_segment_counts[lane] == 0) {
+    if (state_->plan->lane_segment_counts[lane] == 0 ||
+        !shared_lane(*state_->plan, binding.lane)) {
       return Status::InvalidArgument(
-          "graph replay queue names an unused execution lane");
+          "graph replay queue names a lane that does not accept a queue");
     }
     if (state_->queue_seen[lane] != 0)
       return Status::InvalidArgument(
@@ -4611,9 +4809,36 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   }
   for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
     if (state_->plan->lane_segment_counts[lane] != 0 &&
+        shared_lane(*state_->plan,
+                    ExecutionLaneId{static_cast<std::uint32_t>(lane)}) &&
         state_->queue_seen[lane] == 0) {
       return Status::InvalidArgument("graph replay queue binding is missing");
     }
+  }
+
+  for (std::size_t lane = 0; lane < state_->plan->lanes.size(); ++lane) {
+    const ExecutionLaneId lane_id{static_cast<std::uint32_t>(lane)};
+    if (state_->plan->lane_segment_counts[lane] == 0) {
+      state_->candidate_lane_endpoints[lane] = {};
+      continue;
+    }
+    if (!shared_lane(*state_->plan, lane_id)) {
+      if (!state_->lane_endpoints[lane].valid()) {
+        return Status::Internal(
+            "graph delegated execution endpoint is unavailable");
+      }
+      state_->candidate_lane_endpoints[lane] = state_->lane_endpoints[lane];
+      continue;
+    }
+    compute::Queue *queue = candidate_queue(queues, lane_id);
+    if (queue == nullptr)
+      return Status::Internal("graph replay queue binding is unavailable");
+    auto endpoint = compute::detail::QueueSequence::completion_endpoint(*queue);
+    if (!endpoint) {
+      return std::move(endpoint).error().WithContext(
+          "querying graph Queue completion endpoint");
+    }
+    state_->candidate_lane_endpoints[lane] = *endpoint;
   }
 
   Status bindings = prepare_invocation_bindings(*state_);
@@ -4670,6 +4895,9 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   std::copy(state_->candidate_dependency_routes.begin(),
             state_->candidate_dependency_routes.end(),
             state_->dependency_routes.begin());
+  std::copy(state_->candidate_lane_endpoints.begin(),
+            state_->candidate_lane_endpoints.end(),
+            state_->lane_endpoints.begin());
   state_->transfers_prepared = true;
   state_->dependencies_prepared = true;
   state_->replay_report = *dependency_report;
@@ -4717,6 +4945,14 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
     if (!has_commands)
       continue;
     ++command_segment_count;
+    if (!shared_lane(*state_->plan, segment.lane)) {
+      if (options.mode == ReplayMode::kRequireCapture) {
+        clear_captures();
+        return Status::Unimplemented(
+            "a delegated graph segment cannot use Queue command capture");
+      }
+      continue;
+    }
     if (!segment_capture_compatible(*state_->plan, segment)) {
       if (options.mode == ReplayMode::kRequireCapture) {
         clear_captures();
@@ -4879,7 +5115,8 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
         "single-queue submit requires exactly one active execution lane"));
   }
   std::uint32_t active_lane = 0;
-  while (state_->plan->lane_segment_counts[active_lane] == 0)
+  while (state_->plan->lane_segment_counts[active_lane] == 0 ||
+         !shared_lane(*state_->plan, ExecutionLaneId{active_lane}))
     ++active_lane;
   const std::array bindings{QueueBinding{
       .lane = ExecutionLaneId{active_lane}, .queue = &queue}};
@@ -4899,7 +5136,7 @@ Result<compute::Completion> Invocation::submit() noexcept {
   }
   if (state_->plan->required_queue_count != 0) {
     return std::unexpected(Status::InvalidArgument(
-        "queue-free submit requires a graph with no runtime commands"));
+        "queue-free submit requires a graph with no caller Queue lanes"));
   }
   constexpr std::span<const QueueBinding> no_queues{};
   if (!state_->replay_prepared) {
@@ -4967,6 +5204,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
     }
     const std::size_t lane = binding.lane.ordinal();
     if (plan.lane_segment_counts[lane] == 0 ||
+        !shared_lane(plan, binding.lane) ||
         state_->queue_seen[lane] != 0 ||
         state_->queues[lane] != binding.queue) {
       return std::unexpected(Status::InvalidArgument(
@@ -4976,6 +5214,8 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
   }
   for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
     if (plan.lane_segment_counts[lane] != 0 &&
+        shared_lane(plan,
+                    ExecutionLaneId{static_cast<std::uint32_t>(lane)}) &&
         state_->queue_seen[lane] == 0) {
       return std::unexpected(
           Status::InvalidArgument("graph submit queue binding is missing"));
@@ -4994,7 +5234,9 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
   for (std::size_t segment_index = 0; segment_index < plan.segments.size();
        ++segment_index) {
     const detail::PlanSegment &segment = plan.segments[segment_index];
-    compute::Queue &queue = *state_->queues[segment.lane.ordinal()];
+    const bool is_shared = shared_lane(plan, segment.lane);
+    compute::Queue *queue =
+        is_shared ? state_->queues[segment.lane.ordinal()] : nullptr;
     bool continue_segment = true;
     const std::size_t dependency_end =
         segment.dependency_begin + segment.dependency_count;
@@ -5036,56 +5278,109 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
     if (!continue_segment)
       break;
 
-    auto sequence = compute::detail::QueueSequence::begin(queue);
-    if (!sequence) {
-      tail_error = std::move(sequence).error();
-      break;
-    }
-    for (std::size_t dependency_index = segment.dependency_begin;
-         dependency_index < dependency_end; ++dependency_index) {
-      if (state_->dependency_routes[dependency_index] ==
-          ReplayDependencyRoute::kDeviceWait) {
+    if (is_shared) {
+      if (queue == nullptr) {
+        tail_error = Status::Internal(
+            "prepared graph shared lane has no Queue binding");
+        break;
+      }
+      auto sequence = compute::detail::QueueSequence::begin(*queue);
+      if (!sequence) {
+        tail_error = std::move(sequence).error();
+        break;
+      }
+      for (std::size_t dependency_index = segment.dependency_begin;
+           dependency_index < dependency_end; ++dependency_index) {
+        if (state_->dependency_routes[dependency_index] ==
+            ReplayDependencyRoute::kDeviceWait) {
+          const std::uint32_t source_segment =
+              plan.segment_dependencies[dependency_index];
+          compute::Completion &source =
+              state_->segment_completions[source_segment];
+          compute::detail::EnqueueResult waited = sequence->enqueue_wait(source);
+          const bool wait_succeeded = waited.status.ok();
+          if (!wait_succeeded) {
+            tail_error =
+                waited.status.IsUnimplemented()
+                    ? Status::Internal(
+                          "prepared graph completion-wait route was rejected")
+                    : waited.status;
+          }
+          sequence->record(std::move(waited));
+          if (!wait_succeeded) {
+            continue_segment = false;
+            break;
+          }
+        }
+      }
+
+      if (continue_segment &&
+          state_->captured_segments[segment_index].valid()) {
+        compute::detail::EnqueueResult launched =
+            state_->captured_segments[segment_index].enqueue(*sequence);
+        continue_segment = launched.status.ok();
+        if (!continue_segment)
+          tail_error = launched.status;
+        sequence->record(std::move(launched));
+      } else if (continue_segment) {
+        Status enqueued = enqueue_segment_steps(*state_, segment, *sequence);
+        if (!enqueued.ok()) {
+          tail_error = std::move(enqueued);
+          continue_segment = false;
+        }
+      }
+      auto completion = sequence->finish();
+      if (!completion) {
+        tail_error = std::move(completion).error();
+        break;
+      }
+      state_->segment_completions[segment_index] = std::move(*completion);
+    } else {
+      std::size_t imported_count = 0;
+      for (std::size_t dependency_index = segment.dependency_begin;
+           dependency_index < dependency_end; ++dependency_index) {
+        if (state_->dependency_routes[dependency_index] !=
+            ReplayDependencyRoute::kDeviceWait) {
+          continue;
+        }
         const std::uint32_t source_segment =
             plan.segment_dependencies[dependency_index];
         compute::Completion &source =
             state_->segment_completions[source_segment];
-        compute::detail::EnqueueResult waited = sequence->enqueue_wait(source);
-        const bool wait_succeeded = waited.status.ok();
-        if (!wait_succeeded) {
-          tail_error =
-              waited.status.IsUnimplemented()
-                  ? Status::Internal(
-                        "prepared graph device-wait route was rejected")
-                  : waited.status;
+        const compute::detail::CompletionDependency dependency =
+            compute::detail::CompletionAccess::dependency(source);
+        if (!dependency.pending()) {
+          if (dependency.terminal_hint != nullptr &&
+              !dependency.terminal_hint->ok()) {
+            tail_error = *dependency.terminal_hint;
+            continue_segment = false;
+            break;
+          }
+          continue;
         }
-        sequence->record(std::move(waited));
-        if (!wait_succeeded) {
+        state_->completion_dependencies[segment.dependency_begin +
+                                        imported_count] = dependency;
+        ++imported_count;
+      }
+      if (continue_segment) {
+        const auto dependencies =
+            imported_count == 0
+                ? std::span<const compute::detail::CompletionDependency>{}
+                : std::span<const compute::detail::CompletionDependency>(
+                      state_->completion_dependencies.data() +
+                          segment.dependency_begin,
+                      imported_count);
+        auto completion =
+            submit_delegated_segment(*state_, segment, dependencies);
+        if (!completion) {
+          tail_error = std::move(completion).error();
           continue_segment = false;
-          break;
+        } else {
+          state_->segment_completions[segment_index] =
+              std::move(*completion);
         }
       }
     }
-
-    if (continue_segment && state_->captured_segments[segment_index].valid()) {
-      compute::detail::EnqueueResult launched =
-          state_->captured_segments[segment_index].enqueue(*sequence);
-      continue_segment = launched.status.ok();
-      if (!continue_segment)
-        tail_error = launched.status;
-      sequence->record(std::move(launched));
-    } else if (continue_segment) {
-      Status enqueued = enqueue_segment_steps(*state_, segment, *sequence);
-      if (!enqueued.ok()) {
-        tail_error = std::move(enqueued);
-        continue_segment = false;
-      }
-    }
-    auto completion = sequence->finish();
-    if (!completion) {
-      tail_error = std::move(completion).error();
-      break;
-    }
-    state_->segment_completions[segment_index] = std::move(*completion);
     if (!continue_segment)
       break;
   }
@@ -5094,12 +5389,22 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
       [&](std::span<const std::uint32_t> candidates) noexcept {
         std::size_t count = 0;
         for (const std::uint32_t candidate : candidates) {
+          const detail::PlanSegment &candidate_segment =
+              plan.segments[candidate];
+          if (!shared_lane(plan, candidate_segment.lane)) {
+            // A delegated Completion represents this exact provider episode,
+            // not a HYLE ordered-Queue prefix. Even equal endpoint identities
+            // therefore remain independently observable terminal work.
+            state_->aggregate_segments[count++] = candidate;
+            continue;
+          }
           const compute::Queue *queue =
-              state_->queues[plan.segments[candidate].lane.ordinal()];
+              state_->queues[candidate_segment.lane.ordinal()];
           std::size_t match = count;
           for (std::size_t index = 0; index < count; ++index) {
             const std::uint32_t selected = state_->aggregate_segments[index];
-            if (state_->queues[plan.segments[selected].lane.ordinal()] ==
+            if (shared_lane(plan, plan.segments[selected].lane) &&
+                state_->queues[plan.segments[selected].lane.ordinal()] ==
                 queue) {
               match = index;
               break;

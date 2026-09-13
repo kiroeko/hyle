@@ -104,7 +104,12 @@ detail::EnqueueResult wait_completion_impl(void *,
   return detail::EnqueueResult::rejected(Status::Unimplemented(
       "CPU queue cannot consume an asynchronous backend completion"));
 }
-bool can_wait_queue_impl(void *, BackendId, void *) noexcept { return false; }
+detail::CompletionEndpoint completion_endpoint_impl(void *) noexcept {
+  return {};
+}
+bool can_wait_endpoint_impl(void *, detail::CompletionEndpoint) noexcept {
+  return false;
+}
 const void *query_extension_impl(void *, BackendExtensionId) noexcept {
   return nullptr;
 }
@@ -131,7 +136,8 @@ const detail::BackendVTable kBackendVTable{
     .copy_async = &copy_async_impl,
     .fill_async = &fill_async_impl,
     .wait_completion = &wait_completion_impl,
-    .can_wait_queue = &can_wait_queue_impl,
+    .completion_endpoint = &completion_endpoint_impl,
+    .can_wait_endpoint = &can_wait_endpoint_impl,
     .query_extension = &query_extension_impl,
     .drain_context = &drain_context_impl,
     .drain_queue = &drain_queue_impl,

@@ -107,10 +107,13 @@ probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 
   检查。prepare/resource mismatch 在 provider admission 和 host mapping 前失败；
 - native 与 oneDNN single-op provider 已迁移；C66 的 region extension 已升为 v4，并与 operation 共用 exact
   resource requirement、shared/delegated runtime 和 caller/provider workspace owner 合同。shared region、oneDNN
-  region 与 Graph 的精确资源选择已通过 Windows 定向测试；delegated region 执行闭环及 C67 三交付仍必须随
-  Graph G70--G81 完成，因此本卡保持 `AUDITED`。
+  region 与 Graph 的精确资源选择已通过 Windows 定向测试；Graph 现以 synthetic lane 执行 delegated operation/
+  region，并完成 shared↔delegated、delegated↔delegated endpoint import、显式 host-wait、取消、异步失败和
+  abandon 保活。Graph-only borrowed submit 把 Completion 的唯一 lifetime attachment 留给整次 Graph Invocation，
+  避免子 invocation 被保活但 tensor/workspace 提前释放。C67 三交付仍须随 Graph G70--G81 完成，因此本卡
+  保持 `AUDITED`。
 
-当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及六个逐头目标共 15 个定向测试；这只
+当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及相关逐头目标；这只
 是施工检查点，不替代终局三平台、sanitizer、三交付和 P0 裁决。
 
 ## 七问（AUDITED）

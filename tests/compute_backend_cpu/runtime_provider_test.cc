@@ -441,11 +441,22 @@ hyle::compute::detail::EnqueueResult async_wait_completion(
   return hyle::compute::detail::EnqueueResult::accepted_command();
 }
 
-bool can_async_wait_queue(void *destination_queue,
-                          hyle::compute::BackendId source_backend,
-                          void *source_queue) noexcept {
-  return destination_queue != nullptr && source_backend == kAsyncBackendId &&
-         source_queue != nullptr;
+hyle::compute::detail::CompletionEndpoint
+async_completion_endpoint(void *source_queue) noexcept {
+  return source_queue == nullptr
+             ? hyle::compute::detail::CompletionEndpoint{}
+             : hyle::compute::detail::CompletionEndpoint{
+                   .authority = &kAsyncOperationCompletionVTable,
+                   .identity = source_queue,
+               };
+}
+
+bool can_async_wait_endpoint(
+    void *destination_queue,
+    hyle::compute::detail::CompletionEndpoint source) noexcept {
+  return destination_queue != nullptr &&
+         source.authority == &kAsyncOperationCompletionVTable &&
+         source.identity != nullptr;
 }
 
 const void *
@@ -479,7 +490,8 @@ const hyle::compute::detail::BackendVTable kAsyncBackendVTable{
     .copy_async = &async_copy,
     .fill_async = &async_fill,
     .wait_completion = &async_wait_completion,
-    .can_wait_queue = &can_async_wait_queue,
+    .completion_endpoint = &async_completion_endpoint,
+    .can_wait_endpoint = &can_async_wait_endpoint,
     .query_extension = &query_async_extension,
     .drain_context = &drain_async,
     .drain_queue = &drain_async,

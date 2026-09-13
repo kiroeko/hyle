@@ -50,6 +50,13 @@ public:
   enqueue(compute::detail::QueueSequence &sequence,
           std::span<const compute::ConstTensorView> inputs,
           std::span<const compute::TensorView> outputs) noexcept;
+  compute::detail::CompletionEndpoint delegated_endpoint() const noexcept;
+  bool can_import_endpoint(
+      compute::detail::CompletionEndpoint source) const noexcept;
+  Result<compute::Completion> submit_delegated(
+      std::span<const compute::detail::CompletionDependency> dependencies,
+      std::span<const compute::ConstTensorView> inputs,
+      std::span<const compute::TensorView> outputs) noexcept;
 
 private:
   void reset() noexcept;
@@ -119,6 +126,16 @@ public:
   enqueue(void *invocation, compute::detail::QueueSequence &sequence,
           std::span<const compute::ConstTensorView> inputs,
           std::span<const compute::TensorView> outputs) const noexcept;
+  compute::detail::CompletionEndpoint
+  delegated_endpoint(void *invocation) const noexcept;
+  bool can_import_endpoint(
+      void *invocation,
+      compute::detail::CompletionEndpoint source) const noexcept;
+  Result<compute::Completion> submit_delegated(
+      void *invocation,
+      std::span<const compute::detail::CompletionDependency> dependencies,
+      std::span<const compute::ConstTensorView> inputs,
+      std::span<const compute::TensorView> outputs) const noexcept;
 
 private:
   friend class RegionInvocation;
@@ -168,6 +185,28 @@ inline compute::detail::EnqueueResult RegionInvocation::enqueue(
         Status::FailedPrecondition("graph region invocation is invalid"));
   }
   return prepared_->enqueue(state_, sequence, inputs, outputs);
+}
+
+inline compute::detail::CompletionEndpoint
+RegionInvocation::delegated_endpoint() const noexcept {
+  return valid() ? prepared_->delegated_endpoint(state_)
+                 : compute::detail::CompletionEndpoint{};
+}
+
+inline bool RegionInvocation::can_import_endpoint(
+    compute::detail::CompletionEndpoint source) const noexcept {
+  return valid() && prepared_->can_import_endpoint(state_, source);
+}
+
+inline Result<compute::Completion> RegionInvocation::submit_delegated(
+    std::span<const compute::detail::CompletionDependency> dependencies,
+    std::span<const compute::ConstTensorView> inputs,
+    std::span<const compute::TensorView> outputs) noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("graph region invocation is invalid"));
+  }
+  return prepared_->submit_delegated(state_, dependencies, inputs, outputs);
 }
 
 inline Result<RegionInvocation>
@@ -224,6 +263,102 @@ inline compute::detail::EnqueueResult PreparedRegion::enqueue(
             call.inputs, call.outputs);
       },
       &episode);
+}
+
+inline compute::detail::CompletionEndpoint
+PreparedRegion::delegated_endpoint(void *invocation) const noexcept {
+  if (!valid() ||
+      prepared_.properties.runtime.mode !=
+          compute::ProviderRuntimeMode::kDelegated ||
+      prepared_.vtable->endpoint == nullptr) {
+    return {};
+  }
+  struct Episode final {
+    const PreparedRegion *region = nullptr;
+    void *invocation = nullptr;
+    compute::detail::CompletionEndpoint endpoint{};
+  } episode{this, invocation, {}};
+  const Status status = compute::detail::ProviderExtensionAccess::call(
+      extension_,
+      +[](void *, const void *, void *opaque) noexcept -> Status {
+        auto &call = *static_cast<Episode *>(opaque);
+        call.endpoint = call.region->prepared_.vtable->endpoint(
+            call.region->prepared_.state, call.invocation);
+        return Status::Ok();
+      },
+      &episode);
+  return status.ok() ? episode.endpoint
+                     : compute::detail::CompletionEndpoint{};
+}
+
+inline bool PreparedRegion::can_import_endpoint(
+    void *invocation,
+    compute::detail::CompletionEndpoint source) const noexcept {
+  if (!source.valid() || !valid() ||
+      prepared_.properties.runtime.mode !=
+          compute::ProviderRuntimeMode::kDelegated ||
+      prepared_.vtable->can_import_endpoint == nullptr) {
+    return false;
+  }
+  struct Episode final {
+    const PreparedRegion *region = nullptr;
+    void *invocation = nullptr;
+    compute::detail::CompletionEndpoint source{};
+    bool accepted = false;
+  } episode{this, invocation, source, false};
+  const Status status = compute::detail::ProviderExtensionAccess::call(
+      extension_,
+      +[](void *, const void *, void *opaque) noexcept -> Status {
+        auto &call = *static_cast<Episode *>(opaque);
+        call.accepted = call.region->prepared_.vtable->can_import_endpoint(
+            call.region->prepared_.state, call.invocation, call.source);
+        return Status::Ok();
+      },
+      &episode);
+  return status.ok() && episode.accepted;
+}
+
+inline Result<compute::Completion> PreparedRegion::submit_delegated(
+    void *invocation,
+    std::span<const compute::detail::CompletionDependency> dependencies,
+    std::span<const compute::ConstTensorView> inputs,
+    std::span<const compute::TensorView> outputs) const noexcept {
+  if (!valid() ||
+      prepared_.properties.runtime.mode !=
+          compute::ProviderRuntimeMode::kDelegated ||
+      prepared_.vtable->delegated_submit == nullptr) {
+    return std::unexpected(
+        Status::FailedPrecondition("graph region is not delegated"));
+  }
+  Result<compute::Completion> submitted = std::unexpected(
+      Status::Internal("delegated graph region submission did not run"));
+  struct Episode final {
+    const PreparedRegion *region = nullptr;
+    void *invocation = nullptr;
+    std::span<const compute::detail::CompletionDependency> dependencies{};
+    std::span<const compute::ConstTensorView> inputs{};
+    std::span<const compute::TensorView> outputs{};
+    Result<compute::Completion> *submitted = nullptr;
+  } episode{this, invocation, dependencies, inputs, outputs, &submitted};
+  const Status status = compute::detail::ProviderExtensionAccess::call(
+      extension_,
+      +[](void *, const void *, void *opaque) noexcept -> Status {
+        auto &call = *static_cast<Episode *>(opaque);
+        *call.submitted = call.region->prepared_.vtable->delegated_submit(
+            call.region->prepared_.state, call.invocation, call.dependencies,
+            call.inputs, call.outputs);
+        return Status::Ok();
+      },
+      &episode);
+  if (!status.ok())
+    return std::unexpected(status);
+  if (!submitted)
+    return std::unexpected(std::move(submitted).error());
+  if (!submitted->valid()) {
+    return std::unexpected(Status::Internal(
+        "delegated graph region returned an invalid completion"));
+  }
+  return submitted;
 }
 
 enum class PlanStepKind : std::uint8_t {
@@ -410,6 +545,8 @@ struct ExecutionTargetRecord final {
 struct ExecutionLaneRecord final {
   ExecutionTargetId target{};
   ExecutionLaneRole role = ExecutionLaneRole::kCompute;
+  compute::ProviderRuntimeMode runtime_mode =
+      compute::ProviderRuntimeMode::kSharedQueue;
 };
 
 using StorageDomainRecords =
@@ -593,6 +730,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   std::size_t segment_count = 0;
   std::size_t segment_dependency_count = 0;
   std::size_t command_segment_count = 0;
+  std::size_t delegated_segment_count = 0;
   std::size_t capturable_segment_count = 0;
   std::size_t region_count = 0;
   std::size_t fallback_operation_count = 0;
@@ -630,6 +768,12 @@ using AggregateChildStates =
     container::SmallVector<AggregateChildState, 4, mem::AllocatorRef>;
 using ReplayDependencyRoutes =
     container::SmallVector<ReplayDependencyRoute, 4, mem::AllocatorRef>;
+using CompletionEndpoints =
+    container::SmallVector<compute::detail::CompletionEndpoint, 4,
+                           mem::AllocatorRef>;
+using CompletionDependencies =
+    container::SmallVector<compute::detail::CompletionDependency, 4,
+                           mem::AllocatorRef>;
 
 // Preallocated mutable state for a public Completion that represents several
 // independent terminal Queue segments. It is activated only while an
@@ -655,6 +799,8 @@ struct InvocationState final : util::RefCounted<InvocationState> {
         queues(allocator), queue_seen(allocator),
         segment_completions(allocator), captured_segments(allocator),
         dependency_routes(allocator), candidate_dependency_routes(allocator),
+        lane_endpoints(allocator), candidate_lane_endpoints(allocator),
+        completion_dependencies(allocator),
         aggregate_segments(allocator), aggregate_children(allocator) {
     retain(plan);
   }
@@ -690,6 +836,9 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   // transfer and completion-capacity checks succeed.
   ReplayDependencyRoutes dependency_routes;
   ReplayDependencyRoutes candidate_dependency_routes;
+  CompletionEndpoints lane_endpoints;
+  CompletionEndpoints candidate_lane_endpoints;
+  CompletionDependencies completion_dependencies;
   ValueOrdinals aggregate_segments;
   AggregateChildStates aggregate_children;
   AggregateCompletionState aggregate_completion{};

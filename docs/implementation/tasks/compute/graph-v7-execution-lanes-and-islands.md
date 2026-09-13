@@ -126,10 +126,14 @@ auto done = HYLE_TRY(invocation.submit(bindings));
   plan；融合路线没有可行资源时，在未接受工作前显式退回 operation fallback；
 - schedule 已先于 lifetime planning；workspace alias 只发生在 partial-order 证明可比较的 chain 内，跨 lane
   unordered lifetime 即使共享同一 resource 也不会因拓扑序偶然复用；旧单 target `prepare_steps` 路径已删除；
-- Windows 当前 Graph/oneDNN 六组定向测试通过，并新增 exact region input/output/workspace、真实 boundary copy、
-  provider-owned workspace 与 resource-route fallback 覆盖。这仍不是 G70--G81 终局证据；
-- 剩余硬门是 G77 的 `AllowSerialization` 可见加边、G78/G80 delegated endpoint/Completion 执行闭环、真实
-  CUDA 同 storage 多 lane/capture 探针，以及故障、sanitizer、三平台和三交付验证。
+- G78/G80 的 Windows 纵切已经贯通：delegated operation/region 使用无需 QueueBinding 的 synthetic lane；
+  shared↔delegated 与 delegated↔delegated 依赖在冷路径按 exact endpoint 选择 ordered、non-blocking import 或
+  可拒绝 host wait；取消、异步失败、丢弃 pending handle、独立 delegated sinks 与整次 Invocation/workspace
+  保活均有定向覆盖。shared segment 仍走原 QueueSequence，delegated 每 island 只返回一个真实 Completion；
+- Windows 当前 Graph/oneDNN/CPU 七组定向目标通过，并覆盖 exact region input/output/workspace、真实 boundary
+  copy、provider-owned workspace 与 resource-route fallback。这仍不是 G70--G81 终局证据；
+- 剩余硬门是 G77 的 `AllowSerialization` 可见加边、shared-only P0 短路径复核、真实 CUDA 同 storage 多
+  lane/capture 探针，以及故障、sanitizer、三平台和三交付验证。
 
 ## 七问（AUDITED）
 

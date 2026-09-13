@@ -565,7 +565,9 @@ Result<Context> Context::create(Device device,
       table->reserve_completions == nullptr ||
       table->transfer_properties == nullptr || table->copy_async == nullptr ||
       table->fill_async == nullptr || table->wait_completion == nullptr ||
-      table->can_wait_queue == nullptr || table->query_extension == nullptr ||
+      table->completion_endpoint == nullptr ||
+      table->can_wait_endpoint == nullptr ||
+      table->query_extension == nullptr ||
       table->drain_context == nullptr || table->drain_queue == nullptr) {
     return std::unexpected(Status::InvalidArgument(
         "device backend has an incomplete runtime contract"));
@@ -933,13 +935,51 @@ detail::QueueSequence::dependency_route(const Queue &destination,
     return std::unexpected(std::move(source_properties).error());
   if (!source_properties->asynchronous_queues)
     return detail::QueueDependencyRoute::kNoWait;
-  const bool compatible =
-      destination_state->context->backend_vtable->can_wait_queue(
-          destination_state->backend_state,
-          source_state->context->backend_vtable->id,
+  const CompletionEndpoint source_endpoint =
+      source_state->context->backend_vtable->completion_endpoint(
           source_state->backend_state);
+  if (!source_endpoint.valid()) {
+    return std::unexpected(Status::Internal(
+        "asynchronous compute Queue has no completion endpoint"));
+  }
+  const bool compatible =
+      destination_state->context->backend_vtable->can_wait_endpoint(
+          destination_state->backend_state, source_endpoint);
   return compatible ? detail::QueueDependencyRoute::kDeviceWait
                     : detail::QueueDependencyRoute::kHostWait;
+}
+
+Result<detail::CompletionEndpoint>
+detail::QueueSequence::completion_endpoint(const Queue &queue) noexcept {
+  detail::QueueState *state = detail::ContextAccess::state(queue);
+  if (state == nullptr || !queue.is_open()) {
+    return std::unexpected(
+        Status::FailedPrecondition("compute dependency queue is invalid"));
+  }
+  auto properties = state->context->device.properties();
+  if (!properties)
+    return std::unexpected(std::move(properties).error());
+  const CompletionEndpoint endpoint =
+      state->context->backend_vtable->completion_endpoint(
+          state->backend_state);
+  if (properties->asynchronous_queues && !endpoint.valid()) {
+    return std::unexpected(Status::Internal(
+        "asynchronous compute Queue has no completion endpoint"));
+  }
+  return endpoint;
+}
+
+Result<bool> detail::QueueSequence::can_import_endpoint(
+    const Queue &destination, CompletionEndpoint source) noexcept {
+  detail::QueueState *state = detail::ContextAccess::state(destination);
+  if (state == nullptr || !destination.is_open()) {
+    return std::unexpected(
+        Status::FailedPrecondition("compute dependency queue is invalid"));
+  }
+  if (!source.valid())
+    return false;
+  return state->context->backend_vtable->can_wait_endpoint(
+      state->backend_state, source);
 }
 
 void detail::QueueSequence::record(EnqueueResult result) noexcept {

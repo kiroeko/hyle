@@ -52,11 +52,14 @@ struct BackendVTable final {
   EnqueueResult (*wait_completion)(void *queue,
                                    const CompletionVTable *completion_vtable,
                                    void *completion_state) noexcept = nullptr;
-  // Cold compatibility query for the exact source Queue kind. Returning true
-  // commits wait_completion() to accepting a pending prefix Completion from
-  // that Queue; false lets the Graph planner expose/reject a host wait.
-  bool (*can_wait_queue)(void *destination_queue, BackendId source_backend,
-                         void *source_queue) noexcept = nullptr;
+  // Cold endpoint for completions emitted by this exact Queue. Synchronous
+  // queues may return an invalid endpoint because their prefixes need no wait.
+  CompletionEndpoint (*completion_endpoint)(void *queue) noexcept = nullptr;
+  // Returning true commits wait_completion() to accepting a pending
+  // Completion produced by `source`; false lets Graph expose/reject a host
+  // wait. The endpoint keeps backend/provider types out of the common ABI.
+  bool (*can_wait_endpoint)(void *destination_queue,
+                            CompletionEndpoint source) noexcept = nullptr;
   const void *(*query_extension)(void *context,
                                  BackendExtensionId id) noexcept = nullptr;
   Status (*drain_context)(void *context) noexcept = nullptr;

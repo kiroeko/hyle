@@ -64,6 +64,14 @@ public:
   // objects. Same-Queue ordering is normally handled by Graph before calling.
   HYLE_COMPUTE_API static Result<QueueDependencyRoute>
   dependency_route(const Queue &destination, const Queue &source) noexcept;
+  // Cold endpoint bridge shared by Queue and delegated-provider islands.
+  // An invalid endpoint is valid only for a synchronous Queue whose prefix is
+  // complete before finish_sequence() returns.
+  HYLE_COMPUTE_API static Result<CompletionEndpoint>
+  completion_endpoint(const Queue &queue) noexcept;
+  HYLE_COMPUTE_API static Result<bool>
+  can_import_endpoint(const Queue &destination,
+                      CompletionEndpoint source) noexcept;
 
   // Accumulate one provider/backend enqueue result. Once an error is recorded,
   // callers must stop recording and finish the sequence.
@@ -122,6 +130,17 @@ struct OperationInvocationAccess final {
   can_import_endpoint(const OperationInvocation &invocation,
                       CompletionEndpoint source) noexcept;
   HYLE_COMPUTE_API static Result<Completion> submit_delegated_prevalidated(
+      OperationInvocation &invocation,
+      std::span<const CompletionDependency> dependencies,
+      std::span<const ConstTensorView> inputs,
+      std::span<const TensorView> outputs) noexcept;
+  // Graph-only borrowed route. The caller serializes this invocation and
+  // retains it, every binding, and every dependency until the returned
+  // Completion reaches terminal state. Unlike the standalone route above it
+  // deliberately does not consume Completion's single lifetime attachment;
+  // Graph uses that attachment to retain its whole Invocation and workspace.
+  HYLE_COMPUTE_API static Result<Completion>
+  submit_delegated_borrowed_prevalidated(
       OperationInvocation &invocation,
       std::span<const CompletionDependency> dependencies,
       std::span<const ConstTensorView> inputs,
