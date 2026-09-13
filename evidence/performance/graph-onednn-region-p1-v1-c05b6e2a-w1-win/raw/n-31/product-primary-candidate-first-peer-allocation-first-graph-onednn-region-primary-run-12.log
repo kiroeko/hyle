@@ -1,0 +1,21 @@
+
+| relative |               ns/op |                op/s |    err% |     total | graph oneDNN MLP abstraction decode f32 M=1 K=256 H=512
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------------------
+|   100.0% |           11,409.33 |           87,647.60 |    0.9% |      0.10 | `HYLE Graph oneDNN region decode f32 M=1 K=256 H=512`
+|   102.8% |           11,096.14 |           90,121.40 |    1.5% |      0.10 | `direct fused oneDNN region decode f32 M=1 K=256 H=512`
+
+| relative |               ns/op |                op/s |    err% |     total | graph oneDNN MLP region benefit decode f32 M=1 K=256 H=512
+|---------:|--------------------:|--------------------:|--------:|----------:|:-----------------------------------------------------------
+|   100.0% |           11,422.61 |           87,545.68 |    2.0% |      0.10 | `HYLE Graph oneDNN region decode f32 M=1 K=256 H=512`
+|   103.4% |           11,042.11 |           90,562.44 |    0.7% |      0.10 | `direct sequential oneDNN operations decode f32 M=1 K=256 H=512`
+
+| relative |               ns/op |                op/s |    err% |     total | graph oneDNN MLP abstraction short-prefill f32 M=16 K=512 H=1024
+|---------:|--------------------:|--------------------:|--------:|----------:|:-----------------------------------------------------------------
+|   100.0% |          512,411.76 |            1,951.56 |    2.6% |      0.10 | `HYLE Graph oneDNN region short-prefill f32 M=16 K=512 H=1024`
+|    98.8% |          518,393.75 |            1,929.04 |    4.6% |      0.10 | `direct fused oneDNN region short-prefill f32 M=16 K=512 H=1024`
+
+| relative |               ns/op |                op/s |    err% |     total | graph oneDNN MLP region benefit short-prefill f32 M=16 K=512 H=1024
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------------------------------
+|   100.0% |          499,700.00 |            2,001.20 |    1.6% |      0.10 | `HYLE Graph oneDNN region short-prefill f32 M=16 K=512 H=1024`
+|    95.9% |          520,961.11 |            1,919.53 |    2.4% |      0.10 | `direct sequential oneDNN operations short-prefill f32 M=16 K=512 H=1024`
+# HYLE_GRAPH_ONEDNN_RUN execution_order=candidate-first allocation_order=peer-first apple_qos=not-applicable qos_ok=not-applicable affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=83e27f85f5a4996c3e108d1969868206

@@ -210,3 +210,56 @@ python scripts/hyle-perf.py verify `
 
 本结论只裁决当前 f32 CPU shipping route：RMSNorm 与 SiluAndMul 复用已关闭 SIMD leaf 证据；其他 dtype、
 量化算子、region provider、并行 executor 和 GPU backend 必须在各自合同中裁决。
+
+## Graph oneDNN gated-MLP region P1/P2
+
+[`graph-onednn-region-p1-v1`](../../../../bench/contracts/graph-onednn-region-p1-v1.json)
+把同一个四节点 `gate/up MatMul -> SwiGLU -> down MatMul` 任务拆成两个不能混淆的比较：
+
+1. P1 abstraction 行与已经手工融合的 direct route 使用相同两份 oneDNN 3.13.2 BRGEMM plan、相同
+   HYLE SIMD SwiGLU、storage、workspace、串行 executor 和终态边界；只测 Graph immutable plan、binding、
+   queue sequence 和 Completion 的固定组合成本；
+2. P2 natural 行让 direct consumer 按四个普通操作分别 map/execute/close，Graph 则使用一次真实 region
+   boundary；这衡量 region 产品相对自然调用的完整收益，不拿裸 kernel 与完整 Graph 冒充同合同。
+
+W1-WIN、MSVC 19.50、Release、static、portable ISA、LTO off 的唯一资格化运行完成了预声明的
+`n=15 -> n=31`，环境、artifact、A/A、5%/10% known-delta、timer-floor 和 placement 门全部 `PASS`：
+
+| workload | 八个 median ratio | combined exact / NI | 结论 |
+|---|---:|---|---|
+| decode fused-boundary `M=1,K=256,H=512` | `0.9622--0.9817` | `INCONCLUSIVE / UNRESOLVED` | 五行 `PARITY/PASS`；三行 99.26% CI 下界为 `0.9444--0.9495`，略穿过 5% NI 界限 |
+| decode natural-sequence `M=1,K=256,H=512` | `0.9761--0.9994` | `PARITY / PASS` | 八行均通过 |
+| short-prefill fused-boundary `M=16,K=512,H=1024` | `0.9894--1.0144` | `PARITY / PASS` | 八行均通过 |
+| short-prefill natural-sequence `M=16,K=512,H=1024` | `0.9961--1.0068` | `PARITY / PASS` | 八行均通过 |
+
+源码 P0 账单解释了最小 fused-boundary 行的固定方向：相对 direct fused route，Graph 额外执行一次
+in-flight 原子 admission/terminal、外部 binding 完整性扫描、五个 `TensorView` staging、queue sequence、
+region vtable 和 Completion poll/settle；两侧 leaf kernel、mapping 和 workspace owner相同，steady path 都
+零 heap allocation、零搜索、零 JIT、零隐藏 copy。该成本是当前通用 Graph 安全语义，而不是误选 kernel；
+没有真实消费理由授权为 benchmark 增加单节点特判。由于工程 P1 必须明确通过，不能把约 3% 的中位差和
+跨界 CI 改名为 parity，`graph_provider_onednn` 因而不能关闭；同时 P2 自然路线及短 prefill 的通过证明
+它也不是一个 material fixed loss。
+
+原始 bundle 保存在
+[`graph-onednn-region-p1-v1-c05b6e2a-w1-win`](../../../../evidence/performance/graph-onednn-region-p1-v1-c05b6e2a-w1-win/)；
+contract-lock / manifest / summary / controls / observations SHA-256 分别为：
+
+```text
+3bedfbb9c5677489a3126659fbc98385702165eeb7aaf02abf04fe2282bae902
+61cf354d3ef24d7f06bd06a8bd2453ccfc84acc428a9309a80e583dbb8a18d12
+7c46190c410c2f352757c92cb11dc1145362edaacdd3c73cb628703c348e13cb
+99e03e5a5f13140553be7d621b9726e0c2e4a12c822ac7f2f75228be1865d5ea
+77f19e42023a60041569d3ddc27a9dacf04fdebd27fae0081c1a525fc07044b3
+```
+
+严格重放命令返回 `QUALIFIED`、`CURRENT`、`EXACT`、`paths_verified=true`：
+
+```powershell
+python scripts/hyle-perf.py verify `
+  --contract bench/contracts/graph-onednn-region-p1-v1.json `
+  --manifest evidence/performance/graph-onednn-region-p1-v1-c05b6e2a-w1-win/manifest.json
+```
+
+本证据不授权追加样本或为了 fused micro-boundary 改公开 API。只有后续 Runtime/Graph 主干因真实异步、
+specialization、placement 或 replay 需求自然改变公共 submit path，并形成新的 immutable candidate，才可
+依法重新资格化该 factor。
