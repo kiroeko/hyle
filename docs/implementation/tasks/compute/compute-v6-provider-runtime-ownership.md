@@ -116,6 +116,14 @@ probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 
 当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及相关逐头目标；这只
 是施工检查点，不替代终局三平台、sanitizer、三交付和 P0 裁决。
 
+2026-09-14 的 Linux 资格回放在 Ubuntu 24.04/GCC 14 上通过 `hyle_graph_test`、
+`hyle_graph_executable_test`、`hyle_compute_test`、`hyle_compute_ops_test`、
+`hyle_compute_backend_cpu_test` 与 `hyle_compute_provider_native_test` 的 ASan、UBSan 和 TSan；TSan 未报告
+data race。Windows `SelectedComponentSmoke(compute)` 已通过 source embedding、安装并重定位后的
+shared/static C++ consumer 和 shared export hygiene（11 个 HYLE library、902 个导出符号）；
+`SelectedComponentSmoke(graph)` 又从下游产品根验证了同一 Compute façade/provider seam。C67 的 Windows
+三交付已经兑现，Apple 交付与最终 P0/红队仍是终局门槛。
+
 shared-only P0 复核确认两层边界没有被 delegated SPI 污染：公开 direct `OperationInvocation::submit()` 由
 冷 prepare 保证只能持有 shared artifact，release code 以该不变量直接调用 `shared_submit`，不做 runtime
 mode 搜索或动态分派；Graph 的普通单 target/storage/lane 三节点计划仍折叠为一个 shared segment、一个

@@ -37,8 +37,11 @@ using hyle::compute::Unary;
 using hyle::compute::UnaryKind;
 using hyle::graph::CompileEnvironment;
 using hyle::graph::CompileOptions;
-using hyle::graph::ExecutionDomain;
-using hyle::graph::ExecutionDomainId;
+using hyle::graph::ExecutionLane;
+using hyle::graph::ExecutionLaneId;
+using hyle::graph::ExecutionLaneRole;
+using hyle::graph::ExecutionTarget;
+using hyle::graph::ExecutionTargetId;
 using hyle::graph::ExternalResourceContract;
 using hyle::graph::GraphBuilder;
 using hyle::graph::Invocation;
@@ -47,6 +50,8 @@ using hyle::graph::PlacementStrength;
 using hyle::graph::QueueBinding;
 using hyle::graph::ReplayMode;
 using hyle::graph::ReplayRoute;
+using hyle::graph::StorageDomain;
+using hyle::graph::StorageDomainId;
 
 constexpr std::size_t kElements = 1U << 20U;
 
@@ -188,9 +193,9 @@ public:
 
   std::uint64_t run_graph() noexcept {
     const std::array queues{
-        QueueBinding{.domain = ExecutionDomainId{0},
+        QueueBinding{.lane = ExecutionLaneId{0},
                      .queue = &graph_->cpu_queue},
-        QueueBinding{.domain = ExecutionDomainId{1},
+        QueueBinding{.lane = ExecutionLaneId{1},
                      .queue = &graph_->cuda_queue},
     };
     auto completion = graph_->invocation.submit(queues);
@@ -273,28 +278,39 @@ private:
     require_ok(builder.publish(output), "publish graph output");
     auto logical = take_or_abort(std::move(builder).finish(), "logical graph");
 
-    const std::array domains{
-        ExecutionDomain{.context = &cpu_context_,
-                        .workspace_resource = pinned_resource_.ref()},
-        ExecutionDomain{.context = &cuda_context_,
-                        .workspace_resource = device_resource_.ref()},
+    const std::array storage_domains{
+        StorageDomain{.resource = pinned_resource_.ref()},
+        StorageDomain{.resource = device_resource_.ref()},
+    };
+    const std::array targets{
+        ExecutionTarget{.context = &cpu_context_,
+                        .default_storage = StorageDomainId{0}},
+        ExecutionTarget{.context = &cuda_context_,
+                        .default_storage = StorageDomainId{1}},
+    };
+    const std::array lanes{
+        ExecutionLane{.target = ExecutionTargetId{0},
+                      .role = ExecutionLaneRole::kCompute},
+        ExecutionLane{.target = ExecutionTargetId{1},
+                      .role = ExecutionLaneRole::kTransfer},
     };
     const std::array placements{NodePlacement{
         .node = take_or_abort(logical.node_id(0), "graph node id"),
-        .domain = ExecutionDomainId{0},
+        .target = ExecutionTargetId{0},
         .strength = PlacementStrength::kRequired,
     }};
     const std::array resources{
         ExternalResourceContract{.value = input,
-                                 .domain = ExecutionDomainId{1},
-                                 .resource = device_resource_.ref()},
+                                 .storage = StorageDomainId{1}},
         ExternalResourceContract{.value = output,
-                                 .domain = ExecutionDomainId{1},
-                                 .resource = device_resource_.ref()},
+                                 .storage = StorageDomainId{1}},
     };
     auto compiled = take_or_abort(
         hyle::graph::compile(
-            logical, CompileEnvironment{.domains = domains},
+            logical,
+            CompileEnvironment{.storage_domains = storage_domains,
+                               .targets = targets,
+                               .lanes = lanes},
             CompileOptions{.node_placements = placements,
                            .external_resources = resources}),
         "compile cross-domain graph");
@@ -321,9 +337,9 @@ private:
 
   void prepare_graph_replay() {
     const std::array queues{
-        QueueBinding{.domain = ExecutionDomainId{0},
+        QueueBinding{.lane = ExecutionLaneId{0},
                      .queue = &graph_->cpu_queue},
-        QueueBinding{.domain = ExecutionDomainId{1},
+        QueueBinding{.lane = ExecutionLaneId{1},
                      .queue = &graph_->cuda_queue},
     };
     require_ok(graph_->invocation.prepare_replay(
@@ -347,7 +363,7 @@ private:
                "reserve direct CUDA completion");
     auto prepared = take_or_abort(
         hyle::compute::prepare(cpu_context_, Unary{UnaryKind::kNeg},
-                               description_),
+                               description_, pinned_resource_.ref()),
         "prepare direct Unary");
     route.unary =
         take_or_abort(prepared.create_invocation(), "direct Unary invocation");

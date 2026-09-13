@@ -116,7 +116,7 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 除 G70--G81 外不允许扩张 operation schema/catalog、模型 runtime、公开 FFI 或无关模块。最小 probe 验证后
 逐项 `KEEP_PRIVATE/DELETE`；不能用 probe 数量提高算子完成度。
 
-## 实现检查点（2026-09-14，尚非 candidate）
+## 实现检查点（2026-09-13，尚非 candidate）
 
 - G70--G75 已进入产品实现：公开环境分别声明 execution target、storage domain 与 execution lane；physical
   value 只按真实 storage residence 建模，target/lane 改变本身不再制造 copy；compute/transfer/communication
@@ -137,6 +137,13 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - Windows 当前 Graph/oneDNN/CPU 七组定向目标通过，并覆盖 exact region input/output/workspace、真实 boundary
   copy、provider-owned workspace、resource-route fallback 与 budget serialization。这仍不是 G70--G81
   终局证据；
+- 2026-09-14 的 Linux 资格回放在 Ubuntu 24.04/GCC 14 上通过 `hyle_graph_test`、
+  `hyle_graph_executable_test`、`hyle_compute_test`、`hyle_compute_ops_test`、
+  `hyle_compute_backend_cpu_test` 与 `hyle_compute_provider_native_test` 的 ASan、UBSan 和 TSan；TSan 使用
+  `setarch x86_64 -R` 取得可用 shadow layout，未报告 data race；
+- Windows `SelectedComponentSmoke(graph)` 已通过 source embedding、安装并重定位后的 shared/static C++
+  consumer，以及 shared export hygiene（14 个 HYLE library、1088 个导出符号）。这证明 G81 的 Windows
+  三交付形状，不替代 Apple 交付或 CUDA factor 的独立资格；
 - shared-only P0 结构复核通过：普通三节点单 lane 仍为一个 shared segment、一次 QueueSequence
   finalization、零 delegated/serialization/dependency，并由既有 metadata allocator 探针覆盖 steady submit
   零 Graph allocation；owner 判别按 segment 而非 node。旧 v2 P1 不换 revision 冒充当前证据；
@@ -144,8 +151,12 @@ auto done = HYLE_TRY(invocation.submit(bindings));
   未产生 segment 的 compute lane 不要求 Queue；transfer lane 的两个 copy segments 能 cold capture、以
   hybrid plan 重放。独立 backend probe 证明同 Context 两条 stream 以 CUDA event 非阻塞导入 Completion，
   延迟 producer 写入可由 consumer stream 正确观察；
-- 剩余硬门是故障注入、sanitizer、三平台和三交付验证；一般 multi-stream capture 与 CUDA operation
-  provider 不冒充本轮基础资格。
+- CUDA Graph P2 纵切已迁移到 target/storage/lane v7 合同并完成一次功能回放；同一 4 MiB
+  CUDA→CPU Unary→CUDA 语义可运行，但该单样本不冒充正式 P2 签名，正式结论仍须走冻结合同的双顺序、
+  placement 与 control strata；
+- 剩余硬门是两台 Apple 的通用语义/交付验证、CUDA factor 的 loss/race/P1/终局红队，以及 Graph 当前
+  revision 的正式 P2 和终局文档/状态签发；一般 multi-stream capture 与 CUDA operation provider 不冒充
+  本轮基础资格。
 
 ## 七问（AUDITED）
 

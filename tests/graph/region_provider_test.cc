@@ -2294,7 +2294,6 @@ TEST(GraphRegions, MultiTargetIndependentSinksUseANonblockingAggregate) {
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
-  const auto host = hyle::mem::system_resource();
   const std::array resources{
       hyle::graph::ExternalResourceContract{
           .value = first_input,
@@ -2408,7 +2407,6 @@ TEST(GraphRegions, AbandonedAggregateRetainsEveryIndependentSink) {
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
-  const auto host = hyle::mem::system_resource();
   const std::array resources{
       hyle::graph::ExternalResourceContract{
           .value = first_input,
