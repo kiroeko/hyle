@@ -89,3 +89,179 @@
 
 本卡只授权审计。进入 `AUDITED` 并冻结能力表、API/usability、依赖、有限 FIX 和上游触发前，不添加
 CUDA 源码、公开头、CMake option、Toolkit discovery、测试或产品 façade 投影。
+
+## AUDITED 结论（2026-09-13）
+
+### 来源对账与版本裁决
+
+- CUDA Runtime 13.3 的 execution-context 合同明确区分两类 API：device-wide 的 allocation/event 创建仍是
+  current-device 冷操作；`cudaLaunchKernel`、`cudaMemcpyAsync`、`cudaMemsetAsync` 等 context resource
+  操作从**非空显式 stream**推导 context。`cudaDeviceGetExecutionCtx` 与
+  `cudaExecutionCtxStreamCreate` 因而可以让 steady enqueue 不调用 `cudaSetDevice`，也不临时改写调用线程的
+  current context；
+- HYLE v1 选择 **CUDA Toolkit 13.3 minimum**。ggml/llama.cpp 的宽版本兼容通过反复
+  `cudaGetDevice/cudaSetDevice` 取得，但 HYLE 是会嵌入其它 runtime/plugin 的基础库，不能把 TLS context
+  污染或每次 push/pop 成本藏进热路径。若未来真实 consumer 必须支持 12.x，应另开明确 compatibility
+  route，不降低本轮默认合同；
+- primary execution context 由 Runtime 取得，HYLE 不创建隔离 `CUcontext`，也不调用
+  `cudaExecutionCtxDestroy` 或 `cudaDeviceReset`。为了验证 borrowed stream 的 exact context，并让少数冷
+  Driver 操作精确恢复调用线程状态，Context 同时 retain 对应 Driver primary `CUcontext`；两种 handle 不相互
+  转型；
+- ggml `e91ded11bdcd` / llama.cpp `e71b80510c84` 证明 device buffer、async copy、stream/event 与
+  scheduler boundary 是 backend runtime；vLLM `51da0ca66c80`、SGLang `dcebe8c4733a` 证明 capture pool、
+  stable address 与 replay lane 是 Graph/Invocation 冷状态；ds4 `f62ca29a3087` 证明 explicit stream、
+  stream-owned scratch 和 capture-safe preallocation。CUDA factor 不吸收模型/KV/provider policy。
+
+### 十二项审计答案
+
+1. **context owner**：`cuda::backend()` 只返回静态 factory identity；每个 HYLE Context 取得一个 primary
+   execution-context handle，并 retain 同 device Driver primary context。HYLE-owned Queue 用
+   `cudaExecutionCtxStreamCreate(..., cudaStreamNonBlocking, priority=0)`；全部热命令传非空 stream。只有
+   allocation/event-slot 创建、pointer/context validation 等冷调用允许 Driver push/pop，且精确恢复原
+   `CUcontext`；
+2. **通用/typed seam**：Compute v5 的 base vtable 只增加每个 backend 都必须兑现的 sequence begin/finish；
+   transfer、compatible wait 与 query 留在 versioned object-local extension。CUDA stream/context/pointer、
+   import/adopt 与 native callback 只在 `<hyle/compute/backends/cuda.h>`；
+3. **storage owner**：一个 move-only、pimpl-stable `cuda::MemoryResource` 拥有 device/pinned-host/managed 三种
+   resource implementation并 retained exact Context。它返回普通 `mem::MemoryResourceRef`，Buffer/View layout
+   不变；resource owner 必须晚于 Buffer 与 in-flight work 销毁，live allocation 违反顺序时 fail-fast；
+4. **sync/async 分界**：Mem `read/write/copy/fill` 保持同步显式合同；Graph/direct async 只走 Compute
+   `copy_async/fill_async`。pageable host memory 不偷偷 staging；CUDA H2D/D2H 只接受本 factor 的 pinned 或
+   managed resource，D2D 要求同 device，peer route 必须明确报告；
+5. **Completion/event**：Queue 冷路径按稳定 block 创建 `cudaEventDisableTiming` slots；
+   `reserve_completions(n)` 保证至少 n 个同时 outstanding，未预留的普通 direct call 可在接纳任何 work 前
+   按需增长。finish 每个 direct submit/Graph segment 只 record 一个 event。slot 在 Completion settle、后续
+   acquire 扫描或 drain 时回收，generation 不在 slot 未终态/仍被句柄持有时复用；
+6. **cancel**：pending CUDA work 不可抢占，`request_cancel()` 返回 `Unimplemented`；Graph cancellation 只
+   停止尚未 admission 的 segment。event、storage、workspace 在真实终态前都不得复用；
+7. **abandon/teardown**：丢弃 pending Completion 先做一次 non-blocking event query；仍 pending 时把其已
+   预分配 intrusive node、terminal hint、lifetime 与 Queue retain 交给 factor-wide reaper。reaper 是一个用
+   `platform_thread::Thread/Parker` 和 `util_core::SpinLock` 实现的延迟终态服务，不枚举/选择 backend，因而
+   不是 process registry；普通保留句柄路径没有 callback/reaper traffic。Queue/Context 析构只 close，不
+   host-wait；动态卸载 CUDA factor 前必须 drain，库终止阶段才停止并 join reaper；
+8. **interop**：typed façade 提供 exact device ordinal、execution context、stream、validated byte pointer，
+   owned/borrowed stream Queue 及 borrowed/adopted external allocation。borrowed owner 必须覆盖 Queue/
+   Completion；adopt 只在全部校验成功后转移。default/null stream、另一 primary/green context 和错 device
+   明确拒绝；普通 Compute 头不包含 CUDA；
+9. **capture**：普通 `cuda::submit` 在 callback 前拒绝外部 active capture。Graph 的 CUDA extension 在
+   `prepare_replay` 冷路径完成 begin/end/instantiate，且 bindings、workspace、event slots 已稳定；warm
+   submit 只 `cudaGraphLaunch` 后 record segment event。v1 的 multi-queue capture 为 unsupported，prefer
+   显式回退 commands，require 明确失败；capture 内不 query event、不加 host callback、不 allocation；
+10. **build/package**：选中 factor 时才声明 `HYLE_COMPUTE_CUDA=AUTO|ON|OFF`，默认 AUTO；OFF 不探测，ON
+    缺 13.3 Toolkit 硬失败，AUTO 找不到则 `OPTIONAL_ABSENT`。使用 `find_package(CUDAToolkit 13.3)`，不
+    FetchContent、不进入共享源码 cache，也不要求 HYLE 本体启用 CUDA language；只有 `.cu` probe/consumer
+    自己启用。enabled target public 传递 `CUDA::cudart` 和 headers、private 使用 driver；安装包必须
+    `find_dependency(CUDAToolkit 13.3)`。NVIDIA SDK/runtime/driver 由机器提供，HYLE 不复制进离线 source
+    bundle，也不重新分发其许可；
+11. **最小真机 probe**：copy-only 不能证明 typed native command seam。必须是 pinned host -> device async
+    copy -> 一个 consumer `.cu` no-op/copy kernel -> pinned host async copy，校验数据和 pending/poll/wait/
+    abandon；kernel 只验证 seam，不成为算子 provider；
+12. **上游修正**：Compute v5 C55--C61/C64 是前置；其中 C59 还必须让 Completion abandon 把已保存的
+    synchronous tail terminal hint 交给 backend，否则 partial-accepted 序列会丢错误。Mem 现有
+    `MemoryResource/Buffer::adopt` 足够，不重开；`platform_thread`/`util_core` 只被复用，不重开。安装包缺少
+    non-static/system `find_dependency` 登记是独立 build/package trigger，已由
+    `build-cuda-system-sdk-projection-v1` 持有。
+
+### 冻结能力与自然 C++ 形状
+
+| 能力族 | 层级 | 冻结语义 | 当前 | 动作 |
+|---|---|---|---|---|
+| CUDA backend/device/context | 原子机制 | 显式多 device、primary execution context、无全局默认选择 | MISSING | FIX |
+| ordered async Queue | 原子机制 | owned non-blocking stream；borrow/adopt exact primary-context stream | MISSING | FIX |
+| event Completion | 原子机制 | cold/pregrown disable-timing slot、每 segment 一 event、late error | MISSING | FIX |
+| abandoned-state retirement | 原子机制 | 无析构等待/host callback/逐项 heap；factor-wide reaper 只处理 abandon | MISSING | FIX |
+| device/pinned/managed resource | 原子机制 | stable owner -> Mem resource；同步 resource op 与 async queue op 分离 | MISSING | FIX |
+| async copy/fill/wait | 复合功能 | H2D/D2D/D2H/peer capability 可查询，无 pageable staging/host wait | MISSING | FIX |
+| typed native submit | 复合功能 | callback 在 host enqueue 期间借用 stream，调用后即失效；无 type erasure allocation | MISSING | FIX |
+| external storage/stream interop | 复合功能 | borrow/adopt 两条显式 ownership；pointer/context/device 校验 | MISSING | FIX |
+| single-queue capture/replay | 复合功能 | Graph cold capture、warm launch，prefer/require 可报告 | MISSING | FIX |
+| cuBLAS/CUTLASS/ggml kernels | provider | 独立 provider factor 选择/prepare | OUT_OF_SCOPE | ROUTE |
+| green context/MPS/NCCL | 专项 runtime | 需要独立资源/进程/通信 policy | OUT_OF_SCOPE | DEFER |
+
+公开形状冻结为：
+
+```cpp
+auto device = HYLE_TRY(cuda::device(0));
+auto context = HYLE_TRY(Context::create(device));
+auto queue = HYLE_TRY(context.create_queue());
+HYLE_TRY(queue.reserve_completions(4));
+
+auto device_memory = HYLE_TRY(
+    cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice));
+auto pinned_memory = HYLE_TRY(
+    cuda::MemoryResource::create(context, cuda::MemoryKind::kPinnedHost));
+auto input = HYLE_TRY(mem::Buffer::create(pinned_memory.ref(), bytes));
+auto resident = HYLE_TRY(mem::Buffer::create(device_memory.ref(), bytes));
+
+auto uploaded = HYLE_TRY(compute::copy_async(queue, resident.view(), input.view()));
+HYLE_TRY(uploaded.wait());
+auto resident_pointer = HYLE_TRY(cuda::pointer<float>(resident.view()));
+auto launched = HYLE_TRY(cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+  return cuda::status(launch_my_kernel(stream, resident_pointer));
+}));
+HYLE_TRY(launched.wait());
+
+auto borrowed = HYLE_TRY(cuda::borrow_stream(context, external_stream));
+auto external = HYLE_TRY(cuda::ExternalBuffer::borrow(
+    context, external_pointer, bytes));
+```
+
+`MemoryResource` move 只移动一个 pimpl pointer，已发出的 `MemoryResourceRef` 地址稳定。
+`ExternalBuffer` 自带一份稳定 no-op/adopting resource 与普通 Mem Buffer，因此无需给 Mem 增加公开的
+unsafe borrowed-view constructor。最终逐头测试与 guide 必须使用上述可编译 recipe，而不是伪代码逃逸。
+
+### 有限实现 ledger
+
+| ID | owner | 冻结改动 |
+|---|---|---|
+| CU10 | build/CUDA factor | 建立 optional factor 目录/target/header ownership，加入 Compute/Graph product roots；AUTO/ON/OFF 与 13.3 discovery |
+| CU11 | build/package 独立任务 | package registry 增加所有 linkage 适用的 `FIND_DEPENDENCIES`，installed CUDA feature 找到 Toolkit 后再载入 targets |
+| CU12 | CUDA | Backend/Device properties、0/N/ordinal/multi-device、Runtime/Driver 错误映射与 primary context owner |
+| CU13 | CUDA | owned non-blocking Queue、borrow/adopt stream、exact context/device/flags/owner validation |
+| CU14 | Compute v5 + CUDA | sequence begin/finish、completion reserve/growth、disable-timing event state和每 segment 一次 record |
+| CU15 | Compute v5 + CUDA | abandoned terminal hint handoff、intrusive reaper、late error、cancel/close/drain/device-loss teardown |
+| CU16 | CUDA/Mem bridge | stable device/pinned/managed `MemoryResource`，sync resource operations、stats/trim truthful fallback |
+| CU17 | CUDA | async copy/fill/compatible wait，range/domain/overlap/peer/pageable-host failure matrix |
+| CU18 | CUDA | typed context/stream/pointer queries与 zero-allocation `cuda::submit` callback bridge |
+| CU19 | CUDA | `ExternalBuffer` borrow/adopt 与 ownership/error injection/teardown tests |
+| CU20 | CUDA/Graph | single-queue capture extension、cold instantiate、warm replay、prefer/require/report；multi-queue unsupported |
+| CU21 | tests | 真机 H2D -> `.cu` kernel -> D2H、two queue wait、pending abandon、late failure、OOM/race/capture probes |
+| CU22 | delivery/docs | source/static/shared、exact factor/product、OFF/ON diagnostics、installed SDK/driver/runtime/license/guide |
+| CU23 | performance/red team | P0 bill、同 stream/event/copy 合同的必要 P1、终局 ownership/context/capture/build 红队 |
+
+只授权 CU10--CU23。green context、NCCL、宽 kernel/provider、通用公开 Event/CommandList、默认 device/stream、
+兼容 CUDA 12.x 和 multi-queue capture 不得顺手进入本轮。
+
+### 生命周期、并发与 P0 账单
+
+- Queue 是单 producer recording domain，但 Completion poll/wait 与 reaper 可并发；slot free-list 用既有
+  `util_core::SpinLock`，每个 slot 从 free -> recording -> outstanding -> terminal/free 单向转换，复用前
+  event 必须终态且旧 Completion 已 settle/abandon；
+- Context drain 对**自己创建/导入的 Queue prefix**逐 queue 记录/等待内部 drain boundary，不调用会等待同
+  device 其它库和 green context 的 `cudaExecutionCtxSynchronize`。borrowed stream 要求调用方在 HYLE
+  recording interval 外部同步；HYLE 不拥有其上其它 producer 的顺序；
+- `destroy_queue` 只在 QueueState 最后一引用时销毁 owned/adopted stream；pending Completion/reaper 会保活。
+  borrowed stream 从不销毁。primary ref 在所有 Queue/resource state 之后释放；
+- direct steady submit 的 host 成本为一次通用 admission、一次 extension call、consumer CUDA calls、一次
+  `cudaEventRecord`；无 `cudaSetDevice`、context push/pop、HYLE heap、provider search、host callback 或
+  host wait。Graph N commands 同一 segment 仍只有一次 record；
+- `reserve_completions(n)` 与 resource allocation 是冷路径，允许 O(n) event/metadata 与 vendor calls；copy/
+  fill host enqueue O(1)，device work O(bytes)；reaper 成本只由用户主动 abandon pending handle 触发；
+- P1 只比较相同 non-blocking stream、相同 pinned/device buffers、相同 event boundary 的 direct CUDA 调用与
+  HYLE wrapper，固定 5% 非劣门。pageable vs pinned、kernel-only vs terminal Completion、默认 stream vs
+  non-blocking stream或不同 capture 状态都是苹果/橘子，禁止裁决。
+
+### 七问与停止点
+
+1. 第三方：只有系统 CUDA Toolkit/driver；版本、缺席、传播与许可已明确，vendor 类型只在 CUDA header；
+2. 功能：真异步 runtime、storage、interop、single-queue replay 已覆盖两条纵切；算子/模型/通信有明确 owner；
+3. 内部复用：Core/Error/Compute/Mem/Util-core/Platform-thread 全部复用，无私造 Status/Buffer/Thread；
+4. 性能：热路径账单与同合同 P1 已固定，不以裸 kernel 或旧 benchmark 签字；
+5. 交付：纯 C++；Native FFI N/A；source/static/shared 都用同 typed façade；
+6. build：可选 factor 与 system-SDK package gap 分 owner，OFF 不探测、不造 stub DLL；
+7. 易用性：普通 Compute 用户不见 CUDA；CUDA 用户有短路径、明确 owner 和可编译 recipe，限制进入 guide。
+
+CUDA factor 可进入 `AUDITED`。实施顺序必须是：先完成 Compute v5 C55--C61/C64 和 CU10/CU11，使全部
+factor 同一提交序列可构造；再 CU12--CU19 真异步纵切；随后 Graph v6/CU20；candidate 后只运行一次
+CU21--CU23。若 reaper 无法在 abandon 路径做到零 allocation/零 wait，或 installed package 不能自然传播
+Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `void*` façade 绕过。

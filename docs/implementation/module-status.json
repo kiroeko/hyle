@@ -388,9 +388,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v1-async-runtime.md",
-      "summary": "compute_backend_cuda v1 SCOPED：基于 RTX 4070/CUDA 13.3 与四个真实推理 runtime 审计 device/context/stream/event、device/pinned/managed storage、async copy、late Completion、typed interop/capture 和构建交付；审计前仍为空 factor。"
+      "summary": "compute_backend_cuda v1 AUDITED：冻结 CUDA 13.3 explicit-context/non-blocking-stream runtime、stable device/pinned/managed resource、每 segment event Completion、pending abandon reaper、typed import/submit、single-queue capture 与 system-SDK 三交付；只授权 CU10--CU23。"
     },
     {
       "module": "compute_provider_native",

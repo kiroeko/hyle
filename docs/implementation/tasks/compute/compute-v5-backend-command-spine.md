@@ -157,7 +157,7 @@ op/region/copy 录完再 finish，因而只产生一次 backend completion；不
 | C56 | QueueSequence 只做 admission guard | FIX | 增加 backend begin token、accepted/tail 累积、显式 finish 与安全 abandon；同一 sequence 只 finalizes 一次 |
 | C57 | BackendVTable 只有 create/destroy/drain | FIX | 增加 begin/finish sequence、transfer query/enqueue、compatible wait 与 query_extension；CPU 完整实现 immediate route |
 | C58 | 只有 ProviderExtensionRef | FIX | 增加同形状的 versioned `BackendExtensionRef/Access`，保活 exact Context 并验证 Queue belonging/admission |
-| C59 | Completion 无 factor dependency identity | FIX | 增加仅内部借用的 exact backend/vtable/state view；源 Completion 必须保活到 consumer prefix 终态，public 不可复制 |
+| C59 | Completion 无 factor dependency identity，abandon 时也不能把已记录的 tail error 交给 backend | FIX | 增加仅内部借用的 exact backend/vtable/state view；`destroy` 接收待合并 terminal hint，使 abandoned async state 在真实终态后仍能报告同步 tail error；源 Completion 必须保活到 consumer prefix 终态，public 不可复制 |
 | C60 | 无 direct async byte transfer | FIX | 增加 `transfer_properties`、`copy_async`、`fill_async`；BufferView 合同，不把 repack/tensor fill 混进来 |
 | C61 | Queue 无 completion slot 预留 | FIX | 增加 cold、幂等 `reserve_completions(minimum)`；Graph 在 replay 前按 report/lanes 预留，steady exhaustion 明确失败 |
 | C62 | native custom command 只有长期概念 | BORROW | core 只交付 backend extension/sequence bridge；CUDA 等 typed factor 交付自然 callback/artifact API |
@@ -182,8 +182,10 @@ op/region/copy 录完再 finish，因而只产生一次 backend completion；不
   finalizes 并立即走 backend 的安全 abandonment，绝不 host-wait。正常产品路径必须显式 finish；
 - compatible device wait 借用 source Completion，Graph 保活它直到 destination prefix 终态；backend 不得
   缓存裸状态超过该边界。跨 backend 不兼容时不隐式 wait，Graph 选择显式、可报告的 host barrier 或拒绝；
-- Completion abandonment 仍不等待。具体 backend 必须让 event/stream state 和 attached Invocation owner
-  活到真实终态；设备不支持抢占时 cancel 返回 Unimplemented，不能提前释放 Buffer/workspace；
+- Completion abandonment 仍不等待。`Completion::reset` 必须把自身已保存的 tail terminal hint 一并移交
+  backend，而不是只移交 lifetime；具体 backend 必须让 event/stream state、hint 和 attached Invocation
+  owner 活到真实终态后再合并/释放。设备不支持抢占时 cancel 返回 Unimplemented，不能提前释放
+  Buffer/workspace；
 - typed backend resource owner 的稳定实现地址先于所有 MemoryResourceRef/Buffer/View/in-flight work；
   Compute 不给所有 Buffer 增加 shared owner，也不允许从临时 resource owner 取得引用。
 

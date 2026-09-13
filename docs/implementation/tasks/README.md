@@ -32,6 +32,8 @@
   并把显式 C++ export-only 变为 shared artifact 机械合同。
 - [可选 compiled factor 的缺席投影](build/build-optional-compiled-factor-v1.md)：让 OFF 状态保留组件身份与
   公开闭包，但不制造空 DLL、私有实现边或依赖下载。
+- [CUDA system SDK 依赖投影](build/build-cuda-system-sdk-projection-v1.md)：让 CUDA 专用公开头与 target 在
+  source/static/shared 三种交付中由同一 system-SDK `find_dependency` 合同承载。
 
 当前全库性能工作：
 
