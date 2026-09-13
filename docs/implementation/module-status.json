@@ -283,15 +283,9 @@
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/graph-v7-execution-lanes-and-islands.md",
-      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "performance": {
-        "tier": "P2",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      },
-      "summary": "graph v7 CLOSED：target/storage/lane 三轴、HB-safe workspace/budget、跨 lane dependency 与 delegated island 通过三平台、sanitizer、三交付、易用性和红队；CUDA 跨域完整 replay 的八格 P2 均 WIN/PASS。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/graph-v8-explicit-allocator-sort.md",
+      "summary": "graph v8 SCOPED：Compute/Graph 复用回审发现三个已具 ordinal 全序的 target ordering 仍使用可能绕过显式 allocator 的 std::stable_sort；本轮只消除冷编译隐藏临时分配并证明选择语义不变，不重做 placement 或 steady execution。"
     },
     {
       "module": "container_concurrent",
