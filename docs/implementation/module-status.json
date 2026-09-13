@@ -283,9 +283,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v8-explicit-allocator-sort.md",
-      "summary": "graph v8 SCOPED：Compute/Graph 复用回审发现三个已具 ordinal 全序的 target ordering 仍使用可能绕过显式 allocator 的 std::stable_sort；本轮只消除冷编译隐藏临时分配并证明选择语义不变，不重做 placement 或 steady execution。"
+      "summary": "graph v8 AUDITED：三个 target comparator 均以 ordinal 构成严格全序，stable order 无产品语义；有限修正只改用 in-place sort 并补多 target allocator/选择回归，公开 placement 与 steady execution 不变。"
     },
     {
       "module": "container_concurrent",

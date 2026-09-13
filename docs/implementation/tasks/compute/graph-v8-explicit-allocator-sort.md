@@ -37,3 +37,41 @@
 
 `SCOPED` 阶段只允许核对三处 comparator 与测试设计；完成有限改动表并进入 `AUDITED` 前不改 Graph
 产品代码。
+
+## AUDITED 结论（2026-09-14）
+
+三处排序分别服务初次 operation placement、region 选择后的 operation fallback，以及 region decline 后的
+fallback。逐项 comparator 都先排 required/original/preferred/locality，最后以 `left < right` 打破全部平局；
+因此任意不同 target ordinal 都不等价，stable insertion order 不可观察。现有 Container 决策也明确普通
+heap algorithm 直接使用标准库；本轮不新增泛化算法或依赖。
+
+| 能力族 | 层级 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|
+| target 候选确定全序 | 原子机制 | policy key + ordinal tie-break | COMPLETE | KEEP |
+| 显式 compile allocator | 原子机制 | SmallVector/plan metadata 使用 `AllocatorRef`，但 stable-sort scratch 可越界 | PARTIAL | FIX |
+| provider/region fallback | 复合功能 | 冷路径按同一全序尝试，steady path 固定 | COMPLETE | KEEP |
+
+### 有限改动集
+
+| ID | 问题与证据 | 允许改动 | 验收 | 结果 |
+|---|---|---|---|---|
+| G82 | 三处 total-order comparator 仍调用可取临时 buffer 的 `stable_sort` | 改为 in-place `sort`；不改 comparator | 大于 32 targets 仍选同一 required/preferred/original target；源码无 `stable_sort` | 待实现 |
+| G83 | v7 allocator sweep 未跨过实现的临时-buffer 阈值 | 增加多 target 回归并复用 allocator sweep；不接管全局 `new` | selection/失败/重试确定，Graph allocator 账单闭合 | 待实现 |
+
+### API / usability freeze
+
+公开 API、默认 placement、report、对象布局和调用草图全部不变。compile 仍允许显式 allocator 的有界冷
+分配；Invocation/submit 仍零 metadata allocation。失败继续用 `ResourceExhausted` 回到调用方，不增加
+“fast sort”开关、兼容层或 benchmark seam。
+
+## 七问
+
+1. 第三方：只使用 C++23 `sort`；无新增依赖、版本或许可证面。
+2. 功能：多 target/region fallback 功能不变；修复的是现有显式 allocator journey。
+3. 复用：继续使用 Container SmallVector、Mem allocator、Compute provider；标准 heap algorithm 按既有
+   Container 边界直接使用，不复制新模块。
+4. 性能：compile 排序保持 O(T log T)、O(log T) stack，去掉可选 O(T) hidden scratch；steady path 不变，
+   所以只需 P0。
+5. Native FFI：Graph 仅面向 C++，本轮无历史 C ABI。
+6. 交付：没有 header/target/dependency 变化；仍需三种 C++ 交付回放。
+7. 易用性：用户调用不变，但 allocator ownership 从“通常成立”变为结构上成立；guide 无新增选项。
