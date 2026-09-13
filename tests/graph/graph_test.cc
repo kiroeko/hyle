@@ -29,9 +29,13 @@ using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
 using hyle::compute::TopK;
+using hyle::graph::Dimension;
+using hyle::graph::DimensionBounds;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
 using hyle::graph::GraphBuilderOptions;
+using hyle::graph::TensorSpec;
+using hyle::graph::TensorSpecKind;
 using hyle::graph::ValueKind;
 using hyle::mem::AllocatorRef;
 
@@ -150,6 +154,83 @@ TEST(GraphBuilder, BuildsNaturalMultiNodeTransformerFragment) {
   EXPECT_EQ(graph.producer(normalized).value(), norm_node);
   EXPECT_EQ(input.kind(), ValueKind::kInput);
   EXPECT_EQ(normalized.kind(), ValueKind::kNodeOutput);
+}
+
+TEST(GraphBuilder, BuildsBoundedSymbolicGraphWithExplicitOutputSpecs) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto batch = builder.dimension({.minimum = 1, .maximum = 64}).value();
+  const auto tokens =
+      builder.dimension({.minimum = 8, .maximum = 4096, .multiple_of = 8})
+          .value();
+  const std::array activation_shape{Dimension(batch), Dimension(tokens),
+                                    Dimension::fixed(128)};
+  const TensorSpec activation =
+      TensorSpec::dense(DataType::kFloat16, activation_shape).value();
+  const auto input = builder.input(activation).value();
+  const auto output = builder.add(RmsNorm{}, activation, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+
+  Graph graph = std::move(builder).finish().value();
+  EXPECT_EQ(graph.dimension_count(), 2u);
+  EXPECT_EQ(graph.dimension_id(0).value(), batch);
+  EXPECT_EQ(graph.dimension_id(1).value(), tokens);
+  EXPECT_EQ(graph.dimension_bounds(tokens).value(),
+            (DimensionBounds{.minimum = 8, .maximum = 4096, .multiple_of = 8}));
+  EXPECT_EQ(graph.input_spec().value(), activation);
+  EXPECT_EQ(graph.output_spec().value(), activation);
+  EXPECT_EQ(graph.value_spec(output)->kind(), TensorSpecKind::kDense);
+  EXPECT_TRUE(graph.input_description().error().IsFailedPrecondition());
+  EXPECT_TRUE(graph.output_description().error().IsFailedPrecondition());
+}
+
+TEST(GraphBuilder, RejectsInvalidAndForeignSymbolicDimensions) {
+  GraphBuilder first = GraphBuilder::create().value();
+  EXPECT_TRUE(first.dimension({.minimum = 0, .maximum = 4})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(first.dimension({.minimum = 9, .maximum = 15, .multiple_of = 8})
+                  .error()
+                  .IsInvalidArgument());
+
+  GraphBuilder second = GraphBuilder::create().value();
+  const auto foreign = second.dimension({.minimum = 1, .maximum = 8}).value();
+  const std::array shape{Dimension(foreign), Dimension::fixed(4)};
+  const TensorSpec spec = TensorSpec::dense(DataType::kFloat32, shape).value();
+  EXPECT_TRUE(first.input(spec).error().IsInvalidArgument());
+
+  const auto local = first.dimension({.minimum = 1, .maximum = 8}).value();
+  const TensorSpec local_spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(local), Dimension::fixed(4)})
+          .value();
+  const auto input = first.input(local_spec).value();
+  EXPECT_TRUE(first.add(RmsNorm{}, input).error().IsFailedPrecondition());
+}
+
+TEST(GraphBuilder, FixedSpecsShareConcreteValidationAndInference) {
+  const TensorSpec fixed =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension::fixed(2), Dimension::fixed(4)})
+          .value();
+  EXPECT_FALSE(fixed.is_symbolic());
+  EXPECT_EQ(fixed.concrete_description().value(), matrix(2, 4));
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto input = builder.input(fixed).value();
+  const auto output = builder.add(RmsNorm{}, input).value();
+  EXPECT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+  EXPECT_EQ(graph.output_description().value(), matrix(2, 4));
+
+  GraphBuilder mismatch = GraphBuilder::create().value();
+  const auto mismatch_input = mismatch.input(fixed).value();
+  const TensorSpec wrong =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension::fixed(2), Dimension::fixed(5)})
+          .value();
+  EXPECT_TRUE(mismatch.add(RmsNorm{}, wrong, mismatch_input)
+                  .error()
+                  .IsInvalidArgument());
 }
 
 TEST(GraphBuilder, SupportsBranchesSharedValuesAndMultipleOutputs) {

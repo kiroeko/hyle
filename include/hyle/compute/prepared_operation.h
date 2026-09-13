@@ -57,6 +57,7 @@ public:
   HYLE_COMPUTE_API OperationKind kind() const noexcept;
   HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
   HYLE_COMPUTE_API WorkspaceRequirement workspace_requirement() const noexcept;
+  HYLE_COMPUTE_API bool capture_compatible() const noexcept;
   HYLE_COMPUTE_API std::size_t input_count() const noexcept;
   HYLE_COMPUTE_API std::size_t output_count() const noexcept;
   HYLE_COMPUTE_API Result<const TensorDesc &>

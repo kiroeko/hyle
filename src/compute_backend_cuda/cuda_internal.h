@@ -55,8 +55,7 @@ struct EventBlock final {
 
 struct ContextState final : util::RefCounted<ContextState> {
   ContextState(Device device_value, int ordinal_value,
-               cudaExecutionContext_t execution_value,
-               CUcontext primary_value,
+               cudaExecutionContext_t execution_value, CUcontext primary_value,
                mem::AllocatorRef allocator_value) noexcept
       : device(device_value), ordinal(ordinal_value),
         execution(execution_value), primary(primary_value),
@@ -96,6 +95,8 @@ struct QueueState final : util::RefCounted<QueueState> {
   EventSlot *free_slots = nullptr;
   std::size_t capacity = 0;
   QueueState *context_next = nullptr;
+  // Protected by Compute's one-active-QueueSequence admission contract.
+  bool capture_owned = false;
 };
 
 class ScopedPrimaryContext final {
@@ -116,8 +117,8 @@ private:
 
 class CudaResourceBase : public mem::MemoryResource {
 public:
-  CudaResourceBase(compute::detail::ContextState *owner,
-                   ContextState *context, MemoryKind kind) noexcept;
+  CudaResourceBase(compute::detail::ContextState *owner, ContextState *context,
+                   MemoryKind kind) noexcept;
   ~CudaResourceBase() override;
 
   MemoryKind kind() const noexcept { return kind_; }
@@ -130,8 +131,7 @@ public:
   map_host(void *native_handle, std::size_t offset, std::size_t size,
            mem::HostAccess access) noexcept override;
   Status unmap_host(void *native_handle, void *token, std::size_t offset,
-                    std::size_t size,
-                    mem::HostAccess access) noexcept override;
+                    std::size_t size, mem::HostAccess access) noexcept override;
   Status flush(void *native_handle, std::size_t offset,
                std::size_t size) noexcept override;
   Status invalidate(void *native_handle, std::size_t offset,
@@ -178,8 +178,7 @@ public:
   ~CompletionReaper();
 
   Status start() noexcept;
-  void retire(EventSlot *slot,
-              compute::detail::CompletionLifetime lifetime,
+  void retire(EventSlot *slot, compute::detail::CompletionLifetime lifetime,
               Status terminal_hint) noexcept;
 
   static CompletionReaper &instance() noexcept;

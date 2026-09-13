@@ -35,12 +35,11 @@ Status validate_views(const detail::QueueState &queue,
     const std::size_t destination_end = destination_begin + destination.size();
     const std::size_t source_begin = source.offset();
     const std::size_t source_end = source_begin + source.size();
-    const bool exact = destination_begin == source_begin &&
-                       destination_end == source_end;
+    const bool exact =
+        destination_begin == source_begin && destination_end == source_end;
     if (!exact && destination_begin < source_end &&
         source_begin < destination_end) {
-      return Status::InvalidArgument(
-          "compute async copy ranges overlap");
+      return Status::InvalidArgument("compute async copy ranges overlap");
     }
   }
   return Status::Ok();
@@ -114,6 +113,55 @@ Result<Completion> fill_async(Queue &queue, mem::BufferView destination,
         state->backend_state, destination, value));
   }
   return sequence->finish();
+}
+
+detail::EnqueueResult
+detail::TransferAccess::enqueue_copy(detail::QueueSequence &sequence,
+                                     mem::BufferView destination,
+                                     mem::ConstBufferView source) noexcept {
+  if (!sequence.valid()) {
+    return detail::EnqueueResult::rejected(
+        Status::FailedPrecondition("compute queue sequence is invalid"));
+  }
+  detail::QueueState *state = detail::ContextAccess::state(sequence.queue());
+  if (state == nullptr) {
+    return detail::EnqueueResult::rejected(
+        Status::FailedPrecondition("queue is invalid"));
+  }
+  Status status = validate_views(*state, destination, source);
+  if (!status.ok())
+    return detail::EnqueueResult::rejected(std::move(status));
+  if (destination.size() == 0 ||
+      (destination.resource() == source.resource() &&
+       destination.native_handle() == source.native_handle() &&
+       destination.offset() == source.offset())) {
+    return detail::EnqueueResult::no_op();
+  }
+  return state->context->backend_vtable->copy_async(state->backend_state,
+                                                    destination, source);
+}
+
+detail::EnqueueResult detail::TransferAccess::enqueue_prevalidated_copy(
+    detail::QueueSequence &sequence, mem::BufferView destination,
+    mem::ConstBufferView source) noexcept {
+  if (!sequence.valid()) {
+    return detail::EnqueueResult::rejected(
+        Status::FailedPrecondition("compute queue sequence is invalid"));
+  }
+  detail::QueueState *state = detail::ContextAccess::state(sequence.queue());
+  if (state == nullptr || !destination.valid() || !source.valid() ||
+      destination.size() != source.size()) {
+    return detail::EnqueueResult::rejected(
+        Status::Internal("prevalidated graph transfer route is invalid"));
+  }
+  if (destination.size() == 0 ||
+      (destination.resource() == source.resource() &&
+       destination.native_handle() == source.native_handle() &&
+       destination.offset() == source.offset())) {
+    return detail::EnqueueResult::no_op();
+  }
+  return state->context->backend_vtable->copy_async(state->backend_state,
+                                                    destination, source);
 }
 
 } // namespace hyle::compute

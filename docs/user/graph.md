@@ -1,160 +1,220 @@
-# HYLE Graph：何时编译可重复执行的计算 DAG
+# HYLE Graph：编译并重复执行计算 DAG
 
-> 本页描述当前 Graph v5 CPU 实现检查点；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。Graph v3 的通用 IR、region partition、
-> ordered submission、可枚举报告、策略预算和异步 Invocation 生命周期已经进入实现检查点，但生产
-> multi-op provider 尚未签发；选择 oneDNN 时仍只执行受支持的单个 row-major f32 MatMul node。真实
-> oneDNN/ggml multi-op region、GPU provider 与 dynamic shape 仍是后续资格项。
+> 本页描述当前 Graph v6 **运行时骨架检查点**。Graph 的施工状态仍是 `AUDITED`，只以
+> [`module-status.json`](../implementation/module-status.json) 为准；本文不把尚未完成的算子/provider 广度
+> 写成已交付。当前已经实现 symbolic specialization、多 execution domain、placement、真实跨域 copy、
+> per-domain workspace、segment 调度、显式 replay 准备、dependency route 和 CUDA command capture；生产级
+> GPU 算子 provider 与完整 transformer 算子目录仍在后续纵切。
 
-Graph 适合“先定义一段模型无关计算，冷路径编译一次，再为不同请求绑定 storage 并反复执行”。如果只
-执行一个已知 operation 或工程 kernel，直接使用 [Compute](compute.md)。Graph 不是 Sched task graph，
-也不拥有模型循环、KV cache、batching、sampling 或 serving。
+当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
+Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
+task graph，也不拥有模型循环、KV cache、batching、sampling 或 serving policy。
 
-## 生命周期和所有权
+## 四个生命周期对象
 
 ```text
 GraphBuilder -> immutable Graph
-Graph + Compute Context -> Executable + CompileReport
-Executable -> one Invocation per concurrent run
-Invocation.bind(...) -> submit(Queue) -> Compute Completion
+Graph + CompileEnvironment/CompileOptions -> Executable + CompileReport
+Executable -> one Invocation per concurrent lane
+Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 ```
 
-- `GraphBuilder::create()` 是可失败的单-owner 构造入口。输入和 node metadata 使用可注入 allocator；失败
-  的 mutator 不发布部分逻辑修改。
-- `ValueId`/`NodeId` 带 graph generation。一个 builder/graph 的 ID 不能误用于另一个实例；Graph 的
-  node 查询也接收 `NodeId` 而不是把裸下标当身份。node 只能读取已创建 value，因此循环不能被构造出来。
-- `Graph` 是不可变、可复制、可跨线程共享的逻辑元数据；它不拥有 tensor payload、Context 或 Queue。
-- `Executable` 是不可变、可共享的 prepared plan。它拥有获选 provider-region artifact、其余 node 的
-  单-op `PreparedOperation` 和一份 Mem lifetime plan，不拥有每次请求的 bindings/workspace。
-- `Invocation` 是 move-only、单-owner 的每次运行状态。并发请求从同一 Executable 创建不同 Invocation；
-  `create_invocation()` 可以分配，稳定态 `bind/reset/submit` 不增长 metadata。一次 submit 到最终
-  Completion 终态之间不可 rebind/reset/reuse；`in_flight()` 可诊断该状态。
+- `GraphBuilder` 是单 owner、可失败的逻辑构造器。`ValueId`、`NodeId` 和 `DimensionId` 带 graph identity，
+  异图 ID 会被拒绝；node 只能读取已经产生的 value，因此数据环不能被构造出来。
+- `Graph` 是不可变、可共享且与具体设备无关的逻辑 DAG；它不持有 tensor payload、Context、Queue 或
+  provider artifact。
+- `Executable` 是不可变、可共享的单一 concrete specialization。它固定 provider artifact、placement、
+  physical value、segment dependency 和 workspace layout。
+- `Invocation` 是 move-only 的单次并发 lane，独占 bindings、workspace、Completion/capture slots 和 replay
+  route。同一个 Executable 的并发请求必须使用不同 Invocation。
 
-## 当前能表达什么
+## 当前骨架能力
 
 | 能力 | 当前合同 |
 |---|---|
-| DAG | 任意数量的 typed node；共享输入、分支、显式 control dependency 和多个 published outputs |
-| value | graph input、compile-time constant 或 node result；input/constant 本身也可 publish |
-| node | 通用 span arity；`add_node()` + `result(node,index)` 表达零/多输出，单输出 typed `add()` 保留自然短路径 |
-| op | Native 当前可执行 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、rank-2 MatMul 与 packed SiLU GatedActivation；其他合法 schema 在无 provider 时返回 `Unimplemented` |
-| shape/layout | static `TensorDesc`；byte stride、block axis 与 opaque identity 随 value 原样保留；MatMul 的物理权重方向由 descriptor 表达 |
-| compile | constant 一次绑定；provider 冷路径提出 region，Graph 确定性选不重叠区间并只编译获选 artifact；其余 node 单-op fallback；中间 tensor、scratchpad、view alias 与安全 in-place liveness 交给 Mem planner |
-| run | caller 绑定所有 graph inputs 与普通 materialized outputs；发布的零拷贝 View 若根在私有 workspace，则由 Invocation 保活并通过 `output()` 取得；内部中间值、provider run state 与 scratchpad 均由该 Invocation 独占 |
-| report | `CompileReport` 独立拥有轻量诊断副本；除聚合摘要外，`step(i)` 枚举 kind、回退原因、provider/version、node range、workspace、persistent/packed/borrowed bytes、copy/sync/dispatch 与线程、阻塞和并发 Invocation 事实 |
+| DAG | typed、多输入/输出 node；共享 value、分支、多个 published output 与显式 control dependency |
+| shape | concrete `TensorDesc`，或带 min/max/multiple 约束的 graph-local symbol；同一 `DimensionId` 表示相等约束 |
+| specialization | `compile()` 要求每个 symbol 恰好绑定一次；一个 Executable 对应一个 collision-safe `SpecializationSignature` |
+| execution domain | 调用方显式提供有序的 `Context + workspace MemoryResourceRef`；没有进程全局 device/provider registry |
+| placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和 domain 顺序确定性选择；prepare 尝试有硬预算 |
+| region partition | provider 在冷路径提出连续 region；Graph 按覆盖、dispatch 数和 provider 顺序确定性选择并只编译胜出 artifact |
+| boundary | 跨 domain 的 canonical tensor 产生真实 `Copy` step；同步是 segment dependency，不制造虚假的 barrier step |
+| memory plan | 每个 `(logical value, domain)` 是独立 physical instance；各 domain 独立使用 Mem lifetime planner，alias 不跨 domain/resource |
+| scheduling | 在 plan 冷生成期做确定性 Kahn 调度；每个 domain 保持 ready FIFO，并尽量连续录入当前 domain，减少可避免的 Queue segment |
+| replay | `prepare_replay()` 冷验证全部 bindings、transfer capability、Queue identity、dependency route 和 Completion 容量 |
+| capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；允许 command/captured 混合 plan，地址或 binding 改变后必须重新 prepare |
+| report | `CompileReport` 给出 immutable plan 事实；`ReplayReport` 给出绑定具体 Queue 后的 transfer、device wait 和 host wait 事实 |
 
-当前没有已签发的生产 multi-op region/fusion、symbolic dimensions、GPU copy/barrier、serialization/cache
-schema 或通用 control flow。constant payload 默认由 Executable 借用；后续 provider packing
-必须在 compile artifact 中显式拥有并写入 report，不能藏在第一次 submit。
+Provider-private layout 只能留在一个 region 内，公开 region boundary 当前必须回到 canonical `TensorDesc`。
+因此 Graph 不伪造一个没有 layout producer/consumer 合同的通用 `Repack` step；将来某个真实 provider 需要
+跨 region opaque layout handoff 时，必须先增加有版本的 boundary-layout 合同和可执行 repack owner。
 
-## Region 选择不是运行时搜索
+## 单 domain：自然短路径
 
-调用方把 region provider 显式放入 Compute Context，本身就是选择这些 route 的 opt-in。默认
-`RegionSelectionPolicy::kPreferProviderRegions` 接受没有可移植计时估值的正确提案，并在冷路径依次按
-“覆盖更多逻辑节点、较少 backend execution episode、Context 中更早的 provider”确定不重叠组合；这只是
-结构与优先级裁决，不是 Graph 宣称该 route 在所有机器上更快。若部署方只接受 provider 能为当前静态
-specialization 给出正净收益估值的 route，显式选择
-`RegionSelectionPolicy::kRequireEstimatedBenefit`。`nullopt` 表示估值未知，显式 `0` 表示确定没有净收益，
-两者不会互相冒充。`max_region_proposals` 与
-`max_region_proposals_per_provider` 分别是全局和单 provider 硬预算，耗尽会返回
-`ResourceExhausted`，不会截断候选后悄悄生成另一份计划。需要严格逐算子调试时可选择 `kDisabled`；
-必须取得完整 fused/captured artifact 的调用方可设
-`OperationFallbackPolicy::kReject`，任何未被 region 覆盖的单-op 都使 compile 返回 `Unimplemented`。
-
-region 内部临时 value 由 provider artifact 管理，Graph 只为边界 value 和 provider 声明的每次运行
-workspace 规划 backing。当前没有生产 provider 因此默认行为仍是单-op fallback；存在 region 机制并不代表
-oneDNN、ggml 或未来 GPU 路线已经通过正确性/性能资格。
-
-## 自然的多节点路线
-
-下面构造 inference 常见的 `RMSNorm -> MatMul -> SwiGLU` 片段。存储中的权重是 `[2*ffn, hidden]`；逻辑
-MatMul 需要 `[hidden, 2*ffn]`，所以只转置 description，不搬数据。
+固定 shape、单 Context 的调用不需要显式写 environment 或 replay options：
 
 ```cpp
+#include <array>
 #include <hyle/graph/executable.h>
 
 using namespace hyle::compute;
 using namespace hyle::graph;
-
-auto logical_weight_desc = stored_weight_desc.transposed();
-if (!logical_weight_desc) return logical_weight_desc.error();
 
 auto created = GraphBuilder::create();
 if (!created) return created.error();
 GraphBuilder builder = std::move(*created);
 
 auto x = builder.input(x_desc);
-auto norm_w = builder.constant(norm_weight_desc);
-auto gate_up_w = builder.constant(*logical_weight_desc);
-if (!x || !norm_w || !gate_up_w) return hyle::Status::InvalidArgument("input");
+auto weight = builder.constant(weight_desc);
+if (!x || !weight) return hyle::Status::InvalidArgument("graph inputs");
 
-auto normalized = builder.add(RmsNorm{}, *x, *norm_w);
+auto normalized = builder.add(RmsNorm{}, *x);
 if (!normalized) return normalized.error();
-auto gate_up = builder.add(MatMul{}, *normalized, *gate_up_w);
-if (!gate_up) return gate_up.error();
-auto activated = builder.add(GatedActivation{}, *gate_up);
-if (!activated) return activated.error();
-if (auto status = builder.publish(*activated); !status.ok()) return status;
+auto output = builder.add(MatMul{}, *normalized, *weight);
+if (!output) return output.error();
+if (auto status = builder.publish(*output); !status.ok()) return status;
 
 auto graph = std::move(builder).finish();
 if (!graph) return graph.error();
-std::array constants{
-    ConstantBinding{*norm_w, norm_weight_view},
-    ConstantBinding{*gate_up_w, gate_up_weight_view},
-};
-auto compiled = compile(*graph, context, CompileOptions{.constants = constants});
+const std::array constants{ConstantBinding{*weight, weight_view}};
+auto compiled = compile(*graph, context,
+                        CompileOptions{.constants = constants});
 if (!compiled) return compiled.error();
 
 auto invocation = compiled->executable.create_invocation();
 if (!invocation) return invocation.error();
-if (auto s = invocation->bind(*x, x_view); !s.ok()) return s;
-if (auto s = invocation->bind(*activated, output_view); !s.ok()) return s;
+if (auto status = invocation->bind(*x, input_view); !status.ok()) return status;
+if (auto status = invocation->bind(*output, output_view); !status.ok())
+  return status;
+
+// 单 active domain 会自动走同一套 cold prepare；后续相同 Queue 可直接复用。
 auto done = invocation->submit(queue);
 if (!done) return done.error();
 return done->wait();
 ```
 
-## 成本与常见误用
+`constant()` 只声明逻辑 value；`CompileOptions::constants` 提供 payload。当前 Executable 保守借用所有
+constant source，即使 provider 另有 packed representation，源 storage 仍须活过 Executable 及其全部提交。
 
-- compile 是冷路径：shape 复核、每节点 prepare 和 lifetime planning 均在这里发生。shape/layout 改变时
-  重新构图/编译；不要每次请求重新 compile。
-- `constant()` 只声明逻辑 value；`compile()` 要求每项恰好一个 `ConstantBinding`，拒绝遗漏、重复、异图
-  ID 或错误 descriptor。v3 保守地始终 borrow source，payload 必须活过 Executable 及其全部 completion；
-  report 的 packed count 表示 provider 另有一份 owned representation，不缩短 source lifetime。不要把
-  request input 假装成 constant，也不要在 source 失效后继续复用 Executable。
-- Graph 可以保存合法的 block/opaque TensorDesc，但不会假装 CPU native 已能执行它。若当前 Context 没有
-  理解该 encoding 的 provider，compile 返回 `Unimplemented`；不会静默解码、复制或把压缩 bytes 当作
-  plain scalar storage。
-- `create_invocation()` 实例化 workspace；应按并发槽复用 Invocation。`reset()` 只清外部 bindings，保留
-  已规划 workspace，并在 work in flight 时明确失败，因此必须检查返回 Status。一次完整绑定的 alias
-  校验最坏为 `O(inputs*outputs + outputs^2)`，不分配；随后重复 `submit()` 为
-  `O(bindings + emitted steps)`。
-- 普通 materialized published output 必须绑定 mutable `TensorView`；graph input 可绑定 const 或 mutable
-  view；内部 value 不允许由 caller 覆盖绑定。`Executable::output_ownership()` 区分独立 caller destination、
-  source alias 与 Invocation workspace。后两者都不接受 output bind：成功完成后用
-  `Invocation::output(value)` 取得借用 view。published input/constant/View 直接复用已有 source binding；
-  private intermediate 上的 View 由 Invocation 保活。若必须写入指定 destination，应在 Graph 中增加显式
-  `Copy`，不要让 View 暗中复制。
-- 不同 published outputs 不得无计划地重叠，output 与仍存活的 external input 也不得重叠。operation traits
-  只给 alias 上界，真正选中的 PreparedOperation 还会按 provider/shape/layout 收窄；例如 dense Unary 可以
-  原地，而广播 Binary 不会被误规划成原地。可物化算子的 optional in-place 只发生在输入最后一次读取且
-  description 相同时；View 则按推导出的 offset 传播零物化 subrange。其他 partial overlap 一律拒绝。
-- `depends_on(node, prerequisite)` 只接受更早的 node；纯 node 可不写控制边。有外部副作用的 custom node
-  必须形成显式或数据依赖链，否则 `finish()` 失败。它不是用来把整个 DAG 手工串行化的顺序 API。
-- 一次 submit 在同一 ordered Queue 中连续签发全部 materializing steps，不逐 step host wait，只返回代表
-  已接受完整 queue prefix 的最终 `Completion`。同一 Queue 不允许两个 producer 同时录入 sequence；不同
-  Queue 可并发。若后段在前缀已接纳后同步拒绝，最终 Completion 保留前缀并报告该错误。
-- CPU 当前同步完成，但仍要检查 `Completion::wait()`。异步运行期间 Invocation、provider state 和 workspace
-  由最终 Completion 保活；丢弃 pending Completion 不会隐藏等待，也不能提前释放状态，backend 必须在真实
-  终态回调释放。Tensor payload/resource 与 Queue 仍是 caller borrow，必须自行活到终态。
-- CompileReport 可区分 HYLE-native、oneDNN 与 mixed，并逐 step 披露 fallback 原因、copy/sync/dispatch、workspace 与并发限制等成本。`persistent_bytes` 是 optional：
-  `nullopt` 表示 opaque provider 无法报告，值 0 才表示精确没有常驻字节；不要把未知量用于容量承诺。
-  `dispatch_count` 统计 backend execution episode：一次同步 CPU executor fan-out 或一次设备 command launch
-  计一次，worker/task/SIMD chunk 不重复计数；
-  report 副本不保活 heavyweight Executable artifact。当前 CPU 路线仍应为零 copy、零显式 sync；oneDNN
-  node scratchpad 已计入同一 Mem workspace plan，不需要用户另行分配。
-- Graph 不启动 worker，也不依赖 Sched。需要请求调度、取消和服务 drain 时，在消费层组合它们。
+## Symbol 与多 domain
 
-source、headers + static、headers + shared 都选择 `hyle::graph`。公开 `GraphBuilderOptions` 可注入 Mem
-allocator，因此 Graph 的公开构建闭包包含 Compute、Error 和 Mem；Container/Util 只用于私有实现。
-三种交付均为 C++23 surface，不是 Native FFI，也不承诺跨工具链 C++ ABI。
+symbolic graph 在 compile 时产生 concrete specialization；Graph 本身不维护无界 cache。推理引擎可用
+`SpecializationSignature` 管理 decode/prefill 等有限 Executable 集合：
+
+```cpp
+auto batch = builder.dimension({.minimum = 1, .maximum = 64,
+                                .multiple_of = 1});
+const std::array logical_shape{Dimension(*batch), Dimension::fixed(hidden)};
+auto spec = TensorSpec::dense(DataType::kFloat16, logical_shape);
+auto input = builder.input(*spec);
+// ... add operations and finish the Graph ...
+
+const std::array domains{
+    ExecutionDomain{.context = &cpu_context,
+                    .workspace_resource = host_resource},
+    ExecutionDomain{.context = &cuda_context,
+                    .workspace_resource = device_resource},
+};
+const std::array shape{ShapeBinding{*batch, 1}};
+const std::array resources{
+    ExternalResourceContract{.value = *input,
+                             .domain = ExecutionDomainId{1},
+                             .resource = device_resource},
+};
+auto compiled = compile(graph, CompileEnvironment{.domains = domains},
+                        CompileOptions{.shape = shape,
+                                       .external_resources = resources});
+```
+
+`NodePlacement`/`ValuePlacement` 可以表达 required 或 preferred domain。required route 不可执行时 compile
+失败；preferred route 不可执行时按稳定候选顺序继续。只有 `Unimplemented` 表示候选不支持，OOM、损坏
+状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts`、`max_region_proposals` 和
+`max_region_proposals_per_provider` 都是硬预算，耗尽会失败而不是改变计划。
+
+跨域 external value 应提供 `ExternalResourceContract`，让 compiler 能选择真实 transfer route；不能让
+Graph 从偶然地址猜 host/device locality。普通 canonical boundary 使用 Compute byte transfer，不隐藏
+pageable staging、repack 或同步 copy。
+
+## 冷态 replay 路由
+
+多 active domain 必须显式准备 Queue 集合：
+
+```cpp
+const std::array queues{
+    QueueBinding{.domain = ExecutionDomainId{0}, .queue = &cpu_queue},
+    QueueBinding{.domain = ExecutionDomainId{1}, .queue = &cuda_queue},
+};
+
+auto status = invocation.prepare_replay(
+    queues, ReplayOptions{.mode = ReplayMode::kPreferCapture,
+                          .host_wait = HostWaitPolicy::kReject});
+if (!status.ok()) return status;
+
+auto replay = invocation.replay_report();
+if (!replay) return replay.error();
+auto done = invocation.submit(queues);
+if (!done) return done.error();
+return done->wait();
+```
+
+`prepare_replay()` 是冷态 commit point。在任何 segment 提交前，它会：
+
+1. 验证全部 external bindings、resource domain 与 Queue/Context identity；
+2. 对每个真实 copy 查询 immediate/queued-direct/peer capability；
+3. 把每条 segment dependency 固定成 ordered Queue、同步 source、device wait 或 host wait；
+4. 按物理 Queue 汇总并预留 Completion slots；
+5. 按 replay mode 建立 command、capture 或 hybrid route。
+
+默认 `HostWaitPolicy::kAllow` 允许不兼容 backend 的显式 host fallback；延迟敏感部署应选择 `kReject`，在
+进入 warm path 前拒绝这种 topology。host wait 不会藏在 report 里，也不会在持有 destination Queue 的
+single-producer admission 时等待上游。`ReplayReport` 提供四类 dependency 数和三类 transfer 数；
+`dependency_route(segment, index)` 可查询精确边。
+
+`kPreferCapture` 在不支持或不安全的 segment 上保留 command route，最终可报告 `kCommands`、`kCaptured`
+或 `kHybrid`；`kRequireCapture` 遇到任一 command segment 不能 capture 就失败。当前真机纵切已验证 CUDA
+copy segment 的 capture/replay，但这不等于 CUDA 已有完整算子 provider。
+
+## 冷路径、热路径与调度取舍
+
+- compile 做 shape concrete 化、provider prepare/region 选择、placement、boundary materialization、
+  liveness/alias/workspace 和 plan scheduling；复杂度有显式预算，不读取历史 benchmark 常数作为 placement
+  oracle。
+- `create_invocation()` 分配每 lane workspace 和预定长 metadata；应按服务并发槽创建并复用。
+- `prepare_replay()` 做 Queue/transfer/dependency/capture 资格化；bind、reset 或稳定地址变化会使其失效。
+- warm `submit()` 只遍历 emitted steps、segment dependencies 与 bindings：不遍历原始 DAG、不推 shape、
+  不搜索 provider、不 JIT、不增长 Graph heap、不重新查询 transfer/dependency capability。backend
+  finalization/event 数按 segment 增长，不按 node 增长。
+- 调度器优先减少 host 录入与 event 边界，不声称求解一般 DAG 的全局最优设备并行调度。需要跨请求公平、
+  CPU worker 或 cancellation policy 时，在消费层组合 Sched；Graph 自身不启动线程池。
+
+## Report 怎么读
+
+`CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
+
+- specialization、domain/device/backend 与每域 workspace/queue/capture 需求；
+- physical value、external/constant/workspace/alias ownership；
+- operation fallback、provider region 和真实 copy step；
+- segment、dependency、potential synchronization 和 concurrent-invocation 能力；
+- provider/version、dispatch、workspace、persistent/packed/borrowed bytes 与 blocking/threading fact。
+
+`persistent_bytes == nullopt` 表示 provider 无法报告，不是零。CompileReport 中的
+`kQueueBindingDependent` 也不是已经发生 host wait；具体 Queue 绑定后的真实路线只看 `ReplayReport`。
+
+## 所有权与常见陷阱
+
+- `ExecutionDomain` 的 Context 会被 plan 内部 artifact 保活；`MemoryResourceRef` 的 provider 仍是 caller
+  borrow，必须活过 Executable、Invocation 和全部 in-flight work。
+- Tensor view 不拥有 payload。输入、输出、Queue、external resource 与 native kernel 参数都必须活到
+  Completion 真终态；丢弃 pending Completion 不会隐式等待。
+- 普通 materialized published output 绑定 mutable `TensorView`。source alias 或 Invocation-owned output
+  不接受重新绑定；成功完成后用 `Invocation::output()` 取得借用 view。
+- `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。bind/reset 后 replay route
+  失效，多 domain 必须重新 `prepare_replay()`。
+- 不同 published outputs，以及 output 与仍存活 input，不得绕过 plan 形成危险 overlap。只在相同
+  domain/resource、最后一次读取且 provider 明确允许时选择 in-place；其它 partial overlap 被拒绝。
+- 外部副作用 node 必须用数据依赖或 `depends_on()` 排序。纯 node 不要为了“看起来顺序一致”手工串行化。
+- Graph 可以保存合法 blocked/opaque TensorDesc，但没有理解该 encoding 的 provider 时 compile 会返回
+  `Unimplemented`，不会把压缩 bytes 当普通 scalar storage。
+
+source、headers + static、headers + shared 都选择 `hyle::graph`。三种交付是同一 C++23 surface，不是
+Native FFI，也不承诺跨编译器/STL 的 C++ ABI。

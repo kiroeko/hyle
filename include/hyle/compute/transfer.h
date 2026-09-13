@@ -10,6 +10,12 @@
 
 namespace hyle::compute {
 
+namespace detail {
+class QueueSequence;
+struct EnqueueResult;
+struct TransferAccess;
+} // namespace detail
+
 enum class TransferMode : unsigned char {
   kImmediate = 0,
   kQueuedDirect,
@@ -35,7 +41,26 @@ copy_async(Queue &queue, mem::BufferView destination,
            mem::ConstBufferView source) noexcept;
 
 HYLE_COMPUTE_API Result<Completion>
-fill_async(Queue &queue, mem::BufferView destination,
-           std::byte value) noexcept;
+fill_async(Queue &queue, mem::BufferView destination, std::byte value) noexcept;
+
+namespace detail {
+
+// Internal bridge used by Graph to append a transfer to an already-admitted
+// QueueSequence. It performs the same validation as copy_async but does not
+// create or finish another sequence, so a graph segment still owns one final
+// Completion regardless of its operation count.
+struct TransferAccess final {
+  HYLE_COMPUTE_API static EnqueueResult
+  enqueue_copy(QueueSequence &sequence, mem::BufferView destination,
+               mem::ConstBufferView source) noexcept;
+  // Graph-only hot route after transfer_properties() validated the stable
+  // resource pair during replay preparation.
+  HYLE_COMPUTE_API static EnqueueResult
+  enqueue_prevalidated_copy(QueueSequence &sequence,
+                            mem::BufferView destination,
+                            mem::ConstBufferView source) noexcept;
+};
+
+} // namespace detail
 
 } // namespace hyle::compute

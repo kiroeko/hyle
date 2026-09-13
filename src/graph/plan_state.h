@@ -6,7 +6,9 @@
 #include <span>
 #include <utility>
 
+#include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/prepared_operation.h"
@@ -15,6 +17,7 @@
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
+#include "hyle/util/spin_lock.h"
 
 namespace hyle::graph::detail {
 
@@ -226,28 +229,53 @@ inline compute::detail::EnqueueResult PreparedRegion::enqueue(
 enum class PlanStepKind : std::uint8_t {
   kOperation = 0,
   kRegion,
+  kCopy,
 };
 
 struct PlanStep final {
+  PlanStep() noexcept = default;
   PlanStep(compute::PreparedOperation prepared_value,
            std::uint32_t node_begin_value, std::uint32_t input_begin_value,
            std::uint32_t input_count_value, std::uint32_t output_begin_value,
            std::uint32_t output_count_value, bool materializes_value,
-           CompileFallbackReason fallback_reason_value) noexcept
+           CompileFallbackReason fallback_reason_value,
+           ExecutionDomainId domain_value = ExecutionDomainId{0}) noexcept
       : operation(std::move(prepared_value)), node_begin(node_begin_value),
         input_begin(input_begin_value), output_begin(output_begin_value),
         input_count(input_count_value), output_count(output_count_value),
         materializes(materializes_value),
-        fallback_reason(fallback_reason_value) {}
+        fallback_reason(fallback_reason_value), domain(domain_value) {}
 
   PlanStep(PreparedRegion region_value, std::uint32_t node_begin_value,
            std::uint32_t node_count_value, std::uint32_t input_begin_value,
            std::uint32_t input_count_value, std::uint32_t output_begin_value,
-           std::uint32_t output_count_value) noexcept
+           std::uint32_t output_count_value,
+           ExecutionDomainId domain_value = ExecutionDomainId{0}) noexcept
       : region(std::move(region_value)), node_begin(node_begin_value),
         node_count(node_count_value), input_begin(input_begin_value),
         output_begin(output_begin_value), input_count(input_count_value),
-        output_count(output_count_value), kind(PlanStepKind::kRegion) {}
+        output_count(output_count_value), kind(PlanStepKind::kRegion),
+        domain(domain_value) {}
+
+  static PlanStep copy(std::uint32_t input_begin_value,
+                       std::uint32_t output_begin_value,
+                       std::size_t bytes_value,
+                       ExecutionDomainId source_domain_value,
+                       ExecutionDomainId destination_domain_value,
+                       ExecutionDomainId execution_domain_value) noexcept {
+    PlanStep result;
+    result.input_begin = input_begin_value;
+    result.output_begin = output_begin_value;
+    result.input_count = 1;
+    result.output_count = 1;
+    result.kind = PlanStepKind::kCopy;
+    result.materializes = true;
+    result.copy_bytes = bytes_value;
+    result.source_domain = source_domain_value;
+    result.domain = execution_domain_value;
+    result.destination_domain = destination_domain_value;
+    return result;
+  }
 
   PlanStep(const PlanStep &) = delete;
   PlanStep &operator=(const PlanStep &) = delete;
@@ -255,12 +283,36 @@ struct PlanStep final {
   PlanStep &operator=(PlanStep &&) noexcept = default;
 
   compute::ProviderIdentity provider() const noexcept {
-    return kind == PlanStepKind::kRegion ? region.provider()
-                                         : operation.provider();
+    if (kind == PlanStepKind::kRegion)
+      return region.provider();
+    if (kind == PlanStepKind::kOperation)
+      return operation.provider();
+    return {};
   }
   compute::WorkspaceRequirement workspace_requirement() const noexcept {
-    return kind == PlanStepKind::kRegion ? region.properties().workspace
-                                         : operation.workspace_requirement();
+    if (kind == PlanStepKind::kRegion)
+      return region.properties().workspace;
+    if (kind == PlanStepKind::kOperation)
+      return operation.workspace_requirement();
+    return {};
+  }
+  // Output storage and execution are separate concerns. View is the one
+  // built-in metadata-only operation: it derives an alias during binding
+  // preparation and never enters a Queue. Custom operations may legally have
+  // no outputs (for example an external side effect), so materializes must
+  // never be used as a proxy for whether the provider has work to submit.
+  bool emits_command() const noexcept {
+    return kind != PlanStepKind::kOperation ||
+           operation.kind() != compute::OperationKind::kView;
+  }
+  bool capture_compatible() const noexcept {
+    if (!emits_command())
+      return true;
+    if (kind == PlanStepKind::kCopy)
+      return true;
+    if (kind == PlanStepKind::kRegion)
+      return region.properties().capture_compatible;
+    return operation.capture_compatible();
   }
 
   compute::PreparedOperation operation{};
@@ -274,9 +326,21 @@ struct PlanStep final {
   PlanStepKind kind = PlanStepKind::kOperation;
   bool materializes = true;
   CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
+  ExecutionDomainId domain{};
+  ExecutionDomainId source_domain{};
+  ExecutionDomainId destination_domain{};
+  std::size_t copy_bytes = 0;
 };
 
 using PlanSteps = container::SmallVector<PlanStep, 8, mem::AllocatorRef>;
+struct PlanSegment final {
+  ExecutionDomainId domain{};
+  std::uint32_t step_begin = 0;
+  std::uint32_t step_count = 0;
+  std::uint32_t dependency_begin = 0;
+  std::uint32_t dependency_count = 0;
+};
+using PlanSegments = container::SmallVector<PlanSegment, 4, mem::AllocatorRef>;
 using ValueIds = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
 using TensorDescriptions =
     container::SmallVector<compute::TensorDesc, 16, mem::AllocatorRef>;
@@ -296,17 +360,71 @@ using WritableBindings =
     container::SmallVector<compute::TensorView, 16, mem::AllocatorRef>;
 using CompileStepReports =
     container::SmallVector<CompileStepReport, 8, mem::AllocatorRef>;
+using CompileSegmentReports =
+    container::SmallVector<CompileSegmentReport, 4, mem::AllocatorRef>;
+using CompilePhysicalValueReports =
+    container::SmallVector<CompilePhysicalValueReport, 16, mem::AllocatorRef>;
+using ShapeBindings =
+    container::SmallVector<ShapeBinding, 4, mem::AllocatorRef>;
+
+struct ExecutionDomainRecord final {
+  compute::detail::ContextRef context{};
+  mem::MemoryResourceRef workspace_resource{};
+};
+
+using ExecutionDomainRecords =
+    container::SmallVector<ExecutionDomainRecord, 2, mem::AllocatorRef>;
+using CompileDomainReports =
+    container::SmallVector<CompileDomainReport, 2, mem::AllocatorRef>;
+
+struct SignatureState final : util::RefCounted<SignatureState> {
+  SignatureState(mem::AllocatorRef allocator_value,
+                 std::uint64_t generation_value) noexcept
+      : allocator(allocator_value), generation(generation_value),
+        bindings(allocator_value) {}
+
+  void destroy() noexcept {
+    const mem::AllocatorRef owner = allocator;
+    this->~SignatureState();
+    owner.deallocate(this, sizeof(SignatureState), alignof(SignatureState));
+  }
+
+  mem::AllocatorRef allocator{};
+  std::uint64_t generation = 0;
+  ShapeBindings bindings;
+  std::size_t hash = 0;
+};
+
+inline void retain(SignatureState *state) noexcept {
+  if (state != nullptr)
+    state->incref();
+}
+
+inline void release(SignatureState *state) noexcept {
+  if (state != nullptr)
+    state->decref();
+}
 
 struct PlanState final : util::RefCounted<PlanState> {
   PlanState(mem::AllocatorRef allocator_value,
             std::uint64_t generation_value) noexcept
       : allocator(allocator_value), generation(generation_value),
-        steps(allocator_value), input_ids(allocator_value),
+        domains(allocator_value), steps(allocator_value),
+        segments(allocator_value), segment_dependencies(allocator_value),
+        terminal_segments(allocator_value),
+        completion_segments(allocator_value),
+        domain_segment_counts(allocator_value), input_ids(allocator_value),
         constant_ids(allocator_value), output_ids(allocator_value),
         constant_bindings(allocator_value), descriptions(allocator_value),
+        instance_descriptions(allocator_value),
+        instance_values(allocator_value), instance_domains(allocator_value),
+        instance_roles(allocator_value), external_instances(allocator_value),
+        external_domains(allocator_value), external_resources(allocator_value),
         node_inputs(allocator_value), node_outputs(allocator_value),
         workspace_requests(allocator_value),
-        step_workspace_requests(allocator_value), node_steps(allocator_value),
+        step_workspace_requests(allocator_value),
+        domain_workspace_slots(allocator_value),
+        workspace_resources(allocator_value), node_steps(allocator_value),
         value_materialized(allocator_value), alias_sources(allocator_value),
         alias_offsets(allocator_value), binding_roles(allocator_value) {}
 
@@ -318,16 +436,45 @@ struct PlanState final : util::RefCounted<PlanState> {
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
+  ExecutionDomainRecords domains;
   PlanSteps steps;
+  PlanSegments segments;
+  ValueOrdinals segment_dependencies;
+  // Logical DAG sinks are report facts. Runtime completion must additionally
+  // observe the latest ordered prefix from every active execution domain so a
+  // late backend error cannot disappear merely because another domain owns
+  // the final graph sink.
+  ValueOrdinals terminal_segments;
+  ValueOrdinals completion_segments;
+  // Exact number of runtime Queue segments emitted for each execution
+  // domain. A zero entry means the domain participates in compile-time
+  // placement/reporting only and must not require a Queue at replay.
+  ValueOrdinals domain_segment_counts;
   ValueIds input_ids;
   ValueIds constant_ids;
   ValueIds output_ids;
   ReadableBindings constant_bindings;
+  // Public ValueId metadata is logical. Plan step ports address physical
+  // instances, because one logical value may be materialized in several
+  // execution domains after boundary-copy insertion.
   TensorDescriptions descriptions;
+  TensorDescriptions instance_descriptions;
+  ValueOrdinals instance_values;
+  ValueOrdinals instance_domains;
+  BindingRoles instance_roles;
+  ValueOrdinals external_instances;
+  ValueOrdinals external_domains;
+  container::SmallVector<mem::MemoryResourceRef, 16, mem::AllocatorRef>
+      external_resources;
   ValueOrdinals node_inputs;
   ValueOrdinals node_outputs;
   ValueOrdinals workspace_requests;
   ValueOrdinals step_workspace_requests;
+  // LifetimePlanner requires dense resource slots while execution-domain
+  // ordinals may be sparse among values that actually need workspace.
+  ValueOrdinals domain_workspace_slots;
+  container::SmallVector<mem::MemoryResourceRef, 2, mem::AllocatorRef>
+      workspace_resources;
   ValueOrdinals node_steps;
   BindingRoles value_materialized;
   // For an operation output, identifies the input value selected for exact
@@ -341,6 +488,10 @@ struct PlanState final : util::RefCounted<PlanState> {
   std::size_t workspace_backing_count = 0;
   std::size_t logical_node_count = 0;
   std::size_t region_count = 0;
+  std::size_t required_queue_count = 0;
+  bool supports_concurrent_invocations = true;
+  std::atomic<bool> exclusive_in_flight{false};
+  SpecializationSignature specialization{};
 };
 
 inline void retain(PlanState *state) noexcept {
@@ -355,7 +506,10 @@ inline void release(PlanState *state) noexcept {
 
 struct ReportState final : util::RefCounted<ReportState> {
   explicit ReportState(mem::AllocatorRef allocator_value) noexcept
-      : allocator(allocator_value), steps(allocator_value) {}
+      : allocator(allocator_value), steps(allocator_value),
+        domains(allocator_value), segments(allocator_value),
+        physical_values(allocator_value), step_inputs(allocator_value),
+        step_outputs(allocator_value), segment_dependencies(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -365,11 +519,21 @@ struct ReportState final : util::RefCounted<ReportState> {
 
   mem::AllocatorRef allocator{};
   CompileStepReports steps;
+  CompileDomainReports domains;
+  CompileSegmentReports segments;
+  CompilePhysicalValueReports physical_values;
+  ValueOrdinals step_inputs;
+  ValueOrdinals step_outputs;
+  ValueOrdinals segment_dependencies;
   compute::BackendId backend{};
   compute::ProviderIdentity provider{};
   std::size_t workspace_bytes = 0;
   std::size_t workspace_backing_count = 0;
   std::size_t node_count = 0;
+  std::size_t segment_count = 0;
+  std::size_t segment_dependency_count = 0;
+  std::size_t command_segment_count = 0;
+  std::size_t capturable_segment_count = 0;
   std::size_t region_count = 0;
   std::size_t fallback_operation_count = 0;
   std::size_t constant_count = 0;
@@ -379,7 +543,10 @@ struct ReportState final : util::RefCounted<ReportState> {
   std::size_t invocation_owned_output_count = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
+  bool supports_concurrent_invocations = true;
   bool mixed_providers = false;
+  bool mixed_backends = false;
+  SpecializationSignature specialization{};
 };
 
 inline void retain(ReportState *state) noexcept {
@@ -392,13 +559,43 @@ inline void release(ReportState *state) noexcept {
     state->decref();
 }
 
+struct AggregateCompletionState;
+
+struct AggregateChildState final {
+  AggregateCompletionState *aggregate = nullptr;
+  compute::detail::CompletionLifetime lifetime{};
+};
+
+using AggregateChildStates =
+    container::SmallVector<AggregateChildState, 4, mem::AllocatorRef>;
+using ReplayDependencyRoutes =
+    container::SmallVector<ReplayDependencyRoute, 4, mem::AllocatorRef>;
+
+// Preallocated mutable state for a public Completion that represents several
+// independent terminal Queue segments. It is activated only while an
+// Invocation is in flight; no metadata allocation occurs in submit().
+struct AggregateCompletionState final {
+  compute::Completion *completions = nullptr;
+  const std::uint32_t *completion_segments = nullptr;
+  AggregateChildState *children = nullptr;
+  std::size_t completion_count = 0;
+  std::atomic<std::size_t> remaining{0};
+  util::SpinLock lock{};
+  Status terminal{};
+  compute::detail::CompletionLifetime outer_lifetime{};
+};
+
 struct InvocationState final : util::RefCounted<InvocationState> {
   InvocationState(PlanState *plan_value,
                   mem::PlannedBuffers workspace_value) noexcept
       : allocator(plan_value->allocator), plan(plan_value), readable(allocator),
         writable(allocator), bound(allocator),
         workspace(std::move(workspace_value)), invocations(allocator),
-        submission_inputs(allocator), submission_outputs(allocator) {
+        submission_inputs(allocator), submission_outputs(allocator),
+        queues(allocator), queue_seen(allocator),
+        segment_completions(allocator), captured_segments(allocator),
+        dependency_routes(allocator), candidate_dependency_routes(allocator),
+        aggregate_segments(allocator), aggregate_children(allocator) {
     retain(plan);
   }
 
@@ -421,12 +618,33 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   StepInvocations invocations;
   ReadableBindings submission_inputs;
   WritableBindings submission_outputs;
+  container::SmallVector<compute::Queue *, 2, mem::AllocatorRef> queues;
+  BindingRoles queue_seen;
+  container::SmallVector<compute::Completion, 4, mem::AllocatorRef>
+      segment_completions;
+  container::SmallVector<compute::detail::CapturedCommands, 4,
+                         mem::AllocatorRef>
+      captured_segments;
+  // The active vector is immutable throughout every warm submit. Preparation
+  // writes a preallocated candidate vector and commits it only after all Queue,
+  // transfer and completion-capacity checks succeed.
+  ReplayDependencyRoutes dependency_routes;
+  ReplayDependencyRoutes candidate_dependency_routes;
+  ValueOrdinals aggregate_segments;
+  AggregateChildStates aggregate_children;
+  AggregateCompletionState aggregate_completion{};
   compute::detail::CompletionLifetime completion_lifetime{};
   // Only one run may use mutable bindings/provider invocation state at a time.
   // A Completion lifetime attachment returns this flag to idle at the true
   // terminal point and retains the state if the public Invocation is released.
   std::atomic<bool> in_flight{false};
   std::atomic<bool> outputs_ready{false};
+  ReplayRoute replay_route = ReplayRoute::kUnprepared;
+  ReplayReport replay_report{};
+  bool replay_prepared = false;
+  bool bindings_prepared = false;
+  bool transfers_prepared = false;
+  bool dependencies_prepared = false;
 };
 
 inline void retain(InvocationState *state) noexcept {
@@ -454,6 +672,16 @@ struct CompileReportAccess final {
 struct InvocationAccess final {
   static Invocation adopt(InvocationState *state) noexcept {
     return Invocation(state);
+  }
+};
+
+struct SpecializationSignatureAccess final {
+  static SpecializationSignature adopt(SignatureState *state) noexcept {
+    return SpecializationSignature(state);
+  }
+  static const SignatureState *
+  state(const SpecializationSignature &signature) noexcept {
+    return signature.state_;
   }
 };
 

@@ -230,3 +230,27 @@ work、O(1) host enqueue；dependency enqueue O(1)。`reserve_completions(n)` �
 
 不在上述五项内增加算子、公共 Event/CommandList、callback/coroutine 或 vendor 实现。发现新的能力必须
 重新 scope；每项最多两轮根因纠正。由此，本轮审计完成，`compute` 可以进入 `AUDITED` 并开始有限实现。
+
+## 实现检查点（2026-09-13）
+
+Compute v5 的 runtime 主干现已由 Graph v6 实际消费，但本节不替代尚未执行的终局 closure gates：
+
+- provider/region admitted submit 已统一为 `EnqueueResult{accepted,status}`；`QueueSequence` 负责单次
+  admission、accepted prefix 累积和一次 finalization，空 prefix、同步拒绝与异步 late terminal 保持可区分；
+- backend base contract 已包含 sequence begin/finalize、completion reserve、byte transfer、compatible wait
+  与对象局部 extension；public direct submit 仍只返回一个 `Completion`，没有公开万能 Event/CommandList；
+- `transfer_properties/copy_async/fill_async` 已落地，Graph 在冷路径验证真实 BufferView/resource route；
+  CPU 是 immediate，CUDA factor 提供 queued-direct device/pinned/managed 路线，不隐藏 staging；
+- 内部 `QueueSequence::dependency_route(destination, source)` 可在不提交命令的情况下把 exact Queue pair 分类为
+  no-wait、device-wait 或 host-wait。backend 必须通过 `can_wait_queue` 对 exact context/queue 明确承诺；CUDA
+  只接受同 backend、同 CUDA context，CPU source 因 inline terminal 直接 no-wait；
+- Graph `prepare_replay` 缓存上述 transfer/dependency route；warm submit 不搜索 extension、不探测 capability，
+  也不把设备 wait 的运行期拒绝降级成隐藏 host wait；
+- object-local command-capture extension 与 allocator-owned `CapturedCommands` 已实现。CUDA factor 在冷路径
+  capture stream command，warm replay 只 enqueue 已有 graph exec；普通 Compute 头不包含 vendor 类型；
+- CPU/native provider、Graph 与 CUDA backend 的定向回归当前分别为 18/18、63/63，真实 RTX 4070 capture
+  纵切通过；oneDNN Compute provider 11/11、composition 1/1、Graph consumer 1/1 也已回放；
+- W1-WIN 的 `compute` 直接源码、shared SDK、static SDK 及 relocation 后 installed consumer 全部通过，证明
+  backend SPI 仍只留在实现闭包，optional oneDNN 许可证与 static development closure 完整。compute 仍保持
+  `AUDITED`，等待 immutable candidate 后按本卡完成 sanitizer、跨平台、P0 与必要 P1；不因本检查点扩展
+  CPU 算子目录。

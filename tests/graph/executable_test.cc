@@ -37,11 +37,20 @@ using hyle::compute::View;
 using hyle::graph::CompiledGraph;
 using hyle::graph::CompileOptions;
 using hyle::graph::ConstantBinding;
+using hyle::graph::Dimension;
 using hyle::graph::Executable;
+using hyle::graph::ExecutionDomain;
+using hyle::graph::ExecutionDomainId;
+using hyle::graph::ExternalResourceContract;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
 using hyle::graph::Invocation;
+using hyle::graph::NodePlacement;
 using hyle::graph::OutputOwnership;
+using hyle::graph::PlacementStrength;
+using hyle::graph::QueueBinding;
+using hyle::graph::ShapeBinding;
+using hyle::graph::TensorSpec;
 using hyle::graph::ValueId;
 using hyle::mem::AllocatorRef;
 using hyle::mem::Buffer;
@@ -285,6 +294,284 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_TRUE(moved.create_invocation().has_value());
 }
 
+TEST(GraphCompile, SpecializesBoundedShapesWithExactCollisionSafeIdentity) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({.minimum = 1, .maximum = 4}).value();
+  const TensorSpec activation =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto input_id = builder.input(activation).value();
+  const auto output_id = builder.add(RmsNorm{}, activation, input_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  Graph graph = std::move(builder).finish().value();
+  Context context = hyle::compute::cpu::create_context().value();
+
+  EXPECT_TRUE(hyle::graph::compile(graph, context).error().IsInvalidArgument());
+  const std::array outside{ShapeBinding{rows, 5}};
+  EXPECT_TRUE(
+      hyle::graph::compile(graph, context, CompileOptions{.shape = outside})
+          .error()
+          .IsOutOfRange());
+
+  const std::array decode_shape{ShapeBinding{rows, 1}};
+  CompiledGraph decode =
+      hyle::graph::compile(graph, context,
+                           CompileOptions{.shape = decode_shape})
+          .value();
+  const auto executable_signature = decode.executable.specialization();
+  const auto report_signature = decode.report.specialization();
+  ASSERT_TRUE(executable_signature.valid());
+  EXPECT_EQ(executable_signature.binding_count(), 1u);
+  EXPECT_EQ(executable_signature.binding().value(), decode_shape[0]);
+  EXPECT_EQ(executable_signature, report_signature);
+  EXPECT_EQ(executable_signature.hash(), report_signature.hash());
+
+  CompiledGraph same =
+      hyle::graph::compile(graph, context,
+                           CompileOptions{.shape = decode_shape})
+          .value();
+  EXPECT_EQ(executable_signature, same.executable.specialization());
+  const std::array prefill_shape{ShapeBinding{rows, 4}};
+  CompiledGraph prefill =
+      hyle::graph::compile(graph, context,
+                           CompileOptions{.shape = prefill_shape})
+          .value();
+  EXPECT_NE(executable_signature, prefill.executable.specialization());
+
+  OwnedTensor input = make_tensor(matrix(1, 4));
+  OwnedTensor output = make_tensor(matrix(1, 4));
+  write(input, std::array<float, 4>{1, -2, 3, -4});
+  Invocation invocation = decode.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input_id, input.view).ok());
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+}
+
+TEST(GraphCompile, RejectsSymbolicOutputThatFailsConcreteInference) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({.minimum = 1, .maximum = 4}).value();
+  const TensorSpec input_spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const TensorSpec wrong_output =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(5)})
+          .value();
+  const auto input = builder.input(input_spec).value();
+  const auto output = builder.add(RmsNorm{}, wrong_output, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+  Context context = hyle::compute::cpu::create_context().value();
+  const std::array shape{ShapeBinding{rows, 2}};
+  EXPECT_TRUE(
+      hyle::graph::compile(graph, context, CompileOptions{.shape = shape})
+          .error()
+          .IsInvalidArgument());
+}
+
+TEST(GraphCompile, PlacesAcrossDomainsAndExecutesExplicitBoundaryCopies) {
+  const LogicalGraph logical = make_transformer_graph(2, 4, 4);
+  Context first = hyle::compute::cpu::create_context().value();
+  Context second = hyle::compute::cpu::create_context().value();
+  const std::array domains{
+      ExecutionDomain{.context = &first,
+                      .workspace_resource = hyle::mem::system_resource()},
+      ExecutionDomain{.context = &second,
+                      .workspace_resource = hyle::mem::system_resource()},
+  };
+  const std::array placements{
+      NodePlacement{.node = logical.graph.node_id(0).value(),
+                    .domain = ExecutionDomainId{0},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = logical.graph.node_id(1).value(),
+                    .domain = ExecutionDomainId{1},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = logical.graph.node_id(2).value(),
+                    .domain = ExecutionDomainId{0},
+                    .strength = PlacementStrength::kRequired},
+  };
+  const auto host = hyle::mem::system_resource();
+  const std::array resources{
+      ExternalResourceContract{.value = logical.inputs[0],
+                               .domain = ExecutionDomainId{0},
+                               .resource = host},
+      ExternalResourceContract{.value = logical.inputs[1],
+                               .domain = ExecutionDomainId{0},
+                               .resource = host},
+      ExternalResourceContract{.value = logical.inputs[2],
+                               .domain = ExecutionDomainId{1},
+                               .resource = host},
+      ExternalResourceContract{.value = logical.outputs[0],
+                               .domain = ExecutionDomainId{0},
+                               .resource = host},
+  };
+  CompiledGraph compiled =
+      hyle::graph::compile(logical.graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+
+  EXPECT_EQ(compiled.executable.domain_count(), 2u);
+  EXPECT_EQ(compiled.report.domain_count(), 2u);
+  EXPECT_EQ(compiled.report.step_count(), 5u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 3u);
+  EXPECT_EQ(compiled.report.step(1)->kind, hyle::graph::CompileStepKind::kCopy);
+  EXPECT_EQ(compiled.report.step(1)->source_domain, ExecutionDomainId{0});
+  EXPECT_EQ(compiled.report.step(1)->destination_domain, ExecutionDomainId{1});
+  EXPECT_EQ(compiled.report.step(3)->kind, hyle::graph::CompileStepKind::kCopy);
+  EXPECT_EQ(compiled.report.copy_bytes(), 96u);
+  EXPECT_TRUE(compiled.report.domain(0)->queue_required);
+  EXPECT_TRUE(compiled.report.domain(1)->queue_required);
+  EXPECT_FALSE(compiled.report.domain(0)->asynchronous_queue);
+  EXPECT_FALSE(compiled.report.domain(1)->asynchronous_queue);
+  EXPECT_EQ(compiled.report.synchronization_count(), 0u);
+  for (std::size_t segment = 0; segment < compiled.report.segment_count();
+       ++segment) {
+    const auto segment_report = compiled.report.segment(segment).value();
+    for (std::size_t dependency = 0;
+         dependency < segment_report.dependency_count; ++dependency) {
+      EXPECT_NE(compiled.report.segment_dependency(segment, dependency)->route,
+                hyle::graph::CompileDependencyRoute::kQueueBindingDependent);
+    }
+  }
+
+  OwnedTensor input = make_tensor(matrix(2, 4));
+  OwnedTensor norm_weight = make_tensor(row(4));
+  OwnedTensor matrix_weight = make_tensor(matrix(8, 4).transposed().value());
+  OwnedTensor output = make_tensor(matrix(2, 4));
+  const std::array<float, 8> input_values{1, -2, 3, -4, 0.5F, 1, -1, 2};
+  const std::array<float, 4> norm_values{1, 0.5F, -1, 2};
+  std::array<float, 32> matrix_values{};
+  for (std::size_t index = 0; index < matrix_values.size(); ++index)
+    matrix_values[index] = static_cast<float>(index % 7) * 0.1F - 0.2F;
+  write(input, input_values);
+  write(norm_weight, norm_values);
+  write(matrix_weight, matrix_values);
+
+  Invocation invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.inputs[1], norm_weight.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.inputs[2], matrix_weight.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array wrong_queues{
+      QueueBinding{.domain = ExecutionDomainId{0}, .queue = &first_queue},
+      QueueBinding{.domain = ExecutionDomainId{1}, .queue = &first_queue},
+  };
+  EXPECT_TRUE(invocation.prepare_replay(wrong_queues).IsInvalidArgument());
+  const std::array queues{
+      QueueBinding{.domain = ExecutionDomainId{0}, .queue = &first_queue},
+      QueueBinding{.domain = ExecutionDomainId{1}, .queue = &second_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto replay = invocation.replay_report().value();
+  EXPECT_EQ(replay.device_wait_dependency_count, 0u);
+  EXPECT_EQ(replay.host_wait_dependency_count, 0u);
+  EXPECT_GT(replay.synchronous_source_dependency_count, 0u);
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  expect_near(read(output, 8), expected_transformer(input_values, norm_values,
+                                                    matrix_values, 2, 4, 4));
+}
+
+TEST(GraphCompile,
+     SchedulesInterleavedIndependentBranchesIntoTwoQueuePrefixes) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId first_input = builder.input(row(4)).value();
+  const ValueId second_input = builder.input(row(4)).value();
+  const ValueId first_middle =
+      builder.add(Unary{UnaryKind::kNeg}, first_input).value();
+  const ValueId second_middle =
+      builder.add(Unary{UnaryKind::kNeg}, second_input).value();
+  const ValueId first_output =
+      builder.add(Unary{UnaryKind::kNeg}, first_middle).value();
+  const ValueId second_output =
+      builder.add(Unary{UnaryKind::kNeg}, second_middle).value();
+  ASSERT_TRUE(builder.publish(first_output).ok());
+  ASSERT_TRUE(builder.publish(second_output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context first = hyle::compute::cpu::create_context().value();
+  Context second = hyle::compute::cpu::create_context().value();
+  const auto host = hyle::mem::system_resource();
+  const std::array domains{
+      ExecutionDomain{.context = &first, .workspace_resource = host},
+      ExecutionDomain{.context = &second, .workspace_resource = host},
+  };
+  const std::array placements{
+      NodePlacement{.node = graph.node_id(0).value(),
+                    .domain = ExecutionDomainId{0},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = graph.node_id(1).value(),
+                    .domain = ExecutionDomainId{1},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = graph.node_id(2).value(),
+                    .domain = ExecutionDomainId{0},
+                    .strength = PlacementStrength::kRequired},
+      NodePlacement{.node = graph.node_id(3).value(),
+                    .domain = ExecutionDomainId{1},
+                    .strength = PlacementStrength::kRequired},
+  };
+  const std::array resources{
+      ExternalResourceContract{.value = first_input,
+                               .domain = ExecutionDomainId{0},
+                               .resource = host},
+      ExternalResourceContract{.value = second_input,
+                               .domain = ExecutionDomainId{1},
+                               .resource = host},
+      ExternalResourceContract{.value = first_output,
+                               .domain = ExecutionDomainId{0},
+                               .resource = host},
+      ExternalResourceContract{.value = second_output,
+                               .domain = ExecutionDomainId{1},
+                               .resource = host},
+  };
+  CompiledGraph compiled =
+      hyle::graph::compile(graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+
+  ASSERT_EQ(compiled.report.step_count(), 4u);
+  ASSERT_EQ(compiled.report.segment_count(), 2u);
+  EXPECT_EQ(compiled.report.segment_dependency_count(), 0u);
+  EXPECT_EQ(compiled.report.step(0)->domain, ExecutionDomainId{0});
+  EXPECT_EQ(compiled.report.step(1)->domain, ExecutionDomainId{0});
+  EXPECT_EQ(compiled.report.step(2)->domain, ExecutionDomainId{1});
+  EXPECT_EQ(compiled.report.step(3)->domain, ExecutionDomainId{1});
+  EXPECT_EQ(compiled.report.step(0)->node_begin, 0u);
+  EXPECT_EQ(compiled.report.step(1)->node_begin, 2u);
+  EXPECT_EQ(compiled.report.step(2)->node_begin, 1u);
+  EXPECT_EQ(compiled.report.step(3)->node_begin, 3u);
+
+  OwnedTensor first_source = make_tensor(row(4));
+  OwnedTensor second_source = make_tensor(row(4));
+  OwnedTensor first_destination = make_tensor(row(4));
+  OwnedTensor second_destination = make_tensor(row(4));
+  write(first_source, std::array<float, 4>{1, 2, 3, 4});
+  write(second_source, std::array<float, 4>{5, 6, 7, 8});
+  Invocation invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(first_input, first_source.view).ok());
+  ASSERT_TRUE(invocation.bind(second_input, second_source.view).ok());
+  ASSERT_TRUE(invocation.bind(first_output, first_destination.view).ok());
+  ASSERT_TRUE(invocation.bind(second_output, second_destination.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      QueueBinding{.domain = ExecutionDomainId{0}, .queue = &first_queue},
+      QueueBinding{.domain = ExecutionDomainId{1}, .queue = &second_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  expect_near(read(first_destination, 4), std::array<float, 4>{1, 2, 3, 4});
+  expect_near(read(second_destination, 4), std::array<float, 4>{5, 6, 7, 8});
+}
+
 TEST(GraphCompile, BindsBorrowedConstantsOnceForRepeatedInvocations) {
   GraphBuilder builder = GraphBuilder::create().value();
   const auto input_id = builder.input(row(4)).value();
@@ -379,12 +666,30 @@ TEST(GraphCompile, ExecutesPublishedConstantWithoutRuntimeRebinding) {
           .value();
   EXPECT_EQ(compiled.executable.output_ownership().value(),
             OutputOwnership::kSourceAlias);
+  EXPECT_EQ(compiled.executable.required_queue_count(), 0u);
   Invocation invocation = compiled.executable.create_invocation().value();
-  Queue queue = context.create_queue().value();
-  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  ASSERT_TRUE(invocation.submit()->wait().ok());
   EXPECT_TRUE(invocation.output(constant_id).has_value());
   ASSERT_TRUE(invocation.reset().ok());
-  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  ASSERT_TRUE(invocation.submit()->wait().ok());
+}
+
+TEST(GraphCompile, APublishedInputAcceptsTheNaturalMutableInputBinding) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId input = builder.input(row(4)).value();
+  ASSERT_TRUE(builder.publish(input).ok());
+  Graph graph = std::move(builder).finish().value();
+  Context context = hyle::compute::cpu::create_context().value();
+  auto compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_EQ(compiled.executable.output_ownership().value(),
+            OutputOwnership::kSourceAlias);
+  EXPECT_EQ(compiled.executable.required_queue_count(), 0u);
+
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor storage = make_tensor(row(4));
+  ASSERT_TRUE(invocation.bind(input, storage.view).ok());
+  ASSERT_TRUE(invocation.submit()->wait().ok());
+  EXPECT_TRUE(invocation.output(input).has_value());
 }
 
 TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
@@ -841,6 +1146,11 @@ TEST(Invocation, PublishedViewReusesItsSourceBinding) {
   EXPECT_EQ(compiled.executable.output_ownership().value(),
             OutputOwnership::kSourceAlias);
   ASSERT_EQ(compiled.report.step_count(), 1u);
+  EXPECT_EQ(compiled.report.segment_count(), 0u);
+  EXPECT_EQ(compiled.report.command_segment_count(), 0u);
+  EXPECT_EQ(compiled.executable.required_queue_count(), 0u);
+  EXPECT_FALSE(
+      compiled.executable.requires_queue(ExecutionDomainId{0}).value());
   EXPECT_EQ(compiled.report.step(0)->dispatch_count, 0u);
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor storage = make_tensor(input_description);
@@ -853,8 +1163,7 @@ TEST(Invocation, PublishedViewReusesItsSourceBinding) {
           .value();
   ASSERT_TRUE(invocation.bind(input, storage.view).ok());
   EXPECT_TRUE(invocation.bind(output, second_row).IsFailedPrecondition());
-  Queue queue = context.create_queue().value();
-  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  ASSERT_TRUE(invocation.submit()->wait().ok());
   auto derived = invocation.output(output);
   ASSERT_TRUE(derived.has_value()) << derived.error().message();
   EXPECT_EQ(read(*derived, 3), (std::vector<float>{4, 5, 6}));
@@ -866,6 +1175,121 @@ TEST(Invocation, PublishedViewReusesItsSourceBinding) {
           .value();
   ASSERT_TRUE(invocation.bind(input, storage.view).ok());
   EXPECT_TRUE(invocation.bind(output, wrong).IsFailedPrecondition());
+}
+
+TEST(Invocation, RequiresQueuesOnlyForDomainsThatEmitRuntimeCommands) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc description = row(4);
+  const ValueId input = builder.input(description).value();
+  const ValueId output = builder.add(Unary{UnaryKind::kNeg}, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context unused = hyle::compute::cpu::create_context().value();
+  Context active = hyle::compute::cpu::create_context().value();
+  const auto host = hyle::mem::system_resource();
+  const std::array domains{
+      ExecutionDomain{.context = &unused, .workspace_resource = host},
+      ExecutionDomain{.context = &active, .workspace_resource = host},
+  };
+  const std::array placements{NodePlacement{
+      .node = graph.node_id().value(),
+      .domain = ExecutionDomainId{1},
+      .strength = PlacementStrength::kRequired,
+  }};
+  const std::array resources{
+      ExternalResourceContract{
+          .value = input, .domain = ExecutionDomainId{1}, .resource = host},
+      ExternalResourceContract{
+          .value = output, .domain = ExecutionDomainId{1}, .resource = host},
+  };
+  CompiledGraph compiled =
+      hyle::graph::compile(graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+
+  ASSERT_EQ(compiled.report.domain_count(), 2u);
+  EXPECT_FALSE(compiled.report.domain(0)->queue_required);
+  EXPECT_EQ(compiled.report.domain(0)->completion_slots_per_invocation, 0u);
+  EXPECT_TRUE(compiled.report.domain(1)->queue_required);
+  EXPECT_EQ(compiled.report.domain(1)->completion_slots_per_invocation, 1u);
+  EXPECT_EQ(compiled.executable.required_queue_count(), 1u);
+  EXPECT_FALSE(
+      compiled.executable.requires_queue(ExecutionDomainId{0}).value());
+  EXPECT_TRUE(compiled.executable.requires_queue(ExecutionDomainId{1}).value());
+  EXPECT_TRUE(compiled.executable.requires_queue(ExecutionDomainId{2})
+                  .error()
+                  .IsOutOfRange());
+
+  OwnedTensor source = make_tensor(description);
+  OwnedTensor destination = make_tensor(description);
+  write(source, std::array<float, 4>{1, 2, 3, 4});
+  Invocation invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input, source.view).ok());
+  ASSERT_TRUE(invocation.bind(output, destination.view).ok());
+  Queue unused_queue = unused.create_queue().value();
+  const std::array wrong_binding{
+      QueueBinding{.domain = ExecutionDomainId{0}, .queue = &unused_queue}};
+  EXPECT_TRUE(invocation.prepare_replay(wrong_binding).IsInvalidArgument());
+
+  Queue active_queue = active.create_queue().value();
+  ASSERT_TRUE(invocation.submit(active_queue)->wait().ok());
+  expect_near(read(destination, 4), std::array<float, 4>{-1, -2, -3, -4});
+}
+
+TEST(Invocation, CrossDomainPublishedViewUsesItsExplicitOutputBinding) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc input_description = matrix(2, 3);
+  const ValueId input = builder.input(input_description).value();
+  const ValueId output =
+      builder.add(View::slice(0, 1, 1).value(), input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context first = hyle::compute::cpu::create_context().value();
+  Context second = hyle::compute::cpu::create_context().value();
+  const auto host = hyle::mem::system_resource();
+  const std::array domains{
+      ExecutionDomain{.context = &first, .workspace_resource = host},
+      ExecutionDomain{.context = &second, .workspace_resource = host},
+  };
+  const std::array placements{NodePlacement{
+      .node = graph.node_id(0).value(),
+      .domain = ExecutionDomainId{0},
+      .strength = PlacementStrength::kRequired,
+  }};
+  const std::array resources{ExternalResourceContract{
+      .value = output, .domain = ExecutionDomainId{1}, .resource = host}};
+  auto compiled =
+      hyle::graph::compile(graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+  EXPECT_EQ(compiled.executable.output_ownership().value(),
+            OutputOwnership::kCaller);
+  ASSERT_EQ(compiled.report.step_count(), 2u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 1u);
+  EXPECT_FALSE(compiled.report.domain(0)->queue_required);
+  EXPECT_TRUE(compiled.report.domain(1)->queue_required);
+  EXPECT_EQ(compiled.report.step(1)->kind, hyle::graph::CompileStepKind::kCopy);
+  EXPECT_EQ(compiled.report.step(1)->synchronization_count, 0u);
+  EXPECT_EQ(compiled.report.synchronization_count(), 0u);
+
+  OwnedTensor source = make_tensor(input_description);
+  OwnedTensor destination = make_tensor(matrix(1, 3));
+  write(source, std::array<float, 6>{1, 2, 3, 4, 5, 6});
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input, source.view).ok());
+  ASSERT_TRUE(invocation.bind(output, destination.view).ok());
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      QueueBinding{.domain = ExecutionDomainId{1}, .queue = &second_queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  expect_near(read(destination, 3), std::array<float, 3>{4, 5, 6});
 }
 
 TEST(GraphCompile, DoesNotInPlaceABroadcastProviderRoute) {

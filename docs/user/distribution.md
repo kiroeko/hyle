@@ -148,9 +148,15 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 关闭该能力并保留 native Compute；AUTO 只用于开发机探索。开启后
 source/static/shared 都通过同一个
 `hyle::compute::onednn::provider()` C++ 入口使用：static SDK 传递锁定 oneDNN archive/header 闭包，shared
-SDK 把其实现私有链接进 provider shared library，二者都安装 Apache-2.0 notice。CUDA、Metal/MLX、
-Vulkan 或其他第三方 provider 仍须在独立 factor 具备实现、依赖 owner、三交付验证与性能结论后登记。
-HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
+SDK 把其实现私有链接进 provider shared library，二者都安装 Apache-2.0 notice。
+
+Compute/Graph 还包含 CUDA runtime factor。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
+默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
+CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
+都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`
+找到。当前该 factor 提供 CUDA device/context/queue/memory/interop/transfer/capture runtime，不应解读为
+完整 CUDA 算子 provider 已交付。Metal/MLX、Vulkan 或其他 provider 仍须在独立 factor 具备实现、依赖
+owner、三交付验证与性能结论后登记。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
 当前 trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 
 ## 5. 配置合同

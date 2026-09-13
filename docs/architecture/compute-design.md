@@ -248,8 +248,8 @@ HYLE::compute                         # 用户产品 façade
 
 graph_ir -> compute_ops
 graph_compile -> graph_ir + compute provider contracts + mem
-graph_plan -> compute_core + mem
-graph_sched -> graph_plan + compute_sched + sched       # 可选运行时组合
+graph_plan -> compute + mem                            # 当前为 Graph 内部源码边界
+graph_sched -> graph_plan + compute_sched + sched      # 未来可选运行时组合
 ```
 
 `compute_core` 不因 coroutine convenience 强制公开依赖 Sched；需要 `co_await`/task 组合的用户取得窄的

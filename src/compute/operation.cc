@@ -295,6 +295,10 @@ WorkspaceRequirement PreparedOperation::workspace_requirement() const noexcept {
                            : WorkspaceRequirement{};
 }
 
+bool PreparedOperation::capture_compatible() const noexcept {
+  return state_ != nullptr && state_->provider_prepared.capture_compatible;
+}
+
 std::size_t PreparedOperation::input_count() const noexcept {
   return state_ != nullptr ? state_->input_count : 0;
 }
@@ -738,6 +742,30 @@ detail::EnqueueResult detail::OperationInvocationAccess::enqueue(
   return prepared.provider_prepared.vtable->submit(
       prepared.provider_prepared.state, invocation.state_->provider_state,
       queue, inputs, outputs);
+}
+
+detail::EnqueueResult detail::OperationInvocationAccess::enqueue_prevalidated(
+    OperationInvocation &invocation, detail::QueueSequence &sequence,
+    std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  if (!invocation.valid())
+    return EnqueueResult::rejected(
+        Status::FailedPrecondition("operation invocation is invalid"));
+  if (!sequence.valid())
+    return EnqueueResult::rejected(
+        Status::FailedPrecondition("compute queue sequence is invalid"));
+  detail::PreparedState &prepared = *invocation.state_->prepared;
+  detail::QueueState *queue_state =
+      detail::ContextAccess::state(sequence.queue());
+  if (queue_state == nullptr || queue_state->context != prepared.context ||
+      inputs.size() != prepared.input_count ||
+      outputs.size() != prepared.output_count) {
+    return EnqueueResult::rejected(
+        Status::Internal("prevalidated graph operation route is invalid"));
+  }
+  return prepared.provider_prepared.vtable->submit(
+      prepared.provider_prepared.state, invocation.state_->provider_state,
+      sequence.queue(), inputs, outputs);
 }
 
 Result<Completion>

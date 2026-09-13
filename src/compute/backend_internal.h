@@ -49,9 +49,14 @@ struct BackendVTable final {
                               mem::ConstBufferView source) noexcept = nullptr;
   EnqueueResult (*fill_async)(void *queue, mem::BufferView destination,
                               std::byte value) noexcept = nullptr;
-  EnqueueResult (*wait_completion)(
-      void *queue, const CompletionVTable *completion_vtable,
-      void *completion_state) noexcept = nullptr;
+  EnqueueResult (*wait_completion)(void *queue,
+                                   const CompletionVTable *completion_vtable,
+                                   void *completion_state) noexcept = nullptr;
+  // Cold compatibility query for the exact source Queue kind. Returning true
+  // commits wait_completion() to accepting a pending prefix Completion from
+  // that Queue; false lets the Graph planner expose/reject a host wait.
+  bool (*can_wait_queue)(void *destination_queue, BackendId source_backend,
+                         void *source_queue) noexcept = nullptr;
   const void *(*query_extension)(void *context,
                                  BackendExtensionId id) noexcept = nullptr;
   Status (*drain_context)(void *context) noexcept = nullptr;

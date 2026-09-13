@@ -1,10 +1,11 @@
 # HYLE Compute：何时直接执行一个计算
 
-> 本页描述当前 CPU C++ surface；施工资格只以
+> 本页描述当前 CPU operation surface 与 CUDA runtime 检查点；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。默认 CPU façade 使用 HYLE-native；
 > 选择 `HYLE_COMPUTE_ONEDNN=ON` 时，受支持的 x86-64 构建还提供显式 oneDNN MatMul provider。
-> CUDA、Apple MLX/Metal、Vulkan/SPIR-V 与其他已准入 provider 是后续独立纵切。HIP/ROCm 当前无限期
-> 不纳入产品，也没有 component、空实现或可启用的构建开关。
+> CUDA factor 已提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
+> command capture 基础运行时，但尚未签发通用 CUDA operation provider。Apple MLX/Metal、Vulkan/SPIR-V
+> 与其它 provider 是后续独立纵切。HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
@@ -29,6 +30,7 @@ sampling 和 serving 留在推理引擎。
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
+| CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |
 | byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
 | 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
 | provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，不存在隐式 fallback |
@@ -40,6 +42,12 @@ gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19
 **当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、
 rank-2 MatMul 和 packed SiLU GatedActivation 十二项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 7 个
 family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
+
+CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
+找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
+启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context
+的非默认 stream，并通过 `cuda::submit()` 录入 typed stream command。Graph 可在冷路径 capture 兼容的
+CUDA command/copy segment；这不意味着 `prepare(cuda_context, MatMul{...})` 已有可执行 CUDA route。
 
 ## Queue、byte transfer 与 Completion
 

@@ -10,6 +10,7 @@
 #include "context_state.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "provider_internal.h"
@@ -140,9 +141,10 @@ void detail::release(QueueState *state) noexcept {
     state->decref();
 }
 
-detail::BackendExtensionRef::BackendExtensionRef(
-    detail::ContextState *owner, const void *interface_value,
-    BackendExtensionId id, BackendId backend) noexcept
+detail::BackendExtensionRef::BackendExtensionRef(detail::ContextState *owner,
+                                                 const void *interface_value,
+                                                 BackendExtensionId id,
+                                                 BackendId backend) noexcept
     : owner_(owner), interface_(interface_value), id_(id), backend_(backend) {
   detail::retain(owner_);
 }
@@ -195,8 +197,9 @@ detail::BackendExtensionRef &detail::BackendExtensionRef::operator=(
 
 detail::BackendExtensionRef::~BackendExtensionRef() { detail::release(owner_); }
 
-Result<detail::BackendExtensionRef> detail::BackendExtensionAccess::query(
-    const Context &context, BackendExtensionId id) noexcept {
+Result<detail::BackendExtensionRef>
+detail::BackendExtensionAccess::query(const Context &context,
+                                      BackendExtensionId id) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -206,8 +209,8 @@ Result<detail::BackendExtensionRef> detail::BackendExtensionAccess::query(
   }
   if (!state->admission.try_enter())
     return std::unexpected(Status::FailedPrecondition("context is closed"));
-  const void *interface_value = state->backend_vtable->query_extension(
-      state->backend_state, id);
+  const void *interface_value =
+      state->backend_vtable->query_extension(state->backend_state, id);
   Result<BackendExtensionRef> result =
       interface_value != nullptr
           ? Result<BackendExtensionRef>(BackendExtensionRef(
@@ -218,8 +221,9 @@ Result<detail::BackendExtensionRef> detail::BackendExtensionAccess::query(
   return result;
 }
 
-Result<detail::BackendExtensionRef> detail::BackendExtensionAccess::query(
-    const Queue &queue, BackendExtensionId id) noexcept {
+Result<detail::BackendExtensionRef>
+detail::BackendExtensionAccess::query(const Queue &queue,
+                                      BackendExtensionId id) noexcept {
   detail::QueueState *state = detail::ContextAccess::state(queue);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("queue is invalid"));
@@ -237,9 +241,9 @@ Result<detail::BackendExtensionRef> detail::BackendExtensionAccess::query(
       state->context->backend_state, id);
   Result<BackendExtensionRef> result =
       interface_value != nullptr
-          ? Result<BackendExtensionRef>(BackendExtensionRef(
-                state->context, interface_value, id,
-                state->context->backend_vtable->id))
+          ? Result<BackendExtensionRef>(
+                BackendExtensionRef(state->context, interface_value, id,
+                                    state->context->backend_vtable->id))
           : Result<BackendExtensionRef>(std::unexpected(Status::Unimplemented(
                 "compute backend does not implement this extension")));
   state->admission.leave();
@@ -247,9 +251,10 @@ Result<detail::BackendExtensionRef> detail::BackendExtensionAccess::query(
   return result;
 }
 
-Status detail::BackendExtensionAccess::call(
-    const BackendExtensionRef &extension, BackendExtensionCallFn function,
-    void *call_context) noexcept {
+Status
+detail::BackendExtensionAccess::call(const BackendExtensionRef &extension,
+                                     BackendExtensionCallFn function,
+                                     void *call_context) noexcept {
   if (!extension.valid() || function == nullptr)
     return Status::InvalidArgument("compute backend extension call is invalid");
   if (!extension.owner_->admission.try_enter())
@@ -414,7 +419,7 @@ Result<Completion> detail::ProviderExtensionAccess::submit(
   if (!sequence)
     return std::unexpected(std::move(sequence).error());
   EnqueueResult enqueued = enqueue_admitted(extension, *sequence, inputs,
-                                             outputs, function, call_context);
+                                            outputs, function, call_context);
   sequence->record(std::move(enqueued));
   return sequence->finish();
 }
@@ -559,9 +564,8 @@ Result<Context> Context::create(Device device,
       table->reserve_completions == nullptr ||
       table->transfer_properties == nullptr || table->copy_async == nullptr ||
       table->fill_async == nullptr || table->wait_completion == nullptr ||
-      table->query_extension == nullptr ||
-      table->drain_context == nullptr ||
-      table->drain_queue == nullptr) {
+      table->can_wait_queue == nullptr || table->query_extension == nullptr ||
+      table->drain_context == nullptr || table->drain_queue == nullptr) {
     return std::unexpected(Status::InvalidArgument(
         "device backend has an incomplete runtime contract"));
   }
@@ -608,6 +612,88 @@ Context::provider_identity(std::size_t index) const noexcept {
   return table->identity;
 }
 
+detail::ContextRef::ContextRef(const ContextRef &other) noexcept
+    : state_(other.state_) {
+  detail::retain(state_);
+}
+
+detail::ContextRef &
+detail::ContextRef::operator=(const ContextRef &other) noexcept {
+  if (state_ != other.state_) {
+    detail::retain(other.state_);
+    detail::release(state_);
+    state_ = other.state_;
+  }
+  return *this;
+}
+
+detail::ContextRef::ContextRef(ContextRef &&other) noexcept
+    : state_(other.state_) {
+  other.state_ = nullptr;
+}
+
+detail::ContextRef &detail::ContextRef::operator=(ContextRef &&other) noexcept {
+  if (this != &other) {
+    detail::release(state_);
+    state_ = other.state_;
+    other.state_ = nullptr;
+  }
+  return *this;
+}
+
+detail::ContextRef::~ContextRef() { detail::release(state_); }
+
+Result<detail::ContextRef>
+detail::ContextRef::acquire(const Context &context) noexcept {
+  ContextState *state = ContextAccess::state(context);
+  if (state == nullptr)
+    return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  if (!state->admission.is_open())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  detail::retain(state);
+  return ContextRef(state);
+}
+
+Device detail::ContextRef::device() const noexcept {
+  return state_ != nullptr ? state_->device : Device{};
+}
+
+bool detail::ContextRef::is_open() const noexcept {
+  return state_ != nullptr && state_->admission.is_open();
+}
+
+bool detail::ContextRef::owns(const Queue &queue) const noexcept {
+  QueueState *queue_state = ContextAccess::state(queue);
+  return state_ != nullptr && queue_state != nullptr &&
+         queue_state->context == state_;
+}
+
+Result<bool> detail::ContextRef::has_backend_extension(
+    BackendExtensionId id) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("context lease is invalid"));
+  if (!id.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("compute backend extension id is invalid"));
+  }
+  if (!state_->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  const bool supported = state_->backend_vtable->query_extension(
+                             state_->backend_state, id) != nullptr;
+  state_->admission.leave();
+  return supported;
+}
+
+Status detail::ContextRef::validate_resource(
+    mem::MemoryResourceRef resource) const noexcept {
+  if (state_ == nullptr)
+    return Status::FailedPrecondition("context lease is invalid");
+  if (!resource.valid())
+    return Status::InvalidArgument("memory resource is invalid");
+  return state_->backend_vtable->validate_resource(state_->device, resource);
+}
+
 Result<Queue> Context::create_queue(QueueOptions options) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -635,9 +721,9 @@ Result<Queue> Context::create_queue(QueueOptions options) const noexcept {
   return Queue(queue);
 }
 
-Result<Queue> detail::ContextAccess::create_queue(
-    const Context &context, BackendQueueCreateFn create,
-    void *call_context) noexcept {
+Result<Queue> detail::ContextAccess::create_queue(const Context &context,
+                                                  BackendQueueCreateFn create,
+                                                  void *call_context) noexcept {
   ContextState *state = context.state_;
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -648,8 +734,8 @@ Result<Queue> detail::ContextAccess::create_queue(
   if (!state->admission.try_enter())
     return std::unexpected(Status::FailedPrecondition("context is closed"));
 
-  void *storage = state->allocator.allocate(sizeof(QueueState),
-                                             alignof(QueueState));
+  void *storage =
+      state->allocator.allocate(sizeof(QueueState), alignof(QueueState));
   if (storage == nullptr) {
     state->admission.leave();
     return std::unexpected(
@@ -803,13 +889,43 @@ detail::QueueSequence::begin(Queue &queue) noexcept {
     return std::unexpected(std::move(status));
   detail::QueueState *state = detail::ContextAccess::state(queue);
   void *backend_sequence = nullptr;
-  status = state->context->backend_vtable->begin_sequence(
-      state->backend_state, &backend_sequence);
+  status = state->context->backend_vtable->begin_sequence(state->backend_state,
+                                                          &backend_sequence);
   if (!status.ok()) {
     queue.end_submission();
     return std::unexpected(std::move(status));
   }
   return QueueSequence(&queue, backend_sequence);
+}
+
+Result<detail::QueueDependencyRoute>
+detail::QueueSequence::dependency_route(const Queue &destination,
+                                        const Queue &source) noexcept {
+  detail::QueueState *destination_state =
+      detail::ContextAccess::state(destination);
+  detail::QueueState *source_state = detail::ContextAccess::state(source);
+  if (destination_state == nullptr || source_state == nullptr) {
+    return std::unexpected(
+        Status::FailedPrecondition("compute dependency queue is invalid"));
+  }
+  if (!destination.is_open() || !source.is_open()) {
+    return std::unexpected(
+        Status::FailedPrecondition("compute dependency queue is closed"));
+  }
+  if (destination_state == source_state)
+    return detail::QueueDependencyRoute::kNoWait;
+  auto source_properties = source_state->context->device.properties();
+  if (!source_properties)
+    return std::unexpected(std::move(source_properties).error());
+  if (!source_properties->asynchronous_queues)
+    return detail::QueueDependencyRoute::kNoWait;
+  const bool compatible =
+      destination_state->context->backend_vtable->can_wait_queue(
+          destination_state->backend_state,
+          source_state->context->backend_vtable->id,
+          source_state->backend_state);
+  return compatible ? detail::QueueDependencyRoute::kDeviceWait
+                    : detail::QueueDependencyRoute::kHostWait;
 }
 
 void detail::QueueSequence::record(EnqueueResult result) noexcept {
@@ -840,8 +956,7 @@ detail::QueueSequence::enqueue_wait(const Completion &source) noexcept {
   EnqueueResult result = state->context->backend_vtable->wait_completion(
       state->backend_state, dependency.vtable, dependency.state);
   if (result.accepted && result.status.ok() &&
-      dependency.terminal_hint != nullptr &&
-      !dependency.terminal_hint->ok()) {
+      dependency.terminal_hint != nullptr && !dependency.terminal_hint->ok()) {
     result.status = *dependency.terminal_hint;
   }
   return result;

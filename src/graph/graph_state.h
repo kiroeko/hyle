@@ -13,6 +13,10 @@ namespace hyle::graph::detail {
 inline constexpr std::uint32_t kNoNode = UINT32_MAX;
 
 struct GraphIdentity final {
+  static constexpr DimensionId dimension(std::uint64_t generation,
+                                         std::uint32_t ordinal) noexcept {
+    return DimensionId(generation, ordinal);
+  }
   static constexpr ValueId value(std::uint64_t generation, ValueKind kind,
                                  std::uint32_t ordinal) noexcept {
     return ValueId(generation, kind, ordinal);
@@ -27,9 +31,20 @@ struct GraphIdentity final {
   static constexpr std::uint64_t generation(NodeId node) noexcept {
     return node.generation_;
   }
+  static constexpr std::uint64_t generation(DimensionId dimension) noexcept {
+    return dimension.generation_;
+  }
+};
+
+struct DimensionRecord final {
+  DimensionBounds bounds{};
 };
 
 struct ValueRecord final {
+  TensorSpec spec{};
+  // Valid exactly when spec is concrete. Keeping the resolved value beside
+  // the spec preserves O(1) legacy concrete queries and lets the existing
+  // compiler consume concrete-only graphs without a second representation.
   compute::TensorDesc description{};
   ValueKind kind = ValueKind::kInput;
   std::uint32_t producer = kNoNode;
@@ -51,6 +66,8 @@ struct ControlEdgeRecord final {
 };
 
 using ValueRecords = container::SmallVector<ValueRecord, 8, mem::AllocatorRef>;
+using DimensionRecords =
+    container::SmallVector<DimensionRecord, 4, mem::AllocatorRef>;
 using NodeRecords = container::SmallVector<NodeRecord, 8, mem::AllocatorRef>;
 using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
 using ControlEdgeRecords =
@@ -60,13 +77,14 @@ struct BuilderState final {
   BuilderState(std::uint64_t generation_value,
                mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), generation(generation_value),
-        values(allocator_value), nodes(allocator_value), edges(allocator_value),
-        inputs(allocator_value), constants(allocator_value),
-        outputs(allocator_value), control_edges(allocator_value),
-        dependencies(allocator_value) {}
+        dimensions(allocator_value), values(allocator_value),
+        nodes(allocator_value), edges(allocator_value), inputs(allocator_value),
+        constants(allocator_value), outputs(allocator_value),
+        control_edges(allocator_value), dependencies(allocator_value) {}
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
+  DimensionRecords dimensions;
   ValueRecords values;
   NodeRecords nodes;
   Ordinals edges;
@@ -80,6 +98,7 @@ struct BuilderState final {
 struct GraphState final : util::RefCounted<GraphState> {
   explicit GraphState(BuilderState &builder) noexcept
       : allocator(builder.allocator), generation(builder.generation),
+        dimensions(std::move(builder.dimensions)),
         values(std::move(builder.values)), nodes(std::move(builder.nodes)),
         edges(std::move(builder.edges)), inputs(std::move(builder.inputs)),
         constants(std::move(builder.constants)),
@@ -94,6 +113,7 @@ struct GraphState final : util::RefCounted<GraphState> {
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
+  DimensionRecords dimensions;
   ValueRecords values;
   NodeRecords nodes;
   Ordinals edges;
@@ -147,6 +167,12 @@ inline bool owns(const GraphState &state, ValueId value) noexcept {
          value.kind() == state.values[value.ordinal()].kind;
 }
 
+inline bool owns(const GraphState &state, DimensionId dimension) noexcept {
+  return dimension.valid() &&
+         GraphIdentity::generation(dimension) == state.generation &&
+         dimension.ordinal() < state.dimensions.size();
+}
+
 inline bool owns(const GraphState &state, NodeId node) noexcept {
   return node.valid() && GraphIdentity::generation(node) == state.generation &&
          node.ordinal() < state.nodes.size();
@@ -157,6 +183,12 @@ inline bool owns(const BuilderState &state, ValueId value) noexcept {
          GraphIdentity::generation(value) == state.generation &&
          value.ordinal() < state.values.size() &&
          value.kind() == state.values[value.ordinal()].kind;
+}
+
+inline bool owns(const BuilderState &state, DimensionId dimension) noexcept {
+  return dimension.valid() &&
+         GraphIdentity::generation(dimension) == state.generation &&
+         dimension.ordinal() < state.dimensions.size();
 }
 
 inline bool owns(const BuilderState &state, NodeId node) noexcept {

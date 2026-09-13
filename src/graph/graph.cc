@@ -36,6 +36,46 @@ Status allocation_failure() noexcept {
   return Status::ResourceExhausted("graph metadata allocation failed");
 }
 
+Status symbolic_description() noexcept {
+  return Status::FailedPrecondition(
+      "graph value is symbolic and requires a concrete specialization");
+}
+
+Status validate_bounds(DimensionBounds bounds) noexcept {
+  if (bounds.minimum <= 0 || bounds.maximum <= 0 || bounds.multiple_of <= 0) {
+    return Status::InvalidArgument(
+        "graph dimension bounds and multiple must be positive");
+  }
+  if (bounds.minimum > bounds.maximum) {
+    return Status::InvalidArgument("graph dimension minimum exceeds maximum");
+  }
+  const std::int64_t remainder = bounds.minimum % bounds.multiple_of;
+  const std::int64_t adjustment =
+      remainder == 0 ? 0 : bounds.multiple_of - remainder;
+  if (adjustment > bounds.maximum - bounds.minimum) {
+    return Status::InvalidArgument(
+        "graph dimension bounds contain no permitted multiple");
+  }
+  return Status::Ok();
+}
+
+template <class State>
+Status validate_spec(const State &state, const TensorSpec &spec) noexcept {
+  if (!spec.valid())
+    return Status::InvalidArgument("graph tensor spec is invalid");
+  for (Dimension dimension : spec.dimensions()) {
+    if (!dimension.valid()) {
+      return Status::InvalidArgument(
+          "graph tensor spec contains an invalid extent");
+    }
+    if (dimension.is_symbol() && !detail::owns(state, dimension.symbol())) {
+      return Status::InvalidArgument(
+          "tensor dimension belongs to another graph builder");
+    }
+  }
+  return Status::Ok();
+}
+
 Status canonicalize_dependencies(detail::BuilderState &state) noexcept {
   using Counts = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   Counts counts(state.allocator);
@@ -150,12 +190,129 @@ constexpr bool fits_node_ordinal(std::size_t size) noexcept {
   return size < (std::numeric_limits<std::uint32_t>::max)();
 }
 
+constexpr bool fits_dimension_ordinal(std::size_t size) noexcept {
+  return size <= (std::numeric_limits<std::uint32_t>::max)();
+}
+
 static_assert(fits_value_ordinal(
     static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)())));
 static_assert(!fits_node_ordinal(
     static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)())));
 
 } // namespace
+
+Result<TensorSpec>
+TensorSpec::concrete(compute::TensorDesc description) noexcept {
+  if (!description.valid()) {
+    return std::unexpected(Status::InvalidArgument(
+        "concrete graph tensor description is invalid"));
+  }
+  auto bytes = description.required_bytes();
+  if (!bytes)
+    return std::unexpected(std::move(bytes).error());
+
+  TensorSpec result;
+  result.concrete_ = description;
+  result.format_ = description.storage_format();
+  result.type_ = description.data_type();
+  result.rank_ = static_cast<std::uint8_t>(description.rank());
+  result.kind_ = TensorSpecKind::kConcrete;
+  for (std::size_t index = 0; index < description.rank(); ++index) {
+    // Concrete TensorDesc also permits zero extents. Dimension is deliberately
+    // positive-only for symbolic specs, so these cached logical dimensions are
+    // not used to validate or resolve a concrete description.
+    result.dimensions_[index] =
+        Dimension::fixed(description.dimensions()[index]);
+  }
+  return result;
+}
+
+Result<TensorSpec>
+TensorSpec::dense(compute::DataType type,
+                  std::span<const Dimension> dimensions) noexcept {
+  if (type == compute::DataType::kUnknown ||
+      dimensions.size() > compute::kMaxTensorRank) {
+    return std::unexpected(Status::InvalidArgument(
+        "symbolic dense tensor type or rank is invalid"));
+  }
+  TensorSpec result;
+  result.type_ = type;
+  result.rank_ = static_cast<std::uint8_t>(dimensions.size());
+  result.kind_ = TensorSpecKind::kDense;
+  for (std::size_t index = 0; index < dimensions.size(); ++index) {
+    if (!dimensions[index].valid()) {
+      return std::unexpected(Status::InvalidArgument(
+          "symbolic dense tensor extent must be positive or a valid symbol"));
+    }
+    result.dimensions_[index] = dimensions[index];
+  }
+  if (!result.is_symbolic()) {
+    auto concrete = result.concrete_description();
+    if (!concrete)
+      return std::unexpected(std::move(concrete).error());
+  }
+  return result;
+}
+
+Result<TensorSpec>
+TensorSpec::blocked_dense(compute::DataType logical_type,
+                          std::span<const Dimension> dimensions,
+                          compute::StorageFormat format) noexcept {
+  if (logical_type == compute::DataType::kUnknown || dimensions.empty() ||
+      dimensions.size() > compute::kMaxTensorRank ||
+      format.kind() != compute::StorageFormatKind::kBlocked) {
+    return std::unexpected(Status::InvalidArgument(
+        "symbolic blocked tensor type, rank, or format is invalid"));
+  }
+  TensorSpec result;
+  result.format_ = format;
+  result.type_ = logical_type;
+  result.rank_ = static_cast<std::uint8_t>(dimensions.size());
+  result.kind_ = TensorSpecKind::kBlockedDense;
+  for (std::size_t index = 0; index < dimensions.size(); ++index) {
+    if (!dimensions[index].valid()) {
+      return std::unexpected(Status::InvalidArgument(
+          "symbolic blocked tensor extent must be positive or a valid symbol"));
+    }
+    result.dimensions_[index] = dimensions[index];
+  }
+  if (!result.is_symbolic()) {
+    auto concrete = result.concrete_description();
+    if (!concrete)
+      return std::unexpected(std::move(concrete).error());
+  }
+  return result;
+}
+
+bool TensorSpec::is_symbolic() const noexcept {
+  if (!valid() || kind_ == TensorSpecKind::kConcrete)
+    return false;
+  for (Dimension dimension : dimensions()) {
+    if (dimension.is_symbol())
+      return true;
+  }
+  return false;
+}
+
+Result<compute::TensorDesc> TensorSpec::concrete_description() const noexcept {
+  if (!valid())
+    return std::unexpected(
+        Status::FailedPrecondition("tensor spec is invalid"));
+  if (kind_ == TensorSpecKind::kConcrete)
+    return concrete_;
+  if (is_symbolic())
+    return std::unexpected(symbolic_description());
+
+  std::array<std::int64_t, compute::kMaxTensorRank> extents{};
+  for (std::size_t index = 0; index < rank_; ++index)
+    extents[index] = dimensions_[index].fixed_value();
+  const std::span<const std::int64_t> shape(extents.data(), rank_);
+  if (kind_ == TensorSpecKind::kDense)
+    return compute::TensorDesc::dense(type_, shape);
+  if (kind_ == TensorSpecKind::kBlockedDense)
+    return compute::TensorDesc::blocked_dense(type_, shape, format_);
+  return std::unexpected(Status::Internal("tensor spec kind is invalid"));
+}
 
 Graph::Graph(const Graph &other) noexcept : state_(other.state_) {
   detail::retain(state_);
@@ -189,6 +346,10 @@ std::size_t Graph::value_count() const noexcept {
   return state_ != nullptr ? state_->values.size() : 0;
 }
 
+std::size_t Graph::dimension_count() const noexcept {
+  return state_ != nullptr ? state_->dimensions.size() : 0;
+}
+
 std::size_t Graph::input_count() const noexcept {
   return state_ != nullptr ? state_->inputs.size() : 0;
 }
@@ -203,6 +364,28 @@ std::size_t Graph::node_count() const noexcept {
 
 std::size_t Graph::output_count() const noexcept {
   return state_ != nullptr ? state_->outputs.size() : 0;
+}
+
+Result<DimensionId> Graph::dimension_id(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (index >= state_->dimensions.size()) {
+    return std::unexpected(
+        Status::OutOfRange("graph dimension index is out of range"));
+  }
+  return detail::GraphIdentity::dimension(state_->generation,
+                                          static_cast<std::uint32_t>(index));
+}
+
+Result<DimensionBounds>
+Graph::dimension_bounds(DimensionId dimension) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, dimension)) {
+    return std::unexpected(
+        Status::InvalidArgument("dimension does not belong to this graph"));
+  }
+  return state_->dimensions[dimension.ordinal()].bounds;
 }
 
 Result<ValueId> Graph::input_id(std::size_t index) const noexcept {
@@ -220,7 +403,18 @@ Graph::input_description(std::size_t index) const noexcept {
   auto id = input_id(index);
   if (!id)
     return std::unexpected(std::move(id).error());
-  return state_->values[id->ordinal()].description;
+  const compute::TensorDesc &description =
+      state_->values[id->ordinal()].description;
+  if (!description.valid())
+    return std::unexpected(symbolic_description());
+  return description;
+}
+
+Result<const TensorSpec &> Graph::input_spec(std::size_t index) const noexcept {
+  auto id = input_id(index);
+  if (!id)
+    return std::unexpected(std::move(id).error());
+  return state_->values[id->ordinal()].spec;
 }
 
 Result<ValueId> Graph::constant_id(std::size_t index) const noexcept {
@@ -238,7 +432,19 @@ Graph::constant_description(std::size_t index) const noexcept {
   auto id = constant_id(index);
   if (!id)
     return std::unexpected(std::move(id).error());
-  return state_->values[id->ordinal()].description;
+  const compute::TensorDesc &description =
+      state_->values[id->ordinal()].description;
+  if (!description.valid())
+    return std::unexpected(symbolic_description());
+  return description;
+}
+
+Result<const TensorSpec &>
+Graph::constant_spec(std::size_t index) const noexcept {
+  auto id = constant_id(index);
+  if (!id)
+    return std::unexpected(std::move(id).error());
+  return state_->values[id->ordinal()].spec;
 }
 
 Result<NodeId> Graph::node_id(std::size_t index) const noexcept {
@@ -376,7 +582,19 @@ Graph::output_description(std::size_t index) const noexcept {
   auto id = output_id(index);
   if (!id)
     return std::unexpected(std::move(id).error());
-  return state_->values[id->ordinal()].description;
+  const compute::TensorDesc &description =
+      state_->values[id->ordinal()].description;
+  if (!description.valid())
+    return std::unexpected(symbolic_description());
+  return description;
+}
+
+Result<const TensorSpec &>
+Graph::output_spec(std::size_t index) const noexcept {
+  auto id = output_id(index);
+  if (!id)
+    return std::unexpected(std::move(id).error());
+  return state_->values[id->ordinal()].spec;
 }
 
 Result<const compute::TensorDesc &>
@@ -387,7 +605,21 @@ Graph::value_description(ValueId value) const noexcept {
     return std::unexpected(
         Status::InvalidArgument("value does not belong to this graph"));
   }
-  return state_->values[value.ordinal()].description;
+  const compute::TensorDesc &description =
+      state_->values[value.ordinal()].description;
+  if (!description.valid())
+    return std::unexpected(symbolic_description());
+  return description;
+}
+
+Result<const TensorSpec &> Graph::value_spec(ValueId value) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, value)) {
+    return std::unexpected(
+        Status::InvalidArgument("value does not belong to this graph"));
+  }
+  return state_->values[value.ordinal()].spec;
 }
 
 GraphBuilder::GraphBuilder(GraphBuilder &&other) noexcept
@@ -420,16 +652,44 @@ GraphBuilder::create(GraphBuilderOptions options) noexcept {
   return GraphBuilder(state);
 }
 
-Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
+Result<DimensionId> GraphBuilder::dimension(DimensionBounds bounds) noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_builder());
-  if (!description.valid()) {
-    return std::unexpected(
-        Status::InvalidArgument("graph input description is invalid"));
+  Status validation = validate_bounds(bounds);
+  if (!validation.ok())
+    return std::unexpected(std::move(validation));
+  if (!fits_dimension_ordinal(state_->dimensions.size())) {
+    return std::unexpected(Status::ResourceExhausted(
+        "graph dimension identity space is exhausted"));
   }
-  auto bytes = description.required_bytes();
-  if (!bytes)
-    return std::unexpected(std::move(bytes).error());
+  const std::uint32_t ordinal =
+      static_cast<std::uint32_t>(state_->dimensions.size());
+  if (!state_->dimensions.try_push_back(
+          detail::DimensionRecord{.bounds = bounds})) {
+    return std::unexpected(allocation_failure());
+  }
+  return detail::GraphIdentity::dimension(state_->generation, ordinal);
+}
+
+Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
+  auto spec = TensorSpec::concrete(description);
+  if (!spec)
+    return std::unexpected(std::move(spec).error());
+  return input(*spec);
+}
+
+Result<ValueId> GraphBuilder::input(TensorSpec spec) noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
+  Status validation = validate_spec(*state_, spec);
+  if (!validation.ok())
+    return std::unexpected(std::move(validation));
+  compute::TensorDesc description{};
+  auto resolved = spec.concrete_description();
+  if (resolved)
+    description = *resolved;
+  else if (!resolved.error().IsFailedPrecondition())
+    return std::unexpected(std::move(resolved).error());
   if (!fits_value_ordinal(state_->values.size())) {
     return std::unexpected(
         Status::ResourceExhausted("graph value identity space is exhausted"));
@@ -442,6 +702,7 @@ Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
   const std::uint32_t ordinal =
       static_cast<std::uint32_t>(state_->values.size());
   const bool value_added = state_->values.try_push_back(detail::ValueRecord{
+      .spec = spec,
       .description = description,
       .kind = ValueKind::kInput,
       .producer = detail::kNoNode,
@@ -455,15 +716,24 @@ Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
 
 Result<ValueId>
 GraphBuilder::constant(compute::TensorDesc description) noexcept {
+  auto spec = TensorSpec::concrete(description);
+  if (!spec)
+    return std::unexpected(std::move(spec).error());
+  return constant(*spec);
+}
+
+Result<ValueId> GraphBuilder::constant(TensorSpec spec) noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_builder());
-  if (!description.valid()) {
-    return std::unexpected(
-        Status::InvalidArgument("graph constant description is invalid"));
-  }
-  auto bytes = description.required_bytes();
-  if (!bytes)
-    return std::unexpected(std::move(bytes).error());
+  Status validation = validate_spec(*state_, spec);
+  if (!validation.ok())
+    return std::unexpected(std::move(validation));
+  compute::TensorDesc description{};
+  auto resolved = spec.concrete_description();
+  if (resolved)
+    description = *resolved;
+  else if (!resolved.error().IsFailedPrecondition())
+    return std::unexpected(std::move(resolved).error());
   if (!fits_value_ordinal(state_->values.size())) {
     return std::unexpected(
         Status::ResourceExhausted("graph value identity space is exhausted"));
@@ -476,6 +746,7 @@ GraphBuilder::constant(compute::TensorDesc description) noexcept {
   const std::uint32_t ordinal =
       static_cast<std::uint32_t>(state_->values.size());
   const bool value_added = state_->values.try_push_back(detail::ValueRecord{
+      .spec = spec,
       .description = description,
       .kind = ValueKind::kConstant,
       .producer = detail::kNoNode,
@@ -496,10 +767,63 @@ GraphBuilder::add_node(compute::Operation operation,
     return std::unexpected(
         Status::InvalidArgument("graph operation input count is invalid"));
   }
+
+  using Descriptions =
+      container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
+  using Specs = container::SmallVector<TensorSpec, 4, mem::AllocatorRef>;
+  Descriptions descriptions(state_->allocator);
+  Descriptions inferred_outputs(state_->allocator);
+  Specs output_specs(state_->allocator);
+  if (!descriptions.try_resize(inputs.size()) ||
+      !inferred_outputs.try_resize(traits.outputs) ||
+      !output_specs.try_resize(traits.outputs)) {
+    return std::unexpected(allocation_failure());
+  }
+  for (std::size_t index = 0; index < inputs.size(); ++index) {
+    if (!detail::owns(*state_, inputs[index])) {
+      return std::unexpected(Status::InvalidArgument(
+          "operation input belongs to another builder"));
+    }
+    const compute::TensorDesc &description =
+        state_->values[inputs[index].ordinal()].description;
+    if (!description.valid()) {
+      return std::unexpected(Status::FailedPrecondition(
+          "symbolic operation requires explicit output tensor specs"));
+    }
+    descriptions[index] = description;
+  }
+  Status inferred = compute::infer_output_descriptions(operation, descriptions,
+                                                       inferred_outputs);
+  if (!inferred.ok())
+    return std::unexpected(std::move(inferred));
+  for (std::size_t index = 0; index < traits.outputs; ++index) {
+    auto spec = TensorSpec::concrete(inferred_outputs[index]);
+    if (!spec)
+      return std::unexpected(std::move(spec).error());
+    output_specs[index] = *spec;
+  }
+  return add_node(operation, inputs, output_specs);
+}
+
+Result<NodeId>
+GraphBuilder::add_node(compute::Operation operation,
+                       std::span<const ValueId> inputs,
+                       std::span<const TensorSpec> outputs) noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
+  const compute::OperationTraits traits = compute::operation_traits(operation);
+  if (!operation.valid() || !traits.inputs.accepts(inputs.size())) {
+    return std::unexpected(
+        Status::InvalidArgument("graph operation input count is invalid"));
+  }
+  if (outputs.size() != traits.outputs) {
+    return std::unexpected(Status::InvalidArgument(
+        "graph operation output spec count is invalid"));
+  }
   if (inputs.size() > (std::numeric_limits<std::uint16_t>::max)())
     return std::unexpected(Status::ResourceExhausted(
         "graph operation input identity space is exhausted"));
-  const std::size_t output_count = traits.outputs;
+  const std::size_t output_count = outputs.size();
   if (!fits_node_ordinal(state_->nodes.size()) ||
       (output_count != 0 &&
        state_->values.size() >
@@ -513,22 +837,41 @@ GraphBuilder::add_node(compute::Operation operation,
   using Descriptions =
       container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
   Descriptions descriptions(state_->allocator);
-  Descriptions outputs(state_->allocator);
+  Descriptions inferred_outputs(state_->allocator);
   if (!descriptions.try_resize(inputs.size()) ||
-      !outputs.try_resize(output_count)) {
+      !inferred_outputs.try_resize(output_count)) {
     return std::unexpected(allocation_failure());
   }
+  bool all_concrete = true;
   for (std::size_t index = 0; index < inputs.size(); ++index) {
     if (!detail::owns(*state_, inputs[index])) {
       return std::unexpected(Status::InvalidArgument(
           "operation input belongs to another builder"));
     }
     descriptions[index] = state_->values[inputs[index].ordinal()].description;
+    all_concrete = all_concrete && descriptions[index].valid();
   }
-  Status inferred =
-      compute::infer_output_descriptions(operation, descriptions, outputs);
-  if (!inferred.ok())
-    return std::unexpected(std::move(inferred));
+  for (const TensorSpec &output : outputs) {
+    Status validation = validate_spec(*state_, output);
+    if (!validation.ok())
+      return std::unexpected(std::move(validation));
+    all_concrete = all_concrete && !output.is_symbolic();
+  }
+  if (all_concrete) {
+    Status inferred = compute::infer_output_descriptions(
+        operation, descriptions, inferred_outputs);
+    if (!inferred.ok())
+      return std::unexpected(std::move(inferred));
+    for (std::size_t index = 0; index < outputs.size(); ++index) {
+      auto declared = outputs[index].concrete_description();
+      if (!declared)
+        return std::unexpected(std::move(declared).error());
+      if (*declared != inferred_outputs[index]) {
+        return std::unexpected(Status::InvalidArgument(
+            "explicit graph output spec does not match operation inference"));
+      }
+    }
+  }
 
   if (!state_->edges.try_reserve(state_->edges.size() + inputs.size()) ||
       !state_->nodes.try_reserve(state_->nodes.size() + 1) ||
@@ -556,9 +899,16 @@ GraphBuilder::add_node(compute::Operation operation,
       })) {
     return std::unexpected(allocation_failure());
   }
-  for (const compute::TensorDesc &output : outputs) {
+  for (const TensorSpec &output : outputs) {
+    compute::TensorDesc description{};
+    auto resolved = output.concrete_description();
+    if (resolved)
+      description = *resolved;
+    else if (!resolved.error().IsFailedPrecondition())
+      return std::unexpected(std::move(resolved).error());
     if (!state_->values.try_push_back(detail::ValueRecord{
-            .description = output,
+            .spec = output,
+            .description = description,
             .kind = ValueKind::kNodeOutput,
             .producer = node_ordinal,
         })) {

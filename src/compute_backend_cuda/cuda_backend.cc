@@ -1,4 +1,5 @@
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/command_capture.h"
 
 #include <algorithm>
 #include <chrono>
@@ -11,8 +12,8 @@
 
 #include "../compute/backend_internal.h"
 #include "cuda_internal.h"
-#include "hyle/core/assert.h"
 #include "hyle/compute/detail/backend_extension.h"
+#include "hyle/core/assert.h"
 
 namespace hyle::compute::cuda {
 namespace detail {
@@ -84,11 +85,11 @@ Status runtime_status(cudaError_t error) noexcept {
   if (error == cudaSuccess)
     return Status::Ok();
   const char *message = cudaGetErrorString(error);
-  return Status::FromNative(
-      runtime_code(error),
-      NativeError{NativeErrorDomain::CudaRuntime,
-                  static_cast<std::int64_t>(error)},
-      message != nullptr ? std::string_view(message) : std::string_view{});
+  return Status::FromNative(runtime_code(error),
+                            NativeError{NativeErrorDomain::CudaRuntime,
+                                        static_cast<std::int64_t>(error)},
+                            message != nullptr ? std::string_view(message)
+                                               : std::string_view{});
 }
 
 Status driver_status(CUresult error) noexcept {
@@ -96,11 +97,11 @@ Status driver_status(CUresult error) noexcept {
     return Status::Ok();
   const char *message = nullptr;
   (void)cuGetErrorString(error, &message);
-  return Status::FromNative(
-      driver_code(error),
-      NativeError{NativeErrorDomain::CudaDriver,
-                  static_cast<std::int64_t>(error)},
-      message != nullptr ? std::string_view(message) : std::string_view{});
+  return Status::FromNative(driver_code(error),
+                            NativeError{NativeErrorDomain::CudaDriver,
+                                        static_cast<std::int64_t>(error)},
+                            message != nullptr ? std::string_view(message)
+                                               : std::string_view{});
 }
 
 Status combine_terminal(Status observed, Status hint) noexcept {
@@ -141,7 +142,8 @@ Status destroy_event_block(EventBlock *block, ContextState *context) noexcept {
   Status result = Status::Ok();
   for (std::size_t index = 0; index < block->initialized; ++index) {
     if (block->slots[index].event != nullptr) {
-      result.Update(runtime_status(cudaEventDestroy(block->slots[index].event)));
+      result.Update(
+          runtime_status(cudaEventDestroy(block->slots[index].event)));
       block->slots[index].event = nullptr;
     }
   }
@@ -169,6 +171,13 @@ void QueueState::destroy() noexcept {
     destroy_event_block(block, context).IgnoreError();
     block = next;
   }
+  if (capture_owned && stream != nullptr) {
+    cudaGraph_t abandoned = nullptr;
+    (void)cudaStreamEndCapture(stream, &abandoned);
+    capture_owned = false;
+    if (abandoned != nullptr)
+      runtime_status(cudaGraphDestroy(abandoned)).IgnoreError();
+  }
   if (stream != nullptr && ownership != StreamOwnership::kBorrowed)
     runtime_status(cudaStreamDestroy(stream)).IgnoreError();
 
@@ -180,8 +189,8 @@ void QueueState::destroy() noexcept {
 }
 
 Status QueueState::reserve(std::size_t minimum) noexcept {
-  if (minimum > std::numeric_limits<std::size_t>::max() -
-                    (kEventSlotsPerBlock - 1)) {
+  if (minimum >
+      std::numeric_limits<std::size_t>::max() - (kEventSlotsPerBlock - 1)) {
     return Status::OutOfRange("CUDA completion reservation is too large");
   }
   for (;;) {
@@ -281,7 +290,8 @@ Result<QueueState *> create_queue_state(ContextState *context,
     return std::unexpected(
         Status::ResourceExhausted("CUDA queue-state allocation failed"));
   }
-  auto *result = ::new (storage) QueueState(context, stream, ownership, allocator);
+  auto *result =
+      ::new (storage) QueueState(context, stream, ownership, allocator);
   {
     std::lock_guard lock(context->queues_lock);
     result->context_next = context->queues;
@@ -292,8 +302,7 @@ Result<QueueState *> create_queue_state(ContextState *context,
 
 Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
   if (slot == nullptr || slot->owner == nullptr) {
-    return std::unexpected(
-        Status::Internal("CUDA completion slot is invalid"));
+    return std::unexpected(Status::Internal("CUDA completion slot is invalid"));
   }
   cudaError_t result = cudaSuccess;
   if (slot->fence == FenceKind::kEvent)
@@ -301,7 +310,8 @@ Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
   else if (slot->fence == FenceKind::kStreamFallback)
     result = cudaStreamQuery(slot->owner->stream);
   else
-    return std::unexpected(Status::Internal("CUDA completion was not recorded"));
+    return std::unexpected(
+        Status::Internal("CUDA completion was not recorded"));
 
   if (result == cudaSuccess)
     return CompletionPoll::kComplete;
@@ -348,9 +358,9 @@ Status CompletionReaper::start() noexcept {
   std::lock_guard lock(lock_);
   if (started_)
     return Status::Ok();
-  auto created = platform::Thread::spawn(
-      &CompletionReaper::run_entry, this,
-      platform::ThreadOpts{.name = "hyle-cuda-reaper"});
+  auto created =
+      platform::Thread::spawn(&CompletionReaper::run_entry, this,
+                              platform::ThreadOpts{.name = "hyle-cuda-reaper"});
   if (!created)
     return std::move(created).error();
   thread_ = std::move(*created);
@@ -358,9 +368,9 @@ Status CompletionReaper::start() noexcept {
   return Status::Ok();
 }
 
-void CompletionReaper::retire(
-    EventSlot *slot, compute::detail::CompletionLifetime lifetime,
-    Status terminal_hint) noexcept {
+void CompletionReaper::retire(EventSlot *slot,
+                              compute::detail::CompletionLifetime lifetime,
+                              Status terminal_hint) noexcept {
   HYLE_FATAL_ASSERT(slot != nullptr);
   slot->lifetime = lifetime;
   slot->terminal_hint = std::move(terminal_hint);
@@ -481,8 +491,8 @@ public:
         return record->text;
     }
     const mem::AllocatorRef allocator = mem::system_allocator();
-    void *storage = allocator.allocate(sizeof(DeviceNameRecord),
-                                       alignof(DeviceNameRecord));
+    void *storage =
+        allocator.allocate(sizeof(DeviceNameRecord), alignof(DeviceNameRecord));
     if (storage == nullptr)
       return "NVIDIA CUDA GPU";
     auto *record = ::new (storage) DeviceNameRecord;
@@ -518,7 +528,8 @@ Result<std::size_t> device_count_impl(const Backend &) noexcept {
   if (!result.ok())
     return std::unexpected(std::move(result));
   if (count < 0)
-    return std::unexpected(Status::Internal("CUDA returned a negative device count"));
+    return std::unexpected(
+        Status::Internal("CUDA returned a negative device count"));
   return static_cast<std::size_t>(count);
 }
 
@@ -573,8 +584,8 @@ Status create_context_impl(const Device &value, mem::AllocatorRef allocator,
       compute::detail::DeviceAccess::payload<DevicePayload>(value);
   HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(cuInit(0)));
   CUdevice driver_device = 0;
-  HYLE_RETURN_IF_ERROR(
-      cuda::detail::driver_status(cuDeviceGet(&driver_device, payload.ordinal)));
+  HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(
+      cuDeviceGet(&driver_device, payload.ordinal)));
   CUcontext primary = nullptr;
   HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(
       cuDevicePrimaryCtxRetain(&primary, driver_device)));
@@ -641,9 +652,9 @@ Status create_owned_queue(cuda::detail::ContextState *context,
 
 Status create_queue_impl(void *context, QueueOptions,
                          mem::AllocatorRef allocator, void **output) noexcept {
-  return create_owned_queue(
-      static_cast<cuda::detail::ContextState *>(context), allocator,
-      cuda::detail::StreamOwnership::kOwned, nullptr, output);
+  return create_owned_queue(static_cast<cuda::detail::ContextState *>(context),
+                            allocator, cuda::detail::StreamOwnership::kOwned,
+                            nullptr, output);
 }
 
 void destroy_queue_impl(void *queue, mem::AllocatorRef) noexcept {
@@ -651,9 +662,9 @@ void destroy_queue_impl(void *queue, mem::AllocatorRef) noexcept {
     static_cast<cuda::detail::QueueState *>(queue)->decref();
 }
 
-void completion_destroy(
-    void *state, compute::detail::CompletionLifetime lifetime,
-    Status terminal_hint) noexcept;
+void completion_destroy(void *state,
+                        compute::detail::CompletionLifetime lifetime,
+                        Status terminal_hint) noexcept;
 Result<CompletionPoll> completion_poll(void *state) noexcept;
 Status completion_wait(void *state) noexcept;
 Status completion_cancel(void *) noexcept;
@@ -671,8 +682,8 @@ void completion_destroy(void *state,
   auto *slot = static_cast<cuda::detail::EventSlot *>(state);
   auto result = cuda::detail::poll_slot(slot);
   if (result && *result == CompletionPoll::kPending) {
-    cuda::detail::CompletionReaper::instance().retire(
-        slot, lifetime, std::move(terminal_hint));
+    cuda::detail::CompletionReaper::instance().retire(slot, lifetime,
+                                                      std::move(terminal_hint));
     return;
   }
   slot->lifetime = lifetime;
@@ -684,13 +695,11 @@ void completion_destroy(void *state,
 }
 
 Result<CompletionPoll> completion_poll(void *state) noexcept {
-  return cuda::detail::poll_slot(
-      static_cast<cuda::detail::EventSlot *>(state));
+  return cuda::detail::poll_slot(static_cast<cuda::detail::EventSlot *>(state));
 }
 
 Status completion_wait(void *state) noexcept {
-  return cuda::detail::wait_slot(
-      static_cast<cuda::detail::EventSlot *>(state));
+  return cuda::detail::wait_slot(static_cast<cuda::detail::EventSlot *>(state));
 }
 
 Status completion_cancel(void *) noexcept {
@@ -721,15 +730,16 @@ Completion finish_sequence_impl(void *queue, void *sequence, bool accepted,
     return Completion::completed(std::move(terminal));
   }
 
-  const cudaError_t recorded = cudaEventRecord(slot->event, queue_state->stream);
+  const cudaError_t recorded =
+      cudaEventRecord(slot->event, queue_state->stream);
   slot->fence = recorded == cudaSuccess
                     ? cuda::detail::FenceKind::kEvent
                     : cuda::detail::FenceKind::kStreamFallback;
   Completion completion =
       compute::detail::CompletionAccess::make(&kCompletionVTable, slot);
   if (recorded != cudaSuccess)
-    compute::detail::CompletionAccess::append_terminal(
-        completion, status(recorded));
+    compute::detail::CompletionAccess::append_terminal(completion,
+                                                       status(recorded));
   compute::detail::CompletionAccess::append_terminal(completion,
                                                      std::move(terminal));
   return completion;
@@ -750,16 +760,15 @@ transfer_properties_impl(void *context, mem::BufferView destination,
   auto *selected = static_cast<cuda::detail::ContextState *>(context);
   const auto *destination_resource =
       cuda::detail::resource_const(destination.resource());
-  const auto *source_resource =
-      cuda::detail::resource_const(source.resource());
+  const auto *source_resource = cuda::detail::resource_const(source.resource());
   if (destination_resource == nullptr || source_resource == nullptr ||
       destination_resource->context() != selected ||
       source_resource->context() != selected) {
-    return std::unexpected(Status::Unimplemented(
-        "CUDA async transfer requires same-context device, pinned, or managed storage"));
+    return std::unexpected(
+        Status::Unimplemented("CUDA async transfer requires same-context "
+                              "device, pinned, or managed storage"));
   }
-  return TransferProperties{.mode = TransferMode::kQueuedDirect,
-                            .peer = false};
+  return TransferProperties{.mode = TransferMode::kQueuedDirect, .peer = false};
 }
 
 compute::detail::EnqueueResult
@@ -768,23 +777,22 @@ copy_async_impl(void *queue, mem::BufferView destination,
   auto *selected = static_cast<cuda::detail::QueueState *>(queue);
   const auto *destination_resource =
       cuda::detail::resource_const(destination.resource());
-  const auto *source_resource =
-      cuda::detail::resource_const(source.resource());
+  const auto *source_resource = cuda::detail::resource_const(source.resource());
   if (!queue_matches_resource(selected, destination_resource) ||
       !queue_matches_resource(selected, source_resource)) {
     return compute::detail::EnqueueResult::rejected(Status::Unimplemented(
         "CUDA async copy requires same-context CUDA storage"));
   }
-  const cudaError_t result = cudaMemcpyAsync(
-      cuda::detail::byte_pointer(destination),
-      cuda::detail::byte_pointer(source), destination.size(),
-      cudaMemcpyDefault, selected->stream);
+  const cudaError_t result =
+      cudaMemcpyAsync(cuda::detail::byte_pointer(destination),
+                      cuda::detail::byte_pointer(source), destination.size(),
+                      cudaMemcpyDefault, selected->stream);
   return compute::detail::EnqueueResult::accepted_command(status(result));
 }
 
-compute::detail::EnqueueResult
-fill_async_impl(void *queue, mem::BufferView destination,
-                std::byte value) noexcept {
+compute::detail::EnqueueResult fill_async_impl(void *queue,
+                                               mem::BufferView destination,
+                                               std::byte value) noexcept {
   auto *selected = static_cast<cuda::detail::QueueState *>(queue);
   const auto *destination_resource =
       cuda::detail::resource_const(destination.resource());
@@ -793,16 +801,17 @@ fill_async_impl(void *queue, mem::BufferView destination,
     return compute::detail::EnqueueResult::rejected(Status::Unimplemented(
         "CUDA async fill requires same-context device or managed storage"));
   }
-  const cudaError_t result = cudaMemsetAsync(
-      cuda::detail::byte_pointer(destination),
-      std::to_integer<unsigned char>(value), destination.size(),
-      selected->stream);
+  const cudaError_t result =
+      cudaMemsetAsync(cuda::detail::byte_pointer(destination),
+                      std::to_integer<unsigned char>(value), destination.size(),
+                      selected->stream);
   return compute::detail::EnqueueResult::accepted_command(status(result));
 }
 
-compute::detail::EnqueueResult wait_completion_impl(
-    void *queue, const compute::detail::CompletionVTable *completion_vtable,
-    void *completion_state) noexcept {
+compute::detail::EnqueueResult
+wait_completion_impl(void *queue,
+                     const compute::detail::CompletionVTable *completion_vtable,
+                     void *completion_state) noexcept {
   auto *destination = static_cast<cuda::detail::QueueState *>(queue);
   if (completion_vtable != &kCompletionVTable || completion_state == nullptr) {
     return compute::detail::EnqueueResult::rejected(Status::Unimplemented(
@@ -819,14 +828,152 @@ compute::detail::EnqueueResult wait_completion_impl(
   return compute::detail::EnqueueResult::accepted_command(status(result));
 }
 
-inline constexpr BackendExtensionId kCudaExtensionId{
-    0x48594c4500000001ULL, 0x4355444100000001ULL, 1};
+bool can_wait_queue_impl(void *destination_queue, BackendId source_backend,
+                         void *source_queue) noexcept {
+  const auto *destination =
+      static_cast<const cuda::detail::QueueState *>(destination_queue);
+  const auto *source =
+      static_cast<const cuda::detail::QueueState *>(source_queue);
+  return destination != nullptr && source_backend == kBackendId &&
+         source != nullptr && source->context == destination->context;
+}
+
+inline constexpr BackendExtensionId kCudaExtensionId{0x48594c4500000001ULL,
+                                                     0x4355444100000001ULL, 1};
 
 struct CudaExtensionV1 final {};
 const CudaExtensionV1 kCudaExtension{};
 
+struct CapturedCommandsState final {
+  cuda::detail::ContextState *context = nullptr;
+  cudaGraphExec_t executable = nullptr;
+  mem::AllocatorRef allocator{};
+};
+
+Status begin_capture(void *backend_context, void *backend_queue) noexcept {
+  auto *context = static_cast<cuda::detail::ContextState *>(backend_context);
+  auto *queue = static_cast<cuda::detail::QueueState *>(backend_queue);
+  if (context == nullptr || queue == nullptr || queue->context != context)
+    return Status::InvalidArgument("CUDA capture queue is invalid");
+  if (queue->capture_owned)
+    return Status::FailedPrecondition("CUDA queue capture is already active");
+  const Status begun = status(
+      cudaStreamBeginCapture(queue->stream, cudaStreamCaptureModeThreadLocal));
+  if (begun.ok())
+    queue->capture_owned = true;
+  return begun;
+}
+
+Status end_capture(void *backend_context, void *backend_queue,
+                   mem::AllocatorRef allocator,
+                   void **captured_commands) noexcept {
+  auto *context = static_cast<cuda::detail::ContextState *>(backend_context);
+  auto *queue = static_cast<cuda::detail::QueueState *>(backend_queue);
+  if (captured_commands == nullptr)
+    return Status::InvalidArgument("CUDA capture output is null");
+  *captured_commands = nullptr;
+  if (context == nullptr || queue == nullptr || queue->context != context ||
+      !queue->capture_owned || !allocator.valid()) {
+    return Status::FailedPrecondition("CUDA capture session is invalid");
+  }
+  cudaGraph_t graph = nullptr;
+  const cudaError_t ended = cudaStreamEndCapture(queue->stream, &graph);
+  queue->capture_owned = false;
+  if (ended != cudaSuccess) {
+    if (graph != nullptr)
+      status(cudaGraphDestroy(graph)).IgnoreError();
+    return status(ended);
+  }
+  if (graph == nullptr)
+    return Status::Internal("CUDA capture returned no graph");
+  cudaGraphExec_t executable = nullptr;
+  const cudaError_t instantiated =
+      cudaGraphInstantiateWithFlags(&executable, graph, 0);
+  const Status graph_destroyed = status(cudaGraphDestroy(graph));
+  if (instantiated != cudaSuccess)
+    return status(instantiated);
+  if (!graph_destroyed.ok()) {
+    status(cudaGraphExecDestroy(executable)).IgnoreError();
+    return graph_destroyed;
+  }
+  void *storage = allocator.allocate(sizeof(CapturedCommandsState),
+                                     alignof(CapturedCommandsState));
+  if (storage == nullptr) {
+    status(cudaGraphExecDestroy(executable)).IgnoreError();
+    return Status::ResourceExhausted("CUDA graph artifact allocation failed");
+  }
+  context->incref();
+  *captured_commands =
+      ::new (storage) CapturedCommandsState{context, executable, allocator};
+  return Status::Ok();
+}
+
+Status abort_capture(void *backend_context, void *backend_queue) noexcept {
+  auto *context = static_cast<cuda::detail::ContextState *>(backend_context);
+  auto *queue = static_cast<cuda::detail::QueueState *>(backend_queue);
+  if (context == nullptr || queue == nullptr || queue->context != context ||
+      !queue->capture_owned) {
+    return Status::FailedPrecondition("CUDA capture session is not active");
+  }
+  cudaGraph_t graph = nullptr;
+  const cudaError_t ended = cudaStreamEndCapture(queue->stream, &graph);
+  queue->capture_owned = false;
+  Status result = status(ended);
+  if (graph != nullptr)
+    result.Update(status(cudaGraphDestroy(graph)));
+  return result;
+}
+
+void destroy_capture(void *captured_commands,
+                     mem::AllocatorRef allocator) noexcept {
+  auto *captured = static_cast<CapturedCommandsState *>(captured_commands);
+  if (captured == nullptr)
+    return;
+  cuda::detail::ContextState *context = captured->context;
+  {
+    cuda::detail::ScopedPrimaryContext scope(context->primary);
+    if (scope)
+      status(cudaGraphExecDestroy(captured->executable)).IgnoreError();
+  }
+  captured->~CapturedCommandsState();
+  allocator.deallocate(captured, sizeof(CapturedCommandsState),
+                       alignof(CapturedCommandsState));
+  context->decref();
+}
+
+compute::detail::EnqueueResult
+launch_capture(void *backend_context, void *backend_queue,
+               void *captured_commands) noexcept {
+  auto *context = static_cast<cuda::detail::ContextState *>(backend_context);
+  auto *queue = static_cast<cuda::detail::QueueState *>(backend_queue);
+  auto *captured = static_cast<CapturedCommandsState *>(captured_commands);
+  if (context == nullptr || queue == nullptr || captured == nullptr ||
+      queue->context != context || captured->context != context) {
+    return compute::detail::EnqueueResult::rejected(
+        Status::InvalidArgument("CUDA graph launch context is invalid"));
+  }
+  const cudaError_t launched =
+      cudaGraphLaunch(captured->executable, queue->stream);
+  if (launched != cudaSuccess) {
+    return compute::detail::EnqueueResult::rejected(status(launched));
+  }
+  return compute::detail::EnqueueResult::accepted_command();
+}
+
+const compute::detail::CommandCaptureVTable kCommandCaptureVTable{
+    .begin = &begin_capture,
+    .end = &end_capture,
+    .abort = &abort_capture,
+    .destroy = &destroy_capture,
+    .launch = &launch_capture,
+};
+
 const void *query_extension_impl(void *, BackendExtensionId id) noexcept {
-  return id == kCudaExtensionId ? &kCudaExtension : nullptr;
+  if (id == kCudaExtensionId)
+    return &kCudaExtension;
+  if (id == compute::detail::kCommandCaptureExtensionId)
+    return &kCommandCaptureVTable;
+  return nullptr;
 }
 
 Status drain_queue_impl(void *queue) noexcept {
@@ -857,8 +1004,8 @@ Status drain_context_impl(void *context) noexcept {
   std::size_t captured = 0;
   {
     std::lock_guard lock(selected->queues_lock);
-    for (auto *queue = selected->queues;
-         queue != nullptr && captured < count; queue = queue->context_next) {
+    for (auto *queue = selected->queues; queue != nullptr && captured < count;
+         queue = queue->context_next) {
       queue->incref();
       queues[captured++] = queue;
     }
@@ -893,6 +1040,7 @@ const compute::detail::BackendVTable kBackendVTable{
     .copy_async = &copy_async_impl,
     .fill_async = &fill_async_impl,
     .wait_completion = &wait_completion_impl,
+    .can_wait_queue = &can_wait_queue_impl,
     .query_extension = &query_extension_impl,
     .drain_context = &drain_context_impl,
     .drain_queue = &drain_queue_impl,
@@ -960,8 +1108,9 @@ Status primary_context_call(void *backend_context, const void *,
   return Status::Ok();
 }
 
-compute::detail::EnqueueResult submit_call(
-    void *, const void *, void *backend_queue, void *call_context) noexcept {
+compute::detail::EnqueueResult submit_call(void *, const void *,
+                                           void *backend_queue,
+                                           void *call_context) noexcept {
   struct SubmitContext final {
     StreamCommand command = nullptr;
     void *context = nullptr;
@@ -973,7 +1122,7 @@ compute::detail::EnqueueResult submit_call(
   if (queried != cudaSuccess) {
     return compute::detail::EnqueueResult::rejected(status(queried));
   }
-  if (capture != cudaStreamCaptureStatusNone) {
+  if (capture != cudaStreamCaptureStatusNone && !selected->capture_owned) {
     return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
         "cuda::submit does not join an externally active stream capture"));
   }
@@ -988,8 +1137,8 @@ struct ImportedStream final {
 };
 
 Status imported_queue_factory(void *backend_context,
-                              mem::AllocatorRef allocator,
-                              void *call_context, void **output) noexcept {
+                              mem::AllocatorRef allocator, void *call_context,
+                              void **output) noexcept {
   auto *imported = static_cast<ImportedStream *>(call_context);
   return create_owned_queue(
       static_cast<cuda::detail::ContextState *>(backend_context), allocator,
@@ -1014,16 +1163,15 @@ Result<Queue> import_stream(const Context &context, cudaStream_t native_stream,
         "CUDA imported stream must have cudaStreamNonBlocking"));
   }
   int stream_device = -1;
-  HYLE_RETURN_IF_ERROR(status(cudaStreamGetDevice(native_stream,
-                                                  &stream_device)));
+  HYLE_RETURN_IF_ERROR(
+      status(cudaStreamGetDevice(native_stream, &stream_device)));
   if (stream_device != *ordinal) {
     return std::unexpected(Status::InvalidArgument(
         "CUDA imported stream belongs to a different device"));
   }
   CUcontext stream_context = nullptr;
-  HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(
-      cuStreamGetCtx(reinterpret_cast<CUstream>(native_stream),
-                     &stream_context)));
+  HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(cuStreamGetCtx(
+      reinterpret_cast<CUstream>(native_stream), &stream_context)));
   auto expected_context = primary_context(context);
   if (!expected_context)
     return std::unexpected(std::move(expected_context).error());
@@ -1100,8 +1248,8 @@ Result<Completion> submit(Queue &queue, StreamCommand command,
     StreamCommand command = nullptr;
     void *context = nullptr;
   } call{command, context};
-  return compute::detail::BackendExtensionAccess::submit(
-      *extension, queue, &submit_call, &call);
+  return compute::detail::BackendExtensionAccess::submit(*extension, queue,
+                                                         &submit_call, &call);
 }
 
 } // namespace hyle::compute::cuda

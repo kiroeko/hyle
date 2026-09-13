@@ -9,4 +9,9 @@ if(TARGET hyle_compute_backend_cpu AND TARGET hyle_compute_provider_native)
     DEPS hyle_compute_backend_cpu hyle_compute_provider_native Threads::Threads)
   target_include_directories(hyle_graph_executable_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute")
+  if(TARGET hyle_compute_backend_cuda)
+    target_sources(hyle_graph_executable_test PRIVATE cuda_graph_test.cc)
+    target_link_libraries(hyle_graph_executable_test PRIVATE
+      hyle_compute_backend_cuda)
+  endif()
 endif()

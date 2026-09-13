@@ -92,18 +92,19 @@ transfer_properties_impl(void *, mem::BufferView,
 }
 detail::EnqueueResult copy_async_impl(void *, mem::BufferView destination,
                                       mem::ConstBufferView source) noexcept {
-  return detail::EnqueueResult::accepted_command(
-      destination.copy_from(source));
+  return detail::EnqueueResult::accepted_command(destination.copy_from(source));
 }
 detail::EnqueueResult fill_async_impl(void *, mem::BufferView destination,
                                       std::byte value) noexcept {
   return detail::EnqueueResult::accepted_command(destination.fill(value));
 }
-detail::EnqueueResult wait_completion_impl(
-    void *, const detail::CompletionVTable *, void *) noexcept {
+detail::EnqueueResult wait_completion_impl(void *,
+                                           const detail::CompletionVTable *,
+                                           void *) noexcept {
   return detail::EnqueueResult::rejected(Status::Unimplemented(
       "CPU queue cannot consume an asynchronous backend completion"));
 }
+bool can_wait_queue_impl(void *, BackendId, void *) noexcept { return false; }
 const void *query_extension_impl(void *, BackendExtensionId) noexcept {
   return nullptr;
 }
@@ -130,6 +131,7 @@ const detail::BackendVTable kBackendVTable{
     .copy_async = &copy_async_impl,
     .fill_async = &fill_async_impl,
     .wait_completion = &wait_completion_impl,
+    .can_wait_queue = &can_wait_queue_impl,
     .query_extension = &query_extension_impl,
     .drain_context = &drain_context_impl,
     .drain_queue = &drain_queue_impl,

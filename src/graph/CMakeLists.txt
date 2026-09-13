@@ -1,4 +1,4 @@
-# Graph v3 compiles a typed immutable DAG into provider regions or explicit
-# single-operation fallback steps plus one Mem lifetime plan. The plan remains
-# internal; Invocation is the only mutable per-run state.
+# Graph compiles a typed immutable DAG into a specialization-specific,
+# multi-domain execution plan. The plan remains internal; Invocation owns the
+# mutable bindings, workspace, replay routes and capture state for one lane.
 hyle_add_module(graph SOURCES graph.cc executable.cc)

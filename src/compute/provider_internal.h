@@ -5,8 +5,8 @@
 #include <string_view>
 #include <type_traits>
 
-#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 
 namespace hyle::compute::detail {
@@ -33,6 +33,10 @@ struct ProviderPrepared final {
   const ProviderPreparedVTable *vtable = nullptr;
   void *state = nullptr;
   WorkspaceRequirement workspace{};
+  // True only when submit records backend commands without performing the
+  // operation eagerly on the host and those commands are legal inside the
+  // owning backend's command-capture session.
+  bool capture_compatible = false;
 };
 
 struct ProviderVTable final {

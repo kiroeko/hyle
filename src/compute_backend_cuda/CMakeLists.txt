@@ -1,7 +1,7 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  # Product sources are added by the CUDA runtime implementation round.  Keep
-  # Toolkit ownership here so source and installed consumers see the same
-  # public header contract and the Driver API remains implementation-private.
+  # Keep Toolkit ownership in the CUDA factor so source and installed
+  # consumers see the same public header contract while the Driver API remains
+  # implementation-private.
   hyle_add_module(compute_backend_cuda SOURCES
     cuda_backend.cc
     cuda_memory.cc)

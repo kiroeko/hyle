@@ -13,6 +13,7 @@
 #include "backend_internal.h"
 #include "completion_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/region_provider.h"
@@ -79,14 +80,54 @@ struct RegionProbe final {
   std::size_t completion_poll_count = 0;
   std::size_t completion_wait_count = 0;
   std::size_t completion_destroy_count = 0;
+  std::size_t device_wait_count = 0;
+  std::size_t reserve_completion_count = 0;
+  std::size_t last_reserved_completions = 0;
+  std::size_t transfer_query_count = 0;
+  std::size_t capture_begin_count = 0;
+  std::size_t capture_end_count = 0;
+  std::size_t capture_abort_count = 0;
+  std::size_t capture_launch_count = 0;
+  std::size_t capture_destroy_count = 0;
   std::size_t destroy_prepared_count = 0;
+  std::size_t effect_create_count = 0;
+  std::size_t effect_submit_count = 0;
   std::size_t completed_prefix = 0;
   bool cancelled = false;
+  bool terminal_failure = false;
+  bool transfer_supported = true;
+  bool dependency_wait_supported = true;
+  bool capture_supported = false;
+  bool capture_active = false;
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
+};
+
+struct ExternalEffect final {
+  static constexpr hyle::compute::OperationId operation_id{0x48594c45U,
+                                                           0x45464654U};
+  static constexpr std::string_view operation_name = "test-external-effect";
+
+  hyle::compute::OperationTraits operation_traits() const noexcept {
+    return {{0, 0},
+            0,
+            hyle::compute::AliasPolicy::kNone,
+            hyle::compute::EffectKind::kExternalSideEffect,
+            hyle::compute::PrecisionPolicy::kExact,
+            DataType::kUnknown,
+            false};
+  }
+
+  Status
+  infer_output_descriptions(std::span<const TensorDesc> inputs,
+                            std::span<TensorDesc> outputs) const noexcept {
+    return inputs.empty() && outputs.empty()
+               ? Status::Ok()
+               : Status::InvalidArgument("effect operation has no tensors");
+  }
 };
 
 struct ProviderPayload final {
@@ -103,8 +144,24 @@ struct RegionRun final {
 };
 
 Status async_terminal(const RegionProbe &probe) noexcept {
-  return probe.cancelled ? Status::Cancelled("region sequence was cancelled")
-                         : Status::Ok();
+  if (probe.cancelled)
+    return Status::Cancelled("region sequence was cancelled");
+  return probe.terminal_failure
+             ? Status::Internal("injected asynchronous terminal failure")
+             : Status::Ok();
+}
+
+void finish_abandoned_prefix(RegionProbe &probe) {
+  ASSERT_TRUE(probe.abandoned_lifetime.valid());
+  probe.completed_prefix = probe.submit_count;
+  Status terminal = async_terminal(probe);
+  if (terminal.ok() && !probe.abandoned_hint.ok())
+    terminal = probe.abandoned_hint;
+  const auto lifetime = probe.abandoned_lifetime;
+  probe.abandoned_lifetime = {};
+  probe.abandoned_hint = {};
+  lifetime.terminal(lifetime.state, terminal);
+  lifetime.release(lifetime.state);
 }
 
 void destroy_async_completion(
@@ -288,6 +345,8 @@ submit_region(void *prepared, void *invocation, Queue &,
         Status::Internal("region binding mismatch"));
   if (plan.probe->mode == ProposalMode::kAsyncPairs ||
       plan.probe->mode == ProposalMode::kAsyncRejectSecond) {
+    if (plan.probe->capture_active)
+      return hyle::compute::detail::EnqueueResult::accepted_command();
     ++plan.probe->submit_attempt_count;
     if (plan.probe->mode == ProposalMode::kAsyncRejectSecond &&
         plan.probe->submit_attempt_count == 2) {
@@ -395,11 +454,61 @@ Status create_provider_context(const Provider &provider, hyle::compute::Device,
 
 void destroy_provider_context(void *, AllocatorRef) noexcept {}
 
-Status prepare_single(void *context, Operation, std::span<const TensorDesc>,
-                      std::span<const TensorDesc>, AllocatorRef,
-                      hyle::compute::detail::ProviderPrepared *) noexcept {
-  ++static_cast<RegionProbe *>(context)->single_prepare_count;
-  return Status::Unimplemented("region provider has no single-op route");
+void destroy_effect_prepared(void *, AllocatorRef) noexcept {}
+
+AliasSupport effect_alias_support(void *, std::size_t, std::size_t) noexcept {
+  return {};
+}
+
+Status create_effect_invocation(void *prepared, AllocatorRef,
+                                hyle::mem::BufferView,
+                                void **invocation) noexcept {
+  if (invocation == nullptr)
+    return Status::InvalidArgument("effect invocation output is null");
+  auto &probe = *static_cast<RegionProbe *>(prepared);
+  ++probe.effect_create_count;
+  *invocation = prepared;
+  return Status::Ok();
+}
+
+void destroy_effect_invocation(void *, AllocatorRef) noexcept {}
+
+hyle::compute::detail::EnqueueResult
+submit_effect(void *, void *invocation, Queue &,
+              std::span<const ConstTensorView> inputs,
+              std::span<const TensorView> outputs) noexcept {
+  if (invocation == nullptr || !inputs.empty() || !outputs.empty()) {
+    return hyle::compute::detail::EnqueueResult::accepted_command(
+        Status::Internal("effect invocation binding mismatch"));
+  }
+  ++static_cast<RegionProbe *>(invocation)->effect_submit_count;
+  return hyle::compute::detail::EnqueueResult::accepted_command();
+}
+
+const hyle::compute::detail::ProviderPreparedVTable kEffectPreparedVTable{
+    .destroy_prepared = &destroy_effect_prepared,
+    .alias_support = &effect_alias_support,
+    .create_invocation = &create_effect_invocation,
+    .destroy_invocation = &destroy_effect_invocation,
+    .submit = &submit_effect,
+};
+
+Status
+prepare_single(void *context, Operation operation,
+               std::span<const TensorDesc> inputs,
+               std::span<const TensorDesc> outputs, AllocatorRef,
+               hyle::compute::detail::ProviderPrepared *prepared) noexcept {
+  auto &probe = *static_cast<RegionProbe *>(context);
+  ++probe.single_prepare_count;
+  if (!operation.custom_as<ExternalEffect>().has_value())
+    return Status::Unimplemented("region provider has no single-op route");
+  if (!inputs.empty() || !outputs.empty() || prepared == nullptr)
+    return Status::InvalidArgument("effect preparation binding mismatch");
+  *prepared = hyle::compute::detail::ProviderPrepared{
+      .vtable = &kEffectPreparedVTable,
+      .state = &probe,
+  };
+  return Status::Ok();
 }
 
 const void *query_extension(void *,
@@ -427,8 +536,8 @@ struct AsyncBackendPayload final {
   RegionProbe *probe = nullptr;
 };
 
-constexpr hyle::compute::BackendId kAsyncBackendId{
-    0x544553542d475241ULL, 0x50482d4153594e43ULL};
+constexpr hyle::compute::BackendId kAsyncBackendId{0x544553542d475241ULL,
+                                                   0x50482d4153594e43ULL};
 
 Result<hyle::compute::Device>
 async_device(const hyle::compute::Backend &backend, std::size_t index) noexcept;
@@ -442,7 +551,8 @@ bool same_async_device(const hyle::compute::Device &left,
                        const hyle::compute::Device &right) noexcept {
   return hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(left)
              .probe ==
-         hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(right)
+         hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(
+             right)
              .probe;
 }
 
@@ -478,9 +588,9 @@ Status create_async_backend_context(const hyle::compute::Device &device,
                                     AllocatorRef, void **output) noexcept {
   if (output == nullptr)
     return Status::InvalidArgument("test graph context output is null");
-  *output = hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(
-                device)
-                .probe;
+  *output =
+      hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(device)
+          .probe;
   return *output != nullptr
              ? Status::Ok()
              : Status::InvalidArgument("test graph backend has no probe");
@@ -511,25 +621,42 @@ Completion finish_async_sequence(void *, void *sequence, bool accepted,
     return Completion::completed(std::move(terminal));
   Completion completion = hyle::compute::detail::CompletionAccess::make(
       &kAsyncCompletionVTable, sequence);
-  hyle::compute::detail::CompletionAccess::append_terminal(
-      completion, std::move(terminal));
+  hyle::compute::detail::CompletionAccess::append_terminal(completion,
+                                                           std::move(terminal));
   return completion;
 }
 
-Status reserve_async_completions(void *, std::size_t) noexcept {
+Status reserve_async_completions(void *queue, std::size_t minimum) noexcept {
+  if (queue == nullptr)
+    return Status::InvalidArgument("test graph queue is invalid");
+  auto &probe = *static_cast<RegionProbe *>(queue);
+  ++probe.reserve_completion_count;
+  probe.last_reserved_completions = minimum;
   return Status::Ok();
 }
 
 Result<hyle::compute::TransferProperties>
-async_transfer_properties(void *, hyle::mem::BufferView,
+async_transfer_properties(void *context, hyle::mem::BufferView,
                           hyle::mem::ConstBufferView) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  if (probe != nullptr)
+    ++probe->transfer_query_count;
+  if (probe == nullptr || !probe->transfer_supported) {
+    return std::unexpected(
+        Status::Unimplemented("test graph transfer route is unavailable"));
+  }
   return hyle::compute::TransferProperties{
       .mode = hyle::compute::TransferMode::kImmediate};
 }
 
 hyle::compute::detail::EnqueueResult
-async_copy(void *, hyle::mem::BufferView destination,
+async_copy(void *context, hyle::mem::BufferView destination,
            hyle::mem::ConstBufferView source) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  if (probe == nullptr || !probe->transfer_supported) {
+    return hyle::compute::detail::EnqueueResult::rejected(
+        Status::Unimplemented("test graph transfer route is unavailable"));
+  }
   return hyle::compute::detail::EnqueueResult::accepted_command(
       destination.copy_from(source));
 }
@@ -541,15 +668,110 @@ async_fill(void *, hyle::mem::BufferView destination,
       destination.fill(value));
 }
 
-
 hyle::compute::detail::EnqueueResult async_wait_completion(
-    void *, const hyle::compute::detail::CompletionVTable *, void *) noexcept {
-  return hyle::compute::detail::EnqueueResult::rejected(
-      Status::Unimplemented("test graph backend has no dependency route"));
+    void *queue,
+    const hyle::compute::detail::CompletionVTable *completion_vtable,
+    void *completion_state) noexcept {
+  if (queue == nullptr || completion_vtable != &kAsyncCompletionVTable ||
+      completion_state == nullptr) {
+    return hyle::compute::detail::EnqueueResult::rejected(
+        Status::Unimplemented("test graph backend has no dependency route"));
+  }
+  ++static_cast<RegionProbe *>(queue)->device_wait_count;
+  return hyle::compute::detail::EnqueueResult::accepted_command();
 }
 
-const void *query_async_extension(void *,
-                                  hyle::compute::BackendExtensionId) noexcept {
+bool can_async_wait_queue(void *destination_queue,
+                          hyle::compute::BackendId source_backend,
+                          void *source_queue) noexcept {
+  auto *destination = static_cast<RegionProbe *>(destination_queue);
+  return destination != nullptr && source_backend == kAsyncBackendId &&
+         source_queue != nullptr && destination->dependency_wait_supported;
+}
+
+struct MockCapturedCommands final {
+  RegionProbe *probe = nullptr;
+};
+
+Status begin_mock_capture(void *context, void *queue) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  if (probe == nullptr || queue != context || !probe->capture_supported)
+    return Status::Unimplemented("mock command capture is unavailable");
+  if (probe->capture_active)
+    return Status::FailedPrecondition("mock command capture is active");
+  probe->capture_active = true;
+  ++probe->capture_begin_count;
+  return Status::Ok();
+}
+
+Status end_mock_capture(void *context, void *queue, AllocatorRef allocator,
+                        void **output) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  if (probe == nullptr || queue != context || !probe->capture_active ||
+      output == nullptr || !allocator.valid()) {
+    return Status::FailedPrecondition("mock command capture is invalid");
+  }
+  *output = nullptr;
+  void *storage = allocator.allocate(sizeof(MockCapturedCommands),
+                                     alignof(MockCapturedCommands));
+  probe->capture_active = false;
+  if (storage == nullptr)
+    return Status::ResourceExhausted("mock capture allocation failed");
+  *output = ::new (storage) MockCapturedCommands{probe};
+  ++probe->capture_end_count;
+  return Status::Ok();
+}
+
+Status abort_mock_capture(void *context, void *queue) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  if (probe == nullptr || queue != context || !probe->capture_active)
+    return Status::FailedPrecondition("mock command capture is not active");
+  probe->capture_active = false;
+  ++probe->capture_abort_count;
+  return Status::Ok();
+}
+
+void destroy_mock_capture(void *state, AllocatorRef allocator) noexcept {
+  auto *captured = static_cast<MockCapturedCommands *>(state);
+  if (captured == nullptr)
+    return;
+  ++captured->probe->capture_destroy_count;
+  captured->~MockCapturedCommands();
+  allocator.deallocate(captured, sizeof(MockCapturedCommands),
+                       alignof(MockCapturedCommands));
+}
+
+hyle::compute::detail::EnqueueResult
+launch_mock_capture(void *context, void *queue, void *state) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  auto *captured = static_cast<MockCapturedCommands *>(state);
+  if (probe == nullptr || queue != context || captured == nullptr ||
+      captured->probe != probe) {
+    return hyle::compute::detail::EnqueueResult::rejected(
+        Status::InvalidArgument("mock captured command is invalid"));
+  }
+  ++probe->capture_launch_count;
+  ++probe->submit_attempt_count;
+  ++probe->submit_count;
+  return hyle::compute::detail::EnqueueResult::accepted_command();
+}
+
+const hyle::compute::detail::CommandCaptureVTable kMockCaptureVTable{
+    .begin = &begin_mock_capture,
+    .end = &end_mock_capture,
+    .abort = &abort_mock_capture,
+    .destroy = &destroy_mock_capture,
+    .launch = &launch_mock_capture,
+};
+
+const void *
+query_async_extension(void *context,
+                      hyle::compute::BackendExtensionId id) noexcept {
+  auto *probe = static_cast<RegionProbe *>(context);
+  if (probe != nullptr && probe->capture_supported &&
+      id == hyle::compute::detail::kCommandCaptureExtensionId) {
+    return &kMockCaptureVTable;
+  }
   return nullptr;
 }
 
@@ -581,13 +803,15 @@ const hyle::compute::detail::BackendVTable kAsyncBackendVTable{
     .copy_async = &async_copy,
     .fill_async = &async_fill,
     .wait_completion = &async_wait_completion,
+    .can_wait_queue = &can_async_wait_queue,
     .query_extension = &query_async_extension,
     .drain_context = &drain_async,
     .drain_queue = &drain_async,
 };
 
 Result<hyle::compute::Device>
-async_device(const hyle::compute::Backend &backend, std::size_t index) noexcept {
+async_device(const hyle::compute::Backend &backend,
+             std::size_t index) noexcept {
   if (index != 0) {
     return std::unexpected(
         Status::OutOfRange("test graph device index is out of range"));
@@ -643,6 +867,32 @@ Context make_context(RegionProbe &first, RegionProbe &second) {
       .value();
 }
 
+TEST(GraphRegions, ExecutesNonMaterializingExternalEffectSteps) {
+  constexpr std::array<ValueId, 0> no_inputs{};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto first =
+      builder.add_node(Operation::custom(ExternalEffect{}), no_inputs).value();
+  const auto second =
+      builder.add_node(Operation::custom(ExternalEffect{}), no_inputs).value();
+  ASSERT_TRUE(builder.depends_on(second, first).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  RegionProbe probe;
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(graph, context).value();
+  ASSERT_EQ(compiled.report.step_count(), 2u);
+  ASSERT_EQ(compiled.report.segment_count(), 1u);
+  ASSERT_EQ(compiled.executable.required_queue_count(), 1u);
+  EXPECT_EQ(compiled.report.step(0)->dispatch_count, 1u);
+  EXPECT_EQ(compiled.report.step(1)->dispatch_count, 1u);
+
+  auto invocation = compiled.executable.create_invocation().value();
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(probe.effect_create_count, 2u);
+  EXPECT_EQ(probe.effect_submit_count, 2u);
+}
+
 TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   RegionProbe probe;
   const NegationGraph logical = make_negations(2);
@@ -668,6 +918,58 @@ TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   EXPECT_EQ(read(output, values.size()),
             std::vector<float>(values.begin(), values.end()));
   EXPECT_EQ(probe.submit_count, 1u);
+}
+
+TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.capture_supported = true;
+  probe.artifact_properties.capture_compatible = true;
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.domain_count(), 1u);
+  ASSERT_TRUE(compiled.report.domain(0).has_value());
+  EXPECT_TRUE(compiled.report.domain(0)->capture_supported);
+  EXPECT_EQ(compiled.report.command_segment_count(), 1u);
+  EXPECT_EQ(compiled.report.capturable_segment_count(), 1u);
+
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+  const std::array queues{hyle::graph::QueueBinding{
+      .domain = hyle::graph::ExecutionDomainId{0}, .queue = &queue}};
+
+  ASSERT_TRUE(
+      invocation
+          .prepare_replay(queues,
+                          {.mode = hyle::graph::ReplayMode::kRequireCapture})
+          .ok());
+  EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kCaptured);
+  EXPECT_EQ(probe.capture_begin_count, 1u);
+  EXPECT_EQ(probe.capture_end_count, 1u);
+  EXPECT_EQ(probe.capture_abort_count, 0u);
+  EXPECT_EQ(probe.submit_count, 0u);
+
+  const std::array invalid_queues{hyle::graph::QueueBinding{
+      .domain = hyle::graph::ExecutionDomainId{0}, .queue = nullptr}};
+  EXPECT_TRUE(invocation.prepare_replay(invalid_queues).IsInvalidArgument());
+  EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kCaptured);
+  EXPECT_EQ(probe.capture_destroy_count, 0u);
+
+  for (int replay = 0; replay < 2; ++replay) {
+    auto completion = invocation.submit(queues);
+    ASSERT_TRUE(completion.has_value()) << completion.error().message();
+    EXPECT_TRUE(completion->wait().ok());
+  }
+  EXPECT_EQ(probe.capture_launch_count, 2u);
+  EXPECT_EQ(probe.submit_count, 2u);
+
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kUnprepared);
+  EXPECT_EQ(probe.capture_destroy_count, 1u);
 }
 
 TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
@@ -718,6 +1020,120 @@ TEST(GraphRegions,
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
+}
+
+TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackDomain) {
+  RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
+  const NegationGraph logical = make_negations(3);
+  const std::array region_only{region_provider(probe)};
+  Context region_context =
+      Context::create(hyle::compute::cpu::device(), {.providers = region_only})
+          .value();
+  const std::array native_only{hyle::compute::native::provider()};
+  Context fallback_context =
+      Context::create(hyle::compute::cpu::device(), {.providers = native_only})
+          .value();
+  const auto host = hyle::mem::system_resource();
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &region_context,
+                                   .workspace_resource = host},
+      hyle::graph::ExecutionDomain{.context = &fallback_context,
+                                   .workspace_resource = host},
+  };
+  const std::array resources{hyle::graph::ExternalResourceContract{
+      .value = logical.input,
+      .domain = hyle::graph::ExecutionDomainId{1},
+      .resource = host,
+  }};
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, hyle::graph::CompileEnvironment{.domains = domains},
+          CompileOptions{.external_resources = resources,
+                         .region_selection =
+                             RegionSelectionPolicy::kRequireEstimatedBenefit})
+          .value();
+
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
+  EXPECT_EQ(probe.compiled_begin, 1u);
+  EXPECT_EQ(probe.compiled_count, 2u);
+  EXPECT_EQ(probe.single_prepare_count, 1u);
+  bool fallback_on_second_domain = false;
+  for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
+    auto step = compiled.report.step(index);
+    ASSERT_TRUE(step.has_value());
+    fallback_on_second_domain =
+        fallback_on_second_domain ||
+        (step->kind == CompileStepKind::kOperationFallback &&
+         step->domain == hyle::graph::ExecutionDomainId{1});
+  }
+  EXPECT_TRUE(fallback_on_second_domain);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue region_queue = region_context.create_queue().value();
+  Queue fallback_queue = fallback_context.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &region_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &fallback_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  std::array<float, 8> expected{};
+  for (std::size_t index = 0; index < values.size(); ++index)
+    expected[index] = -values[index];
+  EXPECT_EQ(read(output, expected.size()),
+            std::vector<float>(expected.begin(), expected.end()));
+}
+
+TEST(GraphRegions, IgnoresUnusedEnvironmentBackendsInPlanSummary) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  Context unused = make_context(probe);
+  const std::array native_only{hyle::compute::native::provider()};
+  Context active =
+      Context::create(hyle::compute::cpu::device(), {.providers = native_only})
+          .value();
+  const NegationGraph logical = make_negations(1);
+  const auto host = hyle::mem::system_resource();
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &unused,
+                                   .workspace_resource = host},
+      hyle::graph::ExecutionDomain{.context = &active,
+                                   .workspace_resource = host},
+  };
+  const std::array placements{hyle::graph::NodePlacement{
+      .node = logical.graph.node_id().value(),
+      .domain = hyle::graph::ExecutionDomainId{1},
+      .strength = hyle::graph::PlacementStrength::kRequired,
+  }};
+  const std::array resources{
+      hyle::graph::ExternalResourceContract{
+          .value = logical.input,
+          .domain = hyle::graph::ExecutionDomainId{1},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = logical.output,
+          .domain = hyle::graph::ExecutionDomainId{1},
+          .resource = host},
+  };
+  const auto compiled =
+      hyle::graph::compile(logical.graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+
+  EXPECT_FALSE(compiled.report.domain(0)->queue_required);
+  EXPECT_TRUE(compiled.report.domain(1)->queue_required);
+  EXPECT_EQ(compiled.report.backend(), hyle::compute::cpu::kBackendId);
+  EXPECT_FALSE(compiled.report.mixed_backends());
 }
 
 TEST(GraphRegions, DefaultPolicyAcceptsUnknownEstimateAsExplicitOptIn) {
@@ -919,6 +1335,43 @@ TEST(GraphRegions, CostFactsPreserveUnknownAndExactZero) {
   EXPECT_EQ(*zero_step->persistent_bytes, 0u);
 }
 
+TEST(GraphRegions, SerializesArtifactsThatRejectConcurrentInvocations) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.artifact_properties.supports_concurrent_invocations = false;
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_FALSE(compiled.report.supports_concurrent_invocations());
+  EXPECT_FALSE(compiled.executable.supports_concurrent_invocations());
+
+  OwnedTensor first_input = make_tensor(row(8));
+  OwnedTensor first_output = make_tensor(row(8));
+  OwnedTensor second_input = make_tensor(row(8));
+  OwnedTensor second_output = make_tensor(row(8));
+  auto first = compiled.executable.create_invocation().value();
+  auto second = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(first.bind(logical.input, first_input.view).ok());
+  ASSERT_TRUE(first.bind(logical.output, first_output.view).ok());
+  ASSERT_TRUE(second.bind(logical.input, second_input.view).ok());
+  ASSERT_TRUE(second.bind(logical.output, second_output.view).ok());
+  Queue queue = context.create_queue().value();
+
+  auto first_completion = first.submit(queue);
+  ASSERT_TRUE(first_completion.has_value())
+      << first_completion.error().message();
+  EXPECT_TRUE(first.in_flight());
+  auto rejected = second.submit(queue);
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+  EXPECT_FALSE(second.in_flight());
+
+  ASSERT_TRUE(first_completion->wait().ok());
+  auto second_completion = second.submit(queue);
+  ASSERT_TRUE(second_completion.has_value())
+      << second_completion.error().message();
+  EXPECT_TRUE(second_completion->wait().ok());
+}
+
 TEST(GraphRegions, RegionExtensionVersionDoesNotAliasTheV1Table) {
   constexpr hyle::compute::ProviderExtensionId version_one{
       0x48594c4547524150ULL, 0x48524547494f4e31ULL, 1};
@@ -1056,6 +1509,598 @@ TEST(GraphRegions, RejectedTailIsReportedAfterTheAcceptedAsyncPrefix) {
   EXPECT_TRUE(completion->wait().IsUnavailable());
   EXPECT_EQ(probe.completion_wait_count, 1u);
   EXPECT_FALSE(invocation.in_flight());
+}
+
+TEST(GraphRegions,
+     CrossDomainWorkspaceReuseWaitsAndEveryDomainReportsLateFailure) {
+  RegionProbe first_probe{.mode = ProposalMode::kAsyncPairs};
+  RegionProbe second_probe{.mode = ProposalMode::kAsyncPairs};
+  second_probe.terminal_failure = true;
+  Context first = make_context(first_probe);
+  Context second = make_context(second_probe);
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId first_input = builder.input(row(8)).value();
+  const ValueId second_input = builder.input(row(8)).value();
+  ValueId crossing = builder.add(Unary{UnaryKind::kNeg}, first_input).value();
+  crossing = builder.add(Unary{UnaryKind::kNeg}, crossing).value();
+  const auto remote_head =
+      builder.add_node(Operation{Unary{UnaryKind::kNeg}}, std::array{crossing})
+          .value();
+  ValueId remote = builder.result(remote_head).value();
+  const auto remote_tail =
+      builder.add_node(Operation{Unary{UnaryKind::kNeg}}, std::array{remote})
+          .value();
+  remote = builder.result(remote_tail).value();
+  const auto local_head =
+      builder
+          .add_node(Operation{Unary{UnaryKind::kNeg}}, std::array{second_input})
+          .value();
+  ASSERT_TRUE(builder.depends_on(local_head, remote_tail).ok());
+  ValueId local = builder.result(local_head).value();
+  local = builder.add(Unary{UnaryKind::kNeg}, local).value();
+  ASSERT_TRUE(builder.publish(remote).ok());
+  ASSERT_TRUE(builder.publish(local).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &first,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+      hyle::graph::ExecutionDomain{.context = &second,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+  };
+  std::array<hyle::graph::NodePlacement, 6> placements{};
+  for (std::size_t index = 0; index < placements.size(); ++index) {
+    placements[index] = hyle::graph::NodePlacement{
+        .node = graph.node_id(index).value(),
+        .domain =
+            hyle::graph::ExecutionDomainId{index >= 2 && index < 4 ? 1u : 0u},
+        .strength = hyle::graph::PlacementStrength::kRequired,
+    };
+  }
+  auto compiled =
+      hyle::graph::compile(graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements})
+          .value();
+  ASSERT_EQ(compiled.report.segment_count(), 3u);
+  EXPECT_TRUE(compiled.report.segment(2)->terminal);
+  EXPECT_FALSE(compiled.report.segment(1)->terminal);
+  bool waits_for_remote_read = false;
+  for (std::size_t index = 0;
+       index < compiled.report.segment(2)->dependency_count; ++index) {
+    waits_for_remote_read =
+        waits_for_remote_read ||
+        compiled.report.segment_dependency(2, index)->source_segment == 1;
+  }
+  EXPECT_TRUE(waits_for_remote_read);
+
+  OwnedTensor first_source = make_tensor(row(8));
+  OwnedTensor second_source = make_tensor(row(8));
+  OwnedTensor remote_output = make_tensor(row(8));
+  OwnedTensor local_output = make_tensor(row(8));
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(first_input, first_source.view).ok());
+  ASSERT_TRUE(invocation.bind(second_input, second_source.view).ok());
+  ASSERT_TRUE(invocation.bind(remote, remote_output.view).ok());
+  ASSERT_TRUE(invocation.bind(local, local_output.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &first_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &second_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto replay = invocation.replay_report().value();
+  EXPECT_EQ(replay.ordered_dependency_count, 1u);
+  EXPECT_EQ(replay.device_wait_dependency_count, 2u);
+  EXPECT_EQ(replay.ordered_dependency_count +
+                replay.device_wait_dependency_count,
+            compiled.report.segment_dependency_count());
+  EXPECT_EQ(replay.host_wait_dependency_count, 0u);
+  auto completion = invocation.submit(queues);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_EQ(first_probe.device_wait_count, 1u);
+  EXPECT_EQ(second_probe.device_wait_count, 1u);
+  EXPECT_TRUE(completion->wait().IsInternal());
+  EXPECT_EQ(first_probe.completion_wait_count, 1u);
+  EXPECT_EQ(second_probe.completion_wait_count, 1u);
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_TRUE(invocation.output(remote).error().IsFailedPrecondition());
+}
+
+TEST(GraphRegions, MultiDomainIndependentSinksUseANonblockingAggregate) {
+  RegionProbe first_probe{.mode = ProposalMode::kAsyncPairs};
+  RegionProbe second_probe{.mode = ProposalMode::kAsyncPairs};
+  Context first = make_context(first_probe);
+  Context second = make_context(second_probe);
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId first_input = builder.input(row(8)).value();
+  const ValueId second_input = builder.input(row(8)).value();
+  const ValueId first_middle =
+      builder.add(Unary{UnaryKind::kNeg}, first_input).value();
+  const ValueId first_output =
+      builder.add(Unary{UnaryKind::kNeg}, first_middle).value();
+  const ValueId second_middle =
+      builder.add(Unary{UnaryKind::kNeg}, second_input).value();
+  const ValueId second_output =
+      builder.add(Unary{UnaryKind::kNeg}, second_middle).value();
+  ASSERT_TRUE(builder.publish(first_output).ok());
+  ASSERT_TRUE(builder.publish(second_output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &first,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+      hyle::graph::ExecutionDomain{.context = &second,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+  };
+  const std::array placements{
+      hyle::graph::NodePlacement{.node = graph.node_id(0).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = graph.node_id(1).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = graph.node_id(2).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = graph.node_id(3).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+  };
+  const auto host = hyle::mem::system_resource();
+  const std::array resources{
+      hyle::graph::ExternalResourceContract{
+          .value = first_input,
+          .domain = hyle::graph::ExecutionDomainId{0},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = second_input,
+          .domain = hyle::graph::ExecutionDomainId{1},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = first_output,
+          .domain = hyle::graph::ExecutionDomainId{0},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = second_output,
+          .domain = hyle::graph::ExecutionDomainId{1},
+          .resource = host},
+  };
+  auto compiled =
+      hyle::graph::compile(graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+  EXPECT_EQ(compiled.report.step_count(), 2u);
+  EXPECT_EQ(compiled.report.segment_count(), 2u);
+  EXPECT_EQ(compiled.report.segment_dependency_count(), 0u);
+  EXPECT_EQ(compiled.report.command_segment_count(), 2u);
+  EXPECT_EQ(compiled.report.capturable_segment_count(), 0u);
+  EXPECT_TRUE(compiled.report.segment(0)->terminal);
+  EXPECT_TRUE(compiled.report.segment(1)->terminal);
+  EXPECT_FALSE(compiled.report.mixed_backends());
+
+  OwnedTensor first_source = make_tensor(row(8));
+  OwnedTensor second_source = make_tensor(row(8));
+  OwnedTensor first_destination = make_tensor(row(8));
+  OwnedTensor second_destination = make_tensor(row(8));
+  const std::array<float, 8> first_values{-4, -3, -2, -1, 1, 2, 3, 4};
+  const std::array<float, 8> second_values{-8, -7, -6, -5, 5, 6, 7, 8};
+  write(first_source, first_values);
+  write(second_source, second_values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(first_input, first_source.view).ok());
+  ASSERT_TRUE(invocation.bind(second_input, second_source.view).ok());
+  ASSERT_TRUE(invocation.bind(first_output, first_destination.view).ok());
+  ASSERT_TRUE(invocation.bind(second_output, second_destination.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &first_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &second_queue},
+  };
+  EXPECT_TRUE(
+      invocation
+          .prepare_replay(queues,
+                          {.mode = hyle::graph::ReplayMode::kRequireCapture})
+          .IsUnimplemented());
+  ASSERT_TRUE(invocation
+                  .prepare_replay(
+                      queues, {.mode = hyle::graph::ReplayMode::kPreferCapture})
+                  .ok());
+  EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kCommands);
+  auto completion = invocation.submit(queues);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_EQ(first_probe.device_wait_count, 0u);
+  EXPECT_EQ(second_probe.device_wait_count, 0u);
+  EXPECT_EQ(first_probe.completion_wait_count, 0u);
+  EXPECT_EQ(second_probe.completion_wait_count, 0u);
+  EXPECT_TRUE(completion->wait().ok());
+  EXPECT_EQ(first_probe.completion_wait_count, 1u);
+  EXPECT_EQ(second_probe.completion_wait_count, 1u);
+}
+
+TEST(GraphRegions, AbandonedAggregateRetainsEveryIndependentSink) {
+  RegionProbe first_probe{.mode = ProposalMode::kAsyncPairs};
+  RegionProbe second_probe{.mode = ProposalMode::kAsyncPairs};
+  Context first = make_context(first_probe);
+  Context second = make_context(second_probe);
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId first_input = builder.input(row(8)).value();
+  const ValueId second_input = builder.input(row(8)).value();
+  const ValueId first_middle =
+      builder.add(Unary{UnaryKind::kNeg}, first_input).value();
+  const ValueId first_output =
+      builder.add(Unary{UnaryKind::kNeg}, first_middle).value();
+  const ValueId second_middle =
+      builder.add(Unary{UnaryKind::kNeg}, second_input).value();
+  const ValueId second_output =
+      builder.add(Unary{UnaryKind::kNeg}, second_middle).value();
+  ASSERT_TRUE(builder.publish(first_output).ok());
+  ASSERT_TRUE(builder.publish(second_output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &first,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+      hyle::graph::ExecutionDomain{.context = &second,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+  };
+  const std::array placements{
+      hyle::graph::NodePlacement{.node = graph.node_id(0).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = graph.node_id(1).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = graph.node_id(2).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = graph.node_id(3).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+  };
+  const auto host = hyle::mem::system_resource();
+  const std::array resources{
+      hyle::graph::ExternalResourceContract{
+          .value = first_input,
+          .domain = hyle::graph::ExecutionDomainId{0},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = second_input,
+          .domain = hyle::graph::ExecutionDomainId{1},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = first_output,
+          .domain = hyle::graph::ExecutionDomainId{0},
+          .resource = host},
+      hyle::graph::ExternalResourceContract{
+          .value = second_output,
+          .domain = hyle::graph::ExecutionDomainId{1},
+          .resource = host},
+  };
+  auto compiled =
+      hyle::graph::compile(graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements,
+                                          .external_resources = resources})
+          .value();
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor first_source = make_tensor(row(8));
+  OwnedTensor second_source = make_tensor(row(8));
+  OwnedTensor first_destination = make_tensor(row(8));
+  OwnedTensor second_destination = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(first_input, first_source.view).ok());
+  ASSERT_TRUE(invocation.bind(second_input, second_source.view).ok());
+  ASSERT_TRUE(invocation.bind(first_output, first_destination.view).ok());
+  ASSERT_TRUE(invocation.bind(second_output, second_destination.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &first_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &second_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  auto completion = invocation.submit(queues);
+  ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_TRUE(invocation.in_flight());
+
+  *completion = {};
+  EXPECT_EQ(first_probe.completion_wait_count, 0u);
+  EXPECT_EQ(second_probe.completion_wait_count, 0u);
+  EXPECT_TRUE(first_probe.abandoned_lifetime.valid());
+  EXPECT_TRUE(second_probe.abandoned_lifetime.valid());
+  EXPECT_TRUE(invocation.in_flight());
+
+  finish_abandoned_prefix(first_probe);
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_TRUE(invocation.output(first_output).error().IsFailedPrecondition());
+  finish_abandoned_prefix(second_probe);
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_TRUE(invocation.output(first_output).has_value());
+  EXPECT_TRUE(invocation.output(second_output).has_value());
+}
+
+TEST(GraphRegions, MultiDomainPlacementKeepsEligibleProviderRegions) {
+  RegionProbe first_probe;
+  RegionProbe second_probe;
+  const NegationGraph logical = make_negations(4);
+  Context first = make_context(first_probe);
+  Context second = make_context(second_probe);
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &first,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+      hyle::graph::ExecutionDomain{.context = &second,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+  };
+  const std::array placements{
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(2).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(3).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+  };
+  auto compiled =
+      hyle::graph::compile(logical.graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements})
+          .value();
+  EXPECT_EQ(compiled.report.region_count(), 2u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 0u);
+  ASSERT_EQ(compiled.report.step_count(), 3u);
+  EXPECT_EQ(compiled.report.step(0)->kind, CompileStepKind::kProviderRegion);
+  EXPECT_EQ(compiled.report.step(0)->domain, hyle::graph::ExecutionDomainId{0});
+  EXPECT_EQ(compiled.report.step(1)->kind, CompileStepKind::kCopy);
+  EXPECT_EQ(compiled.report.step(2)->kind, CompileStepKind::kProviderRegion);
+  EXPECT_EQ(compiled.report.step(2)->domain, hyle::graph::ExecutionDomainId{1});
+  EXPECT_EQ(first_probe.compile_count, 1u);
+  EXPECT_EQ(second_probe.compile_count, 1u);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &first_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &second_queue},
+  };
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+}
+
+TEST(GraphRegions, SharedQueueReservesTheCombinedDomainPrefixWithoutAWait) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  const NegationGraph logical = make_negations(4);
+  Context context = make_context(probe);
+  const auto host = hyle::mem::system_resource();
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &context,
+                                   .workspace_resource = host},
+      hyle::graph::ExecutionDomain{.context = &context,
+                                   .workspace_resource = host},
+  };
+  const std::array placements{
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(2).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(3).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+  };
+  auto compiled =
+      hyle::graph::compile(logical.graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements})
+          .value();
+  ASSERT_EQ(compiled.report.segment_count(), 2u);
+  EXPECT_EQ(compiled.report.synchronization_count(), 1u);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  auto invocation = compiled.executable.create_invocation().value();
+  Queue queue = context.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &queue},
+  };
+  EXPECT_TRUE(invocation.prepare_replay(queues).IsFailedPrecondition());
+  EXPECT_EQ(probe.reserve_completion_count, 0u);
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto replay = invocation.replay_report().value();
+  EXPECT_EQ(replay.ordered_dependency_count, 1u);
+  EXPECT_EQ(replay.device_wait_dependency_count, 0u);
+  EXPECT_EQ(replay.host_wait_dependency_count, 0u);
+  EXPECT_EQ(invocation.dependency_route(1, 0).value(),
+            hyle::graph::ReplayDependencyRoute::kOrderedQueue);
+  EXPECT_EQ(probe.reserve_completion_count, 1u);
+  EXPECT_EQ(probe.last_reserved_completions, 2u);
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  EXPECT_EQ(probe.device_wait_count, 0u);
+  EXPECT_EQ(probe.completion_wait_count, 1u);
+  EXPECT_EQ(probe.transfer_query_count, 1u);
+}
+
+TEST(GraphRegions, RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted) {
+  RegionProbe first_probe{.mode = ProposalMode::kAsyncPairs};
+  RegionProbe second_probe{.mode = ProposalMode::kAsyncPairs};
+  second_probe.transfer_supported = false;
+  const NegationGraph logical = make_negations(2);
+  Context first = make_context(first_probe);
+  Context second = make_context(second_probe);
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &first,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+      hyle::graph::ExecutionDomain{.context = &second,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+  };
+  const std::array placements{
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+  };
+  auto compiled =
+      hyle::graph::compile(logical.graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements})
+          .value();
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &first_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &second_queue},
+  };
+  EXPECT_TRUE(invocation.prepare_replay(queues).IsUnimplemented());
+  EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kUnprepared);
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_EQ(first_probe.submit_count, 0u);
+  EXPECT_EQ(second_probe.submit_count, 0u);
+  EXPECT_EQ(second_probe.transfer_query_count, 1u);
+}
+
+TEST(GraphRegions, ExposesAndCanRejectAHostDependencyBeforeSubmission) {
+  RegionProbe first_probe{.mode = ProposalMode::kAsyncPairs};
+  RegionProbe second_probe{.mode = ProposalMode::kAsyncPairs};
+  second_probe.dependency_wait_supported = false;
+  const NegationGraph logical = make_negations(2);
+  Context first = make_context(first_probe);
+  Context second = make_context(second_probe);
+  const std::array domains{
+      hyle::graph::ExecutionDomain{.context = &first,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+      hyle::graph::ExecutionDomain{.context = &second,
+                                   .workspace_resource =
+                                       hyle::mem::system_resource()},
+  };
+  const std::array placements{
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
+                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .strength =
+                                     hyle::graph::PlacementStrength::kRequired},
+  };
+  auto compiled =
+      hyle::graph::compile(logical.graph,
+                           hyle::graph::CompileEnvironment{.domains = domains},
+                           CompileOptions{.node_placements = placements})
+          .value();
+  EXPECT_EQ(compiled.report.synchronization_count(), 1u);
+
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue first_queue = first.create_queue().value();
+  Queue second_queue = second.create_queue().value();
+  const std::array queues{
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
+                                .queue = &first_queue},
+      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
+                                .queue = &second_queue},
+  };
+  EXPECT_TRUE(
+      invocation
+          .prepare_replay(queues,
+                          {.host_wait = hyle::graph::HostWaitPolicy::kReject})
+          .IsUnimplemented());
+  EXPECT_TRUE(invocation.replay_report().error().IsFailedPrecondition());
+  EXPECT_EQ(first_probe.reserve_completion_count, 0u);
+  EXPECT_EQ(second_probe.reserve_completion_count, 0u);
+
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto replay = invocation.replay_report().value();
+  EXPECT_EQ(replay.route, hyle::graph::ReplayRoute::kCommands);
+  EXPECT_EQ(replay.immediate_transfer_count + replay.queued_transfer_count, 1u);
+  EXPECT_EQ(replay.device_wait_dependency_count, 0u);
+  EXPECT_EQ(replay.host_wait_dependency_count, 1u);
+  EXPECT_EQ(invocation.dependency_route(1, 0).value(),
+            hyle::graph::ReplayDependencyRoute::kHostWait);
+  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+  EXPECT_GE(first_probe.completion_wait_count, 1u);
+  EXPECT_EQ(second_probe.device_wait_count, 0u);
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
 }
 
 } // namespace

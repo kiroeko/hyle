@@ -6,8 +6,8 @@
 #include <optional>
 #include <span>
 
-#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 #include "hyle/graph/executable.h"
 
@@ -107,7 +107,7 @@ struct RegionArtifactProperties final {
   // nullopt means that opaque provider-owned code/metadata bytes are not
   // reportable. An engaged zero means that the artifact has none.
   std::optional<std::size_t> persistent_bytes{};
-  // Packing is an additional provider-owned representation. Graph v3 keeps
+  // Packing is an additional provider-owned representation. Graph keeps
   // every source ConstantBinding borrowed because aggregate counts do not
   // identify which source could be released.
   std::size_t packed_constant_count = 0;
@@ -119,6 +119,10 @@ struct RegionArtifactProperties final {
   bool blocks_host = false;
   bool uses_private_threads = false;
   bool supports_concurrent_invocations = true;
+  // The provider submit callback only records commands that are legal inside
+  // the selected backend's capture session; it never executes the region
+  // eagerly on the host when this is true.
+  bool capture_compatible = false;
 };
 
 struct ProviderRegionPreparedVTable final {

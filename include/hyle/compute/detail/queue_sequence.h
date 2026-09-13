@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 #include <utility>
 
@@ -13,6 +14,16 @@ class OperationInvocation;
 
 namespace detail {
 
+enum class QueueDependencyRoute : std::uint8_t {
+  // The source Queue completes its work before finish_sequence() returns.
+  kNoWait = 0,
+  // The destination backend can consume the source Queue's prefix completion
+  // without blocking the submitting host thread.
+  kDeviceWait,
+  // No compatible device route exists; a caller may explicitly wait on host.
+  kHostWait,
+};
+
 // Provider/backend command recording result. `accepted` describes whether
 // this command placed any work into the ordered Queue. A non-OK status with an
 // accepted command is a terminal hint for the already-recorded prefix; a
@@ -22,7 +33,8 @@ struct EnqueueResult final {
   bool accepted = false;
   Status status{};
 
-  static EnqueueResult accepted_command(Status terminal = Status::Ok()) noexcept {
+  static EnqueueResult
+  accepted_command(Status terminal = Status::Ok()) noexcept {
     return EnqueueResult{true, std::move(terminal)};
   }
   static EnqueueResult rejected(Status error) noexcept {
@@ -46,6 +58,11 @@ public:
   HYLE_COMPUTE_API ~QueueSequence();
 
   HYLE_COMPUTE_API static Result<QueueSequence> begin(Queue &queue) noexcept;
+  // Cold route query for the prefix Completion produced by source. It does
+  // not begin a sequence or create an event and is stable for these Queue
+  // objects. Same-Queue ordering is normally handled by Graph before calling.
+  HYLE_COMPUTE_API static Result<QueueDependencyRoute>
+  dependency_route(const Queue &destination, const Queue &source) noexcept;
 
   // Accumulate one provider/backend enqueue result. Once an error is recorded,
   // callers must stop recording and finish the sequence.
@@ -54,8 +71,8 @@ public:
   // completions become a no-op (or propagate their terminal error). A backend
   // that cannot consume the exact source completion returns Unimplemented;
   // callers may then choose an explicit, reported host barrier.
-  HYLE_COMPUTE_API EnqueueResult enqueue_wait(
-      const Completion &source) noexcept;
+  HYLE_COMPUTE_API EnqueueResult
+  enqueue_wait(const Completion &source) noexcept;
   // Finalize exactly once. An empty rejected prefix is returned as a Result
   // error after the backend releases its reserved terminal slot; any accepted
   // prefix is represented by a valid Completion carrying the first tail error.
@@ -88,6 +105,13 @@ struct OperationInvocationAccess final {
   enqueue(OperationInvocation &invocation, QueueSequence &sequence,
           std::span<const ConstTensorView> inputs,
           std::span<const TensorView> outputs) noexcept;
+  // Graph-only hot route. The owning plan has already checked descriptions,
+  // resources and aliases for these stable spans during prepare_replay(). It
+  // retains only O(1) state/context invariants before the provider callback.
+  HYLE_COMPUTE_API static EnqueueResult
+  enqueue_prevalidated(OperationInvocation &invocation, QueueSequence &sequence,
+                       std::span<const ConstTensorView> inputs,
+                       std::span<const TensorView> outputs) noexcept;
 };
 
 } // namespace detail

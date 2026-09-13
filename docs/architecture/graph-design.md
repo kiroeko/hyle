@@ -13,7 +13,7 @@ Graph 把**模型无关的逻辑计算 DAG**编译成可重复、可检查、低
 - logical tensor/value 与 operation node 的拓扑；
 - shape/layout/resource/side-effect 约束及图合法性；
 - provider/backend capability matching、region partition 和 placement；
-- fusion、repack、copy、同步、liveness、alias 与 workspace 规划；
+- fusion、boundary transformation、copy、同步、liveness、alias 与 workspace 规划；
 - compiled artifact 的组合、重复执行和每次调用状态分离。
 
 Graph 不是通用 task executor，也不是模型 runtime。Sched 拥有 task/fiber/coroutine、取消、等待和线程；
@@ -32,8 +32,9 @@ HYLE::graph                           逻辑图、编译和执行 façade
   graph_plan                          内部执行物与 invocation runtime
 ```
 
-`graph_plan` 是内部 factor/实现职责；对 C++ 用户公开的结果类型是 `graph::Executable`。这样用户不会在
-“graph 还是 plan”之间选择，构建系统仍能把冷编译依赖与热执行闭包分开。
+`graph_plan` 是内部实现职责，不是当前独立 component identity；对 C++ 用户公开的结果类型是
+`graph::Executable`。只有它以后形成不同依赖、测试 owner 和独立 consumer，才按质因数规则拆 target。
+用户始终不需要在“graph 还是 plan”之间选择。
 
 ## 3. 四个生命周期对象
 
@@ -43,7 +44,7 @@ HYLE::graph                           逻辑图、编译和执行 façade
 GraphBuilder -> Graph
 Graph + CompileEnvironment/Options -> Executable + CompileReport
 Executable -> Invocation
-Invocation.bind(...) -> submit(...) -> compute::Completion
+Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> compute::Completion
 ```
 
 ### `GraphBuilder`
@@ -69,7 +70,8 @@ Invocation.bind(...) -> submit(...) -> compute::Completion
 
 ### `Invocation`
 
-- 每次并发执行独占的可变对象；绑定 inputs/outputs、动态 dimension values、workspace 和 provider state。
+- 每次并发执行独占的可变对象；绑定 inputs/outputs、workspace、Queue route、completion/capture state 和
+  provider run state。symbol 在 compile 时已经固定，不在 warm invocation 中变化。
 - 默认非线程安全，但可在上次 Completion 结束后 reset/reuse；并发请求各用一个 Invocation。
 - submit 后所有 borrow 和 workspace 活到 Completion 终态；in-flight 时 bind/reset/resubmit 明确失败，取消
   不允许提前复用。发布的零拷贝 view 若根在私有 workspace，由 Invocation 持有并在成功终态后借出；需要
@@ -89,7 +91,8 @@ HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同�
 - static shape 和带约束的 symbolic dimension；编译结果按明确 shape signature specialization；
 - dense/strided/layout-tagged 与量化 storage 描述，但不绑定模型文件格式；
 - in-place/alias 候选与禁止 alias 的输出；最终合法性由 operation/provider 合同决定；
-- copy、repack 和 host/device boundary，而不是把它们藏进 provider；
+- canonical tensor copy 和 host/device boundary；provider-private layout 只能留在 region 内。跨 region
+  repack 必须先有有版本的 boundary-layout producer/consumer 合同和真实执行 owner，不能用枚举冒充实现；
 - 有副作用或外部资源访问的 node 及其顺序边；纯 node 默认可重排；
 - typed custom operation extension，供 HYLE/消费者 kernel 接入，不使用字符串属性袋或裸 callable。
 
@@ -106,7 +109,8 @@ HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同�
 3. **capability match**：询问每个 Compute provider 对 op 或 region 的真实支持、结构成本和可选量化估值；
 4. **partition/place**：按调用方选择的 admission 策略选择 regions 与 devices，不把不可移植的计时常数
    冒充通用性能 oracle；
-5. **materialize boundaries**：插入明确的 copy、repack、barrier 和 provider handoff；
+5. **materialize boundaries**：为跨 domain canonical tensor 插入真实 copy；同步表示为 segment dependency，
+   而不是虚构 barrier step。只有版本化 provider layout 合同能证明两端含义时才插入真实 repack；
 6. **liveness/alias/workspace**：把 tensor facts 转成 Mem `LifetimePlanner` 能理解的 interval/resource 请求；
 7. **lower/compile**：取得 provider artifact、native command/capture 或 HYLE kernel route；
 8. **emit plan/report**：生成不可变 graph plan 与可诊断 compile report。
@@ -129,22 +133,27 @@ network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作�
 
 ## 6. Plan 的热路径合同
 
-内部 graph plan 是已经排好序的 region/copy/sync/workspace 程序。每个 step 持有预绑定 callable 或
-backend command；Invocation 只填充运行时 slots。
+内部 graph plan 是已经排好序的 region/copy/dependency/workspace 程序。每个 step 持有预绑定 callable
+或 backend command；Invocation 只填充运行时 slots。Plan 冷生成使用确定性 Kahn 调度：每个 domain 保持
+ready FIFO，并尽量延续当前 domain，以减少不必要的 segment/finalization；这是有界结构启发式，不宣称
+求解一般 DAG 的全局最优设备并行调度。
 
-- prepare 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、不打包常量；
+- `prepare_replay` 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、
+  不打包常量，也不再查询 transfer/dependency capability；
 - workspace layout 对固定 specialization 不变；允许 caller/pool 预留，正常 replay 零 heap allocation；
 - per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
 - plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入；provider/region step 只返回接纳事实，
   sequence 在 segment 边界一次 finalizes 为 prefix Completion，不按 node 创建再覆盖 event。多 Queue plan
-  保存各 segment 前缀并录入兼容 device wait；host wait 只作为 report 明示的不兼容 fallback，可由
-  queue/event 表达的 dependency 不退化成同步 round-trip；
+  保存各 segment 前缀。`prepare_replay` 按 exact Queue identity 把 dependency 固定为 ordered Queue、同步
+  source、device wait 或 host wait；host wait 只作为 `ReplayReport` 明示且可由 policy 拒绝的不兼容
+  fallback，并在取得 destination Queue admission 前完成。可由 queue/event 表达的 dependency 不退化成
+  同步 round-trip；
 - CompileReport 独立拥有轻量 metadata，并逐 step 枚举 kind、fallback reason、node range、device/provider/version、constant
   borrow/额外 packed ownership、copy/sync/dispatch、workspace、persistent bytes 和 threading/blocking/concurrent-invocation fact。
   opaque provider 无法报告的 compile/persistent/workspace estimate 及 artifact persistent bytes 必须为
   `nullopt`，不能伪装成 0；显式 0 才是精确 none。dispatch 是 backend execution episode：一次同步 CPU
   executor fan-out 或一次 device command launch 计一次，worker/task/chunk/leaf call 不分别计数；
-  v3 不因 aggregate packed count 缩短 source borrow，复制 report 也不保活重型 Executable artifact。
+  Graph 不因 aggregate packed count 缩短 source borrow，复制 report 也不保活重型 Executable artifact。
 
 复杂度基线：图结构验证、拓扑和 liveness 应为 `O(V + E)`；在 `P` 个已登记 provider 上的 capability
 matching 应有明确上界，不得随运行次数重复。更复杂的 partition/cost search 若采用启发式，必须登记
@@ -155,8 +164,8 @@ matching 应有明确上界，不得随运行次数重复。更复杂的 partiti
 ```text
 graph_ir      -> compute_ops
 graph_compile -> graph_ir + compute provider contract + mem
-graph_plan    -> compute_core + mem
-graph_sched   -> graph_plan + compute_sched + sched       # 可选组合
+graph_plan    -> compute + mem                            # 当前为 Graph 内部源码边界
+graph_sched   -> graph_plan + compute_sched + sched       # 未来可选组合
 ```
 
 - Graph 向 Mem 交付 lifetime/alias/resource facts；Mem 不理解 Tensor、Node 或 provider policy。

@@ -31,7 +31,9 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
    取得到跨 build 的 `HYLE_DEP_SOURCE_CACHE`；当前 build 的 `_deps` 只保存 binary/subbuild
    （[`dependencies.md` §FetchContent](dependencies.md)）。离线时搬运同一工具生成的完整 cache，或用
    根目录 `hyle-offline-deps.cmake` 注入逐项已审查源码。
-3. **可选能力（显式契约）**：已验收 IO 的 TLS 使用 `AUTO|ON|OFF`、HTTP/2 使用 `ON|OFF`。
+3. **可选能力（显式契约）**：已验收 IO 的 TLS 使用 `AUTO|ON|OFF`、HTTP/2 使用 `ON|OFF`；
+   Compute/Graph 的 CUDA runtime 使用 `HYLE_COMPUTE_CUDA=AUTO|ON|OFF`，要求用户预装 CUDA Toolkit
+   13.3+，HYLE 不下载该机器 SDK。
    `HYLE_TRACE` 只在所选闭包有 trace
    consumer 时出现，`HYLE_TRACY_DIR` 是 trace 开启后才出现的可选受审源码覆盖；正式 CI/交付必须
    写死已验收能力集合。

@@ -38,8 +38,9 @@ HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低�
 内部 factor 是依赖、构建、测试和状态 owner；用户选择的是较少、稳定的问题域 façade。façade 没有
 自己的源码、状态或人工依赖表，只从中央声明投影一个或多个 factor root，再解析传递闭包。因此
 `container_intrusive`、`timer_queue`、`platform_fs`、`mem_vm` 等小 factor 可以防环和减少内部闭包，
-用户仍只需理解 Container、Time、Platform、Mem 等产品。`graph_plan` 同样是 Graph 内部的热执行因子，
-用户取得的是 `graph::Executable/Invocation`，不会多出一个含义模糊的 Plan 产品。
+用户仍只需理解 Container、Time、Platform、Mem 等产品。`graph_plan` 当前只是 Graph 内部的热执行源码
+边界，没有独立 component identity；用户取得的是 `graph::Executable/Invocation`，不会多出一个含义
+模糊的 Plan 产品。只有以后形成独立依赖、测试 owner 和 consumer 才依法拆 factor。
 
 中央声明同时投影：
 

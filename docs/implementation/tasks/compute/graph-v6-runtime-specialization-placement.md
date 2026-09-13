@@ -156,7 +156,8 @@ auto invocation = HYLE_TRY(compiled.executable.create_invocation());
 HYLE_TRY(invocation.bind(input, input_view));
 QueueBinding queues[]{ {ExecutionDomainId{0}, &cpu_queue},
                        {ExecutionDomainId{1}, &cuda_queue} };
-HYLE_TRY(invocation.prepare_replay(queues, ReplayMode::kPreferCapture));
+HYLE_TRY(invocation.prepare_replay(
+    queues, ReplayOptions{.mode = ReplayMode::kPreferCapture}));
 auto done = HYLE_TRY(invocation.submit(queues));
 ```
 
@@ -263,3 +264,59 @@ artifact/resource owner。
 任何新 operator、无界 cache、控制流、模型/KV/batching 或 benchmark 专用 placement 都越出本轮。若 CUDA
 factor 尚未可用，只精确阻塞真异步/capture slice，不缩成 fake backend 后宣称 Graph 完整。审计完成，
 `graph` 可以进入 `AUDITED`，但产品修改仍须等待 Compute v5 的基础 SPI 同轮可编译迁移。
+
+## 实现检查点（2026-09-13）
+
+本节记录 `AUDITED` 后有限 FIX 的当前事实，不把候选写成 `CLOSED`，也不启动 G67 算子扩张。
+
+### G55--G65 落地状态
+
+- G55/G56：`DimensionId/DimensionBounds/Dimension/TensorSpec/ShapeBinding` 已进入 Graph IR；compile exact-once
+  concrete 化并生成比较时不只依赖 hash 的 `SpecializationSignature`。一个 Executable 仍只绑定一个
+  specialization，无进程全局 cache；
+- G57--G59：`CompileEnvironment` 接有序 execution domains，node/value required/preferred placement 与
+  external resource contract 已落地。placement 对每个 node/domain 的 prepare 尝试有硬预算，只有
+  `Unimplemented` 继续候选；其它错误终止并回滚；
+- G60 设计修正：跨 domain canonical tensor 产生真实 `Copy` step；同步由 segment dependency 表示，删除
+  只占枚举而无执行语义的 synthetic Barrier。当前 region boundary 必须是 canonical TensorDesc，provider
+  private layout 留在 region 内；在没有版本化 boundary-layout producer/consumer 合同前不制造 generic
+  Repack。真实 provider 出现该需求时，它构成独立 reopen trigger，而不是本轮伪实现；
+- G61：每个 `(logical value, domain)` 建 physical instance；各 domain 独立生成 Mem LifetimePlan，workspace
+  backing、alias 和 invocation-owned output 均不跨 resource/domain；
+- G62/G65：plan 已生成 Queue segments 与依赖 DAG。同一 segment 用一次 `QueueSequence::finish()` 覆盖全部
+  accepted commands；最终 Completion 只聚合每个 physical Queue 的最新 terminal prefix，并保活 Invocation、
+  workspace 与 provider state；
+- G63：`prepare_replay(queues, ReplayOptions)` 已成为 cold commit point，完成 exact Queue、bindings、实际
+  transfer route、dependency route、Completion capacity 与 capture 准备。`kCommands/kPreferCapture/
+  kRequireCapture` 已实现，CUDA 真机可形成 command/captured hybrid；bind/reset 会使 route 失效；
+- G64：CompileReport 已枚举 specialization、domain、physical value、step、segment、dependency、workspace、
+  copy/capture/concurrency facts；新增 ReplayReport 披露绑定具体 Queue 后的 immediate/queued/peer transfer
+  数以及 ordered/synchronous-source/device-wait/host-wait 数。host fallback 可由
+  `HostWaitPolicy::kReject` 在任何提交和 slot reserve 前拒绝。
+
+### 调度与 steady route
+
+编译器在所有 operation/region/copy 已 prepare 后，对 step dependency 图运行确定性 Kahn scheduler。每个
+domain 使用稳定 ready FIFO；当前 domain 仍有 ready step 时继续该 domain，否则选择原拓扑 ordinal 最早的
+ready step 所在 domain。该有界启发式消除交错独立分支造成的可避免 segment，不读取计时 oracle，也不
+声称求解全局最优异构调度。
+
+`prepare_replay` 把每条 dependency 固定为：同 physical Queue 的 ordered route、同步 source、backend
+确认的 device wait 或显式 host wait。warm submit 不再做 capability query，也不会把运行期
+`Unimplemented` 静默降为 host wait；若已承诺 device wait 的 backend 在提交时拒绝，按内部合同破坏报告。
+host wait 在取得 destination Queue single-producer admission 前执行，避免慢上游长期占住目标 Queue。
+共享 physical Queue 的 completion capacity 在冷路径按所有 logical domain segments 求和并只 reserve 一次。
+
+### 当前验证事实与剩余资格
+
+- W1-WIN Release/shared、CUDA 13.3：`hyle_graph_test` 14/14、`hyle_graph_executable_test` 63/63、
+  `hyle_compute_backend_cpu_test` 18/18；其中 RTX 4070 真 CUDA capture/hybrid replay 通过；
+- 已覆盖 bounded symbol、跨域真实 copy、interleaved branch scheduling、共享 Queue、不可用 transfer 冷拒绝、
+  host-wait 披露/拒绝、同步 source、device-wait mock、并发 Invocation、late error、abandon 与 metadata OOM；
+- P0 结构目标已经由代码和 allocation/capability-query probes 支持：warm 路径无 Graph heap、DAG walk、
+  shape inference、provider search、JIT 或 route query，finalization 数随 segment 而非 node 增长；
+- W1-WIN 的 `compute` 与 `graph` 均已通过直接源码、shared SDK、static SDK 及 relocation 后 installed
+  consumer；Graph consumer 同时覆盖 native 三算子执行与 oneDNN gated-MLP region，安装树没有泄漏 private
+  provider SPI；
+- 本轮尚未形成跨平台 immutable candidate，也未执行 closure card 的 WSL/macOS、sanitizer 及必要 P1/P2，
+  因此 registry 继续保持 `AUDITED`。这些门应在基础实现不再变化后一次运行，不因文档或状态维护重复启动。
