@@ -135,6 +135,11 @@ compiled artifact 必须保活真实 runtime owner，并报告输入输出 resid
 stream 偷跑，也不得把 provider completion 当作已经加入 HYLE timeline；无法建立明确 bridge 时该 route
 就是不支持。
 
+公开 direct `prepare()` 只枚举 shared-runtime provider，因为它返回的 invocation 必须能提交到调用方 Queue。
+delegated proposal 只由 Graph 的内部 exact-route compile seam 选择；Graph 拥有该 invocation，并以 provider
+返回的真实 Completion 连接 island 边界。这样 direct 用户不会拿到一个构造成功却无法执行的 artifact，
+shared steady path 也不需要每次为 delegated mode 做动态路由。
+
 ### 3.3 Provider 的资源合同必须先于 steady submit
 
 “Context 能访问某个 `MemoryResourceRef`”只证明 backend 可以触碰它，不证明某个 provider/kernel 接受该

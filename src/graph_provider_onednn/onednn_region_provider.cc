@@ -780,12 +780,24 @@ void destroy_context(void *context_value,
   allocator.deallocate(context, sizeof(RegionContext), alignof(RegionContext));
 }
 
-Status prepare_single(void *, Operation, std::span<const TensorDesc>,
-                      std::span<const TensorDesc>, mem::AllocatorRef,
+Status propose_single(
+    void *, Operation, std::span<const TensorDesc>,
+    std::span<const TensorDesc>,
+    std::span<compute::detail::ResourceBindingRequirement>,
+    std::span<compute::detail::ResourceBindingRequirement>,
+    compute::detail::ProviderOperationProposal *) noexcept {
+  return Status::Unimplemented(
+      "oneDNN graph region provider has no single-operation route");
+}
+
+Status prepare_single(void *, const compute::detail::ProviderPrepareRequest &,
+                      mem::AllocatorRef,
                       compute::detail::ProviderPrepared *) noexcept {
   return Status::Unimplemented(
       "oneDNN graph region provider has no single-operation route");
 }
+
+Status drain_context(void *) noexcept { return Status::Ok(); }
 
 const void *query_extension(void *, compute::ProviderExtensionId id) noexcept {
   return id == kRegionProviderExtensionId ? &kRegionVTable : nullptr;
@@ -797,7 +809,9 @@ const compute::detail::ProviderVTable kProviderVTable{
                  .version = "3.13.2"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
+    .propose = &propose_single,
     .prepare = &prepare_single,
+    .drain_context = &drain_context,
     .query_extension = &query_extension,
 };
 

@@ -697,7 +697,8 @@ TEST(PreparedOperation,
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation prepared =
-      hyle::compute::prepare(context, RmsNorm{}, description, description)
+      hyle::compute::prepare(context, RmsNorm{}, description, description,
+                             MemoryResourceRef(resource))
           .value();
   auto invocation = prepared.create_invocation().value();
 
@@ -709,6 +710,23 @@ TEST(PreparedOperation,
   EXPECT_EQ(resource.flushes(), 1);
   EXPECT_EQ(resource.maps(), 2);
   EXPECT_EQ(resource.unmaps(), 2);
+
+  InstrumentedResource other_resource;
+  Buffer other_storage =
+      Buffer::create(MemoryResourceRef(other_resource), bytes * 2, 64).value();
+  ConstTensorView other_input =
+      ConstTensorView::create(
+          description, other_storage.view().subview(0, bytes).value())
+          .value();
+  TensorView other_output =
+      TensorView::create(
+          description, other_storage.view().subview(bytes, bytes).value())
+          .value();
+  auto wrong_exact_route =
+      invocation.submit(queue, other_input, other_output);
+  ASSERT_FALSE(wrong_exact_route.has_value());
+  EXPECT_TRUE(wrong_exact_route.error().IsInvalidArgument());
+  EXPECT_EQ(other_resource.maps(), 0);
 
   resource.fail_mapping(true);
   completion = invocation.submit(queue, input_view, output_view);
@@ -741,7 +759,8 @@ TEST(PreparedOperation, RejectsAnActuallyMisalignedHostMapping) {
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   auto invocation =
-      hyle::compute::prepare(context, RmsNorm{}, description, description)
+      hyle::compute::prepare(context, RmsNorm{}, description, description,
+                             MemoryResourceRef(resource))
           ->create_invocation()
           .value();
 
@@ -750,7 +769,7 @@ TEST(PreparedOperation, RejectsAnActuallyMisalignedHostMapping) {
   EXPECT_TRUE(completion->wait().IsFailedPrecondition());
 }
 
-TEST(PreparedOperation, RejectsStorageThatCpuCannotMap) {
+TEST(PreparedOperation, RejectsStorageThatCpuCannotMapDuringPrepare) {
   constexpr std::size_t count = 4;
   const std::size_t bytes = count * sizeof(float);
   const TensorDesc description = row_description(count);
@@ -768,14 +787,12 @@ TEST(PreparedOperation, RejectsStorageThatCpuCannotMap) {
           .value();
 
   Context context = hyle::compute::cpu::create_context().value();
-  Queue queue = context.create_queue().value();
-  PreparedOperation prepared =
-      hyle::compute::prepare(context, RmsNorm{}, description, description)
-          .value();
-  auto invocation = prepared.create_invocation().value();
-  auto rejected = invocation.submit(queue, input, output);
+  const std::array inputs{input};
+  const std::array outputs{output};
+  auto rejected = hyle::compute::prepare(
+      context, hyle::compute::Operation(RmsNorm{}), inputs, outputs);
   ASSERT_FALSE(rejected.has_value());
-  EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
   EXPECT_EQ(resource.maps(), 0);
 }
 

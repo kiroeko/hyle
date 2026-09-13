@@ -17,13 +17,17 @@ struct PreparedState final : util::RefCounted<PreparedState> {
                 ProviderIdentity provider_value,
                 std::size_t allocation_size_value,
                 std::size_t descriptor_offset_value,
+                std::size_t resource_offset_value,
                 std::size_t input_count_value,
-                std::size_t output_count_value) noexcept
+                std::size_t output_count_value,
+                mem::MemoryResourceRef workspace_resource_value) noexcept
       : allocator(context_value->allocator), context(context_value),
         operation(operation_value), provider(provider_value),
         allocation_size(allocation_size_value),
         descriptor_offset(descriptor_offset_value),
+        resource_offset(resource_offset_value),
         input_count(input_count_value), output_count(output_count_value) {
+    workspace_resource = workspace_resource_value;
     detail::retain(context);
   }
 
@@ -37,6 +41,21 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   }
   TensorDesc *outputs() noexcept { return inputs() + input_count; }
   const TensorDesc *outputs() const noexcept { return inputs() + input_count; }
+  mem::MemoryResourceRef *input_resources() noexcept {
+    auto *bytes = reinterpret_cast<std::byte *>(this);
+    return reinterpret_cast<mem::MemoryResourceRef *>(bytes + resource_offset);
+  }
+  const mem::MemoryResourceRef *input_resources() const noexcept {
+    auto *bytes = reinterpret_cast<const std::byte *>(this);
+    return reinterpret_cast<const mem::MemoryResourceRef *>(bytes +
+                                                            resource_offset);
+  }
+  mem::MemoryResourceRef *output_resources() noexcept {
+    return input_resources() + input_count;
+  }
+  const mem::MemoryResourceRef *output_resources() const noexcept {
+    return input_resources() + input_count;
+  }
 
   void destroy() noexcept {
     if (provider_prepared.vtable != nullptr &&
@@ -62,8 +81,10 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   ProviderIdentity provider{};
   std::size_t allocation_size = 0;
   std::size_t descriptor_offset = 0;
+  std::size_t resource_offset = 0;
   std::size_t input_count = 0;
   std::size_t output_count = 0;
+  mem::MemoryResourceRef workspace_resource{};
   ProviderPrepared provider_prepared{};
 };
 

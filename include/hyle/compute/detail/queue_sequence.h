@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "hyle/compute/completion.h"
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/tensor.h"
 
@@ -112,6 +113,19 @@ struct OperationInvocationAccess final {
   enqueue_prevalidated(OperationInvocation &invocation, QueueSequence &sequence,
                        std::span<const ConstTensorView> inputs,
                        std::span<const TensorView> outputs) noexcept;
+  // Delegated Graph route. Endpoint compatibility and stable bindings are
+  // qualified during replay preparation; the provider owns execution and
+  // returns its one real Completion rather than recording into a HYLE Queue.
+  HYLE_COMPUTE_API static CompletionEndpoint
+  delegated_endpoint(const OperationInvocation &invocation) noexcept;
+  HYLE_COMPUTE_API static bool
+  can_import_endpoint(const OperationInvocation &invocation,
+                      CompletionEndpoint source) noexcept;
+  HYLE_COMPUTE_API static Result<Completion> submit_delegated_prevalidated(
+      OperationInvocation &invocation,
+      std::span<const CompletionDependency> dependencies,
+      std::span<const ConstTensorView> inputs,
+      std::span<const TensorView> outputs) noexcept;
 };
 
 } // namespace detail

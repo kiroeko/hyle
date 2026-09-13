@@ -4,6 +4,21 @@
 
 namespace hyle::compute::detail {
 
+// Cold identity for one exact execution endpoint. `authority` namespaces the
+// opaque identity (normally a backend/provider vtable); `identity` is valid
+// only while the owning Queue/provider invocation is alive. Graph uses this
+// to qualify a non-blocking dependency bridge before steady submission.
+struct CompletionEndpoint final {
+  const void *authority = nullptr;
+  const void *identity = nullptr;
+
+  constexpr bool valid() const noexcept {
+    return authority != nullptr && identity != nullptr;
+  }
+  friend constexpr bool operator==(CompletionEndpoint,
+                                   CompletionEndpoint) noexcept = default;
+};
+
 // Internal lifetime attachment carried by an asynchronous Completion. The
 // attachment owns one reference supplied by the caller. A backend settles it
 // only after submitted work reaches a terminal state, even when the public

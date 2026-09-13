@@ -92,6 +92,25 @@ policy 在 admission 前 host-wait，provider 不得偷偷等待。
 除 C60--C67 外不允许扩张 operation schema/catalog、Graph placement 算法、公开 FFI 或无关模块。最小私有
 probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 MLX 实现属于后续独立 factor。
 
+## 实现检查点（2026-09-13，尚非 candidate）
+
+- C60--C63 已进入产品实现：provider 先做 allocation-free proposal，再接收 exact resource prepare；prepared
+  artifact 固化每个 binding/workspace resource、runtime mode、workspace owner 与可得的完整 persistent-byte
+  事实。oneDNN 的 opaque kernel storage 无法完整计量，明确保留 `nullopt`，没有把 wrapper `sizeof` 伪报成总量；
+- C64--C65 已由私有 mock delegated provider 贯通真实 Completion、endpoint import、取消、异步失败、丢弃
+  pending handle、Context drain 与 invocation 保活。非法 shared+delegated callback 组合以及缺失 provider drain
+  在冷构造阶段被拒绝；
+- 公开 direct `prepare()` 只选择 shared provider；Graph 才能通过 internal proposal/exact-prepare seam 取得
+  delegated artifact。由此 direct 用户不会取得不可提交对象，shared submit 对 runtime mode 使用已冻结不变量，
+  没有新增 steady route branch；
+- exact resource identity 检查并入原有每-binding descriptor validation；Graph 的 prevalidated route 不重复该
+  检查。prepare/resource mismatch 在 provider admission 和 host mapping 前失败；
+- native 与 oneDNN single-op provider 已迁移，旧 Graph/oneDNN region 临时适配可编译。C66 的 region v4
+  shared/delegated seam 及 C67 三交付仍必须随 Graph G70--G81 完成，因此本卡保持 `AUDITED`。
+
+当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及六个逐头目标共 15 个定向测试；这只
+是施工检查点，不替代终局三平台、sanitizer、三交付和 P0 裁决。
+
 ## 七问（AUDITED）
 
 1. 第三方：本体不新增第三方；锁定源码/官方文档只证明 seam，真正依赖由具体 provider factor 拥有。

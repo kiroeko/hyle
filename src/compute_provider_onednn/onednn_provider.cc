@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <new>
+#include <optional>
 #include <span>
 #include <utility>
 
@@ -237,16 +238,28 @@ const detail::ProviderPreparedVTable kPreparedVTable{
     .alias_support = &alias_support,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .submit = &submit,
+    .shared_submit = &submit,
+    .delegated_submit = nullptr,
 };
 
-Status prepare(void *context_value, Operation operation,
-               std::span<const TensorDesc> inputs,
-               std::span<const TensorDesc> outputs, mem::AllocatorRef allocator,
-               detail::ProviderPrepared *prepared_output) noexcept {
-  if (prepared_output == nullptr)
-    return Status::InvalidArgument("oneDNN prepared output is null");
-  *prepared_output = {};
+constexpr ProviderRuntimeProperties kRuntimeProperties{
+    .mode = ProviderRuntimeMode::kSharedQueue,
+    .workspace_owner = ProviderWorkspaceOwner::kCaller,
+    .blocks_host = true,
+    .uses_private_threads = false,
+    .supports_concurrent_invocations = true,
+    .capture_compatible = false,
+};
+
+struct OneDnnRoute final {
+  internal::BrgemmShape shape{};
+  std::size_t task_count = 0;
+};
+
+Status select_route(void *context_value, Operation operation,
+                    std::span<const TensorDesc> inputs,
+                    std::span<const TensorDesc> outputs,
+                    OneDnnRoute &route) noexcept {
   auto *context = static_cast<OneDnnContext *>(context_value);
   if (context == nullptr)
     return Status::Internal("oneDNN provider context is invalid");
@@ -273,23 +286,88 @@ Status prepare(void *context_value, Operation operation,
         "zero-size MatMul remains on the HYLE-native route");
   }
 
-  const std::size_t rows = static_cast<std::size_t>(left[0]);
-  const std::size_t inner = static_cast<std::size_t>(left[1]);
-  const std::size_t columns = static_cast<std::size_t>(right[1]);
-  const std::size_t task_count = internal::recommended_brgemm_task_count(
-      columns, context->executor.concurrency());
+  route.shape = internal::BrgemmShape{
+      .rows = static_cast<std::size_t>(left[0]),
+      .inner = static_cast<std::size_t>(left[1]),
+      .columns = static_cast<std::size_t>(right[1]),
+  };
+  route.task_count = internal::recommended_brgemm_task_count(
+      route.shape.columns, context->executor.concurrency());
 
   // The HYLE-native 1/4-row kernels have a structurally cheaper decode route.
   // A real external executor may still make independent N tiles worthwhile.
-  if (task_count == 1 && rows < kNativeSerialRowCutoff) {
+  if (route.task_count == 1 && route.shape.rows < kNativeSerialRowCutoff) {
     return Status::Unimplemented(
         "small serial MatMul remains on the HYLE-native decode route");
   }
+  return Status::Ok();
+}
+
+detail::ResourceBindingRequirement
+host_requirement(const TensorDesc &description) noexcept {
+  return detail::ResourceBindingRequirement{
+      .required_properties = mem::MemoryProperty::kHostAccessible,
+      .minimum_alignment = description.required_alignment(),
+  };
+}
+
+Status propose(
+    void *context_value, Operation operation,
+    std::span<const TensorDesc> inputs,
+    std::span<const TensorDesc> outputs,
+    std::span<detail::ResourceBindingRequirement> input_requirements,
+    std::span<detail::ResourceBindingRequirement> output_requirements,
+    detail::ProviderOperationProposal *proposal) noexcept {
+  if (proposal == nullptr)
+    return Status::InvalidArgument("oneDNN proposal output is null");
+  *proposal = {};
+  if (input_requirements.size() != inputs.size() ||
+      output_requirements.size() != outputs.size()) {
+    return Status::InvalidArgument(
+        "oneDNN proposal requirement counts do not match bindings");
+  }
+  OneDnnRoute route{};
+  Status status =
+      select_route(context_value, operation, inputs, outputs, route);
+  if (!status.ok())
+    return status;
+  for (std::size_t index = 0; index < inputs.size(); ++index)
+    input_requirements[index] = host_requirement(inputs[index]);
+  for (std::size_t index = 0; index < outputs.size(); ++index)
+    output_requirements[index] = host_requirement(outputs[index]);
+  *proposal = detail::ProviderOperationProposal{
+      .route = 1,
+      .runtime = kRuntimeProperties,
+      .workspace_resource = detail::ResourceBindingRequirement{
+          .required_properties = mem::MemoryProperty::kHostAccessible,
+          .minimum_alignment = internal::kBrgemmWorkspaceAlignment,
+      },
+  };
+  return Status::Ok();
+}
+
+Status prepare(void *context_value,
+               const detail::ProviderPrepareRequest &request,
+               mem::AllocatorRef allocator,
+               detail::ProviderPrepared *prepared_output) noexcept {
+  if (prepared_output == nullptr)
+    return Status::InvalidArgument("oneDNN prepared output is null");
+  *prepared_output = {};
+  if (request.input_resources.size() != request.inputs.size() ||
+      request.output_resources.size() != request.outputs.size() ||
+      request.route != 1) {
+    return Status::InvalidArgument("oneDNN exact prepare request is invalid");
+  }
+  OneDnnRoute route{};
+  Status status = select_route(context_value, request.operation,
+                               request.inputs, request.outputs, route);
+  if (!status.ok())
+    return status;
+  auto *context = static_cast<OneDnnContext *>(context_value);
 
   internal::BrgemmPlan *brgemm = nullptr;
-  Status status = internal::create_brgemm_plan(
-      internal::BrgemmShape{.rows = rows, .inner = inner, .columns = columns},
-      task_count, allocator, &brgemm);
+  status = internal::create_brgemm_plan(route.shape, route.task_count,
+                                        allocator, &brgemm);
   if (!status.ok())
     return status;
 
@@ -310,8 +388,15 @@ Status prepare(void *context_value, Operation operation,
       .size = internal::brgemm_scratchpad_size(brgemm),
       .alignment = internal::kBrgemmWorkspaceAlignment,
   };
+  prepared_output->runtime = kRuntimeProperties;
+  // The wrapper allocation is known, but oneDNN owns opaque generated-kernel
+  // storage behind BrgemmPlan.  Reporting only sizeof(OneDnnPrepared) would
+  // turn a partial count into a false exact planning fact.
+  prepared_output->persistent_bytes = std::nullopt;
   return Status::Ok();
 }
+
+Status drain_context(void *) noexcept { return Status::Ok(); }
 
 const detail::ProviderVTable kProviderVTable{
     .identity = ProviderIdentity{.id = kProviderId,
@@ -319,7 +404,9 @@ const detail::ProviderVTable kProviderVTable{
                                  .version = "3.13.2"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
+    .propose = &propose,
     .prepare = &prepare,
+    .drain_context = &drain_context,
 };
 
 } // namespace

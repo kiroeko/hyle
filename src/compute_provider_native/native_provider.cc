@@ -366,19 +366,26 @@ const detail::ProviderPreparedVTable kPreparedVTable{
     .alias_support = &alias_support,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .submit = &submit,
+    .shared_submit = &submit,
+    .delegated_submit = nullptr,
 };
 
-Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
-               std::span<const TensorDesc> outputs, mem::AllocatorRef allocator,
-               detail::ProviderPrepared *prepared_output) noexcept {
-  if (prepared_output == nullptr)
-    return Status::InvalidArgument("native prepared output is null");
-  *prepared_output = {};
+constexpr ProviderRuntimeProperties kRuntimeProperties{
+    .mode = ProviderRuntimeMode::kSharedQueue,
+    .workspace_owner = ProviderWorkspaceOwner::kCaller,
+    .blocks_host = true,
+    .uses_private_threads = false,
+    .supports_concurrent_invocations = true,
+    .capture_compatible = false,
+};
+
+Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
+                  std::span<const TensorDesc> outputs,
+                  NativePlan &plan) noexcept {
   if (outputs.size() != 1)
     return Status::Unimplemented("native route requires one output");
 
-  NativePlan plan{};
+  plan = {};
   switch (operation.kind()) {
   case OperationKind::kView:
   case OperationKind::kCopy:
@@ -504,6 +511,69 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
         "operation has no current HYLE native executable route");
   }
 
+  return Status::Ok();
+}
+
+detail::ResourceBindingRequirement
+host_requirement(const TensorDesc &description) noexcept {
+  return detail::ResourceBindingRequirement{
+      .required_properties = mem::MemoryProperty::kHostAccessible,
+      .minimum_alignment = description.required_alignment(),
+  };
+}
+
+Status propose(
+    void *, Operation operation, std::span<const TensorDesc> inputs,
+    std::span<const TensorDesc> outputs,
+    std::span<detail::ResourceBindingRequirement> input_requirements,
+    std::span<detail::ResourceBindingRequirement> output_requirements,
+    detail::ProviderOperationProposal *proposal) noexcept {
+  if (proposal == nullptr)
+    return Status::InvalidArgument("native proposal output is null");
+  *proposal = {};
+  if (input_requirements.size() != inputs.size() ||
+      output_requirements.size() != outputs.size()) {
+    return Status::InvalidArgument(
+        "native proposal requirement counts do not match bindings");
+  }
+
+  NativePlan plan{};
+  Status status = build_plan(operation, inputs, outputs, plan);
+  if (!status.ok())
+    return status;
+  for (std::size_t index = 0; index < inputs.size(); ++index)
+    input_requirements[index] = host_requirement(inputs[index]);
+  for (std::size_t index = 0; index < outputs.size(); ++index)
+    output_requirements[index] = host_requirement(outputs[index]);
+  *proposal = detail::ProviderOperationProposal{
+      .route = static_cast<std::uint64_t>(operation.kind()),
+      .runtime = kRuntimeProperties,
+      .workspace_resource = detail::ResourceBindingRequirement{
+          .required_properties = mem::MemoryProperty::kHostAccessible,
+      },
+      .workspace = WorkspaceRequirement{},
+      .persistent_bytes = sizeof(NativePlan),
+  };
+  return Status::Ok();
+}
+
+Status prepare(void *, const detail::ProviderPrepareRequest &request,
+               mem::AllocatorRef allocator,
+               detail::ProviderPrepared *prepared_output) noexcept {
+  if (prepared_output == nullptr)
+    return Status::InvalidArgument("native prepared output is null");
+  *prepared_output = {};
+  if (request.input_resources.size() != request.inputs.size() ||
+      request.output_resources.size() != request.outputs.size() ||
+      request.route != static_cast<std::uint64_t>(request.operation.kind())) {
+    return Status::InvalidArgument("native exact prepare request is invalid");
+  }
+  NativePlan plan{};
+  Status status =
+      build_plan(request.operation, request.inputs, request.outputs, plan);
+  if (!status.ok())
+    return status;
+
   void *storage = allocator.allocate(sizeof(NativePlan), alignof(NativePlan));
   if (storage == nullptr)
     return Status::ResourceExhausted("native plan allocation failed");
@@ -511,16 +581,22 @@ Status prepare(void *, Operation operation, std::span<const TensorDesc> inputs,
   prepared_output->vtable = &kPreparedVTable;
   prepared_output->state = prepared;
   prepared_output->workspace = {};
+  prepared_output->runtime = kRuntimeProperties;
+  prepared_output->persistent_bytes = sizeof(NativePlan);
   return Status::Ok();
 }
+
+Status drain_context(void *) noexcept { return Status::Ok(); }
 
 const detail::ProviderVTable kProviderVTable{
     .identity = ProviderIdentity{.id = kProviderId,
                                  .name = "hyle-native",
-                                 .version = "1"},
+                                 .version = "2"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
+    .propose = &propose,
     .prepare = &prepare,
+    .drain_context = &drain_context,
 };
 
 } // namespace

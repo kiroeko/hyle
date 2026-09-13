@@ -490,26 +490,63 @@ const hyle::compute::detail::ProviderPreparedVTable kEffectPreparedVTable{
     .alias_support = &effect_alias_support,
     .create_invocation = &create_effect_invocation,
     .destroy_invocation = &destroy_effect_invocation,
-    .submit = &submit_effect,
+    .shared_submit = &submit_effect,
+    .delegated_submit = nullptr,
 };
 
-Status
-prepare_single(void *context, Operation operation,
-               std::span<const TensorDesc> inputs,
-               std::span<const TensorDesc> outputs, AllocatorRef,
-               hyle::compute::detail::ProviderPrepared *prepared) noexcept {
+constexpr hyle::compute::ProviderRuntimeProperties kEffectRuntime{
+    .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
+    .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+    .blocks_host = true,
+    .uses_private_threads = false,
+    .supports_concurrent_invocations = true,
+    .capture_compatible = false,
+};
+
+Status propose_single(
+    void *context, Operation operation, std::span<const TensorDesc> inputs,
+    std::span<const TensorDesc> outputs,
+    std::span<hyle::compute::detail::ResourceBindingRequirement>
+        input_requirements,
+    std::span<hyle::compute::detail::ResourceBindingRequirement>
+        output_requirements,
+    hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_prepare_count;
   if (!operation.custom_as<ExternalEffect>().has_value())
     return Status::Unimplemented("region provider has no single-op route");
-  if (!inputs.empty() || !outputs.empty() || prepared == nullptr)
+  if (!inputs.empty() || !outputs.empty() || !input_requirements.empty() ||
+      !output_requirements.empty() || proposal == nullptr) {
     return Status::InvalidArgument("effect preparation binding mismatch");
-  *prepared = hyle::compute::detail::ProviderPrepared{
-      .vtable = &kEffectPreparedVTable,
-      .state = &probe,
+  }
+  *proposal = hyle::compute::detail::ProviderOperationProposal{
+      .route = 1,
+      .runtime = kEffectRuntime,
+      .workspace = hyle::compute::WorkspaceRequirement{},
   };
   return Status::Ok();
 }
+
+Status prepare_single(
+    void *context,
+    const hyle::compute::detail::ProviderPrepareRequest &request,
+    AllocatorRef,
+    hyle::compute::detail::ProviderPrepared *prepared) noexcept {
+  auto &probe = *static_cast<RegionProbe *>(context);
+  if (!request.operation.custom_as<ExternalEffect>().has_value() ||
+      !request.inputs.empty() || !request.outputs.empty() ||
+      request.route != 1 || prepared == nullptr) {
+    return Status::InvalidArgument("effect exact preparation mismatch");
+  }
+  *prepared = hyle::compute::detail::ProviderPrepared{
+      .vtable = &kEffectPreparedVTable,
+      .state = &probe,
+      .runtime = kEffectRuntime,
+  };
+  return Status::Ok();
+}
+
+Status drain_provider_context(void *) noexcept { return Status::Ok(); }
 
 const void *query_extension(void *,
                             hyle::compute::ProviderExtensionId id) noexcept {
@@ -523,7 +560,9 @@ const hyle::compute::detail::ProviderVTable kProviderVTable{
                  .version = "1"},
     .create_context = &create_provider_context,
     .destroy_context = &destroy_provider_context,
+    .propose = &propose_single,
     .prepare = &prepare_single,
+    .drain_context = &drain_provider_context,
     .query_extension = &query_extension,
 };
 

@@ -1377,7 +1377,9 @@ Status prepare_multi_domain_steps(detail::PlanState &plan,
       }
       ++placement_attempts;
       auto result = compute::prepare(*environment.domains[candidate].context,
-                                     node.operation, inputs, outputs);
+                                     node.operation, inputs, outputs,
+                                     environment.domains[candidate]
+                                         .workspace_resource);
       if (result) {
         prepared[node_index] = std::move(*result);
         node_domains[node_index] = candidate;
@@ -1504,7 +1506,9 @@ Status prepare_multi_domain_steps(detail::PlanState &plan,
       }
       ++placement_attempts;
       auto fallback = compute::prepare(*environment.domains[candidate].context,
-                                       node.operation, inputs, outputs);
+                                       node.operation, inputs, outputs,
+                                       environment.domains[candidate]
+                                           .workspace_resource);
       if (fallback) {
         prepared[node_index] = std::move(*fallback);
         node_domains[node_index] = candidate;
@@ -2198,7 +2202,8 @@ Status append_operation_step(detail::PlanState &plan,
     plan.value_materialized[ordinal] = 1;
   }
   auto prepared = compute::prepare(context, node.operation, input_descriptions,
-                                   output_descriptions);
+                                   output_descriptions,
+                                   plan.domains[0].workspace_resource);
   if (!prepared)
     return std::move(prepared).error();
   const bool materializes =

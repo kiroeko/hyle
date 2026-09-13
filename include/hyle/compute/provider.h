@@ -31,6 +31,30 @@ struct ProviderIdentity final {
   }
 };
 
+// A prepared provider either records commands into a caller-owned HYLE Queue
+// or owns an independent runtime island. The two modes have disjoint submit
+// callbacks; callers never infer ownership from a provider name.
+enum class ProviderRuntimeMode : std::uint8_t {
+  kSharedQueue = 0,
+  kDelegated,
+};
+
+enum class ProviderWorkspaceOwner : std::uint8_t {
+  kCaller = 0,
+  kProvider,
+};
+
+// Cold-path facts that remain true for the complete lifetime of one prepared
+// artifact. They are diagnostic/planning data, not a runtime policy oracle.
+struct ProviderRuntimeProperties final {
+  ProviderRuntimeMode mode = ProviderRuntimeMode::kSharedQueue;
+  ProviderWorkspaceOwner workspace_owner = ProviderWorkspaceOwner::kCaller;
+  bool blocks_host = false;
+  bool uses_private_threads = false;
+  bool supports_concurrent_invocations = true;
+  bool capture_compatible = false;
+};
+
 // Stable identity for an optional provider-owned capability. The version is
 // part of the identity: consumers never reinterpret an interface table from a
 // different contract version. Extension lookup is explicit and cold-path;

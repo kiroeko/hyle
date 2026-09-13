@@ -98,7 +98,8 @@ create_context_state(Device device, ContextOptions options,
     const ProviderVTable *table = ProviderAccess::vtable(provider);
     if (table == nullptr || !table->identity.valid() ||
         table->create_context == nullptr || table->destroy_context == nullptr ||
-        table->prepare == nullptr) {
+        table->propose == nullptr || table->prepare == nullptr ||
+        table->drain_context == nullptr) {
       detail::release(state);
       return std::unexpected(
           Status::InvalidArgument("compute provider is incomplete"));
@@ -766,7 +767,20 @@ Status Context::drain() noexcept {
   if (state_ == nullptr)
     return Status::FailedPrecondition("context is invalid");
   state_->admission.wait_idle();
-  return state_->backend_vtable->drain_context(state_->backend_state);
+  Status terminal = Status::Ok();
+  for (std::size_t index = 0; index < state_->provider_count; ++index) {
+    detail::ContextState::ProviderSlot &slot = state_->providers()[index];
+    const detail::ProviderVTable *table =
+        detail::ProviderAccess::vtable(slot.provider);
+    Status candidate = table->drain_context(slot.state);
+    if (terminal.ok() && !candidate.ok())
+      terminal = std::move(candidate);
+  }
+  Status backend =
+      state_->backend_vtable->drain_context(state_->backend_state);
+  if (terminal.ok() && !backend.ok())
+    terminal = std::move(backend);
+  return terminal;
 }
 
 Queue::Queue(Queue &&other) noexcept : state_(other.state_) {

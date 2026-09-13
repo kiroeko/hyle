@@ -34,7 +34,8 @@ sampling 和 serving 留在推理引擎。
 | byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
 | 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
 | provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，不存在隐式 fallback |
-| provider 诊断 | `Context::provider_count/provider_identity` | O(1) 读取 Context 冻结的 provider/version；typed extension 由 Graph/backend factor 在内部对象局部 bridge 上使用，不暴露原始 `void*` API |
+| 精确资源 prepare | `OperationResourceBindings` / TensorView overload | provider 先报告要求，再对 input/output/workspace 的 exact `MemoryResourceRef` 冷验证；submit 不重新选资源或隐藏 copy |
+| provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
@@ -238,6 +239,31 @@ convenience 可直接推导 output desc。两者都把 provider/route 选择移�
 没有把 prepare 或 invocation 创建隐藏在一次性 convenience 中，因为 provider workspace 和并发状态必须
 有明确 owner。
 
+只给 descriptor 的 typed convenience 默认绑定 `mem::system_resource()`，适合 CPU/host RAM 的普通路线。
+使用 device、pinned、managed、NUMA 或应用自有 resource 时，不要让 provider 在第一次 submit 时猜测：把
+同一个 `MemoryResourceRef` 作为 typed prepare 的最后一个参数；多资源 operation 使用
+`OperationResourceBindings`；已经有实际 view 时，可直接调用接收 input/output TensorView spans 的 overload。
+prepared artifact 会保存每个 binding 的 exact resource identity，之后换成“属性相同但不是同一 resource”
+的 view 会在进入 provider 前返回 `InvalidArgument`。
+
+```cpp
+const std::array inputs{input_view};
+const std::array outputs{output_view};
+auto prepared = prepare(context, Operation(RmsNorm{.epsilon = 1.0e-5F}),
+                        inputs, outputs);
+
+// descriptor-only GPU/custom-resource route：显式给出 exact resource。
+auto device_prepared = prepare(context, RmsNorm{.epsilon = 1.0e-5F},
+                               input_desc, weight_desc, output_desc,
+                               device_resource);
+```
+
+`runtime_properties()` 说明 artifact 是 `kSharedQueue` 还是 `kDelegated`，以及 workspace owner、host blocking、
+私有线程、并发 invocation 和 capture 事实。公开 direct `prepare()` 只选择 `kSharedQueue` provider，因此其
+invocation 总能提交到调用方 Queue。`kDelegated` artifact 只由 Graph 的内部精确路线创建并作为完整 island
+提交；Compute 不会把一个无法 direct submit 的对象交给普通用户。caller-owned workspace 使用 prepare 时
+固定的 resource；provider-owned workspace 则拒绝调用方传入 BufferView。
+
 图编译器或手工 workspace planner 可在冷路径调用
 `PreparedOperation::alias_support(output_index, input_index)`。公共 operation traits 只是语义允许的上界；
 该查询给出当前 provider、shape 和 layout 真正支持的输入输出 alias 及相对 byte offset。普通调用者无需为
@@ -335,6 +361,8 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   `in_flight()` 可观察该 lane 是否仍被一次提交占用，重叠 submit 明确失败。Completion 会保活 provider
   invocation，因此丢弃外层 `OperationInvocation` handle 不会提前销毁异步状态；Context 关闭后 retained
   artifact 仍可创建 invocation，但任何 submit 都会失败。
+- 公开 direct prepare 只考虑 shared-Queue provider。delegated provider 由 Graph 在 compile 冷路径选择，
+  必须提供真实 endpoint/dependency/Completion/drain 合同；它不会假装在传入的 Queue 上执行。
 - Tensor views 不拥有 payload。Mem Buffer/resource、调用方 workspace 以及 Queue 必须活到 Completion 终态。
   direct op 和 Graph 都把自己的 invocation/provider state owner 附着到最终 Completion；这种内部附件不改变
   caller tensor、workspace 或 Queue 的借用合同。
