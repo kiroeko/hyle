@@ -1,0 +1,53 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "compute-cuda-runtime-p1-v1",
+  "module": "compute",
+  "claim": "P1 engineering non-inferiority for one warmed HYLE CUDA direct copy and terminal Completion against the exact CUDA Runtime copy, pre-created event record and event synchronization on the same device under the same stream-prefix completion contract",
+  "candidate": {"target": "hyle_compute_backend_cuda", "delivery_shape": "source", "revision": "runtime-bound", "component": "compute", "entrypoint": "include/hyle/compute/transfer.h"},
+  "peers": [{"id": "cuda-runtime-raw-adapter", "revision": "e16c1f33ef0f8a00576500d17222cc2da7605b67", "configuration": {"role": "same-product benchmark adapter over the machine-supplied CUDA 13.3 Runtime", "delivery_shape": "source adapter plus system CUDA SDK", "route": "cudaMemcpyAsync plus one pre-created cudaEventRecord/cudaEventSynchronize pair", "semantic_delta": "HYLE validates two pre-bound BufferViews and manages a pre-reserved Completion slot; the peer receives the already-validated raw pointers and owns an equivalent pre-created event"}}],
+  "strata": [
+    {"id": "primary-candidate-first-candidate-allocation-first", "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "candidate-first"}, "target_variant": "primary"},
+    {"id": "primary-candidate-first-peer-allocation-first", "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "peer-first"}, "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"}, "target_variant": "primary"},
+    {"id": "primary-peer-first-candidate-allocation-first", "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "candidate-first"}, "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"}, "target_variant": "primary"},
+    {"id": "primary-peer-first-peer-allocation-first", "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "peer-first"}, "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"}, "target_variant": "primary"},
+    {"id": "placement-candidate-first-candidate-allocation-first", "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "candidate-first"}, "target_variant": "placement"},
+    {"id": "placement-candidate-first-peer-allocation-first", "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "peer-first"}, "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"}, "target_variant": "placement"},
+    {"id": "placement-peer-first-candidate-allocation-first", "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "candidate-first"}, "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"}, "target_variant": "placement"},
+    {"id": "placement-peer-first-peer-allocation-first", "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "peer-first"}, "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"}, "target_variant": "placement"}
+  ],
+  "controls": [{"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}}, {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}}, {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}}, {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}}, {"id": "placement", "kind": "placement", "parameters": {}}],
+  "workloads": [
+    {
+      "id": "cuda-d2d-copy-prefix-completion-1mib", "tier": "consumer", "gate_role": "product", "consumer_key": "accelerator-runtime/resident-tensor-copy/terminal-completion",
+      "provenance": {"path": "bench/compute/cuda_runtime_consumer_v1.json", "sha256": "b5c50ad03121aecc15ccccee0e6e92f8ea9036863d26f2ef3a268120f5110289"},
+      "ownership_topology": {"candidate": "One caller-owned HYLE CUDA Context, Queue, pre-reserved Completion slot and two device Buffers", "peer": "The same CUDA device with one caller-owned non-blocking stream, pre-created event and two separately allocated equivalent HYLE device Buffers exposed as raw CUDA pointers", "equivalence": "Both routes copy one separately initialized 1 MiB device allocation to another and return only after the exact stream prefix is terminal; allocation, event creation, first touch and symmetric clock warmup are outside timing"},
+      "material_contribution": {"frequency": 1, "value": 1, "unit": "completed-device-copy", "budget": 5, "denominator": "one 1 MiB resident D2D copy plus terminal event completion", "derivation": "Inference and media runtimes routinely move already-resident tensors between stable buffers; 1 MiB leaves both launch/runtime overhead and transfer work visible"},
+      "semantic_contract": "Record one 1 MiB CUDA device-to-device copy on a non-default non-blocking stream, record one terminal event for that ordered prefix, and return after the event is complete",
+      "comparability": "COMPARABLE", "peer_id": "cuda-runtime-raw-adapter", "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic 251-byte cycle initialized and first-touched before measurement", "scale": {"bytes": 1048576, "copies_per_callback": 1}},
+      "setup": "Context, streams, events, device buffers, completion capacity, initialization, validation and 2048 symmetric route warmups occur before nanobench",
+      "charged_phases": ["public HYLE BufferView route validation on the candidate", "one cudaMemcpyAsync on each route", "one terminal event record on each route", "one terminal wait on each route"],
+      "pair": {"candidate": "HYLE CUDA copy+Completion 1 MiB", "peer": "CUDA raw copy+event 1 MiB"},
+      "practical_margin_percent": 5, "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {"allowed_platforms": ["windows"], "certification_platforms": ["windows"], "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}},
+  "extensions": {"runner": {
+    "schema": "hyle.perf.nanobench-runner/v1", "sampling_topology": "single-logical-cpu",
+    "cmake": {"cache": {"BUILD_SHARED_LIBS": "OFF", "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF", "HYLE_BUILD_BENCH": "ON", "HYLE_BUILD_TESTS": "OFF", "HYLE_COMPUTE_CUDA": "ON", "HYLE_DEV_FACTORS": "compute_backend_cuda", "HYLE_INSTALL": "OFF", "HYLE_SANITIZER": "off", "HYLE_SIMD_EXACT_TARGET": "", "HYLE_STATIC": "ON", "HYLE_TEST_INSTRUMENTATION": "OFF", "HYLE_TRACE": "OFF"}, "peer_cache": {"cuda-runtime-raw-adapter": "HYLE_COMPUTE_CUDA_RAW_SOURCE_DIR"}},
+    "profiles": {"W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}},
+    "executables": [
+      {"id": "compute-cuda-runtime-primary", "target": "hyle_compute_cuda_runtime_bench", "stem": "hyle_compute_cuda_runtime_bench", "target_variant": "primary", "measurement_batch": 1, "telemetry_prefixes": ["# HYLE_COMPUTE_CUDA_RUNTIME_RUN "], "workloads": [{"id": "cuda-d2d-copy-prefix-completion-1mib", "title": "compute CUDA D2D 1 MiB queue-prefix completion"}]},
+      {"id": "compute-cuda-runtime-placement", "target": "hyle_compute_cuda_runtime_bench_placement", "stem": "hyle_compute_cuda_runtime_bench_placement", "target_variant": "placement", "measurement_batch": 1, "telemetry_prefixes": ["# HYLE_COMPUTE_CUDA_RUNTIME_RUN "], "workloads": [{"id": "cuda-d2d-copy-prefix-completion-1mib", "title": "compute CUDA D2D 1 MiB queue-prefix completion"}]}
+    ],
+    "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+    "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_PEER_ALLOCATION_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+    "validators": [{"id": "artifact-identity", "kind": "artifact-identity"}, {"id": "build-contract", "kind": "build-contract"}]
+  }}
+}
