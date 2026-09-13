@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "hyle/compute/completion.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/device.h"
 #include "hyle/mem/resource.h"
 
@@ -28,21 +29,19 @@ template <class Function, class... Args>
             std::same_as<std::invoke_result_t<Function, Args...>, Status>)
 Result<Completion> submit_host(Queue &queue, Function &&function,
                                Args &&...args) noexcept {
-  Status admission = CpuQueueAccess::begin(queue);
-  if (!admission.ok())
-    return std::unexpected(std::move(admission));
-  struct Guard final {
-    Queue *queue = nullptr;
-    ~Guard() { CpuQueueAccess::end(*queue); }
-  } guard{&queue};
+  auto sequence = detail::QueueSequence::begin(queue);
+  if (!sequence)
+    return std::unexpected(std::move(sequence).error());
 
   if constexpr (std::same_as<std::invoke_result_t<Function, Args...>, void>) {
     std::invoke(std::forward<Function>(function), std::forward<Args>(args)...);
-    return Completion::completed();
+    sequence->record(detail::EnqueueResult::accepted_command());
   } else {
-    return Completion::completed(std::invoke(std::forward<Function>(function),
-                                             std::forward<Args>(args)...));
+    sequence->record(detail::EnqueueResult::accepted_command(
+        std::invoke(std::forward<Function>(function),
+                    std::forward<Args>(args)...)));
   }
+  return sequence->finish();
 }
 
 } // namespace hyle::compute::cpu

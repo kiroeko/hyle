@@ -153,11 +153,16 @@ void preserve_first_error(Status &terminal, Status candidate) noexcept {
     terminal = std::move(candidate);
 }
 
-Result<Completion> submit(void *prepared_value, void *invocation_value, Queue &,
-                          std::span<const ConstTensorView> inputs,
-                          std::span<const TensorView> outputs) noexcept {
+detail::EnqueueResult accepted(Status terminal) noexcept {
+  return detail::EnqueueResult::accepted_command(std::move(terminal));
+}
+
+detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
+                             Queue &,
+                             std::span<const ConstTensorView> inputs,
+                             std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 2 || outputs.size() != 1) {
-    return Completion::completed(
+    return accepted(
         Status::Internal("oneDNN binding count is invalid"));
   }
 
@@ -174,29 +179,29 @@ Result<Completion> submit(void *prepared_value, void *invocation_value, Queue &,
   if (!left_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     Status status = left_storage.invalidate();
     if (!status.ok())
-      return Completion::completed(std::move(status));
+      return accepted(std::move(status));
   }
   if (!right_properties.has(mem::MemoryProperty::kHostDeviceCoherent)) {
     Status status = right_storage.invalidate();
     if (!status.ok())
-      return Completion::completed(std::move(status));
+      return accepted(std::move(status));
   }
 
   auto left_result = left_storage.map_host();
   if (!left_result)
-    return Completion::completed(std::move(left_result).error());
+    return accepted(std::move(left_result).error());
   mem::HostMapping left = std::move(*left_result);
   auto right_result = right_storage.map_host();
   if (!right_result) {
     left.close().IgnoreError();
-    return Completion::completed(std::move(right_result).error());
+    return accepted(std::move(right_result).error());
   }
   mem::HostMapping right = std::move(*right_result);
   auto output_result = output_storage.map_host(mem::HostAccess::kWrite);
   if (!output_result) {
     right.close().IgnoreError();
     left.close().IgnoreError();
-    return Completion::completed(std::move(output_result).error());
+    return accepted(std::move(output_result).error());
   }
   mem::HostMapping output = std::move(*output_result);
   auto writable = output.writable_bytes();
@@ -205,7 +210,7 @@ Result<Completion> submit(void *prepared_value, void *invocation_value, Queue &,
     output.close().IgnoreError();
     right.close().IgnoreError();
     left.close().IgnoreError();
-    return Completion::completed(std::move(terminal));
+    return accepted(std::move(terminal));
   }
 
   const std::array<const void *, 2> mapped_inputs{left.bytes().data(),
@@ -220,7 +225,7 @@ Result<Completion> submit(void *prepared_value, void *invocation_value, Queue &,
   preserve_first_error(terminal, output.close());
   preserve_first_error(terminal, right.close());
   preserve_first_error(terminal, left.close());
-  return Completion::completed(std::move(terminal));
+  return accepted(std::move(terminal));
 }
 
 AliasSupport alias_support(void *, std::size_t, std::size_t) noexcept {

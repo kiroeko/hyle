@@ -662,8 +662,10 @@ OperationInvocation::submit(Queue &queue,
   auto sequence = detail::QueueSequence::begin(queue);
   if (!sequence)
     return std::unexpected(std::move(sequence).error());
-  auto completion = detail::OperationInvocationAccess::submit(*this, *sequence,
-                                                              inputs, outputs);
+  detail::EnqueueResult enqueued = detail::OperationInvocationAccess::enqueue(
+      *this, *sequence, inputs, outputs);
+  sequence->record(std::move(enqueued));
+  auto completion = sequence->finish();
   if (!completion)
     return std::unexpected(std::move(completion).error());
   if (!detail::CompletionAccess::has_async_state(*completion)) {
@@ -686,60 +688,56 @@ OperationInvocation::submit(Queue &queue,
   return completion;
 }
 
-Result<Completion> detail::OperationInvocationAccess::submit(
+detail::EnqueueResult detail::OperationInvocationAccess::enqueue(
     OperationInvocation &invocation, detail::QueueSequence &sequence,
     std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept {
   if (!invocation.valid())
-    return std::unexpected(
+    return EnqueueResult::rejected(
         Status::FailedPrecondition("operation invocation is invalid"));
   if (!sequence.valid())
-    return std::unexpected(
+    return EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   Queue &queue = sequence.queue();
   if (!queue.valid())
-    return std::unexpected(Status::FailedPrecondition("queue is invalid"));
+    return EnqueueResult::rejected(
+        Status::FailedPrecondition("queue is invalid"));
   detail::PreparedState &prepared = *invocation.state_->prepared;
   detail::QueueState *queue_state = detail::ContextAccess::state(queue);
   if (queue_state->context != prepared.context) {
-    return std::unexpected(Status::InvalidArgument(
+    return EnqueueResult::rejected(Status::InvalidArgument(
         "queue and operation invocation belong to different contexts"));
   }
   if (inputs.size() != prepared.input_count ||
       outputs.size() != prepared.output_count) {
-    return std::unexpected(Status::InvalidArgument(
+    return EnqueueResult::rejected(Status::InvalidArgument(
         "binding count does not match the prepared operation"));
   }
   for (std::size_t index = 0; index < inputs.size(); ++index) {
     if (!inputs[index].valid() ||
         inputs[index].description() != prepared.inputs()[index]) {
-      return std::unexpected(Status::InvalidArgument(
+      return EnqueueResult::rejected(Status::InvalidArgument(
           "input binding does not match its prepared description"));
     }
   }
   for (std::size_t index = 0; index < outputs.size(); ++index) {
     if (!outputs[index].valid() ||
         outputs[index].description() != prepared.outputs()[index]) {
-      return std::unexpected(Status::InvalidArgument(
+      return EnqueueResult::rejected(Status::InvalidArgument(
           "output binding does not match its prepared description"));
     }
   }
   Status resource =
       validate_binding_resources(*prepared.context, inputs, outputs);
   if (!resource.ok())
-    return std::unexpected(std::move(resource));
+    return EnqueueResult::rejected(std::move(resource));
   Status alias = validate_aliases(prepared, inputs, outputs);
   if (!alias.ok())
-    return std::unexpected(std::move(alias));
+    return EnqueueResult::rejected(std::move(alias));
 
-  auto completion = prepared.provider_prepared.vtable->submit(
+  return prepared.provider_prepared.vtable->submit(
       prepared.provider_prepared.state, invocation.state_->provider_state,
       queue, inputs, outputs);
-  if (completion && !completion->valid()) {
-    return std::unexpected(
-        Status::Internal("compute provider returned an invalid completion"));
-  }
-  return completion;
 }
 
 Result<Completion>

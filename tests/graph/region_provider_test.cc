@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "backend_internal.h"
 #include "completion_internal.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/completion_access.h"
@@ -82,6 +83,7 @@ struct RegionProbe final {
   std::size_t completed_prefix = 0;
   bool cancelled = false;
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
+  Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
@@ -98,7 +100,6 @@ struct RegionPlan final {
 
 struct RegionRun final {
   RegionProbe *probe = nullptr;
-  std::size_t completion_ordinal = 0;
 };
 
 Status async_terminal(const RegionProbe &probe) noexcept {
@@ -107,43 +108,47 @@ Status async_terminal(const RegionProbe &probe) noexcept {
 }
 
 void destroy_async_completion(
-    void *state, hyle::compute::detail::CompletionLifetime lifetime) noexcept {
-  auto &run = *static_cast<RegionRun *>(state);
-  ++run.probe->completion_destroy_count;
+    void *state, hyle::compute::detail::CompletionLifetime lifetime,
+    Status terminal_hint) noexcept {
+  auto &probe = *static_cast<RegionProbe *>(state);
+  ++probe.completion_destroy_count;
   if (!lifetime.valid())
     return;
-  if (run.probe->completed_prefix < run.completion_ordinal) {
-    run.probe->abandoned_lifetime = lifetime;
+  if (probe.completed_prefix < probe.submit_count) {
+    probe.abandoned_lifetime = lifetime;
+    probe.abandoned_hint = std::move(terminal_hint);
     return;
   }
-  const Status terminal = async_terminal(*run.probe);
+  Status terminal = async_terminal(probe);
+  if (terminal.ok() && !terminal_hint.ok())
+    terminal = std::move(terminal_hint);
   lifetime.terminal(lifetime.state, terminal);
   lifetime.release(lifetime.state);
 }
 
 Result<hyle::compute::CompletionPoll>
 poll_async_completion(void *state) noexcept {
-  auto &run = *static_cast<RegionRun *>(state);
-  ++run.probe->completion_poll_count;
-  if (run.probe->completed_prefix < run.completion_ordinal)
+  auto &probe = *static_cast<RegionProbe *>(state);
+  ++probe.completion_poll_count;
+  if (probe.completed_prefix < probe.submit_count)
     return hyle::compute::CompletionPoll::kPending;
-  const Status terminal = async_terminal(*run.probe);
+  const Status terminal = async_terminal(probe);
   if (!terminal.ok())
     return std::unexpected(terminal);
   return hyle::compute::CompletionPoll::kComplete;
 }
 
 Status wait_async_completion(void *state) noexcept {
-  auto &run = *static_cast<RegionRun *>(state);
-  ++run.probe->completion_wait_count;
-  run.probe->completed_prefix = run.probe->submit_count;
-  return async_terminal(*run.probe);
+  auto &probe = *static_cast<RegionProbe *>(state);
+  ++probe.completion_wait_count;
+  probe.completed_prefix = probe.submit_count;
+  return async_terminal(probe);
 }
 
 Status cancel_async_completion(void *state) noexcept {
-  auto &run = *static_cast<RegionRun *>(state);
-  run.probe->cancelled = true;
-  run.probe->completed_prefix = run.probe->submit_count;
+  auto &probe = *static_cast<RegionProbe *>(state);
+  probe.cancelled = true;
+  probe.completed_prefix = probe.submit_count;
   return Status::Ok();
 }
 
@@ -242,7 +247,7 @@ Status create_region_invocation(void *prepared, AllocatorRef allocator,
   void *storage = allocator.allocate(sizeof(RegionRun), alignof(RegionRun));
   if (storage == nullptr)
     return Status::ResourceExhausted("region invocation allocation failed");
-  *output = ::new (storage) RegionRun{plan.probe, 0};
+  *output = ::new (storage) RegionRun{plan.probe};
   ++plan.probe->create_invocation_count;
   if (plan.probe->mode == ProposalMode::kInvocationFailure) {
     return Status::Internal("injected region invocation failure");
@@ -273,46 +278,50 @@ AliasSupport region_alias_support(void *, std::size_t, std::size_t) noexcept {
   return {};
 }
 
-Result<Completion> submit_region(void *prepared, void *invocation, Queue &,
-                                 std::span<const ConstTensorView> inputs,
-                                 std::span<const TensorView> outputs) noexcept {
+hyle::compute::detail::EnqueueResult
+submit_region(void *prepared, void *invocation, Queue &,
+              std::span<const ConstTensorView> inputs,
+              std::span<const TensorView> outputs) noexcept {
   auto &plan = *static_cast<RegionPlan *>(prepared);
   if (invocation == nullptr || inputs.size() != 1 || outputs.size() != 1)
-    return Completion::completed(Status::Internal("region binding mismatch"));
+    return hyle::compute::detail::EnqueueResult::accepted_command(
+        Status::Internal("region binding mismatch"));
   if (plan.probe->mode == ProposalMode::kAsyncPairs ||
       plan.probe->mode == ProposalMode::kAsyncRejectSecond) {
     ++plan.probe->submit_attempt_count;
     if (plan.probe->mode == ProposalMode::kAsyncRejectSecond &&
         plan.probe->submit_attempt_count == 2) {
-      return std::unexpected(
+      return hyle::compute::detail::EnqueueResult::rejected(
           Status::Unavailable("injected second-region rejection"));
     }
-    auto &run = *static_cast<RegionRun *>(invocation);
-    run.completion_ordinal = ++plan.probe->submit_count;
-    return hyle::compute::detail::CompletionAccess::make(
-        &kAsyncCompletionVTable, &run);
+    ++plan.probe->submit_count;
+    return hyle::compute::detail::EnqueueResult::accepted_command();
   }
   auto input_mapping = inputs[0].storage().map_host();
   if (!input_mapping)
-    return Completion::completed(std::move(input_mapping).error());
+    return hyle::compute::detail::EnqueueResult::accepted_command(
+        std::move(input_mapping).error());
   auto output_mapping =
       outputs[0].storage().map_host(hyle::mem::HostAccess::kWrite);
   if (!output_mapping) {
     input_mapping->close().IgnoreError();
-    return Completion::completed(std::move(output_mapping).error());
+    return hyle::compute::detail::EnqueueResult::accepted_command(
+        std::move(output_mapping).error());
   }
   auto writable = output_mapping->writable_bytes();
   if (!writable) {
     Status error = std::move(writable).error();
     output_mapping->close().IgnoreError();
     input_mapping->close().IgnoreError();
-    return Completion::completed(std::move(error));
+    return hyle::compute::detail::EnqueueResult::accepted_command(
+        std::move(error));
   }
   const std::span<const std::byte> source = input_mapping->bytes();
   if (source.size() != writable->size() || source.size() % sizeof(float) != 0) {
     output_mapping->close().IgnoreError();
     input_mapping->close().IgnoreError();
-    return Completion::completed(Status::Internal("region byte size mismatch"));
+    return hyle::compute::detail::EnqueueResult::accepted_command(
+        Status::Internal("region byte size mismatch"));
   }
   const auto input_values =
       std::span(reinterpret_cast<const float *>(source.data()),
@@ -328,7 +337,8 @@ Result<Completion> submit_region(void *prepared, void *invocation, Queue &,
   if (terminal.ok() && !input_close.ok())
     terminal = input_close;
   ++plan.probe->submit_count;
-  return Completion::completed(std::move(terminal));
+  return hyle::compute::detail::EnqueueResult::accepted_command(
+      std::move(terminal));
 }
 
 const hyle::graph::ProviderRegionPreparedVTable kPreparedRegionVTable{
@@ -413,6 +423,187 @@ Provider region_provider(RegionProbe &probe) noexcept {
                                                      ProviderPayload{&probe});
 }
 
+struct AsyncBackendPayload final {
+  RegionProbe *probe = nullptr;
+};
+
+constexpr hyle::compute::BackendId kAsyncBackendId{
+    0x544553542d475241ULL, 0x50482d4153594e43ULL};
+
+Result<hyle::compute::Device>
+async_device(const hyle::compute::Backend &backend, std::size_t index) noexcept;
+
+Result<std::size_t>
+async_device_count(const hyle::compute::Backend &) noexcept {
+  return std::size_t{1};
+}
+
+bool same_async_device(const hyle::compute::Device &left,
+                       const hyle::compute::Device &right) noexcept {
+  return hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(left)
+             .probe ==
+         hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(right)
+             .probe;
+}
+
+Result<hyle::compute::DeviceProperties>
+async_device_properties(const hyle::compute::Device &device) noexcept {
+  if (hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(device)
+          .probe == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("test graph backend device is invalid"));
+  }
+  return hyle::compute::DeviceProperties{
+      .backend = kAsyncBackendId,
+      .device_class = hyle::compute::DeviceClass::kCpu,
+      .backend_name = "test-graph-async",
+      .name = "test Graph async sequence backend",
+      .unified_memory = true,
+      .asynchronous_queues = true,
+  };
+}
+
+Status validate_async_resource(const hyle::compute::Device &,
+                               hyle::mem::MemoryResourceRef resource) noexcept {
+  if (!resource.valid())
+    return Status::InvalidArgument("test graph resource is invalid");
+  if (!resource.properties().has(hyle::mem::MemoryProperty::kHostAccessible)) {
+    return Status::FailedPrecondition(
+        "test graph backend requires host-accessible storage");
+  }
+  return Status::Ok();
+}
+
+Status create_async_backend_context(const hyle::compute::Device &device,
+                                    AllocatorRef, void **output) noexcept {
+  if (output == nullptr)
+    return Status::InvalidArgument("test graph context output is null");
+  *output = hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(
+                device)
+                .probe;
+  return *output != nullptr
+             ? Status::Ok()
+             : Status::InvalidArgument("test graph backend has no probe");
+}
+
+void destroy_async_backend_context(void *, AllocatorRef) noexcept {}
+
+Status create_async_queue(void *context, hyle::compute::QueueOptions,
+                          AllocatorRef, void **output) noexcept {
+  if (context == nullptr || output == nullptr)
+    return Status::InvalidArgument("test graph queue output is invalid");
+  *output = context;
+  return Status::Ok();
+}
+
+void destroy_async_queue(void *, AllocatorRef) noexcept {}
+
+Status begin_async_sequence(void *queue, void **sequence) noexcept {
+  if (queue == nullptr || sequence == nullptr)
+    return Status::InvalidArgument("test graph sequence is invalid");
+  *sequence = queue;
+  return Status::Ok();
+}
+
+Completion finish_async_sequence(void *, void *sequence, bool accepted,
+                                 Status terminal) noexcept {
+  if (!accepted)
+    return Completion::completed(std::move(terminal));
+  Completion completion = hyle::compute::detail::CompletionAccess::make(
+      &kAsyncCompletionVTable, sequence);
+  hyle::compute::detail::CompletionAccess::append_terminal(
+      completion, std::move(terminal));
+  return completion;
+}
+
+Status reserve_async_completions(void *, std::size_t) noexcept {
+  return Status::Ok();
+}
+
+Result<hyle::compute::TransferProperties>
+async_transfer_properties(void *, hyle::mem::BufferView,
+                          hyle::mem::ConstBufferView) noexcept {
+  return hyle::compute::TransferProperties{
+      .mode = hyle::compute::TransferMode::kImmediate};
+}
+
+hyle::compute::detail::EnqueueResult
+async_copy(void *, hyle::mem::BufferView destination,
+           hyle::mem::ConstBufferView source) noexcept {
+  return hyle::compute::detail::EnqueueResult::accepted_command(
+      destination.copy_from(source));
+}
+
+hyle::compute::detail::EnqueueResult
+async_fill(void *, hyle::mem::BufferView destination,
+           std::byte value) noexcept {
+  return hyle::compute::detail::EnqueueResult::accepted_command(
+      destination.fill(value));
+}
+
+
+hyle::compute::detail::EnqueueResult async_wait_completion(
+    void *, const hyle::compute::detail::CompletionVTable *, void *) noexcept {
+  return hyle::compute::detail::EnqueueResult::rejected(
+      Status::Unimplemented("test graph backend has no dependency route"));
+}
+
+const void *query_async_extension(void *,
+                                  hyle::compute::BackendExtensionId) noexcept {
+  return nullptr;
+}
+
+Status drain_async(void *state) noexcept {
+  if (state != nullptr) {
+    auto &probe = *static_cast<RegionProbe *>(state);
+    probe.completed_prefix = probe.submit_count;
+  }
+  return Status::Ok();
+}
+
+const hyle::compute::detail::BackendVTable kAsyncBackendVTable{
+    .id = kAsyncBackendId,
+    .name = "test-graph-async",
+    .device_class = hyle::compute::DeviceClass::kCpu,
+    .device_count = &async_device_count,
+    .device = &async_device,
+    .same_device = &same_async_device,
+    .properties = &async_device_properties,
+    .validate_resource = &validate_async_resource,
+    .create_context = &create_async_backend_context,
+    .destroy_context = &destroy_async_backend_context,
+    .create_queue = &create_async_queue,
+    .destroy_queue = &destroy_async_queue,
+    .begin_sequence = &begin_async_sequence,
+    .finish_sequence = &finish_async_sequence,
+    .reserve_completions = &reserve_async_completions,
+    .transfer_properties = &async_transfer_properties,
+    .copy_async = &async_copy,
+    .fill_async = &async_fill,
+    .wait_completion = &async_wait_completion,
+    .query_extension = &query_async_extension,
+    .drain_context = &drain_async,
+    .drain_queue = &drain_async,
+};
+
+Result<hyle::compute::Device>
+async_device(const hyle::compute::Backend &backend, std::size_t index) noexcept {
+  if (index != 0) {
+    return std::unexpected(
+        Status::OutOfRange("test graph device index is out of range"));
+  }
+  return hyle::compute::detail::DeviceAccess::make(
+      &kAsyncBackendVTable,
+      hyle::compute::detail::BackendAccess::payload<AsyncBackendPayload>(
+          backend));
+}
+
+hyle::compute::Device async_device(RegionProbe &probe) noexcept {
+  const auto backend = hyle::compute::detail::BackendAccess::make(
+      &kAsyncBackendVTable, AsyncBackendPayload{&probe});
+  return backend.device(0).value();
+}
+
 struct NegationGraph final {
   Graph graph{};
   ValueId input{};
@@ -437,7 +628,11 @@ NegationGraph make_negations(std::size_t count, bool finish_with_abs = false) {
 Context make_context(RegionProbe &probe) {
   const std::array providers{region_provider(probe),
                              hyle::compute::native::provider()};
-  return Context::create(hyle::compute::cpu::device(), {.providers = providers})
+  const bool asynchronous = probe.mode == ProposalMode::kAsyncPairs ||
+                            probe.mode == ProposalMode::kAsyncRejectSecond;
+  return Context::create(asynchronous ? async_device(probe)
+                                      : hyle::compute::cpu::device(),
+                         {.providers = providers})
       .value();
 }
 
@@ -817,7 +1012,7 @@ TEST(GraphRegions,
   EXPECT_TRUE(submitted->wait().ok());
   EXPECT_FALSE(invocation.in_flight());
   EXPECT_EQ(probe.completion_wait_count, 1u);
-  EXPECT_EQ(probe.completion_destroy_count, 2u);
+  EXPECT_EQ(probe.completion_destroy_count, 1u);
   ASSERT_TRUE(invocation.reset().ok());
 
   ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
@@ -831,7 +1026,9 @@ TEST(GraphRegions,
   EXPECT_EQ(probe.destroy_invocation_count, 0u);
 
   probe.completed_prefix = probe.submit_count;
-  const Status terminal = async_terminal(probe);
+  Status terminal = async_terminal(probe);
+  if (terminal.ok() && !probe.abandoned_hint.ok())
+    terminal = probe.abandoned_hint;
   probe.abandoned_lifetime.terminal(probe.abandoned_lifetime.state, terminal);
   probe.abandoned_lifetime.release(probe.abandoned_lifetime.state);
   probe.abandoned_lifetime = {};

@@ -5,6 +5,8 @@
 #include <utility>
 
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/transfer.h"
+#include "hyle/mem/buffer.h"
 
 namespace {
 
@@ -171,6 +173,52 @@ TEST(Queue, InvalidAndMovedFromOperationsAreObservable) {
   Queue moved = std::move(original);
   EXPECT_FALSE(original.valid()); // NOLINT(bugprone-use-after-move)
   EXPECT_TRUE(moved.is_open());
+}
+
+TEST(Queue, CpuAsyncByteOperationsUseTheOrderedCompletionContract) {
+  Context context = Context::create(hyle::compute::cpu::device()).value();
+  Queue queue = context.create_queue().value();
+  auto source = hyle::mem::Buffer::create(hyle::mem::system_resource(), 8)
+                    .value();
+  auto destination = hyle::mem::Buffer::create(hyle::mem::system_resource(), 8)
+                         .value();
+  const std::array<std::byte, 8> bytes{
+      std::byte{1}, std::byte{2}, std::byte{3}, std::byte{4},
+      std::byte{5}, std::byte{6}, std::byte{7}, std::byte{8}};
+  ASSERT_TRUE(source.view().write(bytes).ok());
+
+  auto properties = hyle::compute::transfer_properties(
+      queue, destination.view(), source.view());
+  ASSERT_TRUE(properties.has_value()) << properties.error().message();
+  EXPECT_EQ(properties->mode, hyle::compute::TransferMode::kImmediate);
+  EXPECT_FALSE(properties->peer);
+
+  auto copied = hyle::compute::copy_async(queue, destination.view(),
+                                          source.view());
+  ASSERT_TRUE(copied.has_value()) << copied.error().message();
+  EXPECT_TRUE(copied->wait().ok());
+  std::array<std::byte, 8> observed{};
+  EXPECT_TRUE(destination.view().read(observed).ok());
+  EXPECT_EQ(observed, bytes);
+
+  auto filled = hyle::compute::fill_async(queue, destination.view(),
+                                          std::byte{0x5a});
+  ASSERT_TRUE(filled.has_value()) << filled.error().message();
+  EXPECT_TRUE(filled->wait().ok());
+  EXPECT_TRUE(destination.view().read(observed).ok());
+  for (std::byte value : observed)
+    EXPECT_EQ(value, std::byte{0x5a});
+
+  auto short_destination = destination.view().subview(0, 4).value();
+  EXPECT_TRUE(hyle::compute::copy_async(queue, short_destination, source.view())
+                  .error()
+                  .IsInvalidArgument());
+  auto overlapping_source = source.view().subview(0, 6).value();
+  auto overlapping_destination = source.view().subview(2, 6).value();
+  EXPECT_TRUE(hyle::compute::copy_async(queue, overlapping_destination,
+                                        overlapping_source)
+                  .error()
+                  .IsInvalidArgument());
 }
 
 } // namespace

@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "../compute/native_route.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/prepared_operation.h"
 
 namespace hyle::compute::native::internal {
@@ -16,7 +17,7 @@ enum class ReductionRoute : std::uint8_t {
   kAllDense,
   kLastAxisDense,
 };
-using SubmitRoute = Result<Completion> (*)(
+using SubmitRoute = detail::EnqueueResult (*)(
     const NativePlan &plan, std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept;
 using LinearElementwiseRoute = void (*)(const void *first, const void *second,
@@ -51,8 +52,11 @@ inline void preserve_first_error(Status &terminal, Status candidate) noexcept {
     terminal = std::move(candidate);
 }
 
-inline Result<Completion> completed(Status status) noexcept {
-  return Completion::completed(std::move(status));
+inline detail::EnqueueResult completed(Status status) noexcept {
+  // Native routes execute synchronously on the admitted CPU Queue. Treat the
+  // provider episode as accepted even when a mapping close/flush reports its
+  // terminal error, so callers never infer that an output remained untouched.
+  return detail::EnqueueResult::accepted_command(std::move(status));
 }
 
 inline bool aligned_for_storage(const void *address,

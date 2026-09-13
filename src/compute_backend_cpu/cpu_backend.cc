@@ -72,6 +72,41 @@ Status create_queue_impl(void *, QueueOptions, mem::AllocatorRef,
 }
 
 void destroy_queue_impl(void *, mem::AllocatorRef) noexcept {}
+Status begin_sequence_impl(void *, void **sequence) noexcept {
+  if (sequence == nullptr)
+    return Status::InvalidArgument("CPU sequence output is null");
+  *sequence = nullptr;
+  return Status::Ok();
+}
+Completion finish_sequence_impl(void *, void *, bool,
+                                Status terminal) noexcept {
+  return Completion::completed(std::move(terminal));
+}
+Status reserve_completions_impl(void *, std::size_t) noexcept {
+  return Status::Ok();
+}
+Result<TransferProperties>
+transfer_properties_impl(void *, mem::BufferView,
+                         mem::ConstBufferView) noexcept {
+  return TransferProperties{.mode = TransferMode::kImmediate, .peer = false};
+}
+detail::EnqueueResult copy_async_impl(void *, mem::BufferView destination,
+                                      mem::ConstBufferView source) noexcept {
+  return detail::EnqueueResult::accepted_command(
+      destination.copy_from(source));
+}
+detail::EnqueueResult fill_async_impl(void *, mem::BufferView destination,
+                                      std::byte value) noexcept {
+  return detail::EnqueueResult::accepted_command(destination.fill(value));
+}
+detail::EnqueueResult wait_completion_impl(
+    void *, const detail::CompletionVTable *, void *) noexcept {
+  return detail::EnqueueResult::rejected(Status::Unimplemented(
+      "CPU queue cannot consume an asynchronous backend completion"));
+}
+const void *query_extension_impl(void *, BackendExtensionId) noexcept {
+  return nullptr;
+}
 Status drain_context_impl(void *) noexcept { return Status::Ok(); }
 Status drain_queue_impl(void *) noexcept { return Status::Ok(); }
 
@@ -88,6 +123,14 @@ const detail::BackendVTable kBackendVTable{
     .destroy_context = &destroy_context_impl,
     .create_queue = &create_queue_impl,
     .destroy_queue = &destroy_queue_impl,
+    .begin_sequence = &begin_sequence_impl,
+    .finish_sequence = &finish_sequence_impl,
+    .reserve_completions = &reserve_completions_impl,
+    .transfer_properties = &transfer_properties_impl,
+    .copy_async = &copy_async_impl,
+    .fill_async = &fill_async_impl,
+    .wait_completion = &wait_completion_impl,
+    .query_extension = &query_extension_impl,
     .drain_context = &drain_context_impl,
     .drain_queue = &drain_queue_impl,
 };

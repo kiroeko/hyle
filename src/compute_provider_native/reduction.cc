@@ -57,7 +57,7 @@ void finish_mean(float *output, std::size_t count,
     output[index] /= divisor;
 }
 
-Result<Completion>
+detail::EnqueueResult
 submit_reduction(const NativePlan &plan,
                  std::span<const ConstTensorView> inputs,
                  std::span<const TensorView> outputs) noexcept {

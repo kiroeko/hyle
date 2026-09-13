@@ -26,7 +26,7 @@
   backend 拥有 stream/event/native handle/resource implementation；Provider 只录入一个 op/region，不创建
   Graph 每-step 用户 event；Graph 拥有跨 domain segment、显式 copy/sync、host-barrier fallback 和最终聚合；
 - scope：冻结并实现 queue sequence 的 accepted-prefix/finalize 合同；把 provider 与 region admitted submit
-  改为同步 enqueue `Status`；增加有版本的对象局部 backend extension；冻结 backend-neutral async copy/fill、
+  改为同步 `EnqueueResult{accepted,status}`；增加有版本的对象局部 backend extension；冻结 backend-neutral async copy/fill、
   compatible device-wait、queue-prefix Completion 和 typed native command 的 factor bridge；裁决 async resource
   owner；迁移现有 CPU/native/oneDNN/Graph consumers；逐入口 `KEEP/MOVE/REPLACE/DELETE`；
 - non-goals：增加公共算子、CUDA/Metal/Vulkan 的具体实现、公开万能 `Module/Kernel/CommandList`、Graph 的

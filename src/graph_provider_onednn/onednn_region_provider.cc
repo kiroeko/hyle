@@ -532,7 +532,7 @@ void preserve_first_error(Status &terminal, Status candidate) noexcept {
     terminal = std::move(candidate);
 }
 
-Result<compute::Completion>
+compute::detail::EnqueueResult
 submit(void *prepared_value, void *invocation_value, Queue &,
        std::span<const ConstTensorView> inputs,
        std::span<const TensorView> outputs) noexcept {
@@ -543,7 +543,7 @@ submit(void *prepared_value, void *invocation_value, Queue &,
       invocation->gate == nullptr || invocation->up == nullptr ||
       invocation->scratch == nullptr || inputs.size() != 4 ||
       outputs.size() != 1) {
-    return compute::Completion::completed(
+    return compute::detail::EnqueueResult::accepted_command(
         Status::Internal("oneDNN region execution state is invalid"));
   }
 
@@ -553,7 +553,8 @@ submit(void *prepared_value, void *invocation_value, Queue &,
             mem::MemoryProperty::kHostDeviceCoherent)) {
       Status status = storage.invalidate();
       if (!status.ok())
-        return compute::Completion::completed(std::move(status));
+        return compute::detail::EnqueueResult::accepted_command(
+            std::move(status));
     }
   }
 
@@ -574,7 +575,8 @@ submit(void *prepared_value, void *invocation_value, Queue &,
       preserve_first_error(terminal,
                            input_mappings[mapped_input_count].close());
     }
-    return compute::Completion::completed(std::move(terminal));
+    return compute::detail::EnqueueResult::accepted_command(
+        std::move(terminal));
   }
 
   auto output_result = outputs[0].storage().map_host(mem::HostAccess::kWrite);
@@ -582,7 +584,8 @@ submit(void *prepared_value, void *invocation_value, Queue &,
     terminal = std::move(output_result).error();
     for (std::size_t index = input_mappings.size(); index != 0; --index)
       preserve_first_error(terminal, input_mappings[index - 1].close());
-    return compute::Completion::completed(std::move(terminal));
+    return compute::detail::EnqueueResult::accepted_command(
+        std::move(terminal));
   }
   mem::HostMapping output_mapping = std::move(*output_result);
   auto writable = output_mapping.writable_bytes();
@@ -613,7 +616,8 @@ submit(void *prepared_value, void *invocation_value, Queue &,
   preserve_first_error(terminal, output_mapping.close());
   for (std::size_t index = input_mappings.size(); index != 0; --index)
     preserve_first_error(terminal, input_mappings[index - 1].close());
-  return compute::Completion::completed(std::move(terminal));
+  return compute::detail::EnqueueResult::accepted_command(
+      std::move(terminal));
 }
 
 const ProviderRegionPreparedVTable kPreparedVTable{

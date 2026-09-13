@@ -198,7 +198,7 @@ void close_ignoring_errors(std::array<mem::HostMapping, 3> &mappings,
     mapping.close().IgnoreError();
 }
 
-Result<Completion>
+detail::EnqueueResult
 submit_elementwise(const NativePlan &plan,
                    std::span<const ConstTensorView> inputs,
                    std::span<const TensorView> outputs) noexcept {

@@ -21,6 +21,20 @@ struct CompletionLifetime final {
   }
 };
 
+// Borrowed, backend-private identity for one still-pending Completion. The
+// source handle must outlive every Queue prefix that records a wait against
+// this view. Backends compare the exact vtable before interpreting `state`;
+// no vendor event type enters the common Compute headers.
+struct CompletionDependency final {
+  const CompletionVTable *vtable = nullptr;
+  void *state = nullptr;
+  const Status *terminal_hint = nullptr;
+
+  constexpr bool pending() const noexcept {
+    return vtable != nullptr && state != nullptr;
+  }
+};
+
 // Cross-factor bridge for attaching an execution owner to a provider-created
 // Completion.  This remains an implementation contract; ordinary users only
 // consume Completion::poll/wait/request_cancel.
@@ -43,6 +57,8 @@ struct CompletionAccess final {
   // was accepted before a later sequence step was synchronously rejected.
   static HYLE_COMPUTE_API void append_terminal(Completion &completion,
                                                Status terminal) noexcept;
+  static HYLE_COMPUTE_API CompletionDependency
+  dependency(const Completion &completion) noexcept;
 };
 
 } // namespace hyle::compute::detail

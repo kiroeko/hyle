@@ -106,7 +106,7 @@ bool select_cast(DataType source, DataType destination,
   }
 }
 
-Result<Completion> submit_cast(const NativePlan &plan,
+detail::EnqueueResult submit_cast(const NativePlan &plan,
                                std::span<const ConstTensorView> inputs,
                                std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 1 || outputs.size() != 1 ||

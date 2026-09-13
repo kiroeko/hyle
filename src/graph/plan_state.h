@@ -43,10 +43,10 @@ public:
   ~RegionInvocation();
 
   bool valid() const noexcept { return prepared_ != nullptr; }
-  Result<compute::Completion>
-  submit(compute::detail::QueueSequence &sequence,
-         std::span<const compute::ConstTensorView> inputs,
-         std::span<const compute::TensorView> outputs) noexcept;
+  compute::detail::EnqueueResult
+  enqueue(compute::detail::QueueSequence &sequence,
+          std::span<const compute::ConstTensorView> inputs,
+          std::span<const compute::TensorView> outputs) noexcept;
 
 private:
   void reset() noexcept;
@@ -112,10 +112,10 @@ public:
 
   Result<RegionInvocation>
   create_invocation(mem::BufferView workspace) const noexcept;
-  Result<compute::Completion>
-  submit(void *invocation, compute::detail::QueueSequence &sequence,
-         std::span<const compute::ConstTensorView> inputs,
-         std::span<const compute::TensorView> outputs) const noexcept;
+  compute::detail::EnqueueResult
+  enqueue(void *invocation, compute::detail::QueueSequence &sequence,
+          std::span<const compute::ConstTensorView> inputs,
+          std::span<const compute::TensorView> outputs) const noexcept;
 
 private:
   friend class RegionInvocation;
@@ -156,15 +156,15 @@ inline void RegionInvocation::reset() noexcept {
   state_ = nullptr;
 }
 
-inline Result<compute::Completion> RegionInvocation::submit(
+inline compute::detail::EnqueueResult RegionInvocation::enqueue(
     compute::detail::QueueSequence &sequence,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
   if (!valid()) {
-    return std::unexpected(
+    return compute::detail::EnqueueResult::rejected(
         Status::FailedPrecondition("graph region invocation is invalid"));
   }
-  return prepared_->submit(state_, sequence, inputs, outputs);
+  return prepared_->enqueue(state_, sequence, inputs, outputs);
 }
 
 inline Result<RegionInvocation>
@@ -200,7 +200,7 @@ PreparedRegion::create_invocation(mem::BufferView workspace) const noexcept {
   return RegionInvocation(this, episode.state);
 }
 
-inline Result<compute::Completion> PreparedRegion::submit(
+inline compute::detail::EnqueueResult PreparedRegion::enqueue(
     void *invocation, compute::detail::QueueSequence &sequence,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) const noexcept {
@@ -210,11 +210,11 @@ inline Result<compute::Completion> PreparedRegion::submit(
     std::span<const compute::ConstTensorView> inputs{};
     std::span<const compute::TensorView> outputs{};
   } episode{this, invocation, inputs, outputs};
-  return compute::detail::ProviderExtensionAccess::submit_admitted(
+  return compute::detail::ProviderExtensionAccess::enqueue_admitted(
       extension_, sequence, inputs, outputs,
       +[](void *, const void *, void *opaque,
           compute::Queue &submitted_queue) noexcept
-          -> Result<compute::Completion> {
+          -> compute::detail::EnqueueResult {
         auto &call = *static_cast<Episode *>(opaque);
         return call.region->prepared_.vtable->submit(
             call.region->prepared_.state, call.invocation, submitted_queue,

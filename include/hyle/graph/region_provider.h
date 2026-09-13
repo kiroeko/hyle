@@ -7,6 +7,7 @@
 #include <span>
 
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/provider.h"
 #include "hyle/graph/executable.h"
 
@@ -131,11 +132,10 @@ struct ProviderRegionPreparedVTable final {
                               void **invocation) noexcept = nullptr;
   void (*destroy_invocation)(void *invocation,
                              mem::AllocatorRef allocator) noexcept = nullptr;
-  // Success returns a Completion for the complete ordered Queue prefix through
-  // this region. Dropping an earlier Completion must not cancel that prefix or
-  // prevent a later prefix Completion from reporting an earlier backend
-  // failure. A synchronous Result error means this region accepted no work.
-  Result<compute::Completion> (*submit)(
+  // Record this region into an already-open Queue sequence. A region may have
+  // accepted a partial command prefix before reporting an error, but it never
+  // creates the user-visible Completion itself.
+  compute::detail::EnqueueResult (*submit)(
       void *prepared, void *invocation, compute::Queue &queue,
       std::span<const compute::ConstTensorView> inputs,
       std::span<const compute::TensorView> outputs) noexcept = nullptr;

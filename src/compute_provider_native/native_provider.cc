@@ -205,7 +205,7 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
 
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
 
-Result<Completion> submit_float(const NativePlan &plan,
+detail::EnqueueResult submit_float(const NativePlan &plan,
                                 std::span<const ConstTensorView> inputs,
                                 std::span<const TensorView> outputs) noexcept {
   if (plan.route == nullptr || inputs.empty() || inputs.size() > 2 ||
@@ -337,7 +337,7 @@ Result<Completion> submit_float(const NativePlan &plan,
   return completed(std::move(terminal));
 }
 
-Result<Completion> submit(void *prepared_value, void *, Queue &,
+detail::EnqueueResult submit(void *prepared_value, void *, Queue &,
                           std::span<const ConstTensorView> inputs,
                           std::span<const TensorView> outputs) noexcept {
   auto *plan = static_cast<NativePlan *>(prepared_value);

@@ -23,6 +23,18 @@ struct BackendId final {
   friend constexpr bool operator==(BackendId, BackendId) noexcept = default;
 };
 
+struct BackendExtensionId final {
+  std::uint64_t namespace_id = 0;
+  std::uint64_t extension_id = 0;
+  std::uint32_t version = 0;
+
+  constexpr bool valid() const noexcept {
+    return (namespace_id != 0 || extension_id != 0) && version != 0;
+  }
+  friend constexpr bool operator==(BackendExtensionId,
+                                   BackendExtensionId) noexcept = default;
+};
+
 enum class DeviceClass : std::uint8_t {
   kUnknown = 0,
   kCpu,
@@ -48,6 +60,8 @@ class OperationInvocation;
 
 namespace detail {
 struct BackendAccess;
+struct BackendExtensionAccess;
+class BackendExtensionRef;
 struct BackendVTable;
 struct ContextAccess;
 struct ContextState;
@@ -167,6 +181,10 @@ public:
   explicit operator bool() const noexcept { return valid(); }
   bool is_open() const noexcept;
   Device device() const noexcept;
+  // Cold, idempotent capacity reservation for simultaneously outstanding
+  // Completion handles. It may grow backend event state but never shrinks,
+  // drains, or changes Queue order.
+  Status reserve_completions(std::size_t minimum) noexcept;
   Status close() noexcept;
   Status drain() noexcept;
 
@@ -180,19 +198,9 @@ private:
   friend class OperationInvocation;
   friend struct detail::ContextAccess;
   friend struct detail::ProviderExtensionAccess;
+  friend struct detail::BackendExtensionAccess;
   friend class detail::QueueSequence;
-  friend struct CpuQueueAccess;
   detail::QueueState *state_ = nullptr;
-};
-
-// Private implementation bridge used by the typed CPU header. It is named in
-// the public C++ binary surface only because the callable itself remains in the
-// consumer TU; users do not construct this type.
-struct CpuQueueAccess final {
-  static Status begin(Queue &queue) noexcept {
-    return queue.begin_submission();
-  }
-  static void end(Queue &queue) noexcept { queue.end_submission(); }
 };
 
 } // namespace hyle::compute

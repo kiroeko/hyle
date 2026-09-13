@@ -9,7 +9,8 @@ struct CompletionVTable final {
   // release() after the underlying work actually terminates.  It must not
   // release borrowed execution state merely because the public handle was
   // abandoned.  A terminal state may run both callbacks inline.
-  void (*destroy)(void *state, CompletionLifetime lifetime) noexcept = nullptr;
+  void (*destroy)(void *state, CompletionLifetime lifetime,
+                  Status terminal_hint) noexcept = nullptr;
   Result<CompletionPoll> (*poll)(void *state) noexcept = nullptr;
   Status (*wait)(void *state) noexcept = nullptr;
   Status (*request_cancel)(void *state) noexcept = nullptr;

@@ -3,7 +3,10 @@
 #include <cstring>
 #include <type_traits>
 
+#include "hyle/compute/completion.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/device.h"
+#include "hyle/compute/transfer.h"
 #include "hyle/mem/resource.h"
 
 namespace hyle::compute::detail {
@@ -31,6 +34,26 @@ struct BackendVTable final {
                          void **queue) noexcept = nullptr;
   void (*destroy_queue)(void *queue,
                         mem::AllocatorRef allocator) noexcept = nullptr;
+  // Every accepted direct submission or Graph Queue segment is recorded
+  // inside one sequence and finalized exactly once. begin must reserve all
+  // state needed by finish before any provider command can be accepted.
+  Status (*begin_sequence)(void *queue, void **sequence) noexcept = nullptr;
+  Completion (*finish_sequence)(void *queue, void *sequence, bool accepted,
+                                Status terminal) noexcept = nullptr;
+  Status (*reserve_completions)(void *queue,
+                                std::size_t minimum) noexcept = nullptr;
+  Result<TransferProperties> (*transfer_properties)(
+      void *context, mem::BufferView destination,
+      mem::ConstBufferView source) noexcept = nullptr;
+  EnqueueResult (*copy_async)(void *queue, mem::BufferView destination,
+                              mem::ConstBufferView source) noexcept = nullptr;
+  EnqueueResult (*fill_async)(void *queue, mem::BufferView destination,
+                              std::byte value) noexcept = nullptr;
+  EnqueueResult (*wait_completion)(
+      void *queue, const CompletionVTable *completion_vtable,
+      void *completion_state) noexcept = nullptr;
+  const void *(*query_extension)(void *context,
+                                 BackendExtensionId id) noexcept = nullptr;
   Status (*drain_context)(void *context) noexcept = nullptr;
   Status (*drain_queue)(void *queue) noexcept = nullptr;
 };

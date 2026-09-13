@@ -29,6 +29,8 @@ sampling 和 serving 留在推理引擎。
 | matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
 | gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
+| byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
+| 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
 | provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，不存在隐式 fallback |
 | provider 诊断 | `Context::provider_count/provider_identity` | O(1) 读取 Context 冻结的 provider/version；typed extension 由 Graph/backend factor 在内部对象局部 bridge 上使用，不暴露原始 `void*` API |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
@@ -38,6 +40,43 @@ gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19
 **当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、
 rank-2 MatMul 和 packed SiLU GatedActivation 十二项。** Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；对其他 7 个
 family 调用 `prepare()` 会诚实返回 `Unimplemented`，直至相应 native/provider 卡同时交付实现与正确性证据。
+
+## Queue、byte transfer 与 Completion
+
+Compute 的 Queue 是一个显式、有序的提交域。普通 direct operation、byte transfer 和 backend-specific
+typed command 都在该顺序中执行；一个公开 direct submit 只在边界生成一个 `Completion`。Graph 会把同一
+Queue 上连续的多个 step 录成一个内部 segment，也只在 segment 末尾生成一次 backend 终态，用户不需要
+管理内部 command list 或 event。
+
+`copy_async()` 和 `fill_async()` 接收 Mem `BufferView`，适合模型 byte staging、renderer upload/download
+和已经确定 layout 的设备数据移动。它们不解释 Tensor dtype/stride，不做 repack，也不会为了伪造异步而
+偷偷分配 pinned staging。`transfer_properties()` 可在冷路径确认当前 source/destination route 是立即完成还是
+直接排入 Queue；不支持的资源组合会明确失败。
+
+```cpp
+#include <hyle/compute/transfer.h>
+
+auto properties = transfer_properties(queue, device_view, host_view);
+if (!properties) return properties.error();
+
+// 异步 backend 可在建立并发 lane 时预留 event slot；CPU 上这是 O(1) no-op。
+if (auto status = queue.reserve_completions(concurrent_lanes); !status.ok())
+  return status;
+
+auto uploaded = copy_async(queue, device_view, host_view);
+if (!uploaded) return uploaded.error();
+if (auto status = uploaded->wait(); !status.ok()) return status;
+
+auto cleared = fill_async(queue, scratch_view, std::byte{0});
+if (!cleared) return cleared.error();
+return cleared->wait();
+```
+
+copy 两端必须同尺寸；非完全相同的重叠 range 会被拒绝，完全相同的 range 和零 byte 是成功 no-op。
+CPU backend 当前立即执行，GPU backend 可以返回 pending Completion。无论哪种 backend，source、destination、
+kernel arguments 及其 resource owner 都必须活到 Completion 真正终态。丢弃 pending Completion 不会隐式
+等待；需要回收 Queue/Context 所有已接纳工作时显式调用 `drain()`。`request_cancel()` 只在 backend 能兑现时
+取消工作，不能把“停止接纳后续命令”冒充设备抢占。
 
 ## View、Copy、Fill 与 Cast
 

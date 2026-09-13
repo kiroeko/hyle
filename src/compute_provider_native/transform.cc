@@ -13,7 +13,7 @@
 namespace hyle::compute::native::internal {
 namespace {
 
-Result<Completion> submit_view(const NativePlan &plan,
+detail::EnqueueResult submit_view(const NativePlan &plan,
                                std::span<const ConstTensorView> inputs,
                                std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 1 || outputs.size() != 1)
@@ -34,7 +34,7 @@ Result<Completion> submit_view(const NativePlan &plan,
   return completed(Status::Ok());
 }
 
-Result<Completion> submit_copy(const NativePlan &,
+detail::EnqueueResult submit_copy(const NativePlan &,
                                std::span<const ConstTensorView> inputs,
                                std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 1 || outputs.size() != 1)
@@ -106,7 +106,7 @@ Result<Completion> submit_copy(const NativePlan &,
   return completed(std::move(terminal));
 }
 
-Result<Completion> submit_fill(const NativePlan &plan,
+detail::EnqueueResult submit_fill(const NativePlan &plan,
                                std::span<const ConstTensorView> inputs,
                                std::span<const TensorView> outputs) noexcept {
   if (!inputs.empty() || outputs.size() != 1)

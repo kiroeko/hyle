@@ -12,7 +12,8 @@ detail::CompletionAccess::make(const detail::CompletionVTable *vtable,
   if (vtable == nullptr || state == nullptr || vtable->destroy == nullptr ||
       vtable->poll == nullptr || vtable->wait == nullptr) {
     if (vtable != nullptr && state != nullptr && vtable->destroy != nullptr)
-      vtable->destroy(state, {});
+      vtable->destroy(state, {}, Status::Internal(
+                                      "completion vtable is incomplete"));
     return Completion{};
   }
   return Completion(vtable, state);
@@ -26,6 +27,17 @@ Status detail::CompletionAccess::attach_lifetime(
 void detail::CompletionAccess::append_terminal(Completion &completion,
                                                Status terminal) noexcept {
   completion.append_terminal(std::move(terminal));
+}
+
+detail::CompletionDependency detail::CompletionAccess::dependency(
+    const Completion &completion) noexcept {
+  if (!completion.valid_)
+    return {};
+  return CompletionDependency{
+      .vtable = completion.vtable_,
+      .state = completion.state_,
+      .terminal_hint = &completion.terminal_,
+  };
 }
 
 Completion::Completion(const detail::CompletionVTable *vtable,
@@ -119,7 +131,7 @@ void Completion::reset() noexcept {
     const detail::CompletionLifetime lifetime =
         lifetime_ != nullptr ? *lifetime_ : detail::CompletionLifetime{};
     lifetime_ = nullptr;
-    vtable_->destroy(state_, lifetime);
+    vtable_->destroy(state_, lifetime, std::move(terminal_));
   } else if (lifetime_ != nullptr && lifetime_->valid()) {
     const detail::CompletionLifetime lifetime = *lifetime_;
     lifetime_ = nullptr;
@@ -149,7 +161,7 @@ void Completion::settle(Status terminal) const noexcept {
   // The provider completion state may itself be embedded in the retained
   // invocation.  Retire it before releasing the attachment's final reference.
   if (vtable->destroy != nullptr)
-    vtable->destroy(state, {});
+    vtable->destroy(state, {}, Status::Ok());
   if (lifetime.valid()) {
     lifetime.terminal(lifetime.state, terminal_);
     lifetime.release(lifetime.state);

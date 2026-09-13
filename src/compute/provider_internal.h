@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/provider.h"
 
 namespace hyle::compute::detail {
@@ -20,14 +21,11 @@ struct ProviderPreparedVTable final {
                               void **invocation) noexcept = nullptr;
   void (*destroy_invocation)(void *invocation,
                              mem::AllocatorRef allocator) noexcept = nullptr;
-  // Success returns a Completion for the complete ordered Queue prefix through
-  // this command.  Destroying an earlier handle cannot cancel that prefix or
-  // prevent a later prefix Completion from reporting an earlier terminal
-  // backend error.  A synchronous Result error means this command accepted no
-  // work.
-  Result<Completion> (*submit)(void *prepared, void *invocation, Queue &queue,
-                               std::span<const ConstTensorView> inputs,
-                               std::span<const TensorView> outputs) noexcept =
+  // Record this operation into the already-open Queue sequence. The provider
+  // never creates a user Completion; only the backend sequence boundary does.
+  EnqueueResult (*submit)(void *prepared, void *invocation, Queue &queue,
+                          std::span<const ConstTensorView> inputs,
+                          std::span<const TensorView> outputs) noexcept =
       nullptr;
 };
 

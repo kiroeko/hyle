@@ -1680,7 +1680,6 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
     if (!sequence)
       return std::unexpected(std::move(sequence).error());
 
-    bool accepted_prefix = false;
     const auto all_inputs = std::span<const compute::ConstTensorView>(
         state_->submission_inputs.data(), state_->submission_inputs.size());
     const auto all_outputs = std::span<const compute::TensorView>(
@@ -1694,30 +1693,22 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
           all_inputs.subspan(step.input_begin, step.input_count);
       const auto step_outputs =
           all_outputs.subspan(step.output_begin, step.output_count);
-      Result<compute::Completion> completion =
+      compute::detail::EnqueueResult enqueued =
           step.kind == detail::PlanStepKind::kRegion
-              ? state_->invocations[step_index].region.submit(
+              ? state_->invocations[step_index].region.enqueue(
                     *sequence, step_inputs, step_outputs)
-              : compute::detail::OperationInvocationAccess::submit(
+              : compute::detail::OperationInvocationAccess::enqueue(
                     state_->invocations[step_index].operation, *sequence,
                     step_inputs, step_outputs);
-      if (!completion) {
-        Status rejected = std::move(completion).error();
-        if (!accepted_prefix)
-          return std::unexpected(std::move(rejected));
-        compute::detail::CompletionAccess::append_terminal(final_completion,
-                                                           std::move(rejected));
-        break;
-      }
-      accepted_prefix = true;
-      // A non-blocking observation catches synchronous CPU/provider failure
-      // before a dependent command is submitted.  Pending work continues on
-      // the ordered Queue; there is deliberately no host wait here.
-      auto observed = completion->poll();
-      final_completion = std::move(*completion);
-      if (!observed)
+      const bool continue_recording = enqueued.status.ok();
+      sequence->record(std::move(enqueued));
+      if (!continue_recording)
         break;
     }
+    auto completion = sequence->finish();
+    if (!completion)
+      return std::unexpected(std::move(completion).error());
+    final_completion = std::move(*completion);
   }
 
   if (!compute::detail::CompletionAccess::has_async_state(final_completion)) {

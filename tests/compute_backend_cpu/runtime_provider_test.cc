@@ -6,7 +6,9 @@
 #include <span>
 
 #include "completion_internal.h"
+#include "backend_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/detail/queue_sequence.h"
@@ -39,6 +41,10 @@ struct ProbeExtensionInterface final {
 };
 
 constexpr ProbeExtensionInterface kProbeExtension{0x48594c45U};
+
+constexpr hyle::compute::BackendExtensionId kBackendProbeExtensionId{
+    0x5445535400000002ULL, 0x4241434b454e4401ULL, 1};
+constexpr ProbeExtensionInterface kBackendProbeExtension{0x43554441U};
 
 hyle::Status create_provider_context(const hyle::compute::Provider &provider,
                                      hyle::compute::Device, void *,
@@ -101,9 +107,14 @@ struct AsyncOperationProbe final {
   bool complete = false;
   bool cancelled = false;
   std::size_t submit_count = 0;
+  std::size_t sequence_begin_count = 0;
+  std::size_t sequence_finish_count = 0;
+  std::size_t reserve_count = 0;
+  std::size_t wait_enqueue_count = 0;
   std::size_t completion_destroy_count = 0;
   std::size_t invocation_destroy_count = 0;
   hyle::compute::detail::CompletionLifetime abandoned{};
+  hyle::Status abandoned_hint{};
 };
 
 hyle::Status create_async_context(const hyle::compute::Provider &provider,
@@ -138,18 +149,22 @@ void destroy_async_invocation(void *invocation,
 }
 
 void destroy_async_operation_completion(
-    void *state, hyle::compute::detail::CompletionLifetime lifetime) noexcept {
+    void *state, hyle::compute::detail::CompletionLifetime lifetime,
+    hyle::Status terminal_hint) noexcept {
   auto &probe = *static_cast<AsyncOperationProbe *>(state);
   ++probe.completion_destroy_count;
   if (!lifetime.valid())
     return;
   if (!probe.complete) {
     probe.abandoned = lifetime;
+    probe.abandoned_hint = std::move(terminal_hint);
     return;
   }
-  const hyle::Status terminal =
+  hyle::Status terminal =
       probe.cancelled ? hyle::Status::Cancelled("async operation cancelled")
                       : hyle::Status::Ok();
+  if (terminal.ok() && !terminal_hint.ok())
+    terminal = std::move(terminal_hint);
   lifetime.terminal(lifetime.state, terminal);
   lifetime.release(lifetime.state);
 }
@@ -187,14 +202,13 @@ const hyle::compute::detail::CompletionVTable kAsyncOperationCompletionVTable{
     .request_cancel = &cancel_async_operation,
 };
 
-hyle::Result<hyle::compute::Completion>
+hyle::compute::detail::EnqueueResult
 submit_async_operation(void *, void *invocation, hyle::compute::Queue &,
                        std::span<const hyle::compute::ConstTensorView>,
                        std::span<const hyle::compute::TensorView>) noexcept {
   auto &probe = *static_cast<AsyncOperationProbe *>(invocation);
   ++probe.submit_count;
-  return hyle::compute::detail::CompletionAccess::make(
-      &kAsyncOperationCompletionVTable, &probe);
+  return hyle::compute::detail::EnqueueResult::accepted_command();
 }
 
 const hyle::compute::detail::ProviderPreparedVTable kAsyncPreparedVTable{
@@ -232,6 +246,214 @@ make_async_provider(AsyncOperationProbe &probe) noexcept {
                                                      &probe);
 }
 
+struct AsyncBackendPayload final {
+  AsyncOperationProbe *probe = nullptr;
+};
+
+constexpr hyle::compute::BackendId kAsyncBackendId{
+    0x5445535400000003ULL, 0x4153594e43424531ULL};
+
+hyle::Result<hyle::compute::Device>
+async_device(const hyle::compute::Backend &backend, std::size_t index) noexcept;
+
+hyle::Result<std::size_t>
+async_device_count(const hyle::compute::Backend &) noexcept {
+  return std::size_t{1};
+}
+
+bool same_async_device(const hyle::compute::Device &left,
+                       const hyle::compute::Device &right) noexcept {
+  return hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(left)
+             .probe ==
+         hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(right)
+             .probe;
+}
+
+hyle::Result<hyle::compute::DeviceProperties>
+async_properties(const hyle::compute::Device &device) noexcept {
+  if (hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(device)
+          .probe == nullptr) {
+    return std::unexpected(hyle::Status::InvalidArgument(
+        "test async device has no completion probe"));
+  }
+  return hyle::compute::DeviceProperties{
+      .backend = kAsyncBackendId,
+      .device_class = hyle::compute::DeviceClass::kAccelerator,
+      .backend_name = "test-async",
+      .name = "test async sequence backend",
+      .unified_memory = true,
+      .asynchronous_queues = true,
+  };
+}
+
+hyle::Status validate_async_resource(
+    const hyle::compute::Device &,
+    hyle::mem::MemoryResourceRef resource) noexcept {
+  return resource.valid()
+             ? hyle::Status::Ok()
+             : hyle::Status::InvalidArgument("test resource is invalid");
+}
+
+hyle::Status create_async_backend_context(const hyle::compute::Device &device,
+                                          hyle::mem::AllocatorRef,
+                                          void **output) noexcept {
+  if (output == nullptr)
+    return hyle::Status::InvalidArgument("test context output is null");
+  *output = hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(
+                device)
+                .probe;
+  return *output != nullptr
+             ? hyle::Status::Ok()
+             : hyle::Status::InvalidArgument("test async device is invalid");
+}
+
+void destroy_async_backend_context(void *, hyle::mem::AllocatorRef) noexcept {}
+
+hyle::Status create_async_queue(void *context, hyle::compute::QueueOptions,
+                                hyle::mem::AllocatorRef,
+                                void **output) noexcept {
+  if (output == nullptr)
+    return hyle::Status::InvalidArgument("test queue output is null");
+  *output = context;
+  return hyle::Status::Ok();
+}
+
+void destroy_async_queue(void *, hyle::mem::AllocatorRef) noexcept {}
+
+hyle::Status begin_async_sequence(void *queue, void **sequence) noexcept {
+  if (queue == nullptr || sequence == nullptr)
+    return hyle::Status::InvalidArgument("test sequence is invalid");
+  *sequence = queue;
+  ++static_cast<AsyncOperationProbe *>(queue)->sequence_begin_count;
+  return hyle::Status::Ok();
+}
+
+hyle::compute::Completion finish_async_sequence(void *, void *sequence,
+                                                bool accepted,
+                                                hyle::Status terminal) noexcept {
+  ++static_cast<AsyncOperationProbe *>(sequence)->sequence_finish_count;
+  if (!accepted)
+    return hyle::compute::Completion::completed(std::move(terminal));
+  auto completion = hyle::compute::detail::CompletionAccess::make(
+      &kAsyncOperationCompletionVTable, sequence);
+  hyle::compute::detail::CompletionAccess::append_terminal(
+      completion, std::move(terminal));
+  return completion;
+}
+
+hyle::Status reserve_async_completions(void *queue, std::size_t) noexcept {
+  ++static_cast<AsyncOperationProbe *>(queue)->reserve_count;
+  return hyle::Status::Ok();
+}
+
+hyle::Result<hyle::compute::TransferProperties>
+async_transfer_properties(void *, hyle::mem::BufferView,
+                          hyle::mem::ConstBufferView) noexcept {
+  return hyle::compute::TransferProperties{
+      .mode = hyle::compute::TransferMode::kImmediate};
+}
+
+hyle::compute::detail::EnqueueResult
+async_copy(void *, hyle::mem::BufferView destination,
+           hyle::mem::ConstBufferView source) noexcept {
+  return hyle::compute::detail::EnqueueResult::accepted_command(
+      destination.copy_from(source));
+}
+
+hyle::compute::detail::EnqueueResult
+async_fill(void *, hyle::mem::BufferView destination,
+           std::byte value) noexcept {
+  return hyle::compute::detail::EnqueueResult::accepted_command(
+      destination.fill(value));
+}
+
+hyle::compute::detail::EnqueueResult async_wait_completion(
+    void *queue,
+    const hyle::compute::detail::CompletionVTable *completion_vtable,
+    void *) noexcept {
+  if (completion_vtable != &kAsyncOperationCompletionVTable) {
+    return hyle::compute::detail::EnqueueResult::rejected(
+        hyle::Status::Unimplemented(
+            "test backend cannot consume this completion type"));
+  }
+  ++static_cast<AsyncOperationProbe *>(queue)->wait_enqueue_count;
+  return hyle::compute::detail::EnqueueResult::accepted_command();
+}
+
+const void *query_async_extension(
+    void *, hyle::compute::BackendExtensionId id) noexcept {
+  return id == kBackendProbeExtensionId ? &kBackendProbeExtension : nullptr;
+}
+
+hyle::Status drain_async(void *state) noexcept {
+  if (state != nullptr)
+    static_cast<AsyncOperationProbe *>(state)->complete = true;
+  return hyle::Status::Ok();
+}
+
+const hyle::compute::detail::BackendVTable kAsyncBackendVTable{
+    .id = kAsyncBackendId,
+    .name = "test-async",
+    .device_class = hyle::compute::DeviceClass::kAccelerator,
+    .device_count = &async_device_count,
+    .device = &async_device,
+    .same_device = &same_async_device,
+    .properties = &async_properties,
+    .validate_resource = &validate_async_resource,
+    .create_context = &create_async_backend_context,
+    .destroy_context = &destroy_async_backend_context,
+    .create_queue = &create_async_queue,
+    .destroy_queue = &destroy_async_queue,
+    .begin_sequence = &begin_async_sequence,
+    .finish_sequence = &finish_async_sequence,
+    .reserve_completions = &reserve_async_completions,
+    .transfer_properties = &async_transfer_properties,
+    .copy_async = &async_copy,
+    .fill_async = &async_fill,
+    .wait_completion = &async_wait_completion,
+    .query_extension = &query_async_extension,
+    .drain_context = &drain_async,
+    .drain_queue = &drain_async,
+};
+
+hyle::Result<hyle::compute::Device>
+async_device(const hyle::compute::Backend &backend, std::size_t index) noexcept {
+  if (index != 0)
+    return std::unexpected(
+        hyle::Status::OutOfRange("test async device index is out of range"));
+  return hyle::compute::detail::DeviceAccess::make(
+      &kAsyncBackendVTable,
+      hyle::compute::detail::BackendAccess::payload<AsyncBackendPayload>(
+          backend));
+}
+
+hyle::compute::Device async_device(AsyncOperationProbe &probe) noexcept {
+  const auto backend = hyle::compute::detail::BackendAccess::make(
+      &kAsyncBackendVTable, AsyncBackendPayload{&probe});
+  return backend.device(0).value();
+}
+
+hyle::Status observe_backend_extension(void *, const void *interface_value,
+                                       void *call_context) noexcept {
+  const auto &interface =
+      *static_cast<const ProbeExtensionInterface *>(interface_value);
+  *static_cast<std::uint32_t *>(call_context) = interface.marker;
+  return hyle::Status::Ok();
+}
+
+hyle::compute::detail::EnqueueResult submit_backend_extension(
+    void *backend_context, const void *interface_value, void *backend_queue,
+    void *call_context) noexcept {
+  if (backend_context != backend_queue) {
+    return hyle::compute::detail::EnqueueResult::rejected(
+        hyle::Status::InvalidArgument("test backend queue owner differs"));
+  }
+  const auto &interface =
+      *static_cast<const ProbeExtensionInterface *>(interface_value);
+  *static_cast<std::uint32_t *>(call_context) = interface.marker;
+  return hyle::compute::detail::EnqueueResult::accepted_command();
+}
+
 hyle::Status observe_probe_extension(void *, const void *interface_value,
                                      void *call_context) noexcept {
   const auto &interface =
@@ -240,13 +462,13 @@ hyle::Status observe_probe_extension(void *, const void *interface_value,
   return hyle::Status::Ok();
 }
 
-hyle::Result<hyle::compute::Completion>
+hyle::compute::detail::EnqueueResult
 submit_probe_extension(void *, const void *interface_value, void *call_context,
                        hyle::compute::Queue &) noexcept {
   const auto &interface =
       *static_cast<const ProbeExtensionInterface *>(interface_value);
   *static_cast<std::uint32_t *>(call_context) = interface.marker;
-  return hyle::compute::Completion::completed();
+  return hyle::compute::detail::EnqueueResult::accepted_command();
 }
 
 TEST(RuntimeProviders, ExtensionIsVersionedContextLocalAndRetainsItsOwner) {
@@ -328,6 +550,56 @@ TEST(RuntimeProviders, ExtensionSubmissionRequiresItsExactOpenContext) {
   EXPECT_TRUE(closed.error().IsFailedPrecondition());
 }
 
+TEST(RuntimeProviders, BackendExtensionIsVersionedAndContextLocal) {
+  AsyncOperationProbe first_probe;
+  AsyncOperationProbe second_probe;
+  auto first =
+      hyle::compute::Context::create(async_device(first_probe)).value();
+  auto second =
+      hyle::compute::Context::create(async_device(second_probe)).value();
+  auto first_queue = first.create_queue().value();
+  auto second_queue = second.create_queue().value();
+
+  EXPECT_TRUE(hyle::compute::detail::BackendExtensionAccess::query(first, {})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(hyle::compute::detail::BackendExtensionAccess::query(
+                  first,
+                  hyle::compute::BackendExtensionId{
+                      kBackendProbeExtensionId.namespace_id,
+                      kBackendProbeExtensionId.extension_id, 2})
+                  .error()
+                  .IsUnimplemented());
+  auto extension = hyle::compute::detail::BackendExtensionAccess::query(
+                       first_queue, kBackendProbeExtensionId)
+                       .value();
+  EXPECT_EQ(extension.id(), kBackendProbeExtensionId);
+  EXPECT_EQ(extension.backend(), kAsyncBackendId);
+
+  std::uint32_t observed = 0;
+  EXPECT_TRUE(hyle::compute::detail::BackendExtensionAccess::call(
+                  extension, &observe_backend_extension, &observed)
+                  .ok());
+  EXPECT_EQ(observed, kBackendProbeExtension.marker);
+
+  auto wrong = hyle::compute::detail::BackendExtensionAccess::submit(
+      extension, second_queue, &submit_backend_extension, &observed);
+  ASSERT_FALSE(wrong.has_value());
+  EXPECT_TRUE(wrong.error().IsInvalidArgument());
+
+  observed = 0;
+  auto accepted = hyle::compute::detail::BackendExtensionAccess::submit(
+      extension, first_queue, &submit_backend_extension, &observed);
+  ASSERT_TRUE(accepted.has_value()) << accepted.error().message();
+  EXPECT_TRUE(accepted->wait().ok());
+  EXPECT_EQ(observed, kBackendProbeExtension.marker);
+
+  EXPECT_TRUE(first.close().ok());
+  EXPECT_TRUE(hyle::compute::detail::BackendExtensionAccess::call(
+                  extension, &observe_backend_extension, &observed)
+                  .IsFailedPrecondition());
+}
+
 TEST(RuntimeProviders, ContextCopiesAnArbitraryOrderedSequence) {
   ProviderProbe probe;
   std::array<hyle::compute::Provider, 6> providers{};
@@ -383,6 +655,7 @@ TEST(RuntimeProviders, OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime) {
                                                 make_provider(probe, 0))
                      .value();
   auto queue = context.create_queue().value();
+  EXPECT_TRUE(queue.reserve_completions(3).ok());
   {
     auto first = hyle::compute::detail::QueueSequence::begin(queue);
     ASSERT_TRUE(first.has_value()) << first.error().message();
@@ -393,13 +666,62 @@ TEST(RuntimeProviders, OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime) {
   EXPECT_TRUE(hyle::compute::detail::QueueSequence::begin(queue).has_value());
 }
 
+TEST(RuntimeProviders, QueueSequenceEnqueuesOnlyCompatibleCompletionWaits) {
+  AsyncOperationProbe probe;
+  auto context =
+      hyle::compute::Context::create(async_device(probe)).value();
+  auto source_queue = context.create_queue().value();
+  auto destination_queue = context.create_queue().value();
+
+  auto source_sequence =
+      hyle::compute::detail::QueueSequence::begin(source_queue).value();
+  source_sequence.record(
+      hyle::compute::detail::EnqueueResult::accepted_command());
+  auto source = source_sequence.finish().value();
+
+  auto destination_sequence =
+      hyle::compute::detail::QueueSequence::begin(destination_queue).value();
+  auto wait = destination_sequence.enqueue_wait(source);
+  EXPECT_TRUE(wait.accepted);
+  EXPECT_TRUE(wait.status.ok()) << wait.status.message();
+  destination_sequence.record(std::move(wait));
+  auto destination = destination_sequence.finish().value();
+  EXPECT_EQ(probe.wait_enqueue_count, 1u);
+
+  auto cpu_context =
+      hyle::compute::Context::create(hyle::compute::cpu::device()).value();
+  auto cpu_queue = cpu_context.create_queue().value();
+  auto incompatible =
+      hyle::compute::detail::QueueSequence::begin(cpu_queue).value();
+  auto rejected = incompatible.enqueue_wait(source);
+  EXPECT_FALSE(rejected.accepted);
+  EXPECT_TRUE(rejected.status.IsUnimplemented());
+  incompatible.record(std::move(rejected));
+  EXPECT_TRUE(incompatible.finish().error().IsUnimplemented());
+
+  auto failed = hyle::compute::Completion::completed(
+      hyle::Status::DataLoss("source prefix failed"));
+  auto immediate =
+      hyle::compute::detail::QueueSequence::begin(cpu_queue).value();
+  auto propagated = immediate.enqueue_wait(failed);
+  EXPECT_FALSE(propagated.accepted);
+  EXPECT_TRUE(propagated.status.IsDataLoss());
+  immediate.record(std::move(propagated));
+  EXPECT_TRUE(immediate.finish().error().IsDataLoss());
+
+  EXPECT_TRUE(destination.wait().ok());
+  EXPECT_TRUE(source.wait().ok());
+}
+
 TEST(RuntimeProviders,
      DirectAsyncCompletionRetainsAndSerializesItsOperationInvocation) {
   AsyncOperationProbe probe;
-  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+  auto context = hyle::compute::Context::create(async_device(probe),
                                                 make_async_provider(probe))
                      .value();
   auto queue = context.create_queue().value();
+  EXPECT_TRUE(queue.reserve_completions(3).ok());
+  EXPECT_EQ(probe.reserve_count, 1u);
   const std::array<std::int64_t, 1> shape{4};
   auto description =
       hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
@@ -425,6 +747,8 @@ TEST(RuntimeProviders,
 
   auto completion = invocation.submit(queue, input, output);
   ASSERT_TRUE(completion.has_value()) << completion.error().message();
+  EXPECT_EQ(probe.sequence_begin_count, 1u);
+  EXPECT_EQ(probe.sequence_finish_count, 1u);
   EXPECT_TRUE(invocation.in_flight());
   EXPECT_TRUE(
       invocation.submit(queue, input, output).error().IsFailedPrecondition());

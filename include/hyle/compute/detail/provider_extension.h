@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hyle/compute/completion.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/tensor.h"
 
@@ -8,7 +9,6 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 struct ProviderExtensionAccess;
-class QueueSequence;
 
 // Internal copyable capability handle. It retains the exact Context/provider
 // state so a compiled artifact cannot dangle when the caller releases its
@@ -54,8 +54,8 @@ using ProviderExtensionCallFn = Status (*)(void *provider_context,
                                            void *call_context) noexcept;
 
 using ProviderExtensionSubmitFn =
-    Result<Completion> (*)(void *provider_context, const void *interface_value,
-                           void *call_context, Queue &queue) noexcept;
+    EnqueueResult (*)(void *provider_context, const void *interface_value,
+                      void *call_context, Queue &queue) noexcept;
 
 struct ProviderExtensionAccess final {
   HYLE_COMPUTE_API static Result<ProviderExtensionRef>
@@ -72,7 +72,7 @@ struct ProviderExtensionAccess final {
          std::span<const TensorView> outputs,
          ProviderExtensionSubmitFn function, void *call_context) noexcept;
 
-  HYLE_COMPUTE_API static Result<Completion> submit_admitted(
+  HYLE_COMPUTE_API static EnqueueResult enqueue_admitted(
       const ProviderExtensionRef &extension, QueueSequence &sequence,
       std::span<const ConstTensorView> inputs,
       std::span<const TensorView> outputs, ProviderExtensionSubmitFn function,

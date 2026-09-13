@@ -16,21 +16,26 @@ struct AsyncProbe final {
   std::size_t waits = 0;
   std::size_t cancels = 0;
   hyle::compute::detail::CompletionLifetime abandoned{};
+  hyle::Status abandoned_hint{};
 };
 
 void destroy_async(
-    void *state, hyle::compute::detail::CompletionLifetime lifetime) noexcept {
+    void *state, hyle::compute::detail::CompletionLifetime lifetime,
+    hyle::Status terminal_hint) noexcept {
   auto &probe = *static_cast<AsyncProbe *>(state);
   probe.destroyed = true;
   if (!lifetime.valid())
     return;
   if (!probe.complete) {
     probe.abandoned = lifetime;
+    probe.abandoned_hint = std::move(terminal_hint);
     return;
   }
-  const hyle::Status terminal =
+  hyle::Status terminal =
       probe.cancelled ? hyle::Status::Cancelled("work was cancelled")
                       : hyle::Status::Ok();
+  if (terminal.ok() && !terminal_hint.ok())
+    terminal = std::move(terminal_hint);
   lifetime.terminal(lifetime.state, terminal);
   lifetime.release(lifetime.state);
 }
@@ -72,12 +77,14 @@ struct LifetimeProbe final {
   std::size_t terminal_count = 0;
   std::size_t release_count = 0;
   bool terminal_ok = false;
+  hyle::StatusCode terminal_code = hyle::StatusCode::Ok;
 };
 
 void observe_terminal(void *state, const hyle::Status &terminal) noexcept {
   auto &probe = *static_cast<LifetimeProbe *>(state);
   ++probe.terminal_count;
   probe.terminal_ok = terminal.ok();
+  probe.terminal_code = terminal.code();
 }
 
 void release_lifetime(void *state) noexcept {
@@ -175,6 +182,34 @@ TEST(Completion, AbandonedHandleDefersLifetimeUntilBackendTerminal) {
   EXPECT_EQ(lifetime.terminal_count, 1u);
   EXPECT_EQ(lifetime.release_count, 1u);
   EXPECT_TRUE(lifetime.terminal_ok);
+}
+
+TEST(Completion, AbandonedHandleTransfersSavedTailErrorToBackend) {
+  AsyncProbe async;
+  LifetimeProbe lifetime;
+  hyle::compute::detail::CompletionLifetime attachment{
+      .state = &lifetime,
+      .terminal = &observe_terminal,
+      .release = &release_lifetime,
+  };
+  {
+    auto completion =
+        hyle::compute::detail::CompletionAccess::make(&kAsyncVTable, &async);
+    hyle::compute::detail::CompletionAccess::append_terminal(
+        completion, hyle::Status::Unavailable("tail enqueue failed"));
+    ASSERT_TRUE(hyle::compute::detail::CompletionAccess::attach_lifetime(
+                    completion, attachment)
+                    .ok());
+  }
+  EXPECT_TRUE(async.abandoned.valid());
+  EXPECT_TRUE(async.abandoned_hint.IsUnavailable());
+
+  async.complete = true;
+  async.abandoned.terminal(async.abandoned.state, async.abandoned_hint);
+  async.abandoned.release(async.abandoned.state);
+  async.abandoned = {};
+  EXPECT_EQ(lifetime.terminal_code, hyle::StatusCode::Unavailable);
+  EXPECT_EQ(lifetime.release_count, 1u);
 }
 
 } // namespace
