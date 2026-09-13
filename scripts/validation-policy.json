@@ -1,5 +1,13 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "factor_configure_cache": {
+    "compute_provider_onednn": {
+      "HYLE_COMPUTE_ONEDNN": "ON"
+    },
+    "graph_provider_onednn": {
+      "HYLE_COMPUTE_ONEDNN": "ON"
+    }
+  },
   "vendored_input_owners": {
     "third_party/mimalloc/": ["mem"],
     "third_party/xxhash/": ["container"],

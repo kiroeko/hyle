@@ -584,6 +584,26 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                  "-DCMAKE_BUILD_TYPE=Release", "-DHYLE_DEV_FACTORS=" + ",".join(sorted(selected_factors)),
                  "-DHYLE_BUILD_TESTS=ON", "-DHYLE_BUILD_BENCH=OFF", "-DHYLE_INSTALL=OFF",
                  "-DHYLE_TEST_INSTRUMENTATION=OFF", "-DHYLE_WERROR=ON"]
+    factor_cache = policy.get("factor_configure_cache", {})
+    if not isinstance(factor_cache, dict):
+        raise SelectionError("validation policy factor_configure_cache must be an object")
+    selected_cache = {}
+    for factor in sorted(selected_factors):
+        entries = factor_cache.get(factor, {})
+        if not isinstance(entries, dict):
+            raise SelectionError(f"validation policy cache for {factor} must be an object")
+        for key, value in entries.items():
+            if not isinstance(key, str) or not re.fullmatch(r"HYLE_[A-Z0-9_]+", key):
+                raise SelectionError(f"invalid validation cache key for {factor}: {key!r}")
+            if not isinstance(value, str) or not value:
+                raise SelectionError(f"validation cache value for {factor}/{key} must be a non-empty string")
+            previous = selected_cache.setdefault(key, value)
+            if previous != value:
+                raise SelectionError(
+                    f"selected factors require conflicting validation cache values for {key}: "
+                    f"{previous!r} and {value!r}"
+                )
+    configure += ["-D" + key + "=" + value for key, value in sorted(selected_cache.items())]
     if context and selected_factors and not native_issue:
         configure += ["-DCMAKE_CXX_COMPILER=" + identity["toolchain"]["compiler_path"]]
         configure += ["-D" + key + "=" + value for key, value in sorted(identity["toolchain"]["flags"].items())]
