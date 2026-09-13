@@ -65,7 +65,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 ### compute/（Tier 1，含 Intel 计算加速）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **ggml** | Compute 需求/机制输入 | `compute` 当前为 `QUEUED`，旧 bridge 与 dependency lock 只作重设计输入，不是可选择的产品能力。未来可借其 CPU/backend/operator 核，但 HYLE 必须重新裁决 threadpool、allocator、device lifetime 与 source/static/shared 交付 |
+| **ggml** | Compute 需求/机制输入 | 锁定源码把 buffer type/allocator、backend stream、event 与 graph scheduler 分开；HYLE 用它验证 execution target、storage resource 与 lane 不应合并。ggml provider 仍须独立裁决 threadpool、allocator、device lifetime 与 source/static/shared 交付，不能从本体存在推断已可用 |
 | **kompute** | Compute 参考 | Vulkan compute 的无隐藏 event-loop 形状可参考；`compute` 尚未开工时，不从旧 task 编号继承 backend、fence 或 ownership 决策 |
 | **vitamin-cuda** | **参考（compute 自造 kernel）** | 教学级 CUDA kernel 库（`C:\public\project-hyle\vitamin-cuda`），SGEMM/HGEMM/flash_attn/softmax/rope/reduce 等，含中英“beating cuBLAS”逐步优化 writeup（`posts/`）。它是 ggml 显存边界之外 HYLE 自造 kernel 的优化参考，不是 HYLE kernel 的性能证明。SGEMM 展示 naive → block tiling+共享内存 → 转置写 smem+float4 → swizzle → 合并写回 → double buffer 的阶梯；采用前仍须在 HYLE 的真实合同上复证 |
 | **llama.cpp** | 参考 | 多变体 dispatch、CMake ISA 处理、探测器隔离和推理引擎工程范式；host/device 资源、backend 与 operator 形状只作未来 Compute 审计输入 |
@@ -170,9 +170,10 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 |---|---|---|
 | **ggml / llama.cpp** | 真实 C++ 实现与消费参考 | backend graph plan、scheduler reserve/split/allocate/async compute、ubatch graph rebuild/reuse 与 buffer ownership；用于验证轻量本地推理形状，不把 ggml IR 直接改名为 HYLE Graph |
 | **oneDNN Graph** | 成熟 provider/partition 参考 | [partition](https://uxlfoundation.github.io/oneDNN/v3.9/group_dnnl_graph_api_partition.html) 是 op 与 logical tensor 的编译/执行单元，compiled partition 与 [caller scratchpad](https://uxlfoundation.github.io/oneDNN/dev_guide_graph_scratchpad.html) 分离；用于约束 region、artifact 与 workspace 生命周期 |
-| **ONNX Runtime** | provider partition 参考 | [Execution Provider](https://onnxruntime.ai/docs/reference/high-level-design.html) 先声明 capability、再把支持的 subgraph 编译为 fused node；HYLE 同样在冷路径 partition，但不复制 ONNX schema/session 产品 |
-| **TensorRT** | compiled artifact / invocation 参考 | [NetworkDefinition -> Engine -> ExecutionContext](https://docs.nvidia.com/deeplearning/tensorrt/latest/_static/python-api/coreConcepts.html) 区分逻辑网络、不可变可共享 engine 与每次运行 context；用于约束 Executable/Invocation，不作为唯一 NVIDIA 路线 |
-| **PJRT / IREE** | runtime 边界参考 | [PJRT](https://openxla.org/xla/pjrt/cpp_api_overview) 区分 executable、loaded executable、buffer/device；[IREE invocation model](https://iree.dev/developers/design-docs/invocation-execution-model/) 区分 program/executable/context 与 HAL command；用于防止 Graph 吞掉 backend runtime |
+| **ONNX Runtime** | provider partition 参考 | [Execution Provider](https://onnxruntime.ai/docs/reference/high-level-design.html) 先声明 capability/allocator、再把支持的 subgraph 编译为 fused node；CUDA EP 还分别接受 user stream 与 external allocator。HYLE 同样在冷路径 partition 并验证资源要求，但不复制 ONNX schema/session 产品 |
+| **TensorRT** | compiled artifact / invocation 与并发-内存取舍参考 | [NetworkDefinition -> Engine -> ExecutionContext](https://docs.nvidia.com/deeplearning/tensorrt/latest/_static/python-api/coreConcepts.html) 区分逻辑网络、不可变可共享 engine 与每次运行 context；[multi-stream](https://docs.nvidia.com/deeplearning/tensorrt/latest/performance/optimization.html#within-inference-multi-streaming) 明确 auxiliary stream 会减少 activation reuse、增加内存，用于约束 HYLE 先形成 happens-before 再规划 workspace |
+| **PJRT / IREE** | runtime 与三轴资源边界参考 | [PJRT](https://openxla.org/xla/pjrt/cpp_api_overview) 区分 executable、loaded executable、buffer/device/memory space；[IREE HAL](https://iree.dev/reference/mlir-dialects/HAL/) 分开 device、allocator/buffer、queue affinity、command buffer 与 fence；用于防止 Graph 吞掉 backend runtime 或把 allocator/queue 合成一个 identity |
+| **ExecuTorch** | delegated island / memory owner 参考 | [device-aware memory planning](https://docs.pytorch.org/executorch/stable/compiler-memory-planning.html) 按 device memory 分区并把 delegate 内部 tensor 留给 delegate；用于约束 HYLE 只规划 canonical island boundary 与 shared-runtime workspace |
 | **vLLM / SGLang** | shape specialization/capture 消费参考 | compile cache、piecewise/full CUDA graph、attention backend 与 breakable region 证明同一逻辑模型需要多个 shape/provider specialization；模型 batching/capture policy 仍归引擎 |
 | **MLX / MPSGraph** | Apple compiled graph 候选参考 | 对账 lazy/symbolic graph、compile/replay、unified-memory 与 Metal command/stream；若作为 HYLE provider，其 artifact 留在 provider island，不把其数组 owner 冒充 Mem Buffer |
 | **oneTBB / taskflow** | 仅作相邻领域参考 | parallel-for/reduce/scan 与 callable task DAG 属未来 `parallel`/`graph_incremental` 候选，不再定义 HYLE 计算 Graph；只有独立非计算消费者才能重新准入 |

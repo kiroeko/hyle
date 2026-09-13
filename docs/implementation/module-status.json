@@ -274,13 +274,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md",
-      "summary": "compute v6 AUDITED：新架构确认 Queue/shared runtime 与 delegated provider island 两种真实执行所有权；冻结 C60--C65 的 runtime-mode、delegated Completion/dependency、生命周期和既有 provider 迁移，算子目录扩张暂停。"
+      "summary": "compute v6 AUDITED：首个产品改动前的审计纠正已把 provider binding/resource requirement、exact-route prepare、shared Queue 与 delegated island ownership 冻结为 C60--C67；submit 不再承担首次资源裁决，算子目录扩张暂停。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v7-execution-lanes-and-islands.md",
-      "summary": "graph v7 AUDITED：新架构把 storage domain 与 execution lane 分离，冻结 G70--G77 的 lane binding/schedule/dependency/report、delegated island 和内部 region seam；四条结构探针完成前不横向填充算子。"
+      "summary": "graph v7 AUDITED：首个产品改动前的审计纠正已把 execution target、storage domain/resource、execution lane 三轴和 schedule-before-workspace 固化为 G70--G81；delegated island 与内部 region seam 保留，四条结构探针前不横向填充算子。"
     },
     {
       "module": "container_concurrent",

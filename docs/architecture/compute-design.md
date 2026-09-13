@@ -38,7 +38,8 @@ typed backend Module/Kernel + Queue -> submit() -> Completion
 
 - `Device` 是可复制的能力描述，不拥有 runtime；`Context` 拥有 backend/provider 会话。
 - `Queue` 表达一个有序、单 producer 的**执行 lane**；同一 Context 和同一 storage domain 可以建立多个
-  Queue，用于计算、copy、capture 或独立并发请求。不能用全局默认 stream 隐藏 affinity 或同步。Graph 等组合者
+  Queue，用于计算、copy、通信或独立并发请求。capture 是一组 Queue/命令的录制与 replay 模式，不是另一种
+  工作 lane。不能用全局默认 stream 隐藏 affinity 或同步。Graph 等组合者
   可取得一个短生命周期 submission-sequence guard，使一组命令连续录入；guard 只覆盖 host enqueue，
   绝不持有到设备执行结束。
 - `TensorDesc` 把 logical dtype/shape 与 physical storage format/byte layout 分开；fixed block encoding
@@ -90,25 +91,32 @@ Provider 可以自行拥有 device allocation 或 graph allocator。HYLE 必须�
 一个伪造的 `BufferView` 当成零拷贝。ggml CUDA 的历史调查只证明这种风险真实存在，见
 [ggml provider 的 storage 约束](borrowing-ggml-memory-model.md)；adapter 开工时仍须对锁定版本复验。
 
-### 3.1 设备、storage domain 与 execution lane 是三条正交轴
+### 3.1 Execution target、storage domain 与 execution lane 是三条正交轴
 
-异构运行时不能用一个 `domain` 同时表示“在哪里存”“由谁执行”和“按什么时间线提交”。长期合同明确
+异构运行时不能用一个 `domain` 同时表示“由谁执行”“在哪里分配”和“沿哪条时间线提交”。长期合同明确
 区分：
 
 | 轴 | 身份与 owner | 典型实例 |
 |---|---|---|
-| device/context | backend runtime、能力和 native interop | CPU context、CUDA context、Metal device |
-| storage domain | allocation、可见性、coherence 和 budget | host、pinned host、device-local、managed/unified |
-| execution lane | 一个 ordered Queue/timeline 及其用途 | compute stream、copy stream、capture stream、CPU caller lane |
+| execution target | 一个 HYLE Compute Context 及其 backend/device 执行会话；provider 仍按 op/region 独立选择 | CPU context、CUDA context、Metal context |
+| storage domain | 一个具名 `MemoryResourceRef`、分配属性和可选硬预算 | system host、pinned host、device-local、managed/unified |
+| execution lane | 绑定 target 的 ordered Queue/timeline | compute stream、copy stream、communication stream、CPU caller lane |
 
-一个 storage domain 可以被同一 Context 的多个 lane 访问；一个 lane 也可以合法读写多个兼容 resource。
-Graph 的值 placement 首先选择 storage domain，step scheduling 再选择 execution lane。不能通过复制
-storage domain 来伪造多 stream，因为那会错误复制 workspace、liveness 和物理值身份。Queue/lane 不拥有
-tensor payload，storage domain 也不暗示一个唯一 Queue。
+Graph 的 `StorageDomainId` 是其编译环境中的 resource ordinal；Mem 的 `MemoryDomainId` 是 provider 给出的
+accessibility/coherence identity。两者相关但不互换：前者决定从哪个 resource 分配和记账，后者参与判断
+两个 resource 是否处于同一可见/一致性域。`ExecutionTarget` 可以有一个 `default_storage` 作为普通输出和
+workspace 的默认选择，但这个默认值绝不成为 target identity。
 
-普通用户仍只需建立一条默认 lane。多 lane 只能在 compile/prepare 冷路径形成并写入 report；它不得让
-单 Queue 路线增加每 step 搜索、动态分配或隐藏同步。通用 Queue 选项只接纳至少两个正式 backend 共享且
-语义一致的属性；vendor-specific priority、capture、engine 或 native stream 参数继续放在 typed backend
+因此一个 target 可以访问多个 storage domain，一个 storage domain 也可能被多个 target 访问；同一 target/
+storage 组合可以有多条 lane。Graph 的 node placement 选择 execution target，value placement 选择 storage
+domain，step scheduling 最后选择 lane。target 不同不自动产生 copy；只有 exact resource、backend access、
+provider binding requirement 或调用方 required placement 不兼容时才物化 copy。不能通过复制 target 或
+storage domain 来伪造多 stream，因为那会错误复制 workspace、liveness 和物理值身份。
+
+lane 的 `compute/transfer/communication` 只是冷路径调度意图，exact Queue 的真实能力在 replay preparation
+时验证；capture 由 `ReplayMode` 与 backend capture capability 表达，不进入 lane role。普通用户仍只需一个
+target、一个 storage domain 和一条 compute lane。多 lane 不得让单 Queue 路线增加每 step 搜索、动态分配
+或隐藏同步。vendor-specific priority、engine、queue-family 或 native stream 参数继续放在 typed backend
 extension 中。
 
 ### 3.2 Provider 的两种诚实运行模式
@@ -126,6 +134,22 @@ compiled artifact 必须保活真实 runtime owner，并报告输入输出 resid
 线程、并发 invocation、capture、取消和 drain。delegated island 不得忽略传入 HYLE Queue 后在另一条未知
 stream 偷跑，也不得把 provider completion 当作已经加入 HYLE timeline；无法建立明确 bridge 时该 route
 就是不支持。
+
+### 3.3 Provider 的资源合同必须先于 steady submit
+
+“Context 能访问某个 `MemoryResourceRef`”只证明 backend 可以触碰它，不证明某个 provider/kernel 接受该
+layout、alignment、storage kind 或 owner。provider 合同因此分成两个冷阶段：
+
+1. capability/proposal 根据 operation、shape/layout、execution target 给出每个 boundary binding、workspace
+   和 packed constant 的资源要求，以及 shared/delegated runtime mode；
+2. route 被选中后，prepare/compile 对 Graph 选定的 exact resource 或显式 provider-private bridge 做最终
+   验证，并把结果固化进 immutable artifact。
+
+Direct Compute 的 resource-aware prepare 也走同一内部合同；普通 convenience 可以从实际 TensorView 推导
+resource。资源不匹配必须在 prepare/bind 或 Graph compile 的冷路径返回，使另一个 provider/copy route 仍可
+被选择。已经开始 Queue admission 后，provider 不得第一次发现 storage 不兼容，也不得偷偷 allocation、copy
+或 fallback。Delegated island 只向 Graph 暴露 canonical boundary storage；island 内部 tensor、allocator、
+stream 和 workspace 仍由 provider 规划并在 report 中如实计量。
 
 ## 4. 平台栈与优先级
 
@@ -375,9 +399,18 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
 ## 11. 架构稳定条件
 
 本轮跨 ggml/llama.cpp、vLLM、SGLang、ds4、oneDNN、ONNX Runtime、TensorRT、IREE、PJRT 与
-ExecuTorch 的调查只签发上述边界，不把任何 peer 的完整 runtime 复制为 HYLE 产品。实现必须先通过四个
-架构探针：CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 domain 多 lane/capture、
-Apple delegated MLX region + 原生 Metal interop。
+ExecuTorch 的调查只签发上述边界，不把任何 peer 的完整 runtime 复制为 HYLE 产品。其不可逆结论是：
+
+- execution target、storage domain/resource 与 execution lane 三轴分离；默认 storage 只是 target 的属性；
+- provider 先公开 binding/resource requirement，再对 exact route prepare，不能到 submit 才拒绝；
+- shared Queue 和 delegated island 两种 ownership 都保留，不能用一套伪 stream/allocator 抹平；
+- capture 是 replay capability，communication 才是独立 lane 用途；
+- Graph 只规划 HYLE/shared-runtime storage 与 island boundary，delegated provider 自己规划内部 storage；
+- request/KV/batching/sampling/offload 策略仍归推理引擎，Compiled Graph 不扩成模型 runtime。
+
+实现必须先通过四个架构探针：CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 storage
+domain 多 lane/capture、Apple delegated MLX region + 原生 Metal interop。正式代码与这些结论冲突时停止并
+回到审计；operator 数量、单次 benchmark 或为旧 API 保兼容都不能覆盖该反证。
 
 这些探针通过并形成候选后，只有下列新事实允许重开 Compute 架构：真实探针与合同矛盾；第二个独立
 消费者需要现有 ownership/concurrency/control seam 无法表达的机制；正式 backend API 使合同不可实现；

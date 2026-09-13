@@ -55,6 +55,13 @@ trigger 启动，创建一张不同于旧 terminal record 的新卡，再直接�
 持久化的产品状态。“再看一遍”、历史 TODO 或 benchmark 输赢本身都不是 trigger。需要先重新划分全库边界时，执行
 [能力展开与组件质因数分解](../../architecture/capability-factorization.md)，不要边写代码边改 owner。
 
+SCOPED/AUDITED 阶段必须先冻结会造成系统性返工的决定：职责 owner 与依赖方向、公开对象和 identity、
+ownership/lifetime、并发与完成语义、storage/执行位置、冷/热路径边界、错误边界以及可选构建 factor。
+这些决定至少由主消费者纵切、正交纵切和成熟 peer 的实际 owner 模型共同反证，不能留到写实现时凭某个
+benchmark 临时决定。私有数据结构、vendor API 调用细节、有界启发式和局部 codegen 可以在有限 FIX 的
+实现过程中继续调研；一旦新事实要求改变上述架构合同、公开 API 或常态成本等级，立即停止实现并退回
+`AUDITED`，不得用兼容层或局部补丁掩盖矛盾。
+
 ## 3. AUDITED：先定功能与形状
 
 先从用户任务自顶向下建立能力族，再从全部现有公开入口自底向上回映。证据优先级是：
