@@ -85,3 +85,13 @@ heap algorithm 直接使用标准库；本轮不新增泛化算法或依赖。
 - 既有 Graph 每次 metadata allocation failure/retry sweep、Native SDPA Graph workspace 纵切与 Windows
   Graph 定向测试通过；源码范围已无 `stable_sort`。本轮只改变 compile 冷路径的内存所有权，不改变
   Invocation/submit、公开 API、ABI、provider 或性能证据 tier。
+
+## Candidate
+
+- immutable product commit：`ca59798143345ef54ac8fa293d2eec799e721aa5`；
+- `AUDITED -> CANDIDATE` 前态 revision：同一 product commit（registry 仍为 `AUDITED`）；
+- P0：三处排序均为 O(T log T) in-place introsort、至多 O(log T) stack；submit 路线、mapping、workspace、
+  allocation、lock、atomic、syscall 与 copy 账单零变化；
+- Windows MSVC 19.50 Release/WERROR：`hyle_graph_test`、`hyle_graph_executable_test` 与关联 Native provider
+  测试通过。候选后只补卡片已声明的跨平台、sanitizer、三交付和红队证据；发现产品问题必须退回
+  `AUDITED`。

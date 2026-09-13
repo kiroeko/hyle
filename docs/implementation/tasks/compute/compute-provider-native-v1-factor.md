@@ -182,3 +182,15 @@ RoPE vector blocks/tail 与 strided materialization、additive/all-masked Softma
 - Windows factor/Graph 定向测试已通过，覆盖两种布局、多 batch/head、Q/K 与 V depth 分离、decode causal、
   两种 mask、all-masked/empty-key NaN、strided reference、四 task 独占 workspace、nested executor 与 Graph
   planned workspace。三平台、sanitizer、三交付及七条限定 P1 仍未执行，因此本卡保持 `AUDITED`。
+
+## Candidate（2026-09-14）
+
+- immutable product commit：`ca59798143345ef54ac8fa293d2eec799e721aa5`；公开 API、19-family capability、
+  NativePlan、路由算法、executor 分片与 SDPA online-softmax 已停止变化；
+- `AUDITED -> CANDIDATE` 前态 revision：同一 product commit（registry 仍为 `AUDITED`）；
+- P0 账单：prepare 做一次 provider/ISA/shape/task/workspace 选择；submit 无 metadata allocation、provider/ISA
+  search、隐藏线程、JIT 或 packing。SDPA 为 O(B·H·Q·K·(Dq+Dv))，workspace 为
+  O(tasks·(Dv+64))；其余 route 保持各自已登记线性/矩阵复杂度。每个有资格的调用最多一次同步 fan-out；
+- Windows MSVC 19.50 Release/WERROR 的 `hyle_compute_provider_native_test`、`hyle_compute_ops_test`、
+  `hyle_graph_test` 与 `hyle_graph_executable_test` 通过。候选后只运行预声明的三平台、sanitizer、三交付、
+  七条 P1 与一遍红队；任何产品修正先退回 `AUDITED`。

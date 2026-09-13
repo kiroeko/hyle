@@ -180,3 +180,12 @@ axis 上界检查。该修正属于已有 typed contract 的完整性，不增�
 显式 scale 与 accumulation contract 继续由既有 typed descriptor 表达；Native 当前只接收 plain f32
 Q/K/V、dense f32 output 与 f32 accumulation，不支持的 storage/layout 仍返回 `Unimplemented` 供有序 provider
 fallback。`compute_ops` 保持 `AUDITED`，等待完整 direct/Graph、三平台和交付验证。
+
+## Candidate（2026-09-14）
+
+- immutable product commit：`ca59798143345ef54ac8fa293d2eec799e721aa5`；19-family schema/API 与
+  19/19 Native direct/Graph journey 停止变化；
+- `AUDITED -> CANDIDATE` 前态 revision：同一 product commit（registry 仍为 `AUDITED`）；
+- Windows MSVC 19.50 Release/WERROR 的 `hyle_compute_ops_test`、Native provider 与 Graph 定向纵切通过；
+- 本 factor 是描述/验证层，P0 为固定 rank<=8 的 O(rank) shape/alias 检查，P1 不适用。候选后只补三平台、
+  sanitizer、source/static/shared、逐头和红队；若 schema、API 或算法需改，退回 `AUDITED`。
