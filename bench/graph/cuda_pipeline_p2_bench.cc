@@ -183,14 +183,14 @@ public:
       std::fprintf(stderr, "Graph submit failed: %.*s\n",
                    static_cast<int>(completion.error().message().size()),
                    completion.error().message().data());
-      return 0;
+      std::abort();
     }
     const Status terminal = completion->wait();
     if (!terminal.ok()) {
       std::fprintf(stderr, "Graph wait failed: %.*s\n",
                    static_cast<int>(terminal.message().size()),
                    terminal.message().data());
-      return 0;
+      std::abort();
     }
     return 1U;
   }
@@ -203,14 +203,14 @@ public:
       std::fprintf(stderr, "direct inbound submit failed: %.*s\n",
                    static_cast<int>(inbound.error().message().size()),
                    inbound.error().message().data());
-      return 0;
+      std::abort();
     }
     Status terminal = inbound->wait();
     if (!terminal.ok()) {
       std::fprintf(stderr, "direct inbound wait failed: %.*s\n",
                    static_cast<int>(terminal.message().size()),
                    terminal.message().data());
-      return 0;
+      std::abort();
     }
     auto transformed = direct_->unary.submit(
         direct_->cpu_queue, direct_->host_input.view.as_const(),
@@ -219,14 +219,14 @@ public:
       std::fprintf(stderr, "direct Unary submit failed: %.*s\n",
                    static_cast<int>(transformed.error().message().size()),
                    transformed.error().message().data());
-      return 0;
+      std::abort();
     }
     terminal = transformed->wait();
     if (!terminal.ok()) {
       std::fprintf(stderr, "direct Unary wait failed: %.*s\n",
                    static_cast<int>(terminal.message().size()),
                    terminal.message().data());
-      return 0;
+      std::abort();
     }
     auto outbound = hyle::compute::copy_async(
         direct_->cuda_queue, direct_->output.buffer.view(),
@@ -235,14 +235,14 @@ public:
       std::fprintf(stderr, "direct outbound submit failed: %.*s\n",
                    static_cast<int>(outbound.error().message().size()),
                    outbound.error().message().data());
-      return 0;
+      std::abort();
     }
     terminal = outbound->wait();
     if (!terminal.ok()) {
       std::fprintf(stderr, "direct outbound wait failed: %.*s\n",
                    static_cast<int>(terminal.message().size()),
                    terminal.message().data());
-      return 0;
+      std::abort();
     }
     return 1U;
   }

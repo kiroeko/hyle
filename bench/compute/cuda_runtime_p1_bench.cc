@@ -40,8 +40,11 @@ T take_or_abort(hyle::Result<T> result, std::string_view message) {
 }
 
 void require_cuda(cudaError_t status, std::string_view message) {
-  if (status != cudaSuccess)
-    fail_setup(message);
+  if (status != cudaSuccess) {
+    std::fprintf(stderr, "%.*s: %s\n", static_cast<int>(message.size()),
+                 message.data(), cudaGetErrorString(status));
+    std::abort();
+  }
 }
 
 bool environment_present(const char *name) {
@@ -125,23 +128,46 @@ public:
   std::uint64_t run_candidate() noexcept {
     auto completion = hyle::compute::copy_async(
         queue_, candidate_.destination.view(), candidate_.source.view());
-    if (!completion)
-      return 0;
-    return completion->wait().ok() ? 1U : 0U;
+    if (!completion) {
+      std::fprintf(stderr, "HYLE CUDA copy submit failed: %.*s\n",
+                   static_cast<int>(completion.error().message().size()),
+                   completion.error().message().data());
+      std::abort();
+    }
+    const hyle::Status terminal = completion->wait();
+    if (!terminal.ok()) {
+      std::fprintf(stderr, "HYLE CUDA copy wait failed: %.*s\n",
+                   static_cast<int>(terminal.message().size()),
+                   terminal.message().data());
+      std::abort();
+    }
+    return 1U;
   }
 
   std::uint64_t run_peer() noexcept {
     auto source = hyle::compute::cuda::pointer<std::byte>(peer_.source.view());
     auto destination =
         hyle::compute::cuda::pointer<std::byte>(peer_.destination.view());
-    if (!source || !destination)
-      return 0;
-    if (cudaMemcpyAsync(*destination, *source, kBytes, cudaMemcpyDeviceToDevice,
-                        peer_stream_) != cudaSuccess)
-      return 0;
-    if (cudaEventRecord(peer_event_, peer_stream_) != cudaSuccess)
-      return 0;
-    return cudaEventSynchronize(peer_event_) == cudaSuccess ? 1U : 0U;
+    if (!source) {
+      std::fprintf(stderr, "raw CUDA source pointer failed: %.*s\n",
+                   static_cast<int>(source.error().message().size()),
+                   source.error().message().data());
+      std::abort();
+    }
+    if (!destination) {
+      std::fprintf(stderr, "raw CUDA destination pointer failed: %.*s\n",
+                   static_cast<int>(destination.error().message().size()),
+                   destination.error().message().data());
+      std::abort();
+    }
+    require_cuda(cudaMemcpyAsync(*destination, *source, kBytes,
+                                 cudaMemcpyDeviceToDevice, peer_stream_),
+                 "raw CUDA copy submit failed");
+    require_cuda(cudaEventRecord(peer_event_, peer_stream_),
+                 "raw CUDA event record failed");
+    require_cuda(cudaEventSynchronize(peer_event_),
+                 "raw CUDA event wait failed");
+    return 1U;
   }
 
 private:
