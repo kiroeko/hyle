@@ -168,15 +168,9 @@
     },
     {
       "module": "simd",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "candidate": "e72089c196f6b38f897524087bc53201a0fd8df4",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-simd.md",
-        "material_margin_pct": 5
-      },
-      "summary": "simd-v6 CLOSED：当前推理能力缺口已补齐或路由，三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/simd/simd-v7-compute-row-primitives.md",
+      "summary": "simd-v7 SCOPED：Compute 18/19 真实纵切证明普通 f32 row rsqrt、fmin/fmax、byte-bool select 与 signed-zero-correct extrema reduction 存在可复用缺口；范围限于四组 primitive 及直接 Compute 回放，未授权重审 v6 全目录。"
     },
     {
       "module": "container",
