@@ -239,30 +239,35 @@ struct PlanStep final {
            std::uint32_t input_count_value, std::uint32_t output_begin_value,
            std::uint32_t output_count_value, bool materializes_value,
            CompileFallbackReason fallback_reason_value,
-           ExecutionDomainId domain_value = ExecutionDomainId{0}) noexcept
+           ExecutionTargetId target_value = ExecutionTargetId{0},
+           StorageDomainId workspace_storage_value =
+               StorageDomainId{0}) noexcept
       : operation(std::move(prepared_value)), node_begin(node_begin_value),
         input_begin(input_begin_value), output_begin(output_begin_value),
         input_count(input_count_value), output_count(output_count_value),
         materializes(materializes_value),
-        fallback_reason(fallback_reason_value), domain(domain_value) {}
+        fallback_reason(fallback_reason_value), target(target_value),
+        workspace_storage(workspace_storage_value) {}
 
   PlanStep(PreparedRegion region_value, std::uint32_t node_begin_value,
            std::uint32_t node_count_value, std::uint32_t input_begin_value,
            std::uint32_t input_count_value, std::uint32_t output_begin_value,
            std::uint32_t output_count_value,
-           ExecutionDomainId domain_value = ExecutionDomainId{0}) noexcept
+           ExecutionTargetId target_value = ExecutionTargetId{0},
+           StorageDomainId workspace_storage_value =
+               StorageDomainId{0}) noexcept
       : region(std::move(region_value)), node_begin(node_begin_value),
         node_count(node_count_value), input_begin(input_begin_value),
         output_begin(output_begin_value), input_count(input_count_value),
         output_count(output_count_value), kind(PlanStepKind::kRegion),
-        domain(domain_value) {}
+        target(target_value), workspace_storage(workspace_storage_value) {}
 
   static PlanStep copy(std::uint32_t input_begin_value,
                        std::uint32_t output_begin_value,
                        std::size_t bytes_value,
-                       ExecutionDomainId source_domain_value,
-                       ExecutionDomainId destination_domain_value,
-                       ExecutionDomainId execution_domain_value) noexcept {
+                       StorageDomainId source_storage_value,
+                       StorageDomainId destination_storage_value,
+                       ExecutionTargetId execution_target_value) noexcept {
     PlanStep result;
     result.input_begin = input_begin_value;
     result.output_begin = output_begin_value;
@@ -271,9 +276,9 @@ struct PlanStep final {
     result.kind = PlanStepKind::kCopy;
     result.materializes = true;
     result.copy_bytes = bytes_value;
-    result.source_domain = source_domain_value;
-    result.domain = execution_domain_value;
-    result.destination_domain = destination_domain_value;
+    result.source_storage = source_storage_value;
+    result.target = execution_target_value;
+    result.destination_storage = destination_storage_value;
     return result;
   }
 
@@ -314,6 +319,27 @@ struct PlanStep final {
       return region.properties().capture_compatible;
     return operation.capture_compatible();
   }
+  compute::ProviderRuntimeProperties runtime_properties() const noexcept {
+    if (kind == PlanStepKind::kRegion) {
+      const RegionArtifactProperties properties = region.properties();
+      return compute::ProviderRuntimeProperties{
+          .mode = compute::ProviderRuntimeMode::kSharedQueue,
+          .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+          .blocks_host = properties.blocks_host,
+          .uses_private_threads = properties.uses_private_threads,
+          .supports_concurrent_invocations =
+              properties.supports_concurrent_invocations,
+          .capture_compatible = properties.capture_compatible,
+      };
+    }
+    if (kind == PlanStepKind::kOperation)
+      return operation.runtime_properties();
+    return compute::ProviderRuntimeProperties{
+        .mode = compute::ProviderRuntimeMode::kSharedQueue,
+        .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+        .capture_compatible = true,
+    };
+  }
 
   compute::PreparedOperation operation{};
   PreparedRegion region{};
@@ -326,15 +352,17 @@ struct PlanStep final {
   PlanStepKind kind = PlanStepKind::kOperation;
   bool materializes = true;
   CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
-  ExecutionDomainId domain{};
-  ExecutionDomainId source_domain{};
-  ExecutionDomainId destination_domain{};
+  ExecutionTargetId target{};
+  ExecutionLaneId lane{};
+  StorageDomainId workspace_storage{};
+  StorageDomainId source_storage{};
+  StorageDomainId destination_storage{};
   std::size_t copy_bytes = 0;
 };
 
 using PlanSteps = container::SmallVector<PlanStep, 8, mem::AllocatorRef>;
 struct PlanSegment final {
-  ExecutionDomainId domain{};
+  ExecutionLaneId lane{};
   std::uint32_t step_begin = 0;
   std::uint32_t step_count = 0;
   std::uint32_t dependency_begin = 0;
@@ -367,15 +395,33 @@ using CompilePhysicalValueReports =
 using ShapeBindings =
     container::SmallVector<ShapeBinding, 4, mem::AllocatorRef>;
 
-struct ExecutionDomainRecord final {
-  compute::detail::ContextRef context{};
-  mem::MemoryResourceRef workspace_resource{};
+struct StorageDomainRecord final {
+  mem::MemoryResourceRef resource{};
+  std::size_t workspace_budget_bytes = SIZE_MAX;
 };
 
-using ExecutionDomainRecords =
-    container::SmallVector<ExecutionDomainRecord, 2, mem::AllocatorRef>;
-using CompileDomainReports =
-    container::SmallVector<CompileDomainReport, 2, mem::AllocatorRef>;
+struct ExecutionTargetRecord final {
+  compute::detail::ContextRef context{};
+  StorageDomainId default_storage{};
+};
+
+struct ExecutionLaneRecord final {
+  ExecutionTargetId target{};
+  ExecutionLaneRole role = ExecutionLaneRole::kCompute;
+};
+
+using StorageDomainRecords =
+    container::SmallVector<StorageDomainRecord, 2, mem::AllocatorRef>;
+using ExecutionTargetRecords =
+    container::SmallVector<ExecutionTargetRecord, 2, mem::AllocatorRef>;
+using ExecutionLaneRecords =
+    container::SmallVector<ExecutionLaneRecord, 2, mem::AllocatorRef>;
+using CompileTargetReports =
+    container::SmallVector<CompileTargetReport, 2, mem::AllocatorRef>;
+using CompileStorageReports =
+    container::SmallVector<CompileStorageReport, 2, mem::AllocatorRef>;
+using CompileLaneReports =
+    container::SmallVector<CompileLaneReport, 2, mem::AllocatorRef>;
 
 struct SignatureState final : util::RefCounted<SignatureState> {
   SignatureState(mem::AllocatorRef allocator_value,
@@ -409,22 +455,25 @@ struct PlanState final : util::RefCounted<PlanState> {
   PlanState(mem::AllocatorRef allocator_value,
             std::uint64_t generation_value) noexcept
       : allocator(allocator_value), generation(generation_value),
-        domains(allocator_value), steps(allocator_value),
+        storage_domains(allocator_value), targets(allocator_value),
+        lanes(allocator_value), steps(allocator_value),
         segments(allocator_value), segment_dependencies(allocator_value),
+        step_segments(allocator_value),
         terminal_segments(allocator_value),
         completion_segments(allocator_value),
-        domain_segment_counts(allocator_value), input_ids(allocator_value),
+        lane_segment_counts(allocator_value), input_ids(allocator_value),
         constant_ids(allocator_value), output_ids(allocator_value),
         constant_bindings(allocator_value), descriptions(allocator_value),
         instance_descriptions(allocator_value),
-        instance_values(allocator_value), instance_domains(allocator_value),
+        instance_values(allocator_value), instance_storage(allocator_value),
         instance_roles(allocator_value), external_instances(allocator_value),
-        external_domains(allocator_value), external_resources(allocator_value),
+        external_storage(allocator_value),
         node_inputs(allocator_value), node_outputs(allocator_value),
         workspace_requests(allocator_value),
         step_workspace_requests(allocator_value),
-        domain_workspace_slots(allocator_value),
-        workspace_resources(allocator_value), node_steps(allocator_value),
+        storage_workspace_slots(allocator_value),
+        workspace_resources(allocator_value),
+        workspace_storage(allocator_value), node_steps(allocator_value),
         value_materialized(allocator_value), alias_sources(allocator_value),
         alias_offsets(allocator_value), binding_roles(allocator_value) {}
 
@@ -436,45 +485,48 @@ struct PlanState final : util::RefCounted<PlanState> {
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
-  ExecutionDomainRecords domains;
+  StorageDomainRecords storage_domains;
+  ExecutionTargetRecords targets;
+  ExecutionLaneRecords lanes;
   PlanSteps steps;
   PlanSegments segments;
   ValueOrdinals segment_dependencies;
+  ValueOrdinals step_segments;
   // Logical DAG sinks are report facts. Runtime completion must additionally
-  // observe the latest ordered prefix from every active execution domain so a
+  // observe the latest ordered prefix from every active execution lane so a
   // late backend error cannot disappear merely because another domain owns
   // the final graph sink.
   ValueOrdinals terminal_segments;
   ValueOrdinals completion_segments;
-  // Exact number of runtime Queue segments emitted for each execution
-  // domain. A zero entry means the domain participates in compile-time
+  // Exact number of runtime Queue segments emitted for each execution lane.
+  // A zero entry means the lane participates in compile-time
   // placement/reporting only and must not require a Queue at replay.
-  ValueOrdinals domain_segment_counts;
+  ValueOrdinals lane_segment_counts;
   ValueIds input_ids;
   ValueIds constant_ids;
   ValueIds output_ids;
   ReadableBindings constant_bindings;
   // Public ValueId metadata is logical. Plan step ports address physical
   // instances, because one logical value may be materialized in several
-  // execution domains after boundary-copy insertion.
+  // storage domains after boundary-copy insertion.
   TensorDescriptions descriptions;
   TensorDescriptions instance_descriptions;
   ValueOrdinals instance_values;
-  ValueOrdinals instance_domains;
+  ValueOrdinals instance_storage;
   BindingRoles instance_roles;
   ValueOrdinals external_instances;
-  ValueOrdinals external_domains;
-  container::SmallVector<mem::MemoryResourceRef, 16, mem::AllocatorRef>
-      external_resources;
+  ValueOrdinals external_storage;
   ValueOrdinals node_inputs;
   ValueOrdinals node_outputs;
   ValueOrdinals workspace_requests;
   ValueOrdinals step_workspace_requests;
-  // LifetimePlanner requires dense resource slots while execution-domain
+  // LifetimePlanner requires dense resource slots while storage-domain
   // ordinals may be sparse among values that actually need workspace.
-  ValueOrdinals domain_workspace_slots;
+  ValueOrdinals storage_workspace_slots;
   container::SmallVector<mem::MemoryResourceRef, 2, mem::AllocatorRef>
       workspace_resources;
+  // Dense LifetimePlanner resource slot -> public storage-domain ordinal.
+  ValueOrdinals workspace_storage;
   ValueOrdinals node_steps;
   BindingRoles value_materialized;
   // For an operation output, identifies the input value selected for exact
@@ -489,6 +541,9 @@ struct PlanState final : util::RefCounted<PlanState> {
   std::size_t logical_node_count = 0;
   std::size_t region_count = 0;
   std::size_t required_queue_count = 0;
+  std::size_t serialization_edge_count = 0;
+  WorkspaceReusePolicy workspace_reuse =
+      WorkspaceReusePolicy::kExistingOrderOnly;
   bool supports_concurrent_invocations = true;
   std::atomic<bool> exclusive_in_flight{false};
   SpecializationSignature specialization{};
@@ -507,7 +562,8 @@ inline void release(PlanState *state) noexcept {
 struct ReportState final : util::RefCounted<ReportState> {
   explicit ReportState(mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), steps(allocator_value),
-        domains(allocator_value), segments(allocator_value),
+        targets(allocator_value), storage_domains(allocator_value),
+        lanes(allocator_value), segments(allocator_value),
         physical_values(allocator_value), step_inputs(allocator_value),
         step_outputs(allocator_value), segment_dependencies(allocator_value) {}
 
@@ -519,7 +575,9 @@ struct ReportState final : util::RefCounted<ReportState> {
 
   mem::AllocatorRef allocator{};
   CompileStepReports steps;
-  CompileDomainReports domains;
+  CompileTargetReports targets;
+  CompileStorageReports storage_domains;
+  CompileLaneReports lanes;
   CompileSegmentReports segments;
   CompilePhysicalValueReports physical_values;
   ValueOrdinals step_inputs;

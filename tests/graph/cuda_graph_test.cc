@@ -8,6 +8,7 @@
 #include "hyle/compute/cpu.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
+#include "test_environment.h"
 
 namespace {
 
@@ -20,8 +21,6 @@ using hyle::compute::Unary;
 using hyle::compute::UnaryKind;
 using hyle::graph::CompileEnvironment;
 using hyle::graph::CompileOptions;
-using hyle::graph::ExecutionDomain;
-using hyle::graph::ExecutionDomainId;
 using hyle::graph::ExternalResourceContract;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
@@ -31,6 +30,8 @@ using hyle::graph::QueueBinding;
 using hyle::graph::ReplayMode;
 using hyle::graph::ReplayRoute;
 using hyle::graph::ValueId;
+using hyle::graph::test::Environment;
+using hyle::graph::test::ExecutionSpec;
 using hyle::mem::Buffer;
 
 TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
@@ -54,34 +55,32 @@ TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  const std::array domains{
-      ExecutionDomain{.context = &cpu_context,
-                      .workspace_resource = pinned.ref()},
-      ExecutionDomain{.context = &cuda_context,
-                      .workspace_resource = device.ref()},
-  };
+  const Environment environment{{
+      ExecutionSpec{.context = &cpu_context, .storage = pinned.ref()},
+      ExecutionSpec{.context = &cuda_context, .storage = device.ref()},
+  }};
   const std::array placements{NodePlacement{
       .node = graph.node_id(0).value(),
-      .domain = ExecutionDomainId{0},
+      .target = environment.target(0),
       .strength = PlacementStrength::kRequired,
   }};
   const std::array resources{
       ExternalResourceContract{.value = input,
-                               .domain = ExecutionDomainId{1},
-                               .resource = device.ref()},
+                               .storage = environment.storage(1)},
       ExternalResourceContract{.value = output,
-                               .domain = ExecutionDomainId{1},
-                               .resource = device.ref()},
+                               .storage = environment.storage(1)},
   };
   auto compiled_result =
-      hyle::graph::compile(graph, CompileEnvironment{.domains = domains},
+      hyle::graph::compile(graph, environment.environment(),
                            CompileOptions{.node_placements = placements,
                                           .external_resources = resources});
   ASSERT_TRUE(compiled_result.has_value()) << compiled_result.error().message();
   auto compiled = std::move(*compiled_result);
-  ASSERT_EQ(compiled.report.domain_count(), 2u);
-  EXPECT_FALSE(compiled.report.domain(0)->capture_supported);
-  EXPECT_TRUE(compiled.report.domain(1)->capture_supported);
+  ASSERT_EQ(compiled.report.target_count(), 2u);
+  ASSERT_EQ(compiled.report.storage_domain_count(), 2u);
+  ASSERT_EQ(compiled.report.lane_count(), 2u);
+  EXPECT_FALSE(compiled.report.lane(0)->capture_supported);
+  EXPECT_TRUE(compiled.report.lane(1)->capture_supported);
   EXPECT_EQ(compiled.report.step_count(), 3u);
   EXPECT_EQ(compiled.report.segment_count(), 3u);
   EXPECT_EQ(compiled.report.command_segment_count(), 3u);
@@ -115,8 +114,8 @@ TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
   Queue cpu_queue = cpu_context.create_queue().value();
   Queue cuda_queue = cuda_context.create_queue().value();
   const std::array queues{
-      QueueBinding{.domain = ExecutionDomainId{0}, .queue = &cpu_queue},
-      QueueBinding{.domain = ExecutionDomainId{1}, .queue = &cuda_queue},
+      QueueBinding{.lane = environment.lane(0), .queue = &cpu_queue},
+      QueueBinding{.lane = environment.lane(1), .queue = &cuda_queue},
   };
 
   EXPECT_TRUE(

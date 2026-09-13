@@ -7,6 +7,7 @@
 #include <limits>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,7 @@
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/buffer.h"
 #include "provider_internal.h"
+#include "test_environment.h"
 
 namespace {
 
@@ -50,6 +52,8 @@ using hyle::graph::RegionProposal;
 using hyle::graph::RegionProposalWriter;
 using hyle::graph::RegionSelectionPolicy;
 using hyle::graph::ValueId;
+using hyle::graph::test::Environment;
+using hyle::graph::test::ExecutionSpec;
 using hyle::mem::AllocatorRef;
 using hyle::mem::Buffer;
 
@@ -226,10 +230,55 @@ struct OwnedTensor final {
   TensorView view{};
 };
 
+class HostResource final : public hyle::mem::MemoryResource {
+public:
+  std::string_view name() const noexcept override {
+    return "graph.region-test.host";
+  }
+
+  hyle::mem::MemoryProperties properties() const noexcept override {
+    return hyle::mem::MemoryProperties{
+        .flags = hyle::mem::MemoryProperty::kHostAccessible |
+                 hyle::mem::MemoryProperty::kHostDeviceCoherent,
+        .domain = hyle::mem::MemoryDomainId{this, 0},
+    };
+  }
+
+  Result<hyle::mem::ResourceAllocation>
+  allocate(std::size_t size, std::size_t alignment) noexcept override {
+    return hyle::mem::system_resource().resource().allocate(size, alignment);
+  }
+
+  void deallocate(hyle::mem::ResourceAllocation allocation) noexcept override {
+    hyle::mem::system_resource().resource().deallocate(allocation);
+  }
+
+  Result<hyle::mem::ResourceHostMapping>
+  map_host(void *native_handle, std::size_t offset, std::size_t size,
+           hyle::mem::HostAccess) noexcept override {
+    return hyle::mem::ResourceHostMapping{
+        size == 0 ? nullptr
+                  : static_cast<void *>(
+                        static_cast<std::byte *>(native_handle) + offset),
+        nullptr,
+    };
+  }
+};
+
 OwnedTensor make_tensor(TensorDesc description) {
   OwnedTensor result;
   result.buffer = Buffer::create(hyle::mem::system_resource(),
                                  description.required_bytes().value(), 64)
+                      .value();
+  result.view = TensorView::create(description, result.buffer.view()).value();
+  return result;
+}
+
+OwnedTensor make_tensor(TensorDesc description,
+                        hyle::mem::MemoryResourceRef resource) {
+  OwnedTensor result;
+  result.buffer = Buffer::create(resource, description.required_bytes().value(),
+                                 64)
                       .value();
   result.view = TensorView::create(description, result.buffer.view()).value();
   return result;
@@ -965,10 +1014,11 @@ TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   probe.artifact_properties.capture_compatible = true;
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
   auto compiled = hyle::graph::compile(logical.graph, context).value();
-  ASSERT_EQ(compiled.report.domain_count(), 1u);
-  ASSERT_TRUE(compiled.report.domain(0).has_value());
-  EXPECT_TRUE(compiled.report.domain(0)->capture_supported);
+  ASSERT_EQ(compiled.report.lane_count(), 1u);
+  ASSERT_TRUE(compiled.report.lane(0).has_value());
+  EXPECT_TRUE(compiled.report.lane(0)->capture_supported);
   EXPECT_EQ(compiled.report.command_segment_count(), 1u);
   EXPECT_EQ(compiled.report.capturable_segment_count(), 1u);
 
@@ -979,7 +1029,7 @@ TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
   Queue queue = context.create_queue().value();
   const std::array queues{hyle::graph::QueueBinding{
-      .domain = hyle::graph::ExecutionDomainId{0}, .queue = &queue}};
+      .lane = environment.lane(0), .queue = &queue}};
 
   ASSERT_TRUE(
       invocation
@@ -993,7 +1043,7 @@ TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   EXPECT_EQ(probe.submit_count, 0u);
 
   const std::array invalid_queues{hyle::graph::QueueBinding{
-      .domain = hyle::graph::ExecutionDomainId{0}, .queue = nullptr}};
+      .lane = environment.lane(0), .queue = nullptr}};
   EXPECT_TRUE(invocation.prepare_replay(invalid_queues).IsInvalidArgument());
   EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kCaptured);
   EXPECT_EQ(probe.capture_destroy_count, 0u);
@@ -1061,7 +1111,7 @@ TEST(GraphRegions,
   EXPECT_EQ(probe.compiled_count, 2u);
 }
 
-TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackDomain) {
+TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
   RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
   const NegationGraph logical = make_negations(3);
   const std::array region_only{region_provider(probe)};
@@ -1073,20 +1123,15 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackDomain) {
       Context::create(hyle::compute::cpu::device(), {.providers = native_only})
           .value();
   const auto host = hyle::mem::system_resource();
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &region_context,
-                                   .workspace_resource = host},
-      hyle::graph::ExecutionDomain{.context = &fallback_context,
-                                   .workspace_resource = host},
-  };
+  const Environment environment{{&region_context, host},
+                                {&fallback_context, host}};
   const std::array resources{hyle::graph::ExternalResourceContract{
       .value = logical.input,
-      .domain = hyle::graph::ExecutionDomainId{1},
-      .resource = host,
+      .storage = environment.storage(1),
   }};
   auto compiled =
       hyle::graph::compile(
-          logical.graph, hyle::graph::CompileEnvironment{.domains = domains},
+          logical.graph, environment.environment(),
           CompileOptions{.external_resources = resources,
                          .region_selection =
                              RegionSelectionPolicy::kRequireEstimatedBenefit})
@@ -1097,16 +1142,16 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackDomain) {
   EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
   EXPECT_EQ(probe.single_prepare_count, 1u);
-  bool fallback_on_second_domain = false;
+  bool fallback_on_second_target = false;
   for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
     auto step = compiled.report.step(index);
     ASSERT_TRUE(step.has_value());
-    fallback_on_second_domain =
-        fallback_on_second_domain ||
+    fallback_on_second_target =
+        fallback_on_second_target ||
         (step->kind == CompileStepKind::kOperationFallback &&
-         step->domain == hyle::graph::ExecutionDomainId{1});
+         step->target == environment.target(1));
   }
-  EXPECT_TRUE(fallback_on_second_domain);
+  EXPECT_TRUE(fallback_on_second_target);
 
   OwnedTensor input = make_tensor(row(8));
   OwnedTensor output = make_tensor(row(8));
@@ -1118,10 +1163,10 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackDomain) {
   Queue region_queue = region_context.create_queue().value();
   Queue fallback_queue = fallback_context.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &region_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &fallback_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &region_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &fallback_queue},
   };
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   ASSERT_TRUE(invocation.submit(queues)->wait().ok());
@@ -1141,36 +1186,30 @@ TEST(GraphRegions, IgnoresUnusedEnvironmentBackendsInPlanSummary) {
           .value();
   const NegationGraph logical = make_negations(1);
   const auto host = hyle::mem::system_resource();
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &unused,
-                                   .workspace_resource = host},
-      hyle::graph::ExecutionDomain{.context = &active,
-                                   .workspace_resource = host},
-  };
+  const Environment environment{{&unused, host}, {&active, host}};
   const std::array placements{hyle::graph::NodePlacement{
       .node = logical.graph.node_id().value(),
-      .domain = hyle::graph::ExecutionDomainId{1},
+      .target = environment.target(1),
       .strength = hyle::graph::PlacementStrength::kRequired,
   }};
   const std::array resources{
       hyle::graph::ExternalResourceContract{
           .value = logical.input,
-          .domain = hyle::graph::ExecutionDomainId{1},
-          .resource = host},
+          .storage = environment.storage(1)},
       hyle::graph::ExternalResourceContract{
           .value = logical.output,
-          .domain = hyle::graph::ExecutionDomainId{1},
-          .resource = host},
+          .storage = environment.storage(1)},
   };
   const auto compiled =
-      hyle::graph::compile(logical.graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(logical.graph, environment.environment(),
                            CompileOptions{.node_placements = placements,
                                           .external_resources = resources})
           .value();
 
-  EXPECT_FALSE(compiled.report.domain(0)->queue_required);
-  EXPECT_TRUE(compiled.report.domain(1)->queue_required);
+  EXPECT_FALSE(compiled.report.lane(environment.lane(0).ordinal())
+                   ->queue_required);
+  EXPECT_TRUE(compiled.report.lane(environment.lane(1).ordinal())
+                  ->queue_required);
   EXPECT_EQ(compiled.report.backend(), hyle::compute::cpu::kBackendId);
   EXPECT_FALSE(compiled.report.mixed_backends());
 }
@@ -1345,9 +1384,9 @@ TEST(GraphRegions, DetailedReportOwnsAndEnumeratesTheCompiledPlan) {
   EXPECT_EQ(step->copy_bytes, 64u);
   EXPECT_EQ(step->synchronization_count, 2u);
   EXPECT_EQ(step->dispatch_count, 3u);
-  EXPECT_TRUE(step->blocks_host);
-  EXPECT_TRUE(step->uses_private_threads);
-  EXPECT_FALSE(step->supports_concurrent_invocations);
+  EXPECT_TRUE(step->runtime.blocks_host);
+  EXPECT_TRUE(step->runtime.uses_private_threads);
+  EXPECT_FALSE(step->runtime.supports_concurrent_invocations);
   EXPECT_TRUE(retained.step(1).error().IsOutOfRange());
 
   retained = {};
@@ -1582,26 +1621,20 @@ TEST(GraphRegions,
   ASSERT_TRUE(builder.publish(local).ok());
   Graph graph = std::move(builder).finish().value();
 
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &first,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-      hyle::graph::ExecutionDomain{.context = &second,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
+  const Environment environment{
+      {&first, hyle::mem::system_resource()},
+      {&second, hyle::mem::system_resource()},
   };
   std::array<hyle::graph::NodePlacement, 6> placements{};
   for (std::size_t index = 0; index < placements.size(); ++index) {
     placements[index] = hyle::graph::NodePlacement{
         .node = graph.node_id(index).value(),
-        .domain =
-            hyle::graph::ExecutionDomainId{index >= 2 && index < 4 ? 1u : 0u},
+        .target = environment.target(index >= 2 && index < 4 ? 1u : 0u),
         .strength = hyle::graph::PlacementStrength::kRequired,
     };
   }
   auto compiled =
-      hyle::graph::compile(graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(graph, environment.environment(),
                            CompileOptions{.node_placements = placements})
           .value();
   ASSERT_EQ(compiled.report.segment_count(), 3u);
@@ -1628,10 +1661,10 @@ TEST(GraphRegions,
   Queue first_queue = first.create_queue().value();
   Queue second_queue = second.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &first_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &second_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &first_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &second_queue},
   };
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   const auto replay = invocation.replay_report().value();
@@ -1652,7 +1685,7 @@ TEST(GraphRegions,
   EXPECT_TRUE(invocation.output(remote).error().IsFailedPrecondition());
 }
 
-TEST(GraphRegions, MultiDomainIndependentSinksUseANonblockingAggregate) {
+TEST(GraphRegions, MultiTargetIndependentSinksUseANonblockingAggregate) {
   RegionProbe first_probe{.mode = ProposalMode::kAsyncPairs};
   RegionProbe second_probe{.mode = ProposalMode::kAsyncPairs};
   Context first = make_context(first_probe);
@@ -1673,29 +1706,25 @@ TEST(GraphRegions, MultiDomainIndependentSinksUseANonblockingAggregate) {
   ASSERT_TRUE(builder.publish(second_output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &first,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-      hyle::graph::ExecutionDomain{.context = &second,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
+  const Environment environment{
+      {&first, hyle::mem::system_resource()},
+      {&second, hyle::mem::system_resource()},
   };
   const std::array placements{
       hyle::graph::NodePlacement{.node = graph.node_id(0).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = graph.node_id(1).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = graph.node_id(2).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = graph.node_id(3).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
@@ -1703,24 +1732,19 @@ TEST(GraphRegions, MultiDomainIndependentSinksUseANonblockingAggregate) {
   const std::array resources{
       hyle::graph::ExternalResourceContract{
           .value = first_input,
-          .domain = hyle::graph::ExecutionDomainId{0},
-          .resource = host},
+          .storage = environment.storage(0)},
       hyle::graph::ExternalResourceContract{
           .value = second_input,
-          .domain = hyle::graph::ExecutionDomainId{1},
-          .resource = host},
+          .storage = environment.storage(1)},
       hyle::graph::ExternalResourceContract{
           .value = first_output,
-          .domain = hyle::graph::ExecutionDomainId{0},
-          .resource = host},
+          .storage = environment.storage(0)},
       hyle::graph::ExternalResourceContract{
           .value = second_output,
-          .domain = hyle::graph::ExecutionDomainId{1},
-          .resource = host},
+          .storage = environment.storage(1)},
   };
   auto compiled =
-      hyle::graph::compile(graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(graph, environment.environment(),
                            CompileOptions{.node_placements = placements,
                                           .external_resources = resources})
           .value();
@@ -1749,10 +1773,10 @@ TEST(GraphRegions, MultiDomainIndependentSinksUseANonblockingAggregate) {
   Queue first_queue = first.create_queue().value();
   Queue second_queue = second.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &first_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &second_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &first_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &second_queue},
   };
   EXPECT_TRUE(
       invocation
@@ -1796,29 +1820,25 @@ TEST(GraphRegions, AbandonedAggregateRetainsEveryIndependentSink) {
   ASSERT_TRUE(builder.publish(second_output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &first,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-      hyle::graph::ExecutionDomain{.context = &second,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
+  const Environment environment{
+      {&first, hyle::mem::system_resource()},
+      {&second, hyle::mem::system_resource()},
   };
   const std::array placements{
       hyle::graph::NodePlacement{.node = graph.node_id(0).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = graph.node_id(1).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = graph.node_id(2).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = graph.node_id(3).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
@@ -1826,24 +1846,19 @@ TEST(GraphRegions, AbandonedAggregateRetainsEveryIndependentSink) {
   const std::array resources{
       hyle::graph::ExternalResourceContract{
           .value = first_input,
-          .domain = hyle::graph::ExecutionDomainId{0},
-          .resource = host},
+          .storage = environment.storage(0)},
       hyle::graph::ExternalResourceContract{
           .value = second_input,
-          .domain = hyle::graph::ExecutionDomainId{1},
-          .resource = host},
+          .storage = environment.storage(1)},
       hyle::graph::ExternalResourceContract{
           .value = first_output,
-          .domain = hyle::graph::ExecutionDomainId{0},
-          .resource = host},
+          .storage = environment.storage(0)},
       hyle::graph::ExternalResourceContract{
           .value = second_output,
-          .domain = hyle::graph::ExecutionDomainId{1},
-          .resource = host},
+          .storage = environment.storage(1)},
   };
   auto compiled =
-      hyle::graph::compile(graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(graph, environment.environment(),
                            CompileOptions{.node_placements = placements,
                                           .external_resources = resources})
           .value();
@@ -1859,10 +1874,10 @@ TEST(GraphRegions, AbandonedAggregateRetainsEveryIndependentSink) {
   Queue first_queue = first.create_queue().value();
   Queue second_queue = second.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &first_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &second_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &first_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &second_queue},
   };
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   auto completion = invocation.submit(queues);
@@ -1885,51 +1900,45 @@ TEST(GraphRegions, AbandonedAggregateRetainsEveryIndependentSink) {
   EXPECT_TRUE(invocation.output(second_output).has_value());
 }
 
-TEST(GraphRegions, MultiDomainPlacementKeepsEligibleProviderRegions) {
+TEST(GraphRegions, MultiTargetPlacementKeepsEligibleProviderRegions) {
   RegionProbe first_probe;
   RegionProbe second_probe;
   const NegationGraph logical = make_negations(4);
   Context first = make_context(first_probe);
   Context second = make_context(second_probe);
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &first,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-      hyle::graph::ExecutionDomain{.context = &second,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
+  const Environment environment{
+      {&first, hyle::mem::system_resource()},
+      {&second, hyle::mem::system_resource()},
   };
   const std::array placements{
       hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = logical.graph.node_id(2).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = logical.graph.node_id(3).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
   auto compiled =
-      hyle::graph::compile(logical.graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(logical.graph, environment.environment(),
                            CompileOptions{.node_placements = placements})
           .value();
   EXPECT_EQ(compiled.report.region_count(), 2u);
   EXPECT_EQ(compiled.report.fallback_operation_count(), 0u);
-  ASSERT_EQ(compiled.report.step_count(), 3u);
+  ASSERT_EQ(compiled.report.step_count(), 2u);
   EXPECT_EQ(compiled.report.step(0)->kind, CompileStepKind::kProviderRegion);
-  EXPECT_EQ(compiled.report.step(0)->domain, hyle::graph::ExecutionDomainId{0});
-  EXPECT_EQ(compiled.report.step(1)->kind, CompileStepKind::kCopy);
-  EXPECT_EQ(compiled.report.step(2)->kind, CompileStepKind::kProviderRegion);
-  EXPECT_EQ(compiled.report.step(2)->domain, hyle::graph::ExecutionDomainId{1});
+  EXPECT_EQ(compiled.report.step(0)->target, environment.target(0));
+  EXPECT_EQ(compiled.report.step(1)->kind, CompileStepKind::kProviderRegion);
+  EXPECT_EQ(compiled.report.step(1)->target, environment.target(1));
   EXPECT_EQ(first_probe.compile_count, 1u);
   EXPECT_EQ(second_probe.compile_count, 1u);
 
@@ -1943,10 +1952,10 @@ TEST(GraphRegions, MultiDomainPlacementKeepsEligibleProviderRegions) {
   Queue first_queue = first.create_queue().value();
   Queue second_queue = second.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &first_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &second_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &first_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &second_queue},
   };
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   ASSERT_TRUE(invocation.submit(queues)->wait().ok());
@@ -1954,70 +1963,31 @@ TEST(GraphRegions, MultiDomainPlacementKeepsEligibleProviderRegions) {
             std::vector<float>(values.begin(), values.end()));
 }
 
-TEST(GraphRegions, SharedQueueReservesTheCombinedDomainPrefixWithoutAWait) {
+TEST(GraphRegions, RejectsSurplusBindingsForASingleActiveLane) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   const NegationGraph logical = make_negations(4);
   Context context = make_context(probe);
-  const auto host = hyle::mem::system_resource();
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &context,
-                                   .workspace_resource = host},
-      hyle::graph::ExecutionDomain{.context = &context,
-                                   .workspace_resource = host},
-  };
-  const std::array placements{
-      hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
-                                 .strength =
-                                     hyle::graph::PlacementStrength::kRequired},
-      hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
-                                 .strength =
-                                     hyle::graph::PlacementStrength::kRequired},
-      hyle::graph::NodePlacement{.node = logical.graph.node_id(2).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
-                                 .strength =
-                                     hyle::graph::PlacementStrength::kRequired},
-      hyle::graph::NodePlacement{.node = logical.graph.node_id(3).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
-                                 .strength =
-                                     hyle::graph::PlacementStrength::kRequired},
-  };
-  auto compiled =
-      hyle::graph::compile(logical.graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
-                           CompileOptions{.node_placements = placements})
-          .value();
-  ASSERT_EQ(compiled.report.segment_count(), 2u);
-  EXPECT_EQ(compiled.report.synchronization_count(), 1u);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  auto compiled = hyle::graph::compile(logical.graph, environment.environment())
+                      .value();
+  ASSERT_EQ(compiled.report.segment_count(), 1u);
 
   OwnedTensor input = make_tensor(row(8));
   OwnedTensor output = make_tensor(row(8));
   auto invocation = compiled.executable.create_invocation().value();
   Queue queue = context.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &queue},
   };
-  EXPECT_TRUE(invocation.prepare_replay(queues).IsFailedPrecondition());
+  EXPECT_TRUE(invocation.prepare_replay(queues).IsInvalidArgument());
   EXPECT_EQ(probe.reserve_completion_count, 0u);
   ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
   ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
-  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
-  const auto replay = invocation.replay_report().value();
-  EXPECT_EQ(replay.ordered_dependency_count, 1u);
-  EXPECT_EQ(replay.device_wait_dependency_count, 0u);
-  EXPECT_EQ(replay.host_wait_dependency_count, 0u);
-  EXPECT_EQ(invocation.dependency_route(1, 0).value(),
-            hyle::graph::ReplayDependencyRoute::kOrderedQueue);
-  EXPECT_EQ(probe.reserve_completion_count, 1u);
-  EXPECT_EQ(probe.last_reserved_completions, 2u);
-  ASSERT_TRUE(invocation.submit(queues)->wait().ok());
-  EXPECT_EQ(probe.device_wait_count, 0u);
-  EXPECT_EQ(probe.completion_wait_count, 1u);
-  EXPECT_EQ(probe.transfer_query_count, 1u);
+  EXPECT_TRUE(invocation.prepare_replay(queues).IsInvalidArgument());
+  EXPECT_EQ(probe.reserve_completion_count, 0u);
 }
 
 TEST(GraphRegions, RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted) {
@@ -2027,41 +1997,42 @@ TEST(GraphRegions, RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted) {
   const NegationGraph logical = make_negations(2);
   Context first = make_context(first_probe);
   Context second = make_context(second_probe);
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &first,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-      hyle::graph::ExecutionDomain{.context = &second,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-  };
+  HostResource first_storage;
+  HostResource second_storage;
+  const Environment environment{{
+      ExecutionSpec{.context = &first,
+                    .storage = hyle::mem::MemoryResourceRef(first_storage)},
+      ExecutionSpec{.context = &second,
+                    .storage = hyle::mem::MemoryResourceRef(second_storage)},
+  }};
   const std::array placements{
       hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
   auto compiled =
-      hyle::graph::compile(logical.graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(logical.graph, environment.environment(),
                            CompileOptions{.node_placements = placements})
           .value();
-  OwnedTensor input = make_tensor(row(8));
-  OwnedTensor output = make_tensor(row(8));
+  OwnedTensor input = make_tensor(
+      row(8), hyle::mem::MemoryResourceRef(first_storage));
+  OwnedTensor output = make_tensor(
+      row(8), hyle::mem::MemoryResourceRef(second_storage));
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
   ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
   Queue first_queue = first.create_queue().value();
   Queue second_queue = second.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &first_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &second_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &first_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &second_queue},
   };
   EXPECT_TRUE(invocation.prepare_replay(queues).IsUnimplemented());
   EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kUnprepared);
@@ -2078,33 +2049,34 @@ TEST(GraphRegions, ExposesAndCanRejectAHostDependencyBeforeSubmission) {
   const NegationGraph logical = make_negations(2);
   Context first = make_context(first_probe);
   Context second = make_context(second_probe);
-  const std::array domains{
-      hyle::graph::ExecutionDomain{.context = &first,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-      hyle::graph::ExecutionDomain{.context = &second,
-                                   .workspace_resource =
-                                       hyle::mem::system_resource()},
-  };
+  HostResource first_storage;
+  HostResource second_storage;
+  const Environment environment{{
+      ExecutionSpec{.context = &first,
+                    .storage = hyle::mem::MemoryResourceRef(first_storage)},
+      ExecutionSpec{.context = &second,
+                    .storage = hyle::mem::MemoryResourceRef(second_storage)},
+  }};
   const std::array placements{
       hyle::graph::NodePlacement{.node = logical.graph.node_id(0).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{0},
+                                 .target = environment.target(0),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
       hyle::graph::NodePlacement{.node = logical.graph.node_id(1).value(),
-                                 .domain = hyle::graph::ExecutionDomainId{1},
+                                 .target = environment.target(1),
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
   auto compiled =
-      hyle::graph::compile(logical.graph,
-                           hyle::graph::CompileEnvironment{.domains = domains},
+      hyle::graph::compile(logical.graph, environment.environment(),
                            CompileOptions{.node_placements = placements})
           .value();
   EXPECT_EQ(compiled.report.synchronization_count(), 1u);
 
-  OwnedTensor input = make_tensor(row(8));
-  OwnedTensor output = make_tensor(row(8));
+  OwnedTensor input = make_tensor(
+      row(8), hyle::mem::MemoryResourceRef(first_storage));
+  OwnedTensor output = make_tensor(
+      row(8), hyle::mem::MemoryResourceRef(second_storage));
   const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
   write(input, values);
   auto invocation = compiled.executable.create_invocation().value();
@@ -2113,10 +2085,10 @@ TEST(GraphRegions, ExposesAndCanRejectAHostDependencyBeforeSubmission) {
   Queue first_queue = first.create_queue().value();
   Queue second_queue = second.create_queue().value();
   const std::array queues{
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{0},
-                                .queue = &first_queue},
-      hyle::graph::QueueBinding{.domain = hyle::graph::ExecutionDomainId{1},
-                                .queue = &second_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(0),
+                                 .queue = &first_queue},
+      hyle::graph::QueueBinding{.lane = environment.lane(1),
+                                 .queue = &second_queue},
   };
   EXPECT_TRUE(
       invocation

@@ -12,6 +12,7 @@
 #include "hyle/error/result.h"
 #include "hyle/graph/graph.h"
 #include "hyle/graph/visibility.h"
+#include "hyle/mem/resource.h"
 
 namespace hyle::graph {
 
@@ -28,33 +29,86 @@ struct SpecializationSignatureAccess;
 
 class Invocation;
 
-class ExecutionDomainId final {
+class ExecutionTargetId final {
 public:
-  constexpr ExecutionDomainId() noexcept = default;
-  constexpr explicit ExecutionDomainId(std::uint32_t ordinal) noexcept
+  constexpr ExecutionTargetId() noexcept = default;
+  constexpr explicit ExecutionTargetId(std::uint32_t ordinal) noexcept
       : ordinal_(ordinal) {}
 
   constexpr bool valid() const noexcept { return ordinal_ != UINT32_MAX; }
   constexpr explicit operator bool() const noexcept { return valid(); }
   constexpr std::uint32_t ordinal() const noexcept { return ordinal_; }
 
-  friend constexpr bool operator==(ExecutionDomainId,
-                                   ExecutionDomainId) noexcept = default;
+  friend constexpr bool operator==(ExecutionTargetId,
+                                   ExecutionTargetId) noexcept = default;
 
 private:
   std::uint32_t ordinal_ = UINT32_MAX;
 };
 
-// Borrowed cold compile input. Context is retained internally by the emitted
-// plan; the MemoryResource provider remains caller-owned and must outlive the
-// Executable, its Invocations, and all submitted work.
-struct ExecutionDomain final {
+class StorageDomainId final {
+public:
+  constexpr StorageDomainId() noexcept = default;
+  constexpr explicit StorageDomainId(std::uint32_t ordinal) noexcept
+      : ordinal_(ordinal) {}
+
+  constexpr bool valid() const noexcept { return ordinal_ != UINT32_MAX; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::uint32_t ordinal() const noexcept { return ordinal_; }
+
+  friend constexpr bool operator==(StorageDomainId,
+                                   StorageDomainId) noexcept = default;
+
+private:
+  std::uint32_t ordinal_ = UINT32_MAX;
+};
+
+class ExecutionLaneId final {
+public:
+  constexpr ExecutionLaneId() noexcept = default;
+  constexpr explicit ExecutionLaneId(std::uint32_t ordinal) noexcept
+      : ordinal_(ordinal) {}
+
+  constexpr bool valid() const noexcept { return ordinal_ != UINT32_MAX; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::uint32_t ordinal() const noexcept { return ordinal_; }
+
+  friend constexpr bool operator==(ExecutionLaneId,
+                                   ExecutionLaneId) noexcept = default;
+
+private:
+  std::uint32_t ordinal_ = UINT32_MAX;
+};
+
+// Borrowed cold compile inputs. Contexts are retained by the emitted plan;
+// MemoryResource providers remain caller-owned and must outlive the
+// Executable, its Invocations, and every submitted Completion.
+struct StorageDomain final {
+  mem::MemoryResourceRef resource{};
+  std::size_t workspace_budget_bytes = SIZE_MAX;
+};
+
+struct ExecutionTarget final {
   const compute::Context *context = nullptr;
-  mem::MemoryResourceRef workspace_resource{};
+  StorageDomainId default_storage{};
+};
+
+enum class ExecutionLaneRole : std::uint8_t {
+  kCompute = 0,
+  kTransfer,
+  kCommunication,
+};
+
+struct ExecutionLane final {
+  ExecutionTargetId target{};
+  ExecutionLaneRole role = ExecutionLaneRole::kCompute;
 };
 
 struct CompileEnvironment final {
-  std::span<const ExecutionDomain> domains{};
+  std::span<const StorageDomain> storage_domains{};
+  std::span<const ExecutionTarget> targets{};
+  // Empty means one implicit compute lane per target.
+  std::span<const ExecutionLane> lanes{};
 };
 
 enum class PlacementStrength : std::uint8_t {
@@ -64,32 +118,27 @@ enum class PlacementStrength : std::uint8_t {
 
 struct NodePlacement final {
   NodeId node{};
-  ExecutionDomainId domain{};
+  ExecutionTargetId target{};
   PlacementStrength strength = PlacementStrength::kPreferred;
 };
 
 struct ValuePlacement final {
   ValueId value{};
-  ExecutionDomainId domain{};
+  StorageDomainId storage{};
   PlacementStrength strength = PlacementStrength::kPreferred;
 };
 
 // Exact compile-time resource locality for a caller-bound graph value. The
-// allocation itself may change between replays, but its resource/domain may
-// not. Omitted source contracts use domain zero; an omitted produced output
-// stays with its producer. Both defer exact resource validation to the owning
-// backend, preserving the compact single-domain convenience path. An external
-// value that crosses a domain boundary requires an exact contract so compile
-// can select a real transfer executor instead of guessing from a workspace
-// resource.
+// allocation itself may change between replays, but it must use the selected
+// StorageDomain's exact resource. Omitted source contracts use storage zero;
+// an omitted produced output stays in its producer's selected storage.
 struct ExternalResourceContract final {
   ValueId value{};
-  ExecutionDomainId domain{};
-  mem::MemoryResourceRef resource{};
+  StorageDomainId storage{};
 };
 
 struct QueueBinding final {
-  ExecutionDomainId domain{};
+  ExecutionLaneId lane{};
   compute::Queue *queue = nullptr;
 };
 
@@ -203,9 +252,11 @@ struct CompileStepReport final {
   CompileStepKind kind = CompileStepKind::kOperationFallback;
   CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
   compute::ProviderIdentity provider{};
-  ExecutionDomainId domain{};
-  ExecutionDomainId source_domain{};
-  ExecutionDomainId destination_domain{};
+  ExecutionTargetId target{};
+  ExecutionLaneId lane{};
+  StorageDomainId workspace_storage{};
+  StorageDomainId source_storage{};
+  StorageDomainId destination_storage{};
   std::uint32_t node_begin = 0;
   std::uint32_t node_count = 0;
   compute::WorkspaceRequirement workspace{};
@@ -224,17 +275,27 @@ struct CompileStepReport final {
   std::uint32_t output_begin = 0;
   std::uint32_t input_count = 0;
   std::uint32_t output_count = 0;
-  bool blocks_host = false;
-  bool uses_private_threads = false;
-  bool supports_concurrent_invocations = true;
-  bool capture_compatible = false;
+  compute::ProviderRuntimeProperties runtime{};
 };
 
-struct CompileDomainReport final {
-  ExecutionDomainId domain{};
+struct CompileTargetReport final {
+  ExecutionTargetId target{};
   compute::Device device{};
+  StorageDomainId default_storage{};
+};
+
+struct CompileStorageReport final {
+  StorageDomainId storage{};
+  mem::MemoryProperties properties{};
+  std::size_t workspace_budget_bytes = SIZE_MAX;
   std::size_t workspace_bytes = 0;
   std::size_t workspace_backing_count = 0;
+};
+
+struct CompileLaneReport final {
+  ExecutionLaneId lane{};
+  ExecutionTargetId target{};
+  ExecutionLaneRole role = ExecutionLaneRole::kCompute;
   // Conservative Queue Completion capacity needed by one in-flight
   // Invocation. Deployments sharing a Queue across N concurrent lanes can
   // reserve N times this value before entering their warm path.
@@ -249,7 +310,7 @@ struct CompileDomainReport final {
 // and identities, but intentionally does not retain caller resource objects.
 struct CompilePhysicalValueReport final {
   ValueId value{};
-  ExecutionDomainId domain{};
+  StorageDomainId storage{};
   compute::TensorDesc description{};
   std::optional<std::uint32_t> alias_source{};
   bool external_input = false;
@@ -262,7 +323,7 @@ struct CompilePhysicalValueReport final {
 // A Queue segment is the unit of finalization and optional command capture.
 // Dependencies are queried through CompileReport::segment_dependency().
 struct CompileSegmentReport final {
-  ExecutionDomainId domain{};
+  ExecutionLaneId lane{};
   std::uint32_t step_begin = 0;
   std::uint32_t step_count = 0;
   std::uint32_t dependency_begin = 0;
@@ -312,7 +373,9 @@ public:
   HYLE_GRAPH_API std::size_t workspace_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
-  HYLE_GRAPH_API std::size_t domain_count() const noexcept;
+  HYLE_GRAPH_API std::size_t target_count() const noexcept;
+  HYLE_GRAPH_API std::size_t storage_domain_count() const noexcept;
+  HYLE_GRAPH_API std::size_t lane_count() const noexcept;
   HYLE_GRAPH_API std::size_t step_count() const noexcept;
   HYLE_GRAPH_API std::size_t segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t segment_dependency_count() const noexcept;
@@ -335,8 +398,12 @@ public:
   HYLE_GRAPH_API bool mixed_providers() const noexcept;
   HYLE_GRAPH_API bool mixed_backends() const noexcept;
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
-  HYLE_GRAPH_API Result<CompileDomainReport>
-  domain(std::size_t index) const noexcept;
+  HYLE_GRAPH_API Result<CompileTargetReport>
+  target(std::size_t index) const noexcept;
+  HYLE_GRAPH_API Result<CompileStorageReport>
+  storage_domain(std::size_t index) const noexcept;
+  HYLE_GRAPH_API Result<CompileLaneReport>
+  lane(std::size_t index) const noexcept;
   HYLE_GRAPH_API Result<CompileSegmentReport>
   segment(std::size_t index) const noexcept;
   HYLE_GRAPH_API Result<CompileSegmentDependencyReport>
@@ -388,6 +455,15 @@ enum class OperationFallbackPolicy : std::uint8_t {
   kReject,
 };
 
+enum class WorkspaceReusePolicy : std::uint8_t {
+  // Reuse storage only when the existing lane/dependency schedule proves the
+  // two lifetimes ordered. Unordered values never alias.
+  kExistingOrderOnly = 0,
+  // A compiler may add visible ordering edges to satisfy a hard storage
+  // budget. Every added edge and its concurrency cost is reported.
+  kAllowSerialization,
+};
+
 enum class OutputOwnership : std::uint8_t {
   // A materialized output uses a distinct caller-provided mutable binding.
   kCaller = 0,
@@ -409,6 +485,8 @@ struct CompileOptions final {
   std::span<const NodePlacement> node_placements{};
   std::span<const ValuePlacement> value_placements{};
   std::span<const ExternalResourceContract> external_resources{};
+  WorkspaceReusePolicy workspace_reuse =
+      WorkspaceReusePolicy::kExistingOrderOnly;
   // Hard cap for node/domain preparation attempts during deterministic
   // placement. Exhaustion fails rather than silently selecting another plan.
   std::size_t max_placement_attempts = 4096;
@@ -441,13 +519,15 @@ public:
   HYLE_GRAPH_API std::size_t input_count() const noexcept;
   HYLE_GRAPH_API std::size_t output_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
-  HYLE_GRAPH_API std::size_t domain_count() const noexcept;
+  HYLE_GRAPH_API std::size_t target_count() const noexcept;
+  HYLE_GRAPH_API std::size_t storage_domain_count() const noexcept;
+  HYLE_GRAPH_API std::size_t lane_count() const noexcept;
   HYLE_GRAPH_API std::size_t step_count() const noexcept;
   HYLE_GRAPH_API std::size_t segment_count() const noexcept;
   HYLE_GRAPH_API std::size_t segment_dependency_count() const noexcept;
   HYLE_GRAPH_API std::size_t required_queue_count() const noexcept;
   HYLE_GRAPH_API Result<bool>
-  requires_queue(ExecutionDomainId domain) const noexcept;
+  requires_queue(ExecutionLaneId lane) const noexcept;
   HYLE_GRAPH_API std::size_t region_count() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
