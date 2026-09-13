@@ -10,6 +10,12 @@ mark_as_advanced(
   HYLE_TEST_SIMD_RVV)
 
 if(TARGET hyle_simd)
+  add_test(NAME hyle_simd_provider_codegen_audit_parser_test
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/provider_codegen_audit_test.py")
+  set_tests_properties(hyle_simd_provider_codegen_audit_parser_test PROPERTIES
+    LABELS "simd;codegen")
+
   # Public pointer/count and runtime contracts. Register-provider correctness
   # belongs to Highway plus the finite winner tests below; the removed HYLE
   # vec/native backend is no longer rebuilt as a parallel SIMD library.

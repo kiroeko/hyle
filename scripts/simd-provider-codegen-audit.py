@@ -51,6 +51,14 @@ PEER_PAIRS = (
      "hyle_simd_peer_stream_highway"),
 )
 
+# AppleClang gives every function-local constant pool a translation-unit
+# ordinal (for example LCPI26_0 versus LCPI27_0).  Direct and routed probe
+# functions necessarily have different ordinals even when they reference the
+# same local slot.  The ordinal is presentation identity, not a code edge or
+# cost.  Keep the relocation kind and the pool slot so a changed relocation
+# class or a different constant within one function remains observable.
+MACHO_LOCAL_CONSTANT_POOL = re.compile(r"^(?P<kind>[^:]+):_?lcpi\d+_(?P<slot>\d+)$")
+
 
 def fail(message: str) -> None:
     raise RuntimeError(message)
@@ -137,12 +145,23 @@ def is_alignment_noop(instruction) -> bool:
     return False
 
 
+def relocation_shape(relocation: str) -> str:
+    value = relocation.lower()
+    match = MACHO_LOCAL_CONSTANT_POOL.fullmatch(value)
+    if match is None:
+        return value
+    return f"{match.group('kind')}:lcpi#_{match.group('slot')}"
+
+
 def shape(instructions) -> list[dict[str, object]]:
     return [
         {
             "mnemonic": instruction.mnemonic,
             "operands": operand_shape(instruction.operands),
-            "relocations": sorted(instruction.relocations),
+            "relocations": sorted(
+                relocation_shape(relocation)
+                for relocation in instruction.relocations
+            ),
         }
         for instruction in instructions
         if not is_alignment_noop(instruction)

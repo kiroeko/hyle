@@ -24,7 +24,9 @@
 
 - [Structured pair placement validator 修复](project/performance-structured-placement-validator-2026-09.md)；
 - [性能计时前完成边界与执行拓扑预审](project/performance-preflight-topology-2026-09.md)；
-- [真实 workload paired interleaving](project/performance-workload-interleaving-2026-09.md)。
+- [真实 workload paired interleaving](project/performance-workload-interleaving-2026-09.md)；
+- [AppleClang 本地常量池标签归一化](project/simd-codegen-local-pool-normalization-2026-09.md)：
+  codegen 比较忽略函数局部 `LCPI` 序号，但继续核对 relocation 类型、槽号与外部边。
 
 当前构建/交付审查：
 
