@@ -398,6 +398,11 @@
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
       "summary": "compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select、Reduce、RMSNorm/LayerNorm、MatMul 与 packed-SiLU 共 12/19 类可执行，Windows 定向测试通过；先转去完成 Graph v3 合同，再由真实图缺口驱动其他 7 类；三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。"
+    },
+    {
+      "module": "compute_sched",
+      "state": "QUEUED",
+      "summary": "compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。"
     }
   ]
 }

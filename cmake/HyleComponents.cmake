@@ -387,6 +387,11 @@ _hyle_declare_component(compute_provider_native
     hyle/compute/providers/native.h
     hyle/compute/cpu.h)
 
+# Reserved identity for the optional Platform/Sched-backed persistent CPU
+# execution pool.  It remains dependency-free and absent from the Compute
+# product until its own closure round freezes API, ownership and performance.
+_hyle_declare_component(compute_sched QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

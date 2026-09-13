@@ -50,6 +50,7 @@
 | compute_backend_cpu | AUDITED | — | [record](tasks/compute/compute-backend-cpu-v1-factor.md) | compute_backend_cpu v1 AUDITED：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现并通过 Windows 三交付；依赖 runtime 终局证据后才能关闭。 |
 | compute_backend_cuda | AUDITED | — | [record](tasks/compute/compute-backend-cuda-v1-async-runtime.md) | compute_backend_cuda v1 AUDITED：冻结 CUDA 13.3 explicit-context/non-blocking-stream runtime、stable device/pinned/managed resource、每 segment event Completion、pending abandon reaper、typed import/submit、single-queue capture 与 system-SDK 三交付；只授权 CU10--CU23。 |
 | compute_provider_native | AUDITED | — | [record](tasks/compute/compute-provider-native-v1-factor.md) | compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select、Reduce、RMSNorm/LayerNorm、MatMul 与 packed-SiLU 共 12/19 类可执行，Windows 定向测试通过；先转去完成 Graph v3 合同，再由真实图缺口驱动其他 7 类；三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。 |
+| compute_sched | QUEUED | — | — | compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
