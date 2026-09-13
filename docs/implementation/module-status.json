@@ -375,9 +375,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-provider-onednn-v2-ukernel-region.md",
-      "summary": "graph_provider_onednn v2 AUDITED：GP20--GP26 已冻结为精确四节点 dense-f32 gated MLP region、两个 BRGEMM plan、两个 executor episode、显式 workspace/错误/并发/cost 与 Graph-only provider API；仍为空 factor，下一提交才准入产品实现、依赖和交付。"
+      "candidate": "49dcaa09139f79848af6ece1289e15739556ed9a",
+      "summary": "graph_provider_onednn v2 CANDIDATE：GP20--GP26 的精确四节点 dense-f32 gated MLP region 已实现；Windows 12 项行为测试及 source/relocated shared/relocated static Graph 消费全部通过。qualified P1/P2、WSL sanitizer/package、两台 Apple 可选能力回放、终局 P0 与红队仍待完成。"
     },
     {
       "module": "compute_ops",

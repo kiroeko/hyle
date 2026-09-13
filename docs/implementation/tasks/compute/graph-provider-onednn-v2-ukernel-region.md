@@ -29,9 +29,11 @@
 - non-goals：恢复 oneDNN Graph API、增加通用 CPU 算子目录、单-op prepare、量化/bf16/f16/稀疏、
   Attention、RMSNorm fusion、动态 shape、GPU/SYCL、训练、修改共享 `.deps`、公开 oneDNN 类型、模型/KV/
   batching/sampling/serving、Native FFI；
-- 直接依赖 / 直接消费者：SCOPED 时仍无依赖。候选 public dependency 为 `compute`，private dependency
-  为 `graph`、`simd` 和 locked oneDNN；不得让 Compute 或 `compute_provider_onednn` 反向依赖 Graph。
-  直接消费者是 Graph compile/Invocation 与完整 transformer MLP 纵切；
+- 直接依赖 / 直接消费者：SCOPED 时仍无依赖。候选 public dependency 为 `compute`；实际 private
+  dependency 为 `compute_ops`、`error`、`graph`、`math`、`mem`、`simd` 和
+  `compute_provider_onednn`，外部依赖为 locked oneDNN；不得让 Compute 或
+  `compute_provider_onednn` 反向依赖 Graph。直接消费者是 Graph compile/Invocation、Graph package
+  consumer 与完整 transformer MLP 纵切；
 - 性能 tier 与原因：`P1` 证明 steady allocation、region boundary 与小形状开销，`P2` 比较完整 gated MLP
   admission-to-terminal-completion。比较对象为同一 Graph 的逐 op oneDNN/native sequence，以及同 shape、
   layout、threading、workspace owner 的 direct ukernel+SIMD sequence；固定 5% 非劣门；
@@ -140,16 +142,34 @@ executor backing 必须活过 Context 及其 artifacts/invocations。Graph-only 
 
 ## Candidate
 
-- commit：尚无；
-- public API、layout、算法和常态成本变化：尚无；
-- 直接消费者迁移：尚无；
-- candidate 后仅证据/文档变化：尚未进入候选。
+- immutable product commit：`49dcaa09139f79848af6ece1289e15739556ed9a`；
+- public API：新增 `hyle/graph/providers/onednn.h` 与
+  `hyle::graph::onednn::provider(ProviderOptions)`；公开面只暴露 borrowed
+  `compute::ParallelExecutorRef`，不泄漏 oneDNN 类型；
+- layout、算法和常态成本：只识别冻结的四节点 dense-f32 separate-input gated MLP；两个共享的私有
+  BRGEMM plan、两个 `M*H` 中间区和复用 scratch 在冷路径固定。propose 为 `O(V+E)` 且一次临时计数
+  allocation；每次 Invocation 拥有一个 64-byte aligned workspace；warm submit 两个同步 executor
+  episode、一次边界 mapping、零 HYLE heap allocation/JIT/copy/provider search；
+- correctness：Windows provider header 与 12 项行为测试通过，覆盖精确 region、decode/tail、single-op/
+  published/extra-consumer 反例、严格 estimate 策略、相邻 RMSNorm、warm allocation、nested executor、
+  并发 Invocation，以及 compile/Invocation OOM rollback/retry；
+- 直接消费者与交付：`graph` 产品投影在 oneDNN ON 时包含本 factor，OFF 时 target 不存在且不下载；
+  Graph package sample 冷编译并执行真实四节点 region。Windows Release/WERROR 的 source embedding、
+  relocated installed shared 与 relocated installed static consumer 全部通过，安装包含精确 target、依赖头、
+  package metadata 和 oneDNN license；
+- candidate 后只允许本卡已声明的 P0/P1/P2、WSL sanitizer/package、两台 Apple AUTO/OFF/显式 ON
+  诊断、红队和证据/文档变化。若公开 API、pattern、workspace、执行 episode 或产品依赖改变，必须先退回
+  `AUDITED`。
 
 ## 红队与裁决
 
-- 红队反证与处理：待 AUDITED 后执行；
-- 未决限制：上述七项；
+- 红队反证与处理：candidate 前 implementation review 已确认 ValueId 绑定不依赖常量传入顺序、所有
+  size/alignment 算术复用 `math::try_*` 与 `mem::try_align_up`，不复制 BRGEMM mechanism；终局独立红队仍待
+  candidate gates 后执行；
+- 未决限制：qualified P1/P2、WSL ASan/UBSan 与交付、两台 Apple 可选能力诊断/native fallback、终局 P0
+  和红队；
 - reopen triggers：不适用，当前为 blocker 恢复审计；
 - LOC：终局统计；
-- 最终状态与理由：`AUDITED`；公开形状、依赖、workspace、执行 episode、错误/并发与有限 GP20--GP26
-  已冻结，允许实现；v1 的 oneDNN Graph API blocker 仍然有效且未被绕过。
+- 当前状态与理由：`CANDIDATE`；GP20--GP26 已在不可变产品提交中实现，Windows 行为与三交付通过；
+  v1 的 oneDNN Graph API blocker 仍然有效且未被绕过。其余预声明 gate 未完成，不能提前写成
+  `CLOSED`。
