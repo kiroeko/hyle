@@ -272,9 +272,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-v5-backend-command-spine.md",
-      "summary": "compute v5 SCOPED：以真 CUDA/Graph 证据审计 queue-prefix 单次 finalization、enqueue-only provider SPI、对象局部 backend command extension、async transfer/dependency 与 typed native seam；本轮不扩算子目录，AUDITED 前不改产品。"
+      "summary": "compute v5 AUDITED：C55--C64 冻结为 queue-sequence 单次 finalization、accepted/status provider enqueue、对象局部 backend extension、direct byte transfer、compatible dependency 与 typed native seam；Graph event 数按 segment 而非 node，现可实施有限 FIX，不扩 CPU 算子目录。"
     },
     {
       "module": "graph",

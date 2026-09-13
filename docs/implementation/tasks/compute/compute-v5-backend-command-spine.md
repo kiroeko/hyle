@@ -84,3 +84,147 @@
 
 本卡只授权审计。完成能力表、自然调用草图、P0 账单、七问和有限 FIX ledger 并进入 `AUDITED` 前，不改
 Compute、Provider、Graph 或 backend 产品代码。
+
+## AUDITED 结论（2026-09-13）
+
+### 来源对账与边界裁决
+
+- ggml `e91ded11bdcd` 的 backend 基础面包含 async set/get/copy、device event create/record/wait/synchronize，
+  scheduler 在 split 边界复用 event；其 CUDA route 在 source stream copy 后 record event，再令 destination
+  stream wait。它证明 transfer/event 是 backend runtime，不是 operator provider，也不应按 node 产出 event；
+- llama.cpp `e71b80510c84` 使用该 backend scheduler；vLLM `51da0ca66c80` 和 SGLang
+  `dcebe8c4733a` 把 graph pool、稳定地址与 capture/replay state 放在 invocation/runner；ds4
+  `f62ca29a3087` 把显式 stream、stream-owned scratch/pool 与 capture-safe allocation 分开。共同稳定形状是
+  “冷路径准备资源和 event，热路径向既定 queue 录命令，只在 segment/依赖边界终态化”；
+- CUDA Runtime/Driver、Metal command buffer/shared event 与 Vulkan timeline 的 vendor 对象不能进入普通
+  Compute 头。共同可上提的只有：ordered queue sequence、byte transfer、compatible dependency wait、prefix
+  completion 与版本化对象局部 extension。module/kernel/pipeline 参数仍由 typed backend factor 拥有；
+- 本轮不拆 `compute_command`/`compute_event` component：这些机制与 Context/Queue/Completion 共用相同依赖、
+  owner、测试和所有直接消费者，独立 target 只会制造环与公开心智。`compute` 仍是该 runtime 质因数。
+
+### 能力与形状审计
+
+| 能力族 | 层级 | 准入旅程/来源 | 冻结语义与生命周期 | 当前 | 动作 |
+|---|---|---|---|---|---|
+| queue sequence | 原子机制 | direct op、Graph segment、ggml split | begin 先取得 admission/单 producer 并预留终态 slot；accepted work 只在 `finish` 生成一个 prefix Completion | PARTIAL | FIX |
+| provider/region enqueue | 原子机制 | CPU/CUDA op、oneDNN region | 返回 `EnqueueResult{accepted,status}`；rejected 表示本 command 未录入，accepted+error 表示已有部分 prefix 必须终态化 | MISSING | REPLACE |
+| prefix finalization | 原子机制 | CUDA event、Metal command buffer、timeline value | 每 direct submit 或 Graph queue segment 一次；空/rejected-only sequence 直接 inline terminal；accepted sequence 必须返回有效 Completion | MISSING | FIX |
+| byte transfer | 复合功能 | model staging、renderer upload/download、ggml async copy | `copy_async`/`fill_async` 使用 BufferView；不解释 Tensor format、不隐藏 pageable staging，range/domain/overlap 在接纳前验证 | MISSING | FIX |
+| transfer capability | 原子机制 | Graph placement/materialize boundary | 冷查询说明 immediate 或 queued-direct；unsupported 显式失败，unknown 不写成免费/异步 | MISSING | FIX |
+| compatible queue wait | 原子机制 | multi-stream Graph、ggml event wait | 只借用仍存活的 backend prefix Completion；兼容 route 设备侧录 wait，不兼容返回 Unimplemented 供 Graph 显式 host barrier | MISSING | FIX |
+| backend extension | 原子机制 | CUDA/Metal/Vulkan typed interop | 精确 ID/version、Context-retained、对象局部 query；compile/typed setup 可缓存，普通 op submit 不查询 | MISSING | FIX |
+| typed native command | 复合功能 | custom CUDA kernel、renderer compute pass | vendor header/factor 提供 typed stream/encoder callback 或 artifact；callable 只在 host enqueue 期间借用，不塞进通用 ABI | ROUTED | BORROW |
+| async storage owner | 复合功能 | device/pinned/managed allocation | Mem Buffer/View 不改 layout；typed backend 稳定 resource owner 保活 backend context，并明确要求 owner 先于 Buffer/in-flight work | ROUTED | BORROW |
+| public generic Event/CommandList | 复合功能 | 无第二个独立自然 consumer | Completion 已是用户终态；内部 sequence/event 足够 Graph，公开万能 vendor 抽象会丢语义 | OUT_OF_SCOPE | REJECT |
+| callback/coroutine continuation | 复合功能 | Sched bridge | 不强制 Compute 依赖 Sched；后续 `compute_sched` 组合同一 Completion | ROUTED | DEFER |
+
+全部公开入口回映如下：`Backend/Device/Context/Queue` 回指 runtime identity/admission；`Completion` 回指
+sequence boundary；`OperationInvocation::submit` 保持自然 public 形状，但内部改为 begin -> enqueue -> finish；
+新增 `transfer_properties/copy_async/fill_async` 回指 byte-transfer 族。Provider/backend extension、
+`QueueSequence`、`EnqueueResult` 和 completion dependency 均只供 factor 间使用，不成为普通用户第二套路。
+
+### 冻结自然 C++ 形状
+
+```cpp
+auto queue = HYLE_TRY(context.create_queue());
+HYLE_TRY(queue.reserve_completions(concurrent_lanes)); // cold, idempotent
+
+auto uploaded = HYLE_TRY(compute::copy_async(queue, device_view, host_view));
+HYLE_TRY(uploaded.wait());
+
+auto done = HYLE_TRY(invocation.submit(queue, inputs, outputs));
+HYLE_TRY(done.wait());
+
+// Vendor header owns the native type and callback; ordinary Compute headers do not.
+auto custom = HYLE_TRY(compute::cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+  return launch_my_kernel(stream, args);
+}));
+```
+
+`reserve_completions()` 只增长 backend 的可并发终态槽，不能 shrink、drain 或改变 queue 顺序；CPU 为 O(1)
+no-op。普通单次 direct submit 仍产生一次 Completion。Graph 使用内部 sequence 把同一 queue segment 的多个
+op/region/copy 录完再 finish，因而只产生一次 backend completion；不要求用户管理内部 sequence。
+
+`TransferProperties` 只报告 `kImmediate` 或 `kQueuedDirect` 以及是否支持 peer route。HYLE 不在该 API 内
+偷偷分配 staging；普通 pageable host <-> CUDA 若不能保证 queued-direct，就明确不具备该路线，Graph 可
+显式 materialize pinned staging，普通用户也可选择同步 Mem 操作。
+
+### 有限入口与实现 ledger
+
+| ID | 当前入口/机制 | 裁决 | 冻结改动 |
+|---|---|---|---|
+| C55 | provider/region submit 返回每-step Completion | REPLACE | 内部 `EnqueueResult` 明确 accepted 与同步 status；public direct submit 仍返回 Completion |
+| C56 | QueueSequence 只做 admission guard | FIX | 增加 backend begin token、accepted/tail 累积、显式 finish 与安全 abandon；同一 sequence 只 finalizes 一次 |
+| C57 | BackendVTable 只有 create/destroy/drain | FIX | 增加 begin/finish sequence、transfer query/enqueue、compatible wait 与 query_extension；CPU 完整实现 immediate route |
+| C58 | 只有 ProviderExtensionRef | FIX | 增加同形状的 versioned `BackendExtensionRef/Access`，保活 exact Context 并验证 Queue belonging/admission |
+| C59 | Completion 无 factor dependency identity | FIX | 增加仅内部借用的 exact backend/vtable/state view；源 Completion 必须保活到 consumer prefix 终态，public 不可复制 |
+| C60 | 无 direct async byte transfer | FIX | 增加 `transfer_properties`、`copy_async`、`fill_async`；BufferView 合同，不把 repack/tensor fill 混进来 |
+| C61 | Queue 无 completion slot 预留 | FIX | 增加 cold、幂等 `reserve_completions(minimum)`；Graph 在 replay 前按 report/lanes 预留，steady exhaustion 明确失败 |
+| C62 | native custom command 只有长期概念 | BORROW | core 只交付 backend extension/sequence bridge；CUDA 等 typed factor 交付自然 callback/artifact API |
+| C63 | Graph 保存并覆盖每-step Completion | REPLACE | Graph v6 改为每 queue segment finish；多 queue 保存前缀并显式 wait/host barrier/聚合，不按 node record event |
+| C64 | CPU/native/oneDNN 与 region SPI consumers | FIX | 逐 factor 迁移到 EnqueueResult；同步实现不分配、不造 async state，错误与 partial acceptance 保真 |
+| C65 | QueueOptions 空类型 | KEEP | 通用 options 暂不塞 vendor priority/flags；completion 容量用可增长 reserve，typed options 留给 backend façade |
+| C66 | 通用 Module/Kernel/CommandList | REJECT | 删除/不恢复占位；只有第二个稳定跨 backend consumer 证明共同 typed 形状时再 scope |
+
+实现只限 C55--C64；C65--C66 不产生产品字节。因 C63 会改变当前 Graph，Graph v6 必须先独立进入
+`AUDITED`；因 graph_provider_onednn 当前 `BLOCKED`，只有其 resume condition 在 common submit path 实际
+变化后才恢复并迁移，不能由本卡越权修改。
+
+### 生命周期、失败与并发矩阵
+
+- begin 在任何命令接纳前取得 Context/Queue admission、single-producer guard 和 backend completion slot；
+  reserve/OOM/closed 失败不会留下设备工作。accepted 后即使 tail 同步失败也必须 finish，最终 Completion
+  覆盖已录 prefix 并保留首个 tail error；
+- provider/region 可返回 `accepted=false,error`，也可在多命令 region 已录部分工作后返回
+  `accepted=true,error`。后者禁止继续录入，但不能丢失前缀、workspace 或错误；成功 semantic no-op 可
+  `accepted=false,OK`；
+- sequence destructor 只作为异常防线：无 accepted work 时归还预留 slot；有 accepted work 时以内部错误
+  finalizes 并立即走 backend 的安全 abandonment，绝不 host-wait。正常产品路径必须显式 finish；
+- compatible device wait 借用 source Completion，Graph 保活它直到 destination prefix 终态；backend 不得
+  缓存裸状态超过该边界。跨 backend 不兼容时不隐式 wait，Graph 选择显式、可报告的 host barrier 或拒绝；
+- Completion abandonment 仍不等待。具体 backend 必须让 event/stream state 和 attached Invocation owner
+  活到真实终态；设备不支持抢占时 cancel 返回 Unimplemented，不能提前释放 Buffer/workspace；
+- typed backend resource owner 的稳定实现地址先于所有 MemoryResourceRef/Buffer/View/in-flight work；
+  Compute 不给所有 Buffer 增加 shared owner，也不允许从临时 resource owner 取得引用。
+
+### P0 成本与复杂度账单
+
+| 路径 | 冷路径 | steady host 成本 | event/finalize 上界 |
+|---|---|---|---|
+| CPU direct op | prepare/create invocation；reserve no-op | 两级 admission + single-producer guard + 预绑定 provider call；无 heap/search/JIT | inline Completion，一次 finish |
+| CUDA direct op/copy/custom | context/queue/event slots/resource/kernel prepare | admission + 一次 typed enqueue + 一次 event record；无 HYLE heap/search/host wait | 每 public direct submit 一个 event |
+| Graph single queue, N steps | compile/bind/workspace/event reserve | O(bindings + N enqueue)，不重新遍历原始 DAG、不搜索 provider | **每 queue segment 一个**，不是 N 个 |
+| Graph Q queues/S segments | placement、dependency、per-lane slots | O(bindings + steps + dependency edges)；兼容边设备 wait，不兼容边显式 barrier | O(S)，最终聚合 O(Q) |
+
+Context/provider 枚举仍是冷路径 O(P)；transfer query O(1) vtable/capability call；copy/fill 为 O(bytes) device
+work、O(1) host enqueue；dependency enqueue O(1)。`reserve_completions(n)` 允许 O(n) vendor resource 创建，只
+在冷路径。地址、顺序和亚纳秒诊断不得改变这些公开形状。
+
+### 七问
+
+1. **第三方路径**：Compute core 无新增第三方依赖；CUDA/Metal/Vulkan 库、版本、许可证和 fallback 均留给
+   各 typed factor。四个 consumer revision 与 ggml revision 已固定在本卡。
+2. **功能完整**：本轮覆盖 direct op、byte transfer、typed custom command、single/multi-queue Graph 所需
+   最小 backend runtime；宽算子、模型策略和 coroutine continuation 有明确 owner，不以“上层处理”掩盖
+   通用 glue。
+3. **内部复用**：继续复用 Core/Error、Mem Buffer/View、Util-core refcount；不复制 scheduler、allocator、
+   status 或 Graph planner。资源 owner 不反向修改 Mem 常态对象。
+4. **性能**：复杂度和 event 数按 public submit/Graph segment 而非 node；extension 查询、reserve 和
+   capability match 都在冷路径；P1 等真实 CUDA immutable candidate 后一次执行。
+5. **交付边界**：Native FFI N/A；不恢复历史 C ABI。vendor handle 只出现在选择对应 typed C++ header 的
+   consumer TU。
+6. **构建交付**：Compute core 不链接 CUDA；optional backend factor 负责 toolkit discovery/export/install，
+   AUTO/OFF 不探测。base vtable/extension bridge 必须在 source/static/shared 和精确 factor 选择一致。
+7. **易用与文档**：普通 C++ 用户只需 Context/Queue、BufferView、direct submit/copy 和 Completion；复杂
+   sequence 对 Graph 隐藏，custom kernel 用户显式选择 typed backend header，所有 borrow/close/drain 坑须进 guide。
+
+### AUDITED 有限 FIX 集与停止点
+
+1. 实现 C55--C61 的 core API/SPI、CPU immediate 路线与单元/错误注入测试；
+2. 在其各自合法状态内迁移 Native/oneDNN provider；Graph v6 AUDITED 后实现 C63；
+3. 实现 backend extension 的一个无 vendor mock，证明 exact owner、wrong Context、close 与预绑定零搜索；
+4. 更新 architecture/user/developer 文档和三交付；完成 P0 codegen/成本检查；
+5. 随后由 CUDA v1 实现真实 event/stream/resource/copy/native seam，才签异步生命周期与必要 P1。
+
+不在上述五项内增加算子、公共 Event/CommandList、callback/coroutine 或 vendor 实现。发现新的能力必须
+重新 scope；每项最多两轮根因纠正。由此，本轮审计完成，`compute` 可以进入 `AUDITED` 并开始有限实现。

@@ -135,8 +135,10 @@ backend command；Invocation 只填充运行时 slots。
 - prepare 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、不打包常量；
 - workspace layout 对固定 specialization 不变；允许 caller/pool 预留，正常 replay 零 heap allocation；
 - per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
-- plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入，只返回最后一个 prefix Completion；
-  host wait 只在合同要求时出现，可由 queue/event 表达的 dependency 不退化成同步 round-trip；
+- plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入；provider/region step 只返回接纳事实，
+  sequence 在 segment 边界一次 finalizes 为 prefix Completion，不按 node 创建再覆盖 event。多 Queue plan
+  保存各 segment 前缀并录入兼容 device wait；host wait 只作为 report 明示的不兼容 fallback，可由
+  queue/event 表达的 dependency 不退化成同步 round-trip；
 - CompileReport 独立拥有轻量 metadata，并逐 step 枚举 kind、fallback reason、node range、device/provider/version、constant
   borrow/额外 packed ownership、copy/sync/dispatch、workspace、persistent bytes 和 threading/blocking/concurrent-invocation fact。
   opaque provider 无法报告的 compile/persistent/workspace estimate 及 artifact persistent bytes 必须为

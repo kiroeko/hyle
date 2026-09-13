@@ -33,7 +33,7 @@ TensorDesc + Mem BufferView -> TensorView
 Operation -> PreparedOperation -> per-lane OperationInvocation
 OperationInvocation -> submit(bindings) -> Completion
 
-Module -> Kernel -> CommandList -> submit() -> Completion
+typed backend Module/Kernel + Queue -> submit() -> Completion
 ```
 
 - `Device` 是可复制的能力描述，不拥有 runtime；`Context` 拥有 backend/provider 会话。
@@ -46,11 +46,14 @@ Module -> Kernel -> CommandList -> submit() -> Completion
   `TensorView` 只把描述与 Mem storage 绑定，不拥有 payload。
 - `PreparedOperation` 是可共享的不可变 artifact，把能力检查、provider 选择、layout/repack 决策和可能的
   编译移出热调用；`OperationInvocation` 拥有一次并发 lane 的 stream、binding metadata 与 workspace。
-- `Module/Kernel/CommandList` 是原生或 HYLE kernel 的低层路线；Vulkan SPIR-V、CUDA
-  module/kernel、Metal pipeline 和 CPU function target 都通过有类型的 backend extension 表达。
-- `Completion` 是提交后的生命周期边界。等待、轮询、callback 和 coroutine bridge 必须共享同一个
-  完成状态，不能制造互不相认的 event。一个成功 submit 返回的 Completion 覆盖完整 ordered Queue prefix；
-  销毁 pending handle 不等待，但 backend 必须把附着的 execution owner 保活到真实终态。
+- 原生或 HYLE kernel 的低层路线由 typed backend façade 提供；Vulkan SPIR-V、CUDA module/kernel、
+  Metal pipeline 和 CPU function target 都通过有类型的 backend extension 录入 Queue。普通 Compute 不公开
+  一个抹平 vendor 语义的万能 `Module/Kernel/CommandList` 层。
+- `Completion` 是**公开 direct submit 或组合 sequence 边界**的生命周期对象。等待、轮询、callback 和
+  coroutine bridge 必须共享同一个完成状态，不能制造互不相认的 event。Provider/region 在内部只报告命令
+  是否已接纳，不为 Graph 每个 step 生产用户 Completion；一个成功的 sequence finish 返回覆盖完整 ordered
+  Queue prefix 的 Completion。销毁 pending handle 不等待，但 backend 必须把附着的 execution owner 保活到
+  真实终态。
 
 一次性 convenience 调用将来可以组合 prepare + invocation + submit，但必须在名称和文档中暴露它包含冷路径工作；
 循环执行默认使用 prepared 形状。
@@ -196,9 +199,11 @@ Tensor payload、外借 workspace 与 Queue 仍由调用方保活，不能因为
 取消是“请求停止”，不是“立即可回收”；不支持抢占的设备仍需 drain 迟到完成。Context 的关闭是显式
 `close/drain` 旅程，析构不能偷偷做无界等待，也不能在 work in flight 时释放 backend state。
 
-组合 plan 不以逐命令 `wait()` 建依赖。同一 Queue 的命令按录入顺序建立设备依赖，只保留最后一个 prefix
-Completion；中间 handle 可释放，但其工作和错误必须被后续 prefix completion 覆盖。若后一命令在已有前缀
-之后同步拒绝，组合者返回前缀 Completion 并追加该拒绝状态，而不是丢失已接纳工作或提前释放 workspace。
+组合 plan 不以逐命令 `wait()` 建依赖。同一 Queue 的命令在一个短生命周期 sequence 中按录入顺序建立
+设备依赖，只在 queue segment 结束时记录一次 event/终态并返回 prefix Completion；不能先为每个 step
+制造 Completion 再覆盖句柄。若后一命令在已有前缀之后同步拒绝，sequence 仍 finalizes 已接纳前缀并把该
+拒绝附着到终态，而不是丢失工作或提前释放 workspace。不同 Queue 的兼容依赖优先录入 device wait；不兼容
+路线只能成为 CompileReport 中显式 host barrier 或编译失败，不能偷偷同步。
 
 Storage domain 至少区分普通 host、backend-visible/pinned host、device-local 和 managed/unified。
 unsupported 必须返回明确能力错误；不能把普通 host RAM 冒充 pinned，把 unified address 冒充零复制，
