@@ -1,0 +1,6 @@
+
+| relative |               ns/op |                op/s |    err% |     total | graph CUDA-CPU-CUDA Unary f32 4 MiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------
+|   100.0% |          686,396.67 |            1,456.88 |    0.9% |      0.24 | `HYLE direct CUDA-CPU-CUDA Unary 4 MiB`
+|   123.0% |          557,823.81 |            1,792.68 |    1.8% |      0.24 | `HYLE Graph CUDA-CPU-CUDA Unary 4 MiB`
+# HYLE_GRAPH_CUDA_PIPELINE_RUN execution_order=peer-first allocation_order=candidate-first affinity_topology=n-worker-physical-cores caller_cpu=2 affinity_ok=1 worker_count=4 worker_cpus=0,2,4,6 parent_mask=0x55 priority=above-normal run_nonce=77000700f034f7318c1ceaf519783083

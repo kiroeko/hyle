@@ -161,8 +161,13 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - CUDA factor 的 bounded loss/race probes 已通过：typed asynchronous terminal failure 与并发
   wait/abandon/drain/reaper 均有真机回放；Graph 产品根的 CUDA-on source embedding、安装并重定位后的
   shared/static SDK 也全部通过，三种 consumer 均实际运行 CUDA async fill，而非只检查符号；
-- 剩余硬门收敛为 CUDA factor 当前 revision 的一次性 P1、Graph 当前 revision 的一次性正式 P2，以及
-  两者终局红队/文档/状态签发；一般 multi-stream capture 与 CUDA operation provider 不冒充本轮基础资格。
+- CUDA factor 当前 revision 的 P1 已为 `PARITY/PASS`。Graph 当前 `7718b163` 的唯一正式 P2 也在 W1-WIN
+  于 `n=15` 停止：同一 4 MiB CUDA→CPU Unary→CUDA 完整语义的八个 strata ratio=
+  `1.24305--1.26042`，全部 `WIN/PASS`，综合 exact=`WIN`、NI=`PASS`；所有 controls 与 identity 门通过。
+  retained bundle 见
+  [`graph-cuda-pipeline-p2-v1-7718b163-w1-win`](../../../../evidence/performance/graph-cuda-pipeline-p2-v1-7718b163-w1-win/)；
+- 剩余硬门只剩 Compute/Graph/CUDA 终局红队、文档与状态签发；一般 multi-stream capture 与 CUDA
+  operation provider 不冒充本轮基础资格。
 
 ## 七问（AUDITED）
 

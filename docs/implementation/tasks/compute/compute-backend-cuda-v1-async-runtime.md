@@ -291,9 +291,12 @@ Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `vo
 - CU22 已在 W1-WIN/CUDA 13.3 从 Graph 产品根通过 source embedding、安装并重定位后的 shared/static SDK；
   三种下游 consumer 均实际创建 CUDA Context/Queue/device resource，执行 async fill 并等待终态。
   installed config 会传播 `CUDAToolkit 13.3`，CUDA façade 存在且 relocated consumer 可链接运行；
-- CU23 的 P0 账单已有实现与结构探针支撑，但当前 revision 的一次性 P1 与终局红队尚未签发，因此组件
-  保持 `AUDITED`。
+- CU23 的 P0 账单已有实现与结构探针支撑；当前 `7718b163` 的唯一 P1 在 W1-WIN 于 `n=15` 停止，
+  八个 strata ratio=`0.98967--1.02142`，全部 `PARITY/PASS`，综合 exact=`PARITY`、NI=`PASS`；A/A、
+  5%/10% known-delta、timer floor、placement、artifact/build identity 全过。retained bundle 见
+  [`compute-cuda-runtime-p1-v1-7718b163-w1-win`](../../../../evidence/performance/compute-cuda-runtime-p1-v1-7718b163-w1-win/)；
+  当前只待终局红队与状态签发，因此组件保持 `AUDITED`。
 - 同一 `4d674113` git archive 在 MacBook Air 与 Mac mini 上验证了 CUDA 负能力：`OFF` 不探测，`AUTO`
   明确报告找不到 CUDA Toolkit 13.3+ 并继续配置，显式 `ON` 则在 `FindCUDAToolkit` 处因找不到 `nvcc`
   清晰失败；两机 portable Compute/Graph 六组测试及 Graph 三交付均通过。该事实不替代 Windows RTX 4070
-  的 CUDA-on 三交付或 loss/race；当前仍只待 W1-WIN P1 与终局红队。
+  的 CUDA-on 三交付、loss/race 或 P1；当前只待终局红队。

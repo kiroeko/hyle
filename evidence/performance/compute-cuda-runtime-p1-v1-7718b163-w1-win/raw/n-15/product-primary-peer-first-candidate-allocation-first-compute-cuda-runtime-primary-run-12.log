@@ -1,0 +1,6 @@
+
+| relative |               ns/op |                op/s |    err% |     total | compute CUDA D2D 1 MiB queue-prefix completion
+|---------:|--------------------:|--------------------:|--------:|----------:|:-----------------------------------------------
+|   100.0% |           13,572.00 |           73,681.09 |    4.3% |      0.25 | `CUDA raw copy+event 1 MiB`
+|   103.0% |           13,180.94 |           75,867.11 |    4.3% |      0.23 | `HYLE CUDA copy+Completion 1 MiB`
+# HYLE_COMPUTE_CUDA_RUNTIME_RUN execution_order=peer-first allocation_order=candidate-first affinity_topology=n-worker-physical-cores caller_cpu=2 affinity_ok=1 worker_count=4 worker_cpus=0,2,4,6 parent_mask=0x55 priority=above-normal run_nonce=80e216bf1a5b71f66347b7c7ec6742ce

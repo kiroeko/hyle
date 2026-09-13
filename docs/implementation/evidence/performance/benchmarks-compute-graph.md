@@ -263,3 +263,49 @@ python scripts/hyle-perf.py verify `
 本证据不授权追加样本或为了 fused micro-boundary 改公开 API。只有后续 Runtime/Graph 主干因真实异步、
 specialization、placement 或 replay 需求自然改变公共 submit path，并形成新的 immutable candidate，才可
 依法重新资格化该 factor。
+
+## CUDA runtime P1 与跨域 Graph P2
+
+基础 runtime 候选固定在 `7718b163946104989c9a000f19fd01f454211d36`。两份合同都在 W1-WIN、
+RTX 4070、CUDA 13.3、MSVC 19.50、Release static、LTO off 上于 `n=15` 按规则停止；artifact identity、
+fresh build、A/A、5%/10% known-delta、timer floor、placement 和全部产品门均为 `PASS`。
+
+[`compute-cuda-runtime-p1-v1`](../../../../bench/contracts/compute-cuda-runtime-p1-v1.json) 比较一份 1 MiB
+resident D2D copy：两侧使用 non-blocking stream、独立但等价的 device buffers，以及相同的一次 event record
+和 terminal wait。HYLE 侧只额外承担公开 BufferView 验证和预留 Completion slot 管理。八个执行顺序、
+分配顺序与 placement strata 的 median ratio 为 `0.98967--1.02142`，八行均为 `PARITY/PASS`，综合
+exact verdict=`PARITY`、non-inferiority=`PASS`。因此没有把随姿势反转的点值解释成固定输赢。
+
+[`graph-cuda-pipeline-p2-v1`](../../../../bench/contracts/graph-cuda-pipeline-p2-v1.json) 比较同一 4 MiB
+CUDA D2H → native CPU Unary → CUDA H2D 任务。Graph 与 direct route 使用相同 TensorDesc、CUDA/CPU
+Context 和 Queue、device/pinned storage、leaf operation、依赖与最终 terminal contract；compile、prepare、
+allocation、bind、first touch 和 warmup 都在计时外。Graph 使用冷路径已验证的 exact route 与内部
+prevalidated enqueue，direct consumer 则自然地逐项调用公开安全接口。八个 strata 的 median ratio 为
+`1.24305--1.26042`，99.26% CI 均完整高于 1，综合 exact verdict=`WIN`、non-inferiority=`PASS`；绝对
+中位数为 Graph `1791.2--1805.6 op/s`、direct `1431.8--1447.5 op/s`。这是完整跨域 product replay 的
+计划复用收益，不外推为 leaf CUDA kernel、任意 DAG 或未来 provider 的普遍胜率。
+
+原始 bundle 分别保存在
+[`compute-cuda-runtime-p1-v1-7718b163-w1-win`](../../../../evidence/performance/compute-cuda-runtime-p1-v1-7718b163-w1-win/)
+和
+[`graph-cuda-pipeline-p2-v1-7718b163-w1-win`](../../../../evidence/performance/graph-cuda-pipeline-p2-v1-7718b163-w1-win/)；
+其 contract-lock / manifest / summary / controls / observations SHA-256 分别为：
+
+```text
+compute CUDA P1
+a12115af77d31301155eb871db2688361ac070f5de9e5b4140463c9b10eeaf63
+6553a09e2e0451e089b48d3ad34dd0addfab2c4415806c2566c67176f45994fc
+e90922d0bd9ded8e1d01b82387430973a13d4615568733ce285198992969bcb9
+35f759fcb2310631d958e828a1eabd892803a3067969860e91484d3dbbf1f8f8
+80cc11f27af8894057e1eaa4e8f516196ccd7b95819300abc3d00f6ca31c9c4c
+
+Graph CUDA P2
+1525b6650faee9d58c2daf91d51a0f4b2802e7943fabb36296b6bc171d73a69d
+40bc9b553f9ede8652fd827a84e2350a3e7f5836ee89a2d91a6ca81143065305
+012e3c37ddc6cd3fc32d7ed3311b9757863bd58406314f6f6760ce5ea3336134
+9729bdd98c1ffa4a494a0906c8a1943f0eb2b5c8aa3a617cea491ad1f8f24e82
+9ded1b8c9a6b3d4f69c0da515d50ac923cd261ada4caadf7406b3b0b04d9cbc9
+```
+
+两份 retained bundle 均经 `hyle-perf.py verify` 返回 `QUALIFIED`、`CURRENT`、`EXACT` 和
+`paths_verified=true`。

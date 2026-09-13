@@ -1,0 +1,362 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "graph",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/graph/executable.h",
+      "revision": "runtime-bound",
+      "target": "hyle_graph"
+    },
+    "claim": "P2 engineering non-inferiority for one prepared HYLE Graph CUDA-to-CPU-to-CUDA product replay against the exact direct HYLE Compute command sequence under the same resources, operation, dependencies and final user-visible completion contract",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      },
+      {
+        "id": "placement",
+        "kind": "placement",
+        "parameters": {}
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "BUILD_SHARED_LIBS": "OFF",
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_COMPUTE_CUDA": "ON",
+            "HYLE_DEV_FACTORS": "graph;compute_provider_native;compute_backend_cuda",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF"
+          },
+          "peer_cache": {
+            "hyle-direct-cuda-cpu-cuda": "HYLE_GRAPH_CUDA_DIRECT_SOURCE_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+          "HYLE_BENCH_APPLE_QOS",
+          "HYLE_PERF_APPLE_QOS"
+        ],
+        "executables": [
+          {
+            "id": "graph-cuda-pipeline-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_cuda_pipeline_bench",
+            "target": "hyle_graph_cuda_pipeline_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_GRAPH_CUDA_PIPELINE_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "cuda-cpu-cuda-unary-f32-4mib",
+                "title": "graph CUDA-CPU-CUDA Unary f32 4 MiB"
+              }
+            ]
+          },
+          {
+            "id": "graph-cuda-pipeline-placement",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_cuda_pipeline_bench_placement",
+            "target": "hyle_graph_cuda_pipeline_bench_placement",
+            "target_variant": "placement",
+            "telemetry_prefixes": [
+              "# HYLE_GRAPH_CUDA_PIPELINE_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "cuda-cpu-cuda-unary-f32-4mib",
+                "title": "graph CUDA-CPU-CUDA Unary f32 4 MiB"
+              }
+            ]
+          }
+        ],
+        "profiles": {
+          "W1-WIN": {
+            "architecture": "x64",
+            "cache": {},
+            "compiler_id": "MSVC",
+            "compiler_version_prefix": "19.50",
+            "generator": "Visual Studio 18 2026"
+          }
+        },
+        "sampling_topology": "n-worker-physical-cores",
+        "sampling_worker_count": 4,
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "windows"
+      ],
+      "certification_platforms": [
+        "windows"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WIN"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "graph-cuda-pipeline-p2-v1",
+    "module": "graph",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "source",
+          "role": "same-product direct lower abstraction tier",
+          "route": "HYLE copy_async D2H, native CPU Unary, HYLE copy_async H2D with the required dependency waits",
+          "semantic_delta": "The direct caller owns two pinned intermediates and manually establishes three completion boundaries; Graph owns equivalent invocation workspace, a fixed three-segment plan and one final aggregate Completion while preserving the required D2H-before-CPU dependency"
+        },
+        "id": "hyle-direct-cuda-cpu-cuda",
+        "revision": "4d67411308b7ae19c5f182e58ecea5128706454c"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "id": "primary-candidate-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "primary-candidate-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "id": "placement-candidate-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "placement-candidate-first-peer-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-peer-allocation-first",
+        "target_variant": "placement"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "one CUDA D2H transfer and required completion before CPU consumption",
+          "one native CPU Unary operation",
+          "one CUDA H2D transfer",
+          "one final user-visible terminal result"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "heterogeneous-runtime/canonical-boundary/cpu-fallback",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "cuda-cpu-cuda-unary-f32-4mib",
+        "input": {
+          "distribution": "deterministic finite signed float32 cycle initialized and first-touched before measurement",
+          "scale": {
+            "bytes_per_transfer": 4194304,
+            "elements": 1048576,
+            "graph_segments": 3
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one 4 MiB D2H + CPU Unary + 4 MiB H2D task",
+          "derivation": "The closure vertical slice exercises the exact canonical boundary and host fallback path required when an accelerator graph contains a CPU-owned operation; the size is representative of a nontrivial activation or media buffer",
+          "frequency": 1,
+          "unit": "complete-cross-domain-pipeline",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "One immutable three-segment Executable, one exclusive pre-bound Invocation with two pinned workspace tensors, two device tensors and one CPU plus one CUDA Queue",
+          "equivalence": "Both execute D2H, CPU negation and H2D in dependency order over separately initialized 4 MiB float32 tensors and return only after device output is terminal; construction, allocation, prepare/compile, binding, replay preparation, first touch and symmetric warmup are excluded",
+          "peer": "The caller owns equivalent device tensors, two pinned intermediates, one prepared native Unary invocation and one CPU plus one CUDA Queue"
+        },
+        "pair": {
+          "candidate": "HYLE Graph CUDA-CPU-CUDA Unary 4 MiB",
+          "peer": "HYLE direct CUDA-CPU-CUDA Unary 4 MiB"
+        },
+        "peer_id": "hyle-direct-cuda-cpu-cuda",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/graph/cuda_pipeline_consumer_v1.json",
+          "sha256": "4600cc285b54c4a92ee882217c5be4e11cf1407462a9c4734d2ce06ead6e8578"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Copy 1,048,576 float32 elements from CUDA device memory to pinned host memory, negate every element through the HYLE native CPU provider, copy the result to CUDA device memory, and return after the final output is complete",
+        "setup": "Contexts, queues, resources, tensors, operations, graph compile, invocation binding, command replay preparation, validation and 64 symmetric route warmups occur before nanobench",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "aaee71781d3a5fdb59bac264b0435b019b659e0a1aaf0ee065365dbe61e72420",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

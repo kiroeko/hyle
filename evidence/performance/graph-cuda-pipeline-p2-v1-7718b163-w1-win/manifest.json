@@ -1,0 +1,1178 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-build\\CMakeCache.txt",
+        "sha256": "855f4763fb9b4c966b212b67cc2415c2e87a9fd09cee3ec6d4fc61a48457c954"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-build\\bin\\Release\\hyle_perf_control_bench.exe",
+        "sha256": "382918201798822b62ecd7fcb09ba2b9fb8abce16d9f17daec569a44539caf6f"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-build\\bin\\Release\\hyle_graph_cuda_pipeline_bench_placement.exe",
+        "sha256": "4d8ae8bbfea2a9644a67e23df6df4de4e8aa8eb363d0266bf8d67636f9a0fc88"
+      },
+      "id": "graph-cuda-pipeline-placement"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-build\\bin\\Release\\hyle_graph_cuda_pipeline_bench.exe",
+        "sha256": "d6c4d39118a301a8d4f4469da54db10b966bc110d309c1df7f9e0e533bd5e00b"
+      },
+      "id": "graph-cuda-pipeline-primary"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "x64",
+      "build_stdout_sha256": "8897a44e10a9879dcb45b4663a238432b3ed8216b89f5877156c98f2fcd304dd",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo",
+        "CMAKE_GENERATOR": "Visual Studio 18 2026",
+        "CMAKE_GENERATOR_PLATFORM": "x64",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "855f4763fb9b4c966b212b67cc2415c2e87a9fd09cee3ec6d4fc61a48457c954",
+      "compiler": {
+        "compiler_id": "MSVC",
+        "compiler_version": "19.50.35728.0"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "f752fc524e33729ba4002de93fe3abb14359642ba37213cf3c7c613f1a6469fc",
+      "generator": "Visual Studio 18 2026",
+      "machine_profile": "W1-WIN",
+      "requested_cache": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_BUILD_BENCH": "ON",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_COMPUTE_CUDA": "ON",
+        "HYLE_DEV_FACTORS": "graph;compute_provider_native;compute_backend_cuda",
+        "HYLE_GRAPH_CUDA_DIRECT_SOURCE_DIR": "C:\\hyle-scratch\\hyle-peer-4d674113",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TEST_INSTRUMENTATION": "OFF",
+        "HYLE_TRACE": "OFF"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "hyle_graph_cuda_pipeline_bench",
+        "hyle_graph_cuda_pipeline_bench_placement",
+        "hyle_perf_control_bench"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+        "compiler_frontend_variant": "MSVC",
+        "compiler_id": "MSVC",
+        "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+        "compiler_target": "unknown",
+        "compiler_version": "19.50.35728.0",
+        "formal_identity_complete": true,
+        "linker_id": "MSVC",
+        "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+        "linker_version": "14.50.35728.0",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "windows-sdk:10.0.26100.0",
+        "stdlib": "msvc-stl:14.50.35717/v145",
+        "system_name": "Windows",
+        "system_processor": "AMD64",
+        "system_version": "10.0.26200"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\contract-lock.json",
+    "sha256": "1525b6650faee9d58c2daf91d51a0f4b2802e7943fabb36296b6bc171d73a69d"
+  },
+  "contract_sha256": "aaee71781d3a5fdb59bac264b0435b019b659e0a1aaf0ee065365dbe61e72420",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9910315578808819,
+                1.0159809724558424
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9987182418331735,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9854585666351506,
+                1.0152023468205287
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9922815310387154,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0338360657467947,
+              1.0599591623301978
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0526979426655334,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.037841179063463,
+              1.0707610415806366
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0535495201092886,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0852050739672219,
+              1.1114946669112358
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1008890890309506,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.085109350498386,
+              1.1135184880175577
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0972754057194136,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 555483.0341979943,
+            "conservative_floor_ns_per_op": 0.20168663164245107,
+            "gate": "PASS",
+            "id": "cuda-cpu-cuda-unary-f32-4mib",
+            "measurement_batch": 1,
+            "observed_multiple": 2754188.662254777,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.20168663164245107,
+                "peer_median_ns_per_op": 0.1987925247587895
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.19731625069449377,
+                "peer_median_ns_per_op": 0.1991110786413295
+              }
+            },
+            "peer_median_ns_per_op": 693325.0405039256
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\control-observations.json",
+      "sha256": "e113a4e22e5dfcb1a7853cca86a17acbf63e3a4a61fb753e527ffa55ada16333"
+    },
+    "controls_file": {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\controls.json",
+      "sha256": "9729bdd98c1ffa4a494a0906c8a1943f0eb2b5c8aa3a617cea491ad1f8f24e82"
+    },
+    "created_at_utc": "2026-09-13T17:12:28.764800+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\host-probe.json",
+      "sha256": "51cb6b59c9de74f028a54425393666003d9f6fde7218aa35dd1f536afce4cfa1"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "cuda-cpu-cuda-unary-f32-4mib",
+        "provenance_file": {
+          "path": "C:\\public\\project-hyle\\hyle\\bench\\graph\\cuda_pipeline_consumer_v1.json",
+          "sha256": "4600cc285b54c4a92ee882217c5be4e11cf1407462a9c4734d2ce06ead6e8578"
+        },
+        "provenance_path": "bench/graph/cuda_pipeline_consumer_v1.json",
+        "tier": "replay"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "cuda-cpu-cuda-unary-f32-4mib"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw-log-index.json",
+      "sha256": "bbb8cf55b084b15b21aeb06d41704203dfd527d4b84f5533b99bbdd320c841a9"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "f5e81530b7766d190979bb08d8f44c3da7ab77799bd5d8c8124a2147b24401a2",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "affinity_mask": "0x55",
+      "applied_by": "benchmark-parent-mask-plus-worker-singleton-masks",
+      "caller_logical_cpu": 2,
+      "child_canary": {
+        "affinity_mask": "0x55",
+        "environment": "windows",
+        "gate": "PASS",
+        "mechanism": "inherited-process-policy-canary",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "cpu_set_id": 258,
+      "cpu_set_ids": [
+        256,
+        258,
+        260,
+        262
+      ],
+      "distinct_physical_cores": true,
+      "efficiency_class": 1,
+      "environment": "windows",
+      "launcher_applied": true,
+      "logical_cpu": 2,
+      "logical_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "observed_affinity_mask": "0x55",
+      "physical_core_indices": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "previous_affinity_mask": "0xffffffff",
+      "priority": "above-normal",
+      "processor_group": 0,
+      "required_efficiency_class": "maximum",
+      "sampling_topology": "n-worker-physical-cores",
+      "sampling_worker_count": 4,
+      "smt_sibling_logical_cpu": 3,
+      "smt_siblings_excluded": true,
+      "worker_cpu_set_ids": [
+        256,
+        258,
+        260,
+        262
+      ],
+      "worker_logical_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "worker_singleton_masks": [
+        "0x1",
+        "0x4",
+        "0x10",
+        "0x40"
+      ]
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "W1-WIN",
+    "physical_host_identity": {
+      "environment": "windows",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WIN",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "registration_state": "REGISTERED_MATCH",
+      "required_host_facts_match": true,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": true,
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_source": "windows-machine-guid-sha256"
+    },
+    "platform": "windows",
+    "probe_sha256": "51cb6b59c9de74f028a54425393666003d9f6fde7218aa35dd1f536afce4cfa1",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-09-13T17:01:30.002613+00:00",
+      "environment": "windows",
+      "mutex_key": "W1",
+      "owner_token_sha256": "79041ad353e68f08ef9e84d7591a14fbc9480922f5c540b6bbb9ae5e193e5933",
+      "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+      "physical_host_id": "W1",
+      "pid": 75640,
+      "profile_id": "W1-WIN",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 120,
+    "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\observations.jsonl",
+    "sha256": "9ded1b8c9a6b3d4f69c0da515d50ac923cd261ada4caadf7406b3b0b04d9cbc9"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "hyle-direct-cuda-cpu-cuda",
+      "remote": "git@github.com:axiomates/hyle.git",
+      "revision": "4d67411308b7ae19c5f182e58ecea5128706454c",
+      "tree": "3a0fc9a5c8d55995bbe67a6dd9f00929aa498ccc"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-01.log",
+      "sha256": "84a264dc057e1b1f01cd810fcef8bc3cf2c2e69de4c60ff39a5e11b4e0989a90"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-02.log",
+      "sha256": "a217edb42259593aab21a994e766895d6b0b445d2de68b93a5c81fe46a04e766"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-03.log",
+      "sha256": "c98be52e844159008202e1b918b82a6eaa3840f53b5f34f7c7a3dadc3804c8e2"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-04.log",
+      "sha256": "b313f1efa8419deb8664d9045f940f80447dd3b060f0a9b58b3612c73010baa5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-05.log",
+      "sha256": "7d045decd6b628bf260332d3fd6eb78465636164374b1633e40a406699df9cc5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-06.log",
+      "sha256": "e291a97248bbe29541b2c2c5422c690f6eeba9262e8de2be6847718a0b62117e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-07.log",
+      "sha256": "324377d3e7bd1a177fa153516c538423fa387b1582f9001cde8eff61756a0f3f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-08.log",
+      "sha256": "43f275f204783f3102c77da7551b11eeec28cc33cd2bccb1c20d2a905c0bf0cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-09.log",
+      "sha256": "d4a95c92fd427f2fc724d4a36b190e0845f7e55e3c0b9d556725859f9924b2e5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-10.log",
+      "sha256": "dccc0054ab755f49040186eacc21bee4be7960eee82ee12ec151f8887decaccb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-11.log",
+      "sha256": "2b089843eb8fb411a820679990acd55acbc74879a708ec7fe2510360587ce8a3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-12.log",
+      "sha256": "be99c9fb4a6fdef4fdf248326b9c3f1e2eaa0fcf6f40713b000d842501ff69bb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-13.log",
+      "sha256": "4ebdbf81e8ddd8364bd51b44af04918b8b467e3964a8dc32c54e5725de1150ff"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-14.log",
+      "sha256": "37f6ca039efab704e73ebd6d9187ed9231697464ffefd83f636175ba313f34c1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-15.log",
+      "sha256": "2c6a62f511bd5780eea7212fcd1a24e898c58f359aaf213e2b384e943ea57414"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-01.log",
+      "sha256": "5d749bb38085527e36593582602caf2240178a10dabd6d25dbdda4809af9715d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-02.log",
+      "sha256": "16a05c8b89cd0126df20f24b77011463de925054c80771e95b9d64d0f2297bef"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-03.log",
+      "sha256": "eae1648822add7b841323cd33beb6a1b3df3434adb89bae0cc8ae092292ff943"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-04.log",
+      "sha256": "10eeffbc855d3acacd82e18fe1947b2d4660355db8124664baa4c82119a46af7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-05.log",
+      "sha256": "84e1710235ca9ff20bf589ffe70cfe14edbd4578a5f35931776728c24d02b14a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-06.log",
+      "sha256": "7f6f06e2876cc8aface1741a8170e5dc6d170180335f29f3698f6ad4f28b3b3e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-07.log",
+      "sha256": "eb0d2aed5cce7841955f16a260caeb1fe980ee04d6d4961ca3e352d7a7c46cff"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-08.log",
+      "sha256": "e1d4c88aeb0cf5dd063967cad0e51bee594fcac7b1b4170ed1e48111d3eaf964"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-09.log",
+      "sha256": "b5264d61573eefdc9112528febaa60f4a00829f172c012149220171e712df112"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-10.log",
+      "sha256": "ae634f7651a1f4fa3ac62a3c36ea4c5fce1a7cb38103af5185a37e47e4be9778"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-11.log",
+      "sha256": "28f05643b1547edfc73596349b62e3bf0c2421e99c6a1782e0651f65e89b344f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-12.log",
+      "sha256": "4c23e1e7d45c5a9601978243edad3b86ea43d3aa0b641de541a93e173111323a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-13.log",
+      "sha256": "ae418c6432cb08ea6273f71abbf400c9fdbe94cc207cac8a50f2e1c8ebdd5c1c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-14.log",
+      "sha256": "a167d6a7494b08810cf634479ad509d3029e6388cd8cd1796f25ff465b331b41"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-candidate-first-peer-allocation-first-graph-cuda-pipeline-primary-run-15.log",
+      "sha256": "4a15ae414bc9d6908b0d909b20ef5e78e70a5f440c0bfe02993698b2c1e6c82b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-01.log",
+      "sha256": "62cdc6d019652c5c1f4b2ca26da37afbf62971f2e220bbf42ab1ad47a62dbda3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-02.log",
+      "sha256": "ba448dc721496d90926ebab37c0c00c6b65001a8b7c650ba90becdf42216147c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-03.log",
+      "sha256": "a11803b8a99f5cd9197ac54abeff2a5cd357a53ea7036ea7f9de1a1277e89e7f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-04.log",
+      "sha256": "a0d475cbae5c241a22c98c1cbec74d8205ca7bf3ecc839926a4d07874dd7f0ae"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-05.log",
+      "sha256": "af97b8cf19d9c0430df86522d077753c819e39c10caa01ad04dade412efb23cc"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-06.log",
+      "sha256": "5c70bf91d2d1fa408ddb055a9ebe84dc6d6c7c6c0777fee19539f769cb4961cc"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-07.log",
+      "sha256": "79ce75b4bc75144a5b138c7d323fbd14e6efbed90aafa1d3bdab0ab181dc0dcd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-08.log",
+      "sha256": "7df5be8ecc7c09f2de7555ee586deab103f201d30845702a29abb524c70133dd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-09.log",
+      "sha256": "4ba5c9c6ea0c7f1a82624bd4a8b4e1e86907b86009ab69114d688a01cef0c9dc"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-10.log",
+      "sha256": "b70822c6124921feb16e2ab3892198236b0423443f9f70def2488de34451c388"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-11.log",
+      "sha256": "dbd7481509804dab48c7667e7f6974de260cefc483d34281c7d7e3614cd36de5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-12.log",
+      "sha256": "cd9e3a776e8e4325044bbcc794418a8f26bc939b5d0b8c22d79f41d1233ee4c2"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-13.log",
+      "sha256": "302b2f3d659fd0475a32fff2ad76a9ef5e16f8666debf850b21d2a48c95dfd53"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-14.log",
+      "sha256": "3bcc99ac44eb6520b6a18c1bd83609289f4526a83598a8da7dee0ed49743ed94"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-candidate-allocation-first-graph-cuda-pipeline-primary-run-15.log",
+      "sha256": "f246e1230c8cf52317b6a5ae2f3e08fa5ffeaa185fd06d374f6f4294ebbb3db0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-01.log",
+      "sha256": "b7987b31741d524ce7d750e24196ad5c7e2e1299db6a27d65f2f892af0619e08"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-02.log",
+      "sha256": "ebf7ebc7adeeeb6f037e8e812f81835386eda4c10ebdbb211b1681f5a8cecfff"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-03.log",
+      "sha256": "143b75de3f3d3c84fa9ff07574bf61a8d15c750d1324830b3da7266d55a653d4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-04.log",
+      "sha256": "0d19f032b28293d4e89e8400b09c86fa7f13559987b4ff02d178b0aa84eaf066"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-05.log",
+      "sha256": "f5a1f08017f3d661e7460224ec704a223f203fa8ef183008278654aa57b18af0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-06.log",
+      "sha256": "9c845faf5c362a241209c0adad586be4293b86e644a2e49ef8ac45ae1cf6cd10"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-07.log",
+      "sha256": "82f6e64a5334d457c327fbb1a0b23dd49c2f3d1d2a67ead3c7e9230bd1499ee6"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-08.log",
+      "sha256": "55d2ce98ea3b2df02a16958445f71e53a74439218c6383a345b3175c274d7103"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-09.log",
+      "sha256": "44b1221d730b299fa02e39d8aa9233872be80069cd36020a8a32030e80656467"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-10.log",
+      "sha256": "45c9c0eb6c1627b9ef60e10c532ac933bf709f32d66561fe767141fecd419f11"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-11.log",
+      "sha256": "84e209741f74d4de9cafb2c21bda60308d465b141e664e70398eb68106ce8c9b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-12.log",
+      "sha256": "315ecdb1420e075b17016eca6d603483d07dfd351fd2fd78f4527301adb7e9b4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-13.log",
+      "sha256": "16c0d0079762c708c4332d6b504f6900e627073c7390586191c7329091e6d536"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-14.log",
+      "sha256": "3af67c34969df22a2481c17c1ef9ab9ddb39c7f1b2682ee4ded0e2335162b3f4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-primary-peer-first-peer-allocation-first-graph-cuda-pipeline-primary-run-15.log",
+      "sha256": "96a68dbd97456ca4cd3afd85ce93940365e9a7315964cb0e8b01fe35d37654a3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-01.log",
+      "sha256": "f94b6ca06f836b73eae2f5b4f23907ccd54caa2c14768ea055e7fe8fd12cf6fc"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-02.log",
+      "sha256": "ef6d5ffe7dd10f251103640d583e7a1507a522b2c82cff1e7830deac8f7114d8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-03.log",
+      "sha256": "229c1efbd1bcd0070aa245f401c7d5619d04f51009cccda5c7cf771ed034f753"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-04.log",
+      "sha256": "ae0e175f55843a55a3b9018d9f2efffd2f826baf28132151f412236cc69620ac"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-05.log",
+      "sha256": "72b3e7a0ad608cfb39c7234dbea60b4e3564e114e2645dbdb9a231118c280f8f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-06.log",
+      "sha256": "f4dcf8667712c03bfdfd2cc31a308e223a17008b8f66e6583439011a527fe2c7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-07.log",
+      "sha256": "9b05f063595c2c4b56df88621bcfed1df9cde1f039755da28cd1db5da877db8f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-08.log",
+      "sha256": "d07171347fb52e98b8e93c37e18a4c041ac37915481ef67fa38de0b71918c7d5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-09.log",
+      "sha256": "1f6aa43702f206086150ac7a636e0b88bd90b75b20c8d5f1d0896d499f8f186d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-10.log",
+      "sha256": "621ecd1b30237f13fd0f9d07f3f1a696eb6b16bcbd662ec4b4c03e8b57d0646b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-11.log",
+      "sha256": "c9917564db4a39992ec26a456de61680b1a41d5fc93372a13a486256badebf3e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-12.log",
+      "sha256": "cc5dbf29f47e38cd3fb69a61e0ffac11eb12d1b83f44323998e8298ba43ce345"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-13.log",
+      "sha256": "74a73fac483fbaae7ebcf19fe0b90cdd82807d7dd92ce953e15711d9bed0a233"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-14.log",
+      "sha256": "7ee43d742094f3127824fd8582b2cc115e4f9c88238df7e1fb228b26c5a4710b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-15.log",
+      "sha256": "cf442e2343669b42c6329b34ad3651832746476084199f1efd30ec9997a5e63a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-01.log",
+      "sha256": "c740b231c3863da1d2dcda9a3bf4a3f126efb48fa330fb4f0a5e4b6dec863eb0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-02.log",
+      "sha256": "a516a8d374ac2424377deae9cf0dbb0ef3740403bcc1a2b318abc353005c189a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-03.log",
+      "sha256": "87945ecb606ae06ebc8a13514e00dcb9607f85c092afa6bc00ffb5a0229b17ab"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-04.log",
+      "sha256": "dc8944b2df47fe2e263453d77291c5c97b7f1471bfea2a8d2f3cf6d945eac153"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-05.log",
+      "sha256": "6bdcfcc1499f3c50a3d327fdb9404ee5937a861ae4e80573a5af6a899f06c7b9"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-06.log",
+      "sha256": "93d6e73f69ad07735ac3eb4960f474e74b03bcf1465aea0101118bcf6500dbb1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-07.log",
+      "sha256": "d69017b26f212c514a88c21ea7e097fa7dc8ae0a66bc515873edb7342d43b807"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-08.log",
+      "sha256": "6aff8166e5e6ea0a4f684159f9d2200aa54cb4e3a93c2d5ebe4e7ac68471c376"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-09.log",
+      "sha256": "4d7ef46c7b6c8e9845a86b16145253d7c563aa94aba0fa83b18805db7c4c8ded"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-10.log",
+      "sha256": "afa002f9905737930536385a2d7c9567609f39bac21d6f5bf793883e20712c4c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-11.log",
+      "sha256": "928edb2f499f8661cc886164442f233d0ed15f0a163eaaeef57a5b76dd7c66b4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-12.log",
+      "sha256": "ded710da11198a4467c090be3468e3604a303d1ad7a61a25865d60e3b7728f73"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-13.log",
+      "sha256": "ba12061be1abbed50b07c1d66754963141ffd3587ce4375849ce74d4fff46aba"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-14.log",
+      "sha256": "6f69d95ef3a2eab0a45f115327dbc4f829e53dfabe4c9a28408e315c7b8a138a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-candidate-first-peer-allocation-first-graph-cuda-pipeline-placement-run-15.log",
+      "sha256": "49a18f44a6652b7f8700cba1cbb3c739ff14d669e2fd17972112e1f1d62e95a9"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-01.log",
+      "sha256": "c5f0ea2f8e389b4937157c610bd9e269ae5f6a88ba713304a574fee328866738"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-02.log",
+      "sha256": "c908bdc20a40a7785e88b7e17546f3cb592a22599dce7abf20cb692f01125e6e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-03.log",
+      "sha256": "82b2f602eced32f42faee49300783264e652ec93fbbf26c1176e6c0f7fce73f7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-04.log",
+      "sha256": "19d61b556ad29a21d06151d33c465944befee8050b58c686c270b13475003977"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-05.log",
+      "sha256": "0696b4bd026bf118e1f32a125154d85cfaa20712891a7e11abd25423c7ffa6cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-06.log",
+      "sha256": "f60444413826d049b110fdb3e9f33ba66bc6dd17daec7e76c400f520d5ed3b04"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-07.log",
+      "sha256": "ef3029970fd2837b80a6ff9dea6a143183efc1456c010485d89af6f27d7a9982"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-08.log",
+      "sha256": "5a1d495d434faa06ddc4740a611ef7f5dffd42aad723db789551052923580f0d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-09.log",
+      "sha256": "9544cc9f4b3d0d483d07a5f50c68c7c3bda3cfc31bf9f04e660b00445f1adb59"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-10.log",
+      "sha256": "8744af4d551283a45f40440d9ab925085a00212292078a25cfe5ffab1b7c8eac"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-11.log",
+      "sha256": "dfae16096db07d33174366420896a2b664113295fe41ceeb56a2e2876d9b3e0e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-12.log",
+      "sha256": "96ad8f01028b705d15ea363c71abcb0f786573dcc815f28d618663498b2dc1c3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-13.log",
+      "sha256": "469b538ca2e295a9d4e03d801b4318047945f4eebab6f62e20906babdac1dddd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-14.log",
+      "sha256": "25db7d1013c274a6bbe5d332e98d778329b7006e4f2bf10a5e8e0776df9ee462"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-candidate-allocation-first-graph-cuda-pipeline-placement-run-15.log",
+      "sha256": "ee54dc61c18853792c72a497f21c7faa78aeeaa5bc0fdb11590c84eefc437772"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-01.log",
+      "sha256": "89256d42590eca540668a44ff5d49af6ee2ea5152da4feb3c25e198b5471e5fd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-02.log",
+      "sha256": "049ab5f38a232b725d87741ccca33d36728eda7a6d9fc7307bdc1c330e651d1e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-03.log",
+      "sha256": "00c1ec725e3d6e0db386dee02e348e1270a38974bab1263a2786a7a63044b9df"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-04.log",
+      "sha256": "fc7a267143b77ae6ccc8a43301ddaf78a0b7a26f18a42aa78b26286c0314beb6"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-05.log",
+      "sha256": "a5911902ef512753c9359131ff6741e703fe453a5b5603d94821a515367db5d0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-06.log",
+      "sha256": "06612979654eb81d2ecd48cc29a5a99a1f7da97e1d8bfcb6edf58596d159885c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-07.log",
+      "sha256": "81b06a9d176024f2ddd94094036c3900b160827680e9fd59a61de03cfc5aaa61"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-08.log",
+      "sha256": "d90a55abfbf2e76af3e66eb14c2ba5a313057ea0b1be6181b4aa4ad7cc0aee79"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-09.log",
+      "sha256": "8813039f00f23a79fc20174fc9eb348d3f47c7c5006d39a253f8a563c12fa4a9"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-10.log",
+      "sha256": "9cdfc8c801f6328b75d3624622dae6d4cc8c7a281c47675f5ee66b72b09a1702"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-11.log",
+      "sha256": "c132e28d45e2dc6635bf0b5b47ac9889dbd7111d2a6f6d7b6fe6a183773b0d56"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-12.log",
+      "sha256": "fa9b96b045a5210223db02660d6ee3e1b2c615bea5b353b4e9b18e43387b9521"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-13.log",
+      "sha256": "129747fd9c0114a858952fbbdeebda0b17d0d06fb11dc5e30d1db062e791d70a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-14.log",
+      "sha256": "7f23b0facfcbc5e938d1c95344816516f851295483ecbe3a0251c0a9bb82cdd3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\product-placement-peer-first-peer-allocation-first-graph-cuda-pipeline-placement-run-15.log",
+      "sha256": "3fa104b7900c9a5f13349115fe5391c5801dfb051a7ab6b7a347b8207efa0ea1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-01.log",
+      "sha256": "3229d9df6d1d869e29224dfb53192d6adea1af92f4759f6ece425f77480cbe8a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-02.log",
+      "sha256": "2c3399a41b1f2684bcc6863ee2e882f2d068a0c7f9db64624f4f50ccf147b300"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-03.log",
+      "sha256": "dccb7cf921a20f6185cbf24ddeb4eee7c0a0554ba5473c31c71e4f4e46435dbf"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-04.log",
+      "sha256": "7612e5009e547d0b7413b5aca8c89caecd5bea2f475a7553a14b2d4a3539cd59"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-05.log",
+      "sha256": "5630048d55afbb8db76c20aa10c5678d2b41bc7cd08bb6269ec688c41432c228"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-06.log",
+      "sha256": "08014d8f047c409dbaf3a73fda2e7226abe300c5e97da6d043bd312ba4fb2721"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-07.log",
+      "sha256": "9bc015f3e0cfede1770b65effe24551abe4fe9ed865e464ee51bfcfd71a0f392"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-08.log",
+      "sha256": "ab34a543f9766d42ec9733d630f1dc195f1c69be26d3a8b203665289966a8f86"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-09.log",
+      "sha256": "9530abd103e70906ebc5306921194b2d93d8e98cc5eaa87fe64682b3acdd3946"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-10.log",
+      "sha256": "7787eb8979e5a342b0cbd55bbfe8758f01a282427a907e76f40846e1b76e27db"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-11.log",
+      "sha256": "8b3b461db332edb39dc8ecfdf85f3eb586f1c4226218547a14cb97ab6c2d02ca"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-12.log",
+      "sha256": "e19c6d412b41e0828a7be115485794e52d5c73d4c094eb7102946467c3233e7f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-13.log",
+      "sha256": "fb3343a7a409c6793930a65a20ab3d1fd1c84af43675038fe51fc8dfff62c607"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-14.log",
+      "sha256": "905544aa9f172da0c2eb4c800e02723dfab4f9084868407b0b57c89a6c2bf539"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-candidate-first-run-15.log",
+      "sha256": "1d45215128f68c0b3e1dc432e20209f33a54ed1409c8cfb076eb6c3b7952e3eb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-01.log",
+      "sha256": "d997f678c59980b78c235940deb025a46885b8fc28d6ea58e92fb6c01ea6bb06"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-02.log",
+      "sha256": "85ecc65e8cb197b88aad024ced9ae1b03706ae69b687a989b3068a10cecfaae1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-03.log",
+      "sha256": "453be33aa50085644472d6c89400c26026e97a449a6c502a4429851a29c08bcd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-04.log",
+      "sha256": "9642b4efd82c38e14cce8376c8193fd73ba8ae7e95711541deb844b6ec34e40f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-05.log",
+      "sha256": "6ee17e55a9725cd352768e500bf0404c2769ffbb907b2a0b0dd3be08d14041bd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-06.log",
+      "sha256": "28837a6c86f0cba90bf5fb82838b8fafdf652000573e570b69d8923be4e156bd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-07.log",
+      "sha256": "965d16a2e367c3e097a98526c20fc386080dd616db6550e45a7b45421f17bad9"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-08.log",
+      "sha256": "22dbb903d24ad9907f9944a00c74648438926b32865875795c48aa568adcbbf4"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-09.log",
+      "sha256": "13dedd0306ddbe7a5503f1a2e0f4e232d5573feb7f26839036f8e2daf0b673d1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-10.log",
+      "sha256": "8032e818b5d4be607a0581db0e193b3633eda2cd80a276d8c9303be72aa9c9c3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-11.log",
+      "sha256": "6a8ef64ffdc2c6220867283403bd0e437581494e1d43e0b269c446f5bf701dae"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-12.log",
+      "sha256": "6c67ccd40b893d20c04ae7aa4ef713d7904326154d5a4b75e59965c0c6742261"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-13.log",
+      "sha256": "070bde897bd608093b0f4b569158277ef7460d339bd3734e4e8cb36671ddfd47"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-14.log",
+      "sha256": "fa6dbdab806e26126cf4b9b61b91736504496b2061353b35b9e9de2e1db8896a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\raw\\n-15\\control-peer-first-run-15.log",
+      "sha256": "7e357893a892f77c30f141fe3893328053d458a481ed72771102c321ea3370c3"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "git@github.com:axiomates/hyle.git",
+    "revision": "7718b163946104989c9a000f19fd01f454211d36",
+    "tree": "c707aa031dbcd4427724379e73cb23a55e5e9303"
+  },
+  "summary": {
+    "path": "C:\\hyle-scratch\\graph-cuda-p2-terminal-7718b163-evidence\\summary.json",
+    "sha256": "012e3c37ddc6cd3fc32d7ed3311b9757863bd58406314f6f6760ce5ea3336134"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "MSVC",
+        "compiler_matches_profile": true,
+        "compiler_version": "19.50.35728.0",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "MSVC",
+        "expected_compiler_version_prefix": "19.50",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+          "compiler_frontend_variant": "MSVC",
+          "compiler_id": "MSVC",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+          "compiler_target": "unknown",
+          "compiler_version": "19.50.35728.0",
+          "formal_identity_complete": true,
+          "linker_id": "MSVC",
+          "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+          "linker_version": "14.50.35728.0",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "windows-sdk:10.0.26100.0",
+          "stdlib": "msvc-stl:14.50.35717/v145",
+          "system_name": "Windows",
+          "system_processor": "AMD64",
+          "system_version": "10.0.26200"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    }
+  ]
+}

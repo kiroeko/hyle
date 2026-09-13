@@ -272,15 +272,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md",
-      "summary": "compute v6 AUDITED：首个产品改动前的审计纠正已把 provider binding/resource requirement、exact-route prepare、shared Queue 与 delegated island ownership 冻结为 C60--C67；submit 不再承担首次资源裁决，算子目录扩张暂停。"
+      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
+      "summary": "compute v6 CANDIDATE：C60--C67 已完成，provider resource proposal/exact prepare、shared Queue 与 delegated island ownership 通过三平台 sanitizer/定向测试和三交付；候选固定在 7718b163，待终局红队。"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v7-execution-lanes-and-islands.md",
-      "summary": "graph v7 AUDITED：首个产品改动前的审计纠正已把 execution target、storage domain/resource、execution lane 三轴和 schedule-before-workspace 固化为 G70--G81；delegated island 与内部 region seam 保留，四条结构探针前不横向填充算子。"
+      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
+      "summary": "graph v7 CANDIDATE：G70--G81 的 target/storage/lane 三轴、HB-safe workspace/budget、跨 lane dependency 与 delegated island 已完成；三平台、三交付及当前 CUDA P2 WIN/PASS，候选固定在 7718b163，待终局红队。"
     },
     {
       "module": "container_concurrent",
@@ -388,9 +390,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v1-async-runtime.md",
-      "summary": "compute_backend_cuda v1 AUDITED：冻结 CUDA 13.3 explicit-context/non-blocking-stream runtime、stable device/pinned/managed resource、每 segment event Completion、pending abandon reaper、typed import/submit、single-queue capture 与 system-SDK 三交付；只授权 CU10--CU23。"
+      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
+      "summary": "compute_backend_cuda v1 CANDIDATE：CU10--CU23 的 CUDA 13.3 explicit-context runtime、stable resources、event Completion/reaper、typed interop、single-queue capture 与 CUDA-on 三交付已完成；当前 P1 PARITY/PASS，候选固定在 7718b163，待终局红队。"
     },
     {
       "module": "compute_provider_native",
