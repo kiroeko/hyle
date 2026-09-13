@@ -122,4 +122,25 @@ HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(rvv)
 #undef HYLE_SIMD_DECLARE_ROW_EXTRA_TIER
 #undef HYLE_SIMD_DECLARE_ROW_EXTRA_ONE
 
+#define HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(suffix)                            \
+  void reciprocal_sqrt_f32_##suffix(const float*, float*,                    \
+                                     std::size_t) noexcept;                   \
+  void fmin_f32_##suffix(const float*, const float*, float*,                  \
+                         std::size_t) noexcept;                               \
+  void fmax_f32_##suffix(const float*, const float*, float*,                  \
+                         std::size_t) noexcept;                               \
+  void select_values_f32_##suffix(const std::uint8_t*, const float*,          \
+                                  const float*, float*,                       \
+                                  std::size_t) noexcept;
+
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(scalar)
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(sse4)
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(avx2)
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(avx512)
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(neon)
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(sve)
+HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS(rvv)
+
+#undef HYLE_SIMD_DECLARE_F32_COMPUTE_ROWS
+
 }  // namespace hyle::simd::detail

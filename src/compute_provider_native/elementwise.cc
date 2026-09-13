@@ -97,8 +97,7 @@ void unary_linear(const void *first, const void *, const void *, void *output,
     simd::silu_f32_batch(source, destination, count);
   } else {
     static_assert(Kind == UnaryKind::kRsqrt);
-    for (std::size_t index = 0; index < count; ++index)
-      destination[index] = evaluate_unary<Kind>(source[index]);
+    simd::reciprocal_sqrt(source, destination, count);
   }
 }
 
@@ -143,9 +142,11 @@ void binary_linear(const void *first, const void *second, const void *,
     simd::multiply(left, right, destination, count);
   } else if constexpr (Kind == BinaryKind::kDivide) {
     simd::divide(left, right, destination, count);
+  } else if constexpr (Kind == BinaryKind::kMinimum) {
+    simd::fmin(left, right, destination, count);
   } else {
-    for (std::size_t index = 0; index < count; ++index)
-      destination[index] = evaluate_binary<Kind>(left[index], right[index]);
+    static_assert(Kind == BinaryKind::kMaximum);
+    simd::fmax(left, right, destination, count);
   }
 }
 
@@ -183,6 +184,15 @@ void select_scalar(const std::byte *first, const std::byte *second,
   const std::byte *source = *first != std::byte{0} ? second : third;
   if (source != output)
     std::memcpy(output, source, ElementSize);
+}
+
+void select_f32_linear(const void *first, const void *second,
+                       const void *third, void *output,
+                       std::size_t count) noexcept {
+  simd::select_values(static_cast<const std::uint8_t *>(first),
+                      static_cast<const float *>(second),
+                      static_cast<const float *>(third),
+                      static_cast<float *>(output), count);
 }
 
 template <class Left, class Right>
@@ -403,7 +413,13 @@ bool select_binary(BinaryKind kind, NativePlan &plan) noexcept {
 #undef HYLE_NATIVE_SELECT_BINARY
 }
 
-bool select_select(std::size_t element_size, NativePlan &plan) noexcept {
+bool select_select(DataType data_type, std::size_t element_size,
+                   NativePlan &plan) noexcept {
+  if (data_type == DataType::kFloat32) {
+    plan.linear_elementwise_route = &select_f32_linear;
+    plan.scalar_elementwise_route = &select_scalar<sizeof(float)>;
+    return true;
+  }
 #define HYLE_NATIVE_SELECT_WIDTH(width)                                        \
   case width:                                                                  \
     plan.linear_elementwise_route = &select_linear<width>;                     \
@@ -529,7 +545,7 @@ Status prepare_elementwise(Operation operation,
           "native Select requires plain Bool condition and branch storage");
     }
     const std::size_t element_size = data_type_size(outputs[0].data_type());
-    if (!select_select(element_size, plan)) {
+    if (!select_select(outputs[0].data_type(), element_size, plan)) {
       return Status::Unimplemented(
           "native Select branch scalar width is unsupported");
     }

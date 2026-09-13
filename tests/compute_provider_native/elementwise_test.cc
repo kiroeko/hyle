@@ -371,6 +371,51 @@ TEST(NativeElementwise, SupportsDenseSelectAliasingABranch) {
             expected);
 }
 
+TEST(NativeElementwise, ExecutesDenseF32SelectAcrossVectorBlocksAndTail) {
+  constexpr std::size_t kCount = 19;
+  constexpr std::array<std::int64_t, 1> shape{
+      static_cast<std::int64_t>(kCount)};
+  constexpr std::array<std::uint8_t, kCount> condition{
+      0, 1, 2, 0xff, 0, 4, 0, 7, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0};
+  std::array<float, kCount> when_true{};
+  std::array<float, kCount> when_false{};
+  std::array<float, kCount> expected{};
+  for (std::size_t i = 0; i < kCount; ++i) {
+    when_true[i] = 10.0F + static_cast<float>(i);
+    when_false[i] = -10.0F - static_cast<float>(i);
+    expected[i] = condition[i] != 0 ? when_true[i] : when_false[i];
+  }
+
+  const TensorDesc condition_desc =
+      TensorDesc::dense(DataType::kBool, shape).value();
+  const TensorDesc branch_desc =
+      TensorDesc::dense(DataType::kFloat32, shape).value();
+  Buffer condition_storage = make_buffer(condition);
+  Buffer true_storage = make_buffer(when_true);
+  Buffer false_storage = make_buffer(when_false);
+  Buffer output_storage = make_buffer(std::array<float, kCount>{});
+  const ConstTensorView condition_view =
+      ConstTensorView::create(condition_desc, condition_storage.view()).value();
+  const ConstTensorView true_view =
+      ConstTensorView::create(branch_desc, true_storage.view()).value();
+  const ConstTensorView false_view =
+      ConstTensorView::create(branch_desc, false_storage.view()).value();
+  const TensorView output =
+      TensorView::create(branch_desc, output_storage.view()).value();
+
+  auto context = hyle::compute::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
+                                         branch_desc, branch_desc)
+                      .value();
+  auto invocation = prepared.create_invocation().value();
+  ASSERT_TRUE(
+      invocation.submit(queue, condition_view, true_view, false_view, output)
+          ->wait()
+          .ok());
+  EXPECT_EQ((read_buffer<float, kCount>(output_storage)), expected);
+}
+
 TEST(NativeElementwise, RejectsUnsafeStridedAliasAndUnsupportedArithmeticType) {
   constexpr std::array<std::int64_t, 2> shape{2, 2};
   constexpr std::array<std::int64_t, 2> transposed_strides{4, 8};

@@ -188,6 +188,58 @@ TEST(Search, FloatingExtremaKeepFirstTieAndFirstNaNAcrossBlocks) {
   }
 }
 
+TEST(Search, FloatingExtremaHonorSignedZeroOnEveryRuntimeTier) {
+  for (const hs::Runtime *runtime : {hs::runtime_for(hs::KernelTarget::kScalar),
+                                     hs::runtime_for(hs::KernelTarget::kSse4),
+                                     hs::runtime_for(hs::KernelTarget::kAvx2),
+                                     hs::runtime_for(hs::KernelTarget::kAvx512),
+                                     hs::runtime_for(hs::KernelTarget::kNeon),
+                                     hs::runtime_for(hs::KernelTarget::kSve),
+                                     hs::runtime_for(hs::KernelTarget::kRvv)}) {
+    if (runtime == nullptr)
+      continue;
+
+    std::vector<float> f32(37, 0.0F);
+    f32[1] = -0.0F;
+    f32[19] = -0.0F;
+    EXPECT_TRUE(
+        std::signbit(runtime->search.min_value_f32(f32.data(), f32.size())));
+    EXPECT_FALSE(
+        std::signbit(runtime->search.max_value_f32(f32.data(), f32.size())));
+    EXPECT_EQ(runtime->search.index_of_min_f32(f32.data(), f32.size()), 0u);
+    EXPECT_EQ(runtime->search.index_of_max_f32(f32.data(), f32.size()), 0u);
+    float f32_min = 1.0F;
+    float f32_max = -1.0F;
+    runtime->search.minmax_value_f32(f32.data(), f32.size(), &f32_min,
+                                     &f32_max);
+    EXPECT_TRUE(std::signbit(f32_min));
+    EXPECT_FALSE(std::signbit(f32_max));
+
+    std::vector<double> f64(19, 0.0);
+    f64[0] = -0.0;
+    f64[11] = -0.0;
+    EXPECT_TRUE(
+        std::signbit(runtime->search.min_value_f64(f64.data(), f64.size())));
+    EXPECT_FALSE(
+        std::signbit(runtime->search.max_value_f64(f64.data(), f64.size())));
+    EXPECT_EQ(runtime->search.index_of_min_f64(f64.data(), f64.size()), 0u);
+    EXPECT_EQ(runtime->search.index_of_max_f64(f64.data(), f64.size()), 0u);
+    double f64_min = 1.0;
+    double f64_max = -1.0;
+    runtime->search.minmax_value_f64(f64.data(), f64.size(), &f64_min,
+                                     &f64_max);
+    EXPECT_TRUE(std::signbit(f64_min));
+    EXPECT_FALSE(std::signbit(f64_max));
+
+    const std::vector<float> only_negative_zero(37, -0.0F);
+    EXPECT_TRUE(std::signbit(runtime->search.max_value_f32(
+        only_negative_zero.data(), only_negative_zero.size())));
+    const std::vector<float> only_positive_zero(37, 0.0F);
+    EXPECT_FALSE(std::signbit(runtime->search.min_value_f32(
+        only_positive_zero.data(), only_positive_zero.size())));
+  }
+}
+
 TEST(Search, EmptyNullRange) {
   EXPECT_EQ(hs::count_equal(static_cast<const std::uint32_t*>(nullptr), 0, 1), 0u);
   EXPECT_EQ(hs::find_equal(static_cast<const std::uint32_t*>(nullptr), 0, 1), 0u);

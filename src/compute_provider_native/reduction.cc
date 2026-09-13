@@ -12,6 +12,7 @@
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
 #include "hyle/simd/ops.h"
+#include "hyle/simd/search.h"
 
 namespace hyle::compute::native::internal {
 namespace {
@@ -55,6 +56,20 @@ void finish_mean(float *output, std::size_t count,
   const float divisor = static_cast<float>(reduced_elements);
   for (std::size_t index = 0; index < count; ++index)
     output[index] /= divisor;
+}
+
+float reduce_dense(ReductionKind kind, const float *input,
+                   std::size_t count) noexcept {
+  switch (kind) {
+  case ReductionKind::kSum:
+  case ReductionKind::kMean:
+    return simd::sum(input, count);
+  case ReductionKind::kMinimum:
+    return simd::min_value(input, count);
+  case ReductionKind::kMaximum:
+    return simd::max_value(input, count);
+  }
+  return std::numeric_limits<float>::quiet_NaN();
 }
 
 detail::EnqueueResult
@@ -114,18 +129,16 @@ submit_reduction(const NativePlan &plan,
   std::fill_n(output_data, output_elements,
               reduction_identity(plan.reduction_kind));
   const auto *dense_input = reinterpret_cast<const float *>(input_data);
-  if ((plan.reduction_kind == ReductionKind::kSum ||
-       plan.reduction_kind == ReductionKind::kMean) &&
-      plan.reduction_route == ReductionRoute::kAllDense) {
-    output_data[0] = simd::sum(dense_input, input_elements);
-  } else if ((plan.reduction_kind == ReductionKind::kSum ||
-              plan.reduction_kind == ReductionKind::kMean) &&
-             plan.reduction_route == ReductionRoute::kLastAxisDense) {
+  if (plan.reduction_route == ReductionRoute::kAllDense) {
+    output_data[0] =
+        reduce_dense(plan.reduction_kind, dense_input, input_elements);
+  } else if (plan.reduction_route == ReductionRoute::kLastAxisDense) {
     for (std::size_t row = 0; row < output_elements; ++row) {
       const float *row_input =
           dense_input == nullptr ? nullptr
                                  : dense_input + row * reduced_elements;
-      output_data[row] = simd::sum(row_input, reduced_elements);
+      output_data[row] =
+          reduce_dense(plan.reduction_kind, row_input, reduced_elements);
     }
   } else {
     const TensorDesc &input_description = inputs[0].description();

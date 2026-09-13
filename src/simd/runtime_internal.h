@@ -14,7 +14,7 @@ class RandomState;
 // ordinary calls pay one function-pointer hop per whole buffer. Its layout and
 // per-tier accessors are deliberately not part of the installed C++ surface.
 struct Runtime {
-  static constexpr std::uint32_t kTableVersion = 11;
+  static constexpr std::uint32_t kTableVersion = 12;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -50,6 +50,14 @@ struct Runtime {
     HYLE_RUNTIME_ROW_EXTRA_FIELDS(double, f64)
 
 #undef HYLE_RUNTIME_ROW_EXTRA_FIELDS
+
+    void (*reciprocal_sqrt_f32)(const float*, float*, std::size_t) noexcept;
+    void (*fmin_f32)(const float*, const float*, float*,
+                     std::size_t) noexcept;
+    void (*fmax_f32)(const float*, const float*, float*,
+                     std::size_t) noexcept;
+    void (*select_values_f32)(const std::uint8_t*, const float*, const float*,
+                              float*, std::size_t) noexcept;
   };
 
   struct Random {

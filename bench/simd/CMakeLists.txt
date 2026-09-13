@@ -201,6 +201,26 @@ hyle_apply_warnings(hyle_simd_inference_consumer_bench)
 set_property(TARGET hyle_simd_inference_consumer_bench
   PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 
+# SIMD v7 bounded Compute-row instrument. Candidate and independently spelled
+# direct-Highway peers share one fixed target contract; a second image perturbs
+# code placement without changing any operation or input.
+add_executable(hyle_simd_compute_row_primitives_bench
+  compute_row_primitives_bench.cc)
+target_link_libraries(hyle_simd_compute_row_primitives_bench PRIVATE
+  hyle_simd nanobench)
+target_include_directories(hyle_simd_compute_row_primitives_bench PRIVATE
+  "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_simd_compute_row_primitives_bench SYSTEM PRIVATE
+  "${_hyle_bench_highway_dir}")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_highway_target_isa(compute_row_primitives_bench.cc AVX2)
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_highway_target_isa(compute_row_primitives_bench.cc NEON)
+endif()
+hyle_apply_warnings(hyle_simd_compute_row_primitives_bench)
+set_property(TARGET hyle_simd_compute_row_primitives_bench
+  PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+
 if(HYLE_STATIC)
   add_executable(hyle_simd_inference_consumer_bench_placement
     inference_consumer_bench.cc)
@@ -225,6 +245,29 @@ if(HYLE_STATIC)
   set_property(TARGET hyle_simd_inference_consumer_bench_placement
     PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
   hyle_register_bench(simd hyle_simd_inference_consumer_bench_placement)
+
+  add_executable(hyle_simd_compute_row_primitives_bench_placement
+    compute_row_primitives_bench.cc)
+  target_link_libraries(hyle_simd_compute_row_primitives_bench_placement PRIVATE
+    hyle_simd nanobench)
+  target_include_directories(hyle_simd_compute_row_primitives_bench_placement
+    PRIVATE "${PROJECT_SOURCE_DIR}")
+  target_include_directories(hyle_simd_compute_row_primitives_bench_placement
+    SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
+  if(MSVC)
+    target_link_options(hyle_simd_compute_row_primitives_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_simd_compute_row_primitives_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR
+      "SIMD Compute-row placement perturbation is unsupported by this compiler")
+  endif()
+  hyle_apply_warnings(hyle_simd_compute_row_primitives_bench_placement)
+  set_property(TARGET hyle_simd_compute_row_primitives_bench_placement
+    PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+  hyle_register_bench(simd hyle_simd_compute_row_primitives_bench_placement)
 endif()
 
 # SIMD-09 bounded search/scan integration instrument. The shipping target
@@ -329,6 +372,7 @@ set(_hyle_simd_bench_targets
   hyle_bitpack_bench
   hyle_activation_bench
   hyle_simd_inference_consumer_bench
+  hyle_simd_compute_row_primitives_bench
   hyle_search_scan_parity_bench
   hyle_mixed_dot_bench
   hyle_row_dtype_parity_bench

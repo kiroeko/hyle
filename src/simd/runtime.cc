@@ -68,6 +68,10 @@ namespace {
       &detail::neg_##tag##_##suffix, &detail::square_##tag##_##suffix,         \
       &detail::sqrt_##tag##_##suffix,
 
+#define HYLE_OPS_COMPUTE_ROWS_RUNTIME(suffix)                                  \
+  &detail::reciprocal_sqrt_f32_##suffix, &detail::fmin_f32_##suffix,           \
+      &detail::fmax_f32_##suffix, &detail::select_values_f32_##suffix,
+
 #define HYLE_BITPACK_RUNTIME_ONE(tag, suffix)                                  \
   &detail::pack_##tag##_##suffix, &detail::unpack_##tag##_##suffix,
 
@@ -171,7 +175,8 @@ Runtime::Sort sort_ops_for_product_target(KernelTarget target) noexcept {
          &detail::saxpy_f32_##suffix, &detail::saxpy_f64_##suffix,                  \
          &detail::add_f32_##suffix, &detail::add_f64_##suffix,                      \
          HYLE_OPS_ROW_RUNTIME_ONE(f32, suffix)                                      \
-         HYLE_OPS_ROW_RUNTIME_ONE(f64, suffix)},                                    \
+         HYLE_OPS_ROW_RUNTIME_ONE(f64, suffix)                                      \
+         HYLE_OPS_COMPUTE_ROWS_RUNTIME(suffix)},                                    \
         {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
          &detail::random_fill_f64_##suffix, &detail::random_advance_##suffix},      \
         HYLE_SEARCH_RUNTIME(suffix),                                                \
@@ -221,6 +226,7 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 #undef HYLE_SORT_RUNTIME_ONE
 #undef HYLE_BITPACK_RUNTIME
 #undef HYLE_BITPACK_RUNTIME_ONE
+#undef HYLE_OPS_COMPUTE_ROWS_RUNTIME
 #undef HYLE_OPS_ROW_RUNTIME_ONE
 #undef HYLE_SCAN_RUNTIME
 #undef HYLE_SCAN_RUNTIME_ONE

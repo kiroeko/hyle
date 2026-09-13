@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "hyle/core/environment.h"
@@ -362,6 +363,123 @@ TEST(Ops, CompleteF64RowAlgebraAndZeroContract) {
   hyle::simd::negate(null_in, null_out, 0);
   hyle::simd::square(null_in, null_out, 0);
   hyle::simd::sqrt(null_in, null_out, 0);
+}
+
+TEST(Ops, ComputeF32RowsMatchFullPrecisionAndNumberSemanticsOnEveryTier) {
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const float subnormal = std::numeric_limits<float>::denorm_min();
+  const std::vector<float> left = {
+      0.0F,   -0.0F,  nan,       4.0F,
+      -3.0F,  16.0F,  subnormal, std::numeric_limits<float>::infinity(),
+      9.0F,   1.0F,   25.0F,     36.0F,
+      49.0F,  64.0F,  81.0F,     100.0F,
+      121.0F, 144.0F, 169.0F};
+  const std::vector<float> right = {
+      -0.0F,  0.0F,   7.0F,  nan,
+      -4.0F,  8.0F,   2.0F,  -std::numeric_limits<float>::infinity(),
+      3.0F,   5.0F,   20.0F, 40.0F,
+      48.0F,  65.0F,  80.0F, 101.0F,
+      120.0F, 145.0F, 168.0F};
+  std::vector<float> out(left.size());
+
+  const auto expect_bits_or_nan = [](float actual, float expected) {
+    if (std::isnan(expected)) {
+      EXPECT_TRUE(std::isnan(actual));
+    } else {
+      EXPECT_EQ(std::bit_cast<std::uint32_t>(actual),
+                std::bit_cast<std::uint32_t>(expected));
+    }
+  };
+  const auto number_min = [nan](float a, float b) {
+    if (std::isnan(a))
+      return std::isnan(b) ? nan : b;
+    if (std::isnan(b))
+      return a;
+    if (a == 0.0F && b == 0.0F)
+      return std::bit_cast<float>(std::bit_cast<std::uint32_t>(a) |
+                                  std::bit_cast<std::uint32_t>(b));
+    return a < b ? a : b;
+  };
+  const auto number_max = [nan](float a, float b) {
+    if (std::isnan(a))
+      return std::isnan(b) ? nan : b;
+    if (std::isnan(b))
+      return a;
+    if (a == 0.0F && b == 0.0F)
+      return std::bit_cast<float>(std::bit_cast<std::uint32_t>(a) &
+                                  std::bit_cast<std::uint32_t>(b));
+    return a > b ? a : b;
+  };
+
+  for (const auto *table : available_runtimes()) {
+    table->ops.reciprocal_sqrt_f32(left.data(), out.data(), left.size());
+    for (std::size_t i = 0; i < left.size(); ++i)
+      expect_bits_or_nan(out[i], 1.0F / std::sqrt(left[i]));
+
+    auto reciprocal_alias = left;
+    table->ops.reciprocal_sqrt_f32(reciprocal_alias.data(),
+                                   reciprocal_alias.data(),
+                                   reciprocal_alias.size());
+    for (std::size_t i = 0; i < reciprocal_alias.size(); ++i)
+      expect_bits_or_nan(reciprocal_alias[i], 1.0F / std::sqrt(left[i]));
+
+    table->ops.fmin_f32(left.data(), right.data(), out.data(), left.size());
+    for (std::size_t i = 0; i < left.size(); ++i)
+      expect_bits_or_nan(out[i], number_min(left[i], right[i]));
+
+    table->ops.fmax_f32(left.data(), right.data(), out.data(), left.size());
+    for (std::size_t i = 0; i < left.size(); ++i)
+      expect_bits_or_nan(out[i], number_max(left[i], right[i]));
+
+    auto maximum_alias = right;
+    table->ops.fmax_f32(left.data(), maximum_alias.data(), maximum_alias.data(),
+                        maximum_alias.size());
+    for (std::size_t i = 0; i < maximum_alias.size(); ++i)
+      expect_bits_or_nan(maximum_alias[i], number_max(left[i], right[i]));
+
+    auto alias = left;
+    table->ops.fmin_f32(alias.data(), right.data(), alias.data(), alias.size());
+    for (std::size_t i = 0; i < alias.size(); ++i)
+      expect_bits_or_nan(alias[i], number_min(left[i], right[i]));
+  }
+}
+
+TEST(Ops, ByteBoolSelectUsesAnyNonzeroAndSupportsValueAlias) {
+  constexpr std::size_t kCount = 19;
+  const std::uint8_t condition[kCount] = {0, 1, 2, 0xff, 0, 4, 0, 7, 0, 1,
+                                          0, 2, 0, 3,    0, 4, 0, 5, 0};
+  std::vector<float> when_true(kCount), when_false(kCount), out(kCount);
+  for (std::size_t i = 0; i < kCount; ++i) {
+    when_true[i] = 100.0F + static_cast<float>(i);
+    when_false[i] = -100.0F - static_cast<float>(i);
+  }
+
+  for (const auto *table : available_runtimes()) {
+    table->ops.select_values_f32(condition, when_true.data(), when_false.data(),
+                                 out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i)
+      EXPECT_EQ(out[i], condition[i] != 0 ? when_true[i] : when_false[i]);
+
+    auto alias_true = when_true;
+    table->ops.select_values_f32(condition, alias_true.data(),
+                                 when_false.data(), alias_true.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i)
+      EXPECT_EQ(alias_true[i],
+                condition[i] != 0 ? when_true[i] : when_false[i]);
+
+    auto alias_false = when_false;
+    table->ops.select_values_f32(condition, when_true.data(),
+                                 alias_false.data(), alias_false.data(),
+                                 kCount);
+    for (std::size_t i = 0; i < kCount; ++i)
+      EXPECT_EQ(alias_false[i],
+                condition[i] != 0 ? when_true[i] : when_false[i]);
+  }
+
+  hyle::simd::reciprocal_sqrt(nullptr, nullptr, 0);
+  hyle::simd::fmin(nullptr, nullptr, nullptr, 0);
+  hyle::simd::fmax(nullptr, nullptr, nullptr, 0);
+  hyle::simd::select_values(nullptr, nullptr, nullptr, nullptr, 0);
 }
 
 // Fat artifacts select the best compiled host tier. Exact artifacts deliberately

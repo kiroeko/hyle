@@ -71,4 +71,23 @@ HYLE_SIMD_DECLARE_ROW_ALGEBRA(double)
 
 #undef HYLE_SIMD_DECLARE_ROW_ALGEBRA
 
+// Full-precision f32 row primitives used by ordinary numeric pipelines and by
+// Compute after it has proved a complete contiguous suffix. reciprocal_sqrt
+// evaluates 1.0F / sqrt(x[i]); it is deliberately not an approximate-rsqrt
+// contract. fmin/fmax have std::fmin/std::fmax number semantics, including
+// one-NaN handling and deterministic signed zero. select_values treats every
+// non-zero condition byte as true. Output may exactly alias a value input;
+// partial overlap is unsupported, and select_values requires condition storage
+// to be disjoint from all float ranges. A zero count permits null pointers.
+HYLE_SIMD_API void reciprocal_sqrt(const float* x, float* out,
+                                   std::size_t n) noexcept;
+HYLE_SIMD_API void fmin(const float* x, const float* y, float* out,
+                       std::size_t n) noexcept;
+HYLE_SIMD_API void fmax(const float* x, const float* y, float* out,
+                       std::size_t n) noexcept;
+HYLE_SIMD_API void select_values(const std::uint8_t* condition,
+                                const float* when_true,
+                                const float* when_false, float* out,
+                                std::size_t n) noexcept;
+
 }  // namespace hyle::simd

@@ -146,7 +146,7 @@ AVX-512 不受允许。
 
 | family | HYLE 拥有的公开合同 | 不属于本层 |
 |---|---|---|
-| row ops | 连续 f32/f64 算术、归约、SAXPY；f16/bf16/i8/i16 mixed/storage dot | stride、broadcast、tensor fusion |
+| row ops | 连续 f32/f64 算术、归约、SAXPY；f16/bf16/i8/i16 mixed/storage dot；f32 full-precision reciprocal-sqrt、IEEE number min/max、byte-bool value select | stride、broadcast、tensor fusion、approximation policy |
 | dtype | f32/f16/bf16/E4M3/E5M2 storage、转换、RNE/饱和/NaN/alias | block quant scale、tensor layout |
 | narrow | f16/bf16 数值/bit 搜索、f32 sum、IEEE total-order | 平行 register DSL、tensor narrow policy |
 | math/activation | whole-buffer 数学 accuracy/domain/alias、f32/f16/bf16 激活、split GLU 与单 row normalization 语义 | 模型 operator graph、stride/thread/fused residual |
@@ -161,6 +161,13 @@ AVX-512 不受允许。
 普通 f32/f64 row operation 是 O(n)、O(1) extra storage，不分配、不加锁。输出允许与一个完整输入精确同址；
 任意部分重叠不受支持。浮点 reduction 的结合顺序可随 target 变化，FMA operation 允许最后舍入不同。
 i8/i16 dot 的乘积精确，累加按模 `2^64` 定义后以二补码 i64 返回，不依赖 signed-overflow UB。
+
+`reciprocal_sqrt` 明确为 `1/sqrt` 的 full-precision row，而不是 Highway/xsimd 的 approximate-rsqrt。
+pairwise `fmin/fmax` 使用 number semantics，并由最小 HYLE adapter 在 Highway lowering 上修正 operand-order
+无关的 `-0/+0`；`search.h` 的 extrema reduction 继续传播任意 NaN，并采用相同 signed-zero 次序。
+byte-bool f32 `select_values` 以窄 condition load、同 lane promote 和一次 mask select 实现，不建立临时
+mask buffer。Tensor layout/broadcast/precision 和 row partition 仍归 Compute；SIMD 不因该消费者吸收
+Tensor API。
 
 ### Dtype 与 narrow 合同
 

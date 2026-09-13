@@ -253,6 +253,40 @@ HWY_INLINE void unary_row(const T* x, T* out, std::size_t n, VectorOp vector_op,
   for (; i < n; ++i) out[i] = scalar_op(x[i]);
 }
 
+template <bool kMinimum, class V>
+HWY_INLINE V number_extreme(V a, V b) noexcept {
+  const hn::DFromV<V> d;
+  const auto zero = hn::Zero(d);
+  const auto both_zero = hn::And(hn::Eq(a, zero), hn::Eq(b, zero));
+  const auto numeric =
+      kMinimum ? hn::MinNumber(a, b) : hn::MaxNumber(a, b);
+  // IEEE number min/max prefer -0/+0 independently of operand order. The
+  // generic bitwise form also keeps equal same-sign zeros unchanged.
+  const auto signed_zero = kMinimum ? hn::Or(a, b) : hn::And(a, b);
+  return hn::IfThenElse(both_zero, signed_zero, numeric);
+}
+
+HWY_INLINE void select_values_row(const std::uint8_t* condition,
+                                   const float* when_true,
+                                   const float* when_false, float* out,
+                                   std::size_t n) noexcept {
+  const hn::ScalableTag<float> df;
+  const hn::Rebind<std::uint8_t, decltype(df)> dc;
+  const hn::RebindToUnsigned<decltype(df)> du;
+  const std::size_t lanes = hn::Lanes(df);
+  std::size_t i = 0;
+  for (; lanes <= n - i; i += lanes) {
+    const auto condition_u32 = hn::PromoteTo(du, hn::LoadU(dc, condition + i));
+    const auto mask =
+        hn::RebindMask(df, hn::Ne(condition_u32, hn::Zero(du)));
+    hn::StoreU(hn::IfThenElse(mask, hn::LoadU(df, when_true + i),
+                              hn::LoadU(df, when_false + i)),
+               df, out + i);
+  }
+  for (; i < n; ++i)
+    out[i] = condition[i] != 0 ? when_true[i] : when_false[i];
+}
+
 template <typename T>
 HWY_INLINE void scale_row(const T* x, T factor, T* out, std::size_t n) noexcept {
   const hn::ScalableTag<T> d;
@@ -426,6 +460,38 @@ HYLE_SIMD_DEFINE_ROW(float, f32)
 HYLE_SIMD_DEFINE_ROW(double, f64)
 
 #undef HYLE_SIMD_DEFINE_ROW
+
+void HYLE_SIMD_OPS_FN(reciprocal_sqrt_f32_)(const float* x, float* out,
+                                             std::size_t n) noexcept {
+  unary_row(
+      x, out, n,
+      [](auto v) {
+        const hn::DFromV<decltype(v)> d;
+        return hn::Div(hn::Set(d, 1.0F), hn::Sqrt(v));
+      },
+      [](float v) { return 1.0F / std::sqrt(v); });
+}
+
+void HYLE_SIMD_OPS_FN(fmin_f32_)(const float* x, const float* y, float* out,
+                                  std::size_t n) noexcept {
+  binary_row(x, y, out, n,
+             [](auto a, auto b) { return number_extreme<true>(a, b); },
+             [](float a, float b) { return std::fmin(a, b); });
+}
+
+void HYLE_SIMD_OPS_FN(fmax_f32_)(const float* x, const float* y, float* out,
+                                  std::size_t n) noexcept {
+  binary_row(x, y, out, n,
+             [](auto a, auto b) { return number_extreme<false>(a, b); },
+             [](float a, float b) { return std::fmax(a, b); });
+}
+
+void HYLE_SIMD_OPS_FN(select_values_f32_)(const std::uint8_t* condition,
+                                          const float* when_true,
+                                          const float* when_false, float* out,
+                                          std::size_t n) noexcept {
+  select_values_row(condition, when_true, when_false, out, n);
+}
 
 }  // namespace hyle::simd::detail
 

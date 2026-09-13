@@ -161,8 +161,10 @@ TEST(NativeReduction, HandlesUnalignedStrideNaNAndSignedZero) {
   ASSERT_TRUE(invocation.submit(queue, input, output)->wait().ok());
   EXPECT_TRUE(std::isnan(read_buffer<float, 1>(output_storage)[0]));
 
-  constexpr std::array<float, 2> zeros{0.0F, -0.0F};
-  constexpr std::array<std::int64_t, 1> zero_shape{2};
+  std::array<float, 37> zeros{};
+  zeros[1] = -0.0F;
+  zeros[19] = -0.0F;
+  constexpr std::array<std::int64_t, 1> zero_shape{37};
   const TensorDesc zeros_desc =
       TensorDesc::dense(DataType::kFloat32, zero_shape).value();
   Buffer zeros_storage = make_buffer(zeros);

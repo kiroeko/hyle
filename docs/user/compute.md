@@ -162,14 +162,15 @@ auto chosen = prepare(context, Select{}, condition_desc, true_desc,
 
 dense、等形路线可让 output 精确 alias 任一由 operation traits 允许的输入；provider 此时只建立一个
 read-write mapping。广播或 strided 输入不能 alias 输出，因为逐坐标 materialization 可能覆盖尚未读取的
-元素。partial overlap 在通用 runtime 更早被拒绝。`Minimum/Maximum` 使用 `std::fmin/std::fmax` 语义：单侧
+元素。dense f32 `Rsqrt`、`Minimum/Maximum` 与 f32 `Select` 的完整连续 row 直接复用 SIMD；partial
+overlap 在通用 runtime 更早被拒绝。`Minimum/Maximum` 使用 `std::fmin/std::fmax` 语义：单侧
 NaN 选择另一侧数值，并保留 IEEE signed-zero 规则；它们不是由某条 ISA 的偶然 min/max 行为定义。
 
 ## Reduction 与 LayerNorm
 
 `Reduce` 的 typed `prepare()` 根据 axis 和 `keep_dimensions` 推导 dense output。当前 Native route 支持 f32
 Sum/Mean/Minimum/Maximum；任意普通 byte-strided input 都按逻辑坐标读取，dense reduce-all 和最后一轴
-Sum/Mean 走已有 SIMD reduction。空集合约定为 Sum=0、Mean=NaN、Minimum=+infinity、Maximum=-infinity；
+四种 operation 都走已有 SIMD reduction。空集合约定为 Sum=0、Mean=NaN、Minimum=+infinity、Maximum=-infinity；
 Min/Max 遇到任一 NaN 会传播 NaN。Reduce 不允许 output alias input。
 
 `LayerNorm` 对最后一轴逐 row 计算，可不带参数、只带 scale，或同时带 scale+bias；三种 typed prepare 都

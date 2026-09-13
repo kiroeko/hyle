@@ -29,11 +29,63 @@ namespace {
 namespace hn = hwy::HWY_NAMESPACE;
 
 template <bool kMin, class V>
+HWY_INLINE auto preferred_zero(V value) noexcept {
+  const hn::DFromV<V> d;
+  const auto zero = hn::Eq(value, hn::Zero(d));
+  if constexpr (kMin) {
+    return hn::And(zero, hn::IsNegative(value));
+  } else {
+    return hn::And(zero, hn::Not(hn::IsNegative(value)));
+  }
+}
+
+struct ZeroSigns {
+  bool negative;
+  bool positive;
+};
+
+template <typename T>
+HWY_INLINE ZeroSigns zero_signs(const T* data, std::size_t n) noexcept {
+  static_assert(std::is_floating_point_v<T>);
+  const hn::ScalableTag<T> d;
+  const std::size_t lanes = hn::Lanes(d);
+  auto negative = hn::FirstN(d, 0);
+  auto positive = hn::FirstN(d, 0);
+  std::size_t i = 0;
+  for (; lanes <= n - i; i += lanes) {
+    const auto value = hn::LoadU(d, data + i);
+    negative = hn::Or(negative, preferred_zero<true>(value));
+    positive = hn::Or(positive, preferred_zero<false>(value));
+  }
+  bool has_negative = !hn::AllFalse(d, negative);
+  bool has_positive = !hn::AllFalse(d, positive);
+  for (; i < n; ++i) {
+    if (data[i] != T{0}) continue;
+    has_negative = has_negative || std::signbit(data[i]);
+    has_positive = has_positive || !std::signbit(data[i]);
+  }
+  return {has_negative, has_positive};
+}
+
+template <bool kMin, class V>
 HWY_INLINE auto better(V candidate, V current) noexcept {
   if constexpr (kMin) {
     return hn::Lt(candidate, current);
   } else {
     return hn::Gt(candidate, current);
+  }
+}
+
+template <bool kMin, typename T>
+HWY_INLINE bool scalar_better(T candidate, T current) noexcept {
+  if constexpr (kMin) {
+    return candidate < current ||
+           (candidate == T{0} && current == T{0} &&
+            std::signbit(candidate) && !std::signbit(current));
+  } else {
+    return candidate > current ||
+           (candidate == T{0} && current == T{0} &&
+            !std::signbit(candidate) && std::signbit(current));
   }
 }
 
@@ -90,14 +142,19 @@ HWY_INLINE T propagating_extreme(const T* data, std::size_t n) noexcept {
     if (std::isnan(data[i])) {
       return std::numeric_limits<T>::quiet_NaN();
     }
-    if constexpr (kMin) {
-      if (data[i] < result) result = data[i];
-    } else {
-      if (data[i] > result) result = data[i];
-    }
+    if (scalar_better<kMin>(data[i], result)) result = data[i];
   }
-  return hn::AllFalse(d, nan) ? result
-                              : std::numeric_limits<T>::quiet_NaN();
+  if (!hn::AllFalse(d, nan)) return std::numeric_limits<T>::quiet_NaN();
+  if (result == T{0}) {
+    // Signed zero is relevant only when the numeric result is zero. Keep the
+    // ordinary non-zero reduction free of per-vector sign-mask work and pay
+    // for this second linear pass only on that uncommon semantic edge.
+    const ZeroSigns signs = zero_signs(data, n);
+    const bool has_preferred = kMin ? signs.negative : signs.positive;
+    return std::copysign(T{0}, kMin ? (has_preferred ? T{-1} : T{1})
+                                    : (has_preferred ? T{1} : T{-1}));
+  }
+  return result;
 }
 
 template <bool kMin, typename T>
@@ -258,13 +315,27 @@ HWY_INLINE void minmax_once(const T* data, std::size_t n, T* out_min,
     if constexpr (std::is_floating_point_v<T>) {
       has_nan = has_nan || std::isnan(data[i]);
     }
-    if (data[i] < minimum) minimum = data[i];
-    if (data[i] > maximum) maximum = data[i];
+    if constexpr (std::is_floating_point_v<T>) {
+      if (scalar_better<true>(data[i], minimum)) minimum = data[i];
+      if (scalar_better<false>(data[i], maximum)) maximum = data[i];
+    } else {
+      if (data[i] < minimum) minimum = data[i];
+      if (data[i] > maximum) maximum = data[i];
+    }
   }
   if constexpr (std::is_floating_point_v<T>) {
     if (has_nan) {
       minimum = std::numeric_limits<T>::quiet_NaN();
       maximum = std::numeric_limits<T>::quiet_NaN();
+    } else {
+      const ZeroSigns signs =
+          (minimum == T{0} || maximum == T{0})
+              ? zero_signs(data, n)
+              : ZeroSigns{false, false};
+      if (minimum == T{0})
+        minimum = std::copysign(T{0}, signs.negative ? T{-1} : T{1});
+      if (maximum == T{0})
+        maximum = std::copysign(T{0}, signs.positive ? T{1} : T{-1});
     }
   }
   *out_min = minimum;

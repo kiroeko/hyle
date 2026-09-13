@@ -1,0 +1,125 @@
+{
+  "schema": "hyle.simd.compute-row-shapes/v1",
+  "owner": "simd-v7-compute-row-primitives",
+  "comparison_class": "SAME_CONTRACT",
+  "consumer_evidence": [
+    {
+      "group": "HYLE Compute Native",
+      "revision": "df54eef5352019e25ea1694fc5fec17583ae9d87",
+      "paths": [
+        "src/compute_provider_native/elementwise.cc",
+        "src/compute_provider_native/reduction.cc"
+      ],
+      "shapes": "dense f32 Unary(Rsqrt), Binary(Minimum/Maximum), byte-bool Select, and Reduce(Minimum/Maximum) rows"
+    },
+    {
+      "group": "ggml/llama.cpp, vLLM, SGLang, ds4",
+      "revision": "consumer inventory recorded by compute-ops-v1 and SIMD v7 closure card",
+      "shapes": "model-independent contiguous f32 elementwise and reduction leaves inside decoder execution"
+    }
+  ],
+  "source_evidence": {
+    "adapter": {
+      "path": "bench/simd/compute_row_primitives_bench.cc",
+      "sha256": "adbd5ea13a42f0d5c65a4bc4e7dde98bfd67c29626562909971b4a3ed8f21246"
+    },
+    "candidate_ops_boundary": {
+      "path": "src/simd/ops/kernel_impl.h",
+      "sha256": "6eec4ea1d75fdbfdc9c8407a7bbe4638da9076f769dec210627d1d22b3cec49a"
+    },
+    "candidate_search_boundary": {
+      "path": "src/simd/search/kernel_impl.h",
+      "sha256": "73f93659094d49e08732811c47b1ec7a75ae35e7b8a697844db927b17660e543"
+    }
+  },
+  "common_equivalence": [
+    {
+      "dimension": "ownership-and-lifetime",
+      "candidate": "caller-owned borrowed contiguous buffers remain valid for one synchronous call",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "failure-and-oom",
+      "candidate": "no allocation or failure channel; n==0 permits null and nonzero ranges satisfy the documented disjoint/alias preconditions",
+      "peer": "identical preconditions and no allocation",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "cancel-close-blocking-progress",
+      "candidate": "finite synchronous caller-thread O(n) loop with no cancel, close, suspension or shared state",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "capacity-ordering-backpressure",
+      "candidate": "exactly n elements in index order with no queue, capacity or backpressure state",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "affinity-and-threading",
+      "candidate": "one runner-pinned caller thread; no internal parallelism or affinity",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "setup-steady-state-teardown",
+      "candidate": "allocation and deterministic initialization occur before timing; one public call and one observable sink are charged",
+      "peer": "same buffers, measured work, noinline call boundary and sink",
+      "verdict": "ADAPTER_EQUALIZED"
+    },
+    {
+      "dimension": "delivery-and-codegen",
+      "candidate": "Release static exact-AVX2 HYLE library with LTO off and one public call boundary",
+      "peer": "same executable, compiler and AVX2 target with one noinline direct-Highway adapter boundary",
+      "verdict": "ADAPTER_EQUALIZED"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "dense-rsqrt-f32-4096",
+      "work-and-result": {
+        "candidate": "4096 outputs equal full-precision 1.0F / sqrt(input[i]); not approximate rsqrt",
+        "peer": "identical Highway Div(1,Sqrt(x)) plus scalar tail",
+        "verdict": "EQUAL"
+      },
+      "result-granularity": "one transformer hidden row",
+      "alias": "timed route uses disjoint output; both implementations also support exact input/output alias"
+    },
+    {
+      "id": "dense-number-min-f32-11008",
+      "work-and-result": {
+        "candidate": "11008 pairwise fmin results with number semantics, one-NaN selection and deterministic -0",
+        "peer": "identical Highway MinNumber plus the same minimal signed-zero adapter and scalar tail",
+        "verdict": "EQUAL"
+      },
+      "result-granularity": "one transformer FFN-width row",
+      "alias": "timed route uses disjoint output; both implementations also support exact alias of either value row"
+    },
+    {
+      "id": "dense-byte-select-f32-4096",
+      "work-and-result": {
+        "candidate": "4096 outputs select the true or false f32 lane from any-nonzero byte conditions",
+        "peer": "identical narrow load, promote, mask-select and scalar tail",
+        "verdict": "EQUAL"
+      },
+      "result-granularity": "one transformer hidden row",
+      "alias": "timed route uses disjoint output and condition; both routes support exact alias of either value row only"
+    },
+    {
+      "id": "dense-propagating-min-f32-4096",
+      "work-and-result": {
+        "candidate": "one f32 minimum over 4096 values, propagating any NaN and preferring -0 only when the numeric result is zero",
+        "peer": "identical four-accumulator Highway reduction, NaN mask, scalar tail and conditional signed-zero pass",
+        "verdict": "EQUAL"
+      },
+      "result-granularity": "one scalar reduction from one transformer hidden row",
+      "alias": "read-only input and scalar return; no output buffer"
+    }
+  ],
+  "claim_boundary": {
+    "allowed": "W1-WIN 5% engineering non-inferiority for the four named exact-AVX2 complete-row journeys after full qualification",
+    "forbidden": "all SIMD operations, all sizes or ISAs, cross-platform timing, Tensor/Graph overhead, approximate arithmetic, model throughput or universal SOTA"
+  }
+}

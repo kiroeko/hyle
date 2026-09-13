@@ -1,0 +1,251 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "simd-compute-row-p1-v1",
+  "module": "simd",
+  "claim": "P1 engineering non-inferiority of ordinary HYLE C++ Compute-driven f32 row primitives against same-contract direct locked-Highway AVX2 lowerings under dual execution orders and code-placement strata",
+  "candidate": {
+    "target": "hyle_simd",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "simd",
+    "entrypoint": "include/hyle/simd/ops.h and include/hyle/simd/search.h"
+  },
+  "peers": [
+    {
+      "id": "highway",
+      "revision": "18e449b642599b8f51c03ca10173fdc59864e4f2",
+      "configuration": {
+        "delivery_shape": "same-TU noinline direct Highway AVX2 adapters",
+        "source": "clean external checkout",
+        "operations": "Sqrt/Div, MinNumber, byte promote/mask select, and vector reduction"
+      }
+    },
+    {
+      "id": "xsimd",
+      "revision": "3b3151ff665514a00a437cc985f47b7de99b772b",
+      "configuration": {
+        "delivery_shape": "clean provider checkout retained in the exact SIMD product build",
+        "source": "candidate provider identity; no direct comparison row",
+        "operations": "rejected for these exact semantic contracts by the v7 provider audit"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "dense-rsqrt-f32-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "compute/native/dense-unary-rsqrt-f32",
+      "provenance": {"path": "bench/simd/compute_row_shapes_v1.json", "sha256": "8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6"},
+      "ownership_topology": {
+        "candidate": "one Compute worker calls the ordinary HYLE full-precision reciprocal_sqrt pointer/count API for one dense hidden row",
+        "peer": "the same worker calls an independently spelled direct-Highway Div(1,Sqrt(x)) loop",
+        "equivalence": "identical f32 storage, arithmetic, element count, preallocated output, fixed AVX2 ISA, noinline boundary, compiler, process and measured phase"
+      },
+      "material_contribution": {"frequency": 1, "value": 4096, "unit": "elements-per-hidden-row", "budget": 5, "denominator": "one dense Compute unary row", "derivation": "4096 is a retained transformer hidden width and the full row is charged once"},
+      "semantic_contract": "Write full-precision 1.0F / sqrt(input[i]) for one contiguous f32 row of 4096 elements with no allocation",
+      "comparability": "COMPARABLE",
+      "peer_id": "highway",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic finite positive f32 values", "scale": {"rows_per_callback": 1, "elements_per_row": 4096}},
+      "setup": "All buffers are allocated and initialized before measurement; one complete public or peer operation and an observable sink are charged",
+      "charged_phases": ["4096 f32 loads", "4096 full-precision sqrt and divide operations", "4096 f32 stores", "one output sink"],
+      "pair": {"candidate": "HYLE reciprocal-sqrt f32 N=4096", "peer": "Highway reciprocal-sqrt f32 N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "dense-number-min-f32-11008",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "compute/native/dense-binary-minimum-f32",
+      "provenance": {"path": "bench/simd/compute_row_shapes_v1.json", "sha256": "8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6"},
+      "ownership_topology": {
+        "candidate": "one Compute worker calls ordinary HYLE fmin over two dense FFN-width rows",
+        "peer": "the same worker calls direct Highway MinNumber plus the identical signed-zero adapter",
+        "equivalence": "identical f32 buffers, number/NaN/zero semantics, preallocated output, AVX2 target, noinline boundary and measured phase"
+      },
+      "material_contribution": {"frequency": 1, "value": 11008, "unit": "elements-per-ffn-row", "budget": 5, "denominator": "one dense Compute binary row", "derivation": "11008 is a retained transformer FFN width and the full pairwise row is charged once"},
+      "semantic_contract": "Write std::fmin-style number minimum for two contiguous f32 rows of 11008 elements, including one-NaN and deterministic signed-zero behavior",
+      "comparability": "COMPARABLE",
+      "peer_id": "highway",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic finite mixed-sign f32 values", "scale": {"rows_per_callback": 1, "elements_per_row": 11008}},
+      "setup": "All buffers are allocated and initialized before measurement; one complete public or peer operation and an observable sink are charged",
+      "charged_phases": ["two times 11008 f32 loads", "11008 same-semantics number-min evaluations", "11008 f32 stores", "one output sink"],
+      "pair": {"candidate": "HYLE number-min f32 N=11008", "peer": "Highway number-min f32 N=11008"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "dense-byte-select-f32-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "compute/native/dense-select-byte-f32",
+      "provenance": {"path": "bench/simd/compute_row_shapes_v1.json", "sha256": "8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6"},
+      "ownership_topology": {
+        "candidate": "one Compute worker calls ordinary HYLE select_values for one byte condition and two f32 value rows",
+        "peer": "the same worker calls the identical direct-Highway narrow-load/promote/mask-select loop",
+        "equivalence": "identical condition/value storage, any-nonzero truth semantics, preallocated output, AVX2 target, noinline boundary and measured phase"
+      },
+      "material_contribution": {"frequency": 1, "value": 4096, "unit": "elements-per-hidden-row", "budget": 5, "denominator": "one dense Compute Select row", "derivation": "4096 is a retained transformer hidden width and the complete conditional row is charged once"},
+      "semantic_contract": "Select one of two contiguous f32 values for each of 4096 byte conditions, treating every nonzero byte as true and allocating nothing",
+      "comparability": "COMPARABLE",
+      "peer_id": "highway",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic 0 and varied nonzero bytes with finite f32 branches", "scale": {"rows_per_callback": 1, "elements_per_row": 4096}},
+      "setup": "All buffers are allocated and initialized before measurement; one complete public or peer operation and an observable sink are charged",
+      "charged_phases": ["4096 byte loads", "two times 4096 f32 loads", "4096 same-semantics selections", "4096 f32 stores", "one output sink"],
+      "pair": {"candidate": "HYLE byte-bool select f32 N=4096", "peer": "Highway byte-bool select f32 N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "dense-propagating-min-f32-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "compute/native/dense-reduce-minimum-f32",
+      "provenance": {"path": "bench/simd/compute_row_shapes_v1.json", "sha256": "8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6"},
+      "ownership_topology": {
+        "candidate": "one Compute worker calls ordinary HYLE min_value for one dense hidden row",
+        "peer": "the same worker calls an independently spelled four-accumulator direct-Highway reduction with identical NaN and zero repair",
+        "equivalence": "identical read-only input, reduction order, NaN/zero semantics, scalar return, AVX2 target, noinline boundary and measured phase"
+      },
+      "material_contribution": {"frequency": 1, "value": 4096, "unit": "elements-per-hidden-row", "budget": 5, "denominator": "one dense Compute reduction row", "derivation": "4096 is a retained transformer hidden width and one full scalar reduction is charged"},
+      "semantic_contract": "Return the minimum of 4096 contiguous f32 values, propagating any NaN and preferring -0 only when the numeric result is zero",
+      "comparability": "COMPARABLE",
+      "peer_id": "highway",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic finite mixed-sign nonzero f32 values exercising the ordinary one-pass path", "scale": {"rows_per_callback": 1, "elements_per_row": 4096}},
+      "setup": "The input is allocated and initialized before measurement; one complete public or peer reduction and an observable scalar sink are charged",
+      "charged_phases": ["4096 f32 loads", "four-accumulator minimum and NaN scan", "horizontal reduction and scalar tail", "one scalar sink"],
+      "pair": {"candidate": "HYLE propagating-min f32 N=4096", "peer": "Highway propagating-min f32 N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "exact:AVX2",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "REAL_CONSUMER",
+      "semantic_matrix": "bench/simd/compute_row_shapes_v1.json",
+      "semantic_matrix_sha256": "8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6"
+    },
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "simd",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "AVX2",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON"
+        },
+        "peer_cache": {"highway": "HYLE_SIMD_BENCH_HIGHWAY_DIR", "xsimd": "HYLE_SIMD_BENCH_XSIMD_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "simd-compute-row-primary",
+          "target": "hyle_simd_compute_row_primitives_bench",
+          "stem": "hyle_simd_compute_row_primitives_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_SIMD_COMPUTE_ROWS_RUN "],
+          "workloads": [
+            {"id": "dense-rsqrt-f32-4096", "title": "compute dense reciprocal-sqrt f32 N=4096"},
+            {"id": "dense-number-min-f32-11008", "title": "compute dense number-min f32 N=11008"},
+            {"id": "dense-byte-select-f32-4096", "title": "compute dense byte-bool select f32 N=4096"},
+            {"id": "dense-propagating-min-f32-4096", "title": "compute dense propagating-min f32 N=4096"}
+          ]
+        },
+        {
+          "id": "simd-compute-row-placement",
+          "target": "hyle_simd_compute_row_primitives_bench_placement",
+          "stem": "hyle_simd_compute_row_primitives_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_SIMD_COMPUTE_ROWS_RUN "],
+          "workloads": [
+            {"id": "dense-rsqrt-f32-4096", "title": "compute dense reciprocal-sqrt f32 N=4096"},
+            {"id": "dense-number-min-f32-11008", "title": "compute dense number-min f32 N=11008"},
+            {"id": "dense-byte-select-f32-4096", "title": "compute dense byte-bool select f32 N=4096"},
+            {"id": "dense-propagating-min-f32-4096", "title": "compute dense propagating-min f32 N=4096"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

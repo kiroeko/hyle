@@ -73,7 +73,7 @@ API 不能 pin 实现。
 
 | 头（开发期） | 常用能力 | 适合做什么 |
 |---|---|---|
-| `ops.h` | f32/f64 row 算术、归约、同精度/混合精度 `dot`、`saxpy` | 连续 row、归一化/激活前处理与量化存储 dot |
+| `ops.h` | f32/f64 row 算术、归约、同精度/混合精度 `dot`、`saxpy`；f32 full-precision reciprocal-sqrt、number min/max 与 byte-bool select | 连续 row、归一化/激活前处理、条件合并与量化存储 dot |
 | `random.h` | `RandomState`、`seed/copy/advance/split`、`random_fill` | 可复现、跨 ISA 位一致的 worker-owned 批量随机数；非加密 |
 | `scan.h` | `inclusive_scan`、`exclusive_scan` | 输入输出分离或原地前缀和；exclusive 可指定 init；支持 u/i32、u/i64、f32、f64 |
 | `search.h` | count/find/min/max/minmax/argmin/argmax/is_sorted | 十种普通 scalar 数组的查找、归约、极值位置和有序性检查 |
@@ -125,14 +125,36 @@ API 不能 pin 实现。
 ## C++ whole-buffer 示例
 
 ```cpp
+#include <cstdint>
+
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/ops.h"
 
 float x[4096]{}, y[4096]{}, out[4096]{};
+std::uint8_t condition_bytes[4096]{};
 hyle::simd::add(x, y, out, 4096);
 float inner = hyle::simd::dot(x, y, 4096);
 hyle::simd::saxpy(0.25f, x, y, 4096);
 ```
+
+推理或数值管线常见的四种连续 f32 row 可直接写成：
+
+```cpp
+hyle::simd::reciprocal_sqrt(x, out, 4096);
+hyle::simd::fmin(x, y, out, 4096);
+hyle::simd::fmax(x, y, out, 4096);
+hyle::simd::select_values(condition_bytes, x, y, out, 4096);
+```
+
+`reciprocal_sqrt` 是 full-precision `1.0F / sqrt(x)`，不是 ISA approximate-rsqrt；若模型允许近似，
+应在拥有精度策略的 Compute/custom kernel 层明确选择，不能假设这个入口会降精度。`fmin/fmax` 是
+number semantics：单侧 NaN 返回另一侧数值，两侧 NaN 返回 NaN，零值分别稳定为 `-0/+0`。这与
+`search.h` 的 `min_value/max_value` 不同，后者是 reduction 并传播任意 NaN。`select_values` 把任意
+非零 byte 当 true；输出可完整别名 true 或 false row，condition 不得与 float ranges 重叠。
+
+这些入口只接受连续数据。Tensor 的 dtype、stride、broadcast 和 alias 检查属于 Compute：完整连续后缀
+会整段复用这里的 row primitive，非连续或无法形成完整后缀的形状使用同语义 fallback。不要把 Tensor
+坐标循环拆成大量很短的 SIMD 调用。
 
 模型权重或激活以窄类型存储时，不要先扩成一个临时 f32 数组；同一个入口会在寄存器中 widening：
 

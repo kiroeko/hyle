@@ -134,6 +134,28 @@ HYLE_SIMD_DEFINE_ROW_API(float, f32)
 HYLE_SIMD_DEFINE_ROW_API(double, f64)
 
 #undef HYLE_SIMD_DEFINE_ROW_API
+
+void reciprocal_sqrt(const float* x, float* out, std::size_t n) noexcept {
+  HYLE_SIMD_ROW_CALL(reciprocal_sqrt_f32, x, out, n);
+}
+
+void fmin(const float* x, const float* y, float* out,
+          std::size_t n) noexcept {
+  HYLE_SIMD_ROW_CALL(fmin_f32, x, y, out, n);
+}
+
+void fmax(const float* x, const float* y, float* out,
+          std::size_t n) noexcept {
+  HYLE_SIMD_ROW_CALL(fmax_f32, x, y, out, n);
+}
+
+void select_values(const std::uint8_t* condition, const float* when_true,
+                   const float* when_false, float* out,
+                   std::size_t n) noexcept {
+  HYLE_SIMD_ROW_CALL(select_values_f32, condition, when_true, when_false, out,
+                     n);
+}
+
 #undef HYLE_SIMD_ROW_CALL
 
 }  // namespace hyle::simd

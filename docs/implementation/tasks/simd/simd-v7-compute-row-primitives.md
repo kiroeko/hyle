@@ -48,7 +48,7 @@
 | full-precision f32 reciprocal sqrt row | 原子机制 | Compute dense `Unary(kRsqrt)`；普通数值数组 | `out[i] = 1.0F / sqrt(x[i])`；不得把 ISA approximate-rsqrt 冒充 exact；完整输入/输出可原位 | 现有 SIMD 只有 `sqrt`，Compute scalar loop | `MISSING` | `FIX` |
 | f32 pairwise number min/max row | 原子机制 | Compute dense `Binary(kMinimum/kMaximum)`；普通数值数组 | `std::fmin/std::fmax` 风格：单侧 NaN 返回数值，两侧 NaN 返回 NaN；零值分别稳定为 `-0/+0`；完整输入可原位 | Compute scalar loop；Highway `MinNumber/MaxNumber` 未独立承诺 signed zero | `MISSING` | `FIX` |
 | byte-bool → f32 value select row | 原子机制 | Compute dense `Select`；批处理数值管线 | 任意非零 byte 为 true；只允许输出完整别名任一 value 输入，其他 overlap 不在合同内 | Compute 逐元素 branch/copy；Highway 可窄载入、同 lane promote 后 mask-select | `MISSING` | `FIX` |
-| propagating floating extrema | 原子机制 | Compute dense Reduce；现有公开 search API | 任一 NaN 传播；min/max 的零结果分别保留 `-0/+0`，index 保持相同语义下第一项；空区间 identity 不变 | 当前 Highway `Min/Max/Reduce*` 路线丢失 signed zero；f32/f64 共用实现 | `PARTIAL` | `FIX` |
+| propagating floating extrema | 原子机制 | Compute dense Reduce；现有公开 search API | 任一 NaN 传播；min/max 的零结果分别保留 `-0/+0`；index 继续把两种零按 IEEE `==` 视为 tie 并返回第一项；空区间 identity 不变 | 当前 Highway `Min/Max/Reduce*` value 路线丢失 signed zero；f32/f64 共用实现 | `PARTIAL` | `FIX` |
 | tensor/layout/broadcast/row partition | 应用策略 | Compute provider | SIMD 不吸收 Tensor、axis、broadcast 或 provider policy | Compute 已拥有 | `ROUTED` | `KEEP` |
 
 公开入口冻结为 `reciprocal_sqrt(float*)`、`fmin/fmax(float*)` 和
@@ -78,7 +78,7 @@ number operation 与 `min_value/max_value` propagating reduction 混淆。新 ro
 | S7-F1 | dense f32 rsqrt 仍逐元素 scalar | 在 ops public/runtime/target table 增加 full-precision f32 row；Highway `Div(1,Sqrt(x))` + scalar tail | zero/null、tail、alias、特殊值、逐 runtime differential；Compute dense route 直接复用 |
 | S7-F2 | dense f32 min/max 仍逐元素 scalar | 增加 `fmin/fmax` row，以 Highway number op 加最小 signed-zero adapter | 单/双 NaN、inf、subnormal、四种 `+0/-0` 顺序、alias、逐 runtime differential |
 | S7-F3 | dense byte-bool f32 select 仍逐元素 branch | 增加 `select_values` row；窄 condition load/promote 后一次 mask select | 0/1/其他非零 byte、tail、true/false exact alias、逐 runtime differential；非 f32 Compute route保持原样 |
-| S7-F4 | propagating extrema 的零符号与 Compute 合同不一致 | 修正既有 f32/f64 shared extrema value/index/minmax 实现，不改变 NaN、空区间或整数语义 | signed-zero permutation、第一索引、NaN precedence、逐 runtime differential |
+| S7-F4 | propagating extrema value 的零符号与 Compute 合同不一致 | 修正既有 f32/f64 shared extrema value/minmax 实现；index 保持 first numeric tie，避免无需求的热路径成本 | signed-zero permutation、first numeric-tie index、NaN precedence、逐 runtime differential |
 | S7-F5 | 普通消费者与交付尚未回放 | 更新 SIMD/Compute guide 与 provider ledger；验证 source/static/shared、exact/fat codegen 和三平台 | 无第二次 dispatch、无临时 buffer/heap/lock；Compute dense 与 fallback differential 均通过 |
 
 本表已冻结。未列出的 SIMD family、approximate API、f64 新 row API、Tensor API、线程池和 winner route
@@ -97,6 +97,27 @@ number operation 与 `min_value/max_value` propagating reduction 混淆。新 ro
   宣称全部 Select/Reduce 都被加速；
 - 交付：入口属于既有 `hyle_simd` target 与 export macro，不创建新 component、开关或 vendor runtime
   dependency；source/static/shared 使用同一 public header。
+
+## 实现与候选前检查
+
+S7-F1--F4 已按冻结合同实现：ops 的七档 Highway target body 增加 exact reciprocal-sqrt、number min/max
+和 byte-bool select，普通入口仍只有一次 whole-row route；Compute Native 的 dense f32 elementwise 与
+all/last-axis extrema reduction 已直接复用，非连续、broadcast 和非 f32 fallback 保持原 owner。search
+value/minmax 的 signed-zero 修复没有让普通非零 reduction 在每个 vector block 维护符号 mask：只有最终
+数值结果为零时才执行一次 O(n) 符号补扫；index 路径完全不变。
+
+候选前 W1-WIN/MSVC 19.50 回放结果：fat SIMD + Native provider 定向 `3/3 PASS`；独立 exact-AVX2 SIMD
+route/codegen/order 套件 `5/5 PASS`。逐 runtime 测试覆盖 19/37 个元素的完整 vector 与 tail、exact alias、
+NaN/Inf/subnormal、四种 zero 顺序、非 0 condition byte 和 public zero/null。P0 确认为 O(n) 时间、O(1)
+stack、零 allocation/lock/syscall/临时 mask buffer；fixed/exact 是直接 symbol call，fat 仍为一次缓存的
+whole-row function-pointer hop。
+
+P1 合同为 [`simd-compute-row-p1-v1.json`](../../../../bench/contracts/simd-compute-row-p1-v1.json)，lock
+SHA-256 `deb10651fcb559cc4a08eddb0da8f675af19ea10da569eb268541032d87ebdf1`；语义矩阵 SHA-256 为
+`8cfdbb926fd2b6ec1287eaff1596787875fa87b4ae9c7c884db10e65e51705b6`。候选前只运行了 primary 两顺序
+smoke：四项 correctness oracle 均通过，但 select 等点值随执行顺序反转，因此没有从 smoke 产生性能
+verdict，也没有据此改变产品；正式 P1 只允许在不可变 candidate 上以 15 个独立进程、双顺序和双
+placement 执行一次完整 qualification。
 
 ## 七问（AUDITED）
 
