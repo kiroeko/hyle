@@ -107,8 +107,8 @@ HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同�
 1. **validate/canonicalize**：检查拓扑、shape、dtype、alias、side effect 和输出；
 2. **infer/normalize**：传播 shape/layout 约束，把等价 operation 变成稳定形式；
 3. **capability match**：询问每个 Compute provider 对 op 或 region 的真实支持、结构成本和可选量化估值；
-4. **partition/place**：先尊重调用方/模型 runtime 给出的 device 与持久 storage 约束，再按 admission、
-   capability 和局部性选择 regions；不把不可移植的逐节点计时常数冒充通用性能 oracle；
+4. **partition/place**：按调用方选择的 admission 策略选择 regions 与 devices，不把不可移植的计时常数
+   冒充通用性能 oracle；
 5. **materialize boundaries**：为跨 domain canonical tensor 插入真实 copy；同步表示为 segment dependency，
    而不是虚构 barrier step。只有版本化 provider layout 合同能证明两端含义时才插入真实 repack；
 6. **liveness/alias/workspace**：把 tensor facts 转成 Mem `LifetimePlanner` 能理解的 interval/resource 请求；
@@ -134,16 +134,13 @@ network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作�
 ## 6. Plan 的热路径合同
 
 内部 graph plan 是已经排好序的 region/copy/dependency/workspace 程序。每个 step 持有预绑定 callable
-或 backend command；Invocation 只填充运行时 slots。Physical/storage domain 与 execution lane 是不同事实：
-同一 CUDA device/resource 可以有 primary compute 与 transfer Queue，lane 切换只建立依赖，不得伪造第二份
-physical value 或跨域 copy。Plan 冷生成使用确定性 Kahn 调度：每个 lane 保持 ready FIFO，并尽量延续当前
-lane，以减少不必要的 segment/finalization；这是有界结构启发式，不宣称求解一般 DAG 的全局最优设备
-并行调度。
+或 backend command；Invocation 只填充运行时 slots。Plan 冷生成使用确定性 Kahn 调度：每个 domain 保持
+ready FIFO，并尽量延续当前 domain，以减少不必要的 segment/finalization；这是有界结构启发式，不宣称
+求解一般 DAG 的全局最优设备并行调度。
 
 - `prepare_replay` 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、
   不打包常量，也不再查询 transfer/dependency capability；
-- workspace layout 对固定 specialization 不变；每个 domain 可有 compile-time hard budget，exact plan 超限
-  就失败；允许 caller/pool 预留，正常 replay 零 heap allocation；
+- workspace layout 对固定 specialization 不变；允许 caller/pool 预留，正常 replay 零 heap allocation；
 - per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
 - plan 在同一 ordered Queue 的一个不中断 submission sequence 中录入；provider/region step 只返回接纳事实，
   sequence 在 segment 边界一次 finalizes 为 prefix Completion，不按 node 创建再覆盖 event。多 Queue plan
@@ -176,10 +173,6 @@ graph_sched   -> graph_plan + compute_sched + sched       # 未来可选组合
 - Sched 决定 CPU work、blocking provider、请求取消和公平；Graph 只声明 dependency/resource readiness。
 - Obs 接收 compile/submit/region/completion seam；Obs OFF 时不改变 plan layout 或热路径分支。
 - Error 保存 node/region/provider/backend context；不能另造 graph 私有 TLS error。
-
-Graph 不决定 process/rank、P/E/SMT worker、NUMA page、L1/L2/L3 tile 或模型 layer offload。推理 runtime
-决定模型级资源约束，`compute_sched` 决定持久 CPU execution pool，provider 决定具体 task/tile/cache
-blocking，Mem/loader 决定 backing page policy；Graph 只消费结果并固定 domain/lane/workspace/copy/sync。
 
 Compute 不依赖 Graph。直接 kernel/op 用户因此不取得 graph compiler、container-heavy IR 或 Sched runtime。
 
