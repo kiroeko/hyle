@@ -34,6 +34,7 @@ sampling 和 serving 留在推理引擎。
 | 旋转位置编码 | `RoPE` | dense/strided f32 data、i32/i64 positions、显式 frequency tensor；支持 interleaved/half-split 与未旋转 tail，dense route 冷选择 fat kernel |
 | 概率归一化 | `Softmax` | f32 任意 axis、scale、LogSoftmax，以及可广播 Bool/additive mask；允许精确 input/output in-place；无有效值的 row 产生 NaN |
 | 候选筛选 | `TopK` | f32 任意 axis，largest/smallest、sorted/stable 语义，返回 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
+| 注意力 | `ScaledDotProductAttention` | f32 rank-4 BSHD/BHSD，Q/K depth 与 V/output depth 可不同；可选 bottom-right causal、Bool/additive 广播 mask，分块 online softmax 与显式 caller-owned workspace |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
 | CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |
 | byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
@@ -45,10 +46,9 @@ sampling 和 serving 留在推理引擎。
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
 gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
-**当前可执行 provider 签发 View、Copy、Fill、Cast、Unary、Binary、Select、Reduce、RMSNorm、LayerNorm、
-rank-2 MatMul、packed SiLU GatedActivation、Gather、Scatter、Concat、RoPE、Softmax 和 TopK 共十八项。**
-Tensor schema 能描述 block/opaque storage 也不等于已有量化 kernel；当前只有 SDPA 尚无 native executable
-route，调用 `prepare()` 会诚实返回 `Unimplemented`，直至其实现与正确性证据同时交付。
+**当前 HYLE-native provider 已签发上述 19 个 family 的 CPU executable route。** 这不表示每种 dtype、
+layout 或 encoding 都由同一个 provider 执行：当前 SDPA 是 f32 reference/optimized fallback；block/opaque
+storage、量化 kernel 与窄 storage attention 仍应由理解相应格式的 provider 接管，不会被隐藏 materialize。
 
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
@@ -346,10 +346,12 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 `PreparedOperation::provider()` 返回的开放 `ProviderIdentity` 可以检查实际路线；是否发生组合回落由
 调用方给定的顺序和最终 identity 共同解释，不再用固定枚举或含义模糊的 `used_fallback` 标志。
 
-默认 oneDNN executor 是调用线程串行执行；HYLE 不偷偷创建线程池。已有同步线程池的程序可通过
-`onednn::Options::executor` 传入借用的 `ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部
-任务、不得失败或抛异常，并在嵌套调用时保证进展；executor backing 必须活过由 provider 创建的 Context
-及其 retained artifacts。
+默认 Native 和 oneDNN executor 都是调用线程串行执行；HYLE 不偷偷创建线程池。已有同步线程池的程序可通过
+`cpu::DefaultContextOptions::executor`、`native::Options::executor` 或 `onednn::Options::executor` 传入借用的
+`ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部任务、不得失败或抛异常，并在嵌套调用时
+保证进展；executor backing 必须活过由 provider 创建的 Context 及其 retained artifacts。Native 在 prepare
+冷路径按总工作量固定 task count，目前为足够大的 Norm、MatMul、packed gated activation 与 SDPA row 做
+至多一次同步 fan-out；默认、小工作量与可检测的 nested episode 保持 caller-thread 串行。
 
 并行分片由 HYLE 在 prepare 冷路径决定，不是 oneDNN 的隐藏线程池：正常 tile 宽度至少为 64 columns，
 任务数不超过 executor concurrency，并且至多生成 base/base+1 两种预编译 kernel。每个任务使用独占、

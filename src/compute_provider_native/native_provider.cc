@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <new>
 #include <span>
 #include <utility>
@@ -37,6 +38,36 @@ struct NativeInvocation final {
   mem::BufferView workspace{};
 };
 
+inline constexpr std::size_t kMinimumParallelWorkItems = 16U * 1024U;
+
+std::size_t saturating_product(std::size_t left, std::size_t right) noexcept {
+  if (left == 0 || right == 0)
+    return 0;
+  if (left > (std::numeric_limits<std::size_t>::max)() / right)
+    return (std::numeric_limits<std::size_t>::max)();
+  return left * right;
+}
+
+std::size_t saturating_sum(std::size_t left, std::size_t right) noexcept {
+  if (left > (std::numeric_limits<std::size_t>::max)() - right)
+    return (std::numeric_limits<std::size_t>::max)();
+  return left + right;
+}
+
+std::size_t recommended_parallel_tasks(ParallelExecutorRef executor,
+                                       std::size_t units,
+                                       std::size_t work_per_unit) noexcept {
+  const std::size_t concurrency = executor.concurrency();
+  if (concurrency <= 1 || units <= 1 || work_per_unit == 0)
+    return 1;
+  const std::size_t total = saturating_product(units, work_per_unit);
+  const std::size_t work_limited =
+      total / kMinimumParallelWorkItems +
+      static_cast<std::size_t>(total % kMinimumParallelWorkItems != 0);
+  return (std::max)(std::size_t{1},
+                    (std::min)({concurrency, units, work_limited}));
+}
+
 void run_rms_norm(const float *input, const float *weight, float *output,
                   const Parameters &parameters, float epsilon) noexcept {
   const std::size_t rows = parameters[0];
@@ -64,6 +95,27 @@ void run_silu_and_mul(const float *input, const float *, float *output,
     const float *value = gate + hidden;
     simd::swiglu_f32_batch(gate, value, output + row * hidden, hidden);
   }
+}
+
+struct FloatRouteEpisode final {
+  const NativePlan *plan = nullptr;
+  const float *first = nullptr;
+  const float *second = nullptr;
+  float *output = nullptr;
+};
+
+void run_float_range(void *context, std::size_t, std::size_t begin,
+                     std::size_t end) noexcept {
+  auto &episode = *static_cast<FloatRouteEpisode *>(context);
+  const NativePlan &plan = *episode.plan;
+  Parameters parameters = plan.parameters;
+  parameters[0] = end - begin;
+  const float *first = episode.first + begin * plan.row_first_stride;
+  const float *second = episode.second == nullptr || plan.row_second_stride == 0
+                            ? episode.second
+                            : episode.second + begin * plan.row_second_stride;
+  float *output = episode.output + begin * plan.row_output_stride;
+  plan.route(first, second, output, parameters, plan.scalar);
 }
 
 void run_matmul_transposed_weight(const float *left, const float *right,
@@ -200,8 +252,7 @@ void destroy_prepared(void *state, mem::AllocatorRef allocator) noexcept {
 }
 
 Status create_invocation(void *prepared_value, mem::AllocatorRef allocator,
-                         mem::BufferView workspace,
-                         void **output) noexcept {
+                         mem::BufferView workspace, void **output) noexcept {
   if (output == nullptr)
     return Status::InvalidArgument("native invocation output is null");
   *output = nullptr;
@@ -228,9 +279,9 @@ void destroy_invocation(void *value, mem::AllocatorRef allocator) noexcept {
                        alignof(NativeInvocation));
 }
 
-detail::EnqueueResult submit_float(const NativePlan &plan,
-                                std::span<const ConstTensorView> inputs,
-                                std::span<const TensorView> outputs) noexcept {
+detail::EnqueueResult
+submit_float(const NativePlan &plan, std::span<const ConstTensorView> inputs,
+             std::span<const TensorView> outputs) noexcept {
   if (plan.route == nullptr || inputs.empty() || inputs.size() > 2 ||
       outputs.size() != 1) {
     return completed(Status::Internal("native float plan is invalid"));
@@ -349,8 +400,13 @@ detail::EnqueueResult submit_float(const NativePlan &plan,
         "CPU operation tensor mapping does not satisfy its format alignment"));
   }
 
-  plan.route(first_data, second_data, output_data, plan.parameters,
-             plan.scalar);
+  FloatRouteEpisode episode{
+      .plan = &plan,
+      .first = first_data,
+      .second = second_data,
+      .output = output_data,
+  };
+  parallel_for_ranges(plan, plan.parameters[0], &run_float_range, &episode);
   Status terminal = Status::Ok();
   if (!output_properties.has(mem::MemoryProperty::kHostDeviceCoherent))
     preserve_first_error(terminal, output_mapping.flush());
@@ -361,12 +417,11 @@ detail::EnqueueResult submit_float(const NativePlan &plan,
 }
 
 detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
-                          Queue &,
-                          std::span<const ConstTensorView> inputs,
-                          std::span<const TensorView> outputs) noexcept {
+                             Queue &, std::span<const ConstTensorView> inputs,
+                             std::span<const TensorView> outputs) noexcept {
   auto *plan = static_cast<NativePlan *>(prepared_value);
-  if (plan == nullptr ||
-      (plan->submit_route == nullptr && plan->workspace_submit_route == nullptr)) {
+  if (plan == nullptr || (plan->submit_route == nullptr &&
+                          plan->workspace_submit_route == nullptr)) {
     return completed(Status::Internal("native execution state is invalid"));
   }
   if (plan->workspace_submit_route != nullptr) {
@@ -412,8 +467,8 @@ constexpr ProviderRuntimeProperties kRuntimeProperties{
 };
 
 Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
-                  std::span<const TensorDesc> outputs,
-                  NativePlan &plan) noexcept {
+                  std::span<const TensorDesc> outputs, NativePlan &plan,
+                  ParallelExecutorRef executor = {}) noexcept {
   if (outputs.size() != operation_traits(operation).outputs)
     return Status::Internal("native route output arity is invalid");
 
@@ -477,6 +532,8 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
       return std::move(hidden).error();
     plan.parameters = {*rows, *hidden, 0};
     plan.scalar = operation.get_if<RmsNorm>()->epsilon;
+    plan.row_first_stride = *hidden;
+    plan.row_output_stride = *hidden;
     plan.alias_input_mask = 1;
     plan.route = &run_rms_norm;
     plan.submit_route = &submit_float;
@@ -509,6 +566,8 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     if (!columns)
       return std::move(columns).error();
     plan.parameters = {*rows, *inner, *columns};
+    plan.row_first_stride = *inner;
+    plan.row_output_stride = *columns;
     plan.route = inputs[1].is_dense() ? select_row_major_matmul()
                                       : &run_matmul_transposed_weight;
     plan.submit_route = &submit_float;
@@ -534,6 +593,8 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     if (!packed)
       return std::move(packed).error();
     plan.parameters = {*rows, *packed / 2, 0};
+    plan.row_first_stride = *packed;
+    plan.row_output_stride = *packed / 2;
     plan.route = &run_silu_and_mul;
     plan.submit_route = &submit_float;
     break;
@@ -556,11 +617,48 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
+  case OperationKind::kScaledDotProductAttention: {
+    Status status =
+        internal::prepare_attention(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   default:
     return Status::Unimplemented(
         "operation has no current HYLE native executable route");
   }
 
+  plan.executor = executor;
+  std::size_t work_per_unit = 0;
+  switch (operation.kind()) {
+  case OperationKind::kRmsNorm:
+  case OperationKind::kGatedActivation:
+  case OperationKind::kLayerNorm:
+    work_per_unit = plan.parameters[1];
+    break;
+  case OperationKind::kMatMul:
+    work_per_unit = saturating_product(plan.parameters[1], plan.parameters[2]);
+    break;
+  case OperationKind::kScaledDotProductAttention:
+    work_per_unit = saturating_product(
+        plan.attention_keys,
+        saturating_sum(
+            saturating_product(std::size_t{2}, plan.attention_query_depth),
+            plan.attention_value_depth));
+    break;
+  default:
+    break;
+  }
+  plan.parallel_tasks =
+      recommended_parallel_tasks(executor, plan.parameters[0], work_per_unit);
+  if (operation.kind() == OperationKind::kScaledDotProductAttention) {
+    auto workspace = math::try_multiply(plan.attention_workspace_stride,
+                                        plan.parallel_tasks);
+    if (!workspace)
+      return Status::OutOfRange("native SDPA workspace size overflows");
+    plan.workspace.size = *workspace;
+  }
   return Status::Ok();
 }
 
@@ -572,12 +670,12 @@ host_requirement(const TensorDesc &description) noexcept {
   };
 }
 
-Status propose(
-    void *, Operation operation, std::span<const TensorDesc> inputs,
-    std::span<const TensorDesc> outputs,
-    std::span<detail::ResourceBindingRequirement> input_requirements,
-    std::span<detail::ResourceBindingRequirement> output_requirements,
-    detail::ProviderOperationProposal *proposal) noexcept {
+Status
+propose(void *context_value, Operation operation,
+        std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
+        std::span<detail::ResourceBindingRequirement> input_requirements,
+        std::span<detail::ResourceBindingRequirement> output_requirements,
+        detail::ProviderOperationProposal *proposal) noexcept {
   if (proposal == nullptr)
     return Status::InvalidArgument("native proposal output is null");
   *proposal = {};
@@ -587,8 +685,12 @@ Status propose(
         "native proposal requirement counts do not match bindings");
   }
 
+  auto *context = static_cast<NativeContext *>(context_value);
+  if (context == nullptr)
+    return Status::Internal("native provider context is null");
   NativePlan plan{};
-  Status status = build_plan(operation, inputs, outputs, plan);
+  Status status =
+      build_plan(operation, inputs, outputs, plan, context->executor);
   if (!status.ok())
     return status;
   for (std::size_t index = 0; index < inputs.size(); ++index)
@@ -598,16 +700,18 @@ Status propose(
   *proposal = detail::ProviderOperationProposal{
       .route = static_cast<std::uint64_t>(operation.kind()),
       .runtime = kRuntimeProperties,
-      .workspace_resource = detail::ResourceBindingRequirement{
-          .required_properties = mem::MemoryProperty::kHostAccessible,
-      },
+      .workspace_resource =
+          detail::ResourceBindingRequirement{
+              .required_properties = mem::MemoryProperty::kHostAccessible,
+          },
       .workspace = plan.workspace,
       .persistent_bytes = sizeof(NativePlan),
   };
   return Status::Ok();
 }
 
-Status prepare(void *, const detail::ProviderPrepareRequest &request,
+Status prepare(void *context_value,
+               const detail::ProviderPrepareRequest &request,
                mem::AllocatorRef allocator,
                detail::ProviderPrepared *prepared_output) noexcept {
   if (prepared_output == nullptr)
@@ -618,9 +722,12 @@ Status prepare(void *, const detail::ProviderPrepareRequest &request,
       request.route != static_cast<std::uint64_t>(request.operation.kind())) {
     return Status::InvalidArgument("native exact prepare request is invalid");
   }
+  auto *context = static_cast<NativeContext *>(context_value);
+  if (context == nullptr)
+    return Status::Internal("native provider context is null");
   NativePlan plan{};
-  Status status =
-      build_plan(request.operation, request.inputs, request.outputs, plan);
+  Status status = build_plan(request.operation, request.inputs, request.outputs,
+                             plan, context->executor);
   if (!status.ok())
     return status;
 

@@ -37,23 +37,21 @@ Status invalidate_for_read(mem::ConstBufferView storage) noexcept {
   return storage.invalidate();
 }
 
-bool same_storage(mem::ConstBufferView left,
-                  mem::BufferView right) noexcept {
+bool same_storage(mem::ConstBufferView left, mem::BufferView right) noexcept {
   return left.resource() == right.resource() &&
          left.native_handle() == right.native_handle() &&
          left.offset() == right.offset() && left.size() == right.size();
 }
 
-std::size_t product(std::span<const std::int64_t> dimensions,
-                    std::size_t first, std::size_t last) noexcept {
+std::size_t product(std::span<const std::int64_t> dimensions, std::size_t first,
+                    std::size_t last) noexcept {
   std::size_t result = 1;
   for (std::size_t axis = first; axis < last; ++axis)
     result *= static_cast<std::size_t>(dimensions[axis]);
   return result;
 }
 
-void coordinates(std::span<const std::int64_t> dimensions,
-                 std::size_t linear,
+void coordinates(std::span<const std::int64_t> dimensions, std::size_t linear,
                  std::array<std::size_t, kMaxTensorRank> &result) noexcept {
   result.fill(0);
   for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
@@ -74,8 +72,7 @@ void store_f32(std::byte *data, std::size_t offset, float value) noexcept {
   std::memcpy(data + offset, &value, sizeof(value));
 }
 
-std::int64_t load_position(const std::byte *data,
-                           const TensorDesc &description,
+std::int64_t load_position(const std::byte *data, const TensorDesc &description,
                            std::size_t linear) noexcept {
   const std::size_t offset = logical_byte_offset(description, linear);
   if (description.data_type() == DataType::kInt32) {
@@ -91,45 +88,39 @@ std::int64_t load_position(const std::byte *data,
 RopeKernelRoute select_rope_kernel(RopeLayout layout) noexcept {
 #if HYLE_ARCH_X64
   if (layout == RopeLayout::kInterleaved) {
-    return HYLE_SIMD_SELECT_FAT_KERNEL(
-        &detail::run_rope_interleaved_scalar,
-        &detail::run_rope_interleaved_sse4,
-        &detail::run_rope_interleaved_avx2,
-        &detail::run_rope_interleaved_avx512);
+    return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_interleaved_scalar,
+                                       &detail::run_rope_interleaved_sse4,
+                                       &detail::run_rope_interleaved_avx2,
+                                       &detail::run_rope_interleaved_avx512);
   }
   return HYLE_SIMD_SELECT_FAT_KERNEL(
       &detail::run_rope_half_split_scalar, &detail::run_rope_half_split_sse4,
       &detail::run_rope_half_split_avx2, &detail::run_rope_half_split_avx512);
 #elif HYLE_ARCH_ARM64
   if (layout == RopeLayout::kInterleaved) {
-    return HYLE_SIMD_SELECT_FAT_KERNEL(
-        &detail::run_rope_interleaved_scalar,
-        &detail::run_rope_interleaved_neon,
-        &detail::run_rope_interleaved_sve);
+    return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_interleaved_scalar,
+                                       &detail::run_rope_interleaved_neon,
+                                       &detail::run_rope_interleaved_sve);
   }
-  return HYLE_SIMD_SELECT_FAT_KERNEL(
-      &detail::run_rope_half_split_scalar, &detail::run_rope_half_split_neon,
-      &detail::run_rope_half_split_sve);
+  return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_half_split_scalar,
+                                     &detail::run_rope_half_split_neon,
+                                     &detail::run_rope_half_split_sve);
 #elif HYLE_ARCH_RISCV64
   if (layout == RopeLayout::kInterleaved) {
-    return HYLE_SIMD_SELECT_FAT_KERNEL(
-        &detail::run_rope_interleaved_scalar,
-        &detail::run_rope_interleaved_rvv);
+    return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_interleaved_scalar,
+                                       &detail::run_rope_interleaved_rvv);
   }
   return HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_half_split_scalar,
                                      &detail::run_rope_half_split_rvv);
 #else
   return layout == RopeLayout::kInterleaved
-             ? HYLE_SIMD_SELECT_FAT_KERNEL(
-                   &detail::run_rope_interleaved_scalar)
-             : HYLE_SIMD_SELECT_FAT_KERNEL(
-                   &detail::run_rope_half_split_scalar);
+             ? HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_interleaved_scalar)
+             : HYLE_SIMD_SELECT_FAT_KERNEL(&detail::run_rope_half_split_scalar);
 #endif
 }
 
 detail::EnqueueResult
-submit_rope(const NativePlan &plan,
-            std::span<const ConstTensorView> inputs,
+submit_rope(const NativePlan &plan, std::span<const ConstTensorView> inputs,
             std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 3 || outputs.size() != 1)
     return completed(Status::Internal("native RoPE plan is invalid"));
@@ -242,7 +233,8 @@ submit_rope(const NativePlan &plan,
     if (plan.rope_kernel_route != nullptr) {
       const std::size_t frequency_linear =
           frequencies_desc.rank() == 1 ? 0 : sequence * pairs;
-      const auto *row_input = reinterpret_cast<const float *>(data) + row_linear;
+      const auto *row_input =
+          reinterpret_cast<const float *>(data) + row_linear;
       const auto *row_frequencies =
           reinterpret_cast<const float *>(frequencies) + frequency_linear;
       auto *row_output = reinterpret_cast<float *>(output) + row_linear;
@@ -258,17 +250,16 @@ submit_rope(const NativePlan &plan,
     for (std::size_t pair = 0; pair < pairs; ++pair) {
       const std::size_t frequency_linear =
           frequencies_desc.rank() == 1 ? pair : sequence * pairs + pair;
-      const float frequency =
-          load_f32(frequencies,
-                   logical_byte_offset(frequencies_desc, frequency_linear));
+      const float frequency = load_f32(
+          frequencies, logical_byte_offset(frequencies_desc, frequency_linear));
       const float angle = static_cast<float>(position) * frequency;
       const float cosine = std::cos(angle);
       const float sine = std::sin(angle);
       const std::size_t first =
           plan.rope_layout == RopeLayout::kInterleaved ? pair * 2 : pair;
-      const std::size_t second =
-          plan.rope_layout == RopeLayout::kInterleaved ? first + 1
-                                                       : pair + pairs;
+      const std::size_t second = plan.rope_layout == RopeLayout::kInterleaved
+                                     ? first + 1
+                                     : pair + pairs;
       const float left =
           load_f32(data, logical_byte_offset(data_desc, row_linear + first));
       const float right =
@@ -280,9 +271,9 @@ submit_rope(const NativePlan &plan,
     }
     for (std::size_t column = plan.rotary_dimensions; column < depth;
          ++column) {
-      store_f32(output, (row_linear + column) * sizeof(float),
-                load_f32(data,
-                         logical_byte_offset(data_desc, row_linear + column)));
+      store_f32(
+          output, (row_linear + column) * sizeof(float),
+          load_f32(data, logical_byte_offset(data_desc, row_linear + column)));
     }
   }
 
@@ -299,8 +290,7 @@ submit_rope(const NativePlan &plan,
 }
 
 float masked_softmax_value(const NativePlan &plan, const std::byte *input,
-                           const TensorDesc &input_desc,
-                           const std::byte *mask,
+                           const TensorDesc &input_desc, const std::byte *mask,
                            const TensorDesc *mask_desc,
                            std::size_t logical) noexcept {
   float value = load_f32(input, logical_byte_offset(input_desc, logical));
@@ -328,16 +318,14 @@ void invalid_softmax_row(std::byte *output, std::size_t outer,
 }
 
 detail::EnqueueResult
-submit_softmax(const NativePlan &plan,
-               std::span<const ConstTensorView> inputs,
+submit_softmax(const NativePlan &plan, std::span<const ConstTensorView> inputs,
                std::span<const TensorView> outputs) noexcept {
   if ((inputs.size() != 1 && inputs.size() != 2) || outputs.size() != 1)
     return completed(Status::Internal("native Softmax plan is invalid"));
   const TensorDesc &input_desc = inputs[0].description();
   const TensorDesc &output_desc = outputs[0].description();
-  const TensorDesc *mask_desc = inputs.size() == 2
-                                    ? &inputs[1].description()
-                                    : nullptr;
+  const TensorDesc *mask_desc =
+      inputs.size() == 2 ? &inputs[1].description() : nullptr;
   auto elements = output_desc.element_count();
   if (!elements)
     return completed(std::move(elements).error());
@@ -428,8 +416,8 @@ submit_softmax(const NativePlan &plan,
         continue;
       }
       for (std::size_t lane = 0; lane < axis_extent; ++lane) {
-        destination[lane] = masked_softmax_value(
-            plan, input, input_desc, mask, mask_desc, base + lane);
+        destination[lane] = masked_softmax_value(plan, input, input_desc, mask,
+                                                 mask_desc, base + lane);
       }
       if (plan.softmax_kind == SoftmaxKind::kSoftmax)
         simd::softmax_f32(destination, axis_extent);
@@ -444,10 +432,10 @@ submit_softmax(const NativePlan &plan,
         for (std::size_t lane = 0; lane < axis_extent; ++lane) {
           const std::size_t logical =
               (row * axis_extent + lane) * inner + inner_index;
-          const float value = masked_softmax_value(
-              plan, input, input_desc, mask, mask_desc, logical);
-          if (std::isnan(value) || value ==
-                                       std::numeric_limits<float>::infinity()) {
+          const float value = masked_softmax_value(plan, input, input_desc,
+                                                   mask, mask_desc, logical);
+          if (std::isnan(value) ||
+              value == std::numeric_limits<float>::infinity()) {
             valid = false;
             maximum = std::numeric_limits<float>::quiet_NaN();
             break;
@@ -465,8 +453,8 @@ submit_softmax(const NativePlan &plan,
         for (std::size_t lane = 0; lane < axis_extent; ++lane) {
           const std::size_t logical =
               (row * axis_extent + lane) * inner + inner_index;
-          const float value = masked_softmax_value(
-              plan, input, input_desc, mask, mask_desc, logical);
+          const float value = masked_softmax_value(plan, input, input_desc,
+                                                   mask, mask_desc, logical);
           const float exponential = std::exp(value - maximum);
           sum += static_cast<double>(exponential);
           store_f32(output, logical * sizeof(float),
@@ -533,12 +521,11 @@ void select_top_k(const float *scores, std::size_t count,
   std::size_t retained = 0;
   if (selected <= 8) {
     for (std::size_t index = 0; index < count; ++index) {
-      const simd::ScoredIndexF32 candidate{
-          scores[index], static_cast<std::uint32_t>(index)};
+      const simd::ScoredIndexF32 candidate{scores[index],
+                                           static_cast<std::uint32_t>(index)};
       if (retained == selected && !better(candidate, result[selected - 1]))
         continue;
-      std::size_t position =
-          retained < selected ? retained++ : selected - 1;
+      std::size_t position = retained < selected ? retained++ : selected - 1;
       while (position > 0 && better(candidate, result[position - 1])) {
         result[position] = result[position - 1];
         --position;
@@ -552,8 +539,8 @@ void select_top_k(const float *scores, std::size_t count,
   }
   std::make_heap(result, result + selected, better);
   for (std::size_t index = selected; index < count; ++index) {
-    const simd::ScoredIndexF32 candidate{
-        scores[index], static_cast<std::uint32_t>(index)};
+    const simd::ScoredIndexF32 candidate{scores[index],
+                                         static_cast<std::uint32_t>(index)};
     if (!better(candidate, result[0]))
       continue;
     std::pop_heap(result, result + selected, better);
@@ -564,11 +551,10 @@ void select_top_k(const float *scores, std::size_t count,
     std::sort_heap(result, result + selected, better);
 }
 
-detail::EnqueueResult
-submit_top_k(const NativePlan &plan,
-             std::span<const ConstTensorView> inputs,
-             std::span<const TensorView> outputs,
-             mem::BufferView workspace) noexcept {
+detail::EnqueueResult submit_top_k(const NativePlan &plan,
+                                   std::span<const ConstTensorView> inputs,
+                                   std::span<const TensorView> outputs,
+                                   mem::BufferView workspace) noexcept {
   if (inputs.size() != 1 || outputs.size() != 2)
     return completed(Status::Internal("native TopK plan is invalid"));
   const TensorDesc &input_desc = inputs[0].description();
@@ -619,8 +605,8 @@ submit_top_k(const NativePlan &plan,
     indices_mapping.close().IgnoreError();
     values_mapping.close().IgnoreError();
     input_mapping.close().IgnoreError();
-    return completed(Status::FailedPrecondition(
-        "CPU TopK writable mapping is unavailable"));
+    return completed(
+        Status::FailedPrecondition("CPU TopK writable mapping is unavailable"));
   }
 
   const std::byte *input = input_mapping.bytes().data();
@@ -724,9 +710,8 @@ Status prepare_transformer(Operation operation,
         inputs[2], "native RoPE currently requires plain float32 frequencies");
     if (!status.ok())
       return status;
-    if (!inputs[1].is_plain() ||
-        (inputs[1].data_type() != DataType::kInt32 &&
-         inputs[1].data_type() != DataType::kInt64)) {
+    if (!inputs[1].is_plain() || (inputs[1].data_type() != DataType::kInt32 &&
+                                  inputs[1].data_type() != DataType::kInt64)) {
       return Status::Unimplemented(
           "native RoPE requires plain i32/i64 positions");
     }
@@ -760,10 +745,9 @@ Status prepare_transformer(Operation operation,
     status = require_plain_f32(
         outputs[0], "native Softmax currently requires float32 output");
     if (!status.ok() || !outputs[0].is_dense())
-      return status.ok()
-                 ? Status::Unimplemented(
-                       "native Softmax requires a dense output tensor")
-                 : status;
+      return status.ok() ? Status::Unimplemented(
+                               "native Softmax requires a dense output tensor")
+                         : status;
     const Softmax *softmax = operation.get_if<Softmax>();
     if (softmax->accumulation_type != DataType::kUnknown &&
         softmax->accumulation_type != DataType::kFloat32) {
@@ -800,8 +784,8 @@ Status prepare_transformer(Operation operation,
     status = require_plain_f32(
         outputs[0], "native TopK currently requires float32 value output");
     if (!status.ok() || !outputs[0].is_dense() ||
-        outputs[1].data_type() != DataType::kInt32 ||
-        !outputs[1].is_plain() || !outputs[1].is_dense()) {
+        outputs[1].data_type() != DataType::kInt32 || !outputs[1].is_plain() ||
+        !outputs[1].is_dense()) {
       return Status::Unimplemented(
           "native TopK requires dense float32 values and i32 indices");
     }
@@ -815,12 +799,12 @@ Status prepare_transformer(Operation operation,
         static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max())) {
       return Status::OutOfRange("native TopK index exceeds i32 output range");
     }
-    auto pair_bytes = math::try_multiply(
-        top_k->count, sizeof(simd::ScoredIndexF32));
+    auto pair_bytes =
+        math::try_multiply(top_k->count, sizeof(simd::ScoredIndexF32));
     if (!pair_bytes)
       return Status::OutOfRange("native TopK workspace size overflows");
-    const std::size_t inner = product(inputs[0].dimensions(), *axis + 1,
-                                      inputs[0].rank());
+    const std::size_t inner =
+        product(inputs[0].dimensions(), *axis + 1, inputs[0].rank());
     std::size_t scratch = 0;
     if (!inputs[0].is_dense() || inner != 1) {
       auto scratch_bytes = math::try_multiply(axis_extent, sizeof(float));

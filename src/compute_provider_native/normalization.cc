@@ -27,6 +27,32 @@ void close_ignoring_errors(std::array<mem::HostMapping, 3> &mappings,
     mapping.close().IgnoreError();
 }
 
+struct LayerNormEpisode final {
+  const NativePlan *plan = nullptr;
+  const float *input = nullptr;
+  const float *scale = nullptr;
+  const float *bias = nullptr;
+  float *output = nullptr;
+};
+
+void run_layer_norm_range(void *context, std::size_t, std::size_t begin,
+                          std::size_t end) noexcept {
+  auto &episode = *static_cast<LayerNormEpisode *>(context);
+  const std::size_t hidden = episode.plan->parameters[1];
+  for (std::size_t row = begin; row < end; ++row) {
+    const float *row_input = episode.input + row * hidden;
+    float *row_output = episode.output + row * hidden;
+    if (episode.bias != nullptr) {
+      simd::layer_norm_f32(row_input, episode.scale, episode.bias, row_output,
+                           hidden, episode.plan->scalar);
+    } else {
+      simd::layer_norm_f32(row_input, row_output, hidden, episode.plan->scalar);
+      if (episode.scale != nullptr)
+        simd::multiply(row_output, episode.scale, row_output, hidden);
+    }
+  }
+}
+
 detail::EnqueueResult
 submit_layer_norm(const NativePlan &plan,
                   std::span<const ConstTensorView> inputs,
@@ -128,18 +154,14 @@ submit_layer_norm(const NativePlan &plan,
 
   const float *scale = inputs.size() > 1 ? source_data[1] : nullptr;
   const float *bias = inputs.size() > 2 ? source_data[2] : nullptr;
-  for (std::size_t row = 0; row < rows; ++row) {
-    const float *row_input = source_data[0] + row * hidden;
-    float *row_output = output_data + row * hidden;
-    if (bias != nullptr) {
-      simd::layer_norm_f32(row_input, scale, bias, row_output, hidden,
-                           plan.scalar);
-    } else {
-      simd::layer_norm_f32(row_input, row_output, hidden, plan.scalar);
-      if (scale != nullptr)
-        simd::multiply(row_output, scale, row_output, hidden);
-    }
-  }
+  LayerNormEpisode episode{
+      .plan = &plan,
+      .input = source_data[0],
+      .scale = scale,
+      .bias = bias,
+      .output = output_data,
+  };
+  parallel_for_ranges(plan, rows, &run_layer_norm_range, &episode);
 
   Status terminal = Status::Ok();
   if (!output_storage.resource().properties().has(

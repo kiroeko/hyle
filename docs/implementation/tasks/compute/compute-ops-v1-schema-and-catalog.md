@@ -174,3 +174,9 @@ Softmax、TopK 与 ScaledDotProductAttention，仍不得把可描述冒充可执
 进度更新为 **18/19 executable**；只剩 ScaledDotProductAttention。TopK schema 同时补上 i32 index 输出的
 axis 上界检查。该修正属于已有 typed contract 的完整性，不增加 family 或隐藏策略；`compute_ops` 仍保持
 `AUDITED`，等待 19/19 direct/Graph journey 和终局验证。
+
+同日的 attention checkpoint 已补齐 ScaledDotProductAttention，目录达到 **19/19 executable**。公开 schema
+没有新增 family 或 provider-private knob：BSHD/BHSD、bottom-right causal、Bool/additive broadcast mask、
+显式 scale 与 accumulation contract 继续由既有 typed descriptor 表达；Native 当前只接收 plain f32
+Q/K/V、dense f32 output 与 f32 accumulation，不支持的 storage/layout 仍返回 `Unimplemented` 供有序 provider
+fallback。`compute_ops` 保持 `AUDITED`，等待完整 direct/Graph、三平台和交付验证。

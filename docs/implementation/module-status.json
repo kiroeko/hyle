@@ -383,7 +383,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 18 个已有 native executable route，只剩 SDPA 与终局验证尚未完成。"
+      "summary": "compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现，并均已有 native executable route；仍待完整 direct/Graph、三平台与交付终局验证。"
     },
     {
       "module": "compute_backend_cpu",
@@ -412,7 +412,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：18/19 类已有 executable route，只剩分块 SDPA；Windows schema/native 定向验证通过。真实复用审计另确认 N17 executor 尚未消费，并形成 SIMD row rsqrt/fmin/fmax/select/extrema 的有界 reopen 候选；三平台、sanitizer、三交付与七条 P1 未完成。"
+      "summary": "compute_provider_native v1 AUDITED：19/19 family 已有 executable route；分块 online-softmax SDPA 与 N17 借用 executor fan-out 的 Windows direct/Graph 定向验证通过，未触发底层模块重开；三平台、sanitizer、三交付与七条 P1 尚未完成。"
     },
     {
       "module": "compute_sched",

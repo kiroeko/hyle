@@ -16,6 +16,7 @@ namespace {
 using hyle::compute::ConstTensorView;
 using hyle::compute::DataType;
 using hyle::compute::LayerNorm;
+using hyle::compute::ParallelTaskFn;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::mem::Buffer;
@@ -42,6 +43,25 @@ void expect_near(std::span<const float> actual,
   ASSERT_EQ(actual.size(), expected.size());
   for (std::size_t index = 0; index < actual.size(); ++index)
     EXPECT_NEAR(actual[index], expected[index], 2.0e-5F) << index;
+}
+
+struct ParallelProbe final {
+  std::size_t episodes = 0;
+  std::size_t tasks = 0;
+  bool nested = false;
+};
+
+void probe_parallel_for(void *context, std::size_t count, ParallelTaskFn task,
+                        void *task_context) noexcept {
+  auto &probe = *static_cast<ParallelProbe *>(context);
+  ++probe.episodes;
+  probe.tasks += count;
+  for (std::size_t index = 0; index < count; ++index)
+    task(task_context, index, count);
+}
+
+bool probe_in_parallel(void *context) noexcept {
+  return static_cast<ParallelProbe *>(context)->nested;
 }
 
 TEST(NativeLayerNorm, ExecutesNonAffineScaleOnlyAndAffineRows) {
@@ -157,6 +177,45 @@ TEST(NativeLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
       context, LayerNorm{.accumulation_type = DataType::kFloat64}, f32);
   ASSERT_FALSE(accumulation.has_value());
   EXPECT_TRUE(accumulation.error().IsUnimplemented());
+}
+
+TEST(NativeLayerNorm, PinsExecutorAndUsesOneBoundedSynchronousFanOut) {
+  constexpr std::array<std::int64_t, 2> shape{8, 8192};
+  const TensorDesc description =
+      TensorDesc::dense(DataType::kFloat32, shape).value();
+  const std::size_t bytes =
+      static_cast<std::size_t>(shape[0] * shape[1]) * sizeof(float);
+  Buffer input =
+      Buffer::create(hyle::mem::system_resource(), bytes, alignof(float))
+          .value();
+  Buffer output =
+      Buffer::create(hyle::mem::system_resource(), bytes, alignof(float))
+          .value();
+  ASSERT_TRUE(input.view().fill(std::byte{0}).ok());
+  ASSERT_TRUE(output.view().fill(std::byte{0}).ok());
+
+  ParallelProbe probe;
+  const hyle::compute::ParallelExecutorRef executor(
+      &probe, 4, &probe_parallel_for, &probe_in_parallel);
+  auto context =
+      hyle::compute::cpu::create_context({.executor = executor}).value();
+  auto queue = context.create_queue().value();
+  auto prepared =
+      hyle::compute::prepare(context, LayerNorm{}, description).value();
+  auto invocation = prepared.create_invocation().value();
+  const ConstTensorView input_view =
+      ConstTensorView::create(description, input.view()).value();
+  const TensorView output_view =
+      TensorView::create(description, output.view()).value();
+
+  ASSERT_TRUE(invocation.submit(queue, input_view, output_view)->wait().ok());
+  EXPECT_EQ(probe.episodes, 1U);
+  EXPECT_EQ(probe.tasks, 4U);
+
+  probe.nested = true;
+  ASSERT_TRUE(invocation.submit(queue, input_view, output_view)->wait().ok());
+  EXPECT_EQ(probe.episodes, 1U);
+  EXPECT_EQ(probe.tasks, 4U);
 }
 
 } // namespace

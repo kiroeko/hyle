@@ -3,6 +3,7 @@
 include(HyleDispatch)
 
 hyle_add_module(compute_provider_native SOURCES
+  attention.cc
   cast.cc
   elementwise.cc
   indexing.cc

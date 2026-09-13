@@ -55,8 +55,8 @@ heap algorithm 直接使用标准库；本轮不新增泛化算法或依赖。
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| G82 | 三处 total-order comparator 仍调用可取临时 buffer 的 `stable_sort` | 改为 in-place `sort`；不改 comparator | 大于 32 targets 仍选同一 required/preferred/original target；源码无 `stable_sort` | 待实现 |
-| G83 | v7 allocator sweep 未跨过实现的临时-buffer 阈值 | 增加多 target 回归并复用 allocator sweep；不接管全局 `new` | selection/失败/重试确定，Graph allocator 账单闭合 | 待实现 |
+| G82 | 三处 total-order comparator 仍调用可取临时 buffer 的 `stable_sort` | 改为 in-place `sort`；不改 comparator | 大于 32 targets 仍选同一 required/preferred/original target；源码无 `stable_sort` | 已实现：三处均改为 `std::sort`，comparator 未改 |
+| G83 | v7 allocator sweep 未跨过实现的临时-buffer 阈值 | 增加多 target 回归并复用 allocator sweep；不接管全局 `new` | selection/失败/重试确定，Graph allocator 账单闭合 | 已实现：33-target preferred ordinal 回归使用首 target 的 probe allocator；既有逐 allocation failure/retry sweep 保持通过 |
 
 ### API / usability freeze
 
@@ -75,3 +75,13 @@ heap algorithm 直接使用标准库；本轮不新增泛化算法或依赖。
 5. Native FFI：Graph 仅面向 C++，本轮无历史 C ABI。
 6. 交付：没有 header/target/dependency 变化；仍需三种 C++ 交付回放。
 7. 易用性：用户调用不变，但 allocator ownership 从“通常成立”变为结构上成立；guide 无新增选项。
+
+## Implementation checkpoint（2026-09-14）
+
+- 初始 operation placement、region 后 operation fallback 与 region-decline fallback 三处均只把
+  `std::stable_sort` 替换为 in-place `std::sort`；严格全序 comparator、候选集合和选择策略未改；
+- 新回归构造 33 个不同 CPU target，并把最后一个 target 标为 preferred，证明跨过常见小范围排序阈值后
+  仍确定选择 ordinal 32；compile 继续使用首 target Context 的显式 probe allocator；
+- 既有 Graph 每次 metadata allocation failure/retry sweep、Native SDPA Graph workspace 纵切与 Windows
+  Graph 定向测试通过；源码范围已无 `stable_sort`。本轮只改变 compile 冷路径的内存所有权，不改变
+  Invocation/submit、公开 API、ABI、provider 或性能证据 tier。

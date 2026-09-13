@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -33,12 +34,16 @@ using ScalarElementwiseRoute = void (*)(const std::byte *first,
 using RopeKernelRoute = void (*)(const float *input, const float *frequencies,
                                  float *output, std::size_t pairs,
                                  float position) noexcept;
+using ParallelRangeRoute = void (*)(void *context, std::size_t task_index,
+                                    std::size_t begin,
+                                    std::size_t end) noexcept;
 
 // Cold prepared metadata shared by the native operation families. A family
 // selects one submit route during prepare; submit never searches by kind or
 // grows metadata. The compact scalar/parameter slots hold only route-specific
 // immutable values, not benchmark-driven per-tensor state.
 struct NativePlan final {
+  ParallelExecutorRef executor{};
   detail::NativeParameters parameters{};
   float scalar = 0.0F;
   std::uint64_t scalar_bits = 0;
@@ -54,9 +59,18 @@ struct NativePlan final {
   RopeLayout rope_layout = RopeLayout::kInterleaved;
   SoftmaxKind softmax_kind = SoftmaxKind::kSoftmax;
   MaskKind mask_kind = MaskKind::kNone;
+  AttentionLayout attention_layout = AttentionLayout::kBatchSequenceHeadDepth;
   bool largest = true;
   bool sorted = true;
   bool stable = true;
+  bool causal = false;
+  std::size_t attention_batches = 0;
+  std::size_t attention_heads = 0;
+  std::size_t attention_queries = 0;
+  std::size_t attention_keys = 0;
+  std::size_t attention_query_depth = 0;
+  std::size_t attention_value_depth = 0;
+  std::size_t attention_workspace_stride = 0;
   WorkspaceRequirement workspace{};
   detail::NativeRoute route = nullptr;
   LinearElementwiseRoute linear_elementwise_route = nullptr;
@@ -64,9 +78,59 @@ struct NativePlan final {
   RopeKernelRoute rope_kernel_route = nullptr;
   SubmitRoute submit_route = nullptr;
   WorkspaceSubmitRoute workspace_submit_route = nullptr;
+  std::size_t parallel_tasks = 1;
+  std::size_t row_first_stride = 0;
+  std::size_t row_second_stride = 0;
+  std::size_t row_output_stride = 0;
   std::size_t alias_input0_offset = 0;
   std::uint8_t alias_input_mask = 0;
 };
+
+struct ParallelRangeEpisode final {
+  std::size_t units = 0;
+  std::size_t tasks = 1;
+  ParallelRangeRoute route = nullptr;
+  void *context = nullptr;
+};
+
+inline void execute_parallel_range(void *episode_value, std::size_t index,
+                                   std::size_t count) noexcept {
+  auto &episode = *static_cast<ParallelRangeEpisode *>(episode_value);
+  if (episode.route == nullptr || count != episode.tasks || count == 0 ||
+      index >= count)
+    return;
+  const std::size_t base = episode.units / count;
+  const std::size_t remainder = episode.units % count;
+  const std::size_t begin = index * base + (std::min)(index, remainder);
+  const std::size_t end =
+      begin + base + static_cast<std::size_t>(index < remainder);
+  if (begin != end)
+    episode.route(episode.context, index, begin, end);
+}
+
+// Executes one synchronous fan-out over independent work units. The task count
+// is selected during prepare; submit performs no allocation or policy search.
+// A detectable nested episode deliberately stays on the caller thread. A
+// backing without in_parallel() remains responsible for its documented nested
+// progress guarantee.
+inline void parallel_for_ranges(const NativePlan &plan, std::size_t units,
+                                ParallelRangeRoute route,
+                                void *context) noexcept {
+  if (units == 0 || route == nullptr)
+    return;
+  const std::size_t tasks = (std::min)(plan.parallel_tasks, units);
+  if (tasks <= 1 || plan.executor.in_parallel()) {
+    route(context, 0, 0, units);
+    return;
+  }
+  ParallelRangeEpisode episode{
+      .units = units,
+      .tasks = tasks,
+      .route = route,
+      .context = context,
+  };
+  plan.executor.parallel_for(tasks, &execute_parallel_range, &episode);
+}
 
 inline void preserve_first_error(Status &terminal, Status candidate) noexcept {
   if (terminal.ok() && !candidate.ok())
@@ -150,13 +214,16 @@ Status prepare_layer_norm(Operation operation,
                           std::span<const TensorDesc> inputs,
                           std::span<const TensorDesc> outputs,
                           NativePlan &plan) noexcept;
-Status prepare_indexing(Operation operation,
-                        std::span<const TensorDesc> inputs,
+Status prepare_indexing(Operation operation, std::span<const TensorDesc> inputs,
                         std::span<const TensorDesc> outputs,
                         NativePlan &plan) noexcept;
 Status prepare_transformer(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,
                            NativePlan &plan) noexcept;
+Status prepare_attention(Operation operation,
+                         std::span<const TensorDesc> inputs,
+                         std::span<const TensorDesc> outputs,
+                         NativePlan &plan) noexcept;
 
 } // namespace hyle::compute::native::internal

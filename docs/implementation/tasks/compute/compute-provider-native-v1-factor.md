@@ -164,3 +164,21 @@ strided copy 的地址计算，也不属于任何公开合同。该变量已删�
 本 checkpoint 的 Windows factor-only WERROR 构建、逐头、schema/native 定向测试通过；新增验证覆盖
 RoPE vector blocks/tail 与 strided materialization、additive/all-masked Softmax，以及 TopK i32 axis 上界。
 三平台、sanitizer、三交付、七条 P1、N17 和 SDPA 仍待 candidate 阶段统一完成，因此本卡保持 `AUDITED`。
+
+### Attention 与 executor checkpoint（2026-09-14）
+
+- ScaledDotProductAttention 已补齐 Native executable route，19 个 public family 现均有 CPU 路线。当前路线
+  接收 plain f32 rank-4 Q/K/V、dense f32 output、BSHD/BHSD、不同的 Q/K 与 V/output depth、Bool/additive
+  broadcast mask、显式 scale 与 bottom-right causal；窄 storage、block/opaque encoding 和非 f32 accumulation
+  继续诚实返回 `Unimplemented`；
+- 实现采用 64-score tile 的 online softmax，不 materialize Q×K matrix。每个并行 task 独占
+  `value_depth * sizeof(float) + 64 * sizeof(float)` 的 64-byte-aligned caller workspace；时间复杂度为
+  O(B·H·Q·K·(Dq+Dv))，额外空间为 O(tasks·(Dv+64))；dense Q/K dot、V accumulation 与 score/accumulator
+  row 运算复用已冻结 SIMD，strided plain 输入保留同语义 scalar oracle；
+- N17 已实际消费：prepare 把借用 `ParallelExecutorRef` 固定进 immutable plan，根据总工作量和 concurrency
+  冷选择不超过独立 row 数的 task count；RMSNorm、LayerNorm、MatMul、packed gated activation 与 SDPA 每次
+  submit 最多做一次同步 fan-out，已知 nested episode 串行退化，默认空 executor 保持 caller-thread 路线。
+  这使用 Compute 既有通用执行 seam，未发现需要重开 Sched 的能力缺口；
+- Windows factor/Graph 定向测试已通过，覆盖两种布局、多 batch/head、Q/K 与 V depth 分离、decode causal、
+  两种 mask、all-masked/empty-key NaN、strided reference、四 task 独占 workspace、nested executor 与 Graph
+  planned workspace。三平台、sanitizer、三交付及七条限定 P1 仍未执行，因此本卡保持 `AUDITED`。

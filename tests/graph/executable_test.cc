@@ -20,6 +20,7 @@
 
 namespace {
 
+using hyle::compute::AttentionLayout;
 using hyle::compute::Binary;
 using hyle::compute::BinaryKind;
 using hyle::compute::ConstTensorView;
@@ -29,6 +30,7 @@ using hyle::compute::GatedActivation;
 using hyle::compute::MatMul;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
+using hyle::compute::ScaledDotProductAttention;
 using hyle::compute::StorageFormat;
 using hyle::compute::StorageFormatId;
 using hyle::compute::TensorDesc;
@@ -341,6 +343,46 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_TRUE(moved.create_invocation().has_value());
 }
 
+TEST(GraphCompile, LargeTargetSetKeepsDeterministicPreferredOrdinal) {
+  constexpr std::size_t kTargetCount = 33;
+  const LogicalGraph logical = make_rms_graph(row(8));
+  AllocatorProbe probe;
+  std::array<Context, kTargetCount> contexts{};
+  std::array<hyle::graph::ExecutionTarget, kTargetCount> targets{};
+  const std::array storage_domains{hyle::graph::StorageDomain{
+      .resource = hyle::mem::system_resource(),
+  }};
+  for (std::size_t index = 0; index < kTargetCount; ++index) {
+    contexts[index] = hyle::compute::cpu::create_context(
+                          {.metadata_allocator = probe_allocator(probe)})
+                          .value();
+    targets[index] = hyle::graph::ExecutionTarget{
+        .context = &contexts[index],
+        .default_storage = hyle::graph::StorageDomainId{0},
+    };
+  }
+  const std::array placements{NodePlacement{
+      .node = logical.graph.node_id().value(),
+      .target = hyle::graph::ExecutionTargetId{static_cast<std::uint32_t>(
+          kTargetCount - 1)},
+      .strength = PlacementStrength::kPreferred,
+  }};
+  const hyle::graph::CompileEnvironment environment{
+      .storage_domains = storage_domains,
+      .targets = targets,
+  };
+
+  auto compiled =
+      hyle::graph::compile(logical.graph, environment,
+                           CompileOptions{.node_placements = placements});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  const auto step = compiled->report.step(0);
+  ASSERT_TRUE(step.has_value()) << step.error().message();
+  EXPECT_EQ(step->target, hyle::graph::ExecutionTargetId{
+                              static_cast<std::uint32_t>(kTargetCount - 1)});
+}
+
 TEST(GraphCompile, SpecializesBoundedShapesWithExactCollisionSafeIdentity) {
   GraphBuilder builder = GraphBuilder::create().value();
   const auto rows = builder.dimension({.minimum = 1, .maximum = 4}).value();
@@ -624,20 +666,20 @@ TEST(GraphCompile, MakesWorkspaceSerializationAnExplicitBudgetTradeoff) {
   Context second = hyle::compute::cpu::create_context().value();
   const auto host = hyle::mem::system_resource();
   const std::array targets{
-      hyle::graph::ExecutionTarget{
-          .context = &first,
-          .default_storage = hyle::graph::StorageDomainId{0}},
-      hyle::graph::ExecutionTarget{
-          .context = &second,
-          .default_storage = hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{.context = &first,
+                                   .default_storage =
+                                       hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{.context = &second,
+                                   .default_storage =
+                                       hyle::graph::StorageDomainId{0}},
   };
   const std::array lanes{
-      hyle::graph::ExecutionLane{
-          .target = hyle::graph::ExecutionTargetId{0},
-          .role = hyle::graph::ExecutionLaneRole::kCompute},
-      hyle::graph::ExecutionLane{
-          .target = hyle::graph::ExecutionTargetId{1},
-          .role = hyle::graph::ExecutionLaneRole::kCompute},
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0},
+                                 .role =
+                                     hyle::graph::ExecutionLaneRole::kCompute},
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{1},
+                                 .role =
+                                     hyle::graph::ExecutionLaneRole::kCompute},
   };
   const std::array placements{
       NodePlacement{.node = graph.node_id(0).value(),
@@ -654,29 +696,28 @@ TEST(GraphCompile, MakesWorkspaceSerializationAnExplicitBudgetTradeoff) {
                     .strength = PlacementStrength::kRequired},
   };
   const std::array resources{
-      ExternalResourceContract{
-          .value = first_input, .storage = hyle::graph::StorageDomainId{0}},
-      ExternalResourceContract{
-          .value = second_input, .storage = hyle::graph::StorageDomainId{0}},
-      ExternalResourceContract{
-          .value = first_output, .storage = hyle::graph::StorageDomainId{0}},
-      ExternalResourceContract{
-          .value = second_output, .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{.value = first_input,
+                               .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{.value = second_input,
+                               .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{.value = first_output,
+                               .storage = hyle::graph::StorageDomainId{0}},
+      ExternalResourceContract{.value = second_output,
+                               .storage = hyle::graph::StorageDomainId{0}},
   };
   auto compile_with_budget = [&](std::size_t budget,
                                  hyle::graph::WorkspaceReusePolicy policy) {
     const std::array storage_domains{hyle::graph::StorageDomain{
         .resource = host, .workspace_budget_bytes = budget}};
-    return hyle::graph::compile(
-        graph,
-        hyle::graph::CompileEnvironment{
-            .storage_domains = storage_domains,
-            .targets = targets,
-            .lanes = lanes,
-        },
-        CompileOptions{.node_placements = placements,
-                       .external_resources = resources,
-                       .workspace_reuse = policy});
+    return hyle::graph::compile(graph,
+                                hyle::graph::CompileEnvironment{
+                                    .storage_domains = storage_domains,
+                                    .targets = targets,
+                                    .lanes = lanes,
+                                },
+                                CompileOptions{.node_placements = placements,
+                                               .external_resources = resources,
+                                               .workspace_reuse = policy});
   };
 
   auto concurrent = compile_with_budget(
@@ -1357,10 +1398,10 @@ TEST(Invocation, RequiresQueuesOnlyForLanesThatEmitRuntimeCommands) {
       .strength = PlacementStrength::kRequired,
   }};
   const std::array resources{
-      ExternalResourceContract{
-          .value = input, .storage = environment.storage(1)},
-      ExternalResourceContract{
-          .value = output, .storage = environment.storage(1)},
+      ExternalResourceContract{.value = input,
+                               .storage = environment.storage(1)},
+      ExternalResourceContract{.value = output,
+                               .storage = environment.storage(1)},
   };
   CompiledGraph compiled =
       hyle::graph::compile(graph, environment.environment(),
@@ -1374,12 +1415,12 @@ TEST(Invocation, RequiresQueuesOnlyForLanesThatEmitRuntimeCommands) {
   EXPECT_TRUE(compiled.report.lane(1)->queue_required);
   EXPECT_EQ(compiled.report.lane(1)->completion_slots_per_invocation, 1u);
   EXPECT_EQ(compiled.executable.required_queue_count(), 1u);
-  EXPECT_FALSE(
-      compiled.executable.requires_queue(environment.lane(0)).value());
+  EXPECT_FALSE(compiled.executable.requires_queue(environment.lane(0)).value());
   EXPECT_TRUE(compiled.executable.requires_queue(environment.lane(1)).value());
-  EXPECT_TRUE(compiled.executable.requires_queue(hyle::graph::ExecutionLaneId{2})
-                  .error()
-                  .IsOutOfRange());
+  EXPECT_TRUE(
+      compiled.executable.requires_queue(hyle::graph::ExecutionLaneId{2})
+          .error()
+          .IsOutOfRange());
 
   OwnedTensor source = make_tensor(description);
   OwnedTensor destination = make_tensor(description);
@@ -1438,10 +1479,10 @@ TEST(Invocation, CrossStoragePublishedViewUsesItsExplicitOutputBinding) {
   EXPECT_EQ(compiled.report.step(1)->synchronization_count, 0u);
   EXPECT_EQ(compiled.report.synchronization_count(), 0u);
 
-  OwnedTensor source = make_tensor(
-      input_description, hyle::mem::MemoryResourceRef(first_storage));
-  OwnedTensor destination = make_tensor(
-      matrix(1, 3), hyle::mem::MemoryResourceRef(second_storage));
+  OwnedTensor source = make_tensor(input_description,
+                                   hyle::mem::MemoryResourceRef(first_storage));
+  OwnedTensor destination =
+      make_tensor(matrix(1, 3), hyle::mem::MemoryResourceRef(second_storage));
   write(source, std::array<float, 6>{1, 2, 3, 4, 5, 6});
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(input, source.view).ok());
@@ -1514,6 +1555,48 @@ TEST(Invocation, RejectsAQueueFromAnotherContext) {
   ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
   ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
   EXPECT_TRUE(invocation.submit(wrong_queue).error().IsInvalidArgument());
+}
+
+TEST(GraphCompile, ExecutesNativeAttentionWithPlannedInvocationWorkspace) {
+  constexpr std::array<std::int64_t, 4> query_shape{1, 1, 1, 1};
+  constexpr std::array<std::int64_t, 4> key_shape{1, 1, 3, 1};
+  const TensorDesc query_desc =
+      TensorDesc::dense(DataType::kFloat32, query_shape).value();
+  const TensorDesc key_desc =
+      TensorDesc::dense(DataType::kFloat32, key_shape).value();
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId query = builder.input(query_desc).value();
+  const ValueId key = builder.input(key_desc).value();
+  const ValueId value = builder.input(key_desc).value();
+  const ValueId output =
+      builder
+          .add(
+              ScaledDotProductAttention{
+                  .layout = AttentionLayout::kBatchHeadSequenceDepth,
+                  .causal = true},
+              query, key, value)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  Context context = hyle::compute::cpu::create_context().value();
+  CompiledGraph compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_GT(compiled.report.workspace_bytes(), 0U);
+  Invocation invocation = compiled.executable.create_invocation().value();
+  OwnedTensor query_tensor = make_tensor(query_desc);
+  OwnedTensor key_tensor = make_tensor(key_desc);
+  OwnedTensor value_tensor = make_tensor(key_desc);
+  OwnedTensor output_tensor = make_tensor(query_desc);
+  write(query_tensor, std::array<float, 1>{0});
+  write(key_tensor, std::array<float, 3>{0, 0, 0});
+  write(value_tensor, std::array<float, 3>{1, 2, 6});
+  ASSERT_TRUE(invocation.bind(query, query_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(key, key_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(value, value_tensor.view).ok());
+  ASSERT_TRUE(invocation.bind(output, output_tensor.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  expect_near(read(output_tensor, 1), std::array<float, 1>{3});
 }
 
 } // namespace

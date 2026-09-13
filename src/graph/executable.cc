@@ -672,8 +672,7 @@ compute::Queue *candidate_queue(std::span<const QueueBinding> queues,
   return nullptr;
 }
 
-bool shared_lane(const detail::PlanState &plan,
-                 ExecutionLaneId lane) noexcept {
+bool shared_lane(const detail::PlanState &plan, ExecutionLaneId lane) noexcept {
   return lane.valid() && lane.ordinal() < plan.lanes.size() &&
          plan.lanes[lane.ordinal()].runtime_mode ==
              compute::ProviderRuntimeMode::kSharedQueue;
@@ -712,8 +711,7 @@ delegated_step_index(const detail::PlanState &plan,
 }
 
 bool delegated_can_import_endpoint(
-    detail::InvocationState &invocation,
-    const detail::PlanSegment &segment,
+    detail::InvocationState &invocation, const detail::PlanSegment &segment,
     compute::detail::CompletionEndpoint source) noexcept {
   auto selected = delegated_step_index(*invocation.plan, segment);
   if (!selected)
@@ -729,11 +727,11 @@ bool delegated_can_import_endpoint(
   return false;
 }
 
-Result<compute::Completion> submit_delegated_segment(
-    detail::InvocationState &invocation,
-    const detail::PlanSegment &segment,
-    std::span<const compute::detail::CompletionDependency>
-        dependencies) noexcept {
+Result<compute::Completion>
+submit_delegated_segment(detail::InvocationState &invocation,
+                         const detail::PlanSegment &segment,
+                         std::span<const compute::detail::CompletionDependency>
+                             dependencies) noexcept {
   auto selected = delegated_step_index(*invocation.plan, segment);
   if (!selected)
     return std::unexpected(std::move(selected).error());
@@ -1172,7 +1170,8 @@ Status propose_region_resources(
   struct ProposalEpisode final {
     const RegionCompileRequest *request = nullptr;
     std::span<compute::detail::ResourceBindingRequirement> input_requirements{};
-    std::span<compute::detail::ResourceBindingRequirement> output_requirements{};
+    std::span<compute::detail::ResourceBindingRequirement>
+        output_requirements{};
     RegionResourceProposal *proposal = nullptr;
   } proposal_episode{&request, input_requirements, output_requirements,
                      &resource_proposal};
@@ -1201,11 +1200,12 @@ Status propose_region_resources(
   return Status::Ok();
 }
 
-Result<detail::PreparedRegion> compile_region_artifact(
-    detail::PlanState &plan, const RegionExtension &extension,
-    const RegionCompileRequest &request,
-    const RegionResourceProposal &resource_proposal,
-    CompileOptions options) noexcept {
+Result<detail::PreparedRegion>
+compile_region_artifact(detail::PlanState &plan,
+                        const RegionExtension &extension,
+                        const RegionCompileRequest &request,
+                        const RegionResourceProposal &resource_proposal,
+                        CompileOptions options) noexcept {
   ProviderRegionPrepared provider_prepared{};
   struct Episode final {
     const RegionCompileRequest *request = nullptr;
@@ -1238,7 +1238,8 @@ Result<detail::PreparedRegion> compile_region_artifact(
       provider_prepared.properties.workspace;
   const compute::ProviderRuntimeProperties runtime =
       provider_prepared.properties.runtime;
-  const bool shared = runtime.mode == compute::ProviderRuntimeMode::kSharedQueue;
+  const bool shared =
+      runtime.mode == compute::ProviderRuntimeMode::kSharedQueue;
   if (table == nullptr || table->destroy_prepared == nullptr ||
       table->alias_support == nullptr || table->create_invocation == nullptr ||
       table->destroy_invocation == nullptr ||
@@ -1288,8 +1289,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
   using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
   using Prepared =
       container::SmallVector<compute::PreparedOperation, 8, mem::AllocatorRef>;
-  using Requirements = container::SmallVector<
-      compute::detail::ResourceBindingRequirement, 4, mem::AllocatorRef>;
+  using Requirements =
+      container::SmallVector<compute::detail::ResourceBindingRequirement, 4,
+                             mem::AllocatorRef>;
   constexpr std::uint32_t kNone = detail::kNoWorkspaceRequest;
   const std::size_t target_count = plan.targets.size();
   const std::size_t storage_count = plan.storage_domains.size();
@@ -1458,8 +1460,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
 
   using Descriptions =
       container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
-  using Resources = container::SmallVector<mem::MemoryResourceRef, 4,
-                                           mem::AllocatorRef>;
+  using Resources =
+      container::SmallVector<mem::MemoryResourceRef, 4, mem::AllocatorRef>;
   Descriptions inputs(plan.allocator);
   Descriptions outputs(plan.allocator);
   Resources input_resources(plan.allocator);
@@ -1488,7 +1490,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
           return std::unexpected(std::move(matched));
         return false;
       }
-      Status accessible = plan.targets[target].context.validate_resource(resource);
+      Status accessible =
+          plan.targets[target].context.validate_resource(resource);
       if (!accessible.ok()) {
         if (accessible.IsInternal())
           return std::unexpected(std::move(accessible));
@@ -1529,9 +1532,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
         "no graph storage satisfies provider resource constraints"));
   };
 
-  auto prepare_operation =
-      [&](std::size_t node_index,
-          std::uint32_t candidate) noexcept -> Result<compute::PreparedOperation> {
+  auto prepare_operation = [&](std::size_t node_index,
+                               std::uint32_t candidate) noexcept
+      -> Result<compute::PreparedOperation> {
     const detail::NodeRecord &node = graph.nodes[node_index];
     const compute::Context &context = *environment.targets[candidate].context;
     const std::uint32_t default_storage =
@@ -1560,11 +1563,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
       bool route_supported = true;
       for (std::size_t input_index = 0; input_index < node.input_count;
            ++input_index) {
-        const std::uint32_t value =
-            graph.edges[node.input_begin + input_index];
-        auto storage = select_storage(
-            candidate, input_requirements[input_index], kNone,
-            producer_storage[value], default_storage);
+        const std::uint32_t value = graph.edges[node.input_begin + input_index];
+        auto storage =
+            select_storage(candidate, input_requirements[input_index], kNone,
+                           producer_storage[value], default_storage);
         if (!storage) {
           unsupported = std::move(storage).error();
           if (!unsupported.IsUnimplemented())
@@ -1573,8 +1575,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
           break;
         }
         selected_inputs[input_index] = *storage;
-        input_resources[input_index] =
-            plan.storage_domains[*storage].resource;
+        input_resources[input_index] = plan.storage_domains[*storage].resource;
       }
       if (!route_supported)
         continue;
@@ -1606,9 +1607,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
               "required output storage contradicts operation aliasing");
           break;
         }
-        const std::uint32_t preferred_storage =
-            value_preferred[value] != kNone ? value_preferred[value]
-                                            : default_storage;
+        const std::uint32_t preferred_storage = value_preferred[value] != kNone
+                                                    ? value_preferred[value]
+                                                    : default_storage;
         auto storage = select_storage(
             candidate, output_requirements[output_index], required_storage,
             preferred_storage, default_storage);
@@ -1632,9 +1633,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
           compute::ProviderWorkspaceOwner::kCaller) {
         auto selected = select_storage(
             candidate, proposal->workspace_resource, kNone, default_storage,
-            node.output_count != 0 ? selected_outputs[0]
-                                   : (node.input_count != 0 ? selected_inputs[0]
-                                                            : kNone));
+            node.output_count != 0
+                ? selected_outputs[0]
+                : (node.input_count != 0 ? selected_inputs[0] : kNone));
         if (!selected) {
           unsupported = std::move(selected).error();
           if (!unsupported.IsUnimplemented())
@@ -1686,40 +1687,41 @@ Status prepare_placed_steps(detail::PlanState &plan,
     std::uint32_t preferred = node_preferred[node_index];
     for (std::size_t index = 0; index < target_count; ++index)
       target_candidates[index] = static_cast<std::uint32_t>(index);
-    std::stable_sort(
-        target_candidates.begin(), target_candidates.end(),
-        [&](std::uint32_t left, std::uint32_t right) noexcept {
-          if (required != kNone)
-            return left == required && right != required;
-          const bool left_preferred = left == preferred;
-          const bool right_preferred = right == preferred;
-          if (left_preferred != right_preferred)
-            return left_preferred;
-          const bool left_region =
-              region_support[node_index * target_count + left] != 0;
-          const bool right_region =
-              region_support[node_index * target_count + right] != 0;
-          if (left_region != right_region)
-            return left_region;
-          std::size_t left_local = 0;
-          std::size_t right_local = 0;
-          for (std::size_t input_index = 0; input_index < node.input_count;
-               ++input_index) {
-            const std::uint32_t value =
-                graph.edges[node.input_begin + input_index];
-            left_local += producer_storage[value] ==
-                                  plan.targets[left].default_storage.ordinal()
-                              ? 1u
-                              : 0u;
-            right_local += producer_storage[value] ==
-                                   plan.targets[right].default_storage.ordinal()
-                               ? 1u
-                               : 0u;
-          }
-          if (left_local != right_local)
-            return left_local > right_local;
-          return left < right;
-        });
+    std::sort(target_candidates.begin(), target_candidates.end(),
+              [&](std::uint32_t left, std::uint32_t right) noexcept {
+                if (required != kNone)
+                  return left == required && right != required;
+                const bool left_preferred = left == preferred;
+                const bool right_preferred = right == preferred;
+                if (left_preferred != right_preferred)
+                  return left_preferred;
+                const bool left_region =
+                    region_support[node_index * target_count + left] != 0;
+                const bool right_region =
+                    region_support[node_index * target_count + right] != 0;
+                if (left_region != right_region)
+                  return left_region;
+                std::size_t left_local = 0;
+                std::size_t right_local = 0;
+                for (std::size_t input_index = 0;
+                     input_index < node.input_count; ++input_index) {
+                  const std::uint32_t value =
+                      graph.edges[node.input_begin + input_index];
+                  left_local +=
+                      producer_storage[value] ==
+                              plan.targets[left].default_storage.ordinal()
+                          ? 1u
+                          : 0u;
+                  right_local +=
+                      producer_storage[value] ==
+                              plan.targets[right].default_storage.ordinal()
+                          ? 1u
+                          : 0u;
+                }
+                if (left_local != right_local)
+                  return left_local > right_local;
+                return left < right;
+              });
     if (!inputs.try_resize(node.input_count) ||
         !outputs.try_resize(node.output_count) ||
         !input_resources.try_resize(node.input_count) ||
@@ -1743,13 +1745,12 @@ Status prepare_placed_steps(detail::PlanState &plan,
         node_targets[node_index] = candidate;
         for (std::size_t output_index = 0; output_index < node.output_count;
              ++output_index) {
-          const std::uint32_t value = node.output_begin +
-                                      static_cast<std::uint32_t>(output_index);
-          producer_storage[value] = value_required[value] != kNone
-                                        ? value_required[value]
-                                    : value_preferred[value] != kNone
-                                        ? value_preferred[value]
-                                        : default_storage;
+          const std::uint32_t value =
+              node.output_begin + static_cast<std::uint32_t>(output_index);
+          producer_storage[value] =
+              value_required[value] != kNone    ? value_required[value]
+              : value_preferred[value] != kNone ? value_preferred[value]
+                                                : default_storage;
         }
         selected = true;
         break;
@@ -1820,39 +1821,39 @@ Status prepare_placed_steps(detail::PlanState &plan,
     const std::uint32_t originally_selected = node_targets[node_index];
     for (std::size_t index = 0; index < target_count; ++index)
       target_candidates[index] = static_cast<std::uint32_t>(index);
-    std::stable_sort(target_candidates.begin(), target_candidates.end(),
-                     [&](std::uint32_t left, std::uint32_t right) noexcept {
-                       if (required != kNone)
-                         return left == required && right != required;
-                       const bool left_original = left == originally_selected;
-                       const bool right_original = right == originally_selected;
-                       if (left_original != right_original)
-                         return left_original;
-                       const bool left_preferred = left == preferred;
-                       const bool right_preferred = right == preferred;
-                       if (left_preferred != right_preferred)
-                         return left_preferred;
-                       std::size_t left_local = 0;
-                       std::size_t right_local = 0;
-                       for (std::size_t input_index = 0;
-                            input_index < node.input_count; ++input_index) {
-                         const std::uint32_t value =
-                             graph.edges[node.input_begin + input_index];
-                         left_local += producer_storage[value] ==
-                                               plan.targets[left]
-                                                   .default_storage.ordinal()
-                                           ? 1u
-                                           : 0u;
-                         right_local += producer_storage[value] ==
-                                                plan.targets[right]
-                                                    .default_storage.ordinal()
-                                            ? 1u
-                                            : 0u;
-                       }
-                       if (left_local != right_local)
-                         return left_local > right_local;
-                       return left < right;
-                     });
+    std::sort(target_candidates.begin(), target_candidates.end(),
+              [&](std::uint32_t left, std::uint32_t right) noexcept {
+                if (required != kNone)
+                  return left == required && right != required;
+                const bool left_original = left == originally_selected;
+                const bool right_original = right == originally_selected;
+                if (left_original != right_original)
+                  return left_original;
+                const bool left_preferred = left == preferred;
+                const bool right_preferred = right == preferred;
+                if (left_preferred != right_preferred)
+                  return left_preferred;
+                std::size_t left_local = 0;
+                std::size_t right_local = 0;
+                for (std::size_t input_index = 0;
+                     input_index < node.input_count; ++input_index) {
+                  const std::uint32_t value =
+                      graph.edges[node.input_begin + input_index];
+                  left_local +=
+                      producer_storage[value] ==
+                              plan.targets[left].default_storage.ordinal()
+                          ? 1u
+                          : 0u;
+                  right_local +=
+                      producer_storage[value] ==
+                              plan.targets[right].default_storage.ordinal()
+                          ? 1u
+                          : 0u;
+                }
+                if (left_local != right_local)
+                  return left_local > right_local;
+                return left < right;
+              });
     if (!inputs.try_resize(node.input_count) ||
         !outputs.try_resize(node.output_count) ||
         !input_resources.try_resize(node.input_count) ||
@@ -2021,7 +2022,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
     const mem::MemoryResourceRef destination_resource =
         plan.storage_domains[destination_storage].resource;
     auto supports_route = [&](std::uint32_t target) noexcept {
-      return plan.targets[target].context.validate_resource(source_resource).ok() &&
+      return plan.targets[target]
+                 .context.validate_resource(source_resource)
+                 .ok() &&
              plan.targets[target]
                  .context.validate_resource(destination_resource)
                  .ok();
@@ -2057,8 +2060,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
           "no execution target can transfer between the selected resources");
     }
     if (!plan.steps.try_push_back(detail::PlanStep::copy(
-            input_begin, output_begin, *bytes,
-            StorageDomainId{source_storage},
+            input_begin, output_begin, *bytes, StorageDomainId{source_storage},
             StorageDomainId{destination_storage},
             ExecutionTargetId{execution_target}))) {
       return plan_allocation_failure();
@@ -2150,9 +2152,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
       for (std::size_t index = 0;
            route_supported && index < logical_inputs.size(); ++index) {
         const std::uint32_t value = logical_inputs[index].ordinal();
-        auto storage = select_storage(
-            target, input_requirements[index], kNone, producer_storage[value],
-            default_storage);
+        auto storage = select_storage(target, input_requirements[index], kNone,
+                                      producer_storage[value], default_storage);
         if (!storage) {
           region_status = std::move(storage).error();
           if (!region_status.IsUnimplemented())
@@ -2166,12 +2167,12 @@ Status prepare_placed_steps(detail::PlanState &plan,
       for (std::size_t index = 0;
            route_supported && index < logical_outputs.size(); ++index) {
         const std::uint32_t value = logical_outputs[index].ordinal();
-        const std::uint32_t preferred =
-            value_preferred[value] != kNone ? value_preferred[value]
-                                             : default_storage;
-        auto storage = select_storage(
-            target, output_requirements[index], value_required[value],
-            preferred, default_storage);
+        const std::uint32_t preferred = value_preferred[value] != kNone
+                                            ? value_preferred[value]
+                                            : default_storage;
+        auto storage =
+            select_storage(target, output_requirements[index],
+                           value_required[value], preferred, default_storage);
         if (!storage) {
           region_status = std::move(storage).error();
           if (!region_status.IsUnimplemented())
@@ -2184,16 +2185,15 @@ Status prepare_placed_steps(detail::PlanState &plan,
       }
       std::uint32_t workspace_storage = kNone;
       mem::MemoryResourceRef workspace_resource{};
-      if (route_supported &&
-          resource_proposal.runtime.workspace_owner ==
-              compute::ProviderWorkspaceOwner::kCaller) {
+      if (route_supported && resource_proposal.runtime.workspace_owner ==
+                                 compute::ProviderWorkspaceOwner::kCaller) {
         const std::uint32_t adjacent_storage =
             !selected_outputs.empty()
                 ? selected_outputs[0]
                 : (!selected_inputs.empty() ? selected_inputs[0] : kNone);
-        auto storage = select_storage(
-            target, resource_proposal.workspace_resource, kNone,
-            default_storage, adjacent_storage);
+        auto storage =
+            select_storage(target, resource_proposal.workspace_resource, kNone,
+                           default_storage, adjacent_storage);
         if (!storage) {
           region_status = std::move(storage).error();
           if (!region_status.IsUnimplemented())
@@ -2217,9 +2217,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
               "graph placement preparation budget is exhausted");
         }
         ++placement_attempts;
-        region = compile_region_artifact(
-            plan, extensions[candidate.extension_index], request,
-            resource_proposal, options);
+        region =
+            compile_region_artifact(plan, extensions[candidate.extension_index],
+                                    request, resource_proposal, options);
         if (!region) {
           region_status = region.error();
           if (!region_status.IsUnimplemented())
@@ -2308,7 +2308,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
         return plan_allocation_failure();
       }
       for (std::size_t index = 0; index < node.input_count; ++index)
-        inputs[index] = plan.descriptions[graph.edges[node.input_begin + index]];
+        inputs[index] =
+            plan.descriptions[graph.edges[node.input_begin + index]];
       for (std::size_t index = 0; index < node.output_count; ++index)
         outputs[index] = plan.descriptions[node.output_begin + index];
       for (std::size_t index = 0; index < target_count; ++index)
@@ -2316,21 +2317,20 @@ Status prepare_placed_steps(detail::PlanState &plan,
       const std::uint32_t required = node_required[node_index];
       const std::uint32_t preferred = node_preferred[node_index];
       const std::uint32_t original = node_targets[node_index];
-      std::stable_sort(
-          target_candidates.begin(), target_candidates.end(),
-          [&](std::uint32_t left, std::uint32_t right) noexcept {
-            if (required != kNone)
-              return left == required && right != required;
-            const bool left_original = left == original;
-            const bool right_original = right == original;
-            if (left_original != right_original)
-              return left_original;
-            const bool left_preferred = left == preferred;
-            const bool right_preferred = right == preferred;
-            if (left_preferred != right_preferred)
-              return left_preferred;
-            return left < right;
-          });
+      std::sort(target_candidates.begin(), target_candidates.end(),
+                [&](std::uint32_t left, std::uint32_t right) noexcept {
+                  if (required != kNone)
+                    return left == required && right != required;
+                  const bool left_original = left == original;
+                  const bool right_original = right == original;
+                  if (left_original != right_original)
+                    return left_original;
+                  const bool left_preferred = left == preferred;
+                  const bool right_preferred = right == preferred;
+                  if (left_preferred != right_preferred)
+                    return left_preferred;
+                  return left < right;
+                });
       Status unsupported = Status::Unimplemented(
           "no operation fallback supports a declined graph region route");
       for (std::uint32_t candidate : target_candidates) {
@@ -2350,12 +2350,12 @@ Status prepare_placed_steps(detail::PlanState &plan,
         return unsupported;
     }
     const std::uint32_t target = node_targets[node_index];
-    const std::uint32_t workspace_storage =
-        node_workspace_storage[node_index];
+    const std::uint32_t workspace_storage = node_workspace_storage[node_index];
     if (workspace_storage == kNone &&
         prepared[node_index].runtime_properties().workspace_owner ==
             compute::ProviderWorkspaceOwner::kCaller)
-      return Status::Internal("prepared graph operation has no workspace storage");
+      return Status::Internal(
+          "prepared graph operation has no workspace storage");
     physical_inputs.clear();
     if (!physical_inputs.try_reserve(node.input_count))
       return plan_allocation_failure();
@@ -2738,14 +2738,13 @@ Status schedule_steps(detail::PlanState &plan,
                          "graph delegated lane identity space is exhausted")
                    : plan_allocation_failure();
       }
-      step.lane = ExecutionLaneId{
-          static_cast<std::uint32_t>(plan.lanes.size() - 1)};
+      step.lane =
+          ExecutionLaneId{static_cast<std::uint32_t>(plan.lanes.size() - 1)};
       continue;
     }
     const ExecutionLaneRole preferred_role =
-        step.kind == detail::PlanStepKind::kCopy
-            ? ExecutionLaneRole::kTransfer
-            : ExecutionLaneRole::kCompute;
+        step.kind == detail::PlanStepKind::kCopy ? ExecutionLaneRole::kTransfer
+                                                 : ExecutionLaneRole::kCompute;
     std::uint32_t selected = kNone;
     for (std::size_t lane = 0; lane < plan.lanes.size(); ++lane) {
       if (plan.lanes[lane].runtime_mode ==
@@ -3155,10 +3154,8 @@ Status build_segments(detail::PlanState &plan,
       return Status::Internal("graph serialization edge identity is invalid");
     }
     const std::uint32_t source_step = identity_steps[source_identity];
-    const std::uint32_t destination_step =
-        identity_steps[destination_identity];
-    if (source_step == detail::kNoNode ||
-        destination_step == detail::kNoNode) {
+    const std::uint32_t destination_step = identity_steps[destination_identity];
+    if (source_step == detail::kNoNode || destination_step == detail::kNoNode) {
       return Status::Internal("graph serialization edge step is unavailable");
     }
     Status status = add_edge(plan.step_segments[destination_step],
@@ -3250,8 +3247,7 @@ void reset_workspace_decisions(detail::PlanState &plan) noexcept {
   plan.workspace_storage.clear();
 }
 
-Status plan_workspace(detail::PlanState &plan,
-                      const detail::GraphState &graph,
+Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
                       bool &reschedule_requested) noexcept {
   using LastUses = container::SmallVector<std::uint64_t, 16, mem::AllocatorRef>;
   using Requests =
@@ -3460,8 +3456,7 @@ Status plan_workspace(detail::PlanState &plan,
     }
     const std::uint32_t request = static_cast<std::uint32_t>(requests.size());
     if (!requests.try_push_back(mem::LifetimeRequest{
-            .resource_slot =
-                plan.steps[step_index].workspace_storage.ordinal(),
+            .resource_slot = plan.steps[step_index].workspace_storage.ordinal(),
             .size = requirement.size,
             .alignment = requirement.alignment,
             .begin = step_index,
@@ -3477,10 +3472,8 @@ Status plan_workspace(detail::PlanState &plan,
   // Requests on different chains get distinct planner resource slots even
   // when they use the same MemoryResource; this prevents an arbitrary
   // topological ordering from making unordered device work alias.
-  using Words =
-      container::SmallVector<std::uint64_t, 32, mem::AllocatorRef>;
-  using U64s =
-      container::SmallVector<std::uint64_t, 16, mem::AllocatorRef>;
+  using Words = container::SmallVector<std::uint64_t, 32, mem::AllocatorRef>;
+  using U64s = container::SmallVector<std::uint64_t, 16, mem::AllocatorRef>;
   detail::ValueOrdinals request_roots(plan.allocator);
   detail::ValueOrdinals group_storage(plan.allocator);
   detail::ValueOrdinals group_chain(plan.allocator);
@@ -3586,8 +3579,7 @@ Status plan_workspace(detail::PlanState &plan,
   const std::size_t lane_count = plan.lanes.size();
   constexpr std::size_t kMaximumVectorClockCells = 4u * 1024u * 1024u;
   const bool precise_happens_before =
-      lane_count != 0 &&
-      segment_count <= kMaximumVectorClockCells / lane_count;
+      lane_count != 0 && segment_count <= kMaximumVectorClockCells / lane_count;
   detail::ValueOrdinals segment_sequence(plan.allocator);
   Words clocks(plan.allocator);
   detail::ValueOrdinals lane_sequence(plan.allocator);
@@ -3635,8 +3627,7 @@ Status plan_workspace(detail::PlanState &plan,
         std::lower_bound(use_pairs.begin(), use_pairs.end(), first),
         std::upper_bound(use_pairs.begin(), use_pairs.end(), last)};
   };
-  auto group_before = [&](std::uint32_t left,
-                          std::uint32_t right) noexcept {
+  auto group_before = [&](std::uint32_t left, std::uint32_t right) noexcept {
     if (group_end[left] > group_begin[right])
       return false;
     const std::uint32_t destination = group_start_segment[right];
@@ -3675,12 +3666,12 @@ Status plan_workspace(detail::PlanState &plan,
     if (group_present[root] != 0 && !groups.try_push_back(root))
       return plan_allocation_failure();
   }
-  std::sort(groups.begin(), groups.end(), [&](std::uint32_t left,
-                                              std::uint32_t right) noexcept {
-    if (group_begin[left] != group_begin[right])
-      return group_begin[left] < group_begin[right];
-    return left < right;
-  });
+  std::sort(groups.begin(), groups.end(),
+            [&](std::uint32_t left, std::uint32_t right) noexcept {
+              if (group_begin[left] != group_begin[right])
+                return group_begin[left] < group_begin[right];
+              return left < right;
+            });
 
   plan.workspace_resources.clear();
   plan.workspace_storage.clear();
@@ -3702,8 +3693,7 @@ Status plan_workspace(detail::PlanState &plan,
     }
     if (selected == detail::kNoWorkspaceRequest) {
       if (chain_tail.size() >= detail::kNoWorkspaceRequest ||
-          !chain_head.try_push_back(root) ||
-          !chain_tail.try_push_back(root) ||
+          !chain_head.try_push_back(root) || !chain_tail.try_push_back(root) ||
           !chain_storage.try_push_back(group_storage[root]) ||
           !plan.workspace_resources.try_push_back(
               plan.storage_domains[group_storage[root]].resource) ||
@@ -3781,8 +3771,7 @@ Status plan_workspace(detail::PlanState &plan,
         return true;
       if (source >= segment_count || destination >= segment_count)
         return false;
-      const std::uint32_t source_lane =
-          plan.segments[source].lane.ordinal();
+      const std::uint32_t source_lane = plan.segments[source].lane.ordinal();
       const std::uint32_t destination_lane =
           plan.segments[destination].lane.ordinal();
       if (source_lane == destination_lane) {
@@ -3795,8 +3784,8 @@ Status plan_workspace(detail::PlanState &plan,
     auto command_identity = [&](std::uint32_t segment,
                                 bool first) noexcept -> Result<std::uint32_t> {
       if (segment >= plan.segments.size()) {
-        return std::unexpected(Status::Internal(
-            "graph serialization segment is out of range"));
+        return std::unexpected(
+            Status::Internal("graph serialization segment is out of range"));
       }
       const detail::PlanSegment &record = plan.segments[segment];
       const std::size_t end = record.step_begin + record.step_count;
@@ -3817,14 +3806,13 @@ Status plan_workspace(detail::PlanState &plan,
 
     Words proposed(plan.allocator);
     Words best_edges(plan.allocator);
-    auto propose_chain_order = [&](std::size_t source_chain,
-                                   std::size_t destination_chain) noexcept
-        -> Result<bool> {
+    auto propose_chain_order =
+        [&](std::size_t source_chain,
+            std::size_t destination_chain) noexcept -> Result<bool> {
       proposed.clear();
       const std::uint32_t source_root = chain_tail[source_chain];
       const std::uint32_t destination_root = chain_head[destination_chain];
-      const std::uint32_t destination =
-          group_start_segment[destination_root];
+      const std::uint32_t destination = group_start_segment[destination_root];
       auto destination_identity = command_identity(destination, true);
       if (!destination_identity)
         return std::unexpected(std::move(destination_identity).error());
@@ -3842,8 +3830,8 @@ Status plan_workspace(detail::PlanState &plan,
             (static_cast<std::uint64_t>(*source_identity) << 32) |
             *destination_identity;
         if (std::find(plan.serialization_edges.begin(),
-                      plan.serialization_edges.end(), edge) !=
-                plan.serialization_edges.end() ||
+                      plan.serialization_edges.end(),
+                      edge) != plan.serialization_edges.end() ||
             std::find(proposed.begin(), proposed.end(), edge) !=
                 proposed.end()) {
           continue;
@@ -3888,18 +3876,16 @@ Status plan_workspace(detail::PlanState &plan,
           "graph workspace budget cannot be satisfied by safe bounded "
           "serialization");
     }
-    if (plan.serialization_edges.size() >
-            SIZE_MAX - best_edges.size() ||
-        !plan.serialization_edges.try_reserve(
-            plan.serialization_edges.size() + best_edges.size())) {
+    if (plan.serialization_edges.size() > SIZE_MAX - best_edges.size() ||
+        !plan.serialization_edges.try_reserve(plan.serialization_edges.size() +
+                                              best_edges.size())) {
       return plan_allocation_failure();
     }
     for (const std::uint64_t edge : best_edges) {
       if (!plan.serialization_edges.try_push_back(edge))
         return plan_allocation_failure();
     }
-    std::sort(plan.serialization_edges.begin(),
-              plan.serialization_edges.end());
+    std::sort(plan.serialization_edges.begin(), plan.serialization_edges.end());
     plan.serialization_edge_count = plan.serialization_edges.size();
     reschedule_requested = true;
     return Status::Ok();
@@ -3969,12 +3955,10 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         return std::unexpected(std::move(resource).error());
       }
       state->storage_domains[index].workspace_bytes = saturating_add(
-          state->storage_domains[index].workspace_bytes,
-          resource->peak_bytes);
+          state->storage_domains[index].workspace_bytes, resource->peak_bytes);
       state->storage_domains[index].workspace_backing_count =
-          saturating_add(
-              state->storage_domains[index].workspace_backing_count,
-              resource->backing_count);
+          saturating_add(state->storage_domains[index].workspace_backing_count,
+                         resource->backing_count);
     }
   }
   for (std::size_t index = 0; index < plan.lanes.size(); ++index) {
@@ -3986,9 +3970,9 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
       detail::release(state);
       return std::unexpected(std::move(properties).error());
     }
-    auto capture = plan.targets[lane.target.ordinal()]
-                       .context.has_backend_extension(
-        compute::detail::kCommandCaptureExtensionId);
+    auto capture =
+        plan.targets[lane.target.ordinal()].context.has_backend_extension(
+            compute::detail::kCommandCaptureExtensionId);
     if (!capture) {
       detail::release(state);
       return std::unexpected(std::move(capture).error());
@@ -4070,8 +4054,7 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         state->lanes[segment.lane.ordinal()].capture_supported;
     state->segments[index] = CompileSegmentReport{
         .lane = segment.lane,
-        .runtime_mode =
-            plan.lanes[segment.lane.ordinal()].runtime_mode,
+        .runtime_mode = plan.lanes[segment.lane.ordinal()].runtime_mode,
         .step_begin = segment.step_begin,
         .step_count = segment.step_count,
         .dependency_begin = segment.dependency_begin,
@@ -4085,9 +4068,8 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
     };
     state->command_segment_count += contains_commands ? 1u : 0u;
     state->delegated_segment_count +=
-        contains_commands &&
-                plan.lanes[segment.lane.ordinal()].runtime_mode ==
-                    compute::ProviderRuntimeMode::kDelegated
+        contains_commands && plan.lanes[segment.lane.ordinal()].runtime_mode ==
+                                 compute::ProviderRuntimeMode::kDelegated
             ? 1u
             : 0u;
     state->capturable_segment_count += capture_supported ? 1u : 0u;
@@ -4623,8 +4605,7 @@ std::size_t Executable::required_queue_count() const noexcept {
   return state_ != nullptr ? state_->required_queue_count : 0;
 }
 
-Result<bool>
-Executable::requires_queue(ExecutionLaneId lane) const noexcept {
+Result<bool> Executable::requires_queue(ExecutionLaneId lane) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
@@ -4823,9 +4804,8 @@ Result<Invocation> Executable::create_invocation() const noexcept {
   for (std::size_t step_index = 0; step_index < state_->steps.size();
        ++step_index) {
     const detail::PlanStep &step = state_->steps[step_index];
-    if (!step.emits_command() ||
-        step.runtime_properties().mode !=
-            compute::ProviderRuntimeMode::kDelegated) {
+    if (!step.emits_command() || step.runtime_properties().mode !=
+                                     compute::ProviderRuntimeMode::kDelegated) {
       continue;
     }
     if (!step.lane.valid() || step.lane.ordinal() >= state_->lanes.size() ||
@@ -4836,11 +4816,11 @@ Result<Invocation> Executable::create_invocation() const noexcept {
     }
     compute::detail::CompletionEndpoint endpoint{};
     if (step.kind == detail::PlanStepKind::kRegion) {
-      endpoint = invocation->invocations[step_index].region.delegated_endpoint();
-    } else if (step.kind == detail::PlanStepKind::kOperation) {
       endpoint =
-          compute::detail::OperationInvocationAccess::delegated_endpoint(
-              invocation->invocations[step_index].operation);
+          invocation->invocations[step_index].region.delegated_endpoint();
+    } else if (step.kind == detail::PlanStepKind::kOperation) {
+      endpoint = compute::detail::OperationInvocationAccess::delegated_endpoint(
+          invocation->invocations[step_index].operation);
     }
     if (!endpoint.valid()) {
       detail::release(invocation);
@@ -5363,8 +5343,8 @@ Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
   while (state_->plan->lane_segment_counts[active_lane] == 0 ||
          !shared_lane(*state_->plan, ExecutionLaneId{active_lane}))
     ++active_lane;
-  const std::array bindings{QueueBinding{
-      .lane = ExecutionLaneId{active_lane}, .queue = &queue}};
+  const std::array bindings{
+      QueueBinding{.lane = ExecutionLaneId{active_lane}, .queue = &queue}};
   if (!state_->replay_prepared ||
       (state_->replay_route == ReplayRoute::kCommands &&
        state_->queues[active_lane] != &queue)) {
@@ -5441,16 +5421,14 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
   for (std::size_t index = 0; index < state_->queue_seen.size(); ++index)
     state_->queue_seen[index] = 0;
   for (const QueueBinding binding : queues) {
-    if (!binding.lane.valid() ||
-        binding.lane.ordinal() >= plan.lanes.size() ||
+    if (!binding.lane.valid() || binding.lane.ordinal() >= plan.lanes.size() ||
         binding.queue == nullptr) {
       return std::unexpected(
           Status::InvalidArgument("graph submit queue binding is invalid"));
     }
     const std::size_t lane = binding.lane.ordinal();
     if (plan.lane_segment_counts[lane] == 0 ||
-        !shared_lane(plan, binding.lane) ||
-        state_->queue_seen[lane] != 0 ||
+        !shared_lane(plan, binding.lane) || state_->queue_seen[lane] != 0 ||
         state_->queues[lane] != binding.queue) {
       return std::unexpected(Status::InvalidArgument(
           "graph submit queues differ from prepared replay queues"));
@@ -5459,8 +5437,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
   }
   for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
     if (plan.lane_segment_counts[lane] != 0 &&
-        shared_lane(plan,
-                    ExecutionLaneId{static_cast<std::uint32_t>(lane)}) &&
+        shared_lane(plan, ExecutionLaneId{static_cast<std::uint32_t>(lane)}) &&
         state_->queue_seen[lane] == 0) {
       return std::unexpected(
           Status::InvalidArgument("graph submit queue binding is missing"));
@@ -5525,8 +5502,8 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
 
     if (is_shared) {
       if (queue == nullptr) {
-        tail_error = Status::Internal(
-            "prepared graph shared lane has no Queue binding");
+        tail_error =
+            Status::Internal("prepared graph shared lane has no Queue binding");
         break;
       }
       auto sequence = compute::detail::QueueSequence::begin(*queue);
@@ -5542,7 +5519,8 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
               plan.segment_dependencies[dependency_index];
           compute::Completion &source =
               state_->segment_completions[source_segment];
-          compute::detail::EnqueueResult waited = sequence->enqueue_wait(source);
+          compute::detail::EnqueueResult waited =
+              sequence->enqueue_wait(source);
           const bool wait_succeeded = waited.status.ok();
           if (!wait_succeeded) {
             tail_error =
@@ -5621,8 +5599,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
           tail_error = std::move(completion).error();
           continue_segment = false;
         } else {
-          state_->segment_completions[segment_index] =
-              std::move(*completion);
+          state_->segment_completions[segment_index] = std::move(*completion);
         }
       }
     }
@@ -5650,7 +5627,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
             const std::uint32_t selected = state_->aggregate_segments[index];
             if (shared_lane(plan, plan.segments[selected].lane) &&
                 state_->queues[plan.segments[selected].lane.ordinal()] ==
-                queue) {
+                    queue) {
               match = index;
               break;
             }
@@ -5713,8 +5690,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
     std::size_t count = 0;
     for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
       if (state_->queue_seen[lane] != 0)
-        state_->aggregate_segments[count++] =
-            state_->aggregate_segments[lane];
+        state_->aggregate_segments[count++] = state_->aggregate_segments[lane];
     }
     if (count == 0)
       return std::unexpected(std::move(tail_error));
@@ -5794,15 +5770,14 @@ Result<CompiledGraph> compile(const Graph &graph,
         Status::InvalidArgument("compile environment has no storage domains"));
   }
   if (environment.targets.empty()) {
-    return std::unexpected(
-        Status::InvalidArgument("compile environment has no execution targets"));
+    return std::unexpected(Status::InvalidArgument(
+        "compile environment has no execution targets"));
   }
   if (environment.storage_domains.size() >
           (std::numeric_limits<std::uint32_t>::max)() ||
       environment.targets.size() >
           (std::numeric_limits<std::uint32_t>::max)() ||
-      environment.lanes.size() >
-      (std::numeric_limits<std::uint32_t>::max)()) {
+      environment.lanes.size() > (std::numeric_limits<std::uint32_t>::max)()) {
     return std::unexpected(Status::ResourceExhausted(
         "compile environment identity space is exhausted"));
   }
@@ -5916,8 +5891,7 @@ Result<CompiledGraph> compile(const Graph &graph,
       ::new (storage) detail::PlanState(allocator, concrete->generation);
   plan->specialization = *signature;
   plan->workspace_reuse = options.workspace_reuse;
-  if (!plan->storage_domains.try_reserve(
-          environment.storage_domains.size()) ||
+  if (!plan->storage_domains.try_reserve(environment.storage_domains.size()) ||
       !plan->targets.try_reserve(environment.targets.size()) ||
       !plan->lanes.try_reserve(environment.lanes.empty()
                                    ? environment.targets.size()
@@ -5950,7 +5924,8 @@ Result<CompiledGraph> compile(const Graph &graph,
     }
   }
   if (environment.lanes.empty()) {
-    for (std::size_t target = 0; target < environment.targets.size(); ++target) {
+    for (std::size_t target = 0; target < environment.targets.size();
+         ++target) {
       if (!plan->lanes.try_push_back(detail::ExecutionLaneRecord{
               .target = ExecutionTargetId{static_cast<std::uint32_t>(target)},
               .role = ExecutionLaneRole::kCompute,
