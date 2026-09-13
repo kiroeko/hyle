@@ -1,0 +1,30 @@
+{
+  "schema": "hyle.consumer-shapes/v1",
+  "id": "graph-cuda-pipeline-consumer-v1",
+  "source_pins": {
+    "ggml": "e91ded11bdcd",
+    "llama.cpp": "e71b80510c84",
+    "vllm": "51da0ca66c80",
+    "sglang": "dcebe8c4733a",
+    "ds4": "f62ca29a3087"
+  },
+  "shape": {
+    "consumer": "heterogeneous inference or media runtime",
+    "task": "device input to pinned host, one CPU transform, then pinned host to device output",
+    "dtype": "float32",
+    "elements": 1048576,
+    "bytes_per_transfer": 4194304,
+    "setup_excluded": [
+      "contexts, queues and resources",
+      "graph construction, compilation and replay preparation",
+      "operation preparation, allocations, bindings and first touch"
+    ],
+    "charged": [
+      "CUDA device-to-host copy",
+      "dependency completion required before CPU consumption",
+      "CPU native unary transform",
+      "CUDA host-to-device copy",
+      "terminal result completion"
+    ]
+  }
+}

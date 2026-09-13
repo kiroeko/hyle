@@ -13,11 +13,11 @@
   "peers": [
     {
       "id": "hyle-compute-direct-sequence",
-      "revision": "d6a93086b4cdeb6b412f62c103ff9fb5d61f8902",
+      "revision": "db8d1d335c84fb89675f6be2c2350efc6e35b271",
       "configuration": {
         "role": "same-product immediate lower abstraction tier, not an external SOTA peer",
         "delivery_shape": "source",
-        "route": "the exact HYLE-native PreparedOperation and OperationInvocation implementations fixed by the Compute v2 candidate",
+        "route": "the exact HYLE-native PreparedOperation and OperationInvocation implementations fixed by the Compute v5 candidate",
         "semantic_delta": "the direct caller owns two equivalent preallocated intermediate Buffers and manually submits and waits for three operations; Graph owns the equivalent per-Invocation Mem lifetime workspace, fixed binding mask and immutable three-node plan"
       }
     }
@@ -159,7 +159,7 @@
       "consumer_key": "inference-runtime/decode/rmsnorm-projection-gated-activation",
       "provenance": {
         "path": "bench/graph/consumer_shapes_v2.json",
-        "sha256": "3b352a778a969d62b8a0e4d513027eabd0240beb895be52782a86a09ecb52dbb"
+        "sha256": "7bb9356490da6813536844050f91a95369aeef11019b794ac63312a9f4d3a3fe"
       },
       "ownership_topology": {
         "candidate": "One immutable shared Executable retains the three PreparedOperations; one exclusive pre-bound Invocation owns its Mem lifetime workspace and submits the fixed plan with caller-owned input, weight and output TensorViews",
@@ -233,7 +233,7 @@
       "consumer_key": "inference-runtime/small-batch/rmsnorm-projection-gated-activation",
       "provenance": {
         "path": "bench/graph/consumer_shapes_v2.json",
-        "sha256": "3b352a778a969d62b8a0e4d513027eabd0240beb895be52782a86a09ecb52dbb"
+        "sha256": "7bb9356490da6813536844050f91a95369aeef11019b794ac63312a9f4d3a3fe"
       },
       "ownership_topology": {
         "candidate": "One immutable shared Executable retains the three PreparedOperations; one exclusive pre-bound Invocation owns its Mem lifetime workspace and submits the fixed plan with caller-owned input, weight and output TensorViews",
@@ -348,7 +348,7 @@
           "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
           "HYLE_BUILD_BENCH": "ON",
           "HYLE_BUILD_TESTS": "OFF",
-          "HYLE_DEV_FACTORS": "graph",
+          "HYLE_DEV_FACTORS": "graph;compute_provider_native",
           "HYLE_INSTALL": "OFF",
           "HYLE_SANITIZER": "off",
           "HYLE_SIMD_EXACT_TARGET": "",

@@ -1,0 +1,27 @@
+{
+  "schema": "hyle.consumer-shapes/v1",
+  "id": "compute-cuda-runtime-consumer-v1",
+  "source_pins": {
+    "ggml": "e91ded11bdcd",
+    "llama.cpp": "e71b80510c84",
+    "vllm": "51da0ca66c80",
+    "sglang": "dcebe8c4733a",
+    "ds4": "f62ca29a3087"
+  },
+  "shape": {
+    "consumer": "accelerator inference runtime",
+    "task": "one already-resident device tensor copy followed by a host-observable terminal completion",
+    "bytes": 1048576,
+    "setup_excluded": [
+      "context and stream construction",
+      "device allocation",
+      "event allocation",
+      "first touch and GPU clock warmup"
+    ],
+    "charged": [
+      "record one device-to-device copy",
+      "record one terminal event",
+      "wait until that event is terminal"
+    ]
+  }
+}
