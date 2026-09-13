@@ -377,10 +377,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "candidate": "ca59798143345ef54ac8fa293d2eec799e721aa5",
-      "summary": "compute_ops v1 CANDIDATE：19 个 typed public family 及 shape/layout/alias/effect/precision schema 已固定；候选后红队发现 Native 对已合法 MatMul batch-broadcast 与 GatedActivation 档位覆盖不完整，schema 本身不变，待 provider 修正后完成终局验证。"
+      "summary": "compute_ops v1 AUDITED：Native batch-broadcast MatMul 纵切证明 rank≥3 转置权重只能手写完整 permutation；有限 O18 将 transposed() 自然扩展为交换末两轴，rank-2 行为不变，不增加 material transpose 或 provider 策略。"
     },
     {
       "module": "compute_backend_cpu",

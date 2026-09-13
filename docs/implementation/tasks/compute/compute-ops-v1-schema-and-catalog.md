@@ -194,3 +194,20 @@ fallback。`compute_ops` 保持 `AUDITED`，等待完整 direct/Graph、三平�
 `MatMul` 和 GatedActivation 档位覆盖不完整。因此本 factor 保持同一不可变 schema 候选，
 但“19/19 executable”不再被当作族内语义完整性证据；其 terminal 验收等待 Native 的 N18/N19
 有限修正和 direct/Graph 回归。
+
+## 首候选撤回：批量矩阵视图易用性（2026-09-14）
+
+Native N18 的真实 batch-broadcast MatMul 纵切证明，schema 虽能用通用
+`permuted()` 表达 rank-3/rank-4 权重的末两轴转置，但自然的
+`TensorDesc::transposed()` convenience 只接受 rank-2。用户因此必须为每个 rank
+手写完整轴排列，这与 MatMul 已公开的 `[..., M, K] * [..., K, N]` 合同不一致，
+也会诱使调用方私造 descriptor helper。这是 Compute 的正常消费形状，不是 benchmark
+档位，因此 `ca597981` 不再是不可变 schema/API 候选。
+
+| ID | 可复现问题 | 有限修正 | 验收 |
+|---|---|---|---|
+| O18 | rank≥3 的批量矩阵权重不能用 `transposed()` 自然表达，只能手写 `permuted({..., rank-1, rank-2})` | 将 `transposed()` 定义为 rank≥2 时交换末两轴；rank-2 行为不变，rank<2 拒绝，opaque 仍由既有 `permuted()` 合同拒绝 | rank-1 拒绝、rank-2 原行为、rank-4 dimensions/strides/block-axis 一起换位，以及 Native batched-transposed MatMul 纵切 |
+
+本次只允许 O18；不增加 tensor algebra、material transpose、动态 rank 或 provider
+策略。`compute_ops` 依法从 `CANDIDATE` 返回 `AUDITED`，完成 O18 后与 Native N18/N19
+共同形成新 immutable candidate。
