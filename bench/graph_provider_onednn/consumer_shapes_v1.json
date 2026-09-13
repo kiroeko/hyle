@@ -1,0 +1,54 @@
+{
+  "schema": "hyle.bench.consumer-shapes/v1",
+  "module": "graph_provider_onednn",
+  "candidate": "49dcaa09139f79848af6ece1289e15739556ed9a",
+  "sources": [
+    {
+      "name": "llama.cpp/ggml",
+      "revision": "e71b80510c848c00175924ecf3c40333ccae8eb5",
+      "evidence": "llama graph FFN construction and ggml backend scheduler repeatedly execute gate/up projections, gated activation and down projection over decode and prompt-token rows"
+    },
+    {
+      "name": "ds4",
+      "revision": "f62ca29a308724cde5bc99134ede19104b2a3260",
+      "evidence": "dense and MoE Metal paths retain distinct gate/up/down buffers and decode/prefill execution modes"
+    },
+    {
+      "name": "vLLM",
+      "revision": "51da0ca66c8065619c79e35dff97aa99aeaf5644",
+      "evidence": "compiled full and piecewise graph routes specialize and replay decode and prefill/mixed batch descriptors"
+    },
+    {
+      "name": "SGLang",
+      "revision": "dcebe8c4733a5cb802fb679e0c8fbb886e2801b0",
+      "evidence": "CUDA graph and model-runner routes distinguish decode from extend/prefill shapes and retain stable replay storage"
+    }
+  ],
+  "shape_policy": "Reduced dense-f32 MLP shapes intentionally keep Graph/provider boundary cost measurable while preserving the same branched gate/up, activation and down dataflow. They are architecture qualification shapes, not claims about final model dimensions or quantized-kernel throughput.",
+  "workloads": [
+    {
+      "id": "decode-fused-boundary-1x256x512",
+      "shape": {"rows": 1, "inner": 256, "hidden": 512},
+      "peer": "the identical two-BRGEMM-plan plus HYLE SIMD fused leaf sequence",
+      "purpose": "P1 wrapper and immutable-plan non-inferiority"
+    },
+    {
+      "id": "decode-natural-sequence-1x256x512",
+      "shape": {"rows": 1, "inner": 256, "hidden": 512},
+      "peer": "the natural unfused gate, up, SwiGLU and down sequence with independent mapping boundaries",
+      "purpose": "P2 complete-region comparison"
+    },
+    {
+      "id": "short-prefill-fused-boundary-16x512x1024",
+      "shape": {"rows": 16, "inner": 512, "hidden": 1024},
+      "peer": "the identical two-BRGEMM-plan plus HYLE SIMD fused leaf sequence",
+      "purpose": "P1 wrapper and immutable-plan non-inferiority"
+    },
+    {
+      "id": "short-prefill-natural-sequence-16x512x1024",
+      "shape": {"rows": 16, "inner": 512, "hidden": 1024},
+      "peer": "the natural unfused gate, up, SwiGLU and down sequence with independent mapping boundaries",
+      "purpose": "P2 complete-region comparison"
+    }
+  ]
+}
