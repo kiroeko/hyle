@@ -105,8 +105,10 @@ probe 必须回指具体验收，验证后裁决 `KEEP_PRIVATE/DELETE`。正式 
   没有新增 steady route branch；
 - exact resource identity 检查并入原有每-binding descriptor validation；Graph 的 prevalidated route 不重复该
   检查。prepare/resource mismatch 在 provider admission 和 host mapping 前失败；
-- native 与 oneDNN single-op provider 已迁移，旧 Graph/oneDNN region 临时适配可编译。C66 的 region v4
-  shared/delegated seam 及 C67 三交付仍必须随 Graph G70--G81 完成，因此本卡保持 `AUDITED`。
+- native 与 oneDNN single-op provider 已迁移；C66 的 region extension 已升为 v4，并与 operation 共用 exact
+  resource requirement、shared/delegated runtime 和 caller/provider workspace owner 合同。shared region、oneDNN
+  region 与 Graph 的精确资源选择已通过 Windows 定向测试；delegated region 执行闭环及 C67 三交付仍必须随
+  Graph G70--G81 完成，因此本卡保持 `AUDITED`。
 
 当前 W1-WIN Release 已通过 Compute/CPU/native/oneDNN、Graph/region 及六个逐头目标共 15 个定向测试；这只
 是施工检查点，不替代终局三平台、sanitizer、三交付和 P0 裁决。

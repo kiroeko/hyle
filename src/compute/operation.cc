@@ -599,6 +599,15 @@ detail::OperationPreparationAccess::propose(
   return proposal;
 }
 
+Status detail::OperationPreparationAccess::match_resource(
+    const ResourceBindingRequirement &requirement,
+    mem::MemoryResourceRef resource) noexcept {
+  Status status = validate_requirement(requirement);
+  if (!status.ok())
+    return status;
+  return match_requirement(requirement, resource);
+}
+
 Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
     const Context &context, const ProviderOperationProposal &proposal,
     Operation operation, std::span<const TensorDesc> inputs,

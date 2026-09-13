@@ -116,6 +116,21 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 除 G70--G81 外不允许扩张 operation schema/catalog、模型 runtime、公开 FFI 或无关模块。最小 probe 验证后
 逐项 `KEEP_PRIVATE/DELETE`；不能用 probe 数量提高算子完成度。
 
+## 实现检查点（2026-09-14，尚非 candidate）
+
+- G70--G75 已进入产品实现：公开环境分别声明 execution target、storage domain 与 execution lane；physical
+  value 只按真实 storage residence 建模，target/lane 改变本身不再制造 copy；compute/transfer/communication
+  role 与 capture policy 分离；
+- operation 与 region 都先取得 provider-neutral binding requirement，再由 Graph 为每个输入、输出及 caller
+  workspace 选择 exact resource，最后只 prepare/compile 该路线。provider-owned workspace 不进入 Graph lifetime
+  plan；融合路线没有可行资源时，在未接受工作前显式退回 operation fallback；
+- schedule 已先于 lifetime planning；workspace alias 只发生在 partial-order 证明可比较的 chain 内，跨 lane
+  unordered lifetime 即使共享同一 resource 也不会因拓扑序偶然复用；旧单 target `prepare_steps` 路径已删除；
+- Windows 当前 Graph/oneDNN 六组定向测试通过，并新增 exact region input/output/workspace、真实 boundary copy、
+  provider-owned workspace 与 resource-route fallback 覆盖。这仍不是 G70--G81 终局证据；
+- 剩余硬门是 G77 的 `AllowSerialization` 可见加边、G78/G80 delegated endpoint/Completion 执行闭环、真实
+  CUDA 同 storage 多 lane/capture 探针，以及故障、sanitizer、三平台和三交付验证。
+
 ## 七问（AUDITED）
 
 1. 第三方：Graph 本体不链接第三方；上述版本只提供设计/consumer 证据，具体 provider 各自拥有依赖。

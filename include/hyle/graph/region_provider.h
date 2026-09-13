@@ -6,7 +6,9 @@
 #include <optional>
 #include <span>
 
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/detail/resource_binding.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 #include "hyle/graph/executable.h"
@@ -16,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 3};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 4};
 
 // Half-open contiguous range in Graph's canonical topological node order.
 // Restricting the first contract to intervals makes deterministic weighted
@@ -99,7 +101,18 @@ struct RegionCompileRequest final {
   std::span<const ValueId> inputs{};
   std::span<const ValueId> outputs{};
   std::span<const ConstantBinding> constants{};
+  std::span<const mem::MemoryResourceRef> input_resources{};
+  std::span<const mem::MemoryResourceRef> output_resources{};
+  mem::MemoryResourceRef workspace_resource{};
   std::uint64_t route = 0;
+};
+
+// Cold resource and runtime proposal for one exact candidate boundary. The
+// provider fills one requirement per input/output. Graph chooses concrete
+// storage domains, then passes their exact resources to compile().
+struct RegionResourceProposal final {
+  compute::ProviderRuntimeProperties runtime{};
+  compute::detail::ResourceBindingRequirement workspace_resource{};
 };
 
 struct RegionArtifactProperties final {
@@ -116,13 +129,7 @@ struct RegionArtifactProperties final {
   std::uint32_t synchronization_count = 0;
   // Exact backend execution episodes per submit; see RegionCostFacts.
   std::uint32_t dispatch_count = 1;
-  bool blocks_host = false;
-  bool uses_private_threads = false;
-  bool supports_concurrent_invocations = true;
-  // The provider submit callback only records commands that are legal inside
-  // the selected backend's capture session; it never executes the region
-  // eagerly on the host when this is true.
-  bool capture_compatible = false;
+  compute::ProviderRuntimeProperties runtime{};
 };
 
 struct ProviderRegionPreparedVTable final {
@@ -136,13 +143,21 @@ struct ProviderRegionPreparedVTable final {
                               void **invocation) noexcept = nullptr;
   void (*destroy_invocation)(void *invocation,
                              mem::AllocatorRef allocator) noexcept = nullptr;
-  // Record this region into an already-open Queue sequence. A region may have
-  // accepted a partial command prefix before reporting an error, but it never
-  // creates the user-visible Completion itself.
-  compute::detail::EnqueueResult (*submit)(
+  // Exactly one submit route is present, selected by properties.runtime.mode.
+  compute::detail::EnqueueResult (*shared_submit)(
       void *prepared, void *invocation, compute::Queue &queue,
       std::span<const compute::ConstTensorView> inputs,
       std::span<const compute::TensorView> outputs) noexcept = nullptr;
+  Result<compute::Completion> (*delegated_submit)(
+      void *prepared, void *invocation,
+      std::span<const compute::detail::CompletionDependency> dependencies,
+      std::span<const compute::ConstTensorView> inputs,
+      std::span<const compute::TensorView> outputs) noexcept = nullptr;
+  compute::detail::CompletionEndpoint (*endpoint)(
+      void *prepared, void *invocation) noexcept = nullptr;
+  bool (*can_import_endpoint)(
+      void *prepared, void *invocation,
+      compute::detail::CompletionEndpoint source) noexcept = nullptr;
 };
 
 struct ProviderRegionPrepared final {
@@ -159,6 +174,13 @@ struct ProviderRegionPrepared final {
 struct RegionProviderVTable final {
   Status (*propose)(void *provider_context, const Graph &graph,
                     RegionProposalWriter &writer) noexcept = nullptr;
+  Status (*propose_resources)(
+      void *provider_context, const RegionCompileRequest &request,
+      std::span<compute::detail::ResourceBindingRequirement>
+          input_requirements,
+      std::span<compute::detail::ResourceBindingRequirement>
+          output_requirements,
+      RegionResourceProposal *proposal) noexcept = nullptr;
   Status (*compile)(void *provider_context, const RegionCompileRequest &request,
                     mem::AllocatorRef allocator,
                     ProviderRegionPrepared *prepared) noexcept = nullptr;

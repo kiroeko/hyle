@@ -219,7 +219,7 @@ inline compute::detail::EnqueueResult PreparedRegion::enqueue(
           compute::Queue &submitted_queue) noexcept
           -> compute::detail::EnqueueResult {
         auto &call = *static_cast<Episode *>(opaque);
-        return call.region->prepared_.vtable->submit(
+        return call.region->prepared_.vtable->shared_submit(
             call.region->prepared_.state, call.invocation, submitted_queue,
             call.inputs, call.outputs);
       },
@@ -295,6 +295,17 @@ struct PlanStep final {
     return {};
   }
   compute::WorkspaceRequirement workspace_requirement() const noexcept {
+    if (kind == PlanStepKind::kRegion &&
+        region.properties().runtime.workspace_owner ==
+            compute::ProviderWorkspaceOwner::kCaller)
+      return region.properties().workspace;
+    if (kind == PlanStepKind::kOperation &&
+        operation.runtime_properties().workspace_owner ==
+            compute::ProviderWorkspaceOwner::kCaller)
+      return operation.workspace_requirement();
+    return {};
+  }
+  compute::WorkspaceRequirement reported_workspace_requirement() const noexcept {
     if (kind == PlanStepKind::kRegion)
       return region.properties().workspace;
     if (kind == PlanStepKind::kOperation)
@@ -316,21 +327,12 @@ struct PlanStep final {
     if (kind == PlanStepKind::kCopy)
       return true;
     if (kind == PlanStepKind::kRegion)
-      return region.properties().capture_compatible;
+      return region.properties().runtime.capture_compatible;
     return operation.capture_compatible();
   }
   compute::ProviderRuntimeProperties runtime_properties() const noexcept {
     if (kind == PlanStepKind::kRegion) {
-      const RegionArtifactProperties properties = region.properties();
-      return compute::ProviderRuntimeProperties{
-          .mode = compute::ProviderRuntimeMode::kSharedQueue,
-          .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
-          .blocks_host = properties.blocks_host,
-          .uses_private_threads = properties.uses_private_threads,
-          .supports_concurrent_invocations =
-              properties.supports_concurrent_invocations,
-          .capture_compatible = properties.capture_compatible,
-      };
+      return region.properties().runtime;
     }
     if (kind == PlanStepKind::kOperation)
       return operation.runtime_properties();

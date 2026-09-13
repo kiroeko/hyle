@@ -625,8 +625,48 @@ const ProviderRegionPreparedVTable kPreparedVTable{
     .alias_support = &alias_support,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .submit = &submit,
+    .shared_submit = &submit,
 };
+
+constexpr compute::ProviderRuntimeProperties kRuntimeProperties{
+    .mode = compute::ProviderRuntimeMode::kSharedQueue,
+    .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+    .blocks_host = true,
+    .uses_private_threads = false,
+    .supports_concurrent_invocations = true,
+    .capture_compatible = false,
+};
+
+Status propose_region_resources(
+    void *context_value, const RegionCompileRequest &request,
+    std::span<compute::detail::ResourceBindingRequirement> input_requirements,
+    std::span<compute::detail::ResourceBindingRequirement> output_requirements,
+    RegionResourceProposal *proposal) noexcept {
+  if (context_value == nullptr || request.graph == nullptr ||
+      request.route != kGatedMlpRoute || request.nodes.count != 4 ||
+      request.inputs.size() != 4 || request.outputs.size() != 1 ||
+      input_requirements.size() != request.inputs.size() ||
+      output_requirements.size() != request.outputs.size() ||
+      proposal == nullptr) {
+    return Status::InvalidArgument(
+        "oneDNN region resource proposal request is invalid");
+  }
+  for (auto &requirement : input_requirements) {
+    requirement = {.required_properties =
+                       mem::MemoryProperty::kHostAccessible};
+  }
+  for (auto &requirement : output_requirements) {
+    requirement = {.required_properties =
+                       mem::MemoryProperty::kHostAccessible};
+  }
+  *proposal = RegionResourceProposal{
+      .runtime = kRuntimeProperties,
+      .workspace_resource = {
+          .required_properties = mem::MemoryProperty::kHostAccessible,
+      },
+  };
+  return Status::Ok();
+}
 
 Status compile_region(void *context_value, const RegionCompileRequest &request,
                       mem::AllocatorRef allocator,
@@ -637,7 +677,10 @@ Status compile_region(void *context_value, const RegionCompileRequest &request,
   auto *context = static_cast<RegionContext *>(context_value);
   if (context == nullptr || request.graph == nullptr ||
       request.route != kGatedMlpRoute || request.nodes.count != 4 ||
-      request.inputs.size() != 4 || request.outputs.size() != 1) {
+      request.inputs.size() != 4 || request.outputs.size() != 1 ||
+      request.input_resources.size() != request.inputs.size() ||
+      request.output_resources.size() != request.outputs.size() ||
+      !request.workspace_resource.valid()) {
     return Status::InvalidArgument("oneDNN region compile request is invalid");
   }
 
@@ -736,15 +779,14 @@ Status compile_region(void *context_value, const RegionCompileRequest &request,
       .copy_bytes = 0,
       .synchronization_count = 0,
       .dispatch_count = 2,
-      .blocks_host = true,
-      .uses_private_threads = false,
-      .supports_concurrent_invocations = true,
+      .runtime = kRuntimeProperties,
   };
   return Status::Ok();
 }
 
 const RegionProviderVTable kRegionVTable{
     .propose = &propose_regions,
+    .propose_resources = &propose_region_resources,
     .compile = &compile_region,
 };
 

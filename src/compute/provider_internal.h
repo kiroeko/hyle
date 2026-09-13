@@ -9,28 +9,13 @@
 
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/detail/resource_binding.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 
 namespace hyle::compute::detail {
 
 struct ContextState;
-
-// Provider-neutral cold resource constraint. `minimum_alignment` is the
-// binding alignment the planner must request when it allocates storage; an
-// exact resource/domain is optional. `MemoryProperties::minimum_alignment` is
-// only the resource's unconditional floor, not its maximum accepted explicit
-// alignment, so resource matching never compares those two values. Provider-
-// specific constraints are finally checked by prepare() against the selected
-// exact route.
-struct ResourceBindingRequirement final {
-  mem::MemoryProperty required_properties = mem::MemoryProperty::kNone;
-  mem::MemoryProperty forbidden_properties = mem::MemoryProperty::kNone;
-  std::size_t minimum_alignment = 1;
-  mem::MemoryResourceRef exact_resource{};
-  mem::MemoryDomainId exact_domain{};
-  bool requires_exact_domain = false;
-};
 
 struct ProviderOperationProposal final {
   const ContextState *context = nullptr;
@@ -129,6 +114,13 @@ struct ProviderVTable final {
 // one configured provider without leaking provider state or retaining caller
 // spans. Exact preparation revalidates the proposal identity and resources.
 struct OperationPreparationAccess final {
+  // Allocation-free planner predicate for a proposal's provider-neutral
+  // resource requirement. Backend accessibility remains a separate
+  // backend accessibility check; exact prepare revalidates both.
+  HYLE_COMPUTE_API static Status
+  match_resource(const ResourceBindingRequirement &requirement,
+                 mem::MemoryResourceRef resource) noexcept;
+
   HYLE_COMPUTE_API static Result<ProviderOperationProposal>
   propose(const Context &context, std::size_t provider_index,
           Operation operation, std::span<const TensorDesc> inputs,

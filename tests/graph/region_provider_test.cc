@@ -103,6 +103,15 @@ struct RegionProbe final {
   bool dependency_wait_supported = true;
   bool capture_supported = false;
   bool capture_active = false;
+  hyle::mem::MemoryResourceRef required_resource{};
+  hyle::mem::MemoryResourceRef region_input_resource{};
+  hyle::mem::MemoryResourceRef region_output_resource{};
+  hyle::mem::MemoryResourceRef region_workspace_resource{};
+  hyle::mem::MemoryResourceRef compiled_input_resource{};
+  hyle::mem::MemoryResourceRef compiled_output_resource{};
+  hyle::mem::MemoryResourceRef compiled_workspace_resource{};
+  bool invocation_workspace_valid = false;
+  std::size_t invocation_workspace_size = 0;
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
@@ -348,13 +357,16 @@ Status propose_regions(void *context, const Graph &graph,
 }
 
 Status create_region_invocation(void *prepared, AllocatorRef allocator,
-                                hyle::mem::BufferView, void **output) noexcept {
+                                hyle::mem::BufferView workspace,
+                                void **output) noexcept {
   auto &plan = *static_cast<RegionPlan *>(prepared);
   void *storage = allocator.allocate(sizeof(RegionRun), alignof(RegionRun));
   if (storage == nullptr)
     return Status::ResourceExhausted("region invocation allocation failed");
   *output = ::new (storage) RegionRun{plan.probe};
   ++plan.probe->create_invocation_count;
+  plan.probe->invocation_workspace_valid = workspace.valid();
+  plan.probe->invocation_workspace_size = workspace.size();
   if (plan.probe->mode == ProposalMode::kInvocationFailure) {
     return Status::Internal("injected region invocation failure");
   }
@@ -402,8 +414,6 @@ submit_region(void *prepared, void *invocation, Queue &,
       return hyle::compute::detail::EnqueueResult::rejected(
           Status::Unavailable("injected second-region rejection"));
     }
-    ++plan.probe->submit_count;
-    return hyle::compute::detail::EnqueueResult::accepted_command();
   }
   auto input_mapping = inputs[0].storage().map_host();
   if (!input_mapping)
@@ -454,8 +464,38 @@ const hyle::graph::ProviderRegionPreparedVTable kPreparedRegionVTable{
     .alias_support = &region_alias_support,
     .create_invocation = &create_region_invocation,
     .destroy_invocation = &destroy_region_invocation,
-    .submit = &submit_region,
+    .shared_submit = &submit_region,
 };
+
+Status propose_region_resources(
+    void *context, const RegionCompileRequest &request,
+    std::span<hyle::compute::detail::ResourceBindingRequirement>
+        input_requirements,
+    std::span<hyle::compute::detail::ResourceBindingRequirement>
+        output_requirements,
+    hyle::graph::RegionResourceProposal *proposal) noexcept {
+  if (context == nullptr || request.graph == nullptr || proposal == nullptr ||
+      input_requirements.size() != request.inputs.size() ||
+      output_requirements.size() != request.outputs.size()) {
+    return Status::InvalidArgument("region resource proposal is invalid");
+  }
+  for (auto &requirement : input_requirements)
+    requirement = {};
+  for (auto &requirement : output_requirements)
+    requirement = {};
+  const auto &probe = *static_cast<RegionProbe *>(context);
+  if (!input_requirements.empty() && probe.region_input_resource.valid())
+    input_requirements[0].exact_resource = probe.region_input_resource;
+  if (!output_requirements.empty() && probe.region_output_resource.valid())
+    output_requirements[0].exact_resource = probe.region_output_resource;
+  *proposal = hyle::graph::RegionResourceProposal{
+      .runtime = probe.artifact_properties.runtime,
+      .workspace_resource = {
+          .exact_resource = probe.region_workspace_resource,
+      },
+  };
+  return Status::Ok();
+}
 
 Status compile_region(void *context, const RegionCompileRequest &request,
                       AllocatorRef allocator,
@@ -463,8 +503,22 @@ Status compile_region(void *context, const RegionCompileRequest &request,
   auto &probe = *static_cast<RegionProbe *>(context);
   if (output == nullptr || request.graph == nullptr ||
       request.nodes.count < 2 || request.inputs.size() != 1 ||
-      request.outputs.size() != 1) {
+      request.outputs.size() != 1 ||
+      request.input_resources.size() != request.inputs.size() ||
+      request.output_resources.size() != request.outputs.size()) {
     return Status::InvalidArgument("region compile request is invalid");
+  }
+  if ((probe.region_input_resource.valid() &&
+       request.input_resources[0] != probe.region_input_resource) ||
+      (probe.region_output_resource.valid() &&
+       request.output_resources[0] != probe.region_output_resource) ||
+      (probe.artifact_properties.runtime.workspace_owner ==
+               hyle::compute::ProviderWorkspaceOwner::kCaller
+           ? (probe.region_workspace_resource.valid() &&
+              request.workspace_resource != probe.region_workspace_resource)
+           : request.workspace_resource.valid())) {
+    return Status::InvalidArgument(
+        "region compile resources do not match the proposed route");
   }
   for (std::uint32_t offset = 0; offset < request.nodes.count; ++offset) {
     if (!is_negation(*request.graph, request.nodes.begin + offset))
@@ -481,6 +535,9 @@ Status compile_region(void *context, const RegionCompileRequest &request,
       .properties = probe.artifact_properties,
   };
   ++probe.compile_count;
+  probe.compiled_input_resource = request.input_resources[0];
+  probe.compiled_output_resource = request.output_resources[0];
+  probe.compiled_workspace_resource = request.workspace_resource;
   probe.compiled_begin = request.nodes.begin;
   probe.compiled_count = request.nodes.count;
   if (probe.mode == ProposalMode::kCompileFailure)
@@ -490,6 +547,7 @@ Status compile_region(void *context, const RegionCompileRequest &request,
 
 const hyle::graph::RegionProviderVTable kRegionVTable{
     .propose = &propose_regions,
+    .propose_resources = &propose_region_resources,
     .compile = &compile_region,
 };
 
@@ -552,6 +610,24 @@ constexpr hyle::compute::ProviderRuntimeProperties kEffectRuntime{
     .capture_compatible = false,
 };
 
+constexpr hyle::compute::ProviderRuntimeProperties kUnaryRuntime{
+    .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
+    .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+    .blocks_host = false,
+    .uses_private_threads = false,
+    .supports_concurrent_invocations = true,
+    .capture_compatible = false,
+};
+
+const hyle::compute::detail::ProviderPreparedVTable kUnaryPreparedVTable{
+    .destroy_prepared = &destroy_region_prepared,
+    .alias_support = &region_alias_support,
+    .create_invocation = &create_region_invocation,
+    .destroy_invocation = &destroy_region_invocation,
+    .shared_submit = &submit_region,
+    .delegated_submit = nullptr,
+};
+
 Status propose_single(
     void *context, Operation operation, std::span<const TensorDesc> inputs,
     std::span<const TensorDesc> outputs,
@@ -562,15 +638,28 @@ Status propose_single(
     hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_prepare_count;
-  if (!operation.custom_as<ExternalEffect>().has_value())
+  const bool effect = operation.custom_as<ExternalEffect>().has_value();
+  const bool constrained_unary =
+      operation.kind() == hyle::compute::OperationKind::kUnary &&
+      probe.required_resource.valid();
+  if (!effect && !constrained_unary)
     return Status::Unimplemented("region provider has no single-op route");
-  if (!inputs.empty() || !outputs.empty() || !input_requirements.empty() ||
-      !output_requirements.empty() || proposal == nullptr) {
+  if (proposal == nullptr ||
+      (effect && (!inputs.empty() || !outputs.empty() ||
+                  !input_requirements.empty() ||
+                  !output_requirements.empty())) ||
+      (constrained_unary &&
+       (inputs.size() != 1 || outputs.size() != 1 ||
+        input_requirements.size() != 1 || output_requirements.size() != 1))) {
     return Status::InvalidArgument("effect preparation binding mismatch");
   }
+  if (constrained_unary) {
+    input_requirements[0].exact_resource = probe.required_resource;
+    output_requirements[0].exact_resource = probe.required_resource;
+  }
   *proposal = hyle::compute::detail::ProviderOperationProposal{
-      .route = 1,
-      .runtime = kEffectRuntime,
+      .route = effect ? 1u : 2u,
+      .runtime = effect ? kEffectRuntime : kUnaryRuntime,
       .workspace = hyle::compute::WorkspaceRequirement{},
   };
   return Status::Ok();
@@ -579,13 +668,37 @@ Status propose_single(
 Status prepare_single(
     void *context,
     const hyle::compute::detail::ProviderPrepareRequest &request,
-    AllocatorRef,
+    AllocatorRef allocator,
     hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
-  if (!request.operation.custom_as<ExternalEffect>().has_value() ||
-      !request.inputs.empty() || !request.outputs.empty() ||
-      request.route != 1 || prepared == nullptr) {
+  const bool effect = request.operation.custom_as<ExternalEffect>().has_value();
+  const bool constrained_unary =
+      request.operation.kind() == hyle::compute::OperationKind::kUnary &&
+      probe.required_resource.valid();
+  if (prepared == nullptr ||
+      (effect && (!request.inputs.empty() || !request.outputs.empty() ||
+                  request.route != 1)) ||
+      (constrained_unary &&
+       (request.inputs.size() != 1 || request.outputs.size() != 1 ||
+        request.input_resources.size() != 1 ||
+        request.output_resources.size() != 1 || request.route != 2 ||
+        request.input_resources[0] != probe.required_resource ||
+        request.output_resources[0] != probe.required_resource)) ||
+      (!effect && !constrained_unary)) {
     return Status::InvalidArgument("effect exact preparation mismatch");
+  }
+  if (constrained_unary) {
+    void *storage = allocator.allocate(sizeof(RegionPlan), alignof(RegionPlan));
+    if (storage == nullptr)
+      return Status::ResourceExhausted("unary plan allocation failed");
+    auto *plan = ::new (storage) RegionPlan{&probe, 1};
+    *prepared = hyle::compute::detail::ProviderPrepared{
+        .vtable = &kUnaryPreparedVTable,
+        .state = plan,
+        .workspace = {},
+        .runtime = kUnaryRuntime,
+    };
+    return Status::Ok();
   }
   *prepared = hyle::compute::detail::ProviderPrepared{
       .vtable = &kEffectPreparedVTable,
@@ -662,7 +775,7 @@ async_device_properties(const hyle::compute::Device &device) noexcept {
 }
 
 Status validate_async_resource(const hyle::compute::Device &,
-                               hyle::mem::MemoryResourceRef resource) noexcept {
+                                hyle::mem::MemoryResourceRef resource) noexcept {
   if (!resource.valid())
     return Status::InvalidArgument("test graph resource is invalid");
   if (!resource.properties().has(hyle::mem::MemoryProperty::kHostAccessible)) {
@@ -1008,10 +1121,103 @@ TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   EXPECT_EQ(probe.submit_count, 1u);
 }
 
+TEST(GraphRegions, SelectsExactBoundaryAndWorkspaceResourcesForARegion) {
+  RegionProbe probe;
+  HostResource first_storage;
+  HostResource second_storage;
+  probe.region_input_resource = hyle::mem::MemoryResourceRef(second_storage);
+  probe.region_output_resource = hyle::mem::MemoryResourceRef(second_storage);
+  probe.region_workspace_resource =
+      hyle::mem::MemoryResourceRef(second_storage);
+  probe.artifact_properties.workspace = {.size = 256, .alignment = 64};
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+  const Environment environment{{
+      ExecutionSpec{.context = &context,
+                    .storage = hyle::mem::MemoryResourceRef(first_storage)},
+      ExecutionSpec{.context = &context,
+                    .storage = hyle::mem::MemoryResourceRef(second_storage)},
+  }};
+
+  auto compiled =
+      hyle::graph::compile(logical.graph, environment.environment()).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  ASSERT_EQ(compiled.report.step_count(), 2u);
+  const auto region = compiled.report.step(1).value();
+  EXPECT_EQ(region.kind, CompileStepKind::kProviderRegion);
+  EXPECT_EQ(region.workspace_storage, environment.storage(1));
+  EXPECT_EQ(region.workspace.size, 256u);
+  EXPECT_EQ(probe.compiled_input_resource,
+            hyle::mem::MemoryResourceRef(second_storage));
+  EXPECT_EQ(probe.compiled_output_resource,
+            hyle::mem::MemoryResourceRef(second_storage));
+  EXPECT_EQ(probe.compiled_workspace_resource,
+            hyle::mem::MemoryResourceRef(second_storage));
+  EXPECT_GT(compiled.report.copy_bytes(), 0u);
+  EXPECT_EQ(compiled.report.storage_domain(0)->workspace_bytes, 0u);
+  EXPECT_GE(compiled.report.storage_domain(1)->workspace_bytes, 256u);
+
+  OwnedTensor input = make_tensor(
+      row(8), hyle::mem::MemoryResourceRef(first_storage));
+  OwnedTensor output = make_tensor(
+      row(8), hyle::mem::MemoryResourceRef(second_storage));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+  EXPECT_TRUE(probe.invocation_workspace_valid);
+  EXPECT_EQ(probe.invocation_workspace_size, 256u);
+}
+
+TEST(GraphRegions, KeepsProviderOwnedWorkspaceOutsideTheGraphPlan) {
+  RegionProbe probe;
+  probe.artifact_properties.workspace = {.size = 4096, .alignment = 64};
+  probe.artifact_properties.runtime.workspace_owner =
+      hyle::compute::ProviderWorkspaceOwner::kProvider;
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.workspace_bytes(), 0u);
+  const auto step = compiled.report.step(0).value();
+  EXPECT_EQ(step.workspace.size, 4096u);
+  EXPECT_FALSE(step.workspace_storage.valid());
+
+  auto invocation = compiled.executable.create_invocation().value();
+  EXPECT_FALSE(probe.invocation_workspace_valid);
+  EXPECT_EQ(probe.invocation_workspace_size, 0u);
+}
+
+TEST(GraphRegions, FallsBackWhenASelectedRegionHasNoResourceRoute) {
+  RegionProbe probe;
+  HostResource unavailable;
+  probe.region_input_resource = hyle::mem::MemoryResourceRef(unavailable);
+  probe.region_output_resource = hyle::mem::MemoryResourceRef(unavailable);
+  const NegationGraph logical = make_negations(2);
+  Context context = make_context(probe);
+
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 0u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
+  EXPECT_EQ(probe.compile_count, 0u);
+  for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
+    const auto step = compiled.report.step(index).value();
+    EXPECT_EQ(step.kind, CompileStepKind::kOperationFallback);
+    EXPECT_EQ(step.fallback_reason,
+              CompileFallbackReason::kRegionNotSelected);
+  }
+}
+
 TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   probe.capture_supported = true;
-  probe.artifact_properties.capture_compatible = true;
+  probe.artifact_properties.runtime.capture_compatible = true;
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
   const Environment environment{{&context, hyle::mem::system_resource()}};
@@ -1357,9 +1563,11 @@ TEST(GraphRegions, DetailedReportOwnsAndEnumeratesTheCompiledPlan) {
       .copy_bytes = 64,
       .synchronization_count = 2,
       .dispatch_count = 3,
-      .blocks_host = true,
-      .uses_private_threads = true,
-      .supports_concurrent_invocations = false,
+      .runtime = {
+          .blocks_host = true,
+          .uses_private_threads = true,
+          .supports_concurrent_invocations = false,
+      },
   };
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
@@ -1415,7 +1623,7 @@ TEST(GraphRegions, CostFactsPreserveUnknownAndExactZero) {
 
 TEST(GraphRegions, SerializesArtifactsThatRejectConcurrentInvocations) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
-  probe.artifact_properties.supports_concurrent_invocations = false;
+  probe.artifact_properties.runtime.supports_concurrent_invocations = false;
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
@@ -1928,10 +2136,12 @@ TEST(GraphRegions, MultiTargetPlacementKeepsEligibleProviderRegions) {
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
-  auto compiled =
+  auto compiled_result =
       hyle::graph::compile(logical.graph, environment.environment(),
-                           CompileOptions{.node_placements = placements})
-          .value();
+                           CompileOptions{.node_placements = placements});
+  ASSERT_TRUE(compiled_result.has_value())
+      << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
   EXPECT_EQ(compiled.report.region_count(), 2u);
   EXPECT_EQ(compiled.report.fallback_operation_count(), 0u);
   ASSERT_EQ(compiled.report.step_count(), 2u);
@@ -1999,6 +2209,8 @@ TEST(GraphRegions, RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted) {
   Context second = make_context(second_probe);
   HostResource first_storage;
   HostResource second_storage;
+  first_probe.required_resource = hyle::mem::MemoryResourceRef(first_storage);
+  second_probe.required_resource = hyle::mem::MemoryResourceRef(second_storage);
   const Environment environment{{
       ExecutionSpec{.context = &first,
                     .storage = hyle::mem::MemoryResourceRef(first_storage)},
@@ -2015,10 +2227,12 @@ TEST(GraphRegions, RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted) {
                                  .strength =
                                      hyle::graph::PlacementStrength::kRequired},
   };
-  auto compiled =
+  auto compiled_result =
       hyle::graph::compile(logical.graph, environment.environment(),
-                           CompileOptions{.node_placements = placements})
-          .value();
+                           CompileOptions{.node_placements = placements});
+  ASSERT_TRUE(compiled_result.has_value())
+      << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
   OwnedTensor input = make_tensor(
       row(8), hyle::mem::MemoryResourceRef(first_storage));
   OwnedTensor output = make_tensor(
@@ -2051,6 +2265,8 @@ TEST(GraphRegions, ExposesAndCanRejectAHostDependencyBeforeSubmission) {
   Context second = make_context(second_probe);
   HostResource first_storage;
   HostResource second_storage;
+  first_probe.required_resource = hyle::mem::MemoryResourceRef(first_storage);
+  second_probe.required_resource = hyle::mem::MemoryResourceRef(second_storage);
   const Environment environment{{
       ExecutionSpec{.context = &first,
                     .storage = hyle::mem::MemoryResourceRef(first_storage)},

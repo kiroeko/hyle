@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "../compute/completion_internal.h"
+#include "../compute/provider_internal.h"
 #include "graph_state.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
@@ -968,6 +969,30 @@ bool valid_strength(PlacementStrength strength) noexcept {
          strength == PlacementStrength::kRequired;
 }
 
+bool valid_runtime_properties(
+    const compute::ProviderRuntimeProperties &properties) noexcept {
+  return (properties.mode == compute::ProviderRuntimeMode::kSharedQueue ||
+          properties.mode == compute::ProviderRuntimeMode::kDelegated) &&
+         (properties.workspace_owner ==
+              compute::ProviderWorkspaceOwner::kCaller ||
+          properties.workspace_owner ==
+              compute::ProviderWorkspaceOwner::kProvider) &&
+         (!properties.capture_compatible ||
+          properties.mode == compute::ProviderRuntimeMode::kSharedQueue);
+}
+
+bool same_runtime_properties(
+    const compute::ProviderRuntimeProperties &left,
+    const compute::ProviderRuntimeProperties &right) noexcept {
+  return left.mode == right.mode &&
+         left.workspace_owner == right.workspace_owner &&
+         left.blocks_host == right.blocks_host &&
+         left.uses_private_threads == right.uses_private_threads &&
+         left.supports_concurrent_invocations ==
+             right.supports_concurrent_invocations &&
+         left.capture_compatible == right.capture_compatible;
+}
+
 struct RegionExtension final {
   compute::detail::ProviderExtensionRef extension{};
   std::uint32_t provider_index = 0;
@@ -1032,19 +1057,53 @@ Status collect_region_boundary(
   return Status::Ok();
 }
 
+Status propose_region_resources(
+    const RegionExtension &extension, const RegionCompileRequest &request,
+    std::span<compute::detail::ResourceBindingRequirement> input_requirements,
+    std::span<compute::detail::ResourceBindingRequirement> output_requirements,
+    RegionResourceProposal &resource_proposal) noexcept {
+  for (auto &requirement : input_requirements)
+    requirement = {};
+  for (auto &requirement : output_requirements)
+    requirement = {};
+  resource_proposal = {};
+  struct ProposalEpisode final {
+    const RegionCompileRequest *request = nullptr;
+    std::span<compute::detail::ResourceBindingRequirement> input_requirements{};
+    std::span<compute::detail::ResourceBindingRequirement> output_requirements{};
+    RegionResourceProposal *proposal = nullptr;
+  } proposal_episode{&request, input_requirements, output_requirements,
+                     &resource_proposal};
+  Status proposed = compute::detail::ProviderExtensionAccess::call(
+      extension.extension,
+      +[](void *provider_context, const void *interface_value,
+          void *opaque) noexcept -> Status {
+        const auto *interface =
+            static_cast<const RegionProviderVTable *>(interface_value);
+        auto &call = *static_cast<ProposalEpisode *>(opaque);
+        if (interface == nullptr || interface->propose_resources == nullptr) {
+          return Status::Internal(
+              "graph region resource proposal callback is missing");
+        }
+        return interface->propose_resources(
+            provider_context, *call.request, call.input_requirements,
+            call.output_requirements, call.proposal);
+      },
+      &proposal_episode);
+  if (!proposed.ok())
+    return proposed;
+  if (!valid_runtime_properties(resource_proposal.runtime)) {
+    return Status::Internal(
+        "graph region provider proposed invalid runtime properties");
+  }
+  return Status::Ok();
+}
+
 Result<detail::PreparedRegion> compile_region_artifact(
-    detail::PlanState &plan, const Graph &published_graph,
-    const RegionExtension &extension, const RegionProposal &proposal,
-    std::span<const ValueId> inputs, std::span<const ValueId> outputs,
+    detail::PlanState &plan, const RegionExtension &extension,
+    const RegionCompileRequest &request,
+    const RegionResourceProposal &resource_proposal,
     CompileOptions options) noexcept {
-  RegionCompileRequest request{
-      .graph = &published_graph,
-      .nodes = proposal.nodes,
-      .inputs = inputs,
-      .outputs = outputs,
-      .constants = options.constants,
-      .route = proposal.route,
-  };
   ProviderRegionPrepared provider_prepared{};
   struct Episode final {
     const RegionCompileRequest *request = nullptr;
@@ -1075,11 +1134,26 @@ Result<detail::PreparedRegion> compile_region_artifact(
   const ProviderRegionPreparedVTable *table = provider_prepared.vtable;
   const compute::WorkspaceRequirement workspace =
       provider_prepared.properties.workspace;
+  const compute::ProviderRuntimeProperties runtime =
+      provider_prepared.properties.runtime;
+  const bool shared = runtime.mode == compute::ProviderRuntimeMode::kSharedQueue;
   if (table == nullptr || table->destroy_prepared == nullptr ||
       table->alias_support == nullptr || table->create_invocation == nullptr ||
-      table->destroy_invocation == nullptr || table->submit == nullptr ||
+      table->destroy_invocation == nullptr ||
+      (shared &&
+       (table->shared_submit == nullptr || table->delegated_submit != nullptr ||
+        table->endpoint != nullptr || table->can_import_endpoint != nullptr)) ||
+      (!shared &&
+       (table->shared_submit != nullptr || table->delegated_submit == nullptr ||
+        table->endpoint == nullptr || table->can_import_endpoint == nullptr)) ||
+      !valid_runtime_properties(runtime) ||
+      !same_runtime_properties(runtime, resource_proposal.runtime) ||
       workspace.alignment == 0 ||
       (workspace.alignment & (workspace.alignment - 1)) != 0 ||
+      (runtime.workspace_owner == compute::ProviderWorkspaceOwner::kCaller &&
+       workspace.size != 0 && !request.workspace_resource.valid()) ||
+      (runtime.workspace_owner == compute::ProviderWorkspaceOwner::kProvider &&
+       request.workspace_resource.valid()) ||
       provider_prepared.properties.dispatch_count == 0 ||
       provider_prepared.properties.packed_constant_count >
           options.constants.size()) {
@@ -1112,6 +1186,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
   using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
   using Prepared =
       container::SmallVector<compute::PreparedOperation, 8, mem::AllocatorRef>;
+  using Requirements = container::SmallVector<
+      compute::detail::ResourceBindingRequirement, 4, mem::AllocatorRef>;
   constexpr std::uint32_t kNone = detail::kNoWorkspaceRequest;
   const std::size_t target_count = plan.targets.size();
   const std::size_t storage_count = plan.storage_domains.size();
@@ -1255,16 +1331,24 @@ Status prepare_placed_steps(detail::PlanState &plan,
 
   Ordinals producer_storage(plan.allocator);
   Ordinals node_targets(plan.allocator);
+  Ordinals node_workspace_storage(plan.allocator);
+  Ordinals selected_edge_storage(plan.allocator);
   Ordinals target_candidates(plan.allocator);
   Prepared prepared(plan.allocator);
   if (!producer_storage.try_resize(value_count) ||
       !node_targets.try_resize(node_count) ||
+      !node_workspace_storage.try_resize(node_count) ||
+      !selected_edge_storage.try_resize(graph.edges.size()) ||
       !target_candidates.try_resize(target_count) ||
       !prepared.try_resize(node_count)) {
     return plan_allocation_failure();
   }
   for (std::size_t index = 0; index < value_count; ++index)
     producer_storage[index] = kNone;
+  for (std::uint32_t &storage : node_workspace_storage)
+    storage = kNone;
+  for (std::uint32_t &storage : selected_edge_storage)
+    storage = kNone;
   for (std::uint32_t value : graph.inputs)
     producer_storage[value] = plan.external_storage[value];
   for (std::uint32_t value : graph.constants)
@@ -1278,7 +1362,222 @@ Status prepare_placed_steps(detail::PlanState &plan,
   Descriptions outputs(plan.allocator);
   Resources input_resources(plan.allocator);
   Resources output_resources(plan.allocator);
+  Ordinals selected_inputs(plan.allocator);
+  Ordinals selected_outputs(plan.allocator);
+  Requirements input_requirements(plan.allocator);
+  Requirements output_requirements(plan.allocator);
   std::size_t placement_attempts = 0;
+
+  auto select_storage =
+      [&](std::uint32_t target,
+          const compute::detail::ResourceBindingRequirement &requirement,
+          std::uint32_t required, std::uint32_t first,
+          std::uint32_t second) noexcept -> Result<std::uint32_t> {
+    auto compatible = [&](std::uint32_t storage) noexcept -> Result<bool> {
+      if (storage >= storage_count)
+        return false;
+      const mem::MemoryResourceRef resource =
+          plan.storage_domains[storage].resource;
+      Status matched =
+          compute::detail::OperationPreparationAccess::match_resource(
+              requirement, resource);
+      if (!matched.ok()) {
+        if (matched.IsInternal())
+          return std::unexpected(std::move(matched));
+        return false;
+      }
+      Status accessible = plan.targets[target].context.validate_resource(resource);
+      if (!accessible.ok()) {
+        if (accessible.IsInternal())
+          return std::unexpected(std::move(accessible));
+        return false;
+      }
+      return true;
+    };
+
+    if (required != kNone) {
+      auto accepted = compatible(required);
+      if (!accepted)
+        return std::unexpected(std::move(accepted).error());
+      if (*accepted)
+        return required;
+      return std::unexpected(Status::Unimplemented(
+          "required graph storage does not satisfy provider constraints"));
+    }
+    const std::array preferred{first, second};
+    for (std::uint32_t storage : preferred) {
+      if (storage == kNone)
+        continue;
+      auto accepted = compatible(storage);
+      if (!accepted)
+        return std::unexpected(std::move(accepted).error());
+      if (*accepted)
+        return storage;
+    }
+    for (std::uint32_t storage = 0; storage < storage_count; ++storage) {
+      if (storage == first || storage == second)
+        continue;
+      auto accepted = compatible(storage);
+      if (!accepted)
+        return std::unexpected(std::move(accepted).error());
+      if (*accepted)
+        return storage;
+    }
+    return std::unexpected(Status::Unimplemented(
+        "no graph storage satisfies provider resource constraints"));
+  };
+
+  auto prepare_operation =
+      [&](std::size_t node_index,
+          std::uint32_t candidate) noexcept -> Result<compute::PreparedOperation> {
+    const detail::NodeRecord &node = graph.nodes[node_index];
+    const compute::Context &context = *environment.targets[candidate].context;
+    const std::uint32_t default_storage =
+        plan.targets[candidate].default_storage.ordinal();
+    if (!selected_inputs.try_resize(node.input_count) ||
+        !selected_outputs.try_resize(node.output_count) ||
+        !input_requirements.try_resize(node.input_count) ||
+        !output_requirements.try_resize(node.output_count)) {
+      return std::unexpected(plan_allocation_failure());
+    }
+
+    Status unsupported = Status::Unimplemented(
+        "no configured provider accepts the graph operation resources");
+    for (std::size_t provider = 0; provider < context.provider_count();
+         ++provider) {
+      auto proposal = compute::detail::OperationPreparationAccess::propose(
+          context, provider, node.operation, inputs, outputs,
+          input_requirements, output_requirements);
+      if (!proposal) {
+        unsupported = std::move(proposal).error();
+        if (unsupported.IsUnimplemented())
+          continue;
+        return std::unexpected(std::move(unsupported));
+      }
+
+      bool route_supported = true;
+      for (std::size_t input_index = 0; input_index < node.input_count;
+           ++input_index) {
+        const std::uint32_t value =
+            graph.edges[node.input_begin + input_index];
+        auto storage = select_storage(
+            candidate, input_requirements[input_index], kNone,
+            producer_storage[value], default_storage);
+        if (!storage) {
+          unsupported = std::move(storage).error();
+          if (!unsupported.IsUnimplemented())
+            return std::unexpected(std::move(unsupported));
+          route_supported = false;
+          break;
+        }
+        selected_inputs[input_index] = *storage;
+        input_resources[input_index] =
+            plan.storage_domains[*storage].resource;
+      }
+      if (!route_supported)
+        continue;
+
+      const compute::OperationTraits traits =
+          compute::operation_traits(node.operation);
+      if (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
+          node.input_count == 0) {
+        return std::unexpected(Status::Internal(
+            "operation requires an input alias but has no inputs"));
+      }
+      for (std::size_t output_index = 0; output_index < node.output_count;
+           ++output_index) {
+        const std::uint32_t value =
+            node.output_begin + static_cast<std::uint32_t>(output_index);
+        const bool must_alias_input =
+            traits.alias == compute::AliasPolicy::kMustAliasInput0;
+        const std::uint32_t required_storage =
+            must_alias_input
+                ? (value_required[value] != kNone &&
+                           value_required[value] != selected_inputs[0]
+                       ? kNone
+                       : selected_inputs[0])
+                : value_required[value];
+        if (must_alias_input && value_required[value] != kNone &&
+            value_required[value] != selected_inputs[0]) {
+          route_supported = false;
+          unsupported = Status::Unimplemented(
+              "required output storage contradicts operation aliasing");
+          break;
+        }
+        const std::uint32_t preferred_storage =
+            value_preferred[value] != kNone ? value_preferred[value]
+                                            : default_storage;
+        auto storage = select_storage(
+            candidate, output_requirements[output_index], required_storage,
+            preferred_storage, default_storage);
+        if (!storage) {
+          unsupported = std::move(storage).error();
+          if (!unsupported.IsUnimplemented())
+            return std::unexpected(std::move(unsupported));
+          route_supported = false;
+          break;
+        }
+        selected_outputs[output_index] = *storage;
+        output_resources[output_index] =
+            plan.storage_domains[*storage].resource;
+      }
+      if (!route_supported)
+        continue;
+
+      std::uint32_t workspace_storage = kNone;
+      mem::MemoryResourceRef workspace_resource{};
+      if (proposal->runtime.workspace_owner ==
+          compute::ProviderWorkspaceOwner::kCaller) {
+        auto selected = select_storage(
+            candidate, proposal->workspace_resource, kNone, default_storage,
+            node.output_count != 0 ? selected_outputs[0]
+                                   : (node.input_count != 0 ? selected_inputs[0]
+                                                            : kNone));
+        if (!selected) {
+          unsupported = std::move(selected).error();
+          if (!unsupported.IsUnimplemented())
+            return std::unexpected(std::move(unsupported));
+          continue;
+        }
+        workspace_storage = *selected;
+        workspace_resource = plan.storage_domains[*selected].resource;
+      }
+      if (placement_attempts == options.max_placement_attempts) {
+        return std::unexpected(Status::ResourceExhausted(
+            "graph placement preparation budget is exhausted"));
+      }
+      ++placement_attempts;
+      auto result = compute::detail::OperationPreparationAccess::prepare(
+          context, *proposal, node.operation, inputs, outputs,
+          input_requirements, output_requirements,
+          compute::OperationResourceBindings{
+              .inputs = input_resources,
+              .outputs = output_resources,
+              .workspace_resource = workspace_resource,
+          });
+      if (!result) {
+        unsupported = std::move(result).error();
+        if (unsupported.IsUnimplemented())
+          continue;
+        return std::unexpected(std::move(unsupported));
+      }
+
+      for (std::size_t input_index = 0; input_index < node.input_count;
+           ++input_index) {
+        selected_edge_storage[node.input_begin + input_index] =
+            selected_inputs[input_index];
+      }
+      for (std::size_t output_index = 0; output_index < node.output_count;
+           ++output_index) {
+        producer_storage[node.output_begin + output_index] =
+            selected_outputs[output_index];
+      }
+      node_workspace_storage[node_index] = workspace_storage;
+      return result;
+    }
+    return std::unexpected(std::move(unsupported));
+  };
+
   for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
     const detail::NodeRecord &node = graph.nodes[node_index];
     std::uint32_t required = node_required[node_index];
@@ -1353,46 +1652,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
         selected = true;
         break;
       }
-      if (placement_attempts == options.max_placement_attempts) {
-        return Status::ResourceExhausted(
-            "graph placement preparation budget is exhausted");
-      }
-      ++placement_attempts;
-      for (mem::MemoryResourceRef &resource : input_resources)
-        resource = plan.storage_domains[default_storage].resource;
-      for (std::size_t output_index = 0; output_index < node.output_count;
-           ++output_index) {
-        const std::uint32_t value =
-            node.output_begin + static_cast<std::uint32_t>(output_index);
-        const std::uint32_t storage = value_required[value] != kNone
-                                          ? value_required[value]
-                                      : value_preferred[value] != kNone
-                                          ? value_preferred[value]
-                                          : default_storage;
-        output_resources[output_index] = plan.storage_domains[storage].resource;
-      }
-      auto result = compute::prepare(
-          *environment.targets[candidate].context, node.operation, inputs,
-          outputs,
-          compute::OperationResourceBindings{
-              .inputs = input_resources,
-              .outputs = output_resources,
-              .workspace_resource =
-                  plan.storage_domains[default_storage].resource,
-          });
+      auto result = prepare_operation(node_index, candidate);
       if (result) {
         prepared[node_index] = std::move(*result);
         node_targets[node_index] = candidate;
-        for (std::size_t output_index = 0; output_index < node.output_count;
-             ++output_index) {
-          const std::uint32_t value = node.output_begin +
-                                      static_cast<std::uint32_t>(output_index);
-          producer_storage[value] = value_required[value] != kNone
-                                        ? value_required[value]
-                                    : value_preferred[value] != kNone
-                                        ? value_preferred[value]
-                                        : default_storage;
-        }
         selected = true;
         break;
       }
@@ -1505,48 +1768,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
     for (std::uint32_t candidate : target_candidates) {
       if (required != kNone && candidate != required)
         continue;
-      if (placement_attempts == options.max_placement_attempts) {
-        return Status::ResourceExhausted(
-            "graph placement preparation budget is exhausted");
-      }
-      ++placement_attempts;
-      const std::uint32_t default_storage =
-          plan.targets[candidate].default_storage.ordinal();
-      for (mem::MemoryResourceRef &resource : input_resources)
-        resource = plan.storage_domains[default_storage].resource;
-      for (std::size_t output_index = 0; output_index < node.output_count;
-           ++output_index) {
-        const std::uint32_t value =
-            node.output_begin + static_cast<std::uint32_t>(output_index);
-        const std::uint32_t storage = value_required[value] != kNone
-                                          ? value_required[value]
-                                      : value_preferred[value] != kNone
-                                          ? value_preferred[value]
-                                          : default_storage;
-        output_resources[output_index] = plan.storage_domains[storage].resource;
-      }
-      auto fallback = compute::prepare(
-          *environment.targets[candidate].context, node.operation, inputs,
-          outputs,
-          compute::OperationResourceBindings{
-              .inputs = input_resources,
-              .outputs = output_resources,
-              .workspace_resource =
-                  plan.storage_domains[default_storage].resource,
-          });
+      auto fallback = prepare_operation(node_index, candidate);
       if (fallback) {
         prepared[node_index] = std::move(*fallback);
         node_targets[node_index] = candidate;
-        for (std::size_t output_index = 0; output_index < node.output_count;
-             ++output_index) {
-          const std::uint32_t value = node.output_begin +
-                                      static_cast<std::uint32_t>(output_index);
-          producer_storage[value] = value_required[value] != kNone
-                                        ? value_required[value]
-                                    : value_preferred[value] != kNone
-                                        ? value_preferred[value]
-                                        : default_storage;
-        }
         fallback_selected = true;
         break;
       }
@@ -1787,7 +2012,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
         selected_regions[selection_index].proposal.nodes.begin == node_index) {
       const RegionCandidate &candidate = selected_regions[selection_index];
       const std::uint32_t target = candidate.target.ordinal();
-      const std::uint32_t storage =
+      const std::uint32_t default_storage =
           plan.targets[target].default_storage.ordinal();
       RegionValues logical_inputs(plan.allocator);
       RegionValues logical_outputs(plan.allocator);
@@ -1796,17 +2021,125 @@ Status prepare_placed_steps(detail::PlanState &plan,
           logical_inputs, logical_outputs);
       if (!boundary.ok())
         return boundary;
-      auto region = compile_region_artifact(
-          plan, published_graph, extensions[candidate.extension_index],
-          candidate.proposal, logical_inputs, logical_outputs, options);
-      if (!region)
-        return std::move(region).error();
+      if (!selected_inputs.try_resize(logical_inputs.size()) ||
+          !selected_outputs.try_resize(logical_outputs.size()) ||
+          !input_resources.try_resize(logical_inputs.size()) ||
+          !output_resources.try_resize(logical_outputs.size()) ||
+          !input_requirements.try_resize(logical_inputs.size()) ||
+          !output_requirements.try_resize(logical_outputs.size())) {
+        return plan_allocation_failure();
+      }
+      RegionCompileRequest request{
+          .graph = &published_graph,
+          .nodes = candidate.proposal.nodes,
+          .inputs = logical_inputs,
+          .outputs = logical_outputs,
+          .constants = options.constants,
+          .route = candidate.proposal.route,
+      };
+      RegionResourceProposal resource_proposal{};
+      Status region_status = propose_region_resources(
+          extensions[candidate.extension_index], request, input_requirements,
+          output_requirements, resource_proposal);
+      bool route_supported = region_status.ok();
+      if (!route_supported && !region_status.IsUnimplemented())
+        return region_status;
+
+      for (std::size_t index = 0;
+           route_supported && index < logical_inputs.size(); ++index) {
+        const std::uint32_t value = logical_inputs[index].ordinal();
+        auto storage = select_storage(
+            target, input_requirements[index], kNone, producer_storage[value],
+            default_storage);
+        if (!storage) {
+          region_status = std::move(storage).error();
+          if (!region_status.IsUnimplemented())
+            return region_status;
+          route_supported = false;
+          break;
+        }
+        selected_inputs[index] = *storage;
+        input_resources[index] = plan.storage_domains[*storage].resource;
+      }
+      for (std::size_t index = 0;
+           route_supported && index < logical_outputs.size(); ++index) {
+        const std::uint32_t value = logical_outputs[index].ordinal();
+        const std::uint32_t preferred =
+            value_preferred[value] != kNone ? value_preferred[value]
+                                             : default_storage;
+        auto storage = select_storage(
+            target, output_requirements[index], value_required[value],
+            preferred, default_storage);
+        if (!storage) {
+          region_status = std::move(storage).error();
+          if (!region_status.IsUnimplemented())
+            return region_status;
+          route_supported = false;
+          break;
+        }
+        selected_outputs[index] = *storage;
+        output_resources[index] = plan.storage_domains[*storage].resource;
+      }
+      std::uint32_t workspace_storage = kNone;
+      mem::MemoryResourceRef workspace_resource{};
+      if (route_supported &&
+          resource_proposal.runtime.workspace_owner ==
+              compute::ProviderWorkspaceOwner::kCaller) {
+        const std::uint32_t adjacent_storage =
+            !selected_outputs.empty()
+                ? selected_outputs[0]
+                : (!selected_inputs.empty() ? selected_inputs[0] : kNone);
+        auto storage = select_storage(
+            target, resource_proposal.workspace_resource, kNone,
+            default_storage, adjacent_storage);
+        if (!storage) {
+          region_status = std::move(storage).error();
+          if (!region_status.IsUnimplemented())
+            return region_status;
+          route_supported = false;
+        } else {
+          workspace_storage = *storage;
+          workspace_resource = plan.storage_domains[*storage].resource;
+        }
+      }
+
+      Result<detail::PreparedRegion> region =
+          std::unexpected(Status::Unimplemented(
+              "selected graph region has no compatible resource route"));
+      if (route_supported) {
+        request.input_resources = input_resources;
+        request.output_resources = output_resources;
+        request.workspace_resource = workspace_resource;
+        if (placement_attempts == options.max_placement_attempts) {
+          return Status::ResourceExhausted(
+              "graph placement preparation budget is exhausted");
+        }
+        ++placement_attempts;
+        region = compile_region_artifact(
+            plan, extensions[candidate.extension_index], request,
+            resource_proposal, options);
+        if (!region) {
+          region_status = region.error();
+          if (!region_status.IsUnimplemented())
+            return region_status;
+          route_supported = false;
+        }
+      }
+      if (!route_supported) {
+        if (options.operation_fallback == OperationFallbackPolicy::kReject)
+          return region_status;
+        // The resource route was a cold proposal, not accepted work. Skip the
+        // selected island and let its nodes take the normal operation path.
+        ++selection_index;
+        continue;
+      }
 
       physical_inputs.clear();
       if (!physical_inputs.try_reserve(logical_inputs.size()))
         return plan_allocation_failure();
-      for (ValueId input : logical_inputs) {
-        auto instance = ensure_local_instance(input.ordinal(), storage);
+      for (std::size_t index = 0; index < logical_inputs.size(); ++index) {
+        auto instance = ensure_local_instance(logical_inputs[index].ordinal(),
+                                              selected_inputs[index]);
         if (!instance)
           return std::move(instance).error();
         if (!physical_inputs.try_push_back(*instance))
@@ -1820,8 +2153,13 @@ Status prepare_placed_steps(detail::PlanState &plan,
       }
       const std::uint32_t output_begin =
           static_cast<std::uint32_t>(plan.node_outputs.size());
-      for (ValueId output : logical_outputs) {
-        const std::uint32_t value = output.ordinal();
+      for (std::size_t index = 0; index < logical_outputs.size(); ++index) {
+        const std::uint32_t value = logical_outputs[index].ordinal();
+        const std::uint32_t storage = selected_outputs[index];
+        if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
+            external_seen[value] == 0) {
+          plan.external_storage[value] = storage;
+        }
         std::uint8_t roles = 0;
         if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
             plan.external_storage[value] == storage) {
@@ -1844,7 +2182,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
               std::move(*region), node_index, candidate.proposal.nodes.count,
               input_begin, static_cast<std::uint32_t>(logical_inputs.size()),
               output_begin, static_cast<std::uint32_t>(logical_outputs.size()),
-              ExecutionTargetId{target}, StorageDomainId{storage})) {
+              ExecutionTargetId{target},
+              workspace_storage == kNone
+                  ? StorageDomainId{}
+                  : StorageDomainId{workspace_storage})) {
         return plan_allocation_failure();
       }
       const std::uint32_t end = node_index + candidate.proposal.nodes.count;
@@ -1857,15 +2198,72 @@ Status prepare_placed_steps(detail::PlanState &plan,
     }
 
     const detail::NodeRecord &node = graph.nodes[node_index];
+    if (!prepared[node_index].valid()) {
+      if (!inputs.try_resize(node.input_count) ||
+          !outputs.try_resize(node.output_count) ||
+          !input_resources.try_resize(node.input_count) ||
+          !output_resources.try_resize(node.output_count)) {
+        return plan_allocation_failure();
+      }
+      for (std::size_t index = 0; index < node.input_count; ++index)
+        inputs[index] = plan.descriptions[graph.edges[node.input_begin + index]];
+      for (std::size_t index = 0; index < node.output_count; ++index)
+        outputs[index] = plan.descriptions[node.output_begin + index];
+      for (std::size_t index = 0; index < target_count; ++index)
+        target_candidates[index] = static_cast<std::uint32_t>(index);
+      const std::uint32_t required = node_required[node_index];
+      const std::uint32_t preferred = node_preferred[node_index];
+      const std::uint32_t original = node_targets[node_index];
+      std::stable_sort(
+          target_candidates.begin(), target_candidates.end(),
+          [&](std::uint32_t left, std::uint32_t right) noexcept {
+            if (required != kNone)
+              return left == required && right != required;
+            const bool left_original = left == original;
+            const bool right_original = right == original;
+            if (left_original != right_original)
+              return left_original;
+            const bool left_preferred = left == preferred;
+            const bool right_preferred = right == preferred;
+            if (left_preferred != right_preferred)
+              return left_preferred;
+            return left < right;
+          });
+      Status unsupported = Status::Unimplemented(
+          "no operation fallback supports a declined graph region route");
+      for (std::uint32_t candidate : target_candidates) {
+        if (required != kNone && candidate != required)
+          continue;
+        auto fallback = prepare_operation(node_index, candidate);
+        if (fallback) {
+          prepared[node_index] = std::move(*fallback);
+          node_targets[node_index] = candidate;
+          break;
+        }
+        unsupported = std::move(fallback).error();
+        if (!unsupported.IsUnimplemented())
+          return unsupported;
+      }
+      if (!prepared[node_index].valid())
+        return unsupported;
+    }
     const std::uint32_t target = node_targets[node_index];
-    const std::uint32_t input_storage =
-        plan.targets[target].default_storage.ordinal();
+    const std::uint32_t workspace_storage =
+        node_workspace_storage[node_index];
+    if (workspace_storage == kNone &&
+        prepared[node_index].runtime_properties().workspace_owner ==
+            compute::ProviderWorkspaceOwner::kCaller)
+      return Status::Internal("prepared graph operation has no workspace storage");
     physical_inputs.clear();
     if (!physical_inputs.try_reserve(node.input_count))
       return plan_allocation_failure();
     for (std::size_t input_index = 0; input_index < node.input_count;
          ++input_index) {
       const std::uint32_t value = graph.edges[node.input_begin + input_index];
+      const std::uint32_t input_storage =
+          selected_edge_storage[node.input_begin + input_index];
+      if (input_storage == kNone)
+        return Status::Internal("prepared graph input has no selected storage");
       auto instance = ensure_local_instance(value, input_storage);
       if (!instance)
         return std::move(instance).error();
@@ -1885,6 +2283,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
       const std::uint32_t value =
           node.output_begin + static_cast<std::uint32_t>(output_index);
       const std::uint32_t output_storage = producer_storage[value];
+      if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
+          external_seen[value] == 0) {
+        plan.external_storage[value] = output_storage;
+      }
       std::uint8_t roles = 0;
       if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
           plan.external_storage[value] == output_storage) {
@@ -1915,7 +2317,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
             static_cast<std::uint32_t>(node_index), input_begin,
             node.input_count, output_begin, node.output_count, materializes,
             reason, ExecutionTargetId{target},
-            StorageDomainId{input_storage})) {
+            workspace_storage == kNone ? StorageDomainId{}
+                                       : StorageDomainId{workspace_storage})) {
       return plan_allocation_failure();
     }
     plan.node_steps[node_index] = step_index;
@@ -2191,202 +2594,6 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
     cursor = predecessors[index];
   }
   std::reverse(selected.begin(), selected.end());
-  return Status::Ok();
-}
-
-Status append_operation_step(detail::PlanState &plan,
-                             const detail::GraphState &graph,
-                             const compute::Context &context,
-                             std::uint32_t node_index,
-                             CompileFallbackReason fallback_reason) noexcept {
-  using Descriptions =
-      container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
-  Descriptions input_descriptions(plan.allocator);
-  Descriptions output_descriptions(plan.allocator);
-  const detail::NodeRecord &node = graph.nodes[node_index];
-  if (!input_descriptions.try_resize(node.input_count) ||
-      !output_descriptions.try_resize(node.output_count)) {
-    return plan_allocation_failure();
-  }
-  const std::uint32_t plan_input_begin =
-      static_cast<std::uint32_t>(plan.node_inputs.size());
-  const std::uint32_t plan_output_begin =
-      static_cast<std::uint32_t>(plan.node_outputs.size());
-  for (std::size_t index = 0; index < node.input_count; ++index) {
-    const std::uint32_t ordinal = graph.edges[node.input_begin + index];
-    input_descriptions[index] = plan.descriptions[ordinal];
-    if (!plan.node_inputs.try_push_back(ordinal))
-      return plan_allocation_failure();
-  }
-  for (std::size_t index = 0; index < node.output_count; ++index) {
-    const std::uint32_t ordinal =
-        node.output_begin + static_cast<std::uint32_t>(index);
-    output_descriptions[index] = plan.descriptions[ordinal];
-    if (!plan.node_outputs.try_push_back(ordinal))
-      return plan_allocation_failure();
-    plan.value_materialized[ordinal] = 1;
-  }
-  auto prepared = compute::prepare(context, node.operation, input_descriptions,
-                                   output_descriptions,
-                                   plan.storage_domains[0].resource);
-  if (!prepared)
-    return std::move(prepared).error();
-  const bool materializes =
-      compute::operation_traits(node.operation).materializes;
-  const std::uint32_t step_index =
-      static_cast<std::uint32_t>(plan.steps.size());
-  if (!plan.steps.try_emplace_back(std::move(*prepared), node_index,
-                                   plan_input_begin, node.input_count,
-                                   plan_output_begin, node.output_count,
-                                   materializes, fallback_reason)) {
-    return plan_allocation_failure();
-  }
-  plan.node_steps[node_index] = step_index;
-  return Status::Ok();
-}
-
-Status append_region_step(
-    detail::PlanState &plan, const Graph &published_graph,
-    const detail::GraphState &graph, const RegionExtension &extension,
-    const RegionProposal &proposal,
-    std::span<const std::uint32_t> last_consumers,
-    container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> &marks,
-    std::uint32_t marker, CompileOptions options) noexcept {
-  RegionValues inputs(plan.allocator);
-  RegionValues outputs(plan.allocator);
-  const std::uint32_t begin = proposal.nodes.begin;
-  const std::uint32_t end =
-      begin + static_cast<std::uint32_t>(proposal.nodes.count);
-  Status boundary = collect_region_boundary(
-      plan, graph, proposal, last_consumers, marks, marker, inputs, outputs);
-  if (!boundary.ok())
-    return boundary;
-  auto prepared = compile_region_artifact(plan, published_graph, extension,
-                                          proposal, inputs, outputs, options);
-  if (!prepared)
-    return std::move(prepared).error();
-
-  const std::uint32_t plan_input_begin =
-      static_cast<std::uint32_t>(plan.node_inputs.size());
-  const std::uint32_t plan_output_begin =
-      static_cast<std::uint32_t>(plan.node_outputs.size());
-  for (ValueId input : inputs) {
-    if (!plan.node_inputs.try_push_back(input.ordinal()))
-      return plan_allocation_failure();
-  }
-  for (ValueId output : outputs) {
-    if (!plan.node_outputs.try_push_back(output.ordinal()))
-      return plan_allocation_failure();
-    plan.value_materialized[output.ordinal()] = 1;
-  }
-
-  const std::uint32_t step_index =
-      static_cast<std::uint32_t>(plan.steps.size());
-  if (!plan.steps.try_emplace_back(
-          std::move(*prepared), begin, proposal.nodes.count, plan_input_begin,
-          static_cast<std::uint32_t>(inputs.size()), plan_output_begin,
-          static_cast<std::uint32_t>(outputs.size()))) {
-    return plan_allocation_failure();
-  }
-  for (std::uint32_t node_index = begin; node_index < end; ++node_index)
-    plan.node_steps[node_index] = step_index;
-  ++plan.region_count;
-  return Status::Ok();
-}
-
-Status prepare_steps(detail::PlanState &plan, const Graph &published_graph,
-                     const detail::GraphState &graph,
-                     const compute::Context &context,
-                     CompileOptions options) noexcept {
-  RegionExtensions extensions(plan.allocator);
-  RegionCandidates candidates(plan.allocator);
-  RegionCandidates selected(plan.allocator);
-  Status status = discover_region_candidates(
-      published_graph, graph, context, options, plan.allocator, extensions,
-      candidates, ExecutionTargetId{0});
-  if (!status.ok())
-    return status;
-  status = select_regions(candidates, plan.allocator, options.region_selection,
-                          selected);
-  if (!status.ok())
-    return status;
-  if (options.operation_fallback == OperationFallbackPolicy::kReject) {
-    std::size_t covered_nodes = 0;
-    for (const RegionCandidate &candidate : selected) {
-      covered_nodes = saturating_add(
-          covered_nodes,
-          static_cast<std::size_t>(candidate.proposal.nodes.count));
-    }
-    if (covered_nodes != graph.nodes.size()) {
-      return Status::Unimplemented(
-          "graph specialization requires a single-operation fallback");
-    }
-  }
-
-  container::SmallVector<std::int64_t, 32, mem::AllocatorRef>
-      eligible_region_coverage(plan.allocator);
-  if (!eligible_region_coverage.try_resize(graph.nodes.size() + 1))
-    return plan_allocation_failure();
-  for (std::int64_t &count : eligible_region_coverage)
-    count = 0;
-  for (const RegionCandidate &candidate : candidates) {
-    ++eligible_region_coverage[candidate.proposal.nodes.begin];
-    --eligible_region_coverage[static_cast<std::size_t>(
-        candidate.proposal.nodes.end())];
-  }
-  for (std::size_t index = 1; index < eligible_region_coverage.size();
-       ++index) {
-    eligible_region_coverage[index] += eligible_region_coverage[index - 1];
-  }
-
-  container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> last_consumers(
-      plan.allocator);
-  container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> marks(
-      plan.allocator);
-  if (!last_consumers.try_resize(graph.values.size()) ||
-      !marks.try_resize(graph.values.size())) {
-    return plan_allocation_failure();
-  }
-  for (std::size_t index = 0; index < graph.values.size(); ++index) {
-    last_consumers[index] = detail::kNoNode;
-    marks[index] = 0;
-  }
-  for (std::uint32_t node_index = 0; node_index < graph.nodes.size();
-       ++node_index) {
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    for (std::size_t input_index = 0; input_index < node.input_count;
-         ++input_index) {
-      last_consumers[graph.edges[node.input_begin + input_index]] = node_index;
-    }
-  }
-
-  std::size_t selection_index = 0;
-  std::uint32_t node_index = 0;
-  std::uint32_t marker = 1;
-  while (node_index < graph.nodes.size()) {
-    if (selection_index < selected.size() &&
-        selected[selection_index].proposal.nodes.begin == node_index) {
-      const RegionCandidate &candidate = selected[selection_index];
-      status = append_region_step(
-          plan, published_graph, graph, extensions[candidate.extension_index],
-          candidate.proposal, last_consumers, marks, marker++, options);
-      if (!status.ok())
-        return status;
-      node_index += candidate.proposal.nodes.count;
-      ++selection_index;
-      continue;
-    }
-    const CompileFallbackReason reason =
-        options.region_selection == RegionSelectionPolicy::kDisabled
-            ? CompileFallbackReason::kRegionSelectionDisabled
-            : (eligible_region_coverage[node_index] == 0
-                   ? CompileFallbackReason::kNoEligibleRegion
-                   : CompileFallbackReason::kRegionNotSelected);
-    status = append_operation_step(plan, graph, context, node_index, reason);
-    if (!status.ok())
-      return status;
-    ++node_index;
-  }
   return Status::Ok();
 }
 
@@ -3012,7 +3219,7 @@ Status plan_workspace(detail::PlanState &plan,
     if (plan.steps[step_index].kind == detail::PlanStepKind::kRegion &&
         !plan.steps[step_index]
              .region.properties()
-             .supports_concurrent_invocations) {
+             .runtime.supports_concurrent_invocations) {
       plan.supports_concurrent_invocations = false;
     }
     if (!plan.steps[step_index].emits_command())
@@ -3533,7 +3740,7 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         .destination_storage = step.destination_storage,
         .node_begin = step.node_begin,
         .node_count = step.node_count,
-        .workspace = step.workspace_requirement(),
+        .workspace = step.reported_workspace_requirement(),
         .borrowed_constant_count = step_constant_count(plan, step),
         .dispatch_count = step.emits_command() ? 1u : 0u,
         .input_begin = step.input_begin,
