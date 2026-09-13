@@ -45,3 +45,19 @@ cudaError_t launch_delayed_store_kernel(cudaStream_t stream,
   delayed_store_kernel<<<1, 1, 0, stream>>>(destination, delay_clocks, value);
   return cudaPeekAtLastError();
 }
+
+namespace {
+
+__global__ void delay_kernel(unsigned long long delay_clocks) {
+  const unsigned long long begin = clock64();
+  while (clock64() - begin < delay_clocks) {
+  }
+}
+
+} // namespace
+
+cudaError_t launch_delay_kernel(cudaStream_t stream,
+                                unsigned long long delay_clocks) noexcept {
+  delay_kernel<<<1, 1, 0, stream>>>(delay_clocks);
+  return cudaPeekAtLastError();
+}

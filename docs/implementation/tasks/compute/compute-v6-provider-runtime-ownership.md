@@ -134,6 +134,10 @@ QueueSequence finalization、零 delegated segment、零 serialization edge 和�
 探针继续证明零新增 Graph allocation。旧 P1 bundle 不冒充当前 v7 revision，正式 P1 只在完整 candidate 后
 运行一次。
 
+W1-WIN/CUDA 13.3 又从 Graph 产品根通过 CUDA-on source embedding、安装并重定位后的 shared/static SDK；
+三种独立下游 consumer 均经公开 Compute façade 创建 CUDA Context/Queue/resource、执行 async fill 并等待
+终态。由此 C67 不只覆盖 portable/oneDNN 形状，也覆盖 optional system-SDK factor 的真实传播与运行。
+
 ## 七问（AUDITED）
 
 1. 第三方：本体不新增第三方；锁定源码/官方文档只证明 seam，真正依赖由具体 provider factor 拥有。

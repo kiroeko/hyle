@@ -1,4 +1,8 @@
 #include <hyle/compute/cpu.h>
+#if defined(HYLE_COMPUTE_CUDA)
+#include <hyle/compute/backends/cuda.h>
+#include <hyle/compute/transfer.h>
+#endif
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
 
@@ -184,6 +188,29 @@ int main() {
           hyle::graph::onednn::kProviderId) {
     return 23;
   }
+#endif
+
+#if defined(HYLE_COMPUTE_CUDA)
+  auto cuda_device = hyle::compute::cuda::device(0);
+  if (!cuda_device)
+    return 24;
+  auto cuda_context = Context::create(*cuda_device);
+  if (!cuda_context)
+    return 25;
+  auto cuda_queue = cuda_context->create_queue();
+  auto cuda_resource = hyle::compute::cuda::MemoryResource::create(
+      *cuda_context, hyle::compute::cuda::MemoryKind::kDevice);
+  if (!cuda_queue || !cuda_resource ||
+      !cuda_queue->reserve_completions(1).ok()) {
+    return 26;
+  }
+  auto cuda_buffer = hyle::mem::Buffer::create(cuda_resource->ref(), 256);
+  if (!cuda_buffer)
+    return 27;
+  auto cuda_done = hyle::compute::fill_async(
+      *cuda_queue, cuda_buffer->view(), std::byte{0x2a});
+  if (!cuda_done || !cuda_done->wait().ok())
+    return 28;
 #endif
 
   return 0;

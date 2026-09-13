@@ -283,9 +283,17 @@ Toolkit，立即 `BLOCKED`，不得以 leaked state、hidden sync 或 opaque `vo
   capture/hybrid replay，以及同 Context 双 stream 的 event import。双 stream probe 不做 host wait：延迟
   producer store 后，consumer stream 通过 imported prefix 再 copy 并观察到正确值；
 - CUDA target 的 compute/transfer lane 也已在 Graph 使用同一 device storage 资格化，未使用 lane 不产生假
-  Queue 要求。一般 multi-stream capture 仍明确 unsupported；CU21 剩余 loss/race、CU22 三交付、CU23
-  P0/P1/终局红队尚未完成，因此组件保持 `AUDITED`。
+  Queue 要求。一般 multi-stream capture 仍明确 unsupported；
+- CU21 的 bounded terminal probes 已完成：Runtime/Driver OOM 映射到 portable `ResourceExhausted` 且保留
+  native domain/code；独立进程制造的 asynchronous illegal-address fault 证明 host enqueue 成功后仍可在
+  `Completion::wait()` 返回 typed terminal failure；四线程、多 Context/Queue 的 wait/abandon/drain/reaper
+  竞争回放通过。该 fault probe 是可重复的设备执行失败，不冒充真实物理拔卡测试；
+- CU22 已在 W1-WIN/CUDA 13.3 从 Graph 产品根通过 source embedding、安装并重定位后的 shared/static SDK；
+  三种下游 consumer 均实际创建 CUDA Context/Queue/device resource，执行 async fill 并等待终态。
+  installed config 会传播 `CUDAToolkit 13.3`，CUDA façade 存在且 relocated consumer 可链接运行；
+- CU23 的 P0 账单已有实现与结构探针支撑，但当前 revision 的一次性 P1 与终局红队尚未签发，因此组件
+  保持 `AUDITED`。
 - 同一 `4d674113` git archive 在 MacBook Air 与 Mac mini 上验证了 CUDA 负能力：`OFF` 不探测，`AUTO`
   明确报告找不到 CUDA Toolkit 13.3+ 并继续配置，显式 `ON` 则在 `FindCUDAToolkit` 处因找不到 `nvcc`
   清晰失败；两机 portable Compute/Graph 六组测试及 Graph 三交付均通过。该事实不替代 Windows RTX 4070
-  的 CUDA-on 三交付、loss/race、P1 与终局红队。
+  的 CUDA-on 三交付或 loss/race；当前仍只待 W1-WIN P1 与终局红队。

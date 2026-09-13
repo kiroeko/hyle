@@ -158,8 +158,11 @@ auto done = HYLE_TRY(invocation.submit(bindings));
 - CUDA Graph P2 纵切已迁移到 target/storage/lane v7 合同并完成一次功能回放；同一 4 MiB
   CUDA→CPU Unary→CUDA 语义可运行，但该单样本不冒充正式 P2 签名，正式结论仍须走冻结合同的双顺序、
   placement 与 control strata；
-- 剩余硬门是 CUDA factor 的 loss/race/P1/终局红队与 CUDA-on 三交付，以及 Graph 当前 revision 的正式
-  P2 和终局文档/状态签发；一般 multi-stream capture 与 CUDA operation provider 不冒充本轮基础资格。
+- CUDA factor 的 bounded loss/race probes 已通过：typed asynchronous terminal failure 与并发
+  wait/abandon/drain/reaper 均有真机回放；Graph 产品根的 CUDA-on source embedding、安装并重定位后的
+  shared/static SDK 也全部通过，三种 consumer 均实际运行 CUDA async fill，而非只检查符号；
+- 剩余硬门收敛为 CUDA factor 当前 revision 的一次性 P1、Graph 当前 revision 的一次性正式 P2，以及
+  两者终局红队/文档/状态签发；一般 multi-stream capture 与 CUDA operation provider 不冒充本轮基础资格。
 
 ## 七问（AUDITED）
 

@@ -68,6 +68,7 @@ set(_source_extra_tests "")
 set(_source_feature_contract "")
 set(_selected_feature_args "")
 set(_compute_onednn_selected FALSE)
+set(_compute_cuda_selected FALSE)
 if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
   string(APPEND _source_expert_contract
     "add_library(hyle_selected_source_provider OBJECT \"${_sample}/expert_probe.cc\")\n"
@@ -94,21 +95,31 @@ elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
   # CMAKE_HOST_SYSTEM_PROCESSOR is not initialized. Query the host explicitly;
   # otherwise every native x64 smoke silently exercises the OFF branch and the
   # optional provider is never present in any of the three delivery forms.
-  cmake_host_system_information(
-    RESULT _hyle_smoke_host_processor QUERY OS_PLATFORM)
-  string(TOLOWER "${_hyle_smoke_host_processor}"
-         _hyle_smoke_host_processor)
-  if(_hyle_smoke_host_processor MATCHES "^(amd64|x86_64|x64)$")
-    set(_compute_onednn_selected TRUE)
+  if(DEFINED HYLE_SMOKE_COMPUTE_CUDA AND HYLE_SMOKE_COMPUTE_CUDA)
+    set(_compute_cuda_selected TRUE)
     string(APPEND _source_feature_contract
-      "set(HYLE_COMPUTE_ONEDNN ON)\n")
-    list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=ON)
+      "set(HYLE_COMPUTE_ONEDNN OFF)\n"
+      "set(HYLE_COMPUTE_CUDA ON)\n")
+    list(APPEND _selected_feature_args
+      -DHYLE_COMPUTE_ONEDNN=OFF
+      -DHYLE_COMPUTE_CUDA=ON)
   else()
-    string(APPEND _source_feature_contract
-      "set(HYLE_COMPUTE_ONEDNN OFF)\n")
-    list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=OFF)
+    cmake_host_system_information(
+      RESULT _hyle_smoke_host_processor QUERY OS_PLATFORM)
+    string(TOLOWER "${_hyle_smoke_host_processor}"
+           _hyle_smoke_host_processor)
+    if(_hyle_smoke_host_processor MATCHES "^(amd64|x86_64|x64)$")
+      set(_compute_onednn_selected TRUE)
+      string(APPEND _source_feature_contract
+        "set(HYLE_COMPUTE_ONEDNN ON)\n")
+      list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=ON)
+    else()
+      string(APPEND _source_feature_contract
+        "set(HYLE_COMPUTE_ONEDNN OFF)\n")
+      list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=OFF)
+    endif()
+    unset(_hyle_smoke_host_processor)
   endif()
-  unset(_hyle_smoke_host_processor)
 endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -211,6 +222,20 @@ foreach(_linkage IN ITEMS shared static)
        EXISTS "${_staging}/include/oneapi")
       message(FATAL_ERROR
         "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK leaked private oneDNN headers")
+    endif()
+    if(_compute_cuda_selected)
+      if(NOT EXISTS "${_staging}/include/hyle/compute/backends/cuda.h")
+        message(FATAL_ERROR
+          "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK lacks its CUDA façade")
+      endif()
+      file(READ "${_staging}/lib/cmake/Hyle/HyleConfig.cmake"
+        _installed_hyle_config)
+      if(NOT _installed_hyle_config MATCHES
+         "CUDAToolkit\\|13\\.3")
+        message(FATAL_ERROR
+          "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK does not propagate CUDAToolkit 13.3")
+      endif()
+      unset(_installed_hyle_config)
     endif()
   endif()
   file(RENAME "${_staging}" "${_prefix}" RESULT _relocate_result)

@@ -268,7 +268,7 @@ switch ($Action) {
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiSelectedComponentSmoke.cmake'
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             "-DHYLE_SMOKE_COMPONENT=$Component" -DHYLE_SMOKE_GENERATOR=Ninja `
-            -P $smokeScript
+            @ExtraArgs -P $smokeScript
     }
     'PackageSmoke' {
         if (-not $SmokeRoot) {

@@ -1,9 +1,11 @@
 #include <array>
-#include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <thread>
 #include <utility>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -18,6 +20,8 @@ cudaError_t launch_delayed_store_kernel(cudaStream_t stream,
                                         unsigned int *destination,
                                         unsigned long long delay_clocks,
                                         unsigned int value) noexcept;
+cudaError_t launch_delay_kernel(cudaStream_t stream,
+                                unsigned long long delay_clocks) noexcept;
 
 namespace {
 
@@ -29,6 +33,29 @@ namespace cuda = hyle::compute::cuda;
 namespace mem = hyle::mem;
 
 using hyle::StatusCode;
+
+TEST(CudaBackend, PreservesPortableAndNativeErrorIdentity) {
+  const auto runtime_oom = cuda::status(cudaErrorMemoryAllocation);
+  EXPECT_EQ(runtime_oom.code(), StatusCode::ResourceExhausted);
+  EXPECT_EQ(runtime_oom.native_error().domain,
+            hyle::NativeErrorDomain::CudaRuntime);
+  EXPECT_EQ(runtime_oom.native_error().code,
+            static_cast<std::int64_t>(cudaErrorMemoryAllocation));
+
+  const auto driver_oom = cuda::status(CUDA_ERROR_OUT_OF_MEMORY);
+  EXPECT_EQ(driver_oom.code(), StatusCode::ResourceExhausted);
+  EXPECT_EQ(driver_oom.native_error().domain,
+            hyle::NativeErrorDomain::CudaDriver);
+  EXPECT_EQ(driver_oom.native_error().code,
+            static_cast<std::int64_t>(CUDA_ERROR_OUT_OF_MEMORY));
+
+  const auto late_failure = cuda::status(cudaErrorIllegalAddress);
+  EXPECT_FALSE(late_failure.ok());
+  EXPECT_EQ(late_failure.native_error().domain,
+            hyle::NativeErrorDomain::CudaRuntime);
+  EXPECT_EQ(late_failure.native_error().code,
+            static_cast<std::int64_t>(cudaErrorIllegalAddress));
+}
 
 TEST(CudaBackend, EnumeratesExplicitDevices) {
   const auto count = cuda::backend().device_count();
@@ -444,6 +471,62 @@ TEST(CudaBackend, AbandonedPendingCompletionRetainsQueueAndStorage) {
       0, std::as_writable_bytes(std::span<unsigned int>(&observed, 1))).ok());
   EXPECT_EQ(observed, kExpected);
   EXPECT_TRUE(queue->drain().ok());
+}
+
+TEST(CudaBackend, ConcurrentContextsRetirePendingPrefixesWithoutRaces) {
+  auto device = cuda::device(0);
+  ASSERT_TRUE(device.has_value()) << device.error().message();
+  int clock_rate_khz = 0;
+  ASSERT_EQ(cudaDeviceGetAttribute(&clock_rate_khz, cudaDevAttrClockRate, 0),
+            cudaSuccess);
+  ASSERT_GT(clock_rate_khz, 0);
+
+  constexpr std::size_t kThreads = 4;
+  constexpr std::size_t kIterations = 16;
+  std::atomic<bool> failed{false};
+  std::vector<std::thread> workers;
+  workers.reserve(kThreads);
+  for (std::size_t thread = 0; thread < kThreads; ++thread) {
+    workers.emplace_back([&, thread] {
+      for (std::size_t iteration = 0; iteration < kIterations; ++iteration) {
+        auto context = Context::create(*device);
+        if (!context) {
+          failed.store(true, std::memory_order_relaxed);
+          return;
+        }
+        auto queue = context->create_queue();
+        if (!queue || !queue->reserve_completions(2).ok()) {
+          failed.store(true, std::memory_order_relaxed);
+          return;
+        }
+        const auto delay = static_cast<unsigned long long>(clock_rate_khz);
+        auto pending = cuda::submit(*queue, [&](cudaStream_t stream) noexcept {
+          return launch_delay_kernel(stream, delay);
+        });
+        if (!pending) {
+          failed.store(true, std::memory_order_relaxed);
+          return;
+        }
+        if (((thread + iteration) & 1U) == 0U) {
+          if (!pending->wait().ok()) {
+            failed.store(true, std::memory_order_relaxed);
+            return;
+          }
+        } else {
+          // Exercise handoff to the one process-wide reaper while other
+          // contexts are polling, waiting, draining and being destroyed.
+          pending = hyle::compute::Completion{};
+        }
+        if (!queue->drain().ok()) {
+          failed.store(true, std::memory_order_relaxed);
+          return;
+        }
+      }
+    });
+  }
+  for (auto &worker : workers)
+    worker.join();
+  EXPECT_FALSE(failed.load(std::memory_order_relaxed));
 }
 
 } // namespace
