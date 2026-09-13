@@ -41,12 +41,75 @@
   保留最小 HYLE semantic adapter；若 API 必须吸收 tensor/broadcast policy，停止并把能力留在 Compute；
   material P1 失败最多纠正两轮，之后如实 `BLOCKED`。
 
-## SCOPED 待审计项
+## 能力与形状审计
 
-1. public spelling、alias 与 special-value 语义，尤其 pairwise `fmin/fmax` 和 propagating reduction 不得混淆；
-2. Highway/xsimd 对 rsqrt、NaN、signed zero、mask load/select 的精确合同与 target coverage；
-3. existing Runtime/ops/search table 的最小增量，保证普通路径仍只有一次缓存间接调用；
-4. Compute 能按完整 dense suffix 调用一次 row entry，strided/broadcast fallback 不被错误宣称加速；
-5. 受影响的 source/static/shared export、用户指南与 v6 provider-route 账本增量。
+| 能力族 | 层级 | 准入旅程/来源 | 语义与边界 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|---|---|
+| full-precision f32 reciprocal sqrt row | 原子机制 | Compute dense `Unary(kRsqrt)`；普通数值数组 | `out[i] = 1.0F / sqrt(x[i])`；不得把 ISA approximate-rsqrt 冒充 exact；完整输入/输出可原位 | 现有 SIMD 只有 `sqrt`，Compute scalar loop | `MISSING` | `FIX` |
+| f32 pairwise number min/max row | 原子机制 | Compute dense `Binary(kMinimum/kMaximum)`；普通数值数组 | `std::fmin/std::fmax` 风格：单侧 NaN 返回数值，两侧 NaN 返回 NaN；零值分别稳定为 `-0/+0`；完整输入可原位 | Compute scalar loop；Highway `MinNumber/MaxNumber` 未独立承诺 signed zero | `MISSING` | `FIX` |
+| byte-bool → f32 value select row | 原子机制 | Compute dense `Select`；批处理数值管线 | 任意非零 byte 为 true；只允许输出完整别名任一 value 输入，其他 overlap 不在合同内 | Compute 逐元素 branch/copy；Highway 可窄载入、同 lane promote 后 mask-select | `MISSING` | `FIX` |
+| propagating floating extrema | 原子机制 | Compute dense Reduce；现有公开 search API | 任一 NaN 传播；min/max 的零结果分别保留 `-0/+0`，index 保持相同语义下第一项；空区间 identity 不变 | 当前 Highway `Min/Max/Reduce*` 路线丢失 signed zero；f32/f64 共用实现 | `PARTIAL` | `FIX` |
+| tensor/layout/broadcast/row partition | 应用策略 | Compute provider | SIMD 不吸收 Tensor、axis、broadcast 或 provider policy | Compute 已拥有 | `ROUTED` | `KEEP` |
 
-AUDITED 前不修改 SIMD 产品代码。只允许读取 provider 实现、形成 capability map 和冻结有限 FIX。
+公开入口冻结为 `reciprocal_sqrt(float*)`、`fmin/fmax(float*)` 和
+`select_values(uint8_t*, float*)` 三组 pointer/count overload；名称直接表达数值语义，避免把 pairwise
+number operation 与 `min_value/max_value` propagating reduction 混淆。新 row 输出可完整别名任一同型 value
+输入，partial overlap 不支持；`select_values` 的 condition 不得与 float ranges 重叠。`n == 0` 接受 null。
+不增加 approximate 档、Tensor overload、临时 workspace 或常态 metadata。
+
+### Provider capability map
+
+- locked Highway `18e449b642599b8f51c03ca10173fdc59864e4f2` 提供 portable `Sqrt/Div`、
+  `MinNumber/MaxNumber`、窄整数 promote 与 mask select，覆盖 scalar、SSE4、AVX2、AVX-512、NEON、SVE、
+  RVV；HYLE 只需 signed-zero semantic adapter；
+- Highway `ApproximateReciprocalSqrt` 以及 locked xsimd
+  `3b3151ff665514a00a437cc985f47b7de99b772b` 的 `rsqrt` 在 x86/NEON/SVE/RVV 直接使用估算指令，
+  不满足 Compute 的 exact precision policy；本轮拒绝该路线；
+- xsimd `fmin/fmax` 公开入口委托普通 target `min/max`，其测试未锁定本轮 NaN + signed-zero 全合同；
+  它也没有比现有 Highway target TU 更自然的 byte-bool pointer/count 路线。因此三项均由 locked Highway
+  lowering 承载，不新增 xsimd 例外或第二次路由；
+- `hyle_add_dispatched_kernel(HIGHWAY ...)` 已为 ops/search 生成七档 target TU；Runtime table 是普通
+  pointer/count API 的唯一一次 process-cached 间接调用，exact artifact 继续直接绑定单档 symbol。
+
+### 有限改动集
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| S7-F1 | dense f32 rsqrt 仍逐元素 scalar | 在 ops public/runtime/target table 增加 full-precision f32 row；Highway `Div(1,Sqrt(x))` + scalar tail | zero/null、tail、alias、特殊值、逐 runtime differential；Compute dense route 直接复用 |
+| S7-F2 | dense f32 min/max 仍逐元素 scalar | 增加 `fmin/fmax` row，以 Highway number op 加最小 signed-zero adapter | 单/双 NaN、inf、subnormal、四种 `+0/-0` 顺序、alias、逐 runtime differential |
+| S7-F3 | dense byte-bool f32 select 仍逐元素 branch | 增加 `select_values` row；窄 condition load/promote 后一次 mask select | 0/1/其他非零 byte、tail、true/false exact alias、逐 runtime differential；非 f32 Compute route保持原样 |
+| S7-F4 | propagating extrema 的零符号与 Compute 合同不一致 | 修正既有 f32/f64 shared extrema value/index/minmax 实现，不改变 NaN、空区间或整数语义 | signed-zero permutation、第一索引、NaN precedence、逐 runtime differential |
+| S7-F5 | 普通消费者与交付尚未回放 | 更新 SIMD/Compute guide 与 provider ledger；验证 source/static/shared、exact/fat codegen 和三平台 | 无第二次 dispatch、无临时 buffer/heap/lock；Compute dense 与 fallback differential 均通过 |
+
+本表已冻结。未列出的 SIMD family、approximate API、f64 新 row API、Tensor API、线程池和 winner route
+不在本轮授权内；新事实要求改变这些边界时退回 `SCOPED/AUDITED`。
+
+### API / usability freeze
+
+- 普通 C++：包含 `hyle/simd/ops.h` 后对一个已验证连续 row 调用一次 pointer/count entry；Tensor 用户继续
+  通过 Compute，让 provider 负责 dtype/layout/broadcast 检查；
+- semantics：`reciprocal_sqrt` 只有 full-precision 档；`fmin/fmax` 是 number semantics，
+  `min_value/max_value` 仍是任一 NaN 传播的 reduction；`select_values` 接受非零 byte；
+- lifetime/failure：全为同步 `noexcept` 借用范围，调用返回前完成；无 owner、OOM、cancel 或 teardown；
+- steady cost：O(n) 时间、O(1) stack，零 allocation/atomic/lock/syscall，普通构建一次 whole-row function
+  pointer hop，exact 构建直接 call；
+- 性能限制：只有连续 f32 row 使用这些入口；strided/broadcast Tensor 仍走 Compute scalar fallback，文档不得
+  宣称全部 Select/Reduce 都被加速；
+- 交付：入口属于既有 `hyle_simd` target 与 export macro，不创建新 component、开关或 vendor runtime
+  dependency；source/static/shared 使用同一 public header。
+
+## 七问（AUDITED）
+
+1. 第三方：Highway/xsimd 均由中央 lock/cache 管理，Apache-2.0/BSD-3-Clause 归档随安装；本轮只使用
+   Highway header-only lowering，版本和拒绝 xsimd/approximate 的原因已在 capability map 固定。
+2. 功能：Compute dense row 与普通数组两个纵切共同证明四项缺口；Tensor/broadcast policy 明确仍由 Compute
+   拥有，有限集之外没有新 `MUST`。
+3. 内部复用：Compute 将复用 SIMD；SIMD 继续复用 Core、Platform 与既有 Highway target 生成机制，不复制
+   CPU 探测、runtime route 或 allocation。
+4. 性能：全部 O(n)/O(1)，无隐藏资源成本；P1 只在 candidate 后测 Compute-real dense rows，并同时比较同
+   语义 scalar oracle 与 direct locked-Highway body，5% 为 material 门而非把小输改名为 parity。
+5. FFI：不存在 C/Native FFI；只新增 C++ pointer/count API，未产生跨语言 runtime owner。
+6. 构建：既有 ops/search generated target TUs 和 `hyle_simd` package export 承载全部变化；需在 F5 回放三交付
+   与 exact/fat artifact。
+7. 易用：三组名称、alias、NaN/zero 和 dense/fallback 选型已冻结；guide 必须把 full-precision 与 approximate
+   以及 pairwise/reduction 的差异写清。

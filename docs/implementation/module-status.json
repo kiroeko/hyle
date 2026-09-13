@@ -168,9 +168,9 @@
     },
     {
       "module": "simd",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/simd/simd-v7-compute-row-primitives.md",
-      "summary": "simd-v7 SCOPED：Compute 18/19 真实纵切证明普通 f32 row rsqrt、fmin/fmax、byte-bool select 与 signed-zero-correct extrema reduction 存在可复用缺口；范围限于四组 primitive 及直接 Compute 回放，未授权重审 v6 全目录。"
+      "summary": "simd-v7 AUDITED：锁定 full-precision f32 reciprocal-sqrt、IEEE number fmin/fmax、byte-bool f32 select 与 propagating extrema signed-zero 修复；Highway 提供七档 lowering，HYLE 只补语义 adapter，有限 S7-F1..F5 已冻结。"
     },
     {
       "module": "container",
