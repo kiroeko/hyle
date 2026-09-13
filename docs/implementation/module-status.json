@@ -393,8 +393,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "QUEUED",
-      "summary": "compute_backend_cuda QUEUED：仅保留真异步 NVIDIA 执行轴的 component identity；审计前没有源码、依赖、公开头、产品投影、开关或可调用能力。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-backend-cuda-v1-async-runtime.md",
+      "summary": "compute_backend_cuda v1 SCOPED：基于 RTX 4070/CUDA 13.3 与四个真实推理 runtime 审计 device/context/stream/event、device/pinned/managed storage、async copy、late Completion、typed interop/capture 和构建交付；审计前仍为空 factor。"
     },
     {
       "module": "compute_provider_native",
