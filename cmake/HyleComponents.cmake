@@ -370,6 +370,12 @@ _hyle_declare_component(compute_ops
 _hyle_declare_component(compute_backend_cpu
   PUBLIC_DEPS compute mem
   SPLIT_PUBLIC_HEADERS hyle/compute/backends/cpu.h)
+
+# Reserved identity for the first real asynchronous accelerator backend.
+# QUEUED means it deliberately owns no sources, dependency, public header,
+# package projection or feature switch until its closure audit freezes them.
+_hyle_declare_component(compute_backend_cuda)
+
 _hyle_declare_component(compute_provider_native
   PRIVATE_DEPS math mem platform simd
   PUBLIC_DEPS compute compute_backend_cpu

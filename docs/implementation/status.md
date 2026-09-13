@@ -48,6 +48,7 @@
 | graph_provider_onednn | BLOCKED | — | [record](tasks/compute/graph-provider-onednn-v2-ukernel-region.md) | graph_provider_onednn v2 BLOCKED：精确四节点 dense-f32 gated MLP region 的 Windows correctness/三交付已通过；qualified P1/P2 中三个 workload 8/8 PARITY/PASS，但最小 decode fused-boundary 有 3/8 strata 的 CI 略穿 5% 非劣门，工程性能保持 INCONCLUSIVE。后续只可由真实 Runtime/Graph 主干变化恢复，不为 benchmark 特判。 |
 | compute_ops | AUDITED | — | [record](tasks/compute/compute-ops-v1-schema-and-catalog.md) | compute_ops v1 AUDITED：schema/runtime 拆分、零/多输出与 alias/effect/precision 合同及 19 个 public family 已实现；其中 12 个已有 native executable route，其余 7 个及终局验证尚未完成。 |
 | compute_backend_cpu | AUDITED | — | [record](tasks/compute/compute-backend-cpu-v1-factor.md) | compute_backend_cpu v1 AUDITED：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现并通过 Windows 三交付；依赖 runtime 终局证据后才能关闭。 |
+| compute_backend_cuda | QUEUED | — | — | compute_backend_cuda QUEUED：仅保留真异步 NVIDIA 执行轴的 component identity；审计前没有源码、依赖、公开头、产品投影、开关或可调用能力。 |
 | compute_provider_native | AUDITED | — | [record](tasks/compute/compute-provider-native-v1-factor.md) | compute_provider_native v1 AUDITED：N10--N16 已实现；transform、Cast、Unary/Binary/Select、Reduce、RMSNorm/LayerNorm、MatMul 与 packed-SiLU 共 12/19 类可执行，Windows 定向测试通过；先转去完成 Graph v3 合同，再由真实图缺口驱动其他 7 类；三交付增量回放、Linux/macOS/sanitizer 与七条 P1 未完成。 |
 
 <!-- END GENERATED MODULE STATUS -->

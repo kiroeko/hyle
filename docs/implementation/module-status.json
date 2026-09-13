@@ -392,6 +392,11 @@
       "summary": "compute_backend_cpu v1 AUDITED：B10--B16 的显式 CPU Backend/Device、caller-thread ordered Queue、system MemoryResource、自然 create_context 与 typed host submit 已实现并通过 Windows 三交付；依赖 runtime 终局证据后才能关闭。"
     },
     {
+      "module": "compute_backend_cuda",
+      "state": "QUEUED",
+      "summary": "compute_backend_cuda QUEUED：仅保留真异步 NVIDIA 执行轴的 component identity；审计前没有源码、依赖、公开头、产品投影、开关或可调用能力。"
+    },
+    {
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
