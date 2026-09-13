@@ -279,10 +279,9 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/graph-v6-runtime-specialization-placement.md",
-      "candidate": "db8d1d335c84fb89675f6be2c2350efc6e35b271",
-      "summary": "graph v6 CANDIDATE：bounded specialization、显式 domain/resource/placement、真实跨域 copy、每域 liveness、segment Completion、多 Queue replay/capture 与完整 report 已固定；三平台正确性/sanitizer/三交付和 P0 结构门通过，待同候选 P1/P2 与终局红队。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/graph-v7-execution-lanes.md",
+      "summary": "graph v7 AUDITED：真实推理 runtime 对账确认 v6 错把 storage domain 与唯一 Queue 绑定，无法表达同 device compute/transfer overlap；G70--G74 已冻结为 execution lane、workspace hard budget、真实 replay/report 与有限候选回归，不引入逐节点 timing 或自动模型 placement。"
     },
     {
       "module": "container_concurrent",

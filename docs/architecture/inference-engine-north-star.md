@@ -100,6 +100,41 @@ Compute/Graph/引擎设计不得封死，但不授权重开底层模块或立即
 TTFT/ITL、质量、bytes/token、峰值/常驻状态、batch 利用率和 joules/token。共享权重只有在驻留与搬运
 证据成立时才能形成带宽收益声明，减少可见 reasoning token 也不能自动推导出端到端延迟更低。
 
+### 3.2 用户配置与隐藏资源计划
+
+用户/部署方只应给出会改变产品语义或资源边界的粗粒度约束：可用 device、显式 CPU 上限、显存/内存
+预算、是否允许模型 offload、并发度，以及延迟/吞吐倾向。L1/L2/L3 大小、P/E core、SMT sibling、NUMA
+node、page advice、每算子 task 数、kernel tile、GPU side stream 和 workspace slot 不应成为普通模型配置。
+
+这些细节也不能全部塞给 Graph。资源计划按掌握事实的 owner 分层：
+
+| 层 | 已知事实 | 决策 |
+|---|---|---|
+| 推理 runtime / deployment | 模型层、持久权重、KV/batch、device 容量、TP/PP/DP | process/rank、device set、模型切分/offload、KV 与总内存预算 |
+| Compute/Sched runtime | process cpuset/quota、CPU 拓扑、NUMA、Queue capability | 持久 worker pool、CPU set/affinity、并发 ceiling、同 device Queue/lane 集 |
+| Provider/kernel | exact dtype/layout/shape、ISA、实际 worker set 与 cache class | task/grain/tile、repack、prefetch、per-worker scratch 和具体 kernel route |
+| Graph | DAG、boundary、physical storage domain、liveness 与 Queue dependency | region、workspace packing、compute/transfer lane、copy/sync、capture 与 warm replay |
+| Mem/loader | 文件范围、backing 生命周期、访问顺序和 placement 目标 | mmap/read、prefetch/populate、large page、pinned memory、NUMA bind/interleave 与 first-touch |
+
+默认 CPU 数不是 `hardware_concurrency()`。runtime 先尊重 process affinity/cpuset 与 hard quota，再从
+OS 发布的 topology 中按一个 logical CPU / physical core 建立数学 worker 候选；混合 CPU 在延迟档优先
+performance core，SMT/E core 只有在吞吐档、没有更强 core 或 workload 资格证据成立时加入。provider 再按
+实际 work amount 缩小本次 task 数，因此“机器有 N 核”不等于每个小 decode op 都启动 N 个 task。持久 pool
+在模型初始化时建立，不在 token loop 创建线程；CPU decode 与 prefill 若资源需求不同，由推理 runtime
+持有两个具名 profile/pool，而不是把模型词汇放进基础 API。
+
+GPU 常规路线是一条 primary compute lane，加真实需要时的一条 transfer/prefetch lane；communication 或
+output-copy lane 必须有 typed consumer 才增加。显存预算先扣除模型常驻、provider/vendor workspace、Graph
+workspace、capture 和 safety margin，剩余才交给 KV owner。可重叠 H2D 需要 pinned host backing、独立
+Queue 与 device event 共同成立；普通 pageable memory 加一条 stream 不能形成 overlap 声明。
+
+成熟实现的共同做法是冷路径形成并缓存计划，而不是在每次 replay 微基准选参数：llama.cpp 使用物理/P 核
+优先的持久 decode/prefill pools，并让每个 op 裁剪 task 数；vLLM 按本地进程瓜分启动期 CPU、在 GPU serving
+热路径把无收益的 Torch 线程降为 1，并 profile 可用显存/KV；SGLang 把进程、CPU 和内存绑到 GPU 邻近 NUMA
+node，kernel 再做 cache blocking；ds4 使用固定持久 pool 与显式 stream；oneTBB/oneDNN 分别提供外层 arena
+ceiling 与内层 work-aware clipping。HYLE 应组合已有 Platform/Mem/Sched 机制并补齐 Compute/Graph 接缝，
+不能复制另一套 CPU probe、VM API 或线程池。
+
 ## 4. 版本化 workload 矩阵
 
 稳定文档只规定维度和资格；具体模型 hash、量化格式、prompt/token 序列、规模、线程数、backend、

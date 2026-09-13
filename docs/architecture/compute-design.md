@@ -242,7 +242,7 @@ byte stride 表达；单轴 fixed-block Tensor 记录 elements/block、bytes/blo
 HYLE::compute                         # 用户产品 façade
   compute_core                        # Device/Context/Queue/Completion/kernel/interop
   compute_ops                         # Tensor/Operation 描述与公共算子合同
-  compute_sched                       # 可选 Scheduler/coroutine completion bridge
+  compute_sched                       # 可选持久 CPU execution pool 与 Scheduler/completion bridge
   compute_backend_cpu|cuda|metal|vulkan
   compute_provider_native|ggml|onednn|mlx|mpsgraph|vendor
 
@@ -252,8 +252,10 @@ graph_plan -> compute + mem                            # 当前为 Graph 内部�
 graph_sched -> graph_plan + compute_sched + sched      # 未来可选运行时组合
 ```
 
-`compute_core` 不因 coroutine convenience 强制公开依赖 Sched；需要 `co_await`/task 组合的用户取得窄的
-bridge factor。可选 provider/backend 各自拥有外部依赖和 feature 开关，未选择时不下载、不编译、
+`compute_core` 不因 CPU pool 或 coroutine convenience 强制公开依赖 Sched；需要自然默认 CPU execution
+pool、`co_await` 或 task 组合的用户取得窄的 `compute_sched` factor。该 factor 只把 Platform 的 process
+capacity/topology 与 Sched 的持久 workers 投影成 Compute `ParallelExecutorRef`，不拥有 kernel tile、模型
+进程、batch 或 memory placement。可选 provider/backend 各自拥有外部依赖和 feature 开关，未选择时不下载、不编译、
 不导出恒定失败 stub。Compute 永远不依赖 Graph。
 
 Compute/Graph 的真实纵切也是底层合同的消费者验收。若它证明 Mem、Sched、Platform 或其它已关闭
@@ -275,6 +277,12 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 4. host/device transfer 可批处理并与计算重叠时应显式表达，不通过隐藏 staging 制造假零拷贝；
 5. provider 自有线程必须可配置或在 region 级隔离，禁止与 HYLE workers 无界嵌套造成 oversubscription；
 6. compile latency、warm execution、steady throughput、tail、peak/resident memory、copy bytes 与能耗分别报告。
+
+CPU 并行采用两阶段合同：execution pool 给出 process-aware 的最大并发与稳定 worker CPU set；provider 在
+prepare 时根据 exact shape、实际 CPU set/cache class 和 per-task scratch 把一次操作裁剪到有用 task 数。
+默认 pool 不使用裸 `hardware_concurrency()`，不为每个 op 重建线程，也不让 Graph 接触 L1/L2/L3。自定义
+executor 若没有固定 affinity，应诚实报告 topology unknown，provider 使用保守 route。模型 runtime 可以为
+decode/prefill 或 CPU control/data plane 建不同 pool，但这些名称不进入 Compute 基础类型。
 
 同合同对拍必须锁定 op 语义、dtype/精度、layout、shape、线程/queue、warmup、storage residence 和计费
 边界。HYLE 原生只有在资格化 workload 上形成可复现 material advantage 才取代成熟 provider；无法区分、
