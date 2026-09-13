@@ -321,5 +321,12 @@ host wait 在取得 destination Queue single-producer admission 前执行，避�
 - WSL GCC 14 的 CUDA/oneDNN-OFF Release、Compute/Graph 逐头及直接 owner/consumer 测试通过；ASan、UBSan、
   TSan 四组直接目标均通过。首次回放发现 optional-absent CUDA placeholder target 被测试误认为真实实现，已将
   `cuda_graph_test.cc` 接线改为要求 `HYLE_COMPUTE_CUDA_ENABLED`，随后 CUDA-OFF 构建通过；
-- 本轮尚未形成完整跨平台 immutable candidate，也未执行 macOS 与必要 P1/P2，因此 registry 继续保持
-  `AUDITED`。这些门应在基础实现不再变化后一次运行，不因文档或状态维护重复启动。
+- MacBook Air 与 Mac mini 的 AppleClang 21、ARM/NEON portable shape 均已通过 Compute/Graph/CPU backend
+  直接测试与逐头检查；Mac mini 使用从 Windows canonical checkout 为精确候选生成的完整 `git archive`，
+  没有用手选文件拼接源码；
+- P0 结构门通过：warm submit 不分配 Graph metadata，不遍历原始 DAG，不推 shape、不搜索 provider/JIT，
+  transfer/dependency/capture capability 只在 `prepare_replay` 冷路径查询，Completion/finalization 上界按
+  segment 而非 node；
+- API、算法与普通产品形状固定在
+  `db8d1d335c84fb89675f6be2c2350efc6e35b271`，可进入 `CANDIDATE`。必要 P1/P2 与候选后终局红队仍须在
+  这棵不可变产品树上执行；文档、状态与证据维护不得触发产品重测。

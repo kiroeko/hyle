@@ -89,8 +89,12 @@ scripts/fetch-bench-vendors.sh
 
 ## 五、同步工作流（SSH 开发机）
 
-- 常驻 clone 在 `~/hyle`（`/Users/kiro/hyle`）。**同步走 git**：Windows 侧 commit + push → `cd ~/hyle && git fetch origin -q && git reset --hard origin/main -q`。
-- ⚠️ **别用 scp 手选文件同步**——极易漏传 `src/` 内部 `.h`（如 vtable 头改了没传 → "no member" 编译错，或旧 build 假 PASS）。**优先 git fetch+reset**；必须 scp 时核对测试总数与 Win/WSL 一致。
+- MacBook Air 的常驻 clone 在 `~/hyle`（`/Users/kiro/hyle`）。**同步走 git**：Windows 侧 commit + push → `cd ~/hyle && git fetch origin -q && git reset --hard origin/main -q`。
+- Mac mini 可能只有 Windows 到该主机的 SSH 身份，而没有主机到 GitHub 的仓库身份。此时不得手选文件
+  拼接源码；从 Windows canonical checkout 对候选 commit 生成完整 `git archive`，传输并展开为一次性 source
+  bundle，再记录候选 hash。该机已有验证工具时 CMake 位于 `~/hyle-verify-tools/bin/cmake`，不能假设存在
+  `/opt/homebrew/bin/cmake`。
+- ⚠️ **别用 scp 手选文件同步**——极易漏传 `src/` 内部 `.h`（如 vtable 头改了没传 → "no member" 编译错，或旧 build 假 PASS）。**优先 git fetch+reset**；必须传输时只传完整、可追溯的 archive，并核对测试总数与 Win/WSL 一致。
 - ⚠️ **SSH 免密不生效**：多半是 macOS sshd 权限严格检查——`chmod g-w,o-w ~` + `chmod 700 ~/.ssh` + `chmod 600 ~/.ssh/authorized_keys`。
 
 ## 六、可选依赖

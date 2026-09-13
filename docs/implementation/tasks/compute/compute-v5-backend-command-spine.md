@@ -254,4 +254,9 @@ Compute v5 的 runtime 主干现已由 Graph v6 实际消费，但本节不替�
   backend SPI 仍只留在实现闭包，optional oneDNN 许可证与 static development closure 完整。compute 仍保持
   `AUDITED`；
 - WSL GCC 14 的 CUDA/oneDNN-OFF portable shape 已通过 Compute/CPU backend 定向测试与逐头检查；同一目标的
-  ASan、UBSan、TSan 均通过。还需 Apple portability、P0 与必要 P1，且不因本检查点扩展 CPU 算子目录。
+  ASan、UBSan、TSan 均通过；MacBook Air 与 Mac mini 的 AppleClang 21、ARM/NEON portable shape 也分别
+  通过 Compute/Graph/CPU backend 直接测试与逐头检查；
+- P0 结构账单通过：direct sequence 和 Graph warm route 不分配 Graph metadata，dependency/transfer/capture
+  capability 只在 prepare 冷路径查询，Completion/finalization 上界按 segment。产品 candidate 固定为
+  `db8d1d335c84fb89675f6be2c2350efc6e35b271`；必要 P1 只能在该候选上按同 stream/event/completion 合同执行，
+  且不因本检查点扩展 CPU 算子目录。

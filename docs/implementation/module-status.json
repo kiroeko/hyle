@@ -272,15 +272,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-v5-backend-command-spine.md",
-      "summary": "compute v5 AUDITED：C55--C64 冻结为 queue-sequence 单次 finalization、accepted/status provider enqueue、对象局部 backend extension、direct byte transfer、compatible dependency 与 typed native seam；Graph event 数按 segment 而非 node，现可实施有限 FIX，不扩 CPU 算子目录。"
+      "candidate": "db8d1d335c84fb89675f6be2c2350efc6e35b271",
+      "summary": "compute v5 CANDIDATE：queue-sequence、accepted/status enqueue、对象局部 backend extension、direct byte transfer、compatible dependency、typed native seam 与 Graph segment 消费已经固定；Windows CUDA/三交付、WSL sanitizer、两台 Apple portable 回放及 P0 结构门通过，待候选 P1/P2 与终局红队。"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v6-runtime-specialization-placement.md",
-      "summary": "graph v6 AUDITED：G55--G65 冻结 bounded symbols/单-specialization Executable、显式 domains/resource/placement、真实 copy/repack/sync、多域 liveness、segment Completion、多 Queue replay/capture 与完整 report；只实现 Runtime/Graph 主干探针，不扩算子目录。"
+      "candidate": "db8d1d335c84fb89675f6be2c2350efc6e35b271",
+      "summary": "graph v6 CANDIDATE：bounded specialization、显式 domain/resource/placement、真实跨域 copy、每域 liveness、segment Completion、多 Queue replay/capture 与完整 report 已固定；三平台正确性/sanitizer/三交付和 P0 结构门通过，待同候选 P1/P2 与终局红队。"
     },
     {
       "module": "container_concurrent",
