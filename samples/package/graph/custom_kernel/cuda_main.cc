@@ -188,10 +188,16 @@ Status exercise(bool report_after_launch) {
       const std::array targets{hyle::graph::ExecutionTarget{
           .context = &context,
           .default_storage = hyle::graph::StorageDomainId{0}}};
+      HYLE_ASSIGN_OR_RETURN(auto family, context.provider_identity(0));
+      HYLE_ASSIGN_OR_RETURN(auto instance, context.provider_instance_id(0));
+      HYLE_ASSIGN_OR_RETURN(auto first_node, graph.node_id(0));
+      const std::array required{
+          hyle::graph::NodeProviderConstraint{first_node, family.id, instance}};
       HYLE_ASSIGN_OR_RETURN(
           auto compiled,
-          hyle::graph::compile(
-              graph, {.storage_domains = storage, .targets = targets}));
+          hyle::graph::compile(graph,
+                               {.storage_domains = storage, .targets = targets},
+                               {.node_providers = required}));
       HYLE_ASSIGN_OR_RETURN(auto invocation,
                             compiled.executable.create_invocation());
       HYLE_RETURN_IF_ERROR(invocation.bind(graph_in, in));

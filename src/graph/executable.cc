@@ -1166,6 +1166,108 @@ bool valid_strength(PlacementStrength strength) noexcept {
          strength == PlacementStrength::kRequired;
 }
 
+// Cold-only policy index. No storage is added to Plan or Invocation. Sorting
+// the small family lists avoids rescanning them per node/candidate; an opted-in
+// node table gives constant-time matching and duplicate detection.
+class ProviderPolicy final {
+public:
+  explicit ProviderPolicy(mem::AllocatorRef allocator) noexcept
+      : allowed_(allocator), denied_(allocator), nodes_(allocator) {}
+
+  Status initialize(const detail::GraphState &graph,
+                    CompileOptions options) noexcept {
+    HYLE_RETURN_IF_ERROR(copy_families(options.allowed_providers, allowed_));
+    HYLE_RETURN_IF_ERROR(copy_families(options.denied_providers, denied_));
+    if (options.node_providers.empty())
+      return Status::Ok();
+    if (!nodes_.try_resize(graph.nodes.size()))
+      return plan_allocation_failure();
+    std::fill(nodes_.begin(), nodes_.end(), nullptr);
+    for (const NodeProviderConstraint &constraint : options.node_providers) {
+      if (!detail::owns(graph, constraint.node) || !constraint.provider.valid())
+        return Status::InvalidArgument(
+            "graph node provider constraint is invalid");
+      auto &slot = nodes_[constraint.node.ordinal()];
+      if (slot != nullptr)
+        return Status::InvalidArgument(
+            "graph node provider constraint is duplicated");
+      slot = &constraint;
+    }
+    return Status::Ok();
+  }
+
+  Result<bool> allows_family(const compute::Context &context,
+                             std::size_t index) const noexcept {
+    if (allowed_.empty() && denied_.empty())
+      return true;
+    auto identity = context.provider_identity(index);
+    if (!identity)
+      return std::unexpected(std::move(identity).error());
+    return allows_family(identity->id);
+  }
+
+  Result<bool> allows_operation(const compute::Context &context,
+                                std::size_t index,
+                                std::size_t node) const noexcept {
+    const auto *constraint = nodes_.empty() ? nullptr : nodes_[node];
+    if (constraint == nullptr)
+      return allows_family(context, index);
+    auto identity = context.provider_identity(index);
+    if (!identity)
+      return std::unexpected(std::move(identity).error());
+    if (identity->id != constraint->provider || !allows_family(identity->id))
+      return false;
+    if (!constraint->instance.valid())
+      return true;
+    auto instance = context.provider_instance_id(index);
+    if (!instance)
+      return std::unexpected(std::move(instance).error());
+    return *instance == constraint->instance;
+  }
+
+  bool allows_node(std::size_t node, compute::ProviderId provider,
+                   compute::ProviderInstanceId instance) const noexcept {
+    const auto *constraint = nodes_.empty() ? nullptr : nodes_[node];
+    return constraint == nullptr || (constraint->provider == provider &&
+                                     (!constraint->instance.valid() ||
+                                      constraint->instance == instance));
+  }
+
+private:
+  using Families =
+      container::SmallVector<compute::ProviderId, 4, mem::AllocatorRef>;
+  static bool less(compute::ProviderId left,
+                   compute::ProviderId right) noexcept {
+    return left.namespace_id != right.namespace_id
+               ? left.namespace_id < right.namespace_id
+               : left.provider_id < right.provider_id;
+  }
+  static Status copy_families(std::span<const compute::ProviderId> source,
+                              Families &destination) noexcept {
+    for (const auto id : source) {
+      if (!id.valid())
+        return Status::InvalidArgument(
+            "graph provider filter contains an invalid family ID");
+    }
+    if (!destination.try_resize(source.size()))
+      return plan_allocation_failure();
+    std::copy(source.begin(), source.end(), destination.begin());
+    std::sort(destination.begin(), destination.end(), less);
+    return Status::Ok();
+  }
+  bool allows_family(compute::ProviderId provider) const noexcept {
+    return (allowed_.empty() ||
+            std::binary_search(allowed_.begin(), allowed_.end(), provider,
+                               less)) &&
+           !std::binary_search(denied_.begin(), denied_.end(), provider, less);
+  }
+
+  Families allowed_;
+  Families denied_;
+  container::SmallVector<const NodeProviderConstraint *, 16, mem::AllocatorRef>
+      nodes_;
+};
+
 struct RegionExtension final {
   compute::detail::ProviderExtensionRef extension{};
   std::uint32_t provider_index = 0;
@@ -1649,10 +1751,11 @@ compile_region_artifact(detail::PlanState &plan,
 Status discover_region_candidates(
     const Graph &published_graph, const detail::GraphState &graph,
     const compute::Context &context, CompileOptions options,
-    mem::AllocatorRef allocator, RegionExtensions &extensions,
-    RegionCandidates &candidates, RegionNodeIds &proposal_nodes,
-    std::size_t &proposal_count, std::size_t &proposal_node_count,
-    CompileSearchReport &search, ExecutionTargetId target,
+    const ProviderPolicy &provider_policy, mem::AllocatorRef allocator,
+    RegionExtensions &extensions, RegionCandidates &candidates,
+    RegionNodeIds &proposal_nodes, std::size_t &proposal_count,
+    std::size_t &proposal_node_count, CompileSearchReport &search,
+    ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets = {}) noexcept;
 
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
@@ -1660,13 +1763,11 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
                       const detail::GraphState &graph,
                       RegionCandidates &selected) noexcept;
 
-Status prepare_placed_steps_attempt(detail::PlanState &plan,
-                                    const Graph &published_graph,
-                                    const detail::GraphState &graph,
-                                    CompileEnvironment environment,
-                                    CompileOptions options,
-                                    RegionDiscovery &discovery,
-                                    PlacementAttemptOutcome &outcome) noexcept {
+Status prepare_placed_steps_attempt(
+    detail::PlanState &plan, const Graph &published_graph,
+    const detail::GraphState &graph, CompileEnvironment environment,
+    CompileOptions options, const ProviderPolicy &provider_policy,
+    RegionDiscovery &discovery, PlacementAttemptOutcome &outcome) noexcept {
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
   using Prepared =
@@ -1801,9 +1902,9 @@ Status prepare_placed_steps_attempt(detail::PlanState &plan,
     for (std::size_t target = 0; target < target_count; ++target) {
       Status discovered = discover_region_candidates(
           published_graph, graph, *environment.targets[target].context, options,
-          plan.allocator, extensions, all_region_candidates, all_region_nodes,
-          region_proposal_count, region_proposal_node_count, plan.search,
-          ExecutionTargetId{static_cast<std::uint32_t>(target)});
+          provider_policy, plan.allocator, extensions, all_region_candidates,
+          all_region_nodes, region_proposal_count, region_proposal_node_count,
+          plan.search, ExecutionTargetId{static_cast<std::uint32_t>(target)});
       if (!discovered.ok())
         return discovered;
     }
@@ -1953,6 +2054,12 @@ Status prepare_placed_steps_attempt(detail::PlanState &plan,
     auto decline = compute::detail::ProviderPrepareDecline::kUnsupported;
     for (std::size_t provider = 0; provider < context.provider_count();
          ++provider) {
+      auto allowed =
+          provider_policy.allows_operation(context, provider, node_index);
+      if (!allowed)
+        return std::unexpected(std::move(allowed).error());
+      if (!*allowed)
+        continue;
       decline = compute::detail::ProviderPrepareDecline::kUnsupported;
       auto proposal = compute::detail::OperationPreparationAccess::propose(
           context, provider, node.operation, inputs, outputs,
@@ -3009,7 +3116,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
                             const Graph &published_graph,
                             const detail::GraphState &graph,
                             CompileEnvironment environment,
-                            CompileOptions options) noexcept {
+                            CompileOptions options,
+                            const ProviderPolicy &provider_policy) noexcept {
   RegionDiscovery discovery(plan.allocator);
   Status last_rejection = Status::Ok();
   for (;;) {
@@ -3021,7 +3129,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
     std::fill(plan.node_steps.begin(), plan.node_steps.end(), detail::kNoNode);
     PlacementAttemptOutcome outcome;
     Status status = prepare_placed_steps_attempt(
-        plan, published_graph, graph, environment, options, discovery, outcome);
+        plan, published_graph, graph, environment, options, provider_policy,
+        discovery, outcome);
     if (!outcome.rejected_region) {
       if (outcome.no_feasible_route && !last_rejection.ok())
         return last_rejection;
@@ -3041,10 +3150,11 @@ Status prepare_placed_steps(detail::PlanState &plan,
 Status discover_region_candidates(
     const Graph &published_graph, const detail::GraphState &graph,
     const compute::Context &context, CompileOptions options,
-    mem::AllocatorRef allocator, RegionExtensions &extensions,
-    RegionCandidates &candidates, RegionNodeIds &proposal_nodes,
-    std::size_t &proposal_count, std::size_t &proposal_node_count,
-    CompileSearchReport &search, ExecutionTargetId target,
+    const ProviderPolicy &provider_policy, mem::AllocatorRef allocator,
+    RegionExtensions &extensions, RegionCandidates &candidates,
+    RegionNodeIds &proposal_nodes, std::size_t &proposal_count,
+    std::size_t &proposal_node_count, CompileSearchReport &search,
+    ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets) noexcept {
   if (options.region_selection == RegionSelectionPolicy::kDisabled ||
       graph.nodes.empty()) {
@@ -3078,6 +3188,11 @@ Status discover_region_candidates(
   }
   const std::size_t extension_begin = extensions.size();
   for (std::size_t index = 0; index < context.provider_count(); ++index) {
+    auto allowed = provider_policy.allows_family(context, index);
+    if (!allowed)
+      return std::move(allowed).error();
+    if (!*allowed)
+      continue;
     auto extension = compute::detail::ProviderExtensionAccess::query(
         context, index, kRegionProviderExtensionId);
     if (!extension) {
@@ -3190,6 +3305,14 @@ Status discover_region_candidates(
             "region provider declared invalid structural cost facts");
       }
       if (!replay_allowed(options.provider_replay, proposal.replay_class))
+        continue;
+      const auto &extension = extensions[extension_index].extension;
+      if (!std::all_of(proposal.nodes.begin(), proposal.nodes.end(),
+                       [&](NodeId node) noexcept {
+                         return provider_policy.allows_node(
+                             node.ordinal(), extension.provider().id,
+                             extension.provider_instance_id());
+                       }))
         continue;
       bool target_eligible = true;
       if (!node_targets.empty()) {
@@ -6723,6 +6846,8 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(Status::FailedPrecondition(
         "compute context has no metadata allocator"));
   }
+  ProviderPolicy provider_policy(allocator);
+  HYLE_RETURN_IF_ERROR(provider_policy.initialize(*logical, options));
   detail::TensorDescriptions descriptions(allocator);
   auto signature =
       specialize_descriptions(*logical, options.shape, allocator, descriptions);
@@ -6814,7 +6939,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
-                                  options);
+                                  options, provider_policy);
   if (status.ok())
     status = schedule_steps(*plan, *concrete);
   if (status.ok())

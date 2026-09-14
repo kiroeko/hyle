@@ -4,6 +4,8 @@
 library 中的 `kernel.cc` 持有 move-only factory，冷 prepare 创建 immutable kernel，每次执行有独占
 Invocation。`main.cc` 用同一个 Provider 完成 direct prepare 和 Graph compile/replay。
 它还在释放全部执行 owner 后读取独立 CompileReport 的名称/版本；报告不延后 factory/kernel 的销毁。
+CPU/CUDA 的 Graph 消费同时用公开 `NodeProviderConstraint` 指定配置实例，CPU 另用全局家族 allow
+筛选；约束只在冷 compile 使用，仍复用同一个 Invocation 和 CUDA capture，不增加另一条执行接口。
 
 此 CPU 示例不是 affine 的性能实现；它演示用户尚未放进公共算子目录的计算如何接入。真实热 kernel
 可以在相同边界调用 HYLE SIMD 或自己的实现。输入/输出要求 host-accessible、对齐的 dense f32；backend、

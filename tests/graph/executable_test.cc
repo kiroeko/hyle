@@ -1293,6 +1293,70 @@ TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
   }
 }
 
+TEST(GraphCompile, ProviderPolicyAllocationsRollBackAndDoNotReachReplay) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(row(8)).value();
+  auto output = input;
+  for (std::size_t index = 0; index < 18; ++index)
+    output = builder.add(Unary{UnaryKind::kNeg}, output).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  using hyle::compute::ProviderId;
+  const std::array<ProviderId, 5> allow{
+      {{9, 1}, {3, 1}, hyle::compute::native::kProviderId, {3, 2}, {7, 1}}};
+  const std::array<ProviderId, 5> deny{
+      {{9, 1}, {3, 1}, {3, 2}, {7, 1}, {8, 1}}};
+  std::array required{hyle::graph::NodeProviderConstraint{
+      graph.node_id(17).value(), hyle::compute::native::kProviderId}};
+  const CompileOptions options{.allowed_providers = allow,
+                               .denied_providers = deny,
+                               .node_providers = required};
+  const auto retained = probe.allocations.load() - probe.deallocations.load();
+  probe.attempts = 0;
+  {
+    auto compiled = hyle::graph::compile(graph, context, options);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+  }
+  const auto attempts = probe.attempts.load();
+  ASSERT_GT(attempts,
+            3u); // both family lists and the node index overflow inline storage
+  for (std::size_t fail = 0; fail < attempts; ++fail) {
+    SCOPED_TRACE(fail);
+    probe.attempts = 0;
+    probe.fail_on_attempt = fail;
+    {
+      auto compiled = hyle::graph::compile(graph, context, options);
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsResourceExhausted());
+    }
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), retained);
+    probe.fail_on_attempt = SIZE_MAX;
+    {
+      auto recovered = hyle::graph::compile(graph, context, options);
+      ASSERT_TRUE(recovered) << recovered.error().message();
+    }
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), retained);
+  }
+  auto compiled = hyle::graph::compile(graph, context, options).value();
+  auto run = compiled.executable.create_invocation().value();
+  auto source = make_tensor(row(8)), destination = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(source, values);
+  ASSERT_TRUE(run.bind(input, source.view).ok());
+  ASSERT_TRUE(run.bind(output, destination.view).ok());
+  auto queue = context.create_queue().value();
+  required = {}; // no policy borrow survives compile
+  const auto allocations = probe.allocations.load();
+  ASSERT_TRUE(run.submit(queue).value().wait().ok());
+  EXPECT_EQ(probe.allocations.load(), allocations);
+  EXPECT_EQ(read(destination, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+}
+
 TEST(Invocation, SubmitDoesNotAllocatePlanMetadata) {
   AllocatorProbe probe;
   Context context = hyle::compute::cpu::create_context(

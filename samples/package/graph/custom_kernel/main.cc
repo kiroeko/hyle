@@ -65,7 +65,17 @@ int main() {
   auto graph = std::move(*builder).finish();
   if (!graph)
     return 13;
-  auto compiled = hyle::graph::compile(*graph, *context);
+  const auto family = context->provider_identity(0);
+  const auto instance = context->provider_instance_id(0);
+  const auto node = graph->node_id(0);
+  if (!family || !instance || !node)
+    return 14;
+  const std::array allowed{family->id};
+  const std::array required{
+      hyle::graph::NodeProviderConstraint{*node, family->id, *instance}};
+  auto compiled = hyle::graph::compile(
+      *graph, *context,
+      {.allowed_providers = allowed, .node_providers = required});
   if (!compiled)
     return 14;
   const std::string provider_name(compiled->report.provider().name);

@@ -92,8 +92,10 @@ enum class ProposalMode : std::uint8_t {
 
 struct RegionProbe final {
   ProposalMode mode = ProposalMode::kPairs;
+  std::size_t singleton_node = 0;
   std::optional<std::uint32_t> proposal_dispatch_count = 1;
   std::size_t propose_count = 0;
+  std::size_t extension_query_count = 0;
   std::size_t compile_count = 0;
   std::size_t single_prepare_count = 0;
   std::size_t single_artifact_count = 0;
@@ -472,7 +474,7 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
     return true;
   }
   if (probe.mode == ProposalMode::kSingleton) {
-    const std::array nodes{graph.node_id(0).value()};
+    const std::array nodes{graph.node_id(probe.singleton_node).value()};
     return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count,
                                  probe.discovery_replay_class);
   }
@@ -1112,8 +1114,10 @@ prepare_single(void *context,
 
 Status drain_provider_context(void *) noexcept { return Status::Ok(); }
 
-const void *query_extension(void *,
+const void *query_extension(void *context,
                             hyle::compute::ProviderExtensionId id) noexcept {
+  if (context != nullptr)
+    ++static_cast<RegionProbe *>(context)->extension_query_count;
   return id == hyle::graph::kRegionProviderExtensionId ? &kRegionVTable
                                                        : nullptr;
 }
@@ -1530,6 +1534,157 @@ void use_delegated_runtime(RegionProbe &probe) noexcept {
       .supports_concurrent_invocations = true,
       .capture_compatible = false,
   };
+}
+
+TEST(GraphRegions, GlobalProviderFiltersSkipDiscoveryAndLeafCallbacks) {
+  const auto logical = make_negations(2);
+  for (int mode = 0; mode < 3; ++mode) {
+    RegionProbe probe;
+    auto context = make_context(probe);
+    const auto queries = probe.extension_query_count;
+    const std::array native{context.provider_identity(1)->id};
+    const std::array region{kRegionProviderId};
+    CompileOptions options;
+    if (mode == 0)
+      options.allowed_providers = native;
+    else
+      options.denied_providers = region;
+    if (mode == 2)
+      options.allowed_providers = region; // deny overrides allow
+    auto compiled = hyle::graph::compile(logical.graph, context, options);
+    EXPECT_EQ(probe.extension_query_count, queries);
+    EXPECT_EQ(probe.propose_count, 0u);
+    EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(probe.compile_count, 0u);
+    if (mode == 2) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsUnimplemented());
+    } else {
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->report.region_count(), 0u);
+      EXPECT_EQ(compiled->report.step(0)->provider.id, native[0]);
+    }
+  }
+}
+
+TEST(GraphRegions, RegionMustMatchEveryCoveredNodeProvider) {
+  const auto logical = make_negations(4);
+  RegionProbe probe;
+  auto context = make_context(probe);
+  const auto native = context.provider_identity(1)->id;
+  const std::array constraints{
+      hyle::graph::NodeProviderConstraint{logical.graph.node_id(1).value(),
+                                          native},
+      hyle::graph::NodeProviderConstraint{logical.graph.node_id(3).value(),
+                                          kRegionProviderId}};
+  auto compiled = hyle::graph::compile(logical.graph, context,
+                                       {.node_providers = constraints});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 1u);
+  EXPECT_EQ(probe.region_resource_count, 1u);
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.compiled_begin, 2u);
+  EXPECT_EQ(probe.compiled_count, 2u);
+  EXPECT_EQ(compiled->report.step(1)->provider.id, native);
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(run.submit(queue).value().wait().ok());
+  EXPECT_EQ(read(output, 8), std::vector<float>(values.begin(), values.end()));
+}
+
+TEST(GraphRegions, ConflictingInstancesPreventFusionWithoutRelaxingNodes) {
+  const auto logical = make_negations(2);
+  for (auto mode : {ProposalMode::kPairs, ProposalMode::kSingleton}) {
+    RegionProbe first{.mode = mode}, second{.mode = mode};
+    second.singleton_node = 1;
+    auto context = make_context(first, second);
+    const std::array constraints{
+        hyle::graph::NodeProviderConstraint{
+            logical.graph.node_id(0).value(), kRegionProviderId,
+            context.provider_instance_id(0).value()},
+        hyle::graph::NodeProviderConstraint{
+            logical.graph.node_id(1).value(), kRegionProviderId,
+            context.provider_instance_id(1).value()}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.node_providers = constraints,
+         .operation_fallback = OperationFallbackPolicy::kReject});
+    if (mode == ProposalMode::kPairs) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsUnimplemented());
+      EXPECT_EQ(first.region_resource_count + second.region_resource_count, 0u);
+      EXPECT_EQ(first.compile_count + second.compile_count, 0u);
+    } else {
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->report.region_count(), 2u);
+      EXPECT_EQ(compiled->report.step(0)->provider_instance,
+                constraints[0].instance);
+      EXPECT_EQ(compiled->report.step(1)->provider_instance,
+                constraints[1].instance);
+    }
+    EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+  }
+}
+
+TEST(GraphRegions, RequiredInstanceSelectsTargetAndCannotOverridePlacement) {
+  const auto logical = make_negations(2);
+  RegionProbe first, second;
+  auto a = make_context(first), b = make_context(second);
+  const std::array storage{
+      hyle::graph::StorageDomain{hyle::mem::system_resource()}};
+  const std::array targets{
+      hyle::graph::ExecutionTarget{&a, hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{&b, hyle::graph::StorageDomainId{0}}};
+  const std::array constraints{hyle::graph::NodeProviderConstraint{
+      logical.graph.node_id(0).value(), kRegionProviderId,
+      b.provider_instance_id(0).value()}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, {.storage_domains = storage, .targets = targets},
+      {.node_providers = constraints});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.step(0)->provider_instance,
+            constraints[0].instance);
+  EXPECT_EQ(first.compile_count, 0u);
+  EXPECT_EQ(second.compile_count, 1u);
+  const std::array placements{hyle::graph::NodePlacement{
+      constraints[0].node, hyle::graph::ExecutionTargetId{0},
+      hyle::graph::PlacementStrength::kRequired}};
+  auto conflict = hyle::graph::compile(
+      logical.graph, {.storage_domains = storage, .targets = targets},
+      {.node_placements = placements, .node_providers = constraints});
+  ASSERT_FALSE(conflict);
+  EXPECT_TRUE(conflict.error().IsUnimplemented());
+  EXPECT_EQ(first.compile_count, 0u);
+  EXPECT_EQ(second.compile_count, 1u);
+}
+
+TEST(GraphRegions, RegionRetryAndLeafFallbackCannotEscapeRequiredInstance) {
+  const auto logical = make_negations(2);
+  for (auto fallback :
+       {OperationFallbackPolicy::kAllow, OperationFallbackPolicy::kReject}) {
+    RegionProbe first, second;
+    first.region_outcome_override = ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("required route lacks resources"));
+    auto context = make_context(first, second);
+    const std::array constraints{hyle::graph::NodeProviderConstraint{
+        logical.graph.node_id(0).value(), kRegionProviderId,
+        context.provider_instance_id(0).value()}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.node_providers = constraints, .operation_fallback = fallback});
+    ASSERT_FALSE(compiled);
+    EXPECT_TRUE(compiled.error().IsResourceExhausted());
+    EXPECT_EQ(first.compile_count, 1u);
+    EXPECT_EQ(first.destroy_prepared_count, 1u);
+    EXPECT_EQ(second.compile_count, 0u);
+    EXPECT_EQ(second.region_resource_count, 0u);
+    EXPECT_EQ(second.single_prepare_count, 0u);
+  }
 }
 
 TEST(GraphRegions, ExecutesNonMaterializingExternalEffectSteps) {

@@ -53,6 +53,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
 | replay | `prepare_replay()` 冷验证 bindings、transfer、Queue 与 delegated endpoint identity、dependency route 和 Completion 容量 |
 | Provider replay 成本 | `CompileOptions::provider_replay` 在冷编译筛选 leaf/region；默认允许所有合法类别，严格模式只接受 prepared |
+| Provider 准入 | 全局 `allowed_providers/denied_providers` 和逐节点 `node_providers` 硬约束同时筛选 leaf/region；可指定家族或精确 Context 配置槽位，不因融合或回退而放宽 |
 | capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；capture 只适用于 shared Queue segment，delegated island 不能伪装成 Queue capture |
 | report | `CompileReport` 分列 target/storage/lane/segment/runtime owner；`ReplayReport` 给出 exact endpoint 后的 ordered/imported/host-wait 事实 |
 
@@ -78,7 +79,40 @@ dispatch 都允许明确 unknown，不能写零补齐。当前 prefer-region 结
 比较的候选都声明 dispatch 数时才比较该维度，否则按稳定 Provider 顺序继续；这不是推理性能排名。
 旧的“相对本 Provider fallback 节省若干 ns”入口和 `kRequireEstimatedBenefit` 已移除，不保留别名。
 要求跨 Provider 量化择优的 qualified full-plan profile 尚未交付，不能用各家的私有数字冒充；此期间可
-显式安装 Provider/关闭 region，但不应声称已得到自动 SOTA 计划。
+显式安装/筛选 Provider、约束具名节点或关闭 region，但不应声称已得到自动 SOTA 计划。
+
+### 指定某个节点的实现，其它节点仍可外包
+
+例如用户已经配置了一个自定义实现和成熟 Provider，希望某个 MatMul 节点只能由自定义实现准备，
+其它节点仍参与正常选择。约束与 target/storage placement 独立，不用拆出第二张图：
+
+```cpp
+// context、graph、matmul_node 已创建；slot 是调用方配置的 Provider 槽位。
+auto family = context.provider_identity(slot).value();
+auto instance = context.provider_instance_id(slot).value();
+const std::array required{
+    NodeProviderConstraint{matmul_node, family.id, instance}};
+auto compiled = compile(graph, context,
+                        CompileOptions{.node_providers = required});
+```
+
+省略 `instance` 时，同一 `ProviderId` 家族的任何已配置实例均可；提供它则只允许该 Context 的那一个
+槽位。重新创建 Context 会得到不同实例 ID，不要持久化 ID 或把它当作可跨进程的版本/性能身份。
+`NodeProviderConstraint` 是必需条件，不是软偏好；不相容的 region 不会参与 placement 或创建 artifact。
+若没有完整可执行路线，compile 返回错误，不能为凑齐计划换用其它实现。安全资源拒绝后的重选同样守约。
+它约束的是准备逻辑 node/region 的 Provider；metadata-only View 的准备不因此变成 kernel，Graph 插入的
+跨存储 copy/sync 仍由 backend 完成，不受 Provider allow/deny 冒充的“设备禁用”控制。
+
+全局筛选用 `CompileOptions::allowed_providers/denied_providers`，元素都是家族 `ProviderId`：allow 空表示
+不限制，deny 优先，重复 ID 无额外语义。全局被排除的 Provider 不会被 Graph 查询 extension、发现候选或
+准备算子，但 Context 的配置/构造已经发生，筛选不是 library 卸载或安全隔离。未知 allow-only 家族、
+不匹配的必需实例或与 placement 冲突的约束不会被默默忽略。没有候选满足约束时返回 `Unimplemented`；
+已匹配路线的资源拒绝可以保留 `ResourceExhausted`，真实 Provider 错误继续按原错误返回。无效家族、
+异图节点和重复节点声明返回 `InvalidArgument`。
+
+这些 span 只借用至 `compile()` 返回，之后可以释放或修改。筛选/索引只存在于冷编译，Invocation 不保留
+它们，也不在 submit/replay 再查策略。普通用户全部留空即可。逐节点软偏好与完整成本/profile 的统一
+择优仍未交付；不要把硬约束或 Context 安装顺序当成自动性能排名。
 
 ### 何时要求 prepared-only
 

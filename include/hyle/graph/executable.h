@@ -8,6 +8,7 @@
 #include "hyle/compute/completion.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/provider.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/graph.h"
@@ -121,6 +122,17 @@ struct NodePlacement final {
   NodeId node{};
   ExecutionTargetId target{};
   PlacementStrength strength = PlacementStrength::kPreferred;
+};
+
+// Hard constraint on the provider preparing a logical node, including any
+// region containing it. An invalid instance accepts any configured slot of
+// the required family; a valid one must match that exact Context slot. Never
+// persist instance IDs. Fusion, fallback and resource retries cannot waive
+// this constraint. Graph-inserted transfers are backend work, not providers.
+struct NodeProviderConstraint final {
+  NodeId node{};
+  compute::ProviderId provider{};
+  compute::ProviderInstanceId instance{};
 };
 
 struct ValuePlacement final {
@@ -591,6 +603,15 @@ struct CompileOptions final {
   std::span<const NodePlacement> node_placements{};
   std::span<const ValuePlacement> value_placements{};
   std::span<const ExternalResourceContract> external_resources{};
+  // Borrowed for compile() only. Empty allow means unrestricted; deny wins.
+  // Lists contain family IDs, not backend/target IDs; repeats are harmless.
+  // A globally excluded provider is not queried or prepared by Graph.
+  std::span<const compute::ProviderId> allowed_providers{};
+  std::span<const compute::ProviderId> denied_providers{};
+  // At most one declaration per graph-owned node, with a valid family ID.
+  // No feasible route under these constraints is an error, not permission to
+  // use a different implementation. This is independent of target placement.
+  std::span<const NodeProviderConstraint> node_providers{};
   WorkspaceReusePolicy workspace_reuse =
       WorkspaceReusePolicy::kExistingOrderOnly;
   // Hard cap for node/domain preparation attempts during deterministic

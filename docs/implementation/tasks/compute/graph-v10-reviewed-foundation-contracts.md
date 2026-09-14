@@ -380,3 +380,54 @@ alignment 释放。补充空文本、内嵌 NUL、长文本、同实例两 step 
 这是已接受 G107 的确定生命周期修复和 Windows 增量验证；Linux/macOS、sanitizer、终局独立红队与
 foundation P1 仍留给完整 candidate。C93 完整证据匹配、G103 同池完整计划选择、bounded/variants 与
 constant ownership 等剩余项没有被缩减或宣称完成，Graph 继续 `AUDITED`。
+
+### G103：Provider 硬约束准入（实现前固定）
+
+Compute 设计 §2.8 已接受全局 allow/deny 与逐 node Provider 约束。当前仅有 Context 安装顺序、target
+placement 和全局 region 开关，无法要求 Q4 子图的某个节点走指定实现，同时允许其它节点继续外包。
+先补这个共同候选入口，再接完整成本/profile 和有界计划搜索；不把新增约束作为性能裁决替代物。
+
+本次有限表示：`CompileOptions` 借用 `allowed_providers/denied_providers` 家族 ID 列表和
+`node_providers`。后者的 `NodeProviderConstraint` 必须匹配家族，可额外指定当前 Context slot 的
+ProviderInstanceId；默认不约束，不引入全局 registry。allow 为空表示不限制，deny 优先；节点为硬约束，
+不能由 region fusion、fallback 或资源重选覆盖。逐节点软偏好与完整计划成本仍属 G103 的后续实现，
+不暴露尚无语义的 preferred 开关。
+
+在 compile 冷入口拒绝无效/foreign/重复节点声明；筛选器复用在 leaf propose 和 region discovery，
+全局被禁 Provider 连 extension query 都不调用。region 只有全部覆盖节点约束相容时才可进入 placement；
+被拒的 region 不准备 artifact。约束不写入 Plan/Invocation 常态状态，提交无新增查表。
+反例：deny-only、allow-only、冲突、未知实现、错实例、同家族不同配置、foreign/重复节点、region 跨越
+两个不相容约束、资源拒绝后的重选仍守约、实际输出与回调不执行证明。只跑 Graph 与实际直接消费者、
+逐头和三交付，最终跨平台/性能门保持原卡范围。
+
+## 2026-09-14 G103：Provider 硬约束检查点
+
+上述公开形状已实现。冷 `ProviderPolicy` 先验证家族/节点声明，排序家族列表并为显式节点建立临时
+ordinal 索引；leaf 的全部准备/回退入口共用该 policy，region 在进入 placement 之前检查其全部节点。
+全局排除在 extension query 前生效，资源拒绝后的同池重选不会恢复已排除的 Provider。逻辑 View/Copy
+仍通过 Provider 准备，编译器插入的 storage transfer 则由 backend 拥有，不把 allow/deny 当成设备隔离。
+
+- 11 个新增测试覆盖 allow/deny 交集与重复项、同家族不同槽位、未知/过期身份、无效/异图/重复节点、
+  fusion 冲突、跨 target 与 required placement 冲突、region/leaf 资源拒绝、实际数值输出与策略借用终止。
+  18-node 反例让两张家族表和节点索引都越过 inline storage，逐次注入全部 compile 分配失败并确认回滚/
+  恢复；submit 没有新 metadata allocation。初轮唯一失败是新测试误用 resource-only region fixture，
+  已改为具名数值 singleton fixture，未放宽产品约束。
+- Windows Release static `compute-route-v8-static-20260914`：Graph builder/executable/逐头 3/3 通过，
+  executable 内 147/147 用例通过。oneDNN-enabled shared `compute-route-onednn-v8-20260914`：Graph、
+  真实 oneDNN region 与两组逐头共 5/5 通过。均由 `hyle-windows.ps1`、`--parallel 2` 定向执行。
+- 普通 CPU/CUDA 三交付在 `C:/hyle-scratch/custom-execution-v10-{source-consumer,static-consumer,
+  shared-cuda-consumer}` 各 2/2 通过，含真正 CUDA capture/replay。安装两格重新 build/install Graph
+  到各自 `-static-sdk/-shared-sdk` 后 configure/relink consumer；源码格重新 configure/build。shared
+  producer/consumer 的 Graph DLL SHA-256 同为
+  `3EA2C15AE46AF0372D28CE05A14C27D9C84EE500EF48C2CF8C4A4A02FFF35640`，非旧 DLL 假通过。
+- P0：G 个家族条目、N 个节点、K 条节点约束时，冷索引为 `O(G log G + N + K)`、空间 `O(G + N)`；
+  无节点约束不建立 N 表，默认空策略无堆分配。家族匹配 `O(log G)`、逐节点身份匹配 `O(1)`，region
+  检查线性于 proposal node 总量。公开 CompileOptions 增加三个借用 span；Plan/Invocation/layout、
+  provider kernel、Queue/Completion 和热执行算法均不变。复用现有 Container SmallVector/Mem/Error，
+  CMake 组件边与构建开关不变。
+- impact READY，89 项跳过，docs/closure/diff 通过。记录前 LOC：全库 670,876、自实现不含测试 122,012；
+  Compute 产品 16,156、Graph 产品 10,730，合计 26,886 行。
+
+本检查点没有执行全库/P1；Linux/macOS、sanitizer 与终局独立红队仍按本卡等待完整 foundation candidate。
+G103 的完整成本/profile、同池有界择优与软偏好仍待实施，bounded/variants 和常量所有权等既定 FIX 不缩减。
+Graph 保持 `AUDITED`，没有达到用户要求暂停审视的 foundation 完成节点。
