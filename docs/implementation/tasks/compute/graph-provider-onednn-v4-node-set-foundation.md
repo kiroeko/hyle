@@ -1,5 +1,8 @@
 # Graph oneDNN Provider v4：node-set foundation region
 
+Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 也迁移本 factor 的 single-op 拒绝
+适配器，属于 GP41/GP42 的私有 SPI 影响；它仍不提供 leaf，不改变已实现 node-set MLP 或 kernel。
+
 ## Closure card
 
 - component / owner：`graph_provider_onednn` / Graph oneDNN provider；round=`graph-provider-onednn-v4-node-set-foundation`；

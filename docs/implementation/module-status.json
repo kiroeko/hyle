@@ -273,8 +273,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v8-route-proposal-contract.md",
-      "summary": "compute v8 AUDITED：Device/Context/Queue/Completion 与 public direct façade 保留；C80--C84 只重构冷路径 provider proposal，补 shape-subdomain proof、完整结构成本、qualified profile identity 与事务化 decline，warm submit 不搜索/JIT/分配。"
+      "record": "docs/implementation/tasks/compute/compute-v9-shape-replay-substrate.md",
+      "summary": "compute v9 AUDITED：承接已完成 identity/outcome，C90--C94 固定 provider-neutral shape/replay/cost 基础合同与私有 SPI 迁移；direct/runtime 热路径保留，派生域、完整 Graph 与 custom execution 仍须后续实际验收。"
     },
     {
       "module": "graph",

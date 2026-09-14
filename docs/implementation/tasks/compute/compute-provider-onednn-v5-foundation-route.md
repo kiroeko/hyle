@@ -1,5 +1,8 @@
 # oneDNN Provider v5：foundation proposal 与 region consumer
 
+Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 请求签名迁移属于 OD50；本 Provider
+继续 exact-only。已有 kernel/公开工厂不变，非 exact domain 必须在准备重型 artifact 前拒绝。
+
 ## Closure card
 
 - component / owner：`compute_provider_onednn` / oneDNN provider；round=`compute-provider-onednn-v5-foundation-route`；

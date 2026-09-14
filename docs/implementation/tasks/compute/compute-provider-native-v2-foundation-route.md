@@ -1,5 +1,9 @@
 # Native Provider v2：foundation route 迁移
 
+Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 请求签名与 domain 拒绝迁移属于本卡
+N20/N21 的直接 SPI 影响；不新增 kernel 或放宽 Native prepared 合同。N22 仍须真实 bounded probe，
+不能以新请求能通过编译代替。
+
 ## Closure card
 
 - component / owner：`compute_provider_native` / Native provider；round=`compute-provider-native-v2-foundation-route`；
