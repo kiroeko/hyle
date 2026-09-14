@@ -144,9 +144,9 @@
     },
     {
       "module": "mem",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md",
-      "summary": "mem v9 SCOPED：Graph G106 证明 LifetimePlanner/PlannedBuffers 的 system-only metadata 绕过调用方预算和故障注入；定向补 allocator 注入，不改 payload resource 或规划算法，其它能力沿用 v8。"
+      "summary": "mem v9 AUDITED：M90--M92 固定 LifetimePlanner 显式 metadata allocator、instance 继承/覆盖与 Graph 直接复用；保持 payload resource/规划算法/分配次数，补预算与逐分配故障覆盖，不代签 Graph 整体内存。"
     },
     {
       "module": "mem_vm",

@@ -28,3 +28,24 @@
 现状缺口为 `PARTIAL/FIX`：payload 的 MemoryResource 已可选，但 planner scratch/result 与 instantiated
 metadata 没有可注入路径。职责仍归 Mem；Graph 不复制 planner 或在 Mem 外猜测内部 allocation 数量。
 下一阶段先固定公开调用与生命周期，再修改产品。
+
+## AUDITED：固定接口与有限改动
+
+| ID | FIX | 验收 |
+|---|---|---|
+| M90 | `LifetimePlanner::build(requests, resources, allocator = system_allocator())`；所有 scratch/result 经同一 allocator，保留 sized-free identity | 逐分配拒绝完全回滚；无 payload 分配；无新算法或额外 heap 次数 |
+| M91 | `plan.instantiate(resources)` 继承 plan allocator；`plan.instantiate(resources, allocator)` 显式选择另一 metadata owner | instance 可超过 plan 生命周期；override 不借旧 allocator；payload 仍由 resources 分配/释放 |
+| M92 | Graph 向 LifetimePlanner 传 `plan.allocator`，运行实例自然继承；guide/交付与故障测试同迁移 | Context fault injection 不再漏过 Mem scratch；三交付同义 |
+
+所有 allocator 均为 borrowed `AllocatorRef`，必须活到其所分配的 plan/instance 最后释放。instantiate 的
+默认继承与显式覆盖是两种真实 owner 需求，不是旧 ABI 兼容分支；无参数改变的 view/backing 查询保持
+原样。显式 invalid allocator 拒绝，空计划也需要可用 metadata allocator。临时 RawArray 保有实际
+allocator，转交结果后由 PlanImpl/PlannedImpl 独立保有 identity；用户可直接组合已有 `QuotaAllocator`，
+不新增另一个 quota、全局 setter 或资源种类。
+
+普通 C++ 形状：`LifetimePlanner::build(requests, resources, compile_quota.get())`，然后
+`plan.instantiate(resources, run_quota.get())`。metadata quota 不约束 resource payload 或 allocator 内部
+rounding；这一边界必须在头和用户指南同时说明。公开 owner 仍为单指针，新增 identity 只在 cold impl/
+临时数组；分配数量、best-fit/alias、`O((N+E) log N)` 和 view 的 O(1) 路径不变。
+
+至此 M90--M92 为有限 FIX。需要改变 payload/算法或增加其它公共功能时重新裁决，不顺手扩大本轮。
