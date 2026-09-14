@@ -1,0 +1,32 @@
+# Native Provider v2：foundation route 迁移
+
+## Closure card
+
+- component / owner：`compute_provider_native` / Native provider；round=`compute-provider-native-v2-foundation-route`；
+- baseline commit：`49d32deacf80fbc046e53be64de47042144edc5a`；前轮记录为
+  [native-v1](compute-provider-native-v1-factor.md)；
+- trigger：Compute v8 的 proposal/shape/cost SPI 是直接依赖变化；Graph foundation 还需要一条真实 CPU
+  bounded general route 与 exact tuned route，旧 exact-only candidate 不能冒充；
+- 正常任务：19-family 既有 direct exact 路线不变；动态 token CPU Graph 可在一条明确支持的 Native 路线
+  绑定 concrete shape 后重复执行；
+- scope：迁移新版 proposal/outcome；为所有既有 route 填结构事实；选一个真实 row/MLP shape 实现 bounded
+  general + exact variant 探针；保持 HYLE SIMD/Math/Mem/Platform 复用；
+- non-goals：新增 operation family、重写全部 kernel 为动态 shape、benchmark 驱动的 route 常数、线程池策略；
+- 直接依赖 / 消费者：依赖 Compute/ComputeOps/Math/Mem/Platform/SIMD；direct Compute 与 Graph 消费；
+- 性能：SPI 迁移 P0；exact one-op 与 dynamic normal/holdout P1 随 Graph foundation 一次执行；
+- 预算/验证：一轮 migration、一条 bounded probe、一轮修正；19-family exact 回归、边界/overflow/OOM、三平台、
+  sanitizer、三交付、warm allocation/codegen、P1；
+- stop：若 general route 需要 submit-time allocation/JIT/search 或使 exact 路线增加动态分派，阻塞该 probe，
+  不横向重写全部 kernel。
+
+## AUDITED 结论与有限改动集
+
+| ID | 允许改动 | 验收 |
+|---|---|---|
+| N20 | 迁移 C80--C84 proposal/outcome | 19-family exact direct/Graph 行为不变，旧 SPI 删除 |
+| N21 | 填 exact/upper-bound/unknown 结构成本与稳定 route identity | 不报告不可资格化的相对 ns，不遗漏 dispatch/workspace/persistent/threading |
+| N22 | 一个动态 token normal/holdout route 支持完整 bounded domain，并保留 exact tuned variant | concrete bind 后 warm 无 search/JIT/allocation；非法 domain 点拒绝 |
+| N23 | 与 oneDNN MLP 共同参与 selector/copy/workspace 反例 | 完整 Graph cost 而非单 kernel 名称决定胜者 |
+
+公开 API 不变；bounded capability 是 provider 对完整 subdomain 的承诺。当前为 `AUDITED`，只授权 N20--N23。
+

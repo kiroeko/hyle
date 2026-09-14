@@ -47,7 +47,15 @@
 
 - [第三方广度、全局路由与 foundation lock](compute/compute-graph-route-unification-audit.md)：记录 Provider
   外包、渐进式 HYLE 胜出路线、foundation-v1 架构基线、CUDA Q4 MatMul 纵切、现有 seam 的精确差距和当前
-  goal 顺序；它是重开依据，不在 registry 变更前授权产品修改。
+  goal 顺序；
+- 当前六个 `AUDITED` owner 的有限施工卡：
+  [ComputeOps identity](compute/compute-ops-v2-stable-custom-identity.md)、
+  [Compute proposal](compute/compute-v8-route-proposal-contract.md)、
+  [Graph foundation](compute/graph-v9-foundation-routing.md)、
+  [Native route](compute/compute-provider-native-v2-foundation-route.md)、
+  [oneDNN route](compute/compute-provider-onednn-v5-foundation-route.md) 与
+  [oneDNN node-set region](compute/graph-provider-onednn-v4-node-set-foundation.md)。
+  每张卡只授权其冻结 ledger；registry 仍是唯一当前状态。
 
 当前全库性能工作：
 

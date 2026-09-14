@@ -272,17 +272,15 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/compute-v7-typed-operation-facade.md",
-      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
-      "summary": "compute v7 CANDIDATE：19-family typed prepare 与自然 Concat/TopK/masked-SDPA submit 已落到同一 generic runtime；冲突的早期 RMSNorm/Gated 显式-output 语义已删除，固定 arity 只构造有界 stack span，不改变 provider steady path。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/compute-v8-route-proposal-contract.md",
+      "summary": "compute v8 AUDITED：Device/Context/Queue/Completion 与 public direct façade 保留；C80--C84 只重构冷路径 provider proposal，补 shape-subdomain proof、完整结构成本、qualified profile identity 与事务化 decline，warm submit 不搜索/JIT/分配。"
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/graph-v8-explicit-allocator-sort.md",
-      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
-      "summary": "graph v8 CANDIDATE：G82/G83 allocator/selection 合同已在新 Compute 身份上回放，batch-broadcast MatMul→separate GELU-tanh 多节点纵切通过；Graph IR、placement、liveness、workspace 与 submit 算法未再变化。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/graph-v9-foundation-routing.md",
+      "summary": "graph v9 AUDITED：保留 DAG、三轴资源、liveness/workspace/Completion 骨架；G90--G97 有限重构 node-set region、exact+bounded shape、leaf/region 同池选择、事务化重选、逐常量 ownership 与可解释 report。"
     },
     {
       "module": "container_concurrent",
@@ -357,8 +355,8 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v4-region-kernel-seam.md",
-      "summary": "compute_provider_onednn v4 AUDITED：OD40--OD44 私有 BRGEMM mechanism 已在 6306ab2f 抽取；公开 provider/API/route 不变，pair episode、OOM rollback、六 shape warm 零分配与新鲜 W1-WIN 5% P1 非劣门通过。真实 graph_provider_onednn 的 source/static/shared 消费与组合红队仍待完成，尚非 Candidate。"
+      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v5-foundation-route.md",
+      "summary": "compute_provider_onednn v5 AUDITED：OD50--OD53 迁移 Compute v8 proposal/outcome、保持 exact-only direct route，并由真实 Graph region 消费既有 opaque BRGEMM seam；不改 kernel/tile/public API。"
     },
     {
       "module": "compute_provider_ggml",
@@ -373,15 +371,14 @@
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/graph-provider-onednn-v3-sequence-spi.md",
-      "summary": "graph_provider_onednn v3 AUDITED：OR60--OR62 冻结 region EnqueueResult、首次实际执行 acceptance 与 extension version 迁移；公开 factory/kernel/layout 不变，P0 消除每-region Completion，P1 等完整 Runtime/Graph candidate。"
+      "record": "docs/implementation/tasks/compute/graph-provider-onednn-v4-node-set-foundation.md",
+      "summary": "graph_provider_onednn v4 AUDITED：GP40--GP44 把 gated-MLP region 迁移为可收缩 node set、显式 boundary/完整结构成本与事务化 outcome，并保留 v3 EnqueueResult/acceptance 语义。"
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
-      "summary": "compute_ops v1 CANDIDATE：O18 使 transposed() 对 rank≥2 自然交换末两轴并保留 batch axes；rank-1/opaque 拒绝和 rank-2 行为保持明确，不增加 material transpose、动态 rank 或 provider 策略。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/compute-ops-v2-stable-custom-identity.md",
+      "summary": "compute_ops v2 AUDITED：O20--O22 只修复 typed custom operation 的跨 source/static/shared schema identity，以 OperationId+descriptor size 取代 vtable 地址；不把 provider-specific bounded shape 能力塞入 OperationTraits。"
     },
     {
       "module": "compute_backend_cpu",
@@ -408,10 +405,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
-      "summary": "compute_provider_native v1 CANDIDATE：N18/N19 补齐 rank≥2 batch-broadcast MatMul、零 inner 与 packed/separate 三种 GatedActivation；路线在 prepare 固定并复用 SIMD/Math/Mem/Platform，未触发底层模块重开。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/compute-provider-native-v2-foundation-route.md",
+      "summary": "compute_provider_native v2 AUDITED：N20--N23 迁移新 proposal/outcome、补完整结构成本，并以一个动态 token bounded general route+exact variant 验收 Graph foundation；19-family exact 路线保持。"
     },
     {
       "module": "compute_sched",

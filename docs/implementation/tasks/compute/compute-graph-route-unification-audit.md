@@ -95,7 +95,7 @@ lifetime 和 seam，不复制 peer 的模型 API。
 
 ## 当前源码勘验
 
-源码 baseline：`84e740ffc59d04f88916c6bd69dd28cf75da7996`（与前一轮勘验的 `e23b94ad` 产品树相同）。
+源码 baseline：`49d32deacf80fbc046e53be64de47042144edc5a`（架构文档提交未改变前一轮勘验的产品树）。
 
 | 需要的机制 | 当前事实 | 裁决 |
 |---|---|---|
@@ -203,16 +203,18 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 
 需要，但只做**定向重构**：
 
-- `compute_ops`：从 `CANDIDATE` 返回 `AUDITED`，修复 custom descriptor 的跨 DSO identity，并给 operation
-  schema 增加 bounded-domain proof/exact-only 合同；
+- `compute_ops`：从 `CANDIDATE` 返回 `AUDITED`，只修复 custom descriptor 的跨 DSO identity。后续所有
+  bounded-domain 支持均是 Graph domain 与具体 provider 对完整 subdomain 的承诺，不能把 provider-specific
+  可执行能力误写成 `OperationTraits` 的静态布尔属性；
 - `compute`：从 `CANDIDATE` 返回 `AUDITED`，因为现有 leaf proposal 缺少与 region 同池所需的结构事实和
   shape-subdomain guard、事务化 decline 分类；Device/Context/Queue/Completion 生命周期不重写；
 - `graph`：从 `CANDIDATE` 返回 `AUDITED`，统一 leaf/region route candidate、workload/profile、成本来源和
   有界重选，并引入 exact + bounded/guarded shape domain；
 - `compute_provider_native`：从 `CANDIDATE` 返回 `AUDITED`，只迁移新版 proposal seam 并参与探针；
 - `graph_provider_onednn`：当前虽为 `AUDITED`，其活动卡尚未包含 node-set region；产品修改前必须绑定新
-  baseline，把该迁移和任意 insertion-order node-set 探针写入有限集合。`compute_provider_onednn` 不因该
-  Graph 表示变化自动重开；
+  baseline，把该迁移和非 insertion-order node-set 探针写入有限集合；
+- `compute_provider_onednn`：Graph 的 node-set 表示本身不会重开它，但 Compute v8 会修改它直接实现的
+  私有 proposal/outcome SPI，且前轮尚欠真实 region consumer，因此以 v5 新卡保持 `AUDITED` 并共同迁移；
 - CPU/CUDA backend、Tensor storage、Graph 生命周期/liveness/workspace 骨架没有重写依据；
 - backend-qualified ggml CUDA/Metal/Vulkan factor 在各自 closure card 成立后从 `QUEUED` 开始，不恢复旧
   adapter，也不让当前 CPU blocker 冒充它们的状态。
@@ -227,8 +229,8 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 | 顺序 | 工作包 | 当前裁决 / 完成条件 |
 |---:|---|---|
 | 0 | Foundation v1 架构基线 | 本页和两份 architecture 固定上表全部系统决策；docs/closure contract 通过，不改 registry/product |
-| 1 | 合法状态迁移与小卡 | `compute_ops`、`compute`、`graph`、`compute_provider_native` 分别 `CANDIDATE -> AUDITED`；`graph_provider_onednn` 活动卡补入 node-set migration，不能沿用旧 interval 范围 |
-| 2 | Identity + proposal/shape substrate | R1 custom identity；node-set leaf/region 共用结构事实、decline 分类、workload/profile、schema 的 bounded-domain proof/exact-only、constant borrow/materialize seam；不先写 selector 大算法 |
+| 1 | 合法状态迁移与小卡 | `compute_ops`、`compute`、`graph`、`compute_provider_native` 分别 `CANDIDATE -> AUDITED`；`compute_provider_onednn` 与 `graph_provider_onednn` 绑定新卡，不能沿用旧 proposal/interval 范围 |
+| 2 | Identity + proposal/shape substrate | R1 custom identity；node-set leaf/region 共用结构事实、decline 分类、workload/profile、provider 的 bounded-domain proof/exact-only、constant borrow/materialize seam；不先写 selector 大算法 |
 | 3 | Graph route unification | leaf/region 同池、contractibility、target/storage/boundary 完整成本、有界 state search/reselect、可解释 shortlist/report |
 | 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN shared-runtime direct/region 接受非 insertion-order 的合法 node set；同一 Graph 验 exact 与 bounded route/workspace |
 | 5 | CUDA foundation probe | 同 storage 多 lane/dependency、exact capture 与 bounded/general fallback；Q4 MatMul/MLP 的 HYLE/vendor/第三方/unsupported 路由与 residence |
