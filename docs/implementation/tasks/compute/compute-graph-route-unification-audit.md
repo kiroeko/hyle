@@ -320,6 +320,12 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 证据，暂停与用户共同审视。没有新的继续指示，不进入第 8 项及后续横向算子/后端扩张；局部修复或单个
 平台测试通过不等于达到这个暂停点。
 
+进度报告同时附 Compute、Graph 及合计的自实现不含测试 LOC，绑定同一源码快照。Compute 计入
+`include/hyle/compute` 与全部 `src/compute*` 内现有 runtime、schema、backend/provider 自实现；Graph
+计入 `include/hyle/graph`、`src/graph` 与 Graph provider 自实现。使用 `loc-report.py --module-path` 明确
+这个产品口径，不把仅 `compute` runtime factor 当成全部 Compute；不计测试/bench、第三方实现、构建
+脚本、生成产物、注释和空行，也不把依赖的 Mem/SIMD 等实现重复计入。LOC 不代替基础 gate 完成度。
+
 ### 迁移完成后的独立架构复核
 
 本次前置整体复核不替代迁移后的实现复核。后者属于第 7 项已有的终局红队，不以某个局部迁移

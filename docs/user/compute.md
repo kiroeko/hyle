@@ -488,5 +488,6 @@ inference/prepare 也会检查，非法枚举、缺方法、空资源声明或�
 
 只读外部状态不是 pure。无法列出完整访问集时，保留 `kExternalSideEffect`、零具名端口；它意味着保守
 副作用，不是空资源集。direct Compute 的外部资源顺序/生命周期由调用方 Queue/Completion 管理。
-当前 Graph 尚未完成资源域绑定，仍对所有非 pure 访问要求显式依赖链；本 schema 不等于已支持独立域
-并行，也不会自动安装 custom execution 实现。
+Graph 使用 graph-local `EffectResourceId`、固定 backing footprint 与显式 data/control 依赖消费这些端口：
+同域冲突有序，read/read 或独立域不加边，未知副作用保守排序。具体绑定、alias 与跨 Invocation 限制见
+[Graph 外部资源指南](graph.md#外部可变资源声明访问与顺序)。schema 或资源绑定都不会自动安装 custom execution 实现。

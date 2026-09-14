@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 10};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 11};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -118,6 +118,11 @@ private:
   bool node_limit_reached_ = false;
 };
 
+struct RegionEffectAccess final {
+  EffectResourceId resource{};
+  compute::ResourceAccess access = compute::ResourceAccess::kRead;
+};
+
 struct RegionCompileRequest final {
   const Graph *graph = nullptr;
   std::span<const NodeId> nodes{};
@@ -128,6 +133,11 @@ struct RegionCompileRequest final {
   std::span<const mem::MemoryResourceRef> output_resources{};
   mem::MemoryResourceRef workspace_resource{};
   std::uint64_t route = 0;
+  // Canonical union of node accesses. These are not extra execution inputs;
+  // the implementation must preserve these effects and the graph's ordering.
+  std::span<const RegionEffectAccess> effect_accesses{};
+  std::span<const EffectResourceBinding> effect_bindings{};
+  bool has_unknown_effects = false;
 };
 
 // Cold resource and runtime proposal for one exact candidate boundary. The
@@ -136,6 +146,9 @@ struct RegionCompileRequest final {
 struct RegionResourceProposal final {
   compute::ProviderRuntimeProperties runtime{};
   compute::detail::ResourceBindingRequirement workspace_resource{};
+  // Required when the request contains named or unknown external effects.
+  // false declines that semantic route before artifact creation.
+  bool preserves_effects = false;
 };
 
 struct RegionArtifactProperties final {
@@ -153,6 +166,7 @@ struct RegionArtifactProperties final {
   // Exact backend execution episodes per submit; see ProviderRouteCostFacts.
   std::uint32_t dispatch_count = 1;
   compute::ProviderRuntimeProperties runtime{};
+  bool preserves_effects = false;
 };
 
 struct ProviderRegionPreparedVTable final {

@@ -121,56 +121,6 @@ Status canonicalize_dependencies(detail::BuilderState &state) noexcept {
   return Status::Ok();
 }
 
-Status validate_effect_order(const detail::BuilderState &state) noexcept {
-  using Effects = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
-  Effects latest_reachable(state.allocator);
-  if (!latest_reachable.try_resize(state.nodes.size()))
-    return allocation_failure();
-  for (std::size_t index = 0; index < latest_reachable.size(); ++index)
-    latest_reachable[index] = detail::kNoNode;
-
-  std::uint32_t last_effect = detail::kNoNode;
-  for (std::size_t node_index = 0; node_index < state.nodes.size();
-       ++node_index) {
-    const detail::NodeRecord &node = state.nodes[node_index];
-    std::uint32_t reachable = detail::kNoNode;
-    auto absorb = [&](std::uint32_t prerequisite) noexcept {
-      const bool prerequisite_is_effect =
-          compute::operation_traits(state.nodes[prerequisite].operation)
-              .effect != compute::EffectKind::kPure;
-      const std::uint32_t candidate = prerequisite_is_effect
-                                          ? prerequisite
-                                          : latest_reachable[prerequisite];
-      if (candidate != detail::kNoNode &&
-          (reachable == detail::kNoNode || candidate > reachable)) {
-        reachable = candidate;
-      }
-    };
-    for (std::size_t index = 0; index < node.input_count; ++index) {
-      const std::uint32_t value = state.edges[node.input_begin + index];
-      const std::uint32_t producer = state.values[value].producer;
-      if (producer != detail::kNoNode)
-        absorb(producer);
-    }
-    for (std::size_t index = 0; index < node.dependency_count; ++index)
-      absorb(state.dependencies[node.dependency_begin + index]);
-
-    const bool is_effect = compute::operation_traits(node.operation).effect !=
-                           compute::EffectKind::kPure;
-    if (is_effect && last_effect != detail::kNoNode &&
-        reachable != last_effect) {
-      return Status::FailedPrecondition(
-          "external side-effect nodes require an explicit dependency chain");
-    }
-    if (is_effect) {
-      last_effect = static_cast<std::uint32_t>(node_index);
-      reachable = last_effect;
-    }
-    latest_reachable[node_index] = reachable;
-  }
-  return Status::Ok();
-}
-
 constexpr bool fits_value_ordinal(std::size_t size) noexcept {
   return size <= (std::numeric_limits<std::uint32_t>::max)();
 }
@@ -427,6 +377,21 @@ std::size_t Graph::output_count() const noexcept {
   return state_ != nullptr ? state_->outputs.size() : 0;
 }
 
+std::size_t Graph::effect_resource_count() const noexcept {
+  return state_ != nullptr ? state_->effect_resource_count : 0;
+}
+
+Result<EffectResourceId>
+Graph::effect_resource_id(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (index >= state_->effect_resource_count)
+    return std::unexpected(
+        Status::OutOfRange("graph effect resource index is out of range"));
+  return detail::GraphIdentity::effect_resource(
+      state_->generation, static_cast<std::uint32_t>(index));
+}
+
 Result<DimensionId> Graph::dimension_id(std::size_t index) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_graph());
@@ -599,6 +564,29 @@ Graph::node_dependency(NodeId node,
       state_->dependencies[record.dependency_begin + dependency_index]);
 }
 
+Result<std::size_t> Graph::node_resource_count(NodeId node) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, node))
+    return std::unexpected(
+        Status::InvalidArgument("node does not belong to this graph"));
+  return compute::operation_traits(state_->nodes[node.ordinal()].operation)
+      .resource_count;
+}
+
+Result<EffectResourceId> Graph::node_resource(NodeId node,
+                                              std::size_t port) const noexcept {
+  auto count = node_resource_count(node);
+  if (!count)
+    return std::unexpected(std::move(count).error());
+  if (port >= *count)
+    return std::unexpected(
+        Status::OutOfRange("graph node resource port is out of range"));
+  const detail::NodeRecord &record = state_->nodes[node.ordinal()];
+  return detail::GraphIdentity::effect_resource(
+      state_->generation, state_->resource_edges[record.resource_begin + port]);
+}
+
 Result<std::size_t> Graph::node_output_count(NodeId node) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_graph());
@@ -724,6 +712,49 @@ GraphBuilder::create(GraphBuilderOptions options) noexcept {
   auto *state =
       ::new (storage) detail::BuilderState(next_generation(), allocator);
   return GraphBuilder(state);
+}
+
+Result<EffectResourceId> GraphBuilder::effect_resource() noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
+  if (state_->effect_resource_count == UINT32_MAX)
+    return std::unexpected(Status::ResourceExhausted(
+        "graph effect resource identity space is exhausted"));
+  return detail::GraphIdentity::effect_resource(
+      state_->generation, state_->effect_resource_count++);
+}
+
+Status GraphBuilder::bind_resources(
+    NodeId node, std::span<const EffectResourceId> resources) noexcept {
+  if (state_ == nullptr)
+    return invalid_builder();
+  if (!detail::owns(*state_, node))
+    return Status::InvalidArgument("node does not belong to this builder");
+  auto &record = state_->nodes[node.ordinal()];
+  const auto traits = compute::operation_traits(record.operation);
+  if (resources.size() != traits.resource_count)
+    return Status::InvalidArgument(
+        "graph resource binding count does not match operation schema");
+  for (EffectResourceId resource : resources) {
+    if (!detail::owns(*state_, resource))
+      return Status::InvalidArgument(
+          "effect resource belongs to another builder");
+  }
+  if (resources.empty())
+    return Status::Ok();
+  if (record.resource_begin == detail::kNoNode) {
+    const std::size_t begin = state_->resource_edges.size();
+    if (resources.size() > UINT32_MAX - begin)
+      return Status::ResourceExhausted(
+          "graph resource edge space is exhausted");
+    if (!state_->resource_edges.try_resize(begin + resources.size()))
+      return allocation_failure();
+    record.resource_begin = static_cast<std::uint32_t>(begin);
+  }
+  for (std::size_t port = 0; port < resources.size(); ++port)
+    state_->resource_edges[record.resource_begin + port] =
+        resources[port].ordinal();
+  return Status::Ok();
 }
 
 Result<DimensionId> GraphBuilder::dimension(DimensionBounds bounds) noexcept {
@@ -1097,7 +1128,7 @@ Result<Graph> GraphBuilder::finish() && noexcept {
     return std::unexpected(std::move(shape));
   if (!dependencies.ok())
     return std::unexpected(std::move(dependencies));
-  Status effects = validate_effect_order(*state_);
+  Status effects = detail::validate_effect_order(*state_);
   if (!effects.ok())
     return std::unexpected(std::move(effects));
 

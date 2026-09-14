@@ -231,6 +231,13 @@ reshape、整除失败和 overflow，不能只用输入输出共用一个 symbol
 不能靠不同 ID 忽略同一 backing 的写冲突；子范围并行必须有明确不重叠合同。跨 Invocation 的共享可变
 资源顺序由调用方的 Queue/Completion 或显式 admission 约束，不偷偷建立 Graph 全局锁。
 
+逻辑资源由 `GraphBuilder::effect_resource()` 创建、按 node 的 schema 端口绑定；`finish()` 验证已有的
+data/control 顺序，不按插入顺序补边。`CompileOptions::effect_bindings` 固定该 Executable 的借用访问
+footprint：地址化存储使用 Mem 的 canonical allocation/subrange，非地址化对象使用 canonical owner。
+它不是另一个执行参数通道；custom 执行的资源必须与声明相符。不同 ID 的 backing 重叠直接拒绝，需 alias
+时复用 ID 或给出不重叠范围。effect memory 与 tensor input/constant/output 隐式 alias 也拒绝，避免绕过
+SSA；可变状态的数据结果应显式产出 value。数组/span 在冷 compile 复制，backing 则由 caller 保活。
+
 访问 schema 属于 ComputeOps 的计算语义，不持有 Graph ID；图内资源 identity、绑定与冲突检查属于 Graph。
 KV eviction、communicator 创建、请求顺序等仍是引擎策略。测试同时覆盖独立两域可并行、同域写冲突、
 未知副作用与跨 region 顺序。

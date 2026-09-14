@@ -9,8 +9,8 @@
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
-当前 exact specialization 已支持有限派生维度与 shape guards，Provider replay 分类事实也可查询。
-完整 bounded runtime/variants、资源副作用域、variant 内存共享和搜索受限返回可行解仍是
+当前 exact specialization 已支持有限派生维度与 shape guards、具名资源副作用域，以及有限 region 发现/
+重选；Provider replay 分类事实也可查询。完整 bounded runtime/variants、variant 内存共享与统一完整成本选择仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
@@ -26,7 +26,7 @@ Executable -> one Invocation per concurrent lane
 Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 ```
 
-- `GraphBuilder` 是单 owner、可失败的逻辑构造器。`ValueId`、`NodeId` 和 `DimensionId` 带 graph identity，
+- `GraphBuilder` 是单 owner、可失败的逻辑构造器。`ValueId`、`NodeId`、`DimensionId` 和 `EffectResourceId` 带 graph identity，
   异图 ID 会被拒绝；node 只能读取已经产生的 value，因此数据环不能被构造出来。
 - `Graph` 是不可变、可共享且与具体设备无关的逻辑 DAG；它不持有 tensor payload、Context、Queue 或
   provider artifact。
@@ -40,6 +40,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | 能力 | 当前合同 |
 |---|---|
 | DAG | typed、多输入/输出 node；共享 value、分支、多个 published output 与显式 control dependency |
+| 外部资源 | graph-local `EffectResourceId`、按 schema 端口绑定、read/write 冲突验证与固定 backing footprint；独立域不加边，未知副作用保守排序 |
 | shape | concrete `TensorDesc`，或独立 min/max/multiple 维度、有限 sum/product/exact-quotient/broadcast 派生维度及 equal/less-equal guards；同一 `DimensionId` 共享值 |
 | specialization | `compile()` 只要求每个独立维度恰好绑定一次，派生值由程序计算；一个 Executable 对应一个包含全部维度值的 collision-safe `SpecializationSignature` |
 | execution target | `Context` 是执行者；node placement 只选择 target，不把 allocator 或 Queue 混入 identity |
@@ -380,6 +381,59 @@ view 保留实例 ID，但这不表示发生了 dispatch。ID 本身不保活 Co
 连续 range 的起点。只有 `nodes_contiguous` 为真时才能按 begin/count 展开；通用代码使用
 `CompileReport::step_node(step_index, node_index)` 查询精确节点集合。真实 Copy step 的 node count 为零。
 
+## 外部可变资源：声明访问与顺序
+
+普通 tensor 的输入/输出依赖不需要资源 ID。custom operation 还访问外部状态时，先按
+[Compute 资源 schema](compute.md#custom-operation-的外部资源访问)声明每个端口的 read/write，再把端口
+绑定到 graph-local `EffectResourceId`。例如更新一个外部累积缓冲区后读取它：
+
+```cpp
+// update_op / observe_op 是已由 context 中的 Provider 支持的 custom Operation；
+// 均有一个资源端口，分别声明 Write 和 Read，此例没有 tensor 参数。
+using namespace hyle::graph;
+auto state = builder.effect_resource().value();
+auto update = builder.add_node(update_op, {}).value();
+auto observe = builder.add_node(observe_op, {}).value();
+const std::array ports{state};
+HYLE_RETURN_IF_ERROR(builder.bind_resources(update, ports));
+HYLE_RETURN_IF_ERROR(builder.bind_resources(observe, ports));
+HYLE_RETURN_IF_ERROR(builder.depends_on(observe, update));
+auto graph = std::move(builder).finish().value();
+const std::array backing{EffectResourceBinding{
+    state, EffectResourceFootprint::memory(state_buffer.view())}};
+auto compiled = compile(graph, context, CompileOptions{.effect_bindings = backing});
+```
+
+`finish()` 不会按添加顺序暗中插入依赖。同域写→读、读→写、写→写必须已有 data/control path；多个
+并行 readers 后的 writer 必须依赖全部 readers。read/read 和独立资源无需串行化。缺端口绑定、异图 ID
+和冲突未排序都会失败；失败后可以在 Builder 更正绑定或补 `depends_on()` 再 finish。重复端口可指向同一
+ID，`Graph::node_resource_count/node_resource/effect_resource_id` 可查询逻辑声明。未知外部副作用使用
+`kExternalSideEffect`，与全部具名访问及其它未知副作用保持保守顺序。
+
+`effect_bindings` 是**访问范围证明，不是执行参数传递或资源所有权**。custom 实现仍须自行取得对应资源，
+且声明必须覆盖它实际访问的范围；此入口不自动安装 custom execution。地址化内存使用 Mem 的
+`ConstBufferView`，按 resource/allocation/offset/size 检查；不同 ID 的范围不得重叠，即使两个声明都只读。
+需要 alias 时复用同一 ID；同一 backing 的不重叠 subview 可以使用不同 ID。非地址化外部对象使用
+`EffectResourceFootprint::object(canonical_owner)`；不能用两个包装对象的地址掩盖同一 owner，也不能用
+object 掩盖本应与 tensor 检查重叠的内存。
+
+这个检查依赖 Mem 的 canonical allocation identity，不探测 OS 物理页。若同一内存经多个 handle/resource
+重复导入或映射，调用方必须统一声明它的 backing 身份，不能把不同包装当作独立性证明。
+
+已使用的每个资源需恰好一个有效 backing；未使用的 ID 可不绑定。Graph tensor input/constant/output
+不得与 effect memory 隐式重叠，compile 检查常量，`Invocation::bind()` 检查输入和输出，不因绑定顺序
+不同而漏检。需要从可变资源产生数据时，用 custom operation 的显式输出建立 SSA value，不把相同内存
+重新伪装成普通输入。
+
+编译会复制声明而不保留传入的数组/span；footprint 本身仍借用，实际 backing、resource provider 或外部
+owner 必须活过该 Executable、全部 Invocation 和 in-flight Completion。footprint 固定，不随 tensor
+rebind/reset 改变。不同 Invocation 使用同一外部可变资源时，仍由调用方 Queue/Completion 排序；
+`supports_concurrent_invocations()` 不代表用户资源天然无数据竞争。
+
+Region 编译收到按域合并的访问集与 backing 声明。Provider 必须在资源提案与最终制品中一致承诺
+`preserves_effects`；缺承诺的路线在创建制品前排除，前后矛盾是合同错误而非可忽略 fallback。资源顺序
+沿已有 data/control 边进入 region 收缩和 lane/Completion，不增加全局 registry、锁或 submit 扫描。
+
 ## 所有权与常见陷阱
 
 - `ExecutionTarget` 的 Context 会被 plan 内部 artifact 保活；`StorageDomain` 中 `MemoryResourceRef` 的 provider 仍是 caller
@@ -392,9 +446,8 @@ view 保留实例 ID，但这不表示发生了 dispatch。ID 本身不保活 Co
   失效，多 shared lane 必须重新 `prepare_replay()`。
 - 不同 published outputs，以及 output 与仍存活 input，不得绕过 plan 形成危险 overlap。只在相同
   storage/resource、最后一次读取且 provider 明确允许时选择 in-place；其它 partial overlap 被拒绝。
-- 外部副作用 node 必须用数据依赖或 `depends_on()` 排序。ComputeOps 已能声明具名资源端口的 read/write，
-  但当前 Graph 的域绑定仍未完成，这类 node 也按保守副作用处理，不能据此跳过顺序。纯 node 不要为了
-  “看起来顺序一致”手工串行化；资源 schema 用法见 [Compute 指南](compute.md#custom-operation-的外部资源访问)。
+- 外部资源按上述域和 read/write 规则排序；纯 node、独立域与同域 read/read 不要为了“看起来顺序一致”
+  手工串行化。固定 effect backing 与每次运行可重新绑定的 tensor 是不同生命周期。
 - Graph 可以保存合法 blocked/opaque TensorDesc，但没有理解该 encoding 的 provider 时 compile 会返回
   `Unimplemented`，不会把压缩 bytes 当普通 scalar storage。
 

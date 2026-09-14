@@ -14,6 +14,14 @@ namespace hyle::graph::detail {
 inline constexpr std::uint32_t kNoNode = UINT32_MAX;
 
 struct GraphIdentity final {
+  static constexpr EffectResourceId
+  effect_resource(std::uint64_t generation, std::uint32_t ordinal) noexcept {
+    return EffectResourceId(generation, ordinal);
+  }
+  static constexpr std::uint64_t
+  generation(EffectResourceId resource) noexcept {
+    return resource.generation_;
+  }
   static constexpr DimensionId dimension(std::uint64_t generation,
                                          std::uint32_t ordinal) noexcept {
     return DimensionId(generation, ordinal);
@@ -55,6 +63,7 @@ struct NodeRecord final {
   std::uint32_t output_begin = 0;
   std::uint32_t dependency_begin = 0;
   std::uint32_t dependency_count = 0;
+  std::uint32_t resource_begin = kNoNode;
   std::uint16_t input_count = 0;
   std::uint8_t output_count = 0;
 };
@@ -80,9 +89,9 @@ struct BuilderState final {
       : allocator(allocator_value), generation(generation_value),
         dimensions(allocator_value), shape_guards(allocator_value),
         values(allocator_value), nodes(allocator_value), edges(allocator_value),
-        inputs(allocator_value), constants(allocator_value),
-        outputs(allocator_value), control_edges(allocator_value),
-        dependencies(allocator_value) {}
+        resource_edges(allocator_value), inputs(allocator_value),
+        constants(allocator_value), outputs(allocator_value),
+        control_edges(allocator_value), dependencies(allocator_value) {}
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
@@ -91,6 +100,8 @@ struct BuilderState final {
   ValueRecords values;
   NodeRecords nodes;
   Ordinals edges;
+  Ordinals resource_edges;
+  std::uint32_t effect_resource_count = 0;
   Ordinals inputs;
   Ordinals constants;
   Ordinals outputs;
@@ -104,7 +115,10 @@ struct GraphState final : util::RefCounted<GraphState> {
         dimensions(std::move(builder.dimensions)),
         shape_guards(std::move(builder.shape_guards)),
         values(std::move(builder.values)), nodes(std::move(builder.nodes)),
-        edges(std::move(builder.edges)), inputs(std::move(builder.inputs)),
+        edges(std::move(builder.edges)),
+        resource_edges(std::move(builder.resource_edges)),
+        effect_resource_count(builder.effect_resource_count),
+        inputs(std::move(builder.inputs)),
         constants(std::move(builder.constants)),
         outputs(std::move(builder.outputs)),
         dependencies(std::move(builder.dependencies)) {}
@@ -122,6 +136,8 @@ struct GraphState final : util::RefCounted<GraphState> {
   ValueRecords values;
   NodeRecords nodes;
   Ordinals edges;
+  Ordinals resource_edges;
+  std::uint32_t effect_resource_count = 0;
   Ordinals inputs;
   Ordinals constants;
   Ordinals outputs;
@@ -200,5 +216,14 @@ inline bool owns(const BuilderState &state, NodeId node) noexcept {
   return node.valid() && GraphIdentity::generation(node) == state.generation &&
          node.ordinal() < state.nodes.size();
 }
+
+template <class State>
+inline bool owns(const State &state, EffectResourceId resource) noexcept {
+  return resource.valid() &&
+         GraphIdentity::generation(resource) == state.generation &&
+         resource.ordinal() < state.effect_resource_count;
+}
+
+Status validate_effect_order(const BuilderState &state) noexcept;
 
 } // namespace hyle::graph::detail

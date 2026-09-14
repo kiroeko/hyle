@@ -621,8 +621,8 @@ struct PlanState final : util::RefCounted<PlanState> {
         completion_segments(allocator_value),
         lane_segment_counts(allocator_value), input_ids(allocator_value),
         constant_ids(allocator_value), output_ids(allocator_value),
-        constant_bindings(allocator_value), descriptions(allocator_value),
-        instance_descriptions(allocator_value),
+        constant_bindings(allocator_value), effect_bindings(allocator_value),
+        descriptions(allocator_value), instance_descriptions(allocator_value),
         instance_values(allocator_value), instance_storage(allocator_value),
         instance_roles(allocator_value), external_instances(allocator_value),
         external_storage(allocator_value), node_inputs(allocator_value),
@@ -668,6 +668,8 @@ struct PlanState final : util::RefCounted<PlanState> {
   ValueIds constant_ids;
   ValueIds output_ids;
   ReadableBindings constant_bindings;
+  container::SmallVector<EffectResourceBinding, 0, mem::AllocatorRef>
+      effect_bindings;
   // Public ValueId metadata is logical. Plan step ports address physical
   // instances, because one logical value may be materialized in several
   // storage domains after boundary-copy insertion.

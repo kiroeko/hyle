@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <new>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -37,6 +39,7 @@ using hyle::compute::ProviderPrepareOutcome;
 using hyle::compute::ProviderPrepareOutcomeKind;
 using hyle::compute::ProviderReplayClass;
 using hyle::compute::Queue;
+using hyle::compute::ResourceAccess;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::compute::Unary;
@@ -46,6 +49,9 @@ using hyle::graph::CompileOptions;
 using hyle::graph::CompileReport;
 using hyle::graph::CompileSearchPolicy;
 using hyle::graph::CompileStepKind;
+using hyle::graph::EffectResourceBinding;
+using hyle::graph::EffectResourceFootprint;
+using hyle::graph::EffectResourceId;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
 using hyle::graph::NodeId;
@@ -80,6 +86,8 @@ enum class ProposalMode : std::uint8_t {
   kInvocationFailure,
   kAsyncPairs,
   kAsyncRejectSecond,
+  kResourceSingletons,
+  kResourcePairs,
 };
 
 struct RegionProbe final {
@@ -132,6 +140,11 @@ struct RegionProbe final {
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
+  std::optional<bool> proposed_effects_override{};
+  std::size_t observed_effect_count = 0;
+  hyle::compute::ResourceAccess observed_effect_access{};
+  bool observed_unknown_effects = false;
+  std::int32_t last_resource_read = 0;
   std::optional<hyle::compute::ProviderReplayClass> proposed_replay_override{};
   ProviderReplayClass discovery_replay_class = ProviderReplayClass::kUnknown;
   std::optional<ProviderReplayClass> single_replay_override{};
@@ -170,6 +183,38 @@ struct ExternalEffect final {
                : Status::InvalidArgument("effect operation has no tensors");
   }
 };
+
+struct ResourceTouch final {
+  static constexpr hyle::compute::OperationId operation_id{0x48594c45U,
+                                                           0x52455306U};
+  static constexpr std::string_view operation_name = "test-resource-touch";
+  std::int32_t *state = nullptr;
+  hyle::compute::ResourceAccess access =
+      hyle::compute::ResourceAccess::kReadWrite;
+  std::int32_t value = 1;
+  hyle::compute::OperationTraits operation_traits() const noexcept {
+    return {.effect = hyle::compute::EffectKind::kResourceAccess,
+            .materializes = false,
+            .resource_count = 1};
+  }
+  hyle::compute::ResourceAccess resource_access(std::size_t) const noexcept {
+    return access;
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc>,
+                                   std::span<TensorDesc>) const noexcept {
+    return state != nullptr ? Status::Ok()
+                            : Status::InvalidArgument("resource state is null");
+  }
+};
+
+struct EffectPlan final {
+  RegionProbe *probe = nullptr;
+  std::array<ResourceTouch, 2> touches{};
+  std::size_t count = 0;
+  bool region = false;
+};
+
+extern const hyle::graph::ProviderRegionPreparedVTable kResourceRegionVTable;
 
 struct ProviderPayload final {
   RegionProbe *probe = nullptr;
@@ -266,6 +311,37 @@ struct OwnedTensor final {
   Buffer buffer{};
   TensorView view{};
 };
+
+// A real mutable external buffer, not an opaque identity standing in for
+// addressable bytes. Its mapping and owner outlive each compiled invocation.
+struct ResourceStorage final {
+  Buffer buffer =
+      Buffer::create(hyle::mem::system_resource(), sizeof(std::int32_t), 64)
+          .value();
+  hyle::mem::HostMapping mapping = buffer.view().map_host().value();
+
+  explicit ResourceStorage(std::int32_t initial = 0) {
+    ::new (value()) std::int32_t(initial);
+  }
+  std::int32_t *value() {
+    return reinterpret_cast<std::int32_t *>(mapping.writable_bytes()->data());
+  }
+  EffectResourceFootprint footprint() const {
+    return EffectResourceFootprint::memory(buffer.view());
+  }
+};
+
+NodeId add_resource_touch(GraphBuilder &builder, EffectResourceId resource,
+                          ResourceStorage &storage, ResourceAccess access,
+                          std::int32_t value = 1) {
+  auto node = builder
+                  .add_node(Operation::custom(
+                                ResourceTouch{storage.value(), access, value}),
+                            std::array<ValueId, 0>{})
+                  .value();
+  EXPECT_TRUE(builder.bind_resources(node, std::array{resource}).ok());
+  return node;
+}
 
 class HostResource final : public hyle::mem::MemoryResource {
 public:
@@ -380,6 +456,21 @@ add_proposal(const Graph &graph, RegionProposalWriter &writer,
 Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
                                    RegionProposalWriter &writer) noexcept {
   ++probe.propose_count;
+  if (probe.mode == ProposalMode::kResourceSingletons ||
+      probe.mode == ProposalMode::kResourcePairs) {
+    const std::size_t width =
+        probe.mode == ProposalMode::kResourcePairs ? 2 : 1;
+    for (std::size_t index = 0; index < graph.node_count(); index += width) {
+      std::array<NodeId, 2> nodes{};
+      const auto count = (std::min)(width, graph.node_count() - index);
+      for (std::size_t offset = 0; offset < count; ++offset)
+        nodes[offset] = graph.node_id(index + offset).value();
+      auto added = add_node_set_proposal(writer, std::span(nodes).first(count));
+      if (!added || !*added)
+        return added;
+    }
+    return true;
+  }
   if (probe.mode == ProposalMode::kSingleton) {
     const std::array nodes{graph.node_id(0).value()};
     return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count,
@@ -647,15 +738,22 @@ Status propose_region_resources(
     requirement = {};
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.region_resource_count;
+  probe.observed_effect_count = request.effect_accesses.size();
+  if (!request.effect_accesses.empty())
+    probe.observed_effect_access = request.effect_accesses.front().access;
+  probe.observed_unknown_effects = request.has_unknown_effects;
   if (!input_requirements.empty() && probe.region_input_resource.valid())
     input_requirements[0].exact_resource = probe.region_input_resource;
   if (!output_requirements.empty() && probe.region_output_resource.valid())
     output_requirements[0].exact_resource = probe.region_output_resource;
   *proposal = hyle::graph::RegionResourceProposal{
       .runtime = probe.artifact_properties.runtime,
-      .workspace_resource = {
-          .exact_resource = probe.region_workspace_resource,
-      },
+      .workspace_resource =
+          {
+              .exact_resource = probe.region_workspace_resource,
+          },
+      .preserves_effects = probe.proposed_effects_override.value_or(
+          probe.artifact_properties.preserves_effects),
   };
   if (probe.proposed_replay_override)
     proposal->runtime.replay_class = *probe.proposed_replay_override;
@@ -667,6 +765,34 @@ Status compile_region_checked(void *context,
                               AllocatorRef allocator,
                               ProviderRegionPrepared *output) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
+  if (probe.mode == ProposalMode::kResourceSingletons ||
+      probe.mode == ProposalMode::kResourcePairs) {
+    if (request.nodes.empty() || request.nodes.size() > 2 ||
+        !request.inputs.empty() || !request.outputs.empty() ||
+        request.effect_accesses.empty())
+      return Status::InvalidArgument("invalid resource region request");
+    EffectPlan candidate{
+        .probe = &probe, .count = request.nodes.size(), .region = true};
+    for (std::size_t index = 0; index < request.nodes.size(); ++index) {
+      auto op = request.graph->operation(request.nodes[index]);
+      if (!op)
+        return std::move(op).error();
+      auto touch = op->custom_as<ResourceTouch>();
+      if (!touch)
+        return Status::InvalidArgument(
+            "resource region contains another operation");
+      candidate.touches[index] = *touch;
+    }
+    void *storage = allocator.allocate(sizeof(EffectPlan), alignof(EffectPlan));
+    if (storage == nullptr)
+      return Status::ResourceExhausted("effect region allocation failed");
+    auto *plan = ::new (storage) EffectPlan(candidate);
+    *output = {.vtable = &kResourceRegionVTable,
+               .state = plan,
+               .properties = probe.artifact_properties};
+    ++probe.compile_count;
+    return Status::Ok();
+  }
   const std::size_t expected_boundary_count =
       probe.mode == ProposalMode::kNonContiguousReordered ||
               probe.mode == ProposalMode::kJointCycle
@@ -759,7 +885,13 @@ void destroy_provider_context(void *context, AllocatorRef) noexcept {
   ++static_cast<RegionProbe *>(context)->context_destroy_count;
 }
 
-void destroy_effect_prepared(void *, AllocatorRef) noexcept {}
+void destroy_effect_prepared(void *opaque, AllocatorRef allocator) noexcept {
+  auto *plan = static_cast<EffectPlan *>(opaque);
+  if (plan->region)
+    ++plan->probe->destroy_prepared_count;
+  plan->~EffectPlan();
+  allocator.deallocate(plan, sizeof(EffectPlan), alignof(EffectPlan));
+}
 
 AliasSupport effect_alias_support(void *, std::size_t, std::size_t) noexcept {
   return {};
@@ -770,7 +902,7 @@ Status create_effect_invocation(void *prepared, AllocatorRef,
                                 void **invocation) noexcept {
   if (invocation == nullptr)
     return Status::InvalidArgument("effect invocation output is null");
-  auto &probe = *static_cast<RegionProbe *>(prepared);
+  auto &probe = *static_cast<EffectPlan *>(prepared)->probe;
   ++probe.effect_create_count;
   *invocation = prepared;
   return Status::Ok();
@@ -786,7 +918,22 @@ submit_effect(void *, void *invocation, Queue &,
     return hyle::compute::detail::EnqueueResult::accepted_command(
         Status::Internal("effect invocation binding mismatch"));
   }
-  ++static_cast<RegionProbe *>(invocation)->effect_submit_count;
+  auto &plan = *static_cast<EffectPlan *>(invocation);
+  ++plan.probe->effect_submit_count;
+  for (std::size_t index = 0; index < plan.count; ++index) {
+    const auto &touch = plan.touches[index];
+    switch (touch.access) {
+    case hyle::compute::ResourceAccess::kRead:
+      plan.probe->last_resource_read = *touch.state;
+      break;
+    case hyle::compute::ResourceAccess::kWrite:
+      *touch.state = touch.value;
+      break;
+    case hyle::compute::ResourceAccess::kReadWrite:
+      *touch.state += touch.value;
+      break;
+    }
+  }
   return hyle::compute::detail::EnqueueResult::accepted_command();
 }
 
@@ -797,6 +944,14 @@ const hyle::compute::detail::ProviderPreparedVTable kEffectPreparedVTable{
     .destroy_invocation = &destroy_effect_invocation,
     .shared_submit = &submit_effect,
     .delegated_submit = nullptr,
+};
+
+const hyle::graph::ProviderRegionPreparedVTable kResourceRegionVTable{
+    .destroy_prepared = &destroy_effect_prepared,
+    .alias_support = &effect_alias_support,
+    .create_invocation = &create_effect_invocation,
+    .destroy_invocation = &destroy_effect_invocation,
+    .shared_submit = &submit_effect,
 };
 
 constexpr hyle::compute::ProviderRuntimeProperties kEffectRuntime{
@@ -863,7 +1018,8 @@ Status propose_single(
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_prepare_count;
   probe.destroy_count_at_single_proposal = probe.destroy_prepared_count;
-  const bool effect = operation.custom_as<ExternalEffect>().has_value();
+  const bool effect = operation.custom_as<ExternalEffect>().has_value() ||
+                      operation.custom_as<ResourceTouch>().has_value();
   const bool constrained_unary =
       operation.kind() == hyle::compute::OperationKind::kUnary &&
       probe.required_resource.valid();
@@ -900,7 +1056,10 @@ prepare_single(void *context,
                hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_artifact_count;
-  const bool effect = request.operation.custom_as<ExternalEffect>().has_value();
+  const auto touch = request.operation.custom_as<ResourceTouch>();
+  const bool effect =
+      request.operation.custom_as<ExternalEffect>().has_value() ||
+      touch.has_value();
   const bool constrained_unary =
       request.operation.kind() == hyle::compute::OperationKind::kUnary &&
       probe.required_resource.valid();
@@ -933,9 +1092,18 @@ prepare_single(void *context,
     return probe.single_outcome_override.value_or(
         ProviderPrepareOutcome::prepared());
   }
+  void *storage = allocator.allocate(sizeof(EffectPlan), alignof(EffectPlan));
+  if (storage == nullptr)
+    return ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("effect plan allocation failed"));
+  auto *effect_plan = ::new (storage) EffectPlan{.probe = &probe};
+  if (touch) {
+    effect_plan->touches[0] = *touch;
+    effect_plan->count = 1;
+  }
   *prepared = hyle::compute::detail::ProviderPrepared{
       .vtable = &kEffectPreparedVTable,
-      .state = &probe,
+      .state = effect_plan,
       .runtime = single_runtime(probe, true),
   };
   return probe.single_outcome_override.value_or(
@@ -1388,6 +1556,504 @@ TEST(GraphRegions, ExecutesNonMaterializingExternalEffectSteps) {
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
   EXPECT_EQ(probe.effect_create_count, 2u);
   EXPECT_EQ(probe.effect_submit_count, 2u);
+}
+
+TEST(GraphRegions, NamedResourceExecutesAndInvocationRetainsItsPreparedOwner) {
+  ResourceStorage storage{7};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  const auto write_node = add_resource_touch(builder, resource, storage,
+                                             ResourceAccess::kWrite, 41);
+  const auto read_node =
+      add_resource_touch(builder, resource, storage, ResourceAccess::kRead);
+  ASSERT_TRUE(builder.depends_on(read_node, write_node).ok());
+  Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  hyle::graph::Invocation invocation;
+  {
+    const std::array bindings{
+        EffectResourceBinding{resource, storage.footprint()}};
+    auto compiled =
+        hyle::graph::compile(graph, context, {.effect_bindings = bindings})
+            .value();
+    EXPECT_EQ(compiled.report.region_count(), 0u);
+    invocation = compiled.executable.create_invocation().value();
+  }
+  graph = {};
+  Queue queue = context.create_queue().value();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    *storage.value() = -1;
+    ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+    EXPECT_EQ(*storage.value(), 41);
+    EXPECT_EQ(probe.last_resource_read, 41);
+  }
+  EXPECT_EQ(probe.effect_create_count, 2u);
+  EXPECT_EQ(probe.effect_submit_count, 4u);
+}
+
+TEST(GraphRegions, ValidatesBackingBeforePreparingAnyResourceOperation) {
+  ResourceStorage storage;
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  const auto unused = builder.effect_resource().value();
+  add_resource_touch(builder, resource, storage, ResourceAccess::kReadWrite);
+  const Graph graph = std::move(builder).finish().value();
+  GraphBuilder foreign = GraphBuilder::create().value();
+  const auto other = foreign.effect_resource().value();
+  const EffectResourceBinding valid{resource, storage.footprint()};
+  const std::array<std::vector<EffectResourceBinding>, 7> invalid{{
+      {},
+      {{resource, {}}},
+      {{other, storage.footprint()}},
+      {{EffectResourceId{}, storage.footprint()}},
+      {valid, valid},
+      {{unused, storage.footprint()}},
+      {{resource, EffectResourceFootprint::object(nullptr)}},
+  }};
+  RegionProbe probe;
+  Context context = make_context(probe);
+  for (const auto &bindings : invalid) {
+    auto result =
+        hyle::graph::compile(graph, context, {.effect_bindings = bindings});
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(result.error().IsInvalidArgument()) << result.error().message();
+    EXPECT_EQ(probe.single_artifact_count, 0u);
+  }
+  // Unused identities need no backing. Extra valid declarations are harmless
+  // and do not constrain the graph's live access set.
+  const std::array bindings{valid,
+                            EffectResourceBinding{unused, storage.footprint()}};
+  ASSERT_TRUE(
+      hyle::graph::compile(graph, context, {.effect_bindings = bindings})
+          .has_value());
+}
+
+TEST(GraphRegions, DifferentResourceIdsMustNotHideTheSameMemoryOrObject) {
+  ResourceStorage storage;
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto first = builder.effect_resource().value();
+  const auto second = builder.effect_resource().value();
+  add_resource_touch(builder, first, storage, ResourceAccess::kRead);
+  add_resource_touch(builder, second, storage, ResourceAccess::kRead);
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  // Object identities model an external runtime owner. Both invalid input
+  // cases are rejected before the implementation could access any resource.
+  for (auto footprint :
+       {storage.footprint(), EffectResourceFootprint::object(&probe)}) {
+    const std::array bindings{EffectResourceBinding{first, footprint},
+                              EffectResourceBinding{second, footprint}};
+    auto result =
+        hyle::graph::compile(graph, context, {.effect_bindings = bindings});
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(result.error().IsInvalidArgument());
+    EXPECT_EQ(probe.single_artifact_count, 0u);
+  }
+}
+
+TEST(GraphRegions, DisjointSubrangesOfOneBackingRemainIndependent) {
+  Buffer buffer = Buffer::create(hyle::mem::system_resource(), 16, 64).value();
+  auto mapping = buffer.view().map_host().value();
+  auto *first_value = ::new (mapping.writable_bytes()->data()) std::int32_t{0};
+  auto *second_value =
+      ::new (mapping.writable_bytes()->data() + 8) std::int32_t{0};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto first = builder.effect_resource().value();
+  const auto second = builder.effect_resource().value();
+  const auto first_node =
+      builder
+          .add_node(Operation::custom(
+                        ResourceTouch{first_value, ResourceAccess::kWrite, 17}),
+                    std::array<ValueId, 0>{})
+          .value();
+  const auto second_node =
+      builder
+          .add_node(Operation::custom(ResourceTouch{
+                        second_value, ResourceAccess::kWrite, 29}),
+                    std::array<ValueId, 0>{})
+          .value();
+  ASSERT_TRUE(builder.bind_resources(first_node, std::array{first}).ok());
+  ASSERT_TRUE(builder.bind_resources(second_node, std::array{second}).ok());
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  std::array bindings{
+      EffectResourceBinding{first, EffectResourceFootprint::memory(
+                                       buffer.view().subview(0, 8).value())},
+      EffectResourceBinding{second, EffectResourceFootprint::memory(
+                                        buffer.view().subview(8, 8).value())}};
+  auto compiled =
+      hyle::graph::compile(graph, context, {.effect_bindings = bindings})
+          .value();
+  auto invocation = compiled.executable.create_invocation().value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(*first_value, 17);
+  EXPECT_EQ(*second_value, 29);
+  // One-byte overlap is still an alias, even though these particular test
+  // writes happen not to touch that byte.
+  bindings[0].footprint =
+      EffectResourceFootprint::memory(buffer.view().subview(0, 9).value());
+  auto overlap =
+      hyle::graph::compile(graph, context, {.effect_bindings = bindings});
+  ASSERT_FALSE(overlap.has_value());
+  EXPECT_TRUE(overlap.error().IsInvalidArgument());
+}
+
+TEST(GraphRegions,
+     ResourceRegionsPreserveOrderingWithoutSerializingIndependentDomains) {
+  // Independent writes, ordered write/read, and unordered same-domain reads.
+  for (int scenario : {0, 1, 2}) {
+    SCOPED_TRACE(scenario);
+    const bool same_resource = scenario != 0;
+    const bool dependent = scenario == 1;
+    ResourceStorage first_storage, second_storage;
+    GraphBuilder builder = GraphBuilder::create().value();
+    const auto first = builder.effect_resource().value();
+    const auto second =
+        same_resource ? first : builder.effect_resource().value();
+    const auto first_node = add_resource_touch(
+        builder, first, first_storage,
+        scenario == 2 ? ResourceAccess::kRead : ResourceAccess::kWrite, 37);
+    const auto second_node = add_resource_touch(
+        builder, second, same_resource ? first_storage : second_storage,
+        same_resource ? ResourceAccess::kRead : ResourceAccess::kWrite, 53);
+    if (dependent)
+      ASSERT_TRUE(builder.depends_on(second_node, first_node).ok());
+    const Graph graph = std::move(builder).finish().value();
+    RegionProbe first_probe{.mode = ProposalMode::kResourceSingletons};
+    RegionProbe second_probe{.mode = ProposalMode::kResourceSingletons};
+    for (auto *probe : {&first_probe, &second_probe}) {
+      probe->artifact_properties.preserves_effects = true;
+      probe->artifact_properties.runtime = kEffectRuntime;
+    }
+    Context first_context = make_context(first_probe);
+    Context second_context = make_context(second_probe);
+    const Environment environment{
+        {&first_context, hyle::mem::system_resource()},
+        {&second_context, hyle::mem::system_resource()}};
+    const std::array placements{
+        hyle::graph::NodePlacement{first_node, environment.target(0),
+                                   hyle::graph::PlacementStrength::kRequired},
+        hyle::graph::NodePlacement{second_node, environment.target(1),
+                                   hyle::graph::PlacementStrength::kRequired}};
+    const std::array bindings{
+        EffectResourceBinding{first, first_storage.footprint()},
+        EffectResourceBinding{second, second_storage.footprint()}};
+    auto result = hyle::graph::compile(
+        graph, environment.environment(),
+        {.effect_bindings = std::span(bindings).first(same_resource ? 1 : 2),
+         .node_placements = placements,
+         .operation_fallback = OperationFallbackPolicy::kReject});
+    ASSERT_TRUE(result.has_value()) << result.error().message();
+    auto compiled = std::move(*result);
+    EXPECT_EQ(compiled.report.region_count(), 2u);
+    EXPECT_EQ(compiled.report.segment_count(), 2u);
+    EXPECT_EQ(compiled.report.segment_dependency_count(), dependent ? 1u : 0u);
+    EXPECT_EQ(first_probe.observed_effect_count, 1u);
+    EXPECT_EQ(second_probe.observed_effect_count, 1u);
+    auto invocation = compiled.executable.create_invocation().value();
+    auto first_queue = first_context.create_queue().value();
+    auto second_queue = second_context.create_queue().value();
+    const std::array queues{
+        hyle::graph::QueueBinding{environment.lane(0), &first_queue},
+        hyle::graph::QueueBinding{environment.lane(1), &second_queue}};
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    ASSERT_TRUE(invocation.submit(queues)->wait().ok());
+    EXPECT_EQ(*first_storage.value(), scenario == 2 ? 0 : 37);
+    if (same_resource)
+      EXPECT_EQ(second_probe.last_resource_read, scenario == 2 ? 0 : 37);
+    else
+      EXPECT_EQ(*second_storage.value(), 53);
+  }
+}
+
+TEST(GraphRegions, RegionMustPreserveTheUnionOfItsResourceAccesses) {
+  for (bool preserves : {false, true}) {
+    ResourceStorage storage{5};
+    GraphBuilder builder = GraphBuilder::create().value();
+    const auto resource = builder.effect_resource().value();
+    const auto read_node =
+        add_resource_touch(builder, resource, storage, ResourceAccess::kRead);
+    const auto update_node = add_resource_touch(builder, resource, storage,
+                                                ResourceAccess::kWrite, 19);
+    ASSERT_TRUE(builder.depends_on(update_node, read_node).ok());
+    const Graph graph = std::move(builder).finish().value();
+    RegionProbe probe{.mode = ProposalMode::kResourcePairs};
+    probe.artifact_properties.preserves_effects = preserves;
+    probe.artifact_properties.runtime = kEffectRuntime;
+    Context context = make_context(probe);
+    const std::array bindings{
+        EffectResourceBinding{resource, storage.footprint()}};
+    auto compiled =
+        hyle::graph::compile(graph, context, {.effect_bindings = bindings})
+            .value();
+    EXPECT_EQ(probe.observed_effect_count, 1u);
+    EXPECT_EQ(probe.observed_effect_access, ResourceAccess::kReadWrite);
+    EXPECT_FALSE(probe.observed_unknown_effects);
+    EXPECT_EQ(probe.compile_count, preserves ? 1u : 0u);
+    EXPECT_EQ(compiled.report.region_count(), preserves ? 1u : 0u);
+    auto invocation = compiled.executable.create_invocation().value();
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+    EXPECT_EQ(probe.last_resource_read, 5);
+    EXPECT_EQ(*storage.value(), 19);
+  }
+}
+
+TEST(GraphRegions, ChangingEffectPreservationIsFatalAndReclaimsTheArtifact) {
+  ResourceStorage storage;
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  add_resource_touch(builder, resource, storage, ResourceAccess::kReadWrite);
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe{.mode = ProposalMode::kResourceSingletons};
+  probe.proposed_effects_override = true;
+  probe.artifact_properties.runtime = kEffectRuntime;
+  Context context = make_context(probe);
+  const std::array bindings{
+      EffectResourceBinding{resource, storage.footprint()}};
+  auto compiled =
+      hyle::graph::compile(graph, context, {.effect_bindings = bindings});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsInternal());
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
+  EXPECT_EQ(*storage.value(), 0);
+}
+
+TEST(GraphRegions, EffectOrderingCannotLeaveAndReenterAContractedRegion) {
+  ResourceStorage storage;
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  std::array<NodeId, 3> nodes;
+  for (auto &node : nodes)
+    node = add_resource_touch(builder, resource, storage,
+                              ResourceAccess::kReadWrite);
+  ASSERT_TRUE(builder.depends_on(nodes[1], nodes[0]).ok());
+  ASSERT_TRUE(builder.depends_on(nodes[2], nodes[1]).ok());
+  const Graph graph = std::move(builder).finish().value();
+  EXPECT_FALSE(
+      hyle::graph::is_region_contractible(graph, std::array{nodes[0], nodes[2]})
+          .value());
+  EXPECT_TRUE(hyle::graph::is_region_contractible(graph, nodes).value());
+}
+
+TEST(GraphRegions,
+     UnknownEffectsStillRequireAnExplicitRegionPreservationPromise) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  ASSERT_TRUE(builder
+                  .add_node(Operation::custom(ExternalEffect{}),
+                            std::array<ValueId, 0>{})
+                  .has_value());
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe{.mode = ProposalMode::kResourceSingletons};
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_TRUE(probe.observed_unknown_effects);
+  EXPECT_EQ(probe.observed_effect_count, 0u);
+  EXPECT_EQ(probe.compile_count, 0u);
+  EXPECT_EQ(compiled.report.region_count(), 0u);
+  auto invocation = compiled.executable.create_invocation().value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(probe.effect_submit_count, 1u);
+}
+
+TEST(GraphRegions, TensorBindingCannotHideAnEffectAliasInEitherBindingOrder) {
+  ResourceStorage storage{0};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  add_resource_touch(builder, resource, storage, ResourceAccess::kReadWrite);
+  const auto input_id = builder.input(row(1)).value();
+  const auto output_id = builder.add(Unary{UnaryKind::kNeg}, input_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  const std::array bindings{
+      EffectResourceBinding{resource, storage.footprint()}};
+  auto compiled =
+      hyle::graph::compile(graph, context, {.effect_bindings = bindings})
+          .value();
+  OwnedTensor input = make_tensor(row(1));
+  OwnedTensor output = make_tensor(row(1));
+  write(input, std::array{3.0F});
+  const auto aliased =
+      TensorView::create(row(1), storage.buffer.view()).value();
+  auto queue = context.create_queue().value();
+  for (bool input_first : {false, true}) {
+    auto invocation = compiled.executable.create_invocation().value();
+    const auto first = input_first ? input_id : output_id;
+    const auto second = input_first ? output_id : input_id;
+    EXPECT_TRUE(invocation.bind(first, aliased).IsInvalidArgument());
+    ASSERT_TRUE(
+        invocation.bind(first, input_first ? input.view : output.view).ok());
+    EXPECT_TRUE(invocation.bind(second, aliased).IsInvalidArgument());
+    ASSERT_TRUE(
+        invocation.bind(second, input_first ? output.view : input.view).ok());
+    ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+    EXPECT_EQ(read(output, 1), std::vector<float>{-3.0F});
+  }
+  EXPECT_EQ(*storage.value(), 2);
+}
+
+TEST(GraphRegions, ConstantsCannotHideAnEffectAlias) {
+  ResourceStorage storage;
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  add_resource_touch(builder, resource, storage, ResourceAccess::kWrite);
+  const auto constant = builder.constant(row(1)).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, constant).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  const auto alias = TensorView::create(row(1), storage.buffer.view()).value();
+  std::array constants{
+      hyle::graph::ConstantBinding{constant, alias.as_const()}};
+  const std::array resources{
+      EffectResourceBinding{resource, storage.footprint()}};
+  auto result = hyle::graph::compile(
+      graph, context, {.constants = constants, .effect_bindings = resources});
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsInvalidArgument());
+  EXPECT_EQ(probe.single_artifact_count, 0u);
+  OwnedTensor independent = make_tensor(row(1));
+  constants[0].tensor = independent.view.as_const();
+  ASSERT_TRUE(hyle::graph::compile(
+                  graph, context,
+                  {.constants = constants, .effect_bindings = resources})
+                  .has_value());
+}
+
+TEST(GraphRegions, ExactShapeSpecializationKeepsResourceIdentityAndBinding) {
+  ResourceStorage storage{0};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  add_resource_touch(builder, resource, storage, ResourceAccess::kReadWrite, 3);
+  const auto width = builder.dimension({.minimum = 1, .maximum = 4}).value();
+  const auto spec =
+      hyle::graph::TensorSpec::dense(DataType::kFloat32,
+                                     std::array{hyle::graph::Dimension(width)})
+          .value();
+  const auto input_id = builder.input(spec).value();
+  const auto output_id =
+      builder.add(Unary{UnaryKind::kNeg}, spec, input_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  const std::array resources{
+      EffectResourceBinding{resource, storage.footprint()}};
+  const std::array shape{hyle::graph::ShapeBinding{width, 4}};
+  auto compiled =
+      hyle::graph::compile(graph, context,
+                           {.shape = shape, .effect_bindings = resources})
+          .value();
+  OwnedTensor input = make_tensor(row(4));
+  OwnedTensor output = make_tensor(row(4));
+  write(input, std::array{1.0F, 2.0F, 3.0F, 4.0F});
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input_id, input.view).ok());
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(*storage.value(), 3);
+  EXPECT_EQ(read(output, 4), (std::vector<float>{-1, -2, -3, -4}));
+}
+
+TEST(GraphRegions, ResourceCompileAllocationFailuresRollBackAndCanRetry) {
+  struct AllocationState final {
+    AllocatorRef backing = hyle::mem::system_allocator();
+    std::size_t attempts = 0, fail_at = SIZE_MAX, live = 0;
+  } state;
+  const AllocatorRef allocator{
+      +[](void *opaque, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        auto &s = *static_cast<AllocationState *>(opaque);
+        if (s.attempts++ == s.fail_at)
+          return nullptr;
+        void *p = s.backing.allocate(bytes, alignment);
+        s.live += p != nullptr ? 1u : 0u;
+        return p;
+      },
+      +[](void *opaque, void *pointer, std::size_t bytes,
+          std::size_t alignment) noexcept {
+        auto &s = *static_cast<AllocationState *>(opaque);
+        s.live -= pointer != nullptr ? 1u : 0u;
+        s.backing.deallocate(pointer, bytes, alignment);
+      },
+      +[](void *opaque, void *pointer, std::size_t old_bytes,
+          std::size_t new_bytes, std::size_t alignment) noexcept -> void * {
+        auto &s = *static_cast<AllocationState *>(opaque);
+        if (new_bytes == 0) {
+          s.live -= pointer != nullptr ? 1u : 0u;
+          return s.backing.reallocate(pointer, old_bytes, 0, alignment);
+        }
+        if (s.attempts++ == s.fail_at)
+          return nullptr;
+        void *p =
+            s.backing.reallocate(pointer, old_bytes, new_bytes, alignment);
+        if (pointer == nullptr && p != nullptr)
+          ++s.live;
+        return p;
+      },
+      &state};
+  std::array<ResourceStorage, 18> storage;
+  std::array<EffectResourceBinding, 18> bindings;
+  GraphBuilder builder = GraphBuilder::create().value();
+  for (std::size_t index = 0; index < storage.size(); ++index) {
+    const auto resource = builder.effect_resource().value();
+    bindings[index] = {resource, storage[index].footprint()};
+    add_resource_touch(builder, resource, storage[index],
+                       ResourceAccess::kReadWrite);
+  }
+  const Graph graph = std::move(builder).finish().value();
+  RegionProbe probe{.mode = ProposalMode::kResourcePairs};
+  probe.artifact_properties.preserves_effects = true;
+  probe.artifact_properties.runtime = kEffectRuntime;
+  const std::array providers{region_provider(probe)};
+  auto context =
+      Context::create(hyle::compute::cpu::device(),
+                      {.metadata_allocator = allocator, .providers = providers})
+          .value();
+  const auto live = state.live;
+  const CompileOptions options{.effect_bindings = bindings,
+                               .operation_fallback =
+                                   OperationFallbackPolicy::kReject};
+  state.attempts = 0;
+  {
+    auto compiled = hyle::graph::compile(graph, context, options);
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(compiled->report.region_count(), 9u);
+  }
+  const auto count = state.attempts;
+  ASSERT_GT(count, 0u);
+  EXPECT_EQ(state.live, live);
+  for (std::size_t failure = 0; failure < count; ++failure) {
+    SCOPED_TRACE(failure);
+    state.attempts = 0;
+    state.fail_at = failure;
+    {
+      auto failed = hyle::graph::compile(graph, context, options);
+      ASSERT_FALSE(failed.has_value());
+      EXPECT_TRUE(failed.error().IsResourceExhausted())
+          << failed.error().message();
+    }
+    EXPECT_EQ(state.live, live);
+    state.fail_at = SIZE_MAX;
+    {
+      auto recovered = hyle::graph::compile(graph, context, options);
+      ASSERT_TRUE(recovered.has_value()) << recovered.error().message();
+    }
+    EXPECT_EQ(state.live, live);
+  }
+  context = {};
+  EXPECT_EQ(state.live, 0u);
 }
 
 TEST(GraphRegions, ReplayCostFactsSurviveRegionCompilation) {

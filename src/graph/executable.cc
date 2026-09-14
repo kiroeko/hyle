@@ -380,6 +380,7 @@ make_specialized_graph(const detail::GraphState &source,
       !builder.values.try_resize(source.values.size()) ||
       !builder.nodes.try_resize(source.nodes.size()) ||
       !builder.edges.try_resize(source.edges.size()) ||
+      !builder.resource_edges.try_resize(source.resource_edges.size()) ||
       !builder.inputs.try_resize(source.inputs.size()) ||
       !builder.constants.try_resize(source.constants.size()) ||
       !builder.outputs.try_resize(source.outputs.size()) ||
@@ -402,6 +403,9 @@ make_specialized_graph(const detail::GraphState &source,
     builder.nodes[index] = source.nodes[index];
   for (std::size_t index = 0; index < source.edges.size(); ++index)
     builder.edges[index] = source.edges[index];
+  builder.effect_resource_count = source.effect_resource_count;
+  for (std::size_t index = 0; index < source.resource_edges.size(); ++index)
+    builder.resource_edges[index] = source.resource_edges[index];
   for (std::size_t index = 0; index < source.inputs.size(); ++index)
     builder.inputs[index] = source.inputs[index];
   for (std::size_t index = 0; index < source.constants.size(); ++index)
@@ -479,6 +483,83 @@ bool overlaps(const ByteRange &left, const ByteRange &right) noexcept {
   return left.offset - right.offset < right.size;
 }
 
+bool overlaps(EffectResourceFootprint left,
+              EffectResourceFootprint right) noexcept {
+  if (left.is_memory() != right.is_memory())
+    return false;
+  if (left.is_memory())
+    return overlaps(byte_range(left.memory_range()),
+                    byte_range(right.memory_range()));
+  return left.object_identity() == right.object_identity();
+}
+
+Status validate_effect_tensor_alias(const detail::PlanState &plan,
+                                    ByteRange tensor) noexcept {
+  for (const auto &binding : plan.effect_bindings) {
+    if (binding.footprint.is_memory() &&
+        overlaps(byte_range(binding.footprint.memory_range()), tensor)) {
+      return Status::InvalidArgument(
+          "effect resource memory must not alias graph tensor storage");
+    }
+  }
+  return Status::Ok();
+}
+
+Status bind_effect_resources(detail::PlanState &plan,
+                             const detail::GraphState &graph,
+                             CompileOptions options) noexcept {
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> used(
+      plan.allocator);
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> bound(
+      plan.allocator);
+  if (!used.try_resize(graph.effect_resource_count) ||
+      !bound.try_resize(graph.effect_resource_count))
+    return plan_allocation_failure();
+  std::fill(used.begin(), used.end(), std::uint8_t{0});
+  std::fill(bound.begin(), bound.end(), std::uint8_t{0});
+  std::size_t used_count = 0;
+  for (const auto &node : graph.nodes) {
+    const auto count = compute::operation_traits(node.operation).resource_count;
+    for (std::size_t port = 0; port < count; ++port) {
+      const auto resource = graph.resource_edges[node.resource_begin + port];
+      if (!used[resource]) {
+        used[resource] = 1;
+        ++used_count;
+      }
+    }
+  }
+  if (!plan.effect_bindings.try_reserve(used_count))
+    return plan_allocation_failure();
+  for (const auto &binding : options.effect_bindings) {
+    if (!detail::owns(graph, binding.resource) || !binding.footprint.valid())
+      return Status::InvalidArgument(
+          "invalid effect resource footprint binding");
+    const auto ordinal = binding.resource.ordinal();
+    if (bound[ordinal])
+      return Status::InvalidArgument(
+          "effect resource was bound more than once");
+    bound[ordinal] = 1;
+    if (!used[ordinal])
+      continue;
+    for (const auto &previous : plan.effect_bindings) {
+      if (overlaps(previous.footprint, binding.footprint))
+        return Status::InvalidArgument("different effect resource IDs alias; "
+                                       "use one ID or disjoint ranges");
+    }
+    if (!plan.effect_bindings.try_push_back(binding))
+      return plan_allocation_failure();
+  }
+  for (std::size_t resource = 0; resource < used.size(); ++resource) {
+    if (used[resource] && !bound[resource])
+      return Status::InvalidArgument(
+          "graph effect resource has no backing footprint");
+  }
+  for (const auto &binding : options.constants)
+    HYLE_RETURN_IF_ERROR(validate_effect_tensor_alias(
+        plan, byte_range(binding.tensor.storage())));
+  return Status::Ok();
+}
+
 bool matches_alias_range(ByteRange source, ByteRange output,
                          std::size_t byte_offset) noexcept {
   return same_allocation(source, output) && output.offset >= source.offset &&
@@ -520,6 +601,7 @@ Status validate_external_alias(const detail::InvocationState &invocation,
                                std::size_t ordinal,
                                ByteRange candidate) noexcept {
   const detail::PlanState &plan = *invocation.plan;
+  HYLE_RETURN_IF_ERROR(validate_effect_tensor_alias(plan, candidate));
   const bool candidate_is_output =
       (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0;
 
@@ -1545,6 +1627,8 @@ compile_region_artifact(detail::PlanState &plan,
       (runtime.workspace_owner == compute::ProviderWorkspaceOwner::kProvider &&
        request.workspace_resource.valid()) ||
       provider_prepared.properties.dispatch_count == 0 ||
+      provider_prepared.properties.preserves_effects !=
+          resource_proposal.preserves_effects ||
       provider_prepared.properties.packed_constant_count >
           options.constants.size()) {
     if (table != nullptr && table->destroy_prepared != nullptr)
@@ -2520,6 +2604,43 @@ Status prepare_placed_steps_attempt(detail::PlanState &plan,
           !output_requirements.try_resize(logical_outputs.size())) {
         return plan_allocation_failure();
       }
+      container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef>
+          effect_accesses(plan.allocator);
+      bool unknown_effects = false;
+      for (NodeId node_id : region_nodes) {
+        const auto &node = graph.nodes[node_id.ordinal()];
+        const auto traits = compute::operation_traits(node.operation);
+        unknown_effects |=
+            traits.effect == compute::EffectKind::kExternalSideEffect;
+        for (std::size_t port = 0; port < traits.resource_count; ++port) {
+          auto access =
+              compute::operation_resource_access(node.operation, port);
+          if (!access)
+            return std::move(access).error();
+          if (!effect_accesses.try_push_back(RegionEffectAccess{
+                  detail::GraphIdentity::effect_resource(
+                      graph.generation,
+                      graph.resource_edges[node.resource_begin + port]),
+                  *access}))
+            return plan_allocation_failure();
+        }
+      }
+      std::sort(effect_accesses.begin(), effect_accesses.end(),
+                [](const auto &left, const auto &right) noexcept {
+                  return left.resource.ordinal() < right.resource.ordinal();
+                });
+      std::size_t effect_count = 0;
+      for (const auto access : effect_accesses) {
+        if (effect_count != 0 &&
+            effect_accesses[effect_count - 1].resource == access.resource) {
+          if (effect_accesses[effect_count - 1].access != access.access)
+            effect_accesses[effect_count - 1].access =
+                compute::ResourceAccess::kReadWrite;
+        } else {
+          effect_accesses[effect_count++] = access;
+        }
+      }
+      effect_accesses.try_resize(effect_count);
       RegionCompileRequest request{
           .graph = &published_graph,
           .nodes = region_nodes,
@@ -2527,6 +2648,9 @@ Status prepare_placed_steps_attempt(detail::PlanState &plan,
           .outputs = logical_outputs,
           .constants = options.constants,
           .route = candidate.route,
+          .effect_accesses = effect_accesses,
+          .effect_bindings = plan.effect_bindings,
+          .has_unknown_effects = unknown_effects,
       };
       RegionResourceProposal resource_proposal{};
       Status region_status = propose_region_resources(
@@ -2535,6 +2659,12 @@ Status prepare_placed_steps_attempt(detail::PlanState &plan,
       bool route_supported = region_status.ok();
       if (!route_supported && !region_status.IsUnimplemented())
         return region_status;
+      if (route_supported && (unknown_effects || !effect_accesses.empty()) &&
+          !resource_proposal.preserves_effects) {
+        region_status = Status::Unimplemented(
+            "region provider does not preserve requested resource effects");
+        route_supported = false;
+      }
       if (route_supported &&
           candidate.replay_class != compute::ProviderReplayClass::kUnknown &&
           candidate.replay_class != resource_proposal.runtime.replay_class) {
@@ -6625,6 +6755,8 @@ Result<CompiledGraph> compile(const Graph &graph,
                                    descriptions.data(), descriptions.size()));
   if (status.ok())
     status = bind_constants(*plan, *concrete, options);
+  if (status.ok())
+    status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
                                   options);

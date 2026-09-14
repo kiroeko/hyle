@@ -28,6 +28,26 @@ enum class ValueKind : std::uint8_t {
   kNodeOutput,
 };
 
+// Identity of external state, not a tensor value or MemoryResource allocator.
+// Different IDs are independent only after compile validates their backing.
+class EffectResourceId final {
+public:
+  constexpr EffectResourceId() noexcept = default;
+  constexpr bool valid() const noexcept { return generation_ != 0; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::uint32_t ordinal() const noexcept { return ordinal_; }
+  friend constexpr bool operator==(EffectResourceId,
+                                   EffectResourceId) noexcept = default;
+
+private:
+  friend struct detail::GraphIdentity;
+  constexpr EffectResourceId(std::uint64_t generation,
+                             std::uint32_t ordinal) noexcept
+      : generation_(generation), ordinal_(ordinal) {}
+  std::uint64_t generation_ = 0;
+  std::uint32_t ordinal_ = 0;
+};
+
 // Graph-local identity of an independent or derived dimension. Reusing an ID
 // shares its value; finite arithmetic and explicit guards are built separately.
 // This is not a general symbolic equation solver.
@@ -225,6 +245,9 @@ public:
   HYLE_GRAPH_API std::size_t constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
   HYLE_GRAPH_API std::size_t output_count() const noexcept;
+  HYLE_GRAPH_API std::size_t effect_resource_count() const noexcept;
+  HYLE_GRAPH_API Result<EffectResourceId>
+  effect_resource_id(std::size_t index) const noexcept;
 
   HYLE_GRAPH_API Result<DimensionId>
   dimension_id(std::size_t index = 0) const noexcept;
@@ -255,6 +278,10 @@ public:
   node_dependency_count(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<NodeId>
   node_dependency(NodeId node, std::size_t dependency_index) const noexcept;
+  HYLE_GRAPH_API Result<std::size_t>
+  node_resource_count(NodeId node) const noexcept;
+  HYLE_GRAPH_API Result<EffectResourceId>
+  node_resource(NodeId node, std::size_t port) const noexcept;
   HYLE_GRAPH_API Result<std::size_t>
   node_output_count(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
@@ -301,6 +328,13 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
+
+  HYLE_GRAPH_API Result<EffectResourceId> effect_resource() noexcept;
+  // Bind every schema resource port in its declared order. Rebinding before
+  // finish is allowed; repeated ports can name the same resource. Does not
+  // insert edges: conflicting accesses still need data/control dependencies.
+  HYLE_GRAPH_API Status bind_resources(
+      NodeId node, std::span<const EffectResourceId> resources) noexcept;
 
   HYLE_GRAPH_API Result<DimensionId> dimension(DimensionBounds bounds) noexcept;
   // Operands must be nonnegative constants or existing IDs from this builder.

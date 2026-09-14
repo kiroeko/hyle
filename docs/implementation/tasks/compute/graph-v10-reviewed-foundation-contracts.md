@@ -37,11 +37,35 @@
 factory、ComputeOps access schema 必须先在各自有限卡完成；本卡不越过 owner 写其产品代码。
 
 G105 的底层 schema 已在 [ComputeOps v3](compute-ops-v3-resource-access-schema.md) 绑定并实现。
-Graph 当前只消费统一冷验证，且把尚无域绑定的新资源访问按非 pure 保守排序；本步不声称已经替换
-全局链。下一步仍是本卡的 graph-local identity/绑定、同域冲突与独立域、真实 alias 和 region 边界，
-不是算子目录扩充。
+Graph 的 graph-local identity/绑定、冲突顺序、backing alias 与 region 保真已实现并完成本卡 Windows
+增量回归，见文末 G105 检查点；不再使用全局 last-effect 链。完整 foundation 的跨平台/交付/性能与终局
+红队仍未完成，不把这一项等同于基础实现验收，也不据此扩充算子目录。
 
 ## API / owner / 成本
+
+### G105 资源域表示审计（2026-09-14，实现前固定）
+
+- `GraphBuilder::effect_resource()` 创建 `EffectResourceId`；`bind_resources(node, ids)` 把 ComputeOps 的有序
+  资源端口绑定到这些 ID，可在 finish 前更正绑定，重复端口指向同一资源合法。Graph 提供对应只读查询。
+  缺绑定/foreign ID 失败；ordinary pure 不配置资源。
+- `finish()` 验证同域 RAW/WAR/WAW 必须已由 data/control path 排序，read/read 不加边；未知外部副作用
+  与全部具名资源访问冲突。不会暗中按添加顺序插入边，也不会要求独立域共用一条链。
+- `CompileOptions::effect_bindings` 给出实际资源 footprint：Mem buffer range 复用 resource/handle/offset/size；
+  非地址化的外部对象用 owner 提供的 canonical identity。它是访问范围证明，不是新的执行参数通道，也不
+  接管 owner；实际执行实现仍使用其声明的资源。用不同包装地址冒充独立 owner 是违反合同。
+- Graph 在 compile 拒绝不同资源 ID 的 overlapping backing；同一 backing 的不同不重叠子范围允许。
+  需要 alias 的端口应绑定同一 ID。外部 effect memory 与 Graph tensor 输入/常量/输出不得隐式重叠，否则
+  会绕过 SSA 数据流；compile/bind 两处检查，建议把可变状态作为资源并显式产出 tensor value。
+- footprint 在本 Executable 中固定且借用至所有 Invocation/Completion 销毁；跨 Invocation 资源互斥由
+  调用方 Queue/Completion 保证。没有新增全局 registry/锁；未知资源走保守 effect，而不是伪造 footprint。
+- Region 不得隐藏/改变所含 node 的副作用；请求携带按域聚合的访问声明，provider 必须明确承诺保持它。
+  contracted data/control 边进入既有 lane/happens-before，反例覆盖独立与冲突的 region。
+- 私有冷算法：每个实际使用域一遍 DAG writer 可达性传播，加按相邻 writer 序号分段的 backward walk
+  检查所有未完成 readers；各段不重复访问节点，O(D(V+E)+A)、O(V+D+A) scratch，不制造 V×V 矩阵。
+  无资源/未知 effect 的旧路线保留线性档；物理 footprint 校验 O(D²)，bind 对 D 个固定 footprint 检查。
+  这些成本用于明确的外部资源访问，不增加纯图 submit 的 resource 扫描。
+
+本表示不改变 Graph/Compute owner 或完成边界，属于 G105 的有限实现；不借它扩 custom kernel/模型目录。
 
 保留 `GraphBuilder → Graph → Executable → Invocation`，Plan 仍私有。Builder 拥有 shape 表达式与资源
 identity，compile 拥有有界候选和不可变制品，Invocation 只拥有本次 scratch/bind/capture/完成状态。
@@ -283,3 +307,34 @@ limit。只有完整计划才可返回；禁止 leaf 时仍
 当前每个发现的 region 仍采用确定性资源选择，拒绝后不穷举该 region 的全部资源组合。G103 的
 leaf/region/placement 同池完整成本与 qualified profile、G104 的完整可行 incumbent 优化循环及其余
 G101/G102/G105/G106/G107 仍须继续实施；Graph 保持 `AUDITED`。
+
+## 2026-09-14 G105：具名资源域与执行反例检查点
+
+上述资源域表示已落地，旧全局 last-effect 实现移除。`finish()` 验证同域冲突的已有 data/control path，
+不会替用户补边；未知访问与各域冲突，独立资源与同域 read/read 保持无额外边。backing 在 compile 固定
+并复制借用声明，常量/input/output 的隐藏 effect alias 在 compile/bind 拒绝；exact shape 特化保留 ID。
+Region extension 升至 11，请求携带聚合访问与 footprint；未承诺保留副作用的路线在创建制品前安全拒绝，
+proposal/artifact 承诺矛盾则 fatal 并回收制品。oneDNN 的 pure 路线不需要虚构资源或副作用承诺。
+
+- Windows Release source-tree shared/static：Graph builder/executable/逐头各 3/3，各 158 个单元用例。
+- oneDNN-enabled shared：Graph、direct/composition/direct-Graph/MLP region 及三项逐头共 9/9，187 个单元
+  用例通过。上述三个缓存的 CMake 重配置通过，中央依赖不变（Graph 已公开依赖 Mem），无新 feature 开关。
+- 新反例包括 512 个确定性 DAG 与完整可达性 oracle 差分、全部 read/write 档位、writer 必须汇合所有
+  readers、foreign/missing/rebind/重复端口/255-port、逐次 finish/compile 分配失败与恢复、实际缓冲区读写、
+  两 target 独立/同域 read-read/有序 write-read、region 合并声明/安全拒绝/fatal 清理、不能出入重入 region、
+  input/output 双绑定顺序与常量 alias、shape 特化、传入 span 及 Executable 销毁后的 Invocation 保活。
+- 源码反查核对 CSR 容量受 resource-edge 总额约束、writer 链与 reader antichain、失败后的逻辑状态以及
+  既有 lane/Completion 消费。测试 fixture 的一次 nodiscard 警告已修正；没有以放宽产品合同解决测试。
+- P0：冲突分析 O(D(V+E)+A)、scratch O(V+D+A)。源码反查补了只读/单 node 域的无冲突短路；全部域均
+  无冲突且无未知副作用时为 O(V+D+A)，不做 D 遍 DAG。footprint 校验 O(D²)，tensor bind 增 O(D)，region
+  访问并集对本 region 的 Aᵣ 个端口为 O(Aᵣ log Aᵣ)。不建 V×V 可达矩阵，不在 submit 扫描资源。
+- 私有 NodeRecord 新增端口范围起点，Builder/Graph 新增 packed resource edges/count，Plan 保存固定借用
+  footprint；未使用时不为 resource payload 单独分配。公开 Graph/Executable/Invocation 仍为原句柄形状，
+  Invocation 无新增字段；没有全局 registry/锁、HYLE 热态 search/JIT 或执行参数复制。
+- `hyle-windows.ps1` Build/Test、`--parallel 2`，只选择上述 factor/直接消费者；impact READY、89 项跳过，
+  closure/docs/diff 通过。没有运行 P1、全库测试、CUDA、跨平台/sanitizer 或 installed SDK；最终义务仍按
+  本卡等待完整 foundation candidate，不能从 source-tree shared/static 推导 installed 通过。
+
+footprint 是访问证明而非 custom execution 工厂；调用方仍须保证 canonical backing（不做 OS 物理 alias
+探测）与跨 Invocation 同步。公开 owning custom execution、bounded/variants、统一完整成本/profile 与
+constant ownership 等既定范围仍未完成；保持 `AUDITED`，尚未到用户要求暂停审视的 foundation gate。

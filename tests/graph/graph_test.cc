@@ -53,13 +53,15 @@ struct AllocatorProbe final {
   AllocatorRef backing = hyle::mem::system_allocator();
   std::size_t allocations = 0;
   std::size_t deallocations = 0;
+  std::size_t attempts = 0;
+  std::size_t fail_at = SIZE_MAX;
   bool fail = false;
 };
 
 void *probe_allocate(void *opaque, std::size_t size,
                      std::size_t alignment) noexcept {
   auto &probe = *static_cast<AllocatorProbe *>(opaque);
-  if (probe.fail)
+  if (probe.fail || probe.attempts++ == probe.fail_at)
     return nullptr;
   void *result = probe.backing.allocate(size, alignment);
   if (result != nullptr)
@@ -78,7 +80,7 @@ void probe_free(void *opaque, void *pointer, std::size_t size,
 void *probe_reallocate(void *opaque, void *pointer, std::size_t old_size,
                        std::size_t new_size, std::size_t alignment) noexcept {
   auto &probe = *static_cast<AllocatorProbe *>(opaque);
-  if (probe.fail)
+  if (probe.fail || probe.attempts++ == probe.fail_at)
     return nullptr;
   return probe.backing.reallocate(pointer, old_size, new_size, alignment);
 }
@@ -459,7 +461,7 @@ struct ResourceEffect final {
   }
 };
 
-TEST(GraphBuilder, ResourceSchemaRemainsConservativeBeforeDomainBinding) {
+TEST(GraphBuilder, ResourceDomainsMustOrderUnknownEffectsInBothDirections) {
   for (const bool unknown_first : {false, true}) {
     auto builder = GraphBuilder::create().value();
     const Operation resource = Operation::custom(ResourceEffect{});
@@ -469,6 +471,12 @@ TEST(GraphBuilder, ResourceSchemaRemainsConservativeBeforeDomainBinding) {
     const auto second =
         builder.add_node(unknown_first ? resource : unknown, {}).value();
     EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+    const auto domain = builder.effect_resource().value();
+    ASSERT_TRUE(
+        builder
+            .bind_resources(unknown_first ? second : first, std::array{domain})
+            .ok());
+    EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
     ASSERT_TRUE(builder.depends_on(second, first).ok());
     EXPECT_TRUE(std::move(builder).finish().has_value());
   }
@@ -476,6 +484,263 @@ TEST(GraphBuilder, ResourceSchemaRemainsConservativeBeforeDomainBinding) {
   ASSERT_TRUE(builder.add_node(Operation::custom(ResourceEffect{}), {}));
   ASSERT_TRUE(builder.add_node(Operation::custom(ResourceEffect{}), {}));
   EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+}
+
+TEST(GraphBuilder,
+     IndependentDomainsAndSameDomainReadersNeedNoArtificialEdges) {
+  using hyle::compute::ResourceAccess;
+  for (bool independent : {false, true}) {
+    auto builder = GraphBuilder::create().value();
+    const auto first_resource = builder.effect_resource().value();
+    const auto second_resource =
+        independent ? builder.effect_resource().value() : first_resource;
+    ResourceEffect effect;
+    effect.access =
+        independent ? ResourceAccess::kReadWrite : ResourceAccess::kRead;
+    const auto first = builder.add_node(Operation::custom(effect), {}).value();
+    const auto second = builder.add_node(Operation::custom(effect), {}).value();
+    ASSERT_TRUE(builder.bind_resources(first, std::array{first_resource}).ok());
+    ASSERT_TRUE(
+        builder.bind_resources(second, std::array{second_resource}).ok());
+    auto result = std::move(builder).finish();
+    ASSERT_TRUE(result.has_value()) << result.error().message();
+    Graph graph = *result;
+    EXPECT_EQ(graph.effect_resource_count(), independent ? 2u : 1u);
+    EXPECT_EQ(graph.effect_resource_id(0).value(), first_resource);
+    EXPECT_EQ(graph.node_resource(first, 0).value(), first_resource);
+    EXPECT_EQ(graph.node_resource(second, 0).value(), second_resource);
+    EXPECT_EQ(graph.node_dependency_count(first).value(), 0u);
+    EXPECT_EQ(graph.node_dependency_count(second).value(), 0u);
+    EXPECT_EQ(graph.node_resource_count(second).value(), 1u);
+    EXPECT_TRUE(graph.node_resource(second, 1).error().IsOutOfRange());
+    EXPECT_TRUE(graph.effect_resource_id(2).error().IsOutOfRange());
+  }
+}
+
+TEST(GraphBuilder,
+     EveryConflictingAccessPairRequiresOrderAndBindingsAreFallible) {
+  using hyle::compute::ResourceAccess;
+  constexpr std::array modes{ResourceAccess::kRead, ResourceAccess::kWrite,
+                             ResourceAccess::kReadWrite};
+  for (auto left : modes) {
+    for (auto right : modes) {
+      auto builder = GraphBuilder::create().value();
+      auto foreign = GraphBuilder::create().value();
+      const auto resource = builder.effect_resource().value();
+      const auto first =
+          builder
+              .add_node(Operation::custom(ResourceEffect{.access = left}), {})
+              .value();
+      const auto second =
+          builder
+              .add_node(Operation::custom(ResourceEffect{.access = right}), {})
+              .value();
+      EXPECT_TRUE(builder.bind_resources(first, {}).IsInvalidArgument());
+      EXPECT_TRUE(builder
+                      .bind_resources(
+                          first, std::array{foreign.effect_resource().value()})
+                      .IsInvalidArgument());
+      EXPECT_TRUE(
+          builder.bind_resources({}, std::array{resource}).IsInvalidArgument());
+      ASSERT_TRUE(builder.bind_resources(first, std::array{resource}).ok());
+      ASSERT_TRUE(builder.bind_resources(second, std::array{resource}).ok());
+      if (left == ResourceAccess::kRead && right == ResourceAccess::kRead) {
+        EXPECT_TRUE(std::move(builder).finish().has_value());
+      } else {
+        EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+        ASSERT_TRUE(builder.depends_on(second, first).ok());
+        EXPECT_TRUE(std::move(builder).finish().has_value());
+      }
+    }
+  }
+}
+
+TEST(GraphBuilder, WriterMustJoinAllReadersNotJustTheLatestOrdinal) {
+  using hyle::compute::ResourceAccess;
+  auto builder = GraphBuilder::create().value();
+  const auto resource = builder.effect_resource().value();
+  std::array<hyle::graph::NodeId, 3> nodes{};
+  for (std::size_t index = 0; index < nodes.size(); ++index) {
+    nodes[index] =
+        builder
+            .add_node(Operation::custom(ResourceEffect{
+                          .access = index == 2 ? ResourceAccess::kWrite
+                                               : ResourceAccess::kRead}),
+                      {})
+            .value();
+    ASSERT_TRUE(
+        builder.bind_resources(nodes[index], std::array{resource}).ok());
+  }
+  ASSERT_TRUE(builder.depends_on(nodes[2], nodes[1]).ok());
+  EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+  ASSERT_TRUE(builder.depends_on(nodes[2], nodes[0]).ok());
+  EXPECT_TRUE(std::move(builder).finish().has_value());
+}
+
+TEST(GraphBuilder, ResourceRebindingAndRepeatedPortsDoNotCreateNewDomains) {
+  auto builder = GraphBuilder::create().value();
+  const auto first_domain = builder.effect_resource().value();
+  const auto second_domain = builder.effect_resource().value();
+  const auto first =
+      builder
+          .add_node(Operation::custom(ResourceEffect{.resource_count = 2}), {})
+          .value();
+  const auto second =
+      builder.add_node(Operation::custom(ResourceEffect{}), {}).value();
+  ASSERT_TRUE(
+      builder.bind_resources(first, std::array{first_domain, first_domain})
+          .ok());
+  ASSERT_TRUE(builder.bind_resources(second, std::array{first_domain}).ok());
+  EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+  ASSERT_TRUE(builder.bind_resources(second, std::array{second_domain}).ok());
+  auto graph = std::move(builder).finish();
+  ASSERT_TRUE(graph.has_value());
+  EXPECT_EQ(graph->node_resource(first, 0), graph->node_resource(first, 1));
+  EXPECT_EQ(graph->node_resource(second, 0).value(), second_domain);
+}
+
+TEST(GraphBuilder, ResourceOrderingMatchesPairwiseDagOracle) {
+  using hyle::compute::ResourceAccess;
+  std::uint32_t random = 0x94a4015u;
+  auto next = [&]() {
+    random = random * 1664525u + 1013904223u;
+    return random;
+  };
+  constexpr std::size_t count = 8;
+  for (std::size_t trial = 0; trial < 512; ++trial) {
+    auto builder = GraphBuilder::create().value();
+    const std::array domains{builder.effect_resource().value(),
+                             builder.effect_resource().value(),
+                             builder.effect_resource().value()};
+    std::array<hyle::graph::NodeId, count> nodes{};
+    std::array<std::uint32_t, count> kind{}, domain{};
+    std::array<std::array<bool, count>, count> reach{};
+    for (std::size_t node = 0; node < count; ++node) {
+      kind[node] = (next() >> 16) % 4; // pure, read, write, unknown
+      domain[node] = (next() >> 16) % domains.size();
+      if (kind[node] == 0) {
+        const auto shape =
+            hyle::compute::TensorShape::create(std::array<std::int64_t, 1>{1})
+                .value();
+        nodes[node] = builder
+                          .add_node(Operation(hyle::compute::Fill{
+                                        shape, DataType::kFloat32,
+                                        hyle::compute::ScalarValue(0.0F)}),
+                                    {})
+                          .value();
+      } else if (kind[node] == 3) {
+        nodes[node] =
+            builder.add_node(Operation::custom(ExternalEffect{}), {}).value();
+      } else {
+        nodes[node] =
+            builder
+                .add_node(
+                    Operation::custom(ResourceEffect{
+                        .access = kind[node] == 1 ? ResourceAccess::kRead
+                                                  : ResourceAccess::kWrite}),
+                    {})
+                .value();
+        ASSERT_TRUE(
+            builder
+                .bind_resources(nodes[node], std::array{domains[domain[node]]})
+                .ok());
+      }
+      for (std::size_t prior = 0; prior < node; ++prior) {
+        if ((next() >> 16) % 3 == 0) {
+          reach[prior][node] = true;
+          ASSERT_TRUE(builder.depends_on(nodes[node], nodes[prior]).ok());
+        }
+      }
+    }
+    for (std::size_t middle = 0; middle < count; ++middle)
+      for (std::size_t left = 0; left < count; ++left)
+        for (std::size_t right = 0; right < count; ++right)
+          reach[left][right] = reach[left][right] ||
+                               (reach[left][middle] && reach[middle][right]);
+    bool legal = true;
+    for (std::size_t left = 0; left < count; ++left) {
+      for (std::size_t right = left + 1; right < count; ++right) {
+        const bool conflict = kind[left] && kind[right] &&
+                              (kind[left] == 3 || kind[right] == 3 ||
+                               (domain[left] == domain[right] &&
+                                (kind[left] == 2 || kind[right] == 2)));
+        if (conflict && !reach[left][right])
+          legal = false;
+      }
+    }
+    const auto graph = std::move(builder).finish();
+    EXPECT_EQ(graph.has_value(), legal) << "trial " << trial;
+    if (!graph)
+      EXPECT_TRUE(graph.error().IsFailedPrecondition());
+  }
+}
+
+TEST(GraphBuilder, ResourceBindingAllocationFailureLeavesNodeRetryable) {
+  AllocatorProbe probe;
+  {
+    auto builder =
+        GraphBuilder::create({.metadata_allocator = probe_allocator(probe)})
+            .value();
+    const auto resource = builder.effect_resource().value();
+    const auto node =
+        builder
+            .add_node(Operation::custom(ResourceEffect{.resource_count = 255}),
+                      {})
+            .value();
+    std::array<hyle::graph::EffectResourceId, 255> resources{};
+    resources.fill(resource);
+    probe.fail = true;
+    EXPECT_TRUE(builder.bind_resources(node, resources).IsResourceExhausted());
+    probe.fail = false;
+    EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+    ASSERT_TRUE(builder.bind_resources(node, resources).ok());
+    auto graph = std::move(builder).finish();
+    ASSERT_TRUE(graph.has_value());
+    EXPECT_EQ(graph->node_resource(node, 254).value(), resource);
+  }
+  EXPECT_EQ(probe.allocations, probe.deallocations);
+}
+
+TEST(GraphBuilder, EffectAnalysisAllocationFailuresLeaveTheBuilderRetryable) {
+  bool reached_success = false;
+  for (std::size_t fail_offset = 0; fail_offset < 64; ++fail_offset) {
+    SCOPED_TRACE(fail_offset);
+    AllocatorProbe probe;
+    {
+      auto builder =
+          GraphBuilder::create({.metadata_allocator = probe_allocator(probe)})
+              .value();
+      std::array<hyle::graph::EffectResourceId, 24> resources;
+      for (auto &resource : resources) {
+        resource = builder.effect_resource().value();
+        auto node =
+            builder.add_node(Operation::custom(ResourceEffect{}), {}).value();
+        ASSERT_TRUE(builder.bind_resources(node, std::array{resource}).ok());
+      }
+      probe.fail_at = probe.attempts + fail_offset;
+      auto finished = std::move(builder).finish();
+      if (finished) {
+        EXPECT_GT(fail_offset, 0u);
+        reached_success = true;
+      } else {
+        EXPECT_TRUE(finished.error().IsResourceExhausted());
+        EXPECT_TRUE(builder.valid());
+        probe.fail_at = SIZE_MAX;
+        finished = std::move(builder).finish();
+        ASSERT_TRUE(finished.has_value());
+      }
+      EXPECT_EQ(finished->effect_resource_count(), resources.size());
+      for (std::size_t index = 0; index < resources.size(); ++index) {
+        EXPECT_EQ(finished->node_resource(finished->node_id(index).value(), 0)
+                      .value(),
+                  resources[index]);
+      }
+    }
+    EXPECT_EQ(probe.allocations, probe.deallocations);
+    if (reached_success)
+      break;
+  }
+  EXPECT_TRUE(reached_success);
 }
 
 TEST(GraphBuilder, SymbolicOutputCannotBypassResourceSchemaValidation) {
@@ -623,6 +888,10 @@ TEST(Graph, InvalidOutOfRangeAndForeignQueriesAreRecoverable) {
   EXPECT_TRUE(invalid.input_id().error().IsFailedPrecondition());
   EXPECT_TRUE(invalid.node_id().error().IsFailedPrecondition());
   EXPECT_TRUE(invalid.output_id().error().IsFailedPrecondition());
+  EXPECT_EQ(invalid.effect_resource_count(), 0u);
+  EXPECT_TRUE(invalid.effect_resource_id(0).error().IsFailedPrecondition());
+  EXPECT_TRUE(invalid.node_resource_count({}).error().IsFailedPrecondition());
+  EXPECT_TRUE(invalid.node_resource({}, 0).error().IsFailedPrecondition());
 
   GraphBuilder builder = GraphBuilder::create().value();
   const auto input = builder.input(row(4)).value();
@@ -635,6 +904,9 @@ TEST(Graph, InvalidOutOfRangeAndForeignQueriesAreRecoverable) {
   EXPECT_TRUE(graph.node_id(1).error().IsOutOfRange());
   const auto node = graph.node_id().value();
   EXPECT_TRUE(graph.node_input(node, 1).error().IsOutOfRange());
+  EXPECT_TRUE(graph.effect_resource_id(0).error().IsOutOfRange());
+  EXPECT_EQ(graph.node_resource_count(node).value(), 0u);
+  EXPECT_TRUE(graph.node_resource(node, 0).error().IsOutOfRange());
   EXPECT_TRUE(graph.producer(input).error().IsFailedPrecondition());
   EXPECT_TRUE(graph.output_id(1).error().IsOutOfRange());
 
@@ -646,6 +918,9 @@ TEST(Graph, InvalidOutOfRangeAndForeignQueriesAreRecoverable) {
   const auto foreign_node = other_graph.node_id().value();
   EXPECT_TRUE(graph.value_description(foreign).error().IsInvalidArgument());
   EXPECT_TRUE(graph.operation(foreign_node).error().IsInvalidArgument());
+  EXPECT_TRUE(
+      graph.node_resource_count(foreign_node).error().IsInvalidArgument());
+  EXPECT_TRUE(graph.node_resource(foreign_node, 0).error().IsInvalidArgument());
   EXPECT_TRUE(graph.producer(foreign_output).error().IsInvalidArgument());
 }
 

@@ -12,6 +12,7 @@
 #include "hyle/error/result.h"
 #include "hyle/graph/graph.h"
 #include "hyle/graph/visibility.h"
+#include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
 
 namespace hyle::graph {
@@ -482,6 +483,39 @@ struct ConstantBinding final {
   compute::ConstTensorView tensor{};
 };
 
+// Borrowed access footprint, not an execution argument or ownership transfer.
+// memory() uses Mem's canonical allocation identity and checked subrange.
+// object() is for non-addressable state; pass its canonical owner identity,
+// never distinct wrapper addresses for the same resource. Addressable bytes
+// must use memory(), so their overlap with graph tensor storage can be checked.
+class EffectResourceFootprint final {
+public:
+  constexpr EffectResourceFootprint() noexcept = default;
+  static EffectResourceFootprint memory(mem::ConstBufferView view) noexcept {
+    EffectResourceFootprint result;
+    result.memory_ = view;
+    return result;
+  }
+  static EffectResourceFootprint object(const void *identity) noexcept {
+    EffectResourceFootprint result;
+    result.object_ = identity;
+    return result;
+  }
+  bool valid() const noexcept { return memory_.valid() || object_ != nullptr; }
+  bool is_memory() const noexcept { return memory_.valid(); }
+  mem::ConstBufferView memory_range() const noexcept { return memory_; }
+  const void *object_identity() const noexcept { return object_; }
+
+private:
+  mem::ConstBufferView memory_{};
+  const void *object_ = nullptr;
+};
+
+struct EffectResourceBinding final {
+  EffectResourceId resource{};
+  EffectResourceFootprint footprint{};
+};
+
 enum class RegionSelectionPolicy : std::uint8_t {
   kDisabled = 0,
   // Region providers are explicitly installed in Context. Prefer a
@@ -547,6 +581,12 @@ struct CompileOptions final {
   // Derived IDs must not be bound. Empty is valid with no independent inputs.
   std::span<const ShapeBinding> shape{};
   std::span<const ConstantBinding> constants{};
+  // Every used effect resource needs one binding. Backing is fixed/borrowed
+  // for this Executable and all its Invocations/Completions. It must describe
+  // what the operation implementation actually accesses; this does not pass
+  // data to that implementation. Cross-Invocation ordering remains the
+  // caller's.
+  std::span<const EffectResourceBinding> effect_bindings{};
   std::span<const NodePlacement> node_placements{};
   std::span<const ValuePlacement> value_placements{};
   std::span<const ExternalResourceContract> external_resources{};
@@ -576,8 +616,11 @@ struct CompileOptions final {
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned
-// plan. Mutable bindings and workspace never live here: every concurrent run
-// creates a distinct Invocation.
+// plan. Mutable tensor bindings and workspace never live here: every concurrent
+// run creates a distinct Invocation. Fixed effect footprints are shared
+// borrowed declarations; callers still synchronize conflicting external
+// resource access across Invocations, even when the artifacts support
+// concurrent invocations.
 class Executable final {
 public:
   Executable() noexcept = default;
@@ -624,7 +667,9 @@ private:
 // search a provider, JIT, pack weights, or allocate workspace. bind() checks
 // the candidate against already-bound external outputs (and, for a new output,
 // external inputs), so all bindings together cost O(inputs*outputs+outputs^2)
-// in the worst case while repeated submit remains O(emitted steps+bindings).
+// in the worst case, plus O(effect resources) per bind for tensor/effect alias
+// validation. Repeated submit remains O(emitted steps+bindings), with no
+// separate scan of effect resources.
 class Invocation final {
 public:
   Invocation() noexcept = default;
