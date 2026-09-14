@@ -1,16 +1,87 @@
 #include "kernel.h"
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <span>
 #include <string>
 #include <utility>
 
-#include <hyle/compute/backends/cpu.h>
+#include <hyle/compute/cpu.h>
 #include <hyle/compute/route_profile.h>
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
+
+namespace {
+
+// This second journey exercises the public domain API through the same source,
+// static and shared package boundaries; it does not use a private Provider SPI.
+hyle::Status bounded_normalization() {
+  using namespace hyle::compute;
+  using namespace hyle::graph;
+  HYLE_ASSIGN_OR_RETURN(auto context, cpu::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
+  HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create());
+  HYLE_ASSIGN_OR_RETURN(auto rows, builder.dimension({0, 4, 1}));
+  HYLE_ASSIGN_OR_RETURN(
+      auto spec,
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)}));
+  HYLE_ASSIGN_OR_RETURN(auto input, builder.input(spec));
+  HYLE_ASSIGN_OR_RETURN(auto output, builder.add(RmsNorm{}, spec, input));
+  HYLE_RETURN_IF_ERROR(builder.publish(output));
+  HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+  HYLE_ASSIGN_OR_RETURN(
+      auto compiled,
+      compile(graph, context,
+              {.shape_policy = CompileShapePolicy::kDeclaredDomain}));
+  if (!compiled.executable.is_shape_domain() ||
+      !compiled.report.is_shape_domain() ||
+      compiled.executable.specialization().valid())
+    return hyle::Status::Internal("domain report has an exact signature");
+  graph = {};
+  HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
+                                         hyle::mem::system_resource(), 64, 64));
+  HYLE_ASSIGN_OR_RETURN(
+      auto destination,
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 64, 64));
+  std::array<float, 16> values;
+  values.fill(1.0F);
+  HYLE_RETURN_IF_ERROR(source.view().write(std::as_bytes(std::span(values))));
+  for (std::int64_t count : {0, 1, 4}) {
+    const std::array shape{ShapeBinding{rows, count}};
+    HYLE_ASSIGN_OR_RETURN(auto run,
+                          compiled.executable.create_invocation(shape));
+    HYLE_ASSIGN_OR_RETURN(auto binding, run.specialization().binding());
+    if (binding != shape[0])
+      return hyle::Status::Internal("domain instance has the wrong shape");
+    HYLE_ASSIGN_OR_RETURN(
+        auto description,
+        TensorDesc::dense(DataType::kFloat32,
+                          std::array{count, std::int64_t{4}}));
+    HYLE_ASSIGN_OR_RETURN(auto in,
+                          ConstTensorView::create(description, source.view()));
+    HYLE_ASSIGN_OR_RETURN(auto out,
+                          TensorView::create(description, destination.view()));
+    HYLE_RETURN_IF_ERROR(run.bind(input, in));
+    HYLE_RETURN_IF_ERROR(run.bind(output, out));
+    for (int repeat = 0; repeat < 3; ++repeat) {
+      HYLE_ASSIGN_OR_RETURN(auto completion, run.submit(queue));
+      HYLE_RETURN_IF_ERROR(completion.wait());
+    }
+    std::array<float, 16> result{};
+    HYLE_RETURN_IF_ERROR(out.storage().read(std::as_writable_bytes(
+        std::span(result).first(static_cast<std::size_t>(count * 4)))));
+    for (std::int64_t i = 0; i < count * 4; ++i)
+      if (std::abs(result[static_cast<std::size_t>(i)] -
+                   1.0F / std::sqrt(1.0F + RmsNorm{}.epsilon)) > 1.0e-5F)
+        return hyle::Status::Internal("domain normalization output mismatch");
+  }
+  return hyle::Status::Ok();
+}
+
+} // namespace
 
 int main() {
   using namespace hyle::compute;
@@ -132,5 +203,12 @@ int main() {
       compiled->report.constant()->policy !=
           hyle::graph::ConstantPolicy::kMaterialize)
     return 18;
+  const auto bounded = bounded_normalization();
+  if (!bounded.ok()) {
+    const auto message = bounded.message();
+    std::fprintf(stderr, "bounded graph: %.*s\n",
+                 static_cast<int>(message.size()), message.data());
+    return 22;
+  }
   return 0;
 }

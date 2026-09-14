@@ -259,15 +259,79 @@ resolve_spec(const detail::GraphState &graph, const TensorSpec &spec,
   return std::unexpected(Status::Internal("graph tensor spec kind is invalid"));
 }
 
+bool has_dynamic_axes(const detail::GraphState &graph,
+                      const TensorSpec &spec) noexcept {
+  for (const Dimension axis : spec.dimensions())
+    if (!axis.is_fixed() &&
+        !graph.dimensions[axis.symbol().ordinal()].bounds.exact())
+      return true;
+  return false;
+}
+
+bool has_dynamic_shape(const detail::GraphState &graph,
+                       const detail::NodeRecord &node) noexcept {
+  for (std::size_t port = 0; port < node.input_count; ++port)
+    if (has_dynamic_axes(
+            graph, graph.values[graph.edges[node.input_begin + port]].spec))
+      return true;
+  for (std::size_t port = 0; port < node.output_count; ++port)
+    if (has_dynamic_axes(graph, graph.values[node.output_begin + port].spec))
+      return true;
+  return false;
+}
+
+// Borrowed only during one proposal/prepare call. Core copies the domain into
+// the prepared root; fixed nodes keep the ordinary exact path even if some
+// unrelated node uses dynamic dimensions.
+class NodeShapeScratch final {
+public:
+  explicit NodeShapeScratch(mem::AllocatorRef allocator) noexcept
+      : inputs_(allocator), outputs_(allocator) {}
+
+  Result<compute::detail::ProviderShapeDomain>
+  bind(const detail::PlanState &plan, std::size_t ordinal) noexcept {
+    const auto *graph = detail::GraphAccess::state(plan.domain_graph);
+    if (graph == nullptr || !has_dynamic_shape(*graph, graph->nodes[ordinal]))
+      return compute::detail::ProviderShapeDomain{};
+    const auto &node = graph->nodes[ordinal];
+    if (!inputs_.try_resize(node.input_count) ||
+        !outputs_.try_resize(node.output_count))
+      return std::unexpected(plan_allocation_failure());
+    const auto axes = [](const TensorSpec &spec) noexcept {
+      compute::detail::ProviderTensorAxes result;
+      for (std::size_t axis = 0; axis < spec.dimensions().size(); ++axis)
+        if (!spec.dimensions()[axis].is_fixed())
+          result.values[axis] = spec.dimensions()[axis].symbol().ordinal();
+      return result;
+    };
+    for (std::size_t port = 0; port < node.input_count; ++port)
+      inputs_[port] =
+          axes(graph->values[graph->edges[node.input_begin + port]].spec);
+    for (std::size_t port = 0; port < node.output_count; ++port)
+      outputs_[port] = axes(graph->values[node.output_begin + port].spec);
+    return compute::detail::ProviderShapeDomain{.dimensions = graph->dimensions,
+                                                .inputs = inputs_,
+                                                .outputs = outputs_,
+                                                .guards = graph->shape_guards};
+  }
+
+private:
+  container::SmallVector<compute::detail::ProviderTensorAxes, 4,
+                         mem::AllocatorRef>
+      inputs_, outputs_;
+};
+
 Status validate_specialized_operations(
     const detail::GraphState &graph,
     std::span<const compute::TensorDesc> descriptions,
-    mem::AllocatorRef allocator) noexcept {
+    mem::AllocatorRef allocator, bool fixed_nodes_only = false) noexcept {
   using Descriptions =
       container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
   Descriptions inputs(allocator);
   Descriptions inferred(allocator);
   for (const detail::NodeRecord &node : graph.nodes) {
+    if (fixed_nodes_only && has_dynamic_shape(graph, node))
+      continue;
     if (!inputs.try_resize(node.input_count) ||
         !inferred.try_resize(node.output_count)) {
       return plan_allocation_failure();
@@ -290,11 +354,12 @@ Status validate_specialized_operations(
   return Status::Ok();
 }
 
-Result<SpecializationSignature>
-specialize_descriptions(const detail::GraphState &graph,
-                        std::span<const ShapeBinding> bindings,
-                        mem::AllocatorRef allocator,
-                        detail::TensorDescriptions &descriptions) noexcept {
+template <std::size_t InlineCount>
+Result<SpecializationSignature> specialize_descriptions(
+    const detail::GraphState &graph, std::span<const ShapeBinding> bindings,
+    mem::AllocatorRef allocator,
+    container::SmallVector<compute::TensorDesc, InlineCount, mem::AllocatorRef>
+        &descriptions) noexcept {
   using Values = container::SmallVector<std::int64_t, 4, mem::AllocatorRef>;
   using Flags = container::SmallVector<std::uint8_t, 4, mem::AllocatorRef>;
   Values values(allocator);
@@ -308,7 +373,7 @@ specialize_descriptions(const detail::GraphState &graph,
                                                 graph.shape_guards};
   if (bindings.size() != shape.input_count()) {
     return std::unexpected(
-        Status::InvalidArgument("compile requires exactly one binding for "
+        Status::InvalidArgument("shape requires exactly one binding for "
                                 "every independent graph dimension"));
   }
   for (std::size_t index = 0; index < seen.size(); ++index)
@@ -374,6 +439,49 @@ specialize_descriptions(const detail::GraphState &graph,
   }
   state->hash = static_cast<std::size_t>(hash);
   return detail::SpecializationSignatureAccess::adopt(state);
+}
+
+Status describe_domain(const detail::GraphState &graph,
+                       mem::AllocatorRef allocator,
+                       detail::TensorDescriptions &descriptions) noexcept {
+  HYLE_RETURN_IF_ERROR(compute::detail::validate_shape_program(
+      {graph.dimensions, graph.shape_guards}));
+  for (auto value : graph.constants)
+    if (has_dynamic_axes(graph, graph.values[value].spec))
+      return Status::InvalidArgument("domain constants must have fixed shapes; "
+                                     "use an input for dynamic values");
+  container::SmallVector<std::int64_t, 4, mem::AllocatorRef> envelope(
+      allocator);
+  if (!envelope.try_resize(graph.dimensions.size()) ||
+      !descriptions.try_resize(graph.values.size()))
+    return plan_allocation_failure();
+  // This box need not be an admitted point. Do not evaluate guards/derived
+  // expressions or infer dynamic operations at its corner.
+  for (std::size_t index = 0; index < envelope.size(); ++index)
+    envelope[index] = graph.dimensions[index].bounds.last();
+  for (std::size_t index = 0; index < graph.values.size(); ++index) {
+    HYLE_ASSIGN_OR_RETURN(
+        descriptions[index],
+        resolve_spec(graph, graph.values[index].spec, envelope));
+  }
+  return validate_specialized_operations(graph, descriptions, allocator, true);
+}
+
+const compute::TensorDesc &
+logical_description(const detail::InvocationState &invocation,
+                    std::size_t value) noexcept {
+  return invocation.plan->domain_graph.valid()
+             ? invocation.concrete_descriptions[value]
+             : invocation.plan->descriptions[value];
+}
+
+const compute::TensorDesc &
+physical_description(const detail::InvocationState &invocation,
+                     std::size_t instance) noexcept {
+  return invocation.plan->domain_graph.valid()
+             ? invocation.concrete_descriptions[invocation.plan
+                                                    ->instance_values[instance]]
+             : invocation.plan->instance_descriptions[instance];
 }
 
 Result<Graph>
@@ -710,7 +818,7 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
           return Status::Internal(
               "non-materializing graph output has no readable source");
         }
-        auto bytes = plan.instance_descriptions[output].required_bytes();
+        auto bytes = physical_description(invocation, output).required_bytes();
         if (!bytes)
           return std::move(bytes).error();
         auto storage = invocation.readable[source].storage().subview(
@@ -718,7 +826,7 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
         if (!storage)
           return std::move(storage).error();
         auto derived = compute::ConstTensorView::create(
-            plan.instance_descriptions[output], *storage);
+            physical_description(invocation, output), *storage);
         if (!derived)
           return std::move(derived).error();
         const std::uint32_t logical_output = plan.instance_values[output];
@@ -1726,6 +1834,7 @@ Status discover_operation_candidates(
   Descriptions inputs(plan.allocator), outputs(plan.allocator);
   Requirements input_requirements(plan.allocator),
       output_requirements(plan.allocator);
+  NodeShapeScratch shape_scratch(plan.allocator);
   for (std::size_t node_index = 0; node_index < graph.nodes.size();
        ++node_index) {
     const auto &node = graph.nodes[node_index];
@@ -1738,6 +1847,7 @@ Status discover_operation_candidates(
       inputs[index] = plan.descriptions[graph.edges[node.input_begin + index]];
     for (std::size_t index = 0; index < node.output_count; ++index)
       outputs[index] = plan.descriptions[node.output_begin + index];
+    HYLE_ASSIGN_OR_RETURN(auto shape, shape_scratch.bind(plan, node_index));
     for (std::size_t target = 0; target < target_count; ++target) {
       auto &range = discovery.ranges[node_index * target_count + target];
       range.begin = discovery.candidates.size();
@@ -1757,7 +1867,7 @@ Status discover_operation_candidates(
         }
         auto proposal = compute::detail::OperationPreparationAccess::propose(
             context, provider, node.operation, inputs, outputs,
-            input_requirements, output_requirements);
+            input_requirements, output_requirements, shape);
         if (!proposal) {
           if (proposal.error().IsUnimplemented())
             continue;
@@ -2410,8 +2520,8 @@ Status discover_region_candidates(
     RegionExtensions &extensions, RegionCandidates &candidates,
     RegionNodeIds &proposal_nodes, std::size_t &proposal_count,
     std::size_t &proposal_node_count, CompileSearchReport &search,
-    ExecutionTargetId target,
-    std::span<const std::uint32_t> node_targets = {}) noexcept;
+    ExecutionTargetId target, std::span<const std::uint32_t> node_targets = {},
+    const detail::GraphState *domain = nullptr) noexcept;
 
 Status prepare_placed_steps_attempt(
     detail::PlanState &plan, const Graph &published_graph,
@@ -2558,7 +2668,8 @@ Status prepare_placed_steps_attempt(
           published_graph, graph, *environment.targets[target].context, options,
           provider_policy, plan.allocator, extensions, all_region_candidates,
           all_region_nodes, region_proposal_count, region_proposal_node_count,
-          plan.search, ExecutionTargetId{static_cast<std::uint32_t>(target)});
+          plan.search, ExecutionTargetId{static_cast<std::uint32_t>(target)},
+          {}, detail::GraphAccess::state(plan.domain_graph));
       if (!discovered.ok())
         return discovered;
     }
@@ -3363,6 +3474,7 @@ Status prepare_placed_steps_attempt(
   // heavyweight artifact. A prepare decline invalidates this construction;
   // it never changes the selected provider/target/storage in this loop.
   HYLE_RETURN_IF_ERROR(materialize_constants(plan, environment, constants));
+  NodeShapeScratch shape_scratch(plan.allocator);
   for (auto &step : plan.steps) {
     if (step.kind == detail::PlanStepKind::kCopy)
       continue;
@@ -3405,6 +3517,8 @@ Status prepare_placed_steps_attempt(
               .subspan(route->requirements_begin,
                        static_cast<std::size_t>(step.input_count) +
                            step.output_count);
+      HYLE_ASSIGN_OR_RETURN(auto shape,
+                            shape_scratch.bind(plan, step.node_begin));
       auto attempt =
           compute::detail::OperationPreparationAccess::prepare_candidate(
               *environment.targets[step.target.ordinal()].context,
@@ -3414,7 +3528,8 @@ Status prepare_placed_steps_attempt(
               compute::OperationResourceBindings{.inputs = input_resources,
                                                  .outputs = output_resources,
                                                  .workspace_resource =
-                                                     workspace_resource});
+                                                     workspace_resource},
+              shape);
       if (!attempt)
         return std::move(attempt).error();
       if (!attempt->succeeded()) {
@@ -3679,8 +3794,8 @@ Status discover_region_candidates(
     RegionExtensions &extensions, RegionCandidates &candidates,
     RegionNodeIds &proposal_nodes, std::size_t &proposal_count,
     std::size_t &proposal_node_count, CompileSearchReport &search,
-    ExecutionTargetId target,
-    std::span<const std::uint32_t> node_targets) noexcept {
+    ExecutionTargetId target, std::span<const std::uint32_t> node_targets,
+    const detail::GraphState *domain) noexcept {
   if (options.region_selection == RegionSelectionPolicy::kDisabled ||
       graph.nodes.empty()) {
     return Status::Ok();
@@ -3830,6 +3945,15 @@ Status discover_region_candidates(
             "region provider declared invalid structural cost facts");
       }
       if (!replay_allowed(options.provider_replay, proposal.replay_class))
+        continue;
+      // The current region SPI prepares exact graphs only. An exact envelope
+      // proposal is not proof of a complete domain, including internal nodes.
+      if (domain != nullptr &&
+          std::any_of(proposal.nodes.begin(), proposal.nodes.end(),
+                      [&](NodeId node) noexcept {
+                        return has_dynamic_shape(*domain,
+                                                 domain->nodes[node.ordinal()]);
+                      }))
         continue;
       const auto &extension = extensions[extension_index].extension;
       if (!std::all_of(proposal.nodes.begin(), proposal.nodes.end(),
@@ -5296,6 +5420,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   state->workspace_bytes = plan.workspace_bytes;
   state->workspace_backing_count = plan.workspace_backing_count;
   state->specialization = plan.specialization;
+  state->is_shape_domain = plan.domain_graph.valid();
   state->node_count = plan.logical_node_count;
   state->segment_count = plan.segments.size();
   state->segment_dependency_count = plan.segment_dependencies.size();
@@ -5745,6 +5870,10 @@ bool CompileReport::mixed_backends() const noexcept {
   return state_ != nullptr && state_->mixed_backends;
 }
 
+bool CompileReport::is_shape_domain() const noexcept {
+  return state_ != nullptr && state_->is_shape_domain;
+}
+
 SpecializationSignature CompileReport::specialization() const noexcept {
   return state_ != nullptr ? state_->specialization : SpecializationSignature{};
 }
@@ -6017,6 +6146,10 @@ bool Executable::supports_concurrent_invocations() const noexcept {
   return state_ != nullptr && state_->supports_concurrent_invocations;
 }
 
+bool Executable::is_shape_domain() const noexcept {
+  return state_ != nullptr && state_->domain_graph.valid();
+}
+
 SpecializationSignature Executable::specialization() const noexcept {
   return state_ != nullptr ? state_->specialization : SpecializationSignature{};
 }
@@ -6067,8 +6200,31 @@ Executable::output_ownership(std::size_t index) const noexcept {
 }
 
 Result<Invocation> Executable::create_invocation() const noexcept {
+  return create_invocation({});
+}
+
+Result<Invocation> Executable::create_invocation(
+    std::span<const ShapeBinding> shape) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
+  }
+
+  detail::ConcreteDescriptions concrete(state_->allocator);
+  SpecializationSignature signature;
+  container::SmallVector<std::int64_t, 4, mem::AllocatorRef> values(
+      state_->allocator);
+  const auto *domain = detail::GraphAccess::state(state_->domain_graph);
+  if (domain != nullptr) {
+    HYLE_ASSIGN_OR_RETURN(
+        signature,
+        specialize_descriptions(*domain, shape, state_->allocator, concrete));
+    if (!values.try_resize(domain->dimensions.size()))
+      return std::unexpected(invocation_allocation_failure());
+    for (std::size_t index = 0; index < values.size(); ++index)
+      values[index] = signature.binding(index)->value;
+  } else if (!shape.empty()) {
+    return std::unexpected(
+        Status::InvalidArgument("exact executable already has a fixed shape"));
   }
 
   const std::span<const mem::MemoryResourceRef> selected_resources(
@@ -6084,6 +6240,8 @@ Result<Invocation> Executable::create_invocation() const noexcept {
   }
   auto *invocation =
       ::new (storage) detail::InvocationState(state_, std::move(*workspace));
+  invocation->concrete_descriptions = std::move(concrete);
+  invocation->specialization = std::move(signature);
   const std::size_t value_count = state_->instance_descriptions.size();
   if (!invocation->readable.try_resize(value_count) ||
       !invocation->writable.try_resize(value_count) ||
@@ -6120,7 +6278,7 @@ Result<Invocation> Executable::create_invocation() const noexcept {
       return std::unexpected(std::move(error));
     }
     auto tensor = compute::TensorView::create(
-        state_->instance_descriptions[ordinal], *storage_view);
+        physical_description(*invocation, ordinal), *storage_view);
     if (!tensor) {
       Status error = std::move(tensor).error();
       detail::release(invocation);
@@ -6175,7 +6333,21 @@ Result<Invocation> Executable::create_invocation() const noexcept {
         }
         created_step.region = std::move(*created);
       } else {
-        auto created = step.operation.create_invocation(step_workspace);
+        compute::PreparedOperation instance;
+        const compute::PreparedOperation *operation = &step.operation;
+        if (domain != nullptr &&
+            has_dynamic_shape(*domain, domain->nodes[step.node_begin])) {
+          auto bound = compute::detail::OperationPreparationAccess::instantiate(
+              step.operation, values);
+          if (!bound) {
+            Status error = std::move(bound).error();
+            detail::release(invocation);
+            return std::unexpected(std::move(error));
+          }
+          instance = std::move(*bound);
+          operation = &instance;
+        }
+        auto created = operation->create_invocation(step_workspace);
         if (!created) {
           Status error = std::move(created).error();
           detail::release(invocation);
@@ -6269,7 +6441,7 @@ Status Invocation::bind(ValueId value,
     }
     return Status::InvalidArgument("internal graph values cannot be bound");
   }
-  if (tensor.description() != plan.descriptions[ordinal]) {
+  if (tensor.description() != logical_description(*state_, ordinal)) {
     return Status::InvalidArgument(
         "input tensor does not match the executable description");
   }
@@ -6318,7 +6490,7 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
       return Status::FailedPrecondition(
           "graph output storage is fixed by its compiled ownership policy");
     }
-    if (tensor.description() != plan.descriptions[ordinal]) {
+    if (tensor.description() != logical_description(*state_, ordinal)) {
       return Status::InvalidArgument(
           "output tensor does not match the executable description");
     }
@@ -6344,6 +6516,13 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
     return bind(value, tensor.as_const());
   }
   return Status::InvalidArgument("internal graph values cannot be bound");
+}
+
+SpecializationSignature Invocation::specialization() const noexcept {
+  if (state_ == nullptr)
+    return {};
+  return state_->plan->domain_graph.valid() ? state_->specialization
+                                            : state_->plan->specialization;
 }
 
 bool Invocation::in_flight() const noexcept {
@@ -7288,10 +7467,20 @@ Result<CompiledGraph> compile(const Graph &graph,
   ProviderPolicy provider_policy(allocator);
   HYLE_RETURN_IF_ERROR(provider_policy.initialize(*logical, options));
   detail::TensorDescriptions descriptions(allocator);
-  auto signature =
-      specialize_descriptions(*logical, options.shape, allocator, descriptions);
-  if (!signature)
-    return std::unexpected(std::move(signature).error());
+  SpecializationSignature signature;
+  if (options.shape_policy == CompileShapePolicy::kExact) {
+    HYLE_ASSIGN_OR_RETURN(signature,
+                          specialize_descriptions(*logical, options.shape,
+                                                  allocator, descriptions));
+  } else if (options.shape_policy == CompileShapePolicy::kDeclaredDomain) {
+    if (!options.shape.empty())
+      return std::unexpected(Status::InvalidArgument(
+          "declared-domain compilation does not accept exact shape bindings"));
+    HYLE_RETURN_IF_ERROR(describe_domain(*logical, allocator, descriptions));
+  } else {
+    return std::unexpected(
+        Status::InvalidArgument("compile shape policy is invalid"));
+  }
   auto specialized =
       make_specialized_graph(*logical,
                              std::span<const compute::TensorDesc>(
@@ -7311,7 +7500,9 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(plan_allocation_failure());
   auto *plan =
       ::new (storage) detail::PlanState(allocator, concrete->generation);
-  plan->specialization = *signature;
+  plan->specialization = std::move(signature);
+  if (options.shape_policy == CompileShapePolicy::kDeclaredDomain)
+    plan->domain_graph = graph;
   plan->workspace_reuse = options.workspace_reuse;
   if (!plan->storage_domains.try_reserve(environment.storage_domains.size()) ||
       !plan->targets.try_reserve(environment.targets.size()) ||

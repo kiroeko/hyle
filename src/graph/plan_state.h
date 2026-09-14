@@ -645,6 +645,9 @@ struct PlanState final : util::RefCounted<PlanState> {
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
+  // Empty on the exact path. A domain retains its immutable shape program and
+  // specs once; concrete Invocations share this Plan and its concurrency gate.
+  Graph domain_graph{};
   StorageDomainRecords storage_domains;
   ExecutionTargetRecords targets;
   ExecutionLaneRecords lanes;
@@ -794,6 +797,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   bool supports_concurrent_invocations = true;
   bool mixed_providers = false;
   bool mixed_backends = false;
+  bool is_shape_domain = false;
   CompileSearchReport search{};
   SpecializationSignature specialization{};
 };
@@ -825,6 +829,8 @@ using CompletionEndpoints =
 using CompletionDependencies =
     container::SmallVector<compute::detail::CompletionDependency, 4,
                            mem::AllocatorRef>;
+using ConcreteDescriptions =
+    container::SmallVector<compute::TensorDesc, 0, mem::AllocatorRef>;
 
 // Preallocated mutable state for a public Completion that represents several
 // independent terminal Queue segments. It is activated only while an
@@ -843,7 +849,8 @@ struct AggregateCompletionState final {
 struct InvocationState final : util::RefCounted<InvocationState> {
   InvocationState(PlanState *plan_value,
                   mem::PlannedBuffers workspace_value) noexcept
-      : allocator(plan_value->allocator), plan(plan_value), readable(allocator),
+      : allocator(plan_value->allocator), plan(plan_value),
+        concrete_descriptions(allocator), readable(allocator),
         writable(allocator), bound(allocator),
         workspace(std::move(workspace_value)), invocations(allocator),
         submission_inputs(allocator), submission_outputs(allocator),
@@ -851,8 +858,8 @@ struct InvocationState final : util::RefCounted<InvocationState> {
         segment_completions(allocator), captured_segments(allocator),
         dependency_routes(allocator), candidate_dependency_routes(allocator),
         lane_endpoints(allocator), candidate_lane_endpoints(allocator),
-        completion_dependencies(allocator),
-        aggregate_segments(allocator), aggregate_children(allocator) {
+        completion_dependencies(allocator), aggregate_segments(allocator),
+        aggregate_children(allocator) {
     retain(plan);
   }
 
@@ -866,6 +873,10 @@ struct InvocationState final : util::RefCounted<InvocationState> {
 
   mem::AllocatorRef allocator{};
   PlanState *plan = nullptr;
+  // Empty and allocation-free for exact plans. Domain instances own one
+  // concrete description per logical value, not a copy of the physical plan.
+  ConcreteDescriptions concrete_descriptions;
+  SpecializationSignature specialization{};
   ReadableBindings readable;
   WritableBindings writable;
   BindingRoles bound;

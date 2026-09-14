@@ -64,3 +64,7 @@ OOM/销毁/并发与 direct exact 回归；Graph 整体 bounded/variant 仍由�
 域/生命周期反例与宽度 8192 的 direct/实例化 executor 对照。完整命令、成本、三交付与未运行项见
 [Compute v11 检查点](compute-v11-bounded-instantiation.md#2026-09-15-冷实例化检查点)。Graph general +
 exact variant、跨平台/P1 尚未完成，N22/N23 不因此签完。
+
+同日后继：Graph 已消费该域制品，提供公开 general compile 与具体 Invocation；固定尺寸原路线保留，
+source/static/shared 的 Native RMSNorm 示例均实际执行。见 [Graph general 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g101g102-general-路线检查点)。
+本段未改 Native 产品；同一 Executable 内的有限 exact variant、完整架构探针与终局跨平台/P1 仍待完成。

@@ -91,3 +91,7 @@ diff 检查通过。无 Backend/已 CLOSED 依赖、CMake、公共验证仪器�
 自实现不含测试：Compute **16,670**、Graph **11,673**，合计 **28,343**；全库自实现 **123,469**，
 全库代码 **676,424**，统一脚本 self-check 通过。仍为 `AUDITED`，不是整个模块 terminal：C93 真实
 profile 资格、G101/G102 Graph bounded/finite variants、G106 聚合预算及真实平台探针继续保留。
+
+同日 Graph 后继已接入公开 declared-domain general 路线和 cold concrete Invocation，复用 C110/C111，
+未改本 factor；验证与剩余范围见 [Graph general 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g101g102-general-路线检查点)。
+这不签完有限 exact variants、C93 真实资格、完整资源预算或共同 foundation 终局验证。

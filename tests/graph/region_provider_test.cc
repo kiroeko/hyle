@@ -5236,6 +5236,101 @@ TEST(GraphRegions, SerializesArtifactsThatRejectConcurrentInvocations) {
   EXPECT_TRUE(second_completion->wait().ok());
 }
 
+TEST(GraphRegions, ExactOnlyRegionCannotClaimDynamicEnvelope) {
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      hyle::graph::TensorSpec::dense(
+          DataType::kFloat32, std::array{hyle::graph::Dimension(rows),
+                                         hyle::graph::Dimension::fixed(8)})
+          .value();
+  const auto input = builder.input(spec).value();
+  const auto output =
+      builder.add(hyle::compute::RmsNorm{}, spec, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      graph, context,
+      {.shape_policy = hyle::graph::CompileShapePolicy::kDeclaredDomain});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(probe.propose_count, 1U);
+  EXPECT_EQ(probe.region_resource_count, 0U);
+  EXPECT_EQ(probe.compile_count, 0U);
+  EXPECT_EQ(compiled->report.region_count(), 0U);
+  const std::array shape{hyle::graph::ShapeBinding{rows, 2}};
+  auto run = compiled->executable.create_invocation(shape);
+  ASSERT_TRUE(run.has_value()) << run.error().message();
+  // None of the cold discovery/compilation callbacks are revisited.
+  EXPECT_EQ(probe.propose_count, 1U);
+  EXPECT_EQ(probe.region_resource_count, 0U);
+  EXPECT_EQ(probe.compile_count, 0U);
+}
+
+TEST(GraphRegions, DomainInvocationsShareTheOriginalNonconcurrentArtifactGate) {
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      hyle::graph::TensorSpec::dense(
+          DataType::kFloat32, std::array{hyle::graph::Dimension(rows),
+                                         hyle::graph::Dimension::fixed(8)})
+          .value();
+  const auto dynamic_input = builder.input(spec).value();
+  const auto input = builder.input(row(8)).value();
+  const auto middle = builder.add(Unary{UnaryKind::kNeg}, input).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, middle).value();
+  ASSERT_TRUE(builder.publish(dynamic_input).ok());
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.artifact_properties.runtime.supports_concurrent_invocations = false;
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      graph, context,
+      {.shape_policy = hyle::graph::CompileShapePolicy::kDeclaredDomain});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  ASSERT_EQ(compiled->report.region_count(), 1U);
+  EXPECT_FALSE(compiled->executable.supports_concurrent_invocations());
+  const std::array small{hyle::graph::ShapeBinding{rows, 1}};
+  const std::array large{hyle::graph::ShapeBinding{rows, 4}};
+  auto first = compiled->executable.create_invocation(small).value();
+  auto second = compiled->executable.create_invocation(large).value();
+  EXPECT_NE(first.specialization(), second.specialization());
+  auto small_input = make_tensor(
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{1, 8})
+          .value());
+  auto large_input = make_tensor(
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{4, 8})
+          .value());
+  auto first_input = make_tensor(row(8)), first_output = make_tensor(row(8));
+  auto second_input = make_tensor(row(8)), second_output = make_tensor(row(8));
+  write(first_input, std::array{1.F, 2.F, 3.F, 4.F, 5.F, 6.F, 7.F, 8.F});
+  write(second_input, std::array{2.F, 3.F, 4.F, 5.F, 6.F, 7.F, 8.F, 9.F});
+  ASSERT_TRUE(first.bind(dynamic_input, small_input.view).ok());
+  ASSERT_TRUE(second.bind(dynamic_input, large_input.view).ok());
+  ASSERT_TRUE(first.bind(input, first_input.view).ok());
+  ASSERT_TRUE(second.bind(input, second_input.view).ok());
+  ASSERT_TRUE(first.bind(output, first_output.view).ok());
+  ASSERT_TRUE(second.bind(output, second_output.view).ok());
+  auto queue = context.create_queue().value();
+  auto pending = first.submit(queue);
+  ASSERT_TRUE(pending.has_value()) << pending.error().message();
+  EXPECT_TRUE(first.in_flight());
+  const auto submissions = probe.submit_count;
+  auto rejected = second.submit(queue);
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+  EXPECT_EQ(probe.submit_count, submissions);
+  ASSERT_TRUE(pending->wait().ok());
+  EXPECT_EQ(first.output(dynamic_input)->description(),
+            small_input.view.description());
+  ASSERT_TRUE(second.submit(queue)->wait().ok());
+  EXPECT_EQ(second.output(dynamic_input)->description(),
+            large_input.view.description());
+  EXPECT_EQ(probe.compile_count, 1U);
+}
+
 TEST(GraphRegions, RegionExtensionVersionDoesNotAliasTheV1Table) {
   constexpr hyle::compute::ProviderExtensionId version_one{
       0x48594c4547524150ULL, 0x48524547494f4e31ULL, 1};

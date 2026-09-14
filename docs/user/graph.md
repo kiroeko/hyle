@@ -2,16 +2,17 @@
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
 > [`module-status.json`](../implementation/module-status.json) 为准；node-set region 已实现，已接受但尚未实现的
-> exact + bounded/guarded shape domain、storage/lane 联合优化与跨 variant 常量共享/聚合预算合同见
+> 有限 exact variants、storage/lane 联合优化与跨 variant 常量共享/聚合预算合同见
 > [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
 > 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
-当前 exact specialization 已支持有限派生维度与 shape guards、具名资源副作用域，以及有限 region 发现/
-重选、完整候选 profile 成本匹配与受限优化，以及显式常量物化后的 source release；Provider replay 分类事实也可查询。完整 bounded runtime/variants、variant 内存共享与 storage/lane 联合优化仍是
-[架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
+当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
+width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
+与受限优化、常量物化后的 source release。有限 exact variants、动态 View 属性、variant 内存共享与
+storage/lane 联合优化仍是[架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -30,8 +31,8 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
   异图 ID 会被拒绝；node 只能读取已经产生的 value，因此数据环不能被构造出来。
 - `Graph` 是不可变、可共享且与具体设备无关的逻辑 DAG；它不持有 tensor payload、Context、Queue 或
   provider artifact。
-- `Executable` 是不可变、可共享的单一 concrete specialization。它固定 provider artifact、placement、
-  physical value、segment dependency 和 workspace layout。
+- `Executable` 是不可变、可共享的 exact specialization 或显式声明域的 general 路线。它固定 provider
+  artifact、placement、physical value、segment dependency 和 workspace layout；域模式使用安全上界。
 - `Invocation` 是 move-only 的单次并发 lane，独占 bindings、workspace、Completion/capture slots 和 replay
   route。同一个 Executable 的并发请求必须使用不同 Invocation。
 
@@ -42,7 +43,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | DAG | typed、多输入/输出 node；共享 value、分支、多个 published output 与显式 control dependency |
 | 外部资源 | graph-local `EffectResourceId`、按 schema 端口绑定、read/write 冲突验证与固定 backing footprint；独立域不加边，未知副作用保守排序 |
 | shape | concrete `TensorDesc`，或独立 min/max/multiple 维度、有限 sum/product/exact-quotient/broadcast 派生维度及 equal/less-equal guards；同一 `DimensionId` 共享值 |
-| specialization | `compile()` 只要求每个独立维度恰好绑定一次，派生值由程序计算；一个 Executable 对应一个包含全部维度值的 collision-safe `SpecializationSignature` |
+| specialization | 默认 exact：compile 绑定全部独立维度；declared-domain：create_invocation 绑定。派生值由程序计算，Invocation 总有具体 `SpecializationSignature`；域根没有虚构的 exact signature |
 | execution target | `Context` 是执行者；node placement 只选择 target，不把 allocator 或 Queue 混入 identity |
 | storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
 | execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
@@ -243,17 +244,41 @@ auto compiled = compile(*graph, context, CompileOptions{.shape = shape});
   `dimension_quotient` 要求除数非零且整除，不向下取整；`dimension_broadcast` 要求两值相等或其中一个为 1。
   零尺寸合法，广播 `(0, 1)` 得到 0，但具体算子仍可能不支持空输入。
 - 操作数只允许非负常量或同 Builder 已存在的 ID；表达式天然无环，不读取 payload。无递归表达式解释器、
-  用户 callback 或通用符号求解器。固定矛盾在构造/finish 时拒绝，其余约束在 compile 的具体求值阶段检查。
+  用户 callback 或通用符号求解器。固定矛盾在构造/finish 时拒绝，其余约束在 exact compile 或 domain
+  Invocation 创建的具体求值阶段检查。
 - `dimension_bounds()` 给的是保守范围；guards 可以排除范围中的组合，各轴上界未必同时合法。过宽范围
   导致整数溢出时必须缩窄声明，不能依赖 guard 自动收紧。派生 bounds 由系统计算，不接受独立覆盖。
 - `dimension_count()` 枚举全部 ID；`independent_dimension_count()` 和 `dimension_is_independent(id)` 用于
   识别调用者需绑定的部分。重复、缺失、外来或派生 ID 的 `ShapeBinding` 都会失败。signature 按 ID 顺序保存
   **全部**已解析值，不能把其 `binding_count()` 当成调用者的输入维度数。
 
-这仍是冷编译生成一个 exact Executable：更换具体 shape 需要重新 compile，或由消费方缓存多个
-Executable。它还不是“一个 Executable 跑整个 bounded domain”。当前 `View::reshape/broadcast_to` 的
-operation attributes 仍是具体 `TensorShape`；派生 TensorSpec 不会偷偷改写这些固定参数，也不自动生成
-reshape/copy。完整动态属性与 runtime variants 尚待实现。
+上述默认写法仍生成 exact Executable：更换具体 shape 需要重新 compile，或由消费方缓存多个 Executable。
+若 Provider 对整个范围给出覆盖证明，可显式编译 general 路线，随后仅在冷创建时绑定实际尺寸：
+
+```cpp
+auto compiled = compile(*graph, context,
+    {.shape_policy = CompileShapePolicy::kDeclaredDomain});
+if (!compiled) return compiled.error();
+auto invocation = compiled->executable.create_invocation(shape);
+if (!invocation) return invocation.error();
+// bind 的 TensorView 仍是实际 [256, 128]，不是范围上界。
+// Invocation 的 shape 固定；用 submit(queue) 重复执行，reset 不改变 shape。
+```
+
+这里的 `shape` 仍只绑定独立维度；domain compile 的 `CompileOptions::shape` 必须为空。
+`is_shape_domain()` 区分域与 exact；域根及其报告的 `specialization()` 无效，实际 signature 从 Invocation
+取得。报告中的 descriptor、workspace 和 copy 字节是保守上界，各轴最大值可能被 guard 排除，不能把它
+当成合法输入。每个 Invocation 都有独占 workspace，尺寸变小不会重新规划或缩小预留；需要紧凑内存时
+选择 exact 编译，或缩窄声明域。新尺寸会有冷 metadata/执行状态分配，不应在每次 token 的 submit 中创建。
+
+当前 Native 仅对 dense float32、固定 hidden width 的 RMSNorm 承诺完整域，可带固定 scale；动态 prefix
+可引用派生维度。静态节点可组合原 exact Provider/region。动态节点没有完整域实现时 compile 明确失败，
+不拿上界单点冒充通用路线；当前 exact-only region 不融合任何动态节点。常量描述在一个 Executable 内
+固定，动态尺寸的外部值应建成 input。域与上界 exact point 的 profile identity 不同。
+
+当前 `View::reshape/broadcast_to` 的 operation attributes 仍是具体 `TensorShape`；派生 TensorSpec 不会
+偷偷改写这些固定参数，也不自动生成 reshape/copy。完整动态属性、有限 exact variants 与跨变体共享仍
+待实现，不把这一条 general 路线当成完整动态图目录。
 
 ## Symbol 与多 target/storage/lane
 
@@ -483,11 +508,12 @@ multi-stream capture。
 
 ## 冷路径、热路径与调度取舍
 
-- compile 做 shape concrete 化、provider proposal/exact prepare、region 选择、target/storage placement、
+- compile 做 exact shape 解析或完整域上界/覆盖验证、provider proposal/prepare、region 选择、target/storage placement、
   boundary materialization、lane scheduling、happens-before、liveness/alias/workspace；复杂度有显式预算，不读取历史 benchmark 常数作为 placement
   oracle。`kAllowSerialization` 的额外搜索只在冷编译且实际超过 storage hard budget 时发生；warm path
   只消费已经固化的 segment dependency。
-- `create_invocation()` 实例化 workspace、provider invocation、预定长 metadata，并固定 delegated endpoint；应按服务并发槽创建并复用。
+- `create_invocation()` 实例化 workspace、provider invocation、预定长 metadata，并固定 delegated endpoint；
+  域模式还求值具体 shape 和冷实例化已编译制品，不复制整份计划或重新选路。应按服务并发槽创建并复用。
 - `prepare_replay()` 做 Queue/endpoint/transfer/dependency/capture 资格化；bind、reset 或稳定地址变化会使其失效。
 - warm `submit()` 只遍历 emitted steps、segment dependencies 与 bindings：不遍历原始 DAG、不推 shape、
   不搜索 provider、不 JIT、不增长 Graph heap、不重新查询 transfer/dependency capability。backend

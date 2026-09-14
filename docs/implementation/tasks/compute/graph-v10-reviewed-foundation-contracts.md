@@ -827,3 +827,75 @@ G106 后续，不用 canonical 副本字节冒充全部 Provider 内存，profil
   全库代码 **675,429**；统一脚本 self-check 通过。
   仍为 `AUDITED`；G101/G102 bounded/variants、G106 跨变体共享/聚合预算、storage/lane 联合选路及
   CPU/CUDA/Apple foundation 探针继续按既定卡推进，不扩算子目录。
+
+### G101/G102：共享计划的完整域实例化（实现前固定）
+
+接入 [Compute v11](compute-v11-bounded-instantiation.md) 的已编译域，不为每个具体尺寸复制整个 Plan。
+`CompileOptions::shape_policy` 默认 exact；显式 declared-domain 模式消费 GraphBuilder 已声明的完整
+bounds/guards，compile 不接受单点 shape binding。`Executable::create_invocation(shape)` 只绑定独立
+维度；Invocation 暴露实际 specialization，重复 submit 沿用原执行路径。普通 exact 用法不变。
+
+Plan 保有原 Graph 的只读 shape program/spec，调度、workspace 上界、常量和非并发制品的互斥 gate 仍为
+同一份。仅 domain Invocation 分配 concrete logical descriptions 并从域根冷实例化普通 Compute 制品；
+不复制整份 DAG、重新发现 Provider、prepare/JIT 或重新规划 workspace。actual TensorView 截取实际字节，
+copy 与 alias 绑定使用实际描述，不能按 envelope 多复制。根与 source metadata 可释放，存活 Invocation
+保活其计划和域制品；具体实例的 workspace 不超过 compile 上界。
+
+只有真正使用非 exact 轴的 node 才请求 EntireDomain；静态 node 继续 exact prepare。当前 region SPI
+没有域实例化合同，因此含任一动态 node 的 region 不准入 general 路线，静态 region 仍可组合。常量
+在 Executable 生命周期内保持固定描述；动态尺寸的外部值应为 input。compile 上界不是合法单点：只用于
+安全内存包络，不能对可能违反 guards 的上界组合调用 exact schema 后宣称完整域正确。domain/exact
+进入不同 profile identity，不复用“恰好上界”的 exact 计时记录。
+
+固定反例：guard 排除 envelope、派生维度、完整小域数值、zero extent、多节点内部 workspace、实际
+copy 字节、静态/动态混合、exact-only Provider/region 拒绝、错误/重复/foreign binding、源与根释放、
+冷分配失败与恢复、不同尺寸并发和非并发 gate、重复 submit 无新增 metadata allocation；原 exact、
+oneDNN、CUDA、逐头与 source/static/shared 回放。只执行 P0 与相关正确性，不运行 P1/全库/CI。
+
+本段是 G101/G102 的 general 路线，不冒充全部完成：dynamic View attributes、有限 exact variants、
+跨变体共享和总预算、真实架构探针与终局验证仍保留在原 FIX 集内。
+
+### 2026-09-15 G101/G102 general 路线检查点
+
+- 上述表示已实现：公开 declared-domain compile 与 concrete `create_invocation(shape)`，冷投影完整
+  program/axes/guards 给 Compute；静态 node 沿用 exact。Plan 只保有一份原 Graph，不按 shape 复制
+  DAG、schedule、workspace 或互斥 gate。具体绑定和内部/复制 TensorView 使用实际描述，submit 路线未改。
+- 新增 12 个 Graph/region 反例：完整小域数值（含 guard 排除 envelope、派生乘积和 zero）、内部 workspace、
+  输出尾部哨兵、跨 storage 实际复制、固定节点与动态节点组合、动态常量拒绝、非法/重复/foreign/derived
+  binding、exact-only 与不等价输出 symbols 拒绝、逐次 compile/create OOM 回滚恢复、原 Graph/常量源/
+  公开 Executable 释放、不同尺寸并发、异步非并发制品的共享 gate、domain/exact profile 身份隔离。
+  成功 warm replay 将 metadata allocator 设为拒绝分配，仍完整执行。
+- 两处 fixture 用法被纠正而未放宽产品：有 caller Queue 的图不能使用 queue-free submit；带哨兵的较大
+  backing 读取有效部分必须用实际 TensorView，不能给整块 Buffer 的 exact read 传较短 span。另一次
+  install 使用了 CMake 不支持的 `--message=NEVER`，在安装前失败，随后去掉该选项完成真实安装与验证。
+
+| Windows Release 验证 | cache（`C:/hyle-scratch/` 下） | 结果 |
+|---|---|---|
+| Graph static / 逐头 | `compute-route-v8-static-20260914` | 3/3 |
+| Graph shared、oneDNN Graph/region / 两组逐头 | `compute-route-onednn-v8-20260914` | 6/6；Graph execution 210/210 |
+| CUDA Graph / 逐头 | `compute-graph-v7-cuda` | 3/3；包含真实 CUDA/capture 既有回归 |
+| source CPU/CUDA 公开 sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+命令沿用 Windows wrapper 的 Build/Test，构建至多 `--parallel 2`、测试 `--parallel 1`；只重建对应 target。
+CPU 公开 sample 额外用 Native RMSNorm 演示 `rows=0..4` 域的 0/1/4 行实例、源 Graph 释放与重复执行，
+没有私有 include 或另一套 FFI。安装显式使用 `custom-execution-v10-{shared,static}-sdk` scratch prefix。
+Graph DLL 在 shared producer、SDK、CPU/CUDA 实际加载目录的 SHA-256 一致：
+`B92684FD6403D40E5BA2974414530377D8915B7F674D17697A3A5A9064BD8CD4`。
+
+P0：compile 沿用有限候选搜索；每个动态节点投影和准备其完整域 metadata，普通 exact 节点不分配域。
+domain Plan 保有一次原 Graph IR；每个 domain Invocation 增加 `O(V+D)` concrete descriptions/signature，
+求值及 schema 检查为 `O(D+G+V+E)` 加各 schema 成本；每个动态 step 再经 Compute 的域绑定/alias 检查，
+因此不是整个多节点实例化只做一次 `O(D)`。这全部在冷创建，且沿用已有 allocator/shape evaluator。
+不复制 `O(V+E)` 的物理计划，不重新选路/prepare/JIT。workspace 预留完整 envelope，不能声称为小实例
+自动压紧；需要精确预算可选 exact 编译。exact Invocation 只增加空冷 metadata 字段，无额外分配次数；
+warm callback 层数、步骤与 completion 算法未改，不据此签性能胜负。
+
+用户/架构和公开 sample 已同步；selector 基线 `a0b210c4` READY，89 项有据跳过。registry、backend、
+Provider 产品、公共 CMake/治理/性能仪器未改。现有 shared + oneDNN graph 产品缓存的 CMake 重配置成功；
+oneDNN 自身仍输出既有 CMP0146 OLD 弃用提示，未为本模块改写上游构建。Linux/两台 Apple、sanitizer、独立终局红队和统一 P1
+尚未执行，仍等待完整 foundation candidate；本段不是它们的 PASS。
+Graph 自实现不含测试 **11,862**，Compute **16,670**，合计 **28,532**；全库自实现 **123,658**。
+保持 `AUDITED`，继续 G101 动态属性、G102 finite exact variants、G106 跨变体共享/聚合预算及其余既定
+基础 FIX。没有达到用户要求暂停审视的 foundation 完成节点，也未扩充算子目录。

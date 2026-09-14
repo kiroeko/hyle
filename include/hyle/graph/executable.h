@@ -546,6 +546,9 @@ public:
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
   HYLE_GRAPH_API bool mixed_providers() const noexcept;
   HYLE_GRAPH_API bool mixed_backends() const noexcept;
+  // Domain reports contain conservative descriptor/workspace envelopes, not
+  // an executable exact point. specialization() is invalid for such reports.
+  HYLE_GRAPH_API bool is_shape_domain() const noexcept;
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
   HYLE_GRAPH_API Result<CompileTargetReport>
   target(std::size_t index) const noexcept;
@@ -678,10 +681,20 @@ enum class OutputOwnership : std::uint8_t {
   kExecutable,
 };
 
+enum class CompileShapePolicy : std::uint8_t {
+  kExact,
+  // Compile the complete bounds/guards declared by GraphBuilder. Every
+  // dynamic node needs a Provider that proves and prepares the whole domain.
+  // Exact-only implementations cannot stand in for an unproved domain.
+  kDeclaredDomain,
+};
+
 struct CompileOptions final {
   // Exactly one value per independent GraphBuilder dimension, in any order.
   // Derived IDs must not be bound. Empty is valid with no independent inputs.
+  // Must be empty for kDeclaredDomain; bind at create_invocation() instead.
   std::span<const ShapeBinding> shape{};
+  CompileShapePolicy shape_policy = CompileShapePolicy::kExact;
   std::span<const ConstantBinding> constants{};
   // Every used effect resource needs one binding. Backing is fixed/borrowed
   // for this Executable and all its Invocations/Completions. It must describe
@@ -776,6 +789,8 @@ public:
   HYLE_GRAPH_API std::size_t workspace_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
+  HYLE_GRAPH_API bool is_shape_domain() const noexcept;
+  // Invalid for a domain; the concrete signature belongs to its Invocation.
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
   HYLE_GRAPH_API Result<ValueId> input_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
@@ -783,6 +798,11 @@ public:
   HYLE_GRAPH_API Result<OutputOwnership>
   output_ownership(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<Invocation> create_invocation() const noexcept;
+  // Cold binding of all independent dimensions for a declared domain. Does
+  // not recompile, select Providers or change the shared schedule/workspace
+  // envelope. Exact executables accept only an empty span.
+  HYLE_GRAPH_API Result<Invocation>
+  create_invocation(std::span<const ShapeBinding> shape) const noexcept;
 
 private:
   friend struct detail::ExecutableAccess;
@@ -809,6 +829,9 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
+  // Exact values fixed at creation, including derived dimensions. reset()
+  // clears tensor bindings, not this signature; another shape needs a new run.
+  HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
   HYLE_GRAPH_API Status bind(ValueId value,
                              compute::ConstTensorView tensor) noexcept;
   HYLE_GRAPH_API Status bind(ValueId value,

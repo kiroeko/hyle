@@ -334,6 +334,8 @@ Status build_profile_identity(ReportState &report, const PlanState &plan,
     identity.semantics = semantics.finish();
 
   Fingerprint shape(0x4752415048440001ULL);
+  // An envelope-equal exact point must not qualify a complete-domain route.
+  shape.add(plan.domain_graph.valid());
   shape.add(logical.dimensions.size());
   for (const auto &dimension : logical.dimensions) {
     shape.add(dimension.kind);

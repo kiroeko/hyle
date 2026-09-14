@@ -23,6 +23,10 @@ CPU/CUDA factory 都声明 `ProviderRouteKey{1}`，消费方检查 Graph report 
 CPU 示例也通过公开 profile matcher 和 Graph 的空 `CompileProfileContext` 检查：缺身份不会误配成
 零成本，报告保留自己的 TensorDesc，但不会伪造合格 route。三种交付都链接同一冷合同。
 
+CPU 示例另用默认 Native Provider 编译 `[rows, 4]` RMSNorm 的完整 `rows=0..4` 域，释放原 Graph 后为
+0/1/4 行分别创建 Invocation 并重放，检查具体 signature 与数值。只用公开头，不调用私有域 seam；
+此功能不会让前面的 owning custom factory 自动获得 bounded 支持，它仍只承诺 exact prepare。
+
 安装 static 或 shared SDK 后（同一 C++23 工具链）：
 
 ```sh
