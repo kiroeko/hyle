@@ -43,6 +43,12 @@
 - [CUDA system SDK 依赖投影](build/build-cuda-system-sdk-projection-v1.md)：让 CUDA 专用公开头与 target 在
   source/static/shared 三种交付中由同一 system-SDK `find_dependency` 合同承载。
 
+当前 Compute/Graph 架构审计：
+
+- [第三方广度与 HYLE 全局路由统一](compute/compute-graph-route-unification-audit.md)：记录 Provider 外包、
+  渐进式 HYLE 胜出路线、CUDA Q4 MatMul 纵切，以及现有 selector/custom-operation seam 的精确差距；
+  它是重开依据，不在 registry 变更前授权产品修改。
+
 当前全库性能工作：
 
 - [全库性能定位与差距消除](project/full-library-performance-positioning-2026-09.md)：区分方向、实用

@@ -58,6 +58,13 @@ CUDA command/copy segment；这不意味着 `prepare(cuda_context, MatMul{...})`
 同一 CUDA Context 的不同 Queue 可以用 device event 导入另一个 Queue 的 Completion prefix，不阻塞提交
 线程；跨 context/backend 不会伪装成这条路线，Graph 只能依显式策略选择 host wait 或拒绝。
 
+第三方源码出现在 dependency cache 或最终链接中，不表示其算子已经自动成为 HYLE route。HYLE
+`Operation` 只描述公共语义；一个已交付 Provider 必须在 `prepare()`/Graph compile 冷路径把它翻译成
+第三方 plan、kernel 或 graph artifact。叶函数型 provider 可以产生 `PreparedOperation`；自己 host 图的
+runtime 通常只能由 Graph 作为 compiled region 使用。当前没有已交付 ggml provider，因此合法的 block-Q4
+`TensorDesc` 只证明格式可表达；`prepare(cuda_context, MatMul{}, ...)` 仍返回 `Unimplemented`，不会把
+压缩 bytes 当普通 scalar、偷偷反量化或因为 ggml 已下载就调用私有 kernel。
+
 ## Queue、byte transfer 与 Completion
 
 Compute 的 Queue 是一个显式、有序的提交域。普通 direct operation、byte transfer 和 backend-specific

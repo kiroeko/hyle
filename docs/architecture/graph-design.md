@@ -188,17 +188,40 @@ packing。Provider 的 `supports(op)` 不是“选它一定更快”。无法覆
 编译失败；不能在运行时突然下载依赖、切 backend 或用 host scalar 静默求值。
 
 首个 provider-neutral region 合同只接受 canonical topological order 上的连续半开区间。provider 经
-Compute Context 的对象局部、精确版本 extension 提案，Graph 在有限预算内做确定性的 weighted-interval
-选择；预算耗尽是显式失败，不是截断。调用方显式安装 region provider 本身就是 opt-in：默认结构策略
-先最大化 region 覆盖节点，再最小化 backend execution episode，并以 Context provider 顺序稳定裁决。
-provider 若能给出面向当前 specialization 且可移植的正净收益估值，严格策略才以该估值作为 admission
-和首要 score；unknown 与精确零必须保持可区分，不能用某次微基准的 `1 ns` 填空。非连续 subgraph、
-跨设备 partition 或不同成本单位必须建立新版合同，不能悄悄改变当前 route 语义。
+Compute Context 的对象局部、精确版本 extension 提案，Graph 在有限预算内做确定性的有界选择；预算耗尽
+是显式失败，不是截断。单-op Provider 提案必须作为长度为一的 route candidate 与 region 一起进入计划，
+而不是先由 Context 顺序固化单算子、再让 region 只和 region 竞争。非连续 subgraph、跨设备 partition 或
+不同成本单位必须建立新版合同，不能悄悄改变当前 route 语义。
+
+选择采用约束优先而不是把 ns、bytes 和线程数随意加成一个分数：先满足语义/精度、resource/ownership、
+host-wait 与内存预算等硬约束，再比较绑定到相同设备/shape/layout/完成边界的合格关键路径估值；compile
+成本和常驻内存按显式 workload policy 约束或摊销。无合格估值、差异不可分或低于 material 门时，按已
+配置的成熟 Provider 优先级作确定性裁决，覆盖数、dispatch 和 ordinal 只用于等价候选的最后 tie-break。
+Provider 相对“自己 fallback”的估值不是跨 Provider 货币，不能直接相加。
 
 Region proposal/artifact 同时声明 shared-runtime 或 delegated-runtime 模式。前者必须能在所选 HYLE Queue
 sequence 中录入；后者必须给出 provider-owned invocation/timeline、边界 tensor residence、输入依赖消费和
 完成导出合同。Graph 把 delegated region 视为显式 island segment，在两端物化必要 copy/interop 和同步；
 不得让 adapter 忽略 HYLE Queue 后在未知 stream 执行，也不得把一次 host API 返回误作设备完成。
+
+自己 host 算子图的第三方 runtime 也沿这条 region 合同接入，而不是反过来接管 HYLE Graph。adapter 在
+compile 冷路径把一个连续 HYLE region 翻译为 provider-native graph/engine；一个 region 可以只含一个节点，
+也可以覆盖足以保留融合和内部 layout 的多节点片段。`Executable` 保有该制品，steady replay 只重绑本次
+Invocation 的 canonical boundary tensors 并提交，不重建第三方图。第三方不公开稳定 leaf kernel 时，
+HYLE 只能在 region 边界与其他 provider 竞争，不能钻进不透明制品逐节点替换。
+
+ggml 是这类路线的具名例子，但“链接 ggml”不等于 Graph 自动获得其算子。CPU、CUDA、Metal 与 Vulkan
+拥有不同 buffer、stream/thread、completion 和失败合同，必须由不同 backend-qualified carrier factor
+分别审计。某个 CPU carrier 的 blocker 不应自动否决 CUDA carrier；反过来，CUDA graph 能执行也不能证明
+CPU threadpool 或 Metal storage 合同成立。只有实际 adapter 能把 HYLE storage/operation/region 映射到锁定
+版本的公开 ggml API，并导出真实 Completion 后，该候选才进入 partition。
+
+全局 route selector 必须把单-op fallback 与 provider region 放进同一计划空间，比较最终 placement 后的
+关键路径、边界 copy/repack、同步、dispatch、workspace/persistent 和 compile amortization。最大覆盖节点数、
+最少 dispatch 或 provider 顺序只能在没有可比较性能证据时作为确定性 fallback/tie-break，不能冒充
+SOTA cost model；provider 各自相对自身 fallback 的估值也不能跨 provider 直接排序。长期稳定的推理
+specialization 可以显式 tune-once，但选中结果必须绑定完整 artifact/device/shape/layout identity，且 warm
+replay 不再探测。
 
 ONNX Runtime 的 execution-provider partition、oneDNN 的 partition/compiled partition、TensorRT 的
 network/engine/context 与 vLLM/SGLang 的 shape specialization/capture 都作为该流水线的独立参照；HYLE
@@ -294,14 +317,16 @@ provider/backend workload 上形成可解释收益。
    完整旅程；
 2. 加 HYLE SIMD/native provider，证明同一 Graph 无需改写即可选择另一实现；
 3. 扩为 normalization → matmul → gated activation，接 Mem liveness/workspace；
-4. 接 ggml/oneDNN region，验证 provider-owned allocation/threading 的诚实边界；
-5. 先用 NVIDIA CUDA 验证同一 storage domain 的 copy lane → compute lane → copy lane、设备依赖、
+4. 先统一单-op 与 region candidate、完整边界成本和资格化 evidence/tune-once；用 oneDNN 真实 region
+   验证，不能让 blocked 的 CPU ggml 或只按覆盖节点数的 selector 成为前置；
+5. 用 NVIDIA CUDA 验证同一 storage domain 的 copy lane → compute lane → copy lane、设备依赖、
    happens-before workspace 与 capture；
-6. 再完成两条主平台栈：NVIDIA 的 CUDA backend/providers；Apple 先资格化 delegated MLX compiled region，
+6. 用 CUDA Q4 MatMul/MLP 验证 leaf/region、HYLE/成熟 Provider 与不同 storage residence 的完整路由；
+7. 再完成两条主平台栈：NVIDIA 的 CUDA backend/providers；Apple 先资格化 delegated MLX compiled region，
    同时保留原生 Metal custom-kernel/interop 和 MPSGraph/MPS 候选；Core ML 留在模型级 routed runtime
    边界；
-7. 再落到正式支持的 Vulkan SPIR-V，验证消费级设备与 renderer 的 external memory/semaphore handoff；
-8. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
+8. 再落到正式支持的 Vulkan SPIR-V，验证消费级设备与 renderer 的 external memory/semaphore handoff；
+9. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
    Graph 产品资格。
 
 上述步骤中的算子只作为真实纵切的最小架构探针：先用 gated MLP 检验常量、分支、region、workspace 与

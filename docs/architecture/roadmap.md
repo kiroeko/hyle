@@ -78,6 +78,13 @@ Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass
 明确分为使用 HYLE Queue/resource 的 shared-runtime 路线，以及自有 allocator/stream/context、通过显式
 boundary 与 Completion bridge 接入的 delegated-runtime island；每个 delegated provider 仍是独立 factor。
 
+Provider 是 HYLE Operation/region 到实际制品的冷路径翻译器，不是第二套公共算子图。叶函数库产出
+prepared op；自己 host 图的库产出 provider-native compiled region，Graph 仍是外层 partition/placement
+owner。把第三方加入依赖锁或链接制品不算获得能力，adapter factor 必须实际完成翻译、资源和 Completion
+合同。ggml 的 CPU、CUDA、Metal、Vulkan carrier 因 runtime owner 不同分别审计；当前 registry 中未带
+backend 后缀的 `compute_provider_ggml` 只代表既有 CPU 审计身份，不能被解释为所有 ggml backend 或
+通用 ggml 产品已经交付。
+
 Apple Silicon 栈（MLX-first provider + 原生 Metal backend/custom-kernel escape hatch）和 NVIDIA 栈
 （CUDA backend + 经审计的 vendor/ggml/HYLE provider）是首要优化目标。Vulkan 是面向广泛消费级设备与
 renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 走 MoltenVK portability；它不

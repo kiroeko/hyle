@@ -205,6 +205,17 @@ Triton、GPU/tensor 融合层或渲染领域层，也必须裁决到正确 owner
 平台无法提供时，还必须有正确 fallback 或明确的 unsupported 路线。若公开接口必须暴露第三方类型，
 应把它登记为有意的 interop capability，而不是适配层偶然泄漏。
 
+成熟依赖的自然复用单位不一定是叶函数。对于 ggml、MLX、TensorRT、ONNX Runtime 一类自己 host
+算子图或 engine 的实现，`BORROW` 可以落为 provider-owned compiled region：HYLE 继续拥有公共
+Operation/Graph、全局 partition/placement、跨 region storage 和 Completion，adapter 在冷路径翻译并保有
+第三方局部制品。下载、链接或在依赖锁中登记第三方库不等于相应 HYLE 能力已经存在；只有 adapter 能
+完成语义、storage、失败、并发和完成边界才算 `ROUTED`。
+
+若依赖不公开稳定 leaf seam，不能为了表面上的逐算子 best-of 调用私有符号。应让完整 region 与 HYLE
+单-op/region 候选在同一全局计划中竞争，或把必要 source patch 作为有独立维护、升级、许可证和三交付
+合同的机制 owner。HYLE 的全局调度权不等于亲自调度第三方 artifact 内的每个 kernel；它指 HYLE 唯一
+决定 region 边界、target、boundary storage/copy/sync 和跨 region 依赖，并可因完整成本不合格拒绝外包。
+
 第三方升级是一项有身份的产品输入变化，不能自动继承旧证书。升级前后按影响面裁决：
 
 1. 只改变获取元数据且不改变源码、产物、语义、codegen、许可证或交付时，执行 build/package 维护门；

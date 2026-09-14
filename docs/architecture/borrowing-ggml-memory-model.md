@@ -65,7 +65,8 @@ storage 或 MLX interop 都要按各自公开合同审计，不能从其中一�
 
 ## 对新架构的约束
 
-- ggml 是候选 `compute_provider_ggml`，不是 Compute 本身；用户普通 API 不出现 ggml 类型。
+- 当前 `compute_provider_ggml` 是 CPU-only 的阻塞审计身份，不是 Compute 本身；CUDA、Metal 与 Vulkan
+  carrier 必须各有独立身份和验证，用户普通 API 不出现 ggml 类型。
 - 同一 Graph 可以把部分 region 给 ggml、部分给 HYLE native 或其他 provider；选择发生在编译阶段。
 - provider-owned storage 不削弱 Mem 的 owner/view 价值：Graph boundary、host mapping、external buffer、
   composite shard 与 HYLE native region 仍使用 Mem；provider island 如实保留自己的 owner。
@@ -74,6 +75,29 @@ storage 或 MLX interop 都要按各自公开合同审计，不能从其中一�
   nested oversubscription；HYLE 不假装能注入一个 provider 并未接受的线程池。
 - ggml 升级若改变 buffer import、allocator、threading、graph capture 或 completion 行为，会触发该
   provider factor 的定向重审，不自动重开无关 Compute/Graph 因子。
+
+## ggml graph 怎样成为 HYLE 可调用制品
+
+HYLE 不要求 ggml 把私有 CUDA/CPU kernel 改成公共叶函数。合法 adapter 在冷路径把 HYLE 的一个 op 或
+连续 region 翻译为一个可复用 `ggml_cgraph`：建立并保有 tensor metadata、operation nodes、backend
+对象、常量/packing 和需要的 invocation state；steady submit 只绑定本次 boundary storage，调用公开的
+backend graph compute，并把真实异步终态桥接为 HYLE Completion。一个单节点 `ggml_cgraph` 可以充当
+function-like artifact，多节点 region 则保留 ggml fusion 与内部 layout；两者都不得在每次 submit 重建图。
+
+对当前锁定参考版本，公开 `ggml_backend_graph_compute_async()`、backend event 和 provider-owned buffer
+足以证明 delegated CUDA island 值得独立审计，但还没有证明 shared-runtime 零成本接入：公开 API 没有
+签发把任意 HYLE CUDA allocation 包装为 ggml CUDA buffer、也没有把任意 HYLE stream 设置为 ggml 执行
+stream 的通用合同。`ggml_cuda_compute_forward`、`ggml_cuda_mul_mat` 等实现细节不是稳定公开 seam。
+因此 CUDA carrier 开工时必须在以下路线中明确裁决，而不能先写 adapter 再靠 smoke test 猜：
+
+1. ggml-owned allocation/stream/event 的 delegated region，并把 ingress/egress、同步和内部常驻显存计入
+   完整成本；
+2. 锁定版本后来提供并经验证的 external-memory/stream interop，升级为 shared-runtime 或零拷贝 island；
+3. 对确实值得逐 leaf 替换且有 material 证据的 kernel，建立独立 source-patch factor；否则继续使用
+   ggml region 或 HYLE/vendor provider。
+
+渐进式 best-of 发生在 HYLE op/region 边界。HYLE kernel 胜出时切出相应节点；若切分导致的 copy、repack、
+event 或丢失 fusion 超过收益，就保留更大的 ggml island。不能只比较私有 kernel 时间后忽略边界成本。
 
 总的所有权规则见 [Compute 设计](compute-design.md#5-storage同步与生命周期)；region、Executable 与
 Invocation 的关系见 [Graph 设计](graph-design.md#3-四个生命周期对象)。

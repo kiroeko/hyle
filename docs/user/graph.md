@@ -40,7 +40,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
 | execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
 | placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和稳定 target/storage 顺序确定性选择；prepare 尝试有硬预算 |
-| region partition | provider 在冷路径提出连续 region；Graph 按覆盖、dispatch 数和 provider 顺序确定性选择并只编译胜出 artifact |
+| region partition | provider 在冷路径提出连续 region；当前实现按覆盖、dispatch 数和 provider 顺序确定性选择并只编译胜出 artifact；这是现行结构策略，不是跨 provider 的 SOTA 性能证明 |
 | boundary | canonical tensor 只有在真实 storage residence 改变时才产生 `Copy`；换 target 或 lane 本身不复制 |
 | memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
@@ -51,6 +51,11 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 Provider-private layout 只能留在一个 region 内，公开 region boundary 当前必须回到 canonical `TensorDesc`。
 因此 Graph 不伪造一个没有 layout producer/consumer 合同的通用 `Repack` step；将来某个真实 provider 需要
 跨 region opaque layout handoff 时，必须先增加有版本的 boundary-layout 合同和可执行 repack owner。
+
+对于 ggml、MLX 或 TensorRT 这类自己 host 图/engine 的 runtime，未来 adapter 会在 compile 冷路径把一个
+HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
+保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
+安装且通过当前 backend/storage/completion 审计的 Provider 才能提案；当前尚无可用 ggml region provider。
 
 ## 单 target/storage/lane：自然短路径
 

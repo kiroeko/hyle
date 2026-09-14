@@ -69,6 +69,133 @@ Graph 的 `Executable` 只保存这些 artifact 与已经决定的 copy/sync 步
 因此 HYLE 既能借成熟算子库获得广度，也能保留 HYLE 自实现的胜出 kernel。二者竞争发生在
 prepare/compile 阶段，不在 element、lane 或每次节点执行中反复裁决。
 
+### 2.3 Provider 是冷路径翻译器，不是另一套 Operation
+
+`Operation`/`TensorDesc` 是 HYLE 面向用户的唯一语义描述；它们既不执行，也不因接入一个 vendor 增加
+`GgmlMatMul`、`CublasMatMul` 一类平行公共枚举。Provider 是显式装入 `Context` 的小型类型擦除配置，
+在冷路径把这份中立描述翻译为自己真正拥有的制品：
+
+```text
+HYLE Operation + exact Tensor/storage contract
+  -> provider proposal / exact prepare
+  -> immutable provider artifact
+  -> per-lane invocation + prebound submit
+
+HYLE Graph region + specialization + exact boundary contract
+  -> provider region proposal / compile
+  -> immutable provider-native graph or engine artifact
+  -> delegated or shared-runtime region submit
+```
+
+叶函数型实现可以产出一个 `PreparedOperation`，自己 host 图的实现则产出 compiled region。后者不需要被
+伪装成公开叶函数：例如 ggml adapter 可以在 compile 时建立一个单节点或多节点 `ggml_cgraph`，随后把它
+当成不可变制品重复提交。单节点 mini-graph 在 HYLE 热路径上可以具有函数式调用成本，但仍由 ggml
+拥有其 tensor metadata、graph/runtime 和内部融合语义；submit 不得每次重新建图。
+
+把第三方源码下载、编译或链接进制品本身不产生 HYLE 能力。只有一个已审计 adapter factor 能完成
+HYLE 语义到第三方制品的翻译，并兑现 storage、failure、threading、workspace 与 Completion 合同后，
+相应 route 才存在。若第三方只公开 graph API 而叶 kernel 是私有符号，合法选择只有：
+
+- 以 shared/delegated compiled region 借用公开 API；或
+- 另立版本锁定、维护责任明确的 source-patch/kernel factor，并独立通过升级、错误、交付和性能审计。
+
+包含私有头、调用未导出 kernel 或复制实现片段都不能在普通 provider 内偷渡成稳定路线。
+
+渐进式 best-of 的裁决边界也是 HYLE op/region，而不是第三方黑盒内部的某个隐藏 kernel。同一段计算可
+同时收到成熟 provider、HYLE native/vendor provider 和 custom kernel 的候选；Graph 按完整 region 成本
+选择。未证明 material 优势时保留成熟路线，HYLE 明显胜出时在 canonical tensor boundary 切出相应
+op/region。不能在不透明第三方 region 内局部替换；拆分造成的 copy、repack、同步与 fusion 损失必须计入
+选择，必要时扩大第三方 island，而不是为了“逐算子可换”制造更慢的计划。
+
+### 2.4 HYLE 保留全局调度权，Provider 只拥有局部制品
+
+HYLE 的性能责任不要求它亲自调度每个底层 kernel。cuBLASLt、oneDNN、TensorRT、MLX 和 ggml 都可能在
+一次公开调用内选择或提交多个 kernel；强行拆开反而会丢失 fusion、私有 layout 和厂商调优。必须唯一
+保留在 HYLE 的是**全局决策权**：
+
+- HYLE Graph 拥有逻辑 DAG、region 边界、execution target、跨 region storage/copy/repack、lane、依赖、
+  全局 liveness/workspace 和最终 Completion；
+- 入选 Provider 只拥有一个 region 内的 kernel/engine、局部临时 storage、局部顺序与真实执行终态；
+- Provider 不得越过已选边界读取其它 HYLE node、偷偷改变全局 placement，或启动未声明的并行/runtime；
+- HYLE 可以把整个模型、一个 block、一个融合片段或单 op 交给 Provider，但粒度本身必须参与成本裁决。
+
+因此 Graph 执行的是由 HYLE 排好的异步 segment DAG；每个 segment 可以是 HYLE 叶操作，也可以是第三方
+compiled region。这样的层级调度仍由 HYLE 控制全局关键路径，同时允许成熟实现保留其最擅长的局部计划。
+
+### 2.5 Route 选择必须比较完整计划，而不是“覆盖更多节点”
+
+所有单 op 与 region 实现最终都要归一成同一类冷路径 route candidate，至少携带：覆盖的 HYLE nodes、
+target/provider/version、输入输出 storage/layout、shared/delegated runtime、workspace/persistent/packing、
+copy/repack、同步、dispatch、线程/host blocking、精度/alias/failure 与完成边界。选择目标是满足硬约束后
+降低预期关键路径和资源成本，不是机械最大化第三方覆盖率，也不是看到一个 HYLE kernel 的局部点值更快
+就强行切开 region。
+
+性能信息分三层使用：
+
+1. 结构事实先排除会增加不可接受 copy、host wait、内存、线程嵌套或不兼容 layout 的候选；
+2. 资格化 evidence profile 只在绑定 provider/version、device/ISA、dtype/layout 和 shape domain 时用于
+   冷路由；不同 provider 各自声明、基准边界不同的纳秒估值不能直接相加或排序；
+3. 长寿命推理计划可以显式选择 tune-once，对已通过语义门的少量歧义候选在真实目标上同合同测量并缓存
+   结果；tuning 的时间、scratch 和副作用在 compile report 中可见，普通确定性构建可以禁用。
+
+无合格性能证据、结果不可分或小于预声明 material 门时，优先成熟实现；HYLE 自实现只在精确适用域内
+成为首选。route 在 prepare/compile 后冻结，steady replay 不查 profile、不计时、不搜索、不重新建图。
+缓存 identity 至少绑定 HYLE/provider 版本、backend/device/driver、operation/region fingerprint、shape、
+layout/precision 和构建 feature；任一相关身份变化都重新裁决，不能继承旧机器的赢家。
+
+### 2.6 “借能力广度”与“保留全局性能权”怎样同时成立
+
+这两个目标不是二选一。固定分工如下：
+
+| 决策 | 唯一 owner | 说明 |
+|---|---|---|
+| 公共算子语义、逻辑 DAG、shape/precision | HYLE | 用户不写 `GgmlMatMul`、`CublasMatMul` 等平行图 |
+| region 边界、target/storage/lane、跨 region copy/sync、全局 liveness/workspace | HYLE Graph | 这是 HYLE 不可外包的全局计划权 |
+| region 内 kernel、fusion、私有 layout、局部 workspace 与局部顺序 | 入选 Provider | HYLE 不拆开厂商或成熟 runtime 已经优化好的黑盒 |
+| 最终 route | HYLE 冷路径 selector | 比较完整可执行计划；Provider 不能用名称或自报局部点值直接获胜 |
+| steady replay | 已冻结的 `Executable` | 不搜索、不计时、不重新建图，也不按节点再问 Provider |
+
+因此“使用第三方”不是让 ggml、MLX 或 TensorRT 接管 HYLE Graph，而是把一个已经由 HYLE 划定边界的
+segment 外包给它；“HYLE 自实现胜出”也不是强行替换第三方黑盒里的私有 kernel，而是在相同 HYLE
+boundary 上提交一个竞争候选。若拆开第三方 region 会丢失 fusion 或增加 copy/repack/sync，局部更快的
+HYLE kernel 仍可以在完整计划上落败。反过来，只要 HYLE 单 op 或融合 region 在精确适用域内形成合格的
+material 胜利，selector 就能选择它，而无需改变用户 Graph。
+
+Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承诺稳定的动态插件 ABI。普通用户只看到
+`Operation`、`Context`、`Executable` 与公开 provider factory；新增第三方实现由独立 factor 完成版本、
+许可证、三交付和 backend-specific runtime 审计。需要用户自定义计算时使用 typed custom operation/kernel
+入口，但它的数值 schema identity 必须跨 source/static/shared 成立，不能依赖某个 DSO 内静态对象的地址。
+
+### 2.7 规范例：CUDA 上的 Q4 MatMul 怎样路由
+
+以 `RMSNorm -> Q4 gate/up MatMul -> SwiGLU -> Q4 down MatMul` 为例；单独一个 Q4 MatMul 是它的退化情形。
+正确流程是：
+
+1. 模型 loader 用普通 `MatMul` 表达逻辑计算。权重 `TensorDesc` 仍声明逻辑 scalar/shape，同时用对应
+   Provider 发布的 `StorageFormatId`、block elements/bytes、alignment 与 byte strides 表达 Q4 物理编码；
+   scale/zero 等若不是块内编码，则是显式 typed tensor input，不能藏进 `void *` metadata；
+2. 用户或上层引擎明确把 activation、weight 与 output 放在 CUDA storage，或允许 Graph 选择其它 target。
+   “CUDA backend 已存在”只证明能建立 context/queue/memory/event/copy，不证明任何 Q4 算子已经存在；
+3. 冷编译枚举精确候选。例如 HYLE/CUTLASS 自实现的 Q4 kernel、确实接受该格式的 NVIDIA vendor route、
+   ggml CUDA 单节点 artifact，以及覆盖整个 MLP 的 ggml compiled region。不能理解该 `StorageFormatId` 的
+   Provider 必须返回 `Unimplemented`，不得把压缩 bytes 当普通标量或偷偷反量化；
+4. 对每个候选先检查 dtype/precision、shape、alignment、alias、CUDA device、buffer import、stream/event
+   与 completion 可行性。ggml 若只能使用自有 allocation/stream，就成为 delegated island，并显式产生
+   ingress/egress、常驻显存和同步成本；若公开合同允许 caller storage/stream，才可成为 shared-runtime；
+5. selector 比较的是完整候选计划：kernel/region 执行、constant packing、copy/repack、launch/event、
+   host/thread handoff、丢失或保留的 fusion、workspace/persistent budget 与 compile amortization。不能只拿
+   `q4_matmul` 私有 kernel 的一次耗时决定是否切开四节点 region；
+6. 若 HYLE Q4 MatMul 的合格收益大于拆分边界成本，可只切出该节点；若权重已在 ggml-owned storage、相邻
+   SwiGLU/MatMul 能融合，完整 ggml region 可能仍胜出；若 HYLE 的整段融合实现后来胜出，再把整个 region
+   替换为 HYLE artifact。没有可比较证据时选择已配置的成熟路线，不用微基准猜测；
+7. 编译结果固定 provider、artifact、packing、storage、lane、workspace 与 Completion 路线，并在 report
+   中说明为什么选中/拒绝每类候选。后续 token replay 只重绑动态 activation/KV 等 invocation storage，
+   不再路由或重新构造 ggml graph。
+
+若当前构建只有 CUDA runtime、没有任何接受该 Q4 格式的 operation/region Provider，唯一正确结果就是
+`Unimplemented`。这不是“自动 fallback 还没写好”，而是防止错误计算、隐藏 CPU offload 和伪零拷贝的
+必要合同。
+
 ## 3. Backend 与 Provider 是两条轴
 
 这两个概念不得再混成一个“大后端”枚举：
@@ -375,25 +502,31 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
    CPU kernel catalog；只实现随后 runtime/Graph 纵切实际需要的最小算子集合。
 4. **立即接 Graph 纵切**：Graph 只做一个节点也能编译为 `Executable` 并通过 `Invocation` 运行；此时
    验出抽象税，而不是等 Compute 大全套完成后才发现形状不合。
-5. **多节点 CPU slice**：以量化模型中的 normalization → matmul → gated activation 为首个真实片段，
-   加 liveness/alias/workspace、ggml/oneDNN 候选 provider 和直接路线对拍。
-6. **异步资源探针**：先在 CUDA 走通同一 storage domain 上的 copy lane → compute lane → copy lane，
+5. **统一 route selection**：把单-op proposal 与 compiled-region proposal 放入同一有界计划搜索，先完成
+   resource/ownership 筛选，再使用资格化 profile 或显式 tune-once 比较完整边界成本；修复 typed custom
+   operation 的 source/static/shared identity。此前按最大覆盖选择 region 的实现不能作为本阶段完成品。
+6. **真实 CPU region**：以量化模型中的 normalization → matmul → gated activation 为首个多节点片段，
+   加 liveness/alias/workspace，并用 oneDNN 等成熟 Provider 验证 leaf/region 竞争。CPU ggml 当前 blocker
+   不在关键路径上，也不能用空 factor 冒充纵切。
+7. **异步资源探针**：先在 CUDA 走通同一 storage domain 上的 copy lane → compute lane → copy lane，
    覆盖 device dependency、Completion 聚合和 capture/replay；它是 execution-lane 合同的验收，不是提前
    扩大 CUDA 算子目录。
-7. **主要平台 slice**：NVIDIA 走 CUDA backend 与合格 CUDA providers；Apple 先资格化 MLX delegated
+8. **CUDA Q4 路由纵切**：用 Q4 MatMul/MLP 同时验收 HYLE/vendor leaf、第三方 compiled region、量化
+   storage residence、完整成本裁决与 warm fixed-plan；没有合法 Provider 时保持 `Unimplemented`。
+9. **主要平台 slice**：NVIDIA 继续扩 CUDA providers；Apple 先资格化 MLX delegated
    region，验证 provider-owned runtime 的 boundary/completion bridge；同轮建立原生 Metal custom-kernel/
    interop 路线并审计 MPSGraph/MPS；随后扩 attention、quantized matmul、repack 和异构 partition。Core ML
    不进入首轮低层路线。
-8. **Vulkan slice**：同一 graph/op 合同落到 SPIR-V，验证 native device、buffer、timeline completion、
+10. **Vulkan slice**：同一 graph/op 合同落到 SPIR-V，验证 native device、buffer、timeline completion、
    external memory/sync 与 Windows/Linux 消费级设备；MoltenVK 只签 portability 证据。
-9. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
+11. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
    invocation、取消/drain 和 source/static/shared 交付门。
-10. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
+12. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
    证明上述对象与执行合同不再需要改写后，才按推理热路径与正交工程 workload 系统补齐 CPU 算子；
    每条新 route 复用既有 plan/provider seam，不借“补算子”重新设计 runtime。
 
 因此本顺序不是“先造所有算子，再看它们能否组成图”，也不是脱离执行负载追求抽象意义上的完整 Graph。
-在第 3--9 步，每条纵切只补充用于验证 ownership、layout、partition、workspace、completion 或异步语义的
+在第 3--11 步，每条纵切只补充用于验证 ownership、layout、partition、workspace、completion 或异步语义的
 最少算子；目录式 CPU kernel 填充必须等待这些结构经真实消费链压实。进度报告也必须把“schema 已定义”、
 “已有 executable route”和“系统性 catalog 完成”分开，不能用前两者冒充第三者。
 

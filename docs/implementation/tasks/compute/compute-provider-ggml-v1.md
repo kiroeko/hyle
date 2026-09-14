@@ -126,3 +126,16 @@ disposable-pool 问题；把冷路径 abort 写成限制会破坏 HYLE 工程章
 caller-owned context/threadpool/plan seam，或者 HYLE 另行登记并审计一个明确维护成本、升级策略和三交付
 合同的 source patch factor；恢复后必须重新从 `SCOPED` 冻结有限实现集。Graph 的真实 multi-op region
 资格转交 oneDNN Graph 独立 factor，不让本 blocker 污染 Compute/Graph 主闭包。
+
+## 跨 backend 需求校准（2026-09-14）
+
+后续“借 ggml 的算子广度，同时由 HYLE 保留全局计划”的需求不解除上述 **CPU** blocker。锁定版本的
+公开 backend graph submit、event 与 provider-owned buffer 足以让 CUDA/Metal/Vulkan delegated region 各自
+形成独立审计候选，但这些 backend 的 memory、stream/queue、completion、错误和 build SDK 合同互不等价。
+因此不得把本通用名称解释为全部 ggml 能力，也不得以 CPU threadpool 问题否决 GPU 路线。
+
+预发布阶段的正确迁移是：本 record 继续只记录既有 CPU 审计事实；真正开工时新增 backend-qualified
+component identity（如 `compute_provider_ggml_cuda`），以公开 API 的单节点或多节点 compiled graph 为
+自然复用单位。只有 adapter 实际完成 HYLE Operation/region、storage boundary、失败和 Completion 翻译后，
+该 factor 才拥有能力。调用 `ggml_cuda_compute_forward`、`ggml_cuda_mul_mat` 等私有实现符号不属于普通
+adapter；若 material 证据要求叶级替换，应另立版本锁定的 source-patch/kernel factor。
