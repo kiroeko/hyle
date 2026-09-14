@@ -13,10 +13,21 @@
 #include "hyle/compute/detail/resource_binding.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
+#include "shape_domain.h"
 
 namespace hyle::compute::detail {
 
 struct ContextState;
+
+inline constexpr std::uint32_t kProviderContractVersion = 2;
+
+struct ProviderOperationRequest final {
+  Operation operation{};
+  // Exact descriptors when shape is empty; otherwise the domain's upper point.
+  std::span<const TensorDesc> inputs{};
+  std::span<const TensorDesc> outputs{};
+  ProviderShapeDomain shape{};
+};
 
 // Provider-owned work that is visible at the canonical operation boundary.
 // These are structural facts, not benchmark scores. Unknown byte counts stay
@@ -38,6 +49,7 @@ struct ProviderOperationProposal final {
   ProviderRuntimeProperties runtime{};
   ResourceBindingRequirement workspace_resource{};
   ProviderRouteCostFacts cost{};
+  ProviderShapeCoverage shape_coverage = ProviderShapeCoverage::kExactPoint;
 };
 
 struct ProviderPrepareRequest final {
@@ -138,17 +150,19 @@ struct ProviderPrepareAttempt final {
 };
 
 struct ProviderVTable final {
+  // Private, same-build factor contract, not a dynamic plugin ABI. Mismatches
+  // are rejected before provider context creation; there is no legacy table.
+  std::uint32_t contract_version = kProviderContractVersion;
   ProviderIdentity identity{};
   Status (*create_context)(const Provider &provider, Device device,
                            void *backend_context, mem::AllocatorRef allocator,
                            void **context) noexcept = nullptr;
   void (*destroy_context)(void *context,
                           mem::AllocatorRef allocator) noexcept = nullptr;
-  // Cold, allocation-free capability/resource proposal. Caller supplies one
-  // requirement slot per input/output. Unimplemented declines this route.
-  Status (*propose)(void *context, Operation operation,
-                    std::span<const TensorDesc> inputs,
-                    std::span<const TensorDesc> outputs,
+  // Cold capability/resource proposal, allocation-free on success. Caller
+  // supplies one requirement slot per input/output. Unimplemented declines
+  // this route; its Status diagnostic may allocate.
+  Status (*propose)(void *context, const ProviderOperationRequest &request,
                     std::span<ResourceBindingRequirement> input_requirements,
                     std::span<ResourceBindingRequirement> output_requirements,
                     ProviderOperationProposal *proposal) noexcept = nullptr;
@@ -184,7 +198,8 @@ struct OperationPreparationAccess final {
           Operation operation, std::span<const TensorDesc> inputs,
           std::span<const TensorDesc> outputs,
           std::span<ResourceBindingRequirement> input_requirements,
-          std::span<ResourceBindingRequirement> output_requirements) noexcept;
+          std::span<ResourceBindingRequirement> output_requirements,
+          ProviderShapeDomain shape = {}) noexcept;
 
   HYLE_COMPUTE_API static Result<PreparedOperation>
   prepare(const Context &context, const ProviderOperationProposal &proposal,

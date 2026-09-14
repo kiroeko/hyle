@@ -6,5 +6,6 @@ hyle_add_module(compute SOURCES
   device.cc
   operation.cc
   provider.cc
+  shape_domain.cc
   tensor_view.cc
   transfer.cc)

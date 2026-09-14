@@ -312,15 +312,20 @@ host_requirement(const TensorDesc &description) noexcept {
 }
 
 Status propose(
-    void *context_value, Operation operation,
-    std::span<const TensorDesc> inputs,
-    std::span<const TensorDesc> outputs,
+    void *context_value, const detail::ProviderOperationRequest &request,
     std::span<detail::ResourceBindingRequirement> input_requirements,
     std::span<detail::ResourceBindingRequirement> output_requirements,
     detail::ProviderOperationProposal *proposal) noexcept {
   if (proposal == nullptr)
     return Status::InvalidArgument("oneDNN proposal output is null");
   *proposal = {};
+  if (!request.shape.exact()) {
+    return Status::Unimplemented(
+        "oneDNN direct provider requires an exact shape");
+  }
+  const Operation operation = request.operation;
+  const auto inputs = request.inputs;
+  const auto outputs = request.outputs;
   if (input_requirements.size() != inputs.size() ||
       output_requirements.size() != outputs.size()) {
     return Status::InvalidArgument(

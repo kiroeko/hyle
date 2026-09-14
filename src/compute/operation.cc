@@ -537,7 +537,8 @@ detail::OperationPreparationAccess::propose(
     std::span<const TensorDesc> inputs,
     std::span<const TensorDesc> outputs,
     std::span<ResourceBindingRequirement> input_requirements,
-    std::span<ResourceBindingRequirement> output_requirements) noexcept {
+    std::span<ResourceBindingRequirement> output_requirements,
+    ProviderShapeDomain shape) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -559,6 +560,9 @@ detail::OperationPreparationAccess::propose(
     return std::unexpected(Status::InvalidArgument(
         "operation binding arity does not match its schema"));
   }
+  Status domain_status = validate_shape_domain(shape, inputs, outputs);
+  if (!domain_status.ok())
+    return std::unexpected(std::move(domain_status));
   Status inference =
       validate_inferred_outputs(operation, inputs, outputs, state->allocator);
   if (!inference.ok())
@@ -577,11 +581,22 @@ detail::OperationPreparationAccess::propose(
   const detail::ProviderVTable *table =
       detail::ProviderAccess::vtable(slot.provider);
   detail::ProviderOperationProposal proposal{};
-  Status status = table->propose(slot.state, operation, inputs, outputs,
+  const ProviderOperationRequest request{operation, inputs, outputs, shape};
+  Status status = table->propose(slot.state, request,
                                  input_requirements, output_requirements,
                                  &proposal);
   if (!status.ok())
     return std::unexpected(std::move(status));
+  if (proposal.shape_coverage != ProviderShapeCoverage::kExactPoint &&
+      proposal.shape_coverage != ProviderShapeCoverage::kEntireDomain) {
+    return std::unexpected(Status::Internal(
+        "compute provider returned invalid shape coverage"));
+  }
+  if (!shape.exact() &&
+      proposal.shape_coverage != ProviderShapeCoverage::kEntireDomain) {
+    return std::unexpected(Status::Unimplemented(
+        "compute provider only supports an exact shape point"));
+  }
   proposal.context = state;
   proposal.provider = table->identity;
   proposal.provider_index = provider_index;

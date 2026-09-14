@@ -50,5 +50,37 @@ replay 成本元数据附着既有 Provider runtime facts，仅供冷准备/诊�
 allocator，不为冷 shape 整数检查重开 Math。P0 检查没有热路径调用/分配增加；三交付必须验证跨 factor
 私有 SPI，公开指南继续区分当前能力和未完成的 C92/Graph/Apple 路线。
 
-本卡在既有 AUDITED 阶段重新确定有限范围；只授权 C90--C94。产品验证尚未执行，状态保持 `AUDITED`，
-不签 Candidate、CLOSED 或性能 PASS。记录初始范围后再提交产品代码；后续事实追加在本卡，不回写 v8。
+本卡在既有 AUDITED 阶段重新确定有限范围；只授权 C90--C94。授权时产品验证尚未执行，状态保持
+`AUDITED`，不签 Candidate、CLOSED 或性能 PASS。后续事实追加在本卡，不回写 v8。
+
+## 2026-09-14 C90 / C94 迁移检查点
+
+私有 `ProviderOperationRequest` 已替换旧 propose 签名，携带独立 ranges、重复轴 equality 和上界 tensor
+metadata；私有表版本为 2。Context 在创建不兼容 Provider context 前拒绝版本失配，并回收此前创建的
+context。Native、oneDNN direct、Graph oneDNN single-op 拒绝适配器及测试 Provider 全部迁移，无旧表分支。
+
+shape validation/binding 的成功路径为 `O(S + (I + O) × R)`、零 heap allocation，`R ≤ 8`；具体 descriptor
+写入 caller scratch。错误诊断仍使用 Error 的带消息 Status，可能分配，不能把它写成所有路径零分配。
+空域保留 exact 路线，不额外遍历轴；submit、kernel、Queue、Completion 和 direct Provider 顺序未修改。
+
+定向红队/反例覆盖：range 端点不整除与 `INT64_MAX`、相同范围的独立 symbol、重复轴绑定、零尺寸、
+未知 symbol/越 rank map、错误 upper point、storage block 不完整、dynamic strided/opaque 拒绝、exact
+strided/opaque 原样保留、caller scratch 和版本失配后的逆序回收。非 exact request 要求显式 entire-domain
+承诺；未知 coverage 值拒绝。真实 Native/oneDNN 均仍 exact-only，测试 probe 的 entire-domain 只验证
+能力传递，**不证明**任何真实 bounded artifact 已实现。
+
+本工作树验证：
+
+- Windows Release source-tree shared/static：Compute、CPU backend、Native、Graph 两类单元与逐头，各
+  9/9 通过；两类构建分别覆盖 212 个单元用例。
+- oneDNN-enabled shared：Graph/region/direct/composition/逐头初跑 7/8。新增 shape 测试把 8-row serial
+  route 错当 oneDNN 支持项；源码确认该形状原本按合同留给 Native。仅把 fixture 改为已有支持测试的
+  16-row 形状，失败组复跑 1/1 通过（12 个用例）；没有修改 kernel、cutoff 或路由策略。
+- 首次编译还纠正草稿中 `StorageFormat` accessor 的拼写；没有留下未编译产品文件。
+- closure checker（含 `--previous-ref 401d29698e1cd1e9d07f16c733c0c442246cd8f8`）、docs checker、
+  `git diff --check` 通过。编译并行度限制为 2，未跑全库测试或 P1。
+
+这些是 Windows 增量检查点；本树尚未跑 Linux/macOS、sanitizer、installed SDK journeys 和基础 P1。
+C91、C92、C93 仍待实现，Graph 尚未把 bounded domain 接入实际编译/绑定；C90 substrate 不等于 A2
+完成。下一步仍是本卡的 replay facts、有限派生 shape 与身份合同，然后按总任务接 Graph/真实 Provider。
+组件保持 `AUDITED`，没有签发基础框架完成或任何新性能胜利。

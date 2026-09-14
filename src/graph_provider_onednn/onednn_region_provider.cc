@@ -879,8 +879,7 @@ void destroy_context(void *context_value,
 }
 
 Status propose_single(
-    void *, Operation, std::span<const TensorDesc>,
-    std::span<const TensorDesc>,
+    void *, const compute::detail::ProviderOperationRequest &,
     std::span<compute::detail::ResourceBindingRequirement>,
     std::span<compute::detail::ResourceBindingRequirement>,
     compute::detail::ProviderOperationProposal *) noexcept {

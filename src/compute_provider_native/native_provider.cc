@@ -994,14 +994,20 @@ host_requirement(const TensorDesc &description) noexcept {
 }
 
 Status
-propose(void *context_value, Operation operation,
-        std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
+propose(void *context_value, const detail::ProviderOperationRequest &request,
         std::span<detail::ResourceBindingRequirement> input_requirements,
         std::span<detail::ResourceBindingRequirement> output_requirements,
         detail::ProviderOperationProposal *proposal) noexcept {
   if (proposal == nullptr)
     return Status::InvalidArgument("native proposal output is null");
   *proposal = {};
+  if (!request.shape.exact()) {
+    return Status::Unimplemented(
+        "native provider requires an exact shape until bounded binding is prepared");
+  }
+  const Operation operation = request.operation;
+  const auto inputs = request.inputs;
+  const auto outputs = request.outputs;
   if (input_requirements.size() != inputs.size() ||
       output_requirements.size() != outputs.size()) {
     return Status::InvalidArgument(

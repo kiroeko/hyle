@@ -69,9 +69,7 @@ void destroy_provider_context(void *context, hyle::mem::AllocatorRef) noexcept {
 }
 
 hyle::Status propose_provider(
-    void *context, hyle::compute::Operation,
-    std::span<const hyle::compute::TensorDesc>,
-    std::span<const hyle::compute::TensorDesc>,
+    void *context, const hyle::compute::detail::ProviderOperationRequest &,
     std::span<hyle::compute::detail::ResourceBindingRequirement>,
     std::span<hyle::compute::detail::ResourceBindingRequirement>,
     hyle::compute::detail::ProviderOperationProposal *) noexcept {
@@ -155,6 +153,12 @@ struct AsyncOperationProbe final {
   hyle::Status abandoned_hint{};
   PrepareDisposition prepare_disposition = PrepareDisposition::kPrepared;
   bool return_partial_artifact = false;
+  std::size_t proposal_count = 0;
+  std::size_t shape_symbol_count = 0;
+  bool shape_shares_input_output_axis = false;
+  hyle::compute::detail::ProviderShapeRange observed_shape_range{};
+  hyle::compute::detail::ProviderShapeCoverage shape_coverage =
+      hyle::compute::detail::ProviderShapeCoverage::kExactPoint;
 };
 
 hyle::Status create_async_context(const hyle::compute::Provider &provider,
@@ -264,12 +268,19 @@ const hyle::compute::detail::ProviderPreparedVTable kAsyncPreparedVTable{
 };
 
 hyle::Status propose_async_operation(
-    void *, hyle::compute::Operation,
-    std::span<const hyle::compute::TensorDesc>,
-    std::span<const hyle::compute::TensorDesc>,
+    void *context,
+    const hyle::compute::detail::ProviderOperationRequest &request,
     std::span<hyle::compute::detail::ResourceBindingRequirement>,
     std::span<hyle::compute::detail::ResourceBindingRequirement>,
     hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
+  auto &probe = *static_cast<AsyncOperationProbe *>(context);
+  ++probe.proposal_count;
+  probe.shape_symbol_count = request.shape.symbols.size();
+  if (!request.shape.symbols.empty())
+    probe.observed_shape_range = request.shape.symbols.front();
+  probe.shape_shares_input_output_axis =
+      !request.shape.inputs.empty() && !request.shape.outputs.empty() &&
+      request.shape.inputs[0].symbols[0] == request.shape.outputs[0].symbols[0];
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = 1,
       .runtime = hyle::compute::ProviderRuntimeProperties{
@@ -283,6 +294,7 @@ hyle::Status propose_async_operation(
       .cost = hyle::compute::detail::ProviderRouteCostFacts{
           .workspace = hyle::compute::WorkspaceRequirement{},
       },
+      .shape_coverage = probe.shape_coverage,
   };
   return hyle::Status::Ok();
 }
@@ -828,14 +840,15 @@ constexpr hyle::compute::ProviderRuntimeProperties kDelegatedRuntime{
 };
 
 hyle::Status propose_delegated(
-    void *, hyle::compute::Operation operation,
-    std::span<const hyle::compute::TensorDesc> inputs,
-    std::span<const hyle::compute::TensorDesc> outputs,
+    void *, const hyle::compute::detail::ProviderOperationRequest &request,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
         input_requirements,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
         output_requirements,
     hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
+  const auto operation = request.operation;
+  const auto inputs = request.inputs;
+  const auto outputs = request.outputs;
   if (proposal == nullptr || operation.kind() !=
                                  hyle::compute::OperationKind::kUnary ||
       inputs.size() != 1 || outputs.size() != 1 ||
@@ -1248,6 +1261,77 @@ TEST(RuntimeProviders, RejectsProviderWithoutRequiredDrainContract) {
   ASSERT_FALSE(created.has_value());
   EXPECT_TRUE(created.error().IsInvalidArgument());
   EXPECT_EQ(probe.create_count, 0u);
+}
+
+TEST(RuntimeProviders, RejectsPrivateContractMismatchAndUnwindsEarlierContexts) {
+  ProviderProbe probe;
+  auto incompatible_table = kProviderVTable;
+  incompatible_table.contract_version =
+      hyle::compute::detail::kProviderContractVersion + 1;
+  const auto incompatible = hyle::compute::detail::ProviderAccess::make(
+      &incompatible_table, ProviderPayload{&probe, 1});
+  const std::array providers{make_provider(probe, 0), incompatible};
+  auto context = hyle::compute::Context::create(
+      hyle::compute::cpu::device(),
+      hyle::compute::ContextOptions{.providers = providers});
+  ASSERT_FALSE(context.has_value());
+  EXPECT_TRUE(context.error().IsInvalidArgument());
+  ASSERT_EQ(probe.create_count, 1u);
+  ASSERT_EQ(probe.destroy_count, 1u);
+  EXPECT_EQ(probe.created[0], 0u);
+  EXPECT_EQ(probe.destroyed[0], 0u);
+}
+
+TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
+  using namespace hyle::compute;
+  using namespace hyle::compute::detail;
+  AsyncOperationProbe probe;
+  auto context = Context::create(cpu::device(), make_async_provider(probe)).value();
+  const std::array<std::int64_t, 1> upper_shape{8};
+  const std::array descriptions{
+      TensorDesc::dense(DataType::kFloat32, upper_shape).value()};
+  std::array ranges{ProviderShapeRange{1, 8, 2}};
+  std::array<ProviderTensorAxes, 1> axes{};
+  axes[0].symbols[0] = 0;
+  const ProviderShapeDomain domain{ranges, axes, axes};
+  std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
+  const auto propose = [&]() {
+    return OperationPreparationAccess::propose(
+        context, 0, Operation(Unary{UnaryKind::kNeg}), descriptions,
+        descriptions, inputs, outputs, domain);
+  };
+  auto exact_only = propose();
+  ASSERT_FALSE(exact_only.has_value());
+  EXPECT_TRUE(exact_only.error().IsUnimplemented());
+  EXPECT_EQ(probe.proposal_count, 1u);
+  EXPECT_EQ(probe.shape_symbol_count, 1u);
+  EXPECT_EQ(probe.observed_shape_range, ranges[0]);
+  EXPECT_TRUE(probe.shape_shares_input_output_axis);
+
+  // This probe verifies the capability seam, not a real bounded runtime.
+  probe.shape_coverage = ProviderShapeCoverage::kEntireDomain;
+  auto entire = propose();
+  ASSERT_TRUE(entire.has_value()) << entire.error().message();
+  EXPECT_EQ(entire->shape_coverage, ProviderShapeCoverage::kEntireDomain);
+  probe.shape_coverage = static_cast<ProviderShapeCoverage>(255);
+  auto invalid = propose();
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsInternal());
+  EXPECT_EQ(probe.proposal_count, 3u);
+
+  ranges[0].maximum = 7;
+  auto malformed = propose();
+  ASSERT_FALSE(malformed.has_value());
+  EXPECT_TRUE(malformed.error().IsInvalidArgument());
+  EXPECT_EQ(probe.proposal_count, 3u);
+
+  ranges[0] = ProviderShapeRange{7, 9, 8};
+  probe.shape_coverage = ProviderShapeCoverage::kExactPoint;
+  auto singleton = propose();
+  ASSERT_TRUE(singleton.has_value()) << singleton.error().message();
+  EXPECT_EQ(singleton->shape_coverage, ProviderShapeCoverage::kExactPoint);
+  EXPECT_EQ(probe.prepare_count, 0u);
+  EXPECT_EQ(probe.submit_count, 0u);
 }
 
 TEST(RuntimeProviders, OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime) {

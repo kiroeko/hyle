@@ -786,13 +786,16 @@ const hyle::compute::detail::ProviderPreparedVTable
     };
 
 Status propose_single(
-    void *context, Operation operation, std::span<const TensorDesc> inputs,
-    std::span<const TensorDesc> outputs,
+    void *context,
+    const hyle::compute::detail::ProviderOperationRequest &request,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
         input_requirements,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
         output_requirements,
     hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
+  const Operation operation = request.operation;
+  const auto inputs = request.inputs;
+  const auto outputs = request.outputs;
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_prepare_count;
   const bool effect = operation.custom_as<ExternalEffect>().has_value();

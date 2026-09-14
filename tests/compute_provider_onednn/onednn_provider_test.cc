@@ -18,6 +18,7 @@
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
+#include "provider_internal.h"
 
 namespace {
 
@@ -159,6 +160,35 @@ TEST(OneDnnProvider, ExposesStableIdentity) {
 
   const hyle::compute::ParallelExecutorRef serial(nullptr, 8, nullptr);
   EXPECT_EQ(serial.concurrency(), 1U);
+}
+
+TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
+  using namespace hyle::compute::detail;
+  auto context = Context::create(hyle::compute::cpu::device(),
+                                 hyle::compute::onednn::provider()).value();
+  // Match the supported prefill shape below; tiny serial decode deliberately
+  // declines to Native independently of the shape-domain contract.
+  const std::array inputs{matrix(16, 5), matrix(5, 4)};
+  const std::array outputs{matrix(16, 4)};
+  std::array ranges{ProviderShapeRange{1, 16, 1}};
+  std::array<ProviderTensorAxes, 2> input_axes{};
+  std::array<ProviderTensorAxes, 1> output_axes{};
+  input_axes[0].symbols[0] = output_axes[0].symbols[0] = 0;
+  const ProviderShapeDomain domain{ranges, input_axes, output_axes};
+  std::array<ResourceBindingRequirement, 2> input_requirements{};
+  std::array<ResourceBindingRequirement, 1> output_requirements{};
+  const auto propose = [&]() {
+    return OperationPreparationAccess::propose(
+        context, 0, hyle::compute::Operation(MatMul{}), inputs, outputs,
+        input_requirements, output_requirements, domain);
+  };
+  auto bounded = propose();
+  ASSERT_FALSE(bounded.has_value());
+  EXPECT_TRUE(bounded.error().IsUnimplemented());
+  ranges[0].minimum = 16;
+  auto exact = propose();
+  ASSERT_TRUE(exact.has_value()) << exact.error().message();
+  EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);
 }
 
 TEST(OneDnnProvider, InternalPlanExecutesSharedLeftPairInOneEpisode) {

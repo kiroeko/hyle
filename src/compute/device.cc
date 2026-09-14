@@ -96,6 +96,12 @@ create_context_state(Device device, ContextOptions options,
   ContextState::ProviderSlot *slots = state->providers();
   for (const Provider &provider : options.providers) {
     const ProviderVTable *table = ProviderAccess::vtable(provider);
+    if (table != nullptr &&
+        table->contract_version != kProviderContractVersion) {
+      detail::release(state);
+      return std::unexpected(
+          Status::InvalidArgument("compute provider contract version mismatch"));
+    }
     if (table == nullptr || !table->identity.valid() ||
         table->create_context == nullptr || table->destroy_context == nullptr ||
         table->propose == nullptr || table->prepare == nullptr ||
