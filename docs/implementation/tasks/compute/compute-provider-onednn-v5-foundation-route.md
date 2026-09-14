@@ -3,6 +3,9 @@
 Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 请求签名迁移属于 OD50；本 Provider
 继续 exact-only。已有 kernel/公开工厂不变，非 exact domain 必须在准备重型 artifact 前拒绝。
 
+C91 的 replay facts 属于 OD51：现有已准备 BRGEMM 路线明确 prepared，第三方 JIT 仍仅发生在 prepare；
+不因默认 metadata 改写 warm allocation 或 executor 的 owner 合同。
+
 ## Closure card
 
 - component / owner：`compute_provider_onednn` / oneDNN provider；round=`compute-provider-onednn-v5-foundation-route`；

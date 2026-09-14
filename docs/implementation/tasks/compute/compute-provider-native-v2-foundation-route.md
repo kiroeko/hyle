@@ -4,6 +4,9 @@ Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 请求签�
 N20/N21 的直接 SPI 影响；不新增 kernel 或放宽 Native prepared 合同。N22 仍须真实 bounded probe，
 不能以新请求能通过编译代替。
 
+C91 的 replay facts 属于 N21：给现有成功 Native replay 明确 prepared 声明，调用方 executor 的内部
+成本仍由其 owner 负责；不改变 kernel/线程策略，不把未完成 N22 写成 bounded qualified。
+
 ## Closure card
 
 - component / owner：`compute_provider_native` / Native provider；round=`compute-provider-native-v2-foundation-route`；

@@ -44,6 +44,13 @@ public direct `prepare()` 和 Context provider 顺序不变。私有 `ProviderOp
 replay 成本元数据附着既有 Provider runtime facts，仅供冷准备/诊断；实际 prepared-only 筛选随 Graph
 后继卡实现。它不新增 CMake 开关，不使现有 direct 用户额外配置 Graph，也不恢复 Native FFI。
 
+C91 固定 C++ 形状：`ProviderReplayClass::{kUnknown,kPrepared,kManaged}` 与
+`ProviderRuntimeProperties::replay_class`（默认 unknown），value type 提供 `valid()` 与完整 equality，
+Compute/Graph 共用，不能漏比较新增字段。proposal 与最终 artifact 必须一致；该分类声明本 Provider
+成功 replay 的成本合同，不替调用方提供的 executor/回调证明零成本，也不包含失败诊断的 Status 分配。
+不由 shared/delegated、provider 名称或 capture flag 自动推导分类。Graph 迁移见
+[v10 G100](graph-v10-reviewed-foundation-contracts.md)。
+
 ## 七问与当前裁决
 
 没有新增依赖/许可证；需求由四引擎与 MLX 复核支撑，具体源码在总审计。复用 Error、TensorDesc 和 Mem

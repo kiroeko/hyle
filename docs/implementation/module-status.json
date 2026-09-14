@@ -279,8 +279,8 @@
     {
       "module": "graph",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/graph-v9-foundation-routing.md",
-      "summary": "graph v9 AUDITED：保留 DAG、三轴资源、liveness/workspace/Completion 骨架；G90--G97 有限重构 node-set region、exact+bounded shape、leaf/region 同池选择、事务化重选、逐常量 ownership 与可解释 report。"
+      "record": "docs/implementation/tasks/compute/graph-v10-reviewed-foundation-contracts.md",
+      "summary": "graph v10 AUDITED：承接 node-set 与三轴资源骨架，G100--G107 按整体复核补 replay 分类、派生 shape、统一选择/可行解预算、资源域与 variant 常量内存聚合；热执行与完成边界不放宽，基础仍未验收。"
     },
     {
       "module": "container_concurrent",

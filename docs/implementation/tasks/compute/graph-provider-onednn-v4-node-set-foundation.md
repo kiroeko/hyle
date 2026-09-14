@@ -3,6 +3,9 @@
 Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 也迁移本 factor 的 single-op 拒绝
 适配器，属于 GP41/GP42 的私有 SPI 影响；它仍不提供 leaf，不改变已实现 node-set MLP 或 kernel。
 
+C91 的 replay facts 属于 GP41：已准备 MLP 明确 prepared；proposal/artifact 的成本类别必须一致，
+Graph 复用 Compute 的 value 合同校验，不增加 provider 热分支。
+
 ## Closure card
 
 - component / owner：`graph_provider_onednn` / Graph oneDNN provider；round=`graph-provider-onednn-v4-node-set-foundation`；
