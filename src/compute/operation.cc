@@ -1,11 +1,13 @@
 #include "hyle/compute/prepared_operation.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <new>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "backend_internal.h"
@@ -254,6 +256,77 @@ Result<detail::PreparedState *> make_prepared_state(
   }
   state->provider_prepared = provider_prepared;
   return state;
+}
+
+Result<detail::PreparedShapeDomain *>
+copy_shape_domain(detail::ProviderShapeDomain source,
+                  mem::AllocatorRef allocator) noexcept {
+  std::size_t bytes = sizeof(detail::PreparedShapeDomain);
+  const auto append = [&](std::size_t count, std::size_t element_size,
+                          std::size_t alignment) -> Result<std::size_t> {
+    const auto maximum = (std::numeric_limits<std::size_t>::max)();
+    if (bytes > maximum - alignment + 1)
+      return std::unexpected(
+          Status::OutOfRange("shape storage alignment overflows"));
+    const auto offset = align_up(bytes, alignment);
+    if (count > (maximum - offset) / element_size)
+      return std::unexpected(
+          Status::OutOfRange("shape storage size overflows"));
+    bytes = offset + count * element_size;
+    return offset;
+  };
+  HYLE_ASSIGN_OR_RETURN(const auto dimensions,
+                        append(source.dimensions.size(),
+                               sizeof(detail::ShapeDimension),
+                               alignof(detail::ShapeDimension)));
+  HYLE_ASSIGN_OR_RETURN(const auto inputs,
+                        append(source.inputs.size(),
+                               sizeof(detail::ProviderTensorAxes),
+                               alignof(detail::ProviderTensorAxes)));
+  HYLE_ASSIGN_OR_RETURN(const auto outputs,
+                        append(source.outputs.size(),
+                               sizeof(detail::ProviderTensorAxes),
+                               alignof(detail::ProviderTensorAxes)));
+  HYLE_ASSIGN_OR_RETURN(const auto guards,
+                        append(source.guards.size(), sizeof(detail::ShapeGuard),
+                               alignof(detail::ShapeGuard)));
+  void *allocation =
+      allocator.allocate(bytes, alignof(detail::PreparedShapeDomain));
+  if (allocation == nullptr)
+    return std::unexpected(
+        Status::ResourceExhausted("prepared shape storage allocation failed"));
+  auto *owned = ::new (allocation) detail::PreparedShapeDomain{};
+  owned->allocation_size = bytes;
+  const auto copy = [&]<class T>(std::span<const T> values,
+                                 std::size_t offset) {
+    static_assert(std::is_trivially_copyable_v<T> &&
+                  std::is_trivially_destructible_v<T>);
+    static_assert(alignof(detail::PreparedShapeDomain) >= alignof(T));
+    auto *destination =
+        reinterpret_cast<T *>(static_cast<std::byte *>(allocation) + offset);
+    std::uninitialized_copy(values.begin(), values.end(), destination);
+    return std::span<const T>(destination, values.size());
+  };
+  owned->view = {copy(source.dimensions, dimensions),
+                 copy(source.inputs, inputs), copy(source.outputs, outputs),
+                 copy(source.guards, guards)};
+  return owned;
+}
+
+bool valid_prepared_callbacks(
+    const detail::ProviderPrepared &prepared) noexcept {
+  const auto *table = prepared.vtable;
+  if (table == nullptr || table->destroy_prepared == nullptr ||
+      table->alias_support == nullptr || table->create_invocation == nullptr ||
+      table->destroy_invocation == nullptr || !prepared.runtime.valid())
+    return false;
+  if (prepared.runtime.mode == ProviderRuntimeMode::kSharedQueue)
+    return table->shared_submit != nullptr &&
+           table->delegated_submit == nullptr && table->endpoint == nullptr &&
+           table->can_import_endpoint == nullptr;
+  return table->shared_submit == nullptr &&
+         table->delegated_submit != nullptr && table->endpoint != nullptr &&
+         table->can_import_endpoint != nullptr;
 }
 
 struct ByteRange final {
@@ -637,7 +710,7 @@ detail::OperationPreparationAccess::prepare_candidate(
     std::span<const TensorDesc> outputs,
     std::span<const ResourceBindingRequirement> input_requirements,
     std::span<const ResourceBindingRequirement> output_requirements,
-    OperationResourceBindings resources) noexcept {
+    OperationResourceBindings resources, ProviderShapeDomain shape) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -661,10 +734,22 @@ detail::OperationPreparationAccess::prepare_candidate(
     return std::unexpected(Status::InvalidArgument(
         "operation binding arity does not match its schema"));
   }
-  Status status =
-      validate_inferred_outputs(operation, inputs, outputs, state->allocator);
+  Status status = validate_shape_domain(shape, inputs, outputs);
   if (!status.ok())
     return std::unexpected(std::move(status));
+  HYLE_RETURN_IF_ERROR(validate_operation_effects(operation));
+  if (shape.exact()) {
+    status =
+        validate_inferred_outputs(operation, inputs, outputs, state->allocator);
+    if (!status.ok())
+      return std::unexpected(std::move(status));
+  }
+  if ((proposal.shape_coverage != ProviderShapeCoverage::kExactPoint &&
+       proposal.shape_coverage != ProviderShapeCoverage::kEntireDomain) ||
+      (!shape.exact() &&
+       proposal.shape_coverage != ProviderShapeCoverage::kEntireDomain))
+    return std::unexpected(Status::InvalidArgument(
+        "operation proposal does not cover its shape domain"));
   if (proposal.provider_index >= state->provider_count) {
     return std::unexpected(
         Status::OutOfRange("compute provider index is out of range"));
@@ -738,6 +823,7 @@ detail::OperationPreparationAccess::prepare_candidate(
       .output_resources = resources.outputs,
       .workspace_resource = workspace_resource,
       .route = proposal.route,
+      .shape = shape,
   };
   const auto destroy_invalid = [&]() noexcept {
     if (provider_prepared.vtable != nullptr &&
@@ -775,24 +861,9 @@ detail::OperationPreparationAccess::prepare_candidate(
     return std::unexpected(Status::Internal(
         "compute provider returned an error with a prepared outcome"));
   }
-  const bool shared =
-      provider_prepared.runtime.mode == ProviderRuntimeMode::kSharedQueue;
-  if (provider_prepared.vtable == nullptr ||
-      provider_prepared.vtable->destroy_prepared == nullptr ||
-      provider_prepared.vtable->alias_support == nullptr ||
-      provider_prepared.vtable->create_invocation == nullptr ||
-      provider_prepared.vtable->destroy_invocation == nullptr ||
-      (shared &&
-       (provider_prepared.vtable->shared_submit == nullptr ||
-        provider_prepared.vtable->delegated_submit != nullptr ||
-        provider_prepared.vtable->endpoint != nullptr ||
-        provider_prepared.vtable->can_import_endpoint != nullptr)) ||
-      (!shared &&
-       (provider_prepared.vtable->shared_submit != nullptr ||
-        provider_prepared.vtable->delegated_submit == nullptr ||
-        provider_prepared.vtable->endpoint == nullptr ||
-        provider_prepared.vtable->can_import_endpoint == nullptr)) ||
-      !provider_prepared.runtime.valid() ||
+  if (!valid_prepared_callbacks(provider_prepared) ||
+      (shape.exact() ? provider_prepared.instantiate != nullptr
+                     : provider_prepared.instantiate == nullptr) ||
       provider_prepared.runtime != proposal.runtime ||
       !is_power_of_two(provider_prepared.workspace.alignment) ||
       (proposal.cost.workspace.has_value() &&
@@ -800,8 +871,7 @@ detail::OperationPreparationAccess::prepare_candidate(
         provider_prepared.workspace.alignment !=
             proposal.cost.workspace->alignment)) ||
       (proposal.cost.persistent_bytes.has_value() &&
-       provider_prepared.persistent_bytes !=
-           proposal.cost.persistent_bytes)) {
+       provider_prepared.persistent_bytes != proposal.cost.persistent_bytes)) {
     destroy_invalid();
     return std::unexpected(
         Status::Internal("compute provider returned an invalid artifact"));
@@ -839,9 +909,98 @@ detail::OperationPreparationAccess::prepare_candidate(
       workspace_resource, table->identity, slot.instance, provider_prepared);
   if (!prepared)
     return std::unexpected(std::move(prepared).error());
+  if (!shape.exact()) {
+    auto owned_shape = copy_shape_domain(shape, state->allocator);
+    if (!owned_shape) {
+      detail::release(*prepared);
+      return std::unexpected(std::move(owned_shape).error());
+    }
+    (*prepared)->shape = *owned_shape;
+  }
   return detail::ProviderPrepareAttempt{
       .prepared = PreparedOperation(*prepared),
   };
+}
+
+Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
+    const PreparedOperation &root, std::span<std::int64_t> values) noexcept {
+  auto *state = root.state_;
+  if (state == nullptr || state->shape == nullptr ||
+      state->provider_prepared.instantiate == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("operation is not a prepared shape domain"));
+  if (!state->context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Admission final {
+    detail::AdmissionGate &gate;
+    ~Admission() { gate.leave(); }
+  } admission{state->context->admission};
+  ScratchStorage<TensorDesc, kInlineBindings> inputs(state->input_count,
+                                                     state->allocator);
+  ScratchStorage<TensorDesc, kInlineBindings> outputs(state->output_count,
+                                                      state->allocator);
+  if (!inputs.valid() || !outputs.valid())
+    return std::unexpected(Status::ResourceExhausted(
+        "shape instance descriptor allocation failed"));
+  HYLE_RETURN_IF_ERROR(bind_shape_domain(
+      state->shape->view, {state->inputs(), state->input_count},
+      {state->outputs(), state->output_count}, values, inputs.span(),
+      outputs.span()));
+  HYLE_RETURN_IF_ERROR(validate_inferred_outputs(
+      state->operation, inputs.span(), outputs.span(), state->allocator));
+  detail::ProviderPrepared instance{};
+  const auto destroy = [&]() noexcept {
+    if (instance.vtable != nullptr &&
+        instance.vtable->destroy_prepared != nullptr)
+      instance.vtable->destroy_prepared(instance.state, state->allocator);
+  };
+  Status status = state->provider_prepared.instantiate(
+      state->provider_prepared.state, inputs.span(), outputs.span(),
+      state->allocator, &instance);
+  if (!status.ok()) {
+    if (instance.state != nullptr &&
+        (instance.vtable == nullptr ||
+         instance.vtable->destroy_prepared == nullptr))
+      return std::unexpected(
+          Status::Internal("provider returned unowned partial shape instance"));
+    destroy();
+    return std::unexpected(std::move(status));
+  }
+  const auto maximum = state->provider_prepared.workspace;
+  if (!valid_prepared_callbacks(instance) || instance.instantiate != nullptr ||
+      instance.runtime != state->provider_prepared.runtime ||
+      !is_power_of_two(instance.workspace.alignment) ||
+      instance.workspace.size > maximum.size ||
+      instance.workspace.alignment > maximum.alignment) {
+    destroy();
+    return std::unexpected(Status::Internal(
+        "provider shape instance violates its compiled domain"));
+  }
+  for (std::size_t output = 0; output < state->output_count; ++output) {
+    for (std::size_t input = 0; input < state->input_count; ++input) {
+      const auto expected = state->provider_prepared.vtable->alias_support(
+          state->provider_prepared.state, output, input);
+      const auto actual =
+          instance.vtable->alias_support(instance.state, output, input);
+      if (actual.supported != expected.supported ||
+          actual.byte_offset != expected.byte_offset) {
+        destroy();
+        return std::unexpected(Status::Internal(
+            "provider shape instance changed its alias contract"));
+      }
+    }
+  }
+  HYLE_ASSIGN_OR_RETURN(
+      auto *result,
+      make_prepared_state(state->context, state->operation, inputs.span(),
+                          outputs.span(),
+                          {state->input_resources(), state->input_count},
+                          {state->output_resources(), state->output_count},
+                          state->workspace_resource, state->provider,
+                          state->provider_instance, instance));
+  detail::retain(state);
+  result->domain_owner = state;
+  return PreparedOperation(result);
 }
 
 Result<PreparedOperation>
@@ -1230,6 +1389,9 @@ PreparedOperation::create_invocation(mem::BufferView workspace) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(
         Status::FailedPrecondition("prepared operation is invalid"));
+  if (state_->shape != nullptr)
+    return std::unexpected(Status::FailedPrecondition(
+        "prepared domain requires a concrete instance"));
   const WorkspaceRequirement requirement = workspace_requirement();
   const ProviderWorkspaceOwner workspace_owner =
       state_->provider_prepared.runtime.workspace_owner;

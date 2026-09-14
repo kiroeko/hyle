@@ -12,6 +12,11 @@
 
 namespace hyle::compute::detail {
 
+struct PreparedShapeDomain final {
+  ProviderShapeDomain view{};
+  std::size_t allocation_size = 0;
+};
+
 struct PreparedState final : util::RefCounted<PreparedState> {
   PreparedState(ContextState *context_value, Operation operation_value,
                 ProviderIdentity provider_value,
@@ -67,10 +72,18 @@ struct PreparedState final : util::RefCounted<PreparedState> {
       std::destroy_at(outputs() + index - 1);
     for (std::size_t index = input_count; index != 0; --index)
       std::destroy_at(inputs() + index - 1);
+    if (shape != nullptr) {
+      const auto bytes = shape->allocation_size;
+      std::destroy_at(shape);
+      allocator.deallocate(shape, bytes, alignof(PreparedShapeDomain));
+    }
+    PreparedState *retained_domain = domain_owner;
     ContextState *retained_context = context;
     const mem::AllocatorRef owner = allocator;
     const std::size_t bytes = allocation_size;
     this->~PreparedState();
+    if (retained_domain != nullptr)
+      retained_domain->decref();
     detail::release(retained_context);
     owner.deallocate(this, bytes, alignof(PreparedState));
   }
@@ -87,6 +100,9 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   std::size_t output_count = 0;
   mem::MemoryResourceRef workspace_resource{};
   ProviderPrepared provider_prepared{};
+  // Cold metadata only; neither is consulted by ordinary warm submission.
+  PreparedShapeDomain *shape = nullptr;
+  PreparedState *domain_owner = nullptr;
 };
 
 inline void retain(PreparedState *state) noexcept {

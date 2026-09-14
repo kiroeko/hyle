@@ -13,7 +13,9 @@ sampling 和 serving 留在推理引擎。
 
 direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape program。需要 batch × tokens、concat
 输出轴等派生维度时，使用 [Graph 的独立与派生维度](graph.md#独立与派生维度)，在冷 compile 时解析；
-当前 Native/oneDNN artifact 仍是 exact-only，不能从私有 shape-domain 接口推断已有整个动态范围的执行器。
+当前公开路线仍按 exact shape 编译。Native 的内部 RMSNorm 域制品已支持固定 hidden width 的冷实例化，
+但 Graph 的完整 bounded/variant 执行尚未接入；oneDNN 仍 exact-only。不要直接调用私有 factor seam，
+也不要把它当作整个动态范围已经交付。
 
 ## 当前能力
 

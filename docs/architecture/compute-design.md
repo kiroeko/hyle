@@ -346,6 +346,14 @@ resource。资源不匹配必须在 prepare/bind 或 Graph compile 的冷路径�
 或 fallback。Delegated island 只向 Graph 暴露 canonical boundary storage；island 内部 tensor、allocator、
 stream 和 workspace 仍由 provider 规划并在 report 中如实计量。
 
+bounded 制品在 compile 时必须证明完整域，而不是只证明 envelope 的一个点。Graph 创建具体 Invocation
+时，可经 Compute 私有冷接口把已编译域实例化为普通 exact PreparedOperation：复用 checked shape program
+绑定尺寸并重验 schema，Provider 只生成既定代码的参数/执行状态，不重跑 proposal、prepare、JIT 或 tactic
+选择，不访问 tensor payload。域根拥有 dimensions/guards/axis maps，具体子制品保活它至自身销毁之后；
+runtime/alias 合同不得变化，workspace 不得超过已编译上界。这样重复 submit 仍走原来的普通执行回调，
+不增加动态 shape wrapper 或第二套 Queue/Completion。实例化的冷 metadata 分配与跨变体总内存预算须
+单独计量；它不等于每次 replay 可以重新分配，也不是新的公开产品入口。
+
 ### 3.4 Replay 成本合同独立于 runtime ownership
 
 shared/delegated 回答“谁拥有 Queue、allocator 与完成状态”，不回答“每次调用是否重新分配”。同一

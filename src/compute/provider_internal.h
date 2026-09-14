@@ -20,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 9;
+inline constexpr std::uint32_t kProviderContractVersion = 10;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -57,6 +57,7 @@ struct ProviderPrepareRequest final {
   std::span<const mem::MemoryResourceRef> output_resources{};
   mem::MemoryResourceRef workspace_resource{};
   std::uint64_t route = 0;
+  ProviderShapeDomain shape{};
 };
 
 struct ProviderPrepared final {
@@ -65,6 +66,14 @@ struct ProviderPrepared final {
   WorkspaceRequirement workspace{};
   ProviderRuntimeProperties runtime{};
   std::optional<std::size_t> persistent_bytes{};
+  // Optional domain-only cold instantiation of already compiled code. No
+  // propose/prepare/JIT, payload access or execution is permitted. The returned
+  // exact artifact may borrow this root; Compute retains it until child
+  // teardown.
+  Status (*instantiate)(void *prepared, std::span<const TensorDesc> inputs,
+                        std::span<const TensorDesc> outputs,
+                        mem::AllocatorRef allocator,
+                        ProviderPrepared *instance) noexcept = nullptr;
 };
 
 enum class ProviderPrepareDecline : std::uint8_t {
@@ -98,7 +107,7 @@ struct ProviderVTable final {
                     std::span<ResourceBindingRequirement> input_requirements,
                     std::span<ResourceBindingRequirement> output_requirements,
                     ProviderOperationProposal *proposal) noexcept = nullptr;
-  // Compile only an already-selected exact resource route.
+  // Compile only an already-selected resource route and shape domain.
   ProviderPrepareOutcome (*prepare)(
       void *context, const ProviderPrepareRequest &request,
       mem::AllocatorRef allocator,
@@ -147,7 +156,15 @@ struct OperationPreparationAccess final {
       std::span<const TensorDesc> outputs,
       std::span<const ResourceBindingRequirement> input_requirements,
       std::span<const ResourceBindingRequirement> output_requirements,
-      OperationResourceBindings resources) noexcept;
+      OperationResourceBindings resources,
+      ProviderShapeDomain shape = {}) noexcept;
+
+  // Cold only. values has one slot per dimension, independent inputs filled;
+  // derived slots are overwritten. Failure may change scratch but never
+  // executes work. The result is an ordinary exact PreparedOperation.
+  HYLE_COMPUTE_API static Result<PreparedOperation>
+  instantiate(const PreparedOperation &root,
+              std::span<std::int64_t> values) noexcept;
 };
 
 struct ProviderAccess final {

@@ -50,3 +50,17 @@ C93/G103 的共同结构成本迁移已完成：仅把 N21 既有 facts 改为�
 C93/N21 后继迁移固定：为既有 exact family proposal 填 `ProviderRouteKey`（family ordinal + 1），
 不把临时 prepare token 当稳定身份。完整 key 仍依赖 Provider build/config、语义/shape/layout/device
 与 workload/boundary；此字段只由冷 Graph report 消费，不参与当前无 profile 排序，不改任何 kernel。
+
+### N22 表示审计：已编译 RMSNorm 域
+
+按 [Compute v11](compute-v11-bounded-instantiation.md) 的 C110/C111 实施既定 N22：固定 hidden width、
+dense f32、输入/输出同轴表达式、可选固定 scale；prefix 可含 bounds/guards 与派生维度。准入先证明
+整个域的 schema/布局/字节上界，不能只测试 envelope。每个具体实例只复制既定 NativePlan 的冷参数，
+保留同一 SIMD route、alias、资源与完成语义，不重跑 build_plan/propose/prepare。现有 exact family 不
+改变 kernel 或热回调。验证包含 small-domain 穷举、派生/guard、错误独立 symbol、zero、源元数据释放、
+OOM/销毁/并发与 direct exact 回归；Graph 整体 bounded/variant 仍由其活动卡完成。
+
+2026-09-15：N22 的 Native 域制品与冷实例化已实现，Windows shared/static Native 79/79，含 15 个新增
+域/生命周期反例与宽度 8192 的 direct/实例化 executor 对照。完整命令、成本、三交付与未运行项见
+[Compute v11 检查点](compute-v11-bounded-instantiation.md#2026-09-15-冷实例化检查点)。Graph general +
+exact variant、跨平台/P1 尚未完成，N22/N23 不因此签完。

@@ -995,6 +995,85 @@ host_requirement(const TensorDesc &description) noexcept {
 }
 
 Status
+validate_bounded_rms(const detail::ProviderOperationRequest &request) noexcept {
+  if (request.operation.kind() != OperationKind::kRmsNorm ||
+      request.inputs.empty() || request.inputs.size() > 2 ||
+      request.outputs.size() != 1)
+    return Status::Unimplemented(
+        "native bounded route currently requires RMSNorm");
+  const auto &input = request.inputs[0];
+  const auto &output = request.outputs[0];
+  if (input.rank() == 0 || input.rank() != output.rank())
+    return Status::Unimplemented("native bounded RMSNorm rank differs");
+  const auto fixed = [&](std::uint32_t value) noexcept {
+    return value == detail::kFixedShapeAxis ||
+           request.shape.dimensions[value].bounds.exact();
+  };
+  if (!fixed(request.shape.inputs[0].values[input.rank() - 1]))
+    return Status::Unimplemented(
+        "native bounded RMSNorm requires fixed hidden width");
+  // Equal envelopes of independent symbols are NOT a whole-domain proof.
+  // Every output extent must be the same expression or the same fixed value.
+  for (std::size_t axis = 0; axis < input.rank(); ++axis) {
+    const auto left = request.shape.inputs[0].values[axis];
+    const auto right = request.shape.outputs[0].values[axis];
+    if (input.dimensions()[axis] != output.dimensions()[axis] ||
+        (left != right && !(fixed(left) && fixed(right))))
+      return Status::Unimplemented(
+          "native bounded RMSNorm needs identical input/output axes");
+  }
+  if (request.inputs.size() == 2) {
+    for (std::size_t axis = 0; axis < request.inputs[1].rank(); ++axis) {
+      if (!fixed(request.shape.inputs[1].values[axis]))
+        return Status::Unimplemented(
+            "native bounded RMSNorm requires fixed scale shape");
+    }
+  }
+  // RMSNorm's schema is shape-preserving, with fixed dtype, epsilon, hidden
+  // width and optional scale. The axis proof above makes these conditions
+  // invariant over the domain; this is not sampling an envelope as evidence.
+  HYLE_ASSIGN_OR_RETURN(const auto inferred,
+                        infer_single_output(request.operation, request.inputs));
+  if (inferred != output)
+    return Status::InvalidArgument(
+        "native bounded RMSNorm output does not match its schema");
+  return Status::Ok();
+}
+
+Status instantiate_rms(void *root, std::span<const TensorDesc> inputs,
+                       std::span<const TensorDesc> outputs,
+                       mem::AllocatorRef allocator,
+                       detail::ProviderPrepared *instance) noexcept {
+  if (root == nullptr || instance == nullptr || inputs.empty() ||
+      outputs.size() != 1)
+    return Status::InvalidArgument(
+        "native RMSNorm instance request is invalid");
+  *instance = {};
+  NativePlan concrete = *static_cast<const NativePlan *>(root);
+  if (inputs[0].rank() == 0 ||
+      inputs[0].dimensions().back() !=
+          static_cast<std::int64_t>(concrete.parameters[1]))
+    return Status::Internal(
+        "native RMSNorm instance changed compiled hidden width");
+  HYLE_ASSIGN_OR_RETURN(const auto rows, outer_count(inputs[0]));
+  concrete.parameters[0] = rows;
+  concrete.parallel_tasks = recommended_parallel_tasks(concrete.executor, rows,
+                                                       concrete.parameters[1]);
+  // Rebind scalar metadata only. Kernel, precision, alias and resource route
+  // were compiled once; no build_plan(), proposal, prepare or SIMD dispatch.
+  void *storage = allocator.allocate(sizeof(NativePlan), alignof(NativePlan));
+  if (storage == nullptr)
+    return Status::ResourceExhausted(
+        "native RMSNorm instance allocation failed");
+  *instance = {.vtable = &kPreparedVTable,
+               .state = ::new (storage) NativePlan(concrete),
+               .workspace = concrete.workspace,
+               .runtime = kRuntimeProperties,
+               .persistent_bytes = sizeof(NativePlan)};
+  return Status::Ok();
+}
+
+Status
 propose(void *context_value, const detail::ProviderOperationRequest &request,
         std::span<detail::ResourceBindingRequirement> input_requirements,
         std::span<detail::ResourceBindingRequirement> output_requirements,
@@ -1003,8 +1082,7 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("native proposal output is null");
   *proposal = {};
   if (!request.shape.exact()) {
-    return Status::Unimplemented(
-        "native provider requires an exact shape until bounded binding is prepared");
+    HYLE_RETURN_IF_ERROR(validate_bounded_rms(request));
   }
   const Operation operation = request.operation;
   const auto inputs = request.inputs;
@@ -1043,8 +1121,13 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               .synchronization_count = 0,
               .dispatch_count = 1,
           },
+      .shape_coverage = request.shape.exact()
+                            ? detail::ProviderShapeCoverage::kExactPoint
+                            : detail::ProviderShapeCoverage::kEntireDomain,
       .profile_key =
-          ProviderRouteKey{static_cast<std::uint64_t>(operation.kind()) + 1},
+          ProviderRouteKey{
+              static_cast<std::uint64_t>(operation.kind()) + 1 +
+              (request.shape.exact() ? 0 : (std::uint64_t{1} << 32))},
   };
   return Status::Ok();
 }
@@ -1067,6 +1150,14 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   if (context == nullptr)
     return ProviderPrepareOutcome::error(
         Status::Internal("native provider context is null"));
+  if (!request.shape.exact()) {
+    const auto status = validate_bounded_rms(
+        {request.operation, request.inputs, request.outputs, request.shape});
+    if (!status.ok())
+      return status.IsUnimplemented()
+                 ? ProviderPrepareOutcome::unsupported(status)
+                 : ProviderPrepareOutcome::error(status);
+  }
   NativePlan plan{};
   Status status = build_plan(request.operation, request.inputs, request.outputs,
                              plan, context->executor);
@@ -1087,6 +1178,8 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   prepared_output->workspace = plan.workspace;
   prepared_output->runtime = kRuntimeProperties;
   prepared_output->persistent_bytes = sizeof(NativePlan);
+  prepared_output->instantiate =
+      request.shape.exact() ? nullptr : &instantiate_rms;
   return ProviderPrepareOutcome::prepared();
 }
 
