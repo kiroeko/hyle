@@ -33,6 +33,7 @@ using hyle::compute::Context;
 using hyle::compute::DataType;
 using hyle::compute::Operation;
 using hyle::compute::Provider;
+using hyle::compute::ProviderReplayClass;
 using hyle::compute::Queue;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
@@ -47,6 +48,7 @@ using hyle::graph::GraphBuilder;
 using hyle::graph::NodeId;
 using hyle::graph::OperationFallbackPolicy;
 using hyle::graph::ProviderRegionPrepared;
+using hyle::graph::ProviderReplayPolicy;
 using hyle::graph::RegionCompileRequest;
 using hyle::graph::RegionProposal;
 using hyle::graph::RegionProposalWriter;
@@ -84,6 +86,8 @@ struct RegionProbe final {
   std::size_t propose_count = 0;
   std::size_t compile_count = 0;
   std::size_t single_prepare_count = 0;
+  std::size_t single_artifact_count = 0;
+  std::size_t region_resource_count = 0;
   std::size_t create_invocation_count = 0;
   std::size_t destroy_invocation_count = 0;
   std::size_t submit_count = 0;
@@ -126,6 +130,8 @@ struct RegionProbe final {
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
   std::optional<hyle::compute::ProviderReplayClass> proposed_replay_override{};
+  ProviderReplayClass discovery_replay_class = ProviderReplayClass::kUnknown;
+  std::optional<ProviderReplayClass> single_replay_override{};
   NodeId foreign_node{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
@@ -328,10 +334,10 @@ bool is_negation(const Graph &graph, std::size_t node_index) {
   return unary != nullptr && unary->kind == UnaryKind::kNeg;
 }
 
-Status add_node_set_proposal(RegionProposalWriter &writer,
-                             std::span<const NodeId> nodes,
-                             std::optional<std::uint64_t> savings,
-                             std::uint32_t dispatch_count = 1) noexcept {
+Status add_node_set_proposal(
+    RegionProposalWriter &writer, std::span<const NodeId> nodes,
+    std::optional<std::uint64_t> savings, std::uint32_t dispatch_count = 1,
+    ProviderReplayClass replay_class = ProviderReplayClass::kUnknown) noexcept {
   return writer.add(RegionProposal{
       .nodes = nodes,
       .cost = {.estimated_net_savings_ns = savings,
@@ -341,6 +347,7 @@ Status add_node_set_proposal(RegionProposalWriter &writer,
               ? 0
               : (static_cast<std::uint64_t>(nodes.front().ordinal()) << 32) |
                     nodes.size(),
+      .replay_class = replay_class,
   });
 }
 
@@ -366,7 +373,8 @@ Status propose_regions(void *context, const Graph &graph,
   ++probe.propose_count;
   if (probe.mode == ProposalMode::kSingleton) {
     const std::array nodes{graph.node_id(0).value()};
-    return add_node_set_proposal(writer, nodes, 10);
+    return add_node_set_proposal(writer, nodes, 10, 1,
+                                 probe.discovery_replay_class);
   }
   if (probe.mode == ProposalMode::kInterleavedChains ||
       probe.mode == ProposalMode::kJointCycle) {
@@ -618,7 +626,8 @@ Status propose_region_resources(
     requirement = {};
   for (auto &requirement : output_requirements)
     requirement = {};
-  const auto &probe = *static_cast<RegionProbe *>(context);
+  auto &probe = *static_cast<RegionProbe *>(context);
+  ++probe.region_resource_count;
   if (!input_requirements.empty() && probe.region_input_resource.valid())
     input_requirements[0].exact_resource = probe.region_input_resource;
   if (!output_requirements.empty() && probe.region_output_resource.valid())
@@ -767,6 +776,17 @@ constexpr hyle::compute::ProviderRuntimeProperties kUnaryRuntime{
     .capture_compatible = false,
 };
 
+hyle::compute::ProviderRuntimeProperties
+single_runtime(const RegionProbe &probe, bool effect) noexcept {
+  auto runtime =
+      effect ? kEffectRuntime
+             : (probe.delegated_single ? probe.artifact_properties.runtime
+                                       : kUnaryRuntime);
+  if (probe.single_replay_override)
+    runtime.replay_class = *probe.single_replay_override;
+  return runtime;
+}
+
 const hyle::compute::detail::ProviderPreparedVTable kUnaryPreparedVTable{
     .destroy_prepared = &destroy_region_prepared,
     .alias_support = &region_alias_support,
@@ -822,13 +842,11 @@ Status propose_single(
   }
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = effect ? 1u : 2u,
-      .runtime = effect ? kEffectRuntime
-                        : (probe.delegated_single
-                               ? probe.artifact_properties.runtime
-                               : kUnaryRuntime),
-      .cost = hyle::compute::detail::ProviderRouteCostFacts{
-          .workspace = hyle::compute::WorkspaceRequirement{},
-      },
+      .runtime = single_runtime(probe, effect),
+      .cost =
+          hyle::compute::detail::ProviderRouteCostFacts{
+              .workspace = hyle::compute::WorkspaceRequirement{},
+          },
   };
   return Status::Ok();
 }
@@ -839,6 +857,7 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_single(
     AllocatorRef allocator,
     hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
+  ++probe.single_artifact_count;
   const bool effect = request.operation.custom_as<ExternalEffect>().has_value();
   const bool constrained_unary =
       request.operation.kind() == hyle::compute::OperationKind::kUnary &&
@@ -867,16 +886,14 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_single(
                                          : &kUnaryPreparedVTable,
         .state = plan,
         .workspace = {},
-        .runtime = probe.delegated_single
-                       ? probe.artifact_properties.runtime
-                       : kUnaryRuntime,
+        .runtime = single_runtime(probe, false),
     };
     return hyle::compute::detail::ProviderPrepareOutcome::prepared();
   }
   *prepared = hyle::compute::detail::ProviderPrepared{
       .vtable = &kEffectPreparedVTable,
       .state = &probe,
-      .runtime = kEffectRuntime,
+      .runtime = single_runtime(probe, true),
   };
   return hyle::compute::detail::ProviderPrepareOutcome::prepared();
 }
@@ -1344,6 +1361,195 @@ TEST(GraphRegions, ReplayCostFactsSurviveRegionCompilation) {
     ASSERT_EQ(compiled->report.region_count(), 1u);
     EXPECT_EQ(compiled->report.step(0)->runtime.replay_class, replay_class);
   }
+}
+
+TEST(GraphRegions,
+     PreparedOnlyRejectsUnknownAndManagedBeforeRegionPreparation) {
+  const auto logical = make_negations(1);
+  for (auto replay :
+       {ProviderReplayClass::kUnknown, ProviderReplayClass::kManaged}) {
+    RegionProbe probe{.mode = ProposalMode::kSingleton};
+    probe.discovery_replay_class = replay;
+    // Even a later prepared declaration cannot rescue unknown discovery.
+    probe.artifact_properties.runtime.replay_class =
+        replay == ProviderReplayClass::kUnknown ? ProviderReplayClass::kPrepared
+                                                : replay;
+    Context context = make_context(probe);
+    auto strict = hyle::graph::compile(
+        logical.graph, context,
+        {.provider_replay = ProviderReplayPolicy::kRequirePrepared});
+    ASSERT_TRUE(strict.has_value()) << strict.error().message();
+    EXPECT_EQ(strict->report.region_count(), 0u);
+    EXPECT_EQ(strict->report.step(0)->runtime.replay_class,
+              ProviderReplayClass::kPrepared);
+    EXPECT_EQ(probe.region_resource_count, 0u);
+    EXPECT_EQ(probe.compile_count, 0u);
+
+    auto permissive = hyle::graph::compile(logical.graph, context);
+    ASSERT_TRUE(permissive.has_value()) << permissive.error().message();
+    EXPECT_EQ(permissive->report.region_count(), 1u);
+    EXPECT_EQ(permissive->report.step(0)->runtime.replay_class,
+              probe.artifact_properties.runtime.replay_class);
+    EXPECT_EQ(probe.compile_count, 1u);
+  }
+}
+
+TEST(GraphRegions, PreparedReplayCanHaveDelegatedOwnership) {
+  const auto logical = make_negations(1);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  use_delegated_runtime(probe);
+  probe.discovery_replay_class = ProviderReplayClass::kPrepared;
+  probe.artifact_properties.runtime.replay_class =
+      ProviderReplayClass::kPrepared;
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.provider_replay = ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 1u);
+  EXPECT_EQ(compiled->report.step(0)->runtime.mode,
+            hyle::compute::ProviderRuntimeMode::kDelegated);
+  EXPECT_EQ(compiled->executable.required_queue_count(), 0u);
+
+  auto input = make_tensor(row(8));
+  auto output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit();
+    ASSERT_TRUE(done.has_value()) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto result = read(output, values.size());
+    for (std::size_t index = 0; index < values.size(); ++index)
+      EXPECT_EQ(result[index], -values[index]);
+  }
+  EXPECT_EQ(probe.propose_count, 1u);
+  EXPECT_EQ(probe.region_resource_count, 1u);
+  EXPECT_EQ(probe.compile_count, 1u);
+}
+
+TEST(GraphRegions, ReplayFilteringPrecedesTargetSelection) {
+  const auto logical = make_negations(1);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.discovery_replay_class = ProviderReplayClass::kManaged;
+  probe.artifact_properties.runtime.replay_class =
+      ProviderReplayClass::kManaged;
+  const std::array providers{region_provider(probe)};
+  Context first =
+      Context::create(hyle::compute::cpu::device(), {.providers = providers})
+          .value();
+  const std::array native_providers{hyle::compute::native::provider()};
+  Context second = Context::create(hyle::compute::cpu::device(),
+                                   {.providers = native_providers})
+                       .value();
+  const Environment environment{{&first, hyle::mem::system_resource()},
+                                {&second, hyle::mem::system_resource()}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.provider_replay = ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0u);
+  EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
+  EXPECT_EQ(probe.region_resource_count, 0u);
+  EXPECT_EQ(probe.compile_count, 0u);
+}
+
+TEST(GraphRegions, KnownDiscoveryReplayCannotChangeBeforeArtifactCreation) {
+  const auto logical = make_negations(1);
+  for (auto declared :
+       {ProviderReplayClass::kPrepared, ProviderReplayClass::kManaged}) {
+    for (auto actual :
+         {ProviderReplayClass::kUnknown, ProviderReplayClass::kPrepared,
+          ProviderReplayClass::kManaged}) {
+      if (declared == actual)
+        continue;
+      RegionProbe probe{.mode = ProposalMode::kSingleton};
+      probe.discovery_replay_class = declared;
+      probe.artifact_properties.runtime.replay_class = actual;
+      Context context = make_context(probe);
+      auto compiled = hyle::graph::compile(logical.graph, context);
+      ASSERT_FALSE(compiled.has_value());
+      EXPECT_TRUE(compiled.error().IsInternal());
+      EXPECT_EQ(probe.region_resource_count, 1u);
+      EXPECT_EQ(probe.compile_count, 0u);
+      EXPECT_EQ(probe.submit_count, 0u);
+    }
+  }
+}
+
+TEST(GraphRegions, PreparedOnlyFiltersLeafBeforeArtifactCreation) {
+  const auto logical = make_negations(1);
+  for (auto replay :
+       {ProviderReplayClass::kUnknown, ProviderReplayClass::kManaged,
+        ProviderReplayClass::kPrepared}) {
+    RegionProbe probe;
+    probe.required_resource = hyle::mem::system_resource();
+    probe.single_replay_override = replay;
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.region_selection = RegionSelectionPolicy::kDisabled,
+         .provider_replay = ProviderReplayPolicy::kRequirePrepared});
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(compiled->report.step(0)->runtime.replay_class,
+              ProviderReplayClass::kPrepared);
+    const bool selected = replay == ProviderReplayClass::kPrepared;
+    EXPECT_EQ(probe.single_artifact_count, selected ? 1u : 0u);
+    EXPECT_EQ(compiled->report.step(0)->provider.id == kRegionProviderId,
+              selected);
+    EXPECT_EQ(probe.propose_count, 0u);
+  }
+}
+
+TEST(GraphRegions, PreparedOnlyFailsWhenNoEligibleExecutionRouteExists) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  (void)builder
+      .add_node(Operation::custom(ExternalEffect{}), std::array<ValueId, 0>{})
+      .value();
+  Graph graph = std::move(builder).finish().value();
+  RegionProbe probe;
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      graph, context,
+      {.region_selection = RegionSelectionPolicy::kDisabled,
+       .provider_replay = ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsUnimplemented());
+  EXPECT_EQ(probe.single_artifact_count, 0u);
+  EXPECT_EQ(probe.effect_create_count, 0u);
+}
+
+TEST(GraphRegions, ReplayPolicyDoesNotHideInvalidEnumsOrDiscoveryBudget) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton};
+  RegionProbe second{.mode = ProposalMode::kSingleton};
+  Context context = make_context(first, second);
+  auto invalid_policy = hyle::graph::compile(
+      logical.graph, context,
+      {.provider_replay = static_cast<ProviderReplayPolicy>(255)});
+  ASSERT_FALSE(invalid_policy.has_value());
+  EXPECT_TRUE(invalid_policy.error().IsInvalidArgument());
+  EXPECT_EQ(first.propose_count, 0u);
+
+  first.discovery_replay_class = static_cast<ProviderReplayClass>(255);
+  auto invalid_declaration = hyle::graph::compile(
+      logical.graph, context,
+      {.provider_replay = ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_FALSE(invalid_declaration.has_value());
+  EXPECT_TRUE(invalid_declaration.error().IsInternal());
+
+  first.discovery_replay_class = ProviderReplayClass::kUnknown;
+  auto budget = hyle::graph::compile(
+      logical.graph, context,
+      {.max_region_proposals = 1,
+       .provider_replay = ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_FALSE(budget.has_value());
+  EXPECT_TRUE(budget.error().IsResourceExhausted());
+  EXPECT_EQ(first.compile_count, 0u);
+  EXPECT_EQ(second.compile_count, 0u);
 }
 
 TEST(GraphRegions, RejectsInvalidOrChangedReplayCostBeforeWorkAcceptance) {

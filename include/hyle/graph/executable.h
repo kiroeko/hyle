@@ -477,6 +477,15 @@ enum class OperationFallbackPolicy : std::uint8_t {
   kReject,
 };
 
+enum class ProviderReplayPolicy : std::uint8_t {
+  // Accept any valid declared class, including unknown. This does not prove
+  // a zero-allocation or bounded-cost provider replay.
+  kAllowAny = 0,
+  // Only proposals declaring prepared replay may create artifacts. This is
+  // independent of shared/delegated ownership and command capture support.
+  kRequirePrepared,
+};
+
 enum class WorkspaceReusePolicy : std::uint8_t {
   // Reuse storage only when the existing lane/dependency schedule proves the
   // two lifetimes ordered. Unordered values never alias.
@@ -525,6 +534,9 @@ struct CompileOptions final {
   // Hard aggregate storage budget for node identities copied from provider
   // proposals. Node-set exhaustion is a compile error, never truncation.
   std::size_t max_region_proposal_nodes = 65536;
+  // Cold constraint for both operation and region providers. View/Copy and
+  // caller-owned executor/callback costs are not provider replay contracts.
+  ProviderReplayPolicy provider_replay = ProviderReplayPolicy::kAllowAny;
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned

@@ -372,9 +372,14 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
   Context context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                    {.providers = providers})
                         .value();
-  auto compiled = hyle::graph::compile(logical.graph, context,
-                                       CompileOptions{.constants = constants})
-                      .value();
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          CompileOptions{
+              .constants = constants,
+              .provider_replay =
+                  hyle::graph::ProviderReplayPolicy::kRequirePrepared})
+          .value();
   ASSERT_EQ(compiled.report.region_count(), 1U);
   ASSERT_EQ(compiled.report.step_count(), 1U);
   EXPECT_EQ(compiled.report.provider().id, hyle::graph::onednn::kProviderId);

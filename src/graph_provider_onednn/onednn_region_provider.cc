@@ -44,6 +44,16 @@ inline constexpr std::uint64_t kGatedMlpRoute = 1;
 inline constexpr std::size_t kWorkspaceAlignment =
     compute::onednn::internal::kBrgemmWorkspaceAlignment;
 
+constexpr compute::ProviderRuntimeProperties kRuntimeProperties{
+    .mode = compute::ProviderRuntimeMode::kSharedQueue,
+    .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+    .replay_class = compute::ProviderReplayClass::kPrepared,
+    .blocks_host = true,
+    .uses_private_threads = false,
+    .supports_concurrent_invocations = true,
+    .capture_compatible = false,
+};
+
 struct RegionContext final {
   ParallelExecutorRef executor{};
   mem::AllocatorRef allocator{};
@@ -442,6 +452,7 @@ Status propose_regions(void *context_value, const Graph &graph,
                  .blocks_host = true,
                  .uses_private_threads = false},
         .route = kGatedMlpRoute,
+        .replay_class = kRuntimeProperties.replay_class,
     });
     if (!status.ok())
       return status;
@@ -668,16 +679,6 @@ const ProviderRegionPreparedVTable kPreparedVTable{
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
     .shared_submit = &submit,
-};
-
-constexpr compute::ProviderRuntimeProperties kRuntimeProperties{
-    .mode = compute::ProviderRuntimeMode::kSharedQueue,
-    .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
-    .replay_class = compute::ProviderReplayClass::kPrepared,
-    .blocks_host = true,
-    .uses_private_threads = false,
-    .supports_concurrent_invocations = true,
-    .capture_compatible = false,
 };
 
 Status propose_region_resources(

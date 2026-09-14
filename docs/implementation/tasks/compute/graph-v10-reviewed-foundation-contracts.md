@@ -92,3 +92,44 @@ zero bounds 与 TensorDesc 对齐，未改写用户提供的固定 View attribut
 Windows shared/static 与 oneDNN 回放通过不等于 G101/G102 完成：目前 Executable 仍是一个 exact point，
 缺少 bounded artifact/全域 schema proof、动态属性和 runtime variant 选择。G100 政策筛选、G103--G107
 的统一成本/资源/常量/custom execution 仍待落实。保持 `AUDITED`，没有完成声明或新性能结论。
+
+### G100 冷筛选表示审计（实现前固定）
+
+新增 `ProviderReplayPolicy::{kAllowAny,kRequirePrepared}`，由 `CompileOptions::provider_replay` 指定，默认
+allow-any。严格政策在 leaf proposal 后、资源选择与 artifact prepare 前筛除 managed/unknown；region
+discovery 必须先声明 replay class，先筛选再影响 target/region 选择，不能等制品编译后才发现不合格。
+region extension 升至 7；初始 known class 与后续 resource proposal 必须一致，unknown 可在默认政策下
+细化，但不能通过 prepared-only。最终 artifact 继续用既有完整 runtime equality 校验。
+
+沿用既有有限 proposal/node 预算，被政策排除的 proposal 仍计 discovery 预算；不在本步改变预算终止
+策略。非法枚举/前后矛盾是合同错误，不静默 fallback。政策不把 prepared 等同于 shared/capture，也不
+替调用者 executor/回调证明零分配。View/Copy 等非 Provider 步骤不受 Provider 成本类别筛选。
+
+验证限定为：strict leaf/region 拒绝在 artifact 创建前发生；prepared delegated 可以入选；默认政策仍可
+选择 managed；未知初始值不能伪装成 prepared，known 值不得改变；实际 Native/oneDNN 回放、非法政策、
+fallback 与 proposal 预算反例。只改冷 compile，热提交不存储/查询这个政策，不启动单独 P1。
+
+## 2026-09-14 G100：prepared-only 冷约束检查点
+
+上述政策已实现，公开入口与限制见 [Graph 指南](../../../user/graph.md#何时要求-prepared-only)。leaf 在
+proposal 后、resource/prepare 前筛选；region 在影响 target/partition 前筛选。discovery 的 known 类别
+不得在 resource proposal 改变，artifact 继续完整比较 runtime facts；extension v7 无旧布局适配。oneDNN
+discovery/resource/artifact 复用同一个 prepared 常量，未修改 MLP kernel 或调度。
+
+定向源码/反例复核覆盖 unknown 后续细化仍不合格、managed 默认可用、prepared delegated 可执行、无
+合格路线失败、跨 target 不被拒绝 region 误导、非法枚举、known 类别改变和被筛除 proposal 仍占预算。
+View + 跨 storage Copy 的实际执行在严格政策下通过。新增 probe 的实际 artifact/resource 回调计数证明
+拒绝发生在编译制品之前；两次 delegated submit 不重进 proposal/prepare。首次测试编译发现 fixture
+未包含 CPU convenience 头，改用其已有显式 Context/Native 构造后通过，没有改产品便利入口。
+
+- Windows Release source-tree shared/static：Graph builder/executable/逐头各 3/3，分别含 114 单元用例。
+- oneDNN-enabled shared：Graph executable、真实 oneDNN MLP 与双方逐头 4/4（112 单元用例）；完整
+  MLP 数值用例现明确采用 prepared-only，原普通默认路线仍由其他 region 用例覆盖。
+- P0：每个 proposal 只增加 `O(1)` 冷比较，候选数/预算与复杂度不变；政策不存入 Invocation，也不由
+  submit/Queue/kernel 查询。拒绝的错误 Status 属于冷路径，不承诺其零分配。
+- impact selector 为 READY，只选择 Graph/Graph-oneDNN/逐头/交付及公共检查，跳过 89 个不受影响项。
+  closure/docs/diff 通过；并行编译最多 2，未运行 P1 或全库测试。
+
+这些不是完整安装 SDK、Linux/macOS、sanitizer 或真实 Apple managed 路线的资格化。G100 的分类传播与
+严格冷筛选已落实，managed 完整成本、C93 identity、G101/G102 bounded/variants、G103--G107 其余范围
+仍待完成。保持 `AUDITED`，不宣称基础架构实现/终局性能已经收口。

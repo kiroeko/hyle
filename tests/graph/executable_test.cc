@@ -1680,9 +1680,13 @@ TEST(Invocation, CrossStoragePublishedViewUsesItsExplicitOutputBinding) {
   const std::array resources{ExternalResourceContract{
       .value = output, .storage = environment.storage(1)}};
   auto compiled =
-      hyle::graph::compile(graph, environment.environment(),
-                           CompileOptions{.node_placements = placements,
-                                          .external_resources = resources})
+      hyle::graph::compile(
+          graph, environment.environment(),
+          CompileOptions{
+              .node_placements = placements,
+              .external_resources = resources,
+              .provider_replay =
+                  hyle::graph::ProviderReplayPolicy::kRequirePrepared})
           .value();
   EXPECT_EQ(compiled.executable.output_ownership().value(),
             OutputOwnership::kCaller);

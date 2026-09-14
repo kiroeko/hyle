@@ -51,6 +51,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
 | replay | `prepare_replay()` 冷验证 bindings、transfer、Queue 与 delegated endpoint identity、dependency route 和 Completion 容量 |
+| Provider replay 成本 | `CompileOptions::provider_replay` 在冷编译筛选 leaf/region；默认允许所有合法类别，严格模式只接受 prepared |
 | capture | `kCommands`、`kPreferCapture`、`kRequireCapture`；capture 只适用于 shared Queue segment，delegated island 不能伪装成 Queue capture |
 | report | `CompileReport` 分列 target/storage/lane/segment/runtime owner；`ReplayReport` 给出 exact endpoint 后的 ordered/imported/host-wait 事实 |
 
@@ -62,14 +63,34 @@ Provider-private layout 只能留在一个 region 内，公开 region boundary �
 HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
 保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
 安装且通过当前 backend/storage/completion 审计的 Provider 才能提案；当前尚无可用 ggml region provider。
-第三方的 `compile` 不必然意味着每次调用零分配：未来路线会分别声明 prepared/managed 成本，严格使用者
-可要求 prepared-only。该选择接口尚未交付，不应从当前 `ReplayMode` 推断已有这项能力。
+第三方的 `compile` 不必然意味着每次调用零分配：Provider 分别声明 prepared/managed/unknown 成本，
+严格使用者可在 compile 要求 prepared-only；它与 `ReplayMode` 的 command/capture 选择互相独立。
 
 Region 由数据流而非插入顺序定义。例如 gate/up MatMul 与 gated activation/down MatMul 之间插入无关
 node，或者先创建 up 再创建 gate，不应阻止 oneDNN 识别同一 MLP。反之，如果 data/control 路径离开该集合
 后又回到集合，就不能把它收成一个 execution island；多个各自合法的集合也须通过联合无环检查。
 普通用户不需要手工分区。实现 Provider 时可以用 `is_region_contractible()` 检查候选：合法但不能收缩返回
 `false`，空集、重复或异图 ID 返回错误；Graph 在接收 proposal 后仍独立验证。连续集合保留快速路径。
+
+### 何时要求 prepared-only
+
+若热路径不能接受 Provider 实例化执行 metadata/array 或内部 shape/cache 工作，在冷编译时明确要求：
+
+```cpp
+auto compiled = compile(
+    graph, context,
+    CompileOptions{.provider_replay = ProviderReplayPolicy::kRequirePrepared});
+```
+
+这个约束同时作用于 leaf 和 region：managed/unknown 候选不能影响 target/region 选择，也不会创建
+artifact；仍可选择其他合格 Provider，没有合格路线则 compile 失败，不在 submit 时放宽。默认
+`kAllowAny` 保留已安装 Provider 的合法路线，但不把 unknown 解释成零成本。prepared 也不等于 shared
+Queue 或可 capture：已预备的 delegated artifact 同样可以合格。
+
+实现 region Provider 时，在 `RegionProposal::replay_class` 提前声明类别。known 值必须与资源提案和
+artifact 一致；unknown 只能在 allow-any 下细化，不能先以 unknown 进入严格计划再补声明。此策略只约束
+Provider 成功 replay，不替调用方 executor/callback、View/Copy、失败诊断或 backend Completion 的独立
+合同证明零开销，也不把声明本身当成性能资格化证据。
 
 ## 单 target/storage/lane：自然短路径
 
@@ -316,7 +337,7 @@ island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDepend
 
 Provider operation/region 的 `step(...)->runtime.replay_class` 保留 Compute 声明的 prepared/managed/unknown
 事实（选型见 [Compute](compute.md)）。它不从 region 大小、shared/delegated 或 capture 反推；unknown
-不能视为 prepared。当前能报告并验证 proposal/artifact 一致性，自动 prepared-only 候选筛选仍待实现。
+不能视为 prepared。compile 验证 proposal/artifact 一致性，并按显式 prepared-only 政策筛选候选。
 metadata-only view 和 Graph copy step 不是 Provider artifact，不用这个字段替代各自的执行/后端成本合同。
 
 `CompileStepReport::node_count` 是该 step 覆盖的逻辑节点数量；`node_begin` 是最小 ordinal，不总是一个

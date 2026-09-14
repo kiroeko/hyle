@@ -1088,6 +1088,8 @@ struct RegionExtension final {
 struct RegionCandidate final {
   RegionCostFacts cost{};
   std::uint64_t route = 0;
+  compute::ProviderReplayClass replay_class =
+      compute::ProviderReplayClass::kUnknown;
   std::uint32_t node_offset = 0;
   std::uint32_t node_count = 0;
   std::uint32_t extension_index = 0;
@@ -1095,6 +1097,12 @@ struct RegionCandidate final {
   std::uint32_t proposal_order = 0;
   ExecutionTargetId target{};
 };
+
+constexpr bool replay_allowed(ProviderReplayPolicy policy,
+                              compute::ProviderReplayClass replay) noexcept {
+  return policy == ProviderReplayPolicy::kAllowAny ||
+         replay == compute::ProviderReplayClass::kPrepared;
+}
 
 using RegionExtensions =
     container::SmallVector<RegionExtension, 4, mem::AllocatorRef>;
@@ -1796,6 +1804,13 @@ Status prepare_placed_steps(detail::PlanState &plan,
         return std::unexpected(std::move(unsupported));
       }
 
+      if (!replay_allowed(options.provider_replay,
+                          proposal->runtime.replay_class)) {
+        unsupported = Status::Unimplemented(
+            "operation provider does not declare required prepared replay");
+        continue;
+      }
+
       bool route_supported = true;
       for (std::size_t input_index = 0; input_index < node.input_count;
            ++input_index) {
@@ -2430,6 +2445,12 @@ Status prepare_placed_steps(detail::PlanState &plan,
       bool route_supported = region_status.ok();
       if (!route_supported && !region_status.IsUnimplemented())
         return region_status;
+      if (route_supported &&
+          candidate.replay_class != compute::ProviderReplayClass::kUnknown &&
+          candidate.replay_class != resource_proposal.runtime.replay_class) {
+        return Status::Internal(
+            "region provider changed its declared replay class");
+      }
 
       for (std::size_t index = 0;
            route_supported && index < logical_inputs.size(); ++index) {
@@ -2883,6 +2904,14 @@ Status discover_region_candidates(
       if (!*valid)
         return Status::InvalidArgument(
             "graph region leaves its node set and later re-enters it");
+      if (!compute::ProviderRuntimeProperties{.replay_class =
+                                                  proposal.replay_class}
+               .valid()) {
+        return Status::Internal(
+            "region provider declared an invalid replay class");
+      }
+      if (!replay_allowed(options.provider_replay, proposal.replay_class))
+        continue;
       const std::optional<std::uint64_t> estimate =
           proposal.cost.estimated_net_savings_ns;
       if ((estimate.has_value() && *estimate == 0) ||
@@ -2917,6 +2946,7 @@ Status discover_region_candidates(
       if (!candidates.try_push_back(RegionCandidate{
               .cost = proposal.cost,
               .route = proposal.route,
+              .replay_class = proposal.replay_class,
               .node_offset = static_cast<std::uint32_t>(node_offset),
               .node_count = static_cast<std::uint32_t>(proposal.nodes.size()),
               .extension_index = static_cast<std::uint32_t>(extension_index),
@@ -6350,6 +6380,11 @@ Result<CompiledGraph> compile(const Graph &graph,
       options.operation_fallback != OperationFallbackPolicy::kReject) {
     return std::unexpected(
         Status::InvalidArgument("graph operation fallback policy is invalid"));
+  }
+  if (options.provider_replay != ProviderReplayPolicy::kAllowAny &&
+      options.provider_replay != ProviderReplayPolicy::kRequirePrepared) {
+    return std::unexpected(
+        Status::InvalidArgument("graph provider replay policy is invalid"));
   }
   if (options.workspace_reuse != WorkspaceReusePolicy::kExistingOrderOnly &&
       options.workspace_reuse != WorkspaceReusePolicy::kAllowSerialization) {

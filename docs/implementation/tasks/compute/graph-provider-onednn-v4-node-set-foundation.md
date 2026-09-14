@@ -6,6 +6,10 @@ Compute 后继 [v9](compute-v9-shape-replay-substrate.md) 的 C90/C94 也迁移�
 C91 的 replay facts 属于 GP41：已准备 MLP 明确 prepared；proposal/artifact 的成本类别必须一致，
 Graph 复用 Compute 的 value 合同校验，不增加 provider 热分支。
 
+G100 的 prepared-only 冷筛选同属 GP41：region discovery 提前声明同一 prepared class，迁移 extension
+v7，确保 oneDNN MLP 不被当成 unknown 排除。只迁移元数据并增加实际 strict 编译/执行回归，不改 kernel、
+pattern、线程或 submit；不据此签发 GP44 性能结论。
+
 ## Closure card
 
 - component / owner：`graph_provider_onednn` / Graph oneDNN provider；round=`graph-provider-onednn-v4-node-set-foundation`；
@@ -54,3 +58,7 @@ Graph 逐头测试同时通过。非 Windows、sanitizer、三种完整安装交
 
 GP41--GP44 的完整 boundary cost、事务回退、BRGEMM seam 三交付与 gated MLP 终局 P1 仍待完成；
 本检查点不构成 Candidate 或关闭声明。
+
+G100/GP41 冷筛选迁移已通过 Windows oneDNN-enabled shared 定向 4/4：实际 gated MLP 在 prepared-only
+政策下仍被选中并执行正确，discovery/resource/artifact 使用同一个 runtime 常量；Graph 与本 factor 逐头
+同时通过。只验证当前 source-tree 交付，GP43/GP44 的最终安装/性能义务不被此检查点替代。

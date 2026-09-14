@@ -167,3 +167,11 @@ Container SmallVector 存放；没有增加第三方、CMake 开关、反向依�
 C90--C92 与 C94 的本次 SPI 迁移完成；C93 identity/profile、Graph bounded/runtime variants、动态 View
 attributes 与其余 G100--G107 仍未完成。这里只完成有限 shape substrate 和 exact Graph 消费，组件继续
 `AUDITED`，不签整个 A2、foundation candidate、CLOSED 或新性能胜利。
+
+### C93 身份审计检查点
+
+现有 ProviderId 是逻辑家族 identity，Provider 名称/版本不证明具体 build；Device equality 是进程内资源
+对象身份，也不证明硬件/driver/executor 合同。因此这些字段不能直接冒充可跨构建复用的 qualified
+performance key。C93 尚待补齐明确的 build/device/domain/boundary 事实；没有可用事实时保留 unknown，
+不编造 ns、不用函数地址或 POD padding 做持久 identity。这个缺项不阻止已审定的 Graph G100 replay
+硬约束冷筛选；它不依赖 timing evidence，也不宣称已完成性能排序。

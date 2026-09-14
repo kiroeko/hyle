@@ -304,8 +304,9 @@ invocation 总能提交到调用方 Queue。`kDelegated` artifact 只由 Graph �
 - `kUnknown`：未声明，**不是零成本**。`valid()` 只检查字段是否合法，不证明成本已资格化。
 
 分类不能从 shared/delegated 或 capture flag 推断。调用方自带 executor/callback 的内部开销、失败时
-Status 诊断分配仍由各自合同负责。需要严格路线时，可在准备后、提交前检查该字段；Graph 的自动
-prepared-only 冷筛选尚未接入，不能把分类字段当成已经存在的筛选开关。
+Status 诊断分配仍由各自合同负责。direct 用户可在准备后、提交前检查该字段；Graph 用户可通过
+[`CompileOptions::provider_replay`](graph.md#何时要求-prepared-only) 在创建 artifact 前筛选 leaf/region。
+这不改变 direct `prepare()` 的 Provider 顺序，也不增加每次 submit 的政策查询。
 
 图编译器或手工 workspace planner 可在冷路径调用
 `PreparedOperation::alias_support(output_index, input_index)`。公共 operation traits 只是语义允许的上界；
