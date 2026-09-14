@@ -241,3 +241,40 @@ leaf fallback。初次编译发现一个未迁移的 fallback 解包点，已修
 
 这只完成统一选路所需的结果边界，不把 G103 完整成本/同池搜索、G104 全部重选、variants 或资源/常量
 合同写成完成。状态保持 `AUDITED`。
+
+### G104：安全拒绝后的候选重选审计
+
+当前 compile 在入选 region 明确拒绝后只能拆成 leaf，不能尝试已经发现的其它 region/target；因此合法的
+`operation_fallback=kReject` 也可能错失可行的另一分区。这是 G104 有限事务重选的直接实现缺口。
+
+先固定一次 cold discovery，保存本次编译唯一的候选 ordinal/node set 和扩展 owner。一个构造尝试若因明确
+region decline 或不兼容资源安全拒绝，销毁本次已建制品、移除该候选，再在原候选池重新放置/分区；不重新
+询问 provider、不补充发现预算、不重置 preparation 计数。真正 Error、无匹配 destroy 的制品、公共分配失败
+立即失败。每次重选永久排除一个候选，最多 R 次，仍受原 `max_placement_attempts` 硬约束。
+
+报告记录被安全拒绝的 region 候选数，受拒绝影响的 leaf 标记 `kRegionDeclined`；正常拒绝不等于 search
+limit。只有完整计划才可返回；禁止 leaf 时仍
+可改选完整 region 覆盖，最终没有覆盖则返回最后一次明确拒绝。测试覆盖两个 Provider、同 Provider 不同
+分区、跨 target/required placement、部分已建制品清理、全部拒绝、预算不充值、fatal 不重选及真实 oneDNN。
+这一迁移仍不声称已实现 G103 同池完整成本、全局最优或已有 feasible incumbent 的完整优化循环。
+
+## 2026-09-14 G104：有限 region 重选检查点
+
+上述重选已实现。discovery owner 持有一次发现的 extensions/node arena/候选，构造尝试仅记录明确拒绝的
+候选 ordinal；失败分区的已建制品先销毁，physical metadata 和 node→step 映射再重建。禁止 leaf 时不再
+提前准备不允许使用的 leaf。成功报告新增安全拒绝数与 `kRegionDeclined`；真正 Error 仍立即传播。
+
+- Windows Release source-tree Graph shared/static 各 3/3（各 136 单元用例及逐头）通过。
+- oneDNN-enabled shared 的 Graph/region/direct-Graph 与逐头 5/5（136 单元用例）通过。
+- 新增八项测试覆盖同/异 Provider、改选 node set、跨 target 与 required placement、先成功后拒绝的制品
+  清理、全部拒绝、固定发现/准备预算、不兼容资源及逐次分配失败。每个故障点失败后回收全部本次分配，
+  清除故障即可再次编译；成功重选的两/三/四节点路线实际执行数值正确。既有 fatal/async 回归继续通过。
+- P0：正常构造不重复 discovery；最多 R 次排除/重选，每次消耗一个此前未拒绝的候选，准备总数受原硬
+  上限约束。冷 scratch 增加 O(R) 拒绝标记，原 per-node coverage 计数改为一字节分类；计划/报告增加一个
+  `size_t` 诊断计数。submit/Queue/kernel 无新搜索、分配、锁或调用层。
+- impact READY，跳过 89 项；closure/docs/diff 通过。只运行本卡 Windows 增量验证；跨平台/sanitizer、
+  installed SDK 与最终 P1 仍待完整 foundation candidate，不因本次通过签发全架构完成。
+
+当前每个发现的 region 仍采用确定性资源选择，拒绝后不穷举该 region 的全部资源组合。G103 的
+leaf/region/placement 同池完整成本与 qualified profile、G104 的完整可行 incumbent 优化循环及其余
+G101/G102/G105/G106/G107 仍须继续实施；Graph 保持 `AUDITED`。

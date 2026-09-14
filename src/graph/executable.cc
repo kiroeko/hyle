@@ -1111,6 +1111,25 @@ using RegionCandidates =
 using RegionNodeIds = container::SmallVector<NodeId, 32, mem::AllocatorRef>;
 using RegionValues = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
 
+// One discovery per compile, shared by the bounded construction attempts.
+// Proposal ordinals remain stable while the eligible partition changes.
+struct RegionDiscovery final {
+  explicit RegionDiscovery(mem::AllocatorRef allocator) noexcept
+      : extensions(allocator), candidates(allocator), nodes(allocator),
+        rejected(allocator) {}
+
+  RegionExtensions extensions;
+  RegionCandidates candidates;
+  RegionNodeIds nodes;
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> rejected;
+  bool ready = false;
+};
+
+struct PlacementAttemptOutcome final {
+  std::optional<std::uint32_t> rejected_region{};
+  bool no_feasible_route = false;
+};
+
 // Cold compile scratch. Keep the original adjacency once and sort a proposed
 // partition in O(V + E + U log U), where U is the number of contracted units.
 // Duplicate data/control edges need no deduplication: each increment has one
@@ -1552,11 +1571,13 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
                       const detail::GraphState &graph,
                       RegionCandidates &selected) noexcept;
 
-Status prepare_placed_steps(detail::PlanState &plan,
-                            const Graph &published_graph,
-                            const detail::GraphState &graph,
-                            CompileEnvironment environment,
-                            CompileOptions options) noexcept {
+Status prepare_placed_steps_attempt(detail::PlanState &plan,
+                                    const Graph &published_graph,
+                                    const detail::GraphState &graph,
+                                    CompileEnvironment environment,
+                                    CompileOptions options,
+                                    RegionDiscovery &discovery,
+                                    PlacementAttemptOutcome &outcome) noexcept {
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
   using Prepared =
@@ -1682,35 +1703,43 @@ Status prepare_placed_steps(detail::PlanState &plan,
     }
   }
 
-  RegionExtensions extensions(plan.allocator);
-  RegionCandidates all_region_candidates(plan.allocator);
-  RegionNodeIds all_region_nodes(plan.allocator);
-  std::size_t region_proposal_count = 0;
-  std::size_t region_proposal_node_count = 0;
-  for (std::size_t target = 0; target < target_count; ++target) {
-    Status discovered = discover_region_candidates(
-        published_graph, graph, *environment.targets[target].context, options,
-        plan.allocator, extensions, all_region_candidates, all_region_nodes,
-        region_proposal_count, region_proposal_node_count, plan.search,
-        ExecutionTargetId{static_cast<std::uint32_t>(target)});
-    if (!discovered.ok())
-      return discovered;
+  auto &extensions = discovery.extensions;
+  auto &all_region_candidates = discovery.candidates;
+  auto &all_region_nodes = discovery.nodes;
+  if (!discovery.ready) {
+    std::size_t region_proposal_count = 0;
+    std::size_t region_proposal_node_count = 0;
+    for (std::size_t target = 0; target < target_count; ++target) {
+      Status discovered = discover_region_candidates(
+          published_graph, graph, *environment.targets[target].context, options,
+          plan.allocator, extensions, all_region_candidates, all_region_nodes,
+          region_proposal_count, region_proposal_node_count, plan.search,
+          ExecutionTargetId{static_cast<std::uint32_t>(target)});
+      if (!discovered.ok())
+        return discovered;
+    }
+    plan.search.region_proposals = region_proposal_count;
+    plan.search.region_proposal_nodes = region_proposal_node_count;
+    if (options.search_policy == CompileSearchPolicy::kRequireUnexhausted &&
+        plan.search.optimization_limited()) {
+      return Status::ResourceExhausted("graph candidate discovery reached a "
+                                       "search limit under strict policy");
+    }
+    if (!all_region_nodes.try_resize(region_proposal_node_count) ||
+        !discovery.rejected.try_resize(region_proposal_count))
+      return plan_allocation_failure();
+    std::fill(discovery.rejected.begin(), discovery.rejected.end(),
+              std::uint8_t{0});
+    discovery.ready = true;
   }
-  plan.search.region_proposals = region_proposal_count;
-  plan.search.region_proposal_nodes = region_proposal_node_count;
-  if (options.search_policy == CompileSearchPolicy::kRequireUnexhausted &&
-      plan.search.optimization_limited()) {
-    return Status::ResourceExhausted(
-        "graph candidate discovery reached a search limit under strict policy");
-  }
-  if (!all_region_nodes.try_resize(region_proposal_node_count))
-    return plan_allocation_failure();
   Flags region_support(plan.allocator);
   if (!region_support.try_resize(node_count * target_count))
     return plan_allocation_failure();
   for (std::uint8_t &supported : region_support)
     supported = 0;
   for (const RegionCandidate &candidate : all_region_candidates) {
+    if (discovery.rejected[candidate.proposal_order] != 0)
+      continue;
     for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
       region_support[static_cast<std::size_t>(node.ordinal()) * target_count +
                      candidate.target.ordinal()] = 1;
@@ -2052,6 +2081,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
         selected = true;
         break;
       }
+      if (options.operation_fallback == OperationFallbackPolicy::kReject)
+        continue;
       auto result = prepare_operation(node_index, candidate);
       if (!result) {
         return std::move(result).error().WithContext(
@@ -2065,8 +2096,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
       }
       unsupported = std::move(result->reason);
     }
-    if (!selected)
+    if (!selected) {
+      outcome.no_feasible_route = true;
       return unsupported;
+    }
   }
 
   RegionCandidates candidates(plan.allocator);
@@ -2074,6 +2107,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
   if (!candidates.try_reserve(all_region_candidates.size()))
     return plan_allocation_failure();
   for (const RegionCandidate &candidate : all_region_candidates) {
+    if (discovery.rejected[candidate.proposal_order] != 0)
+      continue;
     bool eligible = true;
     for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
       if (node_targets[node.ordinal()] != candidate.target.ordinal()) {
@@ -2094,6 +2129,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
       covered_nodes += candidate.node_count;
     }
     if (covered_nodes != node_count) {
+      outcome.no_feasible_route = true;
       return Status::Unimplemented(
           "multi-domain graph specialization requires an operation fallback");
     }
@@ -2180,25 +2216,34 @@ Status prepare_placed_steps(detail::PlanState &plan,
       }
       unsupported = std::move(fallback->reason);
     }
-    if (!fallback_selected)
+    if (!fallback_selected) {
+      outcome.no_feasible_route = true;
       return unsupported;
+    }
   }
 
-  container::SmallVector<std::uint32_t, 32, mem::AllocatorRef>
-      eligible_region_coverage(plan.allocator);
+  enum class RegionCoverage : std::uint8_t { kNone, kEligible, kRejected };
+  container::SmallVector<RegionCoverage, 32, mem::AllocatorRef> region_coverage(
+      plan.allocator);
   container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> marks(
       plan.allocator);
   Flags region_node_membership(plan.allocator);
   Flags region_outside_uses(plan.allocator);
-  if (!eligible_region_coverage.try_resize(node_count) ||
+  if (!region_coverage.try_resize(node_count) ||
       !marks.try_resize(value_count)) {
     return plan_allocation_failure();
   }
-  for (std::uint32_t &count : eligible_region_coverage)
-    count = 0;
+  std::fill(region_coverage.begin(), region_coverage.end(),
+            RegionCoverage::kNone);
   for (const RegionCandidate &candidate : candidates) {
     for (NodeId node : candidate_nodes(candidate, all_region_nodes))
-      ++eligible_region_coverage[node.ordinal()];
+      region_coverage[node.ordinal()] = RegionCoverage::kEligible;
+  }
+  for (const RegionCandidate &candidate : all_region_candidates) {
+    if (discovery.rejected[candidate.proposal_order] != 0) {
+      for (NodeId node : candidate_nodes(candidate, all_region_nodes))
+        region_coverage[node.ordinal()] = RegionCoverage::kRejected;
+    }
   }
   for (std::uint32_t &mark : marks)
     mark = 0;
@@ -2578,12 +2623,11 @@ Status prepare_placed_steps(detail::PlanState &plan,
         }
       }
       if (!route_supported) {
-        if (options.operation_fallback == OperationFallbackPolicy::kReject)
-          return region_status;
-        // The resource route was a cold proposal, not accepted work. Its
-        // contracted unit is ready, so its nodes can now take the ordinary
-        // operation path without violating an external dependency.
-        operation_nodes = region_nodes;
+        // This is an explicit cold rejection, not an arbitrary error code.
+        // Discard the construction before reconsidering its partition/target.
+        // Fatal prepare errors returned above never reach this branch.
+        outcome.rejected_region = candidate.proposal_order;
+        return region_status;
       } else {
         physical_inputs.clear();
         if (!physical_inputs.try_reserve(logical_inputs.size()))
@@ -2771,7 +2815,9 @@ Status prepare_placed_steps(detail::PlanState &plan,
       const CompileFallbackReason reason =
           options.region_selection == RegionSelectionPolicy::kDisabled
               ? CompileFallbackReason::kRegionSelectionDisabled
-              : (eligible_region_coverage[node_index] == 0
+          : region_coverage[node_index] == RegionCoverage::kRejected
+              ? CompileFallbackReason::kRegionDeclined
+              : (region_coverage[node_index] == RegionCoverage::kNone
                      ? CompileFallbackReason::kNoEligibleRegion
                      : CompileFallbackReason::kRegionNotSelected);
       const std::uint32_t step_index =
@@ -2822,6 +2868,39 @@ Status prepare_placed_steps(detail::PlanState &plan,
   }
 
   return Status::Ok();
+}
+
+Status prepare_placed_steps(detail::PlanState &plan,
+                            const Graph &published_graph,
+                            const detail::GraphState &graph,
+                            CompileEnvironment environment,
+                            CompileOptions options) noexcept {
+  RegionDiscovery discovery(plan.allocator);
+  Status last_rejection = Status::Ok();
+  for (;;) {
+    // No Invocation or user work exists during this transaction. Clear all
+    // artifacts before calling any provider for the next construction; the
+    // attempt resets its physical metadata and keeps aggregate budgets.
+    plan.steps.clear();
+    plan.region_count = 0;
+    std::fill(plan.node_steps.begin(), plan.node_steps.end(), detail::kNoNode);
+    PlacementAttemptOutcome outcome;
+    Status status = prepare_placed_steps_attempt(
+        plan, published_graph, graph, environment, options, discovery, outcome);
+    if (!outcome.rejected_region) {
+      if (outcome.no_feasible_route && !last_rejection.ok())
+        return last_rejection;
+      return status;
+    }
+    const std::uint32_t rejected = *outcome.rejected_region;
+    if (status.ok() || rejected >= discovery.rejected.size() ||
+        discovery.rejected[rejected] != 0) {
+      return Status::Internal("graph region retry did not exclude a candidate");
+    }
+    discovery.rejected[rejected] = 1;
+    ++plan.search.region_route_rejections;
+    last_rejection = std::move(status);
+  }
 }
 
 Status discover_region_candidates(

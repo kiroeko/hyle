@@ -243,8 +243,11 @@ required 或 preferred。required route 不可执行时 compile
 真正 prepare/region compile 使用共同 `compute::ProviderPrepareOutcome`，只有明确的 unsupported 或
 candidate-local resource-budget decline 可在回收部分 artifact 后回退。kind=Error 即使 code 是
 Unimplemented/ResourceExhausted 也立即失败，不能从错误码推断 rollback。非法 kind/status 同样失败。
-当前拒绝的 region 可使用已安装 leaf 路线；一般的替代 region/全成本重选仍未实现，不能据此推断已经
-获得完整 selector。`max_placement_attempts` 限制实际冷准备次数；当前实现若
+当前编译先发现一次 region 候选。某个 region 的已选资源路线被安全拒绝后，释放本次构造的制品并排除该
+候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
+leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现，
+不重置任何预算。当前这还是确定性重选，不是完整的 leaf/region 同池成本优化或所有资源组合的穷举。
+`max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 
 `max_region_proposals`、`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 限制候选发现，
@@ -347,10 +350,12 @@ multi-stream capture。
 
 `CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
 
-- `search()` 的已接收候选/node 数、prepare 次数和是否因容量省略了候选/provider；
+- `search()` 的已接收候选/node 数、累计 prepare 次数、`region_route_rejections` 安全拒绝数和是否因
+  容量省略了候选/provider；正常拒绝不等于搜索容量耗尽；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
 - operation fallback、provider region 和真实 copy step；
+- leaf 的 `kRegionDeclined` 表示本轮曾安全拒绝包含该 node 的 region，不是 Provider 执行出错后重跑；
 - shared/delegated segment、dependency、为 workspace budget 新增的 serialization edge、potential
   synchronization 和 concurrent-invocation 能力；
 - provider/version、实际配置实例 `provider_instance`、dispatch、workspace、persistent/packed/borrowed

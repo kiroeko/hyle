@@ -243,6 +243,9 @@ enum class CompileFallbackReason : std::uint8_t {
   kRegionSelectionDisabled,
   kNoEligibleRegion,
   kRegionNotSelected,
+  // At least one region containing this node was transactionally rejected
+  // during this compile; the final plan uses an allowed operation route.
+  kRegionDeclined,
 };
 
 // One immutable step in the exact emitted execution plan. Synchronization is
@@ -378,6 +381,9 @@ struct CompileSearchReport final {
   std::size_t region_proposals = 0;
   std::size_t region_proposal_nodes = 0;
   std::size_t placement_attempts = 0;
+  // Candidates excluded after an explicit transactional decline or an
+  // incompatible resource route. Rejection is not search-budget exhaustion.
+  std::size_t region_route_rejections = 0;
   bool region_proposal_limit_reached = false;
   bool per_provider_proposal_limit_reached = false;
   bool region_node_limit_reached = false;

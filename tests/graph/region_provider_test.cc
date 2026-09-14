@@ -142,6 +142,9 @@ struct RegionProbe final {
   std::optional<ProviderPrepareOutcome> region_outcome_override{};
   std::optional<ProviderPrepareOutcome> single_outcome_override{};
   std::size_t destroy_count_at_single_proposal = 0;
+  std::optional<std::uint64_t> region_outcome_route{};
+  const RegionProbe *observe_cleanup = nullptr;
+  std::size_t observed_cleanup_at_compile = 0;
 };
 
 struct ExternalEffect final {
@@ -722,12 +725,18 @@ ProviderPrepareOutcome compile_region(void *context,
                                       AllocatorRef allocator,
                                       ProviderRegionPrepared *output) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
+  if (probe.observe_cleanup != nullptr)
+    probe.observed_cleanup_at_compile =
+        probe.observe_cleanup->destroy_prepared_count;
   if (probe.decline_regions)
     return ProviderPrepareOutcome::unsupported(
         Status::Unimplemented("injected pre-acceptance region decline"));
   Status status = compile_region_checked(context, request, allocator, output);
   if (!status.ok())
     return ProviderPrepareOutcome::error(std::move(status));
+  if (probe.region_outcome_route &&
+      *probe.region_outcome_route != request.route)
+    return ProviderPrepareOutcome::prepared();
   return probe.region_outcome_override.value_or(
       ProviderPrepareOutcome::prepared());
 }
@@ -2017,8 +2026,7 @@ TEST(GraphRegions, FallsBackWhenASelectedRegionHasNoResourceRoute) {
   for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
     const auto step = compiled.report.step(index).value();
     EXPECT_EQ(step.kind, CompileStepKind::kOperationFallback);
-    EXPECT_EQ(step.fallback_reason,
-              CompileFallbackReason::kRegionNotSelected);
+    EXPECT_EQ(step.fallback_reason, CompileFallbackReason::kRegionDeclined);
   }
 }
 
@@ -2904,14 +2912,333 @@ TEST(GraphRegions, RegionErrorCodesDoNotGrantPermissionToRetry) {
         Status::ResourceExhausted("real region allocation failure")}) {
     RegionProbe probe;
     probe.region_outcome_override = ProviderPrepareOutcome::error(error);
-    Context context = make_context(probe);
+    RegionProbe alternative;
+    Context context = make_context(probe, alternative);
     auto compiled = hyle::graph::compile(logical.graph, context);
     ASSERT_FALSE(compiled.has_value());
     EXPECT_EQ(compiled.error(), error);
     EXPECT_EQ(probe.compile_count, 1u);
     EXPECT_EQ(probe.destroy_prepared_count, 1u);
     EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(alternative.compile_count, 0u);
   }
+}
+
+TEST(GraphRegions, RetriesAnotherRegionProviderWithoutRediscovery) {
+  const auto logical = make_negations(2);
+  const std::array declines{
+      ProviderPrepareOutcome::unsupported(
+          Status::Unimplemented("unsupported route")),
+      ProviderPrepareOutcome::resource_declined(
+          Status::ResourceExhausted("candidate-local budget"))};
+  for (const auto &decline : declines) {
+    for (auto fallback :
+         {OperationFallbackPolicy::kAllow, OperationFallbackPolicy::kReject}) {
+      RegionProbe first;
+      first.region_outcome_override = decline;
+      RegionProbe second;
+      second.observe_cleanup = &first;
+      Context context = make_context(first, second);
+      auto compiled = hyle::graph::compile(
+          logical.graph, context,
+          {.max_placement_attempts = 2,
+           .operation_fallback = fallback,
+           .max_region_proposals = 2,
+           .max_region_proposals_per_provider = 1,
+           .max_region_proposal_nodes = 4,
+           .search_policy = CompileSearchPolicy::kRequireUnexhausted});
+      ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+      EXPECT_EQ(first.propose_count, 1u);
+      EXPECT_EQ(second.propose_count, 1u);
+      EXPECT_EQ(first.compile_count, 1u);
+      EXPECT_EQ(second.compile_count, 1u);
+      EXPECT_EQ(second.observed_cleanup_at_compile, 1u);
+      EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+      EXPECT_EQ(compiled->report.region_count(), 1u);
+      EXPECT_EQ(compiled->report.fallback_operation_count(), 0u);
+      EXPECT_EQ(compiled->report.step(0)->provider_instance,
+                context.provider_instance_id(1).value());
+      const auto search = compiled->report.search();
+      EXPECT_EQ(search.region_proposals, 2u);
+      EXPECT_EQ(search.region_proposal_nodes, 4u);
+      EXPECT_EQ(search.placement_attempts, 2u);
+      EXPECT_EQ(search.region_route_rejections, 1u);
+      EXPECT_FALSE(search.optimization_limited());
+
+      auto input = make_tensor(row(8));
+      auto output = make_tensor(row(8));
+      const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+      write(input, values);
+      auto invocation = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+      ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+      auto queue = context.create_queue().value();
+      ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+      EXPECT_EQ(read(output, values.size()),
+                std::vector<float>(values.begin(), values.end()));
+      EXPECT_EQ(first.submit_count, 0u);
+      EXPECT_EQ(second.submit_count, 1u);
+    }
+  }
+}
+
+TEST(GraphRegions, RepartitionsAfterOneRouteOfTheSameProviderDeclines) {
+  const auto logical = make_negations(3);
+  RegionProbe probe{.mode = ProposalMode::kOverlappingRoutes};
+  probe.region_outcome_route = (std::uint64_t{1} << 32) | 2;
+  probe.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("declined suffix fusion"));
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(probe.propose_count, 1u);
+  EXPECT_EQ(probe.compile_count, 2u);
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+  EXPECT_EQ(probe.compiled_begin, 0u);
+  EXPECT_EQ(compiled->report.region_count(), 1u);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 1u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+  EXPECT_EQ(compiled->report.step(1)->fallback_reason,
+            CompileFallbackReason::kRegionDeclined);
+
+  auto input = make_tensor(row(8));
+  auto output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+  std::vector<float> expected;
+  for (float value : values)
+    expected.push_back(-value);
+  EXPECT_EQ(read(output, values.size()), expected);
+}
+
+TEST(GraphRegions, RetryDestroysEarlierArtifactsBeforeRebuildingThePartition) {
+  const auto logical = make_negations(4);
+  RegionProbe first;
+  first.region_outcome_route = (std::uint64_t{2} << 32) | 2;
+  first.region_outcome_override = ProviderPrepareOutcome::resource_declined(
+      Status::ResourceExhausted("second region exceeds private budget"));
+  RegionProbe second;
+  second.observe_cleanup = &first;
+  Context context = make_context(first, second);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.max_placement_attempts = 4,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(first.propose_count, 1u);
+  EXPECT_EQ(second.propose_count, 1u);
+  EXPECT_EQ(first.compile_count, 3u);
+  EXPECT_EQ(second.compile_count, 1u);
+  // Both the rejected partial artifact and the earlier successful artifact
+  // of the abandoned partition are gone, before the alternative is prepared.
+  EXPECT_EQ(second.observed_cleanup_at_compile, 2u);
+  EXPECT_EQ(compiled->report.region_count(), 2u);
+  EXPECT_EQ(compiled->report.step_count(), 2u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 4u);
+  EXPECT_EQ(compiled->report.search().region_proposals, 4u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+
+  auto input = make_tensor(row(8));
+  auto output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+}
+
+TEST(GraphRegions, RegionRetryCanChangeTargetButHonorsRequiredPlacement) {
+  const auto logical = make_negations(2);
+  RegionProbe first;
+  first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("first target declines"));
+  RegionProbe second;
+  Context first_context = make_context(first);
+  Context second_context = make_context(second);
+  const auto resource = hyle::mem::system_resource();
+  const Environment environment{{&first_context, resource},
+                                {&second_context, resource}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 1u);
+  EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+  EXPECT_EQ(second.compile_count, 1u);
+
+  const std::array required{
+      hyle::graph::NodePlacement{logical.graph.node_id(0).value(),
+                                 environment.target(0),
+                                 hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(1).value(),
+                                 environment.target(0),
+                                 hyle::graph::PlacementStrength::kRequired}};
+  auto unavailable = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.node_placements = required,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(unavailable.has_value());
+  EXPECT_EQ(unavailable.error(), first.region_outcome_override->status);
+  EXPECT_EQ(second.compile_count, 1u);
+  EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+}
+
+TEST(GraphRegions, RegionRetriesDoNotRechargePreparationBudget) {
+  const auto logical = make_negations(2);
+  RegionProbe first;
+  first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("first route declines"));
+  RegionProbe second;
+  Context context = make_context(first, second);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.max_placement_attempts = 1,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsResourceExhausted());
+  EXPECT_EQ(first.propose_count, 1u);
+  EXPECT_EQ(second.propose_count, 1u);
+  EXPECT_EQ(first.compile_count, 1u);
+  EXPECT_EQ(second.compile_count, 0u);
+  EXPECT_EQ(first.destroy_prepared_count, 1u);
+}
+
+TEST(GraphRegions, AllRejectedRegionsTerminateWithoutRediscoveryOrLeafWork) {
+  const auto logical = make_negations(2);
+  RegionProbe first;
+  first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("first route declines"));
+  RegionProbe second;
+  second.region_outcome_override = ProviderPrepareOutcome::resource_declined(
+      Status::ResourceExhausted("second route declines"));
+  Context context = make_context(first, second);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.max_placement_attempts = 2,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_EQ(compiled.error(), second.region_outcome_override->status);
+  EXPECT_EQ(first.propose_count, 1u);
+  EXPECT_EQ(second.propose_count, 1u);
+  EXPECT_EQ(first.compile_count, 1u);
+  EXPECT_EQ(second.compile_count, 1u);
+  EXPECT_EQ(first.destroy_prepared_count, 1u);
+  EXPECT_EQ(second.destroy_prepared_count, 1u);
+  EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+}
+
+TEST(GraphRegions, UnmatchedRegionStorageCanSelectAnotherCompleteRegion) {
+  const auto logical = make_negations(2);
+  HostResource unavailable;
+  RegionProbe first;
+  first.region_input_resource = hyle::mem::MemoryResourceRef(unavailable);
+  RegionProbe second;
+  Context context = make_context(first, second);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(first.propose_count, 1u);
+  EXPECT_EQ(second.propose_count, 1u);
+  EXPECT_EQ(first.region_resource_count, 1u);
+  EXPECT_EQ(first.compile_count, 0u);
+  EXPECT_EQ(second.compile_count, 1u);
+  EXPECT_EQ(compiled->report.region_count(), 1u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 1u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+}
+
+TEST(GraphRegions, EveryAllocationFailureInRegionReselectionRollsBack) {
+  struct AllocationState final {
+    AllocatorRef backing = hyle::mem::system_allocator();
+    std::size_t attempts = 0;
+    std::size_t fail_at = SIZE_MAX;
+    std::size_t live = 0;
+  } state;
+  const AllocatorRef allocator{
+      +[](void *opaque, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        auto &state = *static_cast<AllocationState *>(opaque);
+        if (state.attempts++ == state.fail_at)
+          return nullptr;
+        void *result = state.backing.allocate(bytes, alignment);
+        state.live += result != nullptr ? 1u : 0u;
+        return result;
+      },
+      +[](void *opaque, void *pointer, std::size_t bytes,
+          std::size_t alignment) noexcept {
+        auto &state = *static_cast<AllocationState *>(opaque);
+        state.live -= pointer != nullptr ? 1u : 0u;
+        state.backing.deallocate(pointer, bytes, alignment);
+      },
+      +[](void *opaque, void *pointer, std::size_t old_bytes,
+          std::size_t new_bytes, std::size_t alignment) noexcept -> void * {
+        auto &state = *static_cast<AllocationState *>(opaque);
+        if (new_bytes == 0) {
+          state.live -= pointer != nullptr ? 1u : 0u;
+          return state.backing.reallocate(pointer, old_bytes, 0, alignment);
+        }
+        if (state.attempts++ == state.fail_at)
+          return nullptr;
+        void *result =
+            state.backing.reallocate(pointer, old_bytes, new_bytes, alignment);
+        if (pointer == nullptr && result != nullptr)
+          ++state.live;
+        return result;
+      },
+      &state};
+  RegionProbe first;
+  first.region_outcome_route = (std::uint64_t{2} << 32) | 2;
+  first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("reselect after the second region"));
+  RegionProbe second;
+  const std::array providers{region_provider(first), region_provider(second)};
+  auto context =
+      Context::create(hyle::compute::cpu::device(),
+                      {.metadata_allocator = allocator, .providers = providers})
+          .value();
+  const auto logical = make_negations(4);
+  const CompileOptions options{.operation_fallback =
+                                   OperationFallbackPolicy::kReject};
+  const std::size_t context_allocations = state.live;
+  state.attempts = 0;
+  {
+    auto compiled = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+  }
+  const std::size_t attempts = state.attempts;
+  ASSERT_GT(attempts, 0u);
+  EXPECT_EQ(state.live, context_allocations);
+  for (std::size_t failure = 0; failure < attempts; ++failure) {
+    SCOPED_TRACE(failure);
+    state.attempts = 0;
+    state.fail_at = failure;
+    {
+      auto failed = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_FALSE(failed.has_value());
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+    }
+    EXPECT_EQ(state.live, context_allocations);
+    state.fail_at = SIZE_MAX;
+    {
+      auto recovered = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_TRUE(recovered.has_value()) << recovered.error().message();
+    }
+    EXPECT_EQ(state.live, context_allocations);
+  }
+  context = {};
+  EXPECT_EQ(state.live, 0u);
 }
 
 TEST(GraphRegions, InvalidRegionOutcomeIsFatalAndReclaimsItsArtifact) {
