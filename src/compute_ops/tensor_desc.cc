@@ -447,12 +447,15 @@ Result<TensorDesc> TensorDesc::transposed() const noexcept {
     return std::unexpected(
         Status::FailedPrecondition("tensor description is invalid"));
   }
-  if (rank_ != 2) {
+  if (rank_ < 2) {
     return std::unexpected(
-        Status::InvalidArgument("matrix transpose requires rank 2"));
+        Status::InvalidArgument("matrix transpose requires rank at least 2"));
   }
-  constexpr std::array<std::size_t, 2> axes{1, 0};
-  return permuted(axes);
+  std::array<std::size_t, kMaxTensorRank> axes{};
+  for (std::size_t axis = 0; axis < rank_; ++axis)
+    axes[axis] = axis;
+  std::swap(axes[rank_ - 2], axes[rank_ - 1]);
+  return permuted(std::span(axes.data(), rank_));
 }
 
 std::size_t TensorDesc::required_alignment() const noexcept {

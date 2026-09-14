@@ -27,8 +27,8 @@ sampling 和 serving 留在推理引擎。
 | 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
 | reduction | `Reduce` | f32 Sum/Mean/Min/Max；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
 | normalization | `RmsNorm` / `LayerNorm` | dense f32 `[..., hidden]`；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；逐 row、允许精确 input/output in-place |
-| matrix multiply | `MatMul` | f32 rank-2 `A[M,K] * B[K,N]`；B 可 row-major 或物理 `[N,K]` 的转置 view |
-| gated activation | `GatedActivation` 的 packed SiLU mode | dense f32 `[..., 2*d] -> [..., d]`，前半 gate、后半 value |
+| matrix multiply | `MatMul` | f32 `[...,M,K] * [...,K,N]` 与 NumPy-style batch broadcast；两端 batch 都可广播，B 的末两维可 row-major 或物理 `[...,N,K]` 的转置 view |
+| gated activation | `GatedActivation` | dense f32 packed `[...,2*d]` 或 separate gate/value；SiLU、exact GELU、GELU-tanh 三种模式均产生 `[...,d]` |
 | 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 当前为 f32，并可精确原地更新 input0 |
 | 张量拼接 | `Concat` | 同 dtype/rank 的 variadic plain inputs，沿显式 axis 产生 dense output；dense 输入按连续后缀块复制 |
 | 旋转位置编码 | `RoPE` | dense/strided f32 data、i32/i64 positions、显式 frequency tensor；支持 interleaved/half-split 与未旋转 tail，dense route 冷选择 fat kernel |
@@ -227,9 +227,10 @@ subview offset。普通 host route 映射后还会检查实际地址；设备 na
 
 ## MatMul 权重形状
 
-不要增加 provider-specific `transpose_weight` 标志。若模型存储权重为连续 `[N,K]`，创建该 dense desc 后
-调用 `transposed()`，得到逻辑 `[K,N]` 和对应 byte stride；数据不移动。Compute 会在 prepare 冷路径选择
-相应 route。普通连续 `[K,N]` 也直接受支持。Block-compressed `[N,K]` 使用上一节相同的 transpose 方式；
+不要增加 provider-specific `transpose_weight` 标志。若模型存储权重为连续 `[...,N,K]`，创建该 dense
+desc 后调用 `transposed()`；它只交换末两轴并保留领先 batch axes，得到逻辑 `[...,K,N]` 和对应 byte
+stride，数据不移动。Compute 会在 prepare 冷路径选择相应 route。普通连续 `[...,K,N]` 也直接受支持。
+Block-compressed `[...,N,K]` 使用上一节相同的 transpose 方式；
 当前 HYLE-native 与 oneDNN 不解释它，只有以后显式加入的量化 provider 会接收。
 
 ```cpp
@@ -238,21 +239,26 @@ if (!stored) return stored.error();
 auto logical_weight = stored->transposed();
 if (!logical_weight) return logical_weight.error();
 
-auto output = infer_single_output(
-    Operation(MatMul{}), std::array{activation_desc, *logical_weight});
+auto prepared = prepare(context, MatMul{}, activation_desc, *logical_weight);
+if (!prepared) return prepared.error();
+auto output = prepared->output_description();
 if (!output) return output.error();
-auto prepared = prepare(context, MatMul{}, activation_desc,
-                        *logical_weight, *output);
 ```
 
 ## prepare、invocation 与 submit
 
 `infer_output_descriptions()` 是 direct Compute 与 Graph 共用的 shape/layout 规则；单输出 operation 可用
-`infer_single_output()`。通用 span 入口的 `prepare()` 再核对调用方给出的 output desc；已经交付的 typed
-convenience 可直接推导 output desc。两者都把 provider/route 选择移出热路径。对同一描述反复执行时共享
+`infer_single_output()`。通用 span 入口的 `prepare()` 再核对调用方给出的 output desc；19 个 family 的 typed
+convenience 都按真实 arity 推导 output desc，其中 TopK 推导 values 与 i32 indices 两个输出，Concat 保留
+真正 variadic 的 descriptor span。两者都把 provider/route 选择移出热路径。对同一描述反复执行时共享
 `PreparedOperation`，为每个并发执行 lane 创建并复用一个 move-only `OperationInvocation`。当前故意
 没有把 prepare 或 invocation 创建隐藏在一次性 convenience 中，因为 provider workspace 和并发状态必须
 有明确 owner。
+
+固定 arity submit 可直接传 0--4 个 input 与单 output；TopK 可直接传 input、values、indices，Concat
+则传 input-view span 与单 output。这些 convenience 只在栈上组成有界 `std::array/std::span`，不分配，
+随后进入同一通用 submit。极小 operation 的手写热循环若已经持有 descriptor/view arrays，可以直接使用
+span 入口避免重复复制；Graph 会在编译/Invocation 创建时预建 binding，不在每个 node 重新组成数组。
 
 只给 descriptor 的 typed convenience 默认绑定 `mem::system_resource()`，适合 CPU/host RAM 的普通路线。
 使用 device、pinned、managed、NUMA 或应用自有 resource 时，不要让 provider 在第一次 submit 时猜测：把
@@ -269,8 +275,7 @@ auto prepared = prepare(context, Operation(RmsNorm{.epsilon = 1.0e-5F}),
 
 // descriptor-only GPU/custom-resource route：显式给出 exact resource。
 auto device_prepared = prepare(context, RmsNorm{.epsilon = 1.0e-5F},
-                               input_desc, weight_desc, output_desc,
-                               device_resource);
+                               input_desc, weight_desc, device_resource);
 ```
 
 `runtime_properties()` 说明 artifact 是 `kSharedQueue` 还是 `kDelegated`，以及 workspace owner、host blocking、
@@ -291,7 +296,7 @@ auto queue = context->create_queue();
 if (!queue) return queue.error();
 
 auto prepared = prepare(*context, RmsNorm{.epsilon = 1.0e-5F},
-                        input_desc, weight_desc, input_desc);
+                        input_desc, weight_desc);
 if (!prepared) return prepared.error();
 auto invocation = prepared->create_invocation();
 if (!invocation) return invocation.error();
@@ -305,7 +310,7 @@ return done->wait();                  // terminal failure
 当前 oneDNN provider 只接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
 物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K 权重会诚实回落到 HYLE-native SIMD route。RMSNorm、
-packed SiLU GatedActivation、零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
+全部 GatedActivation、batched/零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
 executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-native kernel；传入真实并行 executor
 时，oneDNN 可以把 N 维拆成互不重叠的连续 tile。
 
@@ -350,7 +355,7 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 `cpu::DefaultContextOptions::executor`、`native::Options::executor` 或 `onednn::Options::executor` 传入借用的
 `ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部任务、不得失败或抛异常，并在嵌套调用时
 保证进展；executor backing 必须活过由 provider 创建的 Context 及其 retained artifacts。Native 在 prepare
-冷路径按总工作量固定 task count，目前为足够大的 Norm、MatMul、packed gated activation 与 SDPA row 做
+冷路径按总工作量固定 task count，目前为足够大的 Norm、MatMul、dense gated activation 与 SDPA row 做
 至多一次同步 fan-out；默认、小工作量与可检测的 nested episode 保持 caller-thread 串行。
 
 并行分片由 HYLE 在 prepare 冷路径决定，不是 oneDNN 的隐藏线程池：正常 tile 宽度至少为 64 columns，

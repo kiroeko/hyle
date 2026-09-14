@@ -84,17 +84,49 @@ void run_rms_norm(const float *input, const float *weight, float *output,
   }
 }
 
-void run_silu_and_mul(const float *input, const float *, float *output,
-                      const Parameters &parameters, float) noexcept {
+template <GatedActivationKind Activation, GatedInputKind Inputs>
+void run_gated_activation(const float *first, const float *second,
+                          float *output, const Parameters &parameters,
+                          float) noexcept {
   const std::size_t rows = parameters[0];
   const std::size_t hidden = parameters[1];
   if (hidden == 0)
     return;
   for (std::size_t row = 0; row < rows; ++row) {
-    const float *gate = input + row * hidden * 2;
-    const float *value = gate + hidden;
-    simd::swiglu_f32_batch(gate, value, output + row * hidden, hidden);
+    const float *gate = first + row * hidden *
+                                   (Inputs == GatedInputKind::kPackedHalves
+                                        ? std::size_t{2}
+                                        : std::size_t{1});
+    const float *value =
+        Inputs == GatedInputKind::kPackedHalves ? gate + hidden
+                                                : second + row * hidden;
+    float *destination = output + row * hidden;
+    if constexpr (Activation == GatedActivationKind::kSilu) {
+      simd::swiglu_f32_batch(gate, value, destination, hidden);
+    } else if constexpr (Activation == GatedActivationKind::kGelu) {
+      simd::geglu_f32_batch(gate, value, destination, hidden);
+    } else {
+      simd::geglu_tanh_f32_batch(gate, value, destination, hidden);
+    }
   }
+}
+
+Route select_gated_activation(GatedActivationKind activation,
+                              GatedInputKind inputs) noexcept {
+#define HYLE_NATIVE_GATED_CASE(kind)                                         \
+  case GatedActivationKind::kind:                                            \
+    return inputs == GatedInputKind::kPackedHalves                           \
+               ? &run_gated_activation<GatedActivationKind::kind,            \
+                                       GatedInputKind::kPackedHalves>         \
+               : &run_gated_activation<GatedActivationKind::kind,            \
+                                       GatedInputKind::kSeparate>
+  switch (activation) {
+    HYLE_NATIVE_GATED_CASE(kSilu);
+    HYLE_NATIVE_GATED_CASE(kGelu);
+    HYLE_NATIVE_GATED_CASE(kGeluTanh);
+  }
+#undef HYLE_NATIVE_GATED_CASE
+  return nullptr;
 }
 
 struct FloatRouteEpisode final {
@@ -176,17 +208,78 @@ Status validate_dense_f32(const TensorDesc &description) noexcept {
   return Status::Ok();
 }
 
-bool is_transposed_dense_matrix(const TensorDesc &description) noexcept {
+bool has_row_major_matrix_layout(const TensorDesc &description) noexcept {
   if (!description.valid() || !description.is_plain() ||
-      description.rank() != 2)
+      description.rank() < 2)
     return false;
   const auto dimensions = description.dimensions();
   const auto strides = description.byte_strides();
+  const std::size_t rank = description.rank();
+  if (std::find(dimensions.begin(), dimensions.end(), 0) != dimensions.end())
+    return true;
   const auto row_bytes = math::try_multiply(
-      dimensions[0], static_cast<std::int64_t>(sizeof(float)));
+      dimensions[rank - 1], static_cast<std::int64_t>(sizeof(float)));
   return row_bytes.has_value() &&
-         strides[0] == static_cast<std::int64_t>(sizeof(float)) &&
-         strides[1] == *row_bytes;
+         strides[rank - 1] == static_cast<std::int64_t>(sizeof(float)) &&
+         strides[rank - 2] == *row_bytes;
+}
+
+bool has_transposed_weight_layout(const TensorDesc &description) noexcept {
+  if (!description.valid() || !description.is_plain() ||
+      description.rank() < 2)
+    return false;
+  const auto dimensions = description.dimensions();
+  const auto strides = description.byte_strides();
+  const std::size_t rank = description.rank();
+  if (std::find(dimensions.begin(), dimensions.end(), 0) != dimensions.end())
+    return true;
+  const auto column_bytes = math::try_multiply(
+      dimensions[rank - 2], static_cast<std::int64_t>(sizeof(float)));
+  return column_bytes.has_value() &&
+         strides[rank - 2] == static_cast<std::int64_t>(sizeof(float)) &&
+         strides[rank - 1] == *column_bytes;
+}
+
+Result<std::size_t>
+matrix_batch_count(const TensorDesc &description) noexcept {
+  std::size_t result = 1;
+  const auto dimensions = description.dimensions();
+  for (std::size_t axis = 0; axis + 2 < dimensions.size(); ++axis) {
+    auto extent = math::try_integer_cast<std::size_t>(dimensions[axis]);
+    if (!extent)
+      return std::unexpected(
+          Status::OutOfRange("MatMul batch dimension exceeds size_t"));
+    auto next = math::try_multiply(result, *extent);
+    if (!next)
+      return std::unexpected(Status::OutOfRange("MatMul batch count overflows"));
+    result = *next;
+  }
+  return result;
+}
+
+std::size_t matrix_batch_byte_offset(const TensorDesc &input,
+                                     const TensorDesc &output,
+                                     std::size_t output_batch) noexcept {
+  const auto input_dimensions = input.dimensions();
+  const auto input_strides = input.byte_strides();
+  const auto output_dimensions = output.dimensions();
+  const std::size_t input_batch_rank = input.rank() - 2;
+  const std::size_t output_batch_rank = output.rank() - 2;
+  std::size_t offset = 0;
+  for (std::size_t reverse = 0; reverse < output_batch_rank; ++reverse) {
+    const std::size_t output_axis = output_batch_rank - 1 - reverse;
+    const std::size_t output_extent =
+        static_cast<std::size_t>(output_dimensions[output_axis]);
+    const std::size_t coordinate = output_batch % output_extent;
+    output_batch /= output_extent;
+    if (reverse >= input_batch_rank)
+      continue;
+    const std::size_t input_axis = input_batch_rank - 1 - reverse;
+    if (input_dimensions[input_axis] != 1) {
+      offset += coordinate * static_cast<std::size_t>(input_strides[input_axis]);
+    }
+  }
+  return offset;
 }
 
 Result<std::size_t> outer_count(const TensorDesc &description) noexcept {
@@ -286,6 +379,12 @@ submit_float(const NativePlan &plan, std::span<const ConstTensorView> inputs,
       outputs.size() != 1) {
     return completed(Status::Internal("native float plan is invalid"));
   }
+
+  auto output_elements = outputs[0].description().element_count();
+  if (!output_elements)
+    return completed(std::move(output_elements).error());
+  if (*output_elements == 0)
+    return completed(Status::Ok());
 
   const mem::ConstBufferView first_storage = inputs[0].storage();
   const mem::BufferView output_storage = outputs[0].storage();
@@ -416,6 +515,193 @@ submit_float(const NativePlan &plan, std::span<const ConstTensorView> inputs,
   return completed(std::move(terminal));
 }
 
+detail::EnqueueResult submit_zero_inner_matmul(
+    const NativePlan &plan, std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  if (plan.parameters[1] != 0 || inputs.size() != 2 || outputs.size() != 1) {
+    return completed(
+        Status::Internal("native zero-inner MatMul plan is invalid"));
+  }
+
+  auto output_elements = outputs[0].description().element_count();
+  if (!output_elements)
+    return completed(std::move(output_elements).error());
+  if (*output_elements == 0)
+    return completed(Status::Ok());
+
+  const mem::BufferView output_storage = outputs[0].storage();
+  auto output_result = output_storage.map_host(mem::HostAccess::kWrite);
+  if (!output_result)
+    return completed(std::move(output_result).error());
+  mem::HostMapping output_mapping = std::move(*output_result);
+  auto output_bytes = output_mapping.writable_bytes();
+  if (!output_bytes) {
+    output_mapping.close().IgnoreError();
+    return completed(std::move(output_bytes).error());
+  }
+  auto *output = reinterpret_cast<float *>(output_bytes->data());
+  if (!aligned_for_storage(output,
+                           outputs[0].description().required_alignment())) {
+    output_mapping.close().IgnoreError();
+    return completed(Status::FailedPrecondition(
+        "CPU MatMul output mapping does not satisfy tensor alignment"));
+  }
+  std::fill_n(output, *output_elements, 0.0F);
+
+  Status terminal = Status::Ok();
+  if (!output_storage.resource().properties().has(
+          mem::MemoryProperty::kHostDeviceCoherent)) {
+    preserve_first_error(terminal, output_mapping.flush());
+  }
+  preserve_first_error(terminal, output_mapping.close());
+  return completed(std::move(terminal));
+}
+
+struct BatchedMatMulEpisode final {
+  const NativePlan *plan = nullptr;
+  const TensorDesc *left_description = nullptr;
+  const TensorDesc *right_description = nullptr;
+  const TensorDesc *output_description = nullptr;
+  const std::byte *left = nullptr;
+  const std::byte *right = nullptr;
+  float *output = nullptr;
+};
+
+void run_batched_matmul_range(void *context, std::size_t,
+                              std::size_t begin,
+                              std::size_t end) noexcept {
+  auto &episode = *static_cast<BatchedMatMulEpisode *>(context);
+  const NativePlan &plan = *episode.plan;
+  const std::size_t rows = plan.parameters[0];
+  const std::size_t inner = plan.parameters[1];
+  const std::size_t columns = plan.parameters[2];
+  if (rows == 0)
+    return;
+
+  while (begin < end) {
+    const std::size_t batch = begin / rows;
+    const std::size_t first_row = begin % rows;
+    const std::size_t run_rows =
+        (std::min)(end - begin, rows - first_row);
+    const std::size_t left_batch_offset = matrix_batch_byte_offset(
+        *episode.left_description, *episode.output_description, batch);
+    const std::size_t right_batch_offset = matrix_batch_byte_offset(
+        *episode.right_description, *episode.output_description, batch);
+    const auto *left = reinterpret_cast<const float *>(
+                           episode.left + left_batch_offset) +
+                       first_row * inner;
+    const auto *right = reinterpret_cast<const float *>(
+        episode.right + right_batch_offset);
+    float *output =
+        episode.output + (batch * rows + first_row) * columns;
+    const Parameters parameters{run_rows, inner, columns};
+    plan.route(left, right, output, parameters, plan.scalar);
+    begin += run_rows;
+  }
+}
+
+detail::EnqueueResult submit_batched_matmul(
+    const NativePlan &plan, std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  if (plan.route == nullptr || inputs.size() != 2 || outputs.size() != 1)
+    return completed(Status::Internal("native batched MatMul plan is invalid"));
+
+  auto output_elements = outputs[0].description().element_count();
+  if (!output_elements)
+    return completed(std::move(output_elements).error());
+  if (*output_elements == 0)
+    return completed(Status::Ok());
+
+  const mem::ConstBufferView left_storage = inputs[0].storage();
+  const mem::ConstBufferView right_storage = inputs[1].storage();
+  const mem::BufferView output_storage = outputs[0].storage();
+  const bool shared_inputs =
+      left_storage.resource() == right_storage.resource() &&
+      left_storage.native_handle() == right_storage.native_handle() &&
+      left_storage.offset() == right_storage.offset() &&
+      left_storage.size() == right_storage.size();
+
+  Status status = Status::Ok();
+  if (!left_storage.resource().properties().has(
+          mem::MemoryProperty::kHostDeviceCoherent)) {
+    status = left_storage.invalidate();
+  }
+  if (status.ok() && !shared_inputs &&
+      !right_storage.resource().properties().has(
+          mem::MemoryProperty::kHostDeviceCoherent)) {
+    status = right_storage.invalidate();
+  }
+  if (!status.ok())
+    return completed(std::move(status));
+
+  auto left_result = left_storage.map_host();
+  if (!left_result)
+    return completed(std::move(left_result).error());
+  mem::HostMapping left_mapping = std::move(*left_result);
+  mem::HostMapping right_mapping;
+  const std::byte *left = left_mapping.bytes().data();
+  const std::byte *right = left;
+  if (!shared_inputs) {
+    auto right_result = right_storage.map_host();
+    if (!right_result) {
+      left_mapping.close().IgnoreError();
+      return completed(std::move(right_result).error());
+    }
+    right_mapping = std::move(*right_result);
+    right = right_mapping.bytes().data();
+  }
+
+  auto output_result = output_storage.map_host(mem::HostAccess::kWrite);
+  if (!output_result) {
+    right_mapping.close().IgnoreError();
+    left_mapping.close().IgnoreError();
+    return completed(std::move(output_result).error());
+  }
+  mem::HostMapping output_mapping = std::move(*output_result);
+  auto output_bytes = output_mapping.writable_bytes();
+  if (!output_bytes) {
+    output_mapping.close().IgnoreError();
+    right_mapping.close().IgnoreError();
+    left_mapping.close().IgnoreError();
+    return completed(std::move(output_bytes).error());
+  }
+  auto *output = reinterpret_cast<float *>(output_bytes->data());
+  if (!aligned_for_storage(left, inputs[0].description().required_alignment()) ||
+      !aligned_for_storage(right,
+                           inputs[1].description().required_alignment()) ||
+      !aligned_for_storage(output,
+                           outputs[0].description().required_alignment())) {
+    output_mapping.close().IgnoreError();
+    right_mapping.close().IgnoreError();
+    left_mapping.close().IgnoreError();
+    return completed(Status::FailedPrecondition(
+        "CPU batched MatMul mapping does not satisfy tensor alignment"));
+  }
+
+  BatchedMatMulEpisode episode{
+      .plan = &plan,
+      .left_description = &inputs[0].description(),
+      .right_description = &inputs[1].description(),
+      .output_description = &outputs[0].description(),
+      .left = left,
+      .right = right,
+      .output = output,
+  };
+  const std::size_t units = plan.count * plan.parameters[0];
+  internal::parallel_for_ranges(plan, units, &run_batched_matmul_range,
+                                &episode);
+
+  Status terminal = Status::Ok();
+  if (!output_storage.resource().properties().has(
+          mem::MemoryProperty::kHostDeviceCoherent)) {
+    preserve_first_error(terminal, output_mapping.flush());
+  }
+  preserve_first_error(terminal, output_mapping.close());
+  preserve_first_error(terminal, right_mapping.close());
+  preserve_first_error(terminal, left_mapping.close());
+  return completed(std::move(terminal));
+}
+
 detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
                              Queue &, std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
@@ -540,62 +826,97 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kMatMul: {
-    if (inputs.size() != 2 || inputs[0].rank() != 2 || inputs[1].rank() != 2)
-      return Status::Unimplemented("native MatMul currently requires rank 2");
-    Status status = validate_dense_f32(inputs[0]);
+    if (inputs.size() != 2 || inputs[0].rank() < 2 || inputs[1].rank() < 2)
+      return Status::Internal("native MatMul shape is invalid");
+    Status status = validate_logical_f32(inputs[0]);
     if (!status.ok())
       return status;
     status = validate_logical_f32(inputs[1]);
     if (!status.ok())
       return status;
-    if (!inputs[1].is_plain() ||
-        (!inputs[1].is_dense() && !is_transposed_dense_matrix(inputs[1]))) {
+    if (!has_row_major_matrix_layout(inputs[0])) {
       return Status::Unimplemented(
-          "native MatMul right operand layout is unsupported");
+          "native MatMul requires contiguous rows in its left operand");
+    }
+    const bool right_row_major = has_row_major_matrix_layout(inputs[1]);
+    const bool right_transposed = has_transposed_weight_layout(inputs[1]);
+    if (!right_row_major && !right_transposed) {
+      return Status::Unimplemented(
+          "native MatMul requires row-major or transposed-weight matrix rows");
     }
     status = validate_dense_f32(outputs[0]);
     if (!status.ok())
       return status;
-    auto rows = dimension(inputs[0], 0);
-    auto inner = dimension(inputs[0], 1);
-    auto columns = dimension(inputs[1], 1);
+    auto rows = dimension(inputs[0], inputs[0].rank() - 2);
+    auto inner = dimension(inputs[0], inputs[0].rank() - 1);
+    auto columns = dimension(inputs[1], inputs[1].rank() - 1);
+    auto output_elements = outputs[0].element_count();
     if (!rows)
       return std::move(rows).error();
     if (!inner)
       return std::move(inner).error();
     if (!columns)
       return std::move(columns).error();
+    if (!output_elements)
+      return std::move(output_elements).error();
+    std::size_t batches = 0;
+    if (*output_elements != 0) {
+      auto batch_count = matrix_batch_count(outputs[0]);
+      if (!batch_count)
+        return std::move(batch_count).error();
+      batches = *batch_count;
+    }
     plan.parameters = {*rows, *inner, *columns};
+    plan.count = batches;
     plan.row_first_stride = *inner;
     plan.row_output_stride = *columns;
-    plan.route = inputs[1].is_dense() ? select_row_major_matmul()
-                                      : &run_matmul_transposed_weight;
-    plan.submit_route = &submit_float;
+    plan.route = right_row_major ? select_row_major_matmul()
+                                 : &run_matmul_transposed_weight;
+    if (*inner == 0) {
+      plan.submit_route = &submit_zero_inner_matmul;
+    } else {
+      plan.submit_route = outputs[0].rank() == 2 && inputs[0].rank() == 2 &&
+                                  inputs[1].rank() == 2
+                              ? &submit_float
+                              : &submit_batched_matmul;
+    }
     break;
   }
   case OperationKind::kGatedActivation: {
     const GatedActivation *gated = operation.get_if<GatedActivation>();
-    if (gated == nullptr || gated->activation != GatedActivationKind::kSilu ||
-        gated->inputs != GatedInputKind::kPackedHalves || inputs.size() != 1) {
-      return Status::Unimplemented(
-          "native gated route currently supports packed SiLU only");
-    }
+    if (gated == nullptr)
+      return Status::Internal("native gated descriptor is missing");
+    const std::size_t expected_inputs =
+        gated->inputs == GatedInputKind::kSeparate ? 2 : 1;
+    if (inputs.size() != expected_inputs)
+      return Status::Internal("native gated input arity is invalid");
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())
       return status;
+    if (inputs.size() == 2) {
+      status = validate_dense_f32(inputs[1]);
+      if (!status.ok())
+        return status;
+    }
     status = validate_dense_f32(outputs[0]);
     if (!status.ok())
       return status;
     auto rows = outer_count(inputs[0]);
-    auto packed = dimension(inputs[0], inputs[0].rank() - 1);
+    auto width = dimension(inputs[0], inputs[0].rank() - 1);
     if (!rows)
       return std::move(rows).error();
-    if (!packed)
-      return std::move(packed).error();
-    plan.parameters = {*rows, *packed / 2, 0};
-    plan.row_first_stride = *packed;
-    plan.row_output_stride = *packed / 2;
-    plan.route = &run_silu_and_mul;
+    if (!width)
+      return std::move(width).error();
+    const std::size_t hidden =
+        gated->inputs == GatedInputKind::kPackedHalves ? *width / 2 : *width;
+    plan.parameters = {*rows, hidden, 0};
+    plan.row_first_stride = *width;
+    plan.row_second_stride =
+        gated->inputs == GatedInputKind::kSeparate ? *width : 0;
+    plan.row_output_stride = hidden;
+    plan.route = select_gated_activation(gated->activation, gated->inputs);
+    if (plan.route == nullptr)
+      return Status::Internal("native gated activation mode is invalid");
     plan.submit_route = &submit_float;
     break;
   }
@@ -630,6 +951,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   }
 
   plan.executor = executor;
+  std::size_t parallel_units = plan.parameters[0];
   std::size_t work_per_unit = 0;
   switch (operation.kind()) {
   case OperationKind::kRmsNorm:
@@ -638,6 +960,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     work_per_unit = plan.parameters[1];
     break;
   case OperationKind::kMatMul:
+    parallel_units = saturating_product(plan.count, plan.parameters[0]);
     work_per_unit = saturating_product(plan.parameters[1], plan.parameters[2]);
     break;
   case OperationKind::kScaledDotProductAttention:
@@ -651,7 +974,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   plan.parallel_tasks =
-      recommended_parallel_tasks(executor, plan.parameters[0], work_per_unit);
+      recommended_parallel_tasks(executor, parallel_units, work_per_unit);
   if (operation.kind() == OperationKind::kScaledDotProductAttention) {
     auto workspace = math::try_multiply(plan.attention_workspace_stride,
                                         plan.parallel_tasks);

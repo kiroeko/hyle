@@ -100,31 +100,38 @@ TEST(NativeTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
   auto context = hyle::compute::cpu::create_context().value();
   auto queue = context.create_queue().value();
 
-  auto interleaved = hyle::compute::prepare(
-                         context,
-                         Operation(RoPE{.rotary_dimensions = 4,
-                                        .sequence_axis = 1,
-                                        .layout = RopeLayout::kInterleaved}),
-                         inputs, outputs)
-                         .value();
+  auto interleaved =
+      hyle::compute::prepare(
+          context,
+          RoPE{.rotary_dimensions = 4,
+               .sequence_axis = 1,
+               .layout = RopeLayout::kInterleaved},
+          data_desc, position_desc, frequency_desc)
+          .value();
   auto invocation = interleaved.create_invocation().value();
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], inputs[2],
+                                outputs[0])
+                  ->wait()
+                  .ok());
   expect_near(read_buffer<float, values.size()>(output_storage),
               interleaved_expected);
 
   const TensorView alias_output =
       TensorView::create(data_desc, data_storage.view()).value();
   const std::array alias_outputs{alias_output};
-  auto split =
-      hyle::compute::prepare(context,
-                             Operation(RoPE{.rotary_dimensions = 4,
-                                            .sequence_axis = 1,
-                                            .layout = RopeLayout::kHalfSplit}),
-                             inputs, alias_outputs)
-          .value();
+  auto split = hyle::compute::prepare(
+                   context,
+                   RoPE{.rotary_dimensions = 4,
+                        .sequence_axis = 1,
+                        .layout = RopeLayout::kHalfSplit},
+                   data_desc, position_desc, frequency_desc)
+                   .value();
   EXPECT_TRUE(split.alias_support(0, 0)->supported);
   invocation = split.create_invocation().value();
-  ASSERT_TRUE(invocation.submit(queue, inputs, alias_outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], inputs[2],
+                                alias_outputs[0])
+                  ->wait()
+                  .ok());
   expect_near(read_buffer<float, values.size()>(data_storage), split_expected);
 }
 
@@ -267,16 +274,17 @@ TEST(NativeTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
   auto prepared =
       hyle::compute::prepare(
           context,
-          Operation(
-              Softmax{.axis = -1, .scale = 0.5F, .mask = MaskKind::kBoolean}),
-          inputs, outputs)
+          Softmax{.axis = -1, .scale = 0.5F, .mask = MaskKind::kBoolean},
+          data_desc, mask_desc)
           .value();
   EXPECT_TRUE(prepared.alias_support(0, 0)->supported);
   auto invocation_result = prepared.create_invocation();
   ASSERT_TRUE(invocation_result.has_value())
       << invocation_result.error().message();
   auto invocation = std::move(*invocation_result);
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], outputs[0])
+                  ->wait()
+                  .ok());
 
   const auto first =
       reference_softmax({0.5F, -std::numeric_limits<float>::infinity(), 1.5F});
@@ -303,15 +311,14 @@ TEST(NativeTransformer, LogSoftmaxSupportsANonTrailingAxis) {
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
-          context,
-          Operation(Softmax{.axis = 1, .kind = SoftmaxKind::kLogSoftmax}),
-          inputs, outputs)
+          context, Softmax{.axis = 1, .kind = SoftmaxKind::kLogSoftmax},
+          data_desc)
           .value();
   auto invocation_result = prepared.create_invocation();
   ASSERT_TRUE(invocation_result.has_value())
       << invocation_result.error().message();
   auto invocation = std::move(*invocation_result);
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs[0], outputs[0])->wait().ok());
 
   const float shift0 =
       3.0F + std::log(std::exp(-2.0F) + std::exp(-1.0F) + 1.0F);
@@ -396,13 +403,14 @@ TEST(NativeTransformer, TopKPreservesScoresAndStableIndicesAcrossAxes) {
       TensorView::create(index_desc, index_storage.view()).value()};
   auto context = hyle::compute::cpu::create_context().value();
   auto queue = context.create_queue().value();
-  auto prepared_result = hyle::compute::prepare(context,
-                                                Operation(TopK{.count = 2,
-                                                               .axis = 1,
-                                                               .largest = true,
-                                                               .sorted = true,
-                                                               .stable = true}),
-                                                inputs, outputs);
+  auto prepared_result =
+      hyle::compute::prepare(context,
+                             TopK{.count = 2,
+                                  .axis = 1,
+                                  .largest = true,
+                                  .sorted = true,
+                                  .stable = true},
+                             data_desc);
   ASSERT_TRUE(prepared_result.has_value()) << prepared_result.error().message();
   auto prepared = std::move(*prepared_result);
   const auto requirement = prepared.workspace_requirement();
@@ -414,7 +422,9 @@ TEST(NativeTransformer, TopKPreservesScoresAndStableIndicesAcrossAxes) {
   ASSERT_TRUE(invocation_result.has_value())
       << invocation_result.error().message();
   auto invocation = std::move(*invocation_result);
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs[0], outputs[0], outputs[1])
+                  ->wait()
+                  .ok());
   EXPECT_EQ((read_buffer<float, 4>(value_storage)),
             (std::array<float, 4>{5, 5, 8, 7}));
   EXPECT_EQ((read_buffer<std::int32_t, 4>(index_storage)),
@@ -491,17 +501,20 @@ TEST(NativeTransformer, SdpaExecutesBlockedOnlineSoftmaxInBothLayouts) {
       TensorView::create(output_desc, output.view()).value()};
   auto context = hyle::compute::cpu::create_context().value();
   auto queue = context.create_queue().value();
-  auto prepared =
-      hyle::compute::prepare(context, Operation(ScaledDotProductAttention{}),
-                             inputs, outputs)
-          .value();
+  auto prepared = hyle::compute::prepare(
+                      context, ScaledDotProductAttention{}, query_desc,
+                      key_desc, value_desc)
+                      .value();
   const auto requirement = prepared.workspace_requirement();
   EXPECT_GT(requirement.size, 0U);
   Buffer workspace = Buffer::create(hyle::mem::system_resource(),
                                     requirement.size, requirement.alignment)
                          .value();
   auto invocation = prepared.create_invocation(workspace.view()).value();
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], inputs[2],
+                                outputs[0])
+                  ->wait()
+                  .ok());
 
   const float e = std::exp(1.0F);
   const float first_sum = 2.0F * e + 1.0F;
@@ -649,10 +662,25 @@ TEST(NativeTransformer, SdpaUsesBottomRightCausalAndExplicitMasks) {
   const std::array bool_inputs{
       base_inputs[0], base_inputs[1], base_inputs[2],
       ConstTensorView::create(bool_mask_desc, bool_mask.view()).value()};
-  run(Operation(ScaledDotProductAttention{
-          .layout = AttentionLayout::kBatchHeadSequenceDepth,
-          .mask = MaskKind::kBoolean}),
-      bool_inputs);
+  const ScaledDotProductAttention bool_operation{
+      .layout = AttentionLayout::kBatchHeadSequenceDepth,
+      .mask = MaskKind::kBoolean};
+  auto bool_prepared =
+      hyle::compute::prepare(context, bool_operation, query_desc, key_desc,
+                             key_desc, bool_mask_desc)
+          .value();
+  auto bool_workspace =
+      Buffer::create(hyle::mem::system_resource(),
+                     bool_prepared.workspace_requirement().size,
+                     bool_prepared.workspace_requirement().alignment)
+          .value();
+  auto bool_invocation =
+      bool_prepared.create_invocation(bool_workspace.view()).value();
+  ASSERT_TRUE(bool_invocation
+                  .submit(queue, bool_inputs[0], bool_inputs[1], bool_inputs[2],
+                          bool_inputs[3], outputs[0])
+                  ->wait()
+                  .ok());
   EXPECT_NEAR((read_buffer<float, 1>(output)[0]), 3.5F, 2.0e-5F);
 
   const float negative_infinity = -std::numeric_limits<float>::infinity();

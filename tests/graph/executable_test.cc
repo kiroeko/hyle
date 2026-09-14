@@ -27,6 +27,8 @@ using hyle::compute::ConstTensorView;
 using hyle::compute::Context;
 using hyle::compute::DataType;
 using hyle::compute::GatedActivation;
+using hyle::compute::GatedActivationKind;
+using hyle::compute::GatedInputKind;
 using hyle::compute::MatMul;
 using hyle::compute::Queue;
 using hyle::compute::RmsNorm;
@@ -936,6 +938,81 @@ TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
   ASSERT_TRUE(invocation.bind(logical.inputs[2], matrix_weight.view).ok());
   ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+}
+
+TEST(Invocation, RunsBroadcastMatMulIntoSeparateGatedActivation) {
+  constexpr std::array<std::int64_t, 4> left_shape{2, 1, 1, 2};
+  constexpr std::array<std::int64_t, 4> right_shape{1, 2, 2, 4};
+  constexpr std::array<std::int64_t, 4> output_shape{2, 2, 1, 4};
+  const TensorDesc left_desc =
+      TensorDesc::dense(DataType::kFloat32, left_shape).value();
+  const TensorDesc right_desc =
+      TensorDesc::dense(DataType::kFloat32, right_shape).value();
+  const TensorDesc output_desc =
+      TensorDesc::dense(DataType::kFloat32, output_shape).value();
+
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId left_id = builder.input(left_desc).value();
+  const ValueId right_id = builder.input(right_desc).value();
+  const ValueId value_id = builder.input(output_desc).value();
+  const ValueId product_id = builder.add(MatMul{}, left_id, right_id).value();
+  const ValueId output_id =
+      builder
+          .add(GatedActivation{
+                   .activation = GatedActivationKind::kGeluTanh,
+                   .inputs = GatedInputKind::kSeparate},
+               product_id, value_id)
+          .value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  Graph graph = std::move(builder).finish().value();
+
+  const std::array<float, 4> left_values{1, 2, 3, -1};
+  const std::array<float, 16> right_values{
+      1, 0, -1, 2, 0.5F, 2, 1, -1,
+      2, 1, 0, -1, 1, -2, 3, 0.5F,
+  };
+  std::array<float, 16> value_values{};
+  for (std::size_t index = 0; index < value_values.size(); ++index)
+    value_values[index] = 0.25F * static_cast<float>(index + 1);
+
+  std::array<float, 16> expected{};
+  for (std::size_t left_batch = 0; left_batch < 2; ++left_batch) {
+    for (std::size_t right_batch = 0; right_batch < 2; ++right_batch) {
+      for (std::size_t column = 0; column < 4; ++column) {
+        float product = 0.0F;
+        for (std::size_t inner = 0; inner < 2; ++inner) {
+          product += left_values[left_batch * 2 + inner] *
+                     right_values[(right_batch * 2 + inner) * 4 + column];
+        }
+        const std::size_t index = (left_batch * 2 + right_batch) * 4 + column;
+        const float activated =
+            0.5F * product *
+            (1.0F + std::tanh(0.79788456080286535588F * product *
+                              std::fma(0.044715F, product * product, 1.0F)));
+        expected[index] = activated * value_values[index];
+      }
+    }
+  }
+
+  OwnedTensor left = make_tensor(left_desc);
+  OwnedTensor right = make_tensor(right_desc);
+  OwnedTensor value = make_tensor(output_desc);
+  OwnedTensor output = make_tensor(output_desc);
+  write(left, left_values);
+  write(right, right_values);
+  write(value, value_values);
+
+  Context context = hyle::compute::cpu::create_context().value();
+  Queue queue = context.create_queue().value();
+  Invocation invocation = hyle::graph::compile(graph, context)
+                              ->executable.create_invocation()
+                              .value();
+  ASSERT_TRUE(invocation.bind(left_id, left.view).ok());
+  ASSERT_TRUE(invocation.bind(right_id, right.view).ok());
+  ASSERT_TRUE(invocation.bind(value_id, value.view).ok());
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  expect_near(read(output, expected.size()), expected);
 }
 
 TEST(Invocation, ExecutesSharedInputBranchesWithIndependentOutputs) {

@@ -1042,7 +1042,7 @@ TEST(RuntimeProviders, ContextCopiesAnArbitraryOrderedSequence) {
         hyle::compute::DataType::kFloat32, shape);
     ASSERT_TRUE(description.has_value());
     auto prepared = hyle::compute::prepare(*created, hyle::compute::RmsNorm{},
-                                           *description, *description);
+                                           *description);
     ASSERT_FALSE(prepared.has_value());
     EXPECT_TRUE(prepared.error().IsUnimplemented());
     ASSERT_EQ(probe.prepare_count, providers.size());

@@ -245,8 +245,7 @@ private:
 
     auto rms = take_or_abort(hyle::compute::prepare(context_, RmsNorm{},
                                                     descriptions_.activation,
-                                                    descriptions_.norm_weight,
-                                                    descriptions_.normalized),
+                                                    descriptions_.norm_weight),
                              "direct RMSNorm prepare");
     auto matmul = take_or_abort(
         hyle::compute::prepare(context_, MatMul{}, descriptions_.normalized,
@@ -255,7 +254,7 @@ private:
         "direct MatMul prepare");
     auto swiglu = take_or_abort(
         hyle::compute::prepare(context_, GatedActivation{},
-                               descriptions_.projected, descriptions_.output),
+                               descriptions_.projected),
         "direct packed SiLU GatedActivation prepare");
     route.rms =
         take_or_abort(rms.create_invocation(), "direct RMSNorm invocation");

@@ -190,7 +190,7 @@ TEST(PreparedOperation, ExposesColdRouteAndShapeDiagnostics) {
   Context context = hyle::compute::cpu::create_context().value();
   const TensorDesc description = row_description(8);
   PreparedOperation prepared =
-      hyle::compute::prepare(context, RmsNorm{}, description, description)
+      hyle::compute::prepare(context, RmsNorm{}, description)
           .value();
 
   EXPECT_EQ(prepared.kind(), OperationKind::kRmsNorm);
@@ -216,13 +216,13 @@ TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
   const TensorDesc other = row_description(7);
 
   auto negative =
-      hyle::compute::prepare(context, RmsNorm{.epsilon = -1.0F}, row, row);
+      hyle::compute::prepare(context, RmsNorm{.epsilon = -1.0F}, row);
   ASSERT_FALSE(negative.has_value());
   EXPECT_TRUE(negative.error().IsInvalidArgument());
 
   auto nan = hyle::compute::prepare(
       context, RmsNorm{.epsilon = (std::numeric_limits<float>::quiet_NaN)()},
-      row, row);
+      row);
   ASSERT_FALSE(nan.has_value());
   EXPECT_TRUE(nan.error().IsInvalidArgument());
 
@@ -245,7 +245,7 @@ TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
   EXPECT_TRUE(layout.error().IsUnimplemented());
 
   ASSERT_TRUE(context.close().ok());
-  auto closed = hyle::compute::prepare(context, RmsNorm{}, row, row);
+  auto closed = hyle::compute::prepare(context, RmsNorm{}, row);
   ASSERT_FALSE(closed.has_value());
   EXPECT_TRUE(closed.error().IsFailedPrecondition());
 }
@@ -342,8 +342,7 @@ TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation prepared =
-      hyle::compute::prepare(context, RmsNorm{}, input_desc, weight_desc,
-                             input_desc)
+      hyle::compute::prepare(context, RmsNorm{}, input_desc, weight_desc)
           .value();
   auto input_view =
       ConstTensorView::create(input_desc, input_buffer.view()).value();
@@ -542,8 +541,7 @@ TEST(PreparedOperation, RunsPackedSiluGatedActivationAcrossRows) {
       TensorView::create(output_desc, output_buffer.view()).value();
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
-  auto prepared = hyle::compute::prepare(context, GatedActivation{}, input_desc,
-                                         output_desc)
+  auto prepared = hyle::compute::prepare(context, GatedActivation{}, input_desc)
                       .value();
   auto invocation = prepared.create_invocation().value();
   ASSERT_TRUE(invocation.submit(queue, input_view, output_view)->wait().ok());
@@ -588,7 +586,7 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation plain = hyle::compute::prepare(context, RmsNorm{epsilon},
-                                                   description, description)
+                                                   description)
                                 .value();
   auto plain_invocation = plain.create_invocation().value();
   auto completion = plain_invocation.submit(queue, input_view, output_view);
@@ -599,7 +597,7 @@ TEST(PreparedOperation, RunsUnweightedWeightedAndExactInPlaceRmsNorm) {
 
   PreparedOperation weighted =
       hyle::compute::prepare(context, RmsNorm{epsilon}, description,
-                             description, description)
+                             description)
           .value();
   auto weighted_invocation = weighted.create_invocation().value();
   completion =
@@ -645,7 +643,7 @@ TEST(PreparedOperation, RejectsWrongBindingContextAndUnsafeAlias) {
   Queue first_queue = first.create_queue().value();
   Queue wrong_queue = second.create_queue().value();
   PreparedOperation prepared =
-      hyle::compute::prepare(first, RmsNorm{}, description, description)
+      hyle::compute::prepare(first, RmsNorm{}, description)
           .value();
   auto invocation = prepared.create_invocation().value();
 
@@ -658,8 +656,7 @@ TEST(PreparedOperation, RejectsWrongBindingContextAndUnsafeAlias) {
   EXPECT_TRUE(partial_alias.error().IsInvalidArgument());
 
   PreparedOperation weighted =
-      hyle::compute::prepare(first, RmsNorm{}, description, description,
-                             description)
+      hyle::compute::prepare(first, RmsNorm{}, description, description)
           .value();
   auto weighted_invocation = weighted.create_invocation().value();
   auto weight_alias =
@@ -697,7 +694,7 @@ TEST(PreparedOperation,
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   PreparedOperation prepared =
-      hyle::compute::prepare(context, RmsNorm{}, description, description,
+      hyle::compute::prepare(context, RmsNorm{}, description,
                              MemoryResourceRef(resource))
           .value();
   auto invocation = prepared.create_invocation().value();
@@ -759,7 +756,7 @@ TEST(PreparedOperation, RejectsAnActuallyMisalignedHostMapping) {
   Context context = hyle::compute::cpu::create_context().value();
   Queue queue = context.create_queue().value();
   auto invocation =
-      hyle::compute::prepare(context, RmsNorm{}, description, description,
+      hyle::compute::prepare(context, RmsNorm{}, description,
                              MemoryResourceRef(resource))
           ->create_invocation()
           .value();
@@ -810,7 +807,7 @@ TEST(PreparedOperation,
     Context context = hyle::compute::cpu::create_context().value();
     queue = context.create_queue().value();
     prepared =
-        hyle::compute::prepare(context, RmsNorm{}, description, description)
+        hyle::compute::prepare(context, RmsNorm{}, description)
             .value();
     invocation = prepared.create_invocation().value();
   }

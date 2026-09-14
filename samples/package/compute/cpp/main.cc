@@ -41,7 +41,7 @@ int main() {
   if (!input_view || !output_view || !context)
     return 3;
   auto queue = context->create_queue();
-  auto prepared = prepare(*context, RmsNorm{}, *description, *description);
+  auto prepared = prepare(*context, RmsNorm{}, *description);
   if (!queue || !prepared)
     return 4;
   auto invocation = prepared->create_invocation();

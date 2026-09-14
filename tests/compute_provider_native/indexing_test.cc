@@ -69,11 +69,12 @@ TEST(NativeIndexing, GatherCopiesDenseSuffixBlocksAndChecksIndices) {
 
   auto context = hyle::compute::cpu::create_context().value();
   auto queue = context.create_queue().value();
-  auto prepared = hyle::compute::prepare(
-                      context, Operation(Gather{.axis = 1}), inputs, outputs)
-                      .value();
+  auto prepared =
+      hyle::compute::prepare(context, Gather{.axis = 1}, source_desc,
+                             index_desc)
+          .value();
   auto invocation = prepared.create_invocation().value();
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs, outputs[0])->wait().ok());
   EXPECT_EQ((read_buffer<std::int32_t, expected.size()>(output_storage)),
             expected);
 
@@ -83,7 +84,7 @@ TEST(NativeIndexing, GatherCopiesDenseSuffixBlocksAndChecksIndices) {
                   .ok());
   ASSERT_TRUE(
       output_storage.view().write(std::as_bytes(std::span(poison))).ok());
-  auto failed = invocation.submit(queue, inputs, outputs);
+  auto failed = invocation.submit(queue, inputs, outputs[0]);
   ASSERT_TRUE(failed.has_value());
   EXPECT_TRUE(failed->wait().IsOutOfRange());
   EXPECT_EQ((read_buffer<std::int32_t, poison.size()>(output_storage)), poison);
@@ -119,28 +120,29 @@ TEST(NativeIndexing, ScatterAssignsOrAddsAndSupportsExactSourceAlias) {
 
   auto context = hyle::compute::cpu::create_context().value();
   auto queue = context.create_queue().value();
-  auto assign = hyle::compute::prepare(
-                    context,
-                    Operation(Scatter{.axis = 1,
-                                      .kind = ScatterKind::kAssign}),
-                    inputs, outputs)
-                    .value();
+  auto assign =
+      hyle::compute::prepare(
+          context,
+          Scatter{.axis = 1, .kind = ScatterKind::kAssign}, source_desc,
+          index_desc, update_desc)
+          .value();
   auto assign_invocation = assign.create_invocation().value();
-  ASSERT_TRUE(assign_invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(assign_invocation.submit(queue, inputs, outputs[0])->wait().ok());
   EXPECT_EQ((read_buffer<float, assigned.size()>(output_storage)), assigned);
 
   const TensorView alias_output =
       TensorView::create(source_desc, source_storage.view()).value();
   const std::array alias_outputs{alias_output};
-  auto add = hyle::compute::prepare(
-                 context,
-                 Operation(Scatter{.axis = 1, .kind = ScatterKind::kAdd}),
-                 inputs, alias_outputs)
-                 .value();
+  auto add =
+      hyle::compute::prepare(
+          context, Scatter{.axis = 1, .kind = ScatterKind::kAdd}, source_desc,
+          index_desc, update_desc)
+          .value();
   EXPECT_TRUE(add.alias_support(0, 0)->supported);
   auto add_invocation = add.create_invocation().value();
-  ASSERT_TRUE(
-      add_invocation.submit(queue, inputs, alias_outputs)->wait().ok());
+  ASSERT_TRUE(add_invocation.submit(queue, inputs, alias_outputs[0])
+                  ->wait()
+                  .ok());
   EXPECT_EQ((read_buffer<float, added.size()>(source_storage)), added);
 }
 
@@ -170,12 +172,11 @@ TEST(NativeIndexing, ConcatenatesVariadicDenseInputsAlongMiddleAxis) {
 
   auto context = hyle::compute::cpu::create_context().value();
   auto queue = context.create_queue().value();
+  const std::array descriptions{first_desc, second_desc};
   auto prepared =
-      hyle::compute::prepare(context, Operation(Concat{.axis = 1}), inputs,
-                             outputs)
-          .value();
+      hyle::compute::prepare(context, Concat{.axis = 1}, descriptions).value();
   auto invocation = prepared.create_invocation().value();
-  ASSERT_TRUE(invocation.submit(queue, inputs, outputs)->wait().ok());
+  ASSERT_TRUE(invocation.submit(queue, inputs, outputs[0])->wait().ok());
   EXPECT_EQ((read_buffer<std::int16_t, expected.size()>(output_storage)),
             expected);
 }

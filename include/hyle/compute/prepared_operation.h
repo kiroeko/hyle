@@ -138,6 +138,9 @@ public:
   HYLE_COMPUTE_API Result<Completion>
   submit(Queue &queue, std::span<const ConstTensorView> inputs,
          std::span<const TensorView> outputs) noexcept;
+  HYLE_COMPUTE_API Result<Completion>
+  submit(Queue &queue, std::span<const ConstTensorView> inputs,
+         const TensorView &output) noexcept;
   HYLE_COMPUTE_API Result<Completion> submit(Queue &queue,
                                              const TensorView &output) noexcept;
   HYLE_COMPUTE_API Result<Completion> submit(Queue &queue,
@@ -152,6 +155,14 @@ public:
                                              const ConstTensorView &second,
                                              const ConstTensorView &third,
                                              const TensorView &output) noexcept;
+  HYLE_COMPUTE_API Result<Completion>
+  submit(Queue &queue, const ConstTensorView &first,
+         const ConstTensorView &second, const ConstTensorView &third,
+         const ConstTensorView &fourth, const TensorView &output) noexcept;
+  HYLE_COMPUTE_API Result<Completion>
+  submit(Queue &queue, const ConstTensorView &input,
+         const TensorView &first_output,
+         const TensorView &second_output) noexcept;
 
 private:
   friend class PreparedOperation;
@@ -201,11 +212,14 @@ prepare(const Context &context, LayerNorm operation, TensorDesc input,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, RmsNorm operation, TensorDesc input,
-        TensorDesc output,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, RmsNorm operation, TensorDesc input,
-        TensorDesc weight, TensorDesc output,
+        TensorDesc weight,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, MatMul operation, TensorDesc left,
+        TensorDesc right,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, MatMul operation, TensorDesc left,
@@ -213,7 +227,44 @@ prepare(const Context &context, MatMul operation, TensorDesc left,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, GatedActivation operation, TensorDesc input,
-        TensorDesc output,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, GatedActivation operation, TensorDesc gate,
+        TensorDesc value,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Gather operation, TensorDesc source,
+        TensorDesc indices,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Scatter operation, TensorDesc input,
+        TensorDesc indices, TensorDesc updates,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Concat operation,
+        std::span<const TensorDesc> inputs,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, RoPE operation, TensorDesc input,
+        TensorDesc positions, TensorDesc frequencies,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Softmax operation, TensorDesc input,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Softmax operation, TensorDesc input,
+        TensorDesc mask,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, TopK operation, TensorDesc input,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, ScaledDotProductAttention operation,
+        TensorDesc query, TensorDesc key, TensorDesc value,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, ScaledDotProductAttention operation,
+        TensorDesc query, TensorDesc key, TensorDesc value, TensorDesc mask,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
 
 } // namespace hyle::compute

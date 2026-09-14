@@ -113,7 +113,7 @@ TEST(TensorDesc, PermutationDescribesZeroCopyLogicalViews) {
   EXPECT_EQ(transposed.required_bytes(), matrix.required_bytes());
 }
 
-TEST(TensorDesc, RejectsInvalidPermutationsAndNonMatrixTranspose) {
+TEST(TensorDesc, RejectsInvalidPermutationsAndRankOneTranspose) {
   const TensorDesc invalid;
   EXPECT_TRUE(invalid.permuted({}).error().IsFailedPrecondition());
 
@@ -126,7 +126,15 @@ TEST(TensorDesc, RejectsInvalidPermutationsAndNonMatrixTranspose) {
   EXPECT_TRUE(tensor.permuted(duplicate_axes).error().IsInvalidArgument());
   const std::array<std::size_t, 3> out_of_range_axes{0, 1, 3};
   EXPECT_TRUE(tensor.permuted(out_of_range_axes).error().IsInvalidArgument());
-  EXPECT_TRUE(tensor.transposed().error().IsInvalidArgument());
+  const TensorDesc batched_transpose = tensor.transposed().value();
+  const std::array<std::int64_t, 3> expected_shape{2, 4, 3};
+  EXPECT_TRUE(
+      std::ranges::equal(batched_transpose.dimensions(), expected_shape));
+
+  const std::array<std::int64_t, 1> vector_shape{4};
+  const TensorDesc vector =
+      TensorDesc::dense(DataType::kFloat32, vector_shape).value();
+  EXPECT_TRUE(vector.transposed().error().IsInvalidArgument());
 }
 
 TEST(TensorDesc, RejectsInvalidAndUnrepresentableSchemas) {

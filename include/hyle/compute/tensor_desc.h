@@ -166,8 +166,10 @@ public:
   // prove that a new logical view is zero-copy.
   Result<TensorDesc> permuted(std::span<const std::size_t> axes) const noexcept;
 
-  // Natural rank-2 convenience for matrix weights stored in the opposite
-  // orientation. Equivalent to permuted({1, 0}).
+  // Natural matrix convenience for weights stored in the opposite
+  // orientation. For rank >= 2, swaps only the final two axes (M/K or K/N)
+  // and preserves every leading batch axis. Rank-2 is equivalent to
+  // permuted({1, 0}).
   Result<TensorDesc> transposed() const noexcept;
 
   bool valid() const noexcept { return type_ != DataType::kUnknown; }

@@ -87,4 +87,25 @@ TEST(ComputeOpsTensorDesc,
   EXPECT_EQ(*count, 0u);
 }
 
+TEST(ComputeOpsTensorDesc, TransposeSwapsOnlyMatrixAxesForBatchedLayouts) {
+  constexpr StorageFormatId codec{0x48594c45U, 23U};
+  const StorageFormat q4 = StorageFormat::blocked(codec, 32, 18, 2).value();
+  constexpr std::array<std::int64_t, 4> stored_shape{2, 3, 5, 64};
+  const TensorDesc stored =
+      TensorDesc::blocked_dense(DataType::kFloat32, stored_shape, q4).value();
+
+  const TensorDesc logical = stored.transposed().value();
+  constexpr std::array<std::int64_t, 4> logical_shape{2, 3, 64, 5};
+  constexpr std::array<std::int64_t, 4> logical_strides{540, 180, 18, 36};
+  EXPECT_TRUE(std::ranges::equal(logical.dimensions(), logical_shape));
+  EXPECT_TRUE(std::ranges::equal(logical.byte_strides(), logical_strides));
+  EXPECT_EQ(logical.block_axis(), 2u);
+  EXPECT_EQ(logical.required_bytes(), stored.required_bytes());
+
+  constexpr std::array<std::int64_t, 1> vector_shape{7};
+  const TensorDesc vector =
+      TensorDesc::dense(DataType::kFloat32, vector_shape).value();
+  EXPECT_TRUE(vector.transposed().error().IsInvalidArgument());
+}
+
 } // namespace
