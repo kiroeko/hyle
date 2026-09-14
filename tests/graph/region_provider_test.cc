@@ -4098,6 +4098,239 @@ TEST(GraphRegions, LimitedDiscoveryNeverHidesRealProviderErrors) {
   }
 }
 
+TEST(GraphRegions, FinalWorkspaceRejectionTriesTheSmallerRegion) {
+  const auto logical = make_negations(1);
+  for (const auto reuse :
+       {hyle::graph::WorkspaceReusePolicy::kExistingOrderOnly,
+        hyle::graph::WorkspaceReusePolicy::kAllowSerialization}) {
+    RegionProbe first{.mode = ProposalMode::kSingleton};
+    RegionProbe second{.mode = ProposalMode::kSingleton};
+    use_delegated_runtime(first);
+    first.artifact_properties.workspace = {.size = 128, .alignment = 64};
+    first.profile_key = hyle::compute::ProviderRouteKey{41};
+    second.profile_key = hyle::compute::ProviderRouteKey{42};
+    second.observe_cleanup = &first;
+    auto context = make_context(first, second);
+    const std::array storage{hyle::graph::StorageDomain{
+        .resource = hyle::mem::system_resource(), .workspace_budget_bytes = 0}};
+    const std::array targets{hyle::graph::ExecutionTarget{
+        .context = &context,
+        .default_storage = hyle::graph::StorageDomainId{0}}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, {.storage_domains = storage, .targets = targets},
+        {.workspace_reuse = reuse,
+         .operation_fallback = OperationFallbackPolicy::kReject});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(first.compile_count, 1u);
+    EXPECT_EQ(first.destroy_prepared_count, 1u);
+    EXPECT_EQ(second.observed_cleanup_at_compile, 1u);
+    EXPECT_EQ(first.propose_count, 1u);
+    EXPECT_EQ(second.propose_count, 1u);
+    EXPECT_EQ(compiled->report.search().route_plan_rejections, 1u);
+    EXPECT_EQ(compiled->report.search().region_route_rejections, 0u);
+    EXPECT_EQ(compiled->report.search().placement_attempts, 2u);
+    EXPECT_EQ(compiled->report.lane_count(), 1u);
+    EXPECT_EQ(compiled->report.step(0)->profile_key, second.profile_key);
+    EXPECT_EQ(compiled->report.step(0)->provider_instance,
+              context.provider_instance_id(1).value());
+    auto input = make_tensor(row(8)), output = make_tensor(row(8));
+    write(input, std::array{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F});
+    auto run = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(run.submit(queue).value().wait().ok());
+    EXPECT_EQ(read(output, 8),
+              (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
+  }
+}
+
+TEST(GraphRegions, FinalWorkspaceRejectionCanUseALeafPlan) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  probe.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  auto context = make_context(probe);
+  const std::array storage{hyle::graph::StorageDomain{
+      .resource = hyle::mem::system_resource(), .workspace_budget_bytes = 64}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, {.storage_domains = storage, .targets = targets});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+  EXPECT_EQ(compiled->report.region_count(), 0u);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 2u);
+  EXPECT_EQ(compiled->report.search().route_plan_rejections, 1u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 3u);
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(run.submit(queue).value().wait().ok());
+  EXPECT_EQ(read(output, 8), std::vector<float>(values.begin(), values.end()));
+}
+
+TEST(GraphRegions, FinalWorkspaceRetryDiscardsFailedSerializationEdges) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto a = builder.input(row(8)).value();
+  const auto b = builder.input(row(8)).value();
+  const auto x = builder.add(Unary{UnaryKind::kNeg}, a).value();
+  const auto y = builder.add(Unary{UnaryKind::kNeg}, b).value();
+  ASSERT_TRUE(builder.publish(x).ok());
+  ASSERT_TRUE(builder.publish(y).ok());
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe large{.mode = ProposalMode::kSingleton};
+  RegionProbe small{.mode = ProposalMode::kSingleton};
+  RegionProbe side{.mode = ProposalMode::kSingleton, .singleton_node = 1};
+  large.artifact_properties.workspace = {.size = 128, .alignment = 32};
+  small.artifact_properties.workspace = {.size = 32, .alignment = 32};
+  side.artifact_properties.workspace = {.size = 32, .alignment = 32};
+  auto first = make_context(large, small), second = make_context(side);
+  const std::array storage{hyle::graph::StorageDomain{
+      .resource = hyle::mem::system_resource(), .workspace_budget_bytes = 64}};
+  const std::array targets{
+      hyle::graph::ExecutionTarget{&first, hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExecutionTarget{&second, hyle::graph::StorageDomainId{0}}};
+  const std::array placements{
+      hyle::graph::NodePlacement{graph.node_id(0).value(),
+                                 hyle::graph::ExecutionTargetId{0},
+                                 hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{graph.node_id(1).value(),
+                                 hyle::graph::ExecutionTargetId{1},
+                                 hyle::graph::PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(
+      graph, {.storage_domains = storage, .targets = targets},
+      {.node_placements = placements,
+       .workspace_reuse =
+           hyle::graph::WorkspaceReusePolicy::kAllowSerialization,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(large.compile_count, 1u);
+  EXPECT_EQ(large.destroy_prepared_count, 1u);
+  EXPECT_EQ(side.compile_count, 2u);
+  EXPECT_EQ(side.destroy_prepared_count, 1u);
+  EXPECT_EQ(compiled->report.search().route_plan_rejections, 1u);
+  EXPECT_EQ(compiled->report.serialization_edge_count(), 0u);
+  EXPECT_EQ(compiled->report.workspace_bytes(), 64u);
+  EXPECT_EQ(compiled->report.segment(0)->dependency_count, 0u);
+  EXPECT_EQ(compiled->report.segment(1)->dependency_count, 0u);
+}
+
+TEST(GraphRegions, FinalWorkspaceRetryKeepsHardConstraintsAndBudgets) {
+  const auto logical = make_negations(1);
+  for (const int scenario : {0, 1, 2, 3}) {
+    SCOPED_TRACE(scenario);
+    RegionProbe first{.mode = ProposalMode::kSingleton};
+    RegionProbe second{.mode = ProposalMode::kSingleton};
+    first.artifact_properties.workspace = {.size = 128, .alignment = 64};
+    if (scenario == 3)
+      second.artifact_properties.workspace =
+          first.artifact_properties.workspace;
+    auto context = make_context(first, second);
+    const std::array storage{hyle::graph::StorageDomain{
+        .resource = hyle::mem::system_resource(), .workspace_budget_bytes = 0}};
+    const std::array targets{hyle::graph::ExecutionTarget{
+        .context = &context,
+        .default_storage = hyle::graph::StorageDomainId{0}}};
+    const std::array constraints{hyle::graph::NodeProviderConstraint{
+        logical.graph.node_id(0).value(), kRegionProviderId,
+        context.provider_instance_id(0).value()}};
+    CompileOptions options;
+    options.operation_fallback = OperationFallbackPolicy::kReject;
+    if (scenario == 0)
+      options.max_placement_attempts = 1;
+    if (scenario == 1)
+      options.max_route_search_states = 1;
+    if (scenario == 2)
+      options.node_providers = constraints;
+    auto compiled = hyle::graph::compile(
+        logical.graph, {.storage_domains = storage, .targets = targets},
+        options);
+    ASSERT_FALSE(compiled);
+    EXPECT_TRUE(compiled.error().IsResourceExhausted());
+    EXPECT_EQ(first.compile_count, 1u);
+    EXPECT_EQ(first.destroy_prepared_count, 1u);
+    EXPECT_EQ(second.compile_count, scenario == 3 ? 1u : 0u);
+    EXPECT_EQ(second.destroy_prepared_count, second.compile_count);
+    EXPECT_EQ(first.single_artifact_count + second.single_artifact_count, 0u);
+  }
+}
+
+TEST(GraphRegions, FinalWorkspaceRetryDoesNotHideRealProviderError) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton};
+  RegionProbe second{.mode = ProposalMode::kSingleton};
+  first.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  const Status failure =
+      Status::ResourceExhausted("real prepare allocation failure");
+  second.region_outcome_override = ProviderPrepareOutcome::error(failure);
+  auto context = make_context(first, second);
+  const std::array storage{hyle::graph::StorageDomain{
+      .resource = hyle::mem::system_resource(), .workspace_budget_bytes = 0}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, {.storage_domains = storage, .targets = targets},
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(compiled);
+  EXPECT_EQ(compiled.error(), failure);
+  EXPECT_EQ(first.destroy_prepared_count, 1u);
+  EXPECT_EQ(second.destroy_prepared_count, 1u);
+}
+
+TEST(GraphRegions, MissingLaneSelectsAnotherTargetWithoutWaivingPlacement) {
+  const auto logical = make_negations(1);
+  for (const bool required : {false, true}) {
+    RegionProbe first{.mode = ProposalMode::kSingleton};
+    RegionProbe second{.mode = ProposalMode::kSingleton};
+    auto a = make_context(first), b = make_context(second);
+    const std::array storage{
+        hyle::graph::StorageDomain{hyle::mem::system_resource()}};
+    const std::array targets{
+        hyle::graph::ExecutionTarget{&a, hyle::graph::StorageDomainId{0}},
+        hyle::graph::ExecutionTarget{&b, hyle::graph::StorageDomainId{0}}};
+    const std::array lanes{
+        hyle::graph::ExecutionLane{hyle::graph::ExecutionTargetId{1}}};
+    const std::array placements{hyle::graph::NodePlacement{
+        logical.graph.node_id(0).value(), hyle::graph::ExecutionTargetId{0},
+        hyle::graph::PlacementStrength::kRequired}};
+    CompileOptions options;
+    options.operation_fallback = OperationFallbackPolicy::kReject;
+    if (required)
+      options.node_placements = placements;
+    auto compiled = hyle::graph::compile(
+        logical.graph,
+        {.storage_domains = storage, .targets = targets, .lanes = lanes},
+        options);
+    EXPECT_EQ(first.compile_count, 1u);
+    EXPECT_EQ(first.destroy_prepared_count, 1u);
+    if (required) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsInvalidArgument());
+      EXPECT_EQ(second.compile_count, 0u);
+      continue;
+    }
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(second.compile_count, 1u);
+    EXPECT_EQ(compiled->report.search().route_plan_rejections, 1u);
+    EXPECT_EQ(compiled->report.step(0)->target,
+              hyle::graph::ExecutionTargetId{1});
+    auto input = make_tensor(row(8)), output = make_tensor(row(8));
+    write(input, std::array{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F});
+    auto run = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+    auto queue = b.create_queue().value();
+    ASSERT_TRUE(run.submit(queue).value().wait().ok());
+    EXPECT_EQ(read(output, 8),
+              (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
+  }
+}
+
 TEST(GraphRegions, LimitedSearchCannotWaiveWorkspaceOrPreparationLimits) {
   const auto logical = make_negations(2);
   RegionProbe probe{.mode = ProposalMode::kOverflow};
@@ -4611,88 +4844,109 @@ TEST(GraphRegions, UnmatchedRegionStorageCanSelectAnotherCompleteRegion) {
 }
 
 TEST(GraphRegions, EveryAllocationFailureInRegionReselectionRollsBack) {
-  struct AllocationState final {
-    AllocatorRef backing = hyle::mem::system_allocator();
-    std::size_t attempts = 0;
-    std::size_t fail_at = SIZE_MAX;
-    std::size_t live = 0;
-  } state;
-  const AllocatorRef allocator{
-      +[](void *opaque, std::size_t bytes,
-          std::size_t alignment) noexcept -> void * {
-        auto &state = *static_cast<AllocationState *>(opaque);
-        if (state.attempts++ == state.fail_at)
-          return nullptr;
-        void *result = state.backing.allocate(bytes, alignment);
-        state.live += result != nullptr ? 1u : 0u;
-        return result;
-      },
-      +[](void *opaque, void *pointer, std::size_t bytes,
-          std::size_t alignment) noexcept {
-        auto &state = *static_cast<AllocationState *>(opaque);
-        state.live -= pointer != nullptr ? 1u : 0u;
-        state.backing.deallocate(pointer, bytes, alignment);
-      },
-      +[](void *opaque, void *pointer, std::size_t old_bytes,
-          std::size_t new_bytes, std::size_t alignment) noexcept -> void * {
-        auto &state = *static_cast<AllocationState *>(opaque);
-        if (new_bytes == 0) {
+  for (const bool final_workspace_rejection : {false, true}) {
+    SCOPED_TRACE(final_workspace_rejection);
+    struct AllocationState final {
+      AllocatorRef backing = hyle::mem::system_allocator();
+      std::size_t attempts = 0;
+      std::size_t fail_at = SIZE_MAX;
+      std::size_t live = 0;
+    } state;
+    const AllocatorRef allocator{
+        +[](void *opaque, std::size_t bytes,
+            std::size_t alignment) noexcept -> void * {
+          auto &state = *static_cast<AllocationState *>(opaque);
+          if (state.attempts++ == state.fail_at)
+            return nullptr;
+          void *result = state.backing.allocate(bytes, alignment);
+          state.live += result != nullptr ? 1u : 0u;
+          return result;
+        },
+        +[](void *opaque, void *pointer, std::size_t bytes,
+            std::size_t alignment) noexcept {
+          auto &state = *static_cast<AllocationState *>(opaque);
           state.live -= pointer != nullptr ? 1u : 0u;
-          return state.backing.reallocate(pointer, old_bytes, 0, alignment);
-        }
-        if (state.attempts++ == state.fail_at)
-          return nullptr;
-        void *result =
-            state.backing.reallocate(pointer, old_bytes, new_bytes, alignment);
-        if (pointer == nullptr && result != nullptr)
-          ++state.live;
-        return result;
-      },
-      &state};
-  RegionProbe first;
-  first.region_outcome_route = (std::uint64_t{2} << 32) | 2;
-  first.region_outcome_override = ProviderPrepareOutcome::unsupported(
-      Status::Unimplemented("reselect after the second region"));
-  RegionProbe second;
-  const std::array providers{region_provider(first), region_provider(second)};
-  auto context =
-      Context::create(hyle::compute::cpu::device(),
-                      {.metadata_allocator = allocator, .providers = providers})
-          .value();
-  // Cross all inline capacities in the cold region boundary/resource cache,
-  // including flat port requirements, before injecting each allocation failure.
-  const auto logical = make_negations(18);
-  const CompileOptions options{.operation_fallback =
-                                   OperationFallbackPolicy::kReject};
-  const std::size_t context_allocations = state.live;
-  state.attempts = 0;
-  {
-    auto compiled = hyle::graph::compile(logical.graph, context, options);
-    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
-    EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
-  }
-  const std::size_t attempts = state.attempts;
-  ASSERT_GT(attempts, 0u);
-  EXPECT_EQ(state.live, context_allocations);
-  for (std::size_t failure = 0; failure < attempts; ++failure) {
-    SCOPED_TRACE(failure);
+          state.backing.deallocate(pointer, bytes, alignment);
+        },
+        +[](void *opaque, void *pointer, std::size_t old_bytes,
+            std::size_t new_bytes, std::size_t alignment) noexcept -> void * {
+          auto &state = *static_cast<AllocationState *>(opaque);
+          if (new_bytes == 0) {
+            state.live -= pointer != nullptr ? 1u : 0u;
+            return state.backing.reallocate(pointer, old_bytes, 0, alignment);
+          }
+          if (state.attempts++ == state.fail_at)
+            return nullptr;
+          void *result = state.backing.reallocate(pointer, old_bytes, new_bytes,
+                                                  alignment);
+          if (pointer == nullptr && result != nullptr)
+            ++state.live;
+          return result;
+        },
+        &state};
+    RegionProbe first;
+    first.region_outcome_route = (std::uint64_t{2} << 32) | 2;
+    first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+        Status::Unimplemented("reselect after the second region"));
+    if (final_workspace_rejection) {
+      first.region_outcome_override.reset();
+      first.artifact_properties.workspace = {.size = 128, .alignment = 64};
+      use_delegated_runtime(first);
+    }
+    RegionProbe second;
+    const std::array providers{region_provider(first), region_provider(second)};
+    auto context = Context::create(hyle::compute::cpu::device(),
+                                   {.metadata_allocator = allocator,
+                                    .providers = providers})
+                       .value();
+    // Cross all inline capacities in the cold region boundary/resource cache,
+    // including flat port requirements, before injecting each allocation
+    // failure.
+    const auto logical = make_negations(final_workspace_rejection ? 2 : 18);
+    const std::array storage{hyle::graph::StorageDomain{
+        .resource = hyle::mem::system_resource(),
+        .workspace_budget_bytes = final_workspace_rejection ? 0u : SIZE_MAX}};
+    const std::array targets{hyle::graph::ExecutionTarget{
+        .context = &context,
+        .default_storage = hyle::graph::StorageDomainId{0}}};
+    const hyle::graph::CompileEnvironment environment{
+        .storage_domains = storage, .targets = targets};
+    const CompileOptions options{.operation_fallback =
+                                     OperationFallbackPolicy::kReject};
+    const std::size_t context_allocations = state.live;
     state.attempts = 0;
-    state.fail_at = failure;
     {
-      auto failed = hyle::graph::compile(logical.graph, context, options);
-      ASSERT_FALSE(failed.has_value());
-      EXPECT_TRUE(failed.error().IsResourceExhausted());
+      auto compiled = hyle::graph::compile(logical.graph, environment, options);
+      ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+      EXPECT_EQ(compiled->report.search().region_route_rejections,
+                final_workspace_rejection ? 0u : 1u);
+      EXPECT_EQ(compiled->report.search().route_plan_rejections,
+                final_workspace_rejection ? 1u : 0u);
     }
+    const std::size_t attempts = state.attempts;
+    ASSERT_GT(attempts, 0u);
     EXPECT_EQ(state.live, context_allocations);
-    state.fail_at = SIZE_MAX;
-    {
-      auto recovered = hyle::graph::compile(logical.graph, context, options);
-      ASSERT_TRUE(recovered.has_value()) << recovered.error().message();
+    for (std::size_t failure = 0; failure < attempts; ++failure) {
+      SCOPED_TRACE(failure);
+      state.attempts = 0;
+      state.fail_at = failure;
+      {
+        auto failed = hyle::graph::compile(logical.graph, environment, options);
+        ASSERT_FALSE(failed.has_value());
+        EXPECT_TRUE(failed.error().IsResourceExhausted());
+      }
+      EXPECT_EQ(state.live, context_allocations);
+      state.fail_at = SIZE_MAX;
+      {
+        auto recovered =
+            hyle::graph::compile(logical.graph, environment, options);
+        ASSERT_TRUE(recovered.has_value()) << recovered.error().message();
+      }
+      EXPECT_EQ(state.live, context_allocations);
     }
-    EXPECT_EQ(state.live, context_allocations);
+    context = {};
+    EXPECT_EQ(state.live, 0u);
   }
-  context = {};
-  EXPECT_EQ(state.live, 0u);
 }
 
 TEST(GraphRegions, InvalidRegionOutcomeIsFatalAndReclaimsItsArtifact) {

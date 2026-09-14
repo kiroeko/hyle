@@ -406,7 +406,9 @@ struct CompileSearchReport final {
   std::size_t operation_route_rejections = 0;
   // Cold candidate visits, including overlaps and previously rejected routes.
   std::size_t route_search_states = 0;
-  // Complete node covers rejected by physical resource/copy/cycle checks.
+  // Complete node covers rejected by physical resource/copy/cycle checks or
+  // final lane/workspace constraints. This rejects a combination, not each
+  // participating provider independently. Real errors never count as declines.
   std::size_t route_plan_rejections = 0;
   bool region_proposal_limit_reached = false;
   bool per_provider_proposal_limit_reached = false;

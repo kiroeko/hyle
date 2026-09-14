@@ -298,6 +298,10 @@ leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用�
 只使用已选路线，仍经 Compute 校验；不能原地换 Provider/target/storage，明确 decline 必须整图重规划。
 这可能重新准备已成功的前缀，全部计入累计预算。不承诺提前证明任意 Provider 的真实 prepare 必定成功：
 精确 workspace/persistent、lane/内存和实际 Queue transfer 仍需后续校验，完整成本搜索尚未完成。
+最终 lane/schedule/workspace 校验也在同一冷重选事务中：已准备路线缺可用 lane，或完整 workspace
+无法满足显式 storage 预算/允许的有界序列化时，释放本次制品及其调度/别名/内存决定，再尝试下一组合。
+这不永久排除组合中的每个 Provider；所有路线都无解仍失败。真实 OOM、Provider/alias 合同错误不会被
+按 Status 名称猜成“可以换路”。胜出报告不保留被拒绝路线的 delegated lane、序列化边或实现键。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 `max_route_search_states`（默认 65,536）另行限制累计尝试的候选状态，包括重叠/已拒绝的候选；不在重选时

@@ -684,3 +684,42 @@ region 联合环与回溯；hard target/Provider 不突破；搜索/prepare 上�
 G103/C93 下一段固定为[稳定实现键与临时 token 分离](compute-v10-owning-custom-execution.md#c93稳定实现键与临时准备-token-分离实现前固定)：
 Graph 只迁移 region 提案与冷 report，复用 Compute `ProviderRouteKey`；实际选择仍按本轮无 profile
 合同，不因 Provider 填了非零 key 就授予性能优先级。keys 临时数组活到 build_report，不进入 PlanStep/Invocation。
+
+### G103/G104：最终硬约束进入同一重选事务（实现前固定）
+
+接完整成本/profile 前复核发现：当前搜索只包住 physical/prepare，最终 schedule/workspace 在搜索外；
+首选制品虽合法但完整 workspace 超预算时，后备更省内存的路线不会被尝试。不能把尚未通过这些硬约束
+的 physical skeleton 当作可比较计划，也不能将真实 OOM 当成候选不合适。
+
+有限 FIX：把 schedule/segment/workspace 收入同一次有界冷事务。只有本地检查明确发现缺可用 lane 或
+完整 workspace 无法满足显式预算/允许的有界序列化时，才拒绝当前**组合**并继续已有搜索；不永久排除
+其中每个 Provider。其余错误原样终止，特别是 metadata OOM、Provider 错误和别名合同损坏。候选发现、
+state/prepare 预算继续累计；丢弃制品、合成 delegated lanes、序列化边与 workspace/alias 决策后再重选。
+只有完成最终校验才写入胜出 route key/report，不放宽 hard Provider/target/storage 约束。
+
+验证固定为：大 workspace region→小 region/leaf 的真实数值回放、delegated lane/旧 key/制品不泄漏、
+全部无解、硬约束与 state/prepare 上限不突破、逐 allocation fault 保持 fatal/可重试，以及既有 Graph/
+oneDNN/CUDA/逐头和三交付。只移动既有冷流程并增加明确的拒绝标志，warm 路径不改；不跑 P1，不据此
+签完 qualified profile、storage/lane 联合优化或有 incumbent 的继续优化。这仍在 G103/G104 原 FIX 内。
+
+### 2026-09-15 最终约束重选检查点
+
+- 已将最终 schedule/segments/workspace 放进同一候选事务；只有明确的本地 lane/预算拒绝触发重选，
+  不根据 ResourceExhausted/InvalidArgument 名称回退。新组合复用原候选池与累计预算；旧制品、合成
+  lane、串行化边和 alias/workspace 决策先释放/清除，全部校验成功后才生成胜出 report/key。
+- 两个新增数值反例在 `d0552110` 产品上稳定失败（大 workspace region 挡住更小 region/leaf）；修复后
+  通过。新增共 6 个用例，还覆盖缺 lane 改选 target、required 不放宽、state/prepare 上限、全部无解、
+  真正 Provider OOM 不吞、旧串行化边不污染后备并行计划。原 metadata allocator 逐次失败回放保留
+  18 节点 prepare-decline 模式，另增完整 workspace 拒绝与 delegated lane 的模式；每次失败清理后可重试。
+- Windows static Graph/逐头 3/3，最终执行套件 180/180；shared + oneDNN Graph/region/逐头 5/5；
+  CUDA Graph 1/1。缓存沿用前述 v8 static、v8 oneDNN、v7 CUDA；没有修改 Backend 或 Provider 产品。
+- 公开 custom-kernel sample 的 CPU+CUDA source/installed shared/installed static 各 2/2，沿用 v10
+  consumer 缓存。安装前缀均为显式 scratch；shared producer、SDK、CPU/CUDA 加载目录的 Graph DLL
+  SHA-256 同为 `68C09ABA41EC1C40D25F292334EEE686A79E0BB87C9FAC4C1748154EA4E3D053`。
+- P0：正常首选成功只移动既有冷校验，没有增加每 step/Invocation 常驻字段或 warm 逻辑；重选才清理
+  旧决定并重新 schedule/plan。最坏冷成本受原候选 state/prepare 与每候选序列化上限限制，仍不保证全局
+  最优；为取得真实 workspace 而准备的失败制品有实际成本，不把修复签成计时胜利。
+- selector 基线 `d0552110` READY，89 项有据跳过；docs/closure/diff 通过，registry 不变。未运行 P1、
+  Linux/Apple、sanitizer 或独立终局红队；均仍属完整 foundation candidate 的义务。
+- 自实现不含测试：Compute **16,181**（未改），Graph **10,800**，合计 **26,981**；全库自实现
+  **122,107** 行，统一脚本 self-check 通过。本段不是完整 profile/成本选择的交付，foundation 尚未完成。

@@ -3311,27 +3311,41 @@ Status prepare_placed_steps_attempt(
   return Status::Ok();
 }
 
+void reset_workspace_decisions(detail::PlanState &plan) noexcept;
+Status finalize_placed_steps(detail::PlanState &plan,
+                             const detail::GraphState &graph,
+                             bool &rejected_plan) noexcept;
+
 Status prepare_placed_steps(
     detail::PlanState &plan, const Graph &published_graph,
     const detail::GraphState &graph, CompileEnvironment environment,
     CompileOptions options, const ProviderPolicy &provider_policy,
     std::span<compute::ProviderRouteKey> profile_keys) noexcept {
   RegionDiscovery discovery(plan.allocator);
+  const std::size_t configured_lane_count = plan.lanes.size();
   for (;;) {
     // No Invocation or user work exists during this transaction. Clear all
     // artifacts before calling any provider for the next construction; the
-    // attempt resets its physical metadata and keeps aggregate budgets.
+    // attempt resets its physical metadata and keeps aggregate budgets. Final
+    // scheduling/alias/workspace choices also belong to this one candidate.
     plan.steps.clear();
     plan.region_count = 0;
+    if (!discovery.last_rejection.ok()) {
+      while (plan.lanes.size() > configured_lane_count)
+        plan.lanes.pop_back();
+      plan.serialization_edges.clear();
+      reset_workspace_decisions(plan);
+    }
     std::fill(plan.node_steps.begin(), plan.node_steps.end(), detail::kNoNode);
     PlacementAttemptOutcome outcome;
     Status status = prepare_placed_steps_attempt(
         plan, published_graph, graph, environment, options, provider_policy,
         discovery, outcome);
+    if (status.ok())
+      status = finalize_placed_steps(plan, graph, outcome.rejected_plan);
     if (outcome.rejected_plan) {
       if (status.ok() || outcome.rejected_region || outcome.rejected_operation)
-        return Status::Internal(
-            "graph physical rejection has conflicting outcome");
+        return Status::Internal("graph plan rejection has conflicting outcome");
       ++plan.search.route_plan_rejections;
       discovery.last_rejection = std::move(status);
       continue;
@@ -3600,8 +3614,8 @@ Unsigned saturating_multiply(Unsigned left, Unsigned right) noexcept {
 // current lane while possible. This deterministically removes avoidable
 // Queue segment boundaries from interleaved independent branches; providers,
 // transfer routes and bindings remain fully resolved before the warm path.
-Status schedule_steps(detail::PlanState &plan,
-                      const detail::GraphState &graph) noexcept {
+Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
+                      bool &rejected_plan) noexcept {
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Edges = container::SmallVector<std::uint64_t, 32, mem::AllocatorRef>;
   constexpr std::uint32_t kNone = detail::kNoNode;
@@ -3663,6 +3677,7 @@ Status schedule_steps(detail::PlanState &plan,
       }
     }
     if (selected == kNone) {
+      rejected_plan = true;
       return Status::InvalidArgument(
           "compile environment has no compatible lane for a graph step");
     }
@@ -4150,7 +4165,8 @@ void reset_workspace_decisions(detail::PlanState &plan) noexcept {
 }
 
 Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
-                      bool &reschedule_requested) noexcept {
+                      bool &reschedule_requested,
+                      bool &rejected_plan) noexcept {
   using LastUses = container::SmallVector<std::uint64_t, 16, mem::AllocatorRef>;
   using Requests =
       container::SmallVector<mem::LifetimeRequest, 8, mem::AllocatorRef>;
@@ -4658,10 +4674,12 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
         plan.storage_domains[storage].workspace_budget_bytes)
       continue;
     if (plan.workspace_reuse != WorkspaceReusePolicy::kAllowSerialization) {
+      rejected_plan = true;
       return Status::ResourceExhausted(
           "graph workspace budget is exceeded by the existing order");
     }
     if (!precise_happens_before) {
+      rejected_plan = true;
       return Status::ResourceExhausted(
           "graph workspace serialization exceeds the bounded happens-before "
           "analysis");
@@ -4774,6 +4792,7 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
       }
     }
     if (best_edges.empty()) {
+      rejected_plan = true;
       return Status::ResourceExhausted(
           "graph workspace budget cannot be satisfied by safe bounded "
           "serialization");
@@ -4793,6 +4812,38 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     return Status::Ok();
   }
   return Status::Ok();
+}
+
+// Only explicit local hard-constraint failures authorize another complete
+// route. An allocation/provider/alias error with the same Status code does not.
+Status finalize_placed_steps(detail::PlanState &plan,
+                             const detail::GraphState &graph,
+                             bool &rejected_plan) noexcept {
+  rejected_plan = false;
+  HYLE_RETURN_IF_ERROR(schedule_steps(plan, graph, rejected_plan));
+  HYLE_RETURN_IF_ERROR(build_segments(plan, graph));
+  if (plan.instance_values.size() > SIZE_MAX - plan.steps.size())
+    return Status::ResourceExhausted(
+        "graph workspace serialization round budget overflows");
+  const std::size_t maximum_serialization_rounds =
+      plan.instance_values.size() + plan.steps.size();
+  std::size_t serialization_round = 0;
+  for (;;) {
+    reset_workspace_decisions(plan);
+    bool reschedule_requested = false;
+    HYLE_RETURN_IF_ERROR(
+        plan_workspace(plan, graph, reschedule_requested, rejected_plan));
+    if (!reschedule_requested)
+      return Status::Ok();
+    if (serialization_round++ >= maximum_serialization_rounds) {
+      rejected_plan = true;
+      return Status::ResourceExhausted(
+          "graph workspace serialization exhausted its deterministic "
+          "round budget");
+    }
+    HYLE_RETURN_IF_ERROR(schedule_steps(plan, graph, rejected_plan));
+    HYLE_RETURN_IF_ERROR(build_segments(plan, graph));
+  }
 }
 
 std::size_t step_constant_count(const detail::PlanState &plan,
@@ -6994,36 +7045,6 @@ Result<CompiledGraph> compile(const Graph &graph,
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
                                   options, provider_policy, profile_keys);
-  if (status.ok())
-    status = schedule_steps(*plan, *concrete);
-  if (status.ok())
-    status = build_segments(*plan, *concrete);
-  if (status.ok()) {
-    if (plan->instance_values.size() > SIZE_MAX - plan->steps.size()) {
-      status = Status::ResourceExhausted(
-          "graph workspace serialization round budget overflows");
-    } else {
-      const std::size_t maximum_serialization_rounds =
-          plan->instance_values.size() + plan->steps.size();
-      std::size_t serialization_round = 0;
-      while (status.ok()) {
-        reset_workspace_decisions(*plan);
-        bool reschedule_requested = false;
-        status = plan_workspace(*plan, *concrete, reschedule_requested);
-        if (!status.ok() || !reschedule_requested)
-          break;
-        if (serialization_round++ >= maximum_serialization_rounds) {
-          status = Status::ResourceExhausted(
-              "graph workspace serialization exhausted its deterministic "
-              "round budget");
-          break;
-        }
-        status = schedule_steps(*plan, *concrete);
-        if (status.ok())
-          status = build_segments(*plan, *concrete);
-      }
-    }
-  }
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));
