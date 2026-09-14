@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -1565,6 +1566,51 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   auto singleton = propose();
   ASSERT_TRUE(singleton.has_value()) << singleton.error().message();
   EXPECT_EQ(singleton->shape_coverage, ProviderShapeCoverage::kExactPoint);
+  EXPECT_EQ(probe.prepare_count, 0u);
+  EXPECT_EQ(probe.submit_count, 0u);
+}
+
+struct MalformedEffectSchema final {
+  static constexpr hyle::compute::OperationId operation_id{0x48594c45U,
+                                                           0x52455305U};
+  static constexpr std::string_view operation_name = "bad-effect-schema";
+  hyle::compute::OperationTraits operation_traits() const noexcept {
+    return {.inputs = {1, 1},
+            .outputs = 1,
+            .effect = hyle::compute::EffectKind::kResourceAccess};
+  }
+  hyle::Status infer_output_descriptions(
+      std::span<const hyle::compute::TensorDesc> inputs,
+      std::span<hyle::compute::TensorDesc> outputs) const noexcept {
+    outputs[0] = inputs[0];
+    return hyle::Status::Ok();
+  }
+};
+
+TEST(RuntimeProviders, RejectsMalformedEffectsBeforeExactOrBoundedProposal) {
+  using namespace hyle::compute;
+  using namespace hyle::compute::detail;
+  AsyncOperationProbe probe;
+  probe.shape_coverage = ProviderShapeCoverage::kEntireDomain;
+  auto context =
+      Context::create(cpu::device(), make_async_provider(probe)).value();
+  const std::array descriptions{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
+          .value()};
+  const std::array dimensions{ShapeDimension{.bounds = {1, 8, 1}}};
+  std::array<ProviderTensorAxes, 1> axes{};
+  axes[0].values[0] = 0;
+  std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
+  const auto operation = Operation::custom(MalformedEffectSchema{});
+  for (const ProviderShapeDomain domain :
+       {ProviderShapeDomain{}, ProviderShapeDomain{dimensions, axes, axes}}) {
+    auto result = OperationPreparationAccess::propose(
+        context, 0, operation, descriptions, descriptions, inputs, outputs,
+        domain);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(result.error().IsInvalidArgument());
+  }
+  EXPECT_EQ(probe.proposal_count, 0u);
   EXPECT_EQ(probe.prepare_count, 0u);
   EXPECT_EQ(probe.submit_count, 0u);
 }

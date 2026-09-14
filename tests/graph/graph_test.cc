@@ -433,6 +433,78 @@ TEST(GraphBuilder, RequiresExplicitOrderingBetweenExternalEffects) {
   EXPECT_TRUE(graph.node_dependency(second, 1).error().IsOutOfRange());
 }
 
+struct ResourceEffect final {
+  static constexpr OperationId operation_id{0x48594c45U, 0x52455304U};
+  static constexpr std::string_view operation_name = "graph-resource-effect";
+  std::uint8_t resource_count = 1;
+  bool has_tensor = false;
+  hyle::compute::ResourceAccess access =
+      hyle::compute::ResourceAccess::kReadWrite;
+  OperationTraits operation_traits() const noexcept {
+    const auto arity = static_cast<std::uint16_t>(has_tensor ? 1 : 0);
+    return {.inputs = {arity, arity},
+            .outputs = static_cast<std::uint8_t>(arity),
+            .effect = EffectKind::kResourceAccess,
+            .resource_count = resource_count};
+  }
+  hyle::compute::ResourceAccess resource_access(std::size_t) const noexcept {
+    return access;
+  }
+  Status
+  infer_output_descriptions(std::span<const TensorDesc> inputs,
+                            std::span<TensorDesc> outputs) const noexcept {
+    if (has_tensor)
+      outputs[0] = inputs[0];
+    return Status::Ok();
+  }
+};
+
+TEST(GraphBuilder, ResourceSchemaRemainsConservativeBeforeDomainBinding) {
+  for (const bool unknown_first : {false, true}) {
+    auto builder = GraphBuilder::create().value();
+    const Operation resource = Operation::custom(ResourceEffect{});
+    const Operation unknown = Operation::custom(ExternalEffect{});
+    const auto first =
+        builder.add_node(unknown_first ? unknown : resource, {}).value();
+    const auto second =
+        builder.add_node(unknown_first ? resource : unknown, {}).value();
+    EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+    ASSERT_TRUE(builder.depends_on(second, first).ok());
+    EXPECT_TRUE(std::move(builder).finish().has_value());
+  }
+  auto builder = GraphBuilder::create().value();
+  ASSERT_TRUE(builder.add_node(Operation::custom(ResourceEffect{}), {}));
+  ASSERT_TRUE(builder.add_node(Operation::custom(ResourceEffect{}), {}));
+  EXPECT_TRUE(std::move(builder).finish().error().IsFailedPrecondition());
+}
+
+TEST(GraphBuilder, SymbolicOutputCannotBypassResourceSchemaValidation) {
+  auto builder = GraphBuilder::create().value();
+  const auto tokens = builder.dimension({1, 8, 1}).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32, std::array{Dimension(tokens)})
+          .value();
+  const auto input = builder.input(spec).value();
+  ResourceEffect descriptor{.resource_count = 0, .has_tensor = true};
+  EXPECT_TRUE(builder
+                  .add_node(Operation::custom(descriptor), std::array{input},
+                            std::array{spec})
+                  .error()
+                  .IsInvalidArgument());
+  descriptor.resource_count = 1;
+  descriptor.access = static_cast<hyle::compute::ResourceAccess>(255);
+  EXPECT_TRUE(builder
+                  .add_node(Operation::custom(descriptor), std::array{input},
+                            std::array{spec})
+                  .error()
+                  .IsInvalidArgument());
+  descriptor.access = hyle::compute::ResourceAccess::kRead;
+  const auto valid = builder.add_node(Operation::custom(descriptor),
+                                      std::array{input}, std::array{spec});
+  ASSERT_TRUE(valid.has_value());
+  EXPECT_EQ(valid->ordinal(), 0u);
+}
+
 TEST(GraphBuilder, PreservesProviderNeutralBlockedWeightMetadata) {
   constexpr StorageFormatId codec{0x48594c45U, 41U};
   const StorageFormat blocked =

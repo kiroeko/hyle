@@ -392,7 +392,9 @@ view 保留实例 ID，但这不表示发生了 dispatch。ID 本身不保活 Co
   失效，多 shared lane 必须重新 `prepare_replay()`。
 - 不同 published outputs，以及 output 与仍存活 input，不得绕过 plan 形成危险 overlap。只在相同
   storage/resource、最后一次读取且 provider 明确允许时选择 in-place；其它 partial overlap 被拒绝。
-- 外部副作用 node 必须用数据依赖或 `depends_on()` 排序。纯 node 不要为了“看起来顺序一致”手工串行化。
+- 外部副作用 node 必须用数据依赖或 `depends_on()` 排序。ComputeOps 已能声明具名资源端口的 read/write，
+  但当前 Graph 的域绑定仍未完成，这类 node 也按保守副作用处理，不能据此跳过顺序。纯 node 不要为了
+  “看起来顺序一致”手工串行化；资源 schema 用法见 [Compute 指南](compute.md#custom-operation-的外部资源访问)。
 - Graph 可以保存合法 blocked/opaque TensorDesc，但没有理解该 encoding 的 provider 时 compile 会返回
   `Unimplemented`，不会把压缩 bytes 当普通 scalar storage。
 

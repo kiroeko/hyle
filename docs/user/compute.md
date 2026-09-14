@@ -460,3 +460,33 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 
 source、headers + static、headers + shared 都选择 `hyle::compute`。三者是同一 C++23 source contract，不是
 Native FFI，也不承诺跨工具链 C++ ABI。
+
+## Custom operation 的外部资源访问
+
+普通 tensor input/output 的数据流不需要另加资源端口。只有 custom operation 还观察或修改外部可变
+状态时，descriptor 才使用 `EffectKind::kResourceAccess` 和非零 `resource_count`，逐端口声明
+`ResourceAccess::kRead/kWrite/kReadWrite`。例如一个操作读取配置状态、更新另一个累积状态，其 descriptor
+可包含下面两个成员（identity 与 output inference 仍按原 custom schema 提供）：
+
+```cpp
+compute::OperationTraits operation_traits() const noexcept {
+  return {.inputs = {1, 1}, .outputs = 1,
+          .effect = compute::EffectKind::kResourceAccess,
+          .resource_count = 2};
+}
+compute::ResourceAccess resource_access(std::size_t port) const noexcept {
+  return port == 0 ? compute::ResourceAccess::kRead
+                   : compute::ResourceAccess::kReadWrite;
+}
+```
+
+端口是 schema 中的有序语义位置，不是 tensor input 序号、Graph ID、地址或资源 owner；最多 255 个。
+`operation_resource_access(op, index)` 返回按值结果，`validate_operation_effects(op)` 检查完整访问 schema；
+inference/prepare 也会检查，非法枚举、缺方法、空资源声明或混用 pure 都会报错。声明方法必须为
+`const noexcept`，确定、无分配且不读取 payload/执行工作；结果不能借用被临时解码 descriptor 的内存。
+跨 shared 调用仍走原 producer 的 callback，承载代码的库必须保持加载，不提供卸载中的 plugin 支持。
+
+只读外部状态不是 pure。无法列出完整访问集时，保留 `kExternalSideEffect`、零具名端口；它意味着保守
+副作用，不是空资源集。direct Compute 的外部资源顺序/生命周期由调用方 Queue/Completion 管理。
+当前 Graph 尚未完成资源域绑定，仍对所有非 pure 访问要求显式依赖链；本 schema 不等于已支持独立域
+并行，也不会自动安装 custom execution 实现。

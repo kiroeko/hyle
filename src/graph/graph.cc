@@ -137,7 +137,7 @@ Status validate_effect_order(const detail::BuilderState &state) noexcept {
     auto absorb = [&](std::uint32_t prerequisite) noexcept {
       const bool prerequisite_is_effect =
           compute::operation_traits(state.nodes[prerequisite].operation)
-              .effect == compute::EffectKind::kExternalSideEffect;
+              .effect != compute::EffectKind::kPure;
       const std::uint32_t candidate = prerequisite_is_effect
                                           ? prerequisite
                                           : latest_reachable[prerequisite];
@@ -155,8 +155,8 @@ Status validate_effect_order(const detail::BuilderState &state) noexcept {
     for (std::size_t index = 0; index < node.dependency_count; ++index)
       absorb(state.dependencies[node.dependency_begin + index]);
 
-    const bool is_effect = compute::operation_traits(node.operation).effect ==
-                           compute::EffectKind::kExternalSideEffect;
+    const bool is_effect = compute::operation_traits(node.operation).effect !=
+                           compute::EffectKind::kPure;
     if (is_effect && last_effect != detail::kNoNode &&
         reachable != last_effect) {
       return Status::FailedPrecondition(
@@ -916,6 +916,9 @@ GraphBuilder::add_node(compute::Operation operation,
                        std::span<const TensorSpec> outputs) noexcept {
   if (state_ == nullptr)
     return std::unexpected(invalid_builder());
+  Status effects = compute::validate_operation_effects(operation);
+  if (!effects.ok())
+    return std::unexpected(std::move(effects));
   const compute::OperationTraits traits = compute::operation_traits(operation);
   if (!operation.valid() || !traits.inputs.accepts(inputs.size())) {
     return std::unexpected(

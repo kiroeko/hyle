@@ -22,8 +22,9 @@ namespace hyle::compute::test {
 // consumer must recover it from schema identity rather than a shared vtable.
 HYLE_COMPUTE_OPS_FIXTURE_API Operation
 make_shared_custom_operation(std::uint32_t tag) noexcept;
+HYLE_COMPUTE_OPS_FIXTURE_API Operation
+make_shared_resource_operation(ResourceAccess access) noexcept;
 
 } // namespace hyle::compute::test
 
 #undef HYLE_COMPUTE_OPS_FIXTURE_API
-

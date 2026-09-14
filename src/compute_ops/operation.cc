@@ -938,12 +938,71 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
   return result;
 }
 
+Result<ResourceAccess> operation_resource_access(const Operation &operation,
+                                                 std::size_t index) noexcept {
+  if (!operation.valid())
+    return std::unexpected(Status::InvalidArgument("operation is invalid"));
+  const OperationTraits traits = operation_traits(operation);
+  if (traits.effect != EffectKind::kResourceAccess ||
+      traits.resource_count == 0) {
+    return std::unexpected(
+        Status::InvalidArgument("operation does not declare resource ports"));
+  }
+  if (index >= traits.resource_count) {
+    return std::unexpected(
+        Status::OutOfRange("operation resource index is out of range"));
+  }
+  const auto *value =
+      std::get_if<detail::CustomOperationValue>(&operation.value_);
+  if (value == nullptr || value->vtable == nullptr ||
+      value->vtable->resource_access == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("resource operation has no access schema"));
+  }
+  auto access = value->vtable->resource_access(value->descriptor.data(), index);
+  if (!access)
+    return std::unexpected(std::move(access).error());
+  switch (*access) {
+  case ResourceAccess::kRead:
+  case ResourceAccess::kWrite:
+  case ResourceAccess::kReadWrite:
+    return *access;
+  }
+  return std::unexpected(
+      Status::InvalidArgument("operation resource access mode is invalid"));
+}
+
+Status validate_operation_effects(const Operation &operation) noexcept {
+  if (!operation.valid())
+    return Status::InvalidArgument("operation is invalid");
+  const OperationTraits traits = operation_traits(operation);
+  switch (traits.effect) {
+  case EffectKind::kPure:
+  case EffectKind::kExternalSideEffect:
+    if (traits.resource_count != 0) {
+      return Status::InvalidArgument(
+          "only resource-access operations may declare resource ports");
+    }
+    return Status::Ok();
+  case EffectKind::kResourceAccess:
+    if (traits.resource_count == 0) {
+      return Status::InvalidArgument(
+          "resource-access operation must declare at least one resource port");
+    }
+    for (std::size_t index = 0; index < traits.resource_count; ++index) {
+      auto access = operation_resource_access(operation, index);
+      if (!access)
+        return std::move(access).error();
+    }
+    return Status::Ok();
+  }
+  return Status::InvalidArgument("operation effect kind is invalid");
+}
+
 Status infer_output_descriptions(const Operation &operation,
                                  std::span<const TensorDesc> inputs,
                                  std::span<TensorDesc> outputs) noexcept {
-  if (!operation.valid()) {
-    return Status::InvalidArgument("operation is invalid");
-  }
+  HYLE_RETURN_IF_ERROR(validate_operation_effects(operation));
   Status mode_status = validate_operation_modes(operation);
   if (!mode_status.ok())
     return mode_status;

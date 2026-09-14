@@ -45,3 +45,42 @@ Compute direct 路线由调用方 Queue/Completion 管理外部资源生命周�
 无新第三方/FFI/组件边；复用 Error 和已有 inline custom callback，不创造新的 dispatch 系统。功能缺口
 来自已接受的 consumer 架构，不由 benchmark 产生。公开头由 ComputeOps owning factor 导出，三种 C++
 交付保持同形状。当前 `AUDITED`，尚无新的 Candidate/终局正确性、性能或交付 PASS。
+
+## 2026-09-14 O30/O31 实现检查点
+
+资源 enum/count、按值 producer callback、查询和统一验证已实现。Graph 的 symbolic-output 路径与 Compute
+bounded proposal 都在可能跳过 concrete inference 的位置显式复用同一个 checker；没有新增 kernel 或
+submit 中的资源扫描。Graph 暂把新 resource effect 与未知副作用一样串行检查，不能静默当 pure。
+G105 的 graph-local identity、物理 alias 和独立域并行仍须接着完成。
+
+反例覆盖三个访问值、复制后的原 descriptor 改写、最大 255 端口、越界 callback 不执行、坏 effect/count、
+任意端口坏 enum、缺方法/可能抛异常的方法、producer DLL callback、exact/bounded 在 Provider 前拒绝、
+symbolic Graph 不漏检以及两种副作用的双向混合链。源代码第二遍反证特别确认：callback 结果是 enum 值，
+不会返回解码栈对象的 span；新增方法必须 `const noexcept`；无 Graph/Mem identity 泄漏至 ComputeOps。
+这不是完整 foundation 的终局红队/异步资源执行证明。
+
+Windows MSVC 19.50、Release、每次最多 2 个编译任务，使用现有独占 cache：
+
+| 配置 / 验证 | 本次实际结果 |
+|---|---|
+| `compute-route-v8-20260914` shared：ComputeOps/Compute/CPU/Native/Graph + 逐头 | 11/11；293 单元用例通过 |
+| `compute-route-v8-static-20260914` static：同范围 | 11/11；291 单元用例通过，两个跨 DLL fixture 只适用 shared |
+| `compute-route-onednn-v8-20260914` shared：direct/composition/Graph oneDNN + Graph executable/逐头 | 8/8；149 单元用例通过 |
+| 同 shared cache 的 Graph-only configure，CUDA/oneDNN OFF | 通过；无新增 option/依赖，OFF 不获取依赖/探测 SDK |
+
+可复现入口为 `scripts/hyle-windows.ps1 -Action Build/Test -BinaryDir C:/hyle-scratch/<上述目录>`，Build
+targets 为 `hyle_compute_ops_test,hyle_compute_test,hyle_compute_backend_cpu_test,hyle_compute_provider_native_test,
+hyle_graph_test,hyle_graph_executable_test`；Test filter 为
+`^hyle_(compute|compute_ops|compute_backend_cpu|compute_provider_native|graph)(_header_self_contained|_executable)?_test$`。
+oneDNN targets 为 `hyle_compute_provider_onednn_test,hyle_compute_provider_onednn_composition_test,
+hyle_compute_provider_onednn_graph_test,hyle_graph_provider_onednn_test,hyle_graph_executable_test`，filter 为
+`^hyle_((compute_provider_onednn|graph_provider_onednn)(_[a-z_]+)?|graph_(executable|header_self_contained))_test$`。
+
+P0 结构检查：新增一字节 traits 字段（包含其自然 padding）和每个 custom descriptor 的静态 vtable 函数
+指针；`Operation` 本体、PreparedState/Invocation 未加字段。查询每端口 O(1)，完整验证 O(R)、成功无分配，
+新 checker 不进入 submit。旧 direct alias 检查原本就会取得 `OperationTraits`，现在返回值包含新字段，
+因此不宣称完整 direct 机器码逐字相同；完整 foundation 的公平性能门仍按总卡执行。
+
+impact selector READY（82 项 skipped/reused），closure（含 `--previous-ref 925aaf27`）、docs 和 diff 检查
+通过。没有运行 Linux/macOS/sanitizer/真实设备/独立 installed SDK/P1，不把 source-tree shared 测试当成
+安装包资格；O32 的完整交付门仍未裁决。保持 `AUDITED`，不是 ComputeOps 或 foundation CLOSED。

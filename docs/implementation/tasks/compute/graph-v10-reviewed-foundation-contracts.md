@@ -36,6 +36,11 @@
 这些 FIX 来自 architecture 已接受的具体矛盾，不因本卡延长而重新审全库。Compute 的公开 owning custom
 factory、ComputeOps access schema 必须先在各自有限卡完成；本卡不越过 owner 写其产品代码。
 
+G105 的底层 schema 已在 [ComputeOps v3](compute-ops-v3-resource-access-schema.md) 绑定并实现。
+Graph 当前只消费统一冷验证，且把尚无域绑定的新资源访问按非 pure 保守排序；本步不声称已经替换
+全局链。下一步仍是本卡的 graph-local identity/绑定、同域冲突与独立域、真实 alias 和 region 边界，
+不是算子目录扩充。
+
 ## API / owner / 成本
 
 保留 `GraphBuilder → Graph → Executable → Invocation`，Plan 仍私有。Builder 拥有 shape 表达式与资源

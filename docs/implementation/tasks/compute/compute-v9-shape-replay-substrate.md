@@ -22,6 +22,11 @@
 
 ## 能力与有限改动集
 
+2026-09-14 O31 直接消费者补充：ComputeOps 已在后继
+[资源 schema 卡](compute-ops-v3-resource-access-schema.md) 固定 `validate_operation_effects()`。C90 的
+provider-neutral proposal 校验须在 exact/bounded 两路都调用它；bounded 因不对域包络做 concrete infer，
+不能顺便漏掉与 shape 无关的 schema 检查。只增加冷 proposal 验证，不改变 runtime/Provider kernel。
+
 | ID | 当前事实 / 动作 | 验收 |
 |---|---|---|
 | C90 | 旧 proposal 只有 exact TensorDesc；FIX 为带 provider-neutral shape view 的请求并版本化私有表 | 空 domain 是原 exact 路线；合法 range/equality 传递，错误域在调用 Provider 前拒绝，旧签名移除 |

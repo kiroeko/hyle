@@ -6,6 +6,7 @@
 #include <limits>
 #include <span>
 #include <string_view>
+#include <utility>
 
 #include "custom_operation_fixture.h"
 #include "hyle/compute/operation.h"
@@ -71,6 +72,8 @@ TEST(OperationCatalog, HasNineteenTypedBuiltinFamiliesAndInvalidDefault) {
     EXPECT_EQ(static_cast<std::size_t>(operations[index].kind()), index + 1);
     EXPECT_NE(operation_name(operations[index]), "unknown");
     EXPECT_GT(operation_traits(operations[index]).outputs, 0u);
+    EXPECT_EQ(operation_traits(operations[index]).resource_count, 0u);
+    EXPECT_TRUE(validate_operation_effects(operations[index]).ok());
   }
   EXPECT_EQ(operation_traits(operations[17]).outputs, 2u);
   EXPECT_EQ(operation_traits(operations[0]).alias,
@@ -337,6 +340,158 @@ TEST(OperationCustom, UsesInlineTypedDescriptorWithoutGlobalRegistry) {
   EXPECT_EQ(infer_one(operation, std::array{input}), input);
 }
 
+struct ResourceDescriptor {
+  static constexpr OperationId operation_id{0x48594c45U, 0x52455301U};
+  static constexpr std::string_view operation_name = "test-resource-schema";
+
+  EffectKind effect = EffectKind::kResourceAccess;
+  std::uint8_t count = 3;
+  std::array<ResourceAccess, 3> modes{ResourceAccess::kRead,
+                                      ResourceAccess::kWrite,
+                                      ResourceAccess::kReadWrite};
+  std::size_t *access_calls = nullptr;
+  std::size_t *infer_calls = nullptr;
+
+  OperationTraits operation_traits() const noexcept {
+    return {.inputs = {1, 1},
+            .outputs = 1,
+            .effect = effect,
+            .resource_count = count};
+  }
+  ResourceAccess resource_access(std::size_t index) const noexcept {
+    if (access_calls != nullptr)
+      ++*access_calls;
+    return modes[index % modes.size()];
+  }
+  hyle::Status
+  infer_output_descriptions(std::span<const TensorDesc> inputs,
+                            std::span<TensorDesc> outputs) const noexcept {
+    if (infer_calls != nullptr)
+      ++*infer_calls;
+    outputs[0] = inputs[0];
+    return hyle::Status::Ok();
+  }
+};
+
+struct MissingResourceAccess final {
+  static constexpr OperationId operation_id{0x48594c45U, 0x52455302U};
+  static constexpr std::string_view operation_name = "test-missing-access";
+  OperationTraits operation_traits() const noexcept {
+    return {.effect = EffectKind::kResourceAccess, .resource_count = 1};
+  }
+  hyle::Status infer_output_descriptions(std::span<const TensorDesc>,
+                                         std::span<TensorDesc>) const noexcept {
+    return hyle::Status::Ok();
+  }
+};
+
+struct ThrowingAccess final : ResourceDescriptor {
+  static constexpr OperationId operation_id{0x48594c45U, 0x52455303U};
+  ResourceAccess resource_access(std::size_t index) const {
+    return ResourceDescriptor::resource_access(index);
+  }
+};
+
+TEST(OperationResources, ReturnsOwnedAccessValuesFromCopiedInlineDescriptor) {
+  ResourceDescriptor descriptor;
+  const Operation operation = Operation::custom(descriptor);
+  descriptor.modes.fill(ResourceAccess::kReadWrite);
+  const Operation copied = operation;
+  for (std::size_t index = 0; index < 3; ++index) {
+    auto access = operation_resource_access(copied, index);
+    ASSERT_TRUE(access.has_value());
+    EXPECT_EQ(*access, static_cast<ResourceAccess>(index));
+  }
+  EXPECT_EQ(copied.custom_id(), ResourceDescriptor::operation_id);
+  EXPECT_TRUE(validate_operation_effects(copied).ok());
+  EXPECT_EQ(infer_one(copied, std::array{tensor(DataType::kFloat32, 4)}),
+            tensor(DataType::kFloat32, 4));
+}
+
+TEST(OperationResources,
+     ValidatesFullFiniteArityAndRejectsIndexBeforeCallback) {
+  std::size_t calls = 0;
+  ResourceDescriptor descriptor;
+  descriptor.count = 255;
+  descriptor.access_calls = &calls;
+  const Operation operation = Operation::custom(descriptor);
+  EXPECT_TRUE(validate_operation_effects(operation).ok());
+  EXPECT_EQ(calls, 255u);
+  EXPECT_EQ(operation_resource_access(operation, 254).value(),
+            ResourceAccess::kReadWrite);
+  EXPECT_EQ(calls, 256u);
+  EXPECT_TRUE(operation_resource_access(operation, 255).error().IsOutOfRange());
+  EXPECT_TRUE(operation_resource_access(
+                  operation, (std::numeric_limits<std::size_t>::max)())
+                  .error()
+                  .IsOutOfRange());
+  EXPECT_EQ(calls, 256u);
+}
+
+TEST(OperationResources, RejectsInvalidEffectAndCountBeforeInference) {
+  const std::array inputs{tensor(DataType::kFloat32, 8)};
+  std::array outputs{tensor(DataType::kFloat32, 3)};
+  std::size_t inferred = 0, accessed = 0;
+  for (const auto [effect, count] :
+       std::array{std::pair{EffectKind::kPure, std::uint8_t{1}},
+                  std::pair{EffectKind::kExternalSideEffect, std::uint8_t{1}},
+                  std::pair{EffectKind::kResourceAccess, std::uint8_t{0}},
+                  std::pair{static_cast<EffectKind>(255), std::uint8_t{0}}}) {
+    ResourceDescriptor descriptor;
+    descriptor.effect = effect;
+    descriptor.count = count;
+    descriptor.infer_calls = &inferred;
+    descriptor.access_calls = &accessed;
+    const auto operation = Operation::custom(descriptor);
+    EXPECT_TRUE(validate_operation_effects(operation).IsInvalidArgument());
+    EXPECT_TRUE(infer_output_descriptions(operation, inputs, outputs)
+                    .IsInvalidArgument());
+    EXPECT_EQ(outputs[0], tensor(DataType::kFloat32, 3));
+  }
+  EXPECT_EQ(inferred, 0u);
+  EXPECT_EQ(accessed, 0u);
+}
+
+TEST(OperationResources, RejectsMissingOrPotentiallyThrowingAccessCallback) {
+  const Operation missing = Operation::custom(MissingResourceAccess{});
+  EXPECT_TRUE(validate_operation_effects(missing).IsInvalidArgument());
+  EXPECT_TRUE(
+      operation_resource_access(missing, 0).error().IsInvalidArgument());
+  std::size_t calls = 0;
+  ThrowingAccess throwing;
+  throwing.access_calls = &calls;
+  EXPECT_TRUE(validate_operation_effects(Operation::custom(throwing))
+                  .IsInvalidArgument());
+  EXPECT_EQ(calls, 0u);
+}
+
+TEST(OperationResources, RejectsMalformedAccessAtAnyPort) {
+  for (std::size_t bad_index = 0; bad_index < 3; ++bad_index) {
+    ResourceDescriptor descriptor;
+    descriptor.modes[bad_index] = static_cast<ResourceAccess>(255);
+    const Operation operation = Operation::custom(descriptor);
+    EXPECT_TRUE(operation_resource_access(operation, bad_index)
+                    .error()
+                    .IsInvalidArgument());
+    EXPECT_TRUE(validate_operation_effects(operation).IsInvalidArgument());
+  }
+}
+
+TEST(OperationResources, PureAndUnknownEffectsDoNotRequireResourceCallbacks) {
+  EXPECT_TRUE(
+      validate_operation_effects(Operation::custom(CustomIdentity{})).ok());
+  ResourceDescriptor descriptor;
+  descriptor.effect = EffectKind::kExternalSideEffect;
+  descriptor.count = 0;
+  EXPECT_TRUE(validate_operation_effects(Operation::custom(descriptor)).ok());
+  EXPECT_TRUE(operation_resource_access(Operation(Unary{}), 0)
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(validate_operation_effects(Operation{}).IsInvalidArgument());
+  EXPECT_TRUE(
+      operation_resource_access(Operation{}, 0).error().IsInvalidArgument());
+}
+
 #if !defined(HYLE_STATIC)
 TEST(OperationCustom, DecodesSchemaIdentityAcrossSharedFactorBoundary) {
   const Operation operation =
@@ -349,6 +504,22 @@ TEST(OperationCustom, DecodesSchemaIdentityAcrossSharedFactorBoundary) {
 
   const TensorDesc input = tensor(DataType::kUInt8, 23);
   EXPECT_EQ(infer_one(operation, std::array{input}), input);
+}
+
+TEST(OperationResources, UsesProducerAccessCallbackAcrossSharedFactorBoundary) {
+  for (const ResourceAccess access :
+       {ResourceAccess::kRead, ResourceAccess::kWrite,
+        ResourceAccess::kReadWrite}) {
+    const Operation operation =
+        hyle::compute::test::make_shared_resource_operation(access);
+    EXPECT_EQ(operation_traits(operation).resource_count, 1u);
+    EXPECT_EQ(operation_resource_access(operation, 0).value(), access);
+    EXPECT_TRUE(validate_operation_effects(operation).ok());
+    EXPECT_TRUE(infer_output_descriptions(operation, {}, {}).ok());
+  }
+  const auto invalid = hyle::compute::test::make_shared_resource_operation(
+      static_cast<ResourceAccess>(255));
+  EXPECT_TRUE(validate_operation_effects(invalid).IsInvalidArgument());
 }
 #endif
 

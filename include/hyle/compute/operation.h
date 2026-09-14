@@ -130,7 +130,17 @@ enum class AliasPolicy : std::uint8_t {
 
 enum class EffectKind : std::uint8_t {
   kPure = 0,
+  // Unknown external effects; not a claim that any resources are independent.
   kExternalSideEffect,
+  // All external accesses are described by the resource ports below. Reading
+  // mutable external state is not pure, even when no resource is written.
+  kResourceAccess,
+};
+
+enum class ResourceAccess : std::uint8_t {
+  kRead = 0,
+  kWrite,
+  kReadWrite,
 };
 
 enum class PrecisionPolicy : std::uint8_t {
@@ -159,6 +169,10 @@ struct OperationTraits final {
   PrecisionPolicy precision = PrecisionPolicy::kExact;
   DataType accumulation_type = DataType::kUnknown;
   bool materializes = true;
+  // Semantic resource ports, not tensor input ordinals or runtime handles.
+  // Must be nonzero exactly for kResourceAccess. Graph binds these ports to
+  // graph-local identities; direct callers own resource ordering/lifetime.
+  std::uint8_t resource_count = 0;
 };
 
 // Exact scalar payload for Fill. Floating storage values use their native bit
@@ -372,6 +386,8 @@ struct CustomOperationVTable final {
   OperationTraits (*traits)(const void *descriptor) noexcept = nullptr;
   Status (*infer)(const void *descriptor, std::span<const TensorDesc> inputs,
                   std::span<TensorDesc> outputs) noexcept = nullptr;
+  Result<ResourceAccess> (*resource_access)(
+      const void *descriptor, std::size_t index) noexcept = nullptr;
 };
 
 struct CustomOperationValue final {
@@ -417,8 +433,24 @@ struct CustomOperationModel final {
     return descriptor.infer_output_descriptions(inputs, outputs);
   }
 
+  static Result<ResourceAccess> resource_access(const void *storage,
+                                                std::size_t index) noexcept {
+    if constexpr (requires(const Descriptor &descriptor) {
+                    {
+                      descriptor.resource_access(index)
+                    } noexcept -> std::same_as<ResourceAccess>;
+                  }) {
+      const Descriptor descriptor = load_custom_descriptor<Descriptor>(storage);
+      return descriptor.resource_access(index);
+    } else {
+      return std::unexpected(Status::InvalidArgument(
+          "resource operation requires resource_access(index) const noexcept"));
+    }
+  }
+
   inline static const CustomOperationVTable vtable{
-      std::string_view(Descriptor::operation_name), &traits, &infer};
+      std::string_view(Descriptor::operation_name), &traits, &infer,
+      &resource_access};
 };
 
 } // namespace detail
@@ -513,6 +545,9 @@ private:
   operation_name(const Operation &operation) noexcept;
   friend HYLE_COMPUTE_OPS_API OperationTraits
   operation_traits(const Operation &operation) noexcept;
+  friend HYLE_COMPUTE_OPS_API Result<ResourceAccess>
+  operation_resource_access(const Operation &operation,
+                            std::size_t index) noexcept;
   friend HYLE_COMPUTE_OPS_API Status infer_output_descriptions(
       const Operation &operation, std::span<const TensorDesc> inputs,
       std::span<TensorDesc> outputs) noexcept;
@@ -526,6 +561,14 @@ HYLE_COMPUTE_OPS_API std::string_view
 operation_name(const Operation &operation) noexcept;
 HYLE_COMPUTE_OPS_API OperationTraits
 operation_traits(const Operation &operation) noexcept;
+// Cold schema queries. The callback must be deterministic, allocation-free,
+// and must not read payload or execute work. Results are values, never spans
+// into the temporary inline descriptor decoded by the producer callback.
+HYLE_COMPUTE_OPS_API Result<ResourceAccess>
+operation_resource_access(const Operation &operation,
+                          std::size_t index) noexcept;
+HYLE_COMPUTE_OPS_API Status
+validate_operation_effects(const Operation &operation) noexcept;
 HYLE_COMPUTE_OPS_API Status infer_output_descriptions(
     const Operation &operation, std::span<const TensorDesc> inputs,
     std::span<TensorDesc> outputs) noexcept;

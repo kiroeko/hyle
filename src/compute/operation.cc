@@ -547,6 +547,9 @@ detail::OperationPreparationAccess::propose(
   Status domain_status = validate_shape_domain(shape, inputs, outputs);
   if (!domain_status.ok())
     return std::unexpected(std::move(domain_status));
+  Status effects = validate_operation_effects(operation);
+  if (!effects.ok())
+    return std::unexpected(std::move(effects));
   // A derived/guarded domain's axis-wise envelope need not be an admitted
   // concrete shape. Only the provider's whole-domain proof can qualify it.
   if (shape.exact()) {
