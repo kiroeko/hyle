@@ -286,6 +286,10 @@ Provider 或 region 最后胜出，后排候选也可以被发现。`propose` �
 候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
 leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现，
 不重置任何预算。当前这还是确定性重选，不是完整的 leaf/region 同池成本优化或所有资源组合的穷举。
+普通算子的初步 target/storage 规划不调用 prepare；全部节点具备初步覆盖后，才按选中的收缩图顺序
+构造制品。正常 leaf 使用保存的资源选择，仍经 Compute 最终校验；明确 prepare decline 才寻找后备路线。
+因此后续节点已知无能力/无合法 storage 时，不会先给前面的 leaf 做 JIT/packing；不承诺提前证明任意
+Provider 的真实 prepare 必定成功，也不把 region 的全部资源/成本规划宣称为已经完成。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 

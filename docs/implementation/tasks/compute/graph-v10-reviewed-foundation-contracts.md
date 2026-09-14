@@ -484,3 +484,55 @@ proposal 计数，必须拆清/按真实阶段校准，不能把发现回调说�
 本次没有运行全库/P1，不以 Windows 增量代替 Linux/macOS、sanitizer 或终局独立红队。G103 的统一完整
 成本/profile/有界计划选择、G101/G102 bounded/variants 与 G106 常量所有权仍须完成；旧确定性 region
 优先选择尚未因此变成完整成本 selector。状态保持 `AUDITED`，foundation gate 未签发。
+
+### G103：leaf 资源规划不提前构造制品（实现前固定）
+
+`25ad97ec` 已分离能力查询，但第一遍 target/storage 放置仍调用 leaf prepare：后续节点根本没有资源路线，
+或前面的 region 最后拒绝时，已经为 tail 构造的 kernel/JIT/packing 全部浪费。完整计划成本不能建立在
+这种边规划边准备的流程上；先拆这个具体耦合，再接 profile 与统一搜索，而非先加无人消费的打分类型。
+
+有限 FIX：提取同一 leaf 资源选择器，规划阶段保存 proposal 与端口/workspace storage；只在已选 contraction
+的物化阶段准备它。原每 node PreparedOperation 临时数组换成轻量的冷 placement，实际 artifact 直接归
+最终 step。prepare 使用保存的资源，不重复 Graph 的 storage 搜索，Compute 的共同最终校验仍保留；
+明确 candidate decline 才按已有稳定顺序
+重新放置后备路线，错误仍 fatal，累计准备预算不重置。region 的完整资源 skeleton 与统一成本搜索仍属于
+同一 G103 后续，不因本步没有提前 leaf prepare 就宣称全部规划都已解耦。
+
+反例固定为：后续节点无能力/无合法资源时前节点零 prepare；region 首次拒绝不提前构造 tail；约束、跨
+storage/alias、候选 decline、准备预算、实际数值与全部 OOM 回滚保留。Windows Graph shared/static、
+oneDNN 以及普通 CPU/CUDA 三交付按本卡定向回放；不改公开 API/产品 CMake/backend，不跑 P1 或全库。
+
+本轮源码消费实测暴露样例 staging 竞态：两个可执行文件的 POST_BUILD 同时写相同目录的相同 DLL，
+`hyle_compute_backend_cpu.dll` copy 返回 Permission denied；没有存活的样例进程。有限修复只为该独立
+sample 的 CPU/CUDA executable 设置各自 runtime 输出目录，继续使用现有 staging helper，不引入伪依赖/
+全局串行化，也不修改中央构建系统。三交付复验包含这项真实消费修复。
+
+## 2026-09-14 G103：leaf 资源规划/制品准备分离检查点
+
+上述改动已完成：两遍初步放置只查询资源兼容性并保存候选/端口/workspace storage；制品按选中
+contraction 的执行单元顺序准备并直接归最终 step。正常入选 leaf 不重新做 Graph 的 storage 搜索；
+Compute 仍校验实际 proposal/绑定。明确 prepare decline 才尝试后续 Provider/target，预算跨重选累计，
+真正错误不回退。删除每 node PreparedOperation 临时数组以及早期无用的描述/resource 数组填充。
+
+- 新增后节点无算子、后节点 required storage 无解两例，均证明前节点 prepare=0；受限候选导致图不完整
+  也要求零 prepare。已有 region-retry 数值用例从 5 次实际 prepare 降为 4 次：首次 region 拒绝之前不再
+  准备 tail。原 alias/跨 storage/硬 Provider 约束/异步/全部 OOM 回滚用例通过，没有改宽错误或预算判据。
+- Windows Release static `compute-route-v8-static-20260914`：Graph builder/executable/逐头 3/3，含 155
+  executable + 25 builder 用例；oneDNN-enabled shared `compute-route-onednn-v8-20260914` 的 Graph/
+  真实 oneDNN region/两组逐头 5/5 通过。产品修正后重新完成上述运行。
+- 普通 CPU/CUDA source/installed static/installed shared 各 2/2 通过，包含 CUDA 双 Queue、真实 kernel、
+  capture/replay 和异步失败；静态库已重新安装/relink，shared producer 与 `cpu/`、`cuda/` 两处实际
+  staging Graph DLL 的 SHA-256 同为
+  `C1A6B33A6D4C60563B48C78C1D3079314087C85D9A0398096E4064A0824C5B7F`。样例单独目录修复后继续
+  `--parallel 2` 构建，不依赖串行重试。源码配置因样例 CMake 改动重生成 SIMD prerequisite，但没有运行
+  SIMD 测试、修改 SIMD 产品或据此重签性能。
+- P0：每 node 临时保存一个借用候选指针，workspace/端口继续使用已有 storage 索引；候选拥有者只在
+  compile 内存在。存储搜索的渐进复杂度未变，正常最终 prepare 额外只线性恢复已选端口资源，不重做
+  storage 枚举；提前重型 prepare 的浪费已由回调计数反例证明减少。公共 handle、Plan/Invocation
+  layout、热提交算法、组件边与产品开关均未变。没有将少一次 prepare 外推成固定百分比或稳态胜利。
+- impact READY，90 项跳过；docs/closure/diff 通过。自实现不含测试：Compute 16,156、Graph 10,847，
+  合计 27,003 行（统一 LOC 脚本）。
+
+下一段仍是 region 的冷资源 skeleton 与完整候选计划成本/qualified profile/有限搜索；这里只拆掉 leaf
+提前准备耦合，未完成统一 selector。bounded/variants、常量所有权、真实 CPU/CUDA/Apple 探针与终局
+跨平台/sanitizer/独立红队/P1 仍在原范围内。Graph 保持 `AUDITED`，foundation gate 未签发。

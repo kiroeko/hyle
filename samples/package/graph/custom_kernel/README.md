@@ -27,6 +27,8 @@ ctest --test-dir <consumer-build> --output-on-failure
 完整源码接入把 `CMAKE_PREFIX_PATH` 改成 `-DHYLE_SAMPLE_SOURCE=<absolute-hyle-source>`。
 Windows 请在与 SDK 一致的 Developer shell 内运行；DLL 会按 HYLE package 合同 staging。即使 HYLE 是
 静态 SDK，用户 factory 仍特意放在 sample shared library 内，以验证跨 code image 的 schema 和执行。
+CPU/CUDA executable 分别输出到构建目录的 `cpu/`、`cuda/`，各自 staging DLL，避免并行构建写同一文件；
+用 CTest 运行即可，不需要自己调整 DLL 搜索路径（多配置生成器会再加配置子目录）。
 不要在任何 Provider、Context、执行对象仍存活时卸载这个 library。
 
 资源约束按 kernel 真正需要的能力声明。静态链接到不同 EXE/DLL 的 `system_resource()` 可以是不同

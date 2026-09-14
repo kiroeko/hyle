@@ -273,12 +273,31 @@ TEST(GraphDiscovery, BudgetNeverPermitsAnIncompleteExecutable) {
   ASSERT_FALSE(limited);
   EXPECT_TRUE(limited.error().IsUnimplemented());
   EXPECT_EQ(probe.proposals, 1);
+  EXPECT_EQ(probe.preparations, 0);
   EXPECT_EQ(probe.kernels, 0);
   auto complete = hyle::graph::compile(logical.graph, context,
                                        {.max_operation_proposals = 2});
   ASSERT_TRUE(complete);
   EXPECT_FALSE(complete->report.search().optimization_limited());
   EXPECT_EQ(complete->report.node_count(), 2u);
+}
+
+TEST(GraphDiscovery, MissingLaterOperationDoesNotPrepareEarlierKernels) {
+  auto builder = hyle::graph::GraphBuilder::create().value();
+  const auto input = builder.input(description()).value();
+  const auto affine = builder.add(Operation::custom(Affine{1}), input).value();
+  const auto negated = builder.add(Unary{UnaryKind::kNeg}, affine).value();
+  ASSERT_TRUE(builder.publish(negated).ok());
+  const auto graph = std::move(builder).finish().value();
+  Probe probe;
+  auto context =
+      Context::create(cpu::device(), provider(probe).value()).value();
+  auto compiled = hyle::graph::compile(graph, context);
+  ASSERT_FALSE(compiled);
+  EXPECT_TRUE(compiled.error().IsUnimplemented());
+  EXPECT_EQ(probe.proposals, 2);
+  EXPECT_EQ(probe.preparations, 0);
+  EXPECT_EQ(probe.kernels, 0);
 }
 
 TEST(GraphDiscovery, FatalLaterProposalStopsBeforeAnyArtifactPreparation) {

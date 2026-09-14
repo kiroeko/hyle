@@ -24,6 +24,10 @@ set_target_properties(hyle_custom_example PROPERTIES
   CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)
 
 add_executable(hyle_custom_kernel_sample main.cc)
+# Each executable stages its own DLL closure. Shared output directories let
+# parallel POST_BUILD copies race even when neither program is running.
+set_target_properties(hyle_custom_kernel_sample PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cpu")
 target_compile_features(hyle_custom_kernel_sample PRIVATE cxx_std_23)
 target_link_libraries(hyle_custom_kernel_sample PRIVATE hyle_custom_example hyle::graph)
 if(COMMAND hyle_stage_runtime_dependencies)
@@ -53,6 +57,8 @@ if(HYLE_SAMPLE_CUDA)
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4211>")
   endif()
   add_executable(hyle_custom_cuda_sample cuda_main.cc)
+  set_target_properties(hyle_custom_cuda_sample PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cuda")
   target_compile_features(hyle_custom_cuda_sample PRIVATE cxx_std_23)
   target_link_libraries(hyle_custom_cuda_sample PRIVATE hyle_custom_cuda_kernel hyle::graph)
   hyle_stage_runtime_dependencies(hyle_custom_cuda_sample)

@@ -1611,11 +1611,11 @@ TEST(GraphRegions, RebuildingAPartitionReusesTheOriginalLeafProposals) {
   auto context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context);
   ASSERT_TRUE(compiled) << compiled.error().message();
-  // Initially the unpaired tail is prepared. After the pair declines, that
-  // tail is prepared again in the new plan, without another capability query.
+  // The initial plan places the unpaired tail but does not prepare it before
+  // the region. After the pair declines, all three leaves are prepared once.
   EXPECT_EQ(probe.single_proposal_count, 3u);
   EXPECT_EQ(compiled->report.search().operation_proposals, 3u);
-  EXPECT_EQ(compiled->report.search().placement_attempts, 5u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 4u);
   EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
   EXPECT_EQ(probe.propose_count, 1u);
   auto input = make_tensor(row(8)), output = make_tensor(row(8));
@@ -1631,6 +1631,40 @@ TEST(GraphRegions, RebuildingAPartitionReusesTheOriginalLeafProposals) {
     value = -value;
   EXPECT_EQ(read(output, values.size()), expected);
   EXPECT_EQ(probe.single_proposal_count, 3u);
+}
+
+TEST(GraphRegions, ImpossibleLaterLeafStorageDoesNotPrepareEarlierLeaves) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  probe.required_resource = hyle::mem::system_resource();
+  auto context = make_context(probe);
+  HostResource other;
+  const std::array storage{
+      hyle::graph::StorageDomain{.resource = hyle::mem::system_resource()},
+      hyle::graph::StorageDomain{.resource =
+                                     hyle::mem::MemoryResourceRef(other)}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  const auto instance = context.provider_instance_id(0).value();
+  const std::array providers{
+      hyle::graph::NodeProviderConstraint{logical.graph.node_id(0).value(),
+                                          kRegionProviderId, instance},
+      hyle::graph::NodeProviderConstraint{logical.graph.node_id(1).value(),
+                                          kRegionProviderId, instance}};
+  const std::array placements{hyle::graph::ValuePlacement{
+      .value = logical.output,
+      .storage = hyle::graph::StorageDomainId{1},
+      .strength = hyle::graph::PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, {.storage_domains = storage, .targets = targets},
+      {.value_placements = placements,
+       .node_providers = providers,
+       .region_selection = RegionSelectionPolicy::kDisabled});
+  ASSERT_FALSE(compiled);
+  EXPECT_TRUE(compiled.error().IsUnimplemented());
+  EXPECT_EQ(probe.single_proposal_count, 2u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
+  EXPECT_EQ(probe.compile_count, 0u);
 }
 
 TEST(GraphRegions, RegionMustMatchEveryCoveredNodeProvider) {
