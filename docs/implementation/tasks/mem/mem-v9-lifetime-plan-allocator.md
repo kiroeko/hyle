@@ -70,3 +70,9 @@ Graph 基础 25、Graph 执行 227、oneDNN direct 1、region 17 个用例通过
 的 Graph、Mem-vm API surface 与 Mem 三交付。其余 Container/IO/Process/Sched/Util 不调用本次变更的
 planner API，AllocatorRef/MemoryResource/Buffer 的合同与实现没有变化，不额外运行那些模块的产品测试
 或 package；该裁决遵循 correctness profile 的代表性直接消费者规则，不把未运行的自动选择项写成 PASS。
+
+## Candidate
+
+产品候选为 `8e4f096e801fda16aa3b8ab507556188e7883159`。M90--M92 的 API/算法/正常成本与直接消费者
+迁移已固定，后续只验证并记录证据；Mem 进入 `CANDIDATE`，不是 `CLOSED`。Graph 保持原活动阶段，
+完整内存预算仍待此依赖验证后继续。

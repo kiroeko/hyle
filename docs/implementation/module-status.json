@@ -144,9 +144,10 @@
     },
     {
       "module": "mem",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md",
-      "summary": "mem v9 AUDITED：M90--M92 固定 LifetimePlanner 显式 metadata allocator、instance 继承/覆盖与 Graph 直接复用；保持 payload resource/规划算法/分配次数，补预算与逐分配故障覆盖，不代签 Graph 整体内存。"
+      "candidate": "8e4f096e801fda16aa3b8ab507556188e7883159",
+      "summary": "mem v9 CANDIDATE：M90--M92 显式 planner metadata allocator、instance 继承/覆盖与 Graph 直接复用已实现；Windows 定向正确性通过，三交付、跨平台、sanitizer 和候选后红队待验证，不代签 Graph 整体内存。"
     },
     {
       "module": "mem_vm",
