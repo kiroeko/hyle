@@ -28,9 +28,9 @@ enum class ValueKind : std::uint8_t {
   kNodeOutput,
 };
 
-// Graph-local symbolic dimension identity. Reusing one ID is the complete
-// equality constraint supported by the bounded Graph IR; arbitrary affine
-// equations deliberately remain with the graph producer.
+// Graph-local identity of an independent or derived dimension. Reusing an ID
+// shares its value; finite arithmetic and explicit guards are built separately.
+// This is not a general symbolic equation solver.
 class DimensionId final {
 public:
   constexpr DimensionId() noexcept = default;
@@ -220,6 +220,7 @@ public:
   explicit operator bool() const noexcept { return valid(); }
   HYLE_GRAPH_API std::size_t value_count() const noexcept;
   HYLE_GRAPH_API std::size_t dimension_count() const noexcept;
+  HYLE_GRAPH_API std::size_t independent_dimension_count() const noexcept;
   HYLE_GRAPH_API std::size_t input_count() const noexcept;
   HYLE_GRAPH_API std::size_t constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
@@ -229,6 +230,8 @@ public:
   dimension_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<DimensionBounds>
   dimension_bounds(DimensionId dimension) const noexcept;
+  HYLE_GRAPH_API Result<bool>
+  dimension_is_independent(DimensionId dimension) const noexcept;
 
   HYLE_GRAPH_API Result<ValueId> input_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<const compute::TensorDesc &>
@@ -300,6 +303,22 @@ public:
   explicit operator bool() const noexcept { return valid(); }
 
   HYLE_GRAPH_API Result<DimensionId> dimension(DimensionBounds bounds) noexcept;
+  // Operands must be nonnegative constants or existing IDs from this builder.
+  // Derived IDs are evaluated, never supplied as ShapeBindings. Their bounds
+  // are conservative envelopes; guards can exclude points inside them.
+  HYLE_GRAPH_API Result<DimensionId> dimension_sum(Dimension left,
+                                                   Dimension right) noexcept;
+  HYLE_GRAPH_API Result<DimensionId>
+  dimension_product(Dimension left, Dimension right) noexcept;
+  // Requires nonzero, exact division at specialization (no rounding).
+  HYLE_GRAPH_API Result<DimensionId>
+  dimension_quotient(Dimension left, Dimension right) noexcept;
+  HYLE_GRAPH_API Result<DimensionId>
+  dimension_broadcast(Dimension left, Dimension right) noexcept;
+  HYLE_GRAPH_API Status require_dimension_equal(Dimension left,
+                                                Dimension right) noexcept;
+  HYLE_GRAPH_API Status require_dimension_less_equal(Dimension left,
+                                                     Dimension right) noexcept;
 
   HYLE_GRAPH_API Result<ValueId>
   input(compute::TensorDesc description) noexcept;

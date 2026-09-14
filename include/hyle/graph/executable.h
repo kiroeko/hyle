@@ -196,7 +196,8 @@ struct ReplayReport final {
 
 // Exact, self-contained identity of one Graph specialization. The hash is an
 // acceleration only: equality always compares the graph identity and every
-// canonical binding, so a collision can never select the wrong Executable.
+// canonical binding (including computed derived dimensions), so a collision
+// can never select the wrong Executable.
 class SpecializationSignature final {
 public:
   SpecializationSignature() noexcept = default;
@@ -499,8 +500,8 @@ enum class OutputOwnership : std::uint8_t {
 };
 
 struct CompileOptions final {
-  // Exact-once values for every bounded symbol declared by GraphBuilder.
-  // Empty is valid only for a graph with no symbolic dimensions.
+  // Exactly one value per independent GraphBuilder dimension, in any order.
+  // Derived IDs must not be bound. Empty is valid with no independent inputs.
   std::span<const ShapeBinding> shape{};
   std::span<const ConstantBinding> constants{};
   std::span<const NodePlacement> node_placements{};

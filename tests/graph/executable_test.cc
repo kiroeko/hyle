@@ -463,6 +463,144 @@ TEST(GraphCompile, RejectsSymbolicOutputThatFailsConcreteInference) {
           .IsInvalidArgument());
 }
 
+TEST(GraphCompile, NativeConcatEvaluatesSumAndRunsMultipleSpecializations) {
+  auto builder = GraphBuilder::create().value();
+  const auto left_rows = builder.dimension({1, 4, 1}).value();
+  const auto right_rows = builder.dimension({1, 8, 1}).value();
+  const auto total_rows =
+      builder.dimension_sum(Dimension(left_rows), Dimension(right_rows))
+          .value();
+  ASSERT_TRUE(builder
+                  .require_dimension_less_equal(Dimension(right_rows),
+                                                Dimension(left_rows))
+                  .ok());
+  const auto spec = [](hyle::graph::DimensionId id) {
+    return TensorSpec::dense(DataType::kFloat32,
+                             std::array{Dimension(id), Dimension::fixed(2)})
+        .value();
+  };
+  const auto left_id = builder.input(spec(left_rows)).value();
+  const auto right_id = builder.input(spec(right_rows)).value();
+  const auto output_id = builder
+                             .add(hyle::compute::Concat{.axis = 0},
+                                  spec(total_rows), left_id, right_id)
+                             .value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  const Graph graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const std::array invalid_guard{ShapeBinding{left_rows, 4},
+                                 ShapeBinding{right_rows, 8}};
+  EXPECT_TRUE(hyle::graph::compile(graph, context, {.shape = invalid_guard})
+                  .error()
+                  .IsInvalidArgument());
+  const std::array bind_derived{ShapeBinding{left_rows, 2},
+                                ShapeBinding{total_rows, 3}};
+  EXPECT_TRUE(hyle::graph::compile(graph, context, {.shape = bind_derived})
+                  .error()
+                  .IsInvalidArgument());
+  const std::array duplicate{ShapeBinding{left_rows, 2},
+                             ShapeBinding{left_rows, 2}};
+  EXPECT_TRUE(hyle::graph::compile(graph, context, {.shape = duplicate})
+                  .error()
+                  .IsInvalidArgument());
+  for (const std::int64_t rows : {2, 4}) {
+    const std::array bindings{ShapeBinding{right_rows, 1},
+                              ShapeBinding{left_rows, rows}};
+    auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    const auto signature = compiled->executable.specialization();
+    ASSERT_EQ(signature.binding_count(), 3u);
+    EXPECT_EQ(signature.binding(2).value(),
+              (ShapeBinding{total_rows, rows + 1}));
+    auto left = make_tensor(matrix(rows, 2));
+    auto right = make_tensor(matrix(1, 2));
+    auto output = make_tensor(matrix(rows + 1, 2));
+    std::vector<float> expected(static_cast<std::size_t>(rows * 2), 3.0F);
+    write(left, expected);
+    write(right, std::array<float, 2>{7.0F, 9.0F});
+    expected.push_back(7.0F);
+    expected.push_back(9.0F);
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(left_id, left.view).ok());
+    ASSERT_TRUE(invocation.bind(right_id, right.view).ok());
+    ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+    ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+    EXPECT_EQ(read(output, expected.size()), expected);
+  }
+}
+
+TEST(GraphCompile,
+     NativeNormalizationConsumesDerivedRowsWithoutRuntimeShapeWork) {
+  auto builder = GraphBuilder::create().value();
+  const auto batch = builder.dimension({1, 4, 1}).value();
+  const auto tokens = builder.dimension({1, 8, 1}).value();
+  const auto rows =
+      builder.dimension_product(Dimension(batch), Dimension(tokens)).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto input_id = builder.input(spec).value();
+  const auto output_id = builder.add(RmsNorm{}, spec, input_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  const Graph graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  const std::array bindings{ShapeBinding{batch, 2}, ShapeBinding{tokens, 3}};
+  auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.specialization().binding(2).value(),
+            (ShapeBinding{rows, 6}));
+  auto input = make_tensor(matrix(6, 4));
+  auto output = make_tensor(matrix(6, 4));
+  std::array<float, 24> data{};
+  data.fill(2.0F);
+  write(input, data);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input_id, input.view).ok());
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  for (const float value : read(output, 24))
+    EXPECT_NEAR(value, 2.0F / std::sqrt(4.0F + RmsNorm{}.epsilon), 1.0e-6F);
+}
+
+TEST(GraphCompile, DerivedQuotientAndBroadcastRejectIncompatibleBindings) {
+  auto builder = GraphBuilder::create().value();
+  const auto tokens = builder.dimension({0, 8, 1}).value();
+  const auto divisor = builder.dimension({0, 4, 1}).value();
+  const auto split =
+      builder.dimension_quotient(Dimension(tokens), Dimension(divisor)).value();
+  const auto other = builder.dimension({0, 4, 1}).value();
+  const auto result =
+      builder.dimension_broadcast(Dimension(split), Dimension(other)).value();
+  const auto input =
+      builder
+          .input(TensorSpec::dense(
+                     DataType::kFloat32,
+                     std::array{Dimension(result), Dimension::fixed(2)})
+                     .value())
+          .value();
+  ASSERT_TRUE(builder.publish(input).ok());
+  const Graph graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  for (const auto tuple :
+       {std::array<std::int64_t, 3>{6, 0, 1}, {5, 2, 1}, {6, 2, 2}}) {
+    const std::array bindings{ShapeBinding{tokens, tuple[0]},
+                              ShapeBinding{divisor, tuple[1]},
+                              ShapeBinding{other, tuple[2]}};
+    EXPECT_TRUE(hyle::graph::compile(graph, context, {.shape = bindings})
+                    .error()
+                    .IsInvalidArgument());
+  }
+  const std::array empty{ShapeBinding{tokens, 0}, ShapeBinding{divisor, 2},
+                         ShapeBinding{other, 1}};
+  auto compiled = hyle::graph::compile(graph, context, {.shape = empty});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.specialization().binding(4).value(),
+            (ShapeBinding{result, 0}));
+}
+
 TEST(GraphCompile, PlacesAcrossTargetsWithoutFalseStorageCopies) {
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
   Context first = hyle::compute::cpu::create_context().value();

@@ -19,11 +19,11 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 3;
+inline constexpr std::uint32_t kProviderContractVersion = 4;
 
 struct ProviderOperationRequest final {
   Operation operation{};
-  // Exact descriptors when shape is empty; otherwise the domain's upper point.
+  // Exact descriptors when shape is empty; otherwise the domain's envelope.
   std::span<const TensorDesc> inputs{};
   std::span<const TensorDesc> outputs{};
   ProviderShapeDomain shape{};

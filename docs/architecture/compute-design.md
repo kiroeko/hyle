@@ -143,7 +143,7 @@ copy/repack、同步、dispatch、线程/host blocking、replay 成本类别、�
 降低预期关键路径和资源成本，不是机械最大化第三方覆盖率，也不是看到一个 HYLE kernel 的局部点值更快
 就强行切开 region。
 
-性能信息分三层使用：
+性能信息按以下规则使用：
 
 1. 结构事实先排除会增加不可接受 copy、host wait、内存、线程嵌套或不兼容 layout 的候选；
 2. 资格化 evidence profile 只在绑定 provider/version、device/ISA、dtype/layout 和 shape domain 时用于

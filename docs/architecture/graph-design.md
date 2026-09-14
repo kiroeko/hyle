@@ -212,6 +212,11 @@ rank/type 合法及域覆盖；保守区间与 guards 不足以证明 schema/pro
 大小的有界线性遍历，HYLE warm submit 不再求值。Compute 的直接 TensorDesc 仍描述 concrete tensor，
 provider-neutral domain 投影不引入 Graph ID 或反向依赖。
 
+表达式按创建顺序引用此前维度或非负常量，因而不需要递归图解释器。派生 bounds 是保守 envelope，
+guards 可能排除各轴上界的组合；不能把这个组合当作合法 concrete shape 先做单点 schema inference，
+再声称覆盖整个 domain。整数或 descriptor 的保守上界无法表示时要求缩窄输入范围，不靠通用约束求解
+或抽样自动收紧。具体表示与当前落地范围分别见活动卡和用户指南，不把设计中的 bounded replay 写成已交付。
+
 这不是任意方程求解器、脚本 VM 或数据依赖输出支持。最小反证用 `[B,T,H] -> [B*T,H]`、concat 后
 reshape、整除失败和 overflow，不能只用输入输出共用一个 symbol 的 RMSNorm 证明自然动态图已完整。
 

@@ -11,6 +11,10 @@
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。
 
+direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape program。需要 batch × tokens、concat
+输出轴等派生维度时，使用 [Graph 的独立与派生维度](graph.md#独立与派生维度)，在冷 compile 时解析；
+当前 Native/oneDNN artifact 仍是 exact-only，不能从私有 shape-domain 接口推断已有整个动态范围的执行器。
+
 ## 当前能力
 
 | 任务 | 公开形状 | 当前合同 |

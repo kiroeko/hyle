@@ -9,9 +9,9 @@
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
-整体复核还接受了派生 shape、资源副作用域、variant 内存共享、搜索受限返回可行解及 Provider replay
-成本合同；除下述已能读取的 replay 分类事实外，其余仍是[架构合同](../architecture/graph-design.md)，
-不是本页 API 已支持的能力。
+当前 exact specialization 已支持有限派生维度与 shape guards，Provider replay 分类事实也可查询。
+完整 bounded runtime/variants、资源副作用域、variant 内存共享和搜索受限返回可行解仍是
+[架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -40,8 +40,8 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | 能力 | 当前合同 |
 |---|---|
 | DAG | typed、多输入/输出 node；共享 value、分支、多个 published output 与显式 control dependency |
-| shape | concrete `TensorDesc`，或带 min/max/multiple 约束的 graph-local symbol；同一 `DimensionId` 表示相等约束 |
-| specialization | `compile()` 要求每个 symbol 恰好绑定一次；一个 Executable 对应一个 collision-safe `SpecializationSignature` |
+| shape | concrete `TensorDesc`，或独立 min/max/multiple 维度、有限 sum/product/exact-quotient/broadcast 派生维度及 equal/less-equal guards；同一 `DimensionId` 共享值 |
+| specialization | `compile()` 只要求每个独立维度恰好绑定一次，派生值由程序计算；一个 Executable 对应一个包含全部维度值的 collision-safe `SpecializationSignature` |
 | execution target | `Context` 是执行者；node placement 只选择 target，不把 allocator 或 Queue 混入 identity |
 | storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
 | execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
@@ -117,6 +117,52 @@ return done->wait();
 
 `constant()` 只声明逻辑 value；`CompileOptions::constants` 提供 payload。当前 Executable 保守借用所有
 constant source，即使 provider 另有 packed representation，源 storage 仍须活过 Executable 及其全部提交。
+
+## 独立与派生维度
+
+例如消费者按 batch × tokens 提供一块连续的 activation，用派生行数描述它，不要再创建第三个独立
+symbol 然后要求调用者重复维护乘积：
+
+```cpp
+auto batch = builder.dimension({.minimum = 1, .maximum = 8});
+if (!batch) return batch.error();
+auto tokens = builder.dimension({.minimum = 1, .maximum = 4096});
+if (!tokens) return tokens.error();
+auto rows = builder.dimension_product(Dimension(*batch), Dimension(*tokens));
+if (!rows) return rows.error();
+if (auto s = builder.require_dimension_less_equal(
+        Dimension(*rows), Dimension::fixed(4096)); !s.ok()) return s;
+auto spec = TensorSpec::dense(DataType::kFloat32,
+    std::array{Dimension(*rows), Dimension::fixed(128)});
+if (!spec) return spec.error();
+auto input = builder.input(*spec);
+if (!input) return input.error();
+auto output = builder.add(RmsNorm{}, *spec, *input);
+if (!output) return output.error();
+if (auto s = builder.publish(*output); !s.ok()) return s;
+auto graph = std::move(builder).finish();
+if (!graph) return graph.error();
+
+const std::array shape{ShapeBinding{*batch, 2}, ShapeBinding{*tokens, 128}};
+auto compiled = compile(*graph, context, CompileOptions{.shape = shape});
+// 只绑定 batch/tokens；实际输入、输出 TensorView 是 [256, 128]。
+```
+
+- `dimension_sum` 适合 concat 输出轴；`dimension_product` 适合展平后的 extent；
+  `dimension_quotient` 要求除数非零且整除，不向下取整；`dimension_broadcast` 要求两值相等或其中一个为 1。
+  零尺寸合法，广播 `(0, 1)` 得到 0，但具体算子仍可能不支持空输入。
+- 操作数只允许非负常量或同 Builder 已存在的 ID；表达式天然无环，不读取 payload。无递归表达式解释器、
+  用户 callback 或通用符号求解器。固定矛盾在构造/finish 时拒绝，其余约束在 compile 的具体求值阶段检查。
+- `dimension_bounds()` 给的是保守范围；guards 可以排除范围中的组合，各轴上界未必同时合法。过宽范围
+  导致整数溢出时必须缩窄声明，不能依赖 guard 自动收紧。派生 bounds 由系统计算，不接受独立覆盖。
+- `dimension_count()` 枚举全部 ID；`independent_dimension_count()` 和 `dimension_is_independent(id)` 用于
+  识别调用者需绑定的部分。重复、缺失、外来或派生 ID 的 `ShapeBinding` 都会失败。signature 按 ID 顺序保存
+  **全部**已解析值，不能把其 `binding_count()` 当成调用者的输入维度数。
+
+这仍是冷编译生成一个 exact Executable：更换具体 shape 需要重新 compile，或由消费方缓存多个
+Executable。它还不是“一个 Executable 跑整个 bounded domain”。当前 `View::reshape/broadcast_to` 的
+operation attributes 仍是具体 `TensorShape`；派生 TensorSpec 不会偷偷改写这些固定参数，也不自动生成
+reshape/copy。完整动态属性与 runtime variants 尚待实现。
 
 ## Symbol 与多 target/storage/lane
 

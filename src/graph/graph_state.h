@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "../compute/shape_program.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/graph.h"
 #include "hyle/util/ref_counted.h"
@@ -36,9 +37,7 @@ struct GraphIdentity final {
   }
 };
 
-struct DimensionRecord final {
-  DimensionBounds bounds{};
-};
+using DimensionRecord = compute::detail::ShapeDimension;
 
 struct ValueRecord final {
   TensorSpec spec{};
@@ -68,6 +67,8 @@ struct ControlEdgeRecord final {
 using ValueRecords = container::SmallVector<ValueRecord, 8, mem::AllocatorRef>;
 using DimensionRecords =
     container::SmallVector<DimensionRecord, 4, mem::AllocatorRef>;
+using ShapeGuards =
+    container::SmallVector<compute::detail::ShapeGuard, 4, mem::AllocatorRef>;
 using NodeRecords = container::SmallVector<NodeRecord, 8, mem::AllocatorRef>;
 using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
 using ControlEdgeRecords =
@@ -77,14 +78,16 @@ struct BuilderState final {
   BuilderState(std::uint64_t generation_value,
                mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), generation(generation_value),
-        dimensions(allocator_value), values(allocator_value),
-        nodes(allocator_value), edges(allocator_value), inputs(allocator_value),
-        constants(allocator_value), outputs(allocator_value),
-        control_edges(allocator_value), dependencies(allocator_value) {}
+        dimensions(allocator_value), shape_guards(allocator_value),
+        values(allocator_value), nodes(allocator_value), edges(allocator_value),
+        inputs(allocator_value), constants(allocator_value),
+        outputs(allocator_value), control_edges(allocator_value),
+        dependencies(allocator_value) {}
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
   DimensionRecords dimensions;
+  ShapeGuards shape_guards;
   ValueRecords values;
   NodeRecords nodes;
   Ordinals edges;
@@ -99,6 +102,7 @@ struct GraphState final : util::RefCounted<GraphState> {
   explicit GraphState(BuilderState &builder) noexcept
       : allocator(builder.allocator), generation(builder.generation),
         dimensions(std::move(builder.dimensions)),
+        shape_guards(std::move(builder.shape_guards)),
         values(std::move(builder.values)), nodes(std::move(builder.nodes)),
         edges(std::move(builder.edges)), inputs(std::move(builder.inputs)),
         constants(std::move(builder.constants)),
@@ -114,6 +118,7 @@ struct GraphState final : util::RefCounted<GraphState> {
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
   DimensionRecords dimensions;
+  ShapeGuards shape_guards;
   ValueRecords values;
   NodeRecords nodes;
   Ordinals edges;

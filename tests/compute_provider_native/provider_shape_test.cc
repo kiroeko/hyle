@@ -15,10 +15,10 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   const std::array<std::int64_t, 1> shape{8};
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, shape).value()};
-  std::array ranges{ProviderShapeRange{1, 8, 1}};
+  std::array dimensions{ShapeDimension{.bounds = {1, 8, 1}}};
   std::array<ProviderTensorAxes, 1> axes{};
-  axes[0].symbols[0] = 0;
-  const ProviderShapeDomain domain{ranges, axes, axes};
+  axes[0].values[0] = 0;
+  const ProviderShapeDomain domain{dimensions, axes, axes};
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   const auto propose = [&]() {
     return OperationPreparationAccess::propose(
@@ -28,7 +28,7 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   auto bounded = propose();
   ASSERT_FALSE(bounded.has_value());
   EXPECT_TRUE(bounded.error().IsUnimplemented());
-  ranges[0].minimum = 8;
+  dimensions[0].bounds.minimum = 8;
   auto exact = propose();
   ASSERT_TRUE(exact.has_value()) << exact.error().message();
   EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);

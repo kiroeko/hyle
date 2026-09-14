@@ -7,67 +7,36 @@
 
 #include "hyle/compute/tensor_desc.h"
 #include "hyle/compute/visibility.h"
+#include "shape_program.h"
 
 namespace hyle::compute::detail {
 
-// Provider-neutral projection of a Graph symbol. No Graph identity or graph
-// ownership crosses this seam. Endpoints need not be divisible by multiple_of;
-// first()/last() name the first/last admitted point, including zero extents.
-struct ProviderShapeRange final {
-  std::int64_t minimum = 1;
-  std::int64_t maximum = 1;
-  std::int64_t multiple_of = 1;
-
-  constexpr bool valid() const noexcept {
-    return minimum >= 0 && maximum >= minimum && multiple_of > 0 &&
-           maximum - maximum % multiple_of >= minimum;
-  }
-  // Requires valid(); the admitted upper point proves this addition fits.
-  constexpr std::int64_t first() const noexcept {
-    const std::int64_t remainder = minimum % multiple_of;
-    return minimum + (remainder == 0 ? 0 : multiple_of - remainder);
-  }
-  constexpr std::int64_t last() const noexcept {
-    return maximum - maximum % multiple_of;
-  }
-  constexpr bool contains(std::int64_t value) const noexcept {
-    return valid() && value >= minimum && value <= maximum &&
-           value % multiple_of == 0;
-  }
-  constexpr bool exact() const noexcept { return valid() && first() == last(); }
-  friend constexpr bool operator==(ProviderShapeRange,
-                                   ProviderShapeRange) noexcept = default;
-};
-
-inline constexpr std::uint32_t kFixedShapeAxis = UINT32_MAX;
-
-// One entry per axis of the corresponding upper-point TensorDesc. Fixed axes
-// retain their descriptor extent. Repeated indices impose equality, while two
-// distinct indices remain independent even when their ranges are identical.
+// One entry per axis of the corresponding envelope TensorDesc. Fixed axes
+// retain their descriptor extent; other axes name an input or derived value.
 struct ProviderTensorAxes final {
-  constexpr ProviderTensorAxes() noexcept { symbols.fill(kFixedShapeAxis); }
-  std::array<std::uint32_t, kMaxTensorRank> symbols{};
+  constexpr ProviderTensorAxes() noexcept { values.fill(kFixedShapeAxis); }
+  std::array<std::uint32_t, kMaxTensorRank> values{};
 };
 
 // Borrowed for one cold call. Empty spans are the exact fast path. Otherwise
 // every input/output has an axis map, and the descriptors supplied alongside
-// this view describe the Cartesian upper point. Dynamic layouts are dense or
-// blocked-dense; exact tensors retain arbitrary legal strides/opaque formats.
+// this view describe the envelope, not necessarily an admitted point. Dynamic
+// layouts are dense or blocked-dense; exact tensors retain arbitrary legal
+// strides/opaque formats.
 struct ProviderShapeDomain final {
-  std::span<const ProviderShapeRange> symbols{};
+  std::span<const ShapeDimension> dimensions{};
   std::span<const ProviderTensorAxes> inputs{};
   std::span<const ProviderTensorAxes> outputs{};
+  std::span<const ShapeGuard> guards{};
+
+  constexpr ShapeProgramView program() const noexcept {
+    return {dimensions, guards};
+  }
 
   constexpr bool empty() const noexcept {
-    return symbols.empty() && inputs.empty() && outputs.empty();
+    return program().empty() && inputs.empty() && outputs.empty();
   }
-  constexpr bool exact() const noexcept {
-    for (ProviderShapeRange range : symbols) {
-      if (!range.exact())
-        return false;
-    }
-    return true;
-  }
+  constexpr bool exact() const noexcept { return program().exact(); }
 };
 
 // Metadata-only checks, allocation-free on success; error diagnostics may
@@ -80,14 +49,14 @@ HYLE_COMPUTE_API Status validate_shape_domain(
 
 // Reconstruct concrete dense descriptors before work acceptance, without
 // inference, provider search, JIT or success-path allocation. Caller supplies
-// scratch; on failure discard the destinations (which may be partly set).
+// scratch for every dimension, with input slots filled and derived slots
+// ignored; on failure discard values/destinations (which may be partly set).
 // Each destination may be identical to its paired upper span; all other
 // overlap between destinations and source/domain storage is prohibited.
 HYLE_COMPUTE_API Status bind_shape_domain(
     ProviderShapeDomain domain, std::span<const TensorDesc> upper_inputs,
-    std::span<const TensorDesc> upper_outputs,
-    std::span<const std::int64_t> point, std::span<TensorDesc> inputs,
-    std::span<TensorDesc> outputs) noexcept;
+    std::span<const TensorDesc> upper_outputs, std::span<std::int64_t> values,
+    std::span<TensorDesc> inputs, std::span<TensorDesc> outputs) noexcept;
 
 enum class ProviderShapeCoverage : std::uint8_t {
   kExactPoint = 0,

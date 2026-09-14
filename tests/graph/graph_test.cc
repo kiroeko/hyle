@@ -185,7 +185,7 @@ TEST(GraphBuilder, BuildsBoundedSymbolicGraphWithExplicitOutputSpecs) {
 
 TEST(GraphBuilder, RejectsInvalidAndForeignSymbolicDimensions) {
   GraphBuilder first = GraphBuilder::create().value();
-  EXPECT_TRUE(first.dimension({.minimum = 0, .maximum = 4})
+  EXPECT_TRUE(first.dimension({.minimum = -1, .maximum = 4})
                   .error()
                   .IsInvalidArgument());
   EXPECT_TRUE(first.dimension({.minimum = 9, .maximum = 15, .multiple_of = 8})
@@ -205,6 +205,104 @@ TEST(GraphBuilder, RejectsInvalidAndForeignSymbolicDimensions) {
           .value();
   const auto input = first.input(local_spec).value();
   EXPECT_TRUE(first.add(RmsNorm{}, input).error().IsFailedPrecondition());
+}
+
+TEST(GraphBuilder, DerivedDimensionsShareFiniteProgramAndRemainGraphLocal) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto tokens = builder.dimension({0, 8, 2}).value();
+  const auto doubled =
+      builder.dimension_product(Dimension(tokens), Dimension::fixed(2)).value();
+  // Input declarations may be interleaved with derived values.
+  const auto extra = builder.dimension({1, 4, 1}).value();
+  const auto sum =
+      builder.dimension_sum(Dimension(doubled), Dimension(extra)).value();
+  const auto split =
+      builder.dimension_quotient(Dimension(doubled), Dimension::fixed(2))
+          .value();
+  const auto broadcast =
+      builder.dimension_broadcast(Dimension(split), Dimension::fixed(1))
+          .value();
+  ASSERT_TRUE(
+      builder.require_dimension_equal(Dimension(broadcast), Dimension(tokens))
+          .ok());
+  ASSERT_TRUE(
+      builder
+          .require_dimension_less_equal(Dimension(extra), Dimension::fixed(4))
+          .ok());
+  GraphBuilder foreign = GraphBuilder::create().value();
+  const auto other = foreign.dimension({1, 4, 1}).value();
+  EXPECT_TRUE(builder.dimension_sum(Dimension(other), Dimension(tokens))
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(builder.dimension_product(Dimension{}, Dimension(tokens))
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      builder.require_dimension_equal(Dimension(other), Dimension(tokens))
+          .IsInvalidArgument());
+  EXPECT_TRUE(builder.dimension_quotient(Dimension(tokens), Dimension::fixed(0))
+                  .error()
+                  .IsInvalidArgument());
+  constexpr auto maximum = (std::numeric_limits<std::int64_t>::max)();
+  EXPECT_TRUE(
+      builder.dimension_sum(Dimension::fixed(maximum), Dimension::fixed(1))
+          .error()
+          .IsOutOfRange());
+  const auto input =
+      builder
+          .input(
+              TensorSpec::dense(DataType::kFloat32,
+                                std::array{Dimension(sum), Dimension::fixed(4)})
+                  .value())
+          .value();
+  ASSERT_TRUE(builder.publish(input).ok());
+  Graph graph = std::move(builder).finish().value();
+  EXPECT_EQ(graph.dimension_count(), 6u);
+  EXPECT_EQ(graph.independent_dimension_count(), 2u);
+  EXPECT_TRUE(graph.dimension_is_independent(tokens).value());
+  EXPECT_TRUE(graph.dimension_is_independent(extra).value());
+  EXPECT_FALSE(graph.dimension_is_independent(sum).value());
+  EXPECT_TRUE(
+      graph.dimension_is_independent(other).error().IsInvalidArgument());
+  EXPECT_EQ(graph.dimension_bounds(doubled).value(),
+            (DimensionBounds{0, 16, 4}));
+  EXPECT_EQ(graph.dimension_bounds(sum).value(), (DimensionBounds{1, 20, 1}));
+  EXPECT_TRUE(
+      Graph{}.dimension_is_independent(tokens).error().IsFailedPrecondition());
+  EXPECT_EQ(Graph{}.independent_dimension_count(), 0u);
+}
+
+TEST(GraphBuilder, ShapeGrowthFailureLeavesNoHalfDimensionOrGuard) {
+  AllocatorProbe probe;
+  {
+    auto builder =
+        GraphBuilder::create({.metadata_allocator = probe_allocator(probe)})
+            .value();
+    const auto input = builder.input(row(4)).value();
+    ASSERT_TRUE(builder.publish(input).ok());
+    const auto first = builder.dimension({0, 8, 1}).value();
+    for (int i = 0; i < 3; ++i)
+      ASSERT_TRUE(builder.dimension_sum(Dimension(first), Dimension::fixed(i)));
+    for (int i = 0; i < 4; ++i)
+      ASSERT_TRUE(
+          builder.require_dimension_equal(Dimension(first), Dimension(first))
+              .ok());
+    probe.fail = true;
+    EXPECT_TRUE(builder.dimension_product(Dimension(first), Dimension::fixed(2))
+                    .error()
+                    .IsResourceExhausted());
+    EXPECT_TRUE(
+        builder.require_dimension_equal(Dimension(first), Dimension::fixed(7))
+            .IsResourceExhausted());
+    probe.fail = false;
+    const auto final =
+        builder.dimension_sum(Dimension(first), Dimension::fixed(4)).value();
+    EXPECT_EQ(final.ordinal(), 4u);
+    Graph graph = std::move(builder).finish().value();
+    EXPECT_EQ(graph.dimension_count(), 5u);
+    EXPECT_EQ(graph.independent_dimension_count(), 1u);
+  }
+  EXPECT_EQ(probe.allocations, probe.deallocations);
 }
 
 TEST(GraphBuilder, FixedSpecsShareConcreteValidationAndInference) {

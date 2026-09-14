@@ -154,7 +154,7 @@ struct AsyncOperationProbe final {
   PrepareDisposition prepare_disposition = PrepareDisposition::kPrepared;
   bool return_partial_artifact = false;
   std::size_t proposal_count = 0;
-  std::size_t shape_symbol_count = 0;
+  std::size_t shape_dimension_count = 0;
   bool shape_shares_input_output_axis = false;
   hyle::compute::detail::ProviderShapeRange observed_shape_range{};
   hyle::compute::detail::ProviderShapeCoverage shape_coverage =
@@ -279,12 +279,12 @@ hyle::Status propose_async_operation(
     hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
   auto &probe = *static_cast<AsyncOperationProbe *>(context);
   ++probe.proposal_count;
-  probe.shape_symbol_count = request.shape.symbols.size();
-  if (!request.shape.symbols.empty())
-    probe.observed_shape_range = request.shape.symbols.front();
+  probe.shape_dimension_count = request.shape.dimensions.size();
+  if (!request.shape.dimensions.empty())
+    probe.observed_shape_range = request.shape.dimensions.front().bounds;
   probe.shape_shares_input_output_axis =
       !request.shape.inputs.empty() && !request.shape.outputs.empty() &&
-      request.shape.inputs[0].symbols[0] == request.shape.outputs[0].symbols[0];
+      request.shape.inputs[0].values[0] == request.shape.outputs[0].values[0];
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = 1,
       .runtime = hyle::compute::ProviderRuntimeProperties{
@@ -1338,10 +1338,10 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   const std::array<std::int64_t, 1> upper_shape{8};
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, upper_shape).value()};
-  std::array ranges{ProviderShapeRange{1, 8, 2}};
+  std::array dimensions{ShapeDimension{.bounds = {1, 8, 2}}};
   std::array<ProviderTensorAxes, 1> axes{};
-  axes[0].symbols[0] = 0;
-  const ProviderShapeDomain domain{ranges, axes, axes};
+  axes[0].values[0] = 0;
+  const ProviderShapeDomain domain{dimensions, axes, axes};
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   const auto propose = [&]() {
     return OperationPreparationAccess::propose(
@@ -1352,8 +1352,8 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   ASSERT_FALSE(exact_only.has_value());
   EXPECT_TRUE(exact_only.error().IsUnimplemented());
   EXPECT_EQ(probe.proposal_count, 1u);
-  EXPECT_EQ(probe.shape_symbol_count, 1u);
-  EXPECT_EQ(probe.observed_shape_range, ranges[0]);
+  EXPECT_EQ(probe.shape_dimension_count, 1u);
+  EXPECT_EQ(probe.observed_shape_range, dimensions[0].bounds);
   EXPECT_TRUE(probe.shape_shares_input_output_axis);
 
   // This probe verifies the capability seam, not a real bounded runtime.
@@ -1367,19 +1367,55 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   EXPECT_TRUE(invalid.error().IsInternal());
   EXPECT_EQ(probe.proposal_count, 3u);
 
-  ranges[0].maximum = 7;
+  dimensions[0].bounds.maximum = 7;
   auto malformed = propose();
   ASSERT_FALSE(malformed.has_value());
   EXPECT_TRUE(malformed.error().IsInvalidArgument());
   EXPECT_EQ(probe.proposal_count, 3u);
 
-  ranges[0] = ProviderShapeRange{7, 9, 8};
+  dimensions[0].bounds = ProviderShapeRange{7, 9, 8};
   probe.shape_coverage = ProviderShapeCoverage::kExactPoint;
   auto singleton = propose();
   ASSERT_TRUE(singleton.has_value()) << singleton.error().message();
   EXPECT_EQ(singleton->shape_coverage, ProviderShapeCoverage::kExactPoint);
   EXPECT_EQ(probe.prepare_count, 0u);
   EXPECT_EQ(probe.submit_count, 0u);
+}
+
+TEST(RuntimeProviders, GuardedEnvelopeIsNotUsedForConcreteSchemaInference) {
+  using namespace hyle::compute;
+  using namespace hyle::compute::detail;
+  AsyncOperationProbe probe;
+  probe.shape_coverage = ProviderShapeCoverage::kEntireDomain;
+  auto context =
+      Context::create(cpu::device(), make_async_provider(probe)).value();
+  const std::array dimensions{ShapeDimension{.bounds = {1, 8, 1}},
+                              ShapeDimension{.bounds = {1, 6, 1}}};
+  const std::array guards{ShapeGuard{
+      ShapeGuardKind::kEqual, ShapeOperand::value(0), ShapeOperand::value(1)}};
+  std::array<ProviderTensorAxes, 1> input_axes{}, output_axes{};
+  input_axes[0].values[0] = 0;
+  output_axes[0].values[0] = 1;
+  const ProviderShapeDomain domain{dimensions, input_axes, output_axes, guards};
+  const std::array input_desc{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
+          .value()};
+  const std::array output_desc{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{6})
+          .value()};
+  std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
+  // The equality guard admits (1,1)..(6,6), never the envelope tuple (8,6).
+  // This is still only an SPI probe; no real bounded artifact is claimed.
+  auto proposed = OperationPreparationAccess::propose(
+      context, 0, Operation(Unary{UnaryKind::kNeg}), input_desc, output_desc,
+      inputs, outputs, domain);
+  ASSERT_TRUE(proposed.has_value()) << proposed.error().message();
+  EXPECT_EQ(probe.proposal_count, 1u);
+  auto exact = OperationPreparationAccess::propose(
+      context, 0, Operation(Unary{UnaryKind::kNeg}), input_desc, output_desc,
+      inputs, outputs);
+  EXPECT_TRUE(exact.error().IsInvalidArgument());
+  EXPECT_EQ(probe.proposal_count, 1u);
 }
 
 TEST(RuntimeProviders, OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime) {

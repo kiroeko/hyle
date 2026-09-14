@@ -543,10 +543,14 @@ detail::OperationPreparationAccess::propose(
   Status domain_status = validate_shape_domain(shape, inputs, outputs);
   if (!domain_status.ok())
     return std::unexpected(std::move(domain_status));
-  Status inference =
-      validate_inferred_outputs(operation, inputs, outputs, state->allocator);
-  if (!inference.ok())
-    return std::unexpected(std::move(inference));
+  // A derived/guarded domain's axis-wise envelope need not be an admitted
+  // concrete shape. Only the provider's whole-domain proof can qualify it.
+  if (shape.exact()) {
+    Status inference =
+        validate_inferred_outputs(operation, inputs, outputs, state->allocator);
+    if (!inference.ok())
+      return std::unexpected(std::move(inference));
+  }
 
   if (provider_index >= state->provider_count) {
     return std::unexpected(

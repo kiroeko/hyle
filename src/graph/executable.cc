@@ -298,9 +298,12 @@ specialize_descriptions(const detail::GraphState &graph,
       !descriptions.try_resize(graph.values.size())) {
     return std::unexpected(plan_allocation_failure());
   }
-  if (bindings.size() != graph.dimensions.size()) {
-    return std::unexpected(Status::InvalidArgument(
-        "compile requires exactly one binding for every graph dimension"));
+  const compute::detail::ShapeProgramView shape{graph.dimensions,
+                                                graph.shape_guards};
+  if (bindings.size() != shape.input_count()) {
+    return std::unexpected(
+        Status::InvalidArgument("compile requires exactly one binding for "
+                                "every independent graph dimension"));
   }
   for (std::size_t index = 0; index < seen.size(); ++index)
     seen[index] = 0;
@@ -310,19 +313,23 @@ specialize_descriptions(const detail::GraphState &graph,
           "shape binding does not belong to this graph"));
     }
     const std::size_t ordinal = binding.dimension.ordinal();
+    if (graph.dimensions[ordinal].kind !=
+        compute::detail::ShapeDimensionKind::kInput) {
+      return std::unexpected(Status::InvalidArgument(
+          "derived graph dimensions cannot be bound by the caller"));
+    }
     if (seen[ordinal] != 0) {
       return std::unexpected(
           Status::InvalidArgument("shape binding is duplicated"));
     }
-    const DimensionBounds bounds = graph.dimensions[ordinal].bounds;
-    if (binding.value < bounds.minimum || binding.value > bounds.maximum ||
-        binding.value % bounds.multiple_of != 0) {
-      return std::unexpected(Status::OutOfRange(
-          "shape binding violates its bounded dimension contract"));
-    }
     values[ordinal] = binding.value;
     seen[ordinal] = 1;
   }
+  // Equal counts, valid input IDs, and no duplicates prove every input slot is
+  // filled. Evaluate derived values and guards before consulting any Provider.
+  Status evaluated = compute::detail::evaluate_shape_program(shape, values);
+  if (!evaluated.ok())
+    return std::unexpected(std::move(evaluated));
 
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
     auto description = resolve_spec(graph, graph.values[index].spec, values);
@@ -369,6 +376,7 @@ make_specialized_graph(const detail::GraphState &source,
                        mem::AllocatorRef allocator) noexcept {
   detail::BuilderState builder(source.generation, allocator);
   if (!builder.dimensions.try_resize(source.dimensions.size()) ||
+      !builder.shape_guards.try_resize(source.shape_guards.size()) ||
       !builder.values.try_resize(source.values.size()) ||
       !builder.nodes.try_resize(source.nodes.size()) ||
       !builder.edges.try_resize(source.edges.size()) ||
@@ -380,6 +388,8 @@ make_specialized_graph(const detail::GraphState &source,
   }
   for (std::size_t index = 0; index < source.dimensions.size(); ++index)
     builder.dimensions[index] = source.dimensions[index];
+  for (std::size_t index = 0; index < source.shape_guards.size(); ++index)
+    builder.shape_guards[index] = source.shape_guards[index];
   for (std::size_t index = 0; index < source.values.size(); ++index) {
     auto spec = TensorSpec::concrete(descriptions[index]);
     if (!spec)

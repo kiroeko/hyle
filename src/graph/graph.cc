@@ -42,21 +42,11 @@ Status symbolic_description() noexcept {
 }
 
 Status validate_bounds(DimensionBounds bounds) noexcept {
-  if (bounds.minimum <= 0 || bounds.maximum <= 0 || bounds.multiple_of <= 0) {
-    return Status::InvalidArgument(
-        "graph dimension bounds and multiple must be positive");
-  }
-  if (bounds.minimum > bounds.maximum) {
-    return Status::InvalidArgument("graph dimension minimum exceeds maximum");
-  }
-  const std::int64_t remainder = bounds.minimum % bounds.multiple_of;
-  const std::int64_t adjustment =
-      remainder == 0 ? 0 : bounds.multiple_of - remainder;
-  if (adjustment > bounds.maximum - bounds.minimum) {
-    return Status::InvalidArgument(
-        "graph dimension bounds contain no permitted multiple");
-  }
-  return Status::Ok();
+  const compute::detail::ProviderShapeRange range{
+      bounds.minimum, bounds.maximum, bounds.multiple_of};
+  return range.valid()
+             ? Status::Ok()
+             : Status::InvalidArgument("invalid graph dimension bounds");
 }
 
 template <class State>
@@ -191,7 +181,72 @@ constexpr bool fits_node_ordinal(std::size_t size) noexcept {
 }
 
 constexpr bool fits_dimension_ordinal(std::size_t size) noexcept {
-  return size <= (std::numeric_limits<std::uint32_t>::max)();
+  return size < compute::detail::kFixedShapeAxis;
+}
+
+Result<compute::detail::ShapeOperand>
+shape_operand(const detail::BuilderState &state, Dimension value) noexcept {
+  if (!value.valid() ||
+      (value.is_symbol() && !detail::owns(state, value.symbol()))) {
+    return std::unexpected(Status::InvalidArgument(
+        "shape operand must be a constant or a dimension from this builder"));
+  }
+  return value.is_fixed()
+             ? compute::detail::ShapeOperand::fixed(value.fixed_value())
+             : compute::detail::ShapeOperand::value(value.symbol().ordinal());
+}
+
+compute::detail::ProviderShapeRange
+operand_bounds(const detail::BuilderState &state,
+               compute::detail::ShapeOperand value) noexcept {
+  if (!value.is_fixed())
+    return state.dimensions[value.ordinal].bounds;
+  return {value.constant, value.constant,
+          value.constant == 0 ? 1 : value.constant};
+}
+
+Result<DimensionId> derived_dimension(detail::BuilderState *state,
+                                      compute::detail::ShapeDimensionKind kind,
+                                      Dimension left,
+                                      Dimension right) noexcept {
+  if (state == nullptr)
+    return std::unexpected(invalid_builder());
+  auto lhs = shape_operand(*state, left);
+  if (!lhs)
+    return std::unexpected(std::move(lhs).error());
+  auto rhs = shape_operand(*state, right);
+  if (!rhs)
+    return std::unexpected(std::move(rhs).error());
+  auto bounds = compute::detail::infer_shape_range(
+      kind, operand_bounds(*state, *lhs), operand_bounds(*state, *rhs));
+  if (!bounds)
+    return std::unexpected(std::move(bounds).error());
+  if (!fits_dimension_ordinal(state->dimensions.size())) {
+    return std::unexpected(Status::ResourceExhausted(
+        "graph dimension identity space is exhausted"));
+  }
+  const auto ordinal = static_cast<std::uint32_t>(state->dimensions.size());
+  if (!state->dimensions.try_push_back(
+          detail::DimensionRecord{*bounds, kind, *lhs, *rhs}))
+    return std::unexpected(allocation_failure());
+  return detail::GraphIdentity::dimension(state->generation, ordinal);
+}
+
+Status shape_guard(detail::BuilderState *state,
+                   compute::detail::ShapeGuardKind kind, Dimension left,
+                   Dimension right) noexcept {
+  if (state == nullptr)
+    return invalid_builder();
+  auto lhs = shape_operand(*state, left);
+  if (!lhs)
+    return std::move(lhs).error();
+  auto rhs = shape_operand(*state, right);
+  if (!rhs)
+    return std::move(rhs).error();
+  if (!state->shape_guards.try_push_back(
+          compute::detail::ShapeGuard{kind, *lhs, *rhs}))
+    return allocation_failure();
+  return Status::Ok();
 }
 
 static_assert(fits_value_ordinal(
@@ -218,9 +273,7 @@ TensorSpec::concrete(compute::TensorDesc description) noexcept {
   result.rank_ = static_cast<std::uint8_t>(description.rank());
   result.kind_ = TensorSpecKind::kConcrete;
   for (std::size_t index = 0; index < description.rank(); ++index) {
-    // Concrete TensorDesc also permits zero extents. Dimension is deliberately
-    // positive-only for symbolic specs, so these cached logical dimensions are
-    // not used to validate or resolve a concrete description.
+    // Fixed and symbolic extents share TensorDesc's nonnegative size domain.
     result.dimensions_[index] =
         Dimension::fixed(description.dimensions()[index]);
   }
@@ -350,6 +403,14 @@ std::size_t Graph::dimension_count() const noexcept {
   return state_ != nullptr ? state_->dimensions.size() : 0;
 }
 
+std::size_t Graph::independent_dimension_count() const noexcept {
+  return state_ != nullptr
+             ? compute::detail::ShapeProgramView{state_->dimensions,
+                                                 state_->shape_guards}
+                   .input_count()
+             : 0;
+}
+
 std::size_t Graph::input_count() const noexcept {
   return state_ != nullptr ? state_->inputs.size() : 0;
 }
@@ -385,7 +446,20 @@ Graph::dimension_bounds(DimensionId dimension) const noexcept {
     return std::unexpected(
         Status::InvalidArgument("dimension does not belong to this graph"));
   }
-  return state_->dimensions[dimension.ordinal()].bounds;
+  const auto bounds = state_->dimensions[dimension.ordinal()].bounds;
+  return DimensionBounds{bounds.minimum, bounds.maximum, bounds.multiple_of};
+}
+
+Result<bool>
+Graph::dimension_is_independent(DimensionId dimension) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, dimension)) {
+    return std::unexpected(
+        Status::InvalidArgument("dimension does not belong to this graph"));
+  }
+  return state_->dimensions[dimension.ordinal()].kind ==
+         compute::detail::ShapeDimensionKind::kInput;
 }
 
 Result<ValueId> Graph::input_id(std::size_t index) const noexcept {
@@ -664,11 +738,42 @@ Result<DimensionId> GraphBuilder::dimension(DimensionBounds bounds) noexcept {
   }
   const std::uint32_t ordinal =
       static_cast<std::uint32_t>(state_->dimensions.size());
-  if (!state_->dimensions.try_push_back(
-          detail::DimensionRecord{.bounds = bounds})) {
+  if (!state_->dimensions.try_push_back(detail::DimensionRecord{
+          .bounds = {bounds.minimum, bounds.maximum, bounds.multiple_of}})) {
     return std::unexpected(allocation_failure());
   }
   return detail::GraphIdentity::dimension(state_->generation, ordinal);
+}
+
+Result<DimensionId> GraphBuilder::dimension_sum(Dimension left,
+                                                Dimension right) noexcept {
+  return derived_dimension(state_, compute::detail::ShapeDimensionKind::kAdd,
+                           left, right);
+}
+Result<DimensionId> GraphBuilder::dimension_product(Dimension left,
+                                                    Dimension right) noexcept {
+  return derived_dimension(
+      state_, compute::detail::ShapeDimensionKind::kMultiply, left, right);
+}
+Result<DimensionId> GraphBuilder::dimension_quotient(Dimension left,
+                                                     Dimension right) noexcept {
+  return derived_dimension(
+      state_, compute::detail::ShapeDimensionKind::kExactDivide, left, right);
+}
+Result<DimensionId>
+GraphBuilder::dimension_broadcast(Dimension left, Dimension right) noexcept {
+  return derived_dimension(
+      state_, compute::detail::ShapeDimensionKind::kBroadcast, left, right);
+}
+Status GraphBuilder::require_dimension_equal(Dimension left,
+                                             Dimension right) noexcept {
+  return shape_guard(state_, compute::detail::ShapeGuardKind::kEqual, left,
+                     right);
+}
+Status GraphBuilder::require_dimension_less_equal(Dimension left,
+                                                  Dimension right) noexcept {
+  return shape_guard(state_, compute::detail::ShapeGuardKind::kLessEqual, left,
+                     right);
 }
 
 Result<ValueId> GraphBuilder::input(compute::TensorDesc description) noexcept {
@@ -983,6 +1088,10 @@ Result<Graph> GraphBuilder::finish() && noexcept {
         Status::FailedPrecondition("graph requires a node or published value"));
   }
   Status dependencies = canonicalize_dependencies(*state_);
+  Status shape = compute::detail::validate_shape_program(
+      {state_->dimensions, state_->shape_guards});
+  if (!shape.ok())
+    return std::unexpected(std::move(shape));
   if (!dependencies.ok())
     return std::unexpected(std::move(dependencies));
   Status effects = validate_effect_order(*state_);

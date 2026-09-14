@@ -80,3 +80,15 @@ signature 保存全部解析值，因此不丢失派生维度 identity。exact-o
 Native concat 和派生 row spec 完成消费，不据此声称完整 bounded artifact、dynamic View attributes、
 variant 或 runtime shape selection 已完成。后几项仍属于 G101/G102 的待办，不用固定 View 常量冒充动态
 reshape。普通 concrete 图和 direct Compute 不需要构造 shape 程序。
+
+## 2026-09-14 G101：有限派生维度接入 exact Graph
+
+上述公开 dimension/guard API 已实现；Builder 只追加已验证的算式，Graph 私有记录直接使用 Compute
+的有限程序。compile 只接受独立维度 binding，冷求值后解析 TensorSpec；signature 保留全部已解析值。
+zero bounds 与 TensorDesc 对齐，未改写用户提供的固定 View attributes。两条实际执行是 concat 派生输出
+轴与 batch×tokens normalization，细节和定向验证见
+[Compute C92 检查点](compute-v9-shape-replay-substrate.md#2026-09-14-c92--g101-首个真实消费检查点)。
+
+Windows shared/static 与 oneDNN 回放通过不等于 G101/G102 完成：目前 Executable 仍是一个 exact point，
+缺少 bounded artifact/全域 schema proof、动态属性和 runtime variant 选择。G100 政策筛选、G103--G107
+的统一成本/资源/常量/custom execution 仍待落实。保持 `AUDITED`，没有完成声明或新性能结论。

@@ -132,3 +132,38 @@ P0：固定大小 value 增加一个 enum，校验/比较保持 `O(1)`；分类�
 
 C90/C91 与 C94 的当前直接迁移已实现，C92/C93 仍未完成；状态继续 `AUDITED`。下一项为有限派生
 shape program 的表示审计与实现，再把完整域传入真实 Graph/Provider，不扩充算子目录。
+
+## 2026-09-14 C92 / G101 首个真实消费检查点
+
+C92 的有限程序已实现：独立维度、checked sum/product/exact-divide/broadcast、equal/less-equal guards；
+轴映射引用程序值，Graph ID 不穿过 Compute 边界。Graph 私有记录复用相同表示与计算，不复制第二套
+整数推导。私有 Provider 表升级至 4，不兼容旧 symbols-only 布局。Graph 公开形状与限制见
+[使用指南](../../../user/graph.md#独立与派生维度)。
+
+`validate_shape_program` / `evaluate_shape_program` 成功路径为 `O(D+G)`、零 heap，使用 caller scratch；
+shape-domain descriptor 绑定另为 `O((I+O)×R)`，`R≤8`。Graph 的这一求值只在冷 compile 发生；原有
+submit、kernel、Queue/Completion、线程策略不变。Graph-owned program/guards 仍由 Mem allocator 与
+Container SmallVector 存放；没有增加第三方、CMake 开关、反向依赖或 Native FFI。错误 Status 可分配。
+
+本地定向反例复核覆盖：前向/自引用、外来 ID、非法 enum/常量/派生 bounds、零尺寸、加乘溢出、除零/
+非整除、广播冲突、scratch 数量、缺失/重复/派生 binding、metadata OOM 后逻辑原子性。小范围穷举使用
+独立逐点算术 oracle，检查保守区间不会排除合法结果。guard 排除 envelope tuple 的用例验证非 exact
+请求不再先做错误的 concrete schema inference；实际 Native/oneDNN 仍明确 exact-only，probe 不冒充
+真实 bounded Provider。
+
+真实 Graph 纵切运行不同具体 shape 的 concat（派生输出轴）和 normalization（batch×tokens 行数），
+校验 payload 与完整 specialization identity；head split/broadcast 反例在 compile 阶段、Provider 接纳工作前
+拒绝非法组合。
+本轮首编译因 Graph 私有头路径拼写失败，已按既有相邻因子 include 方式修复，随后全部定向编译通过；
+未修改中央 build system。
+
+- Windows Release source-tree shared/static 定向各 9/9 通过，各含 228 个单元用例及四组逐头。
+- oneDNN-enabled shared 的 direct/composition/Graph/region/逐头 8/8 通过。
+- 三套既有 build 顺序执行，最大编译并行度 2；没有全库 correctness 或新 P1。
+- impact selector 为 READY，保留 CUDA、三平台/sanitizer、installed SDK 与基础 P1 待完整候选执行；
+  本检查点不替这些项签 PASS。closure checker（39 components/schema 4）、docs checker（288 页/1034
+  relative links）与 `git diff --check` 通过。
+
+C90--C92 与 C94 的本次 SPI 迁移完成；C93 identity/profile、Graph bounded/runtime variants、动态 View
+attributes 与其余 G100--G107 仍未完成。这里只完成有限 shape substrate 和 exact Graph 消费，组件继续
+`AUDITED`，不签整个 A2、foundation candidate、CLOSED 或新性能胜利。

@@ -170,11 +170,11 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   // declines to Native independently of the shape-domain contract.
   const std::array inputs{matrix(16, 5), matrix(5, 4)};
   const std::array outputs{matrix(16, 4)};
-  std::array ranges{ProviderShapeRange{1, 16, 1}};
+  std::array dimensions{ShapeDimension{.bounds = {1, 16, 1}}};
   std::array<ProviderTensorAxes, 2> input_axes{};
   std::array<ProviderTensorAxes, 1> output_axes{};
-  input_axes[0].symbols[0] = output_axes[0].symbols[0] = 0;
-  const ProviderShapeDomain domain{ranges, input_axes, output_axes};
+  input_axes[0].values[0] = output_axes[0].values[0] = 0;
+  const ProviderShapeDomain domain{dimensions, input_axes, output_axes};
   std::array<ResourceBindingRequirement, 2> input_requirements{};
   std::array<ResourceBindingRequirement, 1> output_requirements{};
   const auto propose = [&]() {
@@ -185,7 +185,7 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   auto bounded = propose();
   ASSERT_FALSE(bounded.has_value());
   EXPECT_TRUE(bounded.error().IsUnimplemented());
-  ranges[0].minimum = 16;
+  dimensions[0].bounds.minimum = 16;
   auto exact = propose();
   ASSERT_TRUE(exact.has_value()) << exact.error().message();
   EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);

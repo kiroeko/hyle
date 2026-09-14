@@ -18,28 +18,29 @@ Status validate_tensors(ProviderShapeDomain domain,
     if (!description.valid())
       return Status::InvalidArgument("provider shape tensor is invalid");
     for (std::size_t axis = description.rank(); axis < kMaxTensorRank; ++axis) {
-      if (maps[index].symbols[axis] != kFixedShapeAxis) {
+      if (maps[index].values[axis] != kFixedShapeAxis) {
         return Status::InvalidArgument(
             "provider shape axis map exceeds tensor rank");
       }
     }
     bool dynamic = false;
     for (std::size_t axis = 0; axis < description.rank(); ++axis) {
-      const std::uint32_t symbol = maps[index].symbols[axis];
+      const std::uint32_t symbol = maps[index].values[axis];
       if (symbol == kFixedShapeAxis)
         continue;
-      if (symbol >= domain.symbols.size()) {
+      if (symbol >= domain.dimensions.size()) {
         return Status::InvalidArgument(
-            "provider shape axis refers to an unknown symbol");
+            "provider shape axis refers to an unknown value");
       }
-      const ProviderShapeRange range = domain.symbols[symbol];
+      const ProviderShapeRange range = domain.dimensions[symbol].bounds;
       if (description.dimensions()[axis] != range.last()) {
         return Status::InvalidArgument(
-            "provider shape tensor does not describe its upper point");
+            "provider shape tensor does not describe its envelope");
       }
       dynamic = dynamic || !range.exact();
       if (!range.exact() && description.block_axis() == axis &&
-          range.multiple_of % description.storage_format().elements_per_block() !=
+          range.multiple_of %
+                  description.storage_format().elements_per_block() !=
               0) {
         return Status::InvalidArgument(
             "provider shape domain contains incomplete storage blocks");
@@ -64,7 +65,7 @@ Status bind_tensors(std::span<const TensorDesc> upper,
     std::array<std::int64_t, kMaxTensorRank> extents{};
     bool changed = false;
     for (std::size_t axis = 0; axis < description.rank(); ++axis) {
-      const std::uint32_t symbol = maps[index].symbols[axis];
+      const std::uint32_t symbol = maps[index].values[axis];
       extents[axis] = symbol == kFixedShapeAxis ? description.dimensions()[axis]
                                                 : point[symbol];
       changed = changed || extents[axis] != description.dimensions()[axis];
@@ -95,14 +96,9 @@ validate_shape_domain(ProviderShapeDomain domain,
                       std::span<const TensorDesc> upper_outputs) noexcept {
   if (domain.empty())
     return Status::Ok();
-  if (domain.symbols.size() >= kFixedShapeAxis) {
-    return Status::ResourceExhausted(
-        "provider shape domain exceeds symbol identity capacity");
-  }
-  for (ProviderShapeRange range : domain.symbols) {
-    if (!range.valid())
-      return Status::InvalidArgument("provider shape range has no legal point");
-  }
+  Status program_status = validate_shape_program(domain.program());
+  if (!program_status.ok())
+    return program_status;
   Status status = validate_tensors(domain, upper_inputs, domain.inputs);
   return status.ok() ? validate_tensors(domain, upper_outputs, domain.outputs)
                      : status;
@@ -111,24 +107,21 @@ validate_shape_domain(ProviderShapeDomain domain,
 Status bind_shape_domain(ProviderShapeDomain domain,
                          std::span<const TensorDesc> upper_inputs,
                          std::span<const TensorDesc> upper_outputs,
-                         std::span<const std::int64_t> point,
+                         std::span<std::int64_t> values,
                          std::span<TensorDesc> inputs,
                          std::span<TensorDesc> outputs) noexcept {
   if (inputs.size() != upper_inputs.size() ||
       outputs.size() != upper_outputs.size() ||
-      point.size() != domain.symbols.size()) {
+      values.size() != domain.dimensions.size()) {
     return Status::InvalidArgument(
         "provider shape binding counts do not match the domain");
   }
   Status status = validate_shape_domain(domain, upper_inputs, upper_outputs);
   if (!status.ok())
     return status;
-  for (std::size_t index = 0; index < point.size(); ++index) {
-    if (!domain.symbols[index].contains(point[index])) {
-      return Status::OutOfRange(
-          "provider shape binding is outside its declared domain");
-    }
-  }
+  status = evaluate_shape_program(domain.program(), values);
+  if (!status.ok())
+    return status;
   if (domain.empty()) {
     for (std::size_t index = 0; index < inputs.size(); ++index)
       inputs[index] = upper_inputs[index];
@@ -136,9 +129,9 @@ Status bind_shape_domain(ProviderShapeDomain domain,
       outputs[index] = upper_outputs[index];
     return Status::Ok();
   }
-  status = bind_tensors(upper_inputs, domain.inputs, point, inputs);
+  status = bind_tensors(upper_inputs, domain.inputs, values, inputs);
   return status.ok()
-             ? bind_tensors(upper_outputs, domain.outputs, point, outputs)
+             ? bind_tensors(upper_outputs, domain.outputs, values, outputs)
              : status;
 }
 
