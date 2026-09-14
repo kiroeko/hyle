@@ -285,14 +285,15 @@ Provider 或 region 最后胜出，后排候选也可以被发现。`propose` �
 region 的 boundary、资源要求、runtime 与效果声明也在发现阶段查询并缓存；required target 不允许的
 候选不做资源查询。查询不代表后面一定会 compile 该候选，Provider 不应在这里创建重型制品。
 资源要求非法或后排查询出现真实错误，同样在准备任何制品前失败；明确 unsupported 只排除该候选。
-某个 region 的已选资源路线被安全拒绝后，释放本次构造的制品并排除该
+某个 region 的已选资源路线，或某个 leaf 的 prepare 被明确安全拒绝后，释放本次构造的制品并排除该
 候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
 leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现或资源查询，
 不重置任何预算。当前这还是确定性重选，不是完整的 leaf/region 同池成本优化或所有资源组合的穷举。
-普通算子的初步 target/storage 规划不调用 prepare；全部节点具备初步覆盖后，才按选中的收缩图顺序
-构造制品。正常 leaf 使用保存的资源选择，仍经 Compute 最终校验；明确 prepare decline 才寻找后备路线。
-因此后续节点已知无能力/无合法 storage 时，不会先给前面的 leaf 做 JIT/packing；不承诺提前证明任意
-Provider 的真实 prepare 必定成功，也不把 region 的全部资源/成本规划宣称为已经完成。
+先构造完整 leaf/region/copy 的物理步骤和 storage 路线（包括最终输出 copy），之后才准备选中的制品；
+因此后续已知无能力/无合法 storage/copy 承载 target 时，不会先给前面的步骤做 JIT/packing。最终 prepare
+只使用已选路线，仍经 Compute 校验；不能原地换 Provider/target/storage，明确 decline 必须整图重规划。
+这可能重新准备已成功的前缀，全部计入累计预算。不承诺提前证明任意 Provider 的真实 prepare 必定成功：
+精确 workspace/persistent、lane/内存和实际 Queue transfer 仍需后续校验，完整成本搜索尚未完成。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 
@@ -401,7 +402,7 @@ multi-stream capture。
 `CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
 
 - `search()` 的 `operation_proposals/region_proposals`、已接收 region node 数、累计 prepare 次数、
-  `region_route_rejections` 安全拒绝数和是否因
+  `region_route_rejections/operation_route_rejections` 安全拒绝数和是否因
   容量省略了候选/provider；正常拒绝不等于搜索容量耗尽；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；

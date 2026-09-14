@@ -398,6 +398,8 @@ struct CompileSearchReport final {
   // Candidates excluded after an explicit transactional decline or an
   // incompatible resource route. Rejection is not search-budget exhaustion.
   std::size_t region_route_rejections = 0;
+  // Leaf routes excluded by a selected-route transactional prepare decline.
+  std::size_t operation_route_rejections = 0;
   bool region_proposal_limit_reached = false;
   bool per_provider_proposal_limit_reached = false;
   bool region_node_limit_reached = false;

@@ -352,14 +352,19 @@ NodeId add_resource_touch(GraphBuilder &builder, EffectResourceId resource,
 
 class HostResource final : public hyle::mem::MemoryResource {
 public:
+  explicit HostResource(bool host_accessible = true) noexcept
+      : host_accessible_(host_accessible) {}
+
   std::string_view name() const noexcept override {
     return "graph.region-test.host";
   }
 
   hyle::mem::MemoryProperties properties() const noexcept override {
     return hyle::mem::MemoryProperties{
-        .flags = hyle::mem::MemoryProperty::kHostAccessible |
-                 hyle::mem::MemoryProperty::kHostDeviceCoherent,
+        .flags = host_accessible_
+                     ? hyle::mem::MemoryProperty::kHostAccessible |
+                           hyle::mem::MemoryProperty::kHostDeviceCoherent
+                     : hyle::mem::MemoryProperty::kNone,
         .domain = hyle::mem::MemoryDomainId{this, 0},
     };
   }
@@ -383,6 +388,9 @@ public:
         nullptr,
     };
   }
+
+private:
+  bool host_accessible_;
 };
 
 OwnedTensor make_tensor(TensorDesc description) {
@@ -3194,6 +3202,50 @@ TEST(GraphRegions, FallsBackWhenASelectedRegionHasNoResourceRoute) {
   }
 }
 
+TEST(GraphRegions, LaterRegionResourceDeclineDoesNotPrepareAnEarlierLeaf) {
+  const auto logical = make_negations(3);
+  HostResource unavailable;
+  RegionProbe probe{.mode = ProposalMode::kSingleton, .singleton_node = 2};
+  probe.required_resource = hyle::mem::system_resource();
+  probe.region_output_resource = hyle::mem::MemoryResourceRef(unavailable);
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+  EXPECT_EQ(probe.compile_count, 0u);
+  // The abandoned region partition prepares neither of its two prefix leaves.
+  // Each leaf is prepared exactly once, in the final all-leaf construction.
+  EXPECT_EQ(probe.single_artifact_count, 3u);
+  EXPECT_EQ(probe.destroy_prepared_count, 0u);
+  EXPECT_EQ(probe.single_proposal_count, 3u);
+  EXPECT_EQ(probe.region_resource_count, 1u);
+}
+
+TEST(GraphRegions, UnavailableFinalOutputCopyFailsBeforeAnyArtifact) {
+  const auto logical = make_negations(2);
+  HostResource inaccessible{false};
+  RegionProbe probe;
+  probe.required_resource = hyle::mem::system_resource();
+  auto context = make_context(probe);
+  const Environment environment{
+      {&context, probe.required_resource},
+      {&context, hyle::mem::MemoryResourceRef(inaccessible)}};
+  const std::array external{hyle::graph::ExternalResourceContract{
+      logical.output, environment.storage(1)}};
+  for (const auto selection : {RegionSelectionPolicy::kDisabled,
+                               RegionSelectionPolicy::kPreferProviderRegions}) {
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.external_resources = external, .region_selection = selection});
+    ASSERT_FALSE(compiled);
+    EXPECT_TRUE(compiled.error().IsUnimplemented());
+    EXPECT_EQ(probe.compile_count, 0u);
+    EXPECT_EQ(probe.single_artifact_count, 0u);
+    EXPECT_EQ(probe.destroy_prepared_count, 0u);
+  }
+}
+
 TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   probe.capture_supported = true;
@@ -4449,8 +4501,9 @@ TEST(GraphRegions, ExplicitLeafDeclinesCanSelectAnotherTarget) {
       ProviderPrepareOutcome::resource_declined(
           Status::ResourceExhausted("leaf candidate-local budget"))};
   for (const auto &decline : declines) {
+    HostResource first_storage, second_storage;
     RegionProbe probe;
-    probe.required_resource = hyle::mem::system_resource();
+    probe.required_resource = hyle::mem::MemoryResourceRef(first_storage);
     probe.single_outcome_override = decline;
     const std::array providers{region_provider(probe)};
     auto first =
@@ -4459,17 +4512,113 @@ TEST(GraphRegions, ExplicitLeafDeclinesCanSelectAnotherTarget) {
     auto second = Context::create(hyle::compute::cpu::device(),
                                   hyle::compute::native::provider())
                       .value();
-    const Environment environment{{&first, probe.required_resource},
-                                  {&second, probe.required_resource}};
+    const Environment environment{
+        {&first, probe.required_resource},
+        {&second, hyle::mem::MemoryResourceRef(second_storage)}};
+    const std::array external{hyle::graph::ExternalResourceContract{
+        logical.output, environment.storage(1)}};
     auto compiled = hyle::graph::compile(
         logical.graph, environment.environment(),
-        {.region_selection = RegionSelectionPolicy::kDisabled});
+        {.external_resources = external,
+         .region_selection = RegionSelectionPolicy::kDisabled});
     ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
     EXPECT_EQ(probe.single_artifact_count, 1u);
     EXPECT_EQ(probe.destroy_prepared_count, 1u);
     EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
     EXPECT_EQ(compiled->report.search().placement_attempts, 2u);
+    EXPECT_EQ(compiled->report.search().operation_route_rejections, 1u);
+    EXPECT_EQ(probe.single_proposal_count, 1u);
+    EXPECT_EQ(compiled->report.step_count(), 1u);
+    // The first route would copy its output from storage 0 to storage 1;
+    // the replacement produces there directly. No obsolete copy survives.
+    EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+    auto input = make_tensor(row(8), probe.required_resource);
+    auto output =
+        make_tensor(row(8), hyle::mem::MemoryResourceRef(second_storage));
+    const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+    write(input, values);
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+    auto queue = second.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+    auto expected = std::vector<float>(values.begin(), values.end());
+    for (auto &value : expected)
+      value = -value;
+    EXPECT_EQ(read(output, values.size()), expected);
   }
+}
+
+TEST(GraphRegions, LeafDeclineReleasesTheRegionPrefixBeforeReplanning) {
+  const auto logical = make_negations(3);
+  RegionProbe probe;
+  probe.observe_cleanup = &probe;
+  probe.required_resource = hyle::mem::system_resource();
+  probe.single_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("declined tail leaf"));
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context,
+                                       {.max_placement_attempts = 4});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(probe.compile_count, 2u);
+  EXPECT_EQ(probe.single_artifact_count, 1u);
+  EXPECT_EQ(probe.destroy_prepared_count, 2u); // rejected leaf + old prefix
+  EXPECT_EQ(probe.observed_cleanup_at_compile, 2u);
+  EXPECT_EQ(probe.single_proposal_count, 3u);
+  EXPECT_EQ(probe.region_resource_count, 1u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 4u);
+  EXPECT_EQ(compiled->report.search().operation_route_rejections, 1u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 0u);
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+  auto expected = std::vector<float>(values.begin(), values.end());
+  for (auto &value : expected)
+    value = -value;
+  EXPECT_EQ(read(output, values.size()), expected);
+}
+
+TEST(GraphRegions,
+     RegionAndLeafDeclinesShareDiscoveryAndCumulativePrepareBudget) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  probe.required_resource = hyle::mem::system_resource();
+  probe.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("declined region"));
+  probe.single_outcome_override = ProviderPrepareOutcome::resource_declined(
+      Status::ResourceExhausted("declined leaf budget"));
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context,
+                                       {.max_placement_attempts = 6});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(probe.propose_count, 1u);
+  EXPECT_EQ(probe.region_resource_count, 1u);
+  EXPECT_EQ(probe.single_proposal_count, 2u);
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.single_artifact_count, 2u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 6u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+  EXPECT_EQ(compiled->report.search().operation_route_rejections, 2u);
+  EXPECT_EQ(compiled->report.region_count(), 0u);
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+  auto insufficient = hyle::graph::compile(logical.graph, context,
+                                           {.max_placement_attempts = 5});
+  ASSERT_FALSE(insufficient);
+  EXPECT_TRUE(insufficient.error().IsResourceExhausted());
 }
 
 TEST(GraphRegions, LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets) {

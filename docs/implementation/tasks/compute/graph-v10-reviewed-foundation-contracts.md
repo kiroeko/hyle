@@ -582,3 +582,46 @@ Compute 受影响直接消费者、逐头及 CPU/CUDA 三交付，不运行 P1/�
 - guide/closure/docs/diff 校验通过。统一脚本自实现不含测试：Compute 16,162、Graph 10,952，合计
   27,114 行。两个组件保持 `AUDITED`；完整 selector/profile/有限搜索、bounded/variants、常量所有权与
   终局跨平台验证仍未签发，不代表 foundation gate 完成。
+
+### G103/G104：完整物理 skeleton 与统一 prepare 拒绝（实现前固定）
+
+`1c955b3c` 仍边发出 physical step 边 prepare：后排 region 无合法 storage 或输出 copy 无承载 target 时，
+前排 artifact 已创建；leaf prepare decline 还会原地换 Provider/target/storage，不适合完整计划成本比较。
+本段固定改为先建立全部 leaf/region/copy 的物理步骤、端口与 storage，再只准备这份确定的路线。
+不伪造尚需 artifact 才能获得的精确 workspace/persistent 事实；lane/内存与实际 Queue transfer 校验仍在
+既有后续阶段，不能把 physical skeleton 当成完整可执行资格。
+
+leaf 复用已有 node/target/Provider 候选，增加 compile-local rejected 位；明确 prepare decline 与 region 一样
+销毁本次制品后排除对应候选、整图重规划。禁止在最终 prepare 循环改变路线。新增
+`CompileSearchReport::operation_route_rejections` 披露该事实；候选、累计 prepare 上限仍独立且不重置。
+真正错误（包括 kind=Error 的 Unimplemented/ResourceExhausted）立即终止。空 prepared handle 只存在
+compile 私有事务内；仅 Plan/Report 已有 search facts 增加冷计数，不增加每 step/Invocation 字段，
+不允许未准备步骤进入 schedule/report/replay。
+
+验证：后排 region 资源无解与最终 copy 无 target 时前排 prepare=0；region/leaf 在同一重选中互不重复
+发现；leaf 拒绝后 target/storage 变化重新生成 copy/依赖，已有前缀先释放；所有预算、hard Provider/
+target、错误与 OOM 回滚反例、实际数值及 CUDA 多 lane 继续通过。只做相关 Graph/oneDNN/CUDA/
+逐头/三交付及公共检查，P0 审查新增冷位与循环边界，不运行 P1；统一 qualified 成本/state search 仍继续。
+
+本段结果（2026-09-15）：已按上述顺序拆开构造/准备，移除 leaf 原地换路线的 prepare 循环及单节点 span
+中转。空 handle 只留在私有构造期；成功返回前每个非 copy 步骤都取得合法 owning artifact，后续调度与
+replay 仍使用原结构。新增 report 的 leaf 拒绝计数，默认 0；没有修改已 CLOSED 依赖或 CMake 组件边。
+
+- 新增 4 个反例，executable 共 165 例：后排 region 资源拒绝不提前准备前缀；最终输出 copy 无承载
+  target 时 leaf/region 均零 prepare；leaf 拒绝先释放 region 前缀；region+leaf 混合拒绝共用发现结果和
+  累计预算。原跨 target 反例扩成跨 storage 实际计算，证明替代路线不残留旧 copy；6 次 prepare 的完整
+  路线在预算 5 时正确失败，没有扩大预算掩盖退化。原 OOM/错误/硬约束/并发用例通过。
+- Windows Release static Graph/逐头 3/3，shared + oneDNN Graph/两组逐头 5/5，CUDA Graph 1/1 通过，
+  缓存分别为前述 `compute-route-v8-static-20260914`、`compute-route-onednn-v8-20260914`、
+  `compute-graph-v7-cuda`。CPU/CUDA 普通 source/installed static/installed shared 各 2/2 通过；三个交付
+  旅程均重建 Graph，安装前缀仍显式指定 scratch。
+- shared producer 与 consumer 的 CPU/CUDA Graph DLL SHA-256 均为
+  `8ED2039F7C7308F4C3437919B439B27B80C2F7BCDBD17B8DC5E12A23F92A8F4F`。公共 report 字段变化后安装
+  consumer 已重新编译/relink，不用旧客户端二进制冒充交付验证。
+- P0：每 leaf 候选增加一个冷 rejected 标志及其对齐，每 Plan/Report search facts 增加一个计数；不增加
+  per-step/Invocation 字段或热提交逻辑。每次安全拒绝至少排除一个此前未拒绝的有限候选，累计 prepare
+  上限仍生效；准备循环是已选步骤/端口的线性遍历，不搜索路线。重选可能重建成功前缀，属于显式冷
+  事务成本，并未签成全局性能胜利。没有运行 P1 或全库测试。
+- impact READY，89 项跳过；closure/docs/diff 通过。Graph 自实现不含测试 10,863 行，Compute 未改仍为
+  16,162 行，合计 27,025 行。保持 `AUDITED`；下一项仍为完整候选计划的 qualified 成本、同池选择和
+  state 预算，不将本段当成 G103/G104 或 foundation 整体完成。
