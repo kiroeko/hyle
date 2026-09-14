@@ -272,8 +272,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v11-bounded-instantiation.md",
-      "summary": "compute v11 AUDITED：保留 v10 owning custom/profile 与未完成 C93 真实资格；C110--C112 为 Graph/Native 绑定已编译域的冷实例化、完整尺寸/生命周期验证，exact warm route 不变，基础 gate 尚未完成。"
+      "record": "docs/implementation/tasks/compute/compute-v12-metadata-ownership.md",
+      "summary": "compute v12 AUDITED：承接 v11 已编译域与未完成 C93/foundation；C120--C122 接齐 Graph 编译/实例 metadata allocator、失败回滚和 parent 保活，公共 direct 与 warm route 不变；完整基础 gate 尚未完成。"
     },
     {
       "module": "graph",

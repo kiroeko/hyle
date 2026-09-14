@@ -1058,3 +1058,9 @@ allocator bookkeeping。Graph 这一修改只向原有调用传 allocator，热 
 unique resident/compile peak/并发 Invocation/capture 预算或 Provider packing 共享；这些仍是 G106
 活动 FIX，不把前置依赖通过当作基础 gate 完成。当前 Compute/Graph 与此前检查点的实现 LOC 不变：
 **16,670 / 12,273**，合计 **28,943**，不含测试与第三方。
+
+后续 owner 追踪确认 Compute 的 leaf propose/prepare/domain instance/invocation 仍固定使用 Context/root
+allocator，会绕过独立的 Graph metadata 预算。该下层有限修改已绑定
+[Compute v12 C120--C122](compute-v12-metadata-ownership.md)；Graph 本卡只在现有冷调用传递自己的
+plan/instance allocator。Region prepare 已使用 Graph owner；完整 resident/峰值/并发/capture 与私有
+packing 仍是 G106 待实现范围，不以 allocator seam 冒充整体预算。
