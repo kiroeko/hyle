@@ -3,6 +3,7 @@
 hyle_add_module(compute SOURCES
   command_capture.cc
   completion.cc
+  custom_kernel.cc
   device.cc
   operation.cc
   provider.cc

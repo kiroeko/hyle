@@ -74,3 +74,53 @@ compile → 每 lane 一个 Invocation → 重复 submit/Completion。没有第�
 
 本卡已完成 scope 与上述表示审计，以继承的 `AUDITED` 活动阶段绑定新有限集合；不是 CLOSED 的重新
 审查，也不重置/伪造 v9 的未完成项。七门与 foundation gate 均未签发。
+
+## 2026-09-14 C100--C103：公开 owning execution 检查点
+
+C100--C102 的上述表示已实现。`custom_kernel.h` 提供 typed factory/kernel，`custom_kernel.cc` 只负责冷
+owner/结果适配；原 prepared callback 表移到安装的 detail 头，内置 Provider 与 custom 使用同一个
+回调层。`ResourceRequirement` 公开既有约束表示，内部 matcher 复用它，不增加平行资源政策。
+
+源码复核确认 Context 先销毁 provider context 再释放配置，PreparedOperation/Invocation/Completion
+沿既有链保活；factory name/version 在移动 factory 前复制。Kernel 和 Invocation 各自保留或使用原
+allocator 的释放边界。具名 factory/kernel 在无效参数或 allocation 失败时不被移动，部分结果按 RAII
+清理；unsupported/resource-decline 与同码 fatal error 不混淆。
+
+- 11 个 custom 单元用例覆盖 move-only、const copyable、over-alignment、复制/移动/自赋值、配置文本
+  生命周期、全部冷分配失败与恢复、partial cleanup、错误分类、串行声明和独立 Invocation 并发。
+  direct 与两节点 Graph 检查实际输出和重复重放不再 propose/prepare，不只检查回调次数。
+- 公开 [独立消费工程](../../../../samples/package/graph/custom_kernel/README.md) 不包含 `src/`。CPU
+  factory/type 位于单独 shared library；CUDA native kernel 位于独立 CUDA library，普通 C++23 factory
+  使用 HYLE Queue 的原生 stream。CUDA 覆盖 257 元素尾块、双 Queue、两节点 exact capture/replay、配置
+  保活，以及真实 launch 后注入错误的 Completion 和实际输出。
+- 示例的 scale/bias 属于 Operation 数值语义，factory 只持有不改变结果的分块配置；CPU `std::fma` 与
+  CUDA `__fmaf_rn` 同为一次舍入。静态 CPU consumer 曾因 factory 要求另一 image 的精确
+  `system_resource()` 而失败，已按算法实际需求改为 host-accessible/alignment；未放宽产品 matcher。
+- 串行 artifact 的 direct 用法在公开声明/guide 明确：同一 PreparedOperation 的全部 Invocation 须
+  串行到 Completion 终态；direct 不额外增加共享锁。Graph 约束同一 Executable 内的并发，跨 Executable
+  的外部借用资源仍由调用方同步。
+
+本次实际 Windows Release 验证（MSVC 19.50；CUDA 13.3，RTX 4070）：
+
+| 范围 | 缓存/命令定位 | 结果 |
+|---|---|---|
+| Compute/CPU/Graph source-tree shared/static 与逐头 | `C:/hyle-scratch/compute-route-v8-20260914`、`compute-route-v8-static-20260914`；`hyle-windows.ps1` Build/Test，`--parallel 2` | 各 7/7；补齐 11 个 custom 用例后 shared CPU/Native 定向 4/4、static CPU/Graph 定向 2/2 和 Compute 逐头 1/1 通过 |
+| oneDNN direct/composition/Graph region 与逐头 | `C:/hyle-scratch/compute-route-onednn-v8-20260914` | 9/9 通过 |
+| CUDA backend、late-failure 独立进程、Graph 与 CUDA 逐头 | `C:/hyle-scratch/compute-graph-v7-cuda`；CTest `--parallel 1` | 4/4 通过 |
+| CPU/CUDA 普通源码消费 | `C:/hyle-scratch/custom-execution-v10-source-consumer`；`HYLE_SAMPLE_SOURCE` + `HYLE_SAMPLE_CUDA=ON` | 2/2 通过 |
+| CPU/CUDA installed shared 消费 | `custom-execution-v10-shared-build` → `-shared-sdk` → `-shared-cuda-consumer`，均在 `C:/hyle-scratch/` | 2/2 通过 |
+| CPU/CUDA installed static 消费 | `custom-execution-v10-static-build` → `-static-sdk` → `-static-consumer`；真实 `HYLE_STATIC=ON` | 2/2 通过 |
+
+源码/安装样例的两种 kernel 在统一 fma 语义后均重新通过。CUDA 示例保持一个 HYLE runtime owner，
+native kernel 可以跨 image；不承诺不同 DLL 各自静态链接 HYLE 后可互换 backend 私有资源身份。
+这一限制、code image/allocator 保活、exact-only 和非 delegated 适用范围均写入 guide。
+
+P0：Provider 仍为 table pointer + 6 pointers inline payload（本机 56 bytes）；内置配置不分配、不引用
+计数。custom 配置一次冷分配，Context、typed kernel、typed Invocation 各有冷存储；复制 custom handle
+有冷 retain/release。`operation.cc`、Graph warm execution 和 CPU/CUDA backend 产品代码本次未改，
+custom warm enqueue 直接进入既有 prepared callback 的 typed trampoline，无额外虚函数层或 HYLE 热
+分配/search/JIT。未运行 P1，不据源码结构签发最终性能胜负。
+
+此检查点完成 Windows 的 C103 旅程，不签整个 foundation gate。Linux/macOS、适用 sanitizer、终局
+独立红队和基础 P1 随完整 candidate 验证；C93 完整 profile、Graph bounded/variants、统一完整成本与
+constant ownership 仍在既定范围内待实现。组件保持 `AUDITED`，不重开已 CLOSED 的 backend 或其它依赖。

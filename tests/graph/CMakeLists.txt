@@ -5,6 +5,7 @@ hyle_add_test(graph SOURCES graph_test.cc)
 if(TARGET hyle_compute_backend_cpu AND TARGET hyle_compute_provider_native)
   hyle_add_test(graph NAME executable SOURCES
     executable_test.cc
+    custom_kernel_test.cc
     region_provider_test.cc
     DEPS hyle_compute_backend_cpu hyle_compute_provider_native Threads::Threads)
   target_include_directories(hyle_graph_executable_test PRIVATE

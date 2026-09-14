@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/prepared_callbacks.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/detail/resource_binding.h"
 #include "hyle/compute/prepared_operation.h"
@@ -19,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 7;
+inline constexpr std::uint32_t kProviderContractVersion = 8;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -55,40 +56,6 @@ struct ProviderPrepareRequest final {
   std::span<const mem::MemoryResourceRef> output_resources{};
   mem::MemoryResourceRef workspace_resource{};
   std::uint64_t route = 0;
-};
-
-struct ProviderPreparedVTable final {
-  void (*destroy_prepared)(void *state,
-                           mem::AllocatorRef allocator) noexcept = nullptr;
-  AliasSupport (*alias_support)(void *prepared, std::size_t output_index,
-                                std::size_t input_index) noexcept = nullptr;
-  Status (*create_invocation)(void *prepared, mem::AllocatorRef allocator,
-                              mem::BufferView workspace,
-                              void **invocation) noexcept = nullptr;
-  void (*destroy_invocation)(void *invocation,
-                             mem::AllocatorRef allocator) noexcept = nullptr;
-  // Exactly one submit callback is present, selected by runtime.mode.
-  // shared_submit records into an already-open HYLE Queue sequence and never
-  // creates a Completion. delegated_submit owns its independent endpoint and
-  // returns its one real Completion; it must consume dependencies without a
-  // hidden host wait or return Unimplemented before accepting work.
-  EnqueueResult (*shared_submit)(
-      void *prepared, void *invocation, Queue &queue,
-      std::span<const ConstTensorView> inputs,
-      std::span<const TensorView> outputs) noexcept = nullptr;
-  Result<Completion> (*delegated_submit)(
-      void *prepared, void *invocation,
-      std::span<const CompletionDependency> dependencies,
-      std::span<const ConstTensorView> inputs,
-      std::span<const TensorView> outputs) noexcept = nullptr;
-  // Delegated-only cold endpoint contract. Graph calls endpoint() after
-  // invocation creation and asks can_import_endpoint() for every dependency
-  // edge before replay. A true answer commits delegated_submit() to consuming
-  // the matching CompletionDependency without a hidden host wait.
-  CompletionEndpoint (*endpoint)(void *prepared,
-                                 void *invocation) noexcept = nullptr;
-  bool (*can_import_endpoint)(void *prepared, void *invocation,
-                              CompletionEndpoint source) noexcept = nullptr;
 };
 
 struct ProviderPrepared final {
@@ -144,6 +111,10 @@ struct ProviderVTable final {
   // implementation is loaded.
   const void *(*query_extension)(void *context,
                                  ProviderExtensionId id) noexcept = nullptr;
+  // Optional owning configuration. Only Provider copy/destroy use these cold
+  // hooks; builtin inline configurations and every prepared submit are unchanged.
+  void (*retain_configuration)(const Provider &provider) noexcept = nullptr;
+  void (*release_configuration)(const Provider &provider) noexcept = nullptr;
 };
 
 // Cross-factor cold preparation seam used by Graph. It exposes proposals for

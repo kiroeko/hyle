@@ -91,6 +91,9 @@ struct ProviderRuntimeProperties final {
   ProviderReplayClass replay_class = ProviderReplayClass::kUnknown;
   bool blocks_host = false;
   bool uses_private_threads = false;
+  // Per prepared artifact. False requires direct callers to serialize all
+  // its Invocations through terminal Completion, not just through enqueue.
+  // Graph enforces the corresponding exclusion within one Executable.
   bool supports_concurrent_invocations = true;
   bool capture_compatible = false;
 
@@ -174,13 +177,20 @@ struct ProviderAccess;
 struct ProviderVTable;
 } // namespace detail
 
-// Small, copyable provider configuration value. It owns no backend runtime;
-// Context creation copies this value and creates provider state once. Provider
-// identity is open and versioned, so independently shipped implementations do
-// not require a central enum update.
+// Small, copyable configuration, not a backend runtime. Builtin configurations
+// are inline; make_custom_provider owns its captured factory. Context copies
+// retain that configuration until all artifacts/in-flight work release it.
+// Copying separate handles is thread-safe; mutating one handle is exclusive.
+// The implementation's code image and any explicitly borrowed resources must
+// outlive every retained handle. Identity views are borrowed from this owner.
 class Provider final {
 public:
   constexpr Provider() noexcept = default;
+  HYLE_COMPUTE_API Provider(const Provider &other) noexcept;
+  HYLE_COMPUTE_API Provider &operator=(const Provider &other) noexcept;
+  HYLE_COMPUTE_API Provider(Provider &&other) noexcept;
+  HYLE_COMPUTE_API Provider &operator=(Provider &&other) noexcept;
+  HYLE_COMPUTE_API ~Provider();
 
   constexpr bool valid() const noexcept { return vtable_ != nullptr; }
   constexpr explicit operator bool() const noexcept { return valid(); }

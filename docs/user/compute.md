@@ -40,6 +40,7 @@ direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape prog
 | 候选筛选 | `TopK` | f32 任意 axis，largest/smallest、sorted/stable 语义，返回 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
 | 注意力 | `ScaledDotProductAttention` | f32 rank-4 BSHD/BHSD，Q/K depth 与 V/output depth 可不同；可选 bottom-right causal、Bool/additive 广播 mask，分块 online softmax 与显式 caller-owned workspace |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
+| 可准备、可进入 Graph 的用户 kernel | `make_custom_provider` + `make_custom_kernel` | owning typed factory；shared HYLE Queue，逐 Invocation 状态；见下文完整例子 |
 | CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |
 | byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
 | 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
@@ -414,8 +415,9 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 
 ## 所有权、失败和限制
 
-- `Backend`、`Device` 和 `Provider` 是廉价、可复制的进程内值；它们以开放的双字 ID 标识实现，不要求
-  修改中央枚举。`Context`、`Queue`、`OperationInvocation` 与 `Completion` 是 move-only；
+- `Backend`、`Device` 和 `Provider` 是可复制的进程内值；它们以开放的双字 ID 标识实现，不要求
+  修改中央枚举。内置 Provider 配置 inline；custom Provider 复制时保留其 owning factory（冷引用计数），
+  identity 的 name/version view 借用这个 owner。`Context`、`Queue`、`OperationInvocation` 与 `Completion` 是 move-only；
   `PreparedOperation` 可复制共享。
 - `Context::close()` 与 `Queue::close()` 原子地停止新 admission；`drain()` 显式等待已接纳工作。析构只
   close/release，不把等待藏进析构路径。CPU completion 当前立即终态；异步 backend 可返回真正的
@@ -436,8 +438,7 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 - typed custom `Operation` 的 `OperationId` 同样标识完整 schema/version 和 inline descriptor layout；改变字段、
   大小或语义必须换 ID。`custom_id()` 可作冷路径分派/诊断，`custom_as<T>()` 以该 ID 和精确 descriptor
   字节数校验，因此 producer 与 consumer 可以位于不同 source/static/shared factor；不要复用 ID 模拟兼容。
-  这只是 schema 描述/识别，不会自动提供执行实现。目前安装包尚无通用的 owning custom-kernel factory
-  可把用户实现接入 Graph；已接受的补齐方向见 [custom execution 设计](../architecture/compute-design.md#61-安装包消费者的-typed-custom-kernel-路线)，
+  这只是 schema 描述/识别，不会自动提供执行实现；通过下面的 owning factory 单独提供执行。
   不要通过包含 `src/` 私有 Provider SPI 模拟公开扩展。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。
@@ -460,6 +461,43 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 
 source、headers + static、headers + shared 都选择 `hyle::compute`。三者是同一 C++23 source contract，不是
 Native FFI，也不承诺跨工具链 C++ ABI。
+
+## 自定义执行：接入 direct 与 Graph
+
+只执行一次 CPU callable 用 `cpu::submit_host`；需要冷准备、重复执行或放进 Graph 的 kernel 使用
+`<hyle/compute/custom_kernel.h>`。可编译的完整路线见
+[owning custom kernel 示例](../../samples/package/graph/custom_kernel/README.md)，其中 factory 在独立 shared library
+内，消费方同时走 direct 与 Graph，不包含 `src/` 或手写函数表。
+
+- `make_custom_provider(identity, backend_id, factory, allocator)` 拥有 factory，可 move-only；复制 name/version
+  文本。失败不移动具名 factory。Context 保留其配置，直到全部派生执行对象释放。allocator owner 和用户
+  实现所在 code image 仍必须存活；这不是支持任意 unload 的动态 plugin 系统。
+- `const factory.propose(KernelRequest, input_requirements, output_requirements)` 返回 `Result<KernelProposal>`，
+  只声明精确 shape 的支持、资源、runtime 和结构成本，不编译、不执行 payload；`ResourceRequirement`
+  可指定属性、alignment、精确 resource/domain，未填写字段不施加额外约束。所有 span 只借到调用返回。
+  按算法真正需要的属性声明；静态链接到不同 code image 的 `system_resource()` 可能不是同一个实例，
+  不能用它代替通用 host-accessible 要求。确需精确实例时从实际资源 owner 传入句柄。
+- `const factory.prepare(KernelPrepareRequest, allocator)` 仅在选中路线之后创建 kernel，返回
+  `KernelPreparation`。成功用 `make_custom_kernel(value, properties, allocator)`；明确 unsupported /
+  resource-decline 才能授权对应政策回退，真正 error 即使错误码相同也不自动重跑。部分 kernel 由 RAII 回收。
+- kernel 不可变，定义自己的 `Kernel::Invocation` 和 `create_invocation(workspace, allocator)`；每 lane
+  一份独占可变状态，不能同时复用同一个 Invocation。可选 `alias_support(output, input)` 只能细化 schema
+  已允许的 alias；不定义时拒绝 alias。factory 与 kernel 的 const 方法必须支持其声明的并发方式，全部
+  callback 和 move/destructor 为 `noexcept`。
+  若 artifact 声明 `supports_concurrent_invocations=false`，direct 用户须将同一 PreparedOperation 的全部
+  Invocation 串行到真实 Completion 终态，不能只等 enqueue 返回；direct 不额外加共享锁。Graph 会在同一
+  Executable 内检查该限制；用户跨 Executable 借用的外部不可并发资源仍须自行同步。
+- `kernel.enqueue(invocation, queue, inputs, outputs)` 返回 `KernelCommandResult`，在已 admission 的 HYLE
+  Queue 内执行/记录。不要再调用 `submit_host/cuda::submit` 嵌套 admission，也不要创建第二个 Completion。
+  未接纳工作可 rejected；已经写入输出或提交任意命令后必须 accepted，即使随后报错，最终由 Completion
+  覆盖已接纳的前缀。未知接纳状态应保守保活，而不是猜测可重跑。native handle 的 context/stream 限制仍适用。
+
+本接口承载 shared HYLE Queue + caller workspace 的 kernel，不冒充 delegated runtime/region adapter。
+配置、typed kernel、typed Invocation 各有冷分配；内置 Provider 仍用 inline 配置。HYLE 的 warm 调用
+直接进入 typed trampoline，没有额外虚函数层；用户 kernel 的分配、同步和线程必须符合自己声明的
+prepared/managed 成本。此 factory 当前为 exact-point；Windows CPU/CUDA 示例已验证三种交付，其中
+CUDA 使用真实 native kernel、双 Queue 和 exact Graph capture。完整 bounded domain、Apple、跨平台
+sanitizer 和基础终局性能仍随基础任务验证，不能把一个已运行的示例外推为所有 backend 路线通过。
 
 ## Custom operation 的外部资源访问
 

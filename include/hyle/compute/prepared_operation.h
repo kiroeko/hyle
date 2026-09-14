@@ -189,6 +189,9 @@ private:
 // descriptor construction or workspace allocation. A pending Completion
 // retains the provider invocation even if this handle is released; the caller
 // still owns tensor payload, external workspace and Queue lifetimes.
+// If runtime_properties().supports_concurrent_invocations is false, direct
+// callers must serialize every Invocation of that PreparedOperation through
+// terminal Completion. Direct submit does not add a shared artifact lock.
 class OperationInvocation final {
 public:
   OperationInvocation() noexcept = default;
