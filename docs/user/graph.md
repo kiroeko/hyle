@@ -282,9 +282,12 @@ Unimplemented/ResourceExhausted 也立即失败，不能从错误码推断 rollb
 当前编译分别发现一次 region 与普通算子候选；普通算子按允许的 node/target/Provider 配置查询，即使前排
 Provider 或 region 最后胜出，后排候选也可以被发现。`propose` 只返回冷能力与资源要求，不准备重型制品；
 明确 unsupported 被跳过，其它查询错误立即传播，不能因该 Provider 最后未选中而吞错。
+region 的 boundary、资源要求、runtime 与效果声明也在发现阶段查询并缓存；required target 不允许的
+候选不做资源查询。查询不代表后面一定会 compile 该候选，Provider 不应在这里创建重型制品。
+资源要求非法或后排查询出现真实错误，同样在准备任何制品前失败；明确 unsupported 只排除该候选。
 某个 region 的已选资源路线被安全拒绝后，释放本次构造的制品并排除该
 候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
-leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现，
+leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现或资源查询，
 不重置任何预算。当前这还是确定性重选，不是完整的 leaf/region 同池成本优化或所有资源组合的穷举。
 普通算子的初步 target/storage 规划不调用 prepare；全部节点具备初步覆盖后，才按选中的收缩图顺序
 构造制品。正常 leaf 使用保存的资源选择，仍经 Compute 最终校验；明确 prepare decline 才寻找后备路线。

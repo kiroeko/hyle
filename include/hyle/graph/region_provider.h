@@ -204,13 +204,16 @@ struct ProviderRegionPrepared final {
 };
 
 // A provider proposes candidate node sets, then compiles only sets chosen by
-// Graph. Both callbacks are cold-path and run under the owning Context's
+// Graph. All callbacks are cold-path and run under the owning Context's
 // admission gate. Returned artifacts must use the supplied allocator and must
 // not retain request spans or Graph references unless they create an explicit
 // owner of their own.
 struct RegionProviderVTable final {
   Status (*propose)(void *provider_context, const Graph &graph,
                     RegionProposalWriter &writer) noexcept = nullptr;
+  // Queried for hard-eligible candidates before selection, even if compile()
+  // never follows. Graph caches the result across selection retries; this
+  // callback describes constraints, it does not prepare a heavyweight artifact.
   Status (*propose_resources)(
       void *provider_context, const RegionCompileRequest &request,
       std::span<compute::detail::ResourceBindingRequirement>

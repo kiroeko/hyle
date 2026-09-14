@@ -121,6 +121,10 @@ struct ProviderVTable final {
 // one configured provider without leaking provider state or retaining caller
 // spans. Exact preparation revalidates the proposal identity and resources.
 struct OperationPreparationAccess final {
+  // Validate a cold proposal before any exact storage has been selected.
+  HYLE_COMPUTE_API static Status
+  validate_requirement(const ResourceBindingRequirement &requirement) noexcept;
+
   // Allocation-free planner predicate for a proposal's provider-neutral
   // resource requirement. Backend accessibility remains a separate
   // backend accessibility check; exact prepare revalidates both.

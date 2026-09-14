@@ -124,3 +124,16 @@ custom warm enqueue 直接进入既有 prepared callback 的 typed trampoline，
 此检查点完成 Windows 的 C103 旅程，不签整个 foundation gate。Linux/macOS、适用 sanitizer、终局
 独立红队和基础 P1 随完整 candidate 验证；C93 完整 profile、Graph bounded/variants、统一完整成本与
 constant ownership 仍在既定范围内待实现。组件保持 `AUDITED`，不重开已 CLOSED 的 backend 或其它依赖。
+
+### C93/G103：复用资源要求校验（实现前固定）
+
+Graph 将 region 资源查询前移后，需要在尚未选择具体 storage 时拒绝 malformed proposal。给已有私有
+`OperationPreparationAccess` 增加 `validate_requirement`，只转调 Compute 的同一 validator（alignment、
+矛盾 flags、exact domain）；不新增公开 API，不使用一个伪造 resource 来绕过匹配，不在 Graph 复制规则。
+由 Graph 的坏提案/fatal/不提前 prepare 反例和 Compute/CPU/Native/oneDNN 直接回归验证；warm callback、
+Context/Queue/Prepared layout 和 backend 不变，P0 为常数次冷字段检查，仍不签 C93 完整 profile 完成。
+
+已实现并通过：Windows static Compute/Graph 4/4，shared Compute/CPU/Native/oneDNN/Graph 与逐头
+13/13，CUDA backend/Graph 4/4，CPU/CUDA source/installed static/installed shared 各 2/2。Graph 对
+三类端口的坏 alignment/矛盾 flags/无效 exact domain 均在零 prepare 时拒绝；完整记录与剩余范围见
+[Graph v10 本段结果](graph-v10-reviewed-foundation-contracts.md#g103region-冷资源-skeleton实现前固定)。

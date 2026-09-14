@@ -88,6 +88,7 @@ enum class ProposalMode : std::uint8_t {
   kAsyncRejectSecond,
   kResourceSingletons,
   kResourcePairs,
+  kBoundaryWindows,
 };
 
 struct RegionProbe final {
@@ -100,6 +101,7 @@ struct RegionProbe final {
   std::size_t single_proposal_count = 0;
   std::size_t single_artifact_count = 0;
   std::size_t region_resource_count = 0;
+  std::size_t boundary_checks = 0;
   std::size_t context_destroy_count = 0;
   std::size_t create_invocation_count = 0;
   std::size_t destroy_invocation_count = 0;
@@ -154,6 +156,9 @@ struct RegionProbe final {
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
   Status discovery_failure{};
+  Status resource_query_failure{};
+  std::optional<hyle::compute::ResourceRequirement> requirement_override{};
+  std::uint32_t requirement_port = 0; // input, output, workspace
   std::optional<ProviderPrepareOutcome> region_outcome_override{};
   std::optional<ProviderPrepareOutcome> single_outcome_override{};
   std::size_t destroy_count_at_single_preparation = 0;
@@ -458,6 +463,21 @@ add_proposal(const Graph &graph, RegionProposalWriter &writer,
 Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
                                    RegionProposalWriter &writer) noexcept {
   ++probe.propose_count;
+  if (probe.mode == ProposalMode::kBoundaryWindows) {
+    for (std::size_t begin = 0; begin < graph.node_count(); ++begin) {
+      for (std::size_t count = 1;
+           count <= 3 && begin + count <= graph.node_count(); ++count) {
+        std::array<NodeId, 3> nodes{};
+        for (std::size_t index = 0; index < count; ++index)
+          nodes[index] = graph.node_id(begin + index).value();
+        auto added =
+            add_node_set_proposal(writer, std::span(nodes).first(count));
+        if (!added || !*added)
+          return added;
+      }
+    }
+    return true;
+  }
   if (probe.mode == ProposalMode::kResourceSingletons ||
       probe.mode == ProposalMode::kResourcePairs) {
     const std::size_t width =
@@ -722,6 +742,47 @@ const hyle::graph::ProviderRegionPreparedVTable kDelegatedRegionVTable{
     .can_import_endpoint = &delegated_region_can_import,
 };
 
+// Deliberately independent, slow whole-graph oracle. Product boundary discovery
+// uses incidence counts/stamps; the test searches every outside consumer.
+bool boundary_matches_full_scan(const RegionCompileRequest &request) {
+  const auto &graph = *request.graph;
+  const auto contains = [](const auto &values, auto value) {
+    return std::find(values.begin(), values.end(), value) != values.end();
+  };
+  std::vector<ValueId> inputs, outputs;
+  for (auto node : request.nodes) {
+    for (std::size_t port = 0; port < graph.node_input_count(node).value();
+         ++port) {
+      const auto value = graph.node_input(node, port).value();
+      const auto producer = graph.producer(value);
+      if ((!producer || !contains(request.nodes, *producer)) &&
+          !contains(inputs, value))
+        inputs.push_back(value);
+    }
+    for (std::size_t port = 0; port < graph.node_output_count(node).value();
+         ++port) {
+      const auto value = graph.result(node, port).value();
+      bool external = false;
+      for (std::size_t index = 0; index < graph.output_count(); ++index)
+        external |= graph.output_id(index).value() == value;
+      for (std::size_t index = 0; index < graph.node_count(); ++index) {
+        const auto consumer = graph.node_id(index).value();
+        if (contains(request.nodes, consumer))
+          continue;
+        for (std::size_t input = 0;
+             input < graph.node_input_count(consumer).value(); ++input)
+          external |= graph.node_input(consumer, input).value() == value;
+      }
+      if (external)
+        outputs.push_back(value);
+    }
+  }
+  return std::equal(inputs.begin(), inputs.end(), request.inputs.begin(),
+                    request.inputs.end()) &&
+         std::equal(outputs.begin(), outputs.end(), request.outputs.begin(),
+                    request.outputs.end());
+}
+
 Status propose_region_resources(
     void *context, const RegionCompileRequest &request,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
@@ -740,6 +801,11 @@ Status propose_region_resources(
     requirement = {};
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.region_resource_count;
+  ++probe.boundary_checks;
+  if (!boundary_matches_full_scan(request))
+    return Status::Internal("region boundary differs from full-scan oracle");
+  if (!probe.resource_query_failure.ok())
+    return probe.resource_query_failure;
   probe.observed_effect_count = request.effect_accesses.size();
   if (!request.effect_accesses.empty())
     probe.observed_effect_access = request.effect_accesses.front().access;
@@ -759,6 +825,14 @@ Status propose_region_resources(
   };
   if (probe.proposed_replay_override)
     proposal->runtime.replay_class = *probe.proposed_replay_override;
+  if (probe.requirement_override) {
+    if (probe.requirement_port == 0 && !input_requirements.empty())
+      input_requirements[0] = *probe.requirement_override;
+    else if (probe.requirement_port == 1 && !output_requirements.empty())
+      output_requirements[0] = *probe.requirement_override;
+    else
+      proposal->workspace_resource = *probe.requirement_override;
+  }
   return Status::Ok();
 }
 
@@ -1534,6 +1608,172 @@ void use_delegated_runtime(RegionProbe &probe) noexcept {
       .supports_concurrent_invocations = true,
       .capture_compatible = false,
   };
+}
+
+TEST(GraphRegions, DiscoversResourcesForLaterCandidatesWithoutPreparingThem) {
+  const auto logical = make_negations(2);
+  RegionProbe first, second;
+  auto context = make_context(first, second);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(first.region_resource_count, 1u);
+  EXPECT_EQ(second.region_resource_count, 1u);
+  EXPECT_EQ(first.compile_count, 1u);
+  EXPECT_EQ(second.compile_count, 0u);
+  EXPECT_EQ(compiled->report.region_count(), 1u);
+}
+
+TEST(GraphRegions, LaterResourceQueryFailurePrecedesAnyArtifactPreparation) {
+  const auto logical = make_negations(2);
+  RegionProbe first, second;
+  second.resource_query_failure = Status::DataLoss("invalid provider metadata");
+  auto context = make_context(first, second);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(compiled);
+  EXPECT_EQ(compiled.error(), second.resource_query_failure);
+  EXPECT_EQ(first.region_resource_count, 1u);
+  EXPECT_EQ(second.region_resource_count, 1u);
+  EXPECT_EQ(first.compile_count + second.compile_count, 0u);
+  EXPECT_EQ(first.single_artifact_count + second.single_artifact_count, 0u);
+}
+
+TEST(GraphRegions,
+     ValidatesEveryCandidateResourceRequirementBeforePreparation) {
+  const auto logical = make_negations(2);
+  using hyle::compute::ResourceRequirement;
+  using hyle::mem::MemoryProperty;
+  const std::array malformed{
+      ResourceRequirement{.minimum_alignment = 3},
+      ResourceRequirement{
+          .required_properties = MemoryProperty::kHostAccessible,
+          .forbidden_properties = MemoryProperty::kHostAccessible},
+      ResourceRequirement{.requires_exact_domain = true}};
+  for (std::uint32_t port = 0; port < 3; ++port) {
+    SCOPED_TRACE(port);
+    for (const auto &requirement : malformed) {
+      RegionProbe first, second;
+      second.requirement_override = requirement;
+      second.requirement_port = port;
+      auto context = make_context(first, second);
+      auto compiled = hyle::graph::compile(logical.graph, context);
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsInternal());
+      EXPECT_EQ(first.region_resource_count, 1u);
+      EXPECT_EQ(second.region_resource_count, 1u);
+      EXPECT_EQ(first.compile_count + second.compile_count, 0u);
+      EXPECT_EQ(first.single_artifact_count + second.single_artifact_count, 0u);
+    }
+  }
+}
+
+TEST(GraphRegions, RequiredTargetFiltersCandidatesBeforeResourceQuery) {
+  const auto logical = make_negations(2);
+  RegionProbe first, second;
+  second.resource_query_failure =
+      Status::DataLoss("excluded target must not query");
+  auto first_context = make_context(first),
+       second_context = make_context(second);
+  const auto host = hyle::mem::system_resource();
+  const Environment environment{{&first_context, host},
+                                {&second_context, host}};
+  const std::array required{
+      hyle::graph::NodePlacement{logical.graph.node_id(0).value(),
+                                 environment.target(0),
+                                 hyle::graph::PlacementStrength::kRequired},
+      hyle::graph::NodePlacement{logical.graph.node_id(1).value(),
+                                 environment.target(0),
+                                 hyle::graph::PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(logical.graph, environment.environment(),
+                                       {.node_placements = required});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(first.region_resource_count, 1u);
+  EXPECT_EQ(second.region_resource_count, 0u);
+  EXPECT_EQ(first.compile_count, 1u);
+  EXPECT_EQ(second.compile_count, 0u);
+  EXPECT_EQ(compiled->report.step(0)->target, environment.target(0));
+}
+
+TEST(GraphRegions, UnsupportedResourceQueryRejectsOnlyThatCandidate) {
+  const auto logical = make_negations(2);
+  RegionProbe first, second;
+  first.resource_query_failure =
+      Status::Unimplemented("no matching storage contract");
+  auto context = make_context(first, second);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(first.region_resource_count, 1u);
+  EXPECT_EQ(second.region_resource_count, 1u);
+  EXPECT_EQ(first.compile_count, 0u);
+  EXPECT_EQ(second.compile_count, 1u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+}
+
+TEST(GraphRegions,
+     CandidateBoundariesMatchFullScanAcrossFanoutAndRepeatedPorts) {
+  for (std::uint32_t seed = 1; seed <= 32; ++seed) {
+    SCOPED_TRACE(seed);
+    auto builder = GraphBuilder::create().value();
+    std::vector<ValueId> values{builder.input(row(8)).value(),
+                                builder.input(row(8)).value()};
+    std::vector<float> expected{1.F, 2.F};
+    std::uint32_t random = seed;
+    for (std::size_t index = 0; index < 12; ++index) {
+      random = random * 1664525u + 1013904223u;
+      const auto lhs = random % values.size();
+      random = random * 1664525u + 1013904223u;
+      const auto rhs = index % 2 == 0 ? lhs : random % values.size();
+      if (index % 3 == 0) {
+        values.push_back(
+            builder.add(Unary{UnaryKind::kNeg}, values[lhs]).value());
+        expected.push_back(-expected[lhs]);
+      } else {
+        values.push_back(
+            builder
+                .add(hyle::compute::Binary{hyle::compute::BinaryKind::kAdd},
+                     values[lhs], values[rhs])
+                .value());
+        expected.push_back(expected[lhs] + expected[rhs]);
+      }
+    }
+    // Published intermediate results remain outputs even when also consumed
+    // inside a region. Other edges exercise outside fanout and repeated ports.
+    const std::array published{std::size_t{3}, std::size_t{6},
+                               seed % 2 == 0 ? std::size_t{9}
+                                             : values.size() - 1};
+    for (auto index : published)
+      ASSERT_TRUE(builder.publish(values[index]).ok());
+    const auto graph = std::move(builder).finish().value();
+    RegionProbe probe{.mode = ProposalMode::kBoundaryWindows};
+    probe.decline_regions = true;
+    auto context = make_context(probe);
+    auto compiled = hyle::graph::compile(graph, context);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    const auto candidates = 3 * graph.node_count() - 3;
+    EXPECT_EQ(probe.region_resource_count, candidates);
+    EXPECT_EQ(probe.boundary_checks, candidates);
+    EXPECT_EQ(probe.propose_count, 1u);
+    EXPECT_EQ(compiled->report.region_count(), 0u);
+
+    auto input_a = make_tensor(row(8)), input_b = make_tensor(row(8));
+    std::array<float, 8> input_values{};
+    input_values.fill(1.F);
+    write(input_a, input_values);
+    input_values.fill(2.F);
+    write(input_b, input_values);
+    auto outputs = std::array{make_tensor(row(8)), make_tensor(row(8)),
+                              make_tensor(row(8))};
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(values[0], input_a.view).ok());
+    ASSERT_TRUE(invocation.bind(values[1], input_b.view).ok());
+    for (std::size_t index = 0; index < published.size(); ++index)
+      ASSERT_TRUE(
+          invocation.bind(values[published[index]], outputs[index].view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+    for (std::size_t index = 0; index < published.size(); ++index)
+      EXPECT_EQ(read(outputs[index], 8),
+                std::vector<float>(8, expected[published[index]]));
+  }
 }
 
 TEST(GraphRegions, GlobalProviderFiltersSkipDiscoveryAndLeafCallbacks) {
@@ -3964,6 +4204,8 @@ TEST(GraphRegions, RetryDestroysEarlierArtifactsBeforeRebuildingThePartition) {
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
   EXPECT_EQ(first.propose_count, 1u);
   EXPECT_EQ(second.propose_count, 1u);
+  EXPECT_EQ(first.region_resource_count, 2u);
+  EXPECT_EQ(second.region_resource_count, 2u);
   EXPECT_EQ(first.compile_count, 3u);
   EXPECT_EQ(second.compile_count, 1u);
   // Both the rejected partial artifact and the earlier successful artifact
@@ -4139,7 +4381,9 @@ TEST(GraphRegions, EveryAllocationFailureInRegionReselectionRollsBack) {
       Context::create(hyle::compute::cpu::device(),
                       {.metadata_allocator = allocator, .providers = providers})
           .value();
-  const auto logical = make_negations(4);
+  // Cross all inline capacities in the cold region boundary/resource cache,
+  // including flat port requirements, before injecting each allocation failure.
+  const auto logical = make_negations(18);
   const CompileOptions options{.operation_fallback =
                                    OperationFallbackPolicy::kReject};
   const std::size_t context_allocations = state.live;

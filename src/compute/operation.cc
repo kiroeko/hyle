@@ -616,6 +616,11 @@ detail::OperationPreparationAccess::propose(
   return proposal;
 }
 
+Status detail::OperationPreparationAccess::validate_requirement(
+    const ResourceBindingRequirement &requirement) noexcept {
+  return ::hyle::compute::validate_requirement(requirement);
+}
+
 Status detail::OperationPreparationAccess::match_resource(
     const ResourceBindingRequirement &requirement,
     mem::MemoryResourceRef resource) noexcept {

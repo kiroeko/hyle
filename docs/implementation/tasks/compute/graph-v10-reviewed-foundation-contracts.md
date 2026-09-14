@@ -536,3 +536,49 @@ Compute 仍校验实际 proposal/绑定。明确 prepare decline 才尝试后续
 下一段仍是 region 的冷资源 skeleton 与完整候选计划成本/qualified profile/有限搜索；这里只拆掉 leaf
 提前准备耦合，未完成统一 selector。bounded/variants、常量所有权、真实 CPU/CUDA/Apple 探针与终局
 跨平台/sanitizer/独立红队/P1 仍在原范围内。Graph 保持 `AUDITED`，foundation gate 未签发。
+
+### G103：region 冷资源 skeleton（实现前固定）
+
+`948e47ec` 的 region 仍在选中后才查询边界资源/runtime/effects，完整 selector 因而看不到未选候选的这些
+事实。有限 FIX：在同一次有界发现中保存所有硬约束允许的 region 的 boundary、资源要求、效果并集与
+runtime；重选和最终 compile 复用，不重新 query，也不提前准备 artifact。target required 不相容的提案
+不做资源查询；明确 unsupported/不保全效果记为冷拒绝，其它错误（含未选后排）直接失败。
+
+为避免把旧边界收集的逐 region 全图扫描扩大到全部候选，先 `O(V+E)` 统计 value 使用次数，再以带标记
+的 node membership/region 内使用计数，在候选自身 node/port 上找边界；重复输入去重，但计数按实际
+端口累加。结果只存在 compile 的临时平坦存储中，容量由已有 proposal/node/arity 上限约束，所有增长
+检查溢出/OOM。资源要求复用 Compute 原 validator，不新增公共 API/语义平行实现。
+
+验证：后排被查询但不 prepare、跨两次 partition 重选只 query 一次、required target 在 query 前生效、
+晚发现 fatal 不吞、malformed requirement 提前失败、复杂/非连续 region 的边界与全扫描 oracle 一致、
+重复输入/外部多消费者/只发布中间值/effects/零端口，以及原实际数值/OOM/预算回放。执行 Graph 与
+Compute 受影响直接消费者、逐头及 CPU/CUDA 三交付，不运行 P1/全库；统一资源放置与完整成本搜索
+仍属于随后 G103，不以存下 skeleton 就宣称已实现。
+
+本段结果（2026-09-14～15，Windows 本地时间）：
+
+- 已保存每个硬约束允许候选的 boundary/resource/runtime/effects；全局 proposal ordinal 作为缓存索引，
+  target 过滤产生的空位不误用其它候选。冷 unsupported 进入同一 rejected 集；其它查询失败在任何
+  artifact 准备前传播，重选不重复 query。具体 storage/lane 的完整计划搜索仍未完成。
+- 新增 6 个用例；其中 32 个确定性 DAG 的全部长度 1–3 连续窗口，与独立全图扫描 oracle 对照并实际
+  执行 leaf fallback；覆盖重复输入、外部多消费者、发布中间值和只发布中间值。原非连续/重排/effects/
+  零端口用例也使用该 oracle。输入、输出、workspace 各检查坏 alignment、矛盾 flags、无 authority 的
+  exact domain；均在 prepare=0 时失败。
+- 两次 partition 的回退用例证明每个资源提案只 query 一次，旧制品先销毁；逐分配失败回放扩到 18 节点，
+  越过 boundary index、resource skeleton、flat values/requirements 的内联容量，逐项 OOM 后均可重试且
+  live allocations 归零。没有放宽错误、数值或预算断言。
+- Windows Release static `compute-route-v8-static-20260914` 4/4（含 161 个 executable 用例）；shared
+  `compute-route-onednn-v8-20260914` 的 Compute/CPU/Native/oneDNN/Graph 与逐头 13/13；
+  `compute-graph-v7-cuda` 的 backend/late-failure/Graph/逐头 4/4 通过。最后扩大 OOM/仅中间输出案例后，
+  static 定向 4/4 再通过；没有为最后的测试数据与说明修改重跑整套交付。
+- CPU/CUDA 普通 source、installed static、installed shared 各 2/2 通过，使用本卡前述 v10 custom
+  consumer 缓存；三种交付均重建 Compute/Graph，安装始终使用显式 scratch prefix。shared producer 与
+  consumer 的 `cpu/`、`cuda/` 两处 Graph DLL SHA-256 均为
+  `FEE9294B5438FF13376BB78E1AC0BB3E000663F7F20A418CAA8BC4769E964186`。
+- P0：边界收集单独从逐 region 全图扫描改为一次 `O(N+V+E)` 索引、每候选自身 node/port 遍历；效果
+  并集仍为该候选访问项排序。缓存增加的是有界 compile 临时存储，不进入 Plan/Invocation 或 warm submit。
+  为完整裁决会查询更多未选候选，不把局部复杂度改善等同于整个 compile 的计时胜利。没有运行 P1，
+  没有新稳态性能结论；公共 API/layout、组件边、产品开关不变，header 仅补充查询阶段合同说明。
+- guide/closure/docs/diff 校验通过。统一脚本自实现不含测试：Compute 16,162、Graph 10,952，合计
+  27,114 行。两个组件保持 `AUDITED`；完整 selector/profile/有限搜索、bounded/variants、常量所有权与
+  终局跨平台验证仍未签发，不代表 foundation gate 完成。

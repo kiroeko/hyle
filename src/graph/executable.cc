@@ -1300,6 +1300,16 @@ using RegionCandidates =
 using RegionNodeIds = container::SmallVector<NodeId, 32, mem::AllocatorRef>;
 using RegionValues = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
 
+struct RegionResourceSkeleton final {
+  RegionResourceProposal proposal{};
+  std::size_t port_begin = 0;
+  std::size_t input_count = 0;
+  std::size_t output_count = 0;
+  std::size_t effect_begin = 0;
+  std::size_t effect_count = 0;
+  bool has_unknown_effects = false;
+};
+
 struct OperationCandidate final {
   compute::detail::ProviderOperationProposal proposal{};
   std::size_t requirements_begin = 0;
@@ -1418,13 +1428,21 @@ Status discover_operation_candidates(
 struct RegionDiscovery final {
   explicit RegionDiscovery(mem::AllocatorRef allocator) noexcept
       : extensions(allocator), candidates(allocator), nodes(allocator),
-        rejected(allocator), operations(allocator) {}
+        rejected(allocator), resources(allocator), values(allocator),
+        requirements(allocator), effects(allocator), operations(allocator) {}
 
   RegionExtensions extensions;
   RegionCandidates candidates;
   RegionNodeIds nodes;
   container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> rejected;
+  container::SmallVector<RegionResourceSkeleton, 4, mem::AllocatorRef>
+      resources;
+  RegionValues values;
+  container::SmallVector<compute::ResourceRequirement, 16, mem::AllocatorRef>
+      requirements;
+  container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef> effects;
   OperationDiscovery operations;
+  Status last_rejection = Status::Ok();
   bool ready = false;
 };
 
@@ -1654,66 +1672,75 @@ Result<bool> validate_contractible_region(
   return true;
 }
 
-Status collect_region_boundary(
-    const detail::PlanState &plan, const detail::GraphState &graph,
-    std::span<const NodeId> nodes,
-    container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>
-        &node_membership,
-    container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> &outside_uses,
-    container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> &marks,
-    std::uint32_t marker, RegionValues &inputs,
-    RegionValues &outputs) noexcept {
-  if (!node_membership.try_resize(graph.nodes.size()) ||
-      !outside_uses.try_resize(graph.values.size())) {
-    return plan_allocation_failure();
+// One graph-wide use count, then only the nodes/ports of each candidate.
+// Stamps avoid clearing a whole-graph bitmap for every proposed region.
+class RegionBoundaryIndex final {
+public:
+  explicit RegionBoundaryIndex(mem::AllocatorRef allocator) noexcept
+      : node_marks_(allocator), value_marks_(allocator), uses_(allocator),
+        internal_uses_(allocator) {}
+
+  Status initialize(const detail::GraphState &graph) noexcept {
+    if (!node_marks_.try_resize(graph.nodes.size()) ||
+        !value_marks_.try_resize(graph.values.size()) ||
+        !uses_.try_resize(graph.values.size()) ||
+        !internal_uses_.try_resize(graph.values.size()))
+      return plan_allocation_failure();
+    std::fill(node_marks_.begin(), node_marks_.end(), std::uint64_t{0});
+    std::fill(value_marks_.begin(), value_marks_.end(), std::uint64_t{0});
+    std::fill(uses_.begin(), uses_.end(), std::size_t{0});
+    for (const auto value : graph.edges)
+      ++uses_[value];
+    return Status::Ok();
   }
-  std::fill(node_membership.begin(), node_membership.end(), std::uint8_t{0});
-  std::fill(outside_uses.begin(), outside_uses.end(), std::uint8_t{0});
-  for (NodeId node : nodes)
-    node_membership[node.ordinal()] = 1;
-  for (std::uint32_t node_index = 0; node_index < graph.nodes.size();
-       ++node_index) {
-    if (node_membership[node_index] != 0)
-      continue;
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    for (std::size_t input_index = 0; input_index < node.input_count;
-         ++input_index) {
-      outside_uses[graph.edges[node.input_begin + input_index]] = 1;
-    }
-  }
-  for (NodeId node_id : nodes) {
-    const std::uint32_t node_index = node_id.ordinal();
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    for (std::size_t input_index = 0; input_index < node.input_count;
-         ++input_index) {
-      const std::uint32_t ordinal = graph.edges[node.input_begin + input_index];
-      const std::uint32_t producer = graph.values[ordinal].producer;
-      if (producer != detail::kNoNode && node_membership[producer] != 0)
-        continue;
-      if (marks[ordinal] == marker)
-        continue;
-      marks[ordinal] = marker;
-      if (!inputs.try_push_back(detail::value_id(graph, ordinal)))
-        return plan_allocation_failure();
-    }
-  }
-  for (NodeId node_id : nodes) {
-    const std::uint32_t node_index = node_id.ordinal();
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    for (std::size_t output_index = 0; output_index < node.output_count;
-         ++output_index) {
-      const std::uint32_t ordinal =
-          node.output_begin + static_cast<std::uint32_t>(output_index);
-      const bool published =
-          (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0;
-      if ((published || outside_uses[ordinal] != 0) &&
-          !outputs.try_push_back(detail::value_id(graph, ordinal))) {
-        return plan_allocation_failure();
+
+  Status collect(const detail::PlanState &plan, const detail::GraphState &graph,
+                 std::span<const NodeId> nodes, std::uint64_t marker,
+                 RegionValues &inputs, RegionValues &outputs) noexcept {
+    inputs.clear();
+    outputs.clear();
+    for (const auto node : nodes)
+      node_marks_[node.ordinal()] = marker;
+    for (const auto node_id : nodes) {
+      const auto &node = graph.nodes[node_id.ordinal()];
+      for (std::size_t port = 0; port < node.input_count; ++port) {
+        const auto value = graph.edges[node.input_begin + port];
+        const bool first_use = value_marks_[value] != marker;
+        if (first_use) {
+          value_marks_[value] = marker;
+          internal_uses_[value] = 0;
+        }
+        ++internal_uses_[value];
+        const auto producer = graph.values[value].producer;
+        if (first_use &&
+            (producer == detail::kNoNode || node_marks_[producer] != marker) &&
+            !inputs.try_push_back(detail::value_id(graph, value)))
+          return plan_allocation_failure();
       }
     }
+    for (const auto node_id : nodes) {
+      const auto &node = graph.nodes[node_id.ordinal()];
+      for (std::size_t port = 0; port < node.output_count; ++port) {
+        const auto value = node.output_begin + port;
+        const auto inside =
+            value_marks_[value] == marker ? internal_uses_[value] : 0;
+        const bool published =
+            (plan.binding_roles[value] & detail::kExternalOutput) != 0;
+        if ((published || uses_[value] > inside) &&
+            !outputs.try_push_back(
+                detail::value_id(graph, static_cast<std::uint32_t>(value))))
+          return plan_allocation_failure();
+      }
+    }
+    return Status::Ok();
   }
-  return Status::Ok();
-}
+
+private:
+  container::SmallVector<std::uint64_t, 16, mem::AllocatorRef> node_marks_,
+      value_marks_;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> uses_,
+      internal_uses_;
+};
 
 Status propose_region_resources(
     const RegionExtension &extension, const RegionCompileRequest &request,
@@ -1754,6 +1781,150 @@ Status propose_region_resources(
   if (!resource_proposal.runtime.valid()) {
     return Status::Internal(
         "graph region provider proposed invalid runtime properties");
+  }
+  HYLE_RETURN_IF_ERROR(
+      compute::detail::OperationPreparationAccess::validate_requirement(
+          resource_proposal.workspace_resource));
+  for (const auto port : {input_requirements, output_requirements})
+    for (const auto &requirement : port)
+      HYLE_RETURN_IF_ERROR(
+          compute::detail::OperationPreparationAccess::validate_requirement(
+              requirement));
+  return Status::Ok();
+}
+
+Status
+discover_region_resources(const Graph &published_graph,
+                          const detail::GraphState &graph,
+                          detail::PlanState &plan, CompileOptions options,
+                          std::span<const std::uint32_t> required_targets,
+                          RegionDiscovery &discovery) noexcept {
+  std::size_t eligible = 0;
+  for (const auto &candidate : discovery.candidates) {
+    const auto nodes = candidate_nodes(candidate, discovery.nodes);
+    if (!std::all_of(nodes.begin(), nodes.end(), [&](NodeId node) noexcept {
+          return required_targets[node.ordinal()] ==
+                     detail::kNoWorkspaceRequest ||
+                 required_targets[node.ordinal()] == candidate.target.ordinal();
+        }))
+      continue;
+    discovery.candidates[eligible++] = candidate;
+  }
+  discovery.candidates.try_resize(eligible);
+  if (discovery.candidates.empty())
+    return Status::Ok();
+  if (!discovery.resources.try_resize(plan.search.region_proposals))
+    return plan_allocation_failure();
+  RegionBoundaryIndex boundary(plan.allocator);
+  HYLE_RETURN_IF_ERROR(boundary.initialize(graph));
+  RegionValues inputs(plan.allocator), outputs(plan.allocator);
+  container::SmallVector<compute::ResourceRequirement, 8, mem::AllocatorRef>
+      input_requirements(plan.allocator), output_requirements(plan.allocator);
+  container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef> effects(
+      plan.allocator);
+  for (const auto &candidate : discovery.candidates) {
+    const auto nodes = candidate_nodes(candidate, discovery.nodes);
+    HYLE_RETURN_IF_ERROR(boundary.collect(
+        plan, graph, nodes,
+        static_cast<std::uint64_t>(candidate.proposal_order) + 1, inputs,
+        outputs));
+    if (!input_requirements.try_resize(inputs.size()) ||
+        !output_requirements.try_resize(outputs.size()))
+      return plan_allocation_failure();
+    effects.clear();
+    bool unknown_effects = false;
+    for (const auto node_id : nodes) {
+      const auto &node = graph.nodes[node_id.ordinal()];
+      const auto traits = compute::operation_traits(node.operation);
+      unknown_effects |=
+          traits.effect == compute::EffectKind::kExternalSideEffect;
+      for (std::size_t port = 0; port < traits.resource_count; ++port) {
+        HYLE_ASSIGN_OR_RETURN(auto access, compute::operation_resource_access(
+                                               node.operation, port));
+        if (!effects.try_push_back(RegionEffectAccess{
+                detail::GraphIdentity::effect_resource(
+                    graph.generation,
+                    graph.resource_edges[node.resource_begin + port]),
+                access}))
+          return plan_allocation_failure();
+      }
+    }
+    std::sort(effects.begin(), effects.end(),
+              [](const auto &left, const auto &right) noexcept {
+                return left.resource.ordinal() < right.resource.ordinal();
+              });
+    std::size_t effect_count = 0;
+    for (const auto access : effects) {
+      if (effect_count != 0 &&
+          effects[effect_count - 1].resource == access.resource) {
+        if (effects[effect_count - 1].access != access.access)
+          effects[effect_count - 1].access =
+              compute::ResourceAccess::kReadWrite;
+      } else {
+        effects[effect_count++] = access;
+      }
+    }
+    effects.try_resize(effect_count);
+    const RegionCompileRequest request{.graph = &published_graph,
+                                       .nodes = nodes,
+                                       .inputs = inputs,
+                                       .outputs = outputs,
+                                       .constants = options.constants,
+                                       .route = candidate.route,
+                                       .effect_accesses = effects,
+                                       .effect_bindings = plan.effect_bindings,
+                                       .has_unknown_effects = unknown_effects};
+    RegionResourceProposal proposal;
+    Status status = propose_region_resources(
+        discovery.extensions[candidate.extension_index], request,
+        input_requirements, output_requirements, proposal);
+    if (status.ok() &&
+        candidate.replay_class != compute::ProviderReplayClass::kUnknown &&
+        candidate.replay_class != proposal.runtime.replay_class)
+      return Status::Internal(
+          "region provider changed its declared replay class");
+    if (status.ok() && (unknown_effects || !effects.empty()) &&
+        !proposal.preserves_effects)
+      status = Status::Unimplemented(
+          "region provider does not preserve requested resource effects");
+    if (!status.ok()) {
+      if (!status.IsUnimplemented())
+        return status;
+      discovery.rejected[candidate.proposal_order] = 1;
+      ++plan.search.region_route_rejections;
+      discovery.last_rejection = std::move(status);
+      continue;
+    }
+    if (inputs.size() > SIZE_MAX - outputs.size())
+      return Status::ResourceExhausted("region boundary size overflows");
+    const auto port_count = inputs.size() + outputs.size();
+    const auto begin = discovery.values.size();
+    const auto effect_begin = discovery.effects.size();
+    if (port_count > SIZE_MAX - begin ||
+        effects.size() > SIZE_MAX - effect_begin)
+      return Status::ResourceExhausted(
+          "region resource skeleton storage overflows");
+    if (!discovery.values.try_resize(begin + port_count) ||
+        !discovery.requirements.try_resize(begin + port_count) ||
+        !discovery.effects.try_resize(effect_begin + effects.size()))
+      return plan_allocation_failure();
+    std::copy(inputs.begin(), inputs.end(), discovery.values.begin() + begin);
+    std::copy(outputs.begin(), outputs.end(),
+              discovery.values.begin() + begin + inputs.size());
+    std::copy(input_requirements.begin(), input_requirements.end(),
+              discovery.requirements.begin() + begin);
+    std::copy(output_requirements.begin(), output_requirements.end(),
+              discovery.requirements.begin() + begin + inputs.size());
+    std::copy(effects.begin(), effects.end(),
+              discovery.effects.begin() + effect_begin);
+    discovery.resources[candidate.proposal_order] =
+        RegionResourceSkeleton{.proposal = proposal,
+                               .port_begin = begin,
+                               .input_count = inputs.size(),
+                               .output_count = outputs.size(),
+                               .effect_begin = effect_begin,
+                               .effect_count = effects.size(),
+                               .has_unknown_effects = unknown_effects};
   }
   return Status::Ok();
 }
@@ -1888,9 +2059,6 @@ Status prepare_placed_steps_attempt(
     const OperationCandidate *route = nullptr;
     std::uint32_t workspace_storage = detail::kNoWorkspaceRequest;
   };
-  using Requirements =
-      container::SmallVector<compute::detail::ResourceBindingRequirement, 4,
-                             mem::AllocatorRef>;
   constexpr std::uint32_t kNone = detail::kNoWorkspaceRequest;
   const std::size_t target_count = plan.targets.size();
   const std::size_t storage_count = plan.storage_domains.size();
@@ -2043,6 +2211,8 @@ Status prepare_placed_steps_attempt(
       return plan_allocation_failure();
     std::fill(discovery.rejected.begin(), discovery.rejected.end(),
               std::uint8_t{0});
+    HYLE_RETURN_IF_ERROR(discover_region_resources(
+        published_graph, graph, plan, options, node_required, discovery));
     discovery.ready = true;
   }
   Flags region_support(plan.allocator);
@@ -2095,8 +2265,6 @@ Status prepare_placed_steps_attempt(
   Resources output_resources(plan.allocator);
   Ordinals selected_inputs(plan.allocator);
   Ordinals selected_outputs(plan.allocator);
-  Requirements input_requirements(plan.allocator);
-  Requirements output_requirements(plan.allocator);
   std::size_t &placement_attempts = plan.search.placement_attempts;
 
   auto select_storage =
@@ -2535,12 +2703,7 @@ Status prepare_placed_steps_attempt(
   enum class RegionCoverage : std::uint8_t { kNone, kEligible, kRejected };
   container::SmallVector<RegionCoverage, 32, mem::AllocatorRef> region_coverage(
       plan.allocator);
-  container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> marks(
-      plan.allocator);
-  Flags region_node_membership(plan.allocator);
-  Flags region_outside_uses(plan.allocator);
-  if (!region_coverage.try_resize(node_count) ||
-      !marks.try_resize(value_count)) {
+  if (!region_coverage.try_resize(node_count)) {
     return plan_allocation_failure();
   }
   std::fill(region_coverage.begin(), region_coverage.end(),
@@ -2555,8 +2718,6 @@ Status prepare_placed_steps_attempt(
         region_coverage[node.ordinal()] = RegionCoverage::kRejected;
     }
   }
-  for (std::uint32_t &mark : marks)
-    mark = 0;
 
   // With no explicit output storage, keep a published node result where its
   // producer already resides. This avoids manufacturing a boundary copy just
@@ -2801,7 +2962,6 @@ Status prepare_placed_steps_attempt(
   }
 
   Ordinals physical_inputs(plan.allocator);
-  std::uint32_t marker = 1;
   NodeId operation_node;
   std::span<const NodeId> operation_nodes;
   for (std::uint32_t unit_node : unit_order) {
@@ -2814,59 +2974,28 @@ Status prepare_placed_steps_attempt(
       const std::uint32_t target = candidate.target.ordinal();
       const std::uint32_t default_storage =
           plan.targets[target].default_storage.ordinal();
-      RegionValues logical_inputs(plan.allocator);
-      RegionValues logical_outputs(plan.allocator);
-      Status boundary = collect_region_boundary(
-          plan, graph, region_nodes, region_node_membership,
-          region_outside_uses, marks, marker++, logical_inputs,
-          logical_outputs);
-      if (!boundary.ok())
-        return boundary;
+      const auto &skeleton = discovery.resources[candidate.proposal_order];
+      const auto values =
+          std::span<const ValueId>(discovery.values)
+              .subspan(skeleton.port_begin,
+                       skeleton.input_count + skeleton.output_count);
+      const auto logical_inputs = values.first(skeleton.input_count);
+      const auto logical_outputs = values.subspan(skeleton.input_count);
+      const auto requirements =
+          std::span<const compute::ResourceRequirement>(discovery.requirements)
+              .subspan(skeleton.port_begin, values.size());
+      const auto input_requirements = requirements.first(skeleton.input_count);
+      const auto output_requirements =
+          requirements.subspan(skeleton.input_count);
       if (!selected_inputs.try_resize(logical_inputs.size()) ||
           !selected_outputs.try_resize(logical_outputs.size()) ||
           !input_resources.try_resize(logical_inputs.size()) ||
-          !output_resources.try_resize(logical_outputs.size()) ||
-          !input_requirements.try_resize(logical_inputs.size()) ||
-          !output_requirements.try_resize(logical_outputs.size())) {
+          !output_resources.try_resize(logical_outputs.size())) {
         return plan_allocation_failure();
       }
-      container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef>
-          effect_accesses(plan.allocator);
-      bool unknown_effects = false;
-      for (NodeId node_id : region_nodes) {
-        const auto &node = graph.nodes[node_id.ordinal()];
-        const auto traits = compute::operation_traits(node.operation);
-        unknown_effects |=
-            traits.effect == compute::EffectKind::kExternalSideEffect;
-        for (std::size_t port = 0; port < traits.resource_count; ++port) {
-          auto access =
-              compute::operation_resource_access(node.operation, port);
-          if (!access)
-            return std::move(access).error();
-          if (!effect_accesses.try_push_back(RegionEffectAccess{
-                  detail::GraphIdentity::effect_resource(
-                      graph.generation,
-                      graph.resource_edges[node.resource_begin + port]),
-                  *access}))
-            return plan_allocation_failure();
-        }
-      }
-      std::sort(effect_accesses.begin(), effect_accesses.end(),
-                [](const auto &left, const auto &right) noexcept {
-                  return left.resource.ordinal() < right.resource.ordinal();
-                });
-      std::size_t effect_count = 0;
-      for (const auto access : effect_accesses) {
-        if (effect_count != 0 &&
-            effect_accesses[effect_count - 1].resource == access.resource) {
-          if (effect_accesses[effect_count - 1].access != access.access)
-            effect_accesses[effect_count - 1].access =
-                compute::ResourceAccess::kReadWrite;
-        } else {
-          effect_accesses[effect_count++] = access;
-        }
-      }
-      effect_accesses.try_resize(effect_count);
+      const auto effect_accesses =
+          std::span<const RegionEffectAccess>(discovery.effects)
+              .subspan(skeleton.effect_begin, skeleton.effect_count);
       RegionCompileRequest request{
           .graph = &published_graph,
           .nodes = region_nodes,
@@ -2876,27 +3005,11 @@ Status prepare_placed_steps_attempt(
           .route = candidate.route,
           .effect_accesses = effect_accesses,
           .effect_bindings = plan.effect_bindings,
-          .has_unknown_effects = unknown_effects,
+          .has_unknown_effects = skeleton.has_unknown_effects,
       };
-      RegionResourceProposal resource_proposal{};
-      Status region_status = propose_region_resources(
-          extensions[candidate.extension_index], request, input_requirements,
-          output_requirements, resource_proposal);
-      bool route_supported = region_status.ok();
-      if (!route_supported && !region_status.IsUnimplemented())
-        return region_status;
-      if (route_supported && (unknown_effects || !effect_accesses.empty()) &&
-          !resource_proposal.preserves_effects) {
-        region_status = Status::Unimplemented(
-            "region provider does not preserve requested resource effects");
-        route_supported = false;
-      }
-      if (route_supported &&
-          candidate.replay_class != compute::ProviderReplayClass::kUnknown &&
-          candidate.replay_class != resource_proposal.runtime.replay_class) {
-        return Status::Internal(
-            "region provider changed its declared replay class");
-      }
+      const auto &resource_proposal = skeleton.proposal;
+      Status region_status = Status::Ok();
+      bool route_supported = true;
 
       for (std::size_t index = 0;
            route_supported && index < logical_inputs.size(); ++index) {
@@ -3234,7 +3347,6 @@ Status prepare_placed_steps(detail::PlanState &plan,
                             CompileOptions options,
                             const ProviderPolicy &provider_policy) noexcept {
   RegionDiscovery discovery(plan.allocator);
-  Status last_rejection = Status::Ok();
   for (;;) {
     // No Invocation or user work exists during this transaction. Clear all
     // artifacts before calling any provider for the next construction; the
@@ -3247,8 +3359,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
         plan, published_graph, graph, environment, options, provider_policy,
         discovery, outcome);
     if (!outcome.rejected_region) {
-      if (outcome.no_feasible_route && !last_rejection.ok())
-        return last_rejection;
+      if (outcome.no_feasible_route && !discovery.last_rejection.ok())
+        return discovery.last_rejection;
       return status;
     }
     const std::uint32_t rejected = *outcome.rejected_region;
@@ -3258,7 +3370,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
     }
     discovery.rejected[rejected] = 1;
     ++plan.search.region_route_rejections;
-    last_rejection = std::move(status);
+    discovery.last_rejection = std::move(status);
   }
 }
 
