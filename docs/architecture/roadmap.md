@@ -91,6 +91,14 @@ renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 
 是实验，也不替代 Apple 原生性能路线。HIP/ROCm 在没有 AMD 真机、明确消费者与维护预算的情况下
 无限期不纳入当前产品，不创建空 backend 或构建开关；Vulkan 不冒充 ROCm 资格。
 
+Compute/Graph 当前先通过一个共同的 **foundation implementation gate**，再扩展平台和算子广度：
+leaf/可收缩 node-set region 同池路由与完整成本、exact + bounded/guarded shape domain、CPU one-op/oneDNN
+shared region、CUDA 多 lane/exact capture + Q4 MLP，以及 Apple MLX delegated region + 原生 Metal interop
+都必须在同一对象模型上成立。只有该 gate 的 candidate
+完成，后续 provider、Vulkan、Transformer 和系统算子目录才可横向推进。当前有限工作顺序只维护在
+[Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，本页不
+复制一张容易过期的编号状态表。
+
 ## 依赖审查
 
 每次模块 review 都检查：

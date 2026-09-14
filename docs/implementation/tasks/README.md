@@ -45,9 +45,9 @@
 
 当前 Compute/Graph 架构审计：
 
-- [第三方广度与 HYLE 全局路由统一](compute/compute-graph-route-unification-audit.md)：记录 Provider 外包、
-  渐进式 HYLE 胜出路线、CUDA Q4 MatMul 纵切，以及现有 selector/custom-operation seam 的精确差距；
-  它是重开依据，不在 registry 变更前授权产品修改。
+- [第三方广度、全局路由与 foundation lock](compute/compute-graph-route-unification-audit.md)：记录 Provider
+  外包、渐进式 HYLE 胜出路线、foundation-v1 架构基线、CUDA Q4 MatMul 纵切、现有 seam 的精确差距和当前
+  goal 顺序；它是重开依据，不在 registry 变更前授权产品修改。
 
 当前全库性能工作：
 

@@ -1,8 +1,10 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
-> 本页描述已经关闭的 Graph v7 **运行时基础**。当前状态仍只以
-> [`module-status.json`](../implementation/module-status.json) 为准；本文不把尚未完成的算子/provider 广度
-> 写成已交付。当前已经实现 symbolic specialization，execution target / storage domain / execution lane
+> 本页描述当前 Graph v7 **实现基线**，不是 foundation 已收口的声明。当前状态只以
+> [`module-status.json`](../implementation/module-status.json) 为准；已接受但尚未实现的 node-set region、
+> exact + bounded/guarded shape domain 与 constant materialize 合同见
+> [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
+> 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。

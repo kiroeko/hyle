@@ -1,8 +1,9 @@
 # HYLE Compute：异构执行与算子提供者架构
 
-> 决策状态：`ACCEPTED`。本文只定义 Compute 的长期产品合同，不复制阶段性完成状态；当前可用能力查
-> [用户指南](../user/compute.md)，施工资格只查
-> [`module-status.json`](../implementation/module-status.json)。下文平台栈和开工顺序是目标边界，不表示
+> 决策状态：`ACCEPTED`。foundation-v1 架构基线已经裁决；这不表示对应实现或平台纵切已经完成，
+> 也不新增一种模块状态。实现状态与施工资格只查当前 closure task 和
+> [`module-status.json`](../implementation/module-status.json)，当前可用能力查[用户指南](../user/compute.md)。
+> 本文只定义 Compute 的长期产品合同，不复制阶段性完成状态。下文平台栈和开工顺序是目标边界，不表示
 > 每个 provider/backend 已经交付。被删除的旧实现只可从 Git 历史取得调查事实；历史 task/evidence
 > 不是当前设计输入、实现模板或用户承诺。
 
@@ -76,12 +77,12 @@ prepare/compile 阶段，不在 element、lane 或每次节点执行中反复裁
 在冷路径把这份中立描述翻译为自己真正拥有的制品：
 
 ```text
-HYLE Operation + exact Tensor/storage contract
-  -> provider proposal / exact prepare
+HYLE Operation + concrete Tensor/storage contract
+  -> provider proposal / prepared route
   -> immutable provider artifact
   -> per-lane invocation + prebound submit
 
-HYLE Graph region + specialization + exact boundary contract
+HYLE Graph region + shape domain + boundary contract
   -> provider region proposal / compile
   -> immutable provider-native graph or engine artifact
   -> delegated or shared-runtime region submit
@@ -122,11 +123,17 @@ HYLE 的性能责任不要求它亲自调度每个底层 kernel。cuBLASLt、one
 因此 Graph 执行的是由 HYLE 排好的异步 segment DAG；每个 segment 可以是 HYLE 叶操作，也可以是第三方
 compiled region。这样的层级调度仍由 HYLE 控制全局关键路径，同时允许成熟实现保留其最擅长的局部计划。
 
+Provider region 的语义是**可收缩 node set + 显式 boundary ports**，不是某个拓扑序中的 begin/count。
+候选集合必须非空、node identity 唯一，并且不存在一条路径从集合内离开后又进入集合；
+这样 Graph 才能把它收缩为单个 segment 而不改变 DAG 依赖或制造环。多个入选 region 必须互不重叠。
+连续拓扑区间是常见且便宜的发现/执行 fast path，但不是 Provider SPI 的能力上限；Graph 不枚举任意子集，
+只在显式 candidate/state 预算内验证 Provider 提案并做有限选择。
+
 ### 2.5 Route 选择必须比较完整计划，而不是“覆盖更多节点”
 
 所有单 op 与 region 实现最终都要归一成同一类冷路径 route candidate，至少携带：覆盖的 HYLE nodes、
-target/provider/version、输入输出 storage/layout、shared/delegated runtime、workspace/persistent/packing、
-copy/repack、同步、dispatch、线程/host blocking、精度/alias/failure 与完成边界。选择目标是满足硬约束后
+适用的 shape subdomain/typed guard、target/provider/version、输入输出 storage/layout、shared/delegated runtime、workspace/persistent/packing、
+copy/repack、同步、dispatch、线程/host blocking、精度/确定性/alias/failure 与完成边界。选择目标是满足硬约束后
 降低预期关键路径和资源成本，不是机械最大化第三方覆盖率，也不是看到一个 HYLE kernel 的局部点值更快
 就强行切开 region。
 
@@ -135,13 +142,25 @@ copy/repack、同步、dispatch、线程/host blocking、精度/alias/failure �
 1. 结构事实先排除会增加不可接受 copy、host wait、内存、线程嵌套或不兼容 layout 的候选；
 2. 资格化 evidence profile 只在绑定 provider/version、device/ISA、dtype/layout 和 shape domain 时用于
    冷路由；不同 provider 各自声明、基准边界不同的纳秒估值不能直接相加或排序；
-3. 长寿命推理计划可以显式选择 tune-once，对已通过语义门的少量歧义候选在真实目标上同合同测量并缓存
-   结果；tuning 的时间、scratch 和副作用在 compile report 中可见，普通确定性构建可以禁用。
+3. Graph `compile()` 只消费显式传入、身份完整且同完成边界的 evidence profile，绝不执行用户 graph、
+   分配测试 payload 或在编译中偷偷计时。Provider 可以在自己的冷 prepare 内用隔离的私有 scratch 做
+   有预算的 tactic/JIT 调优，但不得把调用方 runtime input/output 当调优 payload；immutable constant 只按
+   显式 policy 读取。调优须报告成本、cache identity 与确定性政策；
+4. 未来可选的 `graph_tune` 工具可以用调用方提供的代表性 binding 生成跨 Provider profile，但它是独立的
+   显式任务，不是 Graph core 的隐藏阶段。
 
 无合格性能证据、结果不可分或小于预声明 material 门时，优先成熟实现；HYLE 自实现只在精确适用域内
 成为首选。route 在 prepare/compile 后冻结，steady replay 不查 profile、不计时、不搜索、不重新建图。
-缓存 identity 至少绑定 HYLE/provider 版本、backend/device/driver、operation/region fingerprint、shape、
-layout/precision 和构建 feature；任一相关身份变化都重新裁决，不能继承旧机器的赢家。
+profile/cache identity 至少绑定 HYLE/provider 版本、backend/device/driver、operation/region fingerprint、
+shape domain、layout/precision、workload objective 和构建 feature；任一相关身份变化都重新裁决，不能
+继承旧机器的赢家。Graph core 不读写进程全局 cache 或隐式配置文件；跨 Executable 的 specialization
+cache 由消费方拥有。
+
+一个 bounded/guarded Executable 若需要多条 route，compile 必须产出有限、互斥且对声明 domain 完整覆盖的
+plan variants，或保留一条覆盖剩余范围的 general fallback。guard 只能读取已验证的 concrete symbolic
+dimensions 和显式 typed execution facts，不能扫描 tensor payload；prepare 阶段按有界表选择，submit 不再
+询问 Provider。无法覆盖整个声明 domain 时 compile 失败或由调用方显式缩窄 domain，不能让未覆盖 shape
+留到执行中突然 `Unimplemented`。
 
 ### 2.6 “借能力广度”与“保留全局性能权”怎样同时成立
 
@@ -179,8 +198,8 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
 3. 冷编译枚举精确候选。例如 HYLE/CUTLASS 自实现的 Q4 kernel、确实接受该格式的 NVIDIA vendor route、
    ggml CUDA 单节点 artifact，以及覆盖整个 MLP 的 ggml compiled region。不能理解该 `StorageFormatId` 的
    Provider 必须返回 `Unimplemented`，不得把压缩 bytes 当普通标量或偷偷反量化；
-4. 对每个候选先检查 dtype/precision、shape、alignment、alias、CUDA device、buffer import、stream/event
-   与 completion 可行性。ggml 若只能使用自有 allocation/stream，就成为 delegated island，并显式产生
+4. 对每个候选先检查 dtype/precision、适用 shape subdomain/guard、alignment、alias、CUDA device、buffer
+   import、stream/event 与 completion 可行性。无法证明 bounded domain 的 kernel 明确 exact-only。ggml 若只能使用自有 allocation/stream，就成为 delegated island，并显式产生
    ingress/egress、常驻显存和同步成本；若公开合同允许 caller storage/stream，才可成为 shared-runtime；
 5. selector 比较的是完整候选计划：kernel/region 执行、constant packing、copy/repack、launch/event、
    host/thread handoff、丢失或保留的 fusion、workspace/persistent budget 与 compile amortization。不能只拿
@@ -189,12 +208,47 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
    SwiGLU/MatMul 能融合，完整 ggml region 可能仍胜出；若 HYLE 的整段融合实现后来胜出，再把整个 region
    替换为 HYLE artifact。没有可比较证据时选择已配置的成熟路线，不用微基准猜测；
 7. 编译结果固定 provider、artifact、packing、storage、lane、workspace 与 Completion 路线，并在 report
-   中说明为什么选中/拒绝每类候选。后续 token replay 只重绑动态 activation/KV 等 invocation storage，
-   不再路由或重新构造 ggml graph。
+   中说明为什么选中/拒绝每类候选。一个 bounded decode Executable 可以同时保留 general route 和若干
+   exact plan variants；某个 Invocation 的显式冷 `prepare_replay` 再按 concrete shape、address 与 Queue key
+   捕获所选 variant。推理引擎把自己的 prefill/decode/batch class 映射到明确 Graph/Invocation facts，Graph
+   只按 concrete shape 与已编译 guard 选择。后续 token replay 只重绑合同允许变化的 activation/KV storage，
+   不再询问 Provider 或重新构造 ggml graph。
 
 若当前构建只有 CUDA runtime、没有任何接受该 Q4 格式的 operation/region Provider，唯一正确结果就是
 `Unimplemented`。这不是“自动 fallback 还没写好”，而是防止错误计算、隐藏 CPU offload 和伪零拷贝的
 必要合同。
+
+### 2.8 冷编译目标、证据与回退边界
+
+Graph compile 必须解析出显式输入或默认的 workload intent，至少区分 steady latency 与 steady throughput、
+预期并发 Invocation 数、确定性要求，以及 compile/packing 是否需要按预期 replay 次数摊销。默认是**长寿命、单 Invocation 的
+steady latency**：在没有 replay 次数时不把 compile 纳秒与执行纳秒任意相加；workspace/persistent、host
+wait 和 compile latency 仍受各自硬预算或 policy 约束。内存不是和时间混成一个魔法分数的第三种目标，
+而是由 storage budget、persistent budget 和允许序列化策略形成硬约束。
+
+可比较的执行估值只能来自 Graph 收到的只读 qualified route profile。它以同一 HYLE boundary 的完整
+候选计划为计费范围，并绑定 provider/build、device/driver、shape、dtype/format/layout、完成边界与
+workload intent；Provider 自报的“相对自己 fallback 节省若干 ns”不是这种 profile。没有合格 profile 时，
+Graph 先按结构成本和硬约束排除劣路线，再按调用方配置的成熟 Provider 顺序作确定性裁决；覆盖节点数和
+dispatch 数只能作最后 tie-break，不能冒充自动 SOTA。
+
+调用方可以全局 allow/deny Provider，也可以对具名 node 设置 preferred/required Provider；region 只有在
+覆盖的全部 node constraint 相容时才可入选。没有约束时 Context 中的 Provider 顺序就是成熟 fallback
+顺序，而不是性能证据。Provider 必须声明候选是否满足 operation 的精度和调用方的确定性要求；这些是
+硬约束，不允许 selector 为了速度静默放宽。
+
+`compile()` 是对用户 graph 无执行副作用的冷转换：它可以 validate、枚举候选、编译/JIT 入选 artifact、
+按 `ConstantBinding` 的显式 borrow/materialize policy 处理常量，但不能用用户 binding 运行 operation 或以真实 output 改变全局
+路由。TensorRT/编译器一类 Provider 可以在自己拥有的隔离 buffer 上做有预算的局部 tactic search；它不
+取得 Graph 全局候选的裁决权，也不能产生外部 side effect。未来 `graph_tune` 若准入，必须由调用方显式
+提供代表性 bindings、允许执行的纯/确定性范围和独立预算，产出 profile 后再调用正常 compile；有 side
+effect、外部资源写入或无稳定 instance fingerprint 的 custom operation 默认不可调优。
+
+候选 prepare/compile 必须事务化，并以结构化 outcome 区分 success、无副作用的 candidate decline 与
+真正 Status error。`Unsupported` 或明确 candidate-local resource-budget decline 可以在有界预算内排除后
+重选；裸 `ResourceExhausted`/`Unimplemented` Status 不能靠调用方猜成回滚证明。数据损坏、内部错误、
+device loss、违反 schema、已接纳工作或未知失败立即终止 compile，不能借 fallback 掩盖。重选次数是显式
+硬预算，耗尽即失败。
 
 ## 3. Backend 与 Provider 是两条轴
 
@@ -272,8 +326,8 @@ shared steady path 也不需要每次为 delegated mode 做动态路由。
 “Context 能访问某个 `MemoryResourceRef`”只证明 backend 可以触碰它，不证明某个 provider/kernel 接受该
 layout、alignment、storage kind 或 owner。provider 合同因此分成两个冷阶段：
 
-1. capability/proposal 根据 operation、shape/layout、execution target 给出每个 boundary binding、workspace
-   和 packed constant 的资源要求，以及 shared/delegated runtime mode；
+1. capability/proposal 根据 operation、shape domain/layout、execution target 给出适用 subdomain/typed guard、
+   每个 boundary binding、workspace 和逐 constant borrow/materialize 要求，以及 shared/delegated runtime mode；
 2. route 被选中后，prepare/compile 对 Graph 选定的 exact resource 或显式 provider-private bridge 做最终
    验证，并把结果固化进 immutable artifact。
 
@@ -503,7 +557,7 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
 4. **立即接 Graph 纵切**：Graph 只做一个节点也能编译为 `Executable` 并通过 `Invocation` 运行；此时
    验出抽象税，而不是等 Compute 大全套完成后才发现形状不合。
 5. **统一 route selection**：把单-op proposal 与 compiled-region proposal 放入同一有界计划搜索，先完成
-   resource/ownership 筛选，再使用资格化 profile 或显式 tune-once 比较完整边界成本；修复 typed custom
+   resource/ownership 筛选，再使用显式 workload intent 与资格化 route profile 比较完整边界成本；修复 typed custom
    operation 的 source/static/shared identity。此前按最大覆盖选择 region 的实现不能作为本阶段完成品。
 6. **真实 CPU region**：以量化模型中的 normalization → matmul → gated activation 为首个多节点片段，
    加 liveness/alias/workspace，并用 oneDNN 等成熟 Provider 验证 leaf/region 竞争。CPU ggml 当前 blocker
@@ -541,14 +595,22 @@ ExecuTorch 的调查只签发上述边界，不把任何 peer 的完整 runtime 
 
 - execution target、storage domain/resource 与 execution lane 三轴分离；默认 storage 只是 target 的属性；
 - provider 先公开 binding/resource requirement，再对 exact route prepare，不能到 submit 才拒绝；
+- region 用可收缩 node set 与显式 boundary 表达，连续拓扑区间只是一条 fast path；
 - shared Queue 和 delegated island 两种 ownership 都保留，不能用一套伪 stream/allocator 抹平；
-- capture 是 replay capability，communication 才是独立 lane 用途；
+- Executable 的 shape domain 可以是 exact 或 bounded/guarded；capture 使用 exact key，steady submit 不 JIT；
+- capture 是与编译正交的 replay capability，communication 才是独立 lane 用途；
 - Graph 只规划 HYLE/shared-runtime storage 与 island boundary，delegated provider 自己规划内部 storage；
 - request/KV/batching/sampling/offload 策略仍归推理引擎，Compiled Graph 不扩成模型 runtime。
 
 实现必须先通过四个架构探针：CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 storage
 domain 多 lane/capture、Apple delegated MLX region + 原生 Metal interop。正式代码与这些结论冲突时停止并
 回到审计；operator 数量、单次 benchmark 或为旧 API 保兼容都不能覆盖该反证。
+
+foundation-v1 架构基线只表示上述设计合同不再漂移。实现还必须补充 CUDA Q4 MLP 的 leaf/region/storage
+路由探针，并让这些探针共同通过 source/static/shared、正确性、one-op 抽象税和终局红队，才能签发
+Compute/Graph foundation candidate。该 gate 以前不横向扩展算子目录、Vulkan 或完整模型；gate 以后新增
+provider/operation 若能进入既有 seam，也不得重开 Device/Context/Queue、Graph/Executable/Invocation 或
+三轴资源模型。
 
 这些探针通过并形成候选后，只有下列新事实允许重开 Compute 架构：真实探针与合同矛盾；第二个独立
 消费者需要现有 ownership/concurrency/control seam 无法表达的机制；正式 backend API 使合同不可实现；
