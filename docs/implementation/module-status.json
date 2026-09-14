@@ -144,15 +144,9 @@
     },
     {
       "module": "mem",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/mem/mem-v8-resource-type-visibility.md",
-      "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v7.md",
-        "material_margin_pct": 5
-      },
-      "summary": "mem v8 CLOSED：MemoryResource 类级 export 已修复 default-hidden shared 类型身份；三平台完整下游交付通过，API、layout、虚表、算法和运行时成本不变，v7 P1 证据继续有效。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md",
+      "summary": "mem v9 SCOPED：Graph G106 证明 LifetimePlanner/PlannedBuffers 的 system-only metadata 绕过调用方预算和故障注入；定向补 allocator 注入，不改 payload resource 或规划算法，其它能力沿用 v8。"
     },
     {
       "module": "mem_vm",
