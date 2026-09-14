@@ -78,6 +78,12 @@ Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass
 明确分为使用 HYLE Queue/resource 的 shared-runtime 路线，以及自有 allocator/stream/context、通过显式
 boundary 与 Completion bridge 接入的 delegated-runtime island；每个 delegated provider 仍是独立 factor。
 
+runtime ownership 与 replay 成本是两条轴：prepared 要求完整路线无热态建图/分配，managed 如实披露
+Provider 内部执行准备。HYLE 自己的计划始终预绑定、无热态搜索/JIT；普通用户可选择 prepared-only。
+typed custom execution 必须能从三种 C++ 交付接入，不以私有 Provider SPI 或仅有 schema identity 代替。
+有限派生 shape、资源副作用域、跨 variant 内存共享与有界优化的合同分别由 Compute/Graph 设计持有，
+不为这六项修正创建新公共产品、重复 runtime 或无真实依赖理由的 factor。
+
 Provider 是 HYLE Operation/region 到实际制品的冷路径翻译器，不是第二套公共算子图。叶函数库产出
 prepared op；自己 host 图的库产出 provider-native compiled region，Graph 仍是外层 partition/placement
 owner。把第三方加入依赖锁或链接制品不算获得能力，adapter factor 必须实际完成翻译、资源和 Completion

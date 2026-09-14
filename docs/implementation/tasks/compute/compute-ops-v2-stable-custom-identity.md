@@ -1,5 +1,9 @@
 # ComputeOps v2：稳定的 typed custom operation identity
 
+> 后续架构补充：[整体复核 A2--A4](compute-graph-route-unification-audit.md#整体架构复核与合同修正)需要
+> 派生 shape、资源访问 schema 与公开 custom execution 旅程。本卡只授权稳定 schema identity，
+> 不把跨 shared 识别测试当成安装包已有执行扩展；新增 schema/API 前须在 AUDITED 阶段绑定后继有限卡。
+
 ## Closure card
 
 - component / owner：`compute_ops` / ComputeOps；round=`compute-ops-v2-stable-custom-identity`；

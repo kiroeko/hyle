@@ -400,6 +400,9 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 - typed custom `Operation` 的 `OperationId` 同样标识完整 schema/version 和 inline descriptor layout；改变字段、
   大小或语义必须换 ID。`custom_id()` 可作冷路径分派/诊断，`custom_as<T>()` 以该 ID 和精确 descriptor
   字节数校验，因此 producer 与 consumer 可以位于不同 source/static/shared factor；不要复用 ID 模拟兼容。
+  这只是 schema 描述/识别，不会自动提供执行实现。目前安装包尚无通用的 owning custom-kernel factory
+  可把用户实现接入 Graph；已接受的补齐方向见 [custom execution 设计](../architecture/compute-design.md#61-安装包消费者的-typed-custom-kernel-路线)，
+  不要通过包含 `src/` 私有 Provider SPI 模拟公开扩展。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
@@ -414,8 +417,8 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 - HYLE-native route 不隐藏 staging、copy、线程切换、packing 或 JIT。oneDNN BRGEMM handle 只在 prepare
   冷路径 finalize/generate；每个 Invocation 映射调用方 workspace，steady submit 不创建 descriptor、
   stream、memory handle、JIT artifact，不 packing/copy，也不执行 route search。当前闭包的六个推理形状
-  已证明 warm `submit()+wait()` 无 C++ 动态分配；适用性能与三交付证据已经由 registry 所指 terminal
-  record 签发。
+  曾证明 warm `submit()+wait()` 无 C++ 动态分配；这些是既有 exact 路线的历史证据，当前 foundation
+  proposal/Graph 迁移仍由 registry 指向的活动卡验收，不能把它们推广为新合同或 MLX 已通过。
 - oneDNN ukernel C API 在锁定版本中仍标记 experimental。它完全私有于 provider，并由精确版本断言保护；
   用户不应直接依赖其 header 或 ABI。升级 oneDNN 必须重做源码、符号、分配和正确性审计。
 

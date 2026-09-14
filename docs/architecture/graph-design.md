@@ -7,6 +7,9 @@
 > 被删除的旧字节只可从 Git 历史取得调查事实，历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
 > 本页不签发用户可用性，也不要求兼容旧头。
 
+2026-09-14 的整体复核保留上述骨架，修正 replay 成本、派生 shape、custom execution、资源副作用域、
+variant 内存与搜索受限合同；依据见[复核记录](../implementation/tasks/compute/compute-graph-route-unification-audit.md#整体架构复核与合同修正)。
+
 ## 1. Graph 解决什么问题
 
 Graph 把**模型无关的逻辑计算 DAG**编译成可重复、可检查、低开销提交的执行物。它拥有：
@@ -71,13 +74,20 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> compute::Completio
 
 每个 Executable 对应一个封闭 `ShapeDomain`：可以是 exact point，也可以是有界/guarded domain。它可以
 包含一个真正接受范围的 artifact，或 compile 时已经生成的有限 exact variant 表与显式 general fallback；
-必须在 report 中声明自己覆盖的集合，steady submit 不因新 shape 触发 JIT、建图、计时或 cache mutation。
+必须在 report 中声明自己覆盖的集合，HYLE steady submit 不因新 shape 触发 JIT、建图、计时或 cache mutation；
+Provider 的 managed replay 内部成本按 Compute §3.4 另行声明，不扩大已编译 shape domain。
 同一 Graph 的跨 Executable specialization cache 由推理引擎/消费方拥有，HYLE 不建立进程全局 cache。
 `ConstantBinding` 必须显式选择 source lifetime：borrowed immutable 表示 source 活到 Executable 与全部
 Completion 终态；materialize 表示 compile 成功前 Graph/Provider 已拥有 replay 所需的全部 canonical/
 packed bytes，调用返回后 source 可释放。选择 materialize 的候选不能因内部实现方便而静默退回 borrow，
 CompileReport 要逐 constant 报告最终 owner/release point，不能再用 aggregate packed count 猜生命周期。
 若消费方要在 Executable 内原位替换权重，应把该 value 建模为普通 input；否则重新 compile。
+
+同一 Executable 的 variants 引用兼容的共享不可变 constant materialization，不因 shape bucket 不同就
+自动复制整套权重。共享键包含 constant 的稳定绑定/内容版本、provider/build/device、packing/precision/
+layout 和 storage 身份；裸地址不足以证明内容相同。Provider 不支持借入同一 packed artifact 时，可以
+保留已披露的重复副本，但全部计入预算，不能假称已共享。跨 Executable 的共享池由消费方显式拥有，
+不为此建立进程全局 cache。
 
 ### `Invocation`
 
@@ -100,13 +110,13 @@ oneDNN 的 compiled partition/scratchpad 和真实推理引擎的 graph capture/
 HYLE Graph 是有限计算 DAG，不是任意控制流 IR。完整产品合同必须能表达：
 
 - 多输入/输出 operation，显式常量与 external binding；
-- static shape 和带上下界/倍数约束的 symbolic dimension，共享 `DimensionId` 表示相等；编译结果声明 exact 或 bounded/guarded shape
+- static shape、带上下界/倍数约束的独立 symbolic dimension 和有限派生维度（§4.3），共享 `DimensionId` 表示相等；编译结果声明 exact 或 bounded/guarded shape
   domain，实际 concrete shape 在运行前验证；无界、数据依赖的动态输出不属于 foundation v1；
 - dense/strided/layout-tagged 与量化 storage 描述，但不绑定模型文件格式；
 - in-place/alias 候选与禁止 alias 的输出；最终合法性由 operation/provider 合同决定；
 - canonical tensor copy 和 host/device boundary；provider-private layout 只能留在 region 内。跨 region
   repack 必须先有有版本的 boundary-layout producer/consumer 合同和真实执行 owner，不能用枚举冒充实现；
-- 有副作用或外部资源访问的 node 及其顺序边；纯 node 默认可重排；
+- 有副作用或外部资源访问的 node、资源域与顺序边（§4.4）；纯 node 默认可重排，独立资源不强制串成一条链；
 - typed custom operation extension，供 HYLE/消费者 kernel 接入，不使用字符串属性袋或裸 callable。
 
 每个 operation schema 必须区分“验证一个 concrete shape”和“证明一个 bounded domain”。只有 schema 与
@@ -180,6 +190,46 @@ Graph 只规划 canonical boundary value、HYLE/shared-runtime workspace 与 cop
 内部 tensor/workspace 由 provider 自己规划，Graph 只记录其 exact/unknown persistent、workspace 与 boundary
 cost，不能与 HYLE workspace 重叠复用。
 
+预算还必须覆盖同一 Executable **全部常驻 variants** 的唯一 constant/packed/artifact allocation，而不是
+逐 variant 都合格就认为整体合格；compile 临时峰值与 steady resident 分开报告。Invocation workspace
+按预计并发数和实际预留计费；不同并发 Invocation 不可因形状相同就共享可变 backing。互斥 variants 仅在
+lifetime、alignment、storage 和 capture 稳定地址均可证明兼容时复用 workspace，不能仅因“每次只选一个”
+就覆盖仍被 capture 持有的 allocation。同物理内存上的 host/device resource 不重复计费；外部已常驻
+backing 与本次新增预留分列，不能把 borrowed 误当成零物理内存。Provider 不能给出预算所需上界时，
+unknown 只可在调用方明确允许未知量的路线中出现，不得宣称满足该硬上限。
+
+### 4.3 有限派生 shape，而非图外手工等式
+
+正常 reshape/flatten、concat、head/group split 和 broadcast 需要 `B*T`、`S1+S2`、整除与广播相容性；
+不能让输出维度成为独立区间后要求引擎在图外重复维持关系。Graph 持有只读 metadata shape program：
+独立 bounded symbols、固定常量、checked add/multiply/exact-divide 和 broadcast 派生式，以及显式 typed
+guards。输出维度由 schema/表达式派生，不要求消费者把每个中间维度再绑定一次。
+
+封闭 domain 是独立 bounds 与 guards 的交集，不是包含非法输出组合的笛卡尔积。compile 验证表达式无环、
+rank/type 合法及域覆盖；保守区间与 guards 不足以证明 schema/provider 合同时，缩窄域或 exact-only，
+不能用若干端点样本代替 proof。Invocation 在 bind/prepare、用户工作接纳前一次求值并检查 overflow、
+除零/非整除、元素数、broadcast、layout 与 workspace；不读取 tensor payload。计算成本为 shape-program
+大小的有界线性遍历，HYLE warm submit 不再求值。Compute 的直接 TensorDesc 仍描述 concrete tensor，
+provider-neutral domain 投影不引入 Graph ID 或反向依赖。
+
+这不是任意方程求解器、脚本 VM 或数据依赖输出支持。最小反证用 `[B,T,H] -> [B*T,H]`、concat 后
+reshape、整除失败和 overflow，不能只用输入输出共用一个 symbol 的 RMSNorm 证明自然动态图已完整。
+
+### 4.4 按资源描述副作用
+
+除 tensor 数据依赖外，node 可以声明 graph-local 资源/副作用域及 read/write/read-write 访问。相同域的
+冲突访问必须有 data/control 顺序，纯 read 可并行；不同且可证明独立的域不强制全局排序。未知外部
+副作用默认进入保守域，与其它未证明独立的外部访问保持顺序，不鼓励谎称 pure 来绕过检查。
+
+编译先验证冲突顺序，再形成 region、lane 与 happens-before；Provider 也必须披露 region 的资源访问，
+不能因内部不透明而漏掉依赖。绑定时若两个声称独立的资源实际 alias，应拒绝或要求重新准备有序计划，
+不能靠不同 ID 忽略同一 backing 的写冲突；子范围并行必须有明确不重叠合同。跨 Invocation 的共享可变
+资源顺序由调用方的 Queue/Completion 或显式 admission 约束，不偷偷建立 Graph 全局锁。
+
+访问 schema 属于 ComputeOps 的计算语义，不持有 Graph ID；图内资源 identity、绑定与冲突检查属于 Graph。
+KV eviction、communicator 创建、请求顺序等仍是引擎策略。测试同时覆盖独立两域可并行、同域写冲突、
+未知副作用与跨 region 顺序。
+
 ## 5. 编译流水线
 
 `graph_compile` 按可检查阶段工作：
@@ -226,7 +276,9 @@ sequence 中录入；后者必须给出 provider-owned invocation/timeline、边
 自己 host 算子图的第三方 runtime 也沿这条 region 合同接入，而不是反过来接管 HYLE Graph。adapter 在
 compile 冷路径把一个可收缩 HYLE region 翻译为 provider-native graph/engine；一个 region 可以只含一个节点，
 也可以覆盖足以保留融合和内部 layout 的多节点片段。`Executable` 保有该制品，steady replay 只重绑本次
-Invocation 的 canonical boundary tensors 并提交，不重建第三方图。第三方不公开稳定 leaf kernel 时，
+Invocation 的 canonical boundary tensors 并提交。prepared artifact 不重建第三方图；managed artifact
+允许已声明的内部执行节点实例化，仍不得重新选择 HYLE region 或隐含 JIT，详见
+[Compute replay 合同](compute-design.md#34-replay-成本合同独立于-runtime-ownership)。第三方不公开稳定 leaf kernel 时，
 HYLE 只能在 region 边界与其他 provider 竞争，不能钻进不透明制品逐节点替换。
 
 ggml 是这类路线的具名例子，但“链接 ggml”不等于 Graph 自动获得其算子。CPU、CUDA、Metal 与 Vulkan
@@ -263,11 +315,12 @@ ready FIFO，并尽量延续当前 lane，以减少不必要的 segment/finaliza
 execution target 负责执行资格，lane 负责执行顺序；这是有界结构启发式，不宣称
 求解一般 DAG 的全局最优设备并行调度。
 
-- `prepare_replay` 完成后，steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、
+- `prepare_replay` 完成后，HYLE steady submit 不遍历原始 DAG、不重新推 shape、不搜索 provider、不 JIT、
   不打包常量，也不再查询 transfer/dependency capability；
 - exact/captured variant 的 workspace layout 固定；bounded artifact 必须在 compile 时给出 domain worst-case，
   并可提供只依赖 concrete shape 的有界 requirement query。`prepare_replay` 固化本次 layout，正常 replay
-  零 heap allocation；
+  HYLE plan 层零 heap allocation；Provider 是否同样零分配由 prepared/managed 合同决定，不能从 shared/
+  delegated ownership 推断。prepared-only 是冷路径约束，不能在 submit 中偷偷改用 managed；
 - per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
 - plan 在同一 execution lane 的 ordered Queue 上以一个不中断 submission sequence 录入；provider/region step 只返回接纳事实，
   sequence 在 segment 边界一次 finalizes 为 prefix Completion，不按 node 创建再覆盖 event。多 Queue plan
@@ -278,7 +331,8 @@ execution target 负责执行资格，lane 负责执行顺序；这是有界结�
   同步 round-trip；
 - CompileReport 独立拥有轻量 metadata，并逐 step 枚举 kind、fallback reason、canonical node set/fingerprint、
   boundary ports、shape domain、device/provider/version、constant
-  borrow/额外 packed ownership、copy/sync/dispatch、workspace、persistent bytes 和 threading/blocking/concurrent-invocation fact。
+  borrow/额外 packed ownership、跨 variant 共享/重复字节、copy/sync/dispatch、workspace、persistent bytes、
+  replay 成本类别和 threading/blocking/concurrent-invocation fact。
   opaque provider 无法报告的 compile/persistent/workspace estimate 及 artifact persistent bytes 必须为
   `nullopt`，不能伪装成 0；显式 0 才是精确 none。dispatch 是 backend execution episode：一次同步 CPU
   executor fan-out 或一次 device command launch 计一次，worker/task/chunk/leaf call 不分别计数；
@@ -307,7 +361,12 @@ CompileOptions 还必须允许全局 allow/deny Provider 和 per-node preferred/
 v1 route search 接纳通过 contractibility 验证的显式 node-set region，并把每个 node 的 leaf 放进同一空间；
 连续区间走 fast path。target/storage/lane 与 boundary transformation 在同一有界 state search 中裁决。
 实现可以使用确定性 DP/beam 等启发式，但必须有 candidate、state、prepare-retry 三类独立硬预算，不能
-宣称求解一般 DAG 全局最优。预算耗尽返回明确错误，不悄悄截断候选改变结果。只有胜出候选构造重型
+宣称求解一般 DAG 全局最优。预算区分**求得可行计划**与**继续优化**：搜索耗尽只停止新增候选/状态，
+仍可在独立 prepare 预算内完成已选计划。最终没有满足全部硬约束且 prepare 成功的完整计划就失败；
+已有可行计划时，默认返回最佳已知可行解，并在 report 中明确
+`optimization_limited`、耗尽的预算与停止原因，调用方可要求预算不足即失败。不得把截断的 node set、
+未验证 proposal 或未覆盖 shape 当成 fallback；结构非法、合同违约与真正错误也不能被这项策略吞掉。
+搜索次序须确定，所有存储/迭代仍有硬上界。只为当前胜出候选构造重型
 artifact；selected-route prepare 通过
 结构化 outcome 返回 success、无副作用 candidate decline 或真正 error。只有 unsupported 或明确
 candidate-local resource-budget decline 才允许排除后重选；裸 Status 不能被猜成 rollback 证明，其它错误
@@ -381,6 +440,11 @@ Graph 至少要用三种不同层级验证：
 unsupported op、OOM、provider failure、device loss、取消、迟到 completion、并发 Invocation、重复 reset、
 partial compile failure 和销毁顺序。
 
+prepared 与 managed 可在同一用户完成边界上比较，但必须把 managed 的执行节点实例化、元数据 allocation
+及内部 runtime 工作全部计费；不能拿其 kernel-only 数字比较 prepared 的完整 submit，也不能把首次编译
+混入一方 warm 样本。HYLE 抽象税用同一个 Provider/同一 replay 合同作 direct 对照，避免把 Provider
+内部成本误归因于 Graph。
+
 Graph 的价值不要求每个 node 都由 HYLE kernel 获胜。基础 Graph factor 必须先证明选择和组合没有
 material 税。减少 submission、copy、repack、allocation 或同步的收益，只能在 provider region、fusion
 或跨设备 copy planning 已进入相应 closure card 后测量；没有这些变换的 CPU direct-composition 纵切不得
@@ -428,6 +492,10 @@ foundation-v1 架构基线不替代实现证据。只有上述四条探针再加
 storage 路由、source/static/shared 和终局红队全部通过，Compute/Graph foundation implementation 才能签发
 不可变 candidate；在此之前禁止把 provider/算子广度当作“基础架构完成百分比”。Vulkan、更多算子和
 完整 Transformer 是锁后扩展，不作为反复改变对象生命周期与调度权的借口。
+
+这些探针还须覆盖有限派生 shape、安装包 custom execution、独立/冲突资源域、多 variant 常量共享与
+并发/capture 内存、可行解存在/不存在两种预算耗尽，以及 Apple managed/Metal prepared 的真实成本
+分类。它们是本轮发现的基础合同缺口，不另起一套泛化 runtime 或无限算子任务。
 
 形成候选后，只有真实纵切与合同矛盾、第二个独立消费者需要现有 ownership/concurrency/control-flow
 机制无法表达的能力、正式 backend/provider 无法实现合同，或合格证据证明 material 热路径税来自 Graph

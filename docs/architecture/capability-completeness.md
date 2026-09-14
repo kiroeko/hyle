@@ -211,6 +211,12 @@ Operation/Graph、全局 partition/placement、跨 region storage 和 Completion
 第三方局部制品。下载、链接或在依赖锁中登记第三方库不等于相应 HYLE 能力已经存在；只有 adapter 能
 完成语义、storage、失败、并发和完成边界才算 `ROUTED`。
 
+借入 compiled runtime 不等于自动获得零分配重放。Compute/Graph 区分固定命令的 prepared 与明确披露
+Provider 内部执行准备的 managed 成本合同；HYLE 自身不在热路径重新规划，第三方内部 allocation、
+cache lookup 和同步仍须计入完整成本并满足调用方约束。不能为追求纸面统一而排除成熟能力，也不能
+因是成熟依赖就忽略额外成本。细则只在 [Compute replay 合同](compute-design.md#34-replay-成本合同独立于-runtime-ownership)
+维护，不把这项机制判断推广成全库统一放宽零分配要求。
+
 若依赖不公开稳定 leaf seam，不能为了表面上的逐算子 best-of 调用私有符号。应让完整 region 与 HYLE
 单-op/region 候选在同一全局计划中竞争，或把必要 source patch 作为有独立维护、升级、许可证和三交付
 合同的机制 owner。HYLE 的全局调度权不等于亲自调度第三方 artifact 内的每个 kernel；它指 HYLE 唯一

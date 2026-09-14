@@ -9,6 +9,9 @@
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
+整体复核还接受了派生 shape、资源副作用域、variant 内存共享、搜索受限返回可行解及 Provider replay
+成本分类；这些目前是[架构合同](../architecture/graph-design.md)，不是本页 API 已支持的能力。
+
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
 task graph，也不拥有模型循环、KV cache、batching、sampling 或 serving policy。
@@ -58,6 +61,8 @@ Provider-private layout 只能留在一个 region 内，公开 region boundary �
 HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
 保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
 安装且通过当前 backend/storage/completion 审计的 Provider 才能提案；当前尚无可用 ggml region provider。
+第三方的 `compile` 不必然意味着每次调用零分配：未来路线会分别声明 prepared/managed 成本，严格使用者
+可要求 prepared-only。该选择接口尚未交付，不应从当前 `ReplayMode` 推断已有这项能力。
 
 Region 由数据流而非插入顺序定义。例如 gate/up MatMul 与 gated activation/down MatMul 之间插入无关
 node，或者先创建 up 再创建 gate，不应阻止 oneDNN 识别同一 MLP。反之，如果 data/control 路径离开该集合

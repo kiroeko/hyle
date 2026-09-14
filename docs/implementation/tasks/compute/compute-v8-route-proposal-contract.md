@@ -1,5 +1,10 @@
 # Compute v8：可组合的 provider route proposal 合同
 
+> 后续架构补充：[整体复核 A1--A6](compute-graph-route-unification-audit.md#整体架构复核与合同修正)已获接受。
+> 本卡保留 C80--C84 与已执行事实，不因该补充自动授权公开 custom-kernel factory 或 managed replay。
+> 涉及这些新合同的产品施工须先在 AUDITED 阶段绑定后继有限卡；既有 Native/oneDNN prepared 热路径
+> 不因 managed 设计而放宽。本卡不是整个 Compute foundation 已完成的证明。
+
 ## Closure card
 
 - component / owner：`compute` / Compute；round=`compute-v8-route-proposal-contract`；

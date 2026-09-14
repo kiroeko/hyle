@@ -1,5 +1,10 @@
 # Graph v9：foundation route、shape 与 ownership 闭环
 
+> 后续架构补充：[整体复核 A1--A6](compute-graph-route-unification-audit.md#整体架构复核与合同修正)已获接受。
+> 本卡保留 G90--G97 与已执行事实；旧的全局副作用链、独立 bounds/equality 和一律预算耗尽失败不能
+> 继续作为最终架构。派生 shape、资源域、variant 聚合和新预算/replay 合同施工前须在 AUDITED 阶段
+> 绑定后继有限卡，不以修改本卡历史结果冒充这些能力已验证。
+
 ## Closure card
 
 - component / owner：`graph` / Graph；round=`graph-v9-foundation-routing`；

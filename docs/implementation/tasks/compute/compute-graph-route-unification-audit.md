@@ -17,8 +17,9 @@ HYLE 冷路径的候选。HYLE 不需要调度第三方 artifact 内每个 kerne
 私有 leaf；渐进替换发生在明确的 HYLE boundary。
 
 默认裁决不是“HYLE 优先”或“第三方优先”，而是：完整计划上存在合格、material 的 HYLE 胜利才替换；
-没有可比证据、测不准或差异不足时使用已配置的成熟路线。steady replay 只运行不可变计划，不支付搜索、
-计时、JIT、建图或常量 packing。
+没有可比证据、测不准或差异不足时使用已配置的成熟路线。HYLE steady replay 只运行不可变计划，不支付
+搜索、计时、JIT、建图或常量 packing；Provider 内部执行成本按本页整体复核接受的 prepared/managed
+合同分别披露，不能把 compiled runtime 自动写成零分配。
 
 ## Foundation v1 架构基线
 
@@ -28,23 +29,25 @@ HYLE 冷路径的候选。HYLE 不需要调度第三方 artifact 内每个 kerne
 |---|---|
 | 公开产品 | 只有 Compute 与 Graph；`graph_plan` 是 Graph 私有实现职责，不新增第三个 Plan 产品 |
 | 生命周期 | Compute 固定为 Device/Context/Queue/Completion、Operation/PreparedOperation/per-run Invocation；Graph 固定为 Builder/immutable Graph/shareable Executable/per-run Invocation |
-| IR 与 shape | 有限 typed DAG；Executable 声明 exact 或 bounded/guarded shape domain，Invocation 在运行前绑定 concrete shape；bounded route 要求 schema/provider 对整个 subdomain 给出 proof，否则 exact-only；无界数据依赖输出和模型循环不进 v1，active set、KV/batching/sampling 仍在引擎 |
+| IR 与 shape | 有限 typed DAG；独立 bounded symbol + 有限派生式/guards；Executable 声明 exact 或 bounded/guarded domain，Invocation 冷绑定 concrete shape；schema/provider 负责完整 subdomain，否则 exact-only；无界数据依赖输出和模型循环不进 v1 |
 | 全局/局部 owner | HYLE 唯一拥有 region boundary、target/storage/lane、跨 region copy/sync、liveness/workspace 和最终 Completion；Provider 只拥有入选 region 内 artifact、私有 layout/workspace/顺序 |
 | 资源模型 | execution target、exact storage resource/domain、execution lane 三轴分离；shared Queue 与 delegated island 都是一等路线，不伪造统一 stream/allocator |
-| Provider 接入 | leaf 与 graph-hosting runtime 都经版本化内部 SPI 提案；第三方私有 kernel 不偷渡。CPU/CUDA/Metal/Vulkan carrier 按 runtime owner 拆 factor |
+| Provider 接入 | vendor factor 经版本化内部 SPI；消费者通过窄的公开 owning custom-kernel factory，不包含私有头。schema identity 与执行旅程分别验收；CPU/CUDA/Metal/Vulkan carrier 按 runtime owner 拆 factor |
 | 路由空间 | 每个 node 的 leaf 与可收缩 node-set region 进入同一有界 `RouteCandidate` 空间；连续区间只是 fast path；完整 boundary 成本决定计划，覆盖数/dispatch/ordinal 只作最后 tie-break |
 | workload | compile 显式区分 steady latency/throughput、预期并发与可选 replay 摊销；默认长寿命、单 Invocation、steady latency；memory/host-wait/compile 分别受硬约束，不混成魔法分数 |
 | 性能证据 | 只消费同 HYLE boundary、完整 identity 的 qualified route profile；Provider 私有相对 ns 不可跨 Provider 排序；无证据或不可分时按成熟 Provider 顺序稳定回退 |
 | tuning | 普通 `compile()` 不用 runtime input/output 执行 graph；Provider 可在私有隔离 scratch 内做有预算的局部 tactic/JIT 选择，immutable constant 只按显式 policy 读取。跨 Provider `graph_tune` 未来由调用方显式提供 bindings；两者都不是隐藏热路径 |
-| identity/cache | OperationId 是 schema+version，不是 vtable 地址；Executable 绑定 closed shape domain，可含 immutable 有限 exact variant 表；constant 显式选择 borrow 或 materialize；跨 Executable cache 由消费方拥有，无全局隐式 cache |
+| identity/cache | OperationId 是 schema+version，不是 vtable 地址；constant 显式 borrow/materialize，兼容 variants 共享不可变常量，不能共享并发可变状态；全部 resident 与 cold peak 计费；跨 Executable cache 由消费方拥有 |
 | capture | capture 与 compilation 正交；exact capture key 可与 bounded/general route 共存，业务 batch mode 由引擎选择，steady submit 不临时 capture/JIT |
 | 分布式边界 | rank/topology/communicator lifecycle、全局 batching 与恢复归引擎；Graph 只调度带 external communicator 的本地 collective participation 与 Completion |
+| 副作用 | 资源/副作用域 + read/write 合同；同域冲突有序，独立域可并行，未知副作用保守；KV/batch 等策略仍在引擎 |
 | failure | selected-route prepare/compile 事务化；`Unsupported` 和明确 candidate-local、完整回滚的资源拒绝可在硬预算内重选；work 一经接纳只经 Completion 报错，不静默跨 Provider 重跑 |
-| 热路径 | warm replay 不搜索、推 shape、JIT、建第三方图、pack 常量、隐式 allocate/copy/sync；每 segment 只产生真实完成边界 |
+| 热路径 | HYLE 不搜索/推 shape/建图/分配；prepared Provider 同样严格，managed 如实披露内部执行准备；两者均禁止热 JIT、隐藏 copy/sync 和接纳后 rerun，支持 prepared-only 冷约束 |
+| 搜索预算 | 硬预算始终有效；无已验证完整可行解则失败，有可行解默认返回并报告 optimization_limited；严格调用方可拒绝受限结果，不能掩盖真实错误 |
 | 交付 | Provider SPI 是 HYLE factor 间 C++ 合同，不是稳定动态 plugin/Native FFI；source/static/shared 语义一致，可选 SDK/provider 独立发现 |
 
-因此大对象模型、依赖方向、资源模型和调度权不再开放讨论。允许在实现卡中局部选择的数据结构、beam/DP
-细节、厂商 API 调用和 profile 存储表示，不得改变上表语义。架构基线要靠 CPU shared region、CUDA async+
+本次复核保留大对象模型、依赖方向、资源模型和调度权；只有具体反证才修改这些边界。允许在实现卡中
+局部选择的数据结构、beam/DP 细节、厂商 API 调用和 profile 存储表示，不得改变上表语义。架构基线要靠 CPU shared region、CUDA async+
 Q4 route、Apple delegated region/Metal interop 三类真实实现探针签发 foundation implementation candidate；
 在该 gate 前不横向填算子或平台大全。
 
@@ -56,12 +59,13 @@ lifetime 根本不可实现，才构成整体架构 reopen fact。
 | 实验变量 | 已固定的不变量 | 签发探针 |
 |---|---|---|
 | node-set 的物理表示与选择算法 | Provider 语义是可收缩 node set；搜索有界、确定性，不宣称一般 DAG 全局最优 | 单节点、连续和非 insertion-order oneDNN region；重叠/离开后重入/预算耗尽反例；再裁决 interval fast path、small vector/bitset 与 DP/beam |
-| `ShapeDomain` 的 C++ 表示与 guard dispatch | exact 与 bounded/guarded 都能表达；schema/provider 必须证明完整 subdomain；submit 不 JIT | CPU 动态 token 维度的 general route + exact tuned variant，越界/倍数/overflow/workspace 反例；再裁决 guard/variant table 表示 |
-| constant materialize 的 owner 数据结构 | caller 明确选 borrow/materialize；逐 constant release point 可查，不能静默延长或缩短 lifetime | mmap borrowed weight、host-to-device materialized weight、部分 Provider packing、compile failure rollback 与 Completion lifetime |
-| global selector 的实现和默认预算 | leaf/region/placement/boundary 同池；结构硬约束优先，只有 qualified profile 可跨 Provider 比较 | native + oneDNN gated MLP，构造局部 kernel 赢但完整计划输、prepare decline/reselect、profile 缺失/不可分 |
+| `ShapeDomain` 的 C++ 表示与 guard dispatch | exact/bounded 与有限派生维度都能表达；schema/provider 负责完整 subdomain；HYLE submit 不求 shape/JIT | 动态 token general + exact variant；flatten/concat/head split、越界/非整除/overflow/workspace 反例 |
+| constant materialize 的 owner 数据结构 | caller 明确 borrow/materialize；兼容 variants 共享、重复副本和全部内存可查，不静默改变 lifetime | mmap/device materialize、两 variant 共享、并发/capture 不安全复用拒绝、compile rollback 与 Completion lifetime |
+| global selector 的实现和默认预算 | leaf/region/placement/boundary 同池；结构硬约束优先，只有 qualified profile 可跨 Provider 比较 | gated MLP 局部赢整体输、prepare decline/reselect、profile 缺失/不可分，以及有/无已验证可行解的预算耗尽 |
 | CUDA capture 与 Q4 路由的具体 carrier | capture 与 compile 正交；exact key；接纳后不跨 Provider 重跑；HYLE 掌握 residence/lane/Completion | CUDA Q4 MLP 在 HYLE/成熟/unsupported、HYLE/Provider-owned storage、general/exact capture、多 lane 与 device error 上回放 |
-| Apple delegated/shared 边界 | MLX island 与 native Metal 都进入同一 HYLE boundary；不得伪造统一 allocator/stream | MLX compiled region + Metal custom kernel/interop，在两台 Apple 机器验证 copy/sync、Completion、workspace 与并发 Invocation |
-| 公共抽象与三交付成本 | direct op 不被 Graph 强迫；prepared/Invocation 热路径不搜索、不分配；source/static/shared 语义一致 | CPU one-op 同合同抽象税、跨 shared custom `OperationId`、provider factor 单独发现/未安装路径 |
+| Apple delegated/shared 边界 | MLX island 与 native Metal 共用 HYLE boundary；ownership 与 prepared/managed 成本独立，不假称统一 allocator/stream | 两台 Apple 验证真实 copy/sync、Completion、元数据/runtime 成本、workspace、并发和 prepared-only 拒绝 |
+| 公共抽象与三交付成本 | direct 不取得 Graph；HYLE 热计划无搜索/分配；安装消费者可绑定 custom execution | CPU one-op 税、跨 shared custom identity、仅安装头/库的 CPU/CUDA custom Graph journey |
+| 资源副作用域 | 同资源冲突有序，独立资源可并行，未知副作用保守；不新增模型策略 | 两独立资源/同域写冲突/绑定 alias/跨 region 顺序，复用现有 Queue/Completion |
 
 因此实验后仍要确定的是数据结构、默认预算、provider-specific carrier 和是否达到 material 性能门；不再
 开放的是 Compute/Graph 两产品边界、全局/局部 owner、三轴资源模型、生命周期、shape/capture 基本语义、
@@ -93,7 +97,7 @@ lifetime 和 seam，不复制 peer 的模型 API。
 [PJRT C++ API](https://openxla.org/xla/pjrt/cpp_api_overview) 和
 [MLX compile](https://ml-explore.github.io/mlx/build/html/usage/compile.html)。
 
-## 当前源码勘验
+## 原始基线源码勘验
 
 源码 baseline：`49d32deacf80fbc046e53be64de47042144edc5a`（架构文档提交未改变前一轮勘验的产品树）。
 
@@ -161,8 +165,9 @@ Provider 应只在自己愿意按该顺序拥有的精确域内提案。Graph �
    不能借此替 Graph 比较全局候选；
 5. 未来独立 `graph_tune` 只有取得调用方代表性 bindings、允许执行的纯/确定性范围和独立预算后，才测量
    结构筛选后的少量**完整候选计划**并产出 profile；它不阻塞 foundation v1；
-6. 一般 DAG 不宣称求全局最优。compile 有确定的 candidate/state/prepare-retry 预算，预算耗尽明确失败，
-   不以静默截断改变计划，也不在 warm path 继续试探；未来 tuner 另有独立预算。CompileReport 只保留
+6. 一般 DAG 不宣称求全局最优。compile 有确定的 candidate/state/prepare-retry 预算；没有已验证完整
+   可行计划时耗尽失败，已有可行计划则显式报告 optimization_limited 并按 policy 返回或拒绝，不能
+   静默截断或在 warm path 继续试探；未来 tuner 另有独立预算。CompileReport 只保留
    有界 shortlist 的身份、拒绝原因、成本来源和最终裁决，不复制无限 proposal 日志。
 
 ### R4：按 runtime owner 拆第三方 carrier
@@ -199,9 +204,10 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 一旦 Queue/Provider 已接纳用户工作，错误只经 Completion 传播；Graph 不在另一 Provider 静默重跑，避免
 重复 side effect、资源写入或部分完成。
 
-## 是否需要再次重构
+## 原始基线的定向重构范围
 
-需要，但只做**定向重构**：
+以下记录从 `49d32dea` 启动的定向迁移；状态迁移已经发生，不能把这段当作今天仍待执行的重复迁移。
+整体复核新增范围见下一节，不由这里的旧有限范围自动授权：
 
 - `compute_ops`：从 `CANDIDATE` 返回 `AUDITED`，只修复 custom descriptor 的跨 DSO identity。后续所有
   bounded-domain 支持均是 Graph domain 与具体 provider 对完整 subdomain 的承诺，不能把 provider-specific
@@ -222,6 +228,63 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 在上述状态迁移和有限卡片完成前，不继续横向填充算子，也不把现有 `RegionSelectionPolicy` 的最大覆盖
 结果称为自动 SOTA 路由。
 
+## 整体架构复核与合同修正
+
+2026-09-14，用户要求先 review 整套架构，随后确认更新架构设计与决策，并再次要求参考 vLLM、SGLang、
+llama.cpp、ds4。复核产品基线为 `5802aa02c828505f83e791091b7491f96f6d58e6`：custom schema identity、
+事务化 prepare outcome、可收缩 node-set 已有实现；统一 selector、bounded runtime、MLX adapter 等尚未
+完成，不能把这些已登记的迁移工作再次统计为新发现。工作区另有未完成、未验证的 C80 shape-domain
+草稿，本次保留，不作为候选或通过证据。
+
+结论是保留 Compute/Graph 两产品、三轴资源、全局/局部调度权和 Executable/Invocation 生命周期，修正
+以下六处合同。它们均为设计/实现准入结论，不是性能胜负；特别是 A5 尚无重复分配的实测结论。
+
+| ID | 反证或未闭合之处 | 已接受的修正与权威位置 | 实现 owner / 最小验收 |
+|---|---|---|---|
+| A1 | MLX v0.32.2 `compile.cpp::compile_replace` 在 cache hit 后仍创建执行数组/容器；与一律零分配重放冲突 | Compute §3.4：prepared/managed 成本与 shared/delegated ownership 正交；HYLE 热计划不放宽，可要求 prepared-only；managed 内部成本如实披露，仍无热 JIT/隐藏同步 | Compute + Apple provider；两台 Apple 实测 replay/Completion/OOM/成本，不能从 compile 名称推断资格 |
+| A2 | `graph.h::Dimension` 只有 fixed/symbol，独立 bounds/equality 不能表达 flatten 的乘积或 concat 的和 | Graph §4.3：有限 metadata shape program + guards，独立维度由用户绑定，中间维度派生；不做通用求解器 | Graph + ComputeOps/domain seam；flatten/concat/head split、overflow/非整除与 bounded/exact 组合 |
+| A3 | `Operation::custom` 只有 traits/infer；Provider 的构造依赖私有 `ProviderAccess`，仅安装 SDK 不能自然加入自己的 Graph kernel | Compute §6.1：对象局部、owning typed custom-kernel factory；公共 schema 与执行扩展分开，不公开整个内部 SPI 或恢复 FFI | Compute/ComputeOps + backend consumer；仅安装头/库的 CPU/CUDA custom Graph，三交付/销毁/并发 |
+| A4 | `graph.cc::validate_effect_order` 以单一 last_effect 要求所有外部副作用串链 | Graph §4.4：资源/副作用域 read/write，冲突有序、独立可并行、未知保守；绑定 alias 也验证 | ComputeOps + Graph；两独立资源、同域冲突、别名绑定和跨 region 顺序 |
+| A5 | 生命周期已分层，但未明确 variants 的 packed constant 共享、重复副本与聚合预算 | Graph §3/§4.2：兼容不可变常量共享，可变并发状态独立；逐唯一 allocation 计 resident/cold peak，unknown 不能证明硬预算 | Graph + provider artifact；两 variant 共享或如实重复、并发/capture 不安全复用拒绝、预算/OOM |
+| A6 | 旧 Graph §6.1 即使已有可行计划也一律把搜索耗尽变成编译错误 | Graph §6.1：无已验证可行解仍失败，有则默认返回并报告 optimization_limited；严格模式可拒绝，不吞掉真实错误 | Graph selector；有/无完整可行解两种耗尽、determinism、partial proposal 拒绝 |
+
+### 四个引擎的具体依据与不照搬的部分
+
+重新确认前述四个本地 reference 的 HEAD 与已记录 commit 一致，引用文件没有受管修改；这不是声称
+它们等于当日 upstream 最新提交。仅比较本轮相关机制，不更新依赖锁、不扩算子目录、不复制引擎策略。
+
+| 具名来源 | 实际机制 | 对本次决策的作用与界限 |
+|---|---|---|
+| vLLM `model_executor/custom_op.py::CustomOp`、`compilation/piecewise_backend.py` | 初始化绑定 `_forward_method`；general 与 exact/range runnable 预先编译，按 runtime shape 选已有路线 | 支持 A2/A3 与冷绑定、general/exact 并存；不复制 Python 全局注册，也不把 Python dispatch 的成本当作 C++ 零成本证据 |
+| SGLang `srt/utils/custom_op.py`、`model_executor/cuda_graph_buffer_registry.py` | 实现与 fake/output shape 分开，声明 `mutates_args`；capture buffer owner 明确，可共享稳定地址的 buffer | 支持 A3/A4/A5 的执行/shape 分离、显式写资源与复用；HYLE 不复制进程全局 pool，仍单独证明并发安全 |
+| llama.cpp `src/llama-graph.cpp`、`llama-context.cpp::sched_reserve` | attention 合并乘积维度，图输入按真实 shape/state 判断可复用，预留 worst-case graph | 证明 A2 不是 synthetic 需求，也支持显式资源预算与复用条件；模型/KV/rebuild policy 留在引擎 |
+| ds4 `ds4_cuda.cu::cuda_decode_graph_find/begin` | 按 layer/island/variant/pointer key 保留有限 capture；槽位用尽返回 eager 路线，首次先 warm 再 capture | 支持固定 key、显式冷阶段及优化容量与执行能力分开；只为 A6 提供工程原则，不冒充同一种图搜索算法；不复制全局状态或未经接纳证明的错误重跑 |
+
+可复核源码：[vLLM custom](https://github.com/vllm-project/vllm/blob/51da0ca66c8065619c79e35dff97aa99aeaf5644/vllm/model_executor/custom_op.py#L129)、
+[vLLM variants](https://github.com/vllm-project/vllm/blob/51da0ca66c8065619c79e35dff97aa99aeaf5644/vllm/compilation/piecewise_backend.py#L99)、
+[SGLang custom](https://github.com/sgl-project/sglang/blob/dcebe8c4733a5cb802fb679e0c8fbb886e2801b0/python/sglang/srt/utils/custom_op.py#L57)、
+[SGLang buffers](https://github.com/sgl-project/sglang/blob/dcebe8c4733a5cb802fb679e0c8fbb886e2801b0/python/sglang/srt/model_executor/cuda_graph_buffer_registry.py#L831)、
+[llama.cpp reshape](https://github.com/ggml-org/llama.cpp/blob/e71b80510c848c00175924ecf3c40333ccae8eb5/src/llama-graph.cpp#L2658)、
+[llama.cpp reserve](https://github.com/ggml-org/llama.cpp/blob/e71b80510c848c00175924ecf3c40333ccae8eb5/src/llama-context.cpp#L582)、
+[ds4 capture](https://github.com/antirez/ds4/blob/f62ca29a308724cde5bc99134ede19104b2a3260/ds4_cuda.cu#L961)、
+[MLX compiled call](https://github.com/ml-explore/mlx/blob/v0.32.2/mlx/compile.cpp#L985)。
+vLLM `compilation/cuda_graph.py` 还明确注释多 stream 共享 global pool 的安全性待处理；这恰好说明不能从
+peer 使用了共享池就推断 HYLE 的并发复用已经正确。
+
+### 实施边界
+
+本次仅更新 architecture、当前说明和任务入口，registry 的状态与 candidate 不变，也不修改公共治理或
+构建工具。当前 Compute v8、Graph v9、ComputeOps v2 的有限卡不能自动扩大为全部 A1--A6；下一步在
+现有 `AUDITED` 阶段绑定新卡和本次架构基线，保留已经完成的事实并固定新增 public API/有限 FIX，再写
+这些新合同的产品代码。Native/oneDNN 只迁移实际受影响的 SPI；已 CLOSED CPU/CUDA backend 没有新缺陷
+不重开。不给六个决策各造一个 factor，也不重新计时未变化的产品候选。
+
+预声明本次只运行 docs/closure/diff 检查与文档提交的 change-impact selection；无 C++ build/P1，不能
+由文档 PASS 推导产品 architecture/correctness/performance gate 已通过。
+
+本次维护验证：`check-module-closure.py`、`check-docs.py` 与 `git diff --check` 均通过。未运行 C++ 测试、
+sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改变。
+
 ## 当前 Compute + Graph goal 的重排
 
 当前总目标不变，但执行依赖改为下列顺序；前一步未给出合法 candidate 时不提前运行后一步的重型 P1/P2：
@@ -229,12 +292,12 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 | 顺序 | 工作包 | 当前裁决 / 完成条件 |
 |---:|---|---|
 | 0 | Foundation v1 架构基线 | 本页和两份 architecture 固定上表全部系统决策；docs/closure contract 通过，不改 registry/product |
-| 1 | 合法状态迁移与小卡 | `compute_ops`、`compute`、`graph`、`compute_provider_native` 分别 `CANDIDATE -> AUDITED`；`compute_provider_onednn` 与 `graph_provider_onednn` 绑定新卡，不能沿用旧 proposal/interval 范围 |
-| 2 | Identity + proposal/shape substrate | R1 custom identity；node-set leaf/region 共用结构事实、decline 分类、workload/profile、provider 的 bounded-domain proof/exact-only、constant borrow/materialize seam；不先写 selector 大算法 |
-| 3 | Graph route unification | leaf/region 同池、contractibility、target/storage/boundary 完整成本、有界 state search/reselect、可解释 shortlist/report |
-| 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN shared-runtime direct/region 接受非 insertion-order 的合法 node set；同一 Graph 验 exact 与 bounded route/workspace |
+| 1 | 合法状态迁移与小卡 | 原迁移已使相关 owner 处于 AUDITED；整体复核后先给受影响 owner 绑定新卡/架构基线与 A1--A6 有限 FIX，旧已验证事实保留，不重开无关 CLOSED factor |
+| 2 | Identity + proposal/shape/custom substrate | 复用已完成 identity/outcome/node-set；补 replay 成本、有限派生 shape/domain、安装包 custom execution、资源访问与 constant seam，不先写 selector 大算法 |
+| 3 | Graph route unification | leaf/region 同池、完整成本与有界重选、搜索受限可行解、资源域顺序、variant 常量/内存聚合和可解释 report |
+| 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN 非 insertion-order region；exact/bounded 与派生维度、资源冲突/独立、variant 内存/预算反例 |
 | 5 | CUDA foundation probe | 同 storage 多 lane/dependency、exact capture 与 bounded/general fallback；Q4 MatMul/MLP 的 HYLE/vendor/第三方/unsupported 路由与 residence |
-| 6 | Apple foundation probe | MLX delegated region + 原生 Metal custom-kernel/interop，反证 island boundary/Completion，不横向填 Apple 算子 |
+| 6 | Apple foundation probe | MLX delegated managed replay + 原生 Metal custom-kernel/interop，实证成本分类、prepared-only 拒绝、island boundary/Completion，不横向填 Apple 算子 |
 | 7 | **Foundation implementation gate** | 上述三类探针、三平台基础 correctness、one-op P0/P1、source/static/shared、红队通过；Compute/Graph 基础 candidate 固定 |
 | 8 | NVIDIA/Apple provider 广度 | cuBLASLt/cuDNN/HYLE 与 MLX/MPS/Metal 按真实热路径扩展；不再改基础对象模型 |
 | 9 | Vulkan 保底 | Windows/Linux 原生 Vulkan 与 Apple MoltenVK portability；不冒充原生 Metal 性能 |
@@ -250,7 +313,7 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 
 ### 迁移完成后的独立架构复核
 
-用户要求在本次架构迁移完成后再 review 架构。该复核属于第 7 项已有的终局红队，不以某个局部迁移
+本次前置整体复核不替代迁移后的实现复核。后者属于第 7 项已有的终局红队，不以某个局部迁移
 通过代替全架构通过，也不新建平行状态系统。以实现和三类真实探针逐项核对：
 
 - HYLE 全局 DAG/放置/生命周期与 Provider 内部调度是否各有唯一 owner，未形成双重调度或隐藏同步；
