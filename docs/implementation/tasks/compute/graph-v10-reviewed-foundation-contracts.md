@@ -1046,3 +1046,15 @@ allocator，无法进入 Context 配额与错误注入。这是具体依赖缺�
 [Mem v9 M90--M92](../mem/mem-v9-lifetime-plan-allocator.md) 定向重开；Graph 的统一 planner build
 调用传入既有 allocator，instance 继承同一 owner。先补此 seam，再实现整体 reservation；不在 Graph
 复制 Mem planner 或猜测其内部 allocation bytes。
+
+### 2026-09-15 G106：planner metadata 依赖回放
+
+上述 Mem v9 前置已在候选 `8e4f096e` 完成：四环境 Mem 正确性/适用 sanitizer/三交付通过，Graph
+Windows shared+oneDNN 10/10 闭包回归、CUDA 3/3（执行 229 用例）及 CPU/CUDA source/static/shared
+各 2/2 通过。具体命令、DLL 身份、范围与 P0 见 Mem v9；Mem 已关闭这次定向重开，Graph 不复制其
+allocator bookkeeping。Graph 这一修改只向原有调用传 allocator，热 submit 无变化。
+
+本项解决 metadata 绕过 Context quota/fault injection 的真实缺口，但**尚未**提供 Graph 的完整
+unique resident/compile peak/并发 Invocation/capture 预算或 Provider packing 共享；这些仍是 G106
+活动 FIX，不把前置依赖通过当作基础 gate 完成。当前 Compute/Graph 与此前检查点的实现 LOC 不变：
+**16,670 / 12,273**，合计 **28,943**，不含测试与第三方。

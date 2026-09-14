@@ -144,10 +144,14 @@
     },
     {
       "module": "mem",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md",
       "candidate": "8e4f096e801fda16aa3b8ab507556188e7883159",
-      "summary": "mem v9 CANDIDATE：M90--M92 显式 planner metadata allocator、instance 继承/覆盖与 Graph 直接复用已实现；Windows 定向正确性通过，三交付、跨平台、sanitizer 和候选后红队待验证，不代签 Graph 整体内存。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md"
+      },
+      "summary": "mem v9 CLOSED：显式 planner metadata allocator、instance 继承/覆盖与 Graph 直接复用完成；四环境正确性/适用 sanitizer/Mem 三交付、Windows Graph CPU/CUDA 回放、候选后源码红队、API/docs 与 P0 全过；只补预算前置，不代签 Graph 整体内存。"
     },
     {
       "module": "mem_vm",
