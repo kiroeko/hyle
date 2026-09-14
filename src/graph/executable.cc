@@ -4,10 +4,13 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <functional>
 #include <limits>
 #include <mutex>
 #include <new>
 #include <span>
+#include <string_view>
 #include <utility>
 
 #include "../compute/completion_internal.h"
@@ -16,6 +19,8 @@
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
+#include "hyle/container/flat_hash_map.h"
+#include "hyle/container/hash.h"
 #include "plan_state.h"
 
 namespace hyle::graph {
@@ -4640,11 +4645,52 @@ std::size_t step_constant_count(const detail::PlanState &plan,
 
 Result<CompileReport> build_report(const detail::PlanState &plan,
                                    const detail::GraphState &graph) noexcept {
-  void *storage = plan.allocator.allocate(sizeof(detail::ReportState),
-                                          alignof(detail::ReportState));
+  using ProviderTexts =
+      container::FlatHashMap<std::uint64_t, compute::ProviderIdentity,
+                             container::Hash<std::uint64_t>, std::equal_to<>,
+                             mem::AllocatorRef>;
+  ProviderTexts providers(plan.allocator);
+  std::size_t allocation_bytes = sizeof(detail::ReportState);
+  for (const detail::PlanStep &step : plan.steps) {
+    const auto identity = step.provider();
+    if (!identity.valid())
+      continue;
+    const auto instance = step.provider_instance_id();
+    if (!instance.valid())
+      return std::unexpected(
+          Status::Internal("graph report provider has no instance identity"));
+    auto [entry, result] = providers.try_emplace(instance.value(), identity);
+    if (entry == nullptr)
+      return std::unexpected(plan_allocation_failure());
+    if (result != ProviderTexts::InsertResult::kInserted)
+      continue;
+    for (const auto text : {entry->name, entry->version}) {
+      if (text.size() > SIZE_MAX - allocation_bytes)
+        return std::unexpected(Status::ResourceExhausted(
+            "graph report provider text size overflows"));
+      allocation_bytes += text.size();
+    }
+  }
+  void *storage =
+      plan.allocator.allocate(allocation_bytes, alignof(detail::ReportState));
   if (storage == nullptr)
     return std::unexpected(plan_allocation_failure());
-  auto *state = ::new (storage) detail::ReportState(plan.allocator);
+  auto *state =
+      ::new (storage) detail::ReportState(plan.allocator, allocation_bytes);
+  auto *text_cursor = reinterpret_cast<char *>(state + 1);
+  providers.for_each([&](std::uint64_t,
+                         compute::ProviderIdentity &identity) noexcept {
+    auto copy_text = [&](std::string_view text) noexcept -> std::string_view {
+      if (text.empty())
+        return {};
+      std::memcpy(text_cursor, text.data(), text.size());
+      const std::string_view copy(text_cursor, text.size());
+      text_cursor += text.size();
+      return copy;
+    };
+    identity.name = copy_text(identity.name);
+    identity.version = copy_text(identity.version);
+  });
   state->search = plan.search;
   if (!state->steps.try_resize(plan.steps.size()) ||
       !state->targets.try_resize(plan.targets.size()) ||
@@ -4863,6 +4909,15 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         .output_count = step.output_count,
         .runtime = step.runtime_properties(),
     };
+    if (step_report.provider.valid()) {
+      const auto *owned = providers.find(step_report.provider_instance.value());
+      if (owned == nullptr) {
+        detail::release(state);
+        return std::unexpected(
+            Status::Internal("graph report provider text is missing"));
+      }
+      step_report.provider = *owned;
+    }
     if (step.kind == detail::PlanStepKind::kCopy) {
       step_report.kind = CompileStepKind::kCopy;
       step_report.copy_bytes = step.copy_bytes;

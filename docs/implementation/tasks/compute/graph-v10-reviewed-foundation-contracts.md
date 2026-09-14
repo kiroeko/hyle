@@ -338,3 +338,45 @@ proposal/artifact 承诺矛盾则 fatal 并回收制品。oneDNN 的 pure 路线
 footprint 是访问证明而非 custom execution 工厂；调用方仍须保证 canonical backing（不做 OS 物理 alias
 探测）与跨 Invocation 同步。公开 owning custom execution、bounded/variants、统一完整成本/profile 与
 constant ownership 等既定范围仍未完成；保持 `AUDITED`，尚未到用户要求暂停审视的 foundation gate。
+
+### G107：owning Provider 的报告保活回归（实现前固定）
+
+Compute C100--C103 在 `00abb380` 提供 owning factory 后，`build_report` 仍只复制 ProviderIdentity 的
+string_view，而 CompileReport 明确不保活 Context/artifact。释放 custom Provider 和执行对象后保留
+报告会产生悬空 name/version；这是 G107 直接消费者/报告合同的具体缺陷，不是新一轮架构扩张。
+
+有限 FIX：报告按实际 ProviderInstanceId 去重名称/版本，在原 ReportState allocation 的尾部复制文本；
+临时索引复用 Container FlatHashMap，全部分配使用现有 metadata allocator。报告继续不保活 factory、
+Context、kernel 或代码 image；返回的文本 view 借用报告共享状态，不承诺活过最后一个报告 handle。
+附加成本只在冷报告构造，禁止修改 Plan/Invocation 的 warm 状态或为修文档重跑 P1。
+
+反例包括保留报告后先销毁全部执行 owner、复制/移动报告、同实例多 step 只复制一次、同家族不同实例的
+不同文本、空文本/长文本、报告分配失败完整回滚。使用 quarantine allocator 在逻辑释放时填毒但保留
+底层 allocation，确定性暴露旧的借用错误；实际 shared/static、原 Graph/oneDNN/CUDA 直接回归按本卡执行。
+
+## 2026-09-14 G107：报告文本独立所有权检查点
+
+上述反例在 `00abb380` 的 Graph 产品上确实失败：释放 custom factory 后，保留报告的 name/version 读到
+quarantine 填入的 `!`。修复后同一测试通过，未通过保留 Context 或 factory 掩盖问题。
+报告现在按配置实例去重，复制 name/version 到 ReportState 同一 allocation 的尾部；析构使用原大小/
+alignment 释放。补充空文本、内嵌 NUL、长文本、同实例两 step 共享文本、同家族两 Context 不同版本、
+报告复制/移动后继续观察等反例，并在原逐次 metadata OOM 测试中验证每次失败后的 allocation balance。
+普通 package 示例也在全部执行 owner 释放后读取报告。
+
+- Windows Release static：`compute-route-v8-static-20260914` 的 Graph builder/executable/逐头 3/3 通过。
+- Windows Release oneDNN-enabled shared：`compute-route-onednn-v8-20260914` 的 Graph、真实 oneDNN region
+  与两组逐头共 5/5 通过。只构建对应 Graph targets，未跑全库或未变化的 Provider 算子性能测试。
+- `C:/hyle-scratch/custom-execution-v10-{source-consumer,shared-cuda-consumer,static-consumer}`：普通
+  CPU/CUDA consumer 各 2/2 通过，包含 CUDA 真 kernel、双 Queue、exact capture 与异步错误。安装两格已
+  重新构建/install Graph 并重链消费方；shared producer 与 consumer 的 `hyle_graph.dll` SHA-256 相同
+  (`C31242548E9AA798FA2AD5AF1121EE7E6F683728FA7C2EABE85CBDAC5C59B498`)，不是旧 staged DLL 的假通过。
+- P0：S 个 step、U 个配置实例、L 个去重文本字节时，报告新增构造成本期望 `O(S+U+L)`、临时索引
+  `O(U)`；常驻增加一个 allocation-size 字段与 L bytes，无每 step 的重复文本或 factory/runtime retain。
+  复用已依赖的 Container FlatHashMap、Mem allocator 与 Error；组件图、公开 handle layout、Plan/
+  Invocation layout 和 warm 算法均未变。不运行 P1，不签新速度结论。
+- impact READY，89 项跳过；docs/closure/diff 通过。全库代码 670,274 行、自实现不含测试 121,888 行；
+  Compute 产品 16,156 行、Graph 产品 10,606 行，合计 26,762 行（统一 LOC 脚本、当前工作树）。
+
+这是已接受 G107 的确定生命周期修复和 Windows 增量验证；Linux/macOS、sanitizer、终局独立红队与
+foundation P1 仍留给完整 candidate。C93 完整证据匹配、G103 同池完整计划选择、bounded/variants 与
+constant ownership 等剩余项没有被缩减或宣称完成，Graph 继续 `AUDITED`。

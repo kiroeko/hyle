@@ -1262,6 +1262,8 @@ TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
                         {.metadata_allocator = probe_allocator(probe)})
                         .value();
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
+  const auto retained_allocations =
+      probe.allocations.load() - probe.deallocations.load();
 
   probe.attempts = 0;
   {
@@ -1270,6 +1272,8 @@ TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
   }
   const std::size_t compile_attempts = probe.attempts.load();
   ASSERT_GT(compile_attempts, 1u);
+  EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(),
+            retained_allocations);
 
   for (std::size_t failure = 0; failure < compile_attempts; ++failure) {
     probe.attempts = 0;
@@ -1277,6 +1281,9 @@ TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
     auto failed = hyle::graph::compile(logical.graph, context);
     ASSERT_FALSE(failed.has_value()) << "allocation attempt " << failure;
     EXPECT_TRUE(failed.error().IsResourceExhausted())
+        << "allocation attempt " << failure;
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(),
+              retained_allocations)
         << "allocation attempt " << failure;
 
     probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();

@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <span>
+#include <string>
+#include <utility>
 
 #include <hyle/compute/backends/cpu.h>
 #include <hyle/graph/executable.h>
@@ -66,6 +68,8 @@ int main() {
   auto compiled = hyle::graph::compile(*graph, *context);
   if (!compiled)
     return 14;
+  const std::string provider_name(compiled->report.provider().name);
+  const std::string provider_version(compiled->report.provider().version);
   auto run = compiled->executable.create_invocation();
   if (!run || !run->bind(*in, *input).ok() || !run->bind(*out, *output).ok())
     return 15;
@@ -78,5 +82,15 @@ int main() {
         actual != std::array<float, 4>{5, 7, 9, 11})
       return 17;
   }
+  // Diagnostic reports own their text, not the factory or execution resources.
+  *done = {};
+  *invocation = {};
+  *prepared = {};
+  *run = {};
+  *queue = {};
+  *context = {};
+  if (compiled->report.provider().name != provider_name ||
+      compiled->report.step(0)->provider.version != provider_version)
+    return 18;
   return 0;
 }

@@ -3,6 +3,7 @@
 这是普通 C++ 消费者，不包含 HYLE `src/` 或手写 Provider 表。`kernel.h` 定义 schema；独立 shared
 library 中的 `kernel.cc` 持有 move-only factory，冷 prepare 创建 immutable kernel，每次执行有独占
 Invocation。`main.cc` 用同一个 Provider 完成 direct prepare 和 Graph compile/replay。
+它还在释放全部执行 owner 后读取独立 CompileReport 的名称/版本；报告不延后 factory/kernel 的销毁。
 
 此 CPU 示例不是 affine 的性能实现；它演示用户尚未放进公共算子目录的计算如何接入。真实热 kernel
 可以在相同边界调用 HYLE SIMD 或自己的实现。输入/输出要求 host-accessible、对齐的 dense f32；backend、

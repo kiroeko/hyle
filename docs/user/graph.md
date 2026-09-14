@@ -362,6 +362,10 @@ multi-stream capture。
 - provider/version、实际配置实例 `provider_instance`、dispatch、workspace、persistent/packed/borrowed
   bytes、blocking/threading 与 replay 类别。
 
+Provider 名称/版本文本由报告复制，释放 Context、factory 或 Executable 不会令报告悬空。
+`provider()` / `step()` 返回值中的文本 view 借用报告共享状态，不能活过最后一个报告 handle；复制/移动
+报告不复制执行资源，也不缩短这份共享文本的生命周期。
+
 `persistent_bytes == nullopt` 表示 provider 无法报告，不是零。`delegated_segment_count()` 是 provider-owned
 island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDependent` 也不是已经发生 host wait；
 具体 Queue/provider endpoint 固定后的真实路线只看 `ReplayReport`。

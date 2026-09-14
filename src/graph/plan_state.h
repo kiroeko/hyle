@@ -728,22 +728,26 @@ inline void release(PlanState *state) noexcept {
 }
 
 struct ReportState final : util::RefCounted<ReportState> {
-  explicit ReportState(mem::AllocatorRef allocator_value) noexcept
-      : allocator(allocator_value), steps(allocator_value),
-        targets(allocator_value), storage_domains(allocator_value),
-        lanes(allocator_value), segments(allocator_value),
-        physical_values(allocator_value), step_inputs(allocator_value),
-        step_outputs(allocator_value), step_nodes(allocator_value),
-        step_node_begins(allocator_value),
+  ReportState(mem::AllocatorRef allocator_value,
+              std::size_t allocation_bytes_value) noexcept
+      : allocator(allocator_value), allocation_bytes(allocation_bytes_value),
+        steps(allocator_value), targets(allocator_value),
+        storage_domains(allocator_value), lanes(allocator_value),
+        segments(allocator_value), physical_values(allocator_value),
+        step_inputs(allocator_value), step_outputs(allocator_value),
+        step_nodes(allocator_value), step_node_begins(allocator_value),
         segment_dependencies(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
+    const std::size_t bytes = allocation_bytes;
     this->~ReportState();
-    owner.deallocate(this, sizeof(ReportState), alignof(ReportState));
+    owner.deallocate(this, bytes, alignof(ReportState));
   }
 
   mem::AllocatorRef allocator{};
+  // Provider identity text is owned in this allocation's immutable tail.
+  std::size_t allocation_bytes = 0;
   CompileStepReports steps;
   CompileTargetReports targets;
   CompileStorageReports storage_domains;

@@ -397,8 +397,9 @@ struct CompileSearchReport final {
 
 // Copyable cold-path report that owns a compact immutable copy of the emitted
 // plan facts independently of the Executable and its heavyweight artifacts.
-// Aggregate queries and step(index) are O(1); step returns a value, so no
-// diagnostic view dangles after either handle moves.
+// Aggregate queries and step(index) are O(1). Provider name/version text is
+// copied into the report; views returned by provider()/step() borrow its
+// shared state and remain valid until the last report handle is destroyed.
 class CompileReport final {
 public:
   CompileReport() noexcept = default;
