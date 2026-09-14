@@ -287,18 +287,20 @@ hyle::Status propose_async_operation(
       request.shape.inputs[0].values[0] == request.shape.outputs[0].values[0];
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = 1,
-      .runtime = hyle::compute::ProviderRuntimeProperties{
-          .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
-          .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
-          .replay_class = probe.proposed_replay,
-          .blocks_host = false,
-          .uses_private_threads = false,
-          .supports_concurrent_invocations = true,
-          .capture_compatible = false,
-      },
-      .cost = hyle::compute::detail::ProviderRouteCostFacts{
-          .workspace = hyle::compute::WorkspaceRequirement{},
-      },
+      .runtime =
+          hyle::compute::ProviderRuntimeProperties{
+              .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
+              .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+              .replay_class = probe.proposed_replay,
+              .blocks_host = false,
+              .uses_private_threads = false,
+              .supports_concurrent_invocations = true,
+              .capture_compatible = false,
+          },
+      .cost =
+          hyle::compute::ProviderRouteCostFacts{
+              .workspace = hyle::compute::WorkspaceRequirement{},
+          },
       .shape_coverage = probe.shape_coverage,
   };
   return hyle::Status::Ok();
@@ -869,9 +871,10 @@ hyle::Status propose_delegated(
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = 1,
       .runtime = kDelegatedRuntime,
-      .cost = hyle::compute::detail::ProviderRouteCostFacts{
-          .workspace = hyle::compute::WorkspaceRequirement{},
-      },
+      .cost =
+          hyle::compute::ProviderRouteCostFacts{
+              .workspace = hyle::compute::WorkspaceRequirement{},
+          },
   };
   return hyle::Status::Ok();
 }

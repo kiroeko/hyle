@@ -40,3 +40,6 @@ OD50/OD51 的 exact 迁移已落地：direct BRGEMM 明确零 copy/repack/sync�
 与尚未构造的 workspace 保持 unknown，未用假零补齐。prepare 的 unsupported、分配预算拒绝和真实错误已
 显式分类。Windows oneDNN-enabled source-tree shared 构建以及 provider/composition/Graph/逐头测试 6/6
 通过；OD52/OD53 的 node-set region 与完整 gated-MLP 证据尚未完成，状态保持 `AUDITED`。
+
+C93/G103 的公共结构成本类型迁移已完成，原有 exact/unknown 数值与 BRGEMM kernel/tile 不变。Windows
+oneDNN-enabled shared 的 direct/composition/Graph/region/逐头定向 8/8 通过；不替代 OD53 最终安装/P1。

@@ -492,7 +492,7 @@ TEST(OneDnnRegionProvider, ExtraIntermediateConsumerIsNotForcedIntoRegion) {
 }
 
 TEST(OneDnnRegionProvider,
-     StrictBenefitPolicyFallsBackWhenPortableEstimateIsUnknown) {
+     ExplicitlyDisabledRegionsUseTheConfiguredLeafProviders) {
   const GatedMlp logical = make_gated_mlp(17, 5, 7);
   OwnedTensor gate_weight = make_tensor(matrix(5, 7));
   OwnedTensor up_weight = make_tensor(matrix(5, 7));
@@ -509,15 +509,15 @@ TEST(OneDnnRegionProvider,
   auto compiled = hyle::graph::compile(
       logical.graph, context,
       CompileOptions{.constants = constants,
-                     .region_selection =
-                         RegionSelectionPolicy::kRequireEstimatedBenefit});
+                     .region_selection = RegionSelectionPolicy::kDisabled});
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
   EXPECT_EQ(compiled->report.region_count(), 0U);
   EXPECT_EQ(compiled->report.fallback_operation_count(), 4U);
   for (std::size_t index = 0; index < compiled->report.step_count(); ++index) {
     const auto step = compiled->report.step(index).value();
     EXPECT_EQ(step.kind, CompileStepKind::kOperationFallback);
-    EXPECT_EQ(step.fallback_reason, CompileFallbackReason::kNoEligibleRegion);
+    EXPECT_EQ(step.fallback_reason,
+              CompileFallbackReason::kRegionSelectionDisabled);
     EXPECT_NE(step.provider.id, hyle::graph::onednn::kProviderId);
   }
 }

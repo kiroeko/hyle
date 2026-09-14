@@ -588,15 +588,9 @@ detail::OperationPreparationAccess::propose(
     return std::unexpected(Status::Internal(
         "compute provider returned invalid runtime properties"));
   }
-  if (proposal.cost.workspace.has_value() &&
-      (!is_power_of_two(proposal.cost.workspace->alignment))) {
+  if (!proposal.cost.valid()) {
     return std::unexpected(Status::Internal(
-        "compute provider returned invalid proposed workspace"));
-  }
-  if (proposal.cost.dispatch_count.has_value() &&
-      *proposal.cost.dispatch_count == 0) {
-    return std::unexpected(Status::Internal(
-        "compute provider returned an invalid zero dispatch count"));
+        "compute provider returned invalid structural cost facts"));
   }
   status = validate_requirement(proposal.workspace_resource);
   if (!status.ok())

@@ -1034,14 +1034,15 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
           detail::ResourceBindingRequirement{
               .required_properties = mem::MemoryProperty::kHostAccessible,
           },
-      .cost = detail::ProviderRouteCostFacts{
-          .workspace = plan.workspace,
-          .persistent_bytes = sizeof(NativePlan),
-          .copy_bytes = 0,
-          .repack_bytes = 0,
-          .synchronization_count = 0,
-          .dispatch_count = 1,
-      },
+      .cost =
+          ProviderRouteCostFacts{
+              .workspace = plan.workspace,
+              .persistent_bytes = sizeof(NativePlan),
+              .copy_bytes = 0,
+              .repack_bytes = 0,
+              .synchronization_count = 0,
+              .dispatch_count = 1,
+          },
   };
   return Status::Ok();
 }

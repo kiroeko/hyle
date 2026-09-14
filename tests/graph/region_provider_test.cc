@@ -64,7 +64,7 @@ constexpr hyle::compute::ProviderId kRegionProviderId{0x544553542d475241ULL,
 
 enum class ProposalMode : std::uint8_t {
   kPairs = 0,
-  kWeightedOverlap,
+  kOverlappingRoutes,
   kNonContiguous,
   kNonContiguousReordered,
   kSingleton,
@@ -81,8 +81,7 @@ enum class ProposalMode : std::uint8_t {
 
 struct RegionProbe final {
   ProposalMode mode = ProposalMode::kPairs;
-  std::optional<std::uint64_t> proposal_savings = 10;
-  std::uint32_t proposal_dispatch_count = 1;
+  std::optional<std::uint32_t> proposal_dispatch_count = 1;
   std::size_t propose_count = 0;
   std::size_t compile_count = 0;
   std::size_t single_prepare_count = 0;
@@ -336,12 +335,11 @@ bool is_negation(const Graph &graph, std::size_t node_index) {
 
 Status add_node_set_proposal(
     RegionProposalWriter &writer, std::span<const NodeId> nodes,
-    std::optional<std::uint64_t> savings, std::uint32_t dispatch_count = 1,
+    std::optional<std::uint32_t> dispatch_count = 1,
     ProviderReplayClass replay_class = ProviderReplayClass::kUnknown) noexcept {
   return writer.add(RegionProposal{
       .nodes = nodes,
-      .cost = {.estimated_net_savings_ns = savings,
-               .dispatch_count = dispatch_count},
+      .cost = {.dispatch_count = dispatch_count},
       .route =
           nodes.empty()
               ? 0
@@ -353,8 +351,7 @@ Status add_node_set_proposal(
 
 Status add_proposal(const Graph &graph, RegionProposalWriter &writer,
                     std::uint32_t begin, std::uint32_t count,
-                    std::optional<std::uint64_t> savings,
-                    std::uint32_t dispatch_count = 1) noexcept {
+                    std::optional<std::uint32_t> dispatch_count = 1) noexcept {
   if (count != 2)
     return Status::InvalidArgument("test region proposal count is not two");
   auto first = graph.node_id(begin);
@@ -364,7 +361,7 @@ Status add_proposal(const Graph &graph, RegionProposalWriter &writer,
   if (!second)
     return std::move(second).error();
   const std::array nodes{*first, *second};
-  return add_node_set_proposal(writer, nodes, savings, dispatch_count);
+  return add_node_set_proposal(writer, nodes, dispatch_count);
 }
 
 Status propose_regions(void *context, const Graph &graph,
@@ -373,29 +370,29 @@ Status propose_regions(void *context, const Graph &graph,
   ++probe.propose_count;
   if (probe.mode == ProposalMode::kSingleton) {
     const std::array nodes{graph.node_id(0).value()};
-    return add_node_set_proposal(writer, nodes, 10, 1,
+    return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count,
                                  probe.discovery_replay_class);
   }
   if (probe.mode == ProposalMode::kInterleavedChains ||
       probe.mode == ProposalMode::kJointCycle) {
     const std::array first{graph.node_id(0).value(), graph.node_id(2).value()};
     const std::array second{graph.node_id(1).value(), graph.node_id(3).value()};
-    Status added = add_node_set_proposal(writer, first, 20);
+    Status added = add_node_set_proposal(writer, first);
     if (!added.ok())
       return added;
-    return add_node_set_proposal(writer, second, 10);
+    return add_node_set_proposal(writer, second);
   }
   if (probe.mode == ProposalMode::kOverflow) {
-    Status first = add_proposal(graph, writer, 0, 2, 10);
+    Status first = add_proposal(graph, writer, 0, 2);
     if (!first.ok())
       return first;
-    return add_proposal(graph, writer, 0, 2, 11);
+    return add_proposal(graph, writer, 0, 2);
   }
-  if (probe.mode == ProposalMode::kWeightedOverlap) {
-    Status first = add_proposal(graph, writer, 0, 2, 10);
+  if (probe.mode == ProposalMode::kOverlappingRoutes) {
+    Status first = add_proposal(graph, writer, 0, 2, 2);
     if (!first.ok())
       return first;
-    return add_proposal(graph, writer, 1, 2, 20);
+    return add_proposal(graph, writer, 1, 2, 1);
   }
   if (probe.mode == ProposalMode::kNonContiguous) {
     auto first = graph.node_id(0);
@@ -405,7 +402,7 @@ Status propose_regions(void *context, const Graph &graph,
     if (!last)
       return std::move(last).error();
     const std::array nodes{*last, *first};
-    return add_node_set_proposal(writer, nodes, 20);
+    return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count);
   }
   if (probe.mode == ProposalMode::kNonContiguousReordered) {
     auto first = graph.node_id(0);
@@ -415,28 +412,28 @@ Status propose_regions(void *context, const Graph &graph,
     if (!last)
       return std::move(last).error();
     const std::array nodes{*first, *last};
-    return add_node_set_proposal(writer, nodes, 20);
+    return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count);
   }
   if (probe.mode == ProposalMode::kDuplicateNode) {
     auto node = graph.node_id(0);
     if (!node)
       return std::move(node).error();
     const std::array nodes{*node, *node};
-    return add_node_set_proposal(writer, nodes, 20);
+    return add_node_set_proposal(writer, nodes);
   }
   if (probe.mode == ProposalMode::kForeignNode) {
     auto local = graph.node_id(1);
     if (!local)
       return std::move(local).error();
     const std::array nodes{probe.foreign_node, *local};
-    return add_node_set_proposal(writer, nodes, 20);
+    return add_node_set_proposal(writer, nodes);
   }
   for (std::size_t index = 0; index + 1 < graph.node_count(); ++index) {
     if (!is_negation(graph, index) || !is_negation(graph, index + 1))
       continue;
     Status status =
         add_proposal(graph, writer, static_cast<std::uint32_t>(index), 2,
-                     probe.proposal_savings, probe.proposal_dispatch_count);
+                     probe.proposal_dispatch_count);
     if (!status.ok())
       return status;
     ++index;
@@ -844,7 +841,7 @@ Status propose_single(
       .route = effect ? 1u : 2u,
       .runtime = single_runtime(probe, effect),
       .cost =
-          hyle::compute::detail::ProviderRouteCostFacts{
+          hyle::compute::ProviderRouteCostFacts{
               .workspace = hyle::compute::WorkspaceRequirement{},
           },
   };
@@ -1703,18 +1700,14 @@ TEST(GraphRegions, DelegatedSingleOperationUsesTheGraphLifetimeOwner) {
 }
 
 TEST(GraphRegions, ImportsASharedQueuePrefixIntoADelegatedRegion) {
-  RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
+  RegionProbe probe{.mode = ProposalMode::kOverlappingRoutes};
   probe.asynchronous_backend = true;
   probe.required_resource = hyle::mem::system_resource();
   use_delegated_runtime(probe);
   const NegationGraph logical = make_negations(3);
   Context context = make_context(probe);
   auto compiled =
-      hyle::graph::compile(
-          logical.graph, context,
-          CompileOptions{.region_selection =
-                             RegionSelectionPolicy::kRequireEstimatedBenefit})
-          .value();
+      hyle::graph::compile(logical.graph, context, CompileOptions{}).value();
   ASSERT_EQ(compiled.report.step_count(), 2u);
   ASSERT_EQ(compiled.report.region_count(), 1u);
   ASSERT_EQ(compiled.executable.required_queue_count(), 1u);
@@ -2044,16 +2037,12 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
 }
 
 TEST(GraphRegions,
-     SelectsTheHigherBenefitOverlappingIntervalDeterministically) {
-  RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
+     SelectsFewerEpisodesForSameIntervalCoverageDeterministically) {
+  RegionProbe probe{.mode = ProposalMode::kOverlappingRoutes};
   const NegationGraph logical = make_negations(3);
   Context context = make_context(probe);
   auto compiled =
-      hyle::graph::compile(
-          logical.graph, context,
-          CompileOptions{.region_selection =
-                             RegionSelectionPolicy::kRequireEstimatedBenefit})
-          .value();
+      hyle::graph::compile(logical.graph, context, CompileOptions{}).value();
   EXPECT_EQ(compiled.report.step_count(), 2u);
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(probe.compiled_begin, 1u);
@@ -2270,7 +2259,7 @@ TEST(GraphRegions, ProposalNodeBudgetExhaustionIsAHardFailure) {
 }
 
 TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
-  RegionProbe probe{.mode = ProposalMode::kWeightedOverlap};
+  RegionProbe probe{.mode = ProposalMode::kOverlappingRoutes};
   const NegationGraph logical = make_negations(3);
   const std::array region_only{region_provider(probe)};
   Context region_context =
@@ -2288,11 +2277,8 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
       .storage = environment.storage(1),
   }};
   auto compiled =
-      hyle::graph::compile(
-          logical.graph, environment.environment(),
-          CompileOptions{.external_resources = resources,
-                         .region_selection =
-                             RegionSelectionPolicy::kRequireEstimatedBenefit})
+      hyle::graph::compile(logical.graph, environment.environment(),
+                           CompileOptions{.external_resources = resources})
           .value();
 
   EXPECT_EQ(compiled.report.region_count(), 1u);
@@ -2372,8 +2358,8 @@ TEST(GraphRegions, IgnoresUnusedEnvironmentBackendsInPlanSummary) {
   EXPECT_FALSE(compiled.report.mixed_backends());
 }
 
-TEST(GraphRegions, DefaultPolicyAcceptsUnknownEstimateAsExplicitOptIn) {
-  RegionProbe probe{.proposal_savings = std::nullopt};
+TEST(GraphRegions, DefaultPolicyAcceptsUnknownCountsAsExplicitOptIn) {
+  RegionProbe probe{.proposal_dispatch_count = std::nullopt};
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
@@ -2382,35 +2368,46 @@ TEST(GraphRegions, DefaultPolicyAcceptsUnknownEstimateAsExplicitOptIn) {
   EXPECT_EQ(probe.single_prepare_count, 0u);
 }
 
-TEST(GraphRegions, StrictPolicyRejectsUnknownEstimate) {
-  RegionProbe probe{.proposal_savings = std::nullopt};
-  const NegationGraph logical = make_negations(2);
-  Context context = make_context(probe);
-  auto compiled =
-      hyle::graph::compile(
-          logical.graph, context,
-          CompileOptions{.region_selection =
-                             RegionSelectionPolicy::kRequireEstimatedBenefit})
-          .value();
-  EXPECT_EQ(compiled.report.region_count(), 0u);
-  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
-  EXPECT_EQ(probe.compile_count, 0u);
-  EXPECT_EQ(probe.single_prepare_count, 2u);
+TEST(GraphRegions, MixedUnknownCountsUseATransitiveDeterministicFallback) {
+  for (auto mode : {ProposalMode::kPairs, ProposalMode::kNonContiguous}) {
+    Graph graph = mode == ProposalMode::kPairs
+                      ? make_negations(2).graph
+                      : make_non_contiguous_negations().graph;
+    // Pairwise "compare when both known" would cycle: first < unknown by
+    // provider order, unknown < third by order, third < first by count.
+    RegionProbe first{.mode = mode, .proposal_dispatch_count = 3};
+    RegionProbe unknown{.mode = mode, .proposal_dispatch_count = std::nullopt};
+    RegionProbe third{.mode = mode, .proposal_dispatch_count = 1};
+    const std::array providers{region_provider(first), region_provider(unknown),
+                               region_provider(third),
+                               hyle::compute::native::provider()};
+    Context context =
+        Context::create(hyle::compute::cpu::device(), {.providers = providers})
+            .value();
+    for (int repeat = 0; repeat < 3; ++repeat) {
+      auto compiled = hyle::graph::compile(graph, context);
+      ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+      EXPECT_EQ(compiled->report.region_count(), 1u);
+    }
+    EXPECT_EQ(first.compile_count, 3u);
+    EXPECT_EQ(unknown.compile_count, 0u);
+    EXPECT_EQ(third.compile_count, 0u);
+  }
 }
 
-TEST(GraphRegions, ExplicitZeroEstimateIsNotSelectedByDefault) {
-  RegionProbe probe{.proposal_savings = 0};
+TEST(GraphRegions, ZeroDispatchCountIsMalformedNotZeroWork) {
+  RegionProbe probe{.proposal_dispatch_count = 0};
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
-  auto compiled = hyle::graph::compile(logical.graph, context).value();
-  EXPECT_EQ(compiled.report.region_count(), 0u);
-  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsInternal());
   EXPECT_EQ(probe.compile_count, 0u);
 }
 
 TEST(GraphRegions, DefaultPolicyUsesEarlierProviderAsTheFinalTieBreak) {
-  RegionProbe first{.proposal_savings = std::nullopt};
-  RegionProbe second{.proposal_savings = std::nullopt};
+  RegionProbe first;
+  RegionProbe second;
   const NegationGraph logical = make_negations(2);
   Context context = make_context(first, second);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
@@ -2420,10 +2417,8 @@ TEST(GraphRegions, DefaultPolicyUsesEarlierProviderAsTheFinalTieBreak) {
 }
 
 TEST(GraphRegions, DefaultPolicyPrefersFewerDispatchEpisodesBeforeProvider) {
-  RegionProbe first{.proposal_savings = std::nullopt,
-                    .proposal_dispatch_count = 2};
-  RegionProbe second{.proposal_savings = std::nullopt,
-                     .proposal_dispatch_count = 1};
+  RegionProbe first{.proposal_dispatch_count = 2};
+  RegionProbe second{.proposal_dispatch_count = 1};
   const NegationGraph logical = make_negations(2);
   Context context = make_context(first, second);
   auto compiled = hyle::graph::compile(logical.graph, context).value();

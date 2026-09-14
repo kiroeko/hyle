@@ -10,6 +10,10 @@ G100 的 prepared-only 冷筛选同属 GP41：region discovery 提前声明同�
 v7，确保 oneDNN MLP 不被当成 unknown 排除。只迁移元数据并增加实际 strict 编译/执行回归，不改 kernel、
 pattern、线程或 submit；不据此签发 GP44 性能结论。
 
+G103/GP41 共用 Compute 的结构成本类型，删除未资格化的私有时间估值槽和重复 runtime 字段；region
+extension 随布局升版。实际 MLP 的已知 copy/repack/sync/dispatch 如实保留，workspace/JIT persistent
+未知仍为 unknown，不为选路捏造时间；kernel/pattern/submit 不变。
+
 ## Closure card
 
 - component / owner：`graph_provider_onednn` / Graph oneDNN provider；round=`graph-provider-onednn-v4-node-set-foundation`；

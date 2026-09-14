@@ -1086,7 +1086,7 @@ struct RegionExtension final {
 };
 
 struct RegionCandidate final {
-  RegionCostFacts cost{};
+  compute::ProviderRouteCostFacts cost{};
   std::uint64_t route = 0;
   compute::ProviderReplayClass replay_class =
       compute::ProviderReplayClass::kUnknown;
@@ -1516,7 +1516,6 @@ Status discover_region_candidates(
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
                       std::span<const NodeId> proposal_nodes,
                       const detail::GraphState &graph,
-                      RegionSelectionPolicy policy,
                       RegionCandidates &selected) noexcept;
 
 Status prepare_placed_steps(detail::PlanState &plan,
@@ -2037,9 +2036,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
     if (eligible && !candidates.try_push_back(candidate))
       return plan_allocation_failure();
   }
-  Status selected =
-      select_regions(candidates, plan.allocator, all_region_nodes, graph,
-                     options.region_selection, selected_regions);
+  Status selected = select_regions(candidates, plan.allocator, all_region_nodes,
+                                   graph, selected_regions);
   if (!selected.ok())
     return selected;
   if (options.operation_fallback == OperationFallbackPolicy::kReject) {
@@ -2910,20 +2908,12 @@ Status discover_region_candidates(
         return Status::Internal(
             "region provider declared an invalid replay class");
       }
+      if (!proposal.cost.valid()) {
+        return Status::Internal(
+            "region provider declared invalid structural cost facts");
+      }
       if (!replay_allowed(options.provider_replay, proposal.replay_class))
         continue;
-      const std::optional<std::uint64_t> estimate =
-          proposal.cost.estimated_net_savings_ns;
-      if ((estimate.has_value() && *estimate == 0) ||
-          (options.region_selection ==
-               RegionSelectionPolicy::kRequireEstimatedBenefit &&
-           !estimate.has_value())) {
-        continue;
-      }
-      if (proposal.cost.dispatch_count == 0) {
-        return Status::InvalidArgument(
-            "provider proposed a graph region with no dispatch");
-      }
       bool target_eligible = true;
       if (!node_targets.empty()) {
         for (NodeId node : proposal.nodes) {
@@ -2964,7 +2954,6 @@ Status discover_region_candidates(
 }
 
 struct RegionSelectionScore final {
-  std::uint64_t estimated_savings = 0;
   std::uint64_t covered_nodes = 0;
   std::uint64_t dispatches = 0;
   std::uint64_t provider_rank_cost = 0;
@@ -2983,14 +2972,10 @@ Unsigned saturating_multiply(Unsigned left, Unsigned right) noexcept {
 }
 
 bool better_score(RegionSelectionScore left, RegionSelectionScore right,
-                  RegionSelectionPolicy policy) noexcept {
-  if (policy == RegionSelectionPolicy::kRequireEstimatedBenefit &&
-      left.estimated_savings != right.estimated_savings) {
-    return left.estimated_savings > right.estimated_savings;
-  }
+                  bool compare_dispatches) noexcept {
   if (left.covered_nodes != right.covered_nodes)
     return left.covered_nodes > right.covered_nodes;
-  if (left.dispatches != right.dispatches)
+  if (compare_dispatches && left.dispatches != right.dispatches)
     return left.dispatches < right.dispatches;
   return left.provider_rank_cost < right.provider_rank_cost;
 }
@@ -2998,8 +2983,15 @@ bool better_score(RegionSelectionScore left, RegionSelectionScore right,
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
                       std::span<const NodeId> proposal_nodes,
                       const detail::GraphState &graph,
-                      RegionSelectionPolicy policy,
                       RegionCandidates &selected) noexcept {
+  // A missing count is not zero, nor evidence against the candidate. Disable
+  // this whole score coordinate when any candidate is unknown. Comparing it
+  // only pairwise when known would also violate sort's transitivity.
+  const bool compare_dispatches =
+      std::all_of(candidates.begin(), candidates.end(),
+                  [](const RegionCandidate &candidate) {
+                    return candidate.cost.dispatch_count.has_value();
+                  });
   const bool intervals_only = std::all_of(
       candidates.begin(), candidates.end(),
       [&](const RegionCandidate &candidate) noexcept {
@@ -3010,15 +3002,10 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
         candidates.begin(), candidates.end(),
         [&](const RegionCandidate &left,
             const RegionCandidate &right) noexcept {
-          if (policy == RegionSelectionPolicy::kRequireEstimatedBenefit &&
-              left.cost.estimated_net_savings_ns !=
-                  right.cost.estimated_net_savings_ns) {
-            return left.cost.estimated_net_savings_ns.value_or(0) >
-                   right.cost.estimated_net_savings_ns.value_or(0);
-          }
           if (left.node_count != right.node_count)
             return left.node_count > right.node_count;
-          if (left.cost.dispatch_count != right.cost.dispatch_count)
+          if (compare_dispatches &&
+              left.cost.dispatch_count != right.cost.dispatch_count)
             return left.cost.dispatch_count < right.cost.dispatch_count;
           if (left.provider_index != right.provider_index)
             return left.provider_index < right.provider_index;
@@ -3130,22 +3117,21 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
         static_cast<std::size_t>(previous_end - candidates.begin());
     predecessors[index] = static_cast<std::uint32_t>(previous_count);
     RegionSelectionScore include = scores[previous_count];
-    include.estimated_savings = saturating_add(
-        include.estimated_savings,
-        candidates[index].cost.estimated_net_savings_ns.value_or(0));
     include.covered_nodes = saturating_add(
         include.covered_nodes,
         static_cast<std::uint64_t>(candidates[index].node_count));
-    include.dispatches = saturating_add(
-        include.dispatches,
-        static_cast<std::uint64_t>(candidates[index].cost.dispatch_count));
+    if (compare_dispatches) {
+      include.dispatches = saturating_add(
+          include.dispatches,
+          static_cast<std::uint64_t>(*candidates[index].cost.dispatch_count));
+    }
     include.provider_rank_cost = saturating_add(
         include.provider_rank_cost,
         saturating_multiply(
             static_cast<std::uint64_t>(candidates[index].provider_index) + 1,
             static_cast<std::uint64_t>(candidates[index].node_count)));
     const RegionSelectionScore exclude = scores[index];
-    if (better_score(include, exclude, policy)) {
+    if (better_score(include, exclude, compare_dispatches)) {
       scores[index + 1] = include;
       take[index] = 1;
     } else {
@@ -6354,9 +6340,7 @@ Result<CompiledGraph> compile(const Graph &graph,
   }
   if (options.region_selection != RegionSelectionPolicy::kDisabled &&
       options.region_selection !=
-          RegionSelectionPolicy::kPreferProviderRegions &&
-      options.region_selection !=
-          RegionSelectionPolicy::kRequireEstimatedBenefit) {
+          RegionSelectionPolicy::kPreferProviderRegions) {
     return std::unexpected(
         Status::InvalidArgument("graph region selection policy is invalid"));
   }

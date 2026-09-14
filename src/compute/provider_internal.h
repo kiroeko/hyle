@@ -19,7 +19,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 4;
+inline constexpr std::uint32_t kProviderContractVersion = 5;
 
 struct ProviderOperationRequest final {
   Operation operation{};
@@ -27,18 +27,6 @@ struct ProviderOperationRequest final {
   std::span<const TensorDesc> inputs{};
   std::span<const TensorDesc> outputs{};
   ProviderShapeDomain shape{};
-};
-
-// Provider-owned work that is visible at the canonical operation boundary.
-// These are structural facts, not benchmark scores. Unknown byte counts stay
-// disengaged; an engaged zero is an exact zero.
-struct ProviderRouteCostFacts final {
-  std::optional<WorkspaceRequirement> workspace{};
-  std::optional<std::size_t> persistent_bytes{};
-  std::optional<std::size_t> copy_bytes{};
-  std::optional<std::size_t> repack_bytes{};
-  std::optional<std::uint32_t> synchronization_count{};
-  std::optional<std::uint32_t> dispatch_count{};
 };
 
 struct ProviderOperationProposal final {

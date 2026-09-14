@@ -175,3 +175,30 @@ attributes 与其余 G100--G107 仍未完成。这里只完成有限 shape subst
 performance key。C93 尚待补齐明确的 build/device/domain/boundary 事实；没有可用事实时保留 unknown，
 不编造 ns、不用函数地址或 POD padding 做持久 identity。这个缺项不阻止已审定的 Graph G100 replay
 硬约束冷筛选；它不依赖 timing evidence，也不宣称已完成性能排序。
+
+C93/G103 的共同成本前置迁移：现有私有 `ProviderRouteCostFacts` 移到公开 prepared-operation 合同，
+不新建目标/依赖，Graph region 直接复用。共享 `valid()` 取代 leaf/region 重复检查，Compute 私有表随表示
+迁移升版；Native/oneDNN 只迁移类型引用。该步骤清除不合格的 region 私有 ns 路径，但 qualified profile
+的完整 identity/输入/匹配仍待实施，不宣称用结构计数替代真实性能。
+
+## 2026-09-14 C93/G103：共同结构成本与旧估值清理
+
+`ProviderRouteCostFacts` 已移到公开 `prepared_operation.h`，leaf/region 使用同一类型与 `valid()`。workspace
+保留 size/alignment，六类事实都显式区分 unknown/known，byte/sync 的 exact zero 合法；已知 dispatch=0
+和非二次幂 alignment 非法。Compute 私有表升至 5、region extension 升至 8，没有旧类型/布局适配。
+
+Graph 不再接收或使用 Provider 相对自身 fallback 的 ns：旧字段、未使用 compile estimate 和
+`kRequireEstimatedBenefit` 均删除。未伪造 full-plan profile 来保留旧打分。结构策略在所有候选都有 dispatch
+事实时才使用该坐标，否则整维跳过；三个候选形成 pairwise 比较环的反例，在 interval 和一般 node-set
+路径重复编译均稳定。精确零/未知、非法事实、异步 prefix→region、fallback relocation 和真实 oneDNN
+全部回放。没有修改 kernel/tile、线程或 warm submit；算子目录未增长。
+
+- Windows Release source-tree shared/static：Compute/CPU/Native/Graph 及逐头各 9/9，通过各 237 单元用例。
+- oneDNN-enabled shared：direct/composition/Graph/region 与逐头 8/8（126 单元用例）通过。
+- P0：共同 valid 为 `O(1)`；每次结构选择仅加一次 `O(R)` 已知性扫描，既有 interval DP 与一般 node-set
+  收缩复杂度不变，warm 无新增政策/成本查询。结构计数不是速度结论，未运行 P1 或全库测试。
+- impact selection READY，跳过 82 个不受影响项；closure/docs/diff 检查通过。仍欠最终 CUDA/跨平台、
+  sanitizer 和完整 installed SDK journeys，不由本机 source-tree 测试代替。
+
+C93 qualified profile identity/匹配、Graph 同池全成本 search、bounded variants 和其余 A3--A6 仍待完成。
+本次消除旧实现与已定架构的一处冲突，**不**把无证据的结构 fallback 声称为自动 SOTA；保持 `AUDITED`。

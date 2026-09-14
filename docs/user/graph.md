@@ -46,7 +46,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
 | execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
 | placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和稳定 target/storage 顺序确定性选择；prepare 尝试有硬预算 |
-| region partition | provider 在冷路径提出非空 node-ID 集合，支持单节点、连续和非连续 region；Graph 验证独立及联合收缩无环，并只编译胜出 artifact；当前仍是按覆盖、dispatch 数和 provider 顺序的结构策略，不是统一完整成本选择或 SOTA 性能证明 |
+| region partition | provider 在冷路径提出非空 node-ID 集合，支持单节点、连续和非连续 region；Graph 验证独立及联合收缩无环，并只编译胜出 artifact；当前仍是显式 prefer-region 的结构策略，不是统一完整成本选择或 SOTA 性能证明 |
 | boundary | canonical tensor 只有在真实 storage residence 改变时才产生 `Copy`；换 target 或 lane 本身不复制 |
 | memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
@@ -71,6 +71,13 @@ node，或者先创建 up 再创建 gate，不应阻止 oneDNN 识别同一 MLP�
 后又回到集合，就不能把它收成一个 execution island；多个各自合法的集合也须通过联合无环检查。
 普通用户不需要手工分区。实现 Provider 时可以用 `is_region_contractible()` 检查候选：合法但不能收缩返回
 `false`，空集、重复或异图 ID 返回错误；Graph 在接收 proposal 后仍独立验证。连续集合保留快速路径。
+
+leaf/region 的结构提案共用 `compute::ProviderRouteCostFacts`，workspace、persistent、copy/repack、sync 和
+dispatch 都允许明确 unknown，不能写零补齐。当前 prefer-region 结构策略先看合法覆盖，只有参与本次
+比较的候选都声明 dispatch 数时才比较该维度，否则按稳定 Provider 顺序继续；这不是推理性能排名。
+旧的“相对本 Provider fallback 节省若干 ns”入口和 `kRequireEstimatedBenefit` 已移除，不保留别名。
+要求跨 Provider 量化择优的 qualified full-plan profile 尚未交付，不能用各家的私有数字冒充；此期间可
+显式安装 Provider/关闭 region，但不应声称已得到自动 SOTA 计划。
 
 ### 何时要求 prepared-only
 

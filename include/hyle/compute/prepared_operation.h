@@ -1,6 +1,8 @@
 #pragma once
 
+#include <bit>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <span>
 
@@ -23,6 +25,25 @@ struct PreparedState;
 struct WorkspaceRequirement final {
   std::size_t size = 0;
   std::size_t alignment = 1;
+};
+
+// Cold structural facts at one provider's canonical operation/region
+// boundary. Disengaged means unknown; engaged zero is an exact zero, never a
+// timing score. Runtime ownership/replay/threading remain separate facts.
+struct ProviderRouteCostFacts final {
+  std::optional<WorkspaceRequirement> workspace{};
+  std::optional<std::size_t> persistent_bytes{};
+  std::optional<std::size_t> copy_bytes{};
+  std::optional<std::size_t> repack_bytes{};
+  std::optional<std::uint32_t> synchronization_count{};
+  // Backend execution episodes, not workers, tasks or vector chunks. A
+  // materialized provider route must declare at least one episode if known.
+  std::optional<std::uint32_t> dispatch_count{};
+
+  constexpr bool valid() const noexcept {
+    return (!workspace || std::has_single_bit(workspace->alignment)) &&
+           (!dispatch_count || *dispatch_count != 0);
+  }
 };
 
 // Exact MemoryResource selection for one prepared route. The spans are

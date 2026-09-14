@@ -308,6 +308,11 @@ Status 诊断分配仍由各自合同负责。direct 用户可在准备后、提
 [`CompileOptions::provider_replay`](graph.md#何时要求-prepared-only) 在创建 artifact 前筛选 leaf/region。
 这不改变 direct `prepare()` 的 Provider 顺序，也不增加每次 submit 的政策查询。
 
+Provider 的冷提案用 `ProviderRouteCostFacts` 声明结构成本，Graph region 也复用这个类型；workspace
+大小/对齐、persistent/copy/repack bytes 与 synchronization/dispatch count 都区分 unknown 和 exact zero。
+它不是时间估值或性能资格证：`valid()` 只检查对齐和非零 dispatch 等结构合法性，不证明某路线快于另一条。
+普通 direct 用户仍使用 `prepare()`，不需要自己构造成本提案。
+
 图编译器或手工 workspace planner 可在冷路径调用
 `PreparedOperation::alias_support(output_index, input_index)`。公共 operation traits 只是语义允许的上界；
 该查询给出当前 provider、shape 和 layout 真正支持的输入输出 alias 及相对 byte offset。普通调用者无需为

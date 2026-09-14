@@ -457,16 +457,13 @@ struct ConstantBinding final {
 enum class RegionSelectionPolicy : std::uint8_t {
   kDisabled = 0,
   // Region providers are explicitly installed in Context. Prefer a
-  // deterministic high-coverage set, then fewer backend execution episodes,
-  // then earlier provider order. Intervals use weighted interval selection;
+  // deterministic high-coverage set, then fewer backend execution episodes
+  // only if every compared candidate declares that count, then earlier
+  // provider order. Intervals use weighted interval selection;
   // general node sets use bounded greedy selection with contraction checks,
-  // not a global maximum-coverage guarantee. A provider may omit a timing
-  // estimate, but an explicit zero estimate is not selected.
+  // not a global maximum-coverage guarantee or a performance proof. Private
+  // provider-relative timing scores are not accepted by this contract.
   kPreferProviderRegions,
-  // Accept only proposals with a positive provider-declared portable net
-  // saving estimate. This is for deployments that require quantified cost
-  // evidence rather than explicit provider opt-in.
-  kRequireEstimatedBenefit,
 };
 
 enum class OperationFallbackPolicy : std::uint8_t {

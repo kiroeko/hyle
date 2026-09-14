@@ -43,3 +43,6 @@ N20 与 N21 的 exact 路线部分已完成：19-family proposal 明确报告 ca
 storage、零 copy/repack/sync 与一次 dispatch；prepare 使用公共四态结果，分配失败为可审计资源拒绝，其他
 错误不伪装 fallback。Windows source-tree shared/static 的 Native 逐头与单元测试均通过。N22 bounded
 probe 与 N23 完整 MLP selector 尚未开始，状态保持 `AUDITED`。
+
+C93/G103 的共同结构成本迁移已完成：仅把 N21 既有 facts 改为公开共用类型，数值与 kernel/线程策略不变。
+本次 Windows shared/static Native 单元与逐头均通过；N22/N23 与终局安装/跨平台/P1 义务仍保留。

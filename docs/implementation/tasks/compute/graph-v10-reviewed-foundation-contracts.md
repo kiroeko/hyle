@@ -133,3 +133,25 @@ View + 跨 storage Copy 的实际执行在严格政策下通过。新增 probe �
 这些不是完整安装 SDK、Linux/macOS、sanitizer 或真实 Apple managed 路线的资格化。G100 的分类传播与
 严格冷筛选已落实，managed 完整成本、C93 identity、G101/G102 bounded/variants、G103--G107 其余范围
 仍待完成。保持 `AUDITED`，不宣称基础架构实现/终局性能已经收口。
+
+### G103 成本表示第一步审计（实现前固定）
+
+源码仍保留 `estimated_net_savings_ns` 与 `kRequireEstimatedBenefit`，允许不同 Provider 相对各自 fallback
+的数值相加/排序，违背已接受的 Compute §2.8 / Graph §6.1。DELETE 这两个字段/政策及未消费的私有 compile
+ns；不保留兼容别名，不把旧 mock 数字移成常量表。需要量化裁决的真实 qualified profile 仍是 C93/G103
+必须实现的后续部分，删除旧入口不等于该能力完成。
+
+leaf/region 共用公开 `compute::ProviderRouteCostFacts`：workspace（size/alignment）、persistent/copy/repack
+bytes、sync/dispatch count 都区分 unknown 与 exact zero，共同 `valid()` 检查 alignment/dispatch。runtime
+仍独立携带 ownership/replay/threading，删除 region cost 中重复的 runtime bool。本步只是共同候选表示，
+不冒充已完成 leaf/region/placement 同池搜索或完整资源预算。
+
+保留已有显式 prefer-region 的确定性结构路线。dispatch 只能在本次参与比较的全部候选都声明时作为
+次级比较；有 unknown 时整维不参与，避免把 unknown 当 zero，也避免 pairwise partial 比较形成非传递
+sort。间隔 DP/一般 node-set 收缩和硬预算不在本步重写。功能反例需覆盖同一候选集中的 unknown/exact
+dispatch、非法结构事实、重复编译稳定性及实际 oneDNN 路线；边界/异步/回退测试不再依赖虚构纳秒。
+
+上述共同成本与旧估值清理已实现并通过定向回归，具体事实见
+[C93/G103 检查点](compute-v9-shape-replay-substrate.md#2026-09-14-c93g103共同结构成本与旧估值清理)。
+当前没有接受完整 qualified profile 或完成统一 selector；这个状态不能用旧 `kRequireEstimatedBenefit`
+测试曾通过代替。后续仍需完成 G103 全部硬约束、完整计划成本与合法 identity 匹配。

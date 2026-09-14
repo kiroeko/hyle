@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <limits>
 
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 
 namespace {
@@ -10,6 +12,53 @@ using hyle::compute::ProviderReplayClass;
 using hyle::compute::ProviderRuntimeMode;
 using hyle::compute::ProviderRuntimeProperties;
 using hyle::compute::ProviderWorkspaceOwner;
+
+TEST(ProviderCostFacts, UnknownIsNotAnExactZero) {
+  constexpr hyle::compute::ProviderRouteCostFacts unknown{};
+  static_assert(unknown.valid());
+  EXPECT_FALSE(unknown.workspace.has_value());
+  EXPECT_FALSE(unknown.persistent_bytes.has_value());
+  EXPECT_FALSE(unknown.copy_bytes.has_value());
+  EXPECT_FALSE(unknown.repack_bytes.has_value());
+  EXPECT_FALSE(unknown.synchronization_count.has_value());
+  EXPECT_FALSE(unknown.dispatch_count.has_value());
+
+  constexpr hyle::compute::ProviderRouteCostFacts known{
+      .workspace = hyle::compute::WorkspaceRequirement{},
+      .persistent_bytes = 0,
+      .copy_bytes = 0,
+      .repack_bytes = 0,
+      .synchronization_count = 0,
+      .dispatch_count = 1,
+  };
+  static_assert(known.valid());
+  EXPECT_EQ(known.workspace->size, 0u);
+  EXPECT_EQ(known.persistent_bytes, 0u);
+  EXPECT_EQ(known.copy_bytes, 0u);
+  EXPECT_EQ(known.repack_bytes, 0u);
+  EXPECT_EQ(known.synchronization_count, 0u);
+  EXPECT_EQ(known.dispatch_count, 1u);
+}
+
+TEST(ProviderCostFacts, WorkspaceAlignmentAndDispatchHaveOneSharedValidator) {
+  hyle::compute::ProviderRouteCostFacts facts;
+  for (std::size_t alignment : {std::size_t{0}, std::size_t{3}, std::size_t{6},
+                                (std::numeric_limits<std::size_t>::max)()}) {
+    facts.workspace = {.size = 0, .alignment = alignment};
+    EXPECT_FALSE(facts.valid());
+  }
+  for (std::size_t alignment :
+       {std::size_t{1}, std::size_t{64}, std::size_t{4096}}) {
+    facts.workspace = {.size = 17, .alignment = alignment};
+    EXPECT_TRUE(facts.valid());
+  }
+  facts.dispatch_count = 0;
+  EXPECT_FALSE(facts.valid());
+  facts.dispatch_count = (std::numeric_limits<std::uint32_t>::max)();
+  EXPECT_TRUE(facts.valid());
+  facts.dispatch_count.reset();
+  EXPECT_TRUE(facts.valid());
+}
 
 TEST(ProviderProperties, ReplayCostDoesNotFollowOwnershipOrCaptureFlags) {
   constexpr ProviderRuntimeProperties unspecified{};

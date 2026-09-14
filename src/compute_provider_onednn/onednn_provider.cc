@@ -344,18 +344,20 @@ Status propose(
   *proposal = detail::ProviderOperationProposal{
       .route = 1,
       .runtime = kRuntimeProperties,
-      .workspace_resource = detail::ResourceBindingRequirement{
-          .required_properties = mem::MemoryProperty::kHostAccessible,
-          .minimum_alignment = internal::kBrgemmWorkspaceAlignment,
-      },
-      .cost = detail::ProviderRouteCostFacts{
-          .workspace = std::nullopt,
-          .persistent_bytes = std::nullopt,
-          .copy_bytes = 0,
-          .repack_bytes = 0,
-          .synchronization_count = 0,
-          .dispatch_count = 1,
-      },
+      .workspace_resource =
+          detail::ResourceBindingRequirement{
+              .required_properties = mem::MemoryProperty::kHostAccessible,
+              .minimum_alignment = internal::kBrgemmWorkspaceAlignment,
+          },
+      .cost =
+          ProviderRouteCostFacts{
+              .workspace = std::nullopt,
+              .persistent_bytes = std::nullopt,
+              .copy_bytes = 0,
+              .repack_bytes = 0,
+              .synchronization_count = 0,
+              .dispatch_count = 1,
+          },
   };
   return Status::Ok();
 }

@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 7};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 8};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -28,34 +28,13 @@ HYLE_GRAPH_API Result<bool> is_region_contractible(
     const Graph &graph, std::span<const NodeId> nodes,
     mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 
-// Cold-path facts for the exact static graph specialization. Net savings is
-// relative to the provider's natural single-op fallback sequence when the
-// provider has a portable estimate; nullopt means unknown and an engaged zero
-// means exact no saving. Unknown estimates remain useful under the explicit
-// provider-region policy and are never converted into benchmark-derived
-// constants. The remaining fields expose hidden costs to policy/reporting.
-struct RegionCostFacts final {
-  std::optional<std::uint64_t> estimated_net_savings_ns{};
-  std::optional<std::uint64_t> estimated_compile_ns{};
-  std::optional<std::size_t> persistent_bytes{};
-  std::optional<std::size_t> workspace_bytes{};
-  std::size_t boundary_copy_bytes = 0;
-  std::uint32_t synchronization_count = 0;
-  // Number of backend execution episodes: one synchronous CPU executor
-  // fan-out or one device command launch counts as one. Workers, tasks,
-  // vector chunks and leaf calls do not count separately.
-  std::uint32_t dispatch_count = 1;
-  bool blocks_host = false;
-  bool uses_private_threads = false;
-};
-
 struct RegionProposal final {
   // Nonempty graph-local node set. add() copies and canonicalizes this span;
   // providers retain no ownership and may use stack storage. Graph rejects a
   // foreign identity, duplicate node, and any set that would form a cycle
   // when contracted to one execution island.
   std::span<const NodeId> nodes{};
-  RegionCostFacts cost{};
+  compute::ProviderRouteCostFacts cost{};
   // Provider-defined cold-path discriminator. It may select a fusion/compile
   // route but is never interpreted or searched on the steady path.
   std::uint64_t route = 0;
@@ -160,7 +139,7 @@ struct RegionArtifactProperties final {
   std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;
   std::uint32_t synchronization_count = 0;
-  // Exact backend execution episodes per submit; see RegionCostFacts.
+  // Exact backend execution episodes per submit; see ProviderRouteCostFacts.
   std::uint32_t dispatch_count = 1;
   compute::ProviderRuntimeProperties runtime{};
 };
