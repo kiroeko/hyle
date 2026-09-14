@@ -1,8 +1,8 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
-> 本页描述当前 Graph v7 **实现基线**，不是 foundation 已收口的声明。当前状态只以
-> [`module-status.json`](../implementation/module-status.json) 为准；已接受但尚未实现的 node-set region、
-> exact + bounded/guarded shape domain 与 constant materialize 合同见
+> 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
+> [`module-status.json`](../implementation/module-status.json) 为准；node-set region 已实现，已接受但尚未实现的
+> exact + bounded/guarded shape domain、统一完整成本路由与 constant materialize 合同见
 > [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
 > 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
@@ -42,7 +42,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
 | execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
 | placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和稳定 target/storage 顺序确定性选择；prepare 尝试有硬预算 |
-| region partition | provider 在冷路径提出连续 region；当前实现按覆盖、dispatch 数和 provider 顺序确定性选择并只编译胜出 artifact；这是现行结构策略，不是跨 provider 的 SOTA 性能证明 |
+| region partition | provider 在冷路径提出非空 node-ID 集合，支持单节点、连续和非连续 region；Graph 验证独立及联合收缩无环，并只编译胜出 artifact；当前仍是按覆盖、dispatch 数和 provider 顺序的结构策略，不是统一完整成本选择或 SOTA 性能证明 |
 | boundary | canonical tensor 只有在真实 storage residence 改变时才产生 `Copy`；换 target 或 lane 本身不复制 |
 | memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
@@ -58,6 +58,12 @@ Provider-private layout 只能留在一个 region 内，公开 region boundary �
 HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
 保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
 安装且通过当前 backend/storage/completion 审计的 Provider 才能提案；当前尚无可用 ggml region provider。
+
+Region 由数据流而非插入顺序定义。例如 gate/up MatMul 与 gated activation/down MatMul 之间插入无关
+node，或者先创建 up 再创建 gate，不应阻止 oneDNN 识别同一 MLP。反之，如果 data/control 路径离开该集合
+后又回到集合，就不能把它收成一个 execution island；多个各自合法的集合也须通过联合无环检查。
+普通用户不需要手工分区。实现 Provider 时可以用 `is_region_contractible()` 检查候选：合法但不能收缩返回
+`false`，空集、重复或异图 ID 返回错误；Graph 在接收 proposal 后仍独立验证。连续集合保留快速路径。
 
 ## 单 target/storage/lane：自然短路径
 
@@ -154,8 +160,10 @@ auto compiled = compile(graph,
 `NodePlacement` 选择 target，`ValuePlacement` 与 `ExternalResourceContract` 选择 storage；前两者可以表达
 required 或 preferred。required route 不可执行时 compile
 失败；preferred route 不可执行时按稳定候选顺序继续。只有 `Unimplemented` 表示候选不支持，OOM、损坏
-状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts`、`max_region_proposals` 和
-`max_region_proposals_per_provider` 都是硬预算，耗尽会失败而不是改变计划。
+状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts`、`max_region_proposals`、
+`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 都是硬预算，耗尽会失败而不是改变计划。
+最后一项限制全部 Provider proposal 中复制保存的 node-ID 总数；每份 proposal 的 node span 会被复制并
+排序，Provider 可以使用临时栈数组，不必把它们保活到 compile 结束。
 
 非默认 storage 的 external value 应提供 `ExternalResourceContract`，让 compiler 能选择真实 transfer route；不能让
 Graph 从偶然地址猜 host/device locality。普通 canonical boundary 使用 Compute byte transfer，不隐藏
@@ -253,6 +261,10 @@ multi-stream capture。
 `persistent_bytes == nullopt` 表示 provider 无法报告，不是零。`delegated_segment_count()` 是 provider-owned
 island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDependent` 也不是已经发生 host wait；
 具体 Queue/provider endpoint 固定后的真实路线只看 `ReplayReport`。
+
+`CompileStepReport::node_count` 是该 step 覆盖的逻辑节点数量；`node_begin` 是最小 ordinal，不总是一个
+连续 range 的起点。只有 `nodes_contiguous` 为真时才能按 begin/count 展开；通用代码使用
+`CompileReport::step_node(step_index, node_index)` 查询精确节点集合。真实 Copy step 的 node count 为零。
 
 ## 所有权与常见陷阱
 

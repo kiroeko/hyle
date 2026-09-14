@@ -44,10 +44,10 @@ using hyle::graph::CompileReport;
 using hyle::graph::CompileStepKind;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
+using hyle::graph::NodeId;
 using hyle::graph::OperationFallbackPolicy;
 using hyle::graph::ProviderRegionPrepared;
 using hyle::graph::RegionCompileRequest;
-using hyle::graph::RegionNodeRange;
 using hyle::graph::RegionProposal;
 using hyle::graph::RegionProposalWriter;
 using hyle::graph::RegionSelectionPolicy;
@@ -63,6 +63,13 @@ constexpr hyle::compute::ProviderId kRegionProviderId{0x544553542d475241ULL,
 enum class ProposalMode : std::uint8_t {
   kPairs = 0,
   kWeightedOverlap,
+  kNonContiguous,
+  kNonContiguousReordered,
+  kSingleton,
+  kInterleavedChains,
+  kJointCycle,
+  kDuplicateNode,
+  kForeignNode,
   kOverflow,
   kCompileFailure,
   kInvocationFailure,
@@ -105,6 +112,7 @@ struct RegionProbe final {
   bool dependency_wait_supported = true;
   bool capture_supported = false;
   bool capture_active = false;
+  bool decline_regions = false;
   hyle::mem::MemoryResourceRef required_resource{};
   hyle::mem::MemoryResourceRef region_input_resource{};
   hyle::mem::MemoryResourceRef region_output_resource{};
@@ -117,6 +125,7 @@ struct RegionProbe final {
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
+  NodeId foreign_node{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
 };
@@ -318,38 +327,106 @@ bool is_negation(const Graph &graph, std::size_t node_index) {
   return unary != nullptr && unary->kind == UnaryKind::kNeg;
 }
 
-Status add_proposal(RegionProposalWriter &writer, std::uint32_t begin,
-                    std::uint32_t count, std::optional<std::uint64_t> savings,
-                    std::uint32_t dispatch_count = 1) noexcept {
+Status add_node_set_proposal(RegionProposalWriter &writer,
+                             std::span<const NodeId> nodes,
+                             std::optional<std::uint64_t> savings,
+                             std::uint32_t dispatch_count = 1) noexcept {
   return writer.add(RegionProposal{
-      .nodes = RegionNodeRange{begin, count},
+      .nodes = nodes,
       .cost = {.estimated_net_savings_ns = savings,
                .dispatch_count = dispatch_count},
-      .route = (static_cast<std::uint64_t>(begin) << 32) | count,
+      .route =
+          nodes.empty()
+              ? 0
+              : (static_cast<std::uint64_t>(nodes.front().ordinal()) << 32) |
+                    nodes.size(),
   });
+}
+
+Status add_proposal(const Graph &graph, RegionProposalWriter &writer,
+                    std::uint32_t begin, std::uint32_t count,
+                    std::optional<std::uint64_t> savings,
+                    std::uint32_t dispatch_count = 1) noexcept {
+  if (count != 2)
+    return Status::InvalidArgument("test region proposal count is not two");
+  auto first = graph.node_id(begin);
+  auto second = graph.node_id(begin + 1);
+  if (!first)
+    return std::move(first).error();
+  if (!second)
+    return std::move(second).error();
+  const std::array nodes{*first, *second};
+  return add_node_set_proposal(writer, nodes, savings, dispatch_count);
 }
 
 Status propose_regions(void *context, const Graph &graph,
                        RegionProposalWriter &writer) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.propose_count;
+  if (probe.mode == ProposalMode::kSingleton) {
+    const std::array nodes{graph.node_id(0).value()};
+    return add_node_set_proposal(writer, nodes, 10);
+  }
+  if (probe.mode == ProposalMode::kInterleavedChains ||
+      probe.mode == ProposalMode::kJointCycle) {
+    const std::array first{graph.node_id(0).value(), graph.node_id(2).value()};
+    const std::array second{graph.node_id(1).value(), graph.node_id(3).value()};
+    Status added = add_node_set_proposal(writer, first, 20);
+    if (!added.ok())
+      return added;
+    return add_node_set_proposal(writer, second, 10);
+  }
   if (probe.mode == ProposalMode::kOverflow) {
-    Status first = add_proposal(writer, 0, 2, 10);
+    Status first = add_proposal(graph, writer, 0, 2, 10);
     if (!first.ok())
       return first;
-    return add_proposal(writer, 0, 2, 11);
+    return add_proposal(graph, writer, 0, 2, 11);
   }
   if (probe.mode == ProposalMode::kWeightedOverlap) {
-    Status first = add_proposal(writer, 0, 2, 10);
+    Status first = add_proposal(graph, writer, 0, 2, 10);
     if (!first.ok())
       return first;
-    return add_proposal(writer, 1, 2, 20);
+    return add_proposal(graph, writer, 1, 2, 20);
+  }
+  if (probe.mode == ProposalMode::kNonContiguous) {
+    auto first = graph.node_id(0);
+    auto last = graph.node_id(2);
+    if (!first)
+      return std::move(first).error();
+    if (!last)
+      return std::move(last).error();
+    const std::array nodes{*last, *first};
+    return add_node_set_proposal(writer, nodes, 20);
+  }
+  if (probe.mode == ProposalMode::kNonContiguousReordered) {
+    auto first = graph.node_id(0);
+    auto last = graph.node_id(3);
+    if (!first)
+      return std::move(first).error();
+    if (!last)
+      return std::move(last).error();
+    const std::array nodes{*first, *last};
+    return add_node_set_proposal(writer, nodes, 20);
+  }
+  if (probe.mode == ProposalMode::kDuplicateNode) {
+    auto node = graph.node_id(0);
+    if (!node)
+      return std::move(node).error();
+    const std::array nodes{*node, *node};
+    return add_node_set_proposal(writer, nodes, 20);
+  }
+  if (probe.mode == ProposalMode::kForeignNode) {
+    auto local = graph.node_id(1);
+    if (!local)
+      return std::move(local).error();
+    const std::array nodes{probe.foreign_node, *local};
+    return add_node_set_proposal(writer, nodes, 20);
   }
   for (std::size_t index = 0; index + 1 < graph.node_count(); ++index) {
     if (!is_negation(graph, index) || !is_negation(graph, index + 1))
       continue;
     Status status =
-        add_proposal(writer, static_cast<std::uint32_t>(index), 2,
+        add_proposal(graph, writer, static_cast<std::uint32_t>(index), 2,
                      probe.proposal_savings, probe.proposal_dispatch_count);
     if (!status.ok())
       return status;
@@ -558,13 +635,20 @@ Status compile_region(void *context, const RegionCompileRequest &request,
                       AllocatorRef allocator,
                       ProviderRegionPrepared *output) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
-  if (output == nullptr || request.graph == nullptr ||
-      request.nodes.count < 2 || request.inputs.size() != 1 ||
-      request.outputs.size() != 1 ||
+  const std::size_t expected_boundary_count =
+      probe.mode == ProposalMode::kNonContiguousReordered ||
+              probe.mode == ProposalMode::kJointCycle
+          ? 2u
+          : 1u;
+  if (output == nullptr || request.graph == nullptr || request.nodes.empty() ||
+      request.inputs.size() != expected_boundary_count ||
+      request.outputs.size() != expected_boundary_count ||
       request.input_resources.size() != request.inputs.size() ||
       request.output_resources.size() != request.outputs.size()) {
     return Status::InvalidArgument("region compile request is invalid");
   }
+  if (probe.decline_regions)
+    return Status::Unimplemented("injected pre-acceptance region decline");
   if ((probe.region_input_resource.valid() &&
        request.input_resources[0] != probe.region_input_resource) ||
       (probe.region_output_resource.valid() &&
@@ -577,15 +661,16 @@ Status compile_region(void *context, const RegionCompileRequest &request,
     return Status::InvalidArgument(
         "region compile resources do not match the proposed route");
   }
-  for (std::uint32_t offset = 0; offset < request.nodes.count; ++offset) {
-    if (!is_negation(*request.graph, request.nodes.begin + offset))
+  for (NodeId node : request.nodes) {
+    if (!is_negation(*request.graph, node.ordinal()))
       return Status::InvalidArgument("region contains a non-negation node");
   }
   void *storage = allocator.allocate(sizeof(RegionPlan), alignof(RegionPlan));
   if (storage == nullptr)
     return Status::ResourceExhausted("region plan allocation failed");
-  auto *plan = ::new (storage)
-      RegionPlan{.probe = &probe, .negation_count = request.nodes.count};
+  auto *plan = ::new (storage) RegionPlan{
+      .probe = &probe,
+      .negation_count = static_cast<std::uint32_t>(request.nodes.size())};
   *output = ProviderRegionPrepared{
       .vtable = probe.artifact_properties.runtime.mode ==
                         hyle::compute::ProviderRuntimeMode::kDelegated
@@ -598,8 +683,8 @@ Status compile_region(void *context, const RegionCompileRequest &request,
   probe.compiled_input_resource = request.input_resources[0];
   probe.compiled_output_resource = request.output_resources[0];
   probe.compiled_workspace_resource = request.workspace_resource;
-  probe.compiled_begin = request.nodes.begin;
-  probe.compiled_count = request.nodes.count;
+  probe.compiled_begin = request.nodes.front().ordinal();
+  probe.compiled_count = static_cast<std::uint32_t>(request.nodes.size());
   if (probe.mode == ProposalMode::kCompileFailure)
     return Status::Internal("injected region compile failure");
   return Status::Ok();
@@ -1144,6 +1229,44 @@ NegationGraph make_negations(std::size_t count, bool finish_with_abs = false) {
   return result;
 }
 
+struct NonContiguousNegationGraph final {
+  Graph graph{};
+  ValueId main_input{};
+  ValueId side_input{};
+  ValueId output{};
+};
+
+NonContiguousNegationGraph make_non_contiguous_negations() {
+  GraphBuilder builder = GraphBuilder::create().value();
+  NonContiguousNegationGraph result;
+  result.main_input = builder.input(row(8)).value();
+  const ValueId first =
+      builder.add(Unary{UnaryKind::kNeg}, result.main_input).value();
+  result.side_input = builder.input(row(8)).value();
+  (void)builder.add(Unary{UnaryKind::kNeg}, result.side_input).value();
+  result.output = builder.add(Unary{UnaryKind::kNeg}, first).value();
+  EXPECT_TRUE(builder.publish(result.output).ok());
+  result.graph = std::move(builder).finish().value();
+  return result;
+}
+
+Graph make_reordered_non_contiguous_negations() {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId main_input = builder.input(row(8)).value();
+  const ValueId selected_first =
+      builder.add(Unary{UnaryKind::kNeg}, main_input).value();
+  const ValueId outside_consumer =
+      builder.add(Unary{UnaryKind::kNeg}, selected_first).value();
+  const ValueId side_input = builder.input(row(8)).value();
+  const ValueId outside_producer =
+      builder.add(Unary{UnaryKind::kNeg}, side_input).value();
+  const ValueId selected_last =
+      builder.add(Unary{UnaryKind::kNeg}, outside_producer).value();
+  EXPECT_TRUE(builder.publish(outside_consumer).ok());
+  EXPECT_TRUE(builder.publish(selected_last).ok());
+  return std::move(builder).finish().value();
+}
+
 Context make_context(RegionProbe &probe) {
   const std::array providers{region_provider(probe),
                              hyle::compute::native::provider()};
@@ -1677,6 +1800,215 @@ TEST(GraphRegions,
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
+}
+
+TEST(GraphRegions, CompilesAContractibleNonContiguousNodeSet) {
+  RegionProbe probe{.mode = ProposalMode::kNonContiguous};
+  const NonContiguousNegationGraph logical = make_non_contiguous_negations();
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
+  bool found_region = false;
+  for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
+    const auto step = compiled.report.step(index).value();
+    if (step.kind != CompileStepKind::kProviderRegion)
+      continue;
+    found_region = true;
+    EXPECT_EQ(step.node_begin, 0u);
+    EXPECT_EQ(step.node_count, 2u);
+    EXPECT_FALSE(step.nodes_contiguous);
+    EXPECT_EQ(compiled.report.step_node(index, 0)->ordinal(), 0u);
+    EXPECT_EQ(compiled.report.step_node(index, 1)->ordinal(), 2u);
+  }
+  EXPECT_TRUE(found_region);
+}
+
+TEST(GraphRegions, SchedulesAContractedNodeSetAfterItsExternalPredecessor) {
+  RegionProbe probe{.mode = ProposalMode::kNonContiguousReordered};
+  const Graph logical = make_reordered_non_contiguous_negations();
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical, context).value();
+
+  ASSERT_EQ(compiled.report.step_count(), 3u);
+  EXPECT_EQ(compiled.report.step(0)->kind, CompileStepKind::kOperationFallback);
+  EXPECT_EQ(compiled.report.step_node(0, 0)->ordinal(), 2u);
+  EXPECT_EQ(compiled.report.step(1)->kind, CompileStepKind::kProviderRegion);
+  EXPECT_EQ(compiled.report.step_node(1, 0)->ordinal(), 0u);
+  EXPECT_EQ(compiled.report.step_node(1, 1)->ordinal(), 3u);
+  EXPECT_EQ(compiled.report.step(2)->kind, CompileStepKind::kOperationFallback);
+  EXPECT_EQ(compiled.report.step_node(2, 0)->ordinal(), 1u);
+}
+
+TEST(GraphRegions, RejectsANodeSetThatLeavesAndReentersTheRegion) {
+  RegionProbe probe{.mode = ProposalMode::kNonContiguous};
+  const NegationGraph logical = make_negations(3);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsInvalidArgument());
+  EXPECT_EQ(probe.compile_count, 0u);
+}
+
+TEST(GraphRegions, ExecutesInterleavedIndependentRegions) {
+  RegionProbe probe{.mode = ProposalMode::kInterleavedChains};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId input_a = builder.input(row(8)).value();
+  const ValueId input_b = builder.input(row(8)).value();
+  const ValueId first_a = builder.add(Unary{UnaryKind::kNeg}, input_a).value();
+  const ValueId first_b = builder.add(Unary{UnaryKind::kNeg}, input_b).value();
+  const ValueId output_a = builder.add(Unary{UnaryKind::kNeg}, first_a).value();
+  const ValueId output_b = builder.add(Unary{UnaryKind::kNeg}, first_b).value();
+  ASSERT_TRUE(builder.publish(output_a).ok());
+  ASSERT_TRUE(builder.publish(output_b).ok());
+  const Graph graph = std::move(builder).finish().value();
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 2u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 0u);
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor first = make_tensor(row(8));
+  OwnedTensor second = make_tensor(row(8));
+  OwnedTensor result_a = make_tensor(row(8));
+  OwnedTensor result_b = make_tensor(row(8));
+  const std::array<float, 8> a{1, -2, 3, -4, 5, -6, 7, -8};
+  const std::array<float, 8> b{-3, 4, 5, 6, -7, 8, 9, 10};
+  write(first, a);
+  write(second, b);
+  ASSERT_TRUE(invocation.bind(input_a, first.view).ok());
+  ASSERT_TRUE(invocation.bind(input_b, second.view).ok());
+  ASSERT_TRUE(invocation.bind(output_a, result_a.view).ok());
+  ASSERT_TRUE(invocation.bind(output_b, result_b.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(read(result_a, a.size()), std::vector<float>(a.begin(), a.end()));
+  EXPECT_EQ(read(result_b, b.size()), std::vector<float>(b.begin(), b.end()));
+}
+
+TEST(GraphRegions, ExcludesARegionThatWouldCycleWithAnAcceptedRegion) {
+  RegionProbe probe{.mode = ProposalMode::kJointCycle};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId input_a = builder.input(row(8)).value();
+  const ValueId input_b = builder.input(row(8)).value();
+  const ValueId first_a = builder.add(Unary{UnaryKind::kNeg}, input_a).value();
+  const ValueId first_b = builder.add(Unary{UnaryKind::kNeg}, input_b).value();
+  const ValueId output_b = builder.add(Unary{UnaryKind::kNeg}, first_b).value();
+  const ValueId output_a = builder.add(Unary{UnaryKind::kNeg}, first_a).value();
+  ASSERT_TRUE(builder.publish(output_a).ok());
+  ASSERT_TRUE(builder.publish(output_b).ok());
+  const Graph graph = std::move(builder).finish().value();
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(graph, context).value();
+  // {0,2} and {1,3} are individually contractible, but the edges 0->3 and
+  // 1->2 make their joint contraction cyclic. The second proposal stays leaf.
+  EXPECT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
+  EXPECT_EQ(probe.compile_count, 1u);
+}
+
+TEST(GraphRegions, DeclinedNonContiguousRegionExecutesLeafFallbacks) {
+  RegionProbe probe{.mode = ProposalMode::kNonContiguous,
+                    .decline_regions = true};
+  const auto logical = make_non_contiguous_negations();
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_EQ(compiled.report.region_count(), 0u);
+  EXPECT_EQ(compiled.report.fallback_operation_count(), 3u);
+  auto invocation = compiled.executable.create_invocation().value();
+  OwnedTensor input = make_tensor(row(8));
+  OwnedTensor side = make_tensor(row(8));
+  OwnedTensor output = make_tensor(row(8));
+  const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+  write(input, values);
+  write(side, values);
+  ASSERT_TRUE(invocation.bind(logical.main_input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.side_input, side.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  Queue queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(read(output, values.size()),
+            std::vector<float>(values.begin(), values.end()));
+}
+
+TEST(GraphRegions, AGraphHostingProviderCanOwnASingleNode) {
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  const auto logical = make_negations(1);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  EXPECT_EQ(compiled.report.step(0)->node_count, 1u);
+  EXPECT_EQ(compiled.report.step_node(0, 0).value(),
+            logical.graph.node_id(0).value());
+  EXPECT_TRUE(compiled.report.step_node(0, 1).error().IsOutOfRange());
+}
+
+TEST(GraphRegions, RejectsDuplicateAndForeignProposalNodes) {
+  const NegationGraph logical = make_negations(2);
+  {
+    RegionProbe probe{.mode = ProposalMode::kDuplicateNode};
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_TRUE(compiled.error().IsInvalidArgument());
+  }
+  {
+    const NegationGraph foreign = make_negations(2);
+    RegionProbe probe{.mode = ProposalMode::kForeignNode,
+                      .foreign_node = foreign.graph.node_id(0).value()};
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_TRUE(compiled.error().IsInvalidArgument());
+  }
+}
+
+TEST(GraphRegions, ProviderCanQueryContractibilityIncludingControlEdges) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const ValueId input = builder.input(row(8)).value();
+  const auto first =
+      builder.add_node(Operation(Unary{UnaryKind::kNeg}), std::array{input})
+          .value();
+  const auto outside =
+      builder.add_node(Operation(Unary{UnaryKind::kNeg}), std::array{input})
+          .value();
+  const auto last = builder
+                        .add_node(Operation(Unary{UnaryKind::kNeg}),
+                                  std::array{builder.result(first).value()})
+                        .value();
+  ASSERT_TRUE(builder.depends_on(outside, first).ok());
+  ASSERT_TRUE(builder.depends_on(last, outside).ok());
+  ASSERT_TRUE(builder.publish(builder.result(last).value()).ok());
+  const Graph graph = std::move(builder).finish().value();
+  EXPECT_FALSE(
+      hyle::graph::is_region_contractible(graph, std::array{last, first})
+          .value());
+  EXPECT_TRUE(hyle::graph::is_region_contractible(
+                  graph, std::array{last, first, outside})
+                  .value());
+  EXPECT_TRUE(
+      hyle::graph::is_region_contractible(graph, std::array{first, first})
+          .error()
+          .IsInvalidArgument());
+  EXPECT_TRUE(hyle::graph::is_region_contractible(graph, {})
+                  .error()
+                  .IsInvalidArgument());
+  const auto foreign = make_negations(1);
+  EXPECT_TRUE(hyle::graph::is_region_contractible(
+                  graph, std::array{foreign.graph.node_id(0).value()})
+                  .error()
+                  .IsInvalidArgument());
+}
+
+TEST(GraphRegions, ProposalNodeBudgetExhaustionIsAHardFailure) {
+  RegionProbe probe{.mode = ProposalMode::kNonContiguous};
+  const NonContiguousNegationGraph logical = make_non_contiguous_negations();
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context, CompileOptions{.max_region_proposal_nodes = 1});
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsResourceExhausted());
+  EXPECT_EQ(probe.compile_count, 0u);
 }
 
 TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {

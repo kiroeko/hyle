@@ -369,32 +369,34 @@ enum class PlanStepKind : std::uint8_t {
 
 struct PlanStep final {
   PlanStep() noexcept = default;
-  PlanStep(compute::PreparedOperation prepared_value,
-           std::uint32_t node_begin_value, std::uint32_t input_begin_value,
-           std::uint32_t input_count_value, std::uint32_t output_begin_value,
-           std::uint32_t output_count_value, bool materializes_value,
-           CompileFallbackReason fallback_reason_value,
-           ExecutionTargetId target_value = ExecutionTargetId{0},
-           StorageDomainId workspace_storage_value =
-               StorageDomainId{0}) noexcept
+  PlanStep(
+      compute::PreparedOperation prepared_value, std::uint32_t node_begin_value,
+      std::uint32_t node_set_begin_value, std::uint32_t input_begin_value,
+      std::uint32_t input_count_value, std::uint32_t output_begin_value,
+      std::uint32_t output_count_value, bool materializes_value,
+      CompileFallbackReason fallback_reason_value,
+      ExecutionTargetId target_value = ExecutionTargetId{0},
+      StorageDomainId workspace_storage_value = StorageDomainId{0}) noexcept
       : operation(std::move(prepared_value)), node_begin(node_begin_value),
-        input_begin(input_begin_value), output_begin(output_begin_value),
-        input_count(input_count_value), output_count(output_count_value),
-        materializes(materializes_value),
+        node_set_begin(node_set_begin_value), input_begin(input_begin_value),
+        output_begin(output_begin_value), input_count(input_count_value),
+        output_count(output_count_value), materializes(materializes_value),
         fallback_reason(fallback_reason_value), target(target_value),
         workspace_storage(workspace_storage_value) {}
 
-  PlanStep(PreparedRegion region_value, std::uint32_t node_begin_value,
-           std::uint32_t node_count_value, std::uint32_t input_begin_value,
-           std::uint32_t input_count_value, std::uint32_t output_begin_value,
-           std::uint32_t output_count_value,
-           ExecutionTargetId target_value = ExecutionTargetId{0},
-           StorageDomainId workspace_storage_value =
-               StorageDomainId{0}) noexcept
+  PlanStep(
+      PreparedRegion region_value, std::uint32_t node_begin_value,
+      std::uint32_t node_set_begin_value, std::uint32_t node_count_value,
+      bool nodes_contiguous_value, std::uint32_t input_begin_value,
+      std::uint32_t input_count_value, std::uint32_t output_begin_value,
+      std::uint32_t output_count_value,
+      ExecutionTargetId target_value = ExecutionTargetId{0},
+      StorageDomainId workspace_storage_value = StorageDomainId{0}) noexcept
       : region(std::move(region_value)), node_begin(node_begin_value),
-        node_count(node_count_value), input_begin(input_begin_value),
-        output_begin(output_begin_value), input_count(input_count_value),
-        output_count(output_count_value), kind(PlanStepKind::kRegion),
+        node_set_begin(node_set_begin_value), node_count(node_count_value),
+        input_begin(input_begin_value), output_begin(output_begin_value),
+        input_count(input_count_value), output_count(output_count_value),
+        kind(PlanStepKind::kRegion), nodes_contiguous(nodes_contiguous_value),
         target(target_value), workspace_storage(workspace_storage_value) {}
 
   static PlanStep copy(std::uint32_t input_begin_value,
@@ -408,6 +410,7 @@ struct PlanStep final {
     result.output_begin = output_begin_value;
     result.input_count = 1;
     result.output_count = 1;
+    result.node_count = 0;
     result.kind = PlanStepKind::kCopy;
     result.materializes = true;
     result.copy_bytes = bytes_value;
@@ -481,6 +484,7 @@ struct PlanStep final {
   compute::PreparedOperation operation{};
   PreparedRegion region{};
   std::uint32_t node_begin = 0;
+  std::uint32_t node_set_begin = 0;
   std::uint32_t node_count = 1;
   std::uint32_t input_begin = 0;
   std::uint32_t output_begin = 0;
@@ -488,6 +492,7 @@ struct PlanStep final {
   std::uint32_t output_count = 0;
   PlanStepKind kind = PlanStepKind::kOperation;
   bool materializes = true;
+  bool nodes_contiguous = true;
   CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
   ExecutionTargetId target{};
   ExecutionLaneId lane{};
@@ -510,6 +515,7 @@ struct PlanSegment final {
 };
 using PlanSegments = container::SmallVector<PlanSegment, 4, mem::AllocatorRef>;
 using ValueIds = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
+using NodeIds = container::SmallVector<NodeId, 8, mem::AllocatorRef>;
 using TensorDescriptions =
     container::SmallVector<compute::TensorDesc, 16, mem::AllocatorRef>;
 using ValueOrdinals =
@@ -600,8 +606,7 @@ struct PlanState final : util::RefCounted<PlanState> {
         storage_domains(allocator_value), targets(allocator_value),
         lanes(allocator_value), steps(allocator_value),
         segments(allocator_value), segment_dependencies(allocator_value),
-        serialization_edges(allocator_value),
-        step_segments(allocator_value),
+        serialization_edges(allocator_value), step_segments(allocator_value),
         terminal_segments(allocator_value),
         completion_segments(allocator_value),
         lane_segment_counts(allocator_value), input_ids(allocator_value),
@@ -610,8 +615,8 @@ struct PlanState final : util::RefCounted<PlanState> {
         instance_descriptions(allocator_value),
         instance_values(allocator_value), instance_storage(allocator_value),
         instance_roles(allocator_value), external_instances(allocator_value),
-        external_storage(allocator_value),
-        node_inputs(allocator_value), node_outputs(allocator_value),
+        external_storage(allocator_value), node_inputs(allocator_value),
+        node_outputs(allocator_value), step_nodes(allocator_value),
         workspace_requests(allocator_value),
         step_workspace_requests(allocator_value),
         storage_workspace_slots(allocator_value),
@@ -665,6 +670,9 @@ struct PlanState final : util::RefCounted<PlanState> {
   ValueOrdinals external_storage;
   ValueOrdinals node_inputs;
   ValueOrdinals node_outputs;
+  // Canonical logical node ordinals owned by each operation/region step.
+  // PlanStep::node_set_begin/node_count address this packed arena.
+  ValueOrdinals step_nodes;
   ValueOrdinals workspace_requests;
   ValueOrdinals step_workspace_requests;
   // LifetimePlanner requires dense resource slots while storage-domain
@@ -712,7 +720,9 @@ struct ReportState final : util::RefCounted<ReportState> {
         targets(allocator_value), storage_domains(allocator_value),
         lanes(allocator_value), segments(allocator_value),
         physical_values(allocator_value), step_inputs(allocator_value),
-        step_outputs(allocator_value), segment_dependencies(allocator_value) {}
+        step_outputs(allocator_value), step_nodes(allocator_value),
+        step_node_begins(allocator_value),
+        segment_dependencies(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -729,6 +739,8 @@ struct ReportState final : util::RefCounted<ReportState> {
   CompilePhysicalValueReports physical_values;
   ValueOrdinals step_inputs;
   ValueOrdinals step_outputs;
+  NodeIds step_nodes;
+  ValueOrdinals step_node_begins;
   ValueOrdinals segment_dependencies;
   compute::BackendId backend{};
   compute::ProviderIdentity provider{};

@@ -35,5 +35,16 @@
 ## 2026-09-14 实现检查点
 
 本 factor 的 single-op 拒绝适配器已迁至显式 unsupported outcome，并在 oneDNN-enabled Windows shared
-构建中通过逐头与现有 region 测试。GP40--GP44 的 node-set、完整 boundary cost、事务回退与 gated MLP
-仍是后续主体；本检查点不构成 Candidate 或关闭声明。
+构建中通过逐头与现有 region 测试。
+
+GP40 已迁移：从 down MatMul 沿 producer identity 匹配 gated MLP，不再假定四个 node 连续，也不要求 gate
+先于 up 创建。Graph 复制并 canonicalize node set，Provider 固定 semantic input 到 boundary port 的映射；
+submit 只读该固定映射，BRGEMM kernel/tile 未改变。发现期通过 Graph 共用 helper 排除 control 重入，不把
+合法的未融合 DAG 当成编译错误。
+
+Windows oneDNN-enabled shared 通过真实数值测试：无关 node 插入、up-first 构造仍生成一个正确 region；
+gate → 外部 node → gated 的控制依赖保留普通 leaf 路线且输出正确。原有 Graph/oneDNN region 回归和
+Graph 逐头测试同时通过。非 Windows、sanitizer、三种完整安装交付和 P1 尚未在本 node-set 树上运行。
+
+GP41--GP44 的完整 boundary cost、事务回退、BRGEMM seam 三交付与 gated MLP 终局 P1 仍待完成；
+本检查点不构成 Candidate 或关闭声明。

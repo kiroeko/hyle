@@ -92,9 +92,12 @@ struct GatedMlp final {
   ValueId output{};
 };
 
+enum class MlpOrder { kCanonical, kInterleaved, kUpFirst, kControlReentry };
+
 GatedMlp make_gated_mlp(std::size_t rows, std::size_t inner, std::size_t hidden,
                         bool publish_gate = false, bool with_rms_norm = false,
-                        bool consume_gate = false) {
+                        bool consume_gate = false,
+                        MlpOrder order = MlpOrder::kCanonical) {
   GraphBuilder builder = GraphBuilder::create().value();
   GatedMlp result;
   result.activation = builder.input(matrix(rows, inner)).value();
@@ -108,16 +111,36 @@ GatedMlp make_gated_mlp(std::size_t rows, std::size_t inner, std::size_t hidden,
   result.gate_weight = builder.constant(matrix(inner, hidden)).value();
   result.up_weight = builder.constant(matrix(inner, hidden)).value();
   result.down_weight = builder.constant(matrix(hidden, inner)).value();
-  result.gate =
-      builder.add(MatMul{}, projected_input, result.gate_weight).value();
-  const ValueId up =
-      builder.add(MatMul{}, projected_input, result.up_weight).value();
-  const ValueId gated =
+  ValueId up;
+  if (order == MlpOrder::kUpFirst)
+    up = builder.add(MatMul{}, projected_input, result.up_weight).value();
+  const auto gate_node =
       builder
-          .add(GatedActivation{.activation = GatedActivationKind::kSilu,
-                               .inputs = GatedInputKind::kSeparate},
-               result.gate, up)
+          .add_node(hyle::compute::Operation(MatMul{}),
+                    std::array{projected_input, result.gate_weight})
           .value();
+  result.gate = builder.result(gate_node).value();
+  hyle::graph::NodeId side_node;
+  if (order != MlpOrder::kCanonical) {
+    side_node = builder
+                    .add_node(hyle::compute::Operation(RmsNorm{}),
+                              std::array{projected_input})
+                    .value();
+    if (order == MlpOrder::kControlReentry)
+      EXPECT_TRUE(builder.depends_on(side_node, gate_node).ok());
+  }
+  if (order != MlpOrder::kUpFirst)
+    up = builder.add(MatMul{}, projected_input, result.up_weight).value();
+  const auto gated_node =
+      builder
+          .add_node(hyle::compute::Operation(GatedActivation{
+                        .activation = GatedActivationKind::kSilu,
+                        .inputs = GatedInputKind::kSeparate}),
+                    std::array{result.gate, up})
+          .value();
+  if (order == MlpOrder::kControlReentry)
+    EXPECT_TRUE(builder.depends_on(gated_node, side_node).ok());
+  const ValueId gated = builder.result(gated_node).value();
   result.output = builder.add(MatMul{}, gated, result.down_weight).value();
   if (consume_gate) {
     const ValueId diagnostic = builder.add(RmsNorm{}, result.gate).value();
@@ -246,8 +269,10 @@ void expect_near(std::span<const float> actual,
 }
 
 void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
-                         std::size_t hidden) {
-  const GatedMlp logical = make_gated_mlp(rows, inner, hidden);
+                         std::size_t hidden,
+                         MlpOrder order = MlpOrder::kCanonical) {
+  const GatedMlp logical =
+      make_gated_mlp(rows, inner, hidden, false, false, false, order);
   OwnedTensor activation = make_tensor(matrix(rows, inner));
   OwnedTensor gate_weight = make_tensor(matrix(inner, hidden));
   OwnedTensor up_weight = make_tensor(matrix(inner, hidden));
@@ -286,7 +311,16 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
   auto compiled = hyle::graph::compile(logical.graph, context,
                                        CompileOptions{.constants = constants})
                       .value();
-  ASSERT_EQ(compiled.report.region_count(), 1U);
+  ASSERT_EQ(compiled.report.region_count(),
+            order == MlpOrder::kControlReentry ? 0u : 1u);
+  if (order == MlpOrder::kInterleaved || order == MlpOrder::kUpFirst) {
+    ASSERT_EQ(compiled.report.fallback_operation_count(), 1u);
+    for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
+      const auto step = compiled.report.step(index).value();
+      if (step.kind == CompileStepKind::kProviderRegion)
+        EXPECT_FALSE(step.nodes_contiguous);
+    }
+  }
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(logical.activation, activation.view).ok());
   ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
@@ -374,6 +408,15 @@ TEST(OneDnnRegionProvider, SupportsDecodeAndNonTileMultipleShapes) {
   run_gated_mlp_shape(1, 5, 7);
   run_gated_mlp_shape(4, 17, 31);
   run_gated_mlp_shape(16, 33, 65);
+}
+
+TEST(OneDnnRegionProvider, MatchesDataflowWithUnrelatedAndReorderedNodes) {
+  run_gated_mlp_shape(4, 17, 31, MlpOrder::kInterleaved);
+  run_gated_mlp_shape(4, 17, 31, MlpOrder::kUpFirst);
+}
+
+TEST(OneDnnRegionProvider, DoesNotFuseAcrossAControlDependencyReentry) {
+  run_gated_mlp_shape(4, 17, 31, MlpOrder::kControlReentry);
 }
 
 TEST(OneDnnRegionProvider, DoesNotInterceptSingleOperationPreparation) {

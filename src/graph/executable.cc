@@ -1100,7 +1100,10 @@ struct RegionExtension final {
 };
 
 struct RegionCandidate final {
-  RegionProposal proposal{};
+  RegionCostFacts cost{};
+  std::uint64_t route = 0;
+  std::uint32_t node_offset = 0;
+  std::uint32_t node_count = 0;
   std::uint32_t extension_index = 0;
   std::uint32_t provider_index = 0;
   std::uint32_t proposal_order = 0;
@@ -1111,25 +1114,265 @@ using RegionExtensions =
     container::SmallVector<RegionExtension, 4, mem::AllocatorRef>;
 using RegionCandidates =
     container::SmallVector<RegionCandidate, 16, mem::AllocatorRef>;
+using RegionNodeIds = container::SmallVector<NodeId, 32, mem::AllocatorRef>;
 using RegionValues = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
+
+// Cold compile scratch. Keep the original adjacency once and sort a proposed
+// partition in O(V + E + U log U), where U is the number of contracted units.
+// Duplicate data/control edges need no deduplication: each increment has one
+// matching decrement. The same checker serves selection and final emission.
+class RegionContraction final {
+public:
+  explicit RegionContraction(mem::AllocatorRef allocator) noexcept
+      : begins_(allocator), successors_(allocator), heads_(allocator),
+        next_(allocator), indegree_(allocator), ready_(allocator),
+        order_(allocator) {}
+
+  Status initialize(const detail::GraphState &graph) noexcept {
+    const std::size_t count = graph.nodes.size();
+    if (count >= detail::kNoNode || graph.edges.size() > detail::kNoNode ||
+        graph.dependencies.size() > detail::kNoNode - graph.edges.size()) {
+      return Status::ResourceExhausted(
+          "graph contracted DAG exceeds its ordinal capacity");
+    }
+    if (!begins_.try_resize(count + 1) || !heads_.try_resize(count) ||
+        !next_.try_resize(count) || !indegree_.try_resize(count) ||
+        !ready_.try_reserve(count) || !order_.try_reserve(count)) {
+      return plan_allocation_failure();
+    }
+    std::fill(begins_.begin(), begins_.end(), std::uint32_t{0});
+    auto visit_edges = [&](auto &&visit) noexcept {
+      for (std::uint32_t destination = 0; destination < count; ++destination) {
+        const detail::NodeRecord &node = graph.nodes[destination];
+        for (std::size_t index = 0; index < node.input_count; ++index) {
+          const auto value = graph.edges[node.input_begin + index];
+          const auto source = graph.values[value].producer;
+          if (source != detail::kNoNode)
+            visit(source, destination);
+        }
+        for (std::size_t index = 0; index < node.dependency_count; ++index)
+          visit(graph.dependencies[node.dependency_begin + index], destination);
+      }
+    };
+    visit_edges([&](std::uint32_t source, std::uint32_t) noexcept {
+      ++begins_[source + 1];
+    });
+    for (std::size_t index = 1; index < begins_.size(); ++index)
+      begins_[index] += begins_[index - 1];
+    if (!successors_.try_resize(begins_.back()))
+      return plan_allocation_failure();
+    std::copy_n(begins_.begin(), count, indegree_.begin());
+    visit_edges([&](std::uint32_t source, std::uint32_t destination) noexcept {
+      successors_[indegree_[source]++] = destination;
+    });
+    return Status::Ok();
+  }
+
+  // Each node maps to the smallest node ordinal in its selected region, or
+  // to itself when it is a leaf. false means the proposed contraction cycles.
+  Result<bool> sort(std::span<const std::uint32_t> owners) noexcept {
+    if (owners.size() != heads_.size())
+      return std::unexpected(Status::Internal("graph partition size mismatch"));
+    std::fill(heads_.begin(), heads_.end(), detail::kNoNode);
+    std::fill(indegree_.begin(), indegree_.end(), std::uint32_t{0});
+    ready_.clear();
+    order_.clear();
+    for (std::uint32_t node = 0; node < owners.size(); ++node) {
+      const std::uint32_t owner = owners[node];
+      if (owner >= owners.size() || owners[owner] != owner)
+        return std::unexpected(
+            Status::Internal("graph partition owner is invalid"));
+      next_[node] = heads_[owner];
+      heads_[owner] = node;
+      for (std::size_t index = begins_[node]; index < begins_[node + 1];
+           ++index) {
+        const std::uint32_t destination = owners[successors_[index]];
+        if (destination != owner)
+          ++indegree_[destination];
+      }
+    }
+    const auto later = [](std::uint32_t left, std::uint32_t right) noexcept {
+      return left > right;
+    };
+    std::size_t unit_count = 0;
+    for (std::uint32_t unit = 0; unit < owners.size(); ++unit) {
+      if (heads_[unit] == detail::kNoNode)
+        continue;
+      ++unit_count;
+      if (indegree_[unit] == 0) {
+        if (!ready_.try_push_back(unit))
+          return std::unexpected(plan_allocation_failure());
+        std::push_heap(ready_.begin(), ready_.end(), later);
+      }
+    }
+    while (!ready_.empty()) {
+      std::pop_heap(ready_.begin(), ready_.end(), later);
+      const std::uint32_t unit = ready_.back();
+      ready_.pop_back();
+      if (!order_.try_push_back(unit))
+        return std::unexpected(plan_allocation_failure());
+      for (std::uint32_t node = heads_[unit]; node != detail::kNoNode;
+           node = next_[node]) {
+        for (std::size_t index = begins_[node]; index < begins_[node + 1];
+             ++index) {
+          const std::uint32_t destination = owners[successors_[index]];
+          if (destination == unit)
+            continue;
+          if (indegree_[destination] == 0)
+            return std::unexpected(
+                Status::Internal("graph partition degree underflow"));
+          if (--indegree_[destination] == 0) {
+            if (!ready_.try_push_back(destination))
+              return std::unexpected(plan_allocation_failure());
+            std::push_heap(ready_.begin(), ready_.end(), later);
+          }
+        }
+      }
+    }
+    return order_.size() == unit_count;
+  }
+
+  std::span<const std::uint32_t> order() const noexcept { return order_; }
+
+private:
+  using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
+  Ordinals begins_;
+  Ordinals successors_;
+  Ordinals heads_;
+  Ordinals next_;
+  Ordinals indegree_;
+  Ordinals ready_;
+  Ordinals order_;
+};
+
+std::span<const NodeId>
+candidate_nodes(const RegionCandidate &candidate,
+                std::span<const NodeId> storage) noexcept {
+  return storage.subspan(candidate.node_offset, candidate.node_count);
+}
+
+bool nodes_are_contiguous(std::span<const NodeId> nodes) noexcept {
+  if (nodes.empty())
+    return false;
+  for (std::size_t index = 1; index < nodes.size(); ++index) {
+    if (nodes[index].ordinal() != nodes[index - 1].ordinal() + 1)
+      return false;
+  }
+  return true;
+}
+
+Result<bool> validate_contractible_region(
+    const detail::GraphState &graph, std::span<const NodeId> nodes,
+    container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> &selected,
+    container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>
+        &reachable_outside) noexcept {
+  if (nodes.empty())
+    return std::unexpected(
+        Status::InvalidArgument("graph region node set is empty"));
+  if (nodes_are_contiguous(nodes)) {
+    for (NodeId node : nodes) {
+      if (!detail::owns(graph, node))
+        return std::unexpected(Status::InvalidArgument(
+            "provider proposed a graph region node from another graph"));
+    }
+    return true;
+  }
+  if (!selected.try_resize(graph.nodes.size()) ||
+      !reachable_outside.try_resize(graph.nodes.size())) {
+    return std::unexpected(plan_allocation_failure());
+  }
+  std::fill(selected.begin(), selected.end(), std::uint8_t{0});
+  std::fill(reachable_outside.begin(), reachable_outside.end(),
+            std::uint8_t{0});
+  std::uint32_t first = detail::kNoNode;
+  std::uint32_t last = 0;
+  for (NodeId node : nodes) {
+    if (!detail::owns(graph, node)) {
+      return std::unexpected(Status::InvalidArgument(
+          "provider proposed a graph region node from another graph"));
+    }
+    if (selected[node.ordinal()] != 0)
+      return std::unexpected(
+          Status::InvalidArgument("graph region node set has duplicates"));
+    selected[node.ordinal()] = 1;
+    first = (std::min)(first, node.ordinal());
+    last = (std::max)(last, node.ordinal());
+  }
+  // In a canonical DAG every path has increasing ordinals, so an interval
+  // (including a singleton) cannot leave the set and then re-enter it.
+  if (static_cast<std::size_t>(last) - first + 1 == nodes.size())
+    return true;
+
+  auto predecessor_state = [&](std::uint32_t predecessor,
+                               bool current_selected) noexcept {
+    if (predecessor == detail::kNoNode)
+      return false;
+    if (current_selected)
+      return selected[predecessor] == 0 && reachable_outside[predecessor] != 0;
+    return selected[predecessor] != 0 || reachable_outside[predecessor] != 0;
+  };
+  for (std::uint32_t node_index = first; node_index <= last; ++node_index) {
+    const detail::NodeRecord &node = graph.nodes[node_index];
+    const bool current_selected = selected[node_index] != 0;
+    bool reached = false;
+    for (std::size_t input_index = 0; input_index < node.input_count;
+         ++input_index) {
+      const std::uint32_t value = graph.edges[node.input_begin + input_index];
+      reached = reached || predecessor_state(graph.values[value].producer,
+                                             current_selected);
+    }
+    for (std::size_t dependency_index = 0;
+         dependency_index < node.dependency_count; ++dependency_index) {
+      reached =
+          reached ||
+          predecessor_state(
+              graph.dependencies[node.dependency_begin + dependency_index],
+              current_selected);
+    }
+    if (current_selected && reached) {
+      return false;
+    }
+    if (!current_selected)
+      reachable_outside[node_index] = reached ? 1 : 0;
+  }
+  return true;
+}
 
 Status collect_region_boundary(
     const detail::PlanState &plan, const detail::GraphState &graph,
-    const RegionProposal &proposal,
-    std::span<const std::uint32_t> last_consumers,
+    std::span<const NodeId> nodes,
+    container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>
+        &node_membership,
+    container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> &outside_uses,
     container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> &marks,
     std::uint32_t marker, RegionValues &inputs,
     RegionValues &outputs) noexcept {
-  const std::uint32_t begin = proposal.nodes.begin;
-  const std::uint32_t end =
-      begin + static_cast<std::uint32_t>(proposal.nodes.count);
-  for (std::uint32_t node_index = begin; node_index < end; ++node_index) {
+  if (!node_membership.try_resize(graph.nodes.size()) ||
+      !outside_uses.try_resize(graph.values.size())) {
+    return plan_allocation_failure();
+  }
+  std::fill(node_membership.begin(), node_membership.end(), std::uint8_t{0});
+  std::fill(outside_uses.begin(), outside_uses.end(), std::uint8_t{0});
+  for (NodeId node : nodes)
+    node_membership[node.ordinal()] = 1;
+  for (std::uint32_t node_index = 0; node_index < graph.nodes.size();
+       ++node_index) {
+    if (node_membership[node_index] != 0)
+      continue;
+    const detail::NodeRecord &node = graph.nodes[node_index];
+    for (std::size_t input_index = 0; input_index < node.input_count;
+         ++input_index) {
+      outside_uses[graph.edges[node.input_begin + input_index]] = 1;
+    }
+  }
+  for (NodeId node_id : nodes) {
+    const std::uint32_t node_index = node_id.ordinal();
     const detail::NodeRecord &node = graph.nodes[node_index];
     for (std::size_t input_index = 0; input_index < node.input_count;
          ++input_index) {
       const std::uint32_t ordinal = graph.edges[node.input_begin + input_index];
       const std::uint32_t producer = graph.values[ordinal].producer;
-      if (producer != detail::kNoNode && producer >= begin && producer < end)
+      if (producer != detail::kNoNode && node_membership[producer] != 0)
         continue;
       if (marks[ordinal] == marker)
         continue;
@@ -1138,7 +1381,8 @@ Status collect_region_boundary(
         return plan_allocation_failure();
     }
   }
-  for (std::uint32_t node_index = begin; node_index < end; ++node_index) {
+  for (NodeId node_id : nodes) {
+    const std::uint32_t node_index = node_id.ordinal();
     const detail::NodeRecord &node = graph.nodes[node_index];
     for (std::size_t output_index = 0; output_index < node.output_count;
          ++output_index) {
@@ -1146,9 +1390,7 @@ Status collect_region_boundary(
           node.output_begin + static_cast<std::uint32_t>(output_index);
       const bool published =
           (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0;
-      const bool consumed_after = last_consumers[ordinal] != detail::kNoNode &&
-                                  last_consumers[ordinal] >= end;
-      if ((published || consumed_after) &&
+      if ((published || outside_uses[ordinal] != 0) &&
           !outputs.try_push_back(detail::value_id(graph, ordinal))) {
         return plan_allocation_failure();
       }
@@ -1273,10 +1515,14 @@ Status discover_region_candidates(
     const Graph &published_graph, const detail::GraphState &graph,
     const compute::Context &context, CompileOptions options,
     mem::AllocatorRef allocator, RegionExtensions &extensions,
-    RegionCandidates &candidates, ExecutionTargetId target,
+    RegionCandidates &candidates, RegionNodeIds &proposal_nodes,
+    std::size_t &proposal_count, std::size_t &proposal_node_count,
+    ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets = {}) noexcept;
 
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
+                      std::span<const NodeId> proposal_nodes,
+                      const detail::GraphState &graph,
                       RegionSelectionPolicy policy,
                       RegionCandidates &selected) noexcept;
 
@@ -1412,23 +1658,28 @@ Status prepare_placed_steps(detail::PlanState &plan,
 
   RegionExtensions extensions(plan.allocator);
   RegionCandidates all_region_candidates(plan.allocator);
+  RegionNodeIds all_region_nodes(plan.allocator);
+  std::size_t region_proposal_count = 0;
+  std::size_t region_proposal_node_count = 0;
   for (std::size_t target = 0; target < target_count; ++target) {
     Status discovered = discover_region_candidates(
         published_graph, graph, *environment.targets[target].context, options,
-        plan.allocator, extensions, all_region_candidates,
+        plan.allocator, extensions, all_region_candidates, all_region_nodes,
+        region_proposal_count, region_proposal_node_count,
         ExecutionTargetId{static_cast<std::uint32_t>(target)});
     if (!discovered.ok())
       return discovered;
   }
+  if (!all_region_nodes.try_resize(region_proposal_node_count))
+    return plan_allocation_failure();
   Flags region_support(plan.allocator);
   if (!region_support.try_resize(node_count * target_count))
     return plan_allocation_failure();
   for (std::uint8_t &supported : region_support)
     supported = 0;
   for (const RegionCandidate &candidate : all_region_candidates) {
-    for (std::uint32_t node = candidate.proposal.nodes.begin;
-         node < candidate.proposal.nodes.end(); ++node) {
-      region_support[static_cast<std::size_t>(node) * target_count +
+    for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
+      region_support[static_cast<std::size_t>(node.ordinal()) * target_count +
                      candidate.target.ordinal()] = 1;
     }
   }
@@ -1777,9 +2028,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
     return plan_allocation_failure();
   for (const RegionCandidate &candidate : all_region_candidates) {
     bool eligible = true;
-    for (std::uint32_t node = candidate.proposal.nodes.begin;
-         node < candidate.proposal.nodes.end(); ++node) {
-      if (node_targets[node] != candidate.target.ordinal()) {
+    for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
+      if (node_targets[node.ordinal()] != candidate.target.ordinal()) {
         eligible = false;
         break;
       }
@@ -1787,14 +2037,15 @@ Status prepare_placed_steps(detail::PlanState &plan,
     if (eligible && !candidates.try_push_back(candidate))
       return plan_allocation_failure();
   }
-  Status selected = select_regions(candidates, plan.allocator,
-                                   options.region_selection, selected_regions);
+  Status selected =
+      select_regions(candidates, plan.allocator, all_region_nodes, graph,
+                     options.region_selection, selected_regions);
   if (!selected.ok())
     return selected;
   if (options.operation_fallback == OperationFallbackPolicy::kReject) {
     std::size_t covered_nodes = 0;
     for (const RegionCandidate &candidate : selected_regions) {
-      covered_nodes += candidate.proposal.nodes.count;
+      covered_nodes += candidate.node_count;
     }
     if (covered_nodes != node_count) {
       return Status::Unimplemented(
@@ -1807,9 +2058,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
   for (std::uint8_t &covered : selected_nodes)
     covered = 0;
   for (const RegionCandidate &candidate : selected_regions) {
-    for (std::uint32_t node = candidate.proposal.nodes.begin;
-         node < candidate.proposal.nodes.end(); ++node) {
-      selected_nodes[node] = 1;
+    for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
+      selected_nodes[node.ordinal()] = 1;
     }
   }
   for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
@@ -1889,37 +2139,24 @@ Status prepare_placed_steps(detail::PlanState &plan,
       return unsupported;
   }
 
-  container::SmallVector<std::int64_t, 32, mem::AllocatorRef>
+  container::SmallVector<std::uint32_t, 32, mem::AllocatorRef>
       eligible_region_coverage(plan.allocator);
-  container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> last_consumers(
-      plan.allocator);
   container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> marks(
       plan.allocator);
-  if (!eligible_region_coverage.try_resize(node_count + 1) ||
-      !last_consumers.try_resize(value_count) ||
+  Flags region_node_membership(plan.allocator);
+  Flags region_outside_uses(plan.allocator);
+  if (!eligible_region_coverage.try_resize(node_count) ||
       !marks.try_resize(value_count)) {
     return plan_allocation_failure();
   }
-  for (std::int64_t &count : eligible_region_coverage)
+  for (std::uint32_t &count : eligible_region_coverage)
     count = 0;
   for (const RegionCandidate &candidate : candidates) {
-    ++eligible_region_coverage[candidate.proposal.nodes.begin];
-    --eligible_region_coverage[static_cast<std::size_t>(
-        candidate.proposal.nodes.end())];
+    for (NodeId node : candidate_nodes(candidate, all_region_nodes))
+      ++eligible_region_coverage[node.ordinal()];
   }
-  for (std::size_t index = 1; index < eligible_region_coverage.size(); ++index)
-    eligible_region_coverage[index] += eligible_region_coverage[index - 1];
-  for (std::size_t index = 0; index < value_count; ++index) {
-    last_consumers[index] = detail::kNoNode;
-    marks[index] = 0;
-  }
-  for (std::uint32_t node_index = 0; node_index < node_count; ++node_index) {
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    for (std::size_t input_index = 0; input_index < node.input_count;
-         ++input_index) {
-      last_consumers[graph.edges[node.input_begin + input_index]] = node_index;
-    }
-  }
+  for (std::uint32_t &mark : marks)
+    mark = 0;
 
   // With no explicit output storage, keep a published node result where its
   // producer already resides. This avoids manufacturing a boundary copy just
@@ -1949,6 +2186,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
   plan.steps.clear();
   plan.node_inputs.clear();
   plan.node_outputs.clear();
+  plan.step_nodes.clear();
   plan.instance_descriptions.clear();
   plan.instance_values.clear();
   plan.instance_storage.clear();
@@ -1967,6 +2205,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
   if (!plan.steps.try_reserve(node_count + maximum_instances) ||
       !plan.node_inputs.try_reserve(edge_capacity) ||
       !plan.node_outputs.try_reserve(node_count + maximum_instances) ||
+      !plan.step_nodes.try_reserve(node_count) ||
       !plan.instance_descriptions.try_reserve(maximum_instances) ||
       !plan.instance_values.try_reserve(maximum_instances) ||
       !plan.instance_storage.try_reserve(maximum_instances) ||
@@ -2107,22 +2346,80 @@ Status prepare_placed_steps(detail::PlanState &plan,
     plan.external_instances[value] = *instance;
   }
 
+  Ordinals contracted_owners(plan.allocator);
+  Ordinals region_by_node(plan.allocator);
+  if (!contracted_owners.try_resize(node_count) ||
+      !region_by_node.try_resize(node_count)) {
+    return plan_allocation_failure();
+  }
+  for (std::uint32_t node = 0; node < node_count; ++node) {
+    contracted_owners[node] = node;
+    region_by_node[node] = kNone;
+  }
+  for (std::size_t index = 0; index < selected_regions.size(); ++index) {
+    const auto nodes =
+        candidate_nodes(selected_regions[index], all_region_nodes);
+    for (NodeId node : nodes) {
+      if (region_by_node[node.ordinal()] != kNone)
+        return Status::Internal("selected graph regions overlap");
+      region_by_node[node.ordinal()] = static_cast<std::uint32_t>(index);
+      contracted_owners[node.ordinal()] = nodes.front().ordinal();
+    }
+  }
+  RegionContraction contraction(plan.allocator);
+  Ordinals interval_order(plan.allocator);
+  std::span<const std::uint32_t> unit_order;
+  const bool intervals_only =
+      std::all_of(selected_regions.begin(), selected_regions.end(),
+                  [&](const RegionCandidate &candidate) noexcept {
+                    return nodes_are_contiguous(
+                        candidate_nodes(candidate, all_region_nodes));
+                  });
+  if (intervals_only) {
+    // The original topological order is already valid after contracting
+    // disjoint intervals. Native-only and contiguous-provider plans need no
+    // second adjacency table or topological sort.
+    if (!interval_order.try_reserve(node_count))
+      return plan_allocation_failure();
+    for (std::uint32_t node = 0; node < node_count; ++node) {
+      if (contracted_owners[node] == node &&
+          !interval_order.try_push_back(node))
+        return plan_allocation_failure();
+    }
+    unit_order = interval_order;
+  } else {
+    Status initialized = contraction.initialize(graph);
+    if (!initialized.ok())
+      return initialized;
+    auto ordered = contraction.sort(contracted_owners);
+    if (!ordered)
+      return std::move(ordered).error();
+    if (!*ordered)
+      return Status::Internal(
+          "selected graph regions form a cyclic contraction");
+    unit_order = contraction.order();
+  }
+
   Ordinals physical_inputs(plan.allocator);
-  std::size_t selection_index = 0;
-  std::uint32_t node_index = 0;
   std::uint32_t marker = 1;
-  while (node_index < node_count) {
-    if (selection_index < selected_regions.size() &&
-        selected_regions[selection_index].proposal.nodes.begin == node_index) {
-      const RegionCandidate &candidate = selected_regions[selection_index];
+  NodeId operation_node;
+  std::span<const NodeId> operation_nodes;
+  for (std::uint32_t unit_node : unit_order) {
+    operation_nodes = {};
+    if (region_by_node[unit_node] != kNone) {
+      const RegionCandidate &candidate =
+          selected_regions[region_by_node[unit_node]];
+      const std::span<const NodeId> region_nodes =
+          candidate_nodes(candidate, all_region_nodes);
       const std::uint32_t target = candidate.target.ordinal();
       const std::uint32_t default_storage =
           plan.targets[target].default_storage.ordinal();
       RegionValues logical_inputs(plan.allocator);
       RegionValues logical_outputs(plan.allocator);
       Status boundary = collect_region_boundary(
-          plan, graph, candidate.proposal, last_consumers, marks, marker++,
-          logical_inputs, logical_outputs);
+          plan, graph, region_nodes, region_node_membership,
+          region_outside_uses, marks, marker++, logical_inputs,
+          logical_outputs);
       if (!boundary.ok())
         return boundary;
       if (!selected_inputs.try_resize(logical_inputs.size()) ||
@@ -2135,11 +2432,11 @@ Status prepare_placed_steps(detail::PlanState &plan,
       }
       RegionCompileRequest request{
           .graph = &published_graph,
-          .nodes = candidate.proposal.nodes,
+          .nodes = region_nodes,
           .inputs = logical_inputs,
           .outputs = logical_outputs,
           .constants = options.constants,
-          .route = candidate.proposal.route,
+          .route = candidate.route,
       };
       RegionResourceProposal resource_proposal{};
       Status region_status = propose_region_resources(
@@ -2230,18 +2527,155 @@ Status prepare_placed_steps(detail::PlanState &plan,
       if (!route_supported) {
         if (options.operation_fallback == OperationFallbackPolicy::kReject)
           return region_status;
-        // The resource route was a cold proposal, not accepted work. Skip the
-        // selected island and let its nodes take the normal operation path.
-        ++selection_index;
+        // The resource route was a cold proposal, not accepted work. Its
+        // contracted unit is ready, so its nodes can now take the ordinary
+        // operation path without violating an external dependency.
+        operation_nodes = region_nodes;
+      } else {
+        physical_inputs.clear();
+        if (!physical_inputs.try_reserve(logical_inputs.size()))
+          return plan_allocation_failure();
+        for (std::size_t index = 0; index < logical_inputs.size(); ++index) {
+          auto instance = ensure_local_instance(logical_inputs[index].ordinal(),
+                                                selected_inputs[index]);
+          if (!instance)
+            return std::move(instance).error();
+          if (!physical_inputs.try_push_back(*instance))
+            return plan_allocation_failure();
+        }
+        const std::uint32_t input_begin =
+            static_cast<std::uint32_t>(plan.node_inputs.size());
+        for (std::uint32_t instance : physical_inputs) {
+          if (!plan.node_inputs.try_push_back(instance))
+            return plan_allocation_failure();
+        }
+        const std::uint32_t output_begin =
+            static_cast<std::uint32_t>(plan.node_outputs.size());
+        for (std::size_t index = 0; index < logical_outputs.size(); ++index) {
+          const std::uint32_t value = logical_outputs[index].ordinal();
+          const std::uint32_t storage = selected_outputs[index];
+          if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
+              external_seen[value] == 0) {
+            plan.external_storage[value] = storage;
+          }
+          std::uint8_t roles = 0;
+          if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
+              plan.external_storage[value] == storage) {
+            roles |= detail::kExternalOutput;
+          }
+          auto instance = add_instance(value, storage, roles);
+          if (!instance)
+            return std::move(instance).error();
+          producer_instances[value] = *instance;
+          producer_storage[value] = storage;
+          if ((roles & detail::kExternalOutput) != 0)
+            plan.external_instances[value] = *instance;
+          if (!plan.node_outputs.try_push_back(*instance))
+            return plan_allocation_failure();
+          plan.value_materialized[*instance] = 1;
+        }
+        const std::uint32_t step_index =
+            static_cast<std::uint32_t>(plan.steps.size());
+        const std::uint32_t step_node_begin =
+            static_cast<std::uint32_t>(plan.step_nodes.size());
+        for (NodeId node : region_nodes) {
+          if (!plan.step_nodes.try_push_back(node.ordinal()))
+            return plan_allocation_failure();
+        }
+        if (!plan.steps.try_emplace_back(
+                std::move(*region), region_nodes.front().ordinal(),
+                step_node_begin, candidate.node_count,
+                nodes_are_contiguous(region_nodes), input_begin,
+                static_cast<std::uint32_t>(logical_inputs.size()), output_begin,
+                static_cast<std::uint32_t>(logical_outputs.size()),
+                ExecutionTargetId{target},
+                workspace_storage == kNone
+                    ? StorageDomainId{}
+                    : StorageDomainId{workspace_storage})) {
+          return plan_allocation_failure();
+        }
+        for (NodeId node : region_nodes)
+          plan.node_steps[node.ordinal()] = step_index;
+        ++plan.region_count;
         continue;
       }
+    } else {
+      operation_node = detail::GraphIdentity::node(graph.generation, unit_node);
+      operation_nodes = std::span<const NodeId>(&operation_node, 1);
+    }
 
+    for (NodeId operation : operation_nodes) {
+      const std::uint32_t node_index = operation.ordinal();
+      const detail::NodeRecord &node = graph.nodes[node_index];
+      if (!prepared[node_index].valid()) {
+        if (!inputs.try_resize(node.input_count) ||
+            !outputs.try_resize(node.output_count) ||
+            !input_resources.try_resize(node.input_count) ||
+            !output_resources.try_resize(node.output_count)) {
+          return plan_allocation_failure();
+        }
+        for (std::size_t index = 0; index < node.input_count; ++index)
+          inputs[index] =
+              plan.descriptions[graph.edges[node.input_begin + index]];
+        for (std::size_t index = 0; index < node.output_count; ++index)
+          outputs[index] = plan.descriptions[node.output_begin + index];
+        for (std::size_t index = 0; index < target_count; ++index)
+          target_candidates[index] = static_cast<std::uint32_t>(index);
+        const std::uint32_t required = node_required[node_index];
+        const std::uint32_t preferred = node_preferred[node_index];
+        const std::uint32_t original = node_targets[node_index];
+        std::sort(target_candidates.begin(), target_candidates.end(),
+                  [&](std::uint32_t left, std::uint32_t right) noexcept {
+                    if (required != kNone)
+                      return left == required && right != required;
+                    const bool left_original = left == original;
+                    const bool right_original = right == original;
+                    if (left_original != right_original)
+                      return left_original;
+                    const bool left_preferred = left == preferred;
+                    const bool right_preferred = right == preferred;
+                    if (left_preferred != right_preferred)
+                      return left_preferred;
+                    return left < right;
+                  });
+        Status unsupported = Status::Unimplemented(
+            "no operation fallback supports a declined graph region route");
+        for (std::uint32_t candidate : target_candidates) {
+          if (required != kNone && candidate != required)
+            continue;
+          auto fallback = prepare_operation(node_index, candidate);
+          if (fallback) {
+            prepared[node_index] = std::move(*fallback);
+            node_targets[node_index] = candidate;
+            break;
+          }
+          unsupported = std::move(fallback).error();
+          if (!unsupported.IsUnimplemented())
+            return unsupported;
+        }
+        if (!prepared[node_index].valid())
+          return unsupported;
+      }
+      const std::uint32_t target = node_targets[node_index];
+      const std::uint32_t workspace_storage =
+          node_workspace_storage[node_index];
+      if (workspace_storage == kNone &&
+          prepared[node_index].runtime_properties().workspace_owner ==
+              compute::ProviderWorkspaceOwner::kCaller)
+        return Status::Internal(
+            "prepared graph operation has no workspace storage");
       physical_inputs.clear();
-      if (!physical_inputs.try_reserve(logical_inputs.size()))
+      if (!physical_inputs.try_reserve(node.input_count))
         return plan_allocation_failure();
-      for (std::size_t index = 0; index < logical_inputs.size(); ++index) {
-        auto instance = ensure_local_instance(logical_inputs[index].ordinal(),
-                                              selected_inputs[index]);
+      for (std::size_t input_index = 0; input_index < node.input_count;
+           ++input_index) {
+        const std::uint32_t value = graph.edges[node.input_begin + input_index];
+        const std::uint32_t input_storage =
+            selected_edge_storage[node.input_begin + input_index];
+        if (input_storage == kNone)
+          return Status::Internal(
+              "prepared graph input has no selected storage");
+        auto instance = ensure_local_instance(value, input_storage);
         if (!instance)
           return std::move(instance).error();
         if (!physical_inputs.try_push_back(*instance))
@@ -2255,176 +2689,60 @@ Status prepare_placed_steps(detail::PlanState &plan,
       }
       const std::uint32_t output_begin =
           static_cast<std::uint32_t>(plan.node_outputs.size());
-      for (std::size_t index = 0; index < logical_outputs.size(); ++index) {
-        const std::uint32_t value = logical_outputs[index].ordinal();
-        const std::uint32_t storage = selected_outputs[index];
+      for (std::size_t output_index = 0; output_index < node.output_count;
+           ++output_index) {
+        const std::uint32_t value =
+            node.output_begin + static_cast<std::uint32_t>(output_index);
+        const std::uint32_t output_storage = producer_storage[value];
         if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
             external_seen[value] == 0) {
-          plan.external_storage[value] = storage;
+          plan.external_storage[value] = output_storage;
         }
         std::uint8_t roles = 0;
         if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
-            plan.external_storage[value] == storage) {
+            plan.external_storage[value] == output_storage) {
           roles |= detail::kExternalOutput;
         }
-        auto instance = add_instance(value, storage, roles);
+        auto instance = add_instance(value, output_storage, roles);
         if (!instance)
           return std::move(instance).error();
         producer_instances[value] = *instance;
-        producer_storage[value] = storage;
         if ((roles & detail::kExternalOutput) != 0)
           plan.external_instances[value] = *instance;
         if (!plan.node_outputs.try_push_back(*instance))
           return plan_allocation_failure();
         plan.value_materialized[*instance] = 1;
       }
+      const bool materializes =
+          compute::operation_traits(node.operation).materializes;
+      const CompileFallbackReason reason =
+          options.region_selection == RegionSelectionPolicy::kDisabled
+              ? CompileFallbackReason::kRegionSelectionDisabled
+              : (eligible_region_coverage[node_index] == 0
+                     ? CompileFallbackReason::kNoEligibleRegion
+                     : CompileFallbackReason::kRegionNotSelected);
       const std::uint32_t step_index =
           static_cast<std::uint32_t>(plan.steps.size());
+      const std::uint32_t step_node_begin =
+          static_cast<std::uint32_t>(plan.step_nodes.size());
+      if (!plan.step_nodes.try_push_back(node_index))
+        return plan_allocation_failure();
       if (!plan.steps.try_emplace_back(
-              std::move(*region), node_index, candidate.proposal.nodes.count,
-              input_begin, static_cast<std::uint32_t>(logical_inputs.size()),
-              output_begin, static_cast<std::uint32_t>(logical_outputs.size()),
-              ExecutionTargetId{target},
+              std::move(prepared[node_index]),
+              static_cast<std::uint32_t>(node_index), step_node_begin,
+              input_begin, node.input_count, output_begin, node.output_count,
+              materializes, reason, ExecutionTargetId{target},
               workspace_storage == kNone
                   ? StorageDomainId{}
                   : StorageDomainId{workspace_storage})) {
         return plan_allocation_failure();
       }
-      const std::uint32_t end = node_index + candidate.proposal.nodes.count;
-      for (std::uint32_t covered = node_index; covered < end; ++covered)
-        plan.node_steps[covered] = step_index;
-      ++plan.region_count;
-      node_index = end;
-      ++selection_index;
-      continue;
+      plan.node_steps[node_index] = step_index;
     }
-
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    if (!prepared[node_index].valid()) {
-      if (!inputs.try_resize(node.input_count) ||
-          !outputs.try_resize(node.output_count) ||
-          !input_resources.try_resize(node.input_count) ||
-          !output_resources.try_resize(node.output_count)) {
-        return plan_allocation_failure();
-      }
-      for (std::size_t index = 0; index < node.input_count; ++index)
-        inputs[index] =
-            plan.descriptions[graph.edges[node.input_begin + index]];
-      for (std::size_t index = 0; index < node.output_count; ++index)
-        outputs[index] = plan.descriptions[node.output_begin + index];
-      for (std::size_t index = 0; index < target_count; ++index)
-        target_candidates[index] = static_cast<std::uint32_t>(index);
-      const std::uint32_t required = node_required[node_index];
-      const std::uint32_t preferred = node_preferred[node_index];
-      const std::uint32_t original = node_targets[node_index];
-      std::sort(target_candidates.begin(), target_candidates.end(),
-                [&](std::uint32_t left, std::uint32_t right) noexcept {
-                  if (required != kNone)
-                    return left == required && right != required;
-                  const bool left_original = left == original;
-                  const bool right_original = right == original;
-                  if (left_original != right_original)
-                    return left_original;
-                  const bool left_preferred = left == preferred;
-                  const bool right_preferred = right == preferred;
-                  if (left_preferred != right_preferred)
-                    return left_preferred;
-                  return left < right;
-                });
-      Status unsupported = Status::Unimplemented(
-          "no operation fallback supports a declined graph region route");
-      for (std::uint32_t candidate : target_candidates) {
-        if (required != kNone && candidate != required)
-          continue;
-        auto fallback = prepare_operation(node_index, candidate);
-        if (fallback) {
-          prepared[node_index] = std::move(*fallback);
-          node_targets[node_index] = candidate;
-          break;
-        }
-        unsupported = std::move(fallback).error();
-        if (!unsupported.IsUnimplemented())
-          return unsupported;
-      }
-      if (!prepared[node_index].valid())
-        return unsupported;
-    }
-    const std::uint32_t target = node_targets[node_index];
-    const std::uint32_t workspace_storage = node_workspace_storage[node_index];
-    if (workspace_storage == kNone &&
-        prepared[node_index].runtime_properties().workspace_owner ==
-            compute::ProviderWorkspaceOwner::kCaller)
-      return Status::Internal(
-          "prepared graph operation has no workspace storage");
-    physical_inputs.clear();
-    if (!physical_inputs.try_reserve(node.input_count))
-      return plan_allocation_failure();
-    for (std::size_t input_index = 0; input_index < node.input_count;
-         ++input_index) {
-      const std::uint32_t value = graph.edges[node.input_begin + input_index];
-      const std::uint32_t input_storage =
-          selected_edge_storage[node.input_begin + input_index];
-      if (input_storage == kNone)
-        return Status::Internal("prepared graph input has no selected storage");
-      auto instance = ensure_local_instance(value, input_storage);
-      if (!instance)
-        return std::move(instance).error();
-      if (!physical_inputs.try_push_back(*instance))
-        return plan_allocation_failure();
-    }
-    const std::uint32_t input_begin =
-        static_cast<std::uint32_t>(plan.node_inputs.size());
-    for (std::uint32_t instance : physical_inputs) {
-      if (!plan.node_inputs.try_push_back(instance))
-        return plan_allocation_failure();
-    }
-    const std::uint32_t output_begin =
-        static_cast<std::uint32_t>(plan.node_outputs.size());
-    for (std::size_t output_index = 0; output_index < node.output_count;
-         ++output_index) {
-      const std::uint32_t value =
-          node.output_begin + static_cast<std::uint32_t>(output_index);
-      const std::uint32_t output_storage = producer_storage[value];
-      if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
-          external_seen[value] == 0) {
-        plan.external_storage[value] = output_storage;
-      }
-      std::uint8_t roles = 0;
-      if ((plan.binding_roles[value] & detail::kExternalOutput) != 0 &&
-          plan.external_storage[value] == output_storage) {
-        roles |= detail::kExternalOutput;
-      }
-      auto instance = add_instance(value, output_storage, roles);
-      if (!instance)
-        return std::move(instance).error();
-      producer_instances[value] = *instance;
-      if ((roles & detail::kExternalOutput) != 0)
-        plan.external_instances[value] = *instance;
-      if (!plan.node_outputs.try_push_back(*instance))
-        return plan_allocation_failure();
-      plan.value_materialized[*instance] = 1;
-    }
-    const bool materializes =
-        compute::operation_traits(node.operation).materializes;
-    const CompileFallbackReason reason =
-        options.region_selection == RegionSelectionPolicy::kDisabled
-            ? CompileFallbackReason::kRegionSelectionDisabled
-            : (eligible_region_coverage[node_index] == 0
-                   ? CompileFallbackReason::kNoEligibleRegion
-                   : CompileFallbackReason::kRegionNotSelected);
-    const std::uint32_t step_index =
-        static_cast<std::uint32_t>(plan.steps.size());
-    if (!plan.steps.try_emplace_back(
-            std::move(prepared[node_index]),
-            static_cast<std::uint32_t>(node_index), input_begin,
-            node.input_count, output_begin, node.output_count, materializes,
-            reason, ExecutionTargetId{target},
-            workspace_storage == kNone ? StorageDomainId{}
-                                       : StorageDomainId{workspace_storage})) {
-      return plan_allocation_failure();
-    }
-    plan.node_steps[node_index] = step_index;
-    ++node_index;
+  }
+  for (std::uint32_t node_step : plan.node_steps) {
+    if (node_step == kNone)
+      return Status::Internal("graph node has no execution step");
   }
 
   for (std::uint32_t value : graph.outputs) {
@@ -2457,10 +2775,12 @@ Status discover_region_candidates(
     const Graph &published_graph, const detail::GraphState &graph,
     const compute::Context &context, CompileOptions options,
     mem::AllocatorRef allocator, RegionExtensions &extensions,
-    RegionCandidates &candidates, ExecutionTargetId target,
+    RegionCandidates &candidates, RegionNodeIds &proposal_nodes,
+    std::size_t &proposal_count, std::size_t &proposal_node_count,
+    ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets) noexcept {
   if (options.region_selection == RegionSelectionPolicy::kDisabled ||
-      graph.nodes.size() < 2) {
+      graph.nodes.empty()) {
     return Status::Ok();
   }
   if (options.max_region_proposals == 0) {
@@ -2472,9 +2792,15 @@ Status discover_region_candidates(
         "enabled graph region selection requires a non-zero per-provider "
         "proposal budget");
   }
+  if (options.max_region_proposal_nodes == 0) {
+    return Status::InvalidArgument(
+        "enabled graph region selection requires a non-zero node budget");
+  }
   if (options.max_region_proposals >
           (std::numeric_limits<std::uint32_t>::max)() ||
       options.max_region_proposals_per_provider >
+          (std::numeric_limits<std::uint32_t>::max)() ||
+      options.max_region_proposal_nodes >
           (std::numeric_limits<std::uint32_t>::max)()) {
     return Status::OutOfRange(
         "graph region proposal budget exceeds the supported identity space");
@@ -2501,26 +2827,43 @@ Status discover_region_candidates(
   if (extensions.size() == extension_begin)
     return Status::Ok();
 
-  container::SmallVector<RegionProposal, 32, mem::AllocatorRef> storage(
-      allocator);
-  if (candidates.size() > options.max_region_proposals) {
+  container::SmallVector<RegionProposal, 32, mem::AllocatorRef>
+      proposal_storage(allocator);
+  if (proposal_count > options.max_region_proposals ||
+      proposal_node_count > options.max_region_proposal_nodes ||
+      proposal_node_count > proposal_nodes.size()) {
     return Status::Internal("graph region proposal accounting overflowed");
   }
   const std::size_t remaining_budget =
-      options.max_region_proposals - candidates.size();
-  if (!storage.try_resize(remaining_budget) ||
+      options.max_region_proposals - proposal_count;
+  if (!proposal_storage.try_resize(remaining_budget) ||
       !candidates.try_reserve(options.max_region_proposals)) {
     return plan_allocation_failure();
   }
 
-  std::size_t used = 0;
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> selected(
+      allocator);
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> reachable_outside(
+      allocator);
   for (std::size_t extension_index = extension_begin;
        extension_index < extensions.size(); ++extension_index) {
-    const std::size_t remaining = storage.size() - used;
+    const std::size_t remaining = options.max_region_proposals - proposal_count;
     const std::size_t provider_capacity =
         (std::min)(remaining, options.max_region_proposals_per_provider);
+    const std::size_t remaining_nodes =
+        options.max_region_proposal_nodes - proposal_node_count;
+    // A unique proposal cannot contain more nodes than the graph. Reserve
+    // only this provider's possible contribution, bounded by the global cap.
+    const std::size_t node_capacity =
+        provider_capacity > remaining_nodes / graph.nodes.size()
+            ? remaining_nodes
+            : provider_capacity * graph.nodes.size();
+    if (!proposal_nodes.try_resize(proposal_node_count + node_capacity))
+      return plan_allocation_failure();
     RegionProposalWriter writer(
-        std::span<RegionProposal>(storage).subspan(used, provider_capacity));
+        std::span<RegionProposal>(proposal_storage).first(provider_capacity),
+        std::span<NodeId>(proposal_nodes)
+            .subspan(proposal_node_count, node_capacity));
     struct Episode final {
       const Graph *graph = nullptr;
       RegionProposalWriter *writer = nullptr;
@@ -2544,12 +2887,17 @@ Status discover_region_candidates(
     if (!proposed.ok())
       return proposed;
 
+    std::uint32_t provider_proposal_order = 0;
     for (const RegionProposal &proposal : writer.proposals()) {
-      if (proposal.nodes.count < 2 ||
-          proposal.nodes.end() > graph.nodes.size()) {
+      const std::uint32_t proposal_order = static_cast<std::uint32_t>(
+          proposal_count + provider_proposal_order++);
+      auto valid = validate_contractible_region(graph, proposal.nodes, selected,
+                                                reachable_outside);
+      if (!valid)
+        return std::move(valid).error();
+      if (!*valid)
         return Status::InvalidArgument(
-            "provider proposed an invalid graph region interval");
-      }
+            "graph region leaves its node set and later re-enters it");
       const std::optional<std::uint64_t> estimate =
           proposal.cost.estimated_net_savings_ns;
       if ((estimate.has_value() && *estimate == 0) ||
@@ -2564,9 +2912,8 @@ Status discover_region_candidates(
       }
       bool target_eligible = true;
       if (!node_targets.empty()) {
-        for (std::uint32_t node = proposal.nodes.begin;
-             node < proposal.nodes.end(); ++node) {
-          if (node_targets[node] != target.ordinal()) {
+        for (NodeId node : proposal.nodes) {
+          if (node_targets[node.ordinal()] != target.ordinal()) {
             target_eligible = false;
             break;
           }
@@ -2574,14 +2921,29 @@ Status discover_region_candidates(
       }
       if (!target_eligible)
         continue;
+      const std::ptrdiff_t node_offset =
+          proposal.nodes.data() - proposal_nodes.data();
+      if (node_offset < 0 ||
+          static_cast<std::size_t>(node_offset) >
+              options.max_region_proposal_nodes - proposal.nodes.size()) {
+        return Status::Internal(
+            "graph region proposal node storage is not writer-owned");
+      }
       if (!candidates.try_push_back(RegionCandidate{
-              proposal, static_cast<std::uint32_t>(extension_index),
-              extensions[extension_index].provider_index,
-              static_cast<std::uint32_t>(candidates.size()), target})) {
+              .cost = proposal.cost,
+              .route = proposal.route,
+              .node_offset = static_cast<std::uint32_t>(node_offset),
+              .node_count = static_cast<std::uint32_t>(proposal.nodes.size()),
+              .extension_index = static_cast<std::uint32_t>(extension_index),
+              .provider_index = extensions[extension_index].provider_index,
+              .proposal_order = proposal_order,
+              .target = target,
+          })) {
         return plan_allocation_failure();
       }
     }
-    used += writer.size();
+    proposal_count += writer.size();
+    proposal_node_count += writer.node_size();
   }
   return Status::Ok();
 }
@@ -2619,19 +2981,111 @@ bool better_score(RegionSelectionScore left, RegionSelectionScore right,
 }
 
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
+                      std::span<const NodeId> proposal_nodes,
+                      const detail::GraphState &graph,
                       RegionSelectionPolicy policy,
                       RegionCandidates &selected) noexcept {
+  const bool intervals_only = std::all_of(
+      candidates.begin(), candidates.end(),
+      [&](const RegionCandidate &candidate) noexcept {
+        return nodes_are_contiguous(candidate_nodes(candidate, proposal_nodes));
+      });
+  if (!intervals_only) {
+    std::sort(
+        candidates.begin(), candidates.end(),
+        [&](const RegionCandidate &left,
+            const RegionCandidate &right) noexcept {
+          if (policy == RegionSelectionPolicy::kRequireEstimatedBenefit &&
+              left.cost.estimated_net_savings_ns !=
+                  right.cost.estimated_net_savings_ns) {
+            return left.cost.estimated_net_savings_ns.value_or(0) >
+                   right.cost.estimated_net_savings_ns.value_or(0);
+          }
+          if (left.node_count != right.node_count)
+            return left.node_count > right.node_count;
+          if (left.cost.dispatch_count != right.cost.dispatch_count)
+            return left.cost.dispatch_count < right.cost.dispatch_count;
+          if (left.provider_index != right.provider_index)
+            return left.provider_index < right.provider_index;
+          const auto left_nodes = candidate_nodes(left, proposal_nodes);
+          const auto right_nodes = candidate_nodes(right, proposal_nodes);
+          if (left_nodes.front().ordinal() != right_nodes.front().ordinal()) {
+            return left_nodes.front().ordinal() < right_nodes.front().ordinal();
+          }
+          if (left.route != right.route)
+            return left.route < right.route;
+          return left.proposal_order < right.proposal_order;
+        });
+    container::SmallVector<std::uint8_t, 32, mem::AllocatorRef> occupied(
+        allocator);
+    container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> owners(
+        allocator);
+    if (!occupied.try_resize(graph.nodes.size()) ||
+        !owners.try_resize(graph.nodes.size()) ||
+        !selected.try_reserve(candidates.size())) {
+      return plan_allocation_failure();
+    }
+    std::fill(occupied.begin(), occupied.end(), std::uint8_t{0});
+    for (std::uint32_t node = 0; node < owners.size(); ++node)
+      owners[node] = node;
+    RegionContraction contraction(allocator);
+    Status initialized = contraction.initialize(graph);
+    if (!initialized.ok())
+      return initialized;
+    for (const RegionCandidate &candidate : candidates) {
+      const auto nodes = candidate_nodes(candidate, proposal_nodes);
+      if (std::any_of(nodes.begin(), nodes.end(), [&](NodeId node) noexcept {
+            return occupied[node.ordinal()] != 0;
+          })) {
+        continue;
+      }
+      for (NodeId node : nodes)
+        owners[node.ordinal()] = nodes.front().ordinal();
+      // Disjoint individually contractible sets can still form a cycle when
+      // combined. Test the proposed partition, not its bounding intervals:
+      // interleaved sets remain eligible whenever their joint DAG is valid.
+      auto acyclic = contraction.sort(owners);
+      if (!acyclic)
+        return std::move(acyclic).error();
+      if (!*acyclic) {
+        for (NodeId node : nodes)
+          owners[node.ordinal()] = node.ordinal();
+        continue;
+      }
+      if (!selected.try_push_back(candidate))
+        return plan_allocation_failure();
+      for (NodeId node : nodes)
+        occupied[node.ordinal()] = 1;
+    }
+    std::sort(
+        selected.begin(), selected.end(),
+        [&](const RegionCandidate &left,
+            const RegionCandidate &right) noexcept {
+          const auto left_nodes = candidate_nodes(left, proposal_nodes);
+          const auto right_nodes = candidate_nodes(right, proposal_nodes);
+          if (left_nodes.front().ordinal() != right_nodes.front().ordinal()) {
+            return left_nodes.front().ordinal() < right_nodes.front().ordinal();
+          }
+          return left.proposal_order < right.proposal_order;
+        });
+    return Status::Ok();
+  }
+
   std::sort(
       candidates.begin(), candidates.end(),
-      [](const RegionCandidate &left, const RegionCandidate &right) noexcept {
-        if (left.proposal.nodes.end() != right.proposal.nodes.end())
-          return left.proposal.nodes.end() < right.proposal.nodes.end();
-        if (left.proposal.nodes.begin != right.proposal.nodes.begin)
-          return left.proposal.nodes.begin < right.proposal.nodes.begin;
+      [&](const RegionCandidate &left, const RegionCandidate &right) noexcept {
+        const auto left_nodes = candidate_nodes(left, proposal_nodes);
+        const auto right_nodes = candidate_nodes(right, proposal_nodes);
+        const std::uint64_t left_end = left_nodes.back().ordinal() + 1ULL;
+        const std::uint64_t right_end = right_nodes.back().ordinal() + 1ULL;
+        if (left_end != right_end)
+          return left_end < right_end;
+        if (left_nodes.front().ordinal() != right_nodes.front().ordinal())
+          return left_nodes.front().ordinal() < right_nodes.front().ordinal();
         if (left.extension_index != right.extension_index)
           return left.extension_index < right.extension_index;
-        if (left.proposal.route != right.proposal.route)
-          return left.proposal.route < right.proposal.route;
+        if (left.route != right.route)
+          return left.route < right.route;
         return left.proposal_order < right.proposal_order;
       });
   using Indices = container::SmallVector<std::uint32_t, 32, mem::AllocatorRef>;
@@ -2648,11 +3102,14 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
   }
   scores[0] = {};
   for (std::size_t index = 0; index < candidates.size(); ++index) {
-    const std::uint64_t begin = candidates[index].proposal.nodes.begin;
+    const auto nodes = candidate_nodes(candidates[index], proposal_nodes);
+    const std::uint64_t begin = nodes.front().ordinal();
     const auto previous_end = std::upper_bound(
         candidates.begin(), candidates.begin() + index, begin,
-        [](std::uint64_t value, const RegionCandidate &candidate) noexcept {
-          return value < candidate.proposal.nodes.end();
+        [&](std::uint64_t value, const RegionCandidate &candidate) noexcept {
+          return value <
+                 candidate_nodes(candidate, proposal_nodes).back().ordinal() +
+                     1ULL;
         });
     const std::size_t previous_count =
         static_cast<std::size_t>(previous_end - candidates.begin());
@@ -2660,20 +3117,18 @@ Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
     RegionSelectionScore include = scores[previous_count];
     include.estimated_savings = saturating_add(
         include.estimated_savings,
-        candidates[index].proposal.cost.estimated_net_savings_ns.value_or(0));
+        candidates[index].cost.estimated_net_savings_ns.value_or(0));
     include.covered_nodes = saturating_add(
         include.covered_nodes,
-        static_cast<std::uint64_t>(candidates[index].proposal.nodes.count));
-    include.dispatches =
-        saturating_add(include.dispatches,
-                       static_cast<std::uint64_t>(
-                           candidates[index].proposal.cost.dispatch_count));
+        static_cast<std::uint64_t>(candidates[index].node_count));
+    include.dispatches = saturating_add(
+        include.dispatches,
+        static_cast<std::uint64_t>(candidates[index].cost.dispatch_count));
     include.provider_rank_cost = saturating_add(
         include.provider_rank_cost,
         saturating_multiply(
             static_cast<std::uint64_t>(candidates[index].provider_index) + 1,
-            static_cast<std::uint64_t>(
-                candidates[index].proposal.nodes.count)));
+            static_cast<std::uint64_t>(candidates[index].node_count)));
     const RegionSelectionScore exclude = scores[index];
     if (better_score(include, exclude, policy)) {
       scores[index + 1] = include;
@@ -2831,8 +3286,10 @@ Status schedule_steps(detail::PlanState &plan,
         step.kind != detail::PlanStepKind::kRegion) {
       continue;
     }
-    const std::uint32_t node_end = step.node_begin + step.node_count;
-    for (std::uint32_t node = step.node_begin; node < node_end; ++node) {
+    const std::span<const std::uint32_t> logical_nodes =
+        std::span<const std::uint32_t>(plan.step_nodes)
+            .subspan(step.node_set_begin, step.node_count);
+    for (std::uint32_t node : logical_nodes) {
       const detail::NodeRecord &record = graph.nodes[node];
       for (std::size_t index = 0; index < record.dependency_count; ++index) {
         const std::uint32_t prerequisite =
@@ -2976,8 +3433,10 @@ Status schedule_steps(detail::PlanState &plan,
         step.kind != detail::PlanStepKind::kRegion) {
       continue;
     }
-    const std::uint32_t end = step.node_begin + step.node_count;
-    for (std::uint32_t node = step.node_begin; node < end; ++node)
+    const std::span<const std::uint32_t> logical_nodes =
+        std::span<const std::uint32_t>(plan.step_nodes)
+            .subspan(step.node_set_begin, step.node_count);
+    for (std::uint32_t node : logical_nodes)
       plan.node_steps[node] = static_cast<std::uint32_t>(step_index);
   }
   return Status::Ok();
@@ -3125,8 +3584,10 @@ Status build_segments(detail::PlanState &plan,
           step.kind != detail::PlanStepKind::kRegion) {
         continue;
       }
-      const std::uint32_t node_end = step.node_begin + step.node_count;
-      for (std::uint32_t node = step.node_begin; node < node_end; ++node) {
+      const std::span<const std::uint32_t> logical_nodes =
+          std::span<const std::uint32_t>(plan.step_nodes)
+              .subspan(step.node_set_begin, step.node_count);
+      for (std::uint32_t node : logical_nodes) {
         const detail::NodeRecord &record = graph.nodes[node];
         for (std::size_t dependency_index = 0;
              dependency_index < record.dependency_count; ++dependency_index) {
@@ -3919,6 +4380,8 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
       !state->physical_values.try_resize(plan.instance_values.size()) ||
       !state->step_inputs.try_resize(plan.node_inputs.size()) ||
       !state->step_outputs.try_resize(plan.node_outputs.size()) ||
+      !state->step_nodes.try_resize(plan.step_nodes.size()) ||
+      !state->step_node_begins.try_resize(plan.steps.size()) ||
       !state->segment_dependencies.try_resize(
           plan.segment_dependencies.size())) {
     detail::release(state);
@@ -3928,6 +4391,9 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
             state->step_inputs.begin());
   std::copy(plan.node_outputs.begin(), plan.node_outputs.end(),
             state->step_outputs.begin());
+  for (std::size_t index = 0; index < plan.step_nodes.size(); ++index)
+    state->step_nodes[index] =
+        detail::GraphIdentity::node(graph.generation, plan.step_nodes[index]);
   std::copy(plan.segment_dependencies.begin(), plan.segment_dependencies.end(),
             state->segment_dependencies.begin());
   for (std::size_t index = 0; index < plan.targets.size(); ++index) {
@@ -4098,6 +4564,7 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
 
   for (std::size_t index = 0; index < plan.steps.size(); ++index) {
     const detail::PlanStep &step = plan.steps[index];
+    state->step_node_begins[index] = step.node_set_begin;
     CompileStepReport step_report{
         .kind = step.kind == detail::PlanStepKind::kRegion
                     ? CompileStepKind::kProviderRegion
@@ -4111,6 +4578,7 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         .destination_storage = step.destination_storage,
         .node_begin = step.node_begin,
         .node_count = step.node_count,
+        .nodes_contiguous = step.nodes_contiguous,
         .workspace = step.reported_workspace_requirement(),
         .borrowed_constant_count = step_constant_count(plan, step),
         .dispatch_count = step.emits_command() ? 1u : 0u,
@@ -4166,6 +4634,20 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
 }
 
 } // namespace
+
+Result<bool> is_region_contractible(const Graph &graph,
+                                    std::span<const NodeId> nodes,
+                                    mem::AllocatorRef allocator) noexcept {
+  const detail::GraphState *state = detail::GraphAccess::state(graph);
+  if (state == nullptr || !allocator.valid())
+    return std::unexpected(
+        Status::InvalidArgument("region query owner is invalid"));
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> selected(
+      allocator);
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> reached(
+      allocator);
+  return validate_contractible_region(*state, nodes, selected, reached);
+}
 
 SpecializationSignature::SpecializationSignature(
     const SpecializationSignature &other) noexcept
@@ -4521,6 +5003,24 @@ CompileReport::step_output(std::size_t step_index,
         Status::OutOfRange("compile report step output index is out of range"));
   }
   return state_->step_outputs[step.output_begin + output_index];
+}
+
+Result<NodeId> CompileReport::step_node(std::size_t step_index,
+                                        std::size_t node_index) const noexcept {
+  if (state_ == nullptr) {
+    return std::unexpected(
+        Status::FailedPrecondition("compile report is invalid"));
+  }
+  if (step_index >= state_->steps.size()) {
+    return std::unexpected(
+        Status::OutOfRange("compile report step index is out of range"));
+  }
+  const CompileStepReport &step = state_->steps[step_index];
+  if (node_index >= step.node_count) {
+    return std::unexpected(
+        Status::OutOfRange("compile report step node index is out of range"));
+  }
+  return state_->step_nodes[state_->step_node_begins[step_index] + node_index];
 }
 
 Result<CompileStepReport>
@@ -5844,6 +6344,22 @@ Result<CompiledGraph> compile(const Graph &graph,
           RegionSelectionPolicy::kRequireEstimatedBenefit) {
     return std::unexpected(
         Status::InvalidArgument("graph region selection policy is invalid"));
+  }
+  if (options.region_selection != RegionSelectionPolicy::kDisabled &&
+      (options.max_region_proposals == 0 ||
+       options.max_region_proposals_per_provider == 0 ||
+       options.max_region_proposal_nodes == 0)) {
+    return std::unexpected(Status::InvalidArgument(
+        "enabled graph region selection requires non-zero hard budgets"));
+  }
+  if (options.max_region_proposals >
+          (std::numeric_limits<std::uint32_t>::max)() ||
+      options.max_region_proposals_per_provider >
+          (std::numeric_limits<std::uint32_t>::max)() ||
+      options.max_region_proposal_nodes >
+          (std::numeric_limits<std::uint32_t>::max)()) {
+    return std::unexpected(Status::OutOfRange(
+        "graph region proposal budget exceeds the supported identity space"));
   }
   if (options.operation_fallback != OperationFallbackPolicy::kAllow &&
       options.operation_fallback != OperationFallbackPolicy::kReject) {

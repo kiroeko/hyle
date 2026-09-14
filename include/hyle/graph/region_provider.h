@@ -1,8 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <span>
 
@@ -18,21 +18,15 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 4};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 5};
 
-// Half-open contiguous range in Graph's canonical topological node order.
-// Restricting the first contract to intervals makes deterministic weighted
-// selection O(Q log Q), while still covering the fused regions exposed by the
-// initial inference providers. A future non-contiguous contract requires a
-// separate version rather than silently changing these semantics.
-struct RegionNodeRange final {
-  std::uint32_t begin = 0;
-  std::uint32_t count = 0;
-
-  constexpr std::uint64_t end() const noexcept {
-    return static_cast<std::uint64_t>(begin) + count;
-  }
-};
+// Provider discovery helper. false means this otherwise valid node set would
+// leave and re-enter through a data/control path; it should remain unfused.
+// Empty, duplicate or foreign IDs are errors. Input order is unrestricted.
+// Scratch uses the supplied allocator and is released before returning.
+HYLE_GRAPH_API Result<bool> is_region_contractible(
+    const Graph &graph, std::span<const NodeId> nodes,
+    mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 
 // Cold-path facts for the exact static graph specialization. Net savings is
 // relative to the provider's natural single-op fallback sequence when the
@@ -56,7 +50,11 @@ struct RegionCostFacts final {
 };
 
 struct RegionProposal final {
-  RegionNodeRange nodes{};
+  // Nonempty graph-local node set. add() copies and canonicalizes this span;
+  // providers retain no ownership and may use stack storage. Graph rejects a
+  // foreign identity, duplicate node, and any set that would form a cycle
+  // when contracted to one execution island.
+  std::span<const NodeId> nodes{};
   RegionCostFacts cost{};
   // Provider-defined cold-path discriminator. It may select a fusion/compile
   // route but is never interpreted or searched on the steady path.
@@ -68,36 +66,66 @@ struct RegionProposal final {
 // proposal budget never changes the chosen plan silently.
 class RegionProposalWriter final {
 public:
-  explicit RegionProposalWriter(std::span<RegionProposal> storage) noexcept
-      : storage_(storage) {}
+  RegionProposalWriter(std::span<RegionProposal> proposal_storage,
+                       std::span<NodeId> node_storage) noexcept
+      : proposal_storage_(proposal_storage), node_storage_(node_storage) {}
 
   Status add(RegionProposal proposal) noexcept {
-    if (proposal.nodes.count == 0 ||
-        proposal.nodes.end() > (std::numeric_limits<std::uint32_t>::max)()) {
-      return Status::InvalidArgument("graph region proposal range is invalid");
+    if (proposal.nodes.empty()) {
+      return Status::InvalidArgument("graph region proposal node set is empty");
     }
-    if (size_ == storage_.size()) {
+    for (NodeId node : proposal.nodes) {
+      if (!node.valid()) {
+        return Status::InvalidArgument(
+            "graph region proposal contains an invalid node identity");
+      }
+    }
+    if (size_ == proposal_storage_.size()) {
       return Status::ResourceExhausted(
           "graph region proposal budget is exhausted");
     }
-    storage_[size_++] = proposal;
+    if (proposal.nodes.size() > node_storage_.size() - node_size_) {
+      return Status::ResourceExhausted(
+          "graph region proposal node budget is exhausted");
+    }
+    std::span<NodeId> destination =
+        node_storage_.subspan(node_size_, proposal.nodes.size());
+    std::copy(proposal.nodes.begin(), proposal.nodes.end(),
+              destination.begin());
+    std::sort(destination.begin(), destination.end(),
+              [](NodeId left, NodeId right) noexcept {
+                return left.ordinal() < right.ordinal();
+              });
+    for (std::size_t index = 1; index < destination.size(); ++index) {
+      if (destination[index - 1].ordinal() == destination[index].ordinal()) {
+        return Status::InvalidArgument(
+            "graph region proposal contains duplicate node ordinals");
+      }
+    }
+    proposal.nodes = destination;
+    proposal_storage_[size_++] = proposal;
+    node_size_ += destination.size();
     return Status::Ok();
   }
 
   std::size_t size() const noexcept { return size_; }
-  std::size_t capacity() const noexcept { return storage_.size(); }
+  std::size_t capacity() const noexcept { return proposal_storage_.size(); }
+  std::size_t node_size() const noexcept { return node_size_; }
+  std::size_t node_capacity() const noexcept { return node_storage_.size(); }
   std::span<const RegionProposal> proposals() const noexcept {
-    return storage_.first(size_);
+    return proposal_storage_.first(size_);
   }
 
 private:
-  std::span<RegionProposal> storage_{};
+  std::span<RegionProposal> proposal_storage_{};
+  std::span<NodeId> node_storage_{};
   std::size_t size_ = 0;
+  std::size_t node_size_ = 0;
 };
 
 struct RegionCompileRequest final {
   const Graph *graph = nullptr;
-  RegionNodeRange nodes{};
+  std::span<const NodeId> nodes{};
   std::span<const ValueId> inputs{};
   std::span<const ValueId> outputs{};
   std::span<const ConstantBinding> constants{};
@@ -166,8 +194,8 @@ struct ProviderRegionPrepared final {
   RegionArtifactProperties properties{};
 };
 
-// A provider proposes candidate intervals, then compiles only intervals chosen
-// by Graph. Both callbacks are cold-path and run under the owning Context's
+// A provider proposes candidate node sets, then compiles only sets chosen by
+// Graph. Both callbacks are cold-path and run under the owning Context's
 // admission gate. Returned artifacts must use the supplied allocator and must
 // not retain request spans or Graph references unless they create an explicit
 // owner of their own.

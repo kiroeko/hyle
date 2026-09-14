@@ -52,3 +52,22 @@ provider 顺序稳定回退，不用微基准魔法分数。
 复杂度按候选/预算显式有界，P1 只在接口固定后运行；FFI N/A；三交付必须验证 provider factor；guide 必须
 给 exact、bounded、borrow/materialize、fallback/capture recipe。当前为 `AUDITED`，只授权 G90--G97。
 
+## 2026-09-14 G90 实现检查点
+
+Region SPI v5 使用 copied、canonical node-ID set；支持 singleton、连续与非连续集合。Graph 分别验证
+单集合的 data/control leave-and-reentry 和已选集合的联合收缩无环；plan 按收缩 DAG 的拓扑序生成，
+不再以最小插入 ordinal 决定 region 执行时刻。report 增加精确 `step_node()`，cold decline 保留单 op 回退。
+oneDNN 的真实非插入顺序探针见 [GP40 检查点](graph-provider-onednn-v4-node-set-foundation.md)。
+
+P0：候选存储受 proposal 数和 aggregate node-ID 数双重硬预算限制；连续候选保留 `O(Q log Q)` interval
+选择。一般 node set 暂沿用确定性 greedy 排序，每次接受前以 `O(V+E+U log U)` 检查联合收缩；原图
+adjacency 只构建一次，scratch 为 `O(V+E)`，`U` 为收缩后节点数。它不承诺全局最大覆盖，更不代表 G93
+的完整成本 selector 已实现；warm replay 不增加搜索或 node-set 分析。
+
+当前产品树验证：Windows oneDNN-enabled shared 的 Graph 两组测试、真实 oneDNN region 测试及 Graph
+逐头测试通过；Windows static 的 Graph 两组测试通过。反例覆盖 duplicate/foreign ID、预算耗尽、
+data/control 重入、各自合法但联合成环、交错独立 region、重排序 boundary、singleton 与 cold decline。
+本检查点未运行 Linux/macOS、sanitizer、installed SDK journey 或新 P1，不作对应 PASS 声明。
+
+G90 的 Windows 实现验证已完成；跨平台及终局门留到稳定 candidate。G91--G97 仍未完成，状态保持
+`AUDITED`，本记录不是 Candidate 或关闭声明。

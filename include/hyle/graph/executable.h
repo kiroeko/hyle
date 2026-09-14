@@ -258,8 +258,12 @@ struct CompileStepReport final {
   StorageDomainId workspace_storage{};
   StorageDomainId source_storage{};
   StorageDomainId destination_storage{};
+  // Smallest canonical topological ordinal in this step. node_count is the
+  // set cardinality; nodes_contiguous says whether begin/count also describe
+  // the exact set. Use CompileReport::step_node() for general regions.
   std::uint32_t node_begin = 0;
   std::uint32_t node_count = 0;
+  bool nodes_contiguous = true;
   compute::WorkspaceRequirement workspace{};
   std::optional<std::size_t> persistent_bytes{};
   std::size_t borrowed_constant_count = 0;
@@ -428,6 +432,8 @@ public:
   step_input(std::size_t step_index, std::size_t input_index) const noexcept;
   HYLE_GRAPH_API Result<std::uint32_t>
   step_output(std::size_t step_index, std::size_t output_index) const noexcept;
+  HYLE_GRAPH_API Result<NodeId>
+  step_node(std::size_t step_index, std::size_t node_index) const noexcept;
   HYLE_GRAPH_API Result<CompileStepReport>
   step(std::size_t index) const noexcept;
 
@@ -450,8 +456,10 @@ struct ConstantBinding final {
 enum class RegionSelectionPolicy : std::uint8_t {
   kDisabled = 0,
   // Region providers are explicitly installed in Context. Prefer a
-  // deterministic maximum-coverage set, then fewer backend execution
-  // episodes, then earlier provider order. A provider may omit a timing
+  // deterministic high-coverage set, then fewer backend execution episodes,
+  // then earlier provider order. Intervals use weighted interval selection;
+  // general node sets use bounded greedy selection with contraction checks,
+  // not a global maximum-coverage guarantee. A provider may omit a timing
   // estimate, but an explicit zero estimate is not selected.
   kPreferProviderRegions,
   // Accept only proposals with a positive provider-declared portable net
@@ -513,6 +521,9 @@ struct CompileOptions final {
   // is min(this value, remaining global budget); either limit is a hard error
   // rather than a silent truncation.
   std::size_t max_region_proposals_per_provider = 1024;
+  // Hard aggregate storage budget for node identities copied from provider
+  // proposals. Node-set exhaustion is a compile error, never truncation.
+  std::size_t max_region_proposal_nodes = 65536;
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned

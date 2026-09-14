@@ -93,6 +93,7 @@ struct WorkspaceLayout final {
 
 struct RegionPlan final {
   RegionContext *context = nullptr;
+  std::array<std::uint32_t, 4> input_indices{};
   BrgemmPlan *gate_up = nullptr;
   BrgemmPlan *down = nullptr;
   WorkspaceLayout workspace{};
@@ -160,22 +161,57 @@ Status build_use_table(const Graph &graph, mem::AllocatorRef allocator,
   return Status::Ok();
 }
 
-Status match_pattern(const Graph &graph, std::size_t begin,
+Status match_pattern(const Graph &graph, std::size_t down_index,
                      std::span<const ValueUse> uses, MlpPattern *pattern,
                      bool *matched) noexcept {
   if (pattern == nullptr || matched == nullptr)
     return Status::InvalidArgument("oneDNN region pattern output is null");
   *matched = false;
   *pattern = {};
-  if (begin > graph.node_count() || graph.node_count() - begin < 4)
+  if (down_index >= graph.node_count())
     return Status::Ok();
 
-  for (std::size_t offset = 0; offset < 4; ++offset) {
-    auto node = graph.node_id(begin + offset);
-    if (!node)
-      return std::move(node).error();
-    pattern->nodes[offset] = *node;
-  }
+  // Walk the dataflow backwards from the down projection. The two independent
+  // projections may be inserted in either order, with unrelated nodes between.
+  auto down_node = graph.node_id(down_index);
+  if (!down_node)
+    return std::move(down_node).error();
+  auto down_op = graph.operation(*down_node);
+  if (!down_op)
+    return std::move(down_op).error();
+  if (down_op->get_if<MatMul>() == nullptr)
+    return Status::Ok();
+  auto down_input_value = graph.node_input(*down_node, 0);
+  if (!down_input_value)
+    return std::move(down_input_value).error();
+  if (down_input_value->kind() != ValueKind::kNodeOutput)
+    return Status::Ok();
+  auto gated_node = graph.producer(*down_input_value);
+  if (!gated_node)
+    return std::move(gated_node).error();
+  auto gated_op = graph.operation(*gated_node);
+  if (!gated_op)
+    return std::move(gated_op).error();
+  const auto *gated_schema = gated_op->get_if<GatedActivation>();
+  if (gated_schema == nullptr ||
+      gated_schema->inputs != GatedInputKind::kSeparate)
+    return Status::Ok();
+  auto gate_value = graph.node_input(*gated_node, 0);
+  auto up_value = graph.node_input(*gated_node, 1);
+  if (!gate_value)
+    return std::move(gate_value).error();
+  if (!up_value)
+    return std::move(up_value).error();
+  if (gate_value->kind() != ValueKind::kNodeOutput ||
+      up_value->kind() != ValueKind::kNodeOutput || *gate_value == *up_value)
+    return Status::Ok();
+  auto gate_node = graph.producer(*gate_value);
+  auto up_node = graph.producer(*up_value);
+  if (!gate_node)
+    return std::move(gate_node).error();
+  if (!up_node)
+    return std::move(up_node).error();
+  pattern->nodes = {*gate_node, *up_node, *gated_node, *down_node};
 
   std::array<const Operation *, 4> operations{};
   for (std::size_t offset = 0; offset < 4; ++offset) {
@@ -380,16 +416,22 @@ Status propose_regions(void *context_value, const Graph &graph,
   if (!status.ok())
     return status;
   const std::span<const ValueUse> uses(table.values, table.count);
-  for (std::size_t begin = 0; begin + 4 <= graph.node_count(); ++begin) {
+  for (std::size_t down = 0; down < graph.node_count(); ++down) {
     MlpPattern pattern;
     bool matched = false;
-    status = match_pattern(graph, begin, uses, &pattern, &matched);
+    status = match_pattern(graph, down, uses, &pattern, &matched);
     if (!status.ok())
       return status;
     if (!matched)
       continue;
+    auto contractible =
+        is_region_contractible(graph, pattern.nodes, context->allocator);
+    if (!contractible)
+      return std::move(contractible).error();
+    if (!*contractible)
+      continue;
     status = writer.add(RegionProposal{
-        .nodes = RegionNodeRange{static_cast<std::uint32_t>(begin), 4},
+        .nodes = pattern.nodes,
         .cost = {.estimated_net_savings_ns = std::nullopt,
                  .estimated_compile_ns = std::nullopt,
                  .persistent_bytes = std::nullopt,
@@ -403,7 +445,6 @@ Status propose_regions(void *context_value, const Graph &graph,
     });
     if (!status.ok())
       return status;
-    begin += 3;
   }
   return Status::Ok();
 }
@@ -562,7 +603,8 @@ submit(void *prepared_value, void *invocation_value, Queue &,
   std::size_t mapped_input_count = 0;
   Status terminal = Status::Ok();
   for (; mapped_input_count < inputs.size(); ++mapped_input_count) {
-    auto mapping = inputs[mapped_input_count].storage().map_host();
+    auto mapping =
+        inputs[plan->input_indices[mapped_input_count]].storage().map_host();
     if (!mapping) {
       terminal = std::move(mapping).error();
       break;
@@ -643,7 +685,7 @@ Status propose_region_resources(
     std::span<compute::detail::ResourceBindingRequirement> output_requirements,
     RegionResourceProposal *proposal) noexcept {
   if (context_value == nullptr || request.graph == nullptr ||
-      request.route != kGatedMlpRoute || request.nodes.count != 4 ||
+      request.route != kGatedMlpRoute || request.nodes.size() != 4 ||
       request.inputs.size() != 4 || request.outputs.size() != 1 ||
       input_requirements.size() != request.inputs.size() ||
       output_requirements.size() != request.outputs.size() ||
@@ -676,7 +718,7 @@ Status compile_region(void *context_value, const RegionCompileRequest &request,
   *prepared_output = {};
   auto *context = static_cast<RegionContext *>(context_value);
   if (context == nullptr || request.graph == nullptr ||
-      request.route != kGatedMlpRoute || request.nodes.count != 4 ||
+      request.route != kGatedMlpRoute || request.nodes.size() != 4 ||
       request.inputs.size() != 4 || request.outputs.size() != 1 ||
       request.input_resources.size() != request.inputs.size() ||
       request.output_resources.size() != request.outputs.size() ||
@@ -690,18 +732,31 @@ Status compile_region(void *context_value, const RegionCompileRequest &request,
     return status;
   MlpPattern pattern;
   bool matched = false;
-  status = match_pattern(*request.graph, request.nodes.begin,
+  status = match_pattern(*request.graph, request.nodes.back().ordinal(),
                          std::span<const ValueUse>(table.values, table.count),
                          &pattern, &matched);
   if (!status.ok())
     return status;
-  if (!matched || request.inputs[0] != pattern.activation ||
-      request.inputs[1] != pattern.gate_weight ||
-      request.inputs[2] != pattern.up_weight ||
-      request.inputs[3] != pattern.down_weight ||
+  auto canonical_nodes = pattern.nodes;
+  std::sort(canonical_nodes.begin(), canonical_nodes.end(),
+            [](NodeId left, NodeId right) noexcept {
+              return left.ordinal() < right.ordinal();
+            });
+  if (!matched || !std::ranges::equal(canonical_nodes, request.nodes) ||
       request.outputs[0] != pattern.output) {
     return Status::InvalidArgument(
         "oneDNN region boundaries do not match the gated MLP");
+  }
+  const std::array semantic_inputs{pattern.activation, pattern.gate_weight,
+                                   pattern.up_weight, pattern.down_weight};
+  std::array<std::uint32_t, 4> input_indices{};
+  for (std::size_t index = 0; index < semantic_inputs.size(); ++index) {
+    const auto found = std::find(request.inputs.begin(), request.inputs.end(),
+                                 semantic_inputs[index]);
+    if (found == request.inputs.end())
+      return Status::InvalidArgument("oneDNN region is missing an input port");
+    input_indices[index] =
+        static_cast<std::uint32_t>(found - request.inputs.begin());
   }
 
   auto gate_weight_desc = request.graph->value_description(pattern.gate_weight);
@@ -763,6 +818,7 @@ Status compile_region(void *context_value, const RegionCompileRequest &request,
     return Status::ResourceExhausted("oneDNN region plan allocation failed");
   }
   auto *plan = ::new (storage) RegionPlan{.context = context,
+                                          .input_indices = input_indices,
                                           .gate_up = gate_up,
                                           .down = down,
                                           .workspace = workspace,

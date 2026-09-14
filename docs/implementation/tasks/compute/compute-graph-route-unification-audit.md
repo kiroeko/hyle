@@ -247,3 +247,18 @@ candidate decline、prepare failure 或 submit 的明确 pre-acceptance failure 
 保持独立 blocker；CUDA/Metal/Vulkan ggml carrier 各自随对应平台纵切开卡。原先尚未执行的 foundation P1
 后移到 route 实现稳定之后，并在第 7 项只运行一次，避免给即将改变的 selector 重复签证。第 7 项以前
 所有“基础完成”百分比都必须按这张表计算；算子 family 数量不计入。
+
+### 迁移完成后的独立架构复核
+
+用户要求在本次架构迁移完成后再 review 架构。该复核属于第 7 项已有的终局红队，不以某个局部迁移
+通过代替全架构通过，也不新建平行状态系统。以实现和三类真实探针逐项核对：
+
+- HYLE 全局 DAG/放置/生命周期与 Provider 内部调度是否各有唯一 owner，未形成双重调度或隐藏同步；
+- borrowed/materialized constant、workspace、per-run state 与 Completion 的所有权能否在失败和并发下闭合；
+- leaf/region/placement 是否真正共用完整成本路由，渐进替换是否有明确 boundary，warm replay 是否无搜索；
+- bounded/general、exact variant 与 capture 是否自然组合，而非依赖单个测试 shape 的特殊分支；
+- CUDA Q4 与 Apple MLX/Metal 是否能复用同一基础合同，新增 Provider 是否只需局部适配而非改核心对象；
+- direct C++ 用法和 source/static/shared 交付是否一致，依赖方向、文档及公开示例是否与实现相符。
+
+报告区分已证实通过、仍需局部实现/验证、以及有具体反证才成立的架构重开项。不以追加无限研究或横向
+算子填充代替这次有限复核。
