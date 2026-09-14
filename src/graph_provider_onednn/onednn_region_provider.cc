@@ -440,7 +440,7 @@ Status propose_regions(void *context_value, const Graph &graph,
       return std::move(contractible).error();
     if (!*contractible)
       continue;
-    status = writer.add(RegionProposal{
+    auto added = writer.try_add(RegionProposal{
         .nodes = pattern.nodes,
         .cost = {.workspace = std::nullopt,
                  .persistent_bytes = std::nullopt,
@@ -451,8 +451,10 @@ Status propose_regions(void *context_value, const Graph &graph,
         .route = kGatedMlpRoute,
         .replay_class = kRuntimeProperties.replay_class,
     });
-    if (!status.ok())
-      return status;
+    if (!added)
+      return std::move(added).error();
+    if (!*added)
+      return Status::Ok();
   }
   return Status::Ok();
 }

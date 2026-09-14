@@ -270,7 +270,8 @@ void expect_near(std::span<const float> actual,
 
 void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
                          std::size_t hidden,
-                         MlpOrder order = MlpOrder::kCanonical) {
+                         MlpOrder order = MlpOrder::kCanonical,
+                         CompileOptions options = {}) {
   const GatedMlp logical =
       make_gated_mlp(rows, inner, hidden, false, false, false, order);
   OwnedTensor activation = make_tensor(matrix(rows, inner));
@@ -308,11 +309,14 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
   Context context =
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();
-  auto compiled = hyle::graph::compile(logical.graph, context,
-                                       CompileOptions{.constants = constants})
-                      .value();
+  options.constants = constants;
+  auto compiled = hyle::graph::compile(logical.graph, context, options).value();
+  const bool capacity_refused = order != MlpOrder::kControlReentry &&
+                                options.max_region_proposal_nodes < 4;
   ASSERT_EQ(compiled.report.region_count(),
-            order == MlpOrder::kControlReentry ? 0u : 1u);
+            order == MlpOrder::kControlReentry || capacity_refused ? 0u : 1u);
+  EXPECT_EQ(compiled.report.search().region_node_limit_reached,
+            capacity_refused);
   if (order == MlpOrder::kInterleaved || order == MlpOrder::kUpFirst) {
     ASSERT_EQ(compiled.report.fallback_operation_count(), 1u);
     for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
@@ -416,6 +420,11 @@ TEST(OneDnnRegionProvider, SupportsDecodeAndNonTileMultipleShapes) {
   run_gated_mlp_shape(1, 5, 7);
   run_gated_mlp_shape(4, 17, 31);
   run_gated_mlp_shape(16, 33, 65);
+}
+
+TEST(OneDnnRegionProvider, LimitedRegionDiscoveryRetainsCorrectLeafExecution) {
+  run_gated_mlp_shape(4, 5, 7, MlpOrder::kCanonical,
+                      {.max_region_proposal_nodes = 3});
 }
 
 TEST(OneDnnRegionProvider, MatchesDataflowWithUnrelatedAndReorderedNodes) {

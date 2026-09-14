@@ -240,10 +240,22 @@ auto compiled = compile(graph,
 `NodePlacement` 选择 target，`ValuePlacement` 与 `ExternalResourceContract` 选择 storage；前两者可以表达
 required 或 preferred。required route 不可执行时 compile
 失败；preferred route 不可执行时按稳定候选顺序继续。只有 `Unimplemented` 表示候选不支持，OOM、损坏
-状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts`、`max_region_proposals`、
-`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 都是硬预算，耗尽会失败而不是改变计划。
-最后一项限制全部 Provider proposal 中复制保存的 node-ID 总数；每份 proposal 的 node span 会被复制并
-排序，Provider 可以使用临时栈数组，不必把它们保活到 compile 结束。
+状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts` 限制实际冷准备次数；当前实现若
+在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
+
+`max_region_proposals`、`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 限制候选发现，
+最后一项限制复制保存的 node-ID 总数。默认 `search_policy = CompileSearchPolicy::kAllowLimited`：达到
+容量时停止扩大相应发现，只用已接收的候选生成并验证完整计划；per-provider 上限不阻止还有总额时
+探索下一家。成功报告的 `search().optimization_limited()` 明确说明搜索是否被截断，可再查看三个
+`*_limit_reached` 字段、实际接收数和 prepare 次数。这不是全局最优或性能资格声明。
+
+需要拒绝受限发现时使用 `CompileSearchPolicy::kRequireUnexhausted`；它不是要求无限搜索。恰好用满
+容量但没有任何候选/provider 被省略，不标记受限。两种政策都不放宽 coverage、required placement、
+workspace 等硬约束，也不吞真实 Provider/OOM 错误。
+
+Provider 的 `RegionProposalWriter::try_add()` 返回 `Result<bool>`：true 表示已复制并排序，false 表示
+容量不够，应结束当前发现并返回 `Status::Ok()`；unexpected 必须原样传播。没有部分接收一个 node set，
+Provider 可以使用临时栈数组，不必把它们保活到 compile 结束；不能把自身 OOM 转换成 false。
 
 非默认 storage 的 external value 应提供 `ExternalResourceContract`，让 compiler 能选择真实 transfer route；不能让
 Graph 从偶然地址猜 host/device locality。普通 canonical boundary 使用 Compute byte transfer，不隐藏
@@ -331,6 +343,7 @@ multi-stream capture。
 
 `CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
 
+- `search()` 的已接收候选/node 数、prepare 次数和是否因容量省略了候选/provider；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
 - operation fallback、provider region 和真实 copy step；

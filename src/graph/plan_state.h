@@ -707,6 +707,7 @@ struct PlanState final : util::RefCounted<PlanState> {
   std::size_t region_count = 0;
   std::size_t required_queue_count = 0;
   std::size_t serialization_edge_count = 0;
+  CompileSearchReport search{};
   WorkspaceReusePolicy workspace_reuse =
       WorkspaceReusePolicy::kExistingOrderOnly;
   bool supports_concurrent_invocations = true;
@@ -775,6 +776,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   bool supports_concurrent_invocations = true;
   bool mixed_providers = false;
   bool mixed_backends = false;
+  CompileSearchReport search{};
   SpecializationSignature specialization{};
 };
 

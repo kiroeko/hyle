@@ -160,3 +160,46 @@ C93 的 `ProviderInstanceId` 属于 G103/G107 冷事实传播：CompileStepRepor
 PreparedOperation，region 来自已绑定 extension，Copy 无实例；metadata View 若由真实 Provider 冷准备则
 保留该 ID，但不因此变成 kernel dispatch。只是固定大小诊断值，不让 report
 保活 Context/artifact，不改变 Provider 家族顺序、选路算法或 warm 路径；完整 profile 匹配仍待实施。
+
+### G104 候选发现预算审计（实现前固定）
+
+现状 `RegionProposalWriter::add()` 把固定容量耗尽变成 ResourceExhausted，Graph 无条件丢弃已接收的
+候选，违背 A6。不能捕捉任意 ResourceExhausted 当作正常终止，否则 Provider 真正的 OOM 会被吞掉。
+REPLACE 为 `try_add() -> Result<bool>`：true 为已复制、false 为搜索容量不足并停止该 provider 的发现，
+unexpected 仍是真实错误；callback 继续返回 Status，任何错误都原样失败。writer 记录究竟哪个容量
+阻止了接收，未接收候选不进入选择，已接收候选仍通过完整 node-set/replay/cost/placement/workspace 验证。
+
+FIX 默认允许有限发现：全局或 node 总额达到且仍有 provider 未探索时停止，per-provider 截止后可继续
+下一家。`CompileReport::search()` 给出已接收的 proposal/node 数、实际 prepare 次数和触及的三个容量；
+`optimization_limited()` 只说明这些预算限制过搜索，不承诺全局最优。新增 `CompileSearchPolicy` 的严格
+模式可拒绝受限发现。无可行完整计划、required 约束失败、真实 OOM/Provider 错误仍失败，不能返回部分图。
+
+这一步不把旧结构选择冒充 G103 的完整 profile/search，也不豁免尚未形成可行解时的 preparation 上限。
+该上限若阻止完成唯一候选仍失败；后续同池重选须在有完整 incumbent 时保留它。各容量的实际 work/storage
+界限不提高，warm 路线不读取政策/计数。oneDNN 只迁移发现循环，收到 false 正常停止，不改 pattern/kernel。
+
+固定验证：global/per-provider/node 容量、恰好填满但未省略候选、后续 provider/target 跳过、strict 拒绝、
+filtered proposal 仍计数、无覆盖/required/workspace/prepare 上限仍失败、真实错误不被受限标记吞掉、
+可行受限计划实际执行与重复编译稳定、真实 oneDNN 受限发现和 source-tree shared/static/逐头。
+
+## 2026-09-14 G104：受限发现与完整可行计划检查点
+
+上述发现合同已实现，region extension 升至 9，无旧 `add()` 兼容入口。容量拒绝为 `Result<bool>` 的
+false，真实错误仍经 Status 传播；Graph 不捕捉 OOM 来猜测是否应该回退。默认允许受限发现，严格政策
+可拒绝；报告拥有实际计数与 global/per-provider/node 限制事实。填满但未跳过任何候选/provider 不标记
+受限，filtered 候选仍占预算，跨 target 的总额不会重新充值，单 provider 的上限不阻止探索下一家。
+
+定向反例验证三种容量、严格政策、未知 enum、writer 拒绝/错误分离、跨 target 跳过与 required placement、
+真实 Provider OOM/Internal 传播、无完整覆盖、workspace/prepare 上限。受限的完整 region 计划连续三次
+编译并执行 payload 正确。真实 oneDNN MLP 的 node 容量不足时完整 leaf 路线执行数值正确并如实报告。
+
+- Windows Release source-tree Graph shared/static 各 3/3（各 122 单元用例及逐头）通过。
+- oneDNN-enabled shared 的 Graph/direct-Graph/region 及逐头 5/5（122 单元用例）通过。
+- P0：固定计数/标记只在冷 compile/报告使用；proposal 复制排序与选择复杂度不变，存储容量不扩大；
+  正常容量终止不再构造错误 Status。submit、kernel、Queue/Completion 无新查询、分配、锁或搜索。
+- impact READY，跳过 89 项；closure/docs/diff 通过。未运行 P1、全库、CUDA、跨平台/sanitizer 或 installed
+  SDK，后四类最终义务保持待完整 foundation candidate 验证，不签全架构通过。
+
+G104 的发现预算部分完成；当前仍没有 G103 qualified full-plan profile、同池有界重选/完整 incumbent
+选择，也未完成 bounded variants 与资源/常量合同。因此组件保持 `AUDITED`，不把本次可行性回归当作
+完整 selector、性能 SOTA 或基础收口。下一步继续补齐这些既定合同，不扩充算子目录。

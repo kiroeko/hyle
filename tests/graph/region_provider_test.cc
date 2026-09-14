@@ -42,6 +42,7 @@ using hyle::compute::UnaryKind;
 using hyle::graph::CompileFallbackReason;
 using hyle::graph::CompileOptions;
 using hyle::graph::CompileReport;
+using hyle::graph::CompileSearchPolicy;
 using hyle::graph::CompileStepKind;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
@@ -135,6 +136,7 @@ struct RegionProbe final {
   NodeId foreign_node{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
+  Status discovery_failure{};
 };
 
 struct ExternalEffect final {
@@ -334,11 +336,11 @@ bool is_negation(const Graph &graph, std::size_t node_index) {
   return unary != nullptr && unary->kind == UnaryKind::kNeg;
 }
 
-Status add_node_set_proposal(
+Result<bool> add_node_set_proposal(
     RegionProposalWriter &writer, std::span<const NodeId> nodes,
     std::optional<std::uint32_t> dispatch_count = 1,
     ProviderReplayClass replay_class = ProviderReplayClass::kUnknown) noexcept {
-  return writer.add(RegionProposal{
+  return writer.try_add(RegionProposal{
       .nodes = nodes,
       .cost = {.dispatch_count = dispatch_count},
       .route =
@@ -350,24 +352,25 @@ Status add_node_set_proposal(
   });
 }
 
-Status add_proposal(const Graph &graph, RegionProposalWriter &writer,
-                    std::uint32_t begin, std::uint32_t count,
-                    std::optional<std::uint32_t> dispatch_count = 1) noexcept {
+Result<bool>
+add_proposal(const Graph &graph, RegionProposalWriter &writer,
+             std::uint32_t begin, std::uint32_t count,
+             std::optional<std::uint32_t> dispatch_count = 1) noexcept {
   if (count != 2)
-    return Status::InvalidArgument("test region proposal count is not two");
+    return std::unexpected(
+        Status::InvalidArgument("test region proposal count is not two"));
   auto first = graph.node_id(begin);
   auto second = graph.node_id(begin + 1);
   if (!first)
-    return std::move(first).error();
+    return std::unexpected(std::move(first).error());
   if (!second)
-    return std::move(second).error();
+    return std::unexpected(std::move(second).error());
   const std::array nodes{*first, *second};
   return add_node_set_proposal(writer, nodes, dispatch_count);
 }
 
-Status propose_regions(void *context, const Graph &graph,
-                       RegionProposalWriter &writer) noexcept {
-  auto &probe = *static_cast<RegionProbe *>(context);
+Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
+                                   RegionProposalWriter &writer) noexcept {
   ++probe.propose_count;
   if (probe.mode == ProposalMode::kSingleton) {
     const std::array nodes{graph.node_id(0).value()};
@@ -378,20 +381,20 @@ Status propose_regions(void *context, const Graph &graph,
       probe.mode == ProposalMode::kJointCycle) {
     const std::array first{graph.node_id(0).value(), graph.node_id(2).value()};
     const std::array second{graph.node_id(1).value(), graph.node_id(3).value()};
-    Status added = add_node_set_proposal(writer, first);
-    if (!added.ok())
+    auto added = add_node_set_proposal(writer, first);
+    if (!added || !*added)
       return added;
     return add_node_set_proposal(writer, second);
   }
   if (probe.mode == ProposalMode::kOverflow) {
-    Status first = add_proposal(graph, writer, 0, 2);
-    if (!first.ok())
+    auto first = add_proposal(graph, writer, 0, 2);
+    if (!first || !*first)
       return first;
     return add_proposal(graph, writer, 0, 2);
   }
   if (probe.mode == ProposalMode::kOverlappingRoutes) {
-    Status first = add_proposal(graph, writer, 0, 2, 2);
-    if (!first.ok())
+    auto first = add_proposal(graph, writer, 0, 2, 2);
+    if (!first || !*first)
       return first;
     return add_proposal(graph, writer, 1, 2, 1);
   }
@@ -399,9 +402,9 @@ Status propose_regions(void *context, const Graph &graph,
     auto first = graph.node_id(0);
     auto last = graph.node_id(2);
     if (!first)
-      return std::move(first).error();
+      return std::unexpected(std::move(first).error());
     if (!last)
-      return std::move(last).error();
+      return std::unexpected(std::move(last).error());
     const std::array nodes{*last, *first};
     return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count);
   }
@@ -409,37 +412,47 @@ Status propose_regions(void *context, const Graph &graph,
     auto first = graph.node_id(0);
     auto last = graph.node_id(3);
     if (!first)
-      return std::move(first).error();
+      return std::unexpected(std::move(first).error());
     if (!last)
-      return std::move(last).error();
+      return std::unexpected(std::move(last).error());
     const std::array nodes{*first, *last};
     return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count);
   }
   if (probe.mode == ProposalMode::kDuplicateNode) {
     auto node = graph.node_id(0);
     if (!node)
-      return std::move(node).error();
+      return std::unexpected(std::move(node).error());
     const std::array nodes{*node, *node};
     return add_node_set_proposal(writer, nodes);
   }
   if (probe.mode == ProposalMode::kForeignNode) {
     auto local = graph.node_id(1);
     if (!local)
-      return std::move(local).error();
+      return std::unexpected(std::move(local).error());
     const std::array nodes{probe.foreign_node, *local};
     return add_node_set_proposal(writer, nodes);
   }
   for (std::size_t index = 0; index + 1 < graph.node_count(); ++index) {
     if (!is_negation(graph, index) || !is_negation(graph, index + 1))
       continue;
-    Status status =
-        add_proposal(graph, writer, static_cast<std::uint32_t>(index), 2,
-                     probe.proposal_dispatch_count);
-    if (!status.ok())
-      return status;
+    auto added = add_proposal(graph, writer, static_cast<std::uint32_t>(index),
+                              2, probe.proposal_dispatch_count);
+    if (!added || !*added)
+      return added;
     ++index;
   }
-  return Status::Ok();
+  return true;
+}
+
+Status propose_regions(void *context, const Graph &graph,
+                       RegionProposalWriter &writer) noexcept {
+  auto &probe = *static_cast<RegionProbe *>(context);
+  auto discovered = discover_test_regions(probe, graph, writer);
+  if (!discovered)
+    return std::move(discovered).error();
+  // A real callback error must not be swallowed just because the writer also
+  // reached a capacity. Normal limited discovery returns Ok, not OOM.
+  return probe.discovery_failure;
 }
 
 Status create_region_invocation(void *prepared, AllocatorRef allocator,
@@ -1577,8 +1590,11 @@ TEST(GraphRegions, ReplayPolicyDoesNotHideInvalidEnumsOrDiscoveryBudget) {
       logical.graph, context,
       {.max_region_proposals = 1,
        .provider_replay = ProviderReplayPolicy::kRequirePrepared});
-  ASSERT_FALSE(budget.has_value());
-  EXPECT_TRUE(budget.error().IsResourceExhausted());
+  ASSERT_TRUE(budget.has_value()) << budget.error().message();
+  EXPECT_TRUE(budget->report.search().region_proposal_limit_reached);
+  EXPECT_EQ(budget->report.search().region_proposals, 1u);
+  EXPECT_EQ(budget->report.region_count(), 0u);
+  EXPECT_EQ(budget->report.fallback_operation_count(), 1u);
   EXPECT_EQ(first.compile_count, 0u);
   EXPECT_EQ(second.compile_count, 0u);
 }
@@ -2281,15 +2297,26 @@ TEST(GraphRegions, ProviderCanQueryContractibilityIncludingControlEdges) {
                   .IsInvalidArgument());
 }
 
-TEST(GraphRegions, ProposalNodeBudgetExhaustionIsAHardFailure) {
+TEST(GraphRegions, ProposalNodeLimitDoesNotAdmitAPartialRegion) {
   RegionProbe probe{.mode = ProposalMode::kNonContiguous};
   const NonContiguousNegationGraph logical = make_non_contiguous_negations();
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(
       logical.graph, context, CompileOptions{.max_region_proposal_nodes = 1});
-  ASSERT_FALSE(compiled.has_value());
-  EXPECT_TRUE(compiled.error().IsResourceExhausted());
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_TRUE(compiled->report.search().region_node_limit_reached);
+  EXPECT_EQ(compiled->report.search().region_proposals, 0u);
+  EXPECT_EQ(compiled->report.search().region_proposal_nodes, 0u);
+  EXPECT_EQ(compiled->report.region_count(), 0u);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 3u);
   EXPECT_EQ(probe.compile_count, 0u);
+
+  auto no_coverage = hyle::graph::compile(
+      logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject,
+       .max_region_proposal_nodes = 1});
+  ASSERT_FALSE(no_coverage.has_value());
+  EXPECT_TRUE(no_coverage.error().IsUnimplemented());
 }
 
 TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
@@ -2494,29 +2521,187 @@ TEST(GraphRegions, DisabledPolicyUsesOnlyExplicitSingleOperationFallback) {
             CompileFallbackReason::kRegionSelectionDisabled);
 }
 
-TEST(GraphRegions, ProposalBudgetExhaustionFailsInsteadOfChangingThePlan) {
+TEST(GraphRegions, ProposalLimitReturnsAndReportsAValidatedExecutable) {
   RegionProbe probe{.mode = ProposalMode::kOverflow};
   const NegationGraph logical = make_negations(2);
   Context context = make_context(probe);
-  auto compiled = hyle::graph::compile(
-      logical.graph, context, CompileOptions{.max_region_proposals = 1});
-  ASSERT_FALSE(compiled.has_value());
-  EXPECT_TRUE(compiled.error().IsResourceExhausted());
-  EXPECT_EQ(probe.compile_count, 0u);
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    auto compiled = hyle::graph::compile(
+        logical.graph, context, CompileOptions{.max_region_proposals = 1});
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    const auto search = compiled->report.search();
+    EXPECT_TRUE(search.optimization_limited());
+    EXPECT_TRUE(search.region_proposal_limit_reached);
+    EXPECT_FALSE(search.per_provider_proposal_limit_reached);
+    EXPECT_FALSE(search.region_node_limit_reached);
+    EXPECT_EQ(search.region_proposals, 1u);
+    EXPECT_EQ(search.region_proposal_nodes, 2u);
+    EXPECT_EQ(search.placement_attempts, 1u);
+    EXPECT_EQ(compiled->report.region_count(), 1u);
+    EXPECT_EQ(compiled->report.fallback_operation_count(), 0u);
+    OwnedTensor input = make_tensor(row(8));
+    OwnedTensor output = make_tensor(row(8));
+    const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+    write(input, values);
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+    EXPECT_EQ(read(output, values.size()),
+              std::vector<float>(values.begin(), values.end()));
+  }
+  EXPECT_EQ(probe.compile_count, 3u);
   EXPECT_EQ(probe.single_prepare_count, 0u);
 }
 
-TEST(GraphRegions, PerProviderProposalBudgetIsAlsoAHardLimit) {
+TEST(GraphRegions, PerProviderLimitStillAllowsDiscoveryFromTheNextProvider) {
   RegionProbe probe{.mode = ProposalMode::kOverflow};
+  RegionProbe second;
   const NegationGraph logical = make_negations(2);
-  Context context = make_context(probe);
+  Context context = make_context(probe, second);
   auto compiled = hyle::graph::compile(
       logical.graph, context,
       CompileOptions{.max_region_proposals = 4,
                      .max_region_proposals_per_provider = 1});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_TRUE(compiled->report.search().per_provider_proposal_limit_reached);
+  EXPECT_FALSE(compiled->report.search().region_proposal_limit_reached);
+  EXPECT_EQ(compiled->report.search().region_proposals, 2u);
+  EXPECT_EQ(compiled->report.search().region_proposal_nodes, 4u);
+  EXPECT_EQ(second.propose_count, 1u);
+}
+
+TEST(GraphRegions, StrictSearchRejectsLimitedDiscoveryBeforePreparation) {
+  const auto logical = make_negations(2);
+  for (unsigned limit = 0; limit != 3; ++limit) {
+    RegionProbe probe{.mode = ProposalMode::kOverflow};
+    Context context = make_context(probe);
+    CompileOptions options{.search_policy =
+                               CompileSearchPolicy::kRequireUnexhausted};
+    if (limit == 0)
+      options.max_region_proposals = 1;
+    else if (limit == 1)
+      options.max_region_proposals_per_provider = 1;
+    else
+      options.max_region_proposal_nodes = 1;
+    auto compiled = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_TRUE(compiled.error().IsResourceExhausted());
+    EXPECT_EQ(probe.compile_count, 0u);
+    EXPECT_EQ(probe.single_prepare_count, 0u);
+  }
+}
+
+TEST(GraphRegions, ExactCapacityWithoutOmissionsIsNotLimitedSearch) {
+  RegionProbe probe;
+  const auto logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.max_region_proposals = 1,
+       .max_region_proposals_per_provider = 1,
+       .max_region_proposal_nodes = 2,
+       .search_policy = CompileSearchPolicy::kRequireUnexhausted});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_FALSE(compiled->report.search().optimization_limited());
+  EXPECT_EQ(compiled->report.search().region_proposals, 1u);
+  EXPECT_EQ(compiled->report.search().region_proposal_nodes, 2u);
+  EXPECT_FALSE(CompileReport{}.search().optimization_limited());
+}
+
+TEST(GraphRegions, GlobalLimitSkipsLaterTargetsButPreservesRequiredPlacement) {
+  RegionProbe first;
+  RegionProbe second;
+  const auto logical = make_negations(2);
+  Context first_context = make_context(first);
+  Context second_context = make_context(second);
+  const auto host = hyle::mem::system_resource();
+  const Environment environment{{&first_context, host},
+                                {&second_context, host}};
+  const std::array placements{hyle::graph::NodePlacement{
+      .node = logical.graph.node_id(0).value(),
+      .target = environment.target(1),
+      .strength = hyle::graph::PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.node_placements = placements, .max_region_proposals = 1});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_TRUE(compiled->report.search().region_proposal_limit_reached);
+  EXPECT_EQ(compiled->report.search().region_proposals, 1u);
+  EXPECT_EQ(second.propose_count, 0u);
+  EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
+}
+
+TEST(GraphRegions, LimitedDiscoveryNeverHidesRealProviderErrors) {
+  const auto logical = make_negations(2);
+  for (const Status failure :
+       {Status::ResourceExhausted("provider scratch allocation failed"),
+        Status::Internal("provider consistency check failed")}) {
+    RegionProbe probe{.mode = ProposalMode::kOverflow};
+    probe.discovery_failure = failure;
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context,
+                                         {.max_region_proposals = 1});
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_EQ(compiled.error(), failure);
+    EXPECT_EQ(probe.compile_count, 0u);
+    EXPECT_EQ(probe.single_prepare_count, 0u);
+  }
+}
+
+TEST(GraphRegions, LimitedSearchCannotWaiveWorkspaceOrPreparationLimits) {
+  const auto logical = make_negations(2);
+  RegionProbe probe{.mode = ProposalMode::kOverflow};
+  probe.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  Context context = make_context(probe);
+  const std::array storage{hyle::graph::StorageDomain{
+      .resource = hyle::mem::system_resource(), .workspace_budget_bytes = 0}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  auto no_space = hyle::graph::compile(
+      logical.graph, {.storage_domains = storage, .targets = targets},
+      {.max_region_proposals = 1});
+  ASSERT_FALSE(no_space.has_value());
+  EXPECT_TRUE(no_space.error().IsResourceExhausted());
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+
+  auto incomplete = hyle::graph::compile(
+      logical.graph, context,
+      {.max_placement_attempts = 1, .max_region_proposal_nodes = 1});
+  ASSERT_FALSE(incomplete.has_value());
+  EXPECT_TRUE(incomplete.error().IsResourceExhausted());
+}
+
+TEST(GraphRegions, UnknownSearchPolicyIsRejectedBeforeDiscovery) {
+  RegionProbe probe;
+  const auto logical = make_negations(2);
+  Context context = make_context(probe);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.search_policy = static_cast<CompileSearchPolicy>(255)});
   ASSERT_FALSE(compiled.has_value());
-  EXPECT_TRUE(compiled.error().IsResourceExhausted());
-  EXPECT_EQ(probe.compile_count, 0u);
+  EXPECT_TRUE(compiled.error().IsInvalidArgument());
+  EXPECT_EQ(probe.propose_count, 0u);
+}
+
+TEST(GraphRegions, WriterSeparatesCapacityRefusalFromValidationErrors) {
+  const auto logical = make_negations(2);
+  std::array<RegionProposal, 1> proposals;
+  std::array<NodeId, 2> nodes;
+  RegionProposalWriter writer(proposals, nodes);
+  const std::array requested{logical.graph.node_id(1).value(),
+                             logical.graph.node_id(0).value()};
+  ASSERT_TRUE(writer.try_add({.nodes = requested}).value());
+  EXPECT_EQ(writer.proposals()[0].nodes[0], requested[1]);
+  EXPECT_FALSE(writer.try_add({.nodes = requested}).value());
+  EXPECT_TRUE(writer.proposal_limit_reached());
+  EXPECT_EQ(writer.size(), 1u);
+  EXPECT_EQ(writer.node_size(), 2u);
+  auto invalid = writer.try_add({});
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
 }
 
 TEST(GraphRegions, RejectFallbackPolicyRequiresCompleteRegionCoverage) {

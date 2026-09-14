@@ -1510,7 +1510,7 @@ Status discover_region_candidates(
     mem::AllocatorRef allocator, RegionExtensions &extensions,
     RegionCandidates &candidates, RegionNodeIds &proposal_nodes,
     std::size_t &proposal_count, std::size_t &proposal_node_count,
-    ExecutionTargetId target,
+    CompileSearchReport &search, ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets = {}) noexcept;
 
 Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
@@ -1657,10 +1657,17 @@ Status prepare_placed_steps(detail::PlanState &plan,
     Status discovered = discover_region_candidates(
         published_graph, graph, *environment.targets[target].context, options,
         plan.allocator, extensions, all_region_candidates, all_region_nodes,
-        region_proposal_count, region_proposal_node_count,
+        region_proposal_count, region_proposal_node_count, plan.search,
         ExecutionTargetId{static_cast<std::uint32_t>(target)});
     if (!discovered.ok())
       return discovered;
+  }
+  plan.search.region_proposals = region_proposal_count;
+  plan.search.region_proposal_nodes = region_proposal_node_count;
+  if (options.search_policy == CompileSearchPolicy::kRequireUnexhausted &&
+      plan.search.optimization_limited()) {
+    return Status::ResourceExhausted(
+        "graph candidate discovery reached a search limit under strict policy");
   }
   if (!all_region_nodes.try_resize(region_proposal_node_count))
     return plan_allocation_failure();
@@ -1713,7 +1720,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
   Ordinals selected_outputs(plan.allocator);
   Requirements input_requirements(plan.allocator);
   Requirements output_requirements(plan.allocator);
-  std::size_t placement_attempts = 0;
+  std::size_t &placement_attempts = plan.search.placement_attempts;
 
   auto select_storage =
       [&](std::uint32_t target,
@@ -2781,7 +2788,7 @@ Status discover_region_candidates(
     mem::AllocatorRef allocator, RegionExtensions &extensions,
     RegionCandidates &candidates, RegionNodeIds &proposal_nodes,
     std::size_t &proposal_count, std::size_t &proposal_node_count,
-    ExecutionTargetId target,
+    CompileSearchReport &search, ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets) noexcept {
   if (options.region_selection == RegionSelectionPolicy::kDisabled ||
       graph.nodes.empty()) {
@@ -2856,6 +2863,13 @@ Status discover_region_candidates(
         (std::min)(remaining, options.max_region_proposals_per_provider);
     const std::size_t remaining_nodes =
         options.max_region_proposal_nodes - proposal_node_count;
+    if (remaining == 0 || remaining_nodes == 0) {
+      // There is still an unvisited region provider. No zero-capacity callback
+      // is needed, and no later target/provider can restore a global budget.
+      search.region_proposal_limit_reached |= remaining == 0;
+      search.region_node_limit_reached |= remaining_nodes == 0;
+      break;
+    }
     // A unique proposal cannot contain more nodes than the graph. Reserve
     // only this provider's possible contribution, bounded by the global cap.
     const std::size_t node_capacity =
@@ -2890,6 +2904,13 @@ Status discover_region_candidates(
         &episode);
     if (!proposed.ok())
       return proposed;
+
+    if (writer.proposal_limit_reached()) {
+      search.region_proposal_limit_reached |= provider_capacity == remaining;
+      search.per_provider_proposal_limit_reached |=
+          provider_capacity == options.max_region_proposals_per_provider;
+    }
+    search.region_node_limit_reached |= writer.node_limit_reached();
 
     std::uint32_t provider_proposal_order = 0;
     for (const RegionProposal &proposal : writer.proposals()) {
@@ -4373,6 +4394,7 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
   if (storage == nullptr)
     return std::unexpected(plan_allocation_failure());
   auto *state = ::new (storage) detail::ReportState(plan.allocator);
+  state->search = plan.search;
   if (!state->steps.try_resize(plan.steps.size()) ||
       !state->targets.try_resize(plan.targets.size()) ||
       !state->storage_domains.try_resize(plan.storage_domains.size()) ||
@@ -4758,6 +4780,10 @@ compute::BackendId CompileReport::backend() const noexcept {
 
 compute::ProviderIdentity CompileReport::provider() const noexcept {
   return state_ != nullptr ? state_->provider : compute::ProviderIdentity{};
+}
+
+CompileSearchReport CompileReport::search() const noexcept {
+  return state_ != nullptr ? state_->search : CompileSearchReport{};
 }
 
 std::size_t CompileReport::workspace_bytes() const noexcept {
@@ -6335,6 +6361,11 @@ Result<CompiledGraph> compile(const Graph &graph,
     }
   }
   const compute::Context &context = *environment.targets[0].context;
+  if (options.search_policy != CompileSearchPolicy::kAllowLimited &&
+      options.search_policy != CompileSearchPolicy::kRequireUnexhausted) {
+    return std::unexpected(
+        Status::InvalidArgument("graph compile search policy is invalid"));
+  }
   if (!context.valid() || !context.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute context is invalid or closed"));

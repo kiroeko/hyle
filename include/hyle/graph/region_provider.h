@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 8};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 9};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -29,10 +29,10 @@ HYLE_GRAPH_API Result<bool> is_region_contractible(
     mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 
 struct RegionProposal final {
-  // Nonempty graph-local node set. add() copies and canonicalizes this span;
-  // providers retain no ownership and may use stack storage. Graph rejects a
-  // foreign identity, duplicate node, and any set that would form a cycle
-  // when contracted to one execution island.
+  // Nonempty graph-local node set. try_add() copies and canonicalizes this
+  // span; providers retain no ownership and may use stack storage. Graph
+  // rejects a foreign identity, duplicate node, and any set that would form a
+  // cycle when contracted to one execution island.
   std::span<const NodeId> nodes{};
   compute::ProviderRouteCostFacts cost{};
   // Provider-defined cold-path discriminator. It may select a fusion/compile
@@ -46,31 +46,36 @@ struct RegionProposal final {
 };
 
 // Fixed-capacity proposal sink owned by Graph compile. Providers cannot grow
-// it or hide allocation. Exhaustion is an explicit compile failure so a
-// proposal budget never changes the chosen plan silently.
+// it or hide allocation. A capacity refusal stops this provider's discovery;
+// Graph reports limited search and still validates any resulting whole plan.
 class RegionProposalWriter final {
 public:
   RegionProposalWriter(std::span<RegionProposal> proposal_storage,
                        std::span<NodeId> node_storage) noexcept
       : proposal_storage_(proposal_storage), node_storage_(node_storage) {}
 
-  Status add(RegionProposal proposal) noexcept {
+  // true: copied; false: capacity refused the proposal, stop discovery and
+  // return Status::Ok() from the provider callback. An unexpected Status is a
+  // real error and must be propagated. Never translate arbitrary provider OOM
+  // into false. No proposal or node storage is committed on refusal/error.
+  Result<bool> try_add(RegionProposal proposal) noexcept {
     if (proposal.nodes.empty()) {
-      return Status::InvalidArgument("graph region proposal node set is empty");
+      return std::unexpected(
+          Status::InvalidArgument("graph region proposal node set is empty"));
     }
     for (NodeId node : proposal.nodes) {
       if (!node.valid()) {
-        return Status::InvalidArgument(
-            "graph region proposal contains an invalid node identity");
+        return std::unexpected(Status::InvalidArgument(
+            "graph region proposal contains an invalid node identity"));
       }
     }
     if (size_ == proposal_storage_.size()) {
-      return Status::ResourceExhausted(
-          "graph region proposal budget is exhausted");
+      proposal_limit_reached_ = true;
+      return false;
     }
     if (proposal.nodes.size() > node_storage_.size() - node_size_) {
-      return Status::ResourceExhausted(
-          "graph region proposal node budget is exhausted");
+      node_limit_reached_ = true;
+      return false;
     }
     std::span<NodeId> destination =
         node_storage_.subspan(node_size_, proposal.nodes.size());
@@ -82,20 +87,24 @@ public:
               });
     for (std::size_t index = 1; index < destination.size(); ++index) {
       if (destination[index - 1].ordinal() == destination[index].ordinal()) {
-        return Status::InvalidArgument(
-            "graph region proposal contains duplicate node ordinals");
+        return std::unexpected(Status::InvalidArgument(
+            "graph region proposal contains duplicate node ordinals"));
       }
     }
     proposal.nodes = destination;
     proposal_storage_[size_++] = proposal;
     node_size_ += destination.size();
-    return Status::Ok();
+    return true;
   }
 
   std::size_t size() const noexcept { return size_; }
   std::size_t capacity() const noexcept { return proposal_storage_.size(); }
   std::size_t node_size() const noexcept { return node_size_; }
   std::size_t node_capacity() const noexcept { return node_storage_.size(); }
+  bool proposal_limit_reached() const noexcept {
+    return proposal_limit_reached_;
+  }
+  bool node_limit_reached() const noexcept { return node_limit_reached_; }
   std::span<const RegionProposal> proposals() const noexcept {
     return proposal_storage_.first(size_);
   }
@@ -105,6 +114,8 @@ private:
   std::span<NodeId> node_storage_{};
   std::size_t size_ = 0;
   std::size_t node_size_ = 0;
+  bool proposal_limit_reached_ = false;
+  bool node_limit_reached_ = false;
 };
 
 struct RegionCompileRequest final {

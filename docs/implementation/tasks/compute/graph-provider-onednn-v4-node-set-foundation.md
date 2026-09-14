@@ -14,6 +14,10 @@ G103/GP41 共用 Compute 的结构成本类型，删除未资格化的私有时�
 extension 随布局升版。实际 MLP 的已知 copy/repack/sync/dispatch 如实保留，workspace/JIT persistent
 未知仍为 unknown，不为选路捏造时间；kernel/pattern/submit 不变。
 
+G104/GP40 迁移有限发现：writer 改为 `try_add() -> Result<bool>`，false 是 Graph 提供的候选容量不足，
+Provider 正常停止发现；unexpected 或 pattern/use-table 错误仍失败。只修改冷发现循环，保留当前匹配、
+artifact 和执行。预算受限是否可接受由 Graph 的显式政策和完整可行性决定，不由 oneDNN 隐藏裁决。
+
 ## Closure card
 
 - component / owner：`graph_provider_onednn` / Graph oneDNN provider；round=`graph-provider-onednn-v4-node-set-foundation`；
@@ -66,3 +70,7 @@ GP41--GP44 的完整 boundary cost、事务回退、BRGEMM seam 三交付与 gat
 G100/GP41 冷筛选迁移已通过 Windows oneDNN-enabled shared 定向 4/4：实际 gated MLP 在 prepared-only
 政策下仍被选中并执行正确，discovery/resource/artifact 使用同一个 runtime 常量；Graph 与本 factor 逐头
 同时通过。只验证当前 source-tree 交付，GP43/GP44 的最终安装/性能义务不被此检查点替代。
+
+G104 的 writer 迁移已通过 oneDNN-enabled Windows shared 定向回归。新增真实 gated MLP：node 容量
+小于整个 region 时不部分接收、不隐藏 OOM，Graph 用已安装 leaf providers 执行完整数值旅程，报告 node
+发现受限。既有 exact/non-order/decline 等 region 测试继续通过；kernel/pattern/submit 未变化，无新 P1。
