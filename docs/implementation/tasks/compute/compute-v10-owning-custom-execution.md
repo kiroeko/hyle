@@ -186,3 +186,54 @@ Graph 在 compile 栈上的 SmallVector 保存最终 node→key，重选成功�
 这里只补足“选的是哪套实现”的稳定分量。C93 的完整 build/config/device/driver/domain/boundary/workload
 匹配、G103 完整成本选择仍未完成；也没有以进程内实例编号或单个 key 代替完整资格。所有 foundation
 剩余项保留，不进入算子扩充或终局收口。
+
+### C93：完整只读 profile 匹配（实现前固定）
+
+实现共同 `route_profile.h` 合同，作为 G103 完整计划选择的数据输入，而非 Provider 私有估值。
+identity 分开保留 HYLE build、backend build/device/runtime/execution config、Provider build/config/
+implementation、计算语义 boundary、shape domain、精确 tensor 描述、完整 physical route、workload
+内容/仪器合同、latency/throughput/concurrency/determinism 与真实终态边界。稳定 fingerprint 由拥有该
+事实的构建/设备/外部 profiler 提供；零是 unknown，不从地址、进程内实例号、显示名字或 POD padding
+自动补全。匹配器只验证一致性，不能凭用户填写非零 ID 就宣称仪器或数据已科学资格化。
+
+有限 FIX：无分配的结构化完整匹配与明确 mismatch reason；只读 span 查找；相同 key 的重复观测取
+保守 interval 包络，不按顺序挑最小值；缺编译次数默认只比 replay，显式 amortization 缺 compile cost
+保持 unknown，溢出/NaN/负数非法；合法 exact zero 与 unknown 区分。普通 direct prepare/warm 路径不
+读 profile。此段只实现共同输入/匹配，Graph 的自动 key 生成、候选计划消费与有 incumbent 搜索须在
+后续同一 C93/G103 范围完成；不能手填一组假 ID 给真实 Provider 签资格。
+
+验证限 Compute 单元/逐头及既有 Graph/Provider 直接消费者；普通 source/static/shared 接入公共 matcher。
+表驱动反例逐字段变更，涵盖 unknown、精确 tensor layout/format、顺序、生命周期借用、重复观测、非法
+浮点/边界/并发与 amortization。P0 查有界线性只读扫描，P1/跨平台/独立红队仍与完整 foundation 一次做。
+不改 Backend、公共构建/仪器核心、组件边或 CLOSED 依赖，只登记本 factor 的源/测试文件。
+
+### 2026-09-15 C93 只读 profile 合同检查点
+
+- `RouteProfileIdentity/RouteProfile`、`WorkloadIntent`、完整 matcher 与只读 lookup 已实现，复用现有
+  BackendId/ProviderId/ProviderRouteKey/TensorDesc，不引入新 factor、cache、FFI 或设备查询。缺任一
+  必需身份时保持 unknown；helper 只证明输入事实一致，不证明 profiler 的测量质量或事实真实性。
+- 重复观测取保守区间包络，与输入顺序无关；latency/throughput、并发、确定性、内容/仪器合同及真正
+  完成边界必须匹配。预计 replay 次数是查询摊销政策，不需要重新测同一 physical route；若改变了实际
+  tactic/config/route，那些身份本身仍必须变化。默认不合并冷时间；明确摊销且缺 cold cost 时 unknown。
+- 新增 10 个用例，Compute 共 44/44；逐字段反例含同家族不同 build/config/implementation、目标次序、
+  空身份、同 shape/dtype/extent 的不同 strides/opaque encoding、各 workload 维度、Graph/operation
+  terminal、NaN/Inf/负数/区间反转/加法溢出、exact zero、缺失与重复观测、借用结束后的值结果。测试中
+  的 fingerprint 与时间仅为合同 fixture，不是任何真实 Provider 的资格或性能记录。
+- Windows static `compute-route-v8-static-20260914` Compute/Graph/逐头 5/5；shared + oneDNN
+  `compute-route-onednn-v8-20260914` Compute/CPU/Native/oneDNN/Graph 与逐头 15/15；CUDA cache
+  `compute-graph-v7-cuda` Compute/Graph/Backend/late-failure/逐头 5/5。
+- v10 custom sample 的 source/shared/static 各 CPU+CUDA 2/2；CPU 消费方显式调用安装的 matcher/lookup
+  和 arithmetic validator，缺身份不能误报零成本。producer、SDK、consumer 的 CPU/CUDA 目录 Compute
+  DLL SHA-256 相同：`8F9B626D49935BD60919108F5954EC4323A10AC104D68D0D5E78A1422EA6A2B1`。
+  SDK 只重建实际改变的 Compute target，保留未改源码对应的其余制品；安装前缀始终显式指定 scratch。
+- P0：单次匹配 `O(T + P + B)`（target、Provider、boundary tensor 数；tensor rank 有上界），lookup
+  最坏 `O(K * (T + P + B))`，额外空间 `O(1)`、零分配。没有 cache/index、回调、时钟读取或新 warm
+  字段；这是有限只读资料的接口实现，不把线性扫描声称为全局最优索引或端到端性能胜利。
+- 当前 guide/样例说明同步；selector 基线 `75cdb4d2` READY、83 项有据跳过。CMake 只登记源/测试文件，
+  registry、组件边、已 CLOSED 依赖和公共仪器未改。已有验证缓存重配触发了 SIMD 的重编译，但没有
+  改 SIMD 源码或执行其性能测试。closure/docs/diff 通过，未运行 P1、Linux/Apple、sanitizer 或独立终局
+  红队；这些仍随完整 foundation candidate 验证。
+- 自实现不含测试：Compute **16,404**、Graph **10,978**，合计 **27,382**（+223）；全库自实现
+  **122,508**，统一脚本 self-check 通过。C93 仍未签完：Provider/backend/Graph 的真实完整 key 生成与
+  Graph candidate 消费尚未接入，不能让调用方手填假 key 代替；G103/G104 完整计划择优与 incumbent、
+  G101/G102 bounded/variants、G106 聚合内存、架构探针和终局验证全部仍在范围内。

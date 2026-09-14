@@ -20,6 +20,7 @@ Provider 可以对同一个操作竞争，不能让切换 Provider 悄悄改变�
 CPU/CUDA factory 都声明 `ProviderRouteKey{1}`，消费方检查 Graph report 保留该稳定实现键。它不是
 临时 prepare token；同一 key 只有和完整 build/config、设备、语义/shape/layout、workload/完成边界
 共同匹配才有性能资料意义。本例只验证传递与生命周期，不提供 profile 或性能胜负。
+CPU 示例也通过公开 profile matcher 检查缺身份不会误配成零成本；三种交付都链接同一冷合同。
 
 安装 static 或 shared SDK 后（同一 C++23 工具链）：
 

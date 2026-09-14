@@ -8,11 +8,19 @@
 #include <utility>
 
 #include <hyle/compute/backends/cpu.h>
+#include <hyle/compute/route_profile.h>
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
 
 int main() {
   using namespace hyle::compute;
+  // This example has no qualified timing dataset. Missing identity must not
+  // turn into a zero-cost match, including through an installed shared SDK.
+  const auto unqualified = match_route_profile({}, {});
+  if (unqualified.reason != ProfileMatchReason::kIncompleteIdentity ||
+      unqualified.cost || find_route_profile({}, {}).cost ||
+      !ProfileTimingInterval{}.valid())
+    return 20;
   auto provider = example::make_provider();
   if (!provider)
     return 1;
