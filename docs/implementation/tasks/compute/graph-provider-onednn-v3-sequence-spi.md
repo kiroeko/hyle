@@ -44,3 +44,11 @@ FFI N/A；公开 factory/API 不变。普通 C++ 用户仍只显式安装 provid
 
 本轮七问均由原 v2 能力/依赖/交付证据和上述 common-SPI 差分覆盖；性能只签 P0，不复用旧 P1 冒充新
 合同。组件进入 `AUDITED`，只授权 OR60--OR62，等待 Compute v5/Graph v6 同一可编译迁移。
+
+## Compute v7 candidate 回放（2026-09-14）
+
+Compute/Native 的 19-family 扩展使此前三条“region 未选中就应编译失败”的测试前提失效：公开中间值、
+额外中间消费者和 strict-benefit 拒绝 oneDNN region 后，Native 已能逐 operation 合法接管整图。测试改为
+核对 `region_count()==0`、完整 operation fallback 数量、精确 fallback reason，且每个 step 均未使用
+Graph oneDNN provider；不再把正常 provider fallback 误写成 `Unimplemented`。本回放只校准测试 oracle，
+不改变 region proposal、selection、artifact、产品 API 或性能路线。

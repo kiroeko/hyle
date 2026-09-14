@@ -35,6 +35,8 @@ using hyle::compute::RmsNorm;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
 using hyle::graph::CompileOptions;
+using hyle::graph::CompileFallbackReason;
+using hyle::graph::CompileStepKind;
 using hyle::graph::ConstantBinding;
 using hyle::graph::Graph;
 using hyle::graph::GraphBuilder;
@@ -401,8 +403,15 @@ TEST(OneDnnRegionProvider, RejectsPublishedIntermediateWithoutForcedFusion) {
           .value();
   auto compiled = hyle::graph::compile(logical.graph, context,
                                        CompileOptions{.constants = constants});
-  ASSERT_FALSE(compiled.has_value());
-  EXPECT_TRUE(compiled.error().IsUnimplemented());
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0U);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 4U);
+  for (std::size_t index = 0; index < compiled->report.step_count(); ++index) {
+    const auto step = compiled->report.step(index).value();
+    EXPECT_EQ(step.kind, CompileStepKind::kOperationFallback);
+    EXPECT_EQ(step.fallback_reason, CompileFallbackReason::kNoEligibleRegion);
+    EXPECT_NE(step.provider.id, hyle::graph::onednn::kProviderId);
+  }
 }
 
 TEST(OneDnnRegionProvider, ExtraIntermediateConsumerIsNotForcedIntoRegion) {
@@ -421,8 +430,15 @@ TEST(OneDnnRegionProvider, ExtraIntermediateConsumerIsNotForcedIntoRegion) {
           .value();
   auto compiled = hyle::graph::compile(logical.graph, context,
                                        CompileOptions{.constants = constants});
-  ASSERT_FALSE(compiled.has_value());
-  EXPECT_TRUE(compiled.error().IsUnimplemented());
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0U);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 5U);
+  for (std::size_t index = 0; index < compiled->report.step_count(); ++index) {
+    const auto step = compiled->report.step(index).value();
+    EXPECT_EQ(step.kind, CompileStepKind::kOperationFallback);
+    EXPECT_EQ(step.fallback_reason, CompileFallbackReason::kNoEligibleRegion);
+    EXPECT_NE(step.provider.id, hyle::graph::onednn::kProviderId);
+  }
 }
 
 TEST(OneDnnRegionProvider,
@@ -445,8 +461,15 @@ TEST(OneDnnRegionProvider,
       CompileOptions{.constants = constants,
                      .region_selection =
                          RegionSelectionPolicy::kRequireEstimatedBenefit});
-  ASSERT_FALSE(compiled.has_value());
-  EXPECT_TRUE(compiled.error().IsUnimplemented());
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0U);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 4U);
+  for (std::size_t index = 0; index < compiled->report.step_count(); ++index) {
+    const auto step = compiled->report.step(index).value();
+    EXPECT_EQ(step.kind, CompileStepKind::kOperationFallback);
+    EXPECT_EQ(step.fallback_reason, CompileFallbackReason::kNoEligibleRegion);
+    EXPECT_NE(step.provider.id, hyle::graph::onednn::kProviderId);
+  }
 }
 
 TEST(OneDnnRegionProvider, ComposesAfterRmsNormAsOneMixedExecutionPlan) {
