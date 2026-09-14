@@ -144,14 +144,9 @@
     },
     {
       "module": "mem",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md",
-      "candidate": "8e4f096e801fda16aa3b8ab507556188e7883159",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/mem/mem-v9-lifetime-plan-allocator.md"
-      },
-      "summary": "mem v9 CLOSED：显式 planner metadata allocator、instance 继承/覆盖与 Graph 直接复用完成；四环境正确性/适用 sanitizer/Mem 三交付、Windows Graph CPU/CUDA 回放、候选后源码红队、API/docs 与 P0 全过；只补预算前置，不代签 Graph 整体内存。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md",
+      "summary": "mem v10 SCOPED：Graph G106 需要把独立 MemoryResource 请求和 allocator 请求计入同一额度；限定为已有 QuotaAllocator 的零分配 RAII reservation，尚未修改产品。"
     },
     {
       "module": "mem_vm",
