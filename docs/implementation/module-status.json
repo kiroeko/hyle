@@ -273,8 +273,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v9-shape-replay-substrate.md",
-      "summary": "compute v9 AUDITED：承接已完成 identity/outcome，C90--C94 固定 provider-neutral shape/replay/cost 基础合同与私有 SPI 迁移；direct/runtime 热路径保留，派生域、完整 Graph 与 custom execution 仍须后续实际验收。"
+      "record": "docs/implementation/tasks/compute/compute-v10-owning-custom-execution.md",
+      "summary": "compute v10 AUDITED：承接 v9 未完成 C93 profile 资格；C100--C103 固定 owning custom factory、typed kernel/Invocation 和三交付执行旅程，复用既有 Context/Completion，基础 gate 尚未完成。"
     },
     {
       "module": "graph",
