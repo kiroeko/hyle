@@ -22,6 +22,8 @@
 
 当前公共工具修复事实：
 
+- [CUDA compiled factor 验证上下文](project/validation-selector-cuda-factor-context-2026-09.md)：
+  显式验证或反向选中 CUDA factor 时同步启用其真实 feature，不把空 target 当成有效测试；
 - [Structured pair placement validator 修复](project/performance-structured-placement-validator-2026-09.md)；
 - [性能计时前完成边界与执行拓扑预审](project/performance-preflight-topology-2026-09.md)；
 - [真实 workload paired interleaving](project/performance-workload-interleaving-2026-09.md)；

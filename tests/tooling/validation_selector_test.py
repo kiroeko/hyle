@@ -49,6 +49,7 @@ class ImpactTest(unittest.TestCase):
         self.write("third_party/picohttpparser/picohttpparser.c", "int parser_version = 1;\n")
         self.write("include/hyle/container/unbounded_queue.h", "int queue_value = 1;\n")
         self.write("include/hyle/container/string_view.h", "int text_value = 1;\n")
+        self.write("include/hyle/compute/prepared_operation.h", "int compute_value = 1;\n")
         self.write("include/hyle/visibility.h", "#define EXPORT 1\n")
         self.write("tests/container_queue/change.cc", "int expected = 1;\n")
         self.write("tests/container_queue/CMakeLists.txt", "hyle_add_header_self_contained_test(container_queue)\n")
@@ -137,11 +138,20 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("graph_provider_onednn", plan["selected_factors"])
         self.assertIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
 
+    def test_reverse_selected_cuda_factor_activates_its_validation_feature(self):
+        self.write("include/hyle/compute/prepared_operation.h", "int compute_value = 2;\n")
+        self.commit()
+        plan = self.plan()
+        configure = self.row(plan, "configure")["commands"][0]
+        self.assertIn("compute_backend_cuda", plan["selected_factors"])
+        self.assertIn("-DHYLE_COMPUTE_CUDA=ON", configure)
+
     def test_unrelated_factor_does_not_activate_optional_provider(self):
         self.write("src/container_queue/change.cc", "int value = 2;\n")
         self.commit()
         configure = self.row(self.plan(), "configure")["commands"][0]
         self.assertNotIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
+        self.assertNotIn("-DHYLE_COMPUTE_CUDA=ON", configure)
 
     def test_product_change_requires_audited_owner(self):
         self.set_state("container_queue", "CLOSED")

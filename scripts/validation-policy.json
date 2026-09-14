@@ -1,6 +1,9 @@
 {
   "schema_version": 2,
   "factor_configure_cache": {
+    "compute_backend_cuda": {
+      "HYLE_COMPUTE_CUDA": "ON"
+    },
     "compute_provider_onednn": {
       "HYLE_COMPUTE_ONEDNN": "ON"
     },
