@@ -203,3 +203,41 @@ false，真实错误仍经 Status 传播；Graph 不捕捉 OOM 来猜测是否�
 G104 的发现预算部分完成；当前仍没有 G103 qualified full-plan profile、同池有界重选/完整 incumbent
 选择，也未完成 bounded variants 与资源/常量合同。因此组件保持 `AUDITED`，不把本次可行性回归当作
 完整 selector、性能 SOTA 或基础收口。下一步继续补齐这些既定合同，不扩充算子目录。
+
+### G103/G104 选路前置：事务化结果接入审计
+
+当前 `prepare_placed_steps()` 调用会把 Compute 的结构化结果重新压成 Status，再据 `IsUnimplemented()`
+重试；region `compile` 回调本身也只返回 Status。这既可能把 kind=Error 的 Unimplemented 当安全拒绝，
+又不能正确处理明确的 candidate-local resource-budget decline。因此在接入 profile 排序之前，先完成
+原有 G104/GP42 的共同结果合同；不新增并行架构决策。
+
+MOVE Compute 已有 `ProviderPrepareOutcome/Kind` 到公开 prepared-operation 合同，并复用其合法性检查。
+Region compile 返回同一类型；Graph 内部 leaf/region attempt 保留 success/decline/error 到实际选路边界，
+不通过 Status code 猜 rollback。部分 artifact 必须先由共同 owner 回收，才能继续；错误与非法 outcome
+立即返回，即使 Status code 是 Unimplemented/ResourceExhausted。原始 proposal 的不支持仍是冷能力查询，
+不等于执行失败。当前候选拒绝后的 leaf fallback 可沿用，任意替代 region/同池重选仍是后续 G103/G104。
+
+固定验证：两类明确 decline 可回退且部分制品先销毁；相同 Status code 的 Error 不回退；非法 kind/status、
+prepared+error、strict no-leaf、真实 oneDNN 正常/失败与默认 exact 回归。P0 只改冷分类/清理，不改热提交；
+沿用本轮定向 Windows shared/static/逐头，完整候选再做跨平台/SDK/sanitizer/P1。
+
+## 2026-09-14 G103/G104：事务化结果检查点
+
+Compute/Graph 共用公开四态 prepare outcome，region extension 升至 10、Compute 私有 SPI 升至 7；删除
+压成 Status 的旧私有入口，无兼容别名。Graph 的普通 leaf、未入选 region 的 leaf，以及 region 安全拒绝后
+的 leaf 三条调用链都保留分类；真正 Error 不因其错误码而重试。部分 artifact 在尝试下一路之前销毁。
+direct Compute 同步修复，但只自动跳过明确 unsupported，资源拒绝仍直接返回，不扩大其选路政策。
+
+新增反例覆盖两类安全拒绝、相同错误码的 fatal Error、非法 kind/status、清理顺序、跨 target 与两阶段
+leaf fallback。初次编译发现一个未迁移的 fallback 解包点，已修复并纳入后续全部回归。
+
+- Windows Release source-tree shared/static 各 9/9，通过各 256 个单元用例与四项逐头测试。
+- oneDNN-enabled shared 定向 8/8，通过 141 个单元用例与三项逐头测试；direct、composition、Graph 和
+  真实 MLP region 均包含在内。oneDNN 原始 compile 错误保持 fatal，不把 OOM 猜成可安全回退。
+- P0：只改变冷准备的类型传播、分类与清理；不增加 submit/kernel/Queue 的分配、锁、搜索或间接调用。
+- 构建沿用 `scripts/hyle-windows.ps1`、`--parallel 2`；ctest 精确选择 Compute/CPU/Native/Graph 及
+  oneDNN provider/composition/region，不运行全库或 P1。三平台、sanitizer、installed SDK 和最终基础 P1
+  仍待完整 candidate；本检查点只证明 Windows 增量路径。
+
+这只完成统一选路所需的结果边界，不把 G103 完整成本/同池搜索、G104 全部重选、variants 或资源/常量
+合同写成完成。状态保持 `AUDITED`。

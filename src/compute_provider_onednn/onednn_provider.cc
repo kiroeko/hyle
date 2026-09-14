@@ -362,18 +362,18 @@ Status propose(
   return Status::Ok();
 }
 
-detail::ProviderPrepareOutcome
+ProviderPrepareOutcome
 prepare(void *context_value, const detail::ProviderPrepareRequest &request,
         mem::AllocatorRef allocator,
         detail::ProviderPrepared *prepared_output) noexcept {
   if (prepared_output == nullptr)
-    return detail::ProviderPrepareOutcome::error(
+    return ProviderPrepareOutcome::error(
         Status::InvalidArgument("oneDNN prepared output is null"));
   *prepared_output = {};
   if (request.input_resources.size() != request.inputs.size() ||
       request.output_resources.size() != request.outputs.size() ||
       request.route != 1) {
-    return detail::ProviderPrepareOutcome::error(
+    return ProviderPrepareOutcome::error(
         Status::InvalidArgument("oneDNN exact prepare request is invalid"));
   }
   OneDnnRoute route{};
@@ -381,8 +381,8 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
                                request.inputs, request.outputs, route);
   if (!status.ok()) {
     return status.IsUnimplemented()
-               ? detail::ProviderPrepareOutcome::unsupported(std::move(status))
-               : detail::ProviderPrepareOutcome::error(std::move(status));
+               ? ProviderPrepareOutcome::unsupported(std::move(status))
+               : ProviderPrepareOutcome::error(std::move(status));
   }
   auto *context = static_cast<OneDnnContext *>(context_value);
 
@@ -391,18 +391,16 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
                                         allocator, &brgemm);
   if (!status.ok()) {
     return status.IsResourceExhausted()
-               ? detail::ProviderPrepareOutcome::resource_declined(
-                     std::move(status))
-               : detail::ProviderPrepareOutcome::error(std::move(status));
+               ? ProviderPrepareOutcome::resource_declined(std::move(status))
+               : ProviderPrepareOutcome::error(std::move(status));
   }
 
   void *storage =
       allocator.allocate(sizeof(OneDnnPrepared), alignof(OneDnnPrepared));
   if (storage == nullptr) {
     internal::destroy_brgemm_plan(brgemm, allocator);
-    return detail::ProviderPrepareOutcome::resource_declined(
-        Status::ResourceExhausted(
-            "oneDNN prepared wrapper allocation failed"));
+    return ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("oneDNN prepared wrapper allocation failed"));
   }
   auto *prepared = ::new (storage) OneDnnPrepared{
       .context = context,
@@ -419,7 +417,7 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   // storage behind BrgemmPlan.  Reporting only sizeof(OneDnnPrepared) would
   // turn a partial count into a false exact planning fact.
   prepared_output->persistent_bytes = std::nullopt;
-  return detail::ProviderPrepareOutcome::prepared();
+  return ProviderPrepareOutcome::prepared();
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }

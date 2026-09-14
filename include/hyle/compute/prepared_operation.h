@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <utility>
 
 #include "hyle/compute/completion.h"
 #include "hyle/compute/device.h"
@@ -12,6 +13,7 @@
 #include "hyle/compute/provider.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/compute/visibility.h"
+#include "hyle/error/status.h"
 
 namespace hyle::compute {
 
@@ -43,6 +45,51 @@ struct ProviderRouteCostFacts final {
   constexpr bool valid() const noexcept {
     return (!workspace || std::has_single_bit(workspace->alignment)) &&
            (!dispatch_count || *dispatch_count != 0);
+  }
+};
+
+enum class ProviderPrepareOutcomeKind : std::uint8_t {
+  kPrepared = 0,
+  kDeclinedUnsupported,
+  kDeclinedResourceBudget,
+  kError,
+};
+
+// Shared operation/region cold-prepare result. A decline promises no accepted
+// user work or external side effects; the common owner must first destroy any
+// returned partial artifact before another route is considered. An arbitrary
+// Error Status (including Unimplemented/OOM) never grants permission to retry.
+struct ProviderPrepareOutcome final {
+  ProviderPrepareOutcomeKind kind = ProviderPrepareOutcomeKind::kError;
+  Status status = Status::Internal("provider prepare outcome is unset");
+
+  static ProviderPrepareOutcome prepared() noexcept {
+    return {ProviderPrepareOutcomeKind::kPrepared, Status::Ok()};
+  }
+  static ProviderPrepareOutcome unsupported(Status reason) noexcept {
+    return {ProviderPrepareOutcomeKind::kDeclinedUnsupported,
+            std::move(reason)};
+  }
+  static ProviderPrepareOutcome resource_declined(Status reason) noexcept {
+    return {ProviderPrepareOutcomeKind::kDeclinedResourceBudget,
+            std::move(reason)};
+  }
+  static ProviderPrepareOutcome error(Status reason) noexcept {
+    return {ProviderPrepareOutcomeKind::kError, std::move(reason)};
+  }
+
+  bool valid() const noexcept {
+    switch (kind) {
+    case ProviderPrepareOutcomeKind::kPrepared:
+      return status.ok();
+    case ProviderPrepareOutcomeKind::kDeclinedUnsupported:
+      return status.IsUnimplemented();
+    case ProviderPrepareOutcomeKind::kDeclinedResourceBudget:
+      return status.IsResourceExhausted();
+    case ProviderPrepareOutcomeKind::kError:
+      return !status.ok();
+    }
+    return false;
   }
 };
 

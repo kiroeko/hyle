@@ -19,7 +19,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 6;
+inline constexpr std::uint32_t kProviderContractVersion = 7;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -99,37 +99,6 @@ struct ProviderPrepared final {
   std::optional<std::size_t> persistent_bytes{};
 };
 
-enum class ProviderPrepareOutcomeKind : std::uint8_t {
-  kPrepared = 0,
-  kDeclinedUnsupported,
-  kDeclinedResourceBudget,
-  kError,
-};
-
-// A prepare callback must classify a failure before any user work is
-// accepted. Declines are retryable only after the partially returned artifact
-// (if any) has been destroyed by the common owner. A raw Status is never
-// guessed into a fallback class by Graph.
-struct ProviderPrepareOutcome final {
-  ProviderPrepareOutcomeKind kind = ProviderPrepareOutcomeKind::kError;
-  Status status = Status::Internal("provider prepare outcome is unset");
-
-  static ProviderPrepareOutcome prepared() noexcept {
-    return {ProviderPrepareOutcomeKind::kPrepared, Status::Ok()};
-  }
-  static ProviderPrepareOutcome unsupported(Status reason) noexcept {
-    return {ProviderPrepareOutcomeKind::kDeclinedUnsupported,
-            std::move(reason)};
-  }
-  static ProviderPrepareOutcome resource_declined(Status reason) noexcept {
-    return {ProviderPrepareOutcomeKind::kDeclinedResourceBudget,
-            std::move(reason)};
-  }
-  static ProviderPrepareOutcome error(Status reason) noexcept {
-    return {ProviderPrepareOutcomeKind::kError, std::move(reason)};
-  }
-};
-
 enum class ProviderPrepareDecline : std::uint8_t {
   kNone = 0,
   kUnsupported,
@@ -195,14 +164,6 @@ struct OperationPreparationAccess final {
           std::span<ResourceBindingRequirement> input_requirements,
           std::span<ResourceBindingRequirement> output_requirements,
           ProviderShapeDomain shape = {}) noexcept;
-
-  HYLE_COMPUTE_API static Result<PreparedOperation>
-  prepare(const Context &context, const ProviderOperationProposal &proposal,
-          Operation operation, std::span<const TensorDesc> inputs,
-          std::span<const TensorDesc> outputs,
-          std::span<const ResourceBindingRequirement> input_requirements,
-          std::span<const ResourceBindingRequirement> output_requirements,
-          OperationResourceBindings resources) noexcept;
 
   HYLE_COMPUTE_API static Result<ProviderPrepareAttempt> prepare_candidate(
       const Context &context, const ProviderOperationProposal &proposal,

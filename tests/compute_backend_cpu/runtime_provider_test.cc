@@ -82,11 +82,11 @@ hyle::Status propose_provider(
   return hyle::Status::Unimplemented("probe provider declines operation");
 }
 
-hyle::compute::detail::ProviderPrepareOutcome prepare_provider(
-    void *, const hyle::compute::detail::ProviderPrepareRequest &,
-    hyle::mem::AllocatorRef,
-    hyle::compute::detail::ProviderPrepared *) noexcept {
-  return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+hyle::compute::ProviderPrepareOutcome
+prepare_provider(void *, const hyle::compute::detail::ProviderPrepareRequest &,
+                 hyle::mem::AllocatorRef,
+                 hyle::compute::detail::ProviderPrepared *) noexcept {
+  return hyle::compute::ProviderPrepareOutcome::unsupported(
       hyle::Status::Unimplemented("probe provider declines operation"));
 }
 
@@ -154,6 +154,8 @@ struct AsyncOperationProbe final {
   hyle::compute::detail::CompletionLifetime abandoned{};
   hyle::Status abandoned_hint{};
   PrepareDisposition prepare_disposition = PrepareDisposition::kPrepared;
+  hyle::Status prepare_error =
+      hyle::Status::DataLoss("injected provider failure");
   bool return_partial_artifact = false;
   std::size_t proposal_count = 0;
   std::size_t shape_dimension_count = 0;
@@ -308,12 +310,12 @@ hyle::Status propose_async_operation(
   return hyle::Status::Ok();
 }
 
-hyle::compute::detail::ProviderPrepareOutcome prepare_async_operation(
+hyle::compute::ProviderPrepareOutcome prepare_async_operation(
     void *context, const hyle::compute::detail::ProviderPrepareRequest &request,
     hyle::mem::AllocatorRef,
     hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   if (request.route != 1)
-    return hyle::compute::detail::ProviderPrepareOutcome::error(
+    return hyle::compute::ProviderPrepareOutcome::error(
         hyle::Status::InvalidArgument("test async route is invalid"));
   auto &probe = *static_cast<AsyncOperationProbe *>(context);
   ++probe.prepare_count;
@@ -335,25 +337,24 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_async_operation(
   switch (probe.prepare_disposition) {
   case PrepareDisposition::kPrepared:
     *prepared = artifact;
-    return hyle::compute::detail::ProviderPrepareOutcome::prepared();
+    return hyle::compute::ProviderPrepareOutcome::prepared();
   case PrepareDisposition::kUnsupported:
-    return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+    return hyle::compute::ProviderPrepareOutcome::unsupported(
         hyle::Status::Unimplemented("injected unsupported route"));
   case PrepareDisposition::kResourceBudget:
-    return hyle::compute::detail::ProviderPrepareOutcome::resource_declined(
+    return hyle::compute::ProviderPrepareOutcome::resource_declined(
         hyle::Status::ResourceExhausted("injected route budget rejection"));
   case PrepareDisposition::kError:
-    return hyle::compute::detail::ProviderPrepareOutcome::error(
-        hyle::Status::DataLoss("injected provider failure"));
+    return hyle::compute::ProviderPrepareOutcome::error(probe.prepare_error);
   case PrepareDisposition::kInvalidClassification:
-    return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+    return hyle::compute::ProviderPrepareOutcome::unsupported(
         hyle::Status::InvalidArgument("mismatched decline classification"));
   case PrepareDisposition::kUnownedPartial:
     *prepared = hyle::compute::detail::ProviderPrepared{.state = context};
-    return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+    return hyle::compute::ProviderPrepareOutcome::unsupported(
         hyle::Status::Unimplemented("unowned partial artifact"));
   }
-  return hyle::compute::detail::ProviderPrepareOutcome::error(
+  return hyle::compute::ProviderPrepareOutcome::error(
       hyle::Status::Internal("unknown test prepare disposition"));
 }
 
@@ -881,14 +882,14 @@ hyle::Status propose_delegated(
   return hyle::Status::Ok();
 }
 
-hyle::compute::detail::ProviderPrepareOutcome prepare_delegated(
-    void *context,
-    const hyle::compute::detail::ProviderPrepareRequest &request,
-    hyle::mem::AllocatorRef,
-    hyle::compute::detail::ProviderPrepared *prepared) noexcept {
+hyle::compute::ProviderPrepareOutcome
+prepare_delegated(void *context,
+                  const hyle::compute::detail::ProviderPrepareRequest &request,
+                  hyle::mem::AllocatorRef,
+                  hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   if (context == nullptr || prepared == nullptr || request.route != 1 ||
       request.inputs.size() != 1 || request.outputs.size() != 1) {
-    return hyle::compute::detail::ProviderPrepareOutcome::error(
+    return hyle::compute::ProviderPrepareOutcome::error(
         hyle::Status::InvalidArgument(
             "delegated exact prepare request is invalid"));
   }
@@ -900,7 +901,7 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_delegated(
       .state = context,
       .runtime = kDelegatedRuntime,
   };
-  return hyle::compute::detail::ProviderPrepareOutcome::prepared();
+  return hyle::compute::ProviderPrepareOutcome::prepared();
 }
 
 hyle::Status drain_delegated_context(void *value) noexcept {
@@ -1437,6 +1438,36 @@ TEST(RuntimeProviders, DirectPreparationRetriesOnlyUnsupportedDeclines) {
   EXPECT_EQ(forbidden_fallback_probe.prepare_count, 0u);
 }
 
+TEST(RuntimeProviders, DirectErrorCodesDoNotBecomeSafeDeclines) {
+  const auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
+                                       std::array<std::int64_t, 1>{8})
+          .value();
+  for (const hyle::Status error :
+       {hyle::Status::Unimplemented("fatal exact preparation failure"),
+        hyle::Status::ResourceExhausted("real exact preparation OOM")}) {
+    AsyncOperationProbe first;
+    AsyncOperationProbe fallback;
+    first.prepare_disposition = PrepareDisposition::kError;
+    first.prepare_error = error;
+    first.return_partial_artifact = true;
+    const std::array providers{make_async_provider(first),
+                               make_async_provider(fallback)};
+    auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                  {.providers = providers})
+                       .value();
+    auto prepared = hyle::compute::prepare(
+        context, hyle::compute::Unary{hyle::compute::UnaryKind::kNeg},
+        description);
+    ASSERT_FALSE(prepared.has_value());
+    EXPECT_EQ(prepared.error(), error);
+    EXPECT_EQ(first.prepare_count, 1u);
+    EXPECT_EQ(first.prepared_destroy_count, 1u);
+    EXPECT_EQ(fallback.proposal_count, 0u);
+    EXPECT_EQ(fallback.prepare_count, 0u);
+  }
+}
+
 TEST(RuntimeProviders, ContextCreationRollsBackInReverseOrder) {
   ProviderProbe probe;
   probe.fail_index = 2;
@@ -1745,18 +1776,21 @@ TEST(RuntimeProviders,
 
   probe.return_invalid_artifact = true;
   auto invalid_artifact =
-      hyle::compute::detail::OperationPreparationAccess::prepare(
+      hyle::compute::detail::OperationPreparationAccess::prepare_candidate(
           context, *proposal, operation, input_descriptions,
           output_descriptions, input_requirements, output_requirements,
           resource_bindings);
   ASSERT_FALSE(invalid_artifact.has_value());
   EXPECT_TRUE(invalid_artifact.error().IsInternal());
   probe.return_invalid_artifact = false;
-  auto prepared = hyle::compute::detail::OperationPreparationAccess::prepare(
-                      context, *proposal, operation, input_descriptions,
-                      output_descriptions, input_requirements,
-                      output_requirements, resource_bindings)
-                      .value();
+  auto attempt =
+      hyle::compute::detail::OperationPreparationAccess::prepare_candidate(
+          context, *proposal, operation, input_descriptions,
+          output_descriptions, input_requirements, output_requirements,
+          resource_bindings)
+          .value();
+  ASSERT_TRUE(attempt.succeeded());
+  auto prepared = std::move(attempt.prepared);
   EXPECT_EQ(prepared.runtime_properties().mode,
             hyle::compute::ProviderRuntimeMode::kDelegated);
   EXPECT_EQ(prepared.runtime_properties().workspace_owner,

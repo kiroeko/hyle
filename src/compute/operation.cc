@@ -738,18 +738,9 @@ detail::OperationPreparationAccess::prepare_candidate(
                                                  state->allocator);
     }
   };
-  detail::ProviderPrepareOutcome outcome = table->prepare(
-      slot.state, request, state->allocator, &provider_prepared);
-  if (outcome.kind != detail::ProviderPrepareOutcomeKind::kPrepared) {
-    const bool valid_decline =
-        (outcome.kind ==
-             detail::ProviderPrepareOutcomeKind::kDeclinedUnsupported &&
-         outcome.status.IsUnimplemented()) ||
-        (outcome.kind ==
-             detail::ProviderPrepareOutcomeKind::kDeclinedResourceBudget &&
-         outcome.status.IsResourceExhausted()) ||
-        (outcome.kind == detail::ProviderPrepareOutcomeKind::kError &&
-         !outcome.status.ok());
+  ProviderPrepareOutcome outcome =
+      table->prepare(slot.state, request, state->allocator, &provider_prepared);
+  if (outcome.kind != ProviderPrepareOutcomeKind::kPrepared) {
     if (provider_prepared.state != nullptr &&
         (provider_prepared.vtable == nullptr ||
          provider_prepared.vtable->destroy_prepared == nullptr)) {
@@ -757,17 +748,17 @@ detail::OperationPreparationAccess::prepare_candidate(
           "compute provider returned an unowned partial artifact"));
     }
     destroy_invalid();
-    if (!valid_decline) {
+    if (!outcome.valid()) {
       return std::unexpected(Status::Internal(
           "compute provider returned an invalid prepare outcome"));
     }
-    if (outcome.kind == detail::ProviderPrepareOutcomeKind::kError)
+    if (outcome.kind == ProviderPrepareOutcomeKind::kError)
       return std::unexpected(std::move(outcome.status));
     return detail::ProviderPrepareAttempt{
-        .decline = outcome.kind ==
-                           detail::ProviderPrepareOutcomeKind::kDeclinedUnsupported
-                       ? detail::ProviderPrepareDecline::kUnsupported
-                       : detail::ProviderPrepareDecline::kResourceBudget,
+        .decline =
+            outcome.kind == ProviderPrepareOutcomeKind::kDeclinedUnsupported
+                ? detail::ProviderPrepareDecline::kUnsupported
+                : detail::ProviderPrepareDecline::kResourceBudget,
         .reason = std::move(outcome.status),
     };
   }
@@ -845,23 +836,6 @@ detail::OperationPreparationAccess::prepare_candidate(
   };
 }
 
-Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
-    const Context &context, const ProviderOperationProposal &proposal,
-    Operation operation, std::span<const TensorDesc> inputs,
-    std::span<const TensorDesc> outputs,
-    std::span<const ResourceBindingRequirement> input_requirements,
-    std::span<const ResourceBindingRequirement> output_requirements,
-    OperationResourceBindings resources) noexcept {
-  auto attempt = prepare_candidate(context, proposal, operation, inputs,
-                                   outputs, input_requirements,
-                                   output_requirements, resources);
-  if (!attempt)
-    return std::unexpected(std::move(attempt).error());
-  if (!attempt->succeeded())
-    return std::unexpected(std::move(attempt->reason));
-  return std::move(attempt->prepared);
-}
-
 Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
         std::span<const TensorDesc> inputs,
@@ -898,12 +872,16 @@ prepare(const Context &context, Operation operation,
     // caller an OperationInvocation that it cannot submit.
     if (proposal->runtime.mode != ProviderRuntimeMode::kSharedQueue)
       continue;
-    auto prepared = detail::OperationPreparationAccess::prepare(
+    auto attempt = detail::OperationPreparationAccess::prepare_candidate(
         context, *proposal, operation, inputs, outputs,
         input_requirements.span(), output_requirements.span(), resources);
-    if (!prepared && prepared.error().IsUnimplemented())
+    if (!attempt)
+      return std::unexpected(std::move(attempt).error());
+    if (attempt->succeeded())
+      return std::move(attempt->prepared);
+    if (attempt->decline == detail::ProviderPrepareDecline::kUnsupported)
       continue;
-    return prepared;
+    return std::unexpected(std::move(attempt->reason));
   }
   return std::unexpected(Status::Unimplemented(
       "no configured compute provider supports this operation"));

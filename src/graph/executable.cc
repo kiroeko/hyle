@@ -1436,7 +1436,14 @@ Status propose_region_resources(
   return Status::Ok();
 }
 
-Result<detail::PreparedRegion>
+struct RegionPrepareAttempt final {
+  detail::PreparedRegion prepared{};
+  compute::detail::ProviderPrepareDecline decline =
+      compute::detail::ProviderPrepareDecline::kNone;
+  Status reason = Status::Ok();
+};
+
+Result<RegionPrepareAttempt>
 compile_region_artifact(detail::PlanState &plan,
                         const RegionExtension &extension,
                         const RegionCompileRequest &request,
@@ -1447,6 +1454,7 @@ compile_region_artifact(detail::PlanState &plan,
     const RegionCompileRequest *request = nullptr;
     mem::AllocatorRef allocator{};
     ProviderRegionPrepared *prepared = nullptr;
+    compute::ProviderPrepareOutcome outcome{};
   } episode{&request, plan.allocator, &provider_prepared};
   const Status compiled = compute::detail::ProviderExtensionAccess::call(
       extension.extension,
@@ -1457,8 +1465,9 @@ compile_region_artifact(detail::PlanState &plan,
         auto &call = *static_cast<Episode *>(opaque);
         if (interface == nullptr || interface->compile == nullptr)
           return Status::Internal("graph region compile callback is missing");
-        return interface->compile(provider_context, *call.request,
-                                  call.allocator, call.prepared);
+        call.outcome = interface->compile(provider_context, *call.request,
+                                          call.allocator, call.prepared);
+        return Status::Ok();
       },
       &episode);
   if (!compiled.ok()) {
@@ -1470,6 +1479,30 @@ compile_region_artifact(detail::PlanState &plan,
     return std::unexpected(compiled);
   }
   const ProviderRegionPreparedVTable *table = provider_prepared.vtable;
+  auto &outcome = episode.outcome;
+  if (outcome.kind != compute::ProviderPrepareOutcomeKind::kPrepared ||
+      !outcome.valid()) {
+    if (provider_prepared.state != nullptr &&
+        (table == nullptr || table->destroy_prepared == nullptr)) {
+      return std::unexpected(Status::Internal(
+          "graph region provider returned an unowned partial artifact"));
+    }
+    if (table != nullptr && table->destroy_prepared != nullptr)
+      table->destroy_prepared(provider_prepared.state, plan.allocator);
+    if (!outcome.valid()) {
+      return std::unexpected(Status::Internal(
+          "graph region provider returned an invalid prepare outcome"));
+    }
+    if (outcome.kind == compute::ProviderPrepareOutcomeKind::kError)
+      return std::unexpected(std::move(outcome.status));
+    return RegionPrepareAttempt{
+        .decline =
+            outcome.kind ==
+                    compute::ProviderPrepareOutcomeKind::kDeclinedUnsupported
+                ? compute::detail::ProviderPrepareDecline::kUnsupported
+                : compute::detail::ProviderPrepareDecline::kResourceBudget,
+        .reason = std::move(outcome.status)};
+  }
   const compute::WorkspaceRequirement workspace =
       provider_prepared.properties.workspace;
   const compute::ProviderRuntimeProperties runtime =
@@ -1500,8 +1533,9 @@ compile_region_artifact(detail::PlanState &plan,
     return std::unexpected(Status::Internal(
         "graph region provider returned an invalid compiled artifact"));
   }
-  return detail::PreparedRegion(extension.extension, provider_prepared,
-                                plan.allocator);
+  return RegionPrepareAttempt{
+      .prepared = detail::PreparedRegion(extension.extension, provider_prepared,
+                                         plan.allocator)};
 }
 
 Status discover_region_candidates(
@@ -1784,7 +1818,7 @@ Status prepare_placed_steps(detail::PlanState &plan,
 
   auto prepare_operation = [&](std::size_t node_index,
                                std::uint32_t candidate) noexcept
-      -> Result<compute::PreparedOperation> {
+      -> Result<compute::detail::ProviderPrepareAttempt> {
     const detail::NodeRecord &node = graph.nodes[node_index];
     const compute::Context &context = *environment.targets[candidate].context;
     const std::uint32_t default_storage =
@@ -1798,8 +1832,10 @@ Status prepare_placed_steps(detail::PlanState &plan,
 
     Status unsupported = Status::Unimplemented(
         "no configured provider accepts the graph operation resources");
+    auto decline = compute::detail::ProviderPrepareDecline::kUnsupported;
     for (std::size_t provider = 0; provider < context.provider_count();
          ++provider) {
+      decline = compute::detail::ProviderPrepareDecline::kUnsupported;
       auto proposal = compute::detail::OperationPreparationAccess::propose(
           context, provider, node.operation, inputs, outputs,
           input_requirements, output_requirements);
@@ -1907,19 +1943,22 @@ Status prepare_placed_steps(detail::PlanState &plan,
             "graph placement preparation budget is exhausted"));
       }
       ++placement_attempts;
-      auto result = compute::detail::OperationPreparationAccess::prepare(
-          context, *proposal, node.operation, inputs, outputs,
-          input_requirements, output_requirements,
-          compute::OperationResourceBindings{
-              .inputs = input_resources,
-              .outputs = output_resources,
-              .workspace_resource = workspace_resource,
-          });
+      auto result =
+          compute::detail::OperationPreparationAccess::prepare_candidate(
+              context, *proposal, node.operation, inputs, outputs,
+              input_requirements, output_requirements,
+              compute::OperationResourceBindings{
+                  .inputs = input_resources,
+                  .outputs = output_resources,
+                  .workspace_resource = workspace_resource,
+              });
       if (!result) {
-        unsupported = std::move(result).error();
-        if (unsupported.IsUnimplemented())
-          continue;
-        return std::unexpected(std::move(unsupported));
+        return std::unexpected(std::move(result).error());
+      }
+      if (!result->succeeded()) {
+        decline = result->decline;
+        unsupported = std::move(result->reason);
+        continue;
       }
 
       for (std::size_t input_index = 0; input_index < node.input_count;
@@ -1935,7 +1974,8 @@ Status prepare_placed_steps(detail::PlanState &plan,
       node_workspace_storage[node_index] = workspace_storage;
       return result;
     }
-    return std::unexpected(std::move(unsupported));
+    return compute::detail::ProviderPrepareAttempt{
+        .decline = decline, .reason = std::move(unsupported)};
   };
 
   for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
@@ -2013,16 +2053,17 @@ Status prepare_placed_steps(detail::PlanState &plan,
         break;
       }
       auto result = prepare_operation(node_index, candidate);
-      if (result) {
-        prepared[node_index] = std::move(*result);
+      if (!result) {
+        return std::move(result).error().WithContext(
+            "preparing graph operation placement candidate");
+      }
+      if (result->succeeded()) {
+        prepared[node_index] = std::move(result->prepared);
         node_targets[node_index] = candidate;
         selected = true;
         break;
       }
-      unsupported = std::move(result).error();
-      if (!unsupported.IsUnimplemented())
-        return std::move(unsupported)
-            .WithContext("preparing graph operation placement candidate");
+      unsupported = std::move(result->reason);
     }
     if (!selected)
       return unsupported;
@@ -2127,18 +2168,17 @@ Status prepare_placed_steps(detail::PlanState &plan,
       if (required != kNone && candidate != required)
         continue;
       auto fallback = prepare_operation(node_index, candidate);
-      if (fallback) {
-        prepared[node_index] = std::move(*fallback);
+      if (!fallback) {
+        return std::move(fallback).error().WithContext(
+            "preparing operation left outside selected graph regions");
+      }
+      if (fallback->succeeded()) {
+        prepared[node_index] = std::move(fallback->prepared);
         node_targets[node_index] = candidate;
         fallback_selected = true;
         break;
       }
-      unsupported = std::move(fallback).error();
-      if (!unsupported.IsUnimplemented()) {
-        return std::move(unsupported)
-            .WithContext(
-                "preparing operation left outside selected graph regions");
-      }
+      unsupported = std::move(fallback->reason);
     }
     if (!fallback_selected)
       return unsupported;
@@ -2525,13 +2565,15 @@ Status prepare_placed_steps(detail::PlanState &plan,
               "graph placement preparation budget is exhausted");
         }
         ++placement_attempts;
-        region =
+        auto attempt =
             compile_region_artifact(plan, extensions[candidate.extension_index],
                                     request, resource_proposal, options);
-        if (!region) {
-          region_status = region.error();
-          if (!region_status.IsUnimplemented())
-            return region_status;
+        if (!attempt)
+          return std::move(attempt).error();
+        if (attempt->prepared.valid()) {
+          region = std::move(attempt->prepared);
+        } else {
+          region_status = std::move(attempt->reason);
           route_supported = false;
         }
       }
@@ -2655,14 +2697,14 @@ Status prepare_placed_steps(detail::PlanState &plan,
           if (required != kNone && candidate != required)
             continue;
           auto fallback = prepare_operation(node_index, candidate);
-          if (fallback) {
-            prepared[node_index] = std::move(*fallback);
+          if (!fallback)
+            return std::move(fallback).error();
+          if (fallback->succeeded()) {
+            prepared[node_index] = std::move(fallback->prepared);
             node_targets[node_index] = candidate;
             break;
           }
-          unsupported = std::move(fallback).error();
-          if (!unsupported.IsUnimplemented())
-            return unsupported;
+          unsupported = std::move(fallback->reason);
         }
         if (!prepared[node_index].valid())
           return unsupported;

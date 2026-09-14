@@ -711,9 +711,10 @@ Status propose_region_resources(
   return Status::Ok();
 }
 
-Status compile_region(void *context_value, const RegionCompileRequest &request,
-                      mem::AllocatorRef allocator,
-                      ProviderRegionPrepared *prepared_output) noexcept {
+Status
+compile_region_checked(void *context_value, const RegionCompileRequest &request,
+                       mem::AllocatorRef allocator,
+                       ProviderRegionPrepared *prepared_output) noexcept {
   if (prepared_output == nullptr)
     return Status::InvalidArgument("oneDNN region prepared output is null");
   *prepared_output = {};
@@ -841,6 +842,16 @@ Status compile_region(void *context_value, const RegionCompileRequest &request,
   return Status::Ok();
 }
 
+compute::ProviderPrepareOutcome
+compile_region(void *context, const RegionCompileRequest &request,
+               mem::AllocatorRef allocator,
+               ProviderRegionPrepared *prepared) noexcept {
+  Status status = compile_region_checked(context, request, allocator, prepared);
+  return status.ok()
+             ? compute::ProviderPrepareOutcome::prepared()
+             : compute::ProviderPrepareOutcome::error(std::move(status));
+}
+
 const RegionProviderVTable kRegionVTable{
     .propose = &propose_regions,
     .propose_resources = &propose_region_resources,
@@ -888,12 +899,12 @@ Status propose_single(
       "oneDNN graph region provider has no single-operation route");
 }
 
-compute::detail::ProviderPrepareOutcome prepare_single(
-    void *, const compute::detail::ProviderPrepareRequest &,
-    mem::AllocatorRef, compute::detail::ProviderPrepared *) noexcept {
-  return compute::detail::ProviderPrepareOutcome::unsupported(
-      Status::Unimplemented(
-          "oneDNN graph region provider has no single-operation route"));
+compute::ProviderPrepareOutcome
+prepare_single(void *, const compute::detail::ProviderPrepareRequest &,
+               mem::AllocatorRef,
+               compute::detail::ProviderPrepared *) noexcept {
+  return compute::ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+      "oneDNN graph region provider has no single-operation route"));
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }

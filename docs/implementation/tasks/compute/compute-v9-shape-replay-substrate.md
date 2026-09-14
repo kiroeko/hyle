@@ -243,3 +243,18 @@ gated MLP 的报告与 Context 实例一致；同步修正指南中把 metadata 
 
 状态继续 `AUDITED`。C93 的完整 qualified profile、G103 同池完整成本、bounded variants 与其余
 foundation 范围仍未完成；实例身份只是它们的一个必要坐标。
+
+C94/G104 结果迁移补齐：Graph 的旧兼容入口会把已分类的 prepare outcome 压回裸 Status，无法保持
+fatal 与 safe decline。MOVE 已有 `ProviderPrepareOutcome/Kind` 到公开 prepared-operation 合同，增加
+公共 `valid()` 供 Compute/Graph 复用；保留现有工厂、分类与 direct API，无旧 detail 别名。Provider 私有
+表随合同迁移升版；Native/oneDNN 只迁移类型名。具体有限 FIX 与反例在 Graph v10 的事务化结果审计，
+不把这一步当作 C93 的完整 profile 已完成。
+
+同一调用链复核确认 direct `prepare()` 也经这个压平入口，因而可能跳过 kind=Error 的 Unimplemented。
+C94 同步改为读取结构化 attempt，但保留 direct 的窄政策：只跳过明确 unsupported，candidate-local
+resource budget 仍直接报告，不自动启动 Graph 式资源重选。删除无其它产品消费者的私有压平包装；其
+两处内部测试改用 attempt。增加 direct 的相同错误码不重试反例，公开函数签名和正常 Provider 顺序不变。
+
+C94 的共同结果迁移已通过 Windows shared/static 各 9/9 与 oneDNN 定向 8/8；完整反例、P0 和未验证边界
+见 [Graph 事务化结果检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-14-g103g104事务化结果检查点)。
+这不关闭 C93 完整 profile 或其它 foundation 待办，组件仍 `AUDITED`。

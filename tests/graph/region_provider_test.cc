@@ -33,6 +33,8 @@ using hyle::compute::Context;
 using hyle::compute::DataType;
 using hyle::compute::Operation;
 using hyle::compute::Provider;
+using hyle::compute::ProviderPrepareOutcome;
+using hyle::compute::ProviderPrepareOutcomeKind;
 using hyle::compute::ProviderReplayClass;
 using hyle::compute::Queue;
 using hyle::compute::TensorDesc;
@@ -137,6 +139,9 @@ struct RegionProbe final {
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
   Status discovery_failure{};
+  std::optional<ProviderPrepareOutcome> region_outcome_override{};
+  std::optional<ProviderPrepareOutcome> single_outcome_override{};
+  std::size_t destroy_count_at_single_proposal = 0;
 };
 
 struct ExternalEffect final {
@@ -654,9 +659,10 @@ Status propose_region_resources(
   return Status::Ok();
 }
 
-Status compile_region(void *context, const RegionCompileRequest &request,
-                      AllocatorRef allocator,
-                      ProviderRegionPrepared *output) noexcept {
+Status compile_region_checked(void *context,
+                              const RegionCompileRequest &request,
+                              AllocatorRef allocator,
+                              ProviderRegionPrepared *output) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   const std::size_t expected_boundary_count =
       probe.mode == ProposalMode::kNonContiguousReordered ||
@@ -670,8 +676,6 @@ Status compile_region(void *context, const RegionCompileRequest &request,
       request.output_resources.size() != request.outputs.size()) {
     return Status::InvalidArgument("region compile request is invalid");
   }
-  if (probe.decline_regions)
-    return Status::Unimplemented("injected pre-acceptance region decline");
   if ((probe.region_input_resource.valid() &&
        request.input_resources[0] != probe.region_input_resource) ||
       (probe.region_output_resource.valid() &&
@@ -711,6 +715,21 @@ Status compile_region(void *context, const RegionCompileRequest &request,
   if (probe.mode == ProposalMode::kCompileFailure)
     return Status::Internal("injected region compile failure");
   return Status::Ok();
+}
+
+ProviderPrepareOutcome compile_region(void *context,
+                                      const RegionCompileRequest &request,
+                                      AllocatorRef allocator,
+                                      ProviderRegionPrepared *output) noexcept {
+  auto &probe = *static_cast<RegionProbe *>(context);
+  if (probe.decline_regions)
+    return ProviderPrepareOutcome::unsupported(
+        Status::Unimplemented("injected pre-acceptance region decline"));
+  Status status = compile_region_checked(context, request, allocator, output);
+  if (!status.ok())
+    return ProviderPrepareOutcome::error(std::move(status));
+  return probe.region_outcome_override.value_or(
+      ProviderPrepareOutcome::prepared());
 }
 
 const hyle::graph::RegionProviderVTable kRegionVTable{
@@ -834,6 +853,7 @@ Status propose_single(
   const auto outputs = request.outputs;
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_prepare_count;
+  probe.destroy_count_at_single_proposal = probe.destroy_prepared_count;
   const bool effect = operation.custom_as<ExternalEffect>().has_value();
   const bool constrained_unary =
       operation.kind() == hyle::compute::OperationKind::kUnary &&
@@ -864,11 +884,11 @@ Status propose_single(
   return Status::Ok();
 }
 
-hyle::compute::detail::ProviderPrepareOutcome prepare_single(
-    void *context,
-    const hyle::compute::detail::ProviderPrepareRequest &request,
-    AllocatorRef allocator,
-    hyle::compute::detail::ProviderPrepared *prepared) noexcept {
+hyle::compute::ProviderPrepareOutcome
+prepare_single(void *context,
+               const hyle::compute::detail::ProviderPrepareRequest &request,
+               AllocatorRef allocator,
+               hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_artifact_count;
   const bool effect = request.operation.custom_as<ExternalEffect>().has_value();
@@ -885,13 +905,13 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_single(
         request.input_resources[0] != probe.required_resource ||
         request.output_resources[0] != probe.required_resource)) ||
       (!effect && !constrained_unary)) {
-    return hyle::compute::detail::ProviderPrepareOutcome::error(
+    return hyle::compute::ProviderPrepareOutcome::error(
         Status::InvalidArgument("effect exact preparation mismatch"));
   }
   if (constrained_unary) {
     void *storage = allocator.allocate(sizeof(RegionPlan), alignof(RegionPlan));
     if (storage == nullptr)
-      return hyle::compute::detail::ProviderPrepareOutcome::resource_declined(
+      return hyle::compute::ProviderPrepareOutcome::resource_declined(
           Status::ResourceExhausted("unary plan allocation failed"));
     auto *plan = ::new (storage) RegionPlan{&probe, 1};
     *prepared = hyle::compute::detail::ProviderPrepared{
@@ -901,14 +921,16 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_single(
         .workspace = {},
         .runtime = single_runtime(probe, false),
     };
-    return hyle::compute::detail::ProviderPrepareOutcome::prepared();
+    return probe.single_outcome_override.value_or(
+        ProviderPrepareOutcome::prepared());
   }
   *prepared = hyle::compute::detail::ProviderPrepared{
       .vtable = &kEffectPreparedVTable,
       .state = &probe,
       .runtime = single_runtime(probe, true),
   };
-  return hyle::compute::detail::ProviderPrepareOutcome::prepared();
+  return probe.single_outcome_override.value_or(
+      ProviderPrepareOutcome::prepared());
 }
 
 Status drain_provider_context(void *) noexcept { return Status::Ok(); }
@@ -2833,6 +2855,168 @@ TEST(GraphRegions, RegionExtensionVersionDoesNotAliasTheV1Table) {
   EXPECT_EQ(query_extension(nullptr, version_two), nullptr);
   EXPECT_EQ(query_extension(nullptr, hyle::graph::kRegionProviderExtensionId),
             &kRegionVTable);
+}
+
+TEST(GraphRegions,
+     ExplicitRegionDeclinesReleasePartialArtifactsBeforeFallback) {
+  const auto logical = make_negations(2);
+  const std::array declines{
+      ProviderPrepareOutcome::unsupported(
+          Status::Unimplemented("safe decline")),
+      ProviderPrepareOutcome::resource_declined(
+          Status::ResourceExhausted("candidate-local budget"))};
+  for (const auto &decline : declines) {
+    RegionProbe probe;
+    probe.region_outcome_override = decline;
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(probe.compile_count, 1u);
+    EXPECT_EQ(probe.destroy_prepared_count, 1u);
+    EXPECT_EQ(probe.destroy_count_at_single_proposal, 1u);
+    EXPECT_EQ(compiled->report.region_count(), 0u);
+    EXPECT_EQ(compiled->report.fallback_operation_count(), 2u);
+    OwnedTensor input = make_tensor(row(8));
+    OwnedTensor output = make_tensor(row(8));
+    const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+    write(input, values);
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+    EXPECT_EQ(read(output, values.size()),
+              std::vector<float>(values.begin(), values.end()));
+
+    auto forbidden = hyle::graph::compile(
+        logical.graph, context,
+        {.operation_fallback = OperationFallbackPolicy::kReject});
+    ASSERT_FALSE(forbidden.has_value());
+    EXPECT_EQ(forbidden.error(), decline.status);
+    EXPECT_EQ(probe.destroy_prepared_count, 2u);
+  }
+}
+
+TEST(GraphRegions, RegionErrorCodesDoNotGrantPermissionToRetry) {
+  const auto logical = make_negations(2);
+  for (const Status error :
+       {Status::Unimplemented("fatal region compile failure"),
+        Status::ResourceExhausted("real region allocation failure")}) {
+    RegionProbe probe;
+    probe.region_outcome_override = ProviderPrepareOutcome::error(error);
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_EQ(compiled.error(), error);
+    EXPECT_EQ(probe.compile_count, 1u);
+    EXPECT_EQ(probe.destroy_prepared_count, 1u);
+    EXPECT_EQ(probe.single_prepare_count, 0u);
+  }
+}
+
+TEST(GraphRegions, InvalidRegionOutcomeIsFatalAndReclaimsItsArtifact) {
+  const auto logical = make_negations(2);
+  const std::array invalid{
+      ProviderPrepareOutcome{static_cast<ProviderPrepareOutcomeKind>(255),
+                             Status::Unimplemented("invalid kind")},
+      ProviderPrepareOutcome{ProviderPrepareOutcomeKind::kPrepared,
+                             Status::Unimplemented("prepared with error")},
+      ProviderPrepareOutcome::unsupported(
+          Status::ResourceExhausted("wrong code")),
+      ProviderPrepareOutcome::error(Status::Ok())};
+  for (const auto &outcome : invalid) {
+    EXPECT_FALSE(outcome.valid());
+    RegionProbe probe;
+    probe.region_outcome_override = outcome;
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_TRUE(compiled.error().IsInternal());
+    EXPECT_EQ(probe.destroy_prepared_count, 1u);
+    EXPECT_EQ(probe.single_prepare_count, 0u);
+  }
+}
+
+TEST(GraphRegions, ExplicitLeafDeclinesCanSelectAnotherTarget) {
+  const auto logical = make_negations(1);
+  const std::array declines{
+      ProviderPrepareOutcome::unsupported(
+          Status::Unimplemented("safe leaf decline")),
+      ProviderPrepareOutcome::resource_declined(
+          Status::ResourceExhausted("leaf candidate-local budget"))};
+  for (const auto &decline : declines) {
+    RegionProbe probe;
+    probe.required_resource = hyle::mem::system_resource();
+    probe.single_outcome_override = decline;
+    const std::array providers{region_provider(probe)};
+    auto first =
+        Context::create(hyle::compute::cpu::device(), {.providers = providers})
+            .value();
+    auto second = Context::create(hyle::compute::cpu::device(),
+                                  hyle::compute::native::provider())
+                      .value();
+    const Environment environment{{&first, probe.required_resource},
+                                  {&second, probe.required_resource}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.region_selection = RegionSelectionPolicy::kDisabled});
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(probe.single_artifact_count, 1u);
+    EXPECT_EQ(probe.destroy_prepared_count, 1u);
+    EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
+    EXPECT_EQ(compiled->report.search().placement_attempts, 2u);
+  }
+}
+
+TEST(GraphRegions, LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets) {
+  const auto logical = make_negations(1);
+  for (const Status error :
+       {Status::Unimplemented("fatal leaf compile failure"),
+        Status::ResourceExhausted("real leaf allocation failure")}) {
+    RegionProbe probe;
+    probe.required_resource = hyle::mem::system_resource();
+    probe.single_outcome_override = ProviderPrepareOutcome::error(error);
+    auto first = make_context(probe);
+    auto second = Context::create(hyle::compute::cpu::device(),
+                                  hyle::compute::native::provider())
+                      .value();
+    const Environment environment{{&first, probe.required_resource},
+                                  {&second, probe.required_resource}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.region_selection = RegionSelectionPolicy::kDisabled});
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_EQ(compiled.error().code(), error.code());
+    EXPECT_NE(compiled.error().message().find(error.message()),
+              std::string_view::npos);
+    EXPECT_EQ(probe.single_artifact_count, 1u);
+    EXPECT_EQ(probe.destroy_prepared_count, 1u);
+  }
+}
+
+TEST(GraphRegions, LeafErrorsRemainFatalDuringBothRegionFallbackStages) {
+  for (const ProposalMode mode :
+       {ProposalMode::kOverlappingRoutes, ProposalMode::kPairs}) {
+    const auto logical = make_negations(mode == ProposalMode::kPairs ? 2 : 3);
+    RegionProbe probe{.mode = mode};
+    probe.required_resource = hyle::mem::system_resource();
+    probe.single_outcome_override = ProviderPrepareOutcome::error(
+        Status::Unimplemented("fatal leaf fallback failure"));
+    if (mode == ProposalMode::kPairs) {
+      probe.region_outcome_override = ProviderPrepareOutcome::unsupported(
+          Status::Unimplemented("safe region decline"));
+    }
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_FALSE(compiled.has_value());
+    EXPECT_TRUE(compiled.error().IsUnimplemented());
+    EXPECT_NE(compiled.error().message().find("fatal leaf fallback failure"),
+              std::string_view::npos);
+    EXPECT_EQ(probe.single_artifact_count, 1u);
+    const std::size_t regions_prepared = mode == ProposalMode::kPairs ? 1u : 0u;
+    EXPECT_EQ(probe.compile_count, regions_prepared);
+    EXPECT_EQ(probe.destroy_prepared_count, regions_prepared + 1);
+  }
 }
 
 TEST(GraphRegions, RollsBackPartiallyCreatedProviderState) {

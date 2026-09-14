@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 9};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 10};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -204,9 +204,13 @@ struct RegionProviderVTable final {
       std::span<compute::detail::ResourceBindingRequirement>
           output_requirements,
       RegionResourceProposal *proposal) noexcept = nullptr;
-  Status (*compile)(void *provider_context, const RegionCompileRequest &request,
-                    mem::AllocatorRef allocator,
-                    ProviderRegionPrepared *prepared) noexcept = nullptr;
+  // Declines explicitly promise transactional rejection before accepted work.
+  // Any partial artifact must supply destroy_prepared, even on failure. Error
+  // statuses are fatal regardless of their code; Graph never guesses rollback.
+  compute::ProviderPrepareOutcome (*compile)(
+      void *provider_context, const RegionCompileRequest &request,
+      mem::AllocatorRef allocator,
+      ProviderRegionPrepared *prepared) noexcept = nullptr;
 };
 
 } // namespace hyle::graph

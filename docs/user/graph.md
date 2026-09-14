@@ -239,8 +239,12 @@ auto compiled = compile(graph,
 
 `NodePlacement` 选择 target，`ValuePlacement` 与 `ExternalResourceContract` 选择 storage；前两者可以表达
 required 或 preferred。required route 不可执行时 compile
-失败；preferred route 不可执行时按稳定候选顺序继续。只有 `Unimplemented` 表示候选不支持，OOM、损坏
-状态或其它错误不会被吞掉后静默 fallback。`max_placement_attempts` 限制实际冷准备次数；当前实现若
+失败；preferred route 不可执行时按稳定候选顺序继续。冷 proposal 的 Unimplemented 表示没有对应能力；
+真正 prepare/region compile 使用共同 `compute::ProviderPrepareOutcome`，只有明确的 unsupported 或
+candidate-local resource-budget decline 可在回收部分 artifact 后回退。kind=Error 即使 code 是
+Unimplemented/ResourceExhausted 也立即失败，不能从错误码推断 rollback。非法 kind/status 同样失败。
+当前拒绝的 region 可使用已安装 leaf 路线；一般的替代 region/全成本重选仍未实现，不能据此推断已经
+获得完整 selector。`max_placement_attempts` 限制实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 
 `max_region_proposals`、`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 限制候选发现，

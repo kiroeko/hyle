@@ -43,7 +43,7 @@ direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape prog
 | CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |
 | byte transfer | `transfer_properties/copy_async/fill_async` | 对 Mem `BufferView` 做显式 byte copy/fill；不隐藏 tensor repack、pageable staging 或 host wait |
 | 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
-| provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，不存在隐式 fallback |
+| provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；冷能力查询不支持或 prepare 明确安全拒绝为 unsupported 才尝试下一项，真正错误不按 code 猜成回退 |
 | 精确资源 prepare | `OperationResourceBindings` / TensorView overload | provider 先报告要求，再对 input/output/workspace 的 exact `MemoryResourceRef` 冷验证；submit 不重新选资源或隐藏 copy |
 | provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、replay 成本类别、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
@@ -312,6 +312,13 @@ Provider 的冷提案用 `ProviderRouteCostFacts` 声明结构成本，Graph reg
 大小/对齐、persistent/copy/repack bytes 与 synchronization/dispatch count 都区分 unknown 和 exact zero。
 它不是时间估值或性能资格证：`valid()` 只检查对齐和非零 dispatch 等结构合法性，不证明某路线快于另一条。
 普通 direct 用户仍使用 `prepare()`，不需要自己构造成本提案。
+
+Provider 实现者使用共同的 `ProviderPrepareOutcome` 声明 prepared、unsupported decline、candidate-local
+resource-budget decline 或 error；`valid()` 只检查 kind/status 合法性，安全拒绝还必须保证未接受用户工作、
+没有外部副作用，且返回的部分 artifact 可由共同 owner 销毁。真正 error 即使带 Unimplemented 或
+ResourceExhausted code 也不会被跳过。普通 direct 调用仍返回 `Result<PreparedOperation>`，只自动跳过
+明确 unsupported；资源预算拒绝直接报告，不自行做 Graph 式资源重选。Graph 可以在有限预算内对两种
+安全拒绝作回退。`submit()` 之后的失败属于 Completion，不能用这个冷编译结果重试已接受的工作。
 
 需要区分同一家 Provider 的多个配置实例时，使用
 `Context::provider_instance_id(index)`；`PreparedOperation` 和 `OperationInvocation` 的同名 accessor

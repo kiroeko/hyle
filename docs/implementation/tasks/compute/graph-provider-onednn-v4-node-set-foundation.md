@@ -74,3 +74,7 @@ G100/GP41 冷筛选迁移已通过 Windows oneDNN-enabled shared 定向 4/4：�
 G104 的 writer 迁移已通过 oneDNN-enabled Windows shared 定向回归。新增真实 gated MLP：node 容量
 小于整个 region 时不部分接收、不隐藏 OOM，Graph 用已安装 leaf providers 执行完整数值旅程，报告 node
 发现受限。既有 exact/non-order/decline 等 region 测试继续通过；kernel/pattern/submit 未变化，无新 P1。
+
+GP42 的事务化结果接入：region compile 改为公共 Compute prepare outcome，显式声明 prepared 或真正
+error；现有 oneDNN compile 路径不把原始分配错误转换成安全 decline。只迁移冷回调合同和检查，不增加
+pattern/算子、重新计时或修改 BRGEMM 内核；Graph 的原样错误传播与 rollback 验证覆盖这个 carrier。
