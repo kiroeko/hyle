@@ -458,6 +458,25 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
             hyle::compute::ProviderReplayClass::kPrepared);
   EXPECT_GT(step->workspace.size, 2 * kRows * kHidden * sizeof(float));
   EXPECT_EQ(step->workspace.alignment, 64U);
+  EXPECT_EQ(compiled.report.compiled_storage().unknown_provider_count, 1U);
+  EXPECT_FALSE(compiled.report.compiled_storage().total_bytes());
+  CompileOptions storage_options{
+      .constants = constants,
+      .compiled_storage = {.max_bytes = 0},
+      .operation_fallback = hyle::graph::OperationFallbackPolicy::kReject};
+  auto strict_storage =
+      hyle::graph::compile(logical.graph, context, storage_options);
+  ASSERT_FALSE(strict_storage);
+  EXPECT_TRUE(strict_storage.error().IsFailedPrecondition())
+      << strict_storage.error().message();
+  storage_options.compiled_storage.unknown =
+      hyle::graph::UnknownStoragePolicy::kAllow;
+  auto partial_storage =
+      hyle::graph::compile(logical.graph, context, storage_options);
+  ASSERT_TRUE(partial_storage) << partial_storage.error().message();
+  EXPECT_EQ(partial_storage->report.region_count(), 1U);
+  EXPECT_EQ(partial_storage->report.compiled_storage().known_bytes(), 0U);
+  EXPECT_FALSE(partial_storage->report.compiled_storage().total_bytes());
 
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(logical.activation, activation.view).ok());

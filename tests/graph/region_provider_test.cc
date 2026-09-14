@@ -3960,7 +3960,9 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
   EXPECT_EQ(fallback->kind, CompileStepKind::kOperationFallback);
   EXPECT_EQ(fallback->fallback_reason,
             CompileFallbackReason::kNoEligibleRegion);
-  EXPECT_FALSE(fallback->persistent_bytes.has_value());
+  ASSERT_TRUE(fallback->persistent_bytes.has_value());
+  EXPECT_GT(*fallback->persistent_bytes,
+            0U); // Native's actual prepared artifact
 
   auto invocation = compiled.executable.create_invocation().value();
   OwnedTensor input = make_tensor(row(8));
@@ -5197,6 +5199,203 @@ TEST(GraphRegions, CostFactsPreserveUnknownAndExactZero) {
   ASSERT_TRUE(zero_step.has_value()) << zero_step.error().message();
   ASSERT_TRUE(zero_step->persistent_bytes.has_value());
   EXPECT_EQ(*zero_step->persistent_bytes, 0u);
+}
+
+TEST(GraphStorage, UnknownProviderStorageRequiresExplicitFiniteBudgetOptIn) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  auto context = make_context(probe);
+  CompileOptions options{.compiled_storage = {.max_bytes = 0},
+                         .operation_fallback =
+                             OperationFallbackPolicy::kReject};
+  auto rejected = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsFailedPrecondition())
+      << rejected.error().message();
+  EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+  options.compiled_storage.unknown = hyle::graph::UnknownStoragePolicy::kAllow;
+  auto partial = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_TRUE(partial) << partial.error().message();
+  const auto report = partial->report.compiled_storage();
+  EXPECT_EQ(report.known_bytes(), 0U);
+  EXPECT_EQ(report.unknown_provider_count, 1U);
+  EXPECT_FALSE(report.total_bytes());
+  EXPECT_FALSE(partial->report.total_compiled_storage().total_bytes());
+  // A default unlimited compile is not a finite-budget promise.
+  auto unlimited = hyle::graph::compile(logical.graph, context).value();
+  EXPECT_FALSE(unlimited.report.compiled_storage().total_bytes());
+}
+
+TEST(GraphStorage, StorageLimitCanReselectACompleteRegionBeforePublishing) {
+  const auto logical = make_negations(2);
+  for (bool unknown : {false, true}) {
+    RegionProbe first, second;
+    first.artifact_properties.persistent_bytes =
+        unknown ? std::nullopt : std::optional<std::size_t>{129};
+    second.artifact_properties.persistent_bytes = 128;
+    second.observe_cleanup = &first;
+    auto context = make_context(first, second);
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.compiled_storage = {.max_bytes = 128},
+         .operation_fallback = OperationFallbackPolicy::kReject});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(first.compile_count, 1U);
+    EXPECT_EQ(first.destroy_prepared_count, 1U);
+    EXPECT_EQ(second.observed_cleanup_at_compile, 1U);
+    EXPECT_EQ(first.propose_count, 1U);
+    EXPECT_EQ(second.propose_count, 1U);
+    EXPECT_EQ(compiled->report.compiled_storage().total_bytes(), 128U);
+    EXPECT_EQ(compiled->report.search().route_plan_rejections, 1U);
+    EXPECT_EQ(compiled->report.step(0)->provider_instance,
+              context.provider_instance_id(1).value());
+  }
+}
+
+TEST(GraphStorage, StorageRejectionCanUseLeafFallbackButCannotWaiveTheLimit) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  probe.artifact_properties.persistent_bytes = SIZE_MAX;
+  auto context = make_context(probe);
+  auto baseline = hyle::graph::compile(
+                      logical.graph, context,
+                      {.region_selection = RegionSelectionPolicy::kDisabled})
+                      .value();
+  const auto required = baseline.report.compiled_storage().total_bytes();
+  ASSERT_TRUE(required);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context, {.compiled_storage = {.max_bytes = *required}});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0U);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 2U);
+  EXPECT_EQ(compiled->report.compiled_storage().total_bytes(), required);
+  EXPECT_EQ(probe.destroy_prepared_count, probe.compile_count);
+  auto failed = hyle::graph::compile(
+      logical.graph, context,
+      {.compiled_storage = {.max_bytes = 0},
+       .search_policy = CompileSearchPolicy::kAllowLimited});
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted()) << failed.error().message();
+}
+
+TEST(GraphStorage, CompiledStorageOverflowRollsBackInsteadOfSaturating) {
+  const auto logical = make_negations(4);
+  RegionProbe probe;
+  probe.artifact_properties.persistent_bytes = SIZE_MAX;
+  auto context = make_context(probe);
+  auto failed = hyle::graph::compile(
+      logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted()) << failed.error().message();
+  EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+  EXPECT_GT(probe.compile_count, 0U);
+  probe.artifact_properties.persistent_bytes = 0;
+  auto zero = hyle::graph::compile(
+      logical.graph, context,
+      {.compiled_storage = {.max_bytes = 0},
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(zero) << zero.error().message();
+  EXPECT_EQ(zero->report.compiled_storage().total_bytes(), 0U);
+}
+
+TEST(GraphStorage,
+     PackedConstantsAreAdditionalToCanonicalAndPersistentStorage) {
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(8)).value();
+  const auto middle = builder.add(Unary{UnaryKind::kNeg}, constant).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, middle).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto tensor = make_tensor(row(8));
+  const std::array bindings{
+      hyle::graph::ConstantBinding{constant, tensor.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  RegionProbe probe;
+  probe.artifact_properties.persistent_bytes = 128;
+  probe.artifact_properties.packed_constant_count = 1;
+  probe.artifact_properties.packed_constant_bytes = 64;
+  auto context = make_context(probe);
+  CompileOptions options{.constants = bindings,
+                         .compiled_storage = {.max_bytes = 224},
+                         .operation_fallback =
+                             OperationFallbackPolicy::kReject};
+  auto compiled = hyle::graph::compile(graph, context, options);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  const auto report = compiled->report.compiled_storage();
+  EXPECT_EQ(report.materialized_constant_bytes, 32U);
+  EXPECT_EQ(report.provider_persistent_bytes, 128U);
+  EXPECT_EQ(report.packed_constant_bytes, 64U);
+  EXPECT_EQ(report.total_bytes(), 224U);
+  --options.compiled_storage.max_bytes;
+  auto over = hyle::graph::compile(graph, context, options);
+  ASSERT_FALSE(over);
+  EXPECT_TRUE(over.error().IsResourceExhausted()) << over.error().message();
+  probe.artifact_properties.persistent_bytes.reset();
+  options.compiled_storage.max_bytes = 96;
+  options.compiled_storage.unknown = hyle::graph::UnknownStoragePolicy::kAllow;
+  auto partial = hyle::graph::compile(graph, context, options);
+  ASSERT_TRUE(partial) << partial.error().message();
+  EXPECT_EQ(partial->report.compiled_storage().known_bytes(), 96U);
+  EXPECT_FALSE(partial->report.compiled_storage().total_bytes());
+  --options.compiled_storage.max_bytes;
+  EXPECT_FALSE(hyle::graph::compile(graph, context, options));
+}
+
+TEST(GraphStorage, UnknownStoragePolicyIsValidatedBeforeProviderDiscovery) {
+  RegionProbe probe;
+  auto context = make_context(probe);
+  auto logical = make_negations(2);
+  auto result = hyle::graph::compile(
+      logical.graph, context,
+      {.compiled_storage = {
+           .unknown = static_cast<hyle::graph::UnknownStoragePolicy>(99)}});
+  ASSERT_FALSE(result);
+  EXPECT_TRUE(result.error().IsInvalidArgument());
+  EXPECT_EQ(probe.propose_count, 0U);
+  EXPECT_EQ(probe.compile_count, 0U);
+}
+
+TEST(GraphStorage, EveryRetainedVariantSpendsTheSameStorageBudget) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  probe.artifact_properties.persistent_bytes = 128;
+  auto context = make_context(probe);
+  const std::array<hyle::graph::ExactShapeVariant, 1> variants{};
+  CompileOptions options{
+      .shape_policy = hyle::graph::CompileShapePolicy::kDeclaredDomain,
+      .exact_variants = variants,
+      .compiled_storage = {.max_bytes = 256},
+      .operation_fallback = OperationFallbackPolicy::kReject};
+  {
+    auto compiled = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.compiled_storage().total_bytes(), 128U);
+    EXPECT_EQ(
+        compiled->report.exact_variant(0)->compiled_storage().total_bytes(),
+        128U);
+    EXPECT_EQ(compiled->report.total_compiled_storage().total_bytes(), 256U);
+  }
+  --options.compiled_storage.max_bytes;
+  auto failed = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted()) << failed.error().message();
+  EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+  // The complete family sum must be representable even with no finite cap.
+  probe.artifact_properties.persistent_bytes = SIZE_MAX;
+  options.compiled_storage.max_bytes = SIZE_MAX;
+  failed = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted()) << failed.error().message();
+  EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+  probe.artifact_properties.persistent_bytes.reset();
+  options.compiled_storage.max_bytes = 0;
+  options.compiled_storage.unknown = hyle::graph::UnknownStoragePolicy::kAllow;
+  auto partial = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_TRUE(partial) << partial.error().message();
+  EXPECT_EQ(partial->report.total_compiled_storage().unknown_provider_count,
+            2U);
+  EXPECT_FALSE(partial->report.total_compiled_storage().total_bytes());
 }
 
 TEST(GraphRegions, SerializesArtifactsThatRejectConcurrentInvocations) {

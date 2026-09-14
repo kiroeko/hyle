@@ -11,7 +11,7 @@
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
-与受限优化、常量物化后的 source release、有限 exact variants 与 canonical 常量共享。动态 View 属性、
+与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享与编译制品累计存储准入。动态 View 属性、
 Provider 私有 packing 共享、完整内存聚合预算与 storage/lane 联合优化仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
@@ -82,8 +82,8 @@ dispatch 都允许明确 unknown，不能写零补齐。默认 `kAllowProviderRe
 最后才以覆盖数与 dispatch 打破等价次序。只有本次候选都声明 dispatch 时才比较该维度；否则按稳定
 候选顺序。它不会因为另一 Provider 的 region 更大或 dispatch 更少就绕过前排可用 leaf，也不是推理性能排名。
 旧的“相对本 Provider fallback 节省若干 ns”入口和 `kRequireEstimatedBenefit` 已移除，不保留别名。
-要求跨 Provider 量化择优的 qualified full-plan profile 尚未交付，不能用各家的私有数字冒充；此期间可
-显式安装/筛选 Provider、约束具名节点或关闭 region，但不应声称已得到自动 SOTA 计划。
+跨 Provider 量化择优可接入下文的 qualified full-plan profile，但 HYLE 不自动测量或生成合格数据；不能用
+各家的私有数字冒充。无数据时可显式安装/筛选 Provider、约束具名节点或关闭 region，不声称得到自动 SOTA 计划。
 
 ### 指定某个节点的实现，其它节点仍可外包
 
@@ -212,6 +212,39 @@ Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prep
 的唯一 canonical 副本；取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享，
 Provider opaque packing 共享及唯一 resident/冷峰值总预算尚未交付。每条路线的
 `materialized_constant_bytes()` 都描述它借用的 canonical 副本，不能把各路线的数值相加当成物理总量。
+
+### 限制编译制品的常驻存储
+
+一张变体表会同时保留多个制品。使用 `compiled_storage` 限制它们累计的 canonical 常量、Provider
+声明的 persistent bytes 和 region 额外 packing，而不是只限制每条路线：
+
+```cpp
+CompileOptions options;
+options.compiled_storage.max_bytes = 256 * 1024 * 1024;
+auto result = compile(graph, context, options);
+if (!result) return result.error();
+const auto storage = result->report.total_compiled_storage();
+// 有限预算默认拒绝未知量，成功时 total_bytes() 有值。
+const auto compiled_bytes = storage.total_bytes().value();
+```
+
+`compiled_storage()` 是单路线；`total_compiled_storage()` 是 general 与全部 exact 的集合。同一张表中
+确实共享的 canonical 副本只计一次；尚未共享的 Provider 制品/packing 每份都计。子报告包含该子路线
+独立保活所需的常量，即使父 Executable 已释放；报告本身不保活 payload。普通算子的 persistent facts
+也通过 `step().persistent_bytes` 如实传播。求和溢出是错误，不会饱和成一个看似合格的数值。
+
+`max_bytes = SIZE_MAX`（默认）不限制此项；有限上限可以触发冷路线重选。所有路线都不能满足则失败。
+后继变体只取得余量，不因 variant 另开预算；不保证对所有变体组合做全局最优搜索，失败也不会偷偷丢掉
+请求的某个形状。这个检查发生在制品准备后，**不是限制准备过程分配峰值的 allocator quota**。
+
+某些 Provider（例如当前 oneDNN adapter）无法报告完整 persistent 量，有限预算默认拒绝。确实愿意接受
+部分约束时显式设置 `options.compiled_storage.unknown = UnknownStoragePolicy::kAllow`；仍检查
+`known_bytes()`，但 `unknown_provider_count` 非零时 `total_bytes()` 返回空，不能宣称满足完整总额。
+
+本项不包含 Graph/Compute 控制 metadata、allocator rounding、借用的外部 backing、Invocation 的
+workspace/capture、编译临时量或进程其它分配，也不是 OS RSS/物理显存预算。borrowed 常量没有新增
+编译存储，并不代表它不占内存。完整冷峰值和并发/capture 总预算仍未交付；运行 workspace 继续使用
+`StorageDomain::workspace_budget_bytes` 的逐路线、逐 Invocation 限制。
 
 ## 独立与派生维度
 
@@ -385,8 +418,9 @@ leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用�
 只使用已选路线，仍经 Compute 校验；不能原地换 Provider/target/storage，明确 decline 必须整图重规划。
 这可能重新准备已成功的前缀，全部计入累计预算。不承诺提前证明任意 Provider 的真实 prepare 必定成功：
 精确 workspace/persistent、lane/内存和实际 Queue transfer 仍需后续校验。只有完整可行计划才参与下述 profile 成本比较。
-最终 lane/schedule/workspace 校验也在同一冷重选事务中：已准备路线缺可用 lane，或完整 workspace
-无法满足显式 storage 预算/允许的有界序列化时，释放本次制品及其调度/别名/内存决定，再尝试下一组合。
+最终 lane/schedule/workspace/compiled-storage 校验也在同一冷重选事务中：已准备路线缺可用 lane，完整
+workspace 无法满足显式 storage 预算/允许的有界序列化，或编译存储超限/包含被禁止的未知量时，释放
+本次制品及其调度/别名/内存决定，再尝试下一组合。
 这不永久排除组合中的每个 Provider；所有路线都无解仍失败。真实 OOM、Provider/alias 合同错误不会被
 按 Status 名称猜成“可以换路”。胜出报告不保留被拒绝路线的 delegated lane、序列化边或实现键。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；若

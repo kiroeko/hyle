@@ -971,4 +971,72 @@ CMake、公共治理/性能仪器均未改。未启动 CI、全库/P1；Linux/�
 G106 packing/唯一 resident/冷峰值/并发/capture 总预算、真实平台探针与共同终局资格仍未完成。
 
 统一 LOC self-check 通过：全库代码 **678,254**、全库自实现不含测试 **123,938**；Compute **16,670**、
-Graph **12,142**，合计 **28,812**。本次没有完成整个 foundation gate，不扩充算子目录。
+ Graph **12,142**，合计 **28,812**。本次没有完成整个 foundation gate，不扩充算子目录。
+
+### G106：编译制品的累计存储准入（实现前固定）
+
+当前只有逐路线 workspace 和累计搜索预算，不能限制保留整张变体表的常量/Provider 制品。第一步固定为
+`CompiledStorageReport` 与 `CompileOptions::compiled_storage`：统计 canonical materialization 的请求字节、
+各独立制品声明的 persistent bytes、region 额外 packing，以及未知 persistent 的制品数。普通 operation
+必须传播已有 `PreparedOperation::persistent_bytes()`，不能像当前 step report 一样丢弃它。
+
+- 报告区分单路线与整个 family；已共享的 canonical allocation 在 family 只计一次，各独立 Provider
+  制品/packing 逐份计费。报告不持有 payload，未知量不记成零，也不通过 Provider 名称猜共享。
+- 有限 `max_bytes` 下默认拒绝未知量；显式 allow 只约束已知部分，报告仍无完整总量保证。默认无限上限
+  保留现有路线。checked 累加溢出拒绝，不使用饱和值冒充合格。
+- 每个完整候选在同一冷事务内接受此门，超预算或未知量可安全销毁并尝试其它路线；后继 exact 子计划
+  使用 family 已消耗额度扣除后的余量，不重新充值。固定点表任意一项失败则整体不发布，不隐式删项。
+- 这是 **compiled storage 的一项预算**，不是进程 RSS/物理显存、完整编译峰值或运行期总内存：Graph/
+  Compute 控制 metadata、allocator rounding、borrowed 外部 backing、Invocation workspace/capture 和
+  Provider 内部临时内存不冒充已覆盖。完整 unique resident/冷峰值/并发/capture 与 packing 身份共享仍是
+  G106 剩余实现，不缩减 foundation gate。不得为此在热提交加计数、锁或扫描。
+- P0 为每个冷候选 `O(constants + steps)`、常量附加空间；family 累计 `O(variants)`。预声明测试：
+  精确边界/零/overflow、unknown/explicit allow、region→region/leaf 重选、共享常量只计一次、父/子报告
+  独立保活、跨变体耗尽及完整 rollback；沿用本卡 Windows Graph/oneDNN/CUDA 与三交付增量验证。
+
+本段只改变已 AUDITED 的 Graph；Provider/Mem/backend 合同不变，也不签完整内存或性能终验。
+
+### 2026-09-15 G106 编译制品存储准入检查点
+
+已实现上述有限存储门：每个候选在 workspace 后、成本比较前累计真实 canonical 请求字节及 Provider
+声明，失败参与已有整图重选；family 向子路线传剩余额度，最终累计时共享 canonical 只计一次。默认
+无上限不排除 unknown；有限上限默认拒绝，显式 allow 仍返回空 `total_bytes()` 与未知数。普通 operation
+的 persistent facts 已补入 step report；插入的 Backend copy 没有另一个 compiled artifact，报告为零。
+
+新增 9 个 GraphStorage 测试，并扩充既有共享常量及真实 oneDNN 旅程。覆盖 native 实际制品报告、精确
+边界/零/overflow、borrow 不计新增编译存储但仍保留 ownership 报告、unknown 与已知部分限制、region
+重选/leaf fallback、不放宽 hard limit、跨变体累计/溢出、失败整表回滚和报告独立生命周期。oneDNN
+完整未知量拒绝与显式 opt-in 在真实 BRGEMM region 上验证，不以 fixture 的已知数字冒充第三方事实。
+
+Windows Release 增量验证：
+
+| 验证 | `C:/hyle-scratch/` 下缓存 | 结果 |
+|---|---|---|
+| Graph static / 逐头 | `compute-route-v8-static-20260914` | 3/3；执行套件 227/227 |
+| shared + oneDNN Graph/region / 逐头 | `compute-route-onednn-v8-20260914` | 6/6 |
+| CUDA Graph / 逐头 | `compute-graph-v7-cuda` | 3/3，含既有真 CUDA/capture 回归 |
+| source CPU/CUDA sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+Build/Test 沿用 Windows wrapper，build 至多 2、测试串行；shared/oneDNN cache 重新 configure 成功，
+保留上游 CMP0146 OLD 警告。该 configure 更新 SIMD 生成文件时间戳并触发依赖重编，不是 SIMD 产品
+改动。SDK 从同名 `custom-execution-v10-{shared,static}-build` 构建并显式安装到 `...-sdk`，没有安装到
+Program Files。公开 sample 使用有限预算并读取单路线/总报告，不依赖私有 SPI。
+
+shared producer/SDK/CPU/CUDA 装载目录的 Graph DLL 均为
+`3D9C44EDEBAE44CA88A761BE01B0DE542419717E6822767C068F072CD00813AA`；源码与两个 SDK 的
+`executable.h` 均为 `972BE1A4E7EE8D743705C81B5618D8445984418FD474C367EAAE87E444FFAFA6`。
+
+P0/源码复核：每个候选一次 `O(constants + steps)`、附加 scratch `O(1)`；每个 family 子项 `O(1)`
+累计。ReportState 增加两份 4-word 冷事实；未增加 Plan/Invocation 热字段、heap 分配次数、submit
+回调层次、原子或扫描。该结构结论不是计时胜负，也不是独立终局红队签名。
+
+selector 基线 `2337618d`，选 Graph/Graph-oneDNN/逐头/交付与 docs/closure/configure，89 项明确跳过。
+registry/Provider/Backend/Mem/CMake/公共仪器未改；closure 39/schema 4、docs 292/1064 links、diff check
+通过。Linux/两台 Apple、sanitizer、独立终局红队和一次 foundation P1 仍待完整 candidate，未运行不签 PASS。
+
+统一 LOC self-check：全库 **678,778**，自实现不含测试 **124,069**；Compute **16,670**，Graph **12,273**，
+合计 **28,943**。仍为 `AUDITED`：本项只覆盖已声明的 compiled storage，不代替 G106 的完整 unique
+resident/冷峰值/并发/capture 或 packing 身份共享；G101 动态 View、G103 storage/lane 联合优化、真实
+平台探针及共同终验继续保留，不扩算子目录。

@@ -38,7 +38,8 @@ hyle::Status bounded_normalization() {
       auto compiled,
       compile(graph, context,
               {.shape_policy = CompileShapePolicy::kDeclaredDomain,
-               .exact_variants = variants}));
+               .exact_variants = variants,
+               .compiled_storage = {.max_bytes = 1024 * 1024}}));
   if (!compiled.executable.is_shape_domain() ||
       !compiled.report.is_shape_domain() ||
       compiled.executable.specialization().valid())
@@ -51,6 +52,13 @@ hyle::Status bounded_normalization() {
       compiled.report.total_search().placement_attempts <=
           compiled.report.search().placement_attempts)
     return hyle::Status::Internal("finite variant report is incomplete");
+  const auto storage = compiled.report.total_compiled_storage();
+  const auto general_storage = compiled.report.compiled_storage();
+  const auto exact_storage = exact_report.compiled_storage();
+  if (!storage.total_bytes() || *storage.total_bytes() > 1024 * 1024 ||
+      storage.known_bytes() !=
+          general_storage.known_bytes() + exact_storage.known_bytes())
+    return hyle::Status::Internal("compiled storage report is incomplete");
   graph = {};
   HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
                                          hyle::mem::system_resource(), 64, 64));

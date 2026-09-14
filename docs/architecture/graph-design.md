@@ -205,6 +205,12 @@ lifetime、alignment、storage 和 capture 稳定地址均可证明兼容时复�
 backing 与本次新增预留分列，不能把 borrowed 误当成零物理内存。Provider 不能给出预算所需上界时，
 unknown 只可在调用方明确允许未知量的路线中出现，不得宣称满足该硬上限。
 
+各预算必须说明所约束的集合，不能用一项局部计数冒充全部内存。编译制品存储准入按 canonical
+materialization 的请求字节、Provider 声明的 persistent 和额外 packing 聚合；有限上限下未知项默认
+拒绝，显式接受未知量只能约束已知部分。该门进入完整候选的冷重选事务，family 共享项只扣一次，
+后继变体只取得余量。它不等于 allocator/驱动的实际物理占用，也不包含控制 metadata、外部借入
+backing、cold scratch 或 Invocation/capture；这些仍需各自 owner 的完整账目和峰值/预留准入。
+
 ### 4.3 有限派生 shape，而非图外手工等式
 
 正常 reshape/flatten、concat、head/group split 和 broadcast 需要 `B*T`、`S1+S2`、整除与广播相容性；

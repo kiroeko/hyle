@@ -819,6 +819,8 @@ struct ReportState final : util::RefCounted<ReportState> {
   std::size_t borrowed_constant_count = 0;
   std::size_t materialized_constant_count = 0;
   std::size_t materialized_constant_bytes = 0;
+  CompiledStorageReport compiled_storage{};
+  CompiledStorageReport total_compiled_storage{};
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t invocation_owned_output_count = 0;

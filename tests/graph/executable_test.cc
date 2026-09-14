@@ -550,6 +550,44 @@ TEST(GraphVariants, ConstantCopyIsSharedAndReportsDoNotRetainPayload) {
                             .constants = constants});
   ASSERT_TRUE(compiled) << compiled.error().message();
   EXPECT_EQ(resource.allocation_count - allocations, 1U);
+  const auto retained = compiled->report.total_compiled_storage();
+  const auto general_storage = compiled->report.compiled_storage();
+  ASSERT_TRUE(retained.total_bytes());
+  ASSERT_TRUE(general_storage.total_bytes());
+  EXPECT_EQ(retained.materialized_constant_bytes, 16U);
+  auto providers = general_storage.provider_persistent_bytes;
+  for (std::size_t i = 0; i < variants.size(); ++i) {
+    const auto child = compiled->report.exact_variant(i).value();
+    const auto storage = child.compiled_storage();
+    EXPECT_EQ(storage.materialized_constant_bytes, 16U);
+    EXPECT_EQ(storage.total_bytes(),
+              child.total_compiled_storage().total_bytes());
+    providers += storage.provider_persistent_bytes;
+  }
+  EXPECT_EQ(retained.provider_persistent_bytes, providers);
+  EXPECT_EQ(retained.known_bytes(), 16U + providers);
+  CompileOptions bounded{
+      .shape_policy = CompileShapePolicy::kDeclaredDomain,
+      .exact_variants = variants,
+      .constants = constants,
+      .compiled_storage = {.max_bytes = retained.known_bytes()}};
+  {
+    auto at_limit =
+        hyle::graph::compile(graph, environment.environment(), bounded);
+    ASSERT_TRUE(at_limit) << at_limit.error().message();
+    EXPECT_EQ(at_limit->report.total_compiled_storage().total_bytes(),
+              retained.total_bytes());
+    EXPECT_EQ(resource.live_allocations, 3U); // source + two compiled families
+  }
+  EXPECT_EQ(resource.live_allocations, 2U);
+  --bounded.compiled_storage.max_bytes;
+  auto over_limit =
+      hyle::graph::compile(graph, environment.environment(), bounded);
+  ASSERT_FALSE(over_limit);
+  EXPECT_TRUE(over_limit.error().IsResourceExhausted())
+      << over_limit.error().message();
+  EXPECT_EQ(resource.live_allocations,
+            2U); // partial family completely reclaimed
   weight = {};
   EXPECT_EQ(resource.live_allocations, 1U);
   auto report = compiled->report;
@@ -589,6 +627,48 @@ TEST(GraphVariants, ConstantCopyIsSharedAndReportsDoNotRetainPayload) {
   EXPECT_EQ(report.materialized_constant_bytes(), 16U);
   EXPECT_EQ(child_report.materialized_constant_bytes(), 16U);
   EXPECT_EQ(report.exact_variant(0)->materialized_constant_bytes(), 16U);
+  EXPECT_EQ(report.total_compiled_storage().total_bytes(),
+            retained.total_bytes());
+}
+
+TEST(GraphStorage, NativeArtifactsAreReportedAndBoundedAtTheirExactTotal) {
+  auto context = hyle::compute::cpu::create_context().value();
+  auto logical = make_rms_graph(row(4));
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  const auto storage = compiled.report.compiled_storage();
+  ASSERT_TRUE(storage.total_bytes());
+  ASSERT_GT(*storage.total_bytes(), 0U);
+  EXPECT_EQ(storage.provider_persistent_bytes, storage.known_bytes());
+  EXPECT_EQ(compiled.report.total_compiled_storage().total_bytes(),
+            storage.total_bytes());
+  EXPECT_EQ(compiled.report.step(0)->persistent_bytes, storage.total_bytes());
+  CompileOptions options{
+      .compiled_storage = {.max_bytes = *storage.total_bytes()}};
+  EXPECT_TRUE(hyle::graph::compile(logical.graph, context, options));
+  --options.compiled_storage.max_bytes;
+  auto failed = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted()) << failed.error().message();
+}
+
+TEST(GraphStorage, NoArtifactAndBorrowedPayloadDoNotSpendCompiledStorage) {
+  auto context = hyle::compute::cpu::create_context().value();
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(4)).value();
+  ASSERT_TRUE(builder.publish(constant).ok());
+  auto graph = std::move(builder).finish().value();
+  auto tensor = make_tensor(row(4));
+  const std::array bindings{ConstantBinding{constant, tensor.view.as_const()}};
+  auto compiled = hyle::graph::compile(
+      graph, context,
+      {.constants = bindings, .compiled_storage = {.max_bytes = 0}});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.compiled_storage().total_bytes(), 0U);
+  EXPECT_EQ(compiled->report.borrowed_constant_count(), 1U);
+  EXPECT_EQ(compiled->report.step_count(), 0U);
+  EXPECT_EQ(hyle::graph::CompileReport{}.compiled_storage().total_bytes(), 0U);
+  EXPECT_EQ(hyle::graph::CompileReport{}.total_compiled_storage().total_bytes(),
+            0U);
 }
 
 TEST(GraphVariants, HardCompileBudgetsAreCumulativeAcrossTheFamily) {

@@ -3645,6 +3645,74 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
              const detail::GraphState &logical,
              const CompileProfileContext *profile_context) noexcept;
 
+Status add_compiled_storage(CompiledStorageReport &total,
+                            CompiledStorageReport part,
+                            bool shared_constants = false) noexcept {
+  if (shared_constants)
+    part.materialized_constant_bytes = 0;
+  constexpr std::array fields{
+      &CompiledStorageReport::materialized_constant_bytes,
+      &CompiledStorageReport::provider_persistent_bytes,
+      &CompiledStorageReport::packed_constant_bytes,
+      &CompiledStorageReport::unknown_provider_count};
+  for (const auto field : fields) {
+    if (part.*field > SIZE_MAX - total.*field)
+      return Status::ResourceExhausted("graph compiled storage sum overflows");
+    total.*field += part.*field;
+  }
+  if (total.provider_persistent_bytes >
+          SIZE_MAX - total.materialized_constant_bytes ||
+      total.packed_constant_bytes > SIZE_MAX -
+                                        total.materialized_constant_bytes -
+                                        total.provider_persistent_bytes)
+    return Status::ResourceExhausted("graph compiled storage sum overflows");
+  return Status::Ok();
+}
+
+Result<CompiledStorageReport>
+compiled_storage(const detail::PlanState &plan) noexcept {
+  CompiledStorageReport total;
+  for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
+    if (const auto *buffer = plan.owned_constant(slot))
+      HYLE_RETURN_IF_ERROR(add_compiled_storage(
+          total, {.materialized_constant_bytes = buffer->size()}));
+  }
+  for (const auto &step : plan.steps) {
+    if (step.kind == detail::PlanStepKind::kCopy)
+      continue; // Backend copies retain no additional compiled artifact.
+    const auto persistent = step.kind == detail::PlanStepKind::kRegion
+                                ? step.region.properties().persistent_bytes
+                                : step.operation.persistent_bytes();
+    HYLE_RETURN_IF_ERROR(add_compiled_storage(
+        total, {.provider_persistent_bytes = persistent.value_or(0),
+                .packed_constant_bytes =
+                    step.kind == detail::PlanStepKind::kRegion
+                        ? step.region.properties().packed_constant_bytes
+                        : 0,
+                .unknown_provider_count = persistent ? 0u : 1u}));
+  }
+  return total;
+}
+
+Status check_compiled_storage(CompiledStorageReport storage,
+                              CompiledStorageLimits limits,
+                              bool shared_constants) noexcept {
+  if (limits.max_bytes == SIZE_MAX)
+    return Status::Ok();
+  // A child retains the same canonical owner, already charged to the parent.
+  // Its standalone report still includes these independently retained bytes.
+  if (shared_constants)
+    storage.materialized_constant_bytes = 0;
+  if (storage.known_bytes() > limits.max_bytes)
+    return Status::ResourceExhausted(
+        "graph compiled storage budget is exceeded");
+  if (storage.unknown_provider_count != 0 &&
+      limits.unknown == UnknownStoragePolicy::kReject)
+    return Status::FailedPrecondition(
+        "graph compiled storage budget cannot admit unknown provider storage");
+  return Status::Ok();
+}
+
 // One complete candidate transaction. Common Context/resource/constant owners,
 // specialization and aggregate search counters stay in plan. No Invocation
 // exists yet; moving these vectors cannot invalidate a submitted command.
@@ -3740,6 +3808,21 @@ Status prepare_placed_steps(
     attempted = true;
     if (status.ok())
       status = finalize_placed_steps(plan, graph, outcome.rejected_plan);
+    CompiledStorageReport storage_report;
+    if (status.ok()) {
+      auto storage = compiled_storage(plan);
+      if (!storage) {
+        status = std::move(storage).error();
+      } else {
+        storage_report = *storage;
+        status =
+            check_compiled_storage(storage_report, options.compiled_storage,
+                                   static_cast<bool>(plan.shared_constants));
+      }
+      // No user work has been accepted. As with the final workspace gate,
+      // reject this complete route, not the provider or the whole search.
+      outcome.rejected_plan = !status.ok();
+    }
     if (status.ok() && options.profile_context != nullptr &&
         options.profile_context->workload.concurrent_invocations > 1 &&
         !plan.supports_concurrent_invocations) {
@@ -3777,6 +3860,9 @@ Status prepare_placed_steps(
         HYLE_ASSIGN_OR_RETURN(auto report,
                               build_report(plan, graph, profile_keys, logical,
                                            options.profile_context));
+        auto &report_state = *detail::CompileReportAccess::state(report);
+        report_state.compiled_storage = storage_report;
+        report_state.total_compiled_storage = storage_report;
         std::optional<compute::ProfileTimingInterval> cost;
         if (options.profile_context != nullptr && !options.profiles.empty())
           cost = compute::find_route_profile(report.profile_identity(),
@@ -5609,6 +5695,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     }
     if (step.kind == detail::PlanStepKind::kCopy) {
       step_report.kind = CompileStepKind::kCopy;
+      step_report.persistent_bytes = 0;
       step_report.copy_bytes = step.copy_bytes;
       state->copy_bytes = saturating_add(state->copy_bytes, step.copy_bytes);
     }
@@ -5636,6 +5723,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
           state->synchronization_count, step_report.synchronization_count);
     } else if (step.kind == detail::PlanStepKind::kOperation) {
       ++state->fallback_operation_count;
+      step_report.persistent_bytes = step.operation.persistent_bytes();
     }
     state->steps[index] = step_report;
 
@@ -5891,6 +5979,15 @@ std::size_t CompileReport::materialized_constant_count() const noexcept {
 
 std::size_t CompileReport::materialized_constant_bytes() const noexcept {
   return state_ != nullptr ? state_->materialized_constant_bytes : 0;
+}
+
+CompiledStorageReport CompileReport::compiled_storage() const noexcept {
+  return state_ != nullptr ? state_->compiled_storage : CompiledStorageReport{};
+}
+
+CompiledStorageReport CompileReport::total_compiled_storage() const noexcept {
+  return state_ != nullptr ? state_->total_compiled_storage
+                           : CompiledStorageReport{};
 }
 
 Result<CompileConstantReport>
@@ -7502,6 +7599,10 @@ compile_plan(const Graph &graph, CompileEnvironment environment,
     return std::unexpected(
         Status::InvalidArgument("graph compile search policy is invalid"));
   }
+  if (options.compiled_storage.unknown != UnknownStoragePolicy::kReject &&
+      options.compiled_storage.unknown != UnknownStoragePolicy::kAllow)
+    return std::unexpected(Status::InvalidArgument(
+        "graph compiled storage unknown policy is invalid"));
   if (!context.valid() || !context.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute context is invalid or closed"));
@@ -7761,7 +7862,8 @@ Status accumulate_search(CompileSearchReport &total,
 
 Result<CompileOptions>
 remaining_compile_budget(CompileOptions options,
-                         const CompileSearchReport &spent) noexcept {
+                         const CompileSearchReport &spent,
+                         CompiledStorageReport storage) noexcept {
   struct Counter final {
     std::size_t CompileOptions::*cap;
     std::size_t CompileSearchReport::*count;
@@ -7787,6 +7889,12 @@ remaining_compile_budget(CompileOptions options,
       options.max_route_search_states == 0)
     return std::unexpected(Status::ResourceExhausted(
         "graph exact variant has no remaining prepare/search budget"));
+  if (options.compiled_storage.max_bytes != SIZE_MAX) {
+    if (storage.known_bytes() > options.compiled_storage.max_bytes)
+      return std::unexpected(
+          Status::Internal("graph compile exceeded its storage budget"));
+    options.compiled_storage.max_bytes -= storage.known_bytes();
+  }
   return options;
 }
 
@@ -7818,7 +7926,8 @@ Result<CompiledGraph> compile(const Graph &graph,
   for (std::size_t index = 0; index < variants.size(); ++index) {
     HYLE_ASSIGN_OR_RETURN(
         auto child_options,
-        remaining_compile_budget(options, report.total_search));
+        remaining_compile_budget(options, report.total_search,
+                                 report.total_compiled_storage));
     child_options.shape_policy = CompileShapePolicy::kExact;
     child_options.shape = variants[index].shape;
     HYLE_ASSIGN_OR_RETURN(auto child,
@@ -7828,6 +7937,9 @@ Result<CompiledGraph> compile(const Graph &graph,
         index;
     HYLE_RETURN_IF_ERROR(
         accumulate_search(report.total_search, child.report.search()));
+    HYLE_RETURN_IF_ERROR(add_compiled_storage(
+        report.total_compiled_storage, child.report.compiled_storage(),
+        static_cast<bool>(plan.shared_constants)));
     if (!plan.exact_variants.try_push_back(std::move(child.executable)) ||
         !report.exact_variants.try_push_back(std::move(child.report)))
       return std::unexpected(plan_allocation_failure());

@@ -486,6 +486,44 @@ struct CompileConstantReport final {
   std::size_t materialized_bytes = 0;
 };
 
+// Storage retained by compiled artifacts, not total process/device memory.
+// Counts requested canonical bytes and provider-reported persistent/packed
+// storage. Excludes Graph/Compute control metadata, allocator overhead,
+// borrowed external backing, Invocation workspace/capture and compile scratch.
+// Provider artifacts are charged independently unless sharing is proven;
+// unknown provider storage is never treated as zero.
+struct CompiledStorageReport final {
+  std::size_t materialized_constant_bytes = 0;
+  std::size_t provider_persistent_bytes = 0; // Known portion only.
+  std::size_t packed_constant_bytes = 0;
+  std::size_t unknown_provider_count = 0;
+  // Sum is checked before a report is published.
+  constexpr std::size_t known_bytes() const noexcept {
+    return materialized_constant_bytes + provider_persistent_bytes +
+           packed_constant_bytes;
+  }
+  constexpr std::optional<std::size_t> total_bytes() const noexcept {
+    return unknown_provider_count == 0
+               ? std::optional<std::size_t>{known_bytes()}
+               : std::nullopt;
+  }
+};
+
+enum class UnknownStoragePolicy : std::uint8_t {
+  kReject = 0,
+  // An explicit partial budget: only known bytes are constrained. A report
+  // with unknown_provider_count != 0 does NOT prove total storage <= max_bytes.
+  kAllow,
+};
+
+struct CompiledStorageLimits final {
+  // Covers the general route and every exact variant together. SIZE_MAX means
+  // no limit, including no unknown-storage restriction. This is a retained
+  // storage admission limit, NOT a peak-allocation quota during compilation.
+  std::size_t max_bytes = SIZE_MAX;
+  UnknownStoragePolicy unknown = UnknownStoragePolicy::kReject;
+};
+
 // Copyable cold-path report that owns a compact immutable copy of the emitted
 // plan facts independently of the Executable and its heavyweight artifacts.
 // Aggregate queries and indexed records are O(1). Provider name/version text
@@ -539,6 +577,11 @@ public:
   HYLE_GRAPH_API std::size_t borrowed_constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t materialized_constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t materialized_constant_bytes() const noexcept;
+  // Single-route facts; total_* includes all retained variants, counting
+  // actually shared canonical constants only once. An exact child's two
+  // reports coincide and include the constants it independently keeps alive.
+  HYLE_GRAPH_API CompiledStorageReport compiled_storage() const noexcept;
+  HYLE_GRAPH_API CompiledStorageReport total_compiled_storage() const noexcept;
   HYLE_GRAPH_API Result<CompileConstantReport>
   constant(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API std::size_t packed_constant_count() const noexcept;
@@ -714,6 +757,7 @@ struct CompileOptions final {
   // each route separately. Workspace budgets remain per-route/per-Invocation.
   std::span<const ExactShapeVariant> exact_variants{};
   std::span<const ConstantBinding> constants{};
+  CompiledStorageLimits compiled_storage{};
   // Every used effect resource needs one binding. Backing is fixed/borrowed
   // for this Executable and all its Invocations/Completions. It must describe
   // what the operation implementation actually accesses; this does not pass
