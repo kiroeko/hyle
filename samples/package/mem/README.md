@@ -5,7 +5,7 @@ These are source-independent consumers of an installed HYLE SDK:
 - `cpp/` requests only `mem` and exercises the installed public façade through
   system PMR + bounded arena, isolated `Heap`, read-only model `FileMapping`,
   transient `BufferPool` reuse, payload-free 64-bit logical range allocation,
-  tensor-free `LifetimePlan` instantiation, and
+  tensor-free `LifetimePlan` instantiation with inherited/separate metadata quotas, and
   guarded publication plus typed retirement of an immutable snapshot.
   Device/pinned/managed providers remain a Compute consumer journey so this
   probe cannot hide a reversed `mem -> compute` dependency.

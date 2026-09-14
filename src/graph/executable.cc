@@ -5174,7 +5174,7 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
       plan.workspace_resources.data(), plan.workspace_resources.size());
   auto lifetime_plan = mem::LifetimePlanner::build(
       std::span<const mem::LifetimeRequest>(requests.data(), requests.size()),
-      selected_resources);
+      selected_resources, plan.allocator);
   if (!lifetime_plan)
     return std::move(lifetime_plan).error();
 

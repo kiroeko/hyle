@@ -13,7 +13,8 @@
   既有 allocator。不会让 payload 改走 host allocator，也不扩展 tensor/graph/runtime 职责。
 - non-goals：best-fit/alias/lifetime 算法更改、常态 allocation 次数增加、device resource 虚表更改、
   全局 allocator setter、其它 Mem 能力、Native FFI、公共仪器或 CMake 改造。
-- 依赖不变；直接消费者为 Graph，公开交付通过 Mem 及 Graph source/static/shared 验证。
+- 依赖不变；真实产品调用者为 Graph，Mem-vm API surface 测试也消费该公开头；公开交付通过 Mem 及
+  Graph source/static/shared 验证。
 - 性能 P0：算法/分配次数/布局查询保持，检查新增 allocator identity 的冷 metadata 成本；不为冷绑定
   跑一轮纳秒 P1。既有 allocator/资源内核未改，不重新签其它能力的性能胜负。
 - 预算：一次表示/实现及一轮纠正；错误注入覆盖每次 scratch/result/instance metadata 分配，验证
@@ -49,3 +50,23 @@ rounding；这一边界必须在头和用户指南同时说明。公开 owner �
 临时数组；分配数量、best-fit/alias、`O((N+E) log N)` 和 view 的 O(1) 路径不变。
 
 至此 M90--M92 为有限 FIX。需要改变 payload/算法或增加其它公共功能时重新裁决，不顺手扩大本轮。
+
+## 2026-09-15 实现检查点
+
+M90--M92 已实现：全部 RawArray scratch/result 和 PlanImpl/PlannedImpl 使用显式 allocator；每个 owner
+保存实际释放身份。默认实例继承，显式实例覆盖，payload 仍使用原 MemoryResource。Graph 唯一的
+LifetimePlanner build 调用现传入 `plan.allocator`，没有复制 planner 或修改 placement 算法。
+
+新增六项测试逐次拒绝 planner/instance metadata 分配，检查同 owner/size/alignment 释放、失败重试、
+payload 第二次分配失败回滚、零配额/非法 allocator、计划先释放、实例 move/reset 和并发实例化。Mem-vm
+API surface 与 Mem package sample 同步验证两个公开实例化形状；guide 区分 metadata 与 payload 预算。
+
+Windows Release 增量：`compute-route-v8-static-20260914` 的 Mem/Graph/逐头 5/5，
+`compute-route-onednn-v8-20260914` 的 Mem/Mem-vm/Graph/oneDNN/逐头 10/10；后者 Mem 237、Mem-vm 65、
+Graph 基础 25、Graph 执行 227、oneDNN direct 1、region 17 个用例通过。最后仅整理新增声明的局部格式与
+并发限制注释，不据此运行 P1。这些是增量正确性，不代签尚待候选验证的三交付、跨平台、sanitizer 和红队。
+
+影响边界：公开头的保守 selector 会展开 Mem 的传递消费者；本卡实际代表集为直接使用 LifetimePlanner
+的 Graph、Mem-vm API surface 与 Mem 三交付。其余 Container/IO/Process/Sched/Util 不调用本次变更的
+planner API，AllocatorRef/MemoryResource/Buffer 的合同与实现没有变化，不额外运行那些模块的产品测试
+或 package；该裁决遵循 correctness profile 的代表性直接消费者规则，不把未运行的自动选择项写成 PASS。

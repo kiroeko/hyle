@@ -293,6 +293,26 @@ opaque native handle 当成连续虚拟地址。`instantiate` 要求 provider sp
 provider 必须长寿于 `PlannedBuffers`、views 和 in-flight operation；plan 销毁后 owner 仍可独立使用。
 零大小、但被显式选择的 resource 会保留一个 size-0 backing，从而使零长 view 仍带有 provider identity。
 
+规划 metadata 和 payload 是两项独立的资源。`build(requests, providers, allocator)` 可为所有规划
+scratch/result 注入 `AllocatorRef`，默认 `system_allocator()`。`plan.instantiate(providers)` 继承它；
+若运行实例应属于另一个 quota/arena，使用 `plan.instantiate(providers, run_allocator)`：
+
+```cpp
+hyle::mem::QuotaAllocator compile_quota(hyle::mem::system_allocator(), 64 * 1024);
+hyle::mem::QuotaAllocator run_quota(hyle::mem::system_allocator(), 64 * 1024);
+HYLE_ASSIGN_OR_RETURN(auto plan,
+    hyle::mem::LifetimePlanner::build(requests, providers, compile_quota.get()));
+HYLE_ASSIGN_OR_RETURN(auto buffers, plan.instantiate(providers, run_quota.get()));
+```
+
+allocator 是借用的：compile quota 必须活到 plan 及所有继承它的实例释放，run quota 必须活到相应实例
+释放。显式 override 的实例复制所需 metadata，不再依赖 plan/旧 allocator，可先销毁 plan 再释放旧
+arena；默认继承时不能提前释放该 arena。每次 deallocate 返回原来的 allocator，metadata 或 payload
+中途失败都完整回滚。并发实例化需要对应 allocator 和资源支持并发调用。
+
+metadata quota **不包含** provider payload、allocator 内部 rounding/metadata 或进程其它内存。需要限制
+device backing 时应另约束相应 resource，不能把上例的 64 KiB 当作 tensor 的总内存上限。
+
 ## Mapping：模型加载、稀疏提交和跨进程共享
 
 `VirtualMapping` 是 `platform::VmRegion` 的零开销别名：`reserve()` 只占地址，随后显式

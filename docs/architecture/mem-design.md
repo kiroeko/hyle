@@ -393,7 +393,7 @@ shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/
 | persistent/imported/composite bytes | `Buffer`、`BufferView`、`ConstBufferView`、`HostMapping`、`CompositeBuffer` | owner/view 分开；view 四字 O(1) subview；opaque handle 不冒充 host pointer |
 | sync data/coherence | view 上 `read/write/fill/copy/map/flush/invalidate` | 无 hidden staging；非 coherent 明示；async ordering 由 IO 或未来 Compute typed adapter 组合 |
 | transient storage reuse | `BufferPool` / `BufferLease` | resource-aware reuse/trim/stats；lease 归还前已等待 completion |
-| worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；resource/backing/local-offset 三层；有限 provider allocation 上限可拆多个 backing；plan/instantiate 分开；O((N+E) log N) / O(N) scratch+metadata；无 Tensor |
+| worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；resource/backing/local-offset 三层；有限 provider allocation 上限可拆多个 backing；plan/instantiate 分开，metadata allocator 可注入且实例可继承/覆盖；O((N+E) log N) / O(N) scratch+metadata；无 Tensor |
 | quota/pressure/diagnostics | allocator/resource stats、quota、leak tracker、system snapshot | opt-in 热路税；partial inventory 可观察；soft retention 不冒充 hard admission |
 | guarded/THP/NUMA | `FiberStack`、`LargeMapping`、显式 placement policy | requested/accepted/applied 分开；失败可观察；不自动迁移 |
 

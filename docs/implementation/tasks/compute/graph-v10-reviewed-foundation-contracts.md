@@ -1043,6 +1043,6 @@ resident/冷峰值/并发/capture 或 packing 身份共享；G101 动态 View、
 
 G106 后续的运行期/冷峰值检查发现 Mem LifetimePlanner/PlannedBuffers 的全部 metadata 硬编码 system
 allocator，无法进入 Context 配额与错误注入。这是具体依赖缺口，已按
-[Mem v9 M90--M92](../mem/mem-v9-lifetime-plan-allocator.md) 定向重开；Graph 只改两个 planner build
+[Mem v9 M90--M92](../mem/mem-v9-lifetime-plan-allocator.md) 定向重开；Graph 的统一 planner build
 调用传入既有 allocator，instance 继承同一 owner。先补此 seam，再实现整体 reservation；不在 Graph
 复制 Mem planner 或猜测其内部 allocation bytes。

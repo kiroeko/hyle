@@ -108,8 +108,10 @@ static_assert(requires(FileMapping mapping, SharedMapping shared,
 static_assert(requires(LifetimePlan plan, PlannedBuffers buffers,
                        std::span<const LifetimeRequest> requests,
                        std::span<const MemoryResourceRef> resources,
-                       std::size_t index) {
+                       AllocatorRef allocator, std::size_t index) {
   { LifetimePlanner::build(requests, resources) }
+      -> std::same_as<hyle::Result<LifetimePlan>>;
+  { LifetimePlanner::build(requests, resources, allocator) }
       -> std::same_as<hyle::Result<LifetimePlan>>;
   { plan.placement(index) } -> std::same_as<hyle::Result<MemoryPlacement>>;
   { plan.resource_plan(index) }
@@ -117,6 +119,8 @@ static_assert(requires(LifetimePlan plan, PlannedBuffers buffers,
   { plan.backing_plan(index, index) }
       -> std::same_as<hyle::Result<LifetimeBackingPlan>>;
   { plan.instantiate(resources) }
+      -> std::same_as<hyle::Result<PlannedBuffers>>;
+  { plan.instantiate(resources, allocator) }
       -> std::same_as<hyle::Result<PlannedBuffers>>;
   { buffers.backing_count(index) }
       -> std::same_as<hyle::Result<std::size_t>>;

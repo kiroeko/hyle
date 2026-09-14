@@ -2,15 +2,18 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <span>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
 #include "hyle/mem/lifetime_plan.h"
+#include "hyle/mem/quota_allocator.h"
 
 namespace {
 
@@ -105,6 +108,249 @@ class BoundedHostResource final : public MemoryResource {
   std::size_t deallocations_ = 0;
   std::size_t live_bytes_ = 0;
 };
+
+struct MetadataAllocator final {
+  struct Allocation {
+    void *address = nullptr;
+    std::size_t size = 0;
+    std::size_t alignment = 0;
+  };
+  std::array<Allocation, 64> allocations{};
+  std::size_t attempts = 0;
+  std::size_t fail_at = SIZE_MAX;
+  std::size_t live = 0;
+  bool forbid_calls = false;
+
+  ~MetadataAllocator() { EXPECT_EQ(live, 0U); }
+  AllocatorRef get() noexcept {
+    return {&allocate, &deallocate, &reallocate, this};
+  }
+  static void *allocate(void *state, std::size_t size,
+                        std::size_t alignment) noexcept {
+    auto &self = *static_cast<MetadataAllocator *>(state);
+    EXPECT_FALSE(self.forbid_calls);
+    if (self.attempts++ == self.fail_at)
+      return nullptr;
+    auto slot =
+        std::find_if(self.allocations.begin(), self.allocations.end(),
+                     [](auto record) { return record.address == nullptr; });
+    if (slot == self.allocations.end()) {
+      ADD_FAILURE() << "test metadata allocation capacity exceeded";
+      return nullptr;
+    }
+    void *pointer = system_allocator().allocate(size, alignment);
+    if (pointer != nullptr) {
+      *slot = {pointer, size, alignment};
+      ++self.live;
+    }
+    return pointer;
+  }
+  static void deallocate(void *state, void *pointer, std::size_t size,
+                         std::size_t alignment) noexcept {
+    if (pointer == nullptr)
+      return;
+    auto &self = *static_cast<MetadataAllocator *>(state);
+    EXPECT_FALSE(self.forbid_calls);
+    auto slot = std::find_if(
+        self.allocations.begin(), self.allocations.end(),
+        [pointer](auto record) { return record.address == pointer; });
+    if (slot == self.allocations.end()) {
+      ADD_FAILURE() << "metadata returned to the wrong allocator";
+      return;
+    }
+    EXPECT_EQ(slot->size, size);
+    EXPECT_EQ(slot->alignment, alignment);
+    system_allocator().deallocate(pointer, slot->size, slot->alignment);
+    *slot = {};
+    --self.live;
+  }
+  static void *reallocate(void *state, void *pointer, std::size_t old_size,
+                          std::size_t size, std::size_t alignment) noexcept {
+    if (size == 0) {
+      deallocate(state, pointer, old_size, alignment);
+      return nullptr;
+    }
+    if (pointer == nullptr)
+      return allocate(state, size, alignment);
+    ADD_FAILURE() << "fixed-size planner arrays unexpectedly resized";
+    return nullptr;
+  }
+};
+
+TEST(LifetimePlan, EveryPlannerMetadataFailureRollsBackAndCanRetry) {
+  BoundedHostResource resource(256);
+  const std::array resources{MemoryResourceRef(resource)};
+  const std::array requests{
+      LifetimeRequest{.size = 256, .alignment = 64, .begin = 0, .end = 2},
+      LifetimeRequest{.size = 128, .alignment = 32, .begin = 2, .end = 4},
+      LifetimeRequest{.size = 64,
+                      .alignment = 16,
+                      .begin = 0,
+                      .end = 2,
+                      .alias_of = 0,
+                      .alias_offset = 64}};
+  MetadataAllocator baseline;
+  auto expected = LifetimePlanner::build(requests, resources).value();
+  {
+    auto plan = LifetimePlanner::build(requests, resources, baseline.get());
+    ASSERT_TRUE(plan) << plan.error().message();
+    EXPECT_GT(baseline.attempts, baseline.live); // scratch also uses this owner
+    for (std::size_t i = 0; i < requests.size(); ++i) {
+      const auto actual = plan->placement(i).value();
+      const auto original = expected.placement(i).value();
+      EXPECT_EQ(actual.backing_index, original.backing_index);
+      EXPECT_EQ(actual.offset, original.offset);
+      EXPECT_EQ(actual.size, original.size);
+      EXPECT_EQ(actual.alignment, original.alignment);
+    }
+  }
+  EXPECT_EQ(baseline.live, 0U);
+  ASSERT_GT(baseline.attempts, 0U);
+  for (std::size_t failure = 0; failure < baseline.attempts; ++failure) {
+    SCOPED_TRACE(failure);
+    MetadataAllocator allocator;
+    allocator.fail_at = failure;
+    auto failed = LifetimePlanner::build(requests, resources, allocator.get());
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsResourceExhausted())
+        << failed.error().message();
+    EXPECT_EQ(allocator.live, 0U);
+    allocator.fail_at = SIZE_MAX;
+    auto recovered =
+        LifetimePlanner::build(requests, resources, allocator.get());
+    ASSERT_TRUE(recovered) << recovered.error().message();
+  }
+  EXPECT_EQ(resource.attempts(), 0U); // planning never allocates payload
+}
+
+TEST(LifetimePlan, EveryInstanceMetadataFailurePrecedesPayloadAndRollsBack) {
+  BoundedHostResource resource(64);
+  const std::array resources{MemoryResourceRef(resource)};
+  const std::array requests{LifetimeRequest{.size = 64, .alignment = 64},
+                            LifetimeRequest{.size = 64, .alignment = 64}};
+  auto plan = LifetimePlanner::build(requests, resources).value();
+  MetadataAllocator baseline;
+  {
+    auto instance = plan.instantiate(resources, baseline.get());
+    ASSERT_TRUE(instance) << instance.error().message();
+    EXPECT_EQ(instance->backing_count(0).value(), 2U);
+  }
+  ASSERT_GT(baseline.attempts, 0U);
+  for (std::size_t failure = 0; failure < baseline.attempts; ++failure) {
+    SCOPED_TRACE(failure);
+    MetadataAllocator allocator;
+    allocator.fail_at = failure;
+    const auto payload_attempts = resource.attempts();
+    auto failed = plan.instantiate(resources, allocator.get());
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsResourceExhausted())
+        << failed.error().message();
+    EXPECT_EQ(allocator.live, 0U);
+    EXPECT_EQ(resource.attempts(), payload_attempts);
+    allocator.fail_at = SIZE_MAX;
+    auto recovered = plan.instantiate(resources, allocator.get());
+    ASSERT_TRUE(recovered) << recovered.error().message();
+  }
+  EXPECT_EQ(resource.live_bytes(), 0U);
+}
+
+TEST(LifetimePlan, InstanceMetadataCanInheritOrOverrideThePlannerOwner) {
+  const std::array requests{LifetimeRequest{.size = 64, .alignment = 64}};
+  MetadataAllocator planner, runner;
+  auto plan =
+      LifetimePlanner::build(requests, one_system_resource(), planner.get())
+          .value();
+  auto inherited = plan.instantiate(one_system_resource()).value();
+  auto overridden =
+      plan.instantiate(one_system_resource(), runner.get()).value();
+  EXPECT_GT(planner.live, 0U);
+  EXPECT_GT(runner.live, 0U);
+  plan = {};
+  EXPECT_GT(planner.live, 0U); // inherited instance owns its copied metadata
+  ASSERT_TRUE(inherited.view(0)->fill(std::byte{7}).ok());
+  inherited.reset();
+  EXPECT_EQ(planner.live, 0U);
+  planner.forbid_calls = true;
+  auto moved = std::move(overridden);
+  EXPECT_FALSE(overridden.valid());
+  ASSERT_TRUE(moved.view(0)->fill(std::byte{9}).ok());
+  moved.reset();
+  moved.reset();
+  EXPECT_EQ(runner.live, 0U);
+}
+
+TEST(LifetimePlan, PayloadFailureReclaimsAllCustomMetadataAndEarlierBuffers) {
+  BoundedHostResource resource(64, 64, 1);
+  const std::array resources{MemoryResourceRef(resource)};
+  const std::array requests{LifetimeRequest{.size = 64, .alignment = 64},
+                            LifetimeRequest{.size = 64, .alignment = 64}};
+  auto plan = LifetimePlanner::build(requests, resources).value();
+  MetadataAllocator allocator;
+  auto failed = plan.instantiate(resources, allocator.get());
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+  EXPECT_EQ(allocator.live, 0U);
+  EXPECT_EQ(resource.successes(), 1U);
+  EXPECT_EQ(resource.deallocations(), 1U);
+  EXPECT_EQ(resource.live_bytes(), 0U);
+}
+
+TEST(LifetimePlan, QuotasCoverMetadataIncludingEmptyOwnersButNotPayload) {
+  QuotaAllocator denied(system_allocator(), 0);
+  EXPECT_FALSE(LifetimePlanner::build({}, {}, denied.get()));
+  EXPECT_EQ(denied.used(), 0U);
+  auto empty = LifetimePlanner::build({}, {}).value();
+  EXPECT_FALSE(empty.instantiate({}, denied.get()));
+  EXPECT_EQ(denied.used(), 0U);
+  auto invalid_build = LifetimePlanner::build({}, {}, AllocatorRef{});
+  ASSERT_FALSE(invalid_build);
+  EXPECT_TRUE(invalid_build.error().IsInvalidArgument());
+  auto invalid_instance = empty.instantiate({}, AllocatorRef{});
+  ASSERT_FALSE(invalid_instance);
+  EXPECT_TRUE(invalid_instance.error().IsInvalidArgument());
+  auto invalid_plan = LifetimePlan{}.instantiate({}, system_allocator());
+  ASSERT_FALSE(invalid_plan);
+  EXPECT_TRUE(invalid_plan.error().IsFailedPrecondition());
+
+  const std::array requests{
+      LifetimeRequest{.size = 1024 * 1024, .alignment = 64}};
+  QuotaAllocator quota(system_allocator(), 64 * 1024);
+  {
+    auto plan =
+        LifetimePlanner::build(requests, one_system_resource(), quota.get());
+    ASSERT_TRUE(plan) << plan.error().message();
+    auto instance = plan->instantiate(one_system_resource());
+    ASSERT_TRUE(instance) << instance.error().message();
+    EXPECT_EQ(instance->backing(0, 0)->size(), 1024 * 1024U);
+    EXPECT_LE(quota.used(), quota.limit());
+    EXPECT_GT(quota.peak(), 0U);
+  }
+  EXPECT_EQ(quota.used(), 0U);
+}
+
+TEST(LifetimePlan, ConcurrentInstancesUseTheSharedThreadSafeAllocator) {
+  QuotaAllocator quota(system_allocator());
+  const std::array requests{LifetimeRequest{.size = 64, .alignment = 64}};
+  auto plan =
+      LifetimePlanner::build(requests, one_system_resource(), quota.get())
+          .value();
+  std::atomic<std::size_t> successes{0};
+  std::array<std::thread, 4> workers;
+  for (auto &worker : workers) {
+    worker = std::thread([&] {
+      for (int i = 0; i < 16; ++i) {
+        auto run = plan.instantiate(one_system_resource());
+        if (run && run->view(0)->fill(std::byte{1}).ok())
+          ++successes;
+      }
+    });
+  }
+  for (auto &worker : workers)
+    worker.join();
+  EXPECT_EQ(successes.load(), 64U);
+  plan = {};
+  EXPECT_EQ(quota.used(), 0U);
+}
 
 TEST(LifetimePlan, ReusesHalfOpenIntervalsWithDeterministicBestFit) {
   const std::array requests{

@@ -27,17 +27,17 @@ class RawArray {
   RawArray& operator=(const RawArray&) = delete;
   ~RawArray() { reset(); }
 
-  bool allocate(std::size_t count) noexcept {
+  bool allocate(std::size_t count, AllocatorRef allocator) noexcept {
     HYLE_FATAL_ASSERT(data_ == nullptr);
     if (count == 0) return true;
     if (count > (std::numeric_limits<std::size_t>::max)() / sizeof(T)) {
       return false;
     }
-    void* storage =
-        system_allocator().allocate(count * sizeof(T), alignof(T));
+    void* storage = allocator.allocate(count * sizeof(T), alignof(T));
     if (storage == nullptr) return false;
     data_ = static_cast<T*>(storage);
     count_ = count;
+    allocator_ = allocator;
     for (std::size_t index = 0; index < count_; ++index) {
       ::new (static_cast<void*>(data_ + index)) T{};
     }
@@ -49,7 +49,7 @@ class RawArray {
     for (std::size_t index = count_; index != 0; --index) {
       data_[index - 1].~T();
     }
-    system_allocator().deallocate(data_, count_ * sizeof(T), alignof(T));
+    allocator_.deallocate(data_, count_ * sizeof(T), alignof(T));
     data_ = nullptr;
     count_ = 0;
   }
@@ -71,11 +71,13 @@ class RawArray {
  private:
   T* data_ = nullptr;
   std::size_t count_ = 0;
+  AllocatorRef allocator_{};
 };
 
 template <class... Arrays>
-bool allocate_all(std::size_t count, Arrays&... arrays) noexcept {
-  return (arrays.allocate(count) && ...);
+bool allocate_all(std::size_t count, AllocatorRef allocator,
+                  Arrays&... arrays) noexcept {
+  return (arrays.allocate(count, allocator) && ...);
 }
 
 struct Group {
@@ -147,6 +149,7 @@ struct PlanImpl {
   MemoryPlacement* placements = nullptr;
   ResourceRecord* resources = nullptr;
   LifetimeBackingPlan* backings = nullptr;
+  AllocatorRef allocator{};
 };
 
 struct PlannedImpl {
@@ -156,6 +159,7 @@ struct PlannedImpl {
   MemoryPlacement* placements = nullptr;
   ResourceRecord* resources = nullptr;
   Buffer* buffers = nullptr;
+  AllocatorRef allocator{};
 };
 
 static_assert(std::is_trivially_copyable_v<MemoryPlacement>);
@@ -314,65 +318,63 @@ ActiveSlot pop_active(ActiveSlot* heap, std::size_t& count) noexcept {
 
 void destroy_plan_impl(PlanImpl* impl) noexcept {
   if (impl == nullptr) return;
+  const auto allocator = impl->allocator;
   if (impl->placements != nullptr) {
-    system_allocator().deallocate(
-        impl->placements, impl->request_count * sizeof(MemoryPlacement),
-        alignof(MemoryPlacement));
+    allocator.deallocate(impl->placements,
+                         impl->request_count * sizeof(MemoryPlacement),
+                         alignof(MemoryPlacement));
   }
   if (impl->resources != nullptr) {
-    system_allocator().deallocate(
-        impl->resources, impl->resource_count * sizeof(ResourceRecord),
-        alignof(ResourceRecord));
+    allocator.deallocate(impl->resources,
+                         impl->resource_count * sizeof(ResourceRecord),
+                         alignof(ResourceRecord));
   }
   if (impl->backings != nullptr) {
-    system_allocator().deallocate(
-        impl->backings, impl->backing_count * sizeof(LifetimeBackingPlan),
-        alignof(LifetimeBackingPlan));
+    allocator.deallocate(impl->backings,
+                         impl->backing_count * sizeof(LifetimeBackingPlan),
+                         alignof(LifetimeBackingPlan));
   }
   impl->~PlanImpl();
-  system_allocator().deallocate(impl, sizeof(PlanImpl), alignof(PlanImpl));
+  allocator.deallocate(impl, sizeof(PlanImpl), alignof(PlanImpl));
 }
 
 void destroy_planned_impl(PlannedImpl* impl) noexcept {
   if (impl == nullptr) return;
+  const auto allocator = impl->allocator;
   if (impl->buffers != nullptr) {
     for (std::size_t index = impl->backing_count; index != 0; --index) {
       impl->buffers[index - 1].~Buffer();
     }
-    system_allocator().deallocate(impl->buffers,
-                                  impl->backing_count * sizeof(Buffer),
-                                  alignof(Buffer));
+    allocator.deallocate(impl->buffers, impl->backing_count * sizeof(Buffer),
+                         alignof(Buffer));
   }
   if (impl->resources != nullptr) {
-    system_allocator().deallocate(
-        impl->resources, impl->resource_count * sizeof(ResourceRecord),
-        alignof(ResourceRecord));
+    allocator.deallocate(impl->resources,
+                         impl->resource_count * sizeof(ResourceRecord),
+                         alignof(ResourceRecord));
   }
   if (impl->placements != nullptr) {
-    system_allocator().deallocate(
-        impl->placements, impl->request_count * sizeof(MemoryPlacement),
-        alignof(MemoryPlacement));
+    allocator.deallocate(impl->placements,
+                         impl->request_count * sizeof(MemoryPlacement),
+                         alignof(MemoryPlacement));
   }
   impl->~PlannedImpl();
-  system_allocator().deallocate(impl, sizeof(PlannedImpl),
-                                alignof(PlannedImpl));
+  allocator.deallocate(impl, sizeof(PlannedImpl), alignof(PlannedImpl));
 }
 
 Result<void*> make_plan_impl(
     std::size_t request_count, std::size_t resource_count,
-    std::size_t backing_count,
-    RawArray<MemoryPlacement>& placements,
+    std::size_t backing_count, RawArray<MemoryPlacement>& placements,
     RawArray<ResourceRecord>& resources,
-    RawArray<LifetimeBackingPlan>& backings) noexcept {
-  void* storage =
-      system_allocator().allocate(sizeof(PlanImpl), alignof(PlanImpl));
+    RawArray<LifetimeBackingPlan>& backings, AllocatorRef allocator) noexcept {
+  void* storage = allocator.allocate(sizeof(PlanImpl), alignof(PlanImpl));
   if (storage == nullptr) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime plan metadata allocation failed"));
   }
   auto* impl = ::new (storage) PlanImpl{
       request_count, resource_count, backing_count, placements.release(),
-      resources.release(), backings.release()};
+      resources.release(), backings.release(), allocator};
   return static_cast<void*>(impl);
 }
 
@@ -380,7 +382,11 @@ Result<void*> make_plan_impl(
 
 Result<LifetimePlan> LifetimePlanner::build(
     std::span<const LifetimeRequest> requests,
-    std::span<const MemoryResourceRef> resources) noexcept {
+    std::span<const MemoryResourceRef> resources,
+    AllocatorRef allocator) noexcept {
+  if (!allocator.valid())
+    return std::unexpected(Status::InvalidArgument(
+        "lifetime planner metadata allocator is invalid"));
   const std::size_t count = requests.size();
   if (count > kInvalidIndex) {
     return std::unexpected(
@@ -396,7 +402,7 @@ Result<LifetimePlan> LifetimePlanner::build(
           "an empty lifetime plan cannot name resources"));
     }
     auto impl = make_plan_impl(0, 0, 0, placements, resource_records,
-                               backing_plans);
+                               backing_plans, allocator);
     if (!impl) return std::unexpected(std::move(impl).error());
     return LifetimePlan(*impl);
   }
@@ -448,10 +454,10 @@ Result<LifetimePlan> LifetimePlanner::build(
   RawArray<BackingWork> backing_work;
   RawArray<Slot> slots;
   RawArray<ActiveSlot> active;
-  if (!allocate_all(count, roots, relative_offsets, states, path, groups,
-                    order, slots, active) ||
-      !resource_work.allocate(resource_count) ||
-      !backing_work.allocate(count)) {
+  if (!allocate_all(count, allocator, roots, relative_offsets, states, path,
+                    groups, order, slots, active) ||
+      !resource_work.allocate(resource_count, allocator) ||
+      !backing_work.allocate(count, allocator)) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime planner scratch allocation failed"));
   }
@@ -566,7 +572,8 @@ Result<LifetimePlan> LifetimePlanner::build(
 
   RawArray<CapacityKey> capacities;
   RawArray<ComboKey> combos;
-  if (!capacities.allocate(group_count) || !combos.allocate(group_count)) {
+  if (!capacities.allocate(group_count, allocator) ||
+      !combos.allocate(group_count, allocator)) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime planner index allocation failed"));
   }
@@ -633,7 +640,8 @@ Result<LifetimePlan> LifetimePlanner::build(
   }
   RawArray<std::uint64_t> tree;
   RawArray<std::uint32_t> free_heads;
-  if (!tree.allocate(tree_base * 2) || !free_heads.allocate(combo_count)) {
+  if (!tree.allocate(tree_base * 2, allocator) ||
+      !free_heads.allocate(combo_count, allocator)) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime planner free-slot index allocation failed"));
   }
@@ -803,9 +811,9 @@ Result<LifetimePlan> LifetimePlanner::build(
         resource.minimum_alignment};
   }
 
-  if (!placements.allocate(count) ||
-      !resource_records.allocate(resource_count) ||
-      !backing_plans.allocate(backing_count)) {
+  if (!placements.allocate(count, allocator) ||
+      !resource_records.allocate(resource_count, allocator) ||
+      !backing_plans.allocate(backing_count, allocator)) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime plan result allocation failed"));
   }
@@ -843,7 +851,7 @@ Result<LifetimePlan> LifetimePlanner::build(
         LifetimeBackingPlan{backing.size, backing.alignment};
   }
   auto impl = make_plan_impl(count, resource_count, backing_count, placements,
-                             resource_records, backing_plans);
+                             resource_records, backing_plans, allocator);
   if (!impl) return std::unexpected(std::move(impl).error());
   return LifetimePlan(*impl);
 }
@@ -920,10 +928,23 @@ Result<LifetimeBackingPlan> LifetimePlan::backing_plan(
 
 Result<PlannedBuffers> LifetimePlan::instantiate(
     std::span<const MemoryResourceRef> resources) const noexcept {
+  if (!valid())
+    return std::unexpected(
+        Status::FailedPrecondition("lifetime plan is invalid"));
+  return instantiate(resources,
+                     static_cast<const PlanImpl*>(impl_)->allocator);
+}
+
+Result<PlannedBuffers> LifetimePlan::instantiate(
+    std::span<const MemoryResourceRef> resources,
+    AllocatorRef allocator) const noexcept {
   if (!valid()) {
     return std::unexpected(
         Status::FailedPrecondition("lifetime plan is invalid"));
   }
+  if (!allocator.valid())
+    return std::unexpected(Status::InvalidArgument(
+        "planned-buffer metadata allocator is invalid"));
   const PlanImpl& plan = *static_cast<PlanImpl*>(impl_);
   if (resources.size() != plan.resource_count) {
     return std::unexpected(Status::InvalidArgument(
@@ -952,25 +973,23 @@ Result<PlannedBuffers> LifetimePlan::instantiate(
     }
   }
 
-  void* storage =
-      system_allocator().allocate(sizeof(PlannedImpl), alignof(PlannedImpl));
+  void* storage = allocator.allocate(sizeof(PlannedImpl), alignof(PlannedImpl));
   if (storage == nullptr) {
     return std::unexpected(Status::ResourceExhausted(
         "planned-buffer metadata allocation failed"));
   }
   auto* output = ::new (storage) PlannedImpl{
       plan.request_count, plan.resource_count, plan.backing_count, nullptr,
-      nullptr, nullptr};
+      nullptr, nullptr, allocator};
 
   RawArray<MemoryPlacement> copied_placements;
   RawArray<ResourceRecord> copied_resources;
   RawArray<Buffer> buffers;
-  if (!copied_placements.allocate(plan.request_count) ||
-      !copied_resources.allocate(plan.resource_count) ||
-      !buffers.allocate(plan.backing_count)) {
+  if (!copied_placements.allocate(plan.request_count, allocator) ||
+      !copied_resources.allocate(plan.resource_count, allocator) ||
+      !buffers.allocate(plan.backing_count, allocator)) {
     output->~PlannedImpl();
-    system_allocator().deallocate(output, sizeof(PlannedImpl),
-                                  alignof(PlannedImpl));
+    allocator.deallocate(output, sizeof(PlannedImpl), alignof(PlannedImpl));
     return std::unexpected(Status::ResourceExhausted(
         "planned-buffer arrays allocation failed"));
   }
@@ -992,8 +1011,7 @@ Result<PlannedBuffers> LifetimePlan::instantiate(
                                     backing_plan.alignment);
       if (!created) {
         output->~PlannedImpl();
-        system_allocator().deallocate(output, sizeof(PlannedImpl),
-                                      alignof(PlannedImpl));
+        allocator.deallocate(output, sizeof(PlannedImpl), alignof(PlannedImpl));
         return std::unexpected(std::move(created).error());
       }
       buffers[flat_index] = std::move(*created);

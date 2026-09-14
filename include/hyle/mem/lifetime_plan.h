@@ -5,6 +5,7 @@
 #include <span>
 
 #include "hyle/error/result.h"
+#include "hyle/mem/allocator.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/visibility.h"
 
@@ -98,8 +99,15 @@ class LifetimePlan {
       std::size_t resource_slot) const noexcept;
   HYLE_MEM_API Result<LifetimeBackingPlan> backing_plan(
       std::size_t resource_slot, std::size_t backing_index) const noexcept;
+  // Metadata inherits the planner's allocator. Its owner must outlive both
+  // this plan and all instances that inherit it; payload uses `resources`.
   HYLE_MEM_API Result<PlannedBuffers> instantiate(
       std::span<const MemoryResourceRef> resources) const noexcept;
+  // Separate run-state metadata owner. The instance keeps no reference to
+  // the plan or its allocator; `allocator` must outlive the returned instance.
+  HYLE_MEM_API Result<PlannedBuffers> instantiate(
+      std::span<const MemoryResourceRef> resources,
+      AllocatorRef allocator) const noexcept;
 
  private:
   friend class LifetimePlanner;
@@ -147,11 +155,15 @@ class PlannedBuffers {
 // New slots are split at provider allocation limits. Build is O((N+E) log N),
 // scratch is O(N), and no table is proportional to bytes/pages. E is the
 // alias-edge count (<= N).
+// `allocator` supplies all scratch/result metadata, never resource payload.
+// It is borrowed until the plan and any inheriting instances are destroyed.
+// Concurrent instantiation requires thread-safe allocators and resources.
 class LifetimePlanner {
  public:
   HYLE_MEM_API static Result<LifetimePlan> build(
       std::span<const LifetimeRequest> requests,
-      std::span<const MemoryResourceRef> resources) noexcept;
+      std::span<const MemoryResourceRef> resources,
+      AllocatorRef allocator = system_allocator()) noexcept;
 };
 
 static_assert(sizeof(LifetimePlan) == sizeof(void*));

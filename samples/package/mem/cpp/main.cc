@@ -174,14 +174,21 @@ int main() {
                                  .flags = hyle::mem::LifetimeFlag::kOutput},
   };
   const std::array resources{hyle::mem::system_resource()};
-  auto plan_result = hyle::mem::LifetimePlanner::build(requests, resources);
+  hyle::mem::QuotaAllocator plan_quota(hyle::mem::system_allocator(),
+                                     64 * 1024);
+  hyle::mem::QuotaAllocator run_quota(hyle::mem::system_allocator(), 64 * 1024);
+  auto plan_result =
+      hyle::mem::LifetimePlanner::build(requests, resources, plan_quota.get());
   if (!plan_result) return 17;
   hyle::mem::LifetimePlan plan = std::move(*plan_result);
   if (plan.resource_plan(0)->backing_count != 1 ||
       plan.backing_plan(0, 0)->size != 256) {
     return 18;
   }
-  auto planned_result = plan.instantiate(resources);
+  auto inherited_result = plan.instantiate(resources);
+  if (!inherited_result)
+    return 27;
+  auto planned_result = plan.instantiate(resources, run_quota.get());
   if (!planned_result) return 19;
   hyle::mem::PlannedBuffers planned = std::move(*planned_result);
   auto first_view = planned.view(0);
@@ -189,6 +196,15 @@ int main() {
   if (!first_view || !second_view || first_view->offset() != second_view->offset()) {
     return 20;
   }
+  plan = {};
+  if (plan_quota.used() == 0 || run_quota.used() == 0)
+    return 28;
+  inherited_result->reset();
+  if (plan_quota.used() != 0)
+    return 29;
+  planned.reset();
+  if (run_quota.used() != 0)
+    return 30;
 
   const auto memory = hyle::mem::system_memory_snapshot();
   if (!memory) {
