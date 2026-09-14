@@ -49,3 +49,14 @@ per-run Invocation 继续分离。steady submit 不搜索、不 JIT、不打包�
 先签 P0、P1 随完整 Graph；Native FFI N/A；三交付必须跨 factor；public C++ journey 不变。
 当前为 `AUDITED`：只授权 C80--C84。
 
+## 2026-09-14 实现检查点
+
+- C80 的 provider-owned 结构成本已集中到 `ProviderRouteCostFacts`；workspace、persistent、copy、repack、
+  synchronization 与 dispatch 都区分 unknown 和 exact zero，零 dispatch 被公共 owner 拒绝。
+- C82/C83 的 exact prepare 已迁为 prepared / unsupported decline / resource-budget decline / error 四态；
+  公共 direct 路线仍只对 unsupported 按显式 provider 顺序继续，资源拒绝与真实错误不会被静默换路。
+- 公共 owner 会在任何 decline/error 后销毁 provider 返回的部分 artifact；无法证明 destroy ownership 的
+  部分 artifact 作为合同违约拒绝。故障注入覆盖四态、错误分类、清理与 direct retry 边界。
+- Windows source-tree shared/static 的 Compute、Graph、CPU backend 与 Native 测试各 9/9 通过；启用
+  oneDNN 的 shared 构建与 oneDNN/Graph provider 测试 6/6 通过。shape proof、stable candidate key、
+  qualified profile identity 与 Graph selector 尚未实现，因此组件仍为 `AUDITED`。

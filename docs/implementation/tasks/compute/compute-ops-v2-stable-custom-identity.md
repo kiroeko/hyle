@@ -24,7 +24,7 @@
 
 | 能力族 | 层级 | 当前事实 | 覆盖 | 动作 |
 |---|---|---|---|---|
-| 内建 typed operation | 原子机制 | 20 个内建 family 由 variant index/typed descriptor 表达 | COMPLETE | KEEP |
+| 内建 typed operation | 原子机制 | 19 个 typed builtin family 由 variant index/typed descriptor 表达 | COMPLETE | KEEP |
 | custom schema identity | 原子机制 | `OperationId` 已保存，但查询仍比较 vtable 地址 | PARTIAL | FIX |
 | bounded shape proof | Graph/provider 机制 | 是否接受完整 shape subdomain 取决于 Graph 与具体 provider，不是 operation value 的单一属性 | ROUTED | 不放入 ComputeOps |
 

@@ -82,11 +82,12 @@ hyle::Status propose_provider(
   return hyle::Status::Unimplemented("probe provider declines operation");
 }
 
-hyle::Status prepare_provider(
+hyle::compute::detail::ProviderPrepareOutcome prepare_provider(
     void *, const hyle::compute::detail::ProviderPrepareRequest &,
     hyle::mem::AllocatorRef,
     hyle::compute::detail::ProviderPrepared *) noexcept {
-  return hyle::Status::Unimplemented("probe provider declines operation");
+  return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+      hyle::Status::Unimplemented("probe provider declines operation"));
 }
 
 hyle::Status drain_provider_context(void *) noexcept {
@@ -129,6 +130,15 @@ hyle::compute::Provider make_provider(ProviderProbe &probe,
       &kProviderVTable, ProviderPayload{&probe, index});
 }
 
+enum class PrepareDisposition : std::uint8_t {
+  kPrepared = 0,
+  kUnsupported,
+  kResourceBudget,
+  kError,
+  kInvalidClassification,
+  kUnownedPartial,
+};
+
 struct AsyncOperationProbe final {
   bool complete = false;
   bool cancelled = false;
@@ -139,8 +149,12 @@ struct AsyncOperationProbe final {
   std::size_t wait_enqueue_count = 0;
   std::size_t completion_destroy_count = 0;
   std::size_t invocation_destroy_count = 0;
+  std::size_t prepare_count = 0;
+  std::size_t prepared_destroy_count = 0;
   hyle::compute::detail::CompletionLifetime abandoned{};
   hyle::Status abandoned_hint{};
+  PrepareDisposition prepare_disposition = PrepareDisposition::kPrepared;
+  bool return_partial_artifact = false;
 };
 
 hyle::Status create_async_context(const hyle::compute::Provider &provider,
@@ -155,7 +169,10 @@ hyle::Status create_async_context(const hyle::compute::Provider &provider,
 
 void destroy_async_context(void *, hyle::mem::AllocatorRef) noexcept {}
 
-void destroy_async_prepared(void *, hyle::mem::AllocatorRef) noexcept {}
+void destroy_async_prepared(void *value, hyle::mem::AllocatorRef) noexcept {
+  if (value != nullptr)
+    ++static_cast<AsyncOperationProbe *>(value)->prepared_destroy_count;
+}
 
 hyle::compute::AliasSupport async_alias_support(void *, std::size_t,
                                                 std::size_t) noexcept {
@@ -263,18 +280,23 @@ hyle::Status propose_async_operation(
           .supports_concurrent_invocations = true,
           .capture_compatible = false,
       },
-      .workspace = hyle::compute::WorkspaceRequirement{},
+      .cost = hyle::compute::detail::ProviderRouteCostFacts{
+          .workspace = hyle::compute::WorkspaceRequirement{},
+      },
   };
   return hyle::Status::Ok();
 }
 
-hyle::Status prepare_async_operation(
+hyle::compute::detail::ProviderPrepareOutcome prepare_async_operation(
     void *context, const hyle::compute::detail::ProviderPrepareRequest &request,
     hyle::mem::AllocatorRef,
     hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   if (request.route != 1)
-    return hyle::Status::InvalidArgument("test async route is invalid");
-  *prepared = hyle::compute::detail::ProviderPrepared{
+    return hyle::compute::detail::ProviderPrepareOutcome::error(
+        hyle::Status::InvalidArgument("test async route is invalid"));
+  auto &probe = *static_cast<AsyncOperationProbe *>(context);
+  ++probe.prepare_count;
+  const auto artifact = hyle::compute::detail::ProviderPrepared{
       .vtable = &kAsyncPreparedVTable,
       .state = context,
       .runtime = hyle::compute::ProviderRuntimeProperties{
@@ -286,7 +308,31 @@ hyle::Status prepare_async_operation(
           .capture_compatible = false,
       },
   };
-  return hyle::Status::Ok();
+  if (probe.return_partial_artifact)
+    *prepared = artifact;
+  switch (probe.prepare_disposition) {
+  case PrepareDisposition::kPrepared:
+    *prepared = artifact;
+    return hyle::compute::detail::ProviderPrepareOutcome::prepared();
+  case PrepareDisposition::kUnsupported:
+    return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+        hyle::Status::Unimplemented("injected unsupported route"));
+  case PrepareDisposition::kResourceBudget:
+    return hyle::compute::detail::ProviderPrepareOutcome::resource_declined(
+        hyle::Status::ResourceExhausted("injected route budget rejection"));
+  case PrepareDisposition::kError:
+    return hyle::compute::detail::ProviderPrepareOutcome::error(
+        hyle::Status::DataLoss("injected provider failure"));
+  case PrepareDisposition::kInvalidClassification:
+    return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+        hyle::Status::InvalidArgument("mismatched decline classification"));
+  case PrepareDisposition::kUnownedPartial:
+    *prepared = hyle::compute::detail::ProviderPrepared{.state = context};
+    return hyle::compute::detail::ProviderPrepareOutcome::unsupported(
+        hyle::Status::Unimplemented("unowned partial artifact"));
+  }
+  return hyle::compute::detail::ProviderPrepareOutcome::error(
+      hyle::Status::Internal("unknown test prepare disposition"));
 }
 
 const hyle::compute::detail::ProviderVTable kAsyncProviderVTable{
@@ -804,20 +850,23 @@ hyle::Status propose_delegated(
   *proposal = hyle::compute::detail::ProviderOperationProposal{
       .route = 1,
       .runtime = kDelegatedRuntime,
-      .workspace = hyle::compute::WorkspaceRequirement{},
+      .cost = hyle::compute::detail::ProviderRouteCostFacts{
+          .workspace = hyle::compute::WorkspaceRequirement{},
+      },
   };
   return hyle::Status::Ok();
 }
 
-hyle::Status prepare_delegated(
+hyle::compute::detail::ProviderPrepareOutcome prepare_delegated(
     void *context,
     const hyle::compute::detail::ProviderPrepareRequest &request,
     hyle::mem::AllocatorRef,
     hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   if (context == nullptr || prepared == nullptr || request.route != 1 ||
       request.inputs.size() != 1 || request.outputs.size() != 1) {
-    return hyle::Status::InvalidArgument(
-        "delegated exact prepare request is invalid");
+    return hyle::compute::detail::ProviderPrepareOutcome::error(
+        hyle::Status::InvalidArgument(
+            "delegated exact prepare request is invalid"));
   }
   *prepared = hyle::compute::detail::ProviderPrepared{
       .vtable = static_cast<DelegatedContext *>(context)
@@ -827,7 +876,7 @@ hyle::Status prepare_delegated(
       .state = context,
       .runtime = kDelegatedRuntime,
   };
-  return hyle::Status::Ok();
+  return hyle::compute::detail::ProviderPrepareOutcome::prepared();
 }
 
 hyle::Status drain_delegated_context(void *value) noexcept {
@@ -1053,6 +1102,122 @@ TEST(RuntimeProviders, ContextCopiesAnArbitraryOrderedSequence) {
   ASSERT_EQ(probe.destroy_count, providers.size());
   for (std::size_t index = 0; index < providers.size(); ++index)
     EXPECT_EQ(probe.destroyed[index], providers.size() - index - 1);
+}
+
+TEST(RuntimeProviders,
+     PreparationAttemptClassifiesDeclinesAndOwnsPartialArtifacts) {
+  AsyncOperationProbe probe;
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_async_provider(probe))
+                     .value();
+  const std::array<std::int64_t, 1> shape{8};
+  const auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
+                                       shape)
+          .value();
+  const hyle::compute::Operation operation(
+      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg});
+  const std::array inputs{description};
+  const std::array outputs{description};
+  std::array<hyle::compute::detail::ResourceBindingRequirement, 1>
+      input_requirements{};
+  std::array<hyle::compute::detail::ResourceBindingRequirement, 1>
+      output_requirements{};
+  const auto proposal =
+      hyle::compute::detail::OperationPreparationAccess::propose(
+          context, 0, operation, inputs, outputs, input_requirements,
+          output_requirements)
+          .value();
+  const std::array input_resources{hyle::mem::system_resource()};
+  const std::array output_resources{hyle::mem::system_resource()};
+  const hyle::compute::OperationResourceBindings resources{
+      .inputs = input_resources,
+      .outputs = output_resources,
+      .workspace_resource = hyle::mem::system_resource(),
+  };
+  const auto attempt = [&]() {
+    return hyle::compute::detail::OperationPreparationAccess::prepare_candidate(
+        context, proposal, operation, inputs, outputs, input_requirements,
+        output_requirements, resources);
+  };
+
+  probe.prepare_disposition = PrepareDisposition::kUnsupported;
+  auto unsupported = attempt();
+  ASSERT_TRUE(unsupported.has_value()) << unsupported.error().message();
+  EXPECT_FALSE(unsupported->succeeded());
+  EXPECT_EQ(unsupported->decline,
+            hyle::compute::detail::ProviderPrepareDecline::kUnsupported);
+  EXPECT_TRUE(unsupported->reason.IsUnimplemented());
+
+  probe.prepare_disposition = PrepareDisposition::kResourceBudget;
+  probe.return_partial_artifact = true;
+  auto resource = attempt();
+  ASSERT_TRUE(resource.has_value()) << resource.error().message();
+  EXPECT_FALSE(resource->succeeded());
+  EXPECT_EQ(resource->decline,
+            hyle::compute::detail::ProviderPrepareDecline::kResourceBudget);
+  EXPECT_TRUE(resource->reason.IsResourceExhausted());
+  EXPECT_EQ(probe.prepared_destroy_count, 1u);
+
+  probe.prepare_disposition = PrepareDisposition::kError;
+  probe.return_partial_artifact = false;
+  auto failed = attempt();
+  ASSERT_FALSE(failed.has_value());
+  EXPECT_TRUE(failed.error().IsDataLoss());
+
+  probe.prepare_disposition = PrepareDisposition::kInvalidClassification;
+  auto invalid_classification = attempt();
+  ASSERT_FALSE(invalid_classification.has_value());
+  EXPECT_TRUE(invalid_classification.error().IsInternal());
+
+  probe.prepare_disposition = PrepareDisposition::kUnownedPartial;
+  auto unowned = attempt();
+  ASSERT_FALSE(unowned.has_value());
+  EXPECT_TRUE(unowned.error().IsInternal());
+}
+
+TEST(RuntimeProviders, DirectPreparationRetriesOnlyUnsupportedDeclines) {
+  const std::array<std::int64_t, 1> shape{8};
+  const auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
+                                       shape)
+          .value();
+
+  AsyncOperationProbe unsupported_probe;
+  AsyncOperationProbe fallback_probe;
+  unsupported_probe.prepare_disposition = PrepareDisposition::kUnsupported;
+  const std::array fallback_providers{make_async_provider(unsupported_probe),
+                                      make_async_provider(fallback_probe)};
+  auto fallback_context = hyle::compute::Context::create(
+                              hyle::compute::cpu::device(),
+                              {.providers = fallback_providers})
+                              .value();
+  auto prepared = hyle::compute::prepare(
+      fallback_context,
+      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg}, description);
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(unsupported_probe.prepare_count, 1u);
+  EXPECT_EQ(fallback_probe.prepare_count, 1u);
+
+  AsyncOperationProbe resource_probe;
+  AsyncOperationProbe forbidden_fallback_probe;
+  resource_probe.prepare_disposition = PrepareDisposition::kResourceBudget;
+  resource_probe.return_partial_artifact = true;
+  const std::array resource_providers{make_async_provider(resource_probe),
+                                      make_async_provider(
+                                          forbidden_fallback_probe)};
+  auto resource_context = hyle::compute::Context::create(
+                              hyle::compute::cpu::device(),
+                              {.providers = resource_providers})
+                              .value();
+  auto declined = hyle::compute::prepare(
+      resource_context,
+      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg}, description);
+  ASSERT_FALSE(declined.has_value());
+  EXPECT_TRUE(declined.error().IsResourceExhausted());
+  EXPECT_EQ(resource_probe.prepare_count, 1u);
+  EXPECT_EQ(resource_probe.prepared_destroy_count, 1u);
+  EXPECT_EQ(forbidden_fallback_probe.prepare_count, 0u);
 }
 
 TEST(RuntimeProviders, ContextCreationRollsBackInReverseOrder) {

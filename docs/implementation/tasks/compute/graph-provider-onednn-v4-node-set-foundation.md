@@ -32,3 +32,8 @@
 公开用户仍只安装 provider 并从 CompileReport 观察选择；没有 provider-specific Graph API。当前为 `AUDITED`，
 只授权 GP40--GP44。
 
+## 2026-09-14 实现检查点
+
+本 factor 的 single-op 拒绝适配器已迁至显式 unsupported outcome，并在 oneDNN-enabled Windows shared
+构建中通过逐头与现有 region 测试。GP40--GP44 的 node-set、完整 boundary cost、事务回退与 gated MLP
+仍是后续主体；本检查点不构成 Candidate 或关闭声明。

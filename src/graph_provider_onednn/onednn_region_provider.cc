@@ -832,11 +832,12 @@ Status propose_single(
       "oneDNN graph region provider has no single-operation route");
 }
 
-Status prepare_single(void *, const compute::detail::ProviderPrepareRequest &,
-                      mem::AllocatorRef,
-                      compute::detail::ProviderPrepared *) noexcept {
-  return Status::Unimplemented(
-      "oneDNN graph region provider has no single-operation route");
+compute::detail::ProviderPrepareOutcome prepare_single(
+    void *, const compute::detail::ProviderPrepareRequest &,
+    mem::AllocatorRef, compute::detail::ProviderPrepared *) noexcept {
+  return compute::detail::ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented(
+          "oneDNN graph region provider has no single-operation route"));
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }

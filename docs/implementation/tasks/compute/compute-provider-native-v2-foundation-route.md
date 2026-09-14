@@ -30,3 +30,9 @@
 
 公开 API 不变；bounded capability 是 provider 对完整 subdomain 的承诺。当前为 `AUDITED`，只授权 N20--N23。
 
+## 2026-09-14 实现检查点
+
+N20 与 N21 的 exact 路线部分已完成：19-family proposal 明确报告 caller workspace、NativePlan persistent
+storage、零 copy/repack/sync 与一次 dispatch；prepare 使用公共四态结果，分配失败为可审计资源拒绝，其他
+错误不伪装 fallback。Windows source-tree shared/static 的 Native 逐头与单元测试均通过。N22 bounded
+probe 与 N23 完整 MLP selector 尚未开始，状态保持 `AUDITED`。

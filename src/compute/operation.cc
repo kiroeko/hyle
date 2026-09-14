@@ -589,10 +589,15 @@ detail::OperationPreparationAccess::propose(
     return std::unexpected(Status::Internal(
         "compute provider returned invalid runtime properties"));
   }
-  if (proposal.workspace.has_value() &&
-      (!is_power_of_two(proposal.workspace->alignment))) {
+  if (proposal.cost.workspace.has_value() &&
+      (!is_power_of_two(proposal.cost.workspace->alignment))) {
     return std::unexpected(Status::Internal(
         "compute provider returned invalid proposed workspace"));
+  }
+  if (proposal.cost.dispatch_count.has_value() &&
+      *proposal.cost.dispatch_count == 0) {
+    return std::unexpected(Status::Internal(
+        "compute provider returned an invalid zero dispatch count"));
   }
   status = validate_requirement(proposal.workspace_resource);
   if (!status.ok())
@@ -619,7 +624,8 @@ Status detail::OperationPreparationAccess::match_resource(
   return match_requirement(requirement, resource);
 }
 
-Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
+Result<detail::ProviderPrepareAttempt>
+detail::OperationPreparationAccess::prepare_candidate(
     const Context &context, const ProviderOperationProposal &proposal,
     Operation operation, std::span<const TensorDesc> inputs,
     std::span<const TensorDesc> outputs,
@@ -727,17 +733,6 @@ Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
       .workspace_resource = workspace_resource,
       .route = proposal.route,
   };
-  status = table->prepare(slot.state, request, state->allocator,
-                          &provider_prepared);
-  if (!status.ok()) {
-    if (provider_prepared.vtable != nullptr &&
-        provider_prepared.vtable->destroy_prepared != nullptr) {
-      provider_prepared.vtable->destroy_prepared(provider_prepared.state,
-                                                 state->allocator);
-    }
-    return std::unexpected(std::move(status));
-  }
-
   const auto destroy_invalid = [&]() noexcept {
     if (provider_prepared.vtable != nullptr &&
         provider_prepared.vtable->destroy_prepared != nullptr) {
@@ -745,6 +740,44 @@ Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
                                                  state->allocator);
     }
   };
+  detail::ProviderPrepareOutcome outcome = table->prepare(
+      slot.state, request, state->allocator, &provider_prepared);
+  if (outcome.kind != detail::ProviderPrepareOutcomeKind::kPrepared) {
+    const bool valid_decline =
+        (outcome.kind ==
+             detail::ProviderPrepareOutcomeKind::kDeclinedUnsupported &&
+         outcome.status.IsUnimplemented()) ||
+        (outcome.kind ==
+             detail::ProviderPrepareOutcomeKind::kDeclinedResourceBudget &&
+         outcome.status.IsResourceExhausted()) ||
+        (outcome.kind == detail::ProviderPrepareOutcomeKind::kError &&
+         !outcome.status.ok());
+    if (provider_prepared.state != nullptr &&
+        (provider_prepared.vtable == nullptr ||
+         provider_prepared.vtable->destroy_prepared == nullptr)) {
+      return std::unexpected(Status::Internal(
+          "compute provider returned an unowned partial artifact"));
+    }
+    destroy_invalid();
+    if (!valid_decline) {
+      return std::unexpected(Status::Internal(
+          "compute provider returned an invalid prepare outcome"));
+    }
+    if (outcome.kind == detail::ProviderPrepareOutcomeKind::kError)
+      return std::unexpected(std::move(outcome.status));
+    return detail::ProviderPrepareAttempt{
+        .decline = outcome.kind ==
+                           detail::ProviderPrepareOutcomeKind::kDeclinedUnsupported
+                       ? detail::ProviderPrepareDecline::kUnsupported
+                       : detail::ProviderPrepareDecline::kResourceBudget,
+        .reason = std::move(outcome.status),
+    };
+  }
+  if (!outcome.status.ok()) {
+    destroy_invalid();
+    return std::unexpected(Status::Internal(
+        "compute provider returned an error with a prepared outcome"));
+  }
   const bool shared =
       provider_prepared.runtime.mode == ProviderRuntimeMode::kSharedQueue;
   if (provider_prepared.vtable == nullptr ||
@@ -765,12 +798,13 @@ Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
       !valid_runtime_properties(provider_prepared.runtime) ||
       !same_runtime_properties(provider_prepared.runtime, proposal.runtime) ||
       !is_power_of_two(provider_prepared.workspace.alignment) ||
-      (proposal.workspace.has_value() &&
-       (provider_prepared.workspace.size != proposal.workspace->size ||
+      (proposal.cost.workspace.has_value() &&
+       (provider_prepared.workspace.size != proposal.cost.workspace->size ||
         provider_prepared.workspace.alignment !=
-            proposal.workspace->alignment)) ||
-      (proposal.persistent_bytes.has_value() &&
-       provider_prepared.persistent_bytes != proposal.persistent_bytes)) {
+            proposal.cost.workspace->alignment)) ||
+      (proposal.cost.persistent_bytes.has_value() &&
+       provider_prepared.persistent_bytes !=
+           proposal.cost.persistent_bytes)) {
     destroy_invalid();
     return std::unexpected(
         Status::Internal("compute provider returned an invalid artifact"));
@@ -808,7 +842,26 @@ Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
       workspace_resource, table->identity, provider_prepared);
   if (!prepared)
     return std::unexpected(std::move(prepared).error());
-  return PreparedOperation(*prepared);
+  return detail::ProviderPrepareAttempt{
+      .prepared = PreparedOperation(*prepared),
+  };
+}
+
+Result<PreparedOperation> detail::OperationPreparationAccess::prepare(
+    const Context &context, const ProviderOperationProposal &proposal,
+    Operation operation, std::span<const TensorDesc> inputs,
+    std::span<const TensorDesc> outputs,
+    std::span<const ResourceBindingRequirement> input_requirements,
+    std::span<const ResourceBindingRequirement> output_requirements,
+    OperationResourceBindings resources) noexcept {
+  auto attempt = prepare_candidate(context, proposal, operation, inputs,
+                                   outputs, input_requirements,
+                                   output_requirements, resources);
+  if (!attempt)
+    return std::unexpected(std::move(attempt).error());
+  if (!attempt->succeeded())
+    return std::unexpected(std::move(attempt->reason));
+  return std::move(attempt->prepared);
 }
 
 Result<PreparedOperation>

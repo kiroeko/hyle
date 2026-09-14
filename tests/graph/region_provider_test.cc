@@ -735,12 +735,14 @@ Status propose_single(
                         : (probe.delegated_single
                                ? probe.artifact_properties.runtime
                                : kUnaryRuntime),
-      .workspace = hyle::compute::WorkspaceRequirement{},
+      .cost = hyle::compute::detail::ProviderRouteCostFacts{
+          .workspace = hyle::compute::WorkspaceRequirement{},
+      },
   };
   return Status::Ok();
 }
 
-Status prepare_single(
+hyle::compute::detail::ProviderPrepareOutcome prepare_single(
     void *context,
     const hyle::compute::detail::ProviderPrepareRequest &request,
     AllocatorRef allocator,
@@ -760,12 +762,14 @@ Status prepare_single(
         request.input_resources[0] != probe.required_resource ||
         request.output_resources[0] != probe.required_resource)) ||
       (!effect && !constrained_unary)) {
-    return Status::InvalidArgument("effect exact preparation mismatch");
+    return hyle::compute::detail::ProviderPrepareOutcome::error(
+        Status::InvalidArgument("effect exact preparation mismatch"));
   }
   if (constrained_unary) {
     void *storage = allocator.allocate(sizeof(RegionPlan), alignof(RegionPlan));
     if (storage == nullptr)
-      return Status::ResourceExhausted("unary plan allocation failed");
+      return hyle::compute::detail::ProviderPrepareOutcome::resource_declined(
+          Status::ResourceExhausted("unary plan allocation failed"));
     auto *plan = ::new (storage) RegionPlan{&probe, 1};
     *prepared = hyle::compute::detail::ProviderPrepared{
         .vtable = probe.delegated_single ? &kDelegatedUnaryPreparedVTable
@@ -776,14 +780,14 @@ Status prepare_single(
                        ? probe.artifact_properties.runtime
                        : kUnaryRuntime,
     };
-    return Status::Ok();
+    return hyle::compute::detail::ProviderPrepareOutcome::prepared();
   }
   *prepared = hyle::compute::detail::ProviderPrepared{
       .vtable = &kEffectPreparedVTable,
       .state = &probe,
       .runtime = kEffectRuntime,
   };
-  return Status::Ok();
+  return hyle::compute::detail::ProviderPrepareOutcome::prepared();
 }
 
 Status drain_provider_context(void *) noexcept { return Status::Ok(); }

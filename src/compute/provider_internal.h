@@ -6,6 +6,7 @@
 #include <span>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
@@ -17,6 +18,18 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
+// Provider-owned work that is visible at the canonical operation boundary.
+// These are structural facts, not benchmark scores. Unknown byte counts stay
+// disengaged; an engaged zero is an exact zero.
+struct ProviderRouteCostFacts final {
+  std::optional<WorkspaceRequirement> workspace{};
+  std::optional<std::size_t> persistent_bytes{};
+  std::optional<std::size_t> copy_bytes{};
+  std::optional<std::size_t> repack_bytes{};
+  std::optional<std::uint32_t> synchronization_count{};
+  std::optional<std::uint32_t> dispatch_count{};
+};
+
 struct ProviderOperationProposal final {
   const ContextState *context = nullptr;
   ProviderIdentity provider{};
@@ -24,8 +37,7 @@ struct ProviderOperationProposal final {
   std::uint64_t route = 0;
   ProviderRuntimeProperties runtime{};
   ResourceBindingRequirement workspace_resource{};
-  std::optional<WorkspaceRequirement> workspace{};
-  std::optional<std::size_t> persistent_bytes{};
+  ProviderRouteCostFacts cost{};
 };
 
 struct ProviderPrepareRequest final {
@@ -80,6 +92,51 @@ struct ProviderPrepared final {
   std::optional<std::size_t> persistent_bytes{};
 };
 
+enum class ProviderPrepareOutcomeKind : std::uint8_t {
+  kPrepared = 0,
+  kDeclinedUnsupported,
+  kDeclinedResourceBudget,
+  kError,
+};
+
+// A prepare callback must classify a failure before any user work is
+// accepted. Declines are retryable only after the partially returned artifact
+// (if any) has been destroyed by the common owner. A raw Status is never
+// guessed into a fallback class by Graph.
+struct ProviderPrepareOutcome final {
+  ProviderPrepareOutcomeKind kind = ProviderPrepareOutcomeKind::kError;
+  Status status = Status::Internal("provider prepare outcome is unset");
+
+  static ProviderPrepareOutcome prepared() noexcept {
+    return {ProviderPrepareOutcomeKind::kPrepared, Status::Ok()};
+  }
+  static ProviderPrepareOutcome unsupported(Status reason) noexcept {
+    return {ProviderPrepareOutcomeKind::kDeclinedUnsupported,
+            std::move(reason)};
+  }
+  static ProviderPrepareOutcome resource_declined(Status reason) noexcept {
+    return {ProviderPrepareOutcomeKind::kDeclinedResourceBudget,
+            std::move(reason)};
+  }
+  static ProviderPrepareOutcome error(Status reason) noexcept {
+    return {ProviderPrepareOutcomeKind::kError, std::move(reason)};
+  }
+};
+
+enum class ProviderPrepareDecline : std::uint8_t {
+  kNone = 0,
+  kUnsupported,
+  kResourceBudget,
+};
+
+struct ProviderPrepareAttempt final {
+  PreparedOperation prepared{};
+  ProviderPrepareDecline decline = ProviderPrepareDecline::kNone;
+  Status reason = Status::Ok();
+
+  bool succeeded() const noexcept { return prepared.valid(); }
+};
+
 struct ProviderVTable final {
   ProviderIdentity identity{};
   Status (*create_context)(const Provider &provider, Device device,
@@ -96,9 +153,10 @@ struct ProviderVTable final {
                     std::span<ResourceBindingRequirement> output_requirements,
                     ProviderOperationProposal *proposal) noexcept = nullptr;
   // Compile only an already-selected exact resource route.
-  Status (*prepare)(void *context, const ProviderPrepareRequest &request,
-                    mem::AllocatorRef allocator,
-                    ProviderPrepared *prepared) noexcept = nullptr;
+  ProviderPrepareOutcome (*prepare)(
+      void *context, const ProviderPrepareRequest &request,
+      mem::AllocatorRef allocator,
+      ProviderPrepared *prepared) noexcept = nullptr;
   // Provider-owned work accepted before this call must reach terminal state.
   // It is required even for shared providers, where an O(1) no-op is normal.
   Status (*drain_context)(void *context) noexcept = nullptr;
@@ -135,6 +193,14 @@ struct OperationPreparationAccess final {
           std::span<const ResourceBindingRequirement> input_requirements,
           std::span<const ResourceBindingRequirement> output_requirements,
           OperationResourceBindings resources) noexcept;
+
+  HYLE_COMPUTE_API static Result<ProviderPrepareAttempt> prepare_candidate(
+      const Context &context, const ProviderOperationProposal &proposal,
+      Operation operation, std::span<const TensorDesc> inputs,
+      std::span<const TensorDesc> outputs,
+      std::span<const ResourceBindingRequirement> input_requirements,
+      std::span<const ResourceBindingRequirement> output_requirements,
+      OperationResourceBindings resources) noexcept;
 };
 
 struct ProviderAccess final {

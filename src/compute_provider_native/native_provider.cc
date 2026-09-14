@@ -1027,43 +1027,57 @@ propose(void *context_value, Operation operation,
           detail::ResourceBindingRequirement{
               .required_properties = mem::MemoryProperty::kHostAccessible,
           },
-      .workspace = plan.workspace,
-      .persistent_bytes = sizeof(NativePlan),
+      .cost = detail::ProviderRouteCostFacts{
+          .workspace = plan.workspace,
+          .persistent_bytes = sizeof(NativePlan),
+          .copy_bytes = 0,
+          .repack_bytes = 0,
+          .synchronization_count = 0,
+          .dispatch_count = 1,
+      },
   };
   return Status::Ok();
 }
 
-Status prepare(void *context_value,
-               const detail::ProviderPrepareRequest &request,
-               mem::AllocatorRef allocator,
-               detail::ProviderPrepared *prepared_output) noexcept {
+detail::ProviderPrepareOutcome
+prepare(void *context_value, const detail::ProviderPrepareRequest &request,
+        mem::AllocatorRef allocator,
+        detail::ProviderPrepared *prepared_output) noexcept {
   if (prepared_output == nullptr)
-    return Status::InvalidArgument("native prepared output is null");
+    return detail::ProviderPrepareOutcome::error(
+        Status::InvalidArgument("native prepared output is null"));
   *prepared_output = {};
   if (request.input_resources.size() != request.inputs.size() ||
       request.output_resources.size() != request.outputs.size() ||
       request.route != static_cast<std::uint64_t>(request.operation.kind())) {
-    return Status::InvalidArgument("native exact prepare request is invalid");
+    return detail::ProviderPrepareOutcome::error(
+        Status::InvalidArgument("native exact prepare request is invalid"));
   }
   auto *context = static_cast<NativeContext *>(context_value);
   if (context == nullptr)
-    return Status::Internal("native provider context is null");
+    return detail::ProviderPrepareOutcome::error(
+        Status::Internal("native provider context is null"));
   NativePlan plan{};
   Status status = build_plan(request.operation, request.inputs, request.outputs,
                              plan, context->executor);
-  if (!status.ok())
-    return status;
+  if (!status.ok()) {
+    return status.IsUnimplemented()
+               ? detail::ProviderPrepareOutcome::unsupported(std::move(status))
+               : detail::ProviderPrepareOutcome::error(std::move(status));
+  }
 
   void *storage = allocator.allocate(sizeof(NativePlan), alignof(NativePlan));
-  if (storage == nullptr)
-    return Status::ResourceExhausted("native plan allocation failed");
+  if (storage == nullptr) {
+    return detail::ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("native plan allocation failed"));
+  }
   auto *prepared = ::new (storage) NativePlan(plan);
   prepared_output->vtable = &kPreparedVTable;
   prepared_output->state = prepared;
   prepared_output->workspace = plan.workspace;
   prepared_output->runtime = kRuntimeProperties;
   prepared_output->persistent_bytes = sizeof(NativePlan);
-  return Status::Ok();
+  return detail::ProviderPrepareOutcome::prepared();
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }

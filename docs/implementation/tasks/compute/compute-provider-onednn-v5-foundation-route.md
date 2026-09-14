@@ -28,3 +28,9 @@
 
 公开 `onednn::provider()` 不变；当前为 `AUDITED`，新卡取代未 terminal 的 v4 卡，只授权 OD50--OD53。
 
+## 2026-09-14 实现检查点
+
+OD50/OD51 的 exact 迁移已落地：direct BRGEMM 明确零 copy/repack/sync、一次 dispatch；opaque JIT storage
+与尚未构造的 workspace 保持 unknown，未用假零补齐。prepare 的 unsupported、分配预算拒绝和真实错误已
+显式分类。Windows oneDNN-enabled source-tree shared 构建以及 provider/composition/Graph/逐头测试 6/6
+通过；OD52/OD53 的 node-set region 与完整 gated-MLP 证据尚未完成，状态保持 `AUDITED`。
