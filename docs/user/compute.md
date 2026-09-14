@@ -14,8 +14,9 @@ sampling 和 serving 留在推理引擎。
 direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape program。需要 batch × tokens、concat
 输出轴等派生维度时，使用 [Graph 的独立与派生维度](graph.md#独立与派生维度)：默认 exact compile，
 或显式声明完整域并在创建 Invocation 时绑定。后者目前支持固定 hidden width 的 Native RMSNorm；
-oneDNN 仍 exact-only，有限 exact variants 与完整动态属性尚未交付。不要直接调用私有 factor seam，
-也不要把单个 family 的域支持当成整个算子目录都支持动态尺寸。
+oneDNN 仍 exact-only，可进入 Graph 的预编译 exact 变体；Graph 也已提供
+[有限精确变体与通用回退](graph.md#有限精确变体与通用回退)。完整动态属性尚未交付。不要直接调用私有
+factor seam，也不要把单个 family 的域支持当成整个算子目录都支持动态尺寸。
 
 ## 当前能力
 

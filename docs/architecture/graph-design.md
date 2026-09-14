@@ -230,6 +230,17 @@ Invocation 只持有实际描述与从已编译根实例化的执行状态，不
 忽略内部动态节点。常量描述在该 Executable 中固定，动态外部张量属于 input。报告必须区分 envelope
 与 exact signature；域内 workspace 保留上界，不能宣称实例化时已经做了紧凑重规划。
 
+有限 exact 表是 compile 的显式输入，不是热态扩充的缓存。general 必须完整覆盖声明域，指定 exact 点
+全部冷准备成功后才发布 Executable；点失败不能默默缺项。Invocation 在接纳工作前求值 guards，并用
+全部维度的确定性有序索引选择现有 exact 子计划或 general；submit 不做此选择。每个 exact 制品可独立
+保活，因此 canonical 常量使用不反向持有 Plan 的共享 owner，artifact 先于最后一份常量和 Context lease
+销毁。Provider 私有 packing 不能未经身份/兼容性证明就合并。
+
+所有路线共用一次 compile 的累计 discovery/state/prepare 预算，不能按变体重复充值；per-provider cap
+只是每次发现的局部上限。普通查询描述 general，子路线有自己的 exact signature、队列、workspace 和
+并发合同；聚合工作计数与逐路线执行成本分开报告，不把不同 shape 的运行时间求和成一个 workload。
+逐路线 workspace 限额不替代 §4.2 的完整常驻/冷峰值/并发/capture 预算。
+
 这不是任意方程求解器、脚本 VM 或数据依赖输出支持。最小反证用 `[B,T,H] -> [B*T,H]`、concat 后
 reshape、整除失败和 overflow，不能只用输入输出共用一个 symbol 的 RMSNorm 证明自然动态图已完整。
 

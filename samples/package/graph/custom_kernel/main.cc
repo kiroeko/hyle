@@ -32,14 +32,25 @@ hyle::Status bounded_normalization() {
   HYLE_ASSIGN_OR_RETURN(auto output, builder.add(RmsNorm{}, spec, input));
   HYLE_RETURN_IF_ERROR(builder.publish(output));
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+  const std::array one_row{ShapeBinding{rows, 1}};
+  const std::array variants{ExactShapeVariant{one_row}};
   HYLE_ASSIGN_OR_RETURN(
       auto compiled,
       compile(graph, context,
-              {.shape_policy = CompileShapePolicy::kDeclaredDomain}));
+              {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+               .exact_variants = variants}));
   if (!compiled.executable.is_shape_domain() ||
       !compiled.report.is_shape_domain() ||
       compiled.executable.specialization().valid())
     return hyle::Status::Internal("domain report has an exact signature");
+  HYLE_ASSIGN_OR_RETURN(auto exact_report, compiled.report.exact_variant(0));
+  HYLE_ASSIGN_OR_RETURN(auto exact_route, compiled.executable.exact_variant(0));
+  if (compiled.report.exact_variant_count() != 1 ||
+      compiled.executable.exact_variant_count() != 1 ||
+      exact_report.specialization() != exact_route.specialization() ||
+      compiled.report.total_search().placement_attempts <=
+          compiled.report.search().placement_attempts)
+    return hyle::Status::Internal("finite variant report is incomplete");
   graph = {};
   HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
                                          hyle::mem::system_resource(), 64, 64));
@@ -53,6 +64,9 @@ hyle::Status bounded_normalization() {
     const std::array shape{ShapeBinding{rows, count}};
     HYLE_ASSIGN_OR_RETURN(auto run,
                           compiled.executable.create_invocation(shape));
+    if (run.exact_variant_index().has_value() != (count == 1) ||
+        run.executable().is_shape_domain() != (count != 1))
+      return hyle::Status::Internal("finite variant selected the wrong route");
     HYLE_ASSIGN_OR_RETURN(auto binding, run.specialization().binding());
     if (binding != shape[0])
       return hyle::Status::Internal("domain instance has the wrong shape");

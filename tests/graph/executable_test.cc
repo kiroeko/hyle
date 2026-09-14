@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -47,6 +48,7 @@ using hyle::graph::CompileOptions;
 using hyle::graph::CompileShapePolicy;
 using hyle::graph::ConstantBinding;
 using hyle::graph::Dimension;
+using hyle::graph::ExactShapeVariant;
 using hyle::graph::Executable;
 using hyle::graph::ExternalResourceContract;
 using hyle::graph::Graph;
@@ -363,6 +365,425 @@ BoundedRmsGraph make_bounded_rms_graph(bool weighted = false) {
   EXPECT_TRUE(builder.publish(result.output).ok());
   result.graph = std::move(builder).finish().value();
   return result;
+}
+
+TEST(GraphVariants, FiniteTableSelectsExactOrGeneralWithoutWarmCompilation) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  auto queue = context.create_queue().value();
+  auto logical = make_bounded_rms_graph();
+  // Both declarations and bindings deliberately differ from sorted order.
+  std::array shapes{std::array{ShapeBinding{logical.tokens, 3},
+                               ShapeBinding{logical.batch, 2}},
+                    std::array{ShapeBinding{logical.batch, 0},
+                               ShapeBinding{logical.tokens, 3}},
+                    std::array{ShapeBinding{logical.tokens, 1},
+                               ShapeBinding{logical.batch, 1}}};
+  const std::array variants{ExactShapeVariant{shapes[0]},
+                            ExactShapeVariant{shapes[1]},
+                            ExactShapeVariant{shapes[2]}};
+  auto compiled =
+      hyle::graph::compile(logical.graph, context,
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = variants});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.exact_variant_count(), variants.size());
+  EXPECT_EQ(compiled->report.exact_variant_count(), variants.size());
+  EXPECT_FALSE(compiled->executable.exact_variant(variants.size()));
+  EXPECT_FALSE(compiled->report.exact_variant(variants.size()));
+  for (std::size_t i = 0; i < variants.size(); ++i) {
+    const auto child = compiled->executable.exact_variant(i).value();
+    const auto report = compiled->report.exact_variant(i).value();
+    EXPECT_FALSE(child.is_shape_domain());
+    EXPECT_FALSE(report.is_shape_domain());
+    EXPECT_EQ(child.specialization(), report.specialization());
+    EXPECT_LE(child.workspace_bytes(), compiled->executable.workspace_bytes());
+    EXPECT_EQ(child.exact_variant_count(), 0U);
+    EXPECT_EQ(child.create_invocation()->exact_variant_index(), i);
+    EXPECT_FALSE(child.create_invocation(shapes[i]));
+  }
+  // Neither the finite table nor the source Graph is borrowed after compile.
+  for (auto &shape : shapes)
+    for (auto &binding : shape)
+      binding.value = -99;
+  logical.graph = {};
+  for (std::int64_t batch = 0; batch <= 3; ++batch) {
+    for (std::int64_t tokens = batch; tokens <= 3; ++tokens) {
+      const std::array shape{ShapeBinding{logical.batch, batch},
+                             ShapeBinding{logical.tokens, tokens}};
+      auto created = compiled->executable.create_invocation(shape);
+      ASSERT_TRUE(created) << created.error().message();
+      std::optional<std::size_t> expected_index;
+      if (batch == 2 && tokens == 3)
+        expected_index = 0;
+      if (batch == 0 && tokens == 3)
+        expected_index = 1;
+      if (batch == 1 && tokens == 1)
+        expected_index = 2;
+      EXPECT_EQ(created->exact_variant_index(), expected_index);
+      EXPECT_EQ(created->executable().is_shape_domain(), !expected_index);
+      EXPECT_EQ(created->specialization().binding(2)->value, batch * tokens);
+      const auto count = static_cast<std::size_t>(batch * tokens * 4);
+      auto input = make_tensor(matrix(batch * tokens, 4));
+      auto output = make_tensor(row(static_cast<std::int64_t>(count + 4)));
+      write(input, std::vector<float>(count, 1.0F));
+      write(output, std::vector<float>(count + 4, -99.0F));
+      const auto output_view =
+          TensorView::create(matrix(batch * tokens, 4), output.buffer.view())
+              .value();
+      ASSERT_TRUE(created->bind(logical.input, input.view).ok());
+      ASSERT_TRUE(created->bind(logical.output, output_view).ok());
+      ASSERT_TRUE(created->submit(queue)->wait().ok());
+      const auto allocations = probe.allocations.load();
+      probe.fail = true;
+      for (int replay = 0; replay < 3; ++replay) {
+        auto completion = created->submit(queue);
+        ASSERT_TRUE(completion) << completion.error().message();
+        ASSERT_TRUE(completion->wait().ok());
+      }
+      probe.fail = false;
+      EXPECT_EQ(probe.allocations.load(), allocations);
+      expect_near(read(output_view.as_const(), count),
+                  std::vector<float>(count, 1.0F));
+      const auto actual = read(output, count + 4);
+      for (std::size_t i = count; i < actual.size(); ++i)
+        EXPECT_EQ(actual[i], -99.0F);
+      ASSERT_TRUE(created->reset().ok());
+      EXPECT_EQ(created->exact_variant_index(), expected_index);
+    }
+  }
+}
+
+TEST(GraphVariants,
+     RejectsInvalidTablesAndNeverReplacesRequiredGeneralCoverage) {
+  auto logical = make_bounded_rms_graph();
+  auto foreign = make_bounded_rms_graph();
+  auto context = hyle::compute::cpu::create_context().value();
+  std::array first{ShapeBinding{logical.batch, 1},
+                   ShapeBinding{logical.tokens, 2}};
+  std::array second{ShapeBinding{logical.tokens, 2},
+                    ShapeBinding{logical.batch, 1}};
+  const std::array variants{ExactShapeVariant{first},
+                            ExactShapeVariant{second}};
+  CompileOptions options{.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                         .exact_variants = variants};
+  auto duplicate = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(duplicate);
+  EXPECT_TRUE(duplicate.error().IsInvalidArgument());
+  for (const auto invalid :
+       std::array{std::array{ShapeBinding{logical.batch, 3},
+                             ShapeBinding{logical.tokens, 2}},
+                  std::array{ShapeBinding{logical.batch, 0},
+                             ShapeBinding{logical.tokens, 4}},
+                  std::array{ShapeBinding{logical.batch, 0},
+                             ShapeBinding{logical.batch, 1}},
+                  std::array{ShapeBinding{logical.rows, 0},
+                             ShapeBinding{logical.tokens, 1}},
+                  std::array{ShapeBinding{foreign.batch, 0},
+                             ShapeBinding{logical.tokens, 1}}}) {
+    second = invalid;
+    auto result = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsInvalidArgument() ||
+                result.error().IsOutOfRange());
+  }
+  options.shape_policy = CompileShapePolicy::kExact;
+  options.shape = first;
+  EXPECT_TRUE(hyle::graph::compile(logical.graph, context, options)
+                  .error()
+                  .IsInvalidArgument());
+
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto input = builder.input(spec).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, spec, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array point{ShapeBinding{rows, 2}};
+  const std::array exact{ExactShapeVariant{point}};
+  auto unavailable =
+      hyle::graph::compile(graph, context,
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = exact});
+  ASSERT_FALSE(unavailable);
+  EXPECT_TRUE(unavailable.error().IsUnimplemented());
+  EXPECT_TRUE(hyle::graph::compile(graph, context, {.shape = point}));
+}
+
+TEST(GraphVariants, ConstantCopyIsSharedAndReportsDoNotRetainPayload) {
+  HostResource resource;
+  const auto memory = hyle::mem::MemoryResourceRef(resource);
+  auto context = hyle::compute::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto input_id = builder.input(spec).value();
+  const auto weight_id = builder.constant(row(4)).value();
+  const auto output_id =
+      builder.add(RmsNorm{}, spec, input_id, weight_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  ASSERT_TRUE(builder.publish(weight_id).ok());
+  auto graph = std::move(builder).finish().value();
+  auto weight = make_tensor(row(4), memory);
+  write(weight, std::array{1.0F, 2.0F, 3.0F, 4.0F});
+  const std::array constants{
+      ConstantBinding{weight_id, weight.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  const std::array small{ShapeBinding{rows, 1}}, large{ShapeBinding{rows, 4}};
+  const std::array variants{ExactShapeVariant{small}, ExactShapeVariant{large}};
+  const Environment environment{{&context, memory}};
+  const auto allocations = resource.allocation_count;
+  auto compiled =
+      hyle::graph::compile(graph, environment.environment(),
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = variants,
+                            .constants = constants});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(resource.allocation_count - allocations, 1U);
+  weight = {};
+  EXPECT_EQ(resource.live_allocations, 1U);
+  auto report = compiled->report;
+  auto child_report = report.exact_variant(1).value();
+  auto child = compiled->executable.exact_variant(1).value();
+  EXPECT_EQ(child.output_ownership(1).value(), OutputOwnership::kExecutable);
+  auto hit = compiled->executable.create_invocation(small).value();
+  const std::array fallback_shape{ShapeBinding{rows, 2}};
+  auto fallback =
+      compiled->executable.create_invocation(fallback_shape).value();
+  graph = {};
+  *compiled = {};
+  {
+    auto input = make_tensor(matrix(1, 4), memory);
+    auto output = make_tensor(matrix(1, 4), memory);
+    write(input, std::array{1.0F, 1.0F, 1.0F, 1.0F});
+    ASSERT_TRUE(hit.bind(input_id, input.view).ok());
+    ASSERT_TRUE(hit.bind(output_id, output.view).ok());
+    ASSERT_TRUE(hit.submit(queue)->wait().ok());
+    expect_near(read(output, 4), std::array{1.0F, 2.0F, 3.0F, 4.0F});
+    const auto stored = hit.output(weight_id).value();
+    auto other_input = make_tensor(matrix(2, 4), memory);
+    auto other_output = make_tensor(matrix(2, 4), memory);
+    write(other_input, std::vector<float>(8, 1.0F));
+    ASSERT_TRUE(fallback.bind(input_id, other_input.view).ok());
+    ASSERT_TRUE(fallback.bind(output_id, other_output.view).ok());
+    ASSERT_TRUE(fallback.submit(queue)->wait().ok());
+    EXPECT_EQ(fallback.output(weight_id)->storage().native_handle(),
+              stored.storage().native_handle());
+  }
+  fallback = {};
+  hit = {};
+  EXPECT_EQ(resource.live_allocations, 1U);
+  EXPECT_TRUE(child.create_invocation());
+  child = {};
+  EXPECT_EQ(resource.live_allocations, 0U);
+  EXPECT_EQ(report.materialized_constant_bytes(), 16U);
+  EXPECT_EQ(child_report.materialized_constant_bytes(), 16U);
+  EXPECT_EQ(report.exact_variant(0)->materialized_constant_bytes(), 16U);
+}
+
+TEST(GraphVariants, HardCompileBudgetsAreCumulativeAcrossTheFamily) {
+  auto logical = make_bounded_rms_graph();
+  auto context = hyle::compute::cpu::create_context().value();
+  const std::array first{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array second{ShapeBinding{logical.batch, 2},
+                          ShapeBinding{logical.tokens, 3}};
+  const std::array variants{ExactShapeVariant{first},
+                            ExactShapeVariant{second}};
+  CompileOptions options{.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                         .exact_variants = variants,
+                         .region_selection =
+                             hyle::graph::RegionSelectionPolicy::kDisabled};
+  auto compiled = hyle::graph::compile(logical.graph, context, options).value();
+  const auto general = compiled.report.search();
+  const auto total = compiled.report.total_search();
+  EXPECT_FALSE(total.selected_profile_cost);
+  std::size_t preparations = general.placement_attempts;
+  std::size_t states = general.route_search_states;
+  std::size_t proposals = general.operation_proposals;
+  for (std::size_t i = 0; i < variants.size(); ++i) {
+    const auto report = compiled.report.exact_variant(i).value();
+    preparations += report.search().placement_attempts;
+    states += report.search().route_search_states;
+    proposals += report.search().operation_proposals;
+    EXPECT_EQ(report.total_search().placement_attempts,
+              report.search().placement_attempts);
+  }
+  EXPECT_EQ(total.placement_attempts, preparations);
+  EXPECT_EQ(total.route_search_states, states);
+  EXPECT_EQ(total.operation_proposals, proposals);
+  for (int kind = 0; kind < 3; ++kind) {
+    auto restricted = options;
+    if (kind == 0)
+      restricted.max_placement_attempts = general.placement_attempts;
+    if (kind == 1)
+      restricted.max_route_search_states = general.route_search_states;
+    if (kind == 2)
+      restricted.max_operation_proposals = general.operation_proposals;
+    auto failed = hyle::graph::compile(logical.graph, context, restricted);
+    ASSERT_FALSE(failed) << "budget kind " << kind;
+    if (kind < 2)
+      EXPECT_TRUE(failed.error().IsResourceExhausted())
+          << failed.error().message();
+  }
+  options.max_placement_attempts = total.placement_attempts;
+  options.max_route_search_states = total.route_search_states;
+  options.max_operation_proposals = total.operation_proposals;
+  EXPECT_TRUE(hyle::graph::compile(logical.graph, context, options));
+}
+
+TEST(GraphVariants, EmptyAndZeroDimensionalHandlesHaveDefinedBehavior) {
+  Executable empty;
+  hyle::graph::CompileReport empty_report;
+  Invocation empty_run;
+  EXPECT_EQ(empty.exact_variant_count(), 0U);
+  EXPECT_EQ(empty_report.exact_variant_count(), 0U);
+  EXPECT_FALSE(empty.exact_variant(0));
+  EXPECT_FALSE(empty_report.exact_variant(0));
+  EXPECT_FALSE(empty_run.executable());
+  EXPECT_FALSE(empty_run.exact_variant_index());
+  auto graph = make_rms_graph(row(4));
+  auto context = hyle::compute::cpu::create_context().value();
+  const std::array<ExactShapeVariant, 2> variants{};
+  auto compiled =
+      hyle::graph::compile(graph.graph, context,
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = std::span(variants).first(1)});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.create_invocation()->exact_variant_index(),
+            0U);
+  EXPECT_FALSE(
+      hyle::graph::compile(graph.graph, context,
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = variants}));
+  auto exact = hyle::graph::compile(graph.graph, context).value();
+  EXPECT_EQ(exact.executable.exact_variant_count(), 0U);
+  EXPECT_FALSE(exact.executable.create_invocation()->exact_variant_index());
+}
+
+TEST(GraphVariants, PartialFamilyAllocationFailureRollsBackAndRecovers) {
+  AllocatorProbe probe;
+  HostResource resource;
+  auto logical = make_bounded_rms_graph(true);
+  const std::array first{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array second{ShapeBinding{logical.batch, 2},
+                          ShapeBinding{logical.tokens, 3}};
+  const std::array variants{ExactShapeVariant{first},
+                            ExactShapeVariant{second}};
+  auto weight = make_tensor(row(4));
+  write(weight, std::array{1.0F, 2.0F, 3.0F, 4.0F});
+  const std::array constants{
+      ConstantBinding{logical.weight, weight.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  {
+    auto context = hyle::compute::cpu::create_context(
+                       {.metadata_allocator = probe_allocator(probe)})
+                       .value();
+    const Environment environment{
+        {&context, hyle::mem::MemoryResourceRef(resource)}};
+    const CompileOptions options{.shape_policy =
+                                     CompileShapePolicy::kDeclaredDomain,
+                                 .exact_variants = variants,
+                                 .constants = constants};
+    const auto begin = probe.attempts.load();
+    EXPECT_TRUE(hyle::graph::compile(logical.graph, environment.environment(),
+                                     options));
+    const auto attempts = probe.attempts.load() - begin;
+    const auto retained = probe.allocations.load() - probe.deallocations.load();
+    for (std::size_t failure = 0; failure < attempts; ++failure) {
+      probe.fail_on_attempt = probe.attempts.load() + failure;
+      {
+        auto failed = hyle::graph::compile(logical.graph,
+                                           environment.environment(), options);
+        ASSERT_FALSE(failed) << "allocation " << failure;
+        EXPECT_TRUE(failed.error().IsResourceExhausted())
+            << failed.error().message();
+      }
+      probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
+      EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), retained)
+          << "allocation " << failure;
+      EXPECT_EQ(resource.live_allocations, 0U);
+    }
+    auto compiled =
+        hyle::graph::compile(logical.graph, environment.environment(), options)
+            .value();
+    const std::array fallback{ShapeBinding{logical.batch, 1},
+                              ShapeBinding{logical.tokens, 2}};
+    for (const auto shape : {std::span<const ShapeBinding>(first),
+                             std::span<const ShapeBinding>(fallback)}) {
+      const auto start = probe.attempts.load();
+      EXPECT_TRUE(compiled.executable.create_invocation(shape));
+      const auto count = probe.attempts.load() - start;
+      const auto live = probe.allocations.load() - probe.deallocations.load();
+      for (std::size_t failure = 0; failure < count; ++failure) {
+        probe.fail_on_attempt = probe.attempts.load() + failure;
+        {
+          auto failed = compiled.executable.create_invocation(shape);
+          ASSERT_FALSE(failed) << "instance allocation " << failure;
+          EXPECT_TRUE(failed.error().IsResourceExhausted());
+        }
+        probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
+        EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), live);
+        EXPECT_TRUE(compiled.executable.create_invocation(shape));
+      }
+    }
+  }
+  EXPECT_EQ(probe.allocations.load(), probe.deallocations.load());
+  EXPECT_EQ(resource.live_allocations, 0U);
+}
+
+TEST(GraphVariants, ExactAndGeneralInvocationsCanRunConcurrently) {
+  auto logical = make_bounded_rms_graph();
+  auto context = hyle::compute::cpu::create_context().value();
+  const std::array point{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array variants{ExactShapeVariant{point}};
+  auto compiled =
+      hyle::graph::compile(logical.graph, context,
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = variants})
+          .value();
+  std::atomic<unsigned> successes{0};
+  std::array<std::thread, 4> threads;
+  for (std::size_t i = 0; i < threads.size(); ++i) {
+    threads[i] = std::thread([&, i] {
+      const std::int64_t rows = i % 2 == 0 ? 1 : 2;
+      const std::array shape{ShapeBinding{logical.batch, 1},
+                             ShapeBinding{logical.tokens, rows}};
+      auto run = compiled.executable.create_invocation(shape).value();
+      auto queue = context.create_queue().value();
+      auto input = make_tensor(matrix(rows, 4));
+      auto output = make_tensor(matrix(rows, 4));
+      const auto count = static_cast<std::size_t>(rows * 4);
+      write(input, std::vector<float>(count, 1.0F));
+      if (!run.bind(logical.input, input.view).ok() ||
+          !run.bind(logical.output, output.view).ok())
+        return;
+      for (int repeat = 0; repeat < 8; ++repeat) {
+        auto completion = run.submit(queue);
+        if (!completion || !completion->wait().ok())
+          return;
+      }
+      for (float value : read(output, count))
+        if (std::abs(value - 1.0F) > 1.0e-5F)
+          return;
+      ++successes;
+    });
+  }
+  for (auto &thread : threads)
+    thread.join();
+  EXPECT_EQ(successes.load(), threads.size());
 }
 
 TEST(GraphDomain,
@@ -785,6 +1206,20 @@ TEST(GraphDomain, EnvelopeExactPointHasDifferentProfileIdentity) {
                             .profile_context = &facts.context})
           .value();
   EXPECT_NE(exact.report.profile_identity().shape_domain,
+            domain.report.profile_identity().shape_domain);
+  const std::array variants{ExactShapeVariant{shape}};
+  auto family =
+      hyle::graph::compile(graph, environment.environment(),
+                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                            .exact_variants = variants,
+                            .profile_context = &facts.context})
+          .value();
+  const auto child = family.report.exact_variant(0).value();
+  EXPECT_EQ(child.profile_identity().shape_domain,
+            exact.report.profile_identity().shape_domain);
+  EXPECT_NE(child.profile_identity().shape_domain,
+            family.report.profile_identity().shape_domain);
+  EXPECT_EQ(family.report.profile_identity().shape_domain,
             domain.report.profile_identity().shape_domain);
 }
 

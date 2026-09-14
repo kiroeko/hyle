@@ -610,13 +610,28 @@ inline void release(SignatureState *state) noexcept {
     state->decref();
 }
 
+// Created only when a compiled family shares owned canonical constants. There
+// is no Plan back-pointer: an exact child may outlive the parent table.
+struct SharedConstants final : util::RefCounted<SharedConstants> {
+  explicit SharedConstants(mem::AllocatorRef owner) noexcept
+      : allocator(owner), buffers(owner) {}
+  void destroy() noexcept {
+    const auto owner = allocator;
+    this->~SharedConstants();
+    owner.deallocate(this, sizeof(SharedConstants), alignof(SharedConstants));
+  }
+  mem::AllocatorRef allocator;
+  container::SmallVector<mem::Buffer, 0, mem::AllocatorRef> buffers;
+};
+
 struct PlanState final : util::RefCounted<PlanState> {
   PlanState(mem::AllocatorRef allocator_value,
             std::uint64_t generation_value) noexcept
       : allocator(allocator_value), generation(generation_value),
         storage_domains(allocator_value), targets(allocator_value),
         lanes(allocator_value), materialized_constants(allocator_value),
-        steps(allocator_value), segments(allocator_value),
+        steps(allocator_value), exact_variants(allocator_value),
+        variant_order(allocator_value), segments(allocator_value),
         segment_dependencies(allocator_value),
         serialization_edges(allocator_value), step_segments(allocator_value),
         terminal_segments(allocator_value),
@@ -643,6 +658,13 @@ struct PlanState final : util::RefCounted<PlanState> {
     owner.deallocate(this, sizeof(PlanState), alignof(PlanState));
   }
 
+  const mem::Buffer *owned_constant(std::size_t slot) const noexcept {
+    const auto &buffers =
+        shared_constants ? shared_constants->buffers : materialized_constants;
+    return slot < buffers.size() && buffers[slot].valid() ? &buffers[slot]
+                                                          : nullptr;
+  }
+
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
   // Empty on the exact path. A domain retains its immutable shape program and
@@ -656,7 +678,13 @@ struct PlanState final : util::RefCounted<PlanState> {
   // Empty on the default borrow path; otherwise one slot per logical constant.
   container::SmallVector<mem::Buffer, 0, mem::AllocatorRef>
       materialized_constants;
+  util::Ref<SharedConstants> shared_constants;
   PlanSteps steps;
+  container::SmallVector<Executable, 0, mem::AllocatorRef> exact_variants;
+  // Lexicographic signature order -> caller's declaration index. Lookup is
+  // O(D log K), including adversarial hash collisions; never used by submit.
+  container::SmallVector<std::uint32_t, 0, mem::AllocatorRef> variant_order;
+  std::optional<std::size_t> exact_variant_index{};
   PlanSegments segments;
   ValueOrdinals segment_dependencies;
   // Packed stable step identities: source in the high word, destination in
@@ -747,7 +775,8 @@ struct ReportState final : util::RefCounted<ReportState> {
         constants(allocator_value), step_inputs(allocator_value),
         step_outputs(allocator_value), step_nodes(allocator_value),
         step_node_begins(allocator_value),
-        segment_dependencies(allocator_value), profile(allocator_value) {}
+        segment_dependencies(allocator_value), profile(allocator_value),
+        exact_variants(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -772,6 +801,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   ValueOrdinals step_node_begins;
   ValueOrdinals segment_dependencies;
   GraphProfileState profile;
+  container::SmallVector<CompileReport, 0, mem::AllocatorRef> exact_variants;
   compute::BackendId backend{};
   compute::ProviderIdentity provider{};
   std::size_t workspace_bytes = 0;
@@ -799,6 +829,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   bool mixed_backends = false;
   bool is_shape_domain = false;
   CompileSearchReport search{};
+  CompileSearchReport total_search{};
   SpecializationSignature specialization{};
 };
 
@@ -931,6 +962,9 @@ inline void release(InvocationState *state) noexcept {
 struct ExecutableAccess final {
   static Executable adopt(PlanState *state) noexcept {
     return Executable(state);
+  }
+  static PlanState *state(const Executable &executable) noexcept {
+    return executable.state_;
   }
 };
 

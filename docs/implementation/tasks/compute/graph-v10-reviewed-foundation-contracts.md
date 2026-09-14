@@ -899,3 +899,76 @@ oneDNN 自身仍输出既有 CMP0146 OLD 弃用提示，未为本模块改写上
 Graph 自实现不含测试 **11,862**，Compute **16,670**，合计 **28,532**；全库自实现 **123,658**。
 保持 `AUDITED`，继续 G101 动态属性、G102 finite exact variants、G106 跨变体共享/聚合预算及其余既定
 基础 FIX。没有达到用户要求暂停审视的 foundation 完成节点，也未扩充算子目录。
+
+### G102/G106：有限 exact 表与共同常量 owner（实现前固定）
+
+`CompileOptions::exact_variants` 是 declared-domain 编译的有限 shape binding 表，普通 exact 编译不接受。
+每项必须满足原完整域，重复 concrete shape 拒绝；通用路线必须先编译成功。随后在同一次冷 compile
+准备全部请求的 exact 路线，某项失败则整次失败，不偷偷返回缺项的产品。所有路线沿用同一 Graph、
+environment、硬 Provider/resource 约束与 profile 输入；不引入业务 bucket/cache 或 warm compilation。
+
+Executable 保有 general Plan 和 exact 子 Plan；子 Plan 可独立保活，因此 materialized 常量改为一次
+独立 `util::Ref` owner，持有 Mem Buffer。所有同 Graph constant slot、同描述和 external storage 的
+路线借用同一不可变副本；不能靠地址碰巧相同猜权重相同。owner 不反向持有 Plan，不形成引用环；
+每条存活路线均保有 Context lease，制品先于最后一份常量副本销毁。borrow 策略不改变。
+
+创建 Invocation 先用既有 shape evaluator 验证独立值/guards，以全部维度的确定性有序索引查 exact 表，
+命中后只创建该已编译 Plan 的 Invocation，否则走既有 general。查找在冷路径，热 submit 不变。
+报告可枚举各 exact route/signature，Invocation 可查询命中序号；默认报告仍描述 general，累计编译工作
+单独查询。prepare/state/proposal/node 总预算跨全部路线累计，不能每个变体重新充值；per-provider 单次
+discovery cap 仍由总预算约束。常量、workspace 等逐路线报告不能简单求和当作 unique resident。
+
+验证：乱序绑定/变体表、重复及域外拒绝、exact 命中/general fallback 数值和生命周期、全表预算耗尽、
+常量仅复制一次、根释放而子路线/Invocation 存活、OOM/部分变体销毁、报告不保活 payload、无 warm
+搜索/新增 allocation，及原 exact/domain/oneDNN/CUDA/三交付。没有新的 kernel 或 Provider 产品修改。
+
+本段的范围是 finite table 和 canonical sharing，不签完 G106：opaque packed identity/共享、全部 unique
+resident/冷构建峰值/并发与 capture 预留的整体硬预算仍是同一 FIX 的后续，必须单独实现、不能以每个
+variant 的 workspace 合格代替。P1 和终局跨平台仍只在完整 foundation candidate 执行。
+
+### 2026-09-15 G102/G106 有限变体检查点
+
+- 已实现上述有限表：`CompileOptions::exact_variants` 只在 declared-domain 模式生效，先准备完整 general，
+  验证全部点与重复后准备所有 exact 子计划。任意错误清理整张表；没有懒编译、缺项成功或业务 cache。
+  `Invocation::exact_variant_index/executable` 披露实际路线；父/子报告分开，报告不持有 payload。
+- canonical materialization 使用现有 Util Ref 和 Mem Buffer 共享，子路线可独立保活；prepared artifact
+  先于常量、Context lease 销毁。borrow 不改，默认无变体路径不创建 shared owner。source release 与
+  多次 compile 重选不重复复制的原合同保留；Provider 自有 packing 尚未共享。
+- discovery/state/prepare/node 上限跨 general/exact 累计扣除，`total_search()` 汇总真实计数与限制标志，
+  不相加不同尺寸的执行时间。源码复核纠正了耗尽预算继承为零时误报 `InvalidArgument` 的路径，现对
+  prepare/state 返回 `ResourceExhausted`；显式非法零参数仍保留原拒绝合同。region 剩余额度为零时可在
+  allow-limited 下由合法 leaf 完成，strict 拒绝；没有候选覆盖完整图仍失败。
+- 新增 8 个测试（7 个 GraphVariants、1 个 GraphRegions），另扩充 profile 身份反例。覆盖全小域的
+  exact 命中/general fallback/zero/哨兵尾部、乱序与重复/非法/外来/派生 binding、exact-only 不能代替
+  general、共享常量只分配一次及父/源释放、报告不保活 payload、各级累计预算、每次冷分配失败回滚与
+  恢复、并发、空句柄/零维图与无 warm metadata 分配。身份 fixture 不含真实性能资格。
+
+| Windows Release 验证 | `C:/hyle-scratch/` 下缓存 | 结果 |
+|---|---|---|
+| Graph static / 逐头 | `compute-route-v8-static-20260914` | 3/3；诊断修正后执行套件 1/1、218/218 |
+| Graph shared + oneDNN Graph/region / 逐头 | `compute-route-onednn-v8-20260914` | 6/6；诊断修正后受影响三组 3/3 |
+| CUDA Graph / 逐头 | `compute-graph-v7-cuda` | 3/3，包含既有真实 CUDA/capture 回归 |
+| source CPU/CUDA 公开 sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+Build/Test 沿用 Windows wrapper，target 仅为上述测试/样例，编译至多 2、测试串行。sample 在同一公开
+CPU journey 中同时消费 exact 表、actual route、各报告与 general fallback，不从源码 SPI 获得能力。
+两个 SDK 从同名 `custom-execution-v10-{shared,static}-build` 的 `hyle_graph` target 构建，安装显式指定
+对应 `...-sdk`，未写入 Program Files。shared producer、SDK、CPU/CUDA 装载目录的 Graph DLL SHA-256
+均为 `80A2E6214217433090965A1E8D72CD53E21FEE8BF8C170FE69B3B00BB7B1CBE9`。
+现有 shared + oneDNN graph 闭包重新 configure 成功，保留已有 oneDNN CMP0146 OLD 弃用提示，未修改上游。
+
+P0：K 个变体、D 个维度、G 个 guard 的表验证为 `O(K*(D+G) + D*K*log K)`，临时点表 `O(K*D)`，
+排序后的常驻索引 `O(K)`；随后确实构建 K 个 exact 计划，不把冷编译成本说成免费。具体创建先绑定域，
+再作最坏 `O(D*log K)` 查找；命中直接创建普通 exact Invocation，回退沿用已编译域。canonical payload
+只复制一次，每个子 Plan 持有一个共享引用；默认 Plan/Report 增加空冷字段及计数，无新增 heap 分配次数。
+Invocation 布局、warm callback 层数与 submit 算法未改，不由这些结构事实签性能胜负。
+
+用户/架构及直接 Compute/Native 记录已校准。selector 基线 `09b3a990`；registry、Backend、Provider 产品、
+CMake、公共治理/性能仪器均未改。未启动 CI、全库/P1；Linux/两台 Apple、sanitizer 和独立终局红队仍待
+完整 foundation candidate，不由本段代签。保持 `AUDITED`：G101 动态属性、G103 storage/lane 联合优化、
+G106 packing/唯一 resident/冷峰值/并发/capture 总预算、真实平台探针与共同终局资格仍未完成。
+
+统一 LOC self-check 通过：全库代码 **678,254**、全库自实现不含测试 **123,938**；Compute **16,670**、
+Graph **12,142**，合计 **28,812**。本次没有完成整个 foundation gate，不扩充算子目录。

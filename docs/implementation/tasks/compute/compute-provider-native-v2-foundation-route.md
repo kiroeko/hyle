@@ -68,3 +68,7 @@ exact variant、跨平台/P1 尚未完成，N22/N23 不因此签完。
 同日后继：Graph 已消费该域制品，提供公开 general compile 与具体 Invocation；固定尺寸原路线保留，
 source/static/shared 的 Native RMSNorm 示例均实际执行。见 [Graph general 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g101g102-general-路线检查点)。
 本段未改 Native 产品；同一 Executable 内的有限 exact variant、完整架构探针与终局跨平台/P1 仍待完成。
+
+后继 Graph 已完成有限 exact 表与 general fallback，直接复用本 Provider 的既有 exact/domain 制品；
+见 [G102/G106 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g102g106-有限变体检查点)。
+这不签完完整 Native 架构探针与终局跨平台/P1。

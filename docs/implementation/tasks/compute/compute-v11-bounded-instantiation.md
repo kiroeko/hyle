@@ -95,3 +95,7 @@ profile 资格、G101/G102 Graph bounded/finite variants、G106 聚合预算及�
 同日 Graph 后继已接入公开 declared-domain general 路线和 cold concrete Invocation，复用 C110/C111，
 未改本 factor；验证与剩余范围见 [Graph general 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g101g102-general-路线检查点)。
 这不签完有限 exact variants、C93 真实资格、完整资源预算或共同 foundation 终局验证。
+
+随后 Graph 已完成同次 compile 的有限 exact 表、冷命中/general fallback、canonical 常量共享与累计
+编译预算；见 [G102/G106 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g102g106-有限变体检查点)。
+本 factor 无进一步产品修改；Provider 私有 packing/完整内存总预算、真实架构探针和终局资格仍未签完。

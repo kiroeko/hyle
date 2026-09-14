@@ -505,6 +505,12 @@ public:
   HYLE_GRAPH_API compute::BackendId backend() const noexcept;
   HYLE_GRAPH_API compute::ProviderIdentity provider() const noexcept;
   HYLE_GRAPH_API CompileSearchReport search() const noexcept;
+  // Counts/limits across the general route and every requested exact route.
+  // selected_profile_cost is empty: these are not one execution workload.
+  HYLE_GRAPH_API CompileSearchReport total_search() const noexcept;
+  HYLE_GRAPH_API std::size_t exact_variant_count() const noexcept;
+  HYLE_GRAPH_API Result<CompileReport>
+  exact_variant(std::size_t index) const noexcept;
   // Self-contained scalar facts plus spans borrowed from this report. Empty
   // unless compile received profile_context. The report owns no Context,
   // constant payload or prepared artifact. Pair with qualified full-Graph
@@ -689,12 +695,24 @@ enum class CompileShapePolicy : std::uint8_t {
   kDeclaredDomain,
 };
 
+struct ExactShapeVariant final {
+  // One binding per independent dimension. Borrowed only during compile;
+  // declaration order determines the stable variant index in the report.
+  std::span<const ShapeBinding> shape{};
+};
+
 struct CompileOptions final {
   // Exactly one value per independent GraphBuilder dimension, in any order.
   // Derived IDs must not be bound. Empty is valid with no independent inputs.
   // Must be empty for kDeclaredDomain; bind at create_invocation() instead.
   std::span<const ShapeBinding> shape{};
   CompileShapePolicy shape_policy = CompileShapePolicy::kExact;
+  // Only with kDeclaredDomain. Prepare every exact route now; unmatched valid
+  // points use the complete general route. No lazy compilation or implicit
+  // cache. Duplicate points and any unpreparable requested route fail compile.
+  // All cumulative search/preparation caps below cover the whole family, not
+  // each route separately. Workspace budgets remain per-route/per-Invocation.
+  std::span<const ExactShapeVariant> exact_variants{};
   std::span<const ConstantBinding> constants{};
   // Every used effect resource needs one binding. Backing is fixed/borrowed
   // for this Executable and all its Invocations/Completions. It must describe
@@ -790,6 +808,11 @@ public:
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
   HYLE_GRAPH_API bool is_shape_domain() const noexcept;
+  HYLE_GRAPH_API std::size_t exact_variant_count() const noexcept;
+  // An independently owning route handle. Top-level plan queries describe the
+  // general route; query a child for its exact workspace/ownership contract.
+  HYLE_GRAPH_API Result<Executable>
+  exact_variant(std::size_t index) const noexcept;
   // Invalid for a domain; the concrete signature belongs to its Invocation.
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
   HYLE_GRAPH_API Result<ValueId> input_id(std::size_t index = 0) const noexcept;
@@ -798,9 +821,11 @@ public:
   HYLE_GRAPH_API Result<OutputOwnership>
   output_ownership(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<Invocation> create_invocation() const noexcept;
-  // Cold binding of all independent dimensions for a declared domain. Does
-  // not recompile, select Providers or change the shared schedule/workspace
-  // envelope. Exact executables accept only an empty span.
+  // Cold binding of all independent dimensions for a declared domain. Selects
+  // a precompiled exact variant if present, otherwise the general route. Does
+  // not recompile or select Providers. Query the returned Invocation's actual
+  // executable for its workspace/queue contract. Exact executables accept
+  // only an empty span.
   HYLE_GRAPH_API Result<Invocation>
   create_invocation(std::span<const ShapeBinding> shape) const noexcept;
 
@@ -832,6 +857,11 @@ public:
   // Exact values fixed at creation, including derived dimensions. reset()
   // clears tensor bindings, not this signature; another shape needs a new run.
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
+  // The actual selected route, retained independently of the parent table.
+  HYLE_GRAPH_API Executable executable() const noexcept;
+  // nullopt for general fallback or an ordinary standalone exact Executable.
+  HYLE_GRAPH_API std::optional<std::size_t>
+  exact_variant_index() const noexcept;
   HYLE_GRAPH_API Status bind(ValueId value,
                              compute::ConstTensorView tensor) noexcept;
   HYLE_GRAPH_API Status bind(ValueId value,

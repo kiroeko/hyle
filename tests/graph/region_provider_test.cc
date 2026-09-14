@@ -5236,6 +5236,74 @@ TEST(GraphRegions, SerializesArtifactsThatRejectConcurrentInvocations) {
   EXPECT_TRUE(second_completion->wait().ok());
 }
 
+TEST(GraphRegions, FiniteVariantsShareRegionDiscoveryAndNodeBudgets) {
+  for (bool node_budget : {false, true}) {
+    RegionProbe probe{.mode = ProposalMode::kSingleton};
+    auto context = make_context(probe);
+    auto builder = GraphBuilder::create().value();
+    const auto rows = builder.dimension({1, 3, 1}).value();
+    const auto fixed_input = builder.input(row(8)).value();
+    const auto fixed_output =
+        builder.add(Unary{UnaryKind::kNeg}, fixed_input).value();
+    const auto spec =
+        hyle::graph::TensorSpec::dense(
+            DataType::kFloat32, std::array{hyle::graph::Dimension(rows),
+                                           hyle::graph::Dimension::fixed(8)})
+            .value();
+    const auto input = builder.input(spec).value();
+    const auto output =
+        builder.add(hyle::compute::RmsNorm{}, spec, input).value();
+    ASSERT_TRUE(builder.publish(fixed_output).ok());
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    const std::array point{hyle::graph::ShapeBinding{rows, 1}};
+    const std::array variants{hyle::graph::ExactShapeVariant{point}};
+    CompileOptions options{.shape_policy =
+                               hyle::graph::CompileShapePolicy::kDeclaredDomain,
+                           .exact_variants = variants};
+    if (node_budget)
+      options.max_region_proposal_nodes = 1;
+    else
+      options.max_region_proposals = 1;
+    auto compiled = hyle::graph::compile(graph, context, options);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.region_count(), 1U);
+    const auto child = compiled->report.exact_variant(0).value();
+    EXPECT_EQ(child.region_count(), 0U);
+    EXPECT_TRUE(child.search().optimization_limited());
+    EXPECT_EQ(child.search().region_node_limit_reached, node_budget);
+    EXPECT_EQ(child.search().region_proposal_limit_reached, !node_budget);
+    EXPECT_EQ(compiled->report.total_search().region_proposals, 1U);
+    EXPECT_EQ(compiled->report.total_search().region_proposal_nodes, 1U);
+    EXPECT_EQ(probe.propose_count, 1U);
+    EXPECT_EQ(probe.compile_count, 1U);
+    auto run = compiled->executable.create_invocation(point).value();
+    auto fixed_in = make_tensor(row(8)), fixed_out = make_tensor(row(8));
+    const auto actual_desc =
+        TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{1, 8})
+            .value();
+    auto in = make_tensor(actual_desc), out = make_tensor(actual_desc);
+    write(fixed_in, std::vector<float>(8, 2.0F));
+    write(in, std::vector<float>(8, 1.0F));
+    ASSERT_TRUE(run.bind(fixed_input, fixed_in.view).ok());
+    ASSERT_TRUE(run.bind(fixed_output, fixed_out.view).ok());
+    ASSERT_TRUE(run.bind(input, in.view).ok());
+    ASSERT_TRUE(run.bind(output, out.view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    EXPECT_EQ(read(fixed_out, 8), std::vector<float>(8, -2.0F));
+    for (float value : read(out, 8))
+      EXPECT_NEAR(value, 1.0F, 1.0e-5F);
+    EXPECT_EQ(probe.propose_count, 1U);
+    EXPECT_EQ(probe.compile_count, 1U);
+    options.search_policy = CompileSearchPolicy::kRequireUnexhausted;
+    auto strict = hyle::graph::compile(graph, context, options);
+    ASSERT_FALSE(strict);
+    EXPECT_TRUE(strict.error().IsResourceExhausted())
+        << strict.error().message();
+  }
+}
+
 TEST(GraphRegions, ExactOnlyRegionCannotClaimDynamicEnvelope) {
   auto builder = GraphBuilder::create().value();
   const auto rows = builder.dimension({1, 4, 1}).value();

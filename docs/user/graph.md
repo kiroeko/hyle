@@ -2,7 +2,7 @@
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
 > [`module-status.json`](../implementation/module-status.json) 为准；node-set region 已实现，已接受但尚未实现的
-> 有限 exact variants、storage/lane 联合优化与跨 variant 常量共享/聚合预算合同见
+> storage/lane 联合优化与跨 variant 完整内存聚合预算合同见
 > [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
 > 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
@@ -11,8 +11,9 @@
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
-与受限优化、常量物化后的 source release。有限 exact variants、动态 View 属性、variant 内存共享与
-storage/lane 联合优化仍是[架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
+与受限优化、常量物化后的 source release、有限 exact variants 与 canonical 常量共享。动态 View 属性、
+Provider 私有 packing 共享、完整内存聚合预算与 storage/lane 联合优化仍是
+[架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -207,8 +208,10 @@ Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prep
 复制。编译失败不会接管或修改源，已接纳复制也会等待后再清理。副本资源的 `MemoryResource` owner
 仍由调用者保活；“可释放 source allocation”不等于“可销毁仍承载副本的 resource 对象”。
 
-跨 variant 共享与 Provider opaque packing 的唯一 resident/冷峰值预算尚未交付；
-`materialized_constant_bytes()` 只统计 canonical 副本，不代表整个 Executable 的内存总量。
+同一次 declared-domain compile 的 general/exact variants 共享同 Graph slot、同描述、同 external storage
+的唯一 canonical 副本；取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享，
+Provider opaque packing 共享及唯一 resident/冷峰值总预算尚未交付。每条路线的
+`materialized_constant_bytes()` 都描述它借用的 canonical 副本，不能把各路线的数值相加当成物理总量。
 
 ## 独立与派生维度
 
@@ -269,7 +272,8 @@ if (!invocation) return invocation.error();
 `is_shape_domain()` 区分域与 exact；域根及其报告的 `specialization()` 无效，实际 signature 从 Invocation
 取得。报告中的 descriptor、workspace 和 copy 字节是保守上界，各轴最大值可能被 guard 排除，不能把它
 当成合法输入。每个 Invocation 都有独占 workspace，尺寸变小不会重新规划或缩小预留；需要紧凑内存时
-选择 exact 编译，或缩窄声明域。新尺寸会有冷 metadata/执行状态分配，不应在每次 token 的 submit 中创建。
+选择 exact 编译、下面的预编译 exact variant，或缩窄声明域。新尺寸会有冷 metadata/执行状态分配，
+不应在每次 token 的 submit 中创建。
 
 当前 Native 仅对 dense float32、固定 hidden width 的 RMSNorm 承诺完整域，可带固定 scale；动态 prefix
 可引用派生维度。静态节点可组合原 exact Provider/region。动态节点没有完整域实现时 compile 明确失败，
@@ -277,8 +281,41 @@ if (!invocation) return invocation.error();
 固定，动态尺寸的外部值应建成 input。域与上界 exact point 的 profile identity 不同。
 
 当前 `View::reshape/broadcast_to` 的 operation attributes 仍是具体 `TensorShape`；派生 TensorSpec 不会
-偷偷改写这些固定参数，也不自动生成 reshape/copy。完整动态属性、有限 exact variants 与跨变体共享仍
-待实现，不把这一条 general 路线当成完整动态图目录。
+偷偷改写这些固定参数，也不自动生成 reshape/copy。完整动态属性仍待实现，不把这一条 general 路线
+当成完整动态图目录。
+
+### 有限精确变体与通用回退
+
+常见尺寸需要 exact Provider、独立 workspace 布局或精确 capture，而其它合法尺寸仍要能运行时，在
+同一次冷编译中列出有限表；它不是自动增长的缓存：
+
+```cpp
+const std::array common_shape{ShapeBinding{*batch, 2}, ShapeBinding{*tokens, 128}};
+const std::array variants{ExactShapeVariant{common_shape}};
+auto compiled = compile(*graph, context,
+    {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+     .exact_variants = variants});
+if (!compiled) return compiled.error();
+auto run = compiled->executable.create_invocation(shape);
+if (!run) return run.error();
+// exact_variant_index(): 命中时为声明序号，否则 nullopt，使用 general。
+auto selected = run->executable(); // 独立保活实际路线，用来查询 Queue/workspace 合同。
+```
+
+- 表及绑定只借用至 compile 返回；每项必须完整绑定独立维度、满足原域和 guards。绑定顺序不限，重复
+  concrete point 拒绝；序号按声明顺序稳定。普通 exact 编译不接受该表。
+- general 必须可编译，所有指定 exact 路线也必须准备成功；任一失败则整次失败并清理，不返回缺项表。
+  有限点不能替代完整域证明。exact 路线可采用只支持单点的 Provider/region，general 的限制仍独立成立。
+- 创建 Invocation 先验证 shape，再按完整维度有序查表，最坏 `O(D log K)`；命中只实例化已有 exact
+  计划，未命中实例化已有 general。两者都不重查 Provider、不 JIT、不扩表；warm submit 不查表。
+- 顶层 `Executable/CompileReport` 的描述、workspace、队列及并发查询仍描述 general；
+  `exact_variant_count()` / `exact_variant(i)` 枚举独立保活的子路线/报告。命中后应查实际路线，不把
+  general 的队列/并发约束套到 exact 路线上。子 Executable 用无参数 `create_invocation()`，已固定尺寸。
+- 所有路线共用累计 `max_*` 编译预算（per-provider cap 仍是每次发现的局部上限）。`search()` 描述当前
+  路线，`total_search()` 是 general 与全部 exact 的计数之和及限制标志并集，没有虚构的总执行时间。
+  前面路线花完预算可能让后续路线失败；`kAllowLimited` 不允许缺失指定变体。
+- 常量副本共享不等于全部内存共享。workspace 仍由各 Invocation 独占，现有 storage workspace 上限是
+  逐路线、逐 Invocation 的，不是所有变体和并发的总上限；不能据此宣称完整 aggregate budget 已交付。
 
 ## Symbol 与多 target/storage/lane
 
@@ -356,7 +393,7 @@ leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用�
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 `max_route_search_states`（默认 65,536）另行限制累计尝试的候选状态，包括重叠/已拒绝的候选；不在重选时
 归零。尚未找到可行计划就用尽，返回 ResourceExhausted。恰好用满且没有省略必需搜索不算受限。
-两者都必须非零。候选表容量、搜索工作量和真正准备次数不是同一个预算。
+调用方给出的两者都必须非零，跨变体累计扣除。候选表容量、搜索工作量和真正准备次数不是同一个预算。
 启用 profile 优化且已有完整可行方案时，后续 state/prepare 耗尽可在 `kAllowLimited` 下保留它；报告分别
 置 `route_search_limit_reached` / `placement_limit_reached`。strict 政策仍拒绝，真实 OOM/Provider 错误
 不因已有方案而被忽略。未完成的 trial 不会成为 Executable。
@@ -460,7 +497,7 @@ auto selected = hyle::graph::compile(
 坑：改变后续 Queue topology、capture 模式、输入分布或并发负载后，原选路预测不再适用，即使执行仍然
 合法。`concurrent_invocations > 1` 会排除必须串行的 Provider 计划；当前尚无完整 Provider 确定性证明合同，
 `require_determinism=true` 明确返回 Unimplemented，而不是仅凭 profile 标签宣称确定性。
-完整 storage/lane 联合优化、bounded variants 和自动生成所有外部 build/device/custom 指纹仍未交付。
+完整 storage/lane 联合优化、跨变体内存总预算和自动生成所有外部 build/device/custom 指纹仍未交付。
 
 ## 冷态 replay 路由
 
@@ -513,7 +550,8 @@ multi-stream capture。
   oracle。`kAllowSerialization` 的额外搜索只在冷编译且实际超过 storage hard budget 时发生；warm path
   只消费已经固化的 segment dependency。
 - `create_invocation()` 实例化 workspace、provider invocation、预定长 metadata，并固定 delegated endpoint；
-  域模式还求值具体 shape 和冷实例化已编译制品，不复制整份计划或重新选路。应按服务并发槽创建并复用。
+  域模式还求值具体 shape，选择已编译 exact 变体或冷实例化 general 制品；不复制整份计划或重选 Provider。
+  应按服务并发槽创建并复用。
 - `prepare_replay()` 做 Queue/endpoint/transfer/dependency/capture 资格化；bind、reset 或稳定地址变化会使其失效。
 - warm `submit()` 只遍历 emitted steps、segment dependencies 与 bindings：不遍历原始 DAG、不推 shape、
   不搜索 provider、不 JIT、不增长 Graph heap、不重新查询 transfer/dependency capability。backend

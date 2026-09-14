@@ -354,53 +354,56 @@ Status validate_specialized_operations(
   return Status::Ok();
 }
 
-template <std::size_t InlineCount>
-Result<SpecializationSignature> specialize_descriptions(
-    const detail::GraphState &graph, std::span<const ShapeBinding> bindings,
-    mem::AllocatorRef allocator,
-    container::SmallVector<compute::TensorDesc, InlineCount, mem::AllocatorRef>
-        &descriptions) noexcept {
-  using Values = container::SmallVector<std::int64_t, 4, mem::AllocatorRef>;
+using ShapeValues = container::SmallVector<std::int64_t, 4, mem::AllocatorRef>;
+
+Status bind_shape_values(const detail::GraphState &graph,
+                         std::span<const ShapeBinding> bindings,
+                         mem::AllocatorRef allocator,
+                         ShapeValues &values) noexcept {
   using Flags = container::SmallVector<std::uint8_t, 4, mem::AllocatorRef>;
-  Values values(allocator);
   Flags seen(allocator);
   if (!values.try_resize(graph.dimensions.size()) ||
-      !seen.try_resize(graph.dimensions.size()) ||
-      !descriptions.try_resize(graph.values.size())) {
-    return std::unexpected(plan_allocation_failure());
+      !seen.try_resize(graph.dimensions.size())) {
+    return plan_allocation_failure();
   }
   const compute::detail::ShapeProgramView shape{graph.dimensions,
                                                 graph.shape_guards};
   if (bindings.size() != shape.input_count()) {
-    return std::unexpected(
-        Status::InvalidArgument("shape requires exactly one binding for "
-                                "every independent graph dimension"));
+    return Status::InvalidArgument("shape requires exactly one binding for "
+                                   "every independent graph dimension");
   }
   for (std::size_t index = 0; index < seen.size(); ++index)
     seen[index] = 0;
   for (const ShapeBinding binding : bindings) {
     if (!detail::owns(graph, binding.dimension)) {
-      return std::unexpected(Status::InvalidArgument(
-          "shape binding does not belong to this graph"));
+      return Status::InvalidArgument(
+          "shape binding does not belong to this graph");
     }
     const std::size_t ordinal = binding.dimension.ordinal();
     if (graph.dimensions[ordinal].kind !=
         compute::detail::ShapeDimensionKind::kInput) {
-      return std::unexpected(Status::InvalidArgument(
-          "derived graph dimensions cannot be bound by the caller"));
+      return Status::InvalidArgument(
+          "derived graph dimensions cannot be bound by the caller");
     }
     if (seen[ordinal] != 0) {
-      return std::unexpected(
-          Status::InvalidArgument("shape binding is duplicated"));
+      return Status::InvalidArgument("shape binding is duplicated");
     }
     values[ordinal] = binding.value;
     seen[ordinal] = 1;
   }
   // Equal counts, valid input IDs, and no duplicates prove every input slot is
   // filled. Evaluate derived values and guards before consulting any Provider.
-  Status evaluated = compute::detail::evaluate_shape_program(shape, values);
-  if (!evaluated.ok())
-    return std::unexpected(std::move(evaluated));
+  return compute::detail::evaluate_shape_program(shape, values);
+}
+
+template <std::size_t InlineCount>
+Result<SpecializationSignature> specialize_bound_descriptions(
+    const detail::GraphState &graph, std::span<const std::int64_t> values,
+    mem::AllocatorRef allocator,
+    container::SmallVector<compute::TensorDesc, InlineCount, mem::AllocatorRef>
+        &descriptions) noexcept {
+  if (!descriptions.try_resize(graph.values.size()))
+    return std::unexpected(plan_allocation_failure());
 
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
     auto description = resolve_spec(graph, graph.values[index].spec, values);
@@ -439,6 +442,46 @@ Result<SpecializationSignature> specialize_descriptions(
   }
   state->hash = static_cast<std::size_t>(hash);
   return detail::SpecializationSignatureAccess::adopt(state);
+}
+
+template <std::size_t InlineCount>
+Result<SpecializationSignature> specialize_descriptions(
+    const detail::GraphState &graph, std::span<const ShapeBinding> bindings,
+    mem::AllocatorRef allocator,
+    container::SmallVector<compute::TensorDesc, InlineCount, mem::AllocatorRef>
+        &descriptions) noexcept {
+  ShapeValues values(allocator);
+  HYLE_RETURN_IF_ERROR(bind_shape_values(graph, bindings, allocator, values));
+  return specialize_bound_descriptions(graph, values, allocator, descriptions);
+}
+
+std::optional<std::size_t>
+find_exact_variant(const detail::PlanState &plan,
+                   std::span<const std::int64_t> values) noexcept {
+  const auto bindings = [&](std::uint32_t index) noexcept {
+    const auto *child =
+        detail::ExecutableAccess::state(plan.exact_variants[index]);
+    return std::span<const ShapeBinding>(
+        detail::SpecializationSignatureAccess::state(child->specialization)
+            ->bindings);
+  };
+  const auto position = std::lower_bound(
+      plan.variant_order.begin(), plan.variant_order.end(), values,
+      [&](std::uint32_t index, std::span<const std::int64_t> point) noexcept {
+        const auto candidate = bindings(index);
+        for (std::size_t axis = 0; axis < point.size(); ++axis) {
+          if (candidate[axis].value != point[axis])
+            return candidate[axis].value < point[axis];
+        }
+        return false;
+      });
+  if (position == plan.variant_order.end())
+    return std::nullopt;
+  const auto candidate = bindings(*position);
+  for (std::size_t axis = 0; axis < values.size(); ++axis)
+    if (candidate[axis].value != values[axis])
+      return std::nullopt;
+  return *position;
 }
 
 Status describe_domain(const detail::GraphState &graph,
@@ -1279,7 +1322,8 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
                   });
   if (materialize &&
       (!constants.bindings.try_resize(graph.constants.size()) ||
-       !plan.materialized_constants.try_resize(graph.constants.size())))
+       (!plan.shared_constants &&
+        !plan.materialized_constants.try_resize(graph.constants.size()))))
     return plan_allocation_failure();
   for (std::size_t index = 0; index < slots.size(); ++index)
     slots[index] = detail::kNoWorkspaceRequest;
@@ -1388,6 +1432,17 @@ Status materialize_constants(detail::PlanState &plan,
     if (storage >= plan.storage_domains.size())
       return Status::Internal("constant has no selected storage domain");
     const auto &description = binding.tensor.description();
+    if (plan.shared_constants) {
+      const auto *buffer = plan.owned_constant(slot);
+      if (buffer == nullptr ||
+          buffer->resource() != plan.storage_domains[storage].resource)
+        return Status::Internal(
+            "variant constant sharing changed its storage contract");
+      HYLE_ASSIGN_OR_RETURN(binding.tensor, compute::ConstTensorView::create(
+                                                description, buffer->view()));
+      plan.constant_bindings[slot] = binding.tensor;
+      continue;
+    }
     HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
     HYLE_ASSIGN_OR_RETURN(
         auto buffer,
@@ -3800,18 +3855,10 @@ Status discover_region_candidates(
       graph.nodes.empty()) {
     return Status::Ok();
   }
-  if (options.max_region_proposals == 0) {
-    return Status::InvalidArgument(
-        "enabled graph region selection requires a non-zero proposal budget");
-  }
   if (options.max_region_proposals_per_provider == 0) {
     return Status::InvalidArgument(
         "enabled graph region selection requires a non-zero per-provider "
         "proposal budget");
-  }
-  if (options.max_region_proposal_nodes == 0) {
-    return Status::InvalidArgument(
-        "enabled graph region selection requires a non-zero node budget");
   }
   if (options.max_region_proposals >
           (std::numeric_limits<std::uint32_t>::max)() ||
@@ -5430,9 +5477,9 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   state->supports_concurrent_invocations = plan.supports_concurrent_invocations;
   for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
     const auto value = plan.constant_ids[slot];
-    const bool owned = !plan.materialized_constants.empty() &&
-                       plan.materialized_constants[slot].valid();
-    const auto bytes = owned ? plan.materialized_constants[slot].size() : 0;
+    const auto *buffer = plan.owned_constant(slot);
+    const bool owned = buffer != nullptr;
+    const auto bytes = owned ? buffer->size() : 0;
     state->constants[slot] = CompileConstantReport{
         .value = value,
         .policy =
@@ -5740,6 +5787,25 @@ compute::ProviderIdentity CompileReport::provider() const noexcept {
 
 CompileSearchReport CompileReport::search() const noexcept {
   return state_ != nullptr ? state_->search : CompileSearchReport{};
+}
+
+CompileSearchReport CompileReport::total_search() const noexcept {
+  return state_ != nullptr ? state_->total_search : CompileSearchReport{};
+}
+
+std::size_t CompileReport::exact_variant_count() const noexcept {
+  return state_ != nullptr ? state_->exact_variants.size() : 0;
+}
+
+Result<CompileReport>
+CompileReport::exact_variant(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("compile report is invalid"));
+  if (index >= state_->exact_variants.size())
+    return std::unexpected(
+        Status::OutOfRange("exact variant index is out of range"));
+  return state_->exact_variants[index];
 }
 
 compute::RouteProfileIdentity CompileReport::profile_identity() const noexcept {
@@ -6186,12 +6252,12 @@ Executable::output_ownership(std::size_t index) const noexcept {
     return OutputOwnership::kInvocation;
   if ((role & (detail::kSourceAliasedOutput | detail::kExternalInput |
                detail::kConstant)) != 0) {
-    if (!state_->materialized_constants.empty()) {
+    if (!state_->materialized_constants.empty() || state_->shared_constants) {
       const auto instance = state_->external_instances[value->ordinal()];
       const auto root = state_->instance_values[alias_root(*state_, instance)];
       for (std::size_t slot = 0; slot < state_->constant_ids.size(); ++slot)
         if (state_->constant_ids[slot].ordinal() == root &&
-            state_->materialized_constants[slot].valid())
+            state_->owned_constant(slot) != nullptr)
           return OutputOwnership::kExecutable;
     }
     return OutputOwnership::kSourceAlias;
@@ -6203,6 +6269,19 @@ Result<Invocation> Executable::create_invocation() const noexcept {
   return create_invocation({});
 }
 
+std::size_t Executable::exact_variant_count() const noexcept {
+  return state_ != nullptr ? state_->exact_variants.size() : 0;
+}
+
+Result<Executable> Executable::exact_variant(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(Status::FailedPrecondition("executable is invalid"));
+  if (index >= state_->exact_variants.size())
+    return std::unexpected(
+        Status::OutOfRange("exact variant index is out of range"));
+  return state_->exact_variants[index];
+}
+
 Result<Invocation> Executable::create_invocation(
     std::span<const ShapeBinding> shape) const noexcept {
   if (state_ == nullptr) {
@@ -6211,17 +6290,16 @@ Result<Invocation> Executable::create_invocation(
 
   detail::ConcreteDescriptions concrete(state_->allocator);
   SpecializationSignature signature;
-  container::SmallVector<std::int64_t, 4, mem::AllocatorRef> values(
-      state_->allocator);
+  ShapeValues values(state_->allocator);
   const auto *domain = detail::GraphAccess::state(state_->domain_graph);
   if (domain != nullptr) {
+    HYLE_RETURN_IF_ERROR(
+        bind_shape_values(*domain, shape, state_->allocator, values));
+    if (const auto variant = find_exact_variant(*state_, values))
+      return state_->exact_variants[*variant].create_invocation();
     HYLE_ASSIGN_OR_RETURN(
-        signature,
-        specialize_descriptions(*domain, shape, state_->allocator, concrete));
-    if (!values.try_resize(domain->dimensions.size()))
-      return std::unexpected(invocation_allocation_failure());
-    for (std::size_t index = 0; index < values.size(); ++index)
-      values[index] = signature.binding(index)->value;
+        signature, specialize_bound_descriptions(*domain, values,
+                                                 state_->allocator, concrete));
   } else if (!shape.empty()) {
     return std::unexpected(
         Status::InvalidArgument("exact executable already has a fixed shape"));
@@ -6523,6 +6601,17 @@ SpecializationSignature Invocation::specialization() const noexcept {
     return {};
   return state_->plan->domain_graph.valid() ? state_->specialization
                                             : state_->plan->specialization;
+}
+
+Executable Invocation::executable() const noexcept {
+  if (state_ == nullptr)
+    return {};
+  detail::retain(state_->plan);
+  return detail::ExecutableAccess::adopt(state_->plan);
+}
+
+std::optional<std::size_t> Invocation::exact_variant_index() const noexcept {
+  return state_ != nullptr ? state_->plan->exact_variant_index : std::nullopt;
 }
 
 bool Invocation::in_flight() const noexcept {
@@ -7329,9 +7418,13 @@ Result<CompiledGraph> compile(const Graph &graph,
                  options);
 }
 
-Result<CompiledGraph> compile(const Graph &graph,
-                              CompileEnvironment environment,
-                              CompileOptions options) noexcept {
+namespace {
+
+Result<CompiledGraph>
+compile_plan(const Graph &graph, CompileEnvironment environment,
+             CompileOptions options,
+             util::Ref<detail::SharedConstants> shared_constants = {},
+             bool inherited_budget = false) noexcept {
   if (!graph.valid()) {
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
@@ -7420,9 +7513,9 @@ Result<CompiledGraph> compile(const Graph &graph,
         Status::InvalidArgument("graph region selection policy is invalid"));
   }
   if (options.region_selection != RegionSelectionPolicy::kDisabled &&
-      (options.max_region_proposals == 0 ||
-       options.max_region_proposals_per_provider == 0 ||
-       options.max_region_proposal_nodes == 0)) {
+      (options.max_region_proposals_per_provider == 0 ||
+       (!inherited_budget && (options.max_region_proposals == 0 ||
+                              options.max_region_proposal_nodes == 0)))) {
     return std::unexpected(Status::InvalidArgument(
         "enabled graph region selection requires non-zero hard budgets"));
   }
@@ -7441,7 +7534,7 @@ Result<CompiledGraph> compile(const Graph &graph,
         Status::InvalidArgument("graph operation fallback policy is invalid"));
   }
   if (options.operation_fallback == OperationFallbackPolicy::kAllow &&
-      options.max_operation_proposals == 0)
+      options.max_operation_proposals == 0 && !inherited_budget)
     return std::unexpected(
         Status::InvalidArgument("graph operation proposal budget is zero"));
   if (options.provider_replay != ProviderReplayPolicy::kAllowAny &&
@@ -7500,6 +7593,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(plan_allocation_failure());
   auto *plan =
       ::new (storage) detail::PlanState(allocator, concrete->generation);
+  plan->shared_constants = std::move(shared_constants);
   plan->specialization = std::move(signature);
   if (options.shape_policy == CompileShapePolicy::kDeclaredDomain)
     plan->domain_graph = graph;
@@ -7567,8 +7661,177 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(std::move(status));
   }
   CompiledGraph result;
+  auto *report_state = detail::CompileReportAccess::state(report);
+  report_state->total_search = plan->search;
+  report_state->total_search.selected_profile_cost.reset();
   result.report = std::move(report);
   result.executable = detail::ExecutableAccess::adopt(plan);
+  return result;
+}
+
+// The table is compile input, not a cache. Validate all domain points and
+// duplicates before preparing any exact artifacts. Temporary values die before
+// child compilation; the final index references the children's owned
+// signatures.
+Status
+index_exact_variants(detail::PlanState &plan,
+                     std::span<const ExactShapeVariant> variants) noexcept {
+  const auto &graph = *detail::GraphAccess::state(plan.domain_graph);
+  const std::size_t dimensions = graph.dimensions.size();
+  if (dimensions != 0 && variants.size() > SIZE_MAX / dimensions)
+    return Status::ResourceExhausted("exact variant dimension table overflows");
+  container::SmallVector<std::int64_t, 0, mem::AllocatorRef> points(
+      plan.allocator);
+  ShapeValues values(plan.allocator);
+  if (!points.try_resize(variants.size() * dimensions) ||
+      !plan.variant_order.try_resize(variants.size()))
+    return plan_allocation_failure();
+  for (std::size_t index = 0; index < variants.size(); ++index) {
+    HYLE_RETURN_IF_ERROR(bind_shape_values(graph, variants[index].shape,
+                                           plan.allocator, values));
+    for (std::size_t axis = 0; axis < dimensions; ++axis)
+      points[index * dimensions + axis] = values[axis];
+    plan.variant_order[index] = static_cast<std::uint32_t>(index);
+  }
+  const auto less = [&](std::uint32_t left, std::uint32_t right) noexcept {
+    for (std::size_t axis = 0; axis < dimensions; ++axis) {
+      const auto a = points[static_cast<std::size_t>(left) * dimensions + axis];
+      const auto b =
+          points[static_cast<std::size_t>(right) * dimensions + axis];
+      if (a != b)
+        return a < b;
+    }
+    return false;
+  };
+  std::sort(plan.variant_order.begin(), plan.variant_order.end(), less);
+  for (std::size_t index = 1; index < plan.variant_order.size(); ++index)
+    if (!less(plan.variant_order[index - 1], plan.variant_order[index]))
+      return Status::InvalidArgument("exact variant shape is duplicated");
+  return Status::Ok();
+}
+
+Status share_constants(detail::PlanState &plan) noexcept {
+  if (plan.materialized_constants.empty())
+    return Status::Ok();
+  void *storage = plan.allocator.allocate(sizeof(detail::SharedConstants),
+                                          alignof(detail::SharedConstants));
+  if (storage == nullptr)
+    return plan_allocation_failure();
+  auto shared =
+      util::adopt_ref(::new (storage) detail::SharedConstants(plan.allocator));
+  // The zero-inline buffer vector transfers its backing; existing artifact
+  // views retain the same addresses. No tensor payload is copied again.
+  shared->buffers = std::move(plan.materialized_constants);
+  plan.shared_constants = std::move(shared);
+  return Status::Ok();
+}
+
+Status accumulate_search(CompileSearchReport &total,
+                         const CompileSearchReport &part) noexcept {
+  constexpr std::array counts{&CompileSearchReport::operation_proposals,
+                              &CompileSearchReport::region_proposals,
+                              &CompileSearchReport::region_proposal_nodes,
+                              &CompileSearchReport::placement_attempts,
+                              &CompileSearchReport::region_route_rejections,
+                              &CompileSearchReport::operation_route_rejections,
+                              &CompileSearchReport::route_search_states,
+                              &CompileSearchReport::route_plan_rejections,
+                              &CompileSearchReport::feasible_plans,
+                              &CompileSearchReport::profiled_plans,
+                              &CompileSearchReport::unprofiled_plans,
+                              &CompileSearchReport::profile_replacements};
+  for (const auto field : counts) {
+    if (part.*field > SIZE_MAX - total.*field)
+      return Status::ResourceExhausted(
+          "aggregate graph compile counters overflow");
+    total.*field += part.*field;
+  }
+  constexpr std::array limits{
+      &CompileSearchReport::region_proposal_limit_reached,
+      &CompileSearchReport::per_provider_proposal_limit_reached,
+      &CompileSearchReport::region_node_limit_reached,
+      &CompileSearchReport::operation_proposal_limit_reached,
+      &CompileSearchReport::route_search_limit_reached,
+      &CompileSearchReport::placement_limit_reached};
+  for (const auto field : limits)
+    total.*field |= part.*field;
+  total.selected_profile_cost.reset();
+  return Status::Ok();
+}
+
+Result<CompileOptions>
+remaining_compile_budget(CompileOptions options,
+                         const CompileSearchReport &spent) noexcept {
+  struct Counter final {
+    std::size_t CompileOptions::*cap;
+    std::size_t CompileSearchReport::*count;
+  };
+  constexpr std::array counters{
+      Counter{&CompileOptions::max_placement_attempts,
+              &CompileSearchReport::placement_attempts},
+      Counter{&CompileOptions::max_route_search_states,
+              &CompileSearchReport::route_search_states},
+      Counter{&CompileOptions::max_operation_proposals,
+              &CompileSearchReport::operation_proposals},
+      Counter{&CompileOptions::max_region_proposals,
+              &CompileSearchReport::region_proposals},
+      Counter{&CompileOptions::max_region_proposal_nodes,
+              &CompileSearchReport::region_proposal_nodes}};
+  for (const auto counter : counters) {
+    if (spent.*(counter.count) > options.*(counter.cap))
+      return std::unexpected(
+          Status::Internal("graph compile exceeded its budget"));
+    options.*(counter.cap) -= spent.*(counter.count);
+  }
+  if (options.max_placement_attempts == 0 ||
+      options.max_route_search_states == 0)
+    return std::unexpected(Status::ResourceExhausted(
+        "graph exact variant has no remaining prepare/search budget"));
+  return options;
+}
+
+} // namespace
+
+Result<CompiledGraph> compile(const Graph &graph,
+                              CompileEnvironment environment,
+                              CompileOptions options) noexcept {
+  const auto variants = options.exact_variants;
+  if (!variants.empty() &&
+      options.shape_policy != CompileShapePolicy::kDeclaredDomain)
+    return std::unexpected(Status::InvalidArgument(
+        "exact variants require declared-domain compilation"));
+  if (variants.size() > (std::numeric_limits<std::uint32_t>::max)())
+    return std::unexpected(
+        Status::ResourceExhausted("exact variant index space is exhausted"));
+  options.exact_variants = {};
+  HYLE_ASSIGN_OR_RETURN(auto result, compile_plan(graph, environment, options));
+  if (variants.empty())
+    return result;
+
+  auto &plan = *detail::ExecutableAccess::state(result.executable);
+  auto &report = *detail::CompileReportAccess::state(result.report);
+  HYLE_RETURN_IF_ERROR(index_exact_variants(plan, variants));
+  if (!plan.exact_variants.try_reserve(variants.size()) ||
+      !report.exact_variants.try_reserve(variants.size()))
+    return std::unexpected(plan_allocation_failure());
+  HYLE_RETURN_IF_ERROR(share_constants(plan));
+  for (std::size_t index = 0; index < variants.size(); ++index) {
+    HYLE_ASSIGN_OR_RETURN(
+        auto child_options,
+        remaining_compile_budget(options, report.total_search));
+    child_options.shape_policy = CompileShapePolicy::kExact;
+    child_options.shape = variants[index].shape;
+    HYLE_ASSIGN_OR_RETURN(auto child,
+                          compile_plan(graph, environment, child_options,
+                                       plan.shared_constants, true));
+    detail::ExecutableAccess::state(child.executable)->exact_variant_index =
+        index;
+    HYLE_RETURN_IF_ERROR(
+        accumulate_search(report.total_search, child.report.search()));
+    if (!plan.exact_variants.try_push_back(std::move(child.executable)) ||
+        !report.exact_variants.try_push_back(std::move(child.report)))
+      return std::unexpected(plan_allocation_failure());
+  }
   return result;
 }
 
