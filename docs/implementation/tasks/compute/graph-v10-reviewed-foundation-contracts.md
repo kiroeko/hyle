@@ -1064,3 +1064,9 @@ allocator，会绕过独立的 Graph metadata 预算。该下层有限修改已�
 [Compute v12 C120--C122](compute-v12-metadata-ownership.md)；Graph 本卡只在现有冷调用传递自己的
 plan/instance allocator。Region prepare 已使用 Graph owner；完整 resident/峰值/并发/capture 与私有
 packing 仍是 G106 待实现范围，不以 allocator seam 冒充整体预算。
+
+该 seam 已实现并通过 [Compute v12 检查点](compute-v12-metadata-ownership.md#2026-09-15metadata-owner-检查点)
+的 Windows static/shared、oneDNN/CUDA 和三交付回放。新增 Graph public journey 将全部 node required
+放到第二个 Context，禁止该 target 新增 metadata 分配后仍可完成 family compile 与 exact/general
+Invocation；Graph 的第一个 Context allocator 统一承担该控制存储。没有新增公开 allocator 开关或
+把 Context/Queue/Provider 私有 heap 纳入虚构的总量；G106 整体预算仍未完成。

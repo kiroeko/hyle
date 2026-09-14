@@ -6,6 +6,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <optional>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -21,6 +22,24 @@ namespace {
 
 constexpr std::size_t kInlineInferredOutputs = 4;
 constexpr std::size_t kInlineBindings = 8;
+
+Result<mem::AllocatorRef>
+metadata_owner(std::optional<mem::AllocatorRef> requested,
+               mem::AllocatorRef inherited) noexcept {
+  const auto allocator = requested.value_or(inherited);
+  if (!allocator.valid())
+    return std::unexpected(
+        Status::InvalidArgument("operation metadata allocator is invalid"));
+  return allocator;
+}
+
+bool same_allocator(mem::AllocatorRef first,
+                    mem::AllocatorRef second) noexcept {
+  return first.state() == second.state() &&
+         first.alloc_fn() == second.alloc_fn() &&
+         first.free_fn() == second.free_fn() &&
+         first.realloc_fn() == second.realloc_fn();
+}
 
 constexpr std::size_t align_up(std::size_t value,
                                std::size_t alignment) noexcept {
@@ -215,32 +234,34 @@ Status validate_inferred_outputs(Operation operation,
   return status;
 }
 
-Result<detail::PreparedState *> make_prepared_state(
-    detail::ContextState *context, Operation operation,
-    std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
-    std::span<const mem::MemoryResourceRef> input_resources,
-    std::span<const mem::MemoryResourceRef> output_resources,
-    mem::MemoryResourceRef workspace_resource, ProviderIdentity provider,
-    ProviderInstanceId provider_instance,
-    detail::ProviderPrepared provider_prepared) noexcept {
+Result<detail::PreparedState *>
+make_prepared_state(detail::ContextState *context, mem::AllocatorRef allocator,
+                    Operation operation, std::span<const TensorDesc> inputs,
+                    std::span<const TensorDesc> outputs,
+                    std::span<const mem::MemoryResourceRef> input_resources,
+                    std::span<const mem::MemoryResourceRef> output_resources,
+                    mem::MemoryResourceRef workspace_resource,
+                    ProviderIdentity provider,
+                    ProviderInstanceId provider_instance,
+                    detail::ProviderPrepared provider_prepared) noexcept {
   auto layout = prepared_allocation_layout(inputs.size(), outputs.size());
   if (!layout) {
     provider_prepared.vtable->destroy_prepared(provider_prepared.state,
-                                               context->allocator);
+                                               allocator);
     return std::unexpected(std::move(layout).error());
   }
-  void *storage = context->allocator.allocate(layout->size,
-                                              alignof(detail::PreparedState));
+  void *storage =
+      allocator.allocate(layout->size, alignof(detail::PreparedState));
   if (storage == nullptr) {
     provider_prepared.vtable->destroy_prepared(provider_prepared.state,
-                                               context->allocator);
+                                               allocator);
     return std::unexpected(
         Status::ResourceExhausted("prepared operation allocation failed"));
   }
-  auto *state = ::new (storage)
-      detail::PreparedState(context, operation, provider, layout->size,
-                            layout->descriptor_offset, layout->resource_offset,
-                            inputs.size(), outputs.size(), workspace_resource);
+  auto *state = ::new (storage) detail::PreparedState(
+      context, allocator, operation, provider, layout->size,
+      layout->descriptor_offset, layout->resource_offset, inputs.size(),
+      outputs.size(), workspace_resource);
   state->provider_instance = provider_instance;
   for (std::size_t index = 0; index < inputs.size(); ++index)
     std::construct_at(state->inputs() + index, inputs[index]);
@@ -591,14 +612,16 @@ PreparedOperation::alias_support(std::size_t output_index,
 Result<detail::ProviderOperationProposal>
 detail::OperationPreparationAccess::propose(
     const Context &context, std::size_t provider_index, Operation operation,
-    std::span<const TensorDesc> inputs,
-    std::span<const TensorDesc> outputs,
+    std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
     std::span<ResourceBindingRequirement> input_requirements,
     std::span<ResourceBindingRequirement> output_requirements,
-    ProviderShapeDomain shape) noexcept {
+    ProviderShapeDomain shape,
+    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  HYLE_ASSIGN_OR_RETURN(const auto allocator,
+                        metadata_owner(requested_allocator, state->allocator));
   if (input_requirements.size() != inputs.size() ||
       output_requirements.size() != outputs.size()) {
     return std::unexpected(Status::InvalidArgument(
@@ -627,7 +650,7 @@ detail::OperationPreparationAccess::propose(
   // concrete shape. Only the provider's whole-domain proof can qualify it.
   if (shape.exact()) {
     Status inference =
-        validate_inferred_outputs(operation, inputs, outputs, state->allocator);
+        validate_inferred_outputs(operation, inputs, outputs, allocator);
     if (!inference.ok())
       return std::unexpected(std::move(inference));
   }
@@ -710,10 +733,13 @@ detail::OperationPreparationAccess::prepare_candidate(
     std::span<const TensorDesc> outputs,
     std::span<const ResourceBindingRequirement> input_requirements,
     std::span<const ResourceBindingRequirement> output_requirements,
-    OperationResourceBindings resources, ProviderShapeDomain shape) noexcept {
+    OperationResourceBindings resources, ProviderShapeDomain shape,
+    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  HYLE_ASSIGN_OR_RETURN(const auto allocator,
+                        metadata_owner(requested_allocator, state->allocator));
   if (resources.inputs.size() != inputs.size() ||
       resources.outputs.size() != outputs.size() ||
       input_requirements.size() != inputs.size() ||
@@ -739,8 +765,7 @@ detail::OperationPreparationAccess::prepare_candidate(
     return std::unexpected(std::move(status));
   HYLE_RETURN_IF_ERROR(validate_operation_effects(operation));
   if (shape.exact()) {
-    status =
-        validate_inferred_outputs(operation, inputs, outputs, state->allocator);
+    status = validate_inferred_outputs(operation, inputs, outputs, allocator);
     if (!status.ok())
       return std::unexpected(std::move(status));
   }
@@ -829,11 +854,11 @@ detail::OperationPreparationAccess::prepare_candidate(
     if (provider_prepared.vtable != nullptr &&
         provider_prepared.vtable->destroy_prepared != nullptr) {
       provider_prepared.vtable->destroy_prepared(provider_prepared.state,
-                                                 state->allocator);
+                                                 allocator);
     }
   };
   ProviderPrepareOutcome outcome =
-      table->prepare(slot.state, request, state->allocator, &provider_prepared);
+      table->prepare(slot.state, request, allocator, &provider_prepared);
   if (outcome.kind != ProviderPrepareOutcomeKind::kPrepared) {
     if (provider_prepared.state != nullptr &&
         (provider_prepared.vtable == nullptr ||
@@ -905,12 +930,13 @@ detail::OperationPreparationAccess::prepare_candidate(
     }
   }
   auto prepared = make_prepared_state(
-      state, operation, inputs, outputs, resources.inputs, resources.outputs,
-      workspace_resource, table->identity, slot.instance, provider_prepared);
+      state, allocator, operation, inputs, outputs, resources.inputs,
+      resources.outputs, workspace_resource, table->identity, slot.instance,
+      provider_prepared);
   if (!prepared)
     return std::unexpected(std::move(prepared).error());
   if (!shape.exact()) {
-    auto owned_shape = copy_shape_domain(shape, state->allocator);
+    auto owned_shape = copy_shape_domain(shape, allocator);
     if (!owned_shape) {
       detail::release(*prepared);
       return std::unexpected(std::move(owned_shape).error());
@@ -923,12 +949,15 @@ detail::OperationPreparationAccess::prepare_candidate(
 }
 
 Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
-    const PreparedOperation &root, std::span<std::int64_t> values) noexcept {
+    const PreparedOperation &root, std::span<std::int64_t> values,
+    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
   auto *state = root.state_;
   if (state == nullptr || state->shape == nullptr ||
       state->provider_prepared.instantiate == nullptr)
     return std::unexpected(
         Status::FailedPrecondition("operation is not a prepared shape domain"));
+  HYLE_ASSIGN_OR_RETURN(const auto allocator,
+                        metadata_owner(requested_allocator, state->allocator));
   if (!state->context->admission.try_enter())
     return std::unexpected(Status::FailedPrecondition("context is closed"));
   struct Admission final {
@@ -936,9 +965,9 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
     ~Admission() { gate.leave(); }
   } admission{state->context->admission};
   ScratchStorage<TensorDesc, kInlineBindings> inputs(state->input_count,
-                                                     state->allocator);
+                                                     allocator);
   ScratchStorage<TensorDesc, kInlineBindings> outputs(state->output_count,
-                                                      state->allocator);
+                                                      allocator);
   if (!inputs.valid() || !outputs.valid())
     return std::unexpected(Status::ResourceExhausted(
         "shape instance descriptor allocation failed"));
@@ -947,16 +976,16 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
       {state->outputs(), state->output_count}, values, inputs.span(),
       outputs.span()));
   HYLE_RETURN_IF_ERROR(validate_inferred_outputs(
-      state->operation, inputs.span(), outputs.span(), state->allocator));
+      state->operation, inputs.span(), outputs.span(), allocator));
   detail::ProviderPrepared instance{};
   const auto destroy = [&]() noexcept {
     if (instance.vtable != nullptr &&
         instance.vtable->destroy_prepared != nullptr)
-      instance.vtable->destroy_prepared(instance.state, state->allocator);
+      instance.vtable->destroy_prepared(instance.state, allocator);
   };
   Status status = state->provider_prepared.instantiate(
-      state->provider_prepared.state, inputs.span(), outputs.span(),
-      state->allocator, &instance);
+      state->provider_prepared.state, inputs.span(), outputs.span(), allocator,
+      &instance);
   if (!status.ok()) {
     if (instance.state != nullptr &&
         (instance.vtable == nullptr ||
@@ -992,8 +1021,8 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
   }
   HYLE_ASSIGN_OR_RETURN(
       auto *result,
-      make_prepared_state(state->context, state->operation, inputs.span(),
-                          outputs.span(),
+      make_prepared_state(state->context, allocator, state->operation,
+                          inputs.span(), outputs.span(),
                           {state->input_resources(), state->input_count},
                           {state->output_resources(), state->output_count},
                           state->workspace_resource, state->provider,
@@ -1386,13 +1415,24 @@ prepare(const Context &context, ScaledDotProductAttention operation,
 
 Result<OperationInvocation>
 PreparedOperation::create_invocation(mem::BufferView workspace) const noexcept {
+  return detail::OperationPreparationAccess::create_invocation(*this,
+                                                               workspace);
+}
+
+Result<OperationInvocation>
+detail::OperationPreparationAccess::create_invocation(
+    const PreparedOperation &prepared, mem::BufferView workspace,
+    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
+  auto *state_ = prepared.state_;
   if (state_ == nullptr)
     return std::unexpected(
         Status::FailedPrecondition("prepared operation is invalid"));
   if (state_->shape != nullptr)
     return std::unexpected(Status::FailedPrecondition(
         "prepared domain requires a concrete instance"));
-  const WorkspaceRequirement requirement = workspace_requirement();
+  HYLE_ASSIGN_OR_RETURN(const auto allocator,
+                        metadata_owner(requested_allocator, state_->allocator));
+  const WorkspaceRequirement requirement = prepared.workspace_requirement();
   const ProviderWorkspaceOwner workspace_owner =
       state_->provider_prepared.runtime.workspace_owner;
   if (workspace_owner == ProviderWorkspaceOwner::kProvider) {
@@ -1419,19 +1459,26 @@ PreparedOperation::create_invocation(mem::BufferView workspace) const noexcept {
   void *provider_state = nullptr;
   const detail::ProviderPrepared &provider = state_->provider_prepared;
   Status status = provider.vtable->create_invocation(
-      provider.state, state_->allocator, workspace, &provider_state);
-  if (!status.ok())
+      provider.state, allocator, workspace, &provider_state);
+  if (!status.ok()) {
+    if (provider_state != nullptr)
+      provider.vtable->destroy_invocation(provider_state, allocator);
     return std::unexpected(std::move(status));
+  }
 
-  void *storage = state_->allocator.allocate(sizeof(detail::InvocationState),
-                                             alignof(detail::InvocationState));
+  const bool separate_allocator = !same_allocator(allocator, state_->allocator);
+  const auto bytes =
+      detail::InvocationState::allocation_bytes(separate_allocator);
+  void *storage = allocator.allocate(bytes, alignof(detail::InvocationState));
   if (storage == nullptr) {
-    provider.vtable->destroy_invocation(provider_state, state_->allocator);
+    provider.vtable->destroy_invocation(provider_state, allocator);
     return std::unexpected(
         Status::ResourceExhausted("operation invocation allocation failed"));
   }
-  auto *invocation =
-      ::new (storage) detail::InvocationState(state_, provider_state);
+  auto *invocation = ::new (storage)
+      detail::InvocationState(state_, provider_state, separate_allocator);
+  if (separate_allocator)
+    std::construct_at(invocation->allocator_tail(), allocator);
   return OperationInvocation(invocation);
 }
 

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <optional>
 #include <span>
 #include <thread>
 #include <utility>
@@ -13,6 +14,7 @@
 
 #include "hyle/compute/cpu.h"
 #include "hyle/mem/buffer.h"
+#include "prepared_state.h"
 #include "provider_internal.h"
 
 namespace {
@@ -62,18 +64,22 @@ struct RmsDomain final {
   }
 };
 
-Result<PreparedOperation> prepare_domain(const Context &context,
-                                         const RmsDomain &domain) {
+Result<PreparedOperation>
+prepare_domain(const Context &context, const RmsDomain &domain,
+               std::optional<hyle::mem::AllocatorRef> allocator = std::nullopt,
+               bool exact = false) {
   std::array<ResourceBindingRequirement, 2> inputs{};
   std::array<ResourceBindingRequirement, 1> outputs{};
   const auto input_requirements = std::span(inputs).first(domain.input_count);
   const Operation operation(RmsNorm{});
+  const auto shape = exact ? ProviderShapeDomain{} : domain.view();
   HYLE_ASSIGN_OR_RETURN(auto proposal,
                         OperationPreparationAccess::propose(
                             context, 0, operation, domain.input_descriptions(),
-                            domain.outputs, input_requirements, outputs,
-                            domain.view()));
-  EXPECT_EQ(proposal.shape_coverage, ProviderShapeCoverage::kEntireDomain);
+                            domain.outputs, input_requirements, outputs, shape,
+                            allocator));
+  if (!exact)
+    EXPECT_EQ(proposal.shape_coverage, ProviderShapeCoverage::kEntireDomain);
   const std::array resources{hyle::mem::system_resource(),
                              hyle::mem::system_resource()};
   HYLE_ASSIGN_OR_RETURN(auto attempt,
@@ -83,7 +89,7 @@ Result<PreparedOperation> prepare_domain(const Context &context,
                             input_requirements, outputs,
                             {std::span(resources).first(domain.input_count),
                              std::span(resources).first(1)},
-                            domain.view()));
+                            shape, allocator));
   if (!attempt.succeeded())
     return std::unexpected(std::move(attempt.reason));
   return std::move(attempt.prepared);
@@ -92,6 +98,42 @@ Result<PreparedOperation> prepare_domain(const Context &context,
 struct FaultAllocator final {
   hyle::mem::AllocatorRef backing = hyle::mem::system_allocator();
   std::size_t attempts = 0, fail = SIZE_MAX, live = 0;
+  std::size_t bytes = 0, last_size = 0;
+  struct Allocation {
+    void *pointer = nullptr;
+    std::size_t size = 0, alignment = 0;
+  };
+  std::array<Allocation, 256> allocations{};
+
+  void record(void *pointer, std::size_t size, std::size_t alignment) noexcept {
+    if (pointer == nullptr)
+      return;
+    for (auto &entry : allocations) {
+      if (entry.pointer == nullptr) {
+        entry = {pointer, size, alignment};
+        ++live;
+        bytes += size;
+        last_size = size;
+        return;
+      }
+    }
+    ADD_FAILURE() << "fixture allocation table exhausted";
+  }
+  void forget(void *pointer, std::size_t size, std::size_t alignment) noexcept {
+    if (pointer == nullptr)
+      return;
+    for (auto &entry : allocations) {
+      if (entry.pointer == pointer) {
+        EXPECT_EQ(entry.size, size);
+        EXPECT_EQ(entry.alignment, alignment);
+        bytes -= entry.size;
+        entry = {};
+        --live;
+        return;
+      }
+    }
+    ADD_FAILURE() << "allocation was freed through a different owner";
+  }
   hyle::mem::AllocatorRef ref() noexcept {
     return {[](void *self, std::size_t size,
                std::size_t alignment) noexcept -> void * {
@@ -99,13 +141,13 @@ struct FaultAllocator final {
               if (s.attempts++ == s.fail)
                 return nullptr;
               auto *p = s.backing.allocate(size, alignment);
-              s.live += p != nullptr;
+              s.record(p, size, alignment);
               return p;
             },
             [](void *self, void *p, std::size_t size,
                std::size_t alignment) noexcept {
               auto &s = *static_cast<FaultAllocator *>(self);
-              s.live -= p != nullptr;
+              s.forget(p, size, alignment);
               s.backing.deallocate(p, size, alignment);
             },
             [](void *self, void *p, std::size_t old_size, std::size_t size,
@@ -114,10 +156,10 @@ struct FaultAllocator final {
               if (size != 0 && s.attempts++ == s.fail)
                 return nullptr;
               auto *next = s.backing.reallocate(p, old_size, size, alignment);
-              if (size == 0)
-                s.live -= p != nullptr;
-              else if (next != nullptr && p == nullptr)
-                ++s.live;
+              if (size == 0 || next != nullptr) {
+                s.forget(p, old_size, alignment);
+                s.record(next, size, alignment);
+              }
               return next;
             },
             this};
@@ -127,7 +169,9 @@ struct FaultAllocator final {
 // Same ordinary exact invocation journey as direct Compute. Only the private
 // cold root creation/instantiation belongs to the Graph factor seam.
 void check_rms(PreparedOperation prepared, Queue &queue, bool weighted,
-               FaultAllocator *allocations = nullptr) {
+               FaultAllocator *allocations = nullptr,
+               std::optional<hyle::mem::AllocatorRef> invocation_allocator =
+                   std::nullopt) {
   const auto description = prepared.input_description().value();
   const auto bytes = description.required_bytes().value();
   const auto count = bytes / sizeof(float);
@@ -156,7 +200,9 @@ void check_rms(PreparedOperation prepared, Queue &queue, bool weighted,
                     .value();
   const auto destination =
       TensorView::create(description, output.view()).value();
-  auto invocation = prepared.create_invocation().value();
+  auto invocation = OperationPreparationAccess::create_invocation(
+                        prepared, {}, invocation_allocator)
+                        .value();
   prepared = {};
   const auto before = allocations == nullptr ? 0 : allocations->attempts;
   // The invocation, not the temporary exact handle, retains the compiled root.
@@ -492,6 +538,194 @@ TEST(NativeProviderShape, EveryColdAllocationFailureCleansUpAndCanRetry) {
     }
   }
   EXPECT_EQ(allocator.live, 0u);
+}
+
+TEST(NativeMetadataOwner, ExactAndDomainArtifactsUseTheirOwnAllocator) {
+  for (const bool exact : {false, true}) {
+    SCOPED_TRACE(exact);
+    FaultAllocator context_owner, compile_owner, instance_owner, run_owner;
+    {
+      auto context =
+          cpu::create_context({.metadata_allocator = context_owner.ref()})
+              .value();
+      auto queue = context.create_queue().value();
+      const auto context_attempts = context_owner.attempts;
+      const RmsDomain domain(true);
+      auto root =
+          prepare_domain(context, domain, compile_owner.ref(), exact).value();
+      EXPECT_GT(compile_owner.live, 0u);
+      auto instance = root;
+      if (!exact) {
+        std::array<std::int64_t, 3> point{2, 3, -1};
+        instance = OperationPreparationAccess::instantiate(root, point,
+                                                           instance_owner.ref())
+                       .value();
+        EXPECT_GT(instance_owner.live, 0u);
+      }
+      root = {};
+      EXPECT_GT(compile_owner.live, 0u);
+      check_rms(std::move(instance), queue, true, &run_owner, run_owner.ref());
+      EXPECT_EQ(context_owner.attempts, context_attempts);
+      EXPECT_EQ(compile_owner.live, 0u);
+      EXPECT_EQ(instance_owner.live, 0u);
+      EXPECT_EQ(run_owner.live, 0u);
+      EXPECT_EQ(compile_owner.bytes + instance_owner.bytes + run_owner.bytes,
+                0u);
+    }
+    EXPECT_EQ(context_owner.live, 0u);
+  }
+}
+
+TEST(NativeMetadataOwner, EveryOverrideAllocationCanFailAndRetry) {
+  FaultAllocator context_owner, compile_owner, instance_owner, run_owner;
+  auto context =
+      cpu::create_context({.metadata_allocator = context_owner.ref()}).value();
+  const auto context_attempts = context_owner.attempts;
+  const RmsDomain domain;
+  auto root = prepare_domain(context, domain, compile_owner.ref()).value();
+  const auto compile_count = compile_owner.attempts;
+  root = {};
+  for (std::size_t fail = 0; fail < compile_count; ++fail) {
+    SCOPED_TRACE(fail);
+    compile_owner.fail = compile_owner.attempts + fail;
+    auto rejected = prepare_domain(context, domain, compile_owner.ref());
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsResourceExhausted());
+    EXPECT_EQ(compile_owner.live, 0u);
+    compile_owner.fail = SIZE_MAX;
+    EXPECT_TRUE(prepare_domain(context, domain, compile_owner.ref()));
+    EXPECT_EQ(compile_owner.live, 0u);
+  }
+  root = prepare_domain(context, domain, compile_owner.ref()).value();
+  const auto compile_bytes = compile_owner.bytes;
+  std::array<std::int64_t, 3> point{2, 3, -1};
+  auto instance =
+      OperationPreparationAccess::instantiate(root, point, instance_owner.ref())
+          .value();
+  const auto instance_count = instance_owner.attempts;
+  instance = {};
+  for (std::size_t fail = 0; fail < instance_count; ++fail) {
+    SCOPED_TRACE(fail);
+    instance_owner.fail = instance_owner.attempts + fail;
+    auto rejected = OperationPreparationAccess::instantiate(
+        root, point, instance_owner.ref());
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsResourceExhausted());
+    EXPECT_EQ(instance_owner.live, 0u);
+    EXPECT_EQ(compile_owner.bytes, compile_bytes);
+    instance_owner.fail = SIZE_MAX;
+    EXPECT_TRUE(OperationPreparationAccess::instantiate(root, point,
+                                                        instance_owner.ref()));
+    EXPECT_EQ(instance_owner.live, 0u);
+  }
+  instance =
+      OperationPreparationAccess::instantiate(root, point, instance_owner.ref())
+          .value();
+  run_owner.fail = 0;
+  auto rejected = OperationPreparationAccess::create_invocation(
+      instance, {}, run_owner.ref());
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  EXPECT_EQ(run_owner.live, 0u);
+  run_owner.fail = SIZE_MAX;
+  EXPECT_TRUE(OperationPreparationAccess::create_invocation(instance, {},
+                                                            run_owner.ref()));
+  EXPECT_EQ(run_owner.live, 0u);
+  EXPECT_EQ(context_owner.attempts, context_attempts);
+}
+
+TEST(NativeMetadataOwner, InvalidOverrideIsNotSilentlyInherited) {
+  auto context = cpu::create_context().value();
+  const RmsDomain domain;
+  const hyle::mem::AllocatorRef invalid;
+  EXPECT_TRUE(
+      prepare_domain(context, domain, invalid).error().IsInvalidArgument());
+  std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
+  const Operation operation(RmsNorm{});
+  auto proposal = OperationPreparationAccess::propose(
+                      context, 0, operation, domain.input_descriptions(),
+                      domain.outputs, inputs, outputs, domain.view())
+                      .value();
+  const std::array resources{hyle::mem::system_resource()};
+  auto rejected = OperationPreparationAccess::prepare_candidate(
+      context, proposal, operation, domain.input_descriptions(), domain.outputs,
+      inputs, outputs, {resources, resources}, domain.view(), invalid);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  auto root = prepare_domain(context, domain).value();
+  std::array<std::int64_t, 3> point{2, 3, -1};
+  EXPECT_TRUE(OperationPreparationAccess::instantiate(root, point, invalid)
+                  .error()
+                  .IsInvalidArgument());
+  auto instance = OperationPreparationAccess::instantiate(root, point).value();
+  EXPECT_TRUE(
+      OperationPreparationAccess::create_invocation(instance, {}, invalid)
+          .error()
+          .IsInvalidArgument());
+}
+
+TEST(NativeMetadataOwner, OrdinaryInvocationKeepsItsSizeAndAllocationCount) {
+  // Structural baseline before allocator overrides; test-only, no product
+  // compatibility type. The new cold flag fits existing trailing padding.
+  struct PreviousLayout : hyle::util::RefCounted<PreviousLayout> {
+    PreparedState *prepared = nullptr;
+    void *provider_state = nullptr;
+    CompletionLifetime lifetime{};
+    std::atomic<bool> in_flight{false};
+  };
+  static_assert(sizeof(InvocationState) == sizeof(PreviousLayout));
+  FaultAllocator owner, separate;
+  auto context = cpu::create_context().value();
+  auto root = prepare_domain(context, RmsDomain{}, owner.ref(), true).value();
+  const auto root_bytes = owner.bytes;
+  const auto before = owner.attempts;
+  auto invocation = root.create_invocation().value();
+  EXPECT_EQ(owner.attempts, before + 1);
+  EXPECT_EQ(owner.bytes - root_bytes, sizeof(PreviousLayout));
+  invocation = {};
+  EXPECT_EQ(owner.bytes, root_bytes);
+  invocation =
+      OperationPreparationAccess::create_invocation(root, {}, owner.ref())
+          .value();
+  EXPECT_EQ(owner.bytes - root_bytes, sizeof(PreviousLayout));
+  invocation = {};
+  invocation =
+      OperationPreparationAccess::create_invocation(root, {}, separate.ref())
+          .value();
+  EXPECT_EQ(owner.bytes, root_bytes);
+  EXPECT_EQ(separate.live, 1u);
+  EXPECT_EQ(separate.bytes,
+            sizeof(PreviousLayout) + sizeof(hyle::mem::AllocatorRef));
+  root = {};
+  EXPECT_GT(owner.bytes, 0u);
+  invocation = {};
+  EXPECT_EQ(owner.bytes, 0u);
+  EXPECT_EQ(separate.bytes, 0u);
+}
+
+TEST(NativeMetadataOwner, ConcurrentInstancesHaveIndependentOwners) {
+  auto context = cpu::create_context().value();
+  FaultAllocator compiled;
+  auto root = prepare_domain(context, RmsDomain{}, compiled.ref()).value();
+  const auto compile_attempts = compiled.attempts;
+  const auto run = [&](std::int64_t batch) {
+    FaultAllocator owner;
+    auto queue = context.create_queue().value();
+    for (int repeat = 0; repeat < 8; ++repeat) {
+      std::array<std::int64_t, 3> point{batch, 3, -1};
+      auto instance =
+          OperationPreparationAccess::instantiate(root, point, owner.ref());
+      ASSERT_TRUE(instance) << instance.error().message();
+      check_rms(std::move(*instance), queue, false, &owner);
+      EXPECT_EQ(owner.live, 0u);
+    }
+  };
+  {
+    std::jthread first(run, 1), second(run, 3);
+  }
+  EXPECT_EQ(compiled.attempts, compile_attempts);
+  root = {};
+  EXPECT_EQ(compiled.live, 0u);
 }
 
 TEST(NativeProviderShape, IndependentInstancesShareOneImmutableDomain) {

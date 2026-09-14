@@ -239,6 +239,7 @@ public:
 
 private:
   friend class PreparedOperation;
+  friend struct detail::OperationPreparationAccess;
   friend struct detail::OperationInvocationAccess;
   explicit OperationInvocation(detail::InvocationState *state) noexcept
       : state_(state) {}

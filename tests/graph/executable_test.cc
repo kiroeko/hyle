@@ -1341,6 +1341,75 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_TRUE(moved.create_invocation().has_value());
 }
 
+TEST(GraphCompile, RemoteTargetMetadataUsesTheGraphOwnerForAllVariants) {
+  AllocatorProbe graph_owner, target_owner;
+  {
+    auto first = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(graph_owner)})
+                     .value();
+    auto second = hyle::compute::cpu::create_context(
+                      {.metadata_allocator = probe_allocator(target_owner)})
+                      .value();
+    auto second_queue = second.create_queue().value();
+    ASSERT_TRUE(second_queue.reserve_completions(4).ok());
+    const Environment environment{{&first, hyle::mem::system_resource()},
+                                  {&second, hyle::mem::system_resource()}};
+    const auto logical = make_bounded_rms_graph();
+    const std::array placements{
+        NodePlacement{.node = logical.graph.node_id(0).value(),
+                      .target = environment.target(1),
+                      .strength = PlacementStrength::kRequired},
+        NodePlacement{.node = logical.graph.node_id(1).value(),
+                      .target = environment.target(1),
+                      .strength = PlacementStrength::kRequired}};
+    const std::array exact{ShapeBinding{logical.batch, 1},
+                           ShapeBinding{logical.tokens, 1}};
+    const std::array general{ShapeBinding{logical.batch, 1},
+                             ShapeBinding{logical.tokens, 2}};
+    const std::array variants{ExactShapeVariant{exact}};
+    // The selected target may not allocate plan or invocation metadata behind
+    // the Graph owner's quota. Context/Queue setup was completed beforehand.
+    target_owner.fail = true;
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+         .exact_variants = variants,
+         .node_placements = placements});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    const std::array queues{
+        QueueBinding{.lane = environment.lane(1), .queue = &second_queue}};
+    for (const auto shape : {std::span<const ShapeBinding>(exact),
+                             std::span<const ShapeBinding>(general)}) {
+      const auto target_allocations = target_owner.allocations.load();
+      auto created = compiled->executable.create_invocation(shape);
+      ASSERT_TRUE(created) << created.error().message();
+      EXPECT_EQ(target_owner.allocations.load(), target_allocations);
+      auto input = make_tensor(matrix(shape[1].value, 4));
+      auto output = make_tensor(matrix(shape[1].value, 4));
+      const std::vector<float> values(
+          static_cast<std::size_t>(shape[1].value * 4), 1);
+      write(input, values);
+      ASSERT_TRUE(created->bind(logical.input, input.view).ok());
+      ASSERT_TRUE(created->bind(logical.output, output.view).ok());
+      // Queue completion reservation remains owned by its Context, not Graph.
+      target_owner.fail = false;
+      const auto preparation = created->prepare_replay(queues);
+      ASSERT_TRUE(preparation.ok()) << preparation.message();
+      target_owner.fail = true;
+      graph_owner.fail = true;
+      for (int repeat = 0; repeat < 3; ++repeat) {
+        auto completion = created->submit(queues);
+        ASSERT_TRUE(completion) << completion.error().message();
+        ASSERT_TRUE(completion->wait().ok());
+      }
+      graph_owner.fail = false;
+      expect_near(read(output, values.size()), values);
+    }
+  }
+  EXPECT_EQ(graph_owner.allocations.load(), graph_owner.deallocations.load());
+  EXPECT_EQ(target_owner.allocations.load(), target_owner.deallocations.load());
+}
+
 TEST(GraphCompile, LargeTargetSetKeepsDeterministicPreferredOrdinal) {
   constexpr std::size_t kTargetCount = 33;
   const LogicalGraph logical = make_rms_graph(row(8));

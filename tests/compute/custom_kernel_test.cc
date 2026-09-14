@@ -8,6 +8,7 @@
 #include <thread>
 
 #include "custom_kernel_fixture.h"
+#include "provider_internal.h"
 
 namespace {
 using namespace custom_test;
@@ -152,6 +153,56 @@ TEST(CustomKernel, SerialArtifactDeclaresDirectCallerCompletionConstraint) {
     ASSERT_TRUE(done->wait().ok());
   }
   EXPECT_EQ(tensors.read(), (std::array<float, 4>{5, 7, 9, 11}));
+}
+
+TEST(CustomKernel, IndependentInvocationAllocatorOwnsTypedStateAndWrapper) {
+  Probe probe;
+  Tensors tensors;
+  ASSERT_TRUE(tensors.fill().ok());
+  FaultAllocator owner;
+  auto context =
+      Context::create(cpu::device(), provider(probe).value()).value();
+  auto queue = context.create_queue().value();
+  auto prepared = prepare(context, Operation::custom(Affine{3}),
+                          std::array{tensors.in}, std::array{tensors.out})
+                      .value();
+  auto invocation = detail::OperationPreparationAccess::create_invocation(
+                        prepared, {}, owner.ref())
+                        .value();
+  const auto count = owner.attempts;
+  EXPECT_EQ(count, 2u); // typed Invocation and Compute's lifetime wrapper
+  invocation = {};
+  EXPECT_EQ(owner.live, 0u);
+  for (std::size_t failure = 0; failure < count; ++failure) {
+    owner.fail = owner.attempts + failure;
+    auto rejected = detail::OperationPreparationAccess::create_invocation(
+        prepared, {}, owner.ref());
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsResourceExhausted());
+    EXPECT_EQ(probe.invocations, 0);
+    EXPECT_EQ(owner.live, 0u);
+  }
+  owner.fail = SIZE_MAX;
+  probe.fault = Fault::kInvocation;
+  EXPECT_FALSE(detail::OperationPreparationAccess::create_invocation(
+      prepared, {}, owner.ref()));
+  EXPECT_EQ(owner.live, 0u);
+  probe.fault = Fault::kNone;
+  invocation = detail::OperationPreparationAccess::create_invocation(
+                   prepared, {}, owner.ref())
+                   .value();
+  prepared = {};
+  owner.fail = owner.attempts;
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    auto completion = invocation.submit(queue, tensors.in, tensors.out);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    EXPECT_EQ(tensors.read(), (std::array<float, 4>{5, 7, 9, 11}));
+  }
+  invocation = {};
+  EXPECT_EQ(probe.invocations, 0);
+  EXPECT_EQ(probe.kernels, 0);
+  EXPECT_EQ(owner.live, 0u);
 }
 
 TEST(CustomKernel, WrongBackendRejectedAndProviderOwnerRemainsValid) {

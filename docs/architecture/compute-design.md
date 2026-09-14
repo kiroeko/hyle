@@ -486,6 +486,13 @@ Mem 是 storage-semantics owner；Compute 是 device/provider artifact 与异步
 - Graph 推导 resource、liveness 和 alias facts，再交给 Mem planner；
 - Queue/Completion 决定 Buffer、workspace、packed constants 和 staging slot 何时可复用。
 
+控制 metadata 的 owner 与 execution target 分开。direct 默认继承 Context allocator；Graph 的私有冷
+prepare/instantiate/create seam 可以指定编译制品或运行实例的 allocator，不能因为 node 路由到另一个
+Context 就绕过 Graph 配额。成功分配和错误回滚使用同一 owner/size/alignment；该借用必须保活到所有
+相关子对象和 Completion 释放。Provider 必须使用本次 callback 收到的 allocator，不能假定 prepare
+与 create-invocation 的 allocator 相同。Context/Queue、自有 Provider heap、payload resource 与驱动
+内存仍由各自 owner 负责；这条注入边界不自动证明完整物理内存预算，Graph 必须另行对账。
+
 任何异步 submit 的输入、输出、kernel argument backing 和 provider state 都必须活到 Completion 终态。
 direct `OperationInvocation` 和 Graph Invocation 都由最终 Completion 保活到真实终态，并在此期间拒绝复用；
 Tensor payload、外借 workspace 与 Queue 仍由调用方保活，不能因为 C++ handle 被移动或销毁就推断设备工作结束。

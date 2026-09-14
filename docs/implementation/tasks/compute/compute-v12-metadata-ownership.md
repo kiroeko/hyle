@@ -51,3 +51,56 @@ Graph owner。Region prepare 已接收 Graph allocator，本卡不改变它的 P
 
 本卡绑定时 Compute 已处于 `AUDITED`，这里在产品修改前重新固定有限 FIX；保持 `AUDITED`，不以这些
 增量内容替代未完成的 foundation 范围或 candidate/terminal。
+
+## 2026-09-15：metadata owner 检查点
+
+C120--C122 已实现。Graph 的跨 target leaf 准备现在使用 Graph allocator；domain instance 和 operation
+invocation 也明确传递 Graph 实例 owner。普通 direct 使用原默认，显式无效 override 不会退回系统堆。
+部分 invocation 错误先调用同 allocator 的 destroy，再返回原 Status。PreparedState 在释放自己的
+allocation 后才释放 domain root/Context；迟到完成仍保活完整实例，未改变工作接纳和完成状态机。
+
+新增 10 个定向测试：Native 的 exact/domain 多 owner、逐分配失败/重试、无效 override、默认大小/
+分配次数、并发独立 owner；CPU 的多输出 inference scratch、部分失败与迟到 Completion；typed custom
+的 Invocation/Compute wrapper 两处分配失败和自然数值执行；Graph 的不同 Context owner、有限 exact
+变体/general fallback 与重复运行。Native 的 tracking allocator 逐项校验 pointer/size/alignment 和
+最终零 live，避免只看一个总分配计数。Graph public journey 明确禁止被选 target Context 新增 metadata
+分配，仍能编译/创建；Queue 完成槽的冷预留仍属于 Queue Context，不错误记成 Graph 分配。
+
+| Windows Release 验证 | `C:/hyle-scratch/` 下缓存 | 结果 |
+|---|---|---|
+| static Compute/CPU/Native/Graph 与逐头 | `compute-route-v8-static-20260914` | 9/9；后补 fixture 后 CPU/Graph 2/2 |
+| shared + oneDNN direct/composition/Graph/region 与逐头 | `compute-route-onednn-v8-20260914` | 15/15；最后 wide scratch fixture 后 CPU 1/1 |
+| CUDA runtime、late failure、Graph 与逐头 | `compute-graph-v7-cuda` | 8/8；Graph execution 230 用例含 2 个真实 CUDA 用例 |
+| source CPU/CUDA custom consumer | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA custom consumer | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA custom consumer | `custom-execution-v10-static-consumer` | 2/2 |
+
+最终 CPU runtime/custom 47、Native 84、普通 Graph execution 228 用例通过。首次 build target 名误写为
+`hyle_graph_execution_test`，在 Ninja 阶段停止，改为已登记的 `hyle_graph_executable_test`；新增 Graph
+fixture 最初给 inactive lane 也传了 Queue，被原合同正确拒绝，改为只传 active lane 后通过。未放宽产品。
+
+命令沿用 `scripts/hyle-windows.ps1 -Action Build/Test -BinaryDir <cache>`，build `--parallel 2`，CTest
+`--parallel 1 --timeout 120 --output-on-failure`，只选表内 target/regex，不启动全库/CI/P1。source consumer
+显式构建 `hyle_custom_kernel_sample hyle_custom_cuda_sample`；两个 SDK 从同名 `*-build` 构建
+`hyle_graph hyle_compute_backend_cuda hyle_compute_provider_native` 后显式 `cmake --install ... --prefix ...-sdk`，
+不写 Program Files。Mem/Compute/Graph DLL 从真实 producer/SDK stage 到 CPU/CUDA 目录并比较 hash。
+shared producer/SDK/两个加载目录的 Compute DLL SHA-256 均为
+`F7BA0BACFB5ACDDDED2EB83685B76D83D0884C2FCB83D44D083833EE6B066040`。
+
+P0：已有 shape/inference/descriptor 算法和 allocation 次数不变；PreparedState/公开 handle 不增字段。
+测试用只在测试定义的旧字段布局确认普通 InvocationState 大小不变，默认和显式同 owner 都不分配尾部；
+不同 owner 才在原 allocation 中多 4-word AllocatorRef。create 有 `O(1)` 校验/owner 比较，destroy 有
+`O(1)` owner 选择；包括最后引用由 Completion 释放时的 teardown，不宣称它免费。正常保留 Invocation
+的重复 submit 不读取标记/尾部，不新增查找、分配、锁、原子或 callback 层次。不是计时胜负结论。
+
+独立于实现的一次本轮源码对账覆盖所有 allocator 入口/回滚/最后引用、tail alignment/lifetime 和 Graph
+直接消费者，没有遗留产品 finding；这是主 agent 的增量源码复核，不冒充独立终局红队或跨平台资格。
+末次产品文件仅修正上述 teardown 注释，未改变已验证的代码/token/layout。selector 基线 `f2b6d6a7`
+READY，83 项有据跳过；closure（含相对 `6caa79f9` 的历史检查）、docs/diff 通过。
+
+统一 LOC self-check：全库 **679,867**，自实现不含测试 **124,154**；Compute **16,731**、Graph **12,275**，
+合计 **29,006**，按两个产品全部实现因子、不含测试和第三方的相同口径。
+
+保持 **AUDITED**，不是新的 terminal。C93 真实 profile、G101 动态属性、G103 联合选择、G106 完整
+resident/冷峰值/并发/capture/packing、真实 CPU/CUDA/Apple 探针和共同 foundation 的 Linux/两台 Apple/
+sanitizer/独立终局红队/P1 继续保留；本轮 allocator seam 不代签，也不授权横向扩充算子目录。

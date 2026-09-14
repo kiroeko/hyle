@@ -148,7 +148,8 @@ struct OperationPreparationAccess final {
           std::span<const TensorDesc> outputs,
           std::span<ResourceBindingRequirement> input_requirements,
           std::span<ResourceBindingRequirement> output_requirements,
-          ProviderShapeDomain shape = {}) noexcept;
+          ProviderShapeDomain shape = {},
+          std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
 
   HYLE_COMPUTE_API static Result<ProviderPrepareAttempt> prepare_candidate(
       const Context &context, const ProviderOperationProposal &proposal,
@@ -156,15 +157,23 @@ struct OperationPreparationAccess final {
       std::span<const TensorDesc> outputs,
       std::span<const ResourceBindingRequirement> input_requirements,
       std::span<const ResourceBindingRequirement> output_requirements,
-      OperationResourceBindings resources,
-      ProviderShapeDomain shape = {}) noexcept;
+      OperationResourceBindings resources, ProviderShapeDomain shape = {},
+      std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
 
   // Cold only. values has one slot per dimension, independent inputs filled;
   // derived slots are overwritten. Failure may change scratch but never
   // executes work. The result is an ordinary exact PreparedOperation.
-  HYLE_COMPUTE_API static Result<PreparedOperation>
-  instantiate(const PreparedOperation &root,
-              std::span<std::int64_t> values) noexcept;
+  HYLE_COMPUTE_API static Result<PreparedOperation> instantiate(
+      const PreparedOperation &root, std::span<std::int64_t> values,
+      std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
+
+  // A missing allocator inherits Context (propose/prepare) or the prepared
+  // owner (instantiate/create). An explicitly invalid allocator is rejected.
+  // Overrides borrow their owner through all children and real Completion;
+  // they do not replace Context, payload resources or provider-private heaps.
+  HYLE_COMPUTE_API static Result<OperationInvocation> create_invocation(
+      const PreparedOperation &prepared, mem::BufferView workspace,
+      std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
 };
 
 struct ProviderAccess final {

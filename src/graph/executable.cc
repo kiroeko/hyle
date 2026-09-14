@@ -1922,7 +1922,7 @@ Status discover_operation_candidates(
         }
         auto proposal = compute::detail::OperationPreparationAccess::propose(
             context, provider, node.operation, inputs, outputs,
-            input_requirements, output_requirements, shape);
+            input_requirements, output_requirements, shape, plan.allocator);
         if (!proposal) {
           if (proposal.error().IsUnimplemented())
             continue;
@@ -3584,7 +3584,7 @@ Status prepare_placed_steps_attempt(
                                                  .outputs = output_resources,
                                                  .workspace_resource =
                                                      workspace_resource},
-              shape);
+              shape, plan.allocator);
       if (!attempt)
         return std::move(attempt).error();
       if (!attempt->succeeded()) {
@@ -6513,7 +6513,7 @@ Result<Invocation> Executable::create_invocation(
         if (domain != nullptr &&
             has_dynamic_shape(*domain, domain->nodes[step.node_begin])) {
           auto bound = compute::detail::OperationPreparationAccess::instantiate(
-              step.operation, values);
+              step.operation, values, invocation->allocator);
           if (!bound) {
             Status error = std::move(bound).error();
             detail::release(invocation);
@@ -6522,7 +6522,9 @@ Result<Invocation> Executable::create_invocation(
           instance = std::move(*bound);
           operation = &instance;
         }
-        auto created = operation->create_invocation(step_workspace);
+        auto created =
+            compute::detail::OperationPreparationAccess::create_invocation(
+                *operation, step_workspace, invocation->allocator);
         if (!created) {
           Status error = std::move(created).error();
           detail::release(invocation);

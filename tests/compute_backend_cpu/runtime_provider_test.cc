@@ -17,6 +17,7 @@
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
+#include "hyle/mem/quota_allocator.h"
 #include "provider_internal.h"
 
 namespace {
@@ -158,6 +159,7 @@ struct AsyncOperationProbe final {
   hyle::Status prepare_error =
       hyle::Status::DataLoss("injected provider failure");
   bool return_partial_artifact = false;
+  bool fail_invocation = false;
   std::size_t proposal_count = 0;
   std::size_t shape_dimension_count = 0;
   bool shape_shares_input_output_axis = false;
@@ -196,7 +198,9 @@ hyle::Status create_async_invocation(void *prepared, hyle::mem::AllocatorRef,
                                      hyle::mem::BufferView,
                                      void **invocation) noexcept {
   *invocation = prepared;
-  return hyle::Status::Ok();
+  return static_cast<AsyncOperationProbe *>(prepared)->fail_invocation
+             ? hyle::Status::DataLoss("injected partial invocation")
+             : hyle::Status::Ok();
 }
 
 void destroy_async_invocation(void *invocation,
@@ -1781,6 +1785,142 @@ TEST(RuntimeProviders,
   probe.abandoned.release(probe.abandoned.state);
   probe.abandoned = {};
   EXPECT_EQ(probe.invocation_destroy_count, 1u);
+}
+
+struct WideMetadataSchema final {
+  static constexpr hyle::compute::OperationId operation_id{0x4d455441ULL, 9};
+  static constexpr std::string_view operation_name = "wide-metadata-fixture";
+  hyle::compute::OperationTraits operation_traits() const noexcept {
+    return {.inputs = {9, 9}, .outputs = 9};
+  }
+  hyle::Status infer_output_descriptions(
+      std::span<const hyle::compute::TensorDesc> inputs,
+      std::span<hyle::compute::TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 9 || outputs.size() != 9)
+      return hyle::Status::InvalidArgument("wide schema arity");
+    for (std::size_t index = 0; index < outputs.size(); ++index)
+      outputs[index] = inputs[index];
+    return hyle::Status::Ok();
+  }
+};
+
+TEST(RuntimeProviders, InferenceScratchDoesNotBypassTheSelectedAllocator) {
+  using namespace hyle::compute;
+  AsyncOperationProbe probe;
+  auto context =
+      Context::create(cpu::device(), make_async_provider(probe)).value();
+  const Operation operation = Operation::custom(WideMetadataSchema{});
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{4})
+          .value();
+  std::array<TensorDesc, 9> descriptions;
+  descriptions.fill(description);
+  std::array<detail::ResourceBindingRequirement, 9> inputs{}, outputs{};
+  hyle::mem::QuotaAllocator denied(hyle::mem::system_allocator(), 0);
+  auto rejected = detail::OperationPreparationAccess::propose(
+      context, 0, operation, descriptions, descriptions, inputs, outputs, {},
+      denied.get());
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  EXPECT_EQ(probe.proposal_count, 0u);
+  auto proposal =
+      detail::OperationPreparationAccess::propose(
+          context, 0, operation, descriptions, descriptions, inputs, outputs)
+          .value();
+  std::array<hyle::mem::MemoryResourceRef, 9> resources;
+  resources.fill(hyle::mem::system_resource());
+  auto failed = detail::OperationPreparationAccess::prepare_candidate(
+      context, proposal, operation, descriptions, descriptions, inputs, outputs,
+      {resources, resources}, {}, denied.get());
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+  EXPECT_EQ(probe.prepare_count, 0u);
+  hyle::mem::QuotaAllocator allowed(hyle::mem::system_allocator(), 65536);
+  {
+    auto prepared = detail::OperationPreparationAccess::prepare_candidate(
+        context, proposal, operation, descriptions, descriptions, inputs,
+        outputs, {resources, resources}, {}, allowed.get());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    ASSERT_TRUE(prepared->succeeded());
+    EXPECT_GT(allowed.used(), 0u);
+  }
+  EXPECT_EQ(allowed.used(), 0u);
+  EXPECT_EQ(probe.prepared_destroy_count, 1u);
+}
+
+TEST(RuntimeProviders, MetadataOverrideRetainsStorageUntilRealCompletion) {
+  using namespace hyle::compute;
+  hyle::mem::QuotaAllocator run_owner(hyle::mem::system_allocator(), 4096);
+  AsyncOperationProbe probe;
+  auto context =
+      Context::create(async_device(probe), make_async_provider(probe)).value();
+  auto queue = context.create_queue().value();
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{4})
+          .value();
+  auto prepared = prepare(context, Unary{UnaryKind::kNeg}, description).value();
+  auto input =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 16).value();
+  auto output =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 16).value();
+  auto invocation = detail::OperationPreparationAccess::create_invocation(
+                        prepared, {}, run_owner.get())
+                        .value();
+  const auto bytes = run_owner.used();
+  ASSERT_GT(bytes, 0u);
+  auto completion = invocation.submit(
+      queue, ConstTensorView::create(description, input.view()).value(),
+      TensorView::create(description, output.view()).value());
+  ASSERT_TRUE(completion) << completion.error().message();
+  EXPECT_EQ(run_owner.used(), bytes);
+  prepared = {};
+  invocation = {};
+  *completion = {};
+  ASSERT_TRUE(probe.abandoned.valid());
+  EXPECT_EQ(run_owner.used(), bytes);
+  EXPECT_EQ(probe.invocation_destroy_count, 0u);
+  EXPECT_EQ(probe.prepared_destroy_count, 0u);
+  probe.complete = true;
+  const auto lifetime = std::exchange(probe.abandoned, {});
+  lifetime.terminal(lifetime.state, hyle::Status::Ok());
+  lifetime.release(lifetime.state);
+  EXPECT_EQ(run_owner.used(), 0u);
+  EXPECT_EQ(probe.invocation_destroy_count, 1u);
+  EXPECT_EQ(probe.prepared_destroy_count, 1u);
+}
+
+TEST(RuntimeProviders, InvocationFailureDestroysPartialWithItsSelectedOwner) {
+  using namespace hyle::compute;
+  AsyncOperationProbe probe;
+  auto context =
+      Context::create(async_device(probe), make_async_provider(probe)).value();
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{4})
+          .value();
+  auto prepared = prepare(context, Unary{UnaryKind::kNeg}, description).value();
+  hyle::mem::QuotaAllocator no_storage(hyle::mem::system_allocator(), 0);
+  probe.fail_invocation = true;
+  auto rejected = detail::OperationPreparationAccess::create_invocation(
+      prepared, {}, no_storage.get());
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsDataLoss());
+  EXPECT_EQ(probe.invocation_destroy_count, 1u);
+  EXPECT_EQ(no_storage.used(), 0u);
+  probe.fail_invocation = false;
+  rejected = detail::OperationPreparationAccess::create_invocation(
+      prepared, {}, no_storage.get());
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  EXPECT_EQ(probe.invocation_destroy_count, 2u);
+  hyle::mem::QuotaAllocator sufficient(hyle::mem::system_allocator(), 4096);
+  {
+    auto retry = detail::OperationPreparationAccess::create_invocation(
+        prepared, {}, sufficient.get());
+    ASSERT_TRUE(retry) << retry.error().message();
+    EXPECT_GT(sufficient.used(), 0u);
+  }
+  EXPECT_EQ(probe.invocation_destroy_count, 3u);
+  EXPECT_EQ(sufficient.used(), 0u);
 }
 
 TEST(RuntimeProviders,

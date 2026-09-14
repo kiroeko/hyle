@@ -518,6 +518,10 @@ Native FFI，也不承诺跨工具链 C++ ABI。
   一份独占可变状态，不能同时复用同一个 Invocation。可选 `alias_support(output, input)` 只能细化 schema
   已允许的 alias；不定义时拒绝 alias。factory 与 kernel 的 const 方法必须支持其声明的并发方式，全部
   callback 和 move/destructor 为 `noexcept`。
+  prepare 与 create-invocation 收到的 allocator **可能不同**：Graph 可将编译制品与运行实例记到不同
+  metadata owner。为本次实例分配的内存应使用本次参数并记录配对释放信息，不要固定回用 factory/
+  kernel 创建时的 allocator。allocator 是借用，owner 须活到实例及其异步 Completion 完全释放；公开
+  direct prepare/create 默认仍继承 Context 的 metadata allocator。payload/workspace 不属于这项配额。
   若 artifact 声明 `supports_concurrent_invocations=false`，direct 用户须将同一 PreparedOperation 的全部
   Invocation 串行到真实 Completion 终态，不能只等 enqueue 返回；direct 不额外加共享锁。Graph 会在同一
   Executable 内检查该限制；用户跨 Executable 借用的外部不可并发资源仍须自行同步。

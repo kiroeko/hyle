@@ -18,20 +18,19 @@ struct PreparedShapeDomain final {
 };
 
 struct PreparedState final : util::RefCounted<PreparedState> {
-  PreparedState(ContextState *context_value, Operation operation_value,
-                ProviderIdentity provider_value,
+  PreparedState(ContextState *context_value, mem::AllocatorRef allocator_value,
+                Operation operation_value, ProviderIdentity provider_value,
                 std::size_t allocation_size_value,
                 std::size_t descriptor_offset_value,
                 std::size_t resource_offset_value,
-                std::size_t input_count_value,
-                std::size_t output_count_value,
+                std::size_t input_count_value, std::size_t output_count_value,
                 mem::MemoryResourceRef workspace_resource_value) noexcept
-      : allocator(context_value->allocator), context(context_value),
+      : allocator(allocator_value), context(context_value),
         operation(operation_value), provider(provider_value),
         allocation_size(allocation_size_value),
         descriptor_offset(descriptor_offset_value),
-        resource_offset(resource_offset_value),
-        input_count(input_count_value), output_count(output_count_value) {
+        resource_offset(resource_offset_value), input_count(input_count_value),
+        output_count(output_count_value) {
     workspace_resource = workspace_resource_value;
     detail::retain(context);
   }
@@ -82,10 +81,10 @@ struct PreparedState final : util::RefCounted<PreparedState> {
     const mem::AllocatorRef owner = allocator;
     const std::size_t bytes = allocation_size;
     this->~PreparedState();
+    owner.deallocate(this, bytes, alignof(PreparedState));
     if (retained_domain != nullptr)
       retained_domain->decref();
     detail::release(retained_context);
-    owner.deallocate(this, bytes, alignof(PreparedState));
   }
 
   mem::AllocatorRef allocator{};
@@ -115,24 +114,37 @@ inline void release(PreparedState *state) noexcept {
 }
 
 struct InvocationState final : util::RefCounted<InvocationState> {
-  InvocationState(PreparedState *prepared_value,
-                  void *provider_state_value) noexcept
-      : prepared(prepared_value), provider_state(provider_state_value) {
+  InvocationState(PreparedState *prepared_value, void *provider_state_value,
+                  bool separate_allocator_value) noexcept
+      : prepared(prepared_value), provider_state(provider_state_value),
+        separate_allocator(separate_allocator_value) {
     detail::retain(prepared);
+  }
+
+  // Only a different owner needs the tail. Steady enqueue/submit ignores it;
+  // last-reference teardown, including completion-driven teardown, reads it.
+  mem::AllocatorRef *allocator_tail() noexcept {
+    return reinterpret_cast<mem::AllocatorRef *>(this + 1);
+  }
+  static constexpr std::size_t allocation_bytes(bool separate) noexcept {
+    return sizeof(InvocationState) + (separate ? sizeof(mem::AllocatorRef) : 0);
   }
 
   void destroy() noexcept {
     PreparedState *owner_prepared = prepared;
-    const mem::AllocatorRef allocator = owner_prepared->allocator;
+    const mem::AllocatorRef allocator =
+        separate_allocator ? *allocator_tail() : owner_prepared->allocator;
+    const std::size_t bytes = allocation_bytes(separate_allocator);
     if (owner_prepared->provider_prepared.vtable != nullptr &&
         owner_prepared->provider_prepared.vtable->destroy_invocation !=
             nullptr) {
       owner_prepared->provider_prepared.vtable->destroy_invocation(
           provider_state, allocator);
     }
+    if (separate_allocator)
+      std::destroy_at(allocator_tail());
     this->~InvocationState();
-    allocator.deallocate(this, sizeof(InvocationState),
-                         alignof(InvocationState));
+    allocator.deallocate(this, bytes, alignof(InvocationState));
     detail::release(owner_prepared);
   }
 
@@ -140,7 +152,11 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   void *provider_state = nullptr;
   CompletionLifetime completion_lifetime{};
   std::atomic<bool> in_flight{false};
+  bool separate_allocator = false;
 };
+
+static_assert(alignof(InvocationState) >= alignof(mem::AllocatorRef));
+static_assert(sizeof(InvocationState) % alignof(mem::AllocatorRef) == 0);
 
 inline void retain(InvocationState *state) noexcept {
   if (state != nullptr)
