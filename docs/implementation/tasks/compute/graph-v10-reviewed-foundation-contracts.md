@@ -66,3 +66,17 @@ class 变化会报错并销毁制品；CompileStepReport 原样传播 unknown/pr
 
 G100 的 prepared-only 自动筛选和 managed 预算尚未实施，其余 G101--G107 未因这次元数据迁移自动
 完成。仍为 `AUDITED`；未运行的 CUDA/跨平台/sanitizer/installed/P1 格不得记为 PASS。
+
+### G101 表示审计（实现前固定）
+
+复用 Compute C92 程序作为 Graph 私有 dimension record，不复制整数计算/guard checker。公开保留
+`dimension(bounds)` 创建独立维度，新增 `dimension_sum/product/quotient/broadcast(Dimension, Dimension)`
+创建派生 `DimensionId`；`require_dimension_equal/less_equal` 添加 guard。操作数必须为常量或同 Builder
+已存在 ID；失败不追加半条记录。`dimension_count()` 枚举全部维度，新增 `independent_dimension_count()`
+与 `dimension_is_independent(id)` 帮消费者识别需要绑定者；bounds 允许零，与 TensorDesc 一致。
+
+compile 仅要求每个独立维度一个 ShapeBinding，拒绝用户绑定派生 ID；一次程序求值后解析 TensorSpec，
+signature 保存全部解析值，因此不丢失派生维度 identity。exact-only 路线继续可用；这个步骤先以真实
+Native concat 和派生 row spec 完成消费，不据此声称完整 bounded artifact、dynamic View attributes、
+variant 或 runtime shape selection 已完成。后几项仍属于 G101/G102 的待办，不用固定 View 常量冒充动态
+reshape。普通 concrete 图和 direct Compute 不需要构造 shape 程序。

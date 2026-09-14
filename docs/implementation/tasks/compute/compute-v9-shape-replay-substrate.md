@@ -92,6 +92,23 @@ C91、C92、C93 仍待实现，Graph 尚未把 bounded domain 接入实际编译
 完成。下一步仍是本卡的 replay facts、有限派生 shape 与身份合同，然后按总任务接 Graph/真实 Provider。
 组件保持 `AUDITED`，没有签发基础框架完成或任何新性能胜利。
 
+### C92 表示审计（实现前固定）
+
+采用 provider-neutral、按创建顺序编号的有限维度程序；每条 dimension 是独立 input 或 add/multiply/
+exact-divide/broadcast，操作数是非负常量或此前的 ordinal。独立 input 有 bounds，派生 bounds 由共用
+区间算术生成并校验，不能把派生输出另造 input。附加 guards 只支持相等/小于等于，除法整除和广播
+兼容性也在求值时检验。无 payload、字符串、循环、递归、动态 callback 或通用求解器。
+
+表中 bounds 是保守 envelope，不宣称任意各轴上界组合均可执行。shape proposal 的整个域由程序和
+guards 联合定义；非 exact 域不得再先用 envelope 做 concrete operation inference。无法证明支持整个域
+的 Provider 仍拒绝；exact 域可保留 concrete 检查。区间过宽导致整数/描述无法表达时要求缩窄输入 bounds，
+不依靠搜索/抽样去求可行子域，不伪称通用 guard tightening。
+
+`ShapeProgramView` 借用 dimension/guard spans；每维携带 `ProviderShapeRange` 与算式，轴映射改为 value
+ordinal。`evaluate_shape_program` 使用 caller 的整维度 scratch：输入槽须预填，派生槽覆写；失败弃用
+scratch。验证/求值 `O(D+G)`，成功零分配，错误 Status 可能分配。shape-domain binding 复用同一求值器，
+不保留旧 symbols-only 表。Graph 的公开 ID 不穿越此层；私有 SPI 同步升版。
+
 ## 2026-09-14 C91 成本分类检查点
 
 `ProviderReplayClass`、默认 unknown 的 `replay_class`、共同 `valid()`/equality 已实现；Compute 与 Graph
