@@ -407,7 +407,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：有限 N18--N20 补 rank>=2 batch-broadcast MatMul、packed/separate 三种 GatedActivation，并删除无源码消费的 Platform 重复 direct edge；真实 Math/Mem/SIMD 复用不变，不重开底层模块。"
+      "summary": "compute_provider_native v1 AUDITED：有限 N18/N19 补 rank>=2 batch-broadcast MatMul 与 packed/separate 三种 GatedActivation；N20 证明 fat-kernel selector 直接消费 Platform CPU facts，故正确保留该边；不重开底层模块。"
     },
     {
       "module": "compute_sched",
