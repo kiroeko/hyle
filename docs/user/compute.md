@@ -477,6 +477,10 @@ Native FFI，也不承诺跨工具链 C++ ABI。
   可指定属性、alignment、精确 resource/domain，未填写字段不施加额外约束。所有 span 只借到调用返回。
   按算法真正需要的属性声明；静态链接到不同 code image 的 `system_resource()` 可能不是同一个实例，
   不能用它代替通用 host-accessible 要求。确需精确实例时从实际资源 owner 传入句柄。
+- `KernelProposal::route` 是本次 propose→prepare 的临时 token；可选 `profile_key = ProviderRouteKey{1}`
+  则是同一 build/configuration 下的稳定实现键，不得填指针、发现序号或随机值。默认 unknown 不影响
+  正常执行。键仅是未来完整性能资料身份的一部分，不能代替 build、设备/驱动、语义、shape/layout、资源、
+  workload 与完成边界；当前 Graph 只把它保留到 step report，不据此改顺序或声称自动择优。
 - `const factory.prepare(KernelPrepareRequest, allocator)` 仅在选中路线之后创建 kernel，返回
   `KernelPreparation`。成功用 `make_custom_kernel(value, properties, allocator)`；明确 unsupported /
   resource-decline 才能授权对应政策回退，真正 error 即使错误码相同也不自动重跑。部分 kernel 由 RAII 回收。

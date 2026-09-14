@@ -680,3 +680,7 @@ region 联合环与回溯；hard target/Provider 不突破；搜索/prepare 上�
 本段仅完成无 profile 的有限可行路线搜索，不签完 G103/G104：qualified identity/cost、storage/lane
 联合优化与有 incumbent 的优化截断仍待接入；G101/G102 的完整 shape domain/variants、G106 常量物化与
 聚合预算、真实 CPU/CUDA/Apple 架构探针及统一终局验证也未完成。下一步仍在这些基础合同内，不扩算子。
+
+G103/C93 下一段固定为[稳定实现键与临时 token 分离](compute-v10-owning-custom-execution.md#c93稳定实现键与临时准备-token-分离实现前固定)：
+Graph 只迁移 region 提案与冷 report，复用 Compute `ProviderRouteKey`；实际选择仍按本轮无 profile
+合同，不因 Provider 填了非零 key 就授予性能优先级。keys 临时数组活到 build_report，不进入 PlanStep/Invocation。

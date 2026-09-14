@@ -1767,6 +1767,7 @@ TEST(Invocation, CrossStoragePublishedViewUsesItsExplicitOutputBinding) {
   EXPECT_TRUE(compiled.report.lane(1)->queue_required);
   EXPECT_EQ(compiled.report.step(1)->kind, hyle::graph::CompileStepKind::kCopy);
   EXPECT_FALSE(compiled.report.step(1)->provider_instance.valid());
+  EXPECT_FALSE(compiled.report.step(1)->profile_key.valid());
   EXPECT_EQ(compiled.report.step(1)->synchronization_count, 0u);
   EXPECT_EQ(compiled.report.synchronization_count(), 0u);
 

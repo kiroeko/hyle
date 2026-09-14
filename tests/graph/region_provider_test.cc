@@ -169,6 +169,7 @@ struct RegionProbe final {
   hyle::mem::MemoryResourceRef backend_only_resource{};
   hyle::mem::MemoryResourceRef validation_failure_resource{};
   Status validation_failure{};
+  hyle::compute::ProviderRouteKey profile_key{};
 };
 
 struct ExternalEffect final {
@@ -442,7 +443,8 @@ bool is_negation(const Graph &graph, std::size_t node_index) {
 Result<bool> add_node_set_proposal(
     RegionProposalWriter &writer, std::span<const NodeId> nodes,
     std::optional<std::uint32_t> dispatch_count = 1,
-    ProviderReplayClass replay_class = ProviderReplayClass::kUnknown) noexcept {
+    ProviderReplayClass replay_class = ProviderReplayClass::kUnknown,
+    hyle::compute::ProviderRouteKey profile_key = {}) noexcept {
   return writer.try_add(RegionProposal{
       .nodes = nodes,
       .cost = {.dispatch_count = dispatch_count},
@@ -452,6 +454,7 @@ Result<bool> add_node_set_proposal(
               : (static_cast<std::uint64_t>(nodes.front().ordinal()) << 32) |
                     nodes.size(),
       .replay_class = replay_class,
+      .profile_key = profile_key,
   });
 }
 
@@ -508,7 +511,8 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
   if (probe.mode == ProposalMode::kSingleton) {
     const std::array nodes{graph.node_id(probe.singleton_node).value()};
     return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count,
-                                 probe.discovery_replay_class);
+                                 probe.discovery_replay_class,
+                                 probe.profile_key);
   }
   if (probe.mode == ProposalMode::kInterleavedChains ||
       probe.mode == ProposalMode::kJointCycle) {
@@ -557,7 +561,8 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
     if (!last)
       return std::unexpected(std::move(last).error());
     const std::array nodes{*first, *last};
-    return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count);
+    return add_node_set_proposal(writer, nodes, probe.proposal_dispatch_count,
+                                 ProviderReplayClass::kUnknown, probe.profile_key);
   }
   if (probe.mode == ProposalMode::kDuplicateNode) {
     auto node = graph.node_id(0);
@@ -3391,6 +3396,7 @@ TEST(GraphRegions, CompilesAContractibleNonContiguousNodeSet) {
 
 TEST(GraphRegions, SchedulesAContractedNodeSetAfterItsExternalPredecessor) {
   RegionProbe probe{.mode = ProposalMode::kNonContiguousReordered};
+  probe.profile_key = hyle::compute::ProviderRouteKey{88};
   const Graph logical = make_reordered_non_contiguous_negations();
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical, context).value();
@@ -3401,6 +3407,9 @@ TEST(GraphRegions, SchedulesAContractedNodeSetAfterItsExternalPredecessor) {
   EXPECT_EQ(compiled.report.step(1)->kind, CompileStepKind::kProviderRegion);
   EXPECT_EQ(compiled.report.step_node(1, 0)->ordinal(), 0u);
   EXPECT_EQ(compiled.report.step_node(1, 1)->ordinal(), 3u);
+  EXPECT_EQ(compiled.report.step(1)->profile_key, probe.profile_key);
+  EXPECT_NE(compiled.report.step(0)->profile_key, probe.profile_key);
+  EXPECT_NE(compiled.report.step(2)->profile_key, probe.profile_key);
   EXPECT_EQ(compiled.report.step(2)->kind, CompileStepKind::kOperationFallback);
   EXPECT_EQ(compiled.report.step_node(2, 0)->ordinal(), 1u);
 }
@@ -4270,8 +4279,36 @@ TEST(GraphRegions, RegionExtensionVersionDoesNotAliasTheV1Table) {
       0x48594c4547524150ULL, 0x48524547494f4e31ULL, 2};
   EXPECT_EQ(query_extension(nullptr, version_one), nullptr);
   EXPECT_EQ(query_extension(nullptr, version_two), nullptr);
+  auto previous = hyle::graph::kRegionProviderExtensionId;
+  --previous.version;
+  EXPECT_EQ(query_extension(nullptr, previous), nullptr);
   EXPECT_EQ(query_extension(nullptr, hyle::graph::kRegionProviderExtensionId),
             &kRegionVTable);
+}
+
+TEST(GraphRegions, ReselectionReportsTheStableKeyNotThePrepareToken) {
+  const auto logical = make_negations(1);
+  for (const auto key : {hyle::compute::ProviderRouteKey{},
+                         hyle::compute::ProviderRouteKey{91}}) {
+    RegionProbe first{.mode = ProposalMode::kSingleton},
+        second{.mode = ProposalMode::kSingleton};
+    first.profile_key = hyle::compute::ProviderRouteKey{41};
+    first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+        Status::Unimplemented("first region declined"));
+    second.profile_key = key;
+    auto context = make_context(first, second);
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.operation_fallback = OperationFallbackPolicy::kReject});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.step(0)->profile_key, key);
+    EXPECT_EQ(compiled->report.step(0)->provider_instance,
+              context.provider_instance_id(1).value());
+    EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+    EXPECT_EQ(first.compile_count, 1u);
+    EXPECT_EQ(first.destroy_prepared_count, 1u);
+    EXPECT_EQ(second.compile_count, 1u);
+  }
 }
 
 TEST(GraphRegions,

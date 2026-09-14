@@ -458,6 +458,56 @@ TEST(GraphCustomKernel, ReportDistinguishesTextOfSameFamilyInstances) {
   }
 }
 
+TEST(GraphCustomKernel, StableKeyDoesNotUseTheTransientPrepareToken) {
+  const auto logical = policy_graph();
+  for (const auto key : {ProviderRouteKey{}, ProviderRouteKey{42}}) {
+    Probe probe;
+    probe.profile_key = key;
+    auto context =
+        Context::create(cpu::device(), provider(probe).value()).value();
+    std::array<hyle::graph::CompileReport, 2> reports;
+    for (std::size_t index = 0; index < reports.size(); ++index) {
+      probe.prepare_token = index == 0 ? 7 : 19;
+      auto compiled = hyle::graph::compile(logical.graph, context);
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      reports[index] = compiled->report;
+      EXPECT_EQ(reports[index].step(0)->profile_key, key);
+      Tensors tensors;
+      ASSERT_TRUE(tensors.fill().ok());
+      auto run = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(run.bind(logical.input, tensors.in).ok());
+      ASSERT_TRUE(run.bind(logical.output, tensors.out).ok());
+      auto queue = context.create_queue().value();
+      ASSERT_TRUE(run.submit(queue).value().wait().ok());
+      EXPECT_EQ(tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
+    }
+    context = {};
+    EXPECT_EQ(probe.configurations, 0);
+    EXPECT_EQ(probe.kernels, 0);
+    EXPECT_EQ(reports[0].step(0)->profile_key, reports[1].step(0)->profile_key);
+  }
+}
+
+TEST(GraphCustomKernel, ARejectedRouteKeyDoesNotLeakIntoTheFinalReport) {
+  const auto logical = policy_graph();
+  Probe first, second;
+  first.profile_key = ProviderRouteKey{11};
+  second.profile_key = ProviderRouteKey{22};
+  first.fault = Fault::kUnsupported;
+  const std::array providers{provider(first).value(), provider(second).value()};
+  auto context =
+      Context::create(cpu::device(), {.providers = providers}).value();
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(first.preparations, 1);
+  EXPECT_EQ(first.kernels, 0);
+  EXPECT_EQ(second.preparations, 1);
+  EXPECT_EQ(compiled->report.step(0)->profile_key, second.profile_key);
+  EXPECT_EQ(compiled->report.step(0)->provider_instance,
+            context.provider_instance_id(1).value());
+  EXPECT_EQ(compiled->report.search().operation_route_rejections, 1u);
+}
+
 TEST(GraphCustomKernel, PublicSchemaAndOwningFactoryUseTheSamePreparedRuntime) {
   Probe probe;
   Tensors tensors;

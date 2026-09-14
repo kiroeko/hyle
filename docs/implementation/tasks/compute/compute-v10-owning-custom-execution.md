@@ -137,3 +137,52 @@ Context/Queue/Prepared layout 和 backend 不变，P0 为常数次冷字段检�
 13/13，CUDA backend/Graph 4/4，CPU/CUDA source/installed static/installed shared 各 2/2。Graph 对
 三类端口的坏 alignment/矛盾 flags/无效 exact domain 均在零 prepare 时拒绝；完整记录与剩余范围见
 [Graph v10 本段结果](graph-v10-reviewed-foundation-contracts.md#g103region-冷资源-skeleton实现前固定)。
+
+### C93：稳定实现键与临时准备 token 分离（实现前固定）
+
+代码审计发现，现有 `ProviderOperationProposal::route` / `RegionProposal::route` 只是 Provider 在本次
+propose→prepare 间解释的 opaque token，未承诺跨次发现稳定；不能把它直接拿来作性能资料的实现身份。
+先补这一必要的身份分量，再接完整 profile。新增共用 `ProviderRouteKey`：默认 unknown；Provider 在
+同一 build/configuration 下为同一实现给出稳定非零 key，不使用指针、发现序号或随机数。实现选择改变
+且不能由完整语义/shape/layout/device/configuration 身份区分时必须换 key，或继续报告 unknown。
+
+- Compute proposal 与 public owning KernelProposal 增加 `profile_key`，不替换临时 `route`；两者独立传递。
+  私有 Provider 表升版，无旧版解释/别名。direct prepare/submit 行为不变，Prepared/Invocation 不存这个字段。
+- Graph region 提案同样声明 key，并升 extension 版本；冷选择在临时 node-key 数组记录最终选中项，
+  CompileReport 复制到 step。不得把候选指针/prepare token 当 key，不给 copy 伪造 Provider key；PlanStep
+  与 Invocation 不增加 profile 元数据。
+- Native exact 实现按 operation family 给稳定键，oneDNN direct BRGEMM 与 gated-MLP region 给各自稳定键；
+  这些仍须与完整 Provider build/config、设备/驱动、语义、shape/domain、layout/precision、workload 和完成
+  边界一起匹配。**有 key 不等于已有 qualified profile，也不用于本段排序**。
+- 验证：unknown 不自动补键、临时 token 与 key 可不同、重选只报告胜出键、旧 SPI 拒绝；真实 Native/
+  oneDNN/region/custom 与 Graph 数值、OOM/生命周期、逐头及三交付回放。P0 只增加冷字段复制，热回调不变。
+  完整 profile 的输入形状、全维匹配和成本比较仍是 C93/G103 未完成部分，不能据此签完 foundation。
+
+### 2026-09-15 C93 稳定实现键检查点
+
+上述分量已实现：`ProviderRouteKey` 与临时 `route` 独立；Compute 私有表为 v9，Graph region extension
+为 v12，不解释旧表。Native exact、oneDNN BRGEMM/gated-MLP 和 public owning factory 已接入。
+Graph 在 compile 栈上的 SmallVector 保存最终 node→key，重选成功后才填入；报告复制后释放临时数组，
+所以 `PlanState/PlanStep/PreparedState/Invocation` 均未为这个字段增加常驻成员或热路径逻辑。
+
+- Windows static Compute/CPU/Native/Graph 与逐头 8/8；shared + oneDNN direct/composition/Graph/region
+  与逐头 14/14；CUDA backend/late-failure/Graph/逐头 4/4。后补非连续 region 调度重排的 key 对应断言，
+  在 static Graph 执行套件 174/174 再通过；没有因纯 fixture include/格式变更重跑全部平台。
+- 新增 key 值类型、临时 token 改变而 key 不变、unknown 不补键、leaf/region 重选不泄漏被拒绝键的
+  测试；真实 Native/oneDNN/MLP 断言键有效，跨域 copy 无键，非连续 region 重排保持正确 node 对应。
+  原逐分配失败/生命周期/数值/版本失配回归继续通过。
+- CPU/CUDA 普通样例现在显式声明并检查 `ProviderRouteKey{1}`，source/installed shared/installed static
+  各 2/2 通过；仍不提供真实性能 profile。SDK 这条样例不包含 oneDNN，oneDNN 本次验证是上述源码构建；
+  OD53/GP43 的终局完整安装/P1 义务未被它代替。
+- shared producer 与 CPU/CUDA consumer 加载目录的 DLL 匹配：Compute SHA-256
+  `9A0DAE2CFDCE74929149C6B5A636A374BB6982AFEE97977690E5EE841015CF55`，Graph
+  `61E1382AEE00C50AB662D13AE67C0C35139A57EB787D26500102DD0166B80F0C`。
+- P0：key 是一个 uint64 value，普通提案/报告各一次冷复制；Graph 临时键存储 `O(N)`、填充 `O(N)`，
+  inline 16 个，较大图用已配置 allocator 一次分配。没有按 key 排序、隐式执行/调优或新 warm 元数据。
+- selector 基线 `3c95186d` READY（82 项跳过），docs/closure/diff 通过；registry 与已 CLOSED backend
+  产品代码未改。未运行本段 P1、Linux/Apple、sanitizer 或独立终局红队，不签发那些结果。
+- 自实现不含测试：Compute **16,181**、Graph **10,784**，合计 **26,965**（同前一检查点口径，+45）。
+
+这里只补足“选的是哪套实现”的稳定分量。C93 的完整 build/config/device/driver/domain/boundary/workload
+匹配、G103 完整成本选择仍未完成；也没有以进程内实例编号或单个 key 代替完整资格。所有 foundation
+剩余项保留，不进入算子扩充或终局收口。

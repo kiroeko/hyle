@@ -426,6 +426,10 @@ multi-stream capture。
 - provider/version、实际配置实例 `provider_instance`、dispatch、workspace、persistent/packed/borrowed
   bytes、blocking/threading 与 replay 类别。
 
+`step(...)->profile_key` 保留 Provider 自行声明的稳定实现键，与临时 prepare token、配置实例编号都
+不同；unknown 不会被自动补成上述编号，Graph 插入的 copy 也没有 Provider key。它是完整性能资料匹配
+所需的一项，不代表有合格计时，更不参与当前无 profile 的排序。完整 profile 输入/匹配与成本择优仍未交付。
+
 Provider 名称/版本文本由报告复制，释放 Context、factory 或 Executable 不会令报告悬空。
 `provider()` / `step()` 返回值中的文本 view 借用报告共享状态，不能活过最后一个报告 handle；复制/移动
 报告不复制执行资源，也不缩短这份共享文本的生命周期。

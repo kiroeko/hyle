@@ -1285,6 +1285,7 @@ struct RegionCandidate final {
   std::uint32_t provider_index = 0;
   std::uint32_t proposal_order = 0;
   ExecutionTargetId target{};
+  compute::ProviderRouteKey profile_key{};
 };
 
 constexpr bool replay_allowed(ProviderReplayPolicy policy,
@@ -3310,12 +3311,11 @@ Status prepare_placed_steps_attempt(
   return Status::Ok();
 }
 
-Status prepare_placed_steps(detail::PlanState &plan,
-                            const Graph &published_graph,
-                            const detail::GraphState &graph,
-                            CompileEnvironment environment,
-                            CompileOptions options,
-                            const ProviderPolicy &provider_policy) noexcept {
+Status prepare_placed_steps(
+    detail::PlanState &plan, const Graph &published_graph,
+    const detail::GraphState &graph, CompileEnvironment environment,
+    CompileOptions options, const ProviderPolicy &provider_policy,
+    std::span<compute::ProviderRouteKey> profile_keys) noexcept {
   RegionDiscovery discovery(plan.allocator);
   for (;;) {
     // No Invocation or user work exists during this transaction. Clear all
@@ -3339,6 +3339,18 @@ Status prepare_placed_steps(detail::PlanState &plan,
     if (!outcome.rejected_region && !outcome.rejected_operation) {
       if (outcome.no_feasible_route && !discovery.last_rejection.ok())
         return discovery.last_rejection;
+      if (status.ok()) {
+        for (const auto &frame : discovery.routes.frames()) {
+          const auto &route = discovery.routes.route(frame.chosen);
+          const auto key =
+              route.region ? discovery.candidates[route.proposal].profile_key
+                           : discovery.operations.candidates[route.proposal]
+                                 .proposal.profile_key;
+          discovery.routes.for_each_node(
+              route,
+              [&](std::uint32_t node) noexcept { profile_keys[node] = key; });
+        }
+      }
       return status;
     }
     if (status.ok() || (outcome.rejected_region && outcome.rejected_operation))
@@ -3560,6 +3572,7 @@ Status discover_region_candidates(
               .provider_index = extensions[extension_index].provider_index,
               .proposal_order = proposal_order,
               .target = target,
+              .profile_key = proposal.profile_key,
           })) {
         return plan_allocation_failure();
       }
@@ -4793,8 +4806,9 @@ std::size_t step_constant_count(const detail::PlanState &plan,
   return count;
 }
 
-Result<CompileReport> build_report(const detail::PlanState &plan,
-                                   const detail::GraphState &graph) noexcept {
+Result<CompileReport>
+build_report(const detail::PlanState &plan, const detail::GraphState &graph,
+             std::span<const compute::ProviderRouteKey> profile_keys) noexcept {
   using ProviderTexts =
       container::FlatHashMap<std::uint64_t, compute::ProviderIdentity,
                              container::Hash<std::uint64_t>, std::equal_to<>,
@@ -5058,6 +5072,9 @@ Result<CompileReport> build_report(const detail::PlanState &plan,
         .input_count = step.input_count,
         .output_count = step.output_count,
         .runtime = step.runtime_properties(),
+        .profile_key = step.kind == detail::PlanStepKind::kCopy
+                           ? compute::ProviderRouteKey{}
+                           : profile_keys[step.node_begin],
     };
     if (step_report.provider.valid()) {
       const auto *owned = providers.find(step_report.provider_instance.value());
@@ -6960,6 +6977,12 @@ Result<CompiledGraph> compile(const Graph &graph,
     }
   }
 
+  container::SmallVector<compute::ProviderRouteKey, 16, mem::AllocatorRef>
+      profile_keys(allocator);
+  if (!profile_keys.try_resize(concrete->nodes.size())) {
+    detail::release(plan);
+    return std::unexpected(plan_allocation_failure());
+  }
   Status status =
       initialize_plan_metadata(*plan, *concrete,
                                std::span<const compute::TensorDesc>(
@@ -6970,7 +6993,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
-                                  options, provider_policy);
+                                  options, provider_policy, profile_keys);
   if (status.ok())
     status = schedule_steps(*plan, *concrete);
   if (status.ok())
@@ -7005,7 +7028,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     detail::release(plan);
     return std::unexpected(std::move(status));
   }
-  auto report = build_report(*plan, *concrete);
+  auto report = build_report(*plan, *concrete, profile_keys);
   if (!report) {
     detail::release(plan);
     return std::unexpected(std::move(report).error());

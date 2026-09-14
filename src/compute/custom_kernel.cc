@@ -103,6 +103,7 @@ Status propose(void *state, const ProviderOperationRequest &request,
   proposal->workspace_resource = result->workspace_resource;
   proposal->cost = result->cost;
   proposal->shape_coverage = ProviderShapeCoverage::kExactPoint;
+  proposal->profile_key = result->profile_key;
   return Status::Ok();
 }
 

@@ -103,7 +103,9 @@ int main() {
   *queue = {};
   *context = {};
   if (compiled->report.provider().name != provider_name ||
-      compiled->report.step(0)->provider.version != provider_version)
+      compiled->report.step(0)->provider.version != provider_version ||
+      compiled->report.step(0)->profile_key !=
+          hyle::compute::ProviderRouteKey{1})
     return 18;
   return 0;
 }

@@ -46,3 +46,7 @@ probe 与 N23 完整 MLP selector 尚未开始，状态保持 `AUDITED`。
 
 C93/G103 的共同结构成本迁移已完成：仅把 N21 既有 facts 改为公开共用类型，数值与 kernel/线程策略不变。
 本次 Windows shared/static Native 单元与逐头均通过；N22/N23 与终局安装/跨平台/P1 义务仍保留。
+
+C93/N21 后继迁移固定：为既有 exact family proposal 填 `ProviderRouteKey`（family ordinal + 1），
+不把临时 prepare token 当稳定身份。完整 key 仍依赖 Provider build/config、语义/shape/layout/device
+与 workload/boundary；此字段只由冷 Graph report 消费，不参与当前无 profile 排序，不改任何 kernel。

@@ -450,6 +450,7 @@ Status propose_regions(void *context_value, const Graph &graph,
                  .dispatch_count = 2},
         .route = kGatedMlpRoute,
         .replay_class = kRuntimeProperties.replay_class,
+        .profile_key = compute::ProviderRouteKey{kGatedMlpRoute},
     });
     if (!added)
       return std::move(added).error();

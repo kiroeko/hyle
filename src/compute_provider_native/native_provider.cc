@@ -1043,6 +1043,8 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               .synchronization_count = 0,
               .dispatch_count = 1,
           },
+      .profile_key =
+          ProviderRouteKey{static_cast<std::uint64_t>(operation.kind()) + 1},
   };
   return Status::Ok();
 }

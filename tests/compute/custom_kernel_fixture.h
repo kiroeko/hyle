@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <span>
 #include <string_view>
@@ -60,6 +61,8 @@ struct Probe final {
   std::atomic<int> proposals{0}, preparations{0}, executions{0};
   Fault fault = Fault::kNone;
   bool concurrent = true;
+  std::uint64_t prepare_token = 7;
+  ProviderRouteKey profile_key{};
 };
 
 struct Config final {
@@ -163,20 +166,21 @@ struct alignas(128) Factory final {
     facts.supports_concurrent_invocations = config->probe->concurrent;
     if (config->probe->fault == Fault::kDelegatedProposal)
       facts.mode = ProviderRuntimeMode::kDelegated;
-    return KernelProposal{.route = 7,
+    return KernelProposal{.route = config->probe->prepare_token,
                           .runtime = facts,
                           .cost = {.workspace = WorkspaceRequirement{},
                                    .persistent_bytes = 0,
                                    .copy_bytes = 0,
                                    .repack_bytes = 0,
                                    .synchronization_count = 0,
-                                   .dispatch_count = 1}};
+                                   .dispatch_count = 1},
+                          .profile_key = config->probe->profile_key};
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,
                             hyle::mem::AllocatorRef allocator) const noexcept {
     ++config->probe->preparations;
     const auto operation = request.operation.custom_as<Affine>();
-    if (request.route != 7 || !operation ||
+    if (request.route != config->probe->prepare_token || !operation ||
         request.resources.inputs[0] != hyle::mem::system_resource())
       return KernelPreparation::error(
           Status::Internal("route/resource changed"));

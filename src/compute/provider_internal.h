@@ -20,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 8;
+inline constexpr std::uint32_t kProviderContractVersion = 9;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -46,6 +46,7 @@ struct ProviderOperationProposal final {
   ResourceBindingRequirement workspace_resource{};
   ProviderRouteCostFacts cost{};
   ProviderShapeCoverage shape_coverage = ProviderShapeCoverage::kExactPoint;
+  ProviderRouteKey profile_key{};
 };
 
 struct ProviderPrepareRequest final {

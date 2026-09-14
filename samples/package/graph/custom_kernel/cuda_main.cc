@@ -90,7 +90,8 @@ struct Factory final {
                                    .copy_bytes = 0,
                                    .repack_bytes = 0,
                                    .synchronization_count = 0,
-                                   .dispatch_count = 1}};
+                                   .dispatch_count = 1},
+                          .profile_key = ProviderRouteKey{1}};
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,
                             hyle::mem::AllocatorRef allocator) const noexcept {
@@ -202,6 +203,12 @@ Status exercise(bool report_after_launch) {
           compiled.report.search().placement_attempts != 2 ||
           compiled.report.search().optimization_limited())
         return Status::Internal("custom CUDA candidate discovery mismatch");
+      for (std::size_t index = 0; index < compiled.report.step_count();
+           ++index) {
+        HYLE_ASSIGN_OR_RETURN(auto step, compiled.report.step(index));
+        if (step.profile_key != ProviderRouteKey{1})
+          return Status::Internal("custom CUDA implementation key changed");
+      }
       HYLE_ASSIGN_OR_RETURN(auto invocation,
                             compiled.executable.create_invocation());
       HYLE_RETURN_IF_ERROR(invocation.bind(graph_in, in));

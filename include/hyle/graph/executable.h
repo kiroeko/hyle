@@ -301,6 +301,10 @@ struct CompileStepReport final {
   std::uint32_t input_count = 0;
   std::uint32_t output_count = 0;
   compute::ProviderRuntimeProperties runtime{};
+  // Provider-declared stable implementation component of a full profile key.
+  // Unknown is not filled from the prepare token or provider instance. Graph
+  // boundary copies have no Provider key. Nonzero is not timing qualification.
+  compute::ProviderRouteKey profile_key{};
 };
 
 struct CompileTargetReport final {

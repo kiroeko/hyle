@@ -78,3 +78,7 @@ G104 的 writer 迁移已通过 oneDNN-enabled Windows shared 定向回归。新
 GP42 的事务化结果接入：region compile 改为公共 Compute prepare outcome，显式声明 prepared 或真正
 error；现有 oneDNN compile 路径不把原始分配错误转换成安全 decline。只迁移冷回调合同和检查，不增加
 pattern/算子、重新计时或修改 BRGEMM 内核；Graph 的原样错误传播与 rollback 验证覆盖这个 carrier。
+
+C93/GP41 后继迁移固定：region proposal 给现有 gated-MLP 实现声明稳定 `ProviderRouteKey`，升版的
+Graph extension 使用同一字段；它不是私有 prepare token 的别名或自动性能证书。Graph report 验证该
+键在真实 MLP 路线上保留；pattern、执行、BRGEMM owner 与热成本不变。

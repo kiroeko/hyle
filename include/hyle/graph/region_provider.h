@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 11};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 12};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -43,6 +43,9 @@ struct RegionProposal final {
   // allow-any, but never qualifies for a prepared-only compile.
   compute::ProviderReplayClass replay_class =
       compute::ProviderReplayClass::kUnknown;
+  // Stable implementation identity, not the temporary prepare token above.
+  // Unknown remains an eligible route, but cannot identify a profile entry.
+  compute::ProviderRouteKey profile_key{};
 };
 
 // Fixed-capacity proposal sink owned by Graph compile. Providers cannot grow

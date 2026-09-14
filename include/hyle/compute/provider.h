@@ -35,6 +35,29 @@ struct ProviderIdentity final {
   }
 };
 
+// Provider-declared implementation identity, stable for equal complete request
+// metadata within one provider build/configuration. Zero means unknown. This is
+// NOT the opaque propose-to-prepare token: never use an address, discovery
+// order or random value here. Change the key when an otherwise
+// indistinguishable request can select a different implementation. The key
+// alone qualifies no timing: build/config, device/driver, semantics,
+// shape/layout/precision, resources, workload and completion boundary must also
+// match.
+class ProviderRouteKey final {
+public:
+  constexpr ProviderRouteKey() noexcept = default;
+  constexpr explicit ProviderRouteKey(std::uint64_t value) noexcept
+      : value_(value) {}
+  constexpr bool valid() const noexcept { return value_ != 0; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::uint64_t value() const noexcept { return value_; }
+  friend constexpr bool operator==(ProviderRouteKey,
+                                   ProviderRouteKey) noexcept = default;
+
+private:
+  std::uint64_t value_ = 0;
+};
+
 // One configured provider slot in one Context, not a provider family or a
 // portable build/device fingerprint. Values are unique only within one loaded
 // Compute runtime lifetime; never persist them or compare across processes.

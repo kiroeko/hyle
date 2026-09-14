@@ -63,6 +63,9 @@ struct KernelProposal final {
   ProviderRuntimeProperties runtime{};
   ResourceRequirement workspace_resource{};
   ProviderRouteCostFacts cost{};
+  // Optional stable implementation key; independent of the prepare token.
+  // Leaving this unknown never disables an otherwise valid execution route.
+  ProviderRouteKey profile_key{};
 };
 
 struct KernelPrepareRequest final {

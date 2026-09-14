@@ -84,7 +84,8 @@ struct AffineFactory final {
                                    .copy_bytes = 0,
                                    .repack_bytes = 0,
                                    .synchronization_count = 0,
-                                   .dispatch_count = 1}};
+                                   .dispatch_count = 1},
+                          .profile_key = ProviderRouteKey{1}};
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,
                             hyle::mem::AllocatorRef allocator) const noexcept {

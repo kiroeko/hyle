@@ -13,6 +13,18 @@ using hyle::compute::ProviderRuntimeMode;
 using hyle::compute::ProviderRuntimeProperties;
 using hyle::compute::ProviderWorkspaceOwner;
 
+TEST(ProviderRouteKey, IsAnOptionalImplementationIdentityNotAProviderSlot) {
+  using hyle::compute::ProviderRouteKey;
+  constexpr ProviderRouteKey unknown{}, known{42}, other{43};
+  static_assert(!unknown.valid());
+  static_assert(known.valid() && known.value() == 42);
+  static_assert(known == ProviderRouteKey{42});
+  static_assert(known != other);
+  EXPECT_EQ(unknown, ProviderRouteKey{0});
+  EXPECT_NE(unknown, known);
+  EXPECT_TRUE(ProviderRouteKey{UINT64_MAX}.valid());
+}
+
 TEST(ProviderCostFacts, UnknownIsNotAnExactZero) {
   constexpr hyle::compute::ProviderRouteCostFacts unknown{};
   static_assert(unknown.valid());

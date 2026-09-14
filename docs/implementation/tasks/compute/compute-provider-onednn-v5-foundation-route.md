@@ -43,3 +43,7 @@ OD50/OD51 的 exact 迁移已落地：direct BRGEMM 明确零 copy/repack/sync�
 
 C93/G103 的公共结构成本类型迁移已完成，原有 exact/unknown 数值与 BRGEMM kernel/tile 不变。Windows
 oneDNN-enabled shared 的 direct/composition/Graph/region/逐头定向 8/8 通过；不替代 OD53 最终安装/P1。
+
+C93/OD50 后继迁移固定：现有 exact BRGEMM proposal 声明稳定 `ProviderRouteKey{1}`，它只有和当前
+oneDNN/HYLE build、配置、设备、语义与完整边界共同匹配才有 profile 意义。只迁移冷 SPI 与回归报告，
+不改 JIT、kernel、tile、scratch 或热调用，不把这一分量当完整性能资格。

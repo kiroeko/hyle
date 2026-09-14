@@ -32,6 +32,9 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   auto exact = propose();
   ASSERT_TRUE(exact.has_value()) << exact.error().message();
   EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);
+  EXPECT_EQ(
+      exact->profile_key,
+      ProviderRouteKey{static_cast<std::uint64_t>(OperationKind::kUnary) + 1});
 }
 
 } // namespace

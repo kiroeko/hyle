@@ -189,6 +189,7 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   auto exact = propose();
   ASSERT_TRUE(exact.has_value()) << exact.error().message();
   EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);
+  EXPECT_EQ(exact->profile_key, hyle::compute::ProviderRouteKey{1});
 }
 
 TEST(OneDnnProvider, InternalPlanExecutesSharedLeftPairInOneEpisode) {
