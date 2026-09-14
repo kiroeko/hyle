@@ -72,3 +72,7 @@ source/static/shared 的 Native RMSNorm 示例均实际执行。见 [Graph gener
 后继 Graph 已完成有限 exact 表与 general fallback，直接复用本 Provider 的既有 exact/domain 制品；
 见 [G102/G106 检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g102g106-有限变体检查点)。
 这不签完完整 Native 架构探针与终局跨平台/P1。
+
+N21 后继 storage 事实：Compute v13 / Graph G106 需要额外 invocation 私有占用上界。Native 的域实例、
+run state 都通过传入 allocator 分配，caller workspace 单独声明，replay 不分配；故该新事实为 0，
+不能把已有 NativePlan persistent 字节再次计入。只补冷属性，不改变 kernel/线程/热回调。

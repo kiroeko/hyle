@@ -24,3 +24,13 @@
 
 真实缺口与自然调用已固定；此阶段不修改 Mem 产品代码。Graph 的所有阶段预算仍归其 G106，
 本卡不是完整 Graph 内存验收，也不撤销其它 Mem v9 能力的既有证据。
+
+## AUDITED：有限 FIX
+
+| ID | 动作 | 验收 |
+|---|---|---|
+| M100 | SELF：Reservation 复用现有 reserve/commit/shrink；保留所有旧路径 | 不调用 backing、不增 QuotaAllocator 字段；空/失败/move/析构账目平衡 |
+| M101 | FIX：Graph G106 直接用该 token 预留独立 workspace/private upper bound | 不用虚假 allocation、不重复扣通过 get() 分配的 metadata；异步释放后才归还 |
+
+准入由具名 Graph consumer 证明，机制 owner 是 Mem；Graph 只拥有 family/Invocation 的复合生命周期。
+既有 allocator 的代码路径、对象布局和 backing 合同无需变化。以上 API/失败/并发与成本在实现前固定。

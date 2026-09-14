@@ -1070,3 +1070,29 @@ packing 仍是 G106 待实现范围，不以 allocator seam 冒充整体预算�
 放到第二个 Context，禁止该 target 新增 metadata 分配后仍可完成 family compile 与 exact/general
 Invocation；Graph 的第一个 Context allocator 统一承担该控制存储。没有新增公开 allocator 开关或
 把 Context/Queue/Provider 私有 heap 纳入虚构的总量；G106 整体预算仍未完成。
+
+### G106：共享运行存储准入（实现前固定）
+
+- `CompileOptions::invocation_storage` 是可选的 family-wide 运行存储限额；未配置不创建 tracker，
+  普通 submit 不加计数、锁或查找。配置后 general/exact 子 Executable 共享同一 owner 和额度。
+- 计费集合为 Invocation 的所有 supplied-allocator metadata、实际 LifetimePlan backing 请求字节、
+  Provider 声明的额外 per-invocation 上界。后者不包含前两项；通过 Compute v13/Region properties
+  披露，未声明为 unknown。限额约束预留请求，不冒充物理 RSS/driver allocator rounding。
+- 复用 Mem v10 QuotaAllocator Reservation：先预留独立 resource 请求，再创建 Buffer；失败完整归还。
+  创建实例后的 retained Completion/公开 signature 仍保活其 allocator owner；直到最后实际对象释放才
+  归还相应额度。并发创建共享严格额度，不能按 shape/variant 重新充值。
+- `Executable::invocation_storage_usage()` 返回可选 live/peak/limit 与完整性事实；未配置为无值。
+  snapshot 可与并发创建/释放交错，不是多个原子字段的线性化全局事务；硬 admission 本身是严格的。
+- 有限额度默认拒绝未知 private 上界，并进入已有冷候选拒绝/重选；显式 allow-unknown 只限制已知部分。
+  Native exact/domain 的额外 private 为 0；typed/外部 Provider 默认 unknown。不拿 persistent 字节抵扣。
+- command capture 目前没有完整 backend 私有存储上界；严格有限额度下 require-capture 在接纳前拒绝，
+  prefer-capture 走已允许的 commands 路线；显式 allow-unknown 捕获必须使 usage 披露不完整，不能假称
+  capture 已计全。Context/Queue、外部绑定和 Executable 常驻不属于此运行限额。
+- Region invocation 独立使用运行 allocator，create/failure/destroy 同 owner；复用已有 callback 参数，
+  不增加另一 runtime。Region contract 因 prepared facts 布局变化递增，不保留兼容字段。
+- 验证：公开 Native exact/domain/finite variants、两线程共享限额、失败逐点回滚、workspace 与 metadata
+  双来源、最后 Completion/子对象释放、unknown/zero/overflow、Region 和 capture policy；原 CPU/Native/
+  oneDNN/Graph/CUDA 定向回放、逐头和三交付。完整候选的跨平台/sanitizer/P1 義务不变。
+
+此项落实运行集合，不代签其余 G106：完整编译 resident/冷峰值、packing identity/共享与 capture 私有上界
+仍须完成；已有 compiled-storage 分类门不改名为总量。能力、生命周期和预算口径在产品实现前固定。

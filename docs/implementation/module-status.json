@@ -144,9 +144,9 @@
     },
     {
       "module": "mem",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md",
-      "summary": "mem v10 SCOPED：Graph G106 需要把独立 MemoryResource 请求和 allocator 请求计入同一额度；限定为已有 QuotaAllocator 的零分配 RAII reservation，尚未修改产品。"
+      "summary": "mem v10 AUDITED：M100/M101 为已有 QuotaAllocator 添加零分配 RAII reservation 并接入 Graph 共享运行预算；普通 allocator 路径和布局不变。"
     },
     {
       "module": "mem_vm",
@@ -267,8 +267,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v12-metadata-ownership.md",
-      "summary": "compute v12 AUDITED：承接 v11 已编译域与未完成 C93/foundation；C120--C122 接齐 Graph 编译/实例 metadata allocator、失败回滚和 parent 保活，公共 direct 与 warm route 不变；完整基础 gate 尚未完成。"
+      "record": "docs/implementation/tasks/compute/compute-v13-invocation-storage-facts.md",
+      "summary": "compute v13 AUDITED：承接 v12 与未完成 C93/foundation，C130/C131 披露不经过 supplied allocator/workspace 的额外 invocation 存储上界；unknown 不猜零，公共 direct 与 warm route 不变。"
     },
     {
       "module": "graph",
