@@ -32,6 +32,8 @@
 
 当前构建/交付审查：
 
+- [exact-factor 测试依赖闭包](project/build-factor-test-closure-2026-09.md)：产品依赖保持纯净，测试开启时
+  从中央组件声明取得 factor 测试所需的夹具闭包；
 - [共享库导出边界 v13](project/build-system-v13-shared-export-hygiene.md)：清除意外内部 C/汇编导出，
   并把显式 C++ export-only 变为 shared artifact 机械合同。
 - [可选 compiled factor 的缺席投影](build/build-optional-compiled-factor-v1.md)：让 OFF 状态保留组件身份与
