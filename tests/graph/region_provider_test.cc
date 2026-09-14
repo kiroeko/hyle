@@ -89,6 +89,7 @@ enum class ProposalMode : std::uint8_t {
   kResourceSingletons,
   kResourcePairs,
   kBoundaryWindows,
+  kEquivalentRoutes,
 };
 
 struct RegionProbe final {
@@ -165,6 +166,9 @@ struct RegionProbe final {
   std::optional<std::uint64_t> region_outcome_route{};
   const RegionProbe *observe_cleanup = nullptr;
   std::size_t observed_cleanup_at_compile = 0;
+  hyle::mem::MemoryResourceRef backend_only_resource{};
+  hyle::mem::MemoryResourceRef validation_failure_resource{};
+  Status validation_failure{};
 };
 
 struct ExternalEffect final {
@@ -526,6 +530,14 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
     if (!first || !*first)
       return first;
     return add_proposal(graph, writer, 1, 2, 1);
+  }
+  if (probe.mode == ProposalMode::kEquivalentRoutes) {
+    auto first = add_proposal(graph, writer, 0, 2, 2);
+    if (!first || !*first)
+      return first;
+    const std::array nodes{graph.node_id(0).value(), graph.node_id(1).value()};
+    return writer.try_add(RegionProposal{
+        .nodes = nodes, .cost = {.dispatch_count = 1}, .route = 3});
   }
   if (probe.mode == ProposalMode::kNonContiguous) {
     auto first = graph.node_id(0);
@@ -1262,10 +1274,19 @@ async_device_properties(const hyle::compute::Device &device) noexcept {
   };
 }
 
-Status validate_async_resource(const hyle::compute::Device &,
-                                hyle::mem::MemoryResourceRef resource) noexcept {
+Status validate_async_resource(const hyle::compute::Device &device,
+                               hyle::mem::MemoryResourceRef resource) noexcept {
   if (!resource.valid())
     return Status::InvalidArgument("test graph resource is invalid");
+  const auto *probe =
+      hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(device)
+          .probe;
+  if (probe->validation_failure_resource == resource)
+    return probe->validation_failure;
+  if (probe->backend_only_resource.valid() &&
+      probe->backend_only_resource != resource)
+    return Status::FailedPrecondition(
+        "test backend cannot access this storage");
   if (!resource.properties().has(hyle::mem::MemoryProperty::kHostAccessible)) {
     return Status::FailedPrecondition(
         "test graph backend requires host-accessible storage");
@@ -3234,7 +3255,7 @@ TEST(GraphRegions, UnavailableFinalOutputCopyFailsBeforeAnyArtifact) {
   const std::array external{hyle::graph::ExternalResourceContract{
       logical.output, environment.storage(1)}};
   for (const auto selection : {RegionSelectionPolicy::kDisabled,
-                               RegionSelectionPolicy::kPreferProviderRegions}) {
+                               RegionSelectionPolicy::kAllowProviderRegions}) {
     auto compiled = hyle::graph::compile(
         logical.graph, environment.environment(),
         {.external_resources = external, .region_selection = selection});
@@ -3333,8 +3354,7 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
             std::vector<float>(expected.begin(), expected.end()));
 }
 
-TEST(GraphRegions,
-     SelectsFewerEpisodesForSameIntervalCoverageDeterministically) {
+TEST(GraphRegions, ConfiguredProviderOrderPrecedesSuffixDispatchEstimate) {
   RegionProbe probe{.mode = ProposalMode::kOverlappingRoutes};
   const NegationGraph logical = make_negations(3);
   Context context = make_context(probe);
@@ -3342,7 +3362,7 @@ TEST(GraphRegions,
       hyle::graph::compile(logical.graph, context, CompileOptions{}).value();
   EXPECT_EQ(compiled.report.step_count(), 2u);
   EXPECT_EQ(compiled.report.region_count(), 1u);
-  EXPECT_EQ(probe.compiled_begin, 1u);
+  EXPECT_EQ(probe.compiled_begin, 0u);
   EXPECT_EQ(probe.compiled_count, 2u);
 }
 
@@ -3449,6 +3469,9 @@ TEST(GraphRegions, ExcludesARegionThatWouldCycleWithAnAcceptedRegion) {
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
   EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(compiled.report.search().route_plan_rejections, 1u);
+  EXPECT_EQ(compiled.report.search().region_route_rejections, 0u);
+  EXPECT_EQ(compiled.report.search().placement_attempts, 3u);
 }
 
 TEST(GraphRegions, DeclinedNonContiguousRegionExecutesLeafFallbacks) {
@@ -3591,7 +3614,7 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
 
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
-  EXPECT_EQ(probe.compiled_begin, 1u);
+  EXPECT_EQ(probe.compiled_begin, 0u);
   EXPECT_EQ(probe.compiled_count, 2u);
   EXPECT_EQ(probe.single_proposal_count, 3u);
   EXPECT_EQ(probe.single_artifact_count, 0u);
@@ -3715,7 +3738,7 @@ TEST(GraphRegions, ZeroDispatchCountIsMalformedNotZeroWork) {
   EXPECT_EQ(probe.compile_count, 0u);
 }
 
-TEST(GraphRegions, DefaultPolicyUsesEarlierProviderAsTheFinalTieBreak) {
+TEST(GraphRegions, DefaultPolicyUsesConfiguredProviderOrder) {
   RegionProbe first;
   RegionProbe second;
   const NegationGraph logical = make_negations(2);
@@ -3726,15 +3749,181 @@ TEST(GraphRegions, DefaultPolicyUsesEarlierProviderAsTheFinalTieBreak) {
   EXPECT_EQ(second.compile_count, 0u);
 }
 
-TEST(GraphRegions, DefaultPolicyPrefersFewerDispatchEpisodesBeforeProvider) {
+TEST(GraphRegions, DispatchCountCannotOverrideConfiguredProviderOrder) {
   RegionProbe first{.proposal_dispatch_count = 2};
   RegionProbe second{.proposal_dispatch_count = 1};
   const NegationGraph logical = make_negations(2);
   Context context = make_context(first, second);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
   EXPECT_EQ(compiled.report.region_count(), 1u);
-  EXPECT_EQ(first.compile_count, 0u);
-  EXPECT_EQ(second.compile_count, 1u);
+  EXPECT_EQ(first.compile_count, 1u);
+  EXPECT_EQ(second.compile_count, 0u);
+}
+
+TEST(GraphRegions, LeafAndRegionProvidersShareConfiguredOrder) {
+  const auto logical = make_negations(2);
+  for (const bool region_first : {false, true}) {
+    RegionProbe probe;
+    std::array providers{hyle::compute::native::provider(),
+                         region_provider(probe)};
+    if (region_first)
+      std::swap(providers[0], providers[1]);
+    auto context =
+        Context::create(hyle::compute::cpu::device(), {.providers = providers})
+            .value();
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(compiled->report.region_count(), region_first ? 1u : 0u);
+    EXPECT_EQ(probe.compile_count, region_first ? 1u : 0u);
+    EXPECT_EQ(probe.propose_count, 1u);
+    EXPECT_EQ(probe.region_resource_count, 1u);
+    EXPECT_EQ(compiled->report.search().route_search_states,
+              region_first ? 1u : 2u);
+    EXPECT_EQ(compiled->report.search().route_plan_rejections, 0u);
+    auto input = make_tensor(row(8)), output = make_tensor(row(8));
+    const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+    write(input, values);
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+    EXPECT_EQ(read(output, values.size()),
+              std::vector<float>(values.begin(), values.end()));
+  }
+}
+
+TEST(GraphRegions, DispatchBreaksOtherwiseEquivalentSameProviderRouteTies) {
+  RegionProbe probe{.mode = ProposalMode::kEquivalentRoutes};
+  // If route 2 were prepared at all this would be fatal, not a safe retry.
+  probe.region_outcome_route = 2;
+  probe.region_outcome_override = ProviderPrepareOutcome::error(
+      Status::Internal("higher dispatch route was prepared"));
+  auto context = make_context(probe);
+  const auto logical = make_negations(2);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(compiled->report.search().route_search_states, 1u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 0u);
+}
+
+TEST(GraphRegions, SearchBudgetIsCumulativeAcrossTransactionalDeclines) {
+  const auto logical = make_negations(2);
+  for (const std::size_t budget : {0u, 1u, 2u}) {
+    RegionProbe first, second;
+    first.region_outcome_override = ProviderPrepareOutcome::unsupported(
+        Status::Unimplemented("first route declined"));
+    auto context = make_context(first, second);
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.max_placement_attempts = 2,
+         .max_route_search_states = budget,
+         .operation_fallback = OperationFallbackPolicy::kReject,
+         .search_policy = CompileSearchPolicy::kRequireUnexhausted});
+    if (budget == 0) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsInvalidArgument());
+      EXPECT_EQ(first.propose_count + second.propose_count, 0u);
+    } else if (budget == 1) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsResourceExhausted());
+      EXPECT_NE(compiled.error().message().find("search state budget"),
+                std::string_view::npos);
+      EXPECT_EQ(first.compile_count, 1u);
+      EXPECT_EQ(second.compile_count, 0u);
+    } else {
+      ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+      EXPECT_EQ(compiled->report.search().route_search_states, 2u);
+      EXPECT_EQ(compiled->report.search().placement_attempts, 2u);
+      EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+      EXPECT_FALSE(compiled->report.search().optimization_limited());
+      EXPECT_EQ(first.compile_count, 1u);
+      EXPECT_EQ(second.compile_count, 1u);
+      EXPECT_EQ(first.propose_count, 1u);
+      EXPECT_EQ(second.propose_count, 1u);
+    }
+  }
+}
+
+TEST(GraphRegions, SearchBudgetNeverPreparesAPartiallyCoveredGraph) {
+  RegionProbe probe;
+  probe.required_resource = hyle::mem::system_resource();
+  auto context = make_context(probe);
+  const auto logical = make_negations(3);
+  auto compiled = hyle::graph::compile(
+      logical.graph, context,
+      {.region_selection = RegionSelectionPolicy::kDisabled,
+       .max_route_search_states = 2});
+  ASSERT_FALSE(compiled);
+  EXPECT_TRUE(compiled.error().IsResourceExhausted());
+  EXPECT_EQ(probe.single_artifact_count, 0u);
+  EXPECT_EQ(probe.single_proposal_count, 3u);
+}
+
+TEST(GraphRegions, PhysicalCopyFailureBacktracksWithoutPreparingArtifacts) {
+  const auto logical = make_negations(1);
+  for (const bool fatal : {false, true}) {
+    HostResource first_storage, second_storage;
+    RegionProbe first, second;
+    first.required_resource = first.backend_only_resource =
+        hyle::mem::MemoryResourceRef(first_storage);
+    second.required_resource = second.backend_only_resource =
+        hyle::mem::MemoryResourceRef(second_storage);
+    if (fatal) {
+      first.validation_failure_resource = second.required_resource;
+      first.validation_failure =
+          Status::Internal("device resource validation failed");
+    }
+    const std::array first_providers{region_provider(first)},
+        second_providers{region_provider(second)};
+    auto first_context =
+        Context::create(async_device(first), {.providers = first_providers})
+            .value();
+    auto second_context =
+        Context::create(async_device(second), {.providers = second_providers})
+            .value();
+    const Environment environment{{&first_context, first.required_resource},
+                                  {&second_context, second.required_resource}};
+    const std::array external{hyle::graph::ExternalResourceContract{
+        logical.input, environment.storage(1)}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.external_resources = external,
+         .max_placement_attempts = 1,
+         .region_selection = RegionSelectionPolicy::kDisabled,
+         .max_route_search_states = 2});
+    EXPECT_EQ(first.single_artifact_count, 0u);
+    if (fatal) {
+      ASSERT_FALSE(compiled);
+      EXPECT_EQ(compiled.error(), first.validation_failure);
+      EXPECT_EQ(second.single_artifact_count, 0u);
+      continue;
+    }
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(compiled->report.search().route_plan_rejections, 1u);
+    EXPECT_EQ(compiled->report.search().route_search_states, 2u);
+    EXPECT_EQ(compiled->report.search().placement_attempts, 1u);
+    EXPECT_EQ(compiled->report.search().operation_route_rejections, 0u);
+    EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
+    EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+    EXPECT_EQ(second.single_artifact_count, 1u);
+    auto input = make_tensor(row(8), second.required_resource),
+         output = make_tensor(row(8), second.required_resource);
+    const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+    write(input, values);
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+    auto queue = second_context.create_queue().value();
+    ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+    std::vector<float> expected(values.begin(), values.end());
+    for (auto &value : expected)
+      value = -value;
+    EXPECT_EQ(read(output, values.size()), expected);
+  }
 }
 
 TEST(GraphRegions, RejectsAnUnknownRegionSelectionPolicy) {
@@ -4209,20 +4398,20 @@ TEST(GraphRegions, RetriesAnotherRegionProviderWithoutRediscovery) {
 TEST(GraphRegions, RepartitionsAfterOneRouteOfTheSameProviderDeclines) {
   const auto logical = make_negations(3);
   RegionProbe probe{.mode = ProposalMode::kOverlappingRoutes};
-  probe.region_outcome_route = (std::uint64_t{1} << 32) | 2;
+  probe.region_outcome_route = 2;
   probe.region_outcome_override = ProviderPrepareOutcome::unsupported(
-      Status::Unimplemented("declined suffix fusion"));
+      Status::Unimplemented("declined prefix fusion"));
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context);
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
   EXPECT_EQ(probe.propose_count, 1u);
   EXPECT_EQ(probe.compile_count, 2u);
   EXPECT_EQ(probe.destroy_prepared_count, 1u);
-  EXPECT_EQ(probe.compiled_begin, 0u);
+  EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(compiled->report.region_count(), 1u);
   EXPECT_EQ(compiled->report.fallback_operation_count(), 1u);
   EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
-  EXPECT_EQ(compiled->report.step(1)->fallback_reason,
+  EXPECT_EQ(compiled->report.step(0)->fallback_reason,
             CompileFallbackReason::kRegionDeclined);
 
   auto input = make_tensor(row(8));
@@ -4666,7 +4855,7 @@ TEST(GraphRegions, LeafErrorsRemainFatalDuringBothRegionFallbackStages) {
     EXPECT_NE(compiled.error().message().find("fatal leaf fallback failure"),
               std::string_view::npos);
     EXPECT_EQ(probe.single_artifact_count, 1u);
-    const std::size_t regions_prepared = mode == ProposalMode::kPairs ? 1u : 0u;
+    const std::size_t regions_prepared = 1;
     EXPECT_EQ(probe.compile_count, regions_prepared);
     EXPECT_EQ(probe.destroy_prepared_count, regions_prepared + 1);
   }

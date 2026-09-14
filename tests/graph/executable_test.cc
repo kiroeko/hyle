@@ -1786,6 +1786,42 @@ TEST(Invocation, CrossStoragePublishedViewUsesItsExplicitOutputBinding) {
   expect_near(read(destination, 3), std::array<float, 3>{4, 5, 6});
 }
 
+TEST(Invocation, RequiredViewStorageCopiesTheSourceBeforeCreatingTheAlias) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto input_description = matrix(2, 3);
+  const auto input = builder.input(input_description).value();
+  const auto output = builder.add(View::slice(0, 1, 1).value(), input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  HostResource source_storage, alias_storage;
+  const auto source_resource = hyle::mem::MemoryResourceRef(source_storage);
+  const auto alias_resource = hyle::mem::MemoryResourceRef(alias_storage);
+  const Environment environment{{&context, source_resource},
+                                {&context, alias_resource}};
+  const std::array placements{hyle::graph::ValuePlacement{
+      output, environment.storage(1), PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(graph, environment.environment(),
+                                       {.value_placements = placements});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.output_ownership().value(),
+            OutputOwnership::kInvocation);
+  ASSERT_EQ(compiled->report.step_count(), 2u);
+  EXPECT_EQ(compiled->report.step(0)->kind,
+            hyle::graph::CompileStepKind::kCopy);
+  EXPECT_EQ(compiled->report.copy_bytes(), 6 * sizeof(float));
+  auto source = make_tensor(input_description, source_resource);
+  write(source, std::array<float, 6>{1, 2, 3, 4, 5, 6});
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input, source.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue).value().wait().ok());
+  auto result = invocation.output(output);
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->storage().resource(), alias_resource);
+  expect_near(read(*result, 3), std::array<float, 3>{4, 5, 6});
+}
+
 TEST(GraphCompile, DoesNotInPlaceABroadcastProviderRoute) {
   GraphBuilder builder = GraphBuilder::create().value();
   const ValueId input = builder.input(row(4)).value();

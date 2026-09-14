@@ -400,13 +400,19 @@ struct CompileSearchReport final {
   std::size_t region_route_rejections = 0;
   // Leaf routes excluded by a selected-route transactional prepare decline.
   std::size_t operation_route_rejections = 0;
+  // Cold candidate visits, including overlaps and previously rejected routes.
+  std::size_t route_search_states = 0;
+  // Complete node covers rejected by physical resource/copy/cycle checks.
+  std::size_t route_plan_rejections = 0;
   bool region_proposal_limit_reached = false;
   bool per_provider_proposal_limit_reached = false;
   bool region_node_limit_reached = false;
   bool operation_proposal_limit_reached = false;
+  bool route_search_limit_reached = false;
 
   constexpr bool optimization_limited() const noexcept {
-    return operation_proposal_limit_reached || region_proposal_limit_reached ||
+    return route_search_limit_reached || operation_proposal_limit_reached ||
+           region_proposal_limit_reached ||
            per_provider_proposal_limit_reached || region_node_limit_reached;
   }
 };
@@ -535,14 +541,10 @@ struct EffectResourceBinding final {
 
 enum class RegionSelectionPolicy : std::uint8_t {
   kDisabled = 0,
-  // Region providers are explicitly installed in Context. Prefer a
-  // deterministic high-coverage set, then fewer backend execution episodes
-  // only if every compared candidate declares that count, then earlier
-  // provider order. Intervals use weighted interval selection;
-  // general node sets use bounded greedy selection with contraction checks,
-  // not a global maximum-coverage guarantee or a performance proof. Private
-  // provider-relative timing scores are not accepted by this contract.
-  kPreferProviderRegions,
+  // Region and leaf providers compete in the same bounded cold search.
+  // Without qualified costs, configured target/provider order takes priority;
+  // coverage/dispatch only break ties. This is not a performance certificate.
+  kAllowProviderRegions,
 };
 
 enum class OperationFallbackPolicy : std::uint8_t {
@@ -618,11 +620,15 @@ struct CompileOptions final {
   std::span<const NodeProviderConstraint> node_providers{};
   WorkspaceReusePolicy workspace_reuse =
       WorkspaceReusePolicy::kExistingOrderOnly;
-  // Hard cap for node/domain preparation attempts during deterministic
-  // placement. Exhaustion fails rather than silently selecting another plan.
+  // Cumulative hard cap for selected leaf/region artifact preparation, including
+  // retry prefixes. Exhaustion before a complete feasible plan fails.
   std::size_t max_placement_attempts = 4096;
   RegionSelectionPolicy region_selection =
-      RegionSelectionPolicy::kPreferProviderRegions;
+      RegionSelectionPolicy::kAllowProviderRegions;
+  // Independent cumulative candidate-state budget. No recursion or warm search.
+  // Exhaustion without a complete feasible route fails, never emits a partial
+  // DAG.
+  std::size_t max_route_search_states = 65536;
   OperationFallbackPolicy operation_fallback = OperationFallbackPolicy::kAllow;
   // Independent storage cap for admitted operation proposals across all
   // nodes/targets/providers. Discovery does not prepare artifacts or spend

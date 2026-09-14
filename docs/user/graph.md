@@ -47,7 +47,7 @@ Invocation.bind(...) -> prepare_replay(...) -> submit(...) -> Completion
 | storage domain | exact `MemoryResourceRef` 加 workspace hard budget；value placement 与真实 copy 只由 storage 决定 |
 | execution lane | shared lane 绑定 target、role 与 caller Queue；delegated provider 为每个 island 产生无需 QueueBinding 的 synthetic lane |
 | placement | node/value 可 required 或 preferred；其余按输入 locality、边界数和稳定 target/storage 顺序确定性选择；prepare 尝试有硬预算 |
-| region partition | provider 在冷路径提出非空 node-ID 集合，支持单节点、连续和非连续 region；Graph 验证独立及联合收缩无环，并只编译胜出 artifact；当前仍是显式 prefer-region 的结构策略，不是统一完整成本选择或 SOTA 性能证明 |
+| region partition | provider 在冷路径提出非空 node-ID 集合，支持单节点、连续和非连续 region；与 leaf 共用有界冷搜索，完整覆盖且联合收缩无环后才准备 artifact；无 profile 时按配置顺序，不是完整成本择优或 SOTA 证明 |
 | boundary | canonical tensor 只有在真实 storage residence 改变时才产生 `Copy`；换 target 或 lane 本身不复制 |
 | memory plan | 每个 `(logical value, storage)` 是一个 physical instance；默认只复用 happens-before 已证明有序的 lifetime，显式允许时才为硬预算增加可报告的顺序边 |
 | scheduling | 冷路径先做确定性 lane-aware Kahn 调度，再建立 happens-before 和 workspace；同 shared lane 尽量连续录入以减少 Queue segment |
@@ -75,8 +75,10 @@ node，或者先创建 up 再创建 gate，不应阻止 oneDNN 识别同一 MLP�
 `false`，空集、重复或异图 ID 返回错误；Graph 在接收 proposal 后仍独立验证。连续集合保留快速路径。
 
 leaf/region 的结构提案共用 `compute::ProviderRouteCostFacts`，workspace、persistent、copy/repack、sync 和
-dispatch 都允许明确 unknown，不能写零补齐。当前 prefer-region 结构策略先看合法覆盖，只有参与本次
-比较的候选都声明 dispatch 数时才比较该维度，否则按稳定 Provider 顺序继续；这不是推理性能排名。
+dispatch 都允许明确 unknown，不能写零补齐。默认 `kAllowProviderRegions` 让 region 与 leaf 同池选择；
+无 qualified profile 时，从最小未覆盖 node 开始，先看 preferred target，再按配置 target/Provider 顺序，
+最后才以覆盖数与 dispatch 打破等价次序。只有本次候选都声明 dispatch 时才比较该维度；否则按稳定
+候选顺序。它不会因为另一 Provider 的 region 更大或 dispatch 更少就绕过前排可用 leaf，也不是推理性能排名。
 旧的“相对本 Provider fallback 节省若干 ns”入口和 `kRequireEstimatedBenefit` 已移除，不保留别名。
 要求跨 Provider 量化择优的 qualified full-plan profile 尚未交付，不能用各家的私有数字冒充；此期间可
 显式安装/筛选 Provider、约束具名节点或关闭 region，但不应声称已得到自动 SOTA 计划。
@@ -288,7 +290,9 @@ region 的 boundary、资源要求、runtime 与效果声明也在发现阶段�
 某个 region 的已选资源路线，或某个 leaf 的 prepare 被明确安全拒绝后，释放本次构造的制品并排除该
 候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
 leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现或资源查询，
-不重置任何预算。当前这还是确定性重选，不是完整的 leaf/region 同池成本优化或所有资源组合的穷举。
+不重置任何预算。region 联合成环、某个完整组合无 storage/copy 路线时，非递归搜索回溯到下一组合，
+不会仅因该组合失败就淘汰其中所有候选。当前这是 leaf/region/target 同池的确定性可行解搜索，
+不是 qualified 完整成本优化，也不穷举所有 storage/lane 组合。
 先构造完整 leaf/region/copy 的物理步骤和 storage 路线（包括最终输出 copy），之后才准备选中的制品；
 因此后续已知无能力/无合法 storage/copy 承载 target 时，不会先给前面的步骤做 JIT/packing。最终 prepare
 只使用已选路线，仍经 Compute 校验；不能原地换 Provider/target/storage，明确 decline 必须整图重规划。
@@ -296,13 +300,21 @@ leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用�
 精确 workspace/persistent、lane/内存和实际 Queue transfer 仍需后续校验，完整成本搜索尚未完成。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
+`max_route_search_states`（默认 65,536）另行限制累计尝试的候选状态，包括重叠/已拒绝的候选；不在重选时
+归零。尚未找到可行计划就用尽，返回 ResourceExhausted。恰好用满且没有省略必需搜索不算受限。
+两者都必须非零。候选表容量、搜索工作量和真正准备次数不是同一个预算。
+
+`View` 的 required 输出域会反向约束其 input 0 的物理副本：必要时先 copy 输入，再在目标域上建立零拷贝
+View。报告明确显示 copy；若 alias 根在内部副本，输出由 Invocation 持有，用 `output(value)` 取得，
+不能再绑定一个 caller 输出。只想把最终切片复制到 caller 存储时，用 `ExternalResourceContract`，
+不必要求 View 本体换域。
 
 `max_operation_proposals`（默认 16,384）限制本次编译接收的普通算子候选总数，独立于实际 prepare 次数；
 禁止 operation fallback 时不发现 leaf，该上限也不使用。`max_region_proposals`、
 `max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 分别限制 region 总数、每配置实例数量与
 复制保存的 node-ID 总数。默认 `search_policy = CompileSearchPolicy::kAllowLimited`：达到
 容量时停止扩大相应发现，只用已接收的候选生成并验证完整计划；per-provider 上限不阻止还有总额时
-探索下一家。成功报告的 `search().optimization_limited()` 明确说明搜索是否被截断，可再查看四个
+探索下一家。成功报告的 `search().optimization_limited()` 明确说明发现是否被截断，可再查看
 `*_limit_reached` 字段、实际接收数和 prepare 次数。这不是全局最优或性能资格声明。
 
 需要拒绝受限发现时使用 `CompileSearchPolicy::kRequireUnexhausted`；它不是要求无限搜索。恰好用满
@@ -402,7 +414,8 @@ multi-stream capture。
 `CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
 
 - `search()` 的 `operation_proposals/region_proposals`、已接收 region node 数、累计 prepare 次数、
-  `region_route_rejections/operation_route_rejections` 安全拒绝数和是否因
+  `route_search_states` 尝试状态数、`route_plan_rejections` 不可行组合数、
+  `region_route_rejections/operation_route_rejections` 候选拒绝数和是否因
   容量省略了候选/provider；正常拒绝不等于搜索容量耗尽；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；

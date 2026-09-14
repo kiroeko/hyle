@@ -625,3 +625,58 @@ replay 仍使用原结构。新增 report 的 leaf 拒绝计数，默认 0；没
 - impact READY，89 项跳过；closure/docs/diff 通过。Graph 自实现不含测试 10,863 行，Compute 未改仍为
   16,162 行，合计 27,025 行。保持 `AUDITED`；下一项仍为完整候选计划的 qualified 成本、同池选择和
   state 预算，不将本段当成 G103/G104 或 foundation 整体完成。
+
+### G103/G104：统一无 profile 候选搜索（实现前固定）
+
+`7f552012` 的 prepare 已与 physical skeleton 分离，但初始 target 仍优先有 region 者，随后只让 region
+互相竞争；即使配置中更靠前的 leaf 可用，也可能被高覆盖 region 绕过。当前没有完整 build/device/driver/
+workload 身份的 profile，不能把 `ProviderInstanceId` 单独当计时资格。本段先落实无 profile 的确定性
+完整路线搜索，C93 的真实 qualification 与成本比较仍必须随后接入，不能据本段签完 G103/G104。
+
+固定实现：所有已接收 leaf 与 region 共用按最小 node 建索引的冷候选表；required Provider/target 先过滤，
+region 的重叠/联合成环不合法。按用户 preferred target、配置 target/Provider 顺序枚举，coverage/dispatch
+只在此前顺序等价时 tie-break。用非递归、可恢复的有限深度搜索产生完整 node 覆盖，交给已有 physical
+构造/prepare；无资源/copy 路线排除此组合后继续，明确 prepare decline 排除对应候选，真实错误终止。
+首个完整且全部后续硬校验通过的计划才可返回；不得返回部分图或在 submit 扩搜。
+
+新增独立 `max_route_search_states` 和相应 report 计数/limit；候选存储、搜索、重型 prepare 三种预算不得
+混用或重置。无完整路线时耗尽失败；exact 用满但未省略必要搜索不标记受限。公共 region policy 改为
+allow/disabled，不保留误导性的高覆盖优先名字或兼容别名。target/storage/lane 完整成本和 qualified
+incumbent 的继续优化仍未实现，不声称 DFS 找到全局最快方案。
+
+验证限定：前排 leaf 不被后排 region 抢占；前排 region 可胜出；先选组合资源不通而后备可行；非连续
+region 联合环与回溯；hard target/Provider 不突破；搜索/prepare 上限独立且累计，错误不吞，原 OOM、
+数值/生命周期、CPU/CUDA/oneDNN 和三交付回放。P0 审查最坏状态预算与 compile 临时空间，P1 仍待终局。
+
+资源联合约束反例：`View` 必须 alias input 0，但 required output storage 可以通过先复制 input 0
+满足；不能先贪心选 input 所在域，再把不同的 required output 当矛盾。此段同时修正该确定的冷路径
+约束传播，新增真实跨 storage View 的数值/ownership 回归；不改变 View 的零拷贝别名语义。
+
+### 2026-09-15 统一无 profile 搜索检查点
+
+- 已移除 region-only DP/greedy 与先按 region 支持选择 target 的两段逻辑。leaf/region/target 共用一次
+  建立的冷候选索引，按最小未覆盖 node 做可恢复非递归搜索；已拒绝候选的子树跳过，联合成环或无
+  copy 路线排除组合。prepare 仍在完整 physical skeleton 之后，submit/Invocation 没有新增搜索层。
+- 无 profile 的顺序是 preferred target、配置 target/Provider，然后覆盖/dispatch/提案序号；旧的
+  `kPreferProviderRegions` 已删除，公开名字是 `kAllowProviderRegions`。已有五个测试依赖旧的 suffix/
+  dispatch 优先次序：按新合同改断言或把 decline 注入真正首选 prefix，仍保留数值、回退和销毁断言。
+- 新增六个回归：两种配置顺序下 leaf/region 同池；同 Provider 等价候选的 dispatch tie；累计 state
+  上限与 exact-capacity；部分覆盖不得 prepare；隔离 storage 的复制失败可回溯而真实验证错误终止；
+  required View 域先复制 input 再建立 alias。原联合环测试增加组合拒绝计数，原逐分配失败回放仍通过。
+- P0：冷索引额外空间 `O(C + N)`，排序 `O(C log C)`；最多 `S=max_route_search_states` 次候选访问，
+  每次 node-set 检查/回溯最坏 `O(N)`，不再递归。完整物理构造仍有独立资源成本，最多随已访问完整
+  路线重建；实际制品准备另受 `max_placement_attempts` 约束。一般 DAG 的组合数可能指数增长，
+  不能把有限搜索写成多项式全局最优；没有完整可行解时预算耗尽失败。
+- Windows：static 的 Graph/逐头 3/3（执行套件 171 用例）；shared + oneDNN 5/5；CUDA Graph 1/1。
+  公开 owning custom-kernel sample 的 source/shared/static 各 CPU+CUDA 2/2，均用本轮 public header
+  重编；不消耗 GitHub CI。shared producer 与 CPU/CUDA consumer 实际加载目录的 Graph DLL SHA-256
+  一致：`DD087FDD8697BB2C3EED10675A75DC5E54E5135F976091CA5921656F83AA93BD`。
+- selector（基线 `7f552012`）READY，89 项有据跳过；docs、closure、diff 检查通过。没有修改 registry、
+  Backend、CMake、公共性能仪器或已 CLOSED 依赖。Linux/Apple、sanitizer、独立终局红队与 P1 仍待完整
+  foundation 候选，不把本轮 Windows 结果冒充那些资格。
+- 自实现不含测试：Compute 16,162，Graph 10,758，合计 **26,920**，比上一检查点净减 105。Graph 口径
+  为 public headers + graph + graph_provider_onednn；Compute 口径沿用前轮且本轮未改。
+
+本段仅完成无 profile 的有限可行路线搜索，不签完 G103/G104：qualified identity/cost、storage/lane
+联合优化与有 incumbent 的优化截断仍待接入；G101/G102 的完整 shape domain/variants、G106 常量物化与
+聚合预算、真实 CPU/CUDA/Apple 架构探针及统一终局验证也未完成。下一步仍在这些基础合同内，不扩算子。

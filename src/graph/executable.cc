@@ -1343,6 +1343,229 @@ struct OperationDiscovery final {
   container::SmallVector<OperationCandidateRange, 16, mem::AllocatorRef> ranges;
 };
 
+// A resumable node-cover search over both leaves and regions. This owns only
+// cold indices; proposed facts and their owners stay in the discovery pool.
+// Every descent covers the smallest uncovered node, so depth is at most N.
+class RouteSearch final {
+public:
+  static constexpr std::size_t kNoRoute = SIZE_MAX;
+  struct Route final {
+    std::size_t proposal = 0;
+    std::uint32_t first = 0;
+    std::uint32_t count = 1;
+    std::uint32_t target = 0;
+    std::uint32_t provider = 0;
+    std::uint32_t preference_misses = 0;
+    std::optional<std::uint32_t> dispatches{};
+    bool region = false;
+  };
+  struct Frame final {
+    std::uint32_t node = 0;
+    std::size_t next = 0;
+    std::size_t chosen = kNoRoute;
+  };
+
+  explicit RouteSearch(mem::AllocatorRef allocator) noexcept
+      : routes_(allocator), begins_(allocator), frames_(allocator),
+        occupied_(allocator) {}
+
+  Status initialize(std::size_t node_count, std::size_t target_count,
+                    const OperationDiscovery &operations,
+                    std::span<const RegionCandidate> regions,
+                    std::span<const NodeId> region_nodes,
+                    std::span<const std::uint8_t> region_rejected,
+                    std::span<const std::uint32_t> preferred) noexcept {
+    operations_ = operations.candidates;
+    regions_ = regions;
+    region_nodes_ = region_nodes;
+    region_rejected_ = region_rejected;
+    if (!begins_.try_resize(node_count + 1) ||
+        !occupied_.try_resize(node_count) || !frames_.try_reserve(node_count))
+      return plan_allocation_failure();
+    std::fill(begins_.begin(), begins_.end(), std::size_t{0});
+    std::fill(occupied_.begin(), occupied_.end(), std::uint8_t{0});
+    for (std::uint32_t node = 0; node < node_count; ++node) {
+      for (std::uint32_t target = 0; target < target_count; ++target) {
+        for (const auto &proposal :
+             operations.for_node(node, target, target_count)) {
+          if (!routes_.try_push_back(Route{
+                  .proposal =
+                      static_cast<std::size_t>(&proposal - operations_.data()),
+                  .first = node,
+                  .target = target,
+                  .provider = static_cast<std::uint32_t>(
+                      proposal.proposal.provider_index),
+                  .preference_misses = preferred[node] != detail::kNoNode &&
+                                               preferred[node] != target
+                                           ? 1u
+                                           : 0u,
+                  .dispatches = proposal.proposal.cost.dispatch_count}))
+            return plan_allocation_failure();
+        }
+      }
+    }
+    for (std::size_t index = 0; index < regions.size(); ++index) {
+      const auto &candidate = regions[index];
+      if (region_rejected[candidate.proposal_order] != 0)
+        continue;
+      const auto nodes =
+          region_nodes.subspan(candidate.node_offset, candidate.node_count);
+      std::uint32_t misses = 0;
+      for (const auto node : nodes)
+        misses +=
+            preferred[node.ordinal()] != detail::kNoNode &&
+                    preferred[node.ordinal()] != candidate.target.ordinal()
+                ? 1u
+                : 0u;
+      if (!routes_.try_push_back(
+              Route{.proposal = index,
+                    .first = nodes.front().ordinal(),
+                    .count = candidate.node_count,
+                    .target = candidate.target.ordinal(),
+                    .provider = candidate.provider_index,
+                    .preference_misses = misses,
+                    .dispatches = candidate.cost.dispatch_count,
+                    .region = true}))
+        return plan_allocation_failure();
+    }
+    const bool compare_dispatches = std::all_of(
+        routes_.begin(), routes_.end(), [](const Route &route) noexcept {
+          return route.dispatches.has_value();
+        });
+    std::sort(routes_.begin(), routes_.end(),
+              [&](const Route &left, const Route &right) noexcept {
+                if (left.first != right.first)
+                  return left.first < right.first;
+                if (left.preference_misses != right.preference_misses)
+                  return left.preference_misses < right.preference_misses;
+                if (left.target != right.target)
+                  return left.target < right.target;
+                if (left.provider != right.provider)
+                  return left.provider < right.provider;
+                if (left.count != right.count)
+                  return left.count > right.count;
+                if (compare_dispatches && left.dispatches != right.dispatches)
+                  return left.dispatches < right.dispatches;
+                if (left.region != right.region)
+                  return left.region;
+                return left.proposal < right.proposal;
+              });
+    for (const auto &route : routes_)
+      ++begins_[route.first + 1];
+    for (std::size_t node = 1; node < begins_.size(); ++node)
+      begins_[node] += begins_[node - 1];
+    if (node_count != 0 && !frames_.try_push_back(Frame{.next = begins_[0]}))
+      return plan_allocation_failure();
+    return Status::Ok();
+  }
+
+  Result<bool> next(std::size_t budget, CompileSearchReport &report) noexcept {
+    if (occupied_.empty()) {
+      if (yielded_)
+        return false;
+      yielded_ = true;
+      return true;
+    }
+    if (yielded_) {
+      // A selected-route decline invalidates that entire subtree, not just
+      // its last leaf. Other physical-plan failures backtrack normally.
+      std::size_t keep = frames_.size();
+      for (std::size_t index = 0; index < frames_.size(); ++index) {
+        if (rejected(routes_[frames_[index].chosen])) {
+          keep = index + 1;
+          break;
+        }
+      }
+      while (frames_.size() > keep) {
+        undo(frames_.back());
+        frames_.pop_back();
+      }
+      undo(frames_.back());
+      yielded_ = false;
+    }
+    while (!frames_.empty()) {
+      auto &frame = frames_.back();
+      if (frame.next == begins_[frame.node + 1]) {
+        frames_.pop_back();
+        if (!frames_.empty())
+          undo(frames_.back());
+        continue;
+      }
+      if (report.route_search_states == budget) {
+        report.route_search_limit_reached = true;
+        return std::unexpected(Status::ResourceExhausted(
+            "graph route search state budget is exhausted"));
+      }
+      ++report.route_search_states;
+      const auto index = frame.next++;
+      const auto &route = routes_[index];
+      if (rejected(route))
+        continue;
+      bool overlap = false;
+      for_each_node(route, [&](std::uint32_t node) noexcept {
+        overlap |= occupied_[node] != 0;
+      });
+      if (overlap)
+        continue;
+      frame.chosen = index;
+      for_each_node(route,
+                    [&](std::uint32_t node) noexcept { occupied_[node] = 1; });
+      covered_ += route.count;
+      if (covered_ == occupied_.size()) {
+        yielded_ = true;
+        return true;
+      }
+      auto next_node = frame.node + 1;
+      while (occupied_[next_node] != 0)
+        ++next_node;
+      if (!frames_.try_push_back(Frame{next_node, begins_[next_node]}))
+        return std::unexpected(plan_allocation_failure());
+    }
+    return false;
+  }
+
+  std::span<const Frame> frames() const noexcept { return frames_; }
+  const Route &route(std::size_t index) const noexcept {
+    return routes_[index];
+  }
+
+  template <class Visitor>
+  void for_each_node(const Route &route, Visitor &&visit) const noexcept {
+    if (!route.region) {
+      visit(route.first);
+      return;
+    }
+    const auto &region = regions_[route.proposal];
+    for (const auto node :
+         region_nodes_.subspan(region.node_offset, region.node_count))
+      visit(node.ordinal());
+  }
+
+private:
+  bool rejected(const Route &route) const noexcept {
+    return route.region
+               ? region_rejected_[regions_[route.proposal].proposal_order] != 0
+               : operations_[route.proposal].rejected;
+  }
+  void undo(Frame &frame) noexcept {
+    const auto &route = routes_[frame.chosen];
+    for_each_node(route,
+                  [&](std::uint32_t node) noexcept { occupied_[node] = 0; });
+    covered_ -= route.count;
+    frame.chosen = kNoRoute;
+  }
+  container::SmallVector<Route, 16, mem::AllocatorRef> routes_;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> begins_;
+  container::SmallVector<Frame, 16, mem::AllocatorRef> frames_;
+  container::SmallVector<std::uint8_t, 32, mem::AllocatorRef> occupied_;
+  std::span<const OperationCandidate> operations_{};
+  std::span<const RegionCandidate> regions_{};
+  std::span<const NodeId> region_nodes_{};
+  std::span<const std::uint8_t> region_rejected_{};
+  std::size_t covered_ = 0;
+  bool yielded_ = false;
+};
+
 Status discover_operation_candidates(
     const detail::PlanState &plan, const detail::GraphState &graph,
     CompileEnvironment environment, CompileOptions options,
@@ -1430,7 +1653,8 @@ struct RegionDiscovery final {
   explicit RegionDiscovery(mem::AllocatorRef allocator) noexcept
       : extensions(allocator), candidates(allocator), nodes(allocator),
         rejected(allocator), resources(allocator), values(allocator),
-        requirements(allocator), effects(allocator), operations(allocator) {}
+        requirements(allocator), effects(allocator), operations(allocator),
+        routes(allocator) {}
 
   RegionExtensions extensions;
   RegionCandidates candidates;
@@ -1443,6 +1667,7 @@ struct RegionDiscovery final {
       requirements;
   container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef> effects;
   OperationDiscovery operations;
+  RouteSearch routes;
   Status last_rejection = Status::Ok();
   bool ready = false;
 };
@@ -1450,6 +1675,7 @@ struct RegionDiscovery final {
 struct PlacementAttemptOutcome final {
   std::optional<std::uint32_t> rejected_region{};
   std::optional<std::size_t> rejected_operation{};
+  bool rejected_plan = false;
   bool no_feasible_route = false;
 };
 
@@ -2045,11 +2271,6 @@ Status discover_region_candidates(
     ExecutionTargetId target,
     std::span<const std::uint32_t> node_targets = {}) noexcept;
 
-Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
-                      std::span<const NodeId> proposal_nodes,
-                      const detail::GraphState &graph,
-                      RegionCandidates &selected) noexcept;
-
 Status prepare_placed_steps_attempt(
     detail::PlanState &plan, const Graph &published_graph,
     const detail::GraphState &graph, CompileEnvironment environment,
@@ -2066,8 +2287,9 @@ Status prepare_placed_steps_attempt(
   const std::size_t storage_count = plan.storage_domains.size();
   const std::size_t value_count = graph.values.size();
   const std::size_t node_count = graph.nodes.size();
-  if (options.max_placement_attempts == 0)
-    return Status::InvalidArgument("graph placement budget is zero");
+  if (options.max_placement_attempts == 0 ||
+      options.max_route_search_states == 0)
+    return Status::InvalidArgument("graph prepare/search budget is zero");
   if (value_count != 0 && storage_count > SIZE_MAX / value_count) {
     return Status::ResourceExhausted(
         "graph physical-instance matrix size overflows");
@@ -2215,34 +2437,30 @@ Status prepare_placed_steps_attempt(
               std::uint8_t{0});
     HYLE_RETURN_IF_ERROR(discover_region_resources(
         published_graph, graph, plan, options, node_required, discovery));
+    HYLE_RETURN_IF_ERROR(discovery.routes.initialize(
+        node_count, target_count, discovery.operations, all_region_candidates,
+        all_region_nodes, discovery.rejected, node_preferred));
     discovery.ready = true;
   }
-  Flags region_support(plan.allocator);
-  if (!region_support.try_resize(node_count * target_count))
-    return plan_allocation_failure();
-  for (std::uint8_t &supported : region_support)
-    supported = 0;
-  for (const RegionCandidate &candidate : all_region_candidates) {
-    if (discovery.rejected[candidate.proposal_order] != 0)
-      continue;
-    for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
-      region_support[static_cast<std::size_t>(node.ordinal()) * target_count +
-                     candidate.target.ordinal()] = 1;
-    }
+  HYLE_ASSIGN_OR_RETURN(
+      const bool has_route,
+      discovery.routes.next(options.max_route_search_states, plan.search));
+  if (!has_route) {
+    outcome.no_feasible_route = true;
+    return Status::Unimplemented(
+        "no complete graph route satisfies the available candidates");
   }
 
   Ordinals producer_storage(plan.allocator);
   Ordinals node_targets(plan.allocator);
   Ordinals node_workspace_storage(plan.allocator);
   Ordinals selected_edge_storage(plan.allocator);
-  Ordinals target_candidates(plan.allocator);
   container::SmallVector<const OperationCandidate *, 8, mem::AllocatorRef>
       operation_routes(plan.allocator);
   if (!producer_storage.try_resize(value_count) ||
       !node_targets.try_resize(node_count) ||
       !node_workspace_storage.try_resize(node_count) ||
       !selected_edge_storage.try_resize(graph.edges.size()) ||
-      !target_candidates.try_resize(target_count) ||
       !operation_routes.try_resize(node_count)) {
     return plan_allocation_failure();
   }
@@ -2283,14 +2501,14 @@ Status prepare_placed_steps_attempt(
           compute::detail::OperationPreparationAccess::match_resource(
               requirement, resource);
       if (!matched.ok()) {
-        if (matched.IsInternal())
+        if (!matched.IsUnimplemented())
           return std::unexpected(std::move(matched));
         return false;
       }
       Status accessible =
           plan.targets[target].context.validate_resource(resource);
       if (!accessible.ok()) {
-        if (accessible.IsInternal())
+        if (!accessible.IsFailedPrecondition() && !accessible.IsUnimplemented())
           return std::unexpected(std::move(accessible));
         return false;
       }
@@ -2349,19 +2567,32 @@ Status prepare_placed_steps_attempt(
                          node.output_count);
     const auto leaf_inputs = requirements.first(node.input_count);
     const auto leaf_outputs = requirements.subspan(node.input_count);
-    for (std::size_t index = 0; index < node.input_count; ++index) {
-      const std::uint32_t value = graph.edges[node.input_begin + index];
-      HYLE_ASSIGN_OR_RETURN(selected_inputs[index],
-                            select_storage(candidate, leaf_inputs[index], kNone,
-                                           producer_storage[value],
-                                           default_storage));
-    }
     const auto traits = compute::operation_traits(node.operation);
     const bool must_alias_input =
         traits.alias == compute::AliasPolicy::kMustAliasInput0;
     if (must_alias_input && node.input_count == 0)
       return std::unexpected(Status::Internal(
           "operation requires an input alias but has no inputs"));
+    std::uint32_t alias_storage = kNone;
+    if (must_alias_input) {
+      for (std::size_t index = 0; index < node.output_count; ++index) {
+        const auto required = value_required[node.output_begin + index];
+        if (required == kNone)
+          continue;
+        if (alias_storage != kNone && alias_storage != required)
+          return std::unexpected(Status::Unimplemented(
+              "required output storages contradict operation aliasing"));
+        alias_storage = required;
+      }
+    }
+    for (std::size_t index = 0; index < node.input_count; ++index) {
+      const std::uint32_t value = graph.edges[node.input_begin + index];
+      HYLE_ASSIGN_OR_RETURN(selected_inputs[index],
+                            select_storage(candidate, leaf_inputs[index],
+                                           index == 0 ? alias_storage : kNone,
+                                           producer_storage[value],
+                                           default_storage));
+    }
     for (std::size_t index = 0; index < node.output_count; ++index) {
       const auto value = node.output_begin + index;
       if (must_alias_input && value_required[value] != kNone &&
@@ -2405,214 +2636,30 @@ Status prepare_placed_steps_attempt(
         operation_routes[node_index] = placement.route;
       };
 
-  auto place_operation = [&](std::size_t node_index,
-                             std::uint32_t target) noexcept -> Status {
-    Status unsupported = Status::Unimplemented(
-        "no configured provider accepts the graph operation resources");
-    for (const auto &route :
-         discovery.operations.for_node(node_index, target, target_count)) {
-      if (route.rejected)
-        continue;
-      auto placement = select_operation_resources(node_index, target, route);
-      if (!placement) {
-        unsupported = std::move(placement).error();
-        if (!unsupported.IsUnimplemented())
-          return unsupported;
-        continue;
-      }
-      publish_operation_placement(node_index, *placement);
-      return Status::Ok();
-    }
-    return unsupported;
-  };
-
-  for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    std::uint32_t required = node_required[node_index];
-    std::uint32_t preferred = node_preferred[node_index];
-    for (std::size_t index = 0; index < target_count; ++index)
-      target_candidates[index] = static_cast<std::uint32_t>(index);
-    std::sort(target_candidates.begin(), target_candidates.end(),
-              [&](std::uint32_t left, std::uint32_t right) noexcept {
-                if (required != kNone)
-                  return left == required && right != required;
-                const bool left_preferred = left == preferred;
-                const bool right_preferred = right == preferred;
-                if (left_preferred != right_preferred)
-                  return left_preferred;
-                const bool left_region =
-                    region_support[node_index * target_count + left] != 0;
-                const bool right_region =
-                    region_support[node_index * target_count + right] != 0;
-                if (left_region != right_region)
-                  return left_region;
-                std::size_t left_local = 0;
-                std::size_t right_local = 0;
-                for (std::size_t input_index = 0;
-                     input_index < node.input_count; ++input_index) {
-                  const std::uint32_t value =
-                      graph.edges[node.input_begin + input_index];
-                  left_local +=
-                      producer_storage[value] ==
-                              plan.targets[left].default_storage.ordinal()
-                          ? 1u
-                          : 0u;
-                  right_local +=
-                      producer_storage[value] ==
-                              plan.targets[right].default_storage.ordinal()
-                          ? 1u
-                          : 0u;
-                }
-                if (left_local != right_local)
-                  return left_local > right_local;
-                return left < right;
-              });
-    Status unsupported = Status::Unimplemented(
-        "no execution target supports the graph operation");
-    bool selected = false;
-    for (std::uint32_t candidate : target_candidates) {
-      if (required != kNone && candidate != required)
-        continue;
-      const std::uint32_t default_storage =
-          plan.targets[candidate].default_storage.ordinal();
-      if (region_support[node_index * target_count + candidate] != 0) {
-        node_targets[node_index] = candidate;
-        for (std::size_t output_index = 0; output_index < node.output_count;
-             ++output_index) {
-          const std::uint32_t value =
-              node.output_begin + static_cast<std::uint32_t>(output_index);
-          producer_storage[value] =
-              value_required[value] != kNone    ? value_required[value]
-              : value_preferred[value] != kNone ? value_preferred[value]
-                                                : default_storage;
-        }
-        selected = true;
-        break;
-      }
-      if (options.operation_fallback == OperationFallbackPolicy::kReject)
-        continue;
-      Status result = place_operation(node_index, candidate);
-      if (result.ok()) {
-        node_targets[node_index] = candidate;
-        selected = true;
-        break;
-      }
-      if (!result.IsUnimplemented())
-        return std::move(result).WithContext(
-            "placing graph operation resources");
-      unsupported = std::move(result);
-    }
-    if (!selected) {
-      outcome.no_feasible_route = true;
-      return unsupported;
-    }
-  }
-
-  RegionCandidates candidates(plan.allocator);
   RegionCandidates selected_regions(plan.allocator);
-  if (!candidates.try_reserve(all_region_candidates.size()))
-    return plan_allocation_failure();
-  for (const RegionCandidate &candidate : all_region_candidates) {
-    if (discovery.rejected[candidate.proposal_order] != 0)
-      continue;
-    bool eligible = true;
-    for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
-      if (node_targets[node.ordinal()] != candidate.target.ordinal()) {
-        eligible = false;
-        break;
-      }
-    }
-    if (eligible && !candidates.try_push_back(candidate))
-      return plan_allocation_failure();
-  }
-  Status selected = select_regions(candidates, plan.allocator, all_region_nodes,
-                                   graph, selected_regions);
-  if (!selected.ok())
-    return selected;
-  if (options.operation_fallback == OperationFallbackPolicy::kReject) {
-    std::size_t covered_nodes = 0;
-    for (const RegionCandidate &candidate : selected_regions) {
-      covered_nodes += candidate.node_count;
-    }
-    if (covered_nodes != node_count) {
-      outcome.no_feasible_route = true;
-      return Status::Unimplemented(
-          "multi-domain graph specialization requires an operation fallback");
-    }
-  }
-  Flags selected_nodes(plan.allocator);
-  if (!selected_nodes.try_resize(node_count))
-    return plan_allocation_failure();
-  for (std::uint8_t &covered : selected_nodes)
-    covered = 0;
-  for (const RegionCandidate &candidate : selected_regions) {
-    for (NodeId node : candidate_nodes(candidate, all_region_nodes)) {
-      selected_nodes[node.ordinal()] = 1;
-    }
-  }
-  for (std::size_t node_index = 0; node_index < node_count; ++node_index) {
-    if (selected_nodes[node_index] != 0 ||
-        operation_routes[node_index] != nullptr)
-      continue;
-    const detail::NodeRecord &node = graph.nodes[node_index];
-    const std::uint32_t required = node_required[node_index];
-    const std::uint32_t preferred = node_preferred[node_index];
-    const std::uint32_t originally_selected = node_targets[node_index];
-    for (std::size_t index = 0; index < target_count; ++index)
-      target_candidates[index] = static_cast<std::uint32_t>(index);
-    std::sort(target_candidates.begin(), target_candidates.end(),
-              [&](std::uint32_t left, std::uint32_t right) noexcept {
-                if (required != kNone)
-                  return left == required && right != required;
-                const bool left_original = left == originally_selected;
-                const bool right_original = right == originally_selected;
-                if (left_original != right_original)
-                  return left_original;
-                const bool left_preferred = left == preferred;
-                const bool right_preferred = right == preferred;
-                if (left_preferred != right_preferred)
-                  return left_preferred;
-                std::size_t left_local = 0;
-                std::size_t right_local = 0;
-                for (std::size_t input_index = 0;
-                     input_index < node.input_count; ++input_index) {
-                  const std::uint32_t value =
-                      graph.edges[node.input_begin + input_index];
-                  left_local +=
-                      producer_storage[value] ==
-                              plan.targets[left].default_storage.ordinal()
-                          ? 1u
-                          : 0u;
-                  right_local +=
-                      producer_storage[value] ==
-                              plan.targets[right].default_storage.ordinal()
-                          ? 1u
-                          : 0u;
-                }
-                if (left_local != right_local)
-                  return left_local > right_local;
-                return left < right;
-              });
-    Status unsupported = Status::Unimplemented(
-        "no execution target supports an unselected graph operation");
-    bool fallback_selected = false;
-    for (std::uint32_t candidate : target_candidates) {
-      if (required != kNone && candidate != required)
-        continue;
-      Status fallback = place_operation(node_index, candidate);
-      if (fallback.ok()) {
-        node_targets[node_index] = candidate;
-        fallback_selected = true;
-        break;
-      }
-      if (!fallback.IsUnimplemented())
-        return std::move(fallback).WithContext(
-            "placing operation left outside selected graph regions");
-      unsupported = std::move(fallback);
-    }
-    if (!fallback_selected) {
-      outcome.no_feasible_route = true;
-      return unsupported;
+  for (const auto &frame : discovery.routes.frames()) {
+    const auto &route = discovery.routes.route(frame.chosen);
+    const auto default_storage =
+        plan.targets[route.target].default_storage.ordinal();
+    discovery.routes.for_each_node(
+        route, [&](std::uint32_t node_index) noexcept {
+          node_targets[node_index] = route.target;
+          const auto &node = graph.nodes[node_index];
+          for (std::size_t index = 0; index < node.output_count; ++index) {
+            const auto value = node.output_begin + index;
+            producer_storage[value] =
+                value_required[value] != kNone    ? value_required[value]
+                : value_preferred[value] != kNone ? value_preferred[value]
+                                                  : default_storage;
+          }
+        });
+    if (route.region) {
+      if (!selected_regions.try_push_back(
+              all_region_candidates[route.proposal]))
+        return plan_allocation_failure();
+    } else {
+      operation_routes[route.first] =
+          &discovery.operations.candidates[route.proposal];
     }
   }
 
@@ -2624,7 +2671,7 @@ Status prepare_placed_steps_attempt(
   }
   std::fill(region_coverage.begin(), region_coverage.end(),
             RegionCoverage::kNone);
-  for (const RegionCandidate &candidate : candidates) {
+  for (const RegionCandidate &candidate : all_region_candidates) {
     for (NodeId node : candidate_nodes(candidate, all_region_nodes))
       region_coverage[node.ordinal()] = RegionCoverage::kEligible;
   }
@@ -2737,27 +2784,36 @@ Status prepare_placed_steps_attempt(
         plan.storage_domains[source_storage].resource;
     const mem::MemoryResourceRef destination_resource =
         plan.storage_domains[destination_storage].resource;
-    auto supports_route = [&](std::uint32_t target) noexcept {
-      return plan.targets[target]
-                 .context.validate_resource(source_resource)
-                 .ok() &&
-             plan.targets[target]
-                 .context.validate_resource(destination_resource)
-                 .ok();
+    auto supports_route = [&](std::uint32_t target) noexcept -> Result<bool> {
+      for (const auto resource : {source_resource, destination_resource}) {
+        auto status = plan.targets[target].context.validate_resource(resource);
+        if (status.ok())
+          continue;
+        if (status.IsFailedPrecondition() || status.IsUnimplemented())
+          return false;
+        return std::unexpected(std::move(status));
+      }
+      return true;
     };
     std::uint32_t execution_target = kNone;
     for (std::size_t index = 0; index < target_count; ++index) {
-      if (plan.targets[index].default_storage.ordinal() ==
-              destination_storage &&
-          supports_route(static_cast<std::uint32_t>(index))) {
+      if (plan.targets[index].default_storage.ordinal() != destination_storage)
+        continue;
+      HYLE_ASSIGN_OR_RETURN(const bool supports,
+                            supports_route(static_cast<std::uint32_t>(index)));
+      if (supports) {
         execution_target = static_cast<std::uint32_t>(index);
         break;
       }
     }
     if (execution_target == kNone) {
       for (std::size_t index = 0; index < target_count; ++index) {
-        if (plan.targets[index].default_storage.ordinal() == source_storage &&
-            supports_route(static_cast<std::uint32_t>(index))) {
+        if (plan.targets[index].default_storage.ordinal() != source_storage)
+          continue;
+        HYLE_ASSIGN_OR_RETURN(
+            const bool supports,
+            supports_route(static_cast<std::uint32_t>(index)));
+        if (supports) {
           execution_target = static_cast<std::uint32_t>(index);
           break;
         }
@@ -2765,13 +2821,17 @@ Status prepare_placed_steps_attempt(
     }
     if (execution_target == kNone) {
       for (std::size_t index = 0; index < target_count; ++index) {
-        if (supports_route(static_cast<std::uint32_t>(index))) {
+        HYLE_ASSIGN_OR_RETURN(
+            const bool supports,
+            supports_route(static_cast<std::uint32_t>(index)));
+        if (supports) {
           execution_target = static_cast<std::uint32_t>(index);
           break;
         }
       }
     }
     if (execution_target == kNone) {
+      outcome.rejected_plan = true;
       return Status::Unimplemented(
           "no execution target can transfer between the selected resources");
     }
@@ -2871,9 +2931,11 @@ Status prepare_placed_steps_attempt(
     auto ordered = contraction.sort(contracted_owners);
     if (!ordered)
       return std::move(ordered).error();
-    if (!*ordered)
-      return Status::Internal(
-          "selected graph regions form a cyclic contraction");
+    if (!*ordered) {
+      outcome.rejected_plan = true;
+      return Status::Unimplemented(
+          "candidate graph regions form a cyclic contraction");
+    }
     unit_order = contraction.order();
   }
 
@@ -3038,6 +3100,14 @@ Status prepare_placed_steps_attempt(
     const std::uint32_t node_index = unit_node;
     const detail::NodeRecord &node = graph.nodes[node_index];
     const std::uint32_t target = node_targets[node_index];
+    auto placement = select_operation_resources(node_index, target,
+                                                *operation_routes[node_index]);
+    if (!placement) {
+      Status status = std::move(placement).error();
+      outcome.rejected_plan = status.IsUnimplemented();
+      return status;
+    }
+    publish_operation_placement(node_index, *placement);
     const std::uint32_t workspace_storage = node_workspace_storage[node_index];
     physical_inputs.clear();
     if (!physical_inputs.try_reserve(node.input_count))
@@ -3258,6 +3328,14 @@ Status prepare_placed_steps(detail::PlanState &plan,
     Status status = prepare_placed_steps_attempt(
         plan, published_graph, graph, environment, options, provider_policy,
         discovery, outcome);
+    if (outcome.rejected_plan) {
+      if (status.ok() || outcome.rejected_region || outcome.rejected_operation)
+        return Status::Internal(
+            "graph physical rejection has conflicting outcome");
+      ++plan.search.route_plan_rejections;
+      discovery.last_rejection = std::move(status);
+      continue;
+    }
     if (!outcome.rejected_region && !outcome.rejected_operation) {
       if (outcome.no_feasible_route && !discovery.last_rejection.ok())
         return discovery.last_rejection;
@@ -3492,12 +3570,6 @@ Status discover_region_candidates(
   return Status::Ok();
 }
 
-struct RegionSelectionScore final {
-  std::uint64_t covered_nodes = 0;
-  std::uint64_t dispatches = 0;
-  std::uint64_t provider_rank_cost = 0;
-};
-
 template <class Unsigned>
 Unsigned saturating_add(Unsigned left, Unsigned right) noexcept {
   const Unsigned limit = (std::numeric_limits<Unsigned>::max)();
@@ -3508,190 +3580,6 @@ template <class Unsigned>
 Unsigned saturating_multiply(Unsigned left, Unsigned right) noexcept {
   const Unsigned limit = (std::numeric_limits<Unsigned>::max)();
   return right != 0 && left > limit / right ? limit : left * right;
-}
-
-bool better_score(RegionSelectionScore left, RegionSelectionScore right,
-                  bool compare_dispatches) noexcept {
-  if (left.covered_nodes != right.covered_nodes)
-    return left.covered_nodes > right.covered_nodes;
-  if (compare_dispatches && left.dispatches != right.dispatches)
-    return left.dispatches < right.dispatches;
-  return left.provider_rank_cost < right.provider_rank_cost;
-}
-
-Status select_regions(RegionCandidates &candidates, mem::AllocatorRef allocator,
-                      std::span<const NodeId> proposal_nodes,
-                      const detail::GraphState &graph,
-                      RegionCandidates &selected) noexcept {
-  // A missing count is not zero, nor evidence against the candidate. Disable
-  // this whole score coordinate when any candidate is unknown. Comparing it
-  // only pairwise when known would also violate sort's transitivity.
-  const bool compare_dispatches =
-      std::all_of(candidates.begin(), candidates.end(),
-                  [](const RegionCandidate &candidate) {
-                    return candidate.cost.dispatch_count.has_value();
-                  });
-  const bool intervals_only = std::all_of(
-      candidates.begin(), candidates.end(),
-      [&](const RegionCandidate &candidate) noexcept {
-        return nodes_are_contiguous(candidate_nodes(candidate, proposal_nodes));
-      });
-  if (!intervals_only) {
-    std::sort(
-        candidates.begin(), candidates.end(),
-        [&](const RegionCandidate &left,
-            const RegionCandidate &right) noexcept {
-          if (left.node_count != right.node_count)
-            return left.node_count > right.node_count;
-          if (compare_dispatches &&
-              left.cost.dispatch_count != right.cost.dispatch_count)
-            return left.cost.dispatch_count < right.cost.dispatch_count;
-          if (left.provider_index != right.provider_index)
-            return left.provider_index < right.provider_index;
-          const auto left_nodes = candidate_nodes(left, proposal_nodes);
-          const auto right_nodes = candidate_nodes(right, proposal_nodes);
-          if (left_nodes.front().ordinal() != right_nodes.front().ordinal()) {
-            return left_nodes.front().ordinal() < right_nodes.front().ordinal();
-          }
-          if (left.route != right.route)
-            return left.route < right.route;
-          return left.proposal_order < right.proposal_order;
-        });
-    container::SmallVector<std::uint8_t, 32, mem::AllocatorRef> occupied(
-        allocator);
-    container::SmallVector<std::uint32_t, 16, mem::AllocatorRef> owners(
-        allocator);
-    if (!occupied.try_resize(graph.nodes.size()) ||
-        !owners.try_resize(graph.nodes.size()) ||
-        !selected.try_reserve(candidates.size())) {
-      return plan_allocation_failure();
-    }
-    std::fill(occupied.begin(), occupied.end(), std::uint8_t{0});
-    for (std::uint32_t node = 0; node < owners.size(); ++node)
-      owners[node] = node;
-    RegionContraction contraction(allocator);
-    Status initialized = contraction.initialize(graph);
-    if (!initialized.ok())
-      return initialized;
-    for (const RegionCandidate &candidate : candidates) {
-      const auto nodes = candidate_nodes(candidate, proposal_nodes);
-      if (std::any_of(nodes.begin(), nodes.end(), [&](NodeId node) noexcept {
-            return occupied[node.ordinal()] != 0;
-          })) {
-        continue;
-      }
-      for (NodeId node : nodes)
-        owners[node.ordinal()] = nodes.front().ordinal();
-      // Disjoint individually contractible sets can still form a cycle when
-      // combined. Test the proposed partition, not its bounding intervals:
-      // interleaved sets remain eligible whenever their joint DAG is valid.
-      auto acyclic = contraction.sort(owners);
-      if (!acyclic)
-        return std::move(acyclic).error();
-      if (!*acyclic) {
-        for (NodeId node : nodes)
-          owners[node.ordinal()] = node.ordinal();
-        continue;
-      }
-      if (!selected.try_push_back(candidate))
-        return plan_allocation_failure();
-      for (NodeId node : nodes)
-        occupied[node.ordinal()] = 1;
-    }
-    std::sort(
-        selected.begin(), selected.end(),
-        [&](const RegionCandidate &left,
-            const RegionCandidate &right) noexcept {
-          const auto left_nodes = candidate_nodes(left, proposal_nodes);
-          const auto right_nodes = candidate_nodes(right, proposal_nodes);
-          if (left_nodes.front().ordinal() != right_nodes.front().ordinal()) {
-            return left_nodes.front().ordinal() < right_nodes.front().ordinal();
-          }
-          return left.proposal_order < right.proposal_order;
-        });
-    return Status::Ok();
-  }
-
-  std::sort(
-      candidates.begin(), candidates.end(),
-      [&](const RegionCandidate &left, const RegionCandidate &right) noexcept {
-        const auto left_nodes = candidate_nodes(left, proposal_nodes);
-        const auto right_nodes = candidate_nodes(right, proposal_nodes);
-        const std::uint64_t left_end = left_nodes.back().ordinal() + 1ULL;
-        const std::uint64_t right_end = right_nodes.back().ordinal() + 1ULL;
-        if (left_end != right_end)
-          return left_end < right_end;
-        if (left_nodes.front().ordinal() != right_nodes.front().ordinal())
-          return left_nodes.front().ordinal() < right_nodes.front().ordinal();
-        if (left.extension_index != right.extension_index)
-          return left.extension_index < right.extension_index;
-        if (left.route != right.route)
-          return left.route < right.route;
-        return left.proposal_order < right.proposal_order;
-      });
-  using Indices = container::SmallVector<std::uint32_t, 32, mem::AllocatorRef>;
-  using Scores =
-      container::SmallVector<RegionSelectionScore, 32, mem::AllocatorRef>;
-  using Decisions = container::SmallVector<std::uint8_t, 32, mem::AllocatorRef>;
-  Indices predecessors(allocator);
-  Scores scores(allocator);
-  Decisions take(allocator);
-  if (!predecessors.try_resize(candidates.size()) ||
-      !scores.try_resize(candidates.size() + 1) ||
-      !take.try_resize(candidates.size())) {
-    return plan_allocation_failure();
-  }
-  scores[0] = {};
-  for (std::size_t index = 0; index < candidates.size(); ++index) {
-    const auto nodes = candidate_nodes(candidates[index], proposal_nodes);
-    const std::uint64_t begin = nodes.front().ordinal();
-    const auto previous_end = std::upper_bound(
-        candidates.begin(), candidates.begin() + index, begin,
-        [&](std::uint64_t value, const RegionCandidate &candidate) noexcept {
-          return value <
-                 candidate_nodes(candidate, proposal_nodes).back().ordinal() +
-                     1ULL;
-        });
-    const std::size_t previous_count =
-        static_cast<std::size_t>(previous_end - candidates.begin());
-    predecessors[index] = static_cast<std::uint32_t>(previous_count);
-    RegionSelectionScore include = scores[previous_count];
-    include.covered_nodes = saturating_add(
-        include.covered_nodes,
-        static_cast<std::uint64_t>(candidates[index].node_count));
-    if (compare_dispatches) {
-      include.dispatches = saturating_add(
-          include.dispatches,
-          static_cast<std::uint64_t>(*candidates[index].cost.dispatch_count));
-    }
-    include.provider_rank_cost = saturating_add(
-        include.provider_rank_cost,
-        saturating_multiply(
-            static_cast<std::uint64_t>(candidates[index].provider_index) + 1,
-            static_cast<std::uint64_t>(candidates[index].node_count)));
-    const RegionSelectionScore exclude = scores[index];
-    if (better_score(include, exclude, compare_dispatches)) {
-      scores[index + 1] = include;
-      take[index] = 1;
-    } else {
-      scores[index + 1] = exclude;
-      take[index] = 0;
-    }
-  }
-
-  std::size_t cursor = candidates.size();
-  while (cursor != 0) {
-    const std::size_t index = cursor - 1;
-    if (take[index] == 0) {
-      --cursor;
-      continue;
-    }
-    if (!selected.try_push_back(candidates[index]))
-      return plan_allocation_failure();
-    cursor = predecessors[index];
-  }
-  std::reverse(selected.begin(), selected.end());
-  return Status::Ok();
 }
 
 // Reorder already-prepared plan steps without changing the logical Graph.
@@ -6940,7 +6828,7 @@ Result<CompiledGraph> compile(const Graph &graph,
   }
   if (options.region_selection != RegionSelectionPolicy::kDisabled &&
       options.region_selection !=
-          RegionSelectionPolicy::kPreferProviderRegions) {
+          RegionSelectionPolicy::kAllowProviderRegions) {
     return std::unexpected(
         Status::InvalidArgument("graph region selection policy is invalid"));
   }
