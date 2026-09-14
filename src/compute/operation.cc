@@ -127,15 +127,6 @@ constexpr bool is_power_of_two(std::size_t value) noexcept {
   return value != 0 && (value & (value - 1)) == 0;
 }
 
-bool valid_runtime_properties(ProviderRuntimeProperties properties) noexcept {
-  return (properties.mode == ProviderRuntimeMode::kSharedQueue ||
-          properties.mode == ProviderRuntimeMode::kDelegated) &&
-         (properties.workspace_owner == ProviderWorkspaceOwner::kCaller ||
-          properties.workspace_owner == ProviderWorkspaceOwner::kProvider) &&
-         (!properties.capture_compatible ||
-          properties.mode == ProviderRuntimeMode::kSharedQueue);
-}
-
 Status validate_requirement(
     const detail::ResourceBindingRequirement &requirement) noexcept {
   if (!is_power_of_two(requirement.minimum_alignment)) {
@@ -178,17 +169,6 @@ Status match_requirement(
         "compute provider does not accept the selected memory resource");
   }
   return Status::Ok();
-}
-
-bool same_runtime_properties(const ProviderRuntimeProperties &left,
-                             const ProviderRuntimeProperties &right) noexcept {
-  return left.mode == right.mode &&
-         left.workspace_owner == right.workspace_owner &&
-         left.blocks_host == right.blocks_host &&
-         left.uses_private_threads == right.uses_private_threads &&
-         left.supports_concurrent_invocations ==
-             right.supports_concurrent_invocations &&
-         left.capture_compatible == right.capture_compatible;
 }
 
 Status validate_inferred_outputs(Operation operation,
@@ -600,7 +580,7 @@ detail::OperationPreparationAccess::propose(
   proposal.context = state;
   proposal.provider = table->identity;
   proposal.provider_index = provider_index;
-  if (!valid_runtime_properties(proposal.runtime)) {
+  if (!proposal.runtime.valid()) {
     return std::unexpected(Status::Internal(
         "compute provider returned invalid runtime properties"));
   }
@@ -683,7 +663,7 @@ detail::OperationPreparationAccess::prepare_candidate(
   const detail::ProviderVTable *table =
       detail::ProviderAccess::vtable(slot.provider);
   if (proposal.context != state || proposal.provider != table->identity ||
-      !valid_runtime_properties(proposal.runtime)) {
+      !proposal.runtime.valid()) {
     return std::unexpected(Status::InvalidArgument(
         "operation proposal does not belong to the selected provider"));
   }
@@ -810,8 +790,8 @@ detail::OperationPreparationAccess::prepare_candidate(
         provider_prepared.vtable->delegated_submit == nullptr ||
         provider_prepared.vtable->endpoint == nullptr ||
         provider_prepared.vtable->can_import_endpoint == nullptr)) ||
-      !valid_runtime_properties(provider_prepared.runtime) ||
-      !same_runtime_properties(provider_prepared.runtime, proposal.runtime) ||
+      !provider_prepared.runtime.valid() ||
+      provider_prepared.runtime != proposal.runtime ||
       !is_power_of_two(provider_prepared.workspace.alignment) ||
       (proposal.cost.workspace.has_value() &&
        (provider_prepared.workspace.size != proposal.cost.workspace->size ||

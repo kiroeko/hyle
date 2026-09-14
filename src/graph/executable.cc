@@ -1069,30 +1069,6 @@ bool valid_strength(PlacementStrength strength) noexcept {
          strength == PlacementStrength::kRequired;
 }
 
-bool valid_runtime_properties(
-    const compute::ProviderRuntimeProperties &properties) noexcept {
-  return (properties.mode == compute::ProviderRuntimeMode::kSharedQueue ||
-          properties.mode == compute::ProviderRuntimeMode::kDelegated) &&
-         (properties.workspace_owner ==
-              compute::ProviderWorkspaceOwner::kCaller ||
-          properties.workspace_owner ==
-              compute::ProviderWorkspaceOwner::kProvider) &&
-         (!properties.capture_compatible ||
-          properties.mode == compute::ProviderRuntimeMode::kSharedQueue);
-}
-
-bool same_runtime_properties(
-    const compute::ProviderRuntimeProperties &left,
-    const compute::ProviderRuntimeProperties &right) noexcept {
-  return left.mode == right.mode &&
-         left.workspace_owner == right.workspace_owner &&
-         left.blocks_host == right.blocks_host &&
-         left.uses_private_threads == right.uses_private_threads &&
-         left.supports_concurrent_invocations ==
-             right.supports_concurrent_invocations &&
-         left.capture_compatible == right.capture_compatible;
-}
-
 struct RegionExtension final {
   compute::detail::ProviderExtensionRef extension{};
   std::uint32_t provider_index = 0;
@@ -1435,7 +1411,7 @@ Status propose_region_resources(
       &proposal_episode);
   if (!proposed.ok())
     return proposed;
-  if (!valid_runtime_properties(resource_proposal.runtime)) {
+  if (!resource_proposal.runtime.valid()) {
     return Status::Internal(
         "graph region provider proposed invalid runtime properties");
   }
@@ -1491,8 +1467,7 @@ compile_region_artifact(detail::PlanState &plan,
       (!shared &&
        (table->shared_submit != nullptr || table->delegated_submit == nullptr ||
         table->endpoint == nullptr || table->can_import_endpoint == nullptr)) ||
-      !valid_runtime_properties(runtime) ||
-      !same_runtime_properties(runtime, resource_proposal.runtime) ||
+      !runtime.valid() || runtime != resource_proposal.runtime ||
       workspace.alignment == 0 ||
       (workspace.alignment & (workspace.alignment - 1)) != 0 ||
       (runtime.workspace_owner == compute::ProviderWorkspaceOwner::kCaller &&

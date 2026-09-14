@@ -10,7 +10,8 @@
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
 整体复核还接受了派生 shape、资源副作用域、variant 内存共享、搜索受限返回可行解及 Provider replay
-成本分类；这些目前是[架构合同](../architecture/graph-design.md)，不是本页 API 已支持的能力。
+成本合同；除下述已能读取的 replay 分类事实外，其余仍是[架构合同](../architecture/graph-design.md)，
+不是本页 API 已支持的能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -261,11 +262,16 @@ multi-stream capture。
 - operation fallback、provider region 和真实 copy step；
 - shared/delegated segment、dependency、为 workspace budget 新增的 serialization edge、potential
   synchronization 和 concurrent-invocation 能力；
-- provider/version、dispatch、workspace、persistent/packed/borrowed bytes 与 blocking/threading fact。
+- provider/version、dispatch、workspace、persistent/packed/borrowed bytes、blocking/threading 与 replay 类别。
 
 `persistent_bytes == nullopt` 表示 provider 无法报告，不是零。`delegated_segment_count()` 是 provider-owned
 island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDependent` 也不是已经发生 host wait；
 具体 Queue/provider endpoint 固定后的真实路线只看 `ReplayReport`。
+
+Provider operation/region 的 `step(...)->runtime.replay_class` 保留 Compute 声明的 prepared/managed/unknown
+事实（选型见 [Compute](compute.md)）。它不从 region 大小、shared/delegated 或 capture 反推；unknown
+不能视为 prepared。当前能报告并验证 proposal/artifact 一致性，自动 prepared-only 候选筛选仍待实现。
+metadata-only view 和 Graph copy step 不是 Provider artifact，不用这个字段替代各自的执行/后端成本合同。
 
 `CompileStepReport::node_count` 是该 step 覆盖的逻辑节点数量；`node_begin` 是最小 ordinal，不总是一个
 连续 range 的起点。只有 `nodes_contiguous` 为真时才能按 begin/count 展开；通用代码使用

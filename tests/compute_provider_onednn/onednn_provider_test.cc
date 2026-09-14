@@ -297,6 +297,8 @@ TEST(OneDnnProvider, PreparesAndRunsRowMajorFloat32MatMul) {
                              right_description, output_description)
           .value();
   EXPECT_EQ(prepared.provider().id, hyle::compute::onednn::kProviderId);
+  EXPECT_EQ(prepared.runtime_properties().replay_class,
+            hyle::compute::ProviderReplayClass::kPrepared);
 
   const auto requirement = prepared.workspace_requirement();
   Buffer workspace;

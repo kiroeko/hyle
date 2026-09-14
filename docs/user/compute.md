@@ -41,7 +41,7 @@ sampling 和 serving 留在推理引擎。
 | 完成边界 | `Queue::reserve_completions` / `Completion` | direct submit 或一个 Graph Queue segment 只产生一个 prefix Completion；销毁 pending handle 不等待 |
 | provider 选择 | `Context::create(device, Provider)` / `ContextOptions::providers` | 显式且有序；只有 `Unimplemented` 才尝试下一项，不存在隐式 fallback |
 | 精确资源 prepare | `OperationResourceBindings` / TensorView overload | provider 先报告要求，再对 input/output/workspace 的 exact `MemoryResourceRef` 冷验证；submit 不重新选资源或隐藏 copy |
-| provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
+| provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、replay 成本类别、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
 公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
@@ -290,6 +290,18 @@ auto device_prepared = prepare(context, RmsNorm{.epsilon = 1.0e-5F},
 invocation 总能提交到调用方 Queue。`kDelegated` artifact 只由 Graph 的内部精确路线创建并作为完整 island
 提交；Compute 不会把一个无法 direct submit 的对象交给普通用户。caller-owned workspace 使用 prepare 时
 固定的 resource；provider-owned workspace 则拒绝调用方传入 BufferView。
+
+`runtime_properties().replay_class` 独立说明 Provider 成功重放的成本合同：
+
+- `ProviderReplayClass::kPrepared`：已经准备命令，不在 Provider replay 内推 shape、建图、分配 heap、JIT
+  或打包常量。当前 Native 与 oneDNN 路线显式声明这一类别。
+- `kManaged`：已编译程序仍可能实例化执行 metadata/array、做已声明的内部 cache/shape 工作；这些成本
+  必须算入完整调用，不得隐含新编译、copy/sync 或改变已选路线。
+- `kUnknown`：未声明，**不是零成本**。`valid()` 只检查字段是否合法，不证明成本已资格化。
+
+分类不能从 shared/delegated 或 capture flag 推断。调用方自带 executor/callback 的内部开销、失败时
+Status 诊断分配仍由各自合同负责。需要严格路线时，可在准备后、提交前检查该字段；Graph 的自动
+prepared-only 冷筛选尚未接入，不能把分类字段当成已经存在的筛选开关。
 
 图编译器或手工 workspace planner 可在冷路径调用
 `PreparedOperation::alias_support(output_index, input_index)`。公共 operation traits 只是语义允许的上界；

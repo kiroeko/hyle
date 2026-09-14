@@ -273,8 +273,9 @@ peer 使用了共享池就推断 HYLE 的并发复用已经正确。
 
 ### 实施边界
 
-本次仅更新 architecture、当前说明和任务入口，registry 的状态与 candidate 不变，也不修改公共治理或
-构建工具。当前 Compute v8、Graph v9、ComputeOps v2 的有限卡不能自动扩大为全部 A1--A6；下一步在
+本节记录架构文档提交 `401d2969`，不是后续产品施工的当前状态。本次仅更新 architecture、说明和任务
+入口，registry 的状态与 candidate 不变，也不修改公共治理或构建工具。当时 Compute v8、Graph v9、
+ComputeOps v2 的有限卡不能自动扩大为全部 A1--A6；后续在
 现有 `AUDITED` 阶段绑定新卡和本次架构基线，保留已经完成的事实并固定新增 public API/有限 FIX，再写
 这些新合同的产品代码。Native/oneDNN 只迁移实际受影响的 SPI；已 CLOSED CPU/CUDA backend 没有新缺陷
 不重开。不给六个决策各造一个 factor，也不重新计时未变化的产品候选。
@@ -284,6 +285,10 @@ peer 使用了共享池就推断 HYLE 的并发复用已经正确。
 
 本次维护验证：`check-module-closure.py`、`check-docs.py` 与 `git diff --check` 均通过。未运行 C++ 测试、
 sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改变。
+
+后续实际实施已绑定 [Compute v9](compute-v9-shape-replay-substrate.md) 与
+[Graph v10](graph-v10-reviewed-foundation-contracts.md)；具体进展、未验证项和剩余 FIX 只在这些活动卡
+记录，组件状态仍以 registry 为准，不把本节文档验证当成产品关闭。
 
 ## 当前 Compute + Graph goal 的重排
 

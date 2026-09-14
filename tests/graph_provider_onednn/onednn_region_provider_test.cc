@@ -388,6 +388,8 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
   EXPECT_TRUE(step->runtime.blocks_host);
   EXPECT_FALSE(step->runtime.uses_private_threads);
   EXPECT_TRUE(step->runtime.supports_concurrent_invocations);
+  EXPECT_EQ(step->runtime.replay_class,
+            hyle::compute::ProviderReplayClass::kPrepared);
   EXPECT_GT(step->workspace.size, 2 * kRows * kHidden * sizeof(float));
   EXPECT_EQ(step->workspace.alignment, 64U);
 

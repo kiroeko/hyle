@@ -56,3 +56,13 @@ G100 的首步仅迁移已有 runtime facts：`ProviderReplayClass` 为 unknown/
 无新外部依赖/FFI；Provider 接入只复用已有因子，版本事实不按名称猜测。能力与易用性由四引擎的真实
 旅程和 exact 反偏置约束；正确性/性能/三交付需按上述具体反例实证，不能以代码量、已编译或历史通过代替。
 已有 AUDITED 轮按接受的架构基线绑定本后继有限卡；当前仍 `AUDITED`，尚未形成新的 Candidate/PASS。
+
+## 2026-09-14 G100 首步
+
+Graph 已复用 Compute `ProviderRuntimeProperties::valid()`/equality，region proposal 与 artifact 的 replay
+class 变化会报错并销毁制品；CompileStepReport 原样传播 unknown/prepared/managed。region extension
+版本为 6；实际 oneDNN MLP 声明 prepared，不从 shared ownership 推断。反例与 Windows shared/static
+及 oneDNN 回归见 [Compute C91 检查点](compute-v9-shape-replay-substrate.md#2026-09-14-c91-成本分类检查点)。
+
+G100 的 prepared-only 自动筛选和 managed 预算尚未实施，其余 G101--G107 未因这次元数据迁移自动
+完成。仍为 `AUDITED`；未运行的 CUDA/跨平台/sanitizer/installed/P1 格不得记为 PASS。

@@ -30,9 +30,9 @@
 | C93 | v8 stable candidate/profile identity 未完成；FIX 保留完整 provider/build/device/domain/boundary 身份 | unknown 与 exact zero 分离；无证据不提供神奇 ns，direct 不读 profile |
 | C94 | KEEP v8 事务化 outcome；迁移三个 Provider 和 Graph 直接调用 | rollback/版本/decline 回归；仅冷路径改变，无 kernel、线程或 Queue 热路径改变 |
 
-独立 ranges/equality 是 C90 的子集，不是 bounded Graph 最终能力。当前工作区的未完成草稿只可经本卡
-修改、验证，不能因草稿有 upper-point 描述就签发整个 domain proof。C92 的派生域不能伪装成彼此独立的
-输出 symbol；没有声明支持的 Provider 仍 exact-only。
+独立 ranges/equality 是 C90 的子集，不是 bounded Graph 最终能力。不能因 C90 有 upper-point 描述就
+签发整个 domain proof。C92 的派生域不能伪装成彼此独立的输出 symbol；没有声明支持的 Provider 仍
+exact-only。
 
 ### API / usability
 
@@ -91,3 +91,27 @@ strided/opaque 原样保留、caller scratch 和版本失配后的逆序回收�
 C91、C92、C93 仍待实现，Graph 尚未把 bounded domain 接入实际编译/绑定；C90 substrate 不等于 A2
 完成。下一步仍是本卡的 replay facts、有限派生 shape 与身份合同，然后按总任务接 Graph/真实 Provider。
 组件保持 `AUDITED`，没有签发基础框架完成或任何新性能胜利。
+
+## 2026-09-14 C91 成本分类检查点
+
+`ProviderReplayClass`、默认 unknown 的 `replay_class`、共同 `valid()`/equality 已实现；Compute 与 Graph
+删除各自复制的属性字段校验/比较。Native、oneDNN direct、oneDNN MLP 的既有成功 replay 声明 prepared；
+原 kernel/Queue/Completion/线程策略和 direct Provider 顺序未改变。私有 Compute 表升级至 3、Graph
+region extension 升级至 6，不保留旧布局适配分支。
+
+反例验证三类成本均可如实传播；proposal/artifact 类别变化、非法 proposal、非法 artifact 都在接受工作前
+失败，已构造 artifact 正确回收。unknown 不被 shared/delegated/capture flag 升级为 prepared，Graph report
+保留原值。这个元数据实现不代表 managed Provider 已资格化，也不代表 prepared-only 筛选已经实现。
+
+Windows Release shared/static 定向 9/9 各通过（各 217 个单元用例及四组逐头）；oneDNN-enabled shared
+的 direct/composition/Graph/region/逐头 8/8 通过。沿用上一检查点三个 session-owned build，最大并行度 2。
+P0：固定大小 value 增加一个 enum，校验/比较保持 `O(1)`；分类只在冷准备与诊断使用，warm 路线不增加
+策略查询、循环、分配或锁。没有新计时结论，没有运行 P1 或不受影响的全库测试。
+
+`validation-select.py plan --base 610a219f57e613ac6f1aaf79b337742122e2569f --candidate WORKTREE` 的 owner
+检查为 READY；它也正确选出 CUDA 和安装交付的影响半径，本检查点未执行这些格，连同三平台/sanitizer
+保留到完整候选，不能以 Windows source-tree 测试代替。closure/docs/diff 检查通过；用户指南已区分当前
+分类 API、调用方 executor 自有成本和未完成的政策筛选。
+
+C90/C91 与 C94 的当前直接迁移已实现，C92/C93 仍未完成；状态继续 `AUDITED`。下一项为有限派生
+shape program 的表示审计与实现，再把完整域传入真实 Graph/Provider，不扩充算子目录。

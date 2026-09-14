@@ -245,6 +245,7 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 constexpr ProviderRuntimeProperties kRuntimeProperties{
     .mode = ProviderRuntimeMode::kSharedQueue,
     .workspace_owner = ProviderWorkspaceOwner::kCaller,
+    .replay_class = ProviderReplayClass::kPrepared,
     .blocks_host = true,
     .uses_private_threads = false,
     .supports_concurrent_invocations = true,

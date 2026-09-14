@@ -19,7 +19,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 2;
+inline constexpr std::uint32_t kProviderContractVersion = 3;
 
 struct ProviderOperationRequest final {
   Operation operation{};

@@ -201,6 +201,8 @@ TEST(PreparedOperation, ExposesColdRouteAndShapeDiagnostics) {
   EXPECT_EQ(prepared.output_description().value(), description);
   EXPECT_EQ(hyle::compute::operation_name(prepared.kind()), "rms-norm");
   EXPECT_EQ(prepared.provider().name, "hyle-native");
+  EXPECT_EQ(prepared.runtime_properties().replay_class,
+            hyle::compute::ProviderReplayClass::kPrepared);
 
   auto bad_input = prepared.input_description(1);
   ASSERT_FALSE(bad_input.has_value());

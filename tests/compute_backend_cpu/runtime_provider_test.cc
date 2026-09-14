@@ -159,6 +159,10 @@ struct AsyncOperationProbe final {
   hyle::compute::detail::ProviderShapeRange observed_shape_range{};
   hyle::compute::detail::ProviderShapeCoverage shape_coverage =
       hyle::compute::detail::ProviderShapeCoverage::kExactPoint;
+  hyle::compute::ProviderReplayClass proposed_replay =
+      hyle::compute::ProviderReplayClass::kUnknown;
+  hyle::compute::ProviderReplayClass prepared_replay =
+      hyle::compute::ProviderReplayClass::kUnknown;
 };
 
 hyle::Status create_async_context(const hyle::compute::Provider &provider,
@@ -286,6 +290,7 @@ hyle::Status propose_async_operation(
       .runtime = hyle::compute::ProviderRuntimeProperties{
           .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+          .replay_class = probe.proposed_replay,
           .blocks_host = false,
           .uses_private_threads = false,
           .supports_concurrent_invocations = true,
@@ -314,6 +319,7 @@ hyle::compute::detail::ProviderPrepareOutcome prepare_async_operation(
       .runtime = hyle::compute::ProviderRuntimeProperties{
           .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+          .replay_class = probe.prepared_replay,
           .blocks_host = false,
           .uses_private_threads = false,
           .supports_concurrent_invocations = true,
@@ -1187,6 +1193,48 @@ TEST(RuntimeProviders,
   auto unowned = attempt();
   ASSERT_FALSE(unowned.has_value());
   EXPECT_TRUE(unowned.error().IsInternal());
+}
+
+TEST(RuntimeProviders, ReplayCostIsPreservedAndCannotChangeDuringPreparation) {
+  using namespace hyle::compute;
+  AsyncOperationProbe probe;
+  auto context = Context::create(cpu::device(), make_async_provider(probe)).value();
+  const std::array<std::int64_t, 1> shape{8};
+  const auto description = TensorDesc::dense(DataType::kFloat32, shape).value();
+  const auto make_prepared = [&]() {
+    return prepare(context, Unary{UnaryKind::kNeg}, description);
+  };
+  constexpr std::array classes{ProviderReplayClass::kUnknown,
+                               ProviderReplayClass::kPrepared,
+                               ProviderReplayClass::kManaged};
+  for (auto replay_class : classes) {
+    probe.proposed_replay = probe.prepared_replay = replay_class;
+    auto prepared = make_prepared();
+    ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+    EXPECT_EQ(prepared->runtime_properties().replay_class, replay_class);
+  }
+  EXPECT_EQ(probe.prepare_count, 3u);
+  EXPECT_EQ(probe.prepared_destroy_count, 3u);
+
+  probe.proposed_replay = ProviderReplayClass::kPrepared;
+  probe.prepared_replay = ProviderReplayClass::kManaged;
+  auto changed = make_prepared();
+  ASSERT_FALSE(changed.has_value());
+  EXPECT_TRUE(changed.error().IsInternal());
+  EXPECT_EQ(probe.prepared_destroy_count, 4u);
+
+  probe.prepared_replay = static_cast<ProviderReplayClass>(255);
+  auto invalid_artifact = make_prepared();
+  ASSERT_FALSE(invalid_artifact.has_value());
+  EXPECT_TRUE(invalid_artifact.error().IsInternal());
+  EXPECT_EQ(probe.prepared_destroy_count, 5u);
+  probe.proposed_replay = static_cast<ProviderReplayClass>(255);
+  auto invalid_proposal = make_prepared();
+  ASSERT_FALSE(invalid_proposal.has_value());
+  EXPECT_TRUE(invalid_proposal.error().IsInternal());
+  EXPECT_EQ(probe.prepare_count, 5u);
+  EXPECT_EQ(probe.prepared_destroy_count, 5u);
+  EXPECT_EQ(probe.submit_count, 0u);
 }
 
 TEST(RuntimeProviders, DirectPreparationRetriesOnlyUnsupportedDeclines) {

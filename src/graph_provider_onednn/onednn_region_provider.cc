@@ -673,6 +673,7 @@ const ProviderRegionPreparedVTable kPreparedVTable{
 constexpr compute::ProviderRuntimeProperties kRuntimeProperties{
     .mode = compute::ProviderRuntimeMode::kSharedQueue,
     .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+    .replay_class = compute::ProviderReplayClass::kPrepared,
     .blocks_host = true,
     .uses_private_threads = false,
     .supports_concurrent_invocations = true,

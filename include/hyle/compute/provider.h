@@ -44,15 +44,44 @@ enum class ProviderWorkspaceOwner : std::uint8_t {
   kProvider,
 };
 
+// The provider's successful replay cost, independent of runtime ownership.
+// Caller-supplied executors/callbacks and failure diagnostics retain their own
+// cost contracts. Neither a provider name nor capture compatibility proves this.
+enum class ProviderReplayClass : std::uint8_t {
+  kUnknown = 0,
+  // Already-prepared commands: no graph/shape inference, heap allocation, JIT,
+  // tactic search or constant packing in the provider's successful replay.
+  kPrepared,
+  // A precompiled program may instantiate execution metadata/arrays and do
+  // declared internal cache/shape work. It still must not JIT/search/repack or
+  // hide copy/sync; all internal costs belong in the full replay boundary.
+  kManaged,
+};
+
 // Cold-path facts that remain true for the complete lifetime of one prepared
 // artifact. They are diagnostic/planning data, not a runtime policy oracle.
 struct ProviderRuntimeProperties final {
   ProviderRuntimeMode mode = ProviderRuntimeMode::kSharedQueue;
   ProviderWorkspaceOwner workspace_owner = ProviderWorkspaceOwner::kCaller;
+  ProviderReplayClass replay_class = ProviderReplayClass::kUnknown;
   bool blocks_host = false;
   bool uses_private_threads = false;
   bool supports_concurrent_invocations = true;
   bool capture_compatible = false;
+
+  constexpr bool valid() const noexcept {
+    return (mode == ProviderRuntimeMode::kSharedQueue ||
+            mode == ProviderRuntimeMode::kDelegated) &&
+           (workspace_owner == ProviderWorkspaceOwner::kCaller ||
+            workspace_owner == ProviderWorkspaceOwner::kProvider) &&
+           (replay_class == ProviderReplayClass::kUnknown ||
+            replay_class == ProviderReplayClass::kPrepared ||
+            replay_class == ProviderReplayClass::kManaged) &&
+           (!capture_compatible || mode == ProviderRuntimeMode::kSharedQueue);
+  }
+  friend constexpr bool operator==(const ProviderRuntimeProperties &,
+                                   const ProviderRuntimeProperties &) noexcept =
+      default;
 };
 
 // Stable identity for an optional provider-owned capability. The version is

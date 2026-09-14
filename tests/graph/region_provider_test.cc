@@ -125,6 +125,7 @@ struct RegionProbe final {
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
+  std::optional<hyle::compute::ProviderReplayClass> proposed_replay_override{};
   NodeId foreign_node{};
   std::uint32_t compiled_begin = (std::numeric_limits<std::uint32_t>::max)();
   std::uint32_t compiled_count = 0;
@@ -628,6 +629,8 @@ Status propose_region_resources(
           .exact_resource = probe.region_workspace_resource,
       },
   };
+  if (probe.proposed_replay_override)
+    proposal->runtime.replay_class = *probe.proposed_replay_override;
   return Status::Ok();
 }
 
@@ -1324,6 +1327,52 @@ TEST(GraphRegions, ExecutesNonMaterializingExternalEffectSteps) {
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
   EXPECT_EQ(probe.effect_create_count, 2u);
   EXPECT_EQ(probe.effect_submit_count, 2u);
+}
+
+TEST(GraphRegions, ReplayCostFactsSurviveRegionCompilation) {
+  using hyle::compute::ProviderReplayClass;
+  constexpr std::array classes{ProviderReplayClass::kUnknown,
+                               ProviderReplayClass::kPrepared,
+                               ProviderReplayClass::kManaged};
+  const NegationGraph logical = make_negations(2);
+  for (auto replay_class : classes) {
+    RegionProbe probe;
+    probe.artifact_properties.runtime.replay_class = replay_class;
+    Context context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context);
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    ASSERT_EQ(compiled->report.region_count(), 1u);
+    EXPECT_EQ(compiled->report.step(0)->runtime.replay_class, replay_class);
+  }
+}
+
+TEST(GraphRegions, RejectsInvalidOrChangedReplayCostBeforeWorkAcceptance) {
+  using hyle::compute::ProviderReplayClass;
+  const NegationGraph logical = make_negations(2);
+  RegionProbe probe;
+  probe.artifact_properties.runtime.replay_class = ProviderReplayClass::kManaged;
+  probe.proposed_replay_override = static_cast<ProviderReplayClass>(255);
+  Context context = make_context(probe);
+  auto invalid_proposal = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(invalid_proposal.has_value());
+  EXPECT_TRUE(invalid_proposal.error().IsInternal());
+  EXPECT_EQ(probe.compile_count, 0u);
+
+  probe.proposed_replay_override = ProviderReplayClass::kPrepared;
+  auto changed = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(changed.has_value());
+  EXPECT_TRUE(changed.error().IsInternal());
+  EXPECT_EQ(probe.compile_count, 1u);
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+
+  probe.artifact_properties.runtime.replay_class =
+      static_cast<ProviderReplayClass>(255);
+  auto invalid_artifact = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(invalid_artifact.has_value());
+  EXPECT_TRUE(invalid_artifact.error().IsInternal());
+  EXPECT_EQ(probe.compile_count, 2u);
+  EXPECT_EQ(probe.destroy_prepared_count, 2u);
+  EXPECT_EQ(probe.submit_count, 0u);
 }
 
 TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
