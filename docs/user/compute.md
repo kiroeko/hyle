@@ -397,6 +397,9 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   caller tensor、workspace 或 Queue 的借用合同。
 - `StorageFormatId` 是跨 source/static/shared 稳定的数值 identity，不是 Native FFI 承诺。自定义 provider
   应以自己的 typed factory 统一发布 identity；同一 identity 不得在升级后改变物理解释。
+- typed custom `Operation` 的 `OperationId` 同样标识完整 schema/version 和 inline descriptor layout；改变字段、
+  大小或语义必须换 ID。`custom_id()` 可作冷路径分派/诊断，`custom_as<T>()` 以该 ID 和精确 descriptor
+  字节数校验，因此 producer 与 consumer 可以位于不同 source/static/shared factor；不要复用 ID 模拟兼容。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output

@@ -7,6 +7,7 @@
 #include <span>
 #include <string_view>
 
+#include "custom_operation_fixture.h"
 #include "hyle/compute/operation.h"
 
 namespace {
@@ -276,6 +277,46 @@ struct CustomIdentity final {
   }
 };
 
+struct EquivalentCustomIdentity final {
+  static constexpr OperationId operation_id = CustomIdentity::operation_id;
+  static constexpr std::string_view operation_name = "test-identity";
+
+  std::uint32_t tag = 0;
+
+  OperationTraits operation_traits() const noexcept { return {}; }
+  hyle::Status infer_output_descriptions(
+      std::span<const TensorDesc>, std::span<TensorDesc>) const noexcept {
+    return hyle::Status::Ok();
+  }
+};
+
+struct WrongSizeCustomIdentity final {
+  static constexpr OperationId operation_id = CustomIdentity::operation_id;
+  static constexpr std::string_view operation_name = "test-identity";
+
+  std::uint64_t tag = 0;
+
+  OperationTraits operation_traits() const noexcept { return {}; }
+  hyle::Status infer_output_descriptions(
+      std::span<const TensorDesc>, std::span<TensorDesc>) const noexcept {
+    return hyle::Status::Ok();
+  }
+};
+
+struct SharedConsumerIdentity final {
+  static constexpr OperationId operation_id{0x48594c4554455354ULL,
+                                             0x435553544f4d0001ULL};
+  static constexpr std::string_view operation_name = "shared-test-identity";
+
+  std::uint32_t tag = 0;
+
+  OperationTraits operation_traits() const noexcept { return {}; }
+  hyle::Status infer_output_descriptions(
+      std::span<const TensorDesc>, std::span<TensorDesc>) const noexcept {
+    return hyle::Status::Ok();
+  }
+};
+
 TEST(OperationCustom, UsesInlineTypedDescriptorWithoutGlobalRegistry) {
   const Operation operation = Operation::custom(CustomIdentity{.tag = 7});
   EXPECT_EQ(operation.kind(), OperationKind::kCustom);
@@ -283,10 +324,33 @@ TEST(OperationCustom, UsesInlineTypedDescriptorWithoutGlobalRegistry) {
   const auto descriptor = operation.custom_as<CustomIdentity>();
   ASSERT_TRUE(descriptor.has_value());
   EXPECT_EQ(descriptor->tag, 7u);
+  ASSERT_TRUE(operation.custom_id().has_value());
+  EXPECT_EQ(*operation.custom_id(), CustomIdentity::operation_id);
+
+  const auto equivalent = operation.custom_as<EquivalentCustomIdentity>();
+  ASSERT_TRUE(equivalent.has_value());
+  EXPECT_EQ(equivalent->tag, 7u);
+  EXPECT_FALSE(operation.custom_as<WrongSizeCustomIdentity>().has_value());
+  EXPECT_FALSE(Operation(Unary{}).custom_id().has_value());
 
   const TensorDesc input = tensor(DataType::kUInt8, 19);
   EXPECT_EQ(infer_one(operation, std::array{input}), input);
 }
+
+#if !defined(HYLE_STATIC)
+TEST(OperationCustom, DecodesSchemaIdentityAcrossSharedFactorBoundary) {
+  const Operation operation =
+      hyle::compute::test::make_shared_custom_operation(17);
+  ASSERT_EQ(operation.custom_id(), SharedConsumerIdentity::operation_id);
+  const auto descriptor = operation.custom_as<SharedConsumerIdentity>();
+  ASSERT_TRUE(descriptor.has_value());
+  EXPECT_EQ(descriptor->tag, 17u);
+  EXPECT_EQ(operation_name(operation), "shared-test-identity");
+
+  const TensorDesc input = tensor(DataType::kUInt8, 23);
+  EXPECT_EQ(infer_one(operation, std::array{input}), input);
+}
+#endif
 
 TEST(OperationValidation, RequiresExactInputAndOutputSpans) {
   const Operation operation(Binary{});

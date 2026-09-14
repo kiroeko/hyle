@@ -46,5 +46,15 @@ version 与 descriptor layout；改变 layout 必须换 ID。payload 最多 64 b
 
 1. 无第三方依赖；2. 缺口来自真实跨 factor journey；3. 复用 Core/Error；4. P0 O(1)、零分配；
 5. Native FFI 不适用；6. 三交付是本轮主 gate；7. API 保持 typed、无需 registry。
-当前为 `AUDITED`：只授权 O20--O22，产品代码尚未修改。
+当前为 `AUDITED`：只授权 O20--O22。
 
+## Implementation checkpoint
+
+- `CustomOperationValue` 保存 schema-version ID、原 producer vtable 与 descriptor byte size；`custom_as<T>()`
+  只用 ID+size 判断可解码性，原 vtable 继续执行 producer 的 name/traits/infer，不建立 registry；
+- 新 `custom_id()` 只对 custom operation 返回 identity，内建 family 继续用 `OperationKind`，避免制造一套
+  重复且易漂移的 builtin ID 表；
+- Windows/MSVC 19.50 的全新独占 shared factor 构建中，producer DLL 使用私有 descriptor 类型构造，测试
+  executable 用同 schema/不同 C++ 类型成功解码并调用 producer infer；错误 size 明确拒绝；
+- 同机全新 static factor 构建与逐头测试也通过。两种形状均只选择 `compute_ops` factor；未运行的平台、
+  sanitizer 和完整 installed/source consumer 仍保持未证明，不提前进入 Candidate。

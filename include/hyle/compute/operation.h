@@ -354,6 +354,9 @@ struct OperationId final {
   std::uint64_t namespace_id = 0;
   std::uint64_t operation_id = 0;
 
+  // For a custom operation this identity names the complete schema version,
+  // including the inline descriptor layout. Reusing an ID after changing the
+  // descriptor or its semantics is a contract violation.
   constexpr bool valid() const noexcept {
     return namespace_id != 0 || operation_id != 0;
   }
@@ -374,6 +377,7 @@ struct CustomOperationVTable final {
 struct CustomOperationValue final {
   OperationId id{};
   const CustomOperationVTable *vtable = nullptr;
+  std::uint8_t descriptor_size = 0;
   alignas(std::max_align_t)
       std::array<std::byte, kCustomOperationInlineBytes> descriptor{};
 };
@@ -456,6 +460,7 @@ public:
     detail::CustomOperationValue value;
     value.id = id;
     value.vtable = &detail::CustomOperationModel<Descriptor>::vtable;
+    value.descriptor_size = static_cast<std::uint8_t>(sizeof(Descriptor));
     std::memcpy(value.descriptor.data(), &descriptor, sizeof(descriptor));
     return Operation(value);
   }
@@ -468,6 +473,12 @@ public:
     return static_cast<OperationKind>(value_.index());
   }
 
+  constexpr std::optional<OperationId> custom_id() const noexcept {
+    const auto *value = std::get_if<detail::CustomOperationValue>(&value_);
+    return value != nullptr ? std::optional<OperationId>(value->id)
+                            : std::nullopt;
+  }
+
   template <class Descriptor>
   constexpr const Descriptor *get_if() const noexcept {
     return std::get_if<Descriptor>(&value_);
@@ -476,8 +487,11 @@ public:
   template <detail::InlineCustomOperationDescriptor Descriptor>
   std::optional<Descriptor> custom_as() const noexcept {
     const auto *value = std::get_if<detail::CustomOperationValue>(&value_);
-    if (value == nullptr ||
-        value->vtable != &detail::CustomOperationModel<Descriptor>::vtable) {
+    // A template-static vtable can have a different address in another shared
+    // factor. OperationId is the schema/version identity; the exact byte size
+    // catches accidental stale descriptor declarations before decoding.
+    if (value == nullptr || value->id != Descriptor::operation_id ||
+        value->descriptor_size != sizeof(Descriptor)) {
       return std::nullopt;
     }
     return detail::load_custom_descriptor<Descriptor>(value->descriptor.data());
