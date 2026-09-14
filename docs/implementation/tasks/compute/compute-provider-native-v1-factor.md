@@ -17,7 +17,8 @@
   precision/workspace/capability，reference 与 optimized route 必须可差分；
 - non-goals：拥有 Tensor/Operation schema、backend context/queue、oneDNN/ggml、GPU kernels、模型/KV/
   sampling/serving、为 benchmark 特设 API 或未经证据的微型 HYLE route；
-- 直接依赖 / 消费者：候选公开依赖 Compute runtime，私有依赖 `compute_ops`、Math、Mem、Platform 与 SIMD；
+- 直接依赖 / 消费者：候选公开依赖 Compute runtime，私有依赖 `compute_ops`、Math、Mem 与 SIMD；Platform
+  是 SIMD 的公开依赖，不重复登记为本 factor 的直接边；
   直接消费者为 direct CPU Compute、Graph fallback 和 provider qualification；
 - 性能：`P0` 冻结每项复杂度、allocation/dispatch/copy/ISA 账单；只有真实高权重 op 进入 `P1`，与成熟
   peer 比较同 dtype/layout/threading/output/completion，5% 非劣门；reference 正确性 route 不冒充 SOTA；
@@ -66,7 +67,7 @@ AUDITED 前不移动或增加 native kernel 产品代码。
   materialize 完整 attention matrix 再把内存成本藏起来。TopK 复用 SIMD selection 时保持冻结 tie/index
   语义，否则走 reference。
 
-公开依赖冻结为 `compute` + `compute_backend_cpu`；私有依赖 `compute_ops`、Math、Platform、SIMD。
+公开依赖冻结为 `compute` + `compute_backend_cpu`；私有依赖 `compute_ops`、Math、Mem、SIMD。
 `native::provider()` 是小型无 owner 配置值；`cpu::create_context()` 只在这个聚合 factor 中出现，因此 CPU
 backend 不反向依赖算子 provider。oneDNN fallback 示例必须显式传 `{onednn, native}`，顺序在 Context
 create 后固定。
@@ -204,7 +205,10 @@ RoPE vector blocks/tail 与 strided materialization、additive/all-masked Softma
 |---|---|---|---|
 | N18 | `MatMul` schema 公开承诺 `[...,M,K] * [...,K,N]` 与 NumPy batch broadcast，Native 却在 rank 不等于 2 时直接 `Unimplemented` | 在 prepare 冷路固定 batch broadcast 索引与 dense/transposed-weight route；submit 对每个逻辑 batch 调用已有 kernel，无 metadata allocation 或 route search | rank-3/rank-4、左/右/双边 broadcast、零 batch、转置权重、overflow 与 Graph 纵切 |
 | N19 | `GatedActivation` schema 已接受 packed/separate 与 SiLU/GELU/GELU-tanh，Native 只接受 packed SiLU | 复用已冻结 SIMD activation/binary row primitives，在 prepare 固定六种 f32 route；不增加 `fast/light` API | 两种 input owner × 三种 activation、in-place/overlap 边界、tail/special-value 差分与 Graph 纵切 |
+| N20 | 中央组件图把 Platform 登记为 Native 的直接私有依赖，但产品源码没有 Platform include/call；所需 ISA facts 已由直接依赖 SIMD 的公开边带入 | 删除冗余 direct edge，保留 Math/Mem/SIMD 的真实直接边；不改变所选组件闭包或运行时代码 | exact-factor 解析、source/static/shared 链接与依赖文档一致 |
 
-`compute_ops` 的 typed schema 和 Graph 产品算法未发现需要修改；只有
-`compute_provider_native` 从 `CANDIDATE` 返回 `AUDITED`。先前已通过的跨平台、sanitizer 与交付
-回放是历史证据，新产品候选必须重跑受 N18/N19 影响的正确性、交付、红队和预声明 P1。
+首轮结论中 `compute_ops` schema/API 未发现问题，但随后 N18 的真实批量转置权重纵切发现 O18；
+该 factor 已独立返回 `AUDITED`。Graph 产品算法未发现缺陷，但其候选依赖身份也需刷新。
+`compute_provider_native` 保持 `AUDITED`，只实施 N18--N20。先前已通过的跨平台、sanitizer 与交付
+回放是历史证据，新产品候选必须重跑受 N18/N19 影响的正确性、交付、红队和预声明 P1；N20 只影响
+exact-factor 与三交付依赖闭包。

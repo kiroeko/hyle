@@ -95,3 +95,12 @@ heap algorithm 直接使用标准库；本轮不新增泛化算法或依赖。
 - Windows MSVC 19.50 Release/WERROR：`hyle_graph_test`、`hyle_graph_executable_test` 与关联 Native provider
   测试通过。候选后只补卡片已声明的跨平台、sanitizer、三交付和红队证据；发现产品问题必须退回
   `AUDITED`。
+
+## 候选依赖身份刷新（2026-09-14）
+
+Native N18 的批量 MatMul 纵切触发 `compute_ops` O18 与 Compute v7 typed façade；Graph 自身的
+IR、compile、placement、liveness、workspace 和执行算法没有发现新缺陷，但
+`ca597981` 已不再代表它当前直接依赖的 Compute/ComputeOps 产品字节。Graph 因此从
+`CANDIDATE` 返回 `AUDITED`，只允许在新依赖上回放既有 G82/G83 验收并增加一条
+batch-broadcast MatMul -> separate GELU-tanh GatedActivation 的真实多节点纵切；不借此重开
+Graph 产品算法或扩大 G82/G83。

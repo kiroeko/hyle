@@ -278,10 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/graph-v8-explicit-allocator-sort.md",
-      "candidate": "ca59798143345ef54ac8fa293d2eec799e721aa5",
-      "summary": "graph v8 CANDIDATE：三处 placement/fallback 排序改为显式 allocator 边界内的 in-place sort；33-target 选择、既有 allocation rollback 与 Windows Graph 纵切通过，待三平台、sanitizer、三交付和终局红队。"
+      "summary": "graph v8 AUDITED：G82/G83 产品算法不变；ComputeOps O18 与 Compute v7 改变直接依赖候选身份，Graph 退回后只回放既有 allocator/selection 验收及批量 MatMul→separate gated 多节点纵切，再共同签发候选。"
     },
     {
       "module": "container_concurrent",
@@ -408,7 +407,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：首候选后红队证明 19/19 family 计数掩盖了两个已冻结的常用档位缺口：rank>=2 batch-broadcast MatMul 与 separate/GELU/GELU-tanh GatedActivation。有限修正仅补这两族的 f32 Native route 及 direct/Graph 回归；不重开底层模块。"
+      "summary": "compute_provider_native v1 AUDITED：有限 N18--N20 补 rank>=2 batch-broadcast MatMul、packed/separate 三种 GatedActivation，并删除无源码消费的 Platform 重复 direct edge；真实 Math/Mem/SIMD 复用不变，不重开底层模块。"
     },
     {
       "module": "compute_sched",

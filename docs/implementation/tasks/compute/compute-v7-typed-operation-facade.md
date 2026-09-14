@@ -12,8 +12,9 @@
   可复现 C++ 用户旅程缺口，符合 v6 的“公开 runtime 合同变化”重开条件；
 - 正常任务：用户用 typed operation 和 TensorDesc 准备一个常用推理操作，让 schema 推导
   output，然后以自然 arity submit；只有真正 variadic 或动态的代码才使用通用 span 入口；
-- scope：补齐 19 family 的 typed prepare convenience，消除 RMSNorm/MatMul/Gated 早期显式
-  output 形状，补 TopK/SDPA/variadic 常用 submit convenience，迁移 HYLE 内部直接消费者；
+- scope：补齐 19 family 的 typed prepare convenience，消除 RMSNorm/Gated 冲突的早期显式
+  output 形状，为 MatMul 增加自然推导形状并保留不冲突的显式-layout 高级入口，补
+  TopK/SDPA/variadic 常用 submit convenience，迁移 HYLE 内部直接消费者；
 - non-goals：修改 Operation schema/provider SPI/Graph IR、增加算子、保留未发布旧 overload、
   Native FFI、为 benchmark 增加入口；
 - 依赖 / 消费者：只依赖已有 Core/Error/Mem/compute_ops/Compute runtime；直接消费者是
