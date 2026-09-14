@@ -2,7 +2,7 @@
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
 > [`module-status.json`](../implementation/module-status.json) 为准；node-set region 已实现，已接受但尚未实现的
-> exact + bounded/guarded shape domain、统一完整成本路由与跨 variant 常量共享/聚合预算合同见
+> exact + bounded/guarded shape domain、storage/lane 联合优化与跨 variant 常量共享/聚合预算合同见
 > [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
 > 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
@@ -10,7 +10,7 @@
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
 当前 exact specialization 已支持有限派生维度与 shape guards、具名资源副作用域，以及有限 region 发现/
-重选，以及显式常量物化后的 source release；Provider replay 分类事实也可查询。完整 bounded runtime/variants、variant 内存共享与统一完整成本选择仍是
+重选、完整候选 profile 成本匹配与受限优化，以及显式常量物化后的 source release；Provider replay 分类事实也可查询。完整 bounded runtime/variants、variant 内存共享与 storage/lane 联合优化仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
@@ -322,16 +322,19 @@ leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用�
 因此后续已知无能力/无合法 storage/copy 承载 target 时，不会先给前面的步骤做 JIT/packing。最终 prepare
 只使用已选路线，仍经 Compute 校验；不能原地换 Provider/target/storage，明确 decline 必须整图重规划。
 这可能重新准备已成功的前缀，全部计入累计预算。不承诺提前证明任意 Provider 的真实 prepare 必定成功：
-精确 workspace/persistent、lane/内存和实际 Queue transfer 仍需后续校验，完整成本搜索尚未完成。
+精确 workspace/persistent、lane/内存和实际 Queue transfer 仍需后续校验。只有完整可行计划才参与下述 profile 成本比较。
 最终 lane/schedule/workspace 校验也在同一冷重选事务中：已准备路线缺可用 lane，或完整 workspace
 无法满足显式 storage 预算/允许的有界序列化时，释放本次制品及其调度/别名/内存决定，再尝试下一组合。
 这不永久排除组合中的每个 Provider；所有路线都无解仍失败。真实 OOM、Provider/alias 合同错误不会被
 按 Status 名称猜成“可以换路”。胜出报告不保留被拒绝路线的 delegated lane、序列化边或实现键。
-`max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
+`max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 `max_route_search_states`（默认 65,536）另行限制累计尝试的候选状态，包括重叠/已拒绝的候选；不在重选时
 归零。尚未找到可行计划就用尽，返回 ResourceExhausted。恰好用满且没有省略必需搜索不算受限。
 两者都必须非零。候选表容量、搜索工作量和真正准备次数不是同一个预算。
+启用 profile 优化且已有完整可行方案时，后续 state/prepare 耗尽可在 `kAllowLimited` 下保留它；报告分别
+置 `route_search_limit_reached` / `placement_limit_reached`。strict 政策仍拒绝，真实 OOM/Provider 错误
+不因已有方案而被忽略。未完成的 trial 不会成为 Executable。
 
 `View` 的 required 输出域会反向约束其 input 0 的物理副本：必要时先 copy 输入，再在目标域上建立零拷贝
 View。报告明确显示 copy；若 alias 根在内部副本，输出由 Invocation 持有，用 `output(value)` 取得，
@@ -379,6 +382,60 @@ const auto added_order = compiled->report.serialization_edge_count();
 
 该选项不会保证任何预算都可满足：预算小于单条不可拆 lifetime、分析规模超过内部硬界或不存在无环排序时仍
 失败。预算本来足够时不会加边，`serialization_edge_count()` 为零。
+
+## 按完整计划的性能资料选路
+
+普通用户不需要 profile：默认取配置顺序下第一个通过全部硬约束的完整计划。已有合格测量资料的部署方/
+profiler 可以提供 `CompileOptions::profile_context` 和 `profiles`，让完整 leaf/region/target 候选继续比较。
+这不是自动调优：compile 不测量、不执行用户图、不读取磁盘 cache；查表和搜索均不进入 warm submit。
+
+`CompileProfileContext` 分清两类事实：
+
+- owner 给真实 HYLE/backend/Provider build、hardware/driver/runtime、ISA/executor/placement 配置、各
+  storage class、假定的 Queue/capture/host-wait replay 配置，以及语义实例和 workload 内容/测量合同指纹。
+  `targets` / `storage_domains` 按 CompileEnvironment 顺序；`ProfileProviderBinding` 的 target/index/instance
+  必须与当前 Context 相符。不要从显示名称、版本字符串或指针猜这些值；缺事实保持零。
+- Graph 自动编码当前内建属性、拓扑/副作用、原 shape program、全部 concrete TensorDesc，以及实际
+  Provider 实现键、physical copies、target/storage/lane、segment/dependency、alias/workspace layout 和常量
+  borrow/materialize 策略。自定义 descriptor 的完整实例语义仍由 owner 的 `semantics` 覆盖，不能只填 schema ID。
+
+只有 context、不传 profiles 时，`CompileReport::profile_identity()` 导出已选计划的 key。返回 spans 借用
+报告，不借用 Context/常量；inputs 顺序是 Graph inputs 后接 Graph constants，outputs 是 published outputs。
+可以用 per-node Provider/placement 硬约束构造其它具体路线并测量。测量必须覆盖整个 Graph 的真实 terminal
+Completion，包含适用的 copy/sync/managed 成本；不能用单 kernel 时间求和。示意如下，变量中的身份与
+区间必须来自真实已资格化资料，而非照抄常数：
+
+```cpp
+auto baseline = hyle::graph::compile(
+    graph, environment, {.profile_context = &current_profile_context});
+if (!baseline) return baseline.error();
+
+// 独立 profiler 对这条完整路线取得合格的不确定区间后，登记观测。
+const hyle::compute::RouteProfile observation{
+    .identity = baseline->report.profile_identity(),
+    .replay = qualified_replay_interval,
+    .compilation = qualified_total_compilation_interval};
+// 将 observation 与其它路线的资料合并成 qualified_route_profiles。
+// 各 RouteProfile 借用的 report/key 存储必须仍存活。
+auto selected = hyle::graph::compile(
+    graph, environment, {.profile_context = &current_profile_context,
+                         .profiles = qualified_route_profiles});
+```
+
+只有第一个可行方案有完整匹配成本才继续扩搜；否则保留确定性选择，unknown 不是“无限慢”。后选方案的
+成本区间上界必须严格低于当前方案下界，且达到 `minimum_relative_improvement`，才替换当前方案；默认
+阈值为零也要求区间不重叠。重叠/失配/缺值继续保留原方案；重复匹配观测取保守包络。预计 replay 次数
+已给出时比较 `replay + 完整 compilation / expected_replays`，缺 compilation 不能参与摊销比较。
+
+`search()` 给出 `feasible_plans`、`profiled_plans`、`unprofiled_plans`、`profile_replacements` 和
+`selected_profile_cost`；这表示本次有限搜索的事实，不证明全局最优或为数据签发科学资格。最多保留一个
+已验证方案与一个 trial，二者共用唯一 canonical 常量副本；后选真实错误仍导致 compile 失败。
+只读匹配的各类拒绝原因可用 [Compute matcher](compute.md#只读性能资料的匹配) 检查。
+
+坑：改变后续 Queue topology、capture 模式、输入分布或并发负载后，原选路预测不再适用，即使执行仍然
+合法。`concurrent_invocations > 1` 会排除必须串行的 Provider 计划；当前尚无完整 Provider 确定性证明合同，
+`require_determinism=true` 明确返回 Unimplemented，而不是仅凭 profile 标签宣称确定性。
+完整 storage/lane 联合优化、bounded variants 和自动生成所有外部 build/device/custom 指纹仍未交付。
 
 ## 冷态 replay 路由
 
@@ -460,7 +517,7 @@ multi-stream capture。
 
 `step(...)->profile_key` 保留 Provider 自行声明的稳定实现键，与临时 prepare token、配置实例编号都
 不同；unknown 不会被自动补成上述编号，Graph 插入的 copy 也没有 Provider key。它是完整性能资料匹配
-所需的一项，不代表有合格计时，更不参与当前无 profile 的排序。完整 profile 输入/匹配与成本择优仍未交付。
+所需的一项，不代表有合格计时，更不参与无 profile 的排序。完整候选的用法见下一节。
 
 Provider 名称/版本文本由报告复制，释放 Context、factory 或 Executable 不会令报告悬空。
 `provider()` / `step()` 返回值中的文本 view 借用报告共享状态，不能活过最后一个报告 handle；复制/移动

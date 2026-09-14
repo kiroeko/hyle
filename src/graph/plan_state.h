@@ -18,6 +18,7 @@
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
+#include "route_profile.h"
 
 namespace hyle::graph::detail {
 
@@ -743,7 +744,7 @@ struct ReportState final : util::RefCounted<ReportState> {
         constants(allocator_value), step_inputs(allocator_value),
         step_outputs(allocator_value), step_nodes(allocator_value),
         step_node_begins(allocator_value),
-        segment_dependencies(allocator_value) {}
+        segment_dependencies(allocator_value), profile(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -767,6 +768,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   NodeIds step_nodes;
   ValueOrdinals step_node_begins;
   ValueOrdinals segment_dependencies;
+  GraphProfileState profile;
   compute::BackendId backend{};
   compute::ProviderIdentity provider{};
   std::size_t workspace_bytes = 0;
@@ -924,6 +926,9 @@ struct ExecutableAccess final {
 struct CompileReportAccess final {
   static CompileReport adopt(ReportState *state) noexcept {
     return CompileReport(state);
+  }
+  static ReportState *state(const CompileReport &report) noexcept {
+    return report.state_;
   }
 };
 

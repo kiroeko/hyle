@@ -7,6 +7,7 @@
 #include <cstring>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <new>
 #include <span>
@@ -1086,6 +1087,9 @@ Status initialize_plan_metadata(
   for (std::size_t index = 0; index < plan.node_steps.size(); ++index)
     plan.node_steps[index] = detail::kNoNode;
   plan.logical_node_count = graph.nodes.size();
+  plan.input_ids.clear();
+  plan.constant_ids.clear();
+  plan.output_ids.clear();
   for (std::uint32_t ordinal : graph.inputs) {
     if (!plan.input_ids.try_push_back(detail::value_id(graph, ordinal))) {
       return plan_allocation_failure();
@@ -1110,6 +1114,27 @@ Status initialize_plan_metadata(
          (detail::kExternalInput | detail::kExternalOutput |
           detail::kConstant)) != 0) {
       plan.external_instances[index] = static_cast<std::uint32_t>(index);
+    }
+  }
+  return Status::Ok();
+}
+
+Status initialize_plan_lanes(detail::PlanState &plan,
+                             CompileEnvironment environment) noexcept {
+  plan.lanes.clear();
+  if (environment.lanes.empty()) {
+    for (std::size_t target = 0; target < environment.targets.size();
+         ++target) {
+      if (!plan.lanes.try_push_back(detail::ExecutionLaneRecord{
+              .target = ExecutionTargetId{static_cast<std::uint32_t>(target)},
+              .role = ExecutionLaneRole::kCompute}))
+        return plan_allocation_failure();
+    }
+  } else {
+    for (const auto &lane : environment.lanes) {
+      if (!plan.lanes.try_push_back(detail::ExecutionLaneRecord{
+              .target = lane.target, .role = lane.role}))
+        return plan_allocation_failure();
     }
   }
   return Status::Ok();
@@ -1571,7 +1596,9 @@ public:
     return Status::Ok();
   }
 
-  Result<bool> next(std::size_t budget, CompileSearchReport &report) noexcept {
+  Result<bool> next(std::size_t budget, CompileSearchReport &report,
+                    bool &limited) noexcept {
+    limited = false;
     if (occupied_.empty()) {
       if (yielded_)
         return false;
@@ -1604,6 +1631,7 @@ public:
         continue;
       }
       if (report.route_search_states == budget) {
+        limited = true;
         report.route_search_limit_reached = true;
         return std::unexpected(Status::ResourceExhausted(
             "graph route search state budget is exhausted"));
@@ -1789,6 +1817,8 @@ struct PlacementAttemptOutcome final {
   std::optional<std::size_t> rejected_operation{};
   bool rejected_plan = false;
   bool no_feasible_route = false;
+  bool search_limit = false;
+  bool prepare_limit = false;
 };
 
 // Cold compile scratch. Keep the original adjacency once and sort a proposed
@@ -2558,9 +2588,10 @@ Status prepare_placed_steps_attempt(
         all_region_nodes, discovery.rejected, node_preferred));
     discovery.ready = true;
   }
-  HYLE_ASSIGN_OR_RETURN(
-      const bool has_route,
-      discovery.routes.next(options.max_route_search_states, plan.search));
+  HYLE_ASSIGN_OR_RETURN(const bool has_route,
+                        discovery.routes.next(options.max_route_search_states,
+                                              plan.search,
+                                              outcome.search_limit));
   if (!has_route) {
     outcome.no_feasible_route = true;
     return Status::Unimplemented(
@@ -3356,9 +3387,12 @@ Status prepare_placed_steps_attempt(
         step.workspace_storage.valid()
             ? plan.storage_domains[step.workspace_storage.ordinal()].resource
             : mem::MemoryResourceRef{};
-    if (placement_attempts == options.max_placement_attempts)
+    if (placement_attempts == options.max_placement_attempts) {
+      outcome.prepare_limit = true;
+      plan.search.placement_limit_reached = true;
       return Status::ResourceExhausted(
           "graph placement preparation budget is exhausted");
+    }
     ++placement_attempts;
     if (step.kind == detail::PlanStepKind::kOperation) {
       const auto *route = operation_routes[step.node_begin];
@@ -3435,14 +3469,80 @@ Status finalize_placed_steps(detail::PlanState &plan,
                              const detail::GraphState &graph,
                              bool &rejected_plan) noexcept;
 
+Result<CompileReport>
+build_report(const detail::PlanState &plan, const detail::GraphState &graph,
+             std::span<const compute::ProviderRouteKey> profile_keys,
+             const detail::GraphState &logical,
+             const CompileProfileContext *profile_context) noexcept;
+
+// One complete candidate transaction. Common Context/resource/constant owners,
+// specialization and aggregate search counters stay in plan. No Invocation
+// exists yet; moving these vectors cannot invalidate a submitted command.
+// The retained snapshot is destroyed before plan's canonical constants.
+void swap_route_state(detail::PlanState &left,
+                      detail::PlanState &right) noexcept {
+  using std::swap;
+  swap(left.lanes, right.lanes);
+  swap(left.steps, right.steps);
+  swap(left.segments, right.segments);
+  swap(left.segment_dependencies, right.segment_dependencies);
+  swap(left.serialization_edges, right.serialization_edges);
+  swap(left.step_segments, right.step_segments);
+  swap(left.terminal_segments, right.terminal_segments);
+  swap(left.completion_segments, right.completion_segments);
+  swap(left.lane_segment_counts, right.lane_segment_counts);
+  swap(left.instance_descriptions, right.instance_descriptions);
+  swap(left.instance_values, right.instance_values);
+  swap(left.instance_storage, right.instance_storage);
+  swap(left.instance_roles, right.instance_roles);
+  swap(left.external_instances, right.external_instances);
+  swap(left.external_storage, right.external_storage);
+  swap(left.node_inputs, right.node_inputs);
+  swap(left.node_outputs, right.node_outputs);
+  swap(left.step_nodes, right.step_nodes);
+  swap(left.workspace_requests, right.workspace_requests);
+  swap(left.step_workspace_requests, right.step_workspace_requests);
+  swap(left.storage_workspace_slots, right.storage_workspace_slots);
+  swap(left.workspace_resources, right.workspace_resources);
+  swap(left.workspace_storage, right.workspace_storage);
+  swap(left.node_steps, right.node_steps);
+  swap(left.value_materialized, right.value_materialized);
+  swap(left.alias_sources, right.alias_sources);
+  swap(left.alias_offsets, right.alias_offsets);
+  swap(left.binding_roles, right.binding_roles);
+  swap(left.workspace_plan, right.workspace_plan);
+  swap(left.workspace_bytes, right.workspace_bytes);
+  swap(left.workspace_backing_count, right.workspace_backing_count);
+  swap(left.region_count, right.region_count);
+  swap(left.required_queue_count, right.required_queue_count);
+  swap(left.serialization_edge_count, right.serialization_edge_count);
+  swap(left.supports_concurrent_invocations,
+       right.supports_concurrent_invocations);
+}
+
 Status prepare_placed_steps(
     detail::PlanState &plan, const Graph &published_graph,
-    const detail::GraphState &graph, CompileEnvironment environment,
-    CompileOptions options, const ProviderPolicy &provider_policy,
-    ConstantPreparation &constants,
-    std::span<compute::ProviderRouteKey> profile_keys) noexcept {
+    const detail::GraphState &graph, const detail::GraphState &logical,
+    CompileEnvironment environment, CompileOptions options,
+    const ProviderPolicy &provider_policy, ConstantPreparation &constants,
+    std::span<compute::ProviderRouteKey> profile_keys,
+    CompileReport &selected_report) noexcept {
   RegionDiscovery discovery(plan.allocator);
   const std::size_t configured_lane_count = plan.lanes.size();
+  const auto release_snapshot = [](detail::PlanState *state) noexcept {
+    detail::release(state);
+  };
+  std::unique_ptr<detail::PlanState, decltype(release_snapshot)> incumbent(
+      nullptr, release_snapshot);
+  std::optional<compute::ProfileTimingInterval> incumbent_cost;
+  bool attempted = false;
+  bool metadata_moved = false;
+  auto finish_incumbent = [&]() noexcept -> Status {
+    swap_route_state(plan, *incumbent);
+    plan.search.selected_profile_cost = incumbent_cost;
+    detail::CompileReportAccess::state(selected_report)->search = plan.search;
+    return Status::Ok();
+  };
   for (;;) {
     // No Invocation or user work exists during this transaction. Clear all
     // artifacts before calling any provider for the next construction; the
@@ -3450,7 +3550,13 @@ Status prepare_placed_steps(
     // scheduling/alias/workspace choices also belong to this one candidate.
     plan.steps.clear();
     plan.region_count = 0;
-    if (!discovery.last_rejection.ok()) {
+    if (attempted) {
+      if (metadata_moved) {
+        HYLE_RETURN_IF_ERROR(
+            initialize_plan_metadata(plan, graph, plan.descriptions));
+        HYLE_RETURN_IF_ERROR(initialize_plan_lanes(plan, environment));
+        metadata_moved = false;
+      }
       while (plan.lanes.size() > configured_lane_count)
         plan.lanes.pop_back();
       plan.serialization_edges.clear();
@@ -3461,8 +3567,16 @@ Status prepare_placed_steps(
     Status status = prepare_placed_steps_attempt(
         plan, published_graph, graph, environment, options, provider_policy,
         discovery, constants, outcome);
+    attempted = true;
     if (status.ok())
       status = finalize_placed_steps(plan, graph, outcome.rejected_plan);
+    if (status.ok() && options.profile_context != nullptr &&
+        options.profile_context->workload.concurrent_invocations > 1 &&
+        !plan.supports_concurrent_invocations) {
+      outcome.rejected_plan = true;
+      status = Status::FailedPrecondition(
+          "graph route cannot satisfy requested concurrent invocations");
+    }
     if (outcome.rejected_plan) {
       if (status.ok() || outcome.rejected_region || outcome.rejected_operation)
         return Status::Internal("graph plan rejection has conflicting outcome");
@@ -3471,6 +3585,11 @@ Status prepare_placed_steps(
       continue;
     }
     if (!outcome.rejected_region && !outcome.rejected_operation) {
+      if (incumbent &&
+          (outcome.no_feasible_route ||
+           ((outcome.search_limit || outcome.prepare_limit) &&
+            options.search_policy == CompileSearchPolicy::kAllowLimited)))
+        return finish_incumbent();
       if (outcome.no_feasible_route && !discovery.last_rejection.ok())
         return discovery.last_rejection;
       if (status.ok()) {
@@ -3484,6 +3603,49 @@ Status prepare_placed_steps(
               route,
               [&](std::uint32_t node) noexcept { profile_keys[node] = key; });
         }
+        ++plan.search.feasible_plans;
+        HYLE_ASSIGN_OR_RETURN(auto report,
+                              build_report(plan, graph, profile_keys, logical,
+                                           options.profile_context));
+        std::optional<compute::ProfileTimingInterval> cost;
+        if (options.profile_context != nullptr && !options.profiles.empty())
+          cost = compute::find_route_profile(report.profile_identity(),
+                                             options.profiles)
+                     .cost;
+        if (cost)
+          ++plan.search.profiled_plans;
+        else
+          ++plan.search.unprofiled_plans;
+        if (!incumbent) {
+          // Without a qualified baseline there is no demonstrated improvement
+          // over configured priority. Unknown is not an infinitely slow cost.
+          if (!cost) {
+            plan.search.selected_profile_cost = cost;
+            detail::CompileReportAccess::state(report)->search = plan.search;
+            selected_report = std::move(report);
+            return Status::Ok();
+          }
+          void *storage = plan.allocator.allocate(sizeof(detail::PlanState),
+                                                  alignof(detail::PlanState));
+          if (storage == nullptr)
+            return plan_allocation_failure();
+          incumbent.reset(::new (storage) detail::PlanState(plan.allocator,
+                                                            plan.generation));
+          incumbent_cost = cost;
+          selected_report = std::move(report);
+          swap_route_state(plan, *incumbent);
+          metadata_moved = true;
+        } else if (cost && cost->upper_ns <
+                               incumbent_cost->lower_ns *
+                                   (1 - options.profile_context
+                                            ->minimum_relative_improvement)) {
+          incumbent_cost = cost;
+          selected_report = std::move(report);
+          swap_route_state(plan, *incumbent);
+          metadata_moved = true;
+          ++plan.search.profile_replacements;
+        }
+        continue;
       }
       return status;
     }
@@ -4979,7 +5141,9 @@ std::size_t step_constant_count(const detail::PlanState &plan,
 
 Result<CompileReport>
 build_report(const detail::PlanState &plan, const detail::GraphState &graph,
-             std::span<const compute::ProviderRouteKey> profile_keys) noexcept {
+             std::span<const compute::ProviderRouteKey> profile_keys,
+             const detail::GraphState &logical,
+             const CompileProfileContext *profile_context) noexcept {
   using ProviderTexts =
       container::FlatHashMap<std::uint64_t, compute::ProviderIdentity,
                              container::Hash<std::uint64_t>, std::equal_to<>,
@@ -5158,10 +5322,10 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   }
 
   for (std::size_t index = 0; index < plan.instance_values.size(); ++index) {
-    const std::uint32_t logical = plan.instance_values[index];
+    const std::uint32_t logical_value = plan.instance_values[index];
     const std::uint8_t roles = plan.instance_roles[index];
     CompilePhysicalValueReport physical{
-        .value = detail::value_id(graph, logical),
+        .value = detail::value_id(graph, logical_value),
         .storage = StorageDomainId{plan.instance_storage[index]},
         .description = plan.instance_descriptions[index],
         .external_input = (roles & detail::kExternalInput) != 0,
@@ -5313,6 +5477,14 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
       }
     }
   }
+  if (profile_context != nullptr) {
+    Status status =
+        detail::build_profile_identity(*state, plan, logical, *profile_context);
+    if (!status.ok()) {
+      detail::release(state);
+      return std::unexpected(std::move(status));
+    }
+  }
   return detail::CompileReportAccess::adopt(state);
 }
 
@@ -5443,6 +5615,11 @@ compute::ProviderIdentity CompileReport::provider() const noexcept {
 
 CompileSearchReport CompileReport::search() const noexcept {
   return state_ != nullptr ? state_->search : CompileSearchReport{};
+}
+
+compute::RouteProfileIdentity CompileReport::profile_identity() const noexcept {
+  return state_ != nullptr ? state_->profile.view()
+                           : compute::RouteProfileIdentity{};
 }
 
 std::size_t CompileReport::workspace_bytes() const noexcept {
@@ -7047,6 +7224,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     }
   }
   const compute::Context &context = *environment.targets[0].context;
+  HYLE_RETURN_IF_ERROR(detail::validate_profile_context(environment, options));
   if (options.search_policy != CompileSearchPolicy::kAllowLimited &&
       options.search_policy != CompileSearchPolicy::kRequireUnexhausted) {
     return std::unexpected(
@@ -7167,27 +7345,10 @@ Result<CompiledGraph> compile(const Graph &graph,
       return std::unexpected(plan_allocation_failure());
     }
   }
-  if (environment.lanes.empty()) {
-    for (std::size_t target = 0; target < environment.targets.size();
-         ++target) {
-      if (!plan->lanes.try_push_back(detail::ExecutionLaneRecord{
-              .target = ExecutionTargetId{static_cast<std::uint32_t>(target)},
-              .role = ExecutionLaneRole::kCompute,
-          })) {
-        detail::release(plan);
-        return std::unexpected(plan_allocation_failure());
-      }
-    }
-  } else {
-    for (const ExecutionLane &lane : environment.lanes) {
-      if (!plan->lanes.try_push_back(detail::ExecutionLaneRecord{
-              .target = lane.target,
-              .role = lane.role,
-          })) {
-        detail::release(plan);
-        return std::unexpected(plan_allocation_failure());
-      }
-    }
+  Status lanes = initialize_plan_lanes(*plan, environment);
+  if (!lanes.ok()) {
+    detail::release(plan);
+    return std::unexpected(std::move(lanes));
   }
 
   container::SmallVector<compute::ProviderRouteKey, 16, mem::AllocatorRef>
@@ -7197,6 +7358,7 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(plan_allocation_failure());
   }
   ConstantPreparation constants(allocator);
+  CompileReport report;
   Status status =
       initialize_plan_metadata(*plan, *concrete,
                                std::span<const compute::TensorDesc>(
@@ -7206,21 +7368,15 @@ Result<CompiledGraph> compile(const Graph &graph,
   if (status.ok())
     status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
-    status =
-        prepare_placed_steps(*plan, *specialized, *concrete, environment,
-                             options, provider_policy, constants, profile_keys);
+    status = prepare_placed_steps(*plan, *specialized, *concrete, *logical,
+                                  environment, options, provider_policy,
+                                  constants, profile_keys, report);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));
   }
-  auto report = build_report(*plan, *concrete, profile_keys);
-  if (!report) {
-    detail::release(plan);
-    return std::unexpected(std::move(report).error());
-  }
-
   CompiledGraph result;
-  result.report = std::move(*report);
+  result.report = std::move(report);
   result.executable = detail::ExecutableAccess::adopt(plan);
   return result;
 }

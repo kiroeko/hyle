@@ -9,6 +9,7 @@
 #include "hyle/compute/device.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
+#include "hyle/compute/route_profile.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/graph.h"
@@ -111,6 +112,44 @@ struct CompileEnvironment final {
   std::span<const ExecutionTarget> targets{};
   // Empty means one implicit compute lane per target.
   std::span<const ExecutionLane> lanes{};
+};
+
+// Cold association with one actual configured Provider slot. instance is
+// checked against Context, then discarded: only build/configuration and the
+// selected provider's stable implementation key enter a persistent profile.
+struct ProfileProviderBinding final {
+  ExecutionTargetId target{};
+  std::size_t provider_index = 0;
+  compute::ProviderInstanceId instance{};
+  compute::ProfileFingerprint build{};
+  compute::ProfileFingerprint configuration{};
+};
+
+// Optional expert input from the owner of qualified measurements. Ordered
+// targets/storage_domains correspond exactly to CompileEnvironment. Backend
+// IDs and provider slots are checked; build/hardware/runtime/configuration
+// fingerprints are owner assertions, never inferred from names or pointers.
+//
+// semantics identifies complete schema/instance semantics (especially custom
+// descriptor attributes); Graph also hashes its actual builtin attributes,
+// topology and shape program. replay_configuration covers the assumed Queue
+// topology, command/capture mode, binding/resource class and host-wait policy.
+// Selection predicts only this declared workload, not a later different replay
+// setup. workload_data covers representative data AND measurement
+// qualification. All-zero facts remain unknown; nonzero hashes alone prove no
+// qualification.
+struct CompileProfileContext final {
+  compute::ProfileFingerprint hyle_build{};
+  compute::ProfileFingerprint semantics{};
+  compute::ProfileFingerprint workload_data{};
+  compute::ProfileFingerprint replay_configuration{};
+  std::span<const compute::ProfileTargetIdentity> targets{};
+  std::span<const compute::ProfileFingerprint> storage_domains{};
+  std::span<const ProfileProviderBinding> providers{};
+  compute::WorkloadIntent workload{};
+  // Finite fraction in [0,1). Zero still requires disjoint uncertainty
+  // intervals. This is a caller's economic policy, not a benchmark threshold.
+  double minimum_relative_improvement = 0;
 };
 
 enum class PlacementStrength : std::uint8_t {
@@ -410,15 +449,21 @@ struct CompileSearchReport final {
   // final lane/workspace constraints. This rejects a combination, not each
   // participating provider independently. Real errors never count as declines.
   std::size_t route_plan_rejections = 0;
+  std::size_t feasible_plans = 0;
+  std::size_t profiled_plans = 0;
+  std::size_t unprofiled_plans = 0;
+  std::size_t profile_replacements = 0;
+  std::optional<compute::ProfileTimingInterval> selected_profile_cost{};
   bool region_proposal_limit_reached = false;
   bool per_provider_proposal_limit_reached = false;
   bool region_node_limit_reached = false;
   bool operation_proposal_limit_reached = false;
   bool route_search_limit_reached = false;
+  bool placement_limit_reached = false;
 
   constexpr bool optimization_limited() const noexcept {
-    return route_search_limit_reached || operation_proposal_limit_reached ||
-           region_proposal_limit_reached ||
+    return route_search_limit_reached || placement_limit_reached ||
+           operation_proposal_limit_reached || region_proposal_limit_reached ||
            per_provider_proposal_limit_reached || region_node_limit_reached;
   }
 };
@@ -460,6 +505,12 @@ public:
   HYLE_GRAPH_API compute::BackendId backend() const noexcept;
   HYLE_GRAPH_API compute::ProviderIdentity provider() const noexcept;
   HYLE_GRAPH_API CompileSearchReport search() const noexcept;
+  // Self-contained scalar facts plus spans borrowed from this report. Empty
+  // unless compile received profile_context. The report owns no Context,
+  // constant payload or prepared artifact. Pair with qualified full-Graph
+  // timings to produce a compute::RouteProfile; never kernel-only timings.
+  HYLE_GRAPH_API compute::RouteProfileIdentity
+  profile_identity() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
@@ -652,8 +703,9 @@ struct CompileOptions final {
   std::span<const NodeProviderConstraint> node_providers{};
   WorkspaceReusePolicy workspace_reuse =
       WorkspaceReusePolicy::kExistingOrderOnly;
-  // Cumulative hard cap for selected leaf/region artifact preparation, including
-  // retry prefixes. Exhaustion before a complete feasible plan fails.
+  // Cumulative hard cap for selected leaf/region artifact preparation,
+  // including retry prefixes. Exhaustion before a complete feasible plan fails;
+  // later exhaustion may return the retained incumbent under kAllowLimited.
   std::size_t max_placement_attempts = 4096;
   RegionSelectionPolicy region_selection =
       RegionSelectionPolicy::kAllowProviderRegions;
@@ -683,6 +735,12 @@ struct CompileOptions final {
   // caller-owned executor/callback costs are not provider replay contracts.
   ProviderReplayPolicy provider_replay = ProviderReplayPolicy::kAllowAny;
   CompileSearchPolicy search_policy = CompileSearchPolicy::kAllowLimited;
+  // Borrowed only through compile(). No implicit measurement or warm lookup.
+  // Context alone exports a plan key; profiles also enable bounded cost search
+  // when the first feasible route has a qualified complete cost. Unknown or
+  // overlapping costs never displace the deterministic incumbent.
+  const CompileProfileContext *profile_context = nullptr;
+  std::span<const compute::RouteProfile> profiles{};
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned

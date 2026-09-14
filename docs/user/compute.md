@@ -352,7 +352,8 @@ return done->wait();                  // terminal failure
 ## 只读性能资料的匹配
 
 `<hyle/compute/route_profile.h>` 提供冷路径共同合同。它**不会测量、生成资格或改变 direct prepare 的
-Provider 次序**；Graph 的完整候选 key 生成和择优接入仍在实现，不要把此接口当作已启用自动调优。
+Provider 次序**；[Graph](graph.md#按完整计划的性能资料选路) 已接入完整候选的结构 key、只读匹配与有界择优，
+但同样不做隐式测量或自动调优。
 
 外部 profiler/部署方提供 `RouteProfile`，其 immutable borrowed identity 必须完整描述：HYLE build；
 每个 target 的 backend build、hardware、driver/runtime 与执行配置；Provider build/config 与稳定

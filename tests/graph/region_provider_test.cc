@@ -21,6 +21,7 @@
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/buffer.h"
+#include "profile_fixture.h"
 #include "provider_internal.h"
 #include "test_environment.h"
 
@@ -1662,6 +1663,598 @@ void use_delegated_runtime(RegionProbe &probe) noexcept {
       .supports_concurrent_invocations = true,
       .capture_compatible = false,
   };
+}
+
+CompileReport profile_report(const Graph &graph, const Context &context,
+                             hyle::graph::CompileEnvironment environment,
+                             const hyle::graph::CompileProfileContext &facts,
+                             std::size_t provider,
+                             CompileOptions options = {}) {
+  std::vector<hyle::graph::NodeProviderConstraint> constraints;
+  for (std::size_t n = 0; n < graph.node_count(); ++n)
+    constraints.push_back({graph.node_id(n).value(),
+                           context.provider_identity(provider)->id,
+                           context.provider_instance_id(provider).value()});
+  options.node_providers = constraints;
+  options.operation_fallback =
+      options.region_selection == RegionSelectionPolicy::kDisabled
+          ? OperationFallbackPolicy::kAllow
+          : OperationFallbackPolicy::kReject;
+  options.profile_context = &facts;
+  auto result = hyle::graph::compile(graph, environment, options);
+  EXPECT_TRUE(result) << result.error().message();
+  return result ? result->report : CompileReport{};
+}
+
+void expect_negation_replay(const hyle::graph::Executable &executable,
+                            const NegationGraph &logical,
+                            const Context &context) {
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  write(input, std::array{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F});
+  auto run = executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  auto completion =
+      executable.required_queue_count() == 0 ? run.submit() : run.submit(queue);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  EXPECT_EQ(read(output, 8),
+            (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
+}
+
+TEST(GraphProfiles, SelectsCompletePlanAndRunsTheSelectedArtifact) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  auto context = make_context(first, second);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  auto b = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 1);
+  const std::array profiles{
+      hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}, {{1, 2}}},
+      hyle::compute::RouteProfile{b.profile_identity(), {{50, 55}}, {{3, 4}}}};
+  const auto old_prepares = first.compile_count + second.compile_count;
+  auto compiled = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.operation_fallback = OperationFallbackPolicy::kReject,
+       .profile_context = &facts.context,
+       .profiles = profiles});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.step(0)->provider_instance,
+            context.provider_instance_id(1).value());
+  const auto search = compiled->report.search();
+  EXPECT_EQ(search.feasible_plans, 2u);
+  EXPECT_EQ(search.profiled_plans, 2u);
+  EXPECT_EQ(search.profile_replacements, 1u);
+  ASSERT_TRUE(search.selected_profile_cost);
+  EXPECT_EQ(search.selected_profile_cost->upper_ns, 55);
+  EXPECT_FALSE(search.optimization_limited());
+  expect_negation_replay(compiled->executable, logical, context);
+  EXPECT_EQ(first.compile_count + second.compile_count, old_prepares + 2);
+  EXPECT_EQ(hyle::compute::match_route_profile(
+                compiled->report.profile_identity(), profiles[1])
+                .reason,
+            hyle::compute::ProfileMatchReason::kMatched);
+}
+
+TEST(GraphProfiles, UnknownOverlapAndEconomicPolicyPreservePriority) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  auto context = make_context(first, second);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  auto b = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 1);
+  for (int scenario = 0; scenario != 7; ++scenario) {
+    SCOPED_TRACE(scenario);
+    std::vector profiles{hyle::compute::RouteProfile{
+                             a.profile_identity(), {{100, 105}}, {{0, 0}}},
+                         hyle::compute::RouteProfile{
+                             b.profile_identity(), {{50, 55}}, {{1000, 1100}}}};
+    facts.context.minimum_relative_improvement = 0;
+    facts.context.workload.expected_replays.reset();
+    if (scenario == 0)
+      profiles[1].replay = {{99, 101}};
+    if (scenario == 1)
+      profiles[1].replay.reset();
+    if (scenario == 2)
+      facts.context.minimum_relative_improvement = 0.6;
+    if (scenario == 3)
+      profiles.push_back({b.profile_identity(), {{101, 109}}, {{1000, 1100}}});
+    if (scenario == 4)
+      profiles[0].replay.reset();
+    if (scenario == 5)
+      facts.context.workload.expected_replays = 1;
+    if (scenario == 6)
+      profiles[1].identity.completion =
+          hyle::compute::ProfileCompletionBoundary::kOperationTerminal;
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.operation_fallback = OperationFallbackPolicy::kReject,
+         .profile_context = &facts.context,
+         .profiles = profiles});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.step(0)->provider_instance,
+              context.provider_instance_id(0).value());
+    EXPECT_EQ(compiled->report.search().profile_replacements, 0u);
+    EXPECT_EQ(compiled->report.search().feasible_plans,
+              scenario == 4 ? 1u : 2u);
+    expect_negation_replay(compiled->executable, logical, context);
+  }
+}
+
+TEST(GraphProfiles, SearchAndPreparationLimitsRetainOnlyACompleteIncumbent) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  auto context = make_context(first, second);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  auto b = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 1);
+  const std::array profiles{
+      hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}},
+      hyle::compute::RouteProfile{b.profile_identity(), {{50, 55}}}};
+  for (bool state_limit : {false, true}) {
+    for (bool strict : {false, true}) {
+      SCOPED_TRACE(state_limit);
+      SCOPED_TRACE(strict);
+      const auto second_prepares = second.compile_count;
+      auto compiled = hyle::graph::compile(
+          logical.graph, environment.environment(),
+          {.max_placement_attempts = state_limit ? 4096u : 1u,
+           .max_route_search_states = state_limit ? 1u : 65536u,
+           .operation_fallback = OperationFallbackPolicy::kReject,
+           .search_policy = strict ? CompileSearchPolicy::kRequireUnexhausted
+                                   : CompileSearchPolicy::kAllowLimited,
+           .profile_context = &facts.context,
+           .profiles = profiles});
+      EXPECT_EQ(second.compile_count, second_prepares);
+      if (strict) {
+        ASSERT_FALSE(compiled);
+        EXPECT_TRUE(compiled.error().IsResourceExhausted());
+      } else {
+        ASSERT_TRUE(compiled) << compiled.error().message();
+        const auto search = compiled->report.search();
+        EXPECT_TRUE(search.optimization_limited());
+        EXPECT_EQ(search.route_search_limit_reached, state_limit);
+        EXPECT_EQ(search.placement_limit_reached, !state_limit);
+        EXPECT_EQ(search.feasible_plans, 1u);
+        EXPECT_EQ(compiled->report.step(0)->provider_instance,
+                  context.provider_instance_id(0).value());
+        expect_negation_replay(compiled->executable, logical, context);
+      }
+    }
+  }
+}
+
+TEST(GraphProfiles, LaterDeclineKeepsIncumbentButRealErrorStillFails) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  auto context = make_context(first, second);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  const std::array profiles{
+      hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}}};
+  for (bool real_error : {false, true}) {
+    const auto failure = Status::ResourceExhausted(
+        "provider failure after a feasible candidate");
+    second.region_outcome_override =
+        real_error ? ProviderPrepareOutcome::error(failure)
+                   : ProviderPrepareOutcome::resource_declined(failure);
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.operation_fallback = OperationFallbackPolicy::kReject,
+         .profile_context = &facts.context,
+         .profiles = profiles});
+    if (real_error) {
+      ASSERT_FALSE(compiled);
+      EXPECT_EQ(compiled.error(), failure);
+    } else {
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+      expect_negation_replay(compiled->executable, logical, context);
+    }
+  }
+}
+
+TEST(GraphProfiles, SelectedRouteKeepsItsOwnLaneWorkspaceAndAliasMetadata) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  use_delegated_runtime(first);
+  first.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  auto context = make_context(first, second);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  auto b = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 1);
+  for (bool second_faster : {false, true}) {
+    const std::array profiles{
+        hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}},
+        hyle::compute::RouteProfile{
+            b.profile_identity(),
+            second_faster ? hyle::compute::ProfileTimingInterval{50, 55}
+                          : hyle::compute::ProfileTimingInterval{150, 155}}};
+    auto compiled = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.operation_fallback = OperationFallbackPolicy::kReject,
+         .profile_context = &facts.context,
+         .profiles = profiles});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.workspace_bytes(), second_faster ? 0u : 128u);
+    EXPECT_EQ(compiled->report.lane_count(), second_faster ? 1u : 2u);
+    EXPECT_EQ(compiled->report.delegated_segment_count(),
+              second_faster ? 0u : 1u);
+    expect_negation_replay(compiled->executable, logical, context);
+  }
+}
+
+TEST(GraphProfiles, StableIdentityIgnoresProcessIdsButIncludesConcreteChanges) {
+  const auto logical = make_negations(1);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.profile_key = hyle::compute::ProviderRouteKey{41};
+  auto context = make_context(probe);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto original = profile_report(logical.graph, context,
+                                 environment.environment(), facts.context, 0);
+  const hyle::compute::RouteProfile record{original.profile_identity(),
+                                           {{100, 105}}};
+  context = {};
+  auto another = make_context(probe);
+  const auto rebuilt = make_negations(1);
+  const Environment rebound{{&another, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture rebound_facts(rebound.environment());
+  auto same = profile_report(rebuilt.graph, another, rebound.environment(),
+                             rebound_facts.context, 0);
+  EXPECT_NE(original.step(0)->provider_instance,
+            same.step(0)->provider_instance);
+  EXPECT_EQ(hyle::compute::match_route_profile(same.profile_identity(), record)
+                .reason,
+            hyle::compute::ProfileMatchReason::kMatched);
+  for (int change = 0; change != 6; ++change) {
+    SCOPED_TRACE(change);
+    hyle::graph::test::ProfileFixture altered(rebound.environment());
+    if (change == 0)
+      altered.context.hyle_build.words[0]++;
+    if (change == 1)
+      altered.targets[0].runtime.words[0]++;
+    if (change == 2)
+      altered.providers[0].configuration.words[0]++;
+    if (change == 3)
+      altered.resources[0].words[0]++;
+    if (change == 4)
+      altered.context.replay_configuration.words[0]++;
+    if (change == 5)
+      altered.context.semantics.words[0]++;
+    auto changed = profile_report(rebuilt.graph, another, rebound.environment(),
+                                  altered.context, 0);
+    EXPECT_NE(
+        hyle::compute::match_route_profile(changed.profile_identity(), record)
+            .reason,
+        hyle::compute::ProfileMatchReason::kMatched);
+  }
+  // A direct-operation timestamp never substitutes for the complete graph.
+  auto wrong_boundary = record;
+  wrong_boundary.identity.completion =
+      hyle::compute::ProfileCompletionBoundary::kOperationTerminal;
+  EXPECT_EQ(hyle::compute::match_route_profile(same.profile_identity(),
+                                               wrong_boundary)
+                .reason,
+            hyle::compute::ProfileMatchReason::kCompletionMismatch);
+  auto altered_builder = GraphBuilder::create().value();
+  const auto altered_input = altered_builder.input(row(8)).value();
+  const auto altered_output =
+      altered_builder.add(Unary{UnaryKind::kAbs}, altered_input).value();
+  ASSERT_TRUE(altered_builder.publish(altered_output).ok());
+  const auto altered_graph = std::move(altered_builder).finish().value();
+  auto different = profile_report(
+      altered_graph, another, rebound.environment(), rebound_facts.context, 1,
+      {.region_selection = RegionSelectionPolicy::kDisabled});
+  EXPECT_NE(different.profile_identity().semantics,
+            same.profile_identity().semantics);
+}
+
+TEST(GraphProfiles, IncompleteFactsStayUnknownAndMalformedBindingsAreRejected) {
+  const auto logical = make_negations(1);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.profile_key = hyle::compute::ProviderRouteKey{41};
+  auto context = make_context(probe);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto original = profile_report(logical.graph, context,
+                                 environment.environment(), facts.context, 0);
+  const std::array profiles{
+      hyle::compute::RouteProfile{original.profile_identity(), {{100, 105}}}};
+  hyle::graph::CompileProfileContext unknown;
+  auto fallback =
+      hyle::graph::compile(logical.graph, environment.environment(),
+                           {.profile_context = &unknown, .profiles = profiles});
+  ASSERT_TRUE(fallback) << fallback.error().message();
+  EXPECT_FALSE(fallback->report.search().selected_profile_cost);
+  EXPECT_FALSE(fallback->report.profile_identity().route.valid());
+  for (int invalid = 0; invalid != 7; ++invalid) {
+    SCOPED_TRACE(invalid);
+    hyle::graph::test::ProfileFixture altered(environment.environment());
+    if (invalid == 0)
+      altered.providers[0].instance = {};
+    if (invalid == 1)
+      altered.targets[0].backend = {1, 2};
+    if (invalid == 2)
+      altered.context.minimum_relative_improvement =
+          std::numeric_limits<double>::quiet_NaN();
+    if (invalid == 3)
+      altered.context.workload.concurrent_invocations = 0;
+    if (invalid == 4)
+      altered.context.workload.require_determinism = true;
+    if (invalid == 5)
+      altered.context.minimum_relative_improvement = 1;
+    auto rejected = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.profile_context = invalid == 6 ? nullptr : &altered.context,
+         .profiles = profiles});
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsInvalidArgument() ||
+                rejected.error().IsUnimplemented());
+  }
+}
+
+TEST(GraphProfiles, LeafAndRegionShareOneCompleteCostBoundary) {
+  const auto logical = make_negations(1);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.profile_key = hyle::compute::ProviderRouteKey{41};
+  auto context = make_context(probe);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto region = profile_report(logical.graph, context,
+                               environment.environment(), facts.context, 0);
+  auto leaf = profile_report(
+      logical.graph, context, environment.environment(), facts.context, 1,
+      {.region_selection = RegionSelectionPolicy::kDisabled});
+  const std::array profiles{
+      hyle::compute::RouteProfile{region.profile_identity(), {{100, 105}}},
+      hyle::compute::RouteProfile{leaf.profile_identity(), {{50, 55}}}};
+  auto compiled = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.profile_context = &facts.context, .profiles = profiles});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(), 0u);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 1u);
+  EXPECT_EQ(compiled->report.search().profile_replacements, 1u);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            hyle::compute::native::provider().id());
+  expect_negation_replay(compiled->executable, logical, context);
+}
+
+TEST(GraphProfiles, ConcurrencyAndRequiredProviderRemainHardConstraints) {
+  const auto logical = make_negations(1);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  first.artifact_properties.runtime.supports_concurrent_invocations = false;
+  auto context = make_context(first, second);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  auto b = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 1);
+  const std::array profiles{
+      hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}},
+      hyle::compute::RouteProfile{b.profile_identity(), {{50, 55}}}};
+  const std::array required{hyle::graph::NodeProviderConstraint{
+      logical.graph.node_id().value(), kRegionProviderId,
+      context.provider_instance_id(0).value()}};
+  auto fixed = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.node_providers = required,
+       .operation_fallback = OperationFallbackPolicy::kReject,
+       .profile_context = &facts.context,
+       .profiles = profiles});
+  ASSERT_TRUE(fixed) << fixed.error().message();
+  EXPECT_EQ(fixed->report.step(0)->provider_instance, required[0].instance);
+  facts.context.workload.concurrent_invocations = 2;
+  auto parallel = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.operation_fallback = OperationFallbackPolicy::kReject,
+       .profile_context = &facts.context,
+       .profiles = profiles});
+  ASSERT_TRUE(parallel) << parallel.error().message();
+  EXPECT_EQ(parallel->report.step(0)->provider_instance,
+            context.provider_instance_id(1).value());
+  EXPECT_EQ(parallel->report.search().route_plan_rejections, 1u);
+  EXPECT_FALSE(parallel->report.search()
+                   .selected_profile_cost); // Different measured concurrency.
+  auto impossible = hyle::graph::compile(
+      logical.graph, environment.environment(),
+      {.node_providers = required,
+       .operation_fallback = OperationFallbackPolicy::kReject,
+       .profile_context = &facts.context,
+       .profiles = profiles});
+  ASSERT_FALSE(impossible);
+  EXPECT_TRUE(impossible.error().IsFailedPrecondition());
+}
+
+TEST(GraphProfiles, IncumbentAndTrialShareOneMaterializedConstant) {
+  HostResource resource;
+  const hyle::mem::MemoryResourceRef owned(resource);
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  first.constant_live_allocations = &resource.live_allocations;
+  second.constant_live_allocations = &resource.live_allocations;
+  auto context = make_context(first, second);
+  const Environment environment{{&context, owned}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(8)).value();
+  const auto output_id = builder.add(Unary{UnaryKind::kNeg}, constant).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto source = make_tensor(row(8));
+  write(source, std::array{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F});
+  const std::array constants{
+      hyle::graph::ConstantBinding{constant, source.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  auto a = profile_report(graph, context, environment.environment(),
+                          facts.context, 0, {.constants = constants});
+  auto b = profile_report(graph, context, environment.environment(),
+                          facts.context, 1, {.constants = constants});
+  const std::array profiles{
+      hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}},
+      hyle::compute::RouteProfile{b.profile_identity(), {{50, 55}}}};
+  ASSERT_EQ(resource.live_allocations, 0u); // Reports retain no payload.
+  resource.allocation_count = 0;
+  auto compiled = hyle::graph::compile(
+      graph, environment.environment(),
+      {.constants = constants,
+       .operation_fallback = OperationFallbackPolicy::kReject,
+       .profile_context = &facts.context,
+       .profiles = profiles});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.search().profile_replacements, 1u);
+  EXPECT_EQ(resource.allocation_count, 1u);
+  EXPECT_EQ(resource.live_allocations, 1u);
+  EXPECT_EQ(first.constant_allocations_at_destroy, 1u);
+  ASSERT_TRUE(first.compiled_constant);
+  ASSERT_TRUE(second.compiled_constant);
+  EXPECT_EQ(first.compiled_constant->storage().native_handle(),
+            second.compiled_constant->storage().native_handle());
+  ASSERT_TRUE(source.buffer.reset().ok());
+  auto output = make_tensor(row(8), owned);
+  auto invocation = compiled->executable.create_invocation().value();
+  compiled->executable = {};
+  ASSERT_TRUE(invocation.bind(output_id, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  EXPECT_EQ(read(output, 8),
+            (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
+  ASSERT_TRUE(invocation.reset().ok());
+  ASSERT_TRUE(output.buffer.reset().ok());
+  invocation = {};
+  EXPECT_EQ(second.constant_allocations_at_destroy, 1u);
+  EXPECT_EQ(resource.live_allocations, 0u);
+  EXPECT_EQ(compiled->report.materialized_constant_bytes(), 32u);
+}
+
+TEST(GraphProfiles, EveryMetadataAllocationFailureIsFatalAndReclaimsSnapshots) {
+  struct Allocations {
+    AllocatorRef backing = hyle::mem::system_allocator();
+    std::size_t attempts = 0, fail_at = SIZE_MAX, live = 0;
+  } allocations;
+  const AllocatorRef allocator{
+      +[](void *opaque, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        auto &a = *static_cast<Allocations *>(opaque);
+        if (a.attempts++ == a.fail_at)
+          return nullptr;
+        auto *result = a.backing.allocate(bytes, alignment);
+        a.live += result != nullptr;
+        return result;
+      },
+      +[](void *opaque, void *pointer, std::size_t bytes,
+          std::size_t alignment) noexcept {
+        auto &a = *static_cast<Allocations *>(opaque);
+        a.live -= pointer != nullptr;
+        a.backing.deallocate(pointer, bytes, alignment);
+      },
+      +[](void *opaque, void *pointer, std::size_t old_bytes,
+          std::size_t new_bytes, std::size_t alignment) noexcept -> void * {
+        auto &a = *static_cast<Allocations *>(opaque);
+        if (new_bytes != 0 && a.attempts++ == a.fail_at)
+          return nullptr;
+        auto *result =
+            a.backing.reallocate(pointer, old_bytes, new_bytes, alignment);
+        if (pointer == nullptr && result != nullptr)
+          ++a.live;
+        if (pointer != nullptr && new_bytes == 0)
+          --a.live;
+        return result;
+      },
+      &allocations};
+  RegionProbe first{.mode = ProposalMode::kSingleton},
+      second{.mode = ProposalMode::kSingleton};
+  first.profile_key = hyle::compute::ProviderRouteKey{41};
+  second.profile_key = hyle::compute::ProviderRouteKey{42};
+  const std::array providers{region_provider(first), region_provider(second)};
+  auto context =
+      Context::create(hyle::compute::cpu::device(),
+                      {.metadata_allocator = allocator, .providers = providers})
+          .value();
+  const auto logical = make_negations(1);
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto a = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 0);
+  auto b = profile_report(logical.graph, context, environment.environment(),
+                          facts.context, 1);
+  const std::array profiles{
+      hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}},
+      hyle::compute::RouteProfile{b.profile_identity(), {{50, 55}}}};
+  const CompileOptions options{.operation_fallback =
+                                   OperationFallbackPolicy::kReject,
+                               .profile_context = &facts.context,
+                               .profiles = profiles};
+  const auto baseline_live = allocations.live;
+  allocations.attempts = 0;
+  {
+    auto good =
+        hyle::graph::compile(logical.graph, environment.environment(), options);
+    ASSERT_TRUE(good) << good.error().message();
+    EXPECT_EQ(good->report.search().profile_replacements, 1u);
+  }
+  const auto count = allocations.attempts;
+  ASSERT_GT(count, 0u);
+  EXPECT_EQ(allocations.live, baseline_live);
+  for (std::size_t fail_at = 0; fail_at < count; ++fail_at) {
+    SCOPED_TRACE(fail_at);
+    allocations.fail_at = fail_at;
+    allocations.attempts = 0;
+    {
+      auto failure = hyle::graph::compile(logical.graph,
+                                          environment.environment(), options);
+      ASSERT_FALSE(failure);
+      EXPECT_TRUE(failure.error().IsResourceExhausted());
+    }
+    EXPECT_EQ(allocations.live, baseline_live);
+    allocations.fail_at = SIZE_MAX;
+  }
+  auto recovered =
+      hyle::graph::compile(logical.graph, environment.environment(), options);
+  ASSERT_TRUE(recovered) << recovered.error().message();
+  expect_negation_replay(recovered->executable, logical, context);
+  recovered = std::unexpected(Status::Cancelled("release test artifact"));
+  a = {};
+  b = {};
+  context = {};
+  EXPECT_EQ(allocations.live, 0u);
 }
 
 TEST(GraphRegions, DiscoversResourcesForLaterCandidatesWithoutPreparingThem) {

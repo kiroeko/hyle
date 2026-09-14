@@ -16,6 +16,7 @@
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
+#include "profile_fixture.h"
 #include "test_environment.h"
 
 namespace {
@@ -2169,6 +2170,76 @@ TEST(GraphCompile, ExecutesNativeAttentionWithPlannedInvocationWorkspace) {
   Queue queue = context.create_queue().value();
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
   expect_near(read(output_tensor, 1), std::array<float, 1>{3});
+}
+
+TEST(GraphProfiles, GeneratedIdentityIncludesAttributesBoundsAndExactStrides) {
+  auto context = hyle::compute::cpu::create_context().value();
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto compile_shape = [&](float epsilon, std::int64_t maximum,
+                           std::int64_t bound) {
+    auto builder = GraphBuilder::create().value();
+    const auto rows = builder.dimension({1, maximum, 1}).value();
+    const auto spec =
+        TensorSpec::dense(DataType::kFloat32,
+                          std::array{Dimension{rows}, Dimension::fixed(8)})
+            .value();
+    const auto input = builder.input(spec).value();
+    const auto output =
+        builder.add(RmsNorm{.epsilon = epsilon}, spec, input).value();
+    EXPECT_TRUE(builder.publish(output).ok());
+    const auto graph = std::move(builder).finish().value();
+    const std::array bindings{ShapeBinding{rows, bound}};
+    auto result = hyle::graph::compile(
+        graph, environment.environment(),
+        {.shape = bindings, .profile_context = &facts.context});
+    EXPECT_TRUE(result) << result.error().message();
+    return result ? result->report : hyle::graph::CompileReport{};
+  };
+  const auto baseline = compile_shape(1e-5F, 4, 2);
+  const auto equal = compile_shape(1e-5F, 4, 2);
+  const auto attributes = compile_shape(2e-5F, 4, 2);
+  const auto bounds = compile_shape(1e-5F, 8, 2);
+  const auto shape = compile_shape(1e-5F, 4, 3);
+  ASSERT_TRUE(baseline && equal && attributes && bounds && shape);
+  const hyle::compute::RouteProfile record{baseline.profile_identity(),
+                                           {{100, 105}}};
+  EXPECT_EQ(hyle::compute::match_route_profile(equal.profile_identity(), record)
+                .reason,
+            hyle::compute::ProfileMatchReason::kMatched);
+  EXPECT_NE(attributes.profile_identity().semantics,
+            baseline.profile_identity().semantics);
+  EXPECT_EQ(bounds.profile_identity().semantics,
+            baseline.profile_identity().semantics);
+  EXPECT_NE(bounds.profile_identity().shape_domain,
+            baseline.profile_identity().shape_domain);
+  EXPECT_NE(shape.profile_identity().semantics,
+            baseline.profile_identity().semantics);
+
+  auto compile_strides = [&](std::int64_t row_stride) {
+    auto builder = GraphBuilder::create().value();
+    const auto description =
+        TensorDesc::strided_bytes(DataType::kFloat32,
+                                  std::array<std::int64_t, 2>{1, 8},
+                                  std::array<std::int64_t, 2>{row_stride, 4})
+            .value();
+    const auto input = builder.input(description).value();
+    // A published input checks exact boundary identity without requiring a
+    // provider to support the deliberately noncanonical padded stride.
+    EXPECT_TRUE(builder.publish(input).ok());
+    const auto graph = std::move(builder).finish().value();
+    auto result = hyle::graph::compile(graph, environment.environment(),
+                                       {.profile_context = &facts.context});
+    EXPECT_TRUE(result) << result.error().message();
+    return result ? result->report : hyle::graph::CompileReport{};
+  };
+  const auto dense = compile_strides(32), padded = compile_strides(64);
+  ASSERT_TRUE(dense);
+  ASSERT_TRUE(padded);
+  EXPECT_EQ(dense.profile_identity().inputs[0].required_bytes().value(),
+            padded.profile_identity().inputs[0].required_bytes().value());
+  EXPECT_NE(dense.profile_identity().semantics,
+            padded.profile_identity().semantics);
 }
 
 } // namespace

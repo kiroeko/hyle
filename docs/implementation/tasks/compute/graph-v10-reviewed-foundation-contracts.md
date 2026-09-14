@@ -776,3 +776,54 @@ G106 后续，不用 canonical 副本字节冒充全部 Provider 内存，profil
   自实现 **122,285** 行，统一脚本 self-check 通过。组件保持 `AUDITED`。本段完成 canonical source
   release，不签完 G106 的跨 variant 共享/packed identity/唯一 resident 与冷峰值预算；C93/G103/G104
   完整 profile/成本/有 incumbent 的优化，以及 G101/G102 bounded/variants 仍须继续。
+
+### G103/G104：完整候选 profile 与保留可行解（实现前固定）
+
+- 公开冷输入 `CompileProfileContext` 由 profile 的 producing owner 提供真实 build、device/runtime/config、
+  storage/replay 环境、语义实例及 workload identity；target/Provider 绑定须与本次 Context 的真实坐标匹配。
+  Graph 不从地址、显示版本、POD padding 或临时 route token 伪造可持久身份。缺事实保留 unknown。
+- Graph 从本次完整计划生成结构身份：内建属性、图边/副作用、原 shape program、全部 TensorDesc、
+  选中 Provider 实现键、target/storage/lane、copy、alias/workspace placement、segment/dependency、常量策略。
+  自定义实例语义、外部 build/config 与未来实际 replay 环境仍由 owner 证明；报告的 key 不签发测量资格。
+- `CompileOptions` 接收只读完整 Graph-terminal profile；普通无 profile 仍止于第一个完整可行方案。
+  首个方案成本未知时也保留确定性选择。已知基准才继续有限搜索；只有同合同成本区间严格分离且达到
+  调用方显式 improvement 要求才替换，不相加单 kernel 时间、不把 unknown 当零、不做隐式测速。
+- 保留一个完整 incumbent 和一个 trial，二者共享唯一 canonical 常量 backing；只移动冷计划制品/元数据。
+  state/prepare 容量有独立的明确终止标志；allow-limited 返回已验证 incumbent，strict 拒绝。真实 OOM/
+  Provider 错误一律失败，不因存在 incumbent 被吞掉。无可行解仍失败，warm submit 不存 profile 或再搜索。
+- 固定反例：完整成本择优/区间重叠/未知/失配、首选与后选实际数值、build/config/shape/属性/resource
+  变化、state/prepare 截断、真实错误、逐 allocation fault、constant source release/制品销毁、实际 Native/
+  oneDNN/CUDA 与三交付。本步不宣称已完成 storage/lane 全组合优化、bounded variants 或终局 P1。
+
+### 2026-09-15 完整候选 profile 与 incumbent 检查点
+
+- 上述 G103/G104 已接入真实 compile：Graph 从实际逻辑/物理计划生成身份，复用 Compute matcher；
+  首个完整可行解有合格成本后才继续搜索。未知/失配/重叠不替换，调用方经济门与测量区间分别判断。
+  同一次编译最多保留 incumbent 与 trial 两套路线制品，共享唯一 canonical 常量；搜索或 prepare 容量
+  耗尽只在 allow-limited 下返回可行解，strict 和真正 OOM/Provider error 仍失败。
+- 新增 12 个 GraphProfiles 用例，覆盖完整成本、重复记录保守包络、冷成本摊销、错误完成边界、硬
+  Provider/并发约束、换 Context 后稳定身份、属性/bounds/stride、预算截断、metadata 逐 allocation
+  fault、workspace/lane/alias 还原、常量源释放与销毁顺序。真实 Native 与真实 oneDNN gated MLP 均可
+  在完整 leaf/region 计划间选择并验证数值；计时区间及外部身份是明确标注的 synthetic fixtures，
+  不构成 qualified measurement、自动硬件身份 producer 或性能胜负。
+- 最后身份测试的 fixture 曾漏给 symbolic op 的输出规格，并误要求 dense-only Native 支持非标准
+  stride；前者按公开合同补规格，后者用 published-input 检查同字节数、不同 stride 的边界身份。
+  没有为测试放宽产品。最终 Windows static 执行套件 198/198，Graph/逐头 4/4；shared + oneDNN 5/5；
+  CUDA Graph/逐头 4/4。缓存分别为 `compute-route-v8-static-20260914`、
+  `compute-route-onednn-v8-20260914`、`compute-graph-v7-cuda`，均在 `C:/hyle-scratch/`。
+- 沿用 v10 public custom-kernel sample，source/installed static/installed shared 的 CPU+CUDA 各 2/2；
+  新增 profile-context/report 的公开链接消费，无 `src/` 或伪资格化 key。shared producer、SDK 和
+  consumer 的 CPU/CUDA 实际 Graph DLL SHA-256 均为
+  `84424AF08E4EAC54B2E21181E88C232F35A5416051B99B4D98193C297172D22B`。
+- P0：无 profile 的默认路径仍停止于首个可行解；报告增加固定冷 metadata，profile 的变长向量只在
+  opt-in 时分配。身份编码按图/shape/物理计划大小线性扫描，Provider binding 关联为每 step 扫描显式
+  binding span；每候选匹配遍历调用方 profile span。最坏冷搜索继续受 state/prepare 预算限制，额外
+  峰值包含两套路线制品，尚不宣称完整 resident/cold-peak 硬预算已实现。PlanStep/Invocation 与 warm
+  submit 未改，没有热态 profile、搜索、JIT 或 payload copy。
+- impact selector 基线 `090cda28` READY，89 项有据跳过；closure/docs/diff 检查通过，registry 未改。
+  最大编译并行度 2、CUDA 测试串行，未启动 CI、全库测试或 P1。Linux/两台 Apple、sanitizer、独立
+  终局红队与真实性能资料资格仍待完整 foundation candidate，不由本轮 Windows 增量通过代签。
+- 自实现不含测试：Compute **16,404**、Graph **11,673**，合计 **28,077**；全库自实现 **123,203**，
+  全库代码 **675,429**；统一脚本 self-check 通过。
+  仍为 `AUDITED`；G101/G102 bounded/variants、G106 跨变体共享/聚合预算、storage/lane 联合选路及
+  CPU/CUDA/Apple foundation 探针继续按既定卡推进，不扩算子目录。

@@ -385,11 +385,19 @@ v1 route search 接纳通过 contractibility 验证的显式 node-set region，�
 已有可行计划时，默认返回最佳已知可行解，并在 report 中明确
 `optimization_limited`、耗尽的预算与停止原因，调用方可要求预算不足即失败。不得把截断的 node set、
 未验证 proposal 或未覆盖 shape 当成 fallback；结构非法、合同违约与真正错误也不能被这项策略吞掉。
-搜索次序须确定，所有存储/迭代仍有硬上界。只为当前胜出候选构造重型
-artifact；selected-route prepare 通过
+搜索次序须确定，所有存储/迭代仍有硬上界。每次只为当前选中的完整 trial 构造重型 artifact，而不是
+预先准备全部独立 proposal；继续优化时保留一个已验证 incumbent，冷峰值包含二者。selected-route prepare 通过
 结构化 outcome 返回 success、无副作用 candidate decline 或真正 error。只有 unsupported 或明确
 candidate-local resource-budget decline 才允许排除后重选；裸 Status 不能被猜成 rollback 证明，其它错误
 立即终止。
+
+完整候选 profile 的身份由 owner 和 Graph 分工：owner 提供真实外部 build/device/runtime/config、
+workload/replay 环境和 custom 实例语义；Graph 编码实际内建属性、图/shape 程序和物理路线，校验当前
+target/Provider 绑定，并复用 Compute matcher。指纹非零不代表已资格化；不从名称/地址推断外部身份。
+首个可行方案成本 unknown 时按配置顺序结束；有合格基准才继续有界比较，只有成本区间严格分离且满足
+调用方 improvement policy 才替换。profile 是同一完整 terminal 边界的测量，不能将 leaf/region 私有计时
+相加作替代。具体已实现输入、寿命和限制见 [Graph 用户指南](../user/graph.md#按完整计划的性能资料选路)；
+此身份机制不等于自动调优、全局最优、所有 storage/lane 组合或 bounded variants 已实现。
 
 ### 6.2 Shape domain、capture 与运行时选择
 
