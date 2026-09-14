@@ -336,7 +336,8 @@ multi-stream capture。
 - operation fallback、provider region 和真实 copy step；
 - shared/delegated segment、dependency、为 workspace budget 新增的 serialization edge、potential
   synchronization 和 concurrent-invocation 能力；
-- provider/version、dispatch、workspace、persistent/packed/borrowed bytes、blocking/threading 与 replay 类别。
+- provider/version、实际配置实例 `provider_instance`、dispatch、workspace、persistent/packed/borrowed
+  bytes、blocking/threading 与 replay 类别。
 
 `persistent_bytes == nullopt` 表示 provider 无法报告，不是零。`delegated_segment_count()` 是 provider-owned
 island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDependent` 也不是已经发生 host wait；
@@ -345,7 +346,13 @@ island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDepend
 Provider operation/region 的 `step(...)->runtime.replay_class` 保留 Compute 声明的 prepared/managed/unknown
 事实（选型见 [Compute](compute.md)）。它不从 region 大小、shared/delegated 或 capture 反推；unknown
 不能视为 prepared。compile 验证 proposal/artifact 一致性，并按显式 prepared-only 政策筛选候选。
-metadata-only view 和 Graph copy step 不是 Provider artifact，不用这个字段替代各自的执行/后端成本合同。
+metadata-only view 可以由 Provider 在冷路径准备别名描述，但不因此录入 kernel；Graph copy 由 backend
+负责，不用 Provider replay 字段替代各自的执行/后端成本合同。
+
+`step(...)->provider_instance` 区分同一 Provider 家族的多个配置槽位：operation 来自 PreparedOperation，
+region 来自实际绑定的 Provider extension，Graph copy 没有 Provider 实例。由 Provider 准备的 metadata
+view 保留实例 ID，但这不表示发生了 dispatch。ID 本身不保活 Context/artifact；报告可留作诊断，不能用
+旧 ID 授权提交或当成跨进程、跨构建的完整性能 key。详见 [Compute 的身份与成本说明](compute.md)。
 
 `CompileStepReport::node_count` 是该 step 覆盖的逻辑节点数量；`node_begin` 是最小 ordinal，不总是一个
 连续 range 的起点。只有 `nodes_contiguous` 为真时才能按 begin/count 展开；通用代码使用

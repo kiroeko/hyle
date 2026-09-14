@@ -213,15 +213,14 @@ Status validate_inferred_outputs(Operation operation,
   return status;
 }
 
-Result<detail::PreparedState *>
-make_prepared_state(detail::ContextState *context, Operation operation,
-                    std::span<const TensorDesc> inputs,
-                    std::span<const TensorDesc> outputs,
-                    std::span<const mem::MemoryResourceRef> input_resources,
-                    std::span<const mem::MemoryResourceRef> output_resources,
-                    mem::MemoryResourceRef workspace_resource,
-                    ProviderIdentity provider,
-                    detail::ProviderPrepared provider_prepared) noexcept {
+Result<detail::PreparedState *> make_prepared_state(
+    detail::ContextState *context, Operation operation,
+    std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
+    std::span<const mem::MemoryResourceRef> input_resources,
+    std::span<const mem::MemoryResourceRef> output_resources,
+    mem::MemoryResourceRef workspace_resource, ProviderIdentity provider,
+    ProviderInstanceId provider_instance,
+    detail::ProviderPrepared provider_prepared) noexcept {
   auto layout = prepared_allocation_layout(inputs.size(), outputs.size());
   if (!layout) {
     provider_prepared.vtable->destroy_prepared(provider_prepared.state,
@@ -240,6 +239,7 @@ make_prepared_state(detail::ContextState *context, Operation operation,
       detail::PreparedState(context, operation, provider, layout->size,
                             layout->descriptor_offset, layout->resource_offset,
                             inputs.size(), outputs.size(), workspace_resource);
+  state->provider_instance = provider_instance;
   for (std::size_t index = 0; index < inputs.size(); ++index)
     std::construct_at(state->inputs() + index, inputs[index]);
   for (std::size_t index = 0; index < outputs.size(); ++index)
@@ -444,6 +444,10 @@ ProviderIdentity PreparedOperation::provider() const noexcept {
   return state_ != nullptr ? state_->provider : ProviderIdentity{};
 }
 
+ProviderInstanceId PreparedOperation::provider_instance_id() const noexcept {
+  return state_ != nullptr ? state_->provider_instance : ProviderInstanceId{};
+}
+
 ProviderRuntimeProperties
 PreparedOperation::runtime_properties() const noexcept {
   return state_ != nullptr ? state_->provider_prepared.runtime
@@ -583,6 +587,7 @@ detail::OperationPreparationAccess::propose(
   }
   proposal.context = state;
   proposal.provider = table->identity;
+  proposal.instance = slot.instance;
   proposal.provider_index = provider_index;
   if (!proposal.runtime.valid()) {
     return std::unexpected(Status::Internal(
@@ -661,7 +666,7 @@ detail::OperationPreparationAccess::prepare_candidate(
   const detail::ProviderVTable *table =
       detail::ProviderAccess::vtable(slot.provider);
   if (proposal.context != state || proposal.provider != table->identity ||
-      !proposal.runtime.valid()) {
+      proposal.instance != slot.instance || !proposal.runtime.valid()) {
     return std::unexpected(Status::InvalidArgument(
         "operation proposal does not belong to the selected provider"));
   }
@@ -832,7 +837,7 @@ detail::OperationPreparationAccess::prepare_candidate(
   }
   auto prepared = make_prepared_state(
       state, operation, inputs, outputs, resources.inputs, resources.outputs,
-      workspace_resource, table->identity, provider_prepared);
+      workspace_resource, table->identity, slot.instance, provider_prepared);
   if (!prepared)
     return std::unexpected(std::move(prepared).error());
   return detail::ProviderPrepareAttempt{
@@ -1301,6 +1306,11 @@ OperationInvocation::~OperationInvocation() { detail::release(state_); }
 
 ProviderIdentity OperationInvocation::provider() const noexcept {
   return state_ != nullptr ? state_->prepared->provider : ProviderIdentity{};
+}
+
+ProviderInstanceId OperationInvocation::provider_instance_id() const noexcept {
+  return state_ != nullptr ? state_->prepared->provider_instance
+                           : ProviderInstanceId{};
 }
 
 bool OperationInvocation::in_flight() const noexcept {

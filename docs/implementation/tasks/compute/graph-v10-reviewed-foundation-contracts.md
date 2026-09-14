@@ -155,3 +155,8 @@ dispatch、非法结构事实、重复编译稳定性及实际 oneDNN 路线；�
 [C93/G103 检查点](compute-v9-shape-replay-substrate.md#2026-09-14-c93g103共同结构成本与旧估值清理)。
 当前没有接受完整 qualified profile 或完成统一 selector；这个状态不能用旧 `kRequireEstimatedBenefit`
 测试曾通过代替。后续仍需完成 G103 全部硬约束、完整计划成本与合法 identity 匹配。
+
+C93 的 `ProviderInstanceId` 属于 G103/G107 冷事实传播：CompileStepReport 增加 instance 坐标，leaf 来自
+PreparedOperation，region 来自已绑定 extension，Copy 无实例；metadata View 若由真实 Provider 冷准备则
+保留该 ID，但不因此变成 kernel dispatch。只是固定大小诊断值，不让 report
+保活 Context/artifact，不改变 Provider 家族顺序、选路算法或 warm 路径；完整 profile 匹配仍待实施。

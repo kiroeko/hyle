@@ -313,6 +313,13 @@ Provider 的冷提案用 `ProviderRouteCostFacts` 声明结构成本，Graph reg
 它不是时间估值或性能资格证：`valid()` 只检查对齐和非零 dispatch 等结构合法性，不证明某路线快于另一条。
 普通 direct 用户仍使用 `prepare()`，不需要自己构造成本提案。
 
+需要区分同一家 Provider 的多个配置实例时，使用
+`Context::provider_instance_id(index)`；`PreparedOperation` 和 `OperationInvocation` 的同名 accessor
+返回实际选中的实例。`provider()` / `provider_identity()` 描述逻辑家族，不能区分同家族的多个 slot。
+`ProviderInstanceId` 在 Context 移动或关闭后保持不变，重新创建 Context/slot 得到新值；默认对象返回
+无效 ID。这个值不保活资源，也不证明资源仍可接受工作；只在同一个已加载 Compute runtime 的生命周期
+内比较，不能持久化或跨进程使用，更不能单独作为合格性能 profile 的完整身份。
+
 图编译器或手工 workspace planner 可在冷路径调用
 `PreparedOperation::alias_support(output_index, input_index)`。公共 operation traits 只是语义允许的上界；
 该查询给出当前 provider、shape 和 layout 真正支持的输入输出 alias 及相对 byte offset。普通调用者无需为

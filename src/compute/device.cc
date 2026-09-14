@@ -1,5 +1,6 @@
 #include "hyle/compute/device.h"
 
+#include <atomic>
 #include <cstddef>
 #include <limits>
 #include <memory>
@@ -21,6 +22,18 @@ namespace {
 constexpr std::size_t align_up(std::size_t value,
                                std::size_t alignment) noexcept {
   return (value + alignment - 1) & ~(alignment - 1);
+}
+
+ProviderInstanceId next_provider_instance() noexcept {
+  static std::atomic<std::uint64_t> next{1};
+  std::uint64_t value = next.load(std::memory_order_relaxed);
+  while (value != (std::numeric_limits<std::uint64_t>::max)()) {
+    if (next.compare_exchange_weak(value, value + 1,
+                                   std::memory_order_relaxed)) {
+      return ProviderInstanceAccess::make(value);
+    }
+  }
+  return {};
 }
 
 } // namespace
@@ -111,7 +124,14 @@ create_context_state(Device device, ContextOptions options,
           Status::InvalidArgument("compute provider is incomplete"));
     }
     ContextState::ProviderSlot &slot = slots[state->provider_count];
-    std::construct_at(&slot, ContextState::ProviderSlot{provider, nullptr});
+    const ProviderInstanceId instance = next_provider_instance();
+    if (!instance.valid()) {
+      detail::release(state);
+      return std::unexpected(Status::ResourceExhausted(
+          "compute provider instance IDs are exhausted"));
+    }
+    std::construct_at(&slot,
+                      ContextState::ProviderSlot{provider, nullptr, instance});
     status = table->create_context(slot.provider, device, state->backend_state,
                                    allocator, &slot.state);
     if (!status.ok()) {
@@ -308,16 +328,18 @@ detail::EnqueueResult detail::BackendExtensionAccess::enqueue_admitted(
 detail::ProviderExtensionRef::ProviderExtensionRef(
     detail::ContextState *owner, void *provider_context,
     const void *interface_value, ProviderExtensionId id,
-    ProviderIdentity provider) noexcept
+    ProviderIdentity provider, ProviderInstanceId instance) noexcept
     : owner_(owner), provider_context_(provider_context),
-      interface_(interface_value), id_(id), provider_(provider) {
+      interface_(interface_value), id_(id), provider_(provider),
+      instance_(instance) {
   detail::retain(owner_);
 }
 
 detail::ProviderExtensionRef::ProviderExtensionRef(
     const detail::ProviderExtensionRef &other) noexcept
     : owner_(other.owner_), provider_context_(other.provider_context_),
-      interface_(other.interface_), id_(other.id_), provider_(other.provider_) {
+      interface_(other.interface_), id_(other.id_), provider_(other.provider_),
+      instance_(other.instance_) {
   detail::retain(owner_);
 }
 
@@ -331,6 +353,7 @@ detail::ProviderExtensionRef &detail::ProviderExtensionRef::operator=(
     interface_ = other.interface_;
     id_ = other.id_;
     provider_ = other.provider_;
+    instance_ = other.instance_;
   }
   return *this;
 }
@@ -338,12 +361,14 @@ detail::ProviderExtensionRef &detail::ProviderExtensionRef::operator=(
 detail::ProviderExtensionRef::ProviderExtensionRef(
     detail::ProviderExtensionRef &&other) noexcept
     : owner_(other.owner_), provider_context_(other.provider_context_),
-      interface_(other.interface_), id_(other.id_), provider_(other.provider_) {
+      interface_(other.interface_), id_(other.id_), provider_(other.provider_),
+      instance_(other.instance_) {
   other.owner_ = nullptr;
   other.provider_context_ = nullptr;
   other.interface_ = nullptr;
   other.id_ = {};
   other.provider_ = {};
+  other.instance_ = {};
 }
 
 detail::ProviderExtensionRef &detail::ProviderExtensionRef::operator=(
@@ -355,11 +380,13 @@ detail::ProviderExtensionRef &detail::ProviderExtensionRef::operator=(
     interface_ = other.interface_;
     id_ = other.id_;
     provider_ = other.provider_;
+    instance_ = other.instance_;
     other.owner_ = nullptr;
     other.provider_context_ = nullptr;
     other.interface_ = nullptr;
     other.id_ = {};
     other.provider_ = {};
+    other.instance_ = {};
   }
   return *this;
 }
@@ -395,7 +422,8 @@ detail::ProviderExtensionAccess::query(const Context &context,
   Result<detail::ProviderExtensionRef> result =
       interface_value != nullptr
           ? Result<detail::ProviderExtensionRef>(detail::ProviderExtensionRef(
-                state, slot.state, interface_value, id, table->identity))
+                state, slot.state, interface_value, id, table->identity,
+                slot.instance))
           : Result<detail::ProviderExtensionRef>(
                 std::unexpected(Status::Unimplemented(
                     "compute provider does not implement this extension")));
@@ -619,6 +647,17 @@ Context::provider_identity(std::size_t index) const noexcept {
   const detail::ProviderVTable *table =
       detail::ProviderAccess::vtable(state_->providers()[index].provider);
   return table->identity;
+}
+
+Result<ProviderInstanceId>
+Context::provider_instance_id(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  if (index >= state_->provider_count) {
+    return std::unexpected(
+        Status::OutOfRange("compute provider index is out of range"));
+  }
+  return state_->providers()[index].instance;
 }
 
 detail::ContextRef::ContextRef(const ContextRef &other) noexcept

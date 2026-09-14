@@ -254,6 +254,9 @@ struct CompileStepReport final {
   CompileStepKind kind = CompileStepKind::kOperationFallback;
   CompileFallbackReason fallback_reason = CompileFallbackReason::kNone;
   compute::ProviderIdentity provider{};
+  // Configured slot identity, including duplicate installations of one
+  // family. Non-owning and process-local; not a portable performance key.
+  compute::ProviderInstanceId provider_instance{};
   ExecutionTargetId target{};
   ExecutionLaneId lane{};
   StorageDomainId workspace_storage{};

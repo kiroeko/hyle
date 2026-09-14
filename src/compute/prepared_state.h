@@ -79,6 +79,7 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   ContextState *context = nullptr;
   Operation operation{};
   ProviderIdentity provider{};
+  ProviderInstanceId provider_instance{};
   std::size_t allocation_size = 0;
   std::size_t descriptor_offset = 0;
   std::size_t resource_offset = 0;

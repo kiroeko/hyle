@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <thread>
+#include <utility>
 
 #include "backend_internal.h"
 #include "completion_internal.h"
@@ -1124,6 +1126,157 @@ TEST(RuntimeProviders, ContextCopiesAnArbitraryOrderedSequence) {
   ASSERT_EQ(probe.destroy_count, providers.size());
   for (std::size_t index = 0; index < providers.size(); ++index)
     EXPECT_EQ(probe.destroyed[index], providers.size() - index - 1);
+}
+
+TEST(RuntimeProviders, InstanceIdsDistinguishSlotsAndSurviveHandleMoves) {
+  using hyle::compute::Context;
+  using hyle::compute::ProviderInstanceId;
+  ProviderProbe probe;
+  const std::array providers{make_provider(probe, 0), make_provider(probe, 1)};
+  ProviderInstanceId retained;
+  {
+    auto context =
+        Context::create(hyle::compute::cpu::device(), {.providers = providers})
+            .value();
+    const auto first = context.provider_instance_id(0).value();
+    const auto second = context.provider_instance_id(1).value();
+    ASSERT_TRUE(first.valid());
+    ASSERT_TRUE(second.valid());
+    EXPECT_NE(first, second);
+    EXPECT_EQ(context.provider_identity(0).value(),
+              context.provider_identity(1).value());
+    EXPECT_TRUE(context.provider_instance_id(2).error().IsOutOfRange());
+    Context moved = std::move(context);
+    EXPECT_TRUE(context.provider_instance_id(0).error().IsFailedPrecondition());
+    EXPECT_EQ(moved.provider_instance_id(0).value(), first);
+    EXPECT_EQ(moved.provider_instance_id(1).value(), second);
+    ASSERT_TRUE(moved.close().ok());
+    EXPECT_EQ(moved.provider_instance_id(0).value(), first);
+    EXPECT_FALSE(moved.is_open());
+    retained = first;
+  }
+  EXPECT_EQ(probe.destroy_count, 2u);
+  EXPECT_TRUE(retained.valid()); // diagnostic identity, not a lifetime handle
+  auto recreated =
+      Context::create(hyle::compute::cpu::device(), {.providers = providers})
+          .value();
+  EXPECT_NE(recreated.provider_instance_id(0).value(), retained);
+  EXPECT_FALSE(ProviderInstanceId{}.valid());
+  EXPECT_EQ(ProviderInstanceId{}, ProviderInstanceId{});
+  EXPECT_FALSE(
+      hyle::compute::PreparedOperation{}.provider_instance_id().valid());
+  EXPECT_FALSE(
+      hyle::compute::OperationInvocation{}.provider_instance_id().valid());
+}
+
+TEST(RuntimeProviders, ConcurrentContextCreationDoesNotReuseInstanceIds) {
+  constexpr std::size_t kThreads = 4;
+  constexpr std::size_t kContexts = 8;
+  std::array<hyle::compute::ProviderInstanceId, kThreads * kContexts>
+      identities;
+  std::array<std::thread, kThreads> workers;
+  for (std::size_t worker = 0; worker < kThreads; ++worker) {
+    workers[worker] = std::thread([&, worker] {
+      ProviderProbe probe;
+      for (std::size_t index = 0; index < kContexts; ++index) {
+        auto context = hyle::compute::Context::create(
+            hyle::compute::cpu::device(), make_provider(probe, index));
+        ASSERT_TRUE(context.has_value()) << context.error().message();
+        identities[worker * kContexts + index] =
+            context->provider_instance_id(0).value();
+      }
+    });
+  }
+  for (auto &worker : workers)
+    worker.join();
+  for (std::size_t first = 0; first < identities.size(); ++first) {
+    ASSERT_TRUE(identities[first].valid());
+    for (std::size_t second = first + 1; second < identities.size(); ++second)
+      EXPECT_NE(identities[first], identities[second]);
+  }
+}
+
+TEST(RuntimeProviders, ProposalCannotBeSplicedIntoAnotherSameFamilySlot) {
+  using hyle::compute::detail::OperationPreparationAccess;
+  AsyncOperationProbe first;
+  AsyncOperationProbe second;
+  const std::array providers{make_async_provider(first),
+                             make_async_provider(second)};
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                {.providers = providers})
+                     .value();
+  const auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
+                                       std::array<std::int64_t, 1>{8})
+          .value();
+  const hyle::compute::Operation operation(
+      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg});
+  const std::array descriptions{description};
+  std::array<hyle::compute::detail::ResourceBindingRequirement, 1> inputs;
+  std::array<hyle::compute::detail::ResourceBindingRequirement, 1> outputs;
+  const auto proposal =
+      OperationPreparationAccess::propose(context, 0, operation, descriptions,
+                                          descriptions, inputs, outputs)
+          .value();
+  const auto expected = context.provider_instance_id(0).value();
+  EXPECT_EQ(proposal.instance, expected);
+  auto spliced = proposal;
+  spliced.provider_index = 1;
+  ASSERT_EQ(proposal.provider, context.provider_identity(1).value());
+  const std::array resources{hyle::mem::system_resource()};
+  const hyle::compute::OperationResourceBindings bindings{
+      .inputs = resources,
+      .outputs = resources,
+      .workspace_resource = hyle::mem::system_resource()};
+  auto rejected = OperationPreparationAccess::prepare_candidate(
+      context, spliced, operation, descriptions, descriptions, inputs, outputs,
+      bindings);
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  EXPECT_EQ(first.prepare_count, 0u);
+  EXPECT_EQ(second.prepare_count, 0u);
+  auto original = OperationPreparationAccess::prepare_candidate(
+                      context, proposal, operation, descriptions, descriptions,
+                      inputs, outputs, bindings)
+                      .value();
+  ASSERT_TRUE(original.succeeded());
+  EXPECT_EQ(original.prepared.provider_instance_id(), expected);
+  auto copied = original.prepared;
+  EXPECT_EQ(copied.provider_instance_id(), expected);
+  auto invocation = copied.create_invocation().value();
+  EXPECT_EQ(invocation.provider_instance_id(), expected);
+  auto moved = std::move(copied);
+  EXPECT_FALSE(copied.provider_instance_id().valid());
+  EXPECT_EQ(moved.provider_instance_id(), expected);
+}
+
+TEST(RuntimeProviders, ProviderExtensionRetainsItsExactInstanceIdentity) {
+  using hyle::compute::detail::ProviderExtensionAccess;
+  using hyle::compute::detail::ProviderExtensionRef;
+  ProviderProbe probe;
+  const std::array providers{make_provider(probe, 0), make_provider(probe, 1)};
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                {.providers = providers})
+                     .value();
+  const auto expected = context.provider_instance_id(1).value();
+  auto extension =
+      ProviderExtensionAccess::query(context, 1, kProbeExtensionId).value();
+  EXPECT_EQ(extension.provider_instance_id(), expected);
+  auto copied = extension;
+  auto moved = std::move(copied);
+  EXPECT_FALSE(copied.provider_instance_id().valid());
+  EXPECT_EQ(moved.provider_instance_id(), expected);
+  ProviderExtensionRef assigned;
+  assigned = moved;
+  EXPECT_EQ(assigned.provider_instance_id(), expected);
+  assigned = std::move(moved);
+  EXPECT_FALSE(moved.provider_instance_id().valid());
+  EXPECT_EQ(assigned.provider_instance_id(), expected);
+  ASSERT_TRUE(context.close().ok());
+  EXPECT_EQ(extension.provider_instance_id(), expected);
+  EXPECT_TRUE(ProviderExtensionAccess::query(context, 1, kProbeExtensionId)
+                  .error()
+                  .IsFailedPrecondition());
 }
 
 TEST(RuntimeProviders,

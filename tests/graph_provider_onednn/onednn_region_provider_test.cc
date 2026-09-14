@@ -388,6 +388,7 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
   EXPECT_EQ(compiled.report.synchronization_count(), 0U);
   auto step = compiled.report.step(0);
   ASSERT_TRUE(step.has_value());
+  EXPECT_EQ(step->provider_instance, context.provider_instance_id(0).value());
   EXPECT_EQ(step->node_count, 4U);
   EXPECT_EQ(step->dispatch_count, 2U);
   EXPECT_TRUE(step->runtime.blocks_host);

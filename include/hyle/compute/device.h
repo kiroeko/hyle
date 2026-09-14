@@ -154,6 +154,10 @@ public:
   mem::AllocatorRef metadata_allocator() const noexcept;
   std::size_t provider_count() const noexcept;
   Result<ProviderIdentity> provider_identity(std::size_t index) const noexcept;
+  // Same family at two slots/Contexts still has two distinct instances. This
+  // cold observation does not reopen a closed Context or retain its resources.
+  Result<ProviderInstanceId>
+  provider_instance_id(std::size_t index) const noexcept;
   Result<Queue> create_queue(QueueOptions options = {}) const noexcept;
   Status close() noexcept;
   Status drain() noexcept;

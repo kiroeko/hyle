@@ -26,16 +26,21 @@ public:
   HYLE_COMPUTE_API ~ProviderExtensionRef();
 
   bool valid() const noexcept {
-    return owner_ != nullptr && interface_ != nullptr && id_.valid();
+    return owner_ != nullptr && interface_ != nullptr && id_.valid() &&
+           instance_.valid();
   }
   explicit operator bool() const noexcept { return valid(); }
   constexpr ProviderExtensionId id() const noexcept { return id_; }
   constexpr ProviderIdentity provider() const noexcept { return provider_; }
+  constexpr ProviderInstanceId provider_instance_id() const noexcept {
+    return instance_;
+  }
 
 private:
   ProviderExtensionRef(ContextState *owner, void *provider_context,
                        const void *interface_value, ProviderExtensionId id,
-                       ProviderIdentity provider) noexcept;
+                       ProviderIdentity provider,
+                       ProviderInstanceId instance) noexcept;
 
   friend struct ProviderExtensionAccess;
   ContextState *owner_ = nullptr;
@@ -43,6 +48,7 @@ private:
   const void *interface_ = nullptr;
   ProviderExtensionId id_{};
   ProviderIdentity provider_{};
+  ProviderInstanceId instance_{};
 };
 
 // Internal cross-factor bridge used by typed extensions such as Graph region

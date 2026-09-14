@@ -107,6 +107,7 @@ public:
   explicit operator bool() const noexcept { return valid(); }
   HYLE_COMPUTE_API OperationKind kind() const noexcept;
   HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
+  HYLE_COMPUTE_API ProviderInstanceId provider_instance_id() const noexcept;
   HYLE_COMPUTE_API ProviderRuntimeProperties runtime_properties() const noexcept;
   HYLE_COMPUTE_API WorkspaceRequirement workspace_requirement() const noexcept;
   HYLE_COMPUTE_API std::optional<std::size_t> persistent_bytes() const noexcept;
@@ -154,6 +155,7 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
   HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
+  HYLE_COMPUTE_API ProviderInstanceId provider_instance_id() const noexcept;
   HYLE_COMPUTE_API bool in_flight() const noexcept;
 
   HYLE_COMPUTE_API Result<Completion>

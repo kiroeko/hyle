@@ -106,6 +106,9 @@ public:
   compute::ProviderIdentity provider() const noexcept {
     return extension_.provider();
   }
+  compute::ProviderInstanceId provider_instance_id() const noexcept {
+    return extension_.provider_instance_id();
+  }
   RegionArtifactProperties properties() const noexcept {
     return prepared_.properties;
   }
@@ -430,6 +433,13 @@ struct PlanStep final {
       return region.provider();
     if (kind == PlanStepKind::kOperation)
       return operation.provider();
+    return {};
+  }
+  compute::ProviderInstanceId provider_instance_id() const noexcept {
+    if (kind == PlanStepKind::kRegion)
+      return region.provider_instance_id();
+    if (kind == PlanStepKind::kOperation)
+      return operation.provider_instance_id();
     return {};
   }
   compute::WorkspaceRequirement workspace_requirement() const noexcept {

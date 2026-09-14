@@ -19,7 +19,13 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 5;
+inline constexpr std::uint32_t kProviderContractVersion = 6;
+
+struct ProviderInstanceAccess final {
+  static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
+    return ProviderInstanceId(value);
+  }
+};
 
 struct ProviderOperationRequest final {
   Operation operation{};
@@ -32,6 +38,7 @@ struct ProviderOperationRequest final {
 struct ProviderOperationProposal final {
   const ContextState *context = nullptr;
   ProviderIdentity provider{};
+  ProviderInstanceId instance{};
   std::size_t provider_index = 0;
   std::uint64_t route = 0;
   ProviderRuntimeProperties runtime{};

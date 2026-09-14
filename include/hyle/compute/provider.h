@@ -9,6 +9,10 @@
 
 namespace hyle::compute {
 
+namespace detail {
+struct ProviderInstanceAccess;
+} // namespace detail
+
 struct ProviderId final {
   std::uint64_t namespace_id = 0;
   std::uint64_t provider_id = 0;
@@ -29,6 +33,27 @@ struct ProviderIdentity final {
                                    const ProviderIdentity &right) noexcept {
     return left.id == right.id;
   }
+};
+
+// One configured provider slot in one Context, not a provider family or a
+// portable build/device fingerprint. Values are unique only within one loaded
+// Compute runtime lifetime; never persist them or compare across processes.
+// This non-owning diagnostic value remains comparable after owner destruction
+// but does not prove liveness, authorize work or qualify a timing measurement.
+class ProviderInstanceId final {
+public:
+  constexpr ProviderInstanceId() noexcept = default;
+  constexpr bool valid() const noexcept { return value_ != 0; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::uint64_t value() const noexcept { return value_; }
+  friend constexpr bool operator==(ProviderInstanceId,
+                                   ProviderInstanceId) noexcept = default;
+
+private:
+  friend struct detail::ProviderInstanceAccess;
+  constexpr explicit ProviderInstanceId(std::uint64_t value) noexcept
+      : value_(value) {}
+  std::uint64_t value_ = 0;
 };
 
 // A prepared provider either records commands into a caller-owned HYLE Queue

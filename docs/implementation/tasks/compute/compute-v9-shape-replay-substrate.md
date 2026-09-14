@@ -202,3 +202,44 @@ Graph 不再接收或使用 Provider 相对自身 fallback 的 ns：旧字段、
 
 C93 qualified profile identity/匹配、Graph 同池全成本 search、bounded variants 和其余 A3--A6 仍待完成。
 本次消除旧实现与已定架构的一处冲突，**不**把无证据的结构 fallback 声称为自动 SOTA；保持 `AUDITED`。
+
+### C93 实例身份表示审计（实现前固定）
+
+同 Context 可安装同一 ProviderId 的多份配置，`ProviderIdentity::operator==` 仅比较家族 ID。现有 proposal
+校验允许把 `provider_index` 改到同家族另一个 slot；且 Context 裸地址不是销毁/重建后的稳定 identity。
+FIX 公开轻量 `ProviderInstanceId`：每个成功建立的 provider slot 获得单一 Compute runtime 内不复用的
+非零序号，默认无效。Context 移动、artifact/invocation、extension 和 report 保持同一值；slot、配置实例
+或 Context 重建必须不同。无需全局 registry、构建脚本、heap key 对象或 resource 保活。
+
+`Context::provider_instance_id(index)` 与 prepared/invocation 的同名 accessor 提供这个值。proposal 由
+Compute owner 签入，并在 exact prepare 校验，Provider 自报家族不能伪造另一配置实例。ID 在 Context
+关闭/销毁后仍可作为诊断值，但不授权工作，也不证明 owner 仍存活。只允许同进程/同 Compute runtime
+的比较，不提供反序列化/跨运行身份承诺；counter 耗尽失败，不回绕复用。
+
+这只是完整 profile key 的实例坐标：不替代 operation/domain/layout、workload、completion boundary 和
+build/device/driver 资格化，不自动启用性能匹配。普通 direct 用户无需填写新字段。P0 限制为每 slot 一次
+冷 ID 分配与冷校验，submit/Queue/kernel 不查询 ID；report 不因此保活后端或 Provider。
+
+固定反例：同家族两个 slot 的 proposal 拼接拒绝、两个 Context/移动/关闭/销毁重建、artifact/extension/report
+一致、报告保留不延后资源销毁、并发 Context 创建不重复、默认无效与越界、source-tree shared/static/逐头。
+
+## 2026-09-14 C93：配置实例身份检查点
+
+上述 `ProviderInstanceId` 已实现，私有 Compute proposal 表升至 6。Context 创建为每 slot 分配不回绕的
+runtime-local ID，owner 在 proposal 写入并在 prepare 校验；prepared/invocation、extension 与 Graph
+report 传播同一值。direct 用户不填写新参数，Provider 家族顺序与算子实现不变；没有新增 CMake 开关、
+依赖、FFI 或全局对象 registry。数值不保活 Context，也不冒充可持久化的 build/device/profile identity。
+
+定向反例覆盖同家族错 slot 在 prepare 前拒绝、Context move/close/重建、并发创建不重复、默认/越界、
+artifact/extension copy/move、一份报告跨越 Context/artifact 销毁以及 Copy 无 Provider ID。真实 oneDNN
+gated MLP 的报告与 Context 实例一致；同步修正指南中把 metadata View 一概描述为无 Provider 的旧说法。
+
+- Windows Release source-tree shared/static 定向各 9/9（各 242 单元用例及四组逐头）通过。
+- oneDNN-enabled shared 的 direct/composition/Graph/region 与逐头 8/8（127 单元用例）通过。
+- P0：每 slot 一次冷 atomic 序号分配；单次 proposal 身份比较和 accessor 为 `O(1)`。仅增加固定大小
+  身份字段，submit/Queue/kernel 不查询、不分配、不加锁；没有新的 P1 样本或性能胜负结论。
+- impact READY，跳过 82 项；closure/docs/diff 通过。CUDA、Linux/macOS、sanitizer 与 installed SDK
+  仍留给完整 foundation candidate，不由本地 source-tree 回归代签。
+
+状态继续 `AUDITED`。C93 的完整 qualified profile、G103 同池完整成本、bounded variants 与其余
+foundation 范围仍未完成；实例身份只是它们的一个必要坐标。

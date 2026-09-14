@@ -87,6 +87,7 @@ struct RegionProbe final {
   std::size_t single_prepare_count = 0;
   std::size_t single_artifact_count = 0;
   std::size_t region_resource_count = 0;
+  std::size_t context_destroy_count = 0;
   std::size_t create_invocation_count = 0;
   std::size_t destroy_invocation_count = 0;
   std::size_t submit_count = 0;
@@ -713,7 +714,9 @@ Status create_provider_context(const Provider &provider, hyle::compute::Device,
   return Status::Ok();
 }
 
-void destroy_provider_context(void *, AllocatorRef) noexcept {}
+void destroy_provider_context(void *context, AllocatorRef) noexcept {
+  ++static_cast<RegionProbe *>(context)->context_destroy_count;
+}
 
 void destroy_effect_prepared(void *, AllocatorRef) noexcept {}
 
@@ -1358,6 +1361,37 @@ TEST(GraphRegions, ReplayCostFactsSurviveRegionCompilation) {
     ASSERT_EQ(compiled->report.region_count(), 1u);
     EXPECT_EQ(compiled->report.step(0)->runtime.replay_class, replay_class);
   }
+}
+
+TEST(GraphRegions, ReportKeepsInstanceFactsWithoutRetainingTheirContext) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  CompileReport retained_region;
+  CompileReport retained_leaf;
+  hyle::compute::ProviderInstanceId region_id;
+  hyle::compute::ProviderInstanceId leaf_id;
+  {
+    Context context = make_context(probe);
+    region_id = context.provider_instance_id(0).value();
+    leaf_id = context.provider_instance_id(1).value();
+    auto region = hyle::graph::compile(logical.graph, context).value();
+    auto leaf = hyle::graph::compile(
+                    logical.graph, context,
+                    {.region_selection = RegionSelectionPolicy::kDisabled})
+                    .value();
+    EXPECT_EQ(region.report.step(0)->provider_instance, region_id);
+    EXPECT_EQ(leaf.report.step(0)->provider_instance, leaf_id);
+    EXPECT_EQ(leaf.report.step(1)->provider_instance, leaf_id);
+    retained_region = region.report;
+    retained_leaf = leaf.report;
+  }
+  EXPECT_EQ(probe.context_destroy_count, 1u);
+  EXPECT_EQ(probe.destroy_prepared_count, 1u);
+  EXPECT_EQ(retained_region.step(0)->provider_instance, region_id);
+  EXPECT_EQ(retained_leaf.step(0)->provider_instance, leaf_id);
+  Context recreated = make_context(probe);
+  EXPECT_NE(recreated.provider_instance_id(0).value(), region_id);
+  EXPECT_NE(recreated.provider_instance_id(1).value(), leaf_id);
 }
 
 TEST(GraphRegions,

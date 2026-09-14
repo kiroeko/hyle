@@ -60,6 +60,7 @@ struct ContextState final : util::RefCounted<ContextState> {
   struct ProviderSlot final {
     Provider provider{};
     void *state = nullptr;
+    ProviderInstanceId instance{};
   };
 
   ContextState(Device device_value, mem::AllocatorRef allocator_value,
