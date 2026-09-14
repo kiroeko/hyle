@@ -17,7 +17,7 @@ set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS "")
 
 function(_hyle_declare_component name)
   cmake_parse_arguments(ARG "TRACE;QUEUED" ""
-    "PRIVATE_DEPS;PUBLIC_DEPS;PUBLIC_TYPE_DEPS;PRIVATE_BUILD_DEPS;SPLIT_PUBLIC_HEADERS"
+    "PRIVATE_DEPS;PUBLIC_DEPS;PUBLIC_TYPE_DEPS;PRIVATE_BUILD_DEPS;TEST_DEPS;SPLIT_PUBLIC_HEADERS"
     ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -31,7 +31,7 @@ function(_hyle_declare_component name)
   endif()
   if(ARG_QUEUED)
     if(ARG_TRACE OR ARG_PRIVATE_DEPS OR ARG_PUBLIC_DEPS OR
-       ARG_PUBLIC_TYPE_DEPS OR ARG_PRIVATE_BUILD_DEPS OR
+       ARG_PUBLIC_TYPE_DEPS OR ARG_PRIVATE_BUILD_DEPS OR ARG_TEST_DEPS OR
        ARG_SPLIT_PUBLIC_HEADERS)
       message(FATAL_ERROR
         "HYLE QUEUED component '${name}' is an identity reservation only and "
@@ -44,8 +44,10 @@ function(_hyle_declare_component name)
 
   set(_private ${ARG_PRIVATE_DEPS})
   set(_public ${ARG_PUBLIC_DEPS})
+  set(_test ${ARG_TEST_DEPS})
   list(REMOVE_DUPLICATES _private)
   list(REMOVE_DUPLICATES _public)
+  list(REMOVE_DUPLICATES _test)
   foreach(_dependency IN LISTS _private)
     if(_dependency IN_LIST _public)
       message(FATAL_ERROR
@@ -91,6 +93,17 @@ function(_hyle_declare_component name)
 
   set(_all ${_private} ${_public})
   list(REMOVE_DUPLICATES _all)
+  foreach(_dependency IN LISTS _test)
+    if(_dependency STREQUAL name)
+      message(FATAL_ERROR
+        "HYLE component '${name}' cannot name itself in TEST_DEPS")
+    endif()
+    if(_dependency IN_LIST _all)
+      message(FATAL_ERROR
+        "HYLE component '${name}' names product dependency '${_dependency}' "
+        "again in TEST_DEPS")
+    endif()
+  endforeach()
   string(TOUPPER "${name}" _component_upper)
   set(_HYLE_PRIVATE_DEPS_${_component_upper} "${_private}" PARENT_SCOPE)
   set(_HYLE_PUBLIC_DEPS_${_component_upper} "${_public}" PARENT_SCOPE)
@@ -98,6 +111,7 @@ function(_hyle_declare_component name)
       "${ARG_PUBLIC_TYPE_DEPS}" PARENT_SCOPE)
   set(_HYLE_PRIVATE_BUILD_DEPS_${_component_upper}
       "${ARG_PRIVATE_BUILD_DEPS}" PARENT_SCOPE)
+  set(_HYLE_TEST_DEPS_${_component_upper} "${_test}" PARENT_SCOPE)
   set(_HYLE_SPLIT_PUBLIC_HEADERS_${_component_upper}
       "${_split_public_headers}" PARENT_SCOPE)
   set(_HYLE_DEPS_${_component_upper} "${_all}" PARENT_SCOPE)
@@ -338,6 +352,7 @@ _hyle_declare_component(io_websocket
 _hyle_declare_component(compute_provider_onednn
   PRIVATE_DEPS error mem
   PUBLIC_DEPS compute
+  TEST_DEPS compute_backend_cpu
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/onednn.h)
 
 # Active SCOPED identity for the ggml compiled-region provider audit.  It owns
@@ -351,6 +366,7 @@ _hyle_declare_component(compute_provider_ggml)
 _hyle_declare_component(graph_provider_onednn
   PRIVATE_DEPS compute_ops error graph math mem simd compute_provider_onednn
   PUBLIC_DEPS core compute
+  TEST_DEPS compute_provider_native
   SPLIT_PUBLIC_HEADERS hyle/graph/providers/onednn.h)
 
 # Provider-neutral Tensor/Operation schema. Public include paths stay in the
@@ -591,6 +607,19 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
         "component '${_dependency}'")
     endif()
   endforeach()
+  foreach(_dependency IN LISTS _HYLE_TEST_DEPS_${_component_upper})
+    if(NOT _dependency IN_LIST HYLE_KNOWN_COMPONENTS)
+      message(FATAL_ERROR
+        "HYLE component '${_component}' names unknown TEST_DEPS "
+        "'${_dependency}'")
+    endif()
+    string(TOUPPER "${_dependency}" _dependency_upper)
+    if(_HYLE_QUEUED_${_dependency_upper})
+      message(FATAL_ERROR
+        "HYLE implemented component '${_component}' cannot use QUEUED "
+        "TEST_DEPS '${_dependency}'")
+    endif()
+  endforeach()
 endforeach()
 
 # Component identity order is append-only audit history, so it cannot also be
@@ -633,22 +662,37 @@ endforeach()
 get_property(_hyle_topological_components GLOBAL
   PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER)
 
-# A single reverse topological pass reaches every transitive dependency,
-# avoiding a fixed-point rescan of the growing selected set.
-foreach(_component IN LISTS _hyle_requested_roots)
-  string(TOUPPER "${_component}" _component_upper)
-  set(_HYLE_SELECTED_${_component_upper} TRUE)
-endforeach()
-set(_hyle_resolution_order ${_hyle_topological_components})
-list(REVERSE _hyle_resolution_order)
-foreach(_component IN LISTS _hyle_resolution_order)
-  string(TOUPPER "${_component}" _component_upper)
-  if(_HYLE_SELECTED_${_component_upper})
-    foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
-      string(TOUPPER "${_dependency}" _dependency_upper)
-      set(_HYLE_SELECTED_${_dependency_upper} TRUE)
+# Visit the selected graph once. Product edges are always followed; TEST_DEPS
+# are followed only for a test-enabled developer build. Selection is recorded
+# before recursion so even a harmless test-fixture cycle terminates. Every
+# selected vertex and outgoing edge is therefore inspected at most once.
+function(_hyle_select_component component include_test_dependencies)
+  string(TOUPPER "${component}" _select_upper)
+  get_property(_selected GLOBAL PROPERTY
+    "_HYLE_COMPONENT_SELECTED_${_select_upper}")
+  if(_selected)
+    return()
+  endif()
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_SELECTED_${_select_upper}" TRUE)
+
+  foreach(_dependency IN LISTS _HYLE_DEPS_${_select_upper})
+    _hyle_select_component("${_dependency}" "${include_test_dependencies}")
+  endforeach()
+  if(include_test_dependencies)
+    foreach(_dependency IN LISTS _HYLE_TEST_DEPS_${_select_upper})
+      _hyle_select_component("${_dependency}" TRUE)
     endforeach()
   endif()
+endfunction()
+
+foreach(_component IN LISTS _hyle_requested_roots)
+  _hyle_select_component("${_component}" "${HYLE_BUILD_TESTS}")
+endforeach()
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_component}" _component_upper)
+  get_property(_HYLE_SELECTED_${_component_upper} GLOBAL PROPERTY
+    "_HYLE_COMPONENT_SELECTED_${_component_upper}")
 endforeach()
 
 # Preserve the computed topological order for target construction, audit and
@@ -718,6 +762,8 @@ endif()
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
   unset(_HYLE_SELECTED_${_component_upper})
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_SELECTED_${_component_upper}" "")
   set_property(GLOBAL PROPERTY
     "_HYLE_COMPONENT_VISIT_${_component_upper}" "")
 endforeach()

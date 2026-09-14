@@ -18,7 +18,7 @@
 ## 一份内部图，两种消费层
 
 [`cmake/HyleComponents.cmake`](../../cmake/HyleComponents.cmake) 是 HYLE factor DAG 和产品 façade 的
-唯一声明。每个 factor 条目拥有身份、是否可构建、`PUBLIC/PRIVATE/PRIVATE_BUILD` 直接边、公开头例外
+唯一声明。每个 factor 条目拥有身份、是否可构建、`PUBLIC/PRIVATE/PRIVATE_BUILD/TEST_DEPS` 直接边、公开头例外
 以及构造所需 metadata；同一声明投影选择闭包、稳定拓扑序、真实 target link、头 owner、安装集合和
 测试图。模块目录不得再手写一份 HYLE 内部依赖。
 
@@ -30,6 +30,11 @@
 `HYLE_DEV_FACTORS` 只给顶层维护/CI 精确构建内部 factor；父工程嵌入和安装不得依赖它。公开头位于
 另一产品命名空间的 factor 用中央 `SPLIT_PUBLIC_HEADERS` 一次登记，不能在安装、测试和 include audit
 分别维护名单。
+
+`TEST_DEPS` 只描述 factor 测试所需、但不属于产品的 HYLE 夹具 target。它只在
+`HYLE_BUILD_TESTS=ON` 时扩展 developer build selection，并取得这些夹具的正常产品依赖；不进入 module
+link verifier、安装 metadata、产品反向依赖或 tests-off 源码交付。这样 CPU-specific provider 可以用
+CPU backend/Native fallback 做真实测试，而不会谎称其工厂 API 或 artifact 在产品上依赖这些实现。
 
 中央 resolver 必须拒绝未知依赖、指向不可构建 identity 的边和 cycle，并以 O(V+E) 得到稳定拓扑。
 factor 身份通常只追加；合法更名需要一对一迁移任务和状态证据。实时 factor/product 数量及边只能从

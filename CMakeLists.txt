@@ -74,9 +74,13 @@ include(HyleTargetPlatform)
 include(HyleDependencyVersions)
 include(HyleDependencyCache)
 
+# Component resolution needs to know whether factor-owned tests are part of
+# this build: TEST_DEPS are build fixtures, never shipping product edges.
+option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
+
 # Resolve platform capability before the component graph. Sched and its current
-# IO consumers require fcontext; the clean Compute CPU factor is deliberately
-# sched-free and Graph remains unimplemented.
+# IO consumers require fcontext; the Compute and Graph runtime factors remain
+# deliberately sched-free.
 set(HYLE_FCONTEXT_SUPPORTED FALSE)
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(MSVC OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
@@ -147,7 +151,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION VERS
 endif()
 
 # ---- global options ---------------------------------------------------------
-option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
 if(HYLE_BUILD_TESTS)
   option(HYLE_TEST_INSTRUMENTATION
     "compile test-only fault injection and structural diagnostics" OFF)

@@ -1,6 +1,6 @@
 # Validation selector：CUDA compiled factor 的验证上下文
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## 问题与边界
 
@@ -29,4 +29,14 @@ Compute v7 的公开 API 变更依法把已关闭的 `compute_backend_cuda` 纳�
 
 ## 结果
 
-待有限验证完成后填写；当前为 `AUDITED`。
+`compute_backend_cuda -> HYLE_COMPUTE_CUDA=ON` 已作为唯一 `factor_configure_cache` 投影登记；Compute
+公开边界变更会自动把该参数传给反向选中的 CUDA factor，无关 factor 不会得到它。工具回归 44/44
+通过。
+
+不可变产品候选 `18970739c5e0909cf968fecba9b96c9ea3560dfc` 已在同一 Windows/MSVC + CUDA
+13.3 上由当前选择器回放：CUDA configure、build 和真实 factor test 通过。该次完整闭包随后在
+`graph_provider_onednn` 的旧 fallback 测试判据停止；这不是 CUDA gate 失败，旧判据已由独立 Graph
+维护提交 `09cb5d1a` 修正。普通 Compute/CPU 配置仍不探测 CUDA，机器缺少 Toolkit 时也没有降级假绿。
+
+本任务没有修改 CUDA/Compute 产品、feature 默认值或模块 registry，有限 FIX 全部完成，项目工具单元
+`CLOSED`。

@@ -1,6 +1,6 @@
 # Build/package：exact-factor 测试依赖闭包
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -32,4 +32,20 @@
 
 ## 结果
 
-待实现和有限验证后填写；当前为 `AUDITED`。
+`TEST_DEPS` 已进入唯一中央组件声明，并由一次访问每个节点/边的选择遍历投影到 test-enabled developer
+build；它不进入 `_HYLE_DEPS_*`、target link、产品反向依赖或安装 metadata。当前精确夹具边为：
+
+- `compute_provider_onednn -> compute_backend_cpu`；
+- `graph_provider_onednn -> compute_provider_native`，CPU backend 由 Native 的正常产品闭包取得。
+
+Windows/MSVC Release 的有限回放结果：
+
+- exact `graph_provider_onednn` 自动解析 CPU/Native fixture，真实 region 测试 12/12 通过；
+- 同一短路径构建树切换为 exact `compute_provider_onednn` 后只解析所需 CPU fixture，真实 provider 测试
+  通过；
+- 中央 component contract 通过，其中 `HYLE_BUILD_TESTS=OFF` 明确拒绝上述 fixture 泄漏，并回放现有
+  source/static/shared 选择语义；
+- validation selector 工具回归 44/44 通过。
+
+没有产品 API、算法、artifact 或模块 registry 变化，运行时成本为零；`BTD-01`--`BTD-04` 全部完成，
+本 build/package 单元 `CLOSED`。

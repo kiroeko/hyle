@@ -467,6 +467,39 @@ unset(_split_header_duplicate_source)
 unset(_split_header_projection_build)
 unset(_split_header_projection_source)
 
+# Product edges and test-fixture edges are deliberately different graphs. An
+# exact provider factor must acquire every target needed by its real tests when
+# tests are enabled, while the identical tests-off selection must retain the
+# product-only closure used by source consumers and package construction.
+set(_test_deps_source "${_hyle_contract_root}/test-deps-source")
+file(MAKE_DIRECTORY "${_test_deps_source}")
+file(WRITE "${_test_deps_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_test_deps_contract LANGUAGES NONE)\n"
+"set(HYLE_SOURCE_DIR \"${HYLE_SOURCE_DIR}\")\n"
+"set(HYLE_DEV_FACTORS graph_provider_onednn)\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n"
+"foreach(_fixture IN ITEMS compute_backend_cpu compute_provider_native)\n"
+"  if(TESTS_ON AND NOT _fixture IN_LIST HYLE_RESOLVED_COMPONENT_LIST)\n"
+"    message(FATAL_ERROR \"missing test fixture '\${_fixture}' from '\${HYLE_RESOLVED_COMPONENT_LIST}'\")\n"
+"  elseif(NOT TESTS_ON AND _fixture IN_LIST HYLE_RESOLVED_COMPONENT_LIST)\n"
+"    message(FATAL_ERROR \"test fixture '\${_fixture}' leaked into tests-off product closure\")\n"
+"  endif()\n"
+"endforeach()\n")
+
+foreach(_tests_on IN ITEMS ON OFF)
+  string(TOLOWER "${_tests_on}" _tests_mode)
+  _hyle_contract_run("TEST_DEPS ${_tests_mode} selection" TRUE
+    "${CMAKE_COMMAND}" -S "${_test_deps_source}"
+    -B "${_hyle_contract_root}/test-deps-${_tests_mode}-build"
+    ${_hyle_generator_args}
+    -DTESTS_ON=${_tests_on}
+    -DHYLE_BUILD_TESTS=${_tests_on})
+endforeach()
+unset(_tests_mode)
+unset(_tests_on)
+unset(_test_deps_source)
+
 # container_intrusive remains an independently buildable internal factor, but
 # it is no longer a consumer product or installable SDK root. The maintainer
 # selector builds its real module tests; public selection and installation must
