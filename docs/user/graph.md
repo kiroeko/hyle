@@ -131,8 +131,9 @@ Queue 或可 capture：已预备的 delegated artifact 同样可以合格。
 
 实现 region Provider 时，在 `RegionProposal::replay_class` 提前声明类别。known 值必须与资源提案和
 artifact 一致；unknown 只能在 allow-any 下细化，不能先以 unknown 进入严格计划再补声明。此策略只约束
-Provider 成功 replay，不替调用方 executor/callback、View/Copy、失败诊断或 backend Completion 的独立
-合同证明零开销，也不把声明本身当成性能资格化证据。
+Provider 成功 replay；逻辑 View/Copy 若经 Provider 准备，同样受筛选。它不替调用方 executor/callback、
+编译器插入的 backend transfer、失败诊断或 Completion 的独立合同证明零开销，也不把声明本身当成
+性能资格化证据。
 
 ## 单 target/storage/lane：自然短路径
 
@@ -278,22 +279,29 @@ required 或 preferred。required route 不可执行时 compile
 真正 prepare/region compile 使用共同 `compute::ProviderPrepareOutcome`，只有明确的 unsupported 或
 candidate-local resource-budget decline 可在回收部分 artifact 后回退。kind=Error 即使 code 是
 Unimplemented/ResourceExhausted 也立即失败，不能从错误码推断 rollback。非法 kind/status 同样失败。
-当前编译先发现一次 region 候选。某个 region 的已选资源路线被安全拒绝后，释放本次构造的制品并排除该
+当前编译分别发现一次 region 与普通算子候选；普通算子按允许的 node/target/Provider 配置查询，即使前排
+Provider 或 region 最后胜出，后排候选也可以被发现。`propose` 只返回冷能力与资源要求，不准备重型制品；
+明确 unsupported 被跳过，其它查询错误立即传播，不能因该 Provider 最后未选中而吞错。
+某个 region 的已选资源路线被安全拒绝后，释放本次构造的制品并排除该
 候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
 leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现，
 不重置任何预算。当前这还是确定性重选，不是完整的 leaf/region 同池成本优化或所有资源组合的穷举。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；当前实现若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
 
-`max_region_proposals`、`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 限制候选发现，
-最后一项限制复制保存的 node-ID 总数。默认 `search_policy = CompileSearchPolicy::kAllowLimited`：达到
+`max_operation_proposals`（默认 16,384）限制本次编译接收的普通算子候选总数，独立于实际 prepare 次数；
+禁止 operation fallback 时不发现 leaf，该上限也不使用。`max_region_proposals`、
+`max_region_proposals_per_provider` 和 `max_region_proposal_nodes` 分别限制 region 总数、每配置实例数量与
+复制保存的 node-ID 总数。默认 `search_policy = CompileSearchPolicy::kAllowLimited`：达到
 容量时停止扩大相应发现，只用已接收的候选生成并验证完整计划；per-provider 上限不阻止还有总额时
-探索下一家。成功报告的 `search().optimization_limited()` 明确说明搜索是否被截断，可再查看三个
+探索下一家。成功报告的 `search().optimization_limited()` 明确说明搜索是否被截断，可再查看四个
 `*_limit_reached` 字段、实际接收数和 prepare 次数。这不是全局最优或性能资格声明。
 
 需要拒绝受限发现时使用 `CompileSearchPolicy::kRequireUnexhausted`；它不是要求无限搜索。恰好用满
 容量但没有任何候选/provider 被省略，不标记受限。两种政策都不放宽 coverage、required placement、
 workspace 等硬约束，也不吞真实 Provider/OOM 错误。
+候选上限不是“保证找到任何存在的可行解”：当前普通候选按 node/target/Provider 的稳定顺序接收，过小
+的上限可能让后面的节点无可用候选，此时 compile 失败而非返回不完整 Executable。
 
 Provider 的 `RegionProposalWriter::try_add()` 返回 `Result<bool>`：true 表示已复制并排序，false 表示
 容量不够，应结束当前发现并返回 `Status::Ok()`；unexpected 必须原样传播。没有部分接收一个 node set，
@@ -385,7 +393,8 @@ multi-stream capture。
 
 `CompileReport` 是可复制的冷态事实副本，不保活 heavyweight artifact。它可枚举：
 
-- `search()` 的已接收候选/node 数、累计 prepare 次数、`region_route_rejections` 安全拒绝数和是否因
+- `search()` 的 `operation_proposals/region_proposals`、已接收 region node 数、累计 prepare 次数、
+  `region_route_rejections` 安全拒绝数和是否因
   容量省略了候选/provider；正常拒绝不等于搜索容量耗尽；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；

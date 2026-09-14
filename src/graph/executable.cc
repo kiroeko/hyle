@@ -1300,17 +1300,131 @@ using RegionCandidates =
 using RegionNodeIds = container::SmallVector<NodeId, 32, mem::AllocatorRef>;
 using RegionValues = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
 
+struct OperationCandidate final {
+  compute::detail::ProviderOperationProposal proposal{};
+  std::size_t requirements_begin = 0;
+};
+
+struct OperationCandidateRange final {
+  std::size_t begin = 0;
+  std::size_t count = 0;
+};
+
+// Typed leaf proposals share the compile-local discovery lifetime with region
+// proposals. These contain no prepared artifacts, only validated cold facts.
+struct OperationDiscovery final {
+  explicit OperationDiscovery(mem::AllocatorRef allocator) noexcept
+      : candidates(allocator), requirements(allocator), ranges(allocator) {}
+
+  std::span<const OperationCandidate>
+  for_node(std::size_t node, std::size_t target,
+           std::size_t target_count) const noexcept {
+    if (ranges.empty())
+      return {};
+    const auto range = ranges[node * target_count + target];
+    return std::span<const OperationCandidate>(candidates)
+        .subspan(range.begin, range.count);
+  }
+
+  container::SmallVector<OperationCandidate, 4, mem::AllocatorRef> candidates;
+  container::SmallVector<compute::ResourceRequirement, 16, mem::AllocatorRef>
+      requirements;
+  container::SmallVector<OperationCandidateRange, 16, mem::AllocatorRef> ranges;
+};
+
+Status discover_operation_candidates(
+    const detail::PlanState &plan, const detail::GraphState &graph,
+    CompileEnvironment environment, CompileOptions options,
+    const ProviderPolicy &policy,
+    std::span<const std::uint32_t> required_targets,
+    OperationDiscovery &discovery, CompileSearchReport &search) noexcept {
+  if (options.operation_fallback == OperationFallbackPolicy::kReject)
+    return Status::Ok();
+  const auto target_count = environment.targets.size();
+  if (graph.nodes.size() != 0 && target_count > SIZE_MAX / graph.nodes.size())
+    return Status::ResourceExhausted("operation proposal index size overflows");
+  if (!discovery.ranges.try_resize(graph.nodes.size() * target_count))
+    return plan_allocation_failure();
+  using Descriptions =
+      container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
+  using Requirements = container::SmallVector<compute::ResourceRequirement, 4,
+                                              mem::AllocatorRef>;
+  Descriptions inputs(plan.allocator), outputs(plan.allocator);
+  Requirements input_requirements(plan.allocator),
+      output_requirements(plan.allocator);
+  for (std::size_t node_index = 0; node_index < graph.nodes.size();
+       ++node_index) {
+    const auto &node = graph.nodes[node_index];
+    if (!inputs.try_resize(node.input_count) ||
+        !outputs.try_resize(node.output_count) ||
+        !input_requirements.try_resize(node.input_count) ||
+        !output_requirements.try_resize(node.output_count))
+      return plan_allocation_failure();
+    for (std::size_t index = 0; index < node.input_count; ++index)
+      inputs[index] = plan.descriptions[graph.edges[node.input_begin + index]];
+    for (std::size_t index = 0; index < node.output_count; ++index)
+      outputs[index] = plan.descriptions[node.output_begin + index];
+    for (std::size_t target = 0; target < target_count; ++target) {
+      auto &range = discovery.ranges[node_index * target_count + target];
+      range.begin = discovery.candidates.size();
+      if (required_targets[node_index] != detail::kNoWorkspaceRequest &&
+          required_targets[node_index] != target)
+        continue;
+      const auto &context = *environment.targets[target].context;
+      for (std::size_t provider = 0; provider < context.provider_count();
+           ++provider) {
+        HYLE_ASSIGN_OR_RETURN(auto allowed, policy.allows_operation(
+                                                context, provider, node_index));
+        if (!allowed)
+          continue;
+        if (discovery.candidates.size() == options.max_operation_proposals) {
+          search.operation_proposal_limit_reached = true;
+          continue;
+        }
+        auto proposal = compute::detail::OperationPreparationAccess::propose(
+            context, provider, node.operation, inputs, outputs,
+            input_requirements, output_requirements);
+        if (!proposal) {
+          if (proposal.error().IsUnimplemented())
+            continue;
+          return std::move(proposal).error();
+        }
+        if (!replay_allowed(options.provider_replay,
+                            proposal->runtime.replay_class))
+          continue;
+        const std::size_t requirement_count = inputs.size() + outputs.size();
+        const std::size_t begin = discovery.requirements.size();
+        if (requirement_count > SIZE_MAX - begin)
+          return Status::ResourceExhausted(
+              "operation proposal requirement storage overflows");
+        if (!discovery.requirements.try_resize(begin + requirement_count) ||
+            !discovery.candidates.try_push_back(
+                OperationCandidate{*proposal, begin}))
+          return plan_allocation_failure();
+        std::copy(input_requirements.begin(), input_requirements.end(),
+                  discovery.requirements.begin() + begin);
+        std::copy(output_requirements.begin(), output_requirements.end(),
+                  discovery.requirements.begin() + begin + inputs.size());
+        ++range.count;
+      }
+    }
+  }
+  search.operation_proposals = discovery.candidates.size();
+  return Status::Ok();
+}
+
 // One discovery per compile, shared by the bounded construction attempts.
 // Proposal ordinals remain stable while the eligible partition changes.
 struct RegionDiscovery final {
   explicit RegionDiscovery(mem::AllocatorRef allocator) noexcept
       : extensions(allocator), candidates(allocator), nodes(allocator),
-        rejected(allocator) {}
+        rejected(allocator), operations(allocator) {}
 
   RegionExtensions extensions;
   RegionCandidates candidates;
   RegionNodeIds nodes;
   container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> rejected;
+  OperationDiscovery operations;
   bool ready = false;
 };
 
@@ -1915,6 +2029,13 @@ Status prepare_placed_steps_attempt(
       return Status::ResourceExhausted("graph candidate discovery reached a "
                                        "search limit under strict policy");
     }
+    HYLE_RETURN_IF_ERROR(discover_operation_candidates(
+        plan, graph, environment, options, provider_policy, node_required,
+        discovery.operations, plan.search));
+    if (options.search_policy == CompileSearchPolicy::kRequireUnexhausted &&
+        plan.search.operation_proposal_limit_reached)
+      return Status::ResourceExhausted("graph operation discovery reached a "
+                                       "search limit under strict policy");
     if (!all_region_nodes.try_resize(region_proposal_node_count) ||
         !discovery.rejected.try_resize(region_proposal_count))
       return plan_allocation_failure();
@@ -2043,47 +2164,32 @@ Status prepare_placed_steps_attempt(
     const std::uint32_t default_storage =
         plan.targets[candidate].default_storage.ordinal();
     if (!selected_inputs.try_resize(node.input_count) ||
-        !selected_outputs.try_resize(node.output_count) ||
-        !input_requirements.try_resize(node.input_count) ||
-        !output_requirements.try_resize(node.output_count)) {
+        !selected_outputs.try_resize(node.output_count)) {
       return std::unexpected(plan_allocation_failure());
     }
 
     Status unsupported = Status::Unimplemented(
         "no configured provider accepts the graph operation resources");
     auto decline = compute::detail::ProviderPrepareDecline::kUnsupported;
-    for (std::size_t provider = 0; provider < context.provider_count();
-         ++provider) {
-      auto allowed =
-          provider_policy.allows_operation(context, provider, node_index);
-      if (!allowed)
-        return std::unexpected(std::move(allowed).error());
-      if (!*allowed)
-        continue;
+    for (const auto &route :
+         discovery.operations.for_node(node_index, candidate, target_count)) {
       decline = compute::detail::ProviderPrepareDecline::kUnsupported;
-      auto proposal = compute::detail::OperationPreparationAccess::propose(
-          context, provider, node.operation, inputs, outputs,
-          input_requirements, output_requirements);
-      if (!proposal) {
-        unsupported = std::move(proposal).error();
-        if (unsupported.IsUnimplemented())
-          continue;
-        return std::unexpected(std::move(unsupported));
-      }
-
-      if (!replay_allowed(options.provider_replay,
-                          proposal->runtime.replay_class)) {
-        unsupported = Status::Unimplemented(
-            "operation provider does not declare required prepared replay");
-        continue;
-      }
+      const auto *proposal = &route.proposal;
+      const auto requirements =
+          std::span<const compute::ResourceRequirement>(
+              discovery.operations.requirements)
+              .subspan(route.requirements_begin,
+                       static_cast<std::size_t>(node.input_count) +
+                           node.output_count);
+      const auto leaf_inputs = requirements.first(node.input_count);
+      const auto leaf_outputs = requirements.subspan(node.input_count);
 
       bool route_supported = true;
       for (std::size_t input_index = 0; input_index < node.input_count;
            ++input_index) {
         const std::uint32_t value = graph.edges[node.input_begin + input_index];
         auto storage =
-            select_storage(candidate, input_requirements[input_index], kNone,
+            select_storage(candidate, leaf_inputs[input_index], kNone,
                            producer_storage[value], default_storage);
         if (!storage) {
           unsupported = std::move(storage).error();
@@ -2128,9 +2234,9 @@ Status prepare_placed_steps_attempt(
         const std::uint32_t preferred_storage = value_preferred[value] != kNone
                                                     ? value_preferred[value]
                                                     : default_storage;
-        auto storage = select_storage(
-            candidate, output_requirements[output_index], required_storage,
-            preferred_storage, default_storage);
+        auto storage = select_storage(candidate, leaf_outputs[output_index],
+                                      required_storage, preferred_storage,
+                                      default_storage);
         if (!storage) {
           unsupported = std::move(storage).error();
           if (!unsupported.IsUnimplemented())
@@ -2170,8 +2276,8 @@ Status prepare_placed_steps_attempt(
       ++placement_attempts;
       auto result =
           compute::detail::OperationPreparationAccess::prepare_candidate(
-              context, *proposal, node.operation, inputs, outputs,
-              input_requirements, output_requirements,
+              context, *proposal, node.operation, inputs, outputs, leaf_inputs,
+              leaf_outputs,
               compute::OperationResourceBindings{
                   .inputs = input_resources,
                   .outputs = output_resources,
@@ -6826,6 +6932,10 @@ Result<CompiledGraph> compile(const Graph &graph,
     return std::unexpected(
         Status::InvalidArgument("graph operation fallback policy is invalid"));
   }
+  if (options.operation_fallback == OperationFallbackPolicy::kAllow &&
+      options.max_operation_proposals == 0)
+    return std::unexpected(
+        Status::InvalidArgument("graph operation proposal budget is zero"));
   if (options.provider_replay != ProviderReplayPolicy::kAllowAny &&
       options.provider_replay != ProviderReplayPolicy::kRequirePrepared) {
     return std::unexpected(

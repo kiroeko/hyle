@@ -202,6 +202,101 @@ TEST(GraphProviderPolicy, LeafResourceDeclineCannotEscapeRequiredInstance) {
   }
 }
 
+TEST(GraphDiscovery, CollectsLaterLeafCandidatesWithoutPreparingThem) {
+  const auto logical = policy_graph(2);
+  Probe first, second;
+  const std::array factories{provider(first).value(), provider(second).value()};
+  auto context =
+      Context::create(cpu::device(), {.providers = factories}).value();
+  auto compiled = hyle::graph::compile(logical.graph, context,
+                                       {.max_placement_attempts = 2});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(first.proposals, 2);
+  EXPECT_EQ(second.proposals, 2);
+  EXPECT_EQ(first.preparations, 2);
+  EXPECT_EQ(second.preparations, 0);
+  EXPECT_EQ(compiled->report.search().operation_proposals, 4u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 2u);
+}
+
+TEST(GraphDiscovery, ProposalStorageBudgetIsSeparateFromPreparation) {
+  const auto logical = policy_graph();
+  for (auto policy : {hyle::graph::CompileSearchPolicy::kAllowLimited,
+                      hyle::graph::CompileSearchPolicy::kRequireUnexhausted}) {
+    Probe first, second;
+    const std::array factories{provider(first).value(),
+                               provider(second).value()};
+    auto context =
+        Context::create(cpu::device(), {.providers = factories}).value();
+    auto compiled = hyle::graph::compile(logical.graph, context,
+                                         {.max_placement_attempts = 1,
+                                          .max_operation_proposals = 1,
+                                          .search_policy = policy});
+    EXPECT_EQ(first.proposals, 1);
+    EXPECT_EQ(second.proposals, 0);
+    EXPECT_EQ(second.preparations, 0);
+    if (policy == hyle::graph::CompileSearchPolicy::kRequireUnexhausted) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsResourceExhausted());
+      EXPECT_EQ(first.preparations, 0);
+      continue;
+    }
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_TRUE(compiled->report.search().operation_proposal_limit_reached);
+    EXPECT_TRUE(compiled->report.search().optimization_limited());
+    EXPECT_EQ(compiled->report.search().operation_proposals, 1u);
+    EXPECT_EQ(compiled->report.search().placement_attempts, 1u);
+    Tensors tensors;
+    ASSERT_TRUE(tensors.fill().ok());
+    auto run = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(run.bind(logical.input, tensors.in).ok());
+    ASSERT_TRUE(run.bind(logical.output, tensors.out).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(run.submit(queue).value().wait().ok());
+    EXPECT_EQ(tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
+    EXPECT_EQ(first.proposals, 1);
+  }
+}
+
+TEST(GraphDiscovery, BudgetNeverPermitsAnIncompleteExecutable) {
+  const auto logical = policy_graph(2);
+  Probe probe;
+  auto context =
+      Context::create(cpu::device(), provider(probe).value()).value();
+  auto invalid = hyle::graph::compile(logical.graph, context,
+                                      {.max_operation_proposals = 0});
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  EXPECT_EQ(probe.proposals, 0);
+  auto limited = hyle::graph::compile(logical.graph, context,
+                                      {.max_operation_proposals = 1});
+  ASSERT_FALSE(limited);
+  EXPECT_TRUE(limited.error().IsUnimplemented());
+  EXPECT_EQ(probe.proposals, 1);
+  EXPECT_EQ(probe.kernels, 0);
+  auto complete = hyle::graph::compile(logical.graph, context,
+                                       {.max_operation_proposals = 2});
+  ASSERT_TRUE(complete);
+  EXPECT_FALSE(complete->report.search().optimization_limited());
+  EXPECT_EQ(complete->report.node_count(), 2u);
+}
+
+TEST(GraphDiscovery, FatalLaterProposalStopsBeforeAnyArtifactPreparation) {
+  const auto logical = policy_graph();
+  Probe first, second;
+  second.fault = Fault::kProposalError;
+  const std::array factories{provider(first).value(), provider(second).value()};
+  auto context =
+      Context::create(cpu::device(), {.providers = factories}).value();
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_FALSE(compiled);
+  EXPECT_TRUE(compiled.error().IsInternal());
+  EXPECT_EQ(first.proposals, 1);
+  EXPECT_EQ(second.proposals, 1);
+  EXPECT_EQ(first.preparations, 0);
+  EXPECT_EQ(second.preparations, 0);
+}
+
 // Keep the raw allocation addressable after logical release, so a stale view
 // deterministically sees poison rather than relying on allocator reuse or UB.
 struct QuarantinedFactoryAllocator final {

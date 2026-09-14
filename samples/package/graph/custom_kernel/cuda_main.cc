@@ -195,9 +195,13 @@ Status exercise(bool report_after_launch) {
           hyle::graph::NodeProviderConstraint{first_node, family.id, instance}};
       HYLE_ASSIGN_OR_RETURN(
           auto compiled,
-          hyle::graph::compile(graph,
-                               {.storage_domains = storage, .targets = targets},
-                               {.node_providers = required}));
+          hyle::graph::compile(
+              graph, {.storage_domains = storage, .targets = targets},
+              {.node_providers = required, .max_operation_proposals = 2}));
+      if (compiled.report.search().operation_proposals != 2 ||
+          compiled.report.search().placement_attempts != 2 ||
+          compiled.report.search().optimization_limited())
+        return Status::Internal("custom CUDA candidate discovery mismatch");
       HYLE_ASSIGN_OR_RETURN(auto invocation,
                             compiled.executable.create_invocation());
       HYLE_RETURN_IF_ERROR(invocation.bind(graph_in, in));

@@ -391,6 +391,7 @@ struct CompileSegmentDependencyReport final {
 // when candidate discovery was limited. A full but untruncated writer alone
 // does not mean optimization_limited().
 struct CompileSearchReport final {
+  std::size_t operation_proposals = 0;
   std::size_t region_proposals = 0;
   std::size_t region_proposal_nodes = 0;
   std::size_t placement_attempts = 0;
@@ -400,9 +401,10 @@ struct CompileSearchReport final {
   bool region_proposal_limit_reached = false;
   bool per_provider_proposal_limit_reached = false;
   bool region_node_limit_reached = false;
+  bool operation_proposal_limit_reached = false;
 
   constexpr bool optimization_limited() const noexcept {
-    return region_proposal_limit_reached ||
+    return operation_proposal_limit_reached || region_proposal_limit_reached ||
            per_provider_proposal_limit_reached || region_node_limit_reached;
   }
 };
@@ -620,6 +622,11 @@ struct CompileOptions final {
   RegionSelectionPolicy region_selection =
       RegionSelectionPolicy::kPreferProviderRegions;
   OperationFallbackPolicy operation_fallback = OperationFallbackPolicy::kAllow;
+  // Independent storage cap for admitted operation proposals across all
+  // nodes/targets/providers. Discovery does not prepare artifacts or spend
+  // max_placement_attempts. A limit may not leave the final plan incomplete.
+  // Unused when operation_fallback is kReject.
+  std::size_t max_operation_proposals = 16384;
   // Hard cold-path admission/storage caps. Exhaustion stops further discovery
   // and is reported; search_policy decides whether a feasible limited plan
   // is acceptable. It never waives placement, coverage or workspace checks.
@@ -631,7 +638,8 @@ struct CompileOptions final {
   // Hard aggregate storage budget for node identities copied from provider
   // proposals. A refused node set is never partially admitted.
   std::size_t max_region_proposal_nodes = 65536;
-  // Cold constraint for both operation and region providers. View/Copy and
+  // Cold constraint for both operation and region providers, including logical
+  // View/Copy prepared by a provider. Compiler-inserted backend transfers and
   // caller-owned executor/callback costs are not provider replay contracts.
   ProviderReplayPolicy provider_replay = ProviderReplayPolicy::kAllowAny;
   CompileSearchPolicy search_policy = CompileSearchPolicy::kAllowLimited;

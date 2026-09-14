@@ -97,7 +97,7 @@ struct RegionProbe final {
   std::size_t propose_count = 0;
   std::size_t extension_query_count = 0;
   std::size_t compile_count = 0;
-  std::size_t single_prepare_count = 0;
+  std::size_t single_proposal_count = 0;
   std::size_t single_artifact_count = 0;
   std::size_t region_resource_count = 0;
   std::size_t context_destroy_count = 0;
@@ -156,7 +156,7 @@ struct RegionProbe final {
   Status discovery_failure{};
   std::optional<ProviderPrepareOutcome> region_outcome_override{};
   std::optional<ProviderPrepareOutcome> single_outcome_override{};
-  std::size_t destroy_count_at_single_proposal = 0;
+  std::size_t destroy_count_at_single_preparation = 0;
   std::optional<std::uint64_t> region_outcome_route{};
   const RegionProbe *observe_cleanup = nullptr;
   std::size_t observed_cleanup_at_compile = 0;
@@ -1018,8 +1018,7 @@ Status propose_single(
   const auto inputs = request.inputs;
   const auto outputs = request.outputs;
   auto &probe = *static_cast<RegionProbe *>(context);
-  ++probe.single_prepare_count;
-  probe.destroy_count_at_single_proposal = probe.destroy_prepared_count;
+  ++probe.single_proposal_count;
   const bool effect = operation.custom_as<ExternalEffect>().has_value() ||
                       operation.custom_as<ResourceTouch>().has_value();
   const bool constrained_unary =
@@ -1058,6 +1057,7 @@ prepare_single(void *context,
                hyle::compute::detail::ProviderPrepared *prepared) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.single_artifact_count;
+  probe.destroy_count_at_single_preparation = probe.destroy_prepared_count;
   const auto touch = request.operation.custom_as<ResourceTouch>();
   const bool effect =
       request.operation.custom_as<ExternalEffect>().has_value() ||
@@ -1554,7 +1554,7 @@ TEST(GraphRegions, GlobalProviderFiltersSkipDiscoveryAndLeafCallbacks) {
     auto compiled = hyle::graph::compile(logical.graph, context, options);
     EXPECT_EQ(probe.extension_query_count, queries);
     EXPECT_EQ(probe.propose_count, 0u);
-    EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(probe.single_proposal_count, 0u);
     EXPECT_EQ(probe.compile_count, 0u);
     if (mode == 2) {
       ASSERT_FALSE(compiled);
@@ -1565,6 +1565,72 @@ TEST(GraphRegions, GlobalProviderFiltersSkipDiscoveryAndLeafCallbacks) {
       EXPECT_EQ(compiled->report.step(0)->provider.id, native[0]);
     }
   }
+}
+
+TEST(GraphRegions, LeafProposalLimitCanRetainACompleteRegionPlan) {
+  const auto logical = make_negations(2);
+  for (auto policy : {CompileSearchPolicy::kAllowLimited,
+                      CompileSearchPolicy::kRequireUnexhausted}) {
+    RegionProbe probe;
+    auto context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context,
+                                         {.max_placement_attempts = 1,
+                                          .max_operation_proposals = 1,
+                                          .search_policy = policy});
+    if (policy == CompileSearchPolicy::kRequireUnexhausted) {
+      ASSERT_FALSE(compiled);
+      EXPECT_TRUE(compiled.error().IsResourceExhausted());
+      EXPECT_EQ(probe.compile_count, 0u);
+      EXPECT_EQ(probe.region_resource_count, 0u);
+      continue;
+    }
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.region_count(), 1u);
+    EXPECT_EQ(compiled->report.search().operation_proposals, 1u);
+    EXPECT_EQ(compiled->report.search().placement_attempts, 1u);
+    EXPECT_TRUE(compiled->report.search().operation_proposal_limit_reached);
+    EXPECT_EQ(probe.single_artifact_count, 0u);
+  }
+  RegionProbe probe;
+  auto context = make_context(probe);
+  auto regions_only = hyle::graph::compile(
+      logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject,
+       .max_operation_proposals = 0});
+  ASSERT_TRUE(regions_only);
+  EXPECT_EQ(probe.single_proposal_count, 0u);
+  EXPECT_EQ(regions_only->report.search().operation_proposals, 0u);
+  EXPECT_FALSE(regions_only->report.search().operation_proposal_limit_reached);
+}
+
+TEST(GraphRegions, RebuildingAPartitionReusesTheOriginalLeafProposals) {
+  const auto logical = make_negations(3);
+  RegionProbe probe;
+  probe.region_outcome_override = ProviderPrepareOutcome::unsupported(
+      Status::Unimplemented("fused route declined"));
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  // Initially the unpaired tail is prepared. After the pair declines, that
+  // tail is prepared again in the new plan, without another capability query.
+  EXPECT_EQ(probe.single_proposal_count, 3u);
+  EXPECT_EQ(compiled->report.search().operation_proposals, 3u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 5u);
+  EXPECT_EQ(compiled->report.search().region_route_rejections, 1u);
+  EXPECT_EQ(probe.propose_count, 1u);
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(run.submit(queue).value().wait().ok());
+  auto expected = std::vector<float>(values.begin(), values.end());
+  for (float &value : expected)
+    value = -value;
+  EXPECT_EQ(read(output, values.size()), expected);
+  EXPECT_EQ(probe.single_proposal_count, 3u);
 }
 
 TEST(GraphRegions, RegionMustMatchEveryCoveredNodeProvider) {
@@ -1627,7 +1693,7 @@ TEST(GraphRegions, ConflictingInstancesPreventFusionWithoutRelaxingNodes) {
       EXPECT_EQ(compiled->report.step(1)->provider_instance,
                 constraints[1].instance);
     }
-    EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+    EXPECT_EQ(first.single_proposal_count + second.single_proposal_count, 0u);
   }
 }
 
@@ -1683,7 +1749,9 @@ TEST(GraphRegions, RegionRetryAndLeafFallbackCannotEscapeRequiredInstance) {
     EXPECT_EQ(first.destroy_prepared_count, 1u);
     EXPECT_EQ(second.compile_count, 0u);
     EXPECT_EQ(second.region_resource_count, 0u);
-    EXPECT_EQ(second.single_prepare_count, 0u);
+    EXPECT_EQ(second.single_proposal_count,
+              fallback == OperationFallbackPolicy::kAllow ? 1u : 0u);
+    EXPECT_EQ(second.single_artifact_count, 0u);
   }
 }
 
@@ -2491,7 +2559,8 @@ TEST(GraphRegions, CompilesAndSubmitsOneArtifactWithoutInternalStorage) {
   EXPECT_EQ(compiled.report.fallback_operation_count(), 0u);
   EXPECT_EQ(compiled.report.provider().id, kRegionProviderId);
   EXPECT_EQ(compiled.report.workspace_bytes(), 0u);
-  EXPECT_EQ(probe.single_prepare_count, 0u);
+  EXPECT_EQ(probe.single_proposal_count, 2u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
 
   auto invocation = compiled.executable.create_invocation().value();
   OwnedTensor input = make_tensor(row(8));
@@ -2915,7 +2984,8 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
   EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
   EXPECT_TRUE(compiled.report.mixed_providers());
   EXPECT_FALSE(compiled.report.provider().valid());
-  EXPECT_EQ(probe.single_prepare_count, 1u);
+  EXPECT_EQ(probe.single_proposal_count, 3u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
   auto fallback = compiled.report.step(1);
   ASSERT_TRUE(fallback.has_value());
   EXPECT_EQ(fallback->kind, CompileStepKind::kOperationFallback);
@@ -3197,7 +3267,8 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
   EXPECT_EQ(compiled.report.fallback_operation_count(), 1u);
   EXPECT_EQ(probe.compiled_begin, 1u);
   EXPECT_EQ(probe.compiled_count, 2u);
-  EXPECT_EQ(probe.single_prepare_count, 1u);
+  EXPECT_EQ(probe.single_proposal_count, 3u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
   bool fallback_on_second_target = false;
   for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
     auto step = compiled.report.step(index);
@@ -3277,7 +3348,8 @@ TEST(GraphRegions, DefaultPolicyAcceptsUnknownCountsAsExplicitOptIn) {
   auto compiled = hyle::graph::compile(logical.graph, context).value();
   EXPECT_EQ(compiled.report.region_count(), 1u);
   EXPECT_EQ(probe.compile_count, 1u);
-  EXPECT_EQ(probe.single_prepare_count, 0u);
+  EXPECT_EQ(probe.single_proposal_count, 2u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
 }
 
 TEST(GraphRegions, MixedUnknownCountsUseATransitiveDeterministicFallback) {
@@ -3365,7 +3437,7 @@ TEST(GraphRegions, DisabledPolicyUsesOnlyExplicitSingleOperationFallback) {
   EXPECT_EQ(compiled.report.region_count(), 0u);
   EXPECT_EQ(compiled.report.fallback_operation_count(), 2u);
   EXPECT_EQ(probe.propose_count, 0u);
-  EXPECT_EQ(probe.single_prepare_count, 2u);
+  EXPECT_EQ(probe.single_proposal_count, 2u);
   auto fallback = compiled.report.step(0);
   ASSERT_TRUE(fallback.has_value());
   EXPECT_EQ(fallback->fallback_reason,
@@ -3403,7 +3475,8 @@ TEST(GraphRegions, ProposalLimitReturnsAndReportsAValidatedExecutable) {
               std::vector<float>(values.begin(), values.end()));
   }
   EXPECT_EQ(probe.compile_count, 3u);
-  EXPECT_EQ(probe.single_prepare_count, 0u);
+  EXPECT_EQ(probe.single_proposal_count, 6u);
+  EXPECT_EQ(probe.single_artifact_count, 0u);
 }
 
 TEST(GraphRegions, PerProviderLimitStillAllowsDiscoveryFromTheNextProvider) {
@@ -3440,7 +3513,7 @@ TEST(GraphRegions, StrictSearchRejectsLimitedDiscoveryBeforePreparation) {
     ASSERT_FALSE(compiled.has_value());
     EXPECT_TRUE(compiled.error().IsResourceExhausted());
     EXPECT_EQ(probe.compile_count, 0u);
-    EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(probe.single_proposal_count, 0u);
   }
 }
 
@@ -3497,7 +3570,7 @@ TEST(GraphRegions, LimitedDiscoveryNeverHidesRealProviderErrors) {
     ASSERT_FALSE(compiled.has_value());
     EXPECT_EQ(compiled.error(), failure);
     EXPECT_EQ(probe.compile_count, 0u);
-    EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(probe.single_proposal_count, 0u);
   }
 }
 
@@ -3696,13 +3769,14 @@ TEST(GraphRegions,
           Status::ResourceExhausted("candidate-local budget"))};
   for (const auto &decline : declines) {
     RegionProbe probe;
+    probe.required_resource = hyle::mem::system_resource();
     probe.region_outcome_override = decline;
     Context context = make_context(probe);
     auto compiled = hyle::graph::compile(logical.graph, context);
     ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
     EXPECT_EQ(probe.compile_count, 1u);
     EXPECT_EQ(probe.destroy_prepared_count, 1u);
-    EXPECT_EQ(probe.destroy_count_at_single_proposal, 1u);
+    EXPECT_EQ(probe.destroy_count_at_single_preparation, 1u);
     EXPECT_EQ(compiled->report.region_count(), 0u);
     EXPECT_EQ(compiled->report.fallback_operation_count(), 2u);
     OwnedTensor input = make_tensor(row(8));
@@ -3740,7 +3814,8 @@ TEST(GraphRegions, RegionErrorCodesDoNotGrantPermissionToRetry) {
     EXPECT_EQ(compiled.error(), error);
     EXPECT_EQ(probe.compile_count, 1u);
     EXPECT_EQ(probe.destroy_prepared_count, 1u);
-    EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(probe.single_proposal_count, 2u);
+    EXPECT_EQ(probe.single_artifact_count, 0u);
     EXPECT_EQ(alternative.compile_count, 0u);
   }
 }
@@ -3774,7 +3849,9 @@ TEST(GraphRegions, RetriesAnotherRegionProviderWithoutRediscovery) {
       EXPECT_EQ(first.compile_count, 1u);
       EXPECT_EQ(second.compile_count, 1u);
       EXPECT_EQ(second.observed_cleanup_at_compile, 1u);
-      EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+      EXPECT_EQ(first.single_proposal_count + second.single_proposal_count,
+                fallback == OperationFallbackPolicy::kAllow ? 4u : 0u);
+      EXPECT_EQ(first.single_artifact_count + second.single_artifact_count, 0u);
       EXPECT_EQ(compiled->report.region_count(), 1u);
       EXPECT_EQ(compiled->report.fallback_operation_count(), 0u);
       EXPECT_EQ(compiled->report.step(0)->provider_instance,
@@ -3911,7 +3988,7 @@ TEST(GraphRegions, RegionRetryCanChangeTargetButHonorsRequiredPlacement) {
   ASSERT_FALSE(unavailable.has_value());
   EXPECT_EQ(unavailable.error(), first.region_outcome_override->status);
   EXPECT_EQ(second.compile_count, 1u);
-  EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+  EXPECT_EQ(first.single_proposal_count + second.single_proposal_count, 0u);
 }
 
 TEST(GraphRegions, RegionRetriesDoNotRechargePreparationBudget) {
@@ -3955,7 +4032,7 @@ TEST(GraphRegions, AllRejectedRegionsTerminateWithoutRediscoveryOrLeafWork) {
   EXPECT_EQ(second.compile_count, 1u);
   EXPECT_EQ(first.destroy_prepared_count, 1u);
   EXPECT_EQ(second.destroy_prepared_count, 1u);
-  EXPECT_EQ(first.single_prepare_count + second.single_prepare_count, 0u);
+  EXPECT_EQ(first.single_proposal_count + second.single_proposal_count, 0u);
 }
 
 TEST(GraphRegions, UnmatchedRegionStorageCanSelectAnotherCompleteRegion) {
@@ -4081,7 +4158,8 @@ TEST(GraphRegions, InvalidRegionOutcomeIsFatalAndReclaimsItsArtifact) {
     ASSERT_FALSE(compiled.has_value());
     EXPECT_TRUE(compiled.error().IsInternal());
     EXPECT_EQ(probe.destroy_prepared_count, 1u);
-    EXPECT_EQ(probe.single_prepare_count, 0u);
+    EXPECT_EQ(probe.single_proposal_count, 2u);
+    EXPECT_EQ(probe.single_artifact_count, 0u);
   }
 }
 

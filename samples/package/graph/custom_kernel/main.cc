@@ -73,10 +73,13 @@ int main() {
   const std::array allowed{family->id};
   const std::array required{
       hyle::graph::NodeProviderConstraint{*node, family->id, *instance}};
-  auto compiled = hyle::graph::compile(
-      *graph, *context,
-      {.allowed_providers = allowed, .node_providers = required});
-  if (!compiled)
+  auto compiled = hyle::graph::compile(*graph, *context,
+                                       {.allowed_providers = allowed,
+                                        .node_providers = required,
+                                        .max_operation_proposals = 1});
+  if (!compiled || compiled->report.search().operation_proposals != 1 ||
+      compiled->report.search().placement_attempts != 1 ||
+      compiled->report.search().optimization_limited())
     return 14;
   const std::string provider_name(compiled->report.provider().name);
   const std::string provider_version(compiled->report.provider().version);

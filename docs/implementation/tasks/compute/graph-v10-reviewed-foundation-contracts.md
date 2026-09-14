@@ -431,3 +431,56 @@ ordinal 索引；leaf 的全部准备/回退入口共用该 policy，region 在�
 本检查点没有执行全库/P1；Linux/macOS、sanitizer 与终局独立红队仍按本卡等待完整 foundation candidate。
 G103 的完整成本/profile、同池有界择优与软偏好仍待实施，bounded/variants 和常量所有权等既定 FIX 不缩减。
 Graph 保持 `AUDITED`，没有达到用户要求暂停审视的 foundation 完成节点。
+
+### G103 共同候选空间：普通算子发现与准备分离（实现前固定）
+
+当前 region 已有一次性 proposal arena，但普通算子仍在 placement/fallback 中逐个 propose 后立即
+prepare；因此不能比较未选 leaf，也会在 region 重选时重复能力查询。按既定同池选择合同，先把所有
+允许的 `(node, target, provider slot)` leaf 冷提案与其 canonical 资源要求收集为本次 compile 的候选，
+不在发现时构造重型制品。region 与 leaf 分别保留 typed payload，由同一次冷发现 owner 持有；接下来
+完整 selector 消费二者，不制造 runtime registry。
+
+固定表示：追加独立 `max_operation_proposals` 候选存储上限及报告计数/受限原因；prepare 总预算仍只
+计真实构造尝试。达到提案上限停止发现，不补预算；strict 策略拒绝受限搜索，普通策略仅可返回完整可行
+计划。禁止 operation fallback 时不发现不允许的 leaf。先应用 Provider/required target/replay 硬约束，
+query 的明确 unsupported 不入池，其它错误直接传播。提案及借用资源只活到 compile 返回，重选复用
+原提案、不重复 discovery；精确资源在 prepare 共同 validator 再检查。
+
+反例：后排 Provider 的正常候选也能被发现但未选不 prepare、同一 leaf 跨 region 重选只 propose 一次、
+发现/准备预算分离、受限但有 region 完整覆盖、受限且无覆盖、strict 停止、fatal 不吞、全部 cold OOM
+回滚以及 source/static/shared/oneDNN/CUDA 直接消费者。原测试中误命名的 single_prepare_count 实为
+proposal 计数，必须拆清/按真实阶段校准，不能把发现回调说成重型 prepare。P0 只增加有界冷候选存储，
+不改变热执行；完整成本/profile、统一有界计划搜索仍是后续同一 G103 FIX，不因此宣称已完成。
+
+## 2026-09-14 G103：普通算子候选池检查点
+
+上述表示已实现：每次 compile 一次收集允许的 node/target/Provider proposal 和资源要求；region 安全
+拒绝后的事务重选复用它们。只为选中的路线创建 artifact，`max_operation_proposals` 与实际 prepare
+预算分开，报告区分接收数量与截断。禁止 leaf 时不发现 leaf；strict 截断在构造制品前失败，普通截断
+仍须得到完整可行图。顺序为稳定的 node/target/Provider；小容量不保证找到候选空间中任何存在的解。
+
+- 新增 6 个反例：后排候选被发现但不 prepare、两预算分离、恰好用满/真正截断、无完整覆盖时失败、
+  后排 fatal 不吞、region 重选只查询一次；执行实际数值并复验全部 metadata OOM 回滚。原 fixture
+  的 `single_prepare_count` 实为 propose 次数，已改名并和 artifact 次数分列；初轮 10 项旧阶段断言
+  失败后按新发现合同校准。partial cleanup 的观察移到真正 prepare，并给 fixture 合法 leaf 路线，
+  仍要求旧 artifact 在新准备之前销毁，没有放宽失败/所有权合同。
+- Windows Release static `compute-route-v8-static-20260914`：Graph builder/executable/逐头 3/3，
+  executable 153 用例、builder 25 用例通过。oneDNN-enabled shared `compute-route-onednn-v8-20260914`：
+  同三项、真实 oneDNN Graph/逐头、Compute 与 CPU custom execution 共 7/7 通过。
+- 普通 CPU/CUDA source/installed shared/installed static 各 2/2 通过；样例使用公开候选上限/报告，
+  包含真正 CUDA kernel、双 Queue、exact capture/replay 与异步错误。缓存沿用前一检查点；安装两格
+  重新 build/install Graph 并 configure/relink consumer，全部安装在显式 scratch prefix。shared
+  producer/consumer Graph DLL SHA-256 同为
+  `C2AE6918C80EC0B75C7D968663B9DC88F4B49C2809992045B9D25F1F7EB0952C`。
+- P0：N 个 node、T 个 target、P 个配置 Provider 时，最多查询 `O(NTP)` 次（不包含 Provider 自身查询
+  内部成本）；K 个已接收候选的资源端口总数为 R 时，冷存储 `O(NT+K+R)`。复用 Container SmallVector、
+  Mem allocator 和 Compute 共同 proposal/资源 validator，不自建 matcher。候选只活到 compile 返回；
+  Plan/Report 的 search 事实增加一个计数和一个标志，Invocation 与热执行算法不变，不新增热查询/
+  JIT/分配。组件边和 CMake 开关不变。
+- 用户指南区分普通/region 候选、真实准备、容量与失败；校准逻辑 View/Copy 的 Provider 筛选与编译器
+  插入 backend transfer 的不同归属。impact READY，88 项跳过；docs/closure/diff 通过。当前自实现不含
+  测试：Compute 16,156、Graph 10,836，合计 26,992 行。
+
+本次没有运行全库/P1，不以 Windows 增量代替 Linux/macOS、sanitizer 或终局独立红队。G103 的统一完整
+成本/profile/有界计划选择、G101/G102 bounded/variants 与 G106 常量所有权仍须完成；旧确定性 region
+优先选择尚未因此变成完整成本 selector。状态保持 `AUDITED`，foundation gate 未签发。
