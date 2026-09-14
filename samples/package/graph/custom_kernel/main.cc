@@ -56,7 +56,7 @@ int main() {
   auto builder = hyle::graph::GraphBuilder::create();
   if (!builder)
     return 10;
-  auto in = builder->input(*desc);
+  auto in = builder->constant(*desc);
   if (!in)
     return 11;
   auto out = builder->add(operation, *in);
@@ -73,18 +73,25 @@ int main() {
   const std::array allowed{family->id};
   const std::array required{
       hyle::graph::NodeProviderConstraint{*node, family->id, *instance}};
+  const std::array constants{hyle::graph::ConstantBinding{
+      *in, *input, hyle::graph::ConstantPolicy::kMaterialize}};
   auto compiled = hyle::graph::compile(*graph, *context,
-                                       {.allowed_providers = allowed,
+                                       {.constants = constants,
+                                        .allowed_providers = allowed,
                                         .node_providers = required,
                                         .max_operation_proposals = 1});
   if (!compiled || compiled->report.search().operation_proposals != 1 ||
       compiled->report.search().placement_attempts != 1 ||
       compiled->report.search().optimization_limited())
     return 14;
+  if (!source->reset().ok() ||
+      compiled->report.borrowed_constant_count() != 0 ||
+      compiled->report.materialized_constant_bytes() != 16)
+    return 19;
   const std::string provider_name(compiled->report.provider().name);
   const std::string provider_version(compiled->report.provider().version);
   auto run = compiled->executable.create_invocation();
-  if (!run || !run->bind(*in, *input).ok() || !run->bind(*out, *output).ok())
+  if (!run || !run->bind(*out, *output).ok())
     return 15;
   compiled->executable = {}; // Invocation retains the kernel/factory owner.
   for (int repeat = 0; repeat < 3; ++repeat) {
@@ -105,7 +112,9 @@ int main() {
   if (compiled->report.provider().name != provider_name ||
       compiled->report.step(0)->provider.version != provider_version ||
       compiled->report.step(0)->profile_key !=
-          hyle::compute::ProviderRouteKey{1})
+          hyle::compute::ProviderRouteKey{1} ||
+      compiled->report.constant()->policy !=
+          hyle::graph::ConstantPolicy::kMaterialize)
     return 18;
   return 0;
 }

@@ -83,6 +83,13 @@ packed bytes，调用返回后 source 可释放。选择 materialize 的候选�
 CompileReport 要逐 constant 报告最终 owner/release point，不能再用 aggregate packed count 猜生命周期。
 若消费方要在 Executable 内原位替换权重，应把该 value 建模为普通 input；否则重新 compile。
 
+canonical materialize 沿用 constant 的 external storage placement；Graph 复用 Mem Buffer 和 Backend
+明确的 transfer/Completion 合同，不暗中 staging 或执行用户 Graph。复制在完整物理路线成立之后、
+Provider prepare 之前进行，同一 compile 的路线重选共用已经完成的副本。resource proposal 只读取
+metadata/policy，不读取 payload 或缓存 source 地址；prepare 接收可借用到制品销毁的 canonical view。
+失败须先等已接纳复制到终态；常量 allocation 后于制品、先于 Context 释放。报告独立保存 policy、目标域
+与 canonical bytes，不保活 payload，也不能将这些 bytes 冒充全部 packed/resident 内存。
+
 同一 Executable 的 variants 引用兼容的共享不可变 constant materialization，不因 shape bucket 不同就
 自动复制整套权重。共享键包含 constant 的稳定绑定/内容版本、provider/build/device、packing/precision/
 layout 和 storage 身份；裸地址不足以证明内容相同。Provider 不支持借入同一 packed artifact 时，可以

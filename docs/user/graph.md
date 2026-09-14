@@ -2,7 +2,7 @@
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
 > [`module-status.json`](../implementation/module-status.json) 为准；node-set region 已实现，已接受但尚未实现的
-> exact + bounded/guarded shape domain、统一完整成本路由与 constant materialize 合同见
+> exact + bounded/guarded shape domain、统一完整成本路由与跨 variant 常量共享/聚合预算合同见
 > [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
 > 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
@@ -10,7 +10,7 @@
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
 
 当前 exact specialization 已支持有限派生维度与 shape guards、具名资源副作用域，以及有限 region 发现/
-重选；Provider replay 分类事实也可查询。完整 bounded runtime/variants、variant 内存共享与统一完整成本选择仍是
+重选，以及显式常量物化后的 source release；Provider replay 分类事实也可查询。完整 bounded runtime/variants、variant 内存共享与统一完整成本选择仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
@@ -181,8 +181,33 @@ if (!done) return done.error();
 return done->wait();
 ```
 
-`constant()` 只声明逻辑 value；`CompileOptions::constants` 提供 payload。当前 Executable 保守借用所有
-constant source，即使 provider 另有 packed representation，源 storage 仍须活过 Executable 及其全部提交。
+`constant()` 只声明逻辑 value；`CompileOptions::constants` 提供 payload。默认 `ConstantPolicy::kBorrow`
+不复制字节，源 storage 必须不可变，并活过 Executable、全部 Invocation 和 in-flight Completion。即使
+Provider 另有 packed representation，也不因此缩短借用期。
+
+模型加载后要释放 staging buffer 或 mapping 时，显式选择物化：
+
+```cpp
+const std::array constants{ConstantBinding{
+    *weight, weight_view, ConstantPolicy::kMaterialize}};
+auto compiled = compile(*graph, context, {.constants = constants});
+if (!compiled) return compiled.error();
+// 此后可释放 weight_view 的源 allocation/mapping；不可再通过旧 view 访问它。
+// Executable 及其 Invocation/Completion 共享编译时创建的不可变副本。
+```
+
+物化把完整 TensorDesc 所需的字节复制一次，保留 dtype、encoding、shape、strides 和 padding；它不是
+重新量化或 Provider packing。目标为 constant 的 external storage 域（默认 0，也可由
+`ExternalResourceContract`/value placement 指定），无需与源相同。配置的某个 target 必须支持这条
+Compute transfer；没有明确 copy route 就失败，不偷偷用 host staging。零字节常量不提交复制。
+
+源必须在调用前 ready，并在整个 `compile()` 期间保持不变；冷编译等待自有复制到终态，不执行用户
+Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prepare 只看到有效副本；路线回退不重复
+复制。编译失败不会接管或修改源，已接纳复制也会等待后再清理。副本资源的 `MemoryResource` owner
+仍由调用者保活；“可释放 source allocation”不等于“可销毁仍承载副本的 resource 对象”。
+
+跨 variant 共享与 Provider opaque packing 的唯一 resident/冷峰值预算尚未交付；
+`materialized_constant_bytes()` 只统计 canonical 副本，不代表整个 Executable 的内存总量。
 
 ## 独立与派生维度
 
@@ -423,6 +448,9 @@ multi-stream capture。
   容量省略了候选/provider；正常拒绝不等于搜索容量耗尽；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
+- `constant(index)` 按 Graph 常量顺序给出 value、borrow/materialize policy、storage、TensorDesc 和
+  canonical owned bytes；`borrowed_constant_count()`、`materialized_constant_count()` 和
+  `materialized_constant_bytes()` 给汇总，报告本身不保活这些 allocation；
 - operation fallback、provider region 和真实 copy step；
 - leaf 的 `kRegionDeclined` 表示本轮曾安全拒绝包含该 node 的 region，不是 Provider 执行出错后重跑；
 - shared/delegated segment、dependency、为 workspace budget 新增的 serialization edge、potential
@@ -516,8 +544,9 @@ Region 编译收到按域合并的访问集与 backing 声明。Provider 必须�
   borrow，必须活过 Executable、Invocation 和全部 in-flight work。
 - Tensor view 不拥有 payload。输入、输出、shared Queue、external resource 与 native kernel 参数都必须活到
   Completion 真终态；delegated provider invocation 由 Graph Completion 保活，丢弃 pending Completion 不会隐式等待。
-- 普通 materialized published output 绑定 mutable `TensorView`。source alias 或 Invocation-owned output
-  不接受重新绑定；成功完成后用 `Invocation::output()` 取得借用 view。
+- `output_ownership()` 为 `kCaller` 的计算结果绑定 mutable `TensorView`；`kSourceAlias` 借用原输入/
+  常量，`kInvocation` 使用本次运行的私有 storage，`kExecutable` 则是已物化常量或它的零拷贝 View。
+  后三种不接受重新绑定；成功完成后用 `Invocation::output()` 取得借用 view，不得活过对应 owner。
 - `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。bind/reset 后 replay route
   失效，多 shared lane 必须重新 `prepare_replay()`。
 - 不同 published outputs，以及 output 与仍存活 input，不得绕过 plan 形成危险 overlap。只在相同

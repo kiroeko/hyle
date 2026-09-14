@@ -271,7 +271,8 @@ void expect_near(std::span<const float> actual,
 void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
                          std::size_t hidden,
                          MlpOrder order = MlpOrder::kCanonical,
-                         CompileOptions options = {}) {
+                         CompileOptions options = {},
+                         bool materialize = false) {
   const GatedMlp logical =
       make_gated_mlp(rows, inner, hidden, false, false, false, order);
   OwnedTensor activation = make_tensor(matrix(rows, inner));
@@ -300,10 +301,16 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
   write(up_weight, up_values);
   write(down_weight, down_values);
   // Region boundaries are keyed by ValueId, not by binding insertion order.
+  const auto constant_policy = materialize
+                                   ? hyle::graph::ConstantPolicy::kMaterialize
+                                   : hyle::graph::ConstantPolicy::kBorrow;
   const std::array constants{
-      ConstantBinding{logical.down_weight, down_weight.view.as_const()},
-      ConstantBinding{logical.gate_weight, gate_weight.view.as_const()},
-      ConstantBinding{logical.up_weight, up_weight.view.as_const()},
+      ConstantBinding{logical.down_weight, down_weight.view.as_const(),
+                      constant_policy},
+      ConstantBinding{logical.gate_weight, gate_weight.view.as_const(),
+                      constant_policy},
+      ConstantBinding{logical.up_weight, up_weight.view.as_const(),
+                      constant_policy},
   };
   const auto providers = provider_sequence();
   Context context =
@@ -311,6 +318,16 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
           .value();
   options.constants = constants;
   auto compiled = hyle::graph::compile(logical.graph, context, options).value();
+  if (materialize) {
+    EXPECT_EQ(compiled.report.borrowed_constant_count(), 0u);
+    EXPECT_EQ(compiled.report.materialized_constant_count(), 3u);
+    EXPECT_EQ(compiled.report.materialized_constant_bytes(),
+              (gate_values.size() + up_values.size() + down_values.size()) *
+                  sizeof(float));
+    ASSERT_TRUE(gate_weight.buffer.reset().ok());
+    ASSERT_TRUE(up_weight.buffer.reset().ok());
+    ASSERT_TRUE(down_weight.buffer.reset().ok());
+  }
   const bool capacity_refused = order != MlpOrder::kControlReentry &&
                                 options.max_region_proposal_nodes < 4;
   ASSERT_EQ(compiled.report.region_count(),
@@ -421,6 +438,11 @@ TEST(OneDnnRegionProvider, SupportsDecodeAndNonTileMultipleShapes) {
   run_gated_mlp_shape(1, 5, 7);
   run_gated_mlp_shape(4, 17, 31);
   run_gated_mlp_shape(16, 33, 65);
+}
+
+TEST(OneDnnRegionProvider, MaterializesWeightsBeforeSourceRelease) {
+  run_gated_mlp_shape(4, 17, 31, MlpOrder::kCanonical, {}, true);
+  run_gated_mlp_shape(1, 5, 7, MlpOrder::kUpFirst, {}, true);
 }
 
 TEST(OneDnnRegionProvider, LimitedRegionDiscoveryRetainsCorrectLeafExecution) {

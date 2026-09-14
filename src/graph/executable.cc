@@ -1115,8 +1115,18 @@ Status initialize_plan_metadata(
   return Status::Ok();
 }
 
+// Exists only during compile. Providers receive these replacement views after
+// materialization, never the caller's soon-to-be-released source allocation.
+struct ConstantPreparation final {
+  explicit ConstantPreparation(mem::AllocatorRef allocator) noexcept
+      : bindings(allocator) {}
+  container::SmallVector<ConstantBinding, 0, mem::AllocatorRef> bindings;
+  bool ready = false;
+};
+
 Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
-                      CompileOptions options) noexcept {
+                      CompileOptions options,
+                      ConstantPreparation &constants) noexcept {
   if (options.constants.size() != graph.constants.size()) {
     return Status::InvalidArgument(
         "compile requires exactly one binding for every graph constant");
@@ -1129,6 +1139,15 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
       !seen.try_resize(graph.constants.size())) {
     return plan_allocation_failure();
   }
+  const bool materialize =
+      std::any_of(options.constants.begin(), options.constants.end(),
+                  [](const ConstantBinding &binding) noexcept {
+                    return binding.policy == ConstantPolicy::kMaterialize;
+                  });
+  if (materialize &&
+      (!constants.bindings.try_resize(graph.constants.size()) ||
+       !plan.materialized_constants.try_resize(graph.constants.size())))
+    return plan_allocation_failure();
   for (std::size_t index = 0; index < slots.size(); ++index)
     slots[index] = detail::kNoWorkspaceRequest;
   for (std::size_t index = 0; index < graph.constants.size(); ++index) {
@@ -1137,6 +1156,9 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
   }
 
   for (const ConstantBinding &binding : options.constants) {
+    if (binding.policy != ConstantPolicy::kBorrow &&
+        binding.policy != ConstantPolicy::kMaterialize)
+      return Status::InvalidArgument("constant source policy is invalid");
     if (!detail::owns(graph, binding.value) ||
         binding.value.kind() != ValueKind::kConstant) {
       return Status::InvalidArgument(
@@ -1152,12 +1174,101 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
           "constant binding does not match its graph description");
     }
     plan.constant_bindings[slot] = binding.tensor;
+    if (materialize)
+      constants.bindings[slot] = binding;
     seen[slot] = 1;
   }
   for (std::uint8_t present : seen) {
     if (present == 0)
       return Status::InvalidArgument("graph constant binding is missing");
   }
+  return Status::Ok();
+}
+
+Status materialize_constants(detail::PlanState &plan,
+                             CompileEnvironment environment,
+                             ConstantPreparation &constants) noexcept {
+  if (constants.bindings.empty() || constants.ready)
+    return Status::Ok();
+  container::SmallVector<compute::Queue, 2, mem::AllocatorRef> queues(
+      plan.allocator);
+  auto copy = [&](mem::BufferView destination, mem::ConstBufferView source,
+                  std::uint32_t storage) noexcept -> Status {
+    if (destination.empty())
+      return Status::Ok();
+    if (!queues.try_resize(environment.targets.size()))
+      return plan_allocation_failure();
+    // Prefer the target owning the destination domain, then other configured
+    // targets. Querying unsupported routes is cold; an actual copy error is
+    // never permission to resubmit potentially accepted bytes elsewhere.
+    for (const bool preferred : {true, false}) {
+      for (std::size_t target = 0; target < environment.targets.size();
+           ++target) {
+        if ((environment.targets[target].default_storage.ordinal() ==
+             storage) != preferred)
+          continue;
+        bool compatible = true;
+        for (const auto resource :
+             {destination.resource(), source.resource()}) {
+          auto status =
+              plan.targets[target].context.validate_resource(resource);
+          if (status.ok())
+            continue;
+          if (!status.IsFailedPrecondition() && !status.IsUnimplemented())
+            return status;
+          compatible = false;
+          break;
+        }
+        if (!compatible)
+          continue;
+        if (!queues[target]) {
+          auto queue = environment.targets[target].context->create_queue();
+          if (!queue)
+            return std::move(queue).error();
+          queues[target] = std::move(*queue);
+        }
+        auto properties =
+            compute::transfer_properties(queues[target], destination, source);
+        if (!properties) {
+          auto status = std::move(properties).error();
+          if (status.IsUnimplemented())
+            continue;
+          return status;
+        }
+        auto completion =
+            compute::copy_async(queues[target], destination, source);
+        if (!completion)
+          return std::move(completion).error();
+        // Includes an accepted copy that later failed. Both borrowed source
+        // and owned destination remain alive until the real terminal point.
+        return completion->wait();
+      }
+    }
+    return Status::Unimplemented(
+        "no configured target can materialize the graph constant");
+  };
+  for (std::size_t slot = 0; slot < constants.bindings.size(); ++slot) {
+    auto &binding = constants.bindings[slot];
+    if (binding.policy != ConstantPolicy::kMaterialize)
+      continue;
+    const auto storage = plan.external_storage[binding.value.ordinal()];
+    if (storage >= plan.storage_domains.size())
+      return Status::Internal("constant has no selected storage domain");
+    const auto &description = binding.tensor.description();
+    HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
+    HYLE_ASSIGN_OR_RETURN(
+        auto buffer,
+        mem::Buffer::create(plan.storage_domains[storage].resource, bytes,
+                            description.required_alignment()));
+    HYLE_ASSIGN_OR_RETURN(auto destination, compute::TensorView::create(
+                                                description, buffer.view()));
+    HYLE_RETURN_IF_ERROR(
+        copy(destination.storage(), binding.tensor.storage(), storage));
+    binding.tensor = destination.as_const();
+    plan.constant_bindings[slot] = binding.tensor;
+    plan.materialized_constants[slot] = std::move(buffer);
+  }
+  constants.ready = true;
   return Status::Ok();
 }
 
@@ -2276,7 +2387,8 @@ Status prepare_placed_steps_attempt(
     detail::PlanState &plan, const Graph &published_graph,
     const detail::GraphState &graph, CompileEnvironment environment,
     CompileOptions options, const ProviderPolicy &provider_policy,
-    RegionDiscovery &discovery, PlacementAttemptOutcome &outcome) noexcept {
+    RegionDiscovery &discovery, ConstantPreparation &constants,
+    PlacementAttemptOutcome &outcome) noexcept {
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
   struct OperationPlacement final {
@@ -2391,6 +2503,9 @@ Status prepare_placed_steps_attempt(
   // Compile-time constants already expose their exact resource. Validate it
   // against the selected exact storage resource now.
   for (std::size_t index = 0; index < graph.constants.size(); ++index) {
+    if (!constants.bindings.empty() && !constants.ready &&
+        constants.bindings[index].policy == ConstantPolicy::kMaterialize)
+      continue;
     const std::uint32_t value = graph.constants[index];
     const mem::MemoryResourceRef actual =
         plan.constant_bindings[index].storage().resource();
@@ -3216,6 +3331,7 @@ Status prepare_placed_steps_attempt(
   // The entire physical route, including output copies, exists before any
   // heavyweight artifact. A prepare decline invalidates this construction;
   // it never changes the selected provider/target/storage in this loop.
+  HYLE_RETURN_IF_ERROR(materialize_constants(plan, environment, constants));
   for (auto &step : plan.steps) {
     if (step.kind == detail::PlanStepKind::kCopy)
       continue;
@@ -3285,7 +3401,10 @@ Status prepare_placed_steps_attempt(
           .nodes = candidate_nodes(candidate, all_region_nodes),
           .inputs = values.first(skeleton.input_count),
           .outputs = values.subspan(skeleton.input_count),
-          .constants = options.constants,
+          .constants =
+              constants.bindings.empty()
+                  ? options.constants
+                  : std::span<const ConstantBinding>(constants.bindings),
           .input_resources = input_resources,
           .output_resources = output_resources,
           .workspace_resource = workspace_resource,
@@ -3320,6 +3439,7 @@ Status prepare_placed_steps(
     detail::PlanState &plan, const Graph &published_graph,
     const detail::GraphState &graph, CompileEnvironment environment,
     CompileOptions options, const ProviderPolicy &provider_policy,
+    ConstantPreparation &constants,
     std::span<compute::ProviderRouteKey> profile_keys) noexcept {
   RegionDiscovery discovery(plan.allocator);
   const std::size_t configured_lane_count = plan.lanes.size();
@@ -3340,7 +3460,7 @@ Status prepare_placed_steps(
     PlacementAttemptOutcome outcome;
     Status status = prepare_placed_steps_attempt(
         plan, published_graph, graph, environment, options, provider_policy,
-        discovery, outcome);
+        discovery, constants, outcome);
     if (status.ok())
       status = finalize_placed_steps(plan, graph, outcome.rejected_plan);
     if (outcome.rejected_plan) {
@@ -4913,6 +5033,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
       !state->lanes.try_resize(plan.lanes.size()) ||
       !state->segments.try_resize(plan.segments.size()) ||
       !state->physical_values.try_resize(plan.instance_values.size()) ||
+      !state->constants.try_resize(plan.constant_ids.size()) ||
       !state->step_inputs.try_resize(plan.node_inputs.size()) ||
       !state->step_outputs.try_resize(plan.node_outputs.size()) ||
       !state->step_nodes.try_resize(plan.step_nodes.size()) ||
@@ -5018,9 +5139,23 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   state->region_count = plan.region_count;
   state->constant_count = plan.constant_ids.size();
   state->supports_concurrent_invocations = plan.supports_concurrent_invocations;
-  // PlanState conservatively keeps every compile-time binding because the
-  // provider contract reports packed counts, not exact constant identities.
-  state->borrowed_constant_count = plan.constant_ids.size();
+  for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
+    const auto value = plan.constant_ids[slot];
+    const bool owned = !plan.materialized_constants.empty() &&
+                       plan.materialized_constants[slot].valid();
+    const auto bytes = owned ? plan.materialized_constants[slot].size() : 0;
+    state->constants[slot] = CompileConstantReport{
+        .value = value,
+        .policy =
+            owned ? ConstantPolicy::kMaterialize : ConstantPolicy::kBorrow,
+        .storage = StorageDomainId{plan.external_storage[value.ordinal()]},
+        .description = plan.constant_bindings[slot].description(),
+        .materialized_bytes = bytes};
+    state->borrowed_constant_count += owned ? 0u : 1u;
+    state->materialized_constant_count += owned ? 1u : 0u;
+    state->materialized_constant_bytes =
+        saturating_add(state->materialized_constant_bytes, bytes);
+  }
 
   for (std::size_t index = 0; index < plan.instance_values.size(); ++index) {
     const std::uint32_t logical = plan.instance_values[index];
@@ -5382,6 +5517,25 @@ std::size_t CompileReport::borrowed_constant_count() const noexcept {
   return state_ != nullptr ? state_->borrowed_constant_count : 0;
 }
 
+std::size_t CompileReport::materialized_constant_count() const noexcept {
+  return state_ != nullptr ? state_->materialized_constant_count : 0;
+}
+
+std::size_t CompileReport::materialized_constant_bytes() const noexcept {
+  return state_ != nullptr ? state_->materialized_constant_bytes : 0;
+}
+
+Result<CompileConstantReport>
+CompileReport::constant(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("compile report is invalid"));
+  if (index >= state_->constants.size())
+    return std::unexpected(
+        Status::OutOfRange("graph constant report index is out of range"));
+  return state_->constants[index];
+}
+
 std::size_t CompileReport::packed_constant_count() const noexcept {
   return state_ != nullptr ? state_->packed_constant_count : 0;
 }
@@ -5722,6 +5876,14 @@ Executable::output_ownership(std::size_t index) const noexcept {
     return OutputOwnership::kInvocation;
   if ((role & (detail::kSourceAliasedOutput | detail::kExternalInput |
                detail::kConstant)) != 0) {
+    if (!state_->materialized_constants.empty()) {
+      const auto instance = state_->external_instances[value->ordinal()];
+      const auto root = state_->instance_values[alias_root(*state_, instance)];
+      for (std::size_t slot = 0; slot < state_->constant_ids.size(); ++slot)
+        if (state_->constant_ids[slot].ordinal() == root &&
+            state_->materialized_constants[slot].valid())
+          return OutputOwnership::kExecutable;
+    }
     return OutputOwnership::kSourceAlias;
   }
   return OutputOwnership::kCaller;
@@ -7034,17 +7196,19 @@ Result<CompiledGraph> compile(const Graph &graph,
     detail::release(plan);
     return std::unexpected(plan_allocation_failure());
   }
+  ConstantPreparation constants(allocator);
   Status status =
       initialize_plan_metadata(*plan, *concrete,
                                std::span<const compute::TensorDesc>(
                                    descriptions.data(), descriptions.size()));
   if (status.ok())
-    status = bind_constants(*plan, *concrete, options);
+    status = bind_constants(*plan, *concrete, options, constants);
   if (status.ok())
     status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
-    status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
-                                  options, provider_policy, profile_keys);
+    status =
+        prepare_placed_steps(*plan, *specialized, *concrete, environment,
+                             options, provider_policy, constants, profile_keys);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));

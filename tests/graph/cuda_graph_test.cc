@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 
 #include "hyle/compute/backends/cuda.h"
@@ -37,6 +38,58 @@ using hyle::graph::StorageDomain;
 using hyle::graph::StorageDomainId;
 using hyle::graph::ValueId;
 using hyle::mem::Buffer;
+
+TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
+  auto device = hyle::compute::cuda::device(0).value();
+  auto context = Context::create(device).value();
+  auto target = hyle::compute::cuda::MemoryResource::create(
+                    context, hyle::compute::cuda::MemoryKind::kDevice)
+                    .value();
+  for (auto source_kind : {hyle::compute::cuda::MemoryKind::kPinnedHost,
+                           hyle::compute::cuda::MemoryKind::kDevice}) {
+    auto source_resource =
+        hyle::compute::cuda::MemoryResource::create(context, source_kind)
+            .value();
+    std::array<float, 257> values{};
+    for (std::size_t i = 0; i < values.size(); ++i)
+      values[i] = static_cast<float>(i);
+    auto source =
+        Buffer::create(source_resource.ref(), sizeof(values), 256).value();
+    ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+    auto description =
+        TensorDesc::dense(DataType::kFloat32,
+                          std::array{static_cast<std::int64_t>(values.size())})
+            .value();
+    auto builder = GraphBuilder::create().value();
+    auto constant = builder.constant(description).value();
+    ASSERT_TRUE(builder.publish(constant).ok());
+    auto graph = std::move(builder).finish().value();
+    const std::array constants{hyle::graph::ConstantBinding{
+        constant,
+        hyle::compute::ConstTensorView::create(description, source.view())
+            .value(),
+        hyle::graph::ConstantPolicy::kMaterialize}};
+    const std::array storage{StorageDomain{target.ref()}};
+    const std::array targets{ExecutionTarget{&context, StorageDomainId{0}}};
+    auto compiled = hyle::graph::compile(
+        graph, {.storage_domains = storage, .targets = targets},
+        {.constants = constants});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_TRUE(source.reset().ok());
+    EXPECT_EQ(compiled->executable.output_ownership().value(),
+              hyle::graph::OutputOwnership::kExecutable);
+    EXPECT_EQ(compiled->report.materialized_constant_bytes(), sizeof(values));
+    auto run = compiled->executable.create_invocation().value();
+    compiled->executable = {};
+    ASSERT_TRUE(run.submit()->wait().ok());
+    std::array<float, 257> actual{};
+    ASSERT_TRUE(run.output(constant)
+                    ->storage()
+                    .read(std::as_writable_bytes(std::span(actual)))
+                    .ok());
+    EXPECT_EQ(actual, values);
+  }
+}
 
 TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
   auto cuda_device = hyle::compute::cuda::device(0);

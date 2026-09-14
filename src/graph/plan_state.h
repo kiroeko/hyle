@@ -614,8 +614,9 @@ struct PlanState final : util::RefCounted<PlanState> {
             std::uint64_t generation_value) noexcept
       : allocator(allocator_value), generation(generation_value),
         storage_domains(allocator_value), targets(allocator_value),
-        lanes(allocator_value), steps(allocator_value),
-        segments(allocator_value), segment_dependencies(allocator_value),
+        lanes(allocator_value), materialized_constants(allocator_value),
+        steps(allocator_value), segments(allocator_value),
+        segment_dependencies(allocator_value),
         serialization_edges(allocator_value), step_segments(allocator_value),
         terminal_segments(allocator_value),
         completion_segments(allocator_value),
@@ -646,6 +647,11 @@ struct PlanState final : util::RefCounted<PlanState> {
   StorageDomainRecords storage_domains;
   ExecutionTargetRecords targets;
   ExecutionLaneRecords lanes;
+  // Declared before steps: artifacts die before the constants they may borrow,
+  // and buffers die before the retained Context/resource backend leases.
+  // Empty on the default borrow path; otherwise one slot per logical constant.
+  container::SmallVector<mem::Buffer, 0, mem::AllocatorRef>
+      materialized_constants;
   PlanSteps steps;
   PlanSegments segments;
   ValueOrdinals segment_dependencies;
@@ -734,8 +740,9 @@ struct ReportState final : util::RefCounted<ReportState> {
         steps(allocator_value), targets(allocator_value),
         storage_domains(allocator_value), lanes(allocator_value),
         segments(allocator_value), physical_values(allocator_value),
-        step_inputs(allocator_value), step_outputs(allocator_value),
-        step_nodes(allocator_value), step_node_begins(allocator_value),
+        constants(allocator_value), step_inputs(allocator_value),
+        step_outputs(allocator_value), step_nodes(allocator_value),
+        step_node_begins(allocator_value),
         segment_dependencies(allocator_value) {}
 
   void destroy() noexcept {
@@ -754,6 +761,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   CompileLaneReports lanes;
   CompileSegmentReports segments;
   CompilePhysicalValueReports physical_values;
+  container::SmallVector<CompileConstantReport, 0, mem::AllocatorRef> constants;
   ValueOrdinals step_inputs;
   ValueOrdinals step_outputs;
   NodeIds step_nodes;
@@ -774,6 +782,8 @@ struct ReportState final : util::RefCounted<ReportState> {
   std::size_t fallback_operation_count = 0;
   std::size_t constant_count = 0;
   std::size_t borrowed_constant_count = 0;
+  std::size_t materialized_constant_count = 0;
+  std::size_t materialized_constant_bytes = 0;
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t invocation_owned_output_count = 0;

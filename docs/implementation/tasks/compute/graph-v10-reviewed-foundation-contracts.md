@@ -723,3 +723,56 @@ oneDNN/CUDA/逐头和三交付。只移动既有冷流程并增加明确的拒�
   Linux/Apple、sanitizer 或独立终局红队；均仍属完整 foundation candidate 的义务。
 - 自实现不含测试：Compute **16,181**（未改），Graph **10,800**，合计 **26,981**；全库自实现
   **122,107** 行，统一脚本 self-check 通过。本段不是完整 profile/成本选择的交付，foundation 尚未完成。
+
+### G106：常量 source release（实现前固定）
+
+现有 ConstantBinding 一律借用，不能满足模型加载 staging/mapping 在 compile 返回后释放的明确需求。
+本段添加 `ConstantPolicy::{kBorrow,kMaterialize}`（默认 borrow），不改变逻辑 tensor 描述和 replay 用法。
+materialize 的目标是该 constant 已声明的 external storage 域（默认 0；沿用 value/external placement），
+可以与 source 不同；使用 Mem Buffer 和 Compute 明确支持的复制/Completion，不暗中 staging/算子求值。
+copy 在完整物理路线成立后、入选 Provider prepare 前发生；每个 constant 每次 compile 只物化一次，
+后续事务重选共用该不可变副本。只能在 cold compile 等待自有复制，绝不执行用户 graph；source 必须已
+ready 且在调用期间不变。失败不接管 source，accepted copy 必须到真实终态后才清理副本。
+
+Graph 给 Provider 的 prepare 常量改为有效的物化副本；resource query 不读取 payload，也不能把旧 source
+地址缓存为制品输入。Executable 拥有 buffer 到全部 invocation/completion 释放；先销毁制品再释放它可能
+借用的常量，最后释放 Context。borrow 不因为 aggregate packed count 而缩短寿命。逐 constant report
+给 policy、storage、description 与 owned bytes；published owned constant/view 返回 Executable ownership。
+新 ConstantBinding 布局对应 region extension 升版，不解释旧版或保留兼容头。
+
+限定验证：CPU 数值与 source 释放、混合/重复/错误 policy、zero/strided 常量、跨 storage、copy 失败与
+OOM 清理、重选不重复复制、制品先于副本销毁、report 不保活；真实 oneDNN MLP、CUDA upload/capture/
+Completion 及源码/static/shared。P0 检查默认 borrow 零 payload copy、物化按字节一次冷复制，warm 不变。
+本段交付 source-release；variant 间共享、opaque packed artifact 的身份/唯一 resident 与冷峰值预算仍是
+G106 后续，不用 canonical 副本字节冒充全部 Provider 内存，profile/variants 也仍须继续。
+
+### 2026-09-15 G106 source-release 检查点
+
+- 已实现显式 `ConstantPolicy`、逐 constant report 与 `OutputOwnership::kExecutable`。Graph 在完整
+  physical skeleton 后创建 canonical Buffer，并以真实 Completion 等待复制；Provider prepare 使用
+  替换后的 view。默认 borrow 不复制 payload，region extension 升到 13，不保留旧布局解释。
+- 新增 6 个 CPU/region 用例：混合/乱序 bindings、源释放与 Executable/Invocation 共享、zero/strided/View、
+  allocation/map/metadata 逐次失败、重复/错误 policy、最终 workspace 重选只复制一次、制品先于常量
+  销毁、报告不保活、无 transfer 路线与 accepted late failure。已有形状/外来 ID/effect overlap 反例扩到
+  materialize；没有放宽数值、错误或预算断言。执行套件 186/186。
+- oneDNN 新用例覆盖两种实际 gated MLP 拓扑，释放 gate/up/down 源后数值仍正确；CUDA 新用例覆盖
+  pinned-host→device 与 device→device。公共 CPU 示例先释放源再 replay；CUDA 示例同时覆盖动态输入
+  和物化常量，源在 capture 前释放，三次 replay 不增加 proposal/prepare。
+- Windows Release static `compute-route-v8-static-20260914` Graph/逐头 4/4；shared + oneDNN
+  `compute-route-onednn-v8-20260914` Graph/Provider/逐头 5/5；`compute-graph-v7-cuda` Graph 1/1。
+  末尾仅扩充 malformed-binding 测试后只重建并回放 static，不为测试断言再次重跑三交付。
+- 沿用 v10 custom sample 缓存，source/installed static/installed shared 各 CPU+CUDA 2/2，均按当前头
+  重编；显式 scratch install prefix，未触发 CI。shared producer、SDK 与 consumer 的 CPU/CUDA 实际
+  DLL 目录 Graph SHA-256 一致：
+  `D0F4ED844CDBBEC2B16EFD0156E835A1832002ACAFA09995A2033E2C5B5CFA50`。
+- P0：物化最多按每个 constant 的必要字节冷复制一次，route 重选不重复；选择 transfer 的上界是每常量
+  遍历配置 targets，Queue 在一次物化中按 target 复用。只有请求物化才分配 canonical ownership 表；
+  report 新增每常量冷记录，默认借用也需这份报告元数据。PlanStep/Invocation/warm submit 没有新增字段、
+  搜索或 payload copy；不将冷路径复杂度审查签成计时胜利。
+- guide/架构/示例说明已更新。selector 基线 `5869e8ce` READY、89 项有据跳过；closure/docs/diff 通过。
+  registry、Backend、CMake、公共仪器与已 CLOSED 依赖均未改。P1、Linux/Apple、sanitizer 和独立终局
+  红队仍待完整 foundation candidate，不能由本轮 Windows 回放外推。
+- 自实现不含测试：Compute **16,181**（未改）、Graph **10,978**，合计 **27,159**，净增 178；全库
+  自实现 **122,285** 行，统一脚本 self-check 通过。组件保持 `AUDITED`。本段完成 canonical source
+  release，不签完 G106 的跨 variant 共享/packed identity/唯一 resident 与冷峰值预算；C93/G103/G104
+  完整 profile/成本/有 incumbent 的优化，以及 G101/G102 bounded/variants 仍须继续。

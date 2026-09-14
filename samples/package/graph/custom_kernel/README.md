@@ -4,6 +4,8 @@
 library 中的 `kernel.cc` 持有 move-only factory，冷 prepare 创建 immutable kernel，每次执行有独占
 Invocation。`main.cc` 用同一个 Provider 完成 direct prepare 和 Graph compile/replay。
 它还在释放全部执行 owner 后读取独立 CompileReport 的名称/版本；报告不延后 factory/kernel 的销毁。
+CPU Graph 把输入作为 `ConstantPolicy::kMaterialize` 常量，编译后释放源 allocation；只绑定输出，
+同一个 Invocation 重放三次。报告校验物化策略与字节数，但不保活常量 payload。
 CPU/CUDA 的 Graph 消费同时用公开 `NodeProviderConstraint` 指定配置实例，CPU 另用全局家族 allow
 筛选；约束只在冷 compile 使用，仍复用同一个 Invocation 和 CUDA capture，不增加另一条执行接口。
 两个例子分别限定 1/2 个普通算子候选，并检查报告区分候选发现与真正 prepare 次数；恰好用满且没有省略
@@ -41,8 +43,9 @@ CPU/CUDA executable 分别输出到构建目录的 `cpu/`、`cuda/`，各自 sta
 CUDA 版加 `-DHYLE_SAMPLE_CUDA=ON`，并使用含 `compute_cuda` feature 的安装包；源码方式会显式启用
 `HYLE_COMPUTE_CUDA=ON`。CUDA Toolkit 13.3+ 与 nvcc 由用户安装，不由 HYLE 下载。`cuda_main.cc` 是
 C++23 factory/consumer；单独的 `cuda_kernel.cu` library 只编译 native kernel，不解析 HYLE 头，当前用
-CUDA C++17。它验证 257 元素的尾块、两个 Queue 上的独立 Invocation、两个节点的 exact capture/replay、
-配置保活和接纳后错误的 Completion；不是性能测量，也不代表 CUDA 算子目录已提供。
+CUDA C++17。它验证 257 元素的尾块、两个 Queue 上的独立 Invocation，以及动态输入和编译时物化常量
+两种两节点 exact capture/replay。物化场景在编译后、capture 前释放原 device allocation；还检查配置
+保活和接纳后错误的 Completion。它不是性能测量，也不代表 CUDA 算子目录已提供。
 
 CUDA 例子让 HYLE runtime/typed resource 访问器留在同一个 owner image，native kernel 可在单独 DLL。
 静态 SDK 不承诺不同 DLL 各自链接一份 HYLE 后，其 backend 私有资源身份可任意互换；跨 HYLE provider

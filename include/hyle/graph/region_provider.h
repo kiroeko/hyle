@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 12};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 13};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -131,6 +131,9 @@ struct RegionCompileRequest final {
   std::span<const NodeId> nodes{};
   std::span<const ValueId> inputs{};
   std::span<const ValueId> outputs{};
+  // Resource query inspects descriptors/policy only; it must not read payload
+  // or cache source addresses. At compile, materialize entries refer to the
+  // Graph-owned canonical copy, which can be borrowed through artifact death.
   std::span<const ConstantBinding> constants{};
   std::span<const mem::MemoryResourceRef> input_resources{};
   std::span<const mem::MemoryResourceRef> output_resources{};
@@ -159,9 +162,8 @@ struct RegionArtifactProperties final {
   // nullopt means that opaque provider-owned code/metadata bytes are not
   // reportable. An engaged zero means that the artifact has none.
   std::optional<std::size_t> persistent_bytes{};
-  // Packing is an additional provider-owned representation. Graph keeps
-  // every source ConstantBinding borrowed because aggregate counts do not
-  // identify which source could be released.
+  // Packing is additional provider-owned storage. Counts never shorten a
+  // borrow or discard a Graph-owned canonical materialization.
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;

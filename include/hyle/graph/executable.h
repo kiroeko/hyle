@@ -423,10 +423,28 @@ struct CompileSearchReport final {
   }
 };
 
+enum class ConstantPolicy : std::uint8_t {
+  kBorrow = 0,
+  // Compile makes one canonical copy in the constant's external storage
+  // domain (default zero). It waits for that copy, not for user graph work.
+  // The source may be released when compile returns; failure never owns it.
+  kMaterialize,
+};
+
+struct CompileConstantReport final {
+  ValueId value{};
+  ConstantPolicy policy = ConstantPolicy::kBorrow;
+  StorageDomainId storage{};
+  compute::TensorDesc description{};
+  // Canonical allocation owned by the Executable, not provider packing or
+  // invocation workspace. The report does not retain this allocation.
+  std::size_t materialized_bytes = 0;
+};
+
 // Copyable cold-path report that owns a compact immutable copy of the emitted
 // plan facts independently of the Executable and its heavyweight artifacts.
-// Aggregate queries and step(index) are O(1). Provider name/version text is
-// copied into the report; views returned by provider()/step() borrow its
+// Aggregate queries and indexed records are O(1). Provider name/version text
+// is copied into the report; views returned by provider()/step() borrow its
 // shared state and remain valid until the last report handle is destroyed.
 class CompileReport final {
 public:
@@ -462,6 +480,10 @@ public:
   HYLE_GRAPH_API std::size_t fallback_operation_count() const noexcept;
   HYLE_GRAPH_API std::size_t constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t borrowed_constant_count() const noexcept;
+  HYLE_GRAPH_API std::size_t materialized_constant_count() const noexcept;
+  HYLE_GRAPH_API std::size_t materialized_constant_bytes() const noexcept;
+  HYLE_GRAPH_API Result<CompileConstantReport>
+  constant(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API std::size_t packed_constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t packed_constant_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t invocation_owned_output_count() const noexcept;
@@ -502,14 +524,15 @@ private:
   detail::ReportState *state_ = nullptr;
 };
 
-// A constant binding is conservatively borrowed by the resulting Executable.
-// A provider may additionally own a packed representation reported by
-// CompileReport, but Graph does not use that aggregate fact to shorten the source
-// lifetime. The source storage must outlive the Executable and every
-// completion submitted from it.
+// Borrowed by default, through every Executable/Invocation/Completion lifetime.
+// Materialize explicitly requests an Executable-owned canonical copy instead;
+// the source must be ready and immutable only for the duration of compile().
+// Aggregate provider packing never shortens a borrow. Resources themselves
+// remain caller-owned even when Graph owns the allocation within them.
 struct ConstantBinding final {
   ValueId value{};
   compute::ConstTensorView tensor{};
+  ConstantPolicy policy = ConstantPolicy::kBorrow;
 };
 
 // Borrowed access footprint, not an execution argument or ownership transfer.
@@ -599,6 +622,9 @@ enum class OutputOwnership : std::uint8_t {
   // a published zero-copy view is rooted in private graph storage; callers can
   // add an explicit Copy node when they require their own destination.
   kInvocation,
+  // A published materialized constant (or its View) borrows an immutable
+  // Executable-owned allocation; it cannot be rebound as a mutable output.
+  kExecutable,
 };
 
 struct CompileOptions final {

@@ -115,6 +115,7 @@ struct RegionProbe final {
   std::size_t reserve_completion_count = 0;
   std::size_t last_reserved_completions = 0;
   std::size_t transfer_query_count = 0;
+  std::size_t copy_count = 0;
   std::size_t capture_begin_count = 0;
   std::size_t capture_end_count = 0;
   std::size_t capture_abort_count = 0;
@@ -170,6 +171,9 @@ struct RegionProbe final {
   hyle::mem::MemoryResourceRef validation_failure_resource{};
   Status validation_failure{};
   hyle::compute::ProviderRouteKey profile_key{};
+  std::optional<ConstTensorView> compiled_constant{};
+  const std::size_t *constant_live_allocations = nullptr;
+  std::size_t constant_allocations_at_destroy = 0;
 };
 
 struct ExternalEffect final {
@@ -357,6 +361,9 @@ NodeId add_resource_touch(GraphBuilder &builder, EffectResourceId resource,
 
 class HostResource final : public hyle::mem::MemoryResource {
 public:
+  std::size_t allocation_count = 0;
+  std::size_t live_allocations = 0;
+
   explicit HostResource(bool host_accessible = true) noexcept
       : host_accessible_(host_accessible) {}
 
@@ -376,10 +383,17 @@ public:
 
   Result<hyle::mem::ResourceAllocation>
   allocate(std::size_t size, std::size_t alignment) noexcept override {
-    return hyle::mem::system_resource().resource().allocate(size, alignment);
+    auto allocation =
+        hyle::mem::system_resource().resource().allocate(size, alignment);
+    if (allocation) {
+      ++allocation_count;
+      ++live_allocations;
+    }
+    return allocation;
   }
 
   void deallocate(hyle::mem::ResourceAllocation allocation) noexcept override {
+    --live_allocations;
     hyle::mem::system_resource().resource().deallocate(allocation);
   }
 
@@ -633,6 +647,9 @@ void destroy_region_prepared(void *prepared, AllocatorRef allocator) noexcept {
   if (plan == nullptr)
     return;
   ++plan->probe->destroy_prepared_count;
+  if (plan->probe->constant_live_allocations != nullptr)
+    plan->probe->constant_allocations_at_destroy =
+        *plan->probe->constant_live_allocations;
   plan->~RegionPlan();
   allocator.deallocate(plan, sizeof(RegionPlan), alignof(RegionPlan));
 }
@@ -937,6 +954,8 @@ Status compile_region_checked(void *context,
       .properties = probe.artifact_properties,
   };
   ++probe.compile_count;
+  if (!request.constants.empty())
+    probe.compiled_constant = request.constants.front().tensor;
   probe.compiled_input_resource = request.input_resources[0];
   probe.compiled_output_resource = request.output_resources[0];
   probe.compiled_workspace_resource = request.workspace_resource;
@@ -1372,6 +1391,7 @@ async_copy(void *context, hyle::mem::BufferView destination,
     return hyle::compute::detail::EnqueueResult::rejected(
         Status::Unimplemented("test graph transfer route is unavailable"));
   }
+  ++probe->copy_count;
   return hyle::compute::detail::EnqueueResult::accepted_command(
       destination.copy_from(source));
 }
@@ -2448,11 +2468,15 @@ TEST(GraphRegions, ConstantsCannotHideAnEffectAlias) {
       hyle::graph::ConstantBinding{constant, alias.as_const()}};
   const std::array resources{
       EffectResourceBinding{resource, storage.footprint()}};
-  auto result = hyle::graph::compile(
-      graph, context, {.constants = constants, .effect_bindings = resources});
-  ASSERT_FALSE(result.has_value());
-  EXPECT_TRUE(result.error().IsInvalidArgument());
-  EXPECT_EQ(probe.single_artifact_count, 0u);
+  for (const auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                            hyle::graph::ConstantPolicy::kMaterialize}) {
+    constants[0].policy = policy;
+    auto result = hyle::graph::compile(
+        graph, context, {.constants = constants, .effect_bindings = resources});
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(result.error().IsInvalidArgument());
+    EXPECT_EQ(probe.single_artifact_count, 0u);
+  }
   OwnedTensor independent = make_tensor(row(1));
   constants[0].tensor = independent.view.as_const();
   ASSERT_TRUE(hyle::graph::compile(
@@ -4143,6 +4167,120 @@ TEST(GraphRegions, FinalWorkspaceRejectionTriesTheSmallerRegion) {
     EXPECT_EQ(read(output, 8),
               (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
   }
+}
+
+TEST(GraphRegions, MaterializedConstantsSurviveRouteRetryAndArtifactTeardown) {
+  HostResource resource;
+  const hyle::mem::MemoryResourceRef owned_resource(resource);
+  RegionProbe first{.mode = ProposalMode::kSingleton};
+  RegionProbe second{.mode = ProposalMode::kSingleton};
+  use_delegated_runtime(first);
+  first.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  first.constant_live_allocations = &resource.live_allocations;
+  second.constant_live_allocations = &resource.live_allocations;
+  auto context = make_context(first, second);
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(8)).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, constant).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto source = make_tensor(row(8));
+  write(source, std::array{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F});
+  const std::array bindings{
+      hyle::graph::ConstantBinding{constant, source.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  const std::array storage{hyle::graph::StorageDomain{
+      .resource = owned_resource, .workspace_budget_bytes = 0}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  CompileReport report;
+  {
+    auto compiled = hyle::graph::compile(
+        graph, {.storage_domains = storage, .targets = targets},
+        {.constants = bindings,
+         .operation_fallback = OperationFallbackPolicy::kReject});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    report = compiled->report;
+    EXPECT_EQ(report.search().route_plan_rejections, 1u);
+    EXPECT_EQ(first.compile_count, 1u);
+    EXPECT_EQ(second.compile_count, 1u);
+    EXPECT_EQ(first.destroy_prepared_count, 1u);
+    EXPECT_EQ(first.constant_allocations_at_destroy, 1u);
+    EXPECT_EQ(resource.allocation_count, 1u);
+    ASSERT_TRUE(first.compiled_constant);
+    ASSERT_TRUE(second.compiled_constant);
+    EXPECT_EQ(first.compiled_constant->storage().resource(), owned_resource);
+    EXPECT_EQ(first.compiled_constant->storage().native_handle(),
+              second.compiled_constant->storage().native_handle());
+    EXPECT_NE(first.compiled_constant->storage().native_handle(),
+              source.view.storage().native_handle());
+    ASSERT_TRUE(source.buffer.reset().ok());
+    auto destination = make_tensor(row(8), owned_resource);
+    auto run = compiled->executable.create_invocation().value();
+    compiled->executable = {};
+    ASSERT_TRUE(run.bind(output, destination.view).ok());
+    auto queue = context.create_queue().value();
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    EXPECT_EQ(read(destination, 8),
+              (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
+    // The external output is not needed by artifact teardown. Removing it
+    // makes the remaining allocation unambiguously the canonical constant.
+    ASSERT_TRUE(run.reset().ok());
+    ASSERT_TRUE(destination.buffer.reset().ok());
+    EXPECT_EQ(resource.live_allocations, 1u);
+    EXPECT_EQ(second.destroy_prepared_count, 0u);
+  }
+  EXPECT_EQ(second.destroy_prepared_count, 1u);
+  EXPECT_EQ(second.constant_allocations_at_destroy, 1u);
+  EXPECT_EQ(resource.live_allocations, 0u);
+  EXPECT_EQ(report.materialized_constant_bytes(), 8 * sizeof(float));
+}
+
+TEST(GraphRegions, ConstantCopiesWaitForAcceptedFailuresWithoutRetryingThem) {
+  HostResource resource;
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.asynchronous_backend = true;
+  auto context = make_context(probe);
+  const Environment environment{
+      {&context, hyle::mem::MemoryResourceRef(resource)}};
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(4)).value();
+  ASSERT_TRUE(builder.publish(constant).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  const std::array bindings{
+      hyle::graph::ConstantBinding{constant, source.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  probe.transfer_supported = false;
+  auto unsupported = hyle::graph::compile(graph, environment.environment(),
+                                          {.constants = bindings});
+  ASSERT_FALSE(unsupported);
+  EXPECT_TRUE(unsupported.error().IsUnimplemented());
+  EXPECT_EQ(probe.copy_count, 0u);
+  EXPECT_EQ(probe.completion_wait_count, 0u);
+  EXPECT_EQ(resource.live_allocations, 0u);
+  probe.transfer_supported = true;
+  probe.terminal_failure = true;
+  auto failed = hyle::graph::compile(graph, environment.environment(),
+                                     {.constants = bindings});
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsInternal());
+  EXPECT_EQ(probe.copy_count, 1u);
+  EXPECT_EQ(probe.completion_wait_count, 1u);
+  EXPECT_EQ(resource.live_allocations, 0u);
+  EXPECT_EQ(read(source, 4), (std::vector<float>{1.F, 2.F, 3.F, 4.F}));
+  probe.terminal_failure = false;
+  {
+    auto retry = hyle::graph::compile(graph, environment.environment(),
+                                      {.constants = bindings});
+    ASSERT_TRUE(retry) << retry.error().message();
+    EXPECT_EQ(resource.live_allocations, 1u);
+    EXPECT_EQ(probe.copy_count, 2u);
+    EXPECT_EQ(probe.completion_wait_count, 2u);
+  }
+  EXPECT_EQ(resource.live_allocations, 0u);
+  EXPECT_EQ(probe.compile_count, 0u);
 }
 
 TEST(GraphRegions, FinalWorkspaceRejectionCanUseALeafPlan) {

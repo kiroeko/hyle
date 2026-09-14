@@ -176,64 +176,86 @@ Status exercise(bool report_after_launch) {
         return Status::DataLoss("custom native concurrent output mismatch");
 
     if (!report_after_launch) {
-      HYLE_ASSIGN_OR_RETURN(auto builder, hyle::graph::GraphBuilder::create());
-      HYLE_ASSIGN_OR_RETURN(auto graph_in, builder.input(desc));
-      HYLE_ASSIGN_OR_RETURN(auto intermediate,
-                            builder.add(operation, graph_in));
-      HYLE_ASSIGN_OR_RETURN(auto graph_out,
-                            builder.add(operation, intermediate));
-      HYLE_RETURN_IF_ERROR(builder.publish(graph_out));
-      HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
-      const std::array storage{
-          hyle::graph::StorageDomain{.resource = memory.ref()}};
-      const std::array targets{hyle::graph::ExecutionTarget{
-          .context = &context,
-          .default_storage = hyle::graph::StorageDomainId{0}}};
-      HYLE_ASSIGN_OR_RETURN(auto family, context.provider_identity(0));
-      HYLE_ASSIGN_OR_RETURN(auto instance, context.provider_instance_id(0));
-      HYLE_ASSIGN_OR_RETURN(auto first_node, graph.node_id(0));
-      const std::array required{
-          hyle::graph::NodeProviderConstraint{first_node, family.id, instance}};
-      HYLE_ASSIGN_OR_RETURN(
-          auto compiled,
-          hyle::graph::compile(
-              graph, {.storage_domains = storage, .targets = targets},
-              {.node_providers = required, .max_operation_proposals = 2}));
-      if (compiled.report.search().operation_proposals != 2 ||
-          compiled.report.search().placement_attempts != 2 ||
-          compiled.report.search().optimization_limited())
-        return Status::Internal("custom CUDA candidate discovery mismatch");
-      for (std::size_t index = 0; index < compiled.report.step_count();
-           ++index) {
-        HYLE_ASSIGN_OR_RETURN(auto step, compiled.report.step(index));
-        if (step.profile_key != ProviderRouteKey{1})
-          return Status::Internal("custom CUDA implementation key changed");
+      for (const bool materialize : {false, true}) {
+        HYLE_ASSIGN_OR_RETURN(auto builder,
+                              hyle::graph::GraphBuilder::create());
+        HYLE_ASSIGN_OR_RETURN(auto graph_in, materialize
+                                                 ? builder.constant(desc)
+                                                 : builder.input(desc));
+        HYLE_ASSIGN_OR_RETURN(auto intermediate,
+                              builder.add(operation, graph_in));
+        HYLE_ASSIGN_OR_RETURN(auto graph_out,
+                              builder.add(operation, intermediate));
+        HYLE_RETURN_IF_ERROR(builder.publish(graph_out));
+        HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+        const std::array storage{
+            hyle::graph::StorageDomain{.resource = memory.ref()}};
+        const std::array targets{hyle::graph::ExecutionTarget{
+            .context = &context,
+            .default_storage = hyle::graph::StorageDomainId{0}}};
+        HYLE_ASSIGN_OR_RETURN(auto family, context.provider_identity(0));
+        HYLE_ASSIGN_OR_RETURN(auto instance, context.provider_instance_id(0));
+        HYLE_ASSIGN_OR_RETURN(auto first_node, graph.node_id(0));
+        const std::array required{hyle::graph::NodeProviderConstraint{
+            first_node, family.id, instance}};
+        const std::array constants{hyle::graph::ConstantBinding{
+            graph_in, in, hyle::graph::ConstantPolicy::kMaterialize}};
+        HYLE_ASSIGN_OR_RETURN(
+            auto compiled,
+            hyle::graph::compile(
+                graph, {.storage_domains = storage, .targets = targets},
+                {.constants =
+                     materialize
+                         ? std::span<const hyle::graph::ConstantBinding>(
+                               constants)
+                         : std::span<const hyle::graph::ConstantBinding>{},
+                 .node_providers = required,
+                 .max_operation_proposals = 2}));
+        if (materialize) {
+          HYLE_RETURN_IF_ERROR(input.reset());
+          if (compiled.report.borrowed_constant_count() != 0 ||
+              compiled.report.materialized_constant_bytes() !=
+                  count * sizeof(float))
+            return Status::Internal("custom CUDA constant ownership mismatch");
+        }
+        if (compiled.report.search().operation_proposals != 2 ||
+            compiled.report.search().placement_attempts != 2 ||
+            compiled.report.search().optimization_limited())
+          return Status::Internal("custom CUDA candidate discovery mismatch");
+        for (std::size_t index = 0; index < compiled.report.step_count();
+             ++index) {
+          HYLE_ASSIGN_OR_RETURN(auto step, compiled.report.step(index));
+          if (step.profile_key != ProviderRouteKey{1})
+            return Status::Internal("custom CUDA implementation key changed");
+        }
+        HYLE_ASSIGN_OR_RETURN(auto invocation,
+                              compiled.executable.create_invocation());
+        if (!materialize)
+          HYLE_RETURN_IF_ERROR(invocation.bind(graph_in, in));
+        HYLE_RETURN_IF_ERROR(invocation.bind(graph_out, out));
+        const std::array queues{hyle::graph::QueueBinding{
+            .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+        HYLE_RETURN_IF_ERROR(invocation.prepare_replay(
+            queues, {.mode = hyle::graph::ReplayMode::kRequireCapture}));
+        if (invocation.replay_route() != hyle::graph::ReplayRoute::kCaptured)
+          return Status::Internal("custom CUDA graph was not captured");
+        const auto proposals = configuration->proposals.load();
+        const auto preparations = configuration->preparations.load();
+        compiled.executable = {};
+        for (int iteration = 0; iteration < 3; ++iteration) {
+          HYLE_ASSIGN_OR_RETURN(auto done, invocation.submit(queues));
+          HYLE_RETURN_IF_ERROR(done.wait());
+          HYLE_RETURN_IF_ERROR(
+              output.view().read(std::as_writable_bytes(std::span(actual))));
+          for (std::size_t index = 0; index < count; ++index)
+            if (actual[index] != values[index] * 4 + 9)
+              return Status::DataLoss("custom captured graph output mismatch");
+        }
+        if (configuration->proposals != proposals ||
+            configuration->preparations != preparations)
+          return Status::Internal(
+              "replay unexpectedly prepared a kernel again");
       }
-      HYLE_ASSIGN_OR_RETURN(auto invocation,
-                            compiled.executable.create_invocation());
-      HYLE_RETURN_IF_ERROR(invocation.bind(graph_in, in));
-      HYLE_RETURN_IF_ERROR(invocation.bind(graph_out, out));
-      const std::array queues{hyle::graph::QueueBinding{
-          .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
-      HYLE_RETURN_IF_ERROR(invocation.prepare_replay(
-          queues, {.mode = hyle::graph::ReplayMode::kRequireCapture}));
-      if (invocation.replay_route() != hyle::graph::ReplayRoute::kCaptured)
-        return Status::Internal("custom CUDA graph was not captured");
-      const auto proposals = configuration->proposals.load();
-      const auto preparations = configuration->preparations.load();
-      compiled.executable = {};
-      for (int iteration = 0; iteration < 3; ++iteration) {
-        HYLE_ASSIGN_OR_RETURN(auto done, invocation.submit(queues));
-        HYLE_RETURN_IF_ERROR(done.wait());
-        HYLE_RETURN_IF_ERROR(
-            output.view().read(std::as_writable_bytes(std::span(actual))));
-        for (std::size_t index = 0; index < count; ++index)
-          if (actual[index] != values[index] * 4 + 9)
-            return Status::DataLoss("custom captured graph output mismatch");
-      }
-      if (configuration->proposals != proposals ||
-          configuration->preparations != preparations)
-        return Status::Internal("replay unexpectedly prepared a kernel again");
     }
     configuration.reset();
     if (lifetime.expired())

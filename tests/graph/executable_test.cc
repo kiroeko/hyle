@@ -144,6 +144,10 @@ struct OwnedTensor final {
 
 class HostResource final : public hyle::mem::MemoryResource {
 public:
+  std::size_t live_allocations = 0;
+  std::size_t allocation_count = 0;
+  bool fail_allocation = false;
+  bool fail_mapping = false;
   std::string_view name() const noexcept override { return "graph.test.host"; }
 
   hyle::mem::MemoryProperties properties() const noexcept override {
@@ -156,16 +160,29 @@ public:
 
   hyle::Result<hyle::mem::ResourceAllocation>
   allocate(std::size_t size, std::size_t alignment) noexcept override {
-    return hyle::mem::system_resource().resource().allocate(size, alignment);
+    if (fail_allocation)
+      return std::unexpected(
+          hyle::Status::ResourceExhausted("test buffer allocation failed"));
+    auto result =
+        hyle::mem::system_resource().resource().allocate(size, alignment);
+    if (result) {
+      ++live_allocations;
+      ++allocation_count;
+    }
+    return result;
   }
 
   void deallocate(hyle::mem::ResourceAllocation allocation) noexcept override {
+    --live_allocations;
     hyle::mem::system_resource().resource().deallocate(allocation);
   }
 
   hyle::Result<hyle::mem::ResourceHostMapping>
   map_host(void *native_handle, std::size_t offset, std::size_t size,
            hyle::mem::HostAccess) noexcept override {
+    if (fail_mapping)
+      return std::unexpected(
+          hyle::Status::DataLoss("test source mapping failed"));
     return hyle::mem::ResourceHostMapping{
         size == 0 ? nullptr
                   : static_cast<void *>(
@@ -959,6 +976,226 @@ TEST(GraphCompile, BindsBorrowedConstantsOnceForRepeatedInvocations) {
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
 }
 
+TEST(GraphCompile,
+     MaterializedConstantsReleaseSourcesAndShareExecutableStorage) {
+  HostResource source_resource, owned_resource;
+  auto builder = GraphBuilder::create().value();
+  const auto borrowed = builder.constant(row(4)).value();
+  const auto owned = builder.constant(row(4)).value();
+  const auto output =
+      builder.add(Binary{BinaryKind::kAdd}, borrowed, owned).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto source =
+      make_tensor(row(4), hyle::mem::MemoryResourceRef(source_resource));
+  auto fixed = make_tensor(row(4));
+  auto destination = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  write(fixed, std::array{10.F, 20.F, 30.F, 40.F});
+  // Caller order need not equal the Graph's constant order.
+  const std::array constants{
+      ConstantBinding{owned, source.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize},
+      ConstantBinding{borrowed, fixed.view.as_const()}};
+  auto context = hyle::compute::cpu::create_context().value();
+  const Environment environment{
+      {&context, hyle::mem::system_resource()},
+      {&context, hyle::mem::MemoryResourceRef(owned_resource)}};
+  const std::array resources{
+      ExternalResourceContract{owned, environment.storage(1)}};
+  hyle::graph::CompileReport report;
+  {
+    auto compiled = hyle::graph::compile(
+        graph, environment.environment(),
+        {.constants = constants, .external_resources = resources});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    report = compiled->report;
+    EXPECT_EQ(report.borrowed_constant_count(), 1u);
+    EXPECT_EQ(report.materialized_constant_count(), 1u);
+    EXPECT_EQ(report.materialized_constant_bytes(), 16u);
+    EXPECT_EQ(report.constant(0)->value, borrowed);
+    EXPECT_EQ(report.constant(0)->policy, hyle::graph::ConstantPolicy::kBorrow);
+    EXPECT_EQ(report.constant(1)->value, owned);
+    EXPECT_EQ(report.constant(1)->storage, environment.storage(1));
+    EXPECT_TRUE(report.constant(2).error().IsOutOfRange());
+    ASSERT_TRUE(source.buffer.reset().ok());
+    EXPECT_EQ(source_resource.live_allocations, 0u);
+    EXPECT_EQ(owned_resource.live_allocations, 1u);
+    auto alias = compiled->executable;
+    auto run = alias.create_invocation().value();
+    compiled->executable = {};
+    alias = {};
+    EXPECT_TRUE(run.bind(owned, fixed.view).IsInvalidArgument());
+    ASSERT_TRUE(run.bind(output, destination.view).ok());
+    auto queue = context.create_queue().value();
+    for (int repeat = 0; repeat < 3; ++repeat) {
+      ASSERT_TRUE(run.submit(queue)->wait().ok());
+      expect_near(read(destination, 4), std::array{11.F, 22.F, 33.F, 44.F});
+    }
+    EXPECT_EQ(owned_resource.allocation_count, 1u);
+  }
+  EXPECT_EQ(owned_resource.live_allocations, 0u);
+  EXPECT_EQ(report.constant(1)->materialized_bytes, 16u);
+  EXPECT_EQ(report.constant(1)->description, row(4));
+  EXPECT_TRUE(
+      hyle::graph::CompileReport{}.constant().error().IsFailedPrecondition());
+}
+
+TEST(GraphCompile, MaterializedPublishedConstantsAndViewsPreserveExactLayout) {
+  auto context = hyle::compute::cpu::create_context().value();
+  const std::array descriptions{row(0), matrix(2, 3).transposed().value()};
+  for (const auto &description : descriptions) {
+    auto builder = GraphBuilder::create().value();
+    const auto constant = builder.constant(description).value();
+    ASSERT_TRUE(builder.publish(constant).ok());
+    const auto graph = std::move(builder).finish().value();
+    auto source = make_tensor(description);
+    const auto bytes = description.required_bytes().value();
+    std::vector<std::byte> expected(bytes, std::byte{0x5A});
+    ASSERT_TRUE(source.buffer.view().write(expected).ok());
+    const std::array bindings{
+        ConstantBinding{constant, source.view.as_const(),
+                        hyle::graph::ConstantPolicy::kMaterialize}};
+    auto compiled =
+        hyle::graph::compile(graph, context, {.constants = bindings});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_TRUE(source.buffer.reset().ok());
+    EXPECT_EQ(compiled->executable.output_ownership().value(),
+              OutputOwnership::kExecutable);
+    EXPECT_EQ(compiled->report.materialized_constant_count(), 1u);
+    EXPECT_EQ(compiled->report.materialized_constant_bytes(), bytes);
+    auto run = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(run.submit()->wait().ok());
+    auto view = run.output(constant).value();
+    EXPECT_EQ(view.description(), description);
+    std::vector<std::byte> actual(bytes);
+    ASSERT_TRUE(view.storage().read(actual).ok());
+    EXPECT_EQ(actual, expected);
+  }
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(4)).value();
+  const auto view = builder.add(View::slice(0, 1, 2).value(), constant).value();
+  ASSERT_TRUE(builder.publish(view).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  const std::array bindings{
+      ConstantBinding{constant, source.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  auto compiled = hyle::graph::compile(graph, context, {.constants = bindings});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_TRUE(source.buffer.reset().ok());
+  EXPECT_EQ(compiled->executable.output_ownership().value(),
+            OutputOwnership::kExecutable);
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.submit()->wait().ok());
+  std::array<float, 2> actual{};
+  ASSERT_TRUE(run.output(view)
+                  ->storage()
+                  .read(std::as_writable_bytes(std::span(actual)))
+                  .ok());
+  EXPECT_EQ(actual, (std::array{2.F, 3.F}));
+}
+
+TEST(GraphCompile, ConstantMaterializationFailureDoesNotOwnOrModifyTheSource) {
+  HostResource source_resource, target_resource;
+  auto source =
+      make_tensor(row(4), hyle::mem::MemoryResourceRef(source_resource));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  auto builder = GraphBuilder::create().value();
+  const auto constant = builder.constant(row(4)).value();
+  ASSERT_TRUE(builder.publish(constant).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  const Environment environment{
+      {&context, hyle::mem::MemoryResourceRef(target_resource)}};
+  std::array bindings{
+      ConstantBinding{constant, source.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  for (int scenario : {0, 1, 2}) {
+    target_resource.fail_allocation = scenario == 0;
+    source_resource.fail_mapping = scenario == 1;
+    bindings[0].policy = scenario == 2
+                             ? static_cast<hyle::graph::ConstantPolicy>(255)
+                             : hyle::graph::ConstantPolicy::kMaterialize;
+    auto failed = hyle::graph::compile(graph, environment.environment(),
+                                       {.constants = bindings});
+    ASSERT_FALSE(failed);
+    EXPECT_EQ(target_resource.live_allocations, 0u);
+    EXPECT_EQ(source_resource.live_allocations, 1u);
+    if (scenario == 0)
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+    if (scenario == 1)
+      EXPECT_TRUE(failed.error().IsDataLoss());
+    if (scenario == 2)
+      EXPECT_TRUE(failed.error().IsInvalidArgument());
+  }
+  source_resource.fail_mapping = false;
+  expect_near(read(source, 4), std::array{1.F, 2.F, 3.F, 4.F});
+  bindings[0].policy = hyle::graph::ConstantPolicy::kMaterialize;
+  ASSERT_TRUE(hyle::graph::compile(graph, environment.environment(),
+                                   {.constants = bindings}));
+  EXPECT_EQ(target_resource.live_allocations, 0u);
+}
+
+TEST(GraphCompile, MaterializedConstantMetadataFailuresRollBack) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  HostResource resource;
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  auto builder = GraphBuilder::create().value();
+  const auto a = builder.constant(row(4)).value();
+  const auto b = builder.constant(row(4)).value();
+  const auto output = builder.add(Binary{BinaryKind::kAdd}, a, b).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  const std::array bindings{
+      ConstantBinding{b, source.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize},
+      ConstantBinding{a, source.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  const Environment environment{
+      {&context, hyle::mem::MemoryResourceRef(resource)}};
+  const auto retained = probe.allocations.load() - probe.deallocations.load();
+  auto duplicate = bindings;
+  duplicate[1].value = b;
+  auto invalid = hyle::graph::compile(graph, environment.environment(),
+                                      {.constants = duplicate});
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  EXPECT_EQ(resource.allocation_count, 0u);
+  probe.attempts = 0;
+  {
+    auto compiled = hyle::graph::compile(graph, environment.environment(),
+                                         {.constants = bindings});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(resource.live_allocations, 2u);
+  }
+  const auto count = probe.attempts.load();
+  EXPECT_EQ(resource.live_allocations, 0u);
+  for (std::size_t failure = 0; failure < count; ++failure) {
+    SCOPED_TRACE(failure);
+    probe.attempts = 0;
+    probe.fail_on_attempt = failure;
+    auto failed = hyle::graph::compile(graph, environment.environment(),
+                                       {.constants = bindings});
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsResourceExhausted());
+    EXPECT_EQ(resource.live_allocations, 0u);
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), retained);
+    probe.fail_on_attempt = SIZE_MAX;
+    {
+      auto retried = hyle::graph::compile(graph, environment.environment(),
+                                          {.constants = bindings});
+      ASSERT_TRUE(retried) << retried.error().message();
+    }
+    EXPECT_EQ(resource.live_allocations, 0u);
+  }
+}
+
 TEST(GraphCompile, RejectsMissingForeignAndMismatchedConstantBindings) {
   GraphBuilder builder = GraphBuilder::create().value();
   const auto input_id = builder.input(row(4)).value();
@@ -971,24 +1208,31 @@ TEST(GraphCompile, RejectsMissingForeignAndMismatchedConstantBindings) {
 
   OwnedTensor correct = make_tensor(row(4));
   OwnedTensor wrong = make_tensor(row(3));
-  const std::array wrong_shape{
-      ConstantBinding{constant_id, wrong.view.as_const()}};
-  EXPECT_TRUE(hyle::graph::compile(graph, context,
-                                   CompileOptions{.constants = wrong_shape})
-                  .error()
-                  .IsInvalidArgument());
+  for (const auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                            hyle::graph::ConstantPolicy::kMaterialize}) {
+    const std::array wrong_shape{
+        ConstantBinding{constant_id, wrong.view.as_const(), policy}};
+    EXPECT_TRUE(hyle::graph::compile(graph, context,
+                                     CompileOptions{.constants = wrong_shape})
+                    .error()
+                    .IsInvalidArgument());
+  }
 
   GraphBuilder foreign_builder = GraphBuilder::create().value();
   const auto foreign = foreign_builder.constant(row(4)).value();
   ASSERT_TRUE(foreign_builder.publish(foreign).ok());
   Graph foreign_graph = std::move(foreign_builder).finish().value();
   static_cast<void>(foreign_graph);
-  const std::array foreign_binding{
-      ConstantBinding{foreign, correct.view.as_const()}};
-  EXPECT_TRUE(hyle::graph::compile(graph, context,
-                                   CompileOptions{.constants = foreign_binding})
-                  .error()
-                  .IsInvalidArgument());
+  for (const auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                            hyle::graph::ConstantPolicy::kMaterialize}) {
+    const std::array foreign_binding{
+        ConstantBinding{foreign, correct.view.as_const(), policy}};
+    EXPECT_TRUE(
+        hyle::graph::compile(graph, context,
+                             CompileOptions{.constants = foreign_binding})
+            .error()
+            .IsInvalidArgument());
+  }
 }
 
 TEST(GraphCompile, ExecutesPublishedConstantWithoutRuntimeRebinding) {

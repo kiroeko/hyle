@@ -82,3 +82,7 @@ pattern/算子、重新计时或修改 BRGEMM 内核；Graph 的原样错误传�
 C93/GP41 后继迁移固定：region proposal 给现有 gated-MLP 实现声明稳定 `ProviderRouteKey`，升版的
 Graph extension 使用同一字段；它不是私有 prepare token 的别名或自动性能证书。Graph report 验证该
 键在真实 MLP 路线上保留；pattern、执行、BRGEMM owner 与热成本不变。
+
+G106 的 ConstantBinding/region extension 升版按 Graph v10 的 source-release 段直接迁移并复验：真实
+MLP 用 materialize bindings，在 compile 后释放三个原权重，再执行与对照。Provider 继续借用 Graph
+传入的有效 canonical view，不推断 aggregate packed count 能释放 source，不改 BRGEMM kernel。
