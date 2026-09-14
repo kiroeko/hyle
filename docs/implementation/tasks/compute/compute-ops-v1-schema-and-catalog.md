@@ -211,3 +211,13 @@ Native N18 的真实 batch-broadcast MatMul 纵切证明，schema 虽能用通�
 本次只允许 O18；不增加 tensor algebra、material transpose、动态 rank 或 provider
 策略。`compute_ops` 依法从 `CANDIDATE` 返回 `AUDITED`，完成 O18 后与 Native N18/N19
 共同形成新 immutable candidate。
+
+## 第二候选（2026-09-14）
+
+- immutable product commit：`18970739c5e0909cf968fecba9b96c9ea3560dfc`；O18 是首候选撤回后唯一
+  schema/API 修正；
+- `transposed()` 现在对 rank≥2 交换末两轴并保留所有 batch axes，dimensions、byte strides 与 block axis
+  一起换位；rank-1 拒绝、rank-2 原语义和 opaque 拒绝保持不变，没有 material copy 或动态 metadata；
+- rank-4 blocked descriptor、Native row-major/物理转置 batch MatMul、零 batch、广播与 Graph 多节点纵切
+  已在 Windows WERROR 下通过；ComputeOps 逐头通过。该 factor 仍为固定 rank≤8 的 O(rank) P0 schema，
+  P1 不适用；候选后只补声明的跨平台、sanitizer 与三交付证据。

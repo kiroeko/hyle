@@ -272,15 +272,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-v7-typed-operation-facade.md",
-      "summary": "compute v7 AUDITED：19-family typed prepare 与 Concat/TopK/masked-SDPA submit 缺口已对账；有限修正只用 rank-bounded stack descriptor/span 转发现有 generic runtime，删除冲突的早期 RMSNorm/Gated 显式-output 语义，不改 provider steady path。"
+      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
+      "summary": "compute v7 CANDIDATE：19-family typed prepare 与自然 Concat/TopK/masked-SDPA submit 已落到同一 generic runtime；冲突的早期 RMSNorm/Gated 显式-output 语义已删除，固定 arity 只构造有界 stack span，不改变 provider steady path。"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v8-explicit-allocator-sort.md",
-      "summary": "graph v8 AUDITED：G82/G83 产品算法不变；ComputeOps O18 与 Compute v7 改变直接依赖候选身份，Graph 退回后只回放既有 allocator/selection 验收及批量 MatMul→separate gated 多节点纵切，再共同签发候选。"
+      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
+      "summary": "graph v8 CANDIDATE：G82/G83 allocator/selection 合同已在新 Compute 身份上回放，batch-broadcast MatMul→separate GELU-tanh 多节点纵切通过；Graph IR、placement、liveness、workspace 与 submit 算法未再变化。"
     },
     {
       "module": "container_concurrent",
@@ -376,9 +378,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-ops-v1-schema-and-catalog.md",
-      "summary": "compute_ops v1 AUDITED：Native batch-broadcast MatMul 纵切证明 rank≥3 转置权重只能手写完整 permutation；有限 O18 将 transposed() 自然扩展为交换末两轴，rank-2 行为不变，不增加 material transpose 或 provider 策略。"
+      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
+      "summary": "compute_ops v1 CANDIDATE：O18 使 transposed() 对 rank≥2 自然交换末两轴并保留 batch axes；rank-1/opaque 拒绝和 rank-2 行为保持明确，不增加 material transpose、动态 rank 或 provider 策略。"
     },
     {
       "module": "compute_backend_cpu",
@@ -405,9 +408,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-provider-native-v1-factor.md",
-      "summary": "compute_provider_native v1 AUDITED：有限 N18/N19 补 rank>=2 batch-broadcast MatMul 与 packed/separate 三种 GatedActivation；N20 证明 fat-kernel selector 直接消费 Platform CPU facts，故正确保留该边；不重开底层模块。"
+      "candidate": "18970739c5e0909cf968fecba9b96c9ea3560dfc",
+      "summary": "compute_provider_native v1 CANDIDATE：N18/N19 补齐 rank≥2 batch-broadcast MatMul、零 inner 与 packed/separate 三种 GatedActivation；路线在 prepare 固定并复用 SIMD/Math/Mem/Platform，未触发底层模块重开。"
     },
     {
       "module": "compute_sched",

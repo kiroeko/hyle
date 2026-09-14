@@ -104,3 +104,13 @@ IR、compile、placement、liveness、workspace 和执行算法没有发现新�
 `CANDIDATE` 返回 `AUDITED`，只允许在新依赖上回放既有 G82/G83 验收并增加一条
 batch-broadcast MatMul -> separate GELU-tanh GatedActivation 的真实多节点纵切；不借此重开
 Graph 产品算法或扩大 G82/G83。
+
+## 依赖刷新后的第二候选（2026-09-14）
+
+- immutable product commit：`18970739c5e0909cf968fecba9b96c9ea3560dfc`；Graph 的 G82/G83 产品字节
+  没有变化，候选身份只刷新到新的 Compute/ComputeOps/Native 依赖树；
+- 33-target allocator/selection 回归继续通过，并新增 rank-4 双边广播 MatMul → separate GELU-tanh
+  GatedActivation 的公开 GraphBuilder/compile/Invocation 纵切；
+- Windows MSVC 19.50 Release/WERROR 的两个 Graph 测试及关联 Compute/Native 测试通过，Graph 逐头通过。
+  compile 仍为显式 allocator 下 O(T log T) in-place sort，Invocation/submit 成本结构不变，因此本轮仍为
+  P0；候选后只补预声明的跨平台、sanitizer、三交付和终局红队证据。

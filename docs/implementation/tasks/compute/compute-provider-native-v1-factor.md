@@ -213,3 +213,17 @@ RoPE vector blocks/tail 与 strided materialization、additive/all-masked Softma
 没有产品改动。先前已通过的跨平台、sanitizer 与交付
 回放是历史证据，新产品候选必须重跑受 N18/N19 影响的正确性、交付、红队和预声明 P1；N20 只影响
 exact-factor 与三交付依赖核对。
+
+## 第二候选（2026-09-14）
+
+- immutable product commit：`18970739c5e0909cf968fecba9b96c9ea3560dfc`；有限 N18/N19 已完成，N20
+  保持 `KEEP` 且没有产品变化；
+- MatMul 现支持 rank≥2、左右/双边 NumPy batch broadcast、row-major 或物理转置权重，并把 batch/row
+  工作在 prepare 冷路固定后交给既有 kernel；合法零 output 不映射 storage，`K=0` 的非空 output 只映射
+  并清零输出，不读取零字节输入；
+- GatedActivation 的 packed/separate × SiLU/GELU/GELU-tanh 六条 f32 route 均在 prepare 固定，并复用
+  已关闭 SIMD whole-row primitive；submit 不搜索模式、不分配 metadata，overlap 继续由统一 alias 合同拒绝；
+- Windows MSVC 19.50 Release/WERROR 的 Native 及关联 Compute/ComputeOps/Graph 定向测试共 6 项、4 个受影响
+  逐头测试通过，覆盖 rank-2/3/4、左右/双边广播、转置、零 batch、零 inner、overflow、tail、特殊值、
+  overlap 和真实 Graph 纵切。候选后只运行卡片已冻结的跨平台、sanitizer、三交付和七条 P1；任何产品
+  修正先退回 `AUDITED`。

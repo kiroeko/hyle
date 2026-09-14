@@ -62,3 +62,15 @@ P0 账单冻结：typed prepare 最多构造 rank-bounded descriptor 及 4 个 s
 显式选择的 variadic Concat 超过通用 inline binding 容量时由冷路 metadata allocator 分配。submit
 overload 只构造 `std::array`/`std::span` 并进入同一 `OperationInvocation::submit`；provider 选择、
 mapping、kernel、Completion 和 steady allocation 账单不变。有限改动集已固定，可进入实现。
+
+## Candidate（2026-09-14）
+
+- immutable product commit：`18970739c5e0909cf968fecba9b96c9ea3560dfc`；C70--C73 的公开
+  overload、内部 direct consumers、package sample 和用户 guide 已停止变化；
+- 19 个 family 均可从真实 typed arity 推导 output；RMSNorm/GatedActivation 不再要求普通用户重复传
+  output descriptor，MatMul 保留不冲突的显式 output 高级入口，异构 resource 仍使用既有 generic route；
+- fixed-arity prepare/submit 只建立至多四项的 stack `array/span`，然后进入同一 generic runtime；没有新增
+  steady allocation、provider/ISA search、锁、原子或复制，故本轮性能层级仍为 P0；
+- Windows MSVC 19.50 Release/WERROR 的 Compute、ComputeOps、CPU backend、Native 与 Graph 共 6 个定向
+  测试，以及 4 个受影响逐头测试通过；文档与 closure checker 通过。候选后只执行卡片已声明的
+  Linux/两台 Apple、sanitizer 和 source/static/shared 交付回放；发现产品问题必须退回 `AUDITED`。
