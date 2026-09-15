@@ -1555,3 +1555,48 @@ optional persistent bytes，单 route/family unique 聚合、余量扣除、unkn
 Region 仍排除已归属这个 owner 的字节。增加真实私有 metadata allocation 反例和精确总额/unknown 资格，
 不改变 hot PlanStep/Invocation、搜索策略或底层模块。首次 275/278 的三项 fixture 失败发生在 packing 前：
 1 MiB 峰值搭配默认数千 proposal/node 缓冲；限制这些小图的明确候选容量后 278/278，没有放宽产品配额。
+
+### 2026-09-15 G106：受管 immutable packing 检查点
+
+产品 `399db99ab83c3be3e53b63902adb37f71c067ca8` 已实现 family-local `ConstantArtifactAccess`，same-build
+region contract 为 v18，不保留 v16/v17 兼容表。真实 RMSNorm 架构 fixture 把 scale 权重反序打包，general
+使用现有 Native bounded RMS，两个不同 token 行数的 exact regions 只打包一次并读取其结果。释放源和父表
+后两个子计划可并发执行；没有把这个 fixture 当生产 kernel 优化，也没有声称 oneDNN 已自动接入共享。
+
+原始产品实现先通过 Windows 增量，随后源码复核发现 opaque persistent 漏记。`acf55949` 的单项反例实际
+失败：factory 另分配 4096 字节 metadata，只给 region+16 字节权重的 compiled-storage 限额仍返回成功。
+按上段唯一产品纠正加入 optional persistent：现在严格未知/精确总额/少一字节、双变体唯一计费都验证通过。
+private compilation bounds 与 artifact 分类独立，不能互相代替；两个生命周期的账目也不重复相加。
+
+八项新增用例覆盖：不同形状共享/源与父表释放/并发、格式/资源/具体 Provider instance 隔离、不同 family
+同地址不缓存、profile 记录 packing 配置、invalid constant/声明不一致/unknown/overflow/真实部分失败、
+拒绝与 incumbent 清理、真实 opaque metadata 与 finite/unknown 限额、family exact-byte 两类配额以及逐
+metadata 分配点 OOM/重试。原有 Graph、region/leaf 重选、动态 View、资源域和 ownership 反例全部回放。
+
+| Windows Release 增量验证 | `C:/hyle-scratch/` 缓存 | 结果 |
+|---|---|---|
+| static Graph/逐头 | `compute-route-v8-static-20260914` | 3/3；Builder 30/30、executable 280/280 |
+| shared Graph/逐头、oneDNN direct composition/region/逐头 | `compute-route-onednn-v8-20260914` | 6/6 |
+| CUDA-on Graph/逐头 | `compute-graph-v7-cuda` | 3/3；executable 284/284 |
+| source CPU/CUDA consumer | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA consumer | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA consumer | `custom-execution-v10-static-consumer` | 2/2 |
+
+wrapper、2 build jobs、串行 CTest/120s。纠正后只重建相关 Graph/provider/consumer，不为文档重跑。
+shared producer/SDK/CPU/CUDA 装载位置的 Graph DLL SHA256 同为
+`3C8156A1872241499A5F5200FD0D9F3EE4CCCDC5C37F422E18D43101F3832B1C`；两个 SDK 的 region_provider.h
+与 canonical 同为 `59347A638428FA97979C6C7AA34F5C12AD4FCF29DDFCBC5668BAA10252B1D461`。安装用例仍是既有
+CPU/CUDA custom execution 旅程；新 packing 行为由 static/shared Graph 测试验证，不冒称 SDK 示例用了 packing。
+
+P0：只在 cold compile 查询，constant slot 为 O(log C)，storage 查找为 O(S)，flat hash 查找期望 O(1)；
+每候选清理扫描 cold cache，Plan 保有 O(U) 个实际使用的 unique payload refs。候选淘汰先毁 region，再释
+refs/无主 cache entry；selected variant/incumbent 不受影响。cache table 在 compile 返回前销毁，普通
+无 packing 不分配它；没有 PlanStep/Invocation 新字段、warm lookup、JIT、packing 或搜索。实际 factory
+成本由 Provider 决定，这里不签纳秒收益或 SOTA。复用 Container hash/map、Util Ref、Mem quota、Compute
+extension/admission/outcome；未改 Compute/backend/Native/oneDNN 产品、registry 或公共工具。
+
+selector `5241d440 → 399db99a` READY（跳过 89 项）；closure 39/schema 4、docs 298/1081 links 与 diff
+check 通过。首次编译的 size_t literal、私有头显式 node identity include、fixture Result 清空写法已纠正。
+G106 的共享与预算实现/Windows 增量完成，但真实 CPU multi-op/CUDA Q4/Apple MLX+Metal 架构探针、完整
+候选跨平台/sanitizer/独立红队/P1、之前 Graph→Math 的横向 component-contract 门仍未完成。保持 AUDITED，
+继续 foundation；不扩算子目录，也不宣称 Compute/Graph 基础完成或达到用户指定暂停点。
