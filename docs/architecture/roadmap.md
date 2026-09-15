@@ -23,8 +23,8 @@ HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低�
 - Mem、Time、Obs、Util、Container、SIMD/Math 提供可组合基础能力；
 - Sched 与 IO 组合底层机制；
 - Compute 承载 device/backend/provider 与直接 op/kernel 执行；Graph 承载逻辑计算 DAG、编译、partition
-  和可复用 Executable。one-op 只是可独立签发的纵切，后续能力按 registry 当前卡推进；旧实现只存在于
-  Git 历史，不作现行需求或实现输入；
+  和可复用 Executable。one-op 只是可独立签发的纵切，后续能力按 registry 当前卡推进；被退役实现从
+  Git 追溯，工作树现有实现按需求决定复用/改写/删除，不把旧类或测试当新设计约束；
 - 模型格式、tokenizer、KV/批处理和 serving policy 属推理引擎；材质、场景、渲染算法和窗口/present
   policy 属渲染产品；通用资源 ownership、异构 copy/completion 与调度机制仍须在正确 HYLE owner 审计；
 - source、static、shared 都是 C++ 交付，Native FFI 只由真实外语消费者触发。
@@ -89,7 +89,8 @@ ggml-Vulkan 与 MLX-Metal 按各自 owner 分别准入，ggml 没有因此变成
 Apple 原生或未测硬件的性能资格。HIP/ROCm 当前不实现。细节只在[四路线设计](compute-routes.md)维护。
 
 基础完成须分别通过路线隔离、真实计算/Provider 组合、资源/同步/错误寿命、三交付与公平完整性能。
-有限架构实验不签这个 gate，也不锁定旧公共对象。当前研究和缺口见
+有限架构实验不签这个 gate，也不锁定旧公共对象。执行顺序见
+[四路线基础重构计划](../implementation/tasks/compute/four-route-foundation-refactor.md)，依据与未证明项见
 [六项架构复核](../implementation/tasks/compute/six-point-architecture-review.md)；历史输入见
 [研究索引](../implementation/tasks/compute/compute-graph-route-unification-audit.md)。本页不维护进度百分比
 或第二份工作队列，研究完成也不自动恢复已暂停的大 goal。

@@ -1,6 +1,7 @@
 # Compute/Graph：架构研究与历史决策索引
 
-当前入口是 [2026-09-15 六项架构复核](six-point-architecture-review.md)。长期需求只由
+当前计划入口是[四路线基础重构](four-route-foundation-refactor.md)，依据为已完成的
+[2026-09-15 六项架构复核](six-point-architecture-review.md)。长期需求只由
 [Compute](../../../architecture/compute-design.md)、[Graph](../../../architecture/graph-design.md) 与
 [四条原生路线](../../../architecture/compute-routes.md)持有；当前组件状态只见
 [registry](../../module-status.json)。本页不是 closure card，也不授权恢复旧 goal 或产品施工。
@@ -98,7 +99,6 @@ weights 的 kernel；vLLM/SGLang 在加载后 repack W4A16。由此撤销把“�
 
 ## 后续工作的边界
 
-当前六项研究完成先报告。后续正式改造由用户确认后按原生路线绑定有限实现卡，先落实必要共同
-结果/完成语义和路线隔离，再完成各自真实程序/组合、错误回收、三交付与完整性能。不恢复 CPU+GPU
-联合推理，也不在基础未完成时填全算子目录。新问题先归属本地 adapter/执行器；只有反例推翻共同
-语义或成本责任时重开共同设计。raw evidence 与 terminal records 保留原历史事实。
+六项研究已报告，用户已批准把七包写成执行计划并绑定首包；实际当前入口只见上面的计划。本页不恢复
+旧队列、CPU+GPU 联合推理或全算子填充。新问题先归属本地 adapter/执行器；只有反例推翻共同语义
+或成本责任时重开共同设计。raw evidence 与 terminal records 保留原历史事实。
