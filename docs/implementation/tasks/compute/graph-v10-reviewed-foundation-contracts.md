@@ -1385,3 +1385,35 @@ guards；以表达式身份、显式相等/顺序 guard、乘除因子消去与�
 
 该步骤是一轮表示/实现和一次产品纠正；若发现需改变公开域、热提交或 owner 合同，回本卡审计，不缩减
 G101 或增加临时兼容入口。
+
+### 2026-09-15 G101：完整域 View 检查点
+
+产品/测试快照 `a654a4db21f92e7bdd3f718b4972fdd0b82bb5d0` 已实现上述有限证明、真实 alias offset 和
+Native bounded Copy。共享 Plan 不复制成逐 shape 的 exact plan；冷绑定按 producer 顺序复用已绑定父
+view，长 alias 链为线性处理。热 replay 不增加 shape 搜索、Provider 查询或 offset sidecar。
+
+新增小域穷举、guard 排除、独立同上界反例、exact quotient head split、empty、嵌套 slice/permute、
+broadcast materialization、长 alias 链及逐分配点 OOM/重试。CUDA 用真实非 host-accessible storage
+执行同一域计划的不同 slice offset；公开 sample 同时执行 exact 与 declared-domain View 链。
+
+| Windows Release 增量 | 缓存（均在 `C:/hyle-scratch/`） | 结果 |
+|---|---|---|
+| static Graph/Native/逐头 | `compute-route-v8-static-20260914` | 5/5；线性绑定纠正后 executable 267/267 |
+| shared Compute/Graph/Native/oneDNN direct、region、composition 与逐头 | `compute-route-onednn-v8-20260914` | 17/17 |
+| CUDA Graph/逐头 | `compute-graph-v7-cuda` | 3/3 |
+| source CPU/CUDA consumer | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA consumer | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA consumer | `custom-execution-v10-static-consumer` | 2/2 |
+
+仍使用 Windows wrapper、2 build jobs、串行 CTest/120s；SDK consumer 实际加载的 DLL 已与本次 producer/
+SDK 校验一致。两处首次编译错误是 const BufferView 与不同 permutation span 类型，已直接纠正；无运行
+语义放宽。P0：证明只在冷 compile，signature 复用既有有限程序；Native Copy 内核及热回调不变。
+
+selector `2056ab65 → a654a4db` READY；Graph→Math PRIVATE 边触发公共选择器的全组件合同/交付扩展。
+本段实际只完成上表的受影响闭包及普通 configure 的真实边/头归属检查，未运行的横向 component-contract/
+全产品门不记 PASS，仍须在 foundation 交付候选处理。没有修改公共仪器。closure 39/schema 4、docs
+298/1080 links 与 diff check 通过；无 P1、全库测试或 CI。Linux/两台 Apple、sanitizer、独立终局红队和
+真实架构探针仍未完成。保持 AUDITED；G103 联合优化、G106 packed 共享/capture 上界仍是产品缺口。
+
+同产品快照 `144df3c5`（随后仅 CUDA 测试格式变化）LOC self-check：全库 **684,835**，自实现不含测试
+**125,802**；Compute **16,992**、Graph **13,625**，合计 **30,617**。本段不是整体 foundation 完成声明。

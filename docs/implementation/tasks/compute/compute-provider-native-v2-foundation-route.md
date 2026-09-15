@@ -99,3 +99,8 @@ input 可为既有 derived 或显式 bounded-strided（含零 stride）。准入
 v15 受检入口绑定，继续使用 Mem dense copy 或现有 strided copy kernel，无 search/JIT/新增热分派。
 RMSNorm 原合同和 19-family exact 不放宽。验证由 G101 的 Copy 内容/空值/guard/预算/OOM/三交付，加
 Native 对错误 output layout/独立同上界 axes 的反例共同承担。
+
+2026-09-15：bounded Copy 已实现并通过 Windows static/shared Native、Graph 完整域内容/失败反例及
+source/static/shared 公开消费回放；具体快照和未验证项见
+[G101 完整域检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g101完整域-view-检查点)。
+没有新增 kernel/family，Native 整体与 foundation 的跨平台、红队和 P1 尚未签发。
