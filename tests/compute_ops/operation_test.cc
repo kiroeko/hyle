@@ -83,8 +83,8 @@ TEST(OperationViewAlias, RejectsUnrepresentableOffsetsAndInconsistentSpans) {
   EXPECT_FALSE(detail::view_alias_offset(View{}, {}, {}).has_value());
 }
 
-TEST(OperationCatalog, HasNineteenTypedBuiltinFamiliesAndInvalidDefault) {
-  const std::array<Operation, 19> operations{
+TEST(OperationCatalog, HasTwentyTypedBuiltinFamiliesAndInvalidDefault) {
+  const std::array<Operation, 20> operations{
       Operation(View::reshape(shape(2, 3)).value()),
       Operation(Copy{}),
       Operation(Fill{shape(2), DataType::kFloat32, ScalarValue(0.0F)}),
@@ -103,7 +103,8 @@ TEST(OperationCatalog, HasNineteenTypedBuiltinFamiliesAndInvalidDefault) {
       Operation(RoPE{.rotary_dimensions = 8}),
       Operation(Softmax{}),
       Operation(TopK{}),
-      Operation(ScaledDotProductAttention{})};
+      Operation(ScaledDotProductAttention{}),
+      Operation(QuantizedMatMul{})};
 
   Operation invalid;
   EXPECT_FALSE(invalid.valid());
@@ -207,6 +208,119 @@ TEST(OperationReductionAndNorm, PreserveExplicitAxesAndParameterShapes) {
   EXPECT_EQ(infer_one(Operation(RmsNorm{}), std::array{input, scale}), input);
   EXPECT_EQ(infer_one(Operation(LayerNorm{}), std::array{input, scale, bias}),
             input);
+}
+
+TensorDesc packed_q4(DataType type, std::int64_t channels,
+                      std::int64_t reduction) {
+  const auto format = StorageFormat::blocked({0x48594c4554455354ULL, 4}, 2, 1)
+                          .value();
+  return TensorDesc::blocked_dense(type, std::array{channels, reduction}, format)
+      .value();
+}
+
+TEST(OperationQuantizedMatMul, InfersSignedAndAffineGroupedLinearProjections) {
+  for (const auto type : {DataType::kFloat16, DataType::kBFloat16,
+                          DataType::kFloat32, DataType::kFloat64}) {
+    const auto weight = packed_q4(type, 256, 256);
+    const auto parameter = tensor(type, 256, 4);
+    for (const auto batch : {1, 7}) {
+      const auto activation = tensor(type, batch, 256);
+      EXPECT_EQ(infer_one(Operation(QuantizedMatMul{}),
+                          std::array{activation, weight, parameter}),
+                tensor(type, batch, 256));
+      EXPECT_EQ(
+          infer_one(Operation(QuantizedMatMul{
+                        .mode = QuantizedWeightMode::kUnsignedAffine4}),
+                    std::array{activation, weight, parameter, parameter}),
+          tensor(type, batch, 256));
+    }
+    EXPECT_EQ(infer_one(Operation(QuantizedMatMul{.group_size = 128}),
+                        std::array{tensor(type, 2, 7, 256), weight,
+                                   tensor(type, 256, 2)}),
+              tensor(type, 2, 7, 256));
+  }
+}
+
+TEST(OperationQuantizedMatMul, RejectsIncompleteAndContradictoryContracts) {
+  const auto type = DataType::kFloat32;
+  const auto activation = tensor(type, 7, 128);
+  const auto weight = packed_q4(type, 32, 128);
+  const auto scales = tensor(type, 32, 2);
+  const std::array inputs{activation, weight, scales};
+  const Operation signed_op(QuantizedMatMul{});
+  const Operation affine_op(
+      QuantizedMatMul{.mode = QuantizedWeightMode::kUnsignedAffine4});
+  EXPECT_TRUE(infer_single_output(affine_op, inputs).error().IsInvalidArgument());
+  EXPECT_TRUE(infer_single_output(signed_op,
+                                 std::array{activation, weight, scales, scales})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(infer_single_output(signed_op, std::array{activation, weight})
+                  .error()
+                  .IsInvalidArgument());
+  for (const auto invalid : {
+           QuantizedMatMul{.mode = static_cast<QuantizedWeightMode>(255)},
+           QuantizedMatMul{.group_size = 0},
+           QuantizedMatMul{.group_size = 63},
+           QuantizedMatMul{.group_size = 256},
+           QuantizedMatMul{.accumulation_type = DataType::kUnknown},
+           QuantizedMatMul{.accumulation_type = DataType::kInt32},
+           QuantizedMatMul{.accumulation_type = DataType::kFloat8E4M3FN}}) {
+    EXPECT_TRUE(infer_single_output(Operation(invalid), inputs)
+                    .error()
+                    .IsInvalidArgument());
+  }
+  for (const auto bad_weight : {tensor(type, 32, 128),
+                                packed_q4(type, 32, 64),
+                                packed_q4(DataType::kFloat16, 32, 128)}) {
+    EXPECT_TRUE(infer_single_output(signed_op,
+                                   std::array{activation, bad_weight, scales})
+                    .error()
+                    .IsInvalidArgument());
+  }
+  for (const auto bad_parameter : {tensor(type, 2, 32), tensor(type, 32, 1),
+                                   tensor(type, 64),
+                                   tensor(DataType::kFloat16, 32, 2)}) {
+    EXPECT_TRUE(infer_single_output(signed_op,
+                                   std::array{activation, weight, bad_parameter})
+                    .error()
+                    .IsInvalidArgument());
+    EXPECT_TRUE(infer_single_output(
+                    affine_op,
+                    std::array{activation, weight, scales, bad_parameter})
+                    .error()
+                    .IsInvalidArgument());
+  }
+  EXPECT_TRUE(infer_single_output(
+                  signed_op, std::array{tensor(type, 7, 0),
+                                        packed_q4(type, 32, 0),
+                                        tensor(type, 32, 0)})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(infer_single_output(
+                  signed_op, std::array{tensor(type, 128), weight, scales})
+                  .error()
+                  .IsInvalidArgument());
+}
+
+TEST(OperationQuantizedMatMul, PreservesEmptyOutputsAndChecksOutputOverflow) {
+  const auto type = DataType::kFloat32;
+  const Operation operation(QuantizedMatMul{});
+  EXPECT_EQ(infer_one(operation, std::array{tensor(type, 0, 64),
+                                           packed_q4(type, 32, 64),
+                                           tensor(type, 32, 1)}),
+            tensor(type, 0, 32));
+  EXPECT_EQ(infer_one(operation, std::array{tensor(type, 7, 64),
+                                           packed_q4(type, 0, 64),
+                                           tensor(type, 0, 1)}),
+            tensor(type, 7, 0));
+  constexpr std::int64_t huge = std::int64_t{1} << 32;
+  const std::array inputs{tensor(type, huge, 64), packed_q4(type, huge, 64),
+                          tensor(type, huge, 1)};
+  std::array output{tensor(type, 1, 1)};
+  const auto original = output;
+  EXPECT_TRUE(infer_output_descriptions(operation, inputs, output).IsOutOfRange());
+  EXPECT_EQ(output, original);
 }
 
 TEST(OperationMatMul, BroadcastsBatchDimensionsWithoutLayoutFlags) {
@@ -536,6 +650,21 @@ TEST(OperationResources, PureAndUnknownEffectsDoNotRequireResourceCallbacks) {
 }
 
 #if !defined(HYLE_STATIC)
+TEST(OperationQuantizedMatMul, CarriesTheWholeDescriptorAcrossSharedLibrary) {
+  const auto operation = hyle::compute::test::make_shared_quantized_operation();
+  ASSERT_EQ(operation.kind(), OperationKind::kQuantizedMatMul);
+  const auto &descriptor = *operation.get_if<QuantizedMatMul>();
+  EXPECT_EQ(descriptor.mode, QuantizedWeightMode::kUnsignedAffine4);
+  EXPECT_EQ(descriptor.group_size, 128u);
+  EXPECT_EQ(descriptor.accumulation_type, DataType::kFloat64);
+  const auto type = DataType::kFloat32;
+  EXPECT_EQ(infer_one(operation, std::array{tensor(type, 7, 256),
+                                           packed_q4(type, 32, 256),
+                                           tensor(type, 32, 2),
+                                           tensor(type, 32, 2)}),
+            tensor(type, 7, 32));
+}
+
 TEST(OperationCustom, DecodesSchemaIdentityAcrossSharedFactorBoundary) {
   const Operation operation =
       hyle::compute::test::make_shared_custom_operation(17);

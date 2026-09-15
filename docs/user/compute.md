@@ -41,7 +41,7 @@ factor seam，也不要把单个 family 的域支持当成整个算子目录都�
 | 设备发现 | `Backend::device_count/device` | 每个显式 backend 只枚举自己的设备；`cpu::device()` 直接取得唯一 CPU |
 | 执行域 | `Backend -> Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有全局 registry、隐藏 worker 或默认设备 |
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
-| operation schema | 19 个 typed family + inline custom | 可做 arity/shape/layout/alias/effect/precision 检查；schema 存在不等于已有可执行 provider |
+| operation schema | 20 个 typed family + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
@@ -100,6 +100,20 @@ runtime 通常只能由 Graph 作为 compiled region 使用。当前没有已交
 正式量化路线仍待接入；研究实验不属于公开 Provider，不能通过一个 sample 推断 `MatMul` 已有量化
 fallback。不同 Q4 格式、activation 临时量化与累加类型不是同一件事。当前
 `MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
+
+### Grouped Q4 的逻辑描述
+
+`QuantizedMatMul{.mode, .group_size, .accumulation_type}` 描述 `[...,K]` activation 与逻辑 `[N,K]`
+压缩权重相乘，输出 `[...,N]`；activation rank 至少为 2。默认 group 为 64、float32 累加。
+`kSignedSymmetric4` 有 activation、weight、scale 三输入，权重公式为 signed q（-8..7）乘 scale；
+`kUnsignedAffine4` 另有 additive bias 输入，公式为 unsigned q（0..15）乘 scale 加 bias。
+scale/bias 的逻辑形状都是 `[N,K/group]`，K 必须为正且整除 group。输入共享 float16、bfloat16、
+float32 或 float64 逻辑 dtype，输出保留该 dtype；累加类型显式声明，不授权偷偷转换 activation。
+
+普通 Graph 可直接 `builder.add(QuantizedMatMul{...}, input, weight, scales, biases)`；signed 形态
+省去最后一项。权重的 `StorageFormatId` 仍须由具体路线的 packing factory 给出；仅凭 4 bit 无法
+推断物理编码或可否无损换格式。目前交付的是公共描述和校验，正式 Q4 执行 Provider 仍待各路线接入。
+已有 19 族 CPU kernel 不因此多出 Q4 fallback；数值资格也不保证与先物化权重的逐位结果相同。
 
 ## Queue、byte transfer 与 Completion
 

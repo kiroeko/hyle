@@ -54,6 +54,11 @@ bool is_numeric(DataType type) noexcept {
   return is_floating(type) || is_integer(type);
 }
 
+bool is_quantized_matmul_float(DataType type) noexcept {
+  return type == DataType::kFloat16 || type == DataType::kBFloat16 ||
+         type == DataType::kFloat32 || type == DataType::kFloat64;
+}
+
 template <class Enum> bool enum_in_range(Enum value, Enum last) noexcept {
   using Underlying = std::underlying_type_t<Enum>;
   return static_cast<Underlying>(value) <= static_cast<Underlying>(last);
@@ -61,6 +66,17 @@ template <class Enum> bool enum_in_range(Enum value, Enum last) noexcept {
 
 Status validate_operation_modes(const Operation &operation) noexcept {
   switch (operation.kind()) {
+  case OperationKind::kQuantizedMatMul: {
+    const auto &matmul = *operation.get_if<QuantizedMatMul>();
+    if (!enum_in_range(matmul.mode, QuantizedWeightMode::kUnsignedAffine4) ||
+        matmul.group_size == 0 ||
+        !is_quantized_matmul_float(matmul.accumulation_type)) {
+      return Status::InvalidArgument(
+          "QuantizedMatMul requires a valid Q4 mode, nonzero group and "
+          "explicit floating accumulation type");
+    }
+    break;
+  }
   case OperationKind::kView:
     if (!enum_in_range(operation.get_if<View>()->kind(),
                        ViewKind::kBroadcast)) {
@@ -417,6 +433,48 @@ Result<TensorDesc> infer_normalization(const TensorDesc &input,
   return dense_like(input, input.data_type());
 }
 
+Result<TensorDesc>
+infer_quantized_matmul(const QuantizedMatMul &operation,
+                       std::span<const TensorDesc> inputs) noexcept {
+  const TensorDesc &activation = inputs[0];
+  const TensorDesc &weight = inputs[1];
+  if (!is_quantized_matmul_float(activation.data_type()) ||
+      activation.rank() < 2 || weight.rank() != 2 || weight.is_plain()) {
+    return std::unexpected(Status::InvalidArgument(
+        "QuantizedMatMul requires floating rank >= 2 activations and "
+        "packed logical [N,K] weights"));
+  }
+  for (const TensorDesc &input : inputs) {
+    if (input.data_type() != activation.data_type()) {
+      return std::unexpected(Status::InvalidArgument(
+          "QuantizedMatMul inputs must share one floating logical type"));
+    }
+  }
+  const std::int64_t channels = weight.dimensions()[0];
+  const std::int64_t reduction = weight.dimensions()[1];
+  if (reduction <= 0 || reduction != activation.dimensions().back() ||
+      reduction % operation.group_size != 0) {
+    return std::unexpected(Status::InvalidArgument(
+        "QuantizedMatMul K must match, be positive and divisible by group"));
+  }
+  const std::int64_t groups = reduction / operation.group_size;
+  for (const TensorDesc &parameter : inputs.subspan(2)) {
+    if (parameter.rank() != 2 || parameter.dimensions()[0] != channels ||
+        parameter.dimensions()[1] != groups) {
+      return std::unexpected(Status::InvalidArgument(
+          "QuantizedMatMul scales and biases must have logical shape "
+          "[N,K/group]"));
+    }
+  }
+  std::array<std::int64_t, kMaxTensorRank> shape{};
+  std::copy(activation.dimensions().begin(), activation.dimensions().end(),
+            shape.begin());
+  shape[activation.rank() - 1] = channels;
+  return TensorDesc::dense(
+      activation.data_type(),
+      std::span<const std::int64_t>(shape.data(), activation.rank()));
+}
+
 Result<TensorDesc> infer_matmul(const TensorDesc &left,
                                 const TensorDesc &right) noexcept {
   if (left.data_type() != right.data_type() || !is_numeric(left.data_type())) {
@@ -708,6 +766,8 @@ std::string_view operation_name(OperationKind operation) noexcept {
     return "layer-norm";
   case OperationKind::kMatMul:
     return "matmul";
+  case OperationKind::kQuantizedMatMul:
+    return "quantized-matmul";
   case OperationKind::kGatedActivation:
     return "gated-activation";
   case OperationKind::kGather:
@@ -844,6 +904,18 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
             EffectKind::kPure,
             PrecisionPolicy::kAccumulateInDeclaredType,
             matmul != nullptr ? matmul->accumulation_type : DataType::kUnknown,
+            true};
+  }
+  case OperationKind::kQuantizedMatMul: {
+    const auto &matmul = *operation.get_if<QuantizedMatMul>();
+    const std::uint16_t count =
+        matmul.mode == QuantizedWeightMode::kUnsignedAffine4 ? 4 : 3;
+    return {{count, count},
+            1,
+            AliasPolicy::kNone,
+            EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType,
+            matmul.accumulation_type,
             true};
   }
   case OperationKind::kGatedActivation: {
@@ -1208,6 +1280,9 @@ Status infer_output_descriptions(const Operation &operation,
     }
     break;
   }
+  case OperationKind::kQuantizedMatMul:
+    first = infer_quantized_matmul(*operation.get_if<QuantizedMatMul>(), inputs);
+    break;
   case OperationKind::kGatedActivation: {
     const GatedActivation &gated = *operation.get_if<GatedActivation>();
     if (!is_floating(inputs[0].data_type()) || inputs[0].rank() == 0) {

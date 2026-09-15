@@ -159,6 +159,34 @@ TEST(GraphBuilder, BuildsNaturalMultiNodeTransformerFragment) {
   EXPECT_EQ(normalized.kind(), ValueKind::kNodeOutput);
 }
 
+TEST(GraphBuilder, DescribesAffineQuantizedProjectionWithAllParameterPorts) {
+  using hyle::compute::QuantizedMatMul;
+  using hyle::compute::QuantizedWeightMode;
+  GraphBuilder builder = GraphBuilder::create().value();
+  const auto input = builder.input(matrix(7, 256)).value();
+  const auto format = StorageFormat::blocked({0x48594c4554455354ULL, 4}, 2, 1)
+                          .value();
+  const auto weight_desc = TensorDesc::blocked_dense(
+      DataType::kFloat32, std::array<std::int64_t, 2>{128, 256}, format).value();
+  const auto weight = builder.constant(weight_desc).value();
+  const auto scales = builder.constant(matrix(128, 4)).value();
+  const auto biases = builder.constant(matrix(128, 4)).value();
+  const QuantizedMatMul operation{.mode = QuantizedWeightMode::kUnsignedAffine4};
+  EXPECT_TRUE(builder.add(operation, input, weight, scales)
+                  .error()
+                  .IsInvalidArgument());
+  const auto output = builder.add(operation, input, weight, scales, biases);
+  ASSERT_TRUE(output.has_value()) << output.error().message();
+  ASSERT_TRUE(builder.publish(*output).ok());
+  const Graph graph = std::move(builder).finish().value();
+  const auto node = graph.node_id(0).value();
+  EXPECT_EQ(graph.operation(node)->kind(), OperationKind::kQuantizedMatMul);
+  EXPECT_EQ(graph.node_input_count(node).value(), 4u);
+  EXPECT_EQ(graph.node_input(node, 3).value(), biases);
+  EXPECT_EQ(graph.output_description().value(), matrix(7, 128));
+  EXPECT_EQ(graph.value_description(weight).value(), weight_desc);
+}
+
 TEST(GraphBuilder, BuildsBoundedSymbolicGraphWithExplicitOutputSpecs) {
   GraphBuilder builder = GraphBuilder::create().value();
   const auto batch = builder.dimension({.minimum = 1, .maximum = 64}).value();

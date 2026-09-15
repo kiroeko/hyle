@@ -58,4 +58,10 @@ Operation make_shared_resource_operation(ResourceAccess access) noexcept {
   return Operation::custom(ProducerResource{access});
 }
 
+Operation make_shared_quantized_operation() noexcept {
+  return Operation(QuantizedMatMul{.mode = QuantizedWeightMode::kUnsignedAffine4,
+                                   .group_size = 128,
+                                   .accumulation_type = DataType::kFloat64});
+}
+
 } // namespace hyle::compute::test

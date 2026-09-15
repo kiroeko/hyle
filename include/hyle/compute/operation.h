@@ -38,6 +38,7 @@ enum class OperationKind : std::uint8_t {
   kSoftmax,
   kTopK,
   kScaledDotProductAttention,
+  kQuantizedMatMul,
   kCustom,
 };
 
@@ -314,6 +315,25 @@ struct MatMul final {
   DataType accumulation_type = DataType::kFloat32;
 };
 
+enum class QuantizedWeightMode : std::uint8_t {
+  kSignedSymmetric4 = 0,
+  kUnsignedAffine4,
+};
+
+// Grouped Q4 linear projection: [..., K] * transpose([N, K]) -> [..., N].
+// Inputs are activation, packed weights, scales and (affine only) biases.
+// Scales/biases have logical shape [N, K / group_size]. Signed weights mean
+// q * scale for q in [-8, 7]; affine weights mean q * scale + bias for q in
+// [0, 15]. The weight StorageFormatId separately identifies physical packing.
+// All inputs share one floating logical dtype; outputs keep that dtype. The
+// declared accumulation allows normal arithmetic reassociation, not implicit
+// activation conversion or bitwise equivalence to materialized weights.
+struct QuantizedMatMul final {
+  QuantizedWeightMode mode = QuantizedWeightMode::kSignedSymmetric4;
+  std::uint32_t group_size = 64;
+  DataType accumulation_type = DataType::kFloat32;
+};
+
 struct GatedActivation final {
   GatedActivationKind activation = GatedActivationKind::kSilu;
   GatedInputKind inputs = GatedInputKind::kPackedHalves;
@@ -471,6 +491,7 @@ public:
   constexpr explicit Operation(RmsNorm value) noexcept : value_(value) {}
   constexpr explicit Operation(LayerNorm value) noexcept : value_(value) {}
   constexpr explicit Operation(MatMul value) noexcept : value_(value) {}
+  constexpr explicit Operation(QuantizedMatMul value) noexcept : value_(value) {}
   constexpr explicit Operation(GatedActivation value) noexcept
       : value_(value) {}
   constexpr explicit Operation(Gather value) noexcept : value_(value) {}
@@ -534,7 +555,8 @@ private:
       std::variant<std::monostate, View, Copy, Fill, Cast, Unary, Binary,
                    Select, Reduce, RmsNorm, LayerNorm, MatMul, GatedActivation,
                    Gather, Scatter, Concat, RoPE, Softmax, TopK,
-                   ScaledDotProductAttention, detail::CustomOperationValue>;
+                   ScaledDotProductAttention, QuantizedMatMul,
+                   detail::CustomOperationValue>;
   static_assert(std::variant_size_v<Value> ==
                 static_cast<std::size_t>(OperationKind::kCustom) + 1);
 
@@ -576,7 +598,7 @@ HYLE_COMPUTE_OPS_API Result<TensorDesc>
 infer_single_output(const Operation &operation,
                     std::span<const TensorDesc> inputs) noexcept;
 
-static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 21);
+static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 22);
 static_assert(std::is_trivially_copyable_v<Operation>);
 static_assert(sizeof(Operation) <= 256);
 
