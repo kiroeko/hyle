@@ -394,34 +394,14 @@ if (!done) return done.error();       // admission failure
 return done->wait();                  // terminal failure
 ```
 
-## 只读性能资料的匹配
+## 准备时绑定实现
 
-本节描述待迁移的现有低层 API，不是普通用户取得 best-of 的必要步骤，也不是新架构的默认机制。
+普通计算不需要用户提供 timing profile。四路线的默认优选规则由 HYLE 研发阶段验证并固定；
+准备时匹配适用条件和资源约束，执行时复用已绑定制品，不计时、不重选。各路线当前能力以其
+公开入口及验收记录为准；本节不把旧 Provider 顺序当作已完成的四路线优选规则。
 
-`<hyle/compute/route_profile.h>` 提供冷路径共同合同。它**不会测量、生成资格或改变 direct prepare 的
-Provider 次序**；[Graph](graph.md#按完整计划的性能资料选路) 已接入完整候选的结构 key、只读匹配与有界择优，
-但同样不做隐式测量或自动调优。
-
-外部 profiler/部署方提供 `RouteProfile`，其 immutable borrowed identity 必须完整描述：HYLE build；
-每个 target 的 backend build、hardware、driver/runtime 与执行配置；Provider build/config 与稳定
-`ProviderRouteKey`；语义、shape domain、完整物理 route、workload 内容/测量合同、输入/输出的精确
-`TensorDesc`，以及完整终态边界。fingerprint 的零值表示 unknown。它不是显示名称、内存地址或
-`ProviderInstanceId`；填入非零值只是在声明身份，并不证明仪器、负载或样本已合格。
-
-`match_route_profile(request, profile)` 给出具体拒绝原因与可选成本；`find_route_profile(request, profiles)`
-只读扫描有限 span，多个匹配观测取覆盖全部区间的保守包络，不挑最快样本。无匹配就是 unknown，合法
-`[0, 0]` 才是 exact zero。latency 与 inverse throughput（每个已完成 Invocation 的归一化时间）不可混用；
-operation terminal 与 Graph terminal 也不可混用，只有 enqueue 或 device event 的局部计时不能写成后者。
-
-`WorkloadIntent` 默认为单 Invocation、长期 steady latency。`expected_replays` 是查询时的摊销策略，
-不是新的测量身份：例如预计只执行 10 次，可以复用同一份已合格 replay/完整 compilation 区间，计算
-`replay + compilation / 10`；缺 compilation 区间则结果仍 unknown。未提供 replay 次数时只用 replay，
-不擅自给冷编译时间分配权重。改变目标、并发、确定性或 workload 内容/测量合同则必须重新匹配。
-若预计寿命改变了实际 tactic/配置/physical route，应更新对应身份，不能仅靠复用时间区间绕过差异。
-
-所有 spans 只在调用期间借用；结果中的区间与计数是独立值。实现不分配、不查询设备、不访问全局 cache，
-也不保活 Provider 或执行制品。identity 的产生方仍负责完整事实、稳定编码及内容变化后的失效；目前没有
-自动推导全部 build/device/自定义语义指纹的助手，不应为了得到 match 手写一组假 key。
+`ProviderRouteKey` 仍标识 Provider 内部实现，供诊断报告使用；单个 key 不证明性能资格。
+旧 `RouteProfile`、matcher 和 Graph 多计划性能竞赛接口已经移除。
 
 ## 何时选 oneDNN
 

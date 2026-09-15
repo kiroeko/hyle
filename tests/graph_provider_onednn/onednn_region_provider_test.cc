@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "../graph/profile_fixture.h"
 #include "../graph/test_environment.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/provider_extension.h"
@@ -281,8 +280,8 @@ void expect_near(std::span<const float> actual,
 void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
                          std::size_t hidden,
                          MlpOrder order = MlpOrder::kCanonical,
-                         CompileOptions options = {}, bool materialize = false,
-                         int profiled_choice = -1) {
+                         CompileOptions options = {},
+                         bool materialize = false) {
   const GatedMlp logical =
       make_gated_mlp(rows, inner, hidden, false, false, false, order);
   OwnedTensor activation = make_tensor(matrix(rows, inner));
@@ -327,40 +326,7 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();
   options.constants = constants;
-  const hyle::graph::test::Environment environment{
-      {&context, hyle::mem::system_resource()}};
-  hyle::graph::test::ProfileFixture facts(environment.environment());
-  hyle::graph::CompileReport region_profile, leaf_profile;
-  std::array<hyle::compute::RouteProfile, 2> profiles;
-  if (profiled_choice >= 0) {
-    options.profile_context = &facts.context;
-    region_profile =
-        hyle::graph::compile(logical.graph, environment.environment(), options)
-            ->report;
-    auto leaf_options = options;
-    leaf_options.region_selection = RegionSelectionPolicy::kDisabled;
-    leaf_profile = hyle::graph::compile(logical.graph,
-                                        environment.environment(), leaf_options)
-                       ->report;
-    profiles = {hyle::compute::RouteProfile{region_profile.profile_identity(),
-                                            {{100, 105}}},
-                hyle::compute::RouteProfile{
-                    leaf_profile.profile_identity(),
-                    profiled_choice == 1
-                        ? hyle::compute::ProfileTimingInterval{50, 55}
-                        : hyle::compute::ProfileTimingInterval{150, 155}}};
-    options.profiles = profiles;
-  }
   auto compiled = hyle::graph::compile(logical.graph, context, options).value();
-  if (profiled_choice >= 0) {
-    EXPECT_GE(compiled.report.search().profiled_plans, 2u);
-    EXPECT_EQ(compiled.report.search().profile_replacements,
-              profiled_choice == 1 ? 1u : 0u);
-    EXPECT_EQ(hyle::compute::match_route_profile(
-                  compiled.report.profile_identity(), profiles[profiled_choice])
-                  .reason,
-              hyle::compute::ProfileMatchReason::kMatched);
-  }
   if (materialize) {
     EXPECT_EQ(compiled.report.borrowed_constant_count(), 0u);
     EXPECT_EQ(compiled.report.materialized_constant_count(), 3u);
@@ -375,7 +341,7 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
                                 options.max_region_proposal_nodes < 4;
   ASSERT_EQ(compiled.report.region_count(),
             order == MlpOrder::kControlReentry || capacity_refused ||
-                    profiled_choice == 1
+                    options.region_selection == RegionSelectionPolicy::kDisabled
                 ? 0u
                 : 1u);
   EXPECT_EQ(compiled.report.search().region_node_limit_reached,
@@ -527,12 +493,11 @@ TEST(OneDnnRegionProvider, SupportsDecodeAndNonTileMultipleShapes) {
   run_gated_mlp_shape(16, 33, 65);
 }
 
-TEST(OneDnnRegionProvider,
-     CompleteProfileSelectsRegionOrLeafWithoutChangingResults) {
-  // Synthetic envelopes exercise real prepared MLP/oneDNN/Native artifacts;
-  // they are not performance evidence for any of these implementations.
-  run_gated_mlp_shape(17, 5, 7, MlpOrder::kCanonical, {}, false, 0);
-  run_gated_mlp_shape(17, 5, 7, MlpOrder::kCanonical, {}, true, 1);
+TEST(OneDnnRegionProvider, RegionAndExplicitLeafExecutionPreserveResults) {
+  run_gated_mlp_shape(17, 5, 7);
+  run_gated_mlp_shape(17, 5, 7, MlpOrder::kCanonical,
+                      {.region_selection = RegionSelectionPolicy::kDisabled},
+                      true);
 }
 
 TEST(OneDnnRegionProvider, MaterializesWeightsBeforeSourceRelease) {

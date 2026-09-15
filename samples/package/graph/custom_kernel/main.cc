@@ -9,7 +9,6 @@
 #include <utility>
 
 #include <hyle/compute/cpu.h>
-#include <hyle/compute/route_profile.h>
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
 
@@ -208,13 +207,6 @@ hyle::Status symbolic_views(hyle::graph::CompileShapePolicy policy) {
 
 int main() {
   using namespace hyle::compute;
-  // This example has no qualified timing dataset. Missing identity must not
-  // turn into a zero-cost match, including through an installed shared SDK.
-  const auto unqualified = match_route_profile({}, {});
-  if (unqualified.reason != ProfileMatchReason::kIncompleteIdentity ||
-      unqualified.cost || find_route_profile({}, {}).cost ||
-      !ProfileTimingInterval{}.valid())
-    return 20;
   auto provider = example::make_provider();
   if (!provider)
     return 1;
@@ -277,23 +269,15 @@ int main() {
       hyle::graph::NodeProviderConstraint{*node, family->id, *instance}};
   const std::array constants{hyle::graph::ConstantBinding{
       *in, *input, hyle::graph::ConstantPolicy::kMaterialize}};
-  // A report can expose structural facts without pretending this deployment
-  // has a qualified build/device/workload profile.
-  const hyle::graph::CompileProfileContext profile_context;
   auto compiled = hyle::graph::compile(*graph, *context,
                                        {.constants = constants,
                                         .allowed_providers = allowed,
                                         .node_providers = required,
-                                        .max_operation_proposals = 1,
-                                        .profile_context = &profile_context});
+                                        .max_operation_proposals = 1});
   if (!compiled || compiled->report.search().operation_proposals != 1 ||
       compiled->report.search().placement_attempts != 1 ||
       compiled->report.search().optimization_limited())
     return 14;
-  if (compiled->report.profile_identity().route.valid() ||
-      compiled->report.profile_identity().inputs.size() != 1 ||
-      compiled->report.search().selected_profile_cost)
-    return 21;
   if (!source->reset().ok() ||
       compiled->report.borrowed_constant_count() != 0 ||
       compiled->report.materialized_constant_bytes() != 16)

@@ -22,8 +22,8 @@ Provider 可以对同一个操作竞争，不能让切换 Provider 悄悄改变�
 CPU/CUDA factory 都声明 `ProviderRouteKey{1}`，消费方检查 Graph report 保留该稳定实现键。它不是
 临时 prepare token；同一 key 只有和完整 build/config、设备、语义/shape/layout、workload/完成边界
 共同匹配才有性能资料意义。本例只验证传递与生命周期，不提供 profile 或性能胜负。
-CPU 示例也通过公开 profile matcher 和 Graph 的空 `CompileProfileContext` 检查：缺身份不会误配成
-零成本，报告保留自己的 TensorDesc，但不会伪造合格 route。三种交付都链接同一冷合同。
+Graph 编译只进行能力和硬约束匹配，绑定第一个完整可行制品；执行复用已绑定计划。三种交付
+使用同一公开 C++ 入口，不接收用户 timing profile。
 
 CPU 示例另用默认 Native Provider 编译 `[rows, 4]` RMSNorm 的完整 `rows=0..4` 域，释放原 Graph 后为
 0/1/4 行分别创建 Invocation 并重放，检查具体 signature 与数值。只用公开头，不调用私有域 seam；

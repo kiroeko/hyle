@@ -20,7 +20,6 @@
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/stats.h"
-#include "profile_fixture.h"
 #include "test_environment.h"
 
 namespace {
@@ -690,7 +689,6 @@ TEST(GraphVariants, HardCompileBudgetsAreCumulativeAcrossTheFamily) {
   auto compiled = hyle::graph::compile(logical.graph, context, options).value();
   const auto general = compiled.report.search();
   const auto total = compiled.report.total_search();
-  EXPECT_FALSE(total.selected_profile_cost);
   std::size_t preparations = general.placement_attempts;
   std::size_t states = general.route_search_states;
   std::size_t proposals = general.operation_proposals;
@@ -1262,48 +1260,6 @@ TEST(GraphDomain, DistinctShapesSharePlanButNotMutableRunState) {
   for (auto &thread : threads)
     thread.join();
   EXPECT_EQ(success.load(), threads.size());
-}
-
-TEST(GraphDomain, EnvelopeExactPointHasDifferentProfileIdentity) {
-  auto builder = GraphBuilder::create().value();
-  const auto rows = builder.dimension({1, 4, 1}).value();
-  const auto spec =
-      TensorSpec::dense(DataType::kFloat32,
-                        std::array{Dimension(rows), Dimension::fixed(4)})
-          .value();
-  const auto input = builder.input(spec).value();
-  const auto output = builder.add(RmsNorm{}, spec, input).value();
-  ASSERT_TRUE(builder.publish(output).ok());
-  const auto graph = std::move(builder).finish().value();
-  auto context = hyle::compute::cpu::create_context().value();
-  const Environment environment{{&context, hyle::mem::system_resource()}};
-  hyle::graph::test::ProfileFixture facts(environment.environment());
-  const std::array shape{ShapeBinding{rows, 4}};
-  auto exact =
-      hyle::graph::compile(graph, environment.environment(),
-                           {.shape = shape, .profile_context = &facts.context})
-          .value();
-  auto domain =
-      hyle::graph::compile(graph, environment.environment(),
-                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
-                            .profile_context = &facts.context})
-          .value();
-  EXPECT_NE(exact.report.profile_identity().shape_domain,
-            domain.report.profile_identity().shape_domain);
-  const std::array variants{ExactShapeVariant{shape}};
-  auto family =
-      hyle::graph::compile(graph, environment.environment(),
-                           {.shape_policy = CompileShapePolicy::kDeclaredDomain,
-                            .exact_variants = variants,
-                            .profile_context = &facts.context})
-          .value();
-  const auto child = family.report.exact_variant(0).value();
-  EXPECT_EQ(child.profile_identity().shape_domain,
-            exact.report.profile_identity().shape_domain);
-  EXPECT_NE(child.profile_identity().shape_domain,
-            family.report.profile_identity().shape_domain);
-  EXPECT_EQ(family.report.profile_identity().shape_domain,
-            domain.report.profile_identity().shape_domain);
 }
 
 TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
@@ -3824,76 +3780,6 @@ TEST(GraphCompile, ExecutesNativeAttentionWithPlannedInvocationWorkspace) {
   expect_near(read(output_tensor, 1), std::array<float, 1>{3});
 }
 
-TEST(GraphProfiles, GeneratedIdentityIncludesAttributesBoundsAndExactStrides) {
-  auto context = hyle::compute::cpu::create_context().value();
-  const Environment environment{{&context, hyle::mem::system_resource()}};
-  hyle::graph::test::ProfileFixture facts(environment.environment());
-  auto compile_shape = [&](float epsilon, std::int64_t maximum,
-                           std::int64_t bound) {
-    auto builder = GraphBuilder::create().value();
-    const auto rows = builder.dimension({1, maximum, 1}).value();
-    const auto spec =
-        TensorSpec::dense(DataType::kFloat32,
-                          std::array{Dimension{rows}, Dimension::fixed(8)})
-            .value();
-    const auto input = builder.input(spec).value();
-    const auto output =
-        builder.add(RmsNorm{.epsilon = epsilon}, spec, input).value();
-    EXPECT_TRUE(builder.publish(output).ok());
-    const auto graph = std::move(builder).finish().value();
-    const std::array bindings{ShapeBinding{rows, bound}};
-    auto result = hyle::graph::compile(
-        graph, environment.environment(),
-        {.shape = bindings, .profile_context = &facts.context});
-    EXPECT_TRUE(result) << result.error().message();
-    return result ? result->report : hyle::graph::CompileReport{};
-  };
-  const auto baseline = compile_shape(1e-5F, 4, 2);
-  const auto equal = compile_shape(1e-5F, 4, 2);
-  const auto attributes = compile_shape(2e-5F, 4, 2);
-  const auto bounds = compile_shape(1e-5F, 8, 2);
-  const auto shape = compile_shape(1e-5F, 4, 3);
-  ASSERT_TRUE(baseline && equal && attributes && bounds && shape);
-  const hyle::compute::RouteProfile record{baseline.profile_identity(),
-                                           {{100, 105}}};
-  EXPECT_EQ(hyle::compute::match_route_profile(equal.profile_identity(), record)
-                .reason,
-            hyle::compute::ProfileMatchReason::kMatched);
-  EXPECT_NE(attributes.profile_identity().semantics,
-            baseline.profile_identity().semantics);
-  EXPECT_EQ(bounds.profile_identity().semantics,
-            baseline.profile_identity().semantics);
-  EXPECT_NE(bounds.profile_identity().shape_domain,
-            baseline.profile_identity().shape_domain);
-  EXPECT_NE(shape.profile_identity().semantics,
-            baseline.profile_identity().semantics);
-
-  auto compile_strides = [&](std::int64_t row_stride) {
-    auto builder = GraphBuilder::create().value();
-    const auto description =
-        TensorDesc::strided_bytes(DataType::kFloat32,
-                                  std::array<std::int64_t, 2>{1, 8},
-                                  std::array<std::int64_t, 2>{row_stride, 4})
-            .value();
-    const auto input = builder.input(description).value();
-    // A published input checks exact boundary identity without requiring a
-    // provider to support the deliberately noncanonical padded stride.
-    EXPECT_TRUE(builder.publish(input).ok());
-    const auto graph = std::move(builder).finish().value();
-    auto result = hyle::graph::compile(graph, environment.environment(),
-                                       {.profile_context = &facts.context});
-    EXPECT_TRUE(result) << result.error().message();
-    return result ? result->report : hyle::graph::CompileReport{};
-  };
-  const auto dense = compile_strides(32), padded = compile_strides(64);
-  ASSERT_TRUE(dense);
-  ASSERT_TRUE(padded);
-  EXPECT_EQ(dense.profile_identity().inputs[0].required_bytes().value(),
-            padded.profile_identity().inputs[0].required_bytes().value());
-  EXPECT_NE(dense.profile_identity().semantics,
-            padded.profile_identity().semantics);
-}
-
 TEST(GraphViews, DerivedFlattenNormAndRestoreUseRealLayoutsIncludingEmpty) {
   auto builder = GraphBuilder::create().value();
   const auto batch = builder.dimension({0, 2, 1}).value();
@@ -4294,11 +4180,9 @@ TEST(GraphViews, EveryExactCompileAllocationFailureCleansUpAndRetries) {
   }
 }
 
-TEST(GraphViews,
-     ProfileIdentityIncludesDynamicAttributesWithEqualOutputShapes) {
+TEST(GraphViews, DynamicAttributesWithEqualShapesKeepDifferentViewOffsets) {
   auto context = hyle::compute::cpu::create_context().value();
   const Environment environment{{&context, hyle::mem::system_resource()}};
-  hyle::graph::test::ProfileFixture facts(environment.environment());
   auto builder = GraphBuilder::create().value();
   const auto start = builder.dimension({0, 4, 1}).value();
   const auto input = builder.input(row(8)).value();
@@ -4312,20 +4196,32 @@ TEST(GraphViews,
   auto graph = std::move(builder).finish().value();
   const auto compile = [&](std::int64_t first) {
     const std::array bindings{ShapeBinding{start, first}};
-    return hyle::graph::compile(
-        graph, environment.environment(),
-        {.shape = bindings, .profile_context = &facts.context});
+    return hyle::graph::compile(graph, environment.environment(),
+                                {.shape = bindings});
   };
   auto first = compile(0), second = compile(1), repeat = compile(0);
   ASSERT_TRUE(first);
   ASSERT_TRUE(second);
   ASSERT_TRUE(repeat);
-  EXPECT_EQ(first->report.profile_identity().outputs[0],
-            second->report.profile_identity().outputs[0]);
-  EXPECT_NE(first->report.profile_identity().semantics,
-            second->report.profile_identity().semantics);
-  EXPECT_EQ(first->report.profile_identity().semantics,
-            repeat->report.profile_identity().semantics);
+  auto source = make_tensor(row(8));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F, 5.F, 6.F, 7.F, 8.F});
+  const std::array compiled{&*first, &*second, &*repeat};
+  const std::array expected{std::array{1.F, 2.F}, std::array{2.F, 3.F},
+                            std::array{1.F, 2.F}};
+  for (std::size_t i = 0; i != compiled.size(); ++i) {
+    auto invocation = compiled[i]->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(input, source.view).ok());
+    auto done = invocation.submit();
+    ASSERT_TRUE(done) << done.error().message();
+    const auto status = done->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    auto result = invocation.output(output);
+    ASSERT_TRUE(result);
+    std::array<float, 2> actual{};
+    ASSERT_TRUE(
+        result->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, expected[i]);
+  }
 }
 
 TEST(GraphViewDomain, GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets) {

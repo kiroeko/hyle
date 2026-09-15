@@ -164,7 +164,7 @@ TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
   }
 }
 
-TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
+TEST(GraphCudaReplay, RejectsCpuCudaComputePlacement) {
   auto cuda_device = hyle::compute::cuda::device(0);
   ASSERT_TRUE(cuda_device.has_value()) << cuda_device.error().message();
   Context cpu_context = hyle::compute::cpu::create_context().value();
@@ -195,9 +195,6 @@ TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
       ExecutionTarget{.context = &cuda_context,
                       .default_storage = StorageDomainId{1}},
   };
-  // The CUDA target has separate compute and transfer lanes backed by the
-  // same device storage. This graph emits only transfers on CUDA, so the
-  // unused compute lane must neither require a Queue nor duplicate storage.
   const std::array lanes{
       ExecutionLane{.target = ExecutionTargetId{0},
                     .role = ExecutionLaneRole::kCompute},
@@ -226,81 +223,9 @@ TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
       hyle::graph::compile(graph, environment,
                            CompileOptions{.node_placements = placements,
                                           .external_resources = resources});
-  ASSERT_TRUE(compiled_result.has_value()) << compiled_result.error().message();
-  auto compiled = std::move(*compiled_result);
-  ASSERT_EQ(compiled.report.target_count(), 2u);
-  ASSERT_EQ(compiled.report.storage_domain_count(), 2u);
-  ASSERT_EQ(compiled.report.lane_count(), 3u);
-  EXPECT_FALSE(compiled.report.lane(0)->capture_supported);
-  EXPECT_TRUE(compiled.report.lane(1)->capture_supported);
-  EXPECT_TRUE(compiled.report.lane(2)->capture_supported);
-  EXPECT_TRUE(compiled.report.lane(0)->queue_required);
-  EXPECT_FALSE(compiled.report.lane(1)->queue_required);
-  EXPECT_TRUE(compiled.report.lane(2)->queue_required);
-  EXPECT_EQ(compiled.executable.required_queue_count(), 2u);
-  EXPECT_EQ(compiled.report.step_count(), 3u);
-  EXPECT_EQ(compiled.report.segment_count(), 3u);
-  EXPECT_EQ(compiled.report.command_segment_count(), 3u);
-  EXPECT_EQ(compiled.report.capturable_segment_count(), 2u);
-  EXPECT_EQ(compiled.report.physical_value_count(), 4u);
-  EXPECT_FALSE(compiled.report.segment(1)->capture_supported);
-  EXPECT_TRUE(compiled.report.segment(0)->capture_supported);
-  EXPECT_TRUE(compiled.report.segment(2)->capture_supported);
-  EXPECT_EQ(compiled.report.segment(0)->lane, ExecutionLaneId{2});
-  EXPECT_EQ(compiled.report.segment(1)->lane, ExecutionLaneId{0});
-  EXPECT_EQ(compiled.report.segment(2)->lane, ExecutionLaneId{2});
-  ASSERT_EQ(compiled.report.segment(2)->dependency_count, 2u);
-  EXPECT_EQ(compiled.report.segment_dependency(2, 0)->source_segment, 0u);
-  EXPECT_EQ(compiled.report.segment_dependency(2, 0)->route,
-            hyle::graph::CompileDependencyRoute::kOrderedQueue);
-  EXPECT_EQ(compiled.report.segment_dependency(2, 1)->source_segment, 1u);
-  EXPECT_EQ(compiled.report.segment_dependency(2, 1)->route,
-            hyle::graph::CompileDependencyRoute::kSourceCompletesInline);
-
-  const std::size_t bytes = description.required_bytes().value();
-  Buffer input_buffer = Buffer::create(device.ref(), bytes, 256).value();
-  Buffer output_buffer = Buffer::create(device.ref(), bytes, 256).value();
-  TensorView input_view =
-      TensorView::create(description, input_buffer.view()).value();
-  TensorView output_view =
-      TensorView::create(description, output_buffer.view()).value();
-  const std::array<float, 8> values{-4.0F, -3.0F, -2.0F, -1.0F,
-                                    1.0F,  2.0F,  3.0F,  4.0F};
-  ASSERT_TRUE(input_buffer.view().write(std::as_bytes(std::span(values))).ok());
-
-  auto invocation = compiled.executable.create_invocation().value();
-  ASSERT_TRUE(invocation.bind(input, input_view.as_const()).ok());
-  ASSERT_TRUE(invocation.bind(output, output_view).ok());
-  Queue cpu_queue = cpu_context.create_queue().value();
-  Queue cuda_queue = cuda_context.create_queue().value();
-  const std::array queues{
-      QueueBinding{.lane = ExecutionLaneId{0}, .queue = &cpu_queue},
-      QueueBinding{.lane = ExecutionLaneId{2}, .queue = &cuda_queue},
-  };
-
-  EXPECT_TRUE(
-      invocation.prepare_replay(queues, {.mode = ReplayMode::kRequireCapture})
-          .IsUnimplemented());
-  ASSERT_TRUE(
-      invocation.prepare_replay(queues, {.mode = ReplayMode::kPreferCapture})
-          .ok());
-  EXPECT_EQ(invocation.replay_route(), ReplayRoute::kHybrid);
-
-  for (int replay = 0; replay < 2; ++replay) {
-    auto completion = invocation.submit(queues);
-    ASSERT_TRUE(completion.has_value()) << completion.error().message();
-    ASSERT_TRUE(completion->wait().ok());
-    std::array<float, 8> result{};
-    ASSERT_TRUE(output_buffer.view()
-                    .read(std::as_writable_bytes(std::span(result)))
-                    .ok());
-    for (std::size_t index = 0; index < values.size(); ++index)
-      EXPECT_EQ(result[index], -values[index]);
-  }
-
-  ASSERT_TRUE(invocation.bind(input, input_view.as_const()).ok());
-  EXPECT_EQ(invocation.replay_route(), ReplayRoute::kUnprepared);
-  EXPECT_TRUE(invocation.submit(queues).error().IsFailedPrecondition());
+  ASSERT_FALSE(compiled_result);
+  EXPECT_TRUE(compiled_result.error().IsInvalidArgument());
+  EXPECT_NE(cpu_context.device(), cuda_context.device());
 }
 
 TEST(GraphCudaReplay, CaptureBudgetPreservesCommandsAndReportsUnknownStorage) {

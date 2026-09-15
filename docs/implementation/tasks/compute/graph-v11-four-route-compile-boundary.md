@@ -70,3 +70,24 @@ P0 确认本卡删除冷测量资料和多个制品保留；不增加 replay 分
 
 Compute 与 Graph 均绑定本卡 AUDITED 后实施 G31–G35；D21–D24 已推送于 `b3abb2f5`，本卡承接
 其尚未运行的跨平台/三交付/Graph 集成门，终局一起裁决，不把换卡当作结案。
+
+## 2026-09-16 实现检查点
+
+G31–G35 已实现：删除公共 profile/matcher、Graph profile identity 编码和 incumbent 快照；冷编译
+绑定首个完整可行计划。并发要求成为直接布尔硬约束；所有计算 targets 在 Provider 查询前核对同一
+Device，含同 backend 的不同 Device 拒绝。同设备不同 Context/Provider/lane、host storage、常量与
+packing 共享及事务化回滚保留。package custom-kernel 样例与 user 文档已迁移。
+
+Windows Ninja / Release / WERROR、实际并行 2：Compute/逐头和 Graph/逐头共 5 个针对性门已
+通过；Graph executable 内 281 个具名用例通过，包含真实 CUDA 存储/capture 及 CPU+CUDA 计算放置
+拒绝。同设备的多 Context 聚合、晚到失败、放弃后回收和 copy 不可行反例继续通过。该协议 fixture
+不计作完整 CUDA 路线；真实 CUDA kernel/默认规则仍归 R4。
+
+首轮失败均保留在外部原始日志：测试 helper 参数写错；旧 fixture 把 Context probe 当 Device 身份；
+纯 View 错用 Queue submit；两个 lane 的拒绝计数仍沿旧 profile 比较写成一次。已按真实接口/物理
+身份迁移，不放宽产品的同 Device 校验。旧 CPU+CUDA 混合计算正例已迁为明确拒绝；其历史回放
+不再算当前能力。日志根 `C:/hyle-scratch/r2-q4-20260916` 的 `g-*` 文件保留各轮原始结果。
+
+以上只签此次 Windows 针对性检查；不可变 R2 候选的完整 selected gates、oneDNN、三交付、WSL/
+两 Mac 与适用 sanitizer 尚待执行，当前保持 AUDITED。API/算法冻结后只补这些已声明门，不再重跑
+已结案 R2-Q 的独立 schema 验收；不启动 P1 或增加性能测量框架。

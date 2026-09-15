@@ -7,7 +7,6 @@
 #include <cstring>
 #include <functional>
 #include <limits>
-#include <memory>
 #include <mutex>
 #include <new>
 #include <span>
@@ -3977,7 +3976,7 @@ Status prepare_placed_steps_attempt(
         return std::move(attempt).error();
       if (!attempt->prepared.valid()) {
         // Shared packing admission depends on this complete candidate's live
-        // prefix/incumbent, not on whether the provider itself is supported.
+        // prefix, not on whether the provider itself is supported.
         if (attempt->compilation_budget_decline) {
           outcome.rejected_plan = true;
           return std::move(attempt->reason);
@@ -4004,9 +4003,7 @@ Status finalize_placed_steps(detail::PlanState &plan,
 
 Result<CompileReport>
 build_report(const detail::PlanState &plan, const detail::GraphState &graph,
-             std::span<const compute::ProviderRouteKey> profile_keys,
-             const detail::GraphState &logical,
-             const CompileProfileContext *profile_context) noexcept;
+             std::span<const compute::ProviderRouteKey> profile_keys) noexcept;
 
 Result<CompiledStorageReport>
 compiled_storage(const detail::PlanState &plan) noexcept {
@@ -4105,74 +4102,19 @@ Status check_invocation_storage(const detail::PlanState &plan,
 // specialization and aggregate search counters stay in plan. No Invocation
 // exists yet; moving these vectors cannot invalidate a submitted command.
 // The retained snapshot is destroyed before plan's canonical constants.
-void swap_route_state(detail::PlanState &left,
-                      detail::PlanState &right) noexcept {
-  using std::swap;
-  swap(left.lanes, right.lanes);
-  swap(left.steps, right.steps);
-  swap(left.artifact_charges, right.artifact_charges);
-  swap(left.constant_artifacts, right.constant_artifacts);
-  swap(left.shared_artifact_storage, right.shared_artifact_storage);
-  swap(left.segments, right.segments);
-  swap(left.segment_dependencies, right.segment_dependencies);
-  swap(left.serialization_edges, right.serialization_edges);
-  swap(left.step_segments, right.step_segments);
-  swap(left.terminal_segments, right.terminal_segments);
-  swap(left.completion_segments, right.completion_segments);
-  swap(left.lane_segment_counts, right.lane_segment_counts);
-  swap(left.instance_descriptions, right.instance_descriptions);
-  swap(left.instance_values, right.instance_values);
-  swap(left.instance_storage, right.instance_storage);
-  swap(left.instance_roles, right.instance_roles);
-  swap(left.external_instances, right.external_instances);
-  swap(left.external_storage, right.external_storage);
-  swap(left.node_inputs, right.node_inputs);
-  swap(left.node_outputs, right.node_outputs);
-  swap(left.step_nodes, right.step_nodes);
-  swap(left.workspace_requests, right.workspace_requests);
-  swap(left.step_workspace_requests, right.step_workspace_requests);
-  swap(left.storage_workspace_slots, right.storage_workspace_slots);
-  swap(left.workspace_resources, right.workspace_resources);
-  swap(left.workspace_storage, right.workspace_storage);
-  swap(left.node_steps, right.node_steps);
-  swap(left.value_materialized, right.value_materialized);
-  swap(left.alias_sources, right.alias_sources);
-  swap(left.alias_offsets, right.alias_offsets);
-  swap(left.binding_roles, right.binding_roles);
-  swap(left.workspace_plan, right.workspace_plan);
-  swap(left.workspace_bytes, right.workspace_bytes);
-  swap(left.workspace_backing_count, right.workspace_backing_count);
-  swap(left.region_count, right.region_count);
-  swap(left.required_queue_count, right.required_queue_count);
-  swap(left.serialization_edge_count, right.serialization_edge_count);
-  swap(left.supports_concurrent_invocations,
-       right.supports_concurrent_invocations);
-}
-
-Status prepare_placed_steps(
-    detail::PlanState &plan, const Graph &published_graph,
-    const detail::GraphState &graph, const detail::GraphState &logical,
-    CompileEnvironment environment, CompileOptions options,
-    const ProviderPolicy &provider_policy, ConstantPreparation &constants,
-    std::span<compute::ProviderRouteKey> profile_keys,
-    CompileReport &selected_report,
-    detail::ConstantArtifactCache &packing) noexcept {
+Status prepare_placed_steps(detail::PlanState &plan,
+                            const Graph &published_graph,
+                            const detail::GraphState &graph,
+                            CompileEnvironment environment,
+                            CompileOptions options,
+                            const ProviderPolicy &provider_policy,
+                            ConstantPreparation &constants,
+                            std::span<compute::ProviderRouteKey> profile_keys,
+                            CompileReport &selected_report,
+                            detail::ConstantArtifactCache &packing) noexcept {
   RegionDiscovery discovery(plan.allocator);
   const std::size_t configured_lane_count = plan.lanes.size();
-  const auto release_snapshot = [](detail::PlanState *state) noexcept {
-    detail::release(state);
-  };
-  std::unique_ptr<detail::PlanState, decltype(release_snapshot)> incumbent(
-      nullptr, release_snapshot);
-  std::optional<compute::ProfileTimingInterval> incumbent_cost;
   bool attempted = false;
-  bool metadata_moved = false;
-  auto finish_incumbent = [&]() noexcept -> Status {
-    swap_route_state(plan, *incumbent);
-    plan.search.selected_profile_cost = incumbent_cost;
-    detail::CompileReportAccess::state(selected_report)->search = plan.search;
-    return Status::Ok();
-  };
   for (;;) {
     // No Invocation or user work exists during this transaction. Clear all
     // artifacts before calling any provider for the next construction; the
@@ -4185,12 +4127,6 @@ Status prepare_placed_steps(
     HYLE_RETURN_IF_ERROR(packing.begin_candidate());
     plan.region_count = 0;
     if (attempted) {
-      if (metadata_moved) {
-        HYLE_RETURN_IF_ERROR(
-            initialize_plan_metadata(plan, graph, plan.descriptions));
-        HYLE_RETURN_IF_ERROR(initialize_plan_lanes(plan, environment));
-        metadata_moved = false;
-      }
       while (plan.lanes.size() > configured_lane_count)
         plan.lanes.pop_back();
       plan.serialization_edges.clear();
@@ -4226,8 +4162,7 @@ Status prepare_placed_steps(
       status = check_invocation_storage(plan, *options.invocation_storage);
       outcome.rejected_plan = !status.ok();
     }
-    if (status.ok() && options.profile_context != nullptr &&
-        options.profile_context->workload.concurrent_invocations > 1 &&
+    if (status.ok() && options.require_concurrent_invocations &&
         !plan.supports_concurrent_invocations) {
       outcome.rejected_plan = true;
       status = Status::FailedPrecondition(
@@ -4241,11 +4176,6 @@ Status prepare_placed_steps(
       continue;
     }
     if (!outcome.rejected_region && !outcome.rejected_operation) {
-      if (incumbent &&
-          (outcome.no_feasible_route ||
-           ((outcome.search_limit || outcome.prepare_limit) &&
-            options.search_policy == CompileSearchPolicy::kAllowLimited)))
-        return finish_incumbent();
       if (outcome.no_feasible_route && !discovery.last_rejection.ok())
         return discovery.last_rejection;
       if (status.ok()) {
@@ -4261,50 +4191,13 @@ Status prepare_placed_steps(
         }
         ++plan.search.feasible_plans;
         HYLE_ASSIGN_OR_RETURN(auto report,
-                              build_report(plan, graph, profile_keys, logical,
-                                           options.profile_context));
+                              build_report(plan, graph, profile_keys));
         auto &report_state = *detail::CompileReportAccess::state(report);
         report_state.compiled_storage = storage_report;
         report_state.total_compiled_storage = storage_report;
-        std::optional<compute::ProfileTimingInterval> cost;
-        if (options.profile_context != nullptr && !options.profiles.empty())
-          cost = compute::find_route_profile(report.profile_identity(),
-                                             options.profiles)
-                     .cost;
-        if (cost)
-          ++plan.search.profiled_plans;
-        else
-          ++plan.search.unprofiled_plans;
-        if (!incumbent) {
-          // Without a qualified baseline there is no demonstrated improvement
-          // over configured priority. Unknown is not an infinitely slow cost.
-          if (!cost) {
-            plan.search.selected_profile_cost = cost;
-            detail::CompileReportAccess::state(report)->search = plan.search;
-            selected_report = std::move(report);
-            return Status::Ok();
-          }
-          void *storage = plan.allocator.allocate(sizeof(detail::PlanState),
-                                                  alignof(detail::PlanState));
-          if (storage == nullptr)
-            return plan_allocation_failure();
-          incumbent.reset(::new (storage) detail::PlanState(plan.allocator,
-                                                            plan.generation));
-          incumbent_cost = cost;
-          selected_report = std::move(report);
-          swap_route_state(plan, *incumbent);
-          metadata_moved = true;
-        } else if (cost && cost->upper_ns <
-                               incumbent_cost->lower_ns *
-                                   (1 - options.profile_context
-                                            ->minimum_relative_improvement)) {
-          incumbent_cost = cost;
-          selected_report = std::move(report);
-          swap_route_state(plan, *incumbent);
-          metadata_moved = true;
-          ++plan.search.profile_replacements;
-        }
-        continue;
+        report_state.search = plan.search;
+        selected_report = std::move(report);
+        return Status::Ok();
       }
       return status;
     }
@@ -5824,9 +5717,7 @@ std::size_t step_constant_count(const detail::PlanState &plan,
 
 Result<CompileReport>
 build_report(const detail::PlanState &plan, const detail::GraphState &graph,
-             std::span<const compute::ProviderRouteKey> profile_keys,
-             const detail::GraphState &logical,
-             const CompileProfileContext *profile_context) noexcept {
+             std::span<const compute::ProviderRouteKey> profile_keys) noexcept {
   using ProviderTexts =
       container::FlatHashMap<std::uint64_t, compute::ProviderIdentity,
                              container::Hash<std::uint64_t>, std::equal_to<>,
@@ -6174,14 +6065,6 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     state->packed_constant_bytes =
         saturating_add(state->packed_constant_bytes, artifact->packed_bytes);
   }
-  if (profile_context != nullptr) {
-    Status status =
-        detail::build_profile_identity(*state, plan, logical, *profile_context);
-    if (!status.ok()) {
-      detail::release(state);
-      return std::unexpected(std::move(status));
-    }
-  }
   return detail::CompileReportAccess::adopt(state);
 }
 
@@ -6331,11 +6214,6 @@ CompileReport::exact_variant(std::size_t index) const noexcept {
     return std::unexpected(
         Status::OutOfRange("exact variant index is out of range"));
   return state_->exact_variants[index];
-}
-
-compute::RouteProfileIdentity CompileReport::profile_identity() const noexcept {
-  return state_ != nullptr ? state_->profile.view()
-                           : compute::RouteProfileIdentity{};
 }
 
 std::size_t CompileReport::workspace_bytes() const noexcept {
@@ -8064,6 +7942,12 @@ Result<CompiledGraph> compile_plan(
       return std::unexpected(Status::FailedPrecondition(
           "compile environment context is invalid or closed"));
     }
+    if (index != 0 &&
+        target.context->device() != environment.targets[0].context->device()) {
+      return std::unexpected(
+          Status::InvalidArgument("compute-backed graph requires one Device "
+                                  "for all execution targets"));
+    }
     if (!target.default_storage.valid() ||
         target.default_storage.ordinal() >=
             environment.storage_domains.size()) {
@@ -8095,7 +7979,6 @@ Result<CompiledGraph> compile_plan(
     }
   }
   const compute::Context &context = *environment.targets[0].context;
-  HYLE_RETURN_IF_ERROR(detail::validate_profile_context(environment, options));
   if (options.search_policy != CompileSearchPolicy::kAllowLimited &&
       options.search_policy != CompileSearchPolicy::kRequireUnexhausted) {
     return std::unexpected(
@@ -8293,9 +8176,9 @@ Result<CompiledGraph> compile_plan(
   if (status.ok())
     status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
-    status = prepare_placed_steps(*plan, *specialized, *concrete, *logical,
-                                  environment, options, provider_policy,
-                                  constants, profile_keys, report, packing);
+    status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
+                                  options, provider_policy, constants,
+                                  profile_keys, report, packing);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));
@@ -8303,7 +8186,6 @@ Result<CompiledGraph> compile_plan(
   CompiledGraph result;
   auto *report_state = detail::CompileReportAccess::state(report);
   report_state->total_search = plan->search;
-  report_state->total_search.selected_profile_cost.reset();
   result.report = std::move(report);
   result.executable = detail::ExecutableAccess::adopt(plan);
   return result;
@@ -8377,10 +8259,7 @@ Status accumulate_search(CompileSearchReport &total,
                               &CompileSearchReport::operation_route_rejections,
                               &CompileSearchReport::route_search_states,
                               &CompileSearchReport::route_plan_rejections,
-                              &CompileSearchReport::feasible_plans,
-                              &CompileSearchReport::profiled_plans,
-                              &CompileSearchReport::unprofiled_plans,
-                              &CompileSearchReport::profile_replacements};
+                              &CompileSearchReport::feasible_plans};
   for (const auto field : counts) {
     if (part.*field > SIZE_MAX - total.*field)
       return Status::ResourceExhausted(
@@ -8396,7 +8275,6 @@ Status accumulate_search(CompileSearchReport &total,
       &CompileSearchReport::placement_limit_reached};
   for (const auto field : limits)
     total.*field |= part.*field;
-  total.selected_profile_cost.reset();
   return Status::Ok();
 }
 

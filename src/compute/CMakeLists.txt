@@ -8,7 +8,6 @@ hyle_add_module(compute SOURCES
   operation.cc
   provider.cc
   result.cc
-  route_profile.cc
   shape_domain.cc
   shape_program.cc
   tensor_view.cc
