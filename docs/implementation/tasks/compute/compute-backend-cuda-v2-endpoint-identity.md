@@ -1,6 +1,6 @@
 # Compute CUDA backend v2：完成端点不能把 Context 当 Queue
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - owner：`compute_backend_cuda`；baseline `a4dee153`；前轮为
   [CUDA v1](compute-backend-cuda-v1-async-runtime.md)。
@@ -93,3 +93,14 @@ Linux runtime 在 adopted-stream 用例发生 SIGSEGV。GDB 定位到测试在 o
 Completion 仍持有 stream 时检查其可用性，再 wait/释放，借既有 StatsAllocator 核对 Queue 元数据全部
 释放；源码 `QueueState::destroy` 核对 adopted 路线调用 stream destroy。不添加产品计数或 vendor hook，
 不再查询已销毁 handle。这是测法错误，不是新候选发生 native lifetime 缺陷。
+
+### 修正候选
+
+`db164bb7` 固定 CU20/CU22 产品、合法 lifetime 夹具和独立 host-warning 修正后的完整输入。WSL native
+ext4、GCC 14.2、CUDA/nvcc 13.3.73、同一 RTX 4070 passthrough：Release/WERROR 下 runtime 13/13、
+late failure 1/1、逐头 1/1 全通过。该验证副本是 `1644bdc2` archive 加 Windows 的两份 CUDA 产品源码、
+同一测试文件和 HyleWarnings；未从 WSL 反向恢复产品。旧 GCC/测试错误均已处理，没有压低 WERROR。
+
+余下只做修正候选的 Windows 定向回放、ASan/UBSan 和候选后独立复核；TSan 不因本轮额外运行：新 endpoint
+只读取其存活 QueueState 的 immutable Context 字段，未修改共享可变状态、同步协议或后台服务；既有并发
+wait/abandon/drain 真机用例继续执行。host sanitizer 不冒充 device kernel instrumentation。

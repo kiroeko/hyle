@@ -387,9 +387,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
-      "summary": "compute_backend_cuda v2 AUDITED：CU20/CU21 已通过 Windows CUDA/Graph 与三交付；CU22 定向纠正真实 Linux CUDA 构建暴露的 ThreadOpts 初始化与未用私有 overload，不放宽 WERROR。"
+      "candidate": "db164bb7dced649c6ae0f5c992be5e7005748c7e",
+      "summary": "compute_backend_cuda v2 CANDIDATE：CU20/CU22 和合法 lifetime 夹具已通过 Linux 真 CUDA/逐头/late failure；Windows 三交付已验证端点修复，待纠正候选回放、ASan/UBSan 与最终复核。"
     },
     {
       "module": "compute_provider_native",
