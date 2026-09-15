@@ -1417,3 +1417,26 @@ selector `2056ab65 → a654a4db` READY；Graph→Math PRIVATE 边触发公共选
 
 同产品快照 `144df3c5`（随后仅 CUDA 测试格式变化）LOC self-check：全库 **684,835**，自实现不含测试
 **125,802**；Compute **16,992**、Graph **13,625**，合计 **30,617**。本段不是整体 foundation 完成声明。
+
+### G103/G104：storage/lane 联合搜索（实现前固定）
+
+基线 `1f22a5ba`。当前 node cover 已有界重选，但同一 leaf/region 的 input/output/workspace 只取第一个
+兼容 resource，copy carrier 和 shared lane 也只取首项。因此资源预算失败可能错误排除整个实现；已有
+完整计划 profile 也无法选择另一个合法 storage/lane 组合。继续既定 G103/G104，不增加算子、用户开关或
+第二套运行时。
+
+- 私有 compile scratch 使用可恢复的有限 choice path：先保持原 locality/preference/default 次序；仅
+  为有多个合法值的决定保存 ordinal/count，后继沿实际前缀回溯，不提前构造笛卡尔积。storage、copy target
+  与 shared compute/transfer lane 都进入同一物理候选，delegated endpoint 的唯一 owner 不变。
+- 新分支与 node-cover 共用 `max_route_search_states`，prepare 仍用独立累计预算；单选不增加分支状态。
+  无 profile 的首个完整可行计划仍直接返回；只有合格 baseline 才继续比较完整候选，不用伪造 ns 排序。
+- required placement/resource/alias 不可放宽；artifact decline 只排除已尝试的资源组合。有其它资源分支时
+  不能把 Provider 全局标坏。真实错误/OOM 仍立即传播，已有 incumbent、strict/limited 行为不变。
+- lane 选择在 workspace/happens-before 之前完成；因显式 memory serialization 再排程时保留已选 lane，
+  不重新消耗 choice。所有 choice metadata 只在 compile，Plan/Invocation/warm layout 不增加字段。
+- 验证：同一实现的首选 storage 预算失败而另一项成功、required/alias 反例、同资源不同 lane 的有限枚举、
+  完整 profile 的资源选择与 unknown 保留、预算有/无 incumbent、scope-local decline/真实错误、OOM/重试、
+  原 region/leaf/copy/domain/variant 回归和实际输出；Windows static/shared/oneDNN/CUDA、三交付受影响回放。
+  synthetic profile 只测选择合同，不声称真实性能胜负；统一 P1/跨平台/终局红队仍在完整 foundation 候选。
+
+本段一轮表示/实现与一轮纠正；不能借此改默认 ownership、隐藏 benchmark 调优或收缩基础完成边界。
