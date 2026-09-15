@@ -248,6 +248,12 @@ step 和 permutation 在编图时固定。逻辑 node 区分未绑定 ViewSpec �
 input/constant 的存储描述。具体绑定按拓扑复用 ComputeOps 的 View 语义，不默认把转置或广播变成 dense，
 也不隐式 materialize。全域路线还需证明布局与 alias offset 的上界及实例化合同，精确点的成功不构成全域证明。
 
+View 的完整域证明只使用有限 shape program 的关系：相同表达式、显式 guards、乘除因子消去和保守区间，
+不枚举尺寸或引入通用符号求解器。无法证明时拒绝该域而保留 exact 路线。包络描述允许把不同合法点的
+stride/span 上界组合在一起，因此它不是实际 slice/reshape 的一个输入样本。共享 lifetime plan 对 alias
+只延长 backing 根的寿命；实际 BufferView 范围在冷创建/绑定时从父 view 推导并检查，避免把互斥的最大
+offset 与最大 span 相加。父 view 按生产顺序复用，长 alias 链不在每个后代重新回溯。
+
 未融合的零拷贝 View 是 Graph 自有 metadata step：复用 ComputeOps schema/alias 计算，没有 Provider
 制品或 kernel dispatch，不能仅为读懂描述而要求 host-accessible storage。它仍拥有正常的 DAG/control
 边与 alias lifetime。真正跨 storage 的搬运是显式 Copy；如果 region 吸收 View，则由该 Provider 完整

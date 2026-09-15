@@ -125,9 +125,9 @@ hyle::Status bounded_normalization() {
   return hyle::Status::Ok();
 }
 
-// Exact ViewSpec lowering uses the same public symbols in all three delivery
-// forms. Only Copy materializes; the surrounding views retain true strides.
-hyle::Status symbolic_views() {
+// Exact and declared-domain ViewSpec lowering use the same public symbols in
+// all three deliveries. Only Copy materializes; views retain true strides.
+hyle::Status symbolic_views(hyle::graph::CompileShapePolicy policy) {
   using namespace hyle::compute;
   using namespace hyle::graph;
   HYLE_ASSIGN_OR_RETURN(auto context, cpu::create_context());
@@ -135,6 +135,10 @@ hyle::Status symbolic_views() {
   HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto rows, builder.dimension({1, 8, 1}));
   HYLE_ASSIGN_OR_RETURN(auto offset, builder.dimension({0, 8, 1}));
+  HYLE_ASSIGN_OR_RETURN(
+      auto end, builder.dimension_sum(Dimension(offset), Dimension::fixed(1)));
+  HYLE_RETURN_IF_ERROR(
+      builder.require_dimension_less_equal(Dimension(end), Dimension(rows)));
   HYLE_ASSIGN_OR_RETURN(
       auto input_spec,
       TensorSpec::dense(DataType::kFloat32,
@@ -149,9 +153,8 @@ hyle::Status symbolic_views() {
   const std::array expanded_shape{Dimension::fixed(4), Dimension::fixed(2)};
   HYLE_ASSIGN_OR_RETURN(auto broadcast, ViewSpec::broadcast_to(expanded_shape));
   HYLE_ASSIGN_OR_RETURN(auto expanded, builder.add(broadcast, transposed));
-  HYLE_ASSIGN_OR_RETURN(
-      auto copied_spec,
-      TensorSpec::inferred(DataType::kFloat32, expanded_shape));
+  HYLE_ASSIGN_OR_RETURN(auto copied_spec,
+                        TensorSpec::dense(DataType::kFloat32, expanded_shape));
   HYLE_ASSIGN_OR_RETURN(auto copied,
                         builder.add(Copy{}, copied_spec, expanded));
   HYLE_ASSIGN_OR_RETURN(auto flatten,
@@ -166,10 +169,17 @@ hyle::Status symbolic_views() {
       logical.start() != Dimension(offset) || graph.operation(slice_node))
     return hyle::Status::Internal("logical ViewSpec introspection mismatch");
   const std::array bindings{ShapeBinding{rows, 3}, ShapeBinding{offset, 1}};
-  HYLE_ASSIGN_OR_RETURN(auto compiled,
-                        compile(graph, context, {.shape = bindings}));
+  const bool domain = policy == CompileShapePolicy::kDeclaredDomain;
+  HYLE_ASSIGN_OR_RETURN(
+      auto compiled,
+      compile(graph, context,
+              {.shape = domain ? std::span<const ShapeBinding>{} : bindings,
+               .shape_policy = policy}));
   graph = {};
-  HYLE_ASSIGN_OR_RETURN(auto run, compiled.executable.create_invocation());
+  HYLE_ASSIGN_OR_RETURN(auto run,
+                        compiled.executable.create_invocation(
+                            domain ? std::span<const ShapeBinding>(bindings)
+                                   : std::span<const ShapeBinding>{}));
   HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
                                          hyle::mem::system_resource(), 48, 64));
   const std::array values{0.F, 1.F, 2.F, 3.F, 4.F,  5.F,
@@ -323,12 +333,15 @@ int main() {
                  static_cast<int>(message.size()), message.data());
     return 22;
   }
-  const auto views = symbolic_views();
-  if (!views.ok()) {
-    const auto message = views.message();
-    std::fprintf(stderr, "symbolic views: %.*s\n",
-                 static_cast<int>(message.size()), message.data());
-    return 23;
+  for (auto policy : {hyle::graph::CompileShapePolicy::kExact,
+                      hyle::graph::CompileShapePolicy::kDeclaredDomain}) {
+    const auto views = symbolic_views(policy);
+    if (!views.ok()) {
+      const auto message = views.message();
+      std::fprintf(stderr, "symbolic views: %.*s\n",
+                   static_cast<int>(message.size()), message.data());
+      return 23;
+    }
   }
   return 0;
 }

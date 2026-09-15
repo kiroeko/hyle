@@ -23,7 +23,6 @@
 #include "hyle/compute/transfer.h"
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/hash.h"
-#include "hyle/math/scalar.h"
 #include "plan_state.h"
 #include "view_domain.h"
 
@@ -626,25 +625,20 @@ workspace_tensor_storage(detail::InvocationState &invocation,
   const auto &plan = *invocation.plan;
   if (!plan.domain_graph.valid())
     return invocation.workspace.view(plan.workspace_requests[instance]);
-  std::size_t offset = 0;
-  const auto original = instance;
-  while (plan.alias_sources[instance] != detail::kNoInPlaceSource) {
-    HYLE_ASSIGN_OR_RETURN(const auto relative,
-                          bound_alias_offset(invocation, instance));
-    const auto next = math::try_add(offset, relative);
-    if (!next)
-      return std::unexpected(
-          Status::OutOfRange("graph bound alias offset overflows"));
-    offset = *next;
-    instance = plan.alias_sources[instance];
-  }
-  HYLE_ASSIGN_OR_RETURN(
-      const auto root,
-      invocation.workspace.view(plan.workspace_requests[instance]));
+  const auto source = plan.alias_sources[instance];
+  if (source == detail::kNoInPlaceSource)
+    return invocation.workspace.view(plan.workspace_requests[instance]);
+  // Physical instances are created producer-first. Reuse the already-bound
+  // parent instead of walking the complete alias chain for every descendant.
+  if (source >= instance || !invocation.writable[source].valid())
+    return std::unexpected(
+        Status::Internal("graph workspace alias parent is unavailable"));
+  HYLE_ASSIGN_OR_RETURN(const auto offset,
+                        bound_alias_offset(invocation, instance));
   HYLE_ASSIGN_OR_RETURN(
       const auto bytes,
-      physical_description(invocation, original).required_bytes());
-  return root.subview(offset, bytes);
+      physical_description(invocation, instance).required_bytes());
+  return invocation.writable[source].storage().subview(offset, bytes);
 }
 
 Result<Graph>

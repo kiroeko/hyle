@@ -27,7 +27,9 @@ CPU 示例另用默认 Native Provider 编译 `[rows, 4]` RMSNorm 的完整 `row
 0/1/4 行分别创建 Invocation 并重放，检查具体 signature 与数值。只用公开头，不调用私有域 seam；
 此功能不会让前面的 owning custom factory 自动获得 bounded 支持，它仍只承诺 exact prepare。
 
-CPU 示例还运行 exact `ViewSpec` 旅程：动态 start 的 slice → permute → broadcast → 显式 Copy → reshape。
+CPU 示例还运行 exact 与 declared-domain `ViewSpec` 旅程：动态 start 的 slice → permute → broadcast →
+显式 Copy → reshape。slice 通过显式 `offset + 1 <= rows` guard 约束，完整域只编译一次，Invocation 绑定
+具体 rows/offset；三种交付均实际执行该路线。
 只有 Copy 物化；Graph 的原始描述可通过 `operation_kind()/view_spec()` 查看，销毁原图后继续重放并核对
 结果。输出约束使用 `TensorSpec::inferred`，不把转置或广播伪装成 dense。此例不声称动态 View 已有完整域资格。
 
