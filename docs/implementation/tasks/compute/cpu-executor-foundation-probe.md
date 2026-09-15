@@ -39,3 +39,11 @@ caller stack，raw runner 不按 item 分配。于是一个**有效且保持开�
 identity 和分片计数是样例观察器，不进入产品或性能结论。Native 与可选 oneDNN 运行相同 RMS+gated-MLP，
 一个 executor 同时借给各 Provider；输入/独立 double oracle 在调度前准备，worker callback 只执行已
 准备计算。先 source consumer，后安装 static/shared；每项实际结果单列，不由编译成功推断运行成功。
+
+## 有限 fixture 复核
+
+首版 `5c1846d6` 的 Windows source/static/shared 均执行通过。复核发现 task 计数是整次 worker 生命周期
+的聚合，混入了前置队列检查，不能单独证明每条 Compute 路线使用 executor。因此使用预声明的一次 fixture
+纠正，将 replay 计数按 Native/oneDNN 分开、排除 compile/prepare/队列检查，要求两 worker Native 与
+oneDNN 真正调用 executor，且 oneDNN 实际进入 nested bulk。Native 单任务/已在 parallel 环境时源码明确
+inline，不能为测试强制它调度。只重编译这个 consumer 并执行三种交付，不改/重建产品或重跑 P1。

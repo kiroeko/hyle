@@ -54,6 +54,10 @@ struct Observations {
   std::atomic<unsigned> started{0}, stopped{0};
   std::array<std::atomic<std::size_t>, 2> worker_tasks{};
   std::atomic<std::size_t> episodes{0}, nested_episodes{0};
+
+  std::size_t task_count() const noexcept {
+    return worker_tasks[0].load() + worker_tasks[1].load();
+  }
 };
 
 // Borrowed, synchronous, infallible executor over an application-owned runtime.
@@ -265,6 +269,9 @@ void run_model(Executor &executor, bool vendor) {
     second.set_input(5);
     // Ordinary prepared input changes do not change bindings or prepare again.
     const auto before = stats.snapshot();
+    const auto episodes_before = executor.observations.episodes.load();
+    const auto tasks_before = executor.observations.task_count();
+    const auto nested_before = executor.observations.nested_episodes.load();
     for (int seed : {1, 3, 9}) {
       first.set_input(seed);
       first.execute();
@@ -289,11 +296,26 @@ void run_model(Executor &executor, bool vendor) {
     require(after.total_allocs == before.total_allocs &&
                 after.reallocs == before.reallocs,
             "prepared replay allocated through Compute's metadata owner");
+    const auto episodes =
+        executor.observations.episodes.load() - episodes_before;
+    const auto tasks = executor.observations.task_count() - tasks_before;
+    const auto nested =
+        executor.observations.nested_episodes.load() - nested_before;
+    // Native intentionally runs a one-task or already-parallel call inline.
+    // The parallel Native case and every oneDNN route must actually use the
+    // supplied executor, independently of the standalone queue sanity check.
+    if (vendor || executor.scheduler.num_workers() > 1)
+      require(episodes > 0 && tasks > 0,
+              "computed route bypassed its executor");
+    if (vendor)
+      require(nested > 0, "oneDNN did not exercise nested bulk progress");
     std::printf("CPU executor PASS: workers=%u route=%s regions=%zu "
-                "workspace=%zu replay_metadata_allocations=0\n",
+                "workspace=%zu replay_metadata_allocations=0 "
+                "executor_episodes=%zu worker_tasks=%zu nested=%zu\n",
                 executor.scheduler.num_workers(), vendor ? "oneDNN" : "Native",
                 model.compiled.report.region_count(),
-                model.compiled.report.workspace_bytes());
+                model.compiled.report.workspace_bytes(), episodes, tasks,
+                nested);
   }
   require(stats.balanced(), "Compute metadata outlived all consumers");
 }
@@ -340,8 +362,7 @@ void run_workers(unsigned workers) {
   require(stats.balanced(), "Scheduler storage survived destruction");
   require(observed.started == workers && observed.stopped == workers,
           "worker lifecycle mismatch");
-  require(observed.worker_tasks[0] + observed.worker_tasks[1] != 0,
-          "no task ran on a real provider worker");
+  require(observed.task_count() != 0, "no task ran on a real provider worker");
   std::printf("  actual worker tasks=[%zu,%zu], episodes=%zu nested=%zu, "
               "workers_started/stopped=%u/%u\n",
               observed.worker_tasks[0].load(), observed.worker_tasks[1].load(),

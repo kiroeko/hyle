@@ -31,8 +31,11 @@ configuration or the installed SDK. Static and shared use the same consumer.
   Invocations, and calls an already-prepared Invocation from a worker callback.
   A separate double-precision oracle checks results after actual Completion.
 - Task/worker counters are sample instrumentation, not product metadata. They
-  report which workers really ran tasks; they do not require the OS to schedule
-  every batch simultaneously or establish a speedup.
+  report tasks separately for Native and oneDNN, excluding setup and the queue
+  sanity check. Native deliberately runs single-task/already-parallel calls
+  inline; parallel Native and oneDNN must actually use the supplied executor.
+  The counters do not require the OS to schedule every batch simultaneously or
+  establish a speedup.
 - Compute metadata and Scheduler lifetime allocations are observed separately.
   No observed replay allocation through Compute's allocator does **not** prove
   anything about oneDNN's private allocator, STL setup or driver storage.
