@@ -2727,14 +2727,17 @@ struct RegionPrepareAttempt final {
   compute::detail::ProviderPrepareDecline decline =
       compute::detail::ProviderPrepareDecline::kNone;
   Status reason = Status::Ok();
+  bool compilation_budget_decline = false;
 };
 
-Result<RegionPrepareAttempt>
-compile_region_artifact(detail::PlanState &plan,
-                        const RegionExtension &extension,
-                        const RegionCompileRequest &request,
-                        const RegionResourceProposal &resource_proposal,
-                        CompileOptions options) noexcept {
+Result<RegionPrepareAttempt> compile_region_artifact(
+    detail::PlanState &plan, const RegionExtension &extension,
+    RegionCompileRequest request,
+    const RegionResourceProposal &resource_proposal, CompileOptions options,
+    detail::ConstantArtifactCache &packing) noexcept {
+  detail::ConstantArtifactScope scope{packing, plan, extension.extension,
+                                      extension.target, options};
+  request.constant_artifacts = scope.access();
   ProviderRegionPrepared provider_prepared{};
   struct Episode final {
     const RegionCompileRequest *request = nullptr;
@@ -2787,7 +2790,8 @@ compile_region_artifact(detail::PlanState &plan,
                     compute::ProviderPrepareOutcomeKind::kDeclinedUnsupported
                 ? compute::detail::ProviderPrepareDecline::kUnsupported
                 : compute::detail::ProviderPrepareDecline::kResourceBudget,
-        .reason = std::move(outcome.status)};
+        .reason = std::move(outcome.status),
+        .compilation_budget_decline = scope.budget_declined};
   }
   const compute::WorkspaceRequirement workspace =
       provider_prepared.properties.workspace;
@@ -2873,7 +2877,8 @@ Status prepare_placed_steps_attempt(
     const detail::GraphState &graph, CompileEnvironment environment,
     CompileOptions options, const ProviderPolicy &provider_policy,
     RegionDiscovery &discovery, ConstantPreparation &constants,
-    PlacementAttemptOutcome &outcome) noexcept {
+    PlacementAttemptOutcome &outcome,
+    detail::ConstantArtifactCache &packing) noexcept {
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
   struct OperationPlacement final {
@@ -3965,10 +3970,16 @@ Status prepare_placed_steps_attempt(
       }
       auto attempt =
           compile_region_artifact(plan, extensions[candidate.extension_index],
-                                  request, skeleton.proposal, options);
+                                  request, skeleton.proposal, options, packing);
       if (!attempt)
         return std::move(attempt).error();
       if (!attempt->prepared.valid()) {
+        // Shared packing admission depends on this complete candidate's live
+        // prefix/incumbent, not on whether the provider itself is supported.
+        if (attempt->compilation_budget_decline) {
+          outcome.rejected_plan = true;
+          return std::move(attempt->reason);
+        }
         discovery.physical.reject_suffix(preparation_prefix[step.node_begin]);
         outcome.rejected_region = candidate.proposal_order;
         return std::move(attempt->reason);
@@ -3997,9 +4008,13 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
 
 Status add_compiled_storage(CompiledStorageReport &total,
                             CompiledStorageReport part,
-                            bool shared_constants = false) noexcept {
+                            bool shared_constants = false,
+                            std::size_t shared_packed_bytes = 0) noexcept {
   if (shared_constants)
     part.materialized_constant_bytes = 0;
+  if (shared_packed_bytes > part.packed_constant_bytes)
+    return Status::Internal("graph shared packing exceeds route packing");
+  part.packed_constant_bytes -= shared_packed_bytes;
   constexpr std::array fields{
       &CompiledStorageReport::materialized_constant_bytes,
       &CompiledStorageReport::provider_persistent_bytes,
@@ -4022,6 +4037,9 @@ Status add_compiled_storage(CompiledStorageReport &total,
 Result<CompiledStorageReport>
 compiled_storage(const detail::PlanState &plan) noexcept {
   CompiledStorageReport total;
+  for (const auto &artifact : plan.constant_artifacts)
+    HYLE_RETURN_IF_ERROR(add_compiled_storage(
+        total, {.packed_constant_bytes = artifact->packed_bytes}));
   for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
     if (const auto *buffer = plan.owned_constant(slot))
       HYLE_RETURN_IF_ERROR(add_compiled_storage(
@@ -4047,13 +4065,17 @@ compiled_storage(const detail::PlanState &plan) noexcept {
 
 Status check_compiled_storage(CompiledStorageReport storage,
                               CompiledStorageLimits limits,
-                              bool shared_constants) noexcept {
+                              bool shared_constants,
+                              std::size_t shared_packed_bytes) noexcept {
   if (limits.max_bytes == SIZE_MAX)
     return Status::Ok();
   // A child retains the same canonical owner, already charged to the parent.
   // Its standalone report still includes these independently retained bytes.
   if (shared_constants)
     storage.materialized_constant_bytes = 0;
+  if (shared_packed_bytes > storage.packed_constant_bytes)
+    return Status::Internal("graph shared packing exceeds route packing");
+  storage.packed_constant_bytes -= shared_packed_bytes;
   if (storage.known_bytes() > limits.max_bytes)
     return Status::ResourceExhausted(
         "graph compiled storage budget is exceeded");
@@ -4118,6 +4140,8 @@ void swap_route_state(detail::PlanState &left,
   swap(left.lanes, right.lanes);
   swap(left.steps, right.steps);
   swap(left.artifact_charges, right.artifact_charges);
+  swap(left.constant_artifacts, right.constant_artifacts);
+  swap(left.shared_packed_bytes, right.shared_packed_bytes);
   swap(left.segments, right.segments);
   swap(left.segment_dependencies, right.segment_dependencies);
   swap(left.serialization_edges, right.serialization_edges);
@@ -4160,7 +4184,8 @@ Status prepare_placed_steps(
     CompileEnvironment environment, CompileOptions options,
     const ProviderPolicy &provider_policy, ConstantPreparation &constants,
     std::span<compute::ProviderRouteKey> profile_keys,
-    CompileReport &selected_report) noexcept {
+    CompileReport &selected_report,
+    detail::ConstantArtifactCache &packing) noexcept {
   RegionDiscovery discovery(plan.allocator);
   const std::size_t configured_lane_count = plan.lanes.size();
   const auto release_snapshot = [](detail::PlanState *state) noexcept {
@@ -4184,6 +4209,9 @@ Status prepare_placed_steps(
     // scheduling/alias/workspace choices also belong to this one candidate.
     plan.steps.clear();
     plan.artifact_charges.clear();
+    plan.constant_artifacts.clear();
+    plan.shared_packed_bytes = 0;
+    HYLE_RETURN_IF_ERROR(packing.begin_candidate());
     plan.region_count = 0;
     if (attempted) {
       if (metadata_moved) {
@@ -4201,7 +4229,7 @@ Status prepare_placed_steps(
     PlacementAttemptOutcome outcome;
     Status status = prepare_placed_steps_attempt(
         plan, published_graph, graph, environment, options, provider_policy,
-        discovery, constants, outcome);
+        discovery, constants, outcome, packing);
     attempted = true;
     if (status.ok())
       status =
@@ -4214,9 +4242,9 @@ Status prepare_placed_steps(
         status = std::move(storage).error();
       } else {
         storage_report = *storage;
-        status =
-            check_compiled_storage(storage_report, options.compiled_storage,
-                                   static_cast<bool>(plan.shared_constants));
+        status = check_compiled_storage(
+            storage_report, options.compiled_storage,
+            static_cast<bool>(plan.shared_constants), plan.shared_packed_bytes);
       }
       // No user work has been accepted. As with the final workspace gate,
       // reject this complete route, not the provider or the whole search.
@@ -6168,6 +6196,12 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
       }
     }
   }
+  for (const auto &artifact : plan.constant_artifacts) {
+    state->packed_constant_count =
+        saturating_add(state->packed_constant_count, 1);
+    state->packed_constant_bytes =
+        saturating_add(state->packed_constant_bytes, artifact->packed_bytes);
+  }
   if (profile_context != nullptr) {
     Status status =
         detail::build_profile_identity(*state, plan, logical, *profile_context);
@@ -8013,6 +8047,7 @@ namespace {
 
 Result<CompiledGraph> compile_plan(
     const Graph &graph, CompileEnvironment environment, CompileOptions options,
+    detail::ConstantArtifactCache &packing,
     util::Ref<detail::SharedConstants> shared_constants = {},
     bool inherited_budget = false,
     util::Ref<detail::StorageBudgetState> invocation_storage = {},
@@ -8288,7 +8323,7 @@ Result<CompiledGraph> compile_plan(
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, *logical,
                                   environment, options, provider_policy,
-                                  constants, profile_keys, report);
+                                  constants, profile_keys, report, packing);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));
@@ -8442,7 +8477,10 @@ Result<CompiledGraph> compile_family(const Graph &graph,
     return std::unexpected(
         Status::ResourceExhausted("exact variant index space is exhausted"));
   options.exact_variants = {};
-  HYLE_ASSIGN_OR_RETURN(auto result, compile_plan(graph, environment, options));
+  detail::ConstantArtifactCache packing;
+  HYLE_ASSIGN_OR_RETURN(auto result,
+                        compile_plan(graph, environment, options, packing));
+  packing.commit_plan();
   if (variants.empty())
     return result;
 
@@ -8460,17 +8498,21 @@ Result<CompiledGraph> compile_family(const Graph &graph,
                                  report.total_compiled_storage));
     child_options.shape_policy = CompileShapePolicy::kExact;
     child_options.shape = variants[index].shape;
-    HYLE_ASSIGN_OR_RETURN(
-        auto child,
-        compile_plan(graph, environment, child_options, plan.shared_constants,
-                     true, plan.invocation_storage, plan.compilation_storage));
+    HYLE_ASSIGN_OR_RETURN(auto child,
+                          compile_plan(graph, environment, child_options,
+                                       packing, plan.shared_constants, true,
+                                       plan.invocation_storage,
+                                       plan.compilation_storage));
+    packing.commit_plan();
     detail::ExecutableAccess::state(child.executable)->exact_variant_index =
         index;
     HYLE_RETURN_IF_ERROR(
         accumulate_search(report.total_search, child.report.search()));
     HYLE_RETURN_IF_ERROR(add_compiled_storage(
         report.total_compiled_storage, child.report.compiled_storage(),
-        static_cast<bool>(plan.shared_constants)));
+        static_cast<bool>(plan.shared_constants),
+        detail::ExecutableAccess::state(child.executable)
+            ->shared_packed_bytes));
     if (!plan.exact_variants.try_push_back(std::move(child.executable)) ||
         !report.exact_variants.try_push_back(std::move(child.report)))
       return std::unexpected(plan_allocation_failure());

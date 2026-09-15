@@ -18,7 +18,72 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 16};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 17};
+
+namespace detail {
+struct ConstantArtifactScope;
+}
+
+// Provider-defined immutable representation, including every packing option
+// that can change its contents. The provider instance/device and logical
+// constant are supplied by Graph; source pointers are never cache identities.
+struct ConstantPackingKey final {
+  std::uint64_t format = 0;
+  std::uint64_t configuration = 0;
+  constexpr bool valid() const noexcept { return format != 0; }
+  friend constexpr bool operator==(ConstantPackingKey,
+                                   ConstantPackingKey) noexcept = default;
+};
+
+struct ConstantArtifactDeclaration final {
+  ConstantPackingKey key{};
+  // Must be a configured storage domain compatible with this provider target.
+  mem::MemoryResourceRef storage{};
+  std::size_t packed_bytes = 0;
+  // Additional bounds outside the supplied allocator, including preparation,
+  // failure and destruction. Excluded from the enclosing region's bounds.
+  compute::ProviderCompilationStorage private_storage{};
+};
+
+struct ConstantArtifactPayload final {
+  void *state = nullptr;
+  void (*destroy)(void *, mem::AllocatorRef) noexcept = nullptr;
+};
+
+struct ConstantArtifactView final {
+  // Immutable, borrowed through destruction of the compiled region. The
+  // payload must own all data needed for replay, not borrow caller scratch.
+  const void *state = nullptr;
+  std::size_t packed_bytes = 0;
+};
+
+using ConstantArtifactFactory =
+    Status (*)(void *context, compute::ConstTensorView source,
+               mem::MemoryResourceRef destination, mem::AllocatorRef allocator,
+               ConstantArtifactPayload *result) noexcept;
+
+// Only available inside region compile(), under its existing admission gate.
+// Copies/spans cannot escape that callback. This is a family-local cold cache,
+// not a global registry or a runtime lookup. A factory runs only on a miss,
+// must finish its preparation before returning, and may return an owned partial
+// payload on error. It must not recursively use this access object.
+class ConstantArtifactAccess final {
+public:
+  ConstantArtifactAccess() noexcept = default;
+  bool available() const noexcept { return scope_ != nullptr; }
+  // Only a resource_declined outcome permits resource-budget fallback; a
+  // factory error, including OOM, is a real error. On failure result is empty.
+  HYLE_GRAPH_API compute::ProviderPrepareOutcome
+  get_or_create(ValueId constant, ConstantArtifactDeclaration declaration,
+                ConstantArtifactFactory factory, void *context,
+                ConstantArtifactView *result) const noexcept;
+
+private:
+  friend struct detail::ConstantArtifactScope;
+  explicit ConstantArtifactAccess(detail::ConstantArtifactScope *scope) noexcept
+      : scope_(scope) {}
+  detail::ConstantArtifactScope *scope_ = nullptr;
+};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -136,6 +201,9 @@ struct RegionCompileRequest final {
   // or cache source addresses. At compile, materialize entries refer to the
   // Graph-owned canonical copy, which can be borrowed through artifact death.
   std::span<const ConstantBinding> constants{};
+  // Empty during resource discovery. Managed immutable packing is retained
+  // independently of mutable region invocation/capture state.
+  ConstantArtifactAccess constant_artifacts{};
   std::span<const mem::MemoryResourceRef> input_resources{};
   std::span<const mem::MemoryResourceRef> output_resources{};
   mem::MemoryResourceRef workspace_resource{};
@@ -156,6 +224,7 @@ struct RegionResourceProposal final {
   // Required when the request contains named or unknown external effects.
   // false declines that semantic route before artifact creation.
   bool preserves_effects = false;
+  // Excludes private bounds requested through constant_artifacts.
   compute::ProviderCompilationStorage compilation_storage{};
 };
 
@@ -164,8 +233,10 @@ struct RegionArtifactProperties final {
   // nullopt means that opaque provider-owned code/metadata bytes are not
   // reportable. An engaged zero means that the artifact has none.
   std::optional<std::size_t> persistent_bytes{};
-  // Packing is additional provider-owned storage. Counts never shorten a
-  // borrow or discard a Graph-owned canonical materialization.
+  // Independent provider-owned packing, excluding constant_artifacts-managed
+  // payloads (Graph counts their unique owners). Counts never shorten a borrow
+  // or discard a Graph-owned canonical materialization. persistent_bytes above
+  // must likewise exclude managed payload storage.
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t copy_bytes = 0;

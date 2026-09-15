@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -10,6 +11,7 @@
 #include <optional>
 #include <span>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -92,6 +94,8 @@ enum class ProposalMode : std::uint8_t {
   kBoundaryWindows,
   kEquivalentRoutes,
 };
+
+struct PackingProbe;
 
 struct RegionProbe final {
   ProposalMode mode = ProposalMode::kPairs;
@@ -180,6 +184,7 @@ struct RegionProbe final {
   std::optional<ConstTensorView> compiled_constant{};
   const std::size_t *constant_live_allocations = nullptr;
   std::size_t constant_allocations_at_destroy = 0;
+  PackingProbe *packing = nullptr;
 };
 
 struct ExternalEffect final {
@@ -249,6 +254,32 @@ struct RegionPlan final {
 
 struct RegionRun final {
   RegionProbe *probe = nullptr;
+};
+
+struct PackingProbe final {
+  hyle::graph::ConstantPackingKey key{1, 0};
+  hyle::mem::MemoryResourceRef storage{};
+  hyle::mem::MemoryResourceRef second_storage{};
+  hyle::compute::ProviderCompilationStorage bounds{16, 16};
+  std::size_t bytes = 16;
+  bool key_per_node = false;
+  bool inconsistent_second_request = false;
+  bool invalid_constant = false;
+  bool decline_after_pack = false;
+  Status factory_failure{};
+  std::atomic<std::size_t> factories{0}, destroys{0}, executions{0};
+};
+
+struct PackedWeights final {
+  PackingProbe *probe = nullptr;
+  Buffer buffer;
+  std::atomic<std::size_t> borrowers{0};
+};
+
+struct PackedRegion final {
+  RegionProbe *probe = nullptr;
+  const PackedWeights *weights = nullptr;
+  float epsilon = 0;
 };
 
 Status async_terminal(const RegionProbe &probe) noexcept {
@@ -498,6 +529,16 @@ add_proposal(const Graph &graph, RegionProposalWriter &writer,
 Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
                                    RegionProposalWriter &writer) noexcept {
   ++probe.propose_count;
+  if (probe.packing != nullptr) {
+    for (std::size_t index = 0; index < graph.node_count(); ++index) {
+      const std::array nodes{graph.node_id(index).value()};
+      auto added = add_node_set_proposal(
+          writer, nodes, 1, probe.discovery_replay_class, probe.profile_key);
+      if (!added || !*added)
+        return added;
+    }
+    return true;
+  }
   if (probe.mode == ProposalMode::kBoundaryWindows) {
     for (std::size_t begin = 0; begin < graph.node_count(); ++begin) {
       for (std::size_t count = 1;
@@ -789,6 +830,147 @@ const hyle::graph::ProviderRegionPreparedVTable kPreparedRegionVTable{
     .shared_submit = &submit_region,
 };
 
+Status pack_weights(void *context, ConstTensorView source,
+                    hyle::mem::MemoryResourceRef resource,
+                    AllocatorRef allocator,
+                    hyle::graph::ConstantArtifactPayload *output) noexcept {
+  auto &probe = *static_cast<PackingProbe *>(context);
+  ++probe.factories;
+  void *storage =
+      allocator.allocate(sizeof(PackedWeights), alignof(PackedWeights));
+  if (storage == nullptr)
+    return Status::ResourceExhausted("packed weights owner allocation failed");
+  auto *packed = ::new (storage) PackedWeights{&probe};
+  *output = {packed, +[](void *opaque, AllocatorRef owner) noexcept {
+               auto *weights = static_cast<PackedWeights *>(opaque);
+               EXPECT_EQ(weights->borrowers.load(), 0U);
+               ++weights->probe->destroys;
+               weights->~PackedWeights();
+               owner.deallocate(weights, sizeof(PackedWeights),
+                                alignof(PackedWeights));
+             }};
+  HYLE_ASSIGN_OR_RETURN(packed->buffer, Buffer::create(resource, 16, 64));
+  std::array<float, 4> values{};
+  HYLE_RETURN_IF_ERROR(
+      source.storage().read(std::as_writable_bytes(std::span(values))));
+  std::reverse(values.begin(), values.end());
+  HYLE_RETURN_IF_ERROR(
+      packed->buffer.view().write(std::as_bytes(std::span(values))));
+  return probe.factory_failure;
+}
+
+const hyle::graph::ProviderRegionPreparedVTable kPackedRegionVTable{
+    .destroy_prepared =
+        +[](void *opaque, AllocatorRef allocator) noexcept {
+          auto *plan = static_cast<PackedRegion *>(opaque);
+          if (plan == nullptr)
+            return;
+          ++plan->probe->destroy_prepared_count;
+          const_cast<PackedWeights *>(plan->weights)->borrowers.fetch_sub(1);
+          plan->~PackedRegion();
+          allocator.deallocate(plan, sizeof(PackedRegion),
+                               alignof(PackedRegion));
+        },
+    .alias_support = &region_alias_support,
+    .create_invocation =
+        +[](void *prepared, AllocatorRef, hyle::mem::BufferView,
+            void **output) noexcept {
+          *output =
+              prepared; // immutable; this fixture has no mutable run state
+          return Status::Ok();
+        },
+    .destroy_invocation = +[](void *, AllocatorRef) noexcept {},
+    .shared_submit =
+        +[](void *opaque, void *, Queue &,
+            std::span<const ConstTensorView> inputs,
+            std::span<const TensorView> outputs) noexcept {
+          const auto &plan = *static_cast<PackedRegion *>(opaque);
+          const auto execute = [&]() noexcept -> Status {
+            if (inputs.size() != 2 || outputs.size() != 1)
+              return Status::Internal("packed RMS boundary mismatch");
+            std::array<float, 4> gamma{};
+            HYLE_RETURN_IF_ERROR(plan.weights->buffer.view().read(
+                std::as_writable_bytes(std::span(gamma))));
+            HYLE_ASSIGN_OR_RETURN(auto input, inputs[0].storage().map_host());
+            HYLE_ASSIGN_OR_RETURN(auto output, outputs[0].storage().map_host());
+            HYLE_ASSIGN_OR_RETURN(auto bytes, output.writable_bytes());
+            const auto *x =
+                reinterpret_cast<const float *>(input.bytes().data());
+            auto *y = reinterpret_cast<float *>(bytes.data());
+            const auto count = bytes.size() / sizeof(float);
+            for (std::size_t base = 0; base < count; base += 4) {
+              float sum = 0;
+              for (std::size_t i = 0; i < 4; ++i)
+                sum += x[base + i] * x[base + i];
+              const float scale = 1 / std::sqrt(sum / 4 + plan.epsilon);
+              for (std::size_t i = 0; i < 4; ++i)
+                y[base + i] = x[base + i] * scale * gamma[3 - i];
+            }
+            ++plan.weights->probe->executions;
+            HYLE_RETURN_IF_ERROR(output.close());
+            return input.close();
+          };
+          return hyle::compute::detail::EnqueueResult::accepted_command(
+              execute());
+        },
+};
+
+ProviderPrepareOutcome
+compile_packed_region(RegionProbe &probe, const RegionCompileRequest &request,
+                      AllocatorRef allocator,
+                      ProviderRegionPrepared *output) noexcept {
+  auto &packing = *probe.packing;
+  if (request.nodes.size() != 1 || request.inputs.size() != 2)
+    return ProviderPrepareOutcome::error(
+        Status::InvalidArgument("packing RMS request"));
+  const auto operation = request.graph->operation(request.nodes[0]).value();
+  const auto *rms = operation.get_if<hyle::compute::RmsNorm>();
+  if (rms == nullptr)
+    return ProviderPrepareOutcome::error(
+        Status::InvalidArgument("packing needs RMS"));
+  auto key = packing.key;
+  if (packing.key_per_node)
+    key.configuration += request.nodes[0].ordinal();
+  auto resource =
+      packing.storage.valid() ? packing.storage : request.input_resources[1];
+  if (packing.second_storage.valid() && request.nodes[0].ordinal() != 0)
+    resource = packing.second_storage;
+  hyle::graph::ConstantArtifactDeclaration declaration{
+      key, resource, packing.bytes, packing.bounds};
+  hyle::graph::ConstantArtifactView first, second;
+  const auto constant =
+      packing.invalid_constant ? request.inputs[0] : request.inputs[1];
+  auto prepared = request.constant_artifacts.get_or_create(
+      constant, declaration, &pack_weights, &packing, &first);
+  if (prepared.kind != ProviderPrepareOutcomeKind::kPrepared)
+    return prepared;
+  if (packing.inconsistent_second_request)
+    ++declaration.packed_bytes;
+  prepared = request.constant_artifacts.get_or_create(
+      constant, declaration, &pack_weights, &packing, &second);
+  if (prepared.kind != ProviderPrepareOutcomeKind::kPrepared)
+    return prepared;
+  if (first.state != second.state)
+    return ProviderPrepareOutcome::error(
+        Status::Internal("same packing was duplicated"));
+  void *memory =
+      allocator.allocate(sizeof(PackedRegion), alignof(PackedRegion));
+  if (memory == nullptr)
+    return ProviderPrepareOutcome::error(
+        Status::ResourceExhausted("packed region allocation failed"));
+  auto *weights = static_cast<const PackedWeights *>(first.state);
+  const_cast<PackedWeights *>(weights)->borrowers.fetch_add(1);
+  *output = {.vtable = &kPackedRegionVTable,
+             .state =
+                 ::new (memory) PackedRegion{&probe, weights, rms->epsilon},
+             .properties = probe.artifact_properties};
+  ++probe.compile_count;
+  return packing.decline_after_pack
+             ? ProviderPrepareOutcome::unsupported(
+                   Status::Unimplemented("packing route declined"))
+             : ProviderPrepareOutcome::prepared();
+}
+
 const hyle::graph::ProviderRegionPreparedVTable kDelegatedRegionVTable{
     .destroy_prepared = &destroy_region_prepared,
     .alias_support = &region_alias_support,
@@ -859,6 +1041,7 @@ Status propose_region_resources(
     requirement = {};
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.region_resource_count;
+  EXPECT_FALSE(request.constant_artifacts.available());
   if (probe.resource_scratch_bytes != 0) {
     void *scratch = allocator.allocate(probe.resource_scratch_bytes,
                                        alignof(std::max_align_t));
@@ -1003,6 +1186,8 @@ ProviderPrepareOutcome compile_region(void *context,
   if (probe.decline_regions)
     return ProviderPrepareOutcome::unsupported(
         Status::Unimplemented("injected pre-acceptance region decline"));
+  if (probe.packing != nullptr)
+    return compile_packed_region(probe, request, allocator, output);
   Status status = compile_region_checked(context, request, allocator, output);
   if (!status.ok())
     return ProviderPrepareOutcome::error(std::move(status));
@@ -7398,6 +7583,407 @@ TEST(GraphRegions, ExposesAndCanRejectAHostDependencyBeforeSubmission) {
   EXPECT_EQ(second_probe.device_wait_count, 0u);
   EXPECT_EQ(read(output, values.size()),
             std::vector<float>(values.begin(), values.end()));
+}
+
+struct PackingGraph final {
+  Graph graph;
+  ValueId input, weight, output;
+  hyle::graph::DimensionId rows;
+};
+
+PackingGraph make_packing_graph(bool dynamic = false, std::size_t nodes = 1) {
+  auto builder = GraphBuilder::create().value();
+  PackingGraph result;
+  auto first = hyle::graph::Dimension::fixed(2);
+  if (dynamic) {
+    result.rows = builder.dimension({1, 3, 1}).value();
+    first = hyle::graph::Dimension(result.rows);
+  }
+  const auto spec = hyle::graph::TensorSpec::dense(
+                        DataType::kFloat32,
+                        std::array{first, hyle::graph::Dimension::fixed(4)})
+                        .value();
+  result.input = builder.input(spec).value();
+  result.weight = builder.constant(row(4)).value();
+  result.output = result.input;
+  for (std::size_t i = 0; i < nodes; ++i)
+    result.output =
+        builder
+            .add(hyle::compute::RmsNorm{0}, spec, result.output, result.weight)
+            .value();
+  EXPECT_TRUE(builder.publish(result.output).ok());
+  result.graph = std::move(builder).finish().value();
+  return result;
+}
+
+void configure_packing(RegionProbe &probe, PackingProbe &packing) {
+  probe.packing = &packing;
+  probe.profile_key = hyle::compute::ProviderRouteKey{901};
+  probe.compilation_storage = {0, 0};
+  probe.artifact_properties.persistent_bytes = sizeof(PackedRegion);
+  probe.artifact_properties.invocation_private_bytes = 0;
+}
+
+void expect_packing_replay(const hyle::graph::Executable &executable,
+                           const PackingGraph &graph, const Context &context,
+                           std::size_t rows, float gamma_scale = 1) {
+  const auto desc = TensorDesc::dense(DataType::kFloat32,
+                                      std::array<std::int64_t, 2>{
+                                          static_cast<std::int64_t>(rows), 4})
+                        .value();
+  auto input = make_tensor(desc), output = make_tensor(desc);
+  write(input, std::vector<float>(rows * 4, 1));
+  auto run = executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(graph.input, input.view).ok());
+  ASSERT_TRUE(run.bind(graph.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  auto completion = run.submit(queue);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  const auto values = read(output, rows * 4);
+  for (std::size_t i = 0; i < values.size(); ++i)
+    EXPECT_FLOAT_EQ(values[i], static_cast<float>(i % 4 + 1) * gamma_scale);
+}
+
+TEST(GraphPacking, ExactVariantsShareWeightsAndSurviveParentAndSource) {
+  PackingProbe packing;
+  RegionProbe probe;
+  configure_packing(probe, packing);
+  auto context = make_context(probe);
+  auto graph = make_packing_graph(true);
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  const std::array bindings{
+      hyle::graph::ConstantBinding{graph.weight, source.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  const std::array shape_a{hyle::graph::ShapeBinding{graph.rows, 2}};
+  const std::array shape_b{hyle::graph::ShapeBinding{graph.rows, 3}};
+  const std::array variants{hyle::graph::ExactShapeVariant{shape_a},
+                            hyle::graph::ExactShapeVariant{shape_b}};
+  auto compiled = hyle::graph::compile(
+      graph.graph, context,
+      {.shape_policy = hyle::graph::CompileShapePolicy::kDeclaredDomain,
+       .exact_variants = variants,
+       .constants = bindings,
+       .compilation_storage = {
+           {.max_resident_bytes = 1U << 20, .max_peak_bytes = 1U << 20}}});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.region_count(),
+            0U); // real bounded Native fallback
+  EXPECT_EQ(compiled->report.exact_variant(0)->region_count(), 1U);
+  EXPECT_EQ(compiled->report.exact_variant(1)->region_count(), 1U);
+  EXPECT_EQ(packing.factories.load(), 1U);
+  EXPECT_EQ(compiled->report.total_compiled_storage().packed_constant_bytes,
+            16U);
+  EXPECT_EQ(
+      compiled->report.total_compiled_storage().materialized_constant_bytes,
+      16U);
+  EXPECT_EQ(compiled->report.exact_variant(0)->packed_constant_count(), 1U);
+  EXPECT_EQ(compiled->report.exact_variant(1)
+                ->compiled_storage()
+                .packed_constant_bytes,
+            16U);
+  EXPECT_FALSE(compiled->report.compilation_storage()->has_unknown_storage);
+  auto first = compiled->executable.exact_variant(0).value();
+  auto second = compiled->executable.exact_variant(1).value();
+  source = {};
+  compiled = {};
+  EXPECT_EQ(packing.destroys.load(), 0U);
+  std::thread a([&] { expect_packing_replay(first, graph, context, 2); });
+  std::thread b([&] { expect_packing_replay(second, graph, context, 3); });
+  a.join();
+  b.join();
+  EXPECT_EQ(packing.factories.load(), 1U);
+  EXPECT_EQ(packing.executions.load(), 2U);
+  first = {};
+  EXPECT_EQ(packing.destroys.load(), 0U);
+  second = {};
+  EXPECT_EQ(packing.destroys.load(), 1U);
+  EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+}
+
+TEST(GraphPacking, IdentitySeparatesFormatStorageAndProviderInstances) {
+  for (int scenario = 0; scenario != 4; ++scenario) {
+    SCOPED_TRACE(scenario);
+    HostResource other;
+    PackingProbe packing;
+    RegionProbe first, second;
+    configure_packing(first, packing);
+    configure_packing(second, packing);
+    packing.key_per_node = scenario == 1;
+    if (scenario == 2)
+      packing.second_storage = hyle::mem::MemoryResourceRef(other);
+    auto context = make_context(first, second);
+    const auto graph = make_packing_graph(false, 2);
+    const Environment environment{
+        {&context, hyle::mem::system_resource()},
+        {&context, hyle::mem::MemoryResourceRef(other)}};
+    std::array<hyle::graph::NodeProviderConstraint, 2> constraints;
+    for (std::size_t i = 0; i < constraints.size(); ++i)
+      constraints[i] = {
+          graph.graph.node_id(i).value(), kRegionProviderId,
+          context.provider_instance_id(scenario == 3 ? i : 0).value()};
+    auto source = make_tensor(row(4));
+    write(source, std::array{1.F, 2.F, 3.F, 4.F});
+    const std::array bindings{
+        hyle::graph::ConstantBinding{graph.weight, source.view.as_const()}};
+    {
+      auto compiled = hyle::graph::compile(
+          graph.graph, environment.environment(),
+          {.constants = bindings,
+           .node_providers = constraints,
+           .operation_fallback = OperationFallbackPolicy::kReject});
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      const auto count = scenario == 0 ? 1U : 2U;
+      EXPECT_EQ(compiled->report.region_count(), 2U);
+      EXPECT_EQ(compiled->report.packed_constant_count(), count);
+      EXPECT_EQ(compiled->report.packed_constant_bytes(), 16U * count);
+      EXPECT_EQ(compiled->report.compiled_storage().packed_constant_bytes,
+                16U * count);
+      EXPECT_EQ(packing.factories.load(), count);
+    }
+    EXPECT_EQ(packing.factories.load(), packing.destroys.load());
+    EXPECT_EQ(other.live_allocations, 0U);
+  }
+}
+
+TEST(GraphPacking, NoGlobalCacheAndPackingFactsIdentifyProfiles) {
+  PackingProbe packing;
+  RegionProbe probe;
+  configure_packing(probe, packing);
+  auto context = make_context(probe);
+  const auto graph = make_packing_graph();
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto source = make_tensor(row(4));
+  const std::array bindings{
+      hyle::graph::ConstantBinding{graph.weight, source.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  CompileOptions options{.constants = bindings,
+                         .profile_context = &facts.context};
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  auto first =
+      hyle::graph::compile(graph.graph, environment.environment(), options)
+          .value();
+  // Same addresses, different family binding/content: must prepare again.
+  write(source, std::array{2.F, 4.F, 6.F, 8.F});
+  auto second =
+      hyle::graph::compile(graph.graph, environment.environment(), options)
+          .value();
+  EXPECT_EQ(packing.factories.load(), 2U);
+  expect_packing_replay(first.executable, graph, context, 2);
+  expect_packing_replay(second.executable, graph, context, 2, 2);
+  const hyle::compute::RouteProfile profile{
+      first.report.profile_identity(), {{10, 11}}, {{1, 2}}};
+  EXPECT_EQ(hyle::compute::match_route_profile(second.report.profile_identity(),
+                                               profile)
+                .reason,
+            hyle::compute::ProfileMatchReason::kMatched);
+  // Workload data identity belongs to the caller; representation identity is
+  // Graph's responsibility even when the caller leaves those facts unchanged.
+  ++packing.key.configuration;
+  auto third =
+      hyle::graph::compile(graph.graph, environment.environment(), options)
+          .value();
+  EXPECT_NE(hyle::compute::match_route_profile(third.report.profile_identity(),
+                                               profile)
+                .reason,
+            hyle::compute::ProfileMatchReason::kMatched);
+}
+
+TEST(GraphPacking, BoundsAndPartialFactoryFailuresAreTransactional) {
+  const auto graph = make_packing_graph();
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  const std::array bindings{
+      hyle::graph::ConstantBinding{graph.weight, source.view.as_const()}};
+  for (int scenario = 0; scenario != 7; ++scenario) {
+    SCOPED_TRACE(scenario);
+    PackingProbe packing;
+    RegionProbe probe;
+    configure_packing(probe, packing);
+    auto context = make_context(probe);
+    CompileOptions options{
+        .constants = bindings,
+        .compilation_storage = {{.max_resident_bytes = 1U << 20,
+                                 .max_peak_bytes = 1U << 20}},
+        .operation_fallback = OperationFallbackPolicy::kReject};
+    if (scenario == 0 || scenario == 1)
+      packing.bounds = {};
+    if (scenario == 1)
+      options.compilation_storage->unknown =
+          hyle::graph::UnknownStoragePolicy::kAllow;
+    if (scenario == 2)
+      packing.bounds = {SIZE_MAX, SIZE_MAX};
+    if (scenario == 3)
+      packing.factory_failure =
+          Status::ResourceExhausted("real factory failure");
+    if (scenario == 4)
+      packing.inconsistent_second_request = true;
+    if (scenario == 5)
+      packing.invalid_constant = true;
+    if (scenario == 6) {
+      packing.bytes = SIZE_MAX;
+      packing.bounds = {16, 16};
+    }
+    {
+      auto compiled = hyle::graph::compile(graph.graph, context, options);
+      if (scenario == 1) {
+        ASSERT_TRUE(compiled) << compiled.error().message();
+        EXPECT_TRUE(
+            compiled->report.compilation_storage()->has_unknown_storage);
+      } else {
+        ASSERT_FALSE(compiled);
+        if (scenario == 3)
+          EXPECT_EQ(compiled.error(), packing.factory_failure);
+        if (scenario == 4 || scenario == 5)
+          EXPECT_TRUE(compiled.error().IsInvalidArgument())
+              << compiled.error().message();
+        if (scenario == 0 || scenario == 2 || scenario == 5)
+          EXPECT_EQ(packing.factories.load(), 0U);
+      }
+    }
+    EXPECT_EQ(packing.factories.load(), packing.destroys.load());
+    EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+  }
+  hyle::graph::ConstantArtifactView view{&source, 4};
+  auto unavailable = hyle::graph::ConstantArtifactAccess{}.get_or_create(
+      graph.weight, {}, &pack_weights, nullptr, &view);
+  EXPECT_EQ(unavailable.kind, ProviderPrepareOutcomeKind::kError);
+  EXPECT_EQ(view.state, nullptr);
+}
+
+TEST(GraphPacking, RejectedPackingDiesBeforeFallbackAndIncumbentSurvives) {
+  for (bool profile_search : {false, true}) {
+    PackingProbe first_packing, second_packing;
+    RegionProbe first, second;
+    configure_packing(first, first_packing);
+    configure_packing(second, second_packing);
+    second.profile_key = hyle::compute::ProviderRouteKey{902};
+    auto context = make_context(first, second);
+    const auto graph = make_packing_graph();
+    const Environment environment{{&context, hyle::mem::system_resource()}};
+    hyle::graph::test::ProfileFixture facts(environment.environment());
+    auto source = make_tensor(row(4));
+    write(source, std::array{1.F, 2.F, 3.F, 4.F});
+    const std::array bindings{
+        hyle::graph::ConstantBinding{graph.weight, source.view.as_const()}};
+    CompileOptions options{.constants = bindings,
+                           .operation_fallback =
+                               OperationFallbackPolicy::kReject};
+    std::array<CompileReport, 2> reports;
+    std::array<hyle::compute::RouteProfile, 2> profiles;
+    if (profile_search) {
+      for (std::size_t i = 0; i < 2; ++i) {
+        reports[i] =
+            profile_report(graph.graph, context, environment.environment(),
+                           facts.context, i, options);
+        profiles[i] = {reports[i].profile_identity(),
+                       {{100.0 + 100 * i, 105.0 + 100 * i}},
+                       {{1, 2}}};
+      }
+      options.profile_context = &facts.context;
+      options.profiles = profiles;
+    } else {
+      first_packing.decline_after_pack = true;
+    }
+    {
+      auto compiled =
+          hyle::graph::compile(graph.graph, environment.environment(), options);
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->report.packed_constant_count(), 1U);
+      EXPECT_EQ(compiled->report.step(0)->provider_instance,
+                context.provider_instance_id(profile_search ? 0 : 1).value());
+      auto &rejected = profile_search ? second_packing : first_packing;
+      EXPECT_EQ(rejected.factories.load(), rejected.destroys.load());
+      expect_packing_replay(compiled->executable, graph, context, 2);
+    }
+    EXPECT_EQ(first_packing.factories.load(), first_packing.destroys.load());
+    EXPECT_EQ(second_packing.factories.load(), second_packing.destroys.load());
+  }
+}
+
+TEST(GraphPacking, EveryMetadataAllocationFailureReleasesPackingAndCanRetry) {
+  struct State {
+    AllocatorRef backing = hyle::mem::system_allocator();
+    std::size_t attempts = 0, fail_at = SIZE_MAX, live = 0;
+  } state;
+  const AllocatorRef allocator{
+      +[](void *opaque, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        auto &s = *static_cast<State *>(opaque);
+        if (s.attempts++ == s.fail_at)
+          return nullptr;
+        void *p = s.backing.allocate(bytes, alignment);
+        s.live += p != nullptr;
+        return p;
+      },
+      +[](void *opaque, void *p, std::size_t bytes,
+          std::size_t alignment) noexcept {
+        auto &s = *static_cast<State *>(opaque);
+        s.live -= p != nullptr;
+        s.backing.deallocate(p, bytes, alignment);
+      },
+      +[](void *opaque, void *p, std::size_t old_bytes, std::size_t bytes,
+          std::size_t alignment) noexcept -> void * {
+        auto &s = *static_cast<State *>(opaque);
+        if (bytes == 0) {
+          s.live -= p != nullptr;
+          return s.backing.reallocate(p, old_bytes, 0, alignment);
+        }
+        if (s.attempts++ == s.fail_at)
+          return nullptr;
+        void *result = s.backing.reallocate(p, old_bytes, bytes, alignment);
+        s.live += p == nullptr && result != nullptr;
+        return result;
+      },
+      &state};
+  PackingProbe packing;
+  RegionProbe probe;
+  configure_packing(probe, packing);
+  const std::array providers{region_provider(probe)};
+  auto context =
+      Context::create(hyle::compute::cpu::device(),
+                      {.metadata_allocator = allocator, .providers = providers})
+          .value();
+  const auto graph = make_packing_graph(false, 2);
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  const std::array bindings{
+      hyle::graph::ConstantBinding{graph.weight, source.view.as_const()}};
+  CompileOptions options{
+      .constants = bindings,
+      .compilation_storage = {{.max_resident_bytes = 1U << 20,
+                               .max_peak_bytes = 1U << 20}},
+      .operation_fallback = OperationFallbackPolicy::kReject};
+  const auto live = state.live;
+  state.attempts = 0;
+  {
+    auto result = hyle::graph::compile(graph.graph, context, options);
+    ASSERT_TRUE(result) << result.error().message();
+  }
+  const auto allocations = state.attempts;
+  EXPECT_EQ(state.live, live);
+  for (std::size_t i = 0; i < allocations; ++i) {
+    SCOPED_TRACE(i);
+    state.attempts = 0;
+    state.fail_at = i;
+    {
+      auto failed = hyle::graph::compile(graph.graph, context, options);
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+    }
+    EXPECT_EQ(state.live, live);
+    state.fail_at = SIZE_MAX;
+    {
+      auto retry = hyle::graph::compile(graph.graph, context, options);
+      ASSERT_TRUE(retry) << retry.error().message();
+    }
+    EXPECT_EQ(state.live, live);
+    EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+  }
+  context = {};
+  EXPECT_EQ(state.live, 0U);
 }
 
 } // namespace

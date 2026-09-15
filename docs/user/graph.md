@@ -1,7 +1,7 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
-> [`module-status.json`](../implementation/module-status.json) 为准；尚未完成的 packed 制品共享及终局验证见
+> [`module-status.json`](../implementation/module-status.json) 为准；packed 制品共享的验证与终局范围见
 > [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)。当前已经实现
 > exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
@@ -14,7 +14,7 @@ width），以及有限派生维度/guards、具名资源副作用域、有限 r
 编译 requested-storage 常驻/峰值配额和共享 Invocation 存储配额。`ViewSpec` 支持动态
 reshape/slice/permute/broadcast 的有限全域证明、真实布局/偏移绑定与共享物理计划；证明不了的关系
 明确拒绝 declared-domain，仍可使用 exact。storage/copy target/lane 与 leaf/region 进入同一有界冷搜索，
-只有合格完整计划 profile 才用于继续择优。Provider 私有 packing 共享尚未实现；capture 私有存储的
+只有合格完整计划 profile 才用于继续择优。Region 可显式共享同 family 的不可变 packing；capture 私有存储的
 unknown 约束见下文，不把 driver 未公开的字节数算作零。完整边界见[架构合同](../architecture/graph-design.md)。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
@@ -212,9 +212,32 @@ Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prep
 仍由调用者保活；“可释放 source allocation”不等于“可销毁仍承载副本的 resource 对象”。
 
 同一次 declared-domain compile 的 general/exact variants 共享同 Graph slot、同描述、同 external storage
-的唯一 canonical 副本；取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享，
-Provider opaque packing 共享尚未交付；下面的 family-wide 编译配额会计入未共享的副本。每条路线的
+的唯一 canonical 副本；取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享。
+Region Provider 可通过下述入口共享兼容 packing，未接入的 Provider 仍独立持有并计费。每条路线的
 `materialized_constant_bytes()` 都描述它借用的 canonical 副本，不能把各路线的数值相加当成物理总量。
+
+### Region 作者：复用不可变 packing
+
+`region_provider.h` 的 `RegionCompileRequest::constant_artifacts` 只在 `compile` 回调有效，resource query
+不提供它。`get_or_create(constant, declaration, factory, context, &view)` 返回 Compute 的显式 prepare
+outcome；非 prepared 应按原 kind 传播，不能把 factory 的真实 OOM 当成可以换路线的预算拒绝。
+
+`ConstantArtifactDeclaration` 声明非零 `ConstantPackingKey::format`、全部配置 discriminator、已登记的
+storage、packed bytes 和所供 allocator 之外的 private resident/peak 上界。Graph 自动绑定本次 family、
+具体 Provider instance、logical constant/描述和 storage；同 key 不得改大小或上界。两个 token 数量不同
+的 exact regions 可以复用同一权重格式，但不同格式、设备实例或 storage 不误共享。普通 Graph 用户
+无需设置缓存或添加开关；采用该入口的是 Provider 作者。
+
+factory 仅在 miss 执行，返回 `ConstantArtifactPayload{state, destroy}`，必须拥有 replay 需要的全部内容，
+不能借用 caller scratch；准备完成后才能返回，也不能递归调用此 access。失败也可以交回带 destroy 的
+部分 payload，Graph 会清理。成功的 `ConstantArtifactView` 是只读借用，直到使用它的 compiled region
+销毁都有效；可变 Invocation/workspace/capture 不在此共享。不同 compile 不以源地址做全局缓存，borrow
+常量原有生命周期也不缩短。
+
+受管 packing 不再重复填写 `RegionArtifactProperties` 的 persistent/packed 字段或 region 自身 private
+compilation bounds；allocator 请求已自动计费，额外私有上界由 declaration 单独准入。单路线报告计它
+实际使用的 unique packed bytes，family 总报告只计实际共享 owner 一次；step 的 packed 字段仍只表示
+该 step 独占的 Provider packing。编译候选放弃时，先销毁 region 再释放共享引用；发布后没有热 cache。
 
 ### 限制编译制品的常驻存储
 
@@ -232,7 +255,7 @@ const auto compiled_bytes = storage.total_bytes().value();
 ```
 
 `compiled_storage()` 是单路线；`total_compiled_storage()` 是 general 与全部 exact 的集合。同一张表中
-确实共享的 canonical 副本只计一次；尚未共享的 Provider 制品/packing 每份都计。子报告包含该子路线
+确实共享的 canonical 副本与受管 packing 只计一次；独立 Provider 制品/packing 每份都计。子报告包含该子路线
 独立保活所需的常量，即使父 Executable 已释放；报告本身不保活 payload。普通算子的 persistent facts
 也通过 `step().persistent_bytes` 如实传播。求和溢出是错误，不会饱和成一个看似合格的数值。
 

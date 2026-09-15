@@ -6,6 +6,7 @@
 #include <span>
 #include <utility>
 
+#include "constant_artifact.h"
 #include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/context_ref.h"
@@ -645,7 +646,8 @@ struct PlanState final : util::RefCounted<PlanState> {
         storage_domains(allocator_value), targets(allocator_value),
         lanes(allocator_value), constant_charges(allocator_value),
         artifact_charges(allocator_value),
-        materialized_constants(allocator_value), steps(allocator_value),
+        materialized_constants(allocator_value),
+        constant_artifacts(allocator_value), steps(allocator_value),
         exact_variants(allocator_value), variant_order(allocator_value),
         segments(allocator_value), segment_dependencies(allocator_value),
         serialization_edges(allocator_value), step_segments(allocator_value),
@@ -705,6 +707,10 @@ struct PlanState final : util::RefCounted<PlanState> {
   container::SmallVector<mem::Buffer, 0, mem::AllocatorRef>
       materialized_constants;
   util::Ref<SharedConstants> shared_constants;
+  container::SmallVector<util::Ref<ConstantArtifactState>, 0, mem::AllocatorRef>
+      constant_artifacts;
+  // Subset already owned by an earlier selected Plan in this compiled family.
+  std::size_t shared_packed_bytes = 0;
   PlanSteps steps;
   container::SmallVector<Executable, 0, mem::AllocatorRef> exact_variants;
   // Lexicographic signature order -> caller's declaration index. Lookup is

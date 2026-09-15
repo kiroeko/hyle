@@ -397,7 +397,7 @@ Status build_profile_identity(ReportState &report, const PlanState &plan,
   }
   identity.shape_domain = shape.finish();
 
-  Fingerprint route(0x4752415048520001ULL);
+  Fingerprint route(0x4752415048520002ULL);
   bool complete = context.replay_configuration.valid() &&
                   context.storage_domains.size() == plan.storage_domains.size();
   route.add(context.replay_configuration);
@@ -512,6 +512,30 @@ Status build_profile_identity(ReportState &report, const PlanState &plan,
     route.add(constant.policy);
     route.add(constant.storage.ordinal());
     route.add(constant.materialized_bytes);
+  }
+  route.add(plan.constant_artifacts.size());
+  route.add(plan.shared_packed_bytes);
+  for (const auto &artifact : plan.constant_artifacts) {
+    route.add(artifact->key.constant);
+    route.add(artifact->key.storage);
+    route.add(artifact->key.packing.format);
+    route.add(artifact->key.packing.configuration);
+    route.add(artifact->packed_bytes);
+    route.optional(artifact->private_storage.resident_bytes);
+    route.optional(artifact->private_storage.peak_bytes);
+    HYLE_RETURN_IF_ERROR(route.tensor(artifact->key.description));
+    // Use the qualified external provider identity, never a process-local ID.
+    bool qualified = false;
+    for (const auto &binding : context.providers) {
+      if (binding.target == artifact->target &&
+          binding.instance == artifact->key.provider) {
+        route.add(binding.build);
+        route.add(binding.configuration);
+        qualified = binding.build.valid() && binding.configuration.valid();
+        break;
+      }
+    }
+    complete &= qualified;
   }
   route.add(report.segments.size());
   for (const auto &segment : report.segments) {

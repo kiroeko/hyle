@@ -621,8 +621,9 @@ public:
   HYLE_GRAPH_API std::size_t materialized_constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t materialized_constant_bytes() const noexcept;
   // Single-route facts; total_* includes all retained variants, counting
-  // actually shared canonical constants only once. An exact child's two
-  // reports coincide and include the constants it independently keeps alive.
+  // actually shared canonical constants and managed packing only once. An exact
+  // child's two reports coincide and include the constants it independently
+  // keeps alive.
   HYLE_GRAPH_API CompiledStorageReport compiled_storage() const noexcept;
   HYLE_GRAPH_API CompiledStorageReport total_compiled_storage() const noexcept;
   // Absent unless compilation_storage was requested. Each child reports the
@@ -631,6 +632,8 @@ public:
   compilation_storage() const noexcept;
   HYLE_GRAPH_API Result<CompileConstantReport>
   constant(std::size_t index = 0) const noexcept;
+  // Unique managed payloads plus independent provider-reported packing for
+  // this route. Per-step fields describe only that step's independent packing.
   HYLE_GRAPH_API std::size_t packed_constant_count() const noexcept;
   HYLE_GRAPH_API std::size_t packed_constant_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t invocation_owned_output_count() const noexcept;

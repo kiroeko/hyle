@@ -276,6 +276,15 @@ Invocation 只持有实际描述与从已编译根实例化的执行状态，不
 保活，因此 canonical 常量使用不反向持有 Plan 的共享 owner，artifact 先于最后一份常量和 Context lease
 销毁。Provider 私有 packing 不能未经身份/兼容性证明就合并。
 
+Region 的 cold `ConstantArtifactAccess` 把兼容性固定为同一次 family、具体 Provider instance、logical
+constant/descriptor、Provider 声明的 packing-format/configuration key 和已登记 storage。factory 只在缺失
+时创建完整不可变 payload；opaque owner 由 Graph 保活，mutable invocation/capture 仍独占。采用此入口的
+packing 单独声明 allocator 之外的 private resident/peak，不再进入 region 自身的重复计数。每个候选 Plan
+保有实际使用的 owner refs；拒绝先毁 region，再归还无引用 payload。冷 flat hash lookup 在 compile 返回前
+销毁，发布后只剩 immutable refs，submit 无查表。现有不支持该入口的 Provider 仍持有独立 packing，不能
+因 format 看似相同就强行合并。完整 profile 包含 packing key、资源与 family 复用量；跨 compile 内容身份
+仍由 workload-data 契约描述，不是对裸 source 指针做缓存。这是渐进式 Provider 接入，不重写 vendor kernel。
+
 所有路线共用一次 compile 的累计 discovery/state/prepare 预算，不能按变体重复充值；per-provider cap
 只是每次发现的局部上限。普通查询描述 general，子路线有自己的 exact signature、队列、workspace 和
 并发合同；聚合工作计数与逐路线执行成本分开报告，不把不同 shape 的运行时间求和成一个 workload。
