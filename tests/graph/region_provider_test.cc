@@ -6483,11 +6483,13 @@ TEST(GraphRegions, ExplicitLeafDeclinesCanSelectAnotherTarget) {
         {.external_resources = external,
          .region_selection = RegionSelectionPolicy::kDisabled});
     ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
-    EXPECT_EQ(probe.single_artifact_count, 1u);
-    EXPECT_EQ(probe.destroy_prepared_count, 1u);
+    // Two caller-workspace bindings are distinct legal prepare requests.
+    // Changing only a later copy carrier must NOT prepare either one again.
+    EXPECT_EQ(probe.single_artifact_count, 2u);
+    EXPECT_EQ(probe.destroy_prepared_count, 2u);
     EXPECT_EQ(compiled->report.step(0)->target, environment.target(1));
-    EXPECT_EQ(compiled->report.search().placement_attempts, 2u);
-    EXPECT_EQ(compiled->report.search().operation_route_rejections, 1u);
+    EXPECT_EQ(compiled->report.search().placement_attempts, 3u);
+    EXPECT_EQ(compiled->report.search().operation_route_rejections, 2u);
     EXPECT_EQ(probe.single_proposal_count, 1u);
     EXPECT_EQ(compiled->report.step_count(), 1u);
     // The first route would copy its output from storage 0 to storage 1;

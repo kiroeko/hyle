@@ -2028,6 +2028,13 @@ public:
     cursor_ = 0;
   }
   bool branched() const noexcept { return !path_.empty(); }
+  std::size_t prefix() const noexcept { return cursor_; }
+  void reject_suffix(std::size_t prefix) noexcept {
+    HYLE_FATAL_ASSERT(prefix <= cursor_);
+    cursor_ = prefix;
+    while (path_.size() > cursor_)
+      path_.pop_back();
+  }
 
   Result<bool> next(std::size_t budget, CompileSearchReport &report,
                     bool &limited) noexcept {
@@ -3060,11 +3067,14 @@ Status prepare_placed_steps_attempt(
   Ordinals node_targets(plan.allocator);
   Ordinals node_workspace_storage(plan.allocator);
   Ordinals selected_edge_storage(plan.allocator);
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> preparation_prefix(
+      plan.allocator);
   container::SmallVector<const OperationCandidate *, 8, mem::AllocatorRef>
       operation_routes(plan.allocator);
   if (!producer_storage.try_resize(value_count) ||
       !node_targets.try_resize(node_count) ||
       !node_workspace_storage.try_resize(node_count) ||
+      !preparation_prefix.try_resize(node_count) ||
       !selected_edge_storage.try_resize(graph.edges.size()) ||
       !operation_routes.try_resize(node_count)) {
     return plan_allocation_failure();
@@ -3638,6 +3648,8 @@ Status prepare_placed_steps_attempt(
         outcome.rejected_region = candidate.proposal_order;
         return region_status;
       }
+      preparation_prefix[region_nodes.front().ordinal()] =
+          discovery.physical.prefix();
       physical_inputs.clear();
       if (!physical_inputs.try_reserve(logical_inputs.size()))
         return plan_allocation_failure();
@@ -3717,6 +3729,7 @@ Status prepare_placed_steps_attempt(
       return status;
     }
     publish_operation_placement(node_index, *placement);
+    preparation_prefix[node_index] = discovery.physical.prefix();
     const std::uint32_t workspace_storage = node_workspace_storage[node_index];
     physical_inputs.clear();
     if (!physical_inputs.try_reserve(node.input_count))
@@ -3893,8 +3906,7 @@ Status prepare_placed_steps_attempt(
       auto charge = reserve_compilation_storage(
           plan, options, route->proposal.cost.compilation_storage);
       if (!charge) {
-        outcome.rejected_operation = static_cast<std::size_t>(
-            route - discovery.operations.candidates.data());
+        outcome.rejected_plan = true;
         return std::move(charge).error();
       }
       auto attempt =
@@ -3911,6 +3923,7 @@ Status prepare_placed_steps_attempt(
       if (!attempt)
         return std::move(attempt).error();
       if (!attempt->succeeded()) {
+        discovery.physical.reject_suffix(preparation_prefix[step.node_begin]);
         outcome.rejected_operation = static_cast<std::size_t>(
             route - discovery.operations.candidates.data());
         return std::move(attempt->reason);
@@ -3947,7 +3960,7 @@ Status prepare_placed_steps_attempt(
       auto charge = reserve_compilation_storage(
           plan, options, skeleton.proposal.compilation_storage);
       if (!charge) {
-        outcome.rejected_region = candidate.proposal_order;
+        outcome.rejected_plan = true;
         return std::move(charge).error();
       }
       auto attempt =
@@ -3956,6 +3969,7 @@ Status prepare_placed_steps_attempt(
       if (!attempt)
         return std::move(attempt).error();
       if (!attempt->prepared.valid()) {
+        discovery.physical.reject_suffix(preparation_prefix[step.node_begin]);
         outcome.rejected_region = candidate.proposal_order;
         return std::move(attempt->reason);
       }
@@ -5206,6 +5220,8 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
            ++input_index) {
         const std::uint32_t input =
             plan.node_inputs[step.input_begin + input_index];
+        if (plan.instance_storage[input] != plan.instance_storage[output])
+          continue;
         auto support = step.operation.alias_support(output_index, input_index);
         if (!support)
           return std::move(support).error();
