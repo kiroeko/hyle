@@ -354,6 +354,14 @@ runtime/alias 合同不得变化，workspace 不得超过已编译上界。这�
 不增加动态 shape wrapper 或第二套 Queue/Completion。实例化的冷 metadata 分配与跨变体总内存预算须
 单独计量；它不等于每次 replay 可以重新分配，也不是新的公开产品入口。
 
+动态维度与动态布局是不同合同。默认布局继续保留 exact strides/opaque，变化的尺寸重建 dense 或
+blocked-dense。需要消费 Graph View 推导的具体 strides 时，Provider 必须显式接受 plain、非负 strides
+和有限可触及字节上界的布局族；其 entire-domain 承诺包括零步幅等合法成员，不能由 dense envelope
+推断任意 strided 支持。固定尺寸的这种布局族也不是 exact point。Graph 冷推导描述后，Compute 重验
+维度程序/guards、dtype/format/rank、布局族/字节上界和原 operation schema，再调用已编译制品的冷
+实例化；既有默认布局仍须完整描述相等。此布局承诺不替 Graph 证明 View 关系、alias offset 或并行写入
+安全，不放宽已编译 alias/资源/完成边界，也不新增公开 stride 求解器或热路径解释器。
+
 ### 3.4 Replay 成本合同独立于 runtime ownership
 
 shared/delegated 回答“谁拥有 Queue、allocator 与完成状态”，不回答“每次调用是否重新分配”。同一

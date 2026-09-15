@@ -267,8 +267,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v14-compilation-storage-facts.md",
-      "summary": "compute v14 AUDITED：承接 v13/C93/foundation，C140/C141 在冷 proposal 披露不经过 supplied allocator 的编译 resident/peak 上界，避免与 metadata 双计；不改 warm route。"
+      "record": "docs/implementation/tasks/compute/compute-v15-bound-layout-instantiation.md",
+      "summary": "compute v15 AUDITED：承接 v14/C93/foundation，C150/C151 为 Graph 真实 strided 布局提供显式布局族和受检冷实例化；不放宽旧 dense 域、alias 或 warm route。"
     },
     {
       "module": "graph",

@@ -80,3 +80,7 @@ run state 都通过传入 allocator 分配，caller workspace 单独声明，rep
 N21 的 Compute v14 直接消费：Native propose/build_plan 只用栈，prepare/销毁通过 supplied allocator
 取得/释放 NativePlan；故新增 compilation private resident/peak 均为 0。既有 persistent_bytes 仍报告
 NativePlan 大小，但完整 compiler quota 不把它再相加。只补 proposal 冷属性，非新算子/route。
+
+N20 的 [Compute v15](compute-v15-bound-layout-instantiation.md) 布局族直接迁移：既有 bounded RMSNorm
+只证明了 kDerived dense 描述，必须显式拒绝 kBoundedStrided，即使它的 envelope 恰好 dense。
+同时用新增受检描述重载回放原 RMSNorm/错误/OOM/owner 合同；没有新增 kernel 或放宽 N22 资格。
