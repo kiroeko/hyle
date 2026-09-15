@@ -36,6 +36,15 @@ struct CompletionLifetime final {
   }
 };
 
+// Optional metadata embedded in a second retained owner. Its storage must
+// survive until own.release returns. No allocation or backend layout change
+// is needed to retain both the original invocation and a generated result.
+struct CompletionRetention final {
+  CompletionLifetime own{};
+  CompletionLifetime inherited{};
+  CompletionLifetime attachment{};
+};
+
 // Borrowed, backend-private identity for one still-pending Completion. The
 // source handle must outlive every Queue prefix that records a wait against
 // this view. Backends compare the exact vtable before interpreting `state`;
@@ -67,6 +76,10 @@ struct CompletionAccess final {
   // path rather than adding three callback words to every public handle.
   static HYLE_COMPUTE_API Status attach_lifetime(
       Completion &completion, CompletionLifetime &lifetime) noexcept;
+  // Consumes own's reference only on success. On failure both the Completion
+  // and the caller's reference remain unchanged. Do not reuse an active node.
+  static HYLE_COMPUTE_API Status attach_retention(
+      Completion &completion, CompletionRetention &retention) noexcept;
   // Preserve an already-observed backend failure; otherwise replace a future
   // successful terminal state with `terminal`.  Used when an ordered prefix
   // was accepted before a later sequence step was synchronously rejected.

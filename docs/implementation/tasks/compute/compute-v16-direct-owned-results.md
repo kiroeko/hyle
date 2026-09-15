@@ -95,3 +95,28 @@ SCOPED 已于 `5bafe026` 提交；现完成 AUDITED 绑定，D21–D24 与上述
 共享入口与独立入口在冷类型上分开；结果 slot 先取得写入权再接纳工作，publish 不申请内存。
 失败的 publish 保留调用方传入的 Completion，不允许以普通错误丢掉已接纳工作。
 candidate、七门实际结果、限制及统一 LOC 在实施后记录；当前不签 native 路线完成。
+
+## 首版实现及 Windows 检查点
+
+D21–D23 已实现：独立 typed prepare/submit、冷 dependency scratch、可选复合 Completion retention、
+typed OwnedResult/ResultLease 与 private ResultSlot 存储。原 shared Invocation、Completion 和 backend
+event slot 未增字段；新可选 Direct state 复用 private RefCounted，payload 仍归真实 native T。
+emplace 接收显式移动引用 T&&，MSVC 的 128-byte aligned owner 编译反例证明不能用按值形参。
+
+Windows MSVC 19.50.35728 / Ninja / Release、两任务普通回放：Compute、CPU backend、CUDA backend、
+Native CPU 四个 factor 与对应逐头共 9 项门通过。包括 composite 嵌套 owner、旧结果/另一个槽、冷 OOM/
+回滚、128-byte alignment、同槽并发 begin/submit、依赖失败、关闭 Context、晚到错误、取消、跨 DLL
+producer 析构、真实 Native RMSNorm 结果保留和真实 CUDA increment kernel 的终态/abandonment。
+
+CUDA 新 fixture 首次放置 stream gate 后再做首次 kernel 调用导致超时；把首次准备移到 gate 前后解除。
+随后发现 fixture 把 device drain 当作后台 owner 已回收，已按源码的 CompletionReaper 边界加入 owner
+回收信号；信号本身保有 owner，测试退出前等待实际 buffer 释放。没有修改 CUDA backend，也未以固定
+sleep 或计时阈值证明完成。初始编译/超时/错误断言日志保留，只回放受影响 CUDA 门；其余 8 门复用。
+
+P0：新 ResultSlot 冷分配一次 metadata+对齐 T；native payload allocation/destruction 由 T 负责。
+Direct 另有可选冷 state/scratch，热态为既有 bindings 校验、有限依赖转换和 admission/refcount。
+retention 的 completion 引用还保护 terminal 与 release 之间的节点，不能提前复用同一附件。不宣称零成本。
+
+当前仍 AUDITED。Windows 记录在 `C:/hyle-scratch/r2-q4-20260916/direct-tests.log` 与
+`direct-cuda-retest.log`；完整源/静态/动态、Graph/oneDNN 直接消费、WSL/两 Mac 及适用 sanitizer 随稳定
+R2 API 候选统一验收，尚未运行项不签 PASS。本检查点不签完整路线、默认优选规则或 P1。

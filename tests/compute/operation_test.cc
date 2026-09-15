@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "hyle/compute/cpu.h"
+#include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/mem/buffer.h"
@@ -320,6 +321,43 @@ TEST(PreparedOperation, LeavesValidEncodedWeightsForAQualifiedProvider) {
   auto native = hyle::compute::prepare(context, MatMul{}, left, right, output);
   ASSERT_FALSE(native.has_value());
   EXPECT_TRUE(native.error().IsUnimplemented());
+}
+
+TEST(PreparedOperation, NativeCpuResultLeaseRetainsComputedOutput) {
+  hyle::compute::ResultLease<Buffer> retained;
+  const std::array<float, 4> values{1.0F, -2.0F, 3.0F, -4.0F};
+  constexpr float epsilon = 1.0e-5F;
+  {
+    auto context = hyle::compute::cpu::create_context().value();
+    auto queue = context.create_queue().value();
+    const auto description = row_description(values.size());
+    auto input =
+        Buffer::create(hyle::mem::system_resource(), sizeof(values)).value();
+    auto output =
+        Buffer::create(hyle::mem::system_resource(), sizeof(values)).value();
+    write_floats(input.view(), values);
+    const auto input_view =
+        ConstTensorView::create(description, input.view()).value();
+    const auto output_view =
+        TensorView::create(description, output.view()).value();
+    auto prepared =
+        hyle::compute::prepare(context, RmsNorm{epsilon}, description).value();
+    auto invocation = prepared.create_invocation().value();
+    auto slot = hyle::compute::detail::ResultSlot<Buffer>::create(
+                    hyle::mem::system_allocator())
+                    .value();
+    auto write = slot.begin().value();
+    ASSERT_TRUE(write.emplace(std::move(output)).ok());
+    auto completion = invocation.submit(queue, input_view, output_view);
+    ASSERT_TRUE(completion.has_value());
+    auto submitted = write.publish(std::move(*completion));
+    ASSERT_TRUE(submitted.has_value());
+    auto ready = submitted->wait();
+    ASSERT_TRUE(ready.has_value());
+    retained = *ready;
+  }
+  expect_rms_norm(values, {}, read_floats(retained->view(), values.size()),
+                  epsilon);
 }
 
 TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {

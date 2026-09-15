@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <thread>
 #include <utility>
@@ -11,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/error/status.h"
@@ -47,6 +49,100 @@ struct HostStreamGate final {
     gate.released.wait(false, std::memory_order_acquire);
   }
 };
+
+struct OwnedCudaBuffer final {
+  mem::Buffer buffer;
+  std::shared_ptr<std::atomic<int>> destroyed;
+  OwnedCudaBuffer(mem::Buffer value,
+                  std::shared_ptr<std::atomic<int>> counter) noexcept
+      : buffer(std::move(value)), destroyed(std::move(counter)) {}
+  OwnedCudaBuffer(OwnedCudaBuffer &&other) noexcept
+      : buffer(std::move(other.buffer)),
+        destroyed(std::move(other.destroyed)) {}
+  ~OwnedCudaBuffer() {
+    if (destroyed) {
+      buffer = {};
+      destroyed->fetch_add(1, std::memory_order_release);
+      destroyed->notify_all();
+    }
+  }
+};
+
+TEST(CudaBackend, OwnedKernelResultWaitAndAbandonmentPreserveNativeStorage) {
+  using hyle::compute::detail::ResultSlot;
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(1).ok());
+  auto resident =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  for (bool abandon : {false, true}) {
+    auto destroyed = std::make_shared<std::atomic<int>>(0);
+    HostStreamGate gate;
+    struct ReleaseGate final {
+      HostStreamGate &gate;
+      Context &context;
+      std::shared_ptr<std::atomic<int>> destroyed;
+      bool has_owner = false;
+      void release() noexcept {
+        gate.released.store(true, std::memory_order_release);
+        gate.released.notify_all();
+      }
+      ~ReleaseGate() {
+        release();
+        context.drain().IgnoreError();
+        if (has_owner)
+          destroyed->wait(0, std::memory_order_acquire);
+      }
+    } release{gate, context, destroyed};
+    {
+      auto slot =
+          ResultSlot<OwnedCudaBuffer>::create(mem::system_allocator()).value();
+      auto write = slot.begin().value();
+      auto buffer = mem::Buffer::create(resident.ref(), 256).value();
+      ASSERT_TRUE(buffer.view().fill(std::byte{41}).ok());
+      auto pointer = cuda::pointer<std::byte>(buffer.view()).value();
+      // Finish first-use kernel preparation before placing a blocking host
+      // callback on this stream. The controlled gate covers result retirement.
+      auto prepared = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+        return launch_increment_kernel(stream, pointer, 256);
+      });
+      ASSERT_TRUE(prepared.has_value());
+      ASSERT_TRUE(prepared->wait().ok());
+      ASSERT_TRUE(buffer.view().fill(std::byte{41}).ok());
+      ASSERT_TRUE(
+          write.emplace(OwnedCudaBuffer(std::move(buffer), destroyed)).ok());
+      release.has_owner = true;
+      auto completion = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+        const auto gated =
+            cudaLaunchHostFunc(stream, &HostStreamGate::wait, &gate);
+        if (gated != cudaSuccess)
+          return gated;
+        return launch_increment_kernel(stream, pointer, 256);
+      });
+      ASSERT_TRUE(completion.has_value());
+      auto submitted = write.publish(std::move(*completion));
+      ASSERT_TRUE(submitted.has_value());
+      EXPECT_EQ(submitted->poll().value(), CompletionPoll::kPending);
+      EXPECT_FALSE(slot.begin().has_value());
+      if (!abandon) {
+        release.release();
+        auto ready = submitted->wait();
+        ASSERT_TRUE(ready.has_value());
+        std::array<std::byte, 256> observed{};
+        ASSERT_TRUE((*ready)->buffer.read(0, observed).ok());
+        for (auto value : observed)
+          EXPECT_EQ(value, std::byte{42});
+      }
+    }
+    EXPECT_EQ(destroyed->load(), abandon ? 0 : 1);
+    release.release();
+    ASSERT_TRUE(context.drain().ok());
+    // Device drain and background owner retirement are distinct boundaries.
+    // Await the owner's explicit signal before destroying its resource owner.
+    destroyed->wait(0, std::memory_order_acquire);
+    EXPECT_EQ(destroyed->load(), 1);
+  }
+}
 
 TEST(CudaBackend, SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion) {
   ASSERT_EQ(cudaSetDevice(0), cudaSuccess);

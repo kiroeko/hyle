@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <barrier>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -11,6 +12,7 @@
 #include "backend_internal.h"
 #include "completion_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/delegated_operation.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/provider_extension.h"
@@ -618,6 +620,10 @@ struct DelegatedProbe final {
   std::size_t invocation_destroy_count = 0;
   bool fail = false;
   bool return_invalid_artifact = false;
+  bool attach_owner = false;
+  std::size_t owner_terminal_count = 0;
+  std::size_t owner_release_count = 0;
+  hyle::compute::detail::CompletionLifetime provider_lifetime{};
 };
 
 constexpr int kDelegatedEndpointAuthority = 0;
@@ -772,7 +778,7 @@ void destroy_delegated_invocation(
 
 hyle::Result<hyle::compute::Completion> submit_delegated(
     void *, void *invocation_value,
-    std::span<const hyle::compute::detail::CompletionDependency>,
+    std::span<const hyle::compute::detail::CompletionDependency> dependencies,
     std::span<const hyle::compute::ConstTensorView> inputs,
     std::span<const hyle::compute::TensorView> outputs) noexcept {
   auto *invocation = static_cast<DelegatedInvocation *>(invocation_value);
@@ -780,6 +786,14 @@ hyle::Result<hyle::compute::Completion> submit_delegated(
     return std::unexpected(
         hyle::Status::Internal("delegated bindings are invalid"));
   DelegatedProbe &probe = *invocation->context->probe;
+  for (const auto &dependency : dependencies) {
+    if (dependency.terminal_hint != nullptr && !dependency.terminal_hint->ok())
+      return std::unexpected(*dependency.terminal_hint);
+    if (dependency.pending() &&
+        dependency.vtable != &kDelegatedCompletionVTable)
+      return std::unexpected(hyle::Status::Unimplemented(
+          "test runtime cannot import this dependency"));
+  }
   if (probe.pending != nullptr) {
     return std::unexpected(
         hyle::Status::FailedPrecondition("delegated runtime is occupied"));
@@ -801,6 +815,20 @@ hyle::Result<hyle::compute::Completion> submit_delegated(
     release_delegated_completion(state);
     return std::unexpected(
         hyle::Status::Internal("delegated completion creation failed"));
+  }
+  if (probe.attach_owner) {
+    probe.provider_lifetime = {
+        &probe,
+        [](void *value, const hyle::Status &) noexcept {
+          ++static_cast<DelegatedProbe *>(value)->owner_terminal_count;
+        },
+        [](void *value) noexcept {
+          ++static_cast<DelegatedProbe *>(value)->owner_release_count;
+        }};
+    const auto attached =
+        hyle::compute::detail::CompletionAccess::attach_lifetime(
+            completion, probe.provider_lifetime);
+    HYLE_FATAL_ASSERT(attached.ok());
   }
   return completion;
 }
@@ -1921,6 +1949,147 @@ TEST(RuntimeProviders, InvocationFailureDestroysPartialWithItsSelectedOwner) {
   }
   EXPECT_EQ(probe.invocation_destroy_count, 3u);
   EXPECT_EQ(sufficient.used(), 0u);
+}
+
+TEST(RuntimeProviders,
+     PublicDelegatedDirectChecksBindingsAndRetainsBothOwners) {
+  DelegatedProbe probe;
+  probe.attach_owner = true;
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_delegated_provider(probe))
+                     .value();
+  const std::array<std::int64_t, 1> shape{4};
+  const auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
+          .value();
+  auto input_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 16).value();
+  auto output_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 16).value();
+  const std::array inputs{
+      hyle::compute::ConstTensorView::create(description, input_buffer.view())
+          .value()};
+  const std::array outputs{
+      hyle::compute::TensorView::create(description, output_buffer.view())
+          .value()};
+  const hyle::compute::Operation operation(
+      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg});
+  auto prepared =
+      hyle::compute::prepare_delegated(context, operation, inputs, outputs);
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(prepared->runtime_properties().mode,
+            hyle::compute::ProviderRuntimeMode::kDelegated);
+  auto invocation = prepared->create_invocation({.dependency_capacity = 1});
+  ASSERT_TRUE(invocation.has_value());
+  EXPECT_FALSE(invocation->submit({}, outputs).has_value());
+  hyle::compute::Completion invalid;
+  const std::array invalid_dependency{&invalid};
+  EXPECT_FALSE(invocation->submit_after(invalid_dependency, inputs, outputs)
+                   .has_value());
+  auto ready = hyle::compute::Completion::completed();
+  const std::array too_many{&ready, &ready};
+  auto overflow = invocation->submit_after(too_many, inputs, outputs);
+  ASSERT_FALSE(overflow.has_value());
+  EXPECT_TRUE(overflow.error().IsResourceExhausted());
+  EXPECT_EQ(probe.submit_count, 0u);
+  const std::array dependencies{&ready};
+  auto source_failure = hyle::compute::Completion::completed(
+      hyle::Status::Unavailable("source runtime failed"));
+  const std::array failed_dependencies{&source_failure};
+  auto dependency_failure =
+      invocation->submit_after(failed_dependencies, inputs, outputs);
+  ASSERT_FALSE(dependency_failure.has_value());
+  EXPECT_TRUE(dependency_failure.error().IsUnavailable());
+  EXPECT_EQ(probe.submit_count, 0u);
+  auto completion = invocation->submit_after(dependencies, inputs, outputs);
+  ASSERT_TRUE(completion.has_value());
+  EXPECT_TRUE(invocation->in_flight());
+  ASSERT_NE(probe.pending, nullptr);
+  EXPECT_FALSE(probe.pending->complete); // submit did not hide a wait
+  EXPECT_FALSE(invocation->submit(inputs, outputs).has_value());
+  EXPECT_TRUE(invocation->in_flight());
+  EXPECT_EQ(completion->poll().value(),
+            hyle::compute::CompletionPoll::kPending);
+  ASSERT_TRUE(completion->wait().ok());
+  EXPECT_FALSE(invocation->in_flight());
+  EXPECT_EQ(probe.owner_terminal_count, 1u);
+  EXPECT_EQ(probe.owner_release_count, 1u);
+
+  probe.fail = true;
+  auto failed = invocation->submit(inputs, outputs);
+  ASSERT_TRUE(failed.has_value());
+  EXPECT_TRUE(failed->wait().IsDataLoss());
+  probe.fail = false;
+  auto cancelled = invocation->submit(inputs, outputs);
+  ASSERT_TRUE(cancelled.has_value());
+  ASSERT_TRUE(cancelled->request_cancel().ok());
+  EXPECT_TRUE(cancelled->wait().IsCancelled());
+  EXPECT_EQ(probe.owner_release_count, 3u);
+
+  std::array<hyle::compute::Completion, 2> competing;
+  std::barrier start(3);
+  auto submit = [&](std::size_t index) {
+    start.arrive_and_wait();
+    auto attempt = invocation->submit(inputs, outputs);
+    if (attempt)
+      competing[index] = std::move(*attempt);
+    else
+      EXPECT_TRUE(attempt.error().IsFailedPrecondition());
+  };
+  std::thread first(submit, 0), second(submit, 1);
+  start.arrive_and_wait();
+  first.join();
+  second.join();
+  EXPECT_NE(competing[0].valid(), competing[1].valid());
+  *invocation = {};
+  *prepared = {};
+  competing = {};
+  EXPECT_EQ(probe.invocation_destroy_count, 0u);
+  EXPECT_EQ(probe.owner_release_count, 3u);
+  ASSERT_TRUE(context.drain().ok());
+  EXPECT_EQ(probe.invocation_destroy_count, 1u);
+  EXPECT_EQ(probe.owner_release_count, 4u);
+}
+
+TEST(RuntimeProviders,
+     DelegatedDirectRejectsClosedContextAndInvalidPreparation) {
+  DelegatedProbe probe;
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_delegated_provider(probe))
+                     .value();
+  const std::array<std::int64_t, 1> shape{1};
+  const auto description =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
+          .value();
+  const std::array descriptions{description};
+  const std::array resources{hyle::mem::system_resource()};
+  const hyle::compute::Operation operation(
+      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg});
+  auto prepared = hyle::compute::prepare_delegated(
+      context, operation, descriptions, descriptions,
+      {.inputs = resources, .outputs = resources});
+  ASSERT_TRUE(prepared.has_value());
+  auto invocation = prepared->create_invocation();
+  ASSERT_TRUE(invocation.has_value());
+  auto input_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 4).value();
+  auto output_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 4).value();
+  const std::array inputs{
+      hyle::compute::ConstTensorView::create(description, input_buffer.view())
+          .value()};
+  const std::array outputs{
+      hyle::compute::TensorView::create(description, output_buffer.view())
+          .value()};
+  auto invalid =
+      hyle::compute::prepare_delegated({}, operation, inputs, outputs);
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsFailedPrecondition());
+  ASSERT_TRUE(context.close().ok());
+  auto rejected = invocation->submit(inputs, outputs);
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+  EXPECT_EQ(probe.submit_count, 0u);
 }
 
 TEST(RuntimeProviders,

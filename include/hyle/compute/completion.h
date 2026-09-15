@@ -16,10 +16,11 @@ struct CompletionLifetime;
 struct CompletionVTable;
 } // namespace detail
 
-// Move-only terminal owner returned after a Queue accepts work. Immediate CPU
-// completions stay inline; asynchronous implementations own their event state
-// through a static vtable. Destroying a Completion never performs a hidden
-// wait, so a backend must keep late work and required runtime state safe.
+// Move-only terminal owner returned after an execution runtime accepts work.
+// Immediate CPU completions stay inline; asynchronous implementations own their
+// event state through a static vtable. Destroying a Completion never performs a
+// hidden wait, so a backend must keep late work and required runtime state
+// safe.
 class [[nodiscard]] Completion final {
 public:
   Completion() noexcept = default;

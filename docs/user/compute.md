@@ -502,8 +502,9 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   `in_flight()` 可观察该 lane 是否仍被一次提交占用，重叠 submit 明确失败。Completion 会保活 provider
   invocation，因此丢弃外层 `OperationInvocation` handle 不会提前销毁异步状态；Context 关闭后 retained
   artifact 仍可创建 invocation，但任何 submit 都会失败。
-- 公开 direct prepare 只考虑 shared-Queue provider。delegated provider 由 Graph 在 compile 冷路径选择，
-  必须提供真实 endpoint/dependency/Completion/drain 合同；它不会假装在传入的 Queue 上执行。
+- `prepare` 选择 shared-Queue provider；`prepare_delegated` 在冷路径绑定独立 runtime，返回专用的
+  `PreparedDelegatedOperation` / `DelegatedInvocation`，其 `submit(inputs, outputs)` 不接收 Queue。
+  两种类型在准备时区分，执行不重新搜索 Provider。独立 runtime 仍须提供真实 dependency/Completion/drain 合同。
 - Tensor views 不拥有 payload。Mem Buffer/resource、调用方 workspace 以及 Queue 必须活到 Completion 终态。
   direct op 和 Graph 都把自己的 invocation/provider state owner 附着到最终 Completion；这种内部附件不改变
   caller tensor、workspace 或 Queue 的借用合同。
@@ -516,6 +517,15 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   不要通过包含 `src/` 私有 Provider SPI 模拟公开扩展。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。
+- `DelegatedInvocationOptions::dependency_capacity` 在冷创建时预留依赖 scratch；零默认 input_count+1。
+  `submit_after(span<const Completion* const>, inputs, outputs)` 校验容量及依赖。源 Completion 与输入/输出
+  storage 必须活过消费完成，期间不能移动、销毁或 settle 源句柄的 native state；不支持的 native 依赖在接纳前拒绝，
+  不暗中 host wait。若 runtime 不支持并行 invocation，调用者须将同一 Prepared 的执行串行到真实终态。
+- `OwnedResult<T>` 持有原生 owning T 和真实 Completion；`wait()` 成功返回可复制的 `ResultLease<T>`，
+  `result()` 只 poll，pending 明确返回 FailedPrecondition，失败/取消不产生 ready lease。保留 lease 后，
+  原提交对象和生产槽可销毁；同槽仍有结果引用时不能覆盖，另一槽可继续使用。T 的 runtime 决定如何读其数据，
+  HYLE 不把它伪装为 Mem allocation，也不隐式创建 host shadow copy。注入 allocator 必须活过所有结果引用。
+  这些共同接口尚不代表 MLX/Metal 或 Vulkan 路线已经交付；原生 Program 与默认规则由对应路线落实。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；同一 ordered Queue 是单 producer 提交域，两个线程同时录入会明确失败。Graph 会用

@@ -1,3 +1,4 @@
+#include "hyle/compute/delegated_operation.h"
 #include "hyle/compute/prepared_operation.h"
 
 #include <algorithm>
@@ -1081,11 +1082,13 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
   return PreparedOperation(result);
 }
 
-Result<PreparedOperation>
-prepare(const Context &context, Operation operation,
-        std::span<const TensorDesc> inputs,
-        std::span<const TensorDesc> outputs,
-        OperationResourceBindings resources) noexcept {
+namespace {
+Result<PreparedOperation> prepare_for_mode(const Context &context,
+                                           Operation operation,
+                                           std::span<const TensorDesc> inputs,
+                                           std::span<const TensorDesc> outputs,
+                                           OperationResourceBindings resources,
+                                           ProviderRuntimeMode mode) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -1111,11 +1114,9 @@ prepare(const Context &context, Operation operation,
       continue;
     if (!proposal)
       return std::unexpected(std::move(proposal).error());
-    // The public direct route promises execution on the caller's Queue.
-    // Delegated artifacts are selected only by Graph through the internal
-    // proposal/exact-prepare seam; returning one here would hand a direct
-    // caller an OperationInvocation that it cannot submit.
-    if (proposal->runtime.mode != ProviderRuntimeMode::kSharedQueue)
+    // Bind mode once at prepare, preserving each public invocation's type
+    // invariant. Execution does not repeat this provider search.
+    if (proposal->runtime.mode != mode)
       continue;
     auto attempt = detail::OperationPreparationAccess::prepare_candidate(
         context, *proposal, operation, inputs, outputs,
@@ -1130,6 +1131,27 @@ prepare(const Context &context, Operation operation,
   }
   return std::unexpected(Status::Unimplemented(
       "no configured compute provider supports this operation"));
+}
+} // namespace
+
+Result<PreparedOperation>
+prepare(const Context &context, Operation operation,
+        std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
+        OperationResourceBindings resources) noexcept {
+  return prepare_for_mode(context, operation, inputs, outputs, resources,
+                          ProviderRuntimeMode::kSharedQueue);
+}
+
+Result<PreparedDelegatedOperation>
+prepare_delegated(const Context &context, Operation operation,
+                  std::span<const TensorDesc> inputs,
+                  std::span<const TensorDesc> outputs,
+                  OperationResourceBindings resources) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto prepared,
+                        prepare_for_mode(context, operation, inputs, outputs,
+                                         resources,
+                                         ProviderRuntimeMode::kDelegated));
+  return PreparedDelegatedOperation(std::move(prepared));
 }
 
 Result<PreparedOperation>
@@ -1164,11 +1186,13 @@ prepare(const Context &context, Operation operation,
                  });
 }
 
+namespace {
 Result<PreparedOperation>
-prepare(const Context &context, Operation operation,
-        std::span<const ConstTensorView> inputs,
-        std::span<const TensorView> outputs,
-        mem::MemoryResourceRef workspace_resource) noexcept {
+prepare_views_for_mode(const Context &context, Operation operation,
+                       std::span<const ConstTensorView> inputs,
+                       std::span<const TensorView> outputs,
+                       mem::MemoryResourceRef workspace_resource,
+                       ProviderRuntimeMode mode) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -1201,13 +1225,37 @@ prepare(const Context &context, Operation operation,
     output_descriptions[index] = outputs[index].description();
     output_resources[index] = outputs[index].storage().resource();
   }
-  return prepare(context, operation, input_descriptions.span(),
-                 output_descriptions.span(),
-                 OperationResourceBindings{
-                     .inputs = input_resources.span(),
-                     .outputs = output_resources.span(),
-                     .workspace_resource = workspace_resource,
-                 });
+  return prepare_for_mode(context, operation, input_descriptions.span(),
+                          output_descriptions.span(),
+                          OperationResourceBindings{
+                              .inputs = input_resources.span(),
+                              .outputs = output_resources.span(),
+                              .workspace_resource = workspace_resource,
+                          },
+                          mode);
+}
+} // namespace
+
+Result<PreparedOperation>
+prepare(const Context &context, Operation operation,
+        std::span<const ConstTensorView> inputs,
+        std::span<const TensorView> outputs,
+        mem::MemoryResourceRef workspace_resource) noexcept {
+  return prepare_views_for_mode(context, operation, inputs, outputs,
+                                workspace_resource,
+                                ProviderRuntimeMode::kSharedQueue);
+}
+
+Result<PreparedDelegatedOperation>
+prepare_delegated(const Context &context, Operation operation,
+                  std::span<const ConstTensorView> inputs,
+                  std::span<const TensorView> outputs,
+                  mem::MemoryResourceRef workspace_resource) noexcept {
+  HYLE_ASSIGN_OR_RETURN(
+      auto prepared, prepare_views_for_mode(context, operation, inputs, outputs,
+                                            workspace_resource,
+                                            ProviderRuntimeMode::kDelegated));
+  return PreparedDelegatedOperation(std::move(prepared));
 }
 
 Result<PreparedOperation> prepare(const Context &context, View operation,
@@ -1871,6 +1919,164 @@ Result<Completion> OperationInvocation::submit(
     const TensorView &second_output) noexcept {
   const std::array outputs{first_output, second_output};
   return submit(queue, std::span<const ConstTensorView>(&input, 1), outputs);
+}
+
+namespace detail {
+
+struct DirectDelegatedState final : util::RefCounted<DirectDelegatedState> {
+  OperationInvocation invocation{};
+  mem::AllocatorRef allocator{};
+  std::size_t allocation_size = 0;
+  std::size_t dependency_capacity = 0;
+  CompletionRetention retention{};
+  std::atomic_flag submitting = ATOMIC_FLAG_INIT;
+  std::atomic<bool> pending{false};
+
+  CompletionDependency *dependencies() noexcept {
+    return reinterpret_cast<CompletionDependency *>(this + 1);
+  }
+  void destroy() noexcept {
+    const auto owner = allocator;
+    const auto bytes = allocation_size;
+    std::destroy_n(dependencies(), dependency_capacity);
+    std::destroy_at(this);
+    owner.deallocate(this, bytes, alignof(DirectDelegatedState));
+  }
+};
+static_assert(alignof(DirectDelegatedState) >= alignof(CompletionDependency));
+
+} // namespace detail
+
+Result<DelegatedInvocation> PreparedDelegatedOperation::create_invocation(
+    DelegatedInvocationOptions options) const noexcept {
+  if (!valid())
+    return std::unexpected(
+        Status::FailedPrecondition("prepared operation is invalid"));
+  const auto limit = std::numeric_limits<std::size_t>::max();
+  if (options.dependency_capacity == 0) {
+    if (input_count() == limit)
+      return std::unexpected(
+          Status::ResourceExhausted("dependency count overflows"));
+    options.dependency_capacity = input_count() + 1;
+  }
+  if (options.dependency_capacity >
+      (limit - sizeof(detail::DirectDelegatedState)) /
+          sizeof(detail::CompletionDependency))
+    return std::unexpected(
+        Status::ResourceExhausted("dependency storage overflows"));
+  const auto bytes =
+      sizeof(detail::DirectDelegatedState) +
+      options.dependency_capacity * sizeof(detail::CompletionDependency);
+  const auto allocator = prepared_.state_->allocator;
+  void *memory =
+      allocator.allocate(bytes, alignof(detail::DirectDelegatedState));
+  if (memory == nullptr)
+    return std::unexpected(
+        Status::ResourceExhausted("delegated invocation allocation failed"));
+  auto *state =
+      std::construct_at(static_cast<detail::DirectDelegatedState *>(memory));
+  state->allocator = allocator;
+  state->allocation_size = bytes;
+  state->dependency_capacity = options.dependency_capacity;
+  for (std::size_t index = 0; index < options.dependency_capacity; ++index)
+    std::construct_at(state->dependencies() + index);
+  auto invocation = prepared_.create_invocation(options.workspace);
+  if (!invocation) {
+    state->decref();
+    return std::unexpected(std::move(invocation).error());
+  }
+  state->invocation = std::move(*invocation);
+  return DelegatedInvocation(state);
+}
+
+DelegatedInvocation::DelegatedInvocation(DelegatedInvocation &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+
+DelegatedInvocation &
+DelegatedInvocation::operator=(DelegatedInvocation &&other) noexcept {
+  if (this != &other) {
+    if (state_ != nullptr)
+      state_->decref();
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+
+DelegatedInvocation::~DelegatedInvocation() {
+  if (state_ != nullptr)
+    state_->decref();
+}
+
+bool DelegatedInvocation::in_flight() const noexcept {
+  return state_ != nullptr && state_->pending.load(std::memory_order_acquire);
+}
+
+ProviderIdentity DelegatedInvocation::provider() const noexcept {
+  return state_ != nullptr ? state_->invocation.provider() : ProviderIdentity{};
+}
+
+Result<Completion> DelegatedInvocation::submit_after(
+    std::span<const Completion *const> dependencies,
+    std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  if (!valid())
+    return std::unexpected(
+        Status::FailedPrecondition("delegated invocation is invalid"));
+  if (state_->submitting.test_and_set(std::memory_order_acquire))
+    return std::unexpected(
+        Status::FailedPrecondition("delegated submit is already active"));
+  struct SubmitGuard final {
+    detail::DirectDelegatedState &state;
+    bool accepted = false;
+    ~SubmitGuard() {
+      if (!accepted)
+        state.pending.store(false, std::memory_order_release);
+      state.submitting.clear(std::memory_order_release);
+    }
+  } guard{*state_};
+  // The completion reference also protects the retention node between its
+  // terminal notification and final release. Do not overwrite it in that gap.
+  if (state_->pending.load(std::memory_order_acquire) || !state_->is_unique()) {
+    guard.accepted = true; // leave the previous run's pending flag unchanged
+    return std::unexpected(
+        Status::FailedPrecondition("delegated invocation is still retained"));
+  }
+  if (dependencies.size() > state_->dependency_capacity)
+    return std::unexpected(
+        Status::ResourceExhausted("delegated dependency capacity exceeded"));
+  HYLE_RETURN_IF_ERROR(
+      validate_bindings(*state_->invocation.state_->prepared, inputs, outputs));
+  for (std::size_t index = 0; index < dependencies.size(); ++index) {
+    if (dependencies[index] == nullptr || !dependencies[index]->valid())
+      return std::unexpected(
+          Status::InvalidArgument("delegated dependency is invalid"));
+    state_->dependencies()[index] =
+        detail::CompletionAccess::dependency(*dependencies[index]);
+  }
+  state_->pending.store(true, std::memory_order_release);
+  auto completion =
+      detail::OperationInvocationAccess::submit_delegated_borrowed_prevalidated(
+          state_->invocation, {state_->dependencies(), dependencies.size()},
+          inputs, outputs);
+  if (!completion)
+    return std::unexpected(std::move(completion).error());
+  state_->incref();
+  state_->retention.own = {
+      state_,
+      [](void *state, const Status &) noexcept {
+        static_cast<detail::DirectDelegatedState *>(state)->pending.store(
+            false, std::memory_order_release);
+      },
+      [](void *state) noexcept {
+        static_cast<detail::DirectDelegatedState *>(state)->decref();
+      }};
+  // All preconditions were checked before acceptance: a valid Completion and
+  // an idle, embedded retention node. Attachment cannot allocate or decline.
+  const auto attached = detail::CompletionAccess::attach_retention(
+      *completion, state_->retention);
+  HYLE_FATAL_ASSERT(attached.ok());
+  guard.accepted = true;
+  return completion;
 }
 
 } // namespace hyle::compute

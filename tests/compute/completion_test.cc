@@ -1,10 +1,19 @@
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <barrier>
 #include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <thread>
 #include <utility>
 
 #include "completion_internal.h"
 #include "hyle/compute/completion.h"
+#include "hyle/compute/detail/generated_result.h"
+#if !defined(HYLE_STATIC)
+#include "result_owner_fixture.h"
+#endif
 
 namespace {
 
@@ -106,6 +115,253 @@ TEST(Completion, ImmediateSuccessAndFailureRemainInline) {
   EXPECT_TRUE(failed_poll.error().IsUnavailable());
   EXPECT_TRUE(failure.wait().IsUnavailable());
 }
+
+TEST(Completion, CompositeRetentionPreservesBothOwnersAndRejectsReuse) {
+  AsyncProbe probe;
+  LifetimeProbe first, second, third;
+  using namespace hyle::compute::detail;
+  CompletionLifetime original{&first, &observe_terminal, &release_lifetime};
+  CompletionRetention extra{{&second, &observe_terminal, &release_lifetime}};
+  CompletionRetention outer{{&third, &observe_terminal, &release_lifetime}};
+  auto completion = CompletionAccess::make(&kAsyncVTable, &probe);
+  ASSERT_TRUE(CompletionAccess::attach_lifetime(completion, original).ok());
+  ASSERT_TRUE(CompletionAccess::attach_retention(completion, extra).ok());
+  EXPECT_TRUE(CompletionAccess::attach_retention(completion, extra)
+                  .IsInvalidArgument());
+  ASSERT_TRUE(CompletionAccess::attach_retention(completion, outer).ok());
+  ASSERT_TRUE(completion.wait().ok());
+  for (const auto *owner : {&first, &second, &third}) {
+    EXPECT_EQ(owner->terminal_count, 1u);
+    EXPECT_EQ(owner->release_count, 1u);
+    EXPECT_TRUE(owner->terminal_ok);
+  }
+  EXPECT_FALSE(extra.attachment.valid());
+  EXPECT_FALSE(outer.attachment.valid());
+}
+
+struct TrackedResult final {
+  std::unique_ptr<int> value;
+  int *destroyed = nullptr;
+  TrackedResult(int number, int &counter)
+      : value(std::make_unique<int>(number)), destroyed(&counter) {}
+  TrackedResult(TrackedResult &&) noexcept = default;
+  ~TrackedResult() {
+    if (value)
+      ++*destroyed;
+  }
+};
+
+TEST(OwnedResult, RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite) {
+  using namespace hyle::compute;
+  auto first =
+      detail::ResultSlot<TrackedResult>::create(hyle::mem::system_allocator());
+  auto second =
+      detail::ResultSlot<TrackedResult>::create(hyle::mem::system_allocator());
+  ASSERT_TRUE(first.has_value());
+  ASSERT_TRUE(second.has_value());
+  int destroyed = 0;
+  ResultLease<TrackedResult> lease;
+  {
+    auto write = first->begin();
+    ASSERT_TRUE(write.has_value());
+    EXPECT_FALSE(first->begin().has_value());
+    ASSERT_TRUE(write->emplace(TrackedResult(42, destroyed)).ok());
+    auto submission = write->publish(Completion::completed());
+    ASSERT_TRUE(submission.has_value());
+    auto ready = submission->wait();
+    ASSERT_TRUE(ready.has_value());
+    lease = *ready;
+    EXPECT_EQ(*lease->value, 42);
+    EXPECT_FALSE(first->begin().has_value());
+    auto other = second->begin();
+    ASSERT_TRUE(other.has_value());
+    ASSERT_TRUE(other->emplace(TrackedResult(81, destroyed)).ok());
+    auto another = other->publish(Completion::completed());
+    ASSERT_TRUE(another.has_value());
+    EXPECT_EQ(*another->wait().value()->value, 81);
+  }
+  first = detail::ResultSlot<TrackedResult>{};
+  second = detail::ResultSlot<TrackedResult>{};
+  EXPECT_EQ(destroyed, 1);
+  EXPECT_EQ(*lease->value, 42);
+  auto copy = lease;
+  lease = {};
+  EXPECT_EQ(destroyed, 1);
+  copy = {};
+  EXPECT_EQ(destroyed, 2);
+}
+
+TEST(OwnedResult, AbandonmentKeepsNativeOwnerUntilRealTerminal) {
+  using namespace hyle::compute;
+  int destroyed = 0;
+  AsyncProbe probe;
+  LifetimeProbe invocation;
+  detail::CompletionLifetime original{&invocation, &observe_terminal,
+                                      &release_lifetime};
+  {
+    auto slot = detail::ResultSlot<TrackedResult>::create(
+        hyle::mem::system_allocator());
+    ASSERT_TRUE(slot.has_value());
+    auto write = slot->begin();
+    ASSERT_TRUE(write.has_value());
+    ASSERT_TRUE(write->emplace(TrackedResult(17, destroyed)).ok());
+    auto completion = detail::CompletionAccess::make(&kAsyncVTable, &probe);
+    ASSERT_TRUE(
+        detail::CompletionAccess::attach_lifetime(completion, original).ok());
+    auto submission = write->publish(std::move(completion));
+    ASSERT_TRUE(submission.has_value());
+    EXPECT_FALSE(submission->result().has_value());
+    EXPECT_FALSE(slot->begin().has_value());
+    EXPECT_EQ(probe.waits, 0u);
+  }
+  EXPECT_EQ(destroyed, 0);
+  EXPECT_EQ(invocation.release_count, 0u);
+  ASSERT_TRUE(probe.abandoned.valid());
+  const auto retired = std::exchange(probe.abandoned, {});
+  retired.terminal(retired.state, hyle::Status::Ok());
+  retired.release(retired.state);
+  EXPECT_EQ(invocation.release_count, 1u);
+  EXPECT_EQ(destroyed, 1);
+  EXPECT_EQ(probe.waits, 0u);
+}
+
+TEST(OwnedResult, FailureAndCancellationDoNotPublishReadyLease) {
+  using namespace hyle::compute;
+  auto slot =
+      detail::ResultSlot<TrackedResult>::create(hyle::mem::system_allocator());
+  ASSERT_TRUE(slot.has_value());
+  int destroyed = 0;
+  for (bool cancel : {false, true}) {
+    AsyncProbe probe;
+    auto write = slot->begin();
+    ASSERT_TRUE(write.has_value());
+    ASSERT_TRUE(write->emplace(TrackedResult(7, destroyed)).ok());
+    auto completion = detail::CompletionAccess::make(&kAsyncVTable, &probe);
+    if (!cancel)
+      detail::CompletionAccess::append_terminal(
+          completion, hyle::Status::Unavailable("late failure"));
+    auto submission = write->publish(std::move(completion));
+    ASSERT_TRUE(submission.has_value());
+    if (cancel) {
+      ASSERT_TRUE(submission->request_cancel().ok());
+    }
+    auto ready = submission->wait();
+    ASSERT_FALSE(ready.has_value());
+    EXPECT_EQ(ready.error().code(), cancel ? hyle::StatusCode::Cancelled
+                                           : hyle::StatusCode::Unavailable);
+    EXPECT_FALSE(submission->result().has_value());
+    EXPECT_FALSE(slot->begin().has_value());
+  }
+  auto next = slot->begin();
+  ASSERT_TRUE(next.has_value());
+  EXPECT_EQ(destroyed, 2);
+}
+
+TEST(OwnedResult, InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover) {
+  using namespace hyle::compute;
+  int destroyed = 0;
+  auto slot =
+      detail::ResultSlot<TrackedResult>::create(hyle::mem::system_allocator());
+  ASSERT_TRUE(slot.has_value());
+  auto write = slot->begin();
+  ASSERT_TRUE(write.has_value());
+  auto completion = Completion::completed();
+  EXPECT_FALSE(write->publish(std::move(completion)).has_value());
+  EXPECT_TRUE(completion.valid());
+  ASSERT_TRUE(write->emplace(TrackedResult(9, destroyed)).ok());
+  Completion invalid;
+  EXPECT_FALSE(write->publish(std::move(invalid)).has_value());
+  auto accepted = write->publish(std::move(completion));
+  ASSERT_TRUE(accepted.has_value());
+  EXPECT_FALSE(completion.valid());
+  EXPECT_EQ(*accepted->wait().value()->value, 9);
+  EXPECT_FALSE(write->publish(Completion::completed()).has_value());
+}
+
+TEST(OwnedResult, ColdAllocationFailureAndUnsubmittedRollback) {
+  using namespace hyle::compute;
+  EXPECT_FALSE(detail::ResultSlot<int>::create({}).has_value());
+  hyle::mem::AllocatorRef exhausted{
+      [](void *, std::size_t, std::size_t) noexcept -> void * {
+        return nullptr;
+      },
+      [](void *, void *, std::size_t, std::size_t) noexcept {},
+      [](void *, void *, std::size_t, std::size_t,
+         std::size_t) noexcept -> void * { return nullptr; },
+      nullptr};
+  auto failed = detail::ResultSlot<int>::create(exhausted);
+  ASSERT_FALSE(failed.has_value());
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+  int destroyed = 0;
+  auto slot =
+      detail::ResultSlot<TrackedResult>::create(hyle::mem::system_allocator());
+  ASSERT_TRUE(slot.has_value());
+  {
+    auto write = slot->begin();
+    ASSERT_TRUE(write.has_value());
+    ASSERT_TRUE(write->emplace(TrackedResult(3, destroyed)).ok());
+  }
+  EXPECT_EQ(destroyed, 1);
+  EXPECT_TRUE(slot->begin().has_value());
+  OwnedResult<int> invalid;
+  EXPECT_FALSE(invalid.wait().has_value());
+  EXPECT_FALSE(invalid.result().has_value());
+}
+
+TEST(OwnedResult, OveralignedOwnerAndConcurrentBeginAdmission) {
+  using namespace hyle::compute;
+  struct alignas(128) AlignedOwner final {
+    int value = 0;
+  };
+  auto slot =
+      detail::ResultSlot<AlignedOwner>::create(hyle::mem::system_allocator());
+  ASSERT_TRUE(slot.has_value());
+  std::barrier start(3);
+  std::barrier admitted(3);
+  std::atomic<int> winners{0};
+  auto attempt = [&] {
+    start.arrive_and_wait();
+    auto write = slot->begin();
+    if (write)
+      winners.fetch_add(1, std::memory_order_relaxed);
+    admitted.arrive_and_wait(); // keep a successful write until both attempted
+  };
+  std::thread first(attempt), second(attempt);
+  start.arrive_and_wait();
+  admitted.arrive_and_wait();
+  first.join();
+  second.join();
+  EXPECT_EQ(winners.load(), 1);
+  auto write = slot->begin();
+  ASSERT_TRUE(write.has_value());
+  ASSERT_TRUE(write->emplace(AlignedOwner{13}).ok());
+  auto submitted = write->publish(Completion::completed());
+  ASSERT_TRUE(submitted.has_value());
+  auto ready = submitted->wait();
+  ASSERT_TRUE(ready.has_value());
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(ready->get()) % 128, 0u);
+  EXPECT_EQ((*ready)->value, 13);
+}
+
+#if !defined(HYLE_STATIC)
+TEST(OwnedResult,
+     ProducerDsoOwnsDestructionAfterConsumerLeaseOutlivesSubmission) {
+  using namespace hyle::compute;
+  int destroyed = 0;
+  ResultLease<test::SharedResultOwner> lease;
+  {
+    auto submitted = test::make_shared_result(101, destroyed);
+    ASSERT_TRUE(submitted.has_value());
+    auto ready = submitted->wait();
+    ASSERT_TRUE(ready.has_value());
+    lease = *ready;
+  }
+  EXPECT_EQ(destroyed, 0);
+  EXPECT_EQ(lease->value, 101);
+  lease = {};
+  EXPECT_EQ(destroyed, 1);
+}
+#endif
 
 TEST(Completion, SimulatedAsyncStateSupportsMovePollWaitAndCancel) {
   AsyncProbe probe;

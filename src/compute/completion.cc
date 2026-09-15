@@ -6,6 +6,28 @@
 
 namespace hyle::compute {
 
+namespace {
+
+void retained_terminal(void *state, const Status &terminal) noexcept {
+  const auto &node = *static_cast<detail::CompletionRetention *>(state);
+  if (node.inherited.valid())
+    node.inherited.terminal(node.inherited.state, terminal);
+  node.own.terminal(node.own.state, terminal);
+}
+
+void retained_release(void *state) noexcept {
+  auto &node = *static_cast<detail::CompletionRetention *>(state);
+  const auto inherited = node.inherited;
+  const auto own = node.own;
+  node = {};
+  if (inherited.valid())
+    inherited.release(inherited.state);
+  // This may destroy the node itself. Do not access it afterwards.
+  own.release(own.state);
+}
+
+} // namespace
+
 Completion
 detail::CompletionAccess::make(const detail::CompletionVTable *vtable,
                                void *state) noexcept {
@@ -22,6 +44,26 @@ detail::CompletionAccess::make(const detail::CompletionVTable *vtable,
 Status detail::CompletionAccess::attach_lifetime(
     Completion &completion, detail::CompletionLifetime &lifetime) noexcept {
   return completion.attach_lifetime(lifetime);
+}
+
+Status detail::CompletionAccess::attach_retention(
+    Completion &completion, detail::CompletionRetention &retention) noexcept {
+  if (!retention.own.valid() || retention.attachment.valid() ||
+      retention.inherited.valid())
+    return Status::InvalidArgument("completion retention is invalid or active");
+  if (!completion.valid_)
+    return Status::FailedPrecondition("completion is invalid");
+  retention.inherited = completion.lifetime_ != nullptr
+                            ? *completion.lifetime_
+                            : detail::CompletionLifetime{};
+  retention.attachment = {&retention, &retained_terminal, &retained_release};
+  if (completion.vtable_ == nullptr) {
+    retained_terminal(&retention, completion.terminal_);
+    retained_release(&retention);
+  } else {
+    completion.lifetime_ = &retention.attachment;
+  }
+  return Status::Ok();
 }
 
 void detail::CompletionAccess::append_terminal(Completion &completion,

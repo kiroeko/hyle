@@ -196,6 +196,7 @@ public:
   create_invocation(mem::BufferView workspace = {}) const noexcept;
 
 private:
+  friend class PreparedDelegatedOperation;
   friend HYLE_COMPUTE_API Result<PreparedOperation>
   prepare(const Context &, Operation, std::span<const TensorDesc>,
           std::span<const TensorDesc>, OperationResourceBindings) noexcept;
@@ -261,6 +262,7 @@ public:
          const TensorView &second_output) noexcept;
 
 private:
+  friend class DelegatedInvocation;
   friend class PreparedOperation;
   friend struct detail::OperationPreparationAccess;
   friend struct detail::OperationInvocationAccess;
