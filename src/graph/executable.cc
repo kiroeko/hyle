@@ -621,7 +621,7 @@ bound_alias_offset(const detail::InvocationState &invocation,
 }
 
 Result<mem::BufferView>
-workspace_tensor_storage(const detail::InvocationState &invocation,
+workspace_tensor_storage(detail::InvocationState &invocation,
                          std::uint32_t instance) noexcept {
   const auto &plan = *invocation.plan;
   if (!plan.domain_graph.valid())
