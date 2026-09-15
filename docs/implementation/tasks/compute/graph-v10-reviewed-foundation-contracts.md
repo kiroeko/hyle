@@ -1501,3 +1501,12 @@ driver bound 或整个 G106 packed 共享已经完成。其余架构探针与终
 
 仅测试/文档变化：CUDA Graph executable/逐头精确回放、docs/closure/diff；没有产品变更时不重跑
 oneDNN/三交付/P1。一轮测试表示与 fixture 纠正，遇到真实产品反例先回本卡固定修复，不扩大测试工具。
+
+结果：`2dff4839` 新增真实 CUDA 用例通过；`compute-graph-v7-cuda` 的 Graph/逐头/executable 3/3，
+其中 executable 276/276。严格预算的 require-capture 在零新增受管字节下拒绝，原 commands 仍正确读取
+更新后的输入；prefer-capture 保留 commands；allow-unknown 实际返回 captured，重复三次内容正确并
+披露 unknown，最终 Invocation/Completion 释放后受管 live bytes 为零。无需修改产品即可通过。
+这是 CUDA capture 未知上界政策的真实资格，不是宣称已知全部 driver 字节，也不缩减 packed 共享、
+其余架构探针或完整候选验证。指南开头同时删除“完整域 View/联合资源搜索尚未实现”的过时说明。
+selector READY（跳过 92 项），closure 39/schema 4、docs 298/1081 links 和 diff check 通过；产品实现仍
+为 `862c0519`，没有因测试/文档重跑三交付或性能采样。
