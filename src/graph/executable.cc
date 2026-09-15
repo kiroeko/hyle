@@ -2015,6 +2015,77 @@ private:
   bool yielded_ = false;
 };
 
+// A dependent choice path, not a materialized Cartesian product. Replaying a
+// prefix visits the same decisions; advancing a parent discards its suffix.
+// Only genuine branches spend state budget or occupy this compile-only tape.
+class ResourceSearch final {
+public:
+  explicit ResourceSearch(mem::AllocatorRef allocator) noexcept
+      : path_(allocator) {}
+
+  void reset() noexcept {
+    path_.clear();
+    cursor_ = 0;
+  }
+  bool branched() const noexcept { return !path_.empty(); }
+
+  Result<bool> next(std::size_t budget, CompileSearchReport &report,
+                    bool &limited) noexcept {
+    while (path_.size() > cursor_)
+      path_.pop_back();
+    while (!path_.empty()) {
+      auto &decision = path_.back();
+      if (decision.selected + 1 < decision.count) {
+        HYLE_RETURN_IF_ERROR(charge(budget, report, limited));
+        ++decision.selected;
+        cursor_ = 0;
+        return true;
+      }
+      path_.pop_back();
+    }
+    cursor_ = 0;
+    return false;
+  }
+
+  Result<std::uint32_t> choose(std::span<const std::uint32_t> choices,
+                               std::size_t budget, CompileSearchReport &report,
+                               bool &limited) noexcept {
+    if (choices.empty())
+      return std::unexpected(Status::Internal("empty graph resource choice"));
+    if (choices.size() == 1)
+      return choices.front();
+    if (cursor_ == path_.size()) {
+      HYLE_RETURN_IF_ERROR(charge(budget, report, limited));
+      if (!path_.try_push_back(Decision{0, choices.size()}))
+        return std::unexpected(plan_allocation_failure());
+    }
+    const auto &decision = path_[cursor_++];
+    if (decision.count != choices.size() || decision.selected >= choices.size())
+      return std::unexpected(Status::Internal(
+          "graph resource choices changed within an identical prefix"));
+    return choices[decision.selected];
+  }
+
+private:
+  struct Decision final {
+    std::size_t selected = 0;
+    std::size_t count = 0;
+  };
+  static Status charge(std::size_t budget, CompileSearchReport &report,
+                       bool &limited) noexcept {
+    if (report.route_search_states == budget) {
+      limited = true;
+      report.route_search_limit_reached = true;
+      return Status::ResourceExhausted(
+          "graph resource search state budget is exhausted");
+    }
+    ++report.route_search_states;
+    return Status::Ok();
+  }
+  container::SmallVector<Decision, 16, mem::AllocatorRef> path_;
+  std::size_t cursor_ = 0;
+};
+
 Status discover_operation_candidates(
     const detail::PlanState &plan, const detail::GraphState &graph,
     CompileEnvironment environment, CompileOptions options,
@@ -2132,7 +2203,7 @@ struct RegionDiscovery final {
       : extensions(allocator), candidates(allocator), nodes(allocator),
         rejected(allocator), resources(allocator), values(allocator),
         requirements(allocator), effects(allocator), operations(allocator),
-        routes(allocator) {}
+        routes(allocator), physical(allocator) {}
 
   RegionExtensions extensions;
   RegionCandidates candidates;
@@ -2146,8 +2217,10 @@ struct RegionDiscovery final {
   container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef> effects;
   OperationDiscovery operations;
   RouteSearch routes;
+  ResourceSearch physical;
   Status last_rejection = Status::Ok();
   bool ready = false;
+  bool has_route = false;
 };
 
 struct PlacementAttemptOutcome final {
@@ -2963,14 +3036,24 @@ Status prepare_placed_steps_attempt(
         all_region_nodes, discovery.rejected, node_preferred));
     discovery.ready = true;
   }
-  HYLE_ASSIGN_OR_RETURN(const bool has_route,
-                        discovery.routes.next(options.max_route_search_states,
-                                              plan.search,
-                                              outcome.search_limit));
-  if (!has_route) {
-    outcome.no_feasible_route = true;
-    return Status::Unimplemented(
-        "no complete graph route satisfies the available candidates");
+  bool next_physical = false;
+  if (discovery.has_route) {
+    HYLE_ASSIGN_OR_RETURN(
+        next_physical,
+        discovery.physical.next(options.max_route_search_states, plan.search,
+                                outcome.search_limit));
+  }
+  if (!next_physical) {
+    HYLE_ASSIGN_OR_RETURN(discovery.has_route,
+                          discovery.routes.next(options.max_route_search_states,
+                                                plan.search,
+                                                outcome.search_limit));
+    if (!discovery.has_route) {
+      outcome.no_feasible_route = true;
+      return Status::Unimplemented(
+          "no complete graph route satisfies the available candidates");
+    }
+    discovery.physical.reset();
   }
 
   Ordinals producer_storage(plan.allocator);
@@ -3007,6 +3090,7 @@ Status prepare_placed_steps_attempt(
   Resources output_resources(plan.allocator);
   Ordinals selected_inputs(plan.allocator);
   Ordinals selected_outputs(plan.allocator);
+  Ordinals resource_choices(plan.allocator);
   std::size_t &placement_attempts = plan.search.placement_attempts;
 
   auto select_storage =
@@ -3046,27 +3130,27 @@ Status prepare_placed_steps_attempt(
       return std::unexpected(Status::Unimplemented(
           "required graph storage does not satisfy provider constraints"));
     }
-    const std::array preferred{first, second};
-    for (std::uint32_t storage : preferred) {
-      if (storage == kNone)
-        continue;
-      auto accepted = compatible(storage);
-      if (!accepted)
-        return std::unexpected(std::move(accepted).error());
-      if (*accepted)
-        return storage;
-    }
+    resource_choices.clear();
+    auto offer = [&](std::uint32_t storage) noexcept -> Status {
+      HYLE_ASSIGN_OR_RETURN(const bool accepted, compatible(storage));
+      if (accepted && !resource_choices.try_push_back(storage))
+        return plan_allocation_failure();
+      return Status::Ok();
+    };
+    HYLE_RETURN_IF_ERROR(offer(first));
+    if (second != first)
+      HYLE_RETURN_IF_ERROR(offer(second));
     for (std::uint32_t storage = 0; storage < storage_count; ++storage) {
       if (storage == first || storage == second)
         continue;
-      auto accepted = compatible(storage);
-      if (!accepted)
-        return std::unexpected(std::move(accepted).error());
-      if (*accepted)
-        return storage;
+      HYLE_RETURN_IF_ERROR(offer(storage));
     }
-    return std::unexpected(Status::Unimplemented(
-        "no graph storage satisfies provider resource constraints"));
+    if (resource_choices.empty())
+      return std::unexpected(Status::Unimplemented(
+          "no graph storage satisfies provider resource constraints"));
+    return discovery.physical.choose(resource_choices,
+                                     options.max_route_search_states,
+                                     plan.search, outcome.search_limit);
   };
 
   auto select_operation_resources =
@@ -3334,46 +3418,32 @@ Status prepare_placed_steps_attempt(
       }
       return true;
     };
-    std::uint32_t execution_target = kNone;
-    for (std::size_t index = 0; index < target_count; ++index) {
-      if (plan.targets[index].default_storage.ordinal() != destination_storage)
-        continue;
-      HYLE_ASSIGN_OR_RETURN(const bool supports,
-                            supports_route(static_cast<std::uint32_t>(index)));
-      if (supports) {
-        execution_target = static_cast<std::uint32_t>(index);
-        break;
-      }
-    }
-    if (execution_target == kNone) {
+    resource_choices.clear();
+    for (unsigned preference = 0; preference != 3; ++preference) {
       for (std::size_t index = 0; index < target_count; ++index) {
-        if (plan.targets[index].default_storage.ordinal() != source_storage)
+        const auto storage = plan.targets[index].default_storage.ordinal();
+        const unsigned rank = storage == destination_storage ? 0
+                              : storage == source_storage    ? 1
+                                                             : 2;
+        if (rank != preference)
           continue;
         HYLE_ASSIGN_OR_RETURN(
             const bool supports,
             supports_route(static_cast<std::uint32_t>(index)));
-        if (supports) {
-          execution_target = static_cast<std::uint32_t>(index);
-          break;
-        }
+        if (supports &&
+            !resource_choices.try_push_back(static_cast<std::uint32_t>(index)))
+          return plan_allocation_failure();
       }
     }
-    if (execution_target == kNone) {
-      for (std::size_t index = 0; index < target_count; ++index) {
-        HYLE_ASSIGN_OR_RETURN(
-            const bool supports,
-            supports_route(static_cast<std::uint32_t>(index)));
-        if (supports) {
-          execution_target = static_cast<std::uint32_t>(index);
-          break;
-        }
-      }
-    }
-    if (execution_target == kNone) {
+    if (resource_choices.empty()) {
       outcome.rejected_plan = true;
       return Status::Unimplemented(
           "no execution target can transfer between the selected resources");
     }
+    HYLE_ASSIGN_OR_RETURN(const auto execution_target,
+                          discovery.physical.choose(
+                              resource_choices, options.max_route_search_states,
+                              plan.search, outcome.search_limit));
     if (!plan.steps.try_push_back(detail::PlanStep::copy(
             input_begin, output_begin, *bytes, StorageDomainId{source_storage},
             StorageDomainId{destination_storage},
@@ -3902,7 +3972,8 @@ Status prepare_placed_steps_attempt(
 void reset_workspace_decisions(detail::PlanState &plan) noexcept;
 Status finalize_placed_steps(detail::PlanState &plan,
                              const detail::GraphState &graph,
-                             bool &rejected_plan) noexcept;
+                             ResourceSearch &physical, CompileOptions options,
+                             bool &search_limit, bool &rejected_plan) noexcept;
 
 Result<CompileReport>
 build_report(const detail::PlanState &plan, const detail::GraphState &graph,
@@ -4119,7 +4190,9 @@ Status prepare_placed_steps(
         discovery, constants, outcome);
     attempted = true;
     if (status.ok())
-      status = finalize_placed_steps(plan, graph, outcome.rejected_plan);
+      status =
+          finalize_placed_steps(plan, graph, discovery.physical, options,
+                                outcome.search_limit, outcome.rejected_plan);
     CompiledStorageReport storage_report;
     if (status.ok()) {
       auto storage = compiled_storage(plan);
@@ -4229,7 +4302,8 @@ Status prepare_placed_steps(
           discovery.operations.candidates[rejected].rejected)
         return Status::Internal(
             "graph operation retry did not exclude a candidate");
-      discovery.operations.candidates[rejected].rejected = true;
+      if (!discovery.physical.branched())
+        discovery.operations.candidates[rejected].rejected = true;
       ++plan.search.operation_route_rejections;
     } else {
       const auto rejected = *outcome.rejected_region;
@@ -4237,7 +4311,8 @@ Status prepare_placed_steps(
           discovery.rejected[rejected] != 0)
         return Status::Internal(
             "graph region retry did not exclude a candidate");
-      discovery.rejected[rejected] = 1;
+      if (!discovery.physical.branched())
+        discovery.rejected[rejected] = 1;
       ++plan.search.region_route_rejections;
     }
     discovery.last_rejection = std::move(status);
@@ -4471,10 +4546,12 @@ Unsigned saturating_multiply(Unsigned left, Unsigned right) noexcept {
 // Queue segment boundaries from interleaved independent branches; providers,
 // transfer routes and bindings remain fully resolved before the warm path.
 Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
-                      bool &rejected_plan) noexcept {
+                      ResourceSearch &physical, CompileOptions options,
+                      bool &search_limit, bool &rejected_plan) noexcept {
   using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
   using Edges = container::SmallVector<std::uint64_t, 32, mem::AllocatorRef>;
   constexpr std::uint32_t kNone = detail::kNoNode;
+  Ordinals lane_choices(plan.allocator);
   const std::size_t step_count = plan.steps.size();
   if (step_count >= kNone) {
     return Status::ResourceExhausted(
@@ -4508,35 +4585,42 @@ Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
           ExecutionLaneId{static_cast<std::uint32_t>(plan.lanes.size() - 1)};
       continue;
     }
+    // A workspace-serialization pass changes order, not this candidate's lane.
+    if (step.lane.valid())
+      continue;
     const ExecutionLaneRole preferred_role =
         step.kind == detail::PlanStepKind::kCopy ? ExecutionLaneRole::kTransfer
                                                  : ExecutionLaneRole::kCompute;
-    std::uint32_t selected = kNone;
+    lane_choices.clear();
     for (std::size_t lane = 0; lane < plan.lanes.size(); ++lane) {
       if (plan.lanes[lane].runtime_mode ==
               compute::ProviderRuntimeMode::kSharedQueue &&
           plan.lanes[lane].target == step.target &&
           plan.lanes[lane].role == preferred_role) {
-        selected = static_cast<std::uint32_t>(lane);
-        break;
+        if (!lane_choices.try_push_back(static_cast<std::uint32_t>(lane)))
+          return plan_allocation_failure();
       }
     }
-    if (selected == kNone && preferred_role != ExecutionLaneRole::kCompute) {
+    if (preferred_role != ExecutionLaneRole::kCompute) {
       for (std::size_t lane = 0; lane < plan.lanes.size(); ++lane) {
         if (plan.lanes[lane].runtime_mode ==
                 compute::ProviderRuntimeMode::kSharedQueue &&
             plan.lanes[lane].target == step.target &&
             plan.lanes[lane].role == ExecutionLaneRole::kCompute) {
-          selected = static_cast<std::uint32_t>(lane);
-          break;
+          if (!lane_choices.try_push_back(static_cast<std::uint32_t>(lane)))
+            return plan_allocation_failure();
         }
       }
     }
-    if (selected == kNone) {
+    if (lane_choices.empty()) {
       rejected_plan = true;
       return Status::InvalidArgument(
           "compile environment has no compatible lane for a graph step");
     }
+    HYLE_ASSIGN_OR_RETURN(const auto selected,
+                          physical.choose(lane_choices,
+                                          options.max_route_search_states,
+                                          plan.search, search_limit));
     step.lane = ExecutionLaneId{selected};
   }
   if (step_count <= 1 || plan.lanes.size() <= 1)
@@ -5680,9 +5764,11 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
 // route. An allocation/provider/alias error with the same Status code does not.
 Status finalize_placed_steps(detail::PlanState &plan,
                              const detail::GraphState &graph,
-                             bool &rejected_plan) noexcept {
+                             ResourceSearch &physical, CompileOptions options,
+                             bool &search_limit, bool &rejected_plan) noexcept {
   rejected_plan = false;
-  HYLE_RETURN_IF_ERROR(schedule_steps(plan, graph, rejected_plan));
+  HYLE_RETURN_IF_ERROR(schedule_steps(plan, graph, physical, options,
+                                      search_limit, rejected_plan));
   HYLE_RETURN_IF_ERROR(build_segments(plan, graph));
   if (plan.instance_values.size() > SIZE_MAX - plan.steps.size())
     return Status::ResourceExhausted(
@@ -5703,7 +5789,8 @@ Status finalize_placed_steps(detail::PlanState &plan,
           "graph workspace serialization exhausted its deterministic "
           "round budget");
     }
-    HYLE_RETURN_IF_ERROR(schedule_steps(plan, graph, rejected_plan));
+    HYLE_RETURN_IF_ERROR(schedule_steps(plan, graph, physical, options,
+                                        search_limit, rejected_plan));
     HYLE_RETURN_IF_ERROR(build_segments(plan, graph));
   }
 }

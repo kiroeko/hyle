@@ -139,6 +139,8 @@ struct RegionProbe final {
   hyle::mem::MemoryResourceRef region_input_resource{};
   hyle::mem::MemoryResourceRef region_output_resource{};
   hyle::mem::MemoryResourceRef region_workspace_resource{};
+  hyle::mem::MemoryResourceRef declined_workspace_resource{};
+  bool workspace_decline_is_error = false;
   hyle::mem::MemoryResourceRef compiled_input_resource{};
   hyle::mem::MemoryResourceRef compiled_output_resource{};
   hyle::mem::MemoryResourceRef compiled_workspace_resource{};
@@ -1004,6 +1006,13 @@ ProviderPrepareOutcome compile_region(void *context,
   Status status = compile_region_checked(context, request, allocator, output);
   if (!status.ok())
     return ProviderPrepareOutcome::error(std::move(status));
+  if (probe.declined_workspace_resource.valid() &&
+      request.workspace_resource == probe.declined_workspace_resource) {
+    const auto failure = Status::ResourceExhausted("workspace-local rejection");
+    return probe.workspace_decline_is_error
+               ? ProviderPrepareOutcome::error(failure)
+               : ProviderPrepareOutcome::resource_declined(failure);
+  }
   if (probe.region_outcome_route &&
       *probe.region_outcome_route != request.route)
     return ProviderPrepareOutcome::prepared();
@@ -1937,6 +1946,232 @@ TEST(GraphProfiles, SelectedRouteKeepsItsOwnLaneWorkspaceAndAliasMetadata) {
   }
 }
 
+TEST(GraphResources, SameRegionCanUseAnotherWorkspaceWithoutChangingProvider) {
+  const auto logical = make_negations(1);
+  HostResource other;
+  const auto host = hyle::mem::system_resource();
+  const hyle::mem::MemoryResourceRef alternate(other);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.region_input_resource = probe.region_output_resource = host;
+  probe.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  auto context = make_context(probe);
+  const std::array domains{
+      hyle::graph::StorageDomain{.resource = host, .workspace_budget_bytes = 0},
+      hyle::graph::StorageDomain{.resource = alternate,
+                                 .workspace_budget_bytes = 128}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  const hyle::graph::CompileEnvironment environment{.storage_domains = domains,
+                                                    .targets = targets};
+  auto result = hyle::graph::compile(
+      logical.graph, environment,
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(result) << result.error().message();
+  EXPECT_EQ(result->report.region_count(), 1u);
+  EXPECT_EQ(result->report.step(0)->workspace_storage,
+            hyle::graph::StorageDomainId{1});
+  EXPECT_EQ(result->report.search().route_plan_rejections, 1u);
+  EXPECT_EQ(result->report.search().region_route_rejections, 0u);
+  EXPECT_EQ(probe.region_resource_count, 1u);
+  EXPECT_EQ(probe.compile_count, 2u);
+  expect_negation_replay(result->executable, logical, context);
+  EXPECT_EQ(other.live_allocations, 0u);
+
+  // An exact Provider resource contract remains hard, even with another
+  // otherwise compatible resource in the environment.
+  probe.region_workspace_resource = host;
+  auto required = hyle::graph::compile(
+      logical.graph, environment,
+      {.operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(required);
+  EXPECT_TRUE(required.error().IsResourceExhausted());
+}
+
+TEST(GraphResources, ResourceLocalDeclineDoesNotPoisonOtherBindings) {
+  const auto logical = make_negations(1);
+  HostResource other;
+  const auto host = hyle::mem::system_resource();
+  for (bool real_error : {false, true}) {
+    RegionProbe probe{.mode = ProposalMode::kSingleton};
+    probe.region_input_resource = probe.region_output_resource = host;
+    probe.declined_workspace_resource = host;
+    probe.workspace_decline_is_error = real_error;
+    probe.artifact_properties.workspace = {.size = 128, .alignment = 64};
+    auto context = make_context(probe);
+    const Environment environment{
+        {&context, host}, {&context, hyle::mem::MemoryResourceRef(other)}};
+    auto result = hyle::graph::compile(
+        logical.graph, environment.environment(),
+        {.operation_fallback = OperationFallbackPolicy::kReject});
+    if (real_error) {
+      ASSERT_FALSE(result);
+      EXPECT_TRUE(result.error().IsResourceExhausted());
+      EXPECT_EQ(probe.compile_count, 1u);
+      EXPECT_EQ(probe.destroy_prepared_count, 1u);
+    } else {
+      ASSERT_TRUE(result) << result.error().message();
+      EXPECT_EQ(result->report.search().region_route_rejections, 1u);
+      EXPECT_EQ(probe.compile_count, 2u);
+      EXPECT_EQ(probe.destroy_prepared_count, 1u);
+      EXPECT_EQ(result->report.step(0)->workspace_storage,
+                environment.storage(1));
+      expect_negation_replay(result->executable, logical, context);
+    }
+  }
+  EXPECT_EQ(other.live_allocations, 0u);
+}
+
+TEST(GraphResources, CompleteProfilesSelectStorageAndDoNotGuessUnknownLanes) {
+  const auto logical = make_negations(1);
+  HostResource other;
+  const auto host = hyle::mem::system_resource();
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.region_input_resource = probe.region_output_resource = host;
+  probe.artifact_properties.workspace = {.size = 128, .alignment = 64};
+  probe.profile_key = hyle::compute::ProviderRouteKey{41};
+  auto context = make_context(probe);
+  std::array domains{hyle::graph::StorageDomain{.resource = host},
+                     hyle::graph::StorageDomain{
+                         .resource = hyle::mem::MemoryResourceRef(other)}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  const std::array lanes{
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0}},
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0}}};
+  const hyle::graph::CompileEnvironment environment{
+      .storage_domains = domains, .targets = targets, .lanes = lanes};
+  hyle::graph::test::ProfileFixture facts(environment);
+  auto first =
+      profile_report(logical.graph, context, environment, facts.context, 0);
+  domains[0].workspace_budget_bytes = 0;
+  auto second =
+      profile_report(logical.graph, context, environment, facts.context, 0);
+  domains[0].workspace_budget_bytes = SIZE_MAX;
+  ASSERT_EQ(first.step(0)->workspace_storage, hyle::graph::StorageDomainId{0});
+  ASSERT_EQ(second.step(0)->workspace_storage, hyle::graph::StorageDomainId{1});
+  // Budgets constrain feasibility, not the identity of this actual plan. These
+  // fixture timings exercise decisions only; they are not P1 measurements.
+  const std::array profiles{
+      hyle::compute::RouteProfile{first.profile_identity(), {{100, 105}}},
+      hyle::compute::RouteProfile{second.profile_identity(), {{50, 55}}}};
+  auto result = hyle::graph::compile(
+      logical.graph, environment,
+      {.operation_fallback = OperationFallbackPolicy::kReject,
+       .profile_context = &facts.context,
+       .profiles = profiles});
+  ASSERT_TRUE(result) << result.error().message();
+  EXPECT_EQ(result->report.step(0)->workspace_storage,
+            hyle::graph::StorageDomainId{1});
+  EXPECT_EQ(result->report.step(0)->lane, hyle::graph::ExecutionLaneId{0});
+  EXPECT_EQ(result->report.search().feasible_plans, 4u);
+  EXPECT_EQ(result->report.search().profiled_plans, 2u);
+  EXPECT_EQ(result->report.search().unprofiled_plans, 2u);
+  EXPECT_EQ(result->report.search().profile_replacements, 1u);
+  EXPECT_FALSE(result->report.search().optimization_limited());
+  expect_negation_replay(result->executable, logical, context);
+}
+
+TEST(GraphResources, LaneSearchSharesStateAndPrepareLimitsWithNodeCover) {
+  const auto logical = make_negations(1);
+  RegionProbe probe{.mode = ProposalMode::kSingleton};
+  probe.profile_key = hyle::compute::ProviderRouteKey{41};
+  auto context = make_context(probe);
+  const Environment base{{&context, hyle::mem::system_resource()}};
+  const std::array lanes{
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0}},
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0}}};
+  auto environment = base.environment();
+  environment.lanes = lanes;
+  hyle::graph::test::ProfileFixture facts(environment);
+  auto baseline =
+      profile_report(logical.graph, context, environment, facts.context, 0);
+  ASSERT_EQ(baseline.search().route_search_states, 2u);
+  ASSERT_EQ(baseline.search().feasible_plans, 1u);
+  const std::array profiles{
+      hyle::compute::RouteProfile{baseline.profile_identity(), {{100, 105}}}};
+  for (bool state_limit : {false, true}) {
+    for (bool strict : {false, true}) {
+      auto result = hyle::graph::compile(
+          logical.graph, environment,
+          {.max_placement_attempts = state_limit ? 4096u : 1u,
+           .max_route_search_states = state_limit ? 2u : 65536u,
+           .operation_fallback = OperationFallbackPolicy::kReject,
+           .search_policy = strict ? CompileSearchPolicy::kRequireUnexhausted
+                                   : CompileSearchPolicy::kAllowLimited,
+           .profile_context = &facts.context,
+           .profiles = profiles});
+      if (strict) {
+        ASSERT_FALSE(result);
+        EXPECT_TRUE(result.error().IsResourceExhausted());
+      } else {
+        ASSERT_TRUE(result) << result.error().message();
+        EXPECT_TRUE(result->report.search().optimization_limited());
+        EXPECT_EQ(result->report.search().route_search_limit_reached,
+                  state_limit);
+        EXPECT_EQ(result->report.search().placement_limit_reached,
+                  !state_limit);
+        EXPECT_EQ(result->report.search().feasible_plans, 1u);
+        expect_negation_replay(result->executable, logical, context);
+      }
+    }
+  }
+  auto incomplete = hyle::graph::compile(
+      logical.graph, environment,
+      {.max_route_search_states = 1,
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  ASSERT_FALSE(incomplete);
+  EXPECT_TRUE(incomplete.error().IsResourceExhausted());
+}
+
+TEST(GraphResources,
+     NativeIntermediateMovesToFeasibleStorageAndPreservesAliasRules) {
+  const auto logical = make_negations(2);
+  HostResource other;
+  const auto host = hyle::mem::system_resource();
+  const std::array providers{hyle::compute::native::provider()};
+  auto context =
+      Context::create(hyle::compute::cpu::device(), {.providers = providers})
+          .value();
+  const std::array domains{
+      hyle::graph::StorageDomain{.resource = host, .workspace_budget_bytes = 0},
+      hyle::graph::StorageDomain{.resource =
+                                     hyle::mem::MemoryResourceRef(other),
+                                 .workspace_budget_bytes = 64}};
+  const std::array targets{hyle::graph::ExecutionTarget{
+      .context = &context, .default_storage = hyle::graph::StorageDomainId{0}}};
+  const hyle::graph::CompileEnvironment environment{.storage_domains = domains,
+                                                    .targets = targets};
+  const std::array external{
+      hyle::graph::ExternalResourceContract{logical.input,
+                                            hyle::graph::StorageDomainId{0}},
+      hyle::graph::ExternalResourceContract{logical.output,
+                                            hyle::graph::StorageDomainId{0}}};
+  auto result = hyle::graph::compile(logical.graph, environment,
+                                     {.external_resources = external});
+  ASSERT_TRUE(result) << result.error().message();
+  EXPECT_GT(result->report.search().route_plan_rejections, 0u);
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  auto run = result->executable.create_invocation().value();
+  EXPECT_GT(other.allocation_count, 0u);
+  ASSERT_TRUE(run.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(run.submit(queue)->wait().ok());
+  EXPECT_EQ(read(output, 8), std::vector<float>(values.begin(), values.end()));
+  const auto middle = logical.graph.result(logical.graph.node_id(0).value());
+  ASSERT_TRUE(middle);
+  const std::array required{
+      hyle::graph::ValuePlacement{*middle, hyle::graph::StorageDomainId{0},
+                                  hyle::graph::PlacementStrength::kRequired}};
+  auto impossible = hyle::graph::compile(
+      logical.graph, environment,
+      {.value_placements = required, .external_resources = external});
+  ASSERT_FALSE(impossible);
+  EXPECT_TRUE(impossible.error().IsResourceExhausted());
+}
+
 TEST(GraphProfiles, StableIdentityIgnoresProcessIdsButIncludesConcreteChanges) {
   const auto logical = make_negations(1);
   RegionProbe probe{.mode = ProposalMode::kSingleton};
@@ -2232,12 +2467,17 @@ TEST(GraphProfiles, EveryMetadataAllocationFailureIsFatalAndReclaimsSnapshots) {
                       {.metadata_allocator = allocator, .providers = providers})
           .value();
   const auto logical = make_negations(1);
-  const Environment environment{{&context, hyle::mem::system_resource()}};
-  hyle::graph::test::ProfileFixture facts(environment.environment());
-  auto a = profile_report(logical.graph, context, environment.environment(),
-                          facts.context, 0);
-  auto b = profile_report(logical.graph, context, environment.environment(),
-                          facts.context, 1);
+  const Environment base_environment{{&context, hyle::mem::system_resource()}};
+  const std::array lanes{
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0}},
+      hyle::graph::ExecutionLane{.target = hyle::graph::ExecutionTargetId{0}}};
+  auto environment = base_environment.environment();
+  environment.lanes = lanes;
+  hyle::graph::test::ProfileFixture facts(environment);
+  auto a =
+      profile_report(logical.graph, context, environment, facts.context, 0);
+  auto b =
+      profile_report(logical.graph, context, environment, facts.context, 1);
   const std::array profiles{
       hyle::compute::RouteProfile{a.profile_identity(), {{100, 105}}},
       hyle::compute::RouteProfile{b.profile_identity(), {{50, 55}}}};
@@ -2248,8 +2488,7 @@ TEST(GraphProfiles, EveryMetadataAllocationFailureIsFatalAndReclaimsSnapshots) {
   const auto baseline_live = allocations.live;
   allocations.attempts = 0;
   {
-    auto good =
-        hyle::graph::compile(logical.graph, environment.environment(), options);
+    auto good = hyle::graph::compile(logical.graph, environment, options);
     ASSERT_TRUE(good) << good.error().message();
     EXPECT_EQ(good->report.search().profile_replacements, 1u);
   }
@@ -2261,16 +2500,14 @@ TEST(GraphProfiles, EveryMetadataAllocationFailureIsFatalAndReclaimsSnapshots) {
     allocations.fail_at = fail_at;
     allocations.attempts = 0;
     {
-      auto failure = hyle::graph::compile(logical.graph,
-                                          environment.environment(), options);
+      auto failure = hyle::graph::compile(logical.graph, environment, options);
       ASSERT_FALSE(failure);
       EXPECT_TRUE(failure.error().IsResourceExhausted());
     }
     EXPECT_EQ(allocations.live, baseline_live);
     allocations.fail_at = SIZE_MAX;
   }
-  auto recovered =
-      hyle::graph::compile(logical.graph, environment.environment(), options);
+  auto recovered = hyle::graph::compile(logical.graph, environment, options);
   ASSERT_TRUE(recovered) << recovered.error().message();
   expect_negation_replay(recovered->executable, logical, context);
   recovered = std::unexpected(Status::Cancelled("release test artifact"));

@@ -440,12 +440,13 @@ struct CompileSearchReport final {
   std::size_t region_proposals = 0;
   std::size_t region_proposal_nodes = 0;
   std::size_t placement_attempts = 0;
-  // Candidates excluded after an explicit transactional decline or an
-  // incompatible resource route. Rejection is not search-budget exhaustion.
+  // Selected region attempts rejected by an explicit transactional decline or
+  // incompatible resources. Other resource bindings may remain eligible.
   std::size_t region_route_rejections = 0;
-  // Leaf routes excluded by a selected-route transactional prepare decline.
+  // Selected leaf attempts rejected by a transactional prepare decline.
   std::size_t operation_route_rejections = 0;
-  // Cold candidate visits, including overlaps and previously rejected routes.
+  // Cold node-cover visits and branching resource/copy-target/lane choices.
+  // Replayed choice prefixes and decisions with only one legal value are free.
   std::size_t route_search_states = 0;
   // Complete node covers rejected by physical resource/copy/cycle checks or
   // final lane/workspace constraints. This rejects a combination, not each
@@ -835,7 +836,8 @@ struct CompileOptions final {
   std::size_t max_placement_attempts = 4096;
   RegionSelectionPolicy region_selection =
       RegionSelectionPolicy::kAllowProviderRegions;
-  // Independent cumulative candidate-state budget. No recursion or warm search.
+  // Cumulative node-cover and branching storage/copy-target/lane state budget.
+  // No recursion, Cartesian-product allocation, or warm search.
   // Exhaustion without a complete feasible route fails, never emits a partial
   // DAG.
   std::size_t max_route_search_states = 65536;

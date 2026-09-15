@@ -454,7 +454,9 @@ target/Provider 绑定，并复用 Compute matcher。指纹非零不代表已资
 首个可行方案成本 unknown 时按配置顺序结束；有合格基准才继续有界比较，只有成本区间严格分离且满足
 调用方 improvement policy 才替换。profile 是同一完整 terminal 边界的测量，不能将 leaf/region 私有计时
 相加作替代。具体已实现输入、寿命和限制见 [Graph 用户指南](../user/graph.md#按完整计划的性能资料选路)；
-此身份机制不等于自动调优、全局最优、所有 storage/lane 组合或 bounded variants 已实现。
+node-cover 内的资源选择使用依赖前缀的有限回溯：只有真实分支保存 choice ordinal/count，共用累计 state
+预算；不物化全部组合。资源局部拒绝不等于该 Provider 在其它资源上也不可用。lane 固定后才做 happens-before/
+workspace，显式内存序列化的再排程保留该 lane。身份机制与此搜索都不等于自动调优、穷尽所有组合或全局最优。
 
 ### 6.2 Shape domain、capture 与运行时选择
 

@@ -525,11 +525,13 @@ region 的 boundary、资源要求、runtime 与效果声明也在发现阶段�
 候选不做资源查询。查询不代表后面一定会 compile 该候选，Provider 不应在这里创建重型制品。
 资源要求非法或后排查询出现真实错误，同样在准备任何制品前失败；明确 unsupported 只排除该候选。
 某个 region 的已选资源路线，或某个 leaf 的 prepare 被明确安全拒绝后，释放本次构造的制品并排除该
-候选，再从原候选池重新放置/分区，可以改选另一 Provider、另一 node set 或另一个允许的 target。禁止
+资源组合，再从原候选池重新放置/分区；同一 Provider 的其它兼容资源仍可使用，也可改选另一 Provider、
+另一 node set 或另一个允许的 target。禁止
 leaf 回退时仍可改选完整 region 覆盖；允许 leaf 时也可以使用已安装的 operation 路线。重选不重复发现或资源查询，
 不重置任何预算。region 联合成环、某个完整组合无 storage/copy 路线时，非递归搜索回溯到下一组合，
-不会仅因该组合失败就淘汰其中所有候选。当前这是 leaf/region/target 同池的确定性可行解搜索，
-不是 qualified 完整成本优化，也不穷举所有 storage/lane 组合。
+不会仅因该组合失败就淘汰其中所有候选。leaf/region/target 与 input/output/workspace storage、copy
+承载 target、shared lane 使用同一有界搜索。默认先保持 locality/preference/default 次序，找到完整
+可行计划即返回；已有 qualified baseline 才继续按完整 profile 比较。它不保证穷尽所有组合或全局最优。
 先构造完整 leaf/region/copy 的物理步骤和 storage 路线（包括最终输出 copy），之后才准备选中的制品；
 因此后续已知无能力/无合法 storage/copy 承载 target 时，不会先给前面的步骤做 JIT/packing。最终 prepare
 只使用已选路线，仍经 Compute 校验；不能原地换 Provider/target/storage，明确 decline 必须整图重规划。
@@ -542,9 +544,11 @@ workspace 无法满足显式 storage 预算/允许的有界序列化，或编译
 按 Status 名称猜成“可以换路”。胜出报告不保留被拒绝路线的 delegated lane、序列化边或实现键。
 `max_placement_attempts` 限制跨所有构造尝试的实际冷准备次数；若
 在形成完整可行计划之前耗尽这个上限，仍然失败，不能返回部分图。
-`max_route_search_states`（默认 65,536）另行限制累计尝试的候选状态，包括重叠/已拒绝的候选；不在重选时
-归零。尚未找到可行计划就用尽，返回 ResourceExhausted。恰好用满且没有省略必需搜索不算受限。
-调用方给出的两者都必须非零，跨变体累计扣除。候选表容量、搜索工作量和真正准备次数不是同一个预算。
+`max_route_search_states`（默认 65,536）限制累计 node-cover 状态及有多个合法值的 storage/copy-target/
+lane 分支；重放同一选择前缀和只有一个合法值的决定不重复扣除。不在重选时归零，也不提前分配笛卡尔积。
+尚未找到可行计划就用尽，返回 ResourceExhausted。恰好用满且没有省略必需搜索不算受限。
+state 上限必须非零；prepare 上限为零只可能接受不需 Provider 制品的纯 metadata 路线。两者跨变体累计
+扣除。候选表容量、搜索工作量和真正准备次数不是同一个预算。
 启用 profile 优化且已有完整可行方案时，后续 state/prepare 耗尽可在 `kAllowLimited` 下保留它；报告分别
 置 `route_search_limit_reached` / `placement_limit_reached`。strict 政策仍拒绝，真实 OOM/Provider 错误
 不因已有方案而被忽略。未完成的 trial 不会成为 Executable。
