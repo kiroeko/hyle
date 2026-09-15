@@ -24,4 +24,8 @@
 
 ## 结果
 
-进行中。
+初版 fixture `66dea696` 在 MacBook Air 通过六次变化输入、真实借入与释放，且证实跨线程再次 trace。
+随后源码复核发现 `array::wait()` 可经 `is_available()` 的已 signal 分支跳过 `Event::wait/check_error`；
+不能按初版注释把 `array.wait()` 单独当作错误终态证明。唯一 fixture 纠正把原本每轮末的显式 stream
+`synchronize()` 前移到读结果前，并纠正注释；不改数值阈值、矩阵或原始结果。此后仍不签 device-loss/
+fault-injection，正式 Provider 不能单凭 ready bit 发出成功 Completion。

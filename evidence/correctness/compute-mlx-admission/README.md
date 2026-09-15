@@ -10,7 +10,7 @@ SHA-256 `e6abeac9ac5265830c9c1541b6f96e9be37a85c2446763a46ad466c63a3837ab`。
 
 预声明：F32 gate/up → SwiGLU → down，M=4/K=1024/H=256，两线程各三次变化输入；double oracle，
 逐元素绝对误差不超过 `1e-4 * max(1, abs(expected))`。输入按主机 page 对齐并观察是否真实借入；
-保留 caller array 至 `wait()` 完成；线程分别 drain 后检查释放。相同 compiled function 在线程迁移前后
+保留 caller array 至 `wait()` 和显式 stream `synchronize()` 完成；线程分别 drain 后检查释放。相同 compiled function 在线程迁移前后
 记录 trace 次数，不用 cache 名称推断无热编译。`synchronize` 是实验观察点，不是推荐产品热路径。
 
 运行结果：待实验。未测试设备故障、OOM、并发提交、取消、HYLE Completion bridge、原生 Metal interop、

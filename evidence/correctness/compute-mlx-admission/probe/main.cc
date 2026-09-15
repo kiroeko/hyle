@@ -87,8 +87,10 @@ void run_phase(const Function& compiled, const std::vector<float>& gate,
       auto output = compiled({x});
       if (output.size() != 1) throw std::runtime_error("wrong result arity");
       mx::async_eval(output);
-      // is_available alone is not a checked success boundary. wait checks errors.
+      // array.wait's already-signaled fast path need not check an event error.
+      // Use the public stream's explicit terminal error check for this probe.
       output[0].wait();
+      mx::synchronize(mx::default_stream(mx::Device::gpu));
       double max_error = 0;
       for (std::size_t i = 0; i < expected.size(); ++i) {
         const double actual = output[0].data<float>()[i];
@@ -106,8 +108,6 @@ void run_phase(const Function& compiled, const std::vector<float>& gate,
                 << " borrowed=" << borrowed << " traces=" << traced.load()
                 << " max_abs_error=" << max_error << " result=PASS\n";
     }
-    // Deliberate research observation, not a proposed host-blocking hot path.
-    mx::synchronize(mx::default_stream(mx::Device::gpu));
   }
 }
 }  // namespace
