@@ -7666,7 +7666,10 @@ TEST(GraphPacking, ExactVariantsShareWeightsAndSurviveParentAndSource) {
        .exact_variants = variants,
        .constants = bindings,
        .compilation_storage = {
-           {.max_resident_bytes = 1U << 20, .max_peak_bytes = 1U << 20}}});
+           {.max_resident_bytes = 1U << 20, .max_peak_bytes = 1U << 20}},
+       .max_region_proposals = 8,
+       .max_region_proposals_per_provider = 4,
+       .max_region_proposal_nodes = 16});
   ASSERT_TRUE(compiled) << compiled.error().message();
   EXPECT_EQ(compiled->report.region_count(),
             0U); // real bounded Native fallback
@@ -7807,7 +7810,10 @@ TEST(GraphPacking, BoundsAndPartialFactoryFailuresAreTransactional) {
         .constants = bindings,
         .compilation_storage = {{.max_resident_bytes = 1U << 20,
                                  .max_peak_bytes = 1U << 20}},
-        .operation_fallback = OperationFallbackPolicy::kReject};
+        .operation_fallback = OperationFallbackPolicy::kReject,
+        .max_region_proposals = 8,
+        .max_region_proposals_per_provider = 4,
+        .max_region_proposal_nodes = 16};
     if (scenario == 0 || scenario == 1)
       packing.bounds = {};
     if (scenario == 1)
@@ -7845,6 +7851,7 @@ TEST(GraphPacking, BoundsAndPartialFactoryFailuresAreTransactional) {
     }
     EXPECT_EQ(packing.factories.load(), packing.destroys.load());
     EXPECT_EQ(probe.compile_count, probe.destroy_prepared_count);
+    EXPECT_GT(probe.region_resource_count, 0U);
   }
   hyle::graph::ConstantArtifactView view{&source, 4};
   auto unavailable = hyle::graph::ConstantArtifactAccess{}.get_or_create(
@@ -7955,7 +7962,10 @@ TEST(GraphPacking, EveryMetadataAllocationFailureReleasesPackingAndCanRetry) {
       .constants = bindings,
       .compilation_storage = {{.max_resident_bytes = 1U << 20,
                                .max_peak_bytes = 1U << 20}},
-      .operation_fallback = OperationFallbackPolicy::kReject};
+      .operation_fallback = OperationFallbackPolicy::kReject,
+      .max_region_proposals = 8,
+      .max_region_proposals_per_provider = 4,
+      .max_region_proposal_nodes = 16};
   const auto live = state.live;
   state.attempts = 0;
   {
