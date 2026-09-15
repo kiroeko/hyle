@@ -1371,6 +1371,8 @@ guards；以表达式身份、显式相等/顺序 guard、乘除因子消去与�
 - envelope 只是各 stride/span 的安全上界，不必是合法绑定；不能对它调用具体 View inference/offset。
   reshape 保证 canonical dense；其它 producer-inferred View 端口显式使用 Compute v15 的 bounded-strided
   family。非 View 的任意 inferred layout 不凭猜测签全域。
+- 关系证明放在 Graph 私有 source；checked integer 运算直接复用 Math，并在中央图增加 Graph→Math
+  PRIVATE 边。没有新 factor、用户开关或公共构建方法；Math 的产品和状态不变。
 - 共享物理 Plan 保留 alias identity、storage 和 lifetime。域内 alias 的 planner request 只延长根的寿命，
   不把互不同时成立的最大 offset 与最大 span 相加。具体 alias 在冷创建/绑定时用现有 signature 与具体
   TensorDesc 求值，并对根 BufferView 做 checked subview；热 replay 复用已绑定 spans，不新增每次搜索。

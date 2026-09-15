@@ -1082,6 +1082,63 @@ Status instantiate_rms(void *root, std::span<const TensorDesc> inputs,
   return Status::Ok();
 }
 
+Status validate_bounded_copy(
+    const detail::ProviderOperationRequest &request) noexcept {
+  if (request.inputs.size() != 1 || request.outputs.size() != 1 ||
+      !request.inputs[0].is_plain() || !request.outputs[0].is_plain() ||
+      !request.outputs[0].is_dense() ||
+      request.shape.outputs[0].layout !=
+          detail::ProviderTensorLayout::kDerived ||
+      request.inputs[0].data_type() != request.outputs[0].data_type() ||
+      request.inputs[0].rank() != request.outputs[0].rank())
+    return Status::Unimplemented(
+        "native bounded Copy requires plain input and canonical dense output");
+  const auto fixed = [&](std::uint32_t value) noexcept {
+    return value == detail::kFixedShapeAxis ||
+           request.shape.dimensions[value].bounds.exact();
+  };
+  for (std::size_t axis = 0; axis < request.inputs[0].rank(); ++axis) {
+    const auto left = request.shape.inputs[0].values[axis];
+    const auto right = request.shape.outputs[0].values[axis];
+    if (request.inputs[0].dimensions()[axis] !=
+            request.outputs[0].dimensions()[axis] ||
+        (left != right && !(fixed(left) && fixed(right))))
+      return Status::Unimplemented(
+          "native bounded Copy needs identical input/output axes");
+  }
+  // Copy's input can have any checked non-negative strides, including zero.
+  // Its output schema is dense, shape/dtype preserving and never aliases.
+  return Status::Ok();
+}
+
+Status
+validate_bounded(const detail::ProviderOperationRequest &request) noexcept {
+  return request.operation.kind() == OperationKind::kCopy
+             ? validate_bounded_copy(request)
+             : validate_bounded_rms(request);
+}
+
+Status instantiate_copy(void *root, std::span<const TensorDesc> inputs,
+                        std::span<const TensorDesc> outputs,
+                        mem::AllocatorRef allocator,
+                        detail::ProviderPrepared *instance) noexcept {
+  if (root == nullptr || instance == nullptr || inputs.size() != 1 ||
+      outputs.size() != 1)
+    return Status::InvalidArgument("native Copy instance request is invalid");
+  *instance = {};
+  void *storage = allocator.allocate(sizeof(NativePlan), alignof(NativePlan));
+  if (storage == nullptr)
+    return Status::ResourceExhausted("native Copy instance allocation failed");
+  const auto &plan = *static_cast<const NativePlan *>(root);
+  *instance = {.vtable = &kPreparedVTable,
+               .state = ::new (storage) NativePlan(plan),
+               .workspace = plan.workspace,
+               .runtime = kRuntimeProperties,
+               .persistent_bytes = sizeof(NativePlan),
+               .invocation_private_bytes = 0};
+  return Status::Ok();
+}
+
 Status
 propose(void *context_value, const detail::ProviderOperationRequest &request,
         std::span<detail::ResourceBindingRequirement> input_requirements,
@@ -1091,7 +1148,7 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("native proposal output is null");
   *proposal = {};
   if (!request.shape.exact()) {
-    HYLE_RETURN_IF_ERROR(validate_bounded_rms(request));
+    HYLE_RETURN_IF_ERROR(validate_bounded(request));
   }
   const Operation operation = request.operation;
   const auto inputs = request.inputs;
@@ -1161,7 +1218,7 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
     return ProviderPrepareOutcome::error(
         Status::Internal("native provider context is null"));
   if (!request.shape.exact()) {
-    const auto status = validate_bounded_rms(
+    const auto status = validate_bounded(
         {request.operation, request.inputs, request.outputs, request.shape});
     if (!status.ok())
       return status.IsUnimplemented()
@@ -1190,7 +1247,9 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   prepared_output->persistent_bytes = sizeof(NativePlan);
   prepared_output->invocation_private_bytes = 0;
   prepared_output->instantiate =
-      request.shape.exact() ? nullptr : &instantiate_rms;
+      request.shape.exact()                              ? nullptr
+      : request.operation.kind() == OperationKind::kCopy ? &instantiate_copy
+                                                         : &instantiate_rms;
   return ProviderPrepareOutcome::prepared();
 }
 

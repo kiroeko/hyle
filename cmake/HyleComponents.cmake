@@ -289,7 +289,7 @@ _hyle_declare_component(compute
 # lifetime/workspace planning are private factors; no task scheduler becomes
 # part of Graph's execution contract.
 _hyle_declare_component(graph
-  PRIVATE_DEPS container util_core
+  PRIVATE_DEPS container util_core math
   PUBLIC_DEPS core error compute_ops compute mem)
 # Container's consumer-facing product remains one facade, while independent
 # factors own concurrency, handoff and text dependencies. Public include paths

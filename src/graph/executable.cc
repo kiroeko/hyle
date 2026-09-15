@@ -23,7 +23,9 @@
 #include "hyle/compute/transfer.h"
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/hash.h"
+#include "hyle/math/scalar.h"
 #include "plan_state.h"
+#include "view_domain.h"
 
 namespace hyle::graph {
 namespace {
@@ -262,6 +264,12 @@ resolve_spec(const detail::GraphState &graph, const TensorSpec &spec,
 
 bool has_dynamic_axes(const detail::GraphState &graph,
                       const TensorSpec &spec) noexcept {
+  // Fixed extents do not imply fixed strides: a preceding dynamic View can
+  // change layout without changing this tensor's logical shape.
+  if (spec.kind() == TensorSpecKind::kInferred &&
+      !compute::detail::ShapeProgramView{graph.dimensions, graph.shape_guards}
+           .exact())
+    return true;
   for (const Dimension axis : spec.dimensions())
     if (!axis.is_fixed() &&
         !graph.dimensions[axis.symbol().ordinal()].bounds.exact())
@@ -310,18 +318,23 @@ public:
     if (!inputs_.try_resize(node.input_count) ||
         !outputs_.try_resize(node.output_count))
       return std::unexpected(plan_allocation_failure());
-    const auto axes = [](const TensorSpec &spec) noexcept {
+    const auto axes = [&](std::size_t value) noexcept {
+      const auto &spec = graph->values[value].spec;
       compute::detail::ProviderTensorAxes result;
       for (std::size_t axis = 0; axis < spec.dimensions().size(); ++axis)
         if (!spec.dimensions()[axis].is_fixed())
           result.values[axis] = spec.dimensions()[axis].symbol().ordinal();
+      if (detail::has_strided_view_layout(*graph, value)) {
+        result.layout = compute::detail::ProviderTensorLayout::kBoundedStrided;
+        result.maximum_bytes =
+            plan.descriptions[value].required_bytes().value();
+      }
       return result;
     };
     for (std::size_t port = 0; port < node.input_count; ++port)
-      inputs_[port] =
-          axes(graph->values[graph->edges[node.input_begin + port]].spec);
+      inputs_[port] = axes(graph->edges[node.input_begin + port]);
     for (std::size_t port = 0; port < node.output_count; ++port)
-      outputs_[port] = axes(graph->values[node.output_begin + port].spec);
+      outputs_[port] = axes(node.output_begin + port);
     return compute::detail::ProviderShapeDomain{.dimensions = graph->dimensions,
                                                 .inputs = inputs_,
                                                 .outputs = outputs_,
@@ -539,10 +552,6 @@ Status describe_domain(const detail::GraphState &graph,
   }
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
     if (graph.values[index].spec.kind() == TensorSpecKind::kInferred) {
-      if (!program.exact())
-        return Status::Unimplemented(
-            "producer-inferred layouts need an exact specialization; "
-            "no whole-domain layout proof is available");
       descriptions[index] = {};
       continue;
     }
@@ -550,6 +559,9 @@ Status describe_domain(const detail::GraphState &graph,
         descriptions[index],
         resolve_spec(graph, graph.values[index].spec, envelope));
   }
+  if (!program.exact())
+    HYLE_RETURN_IF_ERROR(
+        detail::prove_view_domains(graph, descriptions, allocator));
   return validate_specialized_operations(graph, descriptions, allocator,
                                          envelope, !program.exact());
 }
@@ -569,6 +581,70 @@ physical_description(const detail::InvocationState &invocation,
              ? invocation.concrete_descriptions[invocation.plan
                                                     ->instance_values[instance]]
              : invocation.plan->instance_descriptions[instance];
+}
+
+Result<std::size_t>
+bound_alias_offset(const detail::InvocationState &invocation,
+                   std::size_t instance) noexcept {
+  const auto &plan = *invocation.plan;
+  const auto *graph = detail::GraphAccess::state(plan.domain_graph);
+  if (graph == nullptr ||
+      plan.alias_sources[instance] == detail::kNoInPlaceSource)
+    return plan.alias_offsets[instance];
+  const auto producer = graph->values[plan.instance_values[instance]].producer;
+  if (producer == detail::kNoNode ||
+      graph->nodes[producer].kind() != compute::OperationKind::kView)
+    return plan.alias_offsets[instance];
+  const auto &node = graph->nodes[producer];
+  const auto *symbolic = detail::view_spec(*graph, node);
+  compute::View view;
+  if (symbolic) {
+    if (symbolic->kind() != compute::ViewKind::kSlice)
+      return std::size_t{0};
+    const auto &bindings =
+        detail::SpecializationSignatureAccess::state(invocation.specialization)
+            ->bindings;
+    const auto value = [&](Dimension dimension) noexcept {
+      return dimension.is_fixed()
+                 ? dimension.fixed_value()
+                 : bindings[dimension.symbol().ordinal()].value;
+    };
+    HYLE_ASSIGN_OR_RETURN(
+        view, compute::View::slice(symbolic->axis(), value(symbolic->start()),
+                                   value(symbolic->count()), symbolic->step()));
+  } else {
+    view = *node.operation().get_if<compute::View>();
+  }
+  return compute::detail::view_alias_offset(
+      view, physical_description(invocation, plan.alias_sources[instance]),
+      physical_description(invocation, instance));
+}
+
+Result<mem::BufferView>
+workspace_tensor_storage(const detail::InvocationState &invocation,
+                         std::uint32_t instance) noexcept {
+  const auto &plan = *invocation.plan;
+  if (!plan.domain_graph.valid())
+    return invocation.workspace.view(plan.workspace_requests[instance]);
+  std::size_t offset = 0;
+  const auto original = instance;
+  while (plan.alias_sources[instance] != detail::kNoInPlaceSource) {
+    HYLE_ASSIGN_OR_RETURN(const auto relative,
+                          bound_alias_offset(invocation, instance));
+    const auto next = math::try_add(offset, relative);
+    if (!next)
+      return std::unexpected(
+          Status::OutOfRange("graph bound alias offset overflows"));
+    offset = *next;
+    instance = plan.alias_sources[instance];
+  }
+  HYLE_ASSIGN_OR_RETURN(
+      const auto root,
+      invocation.workspace.view(plan.workspace_requests[instance]));
+  HYLE_ASSIGN_OR_RETURN(
+      const auto bytes,
+      physical_description(invocation, original).required_bytes());
+  return root.subview(offset, bytes);
 }
 
 Result<Graph>
@@ -773,9 +849,11 @@ bool matches_alias_range(ByteRange source, ByteRange output,
          byte_offset <= source.size && output.size <= source.size - byte_offset;
 }
 
-bool matches_planned_alias(const detail::PlanState &plan,
-                           std::size_t left_value, ByteRange left,
-                           std::size_t right_value, ByteRange right) noexcept {
+Result<bool> matches_planned_alias(const detail::InvocationState &invocation,
+                                   std::size_t left_value, ByteRange left,
+                                   std::size_t right_value,
+                                   ByteRange right) noexcept {
+  const auto &plan = *invocation.plan;
   const std::uint32_t left_ordinal = plan.external_instances[left_value];
   const std::uint32_t right_ordinal = plan.external_instances[right_value];
   if (left_ordinal == detail::kNoWorkspaceRequest ||
@@ -783,10 +861,14 @@ bool matches_planned_alias(const detail::PlanState &plan,
     return false;
   }
   if (plan.alias_sources[left_ordinal] == right_ordinal) {
-    return matches_alias_range(right, left, plan.alias_offsets[left_ordinal]);
+    HYLE_ASSIGN_OR_RETURN(const auto offset,
+                          bound_alias_offset(invocation, left_ordinal));
+    return matches_alias_range(right, left, offset);
   }
   if (plan.alias_sources[right_ordinal] == left_ordinal) {
-    return matches_alias_range(left, right, plan.alias_offsets[right_ordinal]);
+    HYLE_ASSIGN_OR_RETURN(const auto offset,
+                          bound_alias_offset(invocation, right_ordinal));
+    return matches_alias_range(left, right, offset);
   }
   return false;
 }
@@ -825,7 +907,10 @@ Status validate_external_alias(const detail::InvocationState &invocation,
     const ByteRange existing = bound_range(invocation, other);
     if (!overlaps(candidate, existing))
       return Status::Ok();
-    if (matches_planned_alias(plan, ordinal, candidate, other, existing)) {
+    HYLE_ASSIGN_OR_RETURN(
+        const auto planned,
+        matches_planned_alias(invocation, ordinal, candidate, other, existing));
+    if (planned) {
       return Status::Ok();
     }
     return Status::InvalidArgument(
@@ -913,8 +998,10 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
         auto bytes = physical_description(invocation, output).required_bytes();
         if (!bytes)
           return std::move(bytes).error();
-        auto storage = invocation.readable[source].storage().subview(
-            plan.alias_offsets[output], *bytes);
+        HYLE_ASSIGN_OR_RETURN(const auto offset,
+                              bound_alias_offset(invocation, output));
+        auto storage =
+            invocation.readable[source].storage().subview(offset, *bytes);
         if (!storage)
           return std::move(storage).error();
         auto derived = compute::ConstTensorView::create(
@@ -3643,12 +3730,18 @@ Status prepare_placed_steps_attempt(
       auto &step = plan.steps.back();
       step.kind = detail::PlanStepKind::kView;
       step.fallback_reason = CompileFallbackReason::kNone;
-      HYLE_ASSIGN_OR_RETURN(
-          step.view_offset,
-          compute::detail::view_alias_offset(
-              *node.operation().get_if<compute::View>(),
-              plan.instance_descriptions[plan.node_inputs[input_begin]],
-              plan.instance_descriptions[plan.node_outputs[output_begin]]));
+      if (plan.domain_graph.valid()) {
+        // The envelope may violate guards. Domain View offsets are resolved
+        // from the already-checked concrete signature, never this corner.
+        step.view_offset = 0;
+      } else {
+        HYLE_ASSIGN_OR_RETURN(
+            step.view_offset,
+            compute::detail::view_alias_offset(
+                *node.operation().get_if<compute::View>(),
+                plan.instance_descriptions[plan.node_inputs[input_begin]],
+                plan.instance_descriptions[plan.node_outputs[output_begin]]));
+      }
     }
     plan.node_steps[node_index] = step_index;
   }
@@ -5096,20 +5189,25 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
         continue;
       return Status::Internal("graph internal alias source has no workspace");
     }
+    const bool domain_alias =
+        plan.domain_graph.valid() && alias_request != mem::kNoLifetimeAlias;
     if (!requests.try_push_back(mem::LifetimeRequest{
             .resource_slot = plan.instance_storage[ordinal],
-            .size = *size,
+            // Preserve root lifetime, not a fictitious joint offset/span
+            // maximum. Actual subviews are bound and checked per Invocation.
+            .size = domain_alias ? 0 : *size,
             // A derived view only promises its tensor's required alignment;
             // forcing the root's preferred 64-byte kernel alignment onto a
             // non-zero slice offset would reject otherwise valid aliases.
-            .alignment = alias_request == mem::kNoLifetimeAlias
+            .alignment = domain_alias ? 1
+                         : alias_request == mem::kNoLifetimeAlias
                              ? (std::max)(std::size_t{64},
                                           description.required_alignment())
                              : description.required_alignment(),
             .begin = begin,
             .end = end,
             .alias_of = alias_request,
-            .alias_offset = plan.alias_offsets[ordinal],
+            .alias_offset = domain_alias ? 0 : plan.alias_offsets[ordinal],
             .flags = (plan.instance_roles[ordinal] &
                       detail::kRetainedOutputRoot) != 0
                          ? mem::LifetimeFlag::kOutput
@@ -6715,7 +6813,8 @@ Result<Invocation> Executable::create_invocation(
     const std::uint32_t request = state_->workspace_requests[ordinal];
     if (request == detail::kNoWorkspaceRequest)
       continue;
-    auto storage_view = invocation->workspace.view(request);
+    auto storage_view = workspace_tensor_storage(
+        *invocation, static_cast<std::uint32_t>(ordinal));
     if (!storage_view) {
       Status error = std::move(storage_view).error();
       detail::release(invocation);

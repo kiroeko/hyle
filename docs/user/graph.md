@@ -418,8 +418,15 @@ if (!output3d) return output3d.error();
 - 显式指定操作输出时，`TensorSpec::inferred(type, dimensions, format)` 只约束形状、类型与 storage
   format，真实 strides/block axis 由生产者推导。它只能作为输出，不能给 input/constant 使用；即使
   dimensions 全固定，`is_symbolic()` 仍为 true，表示布局待推导。原有 dense/concrete 输出合同不放宽。
-- 这些新 View 链当前使用默认 exact compile；换形状要另编译。非单点 declared-domain 中的 inferred
-  布局会明确返回 Unimplemented，尚不能接到上面的通用回退路线；不以域的一个上界点冒充完整证明。
+- View 链支持 exact 与 declared-domain。完整域编译会证明 reshape 元素数关系、slice 边界和 broadcast
+  兼容性；flatten/head split 可用既有乘积/整除表达式。动态 slice 常用
+  `end = dimension_sum(start, count)` 配合 `require_dimension_less_equal(end, extent)`（step=1）。
+  仅有相同上下界的独立符号不表示相等；无法用有限表达式/guard/区间证明时返回 Unimplemented，可改为
+  exact 或补充真实关系，不能通过添加不成立的 guard 隐藏输入错误。非连续输入的 reshape 仍须先 Copy。
+  Native Copy 支持 plain bounded-strided 输入并输出 canonical dense；不暗中加入 Copy。
+  任意非 View producer 的 inferred layout 尚无通用完整域证明，需显式输出布局或使用 exact。
+- 域内的具体 strides/offset 在冷创建、绑定时求出，Invocation 重放复用它们。共享 workspace 按根 backing
+  的寿命和上界规划，不将不可能同时出现的最大 offset/span 相加；普通 exact 对象不增加 offset sidecar。
 - `Graph::operation_kind(node)` 对所有节点有效。尚未绑定的 View 用 `view_spec(node)` 查看表达式；
   `operation(node)` 返回 FailedPrecondition，不返回假固定参数。输入和参数都已具体化的 ViewSpec 会在
   构图时折叠为普通 Operation，此时反过来用 `operation()` 查询。查询结果借用至 Graph owner 释放。

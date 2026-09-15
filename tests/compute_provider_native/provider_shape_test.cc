@@ -1231,4 +1231,42 @@ TEST(PreparedDomainContract, StridedMembershipDoesNotOverrideOperationSchema) {
   EXPECT_FALSE(probe.root_live);
 }
 
+TEST(NativeProviderShape,
+     BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions) {
+  auto context = cpu::create_context().value();
+  std::array<ShapeDimension, 2> dimensions{};
+  dimensions[0].bounds = dimensions[1].bounds = {0, 4, 1};
+  std::array<ProviderTensorAxes, 1> input_axes{}, output_axes{};
+  input_axes[0].values[0] = output_axes[0].values[0] = 0;
+  input_axes[0].layout = ProviderTensorLayout::kBoundedStrided;
+  const std::array inputs{
+      TensorDesc::strided_bytes(DataType::kFloat32,
+                                std::array<std::int64_t, 2>{4, 3},
+                                std::array<std::int64_t, 2>{0, 4})
+          .value()};
+  const std::array outputs{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{4, 3})
+          .value()};
+  input_axes[0].maximum_bytes = inputs[0].required_bytes().value();
+  const auto propose = [&] {
+    std::array<ResourceBindingRequirement, 1> in{}, out{};
+    return OperationPreparationAccess::propose(
+        context, 0, Operation(Copy{}), inputs, outputs, in, out,
+        ProviderShapeDomain{dimensions, input_axes, output_axes});
+  };
+  auto accepted = propose();
+  ASSERT_TRUE(accepted) << accepted.error().message();
+  EXPECT_EQ(accepted->shape_coverage, ProviderShapeCoverage::kEntireDomain);
+  output_axes[0].values[0] = 1;
+  auto unrelated = propose();
+  ASSERT_FALSE(unrelated);
+  EXPECT_TRUE(unrelated.error().IsUnimplemented());
+  output_axes[0].values[0] = 0;
+  output_axes[0].layout = ProviderTensorLayout::kBoundedStrided;
+  output_axes[0].maximum_bytes = outputs[0].required_bytes().value();
+  auto arbitrary_output = propose();
+  ASSERT_FALSE(arbitrary_output);
+  EXPECT_TRUE(arbitrary_output.error().IsUnimplemented());
+}
+
 } // namespace
