@@ -86,3 +86,10 @@ name，删除未使用的私有 overload。无字段、公共 API、线程策略
 测试夹具的 `if (graph) ASSERT_EQ(...)` 另补显式大括号，消除 GCC 对 GoogleTest 宏的 dangling-else
 诊断。随后 nvcc 拒绝公共 helper 传入的 host `-Werror`，由独立的
 [CUDA host warning 维护卡](../build/build-cuda-host-warning-v1.md)处理，不在 CUDA 模块放宽 warnings。
+
+Linux runtime 在 adopted-stream 用例发生 SIGSEGV。GDB 定位到测试在 owner 销毁后调用
+`cudaStreamQuery(external)`，NVIDIA [stream destroy 合同](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__STREAM.html)
+明确规定销毁后使用 handle 是 UB；Windows 返回 InvalidResourceHandle 不能证明此测试合法。夹具纠正为
+Completion 仍持有 stream 时检查其可用性，再 wait/释放，借既有 StatsAllocator 核对 Queue 元数据全部
+释放；源码 `QueueState::destroy` 核对 adopted 路线调用 stream destroy。不添加产品计数或 vendor hook，
+不再查询已销毁 handle。这是测法错误，不是新候选发生 native lifetime 缺陷。

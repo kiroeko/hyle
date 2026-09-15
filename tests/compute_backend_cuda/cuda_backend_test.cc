@@ -13,6 +13,7 @@
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/error/status.h"
+#include "hyle/mem/stats.h"
 
 cudaError_t launch_increment_kernel(cudaStream_t stream, void *data,
                                     std::size_t size) noexcept;
@@ -317,9 +318,10 @@ TEST(CudaBackend, StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal) {
 }
 
 TEST(CudaBackend, AdoptedStreamIsReleasedAfterItsQueueAndCompletion) {
+  mem::StatsAllocator metadata;
   auto device = cuda::device(0);
   ASSERT_TRUE(device.has_value()) << device.error().message();
-  auto context = Context::create(*device);
+  auto context = Context::create(*device, {.metadata_allocator = metadata.ref()});
   ASSERT_TRUE(context.has_value()) << context.error().message();
   auto execution = cuda::execution_context(*context);
   ASSERT_TRUE(execution.has_value()) << execution.error().message();
@@ -328,15 +330,29 @@ TEST(CudaBackend, AdoptedStreamIsReleasedAfterItsQueueAndCompletion) {
   ASSERT_EQ(cudaExecutionCtxStreamCreate(&external, *execution,
                                          cudaStreamNonBlocking, 0),
             cudaSuccess);
+  const auto before_queue = metadata.snapshot();
+  hyle::compute::Completion completion;
   {
     auto queue = cuda::adopt_stream(*context, external);
     ASSERT_TRUE(queue.has_value()) << queue.error().message();
-    auto completion = cuda::submit(*queue, [](cudaStream_t) noexcept {});
-    ASSERT_TRUE(completion.has_value()) << completion.error().message();
-    ASSERT_TRUE(completion->wait().ok());
+    auto submitted = cuda::submit(*queue, [](cudaStream_t stream) noexcept {
+      return cuda::status(launch_delay_kernel(stream, 1000000));
+    });
+    ASSERT_TRUE(submitted.has_value()) << submitted.error().message();
+    completion = std::move(*submitted);
   }
-  EXPECT_EQ(cudaStreamQuery(external), cudaErrorInvalidResourceHandle);
-  (void)cudaGetLastError();
+  // The Completion retains the adopted stream after the public Queue dies.
+  // Querying it after releasing both owners would itself be CUDA API UB.
+  EXPECT_GT(metadata.snapshot().live_bytes, before_queue.live_bytes);
+  const auto ready = cudaStreamQuery(external);
+  EXPECT_TRUE(ready == cudaSuccess || ready == cudaErrorNotReady);
+  ASSERT_TRUE(completion.wait().ok());
+  completion = {};
+  EXPECT_EQ(metadata.snapshot().live_bytes, before_queue.live_bytes);
+  EXPECT_EQ(metadata.snapshot().live_count, before_queue.live_count);
+  *context = {};
+  EXPECT_EQ(metadata.snapshot().live_bytes, 0u);
+  EXPECT_EQ(metadata.snapshot().live_count, 0u);
 }
 
 TEST(CudaBackend, MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics) {
