@@ -1331,3 +1331,31 @@ host-accessible storage。这使纯别名需要 kernel Provider，也无法为�
   oneDNN、CUDA、逐头与三交付回放。P0 查消除的制品成本与新增冷分类，P1 仍只随完整候选一次运行。
 
 这一项只完成正确的 metadata owner；全域关系证明和动态 offset 绑定仍按上面的 G101 实现，不缩为 exact。
+
+### 2026-09-15 G101：Graph-owned View 检查点
+
+产品 `1dffd064c332ccfccf18e2a793b98b0ef668d988` 已落实上述 metadata owner。未融合的 View 不再查询或
+准备 kernel Provider，不消耗 proposal/prepare 额度，也不要求源 storage 可由 host 访问；仍保留 alias、
+控制依赖、跨 storage 的显式 copy 和 Completion 合同。Graph/Native 复用 ComputeOps 的 checked alias
+offset helper，`PlanStep` 使用与 copy bytes 互斥的 union，没有为全部 step 增加一个 offset 字段。
+
+新增 7 个用例覆盖 offset/empty/overflow、无 Provider 的纯 View 图、精确准备预算、Provider 硬约束、
+跨 target 控制依赖和真实 CUDA 显存别名。测试夹具纠正了显式 Operation 构造、CPU resource 取得方式及
+多 Queue 的 `prepare_replay()` 调用；没有通过改变产品同步或错误合同使夹具通过。
+
+| Windows Release 验证 | `C:/hyle-scratch/` 缓存 | 结果 |
+|---|---|---|
+| ComputeOps/Compute/CPU/Native/Graph 与逐头 | `compute-route-v8-static-20260914` | 初轮 10/11，纠正夹具后 Graph executable 1/1；受影响集合全部通过 |
+| shared 与真实 oneDNN direct/region/composition | `compute-route-onednn-v8-20260914` | 17/17 |
+| CUDA Graph 与逐头，含新 device-storage alias | `compute-graph-v7-cuda` | 3/3 |
+| source CPU/CUDA sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+沿用 2 build jobs、串行测试与 120s timeout；三交付 helper 以匹配当前产品的 ComputeOps/Compute/Native/
+Graph/Mem DLL 回放并校验复制身份。selector `baa9692a → 1dffd064` READY、跳过 86 项；closure、docs 和
+diff check 通过。无全库测试、CI 或 P1，Linux/两台 Apple、sanitizer 和独立终局红队留给完整候选。
+
+同提交 LOC self-check：全库 **683,934**，自实现不含测试 **125,267**；Compute（含当前 backend/provider
+实现）**16,938**、Graph（含 oneDNN region adapter）**13,144**，合计 **30,082**。保持 AUDITED：动态
+View 的全域证明/offset、G103 联合优化、G106 packing/capture 与终局平台探针仍未完成。
