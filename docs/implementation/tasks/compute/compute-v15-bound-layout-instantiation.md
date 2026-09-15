@@ -33,3 +33,32 @@ kDerived 保持旧 exact strides/opaque 与动态 dense/blocked-dense 规则；�
 本卡只解除受检描述传递的底层缺口，不代表 G101 已完成。Graph 仍必须证明 View 操作关系、alias offset
 及 workspace 上界，并在同一共享 Plan 的冷实例化消费；动态 View attributes/offset 不在本卡被偷偷放宽。
 三种 C++ 用户交付没有新增产品开关/FFI；same-build Provider 私有版本递增，不提供旧表兼容。
+
+## 2026-09-15 实现检查点
+
+产品 `b07f0fec039f875673e2d15f8c51a6684bef7f8a` 已实现 C150/C151，私有 Provider 合同为 v13。
+Graph 冷实例化传入已推导的端口描述；检查在 Provider callback 前执行。原 schema、alias offset、
+workspace/private 上界与制品保活继续校验，未扩大已接受域或改变 warm replay。
+
+新增 11 个测试：6 个 Compute 布局族/小域穷举用例，5 个 Native 真实 RMSNorm、错误前置拒绝、
+逐点 OOM、描述所有权与销毁用例。初次编译纠正了测试中 AllocatorRef 的参数个数，没有放宽产品合同。
+
+| Windows Release 验证 | `C:/hyle-scratch/` 缓存 | 结果 |
+|---|---|---|
+| Compute/CPU/Native/Graph 与逐头 | `compute-route-v8-static-20260914` | 9/9 |
+| shared 与真实 oneDNN direct/region/composition | `compute-route-onednn-v8-20260914` | 14/14 |
+| CUDA runtime/late failure/逐头；Graph/逐头 | `compute-graph-v7-cuda` | 分别 3/3、3/3 |
+| source CPU/CUDA sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+沿用 Windows wrapper 的精确 target/CTest、2 build jobs、串行测试、120s timeout 与显式 SDK prefix。
+shared SDK 与实际 CPU consumer 的 Compute DLL SHA256 同为
+`5275E81FA87F9E5DD065FD268BCDAFB26BDF4B7D6CF2DDDC47FA4953F4A1040E`。
+selector `20c80597 → WORKTREE` 为 READY、跳过 86 项；closure 39/schema 4、docs 与 diff check 通过。
+同提交 LOC self-check：全库 **683,536**，自实现不含测试 **125,183**；Compute **16,917**、Graph
+**13,081**，合计 **29,998**。
+
+本卡仍 AUDITED。完整动态 View 关系/偏移/内存上界、G103 联合优化、G106 packing/capture 与真实架构
+探针仍未完成；Linux/两台 Apple、sanitizer、终局独立红队和 P1 随完整 foundation candidate 验证。
+以上增量通过不是 foundation 完成声明，没有新性能点值或跨平台结论。
