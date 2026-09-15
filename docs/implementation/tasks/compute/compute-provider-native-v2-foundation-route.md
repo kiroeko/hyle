@@ -76,3 +76,7 @@ source/static/shared 的 Native RMSNorm 示例均实际执行。见 [Graph gener
 N21 后继 storage 事实：Compute v13 / Graph G106 需要额外 invocation 私有占用上界。Native 的域实例、
 run state 都通过传入 allocator 分配，caller workspace 单独声明，replay 不分配；故该新事实为 0，
 不能把已有 NativePlan persistent 字节再次计入。只补冷属性，不改变 kernel/线程/热回调。
+
+N21 的 Compute v14 直接消费：Native propose/build_plan 只用栈，prepare/销毁通过 supplied allocator
+取得/释放 NativePlan；故新增 compilation private resident/peak 均为 0。既有 persistent_bytes 仍报告
+NativePlan 大小，但完整 compiler quota 不把它再相加。只补 proposal 冷属性，非新算子/route。

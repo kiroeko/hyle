@@ -1154,3 +1154,30 @@ resident/冷峰值、packing identity/共享、capture 私有上界，G101 动�
 
 统一 LOC self-check：全库代码 **680,831**，自实现不含测试 **124,428**；Compute **16,748**、Graph
 **12,495**，合计 **29,243**。检查器通过 39/schema 4、296 Markdown/1072 links，diff check 通过。
+
+### G106：编译 resident/peak 表示审计（实现前固定）
+
+- `CompileOptions::compilation_storage` 为可选 `CompilationStorageLimits`：family-wide
+  `max_resident_bytes/max_peak_bytes/unknown`。既有 compiled_storage 保留为特定 artifact 分类限额，
+  不改成另一口径；新限额约束整个 compile 新取得的 requested storage，而不是进程 RSS。
+- 集合是 Graph/Compute supplied-allocator 控制 metadata、实际 canonical materialization 请求，以及
+  Compute v14/Region resource proposal 的额外 private resident/peak 上界。不重复加原 persistent_bytes。
+  输入 Graph/外部 backing、已有 Context/Queue 与 backend/driver 控制开销、Status 诊断和 allocator
+  rounding 不在此集合；不为观测 OS/driver 私有 malloc 改 runtime。Invoke/capture 仍是独立集合。
+- cold scratch、incumbent/trial、全部 exact 子计划和报告共享一个峰值额度；在任何受管请求前准入。
+  私有 peak 在 prepare 前预留，成功后只保留 resident；失败先销毁部分制品再归还。未知量在有限 strict
+  模式下于 prepare 前拒绝，可参与既有路线重选；allow 只约束已知部分并披露不完整。
+- 根 compile 返回前、临时对象已销毁后检查 resident 上限；所有指定 variants 原子发布，不删点求成功。
+  `CompileReport::compilation_storage()` 给 family 发布时 resident/peak 与 unknown 快照；报告不靠
+  保活 payload 维持计数。未知尝试影响 peak 的事实保守保留，不能失败后写成已知总量。
+- 复用 Graph 已有引用保活 allocator adapter 与 Mem QuotaAllocator，不另写通用 quota；常量和制品
+  reservation 必须与真实 owner 同步销毁、随 constant sharing 和 route transaction 一起移动。
+  Invocation 使用基础 runtime allocator，不误消耗 compiler quota；运行 tracker 的控制块算编译 metadata。
+- 普通未启用路线不分配 compiler tracker、不加热态计数；新增冷 Plan/Report 字段及 opt-in side arrays
+  记录 P0，不给每个热 PlanStep 增加一份 token。不会用此项假称 opaque packing 兼容共享已经完成。
+- 验证：metadata 对账、精确 resident/peak 边界、未知/非法/overflow、编译前拒绝、private peak 归还、
+  失败逐点清理/重选、constant/variant 共享、独立报告/子路线/运行实例生命周期，原 Graph/Native/
+  oneDNN/CUDA 与三交付。跨平台/终局红队/P1 仍由完整 foundation candidate 统一执行。
+
+这是既定 G106 的完整编译 requested-storage 集合，不扩 kernel、packing 算法或后端目录；未知 vendor
+上界允许明确拒绝，不能改成虚构的有限值。现有 invocation 限额和所有其它 foundation FIX 继续保留。

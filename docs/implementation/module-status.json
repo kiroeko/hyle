@@ -267,8 +267,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v13-invocation-storage-facts.md",
-      "summary": "compute v13 AUDITED：承接 v12 与未完成 C93/foundation，C130/C131 披露不经过 supplied allocator/workspace 的额外 invocation 存储上界；unknown 不猜零，公共 direct 与 warm route 不变。"
+      "record": "docs/implementation/tasks/compute/compute-v14-compilation-storage-facts.md",
+      "summary": "compute v14 AUDITED：承接 v13/C93/foundation，C140/C141 在冷 proposal 披露不经过 supplied allocator 的编译 resident/peak 上界，避免与 metadata 双计；不改 warm route。"
     },
     {
       "module": "graph",
