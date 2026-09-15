@@ -1309,3 +1309,25 @@ G101 的 [Compute v15](compute-v15-bound-layout-instantiation.md) 直接接入�
 具体描述，改为把每个 physical port 的这些描述交给受检实例化，不再让 Compute 重新猜布局。临时描述数组
 复用同一 Invocation allocator，失败完整释放；不保存热态数组或改变共享 Plan。此接入仍只运行原来已证明
 的 general 路线，不自动使 View 全域可用；View 关系/偏移/内存上界证明继续是本卡剩余 FIX。
+
+### G101：零拷贝 View 的元数据 owner（实现前固定）
+
+基线 `69aa1129`。当前 exact View 不进 Queue，却仍经 Native proposal/prepare、分配 NativePlan 并要求
+host-accessible storage。这使纯别名需要 kernel Provider，也无法为非合法 envelope 角点准备动态 View。
+在既定 G101 内把未融合 View 改为 Graph 自有 metadata step；已被 region 完整覆盖者仍由该 region
+负责语义。不改变 direct Compute View 的 Provider 路线，不新增算子族或动态域完成声明。
+
+- 复用 ComputeOps 的既有 View 推导，并把 slice alias offset 计算提为同 build 私有共享 seam；Native
+  也消费它，不在 Graph 复制第三份语义。ComputeOps 当前卡追加这一直接消费，状态保持 AUDITED。
+- metadata step 没有 Provider identity/artifact/workspace/dispatch，不占 Provider 发现/prepare 配额。
+  仍参加有界 node cover、target/storage、控制依赖、alias/lifetime 和 Completion；不是删除 DAG 节点。
+  同域别名不要求 target 能执行该存储上的 kernel；required storage 若需要 copy 仍走显式 backend bridge。
+- 全局 Provider/replay filter 不适用于无 Provider 的 metadata step；逐节点 required Provider 不能被绕过，
+  只有实际含该节点的合格 region 才能满足，否则失败。关闭 operation fallback 不关闭基础 View。
+- CompileStepReport 明确 kView，而不是假 operation fallback。普通 PlanStep 不加字段；copy-size 与
+  metadata-offset 为互斥 payload。exact 生命周期/源绑定/私有根复用和热提交路线保持。
+- 验证：无 Provider 的 View、零 prepare 配额、explicit provider constraint、GPU 非 host 存储、required
+  copy、empty/overflow、控制边/多 lane、私有根/所有权/重复执行/OOM；原 Graph/Native/ComputeOps、
+  oneDNN、CUDA、逐头与三交付回放。P0 查消除的制品成本与新增冷分类，P1 仍只随完整候选一次运行。
+
+这一项只完成正确的 metadata owner；全域关系证明和动态 offset 绑定仍按上面的 G101 实现，不缩为 exact。

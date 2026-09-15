@@ -84,3 +84,12 @@ P0 结构检查：新增一字节 traits 字段（包含其自然 padding）和�
 impact selector READY（82 项 skipped/reused），closure（含 `--previous-ref 925aaf27`）、docs 和 diff 检查
 通过。没有运行 Linux/macOS/sanitizer/真实设备/独立 installed SDK/P1，不把 source-tree shared 测试当成
 安装包资格；O32 的完整交付门仍未裁决。保持 `AUDITED`，不是 ComputeOps 或 foundation CLOSED。
+
+## G101 直接消费：View alias 语义复用（实现前固定）
+
+基线 `69aa1129`；承接 [Graph G101](graph-v10-reviewed-foundation-contracts.md#g101零拷贝-view-的元数据-owner实现前固定)。
+Graph 的 metadata-only View 与 Native direct View 都需要同一 checked slice byte offset。O33 FIX：把
+既有 Native 计算移到 ComputeOps 私有 `view_alias_offset` seam，要求调用方先成功执行现有 View schema，
+保留 empty offset=0、size_t overflow 和 source span 校验。Native/Graph 同 build 直接调用，不增加 public
+API、Operation 字段、kernel 或依赖。成功 O(rank)/零分配，仅冷准备；测试覆盖 normal/negative axis/
+empty/overflow/错误 span 及两条消费者、逐头/三交付。此项不改变资源 schema 或终局预算。

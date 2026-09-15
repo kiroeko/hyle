@@ -248,6 +248,11 @@ step 和 permutation 在编图时固定。逻辑 node 区分未绑定 ViewSpec �
 input/constant 的存储描述。具体绑定按拓扑复用 ComputeOps 的 View 语义，不默认把转置或广播变成 dense，
 也不隐式 materialize。全域路线还需证明布局与 alias offset 的上界及实例化合同，精确点的成功不构成全域证明。
 
+未融合的零拷贝 View 是 Graph 自有 metadata step：复用 ComputeOps schema/alias 计算，没有 Provider
+制品或 kernel dispatch，不能仅为读懂描述而要求 host-accessible storage。它仍拥有正常的 DAG/control
+边与 alias lifetime。真正跨 storage 的搬运是显式 Copy；如果 region 吸收 View，则由该 Provider 完整
+保持其语义。Provider 硬约束不能被 metadata 路线假冒满足，报告也不得给无 Provider 的步骤伪造 identity。
+
 表达式按创建顺序引用此前维度或非负常量，因而不需要递归图解释器。派生 bounds 是保守 envelope，
 guards 可能排除各轴上界的组合；不能把这个组合当作合法 concrete shape 先做单点 schema inference，
 再声称覆盖整个 domain。整数或 descriptor 的保守上界无法表示时要求缩窄输入范围，不靠通用约束求解
