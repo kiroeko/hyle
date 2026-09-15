@@ -387,10 +387,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
-      "candidate": "1644bdc23a6a94a98ac65ccc8bb94fbf64897756",
-      "summary": "compute_backend_cuda v2 CANDIDATE：CU20/CU21 的端点身份修复已通过 Windows CUDA/Graph 与真实双 lane source/static/shared；待 Linux CUDA、适用 sanitizer 和候选后独立复核。"
+      "summary": "compute_backend_cuda v2 AUDITED：CU20/CU21 已通过 Windows CUDA/Graph 与三交付；CU22 定向纠正真实 Linux CUDA 构建暴露的 ThreadOpts 初始化与未用私有 overload，不放宽 WERROR。"
     },
     {
       "module": "compute_provider_native",

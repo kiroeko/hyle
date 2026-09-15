@@ -1,6 +1,6 @@
 # Compute CUDA backend v2：完成端点不能把 Context 当 Queue
 
-## Closure card / CANDIDATE
+## Closure card / AUDITED
 
 - owner：`compute_backend_cuda`；baseline `a4dee153`；前轮为
   [CUDA v1](compute-backend-cuda-v1-async-runtime.md)。
@@ -70,3 +70,15 @@ Context 可互通，不等于同一有序 Queue”。有限产品 FIX 完成，�
 完整候选还需 Linux CUDA/适用 sanitizer 与候选后独立复核。没有新增 P1；必要 event wait 是正确性成本，
 不能拿旧错误路线当性能 peer。当前 Compute/Graph 实现行数分别 16,996/14,135，合计 31,131；全库
 686,973、自实现不含测试 126,316，统一 LOC 工具在同一候选 self-check 通过。
+
+### Linux 候选纠正（实现前固定）
+
+同一 `1644bdc2` archive 在 WSL native ext4、GCC 14.2、CUDA/nvcc 13.3.73 上启用真实 CUDA 后，
+`-Werror` 暴露两处旧 factor 代码：`CompletionReaper::start` 的部分指定 ThreadOpts 初始化被 GCC 判为
+missing-field-initializers；`cuda_memory.cc` 的 const `host_address` overload 没有调用者。两者均不改变
+CU20 的证明；不是关闭 WERROR 的理由。退回 AUDITED，追加唯一 CU22 纠正：ThreadOpts 先值初始化再设置
+name，删除未使用的私有 overload。无字段、公共 API、线程策略或热路径变化，复用既定验证矩阵。
+
+配置先遇到显式空 `HYLE_COMPONENTS` 与 `HYLE_DEV_FACTORS` 互斥，随后未在 PATH 中的 nvcc 无法自动
+识别；分别删除冲突的 cache 输入并显式传 Toolkit/compiler/host compiler 后，已经完成 configure。
+这两项是验证命令纠正，不是产品 CUDA discovery 缺陷。
