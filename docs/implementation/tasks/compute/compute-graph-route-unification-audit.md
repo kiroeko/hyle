@@ -4,48 +4,121 @@
 > 单个 component 的 closure card，也不自行改变 `module-status.json`；产品修改前仍须让受影响 component
 > 依法返回 `AUDITED` 并分别冻结有限改动集。
 
-当前唯一工作入口是下面的[四路线架构定案调研](#当前任务四路线与混合计算的架构定案调研)。原总目标、
+当前唯一工作入口是下面的[四路线架构定案调研](#当前任务四条独立路线的架构定案调研)。原总目标、
 实现队列和 55%/89% 估算保留为历史施工背景，不授权继续正式实现，也不是本次研究进度。
 架构文档不再复制第二套编号队列。
 
-## 当前任务：四路线与混合计算的架构定案调研
+## 当前任务：四条独立路线的架构定案调研
 
 用户在 `e802e677` 后明确：当前任务是参考成熟推理引擎、按真实纵切进行必要调研/实验，把重大架构决策
 定案；不是完成四条路线的正式产品实现。上一轮[准入研究](foundation-architecture-admission.md)只完成
 局部机制验证，不等于整体架构已定案。旧大目标暂不执行，不创建新的并行状态或自动恢复实现。
 
-范围为 CPU、CUDA、MLX/Metal、Vulkan，以及 CPU/GPU 混合计算这个跨路线组合；参考 ggml/llama.cpp、
-vLLM、SGLang、ds4 的具名源码与相应厂商 API。保留已有证据和可用骨架，但不能把现有类型当作不可反证
-的前提。只允许为裁决关键问题制作有限实验原型；不补正式 backend/provider、填算子目录或启动全库测试。
+2026-09-15 在 `6cb2dec3` 后，用户进一步裁决：只保留 CPU、CUDA、MLX/Metal、Vulkan 四条独立推理
+计算路线；**模型级 CPU+GPU 联合计算不属于 HYLE 功能范围，不是延期 backlog**。此前列出的 CPU 层段
+与 GPU 层段、CPU FFN/专家卸载纵切撤销；已有源码调查仍是历史事实，不再授权实现这些能力。
+CPU-only 推理保留，GPU 路线所需的 host 提交、初始化/上传下载、同步与回收保留；同一 GPU 上多个
+Provider 的组合和 MLX/Metal 边界也保留。不能用隐藏 CPU kernel fallback 把混合推理重新带入。
+
+参考 ggml/llama.cpp、vLLM、SGLang、ds4 的具名源码与厂商 API。构建期选能力集合，准备期按实际设备/
+格式/shape 绑定计划，执行期固定；用户接受四条路线各自实现，不以共享执行器或代码行数为目标。
+目标仍是合理真实场景中的 SOTA 性能。已有实现只作审计输入，不能因已经存在或旧测试通过就默认保留；
+调研后须按新架构决定复用、改写或删除，不维护无人消费的旧接口兼容层。
+本轮只更新架构与任务边界、核对现有实现，不改产品/registry/依赖锁/治理工具，不启动构建或 P1。
+复用已有有限实验；本次源码与文档校准预算 30 分钟，完成下述分析即报告，不自动恢复原大 goal。
 
 固定要裁决的系统问题为：
 
 1. logical operation/region、量化精度与物理格式怎样表达，成熟 leaf/opaque region 如何真正接入；
 2. 全局/局部调度权、CPU executor、私有 runtime、shape specialization 与 capture 的责任边界；
-3. execution/storage/lane 是否足以表达设备内、跨 CPU/GPU、共享内存和独立显存，包括显式迁移/同步；
+3. execution/storage/lane 如何表达所选路线内的执行、共享/独立内存与输入输出传输，不把 host resource
+   自动解释为 CPU 计算资格；
 4. 常量、输出、scratch、KV 等外部可变资源的 lifetime/alias/并发/预算，哪些限制必须拒绝而不能假装兑现；
 5. 部分接纳、异步错误、Completion、取消/回收能否跨 runtime 闭合；
-6. 冷路由和渐进替换怎样计入真实完整成本，能否保留成熟实现的性能而不强制复制/同步/重建图。
+6. 冷路由和渐进替换怎样计入真实完整成本，能否保留成熟实现的性能而不强制复制/同步/重建图；
+7. 哪些共同语义值得保留，哪些 lowering/提交/资源/回收应独立实现；CMake、模板/宏、运行时冷绑定
+   各负什么责任，以及未来 HIP 如何接入而不把当前 core 写成封闭的四分支枚举。
 
 每项输出「真实消费/参考入口 → 可选方案及代价 → 必要实验与反例 → 采用/拒绝理由」。复用已有证据；
 实验只针对会改变这些系统决策的未知量，不为了架构调研实现完整模型或完整交付矩阵。现有 CPU/CUDA
 局部通过、MLX 独立 FFN、仅源码检查的 Vulkan 分别记账；不得合并为四路线全部通过。
 
-纵切以既有 FFN/资源流水线为基础，额外检查两种自然混合形状：
-
-- CPU 常驻层段 → GPU 常驻层段，变化输入重复执行，只传必要 activation；验证迁移、内存预算与完成链；
-- GPU attention 周边 → CPU FFN/专家计算 → GPU 后继，或显式允许的 host 权重→GPU 算子路线；
-  用来区别权重放置与实际计算位置。模型划层/专家选择由引擎表达，不在 Graph 内新增模型层调度器。
-
-混合是现有路线的组合，不新增第五个 backend，也不要求研究阶段实现全部 attention/MoE。它不能以一条
-全 GPU FFN 或纯 memcpy 程序代替；哪些跨路线机制尚未证实必须在定案报告中明确。
+纵切以各路线自己的 FFN/资源流水线为基础。CPU 真计算、CUDA 压缩真计算、MLX GPU region 与原生
+Metal 边界、Vulkan 真计算分别取证；GPU 上传下载不能冒充 GPU kernel，独立 MLX 程序也不能冒充
+HYLE/MLX/Metal 全部交付。跨 Provider 组合是同一路线的局部替换，不再增加 CPU+GPU 模型联合计划。
 
 **本阶段停止点是架构定案报告，而非 foundation implementation gate**：重大 owner/接口/资源/路由决策
 有源码和必要实验支撑，不再留“等写完 Provider 才知道共同合同是否成立”的未知量；剩余工作可具体归属
 为局部实现/配置/资格验证。若仍有会改变共同骨架的未决问题，报告精确问题，不能提前宣布定案。
 定案后先报告并与用户确认，再恢复正式施工；不把全部算子、三交付和终局 P1 完成作为研究的结束条件。
 
+### 本轮架构分析：统一合同与独立执行
+
+采用「共同语义/冷编译 + 路线专属制品和运行状态」，拒绝以一个万能 GPU runtime 抹平差异；也不预先
+复制四套 operation/schema/DAG/错误语义。长期决策见 [Compute §1.3/§3.5](../../../architecture/compute-design.md#13-四条独立路线与明确非目标)
+和 [Graph §6.3](../../../architecture/graph-design.md#63-路线内编译与特化执行)。
+
+研究与后续施工按四条路线分别组织，再做一次共同合同核对，不增加 CPU+GPU 组合矩阵。
+每条路线只需确定算子/region 接入、原生资源与并发、准备与重复执行、同步/失败/回收，以及完整成本
+验证方法。它们不必共用执行器；公共 DAG/精度/依赖语义不复制四份。后续局部厂商 API 差异先在所属
+backend/provider 解决，只有具体反例推翻共同合同才重开共同架构，不因新增算子再次进行全架构调研。
+
+本轮只读 pins：llama.cpp `4c9233c034fc450dcf34c7c0988aebe6da5cdf1a`（含 vendored ggml）、
+vLLM `51918e252af4dfff381001f42b7ebe6a0454501b`、SGLang `06992c92ad4494fe9f9636e75be3e35040512447`、
+ds4 `9139e2ae58a41503968a500f36f75895c1ba63fc`；MLX C++ 事实沿用 v0.32.2 与前轮真机证据。
+
+| 源码/公开合同事实 | 采用的设计与不采用的推论 |
+|---|---|
+| ggml 的 CMake 分别选择 CUDA/Metal/Vulkan/HIP；HIP target 可编译部分 CUDA 源码并有 vendor 宏适配 | 构建期裁剪，target 彼此独立；宏可复用同义实现，但不能据此前缀替换就签 HIP，或声称所有执行选择已在编译期完成 |
+| `ggml_backend_cuda_context` 按 device/stream 保存 cuBLAS handle/workspace；cuBLAS 明确 `SetStream` 会重置 workspace，共享可变 handle 有并发约束 | 冷准备 lane/run-slot 资源并复用；不每 op 建 handle，不强制所有 Provider 共用一个可变 handle |
+| ggml Vulkan context 持有 command/descriptor pools、prealloc buffers、同步和回收状态；Vulkan command pool 有 host 外部同步要求 | Vulkan 独立录制/提交/回收；不模拟 CUDA capture，不把 pending command buffer 当可立即 reset 的普通对象 |
+| MLX compile cache 是 thread-local，命中后仍实例化数组；`transforms.cpp` 按 primitive 的 device 选择 CPU/GPU eval | 持久提交 owner 与 managed GPU region；显式绑定/验证 GPU 计算，不把 MLX 同时具备 CPU/GPU 当作本库允许联合推理 |
+| vLLM dispatcher 按 batch descriptor 选 FULL/PIECEWISE/NONE；SGLang 按 bucket/stream/variant 填持久输入并 replay | 部署固定但 shape/批次可以变化；有限已准备变体，不每 token 搜索设备或 Provider |
+| ds4 decode islands 保存有限 key 与 CUDA graph exec，首见 warm、次见 capture、以后 replay | 采用稳定资源/分段 replay；HYLE 把 warm/capture 放显式准备，不照搬首 token 的隐式冷工作或把 peer 的错误处理注释视为 HYLE 失败保证 |
+
+[ggml CUDA 资源](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-cuda/common.cuh#L1454)、
+[HIP 构建](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-hip/CMakeLists.txt)、
+[ggml Vulkan](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-vulkan/ggml-vulkan.cpp#L2506)、
+[cuBLAS stream/workspace](https://docs.nvidia.com/cuda/cublas/index.html#cublassetworkspace)、
+[Vulkan command lifecycle](https://docs.vulkan.org/spec/latest/chapters/cmdbuffers.html)、
+[MLX primitive 执行](https://github.com/ml-explore/mlx/blob/v0.32.2/mlx/transforms.cpp)、
+[vLLM dispatcher](https://github.com/vllm-project/vllm/blob/51918e252af4dfff381001f42b7ebe6a0454501b/vllm/v1/cudagraph_dispatcher.py)、
+[SGLang replay](https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py)、
+[ds4 islands](https://github.com/antirez/ds4/blob/9139e2ae58a41503968a500f36f75895c1ba63fc/ds4_cuda.cu#L899)。
+
+### 现有 HYLE 的待审改造点与后续有限接入
+
+下表明确后续重构的审计对象，不是本次源码阅读已经证明旧实现应当保留。语义需求与具体代码分开裁决。
+
+| 现有实现 | 按新架构审计与改造 |
+|---|---|
+| `BackendVTable`、typed extensions、独立 CUDA target/SDK discovery | 核对 native owner、分发层数、target usage 与 SDK 隔离；独立原生 factor 的方向可复用，具体接口/布局不预先批准；共同层不扩成全局后端 switch |
+| Operation/Graph、Executable/Invocation、资源三轴、shared/delegated、Completion | 核对共同语义是否必要、资源寿命是否准确、状态是否重复；可复用成立的语义，不保证当前类型/字段/分配方式原样保留；共享制品与可变 run-slot 分开 |
+| `RouteSearch/ResourceSearch` | 按所选路线收紧候选与搜索；唯一可行路线直接准备；审查不再服务当前范围的 CPU+GPU 联合分支，而不是只在旧搜索外加一层过滤 |
+| `Invocation::submit` 的共同 segment 循环 | 对照原生提交路径，查逐节点 wrapper、重复验证/分配/同步与事件成本；需要时改成路线专属执行物/入口；不把通用循环视为前提，也不从源码分支数量直接宣称性能 FAIL |
+| `CommandCaptureVTable` | 核对是否给某后端增加模拟或额外生命周期成本；只保留适用的可选能力，必要时改写为独立原生程序接口，不要求 Vulkan/MLX 伪造 CUDA stream capture |
+| 旧 CPU/GPU 模型组合计划和百分比 | 退出当前要求；不删历史证据、不伪造新通过。`ReplayRoute::kHybrid` 表示 capture+普通命令，不等于 CPU+GPU 联合推理，不能按单词机械删除 |
+
+正式重构按每条路线交付「成熟参考调用链 → 新方案与成本理由 → 旧实现复用/改写/删除清单 → 验证」。
+先用 P0/源码对照处理明显的重复规划、临时资源、强制复制/等待、融合破坏和错误线程归属，再对稳定
+candidate 做有限实测：同一 Provider 的 direct 对照查抽象税；同语义/精度/shape/资源与完成边界的成熟
+完整路径查端到端竞争力。冷准备、host submit 和最终完成成本分别报告，不能拿 kernel-only 胜利代替。
+新的公共形状与执行器必须服务消费者和性能；「四套实现」本身不是 SOTA 证明，旧 PASS 也不是新架构的
+性能资格。当前阶段只定案并报告，正式改造范围绑定后再实施，不在本轮顺手改产品或启动测量矩阵。
+
+剩余实验必须是有限接入问题：CUDA 正式压缩 carrier 的 typed scales/精度与准备；MLX GPU region
+到原生 Metal 的真实资源/错误/完整费用；Vulkan 原生录制与资源可见性。优先复用前轮 CPU/CUDA/MLX
+事实。不再研究“CPU 层段怎样与 GPU 最快联合推理”，不把局部厂商接法上升为四条路线必须共用实现。
+MLX 无法无损拆开的 region 可整体委托；原生 Metal 替换只在边界费用合格时准入，不依赖未证明的零拷贝桥。
+这些尚未资格化，不能宣布基础实现或 SOTA 已通过；文档轮也不提高实现百分比。
+
+本轮文档校准验证（2026-09-15）：以 `6cb2dec3` 为 baseline，validation selector 只选择 docs/closure，
+`check-docs.py`、`check-module-closure.py` 与 `git diff --check` 通过。未改产品、CMake、依赖锁或 registry，
+未运行构建、原生实验、交付测试或 P1。本次到文档与架构分析报告为止，不据此恢复正式实现或签发基础通过。
+
 ### 本轮 llama.cpp 混合计算源码核对
+
+本节保留 `6cb2dec3` 的历史调研事实；用户之后已将该产品能力排除，以下不是当前待办或验收门。
 
 只读同日 clean pin `4c9233c034fc450dcf34c7c0988aebe6da5cdf1a`，包括其 vendored ggml；未升级产品锁。
 
@@ -91,7 +164,7 @@ HYLE 冷路径的候选。HYLE 不需要调度第三方 artifact 内每个 kerne
 
 ## Foundation v1 架构基线
 
-下表是此前形成的工作基线，不把尚未完成的实现写成通过；当前按上面的四路线与混合计算研究验证。
+下表是此前形成的工作基线，不把尚未完成的实现写成通过；当前按上面的四条独立路线研究验证。
 已明确的产品目标保留，若关键实验反证某项系统合同，必须在定案前修正，不能仅因写过 ACCEPTED 就拒绝研究。
 
 | 维度 | 工作基线 |
@@ -376,7 +449,7 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 | 5 | CUDA foundation probe | 复用已通过的多 lane/capture；分开做正常浮点 vendor 调用与保留压缩权重的 Q4 decode/prefill FFN；正式 leaf/region/unsupported、residence/预算、general/exact 与完成边界。Q4→F32 预检不代替量化路线 |
 | 6 | Apple foundation probe | MLX delegated managed replay + 原生 Metal custom-kernel/interop，实证成本分类、prepared-only 拒绝、island boundary/Completion，不横向填 Apple 算子 |
 | 6a | Vulkan foundation probe | 最小 SPIR-V 计算、device/queue-family、buffer/barrier/timeline、native handoff；Windows/Linux 与 Apple MoltenVK portability；不填算子目录 |
-| 6b | 基础组合资格 | 真实 CPU/GPU 计算边界及 delegated island 的失败/完成/回收；实测 profile 回灌；最小可选 Obs 事件；每个 backend 的 feature/SDK/三交付资格。见下节有限清单 |
+| 6b | 基础组合资格 | delegated island 的失败/完成/回收、实测 profile 回灌、最小可选 Obs、各 backend 交付；原 CPU/GPU 模型计算边界已由后续用户范围裁决撤销，不再恢复为待办 |
 | 7 | **Foundation implementation gate** | 上述全部基础探针、适用平台 correctness、one-op/MLP P0/P1、实测完整 profile 回灌、source/static/shared、红队通过；报告实际压缩量化/第三方能力与限制，Compute/Graph 基础 candidate 固定后暂停讨论 |
 | 8 | NVIDIA/Apple provider 广度 | cuBLASLt/cuDNN/HYLE 与 MLX/MPS/Metal 按真实热路径扩展；不再改基础对象模型 |
 | 9 | Vulkan provider/算子广度 | 复用 6a 已验证基础，扩正式 SPIR-V/成熟 provider 与跨 API 能力；不冒充原生 Metal 性能，不把基础实现留到本项 |
@@ -388,7 +461,7 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 原目标中“ggml/oneDNN region”不再视为一个并列动作：oneDNN 是 route 层的首个真实验证者；当前 CPU ggml
 保持独立 blocker；CUDA/Metal/Vulkan ggml carrier 各自随对应平台纵切开卡。原先尚未执行的 foundation P1
 后移到 route 实现稳定之后，并在第 7 项只运行一次，避免给即将改变的 selector 重复签证。第 7 项以前
-所有“基础完成”百分比都必须按这张表计算；算子 family 数量不计入。
+曾按这张表估计“基础完成”；该历史分母现已停用，不能在新范围下继续套用，算子 family 数量也不计入。
 
 2026-09-15 总计划覆盖审计补入 6a/6b，之前不含 Vulkan 等资格工作的约 89% 口径停止沿用。已完成的
 实现和证据不清零；新估算必须包含本表全部基础范围，并区分实现与终局验证，不把文档修改算成功能完成。

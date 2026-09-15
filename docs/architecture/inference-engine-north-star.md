@@ -18,6 +18,11 @@ HYLE 是推理引擎下面的基础加速库；推理引擎是第一个可执行
 采样策略不能因为推理引擎需要它们就下沉到基础模块。HYLE 提供可复用机制；推理引擎拥有模型
 语义和产品策略。
 
+推理计算采用 CPU、CUDA、MLX/Metal、Vulkan 四条独立路线。模型级 CPU+GPU 分担计算不属于 HYLE
+范围，不因参考引擎提供 offload 就成为本库 MUST 或延期任务。CPU-only 推理、GPU 的 host 提交与
+输入输出传输/同步、同 GPU 多 Provider 组合仍保留，精确边界见
+[Compute §1.3](compute-design.md#13-四条独立路线与明确非目标)。
+
 一项候选能力进入公共基础 API 前必须通过**语义擦除测试**：去掉模型、token 和服务名称后，
 它仍能以明确 ownership、lifetime、concurrency、failure 和复杂度描述一个通用任务。否则它应
 留在推理引擎、compute adapter 或私有 seam。
@@ -57,7 +62,7 @@ source/static/shared 交付本身不要求制造 FFI parity。
 |---|---|---|
 | core | 编译器合同、稳定的编译期 cache-layout、极小的无所有权 primitive、产品身份 | 模型常量、token/layer 元数据、为单个 kernel 定制的公共入口 |
 | error | 统一 `Status/Result`、context、OS/backend 错误映射 | 模型格式错误分类、对用户的恢复与重试策略 |
-| platform | CPU/ISA/topology、线程亲和、NUMA、VM、动态库和 OS 机制 | 用哪些核、如何放权重/KV、模型级 offload 策略 |
+| platform | CPU/ISA/topology、线程亲和、NUMA、VM、动态库和 OS 机制 | 所选路线使用哪些核、模型/KV 的业务放置；不据此承诺模型联合推理 |
 | mem | host allocator/resource、arena/pool、对齐、大页、file/shared mapping 与 NUMA placement 机制 | KV cell/page 表、prefix cache、sequence copy/evict/defrag 策略 |
 | time | 单调时钟、deadline、timer queue | 请求 SLO、batch 等待窗口和超时策略 |
 | container/util | 通用连续、flat、queue、bitset、registry 等数据结构与工具 | 词表、token 表、模型 registry 语义和模型专用索引 |
@@ -113,7 +118,7 @@ TTFT/ITL、质量、bytes/token、峰值/常驻状态、batch 利用率和 joule
 | Recurrent/hybrid decode | 固定/自适应循环深度；共享计算块；同批不同 active depth；循环取消 | 质量—时间/能耗曲线、loops/token、bytes/token、状态峰值、batch 利用率 | compute/mem/sched/obs |
 | 连续批处理 | 混合 prompt/output 长度；稳态与突发到达；不同并发度 | requests/s、tokens/s、TTFT/ITL tail、公平性、deferred/backpressure | sched/mem/compute |
 | KV 生命周期 replay | 会话加入/退出、共享前缀、fork/copy、回收、容量不足 | bytes/token、峰值 committed、碎片、分配/回收 tail、泄漏 | 引擎策略消费 mem 原语 |
-| Backend handoff | CPU-only、部分/全部 offload；同步与可重叠传输 | copy bytes、同步次数、overlap、CPU busy、device idle | compute/sched/platform |
+| Backend 资源交接 | 四条路线分别运行；GPU 输入输出传输、同 GPU 跨 Provider 资源/完成边界；不含 CPU+GPU 模型联合计算 | copy bytes、同步次数、overlap、CPU busy、device idle | compute/sched/platform |
 | Graph compile/replay | one-op、多 region、shape specialization、并发 Invocation 与重复 decode | compile time、steady submit 税、workspace、copy/sync、cache hit、fallback | graph/compute/mem |
 | 取消与关闭 | 排队、prefill、decode 中取消；backend failure；有界 drain | cancel latency、迟到 completion、泄漏、drain 时间、错误保真 | error/time/sched/compute |
 | 构建与交付 | source embed、installed static/shared；baseline、native/exact ISA；可选 backend | 可构建/运行、组件闭包、artifact 依赖、可复现性 | build/package + 被测模块 |

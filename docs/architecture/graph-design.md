@@ -1,6 +1,6 @@
 # HYLE Graph：计算 DAG、编译与可复用执行计划
 
-> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四路线与混合计算的关键合同尚待真实
+> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四条独立路线的关键合同尚待真实
 > 纵切裁决；不得从本文自动恢复正式实现，也不新增模块状态。本文定义 Graph 的长期产品合同；当前实现状态只查
 > [`module-status.json`](../implementation/module-status.json)。每轮纵切只证明其 closure card 登记的
 > DAG/Executable/Invocation 合同。旧 `TaskGraph`、parallel/data-parallel API 与 benchmark 已退出产品树；
@@ -9,7 +9,7 @@
 
 2026-09-14 的整体复核保留上述骨架，修正 replay 成本、派生 shape、custom execution、资源副作用域、
 variant 内存与搜索受限合同；依据见[复核记录](../implementation/tasks/compute/compute-graph-route-unification-audit.md#整体架构复核与合同修正)。
-当前范围与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)。
+当前范围与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)。
 
 ## 1. Graph 解决什么问题
 
@@ -24,6 +24,10 @@ Graph 把**模型无关的逻辑计算 DAG**编译成可重复、可检查、低
 Graph 不是通用 task executor，也不是模型 runtime。Sched 拥有 task/fiber/coroutine、取消、等待和线程；
 Compute 拥有 device/context/queue/kernel/provider 与单个 region 的执行；Mem 拥有 storage 与通用 lifetime
 packing。推理引擎仍拥有模型构图、KV/prefix-cache、batch/admission、sampling、循环停止和请求策略。
+
+模型推理在 CPU、CUDA、MLX/Metal、Vulkan 中选择一条计算路线。CPU+GPU 分担同一模型计算的联合
+计划不在 HYLE 功能范围内；host 控制/输入输出传输与同一 GPU 上跨 Provider 的执行不在此排除项内。
+精确边界见 [Compute §1.3](compute-design.md#13-四条独立路线与明确非目标)。
 
 ## 2. 三个概念层，两个公开产品
 
@@ -180,6 +184,10 @@ target 不同并不自动产生 copy。Graph 先检查 consumer provider 的 bin
 resource 的访问能力；只有不兼容或调用方 required placement 明确要求另一 storage domain 时才物化 copy。
 因此不能把两个 Queue 表达成两个假的 storage domain，也不能从 Queue 地址反推 tensor residence。跨 lane
 依赖优先成为 device wait/timeline edge；只有显式 policy 允许时才退到 report 中可见的 host wait。
+
+三条资源轴仍必要：即使只有一个 GPU 计算设备，也有 host/device storage、transfer/compute lanes
+和 Provider 自有资源。它们不是模型 CPU+GPU 联合放置的承诺。推理路线先限制计算候选，再规划资源；
+host storage、host callback 或同步 endpoint 不自动增加 CPU 模型计算 target。
 
 ### 4.2 并发调度与 workspace 是一个联合问题
 
@@ -408,7 +416,8 @@ execution target 负责执行资格，lane 负责执行顺序；这是有界结�
   并可提供只依赖 concrete shape 的有界 requirement query。`prepare_replay` 固化本次 layout，正常 replay
   HYLE plan 层零 heap allocation；Provider 是否同样零分配由 prepared/managed 合同决定，不能从 shared/
   delegated ownership 推断。prepared-only 是冷路径约束，不能在 submit 中偷偷改用 managed；
-- per-region 的一次预绑定 dispatch 可以存在，per-node/per-element 的通用虚调用或字符串 lookup 不可接受；
+- 每个已准备 op/region 边界可以有一次固定 dispatch，单节点 region 同样适用；不得逐节点重新筛选
+  backend/Provider 或逐元素做类型擦除。连续片段可 lower 成原生程序，避免逐层通用 wrapper；
 - plan 在同一 execution lane 的 ordered Queue 上以一个不中断 submission sequence 录入；provider/region step 只返回接纳事实，
   sequence 在 segment 边界一次 finalizes 为 prefix Completion，不按 node 创建再覆盖 event。多 Queue plan
   保存各 segment 前缀。`prepare_replay` 按 exact Queue identity 把 dependency 固定为 ordered Queue、同步
@@ -445,8 +454,10 @@ shape、dtype/format/layout、precision、完成边界和 workload identity，�
 CompileOptions 还必须允许全局 allow/deny Provider 和 per-node preferred/required Provider constraint；region
 必须满足其覆盖的全部 constraint。精度、确定性和 required constraint 都是硬门，不参与时间/内存评分。
 
-v1 route search 接纳通过 contractibility 验证的显式 node-set region，并把每个 node 的 leaf 放进同一空间；
-连续区间走 fast path。target/storage/lane 与 boundary transformation 在同一有界 state search 中裁决。
+v1 route search 先限制在用户所选计算路线及其允许的设备/Provider/资源内，不遍历全部已构建 backend，
+不搜索 CPU+GPU 模型联合计划。接纳通过 contractibility 验证的显式 node-set region，并把每个 node 的
+leaf 放进同一空间；连续区间走 fast path。唯一可行路线可以直接准备，有真实竞争才搜索；
+target/storage/lane 与 boundary transformation 在所选范围内联合裁决。
 实现可以使用确定性 DP/beam 等启发式，但必须有 candidate、state、prepare-retry 三类独立硬预算，不能
 宣称求解一般 DAG 全局最优。预算区分**求得可行计划**与**继续优化**：搜索耗尽只停止新增候选/状态，
 仍可在独立 prepare 预算内完成已选计划。最终没有满足全部硬约束且 prepare 成功的完整计划就失败；
@@ -499,6 +510,30 @@ prefill、mixed、uniform decode、LoRA 或 speculative batch 等业务分类由
 一旦某个 Queue/Provider 已接纳用户工作，后续错误只经 Completion 报告，不能静默在另一 Provider 重跑；
 否则 side effect、资源写入和部分完成会被重复。只有 compile/prepare 或 submit 的 pre-acceptance decline
 可以采用已冻结 fallback。
+
+### 6.3 路线内编译与特化执行
+
+部署选定后不是持续做全局设备调度，而是「固定配置 → 有限计划族 → 重复执行」。prefill/decode、
+batch/shape 或其它显式事实变化时选择已准备的适用 variant；输入值、KV position、专家 ID 等变化不
+天然要求重新选 Provider。确实影响程序/资源/合法性的事实必须进入 key/domain；新配置或域外 shape
+走显式冷准备，不在 submit 中重规划。CMake 只能锁定实现集合，不能提前知道所有模型运行参数。
+
+Graph 编译可以共用语义、合法性检查与候选/边界协议，但执行物允许分别实现：CPU 的 prepared calls/
+持久 executor；CUDA 的 native/vendor commands 与可选 capture；MLX 的 GPU managed island 与必要
+Metal 片段；Vulkan 的原生录制/提交。原生 pipeline、pool、handle、array 和回收状态留在 owner 内。
+不要求四条路线经过相同 segment 解释循环；单片段可直接绑定完整执行入口。多 Provider 或多 lane
+确实需要的依赖协调才保留，不能为了通用性让每个 kernel 回 host 等待或创建无关 runtime。
+
+这是旧 Graph 的重构准则，不是认定现有搜索、状态布局和提交循环已经合适。正式实现前按路线对照
+成熟调用链，形成复用/改写/删除清单；以实际依赖、生命周期和完整性能成本取舍，不为旧 API 保留多层适配。
+
+HYLE 仍拥有逻辑图、同路线内的 partition、边界资源/同步和最终完成责任。Provider 可以接管已选择
+region 的局部计划，但不得跨边界改放置。原生片段一次固定调用不是零指令；低开销必须用同 Provider、
+同资源/完成边界的 direct 对照证明，不能靠宏/模板名称或“全部 GPU”推导。
+
+模型 CPU+GPU 联合路线不是待补第五类执行器。已有通用多 target 数据结构不必为缩小产品范围立即删除，
+但不能据此签发模型联合推理能力；`capture + commands` 的 hybrid replay 也不表示 CPU+GPU 联合计算。
+后续产品修改须按当前小卡审计实际入口、约束与特化，不在文档轮伪造已实施。
 
 ## 7. Compute、Mem、Sched 与 Obs 的边界
 
@@ -564,7 +599,7 @@ provider/backend workload 上形成可解释收益。
 ## 10. 首轮纵切和停止点
 
 施工顺序、已完成证据和下一项只维护在
-[当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)，
+[当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)，
 不与 Compute 再各维护一套队列。Graph 的基础完成边界保持如下：
 
 - CPU direct/one-op、真实 multi-op region 与持久 executor 组合；
@@ -577,9 +612,10 @@ provider/backend workload 上形成可解释收益。
 只有 CPU 计算的 GPU copy、或 Q4 整体展开样例代替相应真实路线。到基础 gate 完成时暂停共同审视，
 之后才进入 attention/完整 Transformer 与目录扩充。HIP/ROCm 的无限期 defer 保持。
 
-上面是正式基础实现的终点，不是当前架构研究的结束条件。当前允许有限原型来解决系统性未知量，
-包括 CPU 层段→GPU 层段，以及 GPU 周边→CPU FFN/专家→GPU 后继的真实混合边界；设备放置、activation
-传输、权重常驻、外部状态和最终完成必须能表达。研究定案后先报告，不为完成本节全部产品资格而继续施工。
+上面是正式基础实现的终点，不是当前架构研究的结束条件。当前只允许有限原型解决四条独立路线的
+系统性未知量；输入输出传输、权重常驻、外部状态、同 GPU 跨 Provider 与最终完成仍必须能表达。
+CPU 层段/FFN/专家与 GPU 联合推理的纵切已从范围移除。研究定案后先报告，不为完成本节全部产品
+资格而继续施工，也不因为裁剪范围把未实现的其余路线写成通过。
 
 纵切的单位是**一次完整公开用户旅程及其待裁决问题**，不是新增几个 API 的展示。每条记录正常输入、
 至少一个会推翻对应假设的反例、资源/线程 owner、最终完成点，以及失败时应改哪个 seam。低层借入探针
@@ -588,7 +624,7 @@ provider/backend workload 上形成可解释收益。
 专门反证跨资源访问和内存可见性。具体形状、证据与先后顺序只维护在上面的总计划中。
 
 性能用同一程序分两步隔离问题：先对同实现 direct 与 HYLE 路线检查抽象税，再把成熟完整 region 与
-混合替换计划作同精度/格式/完成边界比较，包含复制、repack、融合损失和线程转交。若局部替换更慢，
+同路线内跨 Provider 替换计划作同精度/格式/完成边界比较，包含复制、repack、融合损失和线程转交。若局部替换更慢，
 保留成熟完整路线；若固定额外成本来自 Graph 边界，记录具体根因，不能因为 kernel-only 赢或差距落入
 某个百分比就宣称计划更优。仅构造快慢标签或伪造 profile 的测试只验证 selector，不签性能胜负。
 

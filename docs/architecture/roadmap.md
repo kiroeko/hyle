@@ -70,6 +70,10 @@ Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass
 由 Graph compile 决定。编译结果公开为不可变可共享的 `graph::Executable`，每次运行状态放在独占的
 `graph::Invocation`。详细合同见 [Compute 设计](compute-design.md)与 [Graph 设计](graph-design.md)。
 
+推理采用 CPU、CUDA、MLX/Metal、Vulkan 四条独立计算路线，模型级 CPU+GPU 联合计算不属于 HYLE
+范围，不保留为延期任务。host 提交/传输/同步及同 GPU 多 Provider 组合仍保留。共同的是图语义、
+资源/完成责任与冷选路合同，不强制四套原生实现复用同一执行器；构建期裁剪、准备期绑定、执行期固定。
+
 异构资源固定分成 execution target、storage domain/resource 和 execution lane 三条轴：node placement
 选 target，值/workspace 选 storage，命令按 target-bound lane/Queue 排序；同一 target/storage 组合可以有
 多条 compute/transfer/communication lane，capture 是 replay mode 而不是 lane。多 lane 的 happens-before

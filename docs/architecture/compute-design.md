@@ -1,6 +1,6 @@
 # HYLE Compute：异构执行与算子提供者架构
 
-> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四路线与混合计算的关键合同正在接受真实
+> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四条独立路线的关键合同正在接受真实
 > 纵切核对，尚未最终定案；不得从本文自动恢复正式实现。这不新增模块状态。实现状态与施工资格只查当前 closure task 和
 > [`module-status.json`](../implementation/module-status.json)，当前可用能力查[用户指南](../user/compute.md)。
 > 本文只定义 Compute 的长期产品合同，不复制阶段性完成状态。下文平台栈和开工顺序是目标边界，不表示
@@ -10,7 +10,7 @@
 2026-09-14 整体复核后的合同修正及源码依据见
 [架构复核记录](../implementation/tasks/compute/compute-graph-route-unification-audit.md#整体架构复核与合同修正)。
 这些决策不代表新增接口、MLX adapter 或性能资格已经交付。
-当前任务与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)；
+当前任务与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)；
 架构定案、基础实现完成和产品性能/交付验收是三个不同的完成点。
 
 ## 1. 产品承诺
@@ -55,7 +55,27 @@ storage import 或必要 copy、Queue/完成桥接、重复执行的准备成本
 
 示例可运行只证明该次调用；正式 factor 才提供用户 route；对应资格完成才可作性能/交付承诺。任何
 一个层次都不能用下载、链接、schema、样例或文档代替下一个层次。当前接入结果与有限任务只见
-[总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)。
+[当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)。
+
+### 1.3 四条独立路线与明确非目标
+
+推理计算的产品路线为 CPU、CUDA、MLX/Metal、Vulkan。CMake 确定制品含哪些 backend/provider，加载与
+准备阶段确定实际设备、资源、数值/物理格式和有限 shape 计划，重复执行只调用已绑定路线。普通部署
+可只构建其中一条；多种 backend 同时可构建不等于必须提供它们联合执行一个模型的功能。
+
+**模型级 CPU+GPU 联合推理不属于 HYLE 功能范围，不是延期项目**：不提供同一模型的 CPU/GPU 分层、
+CPU FFN/专家分担或这种联合计划的自动调度。纯 CPU 推理仍是完整路线；GPU 路线不因缺算子或超预算
+偷偷改用 CPU 计算，准备阶段必须换用同一路线内合格 Provider，或明确拒绝。第三方 runtime 也不能以
+未声明的 CPU 模型 kernel fallback 绕过这条边界。
+
+以下不是模型联合计算，仍在范围内：host 控制与元数据准备、模型初始化/权重 packing、host/device
+输入输出传输、映射、同步、Completion 与回收；同一 GPU 上的 vendor/HYLE kernel 组合，以及 MLX
+region 与原生 Metal 互操作。统一内存的 CPU 可访问性不等于允许 CPU 分担模型算子，也不证明零复制。
+这不禁止上层应用自行组织外部系统，但 HYLE 不提供或承诺模型联合推理的完整旅程。
+
+这项边界是低延迟推理的产品取舍，不是声称所有混合推理都无用途。模型与运行态必须满足所选设备的
+资源约束；容量不足可由引擎选择更合适的模型/配置，而不是由基础库隐藏降级。后端之间的资源、执行器
+和回收实现允许不同；共同合同与特化方式见 §3.5。
 
 ## 2. 两条同等重要的用户路径
 
@@ -168,7 +188,7 @@ HYLE 的性能责任不要求它亲自调度每个底层 kernel。cuBLASLt、one
 因此 Graph 执行的是由 HYLE 排好的异步 segment DAG；每个 segment 可以是 HYLE 叶操作，也可以是第三方
 compiled region。这样的层级调度仍由 HYLE 控制全局关键路径，同时允许成熟实现保留其最擅长的局部计划。
 
-这里的“全局”有明确范围：引擎选择请求/batch、模型循环、KV 策略及允许的设备/offload；HYLE 控制这次
+这里的“全局”有明确范围：引擎选择请求/batch、模型循环、KV 策略及允许的计算路线/设备；HYLE 控制这次
 Executable 内的计算计划；Provider 控制已委托片段；OS/驱动最终执行线程与设备命令。HYLE 不承诺控制
 第三方黑盒内每个线程、GPU 每个 SM 的实时分配，或其它进程的资源争用。专有硬件调度选项仍属于 typed
 backend extension，不变成通用 Graph 的虚构保证。
@@ -186,13 +206,9 @@ backend extension，不变成通用 Graph 的虚构保证。
 也不是自动更快：串行/重叠计划均须在相同硬约束和完整完成边界上比较。固定函数指针调用并非零条指令；
 “低路由成本”要求冷绑定、批量/capture 与同实现 direct 对照，而不能由模板/宏的名称推导。
 
-CPU/GPU 混合是这些能力的必要组合，不是另一个 backend。引擎表达层段/FFN/专家等放置政策与允许的
-迁移；Graph 据此形成 CPU/GPU 片段和 copy/sync。权重驻留、实际执行位置、KV 等外部状态位置要分别
-描述，不能仅按权重 buffer 推断全部算子放置，也不能在显式 required target 之外偷偷 offload。
-独立显存须计入传输与 staging；统一内存也须证明双方访问、可见性与完成，不能因同一地址就省略同步。
-部分卸载首先可用于满足容量限制，不承诺一定比全 GPU 更快；比较必须固定同一放置/精度/内存政策。
-llama.cpp 的层放置、ggml 切图与避免额外 norm 迁移的源码依据见
-[混合计算核对](../implementation/tasks/compute/compute-graph-route-unification-audit.md#本轮-llamacpp-混合计算源码核对)。
+权重驻留、实际执行位置、外部状态位置仍分别描述；host storage 不自动增加 CPU 计算候选。
+GPU 路线中的同设备跨 Provider 片段与资源传输需要明确 copy/sync，但不构成 §1.3 排除的模型联合推理。
+独立显存须计入传输与 staging；统一内存也须证明访问、可见性与完成，不能因同一地址就省略同步。
 
 Provider region 的语义是**可收缩 node set + 显式 boundary ports**，不是某个拓扑序中的 begin/count。
 候选集合必须非空、node identity 唯一，并且不存在一条路径从集合内离开后又进入集合；
@@ -470,6 +486,8 @@ Apple adapter 先验证这种 managed 路线的真实边界；若后来证实某
 
 MLX 的公开接入还必须满足以下具体限制；这是 Provider 内部实现约束，不新增 Graph 对象类型：
 
+- GPU 路线显式绑定 primitive 的 GPU device/stream 并验证实际计算归属；MLX 同时提供 CPU/GPU
+  eval 不等于本库准入 CPU 模型 kernel fallback。host 构图/控制和冷常量准备仍按实际成本披露。
 - v0.32.2 的 compile cache 是 thread-local。同一个 compiled function 在另一线程可能再次 trace；
   prepare/warmup、replay 和清理须绑定稳定的提交线程，或有限且分别预热的线程集合。不能预热后任意
   丢给工作窃取 worker，不能每个 op 创建线程；handoff、私有线程与排他成本须报告。
@@ -486,6 +504,51 @@ MLX 的公开接入还必须满足以下具体限制；这是 Provider 内部实
 它不证明完整 HYLE/MLX/Metal 纵切、无热 JIT、异步错误注入或性能资格；这些限制也不等于 MLX 不适用，
 而是完整 region、managed 路线与原生 Metal 严格路线的真实分界。
 
+### 3.5 共同合同与四套可独立特化的实现
+
+架构采用共同的语义与冷编译协议，但不要求共同的 native resource layout、执行器或回收算法。
+共同层负责 operation/端口与精度、允许的路线/资源、边界访问/依赖、接纳/完成/错误和成本说明；
+backend/provider 持有原生对象并决定怎样准备、录制、提交与回收。字段同名不证明寿命和并发语义相同。
+
+| 路线 | 长寿命制品与执行资源 | 不应被共同层抹平的差异 |
+|---|---|---|
+| CPU | Native/SIMD/成熟 primitive、packed constants、持久 executor、独立 scratch | ISA/tiling 与线程额度归 CPU 路线；不创建 GPU context，不每 op 建线程池 |
+| CUDA | CUDA context/module、vendor 算法/handle、stream、workspace、event、可选 graph exec | handle 的可变配置与 workspace 按 lane/并发槽管理；capture 绑定地址/形状，不能共用一份并发可变执行状态 |
+| MLX/Metal | MLX compiled function/array owner/提交线程；native Metal pipeline/buffer/command 状态分别持有 | MLX 的 thread-local cache、managed metadata、allocator 与错误终态保留真实边界；不伪造 shared stream 或固定输出 allocator |
+| Vulkan | pipeline/layout、memory/buffer、descriptor/command pool、command buffer、同步与回收状态 | 原生可见性、queue family、pool host 同步与 pending 寿命由 Vulkan 实现，不模拟 CUDA API |
+
+资源按真实寿命组织，而不是一律放入 Context 或 Invocation：runtime/提交 owner 保活子制品；兼容且
+不可变的代码/权重可以共享；可变 handle、pool、scratch、capture/run-state 按并发要求独占或池化；
+异步使用保留到其真实完成点。仅 host 编码需要的 metadata 可按原生合同更早释放。具体公开借用义务
+仍遵守 §5，未知私有成本不得作为零字节或有限硬配额证明，也不要求四条路线使用同一 allocator。
+
+四条路线可以各自提供 lowering、准备、replay 和回收实现。Graph 的当前通用 segment loop 是待审旧实现，
+不是预先批准保留的调用栈；单路线/单片段可以直接调用特化执行物。公共 API、schema、完整性验证、报告和
+错误语义仍共享，不能为了四套执行实现复制四套用户 DAG。只有生命周期和成本确实相同的局部算法才复用。
+
+目标是 SOTA 性能下的渐进替换，不是给旧实现增加四个外壳。现有类型、字段、分发层和执行循环均须
+根据参考调用链、真实生命周期及完整成本决定复用、改写或删除；无人消费的旧形状不设兼容层。
+共享语义不意味着锁定当前 API/布局。性能同时核对同 Provider direct 抽象税与成熟等价完整路径，
+不能从旧测试通过、宏/模板或独立执行器的存在推断已达到目标。
+
+分发分三个阶段：
+
+1. **构建期裁剪**：target/编译单元选择 CPU、CUDA、Apple、Vulkan 实现和依赖。宏控制 feature presence，
+   模板/traits 复用已证实同义的局部算法；不使用改变公共对象布局的全库四选一宏。
+2. **准备期绑定**：在已构建且被用户选择的路线内，按实际 device、shape、dtype/量化格式、资源与
+   约束选定 op/region、必要转换和执行入口。唯一可行候选不需要跑复杂搜索，多个候选才按完整成本择优。
+3. **执行期固定**：使用原生程序或已绑定 callable，不能每 token 重新查询 Provider/设备/性能资料。
+   已知类型的局部实现可内联；运行时才知道的模型/设备不能靠宏变成编译期常量，固定间接调用也有成本。
+
+普通 source/static/shared 使用相同语义与 capability 集，SDK/工具链和原生 flags 只在 owning target
+传播。四种构建配置不是四套重复 ABI；不为了源码用户可内联而要求普通 SDK 消费者包含 vendor 私有头。
+构建规则见 [build system](build-system.md#option-语义)，真实源码依据见
+[路线特化调查](../implementation/tasks/compute/compute-graph-route-unification-audit.md#本轮架构分析统一合同与独立执行)。
+
+未来 HIP 可新增独立 backend/provider 与构建发现，复用同义 CUDA 模板或独立实现；设备、数值、memory
+pool、capture、错误与交付必须分别资格化。通常只增加候选和 typed extension，不在 Graph 节点循环里
+增加 `if HIP`；真实新语义才扩共同协议。当前仍无 HIP 真机，不创建空 target/开关，不签兼容或性能。
+
 ## 4. 平台栈与优先级
 
 “正式支持”与“首要优化目标”是两件事，设备 backend 与算子/图 provider 也不是同一层。CUDA 是一套
@@ -497,7 +560,7 @@ MLX 的公开接入还必须满足以下具体限制；这是 Provider 内部实
 | 主要 | Apple 原生 Metal | **MLX（首个资格化 provider）**、HYLE Metal kernel、MPS/MPSGraph、Accelerate/BNNS | 推理纵切优先证明 MLX region；原生 Metal 保留 custom/best-of kernel、资源互操作和缺口路线；不同层不得混成一个 backend |
 | 主要 | NVIDIA CUDA | HYLE CUDA kernel、cuBLAS/cuDNN/TensorRT、ggml 等 | 覆盖消费级 RTX 与可用数据中心形状，按完整 region 成本裁决 provider |
 | 正式保底、次要优化 | 原生 Vulkan；Apple 上经 MoltenVK | HYLE SPIR-V kernel、ggml Vulkan 等 | 给广泛消费级 GPU 和 renderer interop 一条共同路线；MoltenVK 只签 Apple portability，不替代原生 Metal 性能路线 |
-| 基线 | CPU | HYLE SIMD/native、oneDNN、ggml；Apple 可含 Accelerate/BNNS | 三平台 correctness、fallback、provider contract 和可重复性能基线；不是“只剩 CPU 时才用”的 stub |
+| 基线 | CPU | HYLE SIMD/native、oneDNN、ggml；Apple 可含 Accelerate/BNNS | 三平台 correctness、CPU 路线内候选替代、provider contract 和可重复性能基线；不是 GPU 缺算子的隐式 fallback 或“只剩 CPU 时才用”的 stub |
 
 AMD HIP/ROCm **无限期不进入当前产品线**：没有 component、CMake gate、空 target 或恒失败 stub，Vulkan
 只提供跨厂商保底而不冒充 ROCm。只有同时具备可持续使用的 AMD 真机、明确消费者和维护预算，才以新的
@@ -722,13 +785,13 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 ## 10. 开工顺序
 
 当前工作顺序、有限任务和进度分母只在
-[Compute/Graph 当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)
+[Compute/Graph 当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)
 维护，不在两份 architecture 中再复制编号队列。长期顺序原则是：
 
 - 先固定自然 C++ 语义与生命周期，用 direct/one-op 和真实 CPU region 验证基本组合；
 - 先确认目标成熟 runtime 的资源/错误/交付可接入，再实现正式 adapter，不把关键 API 风险留到宽适配之后；
 - CUDA Q4、Apple MLX/Metal、Vulkan 分别以最小真实计算纵切验证同一对象模型；仅补探针必须的算子；
-- 实测 profile 回灌、混合运行时失败/回收、最小 Obs 与各后端交付属于基础门，不拖到完整模型；
+- 实测 profile 回灌、同路线跨 Provider 失败/回收、最小 Obs 与各后端交付属于基础门，不拖到完整模型；
 - 基础实现及对应资格全部通过后暂停共同审视，再授权算子/provider 广度与完整 Transformer 纵切。
 
 每个实际改动 owner 仍须按 registry/closure card 完成 `SCOPED -> AUDITED` 并固定有限 FIX；总计划不
@@ -748,7 +811,8 @@ ExecuTorch 的调查用于裁决上述边界，不把任何 peer 的完整 runti
 - Executable 的 shape domain 可以是 exact 或 bounded/guarded；capture 使用 exact key，steady submit 不 JIT；
 - capture 是与编译正交的 replay capability，communication 才是独立 lane 用途；
 - Graph 只规划 HYLE/shared-runtime storage 与 island boundary，delegated provider 自己规划内部 storage；
-- request/KV/batching/sampling/offload 策略仍归推理引擎，Compiled Graph 不扩成模型 runtime。
+- request/KV/batching/sampling 策略仍归推理引擎，Compiled Graph 不扩成模型 runtime；模型级 CPU+GPU
+  联合推理按 §1.3 排除，不作为架构锁定的待办或实验。
 
 实现必须先通过 CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 storage domain 多
 lane/capture、Apple delegated MLX region + 原生 Metal interop，以及 Vulkan 最小 SPIR-V/资源同步探针。
@@ -760,7 +824,7 @@ CPU 并行分片还须在真实持久 executor 上验证，不以串行调用 ca
 路由探针，并让这些探针共同通过 source/static/shared、正确性、one-op 抽象税和终局红队，才能签发
 Compute/Graph foundation candidate。同一 gate 还检查真实跨运行时失败/回收、测量到 route profile 的消费
 链、可选观测边界与各已接入 backend 的构建交付；不能把这些全部推迟到完整 Transformer。具体有限任务
-只在[总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)维护。
+只在[当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)维护。
 该 gate 以前不横向扩展算子目录或完整模型；gate 以后新增
 provider/operation 若能进入既有 seam，也不得重开 Device/Context/Queue、Graph/Executable/Invocation 或
 三轴资源模型。

@@ -92,6 +92,14 @@ Provider 需要时发现并检查版本/targets，不代管安装器。backend �
 新增 option 前必须证明它不是从平台、编译器、组件选择或 feature presence 可导出的重复状态。正式 CI/
 交付要显式固定重要 feature 集，不能依赖宿主偶然探测结果。
 
+Compute 的 CPU/CUDA/Apple/Vulkan 构建配置只组合真实 backend/provider feature，不另增一套重复的
+单选路线枚举或 CPU+GPU 联合推理开关。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
+算子可用。四条路线可独立编译并采用不同执行器；宏/flags 归 owning target，只有公开头确实需要的
+usage requirement 才传播，不能用消费者宏改变同一公开对象布局。SDK 版本/feature 集在 configure 中
+选定并记录，交付说明保留对应要求；实际模型/device/shape 路线在准备阶段绑定，不是每次执行的 CMake/宏选择。
+尚未实现的路线不为文档先创建空 option/target；具体边界见
+[Compute 四路线设计](compute-design.md#35-共同合同与四套可独立特化的实现)。
+
 ## 三种 C++ 交付
 
 三种形状共享产品名、头 owner、依赖闭包和语义：

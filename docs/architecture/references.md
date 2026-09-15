@@ -70,7 +70,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **vitamin-cuda** | **参考（compute 自造 kernel）** | 教学级 CUDA kernel 库（`C:\public\project-hyle\vitamin-cuda`），SGEMM/HGEMM/flash_attn/softmax/rope/reduce 等，含中英“beating cuBLAS”逐步优化 writeup（`posts/`）。它是 ggml 显存边界之外 HYLE 自造 kernel 的优化参考，不是 HYLE kernel 的性能证明。SGEMM 展示 naive → block tiling+共享内存 → 转置写 smem+float4 → swizzle → 合并写回 → double buffer 的阶梯；采用前仍须在 HYLE 的真实合同上复证 |
 | **llama.cpp** | 参考 | 多变体 dispatch、CMake ISA 处理、探测器隔离和推理引擎工程范式；host/device 资源、backend 与 operator 形状只作未来 Compute 审计输入 |
 | **ds4** | 真实消费参考 | 紧凑 CPU/统一内存量化推理路径；用于发现行算子、内存、top-k 和数据布局需求，不自动作性能 peer |
-| **vLLM** | 真实消费参考 | runtime、CPU offload/custom-op、paged KV、sampling 与 serving 需求；GPU/Triton/tensor fusion 形状必须归到正确 owner |
+| **vLLM** | 真实消费参考 | runtime、custom-op、paged KV、sampling 与 serving 需求；GPU/Triton/tensor fusion 形状必须归到正确 owner；offload 仅作参考事实，不准入 HYLE 的 CPU+GPU 模型联合推理 |
 | **SGLang** | 真实消费参考 | serving/kernel registry、attention、MoE、sampling、speculative decoding 需求；用于发现语义族，不机械复制 Python/GPU API |
 | **Metal** | Apple 主要 backend 参考 | Apple 的低层 graphics/compute API；HYLE 只借 compute resource/queue/pipeline/sync/interop，不承接 raster/present。见 [Metal overview](https://developer.apple.com/metal/) |
 | **MPS / MPSGraph** | Apple provider 候选 | MPS 是优化 primitive，MPSGraph 是[符号计算图](https://developer.apple.com/documentation/metalperformanceshadersgraph/mpsgraph)；按 region 能力、artifact/workspace owner 与 command queue 互操作逐项审计 |

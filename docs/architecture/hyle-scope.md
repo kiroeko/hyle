@@ -87,6 +87,9 @@ API、依赖或 benchmark。
 ## 当前不属于 HYLE 的产品
 
 - 模型文件解析、tokenizer、sampling、KV/prefix-cache 策略和 serving policy；
+- 模型级 CPU+GPU 联合推理：同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合计划与调度；
+  纯 CPU 推理、独立 GPU 推理所需的 host 提交/传输/同步，以及同 GPU 跨 Provider 组合仍保留，见
+  [Compute 四路线边界](compute-design.md#13-四条独立路线与明确非目标)。这不是延期 backlog；
 - 模型训练框架、自动微分、分布式训练或完整模型 zoo；
 - CAD/BIM/CAE 领域对象、几何语义、求解策略和用户界面；
 - 云部署、容器编排、数据库、消息系统或通用分布式 runtime；
