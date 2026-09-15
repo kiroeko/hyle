@@ -17,9 +17,11 @@ reshape/slice/permute/broadcast 的有限全域证明、真实布局/偏移绑�
 只有合格完整计划 profile 才用于继续择优。Region 可显式共享同 family 的不可变 packing；capture 私有存储的
 unknown 约束见下文，不把 driver 未公开的字节数算作零。完整边界见[架构合同](../architecture/graph-design.md)。
 
-完整 profile 的接收/匹配已经实现，但真实“测量候选 → 生成资料 → 重新编译择优”的基础资格仍未完成；
-现有人工 timing fixture 只验证选择规则，不是设备上的性能推荐。未接入的 GPU Provider 不会因
-profile 接口存在而可用，Q4 转 F32 的独立样例也不代表正式压缩量化 Graph 路线已交付。
+完整 profile 的接收/匹配是现有实现；人工 timing fixture 只验证匹配/选择机制，不是设备上的性能
+推荐，也不授权默认执行“测量候选 → 重新编译择优”。重构目标改为
+[应用研发时已验证的优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)，
+普通用户不提供 timing profile；下文旧接口仅描述当前行为，不是目标 API 的保留承诺。未接入的 GPU
+Provider 不因 profile 接口存在而可用，Q4 转 F32 样例也不代表正式压缩量化 Graph 路线已交付。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
@@ -637,7 +639,9 @@ const auto added_order = compiled->report.serialization_edge_count();
 
 ## 按完整计划的性能资料选路
 
-普通用户不需要 profile：默认取配置顺序下第一个通过全部硬约束的完整计划。已有合格测量资料的部署方/
+本节描述待迁移的现有低层 API，不是重构后默认的优选规则，也不承诺保留旧接口。
+
+当前普通入口不需要 profile：默认取配置顺序下第一个通过全部硬约束的完整计划。已有合格测量资料的部署方/
 profiler 可以提供 `CompileOptions::profile_context` 和 `profiles`，让完整 leaf/region/target 候选继续比较。
 这不是自动调优：compile 不测量、不执行用户图、不读取磁盘 cache；查表和搜索均不进入 warm submit。
 

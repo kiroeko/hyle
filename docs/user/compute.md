@@ -9,6 +9,9 @@
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
 研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。
+当前默认 CPU 仅组装 Native，显式 Provider 序列是按支持顺序回退，并非自动 best-of。
+重构目标是[应用研发时确定的默认优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)，
+不要求普通用户排列 Provider 或提供性能资料；该目标尚不能由本文的现有例子推断已经完成。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
@@ -374,6 +377,8 @@ return done->wait();                  // terminal failure
 ```
 
 ## 只读性能资料的匹配
+
+本节描述待迁移的现有低层 API，不是普通用户取得 best-of 的必要步骤，也不是新架构的默认机制。
 
 `<hyle/compute/route_profile.h>` 提供冷路径共同合同。它**不会测量、生成资格或改变 direct prepare 的
 Provider 次序**；[Graph](graph.md#按完整计划的性能资料选路) 已接入完整候选的结构 key、只读匹配与有界择优，

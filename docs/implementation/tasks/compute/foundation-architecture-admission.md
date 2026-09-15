@@ -32,7 +32,7 @@
 但四条路线不能用同一种运行时所有权兑现：CPU/CUDA 的公开 leaf seam 与 MLX delegated runtime
 不同，Vulkan 还有显式内存可见性。**本次不签基础实现完成或性能通过，不重估到 90%。**
 
-长期合同已写回 [Compute](../../../architecture/compute-design.md#24-hyle-保留全局调度权provider-只拥有局部制品)
+长期合同已写回 [Compute](../../../architecture/compute-design.md#24-hyle-拥有计划与边界provider-拥有片段内执行)
 与 [Graph](../../../architecture/graph-design.md#9-基础验收与停止点)。本轮历史纵切依据见
 [总计划](compute-graph-route-unification-audit.md#决策与纵切的对应关系)，不复制第二套模块状态。
 

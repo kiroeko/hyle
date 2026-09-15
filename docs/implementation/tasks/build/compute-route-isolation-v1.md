@@ -15,6 +15,9 @@
   Windows/Linux CUDA-only 不取得 Compute 的 CPU Native 模型 kernel。纯 CPU 用户不发现 CUDA SDK。
   必要 host 基础设施可以使用 SIMD 等底层能力，这不等于 CPU 参与模型计算；不为“零 CPU 依赖”复制
   或禁用这些能力。
+- 默认实现合同：按[既定优选规则](../../../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)
+  交付正常所需的已验收实现；禁用 Provider 属专家裁剪，不要求用户手选哪家更快。R1 管候选闭包，
+  R2/R3–R6 才实现默认组装/规则绑定；不能以本卡只修构建为由遗漏这项产品交接。
 - 正交 consumer：只使用 tensor/operation/扩展合同的无 backend 底座不冒称有执行设备；非 Compute
   产品保持原依赖。测试夹具可以取得 CPU，但不污染 tests-off SDK。
 - scope：用户能力选择、中央 roots/真实 link/公开头/install/feature 投影、直接 package consumers，
@@ -48,14 +51,16 @@
 | ID | 候选动作 | 验收 |
 |---|---|---|
 | RI1 | 提供真正可裁剪的 CPU 计算能力选择；建议 `HYLE_COMPUTE_CPU=ON/OFF`，ON 保留普通 CPU 产品，OFF 排除 CPU runtime/Native。沿用 CUDA/oneDNN 实有选择，不引入单选路线枚举 | 选择表达是否交付 CPU 计算，而不是实际模型 offload；用户不需 HYLE_DEV_FACTORS；未选 Compute/Graph 不触发其依赖 |
-| RI2 | 在中央声明/既有投影中表达所选 roots 与内部边；源码、公开头 owner、安装与 feature metadata 同源 | OFF 不能仅是 runtime stub/空 DLL 或隐藏 PRIVATE link；不漏真依赖，不出现第二份手写图；无 backend 模式明确无计算能力 |
+| RI2 | 在中央声明/既有投影中表达路线及默认实现 roots；正常发行与专家裁剪明确，源码/头/install/features 同源 | 规则与真实实现闭包一致；不假启用未验收 Provider；OFF 不是 stub/隐藏 link；无 backend 模式明确无计算能力 |
 | RI3 | CPU OFF + oneDNN ON 是矛盾配置，明确拒绝；oneDNN AUTO 在无 CPU 能力时关闭而不探测。CUDA OFF 不探测 Toolkit；CUDA-only 不带 Native | 正/负 configure、包内真实头/target/运行库闭包一致；CPU OFF 不禁止必要 host 控制/基础库调用 |
-| RI4 | 将 compute/graph package 样例按实际 feature 选择正常旅程；增加薄的无 backend/独立 CUDA 交付反例 | 同一源代码使用 source/static/shared；不靠私有 factor/include、build tree 或与源不符的安装残留 |
+| RI4 | package 样例按实际 feature 选择正常旅程；无 backend/独立 CUDA 交付反例；给各路线默认组装样例留真实交接 | 三交付一致；不靠私有 factor/build tree；专家手写 Provider 列表不能冒充后续默认 best-of 验收 |
 | RI5 | 定向测试和指南更新，形成旧资产保留/改写/删除 owner 清单 | 本卡只清选路/build 问题；不把 CUDA runtime 可用写成量化 provider 已完成，也不为计划创建不存在选项 |
 
 拟新增 CPU 开关的默认 ON 是当前“未指定设备时仍有可用 CPU 计算”的产品选择，不是承诺兼容旧 API。
 Apple/Vulkan 真正接入时根据各自 runtime 裁决其 feature 和默认规则；这里不先登记空 flags/targets。
 多路线可同时构建，但一个具体程序只绑定所选计算路线；CUDA-only 配置显式 CPU OFF。
+oneDNN 默认 OFF 只是已核对的现状；后续按 CPU 纵切资格与默认规则确定发行组合，不把这个历史默认
+固定成用户必须手动选库的长期形状。默认改变和实际 Provider 的资格分别验收，不先假签可用性。
 
 进入实现前须确认中央图是在 feature 判定前还是后解析，并对选中、缺席与 TEST_DEPS 分别验证。
 选择结果不得反向修改公共头布局；如果改动某 CLOSED factor 的 CMake/公开交付合同构成产品变化，
@@ -105,6 +110,6 @@ FFI 仍不提供；三交付和易用性按上表验证。C++ runtime correctnes
 当前为 **SCOPED**：计划和范围已登记，无产品修改、无 candidate、无交付通过。下一动作是 RI1–RI5
 的一次定向审计并进入 AUDITED；不能把本卡存在当作 R1 已完成。
 
-本次文档验证：`validation-select.py run --base 98778b55 --candidate WORKTREE` 选择 docs/closure，
+首版登记验证：`validation-select.py run --base 98778b55 --candidate WORKTREE` 选择 docs/closure，
 结果 PASS，其余 94 项跳过或复用；`git diff --check` PASS。未构建、未运行 runtime 或 P1，registry
 保持原样，不进行虚构模块关闭。

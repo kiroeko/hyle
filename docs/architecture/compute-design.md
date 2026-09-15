@@ -37,24 +37,40 @@ host 控制/metadata、冷权重准备、上传下载、映射、同步和回收
 同一 GPU 上组合多个 Provider 也在范围内。HIP/ROCm 无设备和维护条件，当前不实现；将来可独立接入，
 不预造空 target/stub。多 GPU 的模型切分和分布式控制属于引擎，不由本轮四路线推导为已支持。
 
+### 1.4 架构速读
+
+```text
+独立推理引擎：模型/权重、KV/批处理、生成循环
+  ├─ 单个计算 → Compute 准备/执行
+  └─ 算子 DAG → Graph 编译 → 路线专属执行计划
+两条路径都绑定所选路线的原生执行：CPU / CUDA / Apple MLX-Metal / Vulkan
+实际计算由已验证的 HYLE 或第三方实现提供，Provider 负责接入。
+```
+
+算子描述“算什么”，属于 Compute 的公共语义，不是另一个调度产品；Graph 描述依赖并编译计划，
+单个计算无需它。Compute 提供资源、准备、提交和完成能力。路线区分原生执行体系，Provider 区分
+具体实现；同一路线可有多个 Provider，同一个库也可分别适配多个路线。它们是职责关系，不是每个
+kernel 必须经过的一串虚调用。普通用户选路线和资源约束，HYLE 应用下文已验证的默认优选规则。
+
 ## 2. 两条用户路径与渐进替换
 
 直接用户选择计算/原生 kernel、输入与路线，显式准备后执行；不依赖 HYLE Graph。
 图用户提供模型无关 DAG，由 Graph 编译后重复调用。两者共享数值、资源和完成语义，不必共享执行器。
 普通 C++ 用户不手工拼 target/storage/lane ID 数组；专家控制通过确有意义的显式选项展开。
 
-Provider 是冷翻译器，不是另一套公共 `GgmlMatMul/CublasMatMul` 计算语言。三种接入均保留：
+Provider 是具体实现的适配层：准备时翻译计算，执行时提供已绑定的原生制品；不是另一套公共
+`GgmlMatMul/CublasMatMul` 计算语言。三种接入均保留：
 
 1. **原生 leaf/融合程序**：HYLE、vendor primitive 或受审源码 kernel 使用所选 native runtime。
 2. **完整 Provider region**：把选定片段交给 ggml、MLX 等自己的计算图/执行制品。
 3. **Provider 内扩展**：若它公开 custom Primitive/lowering，在其编译前插入 HYLE kernel，让它保留
    内部资源和依赖。不修改已编译黑盒，也不假定每个 Provider 都有这种扩展。
 
-一个 HYLE kernel 更快，不意味着拆开成熟 region 后仍更快。原版 region、包含 HYLE 扩展的 region、
-独立 HYLE 程序按完整边界比较；layout/repack、copy、同步、融合损失和运行时开销一起计费。
+一个 HYLE kernel 更快，不意味着拆开成熟 region 后仍更快。开发时比较原版 region、包含 HYLE 扩展
+的 region、独立 HYLE 程序的完整边界；layout/repack、copy、同步、融合损失和运行时开销一起计费。
 无可分辨优势使用合格成熟路线，不为裁决微小点值改变公共 API。
 
-### 2.4 HYLE 保留全局调度权，Provider 只拥有局部制品
+### 2.4 HYLE 拥有计划与边界，Provider 拥有片段内执行
 
 | 决策 | owner |
 |---|---|
@@ -92,7 +108,9 @@ Provider runtime/单 op lowering 不反向依赖 Graph，Graph region 翻译放�
 workspace/常量 packing、private memory、并发与失败限制。选定候选才创建重型制品；不能到接纳用户
 工作后才发现格式或 storage 不兼容。实际运营错误不能伪装成可回退的能力拒绝。
 
-prepare 可进行声明过的 JIT、tactic、constant packing 和受控 warmup；这些不放在首 token 内。
+prepare 可进行已选实现所需的 JIT、启发式 kernel 配置、constant packing 和受控 warmup；这些不放在
+首 token 内。这不授权跨 Provider 试跑选优；第三方内部若有计时式 tactic 搜索，必须单独披露并在该
+路线准入时裁决，不能仅因它发生在 prepare 就默认允许。
 warmup 可能真执行，必须使用隔离输入/scratch/可变状态，不能推进用户 KV、RNG 或其它副作用。
 无法隔离的计算不自动 warm/capture。纯状态实例化不得偷偷执行、重新搜索或 JIT。
 
@@ -114,7 +132,7 @@ run-state 和回收。这里是职责名，不固定旧类、vtable、候选搜�
 只复用同义且成本合适的实现；旧 API 和旧测试没有兼容要求。
 
 - **构建期**：裁剪路线及第三方 backend、SDK、flags、runtime 依赖；不靠消费者宏改变公共对象布局。
-- **准备期**：绑定实际 device、数值/格式/shape、实现、资源和调用入口；少量候选冷选路。
+- **准备期**：按已验证规则匹配实际 device、数值/格式/shape，绑定实现、资源和调用入口，不现场比较性能。
 - **执行期**：调用固定程序，更新允许变化的数据。无 Provider 查表、设备查询、策略选择、隐藏建图。
 
 静态可知的局部调用用模板/直接内联；运行时才知道的模型不能靠宏变为编译期常量。固定边界调用也
@@ -140,6 +158,29 @@ import/依赖能力成立才借用，否则显式 Copy/转换或拒绝。caller 
 
 ## 4. 路线与提供方选择
 
+### 4.1 开发时验证 best-of，准备时应用规则
+
+best-of 是 HYLE 维护者的研发责任，不是交给用户或其运行进程做的性能实验。默认路径固定为：
+
+- **开发时**：按硬件/ISA、Provider 版本、数值/格式/shape、布局、资源和并发条件验证完整收益，形成
+  有适用域与成熟基线的实现/融合规则；不把单个 benchmark 点外推到全部设备或尺寸。
+- **交付时**：规则与对应实现一起编译、版本化和验证。规则可用模板、直接分支或私有有界决策表，
+  不要求新增通用规则引擎、外部 profile 数据库或公共配置协议。
+- **准备时**：按实际计算和设备匹配既定规则，检查合法性并绑定程序。静态已知的选择可编译期消除；
+  模型加载后才知道的 shape 只匹配一次，不通过试跑重新确定赢家。
+- **执行时**：调用绑定程序或绑定好的有限变体；不重新探测 ISA、遍历 Provider、测量或改变优选规则。
+
+普通用户只提供计算、路线/设备和所需数值/资源约束，不排序 Provider、不提供 timing profile；指定
+实现或裁剪依赖只是专家控制。Direct 与 Graph 都须使用对应粒度的默认规则，不能只让专家样例选到
+胜出实现。Graph 的融合规则计入完整片段成本，不把逐 op 最快名单机械拼成整图最优。
+
+规则先服从能力/数值/资源硬约束；已选实现缺席或条件不匹配时，只能用预定的合法基线或明确拒绝，
+不能临时测量、隐藏转换/CPU fallback，或把运营错误当安全回退。未知硬件上的兼容基线不获 SOTA
+资格；依赖升级影响的规则需定向复验。原始性能证据留给维护者，普通运行不加载 benchmark 资料。
+本轮不新增用户侧计时 autotuner；profile 驱动的多计划竞赛不是默认能力或必须保留的旧实现。
+
+### 4.2 四路线的实现来源
+
 Apple 与 NVIDIA 是主要优化目标；CPU 是完整基线路线；Vulkan 是正式跨厂商保底，不是实验。
 Apple 上 MoltenVK 是 Vulkan portability，不替代 MLX/native Metal 性能资格。
 
@@ -157,12 +198,14 @@ Apple 上 MoltenVK 是 Vulkan portability，不替代 MLX/native Metal 性能资
    offsets，明确 group、轴、舍入和累加。普通两输入 MatMul 不冒充所有量化格式。
 2. 在选定 CUDA 路线内验证能力。GGUF Q4_0/Q4_K、Marlin W4A16、FP4 是不同合同；相同 4 bit 不保证
    可无损 repack。cuBLAS 也不自动支持任意 Q4 存储。
-3. 只枚举已有实际 adapter 的候选：原生 kernel/vendor primitive、ggml-CUDA region 或 HYLE 融合。
+3. 匹配研发时已验证、且当前实际交付的实现规则：原生 kernel/vendor primitive、ggml-CUDA region
+   或 HYLE 融合；不是在用户机器上逐个试跑候选。
    量化带来的额外 activation 舍入和 reduction 差异不能隐藏；严格数值策略不满足就拒绝。
 4. 兼容的 packed constants 冷生成并按实际 owner 共享；output/scratch/locks 按并发槽独立。
    默认压缩权重常驻，kernel 内 tile 解码不是全权重浮点常驻。显式展开/再量化另需授权与完整内存计费。
-5. 比较整段可执行计划的转换、融合、copy/sync/launch、准备和内存成本。局部 kernel 赢但拆图后输，
-   则保留完整成熟 region；有同-runtime 扩展时也比较该候选。不是必须把 ggml kernel 拆成函数才能使用。
+5. 研发时把转换、融合、copy/sync/launch、准备和内存成本计入完整比较，并固化适用规则。模型准备
+   时按这些规则构造实际计划；局部 kernel 赢但拆图后输的替换不进入默认规则，同-runtime 扩展也按
+   完整收益验证。不是必须把 ggml kernel 拆成函数才能使用。
 6. 绑定有限程序和运行参数后重复执行。没有合法 Q4 carrier 就明确不支持，不偷偷回 CPU 或全量展开。
 
 ## 5. Storage、同步与生命周期

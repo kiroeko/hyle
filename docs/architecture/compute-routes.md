@@ -10,8 +10,9 @@ CPU、CUDA、Apple MLX/Metal、Vulkan 各自实现冷编译、执行制品、运
 计算/数值描述、错误、资源访问、结果/完成与必要计划事实，不强制一个 segment loop、统一 native
 handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基础设施复制四份。
 
-模型 CPU+GPU 联合计算不在范围内。用户选计算路线，HYLE 在该路线内选合格实现；缺少 GPU 算子或
-资源时明确拒绝，不借 CPU fallback 绕过配置。host 控制、权重准备、上传下载和回收不属于这种混合。
+模型 CPU+GPU 联合计算不在范围内。用户选计算路线，HYLE 按研发时已验证的规则绑定路线内实现；
+缺少 GPU 算子或资源时明确拒绝，不借 CPU fallback 绕过配置。host 控制、权重准备、上传下载和回收
+不属于这种混合。
 
 构建必须从公开产品、路线实现直到第三方 native backend 一直隔离：
 
@@ -36,8 +37,8 @@ MLX 有独立的 CPU/Metal/CUDA 开关，默认 tests/examples、文件格式功
 ## 2. CPU：持久执行资源与真实 ISA 实现
 
 CPU 不是 GPU 的失败接管路径。Platform 提供 OS 已公布的拓扑/NUMA/cache 事实；SIMD 拥有自身最佳
-kernel 的 ISA 路由；Compute 不重新实现这两套探测。ISA、线程数、packing、workspace 和实现选择在
-prepare 确定；输入数据与明确运行参数才进入热路径。
+kernel 的 ISA 路由；Compute 不重新实现这两套探测。实现及线程/packing 策略的适用规则在开发时
+确定，prepare 匹配 ISA/shape/用户预算并绑定资源；输入数据与明确运行参数才进入热路径。
 
 普通计算保留 HYLE SIMD/Native、oneDNN/BLAS 等实际成熟实现，ggml-CPU 作为独立 runtime 候选，
 不能因为 GPU carrier 可用就认为 CPU carrier 已合格。worker 数/亲和性依据 workload 与用户限制，
@@ -81,8 +82,9 @@ HYLE Queue。参考 [vLLM dispatcher](https://github.com/vllm-project/vllm/blob/
 [SGLang graph runner](https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py)、
 [ggml CUDA context](https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cuda/common.cuh)。
 
-压缩 MatMul 的渐进选路按 [Q4 规范例](compute-design.md#cuda-q4-matmul-的规范例)：格式、精度和完整
-边界先匹配，再比较成熟 region、原生 kernel、HYLE 扩展。GGUF、GPTQ/AWQ 与 FP4 不是同一种四位数。
+压缩 MatMul 的渐进替换按 [Q4 规范例](compute-design.md#cuda-q4-matmul-的规范例)：研发时在相同格式、
+精度和完整边界比较成熟 region、原生 kernel、HYLE 扩展，准备时只应用已验证规则。
+GGUF、GPTQ/AWQ 与 FP4 不是同一种四位数。
 
 ## 4. Apple：优先在 MLX 的 Metal runtime 内组合
 
@@ -105,7 +107,7 @@ MLX 使用 Metal 4 TensorOps / Metal Performance Primitives 可获得新 GPU 矩
 [NAX 能力判定](https://github.com/ml-explore/mlx/blob/v0.32.2/mlx/backend/metal/device.cpp)、
 [quantized dispatch](https://github.com/ml-explore/mlx/blob/v0.32.2/mlx/backend/metal/quantized.cpp)。
 
-### 4.2 三种接入，按完整收益选择
+### 4.2 三种接入，研发时验证完整收益
 
 1. **MLX 完整 GPU region**：保留其 compile、packing、allocator 和内部融合，不逐 op 绕回 HYLE。
 2. **MLX 内 HYLE Metal 扩展**：优先公共 `fast::metal_kernel` 或 C++ custom Primitive；沿相同
@@ -116,7 +118,7 @@ MLX 使用 Metal 4 TensorOps / Metal Performance Primitives 可获得新 GPU 矩
 
 通用 custom kernel 可能分配输出、使输入 contiguous、查询 library/kernel cache，也可能形成融合
 边界；“在同一个 Metal runtime”只避免不必要的外部桥，不保证无这些费用或比 MLX 内置计算更快。
-比较完整片段后再默认替换。参见 [C++ 扩展](https://ml-explore.github.io/mlx/build/html/dev/extensions.html)
+研发时比较完整片段后固化默认替换规则。参见 [C++ 扩展](https://ml-explore.github.io/mlx/build/html/dev/extensions.html)
 与 [custom Metal kernels](https://ml-explore.github.io/mlx/build/html/dev/custom_metal_kernels.html)。
 
 ### 4.3 资源、线程和错误
@@ -148,7 +150,7 @@ Intel 或 MoltenVK 的 feature/limits、性能与正确性。
 
 “保底”不等于所有 GPU 强制用最弱通用 shader：ggml 针对 cooperative matrix、NV cooperative
 matrix2、integer dot、subgroup size 与 float controls 有专门分支。HYLE 保留按能力/数值/shape 的
-冷选路和 specialized pipelines；shader 编译器、SPIR-V/headers 与运行 device 的支持须同时验证。
+已验证的选择规则和 specialized pipelines；shader 编译器、SPIR-V/headers 与运行 device 的支持须同时验证。
 例如编译工具识别某扩展不能证明设备支持它，声明支持 integer dot 也不必然硬件加速。适用时借
 成熟高效分支；无硬件资格的分支不宣称 SOTA。参考
 [ggml shader 能力构建](https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-vulkan/CMakeLists.txt)
@@ -191,9 +193,10 @@ handle/allocator/Queue 或同一个热态 adapter 没有依据。
 
 ## 7. 如何获得 SOTA 而非宣布 SOTA
 
-准备期先按硬约束拒绝不兼容候选，再比较成熟完整程序、原生 leaf/融合与嵌入 HYLE 扩展的程序。
-变更限定到有证据的 hardware/格式/shape/精度域，无明确完整收益就保留合格成熟实现；不为一次
-地址/顺序波动从头维护整套 kernel。新胜出实现增加一个局部候选，不重写公共 DAG 或全部后端。
+四路线都遵守 [Compute 的既定优选规则](compute-design.md#41-开发时验证-best-of准备时应用规则)：
+研发时比较成熟完整程序、原生 leaf/融合与嵌入 HYLE 扩展的程序，固化有证据的 hardware/格式/shape/
+精度域；准备时核对硬约束并绑定，不现场计时选优。无明确完整收益就保留合格成熟实现；不为一次
+地址/顺序波动从头维护整套 kernel。新胜出实现只替换适用规则与局部代码，不重写公共 DAG 或全部后端。
 
 热路径只调用绑定程序。静态调用可模板内联，动态计划的一次固定调用不是字面零成本；不能用宏
 抹去 runtime owner、allocator、同步和不可融合边界。分别测 **同 Provider direct 的适配税** 与

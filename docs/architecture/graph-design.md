@@ -5,8 +5,8 @@
 
 ## 1. Graph 解决什么问题
 
-Graph 把模型无关的逻辑 DAG 编译成可重复执行的程序：验证语义、选 Provider/region、决定边界资源/
-转换/依赖、规划自己拥有的 workspace，并导出完整执行和诊断事实。它不是模型 runtime 或通用任务池。
+Graph 把模型无关的逻辑 DAG 编译成可重复执行的程序：验证语义、应用已验证的实现/融合规则、决定
+边界资源/转换/依赖、规划自己拥有的 workspace，并导出执行和诊断事实。它不是模型 runtime 或通用任务池。
 
 用户先选择 CPU、CUDA、Apple MLX/Metal 或 Vulkan 路线。CPU+GPU 分担模型计算不在范围内；
 host 控制/上传下载和同 GPU 多 Provider 组合仍在范围内，见
@@ -17,9 +17,9 @@ host 控制/上传下载和同 GPU 多 Provider 组合仍在范围内，见
 Compute 拥有直接计算与原生执行；Graph 拥有语义图和冷编译；compiled plan 是内部执行制品，不另造
 第三个 Plan 产品。一套计算语义可以被四条路线各自 lowering，不要求一个万能 compiler/执行器。
 
-普通用户选择路线/设备、提供图和数据、显式准备并运行；不手工构造三轴 ID 数组或逐节点 native
-binding。专家再控制资源、并发/lanes、预算或 Provider。具体类名/函数不继承旧测试，使用指南只描述
-真正已交付 API，不把本页概念示意写成用户可调用代码。
+普通用户选择路线/设备、提供图和数据、显式准备并运行；不手工构造三轴 ID 数组、Provider 优先级、
+性能 profile 或逐节点 native binding。专家再控制资源、并发/lanes、预算或 Provider。具体类名/函数
+不继承旧测试，使用指南只描述真正已交付 API，不把本页概念示意写成用户可调用代码。
 
 ## 3. 生命周期职责
 
@@ -58,8 +58,8 @@ host buffer 不是 CPU 模型计算资格，同 GPU 的两个 runtime 也不自�
 先根据 data/control、lane order、跨 lane 依赖形成 happens-before，再决定内存复用。只有全部旧
 使用先于新写入时才能 alias 同一 backing；不能按一个拓扑编号的区间忽略真实并发。
 
-默认保留并发，预算不足就拒绝；只有显式允许才增加可报告的串行依赖换内存。计划搜索有确定的
-时间/状态/内存预算和保守选择，不追求一般 DAG 的无限全局最优解。
+默认保留并发，预算不足就拒绝；只有显式允许才增加可报告的串行依赖换内存。必要的资源计划求解
+有确定的时间/状态/内存预算和保守选择，不进行实测计划竞赛，也不追求一般 DAG 的无限全局最优解。
 
 Graph 只给自身 backing 和必要边界转换调用 Mem lifetime/quota primitive；Provider 私有 heap、
 runtime 生成输出由该 owner 规划。完整内存报告分别计编译峰值、常驻唯一权重/制品、全部有限 variants、
@@ -93,9 +93,9 @@ typed schema 声明 tensor 与其它资源的 read/write/read-write。同资源�
 
 ## 5. 冷编译与 Provider 组合
 
-冷编译按所选路线验证图/推导描述，发现少量实际候选，选择片段与边界，创建制品，建立 native
-执行顺序，再规划 liveness/alias，最后生成路线专属程序和诊断。顺序中的约束可反馈，但不得变成
-无上界的所有设备×所有 Provider×所有子图搜索。
+冷编译按所选路线验证图/推导描述，匹配研发时已验证的实现与融合规则，确定合法片段与边界，建立
+native 顺序和 liveness/alias 计划，创建制品，生成路线专属程序和诊断。实际资源约束可反馈调整；
+这仍是针对真实 DAG 的规划，不是预存所有整图，也不是在模型准备时试跑多个 Provider 争夺赢家。
 
 region 是可收缩 node set 与明确 ports，而非必然连续编号。收缩不能产生离开后重入的路径/新环，
 入选集合不重叠并完整覆盖需要执行的节点；只审计受限提案，不枚举所有子集。
@@ -110,18 +110,23 @@ runtime；ggml-Metal 与 MLX 不因都用 Metal 就能任意交叉串联。
 
 ## 6. 热路径与选择
 
-### 6.1 Workload intent、route profile 与有限搜索
+### 6.1 工作负载约束与既定优选规则
 
 默认面向长寿命、单次运行的低延迟；吞吐/并发、确定性、prepare 预算及内存约束可显式指定。
 无 replay 次数就不任意摊销 compile 时间；不把 bytes、ns 和线程数混成魔法分数。
 
-以合格成熟完整路线为基线；唯一可行路线直接准备，有候选才比较。qualified profile 绑定相同计算、
-数值/格式/shape、device/driver、Provider/build、资源/完成边界与 workload。不同 Provider 各自的
-“比自己快几 ns”不能相加。无证据或结果不可分时保持合格成熟路线，固定小输如实保留，不改名为 parity。
+默认选优遵守 [Compute 的研发/交付/绑定分工](compute-design.md#41-开发时验证-best-of准备时应用规则)。
+Graph 消费随实现交付的融合与片段规则，不要求消费者提供完整图的 timing profile，也不按实测
+profile 重建多个计划再择优。已有 profile 接收/搜索代码不因存在就成为目标架构必须保留的能力。
 
-搜索预算耗尽而已有完整合法解，可返回该解并报告优化受限；没有可行解则失败，严格搜索政策可拒绝
-受限结果。不能丢节点或掩盖真实错误。Graph compile 不用用户 payload 偷计时；显式 tuner 是可选外部
-任务，Provider 内合法 tactic/warmup 依照 Compute 的隔离/成本合同。
+规则只适用于已验证的数值/格式/shape、device、实现版本、资源/完成边界和 workload；不同 Provider
+的局部 timing 不能相加冒充完整图收益。匹配不到胜出规则时采用预定的合格成熟基线；没有合法实现
+则失败。没有性能证据的兼容范围不签最优；固定小输仍如实保留，不改名为 parity。
+
+融合候选重叠、依赖、alias 和预算需要有界的结构判断，不能因此取消必要的 Graph 规划；按既定规则
+与硬约束得不到可行计划时明确拒绝。规划预算耗尽但已有合法计划时可报告优化受限，严格政策可拒绝。
+这些判断不执行 tensor payload、不计时、不搜索新的性能赢家；真正的错误不被规则匹配吞掉。已选
+Provider 的必要编译/packing/warmup 仍遵守 Compute 的准备与隔离合同。
 
 ### 6.2 Shape、capture 与动态参数
 

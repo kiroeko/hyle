@@ -72,7 +72,10 @@ Graph 拥有逻辑图、region 边界、copy/sync、liveness 与 alias；每条�
 
 推理采用 CPU、CUDA、MLX/Metal、Vulkan 四条独立计算路线，模型级 CPU+GPU 联合计算不属于 HYLE
 范围，不保留为延期任务。host 提交/传输/同步及同 GPU 多 Provider 组合仍保留。共同的是图语义、
-资源/完成责任与冷选路合同，不强制四套原生实现复用同一执行器；构建期裁剪、准备期绑定、执行期固定。
+资源/完成责任与已验证的优选规则，不强制四套原生实现复用同一执行器；研发时验证 best-of、构建期
+交付规则和实现、准备期匹配绑定、执行期固定。普通用户不排序 Provider 或提供 timing profile；
+Graph 仍按实际图规划资源/依赖，不现场比较 Provider 性能。规则见
+[Compute](compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
 谁计算、数据由谁持有、沿哪条时间线执行必须分清，但不是要求普通用户拼三套 ID 容器。真实资源依赖
 先于 workspace/alias；共享内存不取消同步。Provider 可以借用原生资源，也可以自持 runtime；它的

@@ -100,6 +100,13 @@ usage requirement 才传播，不能用消费者宏改变同一公开对象布�
 尚未实现的路线不为文档先创建空 option/target；具体边界见
 [Compute 四路线设计](compute-routes.md#1-隔离边界)。
 
+选路线不等于让用户挑算子库。标准发行配置应包含该路线默认优选规则所需且已验收的实现，并在正常
+C++ 入口自动组装；裁剪/禁用某 Provider 是高级交付控制，不是逐 op 性能选择。规则与可用实现必须
+由同一构建闭包投影，source/static/shared 不出现“规则指向未交付实现”。裁剪后的合法基线或明确
+能力缺失须可解释；当前某 Provider 默认 OFF 是现状，不是要求重构后永远由用户手动开启的原则。
+不自动启用尚未验收的实现，也不在 configure 时跑性能比赛。best-of 的责任见
+[Compute 规则](compute-design.md#41-开发时验证-best-of准备时应用规则)。
+
 Compute/Graph 的产品聚合按所选路线生成真实依赖闭包，不固定附带 CPU 算子或 oneDNN；公共语义核
 不引入任何 GPU SDK。隔离继续传入 vendor backend 选择，不能只禁用 HYLE 外层 target 而仍构建依赖
 全家桶。MLX 等依赖自己的 CPU/Metal/CUDA、tests/examples、nested FetchContent 与最低部署版本
