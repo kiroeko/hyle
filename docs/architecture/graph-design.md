@@ -576,6 +576,17 @@ provider/backend workload 上形成可解释收益。
 只有 CPU 计算的 GPU copy、或 Q4 整体展开样例代替相应真实路线。到基础 gate 完成时暂停共同审视，
 之后才进入 attention/完整 Transformer 与目录扩充。HIP/ROCm 的无限期 defer 保持。
 
+纵切的单位是**一次完整公开用户旅程及其待裁决问题**，不是新增几个 API 的展示。每条记录正常输入、
+至少一个会推翻对应假设的反例、资源/线程 owner、最终完成点，以及失败时应改哪个 seam。低层借入探针
+只证明局部机制，不能把 Graph 的跨 Provider 调度、失败回收或完整成本一并签为通过。CUDA 主纵切需
+贯通压缩 FFN 的第三方叶实现与可替换 custom 计算；Apple 需贯通 MLX region 与原生 Metal 边界；Vulkan
+专门反证跨资源访问和内存可见性。具体形状、证据与先后顺序只维护在上面的总计划中。
+
+性能用同一程序分两步隔离问题：先对同实现 direct 与 HYLE 路线检查抽象税，再把成熟完整 region 与
+混合替换计划作同精度/格式/完成边界比较，包含复制、repack、融合损失和线程转交。若局部替换更慢，
+保留成熟完整路线；若固定额外成本来自 Graph 边界，记录具体根因，不能因为 kernel-only 赢或差距落入
+某个百分比就宣称计划更优。仅构造快慢标签或伪造 profile 的测试只验证 selector，不签性能胜负。
+
 ## 11. 架构稳定条件
 
 Graph 架构在有限探针上接受或反证：CPU one-op 抽象税、CPU multi-op region/workspace、CUDA 同 storage

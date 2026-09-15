@@ -306,7 +306,7 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 | 2 | Identity + proposal/shape/custom substrate | 复用已完成 identity/outcome/node-set；补 replay 成本、有限派生 shape/domain、安装包 custom execution、资源访问与 constant seam，不先写 selector 大算法 |
 | 3 | Graph route unification | leaf/region 同池、完整成本与有界重选、搜索受限可行解、资源域顺序、variant 常量/内存聚合和可解释 report |
 | 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN 非 insertion-order region；exact/bounded 与派生维度、资源冲突/独立、variant 内存/预算反例；增加真实持久 executor 组合，不能由串行 callback 探针代替 |
-| 4a | 成熟实现接入准入 | CUDA 独立压缩 kernel 已有具名接入实证，见下节；正式版本/数值/失败封装与 Apple MLX 尚未完成。公开 shared/delegated 不成立时只评估一个窄 source-patch 方案，不先造宽适配 |
+| 4a | 成熟实现接入准入 | CUDA 独立压缩 kernel、MLX C++ FFN/输入借入/线程缓存已有有限实证；正式 CUDA 版本/精度/失败封装与 MLX 全局调度 bridge 仍须准入。MLX 不签为 prepared/shared 或有限私有内存；不先造宽适配 |
 | 5 | CUDA foundation probe | 复用已通过的多 lane/capture；分开做正常浮点 vendor 调用与保留压缩权重的 Q4 decode/prefill FFN；正式 leaf/region/unsupported、residence/预算、general/exact 与完成边界。Q4→F32 预检不代替量化路线 |
 | 6 | Apple foundation probe | MLX delegated managed replay + 原生 Metal custom-kernel/interop，实证成本分类、prepared-only 拒绝、island boundary/Completion，不横向填 Apple 算子 |
 | 6a | Vulkan foundation probe | 最小 SPIR-V 计算、device/queue-family、buffer/barrier/timeline、native handoff；Windows/Linux 与 Apple MoltenVK portability；不填算子目录 |
@@ -407,6 +407,32 @@ Q4→F32 样例的活动源码与用户入口已退役；已经完成的互操�
 carrier 选 Marlin family，但 2024 original pin 不直接成为 shipping/SOTA 默认；当前 vLLM/SGLang
 版本的 native façade、冷配置、错误与数值合同须按该调查的有限清单准入。GGUF 格式/原 ggml blocker
 和 MLX 不由该实验解决；4a 仍部分完成，无新的产品百分比或模块关闭。
+
+同日[调度边界调查](foundation-architecture-admission.md)又完成一个独立 MLX v0.32.2 C++ FFN 实验：
+MacBook Air 六次变化输入正确、页对齐 host 输入真实借入、六次释放，且同 compiled function 跨线程
+再次 trace。公开 `array.wait()` 的 signal 快路不足以独立证明错误终态，调查 fixture 改为在读回前显式
+同步并检查受控 stream。MLX 的线程缓存、全局 allocator、managed 元数据和显式完成 bridge 是局部
+接入约束；不能因这个独立程序能运行就宣布 Apple backend/provider 或 foundation 已完成。
+
+#### 决策与纵切的对应关系
+
+不新增一批平行 epic；以下是既有 5/6/6a 的具体合格条件。各路径仍用同一 Graph/Executable/Invocation。
+
+| 既有工作包 | 固定旅程与判据 | 会改变决策的反例 / 处理边界 |
+|---|---|---|
+| 5 / CUDA 压缩 FFN | 采用 Qwen3-0.6B 的 D=1024/H=3072 gate/up→SwiGLU→down 形状，M=1 与 M=64；所选 Marlin family 的 symmetric group128 W4A16，保持压缩权重。经 HYLE Graph 调用成熟 GEMM/custom 中间计算，再回成熟 GEMM；两个独立 Invocation、变化输入、共享不可变权重、普通与 capture 路线 | 不接受仅旧单 GEMM 或全量展开。若 layout/scale/累加语义不等，修正该格式/operation/provider 合同，不放宽 oracle；若替换造成完整成本变差，保留成熟组合。custom 的可调用性不等于已证明更快 |
+| 6 / Apple 委托边界 | MLX 原生支持的 FFN region，与 HYLE native Metal 前/后处理衔接；固定提交 owner，明确输入/输出 copy 或 import、managed 成本、错误终态与回收；prepared-only/禁止等待/有限私有内存等不满足的要求在接纳前拒绝 | 不能把任意 worker 上的 compiled call 当已预热制品，不能把 ready bit 当成功。若只能公开 host bridge，先计入完整成本并保留较大片段；高效 device bridge 未成立就不能签为成立，不强制移植 MLX runtime |
+| 6a / Vulkan 正交边界 | 上传→SPIR-V 计算→native 后继/读回；重复复用资源，明确 barrier、queue-family ownership、timeline 与真实完成；原生 Vulkan/MoltenVK 各取证 | Queue 顺序不自动证明内存可见性。失败修 typed backend 同步/resource seam，不因其 API 不叫 CUDA stream 就新造一套 Graph |
+
+Qwen 仅提供真实 FFN 拓扑和矩阵规模；本纵切的 W4A16 是明确选择的量化部署合同，不宣称该模型官方
+BF16 checkpoint 自带这种编码，不下载完整权重或用合成权重证明模型质量。
+[官方 config](https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/config.json)给出 hidden_size=1024、
+intermediate_size=3072 与 SiLU。M=1/64 是明确的 decode/prefill 工作点，不代表所有 batch 最优。
+
+全局调度的验收看实际证据：本轮 HYLE 选择的片段/队列、boundary copy、常量/临时驻留、输入就绪、
+输出完成与失败后回收；没有依赖的片段可以提交到不同 lane，但不保证硬件必然并行。两个成本对照必须
+分开：同一实现 direct vs HYLE 的抽象税；成熟完整计划 vs 混合计划的实际收益。只有不可变实现才跑
+预声明 P1，文档/状态变更不重测；本轮研究没有新增 P1，也没有向未实现路径发放通过。
 
 #### 执行约束和停止条件
 

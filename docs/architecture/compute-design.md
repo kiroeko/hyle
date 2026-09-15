@@ -166,6 +166,24 @@ HYLE 的性能责任不要求它亲自调度每个底层 kernel。cuBLASLt、one
 因此 Graph 执行的是由 HYLE 排好的异步 segment DAG；每个 segment 可以是 HYLE 叶操作，也可以是第三方
 compiled region。这样的层级调度仍由 HYLE 控制全局关键路径，同时允许成熟实现保留其最擅长的局部计划。
 
+这里的“全局”有明确范围：引擎选择请求/batch、模型循环、KV 策略及允许的设备/offload；HYLE 控制这次
+Executable 内的计算计划；Provider 控制已委托片段；OS/驱动最终执行线程与设备命令。HYLE 不承诺控制
+第三方黑盒内每个线程、GPU 每个 SM 的实时分配，或其它进程的资源争用。专有硬件调度选项仍属于 typed
+backend extension，不变成通用 Graph 的虚构保证。
+
+实际控制通过以下边界实现，不是每算完一个 op 都回 host 等待：
+
+1. 冷编译选定片段、放置、buffer 生命周期、workspace 和允许并行度，生成 segment DAG；同一 Queue 的
+   依赖合并录入，跨 Queue 使用已验证的 event/semaphore/barrier，能 capture 的兼容片段可整体重放。
+2. shared Provider 只能在已借入的资源上执行；delegated Provider 只能在其声明的 runtime 内执行，HYLE
+   通过输入就绪、提交准入和真实 Completion 连接边界。未知私有内存不是零，不能通过有限硬配额门。
+3. 多 Invocation 不共享可变 scratch；共享权重只读。需要排他的 artifact 排他到终态，不是只锁住 enqueue。
+   已接纳工作出错后停止不安全后继并 drain，不能换 Provider 静默重跑或提前复用内存。
+
+这样保留的是依赖、放置、准入、寿命和路由的控制权，不是强制所有计算经 HYLE CPU worker。多 stream
+也不是自动更快：串行/重叠计划均须在相同硬约束和完整完成边界上比较。固定函数指针调用并非零条指令；
+“低路由成本”要求冷绑定、批量/capture 与同实现 direct 对照，而不能由模板/宏的名称推导。
+
 Provider region 的语义是**可收缩 node set + 显式 boundary ports**，不是某个拓扑序中的 begin/count。
 候选集合必须非空、node identity 唯一，并且不存在一条路径从集合内离开后又进入集合；
 这样 Graph 才能把它收缩为单个 segment 而不改变 DAG 依赖或制造环。多个入选 region 必须互不重叠。
@@ -235,8 +253,12 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
 以 `RMSNorm -> Q4 gate/up MatMul -> SwiGLU -> Q4 down MatMul` 为例；单独一个 Q4 MatMul 是它的退化情形。
 正确流程是：
 
-1. 模型 loader 用普通 `MatMul` 表达逻辑计算。权重 `TensorDesc` 仍声明逻辑 scalar/shape，同时用对应
-   Provider 发布的 `StorageFormatId`、block elements/bytes、alignment 与 byte strides 表达 Q4 物理编码；
+1. 模型 loader 表达逻辑矩阵乘，而不是按 Provider 名称选一套图。普通两输入 `MatMul` 只适用于
+   数值/端口合同确实匹配的路线；Marlin 等独立 scale/zero tensor 的量化路线须有完整 typed operation
+   schema，不能把当前两个输入的 builtin 宣称为已经覆盖，也不能把 scale 指针塞进不透明属性。
+   量化 schema 的补充属于 ComputeOps/Provider，不改变 Graph 对象模型。权重 `TensorDesc` 声明逻辑
+   scalar/shape，同时用对应 Provider 发布的 `StorageFormatId`、block elements/bytes、alignment 与
+   byte strides 表达 Q4 物理编码；
    scale/zero 等若不是块内编码，则是显式 typed tensor input，不能藏进 `void *` metadata；
 2. 用户或上层引擎明确把 activation、weight 与 output 放在 CUDA storage，或允许 Graph 选择其它 target。
    “CUDA backend 已存在”只证明能建立 context/queue/memory/event/copy，不证明任何 Q4 算子已经存在；
@@ -435,6 +457,24 @@ MLX v0.32.2 的公开 compiled function 在缓存命中后仍调用 `compile_rep
 [MLX 实现](https://github.com/ml-explore/mlx/blob/v0.32.2/mlx/compile.cpp#L985)
 Apple adapter 先验证这种 managed 路线的真实边界；若后来证实某条公开 API/capture 满足 prepared，可
 单独升级该 route。原生 Metal 保留严格 kernel 路线；不为满足纸面零分配而默认维护 MLX 私有补丁。
+
+MLX 的公开接入还必须满足以下具体限制；这是 Provider 内部实现约束，不新增 Graph 对象类型：
+
+- v0.32.2 的 compile cache 是 thread-local。同一个 compiled function 在另一线程可能再次 trace；
+  prepare/warmup、replay 和清理须绑定稳定的提交线程，或有限且分别预热的线程集合。不能预热后任意
+  丢给工作窃取 worker，不能每个 op 创建线程；handoff、私有线程与排他成本须报告。
+- `array(void*, ...)` 会在无法借入时复制，不能作为无条件零拷贝 API；严格 import 必须先验证真实资源、
+  对齐和生命周期。输出由 runtime 分配也不能假称使用了 HYLE 预绑定的输出，必要 copy 要显式计费。
+- `array::is_available()` 的 signal 快路和 `array::wait()` 的已就绪分支不足以独立证明成功终态。
+  bridge 必须保留并检查真正错误状态；受控 stream 的公开 `synchronize` 有明确错误检查，但有 host
+  等待成本。可在声明的持久提交线程内完成并转换为 HYLE Completion；这不是零等待的 device bridge，
+  不满足禁止此类等待的模式时应拒绝。并发/晚到错误/部分接纳仍须正式验证。
+- MLX Metal allocator 是 runtime 全局对象；不能把其全局 memory limit 或一次 peak 当作 HYLE 单个
+  Invocation 的硬上界，也不能在每次调用时修改全局限额影响其它用户。无法计量的私有开销保留 unknown。
+
+上述线程迁移和页对齐输入借入已有[有限真机证据](../implementation/tasks/compute/foundation-architecture-admission.md)。
+它不证明完整 HYLE/MLX/Metal 纵切、无热 JIT、异步错误注入或性能资格；这些限制也不等于 MLX 不适用，
+而是完整 region、managed 路线与原生 Metal 严格路线的真实分界。
 
 ## 4. 平台栈与优先级
 
