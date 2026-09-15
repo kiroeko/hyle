@@ -1621,3 +1621,13 @@ P1。完整候选的跨平台、独立红队、抽象税/MLP P1 与 Apple/CUDA �
 两份真实完整计划的较小限额验证 region/leaf 双向可行性，并强制较大路线验证不放宽约束；Graph/源权重/
 父 Executable 可以先释放，Context 必须在成功重放后才关闭，关闭后验证新 submit 不改输出。Graph guide
 补清 runtime 保活与 admission 开放的区别，不改变产品生命周期或为了测试改算法。
+
+结果：`cdd7d1af` 在 Windows Release oneDNN shared cache
+`C:/hyle-scratch/compute-route-onednn-v8-20260914` 精确构建 `hyle_graph_provider_onednn_test`（2 jobs），
+串行 CTest `^hyle_graph_provider_onednn_test$` / 120s：**20/20** 用例通过。三个 mixed MLP 旅程分别覆盖
+canonical 16 行、up-first decode 1 行、interleaved prefill 17 行；受限路线、强制不相容 Provider、零
+workspace 无解、失败后重试、源/Graph/父计划释放、三次变化输入与关闭后的输出不变全部实际执行。
+正常重放的 HYLE metadata 分配尝试数不增长，最后 StatsAllocator live bytes/count 均归零；这不测量或
+证明 vendor 私有 JIT/RSS。没有产品代码变更，已有 18 项其余独立覆盖继续回放；新增两项并扩展原 mixed
+旅程，不复制全套 Graph 测试或签性能收益。selector READY/跳过 92 项，closure/docs/diff 通过。
+CPU 的这条完整资源/lifetime 组合已得到实际实现证据；统一 P1、最终跨平台/红队和其它平台探针仍待完成。
