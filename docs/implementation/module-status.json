@@ -387,14 +387,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
-      "candidate": "db164bb7dced649c6ae0f5c992be5e7005748c7e",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md"
-      },
-      "summary": "compute_backend_cuda v2 CLOSED：精确 Queue endpoint 修复通过 Windows/Linux 真 CUDA、Graph 多 lane/capture、三交付、带记录的 WSL driver 豁免 ASan、UBSan 与候选后红队；两个冷查询维持 O(1)/零常态新增成本，Q4/整体 foundation 不在此证书范围。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md",
+      "summary": "compute_backend_cuda v3 SCOPED：真实 Q4 consumer 与 CUDA native 同步规则暴露 Mem 同步 write/fill/copy 的完成边界缺口；只修 CUDA 存储适配，Queue/事件池/公开 API/对象布局不变。"
     },
     {
       "module": "compute_provider_native",
