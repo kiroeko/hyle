@@ -82,3 +82,7 @@ name，删除未使用的私有 overload。无字段、公共 API、线程策略
 配置先遇到显式空 `HYLE_COMPONENTS` 与 `HYLE_DEV_FACTORS` 互斥，随后未在 PATH 中的 nvcc 无法自动
 识别；分别删除冲突的 cache 输入并显式传 Toolkit/compiler/host compiler 后，已经完成 configure。
 这两项是验证命令纠正，不是产品 CUDA discovery 缺陷。
+
+测试夹具的 `if (graph) ASSERT_EQ(...)` 另补显式大括号，消除 GCC 对 GoogleTest 宏的 dangling-else
+诊断。随后 nvcc 拒绝公共 helper 传入的 host `-Werror`，由独立的
+[CUDA host warning 维护卡](../build/build-cuda-host-warning-v1.md)处理，不在 CUDA 模块放宽 warnings。
