@@ -1,0 +1,584 @@
+{
+  "candidate_product": "50753347a0a18ba81c47fd623a882ca3d719af2b",
+  "corrected_test_candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d",
+  "product_delta_after_test_fix": [],
+  "selector_verdict": "PASS",
+  "gates": [
+    {
+      "id": "delivery:graph",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "cache_key": "2e8facbd5fd734a3c9b91fd7fd03f9f991f38d6cdcee54fa5a711f6ba44d2dd3"
+    },
+    {
+      "id": "docs",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "f70d0da8809539940de52eec567cc395d98606b76b1ffe3da64110bb38bdcc07"
+    },
+    {
+      "id": "closure",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "af579e614574cb95f54ab3c00bf27f7d2686dcf44929a60f8be0bf57972b4240"
+    },
+    {
+      "id": "configure",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "fb0159c7ac001e23ee96e8344f8ac0ba26eb546c30dfb6d425486b804c80cb3a"
+    },
+    {
+      "id": "factor:compute",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "d6e852b3251468ac5057989f0c0bcf7c52af286b64eec6bb25a5ddf62b115850"
+    },
+    {
+      "id": "headers:compute",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "5bedc1a92da7e054ab117642e1a51a69d591b5dacf64e99686eaac183059a3e1"
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "41e09c0ae55e3bfbd25a7b6db04e10f566181a1073d7ced7d2aae4106277b853"
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "f0cb6b416f18e5669bfb42b95b28acf71f1edc430325fbc29bc5f5a90b8aaa87"
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "bf7cc14f499ef33d1ae366c5a127b392beafcc435e20c1434cc67bcf776692e1"
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "ac6a618d5cd3e264fef35b3bf8a7da8c15d01c896efee34321c9ffadb3d75849"
+    },
+    {
+      "id": "factor:compute_ops",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "9f1824ef086e573812e14bedd3c1e174c9a8a46db79e890dfaa8593df298bea0"
+    },
+    {
+      "id": "headers:compute_ops",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "ce93d71bfb156e47afe2568e409951c68bee8d27ee95e00489de1fc5d39e1845"
+    },
+    {
+      "id": "factor:compute_provider_ggml",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests",
+      "cache_key": "88492b849526754ae07fb785b5f16fddbe42d80335777fd83d75b8f5068a427e"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "761a00217f1b8e51f8e5446faca9db2a841c4e7d1d1b299d92f75b20e375fe07"
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "fb65577c871841dbd442dd8b7780bc87503cbc436fc3f6af97b54443934850ef"
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "38912ead6c6496516eaa984295d47a96bf4fe908e88454abf3ae20c574bfb3c6"
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "5b37830a2e752b09f2d316886827e17f8f99e0268e5d10fad636bb42bf76765d"
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "02d10fb30f1b3c5090fb27bc061f38e7c48c66115de734bf5f1f45f2bab201bc"
+    },
+    {
+      "id": "factor:container",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "29f1b0a70b728b5b30a26877ea645b91c1d1761b24c9fa9adfa87eb242b6a208"
+    },
+    {
+      "id": "headers:container",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "c58e6e01710b884e988a56a1469b6852856e5008e5abf240ca9bf44126b30f12"
+    },
+    {
+      "id": "factor:container_concurrent",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "2915cd9fcb097385ff44929d7109e20b5c0e239377912d85eb52f65fc9dfadfe"
+    },
+    {
+      "id": "headers:container_concurrent",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "7bbfb71500c41a1be2200b769595ffb6e6bf605453da735d51bb0a3916457950"
+    },
+    {
+      "id": "factor:container_intrusive",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "b520ca1e620bdbcb78e9606dcbc210f0da2f97a0d7e9e2e20f7d67be551a5ac8"
+    },
+    {
+      "id": "headers:container_intrusive",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "7fa50e7b150d8a6c42edecdafcb27528dd1d8747cbc9f4fe17476b9bbceed930"
+    },
+    {
+      "id": "factor:container_queue",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "78fd1a04cfac96f104308b6843249bc75cabd5a97d18fd80b23a2a073b24d827"
+    },
+    {
+      "id": "headers:container_queue",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "21d69f3208a249506c296fd5fb4f61a34f1b39729b1e3c42b2746686c8f73d87"
+    },
+    {
+      "id": "factor:container_text",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "10e47113061d716421d868771930b2681b01889ea28f89ccae5630cacd7d6539"
+    },
+    {
+      "id": "headers:container_text",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "631fe638d0e460b52feb1ad5a57d5babf7d54026730b62f81f0224fa03639771"
+    },
+    {
+      "id": "factor:core",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "ccae4106ac05361bc2fb2fe37e67f628e05762dbd92ddee2837249e0a6bf6b01"
+    },
+    {
+      "id": "headers:core",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "294fe86c8095d35b7e211efdbb0c236084968b0f3cf2543873f1c8274de8e40a"
+    },
+    {
+      "id": "factor:error",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "f699e6fdc04270471cc93fb31cc47ab7a8569ecc450f2cfd1dc9357d34323035"
+    },
+    {
+      "id": "headers:error",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "c4e66eb4c5dbb2435b4fc6f319b9bdbeb1c27b5c6e92468a0ddb7e0f8c9ebaa5"
+    },
+    {
+      "id": "factor:graph",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "de30cc89adaa39057c8ac8f1221d61edccd40c0319b2cf71af0ea1cd4582c5b5"
+    },
+    {
+      "id": "headers:graph",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "060e598ee840dbbf6514006b0d3fd5ff3c10d754895c1df8b9d4221981fb0f20"
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "d4b705b65ba1366e1a11454366b452f223514e47b2dff0dbc8b4c14548947ab1"
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "6a1988a40fccc1a094777b144ce699a2ffcc28bf0de95dd1a5d7b81ee8d38a26"
+    },
+    {
+      "id": "factor:io_core",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "558c8d6dd9b0812e93b57bca550211be49375086f7cf7111196855a6068c62f7"
+    },
+    {
+      "id": "headers:io_core",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "60363e77f2f614debfa4c73d832069dd67f80b22331970f25dfef115c1c52335"
+    },
+    {
+      "id": "factor:io_http",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "2629c8e3453fb3b114ccfc8c6be63c924698002925191c6e5e0e79c2f2481b58"
+    },
+    {
+      "id": "headers:io_http",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "08ba89f716808d104e1b75bce186a1d60c6f1bfeedc05282d104392602f16ea5"
+    },
+    {
+      "id": "factor:io_http2",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "175361f95fb0deee50a8fd89f519ea1f3b04bb7540921f4fedd9869897bf9772"
+    },
+    {
+      "id": "headers:io_http2",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "0563727cd9dbe3575948351e363fc2b461990bd5ccaf4bb9101e754d75545a85"
+    },
+    {
+      "id": "factor:io_tls",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "9917d018ee746ea52e669b533fb55aa8207cc39cbf3bfce1d498fa1afd250825"
+    },
+    {
+      "id": "headers:io_tls",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "2b8459fdab2c9ae0660a45ae66d941fccbded63f737d736450837af66e69b2a0"
+    },
+    {
+      "id": "factor:io_transfer",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "7b5399610800c8bc7ddcfa5ea3e1838a69caa5eb2025afa89d97495f406ec0bb"
+    },
+    {
+      "id": "headers:io_transfer",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "6a34b5f5abe3417106c64d6fe74c6f94326134b5f4459f81633a64a211946f57"
+    },
+    {
+      "id": "factor:io_watch",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "cd24d0fe1d54ad2e7ad61339e600fe5ef819a0ee099a8baecd22e8a5099bfc65"
+    },
+    {
+      "id": "headers:io_watch",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "1be1276435e8dcf154f20d12fe8828abcd2242e69136f44092d1d6da90f853c3"
+    },
+    {
+      "id": "factor:io_websocket",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "68c570c6d5ace018800de8acc5496e440c13ece0182a67d0a1611490da418eef"
+    },
+    {
+      "id": "headers:io_websocket",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "f683ffe5b9c184745f511c018bfdc1f5d2a568b0281764a31d4f3cd861a783a7"
+    },
+    {
+      "id": "factor:math",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "4a53637c87115c7fd0bd9d21f5ce8fe470a7cf792d4d41134bd0667a3b44b3a7"
+    },
+    {
+      "id": "headers:math",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "757b286db5bc437d593ec7e93e53ecea46a09458215356a09fe5df0d462ec759"
+    },
+    {
+      "id": "factor:mem",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "692074947fb0ef6145c2e5a9a49965ec44552397ac6c6ece38fcee16b69c986c"
+    },
+    {
+      "id": "headers:mem",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "a44ea866e6d0e10c40f5af7e5f6b5802a694162383f1ab708fa5aee52f88ca05"
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "ae7a9d7cab2a9843e320bea5cd1638523df2358dba4b6213f618a548ae1cca3b"
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "fe508e5943806a3787e721660c6b5785ea9f6df6ddeea6042bbd71c924a5978c"
+    },
+    {
+      "id": "factor:mem_vm",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "5619dbdffc25c713ae62f8e33e93b28eb00960cb1f5787048588c952cd00e37c"
+    },
+    {
+      "id": "headers:mem_vm",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "f5c564f95abbba538e46d151cf1f8f8a970cd66788de2c5462d5941bed54af4b"
+    },
+    {
+      "id": "factor:obs",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "3fc192ee409501037eb05fb42ee92af0227dd4fd2fea4b589ab6c75a053d50b6"
+    },
+    {
+      "id": "headers:obs",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "3069e512cb8763d3b38c64b223927654f10b2cb176a4a76ad3dc7e99ab3ae962"
+    },
+    {
+      "id": "factor:platform",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "b4d56dde6e2adf1999a6a4dd888134bc3ac5bbd95f009877f196798dd68d7211"
+    },
+    {
+      "id": "headers:platform",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "b3b4bf5fe30b78257ac51257cfef087af4ee809e64826f39cd2857f8a32112da"
+    },
+    {
+      "id": "factor:platform_fs",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "8ec4b8eeefce143c18ede5ccc121c38a5f3925167da7f7bbd22d0699a12d3a6e"
+    },
+    {
+      "id": "headers:platform_fs",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "5de10cb00ac47e5da0f867bfbf5e4b868437e65f5eec2485ac500d54081239d6"
+    },
+    {
+      "id": "factor:platform_thread",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "14b5aedf4d69d550590a032b7061964199a07da536f6121f1526f52ab1a293a2"
+    },
+    {
+      "id": "headers:platform_thread",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "77728bd136a5d855ffcba8adc536392d0785afa50438e74f3cbdda2776934ad0"
+    },
+    {
+      "id": "factor:process",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "08b29268c553329c8f6708e01c1b5acbefb7351a72de80b1022c28bdc5016b60"
+    },
+    {
+      "id": "headers:process",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "11cbd6a187ce4dc7273d1edee8cc93e57b87ea975bbe5ce8625a548fa6e08d63"
+    },
+    {
+      "id": "factor:sched",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "54e8e634201331fd796f76e9ad5be77e2a35269b1abbe3f92ecfb11b6b2d8b9b"
+    },
+    {
+      "id": "headers:sched",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "1eb66262c32856f8992630f5de8d4f4ef33119012d2ccd5cc1c2ecd63579568f"
+    },
+    {
+      "id": "factor:simd",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "e7f71a4efd1ea7962980b0eb01470e6210d9fd8180ab1f9f2235afc8dc836936"
+    },
+    {
+      "id": "headers:simd",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "fa087e2e56b0f0ac239e7dec6e964e38b9499766d1a84fbdf7cfcb2bf379139d"
+    },
+    {
+      "id": "factor:time",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "21759c458ab33347de26e848277bda169b4f05284ad71c75c6bc4a25a2c1fa78"
+    },
+    {
+      "id": "headers:time",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "0994eb6fcbc05ebb31617cb520ab974fa8f54f2dc12e08746cb5b683fdcaca56"
+    },
+    {
+      "id": "factor:timer_queue",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "032db8257ebf6180b09572a4977ebf962c72ff87573eac8f0b629f315fe58e9c"
+    },
+    {
+      "id": "headers:timer_queue",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "0c70d44f9f040a03ab84e0d4a341eb67f397e5899a0d290917f799e8ce2c5ea9"
+    },
+    {
+      "id": "factor:util_core",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "69727dd47c1431597642e916915a134b112f4256d9ff3e06e6ef51ba74cb6166"
+    },
+    {
+      "id": "headers:util_core",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "48bb37710d2af0cc9e3f90af38790c32f162ed128b01e547f06dae74f2cea008"
+    },
+    {
+      "id": "factor:util_runtime",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "cache_key": "a0cd162448abacc9e3df4fdf121f2cf1f3334680cc269afc82770ab8b5f9aac9"
+    },
+    {
+      "id": "headers:util_runtime",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "cache_key": "2e944c9c46b0b82b6393db7dd2b151d82e52797f9684b584424ab7f884be35eb"
+    },
+    {
+      "id": "component-contract",
+      "status": "SKIPPED",
+      "reason": "no global component/package seam change",
+      "cache_key": "78c3eb2fac42649bc7c90447e42254abc07a589c829dd9457894a3e6ff63b75c"
+    },
+    {
+      "id": "delivery:compute",
+      "status": "REUSED",
+      "reason": "complete PASS evidence with identical tree/contract/toolchain/machine/tool and verified log hashes",
+      "cache_key": "eb42cc838dce719d826b1441da2fc1ce15738ef498d1b3123e8fb4c3f6425855"
+    },
+    {
+      "id": "delivery:container",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "78ca14f56a5c6cbe58b333ee5002e0de857c7004776f23cc521ece4be436345b"
+    },
+    {
+      "id": "delivery:core",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "05aab6123e12bc258f1f7efa4e2c3482163514bf9226ba4e4f4abe2ddf52bfb8"
+    },
+    {
+      "id": "delivery:error",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "a1fb59385b5e950635a1c0eac2d4935da51b34711141727c3f2ca81c7c60d3bf"
+    },
+    {
+      "id": "delivery:io",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "58979da2b687ac6b7837f76609915b96cfe7f063fdfaffdaf4b1cdc7ac040c65"
+    },
+    {
+      "id": "delivery:math",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "cfdda717c905eb2480da31b1fd33022e18b48cae4b3d24b9904452be35fc69c6"
+    },
+    {
+      "id": "delivery:mem",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "7f69cbcfe87e9a0b5943ba574fbf91f656f94147bc2b12caca5af3049e26cf9f"
+    },
+    {
+      "id": "delivery:obs",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "75a1d6cabbefef32d6630652597585ca5a4919254406c37c500fac648993d908"
+    },
+    {
+      "id": "delivery:platform",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "8f371ba714b13a8cd8a698065c66f5b3d585dc18ea6c9f05955ea17f9c58137e"
+    },
+    {
+      "id": "delivery:process",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "fa4c24856777d3a5e246be77776e118cdbb75d6d6bb737ef37391956f67e6611"
+    },
+    {
+      "id": "delivery:sched",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "e5a964abc223719327e7369c2e1bae5404cd938e2a56b5dfabbecaca29697924"
+    },
+    {
+      "id": "delivery:simd",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "3a59297b9a3814600b9dc908a4388035211c7d77ffd8b33d643143bf6889406e"
+    },
+    {
+      "id": "delivery:time",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "6d6d7253516e927297273cdd1947d9cdec54a92a087d697c47e1305a2e3b6617"
+    },
+    {
+      "id": "delivery:util",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "cache_key": "f59b23dfc5250ab65ac4ab63b1778a89a62491ce4a896cad5709d3d03632f1a1"
+    },
+    {
+      "id": "p1",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic",
+      "cache_key": "8578853935aa7725dba41955f795ed7ff427948ba285d1db881e13d37b2940b8"
+    }
+  ]
+}

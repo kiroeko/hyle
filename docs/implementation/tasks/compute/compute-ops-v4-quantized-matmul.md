@@ -1,6 +1,6 @@
 # ComputeOps v4：R2 grouped Q4 MatMul 语义
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -76,3 +76,23 @@ WSL GCC 14 的 Werror 首次回放发现五处测试告警：四处 range-loop c
 测试）及一处 Graph 旧 GTest 宏外缺 braces。使用本卡一次纠正预算，只改测试引用/花括号；产品头及实现
 保持相同。修正候选只回放受影响测试和未完成平台门，不重建已通过 SDK。当前仍 AUDITED，WSL/macOS/
 UBSan 未完成前不签终局 PASS；Direct 的独立实现由 R2-D 继续。
+
+## 终局验收准备
+
+产品候选 `50753347`，修正测试候选 `210044ce0b8b4df0ab6b796e00331536d3f0263d`，原始材料见
+[Q4 证据](../../../../evidence/correctness/compute-ops-v4-quantized-matmul/README.md)。各平台最后的适用门
+已完成；保留所有失败/中止记录，未重建已通过 SDK、未运行 P1。进入 CANDIDATE，下一步只作状态终审。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：Q41/Q42 与继承的 custom/resource/View 验证尾项，未接入 kernel |
+| architecture | PASS：完整数学/端口/数值/格式描述；复用 TensorDesc、Error 与 GraphBuilder |
+| correctness | PASS：Windows/WSL/两 Mac 单测/逐头、shared producer，WSL UBSan；候选测试纠正已回放 |
+| delivery | PASS：Windows source/shared/static 与 relocation；Unix 同候选 schema/Graph/custom/resource 直接消费 |
+| usability_docs | PASS：公开 Q4 描述/拒绝边界明确；docs、closure、diff 检查通过 |
+| red_team | PASS：错误端口、mode/group/K、布局/参数、zero/overflow、失败不发布输出；旧机制继续消费 |
+| engineering_performance | PASS（P0）：新增冷 O(rank) 校验；W1 Operation 仍为 128 bytes/alignment 8，既有 submit 未改；本卡 P1 不适用 |
+
+统一 LOC：Compute+Graph **31,220**；自实现不含测试 **126,405**；全库 **691,833**，自检通过。
+限制：量化默认实现、native packing、执行及完整路线性能在 R3–R6 验收；描述通过不等于 kernel 可执行。
+reopen：公开 schema 推导/格式/跨 DSO 发生真实回归，或路线实施发现当前数学/端口合同无法表达必要消费。
