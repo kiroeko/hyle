@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 
-#include <hyle/compute/cpu.h>
+#include <hyle/graph/cpu.h>
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
 
@@ -19,7 +19,7 @@ namespace {
 hyle::Status bounded_normalization() {
   using namespace hyle::compute;
   using namespace hyle::graph;
-  HYLE_ASSIGN_OR_RETURN(auto context, cpu::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto context, hyle::graph::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto rows, builder.dimension({0, 4, 1}));
@@ -129,7 +129,7 @@ hyle::Status bounded_normalization() {
 hyle::Status symbolic_views(hyle::graph::CompileShapePolicy policy) {
   using namespace hyle::compute;
   using namespace hyle::graph;
-  HYLE_ASSIGN_OR_RETURN(auto context, cpu::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto context, hyle::graph::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto rows, builder.dimension({1, 8, 1}));
@@ -210,7 +210,8 @@ int main() {
   auto provider = example::make_provider();
   if (!provider)
     return 1;
-  auto context = Context::create(cpu::device(), std::move(*provider));
+  auto context =
+      Context::create(hyle::compute::cpu::device(), std::move(*provider));
   if (!context)
     return 2;
   auto queue = context->create_queue();

@@ -11,7 +11,7 @@ if(HYLE_COMPUTE_ONEDNN_ENABLED AND TARGET hyle_compute_backend_cpu)
   if(TARGET hyle_compute_provider_native)
     hyle_add_test(compute_provider_onednn NAME composition
       SOURCES onednn_composition_test.cc
-      DEPS hyle_compute_provider_native)
+      DEPS hyle_compute_provider_native hyle_compute_backend_cpu)
   endif()
   # The executable must own oneDNN's object code so its global-new probe sees
   # vendor allocations. Shared-library builds retain the ordinary product

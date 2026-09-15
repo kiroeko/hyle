@@ -15,9 +15,10 @@
 #include <utility>
 #include <vector>
 
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/backends/cuda.h"
-#include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
@@ -152,17 +153,17 @@ class Fixture final {
 public:
   explicit Fixture(bool peer_allocation_first)
       : description_(take_or_abort(
-            TensorDesc::dense(
-                DataType::kFloat32,
-                std::array{static_cast<std::int64_t>(kElements)}),
+            TensorDesc::dense(DataType::kFloat32,
+                              std::array{static_cast<std::int64_t>(kElements)}),
             "pipeline tensor description")),
-        cpu_context_(take_or_abort(hyle::compute::cpu::create_context(),
-                                   "CPU context")),
-        cuda_context_(take_or_abort(hyle::compute::Context::create(
-                                        take_or_abort(
-                                            hyle::compute::cuda::device(0),
-                                            "CUDA device")),
-                                    "CUDA context")),
+        cpu_context_(take_or_abort(
+            hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                           hyle::compute::native::provider()),
+            "CPU context")),
+        cuda_context_(
+            take_or_abort(hyle::compute::Context::create(take_or_abort(
+                              hyle::compute::cuda::device(0), "CUDA device")),
+                          "CUDA context")),
         pinned_resource_(take_or_abort(
             hyle::compute::cuda::MemoryResource::create(
                 cuda_context_, hyle::compute::cuda::MemoryKind::kPinnedHost),

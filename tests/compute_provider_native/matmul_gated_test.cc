@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -51,7 +51,7 @@ void expect_matmul(const TensorDesc &left_desc, std::span<const float> left,
   Buffer right_storage = make_buffer(right);
   Buffer output_storage =
       make_buffer(std::vector<float>(expected.size(), 0.0F));
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context, MatMul{}, left_desc, right_desc);
@@ -167,7 +167,7 @@ TEST(NativeMatMul, BroadcastsBothBatchOperandsAndSupportsTransposedWeights) {
       ConstTensorView::create(left_desc, left_storage.view()).value();
   const TensorView output_view =
       TensorView::create(expected_output, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   const auto run = [&](const TensorDesc &description, const Buffer &storage) {
@@ -214,7 +214,7 @@ TEST(NativeMatMul, AcceptsAnEmptyBroadcastBatch) {
       ConstTensorView::create(right_desc, right.view()).value();
   const auto output_view =
       TensorView::create(output_desc, output.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context, MatMul{}, left_desc, right_desc);
@@ -260,7 +260,7 @@ TEST(NativeMatMul, ZeroInnerDimensionProducesZeroWithoutReadingInputs) {
         ConstTensorView::create(right_desc, right.view()).value();
     const auto output_view =
         TensorView::create(output_desc, output.view()).value();
-    auto context = hyle::compute::cpu::create_context().value();
+    auto context = hyle::compute::test::native_context().value();
     auto queue = context.create_queue().value();
     auto prepared =
         hyle::compute::prepare(context, MatMul{}, left_desc, right_desc)
@@ -384,7 +384,7 @@ TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
       ConstTensorView::create(packed_desc, packed_storage.view()).value();
   const auto output_view =
       TensorView::create(separate_desc, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   for (const GatedActivationKind kind : {GatedActivationKind::kSilu,

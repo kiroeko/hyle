@@ -1,0 +1,1274 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "graph-cpu-route-p1-v1",
+  "module": "graph_route_cpu",
+  "claim": "P1 engineering qualification of the ordinary CPU Graph default against same-implementation direct fused cost, natural oneDNN sequence and complete Native graph, on caller-thread serial and the same persistent two-worker Sched executor; 5% practical margin.",
+  "candidate": {
+    "target": "hyle_graph_route_cpu",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "graph_route_cpu",
+    "entrypoint": "include/hyle/graph/cpu.h"
+  },
+  "peers": [
+    {
+      "id": "onednn-direct-gated-mlp",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "configuration": {
+        "delivery_shape": "static library built from the pinned clean oneDNN source checkout",
+        "algorithm": "two experimental x64 float32 BRGEMM ukernel plans plus HYLE SIMD separate-input SwiGLU",
+        "source_file": "src/cpu/x64/brgemm/brgemm.cpp",
+        "version": "v3.13.2",
+        "routes": "direct fused region boundary and natural four-operation sequence are separate workload peers"
+      }
+    },
+    {
+      "id": "hyle-native-mlp",
+      "revision": "runtime-bound",
+      "configuration": {
+        "role": "Full gated MLP through an explicit Native context on the same immutable candidate",
+        "threads": "caller-thread serial",
+        "semantic_delta": "same f32 inputs, constant weights, numerical tolerance, outputs and terminal completion"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "decode-fused-boundary-1x256x512",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/decode/gated-mlp-region-boundary",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; caller-owned aligned intermediate and scratch Buffers are fixed before measurement, and each episode maps the same four read-only boundaries plus one output",
+        "equivalence": "Both routes execute the identical gate/up pair, in-place HYLE SIMD SwiGLU and down BRGEMM over separately but identically initialized storage; setup, JIT, allocation and binding are excluded, while Graph bookkeeping and both routes' normal storage/completion boundaries are charged"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=1, K=256, H=512 gate/up/SwiGLU/down fragment",
+        "derivation": "Decode makes the fixed wrapper and immutable-plan tax visible rather than hiding it behind a model-size GEMM"
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=1, K=256, H=512, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 1,
+          "inner": 256,
+          "hidden": 512,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "normal storage mapping and close operations for four read-only boundaries and one output",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region decode f32 M=1 K=256 H=512",
+        "peer": "direct fused oneDNN region decode f32 M=1 K=256 H=512"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "decode-natural-sequence-1x256x512",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/decode/gated-mlp-natural-sequence",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; the natural direct caller executes gate, up, activation and down separately with caller-owned aligned intermediates and the public storage mapping boundary appropriate to each operation",
+        "equivalence": "Both routes produce the same complete gated-MLP result with identical shape, row-major float32 storage, one serial caller-owned executor, BRGEMM plans and HYLE SIMD arithmetic; the direct side intentionally preserves natural per-operation mapping boundaries because eliminating them is the region product benefit under test"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=1, K=256, H=512 gate/up/SwiGLU/down fragment",
+        "derivation": "Decode validates whether one real region removes natural per-operation boundaries without changing arithmetic or ownership"
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=1, K=256, H=512, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 1,
+          "inner": 256,
+          "hidden": 512,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "the natural direct operation sequence's storage map/close boundaries or the Graph region's single boundary episode",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region decode f32 M=1 K=256 H=512",
+        "peer": "direct sequential oneDNN operations decode f32 M=1 K=256 H=512"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "short-prefill-fused-boundary-16x512x1024",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/gated-mlp-region-boundary",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; caller-owned aligned intermediate and scratch Buffers are fixed before measurement, and each episode maps the same four read-only boundaries plus one output",
+        "equivalence": "Both routes execute the identical gate/up pair, in-place HYLE SIMD SwiGLU and down BRGEMM over separately but identically initialized storage; setup, JIT, allocation and binding are excluded, while Graph bookkeeping and both routes' normal storage/completion boundaries are charged"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "derivation": "Short prefill checks that the wrapper remains non-inferior when arithmetic dominates more of the complete task"
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=16, K=512, H=1024, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 16,
+          "inner": 512,
+          "hidden": 1024,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "normal storage mapping and close operations for four read-only boundaries and one output",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region short-prefill f32 M=16 K=512 H=1024",
+        "peer": "direct fused oneDNN region short-prefill f32 M=16 K=512 H=1024"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "short-prefill-natural-sequence-16x512x1024",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/gated-mlp-natural-sequence",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; the natural direct caller executes gate, up, activation and down separately with caller-owned aligned intermediates and the public storage mapping boundary appropriate to each operation",
+        "equivalence": "Both routes produce the same complete gated-MLP result with identical shape, row-major float32 storage, one serial caller-owned executor, BRGEMM plans and HYLE SIMD arithmetic; the direct side intentionally preserves natural per-operation mapping boundaries because eliminating them is the region product benefit under test"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "derivation": "Short prefill checks the complete region benefit at a second normal consumer shape without claiming final model-scale throughput"
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=16, K=512, H=1024, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 16,
+          "inner": 512,
+          "hidden": 1024,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "the natural direct operation sequence's storage map/close boundaries or the Graph region's single boundary episode",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region short-prefill f32 M=16 K=512 H=1024",
+        "peer": "direct sequential oneDNN operations short-prefill f32 M=16 K=512 H=1024"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "holdout-fused-boundary-17x129x257",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/gated-mlp/public-sched-17x129x257",
+      "provenance": {
+        "path": "samples/package/graph/cpu_executor/main.cc",
+        "sha256": "4193dd65f102614adbe0319b3746584324befefa28420698df2a779b968f055e"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; caller-owned aligned intermediate and scratch Buffers are fixed before measurement, and each episode maps the same four read-only boundaries plus one output",
+        "equivalence": "Both routes execute the identical gate/up pair, in-place HYLE SIMD SwiGLU and down BRGEMM over separately but identically initialized storage; setup, JIT, allocation and binding are excluded, while Graph bookkeeping and both routes' normal storage/completion boundaries are charged"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=17, K=129, H=257 gate/up/SwiGLU/down fragment",
+        "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=17, K=129, H=257, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 17,
+          "inner": 129,
+          "hidden": 257,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "normal storage mapping and close operations for four read-only boundaries and one output",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region holdout f32 M=17 K=129 H=257",
+        "peer": "direct fused oneDNN region holdout f32 M=17 K=129 H=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "holdout-natural-sequence-17x129x257",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/gated-mlp/public-sched-17x129x257",
+      "provenance": {
+        "path": "samples/package/graph/cpu_executor/main.cc",
+        "sha256": "4193dd65f102614adbe0319b3746584324befefa28420698df2a779b968f055e"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; the natural direct caller executes gate, up, activation and down separately with caller-owned aligned intermediates and the public storage mapping boundary appropriate to each operation",
+        "equivalence": "Both routes produce the same complete gated-MLP result with identical shape, row-major float32 storage, one serial caller-owned executor, BRGEMM plans and HYLE SIMD arithmetic; the direct side intentionally preserves natural per-operation mapping boundaries because eliminating them is the region product benefit under test"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=17, K=129, H=257 gate/up/SwiGLU/down fragment",
+        "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=17, K=129, H=257, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 17,
+          "inner": 129,
+          "hidden": 257,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "the natural direct operation sequence's storage map/close boundaries or the Graph region's single boundary episode",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region holdout f32 M=17 K=129 H=257",
+        "peer": "direct sequential oneDNN operations holdout f32 M=17 K=129 H=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "decode-native-sequence-1x256x512",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/gated-mlp-region-boundary",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary CPU default Context with one complete oneDNN region, owned constant packing and an exclusive Invocation",
+        "peer": "Explicit Native Context with the complete equivalent gated MLP and an exclusive Invocation",
+        "equivalence": "Same f32 input and constant weights, caller-thread serial execution, separate outputs, and terminal completion; allocation/prepare/packing happen once before measurement"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "derivation": "Short prefill checks that the wrapper remains non-inferior when arithmetic dominates more of the complete task"
+      },
+      "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-native-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 1,
+          "inner": 256,
+          "hidden": 512,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both contexts compile, bind, allocate per-invocation resources and warm outside measurement. Complete repeated execution and terminal completion are timed.",
+      "charged_phases": [
+        "complete gate/up projections, SwiGLU, down projection, storage access, prepared invocation dispatch, and terminal completion"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region decode f32 M=1 K=256 H=512",
+        "peer": "HYLE Graph explicit Native decode f32 M=1 K=256 H=512"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "short-prefill-native-sequence-16x512x1024",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/gated-mlp-region-boundary",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
+        "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary CPU default Context with one complete oneDNN region, owned constant packing and an exclusive Invocation",
+        "peer": "Explicit Native Context with the complete equivalent gated MLP and an exclusive Invocation",
+        "equivalence": "Same f32 input and constant weights, caller-thread serial execution, separate outputs, and terminal completion; allocation/prepare/packing happen once before measurement"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "derivation": "Short prefill checks that the wrapper remains non-inferior when arithmetic dominates more of the complete task"
+      },
+      "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-native-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 16,
+          "inner": 512,
+          "hidden": 1024,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both contexts compile, bind, allocate per-invocation resources and warm outside measurement. Complete repeated execution and terminal completion are timed.",
+      "charged_phases": [
+        "complete gate/up projections, SwiGLU, down projection, storage access, prepared invocation dispatch, and terminal completion"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region short-prefill f32 M=16 K=512 H=1024",
+        "peer": "HYLE Graph explicit Native short-prefill f32 M=16 K=512 H=1024"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "holdout-native-sequence-17x129x257",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/gated-mlp/public-sched-17x129x257",
+      "provenance": {
+        "path": "samples/package/graph/cpu_executor/main.cc",
+        "sha256": "4193dd65f102614adbe0319b3746584324befefa28420698df2a779b968f055e"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary CPU default Context with one complete oneDNN region, owned constant packing and an exclusive Invocation",
+        "peer": "Explicit Native Context with the complete equivalent gated MLP and an exclusive Invocation",
+        "equivalence": "Same f32 input and constant weights, caller-thread serial execution, separate outputs, and terminal completion; allocation/prepare/packing happen once before measurement"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
+      },
+      "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-native-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 17,
+          "inner": 129,
+          "hidden": 257,
+          "gated_mlp_fragments_per_callback": 1
+        }
+      },
+      "setup": "Both contexts compile, bind, allocate per-invocation resources and warm outside measurement. Complete repeated execution and terminal completion are timed.",
+      "charged_phases": [
+        "complete gate/up projections, SwiGLU, down projection, storage access, prepared invocation dispatch, and terminal completion"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region holdout f32 M=17 K=129 H=257",
+        "peer": "HYLE Graph explicit Native holdout f32 M=17 K=129 H=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "two-worker-fused-boundary-17x129x257",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/gated-mlp/public-sched-17x129x257",
+      "provenance": {
+        "path": "samples/package/graph/cpu_executor/main.cc",
+        "sha256": "4193dd65f102614adbe0319b3746584324befefa28420698df2a779b968f055e"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; caller-owned aligned intermediate and scratch Buffers are fixed before measurement, and each episode maps the same four read-only boundaries plus one output",
+        "equivalence": "Both arms borrow the same open two-worker public Sched executor and use identical f32 input/weight tensors, matching scratch plans and terminal completion. All bulk admission, fan-out and synchronization is charged."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=17, K=129, H=257 gate/up/SwiGLU/down fragment",
+        "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=17, K=129, H=257, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 17,
+          "inner": 129,
+          "hidden": 257,
+          "gated_mlp_fragments_per_callback": 1,
+          "executor_workers": 2
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "normal storage mapping and close operations for four read-only boundaries and one output",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary",
+        "public Sched bulk admission, worker dispatch, fan-out and synchronous wait through the same persistent two-worker executor on both arms"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region two-worker f32 M=17 K=129 H=257",
+        "peer": "direct fused oneDNN region two-worker f32 M=17 K=129 H=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "two-worker-natural-sequence-17x129x257",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/gated-mlp/public-sched-17x129x257",
+      "provenance": {
+        "path": "samples/package/graph/cpu_executor/main.cc",
+        "sha256": "4193dd65f102614adbe0319b3746584324befefa28420698df2a779b968f055e"
+      },
+      "ownership_topology": {
+        "candidate": "One immutable HYLE Graph Executable retains the exact four-node oneDNN/SIMD region artifact; one exclusive pre-bound Invocation owns its aligned workspace, maps four caller-owned read-only boundaries and one caller-owned output, submits two synchronous executor episodes and observes one terminal Completion",
+        "peer": "The same process retains independently created copies of the identical two oneDNN BRGEMM plans and HYLE SIMD activation route; the natural direct caller executes gate, up, activation and down separately with caller-owned aligned intermediates and the public storage mapping boundary appropriate to each operation",
+        "equivalence": "Both arms borrow the same open two-worker public Sched executor and use identical f32 input/weight tensors, matching scratch plans and terminal completion. All bulk admission, fan-out and synchronization is charged."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=17, K=129, H=257 gate/up/SwiGLU/down fragment",
+        "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
+      },
+      "semantic_contract": "Compute gate=A*Wgate and up=A*Wup, apply separate-input float32 SiLU gating in place, compute output=gate*Wdown for row-major M=17, K=129, H=257, and return only after terminal completion",
+      "comparability": "COMPARABLE",
+      "peer_id": "onednn-direct-gated-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 17,
+          "inner": 129,
+          "hidden": 257,
+          "gated_mlp_fragments_per_callback": 1,
+          "executor_workers": 2
+        }
+      },
+      "setup": "Both routes allocate, initialize, map persistent workspace, prepare/JIT, bind and warm once before nanobench; construction order is crossed independently from measured execution order",
+      "charged_phases": [
+        "one complete gate/up, SwiGLU and down execution",
+        "the natural direct operation sequence's storage map/close boundaries or the Graph region's single boundary episode",
+        "terminal status checking and one observable output read",
+        "for HYLE Graph, one fixed binding-mask scan, one precompiled region-step dispatch and one already-terminal Completion boundary",
+        "public Sched bulk admission, worker dispatch, fan-out and synchronous wait through the same persistent two-worker executor on both arms"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region two-worker f32 M=17 K=129 H=257",
+        "peer": "direct sequential oneDNN operations two-worker f32 M=17 K=129 H=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "two-worker-native-sequence-17x129x257",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/gated-mlp/public-sched-17x129x257",
+      "provenance": {
+        "path": "samples/package/graph/cpu_executor/main.cc",
+        "sha256": "4193dd65f102614adbe0319b3746584324befefa28420698df2a779b968f055e"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary CPU default Context with one complete oneDNN region, owned constant packing and an exclusive Invocation",
+        "peer": "Explicit Native Context with the complete equivalent gated MLP and an exclusive Invocation",
+        "equivalence": "Both arms borrow the same open two-worker public Sched executor and use identical f32 input/weight tensors, matching scratch plans and terminal completion. All bulk admission, fan-out and synchronization is charged."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-gated-mlp",
+        "budget": 5,
+        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
+      },
+      "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-native-mlp",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic finite signed float32 values initialized and first-touched outside measurement",
+        "scale": {
+          "rows": 17,
+          "inner": 129,
+          "hidden": 257,
+          "gated_mlp_fragments_per_callback": 1,
+          "executor_workers": 2
+        }
+      },
+      "setup": "Both contexts compile, bind, allocate per-invocation resources and warm outside measurement. Complete repeated execution and terminal completion are timed.",
+      "charged_phases": [
+        "complete gate/up projections, SwiGLU, down projection, storage access, prepared invocation dispatch, and terminal completion",
+        "public Sched bulk admission, worker dispatch, fan-out and synchronous wait through the same persistent two-worker executor on both arms"
+      ],
+      "pair": {
+        "candidate": "HYLE Graph oneDNN region two-worker f32 M=17 K=129 H=257",
+        "peer": "HYLE Graph explicit Native two-worker f32 M=17 K=129 H=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows"
+    ],
+    "certification_platforms": [
+      "windows"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "n-worker-physical-cores",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "OFF",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPUTE_ONEDNN": "ON",
+          "HYLE_DEV_FACTORS": "graph_route_cpu;sched",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "onednn-direct-gated-mlp": "FETCHCONTENT_SOURCE_DIR_ONEDNN",
+          "hyle-native-mlp": "HYLE_CPU_NATIVE_SOURCE_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Ninja",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "graph-onednn-region-primary",
+          "target": "hyle_graph_onednn_region_bench",
+          "stem": "hyle_graph_onednn_region_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_GRAPH_ONEDNN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "decode-fused-boundary-1x256x512",
+              "title": "graph oneDNN MLP abstraction decode f32 M=1 K=256 H=512"
+            },
+            {
+              "id": "decode-natural-sequence-1x256x512",
+              "title": "graph oneDNN MLP region benefit decode f32 M=1 K=256 H=512"
+            },
+            {
+              "id": "short-prefill-fused-boundary-16x512x1024",
+              "title": "graph oneDNN MLP abstraction short-prefill f32 M=16 K=512 H=1024"
+            },
+            {
+              "id": "short-prefill-natural-sequence-16x512x1024",
+              "title": "graph oneDNN MLP region benefit short-prefill f32 M=16 K=512 H=1024"
+            },
+            {
+              "id": "holdout-fused-boundary-17x129x257",
+              "title": "graph oneDNN MLP abstraction holdout f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "holdout-natural-sequence-17x129x257",
+              "title": "graph oneDNN MLP region benefit holdout f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "decode-native-sequence-1x256x512",
+              "title": "graph CPU default versus Native decode f32 M=1 K=256 H=512"
+            },
+            {
+              "id": "short-prefill-native-sequence-16x512x1024",
+              "title": "graph CPU default versus Native short-prefill f32 M=16 K=512 H=1024"
+            },
+            {
+              "id": "holdout-native-sequence-17x129x257",
+              "title": "graph CPU default versus Native holdout f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "two-worker-fused-boundary-17x129x257",
+              "title": "graph oneDNN MLP abstraction two-worker f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "two-worker-natural-sequence-17x129x257",
+              "title": "graph oneDNN MLP region benefit two-worker f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "two-worker-native-sequence-17x129x257",
+              "title": "graph CPU default versus Native two-worker f32 M=17 K=129 H=257"
+            }
+          ]
+        },
+        {
+          "id": "graph-onednn-region-placement",
+          "target": "hyle_graph_onednn_region_bench_placement",
+          "stem": "hyle_graph_onednn_region_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_GRAPH_ONEDNN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "decode-fused-boundary-1x256x512",
+              "title": "graph oneDNN MLP abstraction decode f32 M=1 K=256 H=512"
+            },
+            {
+              "id": "decode-natural-sequence-1x256x512",
+              "title": "graph oneDNN MLP region benefit decode f32 M=1 K=256 H=512"
+            },
+            {
+              "id": "short-prefill-fused-boundary-16x512x1024",
+              "title": "graph oneDNN MLP abstraction short-prefill f32 M=16 K=512 H=1024"
+            },
+            {
+              "id": "short-prefill-natural-sequence-16x512x1024",
+              "title": "graph oneDNN MLP region benefit short-prefill f32 M=16 K=512 H=1024"
+            },
+            {
+              "id": "holdout-fused-boundary-17x129x257",
+              "title": "graph oneDNN MLP abstraction holdout f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "holdout-natural-sequence-17x129x257",
+              "title": "graph oneDNN MLP region benefit holdout f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "decode-native-sequence-1x256x512",
+              "title": "graph CPU default versus Native decode f32 M=1 K=256 H=512"
+            },
+            {
+              "id": "short-prefill-native-sequence-16x512x1024",
+              "title": "graph CPU default versus Native short-prefill f32 M=16 K=512 H=1024"
+            },
+            {
+              "id": "holdout-native-sequence-17x129x257",
+              "title": "graph CPU default versus Native holdout f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "two-worker-fused-boundary-17x129x257",
+              "title": "graph oneDNN MLP abstraction two-worker f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "two-worker-natural-sequence-17x129x257",
+              "title": "graph oneDNN MLP region benefit two-worker f32 M=17 K=129 H=257"
+            },
+            {
+              "id": "two-worker-native-sequence-17x129x257",
+              "title": "graph CPU default versus Native two-worker f32 M=17 K=129 H=257"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        }
+      ],
+      "sampling_worker_count": 2
+    }
+  }
+}

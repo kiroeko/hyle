@@ -7,7 +7,7 @@
 #include <span>
 #include <type_traits>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -94,7 +94,7 @@ template <class Source, class Destination> void expect_dense_cast() {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(
       context, Cast{data_type<Destination>()}, input_desc);
@@ -148,7 +148,7 @@ TEST(NativeCast, ConvertsDenseFloat32ToFloat16Bits) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kFloat16}, input_desc)
@@ -192,7 +192,7 @@ TEST(NativeCast, MaterializesStridedFloat16ToFloat32) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kFloat32}, input_desc)
@@ -211,7 +211,7 @@ TEST(NativeCast, RejectsUnfrozenIntegerConversionSemantics) {
   constexpr std::array<std::int64_t, 1> shape{4};
   const TensorDesc input_desc =
       TensorDesc::dense(DataType::kInt32, shape).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kFloat32}, input_desc);
   ASSERT_FALSE(prepared.has_value());
@@ -232,7 +232,7 @@ TEST(NativeCast, RejectsOverlappingInputAndOutputStorage) {
   const TensorView output =
       TensorView::create(output_desc, storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kBFloat16}, input_desc)

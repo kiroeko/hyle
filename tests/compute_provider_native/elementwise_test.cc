@@ -8,7 +8,7 @@
 #include <limits>
 #include <span>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -141,7 +141,7 @@ TEST(NativeElementwise, ExecutesEveryDenseUnaryModeAndExactAlias) {
       ConstTensorView::create(description, input_storage.view()).value();
   const TensorView output =
       TensorView::create(description, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   for (UnaryKind kind : kinds) {
@@ -195,7 +195,7 @@ TEST(NativeElementwise, MaterializesUnalignedStridedUnary) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Unary{UnaryKind::kAbs}, input_desc)
@@ -225,7 +225,7 @@ TEST(NativeElementwise, ExecutesEveryDenseBinaryModeAndAliasesSecondInput) {
       ConstTensorView::create(description, right_storage.view()).value();
   const TensorView output =
       TensorView::create(description, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   for (BinaryKind kind : kinds) {
@@ -279,7 +279,7 @@ TEST(NativeElementwise, BroadcastsBinaryOperands) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Binary{BinaryKind::kMultiply},
                                          left_desc, right_desc);
@@ -321,7 +321,7 @@ TEST(NativeElementwise, BroadcastsSelectWithoutChangingBranchBits) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
                                          true_desc, false_desc);
@@ -356,7 +356,7 @@ TEST(NativeElementwise, SupportsDenseSelectAliasingABranch) {
   const ConstTensorView false_view =
       ConstTensorView::create(branch_desc, false_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
                                          branch_desc, branch_desc)
@@ -403,7 +403,7 @@ TEST(NativeElementwise, ExecutesDenseF32SelectAcrossVectorBlocksAndTail) {
   const TensorView output =
       TensorView::create(branch_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
                                          branch_desc, branch_desc)
@@ -428,7 +428,7 @@ TEST(NativeElementwise, RejectsUnsafeStridedAliasAndUnsupportedArithmeticType) {
   const ConstTensorView input =
       ConstTensorView::create(transposed, storage.view()).value();
   const TensorView output = TensorView::create(dense, storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Unary{UnaryKind::kAbs}, transposed)
@@ -463,7 +463,7 @@ TEST(NativeElementwise, ExecutesZeroElementFamiliesWithoutTouchingStorage) {
   const ConstTensorView condition_input =
       ConstTensorView::create(condition, empty.view()).value();
   const TensorView output = TensorView::create(values, empty.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   auto unary =

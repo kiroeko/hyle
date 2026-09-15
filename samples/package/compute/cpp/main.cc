@@ -79,7 +79,7 @@ int main() {
 #if defined(HYLE_COMPUTE_ONEDNN)
   if (onednn::version() != "3.13.2")
     return 9;
-  auto provider_context = Context::create(cpu::device(), onednn::provider());
+  auto provider_context = cpu::create_context();
   if (!provider_context)
     return 10;
 

@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/mem/buffer.h"
 #include "prepared_state.h"
 #include "provider_internal.h"
@@ -240,7 +240,7 @@ void check_rms(PreparedOperation prepared, Queue &queue, bool weighted,
 TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   using namespace hyle::compute;
   using namespace hyle::compute::detail;
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   const std::array<std::int64_t, 1> shape{8};
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, shape).value()};
@@ -268,7 +268,7 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
 
 TEST(NativeProviderShape,
      ExecutesEveryAdmittedDerivedPointWithAndWithoutScale) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   for (bool weighted : {false, true}) {
     RmsDomain domain(weighted);
@@ -305,7 +305,7 @@ TEST(NativeProviderShape,
 }
 
 TEST(NativeProviderShape, OwnsProgramAndAxesAfterSourceMutationAndDestruction) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   PreparedOperation root;
   {
@@ -332,8 +332,9 @@ TEST(NativeProviderShape, OwnsProgramAndAxesAfterSourceMutationAndDestruction) {
 TEST(NativeProviderShape, RejectsInvalidPointsWithoutMetadataAllocation) {
   FaultAllocator allocator;
   {
-    auto context =
-        cpu::create_context({.metadata_allocator = allocator.ref()}).value();
+    auto context = hyle::compute::test::native_context(
+                       {.metadata_allocator = allocator.ref()})
+                       .value();
     auto root = prepare_domain(context, RmsDomain{}).value();
     const auto before = allocator.attempts;
     for (auto point : {std::array<std::int64_t, 3>{-1, 2, 0},
@@ -362,7 +363,7 @@ TEST(NativeProviderShape, RejectsInvalidPointsWithoutMetadataAllocation) {
 }
 
 TEST(NativeProviderShape, EqualBoundsAreNotEqualSymbolsAndHiddenWidthIsFixed) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   RmsDomain domain(true);
   const auto rejected = [&]() {
     auto result = prepare_domain(context, domain);
@@ -389,7 +390,7 @@ TEST(NativeProviderShape, EqualBoundsAreNotEqualSymbolsAndHiddenWidthIsFixed) {
 }
 
 TEST(NativeProviderShape, ZeroHiddenWidthRemainsAValidEmptyExecution) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto root = prepare_domain(context, RmsDomain(false, 0)).value();
   std::array<std::int64_t, 3> point{2, 3, 0};
@@ -399,7 +400,7 @@ TEST(NativeProviderShape, ZeroHiddenWidthRemainsAValidEmptyExecution) {
 }
 
 TEST(NativeProviderShape, BindsMultiplePrefixAxesWithoutChangingTheRowKernel) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   RmsDomain domain;
   domain.inputs[0] = TensorDesc::dense(DataType::kFloat32,
@@ -432,7 +433,8 @@ TEST(NativeProviderShape, ConcreteRowsReuseTheExistingExecutorPartition) {
         for (std::size_t index = 0; index < count; ++index)
           task(state, index, count);
       });
-  auto context = cpu::create_context({.executor = executor}).value();
+  auto context =
+      hyle::compute::test::native_context({.executor = executor}).value();
   auto queue = context.create_queue().value();
   auto root = prepare_domain(context, RmsDomain(false, 8192)).value();
   for (auto point : {std::array<std::int64_t, 3>{1, 1, -1},
@@ -478,7 +480,7 @@ TEST(NativeProviderShape, ConcreteRowsReuseTheExistingExecutorPartition) {
 }
 
 TEST(NativeProviderShape, OrdinaryExactArtifactsDoNotBecomeDomains) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   const auto description =
       TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{2, 5})
           .value();
@@ -496,8 +498,9 @@ TEST(NativeProviderShape, OrdinaryExactArtifactsDoNotBecomeDomains) {
 TEST(NativeProviderShape, EveryColdAllocationFailureCleansUpAndCanRetry) {
   FaultAllocator allocator;
   {
-    auto context =
-        cpu::create_context({.metadata_allocator = allocator.ref()}).value();
+    auto context = hyle::compute::test::native_context(
+                       {.metadata_allocator = allocator.ref()})
+                       .value();
     auto queue = context.create_queue().value();
     const RmsDomain domain(true);
     const auto live_context = allocator.live;
@@ -547,9 +550,9 @@ TEST(NativeMetadataOwner, ExactAndDomainArtifactsUseTheirOwnAllocator) {
     SCOPED_TRACE(exact);
     FaultAllocator context_owner, compile_owner, instance_owner, run_owner;
     {
-      auto context =
-          cpu::create_context({.metadata_allocator = context_owner.ref()})
-              .value();
+      auto context = hyle::compute::test::native_context(
+                         {.metadata_allocator = context_owner.ref()})
+                         .value();
       auto queue = context.create_queue().value();
       const auto context_attempts = context_owner.attempts;
       const RmsDomain domain(true);
@@ -580,8 +583,9 @@ TEST(NativeMetadataOwner, ExactAndDomainArtifactsUseTheirOwnAllocator) {
 
 TEST(NativeMetadataOwner, EveryOverrideAllocationCanFailAndRetry) {
   FaultAllocator context_owner, compile_owner, instance_owner, run_owner;
-  auto context =
-      cpu::create_context({.metadata_allocator = context_owner.ref()}).value();
+  auto context = hyle::compute::test::native_context(
+                     {.metadata_allocator = context_owner.ref()})
+                     .value();
   const auto context_attempts = context_owner.attempts;
   const RmsDomain domain;
   auto root = prepare_domain(context, domain, compile_owner.ref()).value();
@@ -637,7 +641,7 @@ TEST(NativeMetadataOwner, EveryOverrideAllocationCanFailAndRetry) {
 }
 
 TEST(NativeMetadataOwner, InvalidOverrideIsNotSilentlyInherited) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   const RmsDomain domain;
   const hyle::mem::AllocatorRef invalid;
   EXPECT_TRUE(
@@ -677,7 +681,7 @@ TEST(NativeMetadataOwner, OrdinaryInvocationKeepsItsSizeAndAllocationCount) {
   };
   static_assert(sizeof(InvocationState) == sizeof(PreviousLayout));
   FaultAllocator owner, separate;
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto root = prepare_domain(context, RmsDomain{}, owner.ref(), true).value();
   const auto root_bytes = owner.bytes;
   const auto before = owner.attempts;
@@ -706,7 +710,7 @@ TEST(NativeMetadataOwner, OrdinaryInvocationKeepsItsSizeAndAllocationCount) {
 }
 
 TEST(NativeMetadataOwner, ConcurrentInstancesHaveIndependentOwners) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   FaultAllocator compiled;
   auto root = prepare_domain(context, RmsDomain{}, compiled.ref()).value();
   const auto compile_attempts = compiled.attempts;
@@ -731,7 +735,7 @@ TEST(NativeMetadataOwner, ConcurrentInstancesHaveIndependentOwners) {
 }
 
 TEST(NativeProviderShape, IndependentInstancesShareOneImmutableDomain) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto root = prepare_domain(context, RmsDomain{}).value();
   const auto run = [&](std::int64_t batch) {
     auto queue = context.create_queue().value();
@@ -1057,7 +1061,7 @@ TEST(PreparedDomainContract,
 }
 
 TEST(NativeProviderShape, SuppliedMetadataExecutesAndRetainsItsOwnDescriptors) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   for (bool weighted : {false, true}) {
     auto root = prepare_domain(context, RmsDomain(weighted)).value();
@@ -1085,7 +1089,7 @@ TEST(NativeProviderShape, SuppliedMetadataExecutesAndRetainsItsOwnDescriptors) {
 }
 
 TEST(NativeProviderShape, SuppliedMetadataAllocationFailureAndOwnerLifetime) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto root = prepare_domain(context, RmsDomain{}).value();
   const std::array descriptions{
@@ -1130,7 +1134,7 @@ TEST(NativeProviderShape, SuppliedMetadataAllocationFailureAndOwnerLifetime) {
 }
 
 TEST(NativeProviderShape, DenseEnvelopeDoesNotProveAStridedFamily) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   RmsDomain domain;
   domain.input_axes[0].layout = ProviderTensorLayout::kBoundedStrided;
   domain.input_axes[0].maximum_bytes =
@@ -1235,7 +1239,7 @@ TEST(PreparedDomainContract, StridedMembershipDoesNotOverrideOperationSchema) {
 
 TEST(NativeProviderShape,
      BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions) {
-  auto context = cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   std::array<ShapeDimension, 2> dimensions{};
   dimensions[0].bounds = dimensions[1].bounds = {0, 4, 1};
   std::array<ProviderTensorAxes, 1> input_axes{}, output_axes{};

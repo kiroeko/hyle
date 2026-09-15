@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -48,7 +48,7 @@ TEST(NativeTransform, ValidatesAndExecutesZeroKernelSliceView) {
           storage.view().subview(sizeof(std::int32_t), output_bytes).value())
           .value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, slice, input_desc).value();
   ASSERT_EQ(prepared.output_description().value(), output_descriptions[0]);
@@ -97,7 +97,7 @@ TEST(NativeTransform, MaterializesPlainStridedCopy) {
   const TensorView output =
       TensorView::create(output_descriptions[0], output_storage.view()).value();
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Copy{}, input_desc).value();
   ASSERT_EQ(prepared.output_description().value(), output_descriptions[0]);
@@ -134,7 +134,7 @@ TEST(NativeTransform, FillsExactTypedScalarBits) {
       Buffer::create(hyle::mem::system_resource(), sizeof(expected), 4).value();
   const TensorView output =
       TensorView::create(output_descriptions[0], storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, fill).value();
   ASSERT_EQ(prepared.output_description().value(), output_descriptions[0]);

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -67,7 +67,7 @@ TEST(NativeIndexing, GatherCopiesDenseSuffixBlocksAndChecksIndices) {
   const std::array outputs{
       TensorView::create(output_desc, output_storage.view()).value()};
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Gather{.axis = 1}, source_desc,
@@ -118,7 +118,7 @@ TEST(NativeIndexing, ScatterAssignsOrAddsAndSupportsExactSourceAlias) {
   const std::array outputs{
       TensorView::create(source_desc, output_storage.view()).value()};
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto assign =
       hyle::compute::prepare(
@@ -170,7 +170,7 @@ TEST(NativeIndexing, ConcatenatesVariadicDenseInputsAlongMiddleAxis) {
   const std::array outputs{
       TensorView::create(output_desc, output_storage.view()).value()};
 
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   const std::array descriptions{first_desc, second_desc};
   auto prepared =

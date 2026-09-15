@@ -22,7 +22,9 @@
 
 #include "brgemm_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
+#include "hyle/graph/cpu.h"
 #include "hyle/graph/executable.h"
 #include "hyle/graph/providers/onednn.h"
 #include "hyle/mem/allocator.h"
@@ -31,6 +33,7 @@
 #include "hyle/simd/math.h"
 
 #include "../common/perf_process.h"
+#include "executor.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -225,15 +228,20 @@ LogicalMlp build_graph(const Problem &problem) {
   return logical;
 }
 
-class GraphRoute final {
+class GraphRoute {
 public:
-  explicit GraphRoute(Problem &problem)
+  explicit GraphRoute(Problem &problem, bool use_default = true,
+                      ParallelExecutorRef executor = {})
       : output_(make_tensor(problem.output_desc)) {
     const LogicalMlp logical = build_graph(problem);
-    const std::array<Provider, 1> providers{hyle::graph::onednn::provider()};
-    context_ = take(
-        Context::create(hyle::compute::cpu::device(), {.providers = providers}),
-        "create Graph context");
+    context_ =
+        use_default
+            ? take(hyle::graph::cpu::create_context({.executor = executor}),
+                   "create default Graph context")
+            : take(Context::create(
+                       hyle::compute::cpu::device(),
+                       hyle::compute::native::provider({.executor = executor})),
+                   "create explicit Native context");
     queue_ = take(context_.create_queue(), "create Graph queue");
     const std::array constants{
         ConstantBinding{logical.gate_weight,
@@ -243,13 +251,18 @@ public:
                         problem.down_weight.view.as_const()},
     };
     auto compiled =
-        take(hyle::graph::compile(logical.graph, context_,
-                                  CompileOptions{.constants = constants}),
+        take(hyle::graph::compile(
+                 logical.graph, context_,
+                 CompileOptions{
+                     .constants = constants,
+                     .provider_replay =
+                         hyle::graph::ProviderReplayPolicy::kRequirePrepared}),
              "compile Graph region");
-    if (compiled.report.region_count() != 1 ||
-        compiled.report.step_count() != 1 ||
-        compiled.report.provider().id != hyle::graph::onednn::kProviderId) {
-      fail("select exact Graph region");
+    if (compiled.report.region_count() != (use_default ? 1U : 0U) ||
+        compiled.report.provider().id !=
+            (use_default ? hyle::graph::onednn::kProviderId
+                         : hyle::compute::native::kProviderId)) {
+      fail("select expected default/Native Graph plan");
     }
     invocation_ = take(compiled.executable.create_invocation(),
                        "create Graph invocation");
@@ -258,6 +271,9 @@ public:
             "bind Graph activation");
     require(invocation_.bind(logical.output, output_.view),
             "bind Graph output");
+    const std::array queues{hyle::graph::QueueBinding{
+        .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue_}};
+    require(invocation_.prepare_replay(queues), "prepare fixed Graph replay");
   }
 
   std::uint64_t run() noexcept {
@@ -282,6 +298,12 @@ private:
   Invocation invocation_{};
 };
 
+class NativeRoute final : public GraphRoute {
+public:
+  explicit NativeRoute(Problem &problem, ParallelExecutorRef executor = {})
+      : GraphRoute(problem, false, executor) {}
+};
+
 class PlanOwner final {
 public:
   PlanOwner(brgemm::BrgemmShape shape, std::size_t task_count) {
@@ -302,7 +324,7 @@ private:
 
 class DirectBase {
 public:
-  explicit DirectBase(Problem &problem)
+  explicit DirectBase(Problem &problem, ParallelExecutorRef executor = {})
       : problem_(problem), output_(make_tensor(problem.output_desc)),
         gate_(take(Buffer::create(hyle::mem::system_resource(),
                                   problem.rows * problem.hidden * sizeof(float),
@@ -312,8 +334,13 @@ public:
                                 problem.rows * problem.hidden * sizeof(float),
                                 kAlignment),
                  "allocate direct up workspace")),
-        gate_up_plan_({problem.rows, problem.inner, problem.hidden}, 1),
-        down_plan_({problem.rows, problem.hidden, problem.inner}, 1) {
+        gate_up_plan_({problem.rows, problem.inner, problem.hidden},
+                      brgemm::recommended_brgemm_task_count(
+                          problem.hidden, executor.concurrency())),
+        down_plan_({problem.rows, problem.hidden, problem.inner},
+                   brgemm::recommended_brgemm_task_count(
+                       problem.inner, executor.concurrency())),
+        executor_(executor) {
     const std::size_t scratch_size =
         (std::max)(brgemm::brgemm_scratchpad_size(gate_up_plan_.get()),
                    brgemm::brgemm_scratchpad_size(down_plan_.get()));
@@ -360,7 +387,8 @@ protected:
 
 class DirectFusedRoute final : public DirectBase {
 public:
-  explicit DirectFusedRoute(Problem &problem) : DirectBase(problem) {
+  explicit DirectFusedRoute(Problem &problem, ParallelExecutorRef executor = {})
+      : DirectBase(problem, executor) {
     gate_mapping_ = take(gate_.view().map_host(HostAccess::kReadWrite),
                          "map fused gate workspace");
     up_mapping_ = take(up_.view().map_host(HostAccess::kReadWrite),
@@ -419,7 +447,9 @@ private:
 
 class DirectSequentialRoute final : public DirectBase {
 public:
-  explicit DirectSequentialRoute(Problem &problem) : DirectBase(problem) {}
+  explicit DirectSequentialRoute(Problem &problem,
+                                 ParallelExecutorRef executor = {})
+      : DirectBase(problem, executor) {}
 
   std::uint64_t run() noexcept {
     project(problem_.gate_weight, gate_, gate_up_plan_.get(),
@@ -499,14 +529,14 @@ private:
 template <class Peer> class PairFixture final {
 public:
   PairFixture(std::size_t rows, std::size_t inner, std::size_t hidden,
-              bool peer_allocation_first)
+              bool peer_allocation_first, ParallelExecutorRef executor = {})
       : problem_(rows, inner, hidden) {
     if (peer_allocation_first) {
-      peer_ = std::make_unique<Peer>(problem_);
-      graph_ = std::make_unique<GraphRoute>(problem_);
+      peer_ = std::make_unique<Peer>(problem_, executor);
+      graph_ = std::make_unique<GraphRoute>(problem_, true, executor);
     } else {
-      graph_ = std::make_unique<GraphRoute>(problem_);
-      peer_ = std::make_unique<Peer>(problem_);
+      graph_ = std::make_unique<GraphRoute>(problem_, true, executor);
+      peer_ = std::make_unique<Peer>(problem_, executor);
     }
     if (graph_->run() == 0 || peer_->run() == 0)
       fail("warm routes");
@@ -535,11 +565,11 @@ void run_pair(nb::Bench &bench, bool peer_first,
               std::string_view candidate_name, Candidate &&candidate,
               std::string_view peer_name, Peer &&peer) {
   if (peer_first) {
-    bench.run(peer_name, std::forward<Peer>(peer));
-    bench.run(candidate_name, std::forward<Candidate>(candidate));
+    (void)bench.compare(peer_name, std::forward<Peer>(peer), candidate_name,
+                        std::forward<Candidate>(candidate));
   } else {
-    bench.run(candidate_name, std::forward<Candidate>(candidate));
-    bench.run(peer_name, std::forward<Peer>(peer));
+    (void)bench.compare(candidate_name, std::forward<Candidate>(candidate),
+                        peer_name, std::forward<Peer>(peer));
   }
 }
 
@@ -566,8 +596,9 @@ void measure(PairFixture<Peer> &fixture, bool peer_first,
 
 void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
                bool peer_first, bool peer_allocation_first,
-               std::string_view shape_name) {
-  PairFixture<DirectFusedRoute> tax(rows, inner, hidden, peer_allocation_first);
+               std::string_view shape_name, ParallelExecutorRef executor = {}) {
+  PairFixture<DirectFusedRoute> tax(rows, inner, hidden, peer_allocation_first,
+                                    executor);
   const std::string tax_title =
       "graph oneDNN MLP abstraction " + std::string(shape_name);
   const std::string graph_name =
@@ -577,12 +608,20 @@ void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
   measure(tax, peer_first, tax_title, graph_name, direct_name);
 
   PairFixture<DirectSequentialRoute> benefit(rows, inner, hidden,
-                                             peer_allocation_first);
+                                             peer_allocation_first, executor);
   const std::string benefit_title =
       "graph oneDNN MLP region benefit " + std::string(shape_name);
   const std::string sequential_name =
       "direct sequential oneDNN operations " + std::string(shape_name);
   measure(benefit, peer_first, benefit_title, graph_name, sequential_name);
+
+  PairFixture<NativeRoute> native(rows, inner, hidden, peer_allocation_first,
+                                  executor);
+  const std::string native_title =
+      "graph CPU default versus Native " + std::string(shape_name);
+  const std::string native_name =
+      "HYLE Graph explicit Native " + std::string(shape_name);
+  measure(native, peer_first, native_title, graph_name, native_name);
 }
 
 } // namespace
@@ -595,18 +634,18 @@ int main() {
   const bool peer_first = environment_present("HYLE_BENCH_RIVAL_FIRST");
   const bool peer_allocation_first =
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
-  std::fprintf(stderr,
-               "# HYLE_GRAPH_ONEDNN_RUN execution_order=%s "
-               "allocation_order=%s apple_qos=%s qos_ok=%s "
-               "affinity_topology=%s caller_cpu=%s affinity_ok=%s "
-               "run_nonce=%s\n",
-               peer_first ? "peer-first" : "candidate-first",
-               peer_allocation_first ? "peer-first" : "candidate-first",
-               qos.name, qos.ok, affinity.topology, affinity.cpu, affinity.ok,
-               hyle::bench::perf::run_nonce());
+  hyle::bench::cpu_route::Executor executor;
 
   run_shape(1, 256, 512, peer_first, peer_allocation_first,
             "decode f32 M=1 K=256 H=512");
   run_shape(16, 512, 1024, peer_first, peer_allocation_first,
             "short-prefill f32 M=16 K=512 H=1024");
+  run_shape(17, 129, 257, peer_first, peer_allocation_first,
+            "holdout f32 M=17 K=129 H=257");
+  if (executor.enabled()) {
+    executor.start();
+    run_shape(17, 129, 257, peer_first, peer_allocation_first,
+              "two-worker f32 M=17 K=129 H=257", executor.ref());
+  }
+  executor.print_telemetry(peer_first, peer_allocation_first, qos, affinity);
 }

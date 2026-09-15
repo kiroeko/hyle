@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <span>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -96,7 +96,7 @@ TEST(NativeLayerNorm, ExecutesNonAffineScaleOnlyAndAffineRows) {
       ConstTensorView::create(parameter_desc, bias_storage.view()).value();
   const TensorView output =
       TensorView::create(input_desc, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   const LayerNorm operation{.epsilon = epsilon};
 
@@ -135,7 +135,7 @@ TEST(NativeLayerNorm, SupportsExactInputOutputAlias) {
       ConstTensorView::create(description, storage.view()).value();
   const TensorView output =
       TensorView::create(description, storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, LayerNorm{}, description).value();
@@ -154,7 +154,7 @@ TEST(NativeLayerNorm, AcceptsAnEmptyLastDimension) {
       ConstTensorView::create(description, storage.view()).value();
   const TensorView output =
       TensorView::create(description, storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, LayerNorm{}, description).value();
@@ -167,7 +167,7 @@ TEST(NativeLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
   const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
   const TensorDesc f32 = TensorDesc::dense(DataType::kFloat32, shape).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
 
   auto storage = hyle::compute::prepare(context, LayerNorm{}, f16);
   ASSERT_FALSE(storage.has_value());
@@ -198,7 +198,7 @@ TEST(NativeLayerNorm, PinsExecutorAndUsesOneBoundedSynchronousFanOut) {
   const hyle::compute::ParallelExecutorRef executor(
       &probe, 4, &probe_parallel_for, &probe_in_parallel);
   auto context =
-      hyle::compute::cpu::create_context({.executor = executor}).value();
+      hyle::compute::test::native_context({.executor = executor}).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, LayerNorm{}, description).value();

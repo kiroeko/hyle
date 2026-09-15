@@ -7,7 +7,7 @@
 #include <limits>
 #include <span>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -97,7 +97,7 @@ TEST(NativeTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
           .value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   auto interleaved =
@@ -169,7 +169,7 @@ TEST(NativeTransformer, RopeExercisesVectorBlocksAndPairTail) {
           .value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   for (RopeLayout layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
@@ -236,7 +236,7 @@ TEST(NativeTransformer, RopeMaterializesPlainStridedInputs) {
           .value()};
   const std::array outputs{
       TensorView::create(output_desc, output_storage.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(
                       context,
@@ -269,7 +269,7 @@ TEST(NativeTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
       TensorView::create(data_desc, data_storage.view()).value();
   const std::array inputs{data, mask_view};
   const std::array outputs{output};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
@@ -307,7 +307,7 @@ TEST(NativeTransformer, LogSoftmaxSupportsANonTrailingAxis) {
       ConstTensorView::create(data_desc, input_storage.view()).value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
@@ -347,7 +347,7 @@ TEST(NativeTransformer, SoftmaxSupportsAdditiveMasksAndUndefinedRows) {
       ConstTensorView::create(mask_desc, mask_storage.view()).value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
@@ -401,7 +401,7 @@ TEST(NativeTransformer, TopKPreservesScoresAndStableIndicesAcrossAxes) {
   const std::array outputs{
       TensorView::create(value_desc, value_storage.view()).value(),
       TensorView::create(index_desc, index_storage.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context,
@@ -499,7 +499,7 @@ TEST(NativeTransformer, SdpaExecutesBlockedOnlineSoftmaxInBothLayouts) {
       ConstTensorView::create(value_desc, value.view()).value()};
   const std::array outputs{
       TensorView::create(output_desc, output.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(
                       context, ScaledDotProductAttention{}, query_desc,
@@ -570,7 +570,7 @@ TEST(NativeTransformer, SdpaKeepsBatchAndHeadRowsSeparateInBothLayouts) {
   Buffer query = make_buffer(query_values);
   Buffer key = make_buffer(key_values);
   Buffer output = make_buffer(std::array<float, 8>{});
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   auto run = [&](AttentionLayout layout,
@@ -639,7 +639,7 @@ TEST(NativeTransformer, SdpaUsesBottomRightCausalAndExplicitMasks) {
       ConstTensorView::create(key_desc, value.view()).value()};
   const std::array outputs{
       TensorView::create(query_desc, output.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   auto run = [&](Operation operation, auto inputs) {
@@ -732,7 +732,7 @@ TEST(NativeTransformer, SdpaSupportsPlainStridedReferenceInputs) {
       ConstTensorView::create(key_desc, value.view()).value()};
   const std::array outputs{
       TensorView::create(output_desc, output.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Operation(ScaledDotProductAttention{}),
@@ -798,7 +798,7 @@ TEST(NativeTransformer, SdpaUsesDisjointWorkspacePerExecutorTask) {
   const hyle::compute::ParallelExecutorRef executor(&probe, 4,
                                                     &attention_parallel_for);
   auto context =
-      hyle::compute::cpu::create_context({.executor = executor}).value();
+      hyle::compute::test::native_context({.executor = executor}).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Operation(ScaledDotProductAttention{}),
@@ -837,7 +837,7 @@ TEST(NativeTransformer, SdpaDefinesAnEmptyKeyRowAsInvalid) {
       ConstTensorView::create(value_desc, value.view()).value()};
   const std::array outputs{
       TensorView::create(output_desc, output.view()).value()};
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Operation(ScaledDotProductAttention{}),
@@ -857,7 +857,7 @@ TEST(NativeTransformer, SdpaRejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 4> shape{1, 1, 1, 2};
   const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
   const TensorDesc f32 = TensorDesc::dense(DataType::kFloat32, shape).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
 
   const std::array f16_inputs{f16, f16, f16};
   const std::array f16_outputs{f16};

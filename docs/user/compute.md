@@ -1,17 +1,17 @@
 # HYLE Compute：何时直接执行一个计算
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。默认 CPU façade 使用 HYLE-native；
-> 选择 `HYLE_COMPUTE_ONEDNN=ON` 时，受支持的 x86-64 构建还提供显式 oneDNN MatMul provider。
+> [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 Native/oneDNN 实现；
+> 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时，但尚未签发通用 CUDA operation provider。Apple MLX/Metal、Vulkan/SPIR-V
 > 与其它 provider 是后续独立纵切。HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
 研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。
-当前默认 CPU 仅组装 Native，显式 Provider 序列是按支持顺序回退，并非自动 best-of。
-重构目标是[应用研发时确定的默认优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)，
-不要求普通用户排列 Provider 或提供性能资料；该目标尚不能由本文的现有例子推断已经完成。
+`cpu::create_context()` 在冷路径组装默认实现，prepare 只匹配和绑定固定规则，不运行计时比赛。
+普通用户不排列 Provider 或提供性能资料；规则与性能验收状态由当前 CPU 任务卡记录。
+路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
 构建时默认 `HYLE_COMPUTE_CPU=ON`。CUDA-only SDK 显式设 CPU OFF、CUDA ON；两者都 OFF 时仅有
 计算语义/资源合同底座，无 CPU/Native 入口。安装包的实际 capability、头与 CMake 选项见
@@ -403,7 +403,7 @@ return done->wait();                  // terminal failure
 `ProviderRouteKey` 仍标识 Provider 内部实现，供诊断报告使用；单个 key 不证明性能资格。
 旧 `RouteProfile`、matcher 和 Graph 多计划性能竞赛接口已经移除。
 
-## 何时选 oneDNN
+## CPU 默认规则与显式实现约束
 
 当前 oneDNN provider 只接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
@@ -432,22 +432,18 @@ auto invocation = prepared->create_invocation(scratch.view());
 if (!invocation) return invocation.error();
 ```
 
-上例只有 oneDNN；不支持的形状会返回 `Unimplemented`。需要回落到 native 时必须把顺序写出来：
+上例是专家限定 oneDNN 的用法，不支持的形状返回 `Unimplemented`。普通使用选择 CPU 默认入口：
 
 ```cpp
-#include <array>
 #include <hyle/compute/cpu.h>
-#include <hyle/compute/providers/onednn.h>
 
-const std::array providers{onednn::provider(), native::provider()};
-auto context = Context::create(
-    cpu::device(), ContextOptions{.providers = providers});
+auto context = hyle::compute::cpu::create_context();
 ```
 
 `Context::create()` 在冷路径把完整 provider 序列复制到 context 自己的一次 metadata allocation；输入
 span 只需活到调用返回。序列没有人为四项上限，也不会自动追加 native。通过
 `PreparedOperation::provider()` 返回的开放 `ProviderIdentity` 可以检查实际路线；是否发生组合回落由
-调用方给定的顺序和最终 identity 共同解释，不再用固定枚举或含义模糊的 `used_fallback` 标志。
+所选默认规则和最终 identity 解释。确有实现约束时，专家 ContextOptions 仍可显式提供候选序列。
 
 默认 Native 和 oneDNN executor 都是调用线程串行执行；HYLE 不偷偷创建线程池。已有同步线程池的程序可通过
 `cpu::DefaultContextOptions::executor`、`native::Options::executor` 或 `onednn::Options::executor` 传入借用的
@@ -461,9 +457,9 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 64-byte-aligned scratch slice；调用方只需按 `workspace_requirement()` 分配一块总 workspace，不应自行
 推导 tile 或依赖该内部阈值。
 
-该选项默认 `OFF`，所以普通 Compute 配置不会下载或编译 oneDNN。构建时
+标准 CPU 配置的该选项默认 `AUTO`：支持的 x86-64 目标接入 oneDNN，AArch64 使用 Native。构建时
 `HYLE_COMPUTE_ONEDNN=ON` 在受支持的 x86-64 目标强制启用，在 AArch64 等不支持目标会明确配置失败；
-`AUTO` 只适合本地探索并在不支持目标关闭能力。可复现的 x86-64 oneDNN 制品应显式选择 `ON`，不需要
+`AUTO` 在不支持目标关闭该实现。可复现的 x86-64 oneDNN 制品可显式选择 `ON`，不需要
 它的制品保持 `OFF`。`PreparedOperation::provider()` 与 `workspace_requirement()` 可解释实际路线。
 oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 

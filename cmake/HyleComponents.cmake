@@ -397,21 +397,27 @@ _hyle_declare_component(compute_backend_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/backends/cuda.h)
 
 _hyle_declare_component(compute_provider_native
-  PRIVATE_DEPS math mem platform simd
-  PUBLIC_DEPS compute compute_backend_cpu
-  SPLIT_PUBLIC_HEADERS
-    hyle/compute/providers/native.h
-    hyle/compute/cpu.h)
+  PRIVATE_DEPS math mem platform simd compute_backend_cpu
+  PUBLIC_DEPS compute
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/native.h)
 
 # Reserved identity for the optional Platform/Sched-backed persistent CPU
 # execution pool.  It remains dependency-free and absent from the Compute
 # product until its own closure round freezes API, ownership and performance.
 _hyle_declare_component(compute_sched QUEUED)
 
-# R3 default CPU composition has real route-specific dependency ownership.
-# Reserve identities before freezing API/edges; no product target exists yet.
-_hyle_declare_component(compute_route_cpu QUEUED)
-_hyle_declare_component(graph_route_cpu QUEUED)
+# Compiled defaults own implementation composition at the CPU route boundary.
+# Compute never acquires a reverse dependency on Graph or its region providers.
+_hyle_declare_component(compute_route_cpu
+  PRIVATE_DEPS compute_provider_native compute_provider_onednn
+  PUBLIC_DEPS core compute compute_backend_cpu
+  SPLIT_PUBLIC_HEADERS hyle/compute/cpu.h)
+_hyle_declare_component(graph_route_cpu
+  PRIVATE_DEPS compute_provider_native compute_provider_onednn
+               graph_provider_onednn
+  PUBLIC_DEPS core compute_route_cpu graph
+  TEST_DEPS sched
+  SPLIT_PUBLIC_HEADERS hyle/graph/cpu.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -474,10 +480,10 @@ _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS
-  compute compute_backend_cpu compute_backend_cuda compute_provider_native
+  compute compute_route_cpu compute_backend_cpu compute_backend_cuda compute_provider_native
   compute_provider_onednn)
 _hyle_declare_product(graph FACTORS
-  graph compute_backend_cpu compute_backend_cuda compute_provider_native
+  graph graph_route_cpu compute_backend_cpu compute_backend_cuda compute_provider_native
   compute_provider_onednn graph_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source
@@ -602,7 +608,8 @@ if(_hyle_selection_mode STREQUAL "product" AND
     foreach(_product IN ITEMS COMPUTE GRAPH)
       list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
         compute_backend_cpu compute_provider_native
-        compute_provider_onednn graph_provider_onednn)
+        compute_provider_onednn graph_provider_onednn
+        compute_route_cpu graph_route_cpu)
     endforeach()
     set(_hyle_requested_roots "")
     foreach(_product IN LISTS _hyle_requested_products)

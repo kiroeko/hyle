@@ -1,26 +1,29 @@
 #pragma once
 
-#include <array>
-
 #include "hyle/compute/backends/cpu.h"
-#include "hyle/compute/providers/native.h"
+#include "hyle/compute/device.h"
+#include "hyle/visibility.h"
+
+#if defined(HYLE_STATIC)
+#define HYLE_COMPUTE_ROUTE_CPU_API
+#elif defined(HYLE_COMPUTE_ROUTE_CPU_BUILD)
+#define HYLE_COMPUTE_ROUTE_CPU_API HYLE_EXPORT
+#else
+#define HYLE_COMPUTE_ROUTE_CPU_API HYLE_IMPORT
+#endif
 
 namespace hyle::compute::cpu {
 
 struct DefaultContextOptions final {
+  // Both backings are borrowed through all derived artifacts and invocations.
   mem::AllocatorRef metadata_allocator{};
+  // Empty uses the caller thread. The route never creates a worker pool.
   ParallelExecutorRef executor{};
 };
 
-// Natural CPU route: explicit CPU backend plus the HYLE native provider. More
-// advanced users construct ContextOptions with their own ordered provider span
-// (for example {onednn, native}) and call Context::create(cpu::device(), ...).
-inline Result<Context>
-create_context(DefaultContextOptions options = {}) noexcept {
-  const std::array providers{native::provider({.executor = options.executor})};
-  return Context::create(
-      device(), ContextOptions{.metadata_allocator = options.metadata_allocator,
-                               .providers = providers});
-}
+// CPU Direct Compute with development-qualified implementation rules. Prepare
+// binds an eligible oneDNN operation or Native implementation without timing.
+HYLE_COMPUTE_ROUTE_CPU_API Result<Context>
+create_context(DefaultContextOptions options = {}) noexcept;
 
 } // namespace hyle::compute::cpu

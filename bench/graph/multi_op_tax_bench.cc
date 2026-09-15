@@ -18,8 +18,9 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/cpu.h"
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
 
@@ -172,8 +173,10 @@ public:
           bool peer_allocation_first)
       : rows_(rows), hidden_(hidden), ffn_(ffn),
         descriptions_(make_descriptions(rows, hidden, ffn)),
-        context_(
-            take_or_abort(hyle::compute::cpu::create_context(), "CPU context")),
+        context_(take_or_abort(
+            hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                           hyle::compute::native::provider()),
+            "CPU context")),
         queue_(take_or_abort(context_.create_queue(), "CPU queue")),
         input_(make_tensor(descriptions_.activation)),
         norm_weight_(make_tensor(descriptions_.norm_weight)),

@@ -46,7 +46,7 @@ contract，因此 Compute、Graph、CPU/CUDA backend 需要合法 SCOPED→AUDIT
 - [已登记 public Sched 消费](cpu-executor-foundation-probe.md)：有效且保持 open 的 runtime、body 恒成功、
   无 cancel 的同步 bulk；部分 admission 减少并发而排空 cursor，零 admission 才返回错误。样例检查
   Status，不能吞掉失败或重跑已接纳前缀。借用期限到所有 Compute consumer 完成后。
-- bench/compute/route_p1_bench.cc 与 bench/graph_provider_onednn/region_p1_bench.cc 的现有同合同
+- bench/compute_route_cpu/route_p1_bench.cc 与 bench/graph_route_cpu/region_p1_bench.cc 的现有同合同
   direct/完整片段机制；旧强制 Provider 结果只作研发证据，不能签新默认入口。
 
 ## 预声明验证
@@ -155,3 +155,26 @@ WSL 定向 ASan/UBSan/TSan 仅覆盖新组合与真实 consumer，R2 未变化�
 compute_provider_native、compute_provider_onednn、graph_provider_onednn、compute_route_cpu、
 graph_route_cpu 的上述有限实现/默认接入范围。旧三 Provider 的 R1 AUDITED 本次明确重新定界；
 compute_provider_ggml 的 BLOCKED 与 compute_sched 的 QUEUED 均不解除。
+
+标准 CPU 发行的既有 HYLE_COMPUTE_ONEDNN 默认值改为 AUTO，x64 自动接入，Apple Silicon 使用
+Native，OFF 是显式裁剪。compute_route_cpu/graph_route_cpu 公开头直接使用 core visibility，因此
+各自声明 PUBLIC core；Direct 头直接 include Compute device.h，保留真实公开类型依赖。
+
+### 首轮实现验证（尚非候选终审）
+
+Windows MSVC 19.50/Ninja shared、oneDNN OFF：17/17 定向 Compute/Graph/CPU route/Native
+正确性和公共头检查通过。新默认 MatMul 检查 M=1/15/16/17、129x65 与转置权重、三个变化输入、
+独立 double oracle、无热 metadata 分配、关闭拒绝和冷限额失败回收。源码编译问题只修复了新头
+明确需要的 PUBLIC core/Compute 声明。AUTO 版本与真实 Sched consumer、其它平台/三交付/P1
+仍待执行，不计 PASS。原始日志位于本轮外部 scratch，候选固定后归档。
+
+Windows AUTO/oneDNN 初轮：9 项通过、2 项因定向 build 未包含可执行体而未运行。补构建发现
+oneDNN composition 测试还依赖旧 Native PUBLIC CPU backend 边，已改为该 consumer 的显式
+backend 依赖；这两个测试随后 2/2 通过。默认 Graph 的 Sched consumer 实际输出 region=1；
+1/2 worker 的默认路线分别执行 12/24 个 worker task、各 2 次 nested bulk，独立 oracle/并发/释放
+全部通过。原失败/未运行日志保留，不写成首次 11/11。
+
+P1 的 Graph 合同同时覆盖串行与同一真实两 worker Sched executor；使用公共 instrument 已有
+n-worker-physical-cores 模式，不改 instrument。实际 worker 在 cold start 固定/验证 CPU identity；
+完整 default/direct-fused/direct-sequence/Native 工作均计入 bulk admission、执行和等待。1-worker
+correctness 由普通 consumer 覆盖。benchmark 已通过 MSVC 定向语法检查；尚未启动 P1。

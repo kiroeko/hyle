@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <span>
 
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/backends/cuda.h"
-#include "hyle/compute/cpu.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
 
@@ -167,7 +167,7 @@ TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
 TEST(GraphCudaReplay, RejectsCpuCudaComputePlacement) {
   auto cuda_device = hyle::compute::cuda::device(0);
   ASSERT_TRUE(cuda_device.has_value()) << cuda_device.error().message();
-  Context cpu_context = hyle::compute::cpu::create_context().value();
+  Context cpu_context = hyle::compute::test::native_context().value();
   Context cuda_context = Context::create(*cuda_device).value();
   auto pinned = hyle::compute::cuda::MemoryResource::create(
                     cuda_context, hyle::compute::cuda::MemoryKind::kPinnedHost)

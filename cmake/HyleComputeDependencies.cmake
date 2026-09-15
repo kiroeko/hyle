@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN OR
    HYLE_BUILD_PRODUCT_COMPUTE OR HYLE_BUILD_PRODUCT_GRAPH)
   hyle_auto_feature_option(HYLE_COMPUTE_ONEDNN
-    "Build the x64 oneDNN BRGEMM MatMul provider" DEFAULT OFF)
+    "Build the x64 oneDNN BRGEMM MatMul provider" DEFAULT AUTO)
 else()
   set(HYLE_COMPUTE_ONEDNN OFF)
 endif()

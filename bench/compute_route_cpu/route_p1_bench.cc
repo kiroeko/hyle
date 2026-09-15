@@ -17,6 +17,7 @@
 #include "../common/perf_process.h"
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
@@ -190,15 +191,13 @@ public:
                                : stored_right_description_),
         output_description_(matrix(shape.rows, shape.columns)) {
     if (selected_route) {
-      const std::array providers{hyle::compute::onednn::provider(),
-                                 hyle::compute::native::provider()};
-      const hyle::compute::ContextOptions options{.providers = providers};
-      context_ = take(
-          hyle::compute::Context::create(hyle::compute::cpu::device(), options),
-          "create selected Compute context");
-    } else {
       context_ = take(hyle::compute::cpu::create_context(),
-                      "create native Compute context");
+                      "create default Compute context");
+    } else {
+      context_ = take(
+          hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                         hyle::compute::native::provider()),
+          "create explicit Native context");
     }
     queue_ = take(context_.create_queue(), "create Compute queue");
     prepared_ = take(hyle::compute::prepare(

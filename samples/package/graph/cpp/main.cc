@@ -1,5 +1,5 @@
 #if defined(HYLE_COMPUTE_CPU)
-#include <hyle/compute/cpu.h>
+#include <hyle/graph/cpu.h>
 #endif
 #if defined(HYLE_COMPUTE_CUDA)
 #include <hyle/compute/backends/cuda.h>
@@ -76,7 +76,7 @@ int main() {
     return 8;
 
 #if defined(HYLE_COMPUTE_CPU)
-  auto context = cpu::create_context();
+  auto context = hyle::graph::cpu::create_context();
   if (!logical || !context)
     return 8;
   auto queue = context->create_queue();
@@ -183,8 +183,8 @@ int main() {
       ConstantBinding{*up_weight, up_tensor->as_const()},
       ConstantBinding{*down_weight, down_tensor->as_const()},
   };
-  auto region_context =
-      Context::create(cpu::device(), hyle::graph::onednn::provider());
+  auto region_context = Context::create(hyle::compute::cpu::device(),
+                                        hyle::graph::onednn::provider());
   if (!region_context)
     return 22;
   auto region_compiled = compile(*region_graph, *region_context,

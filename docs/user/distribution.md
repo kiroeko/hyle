@@ -171,14 +171,13 @@ GPU 所需的 host 控制、准备和传输机制。配置示例：
 计算；后续真实路线接入也不会由这个配置自动获得。
 
 CPU 路线可带独立的 x86-64 oneDNN provider factor；
-`HYLE_COMPUTE_ONEDNN=ON|OFF|AUTO` 只在选择这些产品时出现，默认 OFF，因而普通 Compute 构建既不下载
-也不编译 oneDNN。需要该 provider 的 x86-64 制品必须显式选择 ON；AArch64 的 ON 明确失败，AUTO 会
-关闭该能力并保留 native Compute；AUTO 只用于开发机探索。开启后
-source/static/shared 都通过同一个
-`hyle::compute::onednn::provider()` C++ 入口使用：static SDK 传递锁定 oneDNN archive/header 闭包，shared
-SDK 把其实现私有链接进 provider shared library，二者都安装 Apache-2.0 notice。
-CPU OFF + oneDNN ON 明确配置失败；CPU OFF + oneDNN AUTO 不探测、不下载。Provider 默认组装与
-研发验证规则在后续 CPU 纵切接入，本构建能力开关本身不证明实现优选已完成。
+`HYLE_COMPUTE_ONEDNN=ON|OFF|AUTO` 只在相应 CPU 产品/因子闭包出现，默认 AUTO：支持的 x86-64
+目标接入锁定 oneDNN，AArch64 自动保留 Native。ON 在不支持目标明确失败；OFF 可显式裁剪该实现。
+普通 Direct 使用 `hyle::compute::cpu::create_context()`，普通 Graph 使用
+`hyle::graph::cpu::create_context()`；用户不需要排列 Provider。专家仍可显式限定 Provider。
+static SDK 传递锁定 oneDNN archive/header 闭包，shared SDK 把实现私有链接进 provider library，
+二者安装 Apache-2.0 notice。CPU OFF + oneDNN ON 明确配置失败；CPU OFF + oneDNN AUTO
+不探测、不下载。构建 feature 只记录可用实现；默认规则的性能验收由 CPU 路线任务记录。
 
 Compute/Graph 还包含 CUDA runtime factor。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。

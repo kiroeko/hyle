@@ -1,13 +1,10 @@
-#include <hyle/compute/cpu.h>
+#include <hyle/compute/providers/native.h>
+#include <hyle/graph/cpu.h>
 #include <hyle/graph/executable.h>
 #include <hyle/mem/stats.h>
 #include <hyle/sched/bulk.h>
 #include <hyle/sched/scheduler.h>
 #include <hyle/sched/waker.h>
-#if defined(HYLE_SAMPLE_ONEDNN)
-#include <hyle/compute/providers/onednn.h>
-#include <hyle/graph/providers/onednn.h>
-#endif
 
 #include <algorithm>
 #include <array>
@@ -30,14 +27,14 @@ namespace sched = hyle::sched;
 
 void require(bool condition, const char *what) {
   if (!condition) {
-    std::fprintf(stderr, "CPU executor probe failed: %s\n", what);
+    std::fprintf(stderr, "CPU executor consumer failed: %s\n", what);
     std::exit(1);
   }
 }
 void check(hyle::Status status) {
   if (!status.ok()) {
     const auto message = status.message();
-    std::fprintf(stderr, "CPU executor probe: %.*s\n",
+    std::fprintf(stderr, "CPU executor consumer: %.*s\n",
                  static_cast<int>(message.size()), message.data());
     std::exit(1);
   }
@@ -139,26 +136,21 @@ struct Model {
   graph::ValueId input_id, output_id;
   graph::CompiledGraph compiled;
 
-  Model(Executor &executor, mem::AllocatorRef allocator, bool vendor) {
+  Model(Executor &executor, mem::AllocatorRef allocator, bool use_default) {
     gate.write(gate_values);
     up.write(up_values);
     down.write(down_values);
-    std::vector<compute::Provider> providers;
-#if defined(HYLE_SAMPLE_ONEDNN)
-    if (vendor) {
-      providers.push_back(
-          graph::onednn::provider({.executor = executor.ref()}));
-      providers.push_back(
-          compute::onednn::provider({.executor = executor.ref()}));
+    if (use_default) {
+      context = take(graph::cpu::create_context(
+          {.metadata_allocator = allocator, .executor = executor.ref()}));
+    } else {
+      // Explicit Native is the independent implementation comparison only.
+      const std::array providers{
+          compute::native::provider({.executor = executor.ref()})};
+      context = take(compute::Context::create(
+          compute::cpu::device(),
+          {.metadata_allocator = allocator, .providers = providers}));
     }
-#else
-    require(!vendor, "oneDNN route was not built");
-#endif
-    providers.push_back(
-        compute::native::provider({.executor = executor.ref()}));
-    context = take(compute::Context::create(
-        compute::cpu::device(),
-        {.metadata_allocator = allocator, .providers = providers}));
     auto builder = take(graph::GraphBuilder::create());
     input_id = take(builder.input(matrix(kRows, kInner)));
     const auto gate_id = take(builder.constant(matrix(kInner, kHidden)));
@@ -182,8 +174,13 @@ struct Model {
         {.constants = constants,
          .provider_replay = graph::ProviderReplayPolicy::kRequirePrepared}));
     require(compiled.report.node_count() == 5, "unexpected graph shape");
-    require(compiled.report.region_count() == (vendor ? 1U : 0U),
-            "requested native/vendor route was not actually selected");
+#if defined(HYLE_GRAPH_ONEDNN)
+    const bool expected_region = use_default;
+#else
+    const bool expected_region = false;
+#endif
+    require(compiled.report.region_count() == (expected_region ? 1U : 0U),
+            "requested native/use_default route was not actually selected");
   }
 };
 
@@ -260,10 +257,10 @@ struct Run {
   }
 };
 
-void run_model(Executor &executor, bool vendor) {
+void run_model(Executor &executor, bool use_default) {
   auto stats = take(mem::StatsAllocator::create(mem::system_allocator()));
   {
-    Model model(executor, stats.get(), vendor);
+    Model model(executor, stats.get(), use_default);
     Run first(model), second(model);
     first.set_input(1);
     second.set_input(5);
@@ -304,15 +301,17 @@ void run_model(Executor &executor, bool vendor) {
     // Native intentionally runs a one-task or already-parallel call inline.
     // The parallel Native case and every oneDNN route must actually use the
     // supplied executor, independently of the standalone queue sanity check.
-    if (vendor || executor.scheduler.num_workers() > 1)
+    if (model.compiled.report.region_count() != 0 ||
+        executor.scheduler.num_workers() > 1)
       require(episodes > 0 && tasks > 0,
               "computed route bypassed its executor");
-    if (vendor)
+    if (model.compiled.report.region_count() != 0)
       require(nested > 0, "oneDNN did not exercise nested bulk progress");
     std::printf("CPU executor PASS: workers=%u route=%s regions=%zu "
                 "workspace=%zu replay_metadata_allocations=0 "
                 "executor_episodes=%zu worker_tasks=%zu nested=%zu\n",
-                executor.scheduler.num_workers(), vendor ? "oneDNN" : "Native",
+                executor.scheduler.num_workers(),
+                use_default ? "default" : "explicit Native",
                 model.compiled.report.region_count(),
                 model.compiled.report.workspace_bytes(), episodes, tasks,
                 nested);
@@ -347,9 +346,7 @@ void run_workers(unsigned workers) {
     for (const auto &value : visits)
       require(value.load() == 1, "bulk dropped or duplicated a task");
     run_model(executor, false);
-#if defined(HYLE_SAMPLE_ONEDNN)
     run_model(executor, true);
-#endif
     scheduler.begin_shutdown();
     require(!scheduler.accepting(), "shutdown did not close admission");
     std::atomic<bool> invoked{false};

@@ -8,7 +8,7 @@
 #include <limits>
 #include <span>
 
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -63,7 +63,7 @@ TEST(NativeReduction, ExecutesEveryModeAcrossTheLastAxis) {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   for (std::size_t index = 0; index < kinds.size(); ++index) {
@@ -100,7 +100,7 @@ TEST(NativeReduction, ReducesMultipleAxesWithAndWithoutKeptDimensions) {
       TensorView::create(compact_desc, compact_storage.view()).value();
   const TensorView kept =
       TensorView::create(kept_desc, kept_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   auto compact_prepared =
@@ -150,7 +150,7 @@ TEST(NativeReduction, HandlesUnalignedStrideNaNAndSignedZero) {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   auto prepared =
@@ -194,7 +194,7 @@ TEST(NativeReduction, DefinesEmptyReductionIdentities) {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
 
   constexpr std::array kinds{ReductionKind::kSum, ReductionKind::kMean,
@@ -223,7 +223,7 @@ TEST(NativeReduction, RejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 1> shape{4};
   const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
   const TensorDesc f32 = TensorDesc::dense(DataType::kFloat32, shape).value();
-  auto context = hyle::compute::cpu::create_context().value();
+  auto context = hyle::compute::test::native_context().value();
 
   auto storage =
       hyle::compute::prepare(context, Reduce{.kind = ReductionKind::kSum}, f16);
