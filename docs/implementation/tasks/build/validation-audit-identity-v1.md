@@ -1,6 +1,6 @@
 # Selector：无产品实现的审计身份
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## 独立工具卡
 
@@ -25,4 +25,18 @@
 - 成本：P0，只读少量 audit-phase owner 的源码元数据，不新增依赖、runtime 成本或公共 API。
 
 七问：无需新依赖/许可证；补齐工具对现有合法生命周期的处理；复用 registry/图/owner 映射；
-仅冷元数据检查；无 FFI；不改产品交付；skipped reason 清楚。当前 AUDITED，未签修复通过。
+仅冷元数据检查；无 FFI；不改产品交付；skipped reason 清楚。
+
+## Candidate / CLOSED
+
+- candidate：`9600a44886c5df690900ed533e312e3ebe981b40`。没有产品代码/模块状态变更。
+- VI1/VI2 完成；scope、architecture、correctness、delivery、usability/docs、red-team、P0 均 PASS。
+  delivery 指 selector 原有 Python/脚本入口，不制造 C++ binary journey；P1 不适用。
+- `validation-select.py run --base 0a5e4619 --candidate WORKTREE` 的最终结果为 PASS：docs、closure、
+  45 项工具回归；其余 94 gates 跳过，未执行产品构建/性能。原始工具日志见
+  [tool-tests.log](../../../../evidence/correctness/validation-audit-identity-v1/tool-tests.log)。
+- 首次测试暴露新增反例误改共享 graph fixture cache，已改为 deepcopy 后重跑通过；不是产品规则放宽。
+- 候选后复核：真正有实现、头、依赖、测试、生成代码或已进入实现阶段的 owner 不会被此规则隐藏；
+  malformed registry 仍走原 SelectionError 边界。ggml BLOCKED/恢复条件不变。
+- 限制/reopen：只识别严格的空 `hyle_add_module(identity)`；其它形状保守地继续要求测试 owner。
+  新事实证明误跳过或仍误选时定向重开，不扩成新的模块状态系统。
