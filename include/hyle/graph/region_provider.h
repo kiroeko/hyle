@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 13};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 14};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -172,6 +172,10 @@ struct RegionArtifactProperties final {
   std::uint32_t dispatch_count = 1;
   compute::ProviderRuntimeProperties runtime{};
   bool preserves_effects = false;
+  // Additional per-invocation storage upper bound, excluding the supplied
+  // allocator and caller workspace. Includes create/replay/teardown. Unknown
+  // is not zero; do not reuse persistent_bytes for this independent lifetime.
+  std::optional<std::size_t> invocation_private_bytes{};
 };
 
 struct ProviderRegionPreparedVTable final {

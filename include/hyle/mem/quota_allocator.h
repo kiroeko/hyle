@@ -3,6 +3,8 @@
 #include <atomic>
 #include <cstddef>
 #include <limits>
+#include <optional>
+#include <utility>
 
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
@@ -11,17 +13,53 @@ namespace hyle::mem {
 
 // Thread-safe strict byte-budget decorator over any sized-free AllocatorRef.
 //
-// The quota accounts REQUESTED live bytes, not the backing allocator's
-// usable-size or metadata overhead. A reservation is acquired before entering
-// the backing, so concurrent successful calls can never make used() exceed
-// limit(). Backing OOM rolls the reservation back. The AllocatorRef returned by
-// get() borrows this object and is valid only while *this remains alive.
+// The quota accounts REQUESTED live bytes and explicit reservations, not the
+// backing allocator's usable-size or metadata overhead. A reservation is
+// acquired before entering the backing, so concurrent successful calls can
+// never make used() exceed limit(). Backing OOM rolls the reservation back. The
+// AllocatorRef returned by get() borrows this object and is valid only while
+// *this remains alive.
 //
-// As with every HYLE AllocatorRef, deallocate/reallocate must receive the original
-// requested size. Passing a different size is a caller contract violation and
-// corrupts accounting.
+// As with every HYLE AllocatorRef, deallocate/reallocate must receive the
+// original requested size. Passing a different size is a caller contract
+// violation and corrupts accounting.
 class QuotaAllocator {
 public:
+  // A borrowed, move-only charge for storage not allocated through get().
+  // Destroy the external storage before releasing this token. Reserving and
+  // also allocating the same bytes through get() would charge them twice.
+  class Reservation final {
+  public:
+    Reservation() noexcept = default;
+    Reservation(const Reservation &) = delete;
+    Reservation &operator=(const Reservation &) = delete;
+    Reservation(Reservation &&other) noexcept
+        : owner_(std::exchange(other.owner_, nullptr)),
+          bytes_(std::exchange(other.bytes_, 0)) {}
+    Reservation &operator=(Reservation &&other) noexcept {
+      if (this != &other) {
+        reset();
+        owner_ = std::exchange(other.owner_, nullptr);
+        bytes_ = std::exchange(other.bytes_, 0);
+      }
+      return *this;
+    }
+    ~Reservation() { reset(); }
+
+    std::size_t size() const noexcept { return bytes_; }
+    void reset() noexcept {
+      if (auto *owner = std::exchange(owner_, nullptr))
+        owner->commit_shrink(std::exchange(bytes_, 0));
+    }
+
+  private:
+    friend class QuotaAllocator;
+    Reservation(QuotaAllocator *owner, std::size_t bytes) noexcept
+        : owner_(owner), bytes_(bytes) {}
+    QuotaAllocator *owner_ = nullptr;
+    std::size_t bytes_ = 0;
+  };
+
   explicit QuotaAllocator(
       AllocatorRef backing,
       std::size_t limit = (std::numeric_limits<std::size_t>::max)()) noexcept
@@ -41,6 +79,15 @@ public:
 
   AllocatorRef get() noexcept {
     return AllocatorRef(&quota_alloc, &quota_free, &quota_realloc, this);
+  }
+
+  // No backing call or allocation. Zero bytes succeeds; nullopt means the
+  // shared hard limit was exceeded. This quota must outlive the returned token.
+  std::optional<Reservation> try_reserve_bytes(std::size_t bytes) noexcept {
+    if (!reserve(bytes))
+      return std::nullopt;
+    commit_growth(bytes);
+    return Reservation(this, bytes);
   }
 
   std::size_t used() const noexcept {
@@ -154,7 +201,7 @@ private:
   const std::size_t limit_;
   // accounted_ includes live bytes plus reservations currently inside the
   // backing call; live_ includes only successful allocations and is what
-  // used()/peak() expose.
+  // used()/peak() expose. Explicit reservations count as live until released.
   std::atomic<std::size_t> accounted_{0};
   std::atomic<std::size_t> live_{0};
   std::atomic<std::size_t> peak_{0};

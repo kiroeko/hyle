@@ -155,6 +155,23 @@ TEST(CustomKernel, SerialArtifactDeclaresDirectCallerCompletionConstraint) {
   EXPECT_EQ(tensors.read(), (std::array<float, 4>{5, 7, 9, 11}));
 }
 
+TEST(CustomKernel, InvocationPrivateBoundPreservesUnknownZeroAndExplicitSize) {
+  Probe probe;
+  Tensors tensors;
+  auto context =
+      Context::create(cpu::device(), provider(probe).value()).value();
+  for (auto bytes :
+       {std::optional<std::size_t>{}, std::optional<std::size_t>{0},
+        std::optional<std::size_t>{1024}}) {
+    probe.invocation_private_bytes = bytes;
+    auto prepared = prepare(context, Operation::custom(Affine{3}),
+                            std::array{tensors.in}, std::array{tensors.out});
+    ASSERT_TRUE(prepared);
+    EXPECT_EQ(prepared->invocation_private_bytes(), bytes);
+  }
+  EXPECT_FALSE(PreparedOperation{}.invocation_private_bytes());
+}
+
 TEST(CustomKernel, IndependentInvocationAllocatorOwnsTypedStateAndWrapper) {
   Probe probe;
   Tensors tensors;

@@ -18,6 +18,7 @@
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
+#include "invocation_storage.h"
 #include "route_profile.h"
 
 namespace hyle::graph::detail {
@@ -39,7 +40,8 @@ public:
   RegionInvocation(const RegionInvocation &) = delete;
   RegionInvocation &operator=(const RegionInvocation &) = delete;
   RegionInvocation(RegionInvocation &&other) noexcept
-      : prepared_(other.prepared_), state_(other.state_) {
+      : prepared_(other.prepared_), state_(other.state_),
+        allocator_(other.allocator_) {
     other.prepared_ = nullptr;
     other.state_ = nullptr;
   }
@@ -62,11 +64,14 @@ public:
 private:
   void reset() noexcept;
   friend class PreparedRegion;
-  RegionInvocation(const PreparedRegion *prepared, void *state) noexcept
-      : prepared_(prepared), state_(state) {}
+  RegionInvocation(const PreparedRegion *prepared, void *state,
+                   const mem::AllocatorRef &allocator) noexcept
+      : prepared_(prepared), state_(state), allocator_(&allocator) {}
 
   const PreparedRegion *prepared_ = nullptr;
   void *state_ = nullptr;
+  // Borrows the enclosing Graph Invocation's stable allocator member.
+  const mem::AllocatorRef *allocator_ = nullptr;
 };
 
 // Graph-owned wrapper around a provider's compiled region. The extension
@@ -125,7 +130,8 @@ public:
   }
 
   Result<RegionInvocation>
-  create_invocation(mem::BufferView workspace) const noexcept;
+  create_invocation(mem::BufferView workspace,
+                    const mem::AllocatorRef &allocator) const noexcept;
   compute::detail::EnqueueResult
   enqueue(void *invocation, compute::detail::QueueSequence &sequence,
           std::span<const compute::ConstTensorView> inputs,
@@ -162,6 +168,7 @@ RegionInvocation::operator=(RegionInvocation &&other) noexcept {
     reset();
     prepared_ = other.prepared_;
     state_ = other.state_;
+    allocator_ = other.allocator_;
     other.prepared_ = nullptr;
     other.state_ = nullptr;
   }
@@ -173,8 +180,7 @@ inline RegionInvocation::~RegionInvocation() { reset(); }
 inline void RegionInvocation::reset() noexcept {
   if (prepared_ != nullptr && prepared_->valid() &&
       prepared_->prepared_.vtable->destroy_invocation != nullptr) {
-    prepared_->prepared_.vtable->destroy_invocation(state_,
-                                                    prepared_->allocator_);
+    prepared_->prepared_.vtable->destroy_invocation(state_, *allocator_);
   }
   prepared_ = nullptr;
   state_ = nullptr;
@@ -213,8 +219,9 @@ inline Result<compute::Completion> RegionInvocation::submit_delegated(
   return prepared_->submit_delegated(state_, dependencies, inputs, outputs);
 }
 
-inline Result<RegionInvocation>
-PreparedRegion::create_invocation(mem::BufferView workspace) const noexcept {
+inline Result<RegionInvocation> PreparedRegion::create_invocation(
+    mem::BufferView workspace,
+    const mem::AllocatorRef &allocator) const noexcept {
   if (!valid() || prepared_.vtable->create_invocation == nullptr) {
     return std::unexpected(
         Status::FailedPrecondition("compiled graph region is invalid"));
@@ -222,15 +229,16 @@ PreparedRegion::create_invocation(mem::BufferView workspace) const noexcept {
   struct Episode final {
     const PreparedRegion *region = nullptr;
     mem::BufferView workspace{};
+    mem::AllocatorRef allocator{};
     void *state = nullptr;
-  } episode{this, workspace, nullptr};
+  } episode{this, workspace, allocator, nullptr};
   const Status status = compute::detail::ProviderExtensionAccess::call(
       extension_,
       +[](void *, const void *, void *opaque) noexcept -> Status {
         auto &call = *static_cast<Episode *>(opaque);
         return call.region->prepared_.vtable->create_invocation(
-            call.region->prepared_.state, call.region->allocator_,
-            call.workspace, &call.state);
+            call.region->prepared_.state, call.allocator, call.workspace,
+            &call.state);
       },
       &episode);
   if (!status.ok()) {
@@ -239,11 +247,11 @@ PreparedRegion::create_invocation(mem::BufferView workspace) const noexcept {
     // injected-failure rollback symmetric with prepared-region compilation.
     if (episode.state != nullptr &&
         prepared_.vtable->destroy_invocation != nullptr) {
-      prepared_.vtable->destroy_invocation(episode.state, allocator_);
+      prepared_.vtable->destroy_invocation(episode.state, allocator);
     }
     return std::unexpected(status);
   }
-  return RegionInvocation(this, episode.state);
+  return RegionInvocation(this, episode.state, allocator);
 }
 
 inline compute::detail::EnqueueResult PreparedRegion::enqueue(
@@ -670,6 +678,9 @@ struct PlanState final : util::RefCounted<PlanState> {
   // Empty on the exact path. A domain retains its immutable shape program and
   // specs once; concrete Invocations share this Plan and its concurrency gate.
   Graph domain_graph{};
+  // One opt-in owner shared by general/exact Plans; no mutable run data in
+  // Plan.
+  util::Ref<InvocationStorageState> invocation_storage;
   StorageDomainRecords storage_domains;
   ExecutionTargetRecords targets;
   ExecutionLaneRecords lanes;
@@ -880,9 +891,9 @@ struct AggregateCompletionState final {
 };
 
 struct InvocationState final : util::RefCounted<InvocationState> {
-  InvocationState(PlanState *plan_value,
-                  mem::PlannedBuffers workspace_value) noexcept
-      : allocator(plan_value->allocator), plan(plan_value),
+  InvocationState(PlanState *plan_value, mem::PlannedBuffers workspace_value,
+                  mem::AllocatorRef allocator_value) noexcept
+      : allocator(allocator_value), plan(plan_value),
         concrete_descriptions(allocator), readable(allocator),
         writable(allocator), bound(allocator),
         workspace(std::move(workspace_value)), invocations(allocator),
@@ -899,9 +910,24 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
     PlanState *retained_plan = plan;
+    const bool budgeted = static_cast<bool>(plan->invocation_storage);
+    auto *reservation = storage_reservation();
     this->~InvocationState();
+    // Provider state and workspace have actually gone before returning their
+    // reservation. Keep the Plan and allocator alive through this final free.
+    if (budgeted)
+      reservation->~Reservation();
+    owner.deallocate(this, allocation_bytes(budgeted),
+                     alignof(InvocationState));
     release(retained_plan);
-    owner.deallocate(this, sizeof(InvocationState), alignof(InvocationState));
+  }
+
+  using Reservation = mem::QuotaAllocator::Reservation;
+  static constexpr std::size_t allocation_bytes(bool budgeted) noexcept {
+    return sizeof(InvocationState) + (budgeted ? sizeof(Reservation) : 0);
+  }
+  Reservation *storage_reservation() noexcept {
+    return reinterpret_cast<Reservation *>(this + 1);
   }
 
   mem::AllocatorRef allocator{};
@@ -950,6 +976,11 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   bool transfers_prepared = false;
   bool dependencies_prepared = false;
 };
+
+static_assert(alignof(InvocationState) >=
+              alignof(InvocationState::Reservation));
+static_assert(sizeof(InvocationState) % alignof(InvocationState::Reservation) ==
+              0);
 
 inline void retain(InvocationState *state) noexcept {
   if (state != nullptr)

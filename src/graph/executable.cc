@@ -3713,6 +3713,50 @@ Status check_compiled_storage(CompiledStorageReport storage,
   return Status::Ok();
 }
 
+struct InvocationStorageRequirement final {
+  std::size_t bytes = 0;
+  bool unknown = false;
+};
+
+Result<InvocationStorageRequirement>
+invocation_storage_requirement(const detail::PlanState &plan) noexcept {
+  InvocationStorageRequirement result{plan.workspace_bytes, false};
+  for (const auto &step : plan.steps) {
+    if (!step.emits_command())
+      continue;
+    std::optional<std::size_t> bytes;
+    if (step.kind == detail::PlanStepKind::kOperation)
+      bytes = step.operation.invocation_private_bytes();
+    else if (step.kind == detail::PlanStepKind::kRegion)
+      bytes = step.region.properties().invocation_private_bytes;
+    else
+      continue; // Backend transfers have no provider invocation allocation.
+    if (!bytes) {
+      result.unknown = true;
+    } else {
+      if (*bytes > SIZE_MAX - result.bytes)
+        return std::unexpected(Status::ResourceExhausted(
+            "graph invocation storage size overflows"));
+      result.bytes += *bytes;
+    }
+  }
+  return result;
+}
+
+Status check_invocation_storage(const detail::PlanState &plan,
+                                InvocationStorageLimits limits) noexcept {
+  HYLE_ASSIGN_OR_RETURN(const auto requirement,
+                        invocation_storage_requirement(plan));
+  if (requirement.bytes > limits.max_bytes)
+    return Status::ResourceExhausted(
+        "graph invocation workspace/private storage exceeds budget");
+  if (limits.max_bytes != SIZE_MAX && requirement.unknown &&
+      limits.unknown == UnknownStoragePolicy::kReject)
+    return Status::ResourceExhausted(
+        "graph invocation private storage has no declared upper bound");
+  return Status::Ok();
+}
+
 // One complete candidate transaction. Common Context/resource/constant owners,
 // specialization and aggregate search counters stay in plan. No Invocation
 // exists yet; moving these vectors cannot invalidate a submitted command.
@@ -3821,6 +3865,10 @@ Status prepare_placed_steps(
       }
       // No user work has been accepted. As with the final workspace gate,
       // reject this complete route, not the provider or the whole search.
+      outcome.rejected_plan = !status.ok();
+    }
+    if (status.ok() && options.invocation_storage) {
+      status = check_invocation_storage(plan, *options.invocation_storage);
       outcome.rejected_plan = !status.ok();
     }
     if (status.ok() && options.profile_context != nullptr &&
@@ -6370,6 +6418,13 @@ std::size_t Executable::exact_variant_count() const noexcept {
   return state_ != nullptr ? state_->exact_variants.size() : 0;
 }
 
+std::optional<InvocationStorageUsage>
+Executable::invocation_storage_usage() const noexcept {
+  if (state_ == nullptr || !state_->invocation_storage)
+    return std::nullopt;
+  return state_->invocation_storage->usage();
+}
+
 Result<Executable> Executable::exact_variant(std::size_t index) const noexcept {
   if (state_ == nullptr)
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
@@ -6385,36 +6440,57 @@ Result<Invocation> Executable::create_invocation(
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
 
-  detail::ConcreteDescriptions concrete(state_->allocator);
+  auto *budget = state_->invocation_storage.get();
+  const auto allocator =
+      budget != nullptr ? budget->allocator() : state_->allocator;
+  detail::ConcreteDescriptions concrete(allocator);
   SpecializationSignature signature;
-  ShapeValues values(state_->allocator);
+  ShapeValues values(allocator);
   const auto *domain = detail::GraphAccess::state(state_->domain_graph);
   if (domain != nullptr) {
-    HYLE_RETURN_IF_ERROR(
-        bind_shape_values(*domain, shape, state_->allocator, values));
-    if (const auto variant = find_exact_variant(*state_, values))
+    HYLE_RETURN_IF_ERROR(bind_shape_values(*domain, shape, allocator, values));
+    if (const auto variant = find_exact_variant(*state_, values)) {
+      values = ShapeValues(allocator);
       return state_->exact_variants[*variant].create_invocation();
-    HYLE_ASSIGN_OR_RETURN(
-        signature, specialize_bound_descriptions(*domain, values,
-                                                 state_->allocator, concrete));
+    }
+    HYLE_ASSIGN_OR_RETURN(signature, specialize_bound_descriptions(
+                                         *domain, values, allocator, concrete));
   } else if (!shape.empty()) {
     return std::unexpected(
         Status::InvalidArgument("exact executable already has a fixed shape"));
   }
 
+  mem::QuotaAllocator::Reservation reservation;
+  if (budget != nullptr) {
+    HYLE_ASSIGN_OR_RETURN(const auto requirement,
+                          invocation_storage_requirement(*state_));
+    auto reserved = budget->reserve(requirement.bytes);
+    if (!reserved)
+      return std::unexpected(Status::ResourceExhausted(
+          "graph shared invocation storage budget is exhausted"));
+    reservation = std::move(*reserved);
+    if (requirement.unknown)
+      budget->note_unknown();
+  }
+
   const std::span<const mem::MemoryResourceRef> selected_resources(
       state_->workspace_resources.data(), state_->workspace_resources.size());
-  auto workspace = state_->workspace_plan.instantiate(selected_resources);
+  auto workspace =
+      state_->workspace_plan.instantiate(selected_resources, allocator);
   if (!workspace)
     return std::unexpected(std::move(workspace).error());
 
-  void *storage = state_->allocator.allocate(sizeof(detail::InvocationState),
-                                             alignof(detail::InvocationState));
+  void *storage = allocator.allocate(
+      detail::InvocationState::allocation_bytes(budget != nullptr),
+      alignof(detail::InvocationState));
   if (storage == nullptr) {
     return std::unexpected(invocation_allocation_failure());
   }
-  auto *invocation =
-      ::new (storage) detail::InvocationState(state_, std::move(*workspace));
+  auto *invocation = ::new (storage)
+      detail::InvocationState(state_, std::move(*workspace), allocator);
+  if (budget != nullptr)
+    ::new (invocation->storage_reservation())
+        mem::QuotaAllocator::Reservation(std::move(reservation));
   invocation->concrete_descriptions = std::move(concrete);
   invocation->specialization = std::move(signature);
   const std::size_t value_count = state_->instance_descriptions.size();
@@ -6500,7 +6576,8 @@ Result<Invocation> Executable::create_invocation(
         (step.kind == detail::PlanStepKind::kOperation ||
          step.kind == detail::PlanStepKind::kRegion)) {
       if (step.kind == detail::PlanStepKind::kRegion) {
-        auto created = step.region.create_invocation(step_workspace);
+        auto created = step.region.create_invocation(step_workspace,
+                                                     invocation->allocator);
         if (!created) {
           Status error = std::move(created).error();
           detail::release(invocation);
@@ -6761,6 +6838,16 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       options.host_wait != HostWaitPolicy::kReject) {
     return Status::InvalidArgument("graph host-wait policy is invalid");
   }
+  // Backend capture/private driver allocation has no declared hard bound yet.
+  // Do not mutate an existing replay or accept work before rejecting it.
+  if (options.mode != ReplayMode::kCommands &&
+      state_->plan->invocation_storage &&
+      state_->plan->invocation_storage->rejects_unknown()) {
+    if (options.mode == ReplayMode::kRequireCapture)
+      return Status::ResourceExhausted(
+          "graph command capture storage has no declared upper bound");
+    options.mode = ReplayMode::kCommands;
+  }
   if (queues.size() != state_->plan->required_queue_count) {
     return Status::InvalidArgument("replay preparation requires one queue for "
                                    "every active execution lane");
@@ -6962,6 +7049,8 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       return std::move(sequence).error().WithContext(
           "beginning graph command capture sequence");
     }
+    if (state_->plan->invocation_storage)
+      state_->plan->invocation_storage->note_unknown();
     Status begun =
         compute::detail::CommandCaptureAccess::begin(*extension, *sequence);
     if (!begun.ok()) {
@@ -7523,7 +7612,9 @@ Result<CompiledGraph>
 compile_plan(const Graph &graph, CompileEnvironment environment,
              CompileOptions options,
              util::Ref<detail::SharedConstants> shared_constants = {},
-             bool inherited_budget = false) noexcept {
+             bool inherited_budget = false,
+             util::Ref<detail::InvocationStorageState> invocation_storage =
+                 {}) noexcept {
   if (!graph.valid()) {
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
@@ -7605,6 +7696,11 @@ compile_plan(const Graph &graph, CompileEnvironment environment,
       options.compiled_storage.unknown != UnknownStoragePolicy::kAllow)
     return std::unexpected(Status::InvalidArgument(
         "graph compiled storage unknown policy is invalid"));
+  if (options.invocation_storage &&
+      options.invocation_storage->unknown != UnknownStoragePolicy::kReject &&
+      options.invocation_storage->unknown != UnknownStoragePolicy::kAllow)
+    return std::unexpected(Status::InvalidArgument(
+        "graph invocation storage unknown policy is invalid"));
   if (!context.valid() || !context.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute context is invalid or closed"));
@@ -7696,6 +7792,16 @@ compile_plan(const Graph &graph, CompileEnvironment environment,
     return std::unexpected(plan_allocation_failure());
   auto *plan =
       ::new (storage) detail::PlanState(allocator, concrete->generation);
+  if (options.invocation_storage && !invocation_storage) {
+    auto created = detail::InvocationStorageState::create(
+        allocator, *options.invocation_storage);
+    if (!created) {
+      detail::release(plan);
+      return std::unexpected(std::move(created).error());
+    }
+    invocation_storage = util::adopt_ref(*created);
+  }
+  plan->invocation_storage = std::move(invocation_storage);
   plan->shared_constants = std::move(shared_constants);
   plan->specialization = std::move(signature);
   if (options.shape_policy == CompileShapePolicy::kDeclaredDomain)
@@ -7934,7 +8040,8 @@ Result<CompiledGraph> compile(const Graph &graph,
     child_options.shape = variants[index].shape;
     HYLE_ASSIGN_OR_RETURN(auto child,
                           compile_plan(graph, environment, child_options,
-                                       plan.shared_constants, true));
+                                       plan.shared_constants, true,
+                                       plan.invocation_storage));
     detail::ExecutableAccess::state(child.executable)->exact_variant_index =
         index;
     HYLE_RETURN_IF_ERROR(

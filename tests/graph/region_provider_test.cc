@@ -6350,6 +6350,112 @@ TEST(GraphRegions,
   EXPECT_EQ(probe.destroy_invocation_count, 2u);
 }
 
+TEST(GraphInvocationStorage, RegionBudgetSurvivesAnAbandonedCompletion) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  probe.artifact_properties.invocation_private_bytes = 0;
+  const auto logical = make_negations(4);
+  auto context = make_context(probe);
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.invocation_storage =
+               hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20}})
+          .value();
+  ASSERT_EQ(compiled.report.region_count(), 2U);
+  auto invocation = compiled.executable.create_invocation().value();
+  const auto bytes = compiled.executable.invocation_storage_usage()->live_bytes;
+  auto input = make_tensor(row(8)), output = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  auto completion = invocation.submit(queue).value();
+  invocation = {};
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, bytes);
+  completion = {};
+  ASSERT_TRUE(probe.abandoned_lifetime.valid());
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, bytes);
+  EXPECT_EQ(probe.destroy_invocation_count, 0U);
+  probe.completed_prefix = probe.submit_count;
+  probe.abandoned_lifetime.terminal(probe.abandoned_lifetime.state,
+                                    Status::Ok());
+  probe.abandoned_lifetime.release(probe.abandoned_lifetime.state);
+  probe.abandoned_lifetime = {};
+  EXPECT_EQ(probe.destroy_invocation_count, 2U);
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+}
+
+TEST(GraphInvocationStorage, PartialRegionCreationReturnsTheSameOwnersCharge) {
+  RegionProbe probe{.mode = ProposalMode::kInvocationFailure};
+  probe.artifact_properties.invocation_private_bytes = 128;
+  auto context = make_context(probe);
+  auto logical = make_negations(2);
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.invocation_storage =
+               hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20}})
+          .value();
+  ASSERT_EQ(compiled.report.region_count(), 1U);
+  auto failed = compiled.executable.create_invocation();
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsInternal());
+  EXPECT_EQ(probe.create_invocation_count, 1U);
+  EXPECT_EQ(probe.destroy_invocation_count, 1U);
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+  probe.mode = ProposalMode::kPairs;
+  EXPECT_TRUE(compiled.executable.create_invocation());
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+}
+
+TEST(GraphInvocationStorage, CaptureCannotSilentlyBypassAHardCompleteBudget) {
+  for (bool allow_unknown : {false, true}) {
+    RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+    probe.capture_supported = true;
+    probe.artifact_properties.runtime.capture_compatible = true;
+    probe.artifact_properties.invocation_private_bytes = 0;
+    auto context = make_context(probe);
+    auto logical = make_negations(2);
+    auto compiled =
+        hyle::graph::compile(
+            logical.graph, context,
+            {.invocation_storage =
+                 hyle::graph::InvocationStorageLimits{
+                     .max_bytes = 1U << 20,
+                     .unknown =
+                         allow_unknown
+                             ? hyle::graph::UnknownStoragePolicy::kAllow
+                             : hyle::graph::UnknownStoragePolicy::kReject}})
+            .value();
+    auto invocation = compiled.executable.create_invocation().value();
+    auto input = make_tensor(row(8)), output = make_tensor(row(8));
+    ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+    ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    const std::array queues{hyle::graph::QueueBinding{
+        .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+    auto result = invocation.prepare_replay(
+        queues, {.mode = hyle::graph::ReplayMode::kRequireCapture});
+    if (allow_unknown) {
+      ASSERT_TRUE(result.ok()) << result.message();
+      EXPECT_EQ(probe.capture_begin_count, 1U);
+      EXPECT_TRUE(
+          compiled.executable.invocation_storage_usage()->has_unknown_storage);
+    } else {
+      EXPECT_TRUE(result.IsResourceExhausted());
+      EXPECT_EQ(probe.capture_begin_count, 0U);
+      EXPECT_FALSE(
+          compiled.executable.invocation_storage_usage()->has_unknown_storage);
+      ASSERT_TRUE(
+          invocation
+              .prepare_replay(queues,
+                              {.mode = hyle::graph::ReplayMode::kPreferCapture})
+              .ok());
+      EXPECT_EQ(invocation.replay_route(), hyle::graph::ReplayRoute::kCommands);
+      EXPECT_EQ(probe.capture_begin_count, 0U);
+    }
+  }
+}
+
 TEST(GraphRegions, RejectedTailIsReportedAfterTheAcceptedAsyncPrefix) {
   RegionProbe probe{.mode = ProposalMode::kAsyncRejectSecond};
   const NegationGraph logical = make_negations(4);

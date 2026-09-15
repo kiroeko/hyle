@@ -21,7 +21,8 @@ struct CustomKernelAccess final {
             .state = std::exchange(kernel.state_, nullptr),
             .workspace = properties.workspace,
             .runtime = properties.runtime,
-            .persistent_bytes = properties.persistent_bytes};
+            .persistent_bytes = properties.persistent_bytes,
+            .invocation_private_bytes = properties.invocation_private_bytes};
   }
 };
 

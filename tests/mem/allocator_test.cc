@@ -513,6 +513,94 @@ TEST(QuotaAllocator, EnforcesStrictRequestedByteLimit) {
   EXPECT_EQ(quota.peak(), 128u);
 }
 
+TEST(QuotaAllocator, ExternalReservationSharesTheAllocationLimit) {
+  QuotaAllocator quota(system_allocator(), 128);
+  auto reservation = quota.try_reserve_bytes(80);
+  ASSERT_TRUE(reservation);
+  EXPECT_EQ(reservation->size(), 80U);
+  EXPECT_EQ(quota.used(), 80U);
+  auto allocator = quota.get();
+  void *pointer = allocator.allocate(48);
+  ASSERT_NE(pointer, nullptr);
+  EXPECT_FALSE(quota.try_reserve_bytes(1));
+  EXPECT_EQ(allocator.allocate(1), nullptr);
+  EXPECT_EQ(quota.peak(), 128U);
+  reservation->reset();
+  reservation->reset();
+  EXPECT_EQ(reservation->size(), 0U);
+  EXPECT_EQ(quota.used(), 48U);
+  reservation = quota.try_reserve_bytes(80);
+  ASSERT_TRUE(reservation);
+  allocator.deallocate(pointer, 48);
+  EXPECT_EQ(quota.used(), 80U);
+  reservation.reset();
+  EXPECT_EQ(quota.used(), 0U);
+}
+
+TEST(QuotaAllocator, ExternalReservationDoesNotAllocateAndChecksOverflow) {
+  AllocatorRef oom(&quota_oom_alloc, &quota_oom_free, &quota_oom_realloc,
+                   nullptr);
+  QuotaAllocator quota(oom);
+  auto entire = quota.try_reserve_bytes(SIZE_MAX);
+  ASSERT_TRUE(entire);
+  EXPECT_EQ(quota.remaining(), 0U);
+  EXPECT_FALSE(quota.try_reserve_bytes(1));
+  auto empty = quota.try_reserve_bytes(0);
+  ASSERT_TRUE(empty);
+  EXPECT_EQ(empty->size(), 0U);
+  entire.reset();
+  EXPECT_EQ(quota.used(), 0U);
+  EXPECT_EQ(quota.get().allocate(64), nullptr);
+  EXPECT_EQ(quota.used(), 0U);
+  EXPECT_EQ(quota.remaining(), SIZE_MAX);
+}
+
+TEST(QuotaAllocator, ReservationMoveReturnsEachOwnersChargeExactlyOnce) {
+  QuotaAllocator first(system_allocator(), 100),
+      second(system_allocator(), 100);
+  auto a = first.try_reserve_bytes(30).value();
+  auto b = second.try_reserve_bytes(70).value();
+  b = std::move(a);
+  EXPECT_EQ(first.used(), 30U);
+  EXPECT_EQ(second.used(), 0U);
+  EXPECT_EQ(a.size(), 0U);
+  auto &same = b;
+  b = std::move(same);
+  EXPECT_EQ(first.used(), 30U);
+  auto c = std::move(b);
+  EXPECT_EQ(b.size(), 0U);
+  EXPECT_EQ(c.size(), 30U);
+  c.reset();
+  EXPECT_EQ(first.used(), 0U);
+}
+
+TEST(QuotaAllocator, ConcurrentReservationsAndAllocationsShareOneHardLimit) {
+  constexpr std::size_t limit = 512;
+  QuotaAllocator quota(system_allocator(), limit);
+  std::atomic<bool> exceeded{false};
+  std::atomic<unsigned> succeeded{0};
+  std::vector<std::thread> threads;
+  for (int index = 0; index < 4; ++index) {
+    threads.emplace_back([&] {
+      for (int iteration = 0; iteration < 512; ++iteration) {
+        auto reservation = quota.try_reserve_bytes(96);
+        void *pointer = quota.get().allocate(64);
+        if (quota.used() > limit)
+          exceeded = true;
+        if (reservation && pointer)
+          ++succeeded;
+        quota.get().deallocate(pointer, 64);
+      }
+    });
+  }
+  for (auto &thread : threads)
+    thread.join();
+  EXPECT_FALSE(exceeded.load());
+  EXPECT_GT(succeeded.load(), 0U);
+  EXPECT_EQ(quota.used(), 0U);
+  EXPECT_LE(quota.peak(), limit);
+}
+
 TEST(QuotaAllocator, ReallocateReservesAndRollsBackExactly) {
   QuotaAllocator quota(system_allocator(), 128);
   AllocatorRef a = quota.get();

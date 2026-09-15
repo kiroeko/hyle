@@ -20,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 10;
+inline constexpr std::uint32_t kProviderContractVersion = 11;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -66,6 +66,9 @@ struct ProviderPrepared final {
   WorkspaceRequirement workspace{};
   ProviderRuntimeProperties runtime{};
   std::optional<std::size_t> persistent_bytes{};
+  // See PreparedOperation::invocation_private_bytes(). A domain root bounds
+  // every instance, including any extra untracked cold instantiation storage.
+  std::optional<std::size_t> invocation_private_bytes{};
   // Optional domain-only cold instantiation of already compiled code. No
   // propose/prepare/JIT, payload access or execution is permitted. The returned
   // exact artifact may borrow this root; Compute retains it until child

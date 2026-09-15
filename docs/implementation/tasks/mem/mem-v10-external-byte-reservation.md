@@ -34,3 +34,13 @@
 
 准入由具名 Graph consumer 证明，机制 owner 是 Mem；Graph 只拥有 family/Invocation 的复合生命周期。
 既有 allocator 的代码路径、对象布局和 backing 合同无需变化。以上 API/失败/并发与成本在实现前固定。
+
+## 2026-09-15 实现检查点
+
+M100/M101 已接入：Reservation 只持 borrowed owner/bytes，move/reset/destruction 复用既有 shrink；
+零字节成功、超限/overflow 无值，不调用 backing，也不修改原 QuotaAllocator 字段和旧 allocation
+算法。新增 4 个测试；Windows Mem/逐头、Graph 并发与失败/异步消费、CPU/CUDA 三交付已回放，详见
+[Graph 共享运行存储检查点](../compute/graph-v10-reviewed-foundation-contracts.md#2026-09-15-g106共享运行存储检查点)。
+新入口无堆分配、固定空间；无争用 O(1)，竞争重试沿用原 CAS，不承诺 wait-free。未跑 P1，原 allocator
+实现未改变，不宣称新增性能胜负。Windows checkpoint 不代替 WSL/两台 Apple/适用 sanitizer；保持
+AUDITED，完整候选再签本轮剩余风险，不用旧 v9 CLOSED 冒充新能力已验收。

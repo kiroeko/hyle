@@ -39,7 +39,9 @@ hyle::Status bounded_normalization() {
       compile(graph, context,
               {.shape_policy = CompileShapePolicy::kDeclaredDomain,
                .exact_variants = variants,
-               .compiled_storage = {.max_bytes = 1024 * 1024}}));
+               .compiled_storage = {.max_bytes = 1024 * 1024},
+               .invocation_storage =
+                   InvocationStorageLimits{.max_bytes = 1024 * 1024}}));
   if (!compiled.executable.is_shape_domain() ||
       !compiled.report.is_shape_domain() ||
       compiled.executable.specialization().valid())
@@ -72,6 +74,13 @@ hyle::Status bounded_normalization() {
     const std::array shape{ShapeBinding{rows, count}};
     HYLE_ASSIGN_OR_RETURN(auto run,
                           compiled.executable.create_invocation(shape));
+    const auto run_storage = compiled.executable.invocation_storage_usage();
+    const auto shared_storage = exact_route.invocation_storage_usage();
+    if (!run_storage || !shared_storage || run_storage->live_bytes == 0 ||
+        run_storage->live_bytes != shared_storage->live_bytes ||
+        run_storage->live_bytes > run_storage->limit_bytes ||
+        run_storage->has_unknown_storage)
+      return hyle::Status::Internal("invocation storage budget is incomplete");
     if (run.exact_variant_index().has_value() != (count == 1) ||
         run.executable().is_shape_domain() != (count != 1))
       return hyle::Status::Internal("finite variant selected the wrong route");

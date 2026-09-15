@@ -1096,3 +1096,61 @@ Invocation；Graph 的第一个 Context allocator 统一承担该控制存储。
 
 此项落实运行集合，不代签其余 G106：完整编译 resident/冷峰值、packing identity/共享与 capture 私有上界
 仍须完成；已有 compiled-storage 分类门不改名为总量。能力、生命周期和预算口径在产品实现前固定。
+
+### 2026-09-15 G106：共享运行存储检查点
+
+上述共享限额已实现：general/exact 计划共享一个 opt-in owner；Mem QuotaAllocator 同时接管 allocator
+请求和独立 workspace/private 上界的 Reservation，没有伪分配或第二套 quota 算法。Region create、
+部分失败与 destroy 改为同一运行 allocator；Compute 域实例不能把根制品已声明的 private 上界扩大或
+改成 unknown。Native 声明额外 private 为零；其它 Provider 未声明仍为 unknown，不能由名称猜零。
+
+额度随真实对象生命周期归还：Invocation 自身、Provider 状态和 workspace 销毁后才释放 reservation，
+保留的 Completion/signature 不会悬空使用 allocator。strict finite budget 不接纳未知的 capture 私有
+内存；prefer-capture 可走普通命令，require-capture 在开始捕获前失败。allow-unknown 计数只约束已知
+部分，usage 的 unknown 标志是保守粘性事实，不会在一次失败/结束后伪装成完整总量。
+
+新增 16 个用例：Mem 4、Compute typed facts 1、Native 域实例上界 1、Graph 10。覆盖精确计费、
+两线程共享硬限额、逐次 allocation/OOM 回滚、unknown/zero/overflow/重选、general/exact 共享、
+异步放弃后真实完成才回收，以及全部 Plan 已销毁但独立 signature 仍保活 allocator 的反例。公开 CPU
+sample 使用有限运行预算，并验证根/子路线观察到同一份非零用量；没有新增 kernel 或 benchmark。
+
+| Windows Release 定向验证 | `C:/hyle-scratch/` 下缓存 | 结果 |
+|---|---|---|
+| Mem/Compute/CPU/Native/Graph static + 逐头 | `compute-route-v8-static-20260914` | 11/11；后增 Native 反例复跑 1/1 |
+| 上述 shared + oneDNN direct/composition/region | `compute-route-onednn-v8-20260914` | 16/16；强化 signature 反例后 Graph 238/238 |
+| CUDA runtime/Graph/capture/晚到失败 + 逐头 | `compute-graph-v7-cuda` | 8/8；Graph 执行 240 用例 |
+| source CPU/CUDA sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+Windows wrapper 初始化 MSVC 19.50.35728，build `--parallel 2`、CTest `--parallel 1 --timeout 120`。
+shared/oneDNN 的 target 是表内各 factor 的普通测试与 Graph executable 测试；CTest 精确匹配这七个
+factor 的普通/逐头/executable/composition 名称。CUDA 用已有五个产品测试 target；三交付复用
+`samples/package/graph/custom_kernel`，两个 SDK 从对应 `custom-execution-v10-{shared,static}-build`
+安装到显式 `...-sdk`。producer/SDK/CPU/CUDA 装载目录的 shared Graph DLL SHA-256 均为
+`7D43990011357947AC92916D0014B8E7C2A19A682D0012F37ECADADAB8489F0A`；同步更新 Compute/Native DLL，
+不从旧装载副本取得假通过。SDK 回放后只移动一段错位注释、加强测试，没有产品语义变化。
+
+初次 MSVC 编译暴露私有 `Ref<Self>` 在类型未完成时触发 concept；工厂改为返回待立即 adopt 的 +1
+裸指针，不降低公开 Ref 约束。另修正 Native 测试把 shape 求值 scratch 错写为 const；这两项是实现期
+编译纠正，不是性能失败，也没有改变已固定 API。源码复核补强了最后 Plan 释放后的 signature 反例。
+
+P0：opt-in 每次冷创建额外 `O(steps)` 汇总和 Mem 原有 CAS admission；tracker 为一次控制分配，各成功
+metadata allocation 保活 tracker。普通 Plan 增加一个空 Ref，prepared facts 增加一个 optional 字段，
+RegionInvocation 增加一个 allocator 借用指针；不把这些常驻成本写成零。普通 InvocationState 本体
+不增字段，仅 opt-in 在同一 allocation 的尾部存两字 Reservation。未配置不建 tracker，不执行 quota
+计数；warm submit 没有新增预算遍历、查表、锁或原子。释放 opt-in 对象会执行归还与引用计数，不是免费。
+
+selector 基线 `dd85cab8`。它因 Mem public header 保守展开全部反向闭包；本卡增量只执行表内预声明
+风险，不把未执行的 Container/IO/Sched/Process/Util/MemVM 门写成 PASS。源码 include 检查确认产品里
+只有新 Graph owner 消费 `quota_allocator.h`，其它直接引用是既有 Mem/CPU/MemVM 测试；QuotaAllocator
+原字段及 allocate/reallocate/free 算法不变。广泛无关消费者未因这个添加式入口重建，完整候选的适用
+风险仍须最终裁决。CMake/公共仪器/CI 未改，未启动全库测试或 P1。
+
+这些是实现期 Windows 检查点；Linux/两台 Apple、sanitizer、独立终局红队及一次 foundation P1 仍待
+完整候选，未运行不签 PASS。Mem/Compute/Graph 保持 AUDITED，不签整体基础完成。剩余 G106 编译
+resident/冷峰值、packing identity/共享、capture 私有上界，G101 动态 View、G103 storage/lane 联合优化
+和 CPU/CUDA/Apple 真实架构探针继续保留；没有横向扩算子目录。
+
+统一 LOC self-check：全库代码 **680,831**，自实现不含测试 **124,428**；Compute **16,748**、Graph
+**12,495**，合计 **29,243**。检查器通过 39/schema 4、296 Markdown/1072 links，diff check 通过。

@@ -211,6 +211,13 @@ materialization 的请求字节、Provider 声明的 persistent 和额外 packin
 后继变体只取得余量。它不等于 allocator/驱动的实际物理占用，也不包含控制 metadata、外部借入
 backing、cold scratch 或 Invocation/capture；这些仍需各自 owner 的完整账目和峰值/预留准入。
 
+运行存储配额是另一明确集合：同一 family 的所有 general/exact Invocation 共用严格 requested-byte
+admission，包含各实例的 supplied-allocator metadata、真实 workspace backing 请求以及 Provider 的额外
+private 上界。Graph 用 Mem 的 quota/reservation 组合生命周期，不实现第二套通用配额算法。独立资源先
+预留后分配，晚到 Completion/escaped metadata owner 不提前归还。Provider 上界明确排除前两项，防止
+重复计费；未声明不能猜零。Context/Queue、外部绑定、编译常驻与物理 allocator/driver overhead 分开。
+未选择配额时不创建 tracker，submit 不做预算搜索/逐项计费；有限完整配额不能偷偷允许无上界 capture。
+
 ### 4.3 有限派生 shape，而非图外手工等式
 
 正常 reshape/flatten、concat、head/group split 和 broadcast 需要 `B*T`、`S1+S2`、整除与广播相容性；

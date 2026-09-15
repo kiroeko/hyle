@@ -11,7 +11,8 @@
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
-与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享与编译制品累计存储准入。动态 View 属性、
+与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入
+和共享 Invocation 存储配额。动态 View 属性、
 Provider 私有 packing 共享、完整内存聚合预算与 storage/lane 联合优化仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
@@ -243,8 +244,42 @@ const auto compiled_bytes = storage.total_bytes().value();
 
 本项不包含 Graph/Compute 控制 metadata、allocator rounding、借用的外部 backing、Invocation 的
 workspace/capture、编译临时量或进程其它分配，也不是 OS RSS/物理显存预算。borrowed 常量没有新增
-编译存储，并不代表它不占内存。完整冷峰值和并发/capture 总预算仍未交付；运行 workspace 继续使用
-`StorageDomain::workspace_budget_bytes` 的逐路线、逐 Invocation 限制。
+编译存储，并不代表它不占内存。完整编译冷峰值和 capture 私有预算仍未交付；单个 storage domain 的
+workspace 仍可独立用 `StorageDomain::workspace_budget_bytes` 限制。
+
+### 限制所有并发 Invocation 的运行存储
+
+需要控制同一张编译图同时创建多少运行存储时，启用独立的 family-wide quota：
+
+```cpp
+CompileOptions options;
+options.invocation_storage = InvocationStorageLimits{.max_bytes = 256 * 1024 * 1024};
+auto compiled = compile(graph, context, options);
+if (!compiled) return compiled.error();
+auto run = compiled->executable.create_invocation();
+if (!run) return run.error(); // 超额或 backing OOM：没有接纳工作，已回滚。
+auto usage = compiled->executable.invocation_storage_usage().value();
+```
+
+general 和全部 exact 子 Executable 共用额度，单独保留子 handle 不会得到另一份预算。计费包括
+Invocation 的 allocator metadata、LifetimePlan 的实际 backing 请求字节和 Provider 额外私有存储上界；
+共享编译常量不在这里再扣一次。Native 的额外私有量为 0，因为其实例分配全部经过所供 allocator。
+域路线的 workspace 按该路线已规划的上界预留，不按当前 token 点假装减小 backing。
+
+配额不包含外部输入/输出、Context/Queue、编译常驻、错误诊断、栈或 allocator/driver 内部开销，不是
+OS RSS/实际物理显存上限。metadata 按 requested bytes，额外 private 按声明上界保守预留；禁止重复计算。
+有限上限默认拒绝未声明的 private 上界，可在冷编译改选其它合格路线；愿意只约束已知部分时显式选择
+`UnknownStoragePolicy::kAllow`。`has_unknown_storage` 是保守的粘性标志，任何一次未知实例/capture 尝试
+都会留下它，不能因对象后来释放就把历史 peak 当作完整量。
+
+调用完成不等于归还存储：保留 Invocation 供下一次 replay 时仍占额度；丢弃正在运行的 Invocation 或
+Completion 也不会提前归还，必须等真实终态和最后 owner 释放。单独保留的 specialization metadata
+会继续占用自己的字节。创建失败可重试，多个线程同时创建使用同一严格额度；usage 各字段可以来自
+并发变化的不同瞬间，硬 admission 不会因此超限。
+
+目前 backend capture 的私有占用没有完整上界。有限且拒绝 unknown 时，`kRequireCapture` 在接纳前
+返回 ResourceExhausted，`kPreferCapture` 改用合法 commands 路线；显式允许 unknown 才可带着不完整标记
+捕获。未配置 `invocation_storage` 不创建 tracker，正常 submit 不新增逐项计费/分配/搜索。
 
 ## 独立与派生维度
 

@@ -1069,7 +1069,8 @@ Status instantiate_rms(void *root, std::span<const TensorDesc> inputs,
                .state = ::new (storage) NativePlan(concrete),
                .workspace = concrete.workspace,
                .runtime = kRuntimeProperties,
-               .persistent_bytes = sizeof(NativePlan)};
+               .persistent_bytes = sizeof(NativePlan),
+               .invocation_private_bytes = 0};
   return Status::Ok();
 }
 
@@ -1178,6 +1179,7 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   prepared_output->workspace = plan.workspace;
   prepared_output->runtime = kRuntimeProperties;
   prepared_output->persistent_bytes = sizeof(NativePlan);
+  prepared_output->invocation_private_bytes = 0;
   prepared_output->instantiate =
       request.shape.exact() ? nullptr : &instantiate_rms;
   return ProviderPrepareOutcome::prepared();

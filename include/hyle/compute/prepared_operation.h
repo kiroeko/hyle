@@ -158,6 +158,12 @@ public:
   HYLE_COMPUTE_API ProviderRuntimeProperties runtime_properties() const noexcept;
   HYLE_COMPUTE_API WorkspaceRequirement workspace_requirement() const noexcept;
   HYLE_COMPUTE_API std::optional<std::size_t> persistent_bytes() const noexcept;
+  // Per-invocation upper bound outside the supplied metadata allocator and
+  // caller workspace, including cold domain instantiation and all subsequent
+  // create/replay/teardown. A domain artifact covers every accepted shape.
+  // nullopt is unknown; zero promises no such additional private storage.
+  HYLE_COMPUTE_API std::optional<std::size_t>
+  invocation_private_bytes() const noexcept;
   HYLE_COMPUTE_API bool capture_compatible() const noexcept;
   HYLE_COMPUTE_API std::size_t input_count() const noexcept;
   HYLE_COMPUTE_API std::size_t output_count() const noexcept;

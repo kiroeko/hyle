@@ -2,6 +2,7 @@
 
 #include <array>
 #include <atomic>
+#include <barrier>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -18,6 +19,7 @@
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
+#include "hyle/mem/stats.h"
 #include "profile_fixture.h"
 #include "test_environment.h"
 
@@ -1339,6 +1341,211 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   Executable moved = std::move(copied);
   EXPECT_FALSE(copied.valid()); // NOLINT(bugprone-use-after-move)
   EXPECT_TRUE(moved.create_invocation().has_value());
+}
+
+TEST(GraphInvocationStorage, OptInCountsMetadataAndWorkspaceExactlyOnce) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context =
+      hyle::compute::cpu::create_context({.metadata_allocator = stats.get()})
+          .value();
+  HostResource storage;
+  const Environment environment{
+      {&context, hyle::mem::MemoryResourceRef(storage)}};
+  const auto logical = make_transformer_graph(2, 4, 4);
+  auto plain =
+      hyle::graph::compile(logical.graph, environment.environment()).value();
+  EXPECT_FALSE(plain.executable.invocation_storage_usage());
+  EXPECT_FALSE(Executable{}.invocation_storage_usage());
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, environment.environment(),
+          {.invocation_storage = hyle::graph::InvocationStorageLimits{}})
+          .value();
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+  const auto before = stats.snapshot().live_bytes;
+  {
+    auto invocation = compiled.executable.create_invocation();
+    ASSERT_TRUE(invocation) << invocation.error().message();
+    const auto usage = compiled.executable.invocation_storage_usage().value();
+    EXPECT_EQ(usage.live_bytes, stats.snapshot().live_bytes - before +
+                                    compiled.executable.workspace_bytes());
+    EXPECT_GT(compiled.executable.workspace_bytes(), 0U);
+    EXPECT_EQ(storage.live_allocations,
+              compiled.executable.workspace_backing_count());
+    EXPECT_GE(usage.peak_bytes, usage.live_bytes);
+    EXPECT_FALSE(usage.has_unknown_storage);
+  }
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+  EXPECT_EQ(stats.snapshot().live_bytes, before);
+  EXPECT_EQ(storage.live_allocations, 0U);
+}
+
+TEST(GraphInvocationStorage, HardLimitRejectsConcurrentOwnersAndAllowsRetry) {
+  const auto logical = make_transformer_graph(2, 4, 4);
+  auto context = hyle::compute::cpu::create_context().value();
+  auto measured =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.invocation_storage = hyle::graph::InvocationStorageLimits{}})
+          .value();
+  std::size_t live = 0;
+  {
+    auto run = measured.executable.create_invocation().value();
+    live = measured.executable.invocation_storage_usage()->live_bytes;
+  }
+  const auto limit = measured.executable.invocation_storage_usage()->peak_bytes;
+  ASSERT_LT(limit, 2 * live);
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.invocation_storage =
+               hyle::graph::InvocationStorageLimits{.max_bytes = limit}})
+          .value();
+  {
+    auto first = compiled.executable.create_invocation();
+    ASSERT_TRUE(first) << first.error().message();
+    auto second = compiled.executable.create_invocation();
+    ASSERT_FALSE(second);
+    EXPECT_TRUE(second.error().IsResourceExhausted());
+    EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, live);
+  }
+  std::barrier rendezvous(2);
+  std::atomic<unsigned> admitted{0}, denied{0};
+  std::array<std::thread, 2> threads;
+  for (auto &thread : threads) {
+    thread = std::thread([&] {
+      rendezvous.arrive_and_wait();
+      auto run = compiled.executable.create_invocation();
+      if (run)
+        ++admitted;
+      else if (run.error().IsResourceExhausted())
+        ++denied;
+      // Keep any successful instance alive until both admissions finish.
+      rendezvous.arrive_and_wait();
+    });
+  }
+  for (auto &thread : threads)
+    thread.join();
+  EXPECT_LE(admitted.load(), 1U);
+  EXPECT_EQ(admitted.load() + denied.load(), 2U);
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+  EXPECT_LE(compiled.executable.invocation_storage_usage()->peak_bytes, limit);
+  EXPECT_TRUE(compiled.executable.create_invocation());
+}
+
+TEST(GraphInvocationStorage, BackingFailureReturnsAllReservationsAndMetadata) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  HostResource storage;
+  const Environment environment{
+      {&context, hyle::mem::MemoryResourceRef(storage)}};
+  auto logical = make_transformer_graph(2, 4, 4);
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, environment.environment(),
+          {.invocation_storage =
+               hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20}})
+          .value();
+  const auto before = probe.attempts.load();
+  {
+    auto run = compiled.executable.create_invocation().value();
+  }
+  const auto count = probe.attempts.load() - before;
+  ASSERT_GT(count, 3U);
+  for (std::size_t index = 0; index < count; ++index) {
+    SCOPED_TRACE(index);
+    probe.fail_on_attempt = probe.attempts.load() + index;
+    auto failed = compiled.executable.create_invocation();
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsResourceExhausted());
+    EXPECT_EQ(storage.live_allocations, 0U);
+    EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+    probe.fail_on_attempt = SIZE_MAX;
+    EXPECT_TRUE(compiled.executable.create_invocation());
+  }
+  storage.fail_allocation = true;
+  EXPECT_FALSE(compiled.executable.create_invocation());
+  EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+  storage.fail_allocation = false;
+  EXPECT_TRUE(compiled.executable.create_invocation());
+}
+
+TEST(GraphInvocationStorage, SmallKnownWorkspaceLimitRejectsAtCompile) {
+  auto logical = make_transformer_graph(2, 4, 4);
+  auto context = hyle::compute::cpu::create_context().value();
+  auto plain = hyle::graph::compile(logical.graph, context).value();
+  const auto bytes = plain.executable.workspace_bytes();
+  ASSERT_GT(bytes, 0U);
+  auto failed = hyle::graph::compile(
+      logical.graph, context,
+      {.invocation_storage =
+           hyle::graph::InvocationStorageLimits{.max_bytes = bytes - 1}});
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+  auto metadata_denied =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.invocation_storage =
+               hyle::graph::InvocationStorageLimits{.max_bytes = bytes}})
+          .value();
+  EXPECT_FALSE(metadata_denied.executable.create_invocation());
+  EXPECT_EQ(metadata_denied.executable.invocation_storage_usage()->live_bytes,
+            0U);
+  auto invalid = hyle::graph::compile(
+      logical.graph, context,
+      {.invocation_storage = hyle::graph::InvocationStorageLimits{
+           .unknown = static_cast<hyle::graph::UnknownStoragePolicy>(99)}});
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+}
+
+TEST(GraphInvocationStorage,
+     VariantsShareQuotaAndEscapedSignatureRetainsOwner) {
+  const auto logical = make_bounded_rms_graph();
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context =
+      hyle::compute::cpu::create_context({.metadata_allocator = stats.get()})
+          .value();
+  const auto baseline = stats.snapshot().live_bytes;
+  const std::array exact{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array general{ShapeBinding{logical.batch, 1},
+                           ShapeBinding{logical.tokens, 2}};
+  const std::array variants{ExactShapeVariant{exact}};
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.shape_policy = CompileShapePolicy::kDeclaredDomain,
+           .exact_variants = variants,
+           .invocation_storage =
+               hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20}})
+          .value();
+  auto child = compiled.executable.exact_variant(0).value();
+  auto first = compiled.executable.create_invocation(general).value();
+  auto signature = first.specialization();
+  const auto one = child.invocation_storage_usage()->live_bytes;
+  {
+    auto second = compiled.executable.create_invocation(exact).value();
+    EXPECT_GT(child.invocation_storage_usage()->live_bytes, one);
+    EXPECT_EQ(child.invocation_storage_usage()->live_bytes,
+              compiled.executable.invocation_storage_usage()->live_bytes);
+    EXPECT_EQ(second.exact_variant_index(), 0U);
+  }
+  EXPECT_EQ(child.invocation_storage_usage()->live_bytes, one);
+  first = {};
+  compiled = {};
+  EXPECT_GT(child.invocation_storage_usage()->live_bytes, 0U);
+  EXPECT_TRUE(child.create_invocation());
+  child = {};
+  // No Plan remains to retain the budget allocator. The escaped signature
+  // must own its allocation/allocator until its independent final release.
+  EXPECT_GT(stats.snapshot().live_bytes, baseline);
+  signature = {};
+  EXPECT_EQ(stats.snapshot().live_bytes, baseline);
 }
 
 TEST(GraphCompile, RemoteTargetMetadataUsesTheGraphOwnerForAllVariants) {

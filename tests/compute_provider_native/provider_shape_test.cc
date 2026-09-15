@@ -761,6 +761,7 @@ struct DomainProbe final {
   std::size_t proposals = 0, preparations = 0, instances = 0;
   std::size_t roots_destroyed = 0, children_destroyed = 0;
   bool root_live = false;
+  std::optional<std::size_t> root_private_bytes{}, instance_private_bytes{};
 };
 
 struct DomainArtifact final {
@@ -824,7 +825,9 @@ ProviderPrepared probe_artifact(DomainProbe &probe, bool root,
           .state = ::new (storage) DomainArtifact{&probe, root},
           .workspace = {32, 16},
           .runtime = {.replay_class = ProviderReplayClass::kPrepared},
-          .persistent_bytes = sizeof(DomainArtifact)};
+          .persistent_bytes = sizeof(DomainArtifact),
+          .invocation_private_bytes =
+              root ? probe.root_private_bytes : probe.instance_private_bytes};
 }
 
 Status probe_instantiate(void *root, std::span<const TensorDesc>,
@@ -984,6 +987,32 @@ TEST(PreparedDomainContract,
   invocation = {};
   EXPECT_EQ(probe.children_destroyed, 1u);
   EXPECT_EQ(probe.roots_destroyed, 1u);
+}
+
+TEST(PreparedDomainContract, ConcretePrivateStorageCannotExceedDomainBound) {
+  DomainProbe probe;
+  probe.root_private_bytes = 64;
+  auto context = probe_context(probe);
+  auto root = prepare_domain(context, RmsDomain{}).value();
+  EXPECT_EQ(root.invocation_private_bytes(), 64U);
+  for (auto bytes :
+       {std::optional<std::size_t>{32}, std::optional<std::size_t>{65},
+        std::optional<std::size_t>{}}) {
+    std::array<std::int64_t, 3> point{1, 2, -1};
+    probe.instance_private_bytes = bytes;
+    auto instance = OperationPreparationAccess::instantiate(root, point);
+    if (bytes && *bytes <= 64) {
+      ASSERT_TRUE(instance);
+      EXPECT_EQ(instance->invocation_private_bytes(), bytes);
+    } else {
+      ASSERT_FALSE(instance);
+      EXPECT_TRUE(instance.error().IsInternal());
+    }
+  }
+  EXPECT_EQ(probe.instances, 3U);
+  EXPECT_EQ(probe.children_destroyed, 3U);
+  root = {};
+  EXPECT_EQ(probe.roots_destroyed, 1U);
 }
 
 TEST(PreparedDomainContract, SchemaIsRecheckedBeforeAConcreteProviderCallback) {

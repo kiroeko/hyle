@@ -63,6 +63,7 @@ struct Probe final {
   bool concurrent = true;
   std::uint64_t prepare_token = 7;
   ProviderRouteKey profile_key{};
+  std::optional<std::size_t> invocation_private_bytes{};
 };
 
 struct Config final {
@@ -184,8 +185,10 @@ struct alignas(128) Factory final {
         request.resources.inputs[0] != hyle::mem::system_resource())
       return KernelPreparation::error(
           Status::Internal("route/resource changed"));
-    auto properties =
-        KernelProperties{.runtime = runtime, .persistent_bytes = 0};
+    auto properties = KernelProperties{
+        .runtime = runtime,
+        .persistent_bytes = 0,
+        .invocation_private_bytes = config->probe->invocation_private_bytes};
     properties.runtime.supports_concurrent_invocations =
         config->probe->concurrent;
     if (config->probe->fault == Fault::kRuntimeMismatch)

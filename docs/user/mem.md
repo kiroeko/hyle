@@ -664,6 +664,21 @@ Quota 在进入 backing 前原子 reserve，因此并发成功调用不会突破
 reservation。它计 requested live bytes，不计 allocator usable size/metadata。返回的
 `AllocatorRef` 借用 Quota 对象。
 
+若同一额度还要覆盖另一个 `MemoryResource`/第三方 owner 的存储，用显式预留，而不是制造假 allocation：
+
+```cpp
+auto charge = quota.try_reserve_bytes(bytes);
+if (!charge) return hyle::Status::ResourceExhausted("storage budget exhausted");
+HYLE_ASSIGN_OR_RETURN(auto payload,
+    hyle::mem::Buffer::create(resource, bytes, alignment));
+// payload 在 charge 之后构造：离开作用域先释放 payload，再归还额度。
+```
+
+`Reservation` 是 move-only 借用 token，提供 `size()/reset()`；零字节成功也返回有值的 optional，
+超限返回无值，不调用 backing 或分配 metadata。used/peak 包括这些显式预留，仍不是物理 RSS。
+不要为已经通过 `quota.get()` 分配的同一批 bytes 再预留，也不要在外部存储仍存活时 reset token。
+Quota 必须活到所有 allocation 和 token 释放；异步任务要把 token 放进真实 completion owner。
+
 资源耗尽返回 null；invalid alignment、foreign/double return、错误 sized-free、销毁时仍有
 loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可以与 Quota 叠加，
 但 wrapper 顺序决定各层看到 requested attempt 还是 backing success。它们的冷构造返回

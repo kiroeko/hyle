@@ -8,7 +8,7 @@
   字节不能代表 invocation 私有 heap，且不能重复计算已走 supplied allocator 的对象。
 - 主旅程：Native exact/general 的独立 Invocation 共享 Graph 预算；正交旅程：typed custom kernel
   可以明确声明额外 private storage，也可以保留 unknown。默认无预算执行与 direct API 保持。
-- C130 FIX：PreparedOperation 和 KernelPreparedProperties/私有 ProviderPrepared 披露
+- C130 FIX：PreparedOperation 和 KernelProperties/私有 ProviderPrepared 披露
   `invocation_private_bytes`：不经过所供 allocator、不在 caller workspace 中的每实例额外存储上界。
   覆盖 domain instantiate/create/replay/teardown，prepared 域对全部合法点负责；不是 persistent 字节。
 - C131 KEEP：未声明为 unknown，不猜零、不强迫普通 direct caller 配置；Native N21 的已知全部分配
@@ -21,3 +21,12 @@
   明确 unknown，不借本卡扩 Provider 目录。
 
 本卡在同一已 AUDITED owner 下固定有限后继，不签候选或 terminal；完整基础 gate 的剩余范围不缩减。
+
+## 2026-09-15 实现检查点
+
+C130/C131 已实现；typed KernelProperties 传播 unknown/zero/上界，私有 Provider contract 升至 11。
+域实例若扩大根上界或从 known 改为 unknown，销毁部分制品并返回 Internal；真实 Native 根/实例都
+声明额外 private 为零。新增 typed facts 与域实例反例；Windows static/shared、oneDNN/CUDA、逐头和
+三交付通过，完整命令范围、实现期纠正、成本与未验证项见
+[Graph 共享运行存储检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g106共享运行存储检查点)。
+没有增加 submit 分发层或计时样本。仍为 AUDITED；不代签跨平台/终局红队或整个 foundation。

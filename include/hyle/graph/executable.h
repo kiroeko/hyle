@@ -524,6 +524,24 @@ struct CompiledStorageLimits final {
   UnknownStoragePolicy unknown = UnknownStoragePolicy::kReject;
 };
 
+struct InvocationStorageLimits final {
+  // One shared limit for all live invocations of this compiled family,
+  // including independently retained exact variants. Counts allocator requests,
+  // actual workspace backing requests and declared additional private upper
+  // bounds. Not physical RSS, caller bindings, Context/Queue or compiled state.
+  std::size_t max_bytes = SIZE_MAX;
+  UnknownStoragePolicy unknown = UnknownStoragePolicy::kReject;
+};
+
+struct InvocationStorageUsage final {
+  std::size_t live_bytes = 0;
+  std::size_t peak_bytes = 0;
+  std::size_t limit_bytes = SIZE_MAX;
+  // Sticky: an attempted invocation/capture had unbounded private storage.
+  // The counts then constrain only the known portion, even after its teardown.
+  bool has_unknown_storage = false;
+};
+
 // Copyable cold-path report that owns a compact immutable copy of the emitted
 // plan facts independently of the Executable and its heavyweight artifacts.
 // Aggregate queries and indexed records are O(1). Provider name/version text
@@ -758,6 +776,10 @@ struct CompileOptions final {
   std::span<const ExactShapeVariant> exact_variants{};
   std::span<const ConstantBinding> constants{};
   CompiledStorageLimits compiled_storage{};
+  // Opt-in; absent means no tracker or quota on the ordinary create path.
+  // Metadata and workspace stay charged until their actual last owner frees
+  // them, including abandoned asynchronous Completion or retained signatures.
+  std::optional<InvocationStorageLimits> invocation_storage{};
   // Every used effect resource needs one binding. Backing is fixed/borrowed
   // for this Executable and all its Invocations/Completions. It must describe
   // what the operation implementation actually accesses; this does not pass
@@ -853,6 +875,11 @@ public:
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
   HYLE_GRAPH_API bool is_shape_domain() const noexcept;
   HYLE_GRAPH_API std::size_t exact_variant_count() const noexcept;
+  // nullopt if no budget was requested (or this handle is invalid). Individual
+  // counters may observe different instants during concurrent create/free;
+  // admission itself never exceeds the shared hard limit.
+  HYLE_GRAPH_API std::optional<InvocationStorageUsage>
+  invocation_storage_usage() const noexcept;
   // An independently owning route handle. Top-level plan queries describe the
   // general route; query a child for its exact workspace/ownership contract.
   HYLE_GRAPH_API Result<Executable>

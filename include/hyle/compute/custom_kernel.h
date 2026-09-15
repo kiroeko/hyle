@@ -40,6 +40,9 @@ struct KernelProperties final {
   WorkspaceRequirement workspace{};
   ProviderRuntimeProperties runtime{};
   std::optional<std::size_t> persistent_bytes{};
+  // Upper bound outside the create callback's allocator and caller workspace,
+  // including creation, replay and destruction. Unknown is not zero.
+  std::optional<std::size_t> invocation_private_bytes{};
 
   constexpr bool valid() const noexcept {
     return std::has_single_bit(workspace.alignment) && runtime.valid() &&

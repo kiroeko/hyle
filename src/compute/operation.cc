@@ -558,6 +558,12 @@ std::optional<std::size_t> PreparedOperation::persistent_bytes() const noexcept 
                            : std::optional<std::size_t>{};
 }
 
+std::optional<std::size_t>
+PreparedOperation::invocation_private_bytes() const noexcept {
+  return state_ != nullptr ? state_->provider_prepared.invocation_private_bytes
+                           : std::nullopt;
+}
+
 bool PreparedOperation::capture_compatible() const noexcept {
   return state_ != nullptr &&
          state_->provider_prepared.runtime.capture_compatible;
@@ -996,11 +1002,16 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
     return std::unexpected(std::move(status));
   }
   const auto maximum = state->provider_prepared.workspace;
+  const auto private_maximum =
+      state->provider_prepared.invocation_private_bytes;
   if (!valid_prepared_callbacks(instance) || instance.instantiate != nullptr ||
       instance.runtime != state->provider_prepared.runtime ||
       !is_power_of_two(instance.workspace.alignment) ||
       instance.workspace.size > maximum.size ||
-      instance.workspace.alignment > maximum.alignment) {
+      instance.workspace.alignment > maximum.alignment ||
+      (private_maximum &&
+       (!instance.invocation_private_bytes ||
+        *instance.invocation_private_bytes > *private_maximum))) {
     destroy();
     return std::unexpected(Status::Internal(
         "provider shape instance violates its compiled domain"));

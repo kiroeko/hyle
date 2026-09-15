@@ -27,6 +27,87 @@ PolicyGraph policy_graph(std::size_t count = 1) {
   return {std::move(builder).finish().value(), input, output};
 }
 
+TEST(GraphInvocationStorage,
+     PrivateStorageIsUnknownUnlessTheProviderDeclaresIt) {
+  const auto logical = policy_graph();
+  Probe probe;
+  auto context =
+      Context::create(cpu::device(), provider(probe).value()).value();
+  hyle::graph::CompileOptions options;
+  options.invocation_storage =
+      hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20};
+  auto unknown = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(unknown);
+  EXPECT_TRUE(unknown.error().IsResourceExhausted());
+  EXPECT_EQ(probe.invocations, 0);
+  options.invocation_storage->unknown =
+      hyle::graph::UnknownStoragePolicy::kAllow;
+  auto allowed = hyle::graph::compile(logical.graph, context, options).value();
+  {
+    auto run = allowed.executable.create_invocation().value();
+  }
+  EXPECT_TRUE(
+      allowed.executable.invocation_storage_usage()->has_unknown_storage);
+  EXPECT_EQ(allowed.executable.invocation_storage_usage()->live_bytes, 0U);
+  options.invocation_storage->unknown =
+      hyle::graph::UnknownStoragePolicy::kReject;
+  std::size_t plain_bytes = 0;
+  Tensors tensors;
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(tensors.fill().ok());
+  for (std::size_t extra : {0U, 4096U}) {
+    probe.invocation_private_bytes = extra;
+    auto compiled =
+        hyle::graph::compile(logical.graph, context, options).value();
+    {
+      auto run = compiled.executable.create_invocation().value();
+      const auto usage = compiled.executable.invocation_storage_usage().value();
+      if (extra == 0)
+        plain_bytes = usage.live_bytes;
+      EXPECT_EQ(usage.live_bytes, plain_bytes + extra);
+      EXPECT_FALSE(usage.has_unknown_storage);
+      ASSERT_TRUE(run.bind(logical.input, tensors.in).ok());
+      ASSERT_TRUE(run.bind(logical.output, tensors.out).ok());
+      for (int repeat = 0; repeat < 4; ++repeat) {
+        ASSERT_TRUE(run.submit(queue)->wait().ok());
+        EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes,
+                  usage.live_bytes);
+      }
+      EXPECT_EQ(tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
+    }
+    EXPECT_EQ(compiled.executable.invocation_storage_usage()->live_bytes, 0U);
+  }
+  probe.invocation_private_bytes = SIZE_MAX;
+  auto overflow = hyle::graph::compile(policy_graph(2).graph, context, options);
+  ASSERT_FALSE(overflow);
+  EXPECT_TRUE(overflow.error().IsResourceExhausted());
+}
+
+TEST(GraphInvocationStorage,
+     UnknownPrivateRouteCanBeReplacedByAKnownCandidate) {
+  constexpr ProviderIdentity known_id{
+      {0x435553544f4dULL, 31}, "known-storage", "1"};
+  Probe unknown, known;
+  known.invocation_private_bytes = 0;
+  const std::array factories{
+      provider(unknown).value(),
+      make_custom_provider(known_id, cpu::kBackendId,
+                           Factory{std::make_unique<Config>(known)})
+          .value()};
+  auto context =
+      Context::create(cpu::device(), {.providers = factories}).value();
+  auto compiled = hyle::graph::compile(
+      policy_graph().graph, context,
+      {.invocation_storage =
+           hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20}});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.step(0)->provider.id, known_id.id);
+  EXPECT_GT(compiled->report.search().route_plan_rejections, 0U);
+  EXPECT_TRUE(compiled->executable.create_invocation());
+  EXPECT_FALSE(
+      compiled->executable.invocation_storage_usage()->has_unknown_storage);
+}
+
 TEST(GraphProviderPolicy, GlobalFamilyFiltersPrecedeOperationCallbacks) {
   constexpr ProviderIdentity alternative{
       {0x435553544f4dULL, 3}, "alternative", "1"};
