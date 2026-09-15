@@ -1654,3 +1654,6 @@ capture 均要求无 host wait、真实 event 依赖、变化输入重放与最�
 该检查点完成真实 CUDA 异步调度/capture 的这条纵切，不冒充 Q4 MatMul/MLP 的 Provider/residence 路由。
 后者、Apple MLX/Metal、完整候选跨平台/红队/P1 和 Graph→Math component-contract 仍按 foundation 门
 继续；Compute/Graph 保持 AUDITED，未达到用户指定的基础完成暂停点。
+
+下一项的有限实现前审计见 [CUDA Q4 carrier preflight](cuda-q4-foundation-carrier-preflight.md)。先用现有
+public Queue/storage 验证量化编码与厂商路线的实际边界；不把该研究程序当作已交付 Provider 或性能胜利。
