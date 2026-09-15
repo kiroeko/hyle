@@ -954,35 +954,15 @@ detail::OperationPreparationAccess::prepare_candidate(
   };
 }
 
-Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
-    const PreparedOperation &root, std::span<std::int64_t> values,
-    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
-  auto *state = root.state_;
-  if (state == nullptr || state->shape == nullptr ||
-      state->provider_prepared.instantiate == nullptr)
-    return std::unexpected(
-        Status::FailedPrecondition("operation is not a prepared shape domain"));
-  HYLE_ASSIGN_OR_RETURN(const auto allocator,
-                        metadata_owner(requested_allocator, state->allocator));
-  if (!state->context->admission.try_enter())
-    return std::unexpected(Status::FailedPrecondition("context is closed"));
-  struct Admission final {
-    detail::AdmissionGate &gate;
-    ~Admission() { gate.leave(); }
-  } admission{state->context->admission};
-  ScratchStorage<TensorDesc, kInlineBindings> inputs(state->input_count,
-                                                     allocator);
-  ScratchStorage<TensorDesc, kInlineBindings> outputs(state->output_count,
-                                                      allocator);
-  if (!inputs.valid() || !outputs.valid())
-    return std::unexpected(Status::ResourceExhausted(
-        "shape instance descriptor allocation failed"));
-  HYLE_RETURN_IF_ERROR(bind_shape_domain(
-      state->shape->view, {state->inputs(), state->input_count},
-      {state->outputs(), state->output_count}, values, inputs.span(),
-      outputs.span()));
-  HYLE_RETURN_IF_ERROR(validate_inferred_outputs(
-      state->operation, inputs.span(), outputs.span(), allocator));
+namespace {
+
+// Both cold entry points arrive with validated concrete layout metadata.
+// Keep Provider validation/teardown and root ownership identical.
+Result<detail::PreparedState *> instantiate_bound_state(
+    detail::PreparedState *state, std::span<const TensorDesc> inputs,
+    std::span<const TensorDesc> outputs, mem::AllocatorRef allocator) noexcept {
+  HYLE_RETURN_IF_ERROR(
+      validate_inferred_outputs(state->operation, inputs, outputs, allocator));
   detail::ProviderPrepared instance{};
   const auto destroy = [&]() noexcept {
     if (instance.vtable != nullptr &&
@@ -990,8 +970,7 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
       instance.vtable->destroy_prepared(instance.state, allocator);
   };
   Status status = state->provider_prepared.instantiate(
-      state->provider_prepared.state, inputs.span(), outputs.span(), allocator,
-      &instance);
+      state->provider_prepared.state, inputs, outputs, allocator, &instance);
   if (!status.ok()) {
     if (instance.state != nullptr &&
         (instance.vtable == nullptr ||
@@ -1031,15 +1010,74 @@ Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
     }
   }
   HYLE_ASSIGN_OR_RETURN(
-      auto *result,
-      make_prepared_state(state->context, allocator, state->operation,
-                          inputs.span(), outputs.span(),
-                          {state->input_resources(), state->input_count},
-                          {state->output_resources(), state->output_count},
-                          state->workspace_resource, state->provider,
-                          state->provider_instance, instance));
+      auto *result, make_prepared_state(
+                        state->context, allocator, state->operation, inputs,
+                        outputs, {state->input_resources(), state->input_count},
+                        {state->output_resources(), state->output_count},
+                        state->workspace_resource, state->provider,
+                        state->provider_instance, instance));
   detail::retain(state);
   result->domain_owner = state;
+  return result;
+}
+
+} // namespace
+
+Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
+    const PreparedOperation &root, std::span<std::int64_t> values,
+    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
+  auto *state = root.state_;
+  if (state == nullptr || state->shape == nullptr ||
+      state->provider_prepared.instantiate == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("operation is not a prepared shape domain"));
+  HYLE_ASSIGN_OR_RETURN(const auto allocator,
+                        metadata_owner(requested_allocator, state->allocator));
+  if (!state->context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Admission final {
+    detail::AdmissionGate &gate;
+    ~Admission() { gate.leave(); }
+  } admission{state->context->admission};
+  ScratchStorage<TensorDesc, kInlineBindings> inputs(state->input_count,
+                                                     allocator);
+  ScratchStorage<TensorDesc, kInlineBindings> outputs(state->output_count,
+                                                      allocator);
+  if (!inputs.valid() || !outputs.valid())
+    return std::unexpected(Status::ResourceExhausted(
+        "shape instance descriptor allocation failed"));
+  HYLE_RETURN_IF_ERROR(bind_shape_domain(
+      state->shape->view, {state->inputs(), state->input_count},
+      {state->outputs(), state->output_count}, values, inputs.span(),
+      outputs.span()));
+  HYLE_ASSIGN_OR_RETURN(
+      auto *result,
+      instantiate_bound_state(state, inputs.span(), outputs.span(), allocator));
+  return PreparedOperation(result);
+}
+
+Result<PreparedOperation> detail::OperationPreparationAccess::instantiate(
+    const PreparedOperation &root, std::span<std::int64_t> values,
+    std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
+    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
+  auto *state = root.state_;
+  if (state == nullptr || state->shape == nullptr ||
+      state->provider_prepared.instantiate == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("operation is not a prepared shape domain"));
+  HYLE_ASSIGN_OR_RETURN(const auto allocator,
+                        metadata_owner(requested_allocator, state->allocator));
+  if (!state->context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Admission final {
+    detail::AdmissionGate &gate;
+    ~Admission() { gate.leave(); }
+  } admission{state->context->admission};
+  HYLE_RETURN_IF_ERROR(validate_shape_binding(
+      state->shape->view, {state->inputs(), state->input_count},
+      {state->outputs(), state->output_count}, values, inputs, outputs));
+  HYLE_ASSIGN_OR_RETURN(
+      auto *result, instantiate_bound_state(state, inputs, outputs, allocator));
   return PreparedOperation(result);
 }
 

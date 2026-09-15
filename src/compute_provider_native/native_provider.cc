@@ -996,6 +996,14 @@ host_requirement(const TensorDesc &description) noexcept {
 
 Status
 validate_bounded_rms(const detail::ProviderOperationRequest &request) noexcept {
+  for (const auto &map : request.shape.inputs)
+    if (map.layout != detail::ProviderTensorLayout::kDerived)
+      return Status::Unimplemented(
+          "native bounded RMSNorm requires derived dense input layouts");
+  for (const auto &map : request.shape.outputs)
+    if (map.layout != detail::ProviderTensorLayout::kDerived)
+      return Status::Unimplemented(
+          "native bounded RMSNorm requires derived dense output layouts");
   if (request.operation.kind() != OperationKind::kRmsNorm ||
       request.inputs.empty() || request.inputs.size() > 2 ||
       request.outputs.size() != 1)

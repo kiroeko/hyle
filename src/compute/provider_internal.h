@@ -20,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 12;
+inline constexpr std::uint32_t kProviderContractVersion = 13;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -168,6 +168,14 @@ struct OperationPreparationAccess final {
   // executes work. The result is an ordinary exact PreparedOperation.
   HYLE_COMPUTE_API static Result<PreparedOperation> instantiate(
       const PreparedOperation &root, std::span<std::int64_t> values,
+      std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
+
+  // Cold descriptors already inferred by the caller. Revalidates shape,
+  // layout family, byte bounds and the operation schema before the Provider
+  // callback. The resulting artifact owns copies; caller spans may expire.
+  HYLE_COMPUTE_API static Result<PreparedOperation> instantiate(
+      const PreparedOperation &root, std::span<std::int64_t> values,
+      std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
       std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
 
   // A missing allocator inherits Context (propose/prepare) or the prepared

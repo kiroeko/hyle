@@ -1054,4 +1054,181 @@ TEST(PreparedDomainContract,
   EXPECT_EQ(probe.preparations, 0u);
 }
 
+TEST(NativeProviderShape, SuppliedMetadataExecutesAndRetainsItsOwnDescriptors) {
+  auto context = cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  for (bool weighted : {false, true}) {
+    auto root = prepare_domain(context, RmsDomain(weighted)).value();
+    for (std::int64_t rows = 0; rows <= 3; ++rows) {
+      std::array<std::int64_t, 3> point{rows, 3, -1};
+      auto input = TensorDesc::dense(DataType::kFloat32,
+                                     std::array{rows * 3, std::int64_t{5}})
+                       .value();
+      std::array inputs{input, TensorDesc::dense(DataType::kFloat32,
+                                                 std::array<std::int64_t, 1>{5})
+                                   .value()};
+      std::array outputs{input};
+      auto instance = OperationPreparationAccess::instantiate(
+          root, point, std::span(inputs).first(weighted ? 2 : 1), outputs);
+      ASSERT_TRUE(instance) << instance.error().message();
+      EXPECT_EQ(point[2], rows * 3);
+      inputs = {};
+      outputs = {};
+      point = {};
+      EXPECT_EQ(instance->input_description().value(), input);
+      EXPECT_EQ(instance->output_description().value(), input);
+      check_rms(std::move(*instance), queue, weighted);
+    }
+  }
+}
+
+TEST(NativeProviderShape, SuppliedMetadataAllocationFailureAndOwnerLifetime) {
+  auto context = cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  auto root = prepare_domain(context, RmsDomain{}).value();
+  const std::array descriptions{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{6, 5})
+          .value()};
+  std::array<std::int64_t, 3> point{2, 3, -1};
+  FaultAllocator counted;
+  {
+    auto instance = OperationPreparationAccess::instantiate(
+        root, point, descriptions, descriptions, counted.ref());
+    ASSERT_TRUE(instance) << instance.error().message();
+    EXPECT_GT(counted.live, 0u);
+  }
+  EXPECT_EQ(counted.live, 0u);
+  const auto count = counted.attempts;
+  ASSERT_GT(count, 0u);
+  for (std::size_t failure = 0; failure < count; ++failure) {
+    FaultAllocator owner;
+    owner.fail = failure;
+    auto failed = OperationPreparationAccess::instantiate(
+        root, point, descriptions, descriptions, owner.ref());
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsResourceExhausted());
+    EXPECT_EQ(owner.live, 0u);
+    owner.fail = SIZE_MAX;
+    {
+      auto retry = OperationPreparationAccess::instantiate(
+          root, point, descriptions, descriptions, owner.ref());
+      ASSERT_TRUE(retry) << retry.error().message();
+      check_rms(std::move(*retry), queue, false, &owner);
+    }
+    EXPECT_EQ(owner.live, 0u);
+  }
+  {
+    auto instance = OperationPreparationAccess::instantiate(
+                        root, point, descriptions, descriptions, counted.ref())
+                        .value();
+    root = {};
+    check_rms(std::move(instance), queue, false, &counted);
+  }
+  EXPECT_EQ(counted.live, 0u);
+}
+
+TEST(NativeProviderShape, DenseEnvelopeDoesNotProveAStridedFamily) {
+  auto context = cpu::create_context().value();
+  RmsDomain domain;
+  domain.input_axes[0].layout = ProviderTensorLayout::kBoundedStrided;
+  domain.input_axes[0].maximum_bytes =
+      domain.inputs[0].required_bytes().value();
+  auto input_family = prepare_domain(context, domain);
+  ASSERT_FALSE(input_family);
+  EXPECT_TRUE(input_family.error().IsUnimplemented());
+  domain.input_axes[0].layout = ProviderTensorLayout::kDerived;
+  domain.input_axes[0].maximum_bytes = 0;
+  domain.output_axes[0].layout = ProviderTensorLayout::kBoundedStrided;
+  domain.output_axes[0].maximum_bytes =
+      domain.outputs[0].required_bytes().value();
+  auto output_family = prepare_domain(context, domain);
+  ASSERT_FALSE(output_family);
+  EXPECT_TRUE(output_family.error().IsUnimplemented());
+}
+
+TEST(PreparedDomainContract, SuppliedMetadataIsCheckedBeforeTheProvider) {
+  DomainProbe probe;
+  auto context = probe_context(probe);
+  auto root = prepare_domain(context, RmsDomain{}).value();
+  const std::array<std::int64_t, 2> shape{6, 5};
+  const std::array expected{
+      TensorDesc::dense(DataType::kFloat32, shape).value()};
+  std::array<std::int64_t, 3> point{2, 3, -1};
+  for (const auto wrong :
+       {TensorDesc{}, TensorDesc::dense(DataType::kInt32, shape).value(),
+        TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{5, 5})
+            .value(),
+        TensorDesc::strided_bytes(DataType::kFloat32, shape,
+                                  std::array<std::int64_t, 2>{24, 4})
+            .value()}) {
+    const std::array descriptors{wrong};
+    EXPECT_TRUE(OperationPreparationAccess::instantiate(root, point,
+                                                        descriptors, expected)
+                    .error()
+                    .IsInvalidArgument());
+    EXPECT_TRUE(OperationPreparationAccess::instantiate(root, point, expected,
+                                                        descriptors)
+                    .error()
+                    .IsInvalidArgument());
+  }
+  EXPECT_TRUE(OperationPreparationAccess::instantiate(root, point, {}, expected)
+                  .error()
+                  .IsInvalidArgument());
+  point = {4, 3, -1};
+  EXPECT_TRUE(
+      OperationPreparationAccess::instantiate(root, point, expected, expected)
+          .error()
+          .IsInvalidArgument());
+  EXPECT_EQ(probe.instances, 0u);
+  point = {2, 3, -1};
+  auto invalid_allocator =
+      hyle::mem::AllocatorRef(nullptr, nullptr, nullptr, nullptr);
+  EXPECT_TRUE(OperationPreparationAccess::instantiate(
+                  root, point, expected, expected, invalid_allocator)
+                  .error()
+                  .IsInvalidArgument());
+  ASSERT_TRUE(context.close().ok());
+  EXPECT_TRUE(
+      OperationPreparationAccess::instantiate(root, point, expected, expected)
+          .error()
+          .IsFailedPrecondition());
+  EXPECT_EQ(probe.instances, 0u);
+  EXPECT_TRUE(
+      OperationPreparationAccess::instantiate({}, point, expected, expected)
+          .error()
+          .IsFailedPrecondition());
+}
+
+TEST(PreparedDomainContract, StridedMembershipDoesNotOverrideOperationSchema) {
+  DomainProbe probe;
+  auto context = probe_context(probe);
+  RmsDomain domain;
+  domain.output_axes[0].layout = ProviderTensorLayout::kBoundedStrided;
+  domain.output_axes[0].maximum_bytes = 512;
+  auto root = prepare_domain(context, domain).value();
+  const std::array<std::int64_t, 2> shape{6, 5};
+  const std::array inputs{TensorDesc::dense(DataType::kFloat32, shape).value()};
+  const std::array outputs{
+      TensorDesc::strided_bytes(DataType::kFloat32, shape,
+                                std::array<std::int64_t, 2>{24, 4})
+          .value()};
+  std::array<std::int64_t, 3> point{2, 3, -1};
+  ASSERT_TRUE(validate_shape_binding(domain.view(), domain.input_descriptions(),
+                                     domain.outputs, point, inputs, outputs)
+                  .ok());
+  auto invalid =
+      OperationPreparationAccess::instantiate(root, point, inputs, outputs);
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  EXPECT_EQ(probe.instances, 0u);
+  auto valid =
+      OperationPreparationAccess::instantiate(root, point, inputs, inputs);
+  ASSERT_TRUE(valid) << valid.error().message();
+  EXPECT_EQ(probe.instances, 1u);
+  root = {};
+  EXPECT_TRUE(probe.root_live);
+  valid = PreparedOperation{};
+  EXPECT_FALSE(probe.root_live);
+}
+
 } // namespace

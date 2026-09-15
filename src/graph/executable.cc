@@ -6716,8 +6716,22 @@ Result<Invocation> Executable::create_invocation(
         const compute::PreparedOperation *operation = &step.operation;
         if (domain != nullptr &&
             has_dynamic_shape(*domain, domain->nodes[step.node_begin])) {
+          detail::TensorDescriptions bound_inputs(allocator),
+              bound_outputs(allocator);
+          if (!bound_inputs.try_resize(step.input_count) ||
+              !bound_outputs.try_resize(step.output_count)) {
+            detail::release(invocation);
+            return std::unexpected(invocation_allocation_failure());
+          }
+          for (std::size_t port = 0; port < step.input_count; ++port)
+            bound_inputs[port] = physical_description(
+                *invocation, state_->node_inputs[step.input_begin + port]);
+          for (std::size_t port = 0; port < step.output_count; ++port)
+            bound_outputs[port] = physical_description(
+                *invocation, state_->node_outputs[step.output_begin + port]);
           auto bound = compute::detail::OperationPreparationAccess::instantiate(
-              step.operation, values, invocation->allocator);
+              step.operation, values, bound_inputs, bound_outputs,
+              invocation->allocator);
           if (!bound) {
             Status error = std::move(bound).error();
             detail::release(invocation);

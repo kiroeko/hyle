@@ -1304,3 +1304,8 @@ P0：增加冷 Node 的判别值、Graph 的可选表达式数组及每个实际
 动态描述、域实例化仍固定原 Operation attributes/alias offset、Graph 的 alias offset 仍为 Plan 常量。
 必须对布局/偏移给出全域证明并在冷实例化绑定，不能对每个新 shape 重查 Provider 或重建共享物理 Plan。
 G103 联合优化、G106 packing/capture、真实架构探针及完整候选跨平台/sanitizer/终局红队/P1 同样未完成。
+
+G101 的 [Compute v15](compute-v15-bound-layout-instantiation.md) 直接接入：Graph 已在冷创建时按拓扑求出
+具体描述，改为把每个 physical port 的这些描述交给受检实例化，不再让 Compute 重新猜布局。临时描述数组
+复用同一 Invocation allocator，失败完整释放；不保存热态数组或改变共享 Plan。此接入仍只运行原来已证明
+的 general 路线，不自动使 View 全域可用；View 关系/偏移/内存上界证明继续是本卡剩余 FIX。

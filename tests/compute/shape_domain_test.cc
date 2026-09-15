@@ -16,7 +16,9 @@ using hyle::compute::detail::bind_shape_domain;
 using hyle::compute::detail::ProviderShapeDomain;
 using hyle::compute::detail::ProviderShapeRange;
 using hyle::compute::detail::ProviderTensorAxes;
+using hyle::compute::detail::ProviderTensorLayout;
 using hyle::compute::detail::ShapeDimension;
+using hyle::compute::detail::validate_shape_binding;
 using hyle::compute::detail::validate_shape_domain;
 
 TEST(ProviderShapeDomain, RangesAdmitMultiplesWithoutEndpointOverflow) {
@@ -215,6 +217,199 @@ TEST(ProviderShapeDomain,
       dimensions, std::span(axes).last(1), {}};
   EXPECT_TRUE(validate_shape_domain(opaque_domain, std::span(upper).last(1), {})
                   .IsUnimplemented());
+}
+
+TEST(ProviderShapeDomain, SuppliedDenseLayoutsMatchAutomaticBinding) {
+  const std::array dimensions{ShapeDimension{.bounds = {0, 4, 1}},
+                              ShapeDimension{.bounds = {0, 3, 1}}};
+  const auto dense = [](std::int64_t rows, std::int64_t columns) {
+    return TensorDesc::dense(DataType::kFloat32, std::array{rows, columns})
+        .value();
+  };
+  const std::array upper_inputs{dense(4, 3)}, upper_outputs{dense(3, 4)};
+  std::array<ProviderTensorAxes, 1> in_axes{}, out_axes{};
+  in_axes[0].values[0] = out_axes[0].values[1] = 0;
+  in_axes[0].values[1] = out_axes[0].values[0] = 1;
+  const ProviderShapeDomain domain{dimensions, in_axes, out_axes};
+  for (std::int64_t rows = 0; rows <= 4; ++rows) {
+    for (std::int64_t columns = 0; columns <= 3; ++columns) {
+      std::array point{rows, columns};
+      std::array<TensorDesc, 1> inputs{}, outputs{};
+      ASSERT_TRUE(bind_shape_domain(domain, upper_inputs, upper_outputs, point,
+                                    inputs, outputs)
+                      .ok());
+      EXPECT_TRUE(validate_shape_binding(domain, upper_inputs, upper_outputs,
+                                         point, inputs, outputs)
+                      .ok());
+      inputs[0] = TensorDesc::strided_bytes(DataType::kFloat32,
+                                            std::array{rows, columns},
+                                            std::array<std::int64_t, 2>{64, 4})
+                      .value();
+      EXPECT_TRUE(validate_shape_binding(domain, upper_inputs, upper_outputs,
+                                         point, inputs, outputs)
+                      .IsInvalidArgument());
+    }
+  }
+}
+
+TEST(ProviderShapeDomain, FixedExtentsDoNotMakeAStridedFamilyExact) {
+  const auto upper_value =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{3, 4})
+          .value();
+  const std::array upper{upper_value};
+  std::array<ProviderTensorAxes, 1> maps{};
+  maps[0].layout = ProviderTensorLayout::kBoundedStrided;
+  maps[0].maximum_bytes = 96;
+  const ProviderShapeDomain domain{{}, maps, {}};
+  EXPECT_FALSE(domain.empty());
+  EXPECT_FALSE(domain.exact());
+  EXPECT_TRUE(validate_shape_domain(domain, upper, {}).ok());
+  std::array<TensorDesc, 1> automatic{};
+  EXPECT_TRUE(bind_shape_domain(domain, upper, {}, {}, automatic, {})
+                  .IsFailedPrecondition());
+  for (const auto strides :
+       {std::array<std::int64_t, 2>{16, 4}, std::array<std::int64_t, 2>{4, 12},
+        std::array<std::int64_t, 2>{32, 4},
+        std::array<std::int64_t, 2>{0, 4}}) {
+    const std::array concrete{
+        TensorDesc::strided_bytes(DataType::kFloat32, upper_value.dimensions(),
+                                  strides)
+            .value()};
+    EXPECT_TRUE(
+        validate_shape_binding(domain, upper, {}, {}, concrete, {}).ok());
+  }
+}
+
+TEST(ProviderShapeDomain,
+     StridedFamilyChecksReachableSpanIncludingEmptyAndZeroStrides) {
+  const std::array dimensions{ShapeDimension{.bounds = {0, 3, 1}},
+                              ShapeDimension{.bounds = {0, 4, 1}}};
+  const std::array upper{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{3, 4})
+          .value()};
+  std::array<ProviderTensorAxes, 1> maps{};
+  maps[0].values[0] = 0;
+  maps[0].values[1] = 1;
+  maps[0].layout = ProviderTensorLayout::kBoundedStrided;
+  maps[0].maximum_bytes = 128;
+  const ProviderShapeDomain domain{dimensions, maps, {}};
+  for (std::int64_t rows = 0; rows <= 3; ++rows) {
+    for (std::int64_t columns = 0; columns <= 4; ++columns) {
+      for (std::int64_t row_stride : {0, 4, 16, 64}) {
+        for (std::int64_t column_stride : {0, 4, 16}) {
+          std::array point{rows, columns};
+          const std::array concrete{
+              TensorDesc::strided_bytes(DataType::kFloat32, point,
+                                        std::array{row_stride, column_stride})
+                  .value()};
+          const auto status =
+              validate_shape_binding(domain, upper, {}, point, concrete, {});
+          const auto span =
+              rows == 0 || columns == 0
+                  ? 0
+                  : (rows - 1) * row_stride + (columns - 1) * column_stride + 4;
+          EXPECT_EQ(status.ok(), span <= 128);
+          if (span > 128)
+            EXPECT_TRUE(status.IsOutOfRange());
+        }
+      }
+    }
+  }
+  std::array<std::int64_t, 2> point{3, 4};
+  const auto opaque = StorageFormat::opaque(StorageFormatId{123, 1}, 4).value();
+  for (const auto wrong :
+       {TensorDesc{}, TensorDesc::dense(DataType::kInt32, point).value(),
+        TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{12})
+            .value(),
+        TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{3, 3})
+            .value(),
+        TensorDesc::opaque(DataType::kFloat32, point, opaque, 48).value()}) {
+    EXPECT_TRUE(
+        validate_shape_binding(domain, upper, {}, point, std::array{wrong}, {})
+            .IsInvalidArgument());
+  }
+  EXPECT_TRUE(validate_shape_binding(domain, upper, {}, point, {}, {})
+                  .IsInvalidArgument());
+  EXPECT_TRUE(validate_shape_binding(domain, upper, {}, {}, upper, {})
+                  .IsInvalidArgument());
+}
+
+TEST(ProviderShapeDomain, RejectsMalformedLayoutFamiliesAndFalseBounds) {
+  const std::array<std::int64_t, 1> shape{4};
+  std::array upper{TensorDesc::dense(DataType::kFloat32, shape).value()};
+  std::array<ProviderTensorAxes, 1> maps{};
+  const ProviderShapeDomain domain{{}, maps, {}};
+  maps[0].maximum_bytes = 16;
+  EXPECT_TRUE(validate_shape_domain(domain, upper, {}).IsInvalidArgument());
+  maps[0].layout = static_cast<ProviderTensorLayout>(255);
+  EXPECT_TRUE(validate_shape_domain(domain, upper, {}).IsInvalidArgument());
+  maps[0].layout = ProviderTensorLayout::kBoundedStrided;
+  maps[0].maximum_bytes = 15;
+  EXPECT_TRUE(validate_shape_domain(domain, upper, {}).IsInvalidArgument());
+  maps[0].maximum_bytes = 16;
+  EXPECT_TRUE(validate_shape_domain(domain, upper, {}).ok());
+  const auto format =
+      StorageFormat::blocked(StorageFormatId{123, 2}, 4, 4, 1).value();
+  upper[0] =
+      TensorDesc::blocked_dense(DataType::kFloat32, shape, format).value();
+  EXPECT_TRUE(validate_shape_domain(domain, upper, {}).IsUnimplemented());
+  maps[0].maximum_bytes = 0;
+  upper[0] =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{0})
+          .value();
+  EXPECT_TRUE(validate_shape_binding(domain, upper, {}, {}, upper, {}).ok());
+}
+
+TEST(ProviderShapeDomain, SuppliedLayoutsEvaluateDerivedAxesAndGuards) {
+  using namespace hyle::compute::detail;
+  const ProviderShapeRange left{0, 4, 1}, right{0, 3, 1};
+  const std::array dimensions{
+      ShapeDimension{.bounds = left}, ShapeDimension{.bounds = right},
+      ShapeDimension{
+          infer_shape_range(ShapeDimensionKind::kMultiply, left, right).value(),
+          ShapeDimensionKind::kMultiply, ShapeOperand::value(0),
+          ShapeOperand::value(1)}};
+  const std::array guards{ShapeGuard{ShapeGuardKind::kLessEqual,
+                                     ShapeOperand::value(0),
+                                     ShapeOperand::value(1)}};
+  const std::array upper{
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{12, 4})
+          .value()};
+  const std::array concrete{
+      TensorDesc::strided_bytes(DataType::kFloat32,
+                                std::array<std::int64_t, 2>{6, 4},
+                                std::array<std::int64_t, 2>{32, 4})
+          .value()};
+  std::array<ProviderTensorAxes, 1> maps{};
+  maps[0].values[0] = 2;
+  maps[0].layout = ProviderTensorLayout::kBoundedStrided;
+  maps[0].maximum_bytes = 256;
+  const ProviderShapeDomain domain{dimensions, maps, {}, guards};
+  std::array<std::int64_t, 3> point{2, 3, -99};
+  EXPECT_TRUE(
+      validate_shape_binding(domain, upper, {}, point, concrete, {}).ok());
+  EXPECT_EQ(point[2], 6);
+  point = {4, 3, -99};
+  EXPECT_TRUE(validate_shape_binding(domain, upper, {}, point, concrete, {})
+                  .IsInvalidArgument());
+  point = {2, 4, -99};
+  EXPECT_TRUE(validate_shape_binding(domain, upper, {}, point, concrete, {})
+                  .IsOutOfRange());
+}
+
+TEST(ProviderShapeDomain, SuppliedExactDescriptionsDoNotChangeLayout) {
+  const std::array<std::int64_t, 2> shape{1, 4};
+  const std::array upper{
+      TensorDesc::strided_bytes(DataType::kFloat32, shape,
+                                std::array<std::int64_t, 2>{128, 4})
+          .value()};
+  EXPECT_TRUE(validate_shape_binding({}, upper, upper, {}, upper, upper).ok());
+  const std::array changed{
+      TensorDesc::dense(DataType::kFloat32, shape).value()};
+  EXPECT_TRUE(validate_shape_binding({}, upper, upper, {}, changed, upper)
+                  .IsInvalidArgument());
+  EXPECT_TRUE(validate_shape_binding({}, upper, upper, {}, upper, changed)
+                  .IsInvalidArgument());
 }
 
 } // namespace

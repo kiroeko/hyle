@@ -13,8 +13,9 @@
 - 验证：布局族/错误标记、固定 shape 可变 strides、zero/stride/格式/上界/guard/arity；小域穷举；原 Native
   RMSNorm 的 supplied-description 正确执行、错误描述在 Provider 前拒绝、OOM/生命周期；Compute/Native/
   Graph/oneDNN 定向回放、逐头、Windows CUDA 与三交付。跨平台/sanitizer/独立红队/P1 仍随完整候选。
-- P0：全部校验/实例化在冷路径，复杂度 O(D + guards + ports × rank)，无 payload 读取；原 exact prepared
-  不增加字段/分配/分支。域 axis map 的额外布局族与上界是 opt-in 冷 metadata，不声称零字节。
+- P0：新增布局校验在冷路径，复杂度 O(D + guards + ports × rank)，无 payload 读取；原有 schema、
+  input×output alias 校验及 Provider 冷成本另计，未改变。原 exact prepared 不增加字段/分配/分支。
+  域 axis map 的额外布局族与上界是 opt-in 冷 metadata，不声称零字节。
 - 预算：一轮表示/实现与一次产品纠正；若要改变热 replay、全域覆盖或 ownership，先回本卡审计。
 
 ## 固定改动集
