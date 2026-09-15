@@ -616,7 +616,7 @@
       "id": "decode-native-sequence-1x256x512",
       "tier": "consumer",
       "gate_role": "product",
-      "consumer_key": "inference-runtime/short-prefill/gated-mlp-region-boundary",
+      "consumer_key": "inference-runtime/decode/gated-mlp-region-boundary",
       "provenance": {
         "path": "bench/graph_provider_onednn/consumer_shapes_v1.json",
         "sha256": "fba53c517bab2e0fce74d8e24784b61d2decabcb0229e890e1c38dcd04576c23"
@@ -631,8 +631,8 @@
         "value": 1,
         "unit": "complete-gated-mlp",
         "budget": 5,
-        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
-        "derivation": "Short prefill checks that the wrapper remains non-inferior when arithmetic dominates more of the complete task"
+        "denominator": "one M=1, K=256, H=512 gate/up/SwiGLU/down fragment",
+        "derivation": "Decode makes the fixed wrapper and immutable-plan tax visible rather than hiding it behind a model-size GEMM"
       },
       "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
       "comparability": "COMPARABLE",
@@ -775,7 +775,7 @@
         "value": 1,
         "unit": "complete-gated-mlp",
         "budget": 5,
-        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "denominator": "one M=17, K=129, H=257 gate/up/SwiGLU/down fragment",
         "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
       },
       "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
@@ -1001,7 +1001,7 @@
         "value": 1,
         "unit": "complete-gated-mlp",
         "budget": 5,
-        "denominator": "one M=16, K=512, H=1024 gate/up/SwiGLU/down fragment",
+        "denominator": "one M=17, K=129, H=257 gate/up/SwiGLU/down fragment",
         "derivation": "The registered public CPU executor consumer uses this odd/tail shape, changing inputs and independent invocations."
       },
       "semantic_contract": "Execute the same complete gated MLP through the ordinary CPU default or explicit Native context and wait for terminal completion.",
@@ -1105,13 +1105,15 @@
           "HYLE_BUILD_BENCH": "ON",
           "HYLE_BUILD_TESTS": "OFF",
           "HYLE_COMPUTE_ONEDNN": "ON",
-          "HYLE_DEV_FACTORS": "graph_route_cpu;sched",
-          "HYLE_INSTALL": "OFF",
+          "HYLE_INSTALL": "ON",
           "HYLE_SANITIZER": "off",
           "HYLE_SIMD_EXACT_TARGET": "",
           "HYLE_STATIC": "ON",
           "HYLE_TEST_INSTRUMENTATION": "OFF",
-          "HYLE_TRACE": "OFF"
+          "HYLE_TRACE": "OFF",
+          "HYLE_COMPONENTS": "compute;graph;sched",
+          "HYLE_COMPUTE_CPU": "ON",
+          "HYLE_COMPUTE_CUDA": "OFF"
         },
         "peer_cache": {
           "onednn-direct-gated-mlp": "FETCHCONTENT_SOURCE_DIR_ONEDNN",
