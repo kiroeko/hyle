@@ -1510,3 +1510,39 @@ oneDNN/三交付/P1。一轮测试表示与 fixture 纠正，遇到真实产品�
 其余架构探针或完整候选验证。指南开头同时删除“完整域 View/联合资源搜索尚未实现”的过时说明。
 selector READY（跳过 92 项），closure 39/schema 4、docs 298/1081 links 和 diff check 通过；产品实现仍
 为 `862c0519`，没有因测试/文档重跑三交付或性能采样。
+
+### G106：Provider packed 常量共享（实现前固定）
+
+基线 `148f2b53`。canonical 常量已经跨 variants 共享，但 RegionCompileRequest 只有原始 constant view，
+没有复用 immutable packing 的受管入口。以同一权重、不同 token 行数的 compiled region 为主旅程，
+不同 Provider/packing format/storage 的独立副本为反例。llama.cpp clean `e71b80510c848c00175924ecf3c40333ccae8eb5`
+的 `ggml/src/ggml-cpu/repack.cpp` 在 buffer `set_tensor` 时重排权重，运行 kernel 复用；SGLang clean
+`dcebe8c4733a5cb802fb679e0c8fbb886e2801b0` 的 GPTQ/Marlin `process_weights_after_loading` 同样把权重准备
+与 token 运行分开。这些是 lifetime/format 边界依据，不把外部加载器搬入 Graph，也不改其 kernels。
+
+- Region 的 cold compile request 提供对象局部 `ConstantArtifactAccess`，只能在本次回调使用；discovery/
+  resource query 不提供它。Provider 以 logical constant、非零 packing-format/configuration key、已登记
+  storage resource 和 packed bytes/private compilation bounds 请求一个不可变 opaque payload。
+  Graph 自动绑定本次 family、确切 Provider instance（因此包含 build/config/device）、constant ordinal/
+  description 与 resource；同一次 immutable binding 内不靠裸 source 地址判同一内容。跨 Executable
+  缓存不在此 owner，无需引入全局 registry、内容 hash 或新的用户开关。
+- factory 只在缺失时运行，输出带 destroy callback 的完整不可变 payload；失败清理部分 payload。
+  复用 Compute 的 explicit prepare outcome 区分 quota decline 与真实 OOM/error；不能按 Status code 猜。
+  payload 可以是 packed buffer 或 vendor opaque owner，必须自行拥有 replay 所需内容，不借 caller scratch。
+  返回的只读 view 借到相应 compiled region 销毁；Graph 保活 payload、allocator 和 Provider extension。
+- private cache 只活到 family compile 返回，使用已有 Container flat hash/semantic hash、Util intrusive Ref
+  与 Mem quota。每个候选 Plan 只保有自己实际使用的 artifact refs；失败先毁 prepared region 再释放这些 refs，
+  cache 删除仅剩自身引用的条目。incumbent/exact 子计划需要的制品不受回滚影响，全部发布后没有热 cache。
+- compiler allocator 请求自动计费；factory 的额外 private resident/peak 在执行前分别预留，成功只保留
+  resident，失败完整归还。Region 原有 private bounds/persistent/packed facts 排除这份受管制品，避免
+  重复计费；不支持共享的既有 Provider 仍按原字段如实计独立副本。每个 route 的 report 计自己使用的
+  unique packed bytes，family 总量只计每个共享 owner 一次，cold peak 不因重选或变体重新充值。
+- 完整 profile identity 包含 packing key/constant/资源与 family 复用事实；不把不同 packing 或额外冷成本
+  当同一已测计划。普通无 packing 的 Plan 仅新增空冷 refs/计数，不分配 cache，不加 PlanStep/Invocation
+  字段或 warm lookup。已发布 artifact/可变 Invocation/capture 不共用可写状态。
+- 验证：实际读取预打包权重的两个 exact variants、canonical source/父计划释放、不同 key/Provider/storage
+  不误共享、同一 Plan 重复使用一次计费、quota/未知/overflow/部分失败、rejected/incumbent 清理、逐点 OOM、
+  并发 Invocation 与 profile 身份；既有 Graph/oneDNN/CUDA/逐头/三交付。只补架构消费探针，不扩算子族。
+
+Graph 单 owner 有限 FIX，same-build region contract 递增；Compute/已关闭 backend/基础模块不改产品。
+一轮表示/实现和一次产品纠正；完整候选的跨平台、终局红队及 P1 仍依原卡统一执行。
