@@ -836,7 +836,9 @@ completion_endpoint_impl(void *source_queue) noexcept {
              ? compute::detail::CompletionEndpoint{}
              : compute::detail::CompletionEndpoint{
                    .authority = &kCompletionVTable,
-                   .identity = source->context,
+                   // Equality means one ordered endpoint, not merely streams
+                   // whose events can be imported by the same Context.
+                   .identity = source,
                };
 }
 
@@ -845,8 +847,12 @@ bool can_wait_endpoint_impl(
     compute::detail::CompletionEndpoint source) noexcept {
   const auto *destination =
       static_cast<const cuda::detail::QueueState *>(destination_queue);
-  return destination != nullptr && source.authority == &kCompletionVTable &&
-         source.identity == destination->context;
+  if (destination == nullptr || source.authority != &kCompletionVTable ||
+      source.identity == nullptr)
+    return false;
+  const auto *source_queue =
+      static_cast<const cuda::detail::QueueState *>(source.identity);
+  return source_queue->context == destination->context;
 }
 
 inline constexpr BackendExtensionId kCudaExtensionId{0x48594c4500000001ULL,
