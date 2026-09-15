@@ -1192,3 +1192,44 @@ artifact。错误 Status 仍按既有合同排除。Compute leaf proposal 已有
 Graph extension 升版、真实 oneDNN 直接消费者迁移与 allocator/OOM 反例属于 G106/GP41，不扩 pattern/
 kernel 或公共运行时。验证只回放 Graph、oneDNN、逐头、CUDA/三交付受影响闭包；不再重跑 Compute/
 Native 无语义变化的用例或 P1。此纠正未通过前，不把整个编译集合签为完成。
+
+### 2026-09-15 G106 编译 requested-storage 检查点
+
+产品快照 `bcd7ecbe24b0ce3b7003fcd41edb91b1b4c8cfbf` 落实上述 family 编译集合：metadata、canonical
+常量与额外 private resident/peak 统一准入，冷 scratch 退出后检查 resident 并发布同一 family 快照。
+运行实例仍用独立 allocator/配额；常量、制品、escaped report/signature 和共享 tracker 按真实 owner
+释放。Region extension v16 显式传递 discovery/resource-query allocator；真实 oneDNN 不再回用 Context
+allocator，并删除该私有字段。未知 vendor/JIT 上界未伪造为零。
+
+新增 12 个 GraphCompilationStorage 用例及 Compute 上界值测试：双计、零配额、overflow/unknown、逐点
+OOM、私有峰值与失败重选、family 常量共享、发布失败回滚、独立报告/变体/运行生命周期，以及 discovery/
+resource-query 配额拒绝。真实 oneDNN 另覆盖非连续 MLP 的 use-table/contractibility 每处分配失败、
+零/精确峰值配额与重试，Context allocator 调用数不变；正常数值执行与 unknown 准入一并验证。
+
+Windows Release 增量验证（均为 `C:/hyle-scratch/` 下既有缓存，编译 2 jobs、测试串行）：
+
+| 验证 | 缓存 | 结果 |
+|---|---|---|
+| Graph/逐头 | `compute-route-v8-static-20260914` | 3/3；Graph 25 + executable 250 cases |
+| oneDNN-enabled shared Graph/两个逐头/region | `compute-route-onednn-v8-20260914` | Graph/逐头 4/4；region 纠正夹具后 18/18 |
+| CUDA-on Graph/逐头 | `compute-graph-v7-cuda` | 3/3；Graph 25 + executable 252 cases |
+| source CPU/CUDA typed consumer | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA typed consumer | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA typed consumer | `custom-execution-v10-static-consumer` | 2/2 |
+
+命令沿用本卡的 `hyle-windows.ps1` 定向 target/CTest；本次后半段只重跑 Graph/region，未再次执行无语义
+变化的 Compute/Native 全套。前半段 Compute/CPU/Native 静态 9/9、oneDNN shared 14/14、CUDA 8/8 已通过。
+SDK 安装使用明确 scratch prefix；source/installed shared 的实际加载 DLL 与 producer/SDK SHA256 一致。
+初始 region 测试的任意 1MiB 限额挡住了 discovery table，已改为按被测路径实际基线构造边界；新增真实
+scratch 夹具最初误走连续 node 的无分配快路径，改为非连续、超过 inline 容量的合法图后完成失败注入。
+均为测试前提纠正，没有放宽产品配额或性能门。
+
+P0：opt-in 沿用 Mem quota/refcount；新增冷 Plan token 数组为 O(constants + steps)，family snapshot 为
+O(variants)。未配置不创建 tracker/token backing；新增冷 Plan/Report 字段计入实际 metadata，不给每个
+热 PlanStep 加 token，不改 submit 的路由/锁/扫描。没有新 P1，也未改公共仪器/CMake/依赖锁。
+closure 39/schema 4、docs 297/1075 links 与 diff check 通过。全库代码 **681,762**、自实现不含测试
+**124,591**；Compute **16,758**、Graph **12,648**，合计 **29,406**，同快照 LOC self-check 通过。
+
+保持 AUDITED：G106 packing identity/共享与 capture 私有上界、G101 动态 View、G103 storage/lane 联合
+优化、真实 CPU/CUDA/Apple 探针及完整候选的跨平台/sanitizer/独立红队/P1 尚未完成。本段不是 foundation
+gate，也不把 CPU/CUDA typed 三交付冒充 oneDNN region 的全部 GP43 终局交付。

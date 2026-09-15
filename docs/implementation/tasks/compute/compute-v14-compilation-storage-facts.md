@@ -18,3 +18,11 @@
 - 预算：一轮表示/实现与一次纠正；若要猜 vendor malloc 或追踪进程 RSS，保留 unknown，不扩本卡。
 
 Graph 管总量和真实生命周期；本卡只提供非重复、编译前可用的私有上界，不独立声称全内存验收。
+
+## 2026-09-15 实现检查点
+
+`bcd7ecbe` 已实现 C140/C141，私有 Provider table v12；Native 声明额外 0/0，typed factory 原样传递，
+非法上界冷拒绝。公共 `KernelRequest` 补明既有成功 proposal 零分配合同，不改变 callback 形状。
+Compute 值测试、Graph private-bound/失败/重选反例与 source/static/shared 的 CPU/CUDA consumer 已通过；
+命令、环境、LOC 和未验证项统一见 [Graph 编译存储检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g106-编译-requested-storage-检查点)。
+本卡仍 AUDITED，继承 C93/foundation 的未完成事项；未运行的跨平台/终局性能不签 PASS。

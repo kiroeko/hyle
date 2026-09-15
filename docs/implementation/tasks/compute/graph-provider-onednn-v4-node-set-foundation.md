@@ -96,3 +96,9 @@ compiler 配额。FIX：消费 Graph 在 propose/resource-query 参数显式传�
 用实际 gated MLP 的 discovery allocation/OOM、原数值路径、Graph 逐头及三交付回放；额外 vendor
 prepare 私有上界仍为 unknown，不因为 discovery 已正确记账就猜 oneDNN/JIT 内存为零。本项一轮有限
 纠正，状态保持 AUDITED，属于既定 GP41 的资源/成本事实，不重开已 CLOSED 因子。
+
+该纠正在 `bcd7ecbe` 落实：use-table 与 contractibility scratch 都走 Graph 传入的 allocator，Context
+中重复的 allocator 字段已删除；extension v16 直接迁移，无兼容旧表。Windows shared 18/18 测试通过，
+包括真实非连续 MLP 的逐点 OOM/零与精确配额/重试和原数值、并发、warm-no-allocation 路线。private
+vendor/JIT 上界仍 unknown，有限 strict 编译拒绝，显式 allow 如实报告不完整。详情和未完成的 GP43/
+foundation 验证见 [共同检查点](graph-v10-reviewed-foundation-contracts.md#2026-09-15-g106-编译-requested-storage-检查点)。
