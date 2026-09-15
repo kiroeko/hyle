@@ -376,25 +376,15 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-backend-cpu-v1-factor.md",
-      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-backend-cpu-v1-factor.md"
-      },
-      "summary": "compute_backend_cpu v1 CLOSED：显式单 CPU Device/Context、caller-thread ordered Queue、system MemoryResource、copy/fill、Completion 与 typed host submit 通过 factor-only、三平台、sanitizer、三交付和红队；warm 路线零 allocation/lock/syscall/search。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
+      "summary": "compute_backend_cpu R1 delivery SCOPED：因四路线公开交付变化定向重开；冻结 CPU capability 与未选 native 入口裁剪范围，不修改 runtime。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md",
-      "candidate": "be2d8b059ca858d2e9b3393b38d2530d4eb3dbe3",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md"
-      },
-      "summary": "compute_backend_cuda v3 CLOSED：同步存储完成边界修复通过 Windows/Linux 真 CUDA、受控反例、ASan/UBSan、三交付 Q4 与双 lane/capture、候选后红队；仅同步方法等待自身默认流，异步 Queue 未改，整体 foundation 仍未验收。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
+      "summary": "compute_backend_cuda R1 delivery SCOPED：因四路线公开交付变化定向重开；冻结 CPU capability 与未选 native 入口裁剪范围，不修改 runtime。"
     },
     {
       "module": "compute_provider_native",
