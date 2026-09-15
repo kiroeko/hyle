@@ -1446,3 +1446,41 @@ selector `2056ab65 → a654a4db` READY；Graph→Math PRIVATE 边触发公共选
 prepare binding 所需的选择前缀，明确 decline 后剪掉不影响该 binding 的后缀。不同 workspace resource
 仍是不同合法绑定，不能为保留旧测试次数全局淘汰。顺带核对同一事务时，累计编译配额拒绝必须标为整个
 组合拒绝，不能因当前前缀占用而永久淘汰某个 Provider。均是本段既定资源/alias/错误边界，不改公共形状。
+
+### 2026-09-15 G103/G104：联合资源搜索检查点
+
+产品 `862c05194d5eed009582e0c780603933fa2f173b` 实现上述有限 choice path。原来的 locality/default
+次序保留为首选，只有存在多个合法 storage、copy target 或 shared lane 时才记录分支；没有合格 baseline
+profile 时仍返回首个完整可行计划。其余候选只按完整计划 identity 和 qualified interval 比较，不给未知
+lane 或 storage 捏造成本。required placement/alias、真实错误及累计搜索/prepare 上限不放宽。
+
+首次 270/272 的两项失败按上一段纠正后，Graph executable 为 272/272。新增五项覆盖同一 region 改用
+可行 workspace、资源局部拒绝/真实错误、双 storage×双 lane 的完整 profile/unknown 选择、两种预算与
+incumbent/strict 行为，以及真实 Native 跨资源中间值、required placement 和数值重放。原逐分配 OOM
+回放也增加双 lane 分支，继续要求失败后完整回收并可重试。
+
+| Windows Release 增量验证 | `C:/hyle-scratch/` 缓存 | 结果 |
+|---|---|---|
+| static Graph/逐头 | `compute-route-v8-static-20260914` | 3/3；30 + 272 用例 |
+| shared Graph/逐头、oneDNN direct composition/region/逐头 | `compute-route-onednn-v8-20260914` | 6/6 |
+| CUDA-on Graph/逐头 | `compute-graph-v7-cuda` | 3/3 |
+| source CPU/CUDA consumer | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA consumer | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA consumer | `custom-execution-v10-static-consumer` | 2/2 |
+
+沿用 wrapper、2 build jobs、串行 CTest/120s；源码/两个独立 SDK 实际重建、安装、重链接后测试。
+shared producer/SDK/CPU/CUDA 装载位置的 Graph DLL SHA256 均为
+`3171954F43480B2263A975508BFD27F5A7B0F0C3FE88855A94F83F7D3E978B41`。一次 helper 错用 Windows
+PowerShell 5.1，因缺少 `Path.IsPathFullyQualified` 在 build 前退出；改用现有 PowerShell 7 环境完成，
+没有修改工具或产品来兼容这个错误启动方式。
+
+P0：新 scratch 只在 compile；每个实际分支存两个 ordinal/count，prepare-prefix 表为 O(nodes)，候选
+列表复用同一缓冲。搜索按依赖前缀枚举、共享严格状态上限，不物化完整笛卡尔积；工作量仍包含每次候选
+的规划与真实 Provider prepare，不能把“有界”写成常数时间。无新增 PlanStep/Invocation 字段或 warm
+搜索/计数/锁。反例消除了不影响绑定的后缀重复准备，没有将合成 profile 的选择结果写成性能胜负。
+
+selector `57ad415c → WORKTREE` READY，跳过 89 项；本增量不改组件边/开关/公共仪器、不启动 P1/全库/CI。
+此前 Graph→Math 边的横向 component-contract 义务、G106 packed 共享/capture 上界、真实架构探针和
+完整候选的跨平台/sanitizer/终局红队/P1 仍未完成。Graph 保持 AUDITED，不是 foundation 完成声明。
+同提交 LOC self-check：全库 **685,223**，自实现不含测试 **125,896**；Compute **16,992**、Graph
+**13,719**，合计 **30,711**。
