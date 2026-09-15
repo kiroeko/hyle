@@ -1484,3 +1484,20 @@ selector `57ad415c → WORKTREE` READY，跳过 89 项；本增量不改组件�
 完整候选的跨平台/sanitizer/终局红队/P1 仍未完成。Graph 保持 AUDITED，不是 foundation 完成声明。
 同提交 LOC self-check：全库 **685,223**，自实现不含测试 **125,896**；Compute **16,992**、Graph
 **13,719**，合计 **30,711**。
+
+### G106：真实 CUDA capture 与预算边界复验（实现前固定）
+
+基线 `def47497`。之前 unknown capture 的配额反例只使用模拟 backend；本段按原 G106 验证范围增加
+真实 pinned-host→device copy + metadata View 旅程，明确严格限额拒绝不能破坏已经准备的 commands，
+prefer-capture 可保留 commands，allow-unknown 才能实际 capture 并披露不完整用量。重复 replay 读取
+变化的输入并验证输出、最后销毁后的 quota 归还；不加 kernel、改 CUDA backend 或新增计时。
+
+调查区分两种完全不同的数字：[CUDA Graph API](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__GRAPH.html)
+的 `cudaDeviceGetGraphMemAttribute` 观察 graph 异步分配器的 device pool，而 `cudaGraphInstantiateWithParams`
+没有每制品的创建前内存上界字段。不能从 pool 当前值/高水位推导完整 driver capture metadata 的硬上界。
+本轮 CUDA 13.3 的额外私有上界继续如实为 unknown；这不是零字节，也不通过设备总空闲量前后相减伪造。
+原已接受的 unknown/reject/allow 合同不变；新增真机证据只关闭该合同的模拟器覆盖缺口，不能证明有限
+driver bound 或整个 G106 packed 共享已经完成。其余架构探针与终局平台门保持。
+
+仅测试/文档变化：CUDA Graph executable/逐头精确回放、docs/closure/diff；没有产品变更时不重跑
+oneDNN/三交付/P1。一轮测试表示与 fixture 纠正，遇到真实产品反例先回本卡固定修复，不扩大测试工具。
