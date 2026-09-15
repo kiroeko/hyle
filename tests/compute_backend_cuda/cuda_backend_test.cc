@@ -318,10 +318,12 @@ TEST(CudaBackend, StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal) {
 }
 
 TEST(CudaBackend, AdoptedStreamIsReleasedAfterItsQueueAndCompletion) {
-  mem::StatsAllocator metadata;
+  auto tracked = mem::StatsAllocator::create(mem::system_allocator());
+  ASSERT_TRUE(tracked.has_value()) << tracked.error().message();
+  auto &metadata = *tracked;
   auto device = cuda::device(0);
   ASSERT_TRUE(device.has_value()) << device.error().message();
-  auto context = Context::create(*device, {.metadata_allocator = metadata.ref()});
+  auto context = Context::create(*device, {.metadata_allocator = metadata.get()});
   ASSERT_TRUE(context.has_value()) << context.error().message();
   auto execution = cuda::execution_context(*context);
   ASSERT_TRUE(execution.has_value()) << execution.error().message();
