@@ -262,6 +262,7 @@ struct PackingProbe final {
   hyle::mem::MemoryResourceRef second_storage{};
   hyle::compute::ProviderCompilationStorage bounds{16, 16};
   std::size_t bytes = 16;
+  std::size_t extra_private_bytes = 0;
   bool key_per_node = false;
   bool inconsistent_second_request = false;
   bool invalid_constant = false;
@@ -273,6 +274,7 @@ struct PackingProbe final {
 struct PackedWeights final {
   PackingProbe *probe = nullptr;
   Buffer buffer;
+  Buffer private_metadata;
   std::atomic<std::size_t> borrowers{0};
 };
 
@@ -850,6 +852,9 @@ Status pack_weights(void *context, ConstTensorView source,
                                 alignof(PackedWeights));
              }};
   HYLE_ASSIGN_OR_RETURN(packed->buffer, Buffer::create(resource, 16, 64));
+  if (probe.extra_private_bytes != 0)
+    HYLE_ASSIGN_OR_RETURN(packed->private_metadata,
+                          Buffer::create(resource, probe.extra_private_bytes, 64));
   std::array<float, 4> values{};
   HYLE_RETURN_IF_ERROR(
       source.storage().read(std::as_writable_bytes(std::span(values))));
@@ -7908,6 +7913,24 @@ TEST(GraphPacking, RejectedPackingDiesBeforeFallbackAndIncumbentSurvives) {
     EXPECT_EQ(first_packing.factories.load(), first_packing.destroys.load());
     EXPECT_EQ(second_packing.factories.load(), second_packing.destroys.load());
   }
+}
+
+TEST(GraphPacking, OpaqueMetadataCannotDisappearFromCompiledStorage) {
+  PackingProbe packing;
+  packing.extra_private_bytes = 4096;
+  packing.bounds = {4112, 4112};
+  RegionProbe probe;
+  configure_packing(probe, packing);
+  auto context = make_context(probe);
+  const auto graph = make_packing_graph();
+  auto source = make_tensor(row(4));
+  const std::array bindings{hyle::graph::ConstantBinding{graph.weight, source.view.as_const()}};
+  auto compiled = hyle::graph::compile(graph.graph, context,
+      {.constants = bindings,
+       .compiled_storage = {.max_bytes = sizeof(PackedRegion) + 16},
+       .operation_fallback = OperationFallbackPolicy::kReject});
+  EXPECT_FALSE(compiled);
+  EXPECT_GT(packing.factories.load(), 0U);
 }
 
 TEST(GraphPacking, EveryMetadataAllocationFailureReleasesPackingAndCanRetry) {

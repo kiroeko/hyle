@@ -1546,3 +1546,12 @@ selector READY（跳过 92 项），closure 39/schema 4、docs 298/1081 links �
 
 Graph 单 owner 有限 FIX，same-build region contract 递增；Compute/已关闭 backend/基础模块不改产品。
 一轮表示/实现和一次产品纠正；完整候选的跨平台、终局红队及 P1 仍依原卡统一执行。
+
+G106 定向复核（`5be23f5b`）：首轮 Windows static/shared/oneDNN 与 CUDA 增量通过，但当前 declaration
+只有 packed bytes/private compilation bounds，不能单独表示共享 opaque owner 的 persistent metadata，
+也不能在 `compiled_storage` 下如实报告它的 unknown。后者与 compilation requested-byte quota 是不同集合，
+不能把私有 peak 上界直接相加或把不知数写成零。固定唯一产品纠正：给受管制品加入与 region 一致的
+optional persistent bytes，单 route/family unique 聚合、余量扣除、unknown/overflow/profile 身份一并覆盖；
+Region 仍排除已归属这个 owner 的字节。增加真实私有 metadata allocation 反例和精确总额/unknown 资格，
+不改变 hot PlanStep/Invocation、搜索策略或底层模块。首次 275/278 的三项 fixture 失败发生在 packing 前：
+1 MiB 峰值搭配默认数千 proposal/node 缓冲；限制这些小图的明确候选容量后 278/278，没有放宽产品配额。
