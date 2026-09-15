@@ -1677,3 +1677,8 @@ Windows/Linux/ASan/UBSan 与交付日志归该卡，不在本卡复制。
 [CPU executor probe](cpu-executor-foundation-probe.md)，不改 Graph/Sched 产品；CUDA 正式 Q4、Apple、
 Vulkan 与终局资格仍全部保留。Obs 等涉及产品的新 FIX 必须先在 owning card 完成实现前审计，不能由
 本段计划文档直接授权。旧的约 89% 分母不再用于新版基础范围。
+
+CPU executor 的 Windows source/static/shared 检查点已通过，见上述 probe 的具名结果与原始日志。
+它实际验证 Native/oneDNN 的长期 worker、嵌套与并发独立 Invocation，不依赖新的 Graph/Sched 产品 API；
+只增强样例计数一次，没有产品修复。其 Linux/Apple/最终 P1 继续与整体基础资格一起完成。下一实现主线
+仍是 CUDA 正式 Q4 Provider/region，随后 Apple 与 Vulkan；不再反复执行已通过的这条 Windows 样例。

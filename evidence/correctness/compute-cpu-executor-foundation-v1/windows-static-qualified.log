@@ -1,0 +1,32 @@
+f6c45efd75e63c96aa406fc5ad29209f73e149b0
+[1/3] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hyle-scratch\cpu-executor-foundation-static-20260915 && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hyle-scratch/cpu-executor-foundation-static-20260915/hyle-runtime/hyle_cpu_executor_sample-Release.cmake"
+[2/3] Building CXX object CMakeFiles\hyle_cpu_executor_sample.dir\main.cc.obj
+[3/3] Linking CXX executable hyle_cpu_executor_sample.exe
+UpdateCTestConfiguration  from :C:/hyle-scratch/cpu-executor-foundation-static-20260915/DartConfiguration.tcl
+Test project C:/hyle-scratch/cpu-executor-foundation-static-20260915
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: hyle_cpu_executor_sample
+
+1: Test command: C:\hyle-scratch\cpu-executor-foundation-static-20260915\hyle_cpu_executor_sample.exe
+1: Working Directory: C:/hyle-scratch/cpu-executor-foundation-static-20260915
+1: Test timeout computed to be: 120
+1: CPU executor PASS: workers=1 route=Native regions=0 workspace=61260 replay_metadata_allocations=0 executor_episodes=0 worker_tasks=0 nested=0
+1: CPU executor PASS: workers=1 route=oneDNN regions=1 workspace=43908 replay_metadata_allocations=0 executor_episodes=12 worker_tasks=12 nested=2
+1:   actual worker tasks=[20,0], episodes=13 nested=2, workers_started/stopped=1/1
+1: CPU executor PASS: workers=2 route=Native regions=0 workspace=61260 replay_metadata_allocations=0 executor_episodes=15 worker_tasks=30 nested=0
+1: CPU executor PASS: workers=2 route=oneDNN regions=1 workspace=43972 replay_metadata_allocations=0 executor_episodes=12 worker_tasks=24 nested=2
+1:   actual worker tasks=[28,34], episodes=28 nested=2, workers_started/stopped=2/2
+1/1 Test #1: hyle_cpu_executor_sample .........   Passed    0.05 sec
+
+The following tests passed:
+	hyle_cpu_executor_sample
+
+100% tests passed out of 1
+
+Total Test time (real) =   0.07 sec

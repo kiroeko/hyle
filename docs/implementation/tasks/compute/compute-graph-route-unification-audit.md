@@ -345,6 +345,10 @@ execution dependency 本身不等于 memory visibility；因此不能从 CUDA st
 CPU ggml 的既有 blocker 也不因该审计被解除。完整模型、KV/batching、分布式控制面、全算子目录、
 全自动 tuner/cache 仍不进入基础范围。
 
+F2 的首个实际检查点已由 [CPU executor probe](cpu-executor-foundation-probe.md#windows-检查点) 完成：
+`f6c45efd` 的 Native/oneDNN 在 Windows source/static/shared 上均通过真实 worker、嵌套和并发旅程。
+现有 Sched public 组合成立，未新增 `compute_sched`；跨平台/最终 P1 仍归第 7 项，不把本检查点当全局关闭。
+
 本次只校准架构/任务文档；不改变 registry、重开依赖、跑 C++/P1 或改公共仪器。后续产品修改先给实际
 owner 的当前卡固定有限 FIX，新增 factor 保持合法 QUEUED→SCOPED→AUDITED。补项验证优先复用现有
 public journey；只运行受影响目标，文档/状态提交不触发重测。

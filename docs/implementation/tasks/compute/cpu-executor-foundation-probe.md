@@ -47,3 +47,22 @@ identity 和分片计数是样例观察器，不进入产品或性能结论。Na
 纠正，将 replay 计数按 Native/oneDNN 分开、排除 compile/prepare/队列检查，要求两 worker Native 与
 oneDNN 真正调用 executor，且 oneDNN 实际进入 nested bulk。Native 单任务/已在 parallel 环境时源码明确
 inline，不能为测试强制它调度。只重编译这个 consumer 并执行三种交付，不改/重建产品或重跑 P1。
+
+## Windows 检查点
+
+最终样例候选 `f6c45efd75e63c96aa406fc5ad29209f73e149b0`，Windows/MSVC Release 的 source、installed
+static、installed shared 全部实际通过；[原始记录](../../../../evidence/correctness/compute-cpu-executor-foundation-v1/README.md)
+保留具体命令、计数、交付身份和限制。两 worker Native 实际 15 次 executor 调用/30 个 task，oneDNN
+12 次/24 个 task；oneDNN nested bulk 每种 worker 设置均实际执行 2 次。每条路线均通过独立 oracle、
+变化输入、并发独立 Invocation、嵌套、allocator 回收与 prepared metadata 不增长检查；最后验证 runtime
+关闭拒绝和 worker 回收。
+Native 单 worker/已在 parallel 时 inline，是既有避免多余调度的正常路径，不冒称 worker fan-out。
+
+P0 维持 O(1) caller bulk 状态、O(worker-count) raw runners；没有逐 item callable 分配、新全局 pool 或
+Graph→Sched 产品依赖。executor 保持开放的使用前提成立时，现有公开组合已能承载本旅程，因此不新增
+`compute_sched`、不重开 Sched。此结论只覆盖已运行的 Windows 三交付；Linux/两台 Apple、sanitizer、
+最终并行 P1 和整体基础 gate 仍待执行，不把本记录签为 Compute/Graph CLOSED 或完整性能通过。
+
+维护验证通过：closure 39/schema 4、docs 309/1122 links、diff check。selector 对样例变化选 Graph delivery，
+本卡执行的是上述具名 consumer 三交付，不冒称整套 generic package smoke；结果文档只选 docs/closure、
+跳过 94 项。registry 与产品树未变。
