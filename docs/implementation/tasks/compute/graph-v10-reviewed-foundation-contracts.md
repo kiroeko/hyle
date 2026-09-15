@@ -1359,3 +1359,27 @@ diff check 通过。无全库测试、CI 或 P1，Linux/两台 Apple、sanitizer
 同提交 LOC self-check：全库 **683,934**，自实现不含测试 **125,267**；Compute（含当前 backend/provider
 实现）**16,938**、Graph（含 oneDNN region adapter）**13,144**，合计 **30,082**。保持 AUDITED：动态
 View 的全域证明/offset、G103 联合优化、G106 packing/capture 与终局平台探针仍未完成。
+
+### G101：完整域 View 与共享 alias plan（实现前固定）
+
+基线 `f2d9af8c`。保持已接受的 Graph/Compute owner 和公开 ViewSpec，不增加另一套 shape interpreter。
+本步有限实现覆盖 reshape/permute/slice/broadcast 的完整域：复用 Compute 的有限 shape program/bounds/
+guards；以表达式身份、显式相等/顺序 guard、乘除因子消去与保守区间证明关系。不做采样证明、不增加通用
+求解器；无法证明的关系仍明确拒绝 declared-domain，用户可用 exact。正常 flatten/head split、带 guard 的
+动态 slice、permute/broadcast→Copy 必须由真实 public journey 通过，不能把本项退化成只支持固定 View。
+
+- envelope 只是各 stride/span 的安全上界，不必是合法绑定；不能对它调用具体 View inference/offset。
+  reshape 保证 canonical dense；其它 producer-inferred View 端口显式使用 Compute v15 的 bounded-strided
+  family。非 View 的任意 inferred layout 不凭猜测签全域。
+- 共享物理 Plan 保留 alias identity、storage 和 lifetime。域内 alias 的 planner request 只延长根的寿命，
+  不把互不同时成立的最大 offset 与最大 span 相加。具体 alias 在冷创建/绑定时用现有 signature 与具体
+  TensorDesc 求值，并对根 BufferView 做 checked subview；热 replay 复用已绑定 spans，不新增每次搜索。
+  不为 exact Invocation/Plan 增加常态 offset sidecar。
+- View 后的显式 Copy 复用 Native 既有 strided materialization：只增加完整域准入与冷实例化，不新增
+  operation family、copy kernel 或 warm dispatch。其 owner 的 N22 直接消费说明先行登记。
+- 验证：小域穷举/guard 排除点/非法 independent 同上界、flatten/head split/empty、嵌套 slice 与 broadcast
+  的实际内容、内部 workspace 根及重用、OOM/销毁/重复提交、strict budget、原 exact/native/oneDNN/CUDA
+  与三交付。P0 只在冷编译添加有限关系证明，signature 求值沿用已有线性程序；P1 留给完整候选。
+
+该步骤是一轮表示/实现和一次产品纠正；若发现需改变公开域、热提交或 owner 合同，回本卡审计，不缩减
+G101 或增加临时兼容入口。

@@ -89,3 +89,13 @@ G101 的 ComputeOps O33 直接消费：direct View 原有 slice offset 计算移
 Native 复用，保持 empty offset=0、prepared alias 与原 submit 路线。不新增 Native 能力；Graph 未融合
 View 改由 Graph 自己的 metadata step 承载，不再为它创建 NativePlan。定向 direct View/Graph 回归与
 三交付随该 G101 步骤执行；不是 N22 的完整域验收。
+
+### N22 的 G101 直接消费：bounded Copy（实现前固定）
+
+基线 `f2d9af8c`。动态 View 的普通 materialization 旅程需要既有 Copy 可消费完整 bounded-strided input；
+这是 G101 的实际直接需求，不扩算子目录。限定 plain、同 dtype/rank/轴表达式、canonical dense output；
+input 可为既有 derived 或显式 bounded-strided（含零 stride）。准入证明 shape-preserving Copy schema 对
+整个域成立，输出不允许任意重叠布局。冷实例化只复制同一个 NativePlan/submit route，实际描述由 Compute
+v15 受检入口绑定，继续使用 Mem dense copy 或现有 strided copy kernel，无 search/JIT/新增热分派。
+RMSNorm 原合同和 19-family exact 不放宽。验证由 G101 的 Copy 内容/空值/guard/预算/OOM/三交付，加
+Native 对错误 output layout/独立同上界 axes 的反例共同承担。
