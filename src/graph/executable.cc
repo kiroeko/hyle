@@ -6198,7 +6198,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   }
   for (const auto &artifact : plan.constant_artifacts) {
     state->packed_constant_count =
-        saturating_add(state->packed_constant_count, 1);
+        saturating_add(state->packed_constant_count, std::size_t{1});
     state->packed_constant_bytes =
         saturating_add(state->packed_constant_bytes, artifact->packed_bytes);
   }
