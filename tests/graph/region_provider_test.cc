@@ -7687,7 +7687,7 @@ TEST(GraphPacking, ExactVariantsShareWeightsAndSurviveParentAndSource) {
   auto first = compiled->executable.exact_variant(0).value();
   auto second = compiled->executable.exact_variant(1).value();
   source = {};
-  compiled = {};
+  *compiled = hyle::graph::CompiledGraph{};
   EXPECT_EQ(packing.destroys.load(), 0U);
   std::thread a([&] { expect_packing_replay(first, graph, context, 2); });
   std::thread b([&] { expect_packing_replay(second, graph, context, 3); });
