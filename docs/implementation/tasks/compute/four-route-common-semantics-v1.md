@@ -18,11 +18,12 @@
 |---|---|---|
 | R2-Q | 完整的有限 grouped Q4 MatMul schema，区别 signed scale 与 unsigned scale+bias，复用物理格式与 shape 校验 | [ComputeOps 卡](compute-ops-v4-quantized-matmul.md) |
 | R2-D | Direct 的独立提交模式及生成结果 owner；复用真实 Completion，不能让 Queue 参数被忽略或接纳后丢 owner | [Compute 独立提交与结果卡](compute-v16-direct-owned-results.md) |
-| R2-G | 自然 Graph/路线编译边界；清理用户 timing profile 多计划竞赛与模型多路线放置，保留结构/资源规划 | [Graph 编译边界卡](graph-v11-four-route-compile-boundary.md)，SCOPED |
+| R2-G | 自然 Graph/路线编译边界；清理用户 timing profile 多计划竞赛与模型多路线放置，保留结构/资源规划 | [Graph 编译边界卡](graph-v11-four-route-compile-boundary.md)，AUDITED |
 | R2-M | Mem v10 已有 Reservation 的具名平台/失败回收尾项 | 原 [Mem v10 卡](../mem/mem-v10-external-byte-reservation.md)，不扩产品范围 |
 
-R2-Q 已完成有限 schema 子项并 CLOSED，证据在其当前卡。R2-D 已绑定 AUDITED 并实施，R2-G
-尚须单独定界/审计；本表不代替各 owner 的实现授权。R3 的 CPU 默认规则、R4/R5/R6 的 native 完整片段仍由各路线资格决定；R2 不虚造赢家。
+R2-Q 已完成有限 schema 子项并 CLOSED，证据在其当前卡。R2-D 实现已推送，Windows 针对性
+9 门通过；其余验证尾项由已定界 AUDITED 的 R2-G 卡承接。本表不代替各 owner 的实现授权。
+R3 的 CPU 默认规则、R4/R5/R6 的 native 完整片段仍由各路线资格决定；R2 不虚造赢家。
 
 ## 当前定向事实
 

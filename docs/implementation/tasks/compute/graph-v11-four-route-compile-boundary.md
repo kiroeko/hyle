@@ -1,6 +1,6 @@
 # R2-G：既定规则的编译边界与单路线计算
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -17,7 +17,7 @@
 - 预算：定向审计 30 分钟；固定范围后的实现/普通验证最多四小时、一次候选纠正，不追加架构探索。
   复用已通过 Q4 的精确记录，稳定 R2 候选一次性补齐当前公共边界的适用验证。
 
-## 待审计的有限动作
+## 已固定的有限 FIX
 
 - G31：移除 Compute 公共 timing profile API 和 Graph profile context/identity 接收面及其私有编码。
   保留 ProviderRouteKey 的实现身份用途，不把身份误作性能资格。
@@ -26,6 +26,8 @@
   硬约束的完整计划即可绑定，不计时、不执行用户输入、不在 replay 搜索。
 - G33：把原 profile carrier 中确有消费者的并发执行要求放回直接 cold compile 选项；不再携带测量
   fingerprint、经济阈值或对未知 replay 次数的摊销排名。
+  固定为 `CompileOptions::require_concurrent_invocations = false`；true 是制品并发能力硬约束，
+  不承诺预留 N 个 invocation，也不推测吞吐收益。
 - G34：共同 Compute-backed 编译只接受同一 Device 的计算 targets；允许同设备不同 Context/
   Provider/lane 和不同 host/device storage。普通 `compile(graph, context, options)` 路径保留。
   Apple/Vulkan 的原生 compiler 可直接消费同一逻辑图，本卡不强迫其转换成这套执行制品。
@@ -55,4 +57,16 @@ source/static/shared/relocation 使用同一普通 C++ 消费并包含 owning re
 storage 和多 lane 不被误禁、异设备模型计算确实拒绝、workspace/effect/alias/shape/retained result
 不因 profile 清理退化。R2-M 的 Mem v10 定向尾项继续由当前 Mem 卡处理，不扩大底层审计。
 
-本卡当前 SCOPED；完成定向审计并固定 FIX、绑定两个 owner 后才修改产品代码。
+## 定向审计结论
+
+2026-09-16 对 baseline 的上述函数、公开类型及直接消费者完成定界。`swap_route_state` 仅服务
+profile incumbent；去掉该分支即可同时去掉快照及 metadata-moved 重建，不改真正拒绝后的回滚。
+并发布尔约束迁移保留现有硬约束语义；Device 使用既有值身份相等，不猜测 backend 名字或序号。
+
+受影响测试限于 Compute profile 单测、Graph profile/资源/packing 用例及 oneDNN report 消费；
+原预算、OOM、常量共享、packing 拒绝释放、并发和真实数值回放继续保留。oneDNN 的产品代码无需
+改动；其 profile report 断言随公共 API 迁移。sample 是现有 package custom-kernel 消费。
+P0 确认本卡删除冷测量资料和多个制品保留；不增加 replay 分配、计时、搜索或逐 kernel 间接层。
+
+Compute 与 Graph 均绑定本卡 AUDITED 后实施 G31–G35；D21–D24 已推送于 `b3abb2f5`，本卡承接
+其尚未运行的跨平台/三交付/Graph 集成门，终局一起裁决，不把换卡当作结案。
