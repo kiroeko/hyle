@@ -55,9 +55,11 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
       TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
           .value();
   auto builder = GraphBuilder::create().value();
+  const auto start = builder.dimension({0, 5, 1}).value();
   const auto input = builder.input(description).value();
   const auto output =
-      builder.add(hyle::compute::View::slice(0, 2, 3).value(), input).value();
+      builder.add(hyle::graph::ViewSpec::slice(0, hyle::graph::Dimension(start),
+                       hyle::graph::Dimension::fixed(3)).value(), input).value();
   ASSERT_TRUE(builder.publish(output).ok());
   const auto graph = std::move(builder).finish().value();
   // Neither a CUDA target nor a CPU metadata target needs a native Provider
@@ -73,25 +75,32 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
         ExternalResourceContract{input, StorageDomainId{0}}};
     auto compiled = hyle::graph::compile(
         graph, {.storage_domains = storage, .targets = targets},
-        {.external_resources = external});
+        {.shape_policy = hyle::graph::CompileShapePolicy::kDeclaredDomain,
+         .external_resources = external});
     ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
     EXPECT_EQ(compiled->report.copy_bytes(), 0u);
     EXPECT_EQ(compiled->report.step(0)->kind,
               hyle::graph::CompileStepKind::kView);
     EXPECT_FALSE(compiled->report.step(0)->provider.valid());
     EXPECT_EQ(compiled->executable.required_queue_count(), 0u);
-    auto run = compiled->executable.create_invocation().value();
-    ASSERT_TRUE(
-        run.bind(input, TensorView::create(description, source.view()).value())
-            .ok());
-    ASSERT_TRUE(run.submit()->wait().ok());
-    auto result = run.output(output).value();
-    EXPECT_EQ(result.storage().resource(), resource.ref());
-    EXPECT_EQ(result.storage().offset(), 2 * sizeof(float));
-    std::array<float, 3> actual{};
-    ASSERT_TRUE(
-        result.storage().read(std::as_writable_bytes(std::span(actual))).ok());
-    EXPECT_EQ(actual, (std::array<float, 3>{2, 3, 4}));
+    for (std::int64_t offset : {0, 2, 5}) {
+      const std::array shape{hyle::graph::ShapeBinding{start, offset}};
+      auto created = compiled->executable.create_invocation(shape);
+      ASSERT_TRUE(created) << created.error().message();
+      auto run = std::move(*created);
+      ASSERT_TRUE(
+          run.bind(input, TensorView::create(description, source.view()).value())
+              .ok());
+      ASSERT_TRUE(run.submit()->wait().ok());
+      auto result = run.output(output).value();
+      EXPECT_EQ(result.storage().resource(), resource.ref());
+      EXPECT_EQ(result.storage().offset(), static_cast<std::size_t>(offset) * sizeof(float));
+      std::array<float, 3> actual{};
+      ASSERT_TRUE(
+          result.storage().read(std::as_writable_bytes(std::span(actual))).ok());
+      EXPECT_EQ(actual, (std::array<float, 3>{static_cast<float>(offset),
+          static_cast<float>(offset + 1), static_cast<float>(offset + 2)}));
+    }
   }
 }
 
