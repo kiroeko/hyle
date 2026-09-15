@@ -27,4 +27,15 @@
 - 预算/stop：一个 adapter 方案加一次 fixture 纠正；若发现 executor 运营失败会漏算/重复、嵌套不进展、
   常态成本不符合公开承诺，停止样例资格并记录 owner，不能改更宽产品来迎合一次 probe。
 
-当前阶段：实现前调查。没有新的验证结论，不能把本卡存在或可编译记为基础通过。
+## 实现前调查结论
+
+`src/sched/bulk.cc`：无 cancel token 且 body 恒成功时，部分 runner admission 失败只降低并发，已接纳的
+runner 排空同一 cursor；零接纳才返回 admission error。worker-stack 嵌套直接串行；正常批量状态在
+caller stack，raw runner 不按 item 分配。于是一个**有效且保持开放直到计算完成**的 Scheduler 可自然
+承载现有 infallible executor。关闭应发生在所有 Compute consumer 结束之后；这是借用 executor 的
+使用前提，不是把关闭失败当成功。样例检查 bulk Status，前提违约时停止，不在失败后重跑或吞掉错误。
+
+有限实现确定为 `samples/package/graph/cpu_executor`，只依赖公开 Graph/Compute/Sched/Mem；worker
+identity 和分片计数是样例观察器，不进入产品或性能结论。Native 与可选 oneDNN 运行相同 RMS+gated-MLP，
+一个 executor 同时借给各 Provider；输入/独立 double oracle 在调度前准备，worker callback 只执行已
+准备计算。先 source consumer，后安装 static/shared；每项实际结果单列，不由编译成功推断运行成功。

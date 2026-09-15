@@ -36,6 +36,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`06_installed_io_http2/`](06_installed_io_http2/) | io + HTTP/2 | source-independent C++ feature consumer：原生 HTTP/2 seam 与 static/shared 私有协议依赖闭包 |
 | [`08_inference_service/`](08_inference_service/) | platform + mem + util + sched + io + simd + obs | 公开 C++ API 的真实 HTTP 服务纵切：模型映射、backend 选择、REST/SSE、指标与关闭；用假计算暴露仍需用户手写的通用胶水 |
 | [`package/graph/custom_kernel/`](package/graph/custom_kernel/) | compute + graph | owning typed factory、跨 shared image 的 schema/执行、direct 和 Graph 重放；支持源码或安装包接入 |
+| [`package/graph/cpu_executor/`](package/graph/cpu_executor/) | compute + graph + sched | 应用持有的真实持久 executor、Native/可选 oneDNN MLP、嵌套进展、并发 Invocation 与回收；源码/安装使用相同公开 API |
 | [`package/container/intrusive/cpp/`](package/container/intrusive/cpp/) | container / intrusive journey | source-independent C++ package consumer：通过 `hyle::container` 使用 auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
