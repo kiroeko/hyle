@@ -1,6 +1,6 @@
 # Compute CUDA backend v3：同步存储操作的实际完成边界
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - owner：`compute_backend_cuda`；baseline `85f8bbb2`；前轮证书为
   [CUDA v2](compute-backend-cuda-v2-endpoint-identity.md)，产品候选 `db164bb7`。
@@ -75,3 +75,15 @@ host gate 保持未放行时，device fill 与 device copy 都提前返回；两
 因此 CU30/CU31 已固定，进入 AUDITED。选用与当前 native 操作同 TU 的默认流完成等待，避免引入新
 stream owner/资源锁/全设备 barrier；原 Context/Buffer 生命周期与异步 Queue 合同保持。完成 helper
 后先重放这一旧候选失败用例，再运行本卡列出的精确验证，不靠多跑随机 Q4 样例掩盖缺陷。
+
+## 候选与 Windows 定向验证
+
+`be2d8b059ca858d2e9b3393b38d2530d4eb3dbe3` 完成 CU30/CU31 产品与测试：一个私有 helper、四个 native
+range-operation 调用点；read、host 直接方法、Queue/Completion 与对象布局未变。Windows Release CUDA
+runtime 15/15、late failure 1/1、逐头、Graph executable 284/284 通过。
+[原始日志](../../../../evidence/correctness/compute-cuda-resource-sync-v3/windows-runtime-graph.log)同时记录
+旧失败 gate 修复，以及 write/fill/D2D/普通 host resource copy 后立即从独立 Queue 运行 kernel 的四种组合。
+编译最多两 job、CTest 串行/120s；无 P1 或无关模块测试。
+
+进入 CANDIDATE。Linux、sanitizer、三交付/Q4 与候选后复核尚未完成，不能将 Windows 结果扩张为最终
+CLOSED 或整体 foundation 资格。

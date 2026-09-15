@@ -1,0 +1,746 @@
+Start testing: Sep 15 15:25 中国标准时间
+----------------------------------------------------------
+53/64 Testing: hyle_graph_executable_test
+53/64 Test: hyle_graph_executable_test
+Command: "C:/hyle-scratch/compute-graph-v7-cuda/bin/hyle_graph_executable_test.exe"
+Directory: C:/hyle-scratch/compute-graph-v7-cuda/tests/graph
+"hyle_graph_executable_test" start time: Sep 15 15:25 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 284 tests from 17 test suites.
+[----------] Global test environment set-up.
+[----------] 7 tests from GraphVariants
+[ RUN      ] GraphVariants.FiniteTableSelectsExactOrGeneralWithoutWarmCompilation
+[       OK ] GraphVariants.FiniteTableSelectsExactOrGeneralWithoutWarmCompilation (0 ms)
+[ RUN      ] GraphVariants.RejectsInvalidTablesAndNeverReplacesRequiredGeneralCoverage
+[       OK ] GraphVariants.RejectsInvalidTablesAndNeverReplacesRequiredGeneralCoverage (0 ms)
+[ RUN      ] GraphVariants.ConstantCopyIsSharedAndReportsDoNotRetainPayload
+[       OK ] GraphVariants.ConstantCopyIsSharedAndReportsDoNotRetainPayload (0 ms)
+[ RUN      ] GraphVariants.HardCompileBudgetsAreCumulativeAcrossTheFamily
+[       OK ] GraphVariants.HardCompileBudgetsAreCumulativeAcrossTheFamily (0 ms)
+[ RUN      ] GraphVariants.EmptyAndZeroDimensionalHandlesHaveDefinedBehavior
+[       OK ] GraphVariants.EmptyAndZeroDimensionalHandlesHaveDefinedBehavior (0 ms)
+[ RUN      ] GraphVariants.PartialFamilyAllocationFailureRollsBackAndRecovers
+[       OK ] GraphVariants.PartialFamilyAllocationFailureRollsBackAndRecovers (1 ms)
+[ RUN      ] GraphVariants.ExactAndGeneralInvocationsCanRunConcurrently
+[       OK ] GraphVariants.ExactAndGeneralInvocationsCanRunConcurrently (0 ms)
+[----------] 7 tests from GraphVariants (2 ms total)
+
+[----------] 9 tests from GraphStorage
+[ RUN      ] GraphStorage.NativeArtifactsAreReportedAndBoundedAtTheirExactTotal
+[       OK ] GraphStorage.NativeArtifactsAreReportedAndBoundedAtTheirExactTotal (0 ms)
+[ RUN      ] GraphStorage.NoArtifactAndBorrowedPayloadDoNotSpendCompiledStorage
+[       OK ] GraphStorage.NoArtifactAndBorrowedPayloadDoNotSpendCompiledStorage (0 ms)
+[ RUN      ] GraphStorage.UnknownProviderStorageRequiresExplicitFiniteBudgetOptIn
+[       OK ] GraphStorage.UnknownProviderStorageRequiresExplicitFiniteBudgetOptIn (0 ms)
+[ RUN      ] GraphStorage.StorageLimitCanReselectACompleteRegionBeforePublishing
+[       OK ] GraphStorage.StorageLimitCanReselectACompleteRegionBeforePublishing (0 ms)
+[ RUN      ] GraphStorage.StorageRejectionCanUseLeafFallbackButCannotWaiveTheLimit
+[       OK ] GraphStorage.StorageRejectionCanUseLeafFallbackButCannotWaiveTheLimit (0 ms)
+[ RUN      ] GraphStorage.CompiledStorageOverflowRollsBackInsteadOfSaturating
+[       OK ] GraphStorage.CompiledStorageOverflowRollsBackInsteadOfSaturating (0 ms)
+[ RUN      ] GraphStorage.PackedConstantsAreAdditionalToCanonicalAndPersistentStorage
+[       OK ] GraphStorage.PackedConstantsAreAdditionalToCanonicalAndPersistentStorage (0 ms)
+[ RUN      ] GraphStorage.UnknownStoragePolicyIsValidatedBeforeProviderDiscovery
+[       OK ] GraphStorage.UnknownStoragePolicyIsValidatedBeforeProviderDiscovery (0 ms)
+[ RUN      ] GraphStorage.EveryRetainedVariantSpendsTheSameStorageBudget
+[       OK ] GraphStorage.EveryRetainedVariantSpendsTheSameStorageBudget (0 ms)
+[----------] 9 tests from GraphStorage (0 ms total)
+
+[----------] 10 tests from GraphDomain
+[ RUN      ] GraphDomain.CompleteGuardedDomainUsesConcreteViewsAndSharedWorkspaceEnvelope
+[       OK ] GraphDomain.CompleteGuardedDomainUsesConcreteViewsAndSharedWorkspaceEnvelope (0 ms)
+[ RUN      ] GraphDomain.RejectsMissingForeignDerivedDuplicateAndOutOfRangeBindings
+[       OK ] GraphDomain.RejectsMissingForeignDerivedDuplicateAndOutOfRangeBindings (0 ms)
+[ RUN      ] GraphDomain.RejectsExactOnlyOperationsAndIndependentOutputSymbols
+[       OK ] GraphDomain.RejectsExactOnlyOperationsAndIndependentOutputSymbols (0 ms)
+[ RUN      ] GraphDomain.MaterializedConstantsOutliveSourceAndPublicPlanHandles
+[       OK ] GraphDomain.MaterializedConstantsOutliveSourceAndPublicPlanHandles (0 ms)
+[ RUN      ] GraphDomain.CompileAndInstantiationAllocationFailuresRollBackAndRecover
+[       OK ] GraphDomain.CompileAndInstantiationAllocationFailuresRollBackAndRecover (0 ms)
+[ RUN      ] GraphDomain.FixedOperationsUseExactProvidersBesideDynamicNodes
+[       OK ] GraphDomain.FixedOperationsUseExactProvidersBesideDynamicNodes (0 ms)
+[ RUN      ] GraphDomain.DynamicConstantsAreRejectedBeforePreparation
+[       OK ] GraphDomain.DynamicConstantsAreRejectedBeforePreparation (0 ms)
+[ RUN      ] GraphDomain.CrossStorageCopyUsesConcreteByteCountNotEnvelope
+[       OK ] GraphDomain.CrossStorageCopyUsesConcreteByteCountNotEnvelope (0 ms)
+[ RUN      ] GraphDomain.DistinctShapesSharePlanButNotMutableRunState
+[       OK ] GraphDomain.DistinctShapesSharePlanButNotMutableRunState (0 ms)
+[ RUN      ] GraphDomain.EnvelopeExactPointHasDifferentProfileIdentity
+[       OK ] GraphDomain.EnvelopeExactPointHasDifferentProfileIdentity (0 ms)
+[----------] 10 tests from GraphDomain (1 ms total)
+
+[----------] 26 tests from GraphCompile
+[ RUN      ] GraphCompile.CompilesEveryNodeAndReportsItsWorkspaceHonestly
+[       OK ] GraphCompile.CompilesEveryNodeAndReportsItsWorkspaceHonestly (0 ms)
+[ RUN      ] GraphCompile.RemoteTargetMetadataUsesTheGraphOwnerForAllVariants
+[       OK ] GraphCompile.RemoteTargetMetadataUsesTheGraphOwnerForAllVariants (0 ms)
+[ RUN      ] GraphCompile.LargeTargetSetKeepsDeterministicPreferredOrdinal
+[       OK ] GraphCompile.LargeTargetSetKeepsDeterministicPreferredOrdinal (0 ms)
+[ RUN      ] GraphCompile.SpecializesBoundedShapesWithExactCollisionSafeIdentity
+[       OK ] GraphCompile.SpecializesBoundedShapesWithExactCollisionSafeIdentity (0 ms)
+[ RUN      ] GraphCompile.RejectsSymbolicOutputThatFailsConcreteInference
+[       OK ] GraphCompile.RejectsSymbolicOutputThatFailsConcreteInference (0 ms)
+[ RUN      ] GraphCompile.NativeConcatEvaluatesSumAndRunsMultipleSpecializations
+[       OK ] GraphCompile.NativeConcatEvaluatesSumAndRunsMultipleSpecializations (0 ms)
+[ RUN      ] GraphCompile.NativeNormalizationConsumesDerivedRowsWithoutRuntimeShapeWork
+[       OK ] GraphCompile.NativeNormalizationConsumesDerivedRowsWithoutRuntimeShapeWork (0 ms)
+[ RUN      ] GraphCompile.DerivedQuotientAndBroadcastRejectIncompatibleBindings
+[       OK ] GraphCompile.DerivedQuotientAndBroadcastRejectIncompatibleBindings (0 ms)
+[ RUN      ] GraphCompile.PlacesAcrossTargetsWithoutFalseStorageCopies
+[       OK ] GraphCompile.PlacesAcrossTargetsWithoutFalseStorageCopies (0 ms)
+[ RUN      ] GraphCompile.SchedulesInterleavedIndependentBranchesIntoTwoQueuePrefixes
+[       OK ] GraphCompile.SchedulesInterleavedIndependentBranchesIntoTwoQueuePrefixes (0 ms)
+[ RUN      ] GraphCompile.MakesWorkspaceSerializationAnExplicitBudgetTradeoff
+[       OK ] GraphCompile.MakesWorkspaceSerializationAnExplicitBudgetTradeoff (0 ms)
+[ RUN      ] GraphCompile.BindsBorrowedConstantsOnceForRepeatedInvocations
+[       OK ] GraphCompile.BindsBorrowedConstantsOnceForRepeatedInvocations (0 ms)
+[ RUN      ] GraphCompile.MaterializedConstantsReleaseSourcesAndShareExecutableStorage
+[       OK ] GraphCompile.MaterializedConstantsReleaseSourcesAndShareExecutableStorage (0 ms)
+[ RUN      ] GraphCompile.MaterializedPublishedConstantsAndViewsPreserveExactLayout
+[       OK ] GraphCompile.MaterializedPublishedConstantsAndViewsPreserveExactLayout (0 ms)
+[ RUN      ] GraphCompile.ConstantMaterializationFailureDoesNotOwnOrModifyTheSource
+[       OK ] GraphCompile.ConstantMaterializationFailureDoesNotOwnOrModifyTheSource (0 ms)
+[ RUN      ] GraphCompile.MaterializedConstantMetadataFailuresRollBack
+[       OK ] GraphCompile.MaterializedConstantMetadataFailuresRollBack (0 ms)
+[ RUN      ] GraphCompile.RejectsMissingForeignAndMismatchedConstantBindings
+[       OK ] GraphCompile.RejectsMissingForeignAndMismatchedConstantBindings (0 ms)
+[ RUN      ] GraphCompile.ExecutesPublishedConstantWithoutRuntimeRebinding
+[       OK ] GraphCompile.ExecutesPublishedConstantWithoutRuntimeRebinding (0 ms)
+[ RUN      ] GraphCompile.APublishedInputAcceptsTheNaturalMutableInputBinding
+[       OK ] GraphCompile.APublishedInputAcceptsTheNaturalMutableInputBinding (0 ms)
+[ RUN      ] GraphCompile.ReportsInvalidClosedAndMetadataAllocationFailures
+[       OK ] GraphCompile.ReportsInvalidClosedAndMetadataAllocationFailures (0 ms)
+[ RUN      ] GraphCompile.DefersEncodedWeightExecutionToAFutureProvider
+[       OK ] GraphCompile.DefersEncodedWeightExecutionToAFutureProvider (0 ms)
+[ RUN      ] GraphCompile.EveryMetadataAllocationFailureRollsBackAndCanRetry
+[       OK ] GraphCompile.EveryMetadataAllocationFailureRollsBackAndCanRetry (0 ms)
+[ RUN      ] GraphCompile.ProviderPolicyAllocationsRollBackAndDoNotReachReplay
+[       OK ] GraphCompile.ProviderPolicyAllocationsRollBackAndDoNotReachReplay (6 ms)
+[ RUN      ] GraphCompile.ReusesInternalStorageForLifetimeSafeInPlaceOperations
+[       OK ] GraphCompile.ReusesInternalStorageForLifetimeSafeInPlaceOperations (0 ms)
+[ RUN      ] GraphCompile.DoesNotInPlaceABroadcastProviderRoute
+[       OK ] GraphCompile.DoesNotInPlaceABroadcastProviderRoute (0 ms)
+[ RUN      ] GraphCompile.ExecutesNativeAttentionWithPlannedInvocationWorkspace
+[       OK ] GraphCompile.ExecutesNativeAttentionWithPlannedInvocationWorkspace (0 ms)
+[----------] 26 tests from GraphCompile (7 ms total)
+
+[----------] 12 tests from GraphCompilationStorage
+[ RUN      ] GraphCompilationStorage.TypedPrivateBoundsAreAdmittedBeforePrepare
+[       OK ] GraphCompilationStorage.TypedPrivateBoundsAreAdmittedBeforePrepare (0 ms)
+[ RUN      ] GraphCompilationStorage.RejectedPrivateStorageAndPartialArtifactsAreReleased
+[       OK ] GraphCompilationStorage.RejectedPrivateStorageAndPartialArtifactsAreReleased (0 ms)
+[ RUN      ] GraphCompilationStorage.AccountsAllocatorRequestsWithoutPersistentDoubleCharge
+[       OK ] GraphCompilationStorage.AccountsAllocatorRequestsWithoutPersistentDoubleCharge (0 ms)
+[ RUN      ] GraphCompilationStorage.ExactLimitsAndRuntimeStorageAreIndependent
+[       OK ] GraphCompilationStorage.ExactLimitsAndRuntimeStorageAreIndependent (0 ms)
+[ RUN      ] GraphCompilationStorage.ZeroPeakAndInvalidPolicyAllocateNothing
+[       OK ] GraphCompilationStorage.ZeroPeakAndInvalidPolicyAllocateNothing (0 ms)
+[ RUN      ] GraphCompilationStorage.OomUnwindsTheEntireVariantFamily
+[       OK ] GraphCompilationStorage.OomUnwindsTheEntireVariantFamily (0 ms)
+[ RUN      ] GraphCompilationStorage.CanonicalBytesAreSharedAndReportsDoNotOwnPayload
+[       OK ] GraphCompilationStorage.CanonicalBytesAreSharedAndReportsDoNotOwnPayload (0 ms)
+[ RUN      ] GraphCompilationStorage.ConstantReservationPrecedesResourceAllocation
+[       OK ] GraphCompilationStorage.ConstantReservationPrecedesResourceAllocation (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionDiscoveryAndResourceScratchShareCompileQuota
+[       OK ] GraphCompilationStorage.RegionDiscoveryAndResourceScratchShareCompileQuota (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionUnknownAndInvalidBoundsPrecedeArtifactCreation
+[       OK ] GraphCompilationStorage.RegionUnknownAndInvalidBoundsPrecedeArtifactCreation (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionPreparePeakIsTransientNotRetainedPerStep
+[       OK ] GraphCompilationStorage.RegionPreparePeakIsTransientNotRetainedPerStep (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionDeclineCleansPrivateChargesBeforeReselection
+[       OK ] GraphCompilationStorage.RegionDeclineCleansPrivateChargesBeforeReselection (0 ms)
+[----------] 12 tests from GraphCompilationStorage (1 ms total)
+
+[----------] 10 tests from GraphInvocationStorage
+[ RUN      ] GraphInvocationStorage.PrivateStorageIsUnknownUnlessTheProviderDeclaresIt
+[       OK ] GraphInvocationStorage.PrivateStorageIsUnknownUnlessTheProviderDeclaresIt (0 ms)
+[ RUN      ] GraphInvocationStorage.UnknownPrivateRouteCanBeReplacedByAKnownCandidate
+[       OK ] GraphInvocationStorage.UnknownPrivateRouteCanBeReplacedByAKnownCandidate (0 ms)
+[ RUN      ] GraphInvocationStorage.OptInCountsMetadataAndWorkspaceExactlyOnce
+[       OK ] GraphInvocationStorage.OptInCountsMetadataAndWorkspaceExactlyOnce (0 ms)
+[ RUN      ] GraphInvocationStorage.HardLimitRejectsConcurrentOwnersAndAllowsRetry
+[       OK ] GraphInvocationStorage.HardLimitRejectsConcurrentOwnersAndAllowsRetry (0 ms)
+[ RUN      ] GraphInvocationStorage.BackingFailureReturnsAllReservationsAndMetadata
+[       OK ] GraphInvocationStorage.BackingFailureReturnsAllReservationsAndMetadata (0 ms)
+[ RUN      ] GraphInvocationStorage.SmallKnownWorkspaceLimitRejectsAtCompile
+[       OK ] GraphInvocationStorage.SmallKnownWorkspaceLimitRejectsAtCompile (0 ms)
+[ RUN      ] GraphInvocationStorage.VariantsShareQuotaAndEscapedSignatureRetainsOwner
+[       OK ] GraphInvocationStorage.VariantsShareQuotaAndEscapedSignatureRetainsOwner (0 ms)
+[ RUN      ] GraphInvocationStorage.RegionBudgetSurvivesAnAbandonedCompletion
+[       OK ] GraphInvocationStorage.RegionBudgetSurvivesAnAbandonedCompletion (0 ms)
+[ RUN      ] GraphInvocationStorage.PartialRegionCreationReturnsTheSameOwnersCharge
+[       OK ] GraphInvocationStorage.PartialRegionCreationReturnsTheSameOwnersCharge (0 ms)
+[ RUN      ] GraphInvocationStorage.CaptureCannotSilentlyBypassAHardCompleteBudget
+[       OK ] GraphInvocationStorage.CaptureCannotSilentlyBypassAHardCompleteBudget (0 ms)
+[----------] 10 tests from GraphInvocationStorage (0 ms total)
+
+[----------] 18 tests from Invocation
+[ RUN      ] Invocation.RunsNaturalTransformerFragmentAndReusesIt
+[       OK ] Invocation.RunsNaturalTransformerFragmentAndReusesIt (0 ms)
+[ RUN      ] Invocation.RunsBroadcastMatMulIntoSeparateGatedActivation
+[       OK ] Invocation.RunsBroadcastMatMulIntoSeparateGatedActivation (0 ms)
+[ RUN      ] Invocation.ExecutesSharedInputBranchesWithIndependentOutputs
+[       OK ] Invocation.ExecutesSharedInputBranchesWithIndependentOutputs (0 ms)
+[ RUN      ] Invocation.RejectsForeignInternalConstOutputAndWrongShapeBindings
+[       OK ] Invocation.RejectsForeignInternalConstOutputAndWrongShapeBindings (0 ms)
+[ RUN      ] Invocation.SubmitDoesNotAllocatePlanMetadata
+[       OK ] Invocation.SubmitDoesNotAllocatePlanMetadata (0 ms)
+[ RUN      ] Invocation.DistinctInvocationsRunConcurrentlyFromOneExecutable
+[       OK ] Invocation.DistinctInvocationsRunConcurrentlyFromOneExecutable (0 ms)
+[ RUN      ] Invocation.PlanAndRunStateRetainTheirContextOwnedArtifacts
+[       OK ] Invocation.PlanAndRunStateRetainTheirContextOwnedArtifacts (0 ms)
+[ RUN      ] Invocation.ZeroExtentIntermediateWorkspaceRemainsAValidRun
+[       OK ] Invocation.ZeroExtentIntermediateWorkspaceRemainsAValidRun (0 ms)
+[ RUN      ] Invocation.PublishedIntermediateCanFeedALaterNode
+[       OK ] Invocation.PublishedIntermediateCanFeedALaterNode (0 ms)
+[ RUN      ] Invocation.AllowsOnlyLifetimeSafeExactExternalInPlaceAlias
+[       OK ] Invocation.AllowsOnlyLifetimeSafeExactExternalInPlaceAlias (0 ms)
+[ RUN      ] Invocation.ResolvesAnInternalSliceViewWithoutMaterializingIt
+[       OK ] Invocation.ResolvesAnInternalSliceViewWithoutMaterializingIt (0 ms)
+[ RUN      ] Invocation.OwnsAPublishedViewRootedInPrivateWorkspace
+[       OK ] Invocation.OwnsAPublishedViewRootedInPrivateWorkspace (0 ms)
+[ RUN      ] Invocation.PublishedViewReusesItsSourceBinding
+[       OK ] Invocation.PublishedViewReusesItsSourceBinding (0 ms)
+[ RUN      ] Invocation.RequiresQueuesOnlyForLanesThatEmitRuntimeCommands
+[       OK ] Invocation.RequiresQueuesOnlyForLanesThatEmitRuntimeCommands (0 ms)
+[ RUN      ] Invocation.CrossStoragePublishedViewUsesItsExplicitOutputBinding
+[       OK ] Invocation.CrossStoragePublishedViewUsesItsExplicitOutputBinding (0 ms)
+[ RUN      ] Invocation.RequiredViewStorageCopiesTheSourceBeforeCreatingTheAlias
+[       OK ] Invocation.RequiredViewStorageCopiesTheSourceBeforeCreatingTheAlias (0 ms)
+[ RUN      ] Invocation.RejectsExternalAliasWhileTheInputRemainsLive
+[       OK ] Invocation.RejectsExternalAliasWhileTheInputRemainsLive (0 ms)
+[ RUN      ] Invocation.RejectsAQueueFromAnotherContext
+[       OK ] Invocation.RejectsAQueueFromAnotherContext (0 ms)
+[----------] 18 tests from Invocation (0 ms total)
+
+[----------] 13 tests from GraphViews
+[ RUN      ] GraphViews.MetadataOnlyChainNeedsNoProviderOrPreparationBudget
+[       OK ] GraphViews.MetadataOnlyChainNeedsNoProviderOrPreparationBudget (0 ms)
+[ RUN      ] GraphViews.ProviderConstraintsCannotBeSatisfiedByMetadata
+[       OK ] GraphViews.ProviderConstraintsCannotBeSatisfiedByMetadata (0 ms)
+[ RUN      ] GraphViews.MetadataDoesNotConsumeTheAdjacentKernelBudget
+[       OK ] GraphViews.MetadataDoesNotConsumeTheAdjacentKernelBudget (0 ms)
+[ RUN      ] GraphViews.MetadataControlDependencyOrdersCommandsAcrossTargets
+[       OK ] GraphViews.MetadataControlDependencyOrdersCommandsAcrossTargets (0 ms)
+[ RUN      ] GraphViews.DerivedFlattenNormAndRestoreUseRealLayoutsIncludingEmpty
+[       OK ] GraphViews.DerivedFlattenNormAndRestoreUseRealLayoutsIncludingEmpty (0 ms)
+[ RUN      ] GraphViews.SlicePermuteCopyPreservesStridesAndDynamicStart
+[       OK ] GraphViews.SlicePermuteCopyPreservesStridesAndDynamicStart (0 ms)
+[ RUN      ] GraphViews.BroadcastUsesZeroStridesAndAnExplicitCopyMaterializes
+[       OK ] GraphViews.BroadcastUsesZeroStridesAndAnExplicitCopyMaterializes (0 ms)
+[ RUN      ] GraphViews.InferredOutputConstraintsDoNotRelaxExplicitLayoutContracts
+[       OK ] GraphViews.InferredOutputConstraintsDoNotRelaxExplicitLayoutContracts (0 ms)
+[ RUN      ] GraphViews.RejectsInvalidReshapeBroadcastAndUnprovedDomainsBeforeWork
+[       OK ] GraphViews.RejectsInvalidReshapeBroadcastAndUnprovedDomainsBeforeWork (0 ms)
+[ RUN      ] GraphViews.EmptySliceAndOverflowUseTheConcreteCheckedSchema
+[       OK ] GraphViews.EmptySliceAndOverflowUseTheConcreteCheckedSchema (0 ms)
+[ RUN      ] GraphViews.ExactSliceOutlivesGraphAndWarmBindingDoesNotAllocate
+[       OK ] GraphViews.ExactSliceOutlivesGraphAndWarmBindingDoesNotAllocate (0 ms)
+[ RUN      ] GraphViews.EveryExactCompileAllocationFailureCleansUpAndRetries
+[       OK ] GraphViews.EveryExactCompileAllocationFailureCleansUpAndRetries (0 ms)
+[ RUN      ] GraphViews.ProfileIdentityIncludesDynamicAttributesWithEqualOutputShapes
+[       OK ] GraphViews.ProfileIdentityIncludesDynamicAttributesWithEqualOutputShapes (0 ms)
+[----------] 13 tests from GraphViews (0 ms total)
+
+[----------] 12 tests from GraphProfiles
+[ RUN      ] GraphProfiles.GeneratedIdentityIncludesAttributesBoundsAndExactStrides
+[       OK ] GraphProfiles.GeneratedIdentityIncludesAttributesBoundsAndExactStrides (0 ms)
+[ RUN      ] GraphProfiles.SelectsCompletePlanAndRunsTheSelectedArtifact
+[       OK ] GraphProfiles.SelectsCompletePlanAndRunsTheSelectedArtifact (0 ms)
+[ RUN      ] GraphProfiles.UnknownOverlapAndEconomicPolicyPreservePriority
+[       OK ] GraphProfiles.UnknownOverlapAndEconomicPolicyPreservePriority (0 ms)
+[ RUN      ] GraphProfiles.SearchAndPreparationLimitsRetainOnlyACompleteIncumbent
+[       OK ] GraphProfiles.SearchAndPreparationLimitsRetainOnlyACompleteIncumbent (0 ms)
+[ RUN      ] GraphProfiles.LaterDeclineKeepsIncumbentButRealErrorStillFails
+[       OK ] GraphProfiles.LaterDeclineKeepsIncumbentButRealErrorStillFails (0 ms)
+[ RUN      ] GraphProfiles.SelectedRouteKeepsItsOwnLaneWorkspaceAndAliasMetadata
+[       OK ] GraphProfiles.SelectedRouteKeepsItsOwnLaneWorkspaceAndAliasMetadata (0 ms)
+[ RUN      ] GraphProfiles.StableIdentityIgnoresProcessIdsButIncludesConcreteChanges
+[       OK ] GraphProfiles.StableIdentityIgnoresProcessIdsButIncludesConcreteChanges (0 ms)
+[ RUN      ] GraphProfiles.IncompleteFactsStayUnknownAndMalformedBindingsAreRejected
+[       OK ] GraphProfiles.IncompleteFactsStayUnknownAndMalformedBindingsAreRejected (0 ms)
+[ RUN      ] GraphProfiles.LeafAndRegionShareOneCompleteCostBoundary
+[       OK ] GraphProfiles.LeafAndRegionShareOneCompleteCostBoundary (0 ms)
+[ RUN      ] GraphProfiles.ConcurrencyAndRequiredProviderRemainHardConstraints
+[       OK ] GraphProfiles.ConcurrencyAndRequiredProviderRemainHardConstraints (0 ms)
+[ RUN      ] GraphProfiles.IncumbentAndTrialShareOneMaterializedConstant
+[       OK ] GraphProfiles.IncumbentAndTrialShareOneMaterializedConstant (0 ms)
+[ RUN      ] GraphProfiles.EveryMetadataAllocationFailureIsFatalAndReclaimsSnapshots
+[       OK ] GraphProfiles.EveryMetadataAllocationFailureIsFatalAndReclaimsSnapshots (0 ms)
+[----------] 12 tests from GraphProfiles (2 ms total)
+
+[----------] 4 tests from GraphViewDomain
+[ RUN      ] GraphViewDomain.GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets
+[       OK ] GraphViewDomain.GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets (0 ms)
+[ RUN      ] GraphViewDomain.ExactQuotientHeadSplitPreservesCountForEveryAdmittedPoint
+[       OK ] GraphViewDomain.ExactQuotientHeadSplitPreservesCountForEveryAdmittedPoint (0 ms)
+[ RUN      ] GraphViewDomain.EqualEnvelopesAndUnguardedSliceDoNotProveRelationships
+[       OK ] GraphViewDomain.EqualEnvelopesAndUnguardedSliceDoNotProveRelationships (0 ms)
+[ RUN      ] GraphViewDomain.ColdAllocationFailuresReleaseSharedPlanAndCanRetry
+[       OK ] GraphViewDomain.ColdAllocationFailuresReleaseSharedPlanAndCanRetry (1 ms)
+[----------] 4 tests from GraphViewDomain (1 ms total)
+
+[----------] 5 tests from GraphProviderPolicy
+[ RUN      ] GraphProviderPolicy.GlobalFamilyFiltersPrecedeOperationCallbacks
+[       OK ] GraphProviderPolicy.GlobalFamilyFiltersPrecedeOperationCallbacks (0 ms)
+[ RUN      ] GraphProviderPolicy.NodesCanSelectDifferentInstancesOfOneFamily
+[       OK ] GraphProviderPolicy.NodesCanSelectDifferentInstancesOfOneFamily (0 ms)
+[ RUN      ] GraphProviderPolicy.RejectsMalformedDeclarationsBeforeProviderWork
+[       OK ] GraphProviderPolicy.RejectsMalformedDeclarationsBeforeProviderWork (0 ms)
+[ RUN      ] GraphProviderPolicy.UnavailableOrExcludedRequirementsNeverRelax
+[       OK ] GraphProviderPolicy.UnavailableOrExcludedRequirementsNeverRelax (0 ms)
+[ RUN      ] GraphProviderPolicy.LeafResourceDeclineCannotEscapeRequiredInstance
+[       OK ] GraphProviderPolicy.LeafResourceDeclineCannotEscapeRequiredInstance (0 ms)
+[----------] 5 tests from GraphProviderPolicy (0 ms total)
+
+[----------] 5 tests from GraphDiscovery
+[ RUN      ] GraphDiscovery.CollectsLaterLeafCandidatesWithoutPreparingThem
+[       OK ] GraphDiscovery.CollectsLaterLeafCandidatesWithoutPreparingThem (0 ms)
+[ RUN      ] GraphDiscovery.ProposalStorageBudgetIsSeparateFromPreparation
+[       OK ] GraphDiscovery.ProposalStorageBudgetIsSeparateFromPreparation (0 ms)
+[ RUN      ] GraphDiscovery.BudgetNeverPermitsAnIncompleteExecutable
+[       OK ] GraphDiscovery.BudgetNeverPermitsAnIncompleteExecutable (0 ms)
+[ RUN      ] GraphDiscovery.MissingLaterOperationDoesNotPrepareEarlierKernels
+[       OK ] GraphDiscovery.MissingLaterOperationDoesNotPrepareEarlierKernels (0 ms)
+[ RUN      ] GraphDiscovery.FatalLaterProposalStopsBeforeAnyArtifactPreparation
+[       OK ] GraphDiscovery.FatalLaterProposalStopsBeforeAnyArtifactPreparation (0 ms)
+[----------] 5 tests from GraphDiscovery (0 ms total)
+
+[----------] 5 tests from GraphCustomKernel
+[ RUN      ] GraphCustomKernel.ReportOwnsProviderTextWithoutKeepingExecutionAlive
+[       OK ] GraphCustomKernel.ReportOwnsProviderTextWithoutKeepingExecutionAlive (0 ms)
+[ RUN      ] GraphCustomKernel.ReportDistinguishesTextOfSameFamilyInstances
+[       OK ] GraphCustomKernel.ReportDistinguishesTextOfSameFamilyInstances (0 ms)
+[ RUN      ] GraphCustomKernel.StableKeyDoesNotUseTheTransientPrepareToken
+[       OK ] GraphCustomKernel.StableKeyDoesNotUseTheTransientPrepareToken (0 ms)
+[ RUN      ] GraphCustomKernel.ARejectedRouteKeyDoesNotLeakIntoTheFinalReport
+[       OK ] GraphCustomKernel.ARejectedRouteKeyDoesNotLeakIntoTheFinalReport (0 ms)
+[ RUN      ] GraphCustomKernel.PublicSchemaAndOwningFactoryUseTheSamePreparedRuntime
+[       OK ] GraphCustomKernel.PublicSchemaAndOwningFactoryUseTheSamePreparedRuntime (0 ms)
+[----------] 5 tests from GraphCustomKernel (0 ms total)
+
+[----------] 5 tests from GraphResources
+[ RUN      ] GraphResources.SameRegionCanUseAnotherWorkspaceWithoutChangingProvider
+[       OK ] GraphResources.SameRegionCanUseAnotherWorkspaceWithoutChangingProvider (0 ms)
+[ RUN      ] GraphResources.ResourceLocalDeclineDoesNotPoisonOtherBindings
+[       OK ] GraphResources.ResourceLocalDeclineDoesNotPoisonOtherBindings (0 ms)
+[ RUN      ] GraphResources.CompleteProfilesSelectStorageAndDoNotGuessUnknownLanes
+[       OK ] GraphResources.CompleteProfilesSelectStorageAndDoNotGuessUnknownLanes (0 ms)
+[ RUN      ] GraphResources.LaneSearchSharesStateAndPrepareLimitsWithNodeCover
+[       OK ] GraphResources.LaneSearchSharesStateAndPrepareLimitsWithNodeCover (0 ms)
+[ RUN      ] GraphResources.NativeIntermediateMovesToFeasibleStorageAndPreservesAliasRules
+[       OK ] GraphResources.NativeIntermediateMovesToFeasibleStorageAndPreservesAliasRules (0 ms)
+[----------] 5 tests from GraphResources (0 ms total)
+
+[----------] 131 tests from GraphRegions
+[ RUN      ] GraphRegions.DiscoversResourcesForLaterCandidatesWithoutPreparingThem
+[       OK ] GraphRegions.DiscoversResourcesForLaterCandidatesWithoutPreparingThem (0 ms)
+[ RUN      ] GraphRegions.LaterResourceQueryFailurePrecedesAnyArtifactPreparation
+[       OK ] GraphRegions.LaterResourceQueryFailurePrecedesAnyArtifactPreparation (0 ms)
+[ RUN      ] GraphRegions.ValidatesEveryCandidateResourceRequirementBeforePreparation
+[       OK ] GraphRegions.ValidatesEveryCandidateResourceRequirementBeforePreparation (0 ms)
+[ RUN      ] GraphRegions.RequiredTargetFiltersCandidatesBeforeResourceQuery
+[       OK ] GraphRegions.RequiredTargetFiltersCandidatesBeforeResourceQuery (0 ms)
+[ RUN      ] GraphRegions.UnsupportedResourceQueryRejectsOnlyThatCandidate
+[       OK ] GraphRegions.UnsupportedResourceQueryRejectsOnlyThatCandidate (0 ms)
+[ RUN      ] GraphRegions.CandidateBoundariesMatchFullScanAcrossFanoutAndRepeatedPorts
+[       OK ] GraphRegions.CandidateBoundariesMatchFullScanAcrossFanoutAndRepeatedPorts (8 ms)
+[ RUN      ] GraphRegions.GlobalProviderFiltersSkipDiscoveryAndLeafCallbacks
+[       OK ] GraphRegions.GlobalProviderFiltersSkipDiscoveryAndLeafCallbacks (0 ms)
+[ RUN      ] GraphRegions.LeafProposalLimitCanRetainACompleteRegionPlan
+[       OK ] GraphRegions.LeafProposalLimitCanRetainACompleteRegionPlan (0 ms)
+[ RUN      ] GraphRegions.RebuildingAPartitionReusesTheOriginalLeafProposals
+[       OK ] GraphRegions.RebuildingAPartitionReusesTheOriginalLeafProposals (0 ms)
+[ RUN      ] GraphRegions.ImpossibleLaterLeafStorageDoesNotPrepareEarlierLeaves
+[       OK ] GraphRegions.ImpossibleLaterLeafStorageDoesNotPrepareEarlierLeaves (0 ms)
+[ RUN      ] GraphRegions.RegionMustMatchEveryCoveredNodeProvider
+[       OK ] GraphRegions.RegionMustMatchEveryCoveredNodeProvider (0 ms)
+[ RUN      ] GraphRegions.ConflictingInstancesPreventFusionWithoutRelaxingNodes
+[       OK ] GraphRegions.ConflictingInstancesPreventFusionWithoutRelaxingNodes (0 ms)
+[ RUN      ] GraphRegions.RequiredInstanceSelectsTargetAndCannotOverridePlacement
+[       OK ] GraphRegions.RequiredInstanceSelectsTargetAndCannotOverridePlacement (0 ms)
+[ RUN      ] GraphRegions.RegionRetryAndLeafFallbackCannotEscapeRequiredInstance
+[       OK ] GraphRegions.RegionRetryAndLeafFallbackCannotEscapeRequiredInstance (0 ms)
+[ RUN      ] GraphRegions.ExecutesNonMaterializingExternalEffectSteps
+[       OK ] GraphRegions.ExecutesNonMaterializingExternalEffectSteps (0 ms)
+[ RUN      ] GraphRegions.NamedResourceExecutesAndInvocationRetainsItsPreparedOwner
+[       OK ] GraphRegions.NamedResourceExecutesAndInvocationRetainsItsPreparedOwner (0 ms)
+[ RUN      ] GraphRegions.ValidatesBackingBeforePreparingAnyResourceOperation
+[       OK ] GraphRegions.ValidatesBackingBeforePreparingAnyResourceOperation (0 ms)
+[ RUN      ] GraphRegions.DifferentResourceIdsMustNotHideTheSameMemoryOrObject
+[       OK ] GraphRegions.DifferentResourceIdsMustNotHideTheSameMemoryOrObject (0 ms)
+[ RUN      ] GraphRegions.DisjointSubrangesOfOneBackingRemainIndependent
+[       OK ] GraphRegions.DisjointSubrangesOfOneBackingRemainIndependent (0 ms)
+[ RUN      ] GraphRegions.ResourceRegionsPreserveOrderingWithoutSerializingIndependentDomains
+[       OK ] GraphRegions.ResourceRegionsPreserveOrderingWithoutSerializingIndependentDomains (0 ms)
+[ RUN      ] GraphRegions.RegionMustPreserveTheUnionOfItsResourceAccesses
+[       OK ] GraphRegions.RegionMustPreserveTheUnionOfItsResourceAccesses (0 ms)
+[ RUN      ] GraphRegions.ChangingEffectPreservationIsFatalAndReclaimsTheArtifact
+[       OK ] GraphRegions.ChangingEffectPreservationIsFatalAndReclaimsTheArtifact (0 ms)
+[ RUN      ] GraphRegions.EffectOrderingCannotLeaveAndReenterAContractedRegion
+[       OK ] GraphRegions.EffectOrderingCannotLeaveAndReenterAContractedRegion (0 ms)
+[ RUN      ] GraphRegions.UnknownEffectsStillRequireAnExplicitRegionPreservationPromise
+[       OK ] GraphRegions.UnknownEffectsStillRequireAnExplicitRegionPreservationPromise (0 ms)
+[ RUN      ] GraphRegions.TensorBindingCannotHideAnEffectAliasInEitherBindingOrder
+[       OK ] GraphRegions.TensorBindingCannotHideAnEffectAliasInEitherBindingOrder (0 ms)
+[ RUN      ] GraphRegions.ConstantsCannotHideAnEffectAlias
+[       OK ] GraphRegions.ConstantsCannotHideAnEffectAlias (0 ms)
+[ RUN      ] GraphRegions.ExactShapeSpecializationKeepsResourceIdentityAndBinding
+[       OK ] GraphRegions.ExactShapeSpecializationKeepsResourceIdentityAndBinding (0 ms)
+[ RUN      ] GraphRegions.ResourceCompileAllocationFailuresRollBackAndCanRetry
+[       OK ] GraphRegions.ResourceCompileAllocationFailuresRollBackAndCanRetry (3 ms)
+[ RUN      ] GraphRegions.ReplayCostFactsSurviveRegionCompilation
+[       OK ] GraphRegions.ReplayCostFactsSurviveRegionCompilation (0 ms)
+[ RUN      ] GraphRegions.ReportKeepsInstanceFactsWithoutRetainingTheirContext
+[       OK ] GraphRegions.ReportKeepsInstanceFactsWithoutRetainingTheirContext (0 ms)
+[ RUN      ] GraphRegions.PreparedOnlyRejectsUnknownAndManagedBeforeRegionPreparation
+[       OK ] GraphRegions.PreparedOnlyRejectsUnknownAndManagedBeforeRegionPreparation (0 ms)
+[ RUN      ] GraphRegions.PreparedReplayCanHaveDelegatedOwnership
+[       OK ] GraphRegions.PreparedReplayCanHaveDelegatedOwnership (0 ms)
+[ RUN      ] GraphRegions.ReplayFilteringPrecedesTargetSelection
+[       OK ] GraphRegions.ReplayFilteringPrecedesTargetSelection (0 ms)
+[ RUN      ] GraphRegions.KnownDiscoveryReplayCannotChangeBeforeArtifactCreation
+[       OK ] GraphRegions.KnownDiscoveryReplayCannotChangeBeforeArtifactCreation (0 ms)
+[ RUN      ] GraphRegions.PreparedOnlyFiltersLeafBeforeArtifactCreation
+[       OK ] GraphRegions.PreparedOnlyFiltersLeafBeforeArtifactCreation (0 ms)
+[ RUN      ] GraphRegions.PreparedOnlyFailsWhenNoEligibleExecutionRouteExists
+[       OK ] GraphRegions.PreparedOnlyFailsWhenNoEligibleExecutionRouteExists (0 ms)
+[ RUN      ] GraphRegions.ReplayPolicyDoesNotHideInvalidEnumsOrDiscoveryBudget
+[       OK ] GraphRegions.ReplayPolicyDoesNotHideInvalidEnumsOrDiscoveryBudget (0 ms)
+[ RUN      ] GraphRegions.RejectsInvalidOrChangedReplayCostBeforeWorkAcceptance
+[       OK ] GraphRegions.RejectsInvalidOrChangedReplayCostBeforeWorkAcceptance (0 ms)
+[ RUN      ] GraphRegions.CompilesAndSubmitsOneArtifactWithoutInternalStorage
+[       OK ] GraphRegions.CompilesAndSubmitsOneArtifactWithoutInternalStorage (0 ms)
+[ RUN      ] GraphRegions.DelegatedRegionRunsWithoutAQueueAndRetainsTheWholeInvocation
+[       OK ] GraphRegions.DelegatedRegionRunsWithoutAQueueAndRetainsTheWholeInvocation (0 ms)
+[ RUN      ] GraphRegions.DelegatedSingleOperationUsesTheGraphLifetimeOwner
+[       OK ] GraphRegions.DelegatedSingleOperationUsesTheGraphLifetimeOwner (0 ms)
+[ RUN      ] GraphRegions.ImportsASharedQueuePrefixIntoADelegatedRegion
+[       OK ] GraphRegions.ImportsASharedQueuePrefixIntoADelegatedRegion (0 ms)
+[ RUN      ] GraphRegions.ImportsADelegatedRegionIntoASharedQueue
+[       OK ] GraphRegions.ImportsADelegatedRegionIntoASharedQueue (0 ms)
+[ RUN      ] GraphRegions.ChainsDelegatedRegionsWithOneProviderDependency
+[       OK ] GraphRegions.ChainsDelegatedRegionsWithOneProviderDependency (0 ms)
+[ RUN      ] GraphRegions.ExposesADelegatedHostWaitBeforeAcceptingAnyWork
+[       OK ] GraphRegions.ExposesADelegatedHostWaitBeforeAcceptingAnyWork (0 ms)
+[ RUN      ] GraphRegions.KeepsIndependentDelegatedTerminalEpisodesDistinct
+[       OK ] GraphRegions.KeepsIndependentDelegatedTerminalEpisodesDistinct (0 ms)
+[ RUN      ] GraphRegions.SelectsExactBoundaryAndWorkspaceResourcesForARegion
+[       OK ] GraphRegions.SelectsExactBoundaryAndWorkspaceResourcesForARegion (0 ms)
+[ RUN      ] GraphRegions.KeepsProviderOwnedWorkspaceOutsideTheGraphPlan
+[       OK ] GraphRegions.KeepsProviderOwnedWorkspaceOutsideTheGraphPlan (0 ms)
+[ RUN      ] GraphRegions.FallsBackWhenASelectedRegionHasNoResourceRoute
+[       OK ] GraphRegions.FallsBackWhenASelectedRegionHasNoResourceRoute (0 ms)
+[ RUN      ] GraphRegions.LaterRegionResourceDeclineDoesNotPrepareAnEarlierLeaf
+[       OK ] GraphRegions.LaterRegionResourceDeclineDoesNotPrepareAnEarlierLeaf (0 ms)
+[ RUN      ] GraphRegions.UnavailableFinalOutputCopyFailsBeforeAnyArtifact
+[       OK ] GraphRegions.UnavailableFinalOutputCopyFailsBeforeAnyArtifact (0 ms)
+[ RUN      ] GraphRegions.CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps
+[       OK ] GraphRegions.CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps (0 ms)
+[ RUN      ] GraphRegions.MixesACompiledRegionWithSingleOperationFallback
+[       OK ] GraphRegions.MixesACompiledRegionWithSingleOperationFallback (0 ms)
+[ RUN      ] GraphRegions.ConfiguredProviderOrderPrecedesSuffixDispatchEstimate
+[       OK ] GraphRegions.ConfiguredProviderOrderPrecedesSuffixDispatchEstimate (0 ms)
+[ RUN      ] GraphRegions.CompilesAContractibleNonContiguousNodeSet
+[       OK ] GraphRegions.CompilesAContractibleNonContiguousNodeSet (0 ms)
+[ RUN      ] GraphRegions.SchedulesAContractedNodeSetAfterItsExternalPredecessor
+[       OK ] GraphRegions.SchedulesAContractedNodeSetAfterItsExternalPredecessor (0 ms)
+[ RUN      ] GraphRegions.RejectsANodeSetThatLeavesAndReentersTheRegion
+[       OK ] GraphRegions.RejectsANodeSetThatLeavesAndReentersTheRegion (0 ms)
+[ RUN      ] GraphRegions.ExecutesInterleavedIndependentRegions
+[       OK ] GraphRegions.ExecutesInterleavedIndependentRegions (0 ms)
+[ RUN      ] GraphRegions.ExcludesARegionThatWouldCycleWithAnAcceptedRegion
+[       OK ] GraphRegions.ExcludesARegionThatWouldCycleWithAnAcceptedRegion (0 ms)
+[ RUN      ] GraphRegions.DeclinedNonContiguousRegionExecutesLeafFallbacks
+[       OK ] GraphRegions.DeclinedNonContiguousRegionExecutesLeafFallbacks (0 ms)
+[ RUN      ] GraphRegions.AGraphHostingProviderCanOwnASingleNode
+[       OK ] GraphRegions.AGraphHostingProviderCanOwnASingleNode (0 ms)
+[ RUN      ] GraphRegions.RejectsDuplicateAndForeignProposalNodes
+[       OK ] GraphRegions.RejectsDuplicateAndForeignProposalNodes (0 ms)
+[ RUN      ] GraphRegions.ProviderCanQueryContractibilityIncludingControlEdges
+[       OK ] GraphRegions.ProviderCanQueryContractibilityIncludingControlEdges (0 ms)
+[ RUN      ] GraphRegions.ProposalNodeLimitDoesNotAdmitAPartialRegion
+[       OK ] GraphRegions.ProposalNodeLimitDoesNotAdmitAPartialRegion (0 ms)
+[ RUN      ] GraphRegions.RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget
+[       OK ] GraphRegions.RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget (0 ms)
+[ RUN      ] GraphRegions.IgnoresUnusedEnvironmentBackendsInPlanSummary
+[       OK ] GraphRegions.IgnoresUnusedEnvironmentBackendsInPlanSummary (0 ms)
+[ RUN      ] GraphRegions.DefaultPolicyAcceptsUnknownCountsAsExplicitOptIn
+[       OK ] GraphRegions.DefaultPolicyAcceptsUnknownCountsAsExplicitOptIn (0 ms)
+[ RUN      ] GraphRegions.MixedUnknownCountsUseATransitiveDeterministicFallback
+[       OK ] GraphRegions.MixedUnknownCountsUseATransitiveDeterministicFallback (0 ms)
+[ RUN      ] GraphRegions.ZeroDispatchCountIsMalformedNotZeroWork
+[       OK ] GraphRegions.ZeroDispatchCountIsMalformedNotZeroWork (0 ms)
+[ RUN      ] GraphRegions.DefaultPolicyUsesConfiguredProviderOrder
+[       OK ] GraphRegions.DefaultPolicyUsesConfiguredProviderOrder (0 ms)
+[ RUN      ] GraphRegions.DispatchCountCannotOverrideConfiguredProviderOrder
+[       OK ] GraphRegions.DispatchCountCannotOverrideConfiguredProviderOrder (0 ms)
+[ RUN      ] GraphRegions.LeafAndRegionProvidersShareConfiguredOrder
+[       OK ] GraphRegions.LeafAndRegionProvidersShareConfiguredOrder (0 ms)
+[ RUN      ] GraphRegions.DispatchBreaksOtherwiseEquivalentSameProviderRouteTies
+[       OK ] GraphRegions.DispatchBreaksOtherwiseEquivalentSameProviderRouteTies (0 ms)
+[ RUN      ] GraphRegions.SearchBudgetIsCumulativeAcrossTransactionalDeclines
+[       OK ] GraphRegions.SearchBudgetIsCumulativeAcrossTransactionalDeclines (0 ms)
+[ RUN      ] GraphRegions.SearchBudgetNeverPreparesAPartiallyCoveredGraph
+[       OK ] GraphRegions.SearchBudgetNeverPreparesAPartiallyCoveredGraph (0 ms)
+[ RUN      ] GraphRegions.PhysicalCopyFailureBacktracksWithoutPreparingArtifacts
+[       OK ] GraphRegions.PhysicalCopyFailureBacktracksWithoutPreparingArtifacts (0 ms)
+[ RUN      ] GraphRegions.RejectsAnUnknownRegionSelectionPolicy
+[       OK ] GraphRegions.RejectsAnUnknownRegionSelectionPolicy (0 ms)
+[ RUN      ] GraphRegions.DisabledPolicyUsesOnlyExplicitSingleOperationFallback
+[       OK ] GraphRegions.DisabledPolicyUsesOnlyExplicitSingleOperationFallback (0 ms)
+[ RUN      ] GraphRegions.ProposalLimitReturnsAndReportsAValidatedExecutable
+[       OK ] GraphRegions.ProposalLimitReturnsAndReportsAValidatedExecutable (0 ms)
+[ RUN      ] GraphRegions.PerProviderLimitStillAllowsDiscoveryFromTheNextProvider
+[       OK ] GraphRegions.PerProviderLimitStillAllowsDiscoveryFromTheNextProvider (0 ms)
+[ RUN      ] GraphRegions.StrictSearchRejectsLimitedDiscoveryBeforePreparation
+[       OK ] GraphRegions.StrictSearchRejectsLimitedDiscoveryBeforePreparation (0 ms)
+[ RUN      ] GraphRegions.ExactCapacityWithoutOmissionsIsNotLimitedSearch
+[       OK ] GraphRegions.ExactCapacityWithoutOmissionsIsNotLimitedSearch (0 ms)
+[ RUN      ] GraphRegions.GlobalLimitSkipsLaterTargetsButPreservesRequiredPlacement
+[       OK ] GraphRegions.GlobalLimitSkipsLaterTargetsButPreservesRequiredPlacement (0 ms)
+[ RUN      ] GraphRegions.LimitedDiscoveryNeverHidesRealProviderErrors
+[       OK ] GraphRegions.LimitedDiscoveryNeverHidesRealProviderErrors (0 ms)
+[ RUN      ] GraphRegions.FinalWorkspaceRejectionTriesTheSmallerRegion
+[       OK ] GraphRegions.FinalWorkspaceRejectionTriesTheSmallerRegion (0 ms)
+[ RUN      ] GraphRegions.MaterializedConstantsSurviveRouteRetryAndArtifactTeardown
+[       OK ] GraphRegions.MaterializedConstantsSurviveRouteRetryAndArtifactTeardown (0 ms)
+[ RUN      ] GraphRegions.ConstantCopiesWaitForAcceptedFailuresWithoutRetryingThem
+[       OK ] GraphRegions.ConstantCopiesWaitForAcceptedFailuresWithoutRetryingThem (0 ms)
+[ RUN      ] GraphRegions.FinalWorkspaceRejectionCanUseALeafPlan
+[       OK ] GraphRegions.FinalWorkspaceRejectionCanUseALeafPlan (0 ms)
+[ RUN      ] GraphRegions.FinalWorkspaceRetryDiscardsFailedSerializationEdges
+[       OK ] GraphRegions.FinalWorkspaceRetryDiscardsFailedSerializationEdges (0 ms)
+[ RUN      ] GraphRegions.FinalWorkspaceRetryKeepsHardConstraintsAndBudgets
+[       OK ] GraphRegions.FinalWorkspaceRetryKeepsHardConstraintsAndBudgets (0 ms)
+[ RUN      ] GraphRegions.FinalWorkspaceRetryDoesNotHideRealProviderError
+[       OK ] GraphRegions.FinalWorkspaceRetryDoesNotHideRealProviderError (0 ms)
+[ RUN      ] GraphRegions.MissingLaneSelectsAnotherTargetWithoutWaivingPlacement
+[       OK ] GraphRegions.MissingLaneSelectsAnotherTargetWithoutWaivingPlacement (0 ms)
+[ RUN      ] GraphRegions.LimitedSearchCannotWaiveWorkspaceOrPreparationLimits
+[       OK ] GraphRegions.LimitedSearchCannotWaiveWorkspaceOrPreparationLimits (0 ms)
+[ RUN      ] GraphRegions.UnknownSearchPolicyIsRejectedBeforeDiscovery
+[       OK ] GraphRegions.UnknownSearchPolicyIsRejectedBeforeDiscovery (0 ms)
+[ RUN      ] GraphRegions.WriterSeparatesCapacityRefusalFromValidationErrors
+[       OK ] GraphRegions.WriterSeparatesCapacityRefusalFromValidationErrors (0 ms)
+[ RUN      ] GraphRegions.RejectFallbackPolicyRequiresCompleteRegionCoverage
+[       OK ] GraphRegions.RejectFallbackPolicyRequiresCompleteRegionCoverage (0 ms)
+[ RUN      ] GraphRegions.DetailedReportOwnsAndEnumeratesTheCompiledPlan
+[       OK ] GraphRegions.DetailedReportOwnsAndEnumeratesTheCompiledPlan (0 ms)
+[ RUN      ] GraphRegions.CostFactsPreserveUnknownAndExactZero
+[       OK ] GraphRegions.CostFactsPreserveUnknownAndExactZero (0 ms)
+[ RUN      ] GraphRegions.SerializesArtifactsThatRejectConcurrentInvocations
+[       OK ] GraphRegions.SerializesArtifactsThatRejectConcurrentInvocations (0 ms)
+[ RUN      ] GraphRegions.FiniteVariantsShareRegionDiscoveryAndNodeBudgets
+[       OK ] GraphRegions.FiniteVariantsShareRegionDiscoveryAndNodeBudgets (0 ms)
+[ RUN      ] GraphRegions.ExactOnlyRegionCannotClaimDynamicEnvelope
+[       OK ] GraphRegions.ExactOnlyRegionCannotClaimDynamicEnvelope (0 ms)
+[ RUN      ] GraphRegions.DomainInvocationsShareTheOriginalNonconcurrentArtifactGate
+[       OK ] GraphRegions.DomainInvocationsShareTheOriginalNonconcurrentArtifactGate (0 ms)
+[ RUN      ] GraphRegions.RegionExtensionVersionDoesNotAliasTheV1Table
+[       OK ] GraphRegions.RegionExtensionVersionDoesNotAliasTheV1Table (0 ms)
+[ RUN      ] GraphRegions.ReselectionReportsTheStableKeyNotThePrepareToken
+[       OK ] GraphRegions.ReselectionReportsTheStableKeyNotThePrepareToken (0 ms)
+[ RUN      ] GraphRegions.ExplicitRegionDeclinesReleasePartialArtifactsBeforeFallback
+[       OK ] GraphRegions.ExplicitRegionDeclinesReleasePartialArtifactsBeforeFallback (0 ms)
+[ RUN      ] GraphRegions.RegionErrorCodesDoNotGrantPermissionToRetry
+[       OK ] GraphRegions.RegionErrorCodesDoNotGrantPermissionToRetry (0 ms)
+[ RUN      ] GraphRegions.RetriesAnotherRegionProviderWithoutRediscovery
+[       OK ] GraphRegions.RetriesAnotherRegionProviderWithoutRediscovery (0 ms)
+[ RUN      ] GraphRegions.RepartitionsAfterOneRouteOfTheSameProviderDeclines
+[       OK ] GraphRegions.RepartitionsAfterOneRouteOfTheSameProviderDeclines (0 ms)
+[ RUN      ] GraphRegions.RetryDestroysEarlierArtifactsBeforeRebuildingThePartition
+[       OK ] GraphRegions.RetryDestroysEarlierArtifactsBeforeRebuildingThePartition (0 ms)
+[ RUN      ] GraphRegions.RegionRetryCanChangeTargetButHonorsRequiredPlacement
+[       OK ] GraphRegions.RegionRetryCanChangeTargetButHonorsRequiredPlacement (0 ms)
+[ RUN      ] GraphRegions.RegionRetriesDoNotRechargePreparationBudget
+[       OK ] GraphRegions.RegionRetriesDoNotRechargePreparationBudget (0 ms)
+[ RUN      ] GraphRegions.AllRejectedRegionsTerminateWithoutRediscoveryOrLeafWork
+[       OK ] GraphRegions.AllRejectedRegionsTerminateWithoutRediscoveryOrLeafWork (0 ms)
+[ RUN      ] GraphRegions.UnmatchedRegionStorageCanSelectAnotherCompleteRegion
+[       OK ] GraphRegions.UnmatchedRegionStorageCanSelectAnotherCompleteRegion (0 ms)
+[ RUN      ] GraphRegions.EveryAllocationFailureInRegionReselectionRollsBack
+[       OK ] GraphRegions.EveryAllocationFailureInRegionReselectionRollsBack (15 ms)
+[ RUN      ] GraphRegions.InvalidRegionOutcomeIsFatalAndReclaimsItsArtifact
+[       OK ] GraphRegions.InvalidRegionOutcomeIsFatalAndReclaimsItsArtifact (0 ms)
+[ RUN      ] GraphRegions.ExplicitLeafDeclinesCanSelectAnotherTarget
+[       OK ] GraphRegions.ExplicitLeafDeclinesCanSelectAnotherTarget (0 ms)
+[ RUN      ] GraphRegions.LeafDeclineReleasesTheRegionPrefixBeforeReplanning
+[       OK ] GraphRegions.LeafDeclineReleasesTheRegionPrefixBeforeReplanning (0 ms)
+[ RUN      ] GraphRegions.RegionAndLeafDeclinesShareDiscoveryAndCumulativePrepareBudget
+[       OK ] GraphRegions.RegionAndLeafDeclinesShareDiscoveryAndCumulativePrepareBudget (0 ms)
+[ RUN      ] GraphRegions.LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets
+[       OK ] GraphRegions.LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets (0 ms)
+[ RUN      ] GraphRegions.LeafErrorsRemainFatalDuringBothRegionFallbackStages
+[       OK ] GraphRegions.LeafErrorsRemainFatalDuringBothRegionFallbackStages (0 ms)
+[ RUN      ] GraphRegions.RollsBackPartiallyCreatedProviderState
+[       OK ] GraphRegions.RollsBackPartiallyCreatedProviderState (0 ms)
+[ RUN      ] GraphRegions.InvocationRetainsItsCompiledRegionAndWorkspaceOwner
+[       OK ] GraphRegions.InvocationRetainsItsCompiledRegionAndWorkspaceOwner (0 ms)
+[ RUN      ] GraphRegions.OrderedSequenceDoesNotHostWaitAndRetainsInvocationUntilTerminal
+[       OK ] GraphRegions.OrderedSequenceDoesNotHostWaitAndRetainsInvocationUntilTerminal (0 ms)
+[ RUN      ] GraphRegions.RejectedTailIsReportedAfterTheAcceptedAsyncPrefix
+[       OK ] GraphRegions.RejectedTailIsReportedAfterTheAcceptedAsyncPrefix (0 ms)
+[ RUN      ] GraphRegions.CrossDomainWorkspaceReuseWaitsAndEveryDomainReportsLateFailure
+[       OK ] GraphRegions.CrossDomainWorkspaceReuseWaitsAndEveryDomainReportsLateFailure (0 ms)
+[ RUN      ] GraphRegions.MultiTargetIndependentSinksUseANonblockingAggregate
+[       OK ] GraphRegions.MultiTargetIndependentSinksUseANonblockingAggregate (0 ms)
+[ RUN      ] GraphRegions.AbandonedAggregateRetainsEveryIndependentSink
+[       OK ] GraphRegions.AbandonedAggregateRetainsEveryIndependentSink (0 ms)
+[ RUN      ] GraphRegions.MultiTargetPlacementKeepsEligibleProviderRegions
+[       OK ] GraphRegions.MultiTargetPlacementKeepsEligibleProviderRegions (0 ms)
+[ RUN      ] GraphRegions.RejectsSurplusBindingsForASingleActiveLane
+[       OK ] GraphRegions.RejectsSurplusBindingsForASingleActiveLane (0 ms)
+[ RUN      ] GraphRegions.RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted
+[       OK ] GraphRegions.RejectsAnUnavailableTransferBeforeAnySegmentIsSubmitted (0 ms)
+[ RUN      ] GraphRegions.ExposesAndCanRejectAHostDependencyBeforeSubmission
+[       OK ] GraphRegions.ExposesAndCanRejectAHostDependencyBeforeSubmission (0 ms)
+[----------] 131 tests from GraphRegions (33 ms total)
+
+[----------] 8 tests from GraphPacking
+[ RUN      ] GraphPacking.ExactVariantsShareWeightsAndSurviveParentAndSource
+[       OK ] GraphPacking.ExactVariantsShareWeightsAndSurviveParentAndSource (0 ms)
+[ RUN      ] GraphPacking.IdentitySeparatesFormatStorageAndProviderInstances
+[       OK ] GraphPacking.IdentitySeparatesFormatStorageAndProviderInstances (0 ms)
+[ RUN      ] GraphPacking.NoGlobalCacheAndPackingFactsIdentifyProfiles
+[       OK ] GraphPacking.NoGlobalCacheAndPackingFactsIdentifyProfiles (0 ms)
+[ RUN      ] GraphPacking.BoundsAndPartialFactoryFailuresAreTransactional
+[       OK ] GraphPacking.BoundsAndPartialFactoryFailuresAreTransactional (0 ms)
+[ RUN      ] GraphPacking.RejectedPackingDiesBeforeFallbackAndIncumbentSurvives
+[       OK ] GraphPacking.RejectedPackingDiesBeforeFallbackAndIncumbentSurvives (0 ms)
+[ RUN      ] GraphPacking.OpaqueMetadataCannotDisappearFromCompiledStorage
+[       OK ] GraphPacking.OpaqueMetadataCannotDisappearFromCompiledStorage (0 ms)
+[ RUN      ] GraphPacking.FamilyCapsChargeSharedOpaqueAndPackedStorageOnlyOnce
+[       OK ] GraphPacking.FamilyCapsChargeSharedOpaqueAndPackedStorageOnlyOnce (0 ms)
+[ RUN      ] GraphPacking.EveryMetadataAllocationFailureReleasesPackingAndCanRetry
+[       OK ] GraphPacking.EveryMetadataAllocationFailureReleasesPackingAndCanRetry (0 ms)
+[----------] 8 tests from GraphPacking (1 ms total)
+
+[----------] 4 tests from GraphCudaReplay
+[ RUN      ] GraphCudaReplay.MetadataViewAliasesDeviceStorageWithoutAKernelProvider
+[       OK ] GraphCudaReplay.MetadataViewAliasesDeviceStorageWithoutAKernelProvider (85 ms)
+[ RUN      ] GraphCudaReplay.MaterializesConstantsThroughACompletedDeviceCopy
+[       OK ] GraphCudaReplay.MaterializesConstantsThroughACompletedDeviceCopy (1 ms)
+[ RUN      ] GraphCudaReplay.CapturesEligibleSegmentsAndReplaysAHybridPlan
+[       OK ] GraphCudaReplay.CapturesEligibleSegmentsAndReplaysAHybridPlan (0 ms)
+[ RUN      ] GraphCudaReplay.CaptureBudgetPreservesCommandsAndReportsUnknownStorage
+[       OK ] GraphCudaReplay.CaptureBudgetPreservesCommandsAndReportsUnknownStorage (1 ms)
+[----------] 4 tests from GraphCudaReplay (89 ms total)
+
+[----------] Global test environment tear-down
+[==========] 284 tests from 17 test suites ran. (144 ms total)
+[  PASSED  ] 284 tests.
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_executable_test" end time: Sep 15 15:25 中国标准时间
+"hyle_graph_executable_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+60/64 Testing: hyle_compute_backend_cuda_header_self_contained_test
+60/64 Test: hyle_compute_backend_cuda_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_backend_cuda" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "backends/cuda.h" "--extra-include-dir" "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include" "--extra-include-dir" "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl"
+Directory: C:/hyle-scratch/compute-graph-v7-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_header_self_contained_test" start time: Sep 15 15:25 中国标准时间
+Output:
+----------------------------------------------------------
+compute_backend_cuda C++ headers self-contained: 1
+<end of output>
+Test time =   0.55 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_header_self_contained_test" end time: Sep 15 15:25 中国标准时间
+"hyle_compute_backend_cuda_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+61/64 Testing: hyle_compute_backend_cuda_test
+61/64 Test: hyle_compute_backend_cuda_test
+Command: "C:/hyle-scratch/compute-graph-v7-cuda/bin/hyle_compute_backend_cuda_test.exe"
+Directory: C:/hyle-scratch/compute-graph-v7-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_test" start time: Sep 15 15:25 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 15 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 15 tests from CudaBackend
+[ RUN      ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion
+[       OK ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion (299 ms)
+[ RUN      ] CudaBackend.PreservesPortableAndNativeErrorIdentity
+[       OK ] CudaBackend.PreservesPortableAndNativeErrorIdentity (0 ms)
+[ RUN      ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue
+[       OK ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue (1 ms)
+[ RUN      ] CudaBackend.EnumeratesExplicitDevices
+[       OK ] CudaBackend.EnumeratesExplicitDevices (0 ms)
+[ RUN      ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip
+[       OK ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip (1 ms)
+[ RUN      ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext
+[       OK ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext (0 ms)
+[ RUN      ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier
+[       OK ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier (5 ms)
+[ RUN      ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed
+[       OK ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed (0 ms)
+[ RUN      ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal
+[       OK ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal (0 ms)
+[ RUN      ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion
+[       OK ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion (0 ms)
+[ RUN      ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics
+[       OK ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics (58 ms)
+[ RUN      ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership
+[       OK ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership (0 ms)
+[ RUN      ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand
+[       OK ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand (0 ms)
+[ RUN      ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage
+[       OK ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage (4 ms)
+[ RUN      ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces
+[       OK ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces (20 ms)
+[----------] 15 tests from CudaBackend (392 ms total)
+
+[----------] Global test environment tear-down
+[==========] 15 tests from 1 test suite ran. (393 ms total)
+[  PASSED  ] 15 tests.
+<end of output>
+Test time =   0.48 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_test" end time: Sep 15 15:25 中国标准时间
+"hyle_compute_backend_cuda_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+62/64 Testing: hyle_compute_backend_cuda_late_failure_test
+62/64 Test: hyle_compute_backend_cuda_late_failure_test
+Command: "C:/hyle-scratch/compute-graph-v7-cuda/bin/hyle_compute_backend_cuda_late_failure_test.exe"
+Directory: C:/hyle-scratch/compute-graph-v7-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_late_failure_test" start time: Sep 15 15:25 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CudaBackendLateFailure
+[ RUN      ] CudaBackendLateFailure.SurfacesNativeFailureAtCompletionBoundary
+[       OK ] CudaBackendLateFailure.SurfacesNativeFailureAtCompletionBoundary (79 ms)
+[----------] 1 test from CudaBackendLateFailure (79 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (79 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_late_failure_test" end time: Sep 15 15:25 中国标准时间
+"hyle_compute_backend_cuda_late_failure_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 15 15:25 中国标准时间
+
+compute_backend_cuda =   1.20 sec*proc
+
+graph =   0.21 sec*proc
+
+headers =   0.55 sec*proc
+

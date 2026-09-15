@@ -387,9 +387,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md",
-      "summary": "compute_backend_cuda v3 AUDITED：受控 default-stream gate 已反证同步 fill/copy 提前返回；CU30/CU31 固定为 CUDA 同步存储完成边界修复，Queue/事件池/公开 API/对象布局不变。"
+      "candidate": "be2d8b059ca858d2e9b3393b38d2530d4eb3dbe3",
+      "summary": "compute_backend_cuda v3 CANDIDATE：同步存储操作正确等待本默认流完成，旧 gate 反例与 Windows runtime/Graph/逐头通过；Linux、sanitizer、三交付/Q4 与最终复核待完成，异步 Queue 路径未改。"
     },
     {
       "module": "compute_provider_native",
