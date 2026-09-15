@@ -1,6 +1,6 @@
 # R2-G：既定规则的编译边界与单路线计算
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -91,3 +91,20 @@ Windows Ninja / Release / WERROR、实际并行 2：Compute/逐头和 Graph/逐�
 以上只签此次 Windows 针对性检查；不可变 R2 候选的完整 selected gates、oneDNN、三交付、WSL/
 两 Mac 与适用 sanitizer 尚待执行，当前保持 AUDITED。API/算法冻结后只补这些已声明门，不再重跑
 已结案 R2-Q 的独立 schema 验收；不启动 P1 或增加性能测量框架。
+
+## Candidate：4e9f74a0
+
+API、布局、算法和直接消费者已固定，完整 candidate 为
+`4e9f74a09b7218f6053038cc5c5b091e73ff0bc5`。后续只补证据和状态，不因文档提交重新构建。
+Windows MSVC 19.50.35728 / Ninja / Release / WERROR、并行 2：相对 `fb2fc4e5` 的 selector
+**14/14 selected gates PASS**，82 项保留 skipped/reused 理由；包括实际 oneDNN、CUDA 消费以及
+Compute/Graph 的 source/static/shared/relocation。
+
+同一额外普通 C++ consumer 的 source/shared/static 三交付也全部通过：producer DSO 生成真实 Native
+计算结果，submission/Context/slot 退出后 lease 仍能读取，第二次计算不覆盖旧结果，复制 lease 的最后
+释放执行原 DSO 析构；同程序回放变化输入的 Graph，并验证 shared/delegated 模式明确拒绝。
+这些 SDK 复用 selector 的既有输出，没有再造一轮 SDK。
+
+Windows 原始结果在 `C:/hyle-scratch/r2-q4-20260916` 的 `selector-result-4e9f74a0.json`、
+`owning-{source,shared,static}-tests.log`。候选源码红队未发现额外产品纠正；仍需 WSL/两台 Mac 与
+适用 sanitizer 的实际结果，当前为 CANDIDATE，不签全部 correctness/CLOSED。未运行 P1。

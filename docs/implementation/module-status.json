@@ -144,9 +144,10 @@
     },
     {
       "module": "mem",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md",
-      "summary": "mem v10 AUDITED：M100/M101 为已有 QuotaAllocator 添加零分配 RAII reservation 并接入 Graph 共享运行预算；普通 allocator 路径和布局不变。"
+      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
+      "summary": "mem v10 CANDIDATE：M100/M101 已冻结；复用未改动 Mem 的 Windows 生命周期、Graph 预算与三交付证据，4e9f74a0 的 WSL、两台 Mac 和适用 sanitizer 尾项正在验证，未签终局。"
     },
     {
       "module": "mem_vm",
@@ -266,15 +267,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md",
-      "summary": "compute R2-G AUDITED：G31–G35 清理用户 timing profile 公共接收面；承接 b3abb2f5 已实现 D21–D24 的跨平台、交付与 Graph 集成尾项，不把已通过的 Windows 9 门扩写为全部完成。"
+      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
+      "summary": "compute R2 CANDIDATE：D21–D24/G31–G35 固定于 4e9f74a0；Windows 14 个 selected gates 与 owning result 三交付消费者全部通过；WSL、两台 Mac 和适用 sanitizer 尚待裁决。"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md",
-      "summary": "graph R2-G AUDITED：G31–G35 固定单 Device 编译边界、直接并发硬约束、首个可行计划绑定与 profile 竞赛清理；保留资源/region/alias/预算与事务化回滚。"
+      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
+      "summary": "graph R2 CANDIDATE：单 Device 编译、并发硬约束、首个可行计划与 profile 清理已冻结；Windows 14 门及 owning result/Graph 三交付消费者通过，原生路线默认资格仍归 R3–R6。"
     },
     {
       "module": "container_concurrent",

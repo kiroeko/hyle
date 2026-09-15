@@ -44,3 +44,10 @@ M100/M101 已接入：Reservation 只持 borrowed owner/bytes，move/reset/destr
 新入口无堆分配、固定空间；无争用 O(1)，竞争重试沿用原 CAS，不承诺 wait-free。未跑 P1，原 allocator
 实现未改变，不宣称新增性能胜负。Windows checkpoint 不代替 WSL/两台 Apple/适用 sanitizer；保持
 AUDITED，完整候选再签本轮剩余风险，不用旧 v9 CLOSED 冒充新能力已验收。
+
+## Candidate：定向尾项
+
+冻结候选 `4e9f74a09b7218f6053038cc5c5b091e73ff0bc5`；与本轮架构决策 `ec142a92` 相比，Mem
+实现和测试没有变化。Windows 复用上述 G106 对应的 Mem/逐头与三交付记录；当前 R2 Graph 的并发预算、
+失败/异步回收消费者也通过。只补预声明 WSL、两台 Apple 和 ASan/UBSan/TSan 尾项，当前 CANDIDATE，
+未运行部分仍为 UNPROVEN，不触发新的 P1 或全库复检。
