@@ -117,6 +117,54 @@ TEST(CudaBackend, PreservesPortableAndNativeErrorIdentity) {
             static_cast<std::int64_t>(cudaErrorIllegalAddress));
 }
 
+TEST(CudaBackend, SynchronousResourceInitializationPrecedesIndependentQueue) {
+  auto device = cuda::device(0).value();
+  auto context = Context::create(device).value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(1).ok());
+  auto resource =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  constexpr std::size_t kBytes = 4099;
+  auto destination = mem::Buffer::create(resource.ref(), kBytes).value();
+  auto source = mem::Buffer::create(resource.ref(), kBytes).value();
+  auto host = mem::Buffer::create(mem::system_resource(), kBytes).value();
+  auto pointer = cuda::pointer<std::byte>(destination.view()).value();
+  std::array<std::byte, kBytes> expected{};
+  std::array<std::byte, kBytes> observed{};
+  for (int operation = 0; operation < 4; ++operation) {
+    for (std::size_t i = 0; i < kBytes; ++i)
+      expected[i] = operation == 1 ? std::byte{0x51}
+                                   : static_cast<std::byte>((i * 17 + 3) & 255);
+    switch (operation) {
+    case 0:
+      ASSERT_TRUE(destination.view().write(expected).ok());
+      break;
+    case 1:
+      ASSERT_TRUE(destination.view().fill(std::byte{0x51}).ok());
+      break;
+    case 2:
+      ASSERT_TRUE(source.view().write(expected).ok());
+      ASSERT_TRUE(destination.view().copy_from(source.view()).ok());
+      break;
+    case 3:
+      ASSERT_TRUE(host.view().write(expected).ok());
+      ASSERT_TRUE(destination.view().copy_from(host.view()).ok());
+      break;
+    }
+    // No caller-side default-stream wait: the resource methods are complete.
+    auto done = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+      return launch_increment_kernel(stream, pointer, kBytes);
+    });
+    ASSERT_TRUE(done.has_value()) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    ASSERT_TRUE(destination.view().read(observed).ok());
+    for (std::size_t i = 0; i < kBytes; ++i)
+      EXPECT_EQ(observed[i], static_cast<std::byte>(
+                                 (std::to_integer<unsigned>(expected[i]) + 1) &
+                                 255));
+  }
+}
+
 TEST(CudaBackend, EnumeratesExplicitDevices) {
   const auto count = cuda::backend().device_count();
   ASSERT_TRUE(count.has_value()) << count.error().message();

@@ -92,6 +92,15 @@ std::byte *host_address(void *pointer, std::size_t offset) noexcept {
   return static_cast<std::byte *>(pointer) + offset;
 }
 
+Status finish_default_transfer(CUresult submitted) noexcept {
+  // Driver "synchronous" H2D/D2D/memset may return before device completion.
+  // Pair with the same TU's default-stream mode, not a Context/device barrier.
+  // Also observe the prefix when a native call reports an asynchronous error.
+  Status result = driver_status(submitted);
+  result.Update(driver_status(cuStreamSynchronize(nullptr)));
+  return result;
+}
+
 } // namespace
 
 Status CudaResourceBase::read(void *native_handle, std::size_t offset,
@@ -123,8 +132,9 @@ Status CudaResourceBase::write(void *native_handle, std::size_t offset,
   ScopedPrimaryContext scope(context_->primary);
   if (!scope)
     return scope.status();
-  return driver_status(cuMemcpyHtoD(device_address(native_handle, offset),
-                                    source.data(), source.size()));
+  return finish_default_transfer(
+      cuMemcpyHtoD(device_address(native_handle, offset), source.data(),
+                   source.size()));
 }
 
 Status CudaResourceBase::fill(void *native_handle, std::size_t offset,
@@ -139,8 +149,9 @@ Status CudaResourceBase::fill(void *native_handle, std::size_t offset,
   ScopedPrimaryContext scope(context_->primary);
   if (!scope)
     return scope.status();
-  return driver_status(cuMemsetD8(device_address(native_handle, offset),
-                                  std::to_integer<unsigned char>(value), size));
+  return finish_default_transfer(
+      cuMemsetD8(device_address(native_handle, offset),
+                 std::to_integer<unsigned char>(value), size));
 }
 
 Status CudaResourceBase::copy(void *destination_handle,
@@ -164,7 +175,7 @@ Status CudaResourceBase::copy(void *destination_handle,
     ScopedPrimaryContext scope(context_->primary);
     if (!scope)
       return scope.status();
-    return driver_status(cuMemcpy(
+    return finish_default_transfer(cuMemcpy(
         device_address(destination_handle, destination_offset),
         device_address(source_handle, source_offset), size));
   }
@@ -190,7 +201,7 @@ Status CudaResourceBase::copy(void *destination_handle,
   }
   ScopedPrimaryContext scope(context_->primary);
   Status result = scope
-                      ? driver_status(cuMemcpyHtoD(
+                      ? finish_default_transfer(cuMemcpyHtoD(
                             device_address(destination_handle,
                                            destination_offset),
                             source->data, size))
