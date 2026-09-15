@@ -1,6 +1,6 @@
 # R3：CPU 默认计算与 Graph 完整纵切
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -178,3 +178,13 @@ P1 的 Graph 合同同时覆盖串行与同一真实两 worker Sched executor；
 n-worker-physical-cores 模式，不改 instrument。实际 worker 在 cold start 固定/验证 CPU identity；
 完整 default/direct-fused/direct-sequence/Native 工作均计入 bulk admission、执行和等待。1-worker
 correctness 由普通 consumer 覆盖。benchmark 已通过 MSVC 定向语法检查；尚未启动 P1。
+
+## 不可变候选与验收入口
+
+- candidate：`79e96cebeb176c48d66f6b6a156fa9d910b89d82`，API、算法和 benchmark 代码固定。
+- Windows detached 验证副本与 Native comparator 均指向该提交。正式合同在后续 metadata 提交中
+  绑定这个已存在的 peer commit，避免自引用 hash；合同更新不改候选产品/benchmark 源码。
+- Native/oneDNN 双入口与 C44 实消费已有 Windows 初轮结果；C45 四环境三交付、定向 sanitizer、
+  C46 正式 P1 仍待完成。没有把 syntax check、研究 probe 或历史 P1 记为新候选 PASS。
+- `compute-cpu-route-p1-v3`、`graph-cpu-route-p1-v1` 只使用既有 instrument。固定 n=15→31 是工具
+  同一候选的既定精度计划，不允许修改实现后无限重测；最多一次有源码成本依据的产品规则纠正。

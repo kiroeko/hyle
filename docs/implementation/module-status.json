@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
+      "summary": "compute R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "graph R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
+      "summary": "graph R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "container_concurrent",
@@ -353,9 +355,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_provider_onednn R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。"
+      "summary": "compute_provider_onednn R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "graph_provider_onednn R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。"
+      "summary": "graph_provider_onednn R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "compute_ops",
@@ -386,21 +390,24 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_backend_cpu R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
+      "summary": "compute_backend_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_backend_cuda R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
+      "summary": "compute_backend_cuda R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_provider_native R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。"
+      "summary": "compute_provider_native R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "compute_sched",
@@ -409,15 +416,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
-      "summary": "compute_route_cpu R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "compute_route_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "summary": "graph_route_cpu R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "graph_route_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
     }
   ]
 }

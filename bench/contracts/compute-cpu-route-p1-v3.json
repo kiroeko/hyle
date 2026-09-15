@@ -13,9 +13,9 @@
   "peers": [
     {
       "id": "hyle-native",
-      "revision": "runtime-bound",
+      "revision": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
       "configuration": {
-        "role": "The same immutable candidate with the explicit Native provider factory",
+        "role": "Explicit Native implementation from the same immutable product/benchmark candidate; the peer checkout and the compiled Native sources have identical identities.",
         "delivery_shape": "source",
         "route": "HYLE-native SIMD/fat-kernel route selected once during prepare",
         "semantic_delta": "No operation semantics delta; the ordinary default factory cold-binds an eligible implementation."
