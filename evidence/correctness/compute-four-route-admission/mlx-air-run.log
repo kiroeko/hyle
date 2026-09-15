@@ -1,0 +1,9 @@
+e6abeac9ac5265830c9c1541b6f96e9be37a85c2446763a46ad466c63a3837ab  mlx.whl
+MLX=0.32.2 route=GPU M=4 K=1024 H=256 tolerance=1e-4
+run=0 traces=1 max_abs_error=2.56963534409e-08 result=PASS
+run=1 traces=1 max_abs_error=3.40242130512e-08 result=PASS
+run=2 traces=1 max_abs_error=5.85924300814e-08 result=PASS
+run=3 traces=1 max_abs_error=3.67162659998e-08 result=PASS
+run=4 traces=1 max_abs_error=3.85167899138e-08 result=PASS
+run=5 traces=1 max_abs_error=4.13464284685e-08 result=PASS
+result=PASS native_insertion=inside_MLX explicit_intermediate_waits=0 timing=NOT_RUN

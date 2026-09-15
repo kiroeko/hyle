@@ -4,15 +4,18 @@
 > 单个 component 的 closure card，也不自行改变 `module-status.json`；产品修改前仍须让受影响 component
 > 依法返回 `AUDITED` 并分别冻结有限改动集。
 
-当前唯一工作入口是下面的[四路线架构定案调研](#当前任务四条独立路线的架构定案调研)。原总目标、
+当前入口是[四路线研究裁决](four-route-architecture-decision.md)：有限研究完成，停下交用户审视，
+不自动启动产品改造。下面保留范围与前轮分析。原总目标、
 实现队列和 55%/89% 估算保留为历史施工背景，不授权继续正式实现，也不是本次研究进度。
 架构文档不再复制第二套编号队列。
 
 ## 当前任务：四条独立路线的架构定案调研
 
-`fac7c9c5` 后用户要求实际开始剩余调研；本轮具体问题、两个有限实验与停止点见
-[四路线研究卡](four-route-architecture-decision.md)。下述 30 分钟仅指已经完成的文档校准，
-不是新实验的预算或禁止令。当前仍不授权正式 Provider/算子扩充。
+`fac7c9c5` 后用户要求实际开始剩余调研；本轮已完成两个预声明实验和旧实现审计，结果见
+[四路线研究裁决](four-route-architecture-decision.md)。MLX 同 runtime 的 Metal kernel 插入、Vulkan 原生
+重复执行得到有限真机证据；旧 output-only buffer ABI 必须改为同时支持 Provider 生成结果的 owner。
+这不签基础实现或性能通过。后续有限顺序也只见该裁决，不自动恢复旧 goal 或 Provider/算子扩充。
+下述 30 分钟指前轮文档校准，90 分钟研究卡指本轮，二者不是互相覆盖的施工命令。
 
 用户在 `e802e677` 后明确：当前任务是参考成熟推理引擎、按真实纵切进行必要调研/实验，把重大架构决策
 定案；不是完成四条路线的正式产品实现。上一轮[准入研究](foundation-architecture-admission.md)只完成
@@ -45,7 +48,7 @@ Provider 的组合和 MLX/Metal 边界也保留。不能用隐藏 CPU kernel fal
 
 每项输出「真实消费/参考入口 → 可选方案及代价 → 必要实验与反例 → 采用/拒绝理由」。复用已有证据；
 实验只针对会改变这些系统决策的未知量，不为了架构调研实现完整模型或完整交付矩阵。现有 CPU/CUDA
-局部通过、MLX 独立 FFN、仅源码检查的 Vulkan 分别记账；不得合并为四路线全部通过。
+局部证据与本轮 MLX/Vulkan 独立实验分别记账；不得合并为 HYLE 四路线产品全部通过。
 
 纵切以各路线自己的 FFN/资源流水线为基础。CPU 真计算、CUDA 压缩真计算、MLX GPU region 与原生
 Metal 边界、Vulkan 真计算分别取证；GPU 上传下载不能冒充 GPU kernel，独立 MLX 程序也不能冒充
@@ -110,11 +113,11 @@ candidate 做有限实测：同一 Provider 的 direct 对照查抽象税；同�
 新的公共形状与执行器必须服务消费者和性能；「四套实现」本身不是 SOTA 证明，旧 PASS 也不是新架构的
 性能资格。当前阶段只定案并报告，正式改造范围绑定后再实施，不在本轮顺手改产品或启动测量矩阵。
 
-剩余实验必须是有限接入问题：CUDA 正式压缩 carrier 的 typed scales/精度与准备；MLX GPU region
-到原生 Metal 的真实资源/错误/完整费用；Vulkan 原生录制与资源可见性。优先复用前轮 CPU/CUDA/MLX
-事实。不再研究“CPU 层段怎样与 GPU 最快联合推理”，不把局部厂商接法上升为四条路线必须共用实现。
-MLX 无法无损拆开的 region 可整体委托；原生 Metal 替换只在边界费用合格时准入，不依赖未证明的零拷贝桥。
-这些尚未资格化，不能宣布基础实现或 SOTA 已通过；文档轮也不提高实现百分比。
+本节原列的未知量已由[本轮裁决](four-route-architecture-decision.md)逐项处理；不要把这段旧“剩余实验”
+重新执行。CUDA typed scales/精度与源码 façade、MLX result owner/checked completion、Vulkan 原生程序
+已能划定具体实现责任；正式 adapter、错误注入、交付和完整性能仍未资格化。MLX 可通过公开扩展在自己
+runtime 中保留完整 region 并插入 Metal kernel，不强制为了替换而拆图；无支持的边界仍需实证费用。
+模型 CPU+GPU 联合路线不再研究，未完成的正式工作不增加研究轮实现百分比。
 
 本轮文档校准验证（2026-09-15）：以 `6cb2dec3` 为 baseline，validation selector 只选择 docs/closure，
 `check-docs.py`、`check-module-closure.py` 与 `git diff --check` 通过。未改产品、CMake、依赖锁或 registry，

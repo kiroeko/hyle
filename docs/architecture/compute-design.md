@@ -1,7 +1,7 @@
 # HYLE Compute：异构执行与算子提供者架构
 
-> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四条独立路线的关键合同正在接受真实
-> 纵切核对，尚未最终定案；不得从本文自动恢复正式实现。这不新增模块状态。实现状态与施工资格只查当前 closure task 和
+> 决策阶段：**四路线有限调研完成，重构基线待用户审视**。研究已形成共同合同、原生执行方案与旧代码
+> 处置清单；不是基础实现或性能验收通过，不得从本文自动恢复正式实现。这不新增模块状态。实现状态与施工资格只查当前 closure task 和
 > [`module-status.json`](../implementation/module-status.json)，当前可用能力查[用户指南](../user/compute.md)。
 > 本文只定义 Compute 的长期产品合同，不复制阶段性完成状态。下文平台栈和开工顺序是目标边界，不表示
 > 每个 provider/backend 已经交付。被删除的旧实现只可从 Git 历史取得调查事实；历史 task/evidence
@@ -12,6 +12,8 @@
 这些决策不代表新增接口、MLX adapter 或性能资格已经交付。
 当前任务与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)；
 架构定案、基础实现完成和产品性能/交付验收是三个不同的完成点。
+2026-09-15 的[研究裁决](../implementation/tasks/compute/four-route-architecture-decision.md)补正 Provider
+原生扩展、生成结果的所有权及显式准备；其中的新接口合同尚未在 HYLE 产品内全部实现。
 
 ## 1. 产品承诺
 
@@ -167,11 +169,16 @@ buffer、Queue 和 Completion。最新上游只有框架耦合入口时，需要
 [Marlin 压缩接入调查](../implementation/tasks/compute/cuda-compressed-provider-admission.md)给出了真实
 边界证据；它不是已交付 Provider，也没有改变现有对象模型。
 
-渐进式 best-of 的裁决边界也是 HYLE op/region，而不是第三方黑盒内部的某个隐藏 kernel。同一段计算可
-同时收到成熟 provider、HYLE native/vendor provider 和 custom kernel 的候选；Graph 按完整 region 成本
-选择。未证明 material 优势时保留成熟路线，HYLE 明显胜出时在 canonical tensor boundary 切出相应
-op/region。不能在不透明第三方 region 内局部替换；拆分造成的 copy、repack、同步与 fusion 损失必须计入
-选择，必要时扩大第三方 island，而不是为了“逐算子可换”制造更慢的计划。
+渐进式 best-of 有三种实现机制：原生 leaf/融合程序、Provider compiled region、**在 Provider 编译前
+通过受支持的扩展加入 HYLE lowering**。例如 MLX 的公开 CustomKernel/Primitive 可以把 HYLE Metal
+kernel 放在 MLX MatMul 之间，资源和依赖仍由 MLX 持有；无需先拆为两个 runtime 再逐 op 桥接。扩展
+注册/选择在冷路径完成，不能修改已编译黑盒或调用未审计私有符号；没有扩展的 Provider 仍只能按完整
+region 或受审源码 factor 接入。公开 C++ 扩展不要求用户先提供 Python wrapper。
+[MLX 扩展](https://ml-explore.github.io/mlx/build/html/dev/extensions.html)
+
+裁决单位仍是 HYLE op/完整 region，而非隐藏 kernel。原版 MLX region、含 HYLE lowering 的 region、
+独立 HYLE 程序均可成为候选，只有完整收益成立才替换。未证明 material 优势保留成熟路线；拆分的
+copy/repack/同步和扩展导致的 fusion/layout 损失都须计入，不为“逐算子可换”制造更慢的计划。
 
 ### 2.4 HYLE 保留全局调度权，Provider 只拥有局部制品
 
@@ -286,7 +293,8 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
    scalar/shape，同时用对应 Provider 发布的 `StorageFormatId`、block elements/bytes、alignment 与
    byte strides 表达 Q4 物理编码；
    scale/zero 等若不是块内编码，则是显式 typed tensor input，不能藏进 `void *` metadata；
-2. 用户或上层引擎明确把 activation、weight 与 output 放在 CUDA storage，或允许 Graph 选择其它 target。
+2. 用户或上层引擎选择 CUDA 计算路线，并指定或允许 Graph 选择该路线可用的 storage；不授权缺算子时
+   改放 CPU 计算。caller-output 与 Provider-generated output 按 §3.6 的真实所有权处理。
    “CUDA backend 已存在”只证明能建立 context/queue/memory/event/copy，不证明任何 Q4 算子已经存在；
 3. 冷编译枚举精确候选。例如 HYLE 原生或受审 Marlin/CUTLASS kernel、确实接受该格式的 NVIDIA vendor route、
    ggml CUDA 单节点 artifact，以及覆盖整个 MLP 的 ggml compiled region。不能理解该 `StorageFormatId` 的
@@ -420,10 +428,14 @@ compiled artifact 必须保活真实 runtime owner，并报告输入输出 resid
 stream 偷跑，也不得把 provider completion 当作已经加入 HYLE timeline；无法建立明确 bridge 时该 route
 就是不支持。
 
-公开 direct `prepare()` 只枚举 shared-runtime provider，因为它返回的 invocation 必须能提交到调用方 Queue。
-delegated proposal 只由 Graph 的内部 exact-route compile seam 选择；Graph 拥有该 invocation，并以 provider
-返回的真实 Completion 连接 island 边界。这样 direct 用户不会拿到一个构造成功却无法执行的 artifact，
-shared steady path 也不需要每次为 delegated mode 做动态路由。
+Direct Compute 不应因为旧 API 要求一个 Queue 参数，就被限制为只能使用 shared runtime。共享 Queue
+录入入口只接受真正能写入该 Queue 的制品；独立 runtime 的直接计算使用显式绑定提交 owner 的制品，
+返回真实结果/Completion，不需要仅为运行一个 MLX 算子而引入 HYLE Graph。模式与入口在 prepare 时
+确定，不提供“接受 Queue 却忽略它”的伪统一签名，也不让 shared 热路径反复判断 delegated 模式。
+
+Graph 只为多节点 partition/compile 组合调用这些执行能力。Provider 的运行时与单 op lowering 不反向
+依赖 Graph；有需要的 Graph region 翻译放在对应适配层。具体公共类/函数与 factor 按该职责重新设计，
+不保留旧“delegated 只能从 Graph 私有接口进入”的限制或兼容层。
 
 ### 3.3 Provider 的资源合同必须先于 steady submit
 
@@ -438,8 +450,9 @@ layout、alignment、storage kind 或 owner。provider 合同因此分成两个�
 Direct Compute 的 resource-aware prepare 也走同一内部合同；普通 convenience 可以从实际 TensorView 推导
 resource。资源不匹配必须在 prepare/bind 或 Graph compile 的冷路径返回，使另一个 provider/copy route 仍可
 被选择。已经开始 Queue admission 后，provider 不得第一次发现 storage 不兼容，也不得隐藏 allocation、copy
-或 fallback。Delegated island 只向 Graph 暴露 canonical boundary storage；island 内部 tensor、allocator、
-stream 和 workspace 仍由 provider 规划并在 report 中如实计量。
+或 fallback。Delegated island 暴露 canonical boundary 的描述、真实 residence/owner 与完成合同；不要求
+每个输出在调用前已经分配。island 内部 tensor、allocator、stream 和 workspace 仍由 provider 规划并在
+report 中如实计量；生成结果采用 §3.6，而不是伪造已绑定的固定 storage。
 
 bounded 制品在 compile 时必须证明完整域，而不是只证明 envelope 的一个点。Graph 创建具体 Invocation
 时，可经 Compute 私有冷接口把已编译域实例化为普通 exact PreparedOperation：复用 checked shape program
@@ -465,15 +478,17 @@ Provider 的不同 artifact 也可能具有不同成本，必须逐 route 声明
 | Replay 合同 | 准备完成后的每次执行 | 用法与约束 |
 |---|---|---|
 | prepared | HYLE 与 Provider 均不重建图、不推导 shape、不进行 heap allocation、JIT 或常量 packing；只录入已准备命令 | Native、厂商 primitive 或 capture 的严格路线，必须实证而不能按名称推断 |
-| managed | HYLE 固定计划不变；Provider 可为已编译程序实例化执行节点、分配元数据、做已声明的内部 cache lookup/shape 计算 | 完整开销、owner、失败、线程、内存及完成边界可审计；不能标成 prepared，也不能隐含新编译 |
+| managed | HYLE 固定计划不变；Provider 可实例化执行节点、分配已声明的元数据/结果/临时 storage，做内部 cache lookup/shape 计算 | 完整开销、owner、失败、线程、内存及完成边界可审计；不能标成 prepared，也不能隐含新编译 |
 
 两类共用 Operation、Executable 与 Invocation，不制造两套算子 API。默认可选择已资格化且满足调用方
 约束的两类路线，按完整成本与成熟 fallback 顺序裁决；调用方可在冷路径要求 **prepared-only**，此时
 managed/unknown 一律排除。该策略不是 CMake 开关，也不是允许 managed 绕过精度、内存或同步硬门。
 
 两类都禁止 HYLE 热路径搜索/建图/分配、submit-time JIT/tactic search/首次常量 packing、未声明 copy/sync 和
-接纳后静默 rerun。Provider 的首次设备编译及合法 warmup 在显式 prepare 内完成，不执行调用方的副作用
-或可变资源；无法证明整个 bounded domain 不再首次编译时只能缩窄域或 exact-only。managed 内部成本
+接纳后静默 rerun。Provider 的首次设备编译及合法 warmup 在显式 prepare 内完成；warmup 可能执行真实
+工作，必须使用受控隔离输入、scratch 与可变状态，不得推进用户 KV/position、RNG 或其它副作用。不能
+隔离的 effectful route 不自动 warm/capture；需显式安全准备合同或拒绝该模式。冷 instantiate 仅生成参数/
+执行状态，不能借此偷偷执行。无法证明整个 bounded domain 无首次编译时缩窄域或 exact-only。managed 内部成本
 按实际实现报告 exact、上界或 unknown；unknown 不能证明零成本或满足有限硬预算。内部状态和临时
 allocation 若被异步工作引用，必须活到其真实完成点；仅用于 host 录入的临时 metadata 可按合同提前
 释放。OOM/部分接纳仍须处理，不能靠名称豁免生命周期审计。
@@ -492,23 +507,34 @@ MLX 的公开接入还必须满足以下具体限制；这是 Provider 内部实
   prepare/warmup、replay 和清理须绑定稳定的提交线程，或有限且分别预热的线程集合。不能预热后任意
   丢给工作窃取 worker，不能每个 op 创建线程；handoff、私有线程与排他成本须报告。
 - `array(void*, ...)` 会在无法借入时复制，不能作为无条件零拷贝 API；严格 import 必须先验证真实资源、
-  对齐和生命周期。输出由 runtime 分配也不能假称使用了 HYLE 预绑定的输出，必要 copy 要显式计费。
+  对齐和生命周期。默认允许保留 runtime 生成的输出 owner，不强制复制到 HYLE 影子 allocation；只有
+  caller-destination 或真实不兼容边界才产生显式 copy。不可把任意 MTLBuffer 强转为 MLX allocator token。
 - `array::is_available()` 的 signal 快路和 `array::wait()` 的已就绪分支不足以独立证明成功终态。
   bridge 必须保留并检查真正错误状态；受控 stream 的公开 `synchronize` 有明确错误检查，但有 host
   等待成本。可在声明的持久提交线程内完成并转换为 HYLE Completion；这不是零等待的 device bridge，
   不满足禁止此类等待的模式时应拒绝。并发/晚到错误/部分接纳仍须正式验证。
+- v0.32.2 Metal `CommandEncoder::commit` 的完成 handler 先调用用户 completion，再处理 command-buffer
+  错误；因此不能把该回调触发直接转换为 HYLE 成功终态。必须保留 authoritative error/drain。
+  [锁定版本源码](https://github.com/ml-explore/mlx/blob/v0.32.2/mlx/backend/metal/device.cpp)
 - MLX Metal allocator 是 runtime 全局对象；不能把其全局 memory limit 或一次 peak 当作 HYLE 单个
   Invocation 的硬上界，也不能在每次调用时修改全局限额影响其它用户。无法计量的私有开销保留 unknown。
 
 上述线程迁移和页对齐输入借入已有[有限真机证据](../implementation/tasks/compute/foundation-architecture-admission.md)。
 它不证明完整 HYLE/MLX/Metal 纵切、无热 JIT、异步错误注入或性能资格；这些限制也不等于 MLX 不适用，
 而是完整 region、managed 路线与原生 Metal 严格路线的真实分界。
+公开 CustomKernel 的 GPU FFN 组合也已有[六次变化输入验证](../implementation/tasks/compute/four-route-architecture-decision.md#3-新实验与明确未证明项)；
+它仍可能分配输出、整理布局和查询编译 cache，不是零开销或优于 MLX 原版的证明。
 
 ### 3.5 共同合同与四套可独立特化的实现
 
 架构采用共同的语义与冷编译协议，但不要求共同的 native resource layout、执行器或回收算法。
 共同层负责 operation/端口与精度、允许的路线/资源、边界访问/依赖、接纳/完成/错误和成本说明；
 backend/provider 持有原生对象并决定怎样准备、录制、提交与回收。字段同名不证明寿命和并发语义相同。
+
+**先按真实原生调用链从零设计，再盘点旧代码。** 本文的对象名表示职责，不要求保留旧公共类、字段、
+构造步骤、vtable、内部 target 拆分或测试形状。四条路线的冷 lowering/compiler 也可独立实现；共用
+的是必要语义，不是强制使用旧的候选搜索或通用执行程序。已有测试只能回映为需求/缺陷用例，不能
+以“旧测试需要”为理由增加接口或兼容层。
 
 | 路线 | 长寿命制品与执行资源 | 不应被共同层抹平的差异 |
 |---|---|---|
@@ -540,6 +566,11 @@ backend/provider 持有原生对象并决定怎样准备、录制、提交与回
 3. **执行期固定**：使用原生程序或已绑定 callable，不能每 token 重新查询 Provider/设备/性能资料。
    已知类型的局部实现可内联；运行时才知道的模型/设备不能靠宏变成编译期常量，固定间接调用也有成本。
 
+“部署固定”不等于所有 token 参数固定。位置、有效 KV 长度等通常通过已准备的 tensor/参数 buffer
+更新；只有改变程序合法性、资源或真实执行策略的事实才进入有限 variant key。Vulkan 已录制的 push
+constant 不会随 host 变量变化；需要变化时使用合适的 uniform/storage 参数或已资格化的更新/重新录制，
+不能把每个 position 都做成新程序。CUDA capture 和 MLX captured scalar 同样遵守各自真实更新规则。
+
 普通 source/static/shared 使用相同语义与 capability 集，SDK/工具链和原生 flags 只在 owning target
 传播。四种构建配置不是四套重复 ABI；不为了源码用户可内联而要求普通 SDK 消费者包含 vendor 私有头。
 构建规则见 [build system](build-system.md#option-语义)，真实源码依据见
@@ -548,6 +579,34 @@ backend/provider 持有原生对象并决定怎样准备、录制、提交与回
 未来 HIP 可新增独立 backend/provider 与构建发现，复用同义 CUDA 模板或独立实现；设备、数值、memory
 pool、capture、错误与交付必须分别资格化。通常只增加候选和 typed extension，不在 Graph 节点循环里
 增加 `if HIP`；真实新语义才扩共同协议。当前仍无 HIP 真机，不创建空 target/开关，不签兼容或性能。
+
+### 3.6 输出 binding 与生成结果的 owner
+
+输出的逻辑 shape/dtype 可在准备期已知，但其 payload 不一定由调用方分配。边界必须分别表达：
+
+- **预绑定输出**：caller/Graph 提供真实 storage，Provider 确实支持写入；适合固定地址 CUDA/Vulkan
+  程序和普通 direct Compute。捕获、alias 与 workspace 都按真实 allocation 的寿命证明。
+- **Provider 生成结果**：如 MLX array，由 Provider 创建/持有 payload；每次运行发布带 owner 的结果
+  lease。准备期固定 descriptor/residence/导出能力，执行时才有的实际 storage 不能假称已经存在。
+  lease 是 Compute 计算结果合同，不是 Graph 私有裸指针，也不是任意数据依赖输出 shape 的准入。
+
+Graph 的固定 run-slot 可预留结果句柄位置；真实 array/allocator 成本属于声明过的 managed 路线。
+Provider 内连续计算直接消费自己的结果，不要求每个 op 导出成 HYLE buffer；跨 region 只在有真实
+native import/依赖能力时借用，否则显式物化转换/复制并计费，或拒绝不满足策略的边界。获取句柄不
+等于数据已就绪；host 读取等待成功终态，同 runtime/device 消费使用实际可表达的依赖，不强制 host wait。
+
+结果 owner 与异步工作/下游借用一起保活。一次调用未完成或仍有借用时不能覆盖结果槽；需要保留输出
+跨越槽复用时显式转移/保留 owning lease，或使用另一个 run-slot。失败不能发布成功结果，取消不能缩短
+原生 lifetime。实际 allocation 可通过受审 typed resource 与 Mem `Buffer::adopt` 表达，但不能将未物化
+结果、任意 MTLBuffer 或可变 array wrapper 冒充永久稳定的 allocation token。
+
+默认不要求 Provider 结果再复制到 HYLE 影子输出；caller 明确要求固定目的地址时，选择能原地写入的
+候选或加入可报告的 Copy。Graph 的 Mem lifetime planner 不为 Provider-owned payload 重复分配 backing；
+所有 resident/峰值/导出副本仍计入预算，unknown 不满足有限硬预算。只有 adapter 真正证明地址稳定等
+要求时，结果才能进入相应 capture/strict prepared 路线。
+
+这是对旧 `TensorView`-only region output 合同的必要重构，不是已有接口别名。Provider runtime 模式、
+prepared/managed 成本与 output owner 是三个相关但不同的问题，不能从其中一个自动推导另外两个。
 
 ## 4. 平台栈与优先级
 
@@ -815,7 +874,9 @@ ExecuTorch 的调查用于裁决上述边界，不把任何 peer 的完整 runti
   联合推理按 §1.3 排除，不作为架构锁定的待办或实验。
 
 实现必须先通过 CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 storage domain 多
-lane/capture、Apple delegated MLX region + 原生 Metal interop，以及 Vulkan 最小 SPIR-V/资源同步探针。
+lane/capture、Apple MLX region + 受支持的原生 Metal kernel 组合，以及 Vulkan 最小 SPIR-V/资源同步探针。
+Apple 可以在同一 MLX runtime 内通过公开扩展组合，不强制制造外部 Queue 边界；独立 Metal 资源/interop
+按它实际公开承诺的入口另验，不能用同-runtime 探针签任意外部 buffer/Queue 零拷贝。
 CPU 并行分片还须在真实持久 executor 上验证，不以串行调用 callback 或两个独立 Invocation 代替。
 正式代码与这些结论冲突时停止并回到审计；operator 数量、单次 benchmark 或为旧 API 保兼容都不能覆盖该反证。
 

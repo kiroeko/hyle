@@ -1,7 +1,7 @@
 # HYLE Graph：计算 DAG、编译与可复用执行计划
 
-> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四条独立路线的关键合同尚待真实
-> 纵切裁决；不得从本文自动恢复正式实现，也不新增模块状态。本文定义 Graph 的长期产品合同；当前实现状态只查
+> 决策阶段：**四路线有限调研完成，重构基线待用户审视**。共同合同与旧代码处置已形成研究结论，
+> 不是实现或性能资格通过；不得从本文自动恢复正式实现，也不新增模块状态。本文定义 Graph 的长期产品合同；当前实现状态只查
 > [`module-status.json`](../implementation/module-status.json)。每轮纵切只证明其 closure card 登记的
 > DAG/Executable/Invocation 合同。旧 `TaskGraph`、parallel/data-parallel API 与 benchmark 已退出产品树；
 > 被删除的旧字节只可从 Git 历史取得调查事实，历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
@@ -10,6 +10,8 @@
 2026-09-14 的整体复核保留上述骨架，修正 replay 成本、派生 shape、custom execution、资源副作用域、
 variant 内存与搜索受限合同；依据见[复核记录](../implementation/tasks/compute/compute-graph-route-unification-audit.md#整体架构复核与合同修正)。
 当前范围与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四条独立路线的架构定案调研)。
+2026-09-15 的[研究裁决](../implementation/tasks/compute/four-route-architecture-decision.md)要求重构
+Provider 生成结果的所有权和固定执行入口；这些新合同不能当作当前用户接口已交付。
 
 ## 1. Graph 解决什么问题
 
@@ -110,6 +112,9 @@ layout 和 storage 身份；裸地址不足以证明内容相同。Provider 不�
 - submit 后所有 borrow 和 workspace 活到 Completion 终态；in-flight 时 bind/reset/resubmit 明确失败，取消
   不允许提前复用。发布的零拷贝 view 若根在私有 workspace，由 Invocation 持有并在成功终态后借出；需要
   caller destination 时用显式 Copy。
+- Provider 在运行时生成的结果由真实 result owner 保活，不强制先分配 Graph output 再复制。固定结果槽
+  与实际 payload 分开；借用、导出、复用、预算遵守 [Compute §3.6](compute-design.md#36-输出-binding-与生成结果的-owner)。
+  这不是允许无界/数据依赖输出 shape，也不是把 Provider 私有 heap 归入 Graph workspace 后忽略它。
 - Provider 若需要串行 context，Graph 必须在 report 中声明并由 queue/resource admission 表达，不能藏在
   process-global mutex 中。
 
@@ -374,7 +379,13 @@ compile 冷路径把一个可收缩 HYLE region 翻译为 provider-native graph/
 Invocation 的 canonical boundary tensors 并提交。prepared artifact 不重建第三方图；managed artifact
 允许已声明的内部执行节点实例化，仍不得重新选择 HYLE region 或隐含 JIT，详见
 [Compute replay 合同](compute-design.md#34-replay-成本合同独立于-runtime-ownership)。第三方不公开稳定 leaf kernel 时，
-HYLE 只能在 region 边界与其他 provider 竞争，不能钻进不透明制品逐节点替换。
+HYLE 不能钻进不透明制品逐节点替换；若它公开 custom lowering/Primitive 扩展，则可在 **Provider 编译前**
+形成“成熟算子 + HYLE lowering”的完整 region 候选，让该 runtime 保留内部资源与依赖。MLX 的这条
+路径已有有限 GPU FFN 证据；扩展造成的 metadata/layout/fusion 成本仍计入完整比较，不能外推给无扩展的 ggml。
+
+Region boundary 分别声明预绑定 storage 与 Provider-generated result，不统一强制 out-buffer ABI。
+编译期验证逻辑 descriptor/owner/导出能力，运行时保活真实 result lease；同 Provider 的内部中间值不
+强制物化为 HYLE buffer。Graph 只规划自身持有的 backing 与必要边界转换，不重复规划 opaque 内部 heap。
 
 ggml 是这类路线的具名例子，但“链接 ggml”不等于 Graph 自动获得其算子。CPU、CUDA、Metal 与 Vulkan
 拥有不同 buffer、stream/thread、completion 和失败合同，必须由不同 backend-qualified carrier factor
@@ -513,6 +524,11 @@ prefill、mixed、uniform decode、LoRA 或 speculative batch 等业务分类由
 
 ### 6.3 路线内编译与特化执行
 
+先不考虑旧 Graph 类型和实现，从用户固定部署、原生 runtime 资源/执行合同及完整性能成本设计。
+下面的 compiler、Program 和 per-run state 是职责，不规定旧类名或布局；现有搜索器、segment loop、
+capture 接口和 CMake factor 均可改写/删除。普通 C++ 旅程不要求用户组装三轴 ID 数组：选路线/设备、
+提供图与数据、显式准备和运行即可；专家资源/lane 控制才显式展开。旧测试不得成为形状约束。
+
 部署选定后不是持续做全局设备调度，而是「固定配置 → 有限计划族 → 重复执行」。prefill/decode、
 batch/shape 或其它显式事实变化时选择已准备的适用 variant；输入值、KV position、专家 ID 等变化不
 天然要求重新选 Provider。确实影响程序/资源/合法性的事实必须进入 key/domain；新配置或域外 shape
@@ -524,8 +540,13 @@ Metal 片段；Vulkan 的原生录制/提交。原生 pipeline、pool、handle�
 不要求四条路线经过相同 segment 解释循环；单片段可直接绑定完整执行入口。多 Provider 或多 lane
 确实需要的依赖协调才保留，不能为了通用性让每个 kernel 回 host 等待或创建无关 runtime。
 
-这是旧 Graph 的重构准则，不是认定现有搜索、状态布局和提交循环已经合适。正式实现前按路线对照
-成熟调用链，形成复用/改写/删除清单；以实际依赖、生命周期和完整性能成本取舍，不为旧 API 保留多层适配。
+旧 Graph 的 `submit` convenience 会在未准备或 Queue 改变时调用 `prepare_replay`，通用循环还保存了
+逐次 Queue/segment 协调。重构的低延迟入口必须显式完成 prepare/bind，再执行已绑定 native program，
+不能自动准备；如保留方便入口，明确其冷行为。把不变验证移出热路径，不删除必要的 in-flight、alias、
+接纳/失败检查。先限定路线再做 region 选择，唯一可行 route 走快路，不无条件跑全局组合搜索。
+
+具体[旧代码处置](../implementation/tasks/compute/four-route-architecture-decision.md#4-旧代码的处置依据)已经形成，
+但尚未实施；以实际依赖、生命周期和完整性能成本取舍，不为旧 API 保留多层适配。
 
 HYLE 仍拥有逻辑图、同路线内的 partition、边界资源/同步和最终完成责任。Provider 可以接管已选择
 region 的局部计划，但不得跨边界改放置。原生片段一次固定调用不是零指令；低开销必须用同 Provider、
@@ -585,7 +606,7 @@ Graph 至少要用三种不同层级验证：
 unsupported op、OOM、provider failure、device loss、取消、迟到 completion、并发 Invocation、重复 reset、
 partial compile failure 和销毁顺序。
 
-prepared 与 managed 可在同一用户完成边界上比较，但必须把 managed 的执行节点实例化、元数据 allocation
+prepared 与 managed 可在同一用户完成边界上比较，但必须把 managed 的执行节点实例化、元数据/结果/临时 allocation
 及内部 runtime 工作全部计费；不能拿其 kernel-only 数字比较 prepared 的完整 submit，也不能把首次编译
 混入一方 warm 样本。HYLE 抽象税用同一个 Provider/同一 replay 合同作 direct 对照，避免把 Provider
 内部成本误归因于 Graph。
@@ -604,7 +625,7 @@ provider/backend workload 上形成可解释收益。
 
 - CPU direct/one-op、真实 multi-op region 与持久 executor 组合；
 - NVIDIA 的真实浮点 vendor 调用、保留压缩权重的 Q4 decode/prefill、不同候选与完整资源成本；
-- Apple MLX delegated 计算与原生 Metal 边界，以及 Vulkan 的真实资源/计算/同步流水线；
+- Apple MLX 计算与受支持的原生 Metal kernel 组合，以及 Vulkan 的真实资源/计算/同步流水线；
 - 以上路线共用 DAG/Executable/Invocation、冷选路与 shape/capture 合同，并通过实测 profile 回灌、
   生命周期/失败、最小 Obs、三交付和终局性能/红队资格。
 
@@ -620,7 +641,7 @@ CPU 层段/FFN/专家与 GPU 联合推理的纵切已从范围移除。研究定
 纵切的单位是**一次完整公开用户旅程及其待裁决问题**，不是新增几个 API 的展示。每条记录正常输入、
 至少一个会推翻对应假设的反例、资源/线程 owner、最终完成点，以及失败时应改哪个 seam。低层借入探针
 只证明局部机制，不能把 Graph 的跨 Provider 调度、失败回收或完整成本一并签为通过。CUDA 主纵切需
-贯通压缩 FFN 的第三方叶实现与可替换 custom 计算；Apple 需贯通 MLX region 与原生 Metal 边界；Vulkan
+贯通压缩 FFN 的第三方叶实现与可替换 custom 计算；Apple 需贯通 MLX region 与原生 Metal kernel 组合；Vulkan
 专门反证跨资源访问和内存可见性。具体形状、证据与先后顺序只维护在上面的总计划中。
 
 性能用同一程序分两步隔离问题：先对同实现 direct 与 HYLE 路线检查抽象税，再把成熟完整 region 与
@@ -631,9 +652,11 @@ CPU 层段/FFN/专家与 GPU 联合推理的纵切已从范围移除。研究定
 ## 11. 架构稳定条件
 
 Graph 架构在有限探针上接受或反证：CPU one-op 抽象税、CPU multi-op region/workspace、CUDA 同 storage
-domain 多 lane/happens-before/capture、Apple delegated MLX region 与原生 Metal interop，以及 Vulkan
+domain 多 lane/happens-before/capture、Apple MLX region 与受支持的原生 Metal kernel 组合，以及 Vulkan
 SPIR-V 的执行与内存可见性。探针只允许修正它直接反证的 seam，
 不能借机横向增加 operation catalog 或模型 runtime。
+Apple 同 runtime 的公开扩展是有效组合路线，不强制为测试拆成外部 Queue；真正公开的外部
+buffer/Queue 互操作仍须独立资格，不能由该探针外推。
 
 foundation-v1 架构基线不替代实现证据。只有上述探针再加 CUDA Q4 MLP 的 leaf/region/
 storage 路由、source/static/shared 和终局红队全部通过，Compute/Graph foundation implementation 才能签发

@@ -90,7 +90,9 @@ typed custom execution 必须能从三种 C++ 交付接入，不以私有 Provid
 
 Provider 是 HYLE Operation/region 到实际制品的冷路径翻译器，不是第二套公共算子图。叶函数库产出
 prepared op；自己 host 图的库产出 provider-native compiled region，Graph 仍是外层 partition/placement
-owner。把第三方加入依赖锁或链接制品不算获得能力，adapter factor 必须实际完成翻译、资源和 Completion
+owner。有公开 lowering/Primitive 扩展的 runtime 也可在编译前纳入 HYLE kernel，形成同 runtime 的完整
+region 候选；不强制拆图或修改黑盒内部。Provider 生成输出按真实 owner 导出，不强制 HYLE 影子复制。
+把第三方加入依赖锁或链接制品不算获得能力，adapter factor 必须实际完成翻译、资源和 Completion
 合同。ggml 的 CPU、CUDA、Metal、Vulkan carrier 因 runtime owner 不同分别审计；当前 registry 中未带
 backend 后缀的 `compute_provider_ggml` 只代表既有 CPU 审计身份，不能被解释为所有 ggml backend 或
 通用 ggml 产品已经交付。
@@ -108,12 +110,14 @@ renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 
 
 Compute/Graph 当前先通过一个共同的 **foundation implementation gate**，再扩展平台和算子广度：
 leaf/可收缩 node-set region 同池路由与完整成本、exact + bounded/guarded shape domain、CPU one-op/oneDNN
-shared region、CUDA 多 lane/exact capture + Q4 MLP、Apple MLX delegated region + 原生 Metal interop，
+shared region、CUDA 多 lane/exact capture + Q4 MLP、Apple MLX region + 原生 Metal kernel 组合，
 以及 Vulkan 最小 SPIR-V/资源同步纵切都必须在同一对象模型上成立。真实 CPU executor、跨运行时失败
 回收、性能 profile 消费和各 backend 交付也是基础资格，不全部拖到完整模型阶段。只有该 gate 的
 candidate 完成，后续 provider、Vulkan 算子广度、Transformer 和系统算子目录才可横向推进。当前有限工作顺序只维护在
 [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，本页不
 复制一张容易过期的编号状态表。
+本轮四路线[有限研究已形成重构基线](../implementation/tasks/compute/four-route-architecture-decision.md)，
+待用户审视后另开实现卡；两个独立原型不是上述 foundation gate 通过，也不自动恢复旧大 goal。
 
 ## 依赖审查
 
