@@ -1,6 +1,6 @@
 # R3：CPU 默认计算与 Graph 完整纵切
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -119,3 +119,39 @@ graph_route_cpu 的公开边为 Compute CPU route/Graph，私有实现边为 Nat
 
 R2 grouped Q4 为 schema；不添加 CPU Q4 carrier。普通非模型 Unary/Reduce/View/Copy 与上述 FFN 共用
 同一资源/错误合同，不用模型形状收窄已有入口。
+
+## AUDITED：有限 FIX 与验证冻结
+
+C41–C46 是本轮完整 FIX 集；前述 API、依赖方向及 19-family 保留表已经固定。没有发现需要
+修改 CPU backend、Native kernel、共同 Graph planner 或 Sched 产品的基础缺陷。
+
+默认规则在开发期固定：Direct 先匹配 oneDNN 已有二维 dense f32 MatMul 域，串行 rows < 16
+继续由 Native 执行；转置权重/其它不适用域由 Native 的明确能力回答。调用者提供 executor 时沿用
+已有 N tile 与实际并发度条件。Graph 先匹配 oneDNN 已有四节点常量权重 gated FFN region，保留
+其融合、packing 和独立 Invocation scratch；其它节点由 leaf 规则处理。region 不机械套用 leaf
+行数阈值。准备中只查询/绑定，没有输入试跑或计时；正式 P1 若给出完整片段反例，只允许一次
+有源码成本依据的规则纠正，不能反复测到 PASS。
+
+P0：每次 Context 创建只组装至多三个 Provider；Provider 状态由 Context 拥有，allocator/executor
+按已公开期限借用。prepare/compile 冷阶段允许既有 JIT、packing、资源规划；热阶段继续使用固定
+PreparedOperation/Executable、每 Invocation scratch 和真实 Completion。默认入口不添加热层、
+全局状态、线程或逐次分配。专家 Native 的差分/预算测试改用明确 Native fixture，防止普通默认
+变更偷偷改变测试基准。新入口自身检查实际规则、错误、冷 OOM、变化输入与独立重放。
+
+性能采用 W1-WIN 的两个新版本合同：compute-cpu-route-p1-v3 与 graph-cpu-route-p1-v1。
+复用既有 nanobench runner、A/A、双顺序、placement、n=15 与 5% 门；bench 归入两个 route owner，
+不修改公共统计/调度器。Direct 对比默认与明确 Native，Graph 对比同实现 direct 包装税、完整
+oneDNN 序列及明确 Native 完整序列，保留正常 shape 和留出 shape 的数值检查。公开 Sched 的
+1/2-worker 完整消费另作同 executor 条件的真实成本验证；不以串行吞吐冒充 worker 收益。
+本轮 WSL/两 Mac 签正确性与交付；不签未经运行的跨硬件 SOTA 性能。
+
+普通验证限定为新 CPU routes、Native/oneDNN/Graph-oneDNN 和直接受影响的 Compute/Graph
+测试/公共头，以及 Compute/Graph 的 source/static/shared、CPU OFF 头与闭包隔离。Windows、
+WSL 与两 Mac 使用相同普通入口；x64 oneDNN ON/OFF、Apple Native 实际支持域分别取证。
+WSL 定向 ASan/UBSan/TSan 仅覆盖新组合与真实 consumer，R2 未变化共同机制复用原身份证据。
+所有重型构建与运行串行，Ninja parallel 2。文档/状态提交仅 closure/docs/diff。
+
+本卡绑定 compute、graph、compute_backend_cpu、compute_backend_cuda 的交付边界，以及
+compute_provider_native、compute_provider_onednn、graph_provider_onednn、compute_route_cpu、
+graph_route_cpu 的上述有限实现/默认接入范围。旧三 Provider 的 R1 AUDITED 本次明确重新定界；
+compute_provider_ggml 的 BLOCKED 与 compute_sched 的 QUEUED 均不解除。

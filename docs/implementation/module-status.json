@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
+      "summary": "compute R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "graph R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
+      "summary": "graph R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
     },
     {
       "module": "container_concurrent",
@@ -354,8 +354,8 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "compute_provider_onednn R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "compute_provider_onednn R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。"
     },
     {
       "module": "compute_provider_ggml",
@@ -370,8 +370,8 @@
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "graph_provider_onednn R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "graph_provider_onednn R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。"
     },
     {
       "module": "compute_ops",
@@ -386,21 +386,21 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_backend_cpu R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
+      "summary": "compute_backend_cpu R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_backend_cuda R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
+      "summary": "compute_backend_cuda R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。仅交付边界，不重审 R2 机制或 GPU runtime。"
     },
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "compute_provider_native R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "compute_provider_native R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。"
     },
     {
       "module": "compute_sched",
@@ -409,14 +409,14 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
-      "summary": "compute_route_cpu R3 SCOPED：固定真实默认 factory、borrowed executor/allocator 和依赖方向；待有限审计后实现，当前无 target/产品能力。",
+      "state": "AUDITED",
+      "summary": "compute_route_cpu R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "summary": "graph_route_cpu R3 SCOPED：固定真实默认 factory、borrowed executor/allocator 和依赖方向；待有限审计后实现，当前无 target/产品能力。",
+      "state": "AUDITED",
+      "summary": "graph_route_cpu R3 AUDITED：C41–C46 有限 FIX 已冻结；普通 CPU 默认 Direct/Graph、固定 Native/oneDNN 规则、真实 Sched 消费和本路线适用验证。未完成的验证不计 PASS。",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md"
     }
   ]
