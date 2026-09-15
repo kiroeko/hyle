@@ -143,6 +143,7 @@ function(hyle_install_package)
   install(FILES
     "${HYLE_BINARY_DIR}/HyleConfig.cmake"
     "${HYLE_BINARY_DIR}/HyleConfigVersion.cmake"
+    "${HYLE_SOURCE_DIR}/cmake/HyleRuntimeStaging.cmake"
     DESTINATION "${_hyle_package_dir}"
     COMPONENT Hyle_Development)
 endfunction()

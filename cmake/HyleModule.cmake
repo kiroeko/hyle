@@ -551,23 +551,4 @@ function(hyle_add_bench module)
   hyle_register_bench(${module} ${target})
 endfunction()
 
-# hyle_stage_runtime_dependencies(<consumer-target>)
-#
-# Windows does not have an rpath equivalent: a source-embedded executable can
-# link HYLE DLL import libraries successfully but still fail at startup unless
-# the DLLs are beside the executable (or manually placed on PATH).  Do not solve
-# that by overriding the parent project's global output directories.  Instead,
-# consumers that want a runnable build-tree executable opt into this standard
-# CMake runtime-DLL staging step. It also captures transitive runtime DLLs.
-function(hyle_stage_runtime_dependencies target)
-  if(NOT TARGET ${target})
-    message(FATAL_ERROR "hyle_stage_runtime_dependencies: target '${target}' does not exist")
-  endif()
-  if(WIN32 AND NOT HYLE_STATIC)
-    add_custom_command(TARGET ${target} POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E copy -t "$<TARGET_FILE_DIR:${target}>"
-              "$<TARGET_RUNTIME_DLLS:${target}>"
-      COMMAND_EXPAND_LISTS
-      VERBATIM)
-  endif()
-endfunction()
+include("${CMAKE_CURRENT_LIST_DIR}/HyleRuntimeStaging.cmake")

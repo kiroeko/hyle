@@ -50,22 +50,4 @@ unset(_Hyle_missing_components)
 unset(_Hyle_missing_text)
 unset(_Hyle_available_text)
 
-# Windows has no rpath. Keep the installed-package recipe identical to the
-# source-embedded recipe: opt in per executable, never mutate global output dirs.
-if(NOT COMMAND hyle_stage_runtime_dependencies)
-  function(hyle_stage_runtime_dependencies target)
-    if(NOT TARGET ${target})
-      message(FATAL_ERROR
-        "hyle_stage_runtime_dependencies: target '${target}' does not exist")
-    endif()
-    if(WIN32 AND NOT Hyle_STATIC)
-      add_custom_command(TARGET ${target} POST_BUILD
-        # `copy -t <dir>` also succeeds for a header-only component whose
-        # executable has an empty runtime-DLL closure.
-        COMMAND "${CMAKE_COMMAND}" -E copy -t $<TARGET_FILE_DIR:${target}>
-                $<TARGET_RUNTIME_DLLS:${target}>
-        COMMAND_EXPAND_LISTS
-        VERBATIM)
-    endif()
-  endfunction()
-endif()
+include("${CMAKE_CURRENT_LIST_DIR}/HyleRuntimeStaging.cmake")
