@@ -1,0 +1,72 @@
+Start testing: Sep 15 15:22 中国标准时间
+----------------------------------------------------------
+61/64 Testing: hyle_compute_backend_cuda_test
+61/64 Test: hyle_compute_backend_cuda_test
+Command: "C:/hyle-scratch/compute-graph-v7-cuda/bin/hyle_compute_backend_cuda_test.exe"
+Directory: C:/hyle-scratch/compute-graph-v7-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_test" start time: Sep 15 15:22 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 14 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 14 tests from CudaBackend
+[ RUN      ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\cuda_backend_test.cc(88): error: Value of: returned_while_gated
+  Actual: true
+Expected: false
+device fill
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\cuda_backend_test.cc(88): error: Value of: returned_while_gated
+  Actual: true
+Expected: false
+device copy
+
+[  FAILED  ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion (285 ms)
+[ RUN      ] CudaBackend.PreservesPortableAndNativeErrorIdentity
+[       OK ] CudaBackend.PreservesPortableAndNativeErrorIdentity (0 ms)
+[ RUN      ] CudaBackend.EnumeratesExplicitDevices
+[       OK ] CudaBackend.EnumeratesExplicitDevices (0 ms)
+[ RUN      ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip
+[       OK ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip (1 ms)
+[ RUN      ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext
+[       OK ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext (0 ms)
+[ RUN      ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier
+[       OK ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier (4 ms)
+[ RUN      ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed
+[       OK ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed (0 ms)
+[ RUN      ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal
+[       OK ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal (0 ms)
+[ RUN      ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion
+[       OK ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion (0 ms)
+[ RUN      ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics
+[       OK ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics (59 ms)
+[ RUN      ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership
+[       OK ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership (1 ms)
+[ RUN      ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand
+[       OK ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand (0 ms)
+[ RUN      ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage
+[       OK ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage (4 ms)
+[ RUN      ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces
+[       OK ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces (19 ms)
+[----------] 14 tests from CudaBackend (377 ms total)
+
+[----------] Global test environment tear-down
+[==========] 14 tests from 1 test suite ran. (377 ms total)
+[  PASSED  ] 13 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion
+
+ 1 FAILED TEST
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_compute_backend_cuda_test" end time: Sep 15 15:22 中国标准时间
+"hyle_compute_backend_cuda_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 15 15:22 中国标准时间
+
+compute_backend_cuda =   0.47 sec*proc
+

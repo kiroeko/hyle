@@ -387,9 +387,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md",
-      "summary": "compute_backend_cuda v3 SCOPED：真实 Q4 consumer 与 CUDA native 同步规则暴露 Mem 同步 write/fill/copy 的完成边界缺口；只修 CUDA 存储适配，Queue/事件池/公开 API/对象布局不变。"
+      "summary": "compute_backend_cuda v3 AUDITED：受控 default-stream gate 已反证同步 fill/copy 提前返回；CU30/CU31 固定为 CUDA 同步存储完成边界修复，Queue/事件池/公开 API/对象布局不变。"
     },
     {
       "module": "compute_provider_native",

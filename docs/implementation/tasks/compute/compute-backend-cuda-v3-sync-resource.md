@@ -1,6 +1,6 @@
 # Compute CUDA backend v3：同步存储操作的实际完成边界
 
-## Closure card / SCOPED
+## Closure card / AUDITED
 
 - owner：`compute_backend_cuda`；baseline `85f8bbb2`；前轮证书为
   [CUDA v2](compute-backend-cuda-v2-endpoint-identity.md)，产品候选 `db164bb7`。
@@ -63,3 +63,15 @@ P0：复制/填充仍 O(bytes)，新增的是同步合同要求的 O(1) driver w
   engineering_performance 七个最终 gate 待候选证据裁决，不提前写 PASS。
 
 候选与终局结果在此续写；Q4 Provider/residence、Apple 与整体 foundation 尚未完成，不计入本证书。
+
+## 实现前反证
+
+`cd00f76d` 的 CUDA runtime 在未改产品的 Windows RTX 4070 上实际 13/14 通过。新增 default-stream
+host gate 保持未放行时，device fill 与 device copy 都提前返回；两个断言均失败。见
+[受控原始日志](../../../../evidence/correctness/compute-cuda-resource-sync-v3/original-stream-gate.log)。
+这个反例不依赖 cuBLASLt、Q4 数值或亚纳秒计时：未满足执行前置条件，同步操作就已经返回成功。
+100ms 是给 host worker 执行的观察窗口，不是产品性能门槛；放行并 join 后仍验证完整数据与清理。
+
+因此 CU30/CU31 已固定，进入 AUDITED。选用与当前 native 操作同 TU 的默认流完成等待，避免引入新
+stream owner/资源锁/全设备 barrier；原 Context/Buffer 生命周期与异步 Queue 合同保持。完成 helper
+后先重放这一旧候选失败用例，再运行本卡列出的精确验证，不靠多跑随机 Q4 样例掩盖缺陷。
