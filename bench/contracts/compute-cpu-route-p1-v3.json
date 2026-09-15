@@ -512,7 +512,8 @@
           "HYLE_STATIC": "ON",
           "HYLE_TEST_INSTRUMENTATION": "OFF",
           "HYLE_TRACE": "OFF",
-          "HYLE_DEV_FACTORS": "compute_route_cpu"
+          "HYLE_COMPUTE_CPU": "ON",
+          "HYLE_COMPUTE_CUDA": "OFF"
         },
         "peer_cache": {
           "hyle-native": "HYLE_COMPUTE_NATIVE_SOURCE_DIR",
