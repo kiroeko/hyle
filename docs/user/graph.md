@@ -1,10 +1,9 @@
 # HYLE Graph：编译并重复执行计算 DAG
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
-> [`module-status.json`](../implementation/module-status.json) 为准；node-set region 已实现，已接受但尚未实现的
-> storage/lane 联合优化与跨 variant 完整内存聚合预算合同见
-> [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，不得从本页
-> 推断它们已经交付。当前已经实现 exact symbolic specialization，execution target / storage domain / execution lane
+> [`module-status.json`](../implementation/module-status.json) 为准；尚未完成的 packed 制品共享及终局验证见
+> [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)。当前已经实现
+> exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import、single-queue capture/hybrid replay 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
@@ -12,10 +11,11 @@
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
 与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入、
-编译 requested-storage 常驻/峰值配额和共享 Invocation 存储配额。`ViewSpec` 已支持具体形状绑定时的
-动态 reshape/slice/permute/broadcast 与真实布局推导；它的完整动态域证明、
-Provider 私有 packing 共享、capture 私有存储完整上界与 storage/lane 联合优化仍是
-[架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
+编译 requested-storage 常驻/峰值配额和共享 Invocation 存储配额。`ViewSpec` 支持动态
+reshape/slice/permute/broadcast 的有限全域证明、真实布局/偏移绑定与共享物理计划；证明不了的关系
+明确拒绝 declared-domain，仍可使用 exact。storage/copy target/lane 与 leaf/region 进入同一有界冷搜索，
+只有合格完整计划 profile 才用于继续择优。Provider 私有 packing 共享尚未实现；capture 私有存储的
+unknown 约束见下文，不把 driver 未公开的字节数算作零。完整边界见[架构合同](../architecture/graph-design.md)。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched

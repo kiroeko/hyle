@@ -303,4 +303,114 @@ TEST(GraphCudaReplay, CapturesEligibleSegmentsAndReplaysAHybridPlan) {
   EXPECT_TRUE(invocation.submit(queues).error().IsFailedPrecondition());
 }
 
+TEST(GraphCudaReplay, CaptureBudgetPreservesCommandsAndReportsUnknownStorage) {
+  auto context =
+      Context::create(hyle::compute::cuda::device(0).value()).value();
+  auto pinned = hyle::compute::cuda::MemoryResource::create(
+                    context, hyle::compute::cuda::MemoryKind::kPinnedHost)
+                    .value();
+  auto device = hyle::compute::cuda::MemoryResource::create(
+                    context, hyle::compute::cuda::MemoryKind::kDevice)
+                    .value();
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
+          .value();
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  const auto output =
+      builder
+          .add(hyle::graph::ViewSpec::slice(0, hyle::graph::Dimension::fixed(0),
+                                            hyle::graph::Dimension::fixed(8))
+                   .value(),
+               input)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  const std::array storage{StorageDomain{pinned.ref()},
+                           StorageDomain{device.ref()}};
+  const std::array targets{ExecutionTarget{&context, StorageDomainId{1}}};
+  const std::array external{
+      ExternalResourceContract{input, StorageDomainId{0}}};
+  const std::array placements{hyle::graph::ValuePlacement{
+      output, StorageDomainId{1}, PlacementStrength::kRequired}};
+  const CompileEnvironment environment{.storage_domains = storage,
+                                       .targets = targets};
+  auto source = Buffer::create(pinned.ref(), 8 * sizeof(float), 256).value();
+  const auto input_view =
+      TensorView::create(description, source.view()).value();
+  auto queue = context.create_queue().value();
+  const std::array queues{QueueBinding{ExecutionLaneId{0}, &queue}};
+
+  for (const bool allow_unknown : {false, true}) {
+    auto compiled = hyle::graph::compile(
+        graph, environment,
+        {.invocation_storage = hyle::graph::InvocationStorageLimits{
+             .max_bytes = 1U << 20,
+             .unknown = allow_unknown
+                            ? hyle::graph::UnknownStoragePolicy::kAllow
+                            : hyle::graph::UnknownStoragePolicy::kReject},
+         .value_placements = placements,
+         .external_resources = external});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_EQ(compiled->executable.required_queue_count(), 1U);
+    ASSERT_GT(compiled->report.capturable_segment_count(), 0U);
+    ASSERT_EQ(compiled->report.copy_bytes(), 8 * sizeof(float));
+    {
+      auto invocation = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(invocation.bind(input, input_view.as_const()).ok());
+      ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+      EXPECT_EQ(invocation.replay_route(), ReplayRoute::kCommands);
+      EXPECT_FALSE(
+          compiled->executable.invocation_storage_usage()->has_unknown_storage);
+      const auto before =
+          compiled->executable.invocation_storage_usage()->live_bytes;
+      const auto prepared = invocation.prepare_replay(
+          queues, {.mode = ReplayMode::kRequireCapture});
+      if (allow_unknown) {
+        ASSERT_TRUE(prepared.ok()) << prepared.message();
+        EXPECT_EQ(invocation.replay_route(), ReplayRoute::kCaptured);
+        EXPECT_TRUE(compiled->executable.invocation_storage_usage()
+                        ->has_unknown_storage);
+      } else {
+        EXPECT_TRUE(prepared.IsResourceExhausted());
+        EXPECT_EQ(invocation.replay_route(), ReplayRoute::kCommands);
+        EXPECT_EQ(compiled->executable.invocation_storage_usage()->live_bytes,
+                  before);
+        EXPECT_FALSE(compiled->executable.invocation_storage_usage()
+                         ->has_unknown_storage);
+      }
+      // No graph work runs while recording. Every replay must read the new
+      // bytes, including the still-valid commands after a rejected capture.
+      for (int replay = 0; replay < 3; ++replay) {
+        if (!allow_unknown && replay == 1) {
+          ASSERT_TRUE(
+              invocation
+                  .prepare_replay(queues, {.mode = ReplayMode::kPreferCapture})
+                  .ok());
+          EXPECT_EQ(invocation.replay_route(), ReplayRoute::kCommands);
+        }
+        std::array<float, 8> values{};
+        for (std::size_t index = 0; index < values.size(); ++index)
+          values[index] = static_cast<float>(index + 10 * replay);
+        ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+        auto completion = invocation.submit(queues);
+        ASSERT_TRUE(completion) << completion.error().message();
+        ASSERT_TRUE(completion->wait().ok());
+        auto result = invocation.output(output);
+        ASSERT_TRUE(result) << result.error().message();
+        EXPECT_EQ(result->storage().resource(), device.ref());
+        std::array<float, 8> actual{};
+        ASSERT_TRUE(result->storage()
+                        .read(std::as_writable_bytes(std::span(actual)))
+                        .ok());
+        EXPECT_EQ(actual, values);
+      }
+    }
+    EXPECT_EQ(compiled->executable.invocation_storage_usage()->live_bytes, 0U);
+    EXPECT_EQ(
+        compiled->executable.invocation_storage_usage()->has_unknown_storage,
+        allow_unknown);
+  }
+}
+
 } // namespace
