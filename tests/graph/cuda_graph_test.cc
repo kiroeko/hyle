@@ -58,8 +58,12 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
   const auto start = builder.dimension({0, 5, 1}).value();
   const auto input = builder.input(description).value();
   const auto output =
-      builder.add(hyle::graph::ViewSpec::slice(0, hyle::graph::Dimension(start),
-                       hyle::graph::Dimension::fixed(3)).value(), input).value();
+      builder
+          .add(hyle::graph::ViewSpec::slice(0, hyle::graph::Dimension(start),
+                                            hyle::graph::Dimension::fixed(3))
+                   .value(),
+               input)
+          .value();
   ASSERT_TRUE(builder.publish(output).ok());
   const auto graph = std::move(builder).finish().value();
   // Neither a CUDA target nor a CPU metadata target needs a native Provider
@@ -89,17 +93,21 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
       ASSERT_TRUE(created) << created.error().message();
       auto run = std::move(*created);
       ASSERT_TRUE(
-          run.bind(input, TensorView::create(description, source.view()).value())
+          run.bind(input,
+                   TensorView::create(description, source.view()).value())
               .ok());
       ASSERT_TRUE(run.submit()->wait().ok());
       auto result = run.output(output).value();
       EXPECT_EQ(result.storage().resource(), resource.ref());
-      EXPECT_EQ(result.storage().offset(), static_cast<std::size_t>(offset) * sizeof(float));
+      EXPECT_EQ(result.storage().offset(),
+                static_cast<std::size_t>(offset) * sizeof(float));
       std::array<float, 3> actual{};
-      ASSERT_TRUE(
-          result.storage().read(std::as_writable_bytes(std::span(actual))).ok());
+      ASSERT_TRUE(result.storage()
+                      .read(std::as_writable_bytes(std::span(actual)))
+                      .ok());
       EXPECT_EQ(actual, (std::array<float, 3>{static_cast<float>(offset),
-          static_cast<float>(offset + 1), static_cast<float>(offset + 2)}));
+                                              static_cast<float>(offset + 1),
+                                              static_cast<float>(offset + 2)}));
     }
   }
 }
