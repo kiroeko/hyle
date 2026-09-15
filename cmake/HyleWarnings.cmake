@@ -15,9 +15,12 @@ function(hyle_apply_warnings target)
       target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:/WX>")
     endif()
   else()
-    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(${target} PRIVATE
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall>"
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-Wextra>"
+      "$<$<COMPILE_LANGUAGE:C,CXX>:-Wpedantic>")
     if(HYLE_WERROR)
-      target_compile_options(${target} PRIVATE -Werror)
+      target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:C,CXX>:-Werror>")
     endif()
   endif()
 endfunction()
