@@ -387,9 +387,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
-      "summary": "compute_backend_cuda v2 SCOPED：真实 Graph 双 lane 暴露同 Context 的不同 Queue 共用 endpoint identity，可能省略必要 event wait；只审计私有身份与可导入判断，不改变公开 API/runtime owner。"
+      "summary": "compute_backend_cuda v2 AUDITED：CU20/CU21 用稳定 QueueState 区分 exact endpoint 与 Context compatibility；最小真机反例已复现，不改公开 API/layout/CMake 或 warm enqueue。"
     },
     {
       "module": "compute_provider_native",
