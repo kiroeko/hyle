@@ -845,7 +845,9 @@ Status pack_weights(void *context, ConstTensorView source,
       allocator.allocate(sizeof(PackedWeights), alignof(PackedWeights));
   if (storage == nullptr)
     return Status::ResourceExhausted("packed weights owner allocation failed");
-  auto *packed = ::new (storage) PackedWeights{&probe};
+  auto *packed = ::new (storage) PackedWeights{.probe = &probe,
+                                                    .buffer = {},
+                                                    .private_metadata = {}};
   *output = {packed, +[](void *opaque, AllocatorRef owner) noexcept {
                auto *weights = static_cast<PackedWeights *>(opaque);
                EXPECT_EQ(weights->borrowers.load(), 0U);
@@ -3058,8 +3060,9 @@ TEST(GraphRegions,
     const auto second_node = add_resource_touch(
         builder, second, same_resource ? first_storage : second_storage,
         same_resource ? ResourceAccess::kRead : ResourceAccess::kWrite, 53);
-    if (dependent)
+    if (dependent) {
       ASSERT_TRUE(builder.depends_on(second_node, first_node).ok());
+    }
     const Graph graph = std::move(builder).finish().value();
     RegionProbe first_probe{.mode = ProposalMode::kResourceSingletons};
     RegionProbe second_probe{.mode = ProposalMode::kResourceSingletons};
@@ -3101,10 +3104,11 @@ TEST(GraphRegions,
     ASSERT_TRUE(invocation.prepare_replay(queues).ok());
     ASSERT_TRUE(invocation.submit(queues)->wait().ok());
     EXPECT_EQ(*first_storage.value(), scenario == 2 ? 0 : 37);
-    if (same_resource)
+    if (same_resource) {
       EXPECT_EQ(second_probe.last_resource_read, scenario == 2 ? 0 : 37);
-    else
+    } else {
       EXPECT_EQ(*second_storage.value(), 53);
+    }
   }
 }
 
@@ -4898,7 +4902,7 @@ TEST(GraphRegions, GlobalLimitSkipsLaterTargetsButPreservesRequiredPlacement) {
 
 TEST(GraphRegions, LimitedDiscoveryNeverHidesRealProviderErrors) {
   const auto logical = make_negations(2);
-  for (const Status failure :
+  for (const Status &failure :
        {Status::ResourceExhausted("provider scratch allocation failed"),
         Status::Internal("provider consistency check failed")}) {
     RegionProbe probe{.mode = ProposalMode::kOverflow};
@@ -6004,7 +6008,7 @@ TEST(GraphRegions,
 
 TEST(GraphRegions, RegionErrorCodesDoNotGrantPermissionToRetry) {
   const auto logical = make_negations(2);
-  for (const Status error :
+  for (const Status &error :
        {Status::Unimplemented("fatal region compile failure"),
         Status::ResourceExhausted("real region allocation failure")}) {
     RegionProbe probe;
@@ -6522,7 +6526,7 @@ TEST(GraphRegions,
 
 TEST(GraphRegions, LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets) {
   const auto logical = make_negations(1);
-  for (const Status error :
+  for (const Status &error :
        {Status::Unimplemented("fatal leaf compile failure"),
         Status::ResourceExhausted("real leaf allocation failure")}) {
     RegionProbe probe;
@@ -7579,13 +7583,16 @@ TEST(GraphPacking, BoundsAndPartialFactoryFailuresAreTransactional) {
             compiled->report.compilation_storage()->has_unknown_storage);
       } else {
         ASSERT_FALSE(compiled);
-        if (scenario == 3)
+        if (scenario == 3) {
           EXPECT_EQ(compiled.error(), packing.factory_failure);
-        if (scenario == 4 || scenario == 5)
+        }
+        if (scenario == 4 || scenario == 5) {
           EXPECT_TRUE(compiled.error().IsInvalidArgument())
               << compiled.error().message();
-        if (scenario == 0 || scenario == 2 || scenario == 5)
+        }
+        if (scenario == 0 || scenario == 2 || scenario == 5) {
           EXPECT_EQ(packing.factories.load(), 0U);
+        }
       }
     }
     EXPECT_EQ(packing.factories.load(), packing.destroys.load());

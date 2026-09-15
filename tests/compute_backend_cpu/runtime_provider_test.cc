@@ -1476,7 +1476,7 @@ TEST(RuntimeProviders, DirectErrorCodesDoNotBecomeSafeDeclines) {
       hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
                                        std::array<std::int64_t, 1>{8})
           .value();
-  for (const hyle::Status error :
+  for (const hyle::Status &error :
        {hyle::Status::Unimplemented("fatal exact preparation failure"),
         hyle::Status::ResourceExhausted("real exact preparation OOM")}) {
     AsyncOperationProbe first;

@@ -114,8 +114,9 @@ TEST(GraphCompilationStorage,
     EXPECT_EQ(first.kernels, 0);
     EXPECT_EQ(compiled->report.compilation_storage()->has_unknown_storage,
               kind == 3);
-    if (kind == 1)
+    if (kind == 1) {
       EXPECT_GE(compiled->report.compilation_storage()->peak_bytes, 1U << 19);
+    }
     EXPECT_LT(compiled->report.compilation_storage()->resident_bytes, 1U << 17);
   }
 }
@@ -532,7 +533,7 @@ struct QuarantinedFactoryAllocator final {
 };
 
 TEST(GraphCustomKernel, ReportOwnsProviderTextWithoutKeepingExecutionAlive) {
-  for (const std::string name :
+  for (const std::string &name :
        {std::string{}, std::string("na\0me", 5), std::string(1024, 'n')}) {
     const std::string version(513, 'v');
     Probe probe;

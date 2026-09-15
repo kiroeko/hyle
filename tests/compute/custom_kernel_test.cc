@@ -62,8 +62,10 @@ TEST(CustomKernel, OwnsMoveOnlyFactoryAndCopiesIdentityText) {
     Provider copy = *created;
     Provider assigned;
     assigned = copy;
-    assigned = assigned;
-    copy = std::move(copy);
+    auto &same_assigned = assigned;
+    assigned = same_assigned;
+    auto &same_copy = copy;
+    copy = std::move(same_copy);
     Provider moved = std::move(*created);
     EXPECT_FALSE(*created);
     *created = {};
@@ -316,10 +318,12 @@ TEST(CustomKernel,
     EXPECT_EQ(result.has_value(), fault == Fault::kUnsupported);
     EXPECT_EQ(fallback.preparations, fault == Fault::kUnsupported ? 1 : 0);
     EXPECT_EQ(first.kernels, 0);
-    if (fault == Fault::kFatalUnsupported)
+    if (fault == Fault::kFatalUnsupported) {
       EXPECT_TRUE(result.error().IsUnimplemented());
-    if (fault == Fault::kResourceDecline)
+    }
+    if (fault == Fault::kResourceDecline) {
       EXPECT_TRUE(result.error().IsResourceExhausted());
+    }
   }
 }
 

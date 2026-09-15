@@ -713,9 +713,10 @@ TEST(GraphVariants, HardCompileBudgetsAreCumulativeAcrossTheFamily) {
       restricted.max_operation_proposals = general.operation_proposals;
     auto failed = hyle::graph::compile(logical.graph, context, restricted);
     ASSERT_FALSE(failed) << "budget kind " << kind;
-    if (kind < 2)
+    if (kind < 2) {
       EXPECT_TRUE(failed.error().IsResourceExhausted())
           << failed.error().message();
+    }
   }
   options.max_placement_attempts = total.placement_attempts;
   options.max_route_search_states = total.route_search_states;
@@ -1088,8 +1089,9 @@ TEST(GraphDomain, CompileAndInstantiationAllocationFailuresRollBackAndRecover) {
       {
         auto result = hyle::graph::compile(logical.graph, context, options);
         EXPECT_FALSE(result.has_value()) << "compile allocation " << failure;
-        if (!result)
+        if (!result) {
           EXPECT_TRUE(result.error().IsResourceExhausted());
+        }
       }
       probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
       EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(),
@@ -1111,8 +1113,9 @@ TEST(GraphDomain, CompileAndInstantiationAllocationFailuresRollBackAndRecover) {
       {
         auto result = compiled.executable.create_invocation(shape);
         EXPECT_FALSE(result.has_value()) << "instance allocation " << failure;
-        if (!result)
+        if (!result) {
           EXPECT_TRUE(result.error().IsResourceExhausted());
+        }
       }
       probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
       EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(),
@@ -2567,12 +2570,15 @@ TEST(GraphCompile, ConstantMaterializationFailureDoesNotOwnOrModifyTheSource) {
     ASSERT_FALSE(failed);
     EXPECT_EQ(target_resource.live_allocations, 0u);
     EXPECT_EQ(source_resource.live_allocations, 1u);
-    if (scenario == 0)
+    if (scenario == 0) {
       EXPECT_TRUE(failed.error().IsResourceExhausted());
-    if (scenario == 1)
+    }
+    if (scenario == 1) {
       EXPECT_TRUE(failed.error().IsDataLoss());
-    if (scenario == 2)
+    }
+    if (scenario == 2) {
       EXPECT_TRUE(failed.error().IsInvalidArgument());
+    }
   }
   source_resource.fail_mapping = false;
   expect_near(read(source, 4), std::array{1.F, 2.F, 3.F, 4.F});

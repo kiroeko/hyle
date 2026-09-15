@@ -182,8 +182,9 @@ TEST(ShapeProgram, SmallDomainEnumerationNeverExcludesALegalDerivedValue) {
             std::array<std::int64_t, 3> values{lhs, rhs, -1};
             const auto status = evaluate_shape_program({dimensions}, values);
             ASSERT_EQ(status.ok(), expected.has_value());
-            if (expected)
+            if (expected) {
               ASSERT_EQ(values[2], *expected);
+            }
           }
         }
       }

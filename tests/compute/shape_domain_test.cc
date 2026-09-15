@@ -309,15 +309,16 @@ TEST(ProviderShapeDomain,
                   ? 0
                   : (rows - 1) * row_stride + (columns - 1) * column_stride + 4;
           EXPECT_EQ(status.ok(), span <= 128);
-          if (span > 128)
+          if (span > 128) {
             EXPECT_TRUE(status.IsOutOfRange());
+          }
         }
       }
     }
   }
   std::array<std::int64_t, 2> point{3, 4};
   const auto opaque = StorageFormat::opaque(StorageFormatId{123, 1}, 4).value();
-  for (const auto wrong :
+  for (const auto &wrong :
        {TensorDesc{}, TensorDesc::dense(DataType::kInt32, point).value(),
         TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{12})
             .value(),

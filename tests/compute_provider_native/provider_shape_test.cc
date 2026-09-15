@@ -78,8 +78,9 @@ prepare_domain(const Context &context, const RmsDomain &domain,
                             context, 0, operation, domain.input_descriptions(),
                             domain.outputs, input_requirements, outputs, shape,
                             allocator));
-  if (!exact)
+  if (!exact) {
     EXPECT_EQ(proposal.shape_coverage, ProviderShapeCoverage::kEntireDomain);
+  }
   const std::array resources{hyle::mem::system_resource(),
                              hyle::mem::system_resource()};
   HYLE_ASSIGN_OR_RETURN(auto attempt,
@@ -212,8 +213,9 @@ void check_rms(PreparedOperation prepared, Queue &queue, bool weighted,
     ASSERT_TRUE(completion) << completion.error().message();
     ASSERT_TRUE(completion->wait().ok());
   }
-  if (allocations != nullptr)
+  if (allocations != nullptr) {
     EXPECT_EQ(allocations->attempts, before);
+  }
   ASSERT_TRUE(output.view()
                   .read(std::as_writable_bytes(std::span(actual).first(count)))
                   .ok());
@@ -1154,7 +1156,7 @@ TEST(PreparedDomainContract, SuppliedMetadataIsCheckedBeforeTheProvider) {
   const std::array expected{
       TensorDesc::dense(DataType::kFloat32, shape).value()};
   std::array<std::int64_t, 3> point{2, 3, -1};
-  for (const auto wrong :
+  for (const auto &wrong :
        {TensorDesc{}, TensorDesc::dense(DataType::kInt32, shape).value(),
         TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{5, 5})
             .value(),
