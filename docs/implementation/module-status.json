@@ -387,9 +387,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
-      "summary": "compute_backend_cuda v2 AUDITED：CU20/CU21 用稳定 QueueState 区分 exact endpoint 与 Context compatibility；最小真机反例已复现，不改公开 API/layout/CMake 或 warm enqueue。"
+      "candidate": "1644bdc23a6a94a98ac65ccc8bb94fbf64897756",
+      "summary": "compute_backend_cuda v2 CANDIDATE：CU20/CU21 的端点身份修复已通过 Windows CUDA/Graph 与真实双 lane source/static/shared；待 Linux CUDA、适用 sanitizer 和候选后独立复核。"
     },
     {
       "module": "compute_provider_native",

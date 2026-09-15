@@ -1,6 +1,6 @@
 # Compute CUDA backend v2：完成端点不能把 Context 当 Queue
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - owner：`compute_backend_cuda`；baseline `a4dee153`；前轮为
   [CUDA v1](compute-backend-cuda-v1-async-runtime.md)。
@@ -46,3 +46,27 @@ v1，所有其它 v1 公开入口 `KEEP`。直接/间接依赖、CUDA Toolkit 13
 `1def523a` 的最小反例已在 RTX 4070 上实际失败：不同 Queue 的 16-byte endpoint 完全相同；其余
 compatibility/move/foreign/invalid 检查通过。对应安装源码 consumer 已在 `a4dee153` 因异步依赖报告
 失败。两者与源码指向同一根因，接下来只实施 CU20，再按本卡回归；未达到 Candidate/关闭。
+
+## 候选与 Windows 消费回放（2026-09-15）
+
+产品候选 `1644bdc23a6a94a98ac65ccc8bb94fbf64897756` 只改 CU20 的两个私有函数；公开 API、对象布局、
+warm enqueue 与 Graph 产品代码不变。CU21 的端点反例和公开双 lane consumer 已提交，指南补清“同
+Context 可互通，不等于同一有序 Queue”。有限产品 FIX 完成，进入 CANDIDATE；尚不签 CLOSED。
+
+- Windows RTX 4070、CUDA 13.3.73、MSVC Release：`compute-graph-v7-cuda` 精确构建 CUDA runtime/
+  late-failure/Graph executable，串行 CTest 的 CUDA 13/13、late failure 1/1、逐头 1/1、Graph 284/284
+  全通过；旧反例失败、新候选通过，不用成功编译代替跨 stream 数值验证。
+- `custom-execution-v10-source-consumer`、`custom-execution-v10-shared-cuda-consumer` 和
+  `custom-execution-v10-static-consumer` 各自精确构建 `hyle_custom_cuda_sample`，串行 CTest
+  `^hyle_custom_cuda_sample$` 全通过。安装 producer 只增量构建 CUDA backend，再显式安装到各自
+  `C:/hyle-scratch/custom-execution-v10-{shared,static}-sdk`，不写系统安装目录。
+- 每种交付都实际执行 pinned input → H2D → 两个 kernel → D2H；两个独立 Invocation/Queue 对、commands
+  和 require-capture、每种模式三次变化输入，检查两条 device-wait、零 host-wait 与精确数值。
+- 源码 consumer 首次增量仍失败，已定位为样例目录的旧 DLL：producer SHA256 `133d8c83…`，staged
+  `fe600192…`。更新到同一 producer 后通过；installed shared 的 SDK/staged 均为 `ff91df9e…`。
+  这是 [增量 staging 维护问题](../build/build-runtime-staging-incremental-v1.md)，不是 CU20 修复失败；
+  本卡没有顺手修改公共构建脚本。
+
+完整候选还需 Linux CUDA/适用 sanitizer 与候选后独立复核。没有新增 P1；必要 event wait 是正确性成本，
+不能拿旧错误路线当性能 peer。当前 Compute/Graph 实现行数分别 16,996/14,135，合计 31,131；全库
+686,973、自实现不含测试 126,316，统一 LOC 工具在同一候选 self-check 通过。
