@@ -448,8 +448,9 @@ TEST(CudaBackend, RejectsExternalCaptureWithoutInvokingCommand) {
   EXPECT_FALSE(invoked);
   cudaGraph_t graph = nullptr;
   ASSERT_EQ(cudaStreamEndCapture(*native_stream, &graph), cudaSuccess);
-  if (graph != nullptr)
+  if (graph != nullptr) {
     ASSERT_EQ(cudaGraphDestroy(graph), cudaSuccess);
+  }
 }
 
 TEST(CudaBackend, AbandonedPendingCompletionRetainsQueueAndStorage) {
