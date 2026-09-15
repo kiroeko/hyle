@@ -409,13 +409,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "QUEUED",
-      "summary": "compute_route_cpu R3 默认 CPU 组合身份已登记；待固定入口与真实依赖后进入 SCOPED/AUDITED，尚无 target 或实现。"
+      "state": "SCOPED",
+      "summary": "compute_route_cpu R3 SCOPED：固定真实默认 factory、borrowed executor/allocator 和依赖方向；待有限审计后实现，当前无 target/产品能力。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cpu",
-      "state": "QUEUED",
-      "summary": "graph_route_cpu R3 默认 CPU 组合身份已登记；待固定入口与真实依赖后进入 SCOPED/AUDITED，尚无 target 或实现。"
+      "state": "SCOPED",
+      "summary": "graph_route_cpu R3 SCOPED：固定真实默认 factory、borrowed executor/allocator 和依赖方向；待有限审计后实现，当前无 target/产品能力。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md"
     }
   ]
 }

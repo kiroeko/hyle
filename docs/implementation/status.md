@@ -51,8 +51,8 @@
 | compute_backend_cuda | SCOPED | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_backend_cuda R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。 |
 | compute_provider_native | AUDITED | — | [record](tasks/build/compute-route-isolation-v1.md) | compute_provider_native R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。 |
 | compute_sched | QUEUED | — | — | compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。 |
-| compute_route_cpu | QUEUED | — | — | compute_route_cpu R3 默认 CPU 组合身份已登记；待固定入口与真实依赖后进入 SCOPED/AUDITED，尚无 target 或实现。 |
-| graph_route_cpu | QUEUED | — | — | graph_route_cpu R3 默认 CPU 组合身份已登记；待固定入口与真实依赖后进入 SCOPED/AUDITED，尚无 target 或实现。 |
+| compute_route_cpu | SCOPED | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_route_cpu R3 SCOPED：固定真实默认 factory、borrowed executor/allocator 和依赖方向；待有限审计后实现，当前无 target/产品能力。 |
+| graph_route_cpu | SCOPED | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | graph_route_cpu R3 SCOPED：固定真实默认 factory、borrowed executor/allocator 和依赖方向；待有限审计后实现，当前无 target/产品能力。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

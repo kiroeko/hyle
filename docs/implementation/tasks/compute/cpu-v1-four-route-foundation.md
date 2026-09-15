@@ -72,3 +72,50 @@ selector 对中央 manifest 保守生成全量计划（外部 r3-register-plan.j
 这遵循 change-impact 文档中“适用风险及最终裁决仍以当前 closure card 为准”的边界；不改 selector，
 也不把全量 selected 写成已通过。实际 C41–C46 的依赖/源码落地后，再执行本卡声明的适用 CPU/Graph
 及交付门。没有以 nominal identity 启动全库重审。
+
+## 已冻结的普通调用与 owner
+
+Direct 保留自然名称 `compute::cpu::create_context(DefaultContextOptions = {}) -> Result<Context>`，
+迁为 compute_route_cpu 的实际 compiled factory。options 仍只含 borrowed metadata allocator/executor；
+默认 caller-thread，不隐建 worker。准备、Invocation/Queue、Completion 复用既有 CPU 机制。
+
+Graph 新增 `graph::cpu::create_context(compute::cpu::DefaultContextOptions = {}) -> Result<Context>`，
+由 graph_route_cpu 组装 CPU region 与 leaf；用户随后照常 compile/create_invocation/submit/wait。
+两种入口不收 Provider 列表或 timing。Graph 的普通头为 hyle/graph/cpu.h；不为方便增加重复 compile
+wrapper 或第二套程序/资源 owner。显式专家 Context/provider 工厂仍用于确有选择约束的消费者。
+
+compute_route_cpu 的公开边为 Compute/CPU backend，私有实现边为 Native/可选 oneDNN；
+graph_route_cpu 的公开边为 Compute CPU route/Graph，私有实现边为 Native/oneDNN/oneDNN region。
+公开 cpu.h 不再隐式 include Native provider 头。两条冷 factory 按各自粒度组装固定短数组，Context
+复制并拥有 Provider 状态；不建立全局 registry 或新的热分派层。CPU OFF 时从产品 roots 去除两个
+新因子；仍只有原 HYLE_COMPUTE_CPU/ONEDNN 选择，没有新 route enum 或重复 option。
+
+## 有限能力盘点
+
+下列已有 family 全部 KEEP 在现有已声明 dtype/layout/数值域；超域仍明确拒绝，不能隐藏转换。
+本轮默认接线不改 kernel、数据格式、alias 或输出规则；对应现有 Native 差分/边界测试继续有效。
+
+| family | 正常旅程与主要边界 | owner 路径 |
+|---|---|---|
+| View | reshape/slice/permute/broadcast，精确 alias、零 kernel | Native transform |
+| Copy | plain dense/strided → dense materialize | Native transform |
+| Fill | 已登记 scalar dtype 精确 bit pattern | Native transform |
+| Cast | f32/f16/bf16/E4M3/E5M2，显式 materialize/舍入，out-of-place | Native cast + SIMD |
+| Unary | f32 激活/数学函数、plain stride | Native elementwise + SIMD |
+| Binary | f32 算术/broadcast、fmin/fmax | Native elementwise + SIMD |
+| Select | Bool condition，plain 1/2/4/8-byte 分支 bits | Native elementwise |
+| Reduce | f32 Sum/Mean/Min/Max、axis/keep-dim/stride | Native reduction + SIMD |
+| RmsNorm | dense f32、可选 weight、精确原地、已声明 shape family | Native + SIMD |
+| LayerNorm | dense f32、scale/bias、精确原地 | Native normalization + SIMD |
+| MatMul | f32 batch broadcast、row-major/转置权重、零维 | Native；合格二维域可用 oneDNN |
+| GatedActivation | f32 packed/separate，SiLU/GELU/GELU-tanh | Native + SIMD；region 可吸收 |
+| Gather | plain scalar、i32/i64 indices、dense output | Native indexing |
+| Scatter | scalar assign、f32 add、明确原地规则 | Native indexing |
+| Concat | variadic plain inputs、axis、dense output | Native indexing |
+| RoPE | f32 stride、整数 positions、显式 frequency/tail | Native transformer/fat kernel |
+| Softmax | f32 axis/scale/log/Bool或additive mask | Native transformer + SIMD |
+| TopK | f32 axis、stable/sorted、双输出、caller workspace | Native transformer |
+| ScaledDotProductAttention | f32 BSHD/BHSD、mask/causal、online softmax、caller workspace | Native attention |
+
+R2 grouped Q4 为 schema；不添加 CPU Q4 carrier。普通非模型 Unary/Reduce/View/Copy 与上述 FFN 共用
+同一资源/错误合同，不用模型形状收窄已有入口。
