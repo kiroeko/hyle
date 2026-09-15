@@ -649,11 +649,12 @@ TEST(OneDnnRegionProvider,
   }
 }
 
-TEST(OneDnnRegionProvider, ComposesAfterRmsNormAsOneMixedExecutionPlan) {
-  constexpr std::size_t kRows = 16;
+void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
+  const std::size_t kRows = rows;
   constexpr std::size_t kInner = 5;
   constexpr std::size_t kHidden = 7;
-  const GatedMlp logical = make_gated_mlp(kRows, kInner, kHidden, false, true);
+  GatedMlp logical =
+      make_gated_mlp(kRows, kInner, kHidden, false, true, false, order);
   OwnedTensor activation = make_tensor(matrix(kRows, kInner));
   OwnedTensor norm_weight = make_tensor(row(kInner));
   OwnedTensor gate_weight = make_tensor(matrix(kInner, kHidden));
@@ -684,36 +685,177 @@ TEST(OneDnnRegionProvider, ComposesAfterRmsNormAsOneMixedExecutionPlan) {
   write(gate_weight, gate_values);
   write(up_weight, up_values);
   write(down_weight, down_values);
+  const auto materialize = hyle::graph::ConstantPolicy::kMaterialize;
   const std::array constants{
-      ConstantBinding{logical.norm_weight, norm_weight.view.as_const()},
-      ConstantBinding{logical.gate_weight, gate_weight.view.as_const()},
-      ConstantBinding{logical.up_weight, up_weight.view.as_const()},
-      ConstantBinding{logical.down_weight, down_weight.view.as_const()},
+      ConstantBinding{logical.down_weight, down_weight.view.as_const(),
+                      materialize},
+      ConstantBinding{logical.norm_weight, norm_weight.view.as_const(),
+                      materialize},
+      ConstantBinding{logical.up_weight, up_weight.view.as_const(),
+                      materialize},
+      ConstantBinding{logical.gate_weight, gate_weight.view.as_const(),
+                      materialize},
   };
-  const auto providers = provider_sequence();
-  Context context =
-      Context::create(hyle::compute::cpu::device(), {.providers = providers})
-          .value();
-  auto compiled = hyle::graph::compile(logical.graph, context,
-                                       CompileOptions{.constants = constants})
-                      .value();
-  ASSERT_EQ(compiled.report.step_count(), 2U);
-  EXPECT_EQ(compiled.report.region_count(), 1U);
-  EXPECT_TRUE(compiled.report.mixed_providers());
-  EXPECT_EQ(compiled.report.step(0)->provider.id,
-            hyle::compute::native::kProviderId);
-  EXPECT_EQ(compiled.report.step(1)->provider.id,
-            hyle::graph::onednn::kProviderId);
-  auto invocation = compiled.executable.create_invocation().value();
-  ASSERT_TRUE(invocation.bind(logical.activation, activation.view).ok());
-  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
-  auto queue = context.create_queue().value();
-  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
-  const std::vector<float> normalized =
-      rms_norm(activation_values, norm_values, kRows, kInner);
-  expect_near(read(output, kRows * kInner),
-              reference(normalized, gate_values, up_values, down_values, kRows,
-                        kInner, kHidden));
+  // The region uses oneDNN's real private scratch; the independently usable
+  // Native leaves need no BRGEMM scratch. Compare their actual complete plans,
+  // not a fake region with a chosen workspace number or a speed claim.
+  const std::array providers{hyle::graph::onednn::provider(),
+                             hyle::compute::native::provider()};
+  AllocatorProbe probe;
+  auto stats =
+      hyle::mem::StatsAllocator::create(probe_allocator(probe)).value();
+  {
+    Context context = Context::create(hyle::compute::cpu::device(),
+                                      {.metadata_allocator = stats.get(),
+                                       .providers = providers})
+                          .value();
+    const CompileOptions options{
+        .constants = constants,
+        .compilation_storage = hyle::graph::CompilationStorageLimits{},
+        .invocation_storage = hyle::graph::InvocationStorageLimits{},
+        .provider_replay = hyle::graph::ProviderReplayPolicy::kRequirePrepared};
+    auto preferred = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(preferred) << preferred.error().message();
+    auto compiled = std::move(*preferred);
+    const bool contiguous = order == MlpOrder::kCanonical;
+    ASSERT_EQ(compiled.report.step_count(), contiguous ? 2U : 3U);
+    ASSERT_EQ(compiled.report.region_count(), 1U);
+    EXPECT_TRUE(compiled.report.mixed_providers());
+    EXPECT_EQ(compiled.report.step(0)->provider.id,
+              hyle::compute::native::kProviderId);
+    EXPECT_EQ(compiled.report.copy_bytes(), 0U);
+    EXPECT_EQ(compiled.report.synchronization_count(), 0U);
+    EXPECT_EQ(compiled.report.materialized_constant_count(), 4U);
+    for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
+      const auto step = compiled.report.step(index).value();
+      if (step.kind == CompileStepKind::kProviderRegion) {
+        EXPECT_EQ(step.provider.id, hyle::graph::onednn::kProviderId);
+        EXPECT_EQ(step.nodes_contiguous, contiguous);
+        EXPECT_EQ(step.node_count, 4U);
+        EXPECT_EQ(step.dispatch_count, 2U);
+      }
+    }
+
+    auto leaf_options = options;
+    leaf_options.region_selection = RegionSelectionPolicy::kDisabled;
+    auto leaf_result =
+        hyle::graph::compile(logical.graph, context, leaf_options);
+    ASSERT_TRUE(leaf_result) << leaf_result.error().message();
+    auto leaf = std::move(*leaf_result);
+    ASSERT_EQ(leaf.report.region_count(), 0U);
+    ASSERT_GT(leaf.report.workspace_bytes(), 0U);
+    ASSERT_GT(compiled.report.workspace_bytes(), leaf.report.workspace_bytes());
+
+    const std::array storage{hyle::graph::StorageDomain{
+        .resource = hyle::mem::system_resource(),
+        .workspace_budget_bytes = leaf.report.workspace_bytes()}};
+    const std::array targets{hyle::graph::ExecutionTarget{
+        .context = &context,
+        .default_storage = hyle::graph::StorageDomainId{0}}};
+    const hyle::graph::CompileEnvironment environment{
+        .storage_domains = storage, .targets = targets};
+    auto limited_result =
+        hyle::graph::compile(logical.graph, environment, options);
+    ASSERT_TRUE(limited_result) << limited_result.error().message();
+    auto limited = std::move(*limited_result);
+    EXPECT_EQ(limited.report.region_count(), 0U);
+    EXPECT_EQ(limited.report.workspace_bytes(), leaf.report.workspace_bytes());
+    EXPECT_GT(limited.report.search().route_plan_rejections, 0U);
+    EXPECT_FALSE(limited.report.search().optimization_limited());
+    for (std::size_t index = 0; index < limited.report.step_count(); ++index)
+      EXPECT_EQ(limited.report.step(index)->provider.id,
+                hyle::compute::native::kProviderId);
+
+    // A resource retry cannot erase a user's required Provider. Nor may an
+    // impossible budget yield an incomplete graph. Both failures release all
+    // HYLE-tracked compiler/Provider metadata while preserving earlier plans.
+    const auto live = stats.snapshot().live_bytes;
+    const std::array required{hyle::graph::NodeProviderConstraint{
+        .node = logical.graph.producer(logical.gate).value(),
+        .provider = hyle::graph::onednn::kProviderId}};
+    auto required_options = options;
+    required_options.node_providers = required;
+    auto rejected =
+        hyle::graph::compile(logical.graph, environment, required_options);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsResourceExhausted())
+        << rejected.error().message();
+    EXPECT_EQ(stats.snapshot().live_bytes, live);
+    auto no_storage = storage;
+    no_storage[0].workspace_budget_bytes = 0;
+    auto impossible = environment;
+    impossible.storage_domains = no_storage;
+    auto no_plan = hyle::graph::compile(logical.graph, impossible, options);
+    ASSERT_FALSE(no_plan);
+    EXPECT_TRUE(no_plan.error().IsResourceExhausted())
+        << no_plan.error().message();
+    EXPECT_EQ(stats.snapshot().live_bytes, live);
+    {
+      auto retry = hyle::graph::compile(logical.graph, environment, options);
+      ASSERT_TRUE(retry) << retry.error().message();
+      EXPECT_EQ(retry->report.region_count(), 0U);
+    }
+    EXPECT_EQ(stats.snapshot().live_bytes, live);
+
+    auto queue = context.create_queue().value();
+    const std::array queues{hyle::graph::QueueBinding{
+        .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+    std::array invocations{compiled.executable.create_invocation().value(),
+                           leaf.executable.create_invocation().value(),
+                           limited.executable.create_invocation().value()};
+    for (auto &invocation : invocations) {
+      ASSERT_TRUE(invocation.bind(logical.activation, activation.view).ok());
+      ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+      ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    }
+    ASSERT_TRUE(norm_weight.buffer.reset().ok());
+    ASSERT_TRUE(gate_weight.buffer.reset().ok());
+    ASSERT_TRUE(up_weight.buffer.reset().ok());
+    ASSERT_TRUE(down_weight.buffer.reset().ok());
+    logical.graph = Graph{};
+    context = Context{};
+    compiled = hyle::graph::CompiledGraph{};
+    leaf = hyle::graph::CompiledGraph{};
+    limited = hyle::graph::CompiledGraph{};
+
+    const auto allocations = probe.attempts.load();
+    probe.fail_on_attempt = allocations;
+    for (std::size_t replay = 0; replay < 3; ++replay) {
+      for (float &value : activation_values)
+        value = value * -0.75F + 0.03125F;
+      write(activation, activation_values);
+      const auto normalized =
+          rms_norm(activation_values, norm_values, kRows, kInner);
+      const auto expected = reference(normalized, gate_values, up_values,
+                                      down_values, kRows, kInner, kHidden);
+      for (auto &invocation : invocations) {
+        // Poison output so a skipped or stale replay cannot pass the oracle.
+        write(output, std::vector<float>(kRows * kInner, 12345.0F));
+        auto completion = invocation.submit(queue);
+        ASSERT_TRUE(completion) << completion.error().message();
+        ASSERT_TRUE(completion->wait().ok());
+        expect_near(read(output, kRows * kInner), expected);
+      }
+    }
+    EXPECT_EQ(probe.attempts.load(), allocations);
+    probe.fail_on_attempt = SIZE_MAX;
+  }
+  EXPECT_EQ(stats.snapshot().live_bytes, 0U);
+  EXPECT_EQ(stats.snapshot().live_count, 0U);
+}
+
+TEST(OneDnnRegionProvider, ComposesAfterRmsNormAsOneMixedExecutionPlan) {
+  run_mixed_mlp_workspace(16, MlpOrder::kCanonical);
+}
+
+TEST(OneDnnRegionProvider,
+     MixedDecodeReselectsByRealWorkspaceAndRetainsOwners) {
+  run_mixed_mlp_workspace(1, MlpOrder::kUpFirst);
+}
+
+TEST(OneDnnRegionProvider,
+     MixedPrefillReselectsByRealWorkspaceAndRetainsOwners) {
+  run_mixed_mlp_workspace(17, MlpOrder::kInterleaved);
 }
 
 TEST(OneDnnRegionProvider, WarmSubmitDoesNotGrowContextMetadata) {
