@@ -1,7 +1,7 @@
 # HYLE Compute：异构执行与算子提供者架构
 
-> 决策状态：`ACCEPTED`。foundation-v1 架构基线已经裁决；这不表示对应实现或平台纵切已经完成，
-> 也不新增一种模块状态。实现状态与施工资格只查当前 closure task 和
+> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四路线与混合计算的关键合同正在接受真实
+> 纵切核对，尚未最终定案；不得从本文自动恢复正式实现。这不新增模块状态。实现状态与施工资格只查当前 closure task 和
 > [`module-status.json`](../implementation/module-status.json)，当前可用能力查[用户指南](../user/compute.md)。
 > 本文只定义 Compute 的长期产品合同，不复制阶段性完成状态。下文平台栈和开工顺序是目标边界，不表示
 > 每个 provider/backend 已经交付。被删除的旧实现只可从 Git 历史取得调查事实；历史 task/evidence
@@ -10,6 +10,8 @@
 2026-09-14 整体复核后的合同修正及源码依据见
 [架构复核记录](../implementation/tasks/compute/compute-graph-route-unification-audit.md#整体架构复核与合同修正)。
 这些决策不代表新增接口、MLX adapter 或性能资格已经交付。
+当前任务与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)；
+架构定案、基础实现完成和产品性能/交付验收是三个不同的完成点。
 
 ## 1. 产品承诺
 
@@ -183,6 +185,14 @@ backend extension，不变成通用 Graph 的虚构保证。
 这样保留的是依赖、放置、准入、寿命和路由的控制权，不是强制所有计算经 HYLE CPU worker。多 stream
 也不是自动更快：串行/重叠计划均须在相同硬约束和完整完成边界上比较。固定函数指针调用并非零条指令；
 “低路由成本”要求冷绑定、批量/capture 与同实现 direct 对照，而不能由模板/宏的名称推导。
+
+CPU/GPU 混合是这些能力的必要组合，不是另一个 backend。引擎表达层段/FFN/专家等放置政策与允许的
+迁移；Graph 据此形成 CPU/GPU 片段和 copy/sync。权重驻留、实际执行位置、KV 等外部状态位置要分别
+描述，不能仅按权重 buffer 推断全部算子放置，也不能在显式 required target 之外偷偷 offload。
+独立显存须计入传输与 staging；统一内存也须证明双方访问、可见性与完成，不能因同一地址就省略同步。
+部分卸载首先可用于满足容量限制，不承诺一定比全 GPU 更快；比较必须固定同一放置/精度/内存政策。
+llama.cpp 的层放置、ggml 切图与避免额外 norm 迁移的源码依据见
+[混合计算核对](../implementation/tasks/compute/compute-graph-route-unification-audit.md#本轮-llamacpp-混合计算源码核对)。
 
 Provider region 的语义是**可收缩 node set + 显式 boundary ports**，不是某个拓扑序中的 begin/count。
 候选集合必须非空、node identity 唯一，并且不存在一条路径从集合内离开后又进入集合；
@@ -712,7 +722,7 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 ## 10. 开工顺序
 
 当前工作顺序、有限任务和进度分母只在
-[Compute/Graph 总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)
+[Compute/Graph 当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)
 维护，不在两份 architecture 中再复制编号队列。长期顺序原则是：
 
 - 先固定自然 C++ 语义与生命周期，用 direct/one-op 和真实 CPU region 验证基本组合；
@@ -727,7 +737,7 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 ## 11. 架构稳定条件
 
 本轮跨 ggml/llama.cpp、vLLM、SGLang、ds4、oneDNN、ONNX Runtime、TensorRT、IREE、PJRT 与
-ExecuTorch 的调查只签发上述边界，不把任何 peer 的完整 runtime 复制为 HYLE 产品。已接受的基线是：
+ExecuTorch 的调查用于裁决上述边界，不把任何 peer 的完整 runtime 复制为 HYLE 产品。当前工作基线是：
 
 - execution target、storage domain/resource 与 execution lane 三轴分离；默认 storage 只是 target 的属性；
 - provider 先公开 binding/resource requirement，再对 exact route prepare，不能到 submit 才拒绝；
@@ -745,7 +755,8 @@ lane/capture、Apple delegated MLX region + 原生 Metal interop，以及 Vulkan
 CPU 并行分片还须在真实持久 executor 上验证，不以串行调用 callback 或两个独立 Invocation 代替。
 正式代码与这些结论冲突时停止并回到审计；operator 数量、单次 benchmark 或为旧 API 保兼容都不能覆盖该反证。
 
-foundation-v1 架构基线表示上述设计已接受，不代表没有反证可能。实现还必须补充 CUDA Q4 MLP 的 leaf/region/storage
+架构最终定案需按当前研究任务消除会改变共同骨架的未决问题，不要求先完成以下产品资格，也不表示
+所有性能已通过。后续实现仍必须补充 CUDA Q4 MLP 的 leaf/region/storage
 路由探针，并让这些探针共同通过 source/static/shared、正确性、one-op 抽象税和终局红队，才能签发
 Compute/Graph foundation candidate。同一 gate 还检查真实跨运行时失败/回收、测量到 route profile 的消费
 链、可选观测边界与各已接入 backend 的构建交付；不能把这些全部推迟到完整 Transformer。具体有限任务

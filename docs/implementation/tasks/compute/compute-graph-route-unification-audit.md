@@ -4,9 +4,73 @@
 > 单个 component 的 closure card，也不自行改变 `module-status.json`；产品修改前仍须让受影响 component
 > 依法返回 `AUDITED` 并分别冻结有限改动集。
 
-当前执行入口是[总目标与顺序](#当前-compute--graph-goal-的重排)及
-[2026-09-15 重新评估](#2026-09-15-原始需求重新对齐与进度基线)。前面的审计保留调查事实，不覆盖后面的
-当前计划；架构文档不再复制第二套编号队列。
+当前唯一工作入口是下面的[四路线架构定案调研](#当前任务四路线与混合计算的架构定案调研)。原总目标、
+实现队列和 55%/89% 估算保留为历史施工背景，不授权继续正式实现，也不是本次研究进度。
+架构文档不再复制第二套编号队列。
+
+## 当前任务：四路线与混合计算的架构定案调研
+
+用户在 `e802e677` 后明确：当前任务是参考成熟推理引擎、按真实纵切进行必要调研/实验，把重大架构决策
+定案；不是完成四条路线的正式产品实现。上一轮[准入研究](foundation-architecture-admission.md)只完成
+局部机制验证，不等于整体架构已定案。旧大目标暂不执行，不创建新的并行状态或自动恢复实现。
+
+范围为 CPU、CUDA、MLX/Metal、Vulkan，以及 CPU/GPU 混合计算这个跨路线组合；参考 ggml/llama.cpp、
+vLLM、SGLang、ds4 的具名源码与相应厂商 API。保留已有证据和可用骨架，但不能把现有类型当作不可反证
+的前提。只允许为裁决关键问题制作有限实验原型；不补正式 backend/provider、填算子目录或启动全库测试。
+
+固定要裁决的系统问题为：
+
+1. logical operation/region、量化精度与物理格式怎样表达，成熟 leaf/opaque region 如何真正接入；
+2. 全局/局部调度权、CPU executor、私有 runtime、shape specialization 与 capture 的责任边界；
+3. execution/storage/lane 是否足以表达设备内、跨 CPU/GPU、共享内存和独立显存，包括显式迁移/同步；
+4. 常量、输出、scratch、KV 等外部可变资源的 lifetime/alias/并发/预算，哪些限制必须拒绝而不能假装兑现；
+5. 部分接纳、异步错误、Completion、取消/回收能否跨 runtime 闭合；
+6. 冷路由和渐进替换怎样计入真实完整成本，能否保留成熟实现的性能而不强制复制/同步/重建图。
+
+每项输出「真实消费/参考入口 → 可选方案及代价 → 必要实验与反例 → 采用/拒绝理由」。复用已有证据；
+实验只针对会改变这些系统决策的未知量，不为了架构调研实现完整模型或完整交付矩阵。现有 CPU/CUDA
+局部通过、MLX 独立 FFN、仅源码检查的 Vulkan 分别记账；不得合并为四路线全部通过。
+
+纵切以既有 FFN/资源流水线为基础，额外检查两种自然混合形状：
+
+- CPU 常驻层段 → GPU 常驻层段，变化输入重复执行，只传必要 activation；验证迁移、内存预算与完成链；
+- GPU attention 周边 → CPU FFN/专家计算 → GPU 后继，或显式允许的 host 权重→GPU 算子路线；
+  用来区别权重放置与实际计算位置。模型划层/专家选择由引擎表达，不在 Graph 内新增模型层调度器。
+
+混合是现有路线的组合，不新增第五个 backend，也不要求研究阶段实现全部 attention/MoE。它不能以一条
+全 GPU FFN 或纯 memcpy 程序代替；哪些跨路线机制尚未证实必须在定案报告中明确。
+
+**本阶段停止点是架构定案报告，而非 foundation implementation gate**：重大 owner/接口/资源/路由决策
+有源码和必要实验支撑，不再留“等写完 Provider 才知道共同合同是否成立”的未知量；剩余工作可具体归属
+为局部实现/配置/资格验证。若仍有会改变共同骨架的未决问题，报告精确问题，不能提前宣布定案。
+定案后先报告并与用户确认，再恢复正式施工；不把全部算子、三交付和终局 P1 完成作为研究的结束条件。
+
+### 本轮 llama.cpp 混合计算源码核对
+
+只读同日 clean pin `4c9233c034fc450dcf34c7c0988aebe6da5cdf1a`，包括其 vendored ggml；未升级产品锁。
+
+- `llama-model.cpp::load_tensors` 按 `n_gpu_layers` 与 device split 决定 layer buffer list，通常 CPU 前段、
+  GPU 后段；该版本 output layer 也纳入 offload 计数，input layer 首选 CPU。权重在加载期分配到相应
+  buffer，不是正常每 token 把整份层权重来回搬运。tensor overrides 和 backend 支持度仍可改变实际放置。
+- `ggml_backend_sched_backend_id_from_cur` 优先尊重已有 buffer/view 及 weight locality，但在开启
+  `op_offload` 且 backend 支持并愿意接纳时，可让 host 权重的算子在 GPU 执行。CUDA 的 offload 建议
+  还检查 batch size，所以权重驻留不等于计算强制位置。
+- `ggml_backend_sched_split_graph/compute_splits` 切出同 backend 子图，处理跨片段 tensor copy、event
+  和同步，再调用 `ggml_backend_graph_compute_async`；没有异步 copy/事件能力时有同步路线。不能把
+  async API 名称当作必然重叠，顺序 decode 的依赖链也不会因 CPU/GPU 都参加就自动并行。
+- `llama_context::graph_get_cb` 显式约束部分 norm/层末 op 的 backend，源码理由就是避免归到邻层后
+  增加传输。它是完整边界费用必须进入 HYLE 路由的真实例子，不能只做单 op 速度选择。
+- 普通 `llama_kv_cache` 在 offload 开启时按 `model.dev_layer(il)` 选择 KV buffer，否则选 CPU；
+  CLI 另有 KV offload、tensor override、CPU MoE/CPU dense FFN 选项。多 GPU `split-mode` 的 layer/
+  row/tensor 是另一个维度，不能与 CPU/GPU 层卸载混为一个开关。
+
+[层与权重放置](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/llama-model.cpp#L1496)、
+[ggml 切图/执行](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-backend.cpp#L921)、
+[层边界修正](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/llama-context.cpp#L2522)、
+[KV 放置](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/llama-kv-cache.cpp#L214)、
+[用户选项](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/common/arg.cpp#L2745)。
+
+这些是参考实现事实，不是 HYLE 混合计算已经通过的证据。本轮仅 docs/closure/diff 验证，不构建、不采样。
 
 ## 两条需求与统一结论
 
@@ -27,9 +91,10 @@ HYLE 冷路径的候选。HYLE 不需要调度第三方 artifact 内每个 kerne
 
 ## Foundation v1 架构基线
 
-下表只锁设计，不把尚未完成的实现写成通过。任何后续 closure card 都不能无证据改变这些结论。
+下表是此前形成的工作基线，不把尚未完成的实现写成通过；当前按上面的四路线与混合计算研究验证。
+已明确的产品目标保留，若关键实验反证某项系统合同，必须在定案前修正，不能仅因写过 ACCEPTED 就拒绝研究。
 
-| 维度 | 锁定结论 |
+| 维度 | 工作基线 |
 |---|---|
 | 公开产品 | 只有 Compute 与 Graph；`graph_plan` 是 Graph 私有实现职责，不新增第三个 Plan 产品 |
 | 生命周期 | Compute 固定为 Device/Context/Queue/Completion、Operation/PreparedOperation/per-run Invocation；Graph 固定为 Builder/immutable Graph/shareable Executable/per-run Invocation |
@@ -72,9 +137,9 @@ lifetime 根本不可实现，才构成整体架构 reopen fact。
 | 公共抽象与三交付成本 | direct 不取得 Graph；HYLE 热计划无搜索/分配；安装消费者可绑定 custom execution | CPU one-op 税、跨 shared custom identity、仅安装头/库的 CPU/CUDA custom Graph journey |
 | 资源副作用域 | 同资源冲突有序，独立资源可并行，未知副作用保守；不新增模型策略 | 两独立资源/同域写冲突/绑定 alias/跨 region 顺序，复用现有 Queue/Completion |
 
-因此实验后仍要确定的是数据结构、默认预算、provider-specific carrier 和是否达到 material 性能门；不再
-开放的是 Compute/Graph 两产品边界、全局/局部 owner、三轴资源模型、生命周期、shape/capture 基本语义、
-模型策略归属与热路径禁止项。
+既有产品边界、全局控制和渐进替换目标不变；数据结构和具体实现不必全部在研究阶段决定。但 owner、
+资源、生命周期、shape/capture 或低成本路由若还没有真实可行依据，仍是本次必须解决的架构问题，
+不能预先归类为“只剩实现细节”。
 
 ## 真实引擎与成熟 runtime 反证
 
@@ -297,7 +362,8 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 
 ## 当前 Compute + Graph goal 的重排
 
-当前总目标不变，但执行依赖改为下列顺序；前一步未给出合法 candidate 时不提前运行后一步的重型 P1/P2：
+以下保留原大目标的实施队列与历史进展，目前不自动执行。当前任务仅为本文开头的架构定案调研；
+定案并取得后续继续指示后再校准和恢复本表，不能从研究原型通过直接跳进正式 adapter 施工。
 
 | 顺序 | 工作包 | 当前裁决 / 完成条件 |
 |---:|---|---|
@@ -352,9 +418,8 @@ Obs 与各 backend 的三交付。借成熟能力并允许 HYLE 在相同数值/
 factor/底层缺口按现有小卡与状态协议处理，已匹配证据复用，只测实际影响；基础实现和适用正确性、
 性能、交付、红队全部通过后报告并暂停共同审视，不自动进入总目标第 8 项。
 
-这是原大 goal 的当前阶段说明，不把旧总目标标记完成。会话工具当前只能读目标及写 complete/blocked，
-不能改写一个未完成目标的 objective；本轮实际更新的是仓库内的目标与顺序，不声称已修改产品 UI 中
-的原始 goal 文本。后续恢复或替换会话目标时采用本段，registry 仍是唯一模块状态。
+以上是先前为原大 goal 准备的实施说明，已被本文开头的“当前任务”暂停，不得作为当前 session 的启动
+提示词。没有标记旧目标完成或恢复它；模块状态仍只看 registry，不能把会话目标与组件状态混同。
 
 #### 更贴近消费的有限纵切
 
@@ -436,7 +501,8 @@ intermediate_size=3072 与 SiLU。M=1/64 是明确的 decode/prefill 工作点�
 
 #### 执行约束和停止条件
 
-已完成的 0--4 与 CUDA runtime/资源/capture 事实保留。下一步 **4a → 5 → 6 → 6a → 6b → 7**：
+已完成的 0--4 与 CUDA runtime/资源/capture 事实保留。以下 **4a → 5 → 6 → 6a → 6b → 7** 是原实施
+阶段的顺序与限制；当前只运行能回答架构问题的研究子集，不恢复本链条的正式实现：
 
 1. 4a 对 CUDA 压缩 carrier、Apple MLX 各做一次公开 API 源码核对和一个最小执行探针；每条最多再评估
    一个窄 source-patch 备选。单条先固定不超过 2 小时的调查预算（SDK/真机构建等待另记），不是新建

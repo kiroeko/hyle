@@ -1,7 +1,7 @@
 # HYLE Graph：计算 DAG、编译与可复用执行计划
 
-> 决策状态：`ACCEPTED`。foundation-v1 架构基线已经裁决；这不表示当前实现已经越过 foundation
-> implementation gate，也不新增一种模块状态。本文定义 Graph 的长期产品合同；当前实现状态只查
+> 决策阶段：**架构定案调研中**。foundation-v1 是工作基线，四路线与混合计算的关键合同尚待真实
+> 纵切裁决；不得从本文自动恢复正式实现，也不新增模块状态。本文定义 Graph 的长期产品合同；当前实现状态只查
 > [`module-status.json`](../implementation/module-status.json)。每轮纵切只证明其 closure card 登记的
 > DAG/Executable/Invocation 合同。旧 `TaskGraph`、parallel/data-parallel API 与 benchmark 已退出产品树；
 > 被删除的旧字节只可从 Git 历史取得调查事实，历史 task/evidence 不是当前设计输入、实现模板或用户承诺。
@@ -9,6 +9,7 @@
 
 2026-09-14 的整体复核保留上述骨架，修正 replay 成本、派生 shape、custom execution、资源副作用域、
 variant 内存与搜索受限合同；依据见[复核记录](../implementation/tasks/compute/compute-graph-route-unification-audit.md#整体架构复核与合同修正)。
+当前范围与研究停止点见[架构定案调研](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)。
 
 ## 1. Graph 解决什么问题
 
@@ -563,7 +564,7 @@ provider/backend workload 上形成可解释收益。
 ## 10. 首轮纵切和停止点
 
 施工顺序、已完成证据和下一项只维护在
-[总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)，
+[当前任务](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前任务四路线与混合计算的架构定案调研)，
 不与 Compute 再各维护一套队列。Graph 的基础完成边界保持如下：
 
 - CPU direct/one-op、真实 multi-op region 与持久 executor 组合；
@@ -575,6 +576,10 @@ provider/backend workload 上形成可解释收益。
 每条纵切只补证明该边界必须的算子，不要求完整模型、全部量化格式或全部 Provider；也不能以 mock、
 只有 CPU 计算的 GPU copy、或 Q4 整体展开样例代替相应真实路线。到基础 gate 完成时暂停共同审视，
 之后才进入 attention/完整 Transformer 与目录扩充。HIP/ROCm 的无限期 defer 保持。
+
+上面是正式基础实现的终点，不是当前架构研究的结束条件。当前允许有限原型来解决系统性未知量，
+包括 CPU 层段→GPU 层段，以及 GPU 周边→CPU FFN/专家→GPU 后继的真实混合边界；设备放置、activation
+传输、权重常驻、外部状态和最终完成必须能表达。研究定案后先报告，不为完成本节全部产品资格而继续施工。
 
 纵切的单位是**一次完整公开用户旅程及其待裁决问题**，不是新增几个 API 的展示。每条记录正常输入、
 至少一个会推翻对应假设的反例、资源/线程 owner、最终完成点，以及失败时应改哪个 seam。低层借入探针
