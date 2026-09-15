@@ -37,6 +37,7 @@ using hyle::graph::GraphBuilderOptions;
 using hyle::graph::TensorSpec;
 using hyle::graph::TensorSpecKind;
 using hyle::graph::ValueKind;
+using hyle::graph::ViewSpec;
 using hyle::mem::AllocatorRef;
 
 TensorDesc row(std::int64_t size) {
@@ -922,6 +923,158 @@ TEST(Graph, InvalidOutOfRangeAndForeignQueriesAreRecoverable) {
       graph.node_resource_count(foreign_node).error().IsInvalidArgument());
   EXPECT_TRUE(graph.node_resource(foreign_node, 0).error().IsInvalidArgument());
   EXPECT_TRUE(graph.producer(foreign_output).error().IsInvalidArgument());
+}
+
+TEST(GraphViewSpec, ValidatesStaticContractsAndOutputOnlyLayouts) {
+  EXPECT_FALSE(ViewSpec{}.valid());
+  EXPECT_FALSE(ViewSpec::reshape(std::array{Dimension{}}));
+  EXPECT_FALSE(ViewSpec::broadcast_to(std::array{Dimension::fixed(-1)}));
+  EXPECT_TRUE(ViewSpec::reshape({})); // scalar
+  EXPECT_FALSE(ViewSpec::slice(8, Dimension::fixed(0), Dimension::fixed(1)));
+  EXPECT_FALSE(ViewSpec::slice(0, Dimension{}, Dimension::fixed(1)));
+  EXPECT_FALSE(ViewSpec::slice(0, Dimension::fixed(0), Dimension::fixed(1), 0));
+  EXPECT_FALSE(ViewSpec::permute(std::array<std::int32_t, 1>{8}));
+  const std::array shape{Dimension::fixed(2), Dimension::fixed(4)};
+  auto spec = TensorSpec::inferred(DataType::kFloat32, shape);
+  ASSERT_TRUE(spec);
+  EXPECT_EQ(spec->kind(), TensorSpecKind::kInferred);
+  EXPECT_TRUE(spec->is_symbolic());
+  EXPECT_TRUE(spec->concrete_description().error().IsFailedPrecondition());
+  EXPECT_FALSE(TensorSpec::inferred(static_cast<DataType>(255), shape));
+  auto builder = GraphBuilder::create().value();
+  EXPECT_TRUE(builder.input(*spec).error().IsInvalidArgument());
+  EXPECT_TRUE(builder.constant(*spec).error().IsInvalidArgument());
+  EXPECT_FALSE(builder.add(ViewSpec{}, {}));
+  Graph empty;
+  EXPECT_TRUE(empty.operation_kind({}).error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.view_spec({}).error().IsFailedPrecondition());
+}
+
+TEST(GraphViewSpec, LogicalIntrospectionDoesNotInventAConcreteOperation) {
+  auto builder = GraphBuilder::create().value();
+  const auto batch = builder.dimension({0, 4, 1}).value();
+  const auto tokens = builder.dimension({0, 3, 1}).value();
+  const auto rows =
+      builder.dimension_product(Dimension(batch), Dimension(tokens)).value();
+  const auto input =
+      builder
+          .input(
+              TensorSpec::dense(DataType::kFloat32,
+                                std::array{Dimension(batch), Dimension(tokens),
+                                           Dimension::fixed(4)})
+                  .value())
+          .value();
+  const auto view =
+      ViewSpec::reshape(std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto flattened = builder.add(view, input).value();
+  const auto transposed =
+      builder
+          .add(ViewSpec::permute(std::array<std::int32_t, 2>{-1, -2}).value(),
+               flattened)
+          .value();
+  ASSERT_TRUE(builder.publish(transposed).ok());
+  auto graph = std::move(builder).finish().value();
+  const auto node = graph.producer(flattened).value();
+  EXPECT_EQ(graph.operation_kind(node).value(), OperationKind::kView);
+  EXPECT_TRUE(graph.operation(node).error().IsFailedPrecondition());
+  EXPECT_EQ(graph.view_spec(node)->dimensions()[0], Dimension(rows));
+  EXPECT_EQ(graph.node_resource_count(node).value(), 0u);
+  EXPECT_TRUE(
+      graph.value_description(flattened).error().IsFailedPrecondition());
+  EXPECT_EQ(graph.value_spec(transposed)->kind(), TensorSpecKind::kInferred);
+  EXPECT_EQ(graph.value_spec(transposed)->dimensions()[0], Dimension::fixed(4));
+  EXPECT_EQ(graph.value_spec(transposed)->dimensions()[1], Dimension(rows));
+  auto copy = graph;
+  graph = {};
+  EXPECT_EQ(copy.view_spec(node)->dimensions()[0], Dimension(rows));
+  EXPECT_TRUE(copy.view_spec({}).error().IsInvalidArgument());
+  EXPECT_TRUE(copy.operation_kind({}).error().IsInvalidArgument());
+}
+
+TEST(GraphViewSpec, ConcreteCallsUseTheExistingViewSchemaImmediately) {
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(matrix(2, 4)).value();
+  const auto output =
+      builder
+          .add(ViewSpec::permute(std::array<std::int32_t, 2>{1, 0}).value(),
+               input)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  const auto node = graph.producer(output).value();
+  EXPECT_EQ(graph.operation(node)->kind(), OperationKind::kView);
+  EXPECT_TRUE(graph.view_spec(node).error().IsFailedPrecondition());
+  EXPECT_EQ(graph.output_description().value(),
+            matrix(2, 4).transposed().value());
+}
+
+TEST(GraphViewSpec, RejectsForeignParametersAndInvalidAxesTransactionally) {
+  auto builder = GraphBuilder::create().value();
+  auto other = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto foreign = other.dimension({1, 4, 1}).value();
+  const auto input =
+      builder
+          .input(TensorSpec::dense(
+                     DataType::kFloat32,
+                     std::array{Dimension(rows), Dimension::fixed(4)})
+                     .value())
+          .value();
+  EXPECT_FALSE(builder.add(
+      ViewSpec::reshape(std::array{Dimension(foreign), Dimension::fixed(4)})
+          .value(),
+      input));
+  EXPECT_FALSE(builder.add(
+      ViewSpec::slice(0, Dimension(foreign), Dimension::fixed(1)).value(),
+      input));
+  EXPECT_FALSE(builder.add(
+      ViewSpec::slice(0, Dimension::fixed(0), Dimension(foreign)).value(),
+      input));
+  EXPECT_FALSE(builder.add(
+      ViewSpec::permute(std::array<std::int32_t, 2>{0, -2}).value(), input));
+  EXPECT_FALSE(builder.add(
+      ViewSpec::permute(std::array<std::int32_t, 1>{0}).value(), input));
+  EXPECT_FALSE(builder.add(
+      ViewSpec::slice(2, Dimension::fixed(0), Dimension::fixed(1)).value(),
+      input));
+  EXPECT_FALSE(builder.add(
+      ViewSpec::broadcast_to(std::array{Dimension::fixed(4)}).value(), input));
+  const auto output =
+      builder
+          .add(ViewSpec::reshape(
+                   std::array{Dimension(rows), Dimension::fixed(4)})
+                   .value(),
+               input)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  EXPECT_EQ(graph.node_count(), 1u);
+  EXPECT_EQ(graph.value_count(), 2u);
+}
+
+TEST(GraphViewSpec, AllocationFailureDoesNotAppendAHalfView) {
+  AllocatorProbe probe;
+  auto builder = GraphBuilder::create({probe_allocator(probe)}).value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  hyle::graph::ValueId input;
+  for (int i = 0; i < 8; ++i)
+    input = builder.input(spec).value();
+  const auto view = ViewSpec::reshape(spec.dimensions()).value();
+  probe.fail = true;
+  auto failed = builder.add(view, input);
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+  probe.fail = false;
+  const auto output = builder.add(view, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  EXPECT_EQ(graph.node_count(), 1u);
+  EXPECT_EQ(graph.value_count(), 9u);
 }
 
 } // namespace

@@ -1,5 +1,6 @@
 #include "hyle/graph/graph.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <limits>
@@ -204,7 +205,199 @@ static_assert(fits_value_ordinal(
 static_assert(!fits_node_ordinal(
     static_cast<std::size_t>((std::numeric_limits<std::uint32_t>::max)())));
 
+Status validate_dimensions(std::span<const Dimension> dimensions) noexcept {
+  if (dimensions.size() > compute::kMaxTensorRank)
+    return Status::InvalidArgument("graph metadata rank exceeds limit");
+  for (const auto dimension : dimensions)
+    if (!dimension.valid())
+      return Status::InvalidArgument("graph metadata dimension is invalid");
+  return Status::Ok();
+}
+
+Result<std::size_t> view_axis(std::int32_t axis, std::size_t rank) noexcept {
+  const auto normalized =
+      axis < 0 ? axis + static_cast<std::int32_t>(rank) : axis;
+  if (normalized < 0 || static_cast<std::size_t>(normalized) >= rank)
+    return std::unexpected(
+        Status::InvalidArgument("graph view axis is outside its input rank"));
+  return static_cast<std::size_t>(normalized);
+}
+
+// All fallible preparation precedes publication, including resolving fixed
+// output descriptions. Failed construction may retain capacity, not content.
+Result<NodeId>
+append_node(detail::BuilderState &state,
+            std::variant<compute::Operation, ViewSpec> descriptor,
+            std::span<const ValueId> inputs,
+            std::span<const TensorSpec> outputs) noexcept {
+  if (!fits_node_ordinal(state.nodes.size()) ||
+      inputs.size() > (std::numeric_limits<std::uint16_t>::max)() ||
+      outputs.size() > (std::numeric_limits<std::uint8_t>::max)() ||
+      (!outputs.empty() &&
+       state.values.size() > (std::numeric_limits<std::uint32_t>::max)() -
+                                 (outputs.size() - 1)) ||
+      state.edges.size() >
+          (std::numeric_limits<std::uint32_t>::max)() - inputs.size())
+    return std::unexpected(
+        Status::ResourceExhausted("graph identity space is exhausted"));
+  container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef> resolved(
+      state.allocator);
+  if (!resolved.try_resize(outputs.size()))
+    return std::unexpected(allocation_failure());
+  for (std::size_t index = 0; index < outputs.size(); ++index) {
+    auto value = outputs[index].concrete_description();
+    if (value)
+      resolved[index] = *value;
+    else if (!value.error().IsFailedPrecondition())
+      return std::unexpected(std::move(value).error());
+  }
+  const auto *view = std::get_if<ViewSpec>(&descriptor);
+  if (view != nullptr && (!fits_value_ordinal(state.views.size()) ||
+                          !state.views.try_reserve(state.views.size() + 1)))
+    return std::unexpected(allocation_failure());
+  if (!state.edges.try_reserve(state.edges.size() + inputs.size()) ||
+      !state.nodes.try_reserve(state.nodes.size() + 1) ||
+      !state.values.try_reserve(state.values.size() + outputs.size()))
+    return std::unexpected(allocation_failure());
+  const auto ordinal = static_cast<std::uint32_t>(state.nodes.size());
+  const auto edge_begin = static_cast<std::uint32_t>(state.edges.size());
+  const auto output_begin = static_cast<std::uint32_t>(state.values.size());
+  std::variant<compute::Operation, std::uint32_t> stored;
+  if (view != nullptr) {
+    stored = static_cast<std::uint32_t>(state.views.size());
+    const bool added = state.views.try_push_back(*view);
+    HYLE_FATAL_ASSERT(added);
+  } else {
+    stored = std::move(std::get<compute::Operation>(descriptor));
+  }
+  for (const auto input : inputs) {
+    const bool added = state.edges.try_push_back(input.ordinal());
+    HYLE_FATAL_ASSERT(added);
+  }
+  const bool node_added = state.nodes.try_push_back(detail::NodeRecord{
+      .descriptor = std::move(stored),
+      .input_begin = edge_begin,
+      .output_begin = output_begin,
+      .input_count = static_cast<std::uint16_t>(inputs.size()),
+      .output_count = static_cast<std::uint8_t>(outputs.size()),
+  });
+  HYLE_FATAL_ASSERT(node_added);
+  for (std::size_t index = 0; index < outputs.size(); ++index) {
+    const bool added = state.values.try_push_back(detail::ValueRecord{
+        .spec = outputs[index],
+        .description = resolved[index],
+        .kind = ValueKind::kNodeOutput,
+        .producer = ordinal,
+    });
+    HYLE_FATAL_ASSERT(added);
+  }
+  return detail::GraphIdentity::node(state.generation, ordinal);
+}
+
 } // namespace
+
+Result<ViewSpec>
+ViewSpec::reshape(std::span<const Dimension> dimensions) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_dimensions(dimensions));
+  ViewSpec result;
+  std::copy(dimensions.begin(), dimensions.end(), result.dimensions_.begin());
+  result.rank_ = static_cast<std::uint8_t>(dimensions.size());
+  result.valid_ = true;
+  return result;
+}
+
+Result<ViewSpec> ViewSpec::slice(std::int32_t axis, Dimension start,
+                                 Dimension count, std::int64_t step) noexcept {
+  if (!start.valid() || !count.valid())
+    return std::unexpected(
+        Status::InvalidArgument("graph slice start/count is invalid"));
+  // Reuse the concrete schema's fixed axis and step contract.
+  auto checked = compute::View::slice(axis, 0, 0, step);
+  if (!checked)
+    return std::unexpected(std::move(checked).error());
+  ViewSpec result;
+  result.kind_ = compute::ViewKind::kSlice;
+  result.axis_ = axis;
+  result.start_ = start;
+  result.count_ = count;
+  result.step_ = step;
+  result.valid_ = true;
+  return result;
+}
+
+Result<ViewSpec>
+ViewSpec::permute(std::span<const std::int32_t> axes) noexcept {
+  auto checked = compute::View::permute(axes);
+  if (!checked)
+    return std::unexpected(std::move(checked).error());
+  ViewSpec result;
+  result.kind_ = compute::ViewKind::kPermute;
+  std::copy(axes.begin(), axes.end(), result.permutation_.begin());
+  result.rank_ = static_cast<std::uint8_t>(axes.size());
+  result.valid_ = true;
+  return result;
+}
+
+Result<ViewSpec>
+ViewSpec::broadcast_to(std::span<const Dimension> dimensions) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto result, reshape(dimensions));
+  result.kind_ = compute::ViewKind::kBroadcast;
+  return result;
+}
+
+bool ViewSpec::is_symbolic() const noexcept {
+  if (!valid())
+    return false;
+  if (kind_ == compute::ViewKind::kSlice)
+    return start_.is_symbol() || count_.is_symbol();
+  for (const auto dimension : dimensions())
+    if (dimension.is_symbol())
+      return true;
+  return false;
+}
+
+Result<compute::View>
+detail::bind_view(const ViewSpec &view,
+                  std::span<const std::int64_t> values) noexcept {
+  if (!view.valid())
+    return std::unexpected(
+        Status::InvalidArgument("graph ViewSpec is invalid"));
+  const auto value = [&](Dimension dimension) -> Result<std::int64_t> {
+    if (dimension.is_fixed())
+      return dimension.fixed_value();
+    if (dimension.symbol().ordinal() >= values.size())
+      return std::unexpected(Status::FailedPrecondition(
+          "graph ViewSpec needs concrete dimension bindings"));
+    return values[dimension.symbol().ordinal()];
+  };
+  if (view.kind() == compute::ViewKind::kSlice) {
+    HYLE_ASSIGN_OR_RETURN(const auto start, value(view.start()));
+    HYLE_ASSIGN_OR_RETURN(const auto count, value(view.count()));
+    return compute::View::slice(view.axis(), start, count, view.step());
+  }
+  if (view.kind() == compute::ViewKind::kPermute)
+    return compute::View::permute(view.permutation());
+  std::array<std::int64_t, compute::kMaxTensorRank> dimensions{};
+  for (std::size_t axis = 0; axis < view.dimensions().size(); ++axis) {
+    HYLE_ASSIGN_OR_RETURN(dimensions[axis], value(view.dimensions()[axis]));
+  }
+  HYLE_ASSIGN_OR_RETURN(auto shape,
+                        compute::TensorShape::create(
+                            {dimensions.data(), view.dimensions().size()}));
+  return view.kind() == compute::ViewKind::kReshape
+             ? compute::View::reshape(shape)
+             : compute::View::broadcast_to(shape);
+}
+
+Result<compute::Operation>
+detail::bind_operation(const GraphState &graph, const NodeRecord &node,
+                       std::span<const std::int64_t> values) noexcept {
+  if (const auto *view = view_spec(graph, node)) {
+    HYLE_ASSIGN_OR_RETURN(auto bound, bind_view(*view, values));
+    return compute::Operation(bound);
+  }
+  return node.operation();
+}
 
 Result<TensorSpec>
 TensorSpec::concrete(compute::TensorDesc description) noexcept {
@@ -290,11 +483,30 @@ TensorSpec::blocked_dense(compute::DataType logical_type,
 bool TensorSpec::is_symbolic() const noexcept {
   if (!valid() || kind_ == TensorSpecKind::kConcrete)
     return false;
+  if (kind_ == TensorSpecKind::kInferred)
+    return true;
   for (Dimension dimension : dimensions()) {
     if (dimension.is_symbol())
       return true;
   }
   return false;
+}
+
+Result<TensorSpec>
+TensorSpec::inferred(compute::DataType type,
+                     std::span<const Dimension> dimensions,
+                     compute::StorageFormat format) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_dimensions(dimensions));
+  if (compute::data_type_size(type) == 0)
+    return std::unexpected(
+        Status::InvalidArgument("inferred graph tensor type is invalid"));
+  TensorSpec result;
+  result.type_ = type;
+  result.format_ = format;
+  result.rank_ = static_cast<std::uint8_t>(dimensions.size());
+  result.kind_ = TensorSpecKind::kInferred;
+  std::copy(dimensions.begin(), dimensions.end(), result.dimensions_.begin());
+  return result;
 }
 
 Result<compute::TensorDesc> TensorSpec::concrete_description() const noexcept {
@@ -505,7 +717,33 @@ Graph::operation(NodeId node) const noexcept {
     return std::unexpected(
         Status::InvalidArgument("node does not belong to this graph"));
   }
-  return state_->nodes[node.ordinal()].operation;
+  if (state_->nodes[node.ordinal()].view_index())
+    return std::unexpected(Status::FailedPrecondition(
+        "logical ViewSpec requires specialization; inspect view_spec()"));
+  return state_->nodes[node.ordinal()].operation();
+}
+
+Result<compute::OperationKind>
+Graph::operation_kind(NodeId node) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, node))
+    return std::unexpected(
+        Status::InvalidArgument("node does not belong to this graph"));
+  return state_->nodes[node.ordinal()].kind();
+}
+
+Result<const ViewSpec &> Graph::view_spec(NodeId node) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_graph());
+  if (!detail::owns(*state_, node))
+    return std::unexpected(
+        Status::InvalidArgument("node does not belong to this graph"));
+  const auto *view = detail::view_spec(*state_, state_->nodes[node.ordinal()]);
+  if (view == nullptr)
+    return std::unexpected(Status::FailedPrecondition(
+        "node holds a concrete Operation, not a ViewSpec"));
+  return *view;
 }
 
 Result<std::size_t> Graph::node_input_count(NodeId node) const noexcept {
@@ -570,8 +808,7 @@ Result<std::size_t> Graph::node_resource_count(NodeId node) const noexcept {
   if (!detail::owns(*state_, node))
     return std::unexpected(
         Status::InvalidArgument("node does not belong to this graph"));
-  return compute::operation_traits(state_->nodes[node.ordinal()].operation)
-      .resource_count;
+  return state_->nodes[node.ordinal()].traits().resource_count;
 }
 
 Result<EffectResourceId> Graph::node_resource(NodeId node,
@@ -731,7 +968,7 @@ Status GraphBuilder::bind_resources(
   if (!detail::owns(*state_, node))
     return Status::InvalidArgument("node does not belong to this builder");
   auto &record = state_->nodes[node.ordinal()];
-  const auto traits = compute::operation_traits(record.operation);
+  const auto traits = record.traits();
   if (resources.size() != traits.resource_count)
     return Status::InvalidArgument(
         "graph resource binding count does not match operation schema");
@@ -820,6 +1057,9 @@ Result<ValueId> GraphBuilder::input(TensorSpec spec) noexcept {
   Status validation = validate_spec(*state_, spec);
   if (!validation.ok())
     return std::unexpected(std::move(validation));
+  if (spec.kind() == TensorSpecKind::kInferred)
+    return std::unexpected(Status::InvalidArgument(
+        "input tensor spec requires an explicit storage layout"));
   compute::TensorDesc description{};
   auto resolved = spec.concrete_description();
   if (resolved)
@@ -864,6 +1104,9 @@ Result<ValueId> GraphBuilder::constant(TensorSpec spec) noexcept {
   Status validation = validate_spec(*state_, spec);
   if (!validation.ok())
     return std::unexpected(std::move(validation));
+  if (spec.kind() == TensorSpecKind::kInferred)
+    return std::unexpected(Status::InvalidArgument(
+        "constant tensor spec requires an explicit storage layout"));
   compute::TensorDesc description{};
   auto resolved = spec.concrete_description();
   if (resolved)
@@ -1012,49 +1255,77 @@ GraphBuilder::add_node(compute::Operation operation,
     }
   }
 
-  if (!state_->edges.try_reserve(state_->edges.size() + inputs.size()) ||
-      !state_->nodes.try_reserve(state_->nodes.size() + 1) ||
-      !state_->values.try_reserve(state_->values.size() + output_count)) {
-    return std::unexpected(allocation_failure());
+  return append_node(*state_, std::move(operation), inputs, outputs);
+}
+
+Result<NodeId> GraphBuilder::add_node(ViewSpec view, ValueId input) noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(invalid_builder());
+  if (!view.valid() || !detail::owns(*state_, input))
+    return std::unexpected(
+        Status::InvalidArgument("graph ViewSpec or input identity is invalid"));
+  for (const auto dimension : view.dimensions()) {
+    auto checked = shape_operand(*state_, dimension);
+    if (!checked)
+      return std::unexpected(std::move(checked).error());
+  }
+  if (view.kind() == compute::ViewKind::kSlice) {
+    auto start = shape_operand(*state_, view.start());
+    if (!start)
+      return std::unexpected(std::move(start).error());
+    auto count = shape_operand(*state_, view.count());
+    if (!count)
+      return std::unexpected(std::move(count).error());
+  }
+  const auto &source = state_->values[input.ordinal()];
+  const std::array inputs{input};
+  if (source.description.valid() && !view.is_symbolic()) {
+    HYLE_ASSIGN_OR_RETURN(auto concrete, detail::bind_view(view, {}));
+    return add_node(compute::Operation(concrete), inputs);
   }
 
-  const std::uint32_t node_ordinal =
-      static_cast<std::uint32_t>(state_->nodes.size());
-  const std::uint32_t edge_begin =
-      static_cast<std::uint32_t>(state_->edges.size());
-  const std::uint32_t output_begin =
-      static_cast<std::uint32_t>(state_->values.size());
-  for (ValueId input_value : inputs) {
-    if (!state_->edges.try_push_back(input_value.ordinal())) {
-      return std::unexpected(allocation_failure());
+  std::array<Dimension, compute::kMaxTensorRank> dimensions{};
+  std::size_t rank = source.spec.rank();
+  if (view.kind() == compute::ViewKind::kReshape ||
+      view.kind() == compute::ViewKind::kBroadcast) {
+    if (view.kind() == compute::ViewKind::kBroadcast &&
+        view.dimensions().size() < rank)
+      return std::unexpected(Status::InvalidArgument(
+          "graph broadcast target rank is smaller than input rank"));
+    rank = view.dimensions().size();
+    std::copy(view.dimensions().begin(), view.dimensions().end(),
+              dimensions.begin());
+  } else if (view.kind() == compute::ViewKind::kSlice) {
+    HYLE_ASSIGN_OR_RETURN(const auto axis, view_axis(view.axis(), rank));
+    std::copy(source.spec.dimensions().begin(), source.spec.dimensions().end(),
+              dimensions.begin());
+    dimensions[axis] = view.count();
+  } else {
+    if (view.permutation().size() != rank)
+      return std::unexpected(Status::InvalidArgument(
+          "graph permutation rank differs from input rank"));
+    std::array<bool, compute::kMaxTensorRank> seen{};
+    for (std::size_t axis = 0; axis < rank; ++axis) {
+      HYLE_ASSIGN_OR_RETURN(const auto from,
+                            view_axis(view.permutation()[axis], rank));
+      if (seen[from])
+        return std::unexpected(
+            Status::InvalidArgument("graph permutation repeats an axis"));
+      seen[from] = true;
+      dimensions[axis] = source.spec.dimensions()[from];
     }
   }
-  if (!state_->nodes.try_push_back(detail::NodeRecord{
-          .operation = operation,
-          .input_begin = edge_begin,
-          .output_begin = output_begin,
-          .input_count = static_cast<std::uint16_t>(inputs.size()),
-          .output_count = static_cast<std::uint8_t>(output_count),
-      })) {
-    return std::unexpected(allocation_failure());
-  }
-  for (const TensorSpec &output : outputs) {
-    compute::TensorDesc description{};
-    auto resolved = output.concrete_description();
-    if (resolved)
-      description = *resolved;
-    else if (!resolved.error().IsFailedPrecondition())
-      return std::unexpected(std::move(resolved).error());
-    if (!state_->values.try_push_back(detail::ValueRecord{
-            .spec = output,
-            .description = description,
-            .kind = ValueKind::kNodeOutput,
-            .producer = node_ordinal,
-        })) {
-      return std::unexpected(allocation_failure());
-    }
-  }
-  return detail::GraphIdentity::node(state_->generation, node_ordinal);
+  HYLE_ASSIGN_OR_RETURN(auto output,
+                        TensorSpec::inferred(source.spec.data_type(),
+                                             {dimensions.data(), rank},
+                                             source.spec.storage_format()));
+  const std::array outputs{output};
+  return append_node(*state_, std::move(view), inputs, outputs);
+}
+
+Result<ValueId> GraphBuilder::add(ViewSpec view, ValueId input) noexcept {
+  HYLE_ASSIGN_OR_RETURN(const auto node, add_node(std::move(view), input));
+  return result(node);
 }
 
 Result<ValueId> GraphBuilder::result(NodeId node,

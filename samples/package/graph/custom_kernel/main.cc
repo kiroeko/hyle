@@ -125,6 +125,75 @@ hyle::Status bounded_normalization() {
   return hyle::Status::Ok();
 }
 
+// Exact ViewSpec lowering uses the same public symbols in all three delivery
+// forms. Only Copy materializes; the surrounding views retain true strides.
+hyle::Status symbolic_views() {
+  using namespace hyle::compute;
+  using namespace hyle::graph;
+  HYLE_ASSIGN_OR_RETURN(auto context, cpu::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
+  HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create());
+  HYLE_ASSIGN_OR_RETURN(auto rows, builder.dimension({1, 8, 1}));
+  HYLE_ASSIGN_OR_RETURN(auto offset, builder.dimension({0, 8, 1}));
+  HYLE_ASSIGN_OR_RETURN(
+      auto input_spec,
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)}));
+  HYLE_ASSIGN_OR_RETURN(auto input, builder.input(input_spec));
+  HYLE_ASSIGN_OR_RETURN(
+      auto slice, ViewSpec::slice(0, Dimension(offset), Dimension::fixed(1)));
+  HYLE_ASSIGN_OR_RETURN(auto sliced, builder.add(slice, input));
+  HYLE_ASSIGN_OR_RETURN(auto permute,
+                        ViewSpec::permute(std::array<std::int32_t, 2>{1, 0}));
+  HYLE_ASSIGN_OR_RETURN(auto transposed, builder.add(permute, sliced));
+  const std::array expanded_shape{Dimension::fixed(4), Dimension::fixed(2)};
+  HYLE_ASSIGN_OR_RETURN(auto broadcast, ViewSpec::broadcast_to(expanded_shape));
+  HYLE_ASSIGN_OR_RETURN(auto expanded, builder.add(broadcast, transposed));
+  HYLE_ASSIGN_OR_RETURN(
+      auto copied_spec,
+      TensorSpec::inferred(DataType::kFloat32, expanded_shape));
+  HYLE_ASSIGN_OR_RETURN(auto copied,
+                        builder.add(Copy{}, copied_spec, expanded));
+  HYLE_ASSIGN_OR_RETURN(auto flatten,
+                        ViewSpec::reshape(std::array{Dimension::fixed(8)}));
+  HYLE_ASSIGN_OR_RETURN(auto output, builder.add(flatten, copied));
+  HYLE_RETURN_IF_ERROR(builder.publish(output));
+  HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+  HYLE_ASSIGN_OR_RETURN(auto slice_node, graph.producer(sliced));
+  HYLE_ASSIGN_OR_RETURN(auto kind, graph.operation_kind(slice_node));
+  HYLE_ASSIGN_OR_RETURN(const auto &logical, graph.view_spec(slice_node));
+  if (kind != OperationKind::kView || !logical.is_symbolic() ||
+      logical.start() != Dimension(offset) || graph.operation(slice_node))
+    return hyle::Status::Internal("logical ViewSpec introspection mismatch");
+  const std::array bindings{ShapeBinding{rows, 3}, ShapeBinding{offset, 1}};
+  HYLE_ASSIGN_OR_RETURN(auto compiled,
+                        compile(graph, context, {.shape = bindings}));
+  graph = {};
+  HYLE_ASSIGN_OR_RETURN(auto run, compiled.executable.create_invocation());
+  HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
+                                         hyle::mem::system_resource(), 48, 64));
+  const std::array values{0.F, 1.F, 2.F, 3.F, 4.F,  5.F,
+                          6.F, 7.F, 8.F, 9.F, 10.F, 11.F};
+  HYLE_RETURN_IF_ERROR(source.view().write(std::as_bytes(std::span(values))));
+  HYLE_ASSIGN_OR_RETURN(
+      auto description,
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{3, 4}));
+  HYLE_ASSIGN_OR_RETURN(auto tensor,
+                        ConstTensorView::create(description, source.view()));
+  HYLE_RETURN_IF_ERROR(run.bind(input, tensor));
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    HYLE_ASSIGN_OR_RETURN(auto done, run.submit(queue));
+    HYLE_RETURN_IF_ERROR(done.wait());
+    HYLE_ASSIGN_OR_RETURN(auto result, run.output(output));
+    std::array<float, 8> actual{};
+    HYLE_RETURN_IF_ERROR(
+        result.storage().read(std::as_writable_bytes(std::span(actual))));
+    if (actual != std::array{4.F, 4.F, 5.F, 5.F, 6.F, 6.F, 7.F, 7.F})
+      return hyle::Status::Internal("symbolic View graph output mismatch");
+  }
+  return hyle::Status::Ok();
+}
+
 } // namespace
 
 int main() {
@@ -253,6 +322,13 @@ int main() {
     std::fprintf(stderr, "bounded graph: %.*s\n",
                  static_cast<int>(message.size()), message.data());
     return 22;
+  }
+  const auto views = symbolic_views();
+  if (!views.ok()) {
+    const auto message = views.message();
+    std::fprintf(stderr, "symbolic views: %.*s\n",
+                 static_cast<int>(message.size()), message.data());
+    return 23;
   }
   return 0;
 }

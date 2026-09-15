@@ -12,7 +12,8 @@
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
 与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入、
-编译 requested-storage 常驻/峰值配额和共享 Invocation 存储配额。动态 View 属性、
+编译 requested-storage 常驻/峰值配额和共享 Invocation 存储配额。`ViewSpec` 已支持具体形状绑定时的
+动态 reshape/slice/permute/broadcast 与真实布局推导；它的完整动态域证明、
 Provider 私有 packing 共享、capture 私有存储完整上界与 storage/lane 联合优化仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
@@ -383,9 +384,47 @@ if (!invocation) return invocation.error();
 不拿上界单点冒充通用路线；当前 exact-only region 不融合任何动态节点。常量描述在一个 Executable 内
 固定，动态尺寸的外部值应建成 input。域与上界 exact point 的 profile identity 不同。
 
-当前 `View::reshape/broadcast_to` 的 operation attributes 仍是具体 `TensorShape`；派生 TensorSpec 不会
-偷偷改写这些固定参数，也不自动生成 reshape/copy。完整动态属性仍待实现，不把这一条 general 路线
-当成完整动态图目录。
+### 动态 View 与生产者推导布局
+
+直接 Compute 的 `View` 仍使用具体参数。Graph 中需要随 batch/token 数变化的 reshape、slice 或 broadcast
+时，使用 `ViewSpec`：它保存同一 Builder 的 `Dimension`，编译时绑定为真正的 Compute View。比如把
+`[batch, tokens, 128]` 展平、归一化后恢复：
+
+```cpp
+const std::array original{Dimension(*batch), Dimension(*tokens),
+                          Dimension::fixed(128)};
+const std::array flat_axes{Dimension(*rows), Dimension::fixed(128)};
+// rows 由上面的 dimension_product(batch, tokens) 产生；input3d 是 original 形状的输入。
+auto flatten = ViewSpec::reshape(flat_axes);
+if (!flatten) return flatten.error();
+auto flat = builder.add(*flatten, input3d);
+if (!flat) return flat.error();
+auto normalized = builder.add(RmsNorm{}, *spec, *flat);
+if (!normalized) return normalized.error();
+auto restore = ViewSpec::reshape(original);
+if (!restore) return restore.error();
+auto output3d = builder.add(*restore, *normalized);
+if (!output3d) return output3d.error();
+```
+
+`ViewSpec::slice(axis, start, count, step)` 的 start/count 也可以是独立或派生维度；axis/step 固定，step 必须
+为正。`permute(axes)` 固定轴顺序，`broadcast_to(dimensions)` 推导零步幅；负 axis 按输入 rank 归一化。
+所有 ID 都必须来自同一 Builder。`add(ViewSpec, input)` 自动推导输出，不要求用户手工重建 strides。
+
+- View 不复制 payload。reshape 仍要求既有 Compute 支持的连续 plain 布局和相同元素数；非连续
+  slice/permute/broadcast 后需要实化时显式插入 `Copy{}`，不暗中分配或搬运。空切片保留源步幅，不能
+  因元素数为零就把它与规范化 empty-dense 描述视为相同。
+- 显式指定操作输出时，`TensorSpec::inferred(type, dimensions, format)` 只约束形状、类型与 storage
+  format，真实 strides/block axis 由生产者推导。它只能作为输出，不能给 input/constant 使用；即使
+  dimensions 全固定，`is_symbolic()` 仍为 true，表示布局待推导。原有 dense/concrete 输出合同不放宽。
+- 这些新 View 链当前使用默认 exact compile；换形状要另编译。非单点 declared-domain 中的 inferred
+  布局会明确返回 Unimplemented，尚不能接到上面的通用回退路线；不以域的一个上界点冒充完整证明。
+- `Graph::operation_kind(node)` 对所有节点有效。尚未绑定的 View 用 `view_spec(node)` 查看表达式；
+  `operation(node)` 返回 FailedPrecondition，不返回假固定参数。输入和参数都已具体化的 ViewSpec 会在
+  构图时折叠为普通 Operation，此时反过来用 `operation()` 查询。查询结果借用至 Graph owner 释放。
+
+公开可运行的 slice→permute→broadcast→Copy→reshape 例子见
+[`custom_kernel` sample](../../samples/package/graph/custom_kernel/README.md)，source/static/shared 使用相同 API。
 
 ### 有限精确变体与通用回退
 

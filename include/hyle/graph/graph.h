@@ -109,17 +109,67 @@ private:
   std::int64_t fixed_ = -1;
 };
 
+// Graph-time, metadata-only View. Dimensions (including slice start/count)
+// use this builder's independent or derived values; axis/step/permutation are
+// fixed. No tensor payload is read. Compile binds a concrete compute::View.
+class ViewSpec final {
+public:
+  ViewSpec() noexcept = default;
+
+  HYLE_GRAPH_API static Result<ViewSpec>
+  reshape(std::span<const Dimension> dimensions) noexcept;
+  HYLE_GRAPH_API static Result<ViewSpec> slice(std::int32_t axis,
+                                               Dimension start, Dimension count,
+                                               std::int64_t step = 1) noexcept;
+  HYLE_GRAPH_API static Result<ViewSpec>
+  permute(std::span<const std::int32_t> axes) noexcept;
+  HYLE_GRAPH_API static Result<ViewSpec>
+  broadcast_to(std::span<const Dimension> dimensions) noexcept;
+
+  bool valid() const noexcept { return valid_; }
+  explicit operator bool() const noexcept { return valid(); }
+  compute::ViewKind kind() const noexcept { return kind_; }
+  std::span<const Dimension> dimensions() const noexcept {
+    return {dimensions_.data(), kind_ == compute::ViewKind::kReshape ||
+                                        kind_ == compute::ViewKind::kBroadcast
+                                    ? rank_
+                                    : std::size_t{0}};
+  }
+  std::int32_t axis() const noexcept { return axis_; }
+  Dimension start() const noexcept { return start_; }
+  Dimension count() const noexcept { return count_; }
+  std::int64_t step() const noexcept { return step_; }
+  std::span<const std::int32_t> permutation() const noexcept {
+    return {permutation_.data(),
+            kind_ == compute::ViewKind::kPermute ? rank_ : std::size_t{0}};
+  }
+  HYLE_GRAPH_API bool is_symbolic() const noexcept;
+
+private:
+  std::array<Dimension, compute::kMaxTensorRank> dimensions_{};
+  std::array<std::int32_t, compute::kMaxTensorRank> permutation_{};
+  Dimension start_ = Dimension::fixed(0);
+  Dimension count_ = Dimension::fixed(0);
+  std::int64_t step_ = 1;
+  std::int32_t axis_ = 0;
+  std::uint8_t rank_ = 0;
+  compute::ViewKind kind_ = compute::ViewKind::kReshape;
+  bool valid_ = false;
+};
+
 enum class TensorSpecKind : std::uint8_t {
   kInvalid = 0,
   kConcrete,
   kDense,
   kBlockedDense,
+  kInferred,
 };
 
 // Logical graph-time tensor metadata. Concrete preserves every TensorDesc
-// layout. Symbolic descriptions intentionally support only dense and
-// blocked-dense storage; arbitrary symbolic strides and opaque layouts need a
-// provider-owned typed contract instead of guessed generic arithmetic.
+// layout. Symbolic external storage supports dense/blocked-dense descriptions.
+// An inferred output constrains shape/type/format but obtains physical strides
+// and block axis from its producer; it is not an independent storage layout.
+// Arbitrary symbolic strides and opaque layouts are not guessed.
 class TensorSpec final {
 public:
   TensorSpec() noexcept = default;
@@ -132,6 +182,11 @@ public:
   blocked_dense(compute::DataType logical_type,
                 std::span<const Dimension> dimensions,
                 compute::StorageFormat format) noexcept;
+  // Output-only: the operation schema owns the physical layout. Cannot be
+  // used for input()/constant(). Even fixed dimensions require inference.
+  HYLE_GRAPH_API static Result<TensorSpec>
+  inferred(compute::DataType type, std::span<const Dimension> dimensions,
+           compute::StorageFormat format = {}) noexcept;
 
   bool valid() const noexcept { return kind_ != TensorSpecKind::kInvalid; }
   explicit operator bool() const noexcept { return valid(); }
@@ -144,6 +199,7 @@ public:
   std::span<const Dimension> dimensions() const noexcept {
     return {dimensions_.data(), rank_};
   }
+  // Includes unresolved producer-inferred layout, even with fixed extents.
   HYLE_GRAPH_API bool is_symbolic() const noexcept;
   // Succeeds for an original concrete description or a fixed dense/
   // blocked-dense spec. Symbolic specs require graph specialization.
@@ -268,8 +324,13 @@ public:
   HYLE_GRAPH_API Result<const TensorSpec &>
   constant_spec(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<NodeId> node_id(std::size_t index = 0) const noexcept;
+  HYLE_GRAPH_API Result<compute::OperationKind>
+  operation_kind(NodeId node) const noexcept;
+  // Unbound ViewSpec nodes have no concrete Operation: returns
+  // FailedPrecondition. Use view_spec() to inspect their logical parameters.
   HYLE_GRAPH_API Result<const compute::Operation &>
   operation(NodeId node) const noexcept;
+  HYLE_GRAPH_API Result<const ViewSpec &> view_spec(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<std::size_t>
   node_input_count(NodeId node) const noexcept;
   HYLE_GRAPH_API Result<ValueId>
@@ -366,6 +427,11 @@ public:
   HYLE_GRAPH_API Result<NodeId>
   add_node(compute::Operation operation, std::span<const ValueId> inputs,
            std::span<const TensorSpec> outputs) noexcept;
+  // Infers logical output axes and preserves the producer-derived layout.
+  // Shape expressions and input must belong to this builder. Concrete-only
+  // calls use the ordinary compute::View path immediately.
+  HYLE_GRAPH_API Result<NodeId> add_node(ViewSpec view, ValueId input) noexcept;
+  HYLE_GRAPH_API Result<ValueId> add(ViewSpec view, ValueId input) noexcept;
   HYLE_GRAPH_API Result<ValueId>
   result(NodeId node, std::size_t output_index = 0) const noexcept;
   HYLE_GRAPH_API Status depends_on(NodeId node, NodeId prerequisite) noexcept;

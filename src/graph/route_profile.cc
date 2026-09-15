@@ -307,11 +307,32 @@ Status build_profile_identity(ReportState &report, const PlanState &plan,
   for (std::size_t i = 0; i < logical.outputs.size(); ++i)
     storage.outputs[i] = plan.descriptions[logical.outputs[i]];
 
-  Fingerprint semantics(0x4752415048530001ULL);
+  Fingerprint semantics(0x4752415048530002ULL);
   semantics.add(context.semantics);
   semantics.add(logical.nodes.size());
   for (const auto &node : logical.nodes) {
-    HYLE_RETURN_IF_ERROR(operation_identity(semantics, node.operation));
+    const auto *view = view_spec(logical, node);
+    semantics.add(view != nullptr);
+    if (view) {
+      const auto dimension = [&](Dimension value) noexcept {
+        semantics.add(value.is_fixed());
+        semantics.add(value.is_fixed()
+                          ? static_cast<std::uint64_t>(value.fixed_value())
+                          : value.symbol().ordinal());
+      };
+      semantics.add(compute::OperationKind::kView);
+      semantics.add(view->kind());
+      semantics.add(view->dimensions().size());
+      for (const auto axis : view->dimensions())
+        dimension(axis);
+      semantics.add(view->axis());
+      dimension(view->start());
+      dimension(view->count());
+      semantics.add(view->step());
+      semantics.words(view->permutation());
+    } else {
+      HYLE_RETURN_IF_ERROR(operation_identity(semantics, node.operation()));
+    }
     semantics.add(node.input_begin);
     semantics.add(node.input_count);
     semantics.add(node.output_begin);
@@ -327,6 +348,17 @@ Status build_profile_identity(ReportState &report, const PlanState &plan,
   semantics.words(logical.inputs);
   semantics.words(logical.constants);
   semantics.words(logical.outputs);
+  // Shape bindings may change View attributes without changing any tensor
+  // shape/stride (e.g. two equally sized slices at different starts). The
+  // concrete semantic identity must include those values, not only the AST.
+  const auto *signature =
+      SpecializationSignatureAccess::state(plan.specialization);
+  semantics.add(signature != nullptr);
+  if (signature) {
+    semantics.add(signature->bindings.size());
+    for (const auto binding : signature->bindings)
+      semantics.add(binding.value);
+  }
   semantics.add(plan.descriptions.size());
   for (const auto &description : plan.descriptions)
     HYLE_RETURN_IF_ERROR(semantics.tensor(description));

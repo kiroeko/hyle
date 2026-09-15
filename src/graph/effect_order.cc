@@ -108,7 +108,7 @@ Status validate_effect_order(const BuilderState &graph) noexcept {
   std::size_t access_count = 0;
   for (std::size_t index = 0; index < graph.nodes.size(); ++index) {
     const auto &node = graph.nodes[index];
-    const auto traits = compute::operation_traits(node.operation);
+    const auto traits = node.traits();
     if (traits.effect == compute::EffectKind::kExternalSideEffect &&
         !unknown.try_push_back(static_cast<std::uint32_t>(index)))
       return no_memory();
@@ -141,9 +141,9 @@ Status validate_effect_order(const BuilderState &graph) noexcept {
   }
   for (std::size_t index = 0; index < graph.nodes.size(); ++index) {
     const auto &node = graph.nodes[index];
-    const auto count = compute::operation_traits(node.operation).resource_count;
+    const auto count = node.traits().resource_count;
     for (std::size_t port = 0; port < count; ++port) {
-      auto access = compute::operation_resource_access(node.operation, port);
+      auto access = compute::operation_resource_access(node.operation(), port);
       if (!access)
         return std::move(access).error();
       const std::uint8_t mode =

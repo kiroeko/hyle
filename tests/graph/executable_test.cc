@@ -63,6 +63,7 @@ using hyle::graph::QueueBinding;
 using hyle::graph::ShapeBinding;
 using hyle::graph::TensorSpec;
 using hyle::graph::ValueId;
+using hyle::graph::ViewSpec;
 using hyle::graph::test::Environment;
 using hyle::graph::test::ExecutionSpec;
 using hyle::mem::AllocatorRef;
@@ -3726,6 +3727,427 @@ TEST(GraphProfiles, GeneratedIdentityIncludesAttributesBoundsAndExactStrides) {
             padded.profile_identity().inputs[0].required_bytes().value());
   EXPECT_NE(dense.profile_identity().semantics,
             padded.profile_identity().semantics);
+}
+
+TEST(GraphViews, DerivedFlattenNormAndRestoreUseRealLayoutsIncludingEmpty) {
+  auto builder = GraphBuilder::create().value();
+  const auto batch = builder.dimension({0, 2, 1}).value();
+  const auto tokens = builder.dimension({0, 3, 1}).value();
+  const auto rows =
+      builder.dimension_product(Dimension(batch), Dimension(tokens)).value();
+  const std::array original{Dimension(batch), Dimension(tokens),
+                            Dimension::fixed(4)};
+  const std::array flattened{Dimension(rows), Dimension::fixed(4)};
+  const auto input =
+      builder.input(TensorSpec::dense(DataType::kFloat32, original).value())
+          .value();
+  const auto flat =
+      builder.add(ViewSpec::reshape(flattened).value(), input).value();
+  const auto norm =
+      builder
+          .add(RmsNorm{},
+               TensorSpec::dense(DataType::kFloat32, flattened).value(), flat)
+          .value();
+  const auto output =
+      builder.add(ViewSpec::reshape(original).value(), norm).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  for (const std::int64_t b : {0, 1, 2}) {
+    for (const std::int64_t t : {0, 1, 3}) {
+      SCOPED_TRACE("batch=" + std::to_string(b) +
+                   ", tokens=" + std::to_string(t));
+      const std::array bindings{ShapeBinding{batch, b},
+                                ShapeBinding{tokens, t}};
+      auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      const auto description =
+          TensorDesc::dense(DataType::kFloat32,
+                            std::array{b, t, std::int64_t{4}})
+              .value();
+      auto source = make_tensor(description);
+      std::vector<float> values(static_cast<std::size_t>(b * t * 4));
+      for (std::size_t i = 0; i < values.size(); ++i)
+        values[i] = static_cast<float>(i % 11) - 4.F;
+      write(source, values);
+      std::vector<float> expected(values.size());
+      for (std::size_t r = 0; r < values.size() / 4; ++r) {
+        float sum = 0;
+        for (std::size_t h = 0; h < 4; ++h)
+          sum += values[r * 4 + h] * values[r * 4 + h];
+        const float scale = 1.F / std::sqrt(sum / 4.F + RmsNorm{}.epsilon);
+        for (std::size_t h = 0; h < 4; ++h)
+          expected[r * 4 + h] = values[r * 4 + h] * scale;
+      }
+      auto run = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(run.bind(input, source.view).ok());
+      auto submitted = run.submit(queue);
+      ASSERT_TRUE(submitted) << submitted.error().message();
+      ASSERT_TRUE(submitted->wait().ok());
+      auto result = run.output(output);
+      ASSERT_TRUE(result) << result.error().message();
+      EXPECT_EQ(result->description(), description);
+      expect_near(read(*result, values.size()), expected);
+    }
+  }
+}
+
+TEST(GraphViews, SlicePermuteCopyPreservesStridesAndDynamicStart) {
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 5, 1}).value();
+  const auto start = builder.dimension({0, 5, 1}).value();
+  const auto count = builder.dimension({0, 3, 1}).value();
+  const auto input =
+      builder
+          .input(TensorSpec::dense(
+                     DataType::kFloat32,
+                     std::array{Dimension(rows), Dimension::fixed(5)})
+                     .value())
+          .value();
+  const auto slice =
+      builder
+          .add(ViewSpec::slice(-2, Dimension(start), Dimension(count), 2)
+                   .value(),
+               input)
+          .value();
+  const auto transposed =
+      builder
+          .add(ViewSpec::permute(std::array<std::int32_t, 2>{-1, -2}).value(),
+               slice)
+          .value();
+  const auto output = builder
+                          .add(hyle::compute::Copy{},
+                               TensorSpec::dense(DataType::kFloat32,
+                                                 std::array{Dimension::fixed(5),
+                                                            Dimension(count)})
+                                   .value(),
+                               transposed)
+                          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  for (const std::int64_t first : {0, 1, 3, 5}) {
+    const auto n = first == 5 ? 0 : (5 - 1 - first) / 2 + 1;
+    const std::array bindings{ShapeBinding{rows, 5}, ShapeBinding{start, first},
+                              ShapeBinding{count, n}};
+    auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    auto run = compiled->executable.create_invocation().value();
+    auto source = make_tensor(matrix(5, 5));
+    auto destination = make_tensor(matrix(5, n));
+    std::array<float, 25> values{};
+    for (std::size_t i = 0; i < values.size(); ++i)
+      values[i] = static_cast<float>(i);
+    write(source, values);
+    std::vector<float> expected;
+    for (std::int64_t column = 0; column < 5; ++column)
+      for (std::int64_t row_index = 0; row_index < n; ++row_index)
+        expected.push_back(values[static_cast<std::size_t>(
+            (first + row_index * 2) * 5 + column)]);
+    ASSERT_TRUE(run.bind(input, source.view).ok());
+    ASSERT_TRUE(run.bind(output, destination.view).ok());
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    EXPECT_EQ(read(destination, expected.size()), expected);
+  }
+  const std::array invalid{ShapeBinding{rows, 5}, ShapeBinding{start, 4},
+                           ShapeBinding{count, 2}};
+  auto failed = hyle::graph::compile(graph, context, {.shape = invalid});
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsOutOfRange());
+}
+
+TEST(GraphViews, BroadcastUsesZeroStridesAndAnExplicitCopyMaterializes) {
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({0, 4, 1}).value();
+  const auto input = builder.input(matrix(1, 3)).value();
+  const std::array shape{Dimension(rows), Dimension::fixed(3)};
+  const auto expanded =
+      builder.add(ViewSpec::broadcast_to(shape).value(), input).value();
+  const auto output =
+      builder
+          .add(hyle::compute::Copy{},
+               TensorSpec::dense(DataType::kFloat32, shape).value(), expanded)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  ASSERT_TRUE(builder.publish(expanded).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  for (const std::int64_t n : {0, 1, 4}) {
+    const std::array bindings{ShapeBinding{rows, n}};
+    auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    auto run = compiled->executable.create_invocation().value();
+    auto source = make_tensor(matrix(1, 3));
+    auto destination = make_tensor(matrix(n, 3));
+    write(source, std::array{1.F, 3.F, -2.F});
+    ASSERT_TRUE(run.bind(input, source.view).ok());
+    ASSERT_TRUE(run.bind(output, destination.view).ok());
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    auto alias = run.output(expanded);
+    ASSERT_TRUE(alias);
+    EXPECT_EQ(alias->description().byte_strides()[0], n == 1 ? 12 : 0);
+    std::vector<float> expected;
+    for (std::int64_t r = 0; r < n; ++r)
+      expected.insert(expected.end(), {1.F, 3.F, -2.F});
+    EXPECT_EQ(read(destination, expected.size()), expected);
+  }
+}
+
+TEST(GraphViews, InferredOutputConstraintsDoNotRelaxExplicitLayoutContracts) {
+  auto context = hyle::compute::cpu::create_context().value();
+  for (int mismatch = 0; mismatch < 4; ++mismatch) {
+    auto builder = GraphBuilder::create().value();
+    const auto input = builder.input(matrix(2, 3)).value();
+    const auto operation =
+        View::permute(std::array<std::int32_t, 2>{1, 0}).value();
+    const auto format = mismatch == 2
+                            ? StorageFormat::blocked({11, 22}, 2, 4, 2).value()
+                            : StorageFormat{};
+    const auto spec =
+        mismatch == 3
+            ? TensorSpec::dense(
+                  DataType::kFloat32,
+                  std::array{Dimension::fixed(3), Dimension::fixed(2)})
+                  .value()
+            : TensorSpec::inferred(
+                  mismatch == 1 ? DataType::kFloat64 : DataType::kFloat32,
+                  std::array{Dimension::fixed(mismatch == 0 ? 4 : 3),
+                             Dimension::fixed(2)},
+                  format)
+                  .value();
+    auto added = builder.add(operation, spec, input);
+    if (!added) {
+      EXPECT_TRUE(added.error().IsInvalidArgument());
+      continue;
+    }
+    ASSERT_TRUE(builder.publish(*added).ok());
+    auto graph = std::move(builder).finish().value();
+    auto failed = hyle::graph::compile(graph, context);
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsInvalidArgument());
+  }
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(matrix(2, 3)).value();
+  const auto output =
+      builder
+          .add(View::permute(std::array<std::int32_t, 2>{1, 0}).value(),
+               TensorSpec::inferred(
+                   DataType::kFloat32,
+                   std::array{Dimension::fixed(3), Dimension::fixed(2)})
+                   .value(),
+               input)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto compiled = hyle::graph::compile(
+      graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+}
+
+TEST(GraphViews, RejectsInvalidReshapeBroadcastAndUnprovedDomainsBeforeWork) {
+  auto context = hyle::compute::cpu::create_context().value();
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto input = builder.input(spec).value();
+  const auto transposed =
+      builder
+          .add(ViewSpec::permute(std::array<std::int32_t, 2>{1, 0}).value(),
+               input)
+          .value();
+  const auto restored =
+      builder.add(ViewSpec::reshape(spec.dimensions()).value(), transposed)
+          .value();
+  ASSERT_TRUE(builder.publish(restored).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array bindings{ShapeBinding{rows, 2}};
+  auto invalid_layout =
+      hyle::graph::compile(graph, context, {.shape = bindings});
+  ASSERT_FALSE(invalid_layout);
+  EXPECT_TRUE(invalid_layout.error().IsUnimplemented());
+  auto unproved = hyle::graph::compile(
+      graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
+  ASSERT_FALSE(unproved);
+  EXPECT_TRUE(unproved.error().IsUnimplemented());
+
+  for (const bool broadcast : {false, true}) {
+    auto b = GraphBuilder::create().value();
+    const auto n = b.dimension({1, 4, 1}).value();
+    const auto source = b.input(matrix(2, 4)).value();
+    const std::array target{Dimension(n), Dimension::fixed(3)};
+    const auto view =
+        broadcast ? ViewSpec::broadcast_to(target) : ViewSpec::reshape(target);
+    const auto out = b.add(view.value(), source).value();
+    ASSERT_TRUE(b.publish(out).ok());
+    auto g = std::move(b).finish().value();
+    const std::array point{ShapeBinding{n, 2}};
+    auto failed = hyle::graph::compile(g, context, {.shape = point});
+    ASSERT_FALSE(failed);
+    EXPECT_TRUE(failed.error().IsInvalidArgument());
+  }
+}
+
+TEST(GraphViews, EmptySliceAndOverflowUseTheConcreteCheckedSchema) {
+  auto context = hyle::compute::cpu::create_context().value();
+  for (const auto step : {std::int64_t{1}, INT64_MAX}) {
+    auto builder = GraphBuilder::create().value();
+    const auto start = builder.dimension({0, 9, 1}).value();
+    const auto input = builder.input(row(8)).value();
+    const auto output =
+        builder
+            .add(ViewSpec::slice(0, Dimension(start), Dimension::fixed(0), step)
+                     .value(),
+                 input)
+            .value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    for (const auto first : {std::int64_t{8}, std::int64_t{9}}) {
+      const std::array bindings{ShapeBinding{start, first}};
+      auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+      if (first == 8 && step == 1) {
+        ASSERT_TRUE(compiled) << compiled.error().message();
+        auto run = compiled->executable.create_invocation().value();
+        auto source = make_tensor(row(8));
+        ASSERT_TRUE(run.bind(input, source.view).ok());
+        ASSERT_TRUE(run.submit()->wait().ok());
+        auto result = run.output(output);
+        ASSERT_TRUE(result);
+        EXPECT_EQ(result->description().dimensions()[0], 0);
+        // Slicing preserves the source stride even when the result is empty;
+        // the dense empty factory canonically uses zero strides instead.
+        EXPECT_EQ(result->description().byte_strides()[0], 4);
+        EXPECT_EQ(result->description().required_bytes().value(), 0u);
+      } else {
+        ASSERT_FALSE(compiled);
+        EXPECT_TRUE(compiled.error().IsOutOfRange());
+      }
+    }
+  }
+}
+
+TEST(GraphViews, ExactSliceOutlivesGraphAndWarmBindingDoesNotAllocate) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  auto builder = GraphBuilder::create().value();
+  const auto start = builder.dimension({0, 5, 1}).value();
+  const auto input = builder.input(row(8)).value();
+  const auto output =
+      builder
+          .add(
+              ViewSpec::slice(0, Dimension(start), Dimension::fixed(3)).value(),
+              input)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  std::array bindings{ShapeBinding{start, 2}};
+  auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto run = compiled->executable.create_invocation().value();
+  graph = {};
+  bindings = {};
+  compiled = CompiledGraph{};
+  auto source = make_tensor(row(8));
+  write(source, std::array{0.F, 1.F, 2.F, 3.F, 4.F, 5.F, 6.F, 7.F});
+  ASSERT_TRUE(run.bind(input, source.view).ok());
+  const auto before = probe.allocations.load();
+  probe.fail = true;
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    auto submitted = run.submit();
+    ASSERT_TRUE(submitted) << submitted.error().message();
+    ASSERT_TRUE(submitted->wait().ok());
+    EXPECT_EQ(read(run.output(output).value(), 3),
+              (std::vector<float>{2.F, 3.F, 4.F}));
+  }
+  EXPECT_EQ(probe.allocations.load(), before);
+  probe.fail = false;
+}
+
+TEST(GraphViews, EveryExactCompileAllocationFailureCleansUpAndRetries) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec =
+      TensorSpec::dense(DataType::kFloat32,
+                        std::array{Dimension(rows), Dimension::fixed(4)})
+          .value();
+  const auto input = builder.input(spec).value();
+  auto output = input;
+  for (int i = 0; i < 9; ++i)
+    output = builder.add(ViewSpec::reshape(spec.dimensions()).value(), output)
+                 .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array bindings{ShapeBinding{rows, 2}};
+  const auto retained = probe.allocations.load() - probe.deallocations.load();
+  probe.attempts = 0;
+  {
+    auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+  }
+  const auto attempts = probe.attempts.load();
+  ASSERT_GT(attempts, 0u);
+  for (std::size_t fail = 0; fail < attempts; ++fail) {
+    SCOPED_TRACE(fail);
+    probe.attempts = 0;
+    probe.fail_on_attempt = fail;
+    {
+      auto failed = hyle::graph::compile(graph, context, {.shape = bindings});
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+    }
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), retained);
+    probe.fail_on_attempt = SIZE_MAX;
+    {
+      auto retry = hyle::graph::compile(graph, context, {.shape = bindings});
+      ASSERT_TRUE(retry) << retry.error().message();
+    }
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), retained);
+  }
+}
+
+TEST(GraphViews,
+     ProfileIdentityIncludesDynamicAttributesWithEqualOutputShapes) {
+  auto context = hyle::compute::cpu::create_context().value();
+  const Environment environment{{&context, hyle::mem::system_resource()}};
+  hyle::graph::test::ProfileFixture facts(environment.environment());
+  auto builder = GraphBuilder::create().value();
+  const auto start = builder.dimension({0, 4, 1}).value();
+  const auto input = builder.input(row(8)).value();
+  const auto output =
+      builder
+          .add(
+              ViewSpec::slice(0, Dimension(start), Dimension::fixed(2)).value(),
+              input)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  const auto compile = [&](std::int64_t first) {
+    const std::array bindings{ShapeBinding{start, first}};
+    return hyle::graph::compile(
+        graph, environment.environment(),
+        {.shape = bindings, .profile_context = &facts.context});
+  };
+  auto first = compile(0), second = compile(1), repeat = compile(0);
+  ASSERT_TRUE(first);
+  ASSERT_TRUE(second);
+  ASSERT_TRUE(repeat);
+  EXPECT_EQ(first->report.profile_identity().outputs[0],
+            second->report.profile_identity().outputs[0]);
+  EXPECT_NE(first->report.profile_identity().semantics,
+            second->report.profile_identity().semantics);
+  EXPECT_EQ(first->report.profile_identity().semantics,
+            repeat->report.profile_identity().semantics);
 }
 
 } // namespace

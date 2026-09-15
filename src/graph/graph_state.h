@@ -3,9 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include <variant>
 
 #include "../compute/shape_program.h"
 #include "hyle/container/small_vector.h"
+#include "hyle/core/assert.h"
 #include "hyle/graph/graph.h"
 #include "hyle/util/ref_counted.h"
 
@@ -58,7 +60,9 @@ struct ValueRecord final {
 };
 
 struct NodeRecord final {
-  compute::Operation operation{};
+  // The logical node never pretends a symbolic ViewSpec is a fixed View.
+  // Providers and physical planning consume a specialized concrete copy.
+  std::variant<compute::Operation, std::uint32_t> descriptor{};
   std::uint32_t input_begin = 0;
   std::uint32_t output_begin = 0;
   std::uint32_t dependency_begin = 0;
@@ -66,7 +70,34 @@ struct NodeRecord final {
   std::uint32_t resource_begin = kNoNode;
   std::uint16_t input_count = 0;
   std::uint8_t output_count = 0;
+
+  const compute::Operation &operation() const noexcept {
+    const auto *result = std::get_if<compute::Operation>(&descriptor);
+    HYLE_FATAL_ASSERT(result != nullptr);
+    return *result;
+  }
+  const std::uint32_t *view_index() const noexcept {
+    return std::get_if<std::uint32_t>(&descriptor);
+  }
+  compute::OperationKind kind() const noexcept {
+    return view_index() ? compute::OperationKind::kView : operation().kind();
+  }
+  compute::OperationTraits traits() const noexcept {
+    // Only the View schema's shape-independent traits are queried here; no
+    // placeholder descriptor is ever supplied to inference or a Provider.
+    return view_index()
+               ? compute::operation_traits(compute::Operation(compute::View{}))
+               : compute::operation_traits(operation());
+  }
 };
+
+// Metadata-only cold binding. IDs have already been checked against the
+// owning builder; values includes independent and derived program slots.
+Result<compute::Operation>
+bind_operation(const GraphState &graph, const NodeRecord &node,
+               std::span<const std::int64_t> values) noexcept;
+Result<compute::View> bind_view(const ViewSpec &view,
+                                std::span<const std::int64_t> values) noexcept;
 
 struct ControlEdgeRecord final {
   std::uint32_t node = 0;
@@ -79,6 +110,7 @@ using DimensionRecords =
 using ShapeGuards =
     container::SmallVector<compute::detail::ShapeGuard, 4, mem::AllocatorRef>;
 using NodeRecords = container::SmallVector<NodeRecord, 8, mem::AllocatorRef>;
+using ViewSpecs = container::SmallVector<ViewSpec, 0, mem::AllocatorRef>;
 using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
 using ControlEdgeRecords =
     container::SmallVector<ControlEdgeRecord, 8, mem::AllocatorRef>;
@@ -88,10 +120,11 @@ struct BuilderState final {
                mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), generation(generation_value),
         dimensions(allocator_value), shape_guards(allocator_value),
-        values(allocator_value), nodes(allocator_value), edges(allocator_value),
-        resource_edges(allocator_value), inputs(allocator_value),
-        constants(allocator_value), outputs(allocator_value),
-        control_edges(allocator_value), dependencies(allocator_value) {}
+        values(allocator_value), nodes(allocator_value), views(allocator_value),
+        edges(allocator_value), resource_edges(allocator_value),
+        inputs(allocator_value), constants(allocator_value),
+        outputs(allocator_value), control_edges(allocator_value),
+        dependencies(allocator_value) {}
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
@@ -99,6 +132,7 @@ struct BuilderState final {
   ShapeGuards shape_guards;
   ValueRecords values;
   NodeRecords nodes;
+  ViewSpecs views;
   Ordinals edges;
   Ordinals resource_edges;
   std::uint32_t effect_resource_count = 0;
@@ -115,7 +149,7 @@ struct GraphState final : util::RefCounted<GraphState> {
         dimensions(std::move(builder.dimensions)),
         shape_guards(std::move(builder.shape_guards)),
         values(std::move(builder.values)), nodes(std::move(builder.nodes)),
-        edges(std::move(builder.edges)),
+        views(std::move(builder.views)), edges(std::move(builder.edges)),
         resource_edges(std::move(builder.resource_edges)),
         effect_resource_count(builder.effect_resource_count),
         inputs(std::move(builder.inputs)),
@@ -135,6 +169,7 @@ struct GraphState final : util::RefCounted<GraphState> {
   ShapeGuards shape_guards;
   ValueRecords values;
   NodeRecords nodes;
+  ViewSpecs views;
   Ordinals edges;
   Ordinals resource_edges;
   std::uint32_t effect_resource_count = 0;
@@ -150,6 +185,16 @@ struct GraphAccess final {
     return graph.state_;
   }
 };
+
+template <class State>
+inline const ViewSpec *view_spec(const State &graph,
+                                 const NodeRecord &node) noexcept {
+  const auto *index = node.view_index();
+  if (index == nullptr)
+    return nullptr;
+  HYLE_FATAL_ASSERT(*index < graph.views.size());
+  return &graph.views[*index];
+}
 
 inline void retain(GraphState *state) noexcept {
   if (state != nullptr)

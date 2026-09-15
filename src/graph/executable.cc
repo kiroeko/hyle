@@ -270,6 +270,18 @@ bool has_dynamic_axes(const detail::GraphState &graph,
 
 bool has_dynamic_shape(const detail::GraphState &graph,
                        const detail::NodeRecord &node) noexcept {
+  if (const auto *view = detail::view_spec(graph, node)) {
+    const auto dynamic = [&](Dimension value) noexcept {
+      return value.is_symbol() &&
+             !graph.dimensions[value.symbol().ordinal()].bounds.exact();
+    };
+    for (const auto dimension : view->dimensions())
+      if (dynamic(dimension))
+        return true;
+    if (view->kind() == compute::ViewKind::kSlice &&
+        (dynamic(view->start()) || dynamic(view->count())))
+      return true;
+  }
   for (std::size_t port = 0; port < node.input_count; ++port)
     if (has_dynamic_axes(
             graph, graph.values[graph.edges[node.input_begin + port]].spec))
@@ -321,10 +333,12 @@ private:
       inputs_, outputs_;
 };
 
-Status validate_specialized_operations(
-    const detail::GraphState &graph,
-    std::span<const compute::TensorDesc> descriptions,
-    mem::AllocatorRef allocator, bool fixed_nodes_only = false) noexcept {
+Status
+validate_specialized_operations(const detail::GraphState &graph,
+                                std::span<compute::TensorDesc> descriptions,
+                                mem::AllocatorRef allocator,
+                                std::span<const std::int64_t> values,
+                                bool fixed_nodes_only = false) noexcept {
   using Descriptions =
       container::SmallVector<compute::TensorDesc, 4, mem::AllocatorRef>;
   Descriptions inputs(allocator);
@@ -339,11 +353,34 @@ Status validate_specialized_operations(
     for (std::size_t index = 0; index < node.input_count; ++index) {
       inputs[index] = descriptions[graph.edges[node.input_begin + index]];
     }
+    HYLE_ASSIGN_OR_RETURN(const auto operation,
+                          detail::bind_operation(graph, node, values));
     Status status =
-        compute::infer_output_descriptions(node.operation, inputs, inferred);
+        compute::infer_output_descriptions(operation, inputs, inferred);
     if (!status.ok())
       return status.WithContext("graph specialization operation inference");
     for (std::size_t index = 0; index < node.output_count; ++index) {
+      const auto ordinal = node.output_begin + index;
+      const auto &spec = graph.values[ordinal].spec;
+      if (spec.kind() == TensorSpecKind::kInferred) {
+        const auto &actual = inferred[index];
+        if (actual.data_type() != spec.data_type() ||
+            actual.storage_format() != spec.storage_format() ||
+            actual.rank() != spec.rank())
+          return Status::InvalidArgument(
+              "inferred graph output type/format/rank differs from constraint");
+        for (std::size_t axis = 0; axis < spec.rank(); ++axis) {
+          const auto dimension = spec.dimensions()[axis];
+          const auto expected = dimension.is_fixed()
+                                    ? dimension.fixed_value()
+                                    : values[dimension.symbol().ordinal()];
+          if (actual.dimensions()[axis] != expected)
+            return Status::InvalidArgument(
+                "inferred graph output shape differs from constraint");
+        }
+        descriptions[ordinal] = actual;
+        continue;
+      }
       if (inferred[index] != descriptions[node.output_begin + index]) {
         return Status::InvalidArgument(
             "graph specialization output spec does not match operation "
@@ -406,6 +443,10 @@ Result<SpecializationSignature> specialize_bound_descriptions(
     return std::unexpected(plan_allocation_failure());
 
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
+    if (graph.values[index].spec.kind() == TensorSpecKind::kInferred) {
+      descriptions[index] = {};
+      continue;
+    }
     auto description = resolve_spec(graph, graph.values[index].spec, values);
     if (!description)
       return std::unexpected(std::move(description).error());
@@ -413,9 +454,8 @@ Result<SpecializationSignature> specialize_bound_descriptions(
   }
   Status semantic = validate_specialized_operations(
       graph,
-      std::span<const compute::TensorDesc>(descriptions.data(),
-                                           descriptions.size()),
-      allocator);
+      std::span<compute::TensorDesc>(descriptions.data(), descriptions.size()),
+      allocator, values);
   if (!semantic.ok())
     return std::unexpected(std::move(semantic));
 
@@ -442,17 +482,6 @@ Result<SpecializationSignature> specialize_bound_descriptions(
   }
   state->hash = static_cast<std::size_t>(hash);
   return detail::SpecializationSignatureAccess::adopt(state);
-}
-
-template <std::size_t InlineCount>
-Result<SpecializationSignature> specialize_descriptions(
-    const detail::GraphState &graph, std::span<const ShapeBinding> bindings,
-    mem::AllocatorRef allocator,
-    container::SmallVector<compute::TensorDesc, InlineCount, mem::AllocatorRef>
-        &descriptions) noexcept {
-  ShapeValues values(allocator);
-  HYLE_RETURN_IF_ERROR(bind_shape_values(graph, bindings, allocator, values));
-  return specialize_bound_descriptions(graph, values, allocator, descriptions);
 }
 
 std::optional<std::size_t>
@@ -486,15 +515,14 @@ find_exact_variant(const detail::PlanState &plan,
 
 Status describe_domain(const detail::GraphState &graph,
                        mem::AllocatorRef allocator,
-                       detail::TensorDescriptions &descriptions) noexcept {
+                       detail::TensorDescriptions &descriptions,
+                       ShapeValues &envelope) noexcept {
   HYLE_RETURN_IF_ERROR(compute::detail::validate_shape_program(
       {graph.dimensions, graph.shape_guards}));
   for (auto value : graph.constants)
     if (has_dynamic_axes(graph, graph.values[value].spec))
       return Status::InvalidArgument("domain constants must have fixed shapes; "
                                      "use an input for dynamic values");
-  container::SmallVector<std::int64_t, 4, mem::AllocatorRef> envelope(
-      allocator);
   if (!envelope.try_resize(graph.dimensions.size()) ||
       !descriptions.try_resize(graph.values.size()))
     return plan_allocation_failure();
@@ -502,12 +530,27 @@ Status describe_domain(const detail::GraphState &graph,
   // expressions or infer dynamic operations at its corner.
   for (std::size_t index = 0; index < envelope.size(); ++index)
     envelope[index] = graph.dimensions[index].bounds.last();
+  const compute::detail::ShapeProgramView program{graph.dimensions,
+                                                  graph.shape_guards};
+  if (program.exact()) {
+    HYLE_RETURN_IF_ERROR(
+        compute::detail::evaluate_shape_program(program, envelope));
+  }
   for (std::size_t index = 0; index < graph.values.size(); ++index) {
+    if (graph.values[index].spec.kind() == TensorSpecKind::kInferred) {
+      if (!program.exact())
+        return Status::Unimplemented(
+            "producer-inferred layouts need an exact specialization; "
+            "no whole-domain layout proof is available");
+      descriptions[index] = {};
+      continue;
+    }
     HYLE_ASSIGN_OR_RETURN(
         descriptions[index],
         resolve_spec(graph, graph.values[index].spec, envelope));
   }
-  return validate_specialized_operations(graph, descriptions, allocator, true);
+  return validate_specialized_operations(graph, descriptions, allocator,
+                                         envelope, !program.exact());
 }
 
 const compute::TensorDesc &
@@ -530,7 +573,8 @@ physical_description(const detail::InvocationState &invocation,
 Result<Graph>
 make_specialized_graph(const detail::GraphState &source,
                        std::span<const compute::TensorDesc> descriptions,
-                       mem::AllocatorRef allocator) noexcept {
+                       mem::AllocatorRef allocator,
+                       std::span<const std::int64_t> values) noexcept {
   detail::BuilderState builder(source.generation, allocator);
   if (!builder.dimensions.try_resize(source.dimensions.size()) ||
       !builder.shape_guards.try_resize(source.shape_guards.size()) ||
@@ -556,8 +600,12 @@ make_specialized_graph(const detail::GraphState &source,
     builder.values[index].spec = *spec;
     builder.values[index].description = descriptions[index];
   }
-  for (std::size_t index = 0; index < source.nodes.size(); ++index)
+  for (std::size_t index = 0; index < source.nodes.size(); ++index) {
     builder.nodes[index] = source.nodes[index];
+    HYLE_ASSIGN_OR_RETURN(
+        builder.nodes[index].descriptor,
+        detail::bind_operation(source, source.nodes[index], values));
+  }
   for (std::size_t index = 0; index < source.edges.size(); ++index)
     builder.edges[index] = source.edges[index];
   builder.effect_resource_count = source.effect_resource_count;
@@ -676,7 +724,7 @@ Status bind_effect_resources(detail::PlanState &plan,
   std::fill(bound.begin(), bound.end(), std::uint8_t{0});
   std::size_t used_count = 0;
   for (const auto &node : graph.nodes) {
-    const auto count = compute::operation_traits(node.operation).resource_count;
+    const auto count = node.traits().resource_count;
     for (std::size_t port = 0; port < count; ++port) {
       const auto resource = graph.resource_edges[node.resource_begin + port];
       if (!used[resource]) {
@@ -1934,7 +1982,7 @@ Status discover_operation_candidates(
           continue;
         }
         auto proposal = compute::detail::OperationPreparationAccess::propose(
-            context, provider, node.operation, inputs, outputs,
+            context, provider, node.operation(), inputs, outputs,
             input_requirements, output_requirements, shape, plan.allocator);
         if (!proposal) {
           if (proposal.error().IsUnimplemented())
@@ -2388,12 +2436,12 @@ discover_region_resources(const Graph &published_graph,
     bool unknown_effects = false;
     for (const auto node_id : nodes) {
       const auto &node = graph.nodes[node_id.ordinal()];
-      const auto traits = compute::operation_traits(node.operation);
+      const auto traits = node.traits();
       unknown_effects |=
           traits.effect == compute::EffectKind::kExternalSideEffect;
       for (std::size_t port = 0; port < traits.resource_count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto access, compute::operation_resource_access(
-                                               node.operation, port));
+                                               node.operation(), port));
         if (!effects.try_push_back(RegionEffectAccess{
                 detail::GraphIdentity::effect_resource(
                     graph.generation,
@@ -2930,7 +2978,7 @@ Status prepare_placed_steps_attempt(
                          node.output_count);
     const auto leaf_inputs = requirements.first(node.input_count);
     const auto leaf_outputs = requirements.subspan(node.input_count);
-    const auto traits = compute::operation_traits(node.operation);
+    const auto traits = node.traits();
     const bool must_alias_input =
         traits.alias == compute::AliasPolicy::kMustAliasInput0;
     if (must_alias_input && node.input_count == 0)
@@ -3521,8 +3569,7 @@ Status prepare_placed_steps_attempt(
         return plan_allocation_failure();
       plan.value_materialized[*instance] = 1;
     }
-    const bool materializes =
-        compute::operation_traits(node.operation).materializes;
+    const bool materializes = node.traits().materializes;
     const CompileFallbackReason reason =
         options.region_selection == RegionSelectionPolicy::kDisabled
             ? CompileFallbackReason::kRegionSelectionDisabled
@@ -3638,7 +3685,7 @@ Status prepare_placed_steps_attempt(
       auto attempt =
           compute::detail::OperationPreparationAccess::prepare_candidate(
               *environment.targets[step.target.ordinal()].context,
-              route->proposal, graph.nodes[step.node_begin].operation, inputs,
+              route->proposal, graph.nodes[step.node_begin].operation(), inputs,
               outputs, requirements.first(step.input_count),
               requirements.subspan(step.input_count),
               compute::OperationResourceBindings{.inputs = input_resources,
@@ -4886,8 +4933,7 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     if (step.kind != detail::PlanStepKind::kOperation)
       continue;
     const detail::NodeRecord &node = graph.nodes[step.node_begin];
-    const compute::OperationTraits traits =
-        compute::operation_traits(node.operation);
+    const compute::OperationTraits traits = node.traits();
     const compute::AliasPolicy alias = traits.alias;
     if (alias == compute::AliasPolicy::kNone || node.input_count == 0)
       continue;
@@ -7856,16 +7902,20 @@ Result<CompiledGraph> compile_plan(
   ProviderPolicy provider_policy(allocator);
   HYLE_RETURN_IF_ERROR(provider_policy.initialize(*logical, options));
   detail::TensorDescriptions descriptions(allocator);
+  ShapeValues shape_values(allocator);
   SpecializationSignature signature;
   if (options.shape_policy == CompileShapePolicy::kExact) {
-    HYLE_ASSIGN_OR_RETURN(signature,
-                          specialize_descriptions(*logical, options.shape,
-                                                  allocator, descriptions));
+    HYLE_RETURN_IF_ERROR(
+        bind_shape_values(*logical, options.shape, allocator, shape_values));
+    HYLE_ASSIGN_OR_RETURN(
+        signature, specialize_bound_descriptions(*logical, shape_values,
+                                                 allocator, descriptions));
   } else if (options.shape_policy == CompileShapePolicy::kDeclaredDomain) {
     if (!options.shape.empty())
       return std::unexpected(Status::InvalidArgument(
           "declared-domain compilation does not accept exact shape bindings"));
-    HYLE_RETURN_IF_ERROR(describe_domain(*logical, allocator, descriptions));
+    HYLE_RETURN_IF_ERROR(
+        describe_domain(*logical, allocator, descriptions, shape_values));
   } else {
     return std::unexpected(
         Status::InvalidArgument("compile shape policy is invalid"));
@@ -7874,7 +7924,7 @@ Result<CompiledGraph> compile_plan(
       make_specialized_graph(*logical,
                              std::span<const compute::TensorDesc>(
                                  descriptions.data(), descriptions.size()),
-                             allocator);
+                             allocator, shape_values);
   if (!specialized)
     return std::unexpected(std::move(specialized).error());
   const detail::GraphState *concrete = detail::GraphAccess::state(*specialized);

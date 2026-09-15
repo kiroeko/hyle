@@ -1262,3 +1262,8 @@ offset。此项继续既定 G101，不横向扩算子，也不修改 Provider �
   foreign IDs、错误 layout/type/format、链式 inferred 输出、公开 introspection、profile 差异、逐点 OOM/
   销毁与原图释放；Windows Graph/逐头、真实 oneDNN、CUDA、source/static/shared 受影响闭包。
   一轮表示/实现及一次产品纠正；跨平台/sanitizer/独立终局红队/P1 仍按完整 foundation candidate 执行。
+
+表示实现的 P0 复核：`ViewSpec` 含 8 个带 Graph identity 的维度，明显大于 concrete Operation 的内联
+描述；不能让普通 node 为罕见的动态 View 长期携带完整大 union。固定为逻辑 tagged Operation/ViewSpec
+ordinal，表达式集中存入 Graph 拥有、allocator-aware 的 opt-in 数组；specialized Graph 只保留 concrete
+Operation，不复制表达式数组。增加的是冷 tag 与实际 View 的表达式，非每个热 step 的 metadata。
