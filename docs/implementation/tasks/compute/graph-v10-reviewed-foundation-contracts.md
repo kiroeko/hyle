@@ -1631,3 +1631,16 @@ workspace 无解、失败后重试、源/Graph/父计划释放、三次变化输
 证明 vendor 私有 JIT/RSS。没有产品代码变更，已有 18 项其余独立覆盖继续回放；新增两项并扩展原 mixed
 旅程，不复制全套 Graph 测试或签性能收益。selector READY/跳过 92 项，closure/docs/diff 通过。
 CPU 的这条完整资源/lifetime 组合已得到实际实现证据；统一 P1、最终跨平台/红队和其它平台探针仍待完成。
+
+### CUDA foundation：安装消费者的真实 copy/compute/copy 路径
+
+基线 `90f418b5`。G107/总工作包 5 的既有 CUDA Graph 单测以 transfer/View 或 CPU mixed 路径为主，安装
+custom CUDA 示例已有双 kernel 的单 lane capture。扩展同一个公开示例，使用其现成 affine kernel 完成
+pinned input → device copy → 两个 CUDA kernel → pinned output：一个 CUDA target、device/pinned 两个
+storage、compute/transfer 两 lane。两个独立 Invocation 各自绑定 Queue 对与输入输出，commands 与 exact
+capture 均要求无 host wait、真实 event 依赖、变化输入重放与最终 Completion；不新增 kernel/Provider。
+
+这是 Q4 carrier 前的真实异步调度资格，不冒充 Q4/ggml 或完整 CUDA foundation 已通过。本段只改 sample/
+说明，重建现有 source/static/shared 三个 CUDA consumer，复用产品未变且身份核对的 SDK；不重新安装 SDK、
+跑 CPU/全库或 P1。一次表示与 fixture 纠正；若反证 Graph 的 lane/capture/Completion 合同，先固定具体
+修复，不修改已关闭 backend 或公共仪器来绕过。各样例 consumer 串行，构建最多 2 jobs。
