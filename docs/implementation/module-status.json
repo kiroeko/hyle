@@ -371,8 +371,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-ops-v3-resource-access-schema.md",
-      "summary": "compute_ops v3 AUDITED：承接 v2 稳定 custom identity，O30--O32 添加 provider-neutral 资源端口读写 schema 与统一冷验证；Graph identity/alias/顺序由 Graph G105 消费，不扩算子目录或热态 registry。"
+      "record": "docs/implementation/tasks/compute/compute-ops-v4-quantized-matmul.md",
+      "summary": "compute_ops R2-Q AUDITED：重新定界为 Q41/Q42 grouped Q4 数学/端口/格式/shape schema；保留有效 custom/resource 机制并覆盖既有交付尾项，不实施 kernel 或默认优选规则。"
     },
     {
       "module": "compute_backend_cpu",

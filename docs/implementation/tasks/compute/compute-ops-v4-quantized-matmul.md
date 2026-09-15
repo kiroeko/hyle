@@ -1,6 +1,6 @@
 # ComputeOps v4：R2 grouped Q4 MatMul 语义
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -57,5 +57,10 @@ Windows：ComputeOps 单测/逐头与 Graph 描述消费，selector 选中的真
 
 ## 当前状态
 
-SCOPED；未改产品。审计完成后记录结论并将 registry 的 compute_ops 从旧 AUDITED 卡绑定本卡，
-本卡进入 AUDITED 后才实施 Q41/Q42。最终七门、候选、实际限制及统一 LOC 在实施后记录。
+SCOPED 已在 `9bf63d15` 提交；当前完成定向审计，Q41/Q42 与上述签名固定，进入 AUDITED 并绑定
+compute_ops。检查 `operation.h` 的 enum/variant、`compute_ops/operation.cc` 四处语义分派以及
+GraphBuilder 的通用 Operation/span 入口：只需改 schema owner 产品代码与直接消费者测试。
+Native 对新 kind 明确 Unimplemented，oneDNN 只接收普通两输入 MatMul；无需改其已审计 runtime。
+旧 Graph profile 对未知编码明确拒绝；不新增 Q4 计时编码，该过渡公开面归 R2-G 清理。
+现有 TensorDesc checked 尺寸/字节数和 blocked/opaque 格式足够承载描述，不新增 storage/token。
+审计未读/改其它历史任务或底层模块。最终七门、候选、实际限制及统一 LOC 在实施后记录。
