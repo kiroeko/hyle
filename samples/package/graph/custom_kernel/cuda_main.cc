@@ -266,6 +266,145 @@ Status exercise(bool report_after_launch) {
     return Status::Internal("custom CUDA configuration leaked");
   return Status::Ok();
 }
+
+Status exercise_transfer_pipeline() {
+  namespace graph = hyle::graph;
+  auto configuration = std::make_shared<Configuration>();
+  HYLE_ASSIGN_OR_RETURN(
+      auto provider,
+      make_custom_provider({{0x4558414d504c45ULL, 3}, "example-affine-cuda", "1"},
+                           cuda::kBackendId, Factory{configuration}));
+  HYLE_ASSIGN_OR_RETURN(auto device, cuda::device(0));
+  HYLE_ASSIGN_OR_RETURN(auto context,
+                        Context::create(device, std::move(provider)));
+  HYLE_ASSIGN_OR_RETURN(auto memory, cuda::MemoryResource::create(
+                                         context, cuda::MemoryKind::kDevice));
+  HYLE_ASSIGN_OR_RETURN(
+      auto pinned,
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kPinnedHost));
+  constexpr std::size_t count = 257;
+  HYLE_ASSIGN_OR_RETURN(auto description,
+                        TensorDesc::dense(DataType::kFloat32,
+                                          std::array<std::int64_t, 1>{count}));
+  HYLE_ASSIGN_OR_RETURN(auto builder, graph::GraphBuilder::create());
+  HYLE_ASSIGN_OR_RETURN(auto input_id, builder.input(description));
+  const auto operation =
+      Operation::custom(example::Affine{.bias = 3, .scale = 2});
+  HYLE_ASSIGN_OR_RETURN(auto intermediate, builder.add(operation, input_id));
+  HYLE_ASSIGN_OR_RETURN(auto output_id, builder.add(operation, intermediate));
+  HYLE_RETURN_IF_ERROR(builder.publish(output_id));
+  HYLE_ASSIGN_OR_RETURN(auto logical, std::move(builder).finish());
+  const std::array storage{graph::StorageDomain{memory.ref()},
+                           graph::StorageDomain{pinned.ref()}};
+  const std::array targets{
+      graph::ExecutionTarget{&context, graph::StorageDomainId{0}}};
+  const std::array lanes{
+      graph::ExecutionLane{graph::ExecutionTargetId{0},
+                           graph::ExecutionLaneRole::kCompute},
+      graph::ExecutionLane{graph::ExecutionTargetId{0},
+                           graph::ExecutionLaneRole::kTransfer}};
+  const std::array external{
+      graph::ExternalResourceContract{input_id, graph::StorageDomainId{1}},
+      graph::ExternalResourceContract{output_id, graph::StorageDomainId{1}}};
+  HYLE_ASSIGN_OR_RETURN(
+      auto compiled,
+      graph::compile(
+          logical,
+          {.storage_domains = storage, .targets = targets, .lanes = lanes},
+          {.external_resources = external,
+           .provider_replay = graph::ProviderReplayPolicy::kRequirePrepared}));
+  if (compiled.report.target_count() != 1 ||
+      compiled.report.storage_domain_count() != 2 ||
+      compiled.report.lane_count() != 2 ||
+      compiled.report.segment_count() != 3 ||
+      compiled.report.step_count() != 4 ||
+      compiled.report.copy_bytes() != 2 * count * sizeof(float) ||
+      compiled.executable.required_queue_count() != 2)
+    return Status::Internal(
+        "CUDA copy/compute/copy plan is not the declared topology");
+
+  std::array<hyle::mem::Buffer, 2> inputs, outputs;
+  std::array<Queue, 2> compute_queues, transfer_queues;
+  std::array<graph::Invocation, 2> runs;
+  std::array<std::array<graph::QueueBinding, 2>, 2> bindings;
+  for (std::size_t i = 0; i < runs.size(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(
+        inputs[i],
+        hyle::mem::Buffer::create(pinned.ref(), count * sizeof(float), 256));
+    HYLE_ASSIGN_OR_RETURN(
+        outputs[i],
+        hyle::mem::Buffer::create(pinned.ref(), count * sizeof(float), 256));
+    HYLE_ASSIGN_OR_RETURN(compute_queues[i], context.create_queue());
+    HYLE_ASSIGN_OR_RETURN(transfer_queues[i], context.create_queue());
+    HYLE_ASSIGN_OR_RETURN(runs[i], compiled.executable.create_invocation());
+    HYLE_ASSIGN_OR_RETURN(
+        auto input, ConstTensorView::create(description, inputs[i].view()));
+    HYLE_ASSIGN_OR_RETURN(auto output,
+                          TensorView::create(description, outputs[i].view()));
+    HYLE_RETURN_IF_ERROR(runs[i].bind(input_id, input));
+    HYLE_RETURN_IF_ERROR(runs[i].bind(output_id, output));
+    bindings[i] = {
+        graph::QueueBinding{graph::ExecutionLaneId{0}, &compute_queues[i]},
+        graph::QueueBinding{graph::ExecutionLaneId{1}, &transfer_queues[i]}};
+  }
+  // The runs retain the immutable plan; buffers/resources and the still-open
+  // Context remain caller-owned. Each run gets its own scratch and capture.
+  logical = graph::Graph{};
+  compiled = graph::CompiledGraph{};
+  for (const auto mode :
+       {graph::ReplayMode::kCommands, graph::ReplayMode::kRequireCapture}) {
+    for (std::size_t i = 0; i < runs.size(); ++i) {
+      HYLE_RETURN_IF_ERROR(runs[i].prepare_replay(
+          bindings[i],
+          {.mode = mode, .host_wait = graph::HostWaitPolicy::kReject}));
+      HYLE_ASSIGN_OR_RETURN(auto report, runs[i].replay_report());
+      const auto expected = mode == graph::ReplayMode::kCommands
+                                ? graph::ReplayRoute::kCommands
+                                : graph::ReplayRoute::kCaptured;
+      if (report.route != expected || report.queued_transfer_count != 2 ||
+          report.device_wait_dependency_count < 2 ||
+          report.host_wait_dependency_count != 0)
+        return Status::Internal(
+            "CUDA pipeline did not preserve asynchronous lane dependencies");
+    }
+    const auto proposals = configuration->proposals.load();
+    const auto preparations = configuration->preparations.load();
+    for (std::size_t replay = 0; replay < 3; ++replay) {
+      std::array<std::array<float, count>, 2> values;
+      std::array<Completion, 2> completions;
+      for (std::size_t i = 0; i < runs.size(); ++i) {
+        for (std::size_t j = 0; j < count; ++j)
+          values[i][j] =
+              static_cast<float>(replay * 1000 + i * 17 + j) * 0.25F - 32;
+        HYLE_RETURN_IF_ERROR(
+            inputs[i].view().write(std::as_bytes(std::span(values[i]))));
+        std::array<float, count> poison;
+        poison.fill(12345.0F);
+        HYLE_RETURN_IF_ERROR(
+            outputs[i].view().write(std::as_bytes(std::span(poison))));
+        HYLE_ASSIGN_OR_RETURN(completions[i], runs[i].submit(bindings[i]));
+      }
+      // Both independent queue pairs have work in flight. Only the final
+      // per-run Completion, not a device-wide synchronization, releases host
+      // IO.
+      for (std::size_t i = 0; i < runs.size(); ++i) {
+        HYLE_RETURN_IF_ERROR(completions[i].wait());
+        std::array<float, count> actual;
+        HYLE_RETURN_IF_ERROR(
+            outputs[i].view().read(std::as_writable_bytes(std::span(actual))));
+        for (std::size_t j = 0; j < count; ++j)
+          if (actual[j] != values[i][j] * 4 + 9)
+            return Status::DataLoss(
+                "CUDA multi-lane replay produced stale or shared output");
+      }
+    }
+    if (configuration->proposals != proposals ||
+        configuration->preparations != preparations)
+      return Status::Internal(
+          "CUDA pipeline unexpectedly repeated cold routing");
+  }
+  return Status::Ok();
+}
 } // namespace
 
 int main() {
@@ -277,5 +416,12 @@ int main() {
                    static_cast<int>(message.size()), message.data());
       return 1;
     }
+  }
+  const auto pipeline = exercise_transfer_pipeline();
+  if (!pipeline.ok()) {
+    const auto message = pipeline.message();
+    std::fprintf(stderr, "custom CUDA pipeline: %.*s\n",
+                 static_cast<int>(message.size()), message.data());
+    return 1;
   }
 }

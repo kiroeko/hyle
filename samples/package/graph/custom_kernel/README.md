@@ -59,6 +59,12 @@ CUDA C++17。它验证 257 元素的尾块、两个 Queue 上的独立 Invocatio
 两种两节点 exact capture/replay。物化场景在编译后、capture 前释放原 device allocation；还检查配置
 保活和接纳后错误的 Completion。它不是性能测量，也不代表 CUDA 算子目录已提供。
 
+同一个 CUDA 示例还把 pinned-host 输入/输出声明为外部资源，让 Graph 插入 H2D/D2H，并在独立的
+compute/transfer Queue 上执行两个 native kernel。两个 Invocation 使用各自的 Queue 对、输入输出与
+workspace，在 commands 和 exact capture 两种模式下先提交再分别等待 Completion。测试拒绝 host wait，
+检查真实 device-event 依赖与变化输入，避免用单 stream 或不变数据掩盖跨 lane 顺序/存储共享错误。
+这是异步调度与公开接入示例，不是 Q4 算子或厂商 Provider 的能力声明。
+
 CUDA 例子让 HYLE runtime/typed resource 访问器留在同一个 owner image，native kernel 可在单独 DLL。
 静态 SDK 不承诺不同 DLL 各自链接一份 HYLE 后，其 backend 私有资源身份可任意互换；跨 HYLE provider
 代码 image 的自然路线使用共享 SDK，或保持一个明确的 runtime owner。CPU 例子的通用 host mapping
