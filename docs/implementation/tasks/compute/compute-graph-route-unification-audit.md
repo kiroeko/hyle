@@ -48,7 +48,7 @@ HYLE 冷路径的候选。HYLE 不需要调度第三方 artifact 内每个 kerne
 
 本次复核保留大对象模型、依赖方向、资源模型和调度权；只有具体反证才修改这些边界。允许在实现卡中
 局部选择的数据结构、beam/DP 细节、厂商 API 调用和 profile 存储表示，不得改变上表语义。架构基线要靠 CPU shared region、CUDA async+
-Q4 route、Apple delegated region/Metal interop 三类真实实现探针签发 foundation implementation candidate；
+Q4 route、Apple delegated region/Metal interop、Vulkan 资源同步的真实实现探针签发 foundation implementation candidate；
 在该 gate 前不横向填算子或平台大全。
 
 ### 必须由纵切决定、不能在纸面伪造的部分
@@ -64,6 +64,7 @@ lifetime 根本不可实现，才构成整体架构 reopen fact。
 | global selector 的实现和默认预算 | leaf/region/placement/boundary 同池；结构硬约束优先，只有 qualified profile 可跨 Provider 比较 | gated MLP 局部赢整体输、prepare decline/reselect、profile 缺失/不可分，以及有/无已验证可行解的预算耗尽 |
 | CUDA capture 与 Q4 路由的具体 carrier | capture 与 compile 正交；exact key；接纳后不跨 Provider 重跑；HYLE 掌握 residence/lane/Completion | CUDA Q4 MLP 在 HYLE/成熟/unsupported、HYLE/Provider-owned storage、general/exact capture、多 lane 与 device error 上回放 |
 | Apple delegated/shared 边界 | MLX island 与 native Metal 共用 HYLE boundary；ownership 与 prepared/managed 成本独立，不假称统一 allocator/stream | 两台 Apple 验证真实 copy/sync、Completion、元数据/runtime 成本、workspace、并发和 prepared-only 拒绝 |
+| Vulkan 执行与内存可见性 | ordered Queue/Completion 不能省略 barrier、可见性或 queue-family ownership；typed backend 持有 native 细节 | 最小 SPIR-V copy/compute/copy、显式依赖与 native handoff；Windows/Linux 和 MoltenVK 分别取证 |
 | 公共抽象与三交付成本 | direct 不取得 Graph；HYLE 热计划无搜索/分配；安装消费者可绑定 custom execution | CPU one-op 税、跨 shared custom identity、仅安装头/库的 CPU/CUDA custom Graph journey |
 | 资源副作用域 | 同资源冲突有序，独立资源可并行，未知副作用保守；不新增模型策略 | 两独立资源/同域写冲突/绑定 alias/跨 region 顺序，复用现有 Queue/Completion |
 
@@ -300,21 +301,56 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 | 1 | 合法状态迁移与小卡 | 原迁移已使相关 owner 处于 AUDITED；整体复核后先给受影响 owner 绑定新卡/架构基线与 A1--A6 有限 FIX，旧已验证事实保留，不重开无关 CLOSED factor |
 | 2 | Identity + proposal/shape/custom substrate | 复用已完成 identity/outcome/node-set；补 replay 成本、有限派生 shape/domain、安装包 custom execution、资源访问与 constant seam，不先写 selector 大算法 |
 | 3 | Graph route unification | leaf/region 同池、完整成本与有界重选、搜索受限可行解、资源域顺序、variant 常量/内存聚合和可解释 report |
-| 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN 非 insertion-order region；exact/bounded 与派生维度、资源冲突/独立、variant 内存/预算反例 |
+| 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN 非 insertion-order region；exact/bounded 与派生维度、资源冲突/独立、variant 内存/预算反例；增加真实持久 executor 组合，不能由串行 callback 探针代替 |
 | 5 | CUDA foundation probe | 同 storage 多 lane/dependency、exact capture 与 bounded/general fallback；Q4 MatMul/MLP 的 HYLE/vendor/第三方/unsupported 路由与 residence |
 | 6 | Apple foundation probe | MLX delegated managed replay + 原生 Metal custom-kernel/interop，实证成本分类、prepared-only 拒绝、island boundary/Completion，不横向填 Apple 算子 |
-| 7 | **Foundation implementation gate** | 上述三类探针、三平台基础 correctness、one-op P0/P1、source/static/shared、红队通过；Compute/Graph 基础 candidate 固定 |
+| 6a | Vulkan foundation probe | 最小 SPIR-V 计算、device/queue-family、buffer/barrier/timeline、native handoff；Windows/Linux 与 Apple MoltenVK portability；不填算子目录 |
+| 6b | 基础组合资格 | 真实 CPU/GPU 计算边界及 delegated island 的失败/完成/回收；实测 profile 回灌；最小可选 Obs 事件；每个 backend 的 feature/SDK/三交付资格。见下节有限清单 |
+| 7 | **Foundation implementation gate** | 上述全部基础探针、三平台 correctness、one-op/MLP P0/P1、完整 profile 消费、source/static/shared、红队通过；Compute/Graph 基础 candidate 固定 |
 | 8 | NVIDIA/Apple provider 广度 | cuBLASLt/cuDNN/HYLE 与 MLX/MPS/Metal 按真实热路径扩展；不再改基础对象模型 |
-| 9 | Vulkan 保底 | Windows/Linux 原生 Vulkan 与 Apple MoltenVK portability；不冒充原生 Metal 性能 |
+| 9 | Vulkan provider/算子广度 | 复用 6a 已验证基础，扩正式 SPIR-V/成熟 provider 与跨 API 能力；不冒充原生 Metal 性能，不把基础实现留到本项 |
 | 10 | Transformer prefill/decode | 多 region、引擎拥有的 specialization/cache 与 batch-class 选择、并发 Invocation、capture、cancel/drain 和长寿命计划纵切 |
 | 11 | 系统性算子广度 | foundation lock 后按四个真实引擎热路径扩展，不用算子数量掩盖架构缺陷 |
-| 12 | `compute_sched` convenience | 只有 coroutine/Sched 真实消费者形成 trigger 才做，不是 foundation blocker |
+| 12 | `compute_sched` convenience | 只有真实 executor/协程消费者证明重复 glue 或机制缺口才开卡；第 4 项先用现有 Sched public API 验证，不要求为测试制造新产品 |
 | 13 | 终局 closure/package | 各 factor 独立 CLOSED 或精确 BLOCKED；source/static/shared、依赖锁、许可证、user/architecture/docs 一致 |
 
 原目标中“ggml/oneDNN region”不再视为一个并列动作：oneDNN 是 route 层的首个真实验证者；当前 CPU ggml
 保持独立 blocker；CUDA/Metal/Vulkan ggml carrier 各自随对应平台纵切开卡。原先尚未执行的 foundation P1
 后移到 route 实现稳定之后，并在第 7 项只运行一次，避免给即将改变的 selector 重复签证。第 7 项以前
 所有“基础完成”百分比都必须按这张表计算；算子 family 数量不计入。
+
+2026-09-15 总计划覆盖审计补入 6a/6b，之前不含 Vulkan 等资格工作的约 89% 口径停止沿用。已完成的
+实现和证据不清零；新估算必须包含本表全部基础范围，并区分实现与终局验证，不把文档修改算成功能完成。
+
+### 基础计划覆盖审计与有限补项
+
+审计基线 `405fd2892e9dff41d4155b591ae99a5dd0c07f22`，只读核对 architecture、活动卡、公开 API、
+测试与 benchmark。结果不是全源码红队或新产品 candidate；没有发现必须推翻 Device/Context/Queue、
+Graph/Executable/Invocation 或三轴资源模型的证据。以下是任务分解，不是第二套模块状态。
+
+| ID / 工作包 | 当前事实与源码锚点 | 基础 gate 前的有限完成条件 / owner |
+|---|---|---|
+| F1 / 6a | 原第 9 项把 Vulkan 整条路线后移，registry 无 Vulkan factor | 新 backend 先依法登记/审计；一条 SPIR-V 资源流水线覆盖内存可见性、command/timeline 生命周期及 native handoff；实际支持分平台披露 |
+| F2 / 4 | `tests/compute_provider_onednn/onednn_provider_test.cc::probe_parallel_for` 与 Graph region 同名 probe 实际串行循环；现有双 Invocation 线程测试不是单次 fan-out | [真实 CPU executor 旅程](cpu-executor-foundation-probe.md)：复用 Sched，1/多 worker、嵌套、并发独立 scratch、关闭；只在真实公共组合反证后开 `compute_sched` 或重开依赖 |
+| F3 / 6b | `tests/graph/profile_fixture.h` 明确 synthetic；现有 bench 尚未形成 measured profile 回灌旅程 | Graph/已有性能工具：固定完整候选、同合同采样、导出 identity+interval、重新 compile 验证选路；缺失/过期/不可分保持成熟顺序；不新增通用 tuner/全局缓存 |
+| F4 / 5、6、6b | `cuda_graph_test.cc::CapturesEligibleSegmentsAndReplaysAHybridPlan` 只有 CPU kernel+CUDA copy；public CUDA 样例为 GPU kernel；delegated 测试使用 RegionProbe | 在原 CUDA Q4/Apple card 增补真实计算衔接与边界失败：已接纳前缀、迟到完成、owner 关闭/释放、预算回收；复用已有 atomics/OOM 单测，不制造全矩阵 |
+| F5 / 6b | Graph §7 承诺 Obs seam，但 `src/compute`/`src/graph` 无 trace 消费，中央图也无 TRACE | Compute/Graph 按各自小卡落实最小 opt-in compile/submit/region/completion 事件；区分 host enqueue 与 device terminal；OFF 无布局/热分支税，不以 CompileReport 冒充 |
+| F6 / 各 backend、7 | CUDA 已有 feature/三交付实证，后续 backend 尚无对应 card；Graph→Math component-contract 尚待执行 | 各 owner 在基础候选时完成 OFF/AUTO/ON、缺 SDK、独立选择、source/static/shared、runtime staging/许可证；第 13 项是最终汇总，不替代此门 |
+
+Vulkan 的依据是 [Khronos 同步规范](https://docs.vulkan.org/spec/latest/chapters/synchronization.html)：
+execution dependency 本身不等于 memory visibility；因此不能从 CUDA stream 测试外推 Vulkan 已被验证。
+平台没有某 queue family/extension 时记录真实 capability 与 unsupported，不用软件模拟器冒充原生 GPU。
+
+正式 CUDA Q4 Provider/region/residence 与 Apple MLX/Metal 仍是原第 5/6 项未完成工作，不再次统计为新缺口。
+CPU ggml 的既有 blocker 也不因该审计被解除。完整模型、KV/batching、分布式控制面、全算子目录、
+全自动 tuner/cache 仍不进入基础范围。
+
+本次只校准架构/任务文档；不改变 registry、重开依赖、跑 C++/P1 或改公共仪器。后续产品修改先给实际
+owner 的当前卡固定有限 FIX，新增 factor 保持合法 QUEUED→SCOPED→AUDITED。补项验证优先复用现有
+public journey；只运行受影响目标，文档/状态提交不触发重测。
+
+维护验证：closure 39/schema 4、docs 307/1113 links、diff check 通过；selector 仅选 docs/closure，
+跳过 94 项。上述结果只属于本次文档校准，不能签任何新产品能力通过。
 
 2026-09-14 用户指定暂停点：第 7 项的基础实现与对应验证完成后，先报告实际能力、剩余限制和性能/交付
 证据，暂停与用户共同审视。没有新的继续指示，不进入第 8 项及后续横向算子/后端扩张；局部修复或单个
@@ -329,13 +365,13 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 ### 迁移完成后的独立架构复核
 
 本次前置整体复核不替代迁移后的实现复核。后者属于第 7 项已有的终局红队，不以某个局部迁移
-通过代替全架构通过，也不新建平行状态系统。以实现和三类真实探针逐项核对：
+通过代替全架构通过，也不新建平行状态系统。以实现和上述真实探针逐项核对：
 
 - HYLE 全局 DAG/放置/生命周期与 Provider 内部调度是否各有唯一 owner，未形成双重调度或隐藏同步；
 - borrowed/materialized constant、workspace、per-run state 与 Completion 的所有权能否在失败和并发下闭合；
 - leaf/region/placement 是否真正共用完整成本路由，渐进替换是否有明确 boundary，warm replay 是否无搜索；
 - bounded/general、exact variant 与 capture 是否自然组合，而非依赖单个测试 shape 的特殊分支；
-- CUDA Q4 与 Apple MLX/Metal 是否能复用同一基础合同，新增 Provider 是否只需局部适配而非改核心对象；
+- CUDA Q4、Apple MLX/Metal 与 Vulkan 是否能复用同一基础合同，新增 Provider 是否只需局部适配而非改核心对象；
 - direct C++ 用法和 source/static/shared 交付是否一致，依赖方向、文档及公开示例是否与实现相符。
 
 报告区分已证实通过、仍需局部实现/验证、以及有具体反证才成立的架构重开项。不以追加无限研究或横向

@@ -651,8 +651,10 @@ Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
    region，验证 provider-owned runtime 的 boundary/completion bridge；同轮建立原生 Metal custom-kernel/
    interop 路线并审计 MPSGraph/MPS；随后扩 attention、quantized matmul、repack 和异构 partition。Core ML
    不进入首轮低层路线。
-10. **Vulkan slice**：同一 graph/op 合同落到 SPIR-V，验证 native device、buffer、timeline completion、
-   external memory/sync 与 Windows/Linux 消费级设备；MoltenVK 只签 portability 证据。
+10. **Vulkan foundation slice**：在基础 gate 前把同一 graph/op 合同落到最小 SPIR-V 资源流水线，验证
+   device/queue-family、buffer 可见性、command recording、timeline completion、native handoff 与
+   Windows/Linux、Apple MoltenVK 的实际能力边界；完整 Vulkan 算子/provider 广度留到 gate 后。
+   MoltenVK 只签 portability，缺失的 extension 或 queue family 不得以模拟执行冒充真机通过。
 11. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
    invocation、取消/drain 和 source/static/shared 交付门。
 12. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
@@ -684,13 +686,17 @@ ExecuTorch 的调查只签发上述边界，不把任何 peer 的完整 runtime 
 - Graph 只规划 HYLE/shared-runtime storage 与 island boundary，delegated provider 自己规划内部 storage；
 - request/KV/batching/sampling/offload 策略仍归推理引擎，Compiled Graph 不扩成模型 runtime。
 
-实现必须先通过四个架构探针：CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 storage
-domain 多 lane/capture、Apple delegated MLX region + 原生 Metal interop。正式代码与这些结论冲突时停止并
-回到审计；operator 数量、单次 benchmark 或为旧 API 保兼容都不能覆盖该反证。
+实现必须先通过 CPU direct/one-op 同合同、CPU multi-op region/workspace、CUDA 同 storage domain 多
+lane/capture、Apple delegated MLX region + 原生 Metal interop，以及 Vulkan 最小 SPIR-V/资源同步探针。
+CPU 并行分片还须在真实持久 executor 上验证，不以串行调用 callback 或两个独立 Invocation 代替。
+正式代码与这些结论冲突时停止并回到审计；operator 数量、单次 benchmark 或为旧 API 保兼容都不能覆盖该反证。
 
 foundation-v1 架构基线表示上述设计已接受，不代表没有反证可能。实现还必须补充 CUDA Q4 MLP 的 leaf/region/storage
 路由探针，并让这些探针共同通过 source/static/shared、正确性、one-op 抽象税和终局红队，才能签发
-Compute/Graph foundation candidate。该 gate 以前不横向扩展算子目录、Vulkan 或完整模型；gate 以后新增
+Compute/Graph foundation candidate。同一 gate 还检查真实跨运行时失败/回收、测量到 route profile 的消费
+链、可选观测边界与各已接入 backend 的构建交付；不能把这些全部推迟到完整 Transformer。具体有限任务
+只在[总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)维护。
+该 gate 以前不横向扩展算子目录或完整模型；gate 以后新增
 provider/operation 若能进入既有 seam，也不得重开 Device/Context/Queue、Graph/Executable/Invocation 或
 三轴资源模型。
 

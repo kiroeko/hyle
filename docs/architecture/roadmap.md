@@ -99,9 +99,10 @@ renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 
 
 Compute/Graph 当前先通过一个共同的 **foundation implementation gate**，再扩展平台和算子广度：
 leaf/可收缩 node-set region 同池路由与完整成本、exact + bounded/guarded shape domain、CPU one-op/oneDNN
-shared region、CUDA 多 lane/exact capture + Q4 MLP，以及 Apple MLX delegated region + 原生 Metal interop
-都必须在同一对象模型上成立。只有该 gate 的 candidate
-完成，后续 provider、Vulkan、Transformer 和系统算子目录才可横向推进。当前有限工作顺序只维护在
+shared region、CUDA 多 lane/exact capture + Q4 MLP、Apple MLX delegated region + 原生 Metal interop，
+以及 Vulkan 最小 SPIR-V/资源同步纵切都必须在同一对象模型上成立。真实 CPU executor、跨运行时失败
+回收、性能 profile 消费和各 backend 交付也是基础资格，不全部拖到完整模型阶段。只有该 gate 的
+candidate 完成，后续 provider、Vulkan 算子广度、Transformer 和系统算子目录才可横向推进。当前有限工作顺序只维护在
 [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，本页不
 复制一张容易过期的编号状态表。
 

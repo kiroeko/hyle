@@ -1668,3 +1668,12 @@ Windows/Linux/ASan/UBSan 与交付日志归该卡，不在本卡复制。
 当前 G107 的后继仍是 Q4 Provider/region、权重驻留与完整 route 成本的实际接入，随后 Apple probe 和
 终局 foundation gate。不要再把已完成的 direct preflight 当待办，不为这些已固定产品的文档提交重跑
 测试；也不能把前置样例中的 native dot kernel 或冷展开 cuBLASLt 当作已交付的 SOTA Q4 Provider。
+
+### 2026-09-15：总计划覆盖审计的接续
+
+用户发现基础进度遗漏 Vulkan 后，[总计划](compute-graph-route-unification-audit.md#基础计划覆盖审计与有限补项)
+把 Vulkan 最小纵切与真实 CPU executor/profile/生命周期/Obs/交付资格列入基础 gate；不是新增算子目录。
+现有 G100--G107 的实现/证据保留，registry 不变。下一条小型组合验证先执行
+[CPU executor probe](cpu-executor-foundation-probe.md)，不改 Graph/Sched 产品；CUDA 正式 Q4、Apple、
+Vulkan 与终局资格仍全部保留。Obs 等涉及产品的新 FIX 必须先在 owning card 完成实现前审计，不能由
+本段计划文档直接授权。旧的约 89% 分母不再用于新版基础范围。

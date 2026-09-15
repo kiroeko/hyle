@@ -504,7 +504,9 @@ graph_sched   -> graph_plan + compute_sched + sched       # 未来可选组合
   external communicator resource 的 typed **本地 collective participation**，并把其 Queue/Completion 接进
   本地 plan；它不在 foundation v1 内变成跨进程控制面。一个进程多 GPU 仍可由引擎为每个 rank 持有
   Executable/Invocation，并通过 communicator runtime 协调。
-- Obs 接收 compile/submit/region/completion seam；Obs OFF 时不改变 plan layout 或热路径分支。
+- 最小可选 Obs 接入属于基础验收：compile/submit/region/completion 事件须有明确 owner，且必须区分
+  host enqueue 与设备真实终态；Obs OFF 时不改变 plan layout 或热路径分支。`CompileReport` 是冷计划
+  诊断，不替代这些运行事件。当前是否实现由活动卡取证，不从本条设计承诺推导已可用。
 - Error 保存 node/region/provider/backend context；不能另造 graph 私有 TLS error。
 
 Compute 不依赖 Graph。直接 kernel/op 用户因此不取得 graph compiler、container-heavy IR 或 Sched runtime。
@@ -563,7 +565,9 @@ provider/backend workload 上形成可解释收益。
 7. 再完成两条主平台栈：NVIDIA 的 CUDA backend/providers；Apple 先资格化 delegated MLX compiled region，
    同时保留原生 Metal custom-kernel/interop 和 MPSGraph/MPS 候选；Core ML 留在模型级 routed runtime
    边界；
-8. 再落到正式支持的 Vulkan SPIR-V，验证消费级设备与 renderer 的 external memory/semaphore handoff；
+8. 基础 gate 前落到最小 Vulkan SPIR-V，验证消费级设备的内存可见性、queue-family、timeline 和
+   native resource/synchronization handoff；Windows/Linux 与 Apple MoltenVK 分别取证。完整 Vulkan
+   算子、provider 广度和跨 API 扩展能力继续在后续独立轮实现；
 9. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
    Graph 产品资格。
 
@@ -579,19 +583,21 @@ catalog 掩盖根因。
 
 ## 11. 架构稳定条件
 
-Graph 架构只在四条探针上接受或反证：CPU one-op 抽象税、CPU multi-op region/workspace、CUDA 同 storage
-domain 多 lane/happens-before/capture、Apple delegated MLX region 与原生 Metal interop。探针只允许修正它
-直接反证的 seam，
+Graph 架构在有限探针上接受或反证：CPU one-op 抽象税、CPU multi-op region/workspace、CUDA 同 storage
+domain 多 lane/happens-before/capture、Apple delegated MLX region 与原生 Metal interop，以及 Vulkan
+SPIR-V 的执行与内存可见性。探针只允许修正它直接反证的 seam，
 不能借机横向增加 operation catalog 或模型 runtime。
 
-foundation-v1 架构基线不替代实现证据。只有上述四条探针再加 CUDA Q4 MLP 的 leaf/region/
+foundation-v1 架构基线不替代实现证据。只有上述探针再加 CUDA Q4 MLP 的 leaf/region/
 storage 路由、source/static/shared 和终局红队全部通过，Compute/Graph foundation implementation 才能签发
-不可变 candidate；在此之前禁止把 provider/算子广度当作“基础架构完成百分比”。Vulkan、更多算子和
-完整 Transformer 是锁后扩展，不作为反复改变对象生命周期与调度权的借口。
+不可变 candidate；在此之前禁止把 provider/算子广度当作“基础架构完成百分比”。Vulkan 的算子/provider
+广度、更多算子和完整 Transformer 是锁后扩展，不作为反复改变对象生命周期与调度权的借口。
 
 这些探针还须覆盖有限派生 shape、安装包 custom execution、独立/冲突资源域、多 variant 常量共享与
 并发/capture 内存、可行解存在/不存在两种预算耗尽，以及 Apple managed/Metal prepared 的真实成本
-分类。它们是本轮发现的基础合同缺口，不另起一套泛化 runtime 或无限算子任务。
+分类。真实持久 CPU executor、完整测量 profile 的回灌、跨运行时晚到失败/回收、可选 Obs 事件和每个
+backend 的三交付也须有具名验收；复用已存在的单测，不机械做全部平台乘全部错误的笛卡尔积。
+它们是有限的基础实现/资格任务，不另起一套泛化 runtime、通用 tuner 或无限算子任务。
 
 形成候选后，只有真实纵切与合同矛盾、第二个独立消费者需要现有 ownership/concurrency/control-flow
 机制无法表达的能力、正式 backend/provider 无法实现合同，或合格证据证明 material 热路径税来自 Graph
