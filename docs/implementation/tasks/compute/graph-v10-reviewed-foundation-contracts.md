@@ -1267,3 +1267,40 @@ offset。此项继续既定 G101，不横向扩算子，也不修改 Provider �
 描述；不能让普通 node 为罕见的动态 View 长期携带完整大 union。固定为逻辑 tagged Operation/ViewSpec
 ordinal，表达式集中存入 Graph 拥有、allocator-aware 的 opt-in 数组；specialized Graph 只保留 concrete
 Operation，不复制表达式数组。增加的是冷 tag 与实际 View 的表达式，非每个热 step 的 metadata。
+
+### 2026-09-15 G101：具体绑定 View 检查点
+
+产品 `eff0e324d8a278f6595c7c3915dd64959ce2cfbd` 实现上述 ViewSpec、inferred 输出和拓扑布局推导。
+构图先完成所有可失败 reserve/描述解析再发布 node；specialization 直接复用 ComputeOps 的 checked
+schema。slice/permute/broadcast 保留真实 strides/alias offset，Copy 才实化；公开 Graph 不返回假 View。
+profile 除表达式外还记录具体绑定值，防止“形状完全相同但 slice start 不同”误用性能身份。
+
+新增 14 个测试覆盖 flatten→RMSNorm→restore、slice→permute→Copy、broadcast→Copy、空维度、
+越界/overflow、非连续 reshape、foreign IDs、错误输出约束、逐点编译 OOM/重试、原图释放与零新增分配
+的重复运行。初测唯一运行失败是夹具把空 slice 的保留步幅等同于 empty-dense 的规范步幅；修正断言后
+通过，未放宽产品语义。`custom_kernel` sample 添加公开 View 链并销毁原图后重复执行。
+
+| Windows Release 验证 | `C:/hyle-scratch/` 缓存 | 结果 |
+|---|---|---|
+| Graph static / 逐头 | `compute-route-v8-static-20260914` | 3/3；30 + 259 用例 |
+| shared Graph / oneDNN region / 双方逐头 | `compute-route-onednn-v8-20260914` | 5/5；30 + 259 + 18 用例 |
+| CUDA-on Graph / 逐头 | `compute-graph-v7-cuda` | 3/3；30 + 261 用例 |
+| source CPU/CUDA sample | `custom-execution-v10-source-consumer` | 2/2 |
+| installed shared CPU/CUDA sample | `custom-execution-v10-shared-cuda-consumer` | 2/2 |
+| installed static CPU/CUDA sample | `custom-execution-v10-static-consumer` | 2/2 |
+
+沿用本卡 Windows wrapper、精确 target/CTest 与显式 SDK prefix；build 2 jobs、测试串行、timeout 120s。
+producer、shared SDK 与实际 CPU consumer 的 Graph DLL SHA256 均为
+`A80DE3388DAF5DC9ECCAE838ED41DB51F7EF47EB11D95063CF6C5D88F22579F2`，CPU/CUDA 装载目录的
+相关 Mem/Compute/Native/Graph DLL 逐一同步并校验。三交付不是只用 source tree 链接的替代检查。
+
+P0：增加冷 Node 的判别值、Graph 的可选表达式数组及每个实际 ViewSpec；没有新增热 PlanStep 字段。
+编译按有限 shape 程序与拓扑推导 metadata，不读取 payload；实际 prepared alias、workspace、submit 路线
+不变。未运行 P1。selector `a28e441c → WORKTREE` READY、跳过 89 项；closure 39/schema 4、docs
+297/1076 links 与 diff check 通过。LOC：全库 **682,929**，自实现不含测试 **125,010**；Compute
+**16,758**、Graph **13,067**，合计 **29,825**，绑定同一产品提交并通过 self-check。
+
+仍为 AUDITED，G101 没有改成 exact-only 验收。后续完整动态域的具体缺口是：Compute 目前只重建 dense
+动态描述、域实例化仍固定原 Operation attributes/alias offset、Graph 的 alias offset 仍为 Plan 常量。
+必须对布局/偏移给出全域证明并在冷实例化绑定，不能对每个新 shape 重查 Provider 或重建共享物理 Plan。
+G103 联合优化、G106 packing/capture、真实架构探针及完整候选跨平台/sanitizer/终局红队/P1 同样未完成。
