@@ -377,6 +377,7 @@ enum class PlanStepKind : std::uint8_t {
   kOperation = 0,
   kRegion,
   kCopy,
+  kView,
 };
 
 struct PlanStep final {
@@ -474,10 +475,7 @@ struct PlanStep final {
   // preparation and never enters a Queue. Custom operations may legally have
   // no outputs (for example an external side effect), so materializes must
   // never be used as a proxy for whether the provider has work to submit.
-  bool emits_command() const noexcept {
-    return kind != PlanStepKind::kOperation ||
-           operation.kind() != compute::OperationKind::kView;
-  }
+  bool emits_command() const noexcept { return kind != PlanStepKind::kView; }
   bool capture_compatible() const noexcept {
     if (!emits_command())
       return true;
@@ -496,6 +494,9 @@ struct PlanStep final {
     return compute::ProviderRuntimeProperties{
         .mode = compute::ProviderRuntimeMode::kSharedQueue,
         .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+        .replay_class = kind == PlanStepKind::kView
+                            ? compute::ProviderReplayClass::kPrepared
+                            : compute::ProviderReplayClass::kUnknown,
         .capture_compatible = true,
     };
   }
@@ -518,7 +519,10 @@ struct PlanStep final {
   StorageDomainId workspace_storage{};
   StorageDomainId source_storage{};
   StorageDomainId destination_storage{};
-  std::size_t copy_bytes = 0;
+  union {
+    std::size_t copy_bytes = 0;
+    std::size_t view_offset;
+  };
   // Stable identity across cold re-scheduling. Serialization edges name this
   // ordinal rather than the current PlanSteps position.
   std::uint32_t schedule_identity = kNoNode;

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <utility>
 
+#include "../../src/compute_ops/view_alias.h"
 #include "custom_operation_fixture.h"
 #include "hyle/compute/operation.h"
 
@@ -38,6 +39,48 @@ TensorDesc infer_one(const Operation &operation,
     return {};
   }
   return *inferred;
+}
+
+TEST(OperationViewAlias, CheckedSliceOffsetsMatchAddressingAndEmptyRules) {
+  const auto input = tensor(DataType::kFloat32, 7, 3);
+  for (std::int64_t start = 0; start <= 7; ++start) {
+    for (std::int64_t count = 0; count <= 7; ++count) {
+      for (std::int64_t step = 1; step <= 3; ++step) {
+        const auto view = View::slice(-2, start, count, step).value();
+        auto output = infer_single_output(Operation(view), std::array{input});
+        if (!output)
+          continue; // The schema, not the offset helper, admits a slice.
+        const auto offset = detail::view_alias_offset(view, input, *output);
+        ASSERT_TRUE(offset.has_value()) << offset.error().message();
+        EXPECT_EQ(*offset, count == 0 ? 0u : std::size_t(start) * 12);
+        EXPECT_LE(*offset + output->required_bytes().value(),
+                  input.required_bytes().value());
+      }
+    }
+  }
+  for (const auto view :
+       {View::reshape(shape(3, 7)).value(),
+        View::permute(std::array<std::int32_t, 2>{1, 0}).value(),
+        View::broadcast_to(shape(2, 7, 3)).value()}) {
+    const auto output = infer_one(Operation(view), std::array{input});
+    EXPECT_EQ(detail::view_alias_offset(view, input, output).value(), 0u);
+  }
+}
+
+TEST(OperationViewAlias, RejectsUnrepresentableOffsetsAndInconsistentSpans) {
+  const auto input = tensor(DataType::kFloat32, 3);
+  const auto output = tensor(DataType::kFloat32, 2);
+  EXPECT_TRUE(
+      detail::view_alias_offset(View::slice(0, 2, 1).value(), input, output)
+          .error()
+          .IsOutOfRange());
+  EXPECT_TRUE(
+      detail::view_alias_offset(
+          View::slice(0, (std::numeric_limits<std::int64_t>::max)(), 1).value(),
+          input, output)
+          .error()
+          .IsOutOfRange());
+  EXPECT_FALSE(detail::view_alias_offset(View{}, {}, {}).has_value());
 }
 
 TEST(OperationCatalog, HasNineteenTypedBuiltinFamiliesAndInvalidDefault) {

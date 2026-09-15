@@ -39,6 +39,62 @@ using hyle::graph::StorageDomainId;
 using hyle::graph::ValueId;
 using hyle::mem::Buffer;
 
+TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
+  auto device = hyle::compute::cuda::device(0).value();
+  auto context = Context::create(device).value();
+  auto cpu = Context::create(hyle::compute::cpu::device()).value();
+  auto resource = hyle::compute::cuda::MemoryResource::create(
+                      context, hyle::compute::cuda::MemoryKind::kDevice)
+                      .value();
+  ASSERT_FALSE(resource.ref().properties().has(
+      hyle::mem::MemoryProperty::kHostAccessible));
+  auto source = Buffer::create(resource.ref(), 8 * sizeof(float), 256).value();
+  const std::array<float, 8> values{0, 1, 2, 3, 4, 5, 6, 7};
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+  auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
+          .value();
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  const auto output =
+      builder.add(hyle::compute::View::slice(0, 2, 3).value(), input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  // Neither a CUDA target nor a CPU metadata target needs a native Provider
+  // or host access to the aliased bytes. Their real default storage is valid.
+  for (const bool on_cpu : {false, true}) {
+    const std::array storage{
+        StorageDomain{resource.ref()},
+        StorageDomain{
+            hyle::compute::cpu::memory_resource(cpu.device()).value()}};
+    const std::array targets{ExecutionTarget{
+        on_cpu ? &cpu : &context, StorageDomainId{on_cpu ? 1u : 0u}}};
+    const std::array external{
+        ExternalResourceContract{input, StorageDomainId{0}}};
+    auto compiled = hyle::graph::compile(
+        graph, {.storage_domains = storage, .targets = targets},
+        {.external_resources = external});
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    EXPECT_EQ(compiled->report.copy_bytes(), 0u);
+    EXPECT_EQ(compiled->report.step(0)->kind,
+              hyle::graph::CompileStepKind::kView);
+    EXPECT_FALSE(compiled->report.step(0)->provider.valid());
+    EXPECT_EQ(compiled->executable.required_queue_count(), 0u);
+    auto run = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(
+        run.bind(input, TensorView::create(description, source.view()).value())
+            .ok());
+    ASSERT_TRUE(run.submit()->wait().ok());
+    auto result = run.output(output).value();
+    EXPECT_EQ(result.storage().resource(), resource.ref());
+    EXPECT_EQ(result.storage().offset(), 2 * sizeof(float));
+    std::array<float, 3> actual{};
+    ASSERT_TRUE(
+        result.storage().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, (std::array<float, 3>{2, 3, 4}));
+  }
+}
+
 TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
   auto device = hyle::compute::cuda::device(0).value();
   auto context = Context::create(device).value();

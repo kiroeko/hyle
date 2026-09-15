@@ -288,6 +288,8 @@ enum class CompileStepKind : std::uint8_t {
   kOperationFallback = 0,
   kProviderRegion,
   kCopy,
+  // Zero-copy metadata owned by Graph, not a prepared Provider artifact.
+  kView,
 };
 
 enum class CompileFallbackReason : std::uint8_t {
@@ -854,8 +856,8 @@ struct CompileOptions final {
   // Hard aggregate storage budget for node identities copied from provider
   // proposals. A refused node set is never partially admitted.
   std::size_t max_region_proposal_nodes = 65536;
-  // Cold constraint for both operation and region providers, including logical
-  // View/Copy prepared by a provider. Compiler-inserted backend transfers and
+  // Cold constraint for operation and region providers, including a region
+  // containing Views. Graph metadata Views, inserted backend transfers and
   // caller-owned executor/callback costs are not provider replay contracts.
   ProviderReplayPolicy provider_replay = ProviderReplayPolicy::kAllowAny;
   CompileSearchPolicy search_policy = CompileSearchPolicy::kAllowLimited;

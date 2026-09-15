@@ -84,3 +84,8 @@ NativePlan 大小，但完整 compiler quota 不把它再相加。只补 proposa
 N20 的 [Compute v15](compute-v15-bound-layout-instantiation.md) 布局族直接迁移：既有 bounded RMSNorm
 只证明了 kDerived dense 描述，必须显式拒绝 kBoundedStrided，即使它的 envelope 恰好 dense。
 同时用新增受检描述重载回放原 RMSNorm/错误/OOM/owner 合同；没有新增 kernel 或放宽 N22 资格。
+
+G101 的 ComputeOps O33 直接消费：direct View 原有 slice offset 计算移到 ComputeOps 私有共享 helper，
+Native 复用，保持 empty offset=0、prepared alias 与原 submit 路线。不新增 Native 能力；Graph 未融合
+View 改由 Graph 自己的 metadata step 承载，不再为它创建 NativePlan。定向 direct View/Graph 回归与
+三交付随该 G101 步骤执行；不是 N22 的完整域验收。

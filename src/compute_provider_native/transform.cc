@@ -7,6 +7,7 @@
 #include <span>
 #include <utility>
 
+#include "../compute_ops/view_alias.h"
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
 
@@ -173,24 +174,9 @@ Status prepare_transform(Operation operation,
   switch (operation.kind()) {
   case OperationKind::kView: {
     const View *view = operation.get_if<View>();
-    std::size_t byte_offset = 0;
-    auto output_bytes = outputs[0].required_bytes();
-    if (!output_bytes)
-      return std::move(output_bytes).error();
-    if (view->kind() == ViewKind::kSlice && *output_bytes != 0) {
-      std::int32_t axis = view->axis();
-      if (axis < 0)
-        axis += static_cast<std::int32_t>(inputs[0].rank());
-      const auto start = math::try_integer_cast<std::size_t>(view->start());
-      const auto stride = math::try_integer_cast<std::size_t>(
-          inputs[0].byte_strides()[static_cast<std::size_t>(axis)]);
-      if (!start || !stride)
-        return Status::OutOfRange("view storage offset exceeds size_t");
-      const auto offset = math::try_multiply(*start, *stride);
-      if (!offset)
-        return Status::OutOfRange("view storage offset overflows size_t");
-      byte_offset = *offset;
-    }
+    HYLE_ASSIGN_OR_RETURN(
+        const auto byte_offset,
+        detail::view_alias_offset(*view, inputs[0], outputs[0]));
     plan.parameters[0] = byte_offset;
     plan.alias_input0_offset = byte_offset;
     plan.alias_input_mask = 1;

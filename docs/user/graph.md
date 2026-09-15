@@ -106,8 +106,9 @@ auto compiled = compile(graph, context,
 槽位。重新创建 Context 会得到不同实例 ID，不要持久化 ID 或把它当作可跨进程的版本/性能身份。
 `NodeProviderConstraint` 是必需条件，不是软偏好；不相容的 region 不会参与 placement 或创建 artifact。
 若没有完整可执行路线，compile 返回错误，不能为凑齐计划换用其它实现。安全资源拒绝后的重选同样守约。
-它约束的是准备逻辑 node/region 的 Provider；metadata-only View 的准备不因此变成 kernel，Graph 插入的
-跨存储 copy/sync 仍由 backend 完成，不受 Provider allow/deny 冒充的“设备禁用”控制。
+它约束的是准备逻辑 node/region 的 Provider。未融合 View 由 Graph 自己处理，没有 Provider：若对 View
+指定必需 Provider，只有完整覆盖它的合格 region 能满足，否则 compile 失败。全局 allow/deny 不关闭
+metadata View；Graph 插入的跨存储 copy/sync 仍由 backend 完成，不能把 Provider filter 当“设备禁用”。
 
 全局筛选用 `CompileOptions::allowed_providers/denied_providers`，元素都是家族 `ProviderId`：allow 空表示
 不限制，deny 优先，重复 ID 无额外语义。全局被排除的 Provider 不会被 Graph 查询 extension、发现候选或
@@ -137,7 +138,7 @@ Queue 或可 capture：已预备的 delegated artifact 同样可以合格。
 
 实现 region Provider 时，在 `RegionProposal::replay_class` 提前声明类别。known 值必须与资源提案和
 artifact 一致；unknown 只能在 allow-any 下细化，不能先以 unknown 进入严格计划再补声明。此策略只约束
-Provider 成功 replay；逻辑 View/Copy 若经 Provider 准备，同样受筛选。它不替调用方 executor/callback、
+Provider 成功 replay；逻辑 Copy 以及含 View 的 Provider region 同样受筛选。它不替调用方 executor/callback、
 编译器插入的 backend transfer、失败诊断或 Completion 的独立合同证明零开销，也不把声明本身当成
 性能资格化证据。
 
@@ -737,12 +738,14 @@ island 数，不是 hidden Queue 数。CompileReport 中的 `kQueueBindingDepend
 Provider operation/region 的 `step(...)->runtime.replay_class` 保留 Compute 声明的 prepared/managed/unknown
 事实（选型见 [Compute](compute.md)）。它不从 region 大小、shared/delegated 或 capture 反推；unknown
 不能视为 prepared。compile 验证 proposal/artifact 一致性，并按显式 prepared-only 政策筛选候选。
-metadata-only view 可以由 Provider 在冷路径准备别名描述，但不因此录入 kernel；Graph copy 由 backend
-负责，不用 Provider replay 字段替代各自的执行/后端成本合同。
+未融合 View 报告 `kView`：没有 Provider 制品、workspace 或 dispatch，`persistent_bytes` 为零，仍保留
+DAG/control 依赖和 alias lifetime。它不要求 host 可访问存储；纯 View 图无需安装 kernel Provider、
+无需 Queue，绑定后可直接 `invocation.submit()`。operation fallback 的关闭与 Provider 准备配额不关闭
+这些元数据步骤。Graph copy 由 backend 负责，两者都不能用 Provider replay 字段替代自身成本合同。
 
 `step(...)->provider_instance` 区分同一 Provider 家族的多个配置槽位：operation 来自 PreparedOperation，
-region 来自实际绑定的 Provider extension，Graph copy 没有 Provider 实例。由 Provider 准备的 metadata
-view 保留实例 ID，但这不表示发生了 dispatch。ID 本身不保活 Context/artifact；报告可留作诊断，不能用
+region 来自实际绑定的 Provider extension，Graph copy 与未融合 View 没有 Provider 实例或 profile key。
+ID 本身不保活 Context/artifact；报告可留作诊断，不能用
 旧 ID 授权提交或当成跨进程、跨构建的完整性能 key。详见 [Compute 的身份与成本说明](compute.md)。
 
 `CompileStepReport::node_count` 是该 step 覆盖的逻辑节点数量；`node_begin` 是最小 ordinal，不总是一个

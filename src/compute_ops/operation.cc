@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "hyle/math/scalar.h"
+#include "view_alias.h"
 
 namespace hyle::compute {
 namespace {
@@ -1443,6 +1444,35 @@ infer_single_output(const Operation &operation,
   if (!status.ok())
     return std::unexpected(std::move(status));
   return output;
+}
+
+Result<std::size_t>
+detail::view_alias_offset(const View &view, const TensorDesc &input,
+                          const TensorDesc &output) noexcept {
+  HYLE_ASSIGN_OR_RETURN(const auto output_bytes, output.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(const auto input_bytes, input.required_bytes());
+  std::size_t offset = 0;
+  // Empty views have no reachable address, including an empty slice at the
+  // end of its input. Preserve the existing direct-provider convention.
+  if (view.kind() == ViewKind::kSlice && output_bytes != 0) {
+    HYLE_ASSIGN_OR_RETURN(const auto axis,
+                          normalize_axis(view.axis(), input.rank()));
+    const auto start = math::try_integer_cast<std::size_t>(view.start());
+    const auto stride =
+        math::try_integer_cast<std::size_t>(input.byte_strides()[axis]);
+    if (!start || !stride)
+      return std::unexpected(
+          Status::OutOfRange("view storage offset exceeds size_t"));
+    const auto product = math::try_multiply(*start, *stride);
+    if (!product)
+      return std::unexpected(
+          Status::OutOfRange("view storage offset overflows size_t"));
+    offset = *product;
+  }
+  if (offset > input_bytes || output_bytes > input_bytes - offset)
+    return std::unexpected(
+        Status::OutOfRange("view storage span exceeds its input"));
+  return offset;
 }
 
 } // namespace hyle::compute

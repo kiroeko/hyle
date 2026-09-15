@@ -3281,6 +3281,171 @@ TEST(GraphCompile, ReusesInternalStorageForLifetimeSafeInPlaceOperations) {
   expect_near(read(output_tensor, 4), std::array<float, 4>{-1, -2, -3, -4});
 }
 
+TEST(GraphViews, MetadataOnlyChainNeedsNoProviderOrPreparationBudget) {
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(matrix(4, 3)).value();
+  const auto slice = builder.add(View::slice(-2, 1, 2).value(), input).value();
+  const auto output =
+      builder
+          .add(View::permute(std::array<std::int32_t, 2>{1, 0}).value(), slice)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = Context::create(hyle::compute::cpu::device()).value();
+  ASSERT_EQ(context.provider_count(), 0u);
+  CompileOptions options;
+  options.region_selection = hyle::graph::RegionSelectionPolicy::kDisabled;
+  options.operation_fallback = hyle::graph::OperationFallbackPolicy::kReject;
+  options.max_operation_proposals = 0;
+  options.max_placement_attempts = 0;
+  options.provider_replay = hyle::graph::ProviderReplayPolicy::kRequirePrepared;
+  auto compiled = hyle::graph::compile(graph, context, options);
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.search().operation_proposals, 0u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 0u);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 0u);
+  EXPECT_EQ(compiled->report.workspace_bytes(), 0u);
+  EXPECT_EQ(compiled->executable.required_queue_count(), 0u);
+  for (std::size_t i = 0; i < compiled->report.step_count(); ++i) {
+    auto step = compiled->report.step(i).value();
+    EXPECT_EQ(step.kind, hyle::graph::CompileStepKind::kView);
+    EXPECT_FALSE(step.provider.valid());
+    EXPECT_FALSE(step.provider_instance.valid());
+    EXPECT_FALSE(step.profile_key.valid());
+    EXPECT_EQ(step.persistent_bytes, 0u);
+    EXPECT_EQ(step.dispatch_count, 0u);
+  }
+  auto invocation = compiled->executable.create_invocation().value();
+  compiled->executable = {};
+  graph = {};
+  auto source = make_tensor(matrix(4, 3));
+  write(source, std::array<float, 12>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
+  ASSERT_TRUE(invocation.bind(input, source.view).ok());
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    ASSERT_TRUE(invocation.submit()->wait().ok());
+    auto result = invocation.output(output).value();
+    EXPECT_EQ(result.description().dimensions()[0], 3);
+    EXPECT_EQ(result.description().dimensions()[1], 2);
+    EXPECT_EQ(result.description().byte_strides()[0], 4);
+    EXPECT_EQ(result.description().byte_strides()[1], 12);
+    EXPECT_EQ(result.storage().offset(), source.view.storage().offset() + 12);
+    expect_near(read(result, 6), std::array<float, 6>{3, 4, 5, 6, 7, 8});
+  }
+}
+
+TEST(GraphViews, ProviderConstraintsCannotBeSatisfiedByMetadata) {
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(row(4)).value();
+  const auto output = builder.add(View::slice(0, 1, 2).value(), input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  const auto provider = context.provider_identity(0)->id;
+  const std::array denied{provider};
+  EXPECT_TRUE(
+      hyle::graph::compile(graph, context, {.denied_providers = denied}));
+  const std::array required{hyle::graph::NodeProviderConstraint{
+      .node = graph.node_id(0).value(), .provider = provider}};
+  auto result =
+      hyle::graph::compile(graph, context, {.node_providers = required});
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsUnimplemented());
+}
+
+TEST(GraphViews, MetadataDoesNotConsumeTheAdjacentKernelBudget) {
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(row(4)).value();
+  const auto slice = builder.add(View::slice(0, 1, 2).value(), input).value();
+  const auto kernel = builder.add(Unary{UnaryKind::kNeg}, slice).value();
+  const auto output =
+      builder
+          .add(View::reshape(hyle::compute::TensorShape::create(
+                                 std::array<std::int64_t, 2>{1, 2})
+                                 .value())
+                   .value(),
+               kernel)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::cpu::create_context().value();
+  CompileOptions options;
+  options.max_operation_proposals = 1;
+  options.max_placement_attempts = 1;
+  auto compiled = hyle::graph::compile(graph, context, options);
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.search().operation_proposals, 1u);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 1u);
+  EXPECT_EQ(compiled->report.fallback_operation_count(), 1u);
+  EXPECT_FALSE(compiled->report.search().operation_proposal_limit_reached);
+  auto source = make_tensor(row(4));
+  write(source, std::array<float, 4>{1, 2, 3, 4});
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(input, source.view).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(run.submit(queue)->wait().ok());
+  expect_near(read(run.output(output).value(), 2),
+              std::array<float, 2>{-2, -3});
+  options.max_placement_attempts = 0;
+  auto rejected = hyle::graph::compile(graph, context, options);
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+}
+
+TEST(GraphViews, MetadataControlDependencyOrdersCommandsAcrossTargets) {
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(row(4)).value();
+  const auto first =
+      builder
+          .add_node(hyle::compute::Operation(Unary{UnaryKind::kNeg}),
+                    std::array{input})
+          .value();
+  const auto view =
+      builder
+          .add_node(hyle::compute::Operation(View::slice(0, 2, 2).value()),
+                    std::array{input})
+          .value();
+  ASSERT_TRUE(builder.depends_on(view, first).ok());
+  const auto output =
+      builder.add(Unary{UnaryKind::kAbs}, builder.result(view).value()).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto first_context = hyle::compute::cpu::create_context().value();
+  auto second_context = hyle::compute::cpu::create_context().value();
+  const auto resource =
+      hyle::compute::cpu::memory_resource(first_context.device()).value();
+  const Environment environment{{&first_context, resource},
+                                {&second_context, resource}};
+  const std::array placements{
+      NodePlacement{graph.node_id(0).value(), environment.target(0),
+                    PlacementStrength::kRequired},
+      NodePlacement{graph.node_id(1).value(), environment.target(1),
+                    PlacementStrength::kRequired},
+      NodePlacement{graph.node_id(2).value(), environment.target(1),
+                    PlacementStrength::kRequired}};
+  auto compiled = hyle::graph::compile(graph, environment.environment(),
+                                       {.node_placements = placements});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  EXPECT_EQ(compiled->report.segment_count(), 2u);
+  EXPECT_EQ(compiled->report.segment(1)->dependency_count, 1u);
+  EXPECT_EQ(compiled->executable.required_queue_count(), 2u);
+  auto source = make_tensor(row(4));
+  auto destination = make_tensor(row(2));
+  write(source, std::array<float, 4>{1, 2, 3, 4});
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(input, source.view).ok());
+  ASSERT_TRUE(run.bind(output, destination.view).ok());
+  auto first_queue = first_context.create_queue().value();
+  auto second_queue = second_context.create_queue().value();
+  const std::array queues{QueueBinding{environment.lane(0), &first_queue},
+                          QueueBinding{environment.lane(1), &second_queue}};
+  ASSERT_TRUE(run.prepare_replay(queues).ok());
+  auto submitted = run.submit(queues);
+  ASSERT_TRUE(submitted.has_value()) << submitted.error().message();
+  const auto terminal = submitted->wait();
+  ASSERT_TRUE(terminal.ok()) << terminal.message();
+  expect_near(read(destination, 2), std::array<float, 2>{3, 4});
+}
+
 TEST(Invocation, ResolvesAnInternalSliceViewWithoutMaterializingIt) {
   GraphBuilder builder = GraphBuilder::create().value();
   const TensorDesc input_description = matrix(2, 3);

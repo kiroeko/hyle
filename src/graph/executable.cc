@@ -16,6 +16,7 @@
 
 #include "../compute/completion_internal.h"
 #include "../compute/provider_internal.h"
+#include "../compute_ops/view_alias.h"
 #include "graph_state.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
@@ -1675,6 +1676,9 @@ struct OperationCandidate final {
   compute::detail::ProviderOperationProposal proposal{};
   std::size_t requirements_begin = 0;
   bool rejected = false;
+  // A node-cover alternative, not a synthetic Provider. Its facts are exact
+  // zero and it never enters propose/prepare or a Provider budget.
+  bool metadata_view = false;
 };
 
 struct OperationCandidateRange final {
@@ -1936,8 +1940,6 @@ Status discover_operation_candidates(
     const ProviderPolicy &policy,
     std::span<const std::uint32_t> required_targets,
     OperationDiscovery &discovery, CompileSearchReport &search) noexcept {
-  if (options.operation_fallback == OperationFallbackPolicy::kReject)
-    return Status::Ok();
   const auto target_count = environment.targets.size();
   if (graph.nodes.size() != 0 && target_count > SIZE_MAX / graph.nodes.size())
     return Status::ResourceExhausted("operation proposal index size overflows");
@@ -1954,6 +1956,10 @@ Status discover_operation_candidates(
   for (std::size_t node_index = 0; node_index < graph.nodes.size();
        ++node_index) {
     const auto &node = graph.nodes[node_index];
+    const bool metadata_view = node.kind() == compute::OperationKind::kView;
+    if (!metadata_view &&
+        options.operation_fallback == OperationFallbackPolicy::kReject)
+      continue;
     if (!inputs.try_resize(node.input_count) ||
         !outputs.try_resize(node.output_count) ||
         !input_requirements.try_resize(node.input_count) ||
@@ -1970,6 +1976,31 @@ Status discover_operation_candidates(
       if (required_targets[node_index] != detail::kNoWorkspaceRequest &&
           required_targets[node_index] != target)
         continue;
+      if (metadata_view) {
+        // A per-node Provider constraint can only be satisfied by a real
+        // region covering this View, never by an unowned metadata alternative.
+        if (!policy.allows_node(node_index, {}, {}))
+          continue;
+        compute::detail::ProviderOperationProposal facts;
+        facts.runtime = {
+            .mode = compute::ProviderRuntimeMode::kSharedQueue,
+            .workspace_owner = compute::ProviderWorkspaceOwner::kCaller,
+            .replay_class = compute::ProviderReplayClass::kPrepared,
+            .capture_compatible = true};
+        facts.cost = {
+            .workspace = compute::WorkspaceRequirement{},
+            .persistent_bytes = 0,
+            .copy_bytes = 0,
+            .repack_bytes = 0,
+            .synchronization_count = 0,
+            .dispatch_count = 0,
+            .compilation_storage = {.resident_bytes = 0, .peak_bytes = 0}};
+        if (!discovery.candidates.try_push_back(
+                {.proposal = facts, .metadata_view = true}))
+          return plan_allocation_failure();
+        ++range.count;
+        continue;
+      }
       const auto &context = *environment.targets[target].context;
       for (std::size_t provider = 0; provider < context.provider_count();
            ++provider) {
@@ -1977,7 +2008,7 @@ Status discover_operation_candidates(
                                                 context, provider, node_index));
         if (!allowed)
           continue;
-        if (discovery.candidates.size() == options.max_operation_proposals) {
+        if (search.operation_proposals == options.max_operation_proposals) {
           search.operation_proposal_limit_reached = true;
           continue;
         }
@@ -2006,10 +2037,10 @@ Status discover_operation_candidates(
         std::copy(output_requirements.begin(), output_requirements.end(),
                   discovery.requirements.begin() + begin + inputs.size());
         ++range.count;
+        ++search.operation_proposals;
       }
     }
   }
-  search.operation_proposals = discovery.candidates.size();
   return Status::Ok();
 }
 
@@ -2693,9 +2724,8 @@ Status prepare_placed_steps_attempt(
   const std::size_t storage_count = plan.storage_domains.size();
   const std::size_t value_count = graph.values.size();
   const std::size_t node_count = graph.nodes.size();
-  if (options.max_placement_attempts == 0 ||
-      options.max_route_search_states == 0)
-    return Status::InvalidArgument("graph prepare/search budget is zero");
+  if (options.max_route_search_states == 0)
+    return Status::InvalidArgument("graph route search budget is zero");
   if (value_count != 0 && storage_count > SIZE_MAX / value_count) {
     return Status::ResourceExhausted(
         "graph physical-instance matrix size overflows");
@@ -2968,6 +2998,22 @@ Status prepare_placed_steps_attempt(
     if (!selected_inputs.try_resize(node.input_count) ||
         !selected_outputs.try_resize(node.output_count)) {
       return std::unexpected(plan_allocation_failure());
+    }
+
+    if (route.metadata_view) {
+      if (node.input_count != 1 || node.output_count != 1)
+        return std::unexpected(Status::Internal("View arity is invalid"));
+      const auto required = value_required[node.output_begin];
+      const auto storage =
+          required != kNone ? required
+                            : producer_storage[graph.edges[node.input_begin]];
+      if (storage >= storage_count)
+        return std::unexpected(Status::Internal("View source has no storage"));
+      // Merely describing an alias does not require host mapping or kernel
+      // access by this target. Any actual relocation is a checked Copy below.
+      selected_inputs[0] = storage;
+      selected_outputs[0] = storage;
+      return OperationPlacement{&route, kNone};
     }
 
     const auto requirements =
@@ -3593,6 +3639,17 @@ Status prepare_placed_steps_attempt(
                                        : StorageDomainId{workspace_storage})) {
       return plan_allocation_failure();
     }
+    if (node.kind() == compute::OperationKind::kView) {
+      auto &step = plan.steps.back();
+      step.kind = detail::PlanStepKind::kView;
+      step.fallback_reason = CompileFallbackReason::kNone;
+      HYLE_ASSIGN_OR_RETURN(
+          step.view_offset,
+          compute::detail::view_alias_offset(
+              *node.operation().get_if<compute::View>(),
+              plan.instance_descriptions[plan.node_inputs[input_begin]],
+              plan.instance_descriptions[plan.node_outputs[output_begin]]));
+    }
     plan.node_steps[node_index] = step_index;
   }
   for (std::uint32_t node_step : plan.node_steps) {
@@ -3632,7 +3689,8 @@ Status prepare_placed_steps_attempt(
     return plan_allocation_failure();
   NodeShapeScratch shape_scratch(plan.allocator);
   for (auto &step : plan.steps) {
-    if (step.kind == detail::PlanStepKind::kCopy)
+    if (step.kind == detail::PlanStepKind::kCopy ||
+        step.kind == detail::PlanStepKind::kView)
       continue;
     if (!inputs.try_resize(step.input_count) ||
         !outputs.try_resize(step.output_count) ||
@@ -3798,8 +3856,9 @@ compiled_storage(const detail::PlanState &plan) noexcept {
           total, {.materialized_constant_bytes = buffer->size()}));
   }
   for (const auto &step : plan.steps) {
-    if (step.kind == detail::PlanStepKind::kCopy)
-      continue; // Backend copies retain no additional compiled artifact.
+    if (step.kind == detail::PlanStepKind::kCopy ||
+        step.kind == detail::PlanStepKind::kView)
+      continue; // Neither a backend copy nor a View owns a Provider artifact.
     const auto persistent = step.kind == detail::PlanStepKind::kRegion
                                 ? step.region.properties().persistent_bytes
                                 : step.operation.persistent_bytes();
@@ -4448,8 +4507,7 @@ Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
       if (!status.ok())
         return status;
     }
-    if (step.kind != detail::PlanStepKind::kOperation &&
-        step.kind != detail::PlanStepKind::kRegion) {
+    if (step.kind == detail::PlanStepKind::kCopy) {
       continue;
     }
     const std::span<const std::uint32_t> logical_nodes =
@@ -4595,8 +4653,7 @@ Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
   for (std::size_t step_index = 0; step_index < plan.steps.size();
        ++step_index) {
     const detail::PlanStep &step = plan.steps[step_index];
-    if (step.kind != detail::PlanStepKind::kOperation &&
-        step.kind != detail::PlanStepKind::kRegion) {
+    if (step.kind == detail::PlanStepKind::kCopy) {
       continue;
     }
     const std::span<const std::uint32_t> logical_nodes =
@@ -4746,8 +4803,7 @@ Status build_segments(detail::PlanState &plan,
         if (!status.ok())
           return status;
       }
-      if (step.kind != detail::PlanStepKind::kOperation &&
-          step.kind != detail::PlanStepKind::kRegion) {
+      if (step.kind == detail::PlanStepKind::kCopy) {
         continue;
       }
       const std::span<const std::uint32_t> logical_nodes =
@@ -4930,7 +4986,8 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     // Region aliases are optional and are not selected until the provider can
     // report every affected boundary port. A region must therefore support
     // distinct boundary outputs even if it advertises optional aliases.
-    if (step.kind != detail::PlanStepKind::kOperation)
+    if (step.kind != detail::PlanStepKind::kOperation &&
+        step.kind != detail::PlanStepKind::kView)
       continue;
     const detail::NodeRecord &node = graph.nodes[step.node_begin];
     const compute::OperationTraits traits = node.traits();
@@ -4943,7 +5000,11 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
           plan.node_outputs[step.output_begin + output_index];
       const std::uint32_t logical_output = plan.instance_values[output];
       if (alias == compute::AliasPolicy::kMustAliasInput0) {
-        auto support = step.operation.alias_support(output_index, 0);
+        const auto support =
+            step.kind == detail::PlanStepKind::kView
+                ? Result<compute::AliasSupport>(compute::AliasSupport{
+                      .supported = true, .byte_offset = step.view_offset})
+                : step.operation.alias_support(output_index, 0);
         if (!support || !support->supported) {
           return Status::Internal(
               "prepared provider omitted a required graph alias");
@@ -5868,6 +5929,11 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
       step_report.persistent_bytes = 0;
       step_report.copy_bytes = step.copy_bytes;
       state->copy_bytes = saturating_add(state->copy_bytes, step.copy_bytes);
+    }
+    if (step.kind == detail::PlanStepKind::kView) {
+      step_report.kind = CompileStepKind::kView;
+      step_report.persistent_bytes = 0;
+      step_report.profile_key = {};
     }
     if (step.kind == detail::PlanStepKind::kRegion) {
       const RegionArtifactProperties properties = step.region.properties();
@@ -8156,10 +8222,9 @@ remaining_compile_budget(CompileOptions options,
           Status::Internal("graph compile exceeded its budget"));
     options.*(counter.cap) -= spent.*(counter.count);
   }
-  if (options.max_placement_attempts == 0 ||
-      options.max_route_search_states == 0)
+  if (options.max_route_search_states == 0)
     return std::unexpected(Status::ResourceExhausted(
-        "graph exact variant has no remaining prepare/search budget"));
+        "graph exact variant has no remaining search budget"));
   if (options.compiled_storage.max_bytes != SIZE_MAX) {
     if (storage.known_bytes() > options.compiled_storage.max_bytes)
       return std::unexpected(
