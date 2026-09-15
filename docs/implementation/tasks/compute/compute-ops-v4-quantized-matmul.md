@@ -1,6 +1,6 @@
 # ComputeOps v4：R2 grouped Q4 MatMul 语义
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -96,3 +96,7 @@ UBSan 未完成前不签终局 PASS；Direct 的独立实现由 R2-D 继续。
 统一 LOC：Compute+Graph **31,220**；自实现不含测试 **126,405**；全库 **691,833**，自检通过。
 限制：量化默认实现、native packing、执行及完整路线性能在 R3–R6 验收；描述通过不等于 kernel 可执行。
 reopen：公开 schema 推导/格式/跨 DSO 发生真实回归，或路线实施发现当前数学/端口合同无法表达必要消费。
+
+
+七门已裁决，Q41/Q42 与继承尾项 CLOSED。CANDIDATE 在 `72775a17` 单独提交；本次显式以该 revision
+检查 CANDIDATE→CLOSED。结束本 schema 子项，不以 CLOSED 授权新 kernel、格式扩展或路线性能改动。

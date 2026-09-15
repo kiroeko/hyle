@@ -370,10 +370,14 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-ops-v4-quantized-matmul.md",
-      "summary": "compute_ops R2-Q CANDIDATE：Q41/Q42 完整 grouped Q4 schema 与旧 custom/resource/View 消费已实现；四环境正确性、Windows 三交付及 WSL UBSan 通过，P0 已核对；不签 native kernel 或默认规则。",
-      "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d"
+      "summary": "compute_ops R2-Q CLOSED：完整 grouped Q4 schema、既有 custom/resource/View 尾项、四环境正确性、Windows 三交付/relocation、WSL UBSan 与 P0 通过；仅关闭逻辑 schema，native kernel/默认规则仍归 R3–R6。",
+      "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-ops-v4-quantized-matmul.md"
+      }
     },
     {
       "module": "compute_backend_cpu",

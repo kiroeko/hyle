@@ -21,8 +21,8 @@
 | R2-G | 自然 Graph/路线编译边界；清理用户 timing profile 多计划竞赛与模型多路线放置，保留结构/资源规划 | Graph 新卡在定向影响审计后绑定 |
 | R2-M | Mem v10 已有 Reservation 的具名平台/失败回收尾项 | 原 [Mem v10 卡](../mem/mem-v10-external-byte-reservation.md)，不扩产品范围 |
 
-R2-Q 是下一步实际产品修改，不等待另外两项重新研究所有历史。R2-D/G 未冻结的签名不能以本表为
-实现授权。R3 的 CPU 默认规则、R4/R5/R6 的 native 完整片段仍由各路线资格决定；R2 不虚造赢家。
+R2-Q 已完成有限 schema 子项并 CLOSED，证据在其当前卡。R2-D 已绑定 AUDITED 并实施，R2-G
+尚须单独定界/审计；本表不代替各 owner 的实现授权。R3 的 CPU 默认规则、R4/R5/R6 的 native 完整片段仍由各路线资格决定；R2 不虚造赢家。
 
 ## 当前定向事实
 
