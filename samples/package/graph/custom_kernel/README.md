@@ -8,6 +8,8 @@ CPU Graph 把输入作为 `ConstantPolicy::kMaterialize` 常量，编译后释�
 同一个 Invocation 重放三次。报告校验物化策略与字节数，但不保活常量 payload。
 CPU/CUDA 的 Graph 消费同时用公开 `NodeProviderConstraint` 指定配置实例，CPU 另用全局家族 allow
 筛选；约束只在冷 compile 使用，仍复用同一个 Invocation 和 CUDA capture，不增加另一条执行接口。
+样例只构建 SDK 实际提供的 CPU 路线；CUDA-only SDK 使用 `HYLE_SAMPLE_CUDA=ON`，不会编译或链接
+CPU factory/consumer。源码嵌入可同时传 `HYLE_COMPUTE_CPU=OFF`。两条路线都未选择时配置明确失败。
 两个例子分别限定 1/2 个普通算子候选，并检查报告区分候选发现与真正 prepare 次数；恰好用满且没有省略
 后续查询不算搜索受限。这是例子已知只有一个 Provider 的边界，不是一般 Graph 应照抄的容量配置。
 

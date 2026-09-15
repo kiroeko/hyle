@@ -14,28 +14,41 @@ else()
   find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS graph)
 endif()
 
-# Deliberately put the factory and schema decode in another code image. This
-# is a C++ same-toolchain library, not a stable plugin ABI or Native FFI.
-add_library(hyle_custom_example SHARED kernel.cc)
-target_compile_features(hyle_custom_example PRIVATE cxx_std_23)
-target_compile_definitions(hyle_custom_example PRIVATE HYLE_CUSTOM_EXAMPLE_BUILD)
-target_link_libraries(hyle_custom_example PRIVATE hyle::compute)
-set_target_properties(hyle_custom_example PROPERTIES
-  CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)
-
-add_executable(hyle_custom_kernel_sample main.cc)
-# Each executable stages its own DLL closure. Shared output directories let
-# parallel POST_BUILD copies race even when neither program is running.
-set_target_properties(hyle_custom_kernel_sample PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cpu")
-target_compile_features(hyle_custom_kernel_sample PRIVATE cxx_std_23)
-target_link_libraries(hyle_custom_kernel_sample PRIVATE hyle_custom_example hyle::graph)
-if(COMMAND hyle_stage_runtime_dependencies)
-  hyle_stage_runtime_dependencies(hyle_custom_kernel_sample)
+if(HYLE_SAMPLE_SOURCE)
+  set(_sample_cpu "${HYLE_COMPUTE_CPU}")
+elseif("compute_cpu" IN_LIST Hyle_AVAILABLE_FEATURES)
+  set(_sample_cpu ON)
+else()
+  set(_sample_cpu OFF)
+endif()
+if(NOT _sample_cpu AND NOT HYLE_SAMPLE_CUDA)
+  message(FATAL_ERROR "Select an SDK with compute_cpu or set HYLE_SAMPLE_CUDA=ON")
 endif()
 
 enable_testing()
-add_test(NAME hyle_custom_kernel_sample COMMAND hyle_custom_kernel_sample)
+if(_sample_cpu)
+  # Deliberately put the factory and schema decode in another code image. This
+  # is a C++ same-toolchain library, not a stable plugin ABI or Native FFI.
+  add_library(hyle_custom_example SHARED kernel.cc)
+  target_compile_features(hyle_custom_example PRIVATE cxx_std_23)
+  target_compile_definitions(hyle_custom_example PRIVATE HYLE_CUSTOM_EXAMPLE_BUILD)
+  target_link_libraries(hyle_custom_example PRIVATE hyle::compute)
+  set_target_properties(hyle_custom_example PROPERTIES
+    CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)
+
+  add_executable(hyle_custom_kernel_sample main.cc)
+  # Each executable stages its own DLL closure. Shared output directories let
+  # parallel POST_BUILD copies race even when neither program is running.
+  set_target_properties(hyle_custom_kernel_sample PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cpu")
+  target_compile_features(hyle_custom_kernel_sample PRIVATE cxx_std_23)
+  target_link_libraries(hyle_custom_kernel_sample PRIVATE hyle_custom_example hyle::graph)
+  if(COMMAND hyle_stage_runtime_dependencies)
+    hyle_stage_runtime_dependencies(hyle_custom_kernel_sample)
+  endif()
+
+  add_test(NAME hyle_custom_kernel_sample COMMAND hyle_custom_kernel_sample)
+endif()
 
 if(HYLE_SAMPLE_CUDA)
   if(NOT HYLE_SAMPLE_SOURCE AND NOT "compute_cuda" IN_LIST Hyle_AVAILABLE_FEATURES)
