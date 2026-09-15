@@ -141,6 +141,10 @@ FFI 仍不提供；三交付和易用性按上表验证。C++ runtime correctnes
 组件合同必须使用仓库外的专用 `C:/hyle-scratch/r1-20260915-d4006bf7` 根，避免其共享源码缓存
 违反既有 cache 位置合同；首次仓库内 scratch 的环境失败不签产品失败或 PASS。
 
+`8158d74d` 的 Windows factor/header 与组件合同通过；源码交付发现 Visual Studio 的 DLL staging
+跨目录顺序缺陷，交由独立 [staging v2 卡](build-runtime-staging-v2-vs-order.md) 定向修复，
+不通过重复构建或手动 copy 掩盖失败，受影响交付仍待重验。
+
 首版登记验证：`validation-select.py run --base 98778b55 --candidate WORKTREE` 选择 docs/closure，
 结果 PASS，其余 94 项跳过或复用；`git diff --check` PASS。未构建、未运行 runtime 或 P1，registry
 保持原样，不进行虚构模块关闭。
