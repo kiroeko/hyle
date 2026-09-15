@@ -1,11 +1,15 @@
+#if defined(HYLE_COMPUTE_CPU)
 #include <hyle/compute/cpu.h>
+#endif
 #if defined(HYLE_COMPUTE_CUDA)
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/transfer.h>
 #endif
 #include <hyle/compute/operation.h>
 #include <hyle/compute/prepared_operation.h>
+#if defined(HYLE_COMPUTE_ONEDNN)
 #include <hyle/compute/providers/onednn.h>
+#endif
 #include <hyle/compute/tensor.h>
 #include <hyle/mem/buffer.h>
 
@@ -24,6 +28,7 @@ int main() {
   if (!description)
     return 1;
 
+#if defined(HYLE_COMPUTE_CPU)
   const std::array<float, 4> input{1.0F, 2.0F, 3.0F, 4.0F};
   std::array<float, 4> output{};
   auto input_buffer = hyle::mem::Buffer::create(hyle::mem::system_resource(),
@@ -149,6 +154,7 @@ int main() {
   if (provider_output != left_values)
     return 17;
 #endif
+#endif // HYLE_COMPUTE_CPU
 
 #if defined(HYLE_COMPUTE_CUDA)
   auto cuda_device = hyle::compute::cuda::device(0);
@@ -171,6 +177,13 @@ int main() {
       *cuda_queue, cuda_buffer->view(), std::byte{0x2a});
   if (!cuda_done || !cuda_done->wait().ok())
     return 22;
+  std::array<std::byte, 256> downloaded{};
+  if (!cuda_buffer->view().read(downloaded).ok())
+    return 23;
+  for (auto value : downloaded) {
+    if (value != std::byte{0x2a})
+      return 24;
+  }
 #endif
   return 0;
 }

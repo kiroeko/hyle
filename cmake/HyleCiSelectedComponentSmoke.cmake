@@ -87,39 +87,39 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
   string(APPEND _source_extra_tests
     "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
 elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
-  # The provider is deliberately opt-in and x64-only. Native x64 Compute and
-  # Graph smokes select it so all delivery forms prove the optional closure;
-  # native ARM smokes explicitly keep it OFF and prove the honest HYLE-native
-  # product instead.
-  # This driver runs in `cmake -P` script mode, where
-  # CMAKE_HOST_SYSTEM_PROCESSOR is not initialized. Query the host explicitly;
-  # otherwise every native x64 smoke silently exercises the OFF branch and the
-  # optional provider is never present in any of the three delivery forms.
+  # Exercise one explicit capability set in every delivery shape. Preserve
+  # the existing x64 oneDNN smoke unless the caller chooses a narrower route.
+  set(_compute_cpu_selected TRUE)
+  if(DEFINED HYLE_SMOKE_COMPUTE_CPU)
+    set(_compute_cpu_selected "${HYLE_SMOKE_COMPUTE_CPU}")
+  endif()
   if(DEFINED HYLE_SMOKE_COMPUTE_CUDA AND HYLE_SMOKE_COMPUTE_CUDA)
     set(_compute_cuda_selected TRUE)
-    string(APPEND _source_feature_contract
-      "set(HYLE_COMPUTE_ONEDNN OFF)\n"
-      "set(HYLE_COMPUTE_CUDA ON)\n")
-    list(APPEND _selected_feature_args
-      -DHYLE_COMPUTE_ONEDNN=OFF
-      -DHYLE_COMPUTE_CUDA=ON)
-  else()
+  endif()
+  if(DEFINED HYLE_SMOKE_COMPUTE_ONEDNN)
+    set(_compute_onednn_selected "${HYLE_SMOKE_COMPUTE_ONEDNN}")
+  elseif(_compute_cpu_selected AND NOT _compute_cuda_selected)
     cmake_host_system_information(
       RESULT _hyle_smoke_host_processor QUERY OS_PLATFORM)
     string(TOLOWER "${_hyle_smoke_host_processor}"
            _hyle_smoke_host_processor)
     if(_hyle_smoke_host_processor MATCHES "^(amd64|x86_64|x64)$")
       set(_compute_onednn_selected TRUE)
-      string(APPEND _source_feature_contract
-        "set(HYLE_COMPUTE_ONEDNN ON)\n")
-      list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=ON)
-    else()
-      string(APPEND _source_feature_contract
-        "set(HYLE_COMPUTE_ONEDNN OFF)\n")
-      list(APPEND _selected_feature_args -DHYLE_COMPUTE_ONEDNN=OFF)
     endif()
     unset(_hyle_smoke_host_processor)
   endif()
+  foreach(_feature IN ITEMS cpu cuda onednn)
+    string(TOUPPER "${_feature}" _feature_upper)
+    if(_compute_${_feature}_selected)
+      set(_feature_value ON)
+    else()
+      set(_feature_value OFF)
+    endif()
+    string(APPEND _source_feature_contract
+      "set(HYLE_COMPUTE_${_feature_upper} ${_feature_value})\n")
+    list(APPEND _selected_feature_args
+      -DHYLE_COMPUTE_${_feature_upper}=${_feature_value})
+  endforeach()
 endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -202,6 +202,54 @@ foreach(_linkage IN ITEMS shared static)
       endif()
     endforeach()
   elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
+    file(READ "${_staging}/lib/cmake/Hyle/HyleConfig.cmake"
+      _installed_hyle_config)
+    file(READ "${_staging}/lib/cmake/Hyle/HyleTargets.cmake"
+      _installed_hyle_targets)
+    string(REGEX MATCH "set\\(Hyle_AVAILABLE_FEATURES \"([^\"]*)\"\\)"
+      _feature_declaration "${_installed_hyle_config}")
+    set(_installed_features "${CMAKE_MATCH_1}")
+    foreach(_feature IN ITEMS cpu cuda onednn)
+      if(_compute_${_feature}_selected)
+        if(NOT "compute_${_feature}" IN_LIST _installed_features)
+          message(FATAL_ERROR "SDK missing selected compute_${_feature} feature")
+        endif()
+      elseif("compute_${_feature}" IN_LIST _installed_features)
+        message(FATAL_ERROR "SDK leaked unselected compute_${_feature} feature")
+      endif()
+    endforeach()
+    foreach(_entry IN ITEMS
+        "cpu|compute_backend_cpu|hyle/compute/backends/cpu.h"
+        "cpu|compute_provider_native|hyle/compute/providers/native.h"
+        "cuda|compute_backend_cuda|hyle/compute/backends/cuda.h"
+        "onednn|compute_provider_onednn|hyle/compute/providers/onednn.h")
+      string(REPLACE "|" ";" _fields "${_entry}")
+      list(GET _fields 0 _feature)
+      list(GET _fields 1 _factor)
+      list(GET _fields 2 _header)
+      if(_compute_${_feature}_selected)
+        if(NOT EXISTS "${_staging}/include/${_header}" OR
+           NOT _installed_hyle_targets MATCHES "_factor_${_factor}([ ;)]|$)")
+          message(FATAL_ERROR "SDK lacks selected ${_factor} header/target")
+        endif()
+      elseif(EXISTS "${_staging}/include/${_header}" OR
+             _installed_hyle_targets MATCHES "_factor_${_factor}([ ;)]|$)")
+        message(FATAL_ERROR "SDK leaked absent ${_factor} header/target")
+      endif()
+    endforeach()
+    if(NOT _compute_cpu_selected AND
+       EXISTS "${_staging}/include/hyle/compute/cpu.h")
+      message(FATAL_ERROR "SDK leaked unselected CPU convenience header")
+    endif()
+    if(NOT _compute_onednn_selected AND
+       (EXISTS "${_staging}/include/hyle/graph/providers/onednn.h" OR
+        _installed_hyle_targets MATCHES "_factor_graph_provider_onednn"))
+      message(FATAL_ERROR "SDK leaked unselected Graph oneDNN provider")
+    endif()
+    if(NOT _compute_cuda_selected AND
+       _installed_hyle_config MATCHES "CUDAToolkit")
+      message(FATAL_ERROR "SDK leaked unselected CUDA SDK lookup")
+    endif()
     if(EXISTS "${_staging}/include/hyle/compute/detail/provider.h")
       message(FATAL_ERROR
         "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK leaked its private provider SPI")
@@ -228,14 +276,11 @@ foreach(_linkage IN ITEMS shared static)
         message(FATAL_ERROR
           "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK lacks its CUDA façade")
       endif()
-      file(READ "${_staging}/lib/cmake/Hyle/HyleConfig.cmake"
-        _installed_hyle_config)
       if(NOT _installed_hyle_config MATCHES
          "CUDAToolkit\\|13\\.3")
         message(FATAL_ERROR
           "installed ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK does not propagate CUDAToolkit 13.3")
       endif()
-      unset(_installed_hyle_config)
     endif()
   endif()
   file(RENAME "${_staging}" "${_prefix}" RESULT _relocate_result)

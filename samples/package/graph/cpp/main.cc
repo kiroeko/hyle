@@ -1,4 +1,6 @@
+#if defined(HYLE_COMPUTE_CPU)
 #include <hyle/compute/cpu.h>
+#endif
 #if defined(HYLE_COMPUTE_CUDA)
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/transfer.h>
@@ -16,6 +18,7 @@
 #include <span>
 #include <utility>
 
+#if defined(HYLE_COMPUTE_CPU)
 namespace {
 
 hyle::Result<hyle::mem::Buffer>
@@ -27,6 +30,7 @@ make_buffer(hyle::compute::TensorDesc description) noexcept {
 }
 
 } // namespace
+#endif
 
 int main() {
   using namespace hyle::compute;
@@ -68,7 +72,10 @@ int main() {
   if (!output_id || !builder.publish(*output_id).ok())
     return 7;
   auto logical = std::move(builder).finish();
+  if (!logical)
+    return 8;
 
+#if defined(HYLE_COMPUTE_CPU)
   auto context = cpu::create_context();
   if (!logical || !context)
     return 8;
@@ -189,6 +196,7 @@ int main() {
     return 23;
   }
 #endif
+#endif // HYLE_COMPUTE_CPU
 
 #if defined(HYLE_COMPUTE_CUDA)
   auto cuda_device = hyle::compute::cuda::device(0);
@@ -211,6 +219,13 @@ int main() {
       *cuda_queue, cuda_buffer->view(), std::byte{0x2a});
   if (!cuda_done || !cuda_done->wait().ok())
     return 28;
+  std::array<std::byte, 256> downloaded{};
+  if (!cuda_buffer->view().read(downloaded).ok())
+    return 29;
+  for (auto value : downloaded) {
+    if (value != std::byte{0x2a})
+      return 30;
+  }
 #endif
 
   return 0;

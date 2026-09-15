@@ -13,6 +13,10 @@
 重构目标是[应用研发时确定的默认优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)，
 不要求普通用户排列 Provider 或提供性能资料；该目标尚不能由本文的现有例子推断已经完成。
 
+构建时默认 `HYLE_COMPUTE_CPU=ON`。CUDA-only SDK 显式设 CPU OFF、CUDA ON；两者都 OFF 时仅有
+计算语义/资源合同底座，无 CPU/Native 入口。安装包的实际 capability、头与 CMake 选项见
+[交付配置](distribution.md#4-消费安装包)。
+
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。

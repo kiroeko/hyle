@@ -586,6 +586,29 @@ else()
   endif()
 endif()
 
+# CPU computation is a product choice, separate from explicit developer factor
+# selection. Filter the declared roots before following either product or test
+# edges; disabling only the native target would still pull its SIMD closure.
+if(_hyle_selection_mode STREQUAL "product" AND
+   ("compute" IN_LIST _hyle_requested_products OR
+    "graph" IN_LIST _hyle_requested_products))
+  option(HYLE_COMPUTE_CPU "Include the CPU Compute execution route" ON)
+  if(NOT HYLE_COMPUTE_CPU)
+    foreach(_product IN ITEMS COMPUTE GRAPH)
+      list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
+        compute_backend_cpu compute_provider_native
+        compute_provider_onednn graph_provider_onednn)
+    endforeach()
+    set(_hyle_requested_roots "")
+    foreach(_product IN LISTS _hyle_requested_products)
+      string(TOUPPER "${_product}" _product_upper)
+      list(APPEND _hyle_requested_roots
+        ${_HYLE_PRODUCT_FACTORS_${_product_upper}})
+    endforeach()
+    list(REMOVE_DUPLICATES _hyle_requested_roots)
+  endif()
+endif()
+
 # Validate every manifest edge even for an unselected component: this is
 # bounded manifest metadata work and does not read unrelated product source.
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)

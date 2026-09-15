@@ -33,4 +33,6 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     FIND_DEPENDENCIES CUDAToolkit|13.3)
 else()
   hyle_add_module(compute_backend_cuda OPTIONAL_ABSENT)
+  set_property(TARGET hyle_compute_backend_cuda PROPERTY
+    HYLE_INTERNAL_ONLY_ABSENT TRUE)
 endif()

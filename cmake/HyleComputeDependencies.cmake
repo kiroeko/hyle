@@ -1,6 +1,7 @@
 include_guard(GLOBAL)
 
-if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN)
+if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN OR
+   HYLE_BUILD_PRODUCT_COMPUTE OR HYLE_BUILD_PRODUCT_GRAPH)
   hyle_auto_feature_option(HYLE_COMPUTE_ONEDNN
     "Build the x64 oneDNN BRGEMM MatMul provider" DEFAULT OFF)
 else()
@@ -8,6 +9,17 @@ else()
 endif()
 
 function(hyle_configure_compute_dependencies)
+  if(DEFINED HYLE_COMPUTE_CPU AND NOT HYLE_COMPUTE_CPU)
+    if(HYLE_COMPUTE_ONEDNN STREQUAL "ON")
+      message(FATAL_ERROR
+        "HYLE_COMPUTE_ONEDNN=ON requires HYLE_COMPUTE_CPU=ON")
+    endif()
+    message(STATUS
+      "HYLE: CPU route OFF -- oneDNN dependency probe/download skipped")
+    set(HYLE_COMPUTE_ONEDNN_ENABLED OFF PARENT_SCOPE)
+    return()
+  endif()
+
   set(_supported FALSE)
   if(CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux|Darwin)$" AND
      HYLE_TARGET_PROCESSOR STREQUAL "x86_64")

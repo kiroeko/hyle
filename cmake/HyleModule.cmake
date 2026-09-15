@@ -411,6 +411,13 @@ function(hyle_add_product_facades)
           "HYLE product '${_product}' is complete in the manifest but factor "
           "target 'hyle_${_factor}' does not exist")
       endif()
+      # Some optional route roots have no public surface when absent. Keep
+      # their internal graph identity without exporting an empty capability.
+      get_target_property(_internal_only hyle_${_factor}
+        HYLE_INTERNAL_ONLY_ABSENT)
+      if(_internal_only)
+        continue()
+      endif()
       list(APPEND _factor_targets hyle_${_factor})
     endforeach()
 

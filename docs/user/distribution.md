@@ -144,13 +144,33 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 合同，shared loader identity 同样使用完整版本。1.0 后才按 major compatibility 演进。
 
 当前已验收产品中的 IO TLS、HTTP/2 和 trace 等昂贵能力默认关闭，并且只有 owner 组件/gate
-成立时才出现对应 cache 项。Compute/Graph 产品包含独立的 x86-64 oneDNN CPU provider factor；
+成立时才出现对应 cache 项。
+
+Compute/Graph 用 `HYLE_COMPUTE_CPU=ON|OFF` 选择是否交付 CPU 计算，默认 ON。普通用户仍链接
+`hyle::compute/graph`；CPU OFF 排除 CPU backend、Native kernels 和 CPU oneDNN providers，不排除
+GPU 所需的 host 控制、准备和传输机制。配置示例：
+
+| 交付能力 | `HYLE_COMPUTE_CPU` | `HYLE_COMPUTE_CUDA` | `HYLE_COMPUTE_ONEDNN` |
+|---|---|---|---|
+| CPU Native | ON | OFF | OFF |
+| CUDA runtime 独立交付 | OFF | ON | OFF |
+| 仅 tensor/operation/Graph 语义底座，无执行设备 | OFF | OFF | OFF |
+
+这些值由源码父工程在 `add_subdirectory()` 前设置，或由 SDK producer 的 CMake 配置选择；安装消费者
+读取 `Hyle_AVAILABLE_FEATURES` 中的 `compute_cpu/compute_cuda/compute_onednn`，不能在自己工程里
+用宏创建未交付路线。选中 target 传播相应 `HYLE_COMPUTE_*` 存在性宏；它们不改变公共对象布局。
+未选 native/provider 的头、空实现 target、SDK 查找与运行库不进入安装包。无 backend 的底座不能运行
+计算；后续真实路线接入也不会由这个配置自动获得。
+
+CPU 路线可带独立的 x86-64 oneDNN provider factor；
 `HYLE_COMPUTE_ONEDNN=ON|OFF|AUTO` 只在选择这些产品时出现，默认 OFF，因而普通 Compute 构建既不下载
 也不编译 oneDNN。需要该 provider 的 x86-64 制品必须显式选择 ON；AArch64 的 ON 明确失败，AUTO 会
 关闭该能力并保留 native Compute；AUTO 只用于开发机探索。开启后
 source/static/shared 都通过同一个
 `hyle::compute::onednn::provider()` C++ 入口使用：static SDK 传递锁定 oneDNN archive/header 闭包，shared
 SDK 把其实现私有链接进 provider shared library，二者都安装 Apache-2.0 notice。
+CPU OFF + oneDNN ON 明确配置失败；CPU OFF + oneDNN AUTO 不探测、不下载。Provider 默认组装与
+研发验证规则在后续 CPU 纵切接入，本构建能力开关本身不证明实现优选已完成。
 
 Compute/Graph 还包含 CUDA runtime factor。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。

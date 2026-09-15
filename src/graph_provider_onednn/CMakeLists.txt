@@ -7,4 +7,6 @@ if(HYLE_COMPUTE_ONEDNN_ENABLED)
     PUBLIC HYLE_GRAPH_ONEDNN=1)
 else()
   hyle_add_module(graph_provider_onednn OPTIONAL_ABSENT)
+  set_property(TARGET hyle_graph_provider_onednn PROPERTY
+    HYLE_INTERNAL_ONLY_ABSENT TRUE)
 endif()
