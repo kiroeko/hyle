@@ -1614,3 +1614,10 @@ scratch 大小，不把更低 workspace 当速度胜出。严格 Provider 约束
 shape/resource-domain 测试不复制。限定一次测试表示与 fixture 纠正；出现产品反例先在本卡固定具体修复。
 本段仅预声明 Windows oneDNN factor 定向正确性、docs/closure/diff；测试专用变更不重建三种 SDK、不跑
 P1。完整候选的跨平台、独立红队、抽象税/MLP P1 与 Apple/CUDA 探针仍按原基础门执行。
+
+首次 `17853897` 定向运行 17/20：两个 prefill 用例反证测试所假设的“region 总是更大”，真实 workspace
+分别为 region/leaf 1280/1664 与 1428/2196 字节；融合少存中间值，足以抵消 BRGEMM scratch。decode
+回退已走到数值重放，因测试提前销毁 Context 被既定 admission-close 合同拒绝。固定 fixture 纠正为按
+两份真实完整计划的较小限额验证 region/leaf 双向可行性，并强制较大路线验证不放宽约束；Graph/源权重/
+父 Executable 可以先释放，Context 必须在成功重放后才关闭，关闭后验证新 submit 不改输出。Graph guide
+补清 runtime 保活与 admission 开放的区别，不改变产品生命周期或为了测试改算法。

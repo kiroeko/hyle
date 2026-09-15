@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -696,9 +697,9 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
       ConstantBinding{logical.gate_weight, gate_weight.view.as_const(),
                       materialize},
   };
-  // The region uses oneDNN's real private scratch; the independently usable
-  // Native leaves need no BRGEMM scratch. Compare their actual complete plans,
-  // not a fake region with a chosen workspace number or a speed claim.
+  // The region uses oneDNN's real scratch but hides intermediate values from
+  // Graph; Native leaves avoid BRGEMM scratch but expose their intermediates.
+  // Compare actual complete plans, without assuming either is always smaller.
   const std::array providers{hyle::graph::onednn::provider(),
                              hyle::compute::native::provider()};
   AllocatorProbe probe;
@@ -744,11 +745,16 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
     auto leaf = std::move(*leaf_result);
     ASSERT_EQ(leaf.report.region_count(), 0U);
     ASSERT_GT(leaf.report.workspace_bytes(), 0U);
-    ASSERT_GT(compiled.report.workspace_bytes(), leaf.report.workspace_bytes());
+    ASSERT_NE(compiled.report.workspace_bytes(), leaf.report.workspace_bytes());
+    const bool use_leaf =
+        leaf.report.workspace_bytes() < compiled.report.workspace_bytes();
+    const std::size_t expected_regions = use_leaf ? 0 : 1;
+    const auto workspace_limit = (std::min)(compiled.report.workspace_bytes(),
+                                            leaf.report.workspace_bytes());
 
-    const std::array storage{hyle::graph::StorageDomain{
-        .resource = hyle::mem::system_resource(),
-        .workspace_budget_bytes = leaf.report.workspace_bytes()}};
+    const std::array storage{
+        hyle::graph::StorageDomain{.resource = hyle::mem::system_resource(),
+                                   .workspace_budget_bytes = workspace_limit}};
     const std::array targets{hyle::graph::ExecutionTarget{
         .context = &context,
         .default_storage = hyle::graph::StorageDomainId{0}}};
@@ -758,13 +764,16 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
         hyle::graph::compile(logical.graph, environment, options);
     ASSERT_TRUE(limited_result) << limited_result.error().message();
     auto limited = std::move(*limited_result);
-    EXPECT_EQ(limited.report.region_count(), 0U);
-    EXPECT_EQ(limited.report.workspace_bytes(), leaf.report.workspace_bytes());
-    EXPECT_GT(limited.report.search().route_plan_rejections, 0U);
+    EXPECT_EQ(limited.report.region_count(), expected_regions);
+    EXPECT_EQ(limited.report.workspace_bytes(), workspace_limit);
+    if (use_leaf)
+      EXPECT_GT(limited.report.search().route_plan_rejections, 0U);
     EXPECT_FALSE(limited.report.search().optimization_limited());
-    for (std::size_t index = 0; index < limited.report.step_count(); ++index)
-      EXPECT_EQ(limited.report.step(index)->provider.id,
-                hyle::compute::native::kProviderId);
+    if (use_leaf) {
+      for (std::size_t index = 0; index < limited.report.step_count(); ++index)
+        EXPECT_EQ(limited.report.step(index)->provider.id,
+                  hyle::compute::native::kProviderId);
+    }
 
     // A resource retry cannot erase a user's required Provider. Nor may an
     // impossible budget yield an incomplete graph. Both failures release all
@@ -772,7 +781,8 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
     const auto live = stats.snapshot().live_bytes;
     const std::array required{hyle::graph::NodeProviderConstraint{
         .node = logical.graph.producer(logical.gate).value(),
-        .provider = hyle::graph::onednn::kProviderId}};
+        .provider = use_leaf ? hyle::graph::onednn::kProviderId
+                             : hyle::compute::native::kProviderId}};
     auto required_options = options;
     required_options.node_providers = required;
     auto rejected =
@@ -793,7 +803,7 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
     {
       auto retry = hyle::graph::compile(logical.graph, environment, options);
       ASSERT_TRUE(retry) << retry.error().message();
-      EXPECT_EQ(retry->report.region_count(), 0U);
+      EXPECT_EQ(retry->report.region_count(), expected_regions);
     }
     EXPECT_EQ(stats.snapshot().live_bytes, live);
 
@@ -813,7 +823,6 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
     ASSERT_TRUE(up_weight.buffer.reset().ok());
     ASSERT_TRUE(down_weight.buffer.reset().ok());
     logical.graph = Graph{};
-    context = Context{};
     compiled = hyle::graph::CompiledGraph{};
     leaf = hyle::graph::CompiledGraph{};
     limited = hyle::graph::CompiledGraph{};
@@ -839,6 +848,19 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
     }
     EXPECT_EQ(probe.attempts.load(), allocations);
     probe.fail_on_attempt = SIZE_MAX;
+
+    // Retaining a runtime prevents a dangling owner, not explicit admission
+    // closure. Context destruction must reject new work without touching
+    // output.
+    context = Context{};
+    for (auto &invocation : invocations) {
+      const std::vector<float> poison(kRows * kInner, 12345.0F);
+      write(output, poison);
+      auto rejected_submit = invocation.submit(queue);
+      ASSERT_FALSE(rejected_submit);
+      EXPECT_TRUE(rejected_submit.error().IsFailedPrecondition());
+      EXPECT_EQ(read(output, kRows * kInner), poison);
+    }
   }
   EXPECT_EQ(stats.snapshot().live_bytes, 0U);
   EXPECT_EQ(stats.snapshot().live_count, 0U);
@@ -854,7 +876,7 @@ TEST(OneDnnRegionProvider,
 }
 
 TEST(OneDnnRegionProvider,
-     MixedPrefillReselectsByRealWorkspaceAndRetainsOwners) {
+     MixedPrefillKeepsFeasibleRegionUnderRealWorkspaceLimit) {
   run_mixed_mlp_workspace(17, MlpOrder::kInterleaved);
 }
 

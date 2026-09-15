@@ -843,8 +843,10 @@ Region 编译收到按域合并的访问集与 backing 声明。Provider 必须�
 
 ## 所有权与常见陷阱
 
-- `ExecutionTarget` 的 Context 会被 plan 内部 artifact 保活；`StorageDomain` 中 `MemoryResourceRef` 的 provider 仍是 caller
-  borrow，必须活过 Executable、Invocation 和全部 in-flight work。
+- `ExecutionTarget` 的 Context runtime 会被 plan 内部 artifact 保活，但这不保持新任务准入：销毁或
+  `close()` 外层 Context 后，已有 Invocation 的新 submit 同样失败。要重复执行，应保留开放的 Context；
+  内部保活只保证制品与已接纳工作可以安全完成和释放。`StorageDomain` 中 `MemoryResourceRef` 的 provider
+  仍是 caller borrow，必须活过 Executable、Invocation 和全部 in-flight work。
 - Tensor view 不拥有 payload。输入、输出、shared Queue、external resource 与 native kernel 参数都必须活到
   Completion 真终态；delegated provider invocation 由 Graph Completion 保活，丢弃 pending Completion 不会隐式等待。
 - `output_ownership()` 为 `kCaller` 的计算结果绑定 mutable `TensorView`；`kSourceAlias` 借用原输入/
