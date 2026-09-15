@@ -88,11 +88,6 @@ CUdeviceptr device_address(void *pointer, std::size_t offset) noexcept {
                                   offset);
 }
 
-const std::byte *host_address(const void *pointer,
-                              std::size_t offset) noexcept {
-  return static_cast<const std::byte *>(pointer) + offset;
-}
-
 std::byte *host_address(void *pointer, std::size_t offset) noexcept {
   return static_cast<std::byte *>(pointer) + offset;
 }

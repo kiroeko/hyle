@@ -358,9 +358,10 @@ Status CompletionReaper::start() noexcept {
   std::lock_guard lock(lock_);
   if (started_)
     return Status::Ok();
+  platform::ThreadOpts options{};
+  options.name = "hyle-cuda-reaper";
   auto created =
-      platform::Thread::spawn(&CompletionReaper::run_entry, this,
-                              platform::ThreadOpts{.name = "hyle-cuda-reaper"});
+      platform::Thread::spawn(&CompletionReaper::run_entry, this, options);
   if (!created)
     return std::move(created).error();
   thread_ = std::move(*created);
