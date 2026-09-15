@@ -4,8 +4,9 @@
 > 单个 component 的 closure card，也不自行改变 `module-status.json`；产品修改前仍须让受影响 component
 > 依法返回 `AUDITED` 并分别冻结有限改动集。
 
-当前入口是[四路线研究裁决](four-route-architecture-decision.md)：有限研究完成，停下交用户审视，
-不自动启动产品改造。下面保留范围与前轮分析。原总目标、
+当前入口是用户追加的[六项架构复核](six-point-architecture-review.md)：核对路线隔离、实验充分性、
+Apple/多 Provider 接入、路由成本与文档清理，不自动启动产品改造。
+[四路线研究裁决](four-route-architecture-decision.md)是上一轮有限研究。下面保留范围与前轮分析。原总目标、
 实现队列和 55%/89% 估算保留为历史施工背景，不授权继续正式实现，也不是本次研究进度。
 架构文档不再复制第二套编号队列。
 
