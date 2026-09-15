@@ -1600,3 +1600,17 @@ check 通过。首次编译的 size_t literal、私有头显式 node identity in
 G106 的共享与预算实现/Windows 增量完成，但真实 CPU multi-op/CUDA Q4/Apple MLX+Metal 架构探针、完整
 候选跨平台/sanitizer/独立红队/P1、之前 Graph→Math 的横向 component-contract 门仍未完成。保持 AUDITED，
 继续 foundation；不扩算子目录，也不宣称 Compute/Graph 基础完成或达到用户指定暂停点。
+
+### CPU foundation：真实 mixed MLP 的资源可行性探针
+
+基线 `cb6c333c`。按总审计工作包 4 与 G103/G104/G107，复用现有 oneDNN gated-MLP、Native RMSNorm/
+leaf 和数值 oracle，不新增 kernel/Provider/API。已有独立的非连续融合、OOM、并发和模拟 profile 测试；
+本段补它们尚未组合覆盖的实际用户旅程：RMSNorm → 非连续 gated MLP，在同一 storage 的 workspace
+限额下从真实 oneDNN region 回退到完整 Native leaf。限额来自两份实际计划的 workspace，不猜 vendor
+scratch 大小，不把更低 workspace 当速度胜出。严格 Provider 约束不得被回退放宽；没有可行解时失败。
+
+测试同时验证 materialized 权重源可释放、Graph/Context/父 Executable handle 释放后 Invocation 正确
+重放变化的输入、冷失败回收和重试，以及 prepared warm replay 不再申请 HYLE metadata。已有 one-op/
+shape/resource-domain 测试不复制。限定一次测试表示与 fixture 纠正；出现产品反例先在本卡固定具体修复。
+本段仅预声明 Windows oneDNN factor 定向正确性、docs/closure/diff；测试专用变更不重建三种 SDK、不跑
+P1。完整候选的跨平台、独立红队、抽象税/MLP P1 与 Apple/CUDA 探针仍按原基础门执行。
