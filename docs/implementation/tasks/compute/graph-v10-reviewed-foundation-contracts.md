@@ -1682,3 +1682,12 @@ CPU executor 的 Windows source/static/shared 检查点已通过，见上述 pro
 它实际验证 Native/oneDNN 的长期 worker、嵌套与并发独立 Invocation，不依赖新的 Graph/Sched 产品 API；
 只增强样例计数一次，没有产品修复。其 Linux/Apple/最终 P1 继续与整体基础资格一起完成。下一实现主线
 仍是 CUDA 正式 Q4 Provider/region，随后 Apple 与 Vulkan；不再反复执行已通过的这条 Windows 样例。
+
+### 2026-09-15：原始需求与纵切校准
+
+[总计划重估](compute-graph-route-unification-audit.md#2026-09-15-原始需求重新对齐与进度基线)在正式 GPU
+适配前增加 4a：核对成熟压缩 Q4/MLX 入口的资源、精度、错误和成本合同。ggml MMVQ/MMQ 的临时
+activation Q8 与 HYLE 的 accumulation_type 不是同一个语义；相关实际 schema/adapter 修改须先在
+真实 owner 小卡固定，不由本段授权。Q4→F32 预检不作为量化主线；正常浮点 vendor 与压缩 FFN 的
+decode/prefill 分开验证。G100--G107、既有产品/证据和 registry 保持；下一实现工作须服从总计划 4a
+准入结果，随后 5/6/6a/6b/7。没有因文档重排运行产品测试或签新能力通过。

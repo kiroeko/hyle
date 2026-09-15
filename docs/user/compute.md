@@ -81,6 +81,11 @@ runtime 通常只能由 Graph 作为 compiled region 使用。当前没有已交
 `TensorDesc` 只证明格式可表达；`prepare(cuda_context, MatMul{}, ...)` 仍返回 `Unimplemented`，不会把
 压缩 bytes 当普通 scalar、偷偷反量化或因为 ggml 已下载就调用私有 kernel。
 
+仓库的 `cuda_q4_preflight` 是独立互操作程序：它的 native kernel 不是已交付的量化 Provider，
+cuBLASLt 对照先把同一权重显式展开为 F32，不能保留 Q4 的常驻容量，也不是 `MatMul` 的自动 fallback。
+正式量化路线仍待接入；不同 Q4 格式、activation 临时量化与累加类型不是同一件事。当前
+`MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
+
 ## Queue、byte transfer 与 Completion
 
 Compute 的 Queue 是一个显式、有序的提交域。普通 direct operation、byte transfer 和 backend-specific

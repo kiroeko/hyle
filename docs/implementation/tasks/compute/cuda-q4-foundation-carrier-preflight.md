@@ -2,6 +2,10 @@
 
 ## 研究卡 / 完成
 
+当前用途校准：本卡是独立格式/同步/vendor 互操作证据，不是正式量化路线的需求模板。
+[总计划的真实纵切](compute-graph-route-unification-audit.md#更贴近消费的有限纵切)以保留压缩权重的
+decode/prefill 为主；浮点 vendor 与全量展开的资源取舍分开处理。本卡样例保留，不因用途校准重测。
+
 - owner：Graph v10/G107 与总路由审计工作包 5；baseline `4fe60889`。这是基础架构的具名实验，
   不新增 shipping Provider、不为研究 sample 创建假 component 或 CLOSED 证书。
 - 需求：同一逻辑 Q4 MatMul 必须有明确的格式、CUDA Queue、权重表示和完整执行成本，才能决定真实

@@ -4,6 +4,10 @@
 > 单个 component 的 closure card，也不自行改变 `module-status.json`；产品修改前仍须让受影响 component
 > 依法返回 `AUDITED` 并分别冻结有限改动集。
 
+当前执行入口是[总目标与顺序](#当前-compute--graph-goal-的重排)及
+[2026-09-15 重新评估](#2026-09-15-原始需求重新对齐与进度基线)。前面的审计保留调查事实，不覆盖后面的
+当前计划；架构文档不再复制第二套编号队列。
+
 ## 两条需求与统一结论
 
 1. HYLE 不可能经济地在所有平台独立实现所有算子，需要通过成熟 Provider 获得算子、融合和设备广度；
@@ -302,11 +306,12 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 | 2 | Identity + proposal/shape/custom substrate | 复用已完成 identity/outcome/node-set；补 replay 成本、有限派生 shape/domain、安装包 custom execution、资源访问与 constant seam，不先写 selector 大算法 |
 | 3 | Graph route unification | leaf/region 同池、完整成本与有界重选、搜索受限可行解、资源域顺序、variant 常量/内存聚合和可解释 report |
 | 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN 非 insertion-order region；exact/bounded 与派生维度、资源冲突/独立、variant 内存/预算反例；增加真实持久 executor 组合，不能由串行 callback 探针代替 |
-| 5 | CUDA foundation probe | 同 storage 多 lane/dependency、exact capture 与 bounded/general fallback；Q4 MatMul/MLP 的 HYLE/vendor/第三方/unsupported 路由与 residence |
+| 4a | 成熟运行时接入准入 | 先确认 CUDA 压缩 Q4 与 Apple MLX 的具体公开入口、格式/精度、资源、失败和重放成本；公开 shared/delegated 不成立时只评估一个窄 source-patch 方案，见下节停止条件；不先造宽适配 |
+| 5 | CUDA foundation probe | 复用已通过的多 lane/capture；分开做正常浮点 vendor 调用与保留压缩权重的 Q4 decode/prefill FFN；正式 leaf/region/unsupported、residence/预算、general/exact 与完成边界。Q4→F32 预检不代替量化路线 |
 | 6 | Apple foundation probe | MLX delegated managed replay + 原生 Metal custom-kernel/interop，实证成本分类、prepared-only 拒绝、island boundary/Completion，不横向填 Apple 算子 |
 | 6a | Vulkan foundation probe | 最小 SPIR-V 计算、device/queue-family、buffer/barrier/timeline、native handoff；Windows/Linux 与 Apple MoltenVK portability；不填算子目录 |
 | 6b | 基础组合资格 | 真实 CPU/GPU 计算边界及 delegated island 的失败/完成/回收；实测 profile 回灌；最小可选 Obs 事件；每个 backend 的 feature/SDK/三交付资格。见下节有限清单 |
-| 7 | **Foundation implementation gate** | 上述全部基础探针、三平台 correctness、one-op/MLP P0/P1、完整 profile 消费、source/static/shared、红队通过；Compute/Graph 基础 candidate 固定 |
+| 7 | **Foundation implementation gate** | 上述全部基础探针、适用平台 correctness、one-op/MLP P0/P1、实测完整 profile 回灌、source/static/shared、红队通过；报告实际压缩量化/第三方能力与限制，Compute/Graph 基础 candidate 固定后暂停讨论 |
 | 8 | NVIDIA/Apple provider 广度 | cuBLASLt/cuDNN/HYLE 与 MLX/MPS/Metal 按真实热路径扩展；不再改基础对象模型 |
 | 9 | Vulkan provider/算子广度 | 复用 6a 已验证基础，扩正式 SPIR-V/成熟 provider 与跨 API 能力；不冒充原生 Metal 性能，不把基础实现留到本项 |
 | 10 | Transformer prefill/decode | 多 region、引擎拥有的 specialization/cache 与 batch-class 选择、并发 Invocation、capture、cancel/drain 和长寿命计划纵切 |
@@ -321,6 +326,125 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 
 2026-09-15 总计划覆盖审计补入 6a/6b，之前不含 Vulkan 等资格工作的约 89% 口径停止沿用。已完成的
 实现和证据不清零；新估算必须包含本表全部基础范围，并区分实现与终局验证，不把文档修改算成功能完成。
+
+### 2026-09-15 原始需求重新对齐与进度基线
+
+基线 `3ea0eced4eadb8ff18bd7fd5e4ea33bd54e2a3e4`。本轮只校准架构、计划、说明与估算，不改产品、
+registry、依赖锁、构建脚本或公共治理，不跑 C++/P1。原始需求不是“框架能描述所有 Provider”，而是
+让 C++ 消费者实际借到成熟算子广度，保留 HYLE 全局资源/计划权，以完整消费收益渐进替换局部实现。
+
+| 原始需求 | 保留的设计 | 本次实际调整 / 完成证据 |
+|---|---|---|
+| 借第三方广度，不维护全平台大全 | 中立 Operation + 显式 Provider，leaf/region 两种载体 | 接入可行性前置；下载/schema/独立 sample 不计为已交付 route；CPU ggml blocker 不冒充全 ggml 已拒绝或已支持 |
+| HYLE 拥有全局性能责任 | 分层调度、三轴资源、不可变计划和独占 Invocation | 只在明确 boundary 替换；允许成熟 runtime 的真实局部 owner，不强行拆每个 kernel |
+| 性能优先且不被测试扭曲 | 冷选路，prepared/managed 如实分类 | 正常浮点与压缩量化分开；activation 舍入与 accumulation 分开；实测完整计划回灌后才能证明选路，不靠 synthetic timing |
+| 普通量化模型能保持容量优势 | 物理格式与逻辑 dtype 分离、常量 owner/共享/配额 | 压缩权重的 decode/prefill 为主纵切；约 7.1 倍 F32 展开只作显式备选与内存反例，不作默认量化实现 |
+| Apple/NVIDIA 主力、Vulkan 保底 | 同一对象模型、typed native interop | 三条基础路线均纳入分母；不为 HIP 建 stub；SDK 由用户安装、HYLE 按所选 feature 发现 |
+
+#### 替代旧会话目标的任务说明
+
+在现有 Compute/Graph foundation-v1 上完成真实可交付的基础执行与图计划，不重写已获证据的
+Device/Context/Queue/Completion、Graph/Executable/Invocation 和三轴资源。先对成熟 CUDA 量化
+carrier 与 Apple MLX 做有限接入准入，确认公开 shared/delegated 或独立窄补丁的可行边界；再按本表
+完成正式 CUDA 浮点/压缩 Q4 FFN、Apple MLX/Metal、Vulkan SPIR-V，及实测选路、异步失败/回收、最小
+Obs 与各 backend 的三交付。借成熟能力并允许 HYLE 在相同数值/资源/完成合同上渐进替换；无合格
+胜利则保持成熟路线。算子目录、完整模型、KV/batching/serving 和 HIP 均不进入这次基础施工。新
+factor/底层缺口按现有小卡与状态协议处理，已匹配证据复用，只测实际影响；基础实现和适用正确性、
+性能、交付、红队全部通过后报告并暂停共同审视，不自动进入总目标第 8 项。
+
+这是原大 goal 的当前阶段说明，不把旧总目标标记完成。会话工具当前只能读目标及写 complete/blocked，
+不能改写一个未完成目标的 objective；本轮实际更新的是仓库内的目标与顺序，不声称已修改产品 UI 中
+的原始 goal 文本。后续恢复或替换会话目标时采用本段，registry 仍是唯一模块状态。
+
+#### 更贴近消费的有限纵切
+
+选型依据是已更新的同日 clean reference：ggml `456172ec`、llama.cpp `4c9233c0`、vLLM `51918e25`、
+SGLang `06992c92`、ds4 `9139e2ae`；完整 commit 与版本化调查见
+[Q4 preflight](cuda-q4-foundation-carrier-preflight.md#版本化来源与裁决)。本轮只读这些具名路径，未升级产品依赖。
+
+- llama.cpp `src/llama-graph.cpp::build_ffn` 实际组合 up/gate、SiLU 和 down projection；
+  ggml `src/ggml-cuda/mmvq.cu::ggml_cuda_mul_mat_vec_q` 与 `mmq.cu::ggml_cuda_mul_mat_q` 消费压缩权重，
+  同时为 activation 建立 Q8_1 临时表示；Q4_0/Q4_K 均有 switch route，不能假定只有先全量展开再 GEMM。
+- ds4 `ds4_cuda.cu` 的 dense quantized 路径直接把 Q4_K 权重交给 `ds4_mmq_q4_K_dense`；与其 Q8 的
+  浮点缓存/临时展开备选是不同路线，不能从某条 fallback 推断整个引擎都展开权重。
+- vLLM `model_executor/kernels/linear/mixed_precision/marlin.py` 和 SGLang
+  `layers/quantization/compressed_tensors/schemes/compressed_tensors_wNa16.py` 在加载后 repack packed
+  weights/scales，执行时使用这些权重与 workspace；GPTQ/AWQ 的格式不等于 GGUF Q4_0/Q4_K。
+
+源码入口：[ggml MMVQ](https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cuda/mmvq.cu)、
+[ggml MMQ](https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cuda/mmq.cu)、
+[llama.cpp FFN](https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/llama-graph.cpp)、
+[ds4 CUDA](https://github.com/antirez/ds4/blob/9139e2ae58a41503968a500f36f75895c1ba63fc/ds4_cuda.cu)、
+[vLLM Marlin](https://github.com/vllm-project/vllm/blob/51918e252af4dfff381001f42b7ebe6a0454501b/vllm/model_executor/kernels/linear/mixed_precision/marlin.py)、
+[SGLang WNa16](https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/layers/quantization/compressed_tensors/schemes/compressed_tensors_wNa16.py)。
+
+| 纵切 | 正常旅程 / 反偏置 | 要裁决的架构问题 |
+|---|---|---|
+| CPU（保留） | 现有 RMS+gated MLP，Native/oneDNN 共用持久 Sched executor | 真实 region、资源预算、嵌套/并发与抽象税；已有 Windows 证据不重跑 |
+| CUDA 浮点 | GPU 常驻的正常浮点 MatMul，随后组合 FFN；使用 vendor 真正支持的 dtype/累加合同 | 同一个 vendor 的 direct 与 HYLE 路线隔离 adapter/Graph 成本，不把量化转换成本混入 |
+| CUDA 压缩量化（主纵切） | 一次加载/必要 packed repack，device-resident Q4 FFN；M=1 decode 与一个正常 prefill chunk；重复变化 activation、两独立 Invocation | mature compressed route、HYLE/custom leaf 与 region 的真实可用性；压缩常驻、variant 共享、capture、边界费用与完整选路 |
+| Apple | MLX 的真实 FFN region 与一段 native Metal 计算衔接；使用其原生支持的 dtype/format | delegated managed、copy/sync、最终 Completion、源释放与 prepared-only 拒绝；不强迫它假装支持 GGUF Q4 |
+| Vulkan（正交） | 上传资源 → 最小 SPIR-V 数值变换 → 后续 native consumer/读回；重复复用 buffer | barrier/可见性、timeline/owner 与 native handoff；Windows/Linux 与 MoltenVK 分开资格 |
+
+量化首个正式 carrier 在 4a 明确选定一个有实际公开/受审接入路线的格式；现有 Q4_0 是 codec/边界
+回归资产，Q4_K 或 group-wise W4 是依据真实 carrier 的候选，不要求一次实现所有格式，也不强行把
+同为“四位”的表示互换。normal shape 的 hidden/intermediate 来自具名模型配置/真实算子序列，至少保留
+一个 decode 和一个 prefill；tiny/tail 只做 correctness。不用全模型权重下载/长上下文跑分证明基础。
+
+“直接量化计算”只要求没有整份展开常驻权重；kernel 内解码、activation quantization、tile scratch 或
+保持压缩的冷 repack 都可能合理，但必须分别计费。当前 `MatMul::accumulation_type` 不代表允许
+F32 activation 变 Q8：4a 先确定数值合同及所需最小 schema/显式转换，再给实际 owner 固定 FIX；不能
+靠放宽 oracle 容差准入。精度或资源合同不同只作 NATURAL_ROUTE，不签同合同 WIN/LOSS。
+
+Q4→F32 样例保留为已经完成的互操作与同步回归事实，不重写成历史错误，也不继续把它发展成量化默认
+Provider。cuBLASLt 的自然浮点用途与量化 carrier 分别准入；没有证据必须提供长期全量展开功能时，
+不为这个测试建立独立 shipping capability。所选 vendor 的内部算法与 HYLE 包装成本分别测量，默认
+成熟实现不等于它天然接受每一种 Q4 编码。
+
+#### 执行约束和停止条件
+
+已完成的 0--4 与 CUDA runtime/资源/capture 事实保留。下一步 **4a → 5 → 6 → 6a → 6b → 7**：
+
+1. 4a 对 CUDA 压缩 carrier、Apple MLX 各做一次公开 API 源码核对和一个最小执行探针；每条最多再评估
+   一个窄 source-patch 备选。单条先固定不超过 2 小时的调查预算（SDK/真机构建等待另记），不是新建
+   通用调研框架。若须大规模接管依赖 runtime、无法安全恢复运营失败或无合法精度合同，提交精确方案
+   与取舍供用户决策；受影响路线不能通过，独立已证实的路线不清零。
+2. vendor handle、native context/stream、per-run workspace 等只在准入后由真实 owner 建最小 seam。
+   当前 CUDA backend CLOSED 不自动重开；若内部 Provider 接入确实缺少能力，另卡记录 concrete trigger。
+3. 5/6/6a 在正常 public C++ consumer 上实现，同一 API 复用 direct/Graph 或 region；必要 schema/kernel
+   只服务所选纵切。5 完成压缩路线并不解除既有 CPU ggml blocker，也不宣称获得全部 ggml 算子。
+4. 6b 复用这些具体程序做一次实测 profile 回灌与有限生命周期/Obs 组合，不造完整模型或通用 tuner。
+   性能比较先过语义/源码成本 preflight；只对已固定不可变候选跑适用 P1，不为状态/文档/计数重测。
+5. 7 汇总所有适用门并做实现后独立复核。新事实首先修改被反证的 seam；只有 owner、lifetime 或热成本
+   根本无法兑现才重开核心架构。缺 SDK/硬件、未执行或精度不等价不能签为通过。
+
+#### 进度重估（同一基线，不是关闭证明）
+
+本表是本阶段一次工程估算，不是第二份 registry；权重按基础工作包而不是代码行、提交数或用例数。
+架构文档更新不增加实现分数。总估算约 **55%（约 ±5 个百分点）**，旧约 89% 不可换名沿用；百分比
+描述实现及具名定向旅程的进展，不能推出性能/交付/模块通过，也不是剩余墙钟时间。
+
+| 基础工作包 | 固定权重 | 本包估算 | 证据与尚欠内容 |
+|---|---:|---:|---|
+| 通用 Compute + CPU/CUDA runtime | 20% | 90% | CPU/CUDA backend 独立 CLOSED；current Compute shape/custom substrate 已实现，仍需真实新 Provider 与总资格 |
+| Graph 编译与固定执行计划 | 30% | 85% | node-set/shape/三轴/重选/常量共享已有真实增量；managed/跨 runtime 和最终资格未完成 |
+| CPU 真实 region/executor 组合 | 10% | 80% | mixed MLP 与 Windows 三交付 executor 已过；跨平台、并行 P1/完整候选门尚欠 |
+| CUDA 正式浮点/压缩 Q4 Provider 组合 | 15% | 20% | runtime/capture 与独立 codec/native/vendor 预检可复用；正式压缩 carrier、精度合同、region/residence 未交付 |
+| Apple MLX/Metal 组合 | 10% | 0% | 有设计/源码调查，尚无正式 backend/provider 实现旅程 |
+| Vulkan/SPIR-V/MoltenVK 基础 | 10% | 0% | 有需求，无当前 factor/实际旅程 |
+| 实测选路、Obs、跨运行时组合 | 5% | 10% | profile matcher/模拟反例等前置可复用；真实回灌、事件和混合终态链仍缺 |
+
+最后的 foundation gate **尚未通过**，不再用另一个猜测百分比代表验收。上述任务全部实现也必须满足
+对应适用门，才能报告基础完成并暂停。若范围真有新事实，显式说明分母变化，不把未实现平台挪到
+锁后以维持高百分比。之后按子模块完成、重大调整或约 10 个百分点变化报告，不为每次文档提交涨分。
+
+同一 `3ea0eced` 源码快照、统一 `loc-report.py --module-path ... --self-check`：全库代码 **688,607**；
+自实现不含测试 **126,320**；Compute 产品 **17,000**，Graph 产品 **14,135**，合计 **31,135**。
+包括现有 backend/provider，不计测试、样例、第三方、生成物和依赖模块，不把 LOC 当完成度。
+
+本轮维护验证：docs 309/1129 relative links、closure 39/schema 4、`git diff --check` 通过；change-impact
+只选择 docs/closure、跳过 94 项。没有 C++ 构建、性能采样、SDK 更新或 registry 迁移；文档通过不增加
+产品资格或本表进度。
 
 ### 基础计划覆盖审计与有限补项
 

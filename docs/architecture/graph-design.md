@@ -468,6 +468,17 @@ node-cover 内的资源选择使用依赖前缀的有限回溯：只有真实分
 预算；不物化全部组合。资源局部拒绝不等于该 Provider 在其它资源上也不可用。lane 固定后才做 happens-before/
 workspace，显式内存序列化的再排程保留该 lane。身份机制与此搜索都不等于自动调优、穷尽所有组合或全局最优。
 
+完整计划的性能不能仅靠 cost interface 和人工 timing fixture 签发。基础验收必须有一条具名真实消费：
+分别约束两条可行路线，按相同输入、精度、resident/cold/warm 范围与真实终态测量，形成身份完整的
+profile，再重新 compile 检查选路；不要求故意制造 HYLE 赢家。缺失、过期、不可分与硬预算拒绝继续
+使用已有反例验证，不再扩一套 tuner。选择后 warm 路径不读取这些资料。
+
+量化的 weight encoding、activation 舍入/量化、accumulation 与 output dtype 是不同事实。比如一方先将
+F32 activation 量化成 Q8，另一方保持 F32，不能仅凭输入输出类型相同认定数值合同相同。输入量化不能
+由 accumulation_type 推断授权；必须显式进入 schema/转换或经审计的数值策略，再进入 profile identity。
+相同数值合同不要求使用相同算法，但双方都须满足同一允许舍入/误差边界和正确性判据。
+不相容路线只能作自然产品取舍，不能通过放宽测试容差冒充同合同替换；这同样约束基础 CUDA Q4 纵切。
+
 ### 6.2 Shape domain、capture 与运行时选择
 
 编译和 capture 是正交轴。一个 bounded/guarded Executable 可以走接受范围的普通 artifact，也可以内含
@@ -551,35 +562,19 @@ provider/backend workload 上形成可解释收益。
 
 ## 10. 首轮纵切和停止点
 
-开工与 [Compute 的顺序](compute-design.md#10-开工顺序)共同执行：
+施工顺序、已完成证据和下一项只维护在
+[总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)，
+不与 Compute 再各维护一套队列。Graph 的基础完成边界保持如下：
 
-1. 用 CPU reference provider 建 `GraphBuilder -> Graph -> Executable -> Invocation -> Completion` 的 one-op
-   完整旅程；
-2. 加 HYLE SIMD/native provider，证明同一 Graph 无需改写即可选择另一实现；
-3. 扩为 normalization → matmul → gated activation，接 Mem liveness/workspace；
-4. 先统一单-op 与 region candidate、完整边界成本和资格化 route profile seam；用 oneDNN 真实 region
-   验证，不能让 blocked 的 CPU ggml 或只按覆盖节点数的 selector 成为前置；
-5. 用 NVIDIA CUDA 验证同一 storage domain 的 copy lane → compute lane → copy lane、设备依赖、
-   happens-before workspace 与 capture；
-6. 用 CUDA Q4 MatMul/MLP 验证 leaf/region、HYLE/成熟 Provider 与不同 storage residence 的完整路由；
-7. 再完成两条主平台栈：NVIDIA 的 CUDA backend/providers；Apple 先资格化 delegated MLX compiled region，
-   同时保留原生 Metal custom-kernel/interop 和 MPSGraph/MPS 候选；Core ML 留在模型级 routed runtime
-   边界；
-8. 基础 gate 前落到最小 Vulkan SPIR-V，验证消费级设备的内存可见性、queue-family、timeline 和
-   native resource/synchronization handoff；Windows/Linux 与 Apple MoltenVK 分别取证。完整 Vulkan
-   算子、provider 广度和跨 API 扩展能力继续在后续独立轮实现；
-9. 扩 attention、quantized layout 和重复 decode；HIP/ROCm 依 Compute 的无限期 defer 决策，不进入当前
-   Graph 产品资格。
+- CPU direct/one-op、真实 multi-op region 与持久 executor 组合；
+- NVIDIA 的真实浮点 vendor 调用、保留压缩权重的 Q4 decode/prefill、不同候选与完整资源成本；
+- Apple MLX delegated 计算与原生 Metal 边界，以及 Vulkan 的真实资源/计算/同步流水线；
+- 以上路线共用 DAG/Executable/Invocation、冷选路与 shape/capture 合同，并通过实测 profile 回灌、
+  生命周期/失败、最小 Obs、三交付和终局性能/红队资格。
 
-上述步骤中的算子只作为真实纵切的最小架构探针：先用 gated MLP 检验常量、分支、region、workspace 与
-liveness，再用 attention/decode 检验动态 binding、resource state、异步 completion 与重复执行。它们不
-授权在 Graph 合同稳定前横向填充整个 CPU kernel catalog。反过来，Graph 也不能只靠 fake provider 或
-单节点测试宣称完整；至少一个成熟 provider 的真实多算子 region 和一条真实异步 backend 纵切通过后，
-才算具备承载后续算子扩展的稳定底座。
-
-每一步都有独立 closure card、固定 consumer slice 和停止预算。one-op lifecycle、P0 成本或三种 C++ 交付
-未通过时，不得用“后面完整 graph 会摊薄”进入下一步；provider region 不成立时也不得扩大 operator
-catalog 掩盖根因。
+每条纵切只补证明该边界必须的算子，不要求完整模型、全部量化格式或全部 Provider；也不能以 mock、
+只有 CPU 计算的 GPU copy、或 Q4 整体展开样例代替相应真实路线。到基础 gate 完成时暂停共同审视，
+之后才进入 attention/完整 Transformer 与目录扩充。HIP/ROCm 的无限期 defer 保持。
 
 ## 11. 架构稳定条件
 

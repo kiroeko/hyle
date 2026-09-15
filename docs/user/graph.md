@@ -17,6 +17,10 @@ reshape/slice/permute/broadcast 的有限全域证明、真实布局/偏移绑�
 只有合格完整计划 profile 才用于继续择优。Region 可显式共享同 family 的不可变 packing；capture 私有存储的
 unknown 约束见下文，不把 driver 未公开的字节数算作零。完整边界见[架构合同](../architecture/graph-design.md)。
 
+完整 profile 的接收/匹配已经实现，但真实“测量候选 → 生成资料 → 重新编译择优”的基础资格仍未完成；
+现有人工 timing fixture 只验证选择规则，不是设备上的性能推荐。未接入的 GPU Provider 不会因
+profile 接口存在而可用，Q4 转 F32 的独立样例也不代表正式压缩量化 Graph 路线已交付。
+
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
 task graph，也不拥有模型循环、KV cache、batching、sampling 或 serving policy。

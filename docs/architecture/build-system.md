@@ -74,6 +74,11 @@ cache、benchmark peer checkout 和编译产物是三类目录，不能混用。
 依赖升级必须由 owner module 的真实影响触发：先改锁和许可证投影，再验证直接消费者、三交付和适用
 性能。更新 vendor 不是“只改构建”；它会触发 owning factor 进入合法审计状态。
 
+CUDA Toolkit 等系统 SDK 不属于 FetchContent 源码资源：由用户按平台安装，HYLE 只在所选 backend/
+Provider 需要时发现并检查版本/targets，不代管安装器。backend 可用不等于它的全部算子 Provider 可用；
+新增 Provider 的 SDK link、runtime staging、许可与三交付在该 factor 的基础接入卡验收，不留到完整
+模型阶段。精确开关仍由 owning CMake 定义，不在本页另列名单或因计划创建空 target。
+
 ## Option 语义
 
 选项只表达用户需要控制且能稳定解释的产品选择：

@@ -25,6 +25,36 @@ Compute 不是推理引擎。模型格式、tokenizer、KV/prefix-cache 策略�
 HTTP serving 和模型循环仍由消费方拥有。Compute 也不是 Graph：它执行已经决定的 op、kernel 或
 compiled region，不拥有跨节点拓扑、全图 placement、liveness 和融合决策。
 
+### 1.1 原始需求与架构取舍
+
+首席消费者以 C++ 源码组合推理基座；static/shared 消费者使用相同语义。HYLE 不经济地重写全平台
+算子大全，而是借成熟实现获得**实际可用的能力**，在同一用户 Graph 上渐进替换具有合格完整收益的
+HYLE op/region。Apple 与 NVIDIA 为主，Vulkan 为正式保底；模型、KV、batching 等策略不上移进基础库。
+
+由此固定三项取舍：
+
+- 控制全局 region、放置、边界传输与生命周期，不要求控制第三方内部每个 kernel。外包粒度服从完整
+  成本，不能为逐 op 替换权破坏融合；也不能让第三方接管边界之外的图。
+- 统一用户语义，不假装所有 runtime 都能借入同一 allocator/stream。使用 shared 或 delegated、
+  prepared 或 managed 的哪种合同，由真实 API 决定；未知资源成本不得填零，可恢复错误不得伪装成功。
+- “best-of”表示在**已接入、满足硬约束、有可比证据**的候选中择优，不表示穷举全局最优或免费取得
+  第三方全部算子。无证据时确定性回退，不在用户首次 token 上进行隐藏搜索。
+
+### 1.2 先证明接得上，再扩大适配
+
+每条新的 runtime 路线在实现宽适配前，先用具体版本和最小真实调用确定：可访问的公开 op/region、
+storage import 或必要 copy、Queue/完成桥接、重复执行的准备成本、并发、失败/销毁，以及 SDK 交付。
+这些事实写进该 Provider 的小卡；不另造一套机器状态或全库准入工具。
+
+优先使用公开接口；不能 shared 时检查显式 delegated island。公开 API 仍不满足合同，且该能力确有
+消费者需求时，可审计独立、版本锁定的窄 source-patch factor，明确修改面、升级和错误测试责任。
+补丁不得默认演变成接管第三方整套 allocator/scheduler/kernel 库。若需要这种规模的维护，或运营失败
+仍会 abort，报告具体能力缺口并裁决其它承载路线/范围，不能无限期研究或直接降低全库错误合同。
+
+示例可运行只证明该次调用；正式 factor 才提供用户 route；对应资格完成才可作性能/交付承诺。任何
+一个层次都不能用下载、链接、schema、样例或文档代替下一个层次。当前接入结果与有限任务只见
+[总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)。
+
 ## 2. 两条同等重要的用户路径
 
 ### 2.1 直接执行
@@ -203,7 +233,7 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
    scale/zero 等若不是块内编码，则是显式 typed tensor input，不能藏进 `void *` metadata；
 2. 用户或上层引擎明确把 activation、weight 与 output 放在 CUDA storage，或允许 Graph 选择其它 target。
    “CUDA backend 已存在”只证明能建立 context/queue/memory/event/copy，不证明任何 Q4 算子已经存在；
-3. 冷编译枚举精确候选。例如 HYLE/CUTLASS 自实现的 Q4 kernel、确实接受该格式的 NVIDIA vendor route、
+3. 冷编译枚举精确候选。例如 HYLE 原生或受审 CUTLASS Q4 kernel、确实接受该格式的 NVIDIA vendor route、
    ggml CUDA 单节点 artifact，以及覆盖整个 MLP 的 ggml compiled region。不能理解该 `StorageFormatId` 的
    Provider 必须返回 `Unimplemented`，不得把压缩 bytes 当普通标量或偷偷反量化；
 4. 对每个候选先检查 dtype/precision、适用 shape subdomain/guard、alignment、alias、CUDA device、buffer
@@ -225,6 +255,14 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
 若当前构建只有 CUDA runtime、没有任何接受该 Q4 格式的 operation/region Provider，唯一正确结果就是
 `Unimplemented`。这不是“自动 fallback 还没写好”，而是防止错误计算、隐藏 CPU offload 和伪零拷贝的
 必要合同。
+
+Q4 还必须区分两条不同资源路线：保留压缩权重，由 kernel 在计算中解码；或将 immutable constant
+显式冷展开为浮点权重，再调用浮点 GEMM。后者只有在消费者允许该转换且全部常驻/峰值预算成立时
+才可入选，不能因为“冷路径不计时”就免费取得副本。Q4_0 的 18 bytes/32 values 展开为 F32 的
+128 bytes/32 values，权重约增至 7.1 倍；它不能冒充原生量化路线。可变 Q4 input 也不能通过一次
+常量缓存偷偷获得此路线。基础探针须真实保留一条压缩权重的执行路线，验证源释放、variant 共享与
+预算回收；若准入展开候选，另验显式允许/拒绝及完整成本，不为测试强制新增该 shipping 能力。
+样例中的解码 GEMM 只证明互操作，不证明量化性能或成熟 Q4 Provider 已交付。
 
 ### 2.8 冷编译目标、证据与回退边界
 
@@ -624,51 +662,18 @@ Compute 的目标是**端到端可组合的最佳路线**，不是包装层在�
 
 ## 10. 开工顺序
 
-Compute 与 Graph 采用共同纵切，但按独立 factor 小步验收：
+当前工作顺序、有限任务和进度分母只在
+[Compute/Graph 总计划](../implementation/tasks/compute/compute-graph-route-unification-audit.md#当前-compute--graph-goal-的重排)
+维护，不在两份 architecture 中再复制编号队列。长期顺序原则是：
 
-1. **资产与身份审计**：固定现有源码/头/CMake baseline；把每个入口裁决为 KEEP、MOVE、REPLACE 或
-   DELETE；按质因数判据登记必要 component ID。旧 API 不需要兼容。
-2. **Compute core**：先完成 CPU Device/Context/Queue/Completion、Mem resource bridge、typed native
-   kernel 和 explicit shutdown；清除对 Sched 的无条件公开依赖。
-3. **Compute ops**：冻结最小 Tensor/Operation/PreparedOperation 合同，以一个 CPU reference op 和一个
-   HYLE SIMD/native op 证明 direct path。这里的产物是 typed schema 和少量**架构探针**，不是提前填满
-   CPU kernel catalog；只实现随后 runtime/Graph 纵切实际需要的最小算子集合。
-4. **立即接 Graph 纵切**：Graph 只做一个节点也能编译为 `Executable` 并通过 `Invocation` 运行；此时
-   验出抽象税，而不是等 Compute 大全套完成后才发现形状不合。
-5. **统一 route selection**：把单-op proposal 与 compiled-region proposal 放入同一有界计划搜索，先完成
-   resource/ownership 筛选，再使用显式 workload intent 与资格化 route profile 比较完整边界成本；修复 typed custom
-   operation 的 source/static/shared identity 和安装包自定义执行入口。此前按最大覆盖选择 region 的实现
-   不能作为本阶段完成品；派生 shape、资源副作用域、variant 内存与搜索受限行为按 Graph 合同一并落实。
-6. **真实 CPU region**：以量化模型中的 normalization → matmul → gated activation 为首个多节点片段，
-   加 liveness/alias/workspace，并用 oneDNN 等成熟 Provider 验证 leaf/region 竞争。CPU ggml 当前 blocker
-   不在关键路径上，也不能用空 factor 冒充纵切。
-7. **异步资源探针**：先在 CUDA 走通同一 storage domain 上的 copy lane → compute lane → copy lane，
-   覆盖 device dependency、Completion 聚合和 capture/replay；它是 execution-lane 合同的验收，不是提前
-   扩大 CUDA 算子目录。
-8. **CUDA Q4 路由纵切**：用 Q4 MatMul/MLP 同时验收 HYLE/vendor leaf、第三方 compiled region、量化
-   storage residence、完整成本裁决与 warm fixed-plan；没有合法 Provider 时保持 `Unimplemented`。
-9. **主要平台 slice**：NVIDIA 继续扩 CUDA providers；Apple 先资格化 MLX delegated
-   region，验证 provider-owned runtime 的 boundary/completion bridge；同轮建立原生 Metal custom-kernel/
-   interop 路线并审计 MPSGraph/MPS；随后扩 attention、quantized matmul、repack 和异构 partition。Core ML
-   不进入首轮低层路线。
-10. **Vulkan foundation slice**：在基础 gate 前把同一 graph/op 合同落到最小 SPIR-V 资源流水线，验证
-   device/queue-family、buffer 可见性、command recording、timeline completion、native handoff 与
-   Windows/Linux、Apple MoltenVK 的实际能力边界；完整 Vulkan 算子/provider 广度留到 gate 后。
-   MoltenVK 只签 portability，缺失的 extension 或 queue family 不得以模拟执行冒充真机通过。
-11. **Transformer block 与重复执行**：冻结后运行真实 prefill/decode、动态 shape specialization、并发
-   invocation、取消/drain 和 source/static/shared 交付门。
-12. **算子广度扩展**：只有 runtime、Graph、至少一个真实多算子 region，以及一条真实异步设备纵切共同
-   证明上述对象与执行合同不再需要改写后，才按推理热路径与正交工程 workload 系统补齐 CPU 算子；
-   每条新 route 复用既有 plan/provider seam，不借“补算子”重新设计 runtime。
+- 先固定自然 C++ 语义与生命周期，用 direct/one-op 和真实 CPU region 验证基本组合；
+- 先确认目标成熟 runtime 的资源/错误/交付可接入，再实现正式 adapter，不把关键 API 风险留到宽适配之后；
+- CUDA Q4、Apple MLX/Metal、Vulkan 分别以最小真实计算纵切验证同一对象模型；仅补探针必须的算子；
+- 实测 profile 回灌、混合运行时失败/回收、最小 Obs 与各后端交付属于基础门，不拖到完整模型；
+- 基础实现及对应资格全部通过后暂停共同审视，再授权算子/provider 广度与完整 Transformer 纵切。
 
-因此本顺序不是“先造所有算子，再看它们能否组成图”，也不是脱离执行负载追求抽象意义上的完整 Graph。
-在第 3--11 步，每条纵切只补充用于验证 ownership、layout、partition、workspace、completion 或异步语义的
-最少算子；目录式 CPU kernel 填充必须等待这些结构经真实消费链压实。进度报告也必须把“schema 已定义”、
-“已有 executable route”和“系统性 catalog 完成”分开，不能用前两者冒充第三者。
-
-每一步都先创建合法 closure card 并完成 `SCOPED -> AUDITED`，只实现冻结的有限 `FIX/BORROW/DELETE`
-集合；未达到下一步所需的 lifecycle、correctness 或 P0 成本结构就停止为 `BLOCKED`，不靠扩 benchmark
-或继续研究掩盖状态。
+每个实际改动 owner 仍须按 registry/closure card 完成 `SCOPED -> AUDITED` 并固定有限 FIX；总计划不
+直接授权改产品、升级依赖或重开无关底层模块。已验证且身份相符的事实继续复用，文档重排不触发重测。
 
 ## 11. 架构稳定条件
 

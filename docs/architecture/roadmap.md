@@ -91,6 +91,11 @@ owner。把第三方加入依赖锁或链接制品不算获得能力，adapter f
 backend 后缀的 `compute_provider_ggml` 只代表既有 CPU 审计身份，不能被解释为所有 ggml backend 或
 通用 ggml 产品已经交付。
 
+新 Provider 先验证具体成熟 API 的格式、精度、资源和失败边界，再扩大适配。Q4 冷展开到 F32 的
+互操作程序不算压缩量化路线；输入临时量化与累加精度也不能混为一谈。接入方式与完整成本约束只在
+[Compute 原始需求](compute-design.md#11-原始需求与架构取舍)和 [Graph 选路](graph-design.md#61-workload-intentroute-profile-与有限搜索)
+维护；性能资料接口存在不等于真实 best-of 选路已资格化。
+
 Apple Silicon 栈（MLX-first provider + 原生 Metal backend/custom-kernel escape hatch）和 NVIDIA 栈
 （CUDA backend + 经审计的 vendor/ggml/HYLE provider）是首要优化目标。Vulkan 是面向广泛消费级设备与
 renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 走 MoltenVK portability；它不
