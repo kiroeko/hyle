@@ -387,10 +387,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
       "candidate": "db164bb7dced649c6ae0f5c992be5e7005748c7e",
-      "summary": "compute_backend_cuda v2 CANDIDATE：CU20/CU22 和合法 lifetime 夹具已通过 Linux 真 CUDA/逐头/late failure；Windows 三交付已验证端点修复，待纠正候选回放、ASan/UBSan 与最终复核。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md"
+      },
+      "summary": "compute_backend_cuda v2 CLOSED：精确 Queue endpoint 修复通过 Windows/Linux 真 CUDA、Graph 多 lane/capture、三交付、带记录的 WSL driver 豁免 ASan、UBSan 与候选后红队；两个冷查询维持 O(1)/零常态新增成本，Q4/整体 foundation 不在此证书范围。"
     },
     {
       "module": "compute_provider_native",

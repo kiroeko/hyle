@@ -1,6 +1,6 @@
 # Compute CUDA backend v2：完成端点不能把 Context 当 Queue
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
 
 - owner：`compute_backend_cuda`；baseline `a4dee153`；前轮为
   [CUDA v1](compute-backend-cuda-v1-async-runtime.md)。
@@ -104,3 +104,41 @@ late failure 1/1、逐头 1/1 全通过。该验证副本是 `1644bdc2` archive 
 余下只做修正候选的 Windows 定向回放、ASan/UBSan 和候选后独立复核；TSan 不因本轮额外运行：新 endpoint
 只读取其存活 QueueState 的 immutable Context 字段，未修改共享可变状态、同步协议或后台服务；既有并发
 wait/abandon/drain 真机用例继续执行。host sanitizer 不冒充 device kernel instrumentation。
+
+## 终局裁决（2026-09-15）
+
+`db164bb7dced649c6ae0f5c992be5e7005748c7e` 的 CUDA 产品/头/测试到 `aaaf96f7` 没有变化；后续公共
+build 修复分别由两张维护卡拥有。修正候选已完成 Windows 定向回放、WSL Release/ASan/UBSan 和候选后
+红队，本轮 `CLOSED`。这只关闭 endpoint correctness 修复，不等于 Compute/Graph foundation 完成。
+实际命令、环境与原始输出见
+[CUDA v2 证据包](../../../../evidence/correctness/compute-cuda-endpoint-v2-db164bb7/README.md)。
+
+| Gate | 本轮证据与边界 | Verdict |
+|---|---|---|
+| scope | CU20/CU21/CU22 完成；同执行域跨队列依赖由 PARTIAL/FIX 转为 COMPLETE；其它 v1 公开面保持 | PASS |
+| architecture | exact Queue identity 与 Context compatibility 分离；复用稳定 QueueState、Compute endpoint、Graph device-wait，不加 owner/字段/Graph workaround | PASS |
+| correctness | Windows Graph 284、CUDA runtime 13、late-failure 1 和逐头通过；WSL Release 三套与 ASan/UBSan runtime 13 通过，环境限定如下 | PASS |
+| delivery | 真实 source/installed static/installed shared 双 lane kernel consumer 全过；BRS 修复后不再手动复制 DLL | PASS |
+| usability_docs | 原有 C++ 调用不变；Compute guide 明确同 Context 不代表同 stream 顺序；无新增选项或 FFI | PASS |
+| red_team | 主 agent 在候选后单独检查借用有效期、authority、move、同/异 Context、capture 与真实 stream teardown；无未处理产品 finding | PASS |
+| engineering_performance | P0：两个冷查询仍 O(1)，零新增分配/锁/syscall/对象字段；warm 实现不变。没有新增计时或 SOTA 结论 | PASS |
+
+红队与实现阶段分离的一遍复核结论：QueueState 地址不会因 public Queue move 改变；Query 只发生在
+有效开放的 Queue 上，Graph 冷准备重新取得端点并预绑定依赖路线，不在 warm submit 保存失效借用来查询。
+authority/non-null 检查先于私有 cast；context 字段只读，Completion 保活 QueueState/Context。不同 wrapper
+包同一个 borrowed native stream 可能保守多加一次合法 wait，不会误省另一个 stream 的依赖。原测试销毁
+后 query 的 UB 已按上文纠正；没有增加产品 test hook。此项审查不是声称另一个 agent 执行了复核。
+
+Sanitizer 限制：WSL 的 CUDA driver 与默认 ASan shadow-gap 冲突，无 HYLE 的 `cudaGetDeviceCount`
+control 也失败。使用 NVIDIA 建议的 `ASAN_OPTIONS=protect_shadow_gap=0` 后，control 和 HYLE 测试均
+正确执行；两者共有的 WSL shim `/usr/lib/wsl/lib/libcuda.so.1` 两笔、280 字节退出泄漏以该完整路径作
+LSan suppression。没有关闭 leak detection 或忽略 HYLE/其它 driver 栈；本轮只签此带明确豁免的 host
+ASan。UBSan 无此豁免。TSan 按修正候选段的未改共享可变状态理由不新增；Apple 不支持 CUDA，N/A。
+
+重开条件：新的有效 Queue 在其合法生命周期内被误判为有序/可导入、真实跨 stream 数据错误、端点借用
+失效、或相关 CUDA SDK/交付合同改变。Q4 Provider 和 Apple 集成归总 foundation 卡，不能藏入本修复。
+
+LOC（候选 `db164bb7`，统一工具 self-check PASS）：全库 687,056；自实现不含测试 126,313；CUDA
+backend 实现 2,027（`src/compute_backend_cuda` 加其 split public header `compute/backends/cuda.h`）。
+汇报快照 `aaaf96f7` 的 Compute/Graph 合计为 31,128（16,993 + 14,135）；两种数字边界不同，不混作
+CUDA factor 体量。证据/状态提交不产生新产品候选或重复 P1。

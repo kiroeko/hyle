@@ -1,0 +1,7 @@
+cudaGetDeviceCount=0 count=1
+-----------------------------------------------------
+Suppressions used:
+  count      bytes template
+      2        280 /usr/lib/wsl/lib/libcuda.so.1
+-----------------------------------------------------
+

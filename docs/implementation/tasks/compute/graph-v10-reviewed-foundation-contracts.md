@@ -1644,3 +1644,13 @@ capture 均要求无 host wait、真实 event 依赖、变化输入重放与最�
 说明，重建现有 source/static/shared 三个 CUDA consumer，复用产品未变且身份核对的 SDK；不重新安装 SDK、
 跑 CPU/全库或 P1。一次表示与 fixture 纠正；若反证 Graph 的 lane/capture/Completion 合同，先固定具体
 修复，不修改已关闭 backend 或公共仪器来绕过。各样例 consumer 串行，构建最多 2 jobs。
+
+结果：此真实 consumer 发现 CUDA endpoint 错将 Context 当作 exact Queue，合法重开并完成
+[CUDA v2 修复](compute-backend-cuda-v2-endpoint-identity.md)。随后 source/static/shared 均真实执行两个
+独立 Invocation、两个 lane、commands/require-capture 各三次变化输入，device wait 存在、host wait 为零、
+数值正确。Graph 产品无 workaround；Windows 284 项 Graph 用例和 CUDA runtime/late-error/逐头也通过。
+同时暴露并独立完成了 host warning 与增量 DLL staging 两项 build 修复，原始证据由 CUDA v2 卡引用。
+
+该检查点完成真实 CUDA 异步调度/capture 的这条纵切，不冒充 Q4 MatMul/MLP 的 Provider/residence 路由。
+后者、Apple MLX/Metal、完整候选跨平台/红队/P1 和 Graph→Math component-contract 仍按 foundation 门
+继续；Compute/Graph 保持 AUDITED，未达到用户指定的基础完成暂停点。

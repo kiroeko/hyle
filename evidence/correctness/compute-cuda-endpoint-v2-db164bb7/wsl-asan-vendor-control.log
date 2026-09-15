@@ -1,0 +1,27 @@
+cudaGetDeviceCount=2 count=-1
+
+=================================================================
+==658==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 260 byte(s) in 1 object(s) allocated from:
+    #0 0x7b58b0efd9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x7b58b14e725a  (/usr/lib/wsl/lib/libcuda.so.1+0x1025a) (BuildId: 8587eaad68ff611de8f0a2c728566e155c744a35)
+    #2 0x7b58b14fbea6 in cuDriverGetVersion (/usr/lib/wsl/lib/libcuda.so.1+0x24ea6) (BuildId: 8587eaad68ff611de8f0a2c728566e155c744a35)
+
+Direct leak of 24 byte(s) in 1 object(s) allocated from:
+    #0 0x7b58b0efd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x7b58b0ccf956  (<unknown module>)
+
+Direct leak of 20 byte(s) in 1 object(s) allocated from:
+    #0 0x7b58b0efd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x7b58b14f3982  (/usr/lib/wsl/lib/libcuda.so.1+0x1c982) (BuildId: 8587eaad68ff611de8f0a2c728566e155c744a35)
+
+Indirect leak of 50600 byte(s) in 1 object(s) allocated from:
+    #0 0x7b58b0efd9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x7b58b0ccf714  (<unknown module>)
+
+Indirect leak of 56 byte(s) in 1 object(s) allocated from:
+    #0 0x7b58b0efd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x7b58b0ccf6b9  (<unknown module>)
+
+SUMMARY: AddressSanitizer: 50960 byte(s) leaked in 5 allocation(s).
