@@ -86,3 +86,13 @@ Graph extension 使用同一字段；它不是私有 prepare token 的别名或�
 G106 的 ConstantBinding/region extension 升版按 Graph v10 的 source-release 段直接迁移并复验：真实
 MLP 用 materialize bindings，在 compile 后释放三个原权重，再执行与对照。Provider 继续借用 Graph
 传入的有效 canonical view，不推断 aggregate packed count 能释放 source，不改 BRGEMM kernel。
+
+### GP41 / G106 discovery allocator 审计
+
+`propose_regions()` 的 use-table 与 contractibility helper 当前回用 Context allocator，绕过 Graph
+compiler 配额。FIX：消费 Graph 在 propose/resource-query 参数显式传入的 allocator；所有发现 scratch
+在返回前释放，同一次分配/释放 owner 不变。若 Context 中的 allocator 字段已无消费者，删除这个仅为
+发现缓存的副本；不改变 Provider 的 context ownership 或 kernel/pattern/submit。
+用实际 gated MLP 的 discovery allocation/OOM、原数值路径、Graph 逐头及三交付回放；额外 vendor
+prepare 私有上界仍为 unknown，不因为 discovery 已正确记账就猜 oneDNN/JIT 内存为零。本项一轮有限
+纠正，状态保持 AUDITED，属于既定 GP41 的资源/成本事实，不重开已 CLOSED 因子。

@@ -1181,3 +1181,14 @@ resident/冷峰值、packing identity/共享、capture 私有上界，G101 动�
 
 这是既定 G106 的完整编译 requested-storage 集合，不扩 kernel、packing 算法或后端目录；未知 vendor
 上界允许明确拒绝，不能改成虚构的有限值。现有 invocation 限额和所有其它 foundation FIX 继续保留。
+
+### G106：region discovery scratch owner 纠正（实现前固定）
+
+编译配额源码复核发现真实 oneDNN region 的 `propose_regions()` 仍用 Context allocator 构造 use-table
+和 contractibility scratch。它发生在 prepare 之前，不能用事后 private bounds 补记过去的峰值。
+因此本轮有限纠正把 `RegionProviderVTable::propose/propose_resources` 都显式传入本次 Graph compiler
+allocator；发现/资源查询只用该 allocator 的 scratch 与 caller writer，不在这些回调里创建私有 heap/
+artifact。错误 Status 仍按既有合同排除。Compute leaf proposal 已有 success allocation-free 合同，不改。
+Graph extension 升版、真实 oneDNN 直接消费者迁移与 allocator/OOM 反例属于 G106/GP41，不扩 pattern/
+kernel 或公共运行时。验证只回放 Graph、oneDNN、逐头、CUDA/三交付受影响闭包；不再重跑 Compute/
+Native 无语义变化的用例或 P1。此纠正未通过前，不把整个编译集合签为完成。
