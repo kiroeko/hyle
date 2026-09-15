@@ -711,7 +711,7 @@ struct PlanState final : util::RefCounted<PlanState> {
   container::SmallVector<util::Ref<ConstantArtifactState>, 0, mem::AllocatorRef>
       constant_artifacts;
   // Subset already owned by an earlier selected Plan in this compiled family.
-  std::size_t shared_packed_bytes = 0;
+  CompiledStorageReport shared_artifact_storage{};
   PlanSteps steps;
   container::SmallVector<Executable, 0, mem::AllocatorRef> exact_variants;
   // Lexicographic signature order -> caller's declaration index. Lookup is

@@ -514,13 +514,16 @@ Status build_profile_identity(ReportState &report, const PlanState &plan,
     route.add(constant.materialized_bytes);
   }
   route.add(plan.constant_artifacts.size());
-  route.add(plan.shared_packed_bytes);
+  route.add(plan.shared_artifact_storage.provider_persistent_bytes);
+  route.add(plan.shared_artifact_storage.packed_constant_bytes);
+  route.add(plan.shared_artifact_storage.unknown_provider_count);
   for (const auto &artifact : plan.constant_artifacts) {
     route.add(artifact->key.constant);
     route.add(artifact->key.storage);
     route.add(artifact->key.packing.format);
     route.add(artifact->key.packing.configuration);
     route.add(artifact->packed_bytes);
+    route.optional(artifact->persistent_bytes);
     route.optional(artifact->private_storage.resident_bytes);
     route.optional(artifact->private_storage.peak_bytes);
     HYLE_RETURN_IF_ERROR(route.tensor(artifact->key.description));

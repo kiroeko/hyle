@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 17};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 18};
 
 namespace detail {
 struct ConstantArtifactScope;
@@ -40,6 +40,10 @@ struct ConstantArtifactDeclaration final {
   // Must be a configured storage domain compatible with this provider target.
   mem::MemoryResourceRef storage{};
   std::size_t packed_bytes = 0;
+  // Opaque code/metadata retained by this payload, excluding packed_bytes.
+  // Like RegionArtifactProperties::persistent_bytes, unknown is not zero.
+  // This classification is independent of which allocator owns the bytes.
+  std::optional<std::size_t> persistent_bytes{};
   // Additional bounds outside the supplied allocator, including preparation,
   // failure and destruction. Excluded from the enclosing region's bounds.
   compute::ProviderCompilationStorage private_storage{};

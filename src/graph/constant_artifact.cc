@@ -63,14 +63,15 @@ Outcome ConstantArtifactCache::remember(
     PlanState &plan, const util::Ref<ConstantArtifactState> &artifact,
     ConstantArtifactView *result) noexcept {
   if (artifact->last_candidate != candidate_) {
-    if (artifact->retained_by_prior_plan &&
-        artifact->packed_bytes > SIZE_MAX - plan.shared_packed_bytes)
-      return Outcome::error(Status::ResourceExhausted(
-          "graph shared packing storage sum overflows"));
+    auto shared = plan.shared_artifact_storage;
+    if (artifact->retained_by_prior_plan) {
+      auto status = add_compiled_storage(shared, artifact->storage());
+      if (!status.ok())
+        return Outcome::error(std::move(status));
+    }
     if (!plan.constant_artifacts.try_push_back(artifact))
       return allocation_failure();
-    if (artifact->retained_by_prior_plan)
-      plan.shared_packed_bytes += artifact->packed_bytes;
+    plan.shared_artifact_storage = shared;
     artifact->last_candidate = candidate_;
   }
   *result = {artifact->payload.state, artifact->packed_bytes};
@@ -112,6 +113,7 @@ Outcome ConstantArtifactCache::acquire(
     if (auto *found = entries_->find(&key)) {
       const auto &artifact = **found;
       if (artifact.packed_bytes != declaration.packed_bytes ||
+          artifact.persistent_bytes != declaration.persistent_bytes ||
           artifact.private_storage.resident_bytes !=
               declaration.private_storage.resident_bytes ||
           artifact.private_storage.peak_bytes !=
@@ -165,6 +167,7 @@ Outcome ConstantArtifactCache::acquire(
   artifact->key = key;
   artifact->private_storage = bounds;
   artifact->packed_bytes = declaration.packed_bytes;
+  artifact->persistent_bytes = declaration.persistent_bytes;
   artifact->target = target;
   auto status = factory(context, source, declaration.storage, plan.allocator,
                         &artifact->payload);

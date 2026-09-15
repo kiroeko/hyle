@@ -263,6 +263,7 @@ struct PackingProbe final {
   hyle::compute::ProviderCompilationStorage bounds{16, 16};
   std::size_t bytes = 16;
   std::size_t extra_private_bytes = 0;
+  bool unknown_persistent = false;
   bool key_per_node = false;
   bool inconsistent_second_request = false;
   bool invalid_constant = false;
@@ -942,7 +943,15 @@ compile_packed_region(RegionProbe &probe, const RegionCompileRequest &request,
   if (packing.second_storage.valid() && request.nodes[0].ordinal() != 0)
     resource = packing.second_storage;
   hyle::graph::ConstantArtifactDeclaration declaration{
-      key, resource, packing.bytes, packing.bounds};
+      .key = key,
+      .storage = resource,
+      .packed_bytes = packing.bytes,
+      .persistent_bytes =
+          packing.unknown_persistent
+              ? std::nullopt
+              : std::optional<std::size_t>{sizeof(PackedWeights) +
+                                           packing.extra_private_bytes},
+      .private_storage = packing.bounds};
   hyle::graph::ConstantArtifactView first, second;
   const auto constant =
       packing.invalid_constant ? request.inputs[0] : request.inputs[1];
@@ -7925,13 +7934,86 @@ TEST(GraphPacking, OpaqueMetadataCannotDisappearFromCompiledStorage) {
   auto context = make_context(probe);
   const auto graph = make_packing_graph();
   auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
   const std::array bindings{hyle::graph::ConstantBinding{graph.weight, source.view.as_const()}};
-  auto compiled = hyle::graph::compile(graph.graph, context,
-      {.constants = bindings,
-       .compiled_storage = {.max_bytes = sizeof(PackedRegion) + 16},
-       .operation_fallback = OperationFallbackPolicy::kReject});
-  EXPECT_FALSE(compiled);
+  CompileOptions options{
+      .constants = bindings,
+      .compiled_storage = {.max_bytes = sizeof(PackedRegion) + 16},
+      .operation_fallback = OperationFallbackPolicy::kReject};
+  EXPECT_FALSE(hyle::graph::compile(graph.graph, context, options));
   EXPECT_GT(packing.factories.load(), 0U);
+  options.compiled_storage.max_bytes += sizeof(PackedWeights) + 4096;
+  {
+    auto exact = hyle::graph::compile(graph.graph, context, options);
+    ASSERT_TRUE(exact) << exact.error().message();
+    EXPECT_EQ(exact->report.compiled_storage().total_bytes(),
+              options.compiled_storage.max_bytes);
+  }
+  packing.unknown_persistent = true;
+  auto unknown = hyle::graph::compile(graph.graph, context, options);
+  ASSERT_FALSE(unknown);
+  EXPECT_TRUE(unknown.error().IsFailedPrecondition())
+      << unknown.error().message();
+  options.compiled_storage.unknown = hyle::graph::UnknownStoragePolicy::kAllow;
+  {
+    auto partial = hyle::graph::compile(graph.graph, context, options);
+    ASSERT_TRUE(partial) << partial.error().message();
+    EXPECT_EQ(partial->report.compiled_storage().unknown_provider_count, 1U);
+    EXPECT_FALSE(partial->report.compiled_storage().total_bytes());
+  }
+  EXPECT_EQ(packing.factories.load(), packing.destroys.load());
+}
+
+TEST(GraphPacking, FamilyCapsChargeSharedOpaqueAndPackedStorageOnlyOnce) {
+  PackingProbe packing;
+  packing.extra_private_bytes = 4096;
+  packing.bounds = {4112, 4112};
+  RegionProbe probe;
+  configure_packing(probe, packing);
+  auto context = make_context(probe);
+  auto graph = make_packing_graph(true);
+  auto source = make_tensor(row(4));
+  write(source, std::array{1.F, 2.F, 3.F, 4.F});
+  const std::array bindings{
+      hyle::graph::ConstantBinding{graph.weight, source.view.as_const(),
+                                   hyle::graph::ConstantPolicy::kMaterialize}};
+  const std::array a{hyle::graph::ShapeBinding{graph.rows, 2}};
+  const std::array b{hyle::graph::ShapeBinding{graph.rows, 3}};
+  const std::array variants{hyle::graph::ExactShapeVariant{a},
+                            hyle::graph::ExactShapeVariant{b}};
+  CompileOptions options{
+      .shape_policy = hyle::graph::CompileShapePolicy::kDeclaredDomain,
+      .exact_variants = variants,
+      .constants = bindings,
+      .compilation_storage = hyle::graph::CompilationStorageLimits{},
+      .max_region_proposals = 8,
+      .max_region_proposals_per_provider = 4,
+      .max_region_proposal_nodes = 16};
+  {
+    auto measured = hyle::graph::compile(graph.graph, context, options);
+    ASSERT_TRUE(measured) << measured.error().message();
+    const auto total = measured->report.total_compiled_storage();
+    EXPECT_EQ(total.provider_persistent_bytes,
+              measured->report.compiled_storage().provider_persistent_bytes +
+                  2 * sizeof(PackedRegion) + sizeof(PackedWeights) + 4096);
+    EXPECT_EQ(total.packed_constant_bytes, 16U);
+    options.compiled_storage.max_bytes = total.known_bytes();
+    const auto usage = *measured->report.compilation_storage();
+    options.compilation_storage->max_resident_bytes = usage.resident_bytes;
+    options.compilation_storage->max_peak_bytes = usage.peak_bytes;
+  }
+  {
+    auto exact = hyle::graph::compile(graph.graph, context, options);
+    ASSERT_TRUE(exact) << exact.error().message();
+    EXPECT_EQ(exact->report.total_compiled_storage().total_bytes(),
+              options.compiled_storage.max_bytes);
+  }
+  --options.compiled_storage.max_bytes;
+  auto rejected = hyle::graph::compile(graph.graph, context, options);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted())
+      << rejected.error().message();
+  EXPECT_EQ(packing.factories.load(), packing.destroys.load());
 }
 
 TEST(GraphPacking, EveryMetadataAllocationFailureReleasesPackingAndCanRetry) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <new>
@@ -11,6 +12,43 @@
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::graph::detail {
+
+inline constexpr std::array kCompiledStorageFields{
+    &CompiledStorageReport::materialized_constant_bytes,
+    &CompiledStorageReport::provider_persistent_bytes,
+    &CompiledStorageReport::packed_constant_bytes,
+    &CompiledStorageReport::unknown_provider_count};
+
+inline Status subtract_compiled_storage(CompiledStorageReport &total,
+                                        CompiledStorageReport shared) noexcept {
+  for (const auto field : kCompiledStorageFields)
+    if (shared.*field > total.*field)
+      return Status::Internal("graph shared storage exceeds route storage");
+  for (const auto field : kCompiledStorageFields)
+    total.*field -= shared.*field;
+  return Status::Ok();
+}
+
+inline Status add_compiled_storage(CompiledStorageReport &total,
+                                   CompiledStorageReport part,
+                                   bool shared_constants = false,
+                                   CompiledStorageReport shared = {}) noexcept {
+  if (shared_constants)
+    part.materialized_constant_bytes = 0;
+  HYLE_RETURN_IF_ERROR(subtract_compiled_storage(part, shared));
+  for (const auto field : kCompiledStorageFields) {
+    if (part.*field > SIZE_MAX - total.*field)
+      return Status::ResourceExhausted("graph compiled storage sum overflows");
+    total.*field += part.*field;
+  }
+  if (total.provider_persistent_bytes >
+          SIZE_MAX - total.materialized_constant_bytes ||
+      total.packed_constant_bytes > SIZE_MAX -
+                                        total.materialized_constant_bytes -
+                                        total.provider_persistent_bytes)
+    return Status::ResourceExhausted("graph compiled storage sum overflows");
+  return Status::Ok();
+}
 
 // Graph owns only family/lifetime composition. Mem owns the strict byte
 // admission algorithm. Each successful metadata allocation retains this

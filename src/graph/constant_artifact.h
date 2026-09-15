@@ -45,10 +45,16 @@ struct ConstantArtifactState final : util::RefCounted<ConstantArtifactState> {
   compute::ProviderCompilationStorage private_storage;
   ConstantArtifactPayload payload;
   std::size_t packed_bytes = 0;
+  std::optional<std::size_t> persistent_bytes;
   ExecutionTargetId target;
   // Mutated only by the unpublished, single-threaded family compilation.
   std::size_t last_candidate = 0;
   bool retained_by_prior_plan = false;
+  CompiledStorageReport storage() const noexcept {
+    return {.provider_persistent_bytes = persistent_bytes.value_or(0),
+            .packed_constant_bytes = packed_bytes,
+            .unknown_provider_count = persistent_bytes ? 0U : 1U};
+  }
 };
 
 struct ConstantArtifactKeyHash final {

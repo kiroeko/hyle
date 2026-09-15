@@ -223,7 +223,9 @@ Region Provider 可通过下述入口共享兼容 packing，未接入的 Provide
 outcome；非 prepared 应按原 kind 传播，不能把 factory 的真实 OOM 当成可以换路线的预算拒绝。
 
 `ConstantArtifactDeclaration` 声明非零 `ConstantPackingKey::format`、全部配置 discriminator、已登记的
-storage、packed bytes 和所供 allocator 之外的 private resident/peak 上界。Graph 自动绑定本次 family、
+storage、packed bytes、独立的 optional persistent metadata bytes，以及所供 allocator 之外的 private
+resident/peak 上界。persistent 未知不等于零；它是制品分类计数，不能拿 private peak 代替或与完整编译
+配额再相加。Graph 自动绑定本次 family、
 具体 Provider instance、logical constant/描述和 storage；同 key 不得改大小或上界。两个 token 数量不同
 的 exact regions 可以复用同一权重格式，但不同格式、设备实例或 storage 不误共享。普通 Graph 用户
 无需设置缓存或添加开关；采用该入口的是 Provider 作者。
@@ -236,7 +238,7 @@ factory 仅在 miss 执行，返回 `ConstantArtifactPayload{state, destroy}`，
 
 受管 packing 不再重复填写 `RegionArtifactProperties` 的 persistent/packed 字段或 region 自身 private
 compilation bounds；allocator 请求已自动计费，额外私有上界由 declaration 单独准入。单路线报告计它
-实际使用的 unique packed bytes，family 总报告只计实际共享 owner 一次；step 的 packed 字段仍只表示
+实际使用的 unique packed/persistent bytes（含 unknown），family 总报告只计实际共享 owner 一次；step 的 packed 字段仍只表示
 该 step 独占的 Provider packing。编译候选放弃时，先销毁 region 再释放共享引用；发布后没有热 cache。
 
 ### 限制编译制品的常驻存储

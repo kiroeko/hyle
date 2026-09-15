@@ -29,6 +29,8 @@
 namespace hyle::graph {
 namespace {
 
+using detail::add_compiled_storage;
+
 Status plan_allocation_failure() noexcept {
   return Status::ResourceExhausted("graph plan metadata allocation failed");
 }
@@ -4006,40 +4008,11 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
              const detail::GraphState &logical,
              const CompileProfileContext *profile_context) noexcept;
 
-Status add_compiled_storage(CompiledStorageReport &total,
-                            CompiledStorageReport part,
-                            bool shared_constants = false,
-                            std::size_t shared_packed_bytes = 0) noexcept {
-  if (shared_constants)
-    part.materialized_constant_bytes = 0;
-  if (shared_packed_bytes > part.packed_constant_bytes)
-    return Status::Internal("graph shared packing exceeds route packing");
-  part.packed_constant_bytes -= shared_packed_bytes;
-  constexpr std::array fields{
-      &CompiledStorageReport::materialized_constant_bytes,
-      &CompiledStorageReport::provider_persistent_bytes,
-      &CompiledStorageReport::packed_constant_bytes,
-      &CompiledStorageReport::unknown_provider_count};
-  for (const auto field : fields) {
-    if (part.*field > SIZE_MAX - total.*field)
-      return Status::ResourceExhausted("graph compiled storage sum overflows");
-    total.*field += part.*field;
-  }
-  if (total.provider_persistent_bytes >
-          SIZE_MAX - total.materialized_constant_bytes ||
-      total.packed_constant_bytes > SIZE_MAX -
-                                        total.materialized_constant_bytes -
-                                        total.provider_persistent_bytes)
-    return Status::ResourceExhausted("graph compiled storage sum overflows");
-  return Status::Ok();
-}
-
 Result<CompiledStorageReport>
 compiled_storage(const detail::PlanState &plan) noexcept {
   CompiledStorageReport total;
   for (const auto &artifact : plan.constant_artifacts)
-    HYLE_RETURN_IF_ERROR(add_compiled_storage(
-        total, {.packed_constant_bytes = artifact->packed_bytes}));
+    HYLE_RETURN_IF_ERROR(add_compiled_storage(total, artifact->storage()));
   for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
     if (const auto *buffer = plan.owned_constant(slot))
       HYLE_RETURN_IF_ERROR(add_compiled_storage(
@@ -4066,16 +4039,14 @@ compiled_storage(const detail::PlanState &plan) noexcept {
 Status check_compiled_storage(CompiledStorageReport storage,
                               CompiledStorageLimits limits,
                               bool shared_constants,
-                              std::size_t shared_packed_bytes) noexcept {
+                              CompiledStorageReport shared) noexcept {
   if (limits.max_bytes == SIZE_MAX)
     return Status::Ok();
   // A child retains the same canonical owner, already charged to the parent.
   // Its standalone report still includes these independently retained bytes.
   if (shared_constants)
     storage.materialized_constant_bytes = 0;
-  if (shared_packed_bytes > storage.packed_constant_bytes)
-    return Status::Internal("graph shared packing exceeds route packing");
-  storage.packed_constant_bytes -= shared_packed_bytes;
+  HYLE_RETURN_IF_ERROR(detail::subtract_compiled_storage(storage, shared));
   if (storage.known_bytes() > limits.max_bytes)
     return Status::ResourceExhausted(
         "graph compiled storage budget is exceeded");
@@ -4141,7 +4112,7 @@ void swap_route_state(detail::PlanState &left,
   swap(left.steps, right.steps);
   swap(left.artifact_charges, right.artifact_charges);
   swap(left.constant_artifacts, right.constant_artifacts);
-  swap(left.shared_packed_bytes, right.shared_packed_bytes);
+  swap(left.shared_artifact_storage, right.shared_artifact_storage);
   swap(left.segments, right.segments);
   swap(left.segment_dependencies, right.segment_dependencies);
   swap(left.serialization_edges, right.serialization_edges);
@@ -4210,7 +4181,7 @@ Status prepare_placed_steps(
     plan.steps.clear();
     plan.artifact_charges.clear();
     plan.constant_artifacts.clear();
-    plan.shared_packed_bytes = 0;
+    plan.shared_artifact_storage = {};
     HYLE_RETURN_IF_ERROR(packing.begin_candidate());
     plan.region_count = 0;
     if (attempted) {
@@ -4242,9 +4213,10 @@ Status prepare_placed_steps(
         status = std::move(storage).error();
       } else {
         storage_report = *storage;
-        status = check_compiled_storage(
-            storage_report, options.compiled_storage,
-            static_cast<bool>(plan.shared_constants), plan.shared_packed_bytes);
+        status =
+            check_compiled_storage(storage_report, options.compiled_storage,
+                                   static_cast<bool>(plan.shared_constants),
+                                   plan.shared_artifact_storage);
       }
       // No user work has been accepted. As with the final workspace gate,
       // reject this complete route, not the provider or the whole search.
@@ -8512,7 +8484,7 @@ Result<CompiledGraph> compile_family(const Graph &graph,
         report.total_compiled_storage, child.report.compiled_storage(),
         static_cast<bool>(plan.shared_constants),
         detail::ExecutableAccess::state(child.executable)
-            ->shared_packed_bytes));
+            ->shared_artifact_storage));
     if (!plan.exact_variants.try_push_back(std::move(child.executable)) ||
         !report.exact_variants.try_push_back(std::move(child.report)))
       return std::unexpected(plan_allocation_failure());
