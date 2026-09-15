@@ -33,7 +33,7 @@
 不同，Vulkan 还有显式内存可见性。**本次不签基础实现完成或性能通过，不重估到 90%。**
 
 长期合同已写回 [Compute](../../../architecture/compute-design.md#24-hyle-保留全局调度权provider-只拥有局部制品)
-与 [Graph](../../../architecture/graph-design.md#10-首轮纵切和停止点)。纵切的具体顺序只维护在
+与 [Graph](../../../architecture/graph-design.md#9-基础验收与停止点)。本轮历史纵切依据见
 [总计划](compute-graph-route-unification-audit.md#决策与纵切的对应关系)，不复制第二套模块状态。
 
 ### 四条路线共用什么、不强行统一什么

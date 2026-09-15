@@ -182,8 +182,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 ## 阅读优先级（按问题域）
 
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
-- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考），Apple MLX-first + 原生
-  Metal custom-kernel/interop 与 NVIDIA CUDA + vendor providers（两条主要平台栈），Vulkan/MoltenVK（正式消费级
+- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考），Apple MLX-Metal region / 同-runtime
+  custom kernel / 独立原生 Metal 与 NVIDIA CUDA + vendor providers（两条主要平台栈），Vulkan/MoltenVK（正式消费级
   保底/renderer 路线），HIP/ROCm（当前无限期 defer；只在有 AMD 设备、明确 consumer 和维护预算时
   重新准入），oneDNN、ONNX
   Runtime、TensorRT、PJRT/IREE（provider/compiled graph 参考），Seastar/libuv/nginx（异步服务与 IO）。
@@ -196,7 +196,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 借**多年解决的通用难题**（Highway 数学/向量机制、合格 provider 算子、boost.context 汇编、
 liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 算法/API、sched、Graph 编译组合、HYLE
 胜出 kernel）。ggml、MLX、oneDNN 等只是候选 provider，必须连同 copy、layout、线程和生命周期在真实
-region 上裁决，不能按库名预先写成“必借”。所有借入第三方一律封 adapter、不外露其类型。
+region 上裁决，不能按库名预先写成“必借”。通用接口不意外泄漏第三方类型；确有需要的 native/专家
+互操作由 owning adapter 明确公开并隔离依赖，不能用“一律不外露”否定零拷贝与 native kernel 接入。
 
 ### 关键区分：叶子计算与运行时接管
 
@@ -205,7 +206,9 @@ region 上裁决，不能按库名预先写成“必借”。所有借入第三�
 | **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic；部分库仍自带不可替换的内部并行 | oneDNN、MLX provider、Metal/CUDA kernels、Highway、ggml、XXH3 | ✅ **逐能力裁决后借**（每个 adapter 明确线程、storage 与 completion；不能一概声称注入 HYLE pool）|
 | **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | 默认 `ROUTED`；只有不可拆的 provider region 有真实 material 价值时才隔离接入，不成为第二个公共 runtime |
 
-**oneTBB 确实是加速库——但它加速的是"运行时层"，恰是 HYLE 要独占的那一层。** 它的 `parallel_for` 离不开 task arena（自带 work-stealing 调度器）；引它 = HYLE fiber 调度器 + TBB 调度器**两套在同一批核上抢线程、过度订阅、cache 争抢**——正是 HYLE 存在要消灭的"双调度器阻抗失配"（同拒 boost.fiber/asio 的理由）。所以 oneTBB scheduler/queue、oneDPL **边界外**；只 oneTBB 的 allocator pool 设计作 mem/ 参考。
+不把 oneTBB/oneDPL 作为第二套公共调度产品；但“依赖一个 runtime”不必然导致过度订阅，风险取决于
+线程数、嵌套和并发使用。HYLE 控制整体片段/资源边界，不要求亲自调度第三方内部每个 kernel。确有
+价值的 Provider-owned runtime 按下述规则准入，不能因抽象洁癖排除，也不能忽略真实 handoff 成本。
 
 **CPU 数据并行怎样组合？** HYLE-native kernel 使用 HYLE Sched；第三方 provider 必须声明能否注入外部
 线程池、限制线程数或只能自管。Graph compiler 按 region 大小、外层并发和 handoff 成本选择路线，禁止
@@ -217,7 +220,8 @@ workload 裁决的策略，不写成适用于所有 shape 的永久规则。指�
 
 凡库自带线程、event loop、scheduler 或 graph runtime，都必须进入 capability/cost/teardown 合同。优先
 借叶子计算；若成熟 provider 只有连 runtime 才能提供 material 优势，可以作为 region island 接入，但
-必须由 HYLE Sched 进行资源 admission/隔离，禁止无界嵌套和隐藏 shutdown。检查源码中的线程创建、
+必须有真实 owner 负责资源 admission/隔离，按需复用 Sched；直接 Compute 不因此强制取得 Graph 或
+额外线程池。禁止无界嵌套和隐藏 shutdown。检查源码中的线程创建、
 `run/loop/executor/pool`、signal/timer、全局 cache 与 allocator。
 
 | 隐藏运行时来源 | 处置 |
@@ -226,7 +230,7 @@ workload 裁决的策略，不写成适用于所有 shape 的永久规则。指�
 | 异步/IO 运行时（asio/libuv/seastar 整框架）| 只借 syscall 层（liburing），事件循环自造 |
 | 分配器后台线程（mimalloc/jemalloc 的 purge 线程）| 配置关掉或纳管，别让它自起线程 |
 | ggml 内部线程 | 不伪造注入；adapter 复验当前 threadpool API，按 region/外层并发选择限线程、独占或隔离，并把决策写入 compile report |
-| 其他算子库内部线程（如未来 oneDNN） | adapter 落地前逐项验证外部 pool 接口；无证据不得宣称已注入 HYLE scheduler |
+| 其他算子库内部线程（如 oneDNN） | 按所选版本/backend 验证外部 pool 接口；一条已验证组合不签所有平台或其它 runtime |
 | 日志/profiler 异步刷盘（spdlog async / tracy server）| 借设计不借库，或用 HYLE 调度器驱动 |
 | 协程库自带调度器 | 只用语言级 `co_await`，调度归 HYLE sched |
 

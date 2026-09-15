@@ -2,7 +2,7 @@
 
 > 本页描述 foundation 迁移中的**当前实现**，不是 foundation 已收口的声明。当前状态只以
 > [`module-status.json`](../implementation/module-status.json) 为准；packed 制品共享的验证与终局范围见
-> [Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)。当前已经实现
+> [当前架构复核](../implementation/tasks/compute/six-point-architecture-review.md)。当前已经实现
 > exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream

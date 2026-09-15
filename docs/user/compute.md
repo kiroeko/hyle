@@ -7,6 +7,9 @@
 > command capture 基础运行时，但尚未签发通用 CUDA operation provider。Apple MLX/Metal、Vulkan/SPIR-V
 > 与其它 provider 是后续独立纵切。HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
+四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
+研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。
+
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。

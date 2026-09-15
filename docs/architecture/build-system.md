@@ -98,7 +98,13 @@ Compute 的 CPU/CUDA/Apple/Vulkan 构建配置只组合真实 backend/provider f
 usage requirement 才传播，不能用消费者宏改变同一公开对象布局。SDK 版本/feature 集在 configure 中
 选定并记录，交付说明保留对应要求；实际模型/device/shape 路线在准备阶段绑定，不是每次执行的 CMake/宏选择。
 尚未实现的路线不为文档先创建空 option/target；具体边界见
-[Compute 四路线设计](compute-design.md#35-共同合同与四套可独立特化的实现)。
+[Compute 四路线设计](compute-routes.md#1-隔离边界)。
+
+Compute/Graph 的产品聚合按所选路线生成真实依赖闭包，不固定附带 CPU 算子或 oneDNN；公共语义核
+不引入任何 GPU SDK。隔离继续传入 vendor backend 选择，不能只禁用 HYLE 外层 target 而仍构建依赖
+全家桶。MLX 等依赖自己的 CPU/Metal/CUDA、tests/examples、nested FetchContent 与最低部署版本
+也须由 owning adapter 核对；共享源码缓存不共享跨平台/flags 的构建产物。vendor 所需 host 基础代码
+不等于允许隐藏 CPU 模型 fallback。source/static/shared 都验证选中与未选路线的头、链接和 runtime 闭包。
 
 ## 三种 C++ 交付
 

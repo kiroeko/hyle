@@ -43,19 +43,19 @@
 - [CUDA system SDK 依赖投影](build/build-cuda-system-sdk-projection-v1.md)：让 CUDA 专用公开头与 target 在
   source/static/shared 三种交付中由同一 system-SDK `find_dependency` 合同承载。
 
-当前 Compute/Graph 架构审计：
+Compute/Graph 研究与追溯：
 
-- [第三方广度、全局路由与 foundation lock](compute/compute-graph-route-unification-audit.md)：记录 Provider
-  外包、渐进式 HYLE 胜出路线、foundation-v1 架构基线、CUDA Q4 MatMul 纵切、现有 seam 的精确差距和当前
-  goal 顺序；
-- 当前六个 `AUDITED` owner 的有限施工卡：
+- [六项架构复核](compute/six-point-architecture-review.md)：本轮路线隔离、Apple/多 Provider 接入、
+  渐进路由、有限实验与文档清理；不自动恢复产品施工或旧 goal。
+- [历史决策与证据索引](compute/compute-graph-route-unification-audit.md)：不再保存第二份百分比/执行队列。
+- 前轮基础施工记录（其中部分已被后继卡替代，不能按本列表启动）：
   [ComputeOps identity](compute/compute-ops-v2-stable-custom-identity.md)、
   [Compute proposal](compute/compute-v8-route-proposal-contract.md)、
   [Graph foundation](compute/graph-v9-foundation-routing.md)、
   [Native route](compute/compute-provider-native-v2-foundation-route.md)、
   [oneDNN route](compute/compute-provider-onednn-v5-foundation-route.md) 与
   [oneDNN node-set region](compute/graph-provider-onednn-v4-node-set-foundation.md)。
-  每张卡只授权其冻结 ledger；registry 仍是唯一当前状态。
+  当前 owner、阶段与有效 record 只按 registry，不按历史导航推断。
 
 当前全库性能工作：
 

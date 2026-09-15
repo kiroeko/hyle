@@ -1,0 +1,17 @@
+ProductName:		macOS
+ProductVersion:		27.0
+BuildVersion:		26A428
+Mac16,12
+Apple clang version 21.0.0 (clang-2100.3.34.2)
+Target: arm64-apple-darwin27.0.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+MLX=0.32.2 GPU=Metal bits=4 group=64 K=256 H=256 tolerance=1e-4
+M=1 run=0 traces=1 max_abs_error=1.33204808295e-09 retained=PASS result=PASS
+M=1 run=1 traces=1 max_abs_error=1.0358978458e-09 retained=PASS result=PASS
+M=1 run=2 traces=1 max_abs_error=1.61958440322e-09 retained=PASS result=PASS
+M=7 run=0 traces=1 max_abs_error=1.8417804044e-09 retained=PASS result=PASS
+M=7 run=1 traces=1 max_abs_error=1.8417804044e-09 retained=PASS result=PASS
+M=7 run=2 traces=1 max_abs_error=2.01876169427e-09 retained=PASS result=PASS
+result=PASS invalid_K=REJECTED_BEFORE_EVAL intermediate_host_waits=0 timing=NOT_RUN
+60e13167bcc5a5163c6c9585b2aef21535095f8127f755072d978d997e562bf9  src-db01de97/evidence/correctness/compute-apple-route-review/mlx_quantized_lifetime.cc

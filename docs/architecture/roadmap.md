@@ -65,59 +65,34 @@ direct consumer -> Compute op/kernel -> backend/provider
 Graph IR -> Graph compiler -> internal graph plan -> Compute compiled regions
 ```
 
-Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass 的用户不取得图编译器。Graph
-依赖 Compute 的 operation/provider 合同，但 provider 选择、全图 placement、copy/sync、liveness 与 alias
-由 Graph compile 决定。编译结果公开为不可变可共享的 `graph::Executable`，每次运行状态放在独占的
-`graph::Invocation`。详细合同见 [Compute 设计](compute-design.md)与 [Graph 设计](graph-design.md)。
+Compute 永远不依赖 Graph；只运行单 op、kernel 或 Vulkan compute pass 的用户不取得图编译器。
+Graph 拥有逻辑图、region 边界、copy/sync、liveness 与 alias；每条路线可以独立实现 compiler 与原生
+执行器，Provider 拥有片段内的实际计算。不可变可共享的制品与每次运行的可变状态分开，不把旧类名、
+对象布局或通用 segment loop 当重构前提。详细合同见 [Compute](compute-design.md) 与 [Graph](graph-design.md)。
 
 推理采用 CPU、CUDA、MLX/Metal、Vulkan 四条独立计算路线，模型级 CPU+GPU 联合计算不属于 HYLE
 范围，不保留为延期任务。host 提交/传输/同步及同 GPU 多 Provider 组合仍保留。共同的是图语义、
 资源/完成责任与冷选路合同，不强制四套原生实现复用同一执行器；构建期裁剪、准备期绑定、执行期固定。
 
-异构资源固定分成 execution target、storage domain/resource 和 execution lane 三条轴：node placement
-选 target，值/workspace 选 storage，命令按 target-bound lane/Queue 排序；同一 target/storage 组合可以有
-多条 compute/transfer/communication lane，capture 是 replay mode 而不是 lane。多 lane 的 happens-before
-先于最终 workspace/alias 规划。`execution lane` 是 Compute core 与 Graph plan 的共同语义，不单独制造
-用户产品或 factor。Provider 则
-明确分为使用 HYLE Queue/resource 的 shared-runtime 路线，以及自有 allocator/stream/context、通过显式
-boundary 与 Completion bridge 接入的 delegated-runtime island；每个 delegated provider 仍是独立 factor。
+谁计算、数据由谁持有、沿哪条时间线执行必须分清，但不是要求普通用户拼三套 ID 容器。真实资源依赖
+先于 workspace/alias；共享内存不取消同步。Provider 可以借用原生资源，也可以自持 runtime；它的
+replay 是 prepared 还是 managed 单独声明，不能从 runtime owner 推导。直接 Compute 同样可使用
+独立 runtime，不为单个计算强制依赖 Graph。
 
-runtime ownership 与 replay 成本是两条轴：prepared 要求完整路线无热态建图/分配，managed 如实披露
-Provider 内部执行准备。HYLE 自己的计划始终预绑定、无热态搜索/JIT；普通用户可选择 prepared-only。
-typed custom execution 必须能从三种 C++ 交付接入，不以私有 Provider SPI 或仅有 schema identity 代替。
-有限派生 shape、资源副作用域、跨 variant 内存共享与有界优化的合同分别由 Compute/Graph 设计持有，
-不为这六项修正创建新公共产品、重复 runtime 或无真实依赖理由的 factor。
+原生调用、完整 Provider region、Provider 支持的内扩展都是合法接法。优先保留成熟完整实现，再按
+完整性能增量替换；MLX 内的 HYLE Metal kernel 不强制切出一个额外 runtime。ggml-CUDA、ggml-Metal、
+ggml-Vulkan 与 MLX-Metal 按各自 owner 分别准入，ggml 没有因此变成 MLX Provider。Provider 生成的
+输出按真实 owner 导出，不为旧 out-buffer 形状强制复制。三种 C++ 交付都须有可用的 custom execution。
 
-Provider 是 HYLE Operation/region 到实际制品的冷路径翻译器，不是第二套公共算子图。叶函数库产出
-prepared op；自己 host 图的库产出 provider-native compiled region，Graph 仍是外层 partition/placement
-owner。有公开 lowering/Primitive 扩展的 runtime 也可在编译前纳入 HYLE kernel，形成同 runtime 的完整
-region 候选；不强制拆图或修改黑盒内部。Provider 生成输出按真实 owner 导出，不强制 HYLE 影子复制。
-把第三方加入依赖锁或链接制品不算获得能力，adapter factor 必须实际完成翻译、资源和 Completion
-合同。ggml 的 CPU、CUDA、Metal、Vulkan carrier 因 runtime owner 不同分别审计；当前 registry 中未带
-backend 后缀的 `compute_provider_ggml` 只代表既有 CPU 审计身份，不能被解释为所有 ggml backend 或
-通用 ggml 产品已经交付。
+构建隔离一直到 vendor backend，不让 Apple 产品固定拉入 CUDA SDK 或 CPU/oneDNN 算子包。Apple
+和 NVIDIA 是主优化方向；纯 CPU 保留完整路线；Vulkan/MoltenVK 是正式 portability 路线，不冒充
+Apple 原生或未测硬件的性能资格。HIP/ROCm 当前不实现。细节只在[四路线设计](compute-routes.md)维护。
 
-新 Provider 先验证具体成熟 API 的格式、精度、资源和失败边界，再扩大适配。Q4 冷展开到 F32 的
-互操作程序不算压缩量化路线；输入临时量化与累加精度也不能混为一谈。接入方式与完整成本约束只在
-[Compute 原始需求](compute-design.md#11-原始需求与架构取舍)和 [Graph 选路](graph-design.md#61-workload-intentroute-profile-与有限搜索)
-维护；性能资料接口存在不等于真实 best-of 选路已资格化。
-
-Apple Silicon 栈（MLX-first provider + 原生 Metal backend/custom-kernel escape hatch）和 NVIDIA 栈
-（CUDA backend + 经审计的 vendor/ggml/HYLE provider）是首要优化目标。Vulkan 是面向广泛消费级设备与
-renderer interop 的正式保底路线：Windows/Linux 走原生 Vulkan，Apple 走 MoltenVK portability；它不
-是实验，也不替代 Apple 原生性能路线。HIP/ROCm 在没有 AMD 真机、明确消费者与维护预算的情况下
-无限期不纳入当前产品，不创建空 backend 或构建开关；Vulkan 不冒充 ROCm 资格。
-
-Compute/Graph 当前先通过一个共同的 **foundation implementation gate**，再扩展平台和算子广度：
-leaf/可收缩 node-set region 同池路由与完整成本、exact + bounded/guarded shape domain、CPU one-op/oneDNN
-shared region、CUDA 多 lane/exact capture + Q4 MLP、Apple MLX region + 原生 Metal kernel 组合，
-以及 Vulkan 最小 SPIR-V/资源同步纵切都必须在同一对象模型上成立。真实 CPU executor、跨运行时失败
-回收、性能 profile 消费和各 backend 交付也是基础资格，不全部拖到完整模型阶段。只有该 gate 的
-candidate 完成，后续 provider、Vulkan 算子广度、Transformer 和系统算子目录才可横向推进。当前有限工作顺序只维护在
-[Compute/Graph 路由审计](../implementation/tasks/compute/compute-graph-route-unification-audit.md)，本页不
-复制一张容易过期的编号状态表。
-本轮四路线[有限研究已形成重构基线](../implementation/tasks/compute/four-route-architecture-decision.md)，
-待用户审视后另开实现卡；两个独立原型不是上述 foundation gate 通过，也不自动恢复旧大 goal。
+基础完成须分别通过路线隔离、真实计算/Provider 组合、资源/同步/错误寿命、三交付与公平完整性能。
+有限架构实验不签这个 gate，也不锁定旧公共对象。当前研究和缺口见
+[六项架构复核](../implementation/tasks/compute/six-point-architecture-review.md)；历史输入见
+[研究索引](../implementation/tasks/compute/compute-graph-route-unification-audit.md)。本页不维护进度百分比
+或第二份工作队列，研究完成也不自动恢复已暂停的大 goal。
 
 ## 依赖审查
 
@@ -142,8 +117,8 @@ owner 是否放错、公开面是否泄漏机制，以及能否提取满足质�
 实际施工顺序由中央图的拓扑、registry 中的活动状态和真实 blocker 决定，不在 architecture 维护一份
 容易过期的编号队列。对一个问题域的典型顺序是：底层 factor → 产品 façade 所需其余 factor → 直接
 消费者回放。Compute 与 Graph 的每个新纵切都必须先有真实推理或异构资源任务、能力边界和 closure
-card；它们采用“最小 Compute 合同 -> one-op Graph -> multi-op CPU -> 主要设备 -> Vulkan”的
-共同纵切，不先各自造完大全套再尝试拼接。
+card。Compute/Graph 的共同合同须接受四条原生路线的有限纵切检验，不能先把 CPU 对象写死再强迫
+其它 runtime 适配；每条路线先完成真实计算/资源旅程，再扩算子目录，不先造大全套再尝试拼接。
 
 `CLOSED` 模块只因可复现 correctness/security/lifetime 缺陷、真实消费者证明的常用能力缺口、相关
 依赖升级、公开合同/算法/交付变化，或合格同合同证据的 material 回归而重开。形成 trigger 和新 record

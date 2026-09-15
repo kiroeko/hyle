@@ -49,6 +49,7 @@ HYLE 是面向 AI 推理、异构渲染/资源流送、低延迟服务和工程�
 - [process](process-design.md)
 - [compute：异构执行与算子 provider](compute-design.md)
 - [graph：计算 DAG、编译与可复用执行计划](graph-design.md)
+- [Compute/Graph 四路线：隔离、原生资源与 Provider 接入](compute-routes.md)
 
 ## 可信度边界
 
