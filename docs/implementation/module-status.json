@@ -387,10 +387,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md",
       "candidate": "be2d8b059ca858d2e9b3393b38d2530d4eb3dbe3",
-      "summary": "compute_backend_cuda v3 CANDIDATE：同步存储操作正确等待本默认流完成，旧 gate 反例与 Windows runtime/Graph/逐头通过；Linux、sanitizer、三交付/Q4 与最终复核待完成，异步 Queue 路径未改。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md"
+      },
+      "summary": "compute_backend_cuda v3 CLOSED：同步存储完成边界修复通过 Windows/Linux 真 CUDA、受控反例、ASan/UBSan、三交付 Q4 与双 lane/capture、候选后红队；仅同步方法等待自身默认流，异步 Queue 未改，整体 foundation 仍未验收。"
     },
     {
       "module": "compute_provider_native",

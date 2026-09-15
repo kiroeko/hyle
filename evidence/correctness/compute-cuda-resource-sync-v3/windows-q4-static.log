@@ -1,0 +1,21 @@
+Start testing: Sep 15 15:36 中国标准时间
+----------------------------------------------------------
+1/1 Testing: hyle_cuda_q4_preflight
+1/1 Test: hyle_cuda_q4_preflight
+Command: "C:/hyle-scratch/cuda-q4-carrier-static-20260915/app/hyle_cuda_q4_preflight.exe"
+Directory: C:/hyle-scratch/cuda-q4-carrier-static-20260915
+"hyle_cuda_q4_preflight" start time: Sep 15 15:36 中国标准时间
+Output:
+----------------------------------------------------------
+Q4 carrier PASS M=1 N=65 K=96: Q4=3510 bytes, cold F32=24960 bytes, vendor workspace=0 bytes
+Q4 carrier PASS M=7 N=65 K=96: Q4=3510 bytes, cold F32=24960 bytes, vendor workspace=0 bytes
+Q4 carrier PASS M=33 N=65 K=96: Q4=3510 bytes, cold F32=24960 bytes, vendor workspace=98736 bytes
+<end of output>
+Test time =   0.27 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_cuda_q4_preflight" end time: Sep 15 15:36 中国标准时间
+"hyle_cuda_q4_preflight" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 15 15:36 中国标准时间

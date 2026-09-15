@@ -1,6 +1,6 @@
 # Compute CUDA backend v3：同步存储操作的实际完成边界
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
 
 - owner：`compute_backend_cuda`；baseline `85f8bbb2`；前轮证书为
   [CUDA v2](compute-backend-cuda-v2-endpoint-identity.md)，产品候选 `db164bb7`。
@@ -45,8 +45,9 @@
 所有权或调度机制。source/static/shared 均消费同一 CUDA factor 实现，用户安装 Toolkit，构建不代为下载。
 形状来自存储生命周期与 CUDA 标准，不来自 Q4 benchmark。所有旧范围保持，只有上述原子机制修复。
 
-P0：复制/填充仍 O(bytes)，新增的是同步合同要求的 O(1) driver wait 调用，无新增 allocation、lock、
-字段或数据搬运。DtoH 与直接 host 方法无新增调用；CUDA native `copy` 的同步分支明确等实际默认流。
+P0：复制/填充仍 O(bytes)，新增的是同步合同要求的常数次 driver wait 调用，无新增 HYLE allocation、lock、
+字段或数据搬运；等待耗时还取决于流的在途前缀，并不承诺 O(1) 时间或 driver 内部无锁/分配。
+DtoH 与直接 host 方法无新增调用；CUDA native `copy` 的同步分支明确等实际默认流。
 不得把未等待完成的旧实现当作等价性能 peer，也不得把本轮判为纳秒级 WIN；异步 Queue 路线不变。
 
 ## 预声明验证
@@ -87,3 +88,40 @@ runtime 15/15、late failure 1/1、逐头、Graph executable 284/284 通过。
 
 进入 CANDIDATE。Linux、sanitizer、三交付/Q4 与候选后复核尚未完成，不能将 Windows 结果扩张为最终
 CLOSED 或整体 foundation 资格。
+
+## 终局复核与裁决（2026-09-15）
+
+同一产品候选 `be2d8b05` 完成所有本轮适用门。除上述 Windows 结果外，Linux GCC 14/CUDA 13.3 的
+runtime 15/15、late failure、逐头均通过；ASan 与 UBSan 各实际回放 15/15。ASan 使用 v2 已由无 HYLE
+control 证明的 `protect_shadow_gap=0` 和唯一 `/usr/lib/wsl/lib/libcuda.so.1` LSan suppression；仍恰好
+两笔/280 字节 WSL shim 退出泄漏，没有关闭 leak detection 或忽略 HYLE 内存。
+
+Q4 原始默认路线（不加 upload-sync control）在 source、installed static、installed shared 均通过：
+M=1/7/33、N=65、K=96、各三次变化输入，native 与真实 cuBLASLt 输出正确。前两形状 vendor workspace
+为 0，M=33 为 98,736 bytes；Q4 权重 3,510 bytes，显式冷 F32 权重 24,960 bytes，额外占用没有藏掉。
+原有双 lane commands/capture consumer 在三种交付也全部通过。原始日志、缓存和复现命令集中在
+[证据索引](../../../../evidence/correctness/compute-cuda-resource-sync-v3/README.md)。
+
+候选后红队由主 agent 在实现后的独立一遍源码复核完成，不冒称另一 agent：四个调用点均在原
+ScopedPrimaryContext 内等待；helper 保留首个 native error 并观察完成状态；generic host source 在完成
+等待后才 unmap；空范围、DtoH 和直接 host 操作没有新增等待。CUDA 13.3 header 的 PTDS/PTSZ 映射使
+native 操作和 `cuStreamSynchronize(nullptr)` 匹配同一默认流模式。无新可变状态、字段或 owner；
+Queue、事件池、异步 copy/fill/capture 未改，无 Graph workaround。未发现剩余本轮产品反例。
+
+| Gate | 证据与边界 | Verdict |
+|---|---|---|
+| scope | 仅 CU30/CU31，原始 counterexample 与标准一致 | PASS |
+| architecture | Mem 同步合同由 CUDA adapter 实现；不转嫁到 Graph/用户/异步 Queue | PASS |
+| correctness | Windows/Linux 真 CUDA、受控 gate、四种存储组合、既有错误/生命周期，ASan/UBSan 如上 | PASS |
+| delivery | 三种交付的 Q4 与双 lane/capture 实际运行；SDK/consumer DLL 身份核对 | PASS |
+| usability_docs | 公开形状未改；Compute guide 明确同步初始化与 async overlap 的使用边界 | PASS |
+| red_team | 候选后的错误、默认流、unmap、并发和生命周期复核 | PASS |
+| engineering_performance | P0：常数个 native wait，无新增 HYLE metadata；不把错误提前返回当同合同速度 | PASS |
+
+Apple/CUDA 为 N/A；没有新共享可变状态，不新增 TSan。未运行 P1、GPU race sanitizer 或签发厂商
+私有 allocation 上界，不把它们写成通过。本轮仅关闭同步 adapter 修复，不关闭 Q4 Provider/Apple 或
+整个 Compute/Graph foundation。新的有效同步操作提前返回、默认流/context 配对错误或真实 async
+consumer 回归才触发本 owner 重开。
+
+同候选统一 LOC/self-check：全库 **687,918**，自实现不含测试 **126,320**；CUDA factor 实现 **2,034**
+（含 split public header）。Compute **17,000**，Graph **14,135**，合计 **31,135**；样例不计产品实现。

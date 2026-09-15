@@ -1657,3 +1657,14 @@ capture 均要求无 host wait、真实 event 依赖、变化输入重放与最�
 
 下一项的有限实现前审计见 [CUDA Q4 carrier preflight](cuda-q4-foundation-carrier-preflight.md)。先用现有
 public Queue/storage 验证量化编码与厂商路线的实际边界；不把该研究程序当作已交付 Provider 或性能胜利。
+
+### 2026-09-15：Q4 carrier 前置完成与同步存储纠正
+
+上述 preflight 已完成 source/static/shared 三种真实 CUDA 计算旅程，同时反证了 CUDA 同步存储方法
+提前返回的缺陷。[CUDA v3](compute-backend-cuda-v3-sync-resource.md) 独立修复并 CLOSED；Graph 产品没有
+增加 workaround，既有双 lane/capture 和 284 项 executable 测试继续通过。原始失败、受控反证、
+Windows/Linux/ASan/UBSan 与交付日志归该卡，不在本卡复制。
+
+当前 G107 的后继仍是 Q4 Provider/region、权重驻留与完整 route 成本的实际接入，随后 Apple probe 和
+终局 foundation gate。不要再把已完成的 direct preflight 当待办，不为这些已固定产品的文档提交重跑
+测试；也不能把前置样例中的 native dot kernel 或冷展开 cuBLASLt 当作已交付的 SOTA Q4 Provider。

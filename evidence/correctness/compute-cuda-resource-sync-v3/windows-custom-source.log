@@ -1,0 +1,18 @@
+Start testing: Sep 15 15:29 中国标准时间
+----------------------------------------------------------
+2/2 Testing: hyle_custom_cuda_sample
+2/2 Test: hyle_custom_cuda_sample
+Command: "C:/hyle-scratch/custom-execution-v10-source-consumer/cuda/hyle_custom_cuda_sample.exe"
+Directory: C:/hyle-scratch/custom-execution-v10-source-consumer
+"hyle_custom_cuda_sample" start time: Sep 15 15:29 中国标准时间
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.23 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_custom_cuda_sample" end time: Sep 15 15:29 中国标准时间
+"hyle_custom_cuda_sample" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 15 15:29 中国标准时间

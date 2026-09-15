@@ -1,0 +1,104 @@
+Start testing: Sep 15 15:33 CST
+----------------------------------------------------------
+37/39 Testing: hyle_compute_backend_cuda_header_self_contained_test
+37/39 Test: hyle_compute_backend_cuda_header_self_contained_test
+Command: "/usr/bin/python3" "/root/hyle-cuda-endpoint-v2-1644bdc2/scripts/header-self-contained.py" "--module" "compute_backend_cuda" "--include-dir" "/root/hyle-cuda-endpoint-v2-1644bdc2/include" "--cxx" "/usr/bin/g++-14" "--cxx-compiler-id" "GNU" "--cxx-frontend" "GNU" "--header-dir" "compute" "--header" "backends/cuda.h" "--extra-include-dir" "/usr/local/cuda-13.3/targets/x86_64-linux/include"
+Directory: /root/hyle-cuda-endpoint-v2-1644bdc2/build-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_header_self_contained_test" start time: Sep 15 15:33 CST
+Output:
+----------------------------------------------------------
+compute_backend_cuda C++ headers self-contained: 1
+<end of output>
+Test time =   0.56 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_header_self_contained_test" end time: Sep 15 15:33 CST
+"hyle_compute_backend_cuda_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+38/39 Testing: hyle_compute_backend_cuda_test
+38/39 Test: hyle_compute_backend_cuda_test
+Command: "/root/hyle-cuda-endpoint-v2-1644bdc2/build-cuda/bin/hyle_compute_backend_cuda_test"
+Directory: /root/hyle-cuda-endpoint-v2-1644bdc2/build-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_test" start time: Sep 15 15:33 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 15 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 15 tests from CudaBackend
+[ RUN      ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion
+[       OK ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion (368 ms)
+[ RUN      ] CudaBackend.PreservesPortableAndNativeErrorIdentity
+[       OK ] CudaBackend.PreservesPortableAndNativeErrorIdentity (0 ms)
+[ RUN      ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue
+[       OK ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue (6 ms)
+[ RUN      ] CudaBackend.EnumeratesExplicitDevices
+[       OK ] CudaBackend.EnumeratesExplicitDevices (0 ms)
+[ RUN      ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip
+[       OK ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip (2 ms)
+[ RUN      ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext
+[       OK ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext (0 ms)
+[ RUN      ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier
+[       OK ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier (4 ms)
+[ RUN      ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed
+[       OK ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed (0 ms)
+[ RUN      ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal
+[       OK ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal (0 ms)
+[ RUN      ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion
+[       OK ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion (0 ms)
+[ RUN      ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics
+[       OK ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics (2 ms)
+[ RUN      ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership
+[       OK ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership (1 ms)
+[ RUN      ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand
+[       OK ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand (0 ms)
+[ RUN      ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage
+[       OK ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage (4 ms)
+[ RUN      ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces
+[       OK ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces (16 ms)
+[----------] 15 tests from CudaBackend (408 ms total)
+
+[----------] Global test environment tear-down
+[==========] 15 tests from 1 test suite ran. (408 ms total)
+[  PASSED  ] 15 tests.
+<end of output>
+Test time =   0.48 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_test" end time: Sep 15 15:33 CST
+"hyle_compute_backend_cuda_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/39 Testing: hyle_compute_backend_cuda_late_failure_test
+39/39 Test: hyle_compute_backend_cuda_late_failure_test
+Command: "/root/hyle-cuda-endpoint-v2-1644bdc2/build-cuda/bin/hyle_compute_backend_cuda_late_failure_test"
+Directory: /root/hyle-cuda-endpoint-v2-1644bdc2/build-cuda/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_late_failure_test" start time: Sep 15 15:33 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CudaBackendLateFailure
+[ RUN      ] CudaBackendLateFailure.SurfacesNativeFailureAtCompletionBoundary
+[       OK ] CudaBackendLateFailure.SurfacesNativeFailureAtCompletionBoundary (205 ms)
+[----------] 1 test from CudaBackendLateFailure (205 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (205 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.25 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_late_failure_test" end time: Sep 15 15:33 CST
+"hyle_compute_backend_cuda_late_failure_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 15 15:33 CST
+
+compute_backend_cuda =   1.29 sec*proc
+
+headers =   0.56 sec*proc
+

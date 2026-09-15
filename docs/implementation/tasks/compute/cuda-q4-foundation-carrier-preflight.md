@@ -1,6 +1,6 @@
 # CUDA Q4 foundation：真实 carrier 前置验证
 
-## 研究卡 / AUDITED
+## 研究卡 / 完成
 
 - owner：Graph v10/G107 与总路由审计工作包 5；baseline `4fe60889`。这是基础架构的具名实验，
   不新增 shipping Provider、不为研究 sample 创建假 component 或 CLOSED 证书。
@@ -69,3 +69,15 @@ H2D 可能在最终 DMA 完成前返回，D2D 与设备 memset 也不保证 host
 唯一诊断变体增加显式 `--synchronize-upload-control`：在同步 write 后等 legacy stream，其他数值、
 kernel、算法、HYLE Queue/Completion 不变。默认路线保留原行为，control 成功也不算产品已修复；若得到
 支持，先为 CUDA backend 建立独立同步资源修复卡，再更改产品。此诊断不引入主执行路径的全设备同步。
+
+## 结果
+
+同步资源缺口已由 [CUDA v3](compute-backend-cuda-v3-sync-resource.md) 独立修复并验收。未使用诊断 flag
+的原样例在 Windows source、installed static、installed shared 三种交付全部完成 CQ1--CQ3；日志见该卡的
+证据索引。Q4 编码/负 scale/subnormal/partial tile/变化输入与 cuBLASLt 显式 stream 均真实验证，没有
+用 CPU 代替 CUDA，也没有把冷 F32 权重解码搬到 replay。Q4=3,510 bytes、expanded=24,960 bytes；
+M=1/7 的 vendor workspace 为 0，M=33 为 98,736 bytes。
+
+这个前置实验完成，结论是公开 Queue/存储可承载两种真实计算方式，且 vendor 的表示转换与更大驻留
+必须进入 Graph 冷常量制品/资源账目。正式 Provider/residence/路由、ggml runtime 边界、capture/profile
+与 Apple 的任务仍在原 foundation 卡，不因本实验通过而删除或签发整体完成。
