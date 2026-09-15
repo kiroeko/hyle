@@ -271,25 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md",
-      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
-      "summary": "compute R2 CLOSED：Direct delegated、真实 Completion 复合保活、native owning result 和 profile 清理完成；W1 14 门/三交付，WSL/两 Mac、三项 sanitizer、红队与 P0 全过；默认 native 路线仍由 R3–R6 完成。",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "compute R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md",
-      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
-      "summary": "graph R2 CLOSED：单 Device/同设备组合、并发硬约束、首个可行计划与 profile 竞赛清理完成；资源/packing/失败回滚保留，适用正确性/交付/红队/P0 全过；R3–R6 的 native 完整片段和默认规则尚待实施。",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "graph R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
     },
     {
       "module": "container_concurrent",
@@ -396,25 +386,15 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
-      "summary": "compute_backend_cpu R1 delivery CLOSED：BD1/BD2、适用平台源码/静态/动态与 relocation、真实消费、文档/红队及 P0 七门通过。仅关闭公开交付改动；R3/R4 新接口、默认规则和完整计算性能仍待验收。",
-      "candidate": "37dc8b542d52361cfa7b6cc176dc65555941e48d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "compute_backend_cpu R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
-      "summary": "compute_backend_cuda R1 delivery CLOSED：BD1/BD2、适用平台源码/静态/动态与 relocation、真实消费、文档/红队及 P0 七门通过。仅关闭公开交付改动；R3/R4 新接口、默认规则和完整计算性能仍待验收。",
-      "candidate": "37dc8b542d52361cfa7b6cc176dc65555941e48d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
+      "summary": "compute_backend_cuda R3 交付边界 SCOPED：新 CPU 默认入口改变 Compute/Graph 聚合 roots；仅绑定头归属/依赖与消费验证，不撤销 R2 机制证据，不扩 GPU runtime/P1。"
     },
     {
       "module": "compute_provider_native",
@@ -426,6 +406,16 @@
       "module": "compute_sched",
       "state": "QUEUED",
       "summary": "compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。"
+    },
+    {
+      "module": "compute_route_cpu",
+      "state": "QUEUED",
+      "summary": "compute_route_cpu R3 默认 CPU 组合身份已登记；待固定入口与真实依赖后进入 SCOPED/AUDITED，尚无 target 或实现。"
+    },
+    {
+      "module": "graph_route_cpu",
+      "state": "QUEUED",
+      "summary": "graph_route_cpu R3 默认 CPU 组合身份已登记；待固定入口与真实依赖后进入 SCOPED/AUDITED，尚无 target 或实现。"
     }
   ]
 }

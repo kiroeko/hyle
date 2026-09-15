@@ -408,6 +408,11 @@ _hyle_declare_component(compute_provider_native
 # product until its own closure round freezes API, ownership and performance.
 _hyle_declare_component(compute_sched QUEUED)
 
+# R3 default CPU composition has real route-specific dependency ownership.
+# Reserve identities before freezing API/edges; no product target exists yet.
+_hyle_declare_component(compute_route_cpu QUEUED)
+_hyle_declare_component(graph_route_cpu QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
