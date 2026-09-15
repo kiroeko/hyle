@@ -20,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 11;
+inline constexpr std::uint32_t kProviderContractVersion = 12;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {

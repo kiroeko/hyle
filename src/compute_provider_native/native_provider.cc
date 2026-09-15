@@ -1121,6 +1121,7 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               .repack_bytes = 0,
               .synchronization_count = 0,
               .dispatch_count = 1,
+              .compilation_storage = {.resident_bytes = 0, .peak_bytes = 0},
           },
       .shape_coverage = request.shape.exact()
                             ? detail::ProviderShapeCoverage::kExactPoint

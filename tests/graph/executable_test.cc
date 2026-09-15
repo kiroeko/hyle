@@ -1343,6 +1343,238 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_TRUE(moved.create_invocation().has_value());
 }
 
+TEST(GraphCompilationStorage,
+     AccountsAllocatorRequestsWithoutPersistentDoubleCharge) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context =
+      hyle::compute::cpu::create_context({.metadata_allocator = stats.get()})
+          .value();
+  const auto logical = make_transformer_graph(2, 4, 4);
+  EXPECT_FALSE(hyle::graph::CompileReport{}.compilation_storage());
+  {
+    auto plain = hyle::graph::compile(logical.graph, context).value();
+    EXPECT_FALSE(plain.report.compilation_storage());
+  }
+  const auto baseline = stats.snapshot().live_bytes;
+  auto compiled =
+      hyle::graph::compile(
+          logical.graph, context,
+          {.compilation_storage = hyle::graph::CompilationStorageLimits{}})
+          .value();
+  const auto usage = compiled.report.compilation_storage().value();
+  EXPECT_EQ(usage.resident_bytes, stats.snapshot().live_bytes - baseline);
+  EXPECT_GT(compiled.report.compiled_storage().provider_persistent_bytes, 0U);
+  EXPECT_GT(usage.peak_bytes, usage.resident_bytes);
+  EXPECT_FALSE(usage.has_unknown_storage);
+  auto report = compiled.report;
+  auto signature = compiled.executable.specialization();
+  compiled = {};
+  EXPECT_GT(stats.snapshot().live_bytes, baseline);
+  EXPECT_EQ(report.compilation_storage()->resident_bytes, usage.resident_bytes);
+  report = {};
+  EXPECT_GT(stats.snapshot().live_bytes, baseline);
+  signature = {};
+  EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+}
+
+TEST(GraphCompilationStorage, ExactLimitsAndRuntimeStorageAreIndependent) {
+  const auto logical = make_transformer_graph(2, 4, 4);
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context =
+      hyle::compute::cpu::create_context({.metadata_allocator = stats.get()})
+          .value();
+  for (bool runtime_budget : {false, true}) {
+    SCOPED_TRACE(runtime_budget);
+    CompileOptions options{.compilation_storage =
+                               hyle::graph::CompilationStorageLimits{}};
+    if (runtime_budget)
+      options.invocation_storage =
+          hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 24};
+    auto measured =
+        hyle::graph::compile(logical.graph, context, options).value();
+    const auto usage = measured.report.compilation_storage().value();
+    measured = {};
+    const auto baseline = stats.snapshot().live_bytes;
+    options.compilation_storage->max_resident_bytes = usage.resident_bytes;
+    options.compilation_storage->max_peak_bytes = usage.peak_bytes;
+    auto bounded = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(bounded) << bounded.error().message();
+    EXPECT_EQ(bounded->report.compilation_storage()->peak_bytes,
+              usage.peak_bytes);
+    std::vector<Invocation> runs;
+    for (int index = 0; index < 32; ++index) {
+      auto run = bounded->executable.create_invocation();
+      ASSERT_TRUE(run) << run.error().message();
+      runs.push_back(std::move(*run));
+    }
+    // These live runtime allocations exceed the entire compiler quota. They
+    // must use the base/runtime allocator, not the compiler's cold tracker.
+    EXPECT_GT(stats.snapshot().live_bytes - baseline, usage.peak_bytes);
+    *bounded = {};
+    runs.clear();
+    EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+    --options.compilation_storage->max_resident_bytes;
+    auto resident_failure =
+        hyle::graph::compile(logical.graph, context, options);
+    ASSERT_FALSE(resident_failure);
+    EXPECT_TRUE(resident_failure.error().IsResourceExhausted());
+    EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+    ++options.compilation_storage->max_resident_bytes;
+    --options.compilation_storage->max_peak_bytes;
+    auto peak_failure = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_FALSE(peak_failure);
+    EXPECT_TRUE(peak_failure.error().IsResourceExhausted());
+    EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+  }
+}
+
+TEST(GraphCompilationStorage, ZeroPeakAndInvalidPolicyAllocateNothing) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  const auto logical = make_rms_graph(row(4));
+  const auto before = probe.attempts.load();
+  auto zero = hyle::graph::compile(
+      logical.graph, context,
+      {.compilation_storage =
+           hyle::graph::CompilationStorageLimits{.max_peak_bytes = 0}});
+  ASSERT_FALSE(zero);
+  EXPECT_TRUE(zero.error().IsResourceExhausted());
+  auto invalid = hyle::graph::compile(
+      logical.graph, context,
+      {.compilation_storage = hyle::graph::CompilationStorageLimits{
+           .unknown = static_cast<hyle::graph::UnknownStoragePolicy>(99)}});
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  EXPECT_EQ(probe.attempts.load(), before);
+}
+
+TEST(GraphCompilationStorage, OomUnwindsTheEntireVariantFamily) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  AllocatorProbe probe{.backing = stats.get()};
+  auto context = hyle::compute::cpu::create_context(
+                     {.metadata_allocator = probe_allocator(probe)})
+                     .value();
+  const auto logical = make_bounded_rms_graph();
+  const std::array exact{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array variants{ExactShapeVariant{exact}};
+  CompileOptions options{
+      .shape_policy = CompileShapePolicy::kDeclaredDomain,
+      .exact_variants = variants,
+      .compilation_storage = hyle::graph::CompilationStorageLimits{},
+      .invocation_storage = hyle::graph::InvocationStorageLimits{}};
+  const auto baseline = stats.snapshot().live_bytes;
+  const auto before = probe.attempts.load();
+  {
+    auto complete = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(complete) << complete.error().message();
+  }
+  const auto count = probe.attempts.load() - before;
+  ASSERT_GT(count, 10U);
+  for (std::size_t index = 0; index < count; ++index) {
+    SCOPED_TRACE(index);
+    probe.fail_on_attempt = probe.attempts.load() + index;
+    {
+      auto failed = hyle::graph::compile(logical.graph, context, options);
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsResourceExhausted())
+          << failed.error().message();
+    }
+    EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+  }
+  probe.fail_on_attempt = SIZE_MAX;
+  EXPECT_TRUE(hyle::graph::compile(logical.graph, context, options));
+  EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+}
+
+TEST(GraphCompilationStorage,
+     CanonicalBytesAreSharedAndReportsDoNotOwnPayload) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context =
+      hyle::compute::cpu::create_context({.metadata_allocator = stats.get()})
+          .value();
+  HostResource resource;
+  const auto memory = hyle::mem::MemoryResourceRef(resource);
+  const Environment environment{{&context, memory}};
+  const auto logical = make_bounded_rms_graph(true);
+  auto weight = make_tensor(row(4), memory);
+  const std::array constants{
+      ConstantBinding{logical.weight, weight.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  const std::array exact{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array variants{ExactShapeVariant{exact}};
+  CompileOptions options{.shape_policy = CompileShapePolicy::kDeclaredDomain,
+                         .exact_variants = variants,
+                         .constants = constants,
+                         .compilation_storage =
+                             hyle::graph::CompilationStorageLimits{}};
+  const auto baseline = stats.snapshot().live_bytes;
+  auto compiled =
+      hyle::graph::compile(logical.graph, environment.environment(), options);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  const auto usage = compiled->report.compilation_storage().value();
+  EXPECT_EQ(usage.resident_bytes, stats.snapshot().live_bytes - baseline + 16U);
+  EXPECT_EQ(resource.live_allocations, 2U); // source and one shared copy
+  auto child = compiled->executable.exact_variant(0).value();
+  auto report = compiled->report.exact_variant(0).value();
+  EXPECT_EQ(report.compilation_storage()->resident_bytes, usage.resident_bytes);
+  EXPECT_EQ(report.compilation_storage()->peak_bytes, usage.peak_bytes);
+  *compiled = {};
+  options.compilation_storage->max_resident_bytes = usage.resident_bytes - 1;
+  auto failed =
+      hyle::graph::compile(logical.graph, environment.environment(), options);
+  ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());
+  EXPECT_EQ(resource.live_allocations, 2U);
+  child = {};
+  EXPECT_EQ(resource.live_allocations, 1U);
+  // The escaped report retains its allocator, but not the constant or Plan.
+  EXPECT_EQ(report.compilation_storage()->resident_bytes, usage.resident_bytes);
+  report = {};
+  EXPECT_EQ(stats.snapshot().live_bytes, baseline);
+}
+
+TEST(GraphCompilationStorage, ConstantReservationPrecedesResourceAllocation) {
+  auto context = hyle::compute::cpu::create_context().value();
+  HostResource resource;
+  const auto memory = hyle::mem::MemoryResourceRef(resource);
+  const Environment environment{{&context, memory}};
+  auto builder = GraphBuilder::create().value();
+  const auto description = row(256 * 1024);
+  const auto constant = builder.constant(description).value();
+  ASSERT_TRUE(builder.publish(constant).ok());
+  auto graph = std::move(builder).finish().value();
+  auto source = make_tensor(description, memory);
+  const std::array bindings{
+      ConstantBinding{constant, source.view.as_const(),
+                      hyle::graph::ConstantPolicy::kMaterialize}};
+  CompileOptions options{
+      .constants = bindings,
+      .compilation_storage = hyle::graph::CompilationStorageLimits{
+          .max_peak_bytes = description.required_bytes().value() - 1}};
+  const auto before = resource.allocation_count;
+  auto denied = hyle::graph::compile(graph, environment.environment(), options);
+  ASSERT_FALSE(denied);
+  EXPECT_TRUE(denied.error().IsResourceExhausted());
+  EXPECT_EQ(resource.allocation_count, before);
+  EXPECT_EQ(resource.live_allocations, 1U);
+  options.compilation_storage->max_peak_bytes = SIZE_MAX;
+  resource.fail_allocation = true;
+  auto oom = hyle::graph::compile(graph, environment.environment(), options);
+  ASSERT_FALSE(oom);
+  EXPECT_TRUE(oom.error().IsResourceExhausted());
+  resource.fail_allocation = false;
+  EXPECT_TRUE(hyle::graph::compile(graph, environment.environment(), options));
+  EXPECT_EQ(resource.live_allocations, 1U);
+}
+
 TEST(GraphInvocationStorage, OptInCountsMetadataAndWorkspaceExactlyOnce) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();

@@ -147,6 +147,9 @@ struct RegionProbe final {
   hyle::compute::detail::CompletionLifetime abandoned_lifetime{};
   Status abandoned_hint{};
   hyle::graph::RegionArtifactProperties artifact_properties{};
+  hyle::compute::ProviderCompilationStorage compilation_storage{};
+  std::size_t discovery_scratch_bytes = 0;
+  std::size_t resource_scratch_bytes = 0;
   std::optional<bool> proposed_effects_override{};
   std::size_t observed_effect_count = 0;
   hyle::compute::ResourceAccess observed_effect_access{};
@@ -606,8 +609,18 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
 }
 
 Status propose_regions(void *context, const Graph &graph,
+                       AllocatorRef allocator,
                        RegionProposalWriter &writer) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
+  if (probe.discovery_scratch_bytes != 0) {
+    void *scratch = allocator.allocate(probe.discovery_scratch_bytes,
+                                       alignof(std::max_align_t));
+    if (scratch == nullptr)
+      return Status::ResourceExhausted(
+          "region discovery scratch allocation failed");
+    allocator.deallocate(scratch, probe.discovery_scratch_bytes,
+                         alignof(std::max_align_t));
+  }
   auto discovered = discover_test_regions(probe, graph, writer);
   if (!discovered)
     return std::move(discovered).error();
@@ -827,7 +840,7 @@ bool boundary_matches_full_scan(const RegionCompileRequest &request) {
 }
 
 Status propose_region_resources(
-    void *context, const RegionCompileRequest &request,
+    void *context, const RegionCompileRequest &request, AllocatorRef allocator,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
         input_requirements,
     std::span<hyle::compute::detail::ResourceBindingRequirement>
@@ -844,6 +857,15 @@ Status propose_region_resources(
     requirement = {};
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.region_resource_count;
+  if (probe.resource_scratch_bytes != 0) {
+    void *scratch = allocator.allocate(probe.resource_scratch_bytes,
+                                       alignof(std::max_align_t));
+    if (scratch == nullptr)
+      return Status::ResourceExhausted(
+          "region resource query scratch allocation failed");
+    allocator.deallocate(scratch, probe.resource_scratch_bytes,
+                         alignof(std::max_align_t));
+  }
   ++probe.boundary_checks;
   if (!boundary_matches_full_scan(request))
     return Status::Internal("region boundary differs from full-scan oracle");
@@ -865,6 +887,7 @@ Status propose_region_resources(
           },
       .preserves_effects = probe.proposed_effects_override.value_or(
           probe.artifact_properties.preserves_effects),
+      .compilation_storage = probe.compilation_storage,
   };
   if (probe.proposed_replay_override)
     proposal->runtime.replay_class = *probe.proposed_replay_override;
@@ -5199,6 +5222,134 @@ TEST(GraphRegions, CostFactsPreserveUnknownAndExactZero) {
   ASSERT_TRUE(zero_step.has_value()) << zero_step.error().message();
   ASSERT_TRUE(zero_step->persistent_bytes.has_value());
   EXPECT_EQ(*zero_step->persistent_bytes, 0u);
+}
+
+TEST(GraphCompilationStorage,
+     RegionDiscoveryAndResourceScratchShareCompileQuota) {
+  const auto logical = make_negations(2);
+  for (bool resource_query : {false, true}) {
+    SCOPED_TRACE(resource_query ? "resource query" : "discovery");
+    RegionProbe probe;
+    probe.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
+    auto context = make_context(probe);
+    CompileOptions options{
+        .compilation_storage = hyle::graph::CompilationStorageLimits{},
+        .operation_fallback = OperationFallbackPolicy::kReject};
+    auto plain = hyle::graph::compile(logical.graph, context, options).value();
+    const auto base = plain.report.compilation_storage().value();
+    plain = {};
+    const auto scratch_bytes = base.peak_bytes * 2;
+    if (resource_query)
+      probe.resource_scratch_bytes = scratch_bytes;
+    else
+      probe.discovery_scratch_bytes = scratch_bytes;
+    const auto prepared = probe.compile_count;
+    options.compilation_storage->max_peak_bytes = base.peak_bytes;
+    auto rejected = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsResourceExhausted());
+    EXPECT_EQ(rejected.error().message(),
+              resource_query ? "region resource query scratch allocation failed"
+                             : "region discovery scratch allocation failed");
+    EXPECT_EQ(probe.compile_count, prepared);
+    options.compilation_storage->max_peak_bytes = SIZE_MAX;
+    auto measured = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(measured) << measured.error().message();
+    const auto usage = measured->report.compilation_storage().value();
+    EXPECT_GE(usage.peak_bytes, scratch_bytes);
+    EXPECT_EQ(usage.resident_bytes, base.resident_bytes);
+    EXPECT_FALSE(usage.has_unknown_storage);
+    *measured = {};
+    options.compilation_storage->max_resident_bytes = usage.resident_bytes;
+    options.compilation_storage->max_peak_bytes = usage.peak_bytes;
+    auto bounded = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_TRUE(bounded) << bounded.error().message();
+    EXPECT_EQ(bounded->report.compilation_storage()->peak_bytes,
+              usage.peak_bytes);
+  }
+}
+
+TEST(GraphCompilationStorage,
+     RegionUnknownAndInvalidBoundsPrecedeArtifactCreation) {
+  const auto logical = make_negations(2);
+  RegionProbe probe;
+  auto context = make_context(probe);
+  CompileOptions options{
+      .compilation_storage =
+          hyle::graph::CompilationStorageLimits{.max_resident_bytes = 1U << 20},
+      .operation_fallback = OperationFallbackPolicy::kReject};
+  auto unknown = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(unknown);
+  EXPECT_EQ(probe.compile_count, 0U);
+  EXPECT_GT(probe.region_resource_count, 0U);
+  options.compilation_storage->unknown =
+      hyle::graph::UnknownStoragePolicy::kAllow;
+  auto partial = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_TRUE(partial) << partial.error().message();
+  EXPECT_TRUE(partial->report.compilation_storage()->has_unknown_storage);
+  *partial = {};
+  const auto count = probe.compile_count;
+  probe.compilation_storage = {.resident_bytes = 2, .peak_bytes = 1};
+  auto invalid = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInternal());
+  EXPECT_EQ(probe.compile_count, count);
+}
+
+TEST(GraphCompilationStorage, RegionPreparePeakIsTransientNotRetainedPerStep) {
+  const auto logical = make_negations(4);
+  RegionProbe probe;
+  probe.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
+  auto context = make_context(probe);
+  CompileOptions options{
+      .compilation_storage = hyle::graph::CompilationStorageLimits{},
+      .operation_fallback = OperationFallbackPolicy::kReject};
+  auto plain = hyle::graph::compile(logical.graph, context, options).value();
+  ASSERT_EQ(plain.report.region_count(), 2U);
+  const auto base = plain.report.compilation_storage().value();
+  plain = {};
+  const auto private_peak = base.peak_bytes * 2;
+  probe.compilation_storage = {.resident_bytes = 4096,
+                               .peak_bytes = private_peak};
+  options.compilation_storage->max_peak_bytes =
+      base.peak_bytes + private_peak + 8192;
+  auto charged = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_TRUE(charged) << charged.error().message();
+  const auto usage = charged->report.compilation_storage().value();
+  EXPECT_EQ(usage.resident_bytes, base.resident_bytes + 8192);
+  EXPECT_GE(usage.peak_bytes, private_peak);
+  EXPECT_LT(usage.peak_bytes, 2 * private_peak);
+  EXPECT_FALSE(usage.has_unknown_storage);
+}
+
+TEST(GraphCompilationStorage,
+     RegionDeclineCleansPrivateChargesBeforeReselection) {
+  const auto logical = make_negations(2);
+  RegionProbe first, second;
+  first.compilation_storage = {.resident_bytes = 1U << 18,
+                               .peak_bytes = 1U << 19};
+  first.region_outcome_override = ProviderPrepareOutcome::resource_declined(
+      Status::ResourceExhausted("partial region declined"));
+  second.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
+  second.observe_cleanup = &first;
+  auto context = make_context(first, second);
+  CompileOptions options{
+      .compilation_storage = hyle::graph::CompilationStorageLimits{},
+      .operation_fallback = OperationFallbackPolicy::kReject};
+  auto measured = hyle::graph::compile(logical.graph, context, options).value();
+  const auto usage = measured.report.compilation_storage().value();
+  measured = {};
+  const auto attempts = first.compile_count;
+  const auto destroyed = first.destroy_prepared_count;
+  options.compilation_storage->max_resident_bytes = usage.resident_bytes;
+  options.compilation_storage->max_peak_bytes = usage.peak_bytes;
+  auto compiled = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(first.compile_count, attempts + 1);
+  EXPECT_EQ(first.destroy_prepared_count, destroyed + 1);
+  EXPECT_EQ(second.observed_cleanup_at_compile, destroyed + 1);
+  EXPECT_GE(compiled->report.compilation_storage()->peak_bytes, 1U << 19);
+  EXPECT_LT(compiled->report.compilation_storage()->resident_bytes, 1U << 17);
 }
 
 TEST(GraphStorage, UnknownProviderStorageRequiresExplicitFiniteBudgetOptIn) {

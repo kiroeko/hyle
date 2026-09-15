@@ -14,13 +14,17 @@
 #include "../graph/profile_fixture.h"
 #include "../graph/test_environment.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/executable.h"
 #include "hyle/graph/providers/onednn.h"
+#include "hyle/graph/region_provider.h"
 #include "hyle/mem/buffer.h"
+#include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/resource.h"
+#include "hyle/mem/stats.h"
 
 namespace {
 
@@ -99,7 +103,8 @@ enum class MlpOrder { kCanonical, kInterleaved, kUpFirst, kControlReentry };
 GatedMlp make_gated_mlp(std::size_t rows, std::size_t inner, std::size_t hidden,
                         bool publish_gate = false, bool with_rms_norm = false,
                         bool consume_gate = false,
-                        MlpOrder order = MlpOrder::kCanonical) {
+                        MlpOrder order = MlpOrder::kCanonical,
+                        std::size_t unrelated_nodes = 0) {
   GraphBuilder builder = GraphBuilder::create().value();
   GatedMlp result;
   result.activation = builder.input(matrix(rows, inner)).value();
@@ -150,6 +155,8 @@ GatedMlp make_gated_mlp(std::size_t rows, std::size_t inner, std::size_t hidden,
   }
   if (publish_gate)
     EXPECT_TRUE(builder.publish(result.gate).ok());
+  for (std::size_t index = 0; index < unrelated_nodes; ++index)
+    EXPECT_TRUE(builder.add(RmsNorm{}, result.activation).has_value());
   EXPECT_TRUE(builder.publish(result.output).ok());
   result.graph = std::move(builder).finish().value();
   return result;
@@ -436,6 +443,7 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
           logical.graph, context,
           CompileOptions{
               .constants = constants,
+              .compilation_storage = hyle::graph::CompilationStorageLimits{},
               .provider_replay =
                   hyle::graph::ProviderReplayPolicy::kRequirePrepared})
           .value();
@@ -477,6 +485,27 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
   EXPECT_EQ(partial_storage->report.region_count(), 1U);
   EXPECT_EQ(partial_storage->report.compiled_storage().known_bytes(), 0U);
   EXPECT_FALSE(partial_storage->report.compiled_storage().total_bytes());
+
+  const auto compiler_storage = compiled.report.compilation_storage().value();
+  EXPECT_TRUE(compiler_storage.has_unknown_storage);
+  storage_options.compiled_storage = {};
+  storage_options.compilation_storage = hyle::graph::CompilationStorageLimits{
+      .max_peak_bytes = compiler_storage.peak_bytes};
+  auto strict_compiler =
+      hyle::graph::compile(logical.graph, context, storage_options);
+  ASSERT_FALSE(strict_compiler);
+  EXPECT_TRUE(strict_compiler.error().IsResourceExhausted())
+      << strict_compiler.error().message();
+  storage_options.compilation_storage->unknown =
+      hyle::graph::UnknownStoragePolicy::kAllow;
+  auto partial_compiler =
+      hyle::graph::compile(logical.graph, context, storage_options);
+  ASSERT_TRUE(partial_compiler) << partial_compiler.error().message();
+  EXPECT_EQ(partial_compiler->report.region_count(), 1U);
+  EXPECT_TRUE(
+      partial_compiler->report.compilation_storage()->has_unknown_storage);
+  EXPECT_LE(partial_compiler->report.compilation_storage()->peak_bytes,
+            compiler_storage.peak_bytes);
 
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(logical.activation, activation.view).ok());
@@ -827,6 +856,93 @@ TEST(OneDnnRegionProvider, SharedExecutableSupportsConcurrentInvocations) {
   expect_near(read(second_output, kRows * kInner),
               reference(second_values, gate_values, up_values, down_values,
                         kRows, kInner, kHidden));
+}
+
+TEST(OneDnnRegionProvider,
+     DiscoveryUsesCompilerScratchAndRollsBackEveryFailure) {
+  const auto logical =
+      make_gated_mlp(16, 5, 7, false, false, false, MlpOrder::kInterleaved, 20);
+  ASSERT_GT(logical.graph.node_count(), 16U);
+  AllocatorProbe context_probe, scratch_probe;
+  const auto providers = provider_sequence();
+  auto context =
+      Context::create(hyle::compute::cpu::device(),
+                      {.metadata_allocator = probe_allocator(context_probe),
+                       .providers = providers})
+          .value();
+  auto extension = hyle::compute::detail::ProviderExtensionAccess::query(
+                       context, 0, hyle::graph::kRegionProviderExtensionId)
+                       .value();
+  const auto context_allocations = context_probe.attempts.load();
+  auto stats =
+      hyle::mem::StatsAllocator::create(probe_allocator(scratch_probe)).value();
+  std::array<hyle::graph::RegionProposal, 1> proposals;
+  std::array<hyle::graph::NodeId, 4> nodes;
+  auto discover = [&](hyle::mem::AllocatorRef allocator,
+                      hyle::graph::RegionProposalWriter &writer) {
+    struct Call final {
+      const Graph *graph;
+      hyle::mem::AllocatorRef allocator;
+      hyle::graph::RegionProposalWriter *writer;
+    } call{&logical.graph, allocator, &writer};
+    return hyle::compute::detail::ProviderExtensionAccess::call(
+        extension,
+        +[](void *provider_context, const void *interface_value,
+            void *opaque) noexcept -> hyle::Status {
+          const auto &vtable =
+              *static_cast<const hyle::graph::RegionProviderVTable *>(
+                  interface_value);
+          auto &value = *static_cast<Call *>(opaque);
+          return vtable.propose(provider_context, *value.graph, value.allocator,
+                                *value.writer);
+        },
+        &call);
+  };
+  scratch_probe.attempts = 0;
+  hyle::mem::QuotaAllocator measured(stats.get());
+  hyle::graph::RegionProposalWriter writer(proposals, nodes);
+  ASSERT_TRUE(discover(measured.get(), writer).ok());
+  ASSERT_EQ(writer.size(), 1U);
+  const auto allocations = scratch_probe.attempts.load();
+  // Include the use table and both contractibility arrays, beyond their SBO.
+  ASSERT_GE(allocations, 3U);
+  ASSERT_GT(measured.peak(), 0U);
+  EXPECT_EQ(measured.used(), 0U);
+  EXPECT_EQ(stats.snapshot().live_bytes, 0U);
+  EXPECT_EQ(context_probe.attempts.load(), context_allocations);
+
+  for (std::size_t failure = 0; failure < allocations; ++failure) {
+    SCOPED_TRACE(failure);
+    scratch_probe.attempts = 0;
+    scratch_probe.fail_on_attempt = failure;
+    hyle::graph::RegionProposalWriter failed_writer(proposals, nodes);
+    const auto failed = discover(measured.get(), failed_writer);
+    EXPECT_TRUE(failed.IsResourceExhausted()) << failed.message();
+    EXPECT_EQ(measured.used(), 0U);
+    EXPECT_EQ(stats.snapshot().live_bytes, 0U);
+    EXPECT_EQ(context_probe.attempts.load(), context_allocations);
+  }
+  scratch_probe.fail_on_attempt = SIZE_MAX;
+  for (const auto limit :
+       {std::size_t{0}, measured.peak() - 1, measured.peak()}) {
+    SCOPED_TRACE(limit);
+    hyle::mem::QuotaAllocator bounded(stats.get(), limit);
+    hyle::graph::RegionProposalWriter bounded_writer(proposals, nodes);
+    scratch_probe.attempts = 0;
+    const auto result = discover(bounded.get(), bounded_writer);
+    if (limit == measured.peak()) {
+      ASSERT_TRUE(result.ok()) << result.message();
+      EXPECT_EQ(bounded_writer.size(), 1U);
+    } else {
+      EXPECT_TRUE(result.IsResourceExhausted()) << result.message();
+      EXPECT_EQ(bounded_writer.size(), 0U);
+    }
+    if (limit == 0)
+      EXPECT_EQ(scratch_probe.attempts.load(), 0U);
+    EXPECT_EQ(bounded.used(), 0U);
+    EXPECT_EQ(stats.snapshot().live_bytes, 0U);
+    EXPECT_EQ(context_probe.attempts.load(), context_allocations);
+  }
 }
 
 TEST(OneDnnRegionProvider, EveryCompileAllocationFailureRollsBackAndRetries) {

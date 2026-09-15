@@ -27,6 +27,99 @@ PolicyGraph policy_graph(std::size_t count = 1) {
   return {std::move(builder).finish().value(), input, output};
 }
 
+TEST(GraphCompilationStorage, TypedPrivateBoundsAreAdmittedBeforePrepare) {
+  const auto logical = policy_graph();
+  Probe probe;
+  auto context =
+      Context::create(cpu::device(), provider(probe).value()).value();
+  hyle::graph::CompileOptions options{.compilation_storage =
+                                          hyle::graph::CompilationStorageLimits{
+                                              .max_resident_bytes = 1U << 20}};
+  // A finite resident cap alone must reject unknown even if peak is unlimited.
+  auto unknown = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(unknown);
+  EXPECT_EQ(probe.preparations, 0);
+  options.compilation_storage->unknown =
+      hyle::graph::UnknownStoragePolicy::kAllow;
+  auto allowed = hyle::graph::compile(logical.graph, context, options).value();
+  EXPECT_TRUE(allowed.report.compilation_storage()->has_unknown_storage);
+  allowed = {};
+  options.compilation_storage->unknown =
+      hyle::graph::UnknownStoragePolicy::kReject;
+  probe.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
+  auto plain = hyle::graph::compile(logical.graph, context, options).value();
+  const auto base = plain.report.compilation_storage().value();
+  plain = {};
+  probe.compilation_storage = {.resident_bytes = 4096, .peak_bytes = 1U << 18};
+  auto charged = hyle::graph::compile(logical.graph, context, options).value();
+  const auto usage = charged.report.compilation_storage().value();
+  EXPECT_EQ(usage.resident_bytes, base.resident_bytes + 4096);
+  EXPECT_GE(usage.peak_bytes, 1U << 18);
+  EXPECT_FALSE(usage.has_unknown_storage);
+  charged = {};
+  options.compilation_storage->max_peak_bytes = 1U << 17;
+  const auto prepares = probe.preparations.load();
+  auto peak = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(peak);
+  EXPECT_EQ(probe.preparations, prepares);
+  EXPECT_EQ(probe.kernels, 0);
+  probe.compilation_storage = {.resident_bytes = SIZE_MAX,
+                               .peak_bytes = SIZE_MAX};
+  options.compilation_storage->max_peak_bytes = SIZE_MAX;
+  auto overflow = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(overflow);
+  EXPECT_EQ(probe.preparations, prepares);
+  probe.compilation_storage = {.resident_bytes = 2, .peak_bytes = 1};
+  auto invalid = hyle::graph::compile(logical.graph, context, options);
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInternal());
+  EXPECT_EQ(probe.preparations, prepares);
+}
+
+TEST(GraphCompilationStorage,
+     RejectedPrivateStorageAndPartialArtifactsAreReleased) {
+  constexpr ProviderIdentity second_id{
+      {0x435553544f4dULL, 32}, "second-storage", "1"};
+  for (int kind = 0; kind < 4; ++kind) {
+    SCOPED_TRACE(kind);
+    Probe first, second;
+    second.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
+    if (kind != 0) {
+      first.compilation_storage = {.resident_bytes = 1U << 18,
+                                   .peak_bytes = 1U << 19};
+      first.fault = Fault::kResourceDecline;
+    }
+    if (kind == 2)
+      first.compilation_storage.peak_bytes = 1U << 23;
+    if (kind == 3)
+      first.compilation_storage.peak_bytes.reset();
+    const std::array factories{
+        provider(first).value(),
+        make_custom_provider(second_id, cpu::kBackendId,
+                             Factory{std::make_unique<Config>(second)})
+            .value()};
+    auto context =
+        Context::create(cpu::device(), {.providers = factories}).value();
+    hyle::graph::CompileOptions options{
+        .compilation_storage = hyle::graph::CompilationStorageLimits{
+            .max_resident_bytes = 1U << 17, .max_peak_bytes = 1U << 20}};
+    if (kind == 3)
+      options.compilation_storage->unknown =
+          hyle::graph::UnknownStoragePolicy::kAllow;
+    auto compiled =
+        hyle::graph::compile(policy_graph().graph, context, options);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->report.step(0)->provider.id, second_id.id);
+    EXPECT_EQ(first.preparations, kind == 1 || kind == 3 ? 1 : 0);
+    EXPECT_EQ(first.kernels, 0);
+    EXPECT_EQ(compiled->report.compilation_storage()->has_unknown_storage,
+              kind == 3);
+    if (kind == 1)
+      EXPECT_GE(compiled->report.compilation_storage()->peak_bytes, 1U << 19);
+    EXPECT_LT(compiled->report.compilation_storage()->resident_bytes, 1U << 17);
+  }
+}
+
 TEST(GraphInvocationStorage,
      PrivateStorageIsUnknownUnlessTheProviderDeclaresIt) {
   const auto logical = policy_graph();

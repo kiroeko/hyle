@@ -11,9 +11,9 @@
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整候选 profile 成本匹配
-与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入
-和共享 Invocation 存储配额。动态 View 属性、
-Provider 私有 packing 共享、完整内存聚合预算与 storage/lane 联合优化仍是
+与受限优化、常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入、
+编译 requested-storage 常驻/峰值配额和共享 Invocation 存储配额。动态 View 属性、
+Provider 私有 packing 共享、capture 私有存储完整上界与 storage/lane 联合优化仍是
 [架构合同](../architecture/graph-design.md)，不是已经交付的运行能力。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
@@ -211,7 +211,7 @@ Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prep
 
 同一次 declared-domain compile 的 general/exact variants 共享同 Graph slot、同描述、同 external storage
 的唯一 canonical 副本；取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享，
-Provider opaque packing 共享及唯一 resident/冷峰值总预算尚未交付。每条路线的
+Provider opaque packing 共享尚未交付；下面的 family-wide 编译配额会计入未共享的副本。每条路线的
 `materialized_constant_bytes()` 都描述它借用的 canonical 副本，不能把各路线的数值相加当成物理总量。
 
 ### 限制编译制品的常驻存储
@@ -244,8 +244,43 @@ const auto compiled_bytes = storage.total_bytes().value();
 
 本项不包含 Graph/Compute 控制 metadata、allocator rounding、借用的外部 backing、Invocation 的
 workspace/capture、编译临时量或进程其它分配，也不是 OS RSS/物理显存预算。borrowed 常量没有新增
-编译存储，并不代表它不占内存。完整编译冷峰值和 capture 私有预算仍未交付；单个 storage domain 的
+编译存储，并不代表它不占内存。编译冷峰值用下面的独立配额；capture 私有完整上界仍未交付。单个 storage domain 的
 workspace 仍可独立用 `StorageDomain::workspace_budget_bytes` 限制。
+
+### 限制整个编译过程的新增存储
+
+需要同时控制编译临时峰值与最终保留量时，用 `compilation_storage`，不是上面的 artifact 分类限额：
+
+```cpp
+CompileOptions options;
+options.compilation_storage = CompilationStorageLimits{
+    .max_resident_bytes = 256 * 1024 * 1024,
+    .max_peak_bytes = 384 * 1024 * 1024};
+auto compiled = compile(graph, context, options);
+if (!compiled) return compiled.error();
+auto storage = compiled->report.compilation_storage().value();
+```
+
+集合包括 Graph/Compute 经所供 allocator 取得的 metadata、canonical 常量请求字节，以及 Provider
+在 prepare 前声明的额外私有 resident/peak 上界。它不会再加一次可能已经经过 allocator 的
+`persistent_bytes`。general、全部 exact 子路线、候选搜索临时量和报告共享一个配额；canonical 副本只
+计一次。Provider 临时上界在准备期间预留，成功后只留下 resident；拒绝/失败先清理实际对象再归还。
+Region 的候选发现与资源查询也显式取得本次编译 allocator；其 scratch 必须在回调返回前释放，不能回用
+Context allocator 绕过额度，或在这些尚未准入私有上界的阶段创建私有堆状态/制品。
+
+`max_peak_bytes` 在受管请求前准入；`max_resident_bytes` 在编译 scratch 已释放、整张变体表发布前检查。
+后者失败时整个 family 回滚，不会静默少返回几个指定变体。报告是发布时的快照，不是之后释放子对象时
+不断变化的计数；父/子报告都给出相同的 family 快照，单独保留报告不会保活 tensor payload。
+Invocation 使用独立 runtime allocator/配额，不继续消耗 compiler quota。
+
+任一上限有限时，未知 private 上界默认在 Provider prepare 前拒绝，可触发安全的冷路线重选；默认都为
+`SIZE_MAX` 时只观察。显式 `unknown = UnknownStoragePolicy::kAllow` 只限制已知部分，
+`has_unknown_storage` 会保守记录已尝试路线的未知量，失败后不能把历史峰值改写成完整总量。Native
+编译分配全部走所供 allocator，所以额外 private 为 0；oneDNN 等未给出上界的 Provider 仍是 unknown。
+
+这仍不是 OS RSS 或物理显存配额：输入 Graph、借入的外部 backing、Context/Queue/backend/driver 控制
+开销、allocator rounding、错误诊断以及 Invocation/capture 不在编译集合内。私有声明可能是保守上界。
+未配置时不创建 compiler tracker；配置后的成本在冷编译、分配和释放，不给普通 submit 增加扫描或锁。
 
 ### 限制所有并发 Invocation 的运行存储
 

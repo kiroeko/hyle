@@ -512,7 +512,7 @@ struct CompiledStorageReport final {
 enum class UnknownStoragePolicy : std::uint8_t {
   kReject = 0,
   // An explicit partial budget: only known bytes are constrained. A report
-  // with unknown_provider_count != 0 does NOT prove total storage <= max_bytes.
+  // marking unknown storage does NOT prove that total storage is within limit.
   kAllow,
 };
 
@@ -522,6 +522,28 @@ struct CompiledStorageLimits final {
   // storage admission limit, NOT a peak-allocation quota during compilation.
   std::size_t max_bytes = SIZE_MAX;
   UnknownStoragePolicy unknown = UnknownStoragePolicy::kReject;
+};
+
+struct CompilationStorageLimits final {
+  // Family-wide newly acquired storage: supplied-allocator requests, canonical
+  // materializations and declared extra Provider private bounds. Excludes the
+  // input Graph/external backing, Context/Queue/backend control overhead,
+  // allocator rounding, Status diagnostics and Invocation/capture storage.
+  std::size_t max_resident_bytes = SIZE_MAX;
+  // Admission before each managed allocation/Provider preparation. Resident
+  // is checked after cold scratch dies, before the complete family is returned.
+  // Either finite limit rejects unknown private bounds unless kAllow is set.
+  std::size_t max_peak_bytes = SIZE_MAX;
+  UnknownStoragePolicy unknown = UnknownStoragePolicy::kReject;
+};
+
+struct CompilationStorageReport final {
+  // Snapshot when the whole family was published, after cold scratch died.
+  // Private Provider bounds can be conservative, not exact physical bytes.
+  std::size_t resident_bytes = 0;
+  std::size_t peak_bytes = 0;
+  // Includes unknown private storage in attempted, discarded candidates.
+  bool has_unknown_storage = false;
 };
 
 struct InvocationStorageLimits final {
@@ -600,6 +622,10 @@ public:
   // reports coincide and include the constants it independently keeps alive.
   HYLE_GRAPH_API CompiledStorageReport compiled_storage() const noexcept;
   HYLE_GRAPH_API CompiledStorageReport total_compiled_storage() const noexcept;
+  // Absent unless compilation_storage was requested. Each child reports the
+  // same family snapshot; retaining the report does not retain tensor payload.
+  HYLE_GRAPH_API std::optional<CompilationStorageReport>
+  compilation_storage() const noexcept;
   HYLE_GRAPH_API Result<CompileConstantReport>
   constant(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API std::size_t packed_constant_count() const noexcept;
@@ -776,6 +802,7 @@ struct CompileOptions final {
   std::span<const ExactShapeVariant> exact_variants{};
   std::span<const ConstantBinding> constants{};
   CompiledStorageLimits compiled_storage{};
+  std::optional<CompilationStorageLimits> compilation_storage{};
   // Opt-in; absent means no tracker or quota on the ordinary create path.
   // Metadata and workspace stay charged until their actual last owner frees
   // them, including abandoned asynchronous Completion or retained signatures.

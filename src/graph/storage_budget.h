@@ -3,6 +3,8 @@
 #include <atomic>
 #include <cstddef>
 #include <new>
+#include <optional>
+#include <utility>
 
 #include "hyle/graph/executable.h"
 #include "hyle/mem/quota_allocator.h"
@@ -13,28 +15,38 @@ namespace hyle::graph::detail {
 // Graph owns only family/lifetime composition. Mem owns the strict byte
 // admission algorithm. Each successful metadata allocation retains this
 // allocator owner, so independently retained signatures need no Plan cycle.
-class InvocationStorageState final
-    : public util::RefCounted<InvocationStorageState> {
+class StorageBudgetState final : public util::RefCounted<StorageBudgetState> {
 public:
   // Returns the constructing +1, immediately adopted by compile_plan. Do not
   // instantiate constrained Ref<Self> in an incomplete class declaration.
-  static Result<InvocationStorageState *>
-  create(mem::AllocatorRef backing, InvocationStorageLimits limits) noexcept {
-    void *storage = backing.allocate(sizeof(InvocationStorageState),
-                                     alignof(InvocationStorageState));
-    if (storage == nullptr)
+  static Result<StorageBudgetState *>
+  create(mem::AllocatorRef backing, InvocationStorageLimits limits,
+         std::optional<mem::AllocatorRef> control_owner = {},
+         bool account_control = false) noexcept {
+    if (account_control && limits.max_bytes < sizeof(StorageBudgetState))
       return std::unexpected(Status::ResourceExhausted(
-          "graph invocation budget allocation failed"));
-    return ::new (storage) InvocationStorageState(backing, limits);
+          "graph storage budget cannot hold its control state"));
+    const auto owner = control_owner.value_or(backing);
+    void *storage =
+        owner.allocate(sizeof(StorageBudgetState), alignof(StorageBudgetState));
+    if (storage == nullptr)
+      return std::unexpected(
+          Status::ResourceExhausted("graph storage budget allocation failed"));
+    auto *result = ::new (storage) StorageBudgetState(backing, owner, limits);
+    if (account_control)
+      result->control_charge_ =
+          std::move(*result->reserve(sizeof(StorageBudgetState)));
+    return result;
   }
 
   void destroy() noexcept {
-    const auto backing = backing_;
-    this->~InvocationStorageState();
-    backing.deallocate(this, sizeof(InvocationStorageState),
-                       alignof(InvocationStorageState));
+    const auto owner = control_owner_;
+    this->~StorageBudgetState();
+    owner.deallocate(this, sizeof(StorageBudgetState),
+                     alignof(StorageBudgetState));
   }
 
+  mem::AllocatorRef backing() const noexcept { return backing_; }
   mem::AllocatorRef allocator() noexcept {
     return {&allocate, &deallocate, &reallocate, this};
   }
@@ -55,13 +67,14 @@ public:
   }
 
 private:
-  InvocationStorageState(mem::AllocatorRef backing,
-                         InvocationStorageLimits limits) noexcept
-      : backing_(backing), limits_(limits), quota_(backing, limits.max_bytes) {}
+  StorageBudgetState(mem::AllocatorRef backing, mem::AllocatorRef control_owner,
+                     InvocationStorageLimits limits) noexcept
+      : backing_(backing), control_owner_(control_owner), limits_(limits),
+        quota_(backing, limits.max_bytes) {}
 
   static void *allocate(void *opaque, std::size_t bytes,
                         std::size_t alignment) noexcept {
-    auto &self = *static_cast<InvocationStorageState *>(opaque);
+    auto &self = *static_cast<StorageBudgetState *>(opaque);
     void *result = self.quota_.get().allocate(bytes, alignment);
     if (result != nullptr)
       self.incref();
@@ -71,7 +84,7 @@ private:
                          std::size_t alignment) noexcept {
     if (pointer == nullptr)
       return;
-    auto &self = *static_cast<InvocationStorageState *>(opaque);
+    auto &self = *static_cast<StorageBudgetState *>(opaque);
     self.quota_.get().deallocate(pointer, bytes, alignment);
     self.decref();
   }
@@ -80,7 +93,7 @@ private:
                           std::size_t alignment) noexcept {
     if (pointer == nullptr)
       return allocate(opaque, new_bytes, alignment);
-    auto &self = *static_cast<InvocationStorageState *>(opaque);
+    auto &self = *static_cast<StorageBudgetState *>(opaque);
     void *result =
         self.quota_.get().reallocate(pointer, old_bytes, new_bytes, alignment);
     if (new_bytes == 0)
@@ -89,9 +102,11 @@ private:
   }
 
   mem::AllocatorRef backing_;
+  mem::AllocatorRef control_owner_;
   InvocationStorageLimits limits_;
   mem::QuotaAllocator quota_;
   std::atomic<bool> unknown_{false};
+  mem::QuotaAllocator::Reservation control_charge_;
 };
 
 } // namespace hyle::graph::detail

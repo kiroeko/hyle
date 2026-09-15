@@ -505,6 +505,7 @@ Native FFI，也不承诺跨工具链 C++ ABI。
 - `const factory.propose(KernelRequest, input_requirements, output_requirements)` 返回 `Result<KernelProposal>`，
   只声明精确 shape 的支持、资源、runtime 和结构成本，不编译、不执行 payload；`ResourceRequirement`
   可指定属性、alignment、精确 resource/domain，未填写字段不施加额外约束。所有 span 只借到调用返回。
+  成功查询不分配：使用调用方的输出 span 与有界栈 scratch；错误 Status 的诊断存储不属此成功合同。
   按算法真正需要的属性声明；静态链接到不同 code image 的 `system_resource()` 可能不是同一个实例，
   不能用它代替通用 host-accessible 要求。确需精确实例时从实际资源 owner 传入句柄。
 - `KernelProposal::route` 是本次 propose→prepare 的临时 token；可选 `profile_key = ProviderRouteKey{1}`
@@ -530,6 +531,11 @@ Native FFI，也不承诺跨工具链 C++ ABI。
   若 artifact 声明 `supports_concurrent_invocations=false`，direct 用户须将同一 PreparedOperation 的全部
   Invocation 串行到真实 Completion 终态，不能只等 enqueue 返回；direct 不额外加共享锁。Graph 会在同一
   Executable 内检查该限制；用户跨 Executable 借用的外部不可并发资源仍须自行同步。
+- `KernelProposal::cost.compilation_storage` 声明所供 compilation allocator **以外**的私有存储上界。
+  `resident_bytes` 覆盖制品保留到最终销毁（含 teardown scratch），`peak_bytes` 另覆盖 prepare/部分失败
+  清理，且必须不小于 resident。全部编译内存走 callback allocator 时写 `{0, 0}`；不知道则保持 unknown。
+  不能拿可能包含 allocator metadata 的 `persistent_bytes` 直接填进去，也不能等 prepare 后才给峰值。
+  Graph 的 `compilation_storage` 配额在准备前预留这些字节；普通 direct 调用没有自动全局编译配额。
 - `kernel.enqueue(invocation, queue, inputs, outputs)` 返回 `KernelCommandResult`，在已 admission 的 HYLE
   Queue 内执行/记录。不要再调用 `submit_host/cuda::submit` 嵌套 admission，也不要创建第二个 Completion。
   未接纳工作可 rejected；已经写入输出或提交任意命令后必须 accepted，即使随后报错，最终由 Completion

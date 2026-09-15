@@ -211,6 +211,15 @@ materialization 的请求字节、Provider 声明的 persistent 和额外 packin
 后继变体只取得余量。它不等于 allocator/驱动的实际物理占用，也不包含控制 metadata、外部借入
 backing、cold scratch 或 Invocation/capture；这些仍需各自 owner 的完整账目和峰值/预留准入。
 
+整个编译过程另有 family-wide requested-storage 配额：supplied-allocator metadata、canonical 请求与
+Provider 在 prepare 前声明的额外 private resident/peak。它不与上述 persistent 分类重复相加；峰值在
+受管请求前准入，resident 在全部编译 scratch 释放、完整变体表发布前检查。私有 resident 上界覆盖保留
+到最终 teardown，peak 另含 prepare/失败清理；成功后归还临时差额，失败则先销毁部分制品再归还。
+Region discovery/resource-query 显式借用同一个 compiler allocator，scratch 在回调返回前释放；这些
+尚未取得私有上界的阶段禁止创建 private heap/artifact，不能回用 Context allocator 绕过准入。
+输入 Graph/借入 backing、Context/Queue/backend/driver 控制与物理 rounding 分开，不冒充进程 RSS。
+报告保存发布快照而不保活 payload；运行实例使用独立的 base/runtime allocator，不误扣编译额度。
+
 运行存储配额是另一明确集合：同一 family 的所有 general/exact Invocation 共用严格 requested-byte
 admission，包含各实例的 supplied-allocator metadata、真实 workspace backing 请求以及 Provider 的额外
 private 上界。Graph 用 Mem 的 quota/reservation 组合生命周期，不实现第二套通用配额算法。独立资源先

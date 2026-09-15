@@ -1325,6 +1325,9 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
        (!plan.shared_constants &&
         !plan.materialized_constants.try_resize(graph.constants.size()))))
     return plan_allocation_failure();
+  if (materialize && plan.compilation_storage && !plan.shared_constants &&
+      !plan.constant_charges.try_resize(graph.constants.size()))
+    return plan_allocation_failure();
   for (std::size_t index = 0; index < slots.size(); ++index)
     slots[index] = detail::kNoWorkspaceRequest;
   for (std::size_t index = 0; index < graph.constants.size(); ++index) {
@@ -1444,6 +1447,14 @@ Status materialize_constants(detail::PlanState &plan,
       continue;
     }
     HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
+    mem::QuotaAllocator::Reservation charge;
+    if (plan.compilation_storage) {
+      auto reserved = plan.compilation_storage->reserve(bytes);
+      if (!reserved)
+        return Status::ResourceExhausted(
+            "graph constant exceeds compilation peak storage budget");
+      charge = std::move(*reserved);
+    }
     HYLE_ASSIGN_OR_RETURN(
         auto buffer,
         mem::Buffer::create(plan.storage_domains[storage].resource, bytes,
@@ -1455,6 +1466,8 @@ Status materialize_constants(detail::PlanState &plan,
     binding.tensor = destination.as_const();
     plan.constant_bindings[slot] = binding.tensor;
     plan.materialized_constants[slot] = std::move(buffer);
+    if (plan.compilation_storage)
+      plan.constant_charges[slot] = std::move(charge);
   }
   constants.ready = true;
   return Status::Ok();
@@ -2279,6 +2292,7 @@ private:
 
 Status propose_region_resources(
     const RegionExtension &extension, const RegionCompileRequest &request,
+    mem::AllocatorRef allocator,
     std::span<compute::detail::ResourceBindingRequirement> input_requirements,
     std::span<compute::detail::ResourceBindingRequirement> output_requirements,
     RegionResourceProposal &resource_proposal) noexcept {
@@ -2289,12 +2303,13 @@ Status propose_region_resources(
   resource_proposal = {};
   struct ProposalEpisode final {
     const RegionCompileRequest *request = nullptr;
+    mem::AllocatorRef allocator{};
     std::span<compute::detail::ResourceBindingRequirement> input_requirements{};
     std::span<compute::detail::ResourceBindingRequirement>
         output_requirements{};
     RegionResourceProposal *proposal = nullptr;
-  } proposal_episode{&request, input_requirements, output_requirements,
-                     &resource_proposal};
+  } proposal_episode{&request, allocator, input_requirements,
+                     output_requirements, &resource_proposal};
   Status proposed = compute::detail::ProviderExtensionAccess::call(
       extension.extension,
       +[](void *provider_context, const void *interface_value,
@@ -2307,8 +2322,8 @@ Status propose_region_resources(
               "graph region resource proposal callback is missing");
         }
         return interface->propose_resources(
-            provider_context, *call.request, call.input_requirements,
-            call.output_requirements, call.proposal);
+            provider_context, *call.request, call.allocator,
+            call.input_requirements, call.output_requirements, call.proposal);
       },
       &proposal_episode);
   if (!proposed.ok())
@@ -2317,6 +2332,9 @@ Status propose_region_resources(
     return Status::Internal(
         "graph region provider proposed invalid runtime properties");
   }
+  if (!resource_proposal.compilation_storage.valid())
+    return Status::Internal(
+        "graph region provider proposed invalid compilation storage");
   HYLE_RETURN_IF_ERROR(
       compute::detail::OperationPreparationAccess::validate_requirement(
           resource_proposal.workspace_resource));
@@ -2412,7 +2430,7 @@ discover_region_resources(const Graph &published_graph,
     RegionResourceProposal proposal;
     Status status = propose_region_resources(
         discovery.extensions[candidate.extension_index], request,
-        input_requirements, output_requirements, proposal);
+        plan.allocator, input_requirements, output_requirements, proposal);
     if (status.ok() &&
         candidate.replay_class != compute::ProviderReplayClass::kUnknown &&
         candidate.replay_class != proposal.runtime.replay_class)
@@ -2577,6 +2595,38 @@ Status discover_region_candidates(
     std::size_t &proposal_node_count, CompileSearchReport &search,
     ExecutionTargetId target, std::span<const std::uint32_t> node_targets = {},
     const detail::GraphState *domain = nullptr) noexcept;
+
+struct CompilationReservation final {
+  mem::QuotaAllocator::Reservation resident;
+  mem::QuotaAllocator::Reservation transient;
+};
+
+Result<CompilationReservation> reserve_compilation_storage(
+    detail::PlanState &plan, CompileOptions options,
+    compute::ProviderCompilationStorage storage) noexcept {
+  if (!plan.compilation_storage)
+    return CompilationReservation{};
+  const auto limits = *options.compilation_storage;
+  const bool unknown = !storage.resident_bytes || !storage.peak_bytes;
+  if (unknown && limits.unknown == UnknownStoragePolicy::kReject &&
+      (limits.max_resident_bytes != SIZE_MAX ||
+       limits.max_peak_bytes != SIZE_MAX))
+    return std::unexpected(Status::ResourceExhausted(
+        "graph provider compilation storage upper bound is unknown"));
+  const auto resident = storage.resident_bytes.value_or(0);
+  const auto peak = (std::max)(resident, storage.peak_bytes.value_or(0));
+  auto retained = plan.compilation_storage->reserve(resident);
+  if (!retained)
+    return std::unexpected(Status::ResourceExhausted(
+        "graph provider exceeds compilation peak storage budget"));
+  auto transient = plan.compilation_storage->reserve(peak - resident);
+  if (!transient)
+    return std::unexpected(Status::ResourceExhausted(
+        "graph provider exceeds compilation peak storage budget"));
+  if (unknown)
+    plan.compilation_storage->note_unknown();
+  return CompilationReservation{std::move(*retained), std::move(*transient)};
+}
 
 Status prepare_placed_steps_attempt(
     detail::PlanState &plan, const Graph &published_graph,
@@ -3021,6 +3071,7 @@ Status prepare_placed_steps_attempt(
     instance = kNone;
 
   plan.steps.clear();
+  plan.artifact_charges.clear();
   plan.node_inputs.clear();
   plan.node_outputs.clear();
   plan.step_nodes.clear();
@@ -3529,6 +3580,9 @@ Status prepare_placed_steps_attempt(
   // heavyweight artifact. A prepare decline invalidates this construction;
   // it never changes the selected provider/target/storage in this loop.
   HYLE_RETURN_IF_ERROR(materialize_constants(plan, environment, constants));
+  if (plan.compilation_storage &&
+      !plan.artifact_charges.try_resize(plan.steps.size()))
+    return plan_allocation_failure();
   NodeShapeScratch shape_scratch(plan.allocator);
   for (auto &step : plan.steps) {
     if (step.kind == detail::PlanStepKind::kCopy)
@@ -3574,6 +3628,13 @@ Status prepare_placed_steps_attempt(
                            step.output_count);
       HYLE_ASSIGN_OR_RETURN(auto shape,
                             shape_scratch.bind(plan, step.node_begin));
+      auto charge = reserve_compilation_storage(
+          plan, options, route->proposal.cost.compilation_storage);
+      if (!charge) {
+        outcome.rejected_operation = static_cast<std::size_t>(
+            route - discovery.operations.candidates.data());
+        return std::move(charge).error();
+      }
       auto attempt =
           compute::detail::OperationPreparationAccess::prepare_candidate(
               *environment.targets[step.target.ordinal()].context,
@@ -3593,6 +3654,9 @@ Status prepare_placed_steps_attempt(
         return std::move(attempt->reason);
       }
       step.operation = std::move(attempt->prepared);
+      if (plan.compilation_storage)
+        plan.artifact_charges[static_cast<std::size_t>(
+            &step - plan.steps.data())] = std::move(charge->resident);
     } else {
       const auto &candidate = selected_regions[region_by_node[step.node_begin]];
       const auto &skeleton = discovery.resources[candidate.proposal_order];
@@ -3618,6 +3682,12 @@ Status prepare_placed_steps_attempt(
                   .subspan(skeleton.effect_begin, skeleton.effect_count),
           .effect_bindings = plan.effect_bindings,
           .has_unknown_effects = skeleton.has_unknown_effects};
+      auto charge = reserve_compilation_storage(
+          plan, options, skeleton.proposal.compilation_storage);
+      if (!charge) {
+        outcome.rejected_region = candidate.proposal_order;
+        return std::move(charge).error();
+      }
       auto attempt =
           compile_region_artifact(plan, extensions[candidate.extension_index],
                                   request, skeleton.proposal, options);
@@ -3628,6 +3698,9 @@ Status prepare_placed_steps_attempt(
         return std::move(attempt->reason);
       }
       step.region = std::move(attempt->prepared);
+      if (plan.compilation_storage)
+        plan.artifact_charges[static_cast<std::size_t>(
+            &step - plan.steps.data())] = std::move(charge->resident);
     }
   }
 
@@ -3766,6 +3839,7 @@ void swap_route_state(detail::PlanState &left,
   using std::swap;
   swap(left.lanes, right.lanes);
   swap(left.steps, right.steps);
+  swap(left.artifact_charges, right.artifact_charges);
   swap(left.segments, right.segments);
   swap(left.segment_dependencies, right.segment_dependencies);
   swap(left.serialization_edges, right.serialization_edges);
@@ -3831,6 +3905,7 @@ Status prepare_placed_steps(
     // attempt resets its physical metadata and keeps aggregate budgets. Final
     // scheduling/alias/workspace choices also belong to this one candidate.
     plan.steps.clear();
+    plan.artifact_charges.clear();
     plan.region_count = 0;
     if (attempted) {
       if (metadata_moved) {
@@ -4076,8 +4151,9 @@ Status discover_region_candidates(
             .subspan(proposal_node_count, node_capacity));
     struct Episode final {
       const Graph *graph = nullptr;
+      mem::AllocatorRef allocator{};
       RegionProposalWriter *writer = nullptr;
-    } episode{&published_graph, &writer};
+    } episode{&published_graph, allocator, &writer};
     const Status proposed = compute::detail::ProviderExtensionAccess::call(
         extensions[extension_index].extension,
         +[](void *provider_context, const void *interface_value,
@@ -4091,7 +4167,7 @@ Status discover_region_candidates(
                 "graph region provider interface is incomplete");
           }
           return interface->propose(provider_context, *call.graph,
-                                    *call.writer);
+                                    call.allocator, *call.writer);
         },
         &episode);
     if (!proposed.ok())
@@ -6038,6 +6114,11 @@ CompiledStorageReport CompileReport::total_compiled_storage() const noexcept {
                            : CompiledStorageReport{};
 }
 
+std::optional<CompilationStorageReport>
+CompileReport::compilation_storage() const noexcept {
+  return state_ != nullptr ? state_->compilation_storage : std::nullopt;
+}
+
 Result<CompileConstantReport>
 CompileReport::constant(std::size_t index) const noexcept {
   if (state_ == nullptr)
@@ -6442,7 +6523,7 @@ Result<Invocation> Executable::create_invocation(
 
   auto *budget = state_->invocation_storage.get();
   const auto allocator =
-      budget != nullptr ? budget->allocator() : state_->allocator;
+      budget != nullptr ? budget->allocator() : state_->runtime_allocator();
   detail::ConcreteDescriptions concrete(allocator);
   SpecializationSignature signature;
   ShapeValues values(allocator);
@@ -7608,13 +7689,12 @@ Result<CompiledGraph> compile(const Graph &graph,
 
 namespace {
 
-Result<CompiledGraph>
-compile_plan(const Graph &graph, CompileEnvironment environment,
-             CompileOptions options,
-             util::Ref<detail::SharedConstants> shared_constants = {},
-             bool inherited_budget = false,
-             util::Ref<detail::InvocationStorageState> invocation_storage =
-                 {}) noexcept {
+Result<CompiledGraph> compile_plan(
+    const Graph &graph, CompileEnvironment environment, CompileOptions options,
+    util::Ref<detail::SharedConstants> shared_constants = {},
+    bool inherited_budget = false,
+    util::Ref<detail::StorageBudgetState> invocation_storage = {},
+    util::Ref<detail::StorageBudgetState> compilation_storage = {}) noexcept {
   if (!graph.valid()) {
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
@@ -7701,6 +7781,11 @@ compile_plan(const Graph &graph, CompileEnvironment environment,
       options.invocation_storage->unknown != UnknownStoragePolicy::kAllow)
     return std::unexpected(Status::InvalidArgument(
         "graph invocation storage unknown policy is invalid"));
+  if (options.compilation_storage &&
+      options.compilation_storage->unknown != UnknownStoragePolicy::kReject &&
+      options.compilation_storage->unknown != UnknownStoragePolicy::kAllow)
+    return std::unexpected(Status::InvalidArgument(
+        "graph compilation storage unknown policy is invalid"));
   if (!context.valid() || !context.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute context is invalid or closed"));
@@ -7751,11 +7836,23 @@ compile_plan(const Graph &graph, CompileEnvironment environment,
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
 
-  const mem::AllocatorRef allocator = context.metadata_allocator();
-  if (!allocator.valid()) {
+  const auto backing = context.metadata_allocator();
+  if (!backing.valid()) {
     return std::unexpected(Status::FailedPrecondition(
         "compute context has no metadata allocator"));
   }
+  if (options.compilation_storage && !compilation_storage) {
+    HYLE_ASSIGN_OR_RETURN(
+        auto *created,
+        detail::StorageBudgetState::create(
+            backing,
+            {.max_bytes = options.compilation_storage->max_peak_bytes,
+             .unknown = options.compilation_storage->unknown},
+            {}, true));
+    compilation_storage = util::adopt_ref(created);
+  }
+  const auto allocator =
+      compilation_storage ? compilation_storage->allocator() : backing;
   ProviderPolicy provider_policy(allocator);
   HYLE_RETURN_IF_ERROR(provider_policy.initialize(*logical, options));
   detail::TensorDescriptions descriptions(allocator);
@@ -7792,9 +7889,10 @@ compile_plan(const Graph &graph, CompileEnvironment environment,
     return std::unexpected(plan_allocation_failure());
   auto *plan =
       ::new (storage) detail::PlanState(allocator, concrete->generation);
+  plan->compilation_storage = std::move(compilation_storage);
   if (options.invocation_storage && !invocation_storage) {
-    auto created = detail::InvocationStorageState::create(
-        allocator, *options.invocation_storage);
+    auto created = detail::StorageBudgetState::create(
+        backing, *options.invocation_storage, allocator);
     if (!created) {
       detail::release(plan);
       return std::unexpected(std::move(created).error());
@@ -7931,6 +8029,7 @@ Status share_constants(detail::PlanState &plan) noexcept {
   // The zero-inline buffer vector transfers its backing; existing artifact
   // views retain the same addresses. No tensor payload is copied again.
   shared->buffers = std::move(plan.materialized_constants);
+  shared->charges = std::move(plan.constant_charges);
   plan.shared_constants = std::move(shared);
   return Status::Ok();
 }
@@ -8006,11 +8105,9 @@ remaining_compile_budget(CompileOptions options,
   return options;
 }
 
-} // namespace
-
-Result<CompiledGraph> compile(const Graph &graph,
-                              CompileEnvironment environment,
-                              CompileOptions options) noexcept {
+Result<CompiledGraph> compile_family(const Graph &graph,
+                                     CompileEnvironment environment,
+                                     CompileOptions options) noexcept {
   const auto variants = options.exact_variants;
   if (!variants.empty() &&
       options.shape_policy != CompileShapePolicy::kDeclaredDomain)
@@ -8038,10 +8135,10 @@ Result<CompiledGraph> compile(const Graph &graph,
                                  report.total_compiled_storage));
     child_options.shape_policy = CompileShapePolicy::kExact;
     child_options.shape = variants[index].shape;
-    HYLE_ASSIGN_OR_RETURN(auto child,
-                          compile_plan(graph, environment, child_options,
-                                       plan.shared_constants, true,
-                                       plan.invocation_storage));
+    HYLE_ASSIGN_OR_RETURN(
+        auto child,
+        compile_plan(graph, environment, child_options, plan.shared_constants,
+                     true, plan.invocation_storage, plan.compilation_storage));
     detail::ExecutableAccess::state(child.executable)->exact_variant_index =
         index;
     HYLE_RETURN_IF_ERROR(
@@ -8052,6 +8149,31 @@ Result<CompiledGraph> compile(const Graph &graph,
     if (!plan.exact_variants.try_push_back(std::move(child.executable)) ||
         !report.exact_variants.try_push_back(std::move(child.report)))
       return std::unexpected(plan_allocation_failure());
+  }
+  return result;
+}
+
+} // namespace
+
+Result<CompiledGraph> compile(const Graph &graph,
+                              CompileEnvironment environment,
+                              CompileOptions options) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto result,
+                        compile_family(graph, environment, options));
+  const auto &plan = *detail::ExecutableAccess::state(result.executable);
+  if (plan.compilation_storage) {
+    // All family compilation scratch has died. Retained reports, signatures,
+    // plans and the shared budget owner are included; borrowed inputs are not.
+    const auto usage = plan.compilation_storage->usage();
+    if (usage.live_bytes > options.compilation_storage->max_resident_bytes)
+      return std::unexpected(Status::ResourceExhausted(
+          "graph family exceeds compilation resident storage budget"));
+    const CompilationStorageReport snapshot{usage.live_bytes, usage.peak_bytes,
+                                            usage.has_unknown_storage};
+    auto &report = *detail::CompileReportAccess::state(result.report);
+    report.compilation_storage = snapshot;
+    for (const auto &child : report.exact_variants)
+      detail::CompileReportAccess::state(child)->compilation_storage = snapshot;
   }
   return result;
 }

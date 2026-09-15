@@ -64,6 +64,7 @@ struct Probe final {
   std::uint64_t prepare_token = 7;
   ProviderRouteKey profile_key{};
   std::optional<std::size_t> invocation_private_bytes{};
+  ProviderCompilationStorage compilation_storage{};
 };
 
 struct Config final {
@@ -167,15 +168,17 @@ struct alignas(128) Factory final {
     facts.supports_concurrent_invocations = config->probe->concurrent;
     if (config->probe->fault == Fault::kDelegatedProposal)
       facts.mode = ProviderRuntimeMode::kDelegated;
-    return KernelProposal{.route = config->probe->prepare_token,
-                          .runtime = facts,
-                          .cost = {.workspace = WorkspaceRequirement{},
-                                   .persistent_bytes = 0,
-                                   .copy_bytes = 0,
-                                   .repack_bytes = 0,
-                                   .synchronization_count = 0,
-                                   .dispatch_count = 1},
-                          .profile_key = config->probe->profile_key};
+    return KernelProposal{
+        .route = config->probe->prepare_token,
+        .runtime = facts,
+        .cost = {.workspace = WorkspaceRequirement{},
+                 .persistent_bytes = 0,
+                 .copy_bytes = 0,
+                 .repack_bytes = 0,
+                 .synchronization_count = 0,
+                 .dispatch_count = 1,
+                 .compilation_storage = config->probe->compilation_storage},
+        .profile_key = config->probe->profile_key};
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,
                             hyle::mem::AllocatorRef allocator) const noexcept {

@@ -18,8 +18,8 @@
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
-#include "invocation_storage.h"
 #include "route_profile.h"
+#include "storage_budget.h"
 
 namespace hyle::graph::detail {
 
@@ -622,13 +622,15 @@ inline void release(SignatureState *state) noexcept {
 // is no Plan back-pointer: an exact child may outlive the parent table.
 struct SharedConstants final : util::RefCounted<SharedConstants> {
   explicit SharedConstants(mem::AllocatorRef owner) noexcept
-      : allocator(owner), buffers(owner) {}
+      : allocator(owner), charges(owner), buffers(owner) {}
   void destroy() noexcept {
     const auto owner = allocator;
     this->~SharedConstants();
     owner.deallocate(this, sizeof(SharedConstants), alignof(SharedConstants));
   }
   mem::AllocatorRef allocator;
+  container::SmallVector<mem::QuotaAllocator::Reservation, 0, mem::AllocatorRef>
+      charges;
   container::SmallVector<mem::Buffer, 0, mem::AllocatorRef> buffers;
 };
 
@@ -637,10 +639,11 @@ struct PlanState final : util::RefCounted<PlanState> {
             std::uint64_t generation_value) noexcept
       : allocator(allocator_value), generation(generation_value),
         storage_domains(allocator_value), targets(allocator_value),
-        lanes(allocator_value), materialized_constants(allocator_value),
-        steps(allocator_value), exact_variants(allocator_value),
-        variant_order(allocator_value), segments(allocator_value),
-        segment_dependencies(allocator_value),
+        lanes(allocator_value), constant_charges(allocator_value),
+        artifact_charges(allocator_value),
+        materialized_constants(allocator_value), steps(allocator_value),
+        exact_variants(allocator_value), variant_order(allocator_value),
+        segments(allocator_value), segment_dependencies(allocator_value),
         serialization_edges(allocator_value), step_segments(allocator_value),
         terminal_segments(allocator_value),
         completion_segments(allocator_value),
@@ -680,10 +683,18 @@ struct PlanState final : util::RefCounted<PlanState> {
   Graph domain_graph{};
   // One opt-in owner shared by general/exact Plans; no mutable run data in
   // Plan.
-  util::Ref<InvocationStorageState> invocation_storage;
+  util::Ref<StorageBudgetState> invocation_storage;
+  util::Ref<StorageBudgetState> compilation_storage;
+  mem::AllocatorRef runtime_allocator() const noexcept {
+    return compilation_storage ? compilation_storage->backing() : allocator;
+  }
   StorageDomainRecords storage_domains;
   ExecutionTargetRecords targets;
   ExecutionLaneRecords lanes;
+  // Declared before the actual owners: return charges only after their storage
+  // is destroyed. Empty/no allocation on ordinary unbudgeted compilation.
+  container::SmallVector<mem::QuotaAllocator::Reservation, 0, mem::AllocatorRef>
+      constant_charges, artifact_charges;
   // Declared before steps: artifacts die before the constants they may borrow,
   // and buffers die before the retained Context/resource backend leases.
   // Empty on the default borrow path; otherwise one slot per logical constant.
@@ -832,6 +843,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   std::size_t materialized_constant_bytes = 0;
   CompiledStorageReport compiled_storage{};
   CompiledStorageReport total_compiled_storage{};
+  std::optional<CompilationStorageReport> compilation_storage{};
   std::size_t packed_constant_count = 0;
   std::size_t packed_constant_bytes = 0;
   std::size_t invocation_owned_output_count = 0;

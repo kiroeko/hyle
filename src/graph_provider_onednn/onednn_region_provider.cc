@@ -56,7 +56,6 @@ constexpr compute::ProviderRuntimeProperties kRuntimeProperties{
 
 struct RegionContext final {
   ParallelExecutorRef executor{};
-  mem::AllocatorRef allocator{};
 };
 
 struct ValueUse final {
@@ -417,12 +416,12 @@ Status compute_workspace_layout(std::size_t rows, std::size_t hidden,
 }
 
 Status propose_regions(void *context_value, const Graph &graph,
+                       mem::AllocatorRef allocator,
                        RegionProposalWriter &writer) noexcept {
-  auto *context = static_cast<RegionContext *>(context_value);
-  if (context == nullptr || !context->allocator.valid())
+  if (context_value == nullptr || !allocator.valid())
     return Status::Internal("oneDNN region context is invalid");
   UseTable table;
-  Status status = build_use_table(graph, context->allocator, &table);
+  Status status = build_use_table(graph, allocator, &table);
   if (!status.ok())
     return status;
   const std::span<const ValueUse> uses(table.values, table.count);
@@ -434,8 +433,7 @@ Status propose_regions(void *context_value, const Graph &graph,
       return status;
     if (!matched)
       continue;
-    auto contractible =
-        is_region_contractible(graph, pattern.nodes, context->allocator);
+    auto contractible = is_region_contractible(graph, pattern.nodes, allocator);
     if (!contractible)
       return std::move(contractible).error();
     if (!*contractible)
@@ -682,7 +680,7 @@ const ProviderRegionPreparedVTable kPreparedVTable{
 };
 
 Status propose_region_resources(
-    void *context_value, const RegionCompileRequest &request,
+    void *context_value, const RegionCompileRequest &request, mem::AllocatorRef,
     std::span<compute::detail::ResourceBindingRequirement> input_requirements,
     std::span<compute::detail::ResourceBindingRequirement> output_requirements,
     RegionResourceProposal *proposal) noexcept {
@@ -877,8 +875,7 @@ Status create_context(const Provider &provider_value, compute::Device device,
     return Status::ResourceExhausted("oneDNN region context allocation failed");
   const Options options =
       compute::detail::ProviderAccess::payload<Options>(provider_value);
-  *context_output = ::new (storage)
-      RegionContext{.executor = options.executor, .allocator = allocator};
+  *context_output = ::new (storage) RegionContext{.executor = options.executor};
   return Status::Ok();
 }
 

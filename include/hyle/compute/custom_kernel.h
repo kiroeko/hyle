@@ -53,7 +53,9 @@ struct KernelProperties final {
 
 // Borrowed for the duration of propose/prepare only; never retain these spans.
 // Descriptions are exact points. Unsupported is a cold capability decline;
-// propose must not compile, read tensor payload, or accept external work.
+// Successful propose is allocation-free: use caller output spans and bounded
+// stack scratch. It must not compile, read tensor payload, or accept external
+// work. Error Status diagnostic storage is not part of that success contract.
 struct KernelRequest final {
   Device device{};
   Operation operation{};

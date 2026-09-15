@@ -72,6 +72,22 @@ TEST(ProviderCostFacts, WorkspaceAlignmentAndDispatchHaveOneSharedValidator) {
   EXPECT_TRUE(facts.valid());
 }
 
+TEST(ProviderCostFacts, CompilationStorageBoundsAreOptionalAndConsistent) {
+  using hyle::compute::ProviderCompilationStorage;
+  constexpr ProviderCompilationStorage unknown{}, zero{0, 0},
+      max{SIZE_MAX, SIZE_MAX}, resident_only{64, std::nullopt},
+      peak_only{std::nullopt, 64}, invalid{65, 64};
+  static_assert(unknown.valid() && zero.valid() && max.valid());
+  static_assert(resident_only.valid() && peak_only.valid() && !invalid.valid());
+  EXPECT_FALSE(unknown.resident_bytes);
+  EXPECT_FALSE(unknown.peak_bytes);
+  EXPECT_EQ(zero.resident_bytes, 0U);
+  hyle::compute::ProviderRouteCostFacts facts{.compilation_storage = invalid};
+  EXPECT_FALSE(facts.valid());
+  facts.compilation_storage = max;
+  EXPECT_TRUE(facts.valid());
+}
+
 TEST(ProviderProperties, ReplayCostDoesNotFollowOwnershipOrCaptureFlags) {
   constexpr ProviderRuntimeProperties unspecified{};
   static_assert(unspecified.valid());

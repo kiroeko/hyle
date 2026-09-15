@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 14};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 16};
 
 // Provider discovery helper. false means this otherwise valid node set would
 // leave and re-enter through a data/control path; it should remain unfused.
@@ -49,7 +49,8 @@ struct RegionProposal final {
 };
 
 // Fixed-capacity proposal sink owned by Graph compile. Providers cannot grow
-// it or hide allocation. A capacity refusal stops this provider's discovery;
+// it; discovery scratch uses the callback's allocator. A capacity refusal stops
+// this provider's discovery;
 // Graph reports limited search and still validates any resulting whole plan.
 class RegionProposalWriter final {
 public:
@@ -155,6 +156,7 @@ struct RegionResourceProposal final {
   // Required when the request contains named or unknown external effects.
   // false declines that semantic route before artifact creation.
   bool preserves_effects = false;
+  compute::ProviderCompilationStorage compilation_storage{};
 };
 
 struct RegionArtifactProperties final {
@@ -216,17 +218,22 @@ struct ProviderRegionPrepared final {
 // Graph. All callbacks are cold-path and run under the owning Context's
 // admission gate. Returned artifacts must use the supplied allocator and must
 // not retain request spans or Graph references unless they create an explicit
-// owner of their own.
+// owner of their own. Discovery/resource queries may use only the caller's
+// output storage and the supplied allocator for scratch, released before
+// returning. They must not create private heap state/artifacts before Graph
+// can admit the proposal's compilation storage bounds. Error Status diagnostic
+// storage remains outside the compilation budget.
 struct RegionProviderVTable final {
   Status (*propose)(void *provider_context, const Graph &graph,
+                    mem::AllocatorRef allocator,
                     RegionProposalWriter &writer) noexcept = nullptr;
   // Queried for hard-eligible candidates before selection, even if compile()
   // never follows. Graph caches the result across selection retries; this
   // callback describes constraints, it does not prepare a heavyweight artifact.
   Status (*propose_resources)(
       void *provider_context, const RegionCompileRequest &request,
-      std::span<compute::detail::ResourceBindingRequirement>
-          input_requirements,
+      mem::AllocatorRef allocator,
+      std::span<compute::detail::ResourceBindingRequirement> input_requirements,
       std::span<compute::detail::ResourceBindingRequirement>
           output_requirements,
       RegionResourceProposal *proposal) noexcept = nullptr;

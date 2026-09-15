@@ -40,6 +40,9 @@ hyle::Status bounded_normalization() {
               {.shape_policy = CompileShapePolicy::kDeclaredDomain,
                .exact_variants = variants,
                .compiled_storage = {.max_bytes = 1024 * 1024},
+               .compilation_storage =
+                   CompilationStorageLimits{.max_resident_bytes = 1024 * 1024,
+                                            .max_peak_bytes = 2 * 1024 * 1024},
                .invocation_storage =
                    InvocationStorageLimits{.max_bytes = 1024 * 1024}}));
   if (!compiled.executable.is_shape_domain() ||
@@ -61,6 +64,16 @@ hyle::Status bounded_normalization() {
       storage.known_bytes() !=
           general_storage.known_bytes() + exact_storage.known_bytes())
     return hyle::Status::Internal("compiled storage report is incomplete");
+  const auto compilation = compiled.report.compilation_storage();
+  const auto exact_compilation = exact_report.compilation_storage();
+  if (!compilation || !exact_compilation || compilation->resident_bytes == 0 ||
+      compilation->resident_bytes > 1024 * 1024 ||
+      compilation->peak_bytes > 2 * 1024 * 1024 ||
+      compilation->peak_bytes < compilation->resident_bytes ||
+      compilation->has_unknown_storage ||
+      exact_compilation->resident_bytes != compilation->resident_bytes ||
+      exact_compilation->peak_bytes != compilation->peak_bytes)
+    return hyle::Status::Internal("compilation storage report is incomplete");
   graph = {};
   HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
                                          hyle::mem::system_resource(), 64, 64));

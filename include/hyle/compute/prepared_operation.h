@@ -29,6 +29,21 @@ struct WorkspaceRequirement final {
   std::size_t alignment = 1;
 };
 
+// Upper bounds outside the supplied compilation allocator. Includes private
+// packing/code and prepare/failure scratch, but not caller constants,
+// Context/Queue/driver control overhead or per-invocation storage. Resident
+// bounds the retained artifact through final destruction (including teardown
+// scratch); peak additionally covers prepare and partial-failure cleanup.
+// Peak includes resident; unknown is not zero. Declared before prepare.
+struct ProviderCompilationStorage final {
+  std::optional<std::size_t> resident_bytes{};
+  std::optional<std::size_t> peak_bytes{};
+
+  constexpr bool valid() const noexcept {
+    return !resident_bytes || !peak_bytes || *resident_bytes <= *peak_bytes;
+  }
+};
+
 // Cold structural facts at one provider's canonical operation/region
 // boundary. Disengaged means unknown; engaged zero is an exact zero, never a
 // timing score. Runtime ownership/replay/threading remain separate facts.
@@ -41,10 +56,12 @@ struct ProviderRouteCostFacts final {
   // Backend execution episodes, not workers, tasks or vector chunks. A
   // materialized provider route must declare at least one episode if known.
   std::optional<std::uint32_t> dispatch_count{};
+  ProviderCompilationStorage compilation_storage{};
 
   constexpr bool valid() const noexcept {
     return (!workspace || std::has_single_bit(workspace->alignment)) &&
-           (!dispatch_count || *dispatch_count != 0);
+           (!dispatch_count || *dispatch_count != 0) &&
+           compilation_storage.valid();
   }
 };
 
