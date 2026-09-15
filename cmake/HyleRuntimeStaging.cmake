@@ -15,9 +15,6 @@ function(hyle_stage_runtime_dependencies target)
     return()
   endif()
 
-  # No dependency on the executable itself: under CMP0112 NEW,
-  # TARGET_FILE_DIR is a location, not an order edge. The stage depends on the
-  # actual DLLs, so changing a DLL without changing its import library works.
   set(_stage "hyle_runtime_${target}")
   set(_script "${CMAKE_CURRENT_BINARY_DIR}/hyle-runtime/${target}-$<CONFIG>.cmake")
   set(_content [=[
@@ -33,6 +30,20 @@ endforeach()
 ]=])
   string(CONFIGURE "${_content}" _content @ONLY)
   file(GENERATE OUTPUT "${_script}" CONTENT "${_content}")
+  if(CMAKE_GENERATOR MATCHES "^Visual Studio ")
+    # MSBuild's project references finish before this event. File dependencies
+    # on transitive DLL paths alone do not establish cross-directory project
+    # order. PRE_BUILD also runs when the linker keeps an unchanged EXE.
+    add_custom_command(TARGET ${target} PRE_BUILD
+      COMMAND "${CMAKE_COMMAND}" -P "${_script}"
+      VERBATIM)
+    set_property(TARGET ${target} PROPERTY HYLE_RUNTIME_STAGING_TARGET TRUE)
+    return()
+  endif()
+
+  # No dependency on the executable itself: under CMP0112 NEW,
+  # TARGET_FILE_DIR is a location, not an order edge. The stage depends on the
+  # actual DLLs, so changing a DLL without changing its import library works.
   add_custom_target(${_stage}
     COMMAND "${CMAKE_COMMAND}" -P "${_script}"
     DEPENDS "$<TARGET_RUNTIME_DLLS:${target}>"
