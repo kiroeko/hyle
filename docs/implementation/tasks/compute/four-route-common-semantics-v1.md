@@ -1,6 +1,6 @@
 # R2：四路线共同语义与自然入口
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -18,7 +18,7 @@
 |---|---|---|
 | R2-Q | 完整的有限 grouped Q4 MatMul schema，区别 signed scale 与 unsigned scale+bias，复用物理格式与 shape 校验 | [ComputeOps 卡](compute-ops-v4-quantized-matmul.md) |
 | R2-D | Direct 的独立提交模式及生成结果 owner；复用真实 Completion，不能让 Queue 参数被忽略或接纳后丢 owner | [Compute 独立提交与结果卡](compute-v16-direct-owned-results.md) |
-| R2-G | 自然 Graph/路线编译边界；清理用户 timing profile 多计划竞赛与模型多路线放置，保留结构/资源规划 | [Graph 编译边界卡](graph-v11-four-route-compile-boundary.md)，CANDIDATE |
+| R2-G | 自然 Graph/路线编译边界；清理用户 timing profile 多计划竞赛与模型多路线放置，保留结构/资源规划 | [Graph 编译边界卡](graph-v11-four-route-compile-boundary.md)，CLOSED |
 | R2-M | Mem v10 已有 Reservation 的具名平台/失败回收尾项 | 原 [Mem v10 卡](../mem/mem-v10-external-byte-reservation.md)，不扩产品范围 |
 
 R2-Q 已完成有限 schema 子项并 CLOSED，证据在其当前卡。R2-D 实现已推送，Windows 针对性
@@ -50,3 +50,15 @@ MLX lazy array wrapper 不是 Mem allocation token；生成结果保留原 nativ
 D/G 与 Mem 定向尾项已进入 `4e9f74a0` CANDIDATE。Windows selected gates 14/14 和同一 owning
 result C++ consumer 的三交付已通过；WSL/两台 Mac/sanitizer 尚未全部取证。本包仍未 CLOSED，
 不因候选登记增加基础架构完成度；R3–R6 的原生默认规则、完整片段与 P1 未被本包替代。
+
+## R2 汇总完成
+
+四个子项均已完成各自范围：R2-Q 复用其独立 terminal；D/G 与 Mem 尾项现已通过所有预声明适用门，
+证据和限制见 [R2-G terminal](graph-v11-four-route-compile-boundary.md#terminalr2-dg-closed) 与
+[Mem v10 terminal](../mem/mem-v10-external-byte-reservation.md#terminalmem-v10-closed)。
+本页是工作包汇总，不创建新的组件或跳过 owner 状态流。W1 selected 14/14、owning consumer 三交付、
+WSL/两 Mac 各 11/11 和 source consumer、ASan/UBSan/TSan 各 6/6 均通过；P0 通过，未启动 P1。
+
+Compute+Graph 全实现 30,958 行，不含测试，统一脚本 self-check PASS。R2 已完成，不用文档提交或
+旧 CLOSED 增加 native 路线完成度。下一包为 R3 CPU 默认入口/规则、真实 Graph 片段、公用 Sched 消费、
+适用三交付与完整性能；R3–R7 尚未完成，完整基础架构重构未结束。

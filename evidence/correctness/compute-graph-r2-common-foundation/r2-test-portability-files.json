@@ -1,0 +1,14 @@
+{
+  "product_candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
+  "corrected_test_revision": "e25b27f0bf9ec5a6d0b31ec6b49c7bdbf69ea256",
+  "files": {
+    "tests/compute/custom_kernel_test.cc": "2a11e58faee96c69d9e0bd02de7372b0a883305c532b73a9c43028e00f371f7c",
+    "tests/compute/shape_domain_test.cc": "1595a57d9d153e8aa477b7ad77e185364503c41cb051b25c1b164703b272fc6d",
+    "tests/compute/shape_program_test.cc": "8c38061fb0e68782a0ad52a1e1972d6aaf06535b8a2fd4179e8d917bbec88e66",
+    "tests/compute_backend_cpu/runtime_provider_test.cc": "32af5935e3e740863fb801345d00d01af4192731c01a9ba7a841fc265030b8af",
+    "tests/compute_provider_native/provider_shape_test.cc": "55dabb522ed7e70b11fb91379df0466465ee87925fd1c7ccbf1e2abb201c3302",
+    "tests/graph/custom_kernel_test.cc": "d00ca8bb6e11427e60de3e84b44ba840ee83d6383541ca681719d58a12b483d4",
+    "tests/graph/executable_test.cc": "fd28de0e71238c81944934551539829471371b64d24fa20b8434c4981b8acd8a",
+    "tests/graph/region_provider_test.cc": "783bff7ca6025067148a2ccce0003cb7475541045618590fc8694a7324c3892d"
+  }
+}

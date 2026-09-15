@@ -1,6 +1,6 @@
 # R2-G：既定规则的编译边界与单路线计算
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -108,3 +108,28 @@ Compute/Graph 的 source/static/shared/relocation。
 Windows 原始结果在 `C:/hyle-scratch/r2-q4-20260916` 的 `selector-result-4e9f74a0.json`、
 `owning-{source,shared,static}-tests.log`。候选源码红队未发现额外产品纠正；仍需 WSL/两台 Mac 与
 适用 sanitizer 的实际结果，当前为 CANDIDATE，不签全部 correctness/CLOSED。未运行 P1。
+
+## Terminal：R2-D/G CLOSED
+
+产品候选仍为 `4e9f74a09b7218f6053038cc5c5b091e73ff0bc5`；测试可移植性修正为
+`e25b27f0bf9ec5a6d0b31ec6b49c7bdbf69ea256`，产品 include/src/CMake 差异为空。
+[完整验收与原始证据](../../../../evidence/correctness/compute-graph-r2-common-foundation/README.md)
+固定候选、命令、平台、首轮失败与纠正、文件 hash 和限制。
+
+| Gate | 实际裁决 | Verdict |
+|---|---|---|
+| scope | D21–D24、G31–G35 完成；R2-Q 独立 CLOSED，Mem 原卡尾项完成；未扩 native 算子目录 | PASS |
+| architecture | 生成结果保有 native owner；保留真实完成/失败与资源规划；同 Device、无用户 profile 竞赛 | PASS |
+| correctness | W1 selected 14/14；WSL/Air/mini 各 11/11；ASan/UBSan/TSan 各 6/6；测试修正 W1 5/5 | PASS |
+| delivery | W1 Compute/Graph source/static/shared/relocation；同一 producer DSO consumer 三交付及 Unix source 消费 | PASS |
+| usability_docs | checked Direct/结果与 Graph 调用文档、现有 package custom-kernel 样例迁移完成 | PASS |
+| red_team | 单独源码复核 owner/release、同槽 admission、借用依赖、单 Device 与真实回滚；无新增产品缺陷 | PASS |
+| engineering_performance | 本轮预声明 P0 通过；新可选冷/热费用明确，旧 shared/event 布局无增长；未跑 P1 | PASS |
+
+GCC 的测试写法与 Air 外部 Bash recipe 错误均保留原日志并定向纠正，没有放宽产品边界、警告或检查。
+Unix 三机只签实际 source/DSO 消费，不伪称逐机 installed SDK 全矩阵；各路线仍在 R3–R6 中完成
+自己适用的完整交付、默认规则、真实片段与 P1。本卡关闭共同机制，不签四路线已经实现完毕。
+
+本轮统一实现 LOC：Compute+Graph **30,958**，自实现不含测试 **126,143**，全库 **692,165**；
+统计 revision e25b27f0，self-check PASS。重开条件限于真实 ownership/失败/并发缺陷、已批准 native
+consumer 证明共同接口缺口、公开合同/交付变化或合格同合同 material 回归；不能以旧 profile 测试恢复竞赛。

@@ -144,10 +144,14 @@
     },
     {
       "module": "mem",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md",
       "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
-      "summary": "mem v10 CANDIDATE：M100/M101 已冻结；复用未改动 Mem 的 Windows 生命周期、Graph 预算与三交付证据，4e9f74a0 的 WSL、两台 Mac 和适用 sanitizer 尾项正在验证，未签终局。"
+      "summary": "mem v10 CLOSED：M100/M101 外部 Reservation 与 Graph 预算尾项完成；复用 W1 不变实现与三交付，补齐 WSL/两 Mac、ASan/UBSan/TSan、红队和 P0；原 allocator 路径/布局无变化。",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md"
+      }
     },
     {
       "module": "mem_vm",
@@ -267,17 +271,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md",
       "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
-      "summary": "compute R2 CANDIDATE：D21–D24/G31–G35 固定于 4e9f74a0；Windows 14 个 selected gates 与 owning result 三交付消费者全部通过；WSL、两台 Mac 和适用 sanitizer 尚待裁决。"
+      "summary": "compute R2 CLOSED：Direct delegated、真实 Completion 复合保活、native owning result 和 profile 清理完成；W1 14 门/三交付，WSL/两 Mac、三项 sanitizer、红队与 P0 全过；默认 native 路线仍由 R3–R6 完成。",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md",
       "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
-      "summary": "graph R2 CANDIDATE：单 Device 编译、并发硬约束、首个可行计划与 profile 清理已冻结；Windows 14 门及 owning result/Graph 三交付消费者通过，原生路线默认资格仍归 R3–R6。"
+      "summary": "graph R2 CLOSED：单 Device/同设备组合、并发硬约束、首个可行计划与 profile 竞赛清理完成；资源/packing/失败回滚保留，适用正确性/交付/红队/P0 全过；R3–R6 的 native 完整片段和默认规则尚待实施。",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/graph-v11-four-route-compile-boundary.md"
+      }
     },
     {
       "module": "container_concurrent",

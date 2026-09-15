@@ -120,3 +120,9 @@ retention 的 completion 引用还保护 terminal 与 release 之间的节点，
 当前仍 AUDITED。Windows 记录在 `C:/hyle-scratch/r2-q4-20260916/direct-tests.log` 与
 `direct-cuda-retest.log`；完整源/静态/动态、Graph/oneDNN 直接消费、WSL/两 Mac 及适用 sanitizer 随稳定
 R2 API 候选统一验收，尚未运行项不签 PASS。本检查点不签完整路线、默认优选规则或 P1。
+
+## 本轮交接结案
+
+D21–D24 的剩余跨平台、Graph/oneDNN、三交付、sanitizer 和红队已由当前
+[R2-G terminal](graph-v11-four-route-compile-boundary.md#terminalr2-dg-closed) 一起完成。
+当前 Compute 状态以该卡和 registry 为准；本页保留 D 实现期事实，不再授权独立旧队列。

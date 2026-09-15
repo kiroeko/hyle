@@ -51,3 +51,24 @@ AUDITED，完整候选再签本轮剩余风险，不用旧 v9 CLOSED 冒充新�
 实现和测试没有变化。Windows 复用上述 G106 对应的 Mem/逐头与三交付记录；当前 R2 Graph 的并发预算、
 失败/异步回收消费者也通过。只补预声明 WSL、两台 Apple 和 ASan/UBSan/TSan 尾项，当前 CANDIDATE，
 未运行部分仍为 UNPROVEN，不触发新的 P1 或全库复检。
+
+## Terminal：Mem v10 CLOSED
+
+M100/M101 的定向尾项完成，产品候选仍为 `4e9f74a09b7218f6053038cc5c5b091e73ff0bc5`。
+[共同验收原始证据](../../../../evidence/correctness/compute-graph-r2-common-foundation/README.md)：
+WSL/Air/mini 的 Mem 与 Graph 消费/逐头均通过，WSL ASan/UBSan/TSan 各适用 6 门通过。Windows
+复用上述 Mem 不变实现的已声明三交付/单测记录，当前 Graph 预算/异步回收也经 R2 full selector 回放。
+本轮没有增加 Mem 产品/测试改动，没有重审全库。
+
+| Gate | 依据 | Verdict |
+|---|---|---|
+| scope | 只处理 M100/M101 及原卡平台尾项 | PASS |
+| architecture | 外部 bytes 与真实 allocator 请求共享原 quota；借用 owner、先销毁资源再归还 | PASS |
+| correctness | allocation/reservation、边界/失败/并发与真实 Graph 回收；W1 复用与三台 Unix、三项 sanitizer | PASS |
+| delivery | W1 已声明 source/static/shared 与当前 Graph 三交付；三台 Unix source/DSO 消费 | PASS |
+| usability_docs | API/账目/保活合同与 Graph 真实消费已说明 | PASS |
+| red_team | 无 backing 伪分配/双计，move/reset/零值与晚到释放不提前归还；原 owner 路径不变 | PASS |
+| engineering_performance | P0：冷入口零堆分配、固定空间、无争用 O(1)，沿原 CAS；无新 P1 胜负声明 | PASS |
+
+统一 R2 统计：Compute+Graph 30,958，自实现不含测试 126,143，全库 692,165；Mem 原代码规模没有
+本轮增长。重开只接受可复现 quota/生命周期/并发缺陷、真实新 consumer 所需公开合同变化或相关依赖升级。
