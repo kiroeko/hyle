@@ -387,15 +387,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-backend-cuda-v1-async-runtime.md",
-      "candidate": "7718b163946104989c9a000f19fd01f454211d36",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      },
-      "summary": "compute_backend_cuda v1 CLOSED：CUDA 13.3 explicit-context runtime、stable resources、event Completion/reaper、typed interop、single-queue capture 与 CUDA-on 三交付通过正确性、易用性和红队；等价 Runtime copy/event P1 八格 PARITY/PASS。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-backend-cuda-v2-endpoint-identity.md",
+      "summary": "compute_backend_cuda v2 SCOPED：真实 Graph 双 lane 暴露同 Context 的不同 Queue 共用 endpoint identity，可能省略必要 event wait；只审计私有身份与可导入判断，不改变公开 API/runtime owner。"
     },
     {
       "module": "compute_provider_native",
