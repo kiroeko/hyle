@@ -318,16 +318,17 @@ Status infer_domain_view(const GraphState &graph, const NodeRecord &node,
     for (auto dim : source.dimensions())
       output_dense = output_dense && relation.range(operand(dim)).first() > 0;
   } else {
-    const auto permutation =
-        symbolic ? symbolic->permutation() : fixed->permutation();
-    if (permutation.size() != source.rank())
+    const auto permutation_size = symbolic ? symbolic->permutation().size()
+                                            : fixed->permutation().size();
+    if (permutation_size != source.rank())
       return Status::InvalidArgument(
           "View permutation rank differs from input");
     std::array<bool, kRank> seen{};
     output_dense = input_dense;
     for (std::size_t axis = 0; axis < rank; ++axis) {
       HYLE_ASSIGN_OR_RETURN(const auto from,
-                            axis_index(permutation[axis], rank));
+          axis_index(symbolic ? symbolic->permutation()[axis]
+                               : fixed->permutation()[axis], rank));
       if (seen[from])
         return Status::InvalidArgument("View permutation has duplicate axes");
       seen[from] = true;
