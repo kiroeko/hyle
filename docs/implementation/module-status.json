@@ -267,14 +267,14 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-v15-bound-layout-instantiation.md",
-      "summary": "compute v15 AUDITED：承接 v14/C93/foundation，C150/C151 为 Graph 真实 strided 布局提供显式布局族和受检冷实例化；不放宽旧 dense 域、alias 或 warm route。"
+      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
+      "summary": "compute R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/graph-v10-reviewed-foundation-contracts.md",
-      "summary": "graph v10 AUDITED：承接 node-set 与三轴资源骨架，G100--G107 按整体复核补 replay 分类、派生 shape、统一选择/可行解预算、资源域与 variant 常量内存聚合；热执行与完成边界不放宽，基础仍未验收。"
+      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
+      "summary": "graph R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
     },
     {
       "module": "container_concurrent",
@@ -349,8 +349,8 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-provider-onednn-v5-foundation-route.md",
-      "summary": "compute_provider_onednn v5 AUDITED：OD50--OD53 迁移 Compute v8 proposal/outcome、保持 exact-only direct route，并由真实 Graph region 消费既有 opaque BRGEMM seam；不改 kernel/tile/public API。"
+      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
+      "summary": "compute_provider_onednn R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
     },
     {
       "module": "compute_provider_ggml",
@@ -365,8 +365,8 @@
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/graph-provider-onednn-v4-node-set-foundation.md",
-      "summary": "graph_provider_onednn v4 AUDITED：GP40--GP44 把 gated-MLP region 迁移为可收缩 node set、显式 boundary/完整结构成本与事务化 outcome，并保留 v3 EnqueueResult/acceptance 语义。"
+      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
+      "summary": "graph_provider_onednn R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
     },
     {
       "module": "compute_ops",
@@ -376,21 +376,21 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
-      "summary": "compute_backend_cpu R1 delivery SCOPED：因四路线公开交付变化定向重开；冻结 CPU capability 与未选 native 入口裁剪范围，不修改 runtime。"
+      "summary": "compute_backend_cpu R1 delivery AUDITED：BD1/BD2 固定 CPU capability 和可选 native façade/install 投影；runtime 不变。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
-      "summary": "compute_backend_cuda R1 delivery SCOPED：因四路线公开交付变化定向重开；冻结 CPU capability 与未选 native 入口裁剪范围，不修改 runtime。"
+      "summary": "compute_backend_cuda R1 delivery AUDITED：BD1/BD2 固定 CPU capability 和可选 native façade/install 投影；runtime 不变。"
     },
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-provider-native-v2-foundation-route.md",
-      "summary": "compute_provider_native v2 AUDITED：N20--N23 迁移新 proposal/outcome、补完整结构成本，并以一个动态 token bounded general route+exact variant 验收 Graph foundation；19-family exact 路线保持。"
+      "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
+      "summary": "compute_provider_native R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
     },
     {
       "module": "compute_sched",

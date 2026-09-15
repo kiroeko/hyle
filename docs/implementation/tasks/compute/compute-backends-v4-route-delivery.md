@@ -1,6 +1,6 @@
 # CPU/CUDA backend：R1 路线交付边界
 
-## Closure card / SCOPED
+## Closure card / AUDITED
 
 - components / owner：`compute_backend_cpu`、`compute_backend_cuda` / Compute backend delivery。
 - baseline：`ec142a92e00e27a73abbae4f040b6b361465e9a7`；当前工作树干净。
@@ -22,7 +22,7 @@
   macOS CPU/no-backend；backend 代表性现有测试、逐头、source/static/shared/relocation/export；
   selector、docs/closure/diff、候选后红队。重型验证串行、最多两 jobs。
 
-## 能力与候选 FIX
+## 能力与固定 FIX
 
 | 能力族 | 层级 / 现状 | 有限动作 | 验收 |
 |---|---|---|---|
@@ -36,4 +36,5 @@
 ## 七问与裁决
 
 依赖版本/许可不变；补齐的是选路交付；复用中央图、package registry、Error/Mem；P0 无 runtime
-增量；无 Native FFI；三交付与用户选型按 R1 取证。当前仅 SCOPED，BD1/BD2 审计提交后方可实施。
+增量；无 Native FFI；三交付与用户选型按 R1 取证。SCOPED 提交为 `fb5a644d`；已审计中央 roots、
+OPTIONAL_ABSENT 与 installed 投影，BD1/BD2 固定，本卡进入 AUDITED 后方可实施。
