@@ -1,6 +1,6 @@
 # Compute R2-D：独立提交与原生结果 owner
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -87,4 +87,11 @@ R2-Q 的已完成门复用精确候选证据，变化影响的门才回放，不
 6. Compute owning factor 导出新头/实现；native 库头不进入共同接口；三交付同合同。
 7. 普通调用使用 checked result/lease；producer 的写槽属于 detail seam，由各路线的正常 Program/run-state 包装。
 
-当前 SCOPED，完成本卡登记与 owner 的 AUDITED 绑定后才写产品；candidate、七门结果、限制及 LOC 后记。
+SCOPED 已于 `5bafe026` 提交；现完成 AUDITED 绑定，D21–D24 与上述 API/所有权边界固定。
+源码锚点：`operation.cc` 的公开 prepare、shared submit、delegated retained/borrowed submit；
+`completion.cc` 的 settle/reset/attach_lifetime；`prepared_state.h` 的 invocation 引用与 in-flight；
+现有 Graph aggregate 证明 terminal/release 必须分开、先退役 native state 再释放其 owner。
+新复合附件只用于需要多个 owner 的结果，不改现有 backend CompletionVTable 和 event slot 布局。
+共享入口与独立入口在冷类型上分开；结果 slot 先取得写入权再接纳工作，publish 不申请内存。
+失败的 publish 保留调用方传入的 Completion，不允许以普通错误丢掉已接纳工作。
+candidate、七门实际结果、限制及统一 LOC 在实施后记录；当前不签 native 路线完成。
