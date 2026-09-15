@@ -165,6 +165,35 @@ TEST(CudaBackend, QueueTransferNativeSubmitAndMemoryRoundTrip) {
   EXPECT_TRUE(queue->drain().ok());
 }
 
+TEST(CudaBackend, CompletionEndpointIdentifiesQueueNotContext) {
+  using hyle::compute::detail::QueueSequence;
+  auto device = cuda::device(0).value();
+  auto context = Context::create(device).value();
+  auto producer = context.create_queue().value();
+  auto consumer = context.create_queue().value();
+  const auto source = QueueSequence::completion_endpoint(producer).value();
+  const auto destination = QueueSequence::completion_endpoint(consumer).value();
+  EXPECT_TRUE(source.valid());
+  EXPECT_TRUE(destination.valid());
+  // Compatibility is not execution order: separate streams on one device
+  // must still import an event before consuming the producer's writes.
+  EXPECT_NE(source, destination);
+  EXPECT_EQ(source, QueueSequence::completion_endpoint(producer).value());
+  EXPECT_TRUE(QueueSequence::can_import_endpoint(consumer, source).value());
+  auto moved = std::move(producer);
+  EXPECT_EQ(source, QueueSequence::completion_endpoint(moved).value());
+  EXPECT_TRUE(QueueSequence::can_import_endpoint(consumer, source).value());
+
+  auto other_context = Context::create(device).value();
+  auto other_queue = other_context.create_queue().value();
+  EXPECT_FALSE(QueueSequence::can_import_endpoint(other_queue, source).value());
+  EXPECT_FALSE(QueueSequence::can_import_endpoint(consumer, {}).value());
+  const int foreign_authority = 0;
+  EXPECT_FALSE(QueueSequence::can_import_endpoint(
+                   consumer, {&foreign_authority, &foreign_authority})
+                   .value());
+}
+
 TEST(CudaBackend, TwoQueuesImportACompletionWithoutAHostBarrier) {
   auto device = cuda::device(0);
   ASSERT_TRUE(device.has_value()) << device.error().message();
