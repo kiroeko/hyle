@@ -1,0 +1,5 @@
+device=NVIDIA GeForce RTX 4070 queue_family=0 API=1.4.341 driver=2559541248
+run=0 values=1024 record_count=1 result=PASS
+run=1 values=1024 record_count=1 result=PASS
+run=2 values=1024 record_count=1 result=PASS
+result=PASS fixture_resource_creations_in_replay=0 rerecords=0 native_driver_cost=UNMEASURED timing=NOT_RUN
