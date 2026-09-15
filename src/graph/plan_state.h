@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "constant_artifact.h"
+#include "graph_state.h"
 #include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/context_ref.h"
