@@ -1,5 +1,6 @@
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -34,6 +35,64 @@ namespace cuda = hyle::compute::cuda;
 namespace mem = hyle::mem;
 
 using hyle::StatusCode;
+
+struct HostStreamGate final {
+  std::atomic<bool> entered{false};
+  std::atomic<bool> released{false};
+
+  static void CUDART_CB wait(void *raw) {
+    auto &gate = *static_cast<HostStreamGate *>(raw);
+    gate.entered.store(true, std::memory_order_release);
+    gate.entered.notify_all();
+    gate.released.wait(false, std::memory_order_acquire);
+  }
+};
+
+TEST(CudaBackend, SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion) {
+  ASSERT_EQ(cudaSetDevice(0), cudaSuccess);
+  auto device = cuda::device(0).value();
+  auto context = Context::create(device).value();
+  auto resource =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto source = mem::Buffer::create(resource.ref(), 4096).value();
+  auto destination = mem::Buffer::create(resource.ref(), 4096).value();
+  ASSERT_TRUE(source.view().fill(std::byte{0x5a}).ok());
+  // Fixture initialization must also work with the deliberately broken
+  // baseline, so drain it explicitly before installing the controlled gate.
+  ASSERT_EQ(cudaStreamSynchronize(nullptr), cudaSuccess);
+
+  for (bool copy : {false, true}) {
+    HostStreamGate gate;
+    ASSERT_EQ(cudaLaunchHostFunc(nullptr, &HostStreamGate::wait, &gate),
+              cudaSuccess);
+    gate.entered.wait(false, std::memory_order_acquire);
+    std::atomic<bool> started{false};
+    std::atomic<bool> finished{false};
+    hyle::Status result;
+    std::thread worker([&] {
+      started.store(true, std::memory_order_release);
+      started.notify_all();
+      result = copy ? destination.view().copy_from(source.view())
+                    : destination.view().fill(std::byte{0x5a});
+      finished.store(true, std::memory_order_release);
+    });
+    started.wait(false, std::memory_order_acquire);
+    // No throughput assertion: a return while the prerequisite stream is
+    // gated is a correctness violation, however fast or slow the GPU is.
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    const bool returned_while_gated = finished.load(std::memory_order_acquire);
+    gate.released.store(true, std::memory_order_release);
+    gate.released.notify_all();
+    worker.join();
+    ASSERT_EQ(cudaStreamSynchronize(nullptr), cudaSuccess);
+    EXPECT_FALSE(returned_while_gated) << (copy ? "device copy" : "device fill");
+    ASSERT_TRUE(result.ok()) << result.message();
+    std::array<std::byte, 4096> observed{};
+    ASSERT_TRUE(destination.view().read(observed).ok());
+    for (const auto value : observed)
+      EXPECT_EQ(value, std::byte{0x5a});
+  }
+}
 
 TEST(CudaBackend, PreservesPortableAndNativeErrorIdentity) {
   const auto runtime_oom = cuda::status(cudaErrorMemoryAllocation);
