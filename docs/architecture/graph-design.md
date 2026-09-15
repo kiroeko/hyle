@@ -241,6 +241,13 @@ rank/type 合法及域覆盖；保守区间与 guards 不足以证明 schema/pro
 大小的有界线性遍历，HYLE warm submit 不再求值。Compute 的直接 TensorDesc 仍描述 concrete tensor，
 provider-neutral domain 投影不引入 Graph ID 或反向依赖。
 
+Graph 的 `ViewSpec` 用同一组维度表达式描述 reshape/broadcast 的尺寸以及 slice 的 start/count，axis、
+step 和 permutation 在编图时固定。逻辑 node 区分未绑定 ViewSpec 与 concrete Compute Operation，
+不能用一个假固定尺寸描述冒充动态操作。输出可声明 `TensorSpec::inferred` 的 shape/type/storage-format
+约束，让唯一 producer schema 推导实际 strides 和 block axis；这种 output-only spec 不能作为独立
+input/constant 的存储描述。具体绑定按拓扑复用 ComputeOps 的 View 语义，不默认把转置或广播变成 dense，
+也不隐式 materialize。全域路线还需证明布局与 alias offset 的上界及实例化合同，精确点的成功不构成全域证明。
+
 表达式按创建顺序引用此前维度或非负常量，因而不需要递归图解释器。派生 bounds 是保守 envelope，
 guards 可能排除各轴上界的组合；不能把这个组合当作合法 concrete shape 先做单点 schema inference，
 再声称覆盖整个 domain。整数或 descriptor 的保守上界无法表示时要求缩窄输入范围，不靠通用约束求解

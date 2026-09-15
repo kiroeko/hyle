@@ -1233,3 +1233,32 @@ closure 39/schema 4、docs 297/1075 links 与 diff check 通过。全库代码 *
 保持 AUDITED：G106 packing identity/共享与 capture 私有上界、G101 动态 View、G103 storage/lane 联合
 优化、真实 CPU/CUDA/Apple 探针及完整候选的跨平台/sanitizer/独立红队/P1 尚未完成。本段不是 foundation
 gate，也不把 CPU/CUDA typed 三交付冒充 oneDNN region 的全部 GP43 终局交付。
+
+### G101：动态 View 与真实布局（实现前固定）
+
+基线 `d7f397ef`。当前 `compute::View` 的目标形状/start/count 全为常量，Graph 的 symbolic 输出又一律
+重建为 dense；因此只给 reshape 加尺寸包装会错误处理 slice/permute/broadcast 的 strides 和 alias
+offset。此项继续既定 G101，不横向扩算子，也不修改 Provider 选择、Queue 或执行内核。
+
+- Graph 公共 `ViewSpec` 复用 `Dimension`，表达 reshape/broadcast 的目标维度、slice 的 start/count；
+  axis、step、permutation 是编图时固定参数。`GraphBuilder::add(ViewSpec, ValueId)` 自动推导输出维度。
+  Compute 的直接 View/TensorDesc 保持 concrete；Graph ID 不下沉到 Compute。
+- Node 的逻辑描述显式区分 Operation 与 ViewSpec，不填一个假 concrete View。原图的 `operation()` 对
+  未绑定 ViewSpec 返回 FailedPrecondition；`operation_kind()/view_spec()` 可诚实查看逻辑描述。
+- `TensorSpec::inferred(type, dimensions, format)` 是输出约束，不声称 dense：shape/type/storage format
+  已知，strides/block axis 由 producer schema 推导。input/constant 拒绝这种没有独立布局的 spec。
+  它同时承载链式 View 的输出，不引入任意 symbolic stride API 或在图外维护第二份 layout 方程。
+- exact specialization 先求有限维度/guards，再按拓扑绑定 View attributes、调用已有 ComputeOps schema，
+  检查显式输出约束并生成 concrete Graph；Provider 只看到真实 Operation/TensorDesc。普通显式 dense/
+  strided 输出仍严格匹配，不能因添加 inferred 形状而放宽。slice 的真实偏移由现有 prepared alias 消费。
+- 原图 profile identity 必须包含 ViewSpec 的全部表达式/固定属性，不能把不同 start 或布局 recipe 当成
+  同一语义。复制/销毁原图后 exact Executable 仍独立保活；构图与编译失败不发布半成品。
+- P0：只增加冷逻辑 node 的 tagged descriptor；shape/布局推导 O(D + 节点及其端口 × rank)，无 tensor
+  payload 读取；warm submit 不增加求值、搜索、分配或 provider 跳转。复用 Container/ComputeOps/Error/Mem。
+- 本段实施与检查 exact 链路，是完整 G101 的前置，不把全域实现缩为 exact-only。后继仍必须为 View 域
+  给出完整布局/偏移上界证明与冷实例化，保留同一共享物理 Plan；在证明完成前明确拒绝含 inferred View
+  的 declared-domain 编译，不能用上界角点的推导冒充全域支持。
+- 验证：flatten→RMSNorm、slice→permute→Copy、broadcast→Copy、负 axis/empty/越界/溢出/非整除，
+  foreign IDs、错误 layout/type/format、链式 inferred 输出、公开 introspection、profile 差异、逐点 OOM/
+  销毁与原图释放；Windows Graph/逐头、真实 oneDNN、CUDA、source/static/shared 受影响闭包。
+  一轮表示/实现及一次产品纠正；跨平台/sanitizer/独立终局红队/P1 仍按完整 foundation candidate 执行。
