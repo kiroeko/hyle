@@ -4,7 +4,9 @@
 
 当前用途校准：本卡是独立格式/同步/vendor 互操作证据，不是正式量化路线的需求模板。
 [总计划的真实纵切](compute-graph-route-unification-audit.md#更贴近消费的有限纵切)以保留压缩权重的
-decode/prefill 为主；浮点 vendor 与全量展开的资源取舍分开处理。本卡样例保留，不因用途校准重测。
+decode/prefill 为主；浮点 vendor 与全量展开的资源取舍分开处理。后续
+[压缩 carrier 调查](cuda-compressed-provider-admission.md)已移除该样例的活动源码/用户入口；本卡与
+原始证据保留，源码可从 `6619da46` 恢复，不因样例退役重测已完成的产品。
 
 - owner：Graph v10/G107 与总路由审计工作包 5；baseline `4fe60889`。这是基础架构的具名实验，
   不新增 shipping Provider、不为研究 sample 创建假 component 或 CLOSED 证书。

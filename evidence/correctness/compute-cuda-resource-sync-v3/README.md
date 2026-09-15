@@ -3,6 +3,8 @@
 产品候选 `be2d8b059ca858d2e9b3393b38d2530d4eb3dbe3`；见
 [closure card](../../../docs/implementation/tasks/compute/compute-backend-cuda-v3-sync-resource.md)。
 原始 CTest 日志保留本机字节/行尾；日期展示编码不影响用例输出。没有性能计时资格声明。
+下面的 Q4 样例路径和命令是历史运行事实；样例随后退役，可从 `6619da46` 恢复。CUDA 产品与专门的
+同步回归仍保留，见 [退役与替代研究记录](../../../docs/implementation/tasks/compute/cuda-compressed-provider-admission.md)。
 
 | 日志 | 内容 |
 |---|---|

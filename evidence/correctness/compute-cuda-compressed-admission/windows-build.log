@@ -1,0 +1,448 @@
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hyle-scratch\cuda-compressed-admission-20260915 && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hyle-scratch/cuda-compressed-admission-20260915/hyle-runtime/hyle_marlin_admission-Release.cmake"
+[2/5] Building CXX object CMakeFiles\hyle_marlin_admission.dir\main.cc.obj
+[3/5] Building CUDA object CMakeFiles\marlin_reference.dir\C_\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu.obj
+FAILED: [code=1] CMakeFiles/marlin_reference.dir/C_/public/project-hyle/marlin/marlin/marlin_cuda_kernel.cu.obj 
+"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin\nvcc.exe" -forward-unknown-to-host-compiler  -isystem "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include" -isystem "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cccl" -D_WINDOWS -Xcompiler=" /EHsc" -Xcompiler="-O2 -Ob2" -DNDEBUG -std=c++17 "--generate-code=arch=compute_89,code=[compute_89,sm_89]" -Xcompiler=-MD -MD -MT CMakeFiles\marlin_reference.dir\C_\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu.obj -MF CMakeFiles\marlin_reference.dir\C_\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu.obj.d -x cu -c C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu -o CMakeFiles\marlin_reference.dir\C_\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu.obj -Xcompiler=-FdCMakeFiles\marlin_reference.dir\marlin_reference.pdb,-FS
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin/../include\cuda.h(24527): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin/../include\cuda.h(25063): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin/../include\cuda.h(26748): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(13711): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cuda_runtime_api.h(14214): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin/../include\cuda.h(24527): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin/../include\cuda.h(25063): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin/../include\cuda.h(26748): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(780): warning #177-D: variable "cols" was declared but never referenced
+    int cols = prob_n / thread_n;
+        ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=8]" at line 802
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=8]" at line 802
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=8]" at line 802
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=8]" at line 802
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=8]" at line 802
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=8]" at line 802
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 804
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 804
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 804
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 804
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 804
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 804
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 806
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 806
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 806
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 806
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 806
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 806
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 808
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 808
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 808
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 808
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 808
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 808
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(225): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    int iters = ceildiv(k_tiles * n_tiles * parallel, gridDim.x);
+                ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 810
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(229): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      iters = (group_blocks / thread_k_blocks) * ceildiv(iters, (group_blocks / thread_k_blocks));
+                                                 ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 810
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(257): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      int col_first = iters * ceildiv(k_tiles * slice_col_par, iters);
+                              ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 810
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(260): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+        slice_count = ceildiv(k_tiles - col_off, iters);
+                      ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 810
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(290): error: calling a constexpr __host__ function("ceildiv") from a __global__ function("Marlin") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+    constexpr int a_sh_wr_iters = ceildiv(a_sh_stage, a_sh_wr_delta); 
+                                  ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 810
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(611): error: calling a constexpr __host__ function("ceildiv") from a __device__ function("operator()") is not allowed. The experimental flag '--expt-relaxed-constexpr' can be used to allow this (note: for a __tile__/__tile_global__ caller, the flag guarantees support only for calls that are required by language rules to be evaluated at compile time).
+      for (int i = 0; i < ceildiv(16 * thread_m_blocks, threads / (2 * thread_n_blocks)); i++) {
+                          ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=8]" at line 810
+
+60 errors detected in the compilation of "C:/public/project-hyle/marlin/marlin/marlin_cuda_kernel.cu".
+marlin_cuda_kernel.cu
+ninja: build stopped: subcommand failed.

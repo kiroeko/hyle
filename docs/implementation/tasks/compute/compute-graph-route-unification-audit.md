@@ -306,7 +306,7 @@ sanitizer 或性能采样；产品代码与 registry 未由本次文档工作改
 | 2 | Identity + proposal/shape/custom substrate | 复用已完成 identity/outcome/node-set；补 replay 成本、有限派生 shape/domain、安装包 custom execution、资源访问与 constant seam，不先写 selector 大算法 |
 | 3 | Graph route unification | leaf/region 同池、完整成本与有界重选、搜索受限可行解、资源域顺序、variant 常量/内存聚合和可解释 report |
 | 4 | CPU foundation probe | direct/one-op tax + gated MLP；oneDNN 非 insertion-order region；exact/bounded 与派生维度、资源冲突/独立、variant 内存/预算反例；增加真实持久 executor 组合，不能由串行 callback 探针代替 |
-| 4a | 成熟运行时接入准入 | 先确认 CUDA 压缩 Q4 与 Apple MLX 的具体公开入口、格式/精度、资源、失败和重放成本；公开 shared/delegated 不成立时只评估一个窄 source-patch 方案，见下节停止条件；不先造宽适配 |
+| 4a | 成熟实现接入准入 | CUDA 独立压缩 kernel 已有具名接入实证，见下节；正式版本/数值/失败封装与 Apple MLX 尚未完成。公开 shared/delegated 不成立时只评估一个窄 source-patch 方案，不先造宽适配 |
 | 5 | CUDA foundation probe | 复用已通过的多 lane/capture；分开做正常浮点 vendor 调用与保留压缩权重的 Q4 decode/prefill FFN；正式 leaf/region/unsupported、residence/预算、general/exact 与完成边界。Q4→F32 预检不代替量化路线 |
 | 6 | Apple foundation probe | MLX delegated managed replay + 原生 Metal custom-kernel/interop，实证成本分类、prepared-only 拒绝、island boundary/Completion，不横向填 Apple 算子 |
 | 6a | Vulkan foundation probe | 最小 SPIR-V 计算、device/queue-family、buffer/barrier/timeline、native handoff；Windows/Linux 与 Apple MoltenVK portability；不填算子目录 |
@@ -396,10 +396,17 @@ SGLang `06992c92`、ds4 `9139e2ae`；完整 commit 与版本化调查见
 F32 activation 变 Q8：4a 先确定数值合同及所需最小 schema/显式转换，再给实际 owner 固定 FIX；不能
 靠放宽 oracle 容差准入。精度或资源合同不同只作 NATURAL_ROUTE，不签同合同 WIN/LOSS。
 
-Q4→F32 样例保留为已经完成的互操作与同步回归事实，不重写成历史错误，也不继续把它发展成量化默认
-Provider。cuBLASLt 的自然浮点用途与量化 carrier 分别准入；没有证据必须提供长期全量展开功能时，
+Q4→F32 样例的活动源码与用户入口已退役；已经完成的互操作与同步回归事实保留，不重写成历史错误，
+也不继续把它发展成量化默认 Provider。cuBLASLt 的自然浮点用途与量化 carrier 分别准入；没有证据必须提供长期全量展开功能时，
 不为这个测试建立独立 shipping capability。所选 vendor 的内部算法与 HYLE 包装成本分别测量，默认
 成熟实现不等于它天然接受每一种 Q4 编码。
+
+2026-09-15 的 [CUDA 压缩接入调查](cuda-compressed-provider-admission.md)在现有 Windows shared SDK 上
+原样编译并执行 original Marlin W4A16/group128 kernel：HYLE buffers/Queue/Completion，九次变化输入，
+无展开 device 权重。它证实独立 native kernel 路线可行，不需要为接入重写 Graph。建议首个正式压缩
+carrier 选 Marlin family，但 2024 original pin 不直接成为 shipping/SOTA 默认；当前 vLLM/SGLang
+版本的 native façade、冷配置、错误与数值合同须按该调查的有限清单准入。GGUF 格式/原 ggml blocker
+和 MLX 不由该实验解决；4a 仍部分完成，无新的产品百分比或模块关闭。
 
 #### 执行约束和停止条件
 

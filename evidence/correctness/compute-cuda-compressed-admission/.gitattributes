@@ -1,0 +1,2 @@
+# Preserve compiler-quoted source whitespace in this raw failed-build log.
+windows-build.log whitespace=cr-at-eol,-blank-at-eof,-blank-at-eol

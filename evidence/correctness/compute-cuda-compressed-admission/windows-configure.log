@@ -1,0 +1,17 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.52.0.windows.1")
+-- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl (found suitable version "13.3.73", minimum required is "13.3")
+-- The CUDA compiler identification is NVIDIA 13.3.73 with host compiler MSVC 19.50.35728.0
+-- Detecting CUDA compiler ABI info
+-- Detecting CUDA compiler ABI info - done
+-- Check for working CUDA compiler: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/bin/nvcc.exe - skipped
+-- Detecting CUDA compile features
+-- Detecting CUDA compile features - done
+-- Configuring done (9.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/hyle-scratch/cuda-compressed-admission-20260915

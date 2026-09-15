@@ -49,9 +49,6 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 
 ## 构建单个示例
 
-基础架构研究 fixture：[CUDA Q4 carrier preflight](package/compute/cuda_q4_preflight/)。它只验证公开
-Queue/storage 与真实 native/cuBLASLt 计算的接入，不是已交付的 Q4 Provider 或性能证书。
-
 ```bash
 cd samples/01_mem_container
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

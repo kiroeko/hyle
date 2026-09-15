@@ -1,0 +1,33 @@
+UpdateCTestConfiguration  from :C:/hyle-scratch/cuda-compressed-admission-20260915/DartConfiguration.tcl
+Test project C:/hyle-scratch/cuda-compressed-admission-20260915
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: hyle_marlin_admission
+
+1: Test command: C:\hyle-scratch\cuda-compressed-admission-20260915\app\hyle_marlin_admission.exe
+1: Working Directory: C:/hyle-scratch/cuda-compressed-admission-20260915
+1: Test timeout computed to be: 90
+1: device=NVIDIA GeForce RTX 4070 sm=89 sms=46
+1: resident packed=524288 scales=16384 lock_workspace=512 expanded_device_weights=0
+1: PASS M=1 N=1024 K=1024 replay=0 mean_relative_L1=0.000276323961 max_abs=0.0100402832
+1: PASS M=1 N=1024 K=1024 replay=1 mean_relative_L1=0.000299433842 max_abs=0.0121994019
+1: PASS M=1 N=1024 K=1024 replay=2 mean_relative_L1=0.000296698352 max_abs=0.0109024048
+1: PASS M=7 N=1024 K=1024 replay=0 mean_relative_L1=0.000285706027 max_abs=0.0151824951
+1: PASS M=7 N=1024 K=1024 replay=1 mean_relative_L1=0.000291642514 max_abs=0.0138320923
+1: PASS M=7 N=1024 K=1024 replay=2 mean_relative_L1=0.000281737527 max_abs=0.015007019
+1: PASS M=64 N=1024 K=1024 replay=0 mean_relative_L1=0.000384805313 max_abs=0.029838562
+1: PASS M=64 N=1024 K=1024 replay=1 mean_relative_L1=0.000387945787 max_abs=0.0269088745
+1: PASS M=64 N=1024 K=1024 replay=2 mean_relative_L1=0.00038461792 max_abs=0.0236358643
+1/1 Test #1: hyle_marlin_admission ............   Passed    0.29 sec
+
+The following tests passed:
+	hyle_marlin_admission
+
+100% tests passed out of 1
+
+Total Test time (real) =   0.34 sec

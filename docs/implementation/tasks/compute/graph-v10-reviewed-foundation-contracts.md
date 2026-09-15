@@ -1691,3 +1691,7 @@ activation Q8 与 HYLE 的 accumulation_type 不是同一个语义；相关实�
 真实 owner 小卡固定，不由本段授权。Q4→F32 预检不作为量化主线；正常浮点 vendor 与压缩 FFN 的
 decode/prefill 分开验证。G100--G107、既有产品/证据和 registry 保持；下一实现工作须服从总计划 4a
 准入结果，随后 5/6/6a/6b/7。没有因文档重排运行产品测试或签新能力通过。
+
+随后 [CUDA 压缩接入调查](cuda-compressed-provider-admission.md)验证了独立 Marlin kernel 在 HYLE
+buffer/Queue/Completion 上运行，不需要修改 Graph；旧 Q4→F32 展示样例退役，历史证据和 CUDA v3
+回归保留。该结果不冒充正式 Provider/FFN/capture/性能资格；后续只按总计划中的有限 adapter 清单推进。

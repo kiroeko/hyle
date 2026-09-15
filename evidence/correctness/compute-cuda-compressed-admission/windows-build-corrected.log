@@ -1,0 +1,66 @@
+[0/1] Re-running CMake...
+-- Configuring done (4.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/hyle-scratch/cuda-compressed-admission-20260915
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hyle-scratch\cuda-compressed-admission-20260915 && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hyle-scratch/cuda-compressed-admission-20260915/hyle-runtime/hyle_marlin_admission-Release.cmake"
+[2/5] Building CUDA object CMakeFiles\marlin_reference.dir\C_\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu.obj
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(780): warning #177-D: variable "cols" was declared but never referenced
+    int cols = prob_n / thread_n;
+        ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=8, thread_k_blocks=8, stages=4, group_blocks=-1]" at line 801
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=1, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 803
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=2, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 805
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=3, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 807
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(405): warning #179-D: right operand of "%" is zero
+        if (group_blocks != -1 && pipe % (group_blocks / thread_k_blocks) == 0) {
+                                         ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+C:\public\project-hyle\marlin\marlin\marlin_cuda_kernel.cu(430): warning #39-D: division by zero
+        int4* sh_s_stage = sh_s + s_sh_stage * ((group_blocks / thread_k_blocks) * (pipe / (group_blocks / thread_k_blocks)));
+                                                                                           ^
+          detected during instantiation of "void Marlin<threads,thread_m_blocks,thread_n_blocks,thread_k_blocks,stages,group_blocks>(const int4 *, const int4 *, int4 *, const int4 *, int, int, int, int *) [with threads=256, thread_m_blocks=4, thread_n_blocks=16, thread_k_blocks=4, stages=4, group_blocks=-1]" at line 809
+
+marlin_cuda_kernel.cu
+tmpxft_000085a8_00000000-7_marlin_cuda_kernel.cudafe1.cpp
+[3/5] Linking CUDA static library marlin_reference.lib
+[4/5] Linking CXX executable app\hyle_marlin_admission.exe

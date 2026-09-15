@@ -138,6 +138,13 @@ HYLE 语义到第三方制品的翻译，并兑现 storage、failure、threading
 
 包含私有头、调用未导出 kernel 或复制实现片段都不能在普通 provider 内偷渡成稳定路线。
 
+第三方整库带 graph/Tensor runtime，不表示其中每种成熟实现都只能以 runtime region 接入。上游若另有
+明确可独立复用的 kernel 源码，可由版本锁定的 native provider 拥有其构建和 launcher；HYLE 仍提供
+buffer、Queue 和 Completion。最新上游只有框架耦合入口时，需要窄 façade/source-patch 审计，不能把
+旧版独立内核的可用性外推为新版零适配成本。
+[Marlin 压缩接入调查](../implementation/tasks/compute/cuda-compressed-provider-admission.md)给出了真实
+边界证据；它不是已交付 Provider，也没有改变现有对象模型。
+
 渐进式 best-of 的裁决边界也是 HYLE op/region，而不是第三方黑盒内部的某个隐藏 kernel。同一段计算可
 同时收到成熟 provider、HYLE native/vendor provider 和 custom kernel 的候选；Graph 按完整 region 成本
 选择。未证明 material 优势时保留成熟路线，HYLE 明显胜出时在 canonical tensor boundary 切出相应
@@ -233,7 +240,7 @@ Provider SPI 是 HYLE 各可选 factor 之间的源码级内部合同，不承�
    scale/zero 等若不是块内编码，则是显式 typed tensor input，不能藏进 `void *` metadata；
 2. 用户或上层引擎明确把 activation、weight 与 output 放在 CUDA storage，或允许 Graph 选择其它 target。
    “CUDA backend 已存在”只证明能建立 context/queue/memory/event/copy，不证明任何 Q4 算子已经存在；
-3. 冷编译枚举精确候选。例如 HYLE 原生或受审 CUTLASS Q4 kernel、确实接受该格式的 NVIDIA vendor route、
+3. 冷编译枚举精确候选。例如 HYLE 原生或受审 Marlin/CUTLASS kernel、确实接受该格式的 NVIDIA vendor route、
    ggml CUDA 单节点 artifact，以及覆盖整个 MLP 的 ggml compiled region。不能理解该 `StorageFormatId` 的
    Provider 必须返回 `Unimplemented`，不得把压缩 bytes 当普通标量或偷偷反量化；
 4. 对每个候选先检查 dtype/precision、适用 shape subdomain/guard、alignment、alias、CUDA device、buffer
@@ -262,7 +269,9 @@ Q4 还必须区分两条不同资源路线：保留压缩权重，由 kernel 在
 128 bytes/32 values，权重约增至 7.1 倍；它不能冒充原生量化路线。可变 Q4 input 也不能通过一次
 常量缓存偷偷获得此路线。基础探针须真实保留一条压缩权重的执行路线，验证源释放、variant 共享与
 预算回收；若准入展开候选，另验显式允许/拒绝及完整成本，不为测试强制新增该 shipping 能力。
-样例中的解码 GEMM 只证明互操作，不证明量化性能或成熟 Q4 Provider 已交付。
+kernel 内按 tile 解码与整份权重在全局内存中展开不是一回事。Q4 转浮点不会恢复量化时已丢失的信息；
+临时展开 GEMM 在成熟引擎中确有用途，但必须计入转换、scratch 和额外流量。基础主纵切保留压缩常驻，
+不会为了复用一个互操作测试而承诺全量展开的产品能力。旧展开样例已退役，历史证据不代表量化路线资格。
 
 ### 2.8 冷编译目标、证据与回退边界
 
