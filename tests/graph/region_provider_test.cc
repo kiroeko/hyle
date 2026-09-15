@@ -852,9 +852,10 @@ Status pack_weights(void *context, ConstTensorView source,
                                 alignof(PackedWeights));
              }};
   HYLE_ASSIGN_OR_RETURN(packed->buffer, Buffer::create(resource, 16, 64));
-  if (probe.extra_private_bytes != 0)
+  if (probe.extra_private_bytes != 0) {
     HYLE_ASSIGN_OR_RETURN(packed->private_metadata,
                           Buffer::create(resource, probe.extra_private_bytes, 64));
+  }
   std::array<float, 4> values{};
   HYLE_RETURN_IF_ERROR(
       source.storage().read(std::as_writable_bytes(std::span(values))));
