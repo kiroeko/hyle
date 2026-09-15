@@ -1,6 +1,6 @@
 # CPU/CUDA backend：R1 路线交付边界
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
 
 - components / owner：`compute_backend_cpu`、`compute_backend_cuda` / Compute backend delivery。
 - baseline：`ec142a92e00e27a73abbae4f040b6b361465e9a7`；当前工作树干净。
@@ -61,3 +61,6 @@ CPU/无 backend、既有代表性 runtime/header 和 custom consumers 均通过�
 全库自实现不含测试 **126,320**，全库代码 **689,555**，脚本自检通过。该数量不是新路线完成度。
 终局只关闭本轮 backend delivery；R3/R4 的默认规则、自然新接口、真实片段和性能仍须各自验收。
 reopen：支持配置出现真实 native 入口/依赖泄漏、正常三交付回归或新的公开 backend API/交付变化。
+
+七门通过，本轮 CLOSED。registry 的 CANDIDATE 已在 `4d87e963` 单独提交；终局显式以该 revision
+验证 CANDIDATE→CLOSED，无状态跳级。结束本卡 BD1/BD2，不据此授权改写既有 runtime。

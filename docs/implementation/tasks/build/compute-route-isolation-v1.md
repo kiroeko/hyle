@@ -1,10 +1,10 @@
 # R1：Compute/Graph 路线选择与交付隔离
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 这是 build/package 横向施工卡，不增加模块身份或第二套 registry。
 属于[四路线基础重构 R1](../compute/four-route-foundation-refactor.md)；2026-09-15 已获实施授权并完成定向审计。
-2026-09-16 的不可变候选已完成具名 native 验证，当前进入 CANDIDATE 记录与治理收口。
+2026-09-16 的不可变候选已完成具名 native 验证与七门；本 R1 横向施工卡 CLOSED，后续计算基础仍待 R2–R7。
 
 ## Closure card
 
@@ -199,3 +199,8 @@ Linux 普通静态 SDK 的 EXE 消费通过；CPU custom shared factory 使用�
 `check-module-closure.py --previous-ref 37dc8b54` PASS（39 components、schema 4）；
 `git diff --check` PASS。selector 以 `37dc8b54` 对 WORKTREE 仅选择 docs/closure，94 项跳过/复用，
 上述两个 selected gates 已执行；没有因证据/文档/状态变化重建或重跑 P1。
+
+终局：候选/证据提交为 `4d87e963`，CPU/CUDA delivery 从该提交的 CANDIDATE 进入 CLOSED，
+以其为最终状态迁移的 `--previous-ref`。归档 LOC JSON 在首次 staged diff 检查发现 CRLF 格式，
+终局仅规范为 LF，解析后的全部数值不变；最终完整 diff 检查包含新证据。R1 有限 FIX 已完成，
+停止本卡产品施工，按七包顺序进入 R2 的新审计卡。

@@ -1,6 +1,6 @@
 # Windows runtime staging：Visual Studio 构建顺序
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -75,3 +75,5 @@ fixtures 23:53 完成，最终 Graph VS 交付于 2026-09-16 00:09:03 完成，�
 限制：Visual Studio helper 在创建 consumer target 的同一 CMake 目录调用；库可以来自别的目录。
 闭包来自真实 transitive shared targets，无法推导的运行时动态加载不在此合同。reopen：正常
 first/incremental/no-change 或另一受支持 generator 出现可复现失败时定向重开。
+
+七门全部通过，本独立 build 修复 CLOSED；候选证据提交 `4d87e963`，终局只记录状态，不重跑构建。

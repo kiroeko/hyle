@@ -7,8 +7,8 @@
 
 上轮只建立计划和 R1 施工卡。2026-09-15 用户明确授权实际实施并创建新的四路线 goal；该 goal 已建立，
 不恢复旧 goal/百分比。每包仍须绑定 owner 的当前卡，计划、旧 AUDITED 卡或独立探针不是产品修改权限。
-首包入口：[R1：路线选择与交付隔离](../build/compute-route-isolation-v1.md)，已完成实施与适用 native
-验证，当前记录不可变候选及合法终局；R2–R7 尚未完成。
+首包入口：[R1：路线选择与交付隔离](../build/compute-route-isolation-v1.md)，实施、适用 native 验证
+与七门已完成，R1 CLOSED；R2–R7 尚未完成。下一步为 R2 的新有限审计卡与共同语义实施。
 
 ## 目标与不做项
 
