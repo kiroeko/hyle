@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import copy
 import contextlib
 import io
 import json
@@ -343,6 +344,49 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("io_tls", plan["selected_factors"])
         for graph in (selector.project_graph(selector.Snapshot(self.root, self.base)),):
             self.assertIn("sched", selector.reverse_consumers({"container_queue"}, [graph]))
+
+    def test_global_change_skips_only_dormant_audit_identity(self):
+        name = "compute_provider_ggml"
+        registry = json.loads((self.root / selector.REGISTRY).read_text())
+        row = next(row for row in registry["modules"] if row["module"] == name)
+        row.update(state="BLOCKED", blocked_from="SCOPED")
+        self.write(selector.REGISTRY, json.dumps(registry))
+        self.write(f"src/{name}/CMakeLists.txt", f"# Audit only\nhyle_add_module({name})\n")
+        self.base = self.commit()
+        self.write("CMakeLists.txt", "# shared build change\n")
+        self.commit()
+        plan = self.plan()
+        self.assertNotIn(name, plan["selected_factors"])
+        self.assertIn("factor:compute", self.selected(plan))
+        self.assertIn("audit-only", self.row(plan, "factor:" + name)["reason"])
+        self.assertNotIn(name, " ".join(self.row(plan, "configure")["commands"][0]))
+
+        graph = selector.project_graph(selector.Snapshot(self.root, "HEAD"))
+        for path, contents in (
+            (f"src/{name}/implementation.cc", "int implementation;\n"),
+            (f"include/hyle/{name}/api.h", "int api();\n"),
+            (f"tests/{name}/test.cc", "int test;\n"),
+            (f"src/{name}/CMakeLists.txt", f'hyle_add_module({name})\nfile(WRITE generated.cc "int x;")\n'),
+        ):
+            with self.subTest(path=path):
+                old = (self.root / path).read_bytes() if (self.root / path).exists() else None
+                self.write(path, contents)
+                snapshot = selector.Snapshot(self.root, "WORKTREE")
+                self.assertNotIn(name, selector.audit_only_factors(snapshot, graph))
+                if old is None:
+                    (self.root / path).unlink()
+                else:
+                    self.write(path, old)
+        for state, blocked_from in (("AUDITED", None), ("CLOSED", None), ("BLOCKED", "AUDITED")):
+            with self.subTest(state=state, blocked_from=blocked_from):
+                row.update(state=state, blocked_from=blocked_from)
+                self.write(selector.REGISTRY, json.dumps(registry))
+                self.assertNotIn(name, selector.audit_only_factors(selector.Snapshot(self.root, "WORKTREE"), graph))
+        row.update(state="BLOCKED", blocked_from="SCOPED")
+        self.write(selector.REGISTRY, json.dumps(registry))
+        graph = copy.deepcopy(graph)
+        graph["factors"][name]["deps"] = ["compute"]
+        self.assertNotIn(name, selector.audit_only_factors(selector.Snapshot(self.root, "WORKTREE"), graph))
 
     def test_global_public_visibility_is_package_contract(self):
         self.write("include/hyle/visibility.h", "#define EXPORT 2\n")

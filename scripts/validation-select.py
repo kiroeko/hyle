@@ -504,6 +504,35 @@ def p1_scope(snapshot, graph, policy, factor):
             "scope_hash": digest({"factor": factor, "product_input_hash": input_hash})}
 
 
+def audit_only_factors(snapshot, graph):
+    """Recognize dormant identities without hiding a missing product test owner."""
+    registry_states(snapshot)  # Preserve the selector's malformed-registry error boundary.
+    rows = json.loads(snapshot.read(REGISTRY))["modules"]
+    result = set()
+    for row in rows:
+        name = row["module"]
+        if not (row["state"] == "SCOPED" or
+                (row["state"] == "BLOCKED" and row.get("blocked_from") == "SCOPED")):
+            continue
+        facts = graph["factors"].get(name)
+        if not facts or facts["deps"] or facts["headers"] or facts["queued"]:
+            continue
+        cmake = f"src/{name}/CMakeLists.txt"
+        contents = snapshot.read(cmake)
+        if contents is None:
+            continue
+        declaration = "\n".join(line for line in contents.decode().splitlines()
+                                if not line.lstrip().startswith("#")).strip()
+        if not re.fullmatch(r"hyle_add_module\(\s*" + re.escape(name) + r"\s*\)", declaration):
+            continue
+        # Even a header-only implementation, test, generated-code recipe or
+        # private implementation file makes this a real validation owner.
+        if any(path != cmake and owner(path, graph) == name for path in snapshot.files):
+            continue
+        result.add(name)
+    return result
+
+
 def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=None):
     before, after = Snapshot(root, baseline), Snapshot(root, candidate)
     policy = read_json(SCRIPT_DIR / "validation-policy.json")
@@ -513,6 +542,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
         root, before, after, policy, product_change_owners(changes, graphs, policy)
     )
     available = {k for k, v in graphs[1]["factors"].items() if not v["queued"]}
+    audit_only = audit_only_factors(after, graphs[1])
     own, consumers, expanded, header_roots, delivery = set(), set(), set(), set(), set()
     suites, impact_reasons = set(), {}
     broad = False
@@ -539,7 +569,8 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     own &= available
     consumers &= available
     expanded &= available
-    selected_factors = own | consumers | expanded
+    selected_factors = (own | consumers | expanded) - audit_only
+    header_roots -= audit_only
     for product, roots in graphs[1]["products"].items():
         if set(roots) & expanded:
             delivery.add(product)
@@ -616,6 +647,8 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                "real one-hop direct edges to changed implementation: " + ", ".join(sorted({d for graph in graphs
                    for d in graph["factors"].get(factor, {}).get("deps", []) if d in own})) if factor in consumers else
                "outside the change and its required consumer boundary")
+        if factor in audit_only:
+            why = "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
         gate("factor:" + factor, "correctness", factor in selected_factors, why,
              [["cmake", "--build", "{build}", "--config", "Release", "--target", f"hyle_{factor}_tests", "--parallel", "2"],
               ["ctest", "--test-dir", "{build}", "-C", "Release", "--output-on-failure", "--no-tests=error",
