@@ -64,3 +64,15 @@ Native 对新 kind 明确 Unimplemented，oneDNN 只接收普通两输入 MatMul
 旧 Graph profile 对未知编码明确拒绝；不新增 Q4 计时编码，该过渡公开面归 R2-G 清理。
 现有 TensorDesc checked 尺寸/字节数和 blocked/opaque 格式足够承载描述，不新增 storage/token。
 审计未读/改其它历史任务或底层模块。最终七门、候选、实际限制及统一 LOC 在实施后记录。
+
+## 候选验证检查点
+
+`50753347` 已实现 Q41/Q42。Windows selector 的 14 个适用门通过（含复用的 13 门与最后 Graph
+三交付），新增 Q4 consumer 的 source/shared/static 也通过。MSVC 显式环境、候选/合同/工具链/机器
+身份与原始日志在本轮 scratch；最终归档在终局记录。Visual Studio 的嵌套 `/MP` 曾超过两编译进程，
+已中止该 Graph 门并以 Ninja 两任务串行完成；中止日志保留，不作 PASS。
+
+WSL GCC 14 的 Werror 首次回放发现五处测试告警：四处 range-loop copy（包括继承的 View/resource
+测试）及一处 Graph 旧 GTest 宏外缺 braces。使用本卡一次纠正预算，只改测试引用/花括号；产品头及实现
+保持相同。修正候选只回放受影响测试和未完成平台门，不重建已通过 SDK。当前仍 AUDITED，WSL/macOS/
+UBSan 未完成前不签终局 PASS；Direct 的独立实现由 R2-D 继续。

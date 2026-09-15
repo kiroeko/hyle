@@ -699,8 +699,9 @@ TEST(GraphBuilder, ResourceOrderingMatchesPairwiseDagOracle) {
     }
     const auto graph = std::move(builder).finish();
     EXPECT_EQ(graph.has_value(), legal) << "trial " << trial;
-    if (!graph)
+    if (!graph) {
       EXPECT_TRUE(graph.error().IsFailedPrecondition());
+    }
   }
 }
 

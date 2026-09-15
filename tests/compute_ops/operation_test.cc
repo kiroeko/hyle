@@ -58,7 +58,7 @@ TEST(OperationViewAlias, CheckedSliceOffsetsMatchAddressingAndEmptyRules) {
       }
     }
   }
-  for (const auto view :
+  for (const auto &view :
        {View::reshape(shape(3, 7)).value(),
         View::permute(std::array<std::int32_t, 2>{1, 0}).value(),
         View::broadcast_to(shape(2, 7, 3)).value()}) {
@@ -270,7 +270,7 @@ TEST(OperationQuantizedMatMul, RejectsIncompleteAndContradictoryContracts) {
                     .error()
                     .IsInvalidArgument());
   }
-  for (const auto bad_weight : {tensor(type, 32, 128),
+  for (const auto &bad_weight : {tensor(type, 32, 128),
                                 packed_q4(type, 32, 64),
                                 packed_q4(DataType::kFloat16, 32, 128)}) {
     EXPECT_TRUE(infer_single_output(signed_op,
@@ -278,7 +278,7 @@ TEST(OperationQuantizedMatMul, RejectsIncompleteAndContradictoryContracts) {
                     .error()
                     .IsInvalidArgument());
   }
-  for (const auto bad_parameter : {tensor(type, 2, 32), tensor(type, 32, 1),
+  for (const auto &bad_parameter : {tensor(type, 2, 32), tensor(type, 32, 1),
                                    tensor(type, 64),
                                    tensor(DataType::kFloat16, 32, 2)}) {
     EXPECT_TRUE(infer_single_output(signed_op,
@@ -589,7 +589,7 @@ TEST(OperationResources, RejectsInvalidEffectAndCountBeforeInference) {
   const std::array inputs{tensor(DataType::kFloat32, 8)};
   std::array outputs{tensor(DataType::kFloat32, 3)};
   std::size_t inferred = 0, accessed = 0;
-  for (const auto [effect, count] :
+  for (const auto &[effect, count] :
        std::array{std::pair{EffectKind::kPure, std::uint8_t{1}},
                   std::pair{EffectKind::kExternalSideEffect, std::uint8_t{1}},
                   std::pair{EffectKind::kResourceAccess, std::uint8_t{0}},
