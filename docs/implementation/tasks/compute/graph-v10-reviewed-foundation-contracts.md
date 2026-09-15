@@ -1440,3 +1440,9 @@ selector `2056ab65 → a654a4db` READY；Graph→Math PRIVATE 边触发公共选
   synthetic profile 只测选择合同，不声称真实性能胜负；统一 P1/跨平台/终局红队仍在完整 foundation 候选。
 
 本段一轮表示/实现与一轮纠正；不能借此改默认 ownership、隐藏 benchmark 调优或收缩基础完成边界。
+
+首次定向回归 270/272：新的真实 Native 跨资源路径暴露可选 in-place 少了同 storage 检查；既有 decline
+反例暴露同一 prepare binding 因后续 copy carrier 分支重复准备。有限纠正为补 storage 条件，并记录每步
+prepare binding 所需的选择前缀，明确 decline 后剪掉不影响该 binding 的后缀。不同 workspace resource
+仍是不同合法绑定，不能为保留旧测试次数全局淘汰。顺带核对同一事务时，累计编译配额拒绝必须标为整个
+组合拒绝，不能因当前前缀占用而永久淘汰某个 Provider。均是本段既定资源/alias/错误边界，不改公共形状。
