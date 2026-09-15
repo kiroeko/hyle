@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <span>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -109,7 +110,7 @@ struct VendorPlan final {
   }
 };
 
-Status exercise(int rows) {
+Status exercise(int rows, bool synchronize_upload_control) {
   constexpr int columns = 65, inner = 96;
   constexpr std::size_t weight_values = columns * inner;
   constexpr std::size_t weight_blocks = weight_values / 32;
@@ -171,6 +172,8 @@ Status exercise(int rows) {
   // Explicit initialization-time representation conversion, never replay work.
   HYLE_RETURN_IF_ERROR(
       expanded.view().write(std::as_bytes(std::span(decoded))));
+  if (synchronize_upload_control)
+    HYLE_RETURN_IF_ERROR(cuda::status(cudaStreamSynchronize(nullptr)));
   HYLE_ASSIGN_OR_RETURN(auto a, cuda::pointer<float>(input.view()));
   HYLE_ASSIGN_OR_RETURN(auto q4,
                         cuda::pointer<q4_preflight::Block>(weight.view()));
@@ -204,6 +207,10 @@ Status exercise(int rows) {
       std::fill(observed.begin(), observed.end(), 12345.0F);
       HYLE_RETURN_IF_ERROR(
           output.view().write(std::as_bytes(std::span(observed))));
+      // Diagnostic control only: resource.write promises completion itself.
+      // Waiting for the legacy stream must not be required of a HYLE caller.
+      if (synchronize_upload_control)
+        HYLE_RETURN_IF_ERROR(cuda::status(cudaStreamSynchronize(nullptr)));
       HYLE_ASSIGN_OR_RETURN(
           auto done, cuda::submit(queue, [&](cudaStream_t native) noexcept {
             return use_vendor ? vendor.enqueue(native, a, b, y, scratch)
@@ -233,9 +240,13 @@ Status exercise(int rows) {
 }
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+  const bool synchronize_upload_control =
+      argc == 2 && std::string_view(argv[1]) == "--synchronize-upload-control";
+  if (argc != 1 && !synchronize_upload_control)
+    return 2;
   for (int rows : {1, 7, 33}) {
-    const auto status = exercise(rows);
+    const auto status = exercise(rows, synchronize_upload_control);
     if (!status.ok()) {
       const auto message = status.message();
       std::fprintf(stderr, "Q4 preflight: %.*s\n",

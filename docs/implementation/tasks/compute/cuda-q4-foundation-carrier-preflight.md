@@ -55,3 +55,17 @@ HYLE 原生样例复杂度 O(MNK)，额外 device workspace 为零；vendor pref
 
 尚未完成：真实 HYLE/vendor/third-party Provider proposal/region、两种 residence、完整成本裁决、
 bounded/exact/capture 组合与最终 P1。本卡通过也不关闭这些门，更不改变 Compute/Graph 的未验收状态。
+
+## 首次运行与有界诊断
+
+样例候选 `e8e0c95e` 在 Windows installed shared SDK 上编译成功，首次运行却在 M=1/replay=2 的
+cuBLASLt 输出位置 0 得到预填充值 12345，而 double oracle 为 6.3671875。未运行 P1，也未放宽数值
+容差。CUDA `MemoryResource::write/fill/copy` 的实现分别直接返回 `cuMemcpyHtoD/cuMemsetD8/cuMemcpy`，
+但 Mem 的公开合同是同步 range operation。
+[NVIDIA 同步规则](https://docs.nvidia.com/cuda/cuda-driver-api/api-sync-behavior.html)明确指出 pageable
+H2D 可能在最终 DMA 完成前返回，D2D 与设备 memset 也不保证 host 完成；因此有具体的同步合同反例假设，
+不能先归咎于 cuBLASLt 算法或 Completion 缓存。
+
+唯一诊断变体增加显式 `--synchronize-upload-control`：在同步 write 后等 legacy stream，其他数值、
+kernel、算法、HYLE Queue/Completion 不变。默认路线保留原行为，control 成功也不算产品已修复；若得到
+支持，先为 CUDA backend 建立独立同步资源修复卡，再更改产品。此诊断不引入主执行路径的全设备同步。

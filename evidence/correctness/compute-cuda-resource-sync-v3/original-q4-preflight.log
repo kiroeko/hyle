@@ -1,0 +1,20 @@
+Start testing: Sep 15 15:13 中国标准时间
+----------------------------------------------------------
+1/1 Testing: hyle_cuda_q4_preflight
+1/1 Test: hyle_cuda_q4_preflight
+Command: "C:/hyle-scratch/cuda-q4-carrier-preflight-20260915/app/hyle_cuda_q4_preflight.exe"
+Directory: C:/hyle-scratch/cuda-q4-carrier-preflight-20260915
+"hyle_cuda_q4_preflight" start time: Sep 15 15:13 中国标准时间
+Output:
+----------------------------------------------------------
+cuBLASLt M=1 replay=2 index=0: 12345 vs 6.3671875
+Q4 preflight: Q4 carrier numerical mismatch
+<end of output>
+Test time =   0.66 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_cuda_q4_preflight" end time: Sep 15 15:13 中国标准时间
+"hyle_cuda_q4_preflight" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 15 15:13 中国标准时间
