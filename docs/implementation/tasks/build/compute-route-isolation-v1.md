@@ -136,6 +136,11 @@ FFI 仍不提供；三交付和易用性按上表验证。C++ runtime correctnes
 旧资产与自然 C++ 形状按 [七包迁移表](../compute/four-route-foundation-refactor.md#旧代码去留与-owner)
 逐项归属，无 API/算法移除。无产品 runtime 改动的 P0 通过条件为相对实施 baseline 的源码/头 diff 为空。
 
+首个 implementation commit 为 `d4006bf7`。selector 的 broad configure 被无产品实现的 ggml 审计身份
+阻塞；另立 [VI1 工具卡](validation-audit-identity-v1.md) 定向纠正分类，不改变 ggml 恢复条件。
+组件合同必须使用仓库外的专用 `C:/hyle-scratch/r1-20260915-d4006bf7` 根，避免其共享源码缓存
+违反既有 cache 位置合同；首次仓库内 scratch 的环境失败不签产品失败或 PASS。
+
 首版登记验证：`validation-select.py run --base 98778b55 --candidate WORKTREE` 选择 docs/closure，
 结果 PASS，其余 94 项跳过或复用；`git diff --check` PASS。未构建、未运行 runtime 或 P1，registry
 保持原样，不进行虚构模块关闭。
