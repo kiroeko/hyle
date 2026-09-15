@@ -1,6 +1,6 @@
 # Windows runtime staging：Visual Studio 构建顺序
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -48,4 +48,30 @@ Visual Studio 事件必须附着 consumer 所在 CMake 目录；这是 CMake 的
 
 只运行上述具名 staging 回归与 R1 已声明的 affected delivery/selector 门，保留旧候选通过的原始结果，
 不将其改名为新 tree 的 receipt。每次 build 最多 2 jobs，重型验证串行；docs/closure/diff 必须通过。
-未执行门不签 PASS。candidate 与最终七门在实现固定后记录；本卡当前 AUDITED，不表示修复已交付。
+未执行门不签 PASS。以下记录不可变候选与实际结果。
+
+## Candidate 与工程验证
+
+candidate：`37dc8b542d52361cfa7b6cc176dc65555941e48d`。VS1/VS2 完成；原始失败、六个具名 staging
+合同和真实 R1 交付见 [证据](../../../../evidence/correctness/compute-route-isolation-v1/README.md)。
+source、installed shared、installed static 各用 Ninja 与 Visual Studio：首次、DLL-only 增量、无改动、
+EXE/import SHA256 保持、staged DLL 更新、空闭包和幂等全部通过。跨目录 DLL、INTERFACE façade、
+配置条件链接均在 fixture 内。真实 Compute/Graph 的 VS source/static/shared/relocation 也全部通过。
+
+AUDITED 提交于 2026-09-15 23:14:11，产品提交 23:15:17，source fixtures 23:15 完成，installed
+fixtures 23:53 完成，最终 Graph VS 交付于 2026-09-16 00:09:03 完成，具名工程验证在 60 分钟预算内。
+证据/指南收口等待 R1 串行平台结果，没有因文档提交重跑 native 测试。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：VS1/VS2 固定范围，没有新增 resolver 或递归 build |
+| architecture | PASS：VS 原生 PRE_BUILD，Ninja 既有 target，共用相同 per-config 脚本 |
+| correctness | PASS：首建、增量、无改动、空集、幂等和跨目录/配置条件 |
+| delivery | PASS：两种 generator × 三交付的 fixture 及实际 Compute/Graph VS 消费 |
+| usability_docs | PASS：helper 调用目录条件已补明；最终 docs、closure（显式 previous-ref `37dc8b54`）、diff 检查通过 |
+| red_team | PASS：首建无缓存/二次 build；DLL 更新不靠 EXE 重链接；无手动复制 |
+| engineering_performance | PASS（P0）：仅 build-time copy-if-different；无产品 C++、layout 或 runtime 成本变化，P1 不适用 |
+
+限制：Visual Studio helper 在创建 consumer target 的同一 CMake 目录调用；库可以来自别的目录。
+闭包来自真实 transitive shared targets，无法推导的运行时动态加载不在此合同。reopen：正常
+first/incremental/no-change 或另一受支持 generator 出现可复现失败时定向重开。

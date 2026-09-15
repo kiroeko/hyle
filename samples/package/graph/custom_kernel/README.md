@@ -37,6 +37,11 @@ CPU 示例还运行 exact 与 declared-domain `ViewSpec` 旅程：动态 start �
 
 安装 static 或 shared SDK 后（同一 C++23 工具链）：
 
+Linux CPU 示例把 HYLE 静态库链入 shared factory；对应静态 SDK 必须在 producer 配置时启用
+`-DCMAKE_POSITION_INDEPENDENT_CODE=ON`。普通非 PIC 静态 archive 适用于 EXE，不能由 consumer
+补一个编译选项后装入 shared library；源码嵌入且使用 `HYLE_STATIC=ON` 时也要先设置该选项。
+这是 SDK 的编译配置，不改变样例的 C++ 接口或 Provider 选择。
+
 ```sh
 cmake -S samples/package/graph/custom_kernel -B <consumer-build> -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=<hyle-install>

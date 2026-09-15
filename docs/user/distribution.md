@@ -116,6 +116,14 @@ endif()
 配置时用 `CMAKE_PREFIX_PATH` 或 `Hyle_DIR` 指向相应安装 prefix。不要把 static 与 shared SDK 安装
 到同一个 prefix 后依赖偶然搜索顺序；也不要从一个 SDK 拿头、从另一个拿库。
 
+Visual Studio 生成器下，在创建 consumer target 的同一 CMake 目录调用
+`hyle_stage_runtime_dependencies()`；其链接的库可以来自其它目录。
+
+Linux 静态 SDK 若要链入 shared library，生产 SDK 时设置
+`-DCMAKE_POSITION_INDEPENDENT_CODE=ON`。普通静态 EXE 与这种 PIC SDK 是明确的 producer 配置；
+在 consumer 上设置 PIC 不会重编译已经安装的非 PIC archive。选择源码嵌入且 `HYLE_STATIC=ON`
+时，同样在 `add_subdirectory()` 前设置该 CMake 选项。
+
 `find_package` 会拒绝不存在或未打包的产品。`Hyle_AVAILABLE_COMPONENTS` 沿用 CMake 命名，但只列
 产品 façade；包内 `hyle::_factor_*` 仅用于 imported target 的传递闭包，不是用户 API。imported target 负责公开头、C++23 floor、
 传递组件和必要第三方依赖；若用户必须手工补 link/include 参数，应视为 package bug。

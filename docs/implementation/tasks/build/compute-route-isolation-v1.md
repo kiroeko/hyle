@@ -1,9 +1,10 @@
 # R1：Compute/Graph 路线选择与交付隔离
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 这是 build/package 横向施工卡，不增加模块身份或第二套 registry。
-属于[四路线基础重构 R1](../compute/four-route-foundation-refactor.md)；2026-09-15 已获实施授权并完成定向审计，尚未签交付通过。
+属于[四路线基础重构 R1](../compute/four-route-foundation-refactor.md)；2026-09-15 已获实施授权并完成定向审计。
+2026-09-16 的不可变候选已完成具名 native 验证，当前进入 CANDIDATE 记录与治理收口。
 
 ## Closure card
 
@@ -109,7 +110,7 @@ FFI 仍不提供；三交付和易用性按上表验证。C++ runtime correctnes
 
 ## 实施审计（2026-09-15）
 
-当前为 **AUDITED**。本轮新 goal 已建立；不恢复旧 goal/百分比。范围与 RI1–RI5 固定后才改构建。
+实施前为 **AUDITED**。本轮新 goal 已建立；不恢复旧 goal/百分比。范围与 RI1–RI5 固定后才改构建。
 
 - `HyleComponents` 先算 roots/TEST_DEPS，顶层之后才发现 vendor/SDK。CPU 是确定的产品能力开关，
   在中央产品 roots 展开后、闭包遍历前裁剪；维护 factor 显式选择与产品 roots 分开。
@@ -148,3 +149,53 @@ FFI 仍不提供；三交付和易用性按上表验证。C++ runtime correctnes
 首版登记验证：`validation-select.py run --base 98778b55 --candidate WORKTREE` 选择 docs/closure，
 结果 PASS，其余 94 项跳过或复用；`git diff --check` PASS。未构建、未运行 runtime 或 P1，registry
 保持原样，不进行虚构模块关闭。
+
+## 不可变候选与本包裁决（2026-09-16）
+
+产品候选为 `37dc8b542d52361cfa7b6cc176dc65555941e48d`；完整平台结果、原始日志、命令与失败尝试见
+[R1 证据](../../../../evidence/correctness/compute-route-isolation-v1/README.md)。实施授权 baseline 为
+`e469747c`，产品源码不变比较仍以 `ec142a92` 为准。此前“待重验”均是当时记录，以下是当前结果。
+
+| FIX | 实际结果 |
+|---|---|
+| RI1 | `HYLE_COMPUTE_CPU` 默认 ON；OFF 在产品闭包遍历前排除 CPU/Native/CPU oneDNN roots，维护 factor 选择保持独立 |
+| RI2 | CPU usage requirement/package feature 同源；缺席 CUDA/oneDNN 不再导出假 target/native 头，未添加 Apple/Vulkan 占位能力 |
+| RI3 | CPU OFF + oneDNN ON 明确拒绝；AUTO/OFF 与无关 root 不探测未选 SDK，CUDA-only 不带 CPU 计算实现 |
+| RI4 | Compute/Graph 样例按真实能力执行；CPU、无 backend、CUDA 三类 source/static/shared/relocation 和自定义计算消费通过 |
+| RI5 | 组件、包和 staging 定向反例通过；指南补明 native Linux CUDA、静态 archive 嵌入 shared factory 的 PIC 条件及 VS helper 调用目录 |
+
+Windows selector **92 selected gates PASS、5 skipped**；显式平台验证 **38 cases PASS**（Windows 19、
+WSL 12、Air 7）。selected 范围因公共 CMake/package seam 扩展，未额外启动 all-components、CI 或 P1。
+skipped 保留原理由：ggml 空审计身份及无公共头、io_core/simd 未登记独立逐头套件、未声明自动 P1。
+ggml 原 BLOCKED 与恢复条件不变。VI1 和 staging v2 有独立有限卡，不能把工具修复算作计算路线完成。
+
+Linux 普通静态 SDK 的 EXE 消费通过；CPU custom shared factory 使用生产时启用 PIC 的静态 SDK。
+原 non-PIC 失败和错误选中 Windows nvcc.exe 的失败均保留，没有改名为 PASS。纠正使用已有生产选项
+和正确的 Linux SDK 环境，无产品 C++ 或默认 flags 改动。Visual Studio 首建问题以真实顺序修复，
+六种 staging 合同与受影响真实交付重验通过。
+
+| 最终门 | 当前 verdict / 依据 |
+|---|---|
+| scope | PASS：RI1–RI5 与 BD1/BD2 完成；runtime/默认优选/新路线仍归 R2–R6 |
+| architecture | PASS：中央能力投影和路线隔离；无 stub、隐藏 fallback 或新增通用执行器 |
+| correctness | PASS：候选的 selected factor/header/component 与具名平台消费；未将缺席能力签成计算可用 |
+| delivery | PASS：三平台适用的源码、静态、动态、relocation、真实 CPU/CUDA custom execution |
+| usability_docs | PASS：最终指南与证据链接通过 docs；AUDITED→CANDIDATE 的 registry 迁移通过显式 previous-ref 检查 |
+| red_team | PASS：矛盾 feature、缺席依赖、首次/增量 staging、PIC 与 native SDK 反例均有真实结果 |
+| engineering_performance | PASS（P0）：相对 baseline 的库产品源码/公共头 diff 为空，无算法、layout、常态分配/分发/同步增量；P1 不适用纯构建交付变化 |
+
+实施/验证从 2026-09-15 22:18 开始，具名 native 验证最迟于 2026-09-16 01:34 完成，在四小时预算内。
+候选后的证据、文档和状态写入不构成新产品候选，不重建、不重跑 P1。
+
+统一脚本在候选上自检通过：Compute+Graph 全部实现 **31,135** 行（不含测试），全库自实现不含测试
+**126,320**，全库代码 **689,555**。R1 未改变库实现行数；旧实现和文档不折算为新基础完成度。
+
+本卡终局后停止 R1 产品修改。CPU/CUDA delivery owner 依次 CANDIDATE→CLOSED；共同 Compute、Graph
+和三个现有 Provider 仍有基础 MUST，保持未完成，R2/R3 必须重新绑定已审计的有限卡后才改 runtime。
+本卡届时只作为完成的交付证据，不授权继续旧队列。reopen 仅限可复现的路线/SDK 泄漏、正常包消费
+回归或新的公开交付合同变化，不据此全库重审。
+
+候选记录检查：`check-docs.py` PASS（323 Markdown、1236 相对链接）；
+`check-module-closure.py --previous-ref 37dc8b54` PASS（39 components、schema 4）；
+`git diff --check` PASS。selector 以 `37dc8b54` 对 WORKTREE 仅选择 docs/closure，94 项跳过/复用，
+上述两个 selected gates 已执行；没有因证据/文档/状态变化重建或重跑 P1。

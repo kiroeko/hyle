@@ -5,9 +5,10 @@
 长期合同仍只由 [Compute](../../../architecture/compute-design.md)、[Graph](../../../architecture/graph-design.md)
 与[四路线设计](../../../architecture/compute-routes.md)持有。本页只负责执行顺序、产物和完成判据。
 
-本次先建立计划和 R1 施工卡，不运行 R2–R7、不修改产品或模块 registry，不创建/恢复旧大 goal。
-后续每包按本页范围绑定 owner 的当前卡，不能把计划、旧 AUDITED 卡或独立探针当成新产品修改权限。
-首包入口：[R1：路线选择与交付隔离](../build/compute-route-isolation-v1.md)，当前为 SCOPED。
+上轮只建立计划和 R1 施工卡。2026-09-15 用户明确授权实际实施并创建新的四路线 goal；该 goal 已建立，
+不恢复旧 goal/百分比。每包仍须绑定 owner 的当前卡，计划、旧 AUDITED 卡或独立探针不是产品修改权限。
+首包入口：[R1：路线选择与交付隔离](../build/compute-route-isolation-v1.md)，已完成实施与适用 native
+验证，当前记录不可变候选及合法终局；R2–R7 尚未完成。
 
 ## 目标与不做项
 
@@ -132,8 +133,8 @@ backend/provider 与 Graph 全部 provider 统计，不仅计 runtime factor；L
 规则、准备时匹配、执行时固定分开；同步 Compute/Graph/四路线、build/roadmap、首卡与当前用法说明。
 R3–R6 各自验收默认规则和普通入口，R7 不再首次接线；旧计时 profile API 按需求迁移，不强制保留。
 
-实施就绪判断：可以按上述七包进入有界施工，无需再等待一轮全架构研究或全部未来算子性能证明。
-R1 仍为 SCOPED，先完成卡内定向审计和有限 FIX 再进入 AUDITED；R2 的具体 C++ 签名/规则接入和各
+上轮实施就绪判断：可以按上述七包进入有界施工，无需再等待一轮全架构研究或全部未来算子性能证明。
+当时 R1 为 SCOPED，先完成卡内定向审计和有限 FIX 再进入 AUDITED；R2 的具体 C++ 签名/规则接入和各
 路线的 native API 细节仍须在各 owner 实现前固定。未知设备性能不外推，实际反例按所属卡处理，
 不能把此判断当成四路线实现/生命周期/性能已经验收。
 

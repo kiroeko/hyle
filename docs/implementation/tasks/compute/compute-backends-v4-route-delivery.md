@@ -1,6 +1,6 @@
 # CPU/CUDA backend：R1 路线交付边界
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - components / owner：`compute_backend_cpu`、`compute_backend_cuda` / Compute backend delivery。
 - baseline：`ec142a92e00e27a73abbae4f040b6b361465e9a7`；当前工作树干净。
@@ -38,3 +38,26 @@
 依赖版本/许可不变；补齐的是选路交付；复用中央图、package registry、Error/Mem；P0 无 runtime
 增量；无 Native FFI；三交付与用户选型按 R1 取证。SCOPED 提交为 `fb5a644d`；已审计中央 roots、
 OPTIONAL_ABSENT 与 installed 投影，BD1/BD2 固定，本卡进入 AUDITED 后方可实施。
+
+## 候选与结果（2026-09-16）
+
+候选 `37dc8b542d52361cfa7b6cc176dc65555941e48d`。BD1/BD2 均完成，完整取证见
+[R1 当前裁决](../build/compute-route-isolation-v1.md#不可变候选与本包裁决2026-09-16)与
+[原始证据](../../../../evidence/correctness/compute-route-isolation-v1/README.md)。CPU capability、CUDA
+真实/缺席 native 投影在源码、静态、动态和 relocation 一致；Windows/WSL 真 CUDA 与 CPU、Air
+CPU/无 backend、既有代表性 runtime/header 和 custom consumers 均通过。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：仅 BD1/BD2 公开交付边界 |
+| architecture | PASS：真实选路闭包，不创建空 backend 或隐含 CPU fallback |
+| correctness | PASS：候选具名配置/运行/失败回归，原始失败尝试保留 |
+| delivery | PASS：R1 的适用三平台三交付及 relocation；Linux static-in-DSO 使用明确 PIC producer |
+| usability_docs | PASS：最终 docs 及 `check-module-closure.py --previous-ref 37dc8b54` 通过；diff 无格式错误，selector 只选 docs/closure |
+| red_team | PASS：缺席/矛盾配置、SDK 隔离、staging 首建与增量反例 |
+| engineering_performance | PASS（P0）：库 C++/CUDA/公共头与 `ec142a92` 相同；无 runtime 成本增量，P1 不适用 |
+
+与 R1 共用预算，具名 native 验证在四小时内完成。统一 LOC：Compute+Graph **31,135**（不含测试），
+全库自实现不含测试 **126,320**，全库代码 **689,555**，脚本自检通过。该数量不是新路线完成度。
+终局只关闭本轮 backend delivery；R3/R4 的默认规则、自然新接口、真实片段和性能仍须各自验收。
+reopen：支持配置出现真实 native 入口/依赖泄漏、正常三交付回归或新的公开 backend API/交付变化。

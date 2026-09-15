@@ -1,0 +1,53 @@
+{
+  "candidate_commit": "37dc8b542d52361cfa7b6cc176dc65555941e48d",
+  "platform": "macos",
+  "canonical_source_archive_sha256": "79975f409373656a6747d8ce7b98ba3a465d6aaca68c706122cf363e1d043836",
+  "cases": [
+    {
+      "case": "macos-cpu-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "macos-cpu-compute-37dc8b54/smoke.log",
+      "sha256": "8e1bdea5692caf8257560b053c775c9250316130cfa39024b6fb8c56a6ff67a9"
+    },
+    {
+      "case": "macos-cpu-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "macos-cpu-graph-37dc8b54/smoke.log",
+      "sha256": "706ff6924ee61781b6e3abd88a12100fc5b9275c3bcabbb2963d9542b1cb058b"
+    },
+    {
+      "case": "macos-none-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "macos-none-compute-37dc8b54/smoke.log",
+      "sha256": "6d87237fc7fa04041b9ac7be01838b32a914af035ae1980d1e97abe1082c61a4"
+    },
+    {
+      "case": "macos-none-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "macos-none-graph-37dc8b54/smoke.log",
+      "sha256": "1085560bff1e159c01ae13b9a26e9ec50637ff613c2d7f66bbcb478084de8243"
+    },
+    {
+      "case": "custom-macos-cpu-source-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-macos-cpu-source-37dc8b54/sample.log",
+      "sha256": "7802fd6b24fa812625be4acbd440191329f992b22ecf12c234c3663eb3880cd4"
+    },
+    {
+      "case": "custom-macos-cpu-shared-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-macos-cpu-shared-37dc8b54/sample.log",
+      "sha256": "4ad15c857966b458bdf72174d34d88b12c2391d646584382c3dc08cbf5f1bdf5"
+    },
+    {
+      "case": "custom-macos-cpu-static-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-macos-cpu-static-37dc8b54/sample.log",
+      "sha256": "cbbdfafc35fef26346fd0712d8de08c679e96e7b4d933931d1e731b5c1393f4c"
+    }
+  ],
+  "archive": {
+    "name": "macos-r1-evidence-37dc8b54.zip",
+    "sha256": "e69b101fc6e31491975b0dbc211d093d9743405496bc989429b665a7fdb9a820"
+  }
+}

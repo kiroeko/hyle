@@ -1,0 +1,1297 @@
+{
+  "baseline_commit": "e469747ce768d352e4a9ac6d74f11edcb354f49d",
+  "baseline_tree": "fba1ea38170c87cc65a547273c609f3d5bb7d056",
+  "candidate_commit": "37dc8b542d52361cfa7b6cc176dc65555941e48d",
+  "candidate_tree": "baf398dcf8aa42d5968a3cebe297133c3efc7b95",
+  "verdict": "PASS",
+  "selected_gates": [
+    {
+      "id": "docs",
+      "status": "PASS",
+      "reason": "mandatory documentation contract",
+      "receipt": "f7d0b134aa862a1dcec8520407f275efcd83181f9ba5dcea516be70af9dc01a8.json",
+      "logs": [
+        {
+          "path": "f7d0b134aa862a1dcec8520407f275efcd83181f9ba5dcea516be70af9dc01a8-0.log",
+          "sha256": "1b016c939d83b1c746625a6432989cac0fff95745ab27844cca2105d828b6340"
+        }
+      ]
+    },
+    {
+      "id": "closure",
+      "status": "PASS",
+      "reason": "mandatory registry contract",
+      "receipt": "a1b5dfb062b11b89954abeed5fe8aa651cdb248e5436a44d622f71cf8cf09a65.json",
+      "logs": [
+        {
+          "path": "a1b5dfb062b11b89954abeed5fe8aa651cdb248e5436a44d622f71cf8cf09a65-0.log",
+          "sha256": "ee54dfb718ceb4ba11daada227147722b610c8507b99eb63dd884cdff1a48b82"
+        }
+      ]
+    },
+    {
+      "id": "tool:tests/tooling/validation_selector_test.py",
+      "status": "PASS",
+      "reason": "changed tool mapped to this focused regression suite",
+      "receipt": "37b058984be7846a3d328343d9fc19504509114f7b3b3fceb6138c23a2567062.json",
+      "logs": [
+        {
+          "path": "37b058984be7846a3d328343d9fc19504509114f7b3b3fceb6138c23a2567062-0.log",
+          "sha256": "3b1ee320b628d4a25b068c3d41a0da4b352aa9ac47d2480f1bd7acfb796fc902"
+        }
+      ]
+    },
+    {
+      "id": "configure",
+      "status": "PASS",
+      "reason": "configure exact factor roots; dependency artifacts are prerequisites, not additional test roots",
+      "receipt": "8ecc58371dfa35ad62a29856f2ecabd83db8777b0f583a1cef202942c52fa8f8.json",
+      "logs": [
+        {
+          "path": "8ecc58371dfa35ad62a29856f2ecabd83db8777b0f583a1cef202942c52fa8f8-0.log",
+          "sha256": "349b29de41ee9e572e8bf32fd41dae9b72176565427e23fdf3c6c0622cdcbfec"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "36de2709d1b5bc1f32ab62e113f3d081fb80f1805522a198f01bc6fe22778063.json",
+      "logs": [
+        {
+          "path": "36de2709d1b5bc1f32ab62e113f3d081fb80f1805522a198f01bc6fe22778063-0.log",
+          "sha256": "2006a7c1338727feb497cb7b7143e252ff24f8dfe87c855d93545e733a707da1"
+        },
+        {
+          "path": "36de2709d1b5bc1f32ab62e113f3d081fb80f1805522a198f01bc6fe22778063-1.log",
+          "sha256": "42735e1fe080e81f41a84af0af02c8eeb24f2a0ac36c20bc765cb0fbf99cc330"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "b4a96e2a913a4c31cda010730e112b988610ab179941d61fbe9131cd66c71118.json",
+      "logs": [
+        {
+          "path": "b4a96e2a913a4c31cda010730e112b988610ab179941d61fbe9131cd66c71118-0.log",
+          "sha256": "da03e2b763b173386cc07a31a51593b72ac869cd65094195e84560fe8eed7e67"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "status": "PASS",
+      "reason": "owning factor: src/compute_backend_cpu/CMakeLists.txt",
+      "receipt": "fc1f5b203ae9e36239474de3eb406af65f6d68b2596850ab09c304ce03d26fd8.json",
+      "logs": [
+        {
+          "path": "fc1f5b203ae9e36239474de3eb406af65f6d68b2596850ab09c304ce03d26fd8-0.log",
+          "sha256": "5fe60d298a9c1232fa144429be36407021db0a49cb5dd4df4cbd22f741b9be9b"
+        },
+        {
+          "path": "fc1f5b203ae9e36239474de3eb406af65f6d68b2596850ab09c304ce03d26fd8-1.log",
+          "sha256": "408cd0c3462ca197102acf0c263abfc384f7c186c1e1207a9a9b68a9a89e7322"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "c2d4475784b3d0529963fbdba03dcef0e2d99090715bffaa44f029eccba28440.json",
+      "logs": [
+        {
+          "path": "c2d4475784b3d0529963fbdba03dcef0e2d99090715bffaa44f029eccba28440-0.log",
+          "sha256": "4c991fdddacf7ba7574802226ea275fb9cf7b17e87007b3850c3f4b9c80f87fb"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "status": "PASS",
+      "reason": "owning factor: src/compute_backend_cuda/CMakeLists.txt",
+      "receipt": "2de083dc864f527c291db1524415f721870b37a744d245a0530bca35460f0803.json",
+      "logs": [
+        {
+          "path": "2de083dc864f527c291db1524415f721870b37a744d245a0530bca35460f0803-0.log",
+          "sha256": "c634c2b47ee875c21a1ca821be3cc1e154790c8f8f07e1f993388110fcd6c4d3"
+        },
+        {
+          "path": "2de083dc864f527c291db1524415f721870b37a744d245a0530bca35460f0803-1.log",
+          "sha256": "944c1d366ade7d98700f217a2f9fde779b755eba4d15ce01f4571ee882570253"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "3e5bedfcaa40b308949a1ac122c71db9407984c53385512f32190f10d1fc804d.json",
+      "logs": [
+        {
+          "path": "3e5bedfcaa40b308949a1ac122c71db9407984c53385512f32190f10d1fc804d-0.log",
+          "sha256": "1177ce0ae8d11d332bde8d47c58e425ee61383f3002a013bcd00cdbbe6266afd"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute_ops",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "6733dbe60638aacb8bc401890e3eb508b1ce862147bc06b18c43f01fd7bbdb73.json",
+      "logs": [
+        {
+          "path": "6733dbe60638aacb8bc401890e3eb508b1ce862147bc06b18c43f01fd7bbdb73-0.log",
+          "sha256": "c82d1c4207be5d70ce84d2442dbd0d0a09ddf6062b3d227dee4e5d462867fd90"
+        },
+        {
+          "path": "6733dbe60638aacb8bc401890e3eb508b1ce862147bc06b18c43f01fd7bbdb73-1.log",
+          "sha256": "4318ea841f0daff0d02e46d04c5cf079dafd9319223c6dd51957bfef0c96ad64"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute_ops",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "5da2f97bb31f535de5aad4d295cbe28702d14ff2692255dd54e1e9b8dca26b67.json",
+      "logs": [
+        {
+          "path": "5da2f97bb31f535de5aad4d295cbe28702d14ff2692255dd54e1e9b8dca26b67-0.log",
+          "sha256": "4f424cf3077a2ce2c578014db373622e622a3d166317a8b6cd69881269930537"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "b23fa36c4df0387b66801f269df15d45d41dfabcbb1494dcc61d8d27c8465c30.json",
+      "logs": [
+        {
+          "path": "b23fa36c4df0387b66801f269df15d45d41dfabcbb1494dcc61d8d27c8465c30-0.log",
+          "sha256": "75750031e2d0a36059ff292415d1d8ff72076b393d680d86e1d8d8a1c81e0078"
+        },
+        {
+          "path": "b23fa36c4df0387b66801f269df15d45d41dfabcbb1494dcc61d8d27c8465c30-1.log",
+          "sha256": "4c30ef695198209a52df46462c2daca1a3dc69410950c64bfdd2f2fdf0692d94"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "3ee84626ca321f17713c2dc7603e34bca6169fec6c0caaee47c139c4c74bd63b.json",
+      "logs": [
+        {
+          "path": "3ee84626ca321f17713c2dc7603e34bca6169fec6c0caaee47c139c4c74bd63b-0.log",
+          "sha256": "7d7e7a3b5884c7f675c84f9db7f2b115f5ce24f86acfbb656fee3b6f3c7adb19"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "status": "PASS",
+      "reason": "owning factor: src/compute_provider_onednn/CMakeLists.txt",
+      "receipt": "9ac8ca9335270726e947a433613e3eeb27c2400d64e37068abad7cac5e9e4f03.json",
+      "logs": [
+        {
+          "path": "9ac8ca9335270726e947a433613e3eeb27c2400d64e37068abad7cac5e9e4f03-0.log",
+          "sha256": "747f5864d4f0679028f1de562df587c1479c918fa14185aa74d85d57efc1df7b"
+        },
+        {
+          "path": "9ac8ca9335270726e947a433613e3eeb27c2400d64e37068abad7cac5e9e4f03-1.log",
+          "sha256": "db4ec8d22e06ed6cb22cd69a0dd0e611bd03439be39a4fb1eec3cef8565b6333"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "53dffeee6a5214a2e5800d3f59ddddf85420b9c0f05a9bbce005714c6c0ebf4f.json",
+      "logs": [
+        {
+          "path": "53dffeee6a5214a2e5800d3f59ddddf85420b9c0f05a9bbce005714c6c0ebf4f-0.log",
+          "sha256": "f47a939631775593798648a7ed4fc30d5f8205482df4624c3b7f4564eaf48995"
+        }
+      ]
+    },
+    {
+      "id": "factor:container",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "1644b227e94ab8354baa2142fbd2986318116d7638c657553d8eea6c23c9aadd.json",
+      "logs": [
+        {
+          "path": "1644b227e94ab8354baa2142fbd2986318116d7638c657553d8eea6c23c9aadd-0.log",
+          "sha256": "7f092e4b24e4b9bb4891f475ab18d72687819fab37dfe27181e039ed65e80a5d"
+        },
+        {
+          "path": "1644b227e94ab8354baa2142fbd2986318116d7638c657553d8eea6c23c9aadd-1.log",
+          "sha256": "38069effc25c96edba145c0fe258848da3c4d4c6fd309aaf553f721385d673de"
+        }
+      ]
+    },
+    {
+      "id": "headers:container",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "29d38f8df5c2a3536688a208f44cab58d84d41f8e78aa9d7833d35e669e8cb85.json",
+      "logs": [
+        {
+          "path": "29d38f8df5c2a3536688a208f44cab58d84d41f8e78aa9d7833d35e669e8cb85-0.log",
+          "sha256": "f39f5a502e894dce5beb0b7c29b7853c3abdcad785863778fd530ba3fd9b6d2f"
+        }
+      ]
+    },
+    {
+      "id": "factor:container_concurrent",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "cb3adf4aea53b04e064c00f3b764ca2445ac9544841316dda866733328fc1f2c.json",
+      "logs": [
+        {
+          "path": "cb3adf4aea53b04e064c00f3b764ca2445ac9544841316dda866733328fc1f2c-0.log",
+          "sha256": "814c1d88642aad9862f3773c9abb4367b44c44a40bdf63d0c0c4628e8b099f69"
+        },
+        {
+          "path": "cb3adf4aea53b04e064c00f3b764ca2445ac9544841316dda866733328fc1f2c-1.log",
+          "sha256": "fd8d5b8b0b32c62a49892b353db1224566717de265d9d0715488b543208efc6d"
+        }
+      ]
+    },
+    {
+      "id": "headers:container_concurrent",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "4390788c0bf634e017879b2b8e457d40f5bc058650c2e5bb5844c27816b7a3b0.json",
+      "logs": [
+        {
+          "path": "4390788c0bf634e017879b2b8e457d40f5bc058650c2e5bb5844c27816b7a3b0-0.log",
+          "sha256": "068c6fddee805e6eb967095a9a178d6a130b00db6e3457a0279df2d01eee540b"
+        }
+      ]
+    },
+    {
+      "id": "factor:container_intrusive",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "315c140557786d82e024343e4a84927aba7eb76c0630a1ceb749c94605ff5373.json",
+      "logs": [
+        {
+          "path": "315c140557786d82e024343e4a84927aba7eb76c0630a1ceb749c94605ff5373-0.log",
+          "sha256": "226e62a9fe17c010e6a99ac199be6a11d0b562da92f2a1aed31936fcefd12006"
+        },
+        {
+          "path": "315c140557786d82e024343e4a84927aba7eb76c0630a1ceb749c94605ff5373-1.log",
+          "sha256": "c50b2a876de681b8aba6a80f46ab35076a115f81094d2af730e7d147b50b3474"
+        }
+      ]
+    },
+    {
+      "id": "headers:container_intrusive",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "8cbbb72eeebd0135b901fe927384412ec8575d638fe67d3a9db5370e19a9e9fb.json",
+      "logs": [
+        {
+          "path": "8cbbb72eeebd0135b901fe927384412ec8575d638fe67d3a9db5370e19a9e9fb-0.log",
+          "sha256": "f5370d80922825e42fa7aeb31da15dfe55f6de28dd2bbdf37b96ed956696fcd6"
+        }
+      ]
+    },
+    {
+      "id": "factor:container_queue",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "34562120b138a38344bd2f128e513e4a3677b9c0202adbf6edb738314c6d91ce.json",
+      "logs": [
+        {
+          "path": "34562120b138a38344bd2f128e513e4a3677b9c0202adbf6edb738314c6d91ce-0.log",
+          "sha256": "32343e4db32846df69856c28353d9fa30f817fe3f4298974c8fc88057c3fe4f6"
+        },
+        {
+          "path": "34562120b138a38344bd2f128e513e4a3677b9c0202adbf6edb738314c6d91ce-1.log",
+          "sha256": "8d7a94ee5312a6c3bc5e7f8b61dd712786cbf21fa707d267ba9ab0b75af4ac7a"
+        }
+      ]
+    },
+    {
+      "id": "headers:container_queue",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "d302dcbc2c1923a3faaca29d9f20e9c6721cd1b35f0f2e0cb780ddaa25a3b8c2.json",
+      "logs": [
+        {
+          "path": "d302dcbc2c1923a3faaca29d9f20e9c6721cd1b35f0f2e0cb780ddaa25a3b8c2-0.log",
+          "sha256": "008433099b3ba9c8d4875ac93b650d0576f2d96ea942e8f4a9fea8d28463efec"
+        }
+      ]
+    },
+    {
+      "id": "factor:container_text",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "ca8139b8b0af24ead21806b6e864d8dc0cc5a0bb0fefe18595fb583caf97fb2e.json",
+      "logs": [
+        {
+          "path": "ca8139b8b0af24ead21806b6e864d8dc0cc5a0bb0fefe18595fb583caf97fb2e-0.log",
+          "sha256": "cba424035fd93a00c9490d35e8a54b4f838632bd972015a4be77c92fa40f44f0"
+        },
+        {
+          "path": "ca8139b8b0af24ead21806b6e864d8dc0cc5a0bb0fefe18595fb583caf97fb2e-1.log",
+          "sha256": "ac65c3dacd3b4337728abee689fd273940bb3be8c30926190c96f97f1715bc27"
+        }
+      ]
+    },
+    {
+      "id": "headers:container_text",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "b59038c249cbe1e963165fd1633101c3e9630c6d854393adb2921e27905f9b3d.json",
+      "logs": [
+        {
+          "path": "b59038c249cbe1e963165fd1633101c3e9630c6d854393adb2921e27905f9b3d-0.log",
+          "sha256": "27ae0e4dc1b04bb621e4314fa4f9ce0ddebff2d17982c5dbe9ae4b486dd3760e"
+        }
+      ]
+    },
+    {
+      "id": "factor:core",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "a42850b0e28f392c73d3540fbdc396196b72c0511c3eac33716199ccf1f02976.json",
+      "logs": [
+        {
+          "path": "a42850b0e28f392c73d3540fbdc396196b72c0511c3eac33716199ccf1f02976-0.log",
+          "sha256": "ee648366862931219d3e63e7a479698938745149ac32457df883fb8a2238b8dc"
+        },
+        {
+          "path": "a42850b0e28f392c73d3540fbdc396196b72c0511c3eac33716199ccf1f02976-1.log",
+          "sha256": "f1f3bff307ef9f98f1910c286078c6b31de05ef8222e949b6305213020f6bded"
+        }
+      ]
+    },
+    {
+      "id": "headers:core",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "38a1895f1a4022f5e4d1dee1749d04630c2ab6294eb03363fe854c8034ce5b27.json",
+      "logs": [
+        {
+          "path": "38a1895f1a4022f5e4d1dee1749d04630c2ab6294eb03363fe854c8034ce5b27-0.log",
+          "sha256": "ae2e1a0a852f57726dd52d7946a84e2887aede5bff778809d39a6eae26715722"
+        }
+      ]
+    },
+    {
+      "id": "factor:error",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "fc39ed67d963991037af2a8dc62c2cf69c4c619e437890d9460a3086d905fa5c.json",
+      "logs": [
+        {
+          "path": "fc39ed67d963991037af2a8dc62c2cf69c4c619e437890d9460a3086d905fa5c-0.log",
+          "sha256": "2fed0ae34f8afa2eb7d37c7161bf8c43ad1e7517304e162cfe752d5829fcf1d2"
+        },
+        {
+          "path": "fc39ed67d963991037af2a8dc62c2cf69c4c619e437890d9460a3086d905fa5c-1.log",
+          "sha256": "aac3036a2e951c8a69464da5fe602bbec11297ad4a042f96c246cb713c09997d"
+        }
+      ]
+    },
+    {
+      "id": "headers:error",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "a55cd6c606c3fb7f2e7fc6ca1bec478352f502d11ade0d32f784d854d5c345da.json",
+      "logs": [
+        {
+          "path": "a55cd6c606c3fb7f2e7fc6ca1bec478352f502d11ade0d32f784d854d5c345da-0.log",
+          "sha256": "f0457d9766d3d506c0b79cec38bc1d3993db4c2e22532b5aa24f8cd64aa52894"
+        }
+      ]
+    },
+    {
+      "id": "factor:graph",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "135a1bd58dd5d7868be599128eb27aa353ef62bb65d8921c1d9279b5c944a1d3.json",
+      "logs": [
+        {
+          "path": "135a1bd58dd5d7868be599128eb27aa353ef62bb65d8921c1d9279b5c944a1d3-0.log",
+          "sha256": "781a68775b5d4f1c0b4a075861fa071e5cb9ae592a95d5c4e6e08b95867c0855"
+        },
+        {
+          "path": "135a1bd58dd5d7868be599128eb27aa353ef62bb65d8921c1d9279b5c944a1d3-1.log",
+          "sha256": "8cc15563b2ea15cd5b6131a11fc44e0024358c3daa11c7e0f1ccb2531c27e207"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "27bbf7944d40add8b4cd8db3c85e3ebf78252c4d858ad42b3760f5aa04589a0a.json",
+      "logs": [
+        {
+          "path": "27bbf7944d40add8b4cd8db3c85e3ebf78252c4d858ad42b3760f5aa04589a0a-0.log",
+          "sha256": "bc7183f6c9763c3d5ab88db80b4b2198886a53beaaad2965a6fa6a5a8e85009f"
+        }
+      ]
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "status": "PASS",
+      "reason": "owning factor: src/graph_provider_onednn/CMakeLists.txt",
+      "receipt": "f02c6cc295c2a4c60cfb4f4e0a1f58b3f7ad00fbde66ed5de658d3918c6bd5f9.json",
+      "logs": [
+        {
+          "path": "f02c6cc295c2a4c60cfb4f4e0a1f58b3f7ad00fbde66ed5de658d3918c6bd5f9-0.log",
+          "sha256": "3cc3fc9511afbab4ceda0e5b737c1a5fafa0bd3c94ec17d9ec83dccf51fce54d"
+        },
+        {
+          "path": "f02c6cc295c2a4c60cfb4f4e0a1f58b3f7ad00fbde66ed5de658d3918c6bd5f9-1.log",
+          "sha256": "b1b9c90110865806d868dd4acc02479a952d3ef5ee9e6fcb71b609f76138d04f"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "88906d4b10fc22cdd46b4cfaebac164413c38621510b62053b0e76c39128162f.json",
+      "logs": [
+        {
+          "path": "88906d4b10fc22cdd46b4cfaebac164413c38621510b62053b0e76c39128162f-0.log",
+          "sha256": "1d4b3400d419300ffbcd3295c34d32f758f8372cdc9bad23c1ff449da573b415"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_core",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "19833584ec6e6fe25a7b3be8d2c3ecf5d5b43058811a02ff25902330b47a42c1.json",
+      "logs": [
+        {
+          "path": "19833584ec6e6fe25a7b3be8d2c3ecf5d5b43058811a02ff25902330b47a42c1-0.log",
+          "sha256": "1fa62af31fe463ae01b78e076333d6ec5b9c8750ee2e72a199c468138fc547ba"
+        },
+        {
+          "path": "19833584ec6e6fe25a7b3be8d2c3ecf5d5b43058811a02ff25902330b47a42c1-1.log",
+          "sha256": "ae58d29072ce83ed4d361dbcb6d5ccbff1e13cf86e02f1ab11fed3c1bd8f4415"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_http",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "cb3206de64d59dd3d36dcadf9c75eab54d26fc1ea4569df8016a7a4842e17123.json",
+      "logs": [
+        {
+          "path": "cb3206de64d59dd3d36dcadf9c75eab54d26fc1ea4569df8016a7a4842e17123-0.log",
+          "sha256": "7fd29c4d4b80b4b46031bce34f73baa2c63e28dc7a8f095cf7401900d6b34c0e"
+        },
+        {
+          "path": "cb3206de64d59dd3d36dcadf9c75eab54d26fc1ea4569df8016a7a4842e17123-1.log",
+          "sha256": "7b90e1130c7a1ddf5ed09fe9866245ec3ce3568a5b73ceb5de5b8b532a619c26"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_http",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "dc460101e97ed5619ad03137dd0165313994f60ef58961439fa331ace79d7ee5.json",
+      "logs": [
+        {
+          "path": "dc460101e97ed5619ad03137dd0165313994f60ef58961439fa331ace79d7ee5-0.log",
+          "sha256": "aac37bc6330348c9855a5cf9ea22e398541e1cc9d7076ccae7f2fed2b77a1f18"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_http2",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "b6d7cf2d5678ba31219b5af75b0aa001d67de5f2fd2abc7e8d95edcae63e5665.json",
+      "logs": [
+        {
+          "path": "b6d7cf2d5678ba31219b5af75b0aa001d67de5f2fd2abc7e8d95edcae63e5665-0.log",
+          "sha256": "885e4d61fa82c6b04b0bd0ddbba5fdb1a3de52e79e79e5773e34b2a4ea68f9a7"
+        },
+        {
+          "path": "b6d7cf2d5678ba31219b5af75b0aa001d67de5f2fd2abc7e8d95edcae63e5665-1.log",
+          "sha256": "b8739a944829a3dfae413b616e3635882d358dcac099e86fa4997bdd37af34fe"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_http2",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "5738bee012bb99aacad780ee3fddd09c0c228e23483832bfd26ef8b04f7fdcd4.json",
+      "logs": [
+        {
+          "path": "5738bee012bb99aacad780ee3fddd09c0c228e23483832bfd26ef8b04f7fdcd4-0.log",
+          "sha256": "dfbcc3009508e620d9fd52bf07bbd5a07dab933f93b502cb527093f30f68ef89"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_tls",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "127cc7f629ef6ba11b8bc87b6e6751b0a932853b5bc0dd9ebf52874eae61a1b2.json",
+      "logs": [
+        {
+          "path": "127cc7f629ef6ba11b8bc87b6e6751b0a932853b5bc0dd9ebf52874eae61a1b2-0.log",
+          "sha256": "06eeceed6560a2df8fea77f1961d551e20ab8502dec00a84d118503d48640e33"
+        },
+        {
+          "path": "127cc7f629ef6ba11b8bc87b6e6751b0a932853b5bc0dd9ebf52874eae61a1b2-1.log",
+          "sha256": "63a9f2037a01016b609b9ee7d239100b16c248c216baa8a451c713024c1465a6"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_tls",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "12529aed2ee5b72770ef97f9a66f0c13a4e9020c0f87a2f3c16df7fc4761a49f.json",
+      "logs": [
+        {
+          "path": "12529aed2ee5b72770ef97f9a66f0c13a4e9020c0f87a2f3c16df7fc4761a49f-0.log",
+          "sha256": "e432133fb12266ecd585fc909d3f3b8cdfa3899f213f0d798b0f0dbfd4ec815e"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_transfer",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "4ad3ae2d4231d1e8f1edeb76996dcd261c5087b0f53719f50f863fa4af9ef7f4.json",
+      "logs": [
+        {
+          "path": "4ad3ae2d4231d1e8f1edeb76996dcd261c5087b0f53719f50f863fa4af9ef7f4-0.log",
+          "sha256": "ff179b62248adb21648417bf33bd40a26c5db2e3fb3c99adbe7092dc9f35b16b"
+        },
+        {
+          "path": "4ad3ae2d4231d1e8f1edeb76996dcd261c5087b0f53719f50f863fa4af9ef7f4-1.log",
+          "sha256": "d22544842688288daf7fdf8745c1539a2aa2bb12d293754fea5b899ad15e89a4"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_transfer",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "70ab0b9f5ac9345a46468a5d9d3dec09ad3483370dd7fedfa3155ea0a183bdd4.json",
+      "logs": [
+        {
+          "path": "70ab0b9f5ac9345a46468a5d9d3dec09ad3483370dd7fedfa3155ea0a183bdd4-0.log",
+          "sha256": "03b34cd595e69eca196a6cb3ed5fd3c887ca427b0d0789322099a673e6376bc9"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_watch",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "7ab024a65703d229faa9d07f70e9ebf705b82e48012073fd76e39b20a2d2ae6d.json",
+      "logs": [
+        {
+          "path": "7ab024a65703d229faa9d07f70e9ebf705b82e48012073fd76e39b20a2d2ae6d-0.log",
+          "sha256": "a1685c02a32ce1f73b1bba9199ceb1ca3bb9188af56c00b0e8336567fceb32d5"
+        },
+        {
+          "path": "7ab024a65703d229faa9d07f70e9ebf705b82e48012073fd76e39b20a2d2ae6d-1.log",
+          "sha256": "3a98ad0689dbe48261dc19d780497c86e9bc726d34b4e8ab2f045f3b17de3813"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_watch",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "4789b75e9b76e114038a8a535b96ea24fba65d308a941e86f94f2ed5c1e9fae6.json",
+      "logs": [
+        {
+          "path": "4789b75e9b76e114038a8a535b96ea24fba65d308a941e86f94f2ed5c1e9fae6-0.log",
+          "sha256": "a6bb7a439121b28cee4e4c1c8263f803f4a7fc8b0cfc8d179eebae0419d872d1"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_websocket",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "8ca54e6413ff2412837d775f9a0e4c14934ff50b9cc5dcc51c369c21d0284a07.json",
+      "logs": [
+        {
+          "path": "8ca54e6413ff2412837d775f9a0e4c14934ff50b9cc5dcc51c369c21d0284a07-0.log",
+          "sha256": "d7e64986c0da77c3c15f5e4cd6212ed306ddf0eab783e6fe48bf7132cb03434e"
+        },
+        {
+          "path": "8ca54e6413ff2412837d775f9a0e4c14934ff50b9cc5dcc51c369c21d0284a07-1.log",
+          "sha256": "deef96bb220735e74540f7379348b4d680d83d02d3f5a7e021ff4faf00b5b118"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_websocket",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "1662e8279dd7dbdebcb07017ebe7a3921c37a61bf922d10fd86a8112edb0093b.json",
+      "logs": [
+        {
+          "path": "1662e8279dd7dbdebcb07017ebe7a3921c37a61bf922d10fd86a8112edb0093b-0.log",
+          "sha256": "822939df0100b50d19e25c6f38499914bd73ada38eb03e5f3ba141d2c2e413e5"
+        }
+      ]
+    },
+    {
+      "id": "factor:math",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "c21cf1a0ab348c73f191775332e4bff52f88b7229b4ae05931e4944bd54c3d67.json",
+      "logs": [
+        {
+          "path": "c21cf1a0ab348c73f191775332e4bff52f88b7229b4ae05931e4944bd54c3d67-0.log",
+          "sha256": "d77f871888eaa3eb52a1223b38b2a1163ab89c6e9238113446019aaff44ae610"
+        },
+        {
+          "path": "c21cf1a0ab348c73f191775332e4bff52f88b7229b4ae05931e4944bd54c3d67-1.log",
+          "sha256": "c6a896b4c831f89acdc4d39e8750599eabb1024b6396ba0e2aeea8b64ab1ddbf"
+        }
+      ]
+    },
+    {
+      "id": "headers:math",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "2f0834a47542d4be6774d8ee131c8c55cce1627502b639de5d817b7d663240f8.json",
+      "logs": [
+        {
+          "path": "2f0834a47542d4be6774d8ee131c8c55cce1627502b639de5d817b7d663240f8-0.log",
+          "sha256": "f3d46f63013b39d48ffcd7aa8fd005b72eeddd8051ff20c3cf5725213410cbd6"
+        }
+      ]
+    },
+    {
+      "id": "factor:mem",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "bc9bcc2fee17c898fca62c5fa16b3335377051a093d73fc6b94f13a9d2c08299.json",
+      "logs": [
+        {
+          "path": "bc9bcc2fee17c898fca62c5fa16b3335377051a093d73fc6b94f13a9d2c08299-0.log",
+          "sha256": "f3086599d7fec1af5f8c3e5caa80ff314dd4d85c97d49a3678bdb72d043637e8"
+        },
+        {
+          "path": "bc9bcc2fee17c898fca62c5fa16b3335377051a093d73fc6b94f13a9d2c08299-1.log",
+          "sha256": "6dcb41f5b019b30adcf1b76d0f1b976624d7f27ad4e4e1661b85cbb83410b6b9"
+        }
+      ]
+    },
+    {
+      "id": "headers:mem",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "fde9f1f02b6ed43ee7ba7b997ea8f838c78d56796d481a66a9edb2067ebe298b.json",
+      "logs": [
+        {
+          "path": "fde9f1f02b6ed43ee7ba7b997ea8f838c78d56796d481a66a9edb2067ebe298b-0.log",
+          "sha256": "fdc79beb292502961cddab3396b5bf0ccbb71d01f295e1ef2c6564e79c6c8987"
+        }
+      ]
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "811e02d1fc08e4cffab5278823f9dfea666f26fcfd978d9b5a5be5f399ec9fbd.json",
+      "logs": [
+        {
+          "path": "811e02d1fc08e4cffab5278823f9dfea666f26fcfd978d9b5a5be5f399ec9fbd-0.log",
+          "sha256": "06436ebc720bf8aae1c25fcaccd8aaf9447b1f55c90d9689384c08cf47084f41"
+        },
+        {
+          "path": "811e02d1fc08e4cffab5278823f9dfea666f26fcfd978d9b5a5be5f399ec9fbd-1.log",
+          "sha256": "6ba9a1b52c8c39215b0046e110f17103399ae764bf372299642069d42b4e119f"
+        }
+      ]
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "1950c064ec52c2b90353ac4847afaac863d173f56981214c896e94a87738a834.json",
+      "logs": [
+        {
+          "path": "1950c064ec52c2b90353ac4847afaac863d173f56981214c896e94a87738a834-0.log",
+          "sha256": "bfc535fb8462dc9542eeb68c1c5d252d18a942ad5f260139484ffe408a2b13b0"
+        }
+      ]
+    },
+    {
+      "id": "factor:mem_vm",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "3d5887df998a538b780b1173ca5657b0f05503f9014bfcea8933afccba317856.json",
+      "logs": [
+        {
+          "path": "3d5887df998a538b780b1173ca5657b0f05503f9014bfcea8933afccba317856-0.log",
+          "sha256": "5b23e3e280c713bf3b4437bcff933d4525e29a58fe0801a52fd7086e210b6edf"
+        },
+        {
+          "path": "3d5887df998a538b780b1173ca5657b0f05503f9014bfcea8933afccba317856-1.log",
+          "sha256": "24e138f7b8d0c098e8e01398c32996e5ac07cf48584aff087fb15ba65353b5eb"
+        }
+      ]
+    },
+    {
+      "id": "headers:mem_vm",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "94c53f77cc958e2e2380d341fef51d71f8d66de904fcbe3bcc752c6d16c4a30c.json",
+      "logs": [
+        {
+          "path": "94c53f77cc958e2e2380d341fef51d71f8d66de904fcbe3bcc752c6d16c4a30c-0.log",
+          "sha256": "f3ec445a27b0ddd7b31f28648884929751ad618a04cbd5a933d613bd1baa4687"
+        }
+      ]
+    },
+    {
+      "id": "factor:obs",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "85c31e8769ab7e0190cbeb8e3aca296865babb965483e9b7fa58352ddddaab58.json",
+      "logs": [
+        {
+          "path": "85c31e8769ab7e0190cbeb8e3aca296865babb965483e9b7fa58352ddddaab58-0.log",
+          "sha256": "ee03c0e96964e178c952819194dc3ec38e78dc46169ff3ef9d32dd4e0d0ce02e"
+        },
+        {
+          "path": "85c31e8769ab7e0190cbeb8e3aca296865babb965483e9b7fa58352ddddaab58-1.log",
+          "sha256": "c45b2ebda427d908534a2598475a4e33224a4760687a01a945b56a974b92215c"
+        }
+      ]
+    },
+    {
+      "id": "headers:obs",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "f03f53945ed66d912dafbc709431a696a89049a1d249519378c74a938223050c.json",
+      "logs": [
+        {
+          "path": "f03f53945ed66d912dafbc709431a696a89049a1d249519378c74a938223050c-0.log",
+          "sha256": "2b1f66e795f30db6acc589bea45621e7144bcc838c7eede479a4588e30abc0fb"
+        }
+      ]
+    },
+    {
+      "id": "factor:platform",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "82fe686e57ae4c4c71b7107751429d10445234b79fb64af416de48304cba1116.json",
+      "logs": [
+        {
+          "path": "82fe686e57ae4c4c71b7107751429d10445234b79fb64af416de48304cba1116-0.log",
+          "sha256": "2967a4368bf35903336a92303680f91811e0b7d258fcbfac7ae71715407b6a98"
+        },
+        {
+          "path": "82fe686e57ae4c4c71b7107751429d10445234b79fb64af416de48304cba1116-1.log",
+          "sha256": "ee62f7e0ee8874730acd516d3dbf642439cbd206646ad6777310cd5661466da7"
+        }
+      ]
+    },
+    {
+      "id": "headers:platform",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "31fb3134dfc8e3d043c7f2ba4ab190aac3be64ae2549eaf0c4913979da1d578c.json",
+      "logs": [
+        {
+          "path": "31fb3134dfc8e3d043c7f2ba4ab190aac3be64ae2549eaf0c4913979da1d578c-0.log",
+          "sha256": "4f5a1bf0392e928f6fda15e04acdd6392f499ab8ba0b1f860cb25ece6238fff4"
+        }
+      ]
+    },
+    {
+      "id": "factor:platform_fs",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "b40a8f91980476adfff74162a2a9d058c75dee4711895af7cf0d9c1e0c54dcf5.json",
+      "logs": [
+        {
+          "path": "b40a8f91980476adfff74162a2a9d058c75dee4711895af7cf0d9c1e0c54dcf5-0.log",
+          "sha256": "041f78b0e72596f093e0092f71ee6acb72ce5110b8f6d41d979f64cd78e99260"
+        },
+        {
+          "path": "b40a8f91980476adfff74162a2a9d058c75dee4711895af7cf0d9c1e0c54dcf5-1.log",
+          "sha256": "e784ac2767bd6a5a481046b57142b3ae1374d1919e253e0069231aeb129adab2"
+        }
+      ]
+    },
+    {
+      "id": "headers:platform_fs",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "7c0400632e95fe4d873a947ce588e853acf973814ea83bbcee4142dddb70b238.json",
+      "logs": [
+        {
+          "path": "7c0400632e95fe4d873a947ce588e853acf973814ea83bbcee4142dddb70b238-0.log",
+          "sha256": "02e7d736c2513c0f36c9b16d16c4179c4cf205ae10df093b275a6732333cee77"
+        }
+      ]
+    },
+    {
+      "id": "factor:platform_thread",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "be50b6f8fe51ce367c690ba99b97c313b57c8bed769a58fe26c9a704d23e6b9a.json",
+      "logs": [
+        {
+          "path": "be50b6f8fe51ce367c690ba99b97c313b57c8bed769a58fe26c9a704d23e6b9a-0.log",
+          "sha256": "272aa43593160ad368b00bf007983125d4bbdeb2d278b996fabf4028f53d12d2"
+        },
+        {
+          "path": "be50b6f8fe51ce367c690ba99b97c313b57c8bed769a58fe26c9a704d23e6b9a-1.log",
+          "sha256": "dba0bb2b2d32e420d695bc497180521b925566fda48b9ea8e49c6d30493d7fd8"
+        }
+      ]
+    },
+    {
+      "id": "headers:platform_thread",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "a2f0b0bdf618f1e0ab9e137c3c50dd2b3b43009d27d199978609fb56d308bc0b.json",
+      "logs": [
+        {
+          "path": "a2f0b0bdf618f1e0ab9e137c3c50dd2b3b43009d27d199978609fb56d308bc0b-0.log",
+          "sha256": "a7e9051763b917e9df6b1a0c5e9ee494c7eb48b11996c23bfe82387b16edc95e"
+        }
+      ]
+    },
+    {
+      "id": "factor:process",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "4b506b9a95087e1daf7a7da83292015f0291928ac7e15b1b4f81a4b4a3ce8ff9.json",
+      "logs": [
+        {
+          "path": "4b506b9a95087e1daf7a7da83292015f0291928ac7e15b1b4f81a4b4a3ce8ff9-0.log",
+          "sha256": "4aa3aa8bf186ecd42b1a3cf13de125109a31ae2cc4b63e9c5647169df79b3565"
+        },
+        {
+          "path": "4b506b9a95087e1daf7a7da83292015f0291928ac7e15b1b4f81a4b4a3ce8ff9-1.log",
+          "sha256": "1568df6f9470226cea8e8c2061902bfd9916799d0fcb111bb5a18151dacc8586"
+        }
+      ]
+    },
+    {
+      "id": "headers:process",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "f2bd8f4cac5edf090bb8c5fae6d7630893f43222aa57f1acd970e4e7e21e6743.json",
+      "logs": [
+        {
+          "path": "f2bd8f4cac5edf090bb8c5fae6d7630893f43222aa57f1acd970e4e7e21e6743-0.log",
+          "sha256": "3246e5a74c0708ee4e4772728c20c759d75fcc971e29484bce919482e6f8c9a2"
+        }
+      ]
+    },
+    {
+      "id": "factor:sched",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "0142868422215b32d56fe61595473891a6072d764cecd296fc1842fb0d395415.json",
+      "logs": [
+        {
+          "path": "0142868422215b32d56fe61595473891a6072d764cecd296fc1842fb0d395415-0.log",
+          "sha256": "9bb34204e813e38fd1afeb7c0c4cac964ba8e4f2c5ec78fa59f68476b784f110"
+        },
+        {
+          "path": "0142868422215b32d56fe61595473891a6072d764cecd296fc1842fb0d395415-1.log",
+          "sha256": "b5754494d897110f2d2fb3443c913973b1ee8cc1abd07acdd818ebfe089f0e46"
+        }
+      ]
+    },
+    {
+      "id": "headers:sched",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "6707ba695bc489728c12e6e85c6b1089c2e7718f004472cc17df850cdcd8eec2.json",
+      "logs": [
+        {
+          "path": "6707ba695bc489728c12e6e85c6b1089c2e7718f004472cc17df850cdcd8eec2-0.log",
+          "sha256": "4f6a3c549f4e56fa69613c0e079f8a83f805244bd6b7fc0ac45d7aa41b176142"
+        }
+      ]
+    },
+    {
+      "id": "factor:simd",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "b52e11a99692a85945f3ff415e83276f7f3d03d7e43d9c5f1d469270cdd6415e.json",
+      "logs": [
+        {
+          "path": "b52e11a99692a85945f3ff415e83276f7f3d03d7e43d9c5f1d469270cdd6415e-0.log",
+          "sha256": "9237dce038c23ddd6a84976a8a80f65ea9bcb93d404f351016f99b8af5804200"
+        },
+        {
+          "path": "b52e11a99692a85945f3ff415e83276f7f3d03d7e43d9c5f1d469270cdd6415e-1.log",
+          "sha256": "4d4a6a2ca1142801b4a973011755ba8e8ee643b3d54a02bdeeccab9f73ed725c"
+        }
+      ]
+    },
+    {
+      "id": "factor:time",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "b7de41accf1b4c86536912a6e39a219b2d6acef460287176c69b4537a6f1eb0b.json",
+      "logs": [
+        {
+          "path": "b7de41accf1b4c86536912a6e39a219b2d6acef460287176c69b4537a6f1eb0b-0.log",
+          "sha256": "2a9c1731de01854b73b4285e598b8613ab39f3a2c86aed1f33aed67d6738f8a2"
+        },
+        {
+          "path": "b7de41accf1b4c86536912a6e39a219b2d6acef460287176c69b4537a6f1eb0b-1.log",
+          "sha256": "e55268acdabe8fccc3d3a3272a50c63595b72eb88a0d91e72e08a996d5064693"
+        }
+      ]
+    },
+    {
+      "id": "headers:time",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "a3ae2452876e043f66451c5f0294a3aa333231cf0fe7d9bd82271ca0d5ed5881.json",
+      "logs": [
+        {
+          "path": "a3ae2452876e043f66451c5f0294a3aa333231cf0fe7d9bd82271ca0d5ed5881-0.log",
+          "sha256": "c77b0d52982d7c4dd746b74bd3ff65214a0309fab43c6886a87d0ff5d9b5519d"
+        }
+      ]
+    },
+    {
+      "id": "factor:timer_queue",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "235930f362b50a2288aa35567c628afc5f99f947d5692d3a9d3b70895f00ecaa.json",
+      "logs": [
+        {
+          "path": "235930f362b50a2288aa35567c628afc5f99f947d5692d3a9d3b70895f00ecaa-0.log",
+          "sha256": "513945211ba5d7c260bf8b81f14bd1a6e40b1785e09740b2405e4318e617a616"
+        },
+        {
+          "path": "235930f362b50a2288aa35567c628afc5f99f947d5692d3a9d3b70895f00ecaa-1.log",
+          "sha256": "6aeee8fefacedb08e287dae1f32f960981803387a21706d1b66a603e0ad062fd"
+        }
+      ]
+    },
+    {
+      "id": "headers:timer_queue",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "0b4b7767c0dce7644ca0da5c30bccbfe9a301248a45d3c739e75f3cd53486ce9.json",
+      "logs": [
+        {
+          "path": "0b4b7767c0dce7644ca0da5c30bccbfe9a301248a45d3c739e75f3cd53486ce9-0.log",
+          "sha256": "7ebef2abc5cafbfd3e30e1fee88fa53b1dae1f7b2a2c44530e85933f68155072"
+        }
+      ]
+    },
+    {
+      "id": "factor:util_core",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "a7e2388f21d1246feb3d14c10d3d6a671fb62fc1b2caf559b843a514c454f2a7.json",
+      "logs": [
+        {
+          "path": "a7e2388f21d1246feb3d14c10d3d6a671fb62fc1b2caf559b843a514c454f2a7-0.log",
+          "sha256": "3bbb4c71e15bf2a263a4f3fd80a707582ea1a1b546bffd2defbfa90edb86bd6d"
+        },
+        {
+          "path": "a7e2388f21d1246feb3d14c10d3d6a671fb62fc1b2caf559b843a514c454f2a7-1.log",
+          "sha256": "0ff1c634b1b2c1556a417e87e479afdc6bb8e3e56e23aab15f5ab60db4d94dc6"
+        }
+      ]
+    },
+    {
+      "id": "headers:util_core",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "da9c59fdc98ea9d978519ff93da96f8e0c2999c45e7184619cd9db1ee802d208.json",
+      "logs": [
+        {
+          "path": "da9c59fdc98ea9d978519ff93da96f8e0c2999c45e7184619cd9db1ee802d208-0.log",
+          "sha256": "3e7e823ea1e4ec592743cabab3d09bbd7f142e1617feb13b1630144b486a056a"
+        }
+      ]
+    },
+    {
+      "id": "factor:util_runtime",
+      "status": "PASS",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "receipt": "8fe794b23721c00f57dfb1b756495c282c6074e73b224c44faf3d636b4dd7a64.json",
+      "logs": [
+        {
+          "path": "8fe794b23721c00f57dfb1b756495c282c6074e73b224c44faf3d636b4dd7a64-0.log",
+          "sha256": "b4f92d7ff93629b2ccc04c4964442b6e53d6b7a62c8806979de29a6f273e156c"
+        },
+        {
+          "path": "8fe794b23721c00f57dfb1b756495c282c6074e73b224c44faf3d636b4dd7a64-1.log",
+          "sha256": "fe89a440f7bfff558ba148255bb5c47fec87463bfb960355ae5436cd272fa3d7"
+        }
+      ]
+    },
+    {
+      "id": "headers:util_runtime",
+      "status": "PASS",
+      "reason": "public header or delivery seam changed",
+      "receipt": "0104f25b91c7e0f7d33899979a4e88b116c71fd67bd1ae5f5c8f5861d3a55e78.json",
+      "logs": [
+        {
+          "path": "0104f25b91c7e0f7d33899979a4e88b116c71fd67bd1ae5f5c8f5861d3a55e78-0.log",
+          "sha256": "ff80736246638bd9205f46cac15fc841a3790d1324c0617a2855fdb160e7721a"
+        }
+      ]
+    },
+    {
+      "id": "component-contract",
+      "status": "PASS",
+      "reason": "shared component/build/package semantics changed",
+      "receipt": "5574d25c42c7e71c3c68417c7c19276e56f699ae50ecba68ecc990f27f242dc7.json",
+      "logs": [
+        {
+          "path": "5574d25c42c7e71c3c68417c7c19276e56f699ae50ecba68ecc990f27f242dc7-0.log",
+          "sha256": "4b9541d90e6cc270fffba942b21a39855cdcab3c202971aa73424eedb24d22e4"
+        }
+      ]
+    },
+    {
+      "id": "delivery:compute",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "1812110de69c53d40d42c7919ce6608a37d00ce920f584210546f5ac532b67c5.json",
+      "logs": [
+        {
+          "path": "1812110de69c53d40d42c7919ce6608a37d00ce920f584210546f5ac532b67c5-0.log",
+          "sha256": "9ab7bef2841175b981cee610ca920c33bc390840f023c03573e7b9b3de3e1155"
+        }
+      ]
+    },
+    {
+      "id": "delivery:container",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "f03c41b5436fca5ea5614dbf1f98f052c4bf881254aa629206dcb5181cc03697.json",
+      "logs": [
+        {
+          "path": "f03c41b5436fca5ea5614dbf1f98f052c4bf881254aa629206dcb5181cc03697-0.log",
+          "sha256": "2a205a2b459a17569e829fa9b9cd6a22d7d7875c3a50b09af8ddb8bce113b3ca"
+        }
+      ]
+    },
+    {
+      "id": "delivery:core",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "f1f8ffaf3616651237b18313acae0b84b4c1243da1739acae2286ff9680ef561.json",
+      "logs": [
+        {
+          "path": "f1f8ffaf3616651237b18313acae0b84b4c1243da1739acae2286ff9680ef561-0.log",
+          "sha256": "a3f008d102ea141ef9c191ad8d3d453377c423625cc82426e1ba5ddb6e148d6f"
+        }
+      ]
+    },
+    {
+      "id": "delivery:error",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "116038a8932e2d8f897b8aa0d6f21727899743c59fa6cd6d9c55702b12dec0b8.json",
+      "logs": [
+        {
+          "path": "116038a8932e2d8f897b8aa0d6f21727899743c59fa6cd6d9c55702b12dec0b8-0.log",
+          "sha256": "c75507a44659c9b000ab53c04f292500e4ee428a61ddf2cd9cea5e519270da8d"
+        }
+      ]
+    },
+    {
+      "id": "delivery:graph",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "ab6e3128a97b871e6e8266816bb070ed6c12adcffda0c7d77325d588b0f3a4d7.json",
+      "logs": [
+        {
+          "path": "ab6e3128a97b871e6e8266816bb070ed6c12adcffda0c7d77325d588b0f3a4d7-0.log",
+          "sha256": "0d01917b712a112dd756b7e497928913abd52514bc1ce666eb58010d9d4de6c1"
+        }
+      ]
+    },
+    {
+      "id": "delivery:io",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "c1099d3380e35180ed1b8c25bad03c6e99c388099067b7b4a4e471cbb7ac071d.json",
+      "logs": [
+        {
+          "path": "c1099d3380e35180ed1b8c25bad03c6e99c388099067b7b4a4e471cbb7ac071d-0.log",
+          "sha256": "65136f81ccd10484196974a15b425244d29df5822bfcc3b41b00ccee85f043a3"
+        }
+      ]
+    },
+    {
+      "id": "delivery:math",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "be8fb134f9f227f8794e698b0451c7a264e70682a22179a80a55e0f9fad3fa05.json",
+      "logs": [
+        {
+          "path": "be8fb134f9f227f8794e698b0451c7a264e70682a22179a80a55e0f9fad3fa05-0.log",
+          "sha256": "5e6ea1a437aed56f9ab7c701ff8ed8113cfd30adff326e1fee14c8ab71bd2099"
+        }
+      ]
+    },
+    {
+      "id": "delivery:mem",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "343b85e438ce23fdffa65e7ea178dbf41fbbc1d846a666db51f24f22a4d86746.json",
+      "logs": [
+        {
+          "path": "343b85e438ce23fdffa65e7ea178dbf41fbbc1d846a666db51f24f22a4d86746-0.log",
+          "sha256": "030f0b6599afee3b9de1885bfd074af3cc083198beb3b520d8d265a009403092"
+        }
+      ]
+    },
+    {
+      "id": "delivery:obs",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "19b768bcb9fd11106d927f8cda270ce112b99433894e6320cb1fa724d8781802.json",
+      "logs": [
+        {
+          "path": "19b768bcb9fd11106d927f8cda270ce112b99433894e6320cb1fa724d8781802-0.log",
+          "sha256": "dc9cb93e1f9551e18132b967a665513229e5fa2131805360363db7fcaa3cdde5"
+        }
+      ]
+    },
+    {
+      "id": "delivery:platform",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "aae41a0f3eb7ff8ce7ddfd83409261dd8e59cb83565df51468bb2a11df13af05.json",
+      "logs": [
+        {
+          "path": "aae41a0f3eb7ff8ce7ddfd83409261dd8e59cb83565df51468bb2a11df13af05-0.log",
+          "sha256": "e42253429757751a8f1f903608224384adba6696010c8d051d57d4bbab751a45"
+        }
+      ]
+    },
+    {
+      "id": "delivery:process",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "6983efed4a851de24b5ab2065b31ded5a7810e32c2b606c2d13f5c9ffdf00f9d.json",
+      "logs": [
+        {
+          "path": "6983efed4a851de24b5ab2065b31ded5a7810e32c2b606c2d13f5c9ffdf00f9d-0.log",
+          "sha256": "4f5ee7b42eb9fc6edfaf2401f9834d52170f7bb708fa7e6bbd45ea86f4707314"
+        }
+      ]
+    },
+    {
+      "id": "delivery:sched",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "681cd48e93d16cd46b5abc4879f85a56573035f728b928752a3249207a3b4cc0.json",
+      "logs": [
+        {
+          "path": "681cd48e93d16cd46b5abc4879f85a56573035f728b928752a3249207a3b4cc0-0.log",
+          "sha256": "cfed4fab53c3408077e6597b30ad8c0f1e3fa87c8678041cac78808c9037d0d0"
+        }
+      ]
+    },
+    {
+      "id": "delivery:simd",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "710b946b21c5439fef919e4a14bf1120b0d44ad59530ed1d3afc40c6713bda23.json",
+      "logs": [
+        {
+          "path": "710b946b21c5439fef919e4a14bf1120b0d44ad59530ed1d3afc40c6713bda23-0.log",
+          "sha256": "bc6ce58a27d431524eb56cf18118c779e78ece419c6fcca0a8968f226022c9e7"
+        }
+      ]
+    },
+    {
+      "id": "delivery:time",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "6a94dd86659a2f7340ed162088179b4b707c762b4209e1614a6e25bc62950177.json",
+      "logs": [
+        {
+          "path": "6a94dd86659a2f7340ed162088179b4b707c762b4209e1614a6e25bc62950177-0.log",
+          "sha256": "e37874a4d844f8dabddaf36f734cb81910ebd130c5a7066faad2df54e6572176"
+        }
+      ]
+    },
+    {
+      "id": "delivery:util",
+      "status": "PASS",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "receipt": "4618d72fa5c5d505bac8cada3e466731e15d34800e5947fdf578e22edae85fd3.json",
+      "logs": [
+        {
+          "path": "4618d72fa5c5d505bac8cada3e466731e15d34800e5947fdf578e22edae85fd3-0.log",
+          "sha256": "645c4e08b16f2c21c012abd5ae89bc489a6c3ee8bddebccc3faa85941cb3e131"
+        }
+      ]
+    }
+  ],
+  "skipped_gates": [
+    {
+      "id": "factor:compute_provider_ggml",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:io_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+    },
+    {
+      "id": "headers:simd",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+    },
+    {
+      "id": "p1",
+      "kind": "performance",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic"
+    }
+  ],
+  "raw_archive": {
+    "name": "selector-evidence-37dc8b54.zip",
+    "sha256": "b6f81f5ba41dcdfdb2342c15cd76bd69e178bc2da3c1b3515aba295a711cc29f"
+  }
+}

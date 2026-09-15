@@ -1,0 +1,130 @@
+{
+  "candidate_commit": "37dc8b542d52361cfa7b6cc176dc65555941e48d",
+  "candidate_tree": "baf398dcf8aa42d5968a3cebe297133c3efc7b95",
+  "p0": {
+    "baseline": "ec142a92e00e27a73abbae4f040b6b361465e9a7",
+    "runtime_source_changes": [],
+    "new_cpu_macro_runtime_uses": 0,
+    "p1": "NOT_APPLICABLE: build/install projection only"
+  },
+  "cases": [
+    {
+      "case": "win-cpu-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "win-cpu-compute-37dc8b54/smoke.log",
+      "sha256": "e7d4e8b66bad0f29e33e2d9b497936df80d7f40e6008a54170a670b47bcf75ec"
+    },
+    {
+      "case": "win-cpu-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "win-cpu-graph-37dc8b54/smoke.log",
+      "sha256": "fbeba7533c7777da03d1a0c438e9bd2353adab36b443bf0d8e322274d263f787"
+    },
+    {
+      "case": "win-none-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "win-none-compute-37dc8b54/smoke.log",
+      "sha256": "292bcdf619737c9716d7ac7a32840aa4e7f7e157cfb2b5ad4ae5efc122bcc982"
+    },
+    {
+      "case": "win-none-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "win-none-graph-37dc8b54/smoke.log",
+      "sha256": "31d3025c3914180c3a9b49121270de7ffb7e1e95ff7b3f9b3eccc28390db688d"
+    },
+    {
+      "case": "win-cuda-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "win-cuda-compute-37dc8b54/smoke.log",
+      "sha256": "35e490cd1219a20bc0edae34ccaeb34d0111364484889e13cd782f99fea7515a"
+    },
+    {
+      "case": "win-cuda-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "win-cuda-graph-37dc8b54/smoke.log",
+      "sha256": "59faec21807284f2262224dc3b0ccf07ee1cd19b8a4512f64c54289becdaec50"
+    },
+    {
+      "case": "custom-cpu-source-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-cpu-source-37dc8b54/sample.log",
+      "sha256": "f7629004b8e4f55a6fdec84c50faab3936b3e890c1764f62e468e73684fbd117"
+    },
+    {
+      "case": "custom-cpu-shared-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-cpu-shared-37dc8b54/sample.log",
+      "sha256": "67589281d3cf2a87d3153c960394a0e1f5e470166b220759e697c83303192e40"
+    },
+    {
+      "case": "custom-cpu-static-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-cpu-static-37dc8b54/sample.log",
+      "sha256": "a902099c938ddf256ecfabe7eebd61f4bd9016dbb2c0ee4cd6e9dc0f8eefc285"
+    },
+    {
+      "case": "custom-cuda-source-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-cuda-source-37dc8b54/sample.log",
+      "sha256": "2b6afec7fe82282276249c998247563e7eb0a166cd47efedc1db13e5561851ec"
+    },
+    {
+      "case": "custom-cuda-shared-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-cuda-shared-37dc8b54/sample.log",
+      "sha256": "bfe369ee04c846b2f16abbe8e4b505d2b2f3c09c8e496200c9c690a7f1f1a828"
+    },
+    {
+      "case": "custom-cuda-static-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-cuda-static-37dc8b54/sample.log",
+      "sha256": "cf29f3c8ab72c41d53bddcfdd8ad8dd776827499bc61fb2ca8069277ae5a2c3f"
+    },
+    {
+      "case": "cpu-executor-absent-37dc8b54",
+      "verdict": "PASS",
+      "log": "cpu-executor-absent-37dc8b54/configure.log",
+      "sha256": "5b05087382a41ec0891e6b9c99751c36a0b03290893b515745ceeccea821fc9c"
+    },
+    {
+      "case": "staging-v2-ninja-37dc8b54",
+      "verdict": "PASS",
+      "log": "staging-v2-ninja-37dc8b54/contract.log",
+      "sha256": "5641ddc472fdd6f62c86a46e242f5f12043a7e9d3fe767c729f3826dfd7f1fef"
+    },
+    {
+      "case": "staging-v2-vs-37dc8b54",
+      "verdict": "PASS",
+      "log": "staging-v2-vs-37dc8b54/contract.log",
+      "sha256": "5641ddc472fdd6f62c86a46e242f5f12043a7e9d3fe767c729f3826dfd7f1fef"
+    },
+    {
+      "case": "staging-v2-shared-ninja-37dc8b54",
+      "verdict": "PASS",
+      "log": "staging-v2-shared-ninja-37dc8b54/contract.log",
+      "sha256": "5641ddc472fdd6f62c86a46e242f5f12043a7e9d3fe767c729f3826dfd7f1fef"
+    },
+    {
+      "case": "staging-v2-shared-vs-37dc8b54",
+      "verdict": "PASS",
+      "log": "staging-v2-shared-vs-37dc8b54/contract.log",
+      "sha256": "5641ddc472fdd6f62c86a46e242f5f12043a7e9d3fe767c729f3826dfd7f1fef"
+    },
+    {
+      "case": "staging-v2-static-ninja-37dc8b54",
+      "verdict": "PASS",
+      "log": "staging-v2-static-ninja-37dc8b54/contract.log",
+      "sha256": "5641ddc472fdd6f62c86a46e242f5f12043a7e9d3fe767c729f3826dfd7f1fef"
+    },
+    {
+      "case": "staging-v2-static-vs-37dc8b54",
+      "verdict": "PASS",
+      "log": "staging-v2-static-vs-37dc8b54/contract.log",
+      "sha256": "5641ddc472fdd6f62c86a46e242f5f12043a7e9d3fe767c729f3826dfd7f1fef"
+    }
+  ],
+  "archive": {
+    "name": "windows-r1-evidence-37dc8b54.zip",
+    "sha256": "111b860a0162a156b5553216123f6681e0b8ffd7fd212e93a09645d14f4669c2"
+  }
+}

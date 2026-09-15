@@ -268,13 +268,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "compute R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
+      "summary": "compute R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "graph R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
+      "summary": "graph R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
     },
     {
       "module": "container_concurrent",
@@ -350,7 +350,7 @@
       "module": "compute_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "compute_provider_onednn R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
+      "summary": "compute_provider_onednn R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
     },
     {
       "module": "compute_provider_ggml",
@@ -366,7 +366,7 @@
       "module": "graph_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "graph_provider_onednn R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
+      "summary": "graph_provider_onednn R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
     },
     {
       "module": "compute_ops",
@@ -376,21 +376,23 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
-      "summary": "compute_backend_cpu R1 delivery AUDITED：BD1/BD2 固定 CPU capability 和可选 native façade/install 投影；runtime 不变。"
+      "summary": "compute_backend_cpu R1 delivery CANDIDATE：BD1/BD2 完成，适用平台源码/静态/动态与 relocation、代表性真实消费通过；P0 无 runtime 改动，最终治理检查与终局待记录。R3/R4 计算新接口、默认规则及性能仍未验收。",
+      "candidate": "37dc8b542d52361cfa7b6cc176dc65555941e48d"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-backends-v4-route-delivery.md",
-      "summary": "compute_backend_cuda R1 delivery AUDITED：BD1/BD2 固定 CPU capability 和可选 native façade/install 投影；runtime 不变。"
+      "summary": "compute_backend_cuda R1 delivery CANDIDATE：BD1/BD2 完成，适用平台源码/静态/动态与 relocation、代表性真实消费通过；P0 无 runtime 改动，最终治理检查与终局待记录。R3/R4 计算新接口、默认规则及性能仍未验收。",
+      "candidate": "37dc8b542d52361cfa7b6cc176dc65555941e48d"
     },
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-route-isolation-v1.md",
-      "summary": "compute_provider_native R1 delivery AUDITED：按四路线新合同重新绑定 RI1–RI5 构建/交付范围；旧实现为待迁移 baseline，基础能力未验收，runtime 改写由后续包定界。"
+      "summary": "compute_provider_native R1 交付验证完成；四路线基础能力仍未完成，保持 AUDITED。R1 终局记录仅为证据，后续 runtime 修改必须先绑定 R2/R3 新的已审计有限卡。"
     },
     {
       "module": "compute_sched",

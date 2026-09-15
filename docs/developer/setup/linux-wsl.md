@@ -29,6 +29,18 @@ CC=clang-18 CXX=clang++-18 scripts/hyle-unix.sh cmake --preset linux
 `cmake --preset wsl` 仍是名称固定为 `gcc-14/g++-14` 时的方便入口。已有 cache 若曾绑定 GCC 13，必须
 换新的独占 build/scratch；CMake 不支持原地换 compiler，wrapper 也不会删除旧目录。
 
+选择 CUDA 路线时，使用已安装的 **Linux** Toolkit。WSL 继承的 Windows PATH 可能让 CMake 先找到
+`nvcc.exe`，随后无法找到 Linux `cudart`。例如本机 Toolkit 13.3 使用：
+
+```bash
+export PATH=/usr/local/cuda-13.3/bin:$PATH
+command -v nvcc
+nvcc --version
+```
+
+路径按实际安装位置选择；CUDA 13.3+ 由机器环境提供，HYLE 不下载 SDK。已经选错 Toolkit 的 cache
+使用新的独占 build 目录验证。CPU-only/无 backend 配置不需要 CUDA Toolkit。
+
 ## 二、⚠️ 9p 铁律（血泪，最重要）
 
 **把 WSL 当一个独立执行环境，用它自己的原生 ext4，绝不在 `/mnt/c` 上构建/测试。** 它与

@@ -1,0 +1,83 @@
+{
+  "candidate_commit": "37dc8b542d52361cfa7b6cc176dc65555941e48d",
+  "platform": "linux",
+  "canonical_source_archive_sha256": "79975f409373656a6747d8ce7b98ba3a465d6aaca68c706122cf363e1d043836",
+  "cases": [
+    {
+      "case": "linux-cpu-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "linux-cpu-compute-37dc8b54/smoke.log",
+      "sha256": "ba722f8cb02b4758e3f637a4bced7ef206a6b2c14efb6930669a48fa46897a08"
+    },
+    {
+      "case": "linux-cpu-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "linux-cpu-graph-37dc8b54/smoke.log",
+      "sha256": "8ee4d76d8d3428e4d59f587f19b7d18e5ed6364875e1e17e8ea8daf717bdfab8"
+    },
+    {
+      "case": "linux-none-compute-37dc8b54",
+      "verdict": "PASS",
+      "log": "linux-none-compute-37dc8b54/smoke.log",
+      "sha256": "e8db60f6d9818adca7b37a64f3e812f2af88989766770470e855d6b91e2b9d63"
+    },
+    {
+      "case": "linux-none-graph-37dc8b54",
+      "verdict": "PASS",
+      "log": "linux-none-graph-37dc8b54/smoke.log",
+      "sha256": "01391513b22a145d4fc14d35a3ffc3be5f183d874e041dcdab5b15823ed1c282"
+    },
+    {
+      "case": "linux-cuda-compute-37dc8b54-native-sdk",
+      "verdict": "PASS",
+      "log": "linux-cuda-compute-37dc8b54-native-sdk/smoke.log",
+      "sha256": "715302108c6f334efa4f5fabbbdce09639c7a8f237547ede023c71a507ab3169"
+    },
+    {
+      "case": "linux-cuda-graph-37dc8b54-native-sdk",
+      "verdict": "PASS",
+      "log": "linux-cuda-graph-37dc8b54-native-sdk/smoke.log",
+      "sha256": "8fdc0f44748ff7f16f71e6ca4c559b5c2c3cf5ca53cdca3ce7731ac0a5ed5165"
+    },
+    {
+      "case": "custom-linux-cpu-source-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-linux-cpu-source-37dc8b54/sample.log",
+      "sha256": "4dcd4c8d772ae2dbbc960dfb9adfa6676e573c37de7f0d00a8f6e5e7eec257d3"
+    },
+    {
+      "case": "custom-linux-cpu-shared-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-linux-cpu-shared-37dc8b54/sample.log",
+      "sha256": "109b78567c243e5345bedc2e616985bba5602594bfb94bfab802f07cd3d788a6"
+    },
+    {
+      "case": "custom-linux-cpu-static-37dc8b54-pic",
+      "verdict": "PASS",
+      "log": "custom-linux-cpu-static-37dc8b54-pic/sample.log",
+      "sha256": "a1bc55b5c8446c6820c640b9abe21d77ce73d583be0e6dfc614059866bab98c7"
+    },
+    {
+      "case": "custom-linux-cuda-source-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-linux-cuda-source-37dc8b54/sample.log",
+      "sha256": "e45787f723370547062555e8cbd1bbed5831b38b21145f362284ecd7f9ba29a4"
+    },
+    {
+      "case": "custom-linux-cuda-shared-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-linux-cuda-shared-37dc8b54/sample.log",
+      "sha256": "c4d83511a15fc46e071b9a502d74c6ba8ce75e0cf6d482d1b5f0e49ec60e8da8"
+    },
+    {
+      "case": "custom-linux-cuda-static-37dc8b54",
+      "verdict": "PASS",
+      "log": "custom-linux-cuda-static-37dc8b54/sample.log",
+      "sha256": "0245f9b37789417499a809fad83373344d0336580d991f5328a0abfd14f9dcf1"
+    }
+  ],
+  "archive": {
+    "name": "linux-r1-evidence-37dc8b54.zip",
+    "sha256": "ed9848dbdcc6ffb7ca4830348294cf6f9dc7a3c7e8277679bf080c899dfeb0f2"
+  }
+}
