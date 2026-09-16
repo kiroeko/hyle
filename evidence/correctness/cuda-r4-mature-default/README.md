@@ -46,3 +46,9 @@ device code 已插桩。TSan 无 suppression；device 检查由 Compute Sanitize
 
 本包完成普通正确性、插桩与交付门。最终默认 P1 和原生边界成本在独立证据中裁决，不能由本包
 推导性能 PASS 或整个 R4 CLOSED。
+
+后续终局：最终默认 [Direct v3](../../performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)、
+[Graph v3](../../performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)与
+[原生边界诊断](../../performance/cuda-r4-native-boundary-v1/README.md)均已实际完成；裁决由主卡汇总。
+[最终产品候选 LOC 重计](loc-final.json)仍为32,776行/109文件，self-check PASS。原 summary.json 保留
+本正确性检查点当时的性能待验收状态，不改写历史快照。

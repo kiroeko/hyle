@@ -1,4 +1,7 @@
-# Compute / Graph CPU 性能证据
+# Compute / Graph 性能证据
+
+当前四路线工作中，R3 CPU 的原统计与具名例外见[全库账本](full-library-scorecard.md)；R4 CUDA
+最终结果见本页末尾。以下前段保留旧候选的 CPU/CUDA 历史证据，不用旧 copy 或跨域样例签新路线完成。
 
 本页分别裁决 2026-09-12 的 CPU one-op 抽象税与 x64 oneDNN provider 边界，不声称完整 Compute/Graph、
 完整算子目录或 GPU backend 已完成。one-op 冻结合同是
@@ -309,3 +312,35 @@ Graph CUDA P2
 
 两份 retained bundle 均经 `hyle-perf.py verify` 返回 `QUALIFIED`、`CURRENT`、`EXACT` 和
 `paths_verified=true`。
+
+## R4 CUDA 最终成熟默认（2026-09-17）
+
+产品候选755fb7c7；资格化 checkout f01e9237 只含文档/状态/证据差异。W1 RTX4070/SM89、
+driver610.62、Toolkit13.3.73、MSVC19.50、Release/static、caller CPU2、process mask0x14，
+native helpers 保留原生调度。Windows DLL 实际邻置；旧单核失败采样不复用。
+
+普通默认为 cuBLASLt dense、Marlin group128 Q4、SGLang precise vector 激活；HYLE separate/尾部
+能力保留。此前 v2 完整链比较没有给出 HYLE 激活的完整域优势，因而采用成熟基线。最终 v3 两侧
+使用同数学、同 HYLE 生命周期和完成边界，验证接入成本，不授予 HYLE 算法赢家。
+
+| 路径 / workload | 八个分层 median ratio 范围 | 严格方向 | 5% NI |
+|---|---|---|---|
+| Direct M1 | 0.996930–1.004249 | 8 INCONCLUSIVE | PASS |
+| Direct M16 | 0.998512–1.003080 | 8 INCONCLUSIVE | PASS |
+| captured Graph M1 | 0.996611–1.003051 | 1 LOSS / 7 INCONCLUSIVE | PASS |
+| captured Graph M16 | 0.994638–1.004986 | 8 INCONCLUSIVE | PASS |
+
+[Direct 完整证据](../../../../evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)、
+[Graph 完整证据](../../../../evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)：各 n=15，
+未扩到31；16个 A/A、120产品进程、30 control 进程、全部 validator 与 raw replay 均完成并通过。
+保留 Graph 单个小输，不把 practical PARITY 改写为严格等速。资格限于当前两个 resident FFN
+原型，不是生产模型吞吐，也不外推其它 GPU/driver/Toolkit/dtype/shape。
+
+[原生完整边界诊断](../../../../evidence/performance/cuda-r4-native-boundary-v1/README.md)使用同数学链，
+每模式四层×15进程，有自己的数值 oracle 与同 build A/A。Direct 中位差范围 −0.339～1.639 μs，
+Graph −1.481～0.851 μs，完整 FFN 约307～318 μs。差值按分层报告，不合成新 CI；裸路径只提供
+一个事件，缺少公共 admission/保活/失败服务，故保持 NATURAL_ROUTE，不签 NI、WIN/LOSS 或零开销。
+冷 pair_prepare 不是含 packing 的全启动时间；完整 opaque SDK 峰值和独立析构时延未测。
+
+结合主卡正确性/资源/三交付证据，六个 R4 CUDA owner 按协议 CLOSED。CPU 例外、未交付的
+Apple/Vulkan 和 R7 终审保持原状态；本结案不代表整个四路线基础架构已经完成。

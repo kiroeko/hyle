@@ -1,10 +1,10 @@
 {
   "schema": "hyle.performance.scorecard/v1",
-  "as_of": "2026-09-16",
+  "as_of": "2026-09-17",
   "registry": "docs/implementation/module-status.json",
   "baseline": "7fa6dc0a8b3b857a1835525de0d0e7be5f8db5e9",
   "ratio_definition": "greater than one favors the shipped HYLE route",
-  "excluded_modules": ["compute_backend_cuda", "compute_provider_cublas", "compute_provider_cuda", "compute_provider_ggml", "compute_provider_marlin", "compute_route_cuda", "compute_sched", "graph_route_cuda"],
+  "excluded_modules": ["compute_provider_ggml", "compute_sched"],
   "peer_freshness": [
     {"peer": "Highway", "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2", "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2", "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"},
     {"peer": "xsimd", "locked": "3b3151ff665514a00a437cc985f47b7de99b772b", "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b", "disposition": "current"},
@@ -51,7 +51,13 @@
     {"module": "compute_backend_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-foundation-cold-binding", "cuda-c5-public-delivery"]},
     {"module": "compute_provider_native", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024", "cuda-c5-public-delivery"]},
     {"module": "compute_route_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024", "cuda-c5-public-delivery"]},
-    {"module": "graph_route_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257", "cuda-c5-public-delivery"]}
+    {"module": "graph_route_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257", "cuda-c5-public-delivery"]},
+    {"module": "compute_backend_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
+    {"module": "compute_provider_cublas", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
+    {"module": "compute_provider_marlin", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
+    {"module": "compute_provider_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
+    {"module": "compute_route_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
+    {"module": "graph_route_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-graph-native-boundary-cost"]}
   ],
   "claims": [
     {
@@ -1227,6 +1233,231 @@
         "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
         "evidence/correctness/cuda-r4-product-delivery/README.md",
         "evidence/correctness/cuda-r4-product-delivery/p0-unchanged.json"
+      ]
+    },
+    {
+      "id": "cuda-r4-cold-default-and-resource-contract",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda",
+        "graph_route_cuda"
+      ],
+      "kind": "ROUTE_POLICY",
+      "comparison": "PROVIDER_SELECTION",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "Ordinary CUDA Direct and captured Q4 gate/up -> SwiGLU -> dense down FFN; independent dense transform",
+      "contract": "Cold cuBLASLt/Marlin/SGLang binding; HYLE separate/tail fallback; real resource admission, terminal completion and failed-slot retirement",
+      "peer": "Locked cuBLASLt, vLLM Marlin and SGLang precise fragment; previous v2 full-chain HYLE comparison retained",
+      "scale": "Two resident-input slots, shared compressed constants; FP16/FP32 legal domains documented per provider",
+      "absolute": "No hot HYLE metadata allocation, timing search, repacking or per-kernel Graph dispatch; SDK opaque storage remains unknown",
+      "ratio_ci": "N/A: policy claim is not an algorithm speed ranking",
+      "sensitivity": "Win/WSL real source/static/shared FFN; host/device checks; two Mac CUDA-OFF dependency projection checks",
+      "mechanism": "Reuse native stream/context owner; cold captured executable and per-slot workspace; preserve mature fusion/resource ownership",
+      "limitations": "Only SM89/RTX4070 qualified; SM80+ compilation support does not establish SOTA; no unsupported-format CPU fallback",
+      "evidence": [
+        "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+        "evidence/correctness/cuda-r4-mature-default/README.md"
+      ]
+    },
+    {
+      "id": "cuda-r4-compute-decode-q4-ffn-m1",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "compute decode-q4-ffn-m1: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
+      "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
+      "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
+      "scale": "Two code placements, forward/reverse execution and allocation orders; fixed n=15->31 contract",
+      "absolute": "Public median 310.904–313.750 us; peer 310.723–313.208 us across strata",
+      "ratio_ci": "Medians 0.996930–1.004249; CI endpoints 0.986473–1.012000; per-stratum directions {'INCONCLUSIVE': 8}",
+      "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
+      "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
+      "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
+      "evidence": [
+        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
+        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
+        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
+      ]
+    },
+    {
+      "id": "cuda-r4-compute-short-prefill-q4-ffn-m16",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "compute short-prefill-q4-ffn-m16: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
+      "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
+      "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
+      "scale": "Two code placements, forward/reverse execution and allocation orders; fixed n=15->31 contract",
+      "absolute": "Public median 316.527–318.088 us; peer 316.619–318.427 us across strata",
+      "ratio_ci": "Medians 0.998512–1.003080; CI endpoints 0.988165–1.014748; per-stratum directions {'INCONCLUSIVE': 8}",
+      "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
+      "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
+      "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
+      "evidence": [
+        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
+        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
+        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
+      ]
+    },
+    {
+      "id": "cuda-r4-graph-decode-q4-ffn-m1",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda",
+        "graph_route_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "graph decode-q4-ffn-m1: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
+      "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
+      "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
+      "scale": "Two code placements, forward/reverse execution and allocation orders; fixed n=15->31 contract",
+      "absolute": "Public median 307.557–309.343 us; peer 307.550–309.097 us across strata",
+      "ratio_ci": "Medians 0.996611–1.003051; CI endpoints 0.990565–1.009728; per-stratum directions {'INCONCLUSIVE': 7, 'LOSS': 1}",
+      "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
+      "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
+      "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
+      "evidence": [
+        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
+        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
+        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
+      ]
+    },
+    {
+      "id": "cuda-r4-graph-short-prefill-q4-ffn-m16",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda",
+        "graph_route_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "graph short-prefill-q4-ffn-m16: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
+      "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
+      "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
+      "scale": "Two code placements, forward/reverse execution and allocation orders; fixed n=15->31 contract",
+      "absolute": "Public median 312.296–313.738 us; peer 311.596–313.600 us across strata",
+      "ratio_ci": "Medians 0.994638–1.004986; CI endpoints 0.986682–1.012528; per-stratum directions {'INCONCLUSIVE': 8}",
+      "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
+      "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
+      "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
+      "evidence": [
+        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
+        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
+        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
+      ]
+    },
+    {
+      "id": "cuda-r4-compute-native-boundary-cost",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE",
+      "qualification": "REJECTED_DIAGNOSTIC",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "N/A",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "compute full M1/M16 resident FFN versus same-math raw native execution",
+      "contract": "Different public services: raw side has one terminal event and caller-managed ownership; HYLE includes admission, retained owners and failed-slot retirement",
+      "peer": "Same frozen Marlin/SGLang/cuBLASLt, same precision/resources; Graph side also genuinely captured",
+      "scale": "Four execution/allocation-order strata x 15 processes, two shapes/process; one bounded diagnostic, no escalation",
+      "absolute": "decode-q4-ffn-m1 paired extra median 0.371–1.639 us; short-prefill-q4-ffn-m16 paired extra median -0.339–1.458 us",
+      "ratio_ci": "Intervals retained in summary; deliberately no NI, WIN/LOSS or parity ranking",
+      "sensitivity": "Same-build A/A and independent full-chain double oracle; native-runtime-pair and physically staged DLLs",
+      "mechanism": "Full interface-boundary costs; no phase instrumentation attributes individual microseconds to locks, atomics or driver calls",
+      "limitations": "Diagnostic classification rejects comparability, not data correctness; cold pair preparation excludes weight packing, opaque SDK peak memory unknown, teardown not separately timed",
+      "evidence": [
+        "evidence/performance/cuda-r4-native-boundary-v1/README.md",
+        "evidence/performance/cuda-r4-native-boundary-v1/summary.json"
+      ]
+    },
+    {
+      "id": "cuda-r4-graph-native-boundary-cost",
+      "modules": [
+        "compute_backend_cuda",
+        "compute_provider_cublas",
+        "compute_provider_marlin",
+        "compute_provider_cuda",
+        "compute_route_cuda",
+        "graph_route_cuda"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE",
+      "qualification": "REJECTED_DIAGNOSTIC",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "N/A",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "graph full M1/M16 resident FFN versus same-math raw native execution",
+      "contract": "Different public services: raw side has one terminal event and caller-managed ownership; HYLE includes admission, retained owners and failed-slot retirement",
+      "peer": "Same frozen Marlin/SGLang/cuBLASLt, same precision/resources; Graph side also genuinely captured",
+      "scale": "Four execution/allocation-order strata x 15 processes, two shapes/process; one bounded diagnostic, no escalation",
+      "absolute": "decode-q4-ffn-m1 paired extra median -0.376–0.080 us; short-prefill-q4-ffn-m16 paired extra median -1.481–0.851 us",
+      "ratio_ci": "Intervals retained in summary; deliberately no NI, WIN/LOSS or parity ranking",
+      "sensitivity": "Same-build A/A and independent full-chain double oracle; native-runtime-pair and physically staged DLLs",
+      "mechanism": "Full interface-boundary costs; no phase instrumentation attributes individual microseconds to locks, atomics or driver calls",
+      "limitations": "Diagnostic classification rejects comparability, not data correctness; cold pair preparation excludes weight packing, opaque SDK peak memory unknown, teardown not separately timed",
+      "evidence": [
+        "evidence/performance/cuda-r4-native-boundary-v1/README.md",
+        "evidence/performance/cuda-r4-native-boundary-v1/summary.json"
       ]
     }
   ]

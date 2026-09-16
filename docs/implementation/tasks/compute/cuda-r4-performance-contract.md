@@ -1,7 +1,7 @@
 # R4 CUDA 性能比较：预审与有限合同
 
-本记录从属 [R4 主卡](cuda-v1-four-route-foundation.md) 的 C1–C5。当前为 **AUDITED / 采集资格已恢复**，
-不是新的产品 owner 或一次已通过的 P1。[停止事实](../../../../evidence/correctness/cuda-r4-qualification-progress-stop/README.md)
+本记录从属 [R4 主卡](cuda-v1-four-route-foundation.md) 的 C1–C5。当前为 **CLOSED / 最终验收完成**，
+不是新的产品 owner；以下保留预声明合同和历史资格过程，最终结果见文末。[停止事实](../../../../evidence/correctness/cuda-r4-qualification-progress-stop/README.md)
 保留两次启动和有限诊断；以下是计时前冻结的合同。API/算法、正确性及交付固定后，才把完整 commit/tree、
 编译器、依赖和机器身份写入统一仪器合同并执行正式采样。原 5% 门、n=15→最多31、一次源码归因
 机制纠正预算保持；没有修改公共仪器。
@@ -138,3 +138,18 @@ cuBLAS heuristic、小型 HYLE context/packing 与受控 caller 优先级探针�
 分配顺序、两个 placement、分辨率/功效和设备环境资格。使用现有统一仪器、P 核 caller、实际 DLL
 邻置；W1 是 GPU 工程验证，不借用 CPU Formal 身份。任何 preflight 失败先停止；不得靠 n=31
 补救不合格比较、地址效应或仪器噪声。API/算法未固定之前不启动正式 P1。
+
+## 6. 最终结果（2026-09-17）
+
+产品755fb7c7，文档/状态 checkout f01e9237，实际产品、benchmark 和工具输入相同。
+最终成熟默认 [Direct v3](../../../../evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)
+和 [Graph v3](../../../../evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)均以 n=15
+完成两个 workload、八 strata、16 A/A 进程、120 产品进程、30 control 进程及所有 validator/raw replay，
+qualification/5% NI PASS。未启动 n=31，没有新停顿；v1 失败数据仍排除，v2 作为默认选择依据保留。
+
+默认和独立参考已采用同一成熟精确数学，v3 只证明接入非劣。Graph decode 一个 stratum 的 CI 完整
+低于1，其他31个区间跨1；完整小输方向保留。没有完整域 HYLE 算法优势或跨 GPU SOTA 声明。
+
+[原生诊断](../../../../evidence/performance/cuda-r4-native-boundary-v1/README.md)也已完成预声明预算，
+完整 oracle、四顺序层×15进程/模式；不启动 NI 或扩样。Direct、Graph 的边界差值、冷准备计时范围、
+驻留权重/部分 workspace 与 opaque SDK 成本限制分别记录。所有适用性能工作已裁决，主卡可关闭。

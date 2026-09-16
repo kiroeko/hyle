@@ -56,6 +56,12 @@ fast-math or intermediate FP16 activation rounding is enabled.
 does not qualify an A/A, formal P1, native-wrapper cost or winner rule. Those
 remain separate gates under the R4 contract.
 
+The final mature-default v3 [Direct evidence](../../evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)
+and [Graph evidence](../../evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)
+now pass qualification and the unchanged 5% NI gate at n=15. Both use the same
+precise mature device implementation, so this is integration qualification,
+not a HYLE algorithm win. The small negative Graph decode stratum is retained.
+
 ## Raw native cost diagnostic
 
 The separate `hyle_compute_cuda_native_cost_bench` and
@@ -72,3 +78,8 @@ and wrapper cost without pretending that one raw event supplies Direct's three
 Completion objects and lifetime services. They reject the A/A environment knob
 and cannot be used as the SAME_CONTRACT peer. They require their own full-chain
 oracle check before any cost diagnostic is interpreted.
+
+The [completed bounded diagnostic](../../evidence/performance/cuda-r4-native-boundary-v1/README.md)
+retains raw observations, same-build A/A, independent oracle, all four order
+strata and the explicit differences in lifetime services. No NI or algorithm
+ranking is assigned to it.

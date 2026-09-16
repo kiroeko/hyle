@@ -8,5 +8,6 @@
   "summary.json": "dbb1089c815e4c6ca206b8c21bd2d7875ad5fb66c7e45390eafde87731ad74c4",
   "test-braces-source-identity.json": "74cf9369d46e6b89042d8cdc5cde7b9b90e1cd2306e2d30332d70d9eb26df1df",
   "windows-and-recipes.zip": "81c55dc5621481d7ff79397929c64659c6e2ba2699b797762f651214bff5f921",
-  "wsl-raw.tar.gz": "9b73146cc094f7626fe7ae75e3d2e8591778ef9cc3a762b4fbd9e265b2722d02"
+  "wsl-raw.tar.gz": "9b73146cc094f7626fe7ae75e3d2e8591778ef9cc3a762b4fbd9e265b2722d02",
+  "loc-final.json": "ddb4ee702f386379dae856621889886050aa09e45c787c96ed81ba886043fd2d"
 }

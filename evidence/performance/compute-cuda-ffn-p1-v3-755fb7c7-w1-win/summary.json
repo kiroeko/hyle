@@ -1,0 +1,426 @@
+{
+  "contract_sha256": "c1a591ff52417edb340ed6d31cfa61d0002c351ffb1c580e2afb5f588d6333a1",
+  "experiment_id": "compute-cuda-ffn-p1-v3",
+  "qualification": "QUALIFIED",
+  "ratio_definition": "candidate/peer for higher-is-better; peer/candidate for lower-is-better; greater than one favors candidate",
+  "record": "hyle_perf_summary",
+  "schema": "hyle.perf.summary/v1",
+  "workloads": [
+    {
+      "combined_exact_verdict": "PARITY",
+      "combined_noninferiority_gate": "PASS",
+      "comparability": "COMPARABLE",
+      "id": "decode-q4-ffn-m1",
+      "strata": [
+        {
+          "absolute": {
+            "candidate_median": 3201.79,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3218.3,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.99217434527323,
+              1.0050415617637998
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.996935820384268,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-candidate-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3211.82,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3214.04,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9919011149727154,
+              1.0057250049488928
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9994701227133458,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-candidate-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3203.67,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3196.97,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9947065734957641,
+              1.0120004553532465
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0024230911496048,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-peer-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3187.25,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3200.08,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9864734722465418,
+              1.0035783435147214
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9969296534939234,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-peer-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3200.98,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3192.77,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9955809592521527,
+              1.0089677199879046
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0020333863872772,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-candidate-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3204.77,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3202.92,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9956820601585217,
+              1.0063336385185557
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0007471190399206,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-candidate-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3200.67,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3197.41,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9917585164079877,
+              1.0099302721514234
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0011270417821703,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-peer-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3216.43,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3203.29,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9993925287231636,
+              1.0104869805452101
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0042490445105337,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-peer-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        }
+      ]
+    },
+    {
+      "combined_exact_verdict": "PARITY",
+      "combined_noninferiority_gate": "PASS",
+      "comparability": "COMPARABLE",
+      "id": "short-prefill-q4-ffn-m16",
+      "strata": [
+        {
+          "absolute": {
+            "candidate_median": 3158.14,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3145.86,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.994007263922518,
+              1.014748112963454
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0030801895013706,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-candidate-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3159.29,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3158.37,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9976437888885379,
+              1.0046118030570568
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0028767510831524,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-candidate-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3154.5,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3151.48,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.994962899453421,
+              1.0120697923673851
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9999744769367219,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-peer-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3143.78,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3149.53,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9881649764708461,
+              1.0057061295492125
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9985115379510419,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "primary-peer-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3151.59,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3140.44,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9942219841844934,
+              1.0089941456520835
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9986983237728192,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-candidate-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3151.38,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3142.45,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9938463286249858,
+              1.0106538162638707
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0016215975124885,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-candidate-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3151.13,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3157.15,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9908415196990471,
+              1.003753404213252
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0008425320304706,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-peer-first-candidate-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 3148.81,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 3146.4,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9932824793070745,
+              1.0093625048829211
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.001002680180037,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "placement-peer-first-peer-allocation-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        }
+      ]
+    }
+  ]
+}

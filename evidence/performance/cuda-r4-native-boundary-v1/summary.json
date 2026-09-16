@@ -1,0 +1,470 @@
+{
+  "compute": {
+    "collection": "PASS",
+    "classification": "NATURAL_ROUTE / NOT_COMPARABLE",
+    "ranking": null,
+    "noninferiority_gate": null,
+    "sample_escalation": false,
+    "wall_seconds": 178.06199999991804,
+    "gpu_after": {
+      "name": "NVIDIA GeForce RTX 4070",
+      "uuid": "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+      "driver_version": "610.62",
+      "pstate": "P0",
+      "temperature.gpu": "41",
+      "power.draw": "123.40",
+      "power.limit": "200.00",
+      "clocks.sm": "2835",
+      "clocks.mem": "10501",
+      "utilization.gpu": "56",
+      "clocks_event_reasons.sw_thermal_slowdown": "Not Active",
+      "clocks_event_reasons.hw_thermal_slowdown": "Not Active"
+    },
+    "strata": [
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-candidate-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9968901882646506,
+          "confidence_interval": [
+            0.992166825447232,
+            1.0024693207963014
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 311.4081252608043,
+        "native_median_us": 310.96944725180754,
+        "paired_extra_median_us": 0.9681734148234113
+      },
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-candidate-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9947480328403148,
+          "confidence_interval": [
+            0.9906282810335294,
+            1.0031795559854595
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 312.0387676964986,
+        "native_median_us": 310.81576706223154,
+        "paired_extra_median_us": 1.638817360490691
+      },
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-peer-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9988098909897531,
+          "confidence_interval": [
+            0.9915830917799513,
+            1.0047745077939103
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 311.81109236779986,
+        "native_median_us": 310.9858874604271,
+        "paired_extra_median_us": 0.3712165148915574
+      },
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-peer-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9979994310882156,
+          "confidence_interval": [
+            0.9901869612456985,
+            1.0012844093899056
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 311.9764644955185,
+        "native_median_us": 311.4149136602152,
+        "paired_extra_median_us": 0.626609195313165
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-candidate-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9954291228359753,
+          "confidence_interval": [
+            0.9824431921241423,
+            1.0032455527710447
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 317.5389461517455,
+        "native_median_us": 315.9348036939097,
+        "paired_extra_median_us": 1.4575594117388277
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-candidate-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9976089191112517,
+          "confidence_interval": [
+            0.9909911894966461,
+            1.0064248363738741
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 317.79223379339055,
+        "native_median_us": 316.33857084560464,
+        "paired_extra_median_us": 0.7580649513023445
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-peer-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 1.00107543498349,
+          "confidence_interval": [
+            0.9883097366131457,
+            1.0071856742747791
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 315.9577627662734,
+        "native_median_us": 316.51178689894414,
+        "paired_extra_median_us": -0.33880291331098533
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-peer-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.995601603897889,
+          "confidence_interval": [
+            0.9937104529296882,
+            0.998875330014392
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 317.69632044121664,
+        "native_median_us": 316.74638117259514,
+        "paired_extra_median_us": 1.3959306801331195
+      }
+    ],
+    "raw_sha256": {
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-01.log": "33c0703cf147ec8df4f9204fdfc49d87014cf2fe2729624c9f798c6c8be186c8",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-02.log": "705b8fe360a11205b5ff5addbe9690dfeda8c26de932ce7adc714cb2d8b996f7",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-03.log": "a9e976f1ebfd04bc6b4341691be0c827566b49050f4c47c55b96ccf51676c91d",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-04.log": "3d06c1b7589d76f7e15c2ba1e7d9faca045a03d1e4e8213d85e7ec5264850043",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-05.log": "7c9c075c0061d394d82b7db52d3c6c9e9f21536e995014a48c87b1a8e2527980",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-06.log": "9e1719a3ea36254f69fe16617f63f70a87654bcab9aa3278acdd6965bea1c196",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-07.log": "d503b8a6c9c989d56187c4abd9ea33fe4cee32bcfa2a359cbaa83a8d35fd397b",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-08.log": "f8bc967e444dcacadb61b6dccfd967053a35e574fc4fcc05844d3322f84c45eb",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-09.log": "4bca681914b82751799b0125fad228ae959c5adcd596219339d867f51be30ccb",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-10.log": "d046c793a48e129b31a54204dfec7f3aee3591c55c664e22ff2c54e8f14698fd",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-11.log": "ca497aad39fbd6930d908852ae140e2030dfc609835bb5b7c17afea5461f8fef",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-12.log": "3095db019078376b30dbaf0cdafa7799d057b2e5a8cd0778005f3530c3e11bd4",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-13.log": "1424defc376f3a79ad8bcf689dcda3fc8e6c2105dc3ccbf43b5a5631660fe6e3",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-14.log": "09922bc5892e0419e4da8fc0b9842aedcef762e1350da71c29171ddce87374a7",
+      "product-primary-candidate-first-candidate-allocation-first-compute-cuda-native-boundary-run-15.log": "1140735f3adc0628f98980f6c386c7fb44377f6688e77e1957d5ac74fbd25b0b",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-01.log": "6dc3435a7239922483d3b006139b99b8d47108d69913621369b846b78bf66df4",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-02.log": "eaa45802af304c3d8098d530dd0c56ef61fcf5b2be8301a72c3129011a9c9076",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-03.log": "c2f945ffd8e188fcf0304d05b57fd995d659f7721827d08473a687fa0bc6b540",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-04.log": "4592239794b71acc54312ac4cd388325654c2669a304984882edb93d88a21172",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-05.log": "358045bcc5d71846c1d6ff26a97724db2ec62742116ec0d3cc554f77630f1f94",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-06.log": "6889b042740bf09bd408fdc3b060f7295d520a854051ea5e3648a75b18c37641",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-07.log": "ff97a2094d77b6f49d4bc0a9bf9fdac61cacbb38dcc372f233102490a7c9c880",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-08.log": "70a74db892cd3db9ec8b9657947404952d0d45d83f490c1dc28e697b36fe5256",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-09.log": "c51b79fb5affe8a3e8a373f2a40c41d397d3c2bcc861199cbe4ba9ab53595d11",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-10.log": "07de298176c2c631ea8e1c655afb0ba6ed51acfec9a6912906751978acbff1cc",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-11.log": "f6a8755f0ee549c2f80f59254dd85fd9aa33cbb9debfa47bdf6b09ab0455c846",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-12.log": "0cb0bb8de87ea38f8a867d1d84dd1b76f402462ecdeac039242c72a978b0c4c8",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-13.log": "7f64389ebe8b02ba6fdc6d94786aec99c0f54797b618f2c3ad3ad5894d86f221",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-14.log": "5cedebf77315f2fa678b63ad41d2bc6f259e9734f863ae5c683f4753aadf25f0",
+      "product-primary-candidate-first-peer-allocation-first-compute-cuda-native-boundary-run-15.log": "457aa4c51d7ce10f7a57d5d0d861d3f59db6cf0590a7b745dc52d06aab2563c9",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-01.log": "07b86d17a1bd985a1551ae25d4b023320da0bc3660a8dc5e5286ae5ed861ff3f",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-02.log": "3de133129d337defae678de804aae7886d5e66d78718ed04b1b2e47401d91a9f",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-03.log": "122edc7f4909491e980444fc0ee97107eb5ce3f723b6c22f0f7ea714c81d5536",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-04.log": "858a4c74e5392a61c971e7eb63c0c90bb3e4964aec4c4ab433366b56966309a4",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-05.log": "a30a6a2a90c255c2b62a2a58c981f820bc0c5ee56eb415b7dde2e4406669f709",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-06.log": "33fc514984cc7c5f946f299a62c5490193dbd8ba6b6df1baa9e33ed0639474bc",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-07.log": "3eaa011426652e46ed8b8b9425c47d96a43215b6d9913c62e5dcb5107103c5c0",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-08.log": "62c631f95cb637af0871ead580b290c5b702a9b43c95f2c49150f867e20b93e8",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-09.log": "3167fa16758ebd769103f442b7e022729bd5f764f2486689f3c8d4899df74ce9",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-10.log": "0d5623c3f79103689a8d1de1d760005dd8c07f03bc4408dd7f79f8193ead228e",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-11.log": "8eb19b3fcb3616c91c29f5103e28c22596040e6adea1f863cc6f8ca9ff1ab7ab",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-12.log": "5981844faee8e13c694c3cdcc9e8d46cf8023a94963771660bffa4c82ef3135e",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-13.log": "9e696b7e350a2b0ab055b7102a6fc6b18da42d5f10d8bd2a09bbe5a9ce058dc0",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-14.log": "74b25b95a53576296d6f65b4d1752da6882477a675865d748b6d39ed351eb2a7",
+      "product-primary-peer-first-candidate-allocation-first-compute-cuda-native-boundary-run-15.log": "24b1a332c1770256c21de764fd304d0a27558d12ec537679736426ecda71412e",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-01.log": "f748c9023638afbf383b3513bc56cafe4ecae19d4575914b8d75c3a655191199",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-02.log": "a5483bf74a9b607cc5589cfcfde1d36524316017b2f787f2d38d0263ca01881a",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-03.log": "05ae642bfb01657c6a39159d2c2bbffe717bc37ce50f57341f948e49f0662ddb",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-04.log": "36826d49f39bab54f7912d13b7b2864004776e46e35329f4c61592ea93fa78fb",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-05.log": "0a745b1187b47b1f584a1664c2868acf73d7104b58bd6872c6e84a13b7ccac0f",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-06.log": "ccf8105d57ee8288fa1e63c9559b630c01062c02ed4a7d0c8cae985dd06770d1",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-07.log": "47595af96bf6cb9fd29c18d8d7749ec29ecf9eaf4c6a326e01a4e782eb78f23b",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-08.log": "aa6156fe562a9c42396e55d619c1d1f9e3a7174ef535502e91948c9b03bc1c68",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-09.log": "24413bb602a1cf008d525137085fdd805cf78c71806af325ce8acdbda5e895dd",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-10.log": "0f9bdf9a38db9b78042d1d00d62b06b451a0dfee53320bf1ca713445a698b010",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-11.log": "4f57b371d1597cc8071ba1c6f29dda760159ea9c76617dd2d0fb83c41b56ba84",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-12.log": "2cac6f21b01681520fe1f0824f68513557d305bd3d22cdad2c662b464f217951",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-13.log": "67f63160efd8a3cf04dc4ed83215838227d7ada897a9a17f8587d19197da138c",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-14.log": "cfada5851202cf32882f3eda5d2d7aef669b4cf184007b08e7db146f2ee9094a",
+      "product-primary-peer-first-peer-allocation-first-compute-cuda-native-boundary-run-15.log": "b032e2411d3d9ad9137178e1b924509b501cd18fa87de655cf22774513e9cf80"
+    },
+    "cold_pair_prepare_ms_median": {
+      "1": 105.50049999999999,
+      "16": 1.428
+    }
+  },
+  "graph": {
+    "collection": "PASS",
+    "classification": "NATURAL_ROUTE / NOT_COMPARABLE",
+    "ranking": null,
+    "noninferiority_gate": null,
+    "sample_escalation": false,
+    "wall_seconds": 179.46799999987707,
+    "gpu_after": {
+      "name": "NVIDIA GeForce RTX 4070",
+      "uuid": "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+      "driver_version": "610.62",
+      "pstate": "P0",
+      "temperature.gpu": "46",
+      "power.draw": "109.57",
+      "power.limit": "200.00",
+      "clocks.sm": "2835",
+      "clocks.mem": "10501",
+      "utilization.gpu": "97",
+      "clocks_event_reasons.sw_thermal_slowdown": "Not Active",
+      "clocks_event_reasons.hw_thermal_slowdown": "Not Active"
+    },
+    "strata": [
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-candidate-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 1.0002867007830323,
+          "confidence_interval": [
+            0.996287816137354,
+            1.0053221737340987
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 308.5181871471323,
+        "native_median_us": 308.6896125945362,
+        "paired_extra_median_us": -0.088358902907828
+      },
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-candidate-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 1.0001906413544146,
+          "confidence_interval": [
+            0.9955134210859932,
+            1.0046873494406574
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 308.6753198648002,
+        "native_median_us": 308.78588477963496,
+        "paired_extra_median_us": -0.058608384903664046
+      },
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-peer-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 1.0012261567821221,
+          "confidence_interval": [
+            0.9939143704542377,
+            1.0073179012345679
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 307.29990934652676,
+        "native_median_us": 308.03066753325965,
+        "paired_extra_median_us": -0.3763456726156278
+      },
+      {
+        "workload": "decode-q4-ffn-m1",
+        "stratum": "primary-peer-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9997385331401555,
+          "confidence_interval": [
+            0.9955744995152876,
+            1.0064570284754957
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 307.8182764023431,
+        "native_median_us": 308.0354117509349,
+        "paired_extra_median_us": 0.08045035133244482
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-candidate-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 1.004724022599724,
+          "confidence_interval": [
+            0.9917907180385289,
+            1.012999206059155
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 312.34577927148473,
+        "native_median_us": 313.21550166160824,
+        "paired_extra_median_us": -1.4807641382596444
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-candidate-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9980821331148579,
+          "confidence_interval": [
+            0.9906107076433931,
+            1.004502840108469
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 313.43540879813196,
+        "native_median_us": 312.4287271966083,
+        "paired_extra_median_us": 0.5963238297784983
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-peer-first-candidate-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 1.000086951931109,
+          "confidence_interval": [
+            0.9920679746792467,
+            1.0062347468567139
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 312.48437578121093,
+        "native_median_us": 312.4580134544421,
+        "paired_extra_median_us": -0.02699993203094664
+      },
+      {
+        "workload": "short-prefill-q4-ffn-m16",
+        "stratum": "primary-peer-first-peer-allocation-first",
+        "ratio": {
+          "estimator": "process-median",
+          "median_advantage_ratio": 0.9972629745236553,
+          "confidence_interval": [
+            0.990406029436748,
+            1.010077370232174
+          ],
+          "sample_count": 15,
+          "independent_clusters": 15,
+          "confidence_level": 0.99261474609375
+        },
+        "public_median_us": 312.2638504630873,
+        "native_median_us": 313.1576310251528,
+        "paired_extra_median_us": 0.8507212496020315
+      }
+    ],
+    "raw_sha256": {
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-01.log": "7631acc3c1f00f983bae26a725c96276980e191635f80c0cea21c280428e4c8f",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-02.log": "12b4d8315b99b8a29830b8d20b66d9cbeec066020f0af0568547ca9581ac68be",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-03.log": "4210c4e3fee8b26b4a70010ec4c1c9f88ce02382dbcc1e57253a98b4ed416fde",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-04.log": "4e7a5a1e7f72c8df0b60be2f16b067675f075486e666a5a2bea8fad5e4a9979b",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-05.log": "45c63e60224edd3fca0ffdb21b0738e2184cabefa333372e1fd0cb031c13d132",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-06.log": "ed494f1125d08fe75b13d75a4056ad407c25256e3155a487044b30dfca0f0a34",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-07.log": "cb3e953c77cdd4b1755ab5ad74924234e86e7fac55188dfda042b08f4fa9621d",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-08.log": "25d8df25422057b2459fccbe8594e2358a6f186aa8ae61fc33652e9c3a88b8dc",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-09.log": "b8aa2a6a13fbdae661cd4d09899a271f314f77473c4187eb6286deed263e2f3d",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-10.log": "c1c7e08c2b6e0cbbdba5c78b972a8651912727905bb1d9f26adb18162d9efe42",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-11.log": "697ae88cd8aa8a1bb6fdd9db6113ab1c82e146b8f054c9620e8eb6f34e42a33a",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-12.log": "c561a55bd7a3d06c44d660b4b41e24d8c96635a4a50b20e093cb8235e594b154",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-13.log": "8a503565ed9c272f2c061cd27a0973af5ef9ef4ac8a986981ad4052277767de7",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-14.log": "637674aa8c1e942c118f5399de8603efdcab9a572968b34e12b17e70a7516000",
+      "product-primary-candidate-first-candidate-allocation-first-graph-cuda-native-boundary-run-15.log": "3987adab5dd17085ac05f003251328a1151ea70f9690e573433bac5661756839",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-01.log": "c4246e7fc54023c172e42100f04fa30a2751b30b7f045c2f36dd991fd22a027a",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-02.log": "910162614af60522e8777d33978c61685f3b0831af6e3d70890f49466eba192f",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-03.log": "e7373fe266ec1023f94694a36795d4d35ce0a5ca71798709b58ab3bb5417ba9c",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-04.log": "69812b84adf4cf388838f53f3ac6bf5885a6cabd87487967728667b12c666664",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-05.log": "97c5490d2275b68729389ea3e39f40f457913ad2d7b16e20aa1523ac8f396297",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-06.log": "2d7e2e44e6cae697a34a9f64df38d797a90f02b0a93ff7e199004f44951261f4",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-07.log": "0b7fffadab79574a1319bd77d541dd025d1583b6a5ac9e53ae63e3070d34a75f",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-08.log": "8ec8046dcb8a01a704ffb133d1e881ab12077fc0dcd6f8c6754646a0b0798d69",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-09.log": "cc46a9c92712a3486365b964f0d3546667a9b5d42f0568db73cba22d2d6a3319",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-10.log": "03c47208efbde45eb5aba39e725b4b15dfee768579cd92bfbdd109a70a1bc691",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-11.log": "1c68f4b1b1bbc4a2f8ac7d7d92201089dde64a62b71208c796c95a7bf2f69f1c",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-12.log": "b86829176c8edfa00b5e2d7eb5678d73d962abd22924c86e150cc005d75e893c",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-13.log": "c4e082fdc2a8e74de7525614d13a3266f610e5518674b36a81485eaa36223382",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-14.log": "073bf0a288d1df439d2aaf9f7765994ebddfc0a8c6183e41b1543e8433c46095",
+      "product-primary-candidate-first-peer-allocation-first-graph-cuda-native-boundary-run-15.log": "d29c8f1f101ab540a965f8a3fe55f31e9474c99f18a75a6b95eed42e7b1796cf",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-01.log": "50a958aff3d4f54792b41c8173c3d6391c21df5951a5ecd1e738fad6b71de826",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-02.log": "e47d0755ddc261edc861168f581d39281391369b3830129d658eacb49ac81c39",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-03.log": "905addd8a76f9b81f18bee94e950456f689fd2439c3525a0fa7474688d6be898",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-04.log": "ac2f475706ce447107b0885b32f55c28fde0e29c3b4fb816c29be0689cab8e54",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-05.log": "c1ea4c871b1df06a948be1731f8de387caba4291e9eb3fee35b8e3e1ec55e746",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-06.log": "691f5d8d5df723b0090cfd5387e78fdf26917f16eebf156b8f8bac16ded33e6b",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-07.log": "cce3accaea9a24ddeee16266297e1eef4cdd82f899f91fdaad606a459bdf0e8d",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-08.log": "f0135954e3565225bd9b95a67ed88dc08ed3043875f441def30e40d60732ab1b",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-09.log": "980552239440121ea3c531515200d192cf18913eb398b2c44d7dcb486551a994",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-10.log": "77d2b13f2cb20963ccc420193529f5ca2c20f7a8a7accb176e0b598b9c0bdcda",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-11.log": "f37d7143ac3a56c20bf0a2ffe5b48811b71d087ce10a77f8172c3e0507af4601",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-12.log": "91ea7f4178c23f4883a8d250dd97a17ae7b63c13cf671c06d11ffb4e1441cc0e",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-13.log": "f395abea66a69a5a657a5c397eea60d3a0ac015fa5540b3ae8c70a6147dbaff1",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-14.log": "5e0fb1241f9615a152a8012ce9d116eefb9aef29818e4bc910dd7b643c15c18c",
+      "product-primary-peer-first-candidate-allocation-first-graph-cuda-native-boundary-run-15.log": "c4ee39886f668b4fb061fb41891b88b09176b3843f768c571b6b0e515a7f997b",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-01.log": "f6d80e22a2fe49a6fcbe05c72df06eb98edc8d96dbf6ef918a2611b973f5c2f5",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-02.log": "7ce88db82a196214099241f0f713daeb37dfd738c6ab38a6ec7d824853eb5bfe",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-03.log": "614ab0aadc726abfccc6ce67a81a31b2e443fe7c06ace9e4ff040d81317918de",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-04.log": "48fad14eef8d297ce8f0158edd53b0cc08bab461d08e7ac9d11b2e401a11963d",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-05.log": "c03e5e403f0fe8a4110085203ecfb735850e6c05e69025d6aeb463f8882e60fd",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-06.log": "3198d4f710b2f58d45b833c82d3286fefbea7d162acc0dba450cc183a984440a",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-07.log": "957069726e963614d3be8a7f7126bca4a234a624254bdabab0799a50709aa7c6",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-08.log": "3afdf2271ed784a182fe26e53a3b384dc7747414459a2cc0b591088e439d6572",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-09.log": "9a172689aaf3a4c5a2e3bf1a0094d36bf4758c3d550583f595d48370ff2baae5",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-10.log": "15cc65960ab3be6aeca258c08835d0b4cf59d7dc8d90d15cc4333cd330989286",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-11.log": "bf2d7eb6138b742c36b48ef2897cacd087b44428ea5fdfa36e4397c2958df9d2",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-12.log": "e28be2934005567fb552212e5e5366cc20e0dc375185749214b3068a00c41f1a",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-13.log": "e1a588eba534e2583644a5b5103527a79ea00236fa4c57fb802d3f7212790ef8",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-14.log": "3d784b5aa7e62bb519642d61900058a7007c073cc2d6f5b6ec7afeb769c7520a",
+      "product-primary-peer-first-peer-allocation-first-graph-cuda-native-boundary-run-15.log": "97dd92e892f87dc01d8c36925964b31502e2235e96a94fa264b67e7e588f2c86"
+    },
+    "cold_pair_prepare_ms_median": {
+      "1": 105.22800000000001,
+      "16": 1.7835
+    }
+  }
+}

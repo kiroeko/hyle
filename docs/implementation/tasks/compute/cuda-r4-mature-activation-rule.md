@@ -1,5 +1,7 @@
 # R4 CUDA：成熟激活基线与默认规则收口
 
+当前 **CLOSED**；S1–S4 的最终验收见文末及主卡，下面保留实施前冻结的合同。
+
 ## AUDITED / 有限 FIX
 
 - 从属 [R4 主卡](cuda-v1-four-route-foundation.md) C3/C4 的默认规则尾项；产品 baseline
@@ -87,3 +89,15 @@ GCC 曾因测试 gtest 条件宏缺大括号失败，755 仅修测试；产品�
 
 主卡六个 owner 进入 CANDIDATE。最终 v3 P1 与原生边界成本仍待实际运行，不写 PASS；
 文档/状态/证据归档不产生新产品候选，也不重跑已完成的普通门。
+
+## S1–S4 终局：CLOSED
+
+产品候选仍为755fb7c7。S4 的最终 [Direct v3](../../../../evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)
+与 [Graph v3](../../../../evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)均以 n=15
+完成 qualification、5% NI、controls/validators 与完整 raw replay；未扩到31。Graph decode 一个
+stratum 的小幅负向方向照录，其余区间跨1；不签 HYLE 算法胜利，也不改原预算或门。
+
+[原生成本](../../../../evidence/performance/cuda-r4-native-boundary-v1/README.md)完成同数学完整链、
+四顺序层×15进程/模式、真实 oracle 与同 build A/A；责任边界不同，保持 NATURAL_ROUTE。
+最初 scratch build 缺少 peer 身份路径在计时前被拒绝，补记录后六个 exe 哈希相同；没有删样重测。
+原始失败与纠正记录保留。全部适用验收已完成，不再扩大该激活片段或重复采样。

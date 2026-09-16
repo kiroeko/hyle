@@ -5,7 +5,7 @@
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
-> 普通 CUDA Direct/Graph 入口与真实 FFN/capture 已实现；R4 三交付与性能验收仍在进行。
+> 普通 CUDA Direct/Graph 入口、真实 FFN/capture、Win/WSL 三交付与当前 SM89 工程性能验收已完成。
 > Apple MLX/Metal、Vulkan/SPIR-V 是后续独立纵切。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
@@ -24,7 +24,7 @@
 sampling 和 serving 留在推理引擎。
 
 设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的计算 Provider 已有实际 GPU 验证，
-普通入口和完整 FFN Graph 已通过 W1 正确性，三交付与性能尚未完成路线验收；Apple/Vulkan 尚未交付。
+普通入口和完整 FFN Graph 已完成 R4 正确性、三交付与适用性能验收；Apple/Vulkan 尚未交付。
 HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
 提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
 自动交给 CPU。完整范围见 [架构边界](../architecture/compute-design.md#13-四条独立路线与明确非目标)。
@@ -77,6 +77,9 @@ vendor permutation。其余 dtype/shape/operation 明确拒绝；prepare 绑定�
 默认激活规则依据完整 FFN 比较：HYLE 未呈现跨实验顺序成立的明确优势，采用合格成熟实现。
 硬件/版本条件仍可在冷匹配时使用；当前性能资格只覆盖 RTX 4070/SM89、driver 610.62、
 Toolkit 13.3.73，不外推其它 GPU 或版本。
+最终默认 Direct/Graph 的两种 FFN 形状均通过5%工程非劣门；这是同生命周期成熟实现的接入验收，
+不代表 HYLE kernel 战胜 SGLang。完整结论、单个小幅负向分层与原生边界成本见
+[R4 验收记录](../implementation/tasks/compute/cuda-v1-four-route-foundation.md#r4-终局closed)。
 
 Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自借用和在途工作。每槽的 workspace
 与可变 vendor handle 独立，成功完成后复用；失败终态后重建槽。vendor/driver 私有存储可能无法
@@ -155,7 +158,8 @@ packing 与所有权。它供 `QuantizedMatMul` 使用，不能推断普通 `Mat
 
 以下是 [R4 当前施工卡](../implementation/tasks/compute/cuda-v1-four-route-foundation.md) 下已实现并有
 Windows/SM89 验证的专家接入点。普通入口按前述规则自动组成它们，专家可显式限定 Provider。
-Direct/Graph FFN 已接线，完整 CUDA 三交付与 P1 尚待验收，不能从单个 Provider 外推路线完成。
+Direct/Graph FFN、完整 CUDA 三交付与当前支持域 P1 已验收；单个 Provider 的可编译域仍不等于
+所有 GPU/驱动组合都已资格化。
 
 | factor / 公共头 | 工厂 / owner | 当前有限域 |
 |---|---|---|

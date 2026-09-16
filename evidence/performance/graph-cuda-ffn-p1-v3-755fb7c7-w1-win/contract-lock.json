@@ -1,0 +1,462 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract",
+        "cuda-ffn-aa"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "graph_route_cuda",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/graph/cuda.h",
+      "revision": "runtime-bound",
+      "target": "hyle_graph_route_cuda"
+    },
+    "claim": "W1 SM89 engineering qualification of the final mature-default CUDA FFN against the independent pinned precise SGLang adapter, with identical HYLE lifecycle and completion semantics. Both activation bodies use the same qualified precise implementation; A/A or 5% NI is not an algorithm win. Hardware/software identity is frozen; no extrapolation to other GPUs or versions.",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      },
+      {
+        "id": "placement",
+        "kind": "placement",
+        "parameters": {}
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "BUILD_SHARED_LIBS": "OFF",
+            "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_COMPUTE_CPU": "OFF",
+            "HYLE_COMPUTE_CUDA": "ON",
+            "HYLE_COMPUTE_ONEDNN": "OFF",
+            "HYLE_DEV_FACTORS": "graph_route_cuda",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF",
+            "HYLE_WERROR": "ON"
+          },
+          "peer_cache": {
+            "sglang-precise": "HYLE_CUDA_SGLANG_SOURCE_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+          "HYLE_BENCH_APPLE_QOS",
+          "HYLE_PERF_APPLE_QOS",
+          "HYLE_BENCH_AA_ROUTE",
+          "HYLE_BENCH_VERIFY_ONLY"
+        ],
+        "executables": [
+          {
+            "id": "graph-cuda-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_route_cuda_bench",
+            "target": "hyle_graph_route_cuda_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_CUDA_FFN_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "decode-q4-ffn-m1",
+                "title": "Graph captured FFN M=1 K=4096 H=11008 N=4096"
+              },
+              {
+                "id": "short-prefill-q4-ffn-m16",
+                "title": "Graph captured FFN M=16 K=4096 H=11008 N=4096"
+              }
+            ]
+          },
+          {
+            "id": "graph-cuda-placement",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_route_cuda_bench_placement",
+            "target": "hyle_graph_route_cuda_bench_placement",
+            "target_variant": "placement",
+            "telemetry_prefixes": [
+              "# HYLE_CUDA_FFN_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "decode-q4-ffn-m1",
+                "title": "Graph captured FFN M=1 K=4096 H=11008 N=4096"
+              },
+              {
+                "id": "short-prefill-q4-ffn-m16",
+                "title": "Graph captured FFN M=16 K=4096 H=11008 N=4096"
+              }
+            ]
+          }
+        ],
+        "measurement_adapter": "nanobench-paired-rows-v1",
+        "profiles": {
+          "W1-WIN": {
+            "cache": {},
+            "compiler_id": "MSVC",
+            "compiler_version_prefix": "19.50",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "native-runtime-pair",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          },
+          {
+            "command": [
+              "{python}",
+              "bench/compute_route_cuda/validate_aa.py",
+              "--build",
+              "{build}",
+              "--output",
+              "{output}",
+              "--mode",
+              "graph"
+            ],
+            "id": "cuda-ffn-aa",
+            "kind": "command"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "windows"
+      ],
+      "certification_platforms": [
+        "windows"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WIN"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "graph-cuda-ffn-p1-v3",
+    "module": "graph_route_cuda",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "source",
+          "flags": "CUDA 13.3.73, SM89 native + SM80 PTX, relaxed-constexpr, no fast-math, no LTO",
+          "other_implementations": "Same immutable Marlin and cuBLASLt operations in both arms",
+          "precision": "FP32 SiLU and multiply, final FP16 rounding; round_activation=false",
+          "role": "Independent pinned precise SGLang device arithmetic/indexing under the same public HYLE Provider lifecycle as the final mature default.",
+          "scope": "Packed, out-of-place, 16-byte aligned; no PDL/filter/reuse"
+        },
+        "id": "sglang-precise",
+        "revision": "06992c92ad4494fe9f9636e75be3e35040512447"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "id": "primary-candidate-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "primary-candidate-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "id": "placement-candidate-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "placement-candidate-first-peer-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-peer-allocation-first",
+        "target_variant": "placement"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "One public captured Graph submission and actual Completion wait; no early buffer reuse"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/decode/group128-q4-ffn",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "decode-q4-ffn-m1",
+        "input": {
+          "distribution": "Deterministic signed finite Q4/scales/dense weights and two distinct finite resident inputs, identical distributions and cold preparation on both arms.",
+          "scale": {
+            "hidden": 11008,
+            "inner": 4096,
+            "output": 4096,
+            "rows": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete resident FFN accepted through actual terminal completion",
+          "derivation": "PROVISIONAL_ARCHETYPE from pinned vLLM model dimensions; M1 primary, M16 holdout; not production frequency or model throughput",
+          "frequency": 1,
+          "unit": "complete-ffn",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Ordinary HYLE CUDA factory, two independent resident invocation/output slots, shared immutable Q4/dense weights, fixed cold preparation.",
+          "equivalence": "Same resource domain, storage sizes, changed resident inputs, admission, error propagation, retained owner and actual terminal completion. Both Graph arms require successful native capture.",
+          "peer": "Independent pinned precise SGLang activation adapter under the same public runtime, separate queues and slots; the same selected mathematical implementations as the default."
+        },
+        "pair": {
+          "candidate": "HYLE CUDA Graph captured FFN M=1 K=4096 H=11008 N=4096",
+          "peer": "SGLang precise Graph captured FFN M=1 K=4096 H=11008 N=4096"
+        },
+        "peer_id": "sglang-precise",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute_route_cuda/consumer_shapes_v1.json",
+          "sha256": "21a69064639f05bb2264a77c2f655ea572773e7952ac2bc8dd9a0ee7a3776c59"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Compute Y[1,4096] = down(SiLU(gate(X))*up(X)); X FP16, packed gate/up signed group128 Q4 with FP16 scales/dequant, FP32 reductions, FP16 stage/output rounding. Both arms complete before return.",
+        "setup": "Cold allocation, Q4 pack/upload, descriptor/algorithm/kernel binding, two slots, output comparison and eight alternating complete warm calls; Graph cold capture on both arms.",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "One public captured Graph submission and actual Completion wait; no early buffer reuse"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/short-prefill/group128-q4-ffn",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "short-prefill-q4-ffn-m16",
+        "input": {
+          "distribution": "Deterministic signed finite Q4/scales/dense weights and two distinct finite resident inputs, identical distributions and cold preparation on both arms.",
+          "scale": {
+            "hidden": 11008,
+            "inner": 4096,
+            "output": 4096,
+            "rows": 16
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete resident FFN accepted through actual terminal completion",
+          "derivation": "PROVISIONAL_ARCHETYPE from pinned vLLM model dimensions; M1 primary, M16 holdout; not production frequency or model throughput",
+          "frequency": 1,
+          "unit": "complete-ffn",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Ordinary HYLE CUDA factory, two independent resident invocation/output slots, shared immutable Q4/dense weights, fixed cold preparation.",
+          "equivalence": "Same resource domain, storage sizes, changed resident inputs, admission, error propagation, retained owner and actual terminal completion. Both Graph arms require successful native capture.",
+          "peer": "Independent pinned precise SGLang activation adapter under the same public runtime, separate queues and slots; the same selected mathematical implementations as the default."
+        },
+        "pair": {
+          "candidate": "HYLE CUDA Graph captured FFN M=16 K=4096 H=11008 N=4096",
+          "peer": "SGLang precise Graph captured FFN M=16 K=4096 H=11008 N=4096"
+        },
+        "peer_id": "sglang-precise",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute_route_cuda/consumer_shapes_v1.json",
+          "sha256": "21a69064639f05bb2264a77c2f655ea572773e7952ac2bc8dd9a0ee7a3776c59"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Compute Y[16,4096] = down(SiLU(gate(X))*up(X)); X FP16, packed gate/up signed group128 Q4 with FP16 scales/dequant, FP32 reductions, FP16 stage/output rounding. Both arms complete before return.",
+        "setup": "Cold allocation, Q4 pack/upload, descriptor/algorithm/kernel binding, two slots, output comparison and eight alternating complete warm calls; Graph cold capture on both arms.",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "b898e008742404f758711a122b0ed078c6dfbad60eca5af4fabe32e8d0b47e6f",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

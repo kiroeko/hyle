@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：`AUDITED`，采集阻塞已按协议恢复，见文末恢复记录；实际实现和既有验证保留。
+- 状态：`CLOSED`，最终候选、七门和限制见文末终局记录；中间检查点按历史读取。
   本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
 - owner：`compute_provider_cublas`、`compute_provider_marlin`、`compute_provider_cuda`、
   `compute_route_cuda`、`graph_route_cuda`。五个身份先在 `2e8eb24a` 登记为 `QUEUED`，
@@ -179,7 +179,7 @@ host 插桩覆盖，任何未运行项保持未证明。原 C5 frozen candidate 
 7. 易用：普通代码、source/package target、资源借用、支持的 dtype/SM/shape、capture 失效条件和错误，
    随本包用户指南及样例一起交付。
 
-| Gate | 预声明范围 | 当前 verdict |
+| Gate | 预声明范围 | 初始审计 verdict（终局见文末） |
 |---|---|---|
 | scope | 有限 C1–C6、具名 owner；R3 用户例外由独立卡结案 | AUDITED |
 | architecture | pinned source / 生命周期 / 原生 cold-hot 审计与有限 preflight | AUDITED，待产品消费复核 |
@@ -201,7 +201,7 @@ closure（带 previous ref）、docs、scorecard、diff 检查通过。selector 
 gates **未执行、未记 PASS**；本次仅身份登记的执行图等价核对保留在 `r4-identity-proof.json`。
 真实接线 C5 时再以实际 component/package 差异执行适用门，不为没有 target 的身份登记重建全库。
 
-## Candidate / 裁决
+## 初始 AUDITED 裁决（历史）
 
 尚无完整 R4 产品 candidate；C1–C5 未完成，完整路线 correctness、delivery 或 performance 未验收。
 有限审计在预算内停止，进入 C1–C6 实施；不把旧 CUDA CLOSED/probe 当作完成。
@@ -413,3 +413,45 @@ memcheck、两 Mac CUDA OFF 公共入口与发布投影全部 PASS。ASan 已登
 原5%门、n=15→31与停止规则不变，未运行不写 PASS。最终默认与精确参考同算法，非劣只检查
 接入成本，不能记作 HYLE 算法胜利。原生责任边界不同，继续单列 NATURAL_ROUTE。
 统一脚本全实现 **32,776 行 / 109 文件**，self-check PASS，排除测试/第三方。
+
+### R4 终局：CLOSED
+
+`f01e9237` 已将六个 owner 合法移入 CANDIDATE。全部剩余适用验收现已完成，产品候选继续为
+`755fb7c76132908e15cc8e2c298c69c227af775a` / tree
+`5f91d6d548e6e59406adcdc683c67ee473e59f4b`，没有因文档/状态/证据提交改变产品或重跑普通门。
+
+| 门 | 最终证据 / 裁决 |
+|---|---|
+| scope | C1–C6 与 S1–S4 全部完成；C5 既有 root owner 和 C7 失败退役按各自已结案记录继承，PASS |
+| architecture | 原生 CUDA context/stream/resource/capture；准备期固定 cuBLASLt/Marlin/SGLang，HYLE 保留合法 separate/尾部；无热规则搜索或万能新执行器，PASS |
+| correctness | 普通 dense/Q4 FFN、double oracle、双槽/变化输入、OOM/close/失败寿命；适用 host/device 检查，PASS，精确外部 ASan 例外保留 |
+| delivery | Win/WSL source/static/shared 真实 FFN 与 SDK 重定位、依赖/许可；两 Mac CUDA OFF 投影；Windows DLL 邻置，PASS |
+| usability_docs | 普通 Direct/Graph factory、权重 owner、完整可编译样例、默认规则和资源/错误边界，PASS |
+| red_team | 对齐/alias/资源与 Queue 错配、非法域、失败槽复用拒绝、保活及 capture 重绑定失效均有真实检查，PASS |
+| engineering_performance | 最终 Direct/Graph 各两个 workload × 八 strata，n=15；A/A、五控制、5% NI、全部 validator 与 raw replay PASS；原生完整边界诊断完成 |
+
+[Direct v3](../../../../evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md) 与
+[Graph v3](../../../../evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md) 都未扩到31。
+两侧同精度、资源、HYLE 生命周期和完整 FFN；默认与独立 reference 使用同一成熟数学实现，
+只签接入非劣，不能记 HYLE 算法胜利。Graph decode 的一个分层有小幅严格负向区间，其余
+31个区间跨1；原方向保留，不因5%门通过而删去小输。
+
+[原生边界诊断](../../../../evidence/performance/cuda-r4-native-boundary-v1/README.md)每种模式四层×15进程，
+完整 oracle 和各自 build 的 A/A 均通过，没有扩样。Direct 的逐进程中位差范围为 −0.339～1.639 μs，
+Graph 为 −1.481～0.851 μs，完整调用约307～318 μs；这些是分层范围，不是合并 CI。
+裸路径只提供一个 native 终态事件，缺少公共 admission/保活/失败服务，因此保持 NATURAL_ROUTE，
+不签同合同 NI、算法输赢或“零开销”；没有阶段插桩去分配各组件的微秒责任。
+
+接受限制：性能只资格化 RTX4070/SM89、driver610.62、Toolkit13.3.73、MSVC19.50 的两个 resident
+FFN 原型；SM80+ 编译支持不等于所有 GPU 已实测。driver/cuBLAS opaque 内存与峰值未知，严格完整
+预算不得当零；GPU device loss 不主动注入。ASan 外部 libcuda 的2笔/280 bytes限定、旧单CPU采样排除
+和 native-helper 调度事实继续保留；没有修复或归责未知的 driver priority 提升来源。
+
+重开条件限于真实消费者暴露的当前支持域错误、资源/失败生命周期反例、交付缺陷，或版本/硬件变化
+使某条已资格化规则失效；按 owning factor 定向处理，不重开整个架构。CPU 具名例外保持原裁决。
+统一脚本对最终产品候选重计 **32,776 行 / 109 文件**，self-check PASS，不含测试和第三方；该规模
+包含旧实现。R4 已完成，R5 Apple、R6 Vulkan、R7 终审仍未完成，不能宣告整个基础架构重构完成。
+
+终局文档/状态 selector（base f01e9237）只选择 docs/closure，其余108项跳过；对应检查与带
+`--previous-ref f01e9237` 的合法转换检查 PASS，scorecard 为44 CLOSED / 81 claims / 2 excluded。
+30个已登记归档文件哈希核对一致，`git diff --check` PASS；没有为终局记录重建或重跑 P1。

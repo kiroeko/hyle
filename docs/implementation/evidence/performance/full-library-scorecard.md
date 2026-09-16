@@ -1,9 +1,9 @@
-# HYLE 全库性能账本（2026-09-16）
+# HYLE 全库性能账本（2026-09-17）
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本只绑定
-[`module-status.json`](../../module-status.json) 中当前 38 个 `CLOSED` factor，包含 R2 已收口的
-compute_ops schema、Mem reservation 尾项和 R3 CPU。CPU 唯一已量化的 Graph 小片段未决项经用户
-批准接受，原 LOSS/INCONCLUSIVE 保留；GPU 与 ggml 等未收口 owner 不计入数量。旧 CUDA copy 与跨域 Graph 数字保留在
+[`module-status.json`](../../module-status.json) 中当前 44 个 `CLOSED` factor，包含 R2 已收口的
+compute_ops schema、Mem reservation 尾项、R3 CPU 和 R4 CUDA。CPU 唯一已量化的 Graph 小片段未决项经用户
+批准接受，原 LOSS/INCONCLUSIVE 保留；ggml 与 compute_sched 未收口身份不计入数量，Apple/Vulkan 尚未交付。旧 CUDA copy 与跨域 Graph 数字保留在
 [历史证据](benchmarks-compute-graph.md)，不作为四路线基础架构完成证明。账本不授予跨平台、跨能力的
 永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是 2026-09-14 原审计时的事实。
 
@@ -15,21 +15,21 @@ R4 公开产品接线的八个既有 Compute/Graph/CPU root owner 已完成
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 74 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 81 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
 | `WIN` | 26 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
 | `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
-| `INCONCLUSIVE` | 25 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 16 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
+| `INCONCLUSIVE` | 29 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
+| `N/A` | 19 | 结构/规则证据或不同责任边界的原生诊断；没有计时排名 |
 | `LOSS` | 4 | CPU Graph v3 原负向方向；三项通过 5% 非劣门，一项保持未决并接受用户例外 |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-31 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，16 个是 P0 结构证明。后两类不能承担最强宣传声明。
+35 个 claim 在仓库中保留完整合格机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，17 个是结构/规则证明，2 个为明确排除同合同排名的原生诊断。后三类不能承担最强性能宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -210,3 +210,20 @@ R3 已结案，这四项完整纳入上文当前 CLOSED 计数。
 | two-worker-fused-boundary-17x129x257 | 0.972652–0.977621 | 0.961814–0.993454 | LOSS | PASS |
 | two-worker-natural-sequence-17x129x257 | 1.162959–1.175137 | 1.144884–1.187616 | WIN | PASS |
 | two-worker-native-sequence-17x129x257 | 1.300473–1.320614 | 1.277643–1.333040 | WIN | PASS |
+
+## 2026-09-17：R4 CUDA 最终默认与边界成本
+
+六个 CUDA owner 按755fb7c7产品候选 CLOSED，新增一个冷规则/资源 claim、四个完整 FFN 接入 claim
+和两个原生边界诊断。原 R3 CPU 数字与接受例外全部保留，没有重跑 CPU 性能。
+
+[Direct v3](../../../../evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md) 与
+[Graph v3](../../../../evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md)均完成 n=15、
+qualification、5% NI、controls/validators 与原始重放。四个 workload 的整体严格方向均为
+INCONCLUSIVE；Graph M1 单个分层的小幅 LOSS 在证据中保留。默认与独立参考使用相同成熟精确数学，
+这四项不是 HYLE 算法胜利。v2 的原 HYLE 比较仍是采用成熟默认的规则依据。
+
+[原生边界](../../../../evidence/performance/cuda-r4-native-boundary-v1/README.md)的两项诊断因为完整
+责任不同，classification 为 NATURAL_ROUTE、direction=N/A，不能签 NI/算法胜负；
+`REJECTED_DIAGNOSTIC` 在此表示排除可比性排名，并非数值检查失败。差值、冷准备范围、opaque SDK
+存储限制与所有原始数据保留。性能资格仅签 RTX4070/SM89、driver610.62、Toolkit13.3.73 的两个
+resident FFN 原型，不签其它 GPU、版本、shape 或模型吞吐，也不代替 R5/R6/R7。

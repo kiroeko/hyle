@@ -7,7 +7,7 @@
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
 > event import 与 single-queue capture 已真机资格化；普通 CUDA dense/Q4 FFN 已通过 W1 实际
-> Provider 组合与 captured replay 验证，完整 R4 三交付/性能验收仍在进行。
+> Provider 组合与 captured replay 验证，完整 R4 三交付及当前 SM89 工程性能验收已完成。
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、
