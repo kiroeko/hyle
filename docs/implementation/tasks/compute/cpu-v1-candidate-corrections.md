@@ -83,3 +83,19 @@ fixture 通过 MSVC /W4 /WX 语法检查；validator 通过 Python 语法检查�
 WSL 后续实际启用 HYLE_WERROR 时，GCC 14.2 指出已有 region 测试的六处 GoogleTest 宏
 位于无花括号的 if 中（dangling-else）。只给这六个测试分支加花括号；产品/benchmark 候选
 仍为 d9712e68，Graph 性能 BLOCKED 不解除，不因此重跑 P1。首次构建失败日志保留。
+
+## 用户追问后的有界原因诊断
+
+用户明确要求核对锁 P 核、正反顺序并查明异常。原始记录确认 caller=2、workers=0,2，
+均为独立 P 核；两种 placement × 执行/分配正反顺序完整。异常轮两侧 err%=14.6/13.4；
+selected 串行 144 行中仅 2 行 err%>5，双 worker 48 行有 22 行，所有 factor-median 门仍在带内。
+
+源码可检验假设：benchmark 复制 correctness consumer 的 kPowerSaving，空闲直接 park；
+外部 caller 不参与 bulk 计算，且与 worker 1 共用 CPU 2。仅对这两个因素做一次正交诊断：
+固定原失败 placement 与 selected A/A、原全部形状和三组 fixture 生命周期，比较 power-saving/
+balanced × caller=2/4（workers 恒为0,2）×执行/分配正反，共16进程；一次诊断编译，无P1。
+
+在 Windows 外部 scratch 构建独立 probe，只在 copied benchmark 的 cold setup 增加 idle 选择，
+链接 d9712e68 原有未改静态库。不得改原候选、正式合同、公共仪器或 Sched 产品。所有原始
+输出保存，不作 PASS 资格证据；对照仍无法解释时终止，不追加模式/次数。重型任务与现行
+WSL验收串行。诊断可以提供恢复条件所需事实，不能自动解除当前 BLOCKED。
