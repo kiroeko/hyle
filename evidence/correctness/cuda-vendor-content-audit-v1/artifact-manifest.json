@@ -1,0 +1,26 @@
+{
+  "measured_product_candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
+  "current_apple_candidate": "1636365bbe47779de24e84d7c7d1ed8088fe1af2",
+  "identical_product_inputs": [
+    "include",
+    "src",
+    "cmake",
+    "samples",
+    "third_party",
+    "CMakeLists.txt",
+    "CMakePresets.json"
+  ],
+  "changed_product_files": [],
+  "evidence_files": {
+    "inherited-baseline.json": "e9df44a4ee4687bad1a7ce75706384b292d3f2313a2f106095d37e18f1d47e77",
+    "verify-vendor-audit.py": "e1911d29fefe2bc6d354f57e215f40711825dd028d1cad7935319d24daba109f",
+    "air/all-vendor-audit.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "air/marlin-negative.log": "872069766896eee48f316d35dcee2733b5aed4be18af9ce287d32f1977a89dbb",
+    "air/receipt.json": "f5037a02e765016222034b411230168abdc0ec5ac2b77254766a8fb3baeac7f3",
+    "air/sglang_activation-negative.log": "3e774b352109beeb6070c92fe7006ccdbc782e0cf4a4d822f0564a1b7dd37880",
+    "windows/all-vendor-audit.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows/marlin-negative.log": "e60f9c227113fb96610b0fe3a77432152e1bc392758bd470171fee0ba009a75a",
+    "windows/receipt.json": "49cc642c2e0b94670d889678a7fd490e19e9f8c32878700c26b810a22c14939f",
+    "windows/sglang_activation-negative.log": "16404f8c88f0262e85d1be9fba6a99cf04f070ff6008f97ca49e9ab6b3f34335"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "source": "/Users/kiro/hyle-verify/r5-apple-20260917/source-delivery-cbedb837/hyle-0.1.0-source",
+  "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
+  "checks": [
+    {
+      "vendor": "marlin",
+      "canonical_sha256": "fd3ab217a3de85cdcbbe81c6beb88d9d837b21b34fd0ee36920b6f93fc13eb25",
+      "old_casefolded_manifest_sha256": "5ae6ffaf088b175fa38aa4a337f9e6bd017ffd99bb0c3759bd3cb82c29958813",
+      "mutated_consumer_refused_before_cuda_language": true
+    },
+    {
+      "vendor": "sglang_activation",
+      "canonical_sha256": "9e60796cdbdce35e3e8eefca7bc29eed3533afc249992aa27fdfcd74f44f02a0",
+      "old_casefolded_manifest_sha256": "46b190d809760271bb91ec481c4a04536d54f893acfb69c1845df31b87dd1d37",
+      "mutated_consumer_refused_before_cuda_language": true
+    }
+  ],
+  "result": "PASS"
+}

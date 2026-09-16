@@ -1,0 +1,26 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE products: requested='core' available='core' factors='core'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=shared | products=core | factors=core
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    CMAKE_C_COMPILER
+    FETCHCONTENT_FULLY_DISCONNECTED
+    HYLE_COMPUTE_APPLE
+    HYLE_COMPUTE_CPU
+    HYLE_COMPUTE_CUDA
+    HYLE_COMPUTE_ONEDNN
+
+
+-- Build files have been written to: /root/hyle-verify/r5-apple-20260917/off-core

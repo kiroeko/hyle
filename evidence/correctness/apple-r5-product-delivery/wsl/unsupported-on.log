@@ -1,0 +1,24 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE products: requested='compute;graph' available='core,error,math,compute,graph' factors='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas,compute_provider_marlin,compute_provider_cuda,compute_route_cuda,graph_route_cuda,compute_route_apple,graph_route_apple'
+-- The C compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/gcc-14 - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: CPU route OFF -- oneDNN dependency probe/download skipped
+-- HYLE: CUDA backend OFF -- system SDK probe skipped
+CMake Error at cmake/HyleAppleDependencies.cmake:15 (message):
+  HYLE_COMPUTE_APPLE=ON requires macOS Apple Silicon
+Call Stack (most recent call first):
+  CMakeLists.txt:415 (hyle_configure_apple_dependencies)
+
+
+-- Configuring incomplete, errors occurred!

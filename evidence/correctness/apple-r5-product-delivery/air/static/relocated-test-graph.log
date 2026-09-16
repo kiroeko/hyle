@@ -1,0 +1,7 @@
+Test project /Users/kiro/hyle-verify/r5-apple-20260917/consumer-static-graph
+    Start 1: hyle_package_graph_cpp
+1/1 Test #1: hyle_package_graph_cpp ...........   Passed    0.84 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.85 sec

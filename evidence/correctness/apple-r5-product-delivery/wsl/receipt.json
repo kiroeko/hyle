@@ -1,0 +1,38 @@
+{
+  "source_commit": "cbedb837791da15392019299f2652d9d3d70ec9d",
+  "source_archive_sha256": "1aecfb41b9af31881152bdf78a652f7a6ab0f9ec67a4bfbad8993dc1f097d8ce",
+  "machine": "Linux kiro-workstation 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+  "results": {
+    "core": {
+      "result": "PASS",
+      "scope": "configure isolation, not native execution",
+      "cache_sha256": "7f8e9706019876e7f549f8f6a975c44f8e8408020129557983c453a6345c8cab"
+    },
+    "no-backend": {
+      "result": "PASS",
+      "scope": "configure isolation, not native execution",
+      "cache_sha256": "179095d897196da43f6345f6ae043d155b95f70423c070d2a1119063f61ba8d0"
+    },
+    "cpu-only": {
+      "result": "PASS",
+      "scope": "configure isolation, not native execution",
+      "cache_sha256": "2398fa453574a7926443be3e9527a931d05728f8a952bc33a9165c8fb2d39715"
+    },
+    "unsupported-on": {
+      "result": "PASS",
+      "scope": "expected platform rejection before native SDK admission"
+    },
+    "public-headers-off": {
+      "result": "PASS",
+      "scope": "actual GCC syntax check without MLX or Apple SDK"
+    }
+  },
+  "logs": {
+    "core.log": "4e632a3bc7bbdce815cfa717768720a0043e651ead13fbf76d2e4362be19ac60",
+    "cpu-only.log": "58d69b009990013f15e2583b368f3a90d40c1336ba63bcba8dec4f8b30aad001",
+    "public-headers-off.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unsupported-on.log": "b1c8248c1ed4119cc5db74c98b279a3e8176521aaee2853f972e17d86da90342",
+    "no-backend.log": "2f7107e65c69389422a5c248ee07307cbcee8b3ead45cc20045f43d5a865d3a3"
+  }
+}

@@ -42,3 +42,10 @@ SGLang 为 `9e60796cdbdce35e3e8eefca7bc29eed3533afc249992aa27fdfcd74f44f02a0`。
 V2 FIX：两 owning CMake 的 `HYLE_COMPUTE_CUDA_ENABLED` 分支在 `enable_language(CUDA)` 和
 消费头文件前调用现有 `hyle_audit_in_tree_dependencies(<owned vendor>)`。因子未激活时不检查，
 不让 CPU/Apple/core 裁剪消费者依赖 CUDA vendor。无需更改公共工具实现或产品运行路径。
+
+## 已执行证据（最终 selector 未完成）
+
+[Windows/Air 原始记录](../../../../evidence/correctness/cuda-vendor-content-audit-v1/README.md)
+已证明正确 manifest、完整源码全 vendor audit，以及两 owning enabled consumer 对变更副本的
+早期拒绝。CUDA 运算 blob 与 R4 相同；当前 broad native gate 已执行，剩余 selected 三交付继续
+串行完成。完成适用 selector 后按本卡 stop 收口，不重跑既有 GPU P1 或外推未测架构。

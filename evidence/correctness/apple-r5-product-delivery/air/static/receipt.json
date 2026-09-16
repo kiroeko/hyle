@@ -1,0 +1,9 @@
+{
+  "journey": "relocated installed static SDK; Direct + Graph",
+  "build_fallback_hidden": "/Users/kiro/hyle-verify/r5-apple-20260917/sdk-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib",
+  "missing_resource_negative_control": "expected nonzero: MLX Metal GPU is unavailable",
+  "actual_compute": "native RMSNorm + Q4 FFN, rows 1 and 4, three changing inputs",
+  "cpu_cuda": "OFF",
+  "resource_sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+  "result": "PASS"
+}

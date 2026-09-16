@@ -1,0 +1,3 @@
+[1/3] cd /Users/kiro/hyle-verify/r5-apple-20260917/consumer-shared-graph && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/consumer-shared-graph && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/relocated-shared-v1/lib/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/consumer-shared-graph/mlx.metallib
+[2/3] Building CXX object CMakeFiles/hyle_package_graph_cpp.dir/main.cc.o
+[3/3] Linking CXX executable hyle_package_graph_cpp

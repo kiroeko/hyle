@@ -1,0 +1,7 @@
+Test project /Users/kiro/hyle-verify/r5-apple-20260917/consumer-shared-compute
+    Start 1: hyle_package_compute_cpp
+1/1 Test #1: hyle_package_compute_cpp .........   Passed    3.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   3.00 sec

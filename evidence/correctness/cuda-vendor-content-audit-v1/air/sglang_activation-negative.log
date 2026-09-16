@@ -1,0 +1,15 @@
+CMake Error at hyle-verify/r5-apple-20260917/source-delivery-cbedb837/hyle-0.1.0-source/cmake/HyleDependencyVersions.cmake:843 (message):
+  HYLE in-tree dependency audit failed:
+
+  Vendored dependency 'sglang_activation' content does not match the lock.
+
+    path:     /Users/kiro/hyle-verify/r5-apple-20260917/vendor-negative-air/sglang_activation-mutated/third_party/sglang_activation
+    expected: 9e60796cdbdce35e3e8eefca7bc29eed3533afc249992aa27fdfcd74f44f02a0
+    actual:   2529285bcbffaf1b7a155207534360b4b82a98a79cb58fe4e9ef06a20aa17cca
+
+  Refresh complete snapshots and their provenance atomically.
+Call Stack (most recent call first):
+  hyle-verify/r5-apple-20260917/source-delivery-cbedb837/hyle-0.1.0-source/src/compute_provider_cuda/CMakeLists.txt:2 (hyle_audit_in_tree_dependencies)
+  hyle-verify/r5-apple-20260917/vendor-negative-air/sglang_activation-mutated/consume.cmake:5 (include)
+
+

@@ -1,0 +1,15 @@
+CMake Error at cmake/HyleDependencyVersions.cmake:843 (message):
+  HYLE in-tree dependency audit failed:
+
+  Vendored dependency 'marlin' content does not match the lock.
+
+    path:     C:/hyle-scratch/r5-apple-20260917/vendor-negative-windows/marlin-mutated/third_party/marlin
+    expected: fd3ab217a3de85cdcbbe81c6beb88d9d837b21b34fd0ee36920b6f93fc13eb25
+    actual:   36fb110da6f04e8ac995ea08cee6ca44220b7999cad78c13959cc87f072b21ac
+
+  Refresh complete snapshots and their provenance atomically.
+Call Stack (most recent call first):
+  src/compute_provider_marlin/CMakeLists.txt:2 (hyle_audit_in_tree_dependencies)
+  C:/hyle-scratch/r5-apple-20260917/vendor-negative-windows/marlin-mutated/consume.cmake:5 (include)
+
+

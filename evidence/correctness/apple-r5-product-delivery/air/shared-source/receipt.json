@@ -1,0 +1,19 @@
+{
+  "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
+  "source_archive_sha256": "1aecfb41b9af31881152bdf78a652f7a6ab0f9ec67a4bfbad8993dc1f097d8ce",
+  "journeys": [
+    "complete-source add_subdirectory",
+    "relocated installed shared SDK"
+  ],
+  "offline": true,
+  "cpu_cuda": "OFF",
+  "real_compute": "RMSNorm + Q4 FFN decode/prefill replay",
+  "producer_resources_hidden_during_installed_execution": [
+    "/Users/kiro/hyle-verify/r5-apple-20260917/sdk-shared/mlx.metallib",
+    "/Users/kiro/hyle-verify/r5-apple-20260917/sdk-shared/hyle/_deps/mlx-build/mlx.metallib",
+    "/Users/kiro/hyle-verify/r5-apple-20260917/sdk-shared/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib"
+  ],
+  "single_mlx_dylib_loaded_from_relocated_prefix": true,
+  "sdk_paths_headers_licenses": "PASS",
+  "result": "PASS"
+}

@@ -63,3 +63,10 @@ SCOPED 只允许审计；D1–D4 固定为 AUDITED FIX 后再改上述产品和 
 七问：成熟 MLX/Metal-C++ 锁与归属明确；真实计算消费驱动；复用现有图/结果和 package registry；
 只有冷交付 P0；纯 C++ 无 FFI；三形态同入口；用户显式 staging 与 native lifetime 文档。上述有限
 FIX 已冻结，进入实现；其它 A5/A6 与 R5 最终 P1 留在主卡中执行，不计入本卡完成。
+
+## 已执行检查点（非 terminal）
+
+[Air 三交付与 WSL OFF 证据](../../../../evidence/correctness/apple-r5-product-delivery/README.md)
+已归档：真正的 Q4 FFN/RMSNorm、变化输入、完整 source、installed static/shared relocation、
+撤去 producer metallib fallback、单 MLX runtime、许可证与导出检查通过。
+Windows broad 的余下三交付和 Mini 仍待验收；不因这些局部 PASS 提前关闭 owner。
