@@ -9,9 +9,9 @@
 - baseline：`2e8eb24a`；已有产品继承 `d57fa720`，不覆盖其 CPU 修复与验收证据。
 - trigger：用户已授权四路线实际实施；CUDA 现有 stream/resource/event/capture 可复用，但没有本轮
   普通默认计算入口、现代压缩 carrier 与完整 Graph 计算旅程。旧 copy/custom-kernel probe 不签此门。
-- 包间边界：R3 的 Graph 小片段性能门继续由[原卡](cpu-graph-replay-cost-audit.md)保持 `BLOCKED`。
-  本卡不改变其 margin、样本、算法或状态。按 roadmap 的真实依赖及默认包顺序，先推进独立 CUDA owner；
-  R3、整个 goal 都不因此宣告完成。若需要修改现有 Compute/Graph/CUDA backend，先登记具体反例和精确
+- 包间边界：本卡启动时 R3 Graph 小片段性能门由[原卡](cpu-graph-replay-cost-audit.md)保持 `BLOCKED`。
+  后续用户批准的例外已由[独立验收卡](cpu-r3-acceptance-exception.md)完成 R3 结案，原始 margin、
+  样本与统计结果不变；整个 goal 仍未完成。若需要修改现有 Compute/Graph/CUDA backend，先登记具体反例和精确
   owner 的新 scope，不以本卡越过它们的状态。审计已确认 C6 需要复用 backend 私有 native scope，
   为该 owner 从 R3 `CANDIDATE` 定向退回 `AUDITED`；其旧交付证据保留，不修改 CPU/Graph owner。
 - 主 consumer：vLLM/SGLang 的持久 compressed W4A16 权重、变化 activation、decode/短 prefill FFN，
@@ -134,7 +134,7 @@ P0 静态成本预算：Context/prepare/packing/每槽创建允许显式 metadat
 
 | Gate | 预声明范围 | 当前 verdict |
 |---|---|---|
-| scope | 有限 C1–C6、具名 owner、现有 R3 blocker 不改变 | AUDITED |
+| scope | 有限 C1–C6、具名 owner；R3 用户例外由独立卡结案 | AUDITED |
 | architecture | pinned source / 生命周期 / 原生 cold-hot 审计与有限 preflight | AUDITED，待产品消费复核 |
 | correctness | oracle；非法 dtype/format/shape/资源；OOM；变化输入/双槽；close/abandon/accepted prefix | UNPROVEN |
 | delivery | W1-WIN + WSL NVIDIA source/static/shared；CPU/CUDA 隔离；直接用户样例 | UNPROVEN |
@@ -156,6 +156,15 @@ gates **未执行、未记 PASS**；本次仅身份登记的执行图等价核�
 
 ## Candidate / 裁决
 
-尚无 R4 产品 candidate；没有 R4 correctness、delivery 或 performance PASS。有限审计在预算内停止，
-进入 C1–C6 实施。统一脚本 Compute + Graph 全实现 **31,021 行**（不含测试，self-check PASS）；
-源码规模仍包含旧资产，不作进度代理。本卡不解除 CPU 未决项，不把旧 CUDA CLOSED/probe 当作完成。
+尚无完整 R4 产品 candidate；C1–C5 未完成，完整路线 correctness、delivery 或 performance 未验收。
+有限审计在预算内停止，进入 C1–C6 实施；不把旧 CUDA CLOSED/probe 当作完成。
+CPU 例外由独立卡结案，本卡不改变其原统计。
+
+### C6 产品检查点
+
+`42ae3005` 将既有 ScopedPrimaryContext 声明移到私有 `native_context.h`，导出原构造/析构，
+增加只读 primary-context borrow。原 push/pop 算法未变，同构建 Provider 可以复用该 scope。
+[W1 检查证据](../../../../evidence/correctness/cuda-r4-native-context/README.md)：shared/Werror、
+Ninja 并行度 2、CUDA backend 独立 factor，三个适用 source 测试通过，DLL 实际邻置。
+selector 只选 docs/closure/configure/backend CUDA；没有 P1，没有签完整 R4 三交付或 Provider 集成。
+统一脚本 Compute + Graph 全实现 **31,034 行**（不含测试，self-check PASS）；源码规模包含旧资产。

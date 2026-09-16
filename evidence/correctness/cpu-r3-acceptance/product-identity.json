@@ -1,0 +1,31 @@
+{
+  "common_cpu": {
+    "candidate": "79e96ceb",
+    "paths": [
+      "include/hyle/compute",
+      "src/compute",
+      "src/compute_backend_cpu",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn"
+    ],
+    "unchanged": true
+  },
+  "direct_cpu": {
+    "candidate": "d9712e68",
+    "paths": [
+      "include/hyle/compute/cpu.h",
+      "src/compute_route_cpu"
+    ],
+    "unchanged": true
+  },
+  "graph_cpu": {
+    "candidate": "1a3a8d0e",
+    "paths": [
+      "include/hyle/graph",
+      "src/graph",
+      "src/graph_provider_onednn",
+      "src/graph_route_cpu"
+    ],
+    "unchanged": true
+  }
+}

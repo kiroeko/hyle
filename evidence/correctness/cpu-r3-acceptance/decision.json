@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-16",
+  "authorization": "记录验收例外，继续 R4（推荐）",
+  "workload": "decode-fused-boundary-1x256x512",
+  "engineering_action": "ACCEPT_TRADEOFF",
+  "statistical_noninferiority": "INCONCLUSIVE",
+  "strict_direction": "LOSS",
+  "margin_pct": 5,
+  "new_builds": 0,
+  "new_p1_runs": 0,
+  "scope": "Only the already-quantified single CPU decode-fused unresolved item; no future general exception."
+}

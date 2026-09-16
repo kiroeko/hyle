@@ -271,17 +271,26 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 原 Graph 产品候选 1a3a8d0e 重新绑定：无产品变化，用户批准唯一 decode-fused 验收例外；已有普通门和 P1 身份复用，准备终局状态登记，不再采样。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
+      "summary": "R3 CPU CLOSED：普通入口、固定规则、四环境三交付与适用插桩已验收；Direct 4/4 非劣 PASS，Graph 11/12 PASS，唯一 decode-fused 未决项由用户明确接受。原统计 LOSS/INCONCLUSIVE 保留，不重测、不签全域 SOTA。",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "container_concurrent",
@@ -355,10 +364,15 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_provider_onednn R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_provider_ggml",
@@ -372,10 +386,15 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 原 Graph 产品候选 1a3a8d0e 重新绑定：无产品变化，用户批准唯一 decode-fused 验收例外；已有普通门和 P1 身份复用，准备终局状态登记，不再采样。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
+      "summary": "R3 CPU CLOSED：普通入口、固定规则、四环境三交付与适用插桩已验收；Direct 4/4 非劣 PASS，Graph 11/12 PASS，唯一 decode-fused 未决项由用户明确接受。原统计 LOSS/INCONCLUSIVE 保留，不重测、不签全域 SOTA。",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_ops",
@@ -390,23 +409,32 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_backend_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md"
+      }
     },
     {
       "module": "compute_backend_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。"
+      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。"
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_provider_native R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_sched",
@@ -415,46 +443,56 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "R3 CPU Direct 候选 d9712e68：普通入口/固定规则、四环境三交付与适用 sanitizer 已验收，engineering P1 4/4 PASS。Graph 独立工程门仍未决，R3 总包未 CLOSED；不重跑 Direct。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
+      "state": "CLOSED",
+      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "R3 原 Graph 产品候选 1a3a8d0e 重新绑定：无产品变化，用户批准唯一 decode-fused 验收例外；已有普通门和 P1 身份复用，准备终局状态登记，不再采样。",
+      "state": "CLOSED",
+      "summary": "R3 CPU CLOSED：普通入口、固定规则、四环境三交付与适用插桩已验收；Direct 4/4 非劣 PASS，Graph 11/12 PASS，唯一 decode-fused 未决项由用户明确接受。原统计 LOSS/INCONCLUSIVE 保留，不重测、不签全域 SOTA。",
       "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_provider_cublas",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
+      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_marlin",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
+      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
+      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
+      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
+      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     }
   ]

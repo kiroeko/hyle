@@ -1,0 +1,117 @@
+{
+  "schema": 3,
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "42ae3005899cbd6117494b2a609afae6133eae6b",
+    "dirty": false,
+    "tracked_regular_files": 4636,
+    "tracked_missing_files": []
+  },
+  "policy": {
+    "snapshot": "current contents of Git-tracked regular files",
+    "untracked": "not counted; still makes dirty=true",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "compute_graph",
+    "boundary": "explicit",
+    "paths": [
+      "include/hyle/compute",
+      "src/compute",
+      "src/compute_ops",
+      "src/compute_backend_cpu",
+      "src/compute_backend_cuda",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn",
+      "src/compute_route_cpu",
+      "include/hyle/graph",
+      "src/graph",
+      "src/graph_provider_onednn",
+      "src/graph_route_cpu"
+    ],
+    "modules": null
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 727369,
+      "files": 1962,
+      "selected_files": 4636,
+      "paths": [
+        "Git-tracked regular files (current working tree)"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 126219,
+      "files": 442,
+      "selected_files": 485,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute_graph)",
+      "code": 31034,
+      "files": 91,
+      "selected_files": 101,
+      "paths": [
+        "include/hyle/compute",
+        "src/compute",
+        "src/compute_ops",
+        "src/compute_backend_cpu",
+        "src/compute_backend_cuda",
+        "src/compute_provider_native",
+        "src/compute_provider_onednn",
+        "src/compute_route_cpu",
+        "include/hyle/graph",
+        "src/graph",
+        "src/graph_provider_onednn",
+        "src/graph_route_cpu"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA"
+      ]
+    }
+  ],
+  "self_check": "pass"
+}

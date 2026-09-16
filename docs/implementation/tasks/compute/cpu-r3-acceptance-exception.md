@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：`CANDIDATE`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。
+- 状态：`CLOSED`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。
 - 恢复 owner：`graph`、`graph_route_cpu`、`graph_provider_onednn`。原
   [Graph 停止卡](cpu-graph-replay-cost-audit.md) 的用户裁决恢复条件已满足。
 - 同步收口：原 [R3 卡](cpu-v1-four-route-foundation.md) 的 `compute`、`compute_backend_cpu`、
@@ -62,7 +62,7 @@ BRGEMM + HYLE SIMD 的直接融合 FFN。约 12 微秒，paired median ratio 为
 
 | Gate | 工程验收依据 / 限制 | Verdict |
 |---|---|---|
-| scope | 原 R3 C41–C46、Graph RC1/RC2 完成；本轮只处理 A1/A2 | 待完成状态流 |
+| scope | 原 R3 C41–C46、Graph RC1/RC2 完成；本轮只处理 A1/A2 | PASS |
 | architecture | 原生 CPU/Provider region、cold binding、真实资源与完成 owner；源码复核已完成 | 继承 PASS |
 | correctness | 四环境、真实 FFN/Sched、两槽/变化输入、关闭/OOM/失败与适用 sanitizer | 继承 PASS |
 | delivery | source/static/shared、搬迁消费、CPU/oneDNN 裁剪与一致默认选择 | 继承 PASS |
@@ -82,3 +82,15 @@ BRGEMM + HYLE SIMD 的直接融合 FFN。约 12 微秒，paired median ratio 为
 
 A1/A2 已冻结。逐路径 Git 对比确认三个候选组的当前产品 bytes 均未变化；原始资格、普通验收与
 用户裁决记录齐全。没有新产品 FIX；只继续相同候选的状态流。身份对比存于本轮 validation receipt。
+
+## Terminal
+
+A1/A2 完成，八个 CPU/共同层/Graph owner 结案。Graph 的恢复状态流为 `41878390` SCOPED →
+`ad4d5cff` AUDITED → `a437dc28` 绑定不变产品 CANDIDATE → 本次 CLOSED。
+[验收记录及产品身份核对](../../../../evidence/correctness/cpu-r3-acceptance/README.md)保留用户原话、
+三个候选组的逐路径一致性和统一 LOC。机器性能账本纳入完整的四项 Direct、十二项 Graph 与 P0，
+原始 margin、CI、方向及原始包不变；唯一工程例外不改写为 5% 非劣 PASS。
+
+本次只运行 selector、带 previous-ref 的 closure、docs、scorecard 和 diff 检查，没有构建或 P1。
+CUDA backend 的 R3 交付范围已经满足，但其当前 R4 C6 范围仍为 AUDITED，由 R4 卡继续承担。
+R3 到此停止；基础架构 goal 继续 R4–R7。

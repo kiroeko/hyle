@@ -9,7 +9,10 @@
 不恢复旧 goal/百分比。每包仍须绑定 owner 的当前卡，计划、旧 AUDITED 卡或独立探针不是产品修改权限。
 首包入口：[R1：路线选择与交付隔离](../build/compute-route-isolation-v1.md)，实施、适用 native 验证
 与七门已完成，R1 CLOSED；[R2 共同语义及定向尾项](four-route-common-semantics-v1.md) 也已完成。
-当前推进 [R3 CPU 真实默认入口与规则](cpu-v1-four-route-foundation.md)；R3–R7 尚未完成，完整基础架构未结案。
+[R3 CPU](cpu-v1-four-route-foundation.md) 的实现与适用验证已完成，唯一已量化的小片段性能未决项经
+用户批准[登记验收例外并结案](cpu-r3-acceptance-exception.md)，原始统计结果保留。
+当前推进 [R4 CUDA](cuda-v1-four-route-foundation.md)：有限审计完成，产品改码已开始。
+R4–R7 尚未完成；研究探针和文档不计为路线交付，完整基础架构未结案。
 
 ## 目标与不做项
 

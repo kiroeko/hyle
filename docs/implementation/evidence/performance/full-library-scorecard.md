@@ -1,29 +1,29 @@
 # HYLE 全库性能账本（2026-09-16）
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本只绑定
-[`module-status.json`](../../module-status.json) 中当前 30 个 `CLOSED` factor，包含 R2 已收口的
-compute_ops schema 与 Mem reservation 尾项。仍在施工的 Compute/Graph、CPU routes、Providers 和
-GPU 基础架构不计入已收口数量；其合格或未决证据在下方单列。旧 CUDA copy 与跨域 Graph 数字保留在
+[`module-status.json`](../../module-status.json) 中当前 38 个 `CLOSED` factor，包含 R2 已收口的
+compute_ops schema、Mem reservation 尾项和 R3 CPU。CPU 唯一已量化的 Graph 小片段未决项经用户
+批准接受，原 LOSS/INCONCLUSIVE 保留；GPU 与 ggml 等未收口 owner 不计入数量。旧 CUDA copy 与跨域 Graph 数字保留在
 [历史证据](benchmarks-compute-graph.md)，不作为四路线基础架构完成证明。账本不授予跨平台、跨能力的
 永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是 2026-09-14 原审计时的事实。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 55 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 72 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
-| `WIN` | 23 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
+| `WIN` | 26 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
 | `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
-| `INCONCLUSIVE` | 16 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 13 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
-| `LOSS` | 0 个聚合合同 | 不能解释成“未测 API 也都不慢”；见下方 WSL watcher 的固定负向 strata |
+| `INCONCLUSIVE` | 25 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
+| `N/A` | 14 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
+| `LOSS` | 4 | CPU Graph 的固定负向方向保留；其中一项工程例外不改写为统计 PASS |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-15 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，13 个是 P0 结构证明。后两类不能承担最强宣传声明。
+31 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，14 个是 P0 结构证明。后两类不能承担最强宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -77,7 +77,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | compute_ops 为 P0 schema；施工中的 CPU Direct 4/4 P1 PASS，Graph v3 11/12 非劣 PASS、聚合未决，见下方完整方向 | 四路线 runtime/Provider/Graph 尚在当前重构中；GPU 新路线未验收，历史 copy/跨域结果不继承为新路线完成 |
+| Compute / Graph | compute_ops 为 P0 schema；CPU Direct 4/4 非劣 PASS，Graph v3 11/12 非劣 PASS + 1 项用户验收例外，原统计聚合未决 | R3 已收口，GPU 新路线未验收；历史 copy/跨域结果不继承为新路线完成 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线
@@ -90,8 +90,8 @@ Build/package 是横向交付单元而非 runtime factor。source embed、instal
 
 ## 所有当前负向事实
 
-已收口机器账本中的合同尚无所有适用 strata 的 CI 均固定在 1 以下的聚合项。施工中的 CPU Graph v3
-有四项固定 LOSS，v2 的五项也保留为历史事实，完整列于下方，不因尚未 CLOSED 而省略。其它负向事实也继续保留：
+已收口机器账本中的 CPU Graph v3 有四项固定 LOSS：三项通过原 5% 非劣门，一项保留统计未决并经
+用户明确接受工程取舍。v2 的五项保留为历史事实，不重复计数，完整列于下方。其它负向事实也继续保留：
 
 | 路线 | 事实 | 根因 / 行动 |
 |---|---|---|
@@ -170,7 +170,7 @@ python scripts/check-docs.py
 
 [原始工程证据](../../../../evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md)
 资格、全部 controls 与 4/4 非劣门 PASS，n=15 即停止；严格方向 1 WIN / 3 INCONCLUSIVE。
-R3 尚待 Graph，因此暂不并入上文历史 CLOSED 计数。
+R3 已结案，这四项完整纳入上文当前 CLOSED 计数。
 
 | Workload | median ratio 范围 | 全部分层 CI 外界 | 严格方向 | 非劣门 |
 |---|---|---|---|---|
@@ -179,15 +179,16 @@ R3 尚待 Graph，因此暂不并入上文历史 CLOSED 计数。
 | short-prefill-row-major-f32-matmul-m32-k512-n1024 | 1.047825–1.063461 | 1.027823–1.076037 | WIN | PASS |
 | decode-transposed-weight-f32-matmul-m1-k1024-n1024 | 0.997157–1.003399 | 0.981472–1.011034 | INCONCLUSIVE | PASS |
 
-## 2026-09-16：R3 Graph v3 修正后仍有一项未决
+## 2026-09-16：R3 Graph v3 原统计未决，用户接受具名例外
 
 [完整原始包](../../../../evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md)：
 资格、实际 workload A/A、五项 controls 与身份深检 PASS，n=31 已到上限；11/12 非劣门 PASS。
 原双 worker 同实现项已过门。唯一未决为约 12 微秒 decode-fused 的一个 CI，下界
 0.9517370300 仍低于 1/1.05；中位额外耗时约 2.6%–3.5%，其 CI 允许的退化上界约 5.07%。
-不能把该项写为 PASS，也没有足够结论写成 material FAIL。三个 Graph owner BLOCKED，等待
-用户裁决小片段的验收取舍或新有限任务；本候选不再采样。当前 4 LOSS / 2 WIN / 6 INCONCLUSIVE
-继续单列，不计入机器账本的 CLOSED 模块声明。
+不能把该项写为统计 PASS，也没有足够结论写成 material FAIL。用户已明确批准
+[具名验收例外](../../tasks/compute/cpu-r3-acceptance-exception.md)，三个 Graph owner 按协议结案。
+工程动作是 ACCEPT_TRADEOFF，原统计聚合仍 INCONCLUSIVE；本候选不再采样。
+当前 4 LOSS / 2 WIN / 6 INCONCLUSIVE 全部纳入机器账本，没有删去负向 workload。
 
 | Workload | median ratio 范围 | 全部分层 CI 外界 | 严格方向 | 非劣门 |
 |---|---|---|---|---|

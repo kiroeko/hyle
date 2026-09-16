@@ -1,0 +1,9 @@
+{
+  "product": "42ae3005899cbd6117494b2a609afae6133eae6b",
+  "verdict": "W1 shared backend-only source regression 3/3 PASS; R4 provider integration and full delivery not yet run",
+  "files": {
+    "src/compute_backend_cuda/native_context.h": "48eb76a3dc26c7b5f7fad490bc638637ce00fa2a04ea4cab21f299999bb937a3",
+    "src/compute_backend_cuda/cuda_internal.h": "4a857a33eea7d05eaa6c080f6de93e78c84449c9b95df39be23fe9be9182f62f",
+    "src/compute_backend_cuda/cuda_backend.cc": "d2f54735ff09ee387009bc331fa30604a259a3952cf7eb744135e6ac4740c4c5"
+  }
+}

@@ -181,3 +181,10 @@ SIMD 的直接融合调用。Graph 单片段约 11.79–12.29 微秒，paired me
 resume_condition：用户明确裁决该小片段验收取舍，或授权新的有限成本优化轮；依新边界进入
 SCOPED/AUDITED。不能恢复旧 FIX 队列。统一实现统计仍为 Compute + Graph 31,021 行，不含测试，
 包含保留的既有代码，不代表新基础架构完成量。
+
+## 后续用户裁决
+
+2026-09-16 用户明确选择“记录验收例外，继续 R4（推荐）”。三个 Graph owner 已按
+[独立验收卡](cpu-r3-acceptance-exception.md)重新定界，经过 SCOPED/AUDITED/CANDIDATE 后结案。
+上述 BLOCKED 是本轮到预算时的历史停止事实；当前状态以 registry 和新验收卡为准。
+原统计 INCONCLUSIVE/LOSS、5% 门和全部 raw 保留，没有新增采样或算法修改。
