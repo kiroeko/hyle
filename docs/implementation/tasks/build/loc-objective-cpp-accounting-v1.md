@@ -20,3 +20,6 @@
 
 审计已定位两个静态范围常量；现有 cloc 计数、不可变 Git snapshot 和 central owner 算法均可复用。
 不借此更换统计器，也不通过改变产品文件扩展名迁就旧统计范围。
+
+L2 同时把旧测试中固定“Compute/Graph 必须 QUEUED”的历史队列断言替换为显式 mixed-state fixture；
+实际 registry 已变化，该断言不代表产品合同。只改测试输入，不更改 owner 或状态选择算法。

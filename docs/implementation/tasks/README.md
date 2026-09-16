@@ -22,6 +22,7 @@
 
 当前公共工具修复事实：
 
+- [Objective-C++ 实现 LOC 计入](build/loc-objective-cpp-accounting-v1.md)：修正 `.mm` 正式实现的语言范围遗漏；
 - [CUDA compiled factor 验证上下文](project/validation-selector-cuda-factor-context-2026-09.md)：
   显式验证或反向选中 CUDA factor 时同步启用其真实 feature，不把空 target 当成有效测试；
 - [Structured pair placement validator 修复](project/performance-structured-placement-validator-2026-09.md)；

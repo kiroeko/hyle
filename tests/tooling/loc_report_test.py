@@ -165,9 +165,6 @@ def main() -> None:
     closed_modules, closed_files = reporter.registry_state_scope(
         "CLOSED", files, registry, graph
     )
-    queued_modules, queued_files = reporter.registry_state_scope(
-        "QUEUED", files, registry, graph
-    )
     expected_closed = [
         record["module"]
         for record in registry["modules"]
@@ -175,20 +172,32 @@ def main() -> None:
     ]
     if closed_modules != expected_closed:
         raise AssertionError("CLOSED LOC selection lost registry order or membership")
-    if set(queued_modules) != {"compute", "graph"}:
-        raise AssertionError(f"unexpected QUEUED LOC selection: {queued_modules!r}")
-    if set(closed_files) & set(queued_files):
-        raise AssertionError("registry-state LOC selections overlap")
-
-    native_implementation = {
-        path
-        for path in reporter.files_under(files, reporter.SELF_WITHOUT_TESTS_ROOTS)
-        if Path(path).suffix.lower() in reporter.NATIVE_SUFFIXES
-    }
-    if set(closed_files) | set(queued_files) != native_implementation:
-        raise AssertionError(
-            "CLOSED + QUEUED selections do not partition current native implementation"
-        )
+    # State selection must not freeze an old project's construction queue.
+    # Use an explicit mixed-state fixture, including a real native .mm owner.
+    native = "src/compute_route_apple/apple_environment.mm"
+    fixture_files = (
+        "src/compute/completion.cc", "src/graph/graph.cc", native,
+        "tests/compute_route_apple/example.mm",
+    )
+    fixture_registry = {"modules": [
+        {"module": "compute", "state": "CLOSED"},
+        {"module": "graph", "state": "QUEUED"},
+        {"module": "compute_route_apple", "state": "AUDITED"},
+    ]}
+    for state, module, expected in (
+        ("CLOSED", "compute", "src/compute/completion.cc"),
+        ("QUEUED", "graph", "src/graph/graph.cc"),
+        ("AUDITED", "compute_route_apple", native),
+    ):
+        owners, chosen = reporter.registry_state_scope(
+            state, fixture_files, fixture_registry, graph)
+        if owners != [module] or chosen != [expected]:
+            raise AssertionError(f"native owner/state selection mismatch: {owners}, {chosen}")
+    cloc = reporter.find_cloc()
+    actual = reporter.cloc_measure(cloc, root, [native], None)
+    selected = reporter.cloc_measure(cloc, root, [native], reporter.NATIVE_LANGUAGES)
+    if actual[0] == 0 or actual[1] != 1 or selected != actual:
+        raise AssertionError(f"Objective-C++ implementation is silently omitted: {selected} != {actual}")
 
 
 if __name__ == "__main__":
