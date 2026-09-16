@@ -50,3 +50,20 @@ CPU OFF 新头/闭包隔离仍须实际完成。本目录不签尚未运行的�
 统一 `loc-report.py --self-check`：该候选 Compute + Graph 全部实现 **31,018** 行，不含测试；
 自实现不含测试 **126,203** 行，全库代码 **700,200** 行。LOC 包含既有 backend/provider，
 不是本轮新增量或完成百分比。原始统计在 loc-79e96ceb.json，包校验在 sha256.json。
+
+## 有限纠正候选
+
+产品与 benchmark 固定在 `d9712e68d2b812449a170f474d71a347a27b0ba1`，三名直接 owner 的
+状态由 correction card 管理。`correction-initial-checks.zip` 保留修改后的 Windows ON 定向
+7/7（实际 HYLE_WERROR=ON）、OFF static source/installed 各 3/3、selector 与脚本 LOC 自检。
+OFF static 初轮 recipe 使用了无效的 HYLE_WARNINGS_AS_ERRORS 名称，因此这组只证明静态交付
+与正确性，不作为 WERROR 证据；后续 recipe 已改为实际 HYLE_WERROR。
+
+上述正确性发生在冻结提交前，产品文件与此候选一致；其后只补 Graph benchmark 的实际 workload
+A/A，MSVC /W4 /WX 语法检查通过。A/A 和修正候选 P1 尚未裁决，不能据此签性能 PASS。
+
+包内 correction-projection.json 绑定原 `79e96ceb` archive 到新候选的四个产品/测试覆盖文件，
+并列出 891 个 include/src/tests/samples/cmake/root CMake 文件的 SHA-256。WSL、Air、Mini
+向外更新后逐文件匹配；旧日志单独保留。未改变的外部 oneDNN 编译对象可复用，变更配置的
+HYLE 目标仍由 CMake/Ninja 实际重建。包内 Unix recipe 是后续验证入口，不代表它已经执行。
+当前统一脚本 Compute+Graph 实现计数 31,023 行（不含测试），不是重构完成率。
