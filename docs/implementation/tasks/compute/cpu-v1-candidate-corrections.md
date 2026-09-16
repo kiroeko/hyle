@@ -7,7 +7,7 @@
 - owner：compute_route_cpu、graph_route_cpu、graph_provider_onednn，从 CANDIDATE 退回 AUDITED。
 - baseline：`e4a81e88`；产品/benchmark 候选 `79e96ceb`。
 - 父卡：[R3 CPU 默认计算与 Graph](cpu-v1-four-route-foundation.md)。公开 API、默认选择、能力目录、
-  生命周期及该卡其余 owner 不变；本卡只固定下列两个已发生的反例。
+  生命周期及该卡其余 owner 不变；本卡只固定下列已发生的反例和明确缺项。
 - 正常消费：同一 CPU Direct/Graph/Sched source/static/shared；连续 gated FFN 与分列并行 FFN。
 - P1：W1-WIN 原 graph-cpu-route-p1-v1 合同，5% 门、原 shape/双顺序/placement/n=15→31。
   本卡使用父卡已预留的唯一一次有源码原因的性能纠正；不增加性能纠正或采样预算。
@@ -45,3 +45,13 @@ C46a 使用已依赖 SIMD，不修改 SIMD/Native/oneDNN BRGEMM 内核或通用 
 七问沿父卡：oneDNN 版本/许可不变；同一完整消费者；复用原 SIMD；完整 peer 和包装税比较；
 无新 ABI；补足缺席依赖的三交付；普通入口不增加用户选型负担。Native、Mem、Sched 的功能
 范围与原终局不因此重开。纠正仍不能使必须的门通过时，保留实际结果并按协议裁决，不再迭代。
+
+C46b 的 A/A 保留原三组 fixture 同时存活的顺序，只在 cold setup 替换两侧 route 类型。
+模块 validator 复用公共 affinity policy，使父进程实际 mask=0x5、caller=2、workers=0,2；
+保存所有输出。公共 runner 对 command validator 失败仍可启动诊断子进程，因此本模块 benchmark
+在 instrument nonce 存在时先检查同一 build 的 A/A 结果；失败即在任何计时前退出。这个 cold
+检查与结果文件只属于 Graph benchmark，不改变公共仪器、统计规则或产品 runtime。
+
+初轮定向结果：Windows oneDNN ON/WERROR 的 7/7 route/region/Sched 回归通过；oneDNN OFF
+static 的 source 与 installed 三个消费者各 3/3 通过，缺席 oneDNN 安装边检查通过。新增 A/A
+fixture 通过 MSVC /W4 /WX 语法检查；validator 通过 Python 语法检查，尚不代表 A/A 性能通过。

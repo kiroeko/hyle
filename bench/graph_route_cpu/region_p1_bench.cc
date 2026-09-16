@@ -13,10 +13,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -96,6 +99,29 @@ bool environment_present(const char *name) {
 #else
   return std::getenv(name) != nullptr;
 #endif
+}
+
+enum class AaRoute { kOff, kSelected, kPeer };
+
+AaRoute aa_route() {
+#if defined(_WIN32)
+  char *storage = nullptr;
+  std::size_t size = 0;
+  if (_dupenv_s(&storage, &size, "HYLE_BENCH_AA_ROUTE") != 0)
+    fail("read A/A route");
+  const std::string value = storage == nullptr ? "" : storage;
+  std::free(storage);
+#else
+  const char *storage = std::getenv("HYLE_BENCH_AA_ROUTE");
+  const std::string value = storage == nullptr ? "" : storage;
+#endif
+  if (value.empty())
+    return AaRoute::kOff;
+  if (value == "selected")
+    return AaRoute::kSelected;
+  if (value == "peer")
+    return AaRoute::kPeer;
+  fail("select A/A route", value);
 }
 
 TensorDesc matrix(std::size_t rows, std::size_t columns) {
@@ -298,6 +324,12 @@ private:
   Invocation invocation_{};
 };
 
+class DefaultRoute final : public GraphRoute {
+public:
+  explicit DefaultRoute(Problem &problem, ParallelExecutorRef executor = {})
+      : GraphRoute(problem, true, executor) {}
+};
+
 class NativeRoute final : public GraphRoute {
 public:
   explicit NativeRoute(Problem &problem, ParallelExecutorRef executor = {})
@@ -366,6 +398,11 @@ protected:
                             std::size_t leading_columns,
                             brgemm::BrgemmTaskRange range) noexcept {
     auto &context = *static_cast<std::array<float *, 2> *>(context_value);
+    if (range.first_column == 0 && range.column_count == leading_columns) {
+      hyle::simd::swiglu_f32_batch(context[0], context[1], context[0],
+                                   rows * leading_columns);
+      return;
+    }
     for (std::size_t row = 0; row < rows; ++row) {
       const std::size_t offset = row * leading_columns + range.first_column;
       hyle::simd::swiglu_f32_batch(context[0] + offset, context[1] + offset,
@@ -496,11 +533,8 @@ private:
     auto *gate_data = reinterpret_cast<float *>(gate_bytes->data());
     const auto *up_data =
         reinterpret_cast<const float *>(up_mapping->bytes().data());
-    for (std::size_t row = 0; row < problem_.rows; ++row) {
-      const std::size_t offset = row * problem_.hidden;
-      hyle::simd::swiglu_f32_batch(gate_data + offset, up_data + offset,
-                                   gate_data + offset, problem_.hidden);
-    }
+    hyle::simd::swiglu_f32_batch(gate_data, up_data, gate_data,
+                                 problem_.rows * problem_.hidden);
     require(up_mapping->close(), "close activation up mapping");
     require(gate_mapping->close(), "close activation gate mapping");
   }
@@ -526,16 +560,16 @@ private:
   }
 };
 
-template <class Peer> class PairFixture final {
+template <class Peer, class Candidate = DefaultRoute> class PairFixture final {
 public:
   PairFixture(std::size_t rows, std::size_t inner, std::size_t hidden,
               bool peer_allocation_first, ParallelExecutorRef executor = {})
       : problem_(rows, inner, hidden) {
     if (peer_allocation_first) {
       peer_ = std::make_unique<Peer>(problem_, executor);
-      graph_ = std::make_unique<GraphRoute>(problem_, true, executor);
+      graph_ = std::make_unique<Candidate>(problem_, executor);
     } else {
-      graph_ = std::make_unique<GraphRoute>(problem_, true, executor);
+      graph_ = std::make_unique<Candidate>(problem_, executor);
       peer_ = std::make_unique<Peer>(problem_, executor);
     }
     if (graph_->run() == 0 || peer_->run() == 0)
@@ -551,12 +585,12 @@ public:
     }
   }
 
-  GraphRoute &graph() noexcept { return *graph_; }
+  Candidate &graph() noexcept { return *graph_; }
   Peer &peer() noexcept { return *peer_; }
 
 private:
   Problem problem_;
-  std::unique_ptr<GraphRoute> graph_;
+  std::unique_ptr<Candidate> graph_;
   std::unique_ptr<Peer> peer_;
 };
 
@@ -573,8 +607,8 @@ void run_pair(nb::Bench &bench, bool peer_first,
   }
 }
 
-template <class Peer>
-void measure(PairFixture<Peer> &fixture, bool peer_first,
+template <class Peer, class Candidate>
+void measure(PairFixture<Peer, Candidate> &fixture, bool peer_first,
              std::string_view title, std::string_view candidate_name,
              std::string_view peer_name) {
   nb::Bench bench;
@@ -594,10 +628,18 @@ void measure(PairFixture<Peer> &fixture, bool peer_first,
       });
 }
 
+// A/A changes only the two route types. Allocation order, fixture lifetimes,
+// completion boundaries and the normal measured compare call stay identical.
+template <AaRoute Mode, class Peer>
+using ModeFixture = PairFixture<
+    std::conditional_t<Mode == AaRoute::kSelected, DefaultRoute, Peer>,
+    std::conditional_t<Mode == AaRoute::kPeer, Peer, DefaultRoute>>;
+
+template <AaRoute Mode>
 void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
                bool peer_first, bool peer_allocation_first,
                std::string_view shape_name, ParallelExecutorRef executor = {}) {
-  PairFixture<DirectFusedRoute> tax(rows, inner, hidden, peer_allocation_first,
+  ModeFixture<Mode, DirectFusedRoute> tax(rows, inner, hidden, peer_allocation_first,
                                     executor);
   const std::string tax_title =
       "graph oneDNN MLP abstraction " + std::string(shape_name);
@@ -607,7 +649,7 @@ void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
       "direct fused oneDNN region " + std::string(shape_name);
   measure(tax, peer_first, tax_title, graph_name, direct_name);
 
-  PairFixture<DirectSequentialRoute> benefit(rows, inner, hidden,
+  ModeFixture<Mode, DirectSequentialRoute> benefit(rows, inner, hidden,
                                              peer_allocation_first, executor);
   const std::string benefit_title =
       "graph oneDNN MLP region benefit " + std::string(shape_name);
@@ -615,7 +657,7 @@ void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
       "direct sequential oneDNN operations " + std::string(shape_name);
   measure(benefit, peer_first, benefit_title, graph_name, sequential_name);
 
-  PairFixture<NativeRoute> native(rows, inner, hidden, peer_allocation_first,
+  ModeFixture<Mode, NativeRoute> native(rows, inner, hidden, peer_allocation_first,
                                   executor);
   const std::string native_title =
       "graph CPU default versus Native " + std::string(shape_name);
@@ -624,9 +666,25 @@ void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
   measure(native, peer_first, native_title, graph_name, native_name);
 }
 
+template <AaRoute Mode>
+void run_shapes(bool peer_first, bool peer_allocation_first,
+                hyle::bench::cpu_route::Executor &executor) {
+  run_shape<Mode>(1, 256, 512, peer_first, peer_allocation_first,
+            "decode f32 M=1 K=256 H=512");
+  run_shape<Mode>(16, 512, 1024, peer_first, peer_allocation_first,
+            "short-prefill f32 M=16 K=512 H=1024");
+  run_shape<Mode>(17, 129, 257, peer_first, peer_allocation_first,
+            "holdout f32 M=17 K=129 H=257");
+  if (executor.enabled()) {
+    executor.start();
+    run_shape<Mode>(17, 129, 257, peer_first, peer_allocation_first,
+              "two-worker f32 M=17 K=129 H=257", executor.ref());
+  }
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
   const auto qos =
       hyle::bench::perf::configure_thread_qos("HYLE_BENCH_APPLE_QOS");
   const auto affinity =
@@ -636,16 +694,31 @@ int main() {
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
   hyle::bench::cpu_route::Executor executor;
 
-  run_shape(1, 256, 512, peer_first, peer_allocation_first,
-            "decode f32 M=1 K=256 H=512");
-  run_shape(16, 512, 1024, peer_first, peer_allocation_first,
-            "short-prefill f32 M=16 K=512 H=1024");
-  run_shape(17, 129, 257, peer_first, peer_allocation_first,
-            "holdout f32 M=17 K=129 H=257");
-  if (executor.enabled()) {
-    executor.start();
-    run_shape(17, 129, 257, peer_first, peer_allocation_first,
-              "two-worker f32 M=17 K=129 H=257", executor.ref());
+  const auto mode = aa_route();
+  if (mode == AaRoute::kOff && environment_present("HYLE_PERF_RUN_NONCE")) {
+    if (argc < 1)
+      fail("locate workload A/A result");
+    const auto status_path = std::filesystem::path(argv[0]).parent_path() /
+                             "hyle-graph-workload-aa.status";
+    std::ifstream status(status_path);
+    std::string verdict;
+    if (!(status >> verdict) || verdict != "PASS")
+      fail("workload A/A preflight must pass before product sampling");
   }
+  switch (mode) {
+  case AaRoute::kOff:
+    run_shapes<AaRoute::kOff>(peer_first, peer_allocation_first, executor);
+    break;
+  case AaRoute::kSelected:
+    run_shapes<AaRoute::kSelected>(peer_first, peer_allocation_first, executor);
+    break;
+  case AaRoute::kPeer:
+    run_shapes<AaRoute::kPeer>(peer_first, peer_allocation_first, executor);
+    break;
+  }
+  std::fprintf(stderr,
+               "# HYLE_GRAPH_CPU_AA aa_route=%s paired_mode=nanobench-compare\n",
+               mode == AaRoute::kOff ? "off"
+               : mode == AaRoute::kSelected ? "selected" : "peer");
   executor.print_telemetry(peer_first, peer_allocation_first, qos, affinity);
 }

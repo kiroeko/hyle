@@ -11,6 +11,7 @@ R3 仍为 CANDIDATE；尚未宣告路线完成。当前施工卡见
 | WSL Ubuntu 24.04 / GCC 14.2 / Native + oneDNN AUTO | source 23/23 PASS；含新 routes、直接消费者、相关公共头 | linux-delivery-logs.tar.gz |
 | WSL 动态库 SDK | tests-off 实际重构建，安装后搬移；普通 Direct/Graph/Sched consumer 3/3 PASS | 同上 shared 日志 |
 | WSL 静态库 SDK | 实际切换为 static 重构建，安装后搬移；相同 consumer 3/3 PASS | 同上 static 日志 |
+| MacBook Air / Apple Clang 21 / Native AUTO | source 19/19、relocated shared 3/3 PASS；static configure FAIL，尚未签静态交付 | air-first-logs.tar.gz |
 
 WSL source 日志确认默认 Graph 实际选择 oneDNN region，1/2 worker 分别执行 12/24 个 worker
 task，各有两次 nested bulk。变化输入、独立 oracle、并发 Invocation、关闭回收通过，重放的
@@ -30,8 +31,16 @@ driver 以复用 SDK 构建目录时保留了首段 source build log，续建没
 及所有 controls 通过，但 build-contract FAIL，聚合性能 INCONCLUSIVE，包为 DIAGNOSTIC。
 **这不是 P1 PASS**。不得修改旧 manifest、补写未知 SDK 身份或以它签 Formal 结论。
 
-Direct 的正确工程模式和 Graph 完整片段 P1 另行取证；Windows 最终三交付、两 Mac、定向
-sanitizer、CPU OFF 新头/闭包隔离仍须实际执行。本目录不签尚未运行的门，也不据此关闭 R3。
+`graph-first-p1.zip` 是 Graph 的首次工程 P1：资格及 A/A、delta5、delta10、timer-floor、placement
+全部 PASS；12 个 workload 中 11 个非劣门 PASS。串行 17×129×257 对完整 Native 图的两层
+非劣门 UNRESOLVED，n=31 达到合同上限，总性能 INCONCLUSIVE。所有分层中 Native 均快约
+4%～5%，不是零差异；两 worker 的 natural sequence 和 Native 完整比较则显示 WIN。
+原 n=15/n=31 数据都保留；不再对旧候选采样。
+
+Air static 失败来自缺席 oneDNN 的私有依赖仍进入新 route 的静态安装接口，source/shared
+通过不能代替它。三个 owner 已转入父卡链接的有限纠正卡，处理静态安装边和连续激活分派。
+Direct 的正确工程模式、Graph 修正 P1、Windows 最终三交付、Mac 静态及 Mini、定向 sanitizer、
+CPU OFF 新头/闭包隔离仍须实际完成。本目录不签尚未运行的门，也不据此关闭 R3。
 
 ## 范围与规模
 

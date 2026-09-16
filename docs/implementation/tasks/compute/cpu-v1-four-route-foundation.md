@@ -207,3 +207,12 @@ Sched consumer；oneDNN AUTO 实际启用。随后关闭测试、重新构建并
 static 的普通 Direct/Graph/Sched 三个消费者分别 3/3 通过。Sanitizer 仍待执行；各模式由 CMake
 重编译受影响 HYLE 目标，不重复编译配置未变的外部 oneDNN。每种配置均保留自己的命令、
 build/test log，不以 source 结果代替安装交付验收。
+
+Graph 首次工程 P1 已达 n=31 上限：资格与五项 controls 全部 PASS，12 项中 11 项非劣门 PASS。
+串行 17×129×257 的 Native 完整图稳定快约 4%～5%，两层区间跨过 5% 门，因此总性能为
+INCONCLUSIVE；不能把它写成 parity/PASS。停止旧候选采样。Air source 19/19 与 relocated
+shared 3/3 通过，static 则发现新 route 的缺席 oneDNN 私有依赖泄漏到安装接口。
+
+三个直接相关 owner 已按 [有限纠正卡](cpu-v1-candidate-corrections.md) 退回 AUDITED，固定
+C45a/C46a；其余 owner 仍保留本卡候选身份。修正只处理这两个具体反例，不改公开接口、默认
+规则、公共构建系统或性能仪器。旧失败/未决包已提交，纠正结果尚待完整验收。

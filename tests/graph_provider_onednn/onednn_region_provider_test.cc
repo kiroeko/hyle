@@ -489,8 +489,10 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
 
 TEST(OneDnnRegionProvider, SupportsDecodeAndNonTileMultipleShapes) {
   run_gated_mlp_shape(1, 5, 7);
+  run_gated_mlp_shape(3, 9, 17);
   run_gated_mlp_shape(4, 17, 31);
   run_gated_mlp_shape(16, 33, 65);
+  run_gated_mlp_shape(17, 129, 257);
 }
 
 TEST(OneDnnRegionProvider, RegionAndExplicitLeafExecutionPreserveResults) {

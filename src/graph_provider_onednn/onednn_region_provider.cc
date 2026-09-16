@@ -570,6 +570,13 @@ struct ActivationTask final {
 void apply_swiglu(void *context_value, std::size_t row_count,
                   std::size_t leading_columns, BrgemmTaskRange range) noexcept {
   auto &context = *static_cast<ActivationTask *>(context_value);
+  if (range.first_column == 0 && range.column_count == leading_columns) {
+    // The validated dense workspace is contiguous across rows. A full-range
+    // task needs one batch/tail; partitioned columns must retain row strides.
+    simd::swiglu_f32_batch(context.gate, context.up, context.gate,
+                           row_count * leading_columns);
+    return;
+  }
   for (std::size_t row = 0; row < row_count; ++row) {
     const std::size_t offset = row * leading_columns + range.first_column;
     simd::swiglu_f32_batch(context.gate + offset, context.up + offset,

@@ -1076,7 +1076,8 @@
   "artifacts": {
     "validators": [
       "artifact-identity",
-      "build-contract"
+      "build-contract",
+      "graph-route-workload-aa"
     ]
   },
   "hosts": {
@@ -1258,7 +1259,8 @@
         "HYLE_BENCH_RIVAL_FIRST",
         "HYLE_BENCH_PEER_ALLOCATION_FIRST",
         "HYLE_BENCH_APPLE_QOS",
-        "HYLE_PERF_APPLE_QOS"
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE"
       ],
       "validators": [
         {
@@ -1268,6 +1270,20 @@
         {
           "id": "build-contract",
           "kind": "build-contract"
+        },
+        {
+          "id": "graph-route-workload-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-graph-route-p1-bench.py",
+            "--build",
+            "{build}",
+            "--caller-cpu",
+            "2",
+            "--worker-cpus",
+            "0,2"
+          ]
         }
       ],
       "sampling_worker_count": 2
