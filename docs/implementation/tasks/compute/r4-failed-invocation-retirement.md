@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：SCOPED；owner 为 `compute` 与 `graph`。
+- 状态：AUDITED；owner 为 `compute` 与 `graph`。`8f3cffdc` 完成合法 CLOSED → SCOPED。
 - baseline：`ab6d87b349345342258b5b3090953119c06167a0`。
 - trigger：R4 Marlin 的 per-invocation workspace 含 native locks；成功完成会复位，失败完成不能
   保证复位。`src/compute/operation.cc::mark_operation_terminal` 忽略 terminal Status，Graph 的
@@ -37,7 +37,7 @@
 4. 所有外部 payload/workspace 仍必须保活到真实终态；retirement 不提早释放资源，不隐藏 wait，
    不吞晚到错误，不自动重新执行，不影响其它独立槽。
 
-## 待冻结的有限修复
+## 审计冻结的有限修复
 
 | ID | 精确问题 | 允许动作 / 验收 |
 |---|---|---|
@@ -45,17 +45,50 @@
 | F2 | Graph reset/bind/replay 可复用失效 scratch | 复用原子字节，失败终态阻止重提/重绑定/重准备；成功 replay、独立槽和真实完成寿命不变 |
 | F3 | 普通入口未说明失败槽退役 | 注释/指南与回归覆盖 accepted failure、late failure、abandon、未接受拒绝、重建槽与成功复用 |
 
+F1–F3 已固定。源码定位还覆盖 terminal attachment 失败分支：只有真实工作已排空才可向调用者
+返回无 Completion 的错误；退役状态不能被 admission rollback 再覆盖为空闲。保持既有 Completion
+协议，使用现成 wait/attachment 行为，不新增回调或后端终态接口。
+
+### 形状与生命周期冻结
+
+- 原子机制为真实 Completion/lifetime attachment（ROUTED / KEEP）；缺口为 run-slot 的终态准入
+  （SELF / FIX）。不改变不可变 artifact 或 Provider 实际 native owner。
+- 共享与 delegated Direct 均经同一个私有 InvocationState。Graph commands、capture、delegated
+  均经 Graph 的最终 Completion；外层 Graph 独占内部 Provider run-state，因此在该边界统一退役。
+- 内部状态为 idle/running/failed，复用原 `atomic<bool>` 的一个字节；成功 admission 仍一次 CAS，
+  terminal 仍一次状态 store。失败终态不再返回 idle；未接受的拒绝仍由原 rollback 返回 idle。
+- `in_flight()` 在失败已终结时返回 false；`valid()` 仍表示句柄存在。后续 submit 返回
+  FailedPrecondition。Graph 的 bind/reset/prepare_replay 不能重新启用失败槽，必须由 Executable
+  新建 Invocation；Direct 由 PreparedOperation/PreparedDelegatedOperation 新建。
+- Completion 的真实错误仍由 wait/poll 报告。release/abandon 依旧保留执行状态到终态，取消请求
+  不能提前复用槽；独立槽和已知成功槽继续运行。资源借用与设备失效限制保持各 owner 合同。
+- 所有外部 C++ 签名、目标/交付身份保持现有形状；仅私有状态编码和明确失败后的可用性改变。
+
+### 七问裁决
+
+1. 没有新第三方依赖；Marlin 来源仍由 R4 C2 的 pin/lock/许可证负责。
+2. 主 consumer 的 scratch 恢复与正交 accepted/delegated failure 由相同真实终态约束；成功复用、
+   拒绝后重试、失败后重建三种旅程分别验证，避免把所有错误都当已接受失败。
+3. 复用原 Completion attachment、Mem 所有权、Provider artifact 和 Graph slot；不复制资源管理。
+4. P0 检查同大小状态、CAS/store 数、失败清理及生成代码；不给旧 P1 更换 candidate 身份。
+5. 仅 C++，无新增 C/FFI 或动态 plugin ABI。
+6. shared/source/static 仍通过原 public 类型消费。公共失败合同变更按上面四环境交付范围验证。
+7. 在 Direct/delegated/Graph public declaration 与普通指南写明退役/重建，错误无需用户识别
+   Provider 私有锁。测试用受控失败协议，不制造 GPU hang/device loss。
+
 ## 验收
 
 | Gate | 当前裁决 |
 |---|---|
-| scope | SCOPED，具体 R4 consumer 与源码反例成立 |
-| architecture | UNPROVEN，待有限审计冻结 |
+| scope | AUDITED，F1–F3 固定 |
+| architecture | AUDITED；复用现有状态字节与 Completion 协议 |
 | correctness | UNPROVEN |
 | delivery | UNPROVEN |
 | usability_docs | UNPROVEN |
 | red_team | UNPROVEN |
 | engineering_performance | UNPROVEN；仅 P0，禁止本卡启动 CPU 追加 P1 |
 
-没有新产品改动或 candidate。历史 R3 terminal 仍作为旧候选的验收证据保留；其余 CPU owner 的
+当前尚无新产品改动或 candidate。历史 R3 terminal 仍作为旧候选的验收证据保留；其余 CPU owner 的
 当前状态不改变。本轮不解除旧 ggml BLOCKED 或 compute_sched QUEUED。
+
+Compute + Graph 当前全实现 **32,183 行**，不含测试/第三方（`ab6d87b3`，统一脚本 self-check PASS）。

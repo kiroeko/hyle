@@ -204,6 +204,9 @@ scale 及反量化权重采用 FP16，累加/reduction 采用 FP32。
 修复准入，不能对 CLOSED Compute/Graph 直接施工，也不能以每次热 memset 掩盖生命周期缺口。
 这不重开 CPU 算法或已批准的 CPU 性能例外。
 
+该缺口已交由[失败执行槽退役卡](r4-failed-invocation-retirement.md)，精确绑定 Compute/Graph owner
+并冻结 F1–F3；R4 其它 C1–C6 范围保持原样。
+
 C2 仍为实施检查点；C3–C5、普通默认入口、真实 Graph/capture、最终三交付及 P1 未完成。
 selector 扩大的其它 native/package gates 保持未运行，不记 PASS。统一脚本 Compute + Graph
 全实现 **32,183 行**，不含测试及第三方，self-check PASS。

@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 定向依赖修复 SCOPED：Marlin 暴露失败终态后执行槽仍可重提、复用未清理 scratch 的具体缺口；只审计槽退役和准入，不重开 CPU 算法或性能例外。"
+      "summary": "R4 定向依赖修复 AUDITED：F1–F3 固定；复用一字节原子区分 idle/running/failed，失败终态退役、未接受拒绝可重试，Direct/delegated/Graph 统一完成寿命；保留 CPU 原候选与例外证据。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 定向依赖修复 SCOPED：Marlin 暴露失败终态后执行槽仍可重提、复用未清理 scratch 的具体缺口；只审计槽退役和准入，不重开 CPU 算法或性能例外。"
+      "summary": "R4 定向依赖修复 AUDITED：F1–F3 固定；复用一字节原子区分 idle/running/failed，失败终态退役、未接受拒绝可重试，Direct/delegated/Graph 统一完成寿命；保留 CPU 原候选与例外证据。"
     },
     {
       "module": "container_concurrent",
