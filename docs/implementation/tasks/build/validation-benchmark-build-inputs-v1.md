@@ -1,6 +1,6 @@
 # Factor benchmark CMake 的影响分类
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 - unit / owner：build-package TOOL / HYLE maintainers，不创建产品 component。
 - baseline：`69f2d3a6`。R5 A6 添加两个 `bench/<factor>/CMakeLists.txt` 时，selector 把它们归为
@@ -22,3 +22,9 @@
 本卡是独立公共工具修正，先冻结再实现；不是 Compute/Graph 产品完成量。
 
 实现与回归见[具名证据](../../../../evidence/correctness/validation-benchmark-build-inputs-v1/README.md)：52/52 工具测试通过，R5 实际计划按预声明分类；无产品构建或性能采样。
+
+## Terminal
+
+- candidate：`601eb00c3df01dfac692d21fe1fc77a38c0e5ac5`；F1 与全部有限工具验证完成，CLOSED。
+- 产品/P1 不受本工具修正判为通过；没有性能采样。
+- reopen：有具体反例证明 factor benchmark 被误归产品 seam，或产品/未知路径被错误绕过；不因日常复看重开。
