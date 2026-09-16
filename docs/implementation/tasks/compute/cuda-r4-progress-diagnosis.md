@@ -62,3 +62,6 @@ Context 10 秒阈值，因此一次亲和性 intervention 也没有执行。其�
 当前已证实本次现场位于 `cuDevicePrimaryCtxRetain`，未证明其下游原因，也未证明前两次没有现场
 的停顿与此相同。产品保持原样，六个 CUDA owner 继续 BLOCKED；后续须以新事实固定有界的修复或
 采集合同及进度回归，不能自动延长本诊断、重开 Sched/锁或恢复旧 P1。
+
+用户随后明确要求继续探查 CUDA。新的 [API/线程因果核对](cuda-r4-context-causality.md) 以实捕
+`cuDevicePrimaryCtxRetain` 和旧独立 probe 未覆盖该直接入口为具体触发；本卡停止结果保留。
