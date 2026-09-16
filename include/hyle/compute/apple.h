@@ -20,6 +20,7 @@
 #include <mlx/stream.h>
 
 #include "hyle/compute/result.h"
+#include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::compute::apple {
