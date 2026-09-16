@@ -2,8 +2,9 @@
 
 ## 独立诊断审计
 
-- 当前阶段：`AUDITED`，仅诊断；六个产品 owner 仍由 [R4 主卡](cuda-v1-four-route-foundation.md)
-  保持 BLOCKED，本卡不授权产品修改或 P1。
+- 当前阶段：诊断 `CLOSED`，E1–E4 已取得有限机制结论；六个产品 owner 仍由
+  [R4 主卡](cuda-v1-four-route-foundation.md)保持 BLOCKED，修正采集条件的进度回归尚未完成。
+  本卡不授权产品修改或 P1。
 - baseline：`79ca39a3`；trigger：用户在上一轮已停后明确要求 CUDA 必须探查清楚，以及
   [实捕现场](../../../../evidence/correctness/cuda-r4-context-progress-diagnosis/README.md) 已把问题收窄到
   `cuDevicePrimaryCtxRetain`。不把旧单核采样自动恢复。
@@ -30,3 +31,21 @@
 停止时给出 API 调用方式、HYLE 必要性、CPU 采集条件和 SDK 内部未知项的分项结论；有证据的修正再
 固定 owner/FIX/回归，按协议恢复。预算内未解则保留 blocker 并给出最小外部复现包，不增加 P1/n、
 不自动更新驱动、不给隐式验收例外，也不转去填算子目录。
+
+## E1–E4 结果
+
+[完整原始证据](../../../../evidence/correctness/cuda-r4-context-causality/README.md)：实际执行 89 次
+启动（45 native、44 完整 FFN），获得预声明两个现场后停止。两个停顿都来自**完全不链接 HYLE**
+的独立程序，堆栈进入与完整夹具相同的 driver 零超时等待循环；直接 retain 是合法互操作入口。
+
+两个现场的 caller 当前 priority 都为 24，SDK helpers 为 10–11，全部 affinity 都是 CPU2，
+caller 已消耗约 4.45 / 5.09 秒 CPU，而 helpers 为 0。第一次只扩 helper 的可用核、caller 仍固定
+CPU2，retain 恢复后正常释放/退出；第二次保持整个进程单核，仅降低 caller priority，约 62 毫秒内
+完成。这支持单核限制与实际 priority 差造成 SDK 辅助线程调度饥饿；不需要修改 HYLE/Sched 才能复现。
+
+尚未知是谁把 caller priority 提到 24，也不能把前两次没有现场的 120 秒停顿强行归为同因。
+原始观测有明确注记：native basic-info 的 base 字段在本机是相对级别；第一次超时指针在恢复执行后
+读取，值已陈旧，不参与结论。字段布局和 priority 查询以独立 Win32 对照自检通过。
+
+本诊断停止，不再追加启动。后续固定可真实表达 native helper 的采集合同与有限进度回归；不把
+两次干预直接当成产品修复、完整性能通过或所有驱动的结论。

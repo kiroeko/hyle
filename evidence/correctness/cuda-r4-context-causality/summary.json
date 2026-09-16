@@ -1,0 +1,338 @@
+{
+  "diagnostic_verdict": "mechanism supported; sampling repair still required",
+  "product_gate": "BLOCKED",
+  "p1_gate": "INCONCLUSIVE",
+  "runs": 89,
+  "native_runs": 45,
+  "full_runs": 44,
+  "captures": [
+    {
+      "index": 40,
+      "variant": "native",
+      "pid": 25300,
+      "primary_thread": 65564,
+      "initial_mask": "0x4",
+      "observer_mask": "0x40",
+      "priority": "AboveNormal",
+      "delayed_phase": {
+        "phase": 100,
+        "rows": 1
+      },
+      "capture": {
+        "threads": [
+          {
+            "id": 65564,
+            "base_priority": 10,
+            "cpu_seconds": 4.453125,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 24,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 59796,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 11,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 67256,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 10,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 34216,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 10,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 59292,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 10,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 36732,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 11,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          }
+        ],
+        "capture_exit": 0,
+        "nt_wait_stub_rva": "0x1603f0",
+        "wait_timeout_100ns": 2649599246336,
+        "wait_handle": "0x2b0",
+        "object_type_status": 0,
+        "object_type": "Thread"
+      },
+      "intervention": "helper_affinity_only",
+      "affinity_updates": [
+        {
+          "thread": 65564,
+          "old_mask": "0x14",
+          "new_mask": "0x4"
+        },
+        {
+          "thread": 59796,
+          "old_mask": "0x14",
+          "new_mask": "0x14"
+        },
+        {
+          "thread": 67256,
+          "old_mask": "0x14",
+          "new_mask": "0x14"
+        },
+        {
+          "thread": 34216,
+          "old_mask": "0x14",
+          "new_mask": "0x14"
+        },
+        {
+          "thread": 59292,
+          "old_mask": "0x14",
+          "new_mask": "0x14"
+        },
+        {
+          "thread": 36732,
+          "old_mask": "0x14",
+          "new_mask": "0x14"
+        }
+      ],
+      "intervention_seconds": 5.2030000002123415,
+      "threads_after_intervention": [
+        {
+          "id": 65564,
+          "base_priority": 10,
+          "cpu_seconds": 4.609375,
+          "basic_query_status": 0,
+          "affinity": "0x4",
+          "dynamic_priority": 24,
+          "queried_base_priority": 0,
+          "priority_boost_disabled": false
+        },
+        {
+          "id": 59796,
+          "base_priority": 10,
+          "cpu_seconds": 0.0,
+          "basic_query_status": 0,
+          "affinity": "0x14",
+          "dynamic_priority": 10,
+          "queried_base_priority": 0,
+          "priority_boost_disabled": false
+        },
+        {
+          "id": 67256,
+          "base_priority": 10,
+          "cpu_seconds": 0.0,
+          "basic_query_status": 0,
+          "affinity": "0x14",
+          "dynamic_priority": 10,
+          "queried_base_priority": 0,
+          "priority_boost_disabled": false
+        },
+        {
+          "id": 34216,
+          "base_priority": 10,
+          "cpu_seconds": 0.0,
+          "basic_query_status": 0,
+          "affinity": "0x14",
+          "dynamic_priority": 10,
+          "queried_base_priority": 0,
+          "priority_boost_disabled": false
+        },
+        {
+          "id": 59292,
+          "base_priority": 10,
+          "cpu_seconds": 0.0,
+          "basic_query_status": 0,
+          "affinity": "0x14",
+          "dynamic_priority": 12,
+          "queried_base_priority": 0,
+          "priority_boost_disabled": false
+        },
+        {
+          "id": 36732,
+          "base_priority": 10,
+          "cpu_seconds": 0.0,
+          "basic_query_status": 0,
+          "affinity": "0x14",
+          "dynamic_priority": 12,
+          "queried_base_priority": 0,
+          "priority_boost_disabled": false
+        }
+      ],
+      "elapsed_seconds": 8.516000000294298,
+      "exit_code": 0,
+      "history": [
+        {
+          "seconds": 0.030999999959021807,
+          "phase": 100,
+          "rows": 1,
+          "count": 8
+        },
+        {
+          "seconds": 6.266000000294298,
+          "phase": 110,
+          "rows": 1,
+          "count": 9
+        },
+        {
+          "seconds": 8.516000000294298,
+          "phase": 9999,
+          "rows": 1,
+          "count": 11
+        }
+      ],
+      "seconds_after_intervention": 3.3130000000819564,
+      "recovered": true
+    },
+    {
+      "index": 88,
+      "variant": "native",
+      "pid": 56356,
+      "primary_thread": 45220,
+      "initial_mask": "0x4",
+      "observer_mask": "0x40",
+      "priority": "AboveNormal",
+      "delayed_phase": {
+        "phase": 100,
+        "rows": 1
+      },
+      "capture": {
+        "threads": [
+          {
+            "id": 45220,
+            "base_priority": 10,
+            "cpu_seconds": 5.09375,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 24,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 32264,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 10,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 74868,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 10,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 46496,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 11,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          },
+          {
+            "id": 74060,
+            "base_priority": 10,
+            "cpu_seconds": 0.0,
+            "basic_query_status": 0,
+            "affinity": "0x4",
+            "dynamic_priority": 11,
+            "queried_base_priority": 0,
+            "priority_boost_disabled": false
+          }
+        ],
+        "capture_exit": 0,
+        "nt_wait_stub_rva": "0x1603f0",
+        "wait_timeout_100ns": 0,
+        "wait_handle": "0x2b0",
+        "object_type_status": 0,
+        "object_type": "Thread"
+      },
+      "intervention": "caller_priority_only",
+      "intervention_seconds": 5.203999999910593,
+      "threads_after_intervention": [
+        {
+          "id": 45220,
+          "base_priority": 8
+        },
+        {
+          "id": 32264,
+          "base_priority": 10
+        },
+        {
+          "id": 74868,
+          "base_priority": 10
+        },
+        {
+          "id": 46496,
+          "base_priority": 10
+        },
+        {
+          "id": 74060,
+          "base_priority": 10
+        }
+      ],
+      "elapsed_seconds": 5.265999999828637,
+      "exit_code": 0,
+      "history": [
+        {
+          "seconds": 0.03200000012293458,
+          "phase": 100,
+          "rows": 1,
+          "count": 8
+        }
+      ],
+      "seconds_after_intervention": 0.06199999991804361,
+      "recovered": true
+    }
+  ],
+  "findings": [
+    "Two stopped processes link CUDA only, without HYLE/Graph/Sched/Marlin/cuBLAS.",
+    "Both stop at cuDevicePrimaryCtxRetain with the same NVIDIA wait-loop RVA as the full fixture.",
+    "All captured threads initially have affinity 0x4; caller current priority is 24, helper priorities are 10 or 11.",
+    "Driver call at RVA 0x2e350e passes timeout zero to WaitForSingleObject; the captured handle queries as Thread.",
+    "Giving helpers CPU4 while retaining caller CPU2 recovers the first live process.",
+    "Lowering only caller priority, with the same one-CPU process mask, recovers the second in about 62 milliseconds."
+  ],
+  "limitations": [
+    "The component that raised the caller current priority to 24 is not identified.",
+    "Earlier uncaptured 120-second occurrences cannot be assigned this phase with certainty.",
+    "wait_timeout_100ns from run 040 was read after capture resumed the process; its stale value is not evidence.",
+    "The NtQueryInformationThread BasePriority field is a relative adjustment on this host, not the absolute Toolhelp base_priority.",
+    "Interventions are diagnostic, not product repair, performance samples, or a universal driver claim."
+  ],
+  "next_action": "Freeze truthful caller/helper CPU qualification and bounded progress regression before another P1."
+}

@@ -348,3 +348,9 @@ memcheck 对 Direct/Graph 完整链路均为 0 errors / 0 bytes leaked。新 cuB
 预声明的 12 次恢复实验启动全部正常，未触发介入，因果回归仍未裁决。诊断已停止；六个 owner
 保持 BLOCKED，未重新启动 P1，未修改产品锁、GPU 算法、驱动或公共仪器。统一 LOC 仍为
 **32,665 行 / 107 实现文件**，self-check PASS。
+
+用户要求继续探查后，[API/线程因果核对](cuda-r4-context-causality.md) 已在不链接 HYLE 的独立
+CUDA 程序中两次复现同一等待链：单核上 caller 当前 priority 24、helpers 10–11，driver 使用
+零超时轮询。给 helper 另一 P 核或仅降低 caller priority 均让对应存活进程恢复。该机制支持
+采集条件的定向纠正，不支持改 HYLE/Sched；是谁提升 priority 仍未知。六个 owner 继续 BLOCKED，
+须先完成真实 native-helper 采集合同及进度回归，再恢复性能资格，旧样本不复用。
