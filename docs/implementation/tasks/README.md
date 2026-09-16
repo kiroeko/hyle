@@ -22,6 +22,7 @@
 
 当前公共工具修复事实：
 
+- [Native route 平台适用性](build/validation-native-route-platforms-v1.md)：Apple/CUDA 的真实 ON 测试与跨平台 OFF 边界；
 - [Objective-C++ 实现 LOC 计入](build/loc-objective-cpp-accounting-v1.md)：修正 `.mm` 正式实现的语言范围遗漏；
 - [CUDA compiled factor 验证上下文](project/validation-selector-cuda-factor-context-2026-09.md)：
   显式验证或反向选中 CUDA factor 时同步启用其真实 feature，不把空 target 当成有效测试；
