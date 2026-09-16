@@ -19,6 +19,7 @@
 |---|---|---|---|
 | C45a | Air AUTO 正确禁用 oneDNN，source 19/19 与 relocated shared 3/3 通过；static EXPORT 引用未导出的 OPTIONAL_ABSENT provider 而失败 | 两个新 route 的本地 CMake 将缺席 oneDNN 的静态安装边裁去，保留 source build 的 manifest 依赖；不改 HyleModule、selector 或 manifest 协议 | Air/Mini Native 三交付；Windows oneDNN OFF static；x64 oneDNN ON 三交付继续保持真实依赖 |
 | C46a | Graph 首次工程 P1 资格/controls PASS，11/12 非劣门 PASS；串行 17×129×257 的 Native peer 在全部分层快约 4%～5%，两层区间跨过 5% 门 | region 激活的完整连续 column range 合并为一次既有 SIMD batch，分列任务继续逐行；同实现 direct 和自然序列 comparator 同步采用连续 batch | 全图 double oracle、SIMD 尾数/变化输入/资源回收和原两 worker consumer；一次修正候选的原 Graph P1 |
+| C46b | 首轮只有公共 arithmetic A/A，未接入本卡要求的实际 Graph/peer workload A/A；工具 QUALIFIED 不替代这个模块门 | 仅 Graph benchmark 增加 selected/peer 两侧同实现的 A/A 模式及模块 validator；复用既有 nanobench parser、Direct route 已有 5% factor-median / 10% gross preflight 规则，不改公共仪器 | 原 serial/two-worker shape、双顺序、allocation 顺序与两 placement；preflight 失败就停止正式采样 |
 
 C46a 的源码依据是 apply_swiglu 即使覆盖整个连续矩阵，仍按行重复分派和处理尾部。合并连续
 pointwise 区间不改变每个元素的数学任务，减少重复行尾；它不是按 benchmark 数字添加 shape
@@ -27,7 +28,8 @@ Native peer 保留真实产品实现；不删除或故意弱化它。此前的�
 
 首轮完整包：外部 scratch `p1-graph`，qualification QUALIFIED，performance INCONCLUSIVE，
 n=31 已达上限。停止对旧候选重采样；最后两项 two-worker 完整路线显示 WIN，其余通过项只签
-工程非劣。完整数据随后归档，不能仅保留有利分层。
+仪器统计非劣。模块 workload A/A 缺项未签 PASS，因此首轮也不能完成本卡的整体性能验收。
+完整数据已归档，不能仅保留有利分层。C46b 在修正候选冻结前定界；不增加第二次产品性能纠正。
 
 ## 冻结与适用验证
 
