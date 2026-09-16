@@ -175,3 +175,6 @@ MLX Primitive 边界，不给产品添加 fault hook；GPU 前缀是真 square�
 产品 C++、API 和正常成本没有变化，代码量仍为已统一核对的 Compute+Graph 33,815 行 / 116 文件
 （`d900a8ce` 输入相同，不含测试、bench、third_party）。本检查点不签 Mini、host 插桩、最终 P1
 或 R5 完成；其余预声明门继续保留未证明状态。
+
+性能接线暴露的 benchmark CMake 误选由独立[工具卡](../build/validation-benchmark-build-inputs-v1.md)
+按有限预算修正；不改变本卡原有产品交付与性能验收责任。
