@@ -271,25 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 失败槽退役 CLOSED：a116280b 的 F1–F3 已完成四环境普通回归/source/static/shared、W1 CUDA/cuBLASLt/Marlin、WSL 三种 sanitizer 各 12/12、P0 和红队。失败真实终态退役，未受理拒绝可重试；旧 CPU P1 身份及用户例外保持。",
-      "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/r4-failed-invocation-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 失败槽退役 CLOSED：a116280b 的 F1–F3 已完成四环境普通回归/source/static/shared、W1 CUDA/cuBLASLt/Marlin、WSL 三种 sanitizer 各 12/12、P0 和红队。失败真实终态退役，未受理拒绝可重试；旧 CPU P1 身份及用户例外保持。",
-      "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/r4-failed-invocation-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
     },
     {
       "module": "container_concurrent",
@@ -363,15 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
     },
     {
       "module": "compute_provider_ggml",
@@ -385,15 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 CPU CLOSED：普通入口、固定规则、四环境三交付与适用插桩已验收；Direct 4/4 非劣 PASS，Graph 11/12 PASS，唯一 decode-fused 未决项由用户明确接受。原统计 LOSS/INCONCLUSIVE 保留，不重测、不签全域 SOTA。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
     },
     {
       "module": "compute_ops",
@@ -408,14 +386,9 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
     },
     {
       "module": "compute_backend_cuda",
@@ -425,15 +398,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
     },
     {
       "module": "compute_sched",
@@ -442,27 +409,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "summary": "R3 CPU CLOSED：普通入口、固定规则、四环境三交付与适用插桩已验收；Direct 4/4 非劣 PASS，Graph 11/12 PASS，唯一 decode-fused 未决项由用户明确接受。原统计 LOSS/INCONCLUSIVE 保留，不重测、不签全域 SOTA。",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md"
     },
     {
       "module": "compute_provider_cublas",
