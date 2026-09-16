@@ -156,12 +156,17 @@ struct Runtime {
 };
 
 struct ColdJob : Job {
+  // The owner thread still needs this word while waking the caller. Keep a
+  // separate admitted reference so the caller may return/destroy its handle
+  // as soon as it observes done, without racing the final notification.
+  std::shared_ptr<ColdJob> admitted_owner;
   std::function<Status()> body;
   Status terminal;
   std::atomic<std::uint32_t> done{0};
   explicit ColdJob(std::function<Status()> fn) : body(std::move(fn)) {
     execute = [](Job *job) noexcept {
       auto &self = *static_cast<ColdJob *>(job);
+      auto owner = std::move(self.admitted_owner);
       try {
         self.terminal = self.body();
       } catch (...) {
@@ -173,15 +178,18 @@ struct ColdJob : Job {
   }
 };
 
-Status run_cold(Runtime &runtime, ColdJob &job) noexcept {
+Status run_cold(Runtime &runtime, const std::shared_ptr<ColdJob> &job) noexcept {
   if (runtime.owner_id.load(std::memory_order_acquire) == platform::this_thread::get_id())
     return Status::FailedPrecondition("Apple cold preparation cannot reenter its native owner");
-  const Status admitted = runtime.enqueue(job);
-  if (!admitted.ok())
+  job->admitted_owner = job;
+  const Status admitted = runtime.enqueue(*job);
+  if (!admitted.ok()) {
+    job->admitted_owner.reset();
     return admitted;
-  while (job.done.load(std::memory_order_acquire) == 0)
-    platform::detail::wait_on_address(&job.done, 0);
-  return job.terminal;
+  }
+  while (job->done.load(std::memory_order_acquire) == 0)
+    platform::detail::wait_on_address(&job->done, 0);
+  return job->terminal;
 }
 
 struct ArraySpec {
@@ -347,7 +355,7 @@ Result<Context> Context::create() noexcept {
       return std::unexpected(std::move(thread).error());
     runtime->thread = std::move(*thread);
     Context context(runtime);
-    detail::ColdJob initialize([&]() -> Status {
+    auto initialize = std::make_shared<detail::ColdJob>([&]() -> Status {
       if (!mx::is_available(mx::Device(mx::Device::gpu)))
         return Status::Unavailable("MLX Metal GPU is unavailable");
       runtime->stream = mx::new_stream(mx::Device::gpu);
@@ -378,7 +386,7 @@ Result<Program> Context::compile(RegionFunction region,
         return std::unexpected(Status::FailedPrecondition("Apple examples must be ready arrays"));
       program->inputs.push_back({array.shape(), array.dtype()});
     }
-    detail::ColdJob prepare([&]() -> Status {
+    auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
       const auto stream = *state_->stream;
       try {
         program->compiled = mx::compile(
