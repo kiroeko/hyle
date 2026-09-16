@@ -61,7 +61,7 @@ Graph 已有 cold provider-index 优先规则可消费同一组合，不改共�
 - 所有本卡适用检查完成前不授予 CUDA CLOSED；任何未运行项仍未证明。发现范围外具体缺口按
   所属 owner 定向处理，不修改公共治理/性能核心。
 
-## 实施快照（仍为 AUDITED）
+## 实施快照（历史 AUDITED 检查点）
 
 - `c5848846` 已接入具名成熟 Provider、冷默认绑定与原 HYLE 能力保留；实际源码归档/四个
   上游文件 Git blob、许可与 vendored identity 已逐项核对。无 TVM/Python runtime。
@@ -75,3 +75,15 @@ Graph 已有 cold provider-index 优先规则可消费同一组合，不改共�
 - selector 对新增 dependency lock / vendored input 要求 package 闭包检查；沿现有规则执行，
   仅登记 `third_party/sglang_activation/ -> compute_provider_cuda`，不更改 selector 算法。
   三交付、适用 host/device 插桩、两 Mac CUDA OFF 投影、最终 P1 与原生成本诊断仍待完成。
+
+## 最终实现固定：CANDIDATE
+
+`755fb7c76132908e15cc8e2c298c69c227af775a` / tree
+`5f91d6d548e6e59406adcdc683c67ee473e59f4b` 为最终不可变产品候选。
+[普通/插桩/交付证据](../../../../evidence/correctness/cuda-r4-mature-default/README.md)已完成 S1–S3
+及 S4 的普通验收：Windows 全 selector 106 门、增量4门、Win/WSL CUDA-only 三交付、
+WSL 四种 host 模式与 device memcheck、两 Mac CUDA OFF 投影均通过。
+GCC 曾因测试 gtest 条件宏缺大括号失败，755 仅修测试；产品实现和算法未变。
+
+主卡六个 owner 进入 CANDIDATE。最终 v3 P1 与原生边界成本仍待实际运行，不写 PASS；
+文档/状态/证据归档不产生新产品候选，也不重跑已完成的普通门。

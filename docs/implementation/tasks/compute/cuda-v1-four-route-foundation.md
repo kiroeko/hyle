@@ -378,7 +378,7 @@ resume_condition。六个本卡 owner 从 BLOCKED 进入 SCOPED；C5、CPU 例�
 2. 同数学实现的原生完整边界成本单列为 NATURAL_ROUTE，不能签同合同 NI；
 3. 按完整链结果终审默认规则；任何必要成熟实现接入先固定适用域、fallback、来源/许可与验证，
    才使用原一次产品纠正预算，不追加 peer/算子目录或改写公共仪器；
-4. 汇总规则/资源限制、匹配证据与用户文档，全部适用门完成才进入最终 CANDIDATE/CLOSED。
+4. 汇总规则/资源限制、匹配证据与用户文档；API/算法固定后进入 CANDIDATE，全部适用门完成才 CLOSED。
 
 六个 owner 进入 AUDITED；接下来冻结运行的 commit 仅含此审计状态，不改变 `ea8a7101` 的
 产品/benchmark 字节。现有 ordinary、host/device 插桩、三交付等已通过证据继续有效。
@@ -395,3 +395,21 @@ engineering qualification / performance PASS：各两个 workload × 八 strata�
 [成熟激活规则 S1–S4](cuda-r4-mature-activation-rule.md)。该卡现在重新固定 C3/C4 的有限接入、
 对齐/尾部边界与适用检查，必须完成后再签最终候选；当前仍 AUDITED，未完成原生成本或默认接线。
 产品代码截至本检查点未变，全实现仍32,665行/107文件（统一脚本 self-check PASS，不含测试/第三方）。
+
+### 最终成熟默认冻结：CANDIDATE
+
+产品候选 `755fb7c76132908e15cc8e2c298c69c227af775a`，tree
+`5f91d6d548e6e59406adcdc683c67ee473e59f4b`。S1–S3 实现、普通入口、源码/许可和用户文档已固定；
+成熟 SGLang 精确 packed vector 域成为冷默认，HYLE 保留 separate/尾部及专家对齐能力。
+六个当前 CUDA owner 进入 CANDIDATE；不得在此状态继续改产品算法。
+
+[最终默认正确性与三交付](../../../../evidence/correctness/cuda-r4-mature-default/README.md)已完成：
+selector 106 门与测试修正增量4门、Win/WSL 真实三交付、WSL off/ASan/UBSan/TSan、新设备
+memcheck、两 Mac CUDA OFF 公共入口与发布投影全部 PASS。ASan 已登记的外部驱动例外保留；
+不冒称闭源 SDK 插桩、Mac CUDA runtime 或新 CPU 性能。755 只修复一处测试的 GCC warning，
+产品与 f7 普通检查身份等价，不重复构建。
+
+剩余 S4 有限验收是 v3 Direct/Graph 各一次最终默认 P1，以及两者同数学原生边界成本；
+原5%门、n=15→31与停止规则不变，未运行不写 PASS。最终默认与精确参考同算法，非劣只检查
+接入成本，不能记作 HYLE 算法胜利。原生责任边界不同，继续单列 NATURAL_ROUTE。
+统一脚本全实现 **32,776 行 / 109 文件**，self-check PASS，排除测试/第三方。

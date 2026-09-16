@@ -1,0 +1,41 @@
+{
+  "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+  "tree": "5f91d6d548e6e59406adcdc683c67ee473e59f4b",
+  "ordinary_base": "f7d14870fc7066dad5092b7b5200d49ba0581a25",
+  "base_to_candidate": "Only GCC-warning hygiene braces in one Graph test; product unchanged.",
+  "full_selector": {
+    "pass": 106,
+    "skipped": 5
+  },
+  "incremental_test_selector": {
+    "pass": 4,
+    "skipped": 106
+  },
+  "windows_targeted": {
+    "pass": 6
+  },
+  "windows_cuda_only_delivery": {
+    "source": "2/2 PASS",
+    "shared_relocated": "2/2 PASS",
+    "static_relocated": "2/2 PASS",
+    "dependency_and_license_projection": "PASS",
+    "dll_policy": "physically staged beside executables"
+  },
+  "wsl": {
+    "off": "6/6 PASS",
+    "asan": "6/6 PASS with registered exact libcuda leak exception",
+    "ubsan": "6/6 PASS",
+    "tsan": "6/6 PASS",
+    "device_memcheck": "provider 6, Direct 3, Graph 4 cases; 0 errors and 0 device leaks",
+    "delivery": "source/shared/static each 2/2 PASS; relocation, dependency and license projection PASS"
+  },
+  "mac_air_cuda_off": {
+    "public_consumers": "2/2 PASS",
+    "none_cpu_core_projection": "PASS"
+  },
+  "mac_mini_cuda_off": {
+    "public_consumers": "2/2 PASS",
+    "none_cpu_core_projection": "PASS"
+  },
+  "performance": "Final-default P1 and native boundary diagnostic pending; no performance verdict in this bundle."
+}

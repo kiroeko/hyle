@@ -1,0 +1,10 @@
+{
+  "base": "f7d14870fc7066dad5092b7b5200d49ba0581a25",
+  "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+  "candidate_tree": "5f91d6d548e6e59406adcdc683c67ee473e59f4b",
+  "changed_files": [
+    "tests/graph_route_cuda/graph_test.cc"
+  ],
+  "product_implementation_unchanged": true,
+  "patch_sha256": "05163c090ea9637d023883354d1dd0942b38d4e8599a0619a5df8f786e40ccda"
+}

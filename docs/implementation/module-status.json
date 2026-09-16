@@ -417,9 +417,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "summary": "R4 AUDITED：native-helper 采集阻塞已解决，Direct/Graph 基线完整链 P1 均 n=15、qualification/5% NI/raw replay PASS；无完整域 HYLE 优势，按 S1–S4 接入成熟默认激活，最终默认三交付/P1及原生成本尚待完成。既有正确性/插桩和 CPU 例外保留。"
+      "summary": "R4 CANDIDATE：成熟激活默认与 HYLE 尾部能力已接线，Win/WSL 正确性、host/device 插桩、三交付及两 Mac CUDA OFF 投影通过；最终 v3 P1 与原生边界成本待验收，不授予 CLOSED。既有 CPU 例外保留。",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a"
     },
     {
       "module": "compute_provider_native",
@@ -461,33 +462,38 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "AUDITED",
-      "summary": "R4 AUDITED：native-helper 采集阻塞已解决，Direct/Graph 基线完整链 P1 均 n=15、qualification/5% NI/raw replay PASS；无完整域 HYLE 优势，按 S1–S4 接入成熟默认激活，最终默认三交付/P1及原生成本尚待完成。既有正确性/插桩和 CPU 例外保留。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R4 CANDIDATE：成熟激活默认与 HYLE 尾部能力已接线，Win/WSL 正确性、host/device 插桩、三交付及两 Mac CUDA OFF 投影通过；最终 v3 P1 与原生边界成本待验收，不授予 CLOSED。既有 CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "AUDITED",
-      "summary": "R4 AUDITED：native-helper 采集阻塞已解决，Direct/Graph 基线完整链 P1 均 n=15、qualification/5% NI/raw replay PASS；无完整域 HYLE 优势，按 S1–S4 接入成熟默认激活，最终默认三交付/P1及原生成本尚待完成。既有正确性/插桩和 CPU 例外保留。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R4 CANDIDATE：成熟激活默认与 HYLE 尾部能力已接线，Win/WSL 正确性、host/device 插桩、三交付及两 Mac CUDA OFF 投影通过；最终 v3 P1 与原生边界成本待验收，不授予 CLOSED。既有 CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
-      "summary": "R4 AUDITED：native-helper 采集阻塞已解决，Direct/Graph 基线完整链 P1 均 n=15、qualification/5% NI/raw replay PASS；无完整域 HYLE 优势，按 S1–S4 接入成熟默认激活，最终默认三交付/P1及原生成本尚待完成。既有正确性/插桩和 CPU 例外保留。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R4 CANDIDATE：成熟激活默认与 HYLE 尾部能力已接线，Win/WSL 正确性、host/device 插桩、三交付及两 Mac CUDA OFF 投影通过；最终 v3 P1 与原生边界成本待验收，不授予 CLOSED。既有 CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a"
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
-      "summary": "R4 AUDITED：native-helper 采集阻塞已解决，Direct/Graph 基线完整链 P1 均 n=15、qualification/5% NI/raw replay PASS；无完整域 HYLE 优势，按 S1–S4 接入成熟默认激活，最终默认三交付/P1及原生成本尚待完成。既有正确性/插桩和 CPU 例外保留。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R4 CANDIDATE：成熟激活默认与 HYLE 尾部能力已接线，Win/WSL 正确性、host/device 插桩、三交付及两 Mac CUDA OFF 投影通过；最终 v3 P1 与原生边界成本待验收，不授予 CLOSED。既有 CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
-      "summary": "R4 AUDITED：native-helper 采集阻塞已解决，Direct/Graph 基线完整链 P1 均 n=15、qualification/5% NI/raw replay PASS；无完整域 HYLE 优势，按 S1–S4 接入成熟默认激活，最终默认三交付/P1及原生成本尚待完成。既有正确性/插桩和 CPU 例外保留。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R4 CANDIDATE：成熟激活默认与 HYLE 尾部能力已接线，Win/WSL 正确性、host/device 插桩、三交付及两 Mac CUDA OFF 投影通过；最终 v3 P1 与原生边界成本待验收，不授予 CLOSED。既有 CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a"
     }
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "upstream_archive_sha256": "e31827d3f8ef3ae171da08242c2f249110c763cab8d89603dc4c6c57076c3796",
+  "git_tree": "6504cefc56f2b228800eb72a513420e956e21846",
+  "adapted_tree_sha256": "46b190d809760271bb91ec481c4a04536d54f893acfb69c1845df31b87dd1d37",
+  "archive_blobs_match_git": true,
+  "upstream_files": {
+    "python/sglang/kernels/jit/csrc/elementwise/activation.cuh": "f1b56af7476695688d11bb004dc6cee144cd8922a56683a12c504c53aec26c47",
+    "python/sglang/kernels/ops/activation/activation.py": "c8ea8e9480ccc488b5b4721fe991e4e901e63fb88e6fe89286767f30e23d9ab6",
+    "python/sglang/kernels/jit/utils/arch.py": "e9e6359469bfd46e1bfa16b197b9d88cc89d500ebb8f9ccf05b2ab1374063eb7",
+    "LICENSE": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747"
+  }
+}
