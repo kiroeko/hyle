@@ -44,7 +44,9 @@ Direct 的三个真实 Completion 不能与一个最终事件的 peer 混成 NI�
 隔离不需要的 Torch/TVM host glue，保留 Apache 许可、原文件 hash 和差异；使用与产品相同的
 HYLE shared-queue Provider 生命周期，只替换 kernel。双方都实际支付正常生命周期服务，不能
 给裸 kernel 加空原子、空循环或等待来对齐数字。参考本身须先编译、通过独立数值 oracle 和
-完整 FFN 消费，才能取得比较资格；当前均未签 PASS。
+完整 FFN 消费，才能取得比较资格。[编译与完整数值证据](../../../../evidence/correctness/cuda-r4-bench-preflight/README.md)
+现已通过；原生同实现链也通过[独立 oracle](../../../../evidence/correctness/cuda-r4-native-cost-preflight/README.md)。
+这些检查不替代尚未运行的 A/A 或 P1。
 
 本阶段不再追加 peer 搜索。若上述窄接入在一次有明确原因的适配纠正后仍不能满足合同，记录
 具体 blocker；不换更有利 peer、不改精度、不增加公共 Provider API 或第二套产品执行器。
@@ -94,8 +96,18 @@ SwiGLU 单 launch。Graph 冷捕获三段，hot 原生 replay。成熟参考只�
 Provider pin、编译器/flags/linkage、GPU 状态及机器身份。driver API 兼容版本不是驱动发行版本。
 
 只有证据覆盖的条件可以产生默认 winner；环境不匹配时用预定合法成熟基线或明确拒绝。规则在
-研发固定，cold prepare 自动匹配/绑定；不让普通用户提供 profile，不在 hot 查询/计时。参考若
-取得完整消费链的明确收益，按原机制纠正预算更新适用默认规则并重新冻结，不用单 kernel 点值决策。
+研发固定，cold prepare 自动匹配/绑定；不让普通用户提供 profile，不在 hot 查询/计时。
+HYLE 只有取得完整消费链的明确优势才保留该域的默认优选；若无此证据，即使原 5% NI 门通过，
+也采用合格成熟实现。需要替换时按原一次机制纠正预算更新适用默认规则并重新冻结；无法表达的
+separate/非向量尾部继续依法保留所需 HYLE 能力，不以单 kernel 点值决定完整路线。
+
+冻结机器合同为 `bench/contracts/{compute,graph}-cuda-ffn-p1-v1.json`。模块自己的 A/A validator
+先邻置真实 DLL，核对 peer 原文片段、GPU/驱动、CUDA 编译器身份，并运行 16 个独立进程：两种
+同实现路线 × 两个代码位置 × 两种执行顺序 × 两种分配顺序。每个进程含 M1/M16；5% 因子中位
+偏差门与 10% 单进程严重失稳停止门沿已用方法。M16 是预声明正交形状；统一 runner 的统计
+train/holdout 分割保持关闭，不能将其冒充独立未见数据。该 bundle 后置检查仅复用完全相同
+artifact/编译器/DLL/validator 身份及原始日志 hash 的 A/A receipt，并重新检查 GPU/驱动状态。
+不重写公共仪器、统计或 power profile。
 
 正式 n=15 之前必须通过：源码时序/成本审查、独立正确性 oracle、同 workload A/A、双执行与
 分配顺序、两个 placement、分辨率/功效和设备环境资格。使用现有统一仪器、P 核 caller、实际 DLL
