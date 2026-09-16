@@ -292,16 +292,20 @@ def _topology_telemetry_expectations(
         child_policy: Mapping[str, Any] | None) -> dict[str, str]:
     if not isinstance(child_policy, Mapping):
         return {}
-    if child_policy.get("sampling_topology") != "n-worker-physical-cores":
+    topology = child_policy.get("sampling_topology")
+    if topology not in {
+            "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
         return {}
     return {
-        "affinity_topology": "n-worker-physical-cores",
+        "affinity_topology": topology,
         "worker_count": str(child_policy["sampling_worker_count"]),
         "worker_cpus": ",".join(
             str(cpu) for cpu in child_policy["worker_logical_cpus"]),
         "parent_mask": str(child_policy["affinity_mask"]),
         "priority": str(child_policy["priority"]),
         "affinity_ok": "1",
+        **({"caller_cpu": str(child_policy["caller_logical_cpu"])}
+           if topology == "caller-plus-n-worker-physical-cores" else {}),
     }
 
 
@@ -471,6 +475,9 @@ def replay_stage(
                 if key in stratum["dimensions"]}
             if platform_name == "macos":
                 expected.update({"apple_qos": "user-interactive", "qos_ok": "1"})
+            if (child_policy is not None and child_policy.get("sampling_topology")
+                    == "caller-plus-n-worker-physical-cores"):
+                expected.update(_topology_telemetry_expectations(child_policy))
             expected["run_nonce"] = by_product[
                 (stratum_id, executable["id"], run)]["run_nonce"]
             for prefix in executable["telemetry_prefixes"]:

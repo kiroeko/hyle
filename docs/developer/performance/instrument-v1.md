@@ -85,6 +85,15 @@ core id 与 priority 全部进入 child policy。workload 必须逐 worker 应�
 paired-row adapter 组合；拓扑描述 worker placement，measurement adapter 描述 candidate/peer 如何成对，
 两者没有从属关系。benchmark 仍须自行核对并回报 worker 与工作量守恒。
 
+外部 caller 不参与执行时，使用 `sampling_topology=caller-plus-n-worker-physical-cores`，
+`sampling_worker_count=N`（2..63）仍只计实际 worker。Windows 为登记 caller 单独保留一个物理核，
+从其他同组、同效率级物理核选择 N 个 worker；caller 的所有 SMT sibling 都被排除。parent mask
+覆盖 N+1 个角色核，child policy 明确记录全部 CPU Set/core id 和保留核数。product/control
+telemetry 与 raw replay 必须核对 caller_cpu；product 还核对 worker 数、CPU 集、mask 和 priority。
+核数不足或非 Windows 平台拒绝该合同；不能借用 E 核、SMT 或重复 caller 核凑数。原 N-worker
+拓扑继续包含 caller，历史合同与证据不变。两种资源预算不能混为同一性能实验。
+定界与回归见[独立 caller 拓扑工具任务](../../implementation/tasks/project/performance-external-caller-topology-2026-09.md)。
+
 ## 4. Experiment contract v1
 
 正式 experiment contract 至少冻结：
@@ -102,8 +111,8 @@ paired-row adapter 组合；拓扑描述 worker placement，measurement adapter 
 - required controls、artifact validators 和 host requirements；
 - compiler、ISA、LTO、linkage 与资源预算。
 - 对并发负载，冻结 `single-logical-cpu`、`cross-core-pair` 或带固定 worker count 的
-  `n-worker-physical-cores` sampling topology，并由角色 telemetry 证明实际落点；不得用进程允许的
-  CPU 集代替线程角色归属。
+  `n-worker-physical-cores` / `caller-plus-n-worker-physical-cores` sampling topology，并由角色
+  telemetry 证明实际落点；不得用进程允许的 CPU 集代替线程角色归属。
 
 运行前生成 immutable experiment-lock hash。CLI 只允许提供 checkout/build/output/peer 路径和
 machine profile，不能覆盖 pair、margin、规模或停止条件。

@@ -72,6 +72,9 @@ native-Linux 或“第二台独立机器”的 formal gate。以后若把 WSL �
   CPU Set 派生同 group、同最高 efficiency class、每 physical core 一个 logical sibling 的有序集合；
   当前 8-worker 选择为 `0,2,4,6,8,10,12,14`，但这些编号只是本机 probe 事实，不是模块硬编码。
   parent mask、singleton masks、CPU Set/core ids、priority 及逐 worker observed CPU 都进入证据。
+- 外部 caller 不参与 worker 工作时，选择 `caller-plus-n-worker-physical-cores`。worker count
+  只计实际 worker；另为 caller 保留一个完整物理核，总资源为 N+1 核。当前两 worker 派生为
+  caller=2、workers=0,4、parent mask=0x15；caller 的 SMT sibling 也不能作为 worker。
 - 使用交流电与登记的“卓越性能”scheme；source、peer、build、output 均位于本地 fixed NTFS。
 - 工程性能工具链为 MSVC 19.50.35728 / v145 / Windows SDK 10.0.26100.0；clang-cl 只作
   correctness/codegen 复核。Release 为 `/O2 /Ob2 /DNDEBUG`，ISA/linkage/LTO 由 workload 明示。
@@ -116,7 +119,8 @@ Windows 的 engineering 与 formal verdict 都会证明登记的 CPU set 258 / l
 `0x4`、`above-normal` 和空闲 sibling 3，由 benchmark child launcher 实际应用并写入运行记录。
 `cross-core-pair` 合同则基于同一 host probe 派生并记录完整双核 mask 与两个 CPU Set id，且要求
 benchmark 回报 caller/worker 的实际角色 pin；`n-worker-physical-cores` 同理派生并记录 N 个不同
-physical core 的 worker 集与逐 worker singleton pin。这两种 topology 都不修改默认单线程机器合同。
+physical core 的 worker 集与逐 worker singleton pin。独立 caller 拓扑额外记录 N+1 个保留物理核，
+并校验 caller CPU telemetry。这些 topology 都不修改默认单线程机器合同。
 
 ## 采样互斥锁
 

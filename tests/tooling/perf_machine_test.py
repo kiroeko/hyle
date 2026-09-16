@@ -553,6 +553,46 @@ AC Power:
         raise AssertionError(
             f"valid Windows N-worker profile failed: {n_worker_gate}"
         )
+    separate_topology = "caller-plus-n-worker-physical-cores"
+    external_caller = machine.expected_child_policy(
+        profiles["W1-WIN"], sampling_topology=separate_topology,
+        sampling_worker_count=2, probe=windows_probe)
+    if (
+        external_caller["caller_logical_cpu"] != 2
+        or external_caller["worker_logical_cpus"] != [0, 4]
+        or external_caller["logical_cpus"] != [0, 2, 4]
+        or external_caller["cpu_set_ids"] != [256, 258, 260]
+        or external_caller["worker_cpu_set_ids"] != [256, 260]
+        or external_caller["worker_singleton_masks"] != ["0x1", "0x10"]
+        or external_caller["affinity_mask"] != "0x15"
+        or len(set(external_caller["physical_core_indices"])) != 3
+        or external_caller["sampling_worker_count"] != 2
+        or external_caller["reserved_physical_core_count"] != 3
+        or external_caller["caller_separate_physical_core"] is not True
+    ):
+        raise AssertionError(f"external caller policy drifted: {external_caller}")
+    external_gate = machine.evaluate_machine_profile(
+        profiles["W1-WIN"], windows_probe, role="engineering",
+        sampling_topology=separate_topology, sampling_worker_count=2)
+    if external_gate["gate"] != "PASS":
+        raise AssertionError(f"valid external caller profile failed: {external_gate}")
+    # Eight P cores support eight workers sharing the caller, but only seven
+    # workers when the caller reserves a physical core. E cores and the caller's
+    # SMT sibling must not be used to fill the missing eighth worker.
+    try:
+        machine.expected_child_policy(
+            profiles["W1-WIN"], sampling_topology=separate_topology,
+            sampling_worker_count=8, probe=windows_probe)
+    except ValueError as error:
+        if "fewer" not in str(error):
+            raise
+    else:
+        raise AssertionError("external caller silently reused a physical core")
+    insufficient_gate = machine.evaluate_machine_profile(
+        profiles["W1-WIN"], windows_probe, role="engineering",
+        sampling_topology=separate_topology, sampling_worker_count=8)
+    if insufficient_gate["gate"] == "PASS":
+        raise AssertionError("insufficient independent cores passed the machine gate")
     identity_record = windows_formal["physical_host_identity"]
     if (
         identity_record["physical_host_id"] != "W1"

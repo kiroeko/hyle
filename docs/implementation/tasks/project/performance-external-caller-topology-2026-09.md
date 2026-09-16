@@ -37,3 +37,15 @@
 `hyle_perf_raw_replay_test.py`、`hyle_perf_evidence_runner_test.py` 和 `hyle_perf_build_replay_test.py`；
 保留其他门 skipped reasons。机器选择、缺核拒绝、旧合同、caller telemetry 篡改及 raw replay
 是必要回归。另运行 docs/closure checker 与 diff check。工具修改本身不启动产品构建或 P1。
+
+## 结果：工具任务 CLOSED
+
+T1～T3 已完成。selector 选中的 9 个 Python tooling suites 与 docs/closure 共 11 门全部 PASS，
+其余 98 门记录 skipped reasons。原单线程、cross-core 和 N-worker 测试保持通过；新用例证明
+两个 worker 选择 0,4，caller 保持 2，mask=0x15，物理核资源为 3；8 个 P 核不能容纳独立
+caller 加 8 workers；修改或遗漏 caller/worker/mask 的 raw telemetry 会被拒绝。
+初次新测试使用了错误的异常基类，改为实际的 ValidationError 后通过，未放宽被测行为。
+
+完整 selector、receipt 与日志在
+[validation.zip](../../../../evidence/correctness/performance-external-caller-topology-2026-09/validation.zip)。
+本工具轮没有产品构建或性能采样，不签 Graph 性能 PASS。公共统计门槛/估计器与 Sched 产品未改。

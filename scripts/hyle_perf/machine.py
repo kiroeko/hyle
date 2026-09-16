@@ -604,7 +604,8 @@ def get_machine_profile(
 
 
 def _windows_physical_core_workers(
-    profile: Mapping[str, Any], probe: Mapping[str, Any], worker_count: int
+    profile: Mapping[str, Any], probe: Mapping[str, Any], worker_count: int, *,
+    separate_caller: bool = False,
 ) -> tuple[Mapping[str, Any], list[Mapping[str, Any]]]:
     """Select one logical sibling from N same-class Windows physical cores.
 
@@ -613,6 +614,7 @@ def _windows_physical_core_workers(
     physical core; the anchor itself represents its own core.  Sorting by the
     representative logical index makes the selection deterministic without
     turning one host's CPU numbers into a module contract.
+    An external caller can reserve its whole physical core outside the workers.
     """
     if isinstance(worker_count, bool) or not isinstance(worker_count, int) or \
             worker_count < 1:
@@ -641,6 +643,8 @@ def _windows_physical_core_workers(
     representatives = []
     for core_index, siblings in by_core.items():
         if core_index == anchor.get("core_index"):
+            if separate_caller:
+                continue
             representative = anchor
         else:
             representative = min(
@@ -652,7 +656,7 @@ def _windows_physical_core_workers(
             "Windows host has fewer than the requested distinct same-class "
             "physical cores")
     selected = representatives[:worker_count]
-    if anchor not in selected:
+    if not separate_caller and anchor not in selected:
         # The registered caller is the machine contract's stable control CPU.
         # Keep it in the selected set while retaining deterministic ordering.
         selected[-1] = anchor
@@ -728,22 +732,33 @@ def expected_child_policy(
         if sampling_topology == "single-logical-cpu":
             return policy
         if sampling_topology not in {
-                "cross-core-pair", "n-worker-physical-cores"}:
+                "cross-core-pair", "n-worker-physical-cores",
+                "caller-plus-n-worker-physical-cores"}:
             raise ValueError(
                 f"unsupported Windows sampling topology: {sampling_topology!r}"
             )
         if probe is None:
             raise ValueError(
                 f"{sampling_topology} sampling requires a host probe")
-        if sampling_topology == "n-worker-physical-cores":
+        if sampling_topology in {
+                "n-worker-physical-cores",
+                "caller-plus-n-worker-physical-cores"}:
+            separate_caller = (
+                sampling_topology == "caller-plus-n-worker-physical-cores")
             if (isinstance(sampling_worker_count, bool) or
                     not isinstance(sampling_worker_count, int) or
                     sampling_worker_count < 2):
                 raise ValueError(
-                    "n-worker-physical-cores sampling requires worker_count >= 2")
+                    f"{sampling_topology} sampling requires worker_count >= 2")
             anchor, workers = _windows_physical_core_workers(
-                profile, probe, sampling_worker_count)
+                profile, probe, sampling_worker_count,
+                separate_caller=separate_caller)
+            reserved = sorted(
+                [anchor, *workers] if separate_caller else workers,
+                key=lambda item: item["logical_processor_index"])
             logical_cpus = [
+                int(cpu["logical_processor_index"]) for cpu in reserved]
+            worker_cpus = [
                 int(worker["logical_processor_index"]) for worker in workers]
             pointer_bits = ctypes.sizeof(ctypes.c_size_t) * 8
             if any(cpu >= pointer_bits for cpu in logical_cpus):
@@ -757,22 +772,25 @@ def expected_child_policy(
                 "sampling_worker_count": sampling_worker_count,
                 "processor_group": anchor.get("group"),
                 "logical_cpus": logical_cpus,
-                "worker_logical_cpus": logical_cpus,
-                "cpu_set_ids": [worker.get("id") for worker in workers],
+                "worker_logical_cpus": worker_cpus,
+                "cpu_set_ids": [cpu.get("id") for cpu in reserved],
                 "worker_cpu_set_ids": [
                     worker.get("id") for worker in workers],
                 "physical_core_indices": [
-                    worker.get("core_index") for worker in workers],
+                    cpu.get("core_index") for cpu in reserved],
                 "efficiency_class": anchor.get("efficiency_class"),
                 "caller_logical_cpu": int(
                     anchor["logical_processor_index"]),
                 "worker_singleton_masks": [
-                    hex(1 << cpu) for cpu in logical_cpus],
+                    hex(1 << cpu) for cpu in worker_cpus],
                 "distinct_physical_cores": True,
                 "smt_siblings_excluded": True,
                 "applied_by": (
                     "benchmark-parent-mask-plus-worker-singleton-masks"),
             })
+            if separate_caller:
+                policy["reserved_physical_core_count"] = len(reserved)
+                policy["caller_separate_physical_core"] = True
             return policy
         caller, worker = _windows_cross_core_pair(profile, probe)
         caller_cpu = int(caller["logical_processor_index"])
@@ -1618,16 +1636,23 @@ def evaluate_machine_profile(
                     errors.append(
                         "Windows cross-core worker is not maximum efficiency class"
                     )
-        elif sampling_topology == "n-worker-physical-cores":
+        elif sampling_topology in {
+                "n-worker-physical-cores",
+                "caller-plus-n-worker-physical-cores"}:
+            separate_caller = (
+                sampling_topology == "caller-plus-n-worker-physical-cores")
             try:
                 caller, workers = _windows_physical_core_workers(
-                    profile, probe, sampling_worker_count)
+                    profile, probe, sampling_worker_count,
+                    separate_caller=separate_caller)
             except (TypeError, ValueError) as error:
                 errors.append(str(error))
             else:
                 core_indices = [worker.get("core_index") for worker in workers]
                 if len(set(core_indices)) != len(workers):
                     errors.append("Windows N-worker selection repeats a physical core")
+                if separate_caller and caller.get("core_index") in core_indices:
+                    errors.append("Windows external caller shares a worker core")
                 if any(worker.get("group") != caller.get("group")
                        for worker in workers):
                     errors.append("Windows N-worker selection crosses processor groups")

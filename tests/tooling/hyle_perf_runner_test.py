@@ -36,6 +36,7 @@ from hyle_perf.runner import (  # noqa: E402
     SUPPORTED_TIMER_BATCHES,
     _apply_delegated_control_gates,
     _attested_build_artifact_paths,
+    _child_environment,
     _eligible_for_sample_escalation,
     _evaluate_product_evidence,
     _evaluate_controls,
@@ -45,6 +46,7 @@ from hyle_perf.runner import (  # noqa: E402
     _read_strict_json_snapshot,
     _performance_gate,
     _product_gate_workloads,
+    _product_telemetry_expectations,
     _required_telemetry,
     _validate_variant_artifacts,
     run_contract,
@@ -907,9 +909,41 @@ class RunnerBuildArtifactTest(unittest.TestCase):
                          "nanobench-paired-rows-v1")
         self.assertEqual(runner["sampling_worker_count"], 4)
 
+        value["extensions"]["runner"]["sampling_topology"] = \
+            "caller-plus-n-worker-physical-cores"
+        runner = validate_runner_extension(value)
+        self.assertEqual(runner["sampling_worker_count"], 4)
+        for count in (None, True, 0, 1, 64):
+            value["extensions"]["runner"]["sampling_worker_count"] = count
+            with self.assertRaisesRegex(ValidationError, "worker_count"):
+                validate_runner_extension(value)
+
         value["extensions"]["runner"]["sampling_topology"] = "let-os-decide"
         with self.assertRaisesRegex(ValidationError, "sampling topology"):
             validate_runner_extension(value)
+
+    def test_external_caller_topology_checks_each_role(self):
+        profile = {"environment": "windows"}
+        policy = {
+            "sampling_topology": "caller-plus-n-worker-physical-cores",
+            "sampling_worker_count": 2, "caller_logical_cpu": 2,
+            "worker_logical_cpus": [0, 4],
+            "affinity_mask": "0x15", "priority": "above-normal",
+        }
+        environment = _child_environment([], {}, profile, policy)
+        self.assertEqual(environment["HYLE_PERF_CALLER_CPU"], "2")
+        self.assertEqual(environment["HYLE_PERF_WORKER_CPUS"], "0,4")
+        self.assertEqual(environment["HYLE_PERF_PARENT_MASK"], "0x15")
+        expected = _product_telemetry_expectations(
+            {"dimensions": {}}, profile, policy)
+        self.assertEqual(expected["caller_cpu"], "2")
+        self.assertEqual(expected["worker_count"], "2")
+        text = "# PRODUCT " + " ".join(
+            f"{key}={value}" for key, value in expected.items())
+        _required_telemetry(text, ["# PRODUCT "], expected)
+        for token in ("caller_cpu=2", "worker_cpus=0,4", "parent_mask=0x15"):
+            with self.assertRaises(ValidationError):
+                _required_telemetry(text.replace(token, ""), ["# PRODUCT "], expected)
 
     def test_runner_v1_rejects_unbound_toolchain_and_shared_linkage(self):
         value = pilot_contract()

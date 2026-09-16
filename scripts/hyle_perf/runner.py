@@ -191,22 +191,26 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
     sampling_topology = config.get("sampling_topology", "single-logical-cpu")
     if sampling_topology not in {
             "single-logical-cpu", "cross-core-pair",
-            "n-worker-physical-cores"}:
+            "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
         raise ValidationError(
             f"unsupported runner sampling topology: {sampling_topology!r}")
     config["sampling_topology"] = sampling_topology
     sampling_worker_count = config.get("sampling_worker_count")
-    if sampling_topology == "n-worker-physical-cores":
+    if sampling_topology in {
+            "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
+        maximum_workers = (
+            63 if sampling_topology == "caller-plus-n-worker-physical-cores"
+            else 64)
         if (isinstance(sampling_worker_count, bool) or
                 not isinstance(sampling_worker_count, int) or
-                not 2 <= sampling_worker_count <= 64):
+                not 2 <= sampling_worker_count <= maximum_workers):
             raise ValidationError(
-                "n-worker-physical-cores requires sampling_worker_count in "
-                "the range 2..64")
+                f"{sampling_topology} requires sampling_worker_count in "
+                f"the range 2..{maximum_workers}")
         config["sampling_worker_count"] = sampling_worker_count
     elif sampling_worker_count is not None:
         raise ValidationError(
-            "sampling_worker_count is valid only for n-worker-physical-cores")
+            "sampling_worker_count is valid only for N-worker topologies")
 
     cmake = _exact_fields(
         config["cmake"], {"cache", "peer_cache"}, set(), "runner.cmake")
@@ -1279,7 +1283,8 @@ def _product_telemetry_expectations(
             "worker_cpu": str(child_policy["worker_logical_cpu"]),
             "affinity_ok": "1",
         })
-    elif topology == "n-worker-physical-cores":
+    elif topology in {
+            "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
         expectations.update({
             "affinity_topology": topology,
             "worker_count": str(child_policy["sampling_worker_count"]),
@@ -1289,6 +1294,8 @@ def _product_telemetry_expectations(
             "priority": str(child_policy["priority"]),
             "affinity_ok": "1",
         })
+        if topology == "caller-plus-n-worker-physical-cores":
+            expectations["caller_cpu"] = str(child_policy["caller_logical_cpu"])
     return expectations
 
 
@@ -1515,13 +1522,14 @@ def _collect_control_runs(
                 } if child_policy.get("sampling_topology") ==
                     "cross-core-pair" else {}),
                 **({
-                    "affinity_topology": "n-worker-physical-cores",
+                    "affinity_topology": child_policy["sampling_topology"],
                     "caller_cpu": str(child_policy["caller_logical_cpu"]),
                     "parent_mask": str(child_policy["affinity_mask"]),
                     "priority": str(child_policy["priority"]),
                     "affinity_ok": "1",
-                } if child_policy.get("sampling_topology") ==
-                    "n-worker-physical-cores" else {}),
+                } if child_policy.get("sampling_topology") in {
+                    "n-worker-physical-cores",
+                    "caller-plus-n-worker-physical-cores"} else {}),
                 **({"apple_qos": "user-interactive", "qos_ok": "1"}
                    if profile.get("environment") == "macos" else {}),
             })
