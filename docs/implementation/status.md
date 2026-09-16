@@ -36,7 +36,7 @@
 | io_http2 | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。 |
 | io_transfer | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-transfer-v1.md) | io_transfer v1 CLOSED：可靠 local/HTTP(S) transfer、resume、checksum 与 atomic publish 通过三平台、sanitizer、三交付、易用性和红队；P1 的 local publish 非劣、Range resume 双顺序 WIN，5% 门全过。 |
 | compute | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
-| graph | SCOPED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。 |
+| graph | AUDITED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。 |
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
@@ -45,14 +45,14 @@
 | io_websocket | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-websocket-v2-gcc-coroutine-allocator-use.md) | io_websocket v2 CLOSED：两个私有 coroutine 显式保留 frame allocator 使用；GCC 14.2 与 MSVC 19.50 shared/WERROR 定向编译和测试通过，产品 API/算法/成本及 v1 P1 结论不变。 |
 | compute_provider_onednn | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_provider_onednn R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
 | compute_provider_ggml | BLOCKED | — | [record](tasks/compute/compute-provider-ggml-v1.md) | compute_provider_ggml v1 BLOCKED：HYLE block storage 与 Graph region 前置已经解除，但锁定/当前 ggml CPU runtime 仍在 context/threadpool 创建失败时 abort，且无持久 pool 时每次 submit 隐藏创建 disposable pool；空 factor 继续不进入产品。 |
-| graph_provider_onednn | SCOPED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。 |
+| graph_provider_onednn | AUDITED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。 |
 | compute_ops | CLOSED | P0 / [PASS](tasks/compute/compute-ops-v4-quantized-matmul.md) | [record](tasks/compute/compute-ops-v4-quantized-matmul.md) | compute_ops R2-Q CLOSED：完整 grouped Q4 schema、既有 custom/resource/View 尾项、四环境正确性、Windows 三交付/relocation、WSL UBSan 与 P0 通过；仅关闭逻辑 schema，native kernel/默认规则仍归 R3–R6。 |
 | compute_backend_cpu | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_backend_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
 | compute_backend_cuda | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_backend_cuda R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
 | compute_provider_native | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_provider_native R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
 | compute_sched | QUEUED | — | — | compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。 |
 | compute_route_cpu | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | R3 CPU Direct 候选 d9712e68：默认工厂与缺席 oneDNN 静态导出修正已固定；回归父卡完成剩余 Direct 工程 P1/三交付，Graph 性能 blocker 独立保留。 |
-| graph_route_cpu | SCOPED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。 |
+| graph_route_cpu | AUDITED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

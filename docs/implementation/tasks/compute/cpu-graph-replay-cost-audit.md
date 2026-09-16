@@ -1,6 +1,6 @@
 # R3 Graph：同实现重复执行成本的定向审计
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -42,4 +42,47 @@
 - `src/graph_provider_onednn/onednn_region_provider.cc`：region host 映射、BRGEMM pair/down 与激活。
 - 具体热路径依赖按上述函数调用追踪，不重新审计整个 Compute、Mem 或 Sched。
 
-有限 FIX 尚未冻结，产品文件尚未改动；本卡 SCOPED 不代表旧性能门已经解除或通过。
+## AUDITED：固定一个机制纠正
+
+源码确认：`prepare_invocation_bindings` 已缓存合法的 region views，物理资源规划已经调用
+`ContextRef::validate_resource`，外部 bind 又强制资源身份与编译结果相同；重绑定会撤销 replay。
+单算子使用 `OperationInvocationAccess::enqueue_prevalidated`，region 却调用
+`ProviderExtensionAccess::enqueue_admitted`，每次对四输入/一输出重新调用 backend resource
+validator，随后经 Episode trampoline 再调用既定 region callback。这个差异不是数学或 Sched 工作。
+
+不能直接删除所有检查：调用者可以把同一地址的 Queue 对象 move-assign 成另一个 Context 的 Queue。
+现有 pointer 相等检查不能证明当前 owner 相同。保留每次接纳时的 Context/Queue admission；在 Graph
+提交的 lane 检查中用既有 `ContextRef::owns` 核对当前 owner，再由私有 region 包装直接调用已绑定
+callback。不修改 Compute/oneDNN/Sched 产品，不添加字段、公共 API、形状特判或新的程序类型。
+
+| FIX | 范围 | 验收 |
+|---|---|---|
+| RC1 | Graph 私有 shared-region 重放采用冷准备已经证明的 views/resources；省去重复逐端口资源验证和 Episode 转发；每次先检查 Queue 当前 Context | 数学、host mapping/coherence、Queue admission、Completion/失败/保活原样保持；不改变 delegated 路径 |
+| RC2 | 定向防回归与受影响证据 | 计数证明资源验证留在冷阶段；变化输入正确；错资源 bind、原地址换 Context Queue、close 均仍拒绝；真实 CPU FFN/Sched 消费与交付继续实际验证 |
+
+### 成本账单与保留项
+
+- 冷：资源规划/描述、精确资源身份、完整 view、alias、region runtime/vtable、队列 owner 已验证。
+- 热保留：Invocation 排他与 output-ready；每 lane 一次 owner 比较；Queue/Context 关闭接纳；
+  一个 region callback；五个 host map/close、必要 invalidate/flush；两次真实 bulk；Completion 终结。
+- 热移除：每 region 的逐输入/输出 backend resource validator；只用于第二次转发的栈 Episode 和回调。
+- 没有 hot allocation/copy 新增，没有常态 metadata/layout 变化；独立 Invocation 不共享新的可变态。
+- 不把五次 validator 的消除换算成未经测量的加速比；新候选是否过门仍须实际 P1 裁决。
+
+### 预声明验证冻结
+
+产品仅 `src/graph/executable.cc`、`src/graph/plan_state.h`；测试仅既有 region suite。Windows 定向
+Graph/oneDNN-region/default CPU Graph/真实 Sched consumer、对应公共头与 relocated Graph shared/static
+消费；WSL/Air/Mini 回放同一 Graph 直接消费者及 Graph 三交付。WSL Graph/region/Sched consumer 的
+ASan/UBSan/TSan 继续覆盖新路径；外部 oneDNN JIT 仍不宣称被插桩。原 Direct/Compute/Native/oneDNN
+产品不变，复用其独立验收，不重跑 Direct P1。Windows 每次启动前相邻部署实际 DLL，并禁止错误弹窗。
+
+除上述适用检查，运行 selector 与 docs/closure/diff；红队重点核对 cold proof、Queue owner 被替换、
+关闭/接纳前缀/异步完成保活。现行 Direct P1 完成前不运行编译、测试或动态探针。
+一轮实现及必要 correctness 纠正后冻结产品；下一版 Graph 合同仅更新 candidate/peer provenance
+identity，完整继承 v2 的 12 workload、资源/affinity/idle、A/A 门、顺序、placement、统计和 n=15→31。
+只运行一次匹配的新候选工程 P1；原 v2 未决证据保留。无法通过时按具体结果裁决，不追加产品方向或样本。
+
+七问：第三方锁/许可证和数学实现不变；正常反复提交与普通多算子是既有真实消费；不重开底层；
+成本来自源码中已证明的重复验证；无 FFI/公开 API 变化；三交付相同实现；普通用户调用不变。
+有限 FIX 至此冻结。原产品性能门仍未通过，AUDITED 仅表示允许上述定向实现。

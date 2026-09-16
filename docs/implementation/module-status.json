@@ -278,9 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。"
+      "summary": "R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。"
     },
     {
       "module": "container_concurrent",
@@ -371,9 +371,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。"
+      "summary": "R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。"
     },
     {
       "module": "compute_ops",
@@ -421,8 +421,8 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "summary": "R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。",
+      "state": "AUDITED",
+      "summary": "R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md"
     }
   ]
