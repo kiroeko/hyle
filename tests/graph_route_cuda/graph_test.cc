@@ -195,8 +195,9 @@ TEST(CudaDefaultGraph, DefaultRulesCaptureSeparateAndPackedTailCapability) {
               compute::cuda_native::kProviderId);
     auto slot = compiled->executable.create_invocation().value();
     ASSERT_TRUE(slot.bind(input, first.view.as_const()).ok());
-    if (!packed)
+    if (!packed) {
       ASSERT_TRUE(slot.bind(second_input, second.view.as_const()).ok());
+    }
     ASSERT_TRUE(slot.bind(result, output.view).ok());
     ASSERT_TRUE(graph::cuda::prepare_replay(slot, queue).ok());
     EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCaptured);
