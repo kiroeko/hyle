@@ -5,7 +5,8 @@
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。R4 已接入 cuBLASLt、Marlin 和 HYLE SwiGLU 的独立 Provider，
-> 普通 CUDA 入口与完整路线验收仍在实施。Apple MLX/Metal、Vulkan/SPIR-V 是后续独立纵切。
+> 普通 CUDA Direct/Graph 入口与真实 FFN/capture 已实现；R4 三交付与性能验收仍在进行。
+> Apple MLX/Metal、Vulkan/SPIR-V 是后续独立纵切。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
@@ -23,7 +24,7 @@
 sampling 和 serving 留在推理引擎。
 
 设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的三个计算 Provider 已有初始 GPU 验证，
-普通入口、完整 Graph、三交付及性能尚未完成路线验收；Apple/Vulkan 尚未交付。
+普通入口和完整 FFN Graph 已通过 W1 正确性，三交付与性能尚未完成路线验收；Apple/Vulkan 尚未交付。
 HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
 提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
 自动交给 CPU。完整范围见 [架构边界](../architecture/compute-design.md#13-四条独立路线与明确非目标)。
@@ -34,6 +35,47 @@ direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape prog
 oneDNN 仍 exact-only，可进入 Graph 的预编译 exact 变体；Graph 也已提供
 [有限精确变体与通用回退](graph.md#有限精确变体与通用回退)。完整动态属性尚未交付。不要直接调用私有
 factor seam，也不要把单个 family 的域支持当成整个算子目录都支持动态尺寸。
+
+## 普通 CUDA 入口
+
+选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_CUDA=ON`；CUDA-only 再设
+`HYLE_COMPUTE_CPU=OFF`。源码与安装包均链接 `hyle::compute`：
+
+```cpp
+#include <hyle/compute/cuda.h>
+#include <hyle/compute/backends/cuda.h>
+
+auto context = hyle::compute::cuda::create_context({.device_ordinal = 0});
+if (!context) return context.error();
+auto resource = hyle::compute::cuda::MemoryResource::create(
+    *context, hyle::compute::cuda::MemoryKind::kDevice);
+if (!resource) return resource.error();
+auto queue = context->create_queue();
+if (!queue) return queue.error();
+
+auto prepared = hyle::compute::prepare(
+    *context, hyle::compute::MatMul{}, activation_desc, weight_desc, resource->ref());
+```
+
+后续依 `workspace_requirement()` 分配 CUDA workspace，为每个并发槽创建 invocation；绑定同设备
+tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → dense down 样例见
+[CUDA Direct FFN](../../samples/package/compute/cpp/cuda_ffn.h)。该样例连续执行三组变化输入，
+没有 Provider 列表、计时资料或用户 kernel callback。
+
+| 默认规则 | 支持域 |
+|---|---|
+| cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
+| Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
+| HYLE SwiGLU | dense FP16/FP32 packed halves 或 separate，SiLU；非空，输出元素数<=INT32_MAX，输入输出不重叠 |
+
+权重用 `cuda::QuantizedWeights::pack()` 冷准备，owner 只保留 Q4 payload 与 FP16 scales；
+`weights()/scales()` 借用 owner，搭配 `QuantizedWeights::operation()` 使用。普通用户无需认识
+vendor permutation。其余 dtype/shape/operation 明确拒绝；prepare 绑定规则与 vendor tactic，
+执行期不搜索、计时或重新 packing。当前真机资格是 RTX 4070/SM89，不外推其它 SM 的性能。
+
+Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自借用和在途工作。每槽的 workspace
+与可变 vendor handle 独立，成功完成后复用；失败终态后重建槽。vendor/driver 私有存储可能无法
+精确计费，不能把 unknown 当零。异步上传下载与 native stream 接入仍使用 backend/transfer API。
 
 ## 当前能力
 
@@ -98,16 +140,17 @@ runtime 可经 delegated Direct 或 Graph region 保留原生执行。当前没�
 block-Q4 `TensorDesc` 只证明格式可表达；未绑定支持该格式的 Provider 时仍返回 `Unimplemented`，
 不会把压缩 bytes 当普通 scalar、偷偷反量化或因为 ggml 已下载就调用私有 kernel。
 
-Marlin 独立接入使用具名 compressed carrier；普通 CUDA 量化路线仍在实施。研究实验不属于公开
-Provider，不能通过一个 sample 推断 `MatMul` 有量化 fallback。不同 Q4 格式、activation 临时量化
+CUDA 的 Marlin 接入使用具名 compressed carrier，普通入口通过 `cuda::QuantizedWeights` 提供冷
+packing 与所有权。它供 `QuantizedMatMul` 使用，不能推断普通 `MatMul` 有量化 fallback。
+不同 Q4 格式、activation 临时量化
 与累加类型不是同一件事。当前
 `MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
 
 ### CUDA Provider 接入状态
 
 以下是 [R4 当前施工卡](../implementation/tasks/compute/cuda-v1-four-route-foundation.md) 下已实现并有
-Windows/SM89 初始验证的专家接入点；选择对应 factor 和 `HYLE_COMPUTE_CUDA=ON`。完整 CUDA
-普通入口、默认组合、Graph FFN、三交付与 P1 尚待验收，不能从单个 Provider 外推完整路线完成。
+Windows/SM89 验证的专家接入点。普通入口按前述规则自动组成它们，专家可显式限定 Provider。
+Direct/Graph FFN 已接线，完整 CUDA 三交付与 P1 尚待验收，不能从单个 Provider 外推路线完成。
 
 | factor / 公共头 | 工厂 / owner | 当前有限域 |
 |---|---|---|
@@ -131,7 +174,8 @@ float32 或 float64 逻辑 dtype，输出保留该 dtype；累加类型显式声
 
 普通 Graph 可直接 `builder.add(QuantizedMatMul{...}, input, weight, scales, biases)`；signed 形态
 省去最后一项。权重的 `StorageFormatId` 仍须由具体路线的 packing factory 给出；仅凭 4 bit 无法
-推断物理编码或可否无损换格式。目前交付的是公共描述和校验，正式 Q4 执行 Provider 仍待各路线接入。
+推断物理编码或可否无损换格式。当前 CUDA Marlin 只解释前述 group128 carrier；其它路线/格式需要
+具备相应 Provider，公共描述和校验不等于有可执行实现。
 已有 19 族 CPU kernel 不因此多出 Q4 fallback；数值资格也不保证与先物化权重的逐位结果相同。
 
 ## Queue、byte transfer 与 Completion

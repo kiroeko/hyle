@@ -6,7 +6,8 @@
 > exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
-> event import 与 single-queue capture 已真机资格化；生产级 GPU operation provider 仍是后续纵切。
+> event import 与 single-queue capture 已真机资格化；普通 CUDA dense/Q4 FFN 已通过 W1 实际
+> Provider 组合与 captured replay 验证，完整 R4 三交付/性能验收仍在进行。
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、
@@ -31,6 +32,47 @@ task graph，也不拥有模型循环、KV cache、batching、sampling 或 servi
 `hybrid replay` 仅表示 capture 与普通命令组合，不是 CPU+GPU 推理。四路线特化是当前架构方向，
 尚未完成的 backend/provider 或部署约束不会因本次文档校准而自动交付，见
 [Graph 设计](../architecture/graph-design.md#63-路线内编译与特化执行)。
+
+## 普通 CUDA 入口
+
+CUDA Graph 与 Direct 使用相同的默认计算规则，链接 `hyle::graph`。普通单 GPU 程序显式选择
+CUDA device resource，无需手写 storage/target/lane ID 表：
+
+```cpp
+#include <hyle/graph/cuda.h>
+#include <hyle/compute/backends/cuda.h>
+
+auto context = hyle::graph::cuda::create_context();
+if (!context) return context.error();
+auto memory = hyle::compute::cuda::MemoryResource::create(
+    *context, hyle::compute::cuda::MemoryKind::kDevice);
+if (!memory) return memory.error();
+auto queue = context->create_queue();
+if (!queue) return queue.error();
+auto compiled = hyle::graph::cuda::compile(logical_graph, *context, memory->ref(), options);
+if (!compiled) return compiled.error();
+auto run = compiled->executable.create_invocation();
+if (!run) return run.error();
+// bind 全部外部 input/output；options.constants 借用持久权重 owner。
+auto ready = hyle::graph::cuda::prepare_replay(*run, *queue);
+if (!ready.ok()) return ready;
+auto done = run->submit(*queue);
+if (!done) return done.error();
+return done->wait();
+```
+
+默认 PreferCapture + RejectHostWait；通过 `replay_route()/replay_report()` 查看实际 capture 或
+command 路线，也可显式 RequireCapture。Graph 规划中间值与 workspace，Provider 保持自己的
+cuBLASLt/Marlin/kernel artifact；captured 热执行直接重放原生程序。改变同地址 buffer 的内容可
+重复执行；bind/reset 改变绑定会使 preparation 失效，需要重新冷准备。两个并发 run 各有独立
+scratch/captured pointers，外部 input/output 不应产生未排序的冲突访问。
+
+完整同图三 Provider 的 Q4 FFN 与变化输入示例见
+[CUDA Graph FFN](../../samples/package/graph/cpp/cuda_ffn.h)；支持域见
+[CUDA 默认规则](compute.md#普通-cuda-入口)。资源和常量 owner 借用至最后在途 Completion 的
+真实终态；失败槽需要重建。高级同 GPU 多 lane 使用既有 `CompileEnvironment`，普通 helper
+不推断跨 stream 依赖。`graph::compile(graph, context)` 的通用简写使用 host storage，CUDA
+普通代码使用上面的 `graph::cuda::compile`，显式提供设备资源。
 
 ## 普通 CPU 入口
 
@@ -723,8 +765,8 @@ submission admission 时等待上游。`ReplayReport` 提供四类 dependency �
 `kCaptured` 或 `kHybrid`；`kRequireCapture` 遇到任一 delegated 或不能 capture 的 command segment 就失败。
 当前 RTX 4070 纵切已验证：同一 CUDA target 的 compute/transfer lane 共用一个 device storage identity，只有
 实际产生 segment 的 lane 要求 Queue；兼容 CUDA stream 可用 event 非阻塞导入前缀，单 Queue 的兼容 copy
-segment 可 cold capture 并 warm replay。它不代表尚未实现的 CUDA operation provider，也不承诺一般
-multi-stream capture。
+segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt/Marlin/HYLE kernel 的
+同 Queue 计算 capture；这些单 Queue 证据不承诺一般 multi-stream capture。
 
 ## 冷路径、热路径与调度取舍
 

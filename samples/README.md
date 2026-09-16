@@ -41,8 +41,8 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
 | [`package/process/cpp/`](package/process/cpp/) | process | source/static/shared 中启动当前 probe、取得 typed exit，并验证 runtime shutdown 与传递依赖 |
-| [`package/compute/cpp/`](package/compute/cpp/) | compute | source/static/shared 中显式 CPU Context/Queue、Mem tensor、prepared RMSNorm 与 typed host kernel |
-| [`package/graph/cpp/`](package/graph/cpp/) | graph | source/static/shared 中多节点 GraphBuilder、workspace/report、Executable/Invocation 与绑定提交 |
+| [`package/compute/cpp/`](package/compute/cpp/) | compute | CPU prepared RMSNorm；CUDA 默认 Q4 gate/up、SwiGLU、dense down 的三 Provider FFN 与变化输入 |
+| [`package/graph/cpp/`](package/graph/cpp/) | graph | CPU 多节点图；CUDA 普通 compile/capture、压缩常量权重、workspace 与变化输入重放 |
 
 > 01-03 用源码 `add_subdirectory` 集成；04 及之后的编号示例与 `package/*/cpp` 用安装包集成。
 > `package/*/cpp` 是构建回归 fixture，不是额外的产品 API。

@@ -161,7 +161,7 @@ GPU 所需的 host 控制、准备和传输机制。配置示例：
 | 交付能力 | `HYLE_COMPUTE_CPU` | `HYLE_COMPUTE_CUDA` | `HYLE_COMPUTE_ONEDNN` |
 |---|---|---|---|
 | CPU Native | ON | OFF | OFF |
-| CUDA runtime 独立交付 | OFF | ON | OFF |
+| CUDA 默认计算与 native Graph | OFF | ON | OFF |
 | 仅 tensor/operation/Graph 语义底座，无执行设备 | OFF | OFF | OFF |
 
 这些值由源码父工程在 `add_subdirectory()` 前设置，或由 SDK producer 的 CMake 配置选择；安装消费者
@@ -179,12 +179,16 @@ static SDK 传递锁定 oneDNN archive/header 闭包，shared SDK 把实现私�
 二者安装 Apache-2.0 notice。CPU OFF + oneDNN ON 明确配置失败；CPU OFF + oneDNN AUTO
 不探测、不下载。构建 feature 只记录可用实现；默认规则的性能验收由 CPU 路线任务记录。
 
-Compute/Graph 还包含 CUDA runtime factor。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
+Compute/Graph 包含可选 CUDA 默认路线。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
 CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
 都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`
-找到。当前该 factor 提供 CUDA device/context/queue/memory/interop/transfer/capture runtime，不应解读为
-完整 CUDA 算子 provider 已交付。Metal/MLX、Vulkan 或其他 provider 仍须在独立 factor 具备实现、依赖
+找到。选择公开产品会接入 cuBLASLt、Marlin 和 HYLE SwiGLU 的已实现默认组合；Direct 使用
+`compute::cuda::create_context()`，Graph 使用 `graph::cuda::create_context/compile/prepare_replay()`。
+Marlin 的 Apache-2.0 LICENSE/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。R4 的当前
+三交付/性能验收状态见 module-status，不把可编译入口当作全部路线已验收。Windows 运行时将实际
+HYLE、CUDA Runtime、cuBLASLt 及所需 VC runtime DLL 放在 exe 同目录；不要依赖偶然的 PATH。
+Metal/MLX、Vulkan 或其他 provider 仍须在独立 factor 具备实现、依赖
 owner、三交付验证与性能结论后登记。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
 当前 trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 

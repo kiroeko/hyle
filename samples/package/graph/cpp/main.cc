@@ -2,8 +2,8 @@
 #include <hyle/graph/cpu.h>
 #endif
 #if defined(HYLE_COMPUTE_CUDA)
-#include <hyle/compute/backends/cuda.h>
-#include <hyle/compute/transfer.h>
+#include "cuda_ffn.h"
+#include <cstdio>
 #endif
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
@@ -199,32 +199,12 @@ int main() {
 #endif // HYLE_COMPUTE_CPU
 
 #if defined(HYLE_COMPUTE_CUDA)
-  auto cuda_device = hyle::compute::cuda::device(0);
-  if (!cuda_device)
+  const auto cuda_status = sample_cuda_graph::run();
+  if (!cuda_status.ok()) {
+    const auto message = cuda_status.message();
+    std::fprintf(stderr, "CUDA FFN: %.*s\n", static_cast<int>(message.size()),
+                 message.data());
     return 24;
-  auto cuda_context = Context::create(*cuda_device);
-  if (!cuda_context)
-    return 25;
-  auto cuda_queue = cuda_context->create_queue();
-  auto cuda_resource = hyle::compute::cuda::MemoryResource::create(
-      *cuda_context, hyle::compute::cuda::MemoryKind::kDevice);
-  if (!cuda_queue || !cuda_resource ||
-      !cuda_queue->reserve_completions(1).ok()) {
-    return 26;
-  }
-  auto cuda_buffer = hyle::mem::Buffer::create(cuda_resource->ref(), 256);
-  if (!cuda_buffer)
-    return 27;
-  auto cuda_done = hyle::compute::fill_async(
-      *cuda_queue, cuda_buffer->view(), std::byte{0x2a});
-  if (!cuda_done || !cuda_done->wait().ok())
-    return 28;
-  std::array<std::byte, 256> downloaded{};
-  if (!cuda_buffer->view().read(downloaded).ok())
-    return 29;
-  for (auto value : downloaded) {
-    if (value != std::byte{0x2a})
-      return 30;
   }
 #endif
 

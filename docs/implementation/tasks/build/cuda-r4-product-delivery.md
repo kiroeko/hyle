@@ -61,3 +61,11 @@ HYLE_DEV_FACTORS；Windows 验证显式复制实际运行库到各自 exe 目录
 七问裁决：第三方与许可复用 R4；主/正交产品旅程如上；底层 owner 复用；P0 无旧 runtime 成本
 变化、CUDA P1 独立；纯 C++；三交付同一公开 target；指南明确能力、失败、资源寿命和 capture
 失效条件。D1–D3 完成后检查实际 install/export/依赖，适用门未完成之前不签 CLOSED。
+
+### D1/D2 实现检查点
+
+两个 CUDA roots 已接入公开 Compute/Graph 产品，selector 的 owner 检查为 READY；没有修改八个
+旧 factor 的 C++。原 package 样例的 CUDA 分支改为普通入口下的 Q4 gate/up → SwiGLU → dense
+ down，Graph 使用设备资源 compile/prepare_replay 并检查真实 captured 路线。CPU/no-backend
+分支保留。Windows 源码父工程仅选择 compute/graph、CUDA ON/CPU OFF，两个公开产品样例 2/2
+通过，每个执行三组变化输入；DLL 实际邻置。当前仍 AUDITED，安装包/WSL/隔离门待补，不记 PASS。
