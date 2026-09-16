@@ -278,14 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md",
-      "summary": "R3 Graph v2 BLOCKED：12 项中 11 项工程门通过，双 worker 同实现包装税仍未决；停止采样，保留既有正确性/三交付与全部原始证据。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Graph v2 engineering 资格 PASS；two-worker 同实现 direct fused 的两个分层在 n=31 仍未证明 5% 非劣门，聚合性能 INCONCLUSIVE。",
-      "blocker_owner": "Graph CPU 重复执行与 region 边界",
-      "resume_condition": "用户已要求专门调研：另立有限源码成本卡，证明具体多余工作并冻结纠正后按 SCOPED/AUDITED 恢复；不追加原候选样本或更改 affinity/idle/阈值。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
+      "summary": "R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。"
     },
     {
       "module": "container_concurrent",
@@ -376,14 +371,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md",
-      "summary": "R3 Graph v2 BLOCKED：12 项中 11 项工程门通过，双 worker 同实现包装税仍未决；停止采样，保留既有正确性/三交付与全部原始证据。",
-      "candidate": "2b613413cd30af845f0b66911e75a2fb455acd2a",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Graph v2 engineering 资格 PASS；two-worker 同实现 direct fused 的两个分层在 n=31 仍未证明 5% 非劣门，聚合性能 INCONCLUSIVE。",
-      "blocker_owner": "Graph CPU 重复执行与 region 边界",
-      "resume_condition": "用户已要求专门调研：另立有限源码成本卡，证明具体多余工作并冻结纠正后按 SCOPED/AUDITED 恢复；不追加原候选样本或更改 affinity/idle/阈值。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
+      "summary": "R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。"
     },
     {
       "module": "compute_ops",
@@ -431,14 +421,9 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "BLOCKED",
-      "summary": "R3 Graph v2 BLOCKED：12 项中 11 项工程门通过，双 worker 同实现包装税仍未决；停止采样，保留既有正确性/三交付与全部原始证据。",
-      "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md",
-      "candidate": "2b613413cd30af845f0b66911e75a2fb455acd2a",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Graph v2 engineering 资格 PASS；two-worker 同实现 direct fused 的两个分层在 n=31 仍未证明 5% 非劣门，聚合性能 INCONCLUSIVE。",
-      "blocker_owner": "Graph CPU 重复执行与 region 边界",
-      "resume_condition": "用户已要求专门调研：另立有限源码成本卡，证明具体多余工作并冻结纠正后按 SCOPED/AUDITED 恢复；不追加原候选样本或更改 affinity/idle/阈值。"
+      "state": "SCOPED",
+      "summary": "R3 Graph 同实现重复执行成本专项 SCOPED：用户明确要求解决 v2 n=31 的包装税未决；只审计具体热路径，有限 FIX 尚未冻结，不追加旧候选采样。",
+      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md"
     }
   ]
 }
