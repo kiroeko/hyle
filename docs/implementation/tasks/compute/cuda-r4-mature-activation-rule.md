@@ -60,3 +60,18 @@ Graph 已有 cold provider-index 优先规则可消费同一组合，不改共�
   NATURAL_ROUTE，只报完整边界成本。裸 API 缺少 admission/owner/失败服务，不签同合同 NI。
 - 所有本卡适用检查完成前不授予 CUDA CLOSED；任何未运行项仍未证明。发现范围外具体缺口按
   所属 owner 定向处理，不修改公共治理/性能核心。
+
+## 实施快照（仍为 AUDITED）
+
+- `c5848846` 已接入具名成熟 Provider、冷默认绑定与原 HYLE 能力保留；实际源码归档/四个
+  上游文件 Git blob、许可与 vendored identity 已逐项核对。无 TVM/Python runtime。
+- Windows MSVC/CUDA shared Release 定向门 6/6 PASS：三个 factor 的真实测试与逐头检查。
+  覆盖18个成熟 FP16/FP32 shape 组合、特殊值、双槽变化输入、对齐/alias 拒绝后继续使用、
+  原 HYLE 2/4字节对齐能力、OOM/保活/关闭、普通 Direct 与实际 Graph capture 的默认和回退域。
+  完整日志暂存 `C:/hyle-scratch/r4-cuda-20260916/mature-rule/`，尚不冒充全部 S4。
+- 最终默认 P1 使用 [Direct v3](../../../../bench/contracts/compute-cuda-ffn-p1-v3.json) 与
+  [Graph v3](../../../../bench/contracts/graph-cuda-ffn-p1-v3.json)：只更新最终实现身份/claim；
+  原 v2 不覆盖，workload、8 strata、control、5%门及 n=15→31 预算原样保留。尚未启动。
+- selector 对新增 dependency lock / vendored input 要求 package 闭包检查；沿现有规则执行，
+  仅登记 `third_party/sglang_activation/ -> compute_provider_cuda`，不更改 selector 算法。
+  三交付、适用 host/device 插桩、两 Mac CUDA OFF 投影、最终 P1 与原生成本诊断仍待完成。
