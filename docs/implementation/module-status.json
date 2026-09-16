@@ -471,13 +471,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "QUEUED",
-      "summary": "R6 Vulkan route identity reserved for its bounded native resource/program and mature shader audit; no product target or completion claim."
+      "state": "SCOPED",
+      "summary": "R6 Vulkan SCOPED: bounded mature implementation, native lifetime and platform/delivery audit; no product implementation or completion claim.",
+      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "QUEUED",
-      "summary": "R6 Vulkan Graph route identity reserved for its bounded lowering audit; no product target or completion claim."
+      "state": "SCOPED",
+      "summary": "R6 Vulkan SCOPED: bounded mature implementation, native lifetime and platform/delivery audit; no product implementation or completion claim.",
+      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md"
     }
   ]
 }
