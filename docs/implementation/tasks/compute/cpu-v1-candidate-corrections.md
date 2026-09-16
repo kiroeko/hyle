@@ -99,3 +99,19 @@ balanced × caller=2/4（workers 恒为0,2）×执行/分配正反，共16进程
 链接 d9712e68 原有未改静态库。不得改原候选、正式合同、公共仪器或 Sched 产品。所有原始
 输出保存，不作 PASS 资格证据；对照仍无法解释时终止，不追加模式/次数。重型任务与现行
 WSL验收串行。诊断可以提供恢复条件所需事实，不能自动解除当前 BLOCKED。
+
+### 第一组原因诊断结果
+
+固定16进程已完成：原同核 power-saving 的双 worker 同实现 ratio 为0.723～2.378，
+出现44个超过各自中位数两倍的 epoch；caller独立到P核4后为0.949～1.049，未出现这种长尾。
+同核 balanced 的片段中位耗时约34.67毫秒，独立caller后约30.72微秒。所有条件仍锁P核，
+2个worker与数学任务不变；独立caller条件诚实占用第三个物理核，不能冒充原两核正式合同。
+原始轮次/源码/原库hash/编译命令在 parallel-aa-diagnosis.zip；这是 DIAGNOSTIC，不签P1。
+
+bulk.cc 的 notifier 在 Event::signal 返回后才发布 notification_complete，caller 则在 Event
+唤醒后对该旗标作无界 cpu_relax；共核时唤醒抢占可能拖延最后的发布。这是下一步源码检查的
+具体位置，尚未证明全部长尾只来自此处，不因此自动重开整个 Sched。
+
+用户随后明确建议性能模式。Windows本来已使用卓越性能电源计划；新增一次有界 low-latency
+诊断：仅调用现有 kLowLatency，caller=2/4 × 执行/分配正反，共8进程，原库仍不改。
+这是用户追加的具体模式检查，不覆写第一组结果，不替代正式资格或解除 BLOCKED。
