@@ -1,6 +1,6 @@
 # R3 Graph：独立 caller 的验收环境纠正
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: BLOCKED -->
 
 ## Closure card
 
@@ -56,3 +56,27 @@ selector 仅选 docs/closure，两门 PASS，其余 98 门 skipped，未触发�
 
 两个 benchmark target 构建和一次预声明 A/A/P1 仍待执行；CANDIDATE 不是资格 PASS。
 Windows 三交付完成后按串行队列运行，使用全新 build/evidence 目录，不覆盖 v1 失败包。
+
+## Terminal：资格通过，工程性能仍 BLOCKED
+
+候选 `2b613413` 的两个 benchmark 构建通过；实际 workload A/A 16 进程 / 192 ratios
+全部通过，范围 0.915824–1.065435。统一仪器的五个 controls、build/artifact 与完整原始数据
+`verify` 均 PASS，engineering 资格为 QUALIFIED。完整 n=15→31 已执行，原始两阶段均保留。
+
+12 个 workload 中 11 个非劣门 PASS；`two-worker-fused-boundary-17x129x257` 两个 primary
+stratum 的 98.9326% CI 下界为 0.951462、0.950646，低于既定 1/1.05 = 0.952381。
+此项为 UNRESOLVED，聚合 performance_gate 为 INCONCLUSIVE；不是 material FAIL，也不是 PASS。
+八个分层 median ratio 为 0.970361–0.982654，即 Graph 相对同实现 direct fused 耗时多约
+1.8%–3.1%。其余串行固定小幅 loss 原样登记，不以非劣门 PASS 改名为 parity。
+
+[完整结果与证据](../../../../evidence/performance/graph-cpu-route-p1-v2-2b613413-w1-win/README.md)
+保留全部 12 项方向、两阶段 raw、manifest、controls、driver 和 verify receipt。
+本卡 n=31 预算已耗尽，停止 Graph 采样；graph_route_cpu / graph_provider_onednn 以及承担
+该 replay 边界的 graph owner 进入 BLOCKED，已有正确性/三交付不失效。Direct 独立验收继续。
+
+- blocker：合格同合同 Graph/direct fused 比较尚未证明两 worker 包装税落在工程预算内。
+- blocker_owner：Graph CPU 重复执行与 region 边界；尚无 Sched 产品缺陷的独立因果证据。
+- resume_condition：另立有限成本审计，证明具体多余工作并固定合法纠正；依法重新 SCOPED/AUDITED，
+  产品/API 固定后才决定适用候选验证。不能通过追加原候选样本或更换 affinity/idle/阈值恢复。
+
+用户在本次裁决后明确要求专门调研该阻塞项。此授权开启下一张有界源码成本卡，不覆盖本卡停止事实。

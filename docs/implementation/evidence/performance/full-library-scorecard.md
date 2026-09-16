@@ -142,3 +142,27 @@ python scripts/check-docs.py
 
 任何模块从 `CLOSED` 合法重开并签发新 candidate 后，账本 candidate 会故意失配，迫使维护者重新判断旧
 证据是 exact、可证明继承，还是已经失效；这不是第二套状态机。
+
+## 2026-09-16：R3 Graph 未收口的合格证据
+
+以下 owner 尚未 CLOSED，单独列出完整性能方向，不并入上文历史 CLOSED 数量。
+[原始工程证据](../../../../evidence/performance/graph-cpu-route-p1-v2-2b613413-w1-win/README.md)
+资格及 controls PASS，n=31 已到上限；工程门 11/12 PASS，聚合 INCONCLUSIVE。
+严格方向 5 LOSS / 2 WIN / 5 INCONCLUSIVE；LOSS 未被 5% 非劣 PASS 改名。
+
+| Workload | median ratio 范围 | 全部分层 CI 外界 | 严格方向 | 非劣门 |
+|---|---|---|---|---|
+| decode-fused-boundary-1x256x512 | 0.970136–0.974529 | 0.962630–0.981172 | LOSS | PASS |
+| decode-natural-sequence-1x256x512 | 0.981288–0.989639 | 0.973949–0.999395 | LOSS | PASS |
+| short-prefill-fused-boundary-16x512x1024 | 0.994235–1.000967 | 0.981550–1.009335 | INCONCLUSIVE | PASS |
+| short-prefill-natural-sequence-16x512x1024 | 0.990111–1.005592 | 0.981816–1.017910 | INCONCLUSIVE | PASS |
+| holdout-fused-boundary-17x129x257 | 0.984310–0.989053 | 0.979737–0.998289 | LOSS | PASS |
+| holdout-natural-sequence-17x129x257 | 0.987358–0.993463 | 0.982557–0.997530 | LOSS | PASS |
+| decode-native-sequence-1x256x512 | 0.999597–1.008232 | 0.992717–1.015219 | INCONCLUSIVE | PASS |
+| short-prefill-native-sequence-16x512x1024 | 0.978004–0.987949 | 0.966585–1.001661 | INCONCLUSIVE | PASS |
+| holdout-native-sequence-17x129x257 | 0.959773–0.964887 | 0.954126–0.970966 | LOSS | PASS |
+| two-worker-fused-boundary-17x129x257 | 0.970361–0.982654 | 0.950646–1.002706 | INCONCLUSIVE | UNRESOLVED |
+| two-worker-natural-sequence-17x129x257 | 1.157200–1.173222 | 1.137193–1.202477 | WIN | PASS |
+| two-worker-native-sequence-17x129x257 | 1.268071–1.317464 | 1.242161–1.330614 | WIN | PASS |
+
+用户已要求专门审计同实现包装税；当前工程动作 INVESTIGATE，旧候选停止采样。

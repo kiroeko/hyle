@@ -240,3 +240,10 @@ Windows 单测的初始 DLL loader 错误保留；按用户要求把 HYLE 与 Go
 
 普通验证到此停止重复运行。尚缺 Direct 的正确 engineering P1 和 Graph v2 的一次 A/A/P1
 裁决，R3 聚合继续 INCONCLUSIVE；不能把三交付或工具修复当作性能门完成。
+
+## Graph v2 的实际裁决
+
+Graph 资格及全部 controls PASS，12 项中 11 项非劣门 PASS；双 worker 同实现 direct fused
+在 n=31 仍有两个 CI 跨 5% 边界，聚合 INCONCLUSIVE。三个 Graph owner 进入其当前
+[停止记录](cpu-graph-external-caller-qualification.md)。用户随后明确要求专门调研此成本阻塞；
+另立有限源码审计，不重复原样采样。Direct 正确工程模式正在独立完成，R3 尚未关闭。
