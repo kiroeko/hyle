@@ -1,0 +1,34 @@
+{
+  "baseline": "f71a81cc375c292802ace7b399888fa830c6a04f",
+  "stage": "R4 C1 implementation checkpoint; not the complete CUDA route candidate",
+  "source_sha256": {
+    "cmake/HyleComponents.cmake": "f1ed7a42db987d0b95ff59ed4145d8cd824e5f9c3ad360b10d486c4b2d905c6d",
+    "scripts/validation-policy.json": "b53cbf2e8c70a6a667d266c25f8c1289910cadd55ce6a475491ab0268348ca00",
+    "include/hyle/compute/providers/cublas.h": "5171b4a2ac639fd78a20b6390c9f47ae002842842630ff7bab2c9e05506cae6f",
+    "src/compute_provider_cublas/CMakeLists.txt": "fb19cc617ea68dc1d8bc27a715ee1acbb23da69b7e33f4939e7f7f322ede4ff0",
+    "src/compute_provider_cublas/cublas_provider.cc": "1d7b8c27691b7845d8a228db95020dcf10f0e6fab8a2f8d7659880a058348f57",
+    "tests/compute_provider_cublas/CMakeLists.txt": "218d329fbc5cb311b4e65a7212bbcd93731406521b2bd4320e927c902e823542",
+    "tests/compute_provider_cublas/cublas_provider_test.cc": "31d20de4854c1fc0f6f79ddc28ea040d1c13586aca3bd377ee2eccda0776a439"
+  },
+  "validation": {
+    "windows_shared": "PASS: 2/2 CTest, four GPU test cases",
+    "coverage": [
+      "FP32 row/column inputs with double oracle",
+      "FP16 decode/prefill and transposed weights",
+      "three changed inputs and two independent invocation slots",
+      "host-only resource and integer-type rejection",
+      "confirmed pending completion retains released prepared/invocation through context close"
+    ],
+    "selector_policy_tests": "PASS: 45 unit tests",
+    "full_route_graph": "NOT_RUN",
+    "source_static_shared_package_matrix": "NOT_RUN",
+    "P1": "NOT_RUN"
+  },
+  "limits": [
+    "rank-2 matching FP16/FP32, FP32 accumulation",
+    "row/column-major inputs; ordinary MatMul output is dense row-major",
+    "16-byte tensor and 256-byte workspace alignment",
+    "up to 32 MiB explicit workspace; SDK private bytes unknown",
+    "Windows RTX 4070 SM89 tested here; other devices and WSL pending"
+  ]
+}

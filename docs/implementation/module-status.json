@@ -468,7 +468,7 @@
     {
       "module": "compute_provider_cublas",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
+      "summary": "R4 C1 AUDITED 实施中：cuBLASLt FP16/FP32 冷绑定、独立 invocation handle/workspace 和真实终态已接入；W1 shared 2/2 定向测试通过。普通 CUDA 组合、完整 Graph、跨平台三交付和 P1 尚未验收。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {

@@ -419,9 +419,13 @@ _hyle_declare_component(graph_route_cpu
   TEST_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu.h)
 
-# R4 CUDA identities only. No targets, public headers, feature switches or
-# dependency edges are published before the native-route audit is frozen.
-_hyle_declare_component(compute_provider_cublas QUEUED)
+# Audited native cuBLASLt implementation. The expert factory has no CUDA SDK
+# types; only the implementation consumes the backend's private context seam.
+_hyle_declare_component(compute_provider_cublas
+  PRIVATE_DEPS compute_backend_cuda compute_ops error mem
+  PUBLIC_DEPS core compute
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/cublas.h)
+# Remaining R4 identities acquire targets together with their implementation.
 _hyle_declare_component(compute_provider_marlin QUEUED)
 _hyle_declare_component(compute_provider_cuda QUEUED)
 _hyle_declare_component(compute_route_cuda QUEUED)

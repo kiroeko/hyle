@@ -168,3 +168,20 @@ CPU 例外由独立卡结案，本卡不改变其原统计。
 Ninja 并行度 2、CUDA backend 独立 factor，三个适用 source 测试通过，DLL 实际邻置。
 selector 只选 docs/closure/configure/backend CUDA；没有 P1，没有签完整 R4 三交付或 Provider 集成。
 统一脚本 Compute + Graph 全实现 **31,034 行**（不含测试，self-check PASS）；源码规模包含旧资产。
+
+### C1 产品检查点
+
+cuBLASLt 的实际 Provider 已实现并通过 [W1 shared 定向检查](../../../../evidence/correctness/cuda-r4-cublas/README.md)：
+2/2 CTest（公共头与四个 GPU 用例），FP32 四种输入布局、FP16 decode/短 prefill、转置权重、
+三次变化输入、双槽及 double oracle；受控 pending Completion 验证释放 artifact/invocation、
+关闭 Context 后仍保留真实终态。C6 bridge 已被独立 Provider DSO 实际消费。
+
+本次有限域明确为非零 rank-2、匹配 FP16/FP32；输入 row/column-major，普通 MatMul output 为
+dense row-major；tensor 16-byte alignment，workspace 256-byte alignment、最多 32 MiB。
+F32 使用 pedantic compute；FP16 split-K 禁止 output-type partial sums，保持 FP32 accumulation。
+每槽独占 vendor handle/workspace，prepare 后不再查 heuristic；SDK private bytes 仍报告 unknown。
+
+selector 的 cuBLAS factor 配置只增加 CUDA=ON，现有 45 个工具单测通过，没有重写仪器。
+中央 manifest 变化产生的其它 native/package 选择项尚未执行、不记 PASS；待 C5 最终闭包集中裁决。
+仍为 AUDITED 实施检查点，未进入完整 R4 CANDIDATE；C2–C5、OOM 专项、完整 capture/三交付/P1 仍待完成。
+统一脚本 Compute + Graph 当前全实现 **31,486 行**，不含测试，self-check PASS。

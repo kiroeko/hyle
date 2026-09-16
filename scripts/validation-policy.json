@@ -4,6 +4,9 @@
     "compute_backend_cuda": {
       "HYLE_COMPUTE_CUDA": "ON"
     },
+    "compute_provider_cublas": {
+      "HYLE_COMPUTE_CUDA": "ON"
+    },
     "compute_provider_onednn": {
       "HYLE_COMPUTE_ONEDNN": "ON"
     },
