@@ -1,0 +1,30 @@
+[
+  {
+    "target": "hyle_compute_route_apple_bench",
+    "returncode": 0,
+    "elapsed_seconds": 2.717947208,
+    "artifact_sha256": "1e41ce651af4f0bfd5a1c31e6a80924307dc7dd438baebefadd1781e2855801f",
+    "log_sha256": "43cbc5b89a6cd52a680234327e29cd0974efb57faf423f30d7916370063bf409"
+  },
+  {
+    "target": "hyle_graph_route_apple_bench",
+    "returncode": 0,
+    "elapsed_seconds": 2.635155083,
+    "artifact_sha256": "0f42653a96ebeef6de48013835202d29d43a9021b737d49b5c37731c0275175d",
+    "log_sha256": "b2f65091c00dda11b4791cb38e3ac9367ff6cf5785e8335508d39a87501fae1d"
+  },
+  {
+    "target": "hyle_compute_apple_native_cost_bench",
+    "returncode": 0,
+    "elapsed_seconds": 2.638264833,
+    "artifact_sha256": "80fd17786d3b3201d499c9be9b9f2e0e5dd16eabedfacd705fc257d090ad3886",
+    "log_sha256": "04c165884af0318512450606ceb67f276d933657c793b82363d18cbcd2c099ef"
+  },
+  {
+    "target": "hyle_graph_apple_native_cost_bench",
+    "returncode": 0,
+    "elapsed_seconds": 2.648502917,
+    "artifact_sha256": "85d981e9b58062ad89e7b4fa24340cfac1269839f342a65570dc5174c6ad0771",
+    "log_sha256": "4656a38ee7a54b16c2eb87d1f437d4668ed925cd218b4bace81672640732f646"
+  }
+]

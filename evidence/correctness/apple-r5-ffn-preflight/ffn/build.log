@@ -1,0 +1,19 @@
+[0/2] Re-checking globbed directories...
+[1/19] cd /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bench/compute_route_apple && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/build-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/mlx.metallib
+[2/19] cd /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bench/compute_route_apple && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/build-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/mlx.metallib
+[3/19] cd /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bench/compute_route_apple && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/build-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/mlx.metallib
+[4/19] cd /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bench/graph_route_apple && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/build-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/mlx.metallib
+[5/19] cd /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bench/graph_route_apple && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/build-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/mlx.metallib
+[6/19] cd /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bench/graph_route_apple && /opt/homebrew/bin/cmake -E make_directory /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-verify/r5-apple-20260917/build-static/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/mlx.metallib
+[7/19] Building CXX object bench/compute_route_apple/CMakeFiles/hyle_compute_route_apple_bench_placement.dir/route_p1_bench.cc.o
+[8/19] Building CXX object bench/compute_route_apple/CMakeFiles/hyle_compute_route_apple_bench.dir/route_p1_bench.cc.o
+[9/19] Building CXX object bench/compute_route_apple/CMakeFiles/hyle_compute_apple_native_cost_bench.dir/route_p1_bench.cc.o
+[10/19] Building CXX object bench/graph_route_apple/CMakeFiles/hyle_graph_route_apple_bench.dir/__/compute_route_apple/route_p1_bench.cc.o
+[11/19] Building CXX object bench/graph_route_apple/CMakeFiles/hyle_graph_route_apple_bench_placement.dir/__/compute_route_apple/route_p1_bench.cc.o
+[12/19] Building CXX object bench/graph_route_apple/CMakeFiles/hyle_graph_apple_native_cost_bench.dir/__/compute_route_apple/route_p1_bench.cc.o
+[13/19] Linking CXX executable bin/hyle_compute_route_apple_bench
+[14/19] Linking CXX executable bin/hyle_compute_route_apple_bench_placement
+[15/19] Linking CXX executable bin/hyle_compute_apple_native_cost_bench
+[16/19] Linking CXX executable bin/hyle_graph_route_apple_bench
+[17/19] Linking CXX executable bin/hyle_graph_route_apple_bench_placement
+[18/19] Linking CXX executable bin/hyle_graph_apple_native_cost_bench

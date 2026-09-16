@@ -1,0 +1,17 @@
+{
+  "classification": "correctness checkpoint, no timing/A-A/P1",
+  "machine": "Mac16,12",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+  "inputs": {
+    "bench/compute_route_apple/route_p1_bench.cc": "78d5a39f8f1463b527c794569b6153dff056a0e64b645dc6f3812e7864bdb926",
+    "bench/compute_route_apple/CMakeLists.txt": "30f58bb8d2042912590c867f027451a96fb7ad3f6bf5c347833c1036c33a2bee",
+    "bench/compute_route_apple/validate_aa.py": "742054b44df4d8689005d44d69a6bf17b5e5d3e132a0730f9e1de97471cb697b",
+    "bench/common/perf_process.h": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+    "bench/contracts/compute-apple-ffn-p1-v1.json": "398d5345f612a06caf6d82af4a9a0e219fbbcda2262dfa3308cc399980272662",
+    "bench/contracts/graph-apple-ffn-p1-v1.json": "5f7fed23b07f5e081c5dad4ba178944f8833762027942a1328b6b82152fcafac",
+    "tests/graph_route_apple/graph_test.cc": "f5a9c919a672dd23fee6911cd9c573488459e78f12d76028b6a131349bde6924"
+  },
+  "graph_test_artifact": "e6a34053ce0b68c08a5874ebd2e24bec0b7ff42c157b598ac46692bc69034bad",
+  "metallib": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+  "configuration": "Release, static, WERROR, sanitizers off, Metal-only MLX, parallel 2"
+}

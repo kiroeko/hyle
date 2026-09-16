@@ -1,0 +1,458 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "graph-apple-ffn-p1-v1",
+  "module": "graph_route_apple",
+  "claim": "M1-MAC engineering qualification of the mature MLX full-region integration against an independent native C++ MLX expression with identical HYLE ownership, admission and completion. No HYLE algorithm win or extrapolation to other hardware/toolchains.",
+  "candidate": {
+    "target": "hyle_graph_route_apple",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "graph_route_apple",
+    "entrypoint": "include/hyle/graph/apple.h"
+  },
+  "peers": [
+    {
+      "id": "mlx-native",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "Independent native C++ expression of the same mature MLX region under identical HYLE native context lifecycle; no typed lower or Graph calls.",
+        "flags": "Metal-only MLX, JIT enabled, F32, no LTO; actual AppleClang/SDK/Metal versions recorded.",
+        "precision": "F32 affine Q4/group64, F32 activation/SiLU/dense down/output",
+        "scope": "Complete resident FFN, ready arrays, owning checked completion and result release."
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "decode-affine-q4-ffn-m1",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/decode/affine-group64-q4-ffn",
+      "provenance": {
+        "path": "bench/compute_route_apple/consumer_shapes_v1.json",
+        "sha256": "d175dbef88b5e0183f1d39151d5ce29d4f81edc97c7521ec6f37e65d26ce4d10"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary Apple Context, typed Graph lowering, two independent native run slots and owning results.",
+        "peer": "Independent raw MLX C++ callable through the same Context, with separate stream/slots and shared immutable resident weights.",
+        "equivalence": "Identical admission, ready-input binding, fixed native thread, native managed arrays, checked drain, result ownership/release and error responsibility."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-ffn",
+        "budget": 5,
+        "denominator": "one complete resident FFN through actual terminal completion and result release",
+        "derivation": "PROVISIONAL_ARCHETYPE from registered vLLM FFN dimensions; Apple format follows pinned MLX; M1 primary and M16 holdout, not observed production frequency"
+      },
+      "semantic_contract": "Compute Y[1,4096]=down(SiLU(gate(X))*up(X)); both use F32 and unsigned affine Q4/group64 gate/up, F32 dense down. Whole native compiled region and checked terminal before return.",
+      "comparability": "COMPARABLE",
+      "peer_id": "mlx-native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic mixed-index packed affine Q4 weights/scales/biases, dense F32 down weights and two distinct finite ready resident inputs; no short-period cancellation.",
+        "scale": {
+          "rows": 1,
+          "inner": 4096,
+          "hidden": 11008,
+          "output": 4096
+        }
+      },
+      "setup": "Shared immutable native weights; isolated zero-input compilation and exact-shape warmup; two run slots; full output equivalence and independent double oracle preflight (1e-5 + 1e-4*abs(expected), at least half of outputs reject zero), eight alternating complete warm calls.",
+      "charged_phases": [
+        "Ready native input binding, one complete compiled region submission, actual checked completion and this call result/Completion release; all native managed replay and wake/synchronization costs."
+      ],
+      "pair": {
+        "candidate": "HYLE Apple Graph FFN M=1 K=4096 H=11008 N=4096",
+        "peer": "MLX lifecycle Graph FFN M=1 K=4096 H=11008 N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "short-prefill-affine-q4-ffn-m16",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/affine-group64-q4-ffn",
+      "provenance": {
+        "path": "bench/compute_route_apple/consumer_shapes_v1.json",
+        "sha256": "d175dbef88b5e0183f1d39151d5ce29d4f81edc97c7521ec6f37e65d26ce4d10"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary Apple Context, typed Graph lowering, two independent native run slots and owning results.",
+        "peer": "Independent raw MLX C++ callable through the same Context, with separate stream/slots and shared immutable resident weights.",
+        "equivalence": "Identical admission, ready-input binding, fixed native thread, native managed arrays, checked drain, result ownership/release and error responsibility."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-ffn",
+        "budget": 5,
+        "denominator": "one complete resident FFN through actual terminal completion and result release",
+        "derivation": "PROVISIONAL_ARCHETYPE from registered vLLM FFN dimensions; Apple format follows pinned MLX; M1 primary and M16 holdout, not observed production frequency"
+      },
+      "semantic_contract": "Compute Y[16,4096]=down(SiLU(gate(X))*up(X)); both use F32 and unsigned affine Q4/group64 gate/up, F32 dense down. Whole native compiled region and checked terminal before return.",
+      "comparability": "COMPARABLE",
+      "peer_id": "mlx-native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic mixed-index packed affine Q4 weights/scales/biases, dense F32 down weights and two distinct finite ready resident inputs; no short-period cancellation.",
+        "scale": {
+          "rows": 16,
+          "inner": 4096,
+          "hidden": 11008,
+          "output": 4096
+        }
+      },
+      "setup": "Shared immutable native weights; isolated zero-input compilation and exact-shape warmup; two run slots; full output equivalence and independent double oracle preflight (1e-5 + 1e-4*abs(expected), at least half of outputs reject zero), eight alternating complete warm calls.",
+      "charged_phases": [
+        "Ready native input binding, one complete compiled region submission, actual checked completion and this call result/Completion release; all native managed replay and wake/synchronization costs."
+      ],
+      "pair": {
+        "candidate": "HYLE Apple Graph FFN M=16 K=4096 H=11008 N=4096",
+        "peer": "MLX lifecycle Graph FFN M=16 K=4096 H=11008 N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "apple-ffn-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "OFF",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "graph_route_apple",
+          "HYLE_COMPUTE_CUDA": "OFF",
+          "HYLE_COMPUTE_CPU": "OFF",
+          "HYLE_COMPUTE_ONEDNN": "OFF",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_COMPUTE_APPLE": "ON",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "FETCHCONTENT_FULLY_DISCONNECTED": "ON"
+        },
+        "peer_cache": {
+          "mlx-native": "HYLE_APPLE_REFERENCE_SOURCE_DIR"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "graph-apple-primary",
+          "target": "hyle_graph_route_apple_bench",
+          "stem": "hyle_graph_route_apple_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_APPLE_FFN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "decode-affine-q4-ffn-m1",
+              "title": "Graph FFN M=1 K=4096 H=11008 N=4096"
+            },
+            {
+              "id": "short-prefill-affine-q4-ffn-m16",
+              "title": "Graph FFN M=16 K=4096 H=11008 N=4096"
+            }
+          ]
+        },
+        {
+          "id": "graph-apple-placement",
+          "target": "hyle_graph_route_apple_bench_placement",
+          "stem": "hyle_graph_route_apple_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_APPLE_FFN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "decode-affine-q4-ffn-m1",
+              "title": "Graph FFN M=1 K=4096 H=11008 N=4096"
+            },
+            {
+              "id": "short-prefill-affine-q4-ffn-m16",
+              "title": "Graph FFN M=16 K=4096 H=11008 N=4096"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "apple-ffn-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "bench/compute_route_apple/validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}",
+            "--mode",
+            "graph"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    }
+  }
+}

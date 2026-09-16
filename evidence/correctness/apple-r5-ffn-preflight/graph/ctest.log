@@ -1,0 +1,10 @@
+Test project /Users/kiro/hyle-verify/r5-apple-20260917/build-static
+    Start 51: hyle_graph_route_apple_test
+1/1 Test #51: hyle_graph_route_apple_test ......   Passed    0.69 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+graph_route_apple    =   0.69 sec*proc (1 test)
+
+Total Test time (real) =   0.70 sec

@@ -1,0 +1,48 @@
+{
+  "schema": "hyle.bench.consumer-shapes/v1",
+  "module": "compute_route_apple",
+  "qualification": "PROVISIONAL_ARCHETYPE",
+  "sources": [
+    {
+      "name": "vLLM",
+      "revision": "51918e252af4dfff381001f42b7ebe6a0454501b",
+      "paths": [
+        "benchmarks/kernels/benchmark_shapes.py",
+        "benchmarks/kernels/benchmark_marlin.py"
+      ],
+      "evidence": "Llama-2-7b TP1 K4096 H11008 O4096 FFN dimensions; M1 and M16. Shape source only; Apple uses its own F32 affine group64 format."
+    },
+    {
+      "name": "MLX",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "paths": [
+        "mlx/ops.cpp",
+        "mlx/compile.cpp",
+        "mlx/backend/metal/quantized.cpp"
+      ],
+      "evidence": "Native affine quantized_matmul, compiled pure region and Metal QMM; preserving mature native fusion and checked stream completion."
+    }
+  ],
+  "workloads": [
+    {
+      "id": "decode-affine-q4-ffn-m1",
+      "role": "primary",
+      "rows": 1,
+      "inner": 4096,
+      "hidden": 11008,
+      "output": 4096
+    },
+    {
+      "id": "short-prefill-affine-q4-ffn-m16",
+      "role": "holdout",
+      "rows": 16,
+      "inner": 4096,
+      "hidden": 11008,
+      "output": 4096
+    }
+  ],
+  "shape_policy": "Finite complete-chain architecture qualification, not a production trace or a model throughput claim.",
+  "numerics": "Unsigned affine Q4/group64, q*F32scale+F32bias; F32 activation, gate/up, SiLU, dense down and output; both arms identical native MLX primitives.",
+  "storage": "Shared immutable resident compressed gate/up and dense down weights; independent native contexts and two run slots per arm; alternate two distinct ready resident inputs.",
+  "selection_policy": "Locked mature MLX full-region baseline; this final integration A/A/NI cannot establish a HYLE algorithm advantage. Hardware/software-specific replacement requires separate complete benefit evidence."
+}

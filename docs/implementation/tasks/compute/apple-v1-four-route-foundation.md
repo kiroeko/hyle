@@ -176,5 +176,17 @@ MLX Primitive 边界，不给产品添加 fault hook；GPU 前缀是真 square�
 （`d900a8ce` 输入相同，不含测试、bench、third_party）。本检查点不签 Mini、host 插桩、最终 P1
 或 R5 完成；其余预声明门继续保留未证明状态。
 
+## A6 性能接线（尚未正式采样）
+
+[有限比较合同](apple-r5-performance-contract.md)固定 Direct/Graph 对独立 MLX native expression
+的同生命周期接入比较、裸 MLX NATURAL_ROUTE 成本、两个真实 FFN 原型、完整 oracle、正反序/
+分配顺序/placement、A/A 与原 5% NI/n15→最多31预算。默认仍为相同成熟 MLX 实现；A/A 或 NI
+不计为 HYLE 算法胜利。主卡适用验证与停止条件不变，P1 只在不可变候选上启动。
+
 性能接线暴露的 benchmark CMake 误选由独立[工具卡](../build/validation-benchmark-build-inputs-v1.md)
 按有限预算修正；不改变本卡原有产品交付与性能验收责任。
+
+[完整 FFN 数值检查点](../../../../evidence/correctness/apple-r5-ffn-preflight/README.md)已通过四个
+实际可执行文件的 M1/M16、变化输入、独立 packed-weight double oracle，以及 Graph 冷拒绝/恢复。
+预检纠正了一项会放过全零结果的周期 fixture 缺陷；最终数据与 F32 容差在任何计时前固定。
+这些是正确性证据，不是 A/A、P1、Mini 或路线完成声明。

@@ -185,4 +185,61 @@ TEST(AppleGraph, RejectsMissingPendingAndMismatchedConstants) {
   wrong[1] = mx::negative(wrong[1], mx::Device::gpu);
   EXPECT_FALSE(ga::compile(*context, *graph, wrong));
 }
+
+TEST(AppleGraph, CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto builder = g::GraphBuilder::create();
+  ASSERT_TRUE(builder);
+  auto x = builder->input(dense({2, 2}));
+  ASSERT_TRUE(x);
+  auto y = builder->add(c::Operation::custom(Affine{}), *x);
+  ASSERT_TRUE(y);
+  ASSERT_TRUE(builder->publish(*y).ok());
+  auto graph = std::move(*builder).finish();
+  ASSERT_TRUE(graph);
+
+  for (int failure = 0; failure < 3; ++failure) {
+    auto refused = ga::compile(
+        *context, *graph, {},
+        {.custom = [failure](const c::Operation &,
+                             std::span<const mx::array> inputs,
+                             mx::Stream stream)
+             -> hyle::Result<std::vector<mx::array>> {
+          if (failure == 0)
+            return std::vector<mx::array>{};
+          if (failure == 1)
+            return std::vector{mx::astype(inputs[0], mx::int32, stream)};
+          return std::unexpected(hyle::Status::ResourceExhausted(
+              "custom lowering allocation refused"));
+        }});
+    ASSERT_FALSE(refused);
+    if (failure < 2)
+      EXPECT_TRUE(refused.error().IsInvalidArgument());
+    else {
+      EXPECT_TRUE(refused.error().IsResourceExhausted());
+      EXPECT_EQ(refused.error().message(), "custom lowering allocation refused");
+    }
+  }
+
+  auto program = ga::compile(
+      *context, *graph, {},
+      {.custom = [](const c::Operation &, std::span<const mx::array> inputs,
+                    mx::Stream stream)
+           -> hyle::Result<std::vector<mx::array>> {
+        return std::vector{mx::add(
+            mx::multiply(inputs[0], mx::array(2.f), stream), mx::array(1.f),
+            stream)};
+      }});
+  ASSERT_TRUE(program) << program.error().message();
+  auto slot = program->create_invocation();
+  ASSERT_TRUE(slot);
+  const std::array inputs{mx::array({1.f, 2.f, 3.f, 4.f}, {2, 2})};
+  ASSERT_TRUE(slot->bind(inputs).ok());
+  auto work = slot->submit();
+  ASSERT_TRUE(work);
+  auto result = work->wait();
+  ASSERT_TRUE(result);
+  EXPECT_FLOAT_EQ(result->get()->arrays()[0].data<float>()[3], 9.f);
+}
 } // namespace

@@ -1,0 +1,38 @@
+Start testing: Sep 17 05:30 CST
+----------------------------------------------------------
+51/51 Testing: hyle_graph_route_apple_test
+51/51 Test: hyle_graph_route_apple_test
+Command: "/Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/hyle_graph_route_apple_test"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/graph_route_apple
+"hyle_graph_route_apple_test" start time: Sep 17 05:30 CST
+Output:
+----------------------------------------------------------
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from AppleGraph
+[ RUN      ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph
+[       OK ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph (47 ms)
+[ RUN      ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce
+[       OK ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce (8 ms)
+[ RUN      ] AppleGraph.RejectsMissingPendingAndMismatchedConstants
+[       OK ] AppleGraph.RejectsMissingPendingAndMismatchedConstants (0 ms)
+[ RUN      ] AppleGraph.CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms
+[       OK ] AppleGraph.CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms (191 ms)
+[----------] 4 tests from AppleGraph (247 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (248 ms total)
+[  PASSED  ] 4 tests.
+<end of output>
+Test time =   0.69 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_apple_test" end time: Sep 17 05:30 CST
+"hyle_graph_route_apple_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 05:30 CST
+
+graph_route_apple =   0.69 sec*proc
+
