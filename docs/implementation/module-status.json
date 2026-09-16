@@ -278,9 +278,10 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。"
+      "summary": "R3 Graph replay 成本修正 CANDIDATE 1a3a8d0e：RC1/RC2 已实现，Windows 定向正确性 7/7 PASS；受影响平台/三交付与唯一新候选 P1 待验，原 v2 未决结果保留。",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
     },
     {
       "module": "container_concurrent",
@@ -371,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。"
+      "summary": "R3 Graph replay 成本修正 CANDIDATE 1a3a8d0e：RC1/RC2 已实现，Windows 定向正确性 7/7 PASS；受影响平台/三交付与唯一新候选 P1 待验，原 v2 未决结果保留。",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
     },
     {
       "module": "compute_ops",
@@ -421,9 +423,10 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "summary": "R3 Graph 重复执行成本 AUDITED：RC1/RC2 固定；只消除 shared-region 已冷验证资源的重复检查和转发，保留每次 Queue owner/admission/Completion 保护；未签性能 PASS。",
-      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md"
+      "state": "CANDIDATE",
+      "summary": "R3 Graph replay 成本修正 CANDIDATE 1a3a8d0e：RC1/RC2 已实现，Windows 定向正确性 7/7 PASS；受影响平台/三交付与唯一新候选 P1 待验，原 v2 未决结果保留。",
+      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
     }
   ]
 }

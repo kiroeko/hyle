@@ -1,6 +1,6 @@
 # R3 Graph：同实现重复执行成本的定向审计
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -102,3 +102,22 @@ oneDNN region、默认 CPU Graph、public Sched consumer 与两个普通 source 
 
 后续 Graph 平台/交付/sanitizer 与新候选 P1 尚待执行；当前不得 CLOSED。已完成的独立 Direct
 工程 P1 4/4 PASS，原始包另行保留。这里的测试计数不是性能方向或整个 R3 的完成证明。
+
+## 不可变候选与独立源码复核
+
+产品冻结为 `1a3a8d0e40a2a17250119369331c712718a4d880`。Windows 已验的三个 source hash
+与该提交逐项一致。统一 loc-report.py self-check PASS：Compute + Graph 全部实现 31,021 行，
+不含 tests/bench；旧实现仍在计数内，该数字不代表新基础架构完成量。
+
+候选后单独复核：bind 检查描述、精确 resource 和 alias 后撤销缓存；prepare_replay 校验 active lane、
+Context owner、完整 views 及 completion capacity；submit 重新核对 Queue 的当前 Context，再进入
+QueueSequence 的真实 admission。region extension 继续保活 Provider，Invocation/plan 引用和
+accepted-prefix/failure/异步 completion 回收路径未改；delegated 与 captured 路径不经过此次删去的
+shared-region adapter。没有新增 hot allocation、共享可变态、公开字段或 API。
+新增测试分别覆盖 cold proof 与同地址替换 Queue，既有 async/失败/生命周期 suite 已实际通过。
+本遍源码复核没有发现需要退回产品的缺陷；平台与 sanitizer verdict 仍依实际运行填写。
+
+[Graph P1 v3 合同](../../../../bench/contracts/graph-cpu-route-p1-v3.json) 只更新合同 id 和
+Native peer 的不可变来源到该产品提交；12 workload、两个 placement、执行/分配正反、实际 A/A、
+同一三 P 核拓扑/low-latency、5% 非劣门和 n=15→31 均逐字段继承 v2。合同提交不改变产品投影，
+实际 runner source revision 由新的 manifest 保留；不覆盖、不重跑原 v2。
