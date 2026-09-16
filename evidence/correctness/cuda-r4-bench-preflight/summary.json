@@ -1,0 +1,52 @@
+{
+  "product_commit": "f1cf11121b5d4ad9529e3079b82b7e19717e2420",
+  "source_sha256": {
+    "bench/compute_route_cuda/CMakeLists.txt": "80116a31f51ceb1176fac269b958e06ea41009cf0df8a0383a38a9015292eaa2",
+    "bench/compute_route_cuda/README.md": "c948123695e67f9c3c0af821dec83ff91630fcf97fa4f7cd84df25e265d8e1a0",
+    "bench/compute_route_cuda/reference/LICENSE-sglang": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747",
+    "bench/compute_route_cuda/reference/native_kernel.cu": "bf07db01de7e613552ce941b8f8c9310d6a00615e08513f81342992031dcf246",
+    "bench/compute_route_cuda/reference/native_kernel.h": "6c43a046c081be18fe74f61bb9816e046e9bc78d49ac9232461dc31cd5b502f8",
+    "bench/compute_route_cuda/reference/provenance.json": "593391618e7040f35b151a277589c8529f11232ab5bc149e9209e5aff986c20b",
+    "bench/compute_route_cuda/reference/reference_provider.cc": "f995390f72ffa791fd6c6a87db678f4c27401aa5556b984e46322babde94e444",
+    "bench/compute_route_cuda/reference/reference_provider.h": "a8118a2348df0ac71e03c03245ad352b766ebae46d62c2f5d48bf1f824b2f473",
+    "bench/compute_route_cuda/reference/sglang_activation.cuh": "4857dbbec68ae1abda25107338065278fcbe8fb09c4ceb6d068121a05164d864",
+    "bench/compute_route_cuda/reference/sglang_device_compat.cuh": "331f909f9e3c8e41ebf7293b217b36cad9e580b0fe411a6bb579bf04e2d488be",
+    "bench/compute_route_cuda/route_p1_bench.cc": "deca5e1b0a265b938050a008458a2028fbd1f44c280a04c26275bd6e01ea6017",
+    "bench/graph_route_cuda/CMakeLists.txt": "c7a1e4296274ecc0bed7b88140e0d3f0bbf01f160bcc8bb7ac69637a3a74d52c"
+  },
+  "executable_sha256": {
+    "hyle_compute_route_cuda_bench.exe": "a3a189c21343bf920771a734b7a03d42850425de6153404d41672711a22bf598",
+    "hyle_compute_route_cuda_bench_placement.exe": "e42871c69fbdc31f8d768e982547fa50d95c353b166d5ade1f204140f605936b",
+    "hyle_graph_route_cuda_bench.exe": "d675600a03ef8b0ce474bcd5ac1d35bb31b73cbff5148e4b9ce223b2112335e5",
+    "hyle_graph_route_cuda_bench_placement.exe": "9b306685b25a34367a14cce5d949d4d8ac0fbce95601612d4222a438148adbe8"
+  },
+  "oracle": [
+    {
+      "executable": "hyle_compute_route_cuda_bench",
+      "exit_code": 0,
+      "wall_seconds": 31.061999999918044,
+      "performance_claim": false
+    },
+    {
+      "executable": "hyle_graph_route_cuda_bench",
+      "exit_code": 0,
+      "wall_seconds": 29.282000000122935,
+      "performance_claim": false
+    }
+  ],
+  "device": "RTX 4070 / SM89",
+  "driver_api": 13030,
+  "runtime": 13030,
+  "max_oracle_absolute_error": 0.00048828125,
+  "pair_max_absolute_error": 0,
+  "not_claimed": [
+    "A/A qualification",
+    "P1",
+    "native wrapper cost",
+    "SOTA"
+  ],
+  "fixture_corrections": [
+    "Enable CUDA language in the benchmark directory.",
+    "Bind explicit resource views for shared constants; use one borrowed device storage domain with independent buffers and invocations."
+  ]
+}
