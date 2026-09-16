@@ -80,6 +80,7 @@ Ninja parallel 2，跨机器重型验证串行。两 Mac 仅证明正确性/交�
 
 | 环境 | source | relocated shared / static | 额外风险 | 原始包 |
 |---|---|---|---|---|
+| Windows / MSVC 19.50 / oneDNN AUTO | 23/23 PASS | 各 3/3 PASS | DLL 相邻部署后通过，最初 loader 失败保留 | windows-correction-logs.zip |
 | WSL / GCC 14.2 / oneDNN AUTO | 23/23 PASS | 各 3/3 PASS | 新 routes / Sched consumer 的 ASan、UBSan、TSan 各 3/3 PASS | linux-correction-logs.tar.gz |
 | Air / Native AUTO | 19/19 PASS | 各 3/3 PASS | 缺席 oneDNN 的静态安装边已实际通过 | air-correction-logs.tar.gz |
 | Mini / Native AUTO | 19/19 PASS | 各 3/3 PASS | 同一普通 Direct/Graph/Sched consumer | mini-correction-logs.tar.gz |
@@ -87,8 +88,9 @@ Ninja parallel 2，跨机器重型验证串行。两 Mac 仅证明正确性/交�
 WSL 首次 strict GCC 构建发现六处测试 GoogleTest 宏 dangling-else；只覆盖 test-only `6353adf4`
 花括号修正后通过。包保存失败、修正 projection receipt 与最终日志。产品仍为 d9712e68；
 外部 oneDNN JIT 没有被 sanitizer 插桩，sanitizer 只签 HYLE route/consumer 的声明范围。
-所有源码来自 Windows 出站 projection；验证副本未反向提供产品修改。Windows 最终三交付、
-CPU OFF 裁剪与工程 P1 尚待完成。
+所有源码来自 Windows 出站 projection；验证副本未反向提供产品修改。Windows 三交付后，
+CPU OFF / CUDA OFF 的 source 与 installed consumer 各 2/2 PASS；新 route 及全部 CPU provider
+头/export 均无泄漏，CPU OFF + oneDNN ON 明确拒绝，见 windows-cpu-off-logs.zip。工程 P1 待完成。
 
 ## 共核诊断与新实验合同
 
@@ -105,3 +107,10 @@ low-latency 时 caller 共核的双 worker 片段中位约 70.274ms，独立后�
 这是有限的新合同资格工作，原 v1 失败保留；新 A/A 未通过就不能计时产品。公共工具补丁另有
 独立 task 和 11 项 PASS，不是 Compute/Graph 产品进度。最新统一 LOC 与 self-check 在
 loc-external-caller-worktree.json：Compute+Graph 实现仍为 31,023 行，不含测试。
+
+修正后的独立源码复核见 [r3-correction-source-review.md](r3-correction-source-review.md)。Windows
+内部单测首次遗漏全部 runtime 路径，第二次仅补 HYLE 所在目录仍缺 GoogleTest DLL；两次 loader
+失败不算产品测试。按用户要求将同一 build 的 21 个 runtime DLL 复制到 8 个测试 exe 目录，
+加载预检通过后才恢复。随后 23/23 正确性通过；source SDK 和安装消费者始终通过既有
+`hyle_stage_runtime_dependencies` 将依赖放在 exe 旁。后续 Windows 验证使用非交互错误模式
+及 120 秒测试超时，不再依赖弹窗处理错误。产品源码未为此改变。

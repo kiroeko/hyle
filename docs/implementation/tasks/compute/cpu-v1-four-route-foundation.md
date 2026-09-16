@@ -225,3 +225,18 @@ compute_route_cpu 的 C45a 固定后回归本卡、candidate=d9712e68，继续�
 用户要求核对拓扑与性能模式后的实际诊断见
 [独立 caller 验收环境纠正](cpu-graph-external-caller-qualification.md)。该轮明确重定实验资源为
 三个独立 P 核，依法从 BLOCKED 进入 SCOPED；产品投影保持 d9712e68，原 v1 失败不改写。
+
+## 普通验收已完成，性能仍待裁决
+
+当前产品 d9712e68：Windows/WSL source 各23/23、Air/Mini source各19/19；四环境 relocated
+shared/static 的普通 Direct/Graph/Sched consumer 均各3/3 PASS。WSL 新 routes/Sched consumer
+的 ASan/UBSan/TSan 各3/3 PASS，外部 oneDNN JIT 未插桩不作 sanitizer 声明。Windows CPU OFF /
+CUDA OFF source/installed 各2/2，裁剪头/exports 和矛盾 oneDNN ON 拒绝也通过。
+
+Windows 单测的初始 DLL loader 错误保留；按用户要求把 HYLE 与 GoogleTest DLL 复制到每个 exe
+目录并通过加载预检后，才获得23/23结果。之后所有 Windows 验证禁止错误弹窗并设置超时。
+没有因验证 recipe 修改产品源码或公共构建系统。原始包、哈希与定向源码复核均在
+[本轮证据](../../../../evidence/correctness/compute-cpu-r3-foundation/README.md)。
+
+普通验证到此停止重复运行。尚缺 Direct 的正确 engineering P1 和 Graph v2 的一次 A/A/P1
+裁决，R3 聚合继续 INCONCLUSIVE；不能把三交付或工具修复当作性能门完成。

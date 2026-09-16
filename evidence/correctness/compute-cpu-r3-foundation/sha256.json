@@ -13,6 +13,9 @@
   "mini-correction-logs.tar.gz": "d0b6cbd5cc182d6a91e63d1286c6f1170a138d65ba7ac37f0143353aa98362f8",
   "parallel-aa-diagnosis.zip": "6e3672883b8bef22ef81caacc26573b1b783827752a541dae06724587e9d9067",
   "parallel-aa-lowlatency.zip": "7efc9f83153b157822541e1fd3ae26787d162163fa32f11c72b549d9bc944683",
+  "r3-correction-source-review.md": "27df7c0b70fc1f07b8579d14fda9eeee9348e9ffd4dba6b175a7bb0cb0ceaf80",
   "r3-source-review-79e96ceb.md": "9a832d79d965125c439fae32ab8bd9f73a8fad5e70c6f8ad63773cf2f4f3ff4f",
-  "README.md": "4bdc48b784655b9d9db722577040488f9d3810dbee4203a2c2476519a57540ce"
+  "README.md": "caf3980459dfafca85a891a8113e110472b58ef9ce68a1da4c1cf2398e705e61",
+  "windows-correction-logs.zip": "f4d4c2d2e337a7d0159a9fd089373db7866d29d0dac823badc47a73a5e9b51bc",
+  "windows-cpu-off-logs.zip": "31ebd2cb91931f20b7ad5f59053ecb4ff390ca2c9d53147dfddc73cb3bc20100"
 }
