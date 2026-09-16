@@ -188,3 +188,22 @@ correctness 由普通 consumer 覆盖。benchmark 已通过 MSVC 定向语法检
   C46 正式 P1 仍待完成。没有把 syntax check、研究 probe 或历史 P1 记为新候选 PASS。
 - `compute-cpu-route-p1-v3`、`graph-cpu-route-p1-v1` 只使用既有 instrument。固定 n=15→31 是工具
   同一候选的既定精度计划，不允许修改实现后无限重测；最多一次有源码成本依据的产品规则纠正。
+
+### 候选验证中的配置纠正
+
+Direct 首次完成采样的调用误加 `--formal`。合同 claim 和本卡要求的是工程 P1；依
+instrument-v1 的现行规定，未预登记 Formal 八项工具链身份的 profile 只能走 engineering。
+该次四个 workload 的 5% 非劣门与全部 controls 均通过，但 build-contract 资格失败，聚合性能
+为 INCONCLUSIVE；原包保留为 DIAGNOSTIC，不能改写成 PASS。下一次使用合同要求的普通
+`qualify-platform`，候选、合同、统计门槛与仪器均不改变。Graph 尚未采样，直接使用正确模式。
+这次纠正不涉及产品规则，也不把缺失的 SDK identity 补写进旧 manifest。
+
+Unix 三交付外部 recipe 首次误把 tests-on 构建配置为可安装 SDK，CMake 正确拒绝。
+修正为 source/test 构建 INSTALL=OFF；SDK 必须 tests-off 并实际重新构建后再安装、搬移和消费。
+原 configure 失败日志保留；产品源码、候选 archive 不变。
+
+WSL GCC 14.2 的该候选已完成 23/23 定向正确性/公共头检查，包括同一普通 Direct、Graph、真实
+Sched consumer；oneDNN AUTO 实际启用。随后关闭测试、重新构建并安装/搬移 SDK，shared 与
+static 的普通 Direct/Graph/Sched 三个消费者分别 3/3 通过。Sanitizer 仍待执行；各模式由 CMake
+重编译受影响 HYLE 目标，不重复编译配置未变的外部 oneDNN。每种配置均保留自己的命令、
+build/test log，不以 source 结果代替安装交付验收。
