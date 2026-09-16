@@ -419,6 +419,14 @@ _hyle_declare_component(graph_route_cpu
   TEST_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu.h)
 
+# R4 CUDA identities only. No targets, public headers, feature switches or
+# dependency edges are published before the native-route audit is frozen.
+_hyle_declare_component(compute_provider_cublas QUEUED)
+_hyle_declare_component(compute_provider_marlin QUEUED)
+_hyle_declare_component(compute_provider_cuda QUEUED)
+_hyle_declare_component(compute_route_cuda QUEUED)
+_hyle_declare_component(graph_route_cuda QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

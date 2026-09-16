@@ -53,6 +53,11 @@
 | compute_sched | QUEUED | — | — | compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。 |
 | compute_route_cpu | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | R3 CPU Direct 候选 d9712e68：普通入口/固定规则、四环境三交付与适用 sanitizer 已验收，engineering P1 4/4 PASS。Graph 独立工程门仍未决，R3 总包未 CLOSED；不重跑 Direct。 |
 | graph_route_cpu | BLOCKED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。 |
+| compute_provider_cublas | QUEUED | — | — | R4 CUDA vendor GEMM owner 已登记；准备审计 cuBLASLt 的冷算法绑定、每槽 workspace 与三交付，尚无新产品实现。 |
+| compute_provider_marlin | QUEUED | — | — | R4 CUDA compressed W4A16 owner 已登记；准备审计锁定现代 Marlin kernel 的窄 native adapter、冷 packing 与压缩驻留，旧探针不计产品。 |
+| compute_provider_cuda | QUEUED | — | — | R4 HYLE CUDA 中间 kernel owner 已登记；范围仅为真实组合所需的 gated activation 等片段，不扩充算子目录。 |
+| compute_route_cuda | QUEUED | — | — | R4 普通 CUDA Direct 入口与研发固定规则 owner 已登记；尚未发布默认入口或规则资格。 |
+| graph_route_cuda | QUEUED | — | — | R4 CUDA Graph 原生编译/重放与默认组合 owner 已登记；复用既有 CUDA capture，尚无新路线验收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
