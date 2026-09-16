@@ -34,6 +34,21 @@ MLX 有独立的 CPU/Metal/CUDA 开关，默认 tests/examples、文件格式功
 参见 [MLX CMake](https://github.com/ml-explore/mlx/blob/v0.32.2/CMakeLists.txt) 与
 [HYLE build system](build-system.md)。
 
+### 1.1 优选规则的硬件与软件适用域
+
+固定规则可以匹配实际 GPU 型号、架构/SM 代数、所需设备能力，以及驱动、CUDA Toolkit/runtime、
+SDK 和 Provider 版本；还须满足数值、格式、shape、资源与融合边界。型号相同或 SM 相同不自动表示
+全部规则通用。编译时已知的 Toolkit/目标架构与运行时设备/驱动事实分别记录，不能相互代替；
+例如 CUDA driver API 兼容版本不等于 NVIDIA 驱动发行版本。
+
+路线在创建或准备阶段读取必要事实，匹配研发已经验证并随实现版本化的条件，绑定原生程序或
+有限变体。执行不重查设备/版本、不计时选优；普通用户仍只选择路线和资源约束。条件未知或超出
+资格范围时不套用该性能规则，采用已声明的合法成熟基线或明确拒绝。各路线自行承载这些条件，
+不要求统一硬件描述、通用规则引擎或用户提供 profile。
+
+SOTA/胜出结论只覆盖证据绑定的硬件与软件组合；驱动、Toolkit 或 Provider 升级影响某条规则时，
+定向复核该规则及其真实消费链，不重开全部架构，也不把单 kernel 优势直接当作整图收益。
+
 ## 2. CPU：持久执行资源与真实 ISA 实现
 
 CPU 不是 GPU 的失败接管路径。Platform 提供 OS 已公布的拓扑/NUMA/cache 事实；SIMD 拥有自身最佳

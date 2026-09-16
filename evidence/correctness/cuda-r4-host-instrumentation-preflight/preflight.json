@@ -1,0 +1,19 @@
+{
+  "baseline": "0ca1cd0da9e476be44419a50b5ddfdc34544e293",
+  "scope": "nvcc host sanitizer flag acceptance only; no compile, GPU run or sanitizer PASS",
+  "source": {
+    "path": "src/compute_provider_cuda/native_kernel.cu",
+    "sha256": "7884204d712b393c0066979c133b8977d034b400c3324a5b59a964ffdd2693f5"
+  },
+  "observed": {
+    "plain": "nvcc fatal: Unknown option -fsanitize=address",
+    "forwarded": "dry-run reaches host compile and final g++ link with sanitizer flags"
+  },
+  "unproven": [
+    "actual instrumented compilation",
+    "ASan",
+    "UBSan",
+    "TSan",
+    "CUDA device instrumentation"
+  ]
+}

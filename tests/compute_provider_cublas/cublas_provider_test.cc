@@ -260,4 +260,147 @@ TEST(CublasProvider, CompletionRetainsReleasedPreparedAndInvocation) {
   EXPECT_FALSE(owner.create_queue().has_value());
 }
 
+struct MetadataAllocator final {
+  mem::AllocatorRef backing = mem::system_allocator();
+  std::size_t attempts = 0, fail_at = SIZE_MAX, live = 0;
+  mem::AllocatorRef ref() noexcept {
+    return {[](void *opaque, std::size_t size,
+               std::size_t alignment) noexcept -> void * {
+              auto &self = *static_cast<MetadataAllocator *>(opaque);
+              if (self.attempts++ == self.fail_at)
+                return nullptr;
+              void *result = self.backing.allocate(size, alignment);
+              if (result != nullptr)
+                ++self.live;
+              return result;
+            },
+            [](void *opaque, void *pointer, std::size_t size,
+               std::size_t alignment) noexcept {
+              auto &self = *static_cast<MetadataAllocator *>(opaque);
+              if (pointer != nullptr)
+                --self.live;
+              self.backing.deallocate(pointer, size, alignment);
+            },
+            [](void *opaque, void *pointer, std::size_t old_size,
+               std::size_t size, std::size_t alignment) noexcept -> void * {
+              auto &self = *static_cast<MetadataAllocator *>(opaque);
+              if (size != 0 && self.attempts++ == self.fail_at)
+                return nullptr;
+              void *result =
+                  self.backing.reallocate(pointer, old_size, size, alignment);
+              if (pointer == nullptr && result != nullptr)
+                ++self.live;
+              else if (pointer != nullptr && size == 0)
+                --self.live;
+              return result;
+            },
+            this};
+  }
+};
+
+TEST(CublasProvider,
+     ColdMetadataFailuresRollBackAndReservedReplayDoesNotAllocate) {
+  MetadataAllocator allocator;
+  const std::array providers{compute::cublas::provider()};
+  const auto device = cuda::device(0).value();
+  const auto create = [&] {
+    return compute::Context::create(
+        device,
+        {.metadata_allocator = allocator.ref(), .providers = providers});
+  };
+  const auto context_begin = allocator.attempts;
+  {
+    auto owner = create();
+    ASSERT_TRUE(owner.has_value());
+  }
+  const auto context_allocations = allocator.attempts - context_begin;
+  ASSERT_GT(context_allocations, 0u);
+  ASSERT_LT(context_allocations, 32u);
+  EXPECT_EQ(allocator.live, 0u);
+  for (std::size_t offset = 0; offset < context_allocations; ++offset) {
+    SCOPED_TRACE(offset);
+    allocator.fail_at = allocator.attempts + offset;
+    auto owner = create();
+    ASSERT_FALSE(owner.has_value());
+    EXPECT_TRUE(owner.error().IsResourceExhausted());
+    EXPECT_EQ(allocator.live, 0u);
+  }
+  allocator.fail_at = SIZE_MAX;
+  {
+    auto owner = create().value();
+    auto resource =
+        cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+    Matrix left(matrix(compute::DataType::kFloat32, 7, 128, false),
+                resource.ref());
+    Matrix right(matrix(compute::DataType::kFloat32, 128, 64, false),
+                 resource.ref());
+    Matrix output(matrix(compute::DataType::kFloat32, 7, 64, false),
+                  resource.ref());
+    const auto prepare = [&] {
+      return compute::prepare(
+          owner, compute::Operation(compute::MatMul{}),
+          std::array{left.view.as_const(), right.view.as_const()},
+          std::array{output.view});
+    };
+    const auto prepare_begin = allocator.attempts;
+    {
+      auto prepared = prepare();
+      ASSERT_TRUE(prepared.has_value());
+    }
+    const auto prepare_allocations = allocator.attempts - prepare_begin;
+    const auto prepare_live = allocator.live;
+    ASSERT_GT(prepare_allocations, 0u);
+    ASSERT_LT(prepare_allocations, 32u);
+    for (std::size_t offset = 0; offset < prepare_allocations; ++offset) {
+      SCOPED_TRACE(offset);
+      allocator.fail_at = allocator.attempts + offset;
+      auto prepared = prepare();
+      ASSERT_FALSE(prepared.has_value());
+      EXPECT_TRUE(prepared.error().IsResourceExhausted());
+      EXPECT_EQ(allocator.live, prepare_live);
+    }
+    allocator.fail_at = SIZE_MAX;
+    auto prepared = prepare().value();
+    const auto needed = prepared.workspace_requirement();
+    auto workspace =
+        mem::Buffer::create(resource.ref(), needed.size, needed.alignment)
+            .value();
+    const auto lane_begin = allocator.attempts;
+    {
+      auto lane = prepared.create_invocation(workspace.view());
+      ASSERT_TRUE(lane.has_value());
+    }
+    const auto lane_allocations = allocator.attempts - lane_begin;
+    const auto lane_live = allocator.live;
+    ASSERT_GT(lane_allocations, 0u);
+    ASSERT_LT(lane_allocations, 32u);
+    for (std::size_t offset = 0; offset < lane_allocations; ++offset) {
+      SCOPED_TRACE(offset);
+      allocator.fail_at = allocator.attempts + offset;
+      auto lane = prepared.create_invocation(workspace.view());
+      ASSERT_FALSE(lane.has_value());
+      EXPECT_TRUE(lane.error().IsResourceExhausted());
+      EXPECT_EQ(allocator.live, lane_live);
+    }
+    allocator.fail_at = SIZE_MAX;
+    auto lane = prepared.create_invocation(workspace.view()).value();
+    auto queue = owner.create_queue().value();
+    ASSERT_TRUE(queue.reserve_completions(1).ok());
+    const auto a = values<float>(left.description, 0);
+    const auto b = values<float>(right.description, 3);
+    ASSERT_TRUE(left.storage.view().write(std::as_bytes(std::span(a))).ok());
+    ASSERT_TRUE(right.storage.view().write(std::as_bytes(std::span(b))).ok());
+    const auto replay_begin = allocator.attempts;
+    for (int iteration = 0; iteration < 3; ++iteration) {
+      auto done = lane.submit(queue, left.view.as_const(),
+                              right.view.as_const(), output.view);
+      ASSERT_TRUE(done.has_value());
+      ASSERT_TRUE(done->wait().ok());
+    }
+    EXPECT_EQ(allocator.attempts, replay_begin);
+    check_product(left, a, right, b, output);
+  }
+  EXPECT_EQ(allocator.live, 0u);
+}
+
 } // namespace

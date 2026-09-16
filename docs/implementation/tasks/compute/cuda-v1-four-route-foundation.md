@@ -134,6 +134,33 @@ Graph 路线提供 `compile(graph, context, device_resource, options)` 与
 
 ## 七问与预声明验证
 
+### 当前用户确认的环境条件
+
+2026-09-16 用户明确确认保留依据 GPU 型号、架构/SM、驱动及 CUDA Toolkit/Provider 版本设计
+优选规则的能力，详见[路线适用域](../../../architecture/compute-routes.md#11-优选规则的硬件与软件适用域)。
+C4 的普通入口不把规则限制为只看 op/dtype；需要的设备/软件事实由路线在 cold create/prepare
+读取，Provider 的 native prepare 可匹配有证据的适用条件。执行只调用已经绑定的程序，普通用户
+不提供排序或 profile。当前只有 SM89 实际资格，不能把 SM80+ 可编译边界写成全架构 SOTA；未知
+环境不自动命中性能 winner。没有具体 winner 条件时不为未来假设新造公共硬件 schema 或规则引擎。
+
+### C1/C5 适用尾项的有限审计
+
+以下两项属于已冻结 C1/C5，相关 CUDA owners 仍为 AUDITED；不改旧 CPU/Graph runtime 或公共工具。
+
+- C1 的 cuBLAS metadata OOM 检查尚缺：沿已有 Marlin 测试方式，逐项注入 Context、prepare、
+  invocation 的 HYLE metadata 分配失败，检查 ResourceExhausted、回滚和最终零存活分配；预留
+  Completion 后用真实 GEMM 验证重复执行不增加 HYLE metadata allocation。SDK opaque 内存不冒称覆盖。
+- C5 的 Linux CUDA host 插桩存在已复现配置错误：nvcc 13.3 拒绝直接传入 `-fsanitize=address`；
+  同一 TU 的 dry-run 加 `--forward-unknown-to-host-compiler` 后，host compile/link 均收到该参数。
+  [原始预检](../../../../evidence/correctness/cuda-r4-host-instrumentation-preflight/README.md)
+  只证明参数接受，不是 sanitizer PASS。
+  只在 `compute_provider_marlin`、`compute_provider_cuda` 的非 MSVC sanitizer 构建中加此转发。
+  `sanitizer=off` 的 shipping compile/link 命令不变；不改 HyleSanitizers、统计工具或 Windows ASan 合同。
+
+应用后完成 cuBLAS 实际测试、WSL 六个 CUDA factor 的普通回归与适用 host ASan/UBSan/TSan。
+重型串行、Ninja 两 jobs；编译失败只按具体诊断作有限适配纠正。外部 CUDA/SDK 与 device code 不签
+host 插桩覆盖，任何未运行项保持未证明。原 C5 frozen candidate 的交付证据与本尾项分开记录。
+
 1. 第三方：cuBLASLt 属系统 CUDA Toolkit；现代 Marlin 保留 Apache-2.0 provenance、精确文件/hash/
    适配差异。正式接入进入唯一 dependency lock 与许可投影，未选路线不取得源码或 SDK。
 2. 完整旅程：Direct dense/Q4 + Graph FFN，decode/短 prefill、变化输入、两槽，以及正交 dense transform。

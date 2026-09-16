@@ -21,6 +21,14 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     target_compile_options(hyle_compute_provider_marlin PRIVATE
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
   endif()
+  if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")
+    # Sanitizer flags instrument the CUDA TU's host adapter, not device code.
+    # nvcc forwards the ordinary HYLE host flags during compilation and link.
+    target_compile_options(hyle_compute_provider_marlin PRIVATE
+      "$<$<COMPILE_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
+    target_link_options(hyle_compute_provider_marlin PRIVATE
+      "$<$<LINK_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
+  endif()
   target_compile_definitions(hyle_compute_provider_marlin
     PUBLIC HYLE_COMPUTE_CUDA=1)
   hyle_register_package_dependency(
