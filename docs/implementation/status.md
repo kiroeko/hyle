@@ -58,8 +58,8 @@
 | compute_provider_cuda | CLOSED | P1 / [PASS](evidence/performance/benchmarks-compute-graph.md) / 5% | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。 |
 | compute_route_cuda | CLOSED | P1 / [PASS](evidence/performance/benchmarks-compute-graph.md) / 5% | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。 |
 | graph_route_cuda | CLOSED | P1 / [PASS](evidence/performance/benchmarks-compute-graph.md) / 5% | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。 |
-| compute_route_apple | QUEUED | — | — | R5 Apple MLX/Metal route identity reserved for its own bounded audit; no product target, dependency or completion claim. |
-| graph_route_apple | QUEUED | — | — | R5 Apple MLX/Metal route identity reserved for its own bounded audit; no product target, dependency or completion claim. |
+| compute_route_apple | SCOPED | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 scoped: native MLX Metal region, owning results, fixed submission owner, Direct/Graph, route isolation and three deliveries; bounded A1-A6 audit, no completion claim. |
+| graph_route_apple | SCOPED | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 scoped: native MLX Metal region, owning results, fixed submission owner, Direct/Graph, route isolation and three deliveries; bounded A1-A6 audit, no completion claim. |
 
 <!-- END GENERATED MODULE STATUS -->
 

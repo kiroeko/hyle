@@ -527,13 +527,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "QUEUED",
-      "summary": "R5 Apple MLX/Metal route identity reserved for its own bounded audit; no product target, dependency or completion claim."
+      "state": "SCOPED",
+      "summary": "R5 scoped: native MLX Metal region, owning results, fixed submission owner, Direct/Graph, route isolation and three deliveries; bounded A1-A6 audit, no completion claim.",
+      "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_apple",
-      "state": "QUEUED",
-      "summary": "R5 Apple MLX/Metal route identity reserved for its own bounded audit; no product target, dependency or completion claim."
+      "state": "SCOPED",
+      "summary": "R5 scoped: native MLX Metal region, owning results, fixed submission owner, Direct/Graph, route isolation and three deliveries; bounded A1-A6 audit, no completion claim.",
+      "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md"
     }
   ]
 }
