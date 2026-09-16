@@ -22,10 +22,14 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from hyle_perf.environment import (  # noqa: E402
     PERF_ENVIRONMENT_BLOCKLIST, PERF_ENVIRONMENT_FIXED, PERF_ENVIRONMENT_PREFIXES)
 from hyle_perf.nanobench import parse_nanobench, select_pair  # noqa: E402
+from hyle_perf.machine import (  # noqa: E402
+    evaluate_machine_profile, expected_child_policy, get_machine_profile,
+    load_registry, probe_machine)
 
 PREFIX = "# HYLE_CUDA_FFN_RUN "
 GPU = "NVIDIA GeForce RTX 4070"
 GPU_UUID = "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8"
+TOPOLOGY = "native-runtime-pair"
 
 
 def child_environment() -> dict[str, str]:
@@ -128,6 +132,16 @@ def main() -> int:
     args = parser.parse_args()
     if os.name != "nt":
         raise RuntimeError("this qualification is W1-WIN engineering only")
+    build = args.build.resolve(strict=True)
+    ready = build / "bin" / f"hyle_cuda_{args.mode}_aa.ready"
+    ready.write_text("FAIL\n", encoding="ascii")
+    profile = get_machine_profile(load_registry(), "W1-WIN")
+    probe = probe_machine(paths=[("build", build)])
+    gate = evaluate_machine_profile(
+        profile, probe, role="engineering", sampling_topology=TOPOLOGY)
+    if gate["gate"] != "PASS":
+        raise RuntimeError(f"CUDA A/A machine gate failed: {gate['errors']}")
+    policy = expected_child_policy(profile, probe=probe, sampling_topology=TOPOLOGY)
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel32.SetErrorMode(0x8003)
     kernel32.GetCurrentProcess.restype = ctypes.c_void_p
@@ -135,17 +149,16 @@ def main() -> int:
     kernel32.GetProcessAffinityMask.argtypes = [ctypes.c_void_p,
         ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_size_t)]
     process = kernel32.GetCurrentProcess()
-    # Match the actual single-logical-cpu runner policy, including native
-    # helper threads. Pinning just the calling thread does not qualify it.
-    if not kernel32.SetProcessAffinityMask(process, 0x4):
+    # Match the instrument's complete CPU budget; the executable separately
+    # pins its caller and leaves opaque SDK helper placement to the runtime.
+    if not kernel32.SetProcessAffinityMask(process, int(policy["affinity_mask"], 16)):
         raise ctypes.WinError(ctypes.get_last_error())
     observed_mask, system_mask = ctypes.c_size_t(), ctypes.c_size_t()
     if not kernel32.GetProcessAffinityMask(
             process, ctypes.byref(observed_mask), ctypes.byref(system_mask)):
         raise ctypes.WinError(ctypes.get_last_error())
-    if observed_mask.value != 0x4:
+    if observed_mask.value != int(policy["affinity_mask"], 16):
         raise RuntimeError("A/A process affinity differs from W1 P1 policy")
-    build = args.build.resolve(strict=True)
     target = f"hyle_{args.mode}_route_cuda_bench"
     executables = {variant: build / "bin" / (target + suffix + ".exe")
                    for variant, suffix in (("primary", ""), ("placement", "_placement"))}
@@ -156,7 +169,9 @@ def main() -> int:
     # call. Recheck GPU, executable, compiler and all side-by-side DLL identities.
     receipt_path = args.output / f"cuda-{args.mode}-aa.json"
     identity = {"artifacts": artifacts, "runtime": runtime, "reference": reference,
-                "validator": digest(Path(__file__)), "process_mask": hex(observed_mask.value)}
+                "validator": digest(Path(__file__)), "child_policy": policy,
+                "machine_identity": gate["physical_host_identity"],
+                "process_mask": hex(observed_mask.value)}
     before = gpu_facts()
     if receipt_path.exists():
         retained = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -167,6 +182,7 @@ def main() -> int:
                 raise RuntimeError("retained A/A raw log changed")
         print(json.dumps({"gate": "PASS", "reused_receipt": str(receipt_path),
                           "receipt_sha256": digest(receipt_path), "gpu_after": before}))
+        ready.write_text("PASS\n", encoding="ascii")
         return 0
     args.output.mkdir(parents=True, exist_ok=True)
     raw_dir = args.output / f"cuda-{args.mode}-aa-raw"
@@ -179,18 +195,25 @@ def main() -> int:
                 for allocation_first in (False, True):
                     environment = child_environment()
                     environment.update(HYLE_BENCH_AA_ROUTE=route,
-                                       HYLE_PERF_CALLER_CPU="2",
+                                       HYLE_PERF_CALLER_CPU=str(policy["caller_logical_cpu"]),
+                                       HYLE_PERF_PARENT_MASK=policy["affinity_mask"],
+                                       HYLE_PERF_PRIORITY=policy["priority"],
+                                       HYLE_PERF_SAMPLING_TOPOLOGY=TOPOLOGY,
                                        HYLE_PERF_RUN_NONCE=uuid.uuid4().hex)
                     if peer_first:
                         environment["HYLE_BENCH_RIVAL_FIRST"] = "1"
                     if allocation_first:
                         environment["HYLE_BENCH_PEER_ALLOCATION_FIRST"] = "1"
-                    completed = subprocess.run(
-                        [str(executable)], env=environment, capture_output=True,
-                        text=True, encoding="utf-8", errors="replace", timeout=120,
-                        creationflags=subprocess.ABOVE_NORMAL_PRIORITY_CLASS)
-                    text = completed.stdout + completed.stderr
                     log = raw_dir / f"{route}-{variant}-{int(peer_first)}-{int(allocation_first)}.log"
+                    try:
+                        completed = subprocess.run(
+                            [str(executable)], env=environment, capture_output=True,
+                            text=True, encoding="utf-8", errors="replace", timeout=20,
+                            creationflags=subprocess.ABOVE_NORMAL_PRIORITY_CLASS)
+                    except subprocess.TimeoutExpired as exc:
+                        log.write_bytes((exc.stdout or b"") + (exc.stderr or b""))
+                        raise RuntimeError(f"A/A progress timeout; see {log}") from exc
+                    text = completed.stdout + completed.stderr
                     log.write_text(text, encoding="utf-8")
                     if completed.returncode:
                         raise RuntimeError(f"A/A executable failed; see {log}")
@@ -200,7 +223,9 @@ def main() -> int:
                         "allocation_order": "peer-first" if allocation_first else "candidate-first",
                         "aa_route": route, "paired_mode": "nanobench-compare",
                         "gpu": GPU, "sm": "89", "driver_api": "13030", "runtime": "13030",
-                        "affinity_topology": "instrument", "caller_cpu": "2",
+                        "affinity_topology": TOPOLOGY,
+                        "caller_cpu": str(policy["caller_logical_cpu"]),
+                        "parent_mask": policy["affinity_mask"], "priority": policy["priority"],
                         "affinity_ok": "1", "verify_only": "0",
                         "run_nonce": environment["HYLE_PERF_RUN_NONCE"]}
                     observed = telemetry(text)
@@ -239,6 +264,8 @@ def main() -> int:
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"gate": receipt["gate"], "receipt": str(receipt_path),
                       "receipt_sha256": digest(receipt_path), "errors": errors}))
+    if not errors:
+        ready.write_text("PASS\n", encoding="ascii")
     return 2 if errors else 0
 
 

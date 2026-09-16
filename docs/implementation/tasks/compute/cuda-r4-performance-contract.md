@@ -6,6 +6,11 @@
 编译器、依赖和机器身份写入统一仪器合同并执行正式采样。原 5% 门、n=15→最多31、一次源码归因
 机制纠正预算保持；没有修改公共仪器。
 
+后续已取得[独立 CUDA 的线程调度证据](cuda-r4-context-causality.md)。新的
+[有限采集接线](cuda-r4-native-helper-qualification.md) 使用 `bench/contracts/{compute,graph}-cuda-ffn-p1-v2.json`
+与已单独验证的 `native-runtime-pair` 工具支持；v1 文件、失败数据和原门全部保留。v2 未通过进度/A/A
+前不启动 P1；工具修改不代表本模块已经恢复或通过性能。
+
 ## 1. 必须分开的比较
 
 裸 cuBLAS、Marlin launcher、CUDA Graph 与 HYLE 公共 API 不提供完全相同的 admission、close、

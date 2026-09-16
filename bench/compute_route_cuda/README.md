@@ -32,6 +32,17 @@ Controls use the existing instrument conventions:
 - `HYLE_PERF_CALLER_CPU`: the instrument's caller affinity; GPU facts are queried
   once before any measurement and printed with the run nonce.
 
+The v2 W1 contracts use `native-runtime-pair`: a pinned caller and a process CPU
+budget of two distinct P cores, with SDK helper placement left to the runtime.
+The program reads and checks its actual process mask and priority before and
+after measurement. It does not enumerate or take ownership of SDK threads.
+The v1 single-CPU qualification remains stopped; its samples are not reused.
+
+Instrumented product runs also require the module's A/A-ready file beside the
+executable. The validator clears it to FAIL before checking identities or running
+A/A, and writes PASS only after success. A/A processes bypass this cold guard;
+ordinary manual/oracle runs without an instrument nonce remain available.
+
 The reference's device arithmetic/indexing fragment is preserved at the exact
 [pin and hashes](reference/provenance.json). Its standalone compatibility layer
 provides the selected 16-byte vectors, casts and disabled PDL helpers; host TVM

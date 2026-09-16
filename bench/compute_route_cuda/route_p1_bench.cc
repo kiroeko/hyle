@@ -17,6 +17,7 @@
 #include <cuda_fp16.h>
 
 #include "../common/perf_process.h"
+#include "host_policy.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/prepared_operation.h"
@@ -513,11 +514,13 @@ void measure(std::size_t rows, bool peer_first, bool allocation_first,
 int main() {
   const auto affinity =
       hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
+  hyle::bench::cuda::HostPolicy host_policy;
   const bool peer_first = !environment("HYLE_BENCH_RIVAL_FIRST").empty();
   const bool allocation_first =
       !environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty();
   const bool verify_only = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
   const auto aa = environment("HYLE_BENCH_AA_ROUTE");
+  hyle::bench::cuda::require_aa_ready(!aa.empty(), HYLE_CUDA_GRAPH_BENCH != 0);
 #if defined(HYLE_CUDA_NATIVE_COST_BENCH)
   if (!aa.empty())
     fail("raw native cost diagnostic is not an A/A or SAME_CONTRACT peer");
@@ -539,14 +542,17 @@ int main() {
       "# HYLE_CUDA_FFN_RUN mode=%s execution_order=%s allocation_order=%s "
       "aa_route=%s paired_mode=nanobench-compare gpu=%s sm=%d%d "
       "driver_api=%d runtime=%d affinity_topology=%s caller_cpu=%s "
-      "affinity_ok=%s "
+      "affinity_ok=%s parent_mask=%s priority=%s "
       "run_nonce=%s verify_only=%d\n",
       HYLE_CUDA_GRAPH_BENCH ? "captured" : "direct",
       peer_first ? "peer-first" : "candidate-first",
       allocation_first ? "peer-first" : "candidate-first",
       aa.empty() ? "none" : aa.c_str(), properties.name, properties.major,
       properties.minor, driver, runtime, affinity.topology, affinity.cpu,
-      affinity.ok, hyle::bench::perf::run_nonce(), verify_only ? 1 : 0);
+      affinity.ok, host_policy.mask.c_str(), host_policy.priority,
+      hyle::bench::perf::run_nonce(), verify_only ? 1 : 0);
   measure(1, peer_first, allocation_first, aa, verify_only);
+  host_policy.check();
   measure(16, peer_first, allocation_first, aa, verify_only);
+  host_policy.check();
 }
