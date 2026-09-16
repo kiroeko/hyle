@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：`BLOCKED`，从 `AUDITED` 停止；实际实现和既有验证保留，见文末性能资格进度阻塞。
+- 状态：`SCOPED`，采集阻塞的恢复条件已满足，见文末恢复记录；实际实现和既有验证保留。
   本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
 - owner：`compute_provider_cublas`、`compute_provider_marlin`、`compute_provider_cuda`、
   `compute_route_cuda`、`graph_route_cuda`。五个身份先在 `2e8eb24a` 登记为 `QUEUED`，
@@ -354,3 +354,17 @@ CUDA 程序中两次复现同一等待链：单核上 caller 当前 priority 24�
 零超时轮询。给 helper 另一 P 核或仅降低 caller priority 均让对应存活进程恢复。该机制支持
 采集条件的定向纠正，不支持改 HYLE/Sched；是谁提升 priority 仍未知。六个 owner 继续 BLOCKED，
 须先完成真实 native-helper 采集合同及进度回归，再恢复性能资格，旧样本不复用。
+
+### native-helper 回归后恢复：SCOPED
+
+恢复 baseline `ea8a7101`。[有限接线卡](cuda-r4-native-helper-qualification.md) 已 CLOSED：
+32/32 独立 CUDA 启动、7/7 冷拒绝检查、Direct/Graph 各 16/16 完整 A/A 均通过，满足原
+resume_condition。六个本卡 owner 从 BLOCKED 进入 SCOPED；C5、CPU 例外及旧 ggml 状态不变。
+
+恢复范围仍是 C1–C6 的最终验收：冻结候选 Direct/Graph v2 SAME_CONTRACT P1、原生完整边界
+成本诊断、默认优选终审与交付说明。既有产品/API/算法未变，适用 correctness/三交付/插桩证据
+按原身份复用；不重建无关模块。原 n=15→31、5% 门、一次源码归因纠正预算不变。
+
+本次采集边界修正不消耗产品算法纠正，也不授予 HYLE winner。无完整消费链明确优势时，按原
+合同采用已资格化成熟实现；保留其不能覆盖的合法 HYLE 域。新增产品变化仍须在 AUDITED 下
+固定具体范围。正式 fresh build 自己的 A/A 不合格或再现同类停顿则停止，不扩大进度回归预算。

@@ -1,6 +1,6 @@
 # R4 CUDA：native helper 采集接线与恢复条件
 
-## AUDITED：仅 benchmark / 资格接线
+## CLOSED：仅 benchmark / 资格接线
 
 - baseline：`2c20308c`；六个产品 owner 暂时保持 BLOCKED，产品/默认算法未授权变化。
 - trigger：[独立 CUDA 的停顿与干预证据](cuda-r4-context-causality.md)；
@@ -32,3 +32,14 @@
 以上全部通过后，依已满足的恢复条件将所需 CUDA owner 按 BLOCKED → SCOPED → AUDITED 恢复，
 再对冻结候选启动原预算的 P1。未通过不解除 BLOCKED；P1、默认规则终审与原生成本仍须实际完成，
 本卡不提前授予路线 CLOSED。
+
+## 实际结果
+
+候选 `ea8a7101` 的 Q1–Q3 已完成；[完整回归证据](../../../../evidence/correctness/cuda-r4-native-helper-qualification/README.md)
+记录六个 target 构建、32/32 独立 prefix、7/7 冷拒绝路径、Direct/Graph 各 16/16 完整 A/A PASS。
+阶段执行在 20 分钟预算内完成，遇错停止规则未触发，没有运行新 P1。源码/算法与已验收产品检查
+全部不变；统一 LOC 为 32,665 行 / 107 文件，不含测试及第三方，self-check PASS。
+
+receipt 只能复用准确身份；统一 runner 要求正式 bundle 使用 fresh build，若其 artifact 身份
+不同，必须按同一合同取得自己的 16 个 A/A，不能把另一个 build 的 PASS 文件复制过去。
+主卡现在有证据按合法状态流恢复六个 owner；P1 与默认规则仍未完成。

@@ -1,6 +1,6 @@
 # R4 CUDA 性能比较：预审与有限合同
 
-本记录从属 [R4 主卡](cuda-v1-four-route-foundation.md) 的 C1–C5。当前为 **BLOCKED / 资格运行已停止**，
+本记录从属 [R4 主卡](cuda-v1-four-route-foundation.md) 的 C1–C5。当前为 **SCOPED / 采集恢复条件已满足**，
 不是新的产品 owner 或一次已通过的 P1。[停止事实](../../../../evidence/correctness/cuda-r4-qualification-progress-stop/README.md)
 保留两次启动和有限诊断；以下是计时前冻结的合同。API/算法、正确性及交付固定后，才把完整 commit/tree、
 编译器、依赖和机器身份写入统一仪器合同并执行正式采样。原 5% 门、n=15→最多31、一次源码归因
@@ -10,6 +10,10 @@
 [有限采集接线](cuda-r4-native-helper-qualification.md) 使用 `bench/contracts/{compute,graph}-cuda-ffn-p1-v2.json`
 与已单独验证的 `native-runtime-pair` 工具支持；v1 文件、失败数据和原门全部保留。v2 未通过进度/A/A
 前不启动 P1；工具修改不代表本模块已经恢复或通过性能。
+
+`ea8a7101` 接线候选现已通过[全部预声明进度与 A/A 回归](../../../../evidence/correctness/cuda-r4-native-helper-qualification/README.md)。
+主卡正在按 BLOCKED → SCOPED → AUDITED 恢复；尚无新 P1 verdict。正式运行使用 v2 合同和
+fresh build，准确 artifact 不同则取得自己的 A/A receipt；不沿用旧单核样本或新 build 之外的 PASS。
 
 ## 1. 必须分开的比较
 

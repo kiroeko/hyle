@@ -1,0 +1,218 @@
+{
+  "candidate": "ea8a710139395f4f2b7923017390ef71c0837f65",
+  "gate": "PASS",
+  "product_changed": false,
+  "p1_run": false,
+  "progress_launches": 32,
+  "max_progress_seconds": 0.20300000021234155,
+  "negative_guards": 7,
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "aa": {
+    "compute": {
+      "gate": "PASS",
+      "runs": 16,
+      "summaries": {
+        "native-M1": {
+          "ratios": [
+            1.0085271000620095,
+            1.0001940246661682,
+            0.9873176898454333,
+            0.9953338656552551,
+            0.9971321874551905,
+            0.9926231569535129,
+            1.0079727964942136,
+            0.9973732777696513
+          ],
+          "factor_medians": {
+            "all": 0.997252732612421,
+            "variant=placement": 0.997252732612421,
+            "variant=primary": 0.9977639451607117,
+            "execution_order=candidate-first": 0.9986631060606794,
+            "execution_order=peer-first": 0.9963535717124532,
+            "allocation_order=candidate-first": 1.002552491974702,
+            "allocation_order=peer-first": 0.9963535717124532
+          }
+        },
+        "native-M16": {
+          "ratios": [
+            0.9935308524926919,
+            0.9938814144804416,
+            0.996629675297986,
+            0.9978550484446711,
+            0.9960781831130807,
+            0.9911415062585133,
+            1.01439500896707,
+            1.001944915187127
+          ],
+          "factor_medians": {
+            "all": 0.9963539292055333,
+            "variant=placement": 0.9990115491501038,
+            "variant=primary": 0.9952555448892138,
+            "execution_order=candidate-first": 0.9937061334865668,
+            "execution_order=peer-first": 0.999899981815899,
+            "allocation_order=candidate-first": 0.9963539292055333,
+            "allocation_order=peer-first": 0.9958682314625564
+          }
+        },
+        "selected-M1": {
+          "ratios": [
+            0.9995190971517436,
+            0.9942701788002837,
+            1.0001336719689882,
+            1.0008113387713835,
+            1.002390371285665,
+            0.9981496627410491,
+            1.0008303813845287,
+            1.0047198063413234
+          ],
+          "factor_medians": {
+            "all": 1.000472505370186,
+            "variant=placement": 1.0016103763350968,
+            "variant=primary": 0.9998263845603659,
+            "execution_order=candidate-first": 0.9988343799463963,
+            "execution_order=peer-first": 1.000820860077956,
+            "allocation_order=candidate-first": 1.0004820266767585,
+            "allocation_order=peer-first": 0.9994805007562163
+          }
+        },
+        "selected-M16": {
+          "ratios": [
+            1.0023629083808514,
+            1.0006662522513907,
+            1.024099437840126,
+            1.0084521031570437,
+            0.9940298224133186,
+            1.0015673280727293,
+            1.0062841313810842,
+            0.9929066975006671
+          ],
+          "factor_medians": {
+            "all": 1.0019651182267904,
+            "variant=placement": 0.997798575243024,
+            "variant=primary": 1.0054075057689476,
+            "execution_order=candidate-first": 1.00111679016206,
+            "execution_order=peer-first": 1.0073681172690638,
+            "allocation_order=candidate-first": 1.004323519880968,
+            "allocation_order=peer-first": 1.00111679016206
+          }
+        }
+      }
+    },
+    "graph": {
+      "gate": "PASS",
+      "runs": 16,
+      "summaries": {
+        "native-M1": {
+          "ratios": [
+            1.0073428818717367,
+            0.9976792438330899,
+            0.990667105234844,
+            0.9978355111642055,
+            0.9922427708342941,
+            1.0068379411061759,
+            0.9975057665692757,
+            1.0127498159291926
+          ],
+          "factor_medians": {
+            "all": 0.9977573774986477,
+            "variant=placement": 1.0021718538377258,
+            "variant=primary": 0.9977573774986477,
+            "execution_order=candidate-first": 1.0022585924696328,
+            "execution_order=peer-first": 0.9976706388667407,
+            "allocation_order=candidate-first": 0.9948742687017849,
+            "allocation_order=peer-first": 1.0023367261351908
+          }
+        },
+        "native-M16": {
+          "ratios": [
+            0.9883812293129582,
+            0.9972623359518321,
+            1.0114377751125567,
+            0.9959342063539406,
+            1.0003083748957662,
+            1.0070360322542244,
+            0.9844240136498903,
+            1.010982546214152
+          ],
+          "factor_medians": {
+            "all": 0.9987853554237991,
+            "variant=placement": 1.0036722035749954,
+            "variant=primary": 0.9965982711528864,
+            "execution_order=candidate-first": 0.9987853554237991,
+            "execution_order=peer-first": 1.0034583762840463,
+            "allocation_order=candidate-first": 0.9943448021043622,
+            "allocation_order=peer-first": 1.0021491841030283
+          }
+        },
+        "selected-M1": {
+          "ratios": [
+            0.996271726437157,
+            0.9995261538461538,
+            1.002326735266835,
+            0.9932579515700788,
+            1.0078463120178782,
+            1.003082541911484,
+            1.015215077522516,
+            1.0004354459151468
+          ],
+          "factor_medians": {
+            "all": 1.001381090590991,
+            "variant=placement": 1.005464426964681,
+            "variant=primary": 0.9978989401416554,
+            "execution_order=candidate-first": 1.0013043478788188,
+            "execution_order=peer-first": 1.001381090590991,
+            "allocation_order=candidate-first": 1.0050865236423565,
+            "allocation_order=peer-first": 0.9999807998806503
+          }
+        },
+        "selected-M16": {
+          "ratios": [
+            0.9984591198892063,
+            1.004424305695311,
+            1.0065689821363744,
+            1.016913066961426,
+            1.0131272743325996,
+            0.9962026900218955,
+            1.0000219751241595,
+            1.003130656277154
+          ],
+          "factor_medians": {
+            "all": 1.0037774809862325,
+            "variant=placement": 1.0015763157006567,
+            "variant=primary": 1.0054966439158428,
+            "execution_order=candidate-first": 1.0014417127922588,
+            "execution_order=peer-first": 1.0048498192067643,
+            "allocation_order=candidate-first": 1.003295478630267,
+            "allocation_order=peer-first": 1.0037774809862325
+          }
+        }
+      }
+    }
+  }
+}

@@ -417,13 +417,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "BLOCKED",
+      "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "summary": "R4 BLOCKED：实现、三交付与既有检查保留；独立 CUDA 程序两次复现单核上高优先级 caller 轮询、SDK helpers 缺少 CPU 时间，调度干预后恢复。须修正 native-helper 采集合同并完成进度/P1/默认规则验收。",
-      "blocked_from": "AUDITED",
-      "blocker": "已取得独立 CUDA 的实际 API/调度机制证据；原 single-logical-cpu 采集条件不适合此本机 SDK 进度行为。真实 native-helper 采集边界、进度回归与 P1 尚未完成。",
-      "blocker_owner": "R4 CUDA qualification：native-helper 采集条件；cuDevicePrimaryCtxRetain 现场见 cuda-r4-context-causality.md",
-      "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
+      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。"
     },
     {
       "module": "compute_provider_native",
@@ -465,53 +461,33 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "BLOCKED",
-      "summary": "R4 BLOCKED：实现、三交付与既有检查保留；独立 CUDA 程序两次复现单核上高优先级 caller 轮询、SDK helpers 缺少 CPU 时间，调度干预后恢复。须修正 native-helper 采集合同并完成进度/P1/默认规则验收。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "blocked_from": "AUDITED",
-      "blocker": "已取得独立 CUDA 的实际 API/调度机制证据；原 single-logical-cpu 采集条件不适合此本机 SDK 进度行为。真实 native-helper 采集边界、进度回归与 P1 尚未完成。",
-      "blocker_owner": "R4 CUDA qualification：native-helper 采集条件；cuDevicePrimaryCtxRetain 现场见 cuda-r4-context-causality.md",
-      "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
+      "state": "SCOPED",
+      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "BLOCKED",
-      "summary": "R4 BLOCKED：实现、三交付与既有检查保留；独立 CUDA 程序两次复现单核上高优先级 caller 轮询、SDK helpers 缺少 CPU 时间，调度干预后恢复。须修正 native-helper 采集合同并完成进度/P1/默认规则验收。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "blocked_from": "AUDITED",
-      "blocker": "已取得独立 CUDA 的实际 API/调度机制证据；原 single-logical-cpu 采集条件不适合此本机 SDK 进度行为。真实 native-helper 采集边界、进度回归与 P1 尚未完成。",
-      "blocker_owner": "R4 CUDA qualification：native-helper 采集条件；cuDevicePrimaryCtxRetain 现场见 cuda-r4-context-causality.md",
-      "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
+      "state": "SCOPED",
+      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "BLOCKED",
-      "summary": "R4 BLOCKED：实现、三交付与既有检查保留；独立 CUDA 程序两次复现单核上高优先级 caller 轮询、SDK helpers 缺少 CPU 时间，调度干预后恢复。须修正 native-helper 采集合同并完成进度/P1/默认规则验收。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "blocked_from": "AUDITED",
-      "blocker": "已取得独立 CUDA 的实际 API/调度机制证据；原 single-logical-cpu 采集条件不适合此本机 SDK 进度行为。真实 native-helper 采集边界、进度回归与 P1 尚未完成。",
-      "blocker_owner": "R4 CUDA qualification：native-helper 采集条件；cuDevicePrimaryCtxRetain 现场见 cuda-r4-context-causality.md",
-      "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
+      "state": "SCOPED",
+      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_route_cuda",
-      "state": "BLOCKED",
-      "summary": "R4 BLOCKED：实现、三交付与既有检查保留；独立 CUDA 程序两次复现单核上高优先级 caller 轮询、SDK helpers 缺少 CPU 时间，调度干预后恢复。须修正 native-helper 采集合同并完成进度/P1/默认规则验收。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "blocked_from": "AUDITED",
-      "blocker": "已取得独立 CUDA 的实际 API/调度机制证据；原 single-logical-cpu 采集条件不适合此本机 SDK 进度行为。真实 native-helper 采集边界、进度回归与 P1 尚未完成。",
-      "blocker_owner": "R4 CUDA qualification：native-helper 采集条件；cuDevicePrimaryCtxRetain 现场见 cuda-r4-context-causality.md",
-      "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
+      "state": "SCOPED",
+      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cuda",
-      "state": "BLOCKED",
-      "summary": "R4 BLOCKED：实现、三交付与既有检查保留；独立 CUDA 程序两次复现单核上高优先级 caller 轮询、SDK helpers 缺少 CPU 时间，调度干预后恢复。须修正 native-helper 采集合同并完成进度/P1/默认规则验收。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "blocked_from": "AUDITED",
-      "blocker": "已取得独立 CUDA 的实际 API/调度机制证据；原 single-logical-cpu 采集条件不适合此本机 SDK 进度行为。真实 native-helper 采集边界、进度回归与 P1 尚未完成。",
-      "blocker_owner": "R4 CUDA qualification：native-helper 采集条件；cuDevicePrimaryCtxRetain 现场见 cuda-r4-context-causality.md",
-      "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
+      "state": "SCOPED",
+      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     }
   ]
 }
