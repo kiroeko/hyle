@@ -1,7 +1,10 @@
 {
+  "air-first-logs.tar.gz": "2c78aec2345242e675938062e6b8dc080178b471309044863177d4a9801e6c82",
   "direct-formal-invocation-failure.zip": "ffa3ee206f87b57bd50360cb1e9915c2b55200735e2d8ea5211fe28d1c6964b1",
+  "graph-first-p1.zip": "63ae7ec658ec631975f934f932f3c8fa6d5a5e39ff1abbe98044fe8b25320407",
   "implementation-plan.json": "70c29cb3fbcda7fead16bb0aa4037602ee2f59db7577d90d97a0336f97d3fdbd",
   "linux-delivery-logs.tar.gz": "9bc825c1452127334f1965a00c670203e792c068ab4b4b50dc15ac22c7cf42ae",
   "loc-79e96ceb.json": "2f0c9797c58e36851984b01c0fde68a8d9fda5581f221e7ccb0d5aa73c0530a9",
+  "r3-source-review-79e96ceb.md": "9a832d79d965125c439fae32ab8bd9f73a8fad5e70c6f8ad63773cf2f4f3ff4f",
   "README.md": "91d8d26a0dc68baac460bd72d33f76d09714626c891b4b70852cb6b27ab45180"
 }

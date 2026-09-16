@@ -1,0 +1,45 @@
+# R3 候选的有限交付与激活纠正
+
+<!-- PROJECT UNIT REVIEW: AUDITED -->
+
+## Closure card
+
+- owner：compute_route_cpu、graph_route_cpu、graph_provider_onednn，从 CANDIDATE 退回 AUDITED。
+- baseline：`e4a81e88`；产品/benchmark 候选 `79e96ceb`。
+- 父卡：[R3 CPU 默认计算与 Graph](cpu-v1-four-route-foundation.md)。公开 API、默认选择、能力目录、
+  生命周期及该卡其余 owner 不变；本卡只固定下列两个已发生的反例。
+- 正常消费：同一 CPU Direct/Graph/Sched source/static/shared；连续 gated FFN 与分列并行 FFN。
+- P1：W1-WIN 原 graph-cpu-route-p1-v1 合同，5% 门、原 shape/双顺序/placement/n=15→31。
+  本卡使用父卡已预留的唯一一次有源码原因的性能纠正；不增加性能纠正或采样预算。
+- 预算：定向源码审计 30 分钟；纠正、适用回归及不可变候选 P1，不重复整体架构研究。
+
+## 已知反例和固定 FIX
+
+| ID | 实际证据 / 成本机制 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| C45a | Air AUTO 正确禁用 oneDNN，source 19/19 与 relocated shared 3/3 通过；static EXPORT 引用未导出的 OPTIONAL_ABSENT provider 而失败 | 两个新 route 的本地 CMake 将缺席 oneDNN 的静态安装边裁去，保留 source build 的 manifest 依赖；不改 HyleModule、selector 或 manifest 协议 | Air/Mini Native 三交付；Windows oneDNN OFF static；x64 oneDNN ON 三交付继续保持真实依赖 |
+| C46a | Graph 首次工程 P1 资格/controls PASS，11/12 非劣门 PASS；串行 17×129×257 的 Native peer 在全部分层快约 4%～5%，两层区间跨过 5% 门 | region 激活的完整连续 column range 合并为一次既有 SIMD batch，分列任务继续逐行；同实现 direct 和自然序列 comparator 同步采用连续 batch | 全图 double oracle、SIMD 尾数/变化输入/资源回收和原两 worker consumer；一次修正候选的原 Graph P1 |
+
+C46a 的源码依据是 apply_swiglu 即使覆盖整个连续矩阵，仍按行重复分派和处理尾部。合并连续
+pointwise 区间不改变每个元素的数学任务，减少重复行尾；它不是按 benchmark 数字添加 shape
+阈值。分列任务不连续，不能跨行吞并别人的区间。数量由原 dense tensor/workspace 检查保证。
+Native peer 保留真实产品实现；不删除或故意弱化它。此前的差距仍如实保留，不能称已经解决。
+
+首轮完整包：外部 scratch `p1-graph`，qualification QUALIFIED，performance INCONCLUSIVE，
+n=31 已达上限。停止对旧候选重采样；最后两项 two-worker 完整路线显示 WIN，其余通过项只签
+工程非劣。完整数据随后归档，不能仅保留有利分层。
+
+## 冻结与适用验证
+
+公开头、签名、对象 layout、错误/关闭/OOM 合同、Provider 顺序与资格条件保持冻结；无新 op、
+公共 option、依赖或 runtime。C45a 只投影缺席实现的安装边；oneDNN ON 的实际链接不裁掉。
+C46a 使用已依赖 SIMD，不修改 SIMD/Native/oneDNN BRGEMM 内核或通用 Graph planner。
+
+先 selector；Windows/WSL 回放 region 与普通 Graph route/真实 Sched consumer；W1 off-static
+与两 Mac 的 source/shared/static 验证 C45a。已通过且投影未变化的 Direct/CPU/Native 机制结果
+复用。WSL 定向 sanitizer 及剩余三交付沿父卡完成。API/算法固定到新 commit 后才运行修正 P1，
+原比较输入、预算、所有权、线程、完成点和统计规则不变；没有合格最终门就不能关闭父卡。
+
+七问沿父卡：oneDNN 版本/许可不变；同一完整消费者；复用原 SIMD；完整 peer 和包装税比较；
+无新 ABI；补足缺席依赖的三交付；普通入口不增加用户选型负担。Native、Mem、Sched 的功能
+范围与原终局不因此重开。纠正仍不能使必须的门通过时，保留实际结果并按协议裁决，不再迭代。

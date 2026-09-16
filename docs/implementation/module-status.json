@@ -372,10 +372,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "graph_provider_onednn R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
+      "summary": "R3 C45a/C46a AUDITED：修复缺席 oneDNN 的 static 安装边，并合并 region 连续激活；唯一性能纠正，API/默认规则冻结。"
     },
     {
       "module": "compute_ops",
@@ -416,17 +415,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "compute_route_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "AUDITED",
+      "summary": "R3 C45a/C46a AUDITED：修复缺席 oneDNN 的 static 安装边，并合并 region 连续激活；唯一性能纠正，API/默认规则冻结。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "graph_route_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "AUDITED",
+      "summary": "R3 C45a/C46a AUDITED：修复缺席 oneDNN 的 static 安装边，并合并 region 连续激活；唯一性能纠正，API/默认规则冻结。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md"
     }
   ]
 }
