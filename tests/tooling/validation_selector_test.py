@@ -385,6 +385,39 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("headers:container_queue", self.selected(plan))
         self.assertIn("delivery:container", self.selected(plan))
 
+    def test_factor_benchmark_cmake_preserves_explicit_performance_boundary(self):
+        for path in ("bench/container_queue/CMakeLists.txt",
+                     "bench/container_queue/nested/helper.cmake"):
+            with self.subTest(path=path):
+                self.write(path, "set(BENCHMARK_ONLY_INPUT 1)\n")
+                self.commit()
+                plan = self.plan()
+                self.assertEqual(plan["selected_factors"], [])
+                self.assertEqual(self.selected(plan), {"docs", "closure"})
+                self.assertTrue(all(c["kind"] == "benchmark" for c in plan["changes"]))
+                self.assertEqual(self.row(plan, "p1")["status"], "SKIPPED")
+        self.write("src/container_queue/CMakeLists.txt", "hyle_add_module(container_queue)\n")
+        self.commit()
+        plan = self.plan()
+        self.assertIn("factor:sched", self.selected(plan))
+        self.assertIn("headers:container_queue", self.selected(plan))
+        self.assertIn("delivery:container", self.selected(plan))
+
+    def test_global_benchmark_cmake_remains_shared_package_input(self):
+        self.write("bench/CMakeLists.txt", "# shared benchmark registration\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["changes"][0]["kind"], "package")
+        self.assertIn("component-contract", self.selected(plan))
+        self.assertIn("delivery:compute", self.selected(plan))
+
+    def test_unowned_benchmark_cmake_still_blocks(self):
+        self.write("bench/unregistered/CMakeLists.txt", "# no reviewed owner\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertEqual(plan["unknown_paths"], ["bench/unregistered/CMakeLists.txt"])
+
     def test_graph_removed_edge_and_package_seams_expand(self):
         self.write(selector.MANIFEST, self.graph_bytes.replace(b"PRIVATE_DEPS container_queue timer_queue", b"PRIVATE_DEPS timer_queue"))
         self.commit()

@@ -55,6 +55,7 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 | 文档、状态、证据、格式配置、已证明格式变化 | docs + closure；registry 改变时传包含旧 registry 的 `--previous-ref` | C++ build、交付、P1 |
 | 模块实现 | owning factor + 中央真实直接边的一跳消费者 | 传递消费者测试、无关 factor、package、P1 |
 | factor 测试，包括 `tests/<factor>/CMakeLists.txt` 与目录内 `.cmake` | owning factor correctness | 消费者、独立 header/delivery gate、P1 |
+| factor benchmark 源码与 `bench/<factor>/` 内 CMake | docs + closure；构建/资格按当前卡预声明 | 产品 header/三交付、自动 P1；全局 `bench/CMakeLists.txt` 仍按公共 seam |
 | 公共头/API、factor 产品 CMake seam | owning factor、反向消费者闭包、已有逐头测试、受影响产品三交付 | 自动 P1 |
 | 组件图、公共 build/package seam、第三方产品输入 | 组件合同、已实现 factor 与交付闭包 | 未实现 `QUEUED` target、自动 P1 |
 | 已映射维护工具/CI 调度 | `validation-policy.json` 中的工具测试 | 产品 build/P1 |

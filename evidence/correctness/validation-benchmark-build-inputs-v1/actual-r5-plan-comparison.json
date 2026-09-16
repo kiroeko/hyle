@@ -1,0 +1,98 @@
+{
+  "before": {
+    "verdict": "READY",
+    "benchmark_cmake_changes": [
+      {
+        "path": "bench/compute_route_apple/CMakeLists.txt",
+        "kind": "factor_seam",
+        "factors": [
+          "compute_route_apple"
+        ],
+        "reason": "factor product build/package seam changed",
+        "suites": []
+      },
+      {
+        "path": "bench/graph_route_apple/CMakeLists.txt",
+        "kind": "factor_seam",
+        "factors": [
+          "graph_route_apple"
+        ],
+        "reason": "factor product build/package seam changed",
+        "suites": []
+      }
+    ],
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "headers:compute_route_apple",
+      "headers:graph_route_apple",
+      "delivery:compute",
+      "delivery:graph"
+    ],
+    "related_skips": [
+      {
+        "id": "p1",
+        "status": "SKIPPED",
+        "reason": "no explicit frozen P1 card; sampling is never automatic"
+      }
+    ]
+  },
+  "after": {
+    "verdict": "READY",
+    "benchmark_cmake_changes": [
+      {
+        "path": "bench/compute_route_apple/CMakeLists.txt",
+        "kind": "benchmark",
+        "factors": [
+          "compute_route_apple"
+        ],
+        "reason": "factor harness source or CMake input; explicit frozen P1 card required, no automatic sampling",
+        "suites": []
+      },
+      {
+        "path": "bench/graph_route_apple/CMakeLists.txt",
+        "kind": "benchmark",
+        "factors": [
+          "graph_route_apple"
+        ],
+        "reason": "factor harness source or CMake input; explicit frozen P1 card required, no automatic sampling",
+        "suites": []
+      }
+    ],
+    "selected": [
+      "docs",
+      "closure",
+      "tool:tests/tooling/validation_selector_test.py"
+    ],
+    "related_skips": [
+      {
+        "id": "headers:compute_route_apple",
+        "status": "SKIPPED",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "headers:graph_route_apple",
+        "status": "SKIPPED",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "delivery:compute",
+        "status": "SKIPPED",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:graph",
+        "status": "SKIPPED",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "p1",
+        "status": "SKIPPED",
+        "reason": "no explicit frozen P1 card; sampling is never automatic"
+      }
+    ]
+  },
+  "native_execution": "none; classification proof only",
+  "tool_regression": "52/52 PASS"
+}

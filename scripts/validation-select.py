@@ -278,14 +278,14 @@ def classify(before, after, graphs, policy):
             elif factors:
                 if path.startswith("tests/"):
                     kind, reason = "test", "factor test source or CMake change; owner tests only"
+                elif path.startswith("bench/"):
+                    kind, reason = "benchmark", "factor harness source or CMake input; explicit frozen P1 card required, no automatic sampling"
                 elif path.endswith(("CMakeLists.txt", ".cmake")):
                     kind, reason = "factor_seam", "factor product build/package seam changed"
                 elif path.startswith("include/"):
                     kind, reason = "public", "owned public header/API may change consumer closure"
                 elif path.startswith("src/"):
                     kind, reason = "source", "implementation change; owner and one-hop direct consumers only"
-                elif path.startswith("bench/"):
-                    kind, reason = "benchmark", "harness change requires explicit frozen P1 card; no automatic sampling"
             elif path in {"include/hyle/version.h", "include/hyle/visibility.h"}:
                 kind, reason = "package", "shared public version/visibility contract changed"
         if kind == "unknown":

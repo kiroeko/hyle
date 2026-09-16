@@ -20,3 +20,5 @@
   不对任何未运行产品风险签 PASS，不改变状态方法、性能规则或现有原生平台适用性。
 
 本卡是独立公共工具修正，先冻结再实现；不是 Compute/Graph 产品完成量。
+
+实现与回归见[具名证据](../../../../evidence/correctness/validation-benchmark-build-inputs-v1/README.md)：52/52 工具测试通过，R5 实际计划按预声明分类；无产品构建或性能采样。
