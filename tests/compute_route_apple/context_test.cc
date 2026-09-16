@@ -15,13 +15,14 @@ TEST(AppleRegion, ChangedInputsRetainedResultsAndNoRetrace) {
   auto context = apple::Context::create();
   ASSERT_TRUE(context) << context.error().message();
   std::atomic<int> traces{0};
-  const std::vector<mx::array> inputs{
-      mx::array({1.f, 2.f, 3.f, 4.f}, {2, 2}),
-      mx::array({2.f, 0.f, 0.f, 3.f}, {2, 2})};
-  auto program = context->compile([&](const auto &args, mx::Stream stream) {
-    traces.fetch_add(1);
-    return std::vector<mx::array>{mx::matmul(args[0], args[1], stream)};
-  }, inputs);
+  const std::vector<mx::array> inputs{mx::array({1.f, 2.f, 3.f, 4.f}, {2, 2}),
+                                      mx::array({2.f, 0.f, 0.f, 3.f}, {2, 2})};
+  auto program = context->compile(
+      [&](const auto &args, mx::Stream stream) {
+        traces.fetch_add(1);
+        return std::vector<mx::array>{mx::matmul(args[0], args[1], stream)};
+      },
+      inputs);
   ASSERT_TRUE(program) << program.error().message();
   auto a = program->create_invocation();
   auto b = program->create_invocation();
@@ -43,7 +44,8 @@ TEST(AppleRegion, ChangedInputsRetainedResultsAndNoRetrace) {
     ASSERT_TRUE(submitted);
     auto result = submitted->wait();
     ASSERT_TRUE(result);
-    EXPECT_FLOAT_EQ(result->get()->arrays()[0].data<float>()[0], float(run * 2));
+    EXPECT_FLOAT_EQ(result->get()->arrays()[0].data<float>()[0],
+                    float(run * 2));
     EXPECT_FLOAT_EQ(old->get()->arrays()[0].data<float>()[3], 12.f);
   }
   EXPECT_EQ(traces.load(), 1);
@@ -56,13 +58,17 @@ TEST(AppleRegion, RejectsForeignStreamPendingInputAndWrongShape) {
   auto context = apple::Context::create();
   ASSERT_TRUE(context);
   const std::vector<mx::array> inputs{mx::array({1.f, 2.f})};
-  auto wrong_stream = context->compile([](const auto &args, mx::Stream) {
-    return std::vector<mx::array>{mx::negative(args[0], mx::Device::cpu)};
-  }, inputs);
+  auto wrong_stream = context->compile(
+      [](const auto &args, mx::Stream) {
+        return std::vector<mx::array>{mx::negative(args[0], mx::Device::cpu)};
+      },
+      inputs);
   EXPECT_FALSE(wrong_stream);
-  auto program = context->compile([](const auto &args, mx::Stream stream) {
-    return std::vector<mx::array>{mx::negative(args[0], stream)};
-  }, inputs);
+  auto program = context->compile(
+      [](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{mx::negative(args[0], stream)};
+      },
+      inputs);
   ASSERT_TRUE(program);
   auto slot = program->create_invocation();
   ASSERT_TRUE(slot);
@@ -83,9 +89,11 @@ TEST(AppleRegion, AbandonAndConcurrentWaitSurviveContextClose) {
   auto context = apple::Context::create();
   ASSERT_TRUE(context);
   const std::vector<mx::array> inputs{mx::array({1.f, 2.f, 3.f})};
-  auto program = context->compile([](const auto &args, mx::Stream stream) {
-    return std::vector<mx::array>{mx::square(args[0], stream)};
-  }, inputs);
+  auto program = context->compile(
+      [](const auto &args, mx::Stream stream) {
+        return std::vector<mx::array>{mx::square(args[0], stream)};
+      },
+      inputs);
   ASSERT_TRUE(program);
   auto a = program->create_invocation();
   auto b = program->create_invocation();

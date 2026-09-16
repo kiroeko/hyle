@@ -29,8 +29,10 @@ Bounded inspection at the MLX pin established:
   retain every admitted invocation/result through its own terminal notification.
 - CPU/Metal/CUDA are separate. Nested downloads must be authenticated before vendor
   configure, not permitted through an outer route flag alone.
-- MLX_METAL_JIT embeds source and avoids a relocatable metallib lookup requirement;
-  its actual compile/warmup cost belongs to cold prepare and will be measured.
+- MLX_METAL_JIT embeds many kernel sources. The first source build corrected the
+  initial assumption that it removed metallib resources: `kernels/CMakeLists.txt`
+  always builds a small base set and `mlx.metallib`. That generated resource must
+  ship and be found after relocation; actual JIT/warmup remains cold prepare.
 
 The previous [Q4 native probe](../../correctness/compute-apple-route-review/README.md)
 is reused only for the proven native format/lifetime premise. Source-built product,

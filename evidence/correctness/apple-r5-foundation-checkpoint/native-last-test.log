@@ -1,0 +1,111 @@
+Start testing: Sep 17 03:28 CST
+----------------------------------------------------------
+48/51 Testing: hyle_compute_route_apple_header_self_contained_test
+48/51 Test: hyle_compute_route_apple_header_self_contained_test
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/kiro/hyle-verify/r5-apple-20260917/source/scripts/header-self-contained.py" "--module" "compute_route_apple" "--include-dir" "/Users/kiro/hyle-verify/r5-apple-20260917/source/include" "--cxx" "/usr/bin/c++" "--cxx-compiler-id" "AppleClang" "--cxx-frontend" "GNU" "--header-dir" "compute" "--header" "apple.h"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/compute_route_apple
+"hyle_compute_route_apple_header_self_contained_test" start time: Sep 17 03:28 CST
+Output:
+----------------------------------------------------------
+compute_route_apple C++ headers self-contained: 1
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_apple_header_self_contained_test" end time: Sep 17 03:28 CST
+"hyle_compute_route_apple_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+49/51 Testing: hyle_compute_route_apple_test
+49/51 Test: hyle_compute_route_apple_test
+Command: "/Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/hyle_compute_route_apple_test"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/compute_route_apple
+"hyle_compute_route_apple_test" start time: Sep 17 03:28 CST
+Output:
+----------------------------------------------------------
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleRegion
+[ RUN      ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace
+[       OK ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace (34 ms)
+[ RUN      ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape
+[       OK ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape (6 ms)
+[ RUN      ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose
+[       OK ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose (5 ms)
+[----------] 3 tests from AppleRegion (47 ms total)
+
+[----------] 3 tests from AppleTyped
+[ RUN      ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation
+[       OK ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation (10 ms)
+[ RUN      ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes
+[       OK ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes (9 ms)
+[ RUN      ] AppleTyped.MetadataPreparationAndCheckedRegionError
+[       OK ] AppleTyped.MetadataPreparationAndCheckedRegionError (4 ms)
+[----------] 3 tests from AppleTyped (24 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (71 ms total)
+[  PASSED  ] 6 tests.
+<end of output>
+Test time =   0.50 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_apple_test" end time: Sep 17 03:28 CST
+"hyle_compute_route_apple_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+50/51 Testing: hyle_graph_route_apple_header_self_contained_test
+50/51 Test: hyle_graph_route_apple_header_self_contained_test
+Command: "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9" "/Users/kiro/hyle-verify/r5-apple-20260917/source/scripts/header-self-contained.py" "--module" "graph_route_apple" "--include-dir" "/Users/kiro/hyle-verify/r5-apple-20260917/source/include" "--cxx" "/usr/bin/c++" "--cxx-compiler-id" "AppleClang" "--cxx-frontend" "GNU" "--header-dir" "graph" "--header" "apple.h"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/graph_route_apple
+"hyle_graph_route_apple_header_self_contained_test" start time: Sep 17 03:28 CST
+Output:
+----------------------------------------------------------
+graph_route_apple C++ headers self-contained: 1
+<end of output>
+Test time =   0.22 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_apple_header_self_contained_test" end time: Sep 17 03:28 CST
+"hyle_graph_route_apple_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+51/51 Testing: hyle_graph_route_apple_test
+51/51 Test: hyle_graph_route_apple_test
+Command: "/Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/hyle_graph_route_apple_test"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/graph_route_apple
+"hyle_graph_route_apple_test" start time: Sep 17 03:28 CST
+Output:
+----------------------------------------------------------
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleGraph
+[ RUN      ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph
+[       OK ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph (51 ms)
+[ RUN      ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce
+[       OK ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce (8 ms)
+[ RUN      ] AppleGraph.RejectsMissingPendingAndMismatchedConstants
+[       OK ] AppleGraph.RejectsMissingPendingAndMismatchedConstants (0 ms)
+[----------] 3 tests from AppleGraph (60 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (60 ms total)
+[  PASSED  ] 3 tests.
+<end of output>
+Test time =   0.41 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_apple_test" end time: Sep 17 03:28 CST
+"hyle_graph_route_apple_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 03:28 CST
+
+compute_route_apple =   0.54 sec*proc
+
+graph_route_apple =   0.63 sec*proc
+
+headers =   0.27 sec*proc
+

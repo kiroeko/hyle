@@ -1,0 +1,6 @@
+if(HYLE_COMPUTE_APPLE_ENABLED)
+  hyle_add_module(graph_route_apple SOURCES apple_lowering.cc)
+else()
+  hyle_add_module(graph_route_apple OPTIONAL_ABSENT)
+  set_property(TARGET hyle_graph_route_apple PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
+endif()

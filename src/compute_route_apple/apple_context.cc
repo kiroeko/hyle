@@ -14,6 +14,7 @@
 #include <mlx/primitives.h>
 #include <mlx/transforms.h>
 
+#include "apple_internal.h"
 #include "completion_internal.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/container/flat_hash_set.h"
@@ -24,10 +25,18 @@ namespace hyle::compute::apple {
 namespace mx = mlx::core;
 namespace cd = compute::detail;
 
-namespace {
+namespace detail {
+Environment read_environment();
+
+struct RegionFailure {
+  Status status;
+};
+
 Status native_exception() noexcept {
   try {
     throw;
+  } catch (const RegionFailure &failure) {
+    return failure.status;
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("MLX/native metadata allocation failed");
   } catch (const std::invalid_argument &error) {
@@ -38,6 +47,10 @@ Status native_exception() noexcept {
     return Status::Internal("MLX native execution failed");
   }
 }
+} // namespace detail
+
+namespace {
+using detail::native_exception;
 
 // Cold only. Native primitives remain in one MLX GPU stream; the complete
 // compiled region is one hot invocation. Reuse the existing fallible hash set.
@@ -92,6 +105,7 @@ struct Runtime {
   Job *tail = nullptr;
   bool accepting = true;
   Status failure;
+  Environment environment;
   std::optional<mx::Stream> stream;
 
   Status enqueue(Job &job) noexcept {
@@ -141,8 +155,10 @@ struct Runtime {
   }
 
   Status close() noexcept {
-    if (owner_id.load(std::memory_order_acquire) == platform::this_thread::get_id())
-      return Status::FailedPrecondition("Apple Context cannot close on its native owner");
+    if (owner_id.load(std::memory_order_acquire) ==
+        platform::this_thread::get_id())
+      return Status::FailedPrecondition(
+          "Apple Context cannot close on its native owner");
     std::lock_guard join_lock(close_mutex);
     {
       std::lock_guard lock(queue_mutex);
@@ -178,9 +194,12 @@ struct ColdJob : Job {
   }
 };
 
-Status run_cold(Runtime &runtime, const std::shared_ptr<ColdJob> &job) noexcept {
-  if (runtime.owner_id.load(std::memory_order_acquire) == platform::this_thread::get_id())
-    return Status::FailedPrecondition("Apple cold preparation cannot reenter its native owner");
+Status run_cold(Runtime &runtime,
+                const std::shared_ptr<ColdJob> &job) noexcept {
+  if (runtime.owner_id.load(std::memory_order_acquire) ==
+      platform::this_thread::get_id())
+    return Status::FailedPrecondition(
+        "Apple cold preparation cannot reenter its native owner");
   job->admitted_owner = job;
   const Status admitted = runtime.enqueue(*job);
   if (!admitted.ok()) {
@@ -192,15 +211,11 @@ Status run_cold(Runtime &runtime, const std::shared_ptr<ColdJob> &job) noexcept 
   return job->terminal;
 }
 
-struct ArraySpec {
-  mx::Shape shape;
-  mx::Dtype type;
-};
-
 struct ProgramState {
   std::shared_ptr<Runtime> runtime;
-  std::vector<ArraySpec> inputs;
-  std::function<std::vector<mx::array>(const std::vector<mx::array> &)> compiled;
+  std::vector<InputSpec> inputs;
+  std::function<std::vector<mx::array>(const std::vector<mx::array> &)>
+      compiled;
 };
 
 struct ResultValues {
@@ -234,7 +249,8 @@ void retain(InvocationState *state) noexcept {
   state->refs.fetch_add(1, std::memory_order_relaxed);
 }
 void release(InvocationState *state) noexcept {
-  if (state != nullptr && state->refs.fetch_sub(1, std::memory_order_acq_rel) == 1)
+  if (state != nullptr &&
+      state->refs.fetch_sub(1, std::memory_order_acq_rel) == 1)
     delete state;
 }
 
@@ -263,7 +279,8 @@ void execute_invocation(Job *job) noexcept {
     terminal = runtime.failure;
   }
   if (terminal.ok() && state.cancel.load(std::memory_order_acquire))
-    terminal = Status::Cancelled("Apple submission cancelled before native execution");
+    terminal =
+        Status::Cancelled("Apple submission cancelled before native execution");
   if (terminal.ok()) {
     try {
       state.values->arrays = state.program->compiled(state.inputs);
@@ -285,31 +302,34 @@ void execute_invocation(Job *job) noexcept {
       runtime.poison(terminal);
     }
     if (terminal.ok() && state.cancel.load(std::memory_order_acquire))
-      terminal = Status::Cancelled("Apple submission cancelled after native drain");
+      terminal =
+          Status::Cancelled("Apple submission cancelled after native drain");
   }
   finish(state, std::move(terminal));
   release(&state); // admitted worker reference
 }
 
 const cd::CompletionVTable completion_vtable{
-    .destroy = [](void *pointer, cd::CompletionLifetime lifetime, Status hint) noexcept {
-      auto *state = static_cast<InvocationState *>(pointer);
-      Status terminal;
-      bool ready;
-      {
-        std::lock_guard lock(state->completion_mutex);
-        ready = state->done.load(std::memory_order_acquire) != 0;
-        if (ready)
-          terminal = state->terminal;
-        else {
-          state->abandoned = lifetime;
-          state->terminal_hint = hint;
-        }
-      }
-      if (ready)
-        deliver(lifetime, std::move(terminal), hint);
-      release(state);
-    },
+    .destroy =
+        [](void *pointer, cd::CompletionLifetime lifetime,
+           Status hint) noexcept {
+          auto *state = static_cast<InvocationState *>(pointer);
+          Status terminal;
+          bool ready;
+          {
+            std::lock_guard lock(state->completion_mutex);
+            ready = state->done.load(std::memory_order_acquire) != 0;
+            if (ready)
+              terminal = state->terminal;
+            else {
+              state->abandoned = lifetime;
+              state->terminal_hint = hint;
+            }
+          }
+          if (ready)
+            deliver(lifetime, std::move(terminal), hint);
+          release(state);
+        },
     .poll = [](void *pointer) noexcept -> Result<CompletionPoll> {
       const auto &state = *static_cast<InvocationState *>(pointer);
       if (state.done.load(std::memory_order_acquire) == 0)
@@ -318,17 +338,19 @@ const cd::CompletionVTable completion_vtable{
         return std::unexpected(state.terminal);
       return CompletionPoll::kComplete;
     },
-    .wait = [](void *pointer) noexcept {
-      const auto &state = *static_cast<InvocationState *>(pointer);
-      while (state.done.load(std::memory_order_acquire) == 0)
-        platform::detail::wait_on_address(&state.done, 0);
-      return state.terminal;
-    },
-    .request_cancel = [](void *pointer) noexcept {
-      auto &state = *static_cast<InvocationState *>(pointer);
-      state.cancel.store(true, std::memory_order_release);
-      return Status::Ok();
-    }};
+    .wait =
+        [](void *pointer) noexcept {
+          const auto &state = *static_cast<InvocationState *>(pointer);
+          while (state.done.load(std::memory_order_acquire) == 0)
+            platform::detail::wait_on_address(&state.done, 0);
+          return state.terminal;
+        },
+    .request_cancel =
+        [](void *pointer) noexcept {
+          auto &state = *static_cast<InvocationState *>(pointer);
+          state.cancel.store(true, std::memory_order_release);
+          return Status::Ok();
+        }};
 } // namespace detail
 
 std::span<const mx::array> Results::arrays() const noexcept {
@@ -359,6 +381,7 @@ Result<Context> Context::create() noexcept {
       if (!mx::is_available(mx::Device(mx::Device::gpu)))
         return Status::Unavailable("MLX Metal GPU is unavailable");
       runtime->stream = mx::new_stream(mx::Device::gpu);
+      runtime->environment = detail::read_environment();
       return Status::Ok();
     });
     const Status status = detail::run_cold(*runtime, initialize);
@@ -374,31 +397,57 @@ Status Context::close() noexcept {
   return state_ != nullptr ? state_->close() : Status::Ok();
 }
 
-Result<Program> Context::compile(RegionFunction region,
-                                std::span<const mx::array> examples) const noexcept {
+Result<const Environment &> Context::environment() const noexcept {
+  if (!state_)
+    return std::unexpected(Status::FailedPrecondition("invalid Apple Context"));
+  return state_->environment;
+}
+
+Result<Program>
+Context::compile(RegionFunction region,
+                 std::span<const mx::array> examples) const noexcept {
+  try {
+    std::vector<InputSpec> specs;
+    specs.reserve(examples.size());
+    for (const auto &array : examples) {
+      if (array.status() != mx::array::available)
+        return std::unexpected(
+            Status::FailedPrecondition("Apple examples must be ready arrays"));
+      specs.push_back({array.shape(), array.dtype()});
+    }
+    return compile(std::move(region), specs);
+  } catch (...) {
+    return std::unexpected(native_exception());
+  }
+}
+
+Result<Program>
+Context::compile(RegionFunction region,
+                 std::span<const InputSpec> inputs) const noexcept {
   if (!state_ || !region)
-    return std::unexpected(Status::InvalidArgument("invalid Apple Context or region"));
+    return std::unexpected(
+        Status::InvalidArgument("invalid Apple Context or region"));
   try {
     auto program = std::make_shared<detail::ProgramState>();
     program->runtime = state_;
-    for (const auto &array : examples) {
-      if (array.status() != mx::array::available)
-        return std::unexpected(Status::FailedPrecondition("Apple examples must be ready arrays"));
-      program->inputs.push_back({array.shape(), array.dtype()});
-    }
+    program->inputs.assign(inputs.begin(), inputs.end());
     auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
       const auto stream = *state_->stream;
       try {
         program->compiled = mx::compile(
-            [fn = std::move(region), stream](const std::vector<mx::array> &inputs) {
+            [fn = std::move(region),
+             stream](const std::vector<mx::array> &inputs) {
               auto outputs = fn(inputs, stream);
-              validate_region(outputs, stream);
-              return outputs;
-            }, false);
+              if (!outputs)
+                throw detail::RegionFailure{std::move(outputs).error()};
+              validate_region(*outputs, stream);
+              return std::move(*outputs);
+            },
+            false);
         std::vector<mx::array> isolated;
         isolated.reserve(program->inputs.size());
         for (const auto &spec : program->inputs)
-          isolated.push_back(mx::zeros(spec.shape, spec.type, stream));
+          isolated.push_back(mx::zeros(spec.shape, spec.dtype, stream));
         mx::async_eval(isolated);
         mx::synchronize(stream);
         for (auto &input : isolated)
@@ -428,7 +477,8 @@ Result<Program> Context::compile(RegionFunction region,
   }
 }
 
-Result<Invocation> Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
+Result<Invocation>
+Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   if (!state_)
     return std::unexpected(Status::FailedPrecondition("invalid Apple Program"));
   auto slot = cd::ResultSlot<Results>::create(allocator);
@@ -460,15 +510,19 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
   std::lock_guard lock(state_->binding_mutex);
   if (state_->done.load(std::memory_order_acquire) == 0 ||
       state_->retired.load(std::memory_order_acquire))
-    return Status::FailedPrecondition("Apple Invocation is in flight or failed");
+    return Status::FailedPrecondition(
+        "Apple Invocation is in flight or failed");
   if (inputs.size() != state_->program->inputs.size())
-    return Status::InvalidArgument("Apple input count differs from prepared region");
+    return Status::InvalidArgument(
+        "Apple input count differs from prepared region");
   for (std::size_t i = 0; i < inputs.size(); ++i) {
     const auto &spec = state_->program->inputs[i];
-    if (inputs[i].dtype() != spec.type || inputs[i].shape() != spec.shape)
-      return Status::InvalidArgument("Apple input shape/dtype differs from prepared region");
+    if (inputs[i].dtype() != spec.dtype || inputs[i].shape() != spec.shape)
+      return Status::InvalidArgument(
+          "Apple input shape/dtype differs from prepared region");
     if (inputs[i].status() != mx::array::available)
-      return Status::FailedPrecondition("Apple bind requires successfully evaluated inputs");
+      return Status::FailedPrecondition(
+          "Apple bind requires successfully evaluated inputs");
   }
   // Capacity was reserved at slot creation. array copies retain native owners.
   state_->inputs.assign(inputs.begin(), inputs.end());
@@ -478,10 +532,12 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
 
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
   if (!state_)
-    return std::unexpected(Status::FailedPrecondition("invalid Apple Invocation"));
+    return std::unexpected(
+        Status::FailedPrecondition("invalid Apple Invocation"));
   std::lock_guard lock(state_->binding_mutex);
   if (!state_->bound || state_->retired.load(std::memory_order_acquire))
-    return std::unexpected(Status::FailedPrecondition("Apple Invocation is unbound or failed"));
+    return std::unexpected(
+        Status::FailedPrecondition("Apple Invocation is unbound or failed"));
   auto writer = state_->result_slot.begin();
   if (!writer)
     return std::unexpected(std::move(writer).error());
@@ -493,7 +549,8 @@ Result<OwnedResult<Results>> Invocation::submit() noexcept {
   state_->cancel.store(false, std::memory_order_relaxed);
   state_->done.store(0, std::memory_order_release);
   detail::retain(state_); // Completion reference, released by its native vtable
-  auto completion = cd::CompletionAccess::make(&detail::completion_vtable, state_);
+  auto completion =
+      cd::CompletionAccess::make(&detail::completion_vtable, state_);
   auto result = writer->publish(std::move(completion));
   if (!result) {
     detail::finish(*state_, result.error());

@@ -1,0 +1,70 @@
+[0/2] Re-checking globbed directories...
+[1/70] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/70] Linking CXX static library bin/libhyle_error.a
+[3/70] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[4/70] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[5/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[6/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[7/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[8/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[9/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[10/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[11/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[12/70] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[13/70] Building CXX object src/time/CMakeFiles/hyle_time.dir/clock.cc.o
+[14/70] Linking CXX static library bin/libhyle_platform.a
+[15/70] Building CXX object src/time/CMakeFiles/hyle_time.dir/interop.cc.o
+[16/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[17/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[18/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[19/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[20/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[21/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[22/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[23/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[24/70] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[25/70] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[26/70] Linking CXX static library bin/libhyle_time.a
+[27/70] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[28/70] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/thread.cc.o
+[29/70] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/wait.cc.o
+[30/70] Linking CXX static library bin/libhyle_mem.a
+[31/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[32/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[33/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[34/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[35/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[36/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[37/70] Linking CXX static library bin/libhyle_compute_ops.a
+[38/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[39/70] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[40/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[41/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[42/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[43/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[44/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[45/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[46/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[47/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[48/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[49/70] Linking CXX static library bin/libhyle_platform_thread.a
+[50/70] Linking CXX static library bin/libhyle_container.a
+[51/70] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[52/70] Linking CXX static library bin/libhyle_compute.a
+[53/70] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[54/70] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[55/70] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[56/70] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[57/70] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[58/70] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[59/70] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[60/70] Linking CXX static library bin/libhyle_graph.a
+[61/70] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_environment.mm.o
+[62/70] Linking CXX static library bin/libhyle_compute_route_apple.a
+[63/70] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[64/70] Linking CXX static library bin/libhyle_graph_route_apple.a
+[65/70] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/context_test.cc.o
+[66/70] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/operations_test.cc.o
+[67/70] Linking CXX executable bin/hyle_compute_route_apple_test
+[68/70] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/graph_test.cc.o
+[69/70] Linking CXX executable bin/hyle_graph_route_apple_test

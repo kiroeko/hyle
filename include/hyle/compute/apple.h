@@ -11,14 +11,19 @@
 #endif
 
 #if defined(HYLE_COMPUTE_APPLE)
+#include <concepts>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <span>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <mlx/array.h>
 #include <mlx/stream.h>
 
+#include "hyle/compute/operation.h"
 #include "hyle/compute/result.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
@@ -35,8 +40,47 @@ struct ResultValues;
 // Compute/Graph contract. A region is pure, uses the supplied GPU stream, and
 // captures only immutable, successfully evaluated constants. Do not change
 // MLX process-wide compiler settings or invoke this Context from its callable.
-using RegionFunction = std::function<std::vector<mlx::core::array>(
+using RegionFunction = std::function<Result<std::vector<mlx::core::array>>(
     const std::vector<mlx::core::array> &, mlx::core::Stream)>;
+
+// Shape/dtype only; Graph and other metadata-driven consumers do not need a
+// dummy host payload. Preparation creates its own isolated native inputs.
+struct InputSpec final {
+  mlx::core::Shape shape;
+  mlx::core::Dtype dtype = mlx::core::float32;
+};
+
+// Captured once when creating the native Context. Apple driver/runtime is
+// shipped with macOS; its OS build is distinct from the compiled SDK/Metal
+// compiler and deployment floor. Fixed implementation rules may match these
+// facts; unknown combinations retain the legal MLX baseline, not a SOTA claim.
+struct Environment final {
+  std::string device_name;
+  std::string architecture;
+  std::string os_runtime;
+  std::string mlx_version;
+  std::string mlx_revision;
+  std::string metal_compiler;
+  std::uint32_t build_sdk = 0;
+  std::uint32_t deployment_target = 0;
+};
+
+// MLX affine Q4: eight unsigned nibbles, lowest logical K in the low nibble
+// of each uint32 word, physical [N,K/8]. Scales/biases are separate F32 arrays
+// [N,K/64], with decoded weight q*scale+bias. This is not Marlin/GGUF packing.
+inline constexpr StorageFormatId kAffineQ4Format{0x48594c454150504cULL,
+                                                 0x4d4c585134000001ULL};
+HYLE_COMPUTE_ROUTE_APPLE_API Result<TensorDesc>
+affine_q4_description(std::int64_t output_channels,
+                      std::int64_t input_channels) noexcept;
+
+// Cold typed lowering, useful inside a native region and shared by Graph.
+// Current fixed rule: MLX F32 MatMul (2-D), affine Q4/group64 (2-D), and SiLU
+// gated activation (separate inputs or packed halves). Unsupported domains
+// return an error; there is no provider ranking, timing or CPU fallback.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
+lower(const Operation &operation, std::span<const mlx::core::array> inputs,
+      mlx::core::Stream stream) noexcept;
 
 class Program;
 class Invocation;
@@ -76,12 +120,31 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
 
+  // Borrowed immutable facts, valid while this Context retains its state.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<const Environment &>
+  environment() const noexcept;
+
   // Cold compile and isolated zero-input warmup for these exact shapes/dtypes.
   // The callable runs only while preparing a MLX compiled region; this is a
   // managed replay contract, not allocation-free recorded commands.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   compile(RegionFunction region,
           std::span<const mlx::core::array> input_examples) const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
+  compile(RegionFunction region,
+          std::span<const InputSpec> inputs) const noexcept;
+
+  // Natural single-operation preparation; returns the same native Program
+  // as a whole-region compile. Examples must already be successfully ready.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
+  prepare(const Operation &operation,
+          std::span<const mlx::core::array> input_examples) const noexcept;
+  template <class Descriptor>
+    requires(!std::same_as<Descriptor, Operation>) &&
+            std::constructible_from<Operation, Descriptor>
+  Result<Program>
+  prepare(Descriptor operation,
+          std::span<const mlx::core::array> inputs) const noexcept;
 
   // Stops admission, drains every accepted prefix, joins the native owner.
   // Idempotent. Destruction performs this same explicit lifetime duty. Result
@@ -99,8 +162,9 @@ public:
   Program() noexcept = default;
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  HYLE_COMPUTE_ROUTE_APPLE_API Result<Invocation> create_invocation(
-      mem::AllocatorRef result_allocator = mem::system_allocator()) const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<Invocation>
+  create_invocation(mem::AllocatorRef result_allocator =
+                        mem::system_allocator()) const noexcept;
 
 private:
   friend class Context;
@@ -130,8 +194,18 @@ public:
 
 private:
   friend class Program;
-  explicit Invocation(detail::InvocationState *state) noexcept : state_(state) {}
+  explicit Invocation(detail::InvocationState *state) noexcept
+      : state_(state) {}
   detail::InvocationState *state_ = nullptr;
 };
+
+template <class Descriptor>
+  requires(!std::same_as<Descriptor, Operation>) &&
+          std::constructible_from<Operation, Descriptor>
+Result<Program>
+Context::prepare(Descriptor operation,
+                 std::span<const mlx::core::array> inputs) const noexcept {
+  return prepare(Operation(std::move(operation)), inputs);
+}
 } // namespace hyle::compute::apple
 #endif

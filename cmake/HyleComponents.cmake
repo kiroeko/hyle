@@ -446,9 +446,11 @@ _hyle_declare_component(graph_route_cuda
 # Native MLX region ownership is independent of the common Queue executor.
 _hyle_declare_component(compute_route_apple
   PRIVATE_DEPS container platform_thread
-  PUBLIC_DEPS core compute error mem
+  PUBLIC_DEPS core compute compute_ops error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/apple.h)
-_hyle_declare_component(graph_route_apple QUEUED)
+_hyle_declare_component(graph_route_apple
+  PUBLIC_DEPS core compute_ops compute_route_apple error graph
+  SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

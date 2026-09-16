@@ -1,0 +1,25 @@
+{
+  "baseline": "47751365bccb2dd05e5f8e4cc1741b42cd32effb",
+  "staged_tree": "5536cca4db2b81fc04d8c89529543c29850805cd",
+  "files": {
+    "CMakeLists.txt": "6af4edc082a095fedfa01a28a14461e4de193309208dce7693b9d25a5f91b134",
+    "cmake/HyleAppleDependencies.cmake": "f3143c8729f16ce45e47a2a4299753ca06a6c5054dafe246f51a439af9d5894e",
+    "cmake/HyleComponents.cmake": "12ffac2d5a295443a5687b194200ce323548196047ea3345164bfb19317ccd66",
+    "include/hyle/compute/apple.h": "796ed32a9ea5921f5efffb09a0f8974c76bdf4c185da78d5b15fe05ecc634b3b",
+    "include/hyle/graph/apple.h": "42f72dcf01726516e92c5d1894978c22083ba3f26063e92f0a7bbd3b4f115eb4",
+    "src/compute_route_apple/CMakeLists.txt": "9a2af327a14e6ba5bf4179d59264845711c034db19e72f8736936f5c0f8dd82a",
+    "src/compute_route_apple/apple_build.h.in": "03e7ca08eab4353fb73ff39f7506cc2af111681e0f5e8a8efcb4f794b39ac697",
+    "src/compute_route_apple/apple_context.cc": "fde06db44517ed3b5861302c47fe9bf7e1b5590f5b44786a5e3d2fd4fba7c0fe",
+    "src/compute_route_apple/apple_environment.mm": "eae00d49771f6f9bca7c38552bb75277a35baff750bbd663b986292e11a8b5b8",
+    "src/compute_route_apple/apple_internal.h": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c",
+    "src/compute_route_apple/apple_operations.cc": "4e674ee4e22be1b7d2f6bb62f6285df1d0afe928ea95994d471e5a25f1bc6f2b",
+    "src/graph_route_apple/CMakeLists.txt": "1ad3be0055c8bc62df2f1fa8fb93800e8a63a9e60d4e5aaf810b8e7dbcaf56c7",
+    "src/graph_route_apple/apple_lowering.cc": "0b9c7b58cfa70a7e39104d17be32224a06d5105dc58f57d14f8f5d854ffbeb4e",
+    "tests/compute_route_apple/CMakeLists.txt": "3259c8269b262daf8f79294ca5434e7f43eeb80ded6f0a4b70769b85853da04f",
+    "tests/compute_route_apple/context_test.cc": "e52805922519b12299fd42b9733d64b9d41b45ade3cedd591ff450b203a9f2a8",
+    "tests/compute_route_apple/ffn_fixture.h": "ee8e53b35ec3a065020e31c57554ed88d319d4e0e6d3de51dba039a6f76d5481",
+    "tests/compute_route_apple/operations_test.cc": "2f3292b98f3ee0950b01a79b0331d8655a78d4f739360ffcd56736b6f81172db",
+    "tests/graph_route_apple/CMakeLists.txt": "bbec41eede365db301f22055a2c7152d621107667d38ea45ae6e6884dd5c8f56",
+    "tests/graph_route_apple/graph_test.cc": "2545106de78032482b7bd83e4ebf6bf6381089bd95307fd9b835a9cb6912a1eb"
+  }
+}

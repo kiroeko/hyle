@@ -18,6 +18,27 @@ function(hyle_configure_apple_dependencies)
     return()
   endif()
 
+  # JIT mode still builds base kernels into mlx.metallib. Fail at admission
+  # with the missing tool, before downloading/configuring the native sources.
+  foreach(_tool IN ITEMS metal metallib)
+    execute_process(COMMAND xcrun -sdk macosx ${_tool} --version
+      RESULT_VARIABLE _result OUTPUT_VARIABLE _version ERROR_VARIABLE _error
+      TIMEOUT 10 OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _result EQUAL 0)
+      if(HYLE_COMPUTE_APPLE STREQUAL "ON")
+        message(FATAL_ERROR "HYLE Apple requires the Xcode Metal toolchain (${_tool}): ${_error}")
+      endif()
+      message(STATUS "HYLE: Apple AUTO unavailable -- Metal toolchain ${_tool} missing")
+      set(HYLE_COMPUTE_APPLE_ENABLED OFF PARENT_SCOPE)
+      return()
+    endif()
+    if(_tool STREQUAL "metal")
+      string(REGEX MATCH "^[^\r\n]*" _compiler "${_version}")
+      string(REPLACE "\\" "\\\\" _compiler "${_compiler}")
+      string(REPLACE "\"" "\\\"" _compiler "${_compiler}")
+      set(HYLE_APPLE_METAL_COMPILER "${_compiler}" PARENT_SCOPE)
+    endif()
+  endforeach()
   include(FetchContent)
   # Authenticate all nested sources before any vendor configure. Their later
   # FetchContent declarations reuse these names and already populated inputs.
@@ -64,6 +85,7 @@ function(hyle_configure_apple_dependencies)
     set(HYLE_APPLE_${_upper}_SOURCE_DIR "${${_dependency}_SOURCE_DIR}" PARENT_SCOPE)
   endforeach()
   set_target_properties(mlx PROPERTIES
+    SYSTEM TRUE
     EXPORT_NAME "_mlx_native"
     INSTALL_NAME_DIR "@rpath"
     INSTALL_RPATH "@loader_path"

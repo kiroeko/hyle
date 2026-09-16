@@ -1,0 +1,14 @@
+{
+  "archive_sha256": "52b695754914d150d630fe149cacc76a6d72052d6a62dab1f2b92f3e68267a56",
+  "archive_size": 687865856,
+  "tools": {
+    "metal": {
+      "sha256": "3457ceed7d7e9cd5ac4e96affa8726df72331e19f3a836ece5c0758e0ba79f54",
+      "signature": "Executable=/Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/bin/metal\nIdentifier=com.apple.metal\nFormat=Mach-O universal (x86_64 arm64)\nCodeDirectory v=20400 size=883 flags=0x0(none) hashes=22+2 location=embedded\nVersionPlatform=1\nVersionMin=917504\nVersionSDK=1704960\nHash type=sha256 size=32\nCandidateCDHash sha256=40c7148cd96a986ed1288935dc510871483af2a8\nCandidateCDHashFull sha256=40c7148cd96a986ed1288935dc510871483af2a8f75ff3353c7fa4abd22b16f4\nHash choices=sha256\nCMSDigest=40c7148cd96a986ed1288935dc510871483af2a8f75ff3353c7fa4abd22b16f4\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=65536\nExecutable Segment flags=0x1\nPage size=4096\nCDHash=40c7148cd96a986ed1288935dc510871483af2a8\nSignature size=4442\nAuthority=Software Signing\nAuthority=Apple Code Signing Certification Authority\nAuthority=Apple Root CA\nSigned Time=May 23, 2026 at 1:59:07\u202fAM\nInfo.plist=not bound\nTeamIdentifier=59GAB85EFG\nSealed Resources=none\nInternal requirements count=1 size=64\nTotal signatures=1\nChosen signature=1\n"
+    },
+    "metallib": {
+      "sha256": "0f391fad93f257988128848b76eec747ddf6863cff871ee9b9518152a8db68ac",
+      "signature": "Executable=/Users/kiro/hyle-verify-tools/metal-17F109/Metal.xctoolchain/usr/bin/air-lld\nIdentifier=com.apple.air-lld\nFormat=Mach-O universal (x86_64 arm64)\nCodeDirectory v=20400 size=885 flags=0x0(none) hashes=22+2 location=embedded\nVersionPlatform=1\nVersionMin=917504\nVersionSDK=1704960\nHash type=sha256 size=32\nCandidateCDHash sha256=4d1056e4c0c309a8578c716371094bfc355082a8\nCandidateCDHashFull sha256=4d1056e4c0c309a8578c716371094bfc355082a8e701e8c4a6eedc1a9e427a46\nHash choices=sha256\nCMSDigest=4d1056e4c0c309a8578c716371094bfc355082a8e701e8c4a6eedc1a9e427a46\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=65536\nExecutable Segment flags=0x1\nPage size=4096\nCDHash=4d1056e4c0c309a8578c716371094bfc355082a8\nSignature size=4442\nAuthority=Software Signing\nAuthority=Apple Code Signing Certification Authority\nAuthority=Apple Root CA\nSigned Time=May 23, 2026 at 1:59:04\u202fAM\nInfo.plist=not bound\nTeamIdentifier=59GAB85EFG\nSealed Resources=none\nInternal requirements count=1 size=68\nTotal signatures=1\nChosen signature=1\n"
+    }
+  }
+}

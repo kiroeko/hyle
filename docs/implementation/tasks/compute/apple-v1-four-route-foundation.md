@@ -97,8 +97,8 @@ Graph:  GraphBuilder typed DAG -> graph::apple::compile(context, graph, constant
 - `mlx/transforms.cpp` 异常路径会尝试提交并排空 touched streams；HYLE 仍保留自己的已接纳工作到
   checked terminal，不能把该实现事实当任何部分提交均未发生。
 - MLX CPU/Metal/CUDA 独立开关；Metal-C++ 26、json 3.11.3、fmt 12.1.0 是 nested dependencies，
-  A1 纳入同一锁/缓存/许可证。选择 Metal JIT 时，源码嵌入库，冷暖机必须覆盖已编译 shape；
-  若选预编译 metallib，必须另证明 relocation 资源发现，不能依赖维护者的绝对路径。
+  A1 纳入同一锁/缓存/许可证。Metal JIT 的多数源码嵌入库，基础 kernel 仍有 metallib；
+  冷暖机必须覆盖已编译 shape，并证明资源 relocation，不能依赖维护者的绝对路径。
 - 现有 Graph 公开只读结构足以降图；R2 affine Q4 定义是 `q * scale + bias`，不是整数 zero-point。
   不因 Apple 新 factor 便利而重开 Graph/Compute schema。
 
@@ -108,9 +108,11 @@ Graph:  GraphBuilder typed DAG -> graph::apple::compile(context, graph, constant
 caller-thread 快路径。Direct native arrays/callable 是有意的 Apple 专属 C++ 接口；它不要求
 Provider 排序或 profile，也不向共同头泄漏 SDK。Graph 从公开只读结构降图，共同 owner 无需重开。
 
-A1 选择 MLX_METAL_JIT=ON：shader 源码嵌入 native 库，支持可重定位 static/shared，冷准备承担
-实际 JIT 与暖机。CPU/CUDA/Python/GGUF/safetensors/tests/examples 全部关闭。原生算法仍是锁定 MLX，
-热态只有已暖形状；无 metallib 的维护者绝对路径依赖。此为待产品验证的构建选择，不是性能 PASS。
+A1 选择 MLX_METAL_JIT=ON：多数 shader 源码嵌入 native 库，冷准备承担实际 JIT 与暖机。
+首次源码构建发现其少量基础 kernel 仍无条件生成 `mlx.metallib`，原“JIT 可免资源文件”判断撤回。
+A1 因此同时保留该真实构建产物、安装与消费者邻置/relocation 验证；不能借默认绝对 build 路径过门。
+CPU/CUDA/Python/GGUF/safetensors/tests/examples 全部关闭。原生算法仍是锁定 MLX，热态只有已暖形状。
+两 Mac 原先只有 CLT，Metal CLI 的环境准备纳入本卡；不改 shader 算法或借 wheel 签源码交付。
 
 Apple 现已发布官方 [Metal-C++ Git 源码](https://github.com/apple/metal-cpp)，采用其 26 release
 commit `f567ed836e4cbb85788c42115a2682bbe68097ee`；136 个 .hpp 与 MLX 所指定的官方 26 ZIP
@@ -142,3 +144,23 @@ commit `f567ed836e4cbb85788c42115a2682bbe68097ee`；136 个 .hpp 与 MLX 所指�
 
 MLX 自带 USE_TSAN 在 macOS 拒绝配置；须核对 HYLE host 插桩与 vendor 边界，不能把未跑 TSan 写 PASS，
 也不能据此无声把整条并发检查列为不适用。故意 GPU hang/device loss 不注入，相关限制如实记录。
+
+## A1–A4 产品检查点（仍 AUDITED）
+
+已实现固定原生 owner 与 Completion/result lease、typed Direct 三族、Graph 冷遍历与 dead-pure-node
+清理、整段 MLX 编译及同 runtime custom Metal 映射。Graph 可在编译后释放，常量由 native Program
+持有；重复执行不重新走 HYLE DAG 或 custom lowering。元数据驱动编译只需 shape/dtype，不要求
+用户制造 dummy payload。MLX 生成的原始数组直接作为 owning result，不进行影子输出复制。
+
+typed 域目前明确为 2-D F32 MatMul、unsigned affine Q4/group64、F32 SiLU 门控。Q4 的公开格式
+是低 nibble 优先的 uint32 `[N,K/8]`，与其它 Q4 编码分开。Graph 接受固定 dense schema，拒绝符号、
+资源效果和显式 control edges；不声称覆盖旧 Graph 的所有能力。native arrays 自身的 stride 处理仍由
+MLX 承担，不把 Graph metadata 当作外部 buffer import。专家 native region 保留 MLX 更广的表达能力。
+
+Context 冷创建保存实际 device/architecture、含 build 的 macOS runtime、编译 SDK/部署下限、
+MLX pin 和 Metal compiler；没有把编译 SDK 当驱动版本。当前固定基线为成熟 MLX region，尚无
+新 HYLE 替换优势或未测硬件的 SOTA 声明。
+
+[检查点证据](../../../../evidence/correctness/apple-r5-foundation-checkpoint/README.md) 的 Air native
+构建（WERROR）和 9 个 GTest 通过，Windows OFF 双头检查通过；只签这些局部结果。三交付、
+普通 facade 接线、其余适用风险/插桩、mini 和最终 P1 继续按 A1–A6 执行，七门仍未完成。
