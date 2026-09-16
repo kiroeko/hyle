@@ -524,6 +524,16 @@
         "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
         "material_margin_pct": 5
       }
+    },
+    {
+      "module": "compute_route_apple",
+      "state": "QUEUED",
+      "summary": "R5 Apple MLX/Metal route identity reserved for its own bounded audit; no product target, dependency or completion claim."
+    },
+    {
+      "module": "graph_route_apple",
+      "state": "QUEUED",
+      "summary": "R5 Apple MLX/Metal route identity reserved for its own bounded audit; no product target, dependency or completion claim."
     }
   ]
 }

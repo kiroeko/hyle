@@ -443,6 +443,10 @@ _hyle_declare_component(graph_route_cuda
   PUBLIC_DEPS core compute_route_cuda graph
   SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
+# R5 identities; dependencies and targets are admitted by the Apple audit.
+_hyle_declare_component(compute_route_apple QUEUED)
+_hyle_declare_component(graph_route_apple QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
