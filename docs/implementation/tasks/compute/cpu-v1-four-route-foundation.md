@@ -216,3 +216,8 @@ shared 3/3 通过，static 则发现新 route 的缺席 oneDNN 私有依赖泄�
 三个直接相关 owner 已按 [有限纠正卡](cpu-v1-candidate-corrections.md) 退回 AUDITED，固定
 C45a/C46a；其余 owner 仍保留本卡候选身份。修正只处理这两个具体反例，不改公开接口、默认
 规则、公共构建系统或性能仪器。旧失败/未决包已提交，纠正结果尚待完整验收。
+
+修正候选 `d9712e68` 的 Graph 实际 workload A/A 触发固定停止线，两个 Graph owner 已在
+[纠正卡](cpu-v1-candidate-corrections.md) 裁决 BLOCKED；没有开展产品采样或放宽门。
+compute_route_cpu 的 C45a 固定后回归本卡、candidate=d9712e68，继续尚未完成的 Direct P1 与
+交付/sanitizer。R3 总体验收仍 INCONCLUSIVE，不因其余 owner 的实现可用而计作整包完成。

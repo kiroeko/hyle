@@ -372,10 +372,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
-      "summary": "R3 C45a/C46a/C46b 修正候选：静态缺席依赖投影、完整连续 region 激活与实际 workload A/A 已固定；Windows 定向回归通过，其余交付/sanitizer/工程 P1 验收待完成。",
-      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
+      "summary": "R3 Graph 修正候选 BLOCKED：正确性/交付继续按父卡取证，性能 A/A 超出预定停止线；不重复采样、不签产品性能 PASS。",
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1",
+      "blocked_from": "CANDIDATE",
+      "blocker": "修正候选实际 Graph workload A/A 的双 worker 同实现比较出现 ratio=0.9027134979，超出固定 10% gross stop；产品计时未开始，Graph 性能无法裁决。",
+      "blocker_owner": "R3 Graph 模块 benchmark 的双 worker workload qualification",
+      "resume_condition": "独立、有限、预先审计的模块 benchmark 稳定性工作证明可复现原因并合法纠正，保留完整 workload/线程/资源/完成合同，通过固定 A/A 门；按协议 SCOPED/AUDITED 恢复。改变实验合同或预算须先明确决策。"
     },
     {
       "module": "compute_ops",
@@ -417,16 +421,20 @@
     {
       "module": "compute_route_cpu",
       "state": "CANDIDATE",
-      "summary": "R3 C45a/C46a/C46b 修正候选：静态缺席依赖投影、完整连续 region 激活与实际 workload A/A 已固定；Windows 定向回归通过，其余交付/sanitizer/工程 P1 验收待完成。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
+      "summary": "R3 CPU Direct 候选 d9712e68：默认工厂与缺席 oneDNN 静态导出修正已固定；回归父卡完成剩余 Direct 工程 P1/三交付，Graph 性能 blocker 独立保留。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
       "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "R3 C45a/C46a/C46b 修正候选：静态缺席依赖投影、完整连续 region 激活与实际 workload A/A 已固定；Windows 定向回归通过，其余交付/sanitizer/工程 P1 验收待完成。",
+      "state": "BLOCKED",
+      "summary": "R3 Graph 修正候选 BLOCKED：正确性/交付继续按父卡取证，性能 A/A 超出预定停止线；不重复采样、不签产品性能 PASS。",
       "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
-      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1",
+      "blocked_from": "CANDIDATE",
+      "blocker": "修正候选实际 Graph workload A/A 的双 worker 同实现比较出现 ratio=0.9027134979，超出固定 10% gross stop；产品计时未开始，Graph 性能无法裁决。",
+      "blocker_owner": "R3 Graph 模块 benchmark 的双 worker workload qualification",
+      "resume_condition": "独立、有限、预先审计的模块 benchmark 稳定性工作证明可复现原因并合法纠正，保留完整 workload/线程/资源/完成合同，通过固定 A/A 门；按协议 SCOPED/AUDITED 恢复。改变实验合同或预算须先明确决策。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # R3 候选的有限交付与激活纠正
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: BLOCKED -->
 
 ## Closure card
 
@@ -60,3 +60,22 @@ fixture 通过 MSVC /W4 /WX 语法检查；validator 通过 Python 语法检查�
 
 `d9712e68d2b812449a170f474d71a347a27b0ba1` 已固定上述产品与 benchmark；三个纠正 owner 进入 CANDIDATE。
 完整 P1 和剩余适用验证尚待裁决；父卡其余 owner 的未改实现仍复用 `79e96ceb` 投影。
+
+## 当前裁决：Graph 性能资格 BLOCKED
+
+- blocked_from：CANDIDATE。
+- 当前 owner：graph_route_cpu、graph_provider_onednn。compute_route_cpu 的 C45a 产品修正固定后，
+  回归父卡管理剩余 Direct P1 与三交付；这不把 Graph 缺项转移给 Direct 或 R7。
+- blocker：`d9712e68` 的实际 workload A/A 16 进程 / 192 对比较中，selected 双 worker 的
+  Native comparison 位置有一个同实现 ratio=0.9027134979，超出预声明 [1/1.10,1.10]。
+  其余 gross 门和所有 factor-median 5% 门未见越界；单个点仍必须执行已经固定的停止规则。
+- blocker_owner：R3 Graph 模块 benchmark 的双 worker 工作负载资格；不是公共仪器改造任务，
+  也尚不是 Graph 产品性能退化结论。源码原因未被证明，不把随机重跑当恢复条件。
+- resume_condition：独立、有限、预先审计的模块 benchmark 稳定性工作形成可复现的原因与合法
+  纠正，并以同一完整 workload、线程/资源/完成合同通过已固定 A/A 门；再依法 SCOPED/AUDITED
+  恢复未完成的 Graph 性能裁决。若需要改变预声明实验合同/预算，须先明确该决策。
+- performance：BLOCKED；聚合 R3 验收 INCONCLUSIVE。产品计时因 cold guard 在首个 child 的
+  开头拒绝而没有开始；不存在修正候选的 n=15 或 n=31 产品结果。没有放宽门或追加采样。
+
+证据 `graph-correction-aa-stop.zip` 保留全部 16 次 A/A 原始输出、失败诊断、拒绝计时日志、
+固定合同/命令和构建 cache。普通交付与 sanitizer 尚按父卡完成；它们不能代替性能资格。

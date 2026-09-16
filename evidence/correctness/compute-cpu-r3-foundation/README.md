@@ -67,3 +67,8 @@ A/A，MSVC /W4 /WX 语法检查通过。A/A 和修正候选 P1 尚未裁决，�
 向外更新后逐文件匹配；旧日志单独保留。未改变的外部 oneDNN 编译对象可复用，变更配置的
 HYLE 目标仍由 CMake/Ninja 实际重建。包内 Unix recipe 是后续验证入口，不代表它已经执行。
 当前统一脚本 Compute+Graph 实现计数 31,023 行（不含测试），不是重构完成率。
+
+`graph-correction-aa-stop.zip`：修正候选的 16 次实际 workload A/A 中，一个双 worker 同实现
+比较 ratio=0.9027134979，超过既定 gross 停止线。所有原始输出保留；benchmark 的 cold guard
+阻止首个产品进程计时，所以没有修正候选的产品性能采样结果。Graph 两个 owner 已裁决
+BLOCKED，R3 总体验收 INCONCLUSIVE。普通交付与 sanitizer 将独立完成，不改写这个结果。
