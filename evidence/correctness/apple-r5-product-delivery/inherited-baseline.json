@@ -1,0 +1,129 @@
+{
+  "baseline": "9e41c15aab5a97206e82ebc70a0bee0d916e112f",
+  "modules": [
+    {
+      "module": "compute",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "graph",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "compute_provider_onednn",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "graph_provider_onednn",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "compute_backend_cpu",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "compute_backend_cuda",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "summary": "R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      }
+    },
+    {
+      "module": "compute_provider_native",
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "compute_route_cpu",
+      "state": "CLOSED",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "graph_route_cpu",
+      "state": "CLOSED",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
+    },
+    {
+      "module": "compute_route_cuda",
+      "state": "CLOSED",
+      "summary": "R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      }
+    },
+    {
+      "module": "graph_route_cuda",
+      "state": "CLOSED",
+      "summary": "R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      }
+    }
+  ]
+}

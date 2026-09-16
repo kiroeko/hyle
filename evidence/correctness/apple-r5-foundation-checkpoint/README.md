@@ -16,6 +16,8 @@
   MatMul + 同 runtime custom Metal、只 trace 一次；非法 dtype/shape/group、pending 输入/常量、
   未提供/错误 custom lowering；关闭排空、并发等待、丢弃 completion；原生环境事实。
 - Windows Apple OFF 的两个路线头 2/2，配置不查 Metal/MLX；尚不代表全 selected gate 通过。
+- 产品 `d900a8ce` 的 [统一实现 LOC](loc-d900a8ce.json) 为 **33,815 行 / 116 文件**，
+  含旧实现及 Objective-C++、排除测试/bench/第三方，self-check PASS；不作为完成百分比。
 
 ## Metal 编译环境
 

@@ -1,6 +1,6 @@
 # 统一 LOC：Objective-C++ 实现计入
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## 独立工具卡 / SCOPED → AUDITED
 
@@ -23,3 +23,16 @@
 
 L2 同时把旧测试中固定“Compute/Graph 必须 QUEUED”的历史队列断言替换为显式 mixed-state fixture；
 实际 registry 已变化，该断言不代表产品合同。只改测试输入，不更改 owner 或状态选择算法。
+
+## CLOSED
+
+工具候选 `9e41c15aab5a97206e82ebc70a0bee0d916e112f` 的两个范围常量修正后，工具回归、实际 cloc
+识别与 docs/closure/diff 通过；修正前 `.mm` 的 AUDITED owner 选择稳定失败。selector 只选择
+docs、closure 和该工具测试，其余 112 项跳过，没有构建产品或运行 P1。
+
+同一不可变产品 `d900a8ce` 的完整统一统计为 Compute + Graph **33,815 行 / 116 文件**，
+不含测试/bench/第三方，self-check PASS，见
+[JSON](../../../../evidence/correctness/apple-r5-foundation-checkpoint/loc-d900a8ce.json)。原 33,792
+漏掉 23 行 Objective-C++，不作为“全部实现”的报告。统计含新旧仍在树中的实现，不代表重构进度。
+七问在本工具范围内均通过：有限范围、既有计数/owner 复用、真实反例、工具交付/文档、边界审阅和
+离线 P0；本卡停止，不扩张为公共统计重构。
