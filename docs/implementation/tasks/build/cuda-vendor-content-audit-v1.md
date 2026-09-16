@@ -1,6 +1,6 @@
 # CUDA vendor 内容身份与消费前校验
 
-## Closure card / SCOPED
+## Closure card / AUDITED
 
 - baseline：`bf685ea3b2d3317d67802c4d1436c9bf1f440267`；owner 为
   `compute_provider_marlin`、`compute_provider_cuda`，仅重开依赖锁与构建 seam。
@@ -18,7 +18,7 @@
 - 性能：P0，只有配置期文件校验；原 C++/CUDA blob 完全相同，继承 R4 P1，不进行新计时。
 - stop：锁摘要、消费前校验和真实源码交付通过即 CLOSED；不延伸为全库重审。
 
-## 待固定 FIX
+## 固定 FIX
 
 | ID | 缺口 | 允许动作 |
 |---|---|---|
@@ -27,3 +27,18 @@
 
 七问：成熟来源/pin 不变；真实 source consumer 失败；复用已有 audit；冷配置 P0；纯 C++ 无新 FFI；
 三交付运行字节继承且补完整 source 检查；普通用户获得早期、明确的内容身份错误。
+
+## 审计裁决
+
+15 分钟内已定位，不扩大调查。两个旧摘要均可由 Windows `sorted(Path)` 的大小写不敏感
+文件排序精确复现；既有 `_hyle_dependency_tree_sha256` 使用大小写敏感的路径排序。独立 Python
+使用 `relative.as_posix()` 排序，与中央 CMake 输出完全相同。全部 vendor blob 从 R4 最终候选至
+baseline 没有变化，错误在锁的 manifest 排序，不能改全库哈希规则迁就这两条错误记录。
+
+V1 FIX：Marlin 正规范摘要为 `fd3ab217a3de85cdcbbe81c6beb88d9d837b21b34fd0ee36920b6f93fc13eb25`；
+SGLang 为 `9e60796cdbdce35e3e8eefca7bc29eed3533afc249992aa27fdfcd74f44f02a0`。
+旧 evidence 中的 adapted tree 值保留为历史事实，本卡明确更正其 manifest 身份，不改写已测 blob。
+
+V2 FIX：两 owning CMake 的 `HYLE_COMPUTE_CUDA_ENABLED` 分支在 `enable_language(CUDA)` 和
+消费头文件前调用现有 `hyle_audit_in_tree_dependencies(<owned vendor>)`。因子未激活时不检查，
+不让 CPU/Apple/core 裁剪消费者依赖 CUDA vendor。无需更改公共工具实现或产品运行路径。

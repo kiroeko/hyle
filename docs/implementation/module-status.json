@@ -433,15 +433,15 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md",
-      "summary": "CUDA vendor content audit SCOPED: reproduce lock sorting mismatch and missing enabled-consumer validation; preserve R4 runtime and P1."
+      "summary": "CUDA vendor content audit AUDITED: V1 canonical path sorting in two lock hashes; V2 call existing content audit before enabled consumers; no runtime change."
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md",
-      "summary": "CUDA vendor content audit SCOPED: reproduce lock sorting mismatch and missing enabled-consumer validation; preserve R4 runtime and P1."
+      "summary": "CUDA vendor content audit AUDITED: V1 canonical path sorting in two lock hashes; V2 call existing content audit before enabled consumers; no runtime change."
     },
     {
       "module": "compute_route_cuda",
