@@ -271,26 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 CPU CLOSED：普通 Direct/Graph 默认接入、既有能力与真实 Sched 消费、四环境三交付及适用插桩已验收；Direct P1 4/4 非劣 PASS，Graph 唯一未决项另有用户批准的具名验收例外。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
+      "summary": "R4 定向依赖修复 SCOPED：Marlin 暴露失败终态后执行槽仍可重提、复用未清理 scratch 的具体缺口；只审计槽退役和准入，不重开 CPU 算法或性能例外。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 CPU CLOSED：普通入口、固定规则、四环境三交付与适用插桩已验收；Direct 4/4 非劣 PASS，Graph 11/12 PASS，唯一 decode-fused 未决项由用户明确接受。原统计 LOSS/INCONCLUSIVE 保留，不重测、不签全域 SOTA。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
+      "summary": "R4 定向依赖修复 SCOPED：Marlin 暴露失败终态后执行槽仍可重提、复用未清理 scratch 的具体缺口；只审计槽退役和准入，不重开 CPU 算法或性能例外。"
     },
     {
       "module": "container_concurrent",

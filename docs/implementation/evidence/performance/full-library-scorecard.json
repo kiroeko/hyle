@@ -4,603 +4,1789 @@
   "registry": "docs/implementation/module-status.json",
   "baseline": "7fa6dc0a8b3b857a1835525de0d0e7be5f8db5e9",
   "ratio_definition": "greater than one favors the shipped HYLE route",
-  "excluded_modules": ["compute_backend_cuda", "compute_provider_cublas", "compute_provider_cuda", "compute_provider_ggml", "compute_provider_marlin", "compute_route_cuda", "compute_sched", "graph_route_cuda"],
+  "excluded_modules": [
+    "compute",
+    "compute_backend_cuda",
+    "compute_provider_cublas",
+    "compute_provider_cuda",
+    "compute_provider_ggml",
+    "compute_provider_marlin",
+    "compute_route_cuda",
+    "compute_sched",
+    "graph",
+    "graph_route_cuda"
+  ],
   "peer_freshness": [
-    {"peer": "Highway", "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2", "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2", "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"},
-    {"peer": "xsimd", "locked": "3b3151ff665514a00a437cc985f47b7de99b772b", "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b", "disposition": "current"},
-    {"peer": "Abseil", "locked": "mixed: error 5e12b490, container 38f8c153", "reference_head": "38f8c1535de9ebc12c6340e5c1c8ebd72afde560", "disposition": "the 20-commit Error gap changes only tests in absl/status and absl/functional; compared production paths are unchanged"},
-    {"peer": "simdutf", "locked": "v9.1.0 / 2d4e249dcfd978b39dd567b156f20a43db97377b", "reference_head": "b91b70d7d7bf8609eec2612971c01f3c92499a4b", "disposition": "six unreleased commits touch Ice Lake validation only; Base64 is unchanged and the current product claim remains scoped to the locked provider"},
-    {"peer": "nghttp2", "locked": "v1.70.0 / 85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2", "reference_head": "b6729c46cf134a59940a20de534b7f44fdb0e877", "disposition": "17 unreleased commits add queue/CONTINUATION checks; current claim is against the locked stable release"},
-    {"peer": "Boost/Folly/oneTBB/Marl/Seastar/libuv/curl", "locked": "current evidence revisions", "reference_head": "matches the local pinned reference used by the relevant claim", "disposition": "current at audit time"}
+    {
+      "peer": "Highway",
+      "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2",
+      "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2",
+      "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"
+    },
+    {
+      "peer": "xsimd",
+      "locked": "3b3151ff665514a00a437cc985f47b7de99b772b",
+      "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b",
+      "disposition": "current"
+    },
+    {
+      "peer": "Abseil",
+      "locked": "mixed: error 5e12b490, container 38f8c153",
+      "reference_head": "38f8c1535de9ebc12c6340e5c1c8ebd72afde560",
+      "disposition": "the 20-commit Error gap changes only tests in absl/status and absl/functional; compared production paths are unchanged"
+    },
+    {
+      "peer": "simdutf",
+      "locked": "v9.1.0 / 2d4e249dcfd978b39dd567b156f20a43db97377b",
+      "reference_head": "b91b70d7d7bf8609eec2612971c01f3c92499a4b",
+      "disposition": "six unreleased commits touch Ice Lake validation only; Base64 is unchanged and the current product claim remains scoped to the locked provider"
+    },
+    {
+      "peer": "nghttp2",
+      "locked": "v1.70.0 / 85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2",
+      "reference_head": "b6729c46cf134a59940a20de534b7f44fdb0e877",
+      "disposition": "17 unreleased commits add queue/CONTINUATION checks; current claim is against the locked stable release"
+    },
+    {
+      "peer": "Boost/Folly/oneTBB/Marl/Seastar/libuv/curl",
+      "locked": "current evidence revisions",
+      "reference_head": "matches the local pinned reference used by the relevant claim",
+      "disposition": "current at audit time"
+    }
   ],
   "modules": [
-    {"module": "core", "candidate": "4b7f28c55e9ca118cf87b80058ce291261033ec5", "claims": ["core-structural"]},
-    {"module": "container_intrusive", "candidate": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3", "claims": ["intrusive-counted", "intrusive-forward", "intrusive-hlist", "intrusive-sequence"]},
-    {"module": "util_core", "candidate": "439b8915e2c63a6a15545324444b594a25c62a62", "claims": ["util-core-indirect", "util-core-bound-member"]},
-    {"module": "error", "candidate": "d61f0710ec0e465b31d458257e2587fdfe37ed52", "claims": ["error-success", "error-owning-and-borrow"]},
-    {"module": "obs", "candidate": "47a9e03a6bfd4d2d299d26d1d32739bb84541166", "claims": ["obs-owner-metrics", "obs-shared-metrics"]},
-    {"module": "math", "candidate": "686ec1c0215fa7a808ee470fe103ac62a1050759", "claims": ["math-structural"]},
-    {"module": "time", "candidate": "680c9941d7af787067afae904a8ba886c14ba851", "claims": ["time-structural"]},
-    {"module": "timer_queue", "candidate": "381eb4b195973ed35ed23ca63c05f9605a132f9b", "claims": ["timer-queue-lifecycle"]},
-    {"module": "platform", "candidate": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c", "claims": ["platform-host-planning"]},
-    {"module": "platform_thread", "candidate": "c39df6f94c636ab8fa94cb700dd263763a42d680", "claims": ["platform-thread-structural"]},
-    {"module": "platform_fs", "candidate": "c39df6f94c636ab8fa94cb700dd263763a42d680", "claims": ["platform-fs-warm-file"]},
-    {"module": "mem_reclaim", "candidate": "0f6ef8e83ee290ab565c0d53081a0acb75a46675", "claims": ["reclaim-snapshot", "reclaim-stable-registry"]},
-    {"module": "mem", "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5", "claims": ["mem-logical-range", "mem-external-reservation"]},
-    {"module": "mem_vm", "candidate": "ad5bff895125fb0d95281b36559010435c3d7892", "claims": ["mem-vm-lazy-release"]},
-    {"module": "simd", "candidate": "c033ca40d3f119912927c52954079d8c01d6ec12", "claims": ["simd-provider-routing", "simd-hyle-exceptions", "simd-xsimd-activation", "simd-vqsort", "simd-row-dtype", "simd-inference-kernels", "simd-compute-rows-v7"]},
-    {"module": "container", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-lru", "container-utf"]},
-    {"module": "util_runtime", "candidate": "7019998034f8025890770fad04406dc5ef2d6194", "claims": ["util-runtime-structural"]},
-    {"module": "sched", "candidate": "ad5bff895125fb0d95281b36559010435c3d7892", "claims": ["sched-fanout", "sched-completion"]},
-    {"module": "io_core", "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f", "claims": ["io-core-anonymous-adopt", "http1-small", "http1-fragmented"]},
-    {"module": "io_tls", "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d", "claims": ["io-tls-identity", "tls-handshake", "tls-small-record"]},
-    {"module": "io_http", "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7", "claims": ["io-http-upgrade", "http1-small", "http1-fragmented"]},
-    {"module": "io_http2", "candidate": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3", "claims": ["http2-small", "http2-large"]},
-    {"module": "io_transfer", "candidate": "18bf62f81a91975e0776439d88fca3891f10e560", "claims": ["transfer-local", "transfer-range"]},
-    {"module": "container_concurrent", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-concurrent-membership"]},
-    {"module": "container_queue", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-mpmc"]},
-    {"module": "container_text", "candidate": "e50a2d94f601ba0d9b7d87c854c868126ca4e596", "claims": ["container-utf", "base64-decode", "base64-encode"]},
-    {"module": "io_watch", "candidate": "fa5718715aaf7a9d867e0ef9ce81f435b8f5b116", "claims": ["io-watch-recursive", "io-watch-exact-file", "io-watch-directory-burst"]},
-    {"module": "process", "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739", "claims": ["process-structural"]},
-    {"module": "io_websocket", "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99", "claims": ["websocket-mask"]},
-    {"module": "compute_ops", "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d", "claims": ["compute-ops-quantized-schema"]}
-,
-    {"module": "compute", "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82", "claims": ["cpu-foundation-cold-binding"]},
-    {"module": "graph", "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257"]},
-    {"module": "compute_provider_onednn", "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024"]},
-    {"module": "graph_provider_onednn", "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257"]},
-    {"module": "compute_backend_cpu", "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82", "claims": ["cpu-foundation-cold-binding"]},
-    {"module": "compute_provider_native", "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024"]},
-    {"module": "compute_route_cpu", "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1", "claims": ["cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024"]},
-    {"module": "graph_route_cpu", "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257"]}
+    {
+      "module": "core",
+      "candidate": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+      "claims": [
+        "core-structural"
+      ]
+    },
+    {
+      "module": "container_intrusive",
+      "candidate": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
+      "claims": [
+        "intrusive-counted",
+        "intrusive-forward",
+        "intrusive-hlist",
+        "intrusive-sequence"
+      ]
+    },
+    {
+      "module": "util_core",
+      "candidate": "439b8915e2c63a6a15545324444b594a25c62a62",
+      "claims": [
+        "util-core-indirect",
+        "util-core-bound-member"
+      ]
+    },
+    {
+      "module": "error",
+      "candidate": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
+      "claims": [
+        "error-success",
+        "error-owning-and-borrow"
+      ]
+    },
+    {
+      "module": "obs",
+      "candidate": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
+      "claims": [
+        "obs-owner-metrics",
+        "obs-shared-metrics"
+      ]
+    },
+    {
+      "module": "math",
+      "candidate": "686ec1c0215fa7a808ee470fe103ac62a1050759",
+      "claims": [
+        "math-structural"
+      ]
+    },
+    {
+      "module": "time",
+      "candidate": "680c9941d7af787067afae904a8ba886c14ba851",
+      "claims": [
+        "time-structural"
+      ]
+    },
+    {
+      "module": "timer_queue",
+      "candidate": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
+      "claims": [
+        "timer-queue-lifecycle"
+      ]
+    },
+    {
+      "module": "platform",
+      "candidate": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
+      "claims": [
+        "platform-host-planning"
+      ]
+    },
+    {
+      "module": "platform_thread",
+      "candidate": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+      "claims": [
+        "platform-thread-structural"
+      ]
+    },
+    {
+      "module": "platform_fs",
+      "candidate": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+      "claims": [
+        "platform-fs-warm-file"
+      ]
+    },
+    {
+      "module": "mem_reclaim",
+      "candidate": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
+      "claims": [
+        "reclaim-snapshot",
+        "reclaim-stable-registry"
+      ]
+    },
+    {
+      "module": "mem",
+      "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5",
+      "claims": [
+        "mem-logical-range",
+        "mem-external-reservation"
+      ]
+    },
+    {
+      "module": "mem_vm",
+      "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
+      "claims": [
+        "mem-vm-lazy-release"
+      ]
+    },
+    {
+      "module": "simd",
+      "candidate": "c033ca40d3f119912927c52954079d8c01d6ec12",
+      "claims": [
+        "simd-provider-routing",
+        "simd-hyle-exceptions",
+        "simd-xsimd-activation",
+        "simd-vqsort",
+        "simd-row-dtype",
+        "simd-inference-kernels",
+        "simd-compute-rows-v7"
+      ]
+    },
+    {
+      "module": "container",
+      "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+      "claims": [
+        "container-lru",
+        "container-utf"
+      ]
+    },
+    {
+      "module": "util_runtime",
+      "candidate": "7019998034f8025890770fad04406dc5ef2d6194",
+      "claims": [
+        "util-runtime-structural"
+      ]
+    },
+    {
+      "module": "sched",
+      "candidate": "ad5bff895125fb0d95281b36559010435c3d7892",
+      "claims": [
+        "sched-fanout",
+        "sched-completion"
+      ]
+    },
+    {
+      "module": "io_core",
+      "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f",
+      "claims": [
+        "io-core-anonymous-adopt",
+        "http1-small",
+        "http1-fragmented"
+      ]
+    },
+    {
+      "module": "io_tls",
+      "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d",
+      "claims": [
+        "io-tls-identity",
+        "tls-handshake",
+        "tls-small-record"
+      ]
+    },
+    {
+      "module": "io_http",
+      "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7",
+      "claims": [
+        "io-http-upgrade",
+        "http1-small",
+        "http1-fragmented"
+      ]
+    },
+    {
+      "module": "io_http2",
+      "candidate": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
+      "claims": [
+        "http2-small",
+        "http2-large"
+      ]
+    },
+    {
+      "module": "io_transfer",
+      "candidate": "18bf62f81a91975e0776439d88fca3891f10e560",
+      "claims": [
+        "transfer-local",
+        "transfer-range"
+      ]
+    },
+    {
+      "module": "container_concurrent",
+      "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+      "claims": [
+        "container-concurrent-membership"
+      ]
+    },
+    {
+      "module": "container_queue",
+      "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+      "claims": [
+        "container-mpmc"
+      ]
+    },
+    {
+      "module": "container_text",
+      "candidate": "e50a2d94f601ba0d9b7d87c854c868126ca4e596",
+      "claims": [
+        "container-utf",
+        "base64-decode",
+        "base64-encode"
+      ]
+    },
+    {
+      "module": "io_watch",
+      "candidate": "fa5718715aaf7a9d867e0ef9ce81f435b8f5b116",
+      "claims": [
+        "io-watch-recursive",
+        "io-watch-exact-file",
+        "io-watch-directory-burst"
+      ]
+    },
+    {
+      "module": "process",
+      "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739",
+      "claims": [
+        "process-structural"
+      ]
+    },
+    {
+      "module": "io_websocket",
+      "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99",
+      "claims": [
+        "websocket-mask"
+      ]
+    },
+    {
+      "module": "compute_ops",
+      "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d",
+      "claims": [
+        "compute-ops-quantized-schema"
+      ]
+    },
+    {
+      "module": "compute_provider_onednn",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "claims": [
+        "cpu-foundation-cold-binding",
+        "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024"
+      ]
+    },
+    {
+      "module": "graph_provider_onednn",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "claims": [
+        "cpu-graph-r3-decode-fused-boundary-1x256x512",
+        "cpu-graph-r3-decode-natural-sequence-1x256x512",
+        "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
+        "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
+        "cpu-graph-r3-holdout-fused-boundary-17x129x257",
+        "cpu-graph-r3-holdout-natural-sequence-17x129x257",
+        "cpu-graph-r3-decode-native-sequence-1x256x512",
+        "cpu-graph-r3-short-prefill-native-sequence-16x512x1024",
+        "cpu-graph-r3-holdout-native-sequence-17x129x257",
+        "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
+        "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
+        "cpu-graph-r3-two-worker-native-sequence-17x129x257"
+      ]
+    },
+    {
+      "module": "compute_backend_cpu",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "claims": [
+        "cpu-foundation-cold-binding"
+      ]
+    },
+    {
+      "module": "compute_provider_native",
+      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "claims": [
+        "cpu-foundation-cold-binding",
+        "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024",
+        "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024",
+        "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024"
+      ]
+    },
+    {
+      "module": "compute_route_cpu",
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1",
+      "claims": [
+        "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024",
+        "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024",
+        "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024",
+        "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024"
+      ]
+    },
+    {
+      "module": "graph_route_cpu",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "claims": [
+        "cpu-graph-r3-decode-fused-boundary-1x256x512",
+        "cpu-graph-r3-decode-natural-sequence-1x256x512",
+        "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
+        "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
+        "cpu-graph-r3-holdout-fused-boundary-17x129x257",
+        "cpu-graph-r3-holdout-natural-sequence-17x129x257",
+        "cpu-graph-r3-decode-native-sequence-1x256x512",
+        "cpu-graph-r3-short-prefill-native-sequence-16x512x1024",
+        "cpu-graph-r3-holdout-native-sequence-17x129x257",
+        "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
+        "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
+        "cpu-graph-r3-two-worker-native-sequence-17x129x257"
+      ]
+    }
   ],
   "claims": [
     {
-      "id": "core-structural", "modules": ["core"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "id": "core-structural",
+      "modules": [
+        "core"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
       "consumer_shape": "compiler, value, layout, assertion and version primitives used by every native consumer",
       "contract": "constexpr or inline primitives; assertion changes add no Release work or runtime state",
       "peer": "compiler and standard-library primitives; no coherent whole-Core peer",
-      "scale": "fixed work per primitive", "absolute": "not timed by design; zero added Release runtime work",
-      "ratio_ci": "N/A", "sensitivity": "code-shape and layout checks replace sub-nanosecond timing",
-      "mechanism": "compile-time lowering and direct scalar operations", "limitations": "not evidence for every downstream composition or whole-library SOTA",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-core.md"]
+      "scale": "fixed work per primitive",
+      "absolute": "not timed by design; zero added Release runtime work",
+      "ratio_ci": "N/A",
+      "sensitivity": "code-shape and layout checks replace sub-nanosecond timing",
+      "mechanism": "compile-time lowering and direct scalar operations",
+      "limitations": "not evidence for every downstream composition or whole-library SOTA",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-core.md"
+      ]
     },
     {
-      "id": "intrusive-counted", "modules": ["container_intrusive"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
+      "id": "intrusive-counted",
+      "modules": [
+        "container_intrusive"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
       "consumer_shape": "4096 preallocated nodes, arbitrary erase and O(1) size after each mutation",
       "contract": "safe non-owning counted list with identical hook and allocation topology",
-      "peer": "Boost.Intrusive constant_time_size list", "scale": "4096 insertions plus 4096 removals",
-      "absolute": "not retained in the current report", "ratio_ci": "eight medians 1.0118-1.0539; individual CIs not retained",
+      "peer": "Boost.Intrusive constant_time_size list",
+      "scale": "4096 insertions plus 4096 removals",
+      "absolute": "not retained in the current report",
+      "ratio_ci": "eight medians 1.0118-1.0539; individual CIs not retained",
       "sensitivity": "allocation owner, placement and execution order were controlled; per-cell data is unavailable",
-      "mechanism": "one count update per mutation on both routes", "limitations": "direction cannot be upgraded without retained per-stratum intervals",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container-intrusive.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "mechanism": "one count update per mutation on both routes",
+      "limitations": "direction cannot be upgraded without retained per-stratum intervals",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container-intrusive.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "intrusive-forward", "modules": ["container_intrusive"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
+      "id": "intrusive-forward",
+      "modules": [
+        "container_intrusive"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
       "consumer_shape": "cached-tail arena append, traversal and detach-and-consume of 4096 nodes",
-      "contract": "safe non-owning cached-tail forward list", "peer": "Boost.Intrusive cached-tail safe slist",
-      "scale": "4096 nodes", "absolute": "not retained in the current report", "ratio_ci": "eight medians 0.9823-1.0089; current report says PARITY",
-      "sensitivity": "direction crosses execution, placement and allocation order", "mechanism": "same O(1) tail maintenance and O(n) traversal",
-      "limitations": "the legacy exact PARITY label is a practical-band result; absent per-stratum intervals cannot prove directional parity", "evidence": ["docs/implementation/evidence/performance/benchmarks-container-intrusive.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "contract": "safe non-owning cached-tail forward list",
+      "peer": "Boost.Intrusive cached-tail safe slist",
+      "scale": "4096 nodes",
+      "absolute": "not retained in the current report",
+      "ratio_ci": "eight medians 0.9823-1.0089; current report says PARITY",
+      "sensitivity": "direction crosses execution, placement and allocation order",
+      "mechanism": "same O(1) tail maintenance and O(n) traversal",
+      "limitations": "the legacy exact PARITY label is a practical-band result; absent per-stratum intervals cannot prove directional parity",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container-intrusive.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "intrusive-hlist", "modules": ["container_intrusive"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
+      "id": "intrusive-hlist",
+      "modules": [
+        "container_intrusive"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
       "consumer_shape": "4096 callback registrations, known-node unregister and detach-before-fire",
-      "contract": "safe non-owning hlist callback lifecycle", "peer": "the pre-v4 hand-written HYLE Sched hlist",
-      "scale": "4096 callbacks", "absolute": "not retained in the current report", "ratio_ci": "eight medians 1.2206-1.2770; current report says WIN",
-      "sensitivity": "placement and order controls passed", "mechanism": "centralized intrusive primitive removes consumer glue",
-      "limitations": "consumer regression win, not an external SOTA comparison", "evidence": ["docs/implementation/evidence/performance/benchmarks-container-intrusive.md"]
+      "contract": "safe non-owning hlist callback lifecycle",
+      "peer": "the pre-v4 hand-written HYLE Sched hlist",
+      "scale": "4096 callbacks",
+      "absolute": "not retained in the current report",
+      "ratio_ci": "eight medians 1.2206-1.2770; current report says WIN",
+      "sensitivity": "placement and order controls passed",
+      "mechanism": "centralized intrusive primitive removes consumer glue",
+      "limitations": "consumer regression win, not an external SOTA comparison",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container-intrusive.md"
+      ]
     },
     {
-      "id": "intrusive-sequence", "modules": ["container_intrusive"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
+      "id": "intrusive-sequence",
+      "modules": [
+        "container_intrusive"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
       "consumer_shape": "stable sort and merge of two 4096-node non-owning sequences",
-      "contract": "stable intrusive sequence algorithms with identical ownership", "peer": "Boost.Intrusive list sort plus merge",
-      "scale": "two 4096-node sequences", "absolute": "not retained in the current report", "ratio_ci": "eight medians 1.0881-1.1188; current report says WIN",
-      "sensitivity": "placement and order controls passed", "mechanism": "specialized stable sequence implementation",
-      "limitations": "does not cover every intrusive algorithm or element distribution", "evidence": ["docs/implementation/evidence/performance/benchmarks-container-intrusive.md"]
+      "contract": "stable intrusive sequence algorithms with identical ownership",
+      "peer": "Boost.Intrusive list sort plus merge",
+      "scale": "two 4096-node sequences",
+      "absolute": "not retained in the current report",
+      "ratio_ci": "eight medians 1.0881-1.1188; current report says WIN",
+      "sensitivity": "placement and order controls passed",
+      "mechanism": "specialized stable sequence implementation",
+      "limitations": "does not cover every intrusive algorithm or element distribution",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container-intrusive.md"
+      ]
     },
     {
-      "id": "util-core-indirect", "modules": ["util_core"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "id": "util-core-indirect",
+      "modules": [
+        "util_core"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
       "consumer_shape": "const-borrowed and non-type free-function traversal over 4096 records",
-      "contract": "non-owning FunctionRef invocation without allocation", "peer": "Abseil FunctionRef",
-      "scale": "4096 calls per traversal", "absolute": "not retained in the current report", "ratio_ci": "ratios 0.99156-1.00594; every reported CI crosses 1",
-      "sensitivity": "all order and placement directions overlap 1", "mechanism": "equivalent erased indirect call topology",
-      "limitations": "no fixed direction; only 5% non-inferiority is established", "evidence": ["docs/implementation/evidence/performance/benchmarks-util-core-v4.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "contract": "non-owning FunctionRef invocation without allocation",
+      "peer": "Abseil FunctionRef",
+      "scale": "4096 calls per traversal",
+      "absolute": "not retained in the current report",
+      "ratio_ci": "ratios 0.99156-1.00594; every reported CI crosses 1",
+      "sensitivity": "all order and placement directions overlap 1",
+      "mechanism": "equivalent erased indirect call topology",
+      "limitations": "no fixed direction; only 5% non-inferiority is established",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-util-core-v4.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "util-core-bound-member", "modules": ["util_core"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "non-type bound-member traversal over 4096 records", "contract": "borrowed callable with bound object and member known at compile time",
-      "peer": "Abseil FunctionRef", "scale": "4096 calls per traversal", "absolute": "not retained in the current report",
-      "ratio_ci": "1.24523-1.26437, all 99.26% CI lower bounds above 1.22898", "sensitivity": "win holds across order and placement",
-      "mechanism": "non-type member binding removes generic erased-call work", "limitations": "specific callable shape, not all FunctionRef calls",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-util-core-v4.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "util-core-bound-member",
+      "modules": [
+        "util_core"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "non-type bound-member traversal over 4096 records",
+      "contract": "borrowed callable with bound object and member known at compile time",
+      "peer": "Abseil FunctionRef",
+      "scale": "4096 calls per traversal",
+      "absolute": "not retained in the current report",
+      "ratio_ci": "1.24523-1.26437, all 99.26% CI lower bounds above 1.22898",
+      "sensitivity": "win holds across order and placement",
+      "mechanism": "non-type member binding removes generic erased-call work",
+      "limitations": "specific callable shape, not all FunctionRef calls",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-util-core-v4.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "error-success", "modules": ["error"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "PARITY", "parity_basis": "all intervals cross 1 and retained optimized hot-path instructions are identical",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "64-node TaskGraph success propagation", "contract": "one-word successful Status and identical cleanup boundary",
-      "peer": "Abseil Status", "scale": "64 successful nodes", "absolute": "HYLE 10.598-10.658 M op/s; peer 10.661-10.758 M op/s",
-      "ratio_ci": "medians 0.9923-0.9986; all 99.26% intervals cross 1", "sensitivity": "sub-percent placement/order movement; A/A 0.9999-1.0010",
-      "mechanism": "hot functions are instruction-identical; residual is code placement", "limitations": "W1-WIN MSVC engineering evidence, not cross-platform formal proof",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-error.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "error-success",
+      "modules": [
+        "error"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "PARITY",
+      "parity_basis": "all intervals cross 1 and retained optimized hot-path instructions are identical",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "64-node TaskGraph success propagation",
+      "contract": "one-word successful Status and identical cleanup boundary",
+      "peer": "Abseil Status",
+      "scale": "64 successful nodes",
+      "absolute": "HYLE 10.598-10.658 M op/s; peer 10.661-10.758 M op/s",
+      "ratio_ci": "medians 0.9923-0.9986; all 99.26% intervals cross 1",
+      "sensitivity": "sub-percent placement/order movement; A/A 0.9999-1.0010",
+      "mechanism": "hot functions are instruction-identical; residual is code placement",
+      "limitations": "W1-WIN MSVC engineering evidence, not cross-platform formal proof",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-error.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "error-owning-and-borrow", "modules": ["error"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "id": "error-owning-and-borrow",
+      "modules": [
+        "error"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
       "consumer_shape": "fresh owning failure handoff, parallel first-error, Join failure and fixed-table Result<T&> borrow",
-      "contract": "same ownership, lookup, failure and observable boundaries", "peer": "Abseil Status and StatusOr<T&>",
-      "scale": "64-node failures and 64-entry registry", "absolute": "HYLE 9.07-710.62 M op/s; peer 3.66-411.33 M op/s by workload",
+      "contract": "same ownership, lookup, failure and observable boundaries",
+      "peer": "Abseil Status and StatusOr<T&>",
+      "scale": "64-node failures and 64-entry registry",
+      "absolute": "HYLE 9.07-710.62 M op/s; peer 3.66-411.33 M op/s by workload",
       "ratio_ci": "conservative ratios 1.2118-4.7840; every workload's lowest CI bound is at least 1.1814",
       "sensitivity": "Abseil failure rows have large execution-order movement; all strata still favor HYLE",
-      "mechanism": "compact owning status and direct borrow representation", "limitations": "workload-specific ranges must not be averaged into one speedup",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-error.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "mechanism": "compact owning status and direct borrow representation",
+      "limitations": "workload-specific ranges must not be averaged into one speedup",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-error.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "obs-owner-metrics", "modules": ["obs"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "owner-thread scheduler metrics iteration", "contract": "counter, gauge and fixed histogram observation with identical result",
-      "peer": "direct C++ mechanism baseline", "scale": "one scheduler metrics iteration", "absolute": "HYLE 5.085-5.320 M op/s; peer 4.606-4.656 M op/s",
-      "ratio_ci": "1.1053-1.1452; CI envelope 1.0932-1.1596", "sensitivity": "win holds across four order/placement strata",
-      "mechanism": "owner-local fast path amortizes publication", "limitations": "mechanism baseline is not a richer external observability library",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-obs.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "obs-owner-metrics",
+      "modules": [
+        "obs"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "owner-thread scheduler metrics iteration",
+      "contract": "counter, gauge and fixed histogram observation with identical result",
+      "peer": "direct C++ mechanism baseline",
+      "scale": "one scheduler metrics iteration",
+      "absolute": "HYLE 5.085-5.320 M op/s; peer 4.606-4.656 M op/s",
+      "ratio_ci": "1.1053-1.1452; CI envelope 1.0932-1.1596",
+      "sensitivity": "win holds across four order/placement strata",
+      "mechanism": "owner-local fast path amortizes publication",
+      "limitations": "mechanism baseline is not a richer external observability library",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-obs.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "obs-shared-metrics", "modules": ["obs"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "shared scheduler metrics iteration", "contract": "concurrent shared counter, gauge and histogram observation",
-      "peer": "direct C++ mechanism baseline", "scale": "one shared metrics iteration", "absolute": "HYLE 0.848-0.858 M op/s; peer 0.847-0.852 M op/s",
-      "ratio_ci": "1.0042-1.0078; two intervals cross 1 and two are slightly above", "sensitivity": "placement/order affects exact direction",
-      "mechanism": "same atomic contention class", "limitations": "only 5% non-inferiority, not a fixed win",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-obs.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "obs-shared-metrics",
+      "modules": [
+        "obs"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "shared scheduler metrics iteration",
+      "contract": "concurrent shared counter, gauge and histogram observation",
+      "peer": "direct C++ mechanism baseline",
+      "scale": "one shared metrics iteration",
+      "absolute": "HYLE 0.848-0.858 M op/s; peer 0.847-0.852 M op/s",
+      "ratio_ci": "1.0042-1.0078; two intervals cross 1 and two are slightly above",
+      "sensitivity": "placement/order affects exact direction",
+      "mechanism": "same atomic contention class",
+      "limitations": "only 5% non-inferiority, not a fixed win",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-obs.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "math-structural", "modules": ["math"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "checked scalar bit sizing and LCM used outside SIMD vector work", "contract": "constexpr, checked, zero-resource scalar helpers",
-      "peer": "standard scalar primitives, not a coherent library route", "scale": "one scalar conversion or GCD",
-      "absolute": "not timed; bit ceil O(1), LCM O(log min magnitude)", "ratio_ci": "N/A",
-      "sensitivity": "instruction-shape and bounded-loop proof replace microtiming", "mechanism": "native bit-count and Euclidean GCD",
-      "limitations": "vector math belongs to SIMD", "evidence": ["docs/implementation/evidence/performance/benchmarks-math-v4.md"]
+      "id": "math-structural",
+      "modules": [
+        "math"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "checked scalar bit sizing and LCM used outside SIMD vector work",
+      "contract": "constexpr, checked, zero-resource scalar helpers",
+      "peer": "standard scalar primitives, not a coherent library route",
+      "scale": "one scalar conversion or GCD",
+      "absolute": "not timed; bit ceil O(1), LCM O(log min magnitude)",
+      "ratio_ci": "N/A",
+      "sensitivity": "instruction-shape and bounded-loop proof replace microtiming",
+      "mechanism": "native bit-count and Euclidean GCD",
+      "limitations": "vector math belongs to SIMD",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-math-v4.md"
+      ]
     },
     {
-      "id": "time-structural", "modules": ["time"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "deadline, duration, Unix and native OS time conversion", "contract": "checked fixed-work conversion with explicit floor, truncation or timeout ceil",
-      "peer": "standard chrono and OS ABI primitives", "scale": "one value conversion",
-      "absolute": "not timed; O(1), zero heap, lock, syscall or dispatch", "ratio_ci": "N/A",
-      "sensitivity": "code-shape checked on supported toolchains", "mechanism": "inline checked integer arithmetic or one ABI adapter call",
-      "limitations": "host clock timings from older work are not renewed by this P0 card", "evidence": ["docs/implementation/tasks/time/time-v5-interoperability.md"]
+      "id": "time-structural",
+      "modules": [
+        "time"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "deadline, duration, Unix and native OS time conversion",
+      "contract": "checked fixed-work conversion with explicit floor, truncation or timeout ceil",
+      "peer": "standard chrono and OS ABI primitives",
+      "scale": "one value conversion",
+      "absolute": "not timed; O(1), zero heap, lock, syscall or dispatch",
+      "ratio_ci": "N/A",
+      "sensitivity": "code-shape checked on supported toolchains",
+      "mechanism": "inline checked integer arithmetic or one ABI adapter call",
+      "limitations": "host clock timings from older work are not renewed by this P0 card",
+      "evidence": [
+        "docs/implementation/tasks/time/time-v5-interoperability.md"
+      ]
     },
     {
-      "id": "timer-queue-lifecycle", "modules": ["timer_queue"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "64-timer scheduler lifecycle", "contract": "same arm, wake, cancel and teardown boundary",
-      "peer": "Seastar timer queue", "scale": "64 timers", "absolute": "HYLE 62.80-64.63 M op/s; peer 53.42-55.92 M op/s",
-      "ratio_ci": "1.129-1.190 with qualified intervals above 1", "sensitivity": "order and placement controls passed",
-      "mechanism": "intrusive timer ownership and bounded queue operations", "limitations": "one scheduler timer distribution",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-time.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "timer-queue-lifecycle",
+      "modules": [
+        "timer_queue"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "64-timer scheduler lifecycle",
+      "contract": "same arm, wake, cancel and teardown boundary",
+      "peer": "Seastar timer queue",
+      "scale": "64 timers",
+      "absolute": "HYLE 62.80-64.63 M op/s; peer 53.42-55.92 M op/s",
+      "ratio_ci": "1.129-1.190 with qualified intervals above 1",
+      "sensitivity": "order and placement controls passed",
+      "mechanism": "intrusive timer ownership and bounded queue operations",
+      "limitations": "one scheduler timer distribution",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-time.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "platform-host-planning", "modules": ["platform"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "process-visible CPU, NUMA, cache, memory and host-planning snapshot", "contract": "same fields, failure shape, OS queries and composition",
-      "peer": "oneTBB-lineage faithful Win32 adapter", "scale": "one complete host snapshot", "absolute": "HYLE 112.5-116.5 K op/s; peer 110.7-112.8 K op/s",
-      "ratio_ci": "medians 1.0157-1.0372; one interval crosses 1, three lie above", "sensitivity": "placement/order prevents a universal direction",
-      "mechanism": "cached scratch and direct OS query composition", "limitations": "W1-WIN only; does not cover every OS probe",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-platform.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "platform-host-planning",
+      "modules": [
+        "platform"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "process-visible CPU, NUMA, cache, memory and host-planning snapshot",
+      "contract": "same fields, failure shape, OS queries and composition",
+      "peer": "oneTBB-lineage faithful Win32 adapter",
+      "scale": "one complete host snapshot",
+      "absolute": "HYLE 112.5-116.5 K op/s; peer 110.7-112.8 K op/s",
+      "ratio_ci": "medians 1.0157-1.0372; one interval crosses 1, three lie above",
+      "sensitivity": "placement/order prevents a universal direction",
+      "mechanism": "cached scratch and direct OS query composition",
+      "limitations": "W1-WIN only; does not cover every OS probe",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-platform.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "platform-thread-structural", "modules": ["platform_thread"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "STRUCTURAL",
-      "consumer_shape": "Parker and OS thread/wait primitives", "contract": "integrated Rust std Parker state machine and platform backends",
-      "peer": "integrated source provenance, no new timing peer", "scale": "one park or unpark transition",
-      "absolute": "not retimed; no added allocation, lock, syscall, metadata or code-shape work", "ratio_ci": "N/A",
-      "sensitivity": "three-platform correctness and code shape", "mechanism": "upstream state machine with pinned source hash",
-      "limitations": "not a timing SOTA claim", "evidence": ["docs/implementation/evidence/performance/benchmarks-platform.md"]
+      "id": "platform-thread-structural",
+      "modules": [
+        "platform_thread"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "STRUCTURAL",
+      "consumer_shape": "Parker and OS thread/wait primitives",
+      "contract": "integrated Rust std Parker state machine and platform backends",
+      "peer": "integrated source provenance, no new timing peer",
+      "scale": "one park or unpark transition",
+      "absolute": "not retimed; no added allocation, lock, syscall, metadata or code-shape work",
+      "ratio_ci": "N/A",
+      "sensitivity": "three-platform correctness and code shape",
+      "mechanism": "upstream state machine with pinned source hash",
+      "limitations": "not a timing SOTA claim",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-platform.md"
+      ]
     },
     {
-      "id": "platform-fs-warm-file", "modules": ["platform_fs"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "PARITY", "parity_basis": "all eight intervals contain 1 and direction flips across order, allocation and placement",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "warm 4 MiB model-file open, full read, checksum and close", "contract": "same ownership, sharing, read loop, failure and teardown",
-      "peer": "Folly File-lineage faithful OS adapter", "scale": "one warmed 4 MiB file lifecycle",
-      "absolute": "not retained in repository; hashed external bundle", "ratio_ci": "eight ratios 0.987503-1.012026; every interval contains 1",
-      "sensitivity": "direction flips with execution, allocation and placement", "mechanism": "same OS ABI and I/O loop",
-      "limitations": "W1-WIN warm regular file only", "evidence": ["docs/implementation/evidence/performance/benchmarks-platform.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "platform-fs-warm-file",
+      "modules": [
+        "platform_fs"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "PARITY",
+      "parity_basis": "all eight intervals contain 1 and direction flips across order, allocation and placement",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "warm 4 MiB model-file open, full read, checksum and close",
+      "contract": "same ownership, sharing, read loop, failure and teardown",
+      "peer": "Folly File-lineage faithful OS adapter",
+      "scale": "one warmed 4 MiB file lifecycle",
+      "absolute": "not retained in repository; hashed external bundle",
+      "ratio_ci": "eight ratios 0.987503-1.012026; every interval contains 1",
+      "sensitivity": "direction flips with execution, allocation and placement",
+      "mechanism": "same OS ABI and I/O loop",
+      "limitations": "W1-WIN warm regular file only",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-platform.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "reclaim-snapshot", "modules": ["mem_reclaim"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "immutable snapshot read under reclamation", "contract": "same protected read and lifetime boundary",
-      "peer": "Folly reclamation route", "scale": "4096-entry immutable snapshot", "absolute": "HYLE 77.22-80.51 M op/s; peer 55.04-56.31 M op/s",
-      "ratio_ci": "1.3649-1.3812; all 99.26% intervals above 1.3358", "sensitivity": "win holds across order and placement",
-      "mechanism": "short reader protection and immutable traversal", "limitations": "specific read-mostly shape",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-mem-reclamation.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "reclaim-snapshot",
+      "modules": [
+        "mem_reclaim"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "immutable snapshot read under reclamation",
+      "contract": "same protected read and lifetime boundary",
+      "peer": "Folly reclamation route",
+      "scale": "4096-entry immutable snapshot",
+      "absolute": "HYLE 77.22-80.51 M op/s; peer 55.04-56.31 M op/s",
+      "ratio_ci": "1.3649-1.3812; all 99.26% intervals above 1.3358",
+      "sensitivity": "win holds across order and placement",
+      "mechanism": "short reader protection and immutable traversal",
+      "limitations": "specific read-mostly shape",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-mem-reclamation.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "reclaim-stable-registry", "modules": ["mem_reclaim"], "kind": "P1_WORKLOAD",
-      "comparison": "NATURAL_ROUTE", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "stable-node registry read path", "contract": "same stable node lookup and reclamation outcome",
-      "peer": "oneTBB registry adapter", "scale": "stable registry read", "absolute": "HYLE 91.08-93.07 M op/s; peer 65.75-66.24 M op/s",
-      "ratio_ci": "1.3911-1.4028; all intervals above 1.3539", "sensitivity": "win holds across order and placement",
-      "mechanism": "HYLE natural stable-node plus reclamation composition", "limitations": "natural-route evidence, not an isolated primitive ranking",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-mem-reclamation.md"]
+      "id": "reclaim-stable-registry",
+      "modules": [
+        "mem_reclaim"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "stable-node registry read path",
+      "contract": "same stable node lookup and reclamation outcome",
+      "peer": "oneTBB registry adapter",
+      "scale": "stable registry read",
+      "absolute": "HYLE 91.08-93.07 M op/s; peer 65.75-66.24 M op/s",
+      "ratio_ci": "1.3911-1.4028; all intervals above 1.3539",
+      "sensitivity": "win holds across order and placement",
+      "mechanism": "HYLE natural stable-node plus reclamation composition",
+      "limitations": "natural-route evidence, not an isolated primitive ranking",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-mem-reclamation.md"
+      ]
     },
     {
-      "id": "mem-logical-range", "modules": ["mem"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "logical suballocation with alignment, split, coalesce and allocation ownership", "contract": "same recoverable allocation/free lifecycle and bookkeeping",
-      "peer": "OffsetAllocator adapted to the same public contract", "scale": "frozen logical-range trace",
-      "absolute": "HYLE 24.759-25.054 M op/s; peer 23.861-24.122 M op/s", "ratio_ci": "eight ratios 1.0310-1.0432; every 99.26% CI lower bound exceeds 1",
-      "sensitivity": "win holds across placement, execution and owner-allocation order", "mechanism": "bounded range metadata and direct coalescing",
-      "limitations": "raw naked-handle peer is faster but has a weaker contract and is not ranked; inherited at Mem 4e9f74a0 because the ad5bff89-to-4e9f74a0 Mem delta is confined to lifetime_plan and quota_allocator, leaving logical-range implementation and its contract unchanged", "evidence": ["docs/implementation/evidence/performance/benchmarks-mem-v7.md"]
+      "id": "mem-logical-range",
+      "modules": [
+        "mem"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "logical suballocation with alignment, split, coalesce and allocation ownership",
+      "contract": "same recoverable allocation/free lifecycle and bookkeeping",
+      "peer": "OffsetAllocator adapted to the same public contract",
+      "scale": "frozen logical-range trace",
+      "absolute": "HYLE 24.759-25.054 M op/s; peer 23.861-24.122 M op/s",
+      "ratio_ci": "eight ratios 1.0310-1.0432; every 99.26% CI lower bound exceeds 1",
+      "sensitivity": "win holds across placement, execution and owner-allocation order",
+      "mechanism": "bounded range metadata and direct coalescing",
+      "limitations": "raw naked-handle peer is faster but has a weaker contract and is not ranked; inherited at Mem 4e9f74a0 because the ad5bff89-to-4e9f74a0 Mem delta is confined to lifetime_plan and quota_allocator, leaving logical-range implementation and its contract unchanged",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-mem-v7.md"
+      ]
     },
     {
-      "id": "mem-vm-lazy-release", "modules": ["mem_vm"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "CURRENT_DOCUMENT_ONLY", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "model-loader virtual range lazy release", "contract": "same reserved-range ownership, release tracking and failure semantics",
-      "peer": "llama.cpp per-range vector rebuild route", "scale": "64-range lazy-release trace", "absolute": "not retained in current report",
-      "ratio_ci": "1.0307-1.0467; all four 99.26% CI lower bounds exceed 1.0081", "sensitivity": "win holds across order and placement",
-      "mechanism": "indexed ownership avoids rebuilding a range vector", "limitations": "document-level evidence; one model-loader trace",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "mem-vm-lazy-release",
+      "modules": [
+        "mem_vm"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "CURRENT_DOCUMENT_ONLY",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "model-loader virtual range lazy release",
+      "contract": "same reserved-range ownership, release tracking and failure semantics",
+      "peer": "llama.cpp per-range vector rebuild route",
+      "scale": "64-range lazy-release trace",
+      "absolute": "not retained in current report",
+      "ratio_ci": "1.0307-1.0467; all four 99.26% CI lower bounds exceed 1.0081",
+      "sensitivity": "win holds across order and placement",
+      "mechanism": "indexed ownership avoids rebuilding a range vector",
+      "limitations": "document-level evidence; one model-loader trace",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "simd-provider-routing", "modules": ["simd"], "kind": "ROUTE_POLICY",
-      "comparison": "PROVIDER_SELECTION", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "ordinary and exact-target SIMD calls across the frozen operation inventory", "contract": "Highway default, finite typed target exceptions, no unresolved fallback",
-      "peer": "Highway and xsimd providers", "scale": "387 operations and 422 route scopes",
+      "id": "simd-provider-routing",
+      "modules": [
+        "simd"
+      ],
+      "kind": "ROUTE_POLICY",
+      "comparison": "PROVIDER_SELECTION",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "ordinary and exact-target SIMD calls across the frozen operation inventory",
+      "contract": "Highway default, finite typed target exceptions, no unresolved fallback",
+      "peer": "Highway and xsimd providers",
+      "scale": "387 operations and 422 route scopes",
       "absolute": "15 checked provider/kernel instantiations add zero effective instructions; ordinary fat route adds one cached call per whole buffer",
       "ratio_ci": "366 Highway scopes, 34 HYLE scopes, 22 redundant compositions removed, 0 pending",
-      "sensitivity": "route is compiler, ISA, type and operation scoped", "mechanism": "compile-time provider binding for exact TUs and one whole-buffer runtime target dispatch otherwise",
-      "limitations": "routing breadth is not itself a speedup claim", "evidence": ["scripts/simd-op-routing.json", "docs/implementation/evidence/performance/benchmarks-simd.md"]
+      "sensitivity": "route is compiler, ISA, type and operation scoped",
+      "mechanism": "compile-time provider binding for exact TUs and one whole-buffer runtime target dispatch otherwise",
+      "limitations": "routing breadth is not itself a speedup claim",
+      "evidence": [
+        "scripts/simd-op-routing.json",
+        "docs/implementation/evidence/performance/benchmarks-simd.md"
+      ]
     },
     {
-      "id": "simd-hyle-exceptions", "modules": ["simd"], "kind": "P1_WORKLOAD",
-      "comparison": "PROVIDER_SELECTION", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "id": "simd-hyle-exceptions",
+      "modules": [
+        "simd"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "PROVIDER_SELECTION",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "finite operation, type, ISA and compiler scopes where the former HYLE body materially beats Highway",
-      "contract": "same vector operation and observable; exceptions exist only for qualified scope", "peer": "Highway direct provider",
-      "scale": "34 retained HYLE route scopes including Apple NEON Stream", "absolute": "per-operation receipts; Apple M4 256 MiB Stream 32.6-34.9 versus 5.1-12.0 GiB/s",
+      "contract": "same vector operation and observable; exceptions exist only for qualified scope",
+      "peer": "Highway direct provider",
+      "scale": "34 retained HYLE route scopes including Apple NEON Stream",
+      "absolute": "per-operation receipts; Apple M4 256 MiB Stream 32.6-34.9 versus 5.1-12.0 GiB/s",
       "ratio_ci": "33 material exception findings plus Stream; Stream observed 2.9-6.4x with an instruction-level prefetch cause",
-      "sensitivity": "exceptions are not extrapolated beyond named type, target and compiler", "mechanism": "specialized instructions or avoidance of provider regressions such as Apple store prefetch",
-      "limitations": "aggregate averaging is invalid; consult the route ledger for each scope", "evidence": ["evidence/simd-15-route-policy-qualification.json", "evidence/performance/simd-15-stream-workload.json", "scripts/simd-op-routing.json"]
+      "sensitivity": "exceptions are not extrapolated beyond named type, target and compiler",
+      "mechanism": "specialized instructions or avoidance of provider regressions such as Apple store prefetch",
+      "limitations": "aggregate averaging is invalid; consult the route ledger for each scope",
+      "evidence": [
+        "evidence/simd-15-route-policy-qualification.json",
+        "evidence/performance/simd-15-stream-workload.json",
+        "scripts/simd-op-routing.json"
+      ]
     },
     {
-      "id": "simd-xsimd-activation", "modules": ["simd"], "kind": "P1_WORKLOAD",
-      "comparison": "PROVIDER_SELECTION", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "f32 tanh and tanh-GELU rows", "contract": "same tails, in-place behavior and special-value accuracy",
-      "peer": "Highway direct provider; shipped HYLE route selects xsimd", "scale": "4096 and 1,048,576 elements",
-      "absolute": "raw retained logs; ratios are the stable product selector", "ratio_ci": "Highway/xsimd 0.702-0.759 with every 95% CI below 0.850",
-      "sensitivity": "qualified for W1-WIN MSVC AVX2 family scope", "mechanism": "xsimd polynomial/provider body is materially faster",
-      "limitations": "the win is provider selection, not a HYLE-authored math kernel", "evidence": ["evidence/performance/simd-17-w1-win-p1.json", "scripts/simd-family-routing.json"]
+      "id": "simd-xsimd-activation",
+      "modules": [
+        "simd"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "PROVIDER_SELECTION",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "f32 tanh and tanh-GELU rows",
+      "contract": "same tails, in-place behavior and special-value accuracy",
+      "peer": "Highway direct provider; shipped HYLE route selects xsimd",
+      "scale": "4096 and 1,048,576 elements",
+      "absolute": "raw retained logs; ratios are the stable product selector",
+      "ratio_ci": "Highway/xsimd 0.702-0.759 with every 95% CI below 0.850",
+      "sensitivity": "qualified for W1-WIN MSVC AVX2 family scope",
+      "mechanism": "xsimd polynomial/provider body is materially faster",
+      "limitations": "the win is provider selection, not a HYLE-authored math kernel",
+      "evidence": [
+        "evidence/performance/simd-17-w1-win-p1.json",
+        "scripts/simd-family-routing.json"
+      ]
     },
     {
-      "id": "simd-vqsort", "modules": ["simd"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "in-place full and partial f32 ordering without hidden allocation", "contract": "same ordering, input and scratch contract",
-      "peer": "Highway VQSort route", "scale": "4K partial k=10, 4K full and 1M full",
-      "absolute": "retained ordering evidence; aggregate absolute value is invalid across scales", "ratio_ci": "1.147 [1.108,1.185], 5.950 [5.883,6.052], 7.463 [7.374,7.556]",
-      "sensitivity": "W1-WIN f32 scopes only", "mechanism": "HYLE adaptation preserves in-place specialized ordering path",
-      "limitations": "does not cover all types, sizes or order distributions", "evidence": ["docs/implementation/evidence/performance/simd-11-ordering.md", "docs/implementation/evidence/performance/benchmarks-simd.md"]
+      "id": "simd-vqsort",
+      "modules": [
+        "simd"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "in-place full and partial f32 ordering without hidden allocation",
+      "contract": "same ordering, input and scratch contract",
+      "peer": "Highway VQSort route",
+      "scale": "4K partial k=10, 4K full and 1M full",
+      "absolute": "retained ordering evidence; aggregate absolute value is invalid across scales",
+      "ratio_ci": "1.147 [1.108,1.185], 5.950 [5.883,6.052], 7.463 [7.374,7.556]",
+      "sensitivity": "W1-WIN f32 scopes only",
+      "mechanism": "HYLE adaptation preserves in-place specialized ordering path",
+      "limitations": "does not cover all types, sizes or order distributions",
+      "evidence": [
+        "docs/implementation/evidence/performance/simd-11-ordering.md",
+        "docs/implementation/evidence/performance/benchmarks-simd.md"
+      ]
     },
     {
-      "id": "simd-row-dtype", "modules": ["simd"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "row add, f16-to-f32 and mixed bf16 dot", "contract": "same row inputs, output and dtype conversion",
-      "peer": "Highway direct provider", "scale": "4096 and 1,048,576 elements", "absolute": "retained raw logs; current page records ratios",
+      "id": "simd-row-dtype",
+      "modules": [
+        "simd"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "row add, f16-to-f32 and mixed bf16 dot",
+      "contract": "same row inputs, output and dtype conversion",
+      "peer": "Highway direct provider",
+      "scale": "4096 and 1,048,576 elements",
+      "absolute": "retained raw logs; current page records ratios",
       "ratio_ci": "six medians 1.006-1.014; some 95% intervals cross 1, all lower bounds exceed 0.95",
-      "sensitivity": "type, ISA, compiler and placement scoped", "mechanism": "default Highway or tied code generation",
-      "limitations": "non-inferiority only for these rows", "evidence": ["docs/implementation/evidence/performance/benchmarks-simd.md", "evidence/performance/simd-17-w1-win-p1.json"]
+      "sensitivity": "type, ISA, compiler and placement scoped",
+      "mechanism": "default Highway or tied code generation",
+      "limitations": "non-inferiority only for these rows",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-simd.md",
+        "evidence/performance/simd-17-w1-win-p1.json"
+      ]
     },
     {
-      "id": "simd-inference-kernels", "modules": ["simd"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "split SwiGLU 11008, weighted RMSNorm 4096 and expert top-k 256/k6", "contract": "aligned release checks, call boundary, input, output, scratch and ISA",
-      "peer": "direct Highway/body peers with matching public-route checks", "scale": "one full inference row",
+      "id": "simd-inference-kernels",
+      "modules": [
+        "simd"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "split SwiGLU 11008, weighted RMSNorm 4096 and expert top-k 256/k6",
+      "contract": "aligned release checks, call boundary, input, output, scratch and ISA",
+      "peer": "direct Highway/body peers with matching public-route checks",
+      "scale": "one full inference row",
       "absolute": "top-k HYLE 2.411-2.432 M rows/s versus peer 2.444-2.459 M; other rows retained externally",
       "ratio_ci": "SwiGLU and RMSNorm straddle 1; top-k medians 0.9842-0.9905 but all 99.26% intervals cross 1",
-      "sensitivity": "top-k is nominally negative in all four strata but statistically unresolved", "mechanism": "top-k general entry is 0x738 bytes versus 0x529 peer due k=1 and large-k routes",
+      "sensitivity": "top-k is nominally negative in all four strata but statistically unresolved",
+      "mechanism": "top-k general entry is 0x738 bytes versus 0x529 peer due k=1 and large-k routes",
       "limitations": "no engine profile proves the 4.3-7.9 ns row delta material; do not split the API for this benchmark",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-simd.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-simd.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "simd-compute-rows-v7", "modules": ["simd"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "PARITY",
+      "id": "simd-compute-rows-v7",
+      "modules": [
+        "simd"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "PARITY",
       "parity_basis": "all sixteen workload/order/placement intervals remain inside the fixed 5% practical equivalence band",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
       "consumer_shape": "Compute-real dense f32 reciprocal-sqrt, number-min, byte-bool select and propagating-min rows",
       "contract": "same exact numeric, NaN, signed-zero, storage, output, ISA and noinline whole-row boundary",
-      "peer": "direct locked-Highway lowering", "scale": "4096 elements, plus 11008 for number-min",
+      "peer": "direct locked-Highway lowering",
+      "scale": "4096 elements, plus 11008 for number-min",
       "absolute": "candidate medians range from about 0.36% below to 2.62% above the direct peer by workload and placement",
       "ratio_ci": "four-workload median ranges: 0.99699-1.00098, 1.00744-1.00880, 1.02182-1.02624 and 0.99640-1.00962",
       "sensitivity": "31 independent processes in both orders and two placements; all controls pass",
       "mechanism": "one cached whole-row target call for fat artifacts and direct symbol binding for exact artifacts",
       "limitations": "only these four dense f32 row contracts; no claim for every operation, ISA, compiler or tensor layout",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-simd.md", "docs/implementation/tasks/simd/simd-v7-compute-row-primitives.md"]
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-simd.md",
+        "docs/implementation/tasks/simd/simd-v7-compute-row-primitives.md"
+      ]
     },
     {
-      "id": "container-lru", "modules": ["container"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "4096-entry model-cache mixed lookup, insert and weight eviction", "contract": "same hash, allocator, OOM, rollback, typed result and entry/weight limits",
-      "peer": "Abseil adapter", "scale": "4096-entry mixed trace", "absolute": "HYLE 148.99-152.57 M op/s; peer 119.54-123.52 M op/s",
-      "ratio_ci": "1.2223-1.2728; all eight strata WIN", "sensitivity": "win holds across allocation, order and placement",
-      "mechanism": "integrated hash plus intrusive recency and explicit weight accounting", "limitations": "not all caches or hash distributions",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "container-lru",
+      "modules": [
+        "container"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "4096-entry model-cache mixed lookup, insert and weight eviction",
+      "contract": "same hash, allocator, OOM, rollback, typed result and entry/weight limits",
+      "peer": "Abseil adapter",
+      "scale": "4096-entry mixed trace",
+      "absolute": "HYLE 148.99-152.57 M op/s; peer 119.54-123.52 M op/s",
+      "ratio_ci": "1.2223-1.2728; all eight strata WIN",
+      "sensitivity": "win holds across allocation, order and placement",
+      "mechanism": "integrated hash plus intrusive recency and explicit weight accounting",
+      "limitations": "not all caches or hash distributions",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "container-utf", "modules": ["container", "container_text"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "safe UTF-8 to UTF-16 model-metadata conversion into caller buffer", "contract": "same simdutf provider, validation, exact sizing, endian output and typed status",
-      "peer": "simdutf direct adapter", "scale": "4096 metadata conversion units", "absolute": "HYLE 197.77-201.27 M op/s; peer 198.03-202.50 M op/s",
+      "id": "container-utf",
+      "modules": [
+        "container",
+        "container_text"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "safe UTF-8 to UTF-16 model-metadata conversion into caller buffer",
+      "contract": "same simdutf provider, validation, exact sizing, endian output and typed status",
+      "peer": "simdutf direct adapter",
+      "scale": "4096 metadata conversion units",
+      "absolute": "HYLE 197.77-201.27 M op/s; peer 198.03-202.50 M op/s",
       "ratio_ci": "medians 0.9863-1.0102; seven of eight intervals cross 1 and one favors HYLE",
-      "sensitivity": "direction changes across order and placement", "mechanism": "thin safe wrapper around the same provider",
+      "sensitivity": "direction changes across order and placement",
+      "mechanism": "thin safe wrapper around the same provider",
       "limitations": "no fixed superiority; container_text candidate later added Base64 without changing this route",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "container-concurrent-membership", "modules": ["container_concurrent"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "eight-worker read-mostly membership over 4,194,304 queries", "contract": "same hash, equality, allocator, distribution, lifecycle and checksum",
-      "peer": "oneTBB concurrent map", "scale": "8 workers and 4,194,304 queries", "absolute": "HYLE 245.73-246.57 M op/s; peer 250.13-251.54 M op/s",
-      "ratio_ci": "medians 0.9777-0.9882; all qualified intervals cross 1", "sensitivity": "nominal loss persists by order but confidence cannot resolve it",
-      "mechanism": "HYLE also preserves safe concurrent erase semantics outside the read-only trace", "limitations": "5% non-inferiority only; a write/erase consumer needs its own contract",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "container-concurrent-membership",
+      "modules": [
+        "container_concurrent"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "eight-worker read-mostly membership over 4,194,304 queries",
+      "contract": "same hash, equality, allocator, distribution, lifecycle and checksum",
+      "peer": "oneTBB concurrent map",
+      "scale": "8 workers and 4,194,304 queries",
+      "absolute": "HYLE 245.73-246.57 M op/s; peer 250.13-251.54 M op/s",
+      "ratio_ci": "medians 0.9777-0.9882; all qualified intervals cross 1",
+      "sensitivity": "nominal loss persists by order but confidence cannot resolve it",
+      "mechanism": "HYLE also preserves safe concurrent erase semantics outside the read-only trace",
+      "limitations": "5% non-inferiority only; a write/erase consumer needs its own contract",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "container-mpmc", "modules": ["container_queue"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "unbounded typed 4-producer/4-consumer handoff", "contract": "same allocator, recoverable OOM/retry, participation, drain, payload and FIFO conservation",
-      "peer": "oneTBB unbounded queue", "scale": "4P4C and 262144 items", "absolute": "HYLE 33.70-35.00 M op/s; peer 25.05-25.92 M op/s",
-      "ratio_ci": "1.2614-1.2888; both orders WIN", "sensitivity": "win holds in both execution orders",
-      "mechanism": "typed MPMC handoff with direct allocation ownership", "limitations": "does not cover bounded or alternative wait policies",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container.md", "evidence/frozen-performance-audit-2026-09/audit-data.json"]
+      "id": "container-mpmc",
+      "modules": [
+        "container_queue"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "unbounded typed 4-producer/4-consumer handoff",
+      "contract": "same allocator, recoverable OOM/retry, participation, drain, payload and FIFO conservation",
+      "peer": "oneTBB unbounded queue",
+      "scale": "4P4C and 262144 items",
+      "absolute": "HYLE 33.70-35.00 M op/s; peer 25.05-25.92 M op/s",
+      "ratio_ci": "1.2614-1.2888; both orders WIN",
+      "sensitivity": "win holds in both execution orders",
+      "mechanism": "typed MPMC handoff with direct allocation ownership",
+      "limitations": "does not cover bounded or alternative wait policies",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container.md",
+        "evidence/frozen-performance-audit-2026-09/audit-data.json"
+      ]
     },
     {
-      "id": "base64-decode", "modules": ["container_text"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "strict Base64 decode into caller buffer", "contract": "same alphabet, validation, error position and output ownership",
-      "peer": "simdutf direct decode", "scale": "256 KiB input", "absolute": "HYLE 51.026-51.831 M 64-byte units/s; peer 49.984-51.687 M",
-      "ratio_ci": "0.9896-1.0318; two intervals favor HYLE and two cross 1", "sensitivity": "placement changes point direction",
-      "mechanism": "simdutf bulk core plus HYLE strict policy boundary", "limitations": "no universal direction",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container-text-base64.md"]
+      "id": "base64-decode",
+      "modules": [
+        "container_text"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "strict Base64 decode into caller buffer",
+      "contract": "same alphabet, validation, error position and output ownership",
+      "peer": "simdutf direct decode",
+      "scale": "256 KiB input",
+      "absolute": "HYLE 51.026-51.831 M 64-byte units/s; peer 49.984-51.687 M",
+      "ratio_ci": "0.9896-1.0318; two intervals favor HYLE and two cross 1",
+      "sensitivity": "placement changes point direction",
+      "mechanism": "simdutf bulk core plus HYLE strict policy boundary",
+      "limitations": "no universal direction",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container-text-base64.md"
+      ]
     },
     {
-      "id": "base64-encode", "modules": ["container_text"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "small binary identifier Base64 encode into caller buffer", "contract": "same alphabet, padding and ownership",
-      "peer": "simdutf direct encode", "scale": "batched 20-byte records", "absolute": "HYLE 75.112-75.496 M records/s; peer 72.537-72.915 M",
-      "ratio_ci": "1.0329-1.0449; all four 99.26% intervals lie above 1", "sensitivity": "win holds across order and placement",
-      "mechanism": "small-record specialized framing around the provider core", "limitations": "small-record workload only",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-container-text-base64.md"]
+      "id": "base64-encode",
+      "modules": [
+        "container_text"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "small binary identifier Base64 encode into caller buffer",
+      "contract": "same alphabet, padding and ownership",
+      "peer": "simdutf direct encode",
+      "scale": "batched 20-byte records",
+      "absolute": "HYLE 75.112-75.496 M records/s; peer 72.537-72.915 M",
+      "ratio_ci": "1.0329-1.0449; all four 99.26% intervals lie above 1",
+      "sensitivity": "win holds across order and placement",
+      "mechanism": "small-record specialized framing around the provider core",
+      "limitations": "small-record workload only",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-container-text-base64.md"
+      ]
     },
     {
-      "id": "util-runtime-structural", "modules": ["util_runtime"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "registry freeze and lookup plus cold demangle", "contract": "owning registration, borrowed creator and immutable lookup",
-      "peer": "no admitted hot consumer or whole-contract peer", "scale": "one registration/freeze/lookup or symbol",
-      "absolute": "not timed; freeze O(1) zero allocation, frozen lookup O(key)+expected O(1) lock-free", "ratio_ci": "N/A",
-      "sensitivity": "forwarding probe reports zero internal moves on GCC and AppleClang", "mechanism": "immutable table publication and erased argument-slot hop",
-      "limitations": "P1 starts only if a real plugin/registry consumer becomes hot", "evidence": ["docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md"]
+      "id": "util-runtime-structural",
+      "modules": [
+        "util_runtime"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "registry freeze and lookup plus cold demangle",
+      "contract": "owning registration, borrowed creator and immutable lookup",
+      "peer": "no admitted hot consumer or whole-contract peer",
+      "scale": "one registration/freeze/lookup or symbol",
+      "absolute": "not timed; freeze O(1) zero allocation, frozen lookup O(key)+expected O(1) lock-free",
+      "ratio_ci": "N/A",
+      "sensitivity": "forwarding probe reports zero internal moves on GCC and AppleClang",
+      "mechanism": "immutable table publication and erased argument-slot hop",
+      "limitations": "P1 starts only if a real plugin/registry consumer becomes hot",
+      "evidence": [
+        "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md"
+      ]
     },
     {
-      "id": "sched-fanout", "modules": ["sched"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "request fan-out and collect on four P-core workers", "contract": "same input, compute, capacity and completion boundary",
-      "peer": "Marl b8406ab0", "scale": "four workers and one external caller", "absolute": "HYLE 6.940-6.943 M op/s; peer 4.191-4.197 M",
-      "ratio_ci": "1.6462-1.6625; both 99.26% intervals above 1.5694", "sensitivity": "win holds in both execution orders",
-      "mechanism": "fiber scheduling and direct completion spine", "limitations": "normal-priority consumer only",
-      "evidence": ["docs/implementation/tasks/sched/sched-v10-execution-priority.md"]
+      "id": "sched-fanout",
+      "modules": [
+        "sched"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "request fan-out and collect on four P-core workers",
+      "contract": "same input, compute, capacity and completion boundary",
+      "peer": "Marl b8406ab0",
+      "scale": "four workers and one external caller",
+      "absolute": "HYLE 6.940-6.943 M op/s; peer 4.191-4.197 M",
+      "ratio_ci": "1.6462-1.6625; both 99.26% intervals above 1.5694",
+      "sensitivity": "win holds in both execution orders",
+      "mechanism": "fiber scheduling and direct completion spine",
+      "limitations": "normal-priority consumer only",
+      "evidence": [
+        "docs/implementation/tasks/sched/sched-v10-execution-priority.md"
+      ]
     },
     {
-      "id": "sched-completion", "modules": ["sched"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "completion wake on four P-core workers", "contract": "same wait, wake and completion boundary",
-      "peer": "Marl b8406ab0", "scale": "four workers and one external caller", "absolute": "HYLE 376.317-376.367 K op/s; peer 366.826-368.100 K",
-      "ratio_ci": "1.02657-1.02849; both 99.26% intervals are entirely above 1", "sensitivity": "win holds in both orders but does not clear the legacy plus-5% exact band",
-      "mechanism": "unified Waker and completion spine", "limitations": "directional WIN is distinct from the 5% material-band verdict",
-      "evidence": ["docs/implementation/tasks/sched/sched-v10-execution-priority.md"]
+      "id": "sched-completion",
+      "modules": [
+        "sched"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_HASHED_EXTERNAL",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "completion wake on four P-core workers",
+      "contract": "same wait, wake and completion boundary",
+      "peer": "Marl b8406ab0",
+      "scale": "four workers and one external caller",
+      "absolute": "HYLE 376.317-376.367 K op/s; peer 366.826-368.100 K",
+      "ratio_ci": "1.02657-1.02849; both 99.26% intervals are entirely above 1",
+      "sensitivity": "win holds in both orders but does not clear the legacy plus-5% exact band",
+      "mechanism": "unified Waker and completion spine",
+      "limitations": "directional WIN is distinct from the 5% material-band verdict",
+      "evidence": [
+        "docs/implementation/tasks/sched/sched-v10-execution-priority.md"
+      ]
     },
     {
-      "id": "io-core-anonymous-adopt", "modules": ["io_core"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "adopt a process pipe into the existing asynchronous LocalStream runtime", "contract": "validation plus backend bind with existing stream ownership",
-      "peer": "no separate same-contract primitive", "scale": "one adopted native handle", "absolute": "not timed; O(1), zero adapter copy or allocation beyond backend bind",
-      "ratio_ci": "N/A", "sensitivity": "existing connect, listen, read and write code paths are unchanged",
-      "mechanism": "narrow native-handle adoption seam", "limitations": "old HTTP P1 is separately inherited",
-      "evidence": ["docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md"]
+      "id": "io-core-anonymous-adopt",
+      "modules": [
+        "io_core"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "adopt a process pipe into the existing asynchronous LocalStream runtime",
+      "contract": "validation plus backend bind with existing stream ownership",
+      "peer": "no separate same-contract primitive",
+      "scale": "one adopted native handle",
+      "absolute": "not timed; O(1), zero adapter copy or allocation beyond backend bind",
+      "ratio_ci": "N/A",
+      "sensitivity": "existing connect, listen, read and write code paths are unchanged",
+      "mechanism": "narrow native-handle adoption seam",
+      "limitations": "old HTTP P1 is separately inherited",
+      "evidence": [
+        "docs/implementation/tasks/io/io-core-v5-anonymous-stream-adopt.md"
+      ]
     },
     {
-      "id": "http1-small", "modules": ["io_core", "io_http"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "persistent public transport plus HTTP/1 REST streaming lifecycle", "contract": "framing, body retention, byte validation, application chunks and connection retirement",
-      "peer": "Boost.Beast cb94f33f", "scale": "128 responses of 1 KiB", "absolute": "HYLE 62.084-62.139 K op/s; peer 61.838-63.012 K",
-      "ratio_ci": "0.98944-1.00250; both 99.26% intervals cross 1", "sensitivity": "point direction changes with execution order",
-      "mechanism": "complete public stack has no material tax", "limitations": "single worker, localhost/static, no router or full server",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-http-p1-v2-18bf62f8/summary.json"]
+      "id": "http1-small",
+      "modules": [
+        "io_core",
+        "io_http"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "persistent public transport plus HTTP/1 REST streaming lifecycle",
+      "contract": "framing, body retention, byte validation, application chunks and connection retirement",
+      "peer": "Boost.Beast cb94f33f",
+      "scale": "128 responses of 1 KiB",
+      "absolute": "HYLE 62.084-62.139 K op/s; peer 61.838-63.012 K",
+      "ratio_ci": "0.98944-1.00250; both 99.26% intervals cross 1",
+      "sensitivity": "point direction changes with execution order",
+      "mechanism": "complete public stack has no material tax",
+      "limitations": "single worker, localhost/static, no router or full server",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-http-p1-v2-18bf62f8/summary.json"
+      ]
     },
     {
-      "id": "http1-fragmented", "modules": ["io_core", "io_http"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "fragmented public transport plus HTTP/1 streaming lifecycle", "contract": "same full request, streaming response, validation and teardown",
-      "peer": "Boost.Beast cb94f33f", "scale": "16 responses of 64 KiB", "absolute": "HYLE 17.655-17.835 K op/s; peer 5.830-5.881 K",
-      "ratio_ci": "3.030-3.065; all intervals above 2.974", "sensitivity": "win holds in both execution orders",
-      "mechanism": "bounded body/chunk path avoids repeated peer overhead under fragmentation", "limitations": "not a complete routed HTTPS inference server",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-http-p1-v2-18bf62f8/summary.json"]
+      "id": "http1-fragmented",
+      "modules": [
+        "io_core",
+        "io_http"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "fragmented public transport plus HTTP/1 streaming lifecycle",
+      "contract": "same full request, streaming response, validation and teardown",
+      "peer": "Boost.Beast cb94f33f",
+      "scale": "16 responses of 64 KiB",
+      "absolute": "HYLE 17.655-17.835 K op/s; peer 5.830-5.881 K",
+      "ratio_ci": "3.030-3.065; all intervals above 2.974",
+      "sensitivity": "win holds in both execution orders",
+      "mechanism": "bounded body/chunk path avoids repeated peer overhead under fragmentation",
+      "limitations": "not a complete routed HTTPS inference server",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-http-p1-v2-18bf62f8/summary.json"
+      ]
     },
     {
-      "id": "io-tls-identity", "modules": ["io_tls"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "LOW", "candidate_binding": "EXACT",
-      "consumer_shape": "cold validation that HTTP file response and TLS transport share an IO context", "contract": "header-inline context identity accessor",
-      "peer": "no runtime peer", "scale": "one cold validation", "absolute": "zero fields, symbols, provider calls and ordinary TLS-path instructions",
-      "ratio_ci": "N/A", "sensitivity": "ordinary TLS path does not reference the accessor", "mechanism": "inline friend/accessor",
-      "limitations": "TLS throughput is separately inherited", "evidence": ["docs/implementation/tasks/io/io-tls-v4-context-identity.md"]
+      "id": "io-tls-identity",
+      "modules": [
+        "io_tls"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "LOW",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "cold validation that HTTP file response and TLS transport share an IO context",
+      "contract": "header-inline context identity accessor",
+      "peer": "no runtime peer",
+      "scale": "one cold validation",
+      "absolute": "zero fields, symbols, provider calls and ordinary TLS-path instructions",
+      "ratio_ci": "N/A",
+      "sensitivity": "ordinary TLS path does not reference the accessor",
+      "mechanism": "inline friend/accessor",
+      "limitations": "TLS throughput is separately inherited",
+      "evidence": [
+        "docs/implementation/tasks/io/io-tls-v4-context-identity.md"
+      ]
     },
     {
-      "id": "tls-handshake", "modules": ["io_tls"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "verified localhost asynchronous TLS handshake", "contract": "same OpenSSL provider, verification, runtime and teardown",
-      "peer": "Asio 8806a680", "scale": "one verified connection handshake", "absolute": "HYLE 1120.78-1175.95 op/s; peer 1026.02-1061.78",
-      "ratio_ci": "1.0988-1.1016; both intervals above 1.0615", "sensitivity": "win holds in both orders",
-      "mechanism": "HYLE transport integration around the same provider", "limitations": "localhost, one provider and one worker",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-tls-p1-v2-18bf62f8/summary.json"]
+      "id": "tls-handshake",
+      "modules": [
+        "io_tls"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "verified localhost asynchronous TLS handshake",
+      "contract": "same OpenSSL provider, verification, runtime and teardown",
+      "peer": "Asio 8806a680",
+      "scale": "one verified connection handshake",
+      "absolute": "HYLE 1120.78-1175.95 op/s; peer 1026.02-1061.78",
+      "ratio_ci": "1.0988-1.1016; both intervals above 1.0615",
+      "sensitivity": "win holds in both orders",
+      "mechanism": "HYLE transport integration around the same provider",
+      "limitations": "localhost, one provider and one worker",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-tls-p1-v2-18bf62f8/summary.json"
+      ]
     },
     {
-      "id": "tls-small-record", "modules": ["io_tls"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "full-duplex encrypted small-record stream", "contract": "same OpenSSL, 512 records, validation and teardown",
-      "peer": "Asio 8806a680", "scale": "512 records of 256 bytes", "absolute": "HYLE 214.79-223.71 op/s; peer 207.07-214.05",
-      "ratio_ci": "1.0415-1.0527; one interval crosses 1 and one lies above", "sensitivity": "execution order changes certainty",
-      "mechanism": "same provider, different async pump integration", "limitations": "no fixed direction across both orders",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-tls-p1-v2-18bf62f8/summary.json"]
+      "id": "tls-small-record",
+      "modules": [
+        "io_tls"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "full-duplex encrypted small-record stream",
+      "contract": "same OpenSSL, 512 records, validation and teardown",
+      "peer": "Asio 8806a680",
+      "scale": "512 records of 256 bytes",
+      "absolute": "HYLE 214.79-223.71 op/s; peer 207.07-214.05",
+      "ratio_ci": "1.0415-1.0527; one interval crosses 1 and one lies above",
+      "sensitivity": "execution order changes certainty",
+      "mechanism": "same provider, different async pump integration",
+      "limitations": "no fixed direction across both orders",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-tls-p1-v2-18bf62f8/summary.json"
+      ]
     },
     {
-      "id": "io-http-upgrade", "modules": ["io_http"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "one-time HTTP Upgrade transport and prefetched-byte handoff to WebSocket", "contract": "move-only handoff with no normal HTTP-path cost",
-      "peer": "raw socket handoff is not same-contract", "scale": "once per upgraded connection", "absolute": "normal HTTP adds zero field, branch, allocation or syscall; handoff is O(1) and zero prefix copy",
-      "ratio_ci": "N/A", "sensitivity": "opt-in upgrade only", "mechanism": "move transport and prefix allocation",
-      "limitations": "ordinary HTTP performance is separately inherited", "evidence": ["docs/implementation/tasks/io/io-http-v4-upgrade-handoff.md"]
+      "id": "io-http-upgrade",
+      "modules": [
+        "io_http"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "one-time HTTP Upgrade transport and prefetched-byte handoff to WebSocket",
+      "contract": "move-only handoff with no normal HTTP-path cost",
+      "peer": "raw socket handoff is not same-contract",
+      "scale": "once per upgraded connection",
+      "absolute": "normal HTTP adds zero field, branch, allocation or syscall; handoff is O(1) and zero prefix copy",
+      "ratio_ci": "N/A",
+      "sensitivity": "opt-in upgrade only",
+      "mechanism": "move transport and prefix allocation",
+      "limitations": "ordinary HTTP performance is separately inherited",
+      "evidence": [
+        "docs/implementation/tasks/io/io-http-v4-upgrade-handoff.md"
+      ]
     },
     {
-      "id": "http2-small", "modules": ["io_http2"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "h2c multiplex and flow-control small responses", "contract": "same session, body, window, chunk, ownership, validation and teardown",
-      "peer": "nghttp2 85e300c7", "scale": "64 streams of 1 KiB", "absolute": "HYLE 201.87-204.51 K op/s; peer 139.54-140.93 K",
-      "ratio_ci": "1.4658-1.4780; both intervals above 1.383", "sensitivity": "win holds in both orders",
-      "mechanism": "owner progress without redundant outer session monitor", "limitations": "h2c single-worker engineering shape",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-http2-p1-v2-4060e217/summary.json"]
+      "id": "http2-small",
+      "modules": [
+        "io_http2"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "h2c multiplex and flow-control small responses",
+      "contract": "same session, body, window, chunk, ownership, validation and teardown",
+      "peer": "nghttp2 85e300c7",
+      "scale": "64 streams of 1 KiB",
+      "absolute": "HYLE 201.87-204.51 K op/s; peer 139.54-140.93 K",
+      "ratio_ci": "1.4658-1.4780; both intervals above 1.383",
+      "sensitivity": "win holds in both orders",
+      "mechanism": "owner progress without redundant outer session monitor",
+      "limitations": "h2c single-worker engineering shape",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-http2-p1-v2-4060e217/summary.json"
+      ]
     },
     {
-      "id": "http2-large", "modules": ["io_http2"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "h2c multiplex and flow-control large responses", "contract": "same session and lifecycle contract",
-      "peer": "nghttp2 85e300c7", "scale": "4 streams of 256 KiB", "absolute": "HYLE 5308.97-5341.92 op/s; peer 5286.09-5313.12",
-      "ratio_ci": "1.0002-1.0105; both intervals cross 1", "sensitivity": "no fixed direction under order",
-      "mechanism": "payload bandwidth dominates protocol bookkeeping", "limitations": "5% non-inferiority only",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-http2-p1-v2-4060e217/summary.json"]
+      "id": "http2-large",
+      "modules": [
+        "io_http2"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "h2c multiplex and flow-control large responses",
+      "contract": "same session and lifecycle contract",
+      "peer": "nghttp2 85e300c7",
+      "scale": "4 streams of 256 KiB",
+      "absolute": "HYLE 5308.97-5341.92 op/s; peer 5286.09-5313.12",
+      "ratio_ci": "1.0002-1.0105; both intervals cross 1",
+      "sensitivity": "no fixed direction under order",
+      "mechanism": "payload bandwidth dominates protocol bookkeeping",
+      "limitations": "5% non-inferiority only",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-http2-p1-v2-4060e217/summary.json"
+      ]
     },
     {
-      "id": "transfer-local", "modules": ["io_transfer"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "verified atomic local publish", "contract": "same 256 MiB transfer, validation, atomic destination and teardown",
-      "peer": "libcurl", "scale": "256 MiB", "absolute": "HYLE 3.28-3.29 op/s; peer 2.98-3.10",
-      "ratio_ci": "1.0680-1.0980; one interval crosses 1 and one lies above", "sensitivity": "peer-first interval is wide",
-      "mechanism": "local I/O and verification dominate", "limitations": "no fixed two-order superiority",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-transfer-p1-v1-18bf62f8/summary.json"]
+      "id": "transfer-local",
+      "modules": [
+        "io_transfer"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "verified atomic local publish",
+      "contract": "same 256 MiB transfer, validation, atomic destination and teardown",
+      "peer": "libcurl",
+      "scale": "256 MiB",
+      "absolute": "HYLE 3.28-3.29 op/s; peer 2.98-3.10",
+      "ratio_ci": "1.0680-1.0980; one interval crosses 1 and one lies above",
+      "sensitivity": "peer-first interval is wide",
+      "mechanism": "local I/O and verification dominate",
+      "limitations": "no fixed two-order superiority",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-transfer-p1-v1-18bf62f8/summary.json"
+      ]
     },
     {
-      "id": "transfer-range", "modules": ["io_transfer"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "interrupted HTTP Range resume with validation", "contract": "same resume point, bytes, verification and finalization",
-      "peer": "libcurl", "scale": "64 MiB resumed transfer", "absolute": "HYLE 33.63-34.90 op/s; peer 28.03-29.37",
-      "ratio_ci": "1.2063-1.2474; both intervals above 1.1316", "sensitivity": "win holds in both orders",
-      "mechanism": "integrated range state and atomic publish", "limitations": "localhost transfer route, not WAN",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-transfer-p1-v1-18bf62f8/summary.json"]
+      "id": "transfer-range",
+      "modules": [
+        "io_transfer"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "interrupted HTTP Range resume with validation",
+      "contract": "same resume point, bytes, verification and finalization",
+      "peer": "libcurl",
+      "scale": "64 MiB resumed transfer",
+      "absolute": "HYLE 33.63-34.90 op/s; peer 28.03-29.37",
+      "ratio_ci": "1.2063-1.2474; both intervals above 1.1316",
+      "sensitivity": "win holds in both orders",
+      "mechanism": "integrated range state and atomic publish",
+      "limitations": "localhost transfer route, not WAN",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-transfer-p1-v1-18bf62f8/summary.json"
+      ]
     },
     {
-      "id": "io-watch-recursive", "modules": ["io_watch"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "recursive model or asset tree watch with bounded events and rescan", "contract": "native blocking wait, no polling, explicit cap and loss recovery",
-      "peer": "no frozen cross-platform peer with the same recursive lifecycle", "scale": "D watched directories and bounded event banks",
+      "id": "io-watch-recursive",
+      "modules": [
+        "io_watch"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "recursive model or asset tree watch with bounded events and rescan",
+      "contract": "native blocking wait, no polling, explicit cap and loss recovery",
+      "peer": "no frozen cross-platform peer with the same recursive lifecycle",
+      "scale": "D watched directories and bounded event banks",
       "absolute": "not timed; setup O(D+path bytes), steady Linux O(1) descriptor lookup plus root routing, no per-event allocation",
-      "ratio_ci": "N/A", "sensitivity": "OS-native backend cost differs by platform", "mechanism": "ReadDirectoryChangesW, FSEvents or inotify under one bounded API",
-      "limitations": "tree setup/recovery is not the inherited direct-watch P1", "evidence": ["docs/implementation/tasks/io/io-watch-v2-recursive-tree.md"]
+      "ratio_ci": "N/A",
+      "sensitivity": "OS-native backend cost differs by platform",
+      "mechanism": "ReadDirectoryChangesW, FSEvents or inotify under one bounded API",
+      "limitations": "tree setup/recovery is not the inherited direct-watch P1",
+      "evidence": [
+        "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md"
+      ]
     },
     {
-      "id": "io-watch-exact-file", "modules": ["io_watch"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "ACCEPT_TRADEOFF", "consumer_weight": "LOW", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "exact-file atomic replace through the complete watcher lifecycle", "contract": "same established watcher, publish, event-loop dispatch, classification and teardown",
-      "peer": "libuv 3e606bc3", "scale": "one exact-file replace per operation", "absolute": "Windows HYLE 1475-1501 versus 844-937 op/s; WSL 18956-19433 versus 19325-19583; macOS both about 21.23",
+      "id": "io-watch-exact-file",
+      "modules": [
+        "io_watch"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "ACCEPT_TRADEOFF",
+      "consumer_weight": "LOW",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "exact-file atomic replace through the complete watcher lifecycle",
+      "contract": "same established watcher, publish, event-loop dispatch, classification and teardown",
+      "peer": "libuv 3e606bc3",
+      "scale": "one exact-file replace per operation",
+      "absolute": "Windows HYLE 1475-1501 versus 844-937 op/s; WSL 18956-19433 versus 19325-19583; macOS both about 21.23",
       "ratio_ci": "Windows 1.616-1.763 WIN; macOS practical parity; WSL 0.968-0.986 with two of four CI upper bounds below 1",
       "sensitivity": "direction is platform-specific; WSL loss is 1.4-3.2% and two strata are statistically directional",
       "mechanism": "HYLE pays UTF-8 validation, generic multi-target routing, bounded coalescing and fiber wake where libuv compares one basename and calls back",
       "limitations": "accepted low-frequency control-path tradeoff; reopen only if a real reload profile makes it material",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json"]
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json"
+      ]
     },
     {
-      "id": "io-watch-directory-burst", "modules": ["io_watch"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "LOW", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "non-recursive directory event burst through complete watcher lifecycle", "contract": "same established watcher, event batch, validation and teardown",
-      "peer": "libuv 3e606bc3", "scale": "one bounded directory burst", "absolute": "Windows HYLE 4792-4958 versus 1259-1284 op/s; WSL 63264-64099 versus 59064-60047; macOS both about 153.7",
+      "id": "io-watch-directory-burst",
+      "modules": [
+        "io_watch"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "INCONCLUSIVE",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "LOW",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "non-recursive directory event burst through complete watcher lifecycle",
+      "contract": "same established watcher, event batch, validation and teardown",
+      "peer": "libuv 3e606bc3",
+      "scale": "one bounded directory burst",
+      "absolute": "Windows HYLE 4792-4958 versus 1259-1284 op/s; WSL 63264-64099 versus 59064-60047; macOS both about 153.7",
       "ratio_ci": "Windows 3.70-3.89 WIN; WSL 1.063-1.069 with mixed interval certainty; macOS practical parity",
-      "sensitivity": "result depends on OS backend; no cross-platform single direction", "mechanism": "HYLE amortizes routing and wake costs over a borrowed event batch",
-      "limitations": "does not cover recursive trees, network filesystems or reload work", "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-watch-p1-v1-30e133db-w1-win-4c06445c/summary.json", "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json", "evidence/performance/io-watch-p1-v1-30e133db-m1-mac-4c06445c/summary.json"]
+      "sensitivity": "result depends on OS backend; no cross-platform single direction",
+      "mechanism": "HYLE amortizes routing and wake costs over a borrowed event batch",
+      "limitations": "does not cover recursive trees, network filesystems or reload work",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-watch-p1-v1-30e133db-w1-win-4c06445c/summary.json",
+        "evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/summary.json",
+        "evidence/performance/io-watch-p1-v1-30e133db-m1-mac-4c06445c/summary.json"
+      ]
     },
     {
-      "id": "process-structural", "modules": ["process"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "MEDIUM", "candidate_binding": "EXACT",
-      "consumer_shape": "managed child argv, env, cwd, stdio, async wait, process tree and reap", "contract": "cross-platform lifecycle integrated with HYLE Sched and IO",
+      "id": "process-structural",
+      "modules": [
+        "process"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "N/A",
+      "engineering_action": "KEEP",
+      "consumer_weight": "MEDIUM",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "managed child argv, env, cwd, stdio, async wait, process tree and reap",
+      "contract": "cross-platform lifecycle integrated with HYLE Sched and IO",
       "peer": "Boost.Process and libuv lack one entry with the same allocator, fiber wait, LocalStream, tree ownership and shutdown contract",
-      "scale": "one child; one runtime carrier", "absolute": "not timed; O(1) state and handles per child, O(1) cached wait/wake, spawn O(argv+env)",
-      "ratio_ci": "N/A", "sensitivity": "OS carriers differ; raw spawn timing is rejected",
-      "mechanism": "pidfd/epoll, kqueue or registered wait plus existing proactor", "limitations": "control path; no raw-spawn SOTA claim",
-      "evidence": ["docs/implementation/tasks/process/process-v1-managed-child.md"]
+      "scale": "one child; one runtime carrier",
+      "absolute": "not timed; O(1) state and handles per child, O(1) cached wait/wake, spawn O(argv+env)",
+      "ratio_ci": "N/A",
+      "sensitivity": "OS carriers differ; raw spawn timing is rejected",
+      "mechanism": "pidfd/epoll, kqueue or registered wait plus existing proactor",
+      "limitations": "control path; no raw-spawn SOTA claim",
+      "evidence": [
+        "docs/implementation/tasks/process/process-v1-managed-child.md"
+      ]
     },
     {
-      "id": "websocket-mask", "modules": ["io_websocket"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
-      "consumer_shape": "in-place client WebSocket payload masking", "contract": "same RFC mask progression, payload mutation and completion boundary",
-      "peer": "Boost.Beast", "scale": "124 bytes, 4 KiB, 64 KiB and 1 MiB", "absolute": "HYLE 29.6 K-142.8 M op/s; peer 9.0 K-71.1 M by size",
-      "ratio_ci": "2.005-3.354; every qualified interval lies above 1.993", "sensitivity": "win holds across sizes and both orders",
-      "mechanism": "whole-buffer vectorized mask path with one state update", "limitations": "masking kernel, not complete WebSocket server throughput",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-websocket-mask-p1-v1-d4cb26ac-qualified/summary.json"]
+      "id": "websocket-mask",
+      "modules": [
+        "io_websocket"
+      ],
+      "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_EXTERNAL",
+      "qualification": "QUALIFIED_RETAINED",
+      "direction": "WIN",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "in-place client WebSocket payload masking",
+      "contract": "same RFC mask progression, payload mutation and completion boundary",
+      "peer": "Boost.Beast",
+      "scale": "124 bytes, 4 KiB, 64 KiB and 1 MiB",
+      "absolute": "HYLE 29.6 K-142.8 M op/s; peer 9.0 K-71.1 M by size",
+      "ratio_ci": "2.005-3.354; every qualified interval lies above 1.993",
+      "sensitivity": "win holds across sizes and both orders",
+      "mechanism": "whole-buffer vectorized mask path with one state update",
+      "limitations": "masking kernel, not complete WebSocket server throughput",
+      "evidence": [
+        "docs/implementation/evidence/performance/benchmarks-io.md",
+        "evidence/performance/io-websocket-mask-p1-v1-d4cb26ac-qualified/summary.json"
+      ]
     },
     {
       "id": "mem-external-reservation",
@@ -659,7 +1845,6 @@
     {
       "id": "cpu-foundation-cold-binding",
       "modules": [
-        "compute",
         "compute_backend_cpu",
         "compute_provider_native",
         "compute_provider_onednn"
@@ -810,7 +1995,6 @@
     {
       "id": "cpu-graph-r3-decode-fused-boundary-1x256x512",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -841,7 +2025,6 @@
     {
       "id": "cpu-graph-r3-decode-natural-sequence-1x256x512",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -872,7 +2055,6 @@
     {
       "id": "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -903,7 +2085,6 @@
     {
       "id": "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -934,7 +2115,6 @@
     {
       "id": "cpu-graph-r3-holdout-fused-boundary-17x129x257",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -965,7 +2145,6 @@
     {
       "id": "cpu-graph-r3-holdout-natural-sequence-17x129x257",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -996,7 +2175,6 @@
     {
       "id": "cpu-graph-r3-decode-native-sequence-1x256x512",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -1027,7 +2205,6 @@
     {
       "id": "cpu-graph-r3-short-prefill-native-sequence-16x512x1024",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -1058,7 +2235,6 @@
     {
       "id": "cpu-graph-r3-holdout-native-sequence-17x129x257",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -1089,7 +2265,6 @@
     {
       "id": "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -1120,7 +2295,6 @@
     {
       "id": "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
@@ -1151,7 +2325,6 @@
     {
       "id": "cpu-graph-r3-two-worker-native-sequence-17x129x257",
       "modules": [
-        "graph",
         "graph_provider_onednn",
         "graph_route_cpu"
       ],
