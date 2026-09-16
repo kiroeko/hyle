@@ -49,3 +49,6 @@ CPU2，retain 恢复后正常释放/退出；第二次保持整个进程单核�
 
 本诊断停止，不再追加启动。后续固定可真实表达 native helper 的采集合同与有限进度回归；不把
 两次干预直接当成产品修复、完整性能通过或所有驱动的结论。
+
+当前有限修正由[独立 native-runtime 拓扑工具任务](../project/performance-native-runtime-topology-2026-09.md)
+承接：现有自有 worker 合同不能如实表达 opaque SDK 的线程管理，不在模块里假报逐线程 pin。
