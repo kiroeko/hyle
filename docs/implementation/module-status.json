@@ -278,14 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
-      "resume_condition": "用户明确裁决约 12 微秒 decode-fused 小片段的验收取舍，或授权新的有限成本优化轮；先按新边界进入 SCOPED/AUDITED。不得重跑 1a3a8d0e/7fa6dc0a 的既有 P1、追加样本、放宽统计门或沿旧 FIX 无限续作。",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Graph v3 已完成 n=31；decode-fused-boundary-1x256x512 的一个 CI 下界 0.9517370300 低于 1/1.05，其余 11/12 非劣 PASS，资格通过但工程性能 INCONCLUSIVE；本轮修正及采样预算已止。",
-      "blocker_owner": "graph_route_cpu；验收取舍或新有限优化预算由用户裁决"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "summary": "R3 验收例外 SCOPED：用户已明确接受唯一 decode-fused 未决限制；仅登记原始统计与工程取舍，不修改产品、不构建、不重跑 P1，按状态流结束 R3。"
     },
     {
       "module": "container_concurrent",
@@ -376,14 +371,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
-      "resume_condition": "用户明确裁决约 12 微秒 decode-fused 小片段的验收取舍，或授权新的有限成本优化轮；先按新边界进入 SCOPED/AUDITED。不得重跑 1a3a8d0e/7fa6dc0a 的既有 P1、追加样本、放宽统计门或沿旧 FIX 无限续作。",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Graph v3 已完成 n=31；decode-fused-boundary-1x256x512 的一个 CI 下界 0.9517370300 低于 1/1.05，其余 11/12 非劣 PASS，资格通过但工程性能 INCONCLUSIVE；本轮修正及采样预算已止。",
-      "blocker_owner": "graph_route_cpu；验收取舍或新有限优化预算由用户裁决"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+      "summary": "R3 验收例外 SCOPED：用户已明确接受唯一 decode-fused 未决限制；仅登记原始统计与工程取舍，不修改产品、不构建、不重跑 P1，按状态流结束 R3。"
     },
     {
       "module": "compute_ops",
@@ -430,14 +420,9 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "BLOCKED",
-      "summary": "R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。",
-      "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
-      "resume_condition": "用户明确裁决约 12 微秒 decode-fused 小片段的验收取舍，或授权新的有限成本优化轮；先按新边界进入 SCOPED/AUDITED。不得重跑 1a3a8d0e/7fa6dc0a 的既有 P1、追加样本、放宽统计门或沿旧 FIX 无限续作。",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Graph v3 已完成 n=31；decode-fused-boundary-1x256x512 的一个 CI 下界 0.9517370300 低于 1/1.05，其余 11/12 非劣 PASS，资格通过但工程性能 INCONCLUSIVE；本轮修正及采样预算已止。",
-      "blocker_owner": "graph_route_cpu；验收取舍或新有限优化预算由用户裁决"
+      "state": "SCOPED",
+      "summary": "R3 验收例外 SCOPED：用户已明确接受唯一 decode-fused 未决限制；仅登记原始统计与工程取舍，不修改产品、不构建、不重跑 P1，按状态流结束 R3。",
+      "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md"
     },
     {
       "module": "compute_provider_cublas",
