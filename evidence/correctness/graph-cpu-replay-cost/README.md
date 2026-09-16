@@ -7,7 +7,7 @@
 
 | 环境 | 定向 source/真实 consumer | 搬迁后 shared Graph/Sched | 搬迁后 static Graph/Sched |
 |---|---|---|---|
-| Windows / MSVC 19.50 | 7/7 PASS | 2/2 PASS | 尚待运行 |
+| Windows / MSVC 19.50 | 7/7 PASS | 2/2 PASS | 2/2 PASS |
 | WSL / GCC 14 | 7/7 PASS | 2/2 PASS | 2/2 PASS |
 | MacBook Air / AppleClang | 6/6 PASS | 2/2 PASS | 2/2 PASS |
 | Mac mini / AppleClang | 6/6 PASS | 2/2 PASS | 2/2 PASS |
@@ -21,5 +21,10 @@ windows-source.zip 保留首轮 source 完整构建/测试、DLL 记录、已验
 mac-air.tar.gz / mac-mini.tar.gz 各自保留 source/shared/static 全部日志、cache 和 recipe；891 个
 product/build/test 文件均与 Windows 候选投影逐一匹配，仅日志和收据回传，没有反向同步产品代码。
 
-WSL sanitizer 与新的 Graph P1 尚待执行完成，Windows static 消费将使用该冻结静态产物。
+WSL ASan、UBSan、TSan 均各 5/5 PASS，覆盖 Graph/Executable、oneDNN region、默认 Graph 与真实
+Sched consumer；linux.tar.gz 保留三交付及全部 sanitizer 的实际日志、cache 与 recipe。外部 oneDNN
+JIT 不宣称被插桩。Windows static 使用同一 P1 冻结产物安装/搬迁，Graph/Sched 消费 2/2 PASS；
+windows-static.zip 保留日志、cache 与实际 DLL 相邻部署。全部预声明普通验证到此完成。
+[新 Graph P1](../../performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md) 的资格 PASS，
+11/12 非劣 PASS，整体 INCONCLUSIVE；约 12 微秒 decode 的一个 CI 下界仍越过 5% 门。
 当前目录不签整个 R3 PASS，也不把普通验证当成速度证据。原 Direct P1 和未变化模块验收继续复用。

@@ -1,6 +1,6 @@
 # R3 Graph：同实现重复执行成本的定向审计
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: BLOCKED -->
 
 ## Closure card
 
@@ -17,7 +17,7 @@
   建立逐阶段成本账单，检查冷准备已经证明的事实是否在热路径被重复计算。只按具体调用读依赖。
 - 非目标：变更数学内核/默认 Provider 规则、扩充算子、重开 Sched 算法、放宽统计门或重新调核/idle；
   不新增公共 profile、通用执行器、用户手动排序或无需求的双轨 API。
-- 当前仅 SCOPED 源码审计，不授权尚未定界的产品改动。确有多余工作后固定有限 FIX 并进入 AUDITED；
+- 初始 SCOPED 阶段只作源码审计，不授权尚未定界的产品改动。确有多余工作后固定有限 FIX 并进入 AUDITED；
   如缺口属于 Compute 等其他 owner，先单独绑定精确依赖，不借本卡越权修改。
 - 预算：源码/生成代码成本审计最多 40 分钟；只保留一个最小机制纠正方向。确需动态归因时，在现行
   Direct 验收结束后预先固定至多 8 个短 diagnostic 进程，使用真实片段，不以 probe 签性能 PASS。
@@ -135,3 +135,49 @@ WSL sanitizer、新 Graph P1 仍待实际完成；没有把普通验证写成性
 补记已 CLOSED 的 compute_ops schema 与 Mem reservation P0。Mem logical-range 的源码和合同
 未变，明确标作 inherited unchanged route；不重新采样。施工中的 Direct 全部四项和旧 Graph 全部
 十二项方向继续单列，包含固定 LOSS 与未决项，不冒充当前 CLOSED 覆盖。
+
+WSL ASan/UBSan/TSan 后续实际完成，各 5/5 PASS；Graph/Executable、oneDNN region、默认
+Graph 与真实 Sched consumer 全部回放，外部 oneDNN JIT 不作插桩声明。linux.tar.gz 已保留全部
+原始记录。普通验证到此仅余 Windows static 消费；为避免重编同一依赖，将直接使用新 P1 的冻结
+静态产品产物安装/搬迁。Graph P1 已以 source `7fa6dc0a8b3b857a1835525de0d0e7be5f8db5e9`、
+Native peer `1a3a8d0e40a2a17250119369331c712718a4d880` 启动；两者产品投影相同，尚无性能裁决。
+
+## Terminal：修正已完成，工程性能仍未决
+
+RC1/RC2 与全部预声明普通验证完成。Windows source 7/7、WSL source 7/7、Air/Mini source 各
+6/6；四环境搬迁后 shared/static Graph/Sched 消费均各 2/2 PASS。WSL ASan/UBSan/TSan 各
+5/5 PASS。Windows static 直接安装已冻结 P1 产物，未重复编译；运行前 DLL 相邻部署。
+
+[Graph v3 完整工程证据](../../../../evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md)
+已保留。qualification、实际 workload A/A、全部五项 controls、artifact/build validators 和 deep
+verify 的身份/路径检查均 PASS；n=15 后按原合同进入 n=31，此后停止。工程门 11/12 PASS，聚合
+INCONCLUSIVE。严格方向为 4 LOSS / 2 WIN / 6 INCONCLUSIVE，未把非劣改写为 parity。
+
+原双 worker 同实现项已过非劣门；新候选的 median ratio 0.972652–0.977621，全部 CI 在 1 下方，
+所以严格方向仍是 LOSS。这个跨候选变化不能当作同轮配对的修复加速比。
+
+本轮唯一未决项是 `decode-fused-boundary-1x256x512`，即 Graph 与相同 oneDNN BRGEMM + HYLE
+SIMD 的直接融合调用。Graph 单片段约 11.79–12.29 微秒，paired median ratio 0.966131–0.974263，
+对应约 2.6%–3.5% 额外耗时。`placement-peer-first-candidate-allocation-first` 的 98.9326% CI 为
+[0.9517370300377059, 0.9726927370864213]，低于非劣下界 1/1.05=0.9523809523809523；其退化
+上界约 5.07%，因此不能签 5% 非劣 PASS。这是未决，不是已经证明 material FAIL；稳定小幅落后
+本身保留为 LOSS。绝对时间范围不用于重算 paired ratio。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：只做 RC1/RC2，原比较条件和样本预算不变 |
+| architecture | PASS：cold proof 复用，保留 Queue 当前 owner/admission/真实 completion |
+| correctness | PASS：四环境 Graph/真实 FFN/Sched、变化输入、关闭/异步/失败与三项 sanitizer |
+| delivery | PASS：四环境 source + relocated static/shared 普通消费 |
+| usability_docs | PASS：普通入口不变，成本/适用域与证据限制明确 |
+| red_team | PASS：候选后独立源码复核及受影响风险回放，没有新产品缺陷 |
+| engineering_performance | INCONCLUSIVE：资格通过，但一个已运行的适用 P1 项仍未能通过非劣门 |
+
+三个 Graph owner 因此 BLOCKED，不能 CLOSED；原 R3 其它 owner 和整体四路线 goal 不算完成。
+本卡的一轮机制修正和唯一新候选采样预算已使用完毕，不再追加本候选采样、核/idle/顺序变体，
+也不把约 0.07 个百分点的 CI 越界自动豁免。用户需要裁决是否接受这个已量化的未决限制，或授权
+另一个有明确预算的成本优化轮；批准前保持上述事实和状态，不按文档修订重建。
+
+resume_condition：用户明确裁决该小片段验收取舍，或授权新的有限成本优化轮；依新边界进入
+SCOPED/AUDITED。不能恢复旧 FIX 队列。统一实现统计仍为 Compute + Graph 31,021 行，不含测试，
+包含保留的既有代码，不代表新基础架构完成量。

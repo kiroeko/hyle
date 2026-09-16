@@ -278,10 +278,14 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph replay 成本修正 CANDIDATE 1a3a8d0e：RC1/RC2 已实现，Windows 定向正确性 7/7 PASS；受影响平台/三交付与唯一新候选 P1 待验，原 v2 未决结果保留。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
+      "summary": "R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "resume_condition": "用户明确裁决约 12 微秒 decode-fused 小片段的验收取舍，或授权新的有限成本优化轮；先按新边界进入 SCOPED/AUDITED。不得重跑 1a3a8d0e/7fa6dc0a 的既有 P1、追加样本、放宽统计门或沿旧 FIX 无限续作。",
+      "blocked_from": "CANDIDATE",
+      "blocker": "Graph v3 已完成 n=31；decode-fused-boundary-1x256x512 的一个 CI 下界 0.9517370300 低于 1/1.05，其余 11/12 非劣 PASS，资格通过但工程性能 INCONCLUSIVE；本轮修正及采样预算已止。",
+      "blocker_owner": "graph_route_cpu；验收取舍或新有限优化预算由用户裁决"
     },
     {
       "module": "container_concurrent",
@@ -372,10 +376,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "summary": "R3 Graph replay 成本修正 CANDIDATE 1a3a8d0e：RC1/RC2 已实现，Windows 定向正确性 7/7 PASS；受影响平台/三交付与唯一新候选 P1 待验，原 v2 未决结果保留。",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
+      "summary": "R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。",
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "resume_condition": "用户明确裁决约 12 微秒 decode-fused 小片段的验收取舍，或授权新的有限成本优化轮；先按新边界进入 SCOPED/AUDITED。不得重跑 1a3a8d0e/7fa6dc0a 的既有 P1、追加样本、放宽统计门或沿旧 FIX 无限续作。",
+      "blocked_from": "CANDIDATE",
+      "blocker": "Graph v3 已完成 n=31；decode-fused-boundary-1x256x512 的一个 CI 下界 0.9517370300 低于 1/1.05，其余 11/12 非劣 PASS，资格通过但工程性能 INCONCLUSIVE；本轮修正及采样预算已止。",
+      "blocker_owner": "graph_route_cpu；验收取舍或新有限优化预算由用户裁决"
     },
     {
       "module": "compute_ops",
@@ -417,16 +425,20 @@
     {
       "module": "compute_route_cpu",
       "state": "CANDIDATE",
-      "summary": "R3 CPU Direct 候选 d9712e68：默认工厂与缺席 oneDNN 静态导出修正已固定；回归父卡完成剩余 Direct 工程 P1/三交付，Graph 性能 blocker 独立保留。",
+      "summary": "R3 CPU Direct 候选 d9712e68：普通入口/固定规则、四环境三交付与适用 sanitizer 已验收，engineering P1 4/4 PASS。Graph 独立工程门仍未决，R3 总包未 CLOSED；不重跑 Direct。",
       "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
       "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "R3 Graph replay 成本修正 CANDIDATE 1a3a8d0e：RC1/RC2 已实现，Windows 定向正确性 7/7 PASS；受影响平台/三交付与唯一新候选 P1 待验，原 v2 未决结果保留。",
+      "state": "BLOCKED",
+      "summary": "R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。",
       "record": "docs/implementation/tasks/compute/cpu-graph-replay-cost-audit.md",
-      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880"
+      "candidate": "1a3a8d0e40a2a17250119369331c712718a4d880",
+      "resume_condition": "用户明确裁决约 12 微秒 decode-fused 小片段的验收取舍，或授权新的有限成本优化轮；先按新边界进入 SCOPED/AUDITED。不得重跑 1a3a8d0e/7fa6dc0a 的既有 P1、追加样本、放宽统计门或沿旧 FIX 无限续作。",
+      "blocked_from": "CANDIDATE",
+      "blocker": "Graph v3 已完成 n=31；decode-fused-boundary-1x256x512 的一个 CI 下界 0.9517370300 低于 1/1.05，其余 11/12 非劣 PASS，资格通过但工程性能 INCONCLUSIVE；本轮修正及采样预算已止。",
+      "blocker_owner": "graph_route_cpu；验收取舍或新有限优化预算由用户裁决"
     }
   ]
 }

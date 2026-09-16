@@ -77,7 +77,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | compute_ops 为 P0 schema；施工中的 CPU Direct 4/4 P1 PASS，Graph v2 11/12 非劣 PASS、聚合未决，见下方完整方向 | 四路线 runtime/Provider/Graph 尚在当前重构中；GPU 新路线未验收，历史 copy/跨域结果不继承为新路线完成 |
+| Compute / Graph | compute_ops 为 P0 schema；施工中的 CPU Direct 4/4 P1 PASS，Graph v3 11/12 非劣 PASS、聚合未决，见下方完整方向 | 四路线 runtime/Provider/Graph 尚在当前重构中；GPU 新路线未验收，历史 copy/跨域结果不继承为新路线完成 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线
@@ -90,8 +90,8 @@ Build/package 是横向交付单元而非 runtime factor。source embed、instal
 
 ## 所有当前负向事实
 
-已收口机器账本中的合同尚无所有适用 strata 的 CI 均固定在 1 以下的聚合项。施工中的 CPU Graph
-已有五项固定 LOSS，完整列于下方，不因尚未 CLOSED 而省略。其它负向事实也继续保留：
+已收口机器账本中的合同尚无所有适用 strata 的 CI 均固定在 1 以下的聚合项。施工中的 CPU Graph v3
+有四项固定 LOSS，v2 的五项也保留为历史事实，完整列于下方，不因尚未 CLOSED 而省略。其它负向事实也继续保留：
 
 | 路线 | 事实 | 根因 / 行动 |
 |---|---|---|
@@ -142,7 +142,7 @@ python scripts/check-docs.py
 任何模块从 `CLOSED` 合法重开并签发新 candidate 后，账本 candidate 会故意失配，迫使维护者重新判断旧
 证据是 exact、可证明继承，还是已经失效；这不是第二套状态机。
 
-## 2026-09-16：R3 Graph 未收口的合格证据
+## 2026-09-16：R3 Graph v2（历史候选）
 
 以下 owner 尚未 CLOSED，单独列出完整性能方向，不并入上文当前 CLOSED 数量。
 [原始工程证据](../../../../evidence/performance/graph-cpu-route-p1-v2-2b613413-w1-win/README.md)
@@ -164,7 +164,7 @@ python scripts/check-docs.py
 | two-worker-natural-sequence-17x129x257 | 1.157200–1.173222 | 1.137193–1.202477 | WIN | PASS |
 | two-worker-native-sequence-17x129x257 | 1.268071–1.317464 | 1.242161–1.330614 | WIN | PASS |
 
-用户已要求专门审计同实现包装税；当前工程动作 INVESTIGATE，旧候选停止采样。
+该候选已停止采样；定向产品修正后的 v3 完整结果见下节，历史固定负向与未决事实保留。
 
 ## 2026-09-16：R3 CPU Direct 默认入口
 
@@ -178,3 +178,28 @@ R3 尚待 Graph，因此暂不并入上文历史 CLOSED 计数。
 | decode-row-major-f32-matmul-m4-k1024-n1024 | 0.997917–1.003004 | 0.993853–1.006296 | INCONCLUSIVE | PASS |
 | short-prefill-row-major-f32-matmul-m32-k512-n1024 | 1.047825–1.063461 | 1.027823–1.076037 | WIN | PASS |
 | decode-transposed-weight-f32-matmul-m1-k1024-n1024 | 0.997157–1.003399 | 0.981472–1.011034 | INCONCLUSIVE | PASS |
+
+## 2026-09-16：R3 Graph v3 修正后仍有一项未决
+
+[完整原始包](../../../../evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md)：
+资格、实际 workload A/A、五项 controls 与身份深检 PASS，n=31 已到上限；11/12 非劣门 PASS。
+原双 worker 同实现项已过门。唯一未决为约 12 微秒 decode-fused 的一个 CI，下界
+0.9517370300 仍低于 1/1.05；中位额外耗时约 2.6%–3.5%，其 CI 允许的退化上界约 5.07%。
+不能把该项写为 PASS，也没有足够结论写成 material FAIL。三个 Graph owner BLOCKED，等待
+用户裁决小片段的验收取舍或新有限任务；本候选不再采样。当前 4 LOSS / 2 WIN / 6 INCONCLUSIVE
+继续单列，不计入机器账本的 CLOSED 模块声明。
+
+| Workload | median ratio 范围 | 全部分层 CI 外界 | 严格方向 | 非劣门 |
+|---|---|---|---|---|
+| decode-fused-boundary-1x256x512 | 0.966131–0.974263 | 0.951737–0.984423 | LOSS | UNRESOLVED |
+| decode-natural-sequence-1x256x512 | 0.987477–0.995959 | 0.977373–1.005240 | INCONCLUSIVE | PASS |
+| short-prefill-fused-boundary-16x512x1024 | 0.990410–1.002805 | 0.985584–1.014731 | INCONCLUSIVE | PASS |
+| short-prefill-natural-sequence-16x512x1024 | 0.993661–1.003142 | 0.985273–1.015241 | INCONCLUSIVE | PASS |
+| holdout-fused-boundary-17x129x257 | 0.987678–0.995114 | 0.981875–0.999792 | LOSS | PASS |
+| holdout-natural-sequence-17x129x257 | 0.991623–0.994412 | 0.983759–1.001743 | INCONCLUSIVE | PASS |
+| decode-native-sequence-1x256x512 | 1.005643–1.012878 | 0.999680–1.021756 | INCONCLUSIVE | PASS |
+| short-prefill-native-sequence-16x512x1024 | 0.978415–0.993894 | 0.970855–1.000433 | INCONCLUSIVE | PASS |
+| holdout-native-sequence-17x129x257 | 0.962867–0.967719 | 0.955836–0.971654 | LOSS | PASS |
+| two-worker-fused-boundary-17x129x257 | 0.972652–0.977621 | 0.961814–0.993454 | LOSS | PASS |
+| two-worker-natural-sequence-17x129x257 | 1.162959–1.175137 | 1.144884–1.187616 | WIN | PASS |
+| two-worker-native-sequence-17x129x257 | 1.300473–1.320614 | 1.277643–1.333040 | WIN | PASS |

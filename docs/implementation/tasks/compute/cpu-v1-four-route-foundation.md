@@ -256,3 +256,11 @@ M=32 1.047825–1.063461 WIN，其余三个 Native 域 INCONCLUSIVE；不把它�
 [完整证据](../../../../evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md)
 已保留。旧误用 Formal 的 DIAGNOSTIC 不改写；本轮不再测 Direct。Graph 按用户要求进入
 [定向成本修正](cpu-graph-replay-cost-audit.md)，其产品/普通验证与 P1 尚未完成，R3 仍未 CLOSED。
+
+## Graph 定向成本修正的停止裁决
+
+[Graph replay 成本任务](cpu-graph-replay-cost-audit.md) 的 RC1/RC2、四环境三交付和三项
+sanitizer 已完成。新 Graph v3 P1 的资格 PASS，旧双 worker 非劣项已通过；约 12 微秒的
+单线程 decode-fused 仍有一个 CI 越过 5% 门，11/12 工程门 PASS、聚合 INCONCLUSIVE。
+样本已到 n=31 上限，三个 Graph owner BLOCKED，等待明确取舍或新有限任务。Direct 4/4 PASS
+继续有效，R3 总包及四路线基础架构均未完成；不通过追加原样测量解除阻塞。

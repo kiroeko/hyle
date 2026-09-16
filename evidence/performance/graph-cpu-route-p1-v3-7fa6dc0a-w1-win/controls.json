@@ -1,0 +1,375 @@
+[
+  {
+    "details": {
+      "kind": "aa",
+      "maximum_bias_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9934818589906399,
+              1.0100355356530337
+            ],
+            "confidence_level": 0.9893261594697833,
+            "estimator": "process-median",
+            "independent_clusters": 31,
+            "median_advantage_ratio": 1.0000515930335436,
+            "sample_count": 31
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        },
+        "peer-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9913172162504983,
+              1.005165032724046
+            ],
+            "confidence_level": 0.9893261594697833,
+            "estimator": "process-median",
+            "independent_clusters": 31,
+            "median_advantage_ratio": 0.9986562052322543,
+            "sample_count": 31
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        }
+      }
+    },
+    "gate": "PASS",
+    "id": "aa"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.025,
+        1.075
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.0372322373915444,
+            1.0538468853237726
+          ],
+          "confidence_level": 0.9893261594697833,
+          "estimator": "process-median",
+          "independent_clusters": 31,
+          "median_advantage_ratio": 1.0483967125819178,
+          "sample_count": 31
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0386209375004785,
+            1.059184681066876
+          ],
+          "confidence_level": 0.9893261594697833,
+          "estimator": "process-median",
+          "independent_clusters": 31,
+          "median_advantage_ratio": 1.05167919044024,
+          "sample_count": 31
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta5"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.05,
+        1.15
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 10.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.0917537238738997,
+            1.1074585714781935
+          ],
+          "confidence_level": 0.9893261594697833,
+          "estimator": "process-median",
+          "independent_clusters": 31,
+          "median_advantage_ratio": 1.1023000541587922,
+          "sample_count": 31
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0933571496498773,
+            1.1066262670183298
+          ],
+          "confidence_level": 0.9893261594697833,
+          "estimator": "process-median",
+          "independent_clusters": 31,
+          "median_advantage_ratio": 1.1004035473742144,
+          "sample_count": 31
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta10"
+  },
+  {
+    "details": {
+      "kind": "timer-floor",
+      "minimum_workload_floor_multiple": 20.0,
+      "workloads": [
+        {
+          "candidate_median_ns_per_op": 11958.168037519974,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "decode-fused-boundary-1x256x512",
+          "measurement_batch": 1,
+          "observed_multiple": 58372.43364854256,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 11637.295653560093
+        },
+        {
+          "candidate_median_ns_per_op": 11731.76760207155,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "decode-natural-sequence-1x256x512",
+          "measurement_batch": 1,
+          "observed_multiple": 58197.83284896917,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 11602.486737793151
+        },
+        {
+          "candidate_median_ns_per_op": 541820.4113251081,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "short-prefill-fused-boundary-16x512x1024",
+          "measurement_batch": 1,
+          "observed_multiple": 2712652.4782025227,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 540802.1718654764
+        },
+        {
+          "candidate_median_ns_per_op": 557830.2635636746,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "short-prefill-natural-sequence-16x512x1024",
+          "measurement_batch": 1,
+          "observed_multiple": 2798065.033009472,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 558707.6017752958
+        },
+        {
+          "candidate_median_ns_per_op": 29275.351327598073,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "holdout-fused-boundary-17x129x257",
+          "measurement_batch": 1,
+          "observed_multiple": 145061.5191200713,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 28919.88016327942
+        },
+        {
+          "candidate_median_ns_per_op": 29206.072355213844,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "holdout-natural-sequence-17x129x257",
+          "measurement_batch": 1,
+          "observed_multiple": 145391.16678882876,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 28985.599667214017
+        },
+        {
+          "candidate_median_ns_per_op": 11705.437428527088,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "decode-native-sequence-1x256x512",
+          "measurement_batch": 1,
+          "observed_multiple": 58714.23137856225,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 11851.792158118074
+        },
+        {
+          "candidate_median_ns_per_op": 539990.3342084459,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "short-prefill-native-sequence-16x512x1024",
+          "measurement_batch": 1,
+          "observed_multiple": 2660361.858309467,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 530377.3640312289
+        },
+        {
+          "candidate_median_ns_per_op": 29232.368258314025,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "holdout-native-sequence-17x129x257",
+          "measurement_batch": 1,
+          "observed_multiple": 141473.86597667035,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 28204.63535125806
+        },
+        {
+          "candidate_median_ns_per_op": 29858.455989382335,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "two-worker-fused-boundary-17x129x257",
+          "measurement_batch": 1,
+          "observed_multiple": 146271.1741733313,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 29161.040461278426
+        },
+        {
+          "candidate_median_ns_per_op": 29770.292157608055,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "two-worker-natural-sequence-17x129x257",
+          "measurement_batch": 1,
+          "observed_multiple": 149327.16804664876,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 34613.06487597901
+        },
+        {
+          "candidate_median_ns_per_op": 29493.362357821505,
+          "conservative_floor_ns_per_op": 0.1993628657600205,
+          "gate": "PASS",
+          "id": "two-worker-native-sequence-17x129x257",
+          "measurement_batch": 1,
+          "observed_multiple": 147938.09391425792,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19704643427235946,
+              "peer_median_ns_per_op": 0.1993628657600205
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19839281839734904,
+              "peer_median_ns_per_op": 0.19878618065021764
+            }
+          },
+          "peer_median_ns_per_op": 38561.29463182419
+        }
+      ]
+    },
+    "gate": "PASS",
+    "id": "timer-floor"
+  },
+  {
+    "details": {
+      "kind": "placement",
+      "target_variants": [
+        "placement",
+        "primary"
+      ]
+    },
+    "gate": "PASS",
+    "id": "placement"
+  }
+]
