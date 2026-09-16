@@ -1,0 +1,324 @@
+{
+  "schema": "hyle.cuda-qualification-progress-stop/v1",
+  "candidate": "7b3279c8df53681df224e9ce5b30c305edeab0f5",
+  "product_changed": false,
+  "performance_verdict": "INCONCLUSIVE",
+  "graph_p1": "NOT_RUN",
+  "native_cost_timing": "NOT_RUN",
+  "root_cause": "UNPROVEN",
+  "default_winner": "UNPROVEN",
+  "attempts": {
+    "v1": {
+      "candidate": "cc38c398",
+      "raw_product_processes": 1,
+      "complete_product_logs": 0,
+      "accepted_for_p1": false,
+      "aa_gate": "PASS",
+      "aa_process_mask": "caller-only; unmatched",
+      "aa_factor_median_all": {
+        "native-M1": 0.999489657265854,
+        "native-M16": 1.002212888650004,
+        "selected-M1": 1.0022012421221402,
+        "selected-M16": 0.9953821832788423
+      },
+      "artifact_root": "C:\\hv4d1v1"
+    },
+    "v2": {
+      "candidate": "7b3279c8",
+      "raw_product_processes": 91,
+      "complete_product_logs": 90,
+      "accepted_for_p1": false,
+      "aa_gate": "PASS",
+      "aa_process_mask": "0x4",
+      "aa_factor_median_all": {
+        "native-M1": 0.9991806434173851,
+        "native-M16": 1.0028416681754457,
+        "selected-M1": 1.004556372675879,
+        "selected-M16": 1.0013831776897812
+      },
+      "artifact_root": "C:\\hv4d1v2"
+    }
+  },
+  "artifacts": {
+    "C:\\hv4d1v1\\bin\\cublasLt64_13.dll": {
+      "sha256": "e323abd89e0f03c1db91a09d7aeb1928de08e1f86192cc713b335fefe3e368a9",
+      "bytes": 463655536
+    },
+    "C:\\hv4d1v1\\bin\\cudart64_13.dll": {
+      "sha256": "b00ca6f53699120da815bf3e06e2e4285fae2f201235b883dcbb50eec51e2a2a",
+      "bytes": 551024
+    },
+    "C:\\hv4d1v1\\bin\\hyle_compute_route_cuda_bench.exe": {
+      "sha256": "485a563240e7a2d1af214c7013ec0ea49868fad33d60ac86df964306bbf8142c",
+      "bytes": 3294208
+    },
+    "C:\\hv4d1v1\\bin\\hyle_compute_route_cuda_bench_placement.exe": {
+      "sha256": "6806c36ee3ecb46f754151567fd9be87474cb50435f37508fb438def1d1684b9",
+      "bytes": 3372032
+    },
+    "C:\\hv4d1v1\\bin\\hyle_perf_control_bench.exe": {
+      "sha256": "e77059aed75112651f7020aa52269deb7326fa3d0df03ea32da84de8c8aedfe9",
+      "bytes": 88576
+    },
+    "C:\\hv4d1v1\\bin\\msvcp140.dll": {
+      "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb",
+      "bytes": 553552
+    },
+    "C:\\hv4d1v1\\bin\\msvcp140_atomic_wait.dll": {
+      "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241",
+      "bytes": 48800
+    },
+    "C:\\hv4d1v1\\bin\\vcruntime140.dll": {
+      "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2",
+      "bytes": 123472
+    },
+    "C:\\hv4d1v1\\bin\\vcruntime140_1.dll": {
+      "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605",
+      "bytes": 47264
+    },
+    "C:\\hv4d1v2\\bin\\cublasLt64_13.dll": {
+      "sha256": "e323abd89e0f03c1db91a09d7aeb1928de08e1f86192cc713b335fefe3e368a9",
+      "bytes": 463655536
+    },
+    "C:\\hv4d1v2\\bin\\cudart64_13.dll": {
+      "sha256": "b00ca6f53699120da815bf3e06e2e4285fae2f201235b883dcbb50eec51e2a2a",
+      "bytes": 551024
+    },
+    "C:\\hv4d1v2\\bin\\hyle_compute_route_cuda_bench.exe": {
+      "sha256": "07e6645dca9abae07e76ce328792c9df86c2449224ea12fcfe13f9dfa59c420c",
+      "bytes": 3294208
+    },
+    "C:\\hv4d1v2\\bin\\hyle_compute_route_cuda_bench_placement.exe": {
+      "sha256": "78c3c8ceb3c63128bcaccf11f501f9dc54f99663d6ac8207f3bb45cfda828883",
+      "bytes": 3372032
+    },
+    "C:\\hv4d1v2\\bin\\hyle_perf_control_bench.exe": {
+      "sha256": "17e0370e7d7c89ffa9155a06aefb63be378f198990eb91186326cd51cb155a4a",
+      "bytes": 88576
+    },
+    "C:\\hv4d1v2\\bin\\msvcp140.dll": {
+      "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb",
+      "bytes": 553552
+    },
+    "C:\\hv4d1v2\\bin\\msvcp140_atomic_wait.dll": {
+      "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241",
+      "bytes": 48800
+    },
+    "C:\\hv4d1v2\\bin\\vcruntime140.dll": {
+      "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2",
+      "bytes": 123472
+    },
+    "C:\\hv4d1v2\\bin\\vcruntime140_1.dll": {
+      "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605",
+      "bytes": 47264
+    }
+  },
+  "observed_second_delay": {
+    "pid": 49576,
+    "parent_pid": 6560,
+    "observed_process_age_seconds": 168.5322326,
+    "observed_process_cpu_seconds": 162.796875,
+    "active_thread_id": 35060,
+    "captured_stack": false,
+    "capture_error": "OpenProcess WinError 87; process had already exited",
+    "phase": "UNPROVEN; no stack captured",
+    "later_child_stopped": 19972,
+    "delayed_log": "v2/raw/n-15/product-primary-peer-first-peer-allocation-first-compute-cuda-primary-run-07.log"
+  },
+  "bounded_diagnostic": [
+    {
+      "index": 0,
+      "pid": 58028,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9369999999180436
+    },
+    {
+      "index": 1,
+      "pid": 20196,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9380000000819564
+    },
+    {
+      "index": 2,
+      "pid": 69864,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.1719999997876585
+    },
+    {
+      "index": 3,
+      "pid": 16520,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.905999999959022
+    },
+    {
+      "index": 4,
+      "pid": 75460,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9219999997876585
+    },
+    {
+      "index": 5,
+      "pid": 47400,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9840000001713634
+    },
+    {
+      "index": 6,
+      "pid": 56088,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9529999997466803
+    },
+    {
+      "index": 7,
+      "pid": 70684,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.4219999997876585
+    },
+    {
+      "index": 8,
+      "pid": 67708,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.0
+    },
+    {
+      "index": 9,
+      "pid": 61644,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.921000000089407
+    },
+    {
+      "index": 10,
+      "pid": 73396,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.6880000000819564
+    },
+    {
+      "index": 11,
+      "pid": 49432,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.5469999997876585
+    },
+    {
+      "index": 12,
+      "pid": 74856,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9220000002533197
+    },
+    {
+      "index": 13,
+      "pid": 66092,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.8119999999180436
+    },
+    {
+      "index": 14,
+      "pid": 26296,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.0
+    },
+    {
+      "index": 15,
+      "pid": 3012,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.030999999959022
+    },
+    {
+      "index": 16,
+      "pid": 32456,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9219999997876585
+    },
+    {
+      "index": 17,
+      "pid": 46976,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.0
+    },
+    {
+      "index": 18,
+      "pid": 30916,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.969000000040978
+    },
+    {
+      "index": 19,
+      "pid": 62172,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.9840000001713634
+    },
+    {
+      "index": 20,
+      "pid": 23392,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.0
+    },
+    {
+      "index": 21,
+      "pid": 32164,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.984999999869615
+    },
+    {
+      "index": 22,
+      "pid": 15996,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 2.969000000040978
+    },
+    {
+      "index": 23,
+      "pid": 77092,
+      "limit_seconds": 10,
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.0
+    }
+  ],
+  "bounded_diagnostic_conclusion": "24/24 exit 0; no long-delay reproduction or causal verdict",
+  "raw_sha256": "cf08acc5afeb9dd9d4ca8d8dbb1d26d1db79fa76a683afb6711ea35463e393fc"
+}

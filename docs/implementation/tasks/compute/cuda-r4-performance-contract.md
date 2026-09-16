@@ -1,7 +1,8 @@
 # R4 CUDA 性能比较：预审与有限合同
 
-本记录从属 [R4 主卡](cuda-v1-four-route-foundation.md) 的 C1–C5。状态为 **AUDITED / 尚未采样**，
-不是新的产品 owner 或一次已通过的 P1。API/算法、正确性及交付固定后，才把完整 commit/tree、
+本记录从属 [R4 主卡](cuda-v1-four-route-foundation.md) 的 C1–C5。当前为 **BLOCKED / 资格运行已停止**，
+不是新的产品 owner 或一次已通过的 P1。[停止事实](../../../../evidence/correctness/cuda-r4-qualification-progress-stop/README.md)
+保留两次启动和有限诊断；以下是计时前冻结的合同。API/算法、正确性及交付固定后，才把完整 commit/tree、
 编译器、依赖和机器身份写入统一仪器合同并执行正式采样。原 5% 门、n=15→最多31、一次源码归因
 机制纠正预算保持；没有修改公共仪器。
 

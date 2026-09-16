@@ -2,7 +2,8 @@
 
 ## Closure card
 
-- 状态：`AUDITED`。本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
+- 状态：`BLOCKED`，从 `AUDITED` 停止；实际实现和既有验证保留，见文末性能资格进度阻塞。
+  本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
 - owner：`compute_provider_cublas`、`compute_provider_marlin`、`compute_provider_cuda`、
   `compute_route_cuda`、`graph_route_cuda`。五个身份先在 `2e8eb24a` 登记为 `QUEUED`，
   `d1d137e8` 进入 `SCOPED`；另绑定 `compute_backend_cuda` 的下述 C6 私有互操作边。
@@ -317,3 +318,24 @@ memcheck 对 Direct/Graph 完整链路均为 0 errors / 0 bytes leaked。新 cuB
 六个 CUDA owner 继续 AUDITED。剩余工作是已定界的 A/A、固定候选 P1、原生包装成本诊断和由完整
 收益证据约束的默认规则终审；没有重跑 CPU P1、已通过的无关 gate 或把 host 插桩外推成 vendor
 全部源码已检查。
+
+### 性能资格进度阻塞：BLOCKED
+
+[完整事实与原始记录](../../../../evidence/correctness/cuda-r4-qualification-progress-stop/README.md)。
+产品算法未变；`cc38c398` 冻结 FFN 机器合同，`7b3279c8` 修正模块 A/A 的整个进程亲和性。
+匹配 CPU2 进程 mask 的 Direct A/A 16/16 通过，四组总体中位偏差均小于 0.5%。但两次正式启动
+都出现进程超过 120 秒未退出；第二次观测到 168.532 秒进程年龄和 162.797 秒 CPU 时间，活跃
+线程角色及具体阶段未确认。该进程在抓现场前自行退出；后续采样已终止，90 份完整日志和一份
+中断日志全部只作诊断，不签 P1。两核、随后单核、native/cuBLAS/HYLE 小程序及 24 次有限启动
+未再次定位停顿，不能据此归因于驱动、Sched、回收线程或宣布单核不支持。
+
+- blocker owner：R4 CUDA qualification 的进度诊断；产品/SDK/夹具具体责任尚未取证。
+- blocked_from：六个当前 CUDA owner 均为 `AUDITED`；C5 的八个 CLOSED owner、R3 例外及旧 ggml
+  BLOCKED 保持原状态，不重开 CPU 或公共治理。
+- 适用验证：已完成的 ordinary/ASan/UBSan/TSan/device memcheck 与三交付保留；新进度风险为
+  `BLOCKED`，工程性能聚合为 `INCONCLUSIVE`。Graph P1、原生成本计时和默认 winner 终审未运行。
+- 恢复条件：有界独立进度诊断取得实际停顿阶段/owner，或以可复核证据证明夹具/采集边界缺陷；
+  固定针对该事实的有限 FIX 和进度回归后，按 `BLOCKED -> SCOPED -> AUDITED` 恢复所需 owner。
+  没有新事实不重启同一 P1，不增加样本、偷偷换 affinity 或自动给予性能例外。
+- 本次停止不改变完整 goal；尚未完成 R4，更未完成四路线。统一 LOC 在 `7b3279c8` 为
+  **32,665 行 / 107 实现文件**，排除测试和第三方，self-check PASS。

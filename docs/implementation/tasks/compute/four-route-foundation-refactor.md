@@ -11,7 +11,8 @@
 与七门已完成，R1 CLOSED；[R2 共同语义及定向尾项](four-route-common-semantics-v1.md) 也已完成。
 [R3 CPU](cpu-v1-four-route-foundation.md) 的实现与适用验证已完成，唯一已量化的小片段性能未决项经
 用户批准[登记验收例外并结案](cpu-r3-acceptance-exception.md)，原始统计结果保留。
-当前推进 [R4 CUDA](cuda-v1-four-route-foundation.md)：有限审计完成，产品改码已开始。
+当前 [R4 CUDA](cuda-v1-four-route-foundation.md) 已形成真实 Direct/Graph 计算链、三交付和适用
+host/device 检查；性能资格遇间歇进程长停顿，有限定位未取到根因，当前 BLOCKED，默认规则终审未完成。
 R4–R7 尚未完成；研究探针和文档不计为路线交付，完整基础架构未结案。
 
 ## 目标与不做项
