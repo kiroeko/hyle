@@ -169,6 +169,9 @@ host 插桩覆盖，任何未运行项保持未证明。原 C5 frozen candidate 
    不复制 allocator、event pool、stream manager 或开新 Sched 审计。
 4. 性能：与相同选定实现的直接 native 调用/完整 captured FFN 比较包装成本，再给出最强适用完整
    peer。包含必要转换、同步和融合损失；不同格式路线单列，不能签同合同 WIN。
+   [P1 源码预审与有限合同](cuda-r4-performance-contract.md) 已将裸 API 的不同生命周期服务明确
+   归为 NATURAL_ROUTE；产品 NI 使用相同公共生命周期的完整 Provider 组合，不能把更弱裸调用改名
+   为 SAME_CONTRACT。原 5% 门和有限采样/纠正预算不变。
 5. FFI：自然 C++；仅 adapter 内部隔离 CUDA TU/第三方细节，不新增 C 产品或动态 plugin ABI。
 6. 交付：Windows/WSL 上 source/static/shared 正常 consumer；backend-only/CUDA OFF 的裁剪合同。
    Windows 每次新 exe 启动前将实际依赖 DLL 放在同目录，非交互 CTest + 有限 timeout。
