@@ -91,6 +91,17 @@ function(hyle_configure_apple_dependencies)
     INSTALL_RPATH "@loader_path"
     HYLE_DEP_SOURCE_DIR "${mlx_SOURCE_DIR}"
     HYLE_DEP_BINARY_DIR "${mlx_BINARY_DIR}")
+  # The consumer uses its own Apple SDK. Do not export a producer's absolute
+  # CLT/Xcode SDK framework paths into a relocated C++ package.
+  get_target_property(_public_links mlx INTERFACE_LINK_LIBRARIES)
+  set(_relocatable_links "")
+  foreach(_link IN LISTS _public_links)
+    if(_link MATCHES "/(Metal|Foundation|QuartzCore)\\.framework$")
+      set(_link "-framework ${CMAKE_MATCH_1}")
+    endif()
+    list(APPEND _relocatable_links "${_link}")
+  endforeach()
+  set_property(TARGET mlx PROPERTY INTERFACE_LINK_LIBRARIES "${_relocatable_links}")
   set(HYLE_COMPUTE_APPLE_ENABLED ON PARENT_SCOPE)
   message(STATUS "HYLE: MLX ${HYLE_DEP_MLX_VERSION} Metal-only, cold JIT, native region enabled")
 endfunction()

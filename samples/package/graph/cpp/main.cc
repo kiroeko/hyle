@@ -5,6 +5,10 @@
 #include "cuda_ffn.h"
 #include <cstdio>
 #endif
+#if defined(HYLE_COMPUTE_APPLE)
+#include "apple_ffn.h"
+#include <cstdio>
+#endif
 #include <hyle/graph/executable.h>
 #include <hyle/mem/buffer.h>
 
@@ -208,5 +212,13 @@ int main() {
   }
 #endif
 
+#if defined(HYLE_COMPUTE_APPLE)
+  const auto apple_status = sample_apple_graph::run();
+  if (!apple_status.ok()) {
+    const auto message = apple_status.message();
+    std::fprintf(stderr, "Apple graph FFN: %.*s\n", static_cast<int>(message.size()), message.data());
+    return 27;
+  }
+#endif
   return 0;
 }

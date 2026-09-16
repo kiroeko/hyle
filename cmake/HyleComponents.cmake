@@ -513,10 +513,10 @@ _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS
-  compute compute_route_cpu compute_route_cuda compute_backend_cpu compute_backend_cuda compute_provider_native
+  compute compute_route_cpu compute_route_cuda compute_route_apple compute_backend_cpu compute_backend_cuda compute_provider_native
   compute_provider_onednn)
 _hyle_declare_product(graph FACTORS
-  graph graph_route_cpu graph_route_cuda compute_backend_cpu compute_backend_cuda compute_provider_native
+  graph graph_route_cpu graph_route_cuda graph_route_apple compute_backend_cpu compute_backend_cuda compute_provider_native
   compute_provider_onednn graph_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source

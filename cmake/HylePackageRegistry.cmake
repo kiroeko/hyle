@@ -93,7 +93,7 @@ endfunction()
 
 function(hyle_register_package_dependency)
   cmake_parse_arguments(ARG "" "NAME;OWNER"
-    "FEATURES;EXPORT_TARGETS;STATIC_EXPORT_TARGETS;FIND_DEPENDENCIES;STATIC_FIND_DEPENDENCIES;LOCKED_DEPENDENCIES;RUNTIME_FILE_SPECS;DEVELOPMENT_FILE_SPECS;STATIC_DEVELOPMENT_FILE_SPECS;DEVELOPMENT_DIRECTORY_SPECS;STATIC_DEVELOPMENT_DIRECTORY_SPECS;DEVELOPMENT_PROGRAM_SPECS"
+    "FEATURES;EXPORT_TARGETS;STATIC_EXPORT_TARGETS;FIND_DEPENDENCIES;STATIC_FIND_DEPENDENCIES;LOCKED_DEPENDENCIES;RUNTIME_FILE_SPECS;GENERATED_RUNTIME_FILE_SPECS;DEVELOPMENT_FILE_SPECS;STATIC_DEVELOPMENT_FILE_SPECS;DEVELOPMENT_DIRECTORY_SPECS;STATIC_DEVELOPMENT_DIRECTORY_SPECS;DEVELOPMENT_PROGRAM_SPECS"
     ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -132,6 +132,14 @@ function(hyle_register_package_dependency)
     _hyle_package_validate_locked_dependencies(
       "${ARG_NAME}" "${ARG_LOCKED_DEPENDENCIES}" "${ARG_RUNTIME_FILE_SPECS}")
   endif()
+  foreach(_spec IN LISTS ARG_GENERATED_RUNTIME_FILE_SPECS)
+    _hyle_package_parse_generated_asset("${ARG_NAME}" "${_spec}"
+      _producer _source _destination _name)
+    if(NOT _producer IN_LIST ARG_EXPORT_TARGETS)
+      message(FATAL_ERROR
+        "Package dependency '${ARG_NAME}' generated asset producer '${_producer}' must be an exported target of this registry")
+    endif()
+  endforeach()
 
   get_property(_registered GLOBAL PROPERTY HYLE_PACKAGE_DEPENDENCIES)
   if(ARG_NAME IN_LIST _registered)
@@ -164,7 +172,7 @@ function(hyle_register_package_dependency)
   string(TOUPPER "${ARG_NAME}" _key)
   foreach(_field IN ITEMS OWNER FEATURES EXPORT_TARGETS STATIC_EXPORT_TARGETS
       FIND_DEPENDENCIES STATIC_FIND_DEPENDENCIES LOCKED_DEPENDENCIES
-      RUNTIME_FILE_SPECS DEVELOPMENT_FILE_SPECS
+      RUNTIME_FILE_SPECS GENERATED_RUNTIME_FILE_SPECS DEVELOPMENT_FILE_SPECS
       STATIC_DEVELOPMENT_FILE_SPECS DEVELOPMENT_DIRECTORY_SPECS
       STATIC_DEVELOPMENT_DIRECTORY_SPECS DEVELOPMENT_PROGRAM_SPECS)
     set_property(GLOBAL PROPERTY "HYLE_PACKAGE_DEP_${_key}_${_field}"
@@ -296,6 +304,46 @@ function(_hyle_package_parse_asset dependency kind spec out_source out_destinati
   set(${out_name} "${_name}" PARENT_SCOPE)
 endfunction()
 
+function(_hyle_package_parse_generated_asset dependency spec out_producer out_source out_destination out_name)
+  # Generated binaries are deliberately separate from authenticated license
+  # text. They may not exist until the declared native producer has built.
+  string(REPLACE "|" ";" _fields "${spec}")
+  list(LENGTH _fields _count)
+  if(_count LESS 3 OR _count GREATER 4)
+    message(FATAL_ERROR
+      "Package dependency '${dependency}' malformed generated asset '${spec}'; expected producer|source|destination[|name]")
+  endif()
+  list(GET _fields 0 _producer)
+  list(GET _fields 1 _source)
+  list(GET _fields 2 _destination)
+  set(_name "")
+  if(_count EQUAL 4)
+    list(GET _fields 3 _name)
+    _hyle_package_validate_install_name("${dependency}" generated "${_name}")
+  endif()
+  if(NOT TARGET ${_producer})
+    message(FATAL_ERROR "Package dependency '${dependency}' generated asset has no producer target '${_producer}'")
+  endif()
+  get_target_property(_imported ${_producer} IMPORTED)
+  get_target_property(_type ${_producer} TYPE)
+  if(_imported OR NOT _type MATCHES "^(STATIC|SHARED|MODULE)_LIBRARY$")
+    message(FATAL_ERROR "Package dependency '${dependency}' generated asset needs a built producer target")
+  endif()
+  if(NOT IS_ABSOLUTE "${_source}" OR _source MATCHES "\\$<")
+    message(FATAL_ERROR "Package dependency '${dependency}' generated source must be an absolute build-tree path")
+  endif()
+  set(_build_root "${CMAKE_BINARY_DIR}")
+  cmake_path(IS_PREFIX _build_root "${_source}" NORMALIZE _inside_build)
+  if(NOT _inside_build OR IS_DIRECTORY "${_source}")
+    message(FATAL_ERROR "Package dependency '${dependency}' generated source must be a file inside the build tree: '${_source}'")
+  endif()
+  _hyle_package_validate_install_destination("${dependency}" generated "${_destination}")
+  set(${out_producer} "${_producer}" PARENT_SCOPE)
+  set(${out_source} "${_source}" PARENT_SCOPE)
+  set(${out_destination} "${_destination}" PARENT_SCOPE)
+  set(${out_name} "${_name}" PARENT_SCOPE)
+endfunction()
+
 function(_hyle_package_install_file_specs dependency component)
   foreach(_spec IN LISTS ARGN)
     _hyle_package_parse_asset(
@@ -351,6 +399,18 @@ function(hyle_package_install_registered_assets)
       "${_dependency}" RUNTIME_FILE_SPECS _runtime_files)
     _hyle_package_install_file_specs(
       "${_dependency}" Hyle_Runtime ${_runtime_files})
+    _hyle_package_dependency_property(
+      "${_dependency}" GENERATED_RUNTIME_FILE_SPECS _generated_files)
+    foreach(_spec IN LISTS _generated_files)
+      _hyle_package_parse_generated_asset("${_dependency}" "${_spec}"
+        _producer _source _destination _name)
+      if(_name)
+        install(FILES "${_source}" DESTINATION "${_destination}"
+          RENAME "${_name}" COMPONENT Hyle_Runtime)
+      else()
+        install(FILES "${_source}" DESTINATION "${_destination}" COMPONENT Hyle_Runtime)
+      endif()
+    endforeach()
 
     _hyle_package_dependency_property(
       "${_dependency}" DEVELOPMENT_FILE_SPECS _development_files)

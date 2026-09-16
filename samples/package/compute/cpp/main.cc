@@ -5,6 +5,10 @@
 #include "cuda_ffn.h"
 #include <cstdio>
 #endif
+#if defined(HYLE_COMPUTE_APPLE)
+#include "apple_ffn.h"
+#include <cstdio>
+#endif
 #include <hyle/compute/operation.h>
 #include <hyle/compute/prepared_operation.h>
 #if defined(HYLE_COMPUTE_ONEDNN)
@@ -163,6 +167,14 @@ int main() {
     std::fprintf(stderr, "CUDA FFN: %.*s\n", static_cast<int>(message.size()),
                  message.data());
     return 18;
+  }
+#endif
+#if defined(HYLE_COMPUTE_APPLE)
+  const auto apple_status = sample_apple_direct::run();
+  if (!apple_status.ok()) {
+    const auto message = apple_status.message();
+    std::fprintf(stderr, "Apple FFN: %.*s\n", static_cast<int>(message.size()), message.data());
+    return 19;
   }
 #endif
   return 0;

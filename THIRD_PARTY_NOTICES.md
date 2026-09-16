@@ -22,6 +22,10 @@ license text and the notices in each source file control.
 | Google Highway | `simd` portable register, target and mathematics implementation | Apache-2.0 OR BSD-3-Clause | fetched checkout `LICENSE` / `highway-upstream-LICENSE` |
 | xsimd | `simd` target-bound register and mathematics implementation candidate | BSD-3-Clause | fetched checkout `LICENSE` / `xsimd-upstream-LICENSE` |
 | oneDNN | optional `compute` dense row-major f32 MatMul provider | Apache-2.0 | fetched checkout `LICENSE` / `oneDNN-LICENSE` |
+| MLX v0.32.2 | optional Apple Metal native regions, arrays and kernels | MIT | fetched checkout `LICENSE` / `mlx-LICENSE` |
+| Apple Metal-C++ 26 | MLX native Metal/Foundation/QuartzCore declarations | Apache-2.0 | fetched checkout `LICENSE.txt` / `metal-cpp-LICENSE` |
+| nlohmann/json 3.11.3 | MLX implementation dependency | MIT | fetched checkout `LICENSE.MIT` / `mlx-json-LICENSE` |
+| fmt 12.1.0 | MLX implementation dependency | MIT | fetched checkout `LICENSE` / `mlx-fmt-LICENSE` |
 | nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` / `nghttp2-LICENSE` |
 | ggml | `compute` CPU/CUDA operator implementation | MIT | fetched checkout `LICENSE` / `ggml-LICENSE` |
 | volk | `compute` Vulkan meta-loader | MIT | fetched checkout `LICENSE.md` / `volk-LICENSE.md` |

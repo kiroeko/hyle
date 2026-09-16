@@ -1,0 +1,115 @@
+# Apple MLX/Metal：Direct Compute 与 Graph
+
+Apple 路线在同一个 MLX Metal runtime 中保留原生 arrays、编译融合与内存管理。普通 typed Direct
+和 Graph 应用固定的成熟 MLX 规则；用户不排序 Provider、不提交 timing profile。当前 R5 仍在
+[验证中](../implementation/tasks/compute/apple-v1-four-route-foundation.md)，不要将本页当成最终性能证书。
+
+## 构建与三种 C++ 交付
+
+只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C++ 和 Metal 编译工具；
+`xcrun -sdk macosx metal --version`、`xcrun -sdk macosx metallib --version` 必须成功。CLT 本身未必
+包含 Metal CLI。HYLE 不代装系统 SDK；ON 缺条件失败，AUTO 不可用时关闭，OFF 不探测或下载 MLX。
+
+```sh
+cmake -S . -B build-apple -G Ninja \
+  -DHYLE_COMPONENTS="compute;graph" \
+  -DHYLE_COMPUTE_APPLE=ON -DHYLE_COMPUTE_CPU=OFF -DHYLE_COMPUTE_CUDA=OFF \
+  -DHYLE_BUILD_TESTS=OFF -DHYLE_STATIC=ON -DHYLE_INSTALL=ON \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build build-apple --parallel 2
+cmake --install build-apple --prefix /your/sdk
+```
+
+完整源码嵌入使用相同选项和公开 target；安装 SDK 用 `find_package(Hyle ... COMPONENTS compute graph)`。
+设置 `HYLE_STATIC=OFF` 交付 shared，使用独立 build/install prefix。shared HYLE 与消费者共用一份
+shared MLX；不要另外链接另一版本或另一份 static MLX。
+
+```cmake
+target_link_libraries(my_app PRIVATE hyle::graph) # Direct-only 用 hyle::compute
+hyle_stage_apple_runtime(my_app)
+```
+
+这个显式 helper 在 source 和 installed SDK 中相同。它把真实 `mlx.metallib` 放到 EXE 旁，并跟踪资源
+更新；shared SDK 的 native dylib 旁也保有该文件。发布应用时保留邻置资源，不能只复制 executable。
+MLX JIT 仍需要部分预编译基础 kernel，缺文件不是可以忽略的 warning。
+
+SDK 带锁定的 MLX v0.32.2、Metal-C++ 26 和对应许可证；其 CPU/CUDA/Python/GGUF/safetensors 功能
+关闭。Apple 专属头公开 MLX C++ 类型；共同 Compute/Graph 头不要求这些 SDK。
+
+## 普通 typed Direct
+
+下例放在返回 `hyle::Status` 的函数内：
+
+```cpp
+#include <hyle/compute/apple.h>
+#include <array>
+
+namespace mx = mlx::core;
+namespace apple = hyle::compute::apple;
+HYLE_ASSIGN_OR_RETURN(auto context, apple::Context::create());
+const std::array inputs{
+    mx::array({1.f, 2.f, 3.f, 4.f}, {2, 2}),
+    mx::array({2.f, 0.f, 0.f, 3.f}, {2, 2})};
+HYLE_ASSIGN_OR_RETURN(auto program,
+    context.prepare(hyle::compute::MatMul{}, inputs));
+HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation());
+HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
+HYLE_ASSIGN_OR_RETURN(auto work, invocation.submit());
+HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lease
+```
+
+当前 typed 域：二维 F32 MatMul；二维 unsigned affine Q4/group64/F32；F32 SiLU 门控，支持 separate
+inputs 和 packed halves。其它 typed 域明确拒绝。Q4 weight 的 native dtype 是 uint32，shape
+`[N,K/8]`，每 word 按 K 顺序从低 nibble 开始；scale/bias 是 F32 `[N,K/64]`，公式为 `q*scale+bias`。
+Graph 描述用 `apple::affine_q4_description(N,K)`，不把 Marlin/GGUF/其它四位格式直接传入。
+
+`context.compile(callable, input_specs)` 表达更完整的原生 region。`InputSpec` 只含 shape/dtype；
+也可给 ready examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数组列表或
+`hyle::Result<std::vector<mlx::core::array>>`。在其中使用 MLX ops 或 `apple::lower(Operation,...)`
+组合 typed 算子。完整 Direct Q4 FFN 见
+[样例](../../samples/package/compute/cpp/apple_ffn.h)，没有 Graph 依赖。
+
+## Graph 整段编译
+
+用普通 `GraphBuilder` 的 typed operation 构图，再调用：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto program,
+    hyle::graph::apple::compile(context, graph, ready_constants));
+```
+
+constants 按 `Graph::constant_id()` 的顺序，bind inputs 按 `input_id()` 顺序，结果按 publish 顺序。
+其后复用同一 Apple Program/Invocation/OwnedResult 接口。可以释放 Graph 与原 constant 句柄，
+Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes，MLX 保有整段融合；热期不遍历
+HYLE DAG。完整例见 [Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)。
+
+此 Graph lowering 当前接受固定 dense F32 schema 和上述 Q4 编码。native arrays 自身的 stride
+处理仍由 MLX 管理；不是把任意 HYLE buffer 导入 MLX。符号维度、资源效果、显式 control edges 和
+未接入的 typed 操作会拒绝；需要这些能力时不能声称 Apple 已覆盖其它 Graph 路线的全部功能。
+
+纯 custom Operation 可通过 `graph::apple::CompileOptions::custom` 在冷追踪时映射到
+`mlx::core::fast::metal_kernel`。该回调检查完整 schema ID/版本，返回形状/dtype 匹配的 native arrays，
+沿传入的同一 stream 执行。它支持同 runtime 扩展，不承诺任意外部 MTLBuffer/Queue 的零拷贝互通。
+
+## 所有权、线程与成本
+
+- 一个 Context 拥有一个固定提交线程与 GPU stream，按 FIFO 执行完整 region；独立 Context 可并发。
+  冷 compile、隔离零输入暖机、native eval 和 checked synchronize 都在该 owner 上完成。
+- callable 必须 pure，只使用传入的 GPU stream，捕获已成功完成且不可变的常量。不能在回调里调用
+  同一 Context、读取 tensor payload 决定图结构或隐藏外部副作用；它会用隔离输入暖机。
+- bind 只接收已经成功 ready 的 native arrays；pending 输入不隐式等待或复制。保活不允许其它别名
+  同时写 payload。调用方原生 eval 应先做 checked stream synchronize，再把结果交给 HYLE。
+- 同一 Invocation 在执行中或旧结果 lease 未释放时不能覆盖；不同槽可以保留旧结果。拥有型结果
+  使用 MLX 生成的原始数组，不进行影子输出 copy；复制某个原生 array 句柄仍保有其独立原生 owner。
+- Completion/OwnedResult 析构不隐式等待；取消仍等真实已接纳 GPU 工作排空后才回收。失败/取消槽
+  不复用。原生执行错误会封闭 Context 的后续接纳，先 close 再创建新 Context。
+- `close()` 停止接纳、排空并 join，Context 析构同样有 drain 成本。Program/Invocation/结果可比该
+  Context 句柄长寿；关闭后新提交失败，成功结果仍可读。
+- 这是 managed replay：每次一次外层提交、原生 MLX metadata/array/cache 成本、锁/原子/唤醒和一次
+  checked region synchronization 都存在，不宣称零分配 recorded replay。常驻权重、编译和 slot
+  可复用，形状改变需要重新准备。
+
+`context.environment()` 提供冷创建时记录的 GPU 名称/架构、macOS runtime/build、编译 SDK/部署下限、
+Metal compiler 和 MLX pin。规则可匹配这些事实；执行中不探测或计时选优。未知硬件采用合法的成熟
+MLX 基线，不外推 SOTA。默认 deployment 14.4 的构建未启用 NAX，不能拿 M4 验证声明 M5/NAX 资格。
