@@ -2,8 +2,10 @@
 
 ## Closure card
 
-- 状态：`AUDITED`。身份在 `32aade77` 以 `QUEUED` 登记、`8c2f6962` 进入 SCOPED；
-  以下 A1–A6 与 API/成本边界冻结，开始产品实施，尚无路线完成声明。
+- 状态：`CANDIDATE`。身份在 `32aade77` 以 `QUEUED` 登记、`8c2f6962` 进入 SCOPED；
+  A1–A6 经 AUDITED 实施后，API、算法、交付输入与有限性能接线现已固定，尚无路线完成声明。
+- candidate：`1636365bbe47779de24e84d7c7d1ed8088fe1af2`，tree
+  `8e5c24179c53b203ba1509a8d5dff0b805548052`。后续文档/状态不改变产品候选或触发重测。
 - owner：`compute_route_apple` 与 `graph_route_apple`；canonical baseline
   `553a7d6512f68f4b9a1ec9c253b6c4df04616fda`，保留已经 CLOSED 的 R1–R4。
 - trigger：[四路线合同](four-route-foundation-refactor.md) R5 已获实施授权，目前没有 Apple 产品路径。
@@ -190,3 +192,10 @@ MLX Primitive 边界，不给产品添加 fault hook；GPU 前缀是真 square�
 实际可执行文件的 M1/M16、变化输入、独立 packed-weight double oracle，以及 Graph 冷拒绝/恢复。
 预检纠正了一项会放过全零结果的周期 fixture 缺陷；最终数据与 F32 容差在任何计时前固定。
 这些是正确性证据，不是 A/A、P1、Mini 或路线完成声明。
+
+## 不可变候选与剩余验收
+
+普通 Direct/Graph API、typed 域、原生提交与资源所有权、默认成熟规则、source/static/shared 形状及
+性能口径已停止变化。Air 原生与三交付检查点已执行；Windows broad 的已选三交付仍在串行运行。
+Mini、WSL Apple OFF、host 插桩、最终 A/A/P1 和七门汇总继续验收，不将未执行项写成 PASS。
+如候选暴露具体产品缺陷，按 A1–A6 退回 AUDITED 后修正，不在 CANDIDATE 下改动产品。

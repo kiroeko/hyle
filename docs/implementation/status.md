@@ -58,8 +58,8 @@
 | compute_provider_cuda | AUDITED | — | [record](tasks/build/cuda-vendor-content-audit-v1.md) | CUDA vendor content audit AUDITED: V1 canonical path sorting in two lock hashes; V2 call existing content audit before enabled consumers; no runtime change. |
 | compute_route_cuda | AUDITED | — | [record](tasks/build/apple-r5-product-delivery.md) | R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。 |
 | graph_route_cuda | AUDITED | — | [record](tasks/build/apple-r5-product-delivery.md) | R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。 |
-| compute_route_apple | AUDITED | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 A1-A6 audited: pinned MLX GPU region, fixed native submission owner, owning result/checked drain, Direct/Graph and three deliveries. Implementation and applicable validation pending. |
-| graph_route_apple | AUDITED | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 A1-A6 audited: pinned MLX GPU region, fixed native submission owner, owning result/checked drain, Direct/Graph and three deliveries. Implementation and applicable validation pending. |
+| compute_route_apple | CANDIDATE | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 A1-A6 CANDIDATE: native MLX program/result lifecycle, typed Direct/Graph, delivery inputs and finite FFN comparison are fixed. Air correctness checkpoints pass; final platform, host-sanitizer and P1 gates remain pending. |
+| graph_route_apple | CANDIDATE | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 A1-A6 CANDIDATE: native MLX program/result lifecycle, typed Direct/Graph, delivery inputs and finite FFN comparison are fixed. Air correctness checkpoints pass; final platform, host-sanitizer and P1 gates remain pending. |
 
 <!-- END GENERATED MODULE STATUS -->
 
