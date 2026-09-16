@@ -210,3 +210,20 @@ scale 及反量化权重采用 FP16，累加/reduction 采用 FP32。
 C2 仍为实施检查点；C3–C5、普通默认入口、真实 Graph/capture、最终三交付及 P1 未完成。
 selector 扩大的其它 native/package gates 保持未运行，不记 PASS。统一脚本 Compute + Graph
 全实现 **32,183 行**，不含测试及第三方，self-check PASS。
+
+### C3 产品检查点
+
+HYLE CUDA SwiGLU 已接入独立 factor 和无 SDK 类型的公共专家头，
+[W1 shared 初始证据](../../../../evidence/correctness/cuda-r4-kernels/README.md)验证 FP16/FP32、
+packed/separate、48 组 type/layout/shape、双槽及三次变化输入；非法域、NaN/Inf、实际 alias、
+pending/关闭寿命和 metadata OOM 回滚均通过。一个测试按实际 submit binding 检查时机修正后
+定向通过；产品代码和公开合同没有为此改动。selector 的既有 45 个工具测试通过。
+
+冷阶段固定原生 kernel/configuration，热阶段只提交单 kernel。没有 caller workspace 或额外
+native invocation 状态，不把 driver/code image 全局存储记为零。不支持空 shape、非 dense、
+非 FP16/FP32、非 SiLU 或输出元素数超过 INT32_MAX。两种输入布局在最后一维解释 gate/value。
+
+C3 中间片段已经可真实执行；同 GPU 多 Provider 的完整 FFN 仍随 C4 验证。本卡仍 AUDITED，
+普通默认入口、Graph capture、跨平台三交付和 P1 未完成；中央 seam 扩大的其余 native/package
+选择项尚未运行、不记 PASS。统一脚本 Compute + Graph 全实现 **32,562 行**，不含测试及第三方，
+self-check PASS。

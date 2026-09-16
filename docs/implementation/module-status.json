@@ -469,7 +469,7 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
+      "summary": "R4 C3 AUDITED 实施：HYLE CUDA FP16/FP32 packed/separate SwiGLU、冷绑定与无 native slot scratch 已通过 W1 shared 公共头及四个 GPU 用例；完整 FFN/普通入口、Graph capture、三交付与 P1 待本包完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {

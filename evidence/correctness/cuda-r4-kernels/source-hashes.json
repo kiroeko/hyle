@@ -1,0 +1,15 @@
+{
+  "baseline": "a116280bd73678db2790de6ea1d2758ea34b1bf0",
+  "semantics": "LF-normalized source/test/build inputs of C3 checkpoint; full R4 route remains AUDITED",
+  "files": {
+    "cmake/HyleComponents.cmake": "c4213bca1de35d034e8fc1b93f425974201b41d6157d02b9eb181e39a2386062",
+    "scripts/validation-policy.json": "97f06cda77528d25b93012fc1c83d28f2b0f71a67acc3d987c1c1b5da9efea25",
+    "include/hyle/compute/providers/cuda.h": "5b5fd301c4d2330448fb3e8bad1fe28dc4a1e8f1bea3fad86b412a3eef18a222",
+    "src/compute_provider_cuda/CMakeLists.txt": "b87c78ea277e6b891d7584d9f48fb002a138ec3209e400c3ee31845d0c2c8b32",
+    "src/compute_provider_cuda/cuda_provider.cc": "d98d25397da7e724eb26a7a71ff1aed2117b6add3538f4e33ca6baf1cafe098f",
+    "src/compute_provider_cuda/native_kernel.cu": "7884204d712b393c0066979c133b8977d034b400c3324a5b59a964ffdd2693f5",
+    "src/compute_provider_cuda/native_kernel.h": "82a4dd8cae547c46b49726a5e285514d08e94ebd6e1eb8b8b252e0a6e562b855",
+    "tests/compute_provider_cuda/CMakeLists.txt": "89cfe20af54f94b867fc2783a76c4de3f21f8119e086fc13d4df807b7cab219b",
+    "tests/compute_provider_cuda/cuda_provider_test.cc": "fcf1a77c5b72602ec12bb7e770fe26c9e85c8c92d974e5cc3c43ad1323599983"
+  }
+}

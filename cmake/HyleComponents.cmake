@@ -429,8 +429,11 @@ _hyle_declare_component(compute_provider_marlin
   PRIVATE_DEPS compute_backend_cuda
   PUBLIC_DEPS core compute compute_ops error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/marlin.h)
-# Remaining R4 identities acquire targets together with their implementation.
-_hyle_declare_component(compute_provider_cuda QUEUED)
+_hyle_declare_component(compute_provider_cuda
+  PRIVATE_DEPS compute_backend_cuda compute_ops error mem
+  PUBLIC_DEPS core compute
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/cuda.h)
+# Remaining R4 route identities acquire targets with their implementation.
 _hyle_declare_component(compute_route_cuda QUEUED)
 _hyle_declare_component(graph_route_cuda QUEUED)
 

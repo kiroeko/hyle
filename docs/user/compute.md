@@ -4,8 +4,9 @@
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 Native/oneDNN 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
-> command capture 基础运行时，但尚未签发通用 CUDA operation provider。Apple MLX/Metal、Vulkan/SPIR-V
-> 与其它 provider 是后续独立纵切。HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
+> command capture 基础运行时。R4 已接入 cuBLASLt、Marlin 和 HYLE SwiGLU 的独立 Provider，
+> 普通 CUDA 入口与完整路线验收仍在实施。Apple MLX/Metal、Vulkan/SPIR-V 是后续独立纵切。
+> HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
 研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。
@@ -21,8 +22,8 @@
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。
 
-设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。目前 CUDA 只交付运行时基础，
-正式 GPU 算子 Provider 尚未资格化；Apple/Vulkan 尚未交付，不能由设计目标推断可用。
+设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的三个计算 Provider 已有初始 GPU 验证，
+普通入口、完整 Graph、三交付及性能尚未完成路线验收；Apple/Vulkan 尚未交付。
 HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
 提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
 自动交给 CPU。完整范围见 [架构边界](../architecture/compute-design.md#13-四条独立路线与明确非目标)。
@@ -78,7 +79,7 @@ CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=A
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context
 的非默认 stream，并通过 `cuda::submit()` 录入 typed stream command。Graph 可在冷路径 capture 兼容的
-CUDA command/copy segment；这不意味着 `prepare(cuda_context, MatMul{...})` 已有可执行 CUDA route。
+CUDA command/copy segment。只创建 backend Context 不会自动装入计算 Provider；当前独立接入状态见下表。
 同一 CUDA Context 的不同 Queue 可以用 device event 导入另一个 Queue 的 Completion prefix，不阻塞提交
 线程；跨 context/backend 不会伪装成这条路线，Graph 只能依显式策略选择 host wait 或拒绝。
 同 Context 只表示事件可以互通，不表示不同 stream 天然有序。Graph 根据值依赖为跨 Queue 路线插入
@@ -93,13 +94,31 @@ CUDA `Buffer/View` 的 `write/fill/copy_from/read` 是同步存储操作：返�
 第三方源码出现在 dependency cache 或最终链接中，不表示其算子已经自动成为 HYLE route。HYLE
 `Operation` 只描述公共语义；一个已交付 Provider 必须在 `prepare()`/Graph compile 冷路径把它翻译成
 第三方 plan、kernel 或 graph artifact。叶函数型 provider 可以产生 `PreparedOperation`；自己 host 图的
-runtime 通常只能由 Graph 作为 compiled region 使用。当前没有已交付 ggml provider，因此合法的 block-Q4
-`TensorDesc` 只证明格式可表达；`prepare(cuda_context, MatMul{}, ...)` 仍返回 `Unimplemented`，不会把
-压缩 bytes 当普通 scalar、偷偷反量化或因为 ggml 已下载就调用私有 kernel。
+runtime 可经 delegated Direct 或 Graph region 保留原生执行。当前没有已交付 ggml provider，合法的
+block-Q4 `TensorDesc` 只证明格式可表达；未绑定支持该格式的 Provider 时仍返回 `Unimplemented`，
+不会把压缩 bytes 当普通 scalar、偷偷反量化或因为 ggml 已下载就调用私有 kernel。
 
-正式量化路线仍待接入；研究实验不属于公开 Provider，不能通过一个 sample 推断 `MatMul` 已有量化
-fallback。不同 Q4 格式、activation 临时量化与累加类型不是同一件事。当前
+Marlin 独立接入使用具名 compressed carrier；普通 CUDA 量化路线仍在实施。研究实验不属于公开
+Provider，不能通过一个 sample 推断 `MatMul` 有量化 fallback。不同 Q4 格式、activation 临时量化
+与累加类型不是同一件事。当前
 `MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
+
+### CUDA Provider 接入状态
+
+以下是 [R4 当前施工卡](../implementation/tasks/compute/cuda-v1-four-route-foundation.md) 下已实现并有
+Windows/SM89 初始验证的专家接入点；选择对应 factor 和 `HYLE_COMPUTE_CUDA=ON`。完整 CUDA
+普通入口、默认组合、Graph FFN、三交付与 P1 尚待验收，不能从单个 Provider 外推完整路线完成。
+
+| factor / 公共头 | 工厂 / owner | 当前有限域 |
+|---|---|---|
+| `compute_provider_cublas` / `compute/providers/cublas.h` | `cublas::provider()` | FP16/FP32 rank-2 MatMul；输入 row/column-major、输出 dense row-major；FP32 累加；冷绑定算法，每槽独立 handle/workspace |
+| `compute_provider_marlin` / `compute/providers/marlin.h` | `marlin::provider()`、`marlin::QuantizedWeights::pack()` | FP16 activation/output、signed symmetric group128 Q4、FP32 累加；M=1..64、K%128=0、N%64=0、N*K<=INT32_MAX；冷 packing 后只常驻 Q4/scales |
+| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/FP32 SwiGLU，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；非空、输出元素数<=INT32_MAX；不允许输入输出重叠 |
+
+SwiGLU 不需要 caller workspace 或额外 native invocation 存储；Kernel 与 launch 配置在 prepare
+绑定，热提交仅在已有 CUDA stream 上 launch。共同层仍为每个 invocation 管理准入与真实完成。
+CUDA driver/code image 的全局开销不假报为零；payload 必须保活到 Completion 终态。所有 Provider
+失败执行槽都须按本页执行槽合同重建；设备失效仍受 backend 恢复限制。
 
 ### Grouped Q4 的逻辑描述
 
