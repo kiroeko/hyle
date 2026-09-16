@@ -442,28 +442,33 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "QUEUED",
-      "summary": "R4 CUDA vendor GEMM owner 已登记；准备审计 cuBLASLt 的冷算法绑定、每槽 workspace 与三交付，尚无新产品实现。"
+      "state": "SCOPED",
+      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "QUEUED",
-      "summary": "R4 CUDA compressed W4A16 owner 已登记；准备审计锁定现代 Marlin kernel 的窄 native adapter、冷 packing 与压缩驻留，旧探针不计产品。"
+      "state": "SCOPED",
+      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "QUEUED",
-      "summary": "R4 HYLE CUDA 中间 kernel owner 已登记；范围仅为真实组合所需的 gated activation 等片段，不扩充算子目录。"
+      "state": "SCOPED",
+      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_route_cuda",
-      "state": "QUEUED",
-      "summary": "R4 普通 CUDA Direct 入口与研发固定规则 owner 已登记；尚未发布默认入口或规则资格。"
+      "state": "SCOPED",
+      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cuda",
-      "state": "QUEUED",
-      "summary": "R4 CUDA Graph 原生编译/重放与默认组合 owner 已登记；复用既有 CUDA capture，尚无新路线验收。"
+      "state": "SCOPED",
+      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     }
   ]
 }
