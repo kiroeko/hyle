@@ -433,9 +433,15 @@ _hyle_declare_component(compute_provider_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/cuda.h)
-# Remaining R4 route identities acquire targets with their implementation.
-_hyle_declare_component(compute_route_cuda QUEUED)
-_hyle_declare_component(graph_route_cuda QUEUED)
+# Compiled CUDA defaults compose native implementations without a CPU route.
+_hyle_declare_component(compute_route_cuda
+  PRIVATE_DEPS compute_backend_cuda compute_provider_cublas compute_provider_cuda
+  PUBLIC_DEPS core compute compute_provider_marlin
+  SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h)
+_hyle_declare_component(graph_route_cuda
+  PRIVATE_DEPS compute_backend_cuda
+  PUBLIC_DEPS core compute_route_cuda graph
+  SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

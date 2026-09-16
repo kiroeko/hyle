@@ -479,19 +479,19 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "summary": "R4 C3 AUDITED 实施：HYLE CUDA FP16/FP32 packed/separate SwiGLU、冷绑定与无 native slot scratch 已通过 W1 shared 公共头及四个 GPU 用例；完整 FFN/普通入口、Graph capture、三交付与 P1 待本包完成。",
+      "summary": "R4 C3 HYLE FP16/FP32 SwiGLU 已实现并通过单算子数值/寿命/失败回滚；C4 普通 Direct/Graph 的 dense/Q4 完整 FFN 与同图三 Provider/capture 真实链路通过。仍 AUDITED，跨平台/三交付/性能随 R4 C5 验收。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
+      "summary": "R4 C4 普通 CUDA factory/固定规则与 Graph 冷 compile/capture helper 已实现，W1 dense/Q4/三 Provider FFN、双槽变化输入、实际 capture、异步保活及无热 HYLE metadata 分配通过；仍 AUDITED，公开产品 roots/三交付/用户样例/P1 待 C5。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
+      "summary": "R4 C4 普通 CUDA factory/固定规则与 Graph 冷 compile/capture helper 已实现，W1 dense/Q4/三 Provider FFN、双槽变化输入、实际 capture、异步保活及无热 HYLE metadata 分配通过；仍 AUDITED，公开产品 roots/三交付/用户样例/P1 待 C5。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     }
   ]

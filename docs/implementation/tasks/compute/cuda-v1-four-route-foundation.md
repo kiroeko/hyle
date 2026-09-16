@@ -116,6 +116,22 @@ P0 静态成本预算：Context/prepare/packing/每槽创建允许显式 metadat
 一次最终 Completion；Graph capture 只在冷 prepare_replay 逐节点调用 launcher，hot 使用原生 replay。
 图/Direct 的完整 native peer 必须包含相同 resource/数值/完成边界，vendor 内部成本全纳入计时。
 
+### C4 普通入口实现定界
+
+沿上述已审计边界实现两个路线头 `hyle/compute/cuda.h`、`hyle/graph/cuda.h`，本身不包含 CUDA SDK
+类型。`DefaultContextOptions` 只接受设备 ordinal 与借用 metadata allocator；factory 内部组成三个
+适用域互不重叠的 Provider：plain dense MatMul → cuBLASLt，既定 Q4 carrier → Marlin，SwiGLU →
+HYLE。普通 `cuda::QuantizedWeights` 引用已实现的 packing owner，不复制格式或资源管理。
+
+Graph 路线提供 `compile(graph, context, device_resource, options)` 与
+`prepare_replay(invocation, queue, options)`，在冷路径内构造单 GPU 的 storage/target/lane 绑定。
+默认 replay 为 PreferCapture + RejectHostWait，真实路线仍可查询；RequireCapture 可显式要求失败时
+返回错误。公共共同层不改变；原生 MemoryResource/stream interop 继续由 backend 拥有。绑定地址变化
+沿既有合同使 capture 失效，改变原地址内的输入内容则可重放。高级多 lane 继续使用既有显式环境。
+
+产品测试走普通 factory 的 dense/Q4 FFN、固定常量、两个独立槽/stream、变化输入、实际 captured
+报告、无热 HYLE metadata 分配及完整 oracle；不以 factory 或单算子通过代替完整 CUDA 路线。
+
 ## 七问与预声明验证
 
 1. 第三方：cuBLASLt 属系统 CUDA Toolkit；现代 Marlin 保留 Apache-2.0 provenance、精确文件/hash/
@@ -227,3 +243,16 @@ C3 中间片段已经可真实执行；同 GPU 多 Provider 的完整 FFN 仍随
 普通默认入口、Graph capture、跨平台三交付和 P1 未完成；中央 seam 扩大的其余 native/package
 选择项尚未运行、不记 PASS。统一脚本 Compute + Graph 全实现 **32,562 行**，不含测试及第三方，
 self-check PASS。
+
+### C4 产品检查点
+
+[W1 实际链路证据](../../../../evidence/correctness/cuda-r4-routes/README.md)：普通 Direct/Graph
+factory 已组成三个原生 Provider，用户不提交排序或 profile。dense/Q4 FFN 与混合三 Provider
+链经过 double oracle、双槽变化输入、实际 native capture/command、重绑定和真实 pending 寿命
+验证；冷准备后重复运行没有新增 HYLE metadata 分配。两个公开头和 Direct/Graph 共五个 GPU
+用例最终通过，含一次仅测试夹具的阻塞顺序纠正，原始日志保留。selector 工具 45 项通过。
+
+尚未完成 C5 的公开产品 roots/用户样例、Windows+WSL 三交付、最终规则性能资格。C4 的两个 factor
+已真实实现，当前 `hyle::compute/graph` 根列表仍保持原样；接线需要按既有 selector 将其涉及的旧
+root owner 定向绑定交付范围，不扩大到 CPU 算法重审、不重写工具。完整 R4 尚无 terminal candidate，
+不把 factory 或本 W1 checkpoint 当作路线完成。当前全实现 LOC **32,662 行**（不含测试/第三方）。

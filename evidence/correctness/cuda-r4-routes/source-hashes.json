@@ -1,0 +1,19 @@
+{
+  "baseline": "61a9eded665ab011c1669add94bdee5e9b3af2d3",
+  "source_sha256": {
+    "include/hyle/compute/cuda.h": "8a6bbd2620a6385cab5f1d23f0aea60b814015317051adc99319541e24e6cb9e",
+    "include/hyle/graph/cuda.h": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3",
+    "src/compute_route_cuda/CMakeLists.txt": "273107b064ef00cad770ac18656eb68ac1b43deffb24e76f90645a48963a1b5c",
+    "src/compute_route_cuda/cuda_context.cc": "13f1455ed83587b76fdbe94cf1428401cfd099c2f96ac5e49120710b38462547",
+    "src/graph_route_cuda/CMakeLists.txt": "4a17c9c179b05436ebf4419824bf3e67f8a52bf44fb3cd344a18e5c2bcc92314",
+    "src/graph_route_cuda/cuda_context.cc": "d8e2afda08be770b6d1713530963f4cd58aa39bb24b29fc808f57fb3c36aa29a",
+    "tests/compute_route_cuda/CMakeLists.txt": "23fcdb6d516075949ed3bc250345e5849ac78bb40c188febc0f6ccb264181c56",
+    "tests/compute_route_cuda/context_test.cc": "5d7e4e298c6f5d58b646ce244e24558f0793d731e265d92b71b921d21dd4c102",
+    "tests/compute_route_cuda/ffn_support.h": "545e8f839e644952a4bfed62c30142f8e222d04671c97cd1c54e29d58fc2499d",
+    "tests/graph_route_cuda/CMakeLists.txt": "ee919bae21f56fc224e25ca2f7189a3386eb54c7b86ea490e2da64d5a72cab02",
+    "tests/graph_route_cuda/graph_test.cc": "e7e008f03846271eefc9627d087e057925fccde02e8e4d71c1830bdd0ff44ca7",
+    "cmake/HyleComponents.cmake": "401456b10fd81849596b8e9ee983bb323af1e7fb8112e8a5e2b5b3752b5f9280",
+    "scripts/validation-policy.json": "8104cba7865a4e25e77c35b7a1711817d459196e121d86003f3b5cad78edc608"
+  },
+  "test_shape": "Windows MSVC 19.50 / CUDA 13.3 / SM89, Release shared Werror; CPU OFF; source factor checkpoint, not public-product three-delivery acceptance"
+}
