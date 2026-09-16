@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：CANDIDATE；owner 为 `compute` 与 `graph`。`8f3cffdc` 完成合法 CLOSED → SCOPED。
+- 状态：CLOSED；owner 为 `compute` 与 `graph`。`8f3cffdc` 完成合法 CLOSED → SCOPED。
 - baseline：`ab6d87b349345342258b5b3090953119c06167a0`。
 - trigger：R4 Marlin 的 per-invocation workspace 含 native locks；成功完成会复位，失败完成不能
   保证复位。`src/compute/operation.cc::mark_operation_terminal` 忽略 terminal Status，Graph 的
@@ -141,3 +141,9 @@ Provider 自有 completion owner 未被覆盖，独立槽与重建槽通过真�
 重开条件：可复现的失败槽重入、过早释放、终态/取消竞争、拒绝后无法重试或与真实 Provider 的
 恢复合同冲突。新算法、其它路线的性能或无具体缺陷的再审均不属于本卡。candidate 全实现 LOC
 **32,252 行**，当前已提交 HEAD 为 **32,562 行**，不含测试/第三方；不是新架构完成百分比。
+
+### Terminal record
+
+`6305f7af` 合法进入 CANDIDATE，selector 仅选 docs/closure（104 项跳过/复用），没有重建或计时。
+本次 CANDIDATE → CLOSED 只登记七门最终 PASS 与 P0 结构 claim；产品仍为 `a116280b`。有限
+依赖修复结束，两个 owner 恢复变更控制；后续 R4 使用该失败合同，不继续重审共同层。

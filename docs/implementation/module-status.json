@@ -271,17 +271,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 失败槽退役 CANDIDATE：F1–F3 完成，冻结 a116280b；四环境普通回归/三交付、W1 CUDA/cuBLASLt/Marlin、WSL ASan/UBSan/TSan 各 12/12、P0 和红队通过。CPU 原性能例外及候选身份保持。",
-      "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0"
+      "summary": "R4 失败槽退役 CLOSED：a116280b 的 F1–F3 已完成四环境普通回归/source/static/shared、W1 CUDA/cuBLASLt/Marlin、WSL 三种 sanitizer 各 12/12、P0 和红队。失败真实终态退役，未受理拒绝可重试；旧 CPU P1 身份及用户例外保持。",
+      "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/r4-failed-invocation-retirement/README.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 失败槽退役 CANDIDATE：F1–F3 完成，冻结 a116280b；四环境普通回归/三交付、W1 CUDA/cuBLASLt/Marlin、WSL ASan/UBSan/TSan 各 12/12、P0 和红队通过。CPU 原性能例外及候选身份保持。",
-      "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0"
+      "summary": "R4 失败槽退役 CLOSED：a116280b 的 F1–F3 已完成四环境普通回归/source/static/shared、W1 CUDA/cuBLASLt/Marlin、WSL 三种 sanitizer 各 12/12、P0 和红队。失败真实终态退役，未受理拒绝可重试；旧 CPU P1 身份及用户例外保持。",
+      "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/r4-failed-invocation-retirement/README.md"
+      }
     },
     {
       "module": "container_concurrent",

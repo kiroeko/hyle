@@ -1,7 +1,7 @@
 # R4 失败执行槽退役：产品验证
 
 Owner `compute` / `graph` 的[当前施工卡](../../../docs/implementation/tasks/compute/r4-failed-invocation-retirement.md)
-现为 CANDIDATE，产品冻结于 `a116280b`。本目录覆盖该有限修复的跨平台验证，不签完整 CUDA 路线。
+现为 CLOSED，产品冻结于 `a116280b`。本目录覆盖该有限修复的跨平台验证，不签完整 CUDA 路线。
 
 ## 已运行
 

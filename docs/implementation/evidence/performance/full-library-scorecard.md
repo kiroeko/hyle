@@ -1,20 +1,20 @@
 # HYLE 全库性能账本（2026-09-16）
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本只绑定
-[`module-status.json`](../../module-status.json) 中当前 36 个 `CLOSED` factor，包含 R2 已收口的
+[`module-status.json`](../../module-status.json) 中当前 38 个 `CLOSED` factor，包含 R2 已收口的
 compute_ops schema、Mem reservation 尾项和 R3 CPU。CPU 唯一已量化的 Graph 小片段未决项经用户
 批准接受，原 LOSS/INCONCLUSIVE 保留；GPU 与 ggml 等未收口 owner 不计入数量。旧 CUDA copy 与跨域 Graph 数字保留在
 [历史证据](benchmarks-compute-graph.md)，不作为四路线基础架构完成证明。账本不授予跨平台、跨能力的
 永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是 2026-09-14 原审计时的事实。
 
-共同 `compute`/`graph` 已因 R4 Marlin 暴露的失败槽重用缺口进入
-[定向依赖修复](../../tasks/compute/r4-failed-invocation-retirement.md)，当前从 CLOSED owner 投影排除。
+共同 `compute`/`graph` 的 R4 失败槽重用缺口已由
+[定向依赖修复](../../tasks/compute/r4-failed-invocation-retirement.md)结案，新增仅绑定 `a116280b` 的 P0 结构 claim。
 R3 原候选的完整数据和 CPU 已关闭路线的对应 claim 保留；没有把旧计时绑定成新修复候选，也没有
 追加 CPU P1 或改变已批准的验收例外。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 72 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 73 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
@@ -22,13 +22,13 @@ HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明
 | `WIN` | 26 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
 | `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
 | `INCONCLUSIVE` | 25 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 14 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
+| `N/A` | 15 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
 | `LOSS` | 4 | CPU Graph 的固定负向方向保留；其中一项工程例外不改写为统计 PASS |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
 31 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，14 个是 P0 结构证明。后两类不能承担最强宣传声明。
+恢复，15 个是 P0 结构证明。后两类不能承担最强宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
