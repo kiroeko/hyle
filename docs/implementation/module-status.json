@@ -418,8 +418,8 @@
     {
       "module": "compute_backend_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。"
+      "record": "docs/implementation/tasks/compute/cuda-r4-host-validation-visibility.md",
+      "summary": "R4 host 验证可见性重新定界 AUDITED：V1 final-ref acquire 的 TSan-only 投影、V2 callback fixture 退出同步已固定；shipping API、算法、layout 和热路径保持。"
     },
     {
       "module": "compute_provider_native",
