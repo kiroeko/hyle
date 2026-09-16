@@ -108,6 +108,11 @@ Status combine_terminal(Status observed, Status hint) noexcept {
   return observed.ok() && !hint.ok() ? std::move(hint) : std::move(observed);
 }
 
+CUcontext borrow_primary_context(void *backend_state) noexcept {
+  const auto *context = static_cast<const ContextState *>(backend_state);
+  return context != nullptr ? context->primary : nullptr;
+}
+
 ScopedPrimaryContext::ScopedPrimaryContext(CUcontext primary) noexcept
     : expected_(primary) {
   if (primary == nullptr) {

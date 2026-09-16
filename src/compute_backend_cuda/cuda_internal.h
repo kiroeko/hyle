@@ -14,6 +14,7 @@
 #include "hyle/platform/thread.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
+#include "native_context.h"
 
 namespace hyle::compute::cuda::detail {
 
@@ -97,22 +98,6 @@ struct QueueState final : util::RefCounted<QueueState> {
   QueueState *context_next = nullptr;
   // Protected by Compute's one-active-QueueSequence admission contract.
   bool capture_owned = false;
-};
-
-class ScopedPrimaryContext final {
-public:
-  explicit ScopedPrimaryContext(CUcontext primary) noexcept;
-  ScopedPrimaryContext(const ScopedPrimaryContext &) = delete;
-  ScopedPrimaryContext &operator=(const ScopedPrimaryContext &) = delete;
-  ~ScopedPrimaryContext();
-
-  const Status &status() const noexcept { return status_; }
-  explicit operator bool() const noexcept { return status_.ok(); }
-
-private:
-  CUcontext expected_ = nullptr;
-  bool pushed_ = false;
-  Status status_{};
 };
 
 class CudaResourceBase : public mem::MemoryResource {
