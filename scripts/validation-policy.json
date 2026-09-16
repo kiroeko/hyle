@@ -24,7 +24,23 @@
     },
     "graph_provider_onednn": {
       "HYLE_COMPUTE_ONEDNN": "ON"
+    },
+    "compute_route_apple": {
+      "HYLE_COMPUTE_APPLE": "ON"
+    },
+    "graph_route_apple": {
+      "HYLE_COMPUTE_APPLE": "ON"
     }
+  },
+  "factor_supported_systems": {
+    "compute_backend_cuda": ["Windows", "Linux"],
+    "compute_provider_cublas": ["Windows", "Linux"],
+    "compute_provider_marlin": ["Windows", "Linux"],
+    "compute_provider_cuda": ["Windows", "Linux"],
+    "compute_route_cuda": ["Windows", "Linux"],
+    "graph_route_cuda": ["Windows", "Linux"],
+    "compute_route_apple": ["Darwin"],
+    "graph_route_apple": ["Darwin"]
   },
   "vendored_input_owners": {
     "third_party/marlin/": ["compute_provider_marlin"],

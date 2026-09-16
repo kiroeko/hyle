@@ -68,6 +68,11 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 没有独立 header suite 的因子明确显示限制；consumer/delivery 编译不冒充逐头 self-containment。
 若 closure card 要求这一风险，仍需单独给出实际门，未完成保持 `BLOCKED`。
 
+原生路线通过 policy 的 `factor_supported_systems` 声明 OS 适用性。当前 OS 不支持的路线
+correctness 明确 `SKIPPED`，配置 feature 为 OFF 并保留独立的 OFF 公开头检查；这些 skip 不能签路线
+完成，也不能作为 P1 前置 PASS。支持的 OS 一律配置 ON，SDK 或设备缺失仍按实际门失败，不能
+探测不到便自动跳过。Apple 真实执行需 Darwin，CUDA 真实执行需 Windows/Linux；跨平台结果由当前卡汇总。
+
 中央图始终只有 `cmake/HyleComponents.cmake` 一份。adapter 从 Git blob 取具名
 `_hyle_component_public_headers` 边界前的完整 metadata 前缀，由 CMake 自身执行声明、闭包与
 图检查；不运行 `project()`、compiler probe 或配置期全库源码审计，不用 Python 解释 CMake。

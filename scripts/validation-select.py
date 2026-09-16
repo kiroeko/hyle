@@ -571,6 +571,18 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     expanded &= available
     selected_factors = (own | consumers | expanded) - audit_only
     header_roots -= audit_only
+    supported_systems = policy.get("factor_supported_systems", {})
+    if not isinstance(supported_systems, dict) or any(
+            not isinstance(systems, list) or not systems or
+            not all(isinstance(system, str) and system for system in systems)
+            for systems in supported_systems.values()):
+        raise SelectionError("validation policy factor_supported_systems must map factors to non-empty OS lists")
+    host_system = platform.system()
+    unsupported = {factor for factor in selected_factors
+                   if factor in supported_systems and host_system not in supported_systems[factor]}
+    # Keep configure roots for the OFF header/delivery boundary, but never
+    # count an absent native route as a correctness or P1 prerequisite PASS.
+    correctness_factors = selected_factors - unsupported
     for product, roots in graphs[1]["products"].items():
         if set(roots) & expanded:
             delivery.add(product)
@@ -628,6 +640,10 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                 raise SelectionError(f"invalid validation cache key for {factor}: {key!r}")
             if not isinstance(value, str) or not value:
                 raise SelectionError(f"validation cache value for {factor}/{key} must be a non-empty string")
+            if factor in unsupported:
+                if value != "ON":
+                    raise SelectionError(f"unsupported native factor {factor}/{key} must declare an ON feature")
+                value = "OFF"
             previous = selected_cache.setdefault(key, value)
             if previous != value:
                 raise SelectionError(
@@ -649,7 +665,10 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                "outside the change and its required consumer boundary")
         if factor in audit_only:
             why = "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
-        gate("factor:" + factor, "correctness", factor in selected_factors, why,
+        if factor in unsupported:
+            why = (f"native route is not supported on {host_system}; correctness requires " +
+                   ", ".join(supported_systems[factor]) + "; OFF headers remain independently selected")
+        gate("factor:" + factor, "correctness", factor in correctness_factors, why,
              [["cmake", "--build", "{build}", "--config", "Release", "--target", f"hyle_{factor}_tests", "--parallel", "2"],
               ["ctest", "--test-dir", "{build}", "-C", "Release", "--output-on-failure", "--no-tests=error",
                "-L", "^" + factor + "$", "-LE", "headers"]], [factor])
@@ -695,7 +714,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
             if machine_profile.get("id") not in profiles or machine_profile.get("profile_hash") != digest(profiles.get(machine_profile.get("id"))):
                 issues.append("P1 machine profile hash must match the candidate central machine registry")
             factors = card.get("factors")
-            if not isinstance(factors, list) or not factors or not all(isinstance(f, str) for f in factors) or len(set(factors)) != len(factors) or not set(factors) <= selected_factors:
+            if not isinstance(factors, list) or not factors or not all(isinstance(f, str) for f in factors) or len(set(factors)) != len(factors) or not set(factors) <= correctness_factors:
                 issues.append("P1 factors must have selected candidate correctness gates")
             else:
                 try:

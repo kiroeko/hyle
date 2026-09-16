@@ -139,7 +139,8 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("graph_provider_onednn", plan["selected_factors"])
         self.assertIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
 
-    def test_reverse_selected_cuda_factor_activates_its_validation_feature(self):
+    @patch.object(selector.platform, "system", return_value="Windows")
+    def test_reverse_selected_cuda_factor_activates_its_validation_feature(self, _system):
         self.write("include/hyle/compute/prepared_operation.h", "int compute_value = 2;\n")
         self.commit()
         plan = self.plan()
@@ -147,7 +148,8 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("compute_backend_cuda", plan["selected_factors"])
         self.assertIn("-DHYLE_COMPUTE_CUDA=ON", configure)
 
-    def test_cpu_and_cuda_reverse_consumers_have_compatible_features(self):
+    @patch.object(selector.platform, "system", return_value="Linux")
+    def test_cpu_and_cuda_reverse_consumers_have_compatible_features(self, _system):
         self.write("include/hyle/compute/prepared_operation.h", "int compute_value = 2;\n")
         self.commit()
         plan = self.plan()
@@ -158,12 +160,49 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
         self.assertNotIn("-DHYLE_COMPUTE_CPU=OFF", configure)
 
+    def test_native_platforms_keep_off_headers_without_false_correctness(self):
+        for factor in ("compute_route_apple", "graph_route_apple", "compute_route_cuda"):
+            self.write(f"tests/{factor}/CMakeLists.txt",
+                       f"hyle_add_header_self_contained_test({factor})\n")
+        self.base = self.commit()
+        self.write("CMakeLists.txt", "# shared package seam\n")
+        self.commit()
+        for system in ("Windows", "Linux", "Darwin"):
+            with self.subTest(system=system), patch.object(selector.platform, "system", return_value=system):
+                plan = self.plan()
+                configure = self.row(plan, "configure")["commands"][0]
+                apple = system == "Darwin"
+                self.assertIn("-DHYLE_COMPUTE_APPLE=" + ("ON" if apple else "OFF"), configure)
+                self.assertIn("-DHYLE_COMPUTE_CUDA=" + ("OFF" if apple else "ON"), configure)
+                self.assertIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
+                for factor, supported in (("compute_route_apple", apple),
+                                          ("graph_route_apple", apple),
+                                          ("compute_route_cuda", not apple)):
+                    row = self.row(plan, "factor:" + factor)
+                    self.assertEqual(row["status"], "SELECTED" if supported else "SKIPPED")
+                    self.assertIn("headers:" + factor, self.selected(plan))
+                    if not supported:
+                        self.assertIn("not supported on " + system, row["reason"])
+                        self.assertNotIn("receipt", row)
+
+    @patch.object(selector.platform, "system", return_value="Darwin")
+    def test_apple_implementation_requires_on_without_sdk_availability_probe(self, _system):
+        self.write("src/compute_route_apple/change.cc", "int value = 2;\n")
+        self.commit()
+        plan = self.plan()
+        configure = self.row(plan, "configure")["commands"][0]
+        self.assertIn("-DHYLE_COMPUTE_APPLE=ON", configure)
+        self.assertIn("factor:compute_route_apple", self.selected(plan))
+        self.assertIn("factor:graph_route_apple", self.selected(plan))
+        self.assertNotIn("-DHYLE_COMPUTE_CUDA=ON", configure)
+
     def test_unrelated_factor_does_not_activate_optional_provider(self):
         self.write("src/container_queue/change.cc", "int value = 2;\n")
         self.commit()
         configure = self.row(self.plan(), "configure")["commands"][0]
         self.assertNotIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
         self.assertNotIn("-DHYLE_COMPUTE_CUDA=ON", configure)
+        self.assertNotIn("-DHYLE_COMPUTE_APPLE=ON", configure)
 
     def test_product_change_requires_audited_owner(self):
         self.set_state("container_queue", "CLOSED")
@@ -508,6 +547,18 @@ class ImpactTest(unittest.TestCase):
         self.write("README.md", "# metadata after freeze\n")
         self.commit()
         self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "SKIPPED")
+
+    @patch.object(selector.platform, "system", return_value="Windows")
+    def test_p1_rejects_native_factor_without_applicable_correctness(self, _system):
+        self.write("src/compute_route_apple/change.cc", "int value = 2;\n")
+        path = self.p1_card()
+        card = selector.read_json(path)
+        card["factors"] = ["compute_route_apple"]
+        selector.write_json(path, card)
+        plan = self.plan(card_path=path, context=self.context)
+        self.assertEqual(self.row(plan, "factor:compute_route_apple")["status"], "SKIPPED")
+        self.assertEqual(self.row(plan, "p1")["status"], "BLOCKED")
+        self.assertIn("selected candidate correctness", self.row(plan, "p1")["reason"])
 
     def test_p1_reuses_verified_artifact_and_reselects_invalid_cache(self):
         path = self.p1_card()
