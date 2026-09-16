@@ -1,0 +1,90 @@
+Start testing: Sep 17 05:14 CST
+----------------------------------------------------------
+49/51 Testing: hyle_compute_route_apple_test
+49/51 Test: hyle_compute_route_apple_test
+Command: "/Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/hyle_compute_route_apple_test"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/compute_route_apple
+"hyle_compute_route_apple_test" start time: Sep 17 05:14 CST
+Output:
+----------------------------------------------------------
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 11 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleRegion
+[ RUN      ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace
+[       OK ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace (31 ms)
+[ RUN      ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape
+[       OK ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape (6 ms)
+[ RUN      ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose
+[       OK ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose (6 ms)
+[----------] 3 tests from AppleRegion (44 ms total)
+
+[----------] 3 tests from AppleTyped
+[ RUN      ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation
+[       OK ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation (10 ms)
+[ RUN      ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes
+[       OK ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes (9 ms)
+[ RUN      ] AppleTyped.MetadataPreparationAndCheckedRegionError
+[       OK ] AppleTyped.MetadataPreparationAndCheckedRegionError (5 ms)
+[----------] 3 tests from AppleTyped (25 ms total)
+
+[----------] 5 tests from AppleLifetime
+[ RUN      ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose
+[       OK ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose (5 ms)
+[ RUN      ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot
+[       OK ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot (6 ms)
+[ RUN      ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork
+[       OK ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork (5 ms)
+[ RUN      ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads
+[       OK ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads (6 ms)
+[ RUN      ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult
+[       OK ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult (6 ms)
+[----------] 5 tests from AppleLifetime (30 ms total)
+
+[----------] Global test environment tear-down
+[==========] 11 tests from 3 test suites ran. (100 ms total)
+[  PASSED  ] 11 tests.
+<end of output>
+Test time =   0.54 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_apple_test" end time: Sep 17 05:14 CST
+"hyle_compute_route_apple_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+51/51 Testing: hyle_graph_route_apple_test
+51/51 Test: hyle_graph_route_apple_test
+Command: "/Users/kiro/hyle-verify/r5-apple-20260917/build-static/bin/hyle_graph_route_apple_test"
+Directory: /Users/kiro/hyle-verify/r5-apple-20260917/build-static/tests/graph_route_apple
+"hyle_graph_route_apple_test" start time: Sep 17 05:14 CST
+Output:
+----------------------------------------------------------
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleGraph
+[ RUN      ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph
+[       OK ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph (53 ms)
+[ RUN      ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce
+[       OK ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce (8 ms)
+[ RUN      ] AppleGraph.RejectsMissingPendingAndMismatchedConstants
+[       OK ] AppleGraph.RejectsMissingPendingAndMismatchedConstants (0 ms)
+[----------] 3 tests from AppleGraph (62 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (62 ms total)
+[  PASSED  ] 3 tests.
+<end of output>
+Test time =   0.41 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_apple_test" end time: Sep 17 05:14 CST
+"hyle_graph_route_apple_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 05:14 CST
+
+compute_route_apple =   0.54 sec*proc
+
+graph_route_apple =   0.41 sec*proc
+

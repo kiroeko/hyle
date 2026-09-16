@@ -1,0 +1,33 @@
+{
+  "scope": "R5 A5 finite lifecycle checkpoint; not full route closure",
+  "baseline": "6f3ff7cae99ff141fe5ccc44ff842c0fd60a1e3d",
+  "shipping_cpp": "unchanged from d900a8ce; only two canonical test files changed",
+  "machine": "MacBook Air Mac16,12 / M4 / macOS 27.0 build 26A428",
+  "compiler": "AppleClang 21.0.0.21000334",
+  "configuration": "Release / static / WERROR ON / sanitizer off / Apple-only developer factors / offline locked cache",
+  "native_pin": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+  "test_source_sha256": "88d40360a4bc286abdd70b8489f0847ff37b53f83efab21b1274cfb0542cf745",
+  "executables": {
+    "hyle_compute_route_apple_test": "670f5eec3c886ace3a0506518136643a0cab7c9ca6641ab3fe217b3fb0b2fdef",
+    "hyle_graph_route_apple_test": "9a11df9ee5429161a26bc4a382680c648c059a786909787e92cbde0943f14820"
+  },
+  "checks": {
+    "new_lifecycle_gtests": 5,
+    "compute_gtests": 11,
+    "graph_gtests": 3,
+    "ctest": 2,
+    "failed": 0
+  },
+  "limits": [
+    "native capacity refusal and injected metadata bad_alloc, not physical device OOM exhaustion",
+    "native exception after encoded real GPU prefix, not injected hardware device loss",
+    "ASan/UBSan/TSan, Mini and P1 still pending"
+  ],
+  "logs": {
+    "LastTest.log": "3a264fd813881ea80ee98a442aa691f2b7aed5c5c510911f07608556b2ffc61b",
+    "lifecycle-build.log": "e5d9c19528fd6d3171cdb11df2c48e98698a961e40f1ee6f781c836f13e02d18",
+    "lifecycle-configure.log": "5391431427f43cf47d8adcf2e1b92549be9366a9e7a57f2da74fe7413fbedeba",
+    "lifecycle-native-tests.log": "8da88427d2ef22b08ea22a52629372b0a580a2e0247bc234ae45db1f7a770f0c"
+  },
+  "result": "PASS for this finite checkpoint"
+}

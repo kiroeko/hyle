@@ -1,0 +1,4 @@
+[0/2] Re-checking globbed directories...
+[1/4] Linking CXX executable bin/hyle_graph_route_apple_test
+[2/4] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/lifecycle_test.cc.o
+[3/4] Linking CXX executable bin/hyle_compute_route_apple_test

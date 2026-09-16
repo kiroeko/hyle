@@ -1,0 +1,23 @@
+{
+  "archive_candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
+  "files_compared": 749,
+  "differences": [
+    {
+      "path": "src/compute_provider_marlin/CMakeLists.txt",
+      "static_source_sha256": "5cad180ad8d4288565194297f0d73b055bb07157f83b8119e4acc7cbac9e8d2e",
+      "archive_sha256": "e30217ccd32df3a6822d96223623c2b617f129ac6e5da10e970603c26c58d942"
+    },
+    {
+      "path": "src/compute_provider_cuda/CMakeLists.txt",
+      "static_source_sha256": "4617befe7186f179127992b38c9ae39cecb53f1d23d32df6278415e150791676",
+      "archive_sha256": "51e09a20a5ffbe18bdf9427cea3ccc574be375ca0e862f9cfcc587120cf0dd7a"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "static_source_sha256": "8f9f5fbcf97afbcd45da8174a5b8370be7ed9470193d5e35361ea30deeda917a",
+      "archive_sha256": "446165a418ef76cf6560169349d5d8720f0472c5399cf5313bea4f93031b3dfb"
+    }
+  ],
+  "apple_active_inputs": "IDENTICAL",
+  "result": "PASS"
+}

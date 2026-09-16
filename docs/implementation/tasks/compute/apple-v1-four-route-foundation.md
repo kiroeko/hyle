@@ -164,3 +164,14 @@ MLX pin 和 Metal compiler；没有把编译 SDK 当驱动版本。当前固定�
 [检查点证据](../../../../evidence/correctness/apple-r5-foundation-checkpoint/README.md) 的 Air native
 构建（WERROR）和 9 个 GTest 通过，Windows OFF 双头检查通过；只签这些局部结果。三交付、
 普通 facade 接线、其余适用风险/插桩、mini 和最终 P1 继续按 A1–A6 执行，七门仍未完成。
+
+## A5 生命周期检查点（仍 AUDITED）
+
+新增 [5 项原生生命周期用例](../../../../evidence/correctness/apple-r5-lifecycle/README.md)，
+Air 实际 14 个 GTest 全部通过：排队/执行中取消、丢弃后的保活、close 排空、晚到失败与 queued
+失败、独立 Context 原生并发，以及 quota/bad_alloc/Metal 容量拒绝后的安全恢复。只使用测试内
+MLX Primitive 边界，不给产品添加 fault hook；GPU 前缀是真 square，未用 mock Provider。
+
+产品 C++、API 和正常成本没有变化，代码量仍为已统一核对的 Compute+Graph 33,815 行 / 116 文件
+（`d900a8ce` 输入相同，不含测试、bench、third_party）。本检查点不签 Mini、host 插桩、最终 P1
+或 R5 完成；其余预声明门继续保留未证明状态。
