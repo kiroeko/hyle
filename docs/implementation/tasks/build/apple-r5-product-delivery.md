@@ -1,6 +1,6 @@
 # R5 A1/A6：Apple 公开产品与原生资源交付
 
-## Closure card / SCOPED
+## Closure card / AUDITED
 
 - baseline：`9e41c15aab5a97206e82ebc70a0bee0d916e112f`；产品仍为 `d900a8ce`，后续仅 LOC 工具。
 - 当前 owner：`compute`、`graph`、`compute_backend_cpu`、`compute_backend_cuda`、
@@ -40,3 +40,26 @@
 | D4 | 新依赖与用户入口未形成说明 | 四项 license/notice、Apple CLI 构建要求、native 数组/结果/准备成本与 staging 指南 |
 
 SCOPED 只允许审计；D1–D4 固定为 AUDITED FIX 后再改上述产品和 package seam。
+
+## 审计冻结 / D1–D4 FIX
+
+- 两 facade 的现有 root union 正好是上列十一 owner；只有追加两个 Apple roots，旧 C++、规则与
+  对象布局不改。CPU filter 和 CUDA OFF 沿现有机制执行。
+- MLX `device.cpp` 先从包含 MLX 代码的 binary/dylib 同目录找 `mlx.metallib`，最终才尝试编译时
+  build 路径。static 消费者因此需要 EXE 邻置；shared 包需要 native dylib 邻置。资源属于 MLX
+  生成制品，不是锁定文本 license，也不引入进程全局 `set_metallib_path`。
+- registry 增加独立 `GENERATED_RUNTIME_FILE_SPECS`：producer 必须是该 registry 导出的真实 target，
+  source 必须位于 build tree，安装目的地复用已有路径约束；configure 允许尚未生成，install 必须
+  真正存在。旧 runtime/license hash 多重集校验完全保留。
+- 新 Apple 专属 `hyle_stage_apple_runtime(executable)` 在 source 与 installed SDK 提供同一函数，
+  只做显式资源邻置；不改变 Windows DLL helper。package 配置按实际 Apple feature 加载该 helper。
+  source 的 shared MLX 旁由 owning factor 放置资源，installed shared 则由中央资产投影放置。
+- 按上游安装规则只投影 MLX `.h`（排除上游不发布的 `backend/metal/kernels.h`），Metal-C++ 头与
+  四项 license 保留；不安装 vendor `.cpp`/shader 源文件充当 header SDK。公开 framework link 使用
+  Apple 原生 framework 名称，不能携带维护机 SDK 绝对路径。
+- Direct/Graph 样例均通过公开 facade 使用同一个 affine Q4 FFN 数据与独立 oracle。安装包验证要
+  撤去原 build fallback；SDK prefix 整体移动后仍能计算，不能以 configure 或设备枚举代替。
+
+七问：成熟 MLX/Metal-C++ 锁与归属明确；真实计算消费驱动；复用现有图/结果和 package registry；
+只有冷交付 P0；纯 C++ 无 FFI；三形态同入口；用户显式 staging 与 native lifetime 文档。上述有限
+FIX 已冻结，进入实现；其它 A5/A6 与 R5 最终 P1 留在主卡中执行，不计入本卡完成。

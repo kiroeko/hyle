@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "container_concurrent",
@@ -353,9 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "compute_ops",
@@ -386,21 +386,21 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。"
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
     },
     {
       "module": "compute_sched",
@@ -409,14 +409,14 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。",
+      "state": "AUDITED",
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。",
+      "state": "AUDITED",
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
     },
     {
@@ -457,14 +457,14 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。",
+      "state": "AUDITED",
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
-      "summary": "R5 Apple 交付 scope：仅公开 roots、metallib/package seam、普通样例与隔离验证；既有 C++/算法/性能证据继承。",
+      "state": "AUDITED",
+      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
     },
     {
