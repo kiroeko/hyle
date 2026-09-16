@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
     },
     {
       "module": "container_concurrent",
@@ -353,9 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
     },
     {
       "module": "compute_ops",
@@ -386,9 +386,9 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
     },
     {
       "module": "compute_backend_cuda",
@@ -398,9 +398,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。"
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
     },
     {
       "module": "compute_sched",
@@ -409,14 +409,14 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。",
+      "state": "AUDITED",
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "summary": "R4 C5 定向交付 SCOPED：普通 Compute/Graph 产品增加已实现 CUDA 路线 roots；仅绑定 facade/安装/消费合同，运行时与 CPU 算法/性能例外不变，原候选和性能证据由 baseline receipt 保留。",
+      "state": "AUDITED",
+      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md"
     },
     {
