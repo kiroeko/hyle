@@ -221,3 +221,7 @@ C45a/C46a；其余 owner 仍保留本卡候选身份。修正只处理这两个�
 [纠正卡](cpu-v1-candidate-corrections.md) 裁决 BLOCKED；没有开展产品采样或放宽门。
 compute_route_cpu 的 C45a 固定后回归本卡、candidate=d9712e68，继续尚未完成的 Direct P1 与
 交付/sanitizer。R3 总体验收仍 INCONCLUSIVE，不因其余 owner 的实现可用而计作整包完成。
+
+用户要求核对拓扑与性能模式后的实际诊断见
+[独立 caller 验收环境纠正](cpu-graph-external-caller-qualification.md)。该轮明确重定实验资源为
+三个独立 P 核，依法从 BLOCKED 进入 SCOPED；产品投影保持 d9712e68，原 v1 失败不改写。
