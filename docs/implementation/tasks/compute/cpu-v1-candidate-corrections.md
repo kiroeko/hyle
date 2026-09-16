@@ -1,6 +1,6 @@
 # R3 候选的有限交付与激活纠正
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -55,3 +55,8 @@ C46b 的 A/A 保留原三组 fixture 同时存活的顺序，只在 cold setup �
 初轮定向结果：Windows oneDNN ON/WERROR 的 7/7 route/region/Sched 回归通过；oneDNN OFF
 static 的 source 与 installed 三个消费者各 3/3 通过，缺席 oneDNN 安装边检查通过。新增 A/A
 fixture 通过 MSVC /W4 /WX 语法检查；validator 通过 Python 语法检查，尚不代表 A/A 性能通过。
+
+## 不可变修正候选
+
+`d9712e68d2b812449a170f474d71a347a27b0ba1` 已固定上述产品与 benchmark；三个纠正 owner 进入 CANDIDATE。
+完整 P1 和剩余适用验证尚待裁决；父卡其余 owner 的未改实现仍复用 `79e96ceb` 投影。

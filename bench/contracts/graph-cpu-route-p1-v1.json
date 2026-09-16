@@ -24,7 +24,7 @@
     },
     {
       "id": "hyle-native-mlp",
-      "revision": "79e96cebeb176c48d66f6b6a156fa9d910b89d82",
+      "revision": "d9712e68d2b812449a170f474d71a347a27b0ba1",
       "configuration": {
         "role": "Explicit Native implementation from the same immutable product/benchmark candidate; the peer checkout and the compiled Native sources have identical identities.",
         "threads": "caller-thread serial",

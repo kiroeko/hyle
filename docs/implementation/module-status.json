@@ -372,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
-      "summary": "R3 C45a/C46a AUDITED：修复缺席 oneDNN 的 static 安装边，并合并 region 连续激活；唯一性能纠正，API/默认规则冻结。"
+      "summary": "R3 C45a/C46a/C46b 修正候选：静态缺席依赖投影、完整连续 region 激活与实际 workload A/A 已固定；Windows 定向回归通过，其余交付/sanitizer/工程 P1 验收待完成。",
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
     },
     {
       "module": "compute_ops",
@@ -415,15 +416,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
-      "summary": "R3 C45a/C46a AUDITED：修复缺席 oneDNN 的 static 安装边，并合并 region 连续激活；唯一性能纠正，API/默认规则冻结。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md"
+      "state": "CANDIDATE",
+      "summary": "R3 C45a/C46a/C46b 修正候选：静态缺席依赖投影、完整连续 region 激活与实际 workload A/A 已固定；Windows 定向回归通过，其余交付/sanitizer/工程 P1 验收待完成。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "summary": "R3 C45a/C46a AUDITED：修复缺席 oneDNN 的 static 安装边，并合并 region 连续激活；唯一性能纠正，API/默认规则冻结。",
-      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md"
+      "state": "CANDIDATE",
+      "summary": "R3 C45a/C46a/C46b 修正候选：静态缺席依赖投影、完整连续 region 激活与实际 workload A/A 已固定；Windows 定向回归通过，其余交付/sanitizer/工程 P1 验收待完成。",
+      "record": "docs/implementation/tasks/compute/cpu-v1-candidate-corrections.md",
+      "candidate": "d9712e68d2b812449a170f474d71a347a27b0ba1"
     }
   ]
 }
