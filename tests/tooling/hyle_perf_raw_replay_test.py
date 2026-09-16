@@ -167,6 +167,36 @@ class RawReplayTest(unittest.TestCase):
                                        platform_name="windows", child_policy=policy)
                 path.write_text(original, encoding="utf-8")
 
+    def test_native_runtime_replay_rejects_changed_cpu_budget(self):
+        policy = {
+            "sampling_topology": "native-runtime-pair", "caller_logical_cpu": 2,
+            "affinity_mask": "0x14", "priority": "above-normal",
+        }
+        topology = ("affinity_topology=native-runtime-pair caller_cpu=2 "
+                    "parent_mask=0x14 priority=above-normal affinity_ok=1 ")
+        with tempfile.TemporaryDirectory() as temporary:
+            contract, runner, _, _, references = self.materialize(pathlib.Path(temporary))
+            paths = [pathlib.Path(reference["path"]) for reference in references]
+            for path in paths:
+                path.write_text(path.read_text(encoding="utf-8").replace(
+                    "run_nonce=", topology + "run_nonce="), encoding="utf-8")
+            index = build_raw_log_index(contract, runner, [1], paths)
+            observations, _ = replay_final_stage(
+                index, contract, runner, platform_name="windows", child_policy=policy)
+            self.assertEqual(len(observations), 1)
+            for path in paths:
+                for before, after in (("caller_cpu=2", "caller_cpu=4"),
+                                      ("parent_mask=0x14", "parent_mask=0x4"),
+                                      ("priority=above-normal", "priority=normal"),
+                                      ("affinity_ok=1", "")):
+                    original = path.read_text(encoding="utf-8")
+                    path.write_text(original.replace(before, after), encoding="utf-8")
+                    index = build_raw_log_index(contract, runner, [1], paths)
+                    with self.assertRaisesRegex(ValidationError, "telemetry"):
+                        replay_final_stage(index, contract, runner,
+                                           platform_name="windows", child_policy=policy)
+                    path.write_text(original, encoding="utf-8")
+
     def test_copied_process_log_is_not_a_new_sample(self):
         with tempfile.TemporaryDirectory() as temporary:
             contract, runner, _, index, references = self.materialize(

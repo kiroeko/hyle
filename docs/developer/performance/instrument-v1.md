@@ -94,6 +94,13 @@ telemetry 与 raw replay 必须核对 caller_cpu；product 还核对 worker 数�
 拓扑继续包含 caller，历史合同与证据不变。两种资源预算不能混为同一性能实验。
 定界与回归见[独立 caller 拓扑工具任务](../../implementation/tasks/project/performance-external-caller-topology-2026-09.md)。
 
+原生 GPU/库 runtime 拥有内部辅助线程时，可选 `native-runtime-pair`。它复用实时双 P 核选择，
+只把 caller 固定到登记核，整个进程限于两颗核，helpers 保持 runtime 自管。它记录 CPU 资源预算，
+不承诺逐 helper 的执行核、数量或独占性，也不接受 `sampling_worker_count`。product/control 与
+raw replay 必须核对 caller、实际 parent mask、priority 和 affinity_ok；模块不能伪报 worker pin。
+仅 Windows 准入；原统计与既有拓扑语义不变，详见
+[native-runtime 工具任务](../../implementation/tasks/project/performance-native-runtime-topology-2026-09.md)。
+
 ## 4. Experiment contract v1
 
 正式 experiment contract 至少冻结：

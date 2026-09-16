@@ -293,6 +293,14 @@ def _topology_telemetry_expectations(
     if not isinstance(child_policy, Mapping):
         return {}
     topology = child_policy.get("sampling_topology")
+    if topology == "native-runtime-pair":
+        return {
+            "affinity_topology": topology,
+            "caller_cpu": str(child_policy["caller_logical_cpu"]),
+            "parent_mask": str(child_policy["affinity_mask"]),
+            "priority": str(child_policy["priority"]),
+            "affinity_ok": "1",
+        }
     if topology not in {
             "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
         return {}
@@ -476,7 +484,7 @@ def replay_stage(
             if platform_name == "macos":
                 expected.update({"apple_qos": "user-interactive", "qos_ok": "1"})
             if (child_policy is not None and child_policy.get("sampling_topology")
-                    == "caller-plus-n-worker-physical-cores"):
+                    in {"caller-plus-n-worker-physical-cores", "native-runtime-pair"}):
                 expected.update(_topology_telemetry_expectations(child_policy))
             expected["run_nonce"] = by_product[
                 (stratum_id, executable["id"], run)]["run_nonce"]

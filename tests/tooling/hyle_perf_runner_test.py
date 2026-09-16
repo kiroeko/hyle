@@ -900,6 +900,13 @@ class RunnerBuildArtifactTest(unittest.TestCase):
         runner = validate_runner_extension(value)
         self.assertEqual(runner["sampling_topology"], "cross-core-pair")
 
+        value["extensions"]["runner"]["sampling_topology"] = "native-runtime-pair"
+        runner = validate_runner_extension(value)
+        self.assertEqual(runner["sampling_topology"], "native-runtime-pair")
+        value["extensions"]["runner"]["sampling_worker_count"] = 2
+        with self.assertRaisesRegex(ValidationError, "worker_count"):
+            validate_runner_extension(value)
+
         value = pilot_contract()
         value["extensions"]["runner"]["sampling_topology"] = \
             "n-worker-physical-cores"
@@ -942,6 +949,27 @@ class RunnerBuildArtifactTest(unittest.TestCase):
             f"{key}={value}" for key, value in expected.items())
         _required_telemetry(text, ["# PRODUCT "], expected)
         for token in ("caller_cpu=2", "worker_cpus=0,4", "parent_mask=0x15"):
+            with self.assertRaises(ValidationError):
+                _required_telemetry(text.replace(token, ""), ["# PRODUCT "], expected)
+
+    def test_native_runtime_checks_cpu_budget_without_claiming_worker_pins(self):
+        profile = {"environment": "windows"}
+        policy = {
+            "sampling_topology": "native-runtime-pair", "caller_logical_cpu": 2,
+            "affinity_mask": "0x14", "priority": "above-normal",
+            "helper_placement": "native-runtime-managed",
+        }
+        environment = _child_environment([], {}, profile, policy)
+        self.assertEqual(environment["HYLE_PERF_CALLER_CPU"], "2")
+        self.assertEqual(environment["HYLE_PERF_PARENT_MASK"], "0x14")
+        self.assertNotIn("HYLE_PERF_WORKER_CPU", environment)
+        self.assertNotIn("HYLE_PERF_WORKER_CPUS", environment)
+        expected = _product_telemetry_expectations({"dimensions": {}}, profile, policy)
+        self.assertEqual(expected["parent_mask"], "0x14")
+        self.assertFalse(any(key.startswith("worker_") for key in expected))
+        text = "# PRODUCT " + " ".join(f"{key}={value}" for key, value in expected.items())
+        _required_telemetry(text, ["# PRODUCT "], expected)
+        for token in ("caller_cpu=2", "parent_mask=0x14", "priority=above-normal", "affinity_ok=1"):
             with self.assertRaises(ValidationError):
                 _required_telemetry(text.replace(token, ""), ["# PRODUCT "], expected)
 

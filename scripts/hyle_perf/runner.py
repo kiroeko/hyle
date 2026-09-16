@@ -190,7 +190,7 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
     config["measurement_adapter"] = measurement_adapter
     sampling_topology = config.get("sampling_topology", "single-logical-cpu")
     if sampling_topology not in {
-            "single-logical-cpu", "cross-core-pair",
+            "single-logical-cpu", "cross-core-pair", "native-runtime-pair",
             "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
         raise ValidationError(
             f"unsupported runner sampling topology: {sampling_topology!r}")
@@ -1283,6 +1283,14 @@ def _product_telemetry_expectations(
             "worker_cpu": str(child_policy["worker_logical_cpu"]),
             "affinity_ok": "1",
         })
+    elif topology == "native-runtime-pair":
+        expectations.update({
+            "affinity_topology": topology,
+            "caller_cpu": str(child_policy["caller_logical_cpu"]),
+            "parent_mask": str(child_policy["affinity_mask"]),
+            "priority": str(child_policy["priority"]),
+            "affinity_ok": "1",
+        })
     elif topology in {
             "n-worker-physical-cores", "caller-plus-n-worker-physical-cores"}:
         expectations.update({
@@ -1528,6 +1536,7 @@ def _collect_control_runs(
                     "priority": str(child_policy["priority"]),
                     "affinity_ok": "1",
                 } if child_policy.get("sampling_topology") in {
+                    "native-runtime-pair",
                     "n-worker-physical-cores",
                     "caller-plus-n-worker-physical-cores"} else {}),
                 **({"apple_qos": "user-interactive", "qos_ok": "1"}

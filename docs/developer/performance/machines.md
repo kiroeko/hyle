@@ -76,6 +76,10 @@ native-Linux 或“第二台独立机器”的 formal gate。以后若把 WSL �
   只计实际 worker；另为 caller 保留一个完整物理核，总资源为 N+1 核。当前两 worker 派生为
   caller=2、workers=0,4、parent mask=0x15；caller 的 SMT sibling 也不能作为 worker。
 - 使用交流电与登记的“卓越性能”scheme；source、peer、build、output 均位于本地 fixed NTFS。
+- 原生 SDK 自管辅助线程时，可选 `native-runtime-pair`：复用实时双 P 核选择，process mask 只开放
+  caller 与另一物理 P 核，caller 仍 singleton pin。SDK helpers 在该集合内由 runtime 调度；不声明
+  worker 数、逐 helper pin 或 helper 总能独占另一核。记录两颗核、CPU Set id、实际 mask 与 caller
+  telemetry；不能用它签有明确逐 worker placement 要求的并发实验。
 - 工程性能工具链为 MSVC 19.50.35728 / v145 / Windows SDK 10.0.26100.0；clang-cl 只作
   correctness/codegen 复核。Release 为 `/O2 /Ob2 /DNDEBUG`，ISA/linkage/LTO 由 workload 明示。
 

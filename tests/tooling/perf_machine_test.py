@@ -529,6 +529,38 @@ AC Power:
         raise AssertionError(
             f"valid Windows cross-core profile failed: {cross_core_gate}"
         )
+    native_runtime = machine.expected_child_policy(
+        profiles["W1-WIN"], sampling_topology="native-runtime-pair",
+        probe=windows_probe)
+    if (native_runtime["affinity_mask"] != "0x14"
+            or native_runtime["logical_cpus"] != [2, 4]
+            or native_runtime["cpu_set_ids"] != [258, 260]
+            or native_runtime["reserved_physical_core_count"] != 2
+            or native_runtime["caller_logical_cpu"] != 2
+            or native_runtime["helper_placement"] != "native-runtime-managed"
+            or any(key.startswith("worker_") or key == "sampling_worker_count"
+                   for key in native_runtime)):
+        raise AssertionError(f"native helper budget or ownership drifted: {native_runtime}")
+    native_gate = machine.evaluate_machine_profile(
+        profiles["W1-WIN"], windows_probe, role="engineering",
+        sampling_topology="native-runtime-pair")
+    if native_gate["gate"] != "PASS":
+        raise AssertionError(f"valid native runtime topology failed: {native_gate}")
+    no_native_pair = copy.deepcopy(windows_probe)
+    no_native_pair["scheduler"]["cpu_sets"] = [
+        cpu for cpu in no_native_pair["scheduler"]["cpu_sets"]
+        if cpu["logical_processor_index"] in {2, 3}]
+    if machine.evaluate_machine_profile(
+            profiles["W1-WIN"], no_native_pair, role="engineering",
+            sampling_topology="native-runtime-pair")["gate"] != "FAIL":
+        raise AssertionError("native runtime topology borrowed a caller SMT sibling")
+    try:
+        machine.expected_child_policy(
+            profiles["M1-MAC"], sampling_topology="native-runtime-pair")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("native Windows topology was admitted on macOS")
     n_worker = machine.expected_child_policy(
         profiles["W1-WIN"], sampling_topology="n-worker-physical-cores",
         sampling_worker_count=8, probe=windows_probe)

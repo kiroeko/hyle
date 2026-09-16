@@ -29,3 +29,14 @@
 预声明验证沿 selector：perf_machine、hyle_perf_runner、hyle_perf_raw_replay、evidence/build replay
 相关 tooling suites；新用例覆盖选择/拒绝、旧合同稳定、环境传递与 telemetry 篡改。docs/closure
 及 diff check 必跑。没有产品修改，本工具轮不重建、不运行 P1。
+
+## 结果：工具任务 CLOSED
+
+N1–N3 已完成。`native-runtime-pair` 复用既有双 P 核选择，记录 2 核 process budget 与固定 caller，
+不产生 worker count/pin 字段；contract、live telemetry 与 raw replay 都支持同一声明。
+新增回归证明：缺少另一物理 P 核时拒绝借用 SMT；非 Windows 拒绝；伪造 worker count 拒绝；
+product/control 的 caller、mask、priority 或 affinity_ok 被删改时拒绝。既有拓扑回归全部保留。
+
+selector 选中 9 个 tooling suites 与 docs/closure，11 门全部 PASS，其余 108 项有 skipped/reused
+原因。[完整 selector receipt](../../../../evidence/correctness/performance-native-runtime-topology-2026-09/validation.zip)。
+此轮实际没有产品构建或 P1。CUDA 模块尚须冻结接线、完成进度/A/A 后才可恢复正式资格。

@@ -732,7 +732,7 @@ def expected_child_policy(
         if sampling_topology == "single-logical-cpu":
             return policy
         if sampling_topology not in {
-                "cross-core-pair", "n-worker-physical-cores",
+                "cross-core-pair", "native-runtime-pair", "n-worker-physical-cores",
                 "caller-plus-n-worker-physical-cores"}:
             raise ValueError(
                 f"unsupported Windows sampling topology: {sampling_topology!r}"
@@ -795,6 +795,22 @@ def expected_child_policy(
         caller, worker = _windows_cross_core_pair(profile, probe)
         caller_cpu = int(caller["logical_processor_index"])
         worker_cpu = int(worker["logical_processor_index"])
+        if sampling_topology == "native-runtime-pair":
+            # Opaque runtimes own their helper threads. Reserve a bounded CPU
+            # set without claiming a worker count or per-helper singleton pin.
+            policy.update({
+                "affinity_mask": hex((1 << caller_cpu) | (1 << worker_cpu)),
+                "sampling_topology": sampling_topology,
+                "logical_cpus": [caller_cpu, worker_cpu],
+                "cpu_set_ids": [caller.get("id"), worker.get("id")],
+                "physical_core_indices": [caller.get("core_index"), worker.get("core_index")],
+                "caller_logical_cpu": caller_cpu,
+                "distinct_physical_cores": True,
+                "reserved_physical_core_count": 2,
+                "helper_placement": "native-runtime-managed",
+                "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+            })
+            return policy
         policy.update({
             "affinity_mask": hex((1 << caller_cpu) | (1 << worker_cpu)),
             "sampling_topology": sampling_topology,
@@ -1623,7 +1639,7 @@ def evaluate_machine_profile(
             item.get("id") != expected_cpu_set_id for item in selected
         ):
             errors.append("registered Windows CPU-set identity changed")
-        if sampling_topology == "cross-core-pair":
+        if sampling_topology in {"cross-core-pair", "native-runtime-pair"}:
             try:
                 caller, worker = _windows_cross_core_pair(profile, probe)
             except ValueError as error:
