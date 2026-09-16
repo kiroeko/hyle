@@ -273,13 +273,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 定向依赖修复 AUDITED：F1–F3 已实现；W1 共同层/CPU 9 项及 cuBLASLt、Marlin 各 2 项通过，P0 复用状态字节；跨平台、sanitizer 与三交付待验，不追加 CPU P1 或改变已批准例外。"
+      "summary": "R4 定向依赖修复 AUDITED：F1–F3 已实现；四环境普通测试与三交付、W1 CUDA/cuBLASLt/Marlin 回归通过，P0 复用状态字节；仅 WSL ASan/UBSan/TSan 仍在串行验收，不追加 CPU P1 或改变例外。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-      "summary": "R4 定向依赖修复 AUDITED：F1–F3 已实现；W1 共同层/CPU 9 项及 cuBLASLt、Marlin 各 2 项通过，P0 复用状态字节；跨平台、sanitizer 与三交付待验，不追加 CPU P1 或改变已批准例外。"
+      "summary": "R4 定向依赖修复 AUDITED：F1–F3 已实现；四环境普通测试与三交付、W1 CUDA/cuBLASLt/Marlin 回归通过，P0 复用状态字节；仅 WSL ASan/UBSan/TSan 仍在串行验收，不追加 CPU P1 或改变例外。"
     },
     {
       "module": "container_concurrent",

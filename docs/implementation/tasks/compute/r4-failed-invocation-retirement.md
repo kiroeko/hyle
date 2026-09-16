@@ -107,3 +107,15 @@ P0 检查确认状态字节大小/对齐和原子 RMW 数不增加，终态增�
 历史 R3 terminal 保留旧候选身份；其余 CPU owner 状态不改变。本轮不解除旧 ggml BLOCKED 或
 compute_sched QUEUED。统一脚本 Compute + Graph 当前全实现 **32,252 行**，不含测试/第三方，
 self-check PASS。
+
+### 普通验证补齐
+
+`a116280b` 的受影响产品和测试已冻结，后续 C3 没有更改这些路径。W1 剩余直接 CPU/source
+消费者 14/14 通过，与初始九项共同覆盖 23 项；CUDA backend 三项（含 late failure）通过。
+WSL 23/23、Air/Mini 各 19/19；四环境 source 和 relocated static/shared 公开旅程全部完成，
+每种安装包的 Direct、Graph、CPU executor 均 3/3。原始证据与 SHA 见上述证据目录。
+
+Windows harness 两个问题已定向处理：tests/install 分开配置；同 exe 目录 DLL staging 串行。
+保留失败日志，不修改产品/公共治理。CUDA Provider 本身仍由 R4 各自的 card 范围继续验收。
+剩余适用项仅 WSL ASan/UBSan/TSan，正在按原声明串行执行；聚合 correctness 尚未最终裁决，
+不重跑已通过的普通门、不追加 CPU P1。当前全实现 LOC 随 C3 为 **32,562 行**，不含测试/第三方。

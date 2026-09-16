@@ -25,6 +25,21 @@ Owner `compute` / `graph` 的[当前施工卡](../../../docs/implementation/task
 `windows-initial.zip` 包含原始成功/失败日志、实际 DLL hash、完整生成代码、selector 初始计划与 LOC。
 `sha256.json` 绑定本目录产物。P0 不把旧 CPU P1 换成新候选；没有追加 CPU P1 或改变已获批例外。
 
-WSL/Air/Mini、适用 sanitizer、完整直接 CPU consumer 和四环境三交付仍未运行，不记 PASS。
-当前是实现检查点；后续仅对这些预声明范围补验。Compute + Graph 当前全实现 **32,252 行**，
-不含测试/第三方，统一脚本 self-check PASS；代码规模包含既有资产。
+## 四环境普通验证检查点
+
+产品与测试冻结在 `a116280b`。Windows 原共同层九项通过后，仅补其余直接 CPU consumer 和公开
+source 样例 14/14，通过项合计 23 项；CUDA backend 的三项（含实际 late failure）也通过。
+WSL 23/23、MacBook Air 19/19、Mac mini 19/19；四环境 relocated static/shared 的 Direct、Graph、
+公开 CPU executor 样例均各 3/3 通过。Air/Mini 为 Native-only，不能把缺席的 oneDNN 行记为执行过。
+原始 logs/CMakeCache/LastTest/候选与完整 archive hash 保存在三份 `*-ordinary.tar.gz` 和
+`windows-delivery.zip`。所有 native 构建并行度 2；重型验证串行。
+
+Windows source 配置首次同时指定 tests/install，构建合同正确拒绝；修正 harness 分为 validation
+和 SDK 配置。安装 consumer 的两个 runtime staging target 曾同时向同一 exe 目录复制相同 DLL，
+一次 COPY_FILE 失败；仅将 consumer build 串行化后通过。保留初次日志，没有修改产品/构建治理，
+没有以 PATH 替代 DLL 邻置。后续同目录 runtime staging 保持串行。
+
+`ordinary-projection.json` 确认 C7 产品/测试仍与该候选相同；其后的 C3 SwiGLU 是独立改动，不把
+C3 加入本卡的完成证明。适用 WSL ASan/UBSan/TSan 正在串行运行，尚未记 PASS；本卡未结案。
+C7 候选 Compute + Graph 全实现 **32,252 行**；C3 检查点后的当前全实现 **32,562 行**，均不含
+测试/第三方，统一脚本 self-check PASS；代码规模包含既有资产。

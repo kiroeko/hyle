@@ -1,0 +1,63 @@
+{
+  "candidate": "a116280bd73678db2790de6ea1d2758ea34b1bf0",
+  "current": "f380bc773e9abcd9c29d47f56af2bab6ea83ff9d",
+  "archive_sha256": "edac1b9c6c7a02196b838272d9fd6fae8ef71c3afaeecbd161385862ecec188b",
+  "meaning": "C7 changed product/test paths remain unchanged after the independent C3 CUDA Provider checkpoint; no old CPU timing is rebound",
+  "files": [
+    {
+      "path": "include/hyle/compute/delegated_operation.h",
+      "sha256": "4d263d736399f16ab69997ac9daa9f3c3258b067507df58eb5fa1b8d1020f7a7",
+      "matches": true
+    },
+    {
+      "path": "include/hyle/compute/prepared_operation.h",
+      "sha256": "8ad6cda2f48a151c6dcec1ced32619de26aba0489bc54a76f4cc4317952d7fbe",
+      "matches": true
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "sha256": "a00bcd98a8c5157a8f45d6bc637f50a433df9de3b606ce215eba42f05734f634",
+      "matches": true
+    },
+    {
+      "path": "src/compute/operation.cc",
+      "sha256": "ceaad5a0121afbccb3b35522d1f1381838142fed6835108c540421daa29b2d88",
+      "matches": true
+    },
+    {
+      "path": "src/compute/prepared_state.h",
+      "sha256": "d8c7f27763c26d228f752c1385979a64f008efb2da8b93a94023cc9ae70919f1",
+      "matches": true
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "cdc7a86de7447f090ff6b7293522bda05d6dbe5ddaaf0a616c9579a8cb1c82ad",
+      "matches": true
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "3893faf1a98ebe3b6c32650f6bb4f6a75a6bea4bfd9935a71d1ee06401fe966c",
+      "matches": true
+    },
+    {
+      "path": "tests/compute/custom_kernel_test.cc",
+      "sha256": "a053daef3012c5192fc4489a313646b7e5a97b449312ba3418b2e7793348905c",
+      "matches": true
+    },
+    {
+      "path": "tests/compute/operation_test.cc",
+      "sha256": "47346afb03fe7e8d5e5f75b6fe37140c11b2eb138c752363406a33f2b8c6a8ca",
+      "matches": true
+    },
+    {
+      "path": "tests/compute_backend_cpu/runtime_provider_test.cc",
+      "sha256": "3c5d01166e046d4b9ccd79ea77b77fb51153afe7b3baba2c8901f0ab315c71a6",
+      "matches": true
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "sha256": "d746a57794473ed9f25acd5d03865f02989ce12aa9d9f198d18f7b1837ddecfb",
+      "matches": true
+    }
+  ]
+}
