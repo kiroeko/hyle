@@ -48,16 +48,16 @@
 | graph_provider_onednn | BLOCKED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。 |
 | compute_ops | CLOSED | P0 / [PASS](tasks/compute/compute-ops-v4-quantized-matmul.md) | [record](tasks/compute/compute-ops-v4-quantized-matmul.md) | compute_ops R2-Q CLOSED：完整 grouped Q4 schema、既有 custom/resource/View 尾项、四环境正确性、Windows 三交付/relocation、WSL UBSan 与 P0 通过；仅关闭逻辑 schema，native kernel/默认规则仍归 R3–R6。 |
 | compute_backend_cpu | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_backend_cpu R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
-| compute_backend_cuda | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_backend_cuda R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
+| compute_backend_cuda | AUDITED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。 |
 | compute_provider_native | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | compute_provider_native R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。 |
 | compute_sched | QUEUED | — | — | compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。 |
 | compute_route_cpu | CANDIDATE | — | [record](tasks/compute/cpu-v1-four-route-foundation.md) | R3 CPU Direct 候选 d9712e68：普通入口/固定规则、四环境三交付与适用 sanitizer 已验收，engineering P1 4/4 PASS。Graph 独立工程门仍未决，R3 总包未 CLOSED；不重跑 Direct。 |
 | graph_route_cpu | BLOCKED | — | [record](tasks/compute/cpu-graph-replay-cost-audit.md) | R3 Graph replay 修正已实现；四环境 source/static/shared 与 WSL 三项 sanitizer 全过。Graph v3 资格 PASS、11/12 非劣 PASS；旧双 worker 项已过，decode-fused 单个 CI 仍跨 5% 门。n=31 预算已止，整体性能 INCONCLUSIVE。 |
-| compute_provider_cublas | SCOPED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。 |
-| compute_provider_marlin | SCOPED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。 |
-| compute_provider_cuda | SCOPED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。 |
-| compute_route_cuda | SCOPED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。 |
-| graph_route_cuda | SCOPED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。 |
+| compute_provider_cublas | AUDITED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。 |
+| compute_provider_marlin | AUDITED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。 |
+| compute_provider_cuda | AUDITED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。 |
+| compute_route_cuda | AUDITED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。 |
+| graph_route_cuda | AUDITED | — | [record](tasks/compute/cuda-v1-four-route-foundation.md) | R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

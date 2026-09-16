@@ -405,10 +405,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-      "summary": "compute_backend_cuda R3 CANDIDATE 79e96ceb：普通 CPU Direct/Graph 默认规则已实现，Windows Native/oneDNN/真实 Sched 初轮通过；三交付、跨平台与正式性能仍待完成，不计 CLOSED。",
-      "candidate": "79e96cebeb176c48d66f6b6a156fa9d910b89d82"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。"
     },
     {
       "module": "compute_provider_native",
@@ -442,32 +441,32 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "SCOPED",
-      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "state": "AUDITED",
+      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "SCOPED",
-      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "state": "AUDITED",
+      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
-      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "state": "AUDITED",
+      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
-      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "state": "AUDITED",
+      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
-      "summary": "R4 CUDA SCOPED：冻结 vendor GEMM、现代压缩 W4A16、必要 HYLE 片段、普通 Direct/Graph 与三交付的有限接入审计；尚无产品实现或性能资格。R3 CPU 未决门保持原状态。",
+      "state": "AUDITED",
+      "summary": "R4 CUDA AUDITED：现代 Marlin 无 Torch native 预检通过；冻结 C1–C6（vendor/压缩/HYLE 片段、普通 Direct/Graph、交付、backend 私有 scope 复用）。尚无 R4 产品/三交付/P1 验收，CPU 未决项保持原状态。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     }
   ]

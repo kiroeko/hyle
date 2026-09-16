@@ -1,0 +1,27 @@
+{
+  "status": "PASS_MECHANISM_ONLY",
+  "upstream_revision": "51918e252af4dfff381001f42b7ebe6a0454501b",
+  "machine": "W1-WIN RTX 4070 SM89; CUDA 13.3.73; MSVC 19.50",
+  "cases": 12,
+  "m": [
+    1,
+    7,
+    17,
+    64
+  ],
+  "k": 1024,
+  "n": 1024,
+  "group_size": 128,
+  "maximum_absolute_error": 0.001953125,
+  "packed_weight_bytes": 524288,
+  "scale_bytes": 16384,
+  "torch_runtime": false,
+  "hyle_product_integration": "NOT_RUN",
+  "performance": "NOT_RUN",
+  "dll_imports": [
+    "KERNEL32.dll"
+  ],
+  "exe_sha256": "df3daa314ada000f4c6fd2109a772b02109ff8f06acf882618d407377e585967",
+  "build_correction": "one: restore upstream --expt-relaxed-constexpr; UTF-8 compiler input for SDK headers",
+  "product_implementation_loc_excluding_tests": 31021
+}

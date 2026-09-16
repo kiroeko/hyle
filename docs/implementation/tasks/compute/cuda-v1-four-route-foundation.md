@@ -2,16 +2,18 @@
 
 ## Closure card
 
-- 状态：`SCOPED`。本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
+- 状态：`AUDITED`。本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
 - owner：`compute_provider_cublas`、`compute_provider_marlin`、`compute_provider_cuda`、
-  `compute_route_cuda`、`graph_route_cuda`。五个身份先在 `2e8eb24a` 登记为 `QUEUED`。
+  `compute_route_cuda`、`graph_route_cuda`。五个身份先在 `2e8eb24a` 登记为 `QUEUED`，
+  `d1d137e8` 进入 `SCOPED`；另绑定 `compute_backend_cuda` 的下述 C6 私有互操作边。
 - baseline：`2e8eb24a`；已有产品继承 `d57fa720`，不覆盖其 CPU 修复与验收证据。
 - trigger：用户已授权四路线实际实施；CUDA 现有 stream/resource/event/capture 可复用，但没有本轮
   普通默认计算入口、现代压缩 carrier 与完整 Graph 计算旅程。旧 copy/custom-kernel probe 不签此门。
 - 包间边界：R3 的 Graph 小片段性能门继续由[原卡](cpu-graph-replay-cost-audit.md)保持 `BLOCKED`。
   本卡不改变其 margin、样本、算法或状态。按 roadmap 的真实依赖及默认包顺序，先推进独立 CUDA owner；
   R3、整个 goal 都不因此宣告完成。若需要修改现有 Compute/Graph/CUDA backend，先登记具体反例和精确
-  owner 的新 scope，不以本卡越过它们的状态。
+  owner 的新 scope，不以本卡越过它们的状态。审计已确认 C6 需要复用 backend 私有 native scope，
+  为该 owner 从 R3 `CANDIDATE` 定向退回 `AUDITED`；其旧交付证据保留，不修改 CPU/Graph owner。
 - 主 consumer：vLLM/SGLang 的持久 compressed W4A16 权重、变化 activation、decode/短 prefill FFN，
   去除模型 batching/KV/Torch 运行时策略后，普通 C++ Direct 和 Graph 使用同一 native carrier。
 - 正交 consumer：caller-owned GPU dense matrix transform，显式 stream、两槽不同输入、异步完成与回收。
@@ -49,7 +51,7 @@ SGLang `06992c92ad4494fe9f9636e75be3e35040512447`，见
 config、设置函数属性；`kernel.h` / `marlin_template.h` 承载真实 kernel。`core/scalar_type.hpp`
 仍 include Torch exception header；native 接入需显式隔离并记录其维护责任，不能伪装为原样链接库。
 
-### 待审计后冻结的有限 FIX
+### 审计冻结的有限 FIX
 
 | ID | 问题 / 允许边界 | 验收 |
 |---|---|---|
@@ -58,13 +60,25 @@ config、设置函数属性；`kernel.h` / `marlin_template.h` 承载真实 kern
 | C3 | HYLE gated activation 与同 GPU 多 Provider 组合 | 完整 FFN，非 copy/mock，保持各实现真实数值边界 |
 | C4 | 普通 CUDA Direct/Graph 入口、固定规则与 native capture | 用户不排序 Provider、不交 profile；正确默认选择、两槽与资源复用 |
 | C5 | 实际新增组件的构建隔离、三交付、依赖/许可证与用法 | Win/Linux source/static/shared；CUDA OFF 不探测/泄漏依赖；Windows DLL 邻置 |
+| C6 | 复用 backend 已有 primary-context scope；提供同构建 Provider 的窄私有声明/导出 | 各 Provider 不复制 context manager；保留准确 context、push/pop 与错误合同；shared 真实链接 |
 
-表内为有限候选动作；进入 `AUDITED` 时补齐具体 API/packing/tactic/cost 决定后才写产品实现。
-新事实改变 scope 时按协议退回，不能顺手改已有治理或性能仪器。
+以上 C1–C6 冻结。C6 的具体证据是 `ProviderVTable::create_context` 传入精确 backend state，但 CUDA
+现有 `ScopedPrimaryContext` 定义只在私有 `cuda_internal.h`，跨 Provider DSO 没有可链接的声明/导出。
+将其已有实现原样投影到小型私有 bridge，并借取 exact primary handle；不扩大公共 API、不新造第二套
+context owner、不修改 event/capture 算法。新事实改变 scope 时按协议退回，不顺手改治理或性能仪器。
+
+### 现代 carrier 预检结论
+
+[原始来源、构建和运行证据](../../../../evidence/research/cuda-r4-modern-marlin-preflight/README.md)：
+当前 vLLM pin 的 kernel，在 Windows 无 Torch runtime 下通过 12 次真实变化输入，M=1/7/17/64、
+K=N=1024、group128，最大 double-oracle 绝对误差 0.001953125；权重 524,288 bytes、scale
+16,384 bytes。设备 kernel 未改算术。仅隔离 scalar descriptor 的 Torch 检查、修正 LLP64 模板 ID
+类型、取出现有 repack kernel；一次编译纠正恢复上游使用的 relaxed-constexpr flag。
+这证明 C2 的接入机制成立，不签 HYLE 产品、SOTA、Graph、并发、三交付或 P1。
 
 ## API / usability 边界
 
-- 普通入口拟为 `compute::cuda::create_context` 与 `graph::cuda::create_context`；用户仅选择 CUDA
+- 普通入口为 `compute::cuda::create_context` 与 `graph::cuda::create_context`；用户仅选择 CUDA
   device/resource。已登记 CPU 入口保持原样。底层 typed stream interop 仍在 backend 头中。
 - Direct 使用 `prepare`、`create_invocation`、`submit`、真实 `Completion`；Graph 使用 compile、
   bind、冷 prepare_replay、固定 submit。正式冻结前核对普通 capture recipe，不能以专家 callback 替代。
@@ -77,6 +91,30 @@ config、设置函数属性；`kernel.h` / `marlin_template.h` 承载真实 kern
 - 外部 tensor/resource borrow 要活到终态；artifact/invocation/code owner 由已有 runtime 保活。
   enqueue 成功不等于设备成功；受理部分 prefix 后的失败必须保存可等待终态。取消不提前释放资源。
 - 常态账单在审计冻结时给出；不能凭 capture 支持宣称 vendor 所有内部资源都已计费或零分配。
+
+冻结的实现边界：cuBLASLt FP16/FP32、FP32 accumulation、plain rank-2 row/column layout；不偷偷
+切成 TF32。冷 `cublasLtMatmulAlgoGetHeuristic` 绑定合格 algo，hot `cublasLtMatmul` 显式传 stream/
+workspace，参照 [NVIDIA 13.3 heuristic/capture 合同](https://docs.nvidia.com/cuda/archive/13.3.0/cublas/index.html)。
+每 invocation 保有自己的可变 vendor handle 与 scratch，prepared 描述和 algo 固定；vendor opaque
+storage 未知就报告 unknown，不假报严格配额可计费。Direct 提交不创建新的 handle/描述符或选 tactic。
+
+Marlin 冻结为 FP16 activation/output、FP32 reduction、signed symmetric group128；首轮支持 SM80+
+可编译 native kernel（实际资格只给测试过的 SM89），K 为 128 倍数、N 为 64 倍数、M=1..64。超过域
+明确拒绝，不解压为浮点冒充同格式 fallback。cold packing 使用既有 GPTQ repack/permutation，typed
+`QuantizedWeights` owner 提供 weights/scales view 给普通 QuantizedMatMul 与 Graph constant；物理
+format ID 由 CUDA adapter 拥有，用户不手写 permutation。所有 input/resource borrow 的寿命明确。
+kernel 的 tile/config/SM/共享内存需求在 prepare 固定，每槽 FP32 reduce scratch 和 locks 独立；
+前一次成功完成使 locks 回到可重用状态，失败槽不未经 reset/重准备继续使用。
+
+HYLE 中间 kernel 仅 FP16/FP32 separate/packed SwiGLU，复用现有 GatedActivation 语义；相同 CUDA
+stream 上与 cuBLASLt/Marlin 组合。普通 Graph 可通过既有 `prepare_replay(kPreferCapture)` 形成
+native captured 程序；捕获失败按已声明的模式错误/报告，不假报 captured。Graph 的规划/绑定保持
+共同层，CUDA kernel 的配置/launch 保持 CUDA owner，无需新造通用执行器。
+
+P0 静态成本预算：Context/prepare/packing/每槽创建允许显式 metadata/SDK 分配、冷上传与同步；
+成功 replay 的 HYLE adapter 不分配、不重打包、不查设备、不查规则。Direct 保留现有 admission +
+一次最终 Completion；Graph capture 只在冷 prepare_replay 逐节点调用 launcher，hot 使用原生 replay。
+图/Direct 的完整 native peer 必须包含相同 resource/数值/完成边界，vendor 内部成本全纳入计时。
 
 ## 七问与预声明验证
 
@@ -96,8 +134,8 @@ config、设置函数属性；`kernel.h` / `marlin_template.h` 承载真实 kern
 
 | Gate | 预声明范围 | 当前 verdict |
 |---|---|---|
-| scope | 有限 C1–C5、具名 owner、现有 R3 blocker 不改变 | SCOPED |
-| architecture | pinned source / 生命周期 / 原生 cold-hot 审计与有限 preflight | UNPROVEN |
+| scope | 有限 C1–C6、具名 owner、现有 R3 blocker 不改变 | AUDITED |
+| architecture | pinned source / 生命周期 / 原生 cold-hot 审计与有限 preflight | AUDITED，待产品消费复核 |
 | correctness | oracle；非法 dtype/format/shape/资源；OOM；变化输入/双槽；close/abandon/accepted prefix | UNPROVEN |
 | delivery | W1-WIN + WSL NVIDIA source/static/shared；CPU/CUDA 隔离；直接用户样例 | UNPROVEN |
 | usability_docs | 普通默认入口、packing、capture、资源/完成边界与规则说明 | UNPROVEN |
@@ -118,5 +156,6 @@ gates **未执行、未记 PASS**；本次仅身份登记的执行图等价核�
 
 ## Candidate / 裁决
 
-尚无 R4 产品 candidate；没有 R4 correctness、delivery 或 performance PASS。审计完成后记录有限 FIX
-和 API 冻结；本卡不能解除 CPU 未决项，也不把旧 CUDA CLOSED/probe 当作本轮完成。
+尚无 R4 产品 candidate；没有 R4 correctness、delivery 或 performance PASS。有限审计在预算内停止，
+进入 C1–C6 实施。统一脚本 Compute + Graph 全实现 **31,021 行**（不含测试，self-check PASS）；
+源码规模仍包含旧资产，不作进度代理。本卡不解除 CPU 未决项，不把旧 CUDA CLOSED/probe 当作完成。
