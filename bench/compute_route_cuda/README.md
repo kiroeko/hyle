@@ -41,3 +41,20 @@ fast-math or intermediate FP16 activation rounding is enabled.
 [Compilation and oracle evidence](../../evidence/correctness/cuda-r4-bench-preflight/README.md)
 does not qualify an A/A, formal P1, native-wrapper cost or winner rule. Those
 remain separate gates under the R4 contract.
+
+## Raw native cost diagnostic
+
+The separate `hyle_compute_cuda_native_cost_bench` and
+`hyle_graph_cuda_native_cost_bench` targets use the same frozen Marlin launcher,
+HYLE precise activation and cuBLASLt descriptor/heuristic settings. The caller
+owns two native workspaces, cuBLAS handles, the stream, event and captured graph
+executables. A complete call restores the CUDA context, launches the full chain
+or captured graph, records one final event and waits for it. Native errors stop
+the diagnostic; this does not provide the public API's admission, retained
+ownership, recoverable error or failure-slot retirement services.
+
+These rows are `NATURAL_ROUTE` only. They quantify the complete native boundary
+and wrapper cost without pretending that one raw event supplies Direct's three
+Completion objects and lifetime services. They reject the A/A environment knob
+and cannot be used as the SAME_CONTRACT peer. They require their own full-chain
+oracle check before any cost diagnostic is interpreted.

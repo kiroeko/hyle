@@ -50,6 +50,13 @@ if(HYLE_STATIC AND HYLE_COMPUTE_CUDA_ENABLED)
   add_executable(hyle_compute_route_cuda_bench_placement route_p1_bench.cc)
   hyle_configure_cuda_ffn_bench(
     hyle_compute_route_cuda_bench_placement compute_route_cuda 0 TRUE)
+  add_executable(hyle_compute_cuda_native_cost_bench route_p1_bench.cc)
+  hyle_configure_cuda_ffn_bench(
+    hyle_compute_cuda_native_cost_bench compute_route_cuda 0 FALSE)
+  target_compile_definitions(hyle_compute_cuda_native_cost_bench PRIVATE
+    HYLE_CUDA_NATIVE_COST_BENCH=1)
+  target_link_libraries(hyle_compute_cuda_native_cost_bench PRIVATE CUDA::cublasLt)
   hyle_register_benches(compute_route_cuda
-    hyle_compute_route_cuda_bench hyle_compute_route_cuda_bench_placement)
+    hyle_compute_route_cuda_bench hyle_compute_route_cuda_bench_placement
+    hyle_compute_cuda_native_cost_bench)
 endif()

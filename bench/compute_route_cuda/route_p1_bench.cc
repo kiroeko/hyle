@@ -24,6 +24,12 @@
 #include "hyle/compute/providers/cuda.h"
 #include "hyle/mem/buffer.h"
 #include "reference/reference_provider.h"
+#if defined(HYLE_CUDA_NATIVE_COST_BENCH)
+#include "../../src/compute_backend_cuda/native_context.h"
+#include "../../src/compute_provider_cuda/native_kernel.h"
+#include "../../src/compute_provider_marlin/native_kernel.h"
+#include <cublasLt.h>
+#endif
 #if HYLE_CUDA_GRAPH_BENCH
 #include "hyle/graph/cuda.h"
 #endif
@@ -391,6 +397,13 @@ private:
   std::size_t next_slot_ = 0;
 };
 
+#if defined(HYLE_CUDA_NATIVE_COST_BENCH)
+#include "native_cost.h"
+using PeerHarness = NativeHarness;
+#else
+using PeerHarness = Harness;
+#endif
+
 void verify(std::span<const float> actual, std::span<const float> expected,
             bool oracle) {
   if (actual.size() != expected.size())
@@ -416,24 +429,25 @@ void verify(std::span<const float> actual, std::span<const float> expected,
                actual.size(), oracle ? 1 : 0, max_error);
 }
 
-struct Runner final {
-  Harness *harness;
+template <class T> struct Runner final {
+  T *harness;
   void operator()() const { harness->run(); }
 };
 
 void measure(std::size_t rows, bool peer_first, bool allocation_first,
              std::string_view aa, bool verify_only) {
   DataSet data(rows);
-  std::unique_ptr<Harness> candidate, peer;
+  std::unique_ptr<Harness> candidate;
+  std::unique_ptr<PeerHarness> peer;
   const bool candidate_reference = aa == "native";
   const bool peer_reference = aa != "selected";
   const auto cold_start = std::chrono::steady_clock::now();
   if (allocation_first) {
-    peer = std::make_unique<Harness>(data, peer_reference);
+    peer = std::make_unique<PeerHarness>(data, peer_reference);
     candidate = std::make_unique<Harness>(data, candidate_reference);
   } else {
     candidate = std::make_unique<Harness>(data, candidate_reference);
-    peer = std::make_unique<Harness>(data, peer_reference);
+    peer = std::make_unique<PeerHarness>(data, peer_reference);
   }
   const auto cold_end = std::chrono::steady_clock::now();
   std::fprintf(
@@ -474,7 +488,11 @@ void measure(std::size_t rows, bool peer_first, bool allocation_first,
   const std::string kind =
       HYLE_CUDA_GRAPH_BENCH ? "Graph captured FFN" : "Direct FFN";
   const std::string candidate_name = "HYLE CUDA " + kind + shape;
+#if defined(HYLE_CUDA_NATIVE_COST_BENCH)
+  const std::string peer_name = "Raw native " + kind + shape;
+#else
   const std::string peer_name = "SGLang precise " + kind + shape;
+#endif
   nb::Bench bench;
   bench.title(kind + shape)
       .batch(1)
@@ -500,6 +518,12 @@ int main() {
       !environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty();
   const bool verify_only = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
   const auto aa = environment("HYLE_BENCH_AA_ROUTE");
+#if defined(HYLE_CUDA_NATIVE_COST_BENCH)
+  if (!aa.empty())
+    fail("raw native cost diagnostic is not an A/A or SAME_CONTRACT peer");
+  std::fprintf(stderr,
+               "# NATIVE_COST comparability=NATURAL_ROUTE ranking=none\n");
+#endif
   if (!aa.empty() && aa != "selected" && aa != "native")
     fail("HYLE_BENCH_AA_ROUTE must be selected or native");
   int driver = 0, runtime = 0;

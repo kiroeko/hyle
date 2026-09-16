@@ -1,0 +1,34 @@
+{
+  "product_commit": "a8c982496984c16b33c3b1d6f3a7622058f5b92c",
+  "oracle": [
+    {
+      "executable": "hyle_compute_cuda_native_cost_bench",
+      "exit_code": 0,
+      "wall_seconds": 29.5,
+      "performance_claim": false
+    },
+    {
+      "executable": "hyle_graph_cuda_native_cost_bench",
+      "exit_code": 0,
+      "wall_seconds": 28.54699999978766,
+      "performance_claim": false
+    }
+  ],
+  "comparison": "NATURAL_ROUTE only; no equivalent lifetime/error/admission claim",
+  "source_sha256": {
+    "bench/compute_route_cuda/route_p1_bench.cc": "4e0934f376e42057f87d34ba1c2555e5ca8de7599119a7c1a607164ab79e6c84",
+    "bench/compute_route_cuda/native_cost.h": "6910b963b397315a0bd27c7757df7b0ea6a2db1d4a72b83d0542e74abd52b88e",
+    "bench/compute_route_cuda/CMakeLists.txt": "73a1cf66eb92e52428d330b0676066d11f881836b65dff0dee6e446afcf1de7a",
+    "bench/graph_route_cuda/CMakeLists.txt": "590e84b04f7269b690763dae94d20c2bae55450486a3dc7660d4c55468b91970"
+  },
+  "artifacts": {
+    "hyle_compute_cuda_native_cost_bench.exe": "14aa3e82dbe4ef44302baad8f2b956d2109c8e8b5d72742dc7032f7032e18cbb",
+    "hyle_graph_cuda_native_cost_bench.exe": "007aa1541546f27becb2481b9d5bcf3936e46a94ed5e28fe118e7f2f74b7a89a"
+  },
+  "not_claimed": [
+    "cost timing",
+    "P1",
+    "noninferiority",
+    "SOTA"
+  ]
+}
