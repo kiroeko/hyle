@@ -527,14 +527,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
-      "summary": "R5 scoped: native MLX Metal region, owning results, fixed submission owner, Direct/Graph, route isolation and three deliveries; bounded A1-A6 audit, no completion claim.",
+      "state": "AUDITED",
+      "summary": "R5 A1-A6 audited: pinned MLX GPU region, fixed native submission owner, owning result/checked drain, Direct/Graph and three deliveries. Implementation and applicable validation pending.",
       "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
-      "summary": "R5 scoped: native MLX Metal region, owning results, fixed submission owner, Direct/Graph, route isolation and three deliveries; bounded A1-A6 audit, no completion claim.",
+      "state": "AUDITED",
+      "summary": "R5 A1-A6 audited: pinned MLX GPU region, fixed native submission owner, owning result/checked drain, Direct/Graph and three deliveries. Implementation and applicable validation pending.",
       "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md"
     }
   ]

@@ -1,0 +1,94 @@
+[
+  {
+    "name": "mlx",
+    "class": "fetchcontent",
+    "repository": "https://github.com/ml-explore/mlx.git",
+    "version": "0.32.2",
+    "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "git_tree": "05433bcb7241af2b3531e7ee94f1eed07d4bf15c",
+    "archive": {
+      "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
+    },
+    "expanded_tree_sha256": "95caa530dd4168a96f1100637a718f103873f6acd11718a50ddabbe9aa180ee8",
+    "license": {
+      "expression": "MIT",
+      "files": [
+        {
+          "root": "dependency",
+          "path": "LICENSE",
+          "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+        }
+      ]
+    }
+  },
+  {
+    "name": "metal_cpp",
+    "class": "fetchcontent",
+    "repository": "https://github.com/apple/metal-cpp.git",
+    "version": "metal-cpp_macOS26_iOS26",
+    "revision": "f567ed836e4cbb85788c42115a2682bbe68097ee",
+    "git_tree": "68a8efdea7394f4c542b5a3fec73401c17e7b639",
+    "archive": {
+      "url": "https://codeload.github.com/apple/metal-cpp/tar.gz/f567ed836e4cbb85788c42115a2682bbe68097ee",
+      "sha256": "c3d867f795340934ce3d61b06f84bd019528102fb8ea45e0f193d6ae24912e62"
+    },
+    "expanded_tree_sha256": "3874e9e28e8e7150699a3c6a8392699a2c92996524695396d6011db6d8a12b56",
+    "license": {
+      "expression": "Apache-2.0",
+      "files": [
+        {
+          "root": "dependency",
+          "path": "LICENSE.txt",
+          "sha256": "f4e92c7fe2aa066e294c0da9d08683dc9fb741ee6e6debbfad99a0c96e07c1f2"
+        }
+      ]
+    }
+  },
+  {
+    "name": "json",
+    "class": "fetchcontent",
+    "repository": "https://github.com/nlohmann/json.git",
+    "version": "3.11.3",
+    "revision": "9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03",
+    "git_tree": "5af76d5aa32f4b473b5dd7f82fb9f2a4257322c6",
+    "archive": {
+      "url": "https://codeload.github.com/nlohmann/json/tar.gz/9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03",
+      "sha256": "0dbc5e40a01ff142e7e68c03e85247a4dcede2f592d12d3677dee3664d17975a"
+    },
+    "expanded_tree_sha256": "6fc3450934345cca6b7313a17c4a223800a598cfb3173c522160cb048d4b8b25",
+    "license": {
+      "expression": "MIT",
+      "files": [
+        {
+          "root": "dependency",
+          "path": "LICENSE.MIT",
+          "sha256": "86b998c792894ccb911a1cb7994f7a9652894e7a094c0b5e45be2f553f45cf14"
+        }
+      ]
+    }
+  },
+  {
+    "name": "fmt",
+    "class": "fetchcontent",
+    "repository": "https://github.com/fmtlib/fmt.git",
+    "version": "12.1.0",
+    "revision": "407c905e45ad75fc29bf0f9bb7c5c2fd3475976f",
+    "git_tree": "07e6ac840f6697f4a83181d249a4c6aaf23b374e",
+    "archive": {
+      "url": "https://codeload.github.com/fmtlib/fmt/tar.gz/407c905e45ad75fc29bf0f9bb7c5c2fd3475976f",
+      "sha256": "2bc1fe4a5b6d5d6a614239b4ca1d520e66e152a02d3d262684d26dfd6ab3438a"
+    },
+    "expanded_tree_sha256": "cd0d9446fff4d66ea07215a03732f99bd397e9f4e57a4163c3a0d1545cc0f0bd",
+    "license": {
+      "expression": "MIT",
+      "files": [
+        {
+          "root": "dependency",
+          "path": "LICENSE",
+          "sha256": "07580f2a3b35709ce703d523f447b242f6dfec7582a8c0df102c7fa2849375f8"
+        }
+      ]
+    }
+  }
+]

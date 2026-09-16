@@ -2,7 +2,8 @@
 
 ## Closure card
 
-- 状态：`SCOPED`。身份在 `32aade77` 以 `QUEUED` 登记；尚无路线完成声明。
+- 状态：`AUDITED`。身份在 `32aade77` 以 `QUEUED` 登记、`8c2f6962` 进入 SCOPED；
+  以下 A1–A6 与 API/成本边界冻结，开始产品实施，尚无路线完成声明。
 - owner：`compute_route_apple` 与 `graph_route_apple`；canonical baseline
   `553a7d6512f68f4b9a1ec9c253b6c4df04616fda`，保留已经 CLOSED 的 R1–R4。
 - trigger：[四路线合同](four-route-foundation-refactor.md) R5 已获实施授权，目前没有 Apple 产品路径。
@@ -41,7 +42,7 @@
 不机械拆出没有独立能力的 backend/provider 外壳。MLX runtime、计算适配与默认规则共同属于
 `compute_route_apple`；只有 Graph lowering 需要另一因子。共同 Compute/Graph 不反向依赖 MLX。
 
-## 待冻结的有限 FIX
+## 审计冻结的有限 FIX
 
 | ID | 问题与允许改动 | 必须验收 |
 |---|---|---|
@@ -52,7 +53,7 @@
 | A5 | 路线风险验证与成本账单 | Oracle、边界、OOM/注入故障、晚到失败、取消/关闭、host 插桩与真 Metal |
 | A6 | 用法、默认规则证据、三交付消费者、不可变候选 P1 | 每条路线自己的七门完整；未决事实不挪给 R7 首次接线 |
 
-## API / usability 冻结方向
+## API / usability 冻结
 
 原生 MLX 类型只出现在 Apple 专属头与 target；通用 Compute/Graph 头不带 SDK。
 Direct 的整个 region 可用自然 C++ callable 表达，接收 MLX arrays 与该 Context 的 stream；
@@ -101,6 +102,23 @@ Graph:  GraphBuilder typed DAG -> graph::apple::compile(context, graph, constant
 - 现有 Graph 公开只读结构足以降图；R2 affine Q4 定义是 `q * scale + bias`，不是整数 zero-point。
   不因 Apple 新 factor 便利而重开 Graph/Compute schema。
 
+### 审计裁决
+
+采用固定 owner 线程与 MLX `compile`/`async_eval`/checked `synchronize`，不增加一条未经证明的
+caller-thread 快路径。Direct native arrays/callable 是有意的 Apple 专属 C++ 接口；它不要求
+Provider 排序或 profile，也不向共同头泄漏 SDK。Graph 从公开只读结构降图，共同 owner 无需重开。
+
+A1 选择 MLX_METAL_JIT=ON：shader 源码嵌入 native 库，支持可重定位 static/shared，冷准备承担
+实际 JIT 与暖机。CPU/CUDA/Python/GGUF/safetensors/tests/examples 全部关闭。原生算法仍是锁定 MLX，
+热态只有已暖形状；无 metallib 的维护者绝对路径依赖。此为待产品验证的构建选择，不是性能 PASS。
+
+Apple 现已发布官方 [Metal-C++ Git 源码](https://github.com/apple/metal-cpp)，采用其 26 release
+commit `f567ed836e4cbb85788c42115a2682bbe68097ee`；136 个 .hpp 与 MLX 所指定的官方 26 ZIP
+逐字节一致。因此四个实际依赖都能使用现有 Git lock/cache 合同，无需重写公共依赖工具。
+版本、archive/tree/license hash 与核对 receipt 见
+[本轮 source admission](../../../../evidence/research/apple-r5-source-admission/README.md)。
+不另开同内容的研究 native 构建；下一次真机编译直接验证 A1/A2 产品输入，旧 probe 不计产品完成。
+
 ## 七问与验证矩阵
 
 1. 第三方：上列 pin/许可证与 A1 receipt；没有 CPU fallback，版本升级由本 owner 重审。
@@ -114,8 +132,8 @@ Graph:  GraphBuilder typed DAG -> graph::apple::compile(context, graph, constant
 
 | Gate | 适用风险 / 预声明证据 | 当前 verdict |
 |---|---|---|
-| scope | 两 owner、A1–A6、两个真实消费形状 | SCOPED |
-| architecture | 依赖隔离、原生 full-region、正确输出 owner 与线程/完成审计 | UNPROVEN |
+| scope | 两 owner、A1–A6、两个真实消费形状 | AUDITED |
+| architecture | 依赖隔离、原生 full-region、正确输出 owner 与线程/完成源码审计已固定；产品回放待验 | AUDITED |
 | correctness | Air + mini 真 Metal；Q4 独立解码 oracle、变化输入、非法域、两槽、lease、故障、并发/close | UNPROVEN |
 | delivery | 两 Mac source/static/shared 与 relocation；Windows/WSL Apple OFF 无探测；public headers | UNPROVEN |
 | usability_docs | 普通 Direct/Graph sample、默认规则边界、native custom、成本和误用 | UNPROVEN |
