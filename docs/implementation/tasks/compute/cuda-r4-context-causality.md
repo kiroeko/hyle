@@ -52,3 +52,6 @@ CPU2，retain 恢复后正常释放/退出；第二次保持整个进程单核�
 
 当前有限修正由[独立 native-runtime 拓扑工具任务](../project/performance-native-runtime-topology-2026-09.md)
 承接：现有自有 worker 合同不能如实表达 opaque SDK 的线程管理，不在模块里假报逐线程 pin。
+
+工具修正已结案；[模块采集接线与进度回归](cuda-r4-native-helper-qualification.md) 按独立有限卡执行，
+产品 owner 仍需满足恢复条件，不借工具 PASS 提前解除 BLOCKED。
