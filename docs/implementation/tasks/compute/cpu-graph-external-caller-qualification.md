@@ -1,6 +1,6 @@
 # R3 Graph：独立 caller 的验收环境纠正
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -46,3 +46,13 @@
 的 `_child_environment` / `_apply_sampling_policy`，无需手写另一套 mask 或线程环境。v2 只复制
 v1 并更新实验 ID、资源/模式说明、topology 及 validator argv，不改十二项数值/计费合同。
 有限 FIX 到此冻结；没有发现允许产品算法或 Sched 改动的新事实。
+
+## 不可变候选
+
+benchmark/validator 固定在 `2b613413cd30af845f0b66911e75a2fb455acd2a`。相对 d9712e68，
+include/src/samples/cmake/CMakeLists.txt 全部无差异，产品投影继续复用其普通验收。v2 合同
+validate、validator Python 编译及记录 host probe 上的 cold policy/environment 接线检查通过；
+selector 仅选 docs/closure，两门 PASS，其余 98 门 skipped，未触发产品重建或采样。
+
+两个 benchmark target 构建和一次预声明 A/A/P1 仍待执行；CANDIDATE 不是资格 PASS。
+Windows 三交付完成后按串行队列运行，使用全新 build/evidence 目录，不覆盖 v1 失败包。

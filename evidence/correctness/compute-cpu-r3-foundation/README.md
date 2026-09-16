@@ -1,7 +1,7 @@
 # R3 CPU 默认 Direct / Graph 候选验收
 
-候选：`79e96cebeb176c48d66f6b6a156fa9d910b89d82`。本目录目前是进行中的验收记录，
-R3 仍为 CANDIDATE；尚未宣告路线完成。当前施工卡见
+初始候选：`79e96cebeb176c48d66f6b6a156fa9d910b89d82`；当前产品投影为 `d9712e68`。
+本目录是进行中的验收记录；R3 总体验收仍 INCONCLUSIVE，尚未宣告路线完成。当前施工卡见
 [CPU 四路线基础任务](../../../docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md)。
 
 ## 已完成的本轮验证
@@ -72,3 +72,36 @@ HYLE 目标仍由 CMake/Ninja 实际重建。包内 Unix recipe 是后续验证�
 比较 ratio=0.9027134979，超过既定 gross 停止线。所有原始输出保留；benchmark 的 cold guard
 阻止首个产品进程计时，所以没有修正候选的产品性能采样结果。Graph 两个 owner 已裁决
 BLOCKED，R3 总体验收 INCONCLUSIVE。普通交付与 sanitizer 将独立完成，不改写这个结果。
+
+## 修正产品的后续普通验收
+
+下面是 d9712e68 产品投影的实际结果，补充上述初始候选记录。均使用实际 `HYLE_WERROR=ON`、
+Ninja parallel 2，跨机器重型验证串行。两 Mac 仅证明正确性/交付，未签性能。
+
+| 环境 | source | relocated shared / static | 额外风险 | 原始包 |
+|---|---|---|---|---|
+| WSL / GCC 14.2 / oneDNN AUTO | 23/23 PASS | 各 3/3 PASS | 新 routes / Sched consumer 的 ASan、UBSan、TSan 各 3/3 PASS | linux-correction-logs.tar.gz |
+| Air / Native AUTO | 19/19 PASS | 各 3/3 PASS | 缺席 oneDNN 的静态安装边已实际通过 | air-correction-logs.tar.gz |
+| Mini / Native AUTO | 19/19 PASS | 各 3/3 PASS | 同一普通 Direct/Graph/Sched consumer | mini-correction-logs.tar.gz |
+
+WSL 首次 strict GCC 构建发现六处测试 GoogleTest 宏 dangling-else；只覆盖 test-only `6353adf4`
+花括号修正后通过。包保存失败、修正 projection receipt 与最终日志。产品仍为 d9712e68；
+外部 oneDNN JIT 没有被 sanitizer 插桩，sanitizer 只签 HYLE route/consumer 的声明范围。
+所有源码来自 Windows 出站 projection；验证副本未反向提供产品修改。Windows 最终三交付、
+CPU OFF 裁剪与工程 P1 尚待完成。
+
+## 共核诊断与新实验合同
+
+`parallel-aa-diagnosis.zip` 保存固定 16 进程的 power-saving/balanced × caller 共核/独立核对照。
+`parallel-aa-lowlatency.zip` 保存用户要求的 8 进程 low-latency 对照。仅 copied benchmark 的 cold
+配置有变化，链接 d9712e68 原静态库，记录全部输出、per-round 数据、源码/库 hash 和 host probe。
+
+low-latency 时 caller 共核的双 worker 片段中位约 70.274ms，独立后约 30.780us；每组仍各有
+一个同实现比较超过 10% gross 门，独立组最高 ratio=1.10195。两组都是 DIAGNOSTIC，均非 PASS。
+证据支持纠正共核资源配置，尚未证明 Sched 内部某一条等待语句就是全部长延迟的原因。
+
+后续明确使用三个独立 P 核的新 v2 合同，见
+[独立 caller 验收卡](../../../docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md)。
+这是有限的新合同资格工作，原 v1 失败保留；新 A/A 未通过就不能计时产品。公共工具补丁另有
+独立 task 和 11 项 PASS，不是 Compute/Graph 产品进度。最新统一 LOC 与 self-check 在
+loc-external-caller-worktree.json：Compute+Graph 实现仍为 31,023 行，不含测试。

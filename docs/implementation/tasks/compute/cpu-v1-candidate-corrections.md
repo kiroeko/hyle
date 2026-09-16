@@ -115,3 +115,9 @@ bulk.cc 的 notifier 在 Event::signal 返回后才发布 notification_complete�
 用户随后明确建议性能模式。Windows本来已使用卓越性能电源计划；新增一次有界 low-latency
 诊断：仅调用现有 kLowLatency，caller=2/4 × 执行/分配正反，共8进程，原库仍不改。
 这是用户追加的具体模式检查，不覆写第一组结果，不替代正式资格或解除 BLOCKED。
+
+固定 8 进程 low-latency 诊断已结束：caller 共核的双 worker 片段中位约70.274ms，独立后约
+30.780us；两组各有一个 ratio 越过10% gross，独立组最高1.10195，均不签PASS。原始数据保存在
+parallel-aa-lowlatency.zip。新事实与用户明确要求性能模式后，另立
+[独立 caller 验收环境纠正](cpu-graph-external-caller-qualification.md)，明确将资源合同变为三个
+物理P核，依法重新SCOPED/AUDITED。本卡的旧v1停止结论保持不变，新合同仍必须先过原A/A门。

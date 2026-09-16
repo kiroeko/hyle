@@ -372,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md",
-      "summary": "R3 Graph 验收环境纠正 AUDITED：固定 E1–E3，仅 benchmark 低延迟、独立 caller 拓扑与 v2 合同；产品 d9712e68 不变，原统计停止线不变。"
+      "summary": "R3 Graph 验收环境候选 2b613413：三 P 核外部 caller + 两 worker、既有低延迟模式已固定；产品投影与 d9712e68 相同，新合同 A/A/P1 尚待裁决。",
+      "candidate": "2b613413cd30af845f0b66911e75a2fb455acd2a"
     },
     {
       "module": "compute_ops",
@@ -422,9 +423,10 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "summary": "R3 Graph 验收环境纠正 AUDITED：固定 E1–E3，仅 benchmark 低延迟、独立 caller 拓扑与 v2 合同；产品 d9712e68 不变，原统计停止线不变。",
-      "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md"
+      "state": "CANDIDATE",
+      "summary": "R3 Graph 验收环境候选 2b613413：三 P 核外部 caller + 两 worker、既有低延迟模式已固定；产品投影与 d9712e68 相同，新合同 A/A/P1 尚待裁决。",
+      "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md",
+      "candidate": "2b613413cd30af845f0b66911e75a2fb455acd2a"
     }
   ]
 }
