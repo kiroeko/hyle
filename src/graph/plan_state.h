@@ -24,6 +24,12 @@
 
 namespace hyle::graph::detail {
 
+enum class InvocationPhase : std::uint8_t { kIdle, kRunning, kFailed };
+static_assert(sizeof(std::atomic<InvocationPhase>) ==
+              sizeof(std::atomic<bool>));
+static_assert(alignof(std::atomic<InvocationPhase>) ==
+              alignof(std::atomic<bool>));
+
 inline constexpr std::uint32_t kNoWorkspaceRequest = UINT32_MAX;
 inline constexpr std::uint32_t kNoInPlaceSource = UINT32_MAX;
 inline constexpr std::uint8_t kExternalInput = 1u << 0;
@@ -984,9 +990,9 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   AggregateCompletionState aggregate_completion{};
   compute::detail::CompletionLifetime completion_lifetime{};
   // Only one run may use mutable bindings/provider invocation state at a time.
-  // A Completion lifetime attachment returns this flag to idle at the true
-  // terminal point and retains the state if the public Invocation is released.
-  std::atomic<bool> in_flight{false};
+  // A Completion attachment publishes idle only after success, failed after
+  // failure, and retains the state if the public Invocation is released.
+  std::atomic<InvocationPhase> phase{InvocationPhase::kIdle};
   std::atomic<bool> outputs_ready{false};
   ReplayRoute replay_route = ReplayRoute::kUnprepared;
   ReplayReport replay_report{};

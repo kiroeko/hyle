@@ -1,0 +1,21 @@
+{
+  "tool": "MSVC 19.50 Release / dumpbin /DISASM:NOBYTES",
+  "baseline_object": "operation-before.obj copied from the ab6d87b3 Marlin shared build before C7 rebuild",
+  "metadata": "InvocationPhase uses the existing atomic byte; sizeof and alignof static_assert in each owner, all other slot members unchanged",
+  "atomic_rmw": "same Direct span-submit byte CAS and existing refcount increment; terminal still a release byte store",
+  "added_cost": "Status decode at terminal; already-terminal Direct Completion status is observed via wait without a new asynchronous wait; exceptional post-accept attachment/assembly failure drains before returning without Completion",
+  "not_claimed": "no byte-identical hot path or new timing claim; old CPU P1 retains its old candidate; R4 final P1 includes the new source",
+  "blocks": {
+    "operation-before.asm": "?mark_operation_terminal@?A0xcdad0fef@compute@hyle@@YAXPEAXAEBVStatus@3@@Z (void __cdecl hyle::compute::`anonymous namespace'::mark_operation_terminal(void *,class hyle::Status const &)):\n  0000000000000000: nop\n  0000000000000002: nop\n  0000000000000003: mov         byte ptr [rcx+30h],0\n  0000000000000007: ret\n",
+    "operation-after.asm": "?mark_operation_terminal@?A0xcdad0fef@compute@hyle@@YAXPEAXAEBVStatus@3@@Z (void __cdecl hyle::compute::`anonymous namespace'::mark_operation_terminal(void *,class hyle::Status const &)):\n  0000000000000000: mov         rax,qword ptr [rdx]\n  0000000000000003: xor         r8d,r8d\n  0000000000000006: cmp         rax,1\n  000000000000000A: mov         edx,2\n  000000000000000F: nop\n  0000000000000010: cmove       edx,r8d\n  0000000000000014: mov         byte ptr [rcx+30h],dl\n  0000000000000017: ret\n",
+    "executable-after.asm": "?mark_invocation_terminal@?A0x779b0e4d@graph@hyle@@YAXPEAXAEBVStatus@3@@Z (void __cdecl hyle::graph::`anonymous namespace'::mark_invocation_terminal(void *,class hyle::Status const &)):\n  0000000000000000: mov         r8,qword ptr [rdx]\n  0000000000000003: nop\n  0000000000000004: cmp         r8,1\n  0000000000000008: sete        al\n  000000000000000B: mov         byte ptr [rcx+0000000000003FB9h],al\n  0000000000000011: mov         rax,qword ptr [rcx+28h]\n  0000000000000015: cmp         byte ptr [rax+0000000000004039h],0\n  000000000000001C: jne         0000000000000026\n  000000000000001E: nop\n  000000000000001F: mov         byte ptr [rax+000000000000403Ah],0\n  0000000000000026: xor         edx,edx\n  0000000000000028: mov         eax,2\n  000000000000002D: cmp         r8,1\n  0000000000000031: nop\n  0000000000000032: cmove       eax,edx\n  0000000000000035: mov         byte ptr [rcx+0000000000003FB8h],al\n  000000000000003B: ret\n",
+    "operation-before.asm:span-submit-locks": [
+      "  00000000000000CC: lock cmpxchg byte ptr [rcx+30h],dl",
+      "  00000000000002DC: lock inc    dword ptr [rax]"
+    ],
+    "operation-after.asm:span-submit-locks": [
+      "  00000000000000D1: lock cmpxchg byte ptr [rcx+30h],dl",
+      "  000000000000030C: lock inc    dword ptr [rax]"
+    ]
+  }
+}

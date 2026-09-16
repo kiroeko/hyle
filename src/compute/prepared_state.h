@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <span>
 
@@ -11,6 +12,12 @@
 #include "provider_internal.h"
 
 namespace hyle::compute::detail {
+
+enum class InvocationPhase : std::uint8_t { kIdle, kRunning, kFailed };
+static_assert(sizeof(std::atomic<InvocationPhase>) ==
+              sizeof(std::atomic<bool>));
+static_assert(alignof(std::atomic<InvocationPhase>) ==
+              alignof(std::atomic<bool>));
 
 struct PreparedShapeDomain final {
   ProviderShapeDomain view{};
@@ -151,7 +158,7 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   PreparedState *prepared = nullptr;
   void *provider_state = nullptr;
   CompletionLifetime completion_lifetime{};
-  std::atomic<bool> in_flight{false};
+  std::atomic<InvocationPhase> phase{InvocationPhase::kIdle};
   bool separate_allocator = false;
 };
 

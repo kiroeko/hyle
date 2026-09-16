@@ -702,11 +702,14 @@ make_specialized_graph(const detail::GraphState &source,
 
 void mark_invocation_terminal(void *opaque, const Status &terminal) noexcept {
   auto *state = static_cast<detail::InvocationState *>(opaque);
-  state->outputs_ready.store(terminal.ok(), std::memory_order_release);
+  const bool succeeded = terminal.ok();
+  state->outputs_ready.store(succeeded, std::memory_order_release);
   if (!state->plan->supports_concurrent_invocations) {
     state->plan->exclusive_in_flight.store(false, std::memory_order_release);
   }
-  state->in_flight.store(false, std::memory_order_release);
+  state->phase.store(succeeded ? detail::InvocationPhase::kIdle
+                               : detail::InvocationPhase::kFailed,
+                     std::memory_order_release);
 }
 
 void release_invocation_lifetime(void *opaque) noexcept {
@@ -6957,9 +6960,12 @@ Status Invocation::bind(ValueId value,
   if (state_ == nullptr) {
     return Status::FailedPrecondition("invocation is invalid");
   }
-  if (state_->in_flight.load(std::memory_order_acquire)) {
+  if (const auto phase = state_->phase.load(std::memory_order_acquire);
+      phase != detail::InvocationPhase::kIdle) {
     return Status::FailedPrecondition(
-        "invocation bindings cannot change while work is in flight");
+        phase == detail::InvocationPhase::kFailed
+            ? "failed graph invocation must be recreated"
+            : "invocation bindings cannot change while work is in flight");
   }
   if (!tensor.valid())
     return Status::InvalidArgument("tensor binding is invalid");
@@ -7007,9 +7013,12 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
   if (state_ == nullptr) {
     return Status::FailedPrecondition("invocation is invalid");
   }
-  if (state_->in_flight.load(std::memory_order_acquire)) {
+  if (const auto phase = state_->phase.load(std::memory_order_acquire);
+      phase != detail::InvocationPhase::kIdle) {
     return Status::FailedPrecondition(
-        "invocation bindings cannot change while work is in flight");
+        phase == detail::InvocationPhase::kFailed
+            ? "failed graph invocation must be recreated"
+            : "invocation bindings cannot change while work is in flight");
   }
   if (!tensor.valid())
     return Status::InvalidArgument("tensor binding is invalid");
@@ -7078,15 +7087,19 @@ std::optional<std::size_t> Invocation::exact_variant_index() const noexcept {
 }
 
 bool Invocation::in_flight() const noexcept {
-  return state_ != nullptr && state_->in_flight.load(std::memory_order_acquire);
+  return state_ != nullptr && state_->phase.load(std::memory_order_acquire) ==
+                                  detail::InvocationPhase::kRunning;
 }
 
 Status Invocation::reset() noexcept {
   if (state_ == nullptr)
     return Status::FailedPrecondition("invocation is invalid");
-  if (state_->in_flight.load(std::memory_order_acquire)) {
+  if (const auto phase = state_->phase.load(std::memory_order_acquire);
+      phase != detail::InvocationPhase::kIdle) {
     return Status::FailedPrecondition(
-        "invocation cannot reset while work is in flight");
+        phase == detail::InvocationPhase::kFailed
+            ? "failed graph invocation must be recreated"
+            : "invocation cannot reset while work is in flight");
   }
   invalidate_binding_cache(*state_);
   state_->outputs_ready.store(false, std::memory_order_release);
@@ -7112,9 +7125,12 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
                                   ReplayOptions options) noexcept {
   if (state_ == nullptr)
     return Status::FailedPrecondition("invocation is invalid");
-  if (state_->in_flight.load(std::memory_order_acquire)) {
+  if (const auto phase = state_->phase.load(std::memory_order_acquire);
+      phase != detail::InvocationPhase::kIdle) {
     return Status::FailedPrecondition(
-        "invocation replay cannot be prepared while work is in flight");
+        phase == detail::InvocationPhase::kFailed
+            ? "failed graph invocation must be recreated"
+            : "invocation replay cannot be prepared while work is in flight");
   }
   if (options.mode != ReplayMode::kCommands &&
       options.mode != ReplayMode::kPreferCapture &&
@@ -7438,11 +7454,9 @@ Invocation::output(ValueId value) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
-  if (state_->in_flight.load(std::memory_order_acquire)) {
-    return std::unexpected(Status::FailedPrecondition(
-        "graph outputs are unavailable while work is in flight"));
-  }
-  if (!state_->outputs_ready.load(std::memory_order_acquire)) {
+  if (state_->phase.load(std::memory_order_acquire) !=
+          detail::InvocationPhase::kIdle ||
+      !state_->outputs_ready.load(std::memory_order_acquire)) {
     return std::unexpected(Status::FailedPrecondition(
         "graph outputs require a successful completed submission"));
   }
@@ -7511,11 +7525,14 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
-  bool idle = false;
-  if (!state_->in_flight.compare_exchange_strong(
-          idle, true, std::memory_order_acq_rel, std::memory_order_acquire)) {
-    return std::unexpected(
-        Status::FailedPrecondition("invocation already has work in flight"));
+  auto idle = detail::InvocationPhase::kIdle;
+  if (!state_->phase.compare_exchange_strong(
+          idle, detail::InvocationPhase::kRunning, std::memory_order_acq_rel,
+          std::memory_order_acquire)) {
+    return std::unexpected(Status::FailedPrecondition(
+        idle == detail::InvocationPhase::kFailed
+            ? "failed graph invocation must be recreated"
+            : "invocation already has work in flight"));
   }
   const detail::PlanState &plan = *state_->plan;
   bool exclusive = false;
@@ -7523,7 +7540,8 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
       !state_->plan->exclusive_in_flight.compare_exchange_strong(
           exclusive, true, std::memory_order_acq_rel,
           std::memory_order_acquire)) {
-    state_->in_flight.store(false, std::memory_order_release);
+    state_->phase.store(detail::InvocationPhase::kIdle,
+                        std::memory_order_release);
     return std::unexpected(Status::FailedPrecondition(
         "a provider in this executable requires serialized invocations"));
   }
@@ -7538,7 +7556,8 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
           state->plan->exclusive_in_flight.store(false,
                                                  std::memory_order_release);
         }
-        state->in_flight.store(false, std::memory_order_release);
+        state->phase.store(detail::InvocationPhase::kIdle,
+                           std::memory_order_release);
       }
     }
     void disarm() noexcept { armed = false; }
@@ -7813,6 +7832,17 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
     return Status::Ok();
   };
 
+  // Only used for an internal assembly failure after acceptance. No borrowed
+  // run storage can escape while its Completion is unavailable to the caller.
+  auto retire_unreturnable_prefix = [&](const Status &failure) noexcept {
+    for (auto &completion : state_->segment_completions) {
+      if (completion.valid())
+        completion.wait().IgnoreError();
+    }
+    mark_invocation_terminal(state_, failure);
+    rollback.disarm();
+  };
+
   if (!tail_error.ok()) {
     // Preserve the latest accepted ordered prefix from every participating
     // lane. A synchronous tail rejection therefore remains asynchronous
@@ -7839,16 +7869,20 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
         select_latest_queue_prefixes(std::span<const std::uint32_t>(
             state_->aggregate_segments.data(), count));
     const Status assembled = assemble_completion(selected, tail_error);
-    if (!assembled.ok())
+    if (!assembled.ok()) {
+      retire_unreturnable_prefix(assembled);
       return std::unexpected(assembled);
+    }
     tail_error = Status::Ok();
   } else {
     const auto selected =
         select_latest_queue_prefixes(std::span<const std::uint32_t>(
             plan.completion_segments.data(), plan.completion_segments.size()));
     Status assembled = assemble_completion(selected, Status::Ok());
-    if (!assembled.ok())
+    if (!assembled.ok()) {
+      retire_unreturnable_prefix(assembled);
       return std::unexpected(std::move(assembled));
+    }
   }
   if (!final_completion.valid())
     final_completion = compute::Completion::completed();
@@ -7869,8 +7903,10 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
       final_completion, state_->completion_lifetime);
   if (!attached.ok()) {
     // This is an invariant/error path after work may have been accepted.
-    // Drain before exposing mutable Invocation storage again.
+    // Drain before returning without a Completion, then retire the slot.
     final_completion.wait().IgnoreError();
+    mark_invocation_terminal(state_, attached);
+    rollback.disarm();
     return std::unexpected(std::move(attached));
   }
   rollback.disarm();

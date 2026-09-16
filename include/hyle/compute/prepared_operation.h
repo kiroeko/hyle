@@ -216,6 +216,10 @@ private:
 // If runtime_properties().supports_concurrent_invocations is false, direct
 // callers must serialize every Invocation of that PreparedOperation through
 // terminal Completion. Direct submit does not add a shared artifact lock.
+// An accepted run that ends in failure retires this invocation: in_flight()
+// becomes false, but subsequent submit fails. Create a fresh invocation;
+// provider/device recovery may additionally require rebuilding its owners.
+// A rejection before acceptance leaves the invocation reusable.
 class OperationInvocation final {
 public:
   OperationInvocation() noexcept = default;

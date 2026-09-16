@@ -493,6 +493,10 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   不要通过包含 `src/` 私有 Provider SPI 模拟公开扩展。
 - admission 前的参数、shape、alias、context/queue mismatch 由外层 `Result` 报告；接纳后的 mapping、coherence
   等失败由 Completion terminal `Status` 报告，两层都要检查。
+- 已接纳工作的 Completion 若以失败（含实际取消）终结，该 OperationInvocation/DelegatedInvocation
+  退役。此时 `in_flight()` 为 false，但再次 submit 会失败；从原 Prepared 对象重新创建槽才能重新提交。
+  未接纳工作的拒绝仍可修正参数后重试。设备或 Provider 自身失效可能还需重建对应 owner；重建槽不修复
+  设备故障，也不缩短已提交 payload/workspace 的借用寿命。
 - `DelegatedInvocationOptions::dependency_capacity` 在冷创建时预留依赖 scratch；零默认 input_count+1。
   `submit_after(span<const Completion* const>, inputs, outputs)` 校验容量及依赖。源 Completion 与输入/输出
   storage 必须活过消费完成，期间不能移动、销毁或 settle 源句柄的 native state；不支持的 native 依赖在接纳前拒绝，

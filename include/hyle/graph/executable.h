@@ -898,6 +898,10 @@ private:
 // in the worst case, plus O(effect resources) per bind for tensor/effect alias
 // validation. Repeated submit remains O(emitted steps+bindings), with no
 // separate scan of effect resources.
+// An accepted run's failed terminal Completion retires the slot: submit, bind,
+// reset and prepare_replay then reject it. Create another Invocation from the
+// Executable; a provider/device failure may additionally require rebuilding
+// its owners. Rejection before any accepted work leaves the slot reusable.
 class Invocation final {
 public:
   Invocation() noexcept = default;

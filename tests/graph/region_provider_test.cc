@@ -3748,20 +3748,30 @@ TEST(GraphRegions,
   EXPECT_TRUE(cancelled.wait().IsCancelled());
   EXPECT_FALSE(invocation.in_flight());
   probe.cancelled = false;
+  EXPECT_TRUE(invocation.submit().error().IsFailedPrecondition());
+  auto recreate = [&] {
+    invocation = compiled.executable.create_invocation().value();
+    EXPECT_TRUE(invocation.bind(logical.input, input.view).ok());
+    EXPECT_TRUE(invocation.bind(logical.output, output.view).ok());
+  };
+  recreate();
 
   probe.terminal_failure = true;
   EXPECT_TRUE(invocation.submit()->wait().IsInternal());
   EXPECT_FALSE(invocation.in_flight());
   probe.terminal_failure = false;
+  EXPECT_TRUE(invocation.submit().error().IsFailedPrecondition());
+  EXPECT_TRUE(invocation.reset().IsFailedPrecondition());
+  recreate();
 
   Completion abandoned = invocation.submit().value();
   invocation = {};
-  EXPECT_EQ(probe.destroy_invocation_count, 0u);
+  EXPECT_EQ(probe.destroy_invocation_count, 2u);
   abandoned = {};
   ASSERT_TRUE(probe.abandoned_lifetime.valid());
-  EXPECT_EQ(probe.destroy_invocation_count, 0u);
+  EXPECT_EQ(probe.destroy_invocation_count, 2u);
   finish_abandoned_prefix(probe);
-  EXPECT_EQ(probe.destroy_invocation_count, 1u);
+  EXPECT_EQ(probe.destroy_invocation_count, 3u);
 }
 
 TEST(GraphRegions, DelegatedSingleOperationUsesTheGraphLifetimeOwner) {
@@ -4253,6 +4263,69 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
   EXPECT_EQ(read(output, expected.size()),
             std::vector<float>(expected.begin(), expected.end()));
+}
+
+TEST(GraphRegions, FailedCommandAndCapturedSlotsRetireAtTheActualTerminal) {
+  for (bool capture : {false, true}) {
+    for (bool abandon : {false, true}) {
+      SCOPED_TRACE(capture);
+      SCOPED_TRACE(abandon);
+      RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+      probe.capture_supported = capture;
+      probe.artifact_properties.runtime.capture_compatible = true;
+      const auto logical = make_negations(2);
+      auto context = make_context(probe);
+      auto compiled = hyle::graph::compile(logical.graph, context).value();
+      auto input = make_tensor(row(8)), output = make_tensor(row(8));
+      const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
+      write(input, values);
+      auto queue = context.create_queue().value();
+      const std::array queues{hyle::graph::QueueBinding{
+          .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+      const hyle::graph::ReplayOptions options{
+          .mode = capture ? hyle::graph::ReplayMode::kRequireCapture
+                          : hyle::graph::ReplayMode::kCommands};
+      auto make_slot = [&] {
+        auto result = compiled.executable.create_invocation().value();
+        EXPECT_TRUE(result.bind(logical.input, input.view).ok());
+        EXPECT_TRUE(result.bind(logical.output, output.view).ok());
+        EXPECT_TRUE(result.prepare_replay(queues, options).ok());
+        return result;
+      };
+      auto failed_slot = make_slot();
+      auto independent_slot = make_slot();
+      auto completion = failed_slot.submit(queues).value();
+      EXPECT_TRUE(failed_slot.in_flight());
+      probe.terminal_failure = true;
+      if (abandon) {
+        completion = {};
+        EXPECT_TRUE(failed_slot.in_flight());
+        finish_abandoned_prefix(probe);
+      } else {
+        EXPECT_TRUE(completion.wait().IsInternal());
+      }
+      EXPECT_FALSE(failed_slot.in_flight());
+      probe.terminal_failure = false;
+      const auto submits = probe.submit_attempt_count;
+      const auto captures = probe.capture_launch_count;
+      EXPECT_TRUE(failed_slot.reset().IsFailedPrecondition());
+      EXPECT_TRUE(failed_slot.bind(logical.input, input.view.as_const())
+                      .IsFailedPrecondition());
+      EXPECT_TRUE(
+          failed_slot.bind(logical.output, output.view).IsFailedPrecondition());
+      EXPECT_TRUE(
+          failed_slot.prepare_replay(queues, options).IsFailedPrecondition());
+      EXPECT_TRUE(failed_slot.submit(queues).error().IsFailedPrecondition());
+      EXPECT_TRUE(
+          failed_slot.output(logical.output).error().IsFailedPrecondition());
+      EXPECT_EQ(probe.submit_attempt_count, submits);
+      EXPECT_EQ(probe.capture_launch_count, captures);
+      ASSERT_TRUE(independent_slot.submit(queues)->wait().ok());
+      ASSERT_TRUE(independent_slot.submit(queues)->wait().ok());
+      auto fresh = make_slot();
+      ASSERT_TRUE(fresh.submit(queues)->wait().ok());
+    }
+  }
 }
 
 TEST(GraphRegions, ConfiguredProviderOrderPrecedesSuffixDispatchEstimate) {

@@ -28,8 +28,9 @@
 
 ## 当前审计输入
 
-1. Compute shared submit 和 delegated submit 都使用同一个 InvocationState 的 `atomic<bool>`；
-   异步 attachment callback 与同步 completed 分支均把失败槽恢复为空闲。
+1. Compute shared submit 与内部 delegated submit 使用 InvocationState 的 `atomic<bool>`；
+   普通 DelegatedInvocation 为保留 Provider 自带 completion owner，使用 DirectDelegatedState 的
+   pending 原子与 retention callback。这两种 owner 的同步/异步完成都把失败槽恢复为空闲。
 2. Graph commands/capture/delegated 最终都会经 `mark_invocation_terminal`；该处已按 Status 发布
    outputs_ready，但仍允许重用失败槽。reset 只清 tensor binding，不重建 Provider invocation。
 3. `tests/compute/operation_test.cc` 的 mapping/unmap failure 现有用例会复用前一失败 invocation，
@@ -53,8 +54,10 @@ F1–F3 已固定。源码定位还覆盖 terminal attachment 失败分支：只
 
 - 原子机制为真实 Completion/lifetime attachment（ROUTED / KEEP）；缺口为 run-slot 的终态准入
   （SELF / FIX）。不改变不可变 artifact 或 Provider 实际 native owner。
-- 共享与 delegated Direct 均经同一个私有 InvocationState。Graph commands、capture、delegated
-  均经 Graph 的最终 Completion；外层 Graph 独占内部 Provider run-state，因此在该边界统一退役。
+- 共享 Direct 在 InvocationState 退役；普通 delegated Direct 在其原有 DirectDelegatedState 的
+  retention callback 退役，保留 Provider 自带的 completion owner。内部 delegated 入口也保持同一
+  失败约束。Graph commands、capture、delegated 均经 Graph 的最终 Completion；外层 Graph 独占
+  内部 Provider run-state，因此在该边界统一退役。
 - 内部状态为 idle/running/failed，复用原 `atomic<bool>` 的一个字节；成功 admission 仍一次 CAS，
   terminal 仍一次状态 store。失败终态不再返回 idle；未接受的拒绝仍由原 rollback 返回 idle。
 - `in_flight()` 在失败已终结时返回 false；`valid()` 仍表示句柄存在。后续 submit 返回
@@ -88,7 +91,19 @@ F1–F3 已固定。源码定位还覆盖 terminal attachment 失败分支：只
 | red_team | UNPROVEN |
 | engineering_performance | UNPROVEN；仅 P0，禁止本卡启动 CPU 追加 P1 |
 
-当前尚无新产品改动或 candidate。历史 R3 terminal 仍作为旧候选的验收证据保留；其余 CPU owner 的
-当前状态不改变。本轮不解除旧 ggml BLOCKED 或 compute_sched QUEUED。
+### 实现检查点
 
-Compute + Graph 当前全实现 **32,183 行**，不含测试/第三方（`ab6d87b3`，统一脚本 self-check PASS）。
+F1–F3 已实现，当前仍为 AUDITED，跨平台验收完成后再冻结 CANDIDATE。
+[初始 W1 证据](../../../../evidence/correctness/r4-failed-invocation-retirement/README.md)：
+共同 Compute/Graph 与选定 CPU consumer 最终 9/9 CTest 通过；其中一个旧测试按取消后重建槽的
+合同迁移，再仅重跑对应 backend。cuBLASLt 与 Marlin 的实际 GPU 回归各 2/2 通过。
+覆盖 shared/internal delegated/public delegated、Graph command/capture 的失败、取消、丢弃完成、
+独立槽和重建槽；未接纳拒绝仍可重试。异常 assembly/attachment 失败会先排空已接纳工作再返回错误。
+
+P0 检查确认状态字节大小/对齐和原子 RMW 数不增加，终态增加 Status 解码；不假报指令完全相同。
+适用 WSL/Air/Mini、sanitizer、其余直接 CPU consumer 和四环境 source/static/shared 尚未完成，
+聚合 correctness/delivery 仍未裁决。只补这些预声明门，不追加 CPU P1。
+
+历史 R3 terminal 保留旧候选身份；其余 CPU owner 状态不改变。本轮不解除旧 ggml BLOCKED 或
+compute_sched QUEUED。统一脚本 Compute + Graph 当前全实现 **32,252 行**，不含测试/第三方，
+self-check PASS。

@@ -1,0 +1,17 @@
+{
+  "baseline": "1302f22ab3a660886cfdd97c40befe778014647d",
+  "semantics": "SHA-256 of LF-normalized changed product and test inputs; pending cross-platform verification, not full R4 acceptance",
+  "files": {
+    "include/hyle/compute/delegated_operation.h": "4d263d736399f16ab69997ac9daa9f3c3258b067507df58eb5fa1b8d1020f7a7",
+    "include/hyle/compute/prepared_operation.h": "8ad6cda2f48a151c6dcec1ced32619de26aba0489bc54a76f4cc4317952d7fbe",
+    "include/hyle/graph/executable.h": "a00bcd98a8c5157a8f45d6bc637f50a433df9de3b606ce215eba42f05734f634",
+    "src/compute/operation.cc": "ceaad5a0121afbccb3b35522d1f1381838142fed6835108c540421daa29b2d88",
+    "src/compute/prepared_state.h": "d8c7f27763c26d228f752c1385979a64f008efb2da8b93a94023cc9ae70919f1",
+    "src/graph/executable.cc": "cdc7a86de7447f090ff6b7293522bda05d6dbe5ddaaf0a616c9579a8cb1c82ad",
+    "src/graph/plan_state.h": "3893faf1a98ebe3b6c32650f6bb4f6a75a6bea4bfd9935a71d1ee06401fe966c",
+    "tests/compute/custom_kernel_test.cc": "a053daef3012c5192fc4489a313646b7e5a97b449312ba3418b2e7793348905c",
+    "tests/compute/operation_test.cc": "47346afb03fe7e8d5e5f75b6fe37140c11b2eb138c752363406a33f2b8c6a8ca",
+    "tests/compute_backend_cpu/runtime_provider_test.cc": "3c5d01166e046d4b9ccd79ea77b77fb51153afe7b3baba2c8901f0ab315c71a6",
+    "tests/graph/region_provider_test.cc": "d746a57794473ed9f25acd5d03865f02989ce12aa9d9f198d18f7b1837ddecfb"
+  }
+}

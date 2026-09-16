@@ -772,6 +772,10 @@ TEST(PreparedOperation,
 
   resource.fail_mapping(false);
   resource.fail_unmap(true);
+  auto retired = invocation.submit(queue, input_view, output_view);
+  ASSERT_FALSE(retired.has_value());
+  EXPECT_TRUE(retired.error().IsFailedPrecondition());
+  invocation = prepared.create_invocation().value();
   completion = invocation.submit(queue, input_view, output_view);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->wait().IsUnavailable());

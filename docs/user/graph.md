@@ -855,7 +855,9 @@ Region 编译收到按域合并的访问集与 backing 声明。Provider 必须�
 - `output_ownership()` 为 `kCaller` 的计算结果绑定 mutable `TensorView`；`kSourceAlias` 借用原输入/
   常量，`kInvocation` 使用本次运行的私有 storage，`kExecutable` 则是已物化常量或它的零拷贝 View。
   后三种不接受重新绑定；成功完成后用 `Invocation::output()` 取得借用 view，不得活过对应 owner。
-- `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。bind/reset 后 replay route
+- `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。失败终态后的 Invocation
+  已退役，submit/bind/reset/prepare_replay 均拒绝；需从 Executable 创建新槽。未接纳工作的拒绝仍可
+  修正参数后重试。设备/Provider 的恢复限制另按其 owner 合同处理。正常 bind/reset 后 replay route
   失效，多 shared lane 必须重新 `prepare_replay()`。
 - 不同 published outputs，以及 output 与仍存活 input，不得绕过 plan 形成危险 overlap。只在相同
   storage/resource、最后一次读取且 provider 明确允许时选择 in-place；其它 partial overlap 被拒绝。

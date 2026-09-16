@@ -2020,11 +2020,18 @@ TEST(RuntimeProviders,
   ASSERT_TRUE(failed.has_value());
   EXPECT_TRUE(failed->wait().IsDataLoss());
   probe.fail = false;
+  auto retired = invocation->submit(inputs, outputs);
+  ASSERT_FALSE(retired.has_value());
+  EXPECT_TRUE(retired.error().IsFailedPrecondition());
+  EXPECT_FALSE(invocation->in_flight());
+  *invocation = prepared->create_invocation({.dependency_capacity = 1}).value();
   auto cancelled = invocation->submit(inputs, outputs);
   ASSERT_TRUE(cancelled.has_value());
   ASSERT_TRUE(cancelled->request_cancel().ok());
   EXPECT_TRUE(cancelled->wait().IsCancelled());
   EXPECT_EQ(probe.owner_release_count, 3u);
+  EXPECT_FALSE(invocation->submit(inputs, outputs).has_value());
+  *invocation = prepared->create_invocation({.dependency_capacity = 1}).value();
 
   std::array<hyle::compute::Completion, 2> competing;
   std::barrier start(3);
@@ -2044,10 +2051,10 @@ TEST(RuntimeProviders,
   *invocation = {};
   *prepared = {};
   competing = {};
-  EXPECT_EQ(probe.invocation_destroy_count, 0u);
+  EXPECT_EQ(probe.invocation_destroy_count, 2u);
   EXPECT_EQ(probe.owner_release_count, 3u);
   ASSERT_TRUE(context.drain().ok());
-  EXPECT_EQ(probe.invocation_destroy_count, 1u);
+  EXPECT_EQ(probe.invocation_destroy_count, 3u);
   EXPECT_EQ(probe.owner_release_count, 4u);
 }
 
@@ -2090,6 +2097,48 @@ TEST(RuntimeProviders,
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsFailedPrecondition());
   EXPECT_EQ(probe.submit_count, 0u);
+}
+
+TEST(RuntimeProviders, AbandonedDelegatedFailureRetiresOnlyItsOwnSlot) {
+  DelegatedProbe probe;
+  probe.attach_owner = true;
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_delegated_provider(probe))
+                     .value();
+  const auto desc =
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
+                                       std::array<std::int64_t, 1>{4})
+          .value();
+  auto input =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 16).value();
+  auto output =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 16).value();
+  const std::array inputs{
+      hyle::compute::ConstTensorView::create(desc, input.view()).value()};
+  const std::array outputs{
+      hyle::compute::TensorView::create(desc, output.view()).value()};
+  auto prepared = hyle::compute::prepare_delegated(
+                      context,
+                      hyle::compute::Operation(
+                          hyle::compute::Unary{hyle::compute::UnaryKind::kNeg}),
+                      inputs, outputs)
+                      .value();
+  auto invocation = prepared.create_invocation().value();
+  auto independent = prepared.create_invocation().value();
+  auto abandoned = invocation.submit(inputs, outputs).value();
+  probe.fail = true;
+  abandoned = {};
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_EQ(probe.owner_release_count, 0u);
+  ASSERT_TRUE(context.drain().ok());
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_EQ(probe.owner_release_count, 1u);
+  probe.fail = false;
+  auto retired = invocation.submit(inputs, outputs);
+  ASSERT_FALSE(retired.has_value());
+  EXPECT_TRUE(retired.error().IsFailedPrecondition());
+  EXPECT_EQ(probe.submit_count, 1u);
+  ASSERT_TRUE(independent.submit(inputs, outputs)->wait().ok());
 }
 
 TEST(RuntimeProviders,
@@ -2202,6 +2251,11 @@ TEST(RuntimeProviders,
   EXPECT_TRUE(completion->wait().IsCancelled());
   EXPECT_FALSE(invocation.in_flight());
 
+  EXPECT_TRUE(hyle::compute::detail::OperationInvocationAccess::
+                  submit_delegated_prevalidated(invocation, {}, inputs, outputs)
+                      .error()
+                      .IsFailedPrecondition());
+  invocation = prepared.create_invocation().value();
   probe.fail = true;
   completion = hyle::compute::detail::OperationInvocationAccess::
                    submit_delegated_prevalidated(invocation, {}, inputs,
@@ -2210,19 +2264,20 @@ TEST(RuntimeProviders,
   EXPECT_TRUE(completion->wait().IsDataLoss());
   probe.fail = false;
 
+  invocation = prepared.create_invocation().value();
   completion = hyle::compute::detail::OperationInvocationAccess::
                    submit_delegated_prevalidated(invocation, {}, inputs,
                                                  outputs);
   ASSERT_TRUE(completion.has_value());
   invocation = {};
-  EXPECT_EQ(probe.invocation_destroy_count, 0u);
+  EXPECT_EQ(probe.invocation_destroy_count, 2u);
   *completion = {};
   ASSERT_NE(probe.pending, nullptr);
   EXPECT_TRUE(probe.pending->abandoned);
   EXPECT_TRUE(context.drain().ok());
   EXPECT_EQ(probe.drain_count, 1u);
   EXPECT_EQ(probe.pending, nullptr);
-  EXPECT_EQ(probe.invocation_destroy_count, 1u);
+  EXPECT_EQ(probe.invocation_destroy_count, 3u);
 }
 
 } // namespace

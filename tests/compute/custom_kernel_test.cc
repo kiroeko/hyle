@@ -296,6 +296,20 @@ TEST(CustomKernel,
       EXPECT_TRUE(done->wait().IsDataLoss());
       EXPECT_EQ(probe.executions, 1);
     }
+    probe.fault = Fault::kNone;
+    auto retry = invocation.submit(queue, tensors.in, tensors.out);
+    if (fault == Fault::kRejected) {
+      ASSERT_TRUE(retry);
+      EXPECT_TRUE(retry->wait().ok());
+    } else {
+      ASSERT_FALSE(retry);
+      EXPECT_TRUE(retry.error().IsFailedPrecondition());
+      EXPECT_FALSE(invocation.in_flight());
+      EXPECT_EQ(probe.executions, 1);
+      invocation = prepared.create_invocation().value();
+      ASSERT_TRUE(
+          invocation.submit(queue, tensors.in, tensors.out)->wait().ok());
+    }
   }
 }
 

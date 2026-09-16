@@ -47,9 +47,11 @@ constexpr std::size_t align_up(std::size_t value,
   return (value + alignment - 1) & ~(alignment - 1);
 }
 
-void mark_operation_terminal(void *opaque, const Status &) noexcept {
-  static_cast<detail::InvocationState *>(opaque)->in_flight.store(
-      false, std::memory_order_release);
+void mark_operation_terminal(void *opaque, const Status &terminal) noexcept {
+  static_cast<detail::InvocationState *>(opaque)->phase.store(
+      terminal.ok() ? detail::InvocationPhase::kIdle
+                    : detail::InvocationPhase::kFailed,
+      std::memory_order_release);
 }
 
 void release_operation_lifetime(void *opaque) noexcept {
@@ -1606,7 +1608,8 @@ ProviderInstanceId OperationInvocation::provider_instance_id() const noexcept {
 }
 
 bool OperationInvocation::in_flight() const noexcept {
-  return state_ != nullptr && state_->in_flight.load(std::memory_order_acquire);
+  return state_ != nullptr && state_->phase.load(std::memory_order_acquire) ==
+                                  detail::InvocationPhase::kRunning;
 }
 
 Result<Completion>
@@ -1633,18 +1636,22 @@ OperationInvocation::submit(Queue &queue,
   if (!binding_status.ok())
     return std::unexpected(std::move(binding_status));
 
-  bool idle = false;
-  if (!state_->in_flight.compare_exchange_strong(
-          idle, true, std::memory_order_acq_rel, std::memory_order_acquire)) {
+  auto idle = detail::InvocationPhase::kIdle;
+  if (!state_->phase.compare_exchange_strong(
+          idle, detail::InvocationPhase::kRunning, std::memory_order_acq_rel,
+          std::memory_order_acquire)) {
     return std::unexpected(Status::FailedPrecondition(
-        "operation invocation already has work in flight"));
+        idle == detail::InvocationPhase::kFailed
+            ? "failed operation invocation must be recreated"
+            : "operation invocation already has work in flight"));
   }
   struct RunRollback final {
     detail::InvocationState *state = nullptr;
     bool armed = true;
     ~RunRollback() {
       if (armed)
-        state->in_flight.store(false, std::memory_order_release);
+        state->phase.store(detail::InvocationPhase::kIdle,
+                           std::memory_order_release);
     }
     void disarm() noexcept { armed = false; }
   } rollback{state_};
@@ -1660,7 +1667,7 @@ OperationInvocation::submit(Queue &queue,
   if (!completion)
     return std::unexpected(std::move(completion).error());
   if (!detail::CompletionAccess::has_async_state(*completion)) {
-    state_->in_flight.store(false, std::memory_order_release);
+    mark_operation_terminal(state_, completion->wait());
     rollback.disarm();
     return completion;
   }
@@ -1673,8 +1680,14 @@ OperationInvocation::submit(Queue &queue,
   };
   Status attached = detail::CompletionAccess::attach_lifetime(
       *completion, state_->completion_lifetime);
-  if (!attached.ok())
+  if (!attached.ok()) {
+    // Acceptance has already happened. Settle borrowed storage before
+    // returning an error without a Completion, and never rearm this slot.
+    completion->wait().IgnoreError();
+    mark_operation_terminal(state_, attached);
+    rollback.disarm();
     return std::unexpected(std::move(attached));
+  }
   rollback.disarm();
   return completion;
 }
@@ -1782,18 +1795,22 @@ detail::OperationInvocationAccess::submit_delegated_prevalidated(
   }
   detail::InvocationState &state = *invocation.state_;
 
-  bool idle = false;
-  if (!state.in_flight.compare_exchange_strong(
-          idle, true, std::memory_order_acq_rel, std::memory_order_acquire)) {
+  auto idle = detail::InvocationPhase::kIdle;
+  if (!state.phase.compare_exchange_strong(
+          idle, detail::InvocationPhase::kRunning, std::memory_order_acq_rel,
+          std::memory_order_acquire)) {
     return std::unexpected(Status::FailedPrecondition(
-        "operation invocation already has work in flight"));
+        idle == detail::InvocationPhase::kFailed
+            ? "failed operation invocation must be recreated"
+            : "operation invocation already has work in flight"));
   }
   struct RunRollback final {
     detail::InvocationState *state = nullptr;
     bool armed = true;
     ~RunRollback() {
       if (armed)
-        state->in_flight.store(false, std::memory_order_release);
+        state->phase.store(detail::InvocationPhase::kIdle,
+                           std::memory_order_release);
     }
     void disarm() noexcept { armed = false; }
   } rollback{&state};
@@ -1807,7 +1824,7 @@ detail::OperationInvocationAccess::submit_delegated_prevalidated(
         Status::Internal("delegated provider returned an invalid completion"));
   }
   if (!detail::CompletionAccess::has_async_state(*completion)) {
-    state.in_flight.store(false, std::memory_order_release);
+    mark_operation_terminal(&state, completion->wait());
     rollback.disarm();
     return completion;
   }
@@ -1822,6 +1839,8 @@ detail::OperationInvocationAccess::submit_delegated_prevalidated(
       *completion, state.completion_lifetime);
   if (!attached.ok()) {
     completion->wait().IgnoreError();
+    mark_operation_terminal(&state, attached);
+    rollback.disarm();
     return std::unexpected(std::move(attached));
   }
   rollback.disarm();
@@ -1930,7 +1949,7 @@ struct DirectDelegatedState final : util::RefCounted<DirectDelegatedState> {
   std::size_t dependency_capacity = 0;
   CompletionRetention retention{};
   std::atomic_flag submitting = ATOMIC_FLAG_INIT;
-  std::atomic<bool> pending{false};
+  std::atomic<InvocationPhase> phase{InvocationPhase::kIdle};
 
   CompletionDependency *dependencies() noexcept {
     return reinterpret_cast<CompletionDependency *>(this + 1);
@@ -2008,7 +2027,8 @@ DelegatedInvocation::~DelegatedInvocation() {
 }
 
 bool DelegatedInvocation::in_flight() const noexcept {
-  return state_ != nullptr && state_->pending.load(std::memory_order_acquire);
+  return state_ != nullptr && state_->phase.load(std::memory_order_acquire) ==
+                                  detail::InvocationPhase::kRunning;
 }
 
 ProviderIdentity DelegatedInvocation::provider() const noexcept {
@@ -2030,16 +2050,20 @@ Result<Completion> DelegatedInvocation::submit_after(
     bool accepted = false;
     ~SubmitGuard() {
       if (!accepted)
-        state.pending.store(false, std::memory_order_release);
+        state.phase.store(detail::InvocationPhase::kIdle,
+                          std::memory_order_release);
       state.submitting.clear(std::memory_order_release);
     }
   } guard{*state_};
   // The completion reference also protects the retention node between its
   // terminal notification and final release. Do not overwrite it in that gap.
-  if (state_->pending.load(std::memory_order_acquire) || !state_->is_unique()) {
-    guard.accepted = true; // leave the previous run's pending flag unchanged
-    return std::unexpected(
-        Status::FailedPrecondition("delegated invocation is still retained"));
+  const auto phase = state_->phase.load(std::memory_order_acquire);
+  if (phase != detail::InvocationPhase::kIdle || !state_->is_unique()) {
+    guard.accepted = true; // leave the previous run's phase unchanged
+    return std::unexpected(Status::FailedPrecondition(
+        phase == detail::InvocationPhase::kFailed
+            ? "failed delegated invocation must be recreated"
+            : "delegated invocation is still retained"));
   }
   if (dependencies.size() > state_->dependency_capacity)
     return std::unexpected(
@@ -2053,7 +2077,8 @@ Result<Completion> DelegatedInvocation::submit_after(
     state_->dependencies()[index] =
         detail::CompletionAccess::dependency(*dependencies[index]);
   }
-  state_->pending.store(true, std::memory_order_release);
+  state_->phase.store(detail::InvocationPhase::kRunning,
+                      std::memory_order_release);
   auto completion =
       detail::OperationInvocationAccess::submit_delegated_borrowed_prevalidated(
           state_->invocation, {state_->dependencies(), dependencies.size()},
@@ -2063,9 +2088,11 @@ Result<Completion> DelegatedInvocation::submit_after(
   state_->incref();
   state_->retention.own = {
       state_,
-      [](void *state, const Status &) noexcept {
-        static_cast<detail::DirectDelegatedState *>(state)->pending.store(
-            false, std::memory_order_release);
+      [](void *state, const Status &terminal) noexcept {
+        static_cast<detail::DirectDelegatedState *>(state)->phase.store(
+            terminal.ok() ? detail::InvocationPhase::kIdle
+                          : detail::InvocationPhase::kFailed,
+            std::memory_order_release);
       },
       [](void *state) noexcept {
         static_cast<detail::DirectDelegatedState *>(state)->decref();

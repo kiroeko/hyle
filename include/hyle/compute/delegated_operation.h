@@ -25,6 +25,9 @@ struct DelegatedInvocationOptions final {
 // through dependent completion; do not move, destroy or settle a dependency
 // while that runtime may still use its native state. A Provider must reject
 // unsupported dependencies before acceptance, without an implicit host wait.
+// An accepted run's failed terminal Completion retires this invocation.
+// Create a fresh invocation before submitting again; rejection before any
+// acceptance remains retryable. Device/provider recovery is owner-specific.
 class DelegatedInvocation final {
 public:
   DelegatedInvocation() noexcept = default;
