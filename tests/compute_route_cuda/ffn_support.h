@@ -198,6 +198,7 @@ inline void check_ffn(Tensor &output, std::span<const float> input,
 // A real pending CUDA prefix, released and drained even after a failed ASSERT.
 struct HostGate final {
   std::atomic<bool> released{false};
+  std::atomic<bool> finished{false};
   compute::Completion completion;
 
   explicit HostGate(compute::Queue &queue) {
@@ -208,6 +209,7 @@ struct HostGate final {
                          auto &gate = *static_cast<HostGate *>(opaque);
                          while (!gate.released.load(std::memory_order_acquire))
                            gate.released.wait(false, std::memory_order_relaxed);
+                         gate.finished.store(true, std::memory_order_release);
                        },
                        this);
                  }).value();
@@ -219,6 +221,9 @@ struct HostGate final {
   ~HostGate() {
     open();
     completion.wait().IgnoreError();
+    // The CUDA event is the real completion boundary; this acquire exposes
+    // the callback's final access to the host race detector before stack reuse.
+    EXPECT_TRUE(finished.load(std::memory_order_acquire));
   }
 };
 

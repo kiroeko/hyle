@@ -161,6 +161,13 @@ Status destroy_event_block(EventBlock *block, ContextState *context) noexcept {
 } // namespace
 
 void QueueState::destroy() noexcept {
+#if defined(HYLE_DETAIL_SANITIZER_THREAD)
+  // RefCounted's final acquire fence already orders all prior releases in the
+  // C++ memory model. TSan cannot model that standalone fence; observing the
+  // same counter with an acquire load makes teardown visible to the tool.
+  // The count is already zero, so the boolean has no ownership meaning here.
+  (void)is_unique();
+#endif
   {
     std::lock_guard lock(context->queues_lock);
     QueueState **cursor = &context->queues;

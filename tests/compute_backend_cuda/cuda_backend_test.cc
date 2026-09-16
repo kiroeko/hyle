@@ -41,12 +41,22 @@ using hyle::StatusCode;
 struct HostStreamGate final {
   std::atomic<bool> entered{false};
   std::atomic<bool> released{false};
+  std::atomic<bool> finished{false};
+
+  ~HostStreamGate() {
+    // Native stream/event completion remains the actual lifetime boundary.
+    // Observe the callback's final access explicitly for host race detectors.
+    if (entered.load(std::memory_order_acquire)) {
+      EXPECT_TRUE(finished.load(std::memory_order_acquire));
+    }
+  }
 
   static void CUDART_CB wait(void *raw) {
     auto &gate = *static_cast<HostStreamGate *>(raw);
     gate.entered.store(true, std::memory_order_release);
     gate.entered.notify_all();
     gate.released.wait(false, std::memory_order_acquire);
+    gate.finished.store(true, std::memory_order_release);
   }
 };
 
