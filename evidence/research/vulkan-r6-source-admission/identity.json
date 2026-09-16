@@ -1,0 +1,9 @@
+{
+  "kind": "bounded R6 source/compiler/environment admission, not product correctness or performance",
+  "canonical_baseline": "43f4c29c70fb388224fc8f12aa97adb773322ace",
+  "peer_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "raw_archive_sha256": "f151cbaeda7caa62dd31e7c0e2d0db10614ce270c443e1c53b4df18b8ed447a2",
+  "raw_archive_bytes": 63333,
+  "shader_input_count": 15,
+  "native_gpu_execution": false
+}

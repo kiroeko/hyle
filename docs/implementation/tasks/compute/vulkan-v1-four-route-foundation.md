@@ -64,3 +64,11 @@ AUDITED 前还须固定普通 C++ 调用、资源与失败边界、默认规则�
 `.scratch/validation/vulkan-r6-identities-plan.json`；中央 manifest 触发的 broad build gates 未执行，
 不计 PASS，也不为只有身份登记的改动另开一批重型构建。真实依赖/target 接入后按冻结候选的
 实际影响面执行与复用证据。当前 docs/closure 与状态迁移检查通过；R5 的运行中验收保持独立。
+
+## 有限审计检查点
+
+[源码/编译器/环境记录](../../../../evidence/research/vulkan-r6-source-admission/README.md)已取得：
+Windows RTX 4070 与 Air MoltenVK 的实际版本/能力；四个原样 F32 shader 变体编译成功。
+GLSL 的扩展声明不等于最终 SPIR-V 必需能力，且部分 F32 输入的 cooperative-matrix 变体内部转为
+FP16，须分开数值合同。两环境尚缺已枚举的 Khronos validation layer；Mini/WSL 原生条件继续按
+本卡定向准备。这些不计产品完成，普通/native API 与生命周期及有限 FIX 尚未冻结，维持 SCOPED。
