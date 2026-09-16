@@ -49,8 +49,14 @@ public:
     }
     if (cpus_[0] == cpus_[1])
       fail("worker CPU identities overlap");
+    const auto caller_text = environment("HYLE_PERF_CALLER_CPU");
+    char *caller_end = nullptr;
+    const auto caller_cpu = std::strtoul(caller_text.c_str(), &caller_end, 10);
+    if (caller_end == caller_text.c_str() || *caller_end != '\0' ||
+        caller_cpu >= 64 || caller_cpu == cpus_[0] || caller_cpu == cpus_[1])
+      fail("external caller requires a separate CPU from both workers");
     sched::SchedulerOptions options;
-    options.idle_policy = sched::SchedulerIdlePolicy::kPowerSaving;
+    options.idle_policy = sched::SchedulerIdlePolicy::kLowLatency;
     options.worker_hook_context = this;
     options.on_worker_start = [](void *opaque, unsigned worker) noexcept {
       auto &self = *static_cast<Executor *>(opaque);
@@ -90,7 +96,7 @@ public:
         "allocation_order=%s apple_qos=%s qos_ok=%s "
         "affinity_topology=%s caller_cpu=%s worker_count=%u "
         "worker_cpus=%s parent_mask=%s priority=%s affinity_ok=%s "
-        "run_nonce=%s\n",
+        "idle_policy=low-latency run_nonce=%s\n",
         peer_first ? "peer-first" : "candidate-first",
         peer_allocation_first ? "peer-first" : "candidate-first", qos.name,
         qos.ok, enabled() ? topology.c_str() : affinity.topology, affinity.cpu,

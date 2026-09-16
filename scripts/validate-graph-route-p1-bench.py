@@ -21,12 +21,15 @@ import subprocess
 import sys
 
 from hyle_perf.nanobench import parse_nanobench, select_pair
-from hyle_perf.runner import _apply_sampling_policy
+from hyle_perf import (evaluate_machine_profile, expected_child_policy,
+                       get_machine_profile, load_registry, probe_machine)
+from hyle_perf.runner import _apply_sampling_policy, _child_environment
 
 
 PREFIX = "# HYLE_GRAPH_ONEDNN_RUN "
 AA_PREFIX = "# HYLE_GRAPH_CPU_AA "
 STATUS_FILE = "hyle-graph-workload-aa.status"
+TOPOLOGY = "caller-plus-n-worker-physical-cores"
 LOWER = 1.0 / 1.05
 UPPER = 1.05
 WORKLOADS = tuple(
@@ -79,28 +82,10 @@ def _telemetry(output: str, prefix: str) -> dict[str, str]:
 
 def _environment(
     route: str, peer_first: bool, peer_allocation_first: bool,
-    caller_cpu: str, worker_cpus: str
+    profile: dict, policy: dict,
 ) -> dict[str, str]:
-    environment = {
-        key: value
-        for key, value in os.environ.items()
-        if not key.startswith("HYLE_BENCH_") and not key.startswith("HYLE_PERF_")
-    }
-    environment.update(
-        {
-            "HYLE_BENCH_AA_ROUTE": route,
-            "HYLE_PERF_CALLER_CPU": caller_cpu,
-            "HYLE_PERF_WORKER_CPUS": worker_cpus,
-            "HYLE_PERF_SAMPLING_TOPOLOGY": "n-worker-physical-cores",
-            "HYLE_PERF_PARENT_MASK": hex(sum(1 << int(cpu) for cpu in worker_cpus.split(","))),
-            "HYLE_PERF_PRIORITY": "above-normal",
-            "MKL_NUM_THREADS": "1",
-            "NUMEXPR_NUM_THREADS": "1",
-            "OMP_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1",
-            "VECLIB_MAXIMUM_THREADS": "1",
-        }
-    )
+    environment = _child_environment(
+        [], {"HYLE_BENCH_AA_ROUTE": route}, profile, policy)
     if peer_first:
         environment["HYLE_BENCH_RIVAL_FIRST"] = "1"
     if peer_allocation_first:
@@ -114,12 +99,10 @@ def _run(
     route: str,
     peer_first: bool,
     peer_allocation_first: bool,
-    caller_cpu: str,
-    worker_cpus: str,
+    profile: dict,
+    policy: dict,
 ) -> dict[str, object]:
     creationflags = 0x00008000 if os.name == "nt" else 0
-    mask = sum(1 << int(cpu) for cpu in worker_cpus.split(","))
-    policy = {"affinity_mask": hex(mask)}
     with _apply_sampling_policy(policy):
         completed = subprocess.run(
             [str(executable)],
@@ -128,7 +111,7 @@ def _run(
             encoding="utf-8",
             errors="replace",
             env=_environment(
-                route, peer_first, peer_allocation_first, caller_cpu, worker_cpus
+                route, peer_first, peer_allocation_first, profile, policy
             ),
             timeout=120,
             creationflags=creationflags,
@@ -146,13 +129,14 @@ def _run(
         ),
         "aa_route": route,
         "paired_mode": "nanobench-compare",
-        "affinity_topology": "n-worker-physical-cores",
+        "affinity_topology": TOPOLOGY,
         "worker_count": "2",
-        "worker_cpus": worker_cpus,
+        "worker_cpus": ",".join(str(cpu) for cpu in policy["worker_logical_cpus"]),
         "parent_mask": policy["affinity_mask"],
-        "priority": "above-normal",
-        "caller_cpu": caller_cpu,
+        "priority": policy["priority"],
+        "caller_cpu": str(policy["caller_logical_cpu"]),
         "affinity_ok": "1",
+        "idle_policy": "low-latency",
     }
     for key, value in expected.items():
         if telemetry.get(key) != value:
@@ -181,11 +165,9 @@ def _run(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build", required=True)
-    parser.add_argument("--caller-cpu", default="2")
-    parser.add_argument("--worker-cpus", default="0,2")
     args = parser.parse_args()
-    if os.name != "nt" or args.caller_cpu != "2" or args.worker_cpus != "0,2":
-        raise RuntimeError("this preflight is bound to W1-WIN caller 2 / workers 0,2")
+    if os.name != "nt":
+        raise RuntimeError("this preflight is bound to W1-WIN")
     build = pathlib.Path(args.build).resolve(strict=True)
     executables = {
         "primary": _find_executable(build, "hyle_graph_onednn_region_bench"),
@@ -200,6 +182,17 @@ def main() -> int:
     status_paths = {path.parent / STATUS_FILE for path in executables.values()}
     for status in status_paths:
         status.write_text("FAIL\n", encoding="ascii")
+    profile = get_machine_profile(load_registry(), "W1-WIN")
+    probe = probe_machine(paths=[("build", build)])
+    gate = evaluate_machine_profile(
+        profile, probe, role="engineering", sampling_topology=TOPOLOGY,
+        sampling_worker_count=2)
+    if gate["gate"] != "PASS":
+        raise RuntimeError(f"Graph A/A machine gate failed: {gate!r}")
+    policy = expected_child_policy(
+        profile, probe=probe, sampling_topology=TOPOLOGY, sampling_worker_count=2)
+    print(json.dumps({"schema": "hyle.graph-route-workload-aa-policy/v1",
+                      "child_policy": policy}, sort_keys=True), flush=True)
     runs = []
     for route in ("peer", "selected"):
         for variant, executable in executables.items():
@@ -210,8 +203,8 @@ def main() -> int:
                         route=route,
                         peer_first=peer_first,
                         peer_allocation_first=peer_allocation_first,
-                        caller_cpu=args.caller_cpu,
-                        worker_cpus=args.worker_cpus,
+                        profile=profile,
+                        policy=policy,
                     )
                     result["variant"] = variant
                     runs.append(result)

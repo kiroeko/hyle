@@ -21,7 +21,7 @@
 - consumer/语义：沿父 R3 卡的完整 gated FFN，default Graph / direct fused / natural sequence /
   explicit Native；12 个原 workload，含 serial 与真实 two-worker；同 executor、同输入和终结点。
 - P0：热工作不变；cold setup 选择 kLowLatency，caller 不参与 bulk 计算。总资源三个 P 核，
-  两 worker 常驻；serial 行仍在 caller 上，两 worker 空闲成本在两臂相同。
+  two-worker 阶段两 worker 常驻；serial 阶段仍只有 caller 执行，两个 worker 尚未创建。
 - P1：W1-WIN engineering；两个 placement × 执行/分配正反；原 5% 工程门、n=15→31。
   预先保留一次 16-process workload A/A；仅其通过后启动一次新合同完整采样，无产品性能纠正额度。
 - 预算/停止：源码审计 20 分钟，定向接线 40 分钟；A/A 或适用资格再失败就 BLOCKED，不再
