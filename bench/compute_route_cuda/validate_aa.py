@@ -128,7 +128,23 @@ def main() -> int:
     args = parser.parse_args()
     if os.name != "nt":
         raise RuntimeError("this qualification is W1-WIN engineering only")
-    ctypes.windll.kernel32.SetErrorMode(0x8003)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.SetErrorMode(0x8003)
+    kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+    kernel32.SetProcessAffinityMask.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+    kernel32.GetProcessAffinityMask.argtypes = [ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_size_t), ctypes.POINTER(ctypes.c_size_t)]
+    process = kernel32.GetCurrentProcess()
+    # Match the actual single-logical-cpu runner policy, including native
+    # helper threads. Pinning just the calling thread does not qualify it.
+    if not kernel32.SetProcessAffinityMask(process, 0x4):
+        raise ctypes.WinError(ctypes.get_last_error())
+    observed_mask, system_mask = ctypes.c_size_t(), ctypes.c_size_t()
+    if not kernel32.GetProcessAffinityMask(
+            process, ctypes.byref(observed_mask), ctypes.byref(system_mask)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    if observed_mask.value != 0x4:
+        raise RuntimeError("A/A process affinity differs from W1 P1 policy")
     build = args.build.resolve(strict=True)
     target = f"hyle_{args.mode}_route_cuda_bench"
     executables = {variant: build / "bin" / (target + suffix + ".exe")
@@ -140,7 +156,7 @@ def main() -> int:
     # call. Recheck GPU, executable, compiler and all side-by-side DLL identities.
     receipt_path = args.output / f"cuda-{args.mode}-aa.json"
     identity = {"artifacts": artifacts, "runtime": runtime, "reference": reference,
-                "validator": digest(Path(__file__))}
+                "validator": digest(Path(__file__)), "process_mask": hex(observed_mask.value)}
     before = gpu_facts()
     if receipt_path.exists():
         retained = json.loads(receipt_path.read_text(encoding="utf-8"))

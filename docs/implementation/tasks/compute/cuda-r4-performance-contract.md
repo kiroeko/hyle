@@ -109,6 +109,16 @@ train/holdout 分割保持关闭，不能将其冒充独立未见数据。该 bu
 artifact/编译器/DLL/validator 身份及原始日志 hash 的 A/A receipt，并重新检查 GPU/驱动状态。
 不重写公共仪器、统计或 power profile。
 
+首次 `cc38c398` 资格启动保留在 `p1-compute-v1`：A/A 16 进程通过，但 A/A 当时只固定 caller，
+统一 runner 则固定整个进程到 CPU2。首个正式子进程在冷准备阶段超过 120 秒，人工停止；没有
+完成的产品样本，也没有 P1 verdict。两核完整夹具、随后单核相同 binary、独立 CUDA 内存/事件/
+cuBLAS heuristic、小型 HYLE context/packing 与受控 caller 优先级探针均正常完成，未稳定复现
+根因。此事实不证明驱动、Sched 或回收线程缺陷，不据此改产品或公共仪器。
+
+有限资格纠正仅将 A/A 的整个进程也固定为同一 CPU2，核对 mask 后再启动子进程，保留真实 DLL
+邻置、完整数值和原门。此前 A/A 只作诊断，不能签新资格。修正冻结后允许一次相同算法的 fresh
+资格启动；若再有同类冷启动超时，停止本次性能采样并保留具体现场，不用扩 n 或改变亲和性掩盖。
+
 正式 n=15 之前必须通过：源码时序/成本审查、独立正确性 oracle、同 workload A/A、双执行与
 分配顺序、两个 placement、分辨率/功效和设备环境资格。使用现有统一仪器、P 核 caller、实际 DLL
 邻置；W1 是 GPU 工程验证，不借用 CPU Formal 身份。任何 preflight 失败先停止；不得靠 n=31
