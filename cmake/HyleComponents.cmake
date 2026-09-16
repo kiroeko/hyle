@@ -443,8 +443,11 @@ _hyle_declare_component(graph_route_cuda
   PUBLIC_DEPS core compute_route_cuda graph
   SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
-# R5 identities; dependencies and targets are admitted by the Apple audit.
-_hyle_declare_component(compute_route_apple QUEUED)
+# Native MLX region ownership is independent of the common Queue executor.
+_hyle_declare_component(compute_route_apple
+  PRIVATE_DEPS container platform_thread
+  PUBLIC_DEPS core compute error mem
+  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h)
 _hyle_declare_component(graph_route_apple QUEUED)
 
 # Product facades are deliberately outside the factor DAG. They have no source,

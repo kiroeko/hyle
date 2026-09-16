@@ -410,6 +410,12 @@ if(HYLE_BUILD_COMPUTE_BACKEND_CUDA)
 else()
   set(HYLE_COMPUTE_CUDA_ENABLED OFF)
 endif()
+if(HYLE_BUILD_COMPUTE_ROUTE_APPLE)
+  include(HyleAppleDependencies)
+  hyle_configure_apple_dependencies()
+else()
+  set(HYLE_COMPUTE_APPLE_ENABLED OFF)
+endif()
 # ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored build integration
 # currently covers x86_64 Windows/Linux/macOS and arm64 Linux/macOS.  The
