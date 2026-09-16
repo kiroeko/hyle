@@ -1,4 +1,5 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
+  hyle_audit_in_tree_dependencies(sglang_activation)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
   endif()

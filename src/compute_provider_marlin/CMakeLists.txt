@@ -1,4 +1,5 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
+  hyle_audit_in_tree_dependencies(marlin)
   # Distributable SM80 PTX plus the qualified SM89 native image. Callers may
   # explicitly select a different architecture set for their CUDA toolchain.
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
