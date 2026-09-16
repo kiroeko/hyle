@@ -1,0 +1,29 @@
+{
+  "baseline": "bf685ea3b2d3317d67802c4d1436c9bf1f440267",
+  "modules": [
+    {
+      "module": "compute_provider_marlin",
+      "state": "CLOSED",
+      "summary": "R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      }
+    },
+    {
+      "module": "compute_provider_cuda",
+      "state": "CLOSED",
+      "summary": "R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。",
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
+        "material_margin_pct": 5
+      }
+    }
+  ]
+}
