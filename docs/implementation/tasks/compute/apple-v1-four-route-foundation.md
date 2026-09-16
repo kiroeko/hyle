@@ -197,5 +197,9 @@ MLX Primitive 边界，不给产品添加 fault hook；GPU 前缀是真 square�
 
 普通 Direct/Graph API、typed 域、原生提交与资源所有权、默认成熟规则、source/static/shared 形状及
 性能口径已停止变化。Air 原生与三交付检查点已执行；Windows broad 的已选三交付仍在串行运行。
-Mini、WSL Apple OFF、host 插桩、最终 A/A/P1 和七门汇总继续验收，不将未执行项写成 PASS。
+WSL Apple OFF 已有实际隔离/逐头证据；Mini、host 插桩、最终 A/A/P1 和七门汇总继续验收，不将未执行项写成 PASS。
 如候选暴露具体产品缺陷，按 A1–A6 退回 AUDITED 后修正，不在 CANDIDATE 下改动产品。
+
+[候选后的独立审阅视角](../../../../evidence/correctness/apple-r5-candidate-review/README.md)已检查公开入口、
+失败/取消保活、并发关闭、Graph 冷/热边界、数值与比较责任、资源交付及用法，没有产生新的产品 FIX。
+该源码审阅不替代尚未运行的 host 插桩、Mini 和最终性能门；候选保持不变。
