@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "74fe75ed038d76fbcf651de8ba8517d7a944d9fb2311ba54e5437197dd562ee9",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "C:\\hyle-scratch\\r4-cuda-20260916\\qualification\\p1-graph-helper\\manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

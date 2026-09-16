@@ -382,3 +382,16 @@ resume_condition。六个本卡 owner 从 BLOCKED 进入 SCOPED；C5、CPU 例�
 
 六个 owner 进入 AUDITED；接下来冻结运行的 commit 仅含此审计状态，不改变 `ea8a7101` 的
 产品/benchmark 字节。现有 ordinary、host/device 插桩、三交付等已通过证据继续有效。
+
+### 首次合格完整链 P1 与默认规则纠正
+
+候选 `a6775659` 的 [Direct](../../../../evidence/performance/compute-cuda-ffn-p1-v2-a6775659-w1-win/README.md)
+和 [Graph](../../../../evidence/performance/graph-cuda-ffn-p1-v2-a6775659-w1-win/README.md) 均取得实际
+engineering qualification / performance PASS：各两个 workload × 八 strata，n=15，未扩到31，
+每包120产品进程、30 control 进程、16 A/A 和 raw replay 全部完成，没有再次发生长停顿。
+旧失败样本仍排除。非劣通过不证明 HYLE 默认优选，局部严格方向照原始区间保留。
+
+完整域没有 HYLE 明确优势，依原准则使用一次产品纠正预算，落实
+[成熟激活规则 S1–S4](cuda-r4-mature-activation-rule.md)。该卡现在重新固定 C3/C4 的有限接入、
+对齐/尾部边界与适用检查，必须完成后再签最终候选；当前仍 AUDITED，未完成原生成本或默认接线。
+产品代码截至本检查点未变，全实现仍32,665行/107文件（统一脚本 self-check PASS，不含测试/第三方）。

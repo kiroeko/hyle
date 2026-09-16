@@ -1,0 +1,9 @@
+{
+  "decode-q4-ffn-m1": {
+    "INCONCLUSIVE": 6,
+    "WIN": 2
+  },
+  "short-prefill-q4-ffn-m16": {
+    "INCONCLUSIVE": 8
+  }
+}

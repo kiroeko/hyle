@@ -12,8 +12,9 @@
 [R3 CPU](cpu-v1-four-route-foundation.md) 的实现与适用验证已完成，唯一已量化的小片段性能未决项经
 用户批准[登记验收例外并结案](cpu-r3-acceptance-exception.md)，原始统计结果保留。
 当前 [R4 CUDA](cuda-v1-four-route-foundation.md) 已形成真实 Direct/Graph 计算链、三交付和适用
-host/device 检查；性能资格的长停顿已在独立 CUDA 中复现并取得调度干预证据，修正后的进度/A/A
-回归通过，正在按协议恢复验收；P1 与默认规则终审未完成。
+host/device 检查；性能资格的长停顿已在独立 CUDA 中复现并取得调度干预证据，修正后 Direct/Graph
+基线完整链 P1 均通过原5%门、n=15停止。完整域没有 HYLE 明确优势，正在接入成熟默认激活；
+最终默认规则交付、对应最终候选 P1 与原生成本仍未完成。
 R4–R7 尚未完成；研究探针和文档不计为路线交付，完整基础架构未结案。
 
 ## 目标与不做项

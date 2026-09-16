@@ -15,6 +15,11 @@
 主卡正在按 BLOCKED → SCOPED → AUDITED 恢复；尚无新 P1 verdict。正式运行使用 v2 合同和
 fresh build，准确 artifact 不同则取得自己的 A/A receipt；不沿用旧单核样本或新 build 之外的 PASS。
 
+v2 现已由 `a6775659` 实际完成 Direct/Graph 两包，均 n=15、qualification 与5% NI PASS；
+详见主卡链接的完整 manifest/raw replay。全部分层没有成立的 HYLE 明确优势，局部小输/赢不删。
+按原一次纠正预算进入[成熟默认规则接入](cuda-r4-mature-activation-rule.md)，最终选定实现再冻结
+适用 P1 与同数学原生成本；不把本次基线比较误记为最终默认已交付。
+
 ## 1. 必须分开的比较
 
 裸 cuBLAS、Marlin launcher、CUDA Graph 与 HYLE 公共 API 不提供完全相同的 admission、close、
