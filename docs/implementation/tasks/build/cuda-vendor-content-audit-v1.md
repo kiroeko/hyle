@@ -1,6 +1,6 @@
 # CUDA vendor 内容身份与消费前校验
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - baseline：`bf685ea3b2d3317d67802c4d1436c9bf1f440267`；owner 为
   `compute_provider_marlin`、`compute_provider_cuda`，仅重开依赖锁与构建 seam。
@@ -43,9 +43,13 @@ V2 FIX：两 owning CMake 的 `HYLE_COMPUTE_CUDA_ENABLED` 分支在 `enable_lang
 消费头文件前调用现有 `hyle_audit_in_tree_dependencies(<owned vendor>)`。因子未激活时不检查，
 不让 CPU/Apple/core 裁剪消费者依赖 CUDA vendor。无需更改公共工具实现或产品运行路径。
 
-## 已执行证据（最终 selector 未完成）
+## 不可变候选与已执行证据
 
 [Windows/Air 原始记录](../../../../evidence/correctness/cuda-vendor-content-audit-v1/README.md)
 已证明正确 manifest、完整源码全 vendor audit，以及两 owning enabled consumer 对变更副本的
-早期拒绝。CUDA 运算 blob 与 R4 相同；当前 broad native gate 已执行，剩余 selected 三交付继续
-串行完成。完成适用 selector 后按本卡 stop 收口，不重跑既有 GPU P1 或外推未测架构。
+早期拒绝。CUDA 运算 blob 与 R4 相同。有限 V1/V2 的不可变产品候选为
+`cbedb837791da15392019299f2652d9d3d70ec9d`；其后的平台工具纠正不改变这两个 FIX。
+[Windows 最终 selector](../../../../evidence/correctness/apple-r5-windows-selector/README.md)
+已完成：15 个三交付门 PASS、93 个身份匹配门 REUSED、7 个有原因的 SKIPPED，聚合 PASS。
+复用记录逐项核对 candidate 与原日志摘要，未运行项没有改写为 PASS。
+按本卡 stop 进入 terminal 裁决，不重跑既有 GPU P1 或外推未测架构。

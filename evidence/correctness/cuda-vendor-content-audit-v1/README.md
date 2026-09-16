@@ -1,8 +1,9 @@
 # CUDA vendor identity and consumer admission
 
 Owned by [V1/V2](../../../docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md).
-This closes the identified hash/sorting evidence gap; the owner's final applicable
-selector gate remains pending, so this is not a terminal record.
+This closes the identified hash/sorting evidence gap. The final applicable
+[Windows selector](../apple-r5-windows-selector/README.md) now passes; the owning
+task records the legal candidate and terminal transitions separately.
 
 - Windows and Air independently reproduce both incorrect historical hashes with
   case-insensitive path sorting, and the correct hashes with the existing CMake

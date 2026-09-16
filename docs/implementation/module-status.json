@@ -433,15 +433,17 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md",
-      "summary": "CUDA vendor content audit AUDITED: V1 canonical path sorting in two lock hashes; V2 call existing content audit before enabled consumers; no runtime change."
+      "summary": "CUDA vendor audit CANDIDATE：V1/V2 在不可变 cbedb837 固定；Windows/Air 内容审计、enabled 消费前拒绝及最终 selector 已完成，待七门 terminal 裁决；运行时代码与 R4 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md",
-      "summary": "CUDA vendor content audit AUDITED: V1 canonical path sorting in two lock hashes; V2 call existing content audit before enabled consumers; no runtime change."
+      "summary": "CUDA vendor audit CANDIDATE：V1/V2 在不可变 cbedb837 固定；Windows/Air 内容审计、enabled 消费前拒绝及最终 selector 已完成，待七门 terminal 裁决；运行时代码与 R4 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_route_cuda",

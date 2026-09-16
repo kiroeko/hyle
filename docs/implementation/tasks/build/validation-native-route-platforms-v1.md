@@ -1,6 +1,6 @@
 # Native route selector 的平台适用性
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 - unit / owner：build-package TOOL / HYLE maintainers；不创建产品 component。
 - baseline：`cbedb837791da15392019299f2652d9d3d70ec9d`。
@@ -22,3 +22,15 @@
 
 源码审计确认 `selected_factors` 同时承载 configure roots；因此不删除不支持的 root 以免连 OFF
 公开头检查也消失。单独约束 correctness/P1，使用现有 cache 冲突检查，不改执行引擎。
+
+## Terminal / F1–F3 完成
+
+不可变工具候选 `6f3ff7cae99ff141fe5ccc44ff842c0fd60a1e3d`。49 项工具回归、三 OS
+计划以及 [Windows 最终 broad selector](../../../../evidence/correctness/apple-r5-windows-selector/README.md)
+通过；108 个适用 PASS/REUSED receipt 保留原日志，7 个 SKIPPED 保留真实原因。Mac 的
+Apple 原生检查实际运行，见 [Air 最终候选正确性](../../../../evidence/correctness/apple-r5-ffn-preflight/README.md)；
+Windows 的平台 skip 不替代这些实算。
+
+本轮只修正声明的平台适用性和已有 Apple ON 配置，P0 为冷期命令选择；无产品运行时、API、
+算法或性能统计变更，无须 P1。F1–F3 与预算已结束，状态 CLOSED；未来新增路线的策略配置
+须按其实际平台条件定向接入，不能把本卡当作持续修改 selector 的授权。
