@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：`AUDITED`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。
+- 状态：`CANDIDATE`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。
 - 恢复 owner：`graph`、`graph_route_cpu`、`graph_provider_onednn`。原
   [Graph 停止卡](cpu-graph-replay-cost-audit.md) 的用户裁决恢复条件已满足。
 - 同步收口：原 [R3 卡](cpu-v1-four-route-foundation.md) 的 `compute`、`compute_backend_cpu`、
