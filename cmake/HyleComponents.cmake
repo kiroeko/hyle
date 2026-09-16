@@ -452,6 +452,10 @@ _hyle_declare_component(graph_route_apple
   PUBLIC_DEPS core compute_ops compute_route_apple error graph
   SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
+# R6 identities; the bounded Vulkan audit admits their dependencies and targets.
+_hyle_declare_component(compute_route_vulkan QUEUED)
+_hyle_declare_component(graph_route_vulkan QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

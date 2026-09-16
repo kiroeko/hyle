@@ -468,6 +468,16 @@
       "summary": "R5 A1-A6 CANDIDATE: native MLX program/result lifecycle, typed Direct/Graph, delivery inputs and finite FFN comparison are fixed. Air correctness checkpoints pass; final platform, host-sanitizer and P1 gates remain pending.",
       "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md",
       "candidate": "1636365bbe47779de24e84d7c7d1ed8088fe1af2"
+    },
+    {
+      "module": "compute_route_vulkan",
+      "state": "QUEUED",
+      "summary": "R6 Vulkan route identity reserved for its bounded native resource/program and mature shader audit; no product target or completion claim."
+    },
+    {
+      "module": "graph_route_vulkan",
+      "state": "QUEUED",
+      "summary": "R6 Vulkan Graph route identity reserved for its bounded lowering audit; no product target or completion claim."
     }
   ]
 }
