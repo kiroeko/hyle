@@ -271,17 +271,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -355,10 +363,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml",
@@ -372,10 +384,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "compute_ops",
@@ -390,10 +406,14 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "compute_backend_cuda",
@@ -403,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -415,17 +439,25 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "state": "CLOSED",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
-      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "state": "CLOSED",
+      "summary": "R4 C5 交付范围 CLOSED：CUDA 公开 roots、真实样例、Win/WSL 三交付、CUDA OFF/后端裁剪、全部 selected gates 与 P0 已验收；继承 CPU 原始 P1/唯一用户例外，CUDA 主卡仍待插桩与 P1。",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-r4-product-delivery/README.md"
+      }
     },
     {
       "module": "compute_provider_cublas",

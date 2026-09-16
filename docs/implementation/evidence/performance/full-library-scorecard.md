@@ -1,35 +1,35 @@
 # HYLE 全库性能账本（2026-09-16）
 
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本只绑定
-[`module-status.json`](../../module-status.json) 中当前 30 个 `CLOSED` factor，包含 R2 已收口的
+[`module-status.json`](../../module-status.json) 中当前 38 个 `CLOSED` factor，包含 R2 已收口的
 compute_ops schema、Mem reservation 尾项和 R3 CPU。CPU 唯一已量化的 Graph 小片段未决项经用户
 批准接受，原 LOSS/INCONCLUSIVE 保留；GPU 与 ggml 等未收口 owner 不计入数量。旧 CUDA copy 与跨域 Graph 数字保留在
 [历史证据](benchmarks-compute-graph.md)，不作为四路线基础架构完成证明。账本不授予跨平台、跨能力的
 永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是 2026-09-14 原审计时的事实。
 
-R4 公开产品接线使八个既有 Compute/Graph/CPU root owner 进入
-[定向交付轮](../../tasks/build/cuda-r4-product-delivery.md)。当前账本暂不把它们算作 CLOSED；
+R4 公开产品接线的八个既有 Compute/Graph/CPU root owner 已完成
+[定向交付轮](../../tasks/build/cuda-r4-product-delivery.md)，恢复 CLOSED 与原始 CPU/C7 claims；
 [原候选与完整 claim 快照](../../../../evidence/correctness/cuda-r4-product-delivery/inherited-baseline.json)
-保留 R3 CPU 数据/用户例外及 C7 P0，不删除原证据，不把这次交付接线算成重做 CPU 或新性能成绩。
-仅改变产品 roots/消费合同，不更改 CPU 算法或追加 CPU P1。
+保留 R3 CPU 数据/用户例外及 C7 P0，继承的 measured candidate 和统计值均未改写。新增 C5 claim
+只证明公开 roots/消费的 P0 交付成本；没有更改 CPU 算法、追加 CPU P1 或签署 CUDA 性能结论。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 55 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 74 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
-| `WIN` | 23 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
+| `WIN` | 26 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
 | `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
-| `INCONCLUSIVE` | 16 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 13 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
-| `LOSS` | 0 | CPU Graph 原负向方向与用户例外保留在上述继承快照，交付轮暂不纳入当前投影 |
+| `INCONCLUSIVE` | 25 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
+| `N/A` | 16 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
+| `LOSS` | 4 | CPU Graph v3 原负向方向；三项通过 5% 非劣门，一项保持未决并接受用户例外 |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-15 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，13 个是 P0 结构证明。后两类不能承担最强宣传声明。
+31 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，16 个是 P0 结构证明。后两类不能承担最强宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -83,7 +83,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | compute_ops 为 P0 schema；CPU Direct 4/4 非劣 PASS，Graph v3 11/12 非劣 PASS + 1 项用户验收例外，原统计聚合未决 | R3 原候选已验收；共同执行槽进入 R4 定向修复，GPU 新路线未验收；历史 copy/跨域结果不继承 |
+| Compute / Graph | compute_ops 为 P0 schema；CPU Direct 4/4 非劣 PASS，Graph v3 11/12 非劣 PASS + 1 项用户验收例外，原统计聚合未决 | R3、C7 失败槽修复、C5 三交付已验收；CUDA 主卡插桩/P1 未完，Apple/Vulkan 新路线未验收；历史 copy/跨域结果不继承 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线

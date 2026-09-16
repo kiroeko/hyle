@@ -1,6 +1,6 @@
 # R4 C5：普通产品与 CUDA 三交付接线
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
 
 - baseline：`d2e631b4e9eda584d94f5b9936f68e01f4a5a3c7`，工作树干净；C4 的三个真实 Provider、
   普通 factory 和 native captured FFN 已验证，公开产品 roots 尚未加入这两个路线 factor。
@@ -94,3 +94,19 @@ source、relocated static/shared 均通过真实 Direct/Graph FFN，每种消费
 尾项及 CUDA P1 仍待完成。八个旧 owner 进入 CANDIDATE，六个 CUDA owner 继续由 R4 主卡 AUDITED。
 
 95 项完成后，将未完成交付检查迁至同提交的 Windows detached 验证副本 `C:/hvr4`，继续复用精确身份的 PASS receipts。原 Graph 启动被主动终止，不伪装为产品故障或 PASS；主工作区仍是产品真相。
+
+## CLOSED / 七门
+
+| Gate | 本卡范围的结论 |
+|---|---|
+| scope | PASS，只有 D1–D3，旧 CPU/C7 C++ 未变 |
+| architecture | PASS，真实 CUDA roots 复用既有 optional factor/Provider，未复制执行器 |
+| correctness | PASS，实际 FFN/变化输入/capture，所选 native/header/consumer 回归通过 |
+| delivery | PASS，Win/WSL source/static/shared，隔离/依赖/许可/relocation；macOS 仅 CUDA OFF 投影 |
+| usability_docs | PASS，公开 C++ 样例和指南说明 packing、资源寿命、完成、capture 与 SDK |
+| red_team | PASS，核对 CPU/CUDA OFF、backend-only、公开头/导出、实际 DLL 和原统计身份；未扩大性能结论 |
+| engineering_performance | PASS，P0 的八个旧 factor source/header tree 相等；原 CPU 数据和唯一例外继承 |
+
+统一实现规模沿不可变产品 f735271b：Compute + Graph **32,662 行**，不含测试/第三方，self-check PASS。
+本交付卡到此停止；仅在公开 roots/导出/消费/依赖发生变化或出现可复现交付缺陷时重开。
+CUDA 插桩、cuBLAS OOM 与正式 P1 继续归主卡，不能用这八个旧 owner 结案替代 R4 完成。

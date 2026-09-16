@@ -286,3 +286,10 @@ factory 已组成三个原生 Provider，用户不提交排序或 profile。dens
 已真实实现，当前 `hyle::compute/graph` 根列表仍保持原样；接线需要按既有 selector 将其涉及的旧
 root owner 定向绑定交付范围，不扩大到 CPU 算法重审、不重写工具。完整 R4 尚无 terminal candidate，
 不把 factory 或本 W1 checkpoint 当作路线完成。当前全实现 LOC **32,662 行**（不含测试/第三方）。
+
+### C5 交付收口
+
+[C5 交付卡](../build/cuda-r4-product-delivery.md) 已完成公开 roots、实际 FFN 样例与 Windows/WSL
+源码、静态、动态消费；CUDA OFF/CPU-only/backend-only/core 隔离及 106 项 selected gates 全部通过。
+八个旧 owner 按交付范围 CLOSED，原 CPU 数值与唯一用户例外不变；六个 CUDA owner 仍由本卡 AUDITED。
+主卡当前剩余 host 插桩、cuBLAS OOM 新测试及已冻结比较合同的 CUDA P1，不用 C5 结案替代完整 R4。
