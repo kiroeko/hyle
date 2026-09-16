@@ -112,8 +112,9 @@ oneDNN region、默认 CPU Graph、public Sched consumer 与两个普通 source 
 候选后单独复核：bind 检查描述、精确 resource 和 alias 后撤销缓存；prepare_replay 校验 active lane、
 Context owner、完整 views 及 completion capacity；submit 重新核对 Queue 的当前 Context，再进入
 QueueSequence 的真实 admission。region extension 继续保活 Provider，Invocation/plan 引用和
-accepted-prefix/failure/异步 completion 回收路径未改；delegated 与 captured 路径不经过此次删去的
-shared-region adapter。没有新增 hot allocation、共享可变态、公开字段或 API。
+accepted-prefix/failure/异步 completion 回收路径未改；delegated 与已录制 capture 的重放不经过此次
+删去的 shared-region adapter。capture 录制仍在冷阶段验证 Queue/resources 后提交步骤。
+没有新增 hot allocation、共享可变态、公开字段或 API。
 新增测试分别覆盖 cold proof 与同地址替换 Queue，既有 async/失败/生命周期 suite 已实际通过。
 本遍源码复核没有发现需要退回产品的缺陷；平台与 sanitizer verdict 仍依实际运行填写。
 
@@ -121,3 +122,16 @@ shared-region adapter。没有新增 hot allocation、共享可变态、公开�
 Native peer 的不可变来源到该产品提交；12 workload、两个 placement、执行/分配正反、实际 A/A、
 同一三 P 核拓扑/low-latency、5% 非劣门和 n=15→31 均逐字段继承 v2。合同提交不改变产品投影，
 实际 runner source revision 由新的 manifest 保留；不覆盖、不重跑原 v2。
+
+## 平台与交付检查点
+
+Windows source 7/7、搬迁后 shared Graph/Sched 消费 2/2 PASS；WSL source 7/7、Air/Mini 各
+6/6，三台 Unix 的搬迁后 shared/static Graph/Sched 均各 2/2 PASS。每台验证副本的 891 个
+product/build/test 文件都逐项核对 Windows 候选 hash。原始记录见
+[本轮证据](../../../../evidence/correctness/graph-cpu-replay-cost/README.md)。Windows static 与
+WSL sanitizer、新 Graph P1 仍待实际完成；没有把普通验证写成性能 PASS。
+
+全库性能总账只作当前状态同步：移出已重开的旧 Compute/CUDA/Graph claim，保留历史证据；
+补记已 CLOSED 的 compute_ops schema 与 Mem reservation P0。Mem logical-range 的源码和合同
+未变，明确标作 inherited unchanged route；不重新采样。施工中的 Direct 全部四项和旧 Graph 全部
+十二项方向继续单列，包含固定 LOSS 与未决项，不冒充当前 CLOSED 覆盖。

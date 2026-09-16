@@ -1,28 +1,29 @@
-# HYLE 全库性能账本（2026-09-14）
+# HYLE 全库性能账本（2026-09-16）
 
-本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
-[`module-status.json`](../../module-status.json) 中当前 33 个 `CLOSED` factor。Compute/Graph runtime 基础与
-CPU/CUDA backend factor 已进入账本；仍在施工的 `compute_ops`、Native/oneDNN/ggml provider、
-oneDNN graph provider 与 `compute_sched` 被明确排除。它不是第二套模块状态，也不授予 HYLE 一个跨平台、
-跨能力的永久 SOTA 标签。被重开的旧 provider claim 仍保存在历史 evidence 中，但不属于当前产品性能账本。
+本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本只绑定
+[`module-status.json`](../../module-status.json) 中当前 30 个 `CLOSED` factor，包含 R2 已收口的
+compute_ops schema 与 Mem reservation 尾项。仍在施工的 Compute/Graph、CPU routes、Providers 和
+GPU 基础架构不计入已收口数量；其合格或未决证据在下方单列。旧 CUDA copy 与跨域 Graph 数字保留在
+[历史证据](benchmarks-compute-graph.md)，不作为四路线基础架构完成证明。账本不授予跨平台、跨能力的
+永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是 2026-09-14 原审计时的事实。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 56 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 55 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
-| `WIN` | 24 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
-| `PARITY` | 4 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
+| `WIN` | 23 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
+| `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
 | `INCONCLUSIVE` | 16 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 12 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
+| `N/A` | 13 | P0 结构成本或没有完整同合同 peer；没有计时排名 |
 | `LOSS` | 0 个聚合合同 | 不能解释成“未测 API 也都不慢”；见下方 WSL watcher 的固定负向 strata |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-17 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，12 个是 P0 结构证明。后两类不能承担最强宣传声明。
+15 个 claim 在仓库中保留完整机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，13 个是 P0 结构证明。后两类不能承担最强宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -45,8 +46,6 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | typed unbounded MPMC | `1.261x` 到 `1.289x` | oneTBB，同 allocator/OOM/FIFO/drain 合同 |
 | scheduler request fan-out | `1.646x` 到 `1.663x` | Marl，同 worker/input/compute/completion 边界 |
 | SIMD Compute rows | exact rsqrt、number-min、byte-select、propagating-min 的 16 个 strata 全部 `PARITY/PASS`；median `0.9964–1.0262` | 同一 locked-Highway lowering、精确数值/NaN/signed-zero、ISA、storage 与 whole-row 边界 |
-| CUDA runtime boundary | 1 MiB D2D copy 的 8/8 strata `PARITY/PASS`；median `0.9897–1.0214` | 同一 CUDA stream/buffer/event/terminal wait，HYLE 侧包含公开验证与 Completion slot |
-| Graph CUDA→CPU→CUDA replay | `1.243x–1.260x`，八个 99.26% CI 全部高于 1 | 同一 4 MiB 跨域任务；收益来自编译计划复用与 prevalidated enqueue，不是 leaf kernel |
 | HTTP/1 fragmented stream | 约 `3.03x` | Boost.Beast，完整 public transport + HTTP lifecycle；不是裸 parser |
 | HTTP/2 small multiplex | `1.466x` 到 `1.478x` | nghttp2，同 session/body/window/flow-control 生命周期 |
 | WebSocket masking | `2.005x` 到 `3.354x`，覆盖 124 B 到 1 MiB | Boost.Beast，同 RFC mask state 与完整 buffer |
@@ -78,7 +77,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | CPU runtime 为 P0；CUDA runtime 为 P1 parity；一个 CUDA→CPU→CUDA Graph P2 为 `1.243x–1.260x WIN` | operation catalog、Native/oneDNN/ggml provider、并行 executor/`compute_sched`、Apple provider 与更多跨-provider 图仍在施工；旧 oneDNN provider claim 在其重开期间退出当前账本 |
+| Compute / Graph | compute_ops 为 P0 schema；施工中的 CPU Direct 4/4 P1 PASS，Graph v2 11/12 非劣 PASS、聚合未决，见下方完整方向 | 四路线 runtime/Provider/Graph 尚在当前重构中；GPU 新路线未验收，历史 copy/跨域结果不继承为新路线完成 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线
@@ -91,8 +90,8 @@ Build/package 是横向交付单元而非 runtime factor。source embed、instal
 
 ## 所有当前负向事实
 
-严格扫描当前 retained summary、当前外部 hashed bundle 和旧审计数据后，没有发现一个完整聚合合同的
-所有适用 strata 都把 CI 固定在 1 以下。不过，以下负向事实必须保留：
+已收口机器账本中的合同尚无所有适用 strata 的 CI 均固定在 1 以下的聚合项。施工中的 CPU Graph
+已有五项固定 LOSS，完整列于下方，不因尚未 CLOSED 而省略。其它负向事实也继续保留：
 
 | 路线 | 事实 | 根因 / 行动 |
 |---|---|---|
@@ -145,7 +144,7 @@ python scripts/check-docs.py
 
 ## 2026-09-16：R3 Graph 未收口的合格证据
 
-以下 owner 尚未 CLOSED，单独列出完整性能方向，不并入上文历史 CLOSED 数量。
+以下 owner 尚未 CLOSED，单独列出完整性能方向，不并入上文当前 CLOSED 数量。
 [原始工程证据](../../../../evidence/performance/graph-cpu-route-p1-v2-2b613413-w1-win/README.md)
 资格及 controls PASS，n=31 已到上限；工程门 11/12 PASS，聚合 INCONCLUSIVE。
 严格方向 5 LOSS / 2 WIN / 5 INCONCLUSIVE；LOSS 未被 5% 非劣 PASS 改名。

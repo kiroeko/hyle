@@ -1,10 +1,10 @@
 {
   "schema": "hyle.performance.scorecard/v1",
-  "as_of": "2026-09-14",
+  "as_of": "2026-09-16",
   "registry": "docs/implementation/module-status.json",
-  "baseline": "bbd1eebada1be72d5b33c07e8c0763b16196d3fb",
+  "baseline": "7fa6dc0a8b3b857a1835525de0d0e7be5f8db5e9",
   "ratio_definition": "greater than one favors the shipped HYLE route",
-  "excluded_modules": ["compute_provider_onednn", "compute_provider_ggml", "graph_provider_onednn", "compute_ops", "compute_provider_native", "compute_sched"],
+  "excluded_modules": ["compute", "compute_backend_cpu", "compute_backend_cuda", "compute_provider_ggml", "compute_provider_native", "compute_provider_onednn", "compute_route_cpu", "compute_sched", "graph", "graph_provider_onednn", "graph_route_cpu"],
   "peer_freshness": [
     {"peer": "Highway", "locked": "18e449b642599b8f51c03ca10173fdc59864e4f2", "reference_head": "18e449b642599b8f51c03ca10173fdc59864e4f2", "disposition": "current product lock; legacy finite exception receipts were source-diff replayed by SIMD v6"},
     {"peer": "xsimd", "locked": "3b3151ff665514a00a437cc985f47b7de99b772b", "reference_head": "3b3151ff665514a00a437cc985f47b7de99b772b", "disposition": "current"},
@@ -26,7 +26,7 @@
     {"module": "platform_thread", "candidate": "c39df6f94c636ab8fa94cb700dd263763a42d680", "claims": ["platform-thread-structural"]},
     {"module": "platform_fs", "candidate": "c39df6f94c636ab8fa94cb700dd263763a42d680", "claims": ["platform-fs-warm-file"]},
     {"module": "mem_reclaim", "candidate": "0f6ef8e83ee290ab565c0d53081a0acb75a46675", "claims": ["reclaim-snapshot", "reclaim-stable-registry"]},
-    {"module": "mem", "candidate": "ad5bff895125fb0d95281b36559010435c3d7892", "claims": ["mem-logical-range"]},
+    {"module": "mem", "candidate": "4e9f74a09b7218f6053038cc5c5b091e73ff0bc5", "claims": ["mem-logical-range", "mem-external-reservation"]},
     {"module": "mem_vm", "candidate": "ad5bff895125fb0d95281b36559010435c3d7892", "claims": ["mem-vm-lazy-release"]},
     {"module": "simd", "candidate": "c033ca40d3f119912927c52954079d8c01d6ec12", "claims": ["simd-provider-routing", "simd-hyle-exceptions", "simd-xsimd-activation", "simd-vqsort", "simd-row-dtype", "simd-inference-kernels", "simd-compute-rows-v7"]},
     {"module": "container", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-lru", "container-utf"]},
@@ -43,10 +43,7 @@
     {"module": "io_watch", "candidate": "fa5718715aaf7a9d867e0ef9ce81f435b8f5b116", "claims": ["io-watch-recursive", "io-watch-exact-file", "io-watch-directory-burst"]},
     {"module": "process", "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739", "claims": ["process-structural"]},
     {"module": "io_websocket", "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99", "claims": ["websocket-mask"]},
-    {"module": "compute", "candidate": "7718b163946104989c9a000f19fd01f454211d36", "claims": ["compute-cpu-runtime-structural"]},
-    {"module": "compute_backend_cpu", "candidate": "7718b163946104989c9a000f19fd01f454211d36", "claims": ["compute-cpu-runtime-structural"]},
-    {"module": "compute_backend_cuda", "candidate": "7718b163946104989c9a000f19fd01f454211d36", "claims": ["compute-cuda-runtime"]},
-    {"module": "graph", "candidate": "7718b163946104989c9a000f19fd01f454211d36", "claims": ["graph-cuda-cross-domain"]}
+    {"module": "compute_ops", "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d", "claims": ["compute-ops-quantized-schema"]}
   ],
   "claims": [
     {
@@ -248,12 +245,12 @@
     {
       "id": "mem-logical-range", "modules": ["mem"], "kind": "P1_WORKLOAD",
       "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_HASHED_EXTERNAL", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "logical suballocation with alignment, split, coalesce and allocation ownership", "contract": "same recoverable allocation/free lifecycle and bookkeeping",
       "peer": "OffsetAllocator adapted to the same public contract", "scale": "frozen logical-range trace",
       "absolute": "HYLE 24.759-25.054 M op/s; peer 23.861-24.122 M op/s", "ratio_ci": "eight ratios 1.0310-1.0432; every 99.26% CI lower bound exceeds 1",
       "sensitivity": "win holds across placement, execution and owner-allocation order", "mechanism": "bounded range metadata and direct coalescing",
-      "limitations": "raw naked-handle peer is faster but has a weaker contract and is not ranked", "evidence": ["docs/implementation/evidence/performance/benchmarks-mem-v7.md"]
+      "limitations": "raw naked-handle peer is faster but has a weaker contract and is not ranked; inherited at Mem 4e9f74a0 because the ad5bff89-to-4e9f74a0 Mem delta is confined to lifetime_plan and quota_allocator, leaving logical-range implementation and its contract unchanged", "evidence": ["docs/implementation/evidence/performance/benchmarks-mem-v7.md"]
     },
     {
       "id": "mem-vm-lazy-release", "modules": ["mem_vm"], "kind": "P1_WORKLOAD",
@@ -597,46 +594,58 @@
       "evidence": ["docs/implementation/evidence/performance/benchmarks-io.md", "evidence/performance/io-websocket-mask-p1-v1-d4cb26ac-qualified/summary.json"]
     },
     {
-      "id": "compute-cpu-runtime-structural", "modules": ["compute", "compute_backend_cpu"], "kind": "P0_STRUCTURAL",
-      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
-      "practical_result": "N/A", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "provider-neutral runtime plus caller-thread ordered CPU submit",
-      "contract": "cold context/queue metadata; warm CPU submit performs no allocation, lock, syscall, thread creation or provider search",
-      "peer": "no coherent external peer for the combined ownership and typed-submit seam", "scale": "one prepared submission",
-      "absolute": "P0 code shape and resource bill only; no timer ranking",
-      "ratio_ci": "N/A", "sensitivity": "runtime ownership and backend factor boundary",
-      "mechanism": "prebound hooks and immediate completion on the caller thread",
-      "limitations": "not evidence for operation kernels, parallel execution or whole-graph throughput",
-      "evidence": ["docs/implementation/tasks/compute/compute-v6-provider-runtime-ownership.md", "docs/implementation/tasks/compute/compute-backend-cpu-v1-factor.md"]
+      "id": "mem-external-reservation",
+      "modules": [
+        "mem"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "Graph workspace/private upper-bound reservation sharing the existing allocator quota",
+      "contract": "Borrowed owner; destroy the external resource before returning its reservation; no fake backing allocation or double charge.",
+      "peer": "No same-contract timing peer is claimed; P0 source and lifetime accounting only.",
+      "scale": "One reservation or release",
+      "absolute": "No heap allocation or new QuotaAllocator fields; fixed space, uncontended O(1), existing CAS retry under contention.",
+      "ratio_ci": "N/A",
+      "sensitivity": "No timing or cross-hardware speed claim.",
+      "mechanism": "Reuse reserve/commit/shrink and a move-only owner/byte token.",
+      "limitations": "This extends cold admission accounting; it does not establish new allocator throughput or wait-free progress.",
+      "evidence": [
+        "docs/implementation/tasks/mem/mem-v10-external-byte-reservation.md",
+        "evidence/correctness/compute-graph-r2-common-foundation/README.md"
+      ]
     },
     {
-      "id": "compute-cuda-runtime", "modules": ["compute_backend_cuda"], "kind": "P1_WORKLOAD",
-      "comparison": "SAME_CONTRACT_EXTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "PARITY",
-      "parity_basis": "all eight order, allocation and placement strata and their 99.26% intervals remain within the fixed 5% equivalence band",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "1 MiB resident CUDA D2D copy with non-blocking stream, event record and terminal wait",
-      "contract": "same stream, buffers, event and completion boundary; HYLE includes public BufferView validation and Completion slot management",
-      "peer": "direct CUDA 13.3 runtime route", "scale": "1 MiB resident D2D copy",
-      "absolute": "retained qualified bundle; no aggregate absolute value beyond its fixed operation",
-      "ratio_ci": "eight median ratios 0.98967-1.02142; every stratum PARITY/PASS",
-      "sensitivity": "execution order, allocation order and placement crossed on RTX 4070",
-      "mechanism": "preallocated completion slots and non-blocking event ownership",
-      "limitations": "CUDA 13.3/RTX 4070 runtime boundary only; not a kernel or provider claim",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-compute-graph.md", "evidence/performance/compute-cuda-runtime-p1-v1-7718b163-w1-win/summary.json"]
-    },
-    {
-      "id": "graph-cuda-cross-domain", "modules": ["graph"], "kind": "P2_SLICE",
-      "comparison": "NATURAL_ROUTE", "qualification": "QUALIFIED_RETAINED", "direction": "WIN",
-      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
-      "consumer_shape": "CUDA D2H to native CPU Unary to CUDA H2D replay through one compiled plan",
-      "contract": "same descriptors, contexts, queues, storage, leaf operation, dependencies and terminal completion",
-      "peer": "natural direct consumer issuing the same public safe operations", "scale": "one 4 MiB cross-domain task",
-      "absolute": "Graph 1791.2-1805.6 op/s versus direct 1431.8-1447.5 op/s",
-      "ratio_ci": "eight median ratios 1.24305-1.26042; every 99.26% interval above 1",
-      "sensitivity": "execution order, allocation order and placement crossed on RTX 4070",
-      "mechanism": "compile-time exact route reuse and internal prevalidated enqueue",
-      "limitations": "one CUDA/CPU cross-domain plan; not evidence for leaf kernels, arbitrary DAGs or future providers",
-      "evidence": ["docs/implementation/evidence/performance/benchmarks-compute-graph.md", "evidence/performance/graph-cuda-pipeline-p2-v1-7718b163-w1-win/summary.json"]
+      "id": "compute-ops-quantized-schema",
+      "modules": [
+        "compute_ops"
+      ],
+      "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER",
+      "qualification": "STRUCTURAL",
+      "direction": "N/A",
+      "practical_result": "PASS",
+      "engineering_action": "KEEP",
+      "consumer_weight": "HIGH",
+      "candidate_binding": "EXACT",
+      "consumer_shape": "Direct and Graph consumers describe grouped Q4 weight-only matrix multiplication with explicit ports and formats.",
+      "contract": "Cold mathematical, shape, storage and numeric validation; providers can explicitly reject unsupported execution.",
+      "peer": "No same-contract timing peer is claimed; P0 source and lifetime accounting only.",
+      "scale": "O(rank) cold descriptor validation",
+      "absolute": "Windows Operation remains 128 bytes, alignment 8; existing submit paths unchanged.",
+      "ratio_ci": "N/A",
+      "sensitivity": "No timing or cross-hardware speed claim.",
+      "mechanism": "Reuse checked TensorDesc and operation shape/port inference.",
+      "limitations": "Schema closure is not CPU/GPU Q4 kernel support; route implementation and performance remain separately unaccepted.",
+      "evidence": [
+        "docs/implementation/tasks/compute/compute-ops-v4-quantized-matmul.md",
+        "evidence/correctness/compute-ops-v4-quantized-matmul/README.md"
+      ]
     }
   ]
 }
