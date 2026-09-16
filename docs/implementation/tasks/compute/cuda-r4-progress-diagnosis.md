@@ -1,5 +1,8 @@
 # R4 CUDA 长停顿：有界进度诊断
 
+当前裁决：`BLOCKED`。已定位实际 SDK API，有限恢复实验未触发；不继续追加启动或重跑 P1。
+[完整现场与配方](../../../../evidence/correctness/cuda-r4-context-progress-diagnosis/README.md)。
+
 ## Diagnostic-only audit
 
 - baseline：`c2edb1c2`；[R4 当前卡](cuda-v1-four-route-foundation.md) 六个 owner 保持 BLOCKED。
@@ -49,3 +52,13 @@
   无复现或未恢复就停止，不能声称原因成立，不能据此重启 P1。
 - 成功也只证明这台机器/软件/夹具下的进度约束；若要采用修正拓扑，须先冻结新采集合同和
   有限进度/A/A 回归，原失败数据继续排除，不外推所有驱动，不改产品锁或公共仪器。
+
+### 本轮停止裁决
+
+独立恢复实验在 `fd16d25d` 冻结后执行，12/12 进程正常退出，约 2.797–3.485 秒；没有再次达到
+Context 10 秒阈值，因此一次亲和性 intervention 也没有执行。其结果为 `INCONCLUSIVE`，不能写
+恢复 PASS，不能声称整个进程单核就是原因。到预声明启动上限即停止，总诊断仍在原 30 分钟内。
+
+当前已证实本次现场位于 `cuDevicePrimaryCtxRetain`，未证明其下游原因，也未证明前两次没有现场
+的停顿与此相同。产品保持原样，六个 CUDA owner 继续 BLOCKED；后续须以新事实固定有界的修复或
+采集合同及进度回归，不能自动延长本诊断、重开 Sched/锁或恢复旧 P1。

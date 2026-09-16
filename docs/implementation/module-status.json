@@ -419,10 +419,10 @@
       "module": "compute_backend_cuda",
       "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "summary": "R4 BLOCKED：真实 CUDA Direct/Graph、三交付及既有 ordinary/host/device 检查已完成；匹配进程亲和性的 Direct A/A 16/16 通过。两次正式资格因长停顿停止，后续 24 次有限启动未定位根因；Graph P1、原生成本计时和默认规则终审未完成。",
+      "summary": "R4 BLOCKED：真实实现、三交付及既有检查保留；独立诊断捕获首次 Context 创建停在 cuDevicePrimaryCtxRetain 内。12 次有限恢复实验启动正常，未触发介入，因果修复未证明；P1、原生成本与默认规则终审未完成。",
       "blocked_from": "AUDITED",
-      "blocker": "CUDA 完整 FFN 性能资格两次出现进程超过 120 秒未退出；有限定位未取得实际阶段/owner。适用进度风险与 P1 未能裁决，默认规则终审未完成。",
-      "blocker_owner": "R4 CUDA qualification 进度诊断；产品、SDK 或夹具责任尚未取证",
+      "blocker": "完整 FFN 资格曾两次长停顿；新诊断已定位自身一次停顿在 CUDA SDK primary-context 创建，未证明根因或前两次同因。预声明恢复实验未触发，进度门仍 BLOCKED，P1 聚合 INCONCLUSIVE。",
+      "blocker_owner": "R4 CUDA qualification / CUDA SDK primary-context 初始化边界；具体因果与修复未证明，见 cuda-r4-progress-diagnosis.md",
       "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
     },
     {
@@ -466,51 +466,51 @@
     {
       "module": "compute_provider_cublas",
       "state": "BLOCKED",
-      "summary": "R4 BLOCKED：真实 CUDA Direct/Graph、三交付及既有 ordinary/host/device 检查已完成；匹配进程亲和性的 Direct A/A 16/16 通过。两次正式资格因长停顿停止，后续 24 次有限启动未定位根因；Graph P1、原生成本计时和默认规则终审未完成。",
+      "summary": "R4 BLOCKED：真实实现、三交付及既有检查保留；独立诊断捕获首次 Context 创建停在 cuDevicePrimaryCtxRetain 内。12 次有限恢复实验启动正常，未触发介入，因果修复未证明；P1、原生成本与默认规则终审未完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
       "blocked_from": "AUDITED",
-      "blocker": "CUDA 完整 FFN 性能资格两次出现进程超过 120 秒未退出；有限定位未取得实际阶段/owner。适用进度风险与 P1 未能裁决，默认规则终审未完成。",
-      "blocker_owner": "R4 CUDA qualification 进度诊断；产品、SDK 或夹具责任尚未取证",
+      "blocker": "完整 FFN 资格曾两次长停顿；新诊断已定位自身一次停顿在 CUDA SDK primary-context 创建，未证明根因或前两次同因。预声明恢复实验未触发，进度门仍 BLOCKED，P1 聚合 INCONCLUSIVE。",
+      "blocker_owner": "R4 CUDA qualification / CUDA SDK primary-context 初始化边界；具体因果与修复未证明，见 cuda-r4-progress-diagnosis.md",
       "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
     },
     {
       "module": "compute_provider_marlin",
       "state": "BLOCKED",
-      "summary": "R4 BLOCKED：真实 CUDA Direct/Graph、三交付及既有 ordinary/host/device 检查已完成；匹配进程亲和性的 Direct A/A 16/16 通过。两次正式资格因长停顿停止，后续 24 次有限启动未定位根因；Graph P1、原生成本计时和默认规则终审未完成。",
+      "summary": "R4 BLOCKED：真实实现、三交付及既有检查保留；独立诊断捕获首次 Context 创建停在 cuDevicePrimaryCtxRetain 内。12 次有限恢复实验启动正常，未触发介入，因果修复未证明；P1、原生成本与默认规则终审未完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
       "blocked_from": "AUDITED",
-      "blocker": "CUDA 完整 FFN 性能资格两次出现进程超过 120 秒未退出；有限定位未取得实际阶段/owner。适用进度风险与 P1 未能裁决，默认规则终审未完成。",
-      "blocker_owner": "R4 CUDA qualification 进度诊断；产品、SDK 或夹具责任尚未取证",
+      "blocker": "完整 FFN 资格曾两次长停顿；新诊断已定位自身一次停顿在 CUDA SDK primary-context 创建，未证明根因或前两次同因。预声明恢复实验未触发，进度门仍 BLOCKED，P1 聚合 INCONCLUSIVE。",
+      "blocker_owner": "R4 CUDA qualification / CUDA SDK primary-context 初始化边界；具体因果与修复未证明，见 cuda-r4-progress-diagnosis.md",
       "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
     },
     {
       "module": "compute_provider_cuda",
       "state": "BLOCKED",
-      "summary": "R4 BLOCKED：真实 CUDA Direct/Graph、三交付及既有 ordinary/host/device 检查已完成；匹配进程亲和性的 Direct A/A 16/16 通过。两次正式资格因长停顿停止，后续 24 次有限启动未定位根因；Graph P1、原生成本计时和默认规则终审未完成。",
+      "summary": "R4 BLOCKED：真实实现、三交付及既有检查保留；独立诊断捕获首次 Context 创建停在 cuDevicePrimaryCtxRetain 内。12 次有限恢复实验启动正常，未触发介入，因果修复未证明；P1、原生成本与默认规则终审未完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
       "blocked_from": "AUDITED",
-      "blocker": "CUDA 完整 FFN 性能资格两次出现进程超过 120 秒未退出；有限定位未取得实际阶段/owner。适用进度风险与 P1 未能裁决，默认规则终审未完成。",
-      "blocker_owner": "R4 CUDA qualification 进度诊断；产品、SDK 或夹具责任尚未取证",
+      "blocker": "完整 FFN 资格曾两次长停顿；新诊断已定位自身一次停顿在 CUDA SDK primary-context 创建，未证明根因或前两次同因。预声明恢复实验未触发，进度门仍 BLOCKED，P1 聚合 INCONCLUSIVE。",
+      "blocker_owner": "R4 CUDA qualification / CUDA SDK primary-context 初始化边界；具体因果与修复未证明，见 cuda-r4-progress-diagnosis.md",
       "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
     },
     {
       "module": "compute_route_cuda",
       "state": "BLOCKED",
-      "summary": "R4 BLOCKED：真实 CUDA Direct/Graph、三交付及既有 ordinary/host/device 检查已完成；匹配进程亲和性的 Direct A/A 16/16 通过。两次正式资格因长停顿停止，后续 24 次有限启动未定位根因；Graph P1、原生成本计时和默认规则终审未完成。",
+      "summary": "R4 BLOCKED：真实实现、三交付及既有检查保留；独立诊断捕获首次 Context 创建停在 cuDevicePrimaryCtxRetain 内。12 次有限恢复实验启动正常，未触发介入，因果修复未证明；P1、原生成本与默认规则终审未完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
       "blocked_from": "AUDITED",
-      "blocker": "CUDA 完整 FFN 性能资格两次出现进程超过 120 秒未退出；有限定位未取得实际阶段/owner。适用进度风险与 P1 未能裁决，默认规则终审未完成。",
-      "blocker_owner": "R4 CUDA qualification 进度诊断；产品、SDK 或夹具责任尚未取证",
+      "blocker": "完整 FFN 资格曾两次长停顿；新诊断已定位自身一次停顿在 CUDA SDK primary-context 创建，未证明根因或前两次同因。预声明恢复实验未触发，进度门仍 BLOCKED，P1 聚合 INCONCLUSIVE。",
+      "blocker_owner": "R4 CUDA qualification / CUDA SDK primary-context 初始化边界；具体因果与修复未证明，见 cuda-r4-progress-diagnosis.md",
       "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
     },
     {
       "module": "graph_route_cuda",
       "state": "BLOCKED",
-      "summary": "R4 BLOCKED：真实 CUDA Direct/Graph、三交付及既有 ordinary/host/device 检查已完成；匹配进程亲和性的 Direct A/A 16/16 通过。两次正式资格因长停顿停止，后续 24 次有限启动未定位根因；Graph P1、原生成本计时和默认规则终审未完成。",
+      "summary": "R4 BLOCKED：真实实现、三交付及既有检查保留；独立诊断捕获首次 Context 创建停在 cuDevicePrimaryCtxRetain 内。12 次有限恢复实验启动正常，未触发介入，因果修复未证明；P1、原生成本与默认规则终审未完成。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
       "blocked_from": "AUDITED",
-      "blocker": "CUDA 完整 FFN 性能资格两次出现进程超过 120 秒未退出；有限定位未取得实际阶段/owner。适用进度风险与 P1 未能裁决，默认规则终审未完成。",
-      "blocker_owner": "R4 CUDA qualification 进度诊断；产品、SDK 或夹具责任尚未取证",
+      "blocker": "完整 FFN 资格曾两次长停顿；新诊断已定位自身一次停顿在 CUDA SDK primary-context 创建，未证明根因或前两次同因。预声明恢复实验未触发，进度门仍 BLOCKED，P1 聚合 INCONCLUSIVE。",
+      "blocker_owner": "R4 CUDA qualification / CUDA SDK primary-context 初始化边界；具体因果与修复未证明，见 cuda-r4-progress-diagnosis.md",
       "resume_condition": "有界独立诊断取得实际停顿阶段/owner，或可复核证据证明夹具/采集边界缺陷；固定有限 FIX 和进度回归后按 BLOCKED -> SCOPED -> AUDITED 恢复所需 owner。无新事实不重跑 P1，不扩样本或自动给予例外。"
     }
   ]

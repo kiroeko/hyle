@@ -341,3 +341,10 @@ memcheck 对 Direct/Graph 完整链路均为 0 errors / 0 bytes leaked。新 cuB
   **32,665 行 / 107 实现文件**，排除测试和第三方，self-check PASS。
 
 [有界进度诊断](cuda-r4-progress-diagnosis.md) 单独限定现场捕获与源码归因，不解除上述 BLOCKED。
+
+其后取得[独立完整夹具的现场](../../../../evidence/correctness/cuda-r4-context-progress-diagnosis/README.md)：
+第一次 Context 创建在 `cuDevicePrimaryCtxRetain` 内超过 10 秒，map/调用指令与离线 unwind 一致，
+尚未进入 HYLE reaper。这个事实不等于驱动缺陷根因，也不证明前两次未捕获的停顿阶段相同。
+预声明的 12 次恢复实验启动全部正常，未触发介入，因果回归仍未裁决。诊断已停止；六个 owner
+保持 BLOCKED，未重新启动 P1，未修改产品锁、GPU 算法、驱动或公共仪器。统一 LOC 仍为
+**32,665 行 / 107 实现文件**，self-check PASS。

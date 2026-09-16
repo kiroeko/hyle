@@ -1,0 +1,90 @@
+{
+  "verdict": "BLOCKED",
+  "progress": "actual SDK API located; causal repair unproven",
+  "product_changed": false,
+  "p1_restarted": false,
+  "capture": {
+    "pid": 36248,
+    "primary_thread": 63172,
+    "observer_mask": "0x10",
+    "child_mask": "0x4",
+    "priority": "AboveNormal",
+    "limit_seconds": 10,
+    "selftest": false,
+    "observed_seconds": 10.030999999959022,
+    "phase": {
+      "phase": 100,
+      "rows": 1,
+      "thread": 63172,
+      "count": 5
+    },
+    "threads": [
+      {
+        "id": 63172,
+        "base_priority": 10,
+        "cpu_seconds": 10.09375
+      },
+      {
+        "id": 67768,
+        "base_priority": 10,
+        "cpu_seconds": 0.0
+      },
+      {
+        "id": 33932,
+        "base_priority": 10,
+        "cpu_seconds": 0.0
+      },
+      {
+        "id": 30564,
+        "base_priority": 10,
+        "cpu_seconds": 0.0
+      },
+      {
+        "id": 73720,
+        "base_priority": 10,
+        "cpu_seconds": 0.0
+      }
+    ],
+    "capture_exit": 0,
+    "timed_out": true,
+    "elapsed_seconds": 10.280999999959022,
+    "exit_code": 124,
+    "history": [
+      {
+        "seconds": 0.10899999970570207,
+        "phase": 100,
+        "rows": 1,
+        "thread": 63172,
+        "count": 5
+      }
+    ]
+  },
+  "actual_call_chain": [
+    "cuda::create_context",
+    "Context::create",
+    "create_context_state",
+    "cuda::create_context_impl+0xba",
+    "cuDevicePrimaryCtxRetain",
+    "nvcuda64.dll",
+    "KERNELBASE.dll",
+    "ntdll.dll"
+  ],
+  "call_site": {
+    "return_rva": "0xa5ca",
+    "call_rva": "0xa5c5",
+    "target_rva": "0x2eeb0",
+    "target_symbol": "cuDevicePrimaryCtxRetain"
+  },
+  "intervention": {
+    "attempted_launches": 12,
+    "successful_exits": 12,
+    "applied": false,
+    "verdict": "INCONCLUSIVE; no qualifying recurrence"
+  },
+  "limitations": [
+    "This single captured diagnostic process does not prove the earlier two processes had the same phase.",
+    "The stack locates the SDK call; it does not prove a driver defect or affinity causality.",
+    "The recovery experiment did not reach its intervention condition and is not a PASS.",
+    "No new default rule, P1 result, product repair, or route closure is claimed."
+  ]
+}
