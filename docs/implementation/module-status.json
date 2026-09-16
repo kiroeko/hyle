@@ -417,9 +417,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。"
+      "summary": "R4 AUDITED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。"
     },
     {
       "module": "compute_provider_native",
@@ -461,32 +461,32 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "SCOPED",
-      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "state": "AUDITED",
+      "summary": "R4 AUDITED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "SCOPED",
-      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "state": "AUDITED",
+      "summary": "R4 AUDITED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
-      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "state": "AUDITED",
+      "summary": "R4 AUDITED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
-      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "state": "AUDITED",
+      "summary": "R4 AUDITED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
-      "summary": "R4 SCOPED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
+      "state": "AUDITED",
+      "summary": "R4 AUDITED：独立 CUDA 调度因果证据及 native-helper 修正已完成，32 次进度回归、7 项冷拒绝与 Direct/Graph 各 16 个 A/A 通过；保留实现、三交付和插桩，恢复原预算 P1、原生成本与默认规则验收，尚无性能结论。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     }
   ]

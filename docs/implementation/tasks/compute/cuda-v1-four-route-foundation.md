@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：`SCOPED`，采集阻塞的恢复条件已满足，见文末恢复记录；实际实现和既有验证保留。
+- 状态：`AUDITED`，采集阻塞已按协议恢复，见文末恢复记录；实际实现和既有验证保留。
   本卡承接[四路线实施合同](four-route-foundation-refactor.md) R4。
 - owner：`compute_provider_cublas`、`compute_provider_marlin`、`compute_provider_cuda`、
   `compute_route_cuda`、`graph_route_cuda`。五个身份先在 `2e8eb24a` 登记为 `QUEUED`，
@@ -368,3 +368,17 @@ resume_condition。六个本卡 owner 从 BLOCKED 进入 SCOPED；C5、CPU 例�
 本次采集边界修正不消耗产品算法纠正，也不授予 HYLE winner。无完整消费链明确优势时，按原
 合同采用已资格化成熟实现；保留其不能覆盖的合法 HYLE 域。新增产品变化仍须在 AUDITED 下
 固定具体范围。正式 fresh build 自己的 A/A 不合格或再现同类停顿则停止，不扩大进度回归预算。
+
+### 恢复审计冻结：AUDITED
+
+`f5c13668` 已完成 SCOPED；复核确认本次仅修正采集进程 CPU 预算，C1–C6 产品能力、原精度/
+生命周期/资源合同及三交付没有变化。有限 FIX 保持 C1–C6，尾项固定为：
+
+1. v2 Direct 与 Graph 各一次冻结候选 SAME_CONTRACT P1，沿原样本/停止合同串行执行；
+2. 同数学实现的原生完整边界成本单列为 NATURAL_ROUTE，不能签同合同 NI；
+3. 按完整链结果终审默认规则；任何必要成熟实现接入先固定适用域、fallback、来源/许可与验证，
+   才使用原一次产品纠正预算，不追加 peer/算子目录或改写公共仪器；
+4. 汇总规则/资源限制、匹配证据与用户文档，全部适用门完成才进入最终 CANDIDATE/CLOSED。
+
+六个 owner 进入 AUDITED；接下来冻结运行的 commit 仅含此审计状态，不改变 `ea8a7101` 的
+产品/benchmark 字节。现有 ordinary、host/device 插桩、三交付等已通过证据继续有效。
