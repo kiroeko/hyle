@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：`SCOPED`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。
+- 状态：`AUDITED`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。
 - 恢复 owner：`graph`、`graph_route_cpu`、`graph_provider_onednn`。原
   [Graph 停止卡](cpu-graph-replay-cost-audit.md) 的用户裁决恢复条件已满足。
 - 同步收口：原 [R3 卡](cpu-v1-four-route-foundation.md) 的 `compute`、`compute_backend_cpu`、
@@ -77,3 +77,8 @@ BRGEMM + HYLE SIMD 的直接融合 FFN。约 12 微秒，paired median ratio 为
 当前全实现 LOC：Compute + Graph **31,034**，不含测试；统一脚本 self-check PASS（`42ae3005`）。
 其中包含既有资产和 R4 刚开始的私有 context bridge，不能将它们当作 R3 新增算子或完成百分比。
 基础架构 goal 仍 ACTIVE；R4 CUDA、R5 Apple、R6 Vulkan、R7 终审均尚未完成。
+
+## 审计固定
+
+A1/A2 已冻结。逐路径 Git 对比确认三个候选组的当前产品 bytes 均未变化；原始资格、普通验收与
+用户裁决记录齐全。没有新产品 FIX；只继续相同候选的状态流。身份对比存于本轮 validation receipt。

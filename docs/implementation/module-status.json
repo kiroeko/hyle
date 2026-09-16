@@ -278,9 +278,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 验收例外 SCOPED：用户已明确接受唯一 decode-fused 未决限制；仅登记原始统计与工程取舍，不修改产品、不构建、不重跑 P1，按状态流结束 R3。"
+      "summary": "R3 验收例外 AUDITED：A1/A2 已固定；产品路径与原候选一致，已有四环境交付/插桩/合格 P1 receipts 复用；用户接受唯一未决限制，统计裁决不改写。"
     },
     {
       "module": "container_concurrent",
@@ -371,9 +371,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-      "summary": "R3 验收例外 SCOPED：用户已明确接受唯一 decode-fused 未决限制；仅登记原始统计与工程取舍，不修改产品、不构建、不重跑 P1，按状态流结束 R3。"
+      "summary": "R3 验收例外 AUDITED：A1/A2 已固定；产品路径与原候选一致，已有四环境交付/插桩/合格 P1 receipts 复用；用户接受唯一未决限制，统计裁决不改写。"
     },
     {
       "module": "compute_ops",
@@ -420,8 +420,8 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "summary": "R3 验收例外 SCOPED：用户已明确接受唯一 decode-fused 未决限制；仅登记原始统计与工程取舍，不修改产品、不构建、不重跑 P1，按状态流结束 R3。",
+      "state": "AUDITED",
+      "summary": "R3 验收例外 AUDITED：A1/A2 已固定；产品路径与原候选一致，已有四环境交付/插桩/合格 P1 receipts 复用；用户接受唯一未决限制，统计裁决不改写。",
       "record": "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md"
     },
     {
