@@ -36,3 +36,12 @@ V1/V2 均为 FIX。release-sequence 和终态资源寿命的产品语义保持�
 registry 不制造不合法的 AUDITED→SCOPED 转移，延续 AUDITED 并绑定本次有限重审结果。
 原 TSan 报告不得写 PASS，原始数据保存在本轮 qualification 工作区，终审时归档。完成 V1/V2 后
 owner 回到 R4 主卡继续全部验收，不能把验证投影算作新路线能力或独立 CUDA CLOSED。
+
+## 本有限项完成
+
+产品 `a8c982496984c16b33c3b1d6f3a7622058f5b92c` 的 V1/V2 已完成：WSL TSan 两项定向测试
+2/2 PASS、没有 race suppression；Windows 六个 CUDA factor 13/13 PASS。
+[完整日志与原报告](../../../../evidence/correctness/cuda-r4-host-qualification/README.md)保留初始
+十条告警、最小复现与修正依据。[源码等价](../../../../evidence/correctness/cuda-r4-host-qualification/shipping-source-equality.json)
+确认 sanitizer=off 产品路径未变，ABI/算法/热调用不加成本。本卡预算内停止；backend owner 仍为
+AUDITED，回归 R4 主卡继续正式 P1 与最终路线验收，不写独立 backend CLOSED。

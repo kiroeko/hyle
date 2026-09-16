@@ -293,3 +293,27 @@ root owner 定向绑定交付范围，不扩大到 CPU 算法重审、不重写�
 源码、静态、动态消费；CUDA OFF/CPU-only/backend-only/core 隔离及 106 项 selected gates 全部通过。
 八个旧 owner 按交付范围 CLOSED，原 CPU 数值与唯一用户例外不变；六个 CUDA owner 仍由本卡 AUDITED。
 主卡当前剩余 host 插桩、cuBLAS OOM 新测试及已冻结比较合同的 CUDA P1，不用 C5 结案替代完整 R4。
+
+### GPU 设备内存检查的有限执行范围
+
+host 插桩不覆盖 device 指令。沿本卡既定 CUDA 适用检查，使用本机 CUDA 13.3 Compute Sanitizer
+2026.2.1 的 memcheck，对普通 Direct 与实际 captured Graph 的完整 FFN 测试各运行一次，保留
+真实错误退出和 leak-check；单程序最多 180 秒，串行。使用 f1cf1112 的普通 shipping 验证副本：
+后续 a8c98249 只添加 TSan-only host 投影与测试同步，GPU 与 sanitizer=off 产品源码不变。
+不运行故意触发非法设备访问的 late-failure 测试，不把该排除伪装成 device 错误处理未验证；其
+正常隔离进程旅程已有 ordinary/ASan/UBSan/TSan 证据。本检查不扩算子、peer 或 profiling 仪器。
+若工具/驱动实际不能提供 verdict，记录具体缺口，不伪写 PASS 或调整系统驱动配置。
+
+### 正确性 / 插桩尾项完成
+
+[本轮完整证据](../../../../evidence/correctness/cuda-r4-host-qualification/README.md)：Windows 与 WSL
+普通六因子检查各 13/13 PASS；WSL ASan 与 UBSan 适用项完成。ASan 只排除独立最小 CUDA 程序也会
+产生的精确 2 笔/280-byte 驱动内部分配，逐程序核对数量，并保留全部未抑制报告。
+TSan 原 11 项 PASS、两项同步可见性告警经 [有限重审](cuda-r4-host-validation-visibility.md)修正后
+2/2 PASS；产品只加 TSan 条件下的最终 acquire 观察，shipping source bytes 等价。实际 device
+memcheck 对 Direct/Graph 完整链路均为 0 errors / 0 bytes leaked。新 cuBLAS OOM 回滚和无热 metadata
+分配测试在 Windows/WSL 与各插桩模式均实际通过。
+
+六个 CUDA owner 继续 AUDITED。剩余工作是已定界的 A/A、固定候选 P1、原生包装成本诊断和由完整
+收益证据约束的默认规则终审；没有重跑 CPU P1、已通过的无关 gate 或把 host 插桩外推成 vendor
+全部源码已检查。

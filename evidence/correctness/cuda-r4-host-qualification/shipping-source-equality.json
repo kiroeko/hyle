@@ -1,0 +1,6 @@
+{
+  "baseline": "6541e801",
+  "candidate": "a8c982496984c16b33c3b1d6f3a7622058f5b92c",
+  "proof": "Remove the only added HYLE_DETAIL_SANITIZER_THREAD conditional; shipping source bytes equal baseline",
+  "sha256": "d2f54735ff09ee387009bc331fa30604a259a3952cf7eb744135e6ac4740c4c5"
+}

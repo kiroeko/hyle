@@ -418,8 +418,8 @@
     {
       "module": "compute_backend_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-r4-host-validation-visibility.md",
-      "summary": "R4 host 验证可见性重新定界 AUDITED：V1 final-ref acquire 的 TSan-only 投影、V2 callback fixture 退出同步已固定；shipping API、算法、layout 和热路径保持。"
+      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
+      "summary": "R4 C6/host 验证 AUDITED：既有 native scope/primary bridge 已接线；TSan-only 最终引用同步投影与夹具可见性修正完成，普通/ASan/UBSan/TSan 和 device memcheck 已验证；回归主卡继续 CUDA P1。"
     },
     {
       "module": "compute_provider_native",

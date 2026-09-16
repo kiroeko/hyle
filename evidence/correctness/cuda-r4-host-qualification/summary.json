@@ -1,0 +1,47 @@
+{
+  "initial_product": "f1cf11121b5d4ad9529e3079b82b7e19717e2420",
+  "visibility_correction": "a8c982496984c16b33c3b1d6f3a7622058f5b92c",
+  "windows_ordinary": {
+    "passed": 13,
+    "total": 13,
+    "candidate": "a8c98249"
+  },
+  "wsl_ordinary": {
+    "passed": 13,
+    "total": 13,
+    "candidate": "f1cf1112"
+  },
+  "wsl_asan": {
+    "headers": "6/6 PASS",
+    "runtime": "7/7 PASS",
+    "candidate": "f1cf1112",
+    "environment": {
+      "ASAN_OPTIONS": "protect_shadow_gap=0",
+      "LSAN_OPTIONS": "suppressions=driver.supp:print_suppressions=1"
+    },
+    "limited_driver_suppression": "Only libcuda.so.1; each executable must report exactly 2 suppressed allocations totaling 280 bytes, reproduced without HYLE",
+    "driver_build_id": "8587eaad68ff611de8f0a2c728566e155c744a35"
+  },
+  "wsl_ubsan": {
+    "passed": 13,
+    "total": 13,
+    "candidate": "f1cf1112"
+  },
+  "wsl_tsan": {
+    "initial": "11/13 PASS, two failed with ten reports",
+    "correction": "backend and graph 2/2 PASS at a8c98249, no suppression",
+    "inherited": "11 unchanged passing tests from f1cf1112",
+    "native_synchronization_model": "final refcount acquire load under TSan only; test callback final release/acquire after real native completion"
+  },
+  "device_memcheck": {
+    "candidate": "f1cf1112",
+    "version": "2026.2.1.0",
+    "direct": "2/2, 0 errors, 0 bytes device leaks",
+    "graph": "3/3, 0 errors, 0 bytes device leaks"
+  },
+  "not_claimed": [
+    "instrumented proprietary driver/cuBLAS internals",
+    "CUDA P1",
+    "other GPU architectures"
+  ]
+}
