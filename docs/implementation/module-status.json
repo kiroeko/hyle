@@ -474,7 +474,7 @@
     {
       "module": "compute_provider_marlin",
       "state": "AUDITED",
-      "summary": "R4 CUDA AUDITED：冻结 C1–C6；现代 Marlin 无 Torch 接入预检通过，C6 私有 native context bridge 已开始产品实现并通过 W1 shared 定向回归。计算 Provider/普通入口/完整 Graph/三交付/P1 仍待完成。",
+      "summary": "R4 C2 AUDITED 实施：pinned Marlin 原生 group128 Q4、冷 packing owner 与独立 workspace 已通过 W1 shared 公共头及五个 GPU 测试；变化输入/双槽/oracle/OOM 回滚成立。普通入口、Graph、失败槽依赖修复、三交付及 P1 尚未验收。",
       "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md"
     },
     {

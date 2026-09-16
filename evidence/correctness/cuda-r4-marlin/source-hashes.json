@@ -1,0 +1,30 @@
+{
+  "baseline": "7873e344e6e2f81fc9f429b4cb9543d92de574cd",
+  "semantics": "SHA-256 of LF-normalized source and test inputs; checkpoint is not the full R4 candidate",
+  "files": {
+    "cmake/HyleComponents.cmake": "acf49b98d761b431eb8bca46964d223fd3c43118c717ed6b6965b07a2aa8f991",
+    "cmake/HyleDependencyLock.json": "7a75601d7665d5945e1a97533e896703d9ed9747195d811ef7a19a736aab012a",
+    "include/hyle/compute/providers/marlin.h": "153f7feabedc696f8026ae0c4b0c7f2f0925a0fc936cf0b78ce9e88dccccbe8a",
+    "scripts/validation-policy.json": "1bca1f4b9cb1d1db42034a92400b7b07f034cf3873d5eed124422f42a6ea4e83",
+    "src/compute_provider_marlin/CMakeLists.txt": "e3eeffa3ff5d86e53241126f7ad5669a618c289e6e6590131a7cd6d8762f1557",
+    "src/compute_provider_marlin/marlin_internal.h": "16571e5ab27c469154afb14420e12da2b79fcf70ebaf51d116405b8f1445d778",
+    "src/compute_provider_marlin/marlin_provider.cc": "13b33b9a2d6dff97525c4f26680d5b95bd3baeb2a7ddea6deac4b43241fc80a9",
+    "src/compute_provider_marlin/native_kernel.cu": "3eedaf1fd8e77c4bbf90d4730f215e996f2e77aabaf5712f521b0ad7edaf7f1c",
+    "src/compute_provider_marlin/native_kernel.h": "40e6d7893caec3e1c9e10e4acd268333c4d939cfe97c6d151b09bdf61c2d808b",
+    "src/compute_provider_marlin/quantized_weights.cc": "2feebdf6d888a378387084bc78af5e20e2fca85abcbef073e9797f74fa9ce786",
+    "tests/compute_provider_marlin/CMakeLists.txt": "2f68b649208573261aaeb167ac7d59144372a9c64d95782a35918be704187bf2",
+    "tests/compute_provider_marlin/marlin_provider_test.cc": "391e13722c40b4b54de6315a81fbfa4a9278f0b8eedd85e09a740395c4a7b449",
+    "third_party/marlin/LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "third_party/marlin/NOTICE": "522d55ffdd2f36c579e78ee9613d967ab7db586a9d512f841a04ed94065fe04e",
+    "third_party/marlin/README.md": "3c2a0b55c2c9758fd45e0cbb2f7a65a1572b4200d36245873cb57b70abf21bd1",
+    "third_party/marlin/core/scalar_type.hpp": "42a7f988658d3fe34bade8e11889685f8a3287d5af30e430dd5480c1cbe2c3b0",
+    "third_party/marlin/dequant.h": "39c4640d2de39374ef5d96e7fa27701a675922113c3f5b05d45369321090e728",
+    "third_party/marlin/kernel.h": "484cdcce20793d67d3428d64704b0439210b300e03b335bca602c152e2ae1f96",
+    "third_party/marlin/marlin.cuh": "5cadd986f5cd57a6294688beef73548fcefce4efada08b4ec0f5fed33f1dbab3",
+    "third_party/marlin/marlin_dtypes.cuh": "949068a279fe0d29139dbb6a22ed3aff8781b969a588c51d1136d637f315529c",
+    "third_party/marlin/marlin_mma.h": "bf863d252bfc468eaff42b2c1bda583c5e6ab97ceacf0ac248c164564ddcce9b",
+    "third_party/marlin/marlin_template.h": "972ffd66fdfb6781dad13daea1167981821a78b86a93d865baa2b3c3ed11cd19",
+    "third_party/marlin/provenance.json": "2fa74c926c55c181b6543d9898324c8e403db715f2d1030e85506e6895a848fe",
+    "third_party/marlin/repack_kernel.cuh": "04d053c6239cd5b8159c85793c2e4f2b538d10c3caa9d707a8cc6c54c85b9686"
+  }
+}

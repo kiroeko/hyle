@@ -1,0 +1,64 @@
+{
+  "repository": "https://github.com/vllm-project/vllm.git",
+  "revision": "51918e252af4dfff381001f42b7ebe6a0454501b",
+  "files": {
+    "kernel.h": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/kernel.h",
+      "upstream_sha256": "484cdcce20793d67d3428d64704b0439210b300e03b335bca602c152e2ae1f96",
+      "adaptations": []
+    },
+    "marlin.cuh": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/marlin.cuh",
+      "upstream_sha256": "8a129f1f3086d83c7f33ee8fdb38a0d68c0b167c99c9cef60394c3219ede86b7",
+      "adaptations": [
+        "remove unused iostream include"
+      ]
+    },
+    "marlin_dtypes.cuh": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/marlin_dtypes.cuh",
+      "upstream_sha256": "15b90a65eadb200a3f7165e2e0d7d899f36d4993b20dbd89093ef2cea274da71",
+      "adaptations": [
+        "use ScalarTypeId instead of LLP64 long; no arithmetic change"
+      ]
+    },
+    "marlin_template.h": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/marlin_template.h",
+      "upstream_sha256": "972ffd66fdfb6781dad13daea1167981821a78b86a93d865baa2b3c3ed11cd19",
+      "adaptations": []
+    },
+    "marlin_mma.h": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/marlin_mma.h",
+      "upstream_sha256": "bf863d252bfc468eaff42b2c1bda583c5e6ab97ceacf0ac248c164564ddcce9b",
+      "adaptations": []
+    },
+    "dequant.h": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/dequant.h",
+      "upstream_sha256": "39c4640d2de39374ef5d96e7fa27701a675922113c3f5b05d45369321090e728",
+      "adaptations": []
+    },
+    "core/scalar_type.hpp": {
+      "upstream": "csrc/core/scalar_type.hpp",
+      "upstream_sha256": "8d3671759c43a0219f51e3a1f32c94ef5d70ecc99e264100f4015a781d94bb99",
+      "adaptations": [
+        "replace Torch exception include with a compile-time descriptor invariant check; undefine the private macro at EOF"
+      ]
+    },
+    "repack_kernel.cuh": {
+      "upstream": "csrc/libtorch_stable/quantization/marlin/gptq_marlin_repack.cu",
+      "upstream_sha256": "e1a4740530c5346c1995cd1e11fedae40fe0752767765316827448242c78d9bc",
+      "adaptations": [
+        "extract unchanged GPTQ repack device kernel, omit Torch host wrapper, use the private kernel namespace"
+      ]
+    },
+    "LICENSE": {
+      "upstream": "LICENSE",
+      "upstream_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "adaptations": []
+    }
+  },
+  "hash_semantics": "SHA-256 of the upstream Git blob, before HYLE adaptations",
+  "adapter_sources": {
+    "csrc/libtorch_stable/quantization/marlin/marlin.cu": "ee705342620ac13ee019e18129cf499b6031d5aa7f7a9e5b9fd649cb75f688b3",
+    "vllm/model_executor/layers/quantization/utils/marlin_utils.py": "c51456a32fd1455e10a4b7bb83cdaae535a466720d4517230a54c2659ecb8636"
+  }
+}

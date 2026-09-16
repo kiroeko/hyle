@@ -7,6 +7,9 @@
     "compute_provider_cublas": {
       "HYLE_COMPUTE_CUDA": "ON"
     },
+    "compute_provider_marlin": {
+      "HYLE_COMPUTE_CUDA": "ON"
+    },
     "compute_provider_onednn": {
       "HYLE_COMPUTE_ONEDNN": "ON"
     },
@@ -15,6 +18,7 @@
     }
   },
   "vendored_input_owners": {
+    "third_party/marlin/": ["compute_provider_marlin"],
     "third_party/mimalloc/": ["mem"],
     "third_party/xxhash/": ["container"],
     "third_party/wyhash/": ["container"],

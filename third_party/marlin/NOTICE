@@ -1,0 +1,14 @@
+Marlin CUDA kernels from vLLM
+https://github.com/vllm-project/vllm
+Revision: 51918e252af4dfff381001f42b7ebe6a0454501b
+
+Copyright (C) Marlin.2024 Elias Frantar
+Modifications by Neural Magic and the vLLM contributors.
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+HYLE adaptations: Torch-free compile-time scalar descriptor checks, Windows
+LLP64 scalar template identifiers, private repack kernel extraction and removal
+of an unused include. See provenance.json for exact source paths and changes.
+The HYLE host adapter also derives launch/cache configuration arithmetic from
+csrc/libtorch_stable/quantization/marlin/marlin.cu at the same revision and the
+scale permutation from vllm/model_executor/layers/quantization/utils/marlin_utils.py.

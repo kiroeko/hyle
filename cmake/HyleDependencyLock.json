@@ -85,6 +85,37 @@
       ] }
     },
     {
+      "name": "marlin",
+      "class": "in_tree",
+      "repository": "https://github.com/vllm-project/vllm.git",
+      "version": "vllm-snapshot-51918e252af4",
+      "revision": "51918e252af4dfff381001f42b7ebe6a0454501b",
+      "git_tree": "bbf170b2bbc575aed943db781dc299676b2ba59a",
+      "archive": {
+        "url": "https://codeload.github.com/vllm-project/vllm/tar.gz/51918e252af4dfff381001f42b7ebe6a0454501b",
+        "sha256": "288b1dd0cd2a32a8b6c23f4143e72d779a329d54015881b1d37de09b08f2d969"
+      },
+      "vendored": {
+        "path": "third_party/marlin",
+        "tree_sha256": "5ae6ffaf088b175fa38aa4a337f9e6bd017ffd99bb0c3759bd3cb82c29958813"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/marlin/LICENSE",
+            "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/marlin/NOTICE",
+            "sha256": "522d55ffdd2f36c579e78ee9613d967ab7db586a9d512f841a04ed94065fe04e"
+          }
+        ]
+      }
+    },
+    {
       "name": "mimalloc", "class": "in_tree",
       "repository": "https://github.com/microsoft/mimalloc.git", "version": "v3.5.1",
       "revision": "34fbd7e7cd4627424490afe19b20f8066bfc537d", "git_tree": "e69ccc36d80961459810aed044247c6b69c549cd",

@@ -185,3 +185,25 @@ selector 的 cuBLAS factor 配置只增加 CUDA=ON，现有 45 个工具单测�
 中央 manifest 变化产生的其它 native/package 选择项尚未执行、不记 PASS；待 C5 最终闭包集中裁决。
 仍为 AUDITED 实施检查点，未进入完整 R4 CANDIDATE；C2–C5、OOM 专项、完整 capture/三交付/P1 仍待完成。
 统一脚本 Compute + Graph 当前全实现 **31,486 行**，不含测试，self-check PASS。
+
+### C2 产品检查点
+
+Marlin 已成为真实独立 factor：[W1 shared 定向证据](../../../../evidence/correctness/cuda-r4-marlin/README.md)
+通过公开头与五个 GPU 测试，包含 11 组矩阵形状、双槽三次变化输入、独立 double oracle、压缩常驻、
+move/close/Completion 寿命、非法域和 host/metadata OOM 回滚。预留 Completion 后 replay 不增加
+HYLE metadata allocation；未把这一事实外推为 CUDA driver/JIT 无隐藏内存。
+
+pin、Git blob/hash、真实 archive hash、改造后的 vendor tree hash 与 Apache LICENSE/NOTICE 均已
+登记。普通用户可调用冷 `QuantizedWeights::pack`，只保留 Q4 与 FP16 scales。native 配置和 device
+查询只在冷阶段完成；编译含 SM80 PTX 与 SM89 native image，实际 GPU 正确性仅验证 SM89。
+现有 kernel 的 32-bit 索引进一步要求 N*K <= INT32_MAX；冷边界拒绝越域，不让大尺寸静默溢出。
+scale 及反量化权重采用 FP16，累加/reduction 采用 FP32。
+
+源码确认一个真实依赖缺口：共同 Compute/Graph 在失败 terminal 后也把槽设为可再次提交，可能
+复用未清理的 Marlin locks。当前 header 要求失败后重建槽；下一步先按精确 owner 定向定界、审计并
+修复准入，不能对 CLOSED Compute/Graph 直接施工，也不能以每次热 memset 掩盖生命周期缺口。
+这不重开 CPU 算法或已批准的 CPU 性能例外。
+
+C2 仍为实施检查点；C3–C5、普通默认入口、真实 Graph/capture、最终三交付及 P1 未完成。
+selector 扩大的其它 native/package gates 保持未运行，不记 PASS。统一脚本 Compute + Graph
+全实现 **32,183 行**，不含测试及第三方，self-check PASS。
