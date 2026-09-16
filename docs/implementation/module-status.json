@@ -471,14 +471,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
-      "summary": "R6 Vulkan SCOPED: bounded mature implementation, native lifetime and platform/delivery audit; no product implementation or completion claim.",
+      "state": "AUDITED",
+      "summary": "R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
-      "summary": "R6 Vulkan SCOPED: bounded mature implementation, native lifetime and platform/delivery audit; no product implementation or completion claim.",
+      "state": "AUDITED",
+      "summary": "R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md"
     }
   ]

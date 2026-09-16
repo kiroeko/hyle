@@ -60,8 +60,8 @@
 | graph_route_cuda | AUDITED | — | [record](tasks/build/apple-r5-product-delivery.md) | R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。 |
 | compute_route_apple | CANDIDATE | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 A1-A6 CANDIDATE: native MLX program/result lifecycle, typed Direct/Graph, delivery inputs and finite FFN comparison are fixed. Air correctness checkpoints pass; final platform, host-sanitizer and P1 gates remain pending. |
 | graph_route_apple | CANDIDATE | — | [record](tasks/compute/apple-v1-four-route-foundation.md) | R5 A1-A6 CANDIDATE: native MLX program/result lifecycle, typed Direct/Graph, delivery inputs and finite FFN comparison are fixed. Air correctness checkpoints pass; final platform, host-sanitizer and P1 gates remain pending. |
-| compute_route_vulkan | SCOPED | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan SCOPED: bounded mature implementation, native lifetime and platform/delivery audit; no product implementation or completion claim. |
-| graph_route_vulkan | SCOPED | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan SCOPED: bounded mature implementation, native lifetime and platform/delivery audit; no product implementation or completion claim. |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim. |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim. |
 
 <!-- END GENERATED MODULE STATUS -->
 
