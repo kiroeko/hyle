@@ -69,3 +69,15 @@ HYLE_DEV_FACTORS；Windows 验证显式复制实际运行库到各自 exe 目录
  down，Graph 使用设备资源 compile/prepare_replay 并检查真实 captured 路线。CPU/no-backend
 分支保留。Windows 源码父工程仅选择 compute/graph、CUDA ON/CPU OFF，两个公开产品样例 2/2
 通过，每个执行三组变化输入；DLL 实际邻置。当前仍 AUDITED，安装包/WSL/隔离门待补，不记 PASS。
+
+### D3 交付验证检查点
+
+[`f735271b` 的归档证据](../../../../evidence/correctness/cuda-r4-product-delivery/README.md)：Windows/WSL
+source、relocated static/shared 均通过真实 Direct/Graph FFN，每种消费
+2/2；CPU-only/no-backend 样例各 2/2。CUDA 包实际头、导出、系统 SDK 依赖与 Marlin license/notice
+一致，未带 CPU/oneDNN。Windows 组件合同和 backend-only 裁剪通过；Air/Mini 各三个 CUDA OFF
+配置/发布投影通过，仅签配置边界，不签 CUDA 运行资格。八个旧 factor 的源码/头没有变化，未重跑 CPU P1。
+
+中央 seam 的 broad selector 尚未完成；其配置表产生 oneDNN ON + CPU OFF 的真实冲突，交由
+[独立配置修复卡](validation-cuda-cpu-coexistence-v1.md) 定向处理。工具预算固定，不修改 selector
+算法或扩大产品 scope；上述产品交付结果保留，尚未运行的 selected gates 不写 PASS。

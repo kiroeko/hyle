@@ -1,0 +1,14 @@
+test_cpu_and_cuda_reverse_consumers_have_compatible_features (__main__.ImpactTest.test_cpu_and_cuda_reverse_consumers_have_compatible_features) ... FAIL
+
+======================================================================
+FAIL: test_cpu_and_cuda_reverse_consumers_have_compatible_features (__main__.ImpactTest.test_cpu_and_cuda_reverse_consumers_have_compatible_features)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\tests\tooling\validation_selector_test.py", line 159, in test_cpu_and_cuda_reverse_consumers_have_compatible_features
+    self.assertNotIn("-DHYLE_COMPUTE_CPU=OFF", configure)
+AssertionError: '-DHYLE_COMPUTE_CPU=OFF' unexpectedly found in ['cmake', '-S', '.', '-B', '{build}', '-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release', '-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_cpu,compute_route_cuda,graph,graph_provider_onednn,graph_route_cpu,graph_route_cuda', '-DHYLE_BUILD_TESTS=ON', '-DHYLE_BUILD_BENCH=OFF', '-DHYLE_INSTALL=OFF', '-DHYLE_TEST_INSTRUMENTATION=OFF', '-DHYLE_WERROR=ON', '-DHYLE_COMPUTE_CPU=OFF', '-DHYLE_COMPUTE_CUDA=ON', '-DHYLE_COMPUTE_ONEDNN=ON']
+
+----------------------------------------------------------------------
+Ran 1 test in 1.222s
+
+FAILED (failures=1)

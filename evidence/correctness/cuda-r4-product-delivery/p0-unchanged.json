@@ -1,0 +1,48 @@
+{
+  "baseline": "d2e631b4e9eda584d94f5b9936f68e01f4a5a3c7",
+  "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+  "verdict": "PASS",
+  "scope": "eight old owners runtime/header source projection unchanged; no new CPU timing",
+  "trees": {
+    "include/hyle/compute": {
+      "baseline_tree": "4d3e5f21e5c86cce1df00910ae14fd54039c9dce",
+      "candidate_tree": "4d3e5f21e5c86cce1df00910ae14fd54039c9dce"
+    },
+    "include/hyle/graph": {
+      "baseline_tree": "2270c6f8733f6665eb2e59d43d3f2d202193ec92",
+      "candidate_tree": "2270c6f8733f6665eb2e59d43d3f2d202193ec92"
+    },
+    "src/compute": {
+      "baseline_tree": "dfb259ba2990d18c143229c404b85352aeac2e90",
+      "candidate_tree": "dfb259ba2990d18c143229c404b85352aeac2e90"
+    },
+    "src/graph": {
+      "baseline_tree": "8a073b413ed004bd9bb0c32654c9f00a0574492b",
+      "candidate_tree": "8a073b413ed004bd9bb0c32654c9f00a0574492b"
+    },
+    "src/compute_backend_cpu": {
+      "baseline_tree": "68175779ac7434005d9560dcf4a3fe7ca55777a6",
+      "candidate_tree": "68175779ac7434005d9560dcf4a3fe7ca55777a6"
+    },
+    "src/compute_provider_native": {
+      "baseline_tree": "c8430547a64b84eb75b492c79ad8dbeb3a9ca18b",
+      "candidate_tree": "c8430547a64b84eb75b492c79ad8dbeb3a9ca18b"
+    },
+    "src/compute_provider_onednn": {
+      "baseline_tree": "732a43e5e391c815abade75916d1c0fc169f1eec",
+      "candidate_tree": "732a43e5e391c815abade75916d1c0fc169f1eec"
+    },
+    "src/compute_route_cpu": {
+      "baseline_tree": "df76bcf06f86b699a186ff2e5c649a216f5c7701",
+      "candidate_tree": "df76bcf06f86b699a186ff2e5c649a216f5c7701"
+    },
+    "src/graph_provider_onednn": {
+      "baseline_tree": "2d8d4d6988b1915e4261426d33ca52c925a525bc",
+      "candidate_tree": "2d8d4d6988b1915e4261426d33ca52c925a525bc"
+    },
+    "src/graph_route_cpu": {
+      "baseline_tree": "8bc1c78c097cd79c96aff6bf948ac0c361fb4832",
+      "candidate_tree": "8bc1c78c097cd79c96aff6bf948ac0c361fb4832"
+    }
+  }
+}

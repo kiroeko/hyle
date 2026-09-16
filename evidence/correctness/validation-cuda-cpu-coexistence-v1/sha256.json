@@ -1,0 +1,7 @@
+{
+  "raw-receipts.zip": "b4b472d7ca0d8f6a9631fd43c1dfc922ad6e673a612e692004a448fbeeda2b80",
+  "selector-configure-preflight.log": "561b350af78bfb4d1f2354c559f5df4a2fb604a6ae04a465b8a0e569207030a9",
+  "tool-fix-validation.json": "1aab2568474d1a999752c310222e1c0d07fd70d1ba1b092c3bd2051b5ee23cb2",
+  "tool-regression-after.log": "f332a13cae11b16e4128c92f222c3b3be9b23a0fd0849eab2723c9f043dda7b6",
+  "tool-regression-before.log": "43cbc01874e543560b6a09a16a84716827e569aa5247257b9587fc304edce821"
+}

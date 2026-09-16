@@ -1,0 +1,23 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE developer factors: requested='compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_cpu,compute_route_cuda,container,container_concurrent,container_intrusive,container_queue,container_text,core,error,graph,graph_provider_onednn,graph_route_cpu,graph_route_cuda,io_core,io_http,io_http2,io_tls,io_transfer,io_watch,io_websocket,math,mem,mem_reclaim,mem_vm,obs,platform,platform_fs,platform_thread,process,sched,simd,time,timer_queue,util_core,util_runtime' resolved='core,container_intrusive,util_core,error,mem_reclaim,time,obs,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_text,util_runtime,container_queue,sched,io_core,io_tls,io_http,io_http2,io_transfer,compute_ops,compute,graph,container_concurrent,io_watch,process,io_websocket,compute_provider_onednn,graph_provider_onednn,compute_backend_cpu,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_marlin,compute_provider_cuda,compute_route_cuda,graph_route_cuda' products=''
+-- The C compiler identification is MSVC 19.50.35728.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE: io TLS OFF -- dependency probe skipped
+CMake Error at cmake/HyleComputeDependencies.cmake:14 (message):
+  HYLE_COMPUTE_ONEDNN=ON requires HYLE_COMPUTE_CPU=ON
+Call Stack (most recent call first):
+  CMakeLists.txt:403 (hyle_configure_compute_dependencies)
+
+
+-- Configuring incomplete, errors occurred!

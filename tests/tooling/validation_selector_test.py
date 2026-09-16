@@ -147,6 +147,17 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("compute_backend_cuda", plan["selected_factors"])
         self.assertIn("-DHYLE_COMPUTE_CUDA=ON", configure)
 
+    def test_cpu_and_cuda_reverse_consumers_have_compatible_features(self):
+        self.write("include/hyle/compute/prepared_operation.h", "int compute_value = 2;\n")
+        self.commit()
+        plan = self.plan()
+        self.assertTrue({"compute_route_cuda", "graph_route_cuda", "compute_provider_onednn"}
+                        <= set(plan["selected_factors"]))
+        configure = self.row(plan, "configure")["commands"][0]
+        self.assertIn("-DHYLE_COMPUTE_CUDA=ON", configure)
+        self.assertIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
+        self.assertNotIn("-DHYLE_COMPUTE_CPU=OFF", configure)
+
     def test_unrelated_factor_does_not_activate_optional_provider(self):
         self.write("src/container_queue/change.cc", "int value = 2;\n")
         self.commit()

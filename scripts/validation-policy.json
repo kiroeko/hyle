@@ -14,12 +14,10 @@
       "HYLE_COMPUTE_CUDA": "ON"
     },
     "compute_route_cuda": {
-      "HYLE_COMPUTE_CUDA": "ON",
-      "HYLE_COMPUTE_CPU": "OFF"
+      "HYLE_COMPUTE_CUDA": "ON"
     },
     "graph_route_cuda": {
-      "HYLE_COMPUTE_CUDA": "ON",
-      "HYLE_COMPUTE_CPU": "OFF"
+      "HYLE_COMPUTE_CUDA": "ON"
     },
     "compute_provider_onednn": {
       "HYLE_COMPUTE_ONEDNN": "ON"

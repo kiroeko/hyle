@@ -1,0 +1,5164 @@
+{
+  "schema_version": 2,
+  "baseline_commit": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e",
+  "baseline_tree": "6c9a9836b3659d3f8fccd29dc89ac26ec85b1e54",
+  "candidate_commit": null,
+  "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+  "changes": [
+    {
+      "path": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "kind": "docs",
+      "factors": [],
+      "reason": "documentation/evidence only",
+      "suites": []
+    },
+    {
+      "path": "docs/implementation/tasks/build/validation-cuda-cpu-coexistence-v1.md",
+      "kind": "docs",
+      "factors": [],
+      "reason": "documentation/evidence only",
+      "suites": []
+    },
+    {
+      "path": "scripts/validation-policy.json",
+      "kind": "tool",
+      "factors": [],
+      "reason": "mapped maintainer tool contract; no product build or P1",
+      "suites": [
+        "tests/tooling/validation_selector_test.py"
+      ]
+    },
+    {
+      "path": "tests/tooling/validation_selector_test.py",
+      "kind": "tool",
+      "factors": [],
+      "reason": "mapped maintainer tool contract; no product build or P1",
+      "suites": [
+        "tests/tooling/validation_selector_test.py"
+      ]
+    }
+  ],
+  "selected_factors": [],
+  "p1_scopes": {},
+  "unknown_paths": [],
+  "product_authorization": {
+    "owners": [],
+    "states": {},
+    "issues": []
+  },
+  "verdict": "PASS",
+  "selected_gates": [
+    {
+      "id": "docs",
+      "kind": "maintenance",
+      "status": "PASS",
+      "reason": "mandatory documentation contract",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "scripts/check-docs.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "0f0841481c0b95797a0182c0255f3f487c08d828c0a58e7f9eb06e24eb82a9f4",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "a3b99e6a41d6640d7601ee799aa26b0d09695bb45e9013563c39bd50fa255a33",
+      "receipt": "C:\\public\\project-hyle\\hyle\\.git\\hyle-validation\\a3b99e6a41d6640d7601ee799aa26b0d09695bb45e9013563c39bd50fa255a33.json"
+    },
+    {
+      "id": "closure",
+      "kind": "maintenance",
+      "status": "PASS",
+      "reason": "mandatory registry contract",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "scripts/check-module-closure.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "113817357720ce6c9f2817c97dca1d1f97de1fac9aabd4103453414d2826718b",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "9194102754faa82fe035922804128da3e3820a6a02dbd6f789ba2cb8e1eeebe7",
+      "receipt": "C:\\public\\project-hyle\\hyle\\.git\\hyle-validation\\9194102754faa82fe035922804128da3e3820a6a02dbd6f789ba2cb8e1eeebe7.json"
+    },
+    {
+      "id": "tool:tests/tooling/validation_selector_test.py",
+      "kind": "tool",
+      "status": "PASS",
+      "reason": "changed tool mapped to this focused regression suite",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "tests/tooling/validation_selector_test.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "11eabe321463e030e158033f7bee20dce88bb916d48f100d333ebac71542f164",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "31a82de53136191ac26be0b58321701ad2114014d4291b48054f0484237fc257",
+      "receipt": "C:\\public\\project-hyle\\hyle\\.git\\hyle-validation\\31a82de53136191ac26be0b58321701ad2114014d4291b48054f0484237fc257.json"
+    }
+  ],
+  "skipped_gates": [
+    {
+      "id": "configure",
+      "kind": "build",
+      "status": "SKIPPED",
+      "reason": "no product or factor test impact",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-B",
+          "{build}",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DHYLE_DEV_FACTORS=",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_TEST_INSTRUMENTATION=OFF",
+          "-DHYLE_WERROR=ON"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f8998ddc6e060b853a743a357f6816abebb1c8cea24e439464cbc982eb6b8707",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "2e8433616e6613eac8e9d32972fdf2337cb02521e6b4d0d45fb0de24767c02ea"
+    },
+    {
+      "id": "factor:compute",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "06f0d4e886fa46d2d2f5b625cf8a441379ae138d57337c7824b5b1d00bb63a16",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "e93f7f6e07eaac12f435a4c8fc7dcb1c1c9603f4bf96b8cef65859b7e8042aa1"
+    },
+    {
+      "id": "headers:compute",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "b13986d595c3066273f51029f6ee53ad88f017afa5847fdcf55b717241b9d9b0",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "a8dc458da27b383441d7ef29c5f2a23db5c26fc5dbcbf41b8aa1575d9dd1e4e2"
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_backend_cpu"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_backend_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cpu$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "06f3e29a531278cf89f9c624360467b73faad7e85b22da7df837f8cf84f3e913",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "23c1a9b7d953d7b09ce2894b680f07bc0fdef2a68955f32cf7727a7159130c81"
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_backend_cpu"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cpu$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "bc14b763f92b897c2a7467a183828de8c10027d2667fac3af62b56b445b9dddc",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "3d80cd86a1a718bbc6f77b0403e8d5d23142d6ba2c748fd6f3646bec184e8fc9"
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_backend_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_backend_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "9e43c81342f6211d2618bc8a37abbe953b3531f83b51b79c2b20972b1131095c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "81df13bfc55d03c24b73586276254b24816b00c84da2763bbf62d29a87ceee40"
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_backend_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "cac621cb12197b589cc8029ffc095ff37d61e0561ed761e78ef6efaf5c9591bd",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "65e0137bbab781158885d8fbd5e019b4794c2ace8640a476cf6bacec8ee5ade4"
+    },
+    {
+      "id": "factor:compute_ops",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_ops"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_ops_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ops$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "b3a638068cca4aa658545725fae7345994b7fb160d1c974de1d9386c79fbf6d7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "85e69aa44cdd2d9b063cfe487f2b08f53204254b684e5bf2a45bfcf1acc1736b"
+    },
+    {
+      "id": "headers:compute_ops",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_ops"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ops$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "bfdf819f906d420909d9afc82b44b048d7506a67a334a781b80fa5307de346ef",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "49db676e2b4e7ab9c747e4bc835c0303a4422b79910e14844953f96482716cfe"
+    },
+    {
+      "id": "factor:compute_provider_cublas",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_provider_cublas"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_cublas_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cublas$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "c17d695935f4a2370913a5ebafd7f58905eb4f88784d41ffbaa713a50e1ef24e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "67f5c63185be271813ca41fd92f71b1c10ec433b88202fb77124d07599d4f7a0"
+    },
+    {
+      "id": "headers:compute_provider_cublas",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_cublas"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cublas$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "4ace2a5ed64d1ef832d3dcd59b02943e9f0ed6989f43325d8c64e05e8a431687",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "2bb6ceff18bc959ea0d4226e490f873878f5836a1c1dbcec320b49e837169e98"
+    },
+    {
+      "id": "factor:compute_provider_cuda",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_provider_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "a3cc285172435057120b1cc6865f87d370a5a96679496c27932013bb72dabb26",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "90ba98e01c72738912cf00e9741a134f8bc147c64ad081781d23a19844101e2f"
+    },
+    {
+      "id": "headers:compute_provider_cuda",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "a637743145b1347680c0afc8b3eedf1d665ee69f0d17984864dc814537bbb031",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "372d2448f575fee0555568e4289e2576d724b0e45d29591c0c56421609d84b78"
+    },
+    {
+      "id": "factor:compute_provider_ggml",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "be1a5b175284ecbe2686a506f176d91b142cd04628662c53f57df9e0c6207b9f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "ddef5eba0430cecaa168fa9a522908e59cead8396c95694dfb599be8485d539e"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "ce34dfc08edfec4f7bcfac88689304123b17ec3082394d9d3e6d5608140f3a82",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "5efe524650f962848fd97442241721b129eed13935ecbb072ebe658e0bc1291d"
+    },
+    {
+      "id": "factor:compute_provider_marlin",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_provider_marlin"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_marlin_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_marlin$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "4d2837113a6438a5c8d6375272dbe75bac0d515b20e099f62f724fde3529fd69",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "f1838fa1f5e783dc9fe6eef7af6d0048b1d3d3c9257ceb6408d5dc666f3daa4e"
+    },
+    {
+      "id": "headers:compute_provider_marlin",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_marlin"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_marlin$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f312efc9e9d33d91fffa16fa4b21a38ff00beb472c29e5edd92be98557b6ede1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "fb201692707a5e774d8feb9fe0a65071d05ccd43bcc394ab5d83127c01095dff"
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_provider_native"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_native_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_native$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "e5a172fa7b768417c763c958a80d155e9ffe7ec80423fd0b5418690b340ccf25",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "df30f32f0ab0d629809d8e764f2724213d0016849bc8348897f1e123be06eecd"
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_native"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_native$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "68d2eedc3845bfd3faa62e7895028f3ef85f8b14124b8a323903b1dec0f9d17a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "efba34f27568a7d68361f742e87a59b05d43e7c7ded9911f51f6f22bb07b2837"
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_provider_onednn"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_onednn_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_onednn$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "7a0b07d37f0ae59e9c049b1727fbeaaa766a6f7ea4d2ab3ff5e9a4633d96b387",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "e8bde00e1af702a4b7b327d4e1e3888cdac860c556c86cec8fac85f8114cbcf9"
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_onednn"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_onednn$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "194f536b49db6a68e4609869e7158a49032974c3ed5c0cd64e6715c8797f4a48",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "e207ccd8c8cf20e955a2048dbf4e37fc9890f0d08b4f9af987329e15a44b0499"
+    },
+    {
+      "id": "factor:compute_route_cpu",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_route_cpu"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cpu$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "d0e595b04c7542ea4366662256ba243188c35610bd295a2e669738ae2639f32e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "88a04dc5607052878c769f125ac2c32f5095ac8c17e8da8c4f51f5c42b5a7968"
+    },
+    {
+      "id": "headers:compute_route_cpu",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_route_cpu"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cpu$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "2f51ede6fd3d7a9f089bffedcceec87d4df3656f9bd4f0f8acd62457c77e0b73",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "6dda062aa2e8168a10438aede9d325d21db93313ae6fd9f713a4d302d3bd8bc8"
+    },
+    {
+      "id": "factor:compute_route_cuda",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "compute_route_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "03aca62a70f44cba616caa91b240281ee33f91536d6adc81806be2ce66aea55a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "69af45a2bf96527b0df56ec97a6d0dbb0184910e635f32f58e5bde11f6a9cc2c"
+    },
+    {
+      "id": "headers:compute_route_cuda",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_route_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "ea9eafff7c29bcd6d4c5cd0a29a85d5b049ea10e4b0811973a8cf1757f567ec9",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "f8e274c8cdef7c8e75e27670430d134f0af19d027d4830be7de306d0730c2baf"
+    },
+    {
+      "id": "factor:container",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "container"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "bf6ab397c72b20701b60b6a134e3b6fa277c618cc13e77f97e340046d10f0fc2",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b99d8d811313731fc8fd50df986e26205556b41ce8d82a7e1e7d5917e4d77d14"
+    },
+    {
+      "id": "headers:container",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "container"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "0dd5940122897f215fb4884484819050287aad7f45f3badeba27aad249ee6996",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "977a6745c217f69872383930d9f693816f74282df94a76601b40cad76de9f3f8"
+    },
+    {
+      "id": "factor:container_concurrent",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "container_concurrent"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_concurrent_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_concurrent$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "503df2f1b85069dd96b87d98755b3abadace9ee4858c75eb0e9183fcfe360914",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "d20d498c149723407fa14c17e0d5c06c1e0468f96856c27ca0b4be372f5cd49a"
+    },
+    {
+      "id": "headers:container_concurrent",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "container_concurrent"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_concurrent$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "3b5249343840dac546fb777b8c6cbe364041c3fab2b4df46e78fd98d9769290e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "8772081ab441b2a3e6e748784cfe89c11f8727dfd5ebaaa5f4e295f3283c9329"
+    },
+    {
+      "id": "factor:container_intrusive",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "container_intrusive"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_intrusive_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_intrusive$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "0f9620b4f878bc52d5d838969c3b4b0fb55d5513a2c8a5e53e2cc275b5c3c21c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "07923031c42ce6b415929484f6c737efb38eb1019f5ca3a43ac871b223124786"
+    },
+    {
+      "id": "headers:container_intrusive",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "container_intrusive"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_intrusive$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "0b26598a34a800d6d1979ed30f54808439dbf8be2d1a74e0f934a13ce2600db0",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "4a2157caf0979bd4f437b03919255fb5c42cdef7f7ac24b1a0f2302d30f6d3f8"
+    },
+    {
+      "id": "factor:container_queue",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "container_queue"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_queue_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_queue$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "ba20bdf341963334f6cbafddd2691a4ed994ee9d4bbb288dbea5eae202c4c462",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "5399f4057ca2fa296aaa432d8e5ebad179fe7e96a7fe212f41847d8b00cfd23e"
+    },
+    {
+      "id": "headers:container_queue",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "container_queue"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_queue$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "4c6b85b7e4ce15b4fdf18a1b847416c62d242735747521e17647e67f4fab7a48",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "ac5c4ad5975ce8d2127b71f5c6a5469434bdf40a445c86f24b0987097cb85da5"
+    },
+    {
+      "id": "factor:container_text",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "container_text"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_text_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_text$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "27234d716351c17cfe8f041216bbe599a175a30bd734657db950b3abc34f1b9d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "7ba84e7b920e2caae30768fb306432b6725f7a6246d45b7086a7619102ba1f87"
+    },
+    {
+      "id": "headers:container_text",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "container_text"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_text$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "c0e6c893e79b5178b96f1f45aeed26c97f53adc5da195986b646b892afdb9a5c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "ca1af6c95a4fd6f085dca4fd37bbfc370de6224bd244383bf69823ae3c399367"
+    },
+    {
+      "id": "factor:core",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "core"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_core_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^core$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "113e6ec9ded9db12c30b99dcbd00445388c1078f9a3e76fab6db3379f1e2b92d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "5b6f848720e3a7c6a8e15a38b1ef8d932f70043f4dc21df3589c34093b7e3c1f"
+    },
+    {
+      "id": "headers:core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "2abc33c9cecfd64aef58b715da19eb6303ad633509abd42199ceeab3d115aad6",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "84987b2b58a244fa7000a962351110ff7a5f33783f269b13c75748e876ce2c3c"
+    },
+    {
+      "id": "factor:error",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "error"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_error_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^error$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "ad1f013caeae7c2a7896ac6c96b6717e0b3aaade1271c1816927acf8b76dfb92",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "5f7790e79e7b68a6c4ee74416d85b8705cde7144d959274bf5a6b1084260603a"
+    },
+    {
+      "id": "headers:error",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "error"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^error$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "aedf20261fe3a40e4402a5fbd2ee359827b06ae324160b4f569c8a82c552d3cd",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "f76786c4b45a3c6318340a12a84023b13e7f8f3dfd2ced1a965c71c33b314cf1"
+    },
+    {
+      "id": "factor:graph",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "graph"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "1d08c28cf8c2473604789fae6e070c2f98dfb398acd2e701ffb3e76aecf0f81e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b2b67e3453e7cfb69a70fae7c6b6f551e55a99b2a0d9bf95b2a9d04ed51322da"
+    },
+    {
+      "id": "headers:graph",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "graph"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f56d25cd6f5e8d284e9cc903e69b4a7224efbf3d79d40c08224f1fa406e3cfdc",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "4095edbd4a3c8dc81604bf06084fb16b3694a9d3003a032951c02d5e87973613"
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "graph_provider_onednn"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_provider_onednn_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_provider_onednn$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "b3c45f8c491fba3a4f9b0012e87689ffd3d0171e01002c3610f6146c431e92e8",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "20258ce0aac132808529d0a5cec88ed52bf3dd3da5c9c3e81ee811907f554ef2"
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "graph_provider_onednn"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_provider_onednn$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "79c96863d9203a0ba09b8d77f0ceb546930761ee05d1dd02216e23666fc3787c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b13958e49774e04fcc7116203387e8fbf88e5c161e0dfe28a0e23fa9dc5b1da6"
+    },
+    {
+      "id": "factor:graph_route_cpu",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "graph_route_cpu"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cpu$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "89f2698a55f8601316a203c0b109a9706d0f951e64210445a6bf01f073e1a312",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "f5ff53521873d7b3bd4c90c4e253a6ee87a3d842315bd892df354e42a0486299"
+    },
+    {
+      "id": "headers:graph_route_cpu",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "graph_route_cpu"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cpu$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "919b9c50083e4d2e438fb98d437042fe3bbeef89b9c1978cf444e065d46dbf3d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "39827f5a58be7943a4d86e2b43f35f01df545fac61d9747dab8b3221dc036975"
+    },
+    {
+      "id": "factor:graph_route_cuda",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "graph_route_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f3ed8cce432e7564b596593e539d012ff279ed04ec88c598511b7fa104071a50",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "9308589d5b5ddb2c5c765746590625f77f27191325e8f727d14e7d287773add4"
+    },
+    {
+      "id": "headers:graph_route_cuda",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "graph_route_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "5a09e15929ea8121510835ae80258b1db5f4e2d46defef684e0f23eb8e724ff1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "d12bc3ea7626ad9308fff7cfcee419ccadcff0d5a36dc8d6577a935190a3bf00"
+    },
+    {
+      "id": "factor:io_core",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_core_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "91adec172fff6c86e457efb02fd305f5fc3d73b522a603ec3cf2413808f58a03",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "14df3a553b6980609d8a72c8c7e43ff09119c5e26492d925330ce8035376b199"
+    },
+    {
+      "id": "headers:io_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "5b9a5df210aaa6bb91baff661fe65d21ecf363e8731561d44610ce0b80bce29d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "0809dfdc9c534e8201a6164151442d06e09778c762482e33a4e59806b88579d2"
+    },
+    {
+      "id": "factor:io_http",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_http"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_http_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "54ecdd9f340b15b1bdfba53d1872c1c9b4c6211d9eaf596a4830a8047f63cdb3",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "ed4055a9068cb9dda18e7c3871986a8cfd17fe9e5597fac191ea6397a6546a6d"
+    },
+    {
+      "id": "headers:io_http",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_http"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "23632a0618f1332346a72c3287bf8d588f8fe1523d0f9217d828d618885cbcdf",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "6c636f499bb2f26eb74cb703fa3a732c0fb961ac89061a7aa01d051b3d641962"
+    },
+    {
+      "id": "factor:io_http2",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_http2"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_http2_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http2$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "2c4ae3e1660ace82902213c6c8a6d792b1c819fc468d7b9998531873775d355f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "7688df9ea43cd5a1273bca81caf469cf10f2632e57f04407896cd889b19bb10d"
+    },
+    {
+      "id": "headers:io_http2",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_http2"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http2$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "e1b90f62a137061594b27cc12771361df3fa05c2507107785e522de1ea5d3762",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "36470561424c2acb3d423351eaec225de6e503ffd5f69f7fbbb512f6e798c7c4"
+    },
+    {
+      "id": "factor:io_tls",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_tls"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_tls_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_tls$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "473f5eb68e651843abb95af5f4766d532e69a6c491bb7c844d30cf425c6f24eb",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "36ac01520aac3736fcac1f06810f6ffce3d54189cc581feb311390612197d94e"
+    },
+    {
+      "id": "headers:io_tls",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_tls"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_tls$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "9d1e658e1b437ff48be3e82bffc6eec2f1359432b1d41a9aee17db536b3b65d4",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "8dbc4db7dae1503341200efadcd6d151b5e9f60fa9030e4564d1c698d9b2664d"
+    },
+    {
+      "id": "factor:io_transfer",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_transfer"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_transfer_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_transfer$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "174d044f22a2ca37b1330920d8936c585ae29bb610285bbd4f91a71f90ddb3fc",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "934e8a4bf91926fe3d3a6619e1bc5f8aecdcbdbf65287290bc5575c3a7cf71fa"
+    },
+    {
+      "id": "headers:io_transfer",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_transfer"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_transfer$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "d07426d23f3f8e9fe9ebf3e4fc857502365e1ef49dcc9726b52583079c03d6a8",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "a9d8bc31a14a0a17a5950c6b70b6ec0a03a611686619cf42a3e44b006d6f5a6b"
+    },
+    {
+      "id": "factor:io_watch",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_watch"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_watch_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_watch$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "8348168f2c2b63923785788a70d47d772efa1429774b11779a3ef37da691d9ee",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "fe1d48cf123817e70900f7a7a8fa5c8925304ffe57d0070796166be558e74703"
+    },
+    {
+      "id": "headers:io_watch",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_watch"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_watch$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "d766d0e4d1bd1c5afd5cf6800a9b292d78685e254dbe28eaee9215d252ec84b2",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "1947d1df368d7864e076c068273bcbc670183767705b69cbe09509ffd52b708e"
+    },
+    {
+      "id": "factor:io_websocket",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "io_websocket"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_websocket_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_websocket$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "34a80852b726d34d4a2db9a54ccec45c4ab29e7838c6c66c58996aa1b44d17b9",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "65659a27fd1167ae4b3a5476ae60400ea557e26c58ca0885cbd584812ed59f03"
+    },
+    {
+      "id": "headers:io_websocket",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "io_websocket"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_websocket$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "bbc9d45de73c47c367cab3c4c66bf0f413cf81ddc3851b2f4030aa097344fa48",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "3655e788491f40ae36fec8582289cd44fdd2f1720b9ca48ea709e0c92531e200"
+    },
+    {
+      "id": "factor:math",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "math"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_math_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^math$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "e45182fbf1c96bf1406009e413ba6a44e8da67a4874139da60242b41ac12d249",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "bcfd4995172fa78f67ceb97c6706fe3e45a2f9833e3629e8378f3219cd48b54a"
+    },
+    {
+      "id": "headers:math",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "math"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^math$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "a22bd7c0ecfe6bfadd8cd53e206c9276e4d194bd51542253c90a36c660a57d01",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "78f082d743acf2838a8a1b2de9ec767e547a5bf5e2964976d7521c2eaa393d52"
+    },
+    {
+      "id": "factor:mem",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "mem"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_mem_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f11d230bfa40c8fe5b72c689070acec4896d2e0257ba1355dc17d82f0302492f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "c99e4ea0a262306065c0d7e45db833040d8c0d7ae0feb1751d3e011a788c9ca5"
+    },
+    {
+      "id": "headers:mem",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "mem"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "4992ccf70e8b1836e88f13ec41e121252138e326c0c76d83bcc11a308bc7015e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "757fd73930a39a40dbdceca72224fe69ccbb32527adf2751a2136bf6ffc74960"
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "mem_reclaim"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_mem_reclaim_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_reclaim$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "b0dffec1168191a7891b0abfcf0a55860399de91d98e0118ddebfddbe2a84ff8",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "48a87058ffaa41aec2aedfb6544a76dcc5d8e9f970328b539173d5d9cc84f29c"
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "mem_reclaim"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_reclaim$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "aae1a01d88ca351ed73a34b9d65d673c237e1c59a3865b06dc304b7a6bf948e3",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "5f49794cce369efce855fd8315de6954ddae09ca5b90906f00506c9eec57d0a0"
+    },
+    {
+      "id": "factor:mem_vm",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "mem_vm"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_mem_vm_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_vm$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "e3b6be2a040ce29f0fa1a3e7167b1107bd3d451e9e293b11105d59f437b60957",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b469fdc070639612ddfa73daa62ccac035432c3553cf936df997bc5deb3d63dd"
+    },
+    {
+      "id": "headers:mem_vm",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "mem_vm"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_vm$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "092728464d5dd6a23c19fbc9f1f7d2c4005fad4ad92aadb9098c7b7d9c1990d6",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "53c3b4a0880555c2086f340e64ecaf04b081c07d5e52965ab7d94e66fdd83a84"
+    },
+    {
+      "id": "factor:obs",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "obs"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_obs_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^obs$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "72a51040164543a80464426d4fc7230c40c70abcc7e63d86185b1ea3c1777dc4",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "28bc587d60b68f684a536e72bc75f72556d4425b0ce9a46b9103e239300dc625"
+    },
+    {
+      "id": "headers:obs",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "obs"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^obs$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "0e6dbc2bf996b62b972f168424ac4978461ba0ab2ee6c2092a4caf13371988a6",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "869782e68c05d6cd689b8db026f6934b763d538a300c409cdcc273922f6c7961"
+    },
+    {
+      "id": "factor:platform",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "platform"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_platform_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "5586671184d243040906543816319f50e3bb20af1ee15decfe7e0aacfab6d7a5",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "0e2325efe7563edff8b63f712148eeaff4b22f7715bc4ca6222fd42220f945cc"
+    },
+    {
+      "id": "headers:platform",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "platform"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "4f33bbcdcb51d789ab87be44f571f260db261190621d5c4834145e0d0981508c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b5486c2ce59b699b1c80f9bb85b9c185aad5bf463aa794bf35146aeeb7e62e26"
+    },
+    {
+      "id": "factor:platform_fs",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "platform_fs"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_platform_fs_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_fs$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "c8609d4e0b4d86813ef67c340c2ba6beaa9129cfa354849ebb980391b49c6089",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "a79b869d932f27bef0097babaac81be10df1ffd9a1a7a7463f4dce4d137fb1d7"
+    },
+    {
+      "id": "headers:platform_fs",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "platform_fs"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_fs$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f6f9dcce512760a8752d2468c32b227a648ea9d446f0957a3ab40a44776c5faf",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "71623157e5ea487721c648e1f45cd2d6c87575f0de8fc5b184f788aeeb93fa9a"
+    },
+    {
+      "id": "factor:platform_thread",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "platform_thread"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_platform_thread_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_thread$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "668f67825e8fa1043fec73baaef6a6535b1e468897b8f127bb9fad8b839cf437",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "6a4d5c0d77ec77e1ad1ec271dadf24a3c7af8349e90bf4208041a0f34c85d3c5"
+    },
+    {
+      "id": "headers:platform_thread",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "platform_thread"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_thread$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "95c6aeff27ca35b6a8da28cca7f1f1da67563996381754a2d5efa6425e100908",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "0507e40798a0687cd43a7b50f91ecb3ff827385a1e8cb633fd1418728c70ef44"
+    },
+    {
+      "id": "factor:process",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "process"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_process_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^process$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "39991e355e278aace981a336c872802ea9041b32486d9e384bb8dafbbdacba63",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "a35b10ba46a1f82f9b491ce3f2f81c23a28f53190f7c3c3c75a257b72813677e"
+    },
+    {
+      "id": "headers:process",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "process"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^process$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "88c6c60181f0840614b1a0d1056cfd4582c9dc1f96fbfa6d47ec33b3b5930cf7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "62f8bf01ed4e74bdb25335ed2ba27415166fbb81da671a7f3086dc371527a86b"
+    },
+    {
+      "id": "factor:sched",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "sched"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_sched_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^sched$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "88c67dac66768c0fb9821d516ddab76b0f7b337973c3191a8be9051beab9b787",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b81717da0bb2076797044499904b68b5ae7fd615a4bff104322ef03cd875376c"
+    },
+    {
+      "id": "headers:sched",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "sched"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^sched$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "cb9db64c0b79b0542a4556be0c8bb1997c3ed47c9448a4d540a43c9670f8a6ed",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "3c56fe0d16ee9a5fa84533fb5496c189dd617706ebaedd9fc02fb12a92f2c4cd"
+    },
+    {
+      "id": "factor:simd",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_simd_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "04400f42c10b7657ea19b6cc277eca0dadaad662296791e209d4fe6fad3a77a6",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b05e1fd2053be15bae26e257c5262e9a55cd9f4386e45028b90306bb9a884574"
+    },
+    {
+      "id": "headers:simd",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "ef58ddad06d1578015cb0b4f3dc87ee7148e84878e6e3195891a25ea50f29961",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "6bb363301144d436f8b2403696bf11dc437529c40f0a505dd0a59752a59a40c6"
+    },
+    {
+      "id": "factor:time",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "time"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_time_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^time$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "9a8fa6d9c17f30d5dc223af747f05719ec61f2aa8fd4529788ba0b5d8fdcb64c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b556281428b04e0c174f2e13ddb1cfc4db1f71c739f18b41beb0c5b79be49f8b"
+    },
+    {
+      "id": "headers:time",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "time"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^time$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "b9a165c326d34b84ea4c111b6310d4e849279e839fdd2a4d258daac7c1b73ec6",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "4daa010020e890adcb3b676858c9f59b61819daaa10bc644e9daa2f33f8bf95e"
+    },
+    {
+      "id": "factor:timer_queue",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "timer_queue"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_timer_queue_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^timer_queue$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "91bf3e2a3b0591e03e6c5f688340acf2cd7b6c7287eb766a2a312710d3c7754a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "d8824472d7a5321e622c11ce917f867cafbffca125aa718ccb45a1ad52f2aa27"
+    },
+    {
+      "id": "headers:timer_queue",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "timer_queue"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^timer_queue$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "3f55ad6e05a300a35f37691c3bbba1d6483ebb413825424281004587520d5bc1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "64528de7c1f531ea0fa411042f8513203b32e501568dfacbf4b17ca37b708e96"
+    },
+    {
+      "id": "factor:util_core",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "util_core"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_util_core_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_core$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "94c5367727ac56ba7abe00f39b40fad54fc1c4661b648c96c19108e3af4b89c0",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "2c94ea24f31c8dc22128b3bff991b51643973818e303ef94b0c19ace0c3f0fc1"
+    },
+    {
+      "id": "headers:util_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "util_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "06d915c92f5cf6edd3ede13666416c847d3d2f12e37dc8da45af31ab18336661",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "74fd01dbb2a18ccd493b05381de4749688ceeb7d1ba6c517629d30a3c7c4d5ae"
+    },
+    {
+      "id": "factor:util_runtime",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "outside the change and its required consumer boundary",
+      "factors": [
+        "util_runtime"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_util_runtime_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_runtime$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "2b1edfde9d24b9047a1cf10b06b24bd9145414c0c3a554b2d6b172eec30dbb07",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "580613e51316bf64f1029b13f7524bac932f3afdfe454206aacfcfae674756ad"
+    },
+    {
+      "id": "headers:util_runtime",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "util_runtime"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_runtime$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "07407d64d1b62aae269c2c0b0a20ae7ef7aadaa17a9f90325dc339392d0f3f94",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "ad2d89dbb8027275c5836a53b40ac31c77a5d03d879836cb00b828be22346c1a"
+    },
+    {
+      "id": "component-contract",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no global component/package seam change",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/component",
+          "-P",
+          "cmake/HyleCiComponentContract.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "63e5c62e25dffe78d8b57956aa478cc0a35882879bda704c239dcf89877360b0",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "1d99342b1aa268ed99a73d67e4176cfeee574a0a914cc21a2c7131fb10a8997e"
+    },
+    {
+      "id": "delivery:compute",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-compute",
+          "-DHYLE_SMOKE_COMPONENT=compute",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "63f5116925319829f097a37e5afa333e5cce9218d08c63971ec19a170119bc7c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "942861ec62f753ea9a5d2632a71964d04c38cfaab0f004c964d403c6fefb81ea"
+    },
+    {
+      "id": "delivery:container",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-container",
+          "-DHYLE_SMOKE_COMPONENT=container",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "7321578aca014eeb8f99f2dacb24895bf6a5649e7614358e22ab14586781a5ab",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "cfd8ab8504da3677da2bbed129bb7942ff8310519e85d425abf6cfb5eaae0ef1"
+    },
+    {
+      "id": "delivery:core",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-core",
+          "-DHYLE_SMOKE_COMPONENT=core",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "bd445010db0f0c8ca54183fc335b3a7e994a2aa4fea7d6f192fc55ebc7ce3bd7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "493f80ddaf13e8305ff68e7d60a85265ea136f699f85195214f3c34d3c251bcb"
+    },
+    {
+      "id": "delivery:error",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-error",
+          "-DHYLE_SMOKE_COMPONENT=error",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "b1ef3e963185f6c4c25c09726d90ecbe7464504ce7d549686a18d4567602ad52",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "6a5f7b1a0d067324d6935e277f32d219c3ce3a4c834a0fd702d96bd3154119ab"
+    },
+    {
+      "id": "delivery:graph",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-graph",
+          "-DHYLE_SMOKE_COMPONENT=graph",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "98cac79320541bcb473392c53c21123f70eb1dc6771641182ddb2b0fb925b8ee",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b3ddb60b9e922deb0e1e2e9504031bdf7ce096527aafc31ee08d4f9866f89c86"
+    },
+    {
+      "id": "delivery:io",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-io",
+          "-DHYLE_SMOKE_COMPONENT=io",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "370948eb665d69f96902a696517928ca06a12527b1c5d3cb0728b593b91c7173",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "b8b165aff4b337835ef0e5f715d07d9ea5cac64af5a7c717ebdc461ac392b4a6"
+    },
+    {
+      "id": "delivery:math",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-math",
+          "-DHYLE_SMOKE_COMPONENT=math",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "dd33d5a3333842646189e22a7d719659625a21e865edc5aee2ba6e176db81d90",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "bcd8f10bfb17a007842d8900d54cee0689760a63bfcbcb078473f06b22701f1e"
+    },
+    {
+      "id": "delivery:mem",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-mem",
+          "-DHYLE_SMOKE_COMPONENT=mem",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "f0fd2b3713110fbbff7eaf528edcca65c4fae73ae801db925f87b6f39a76f635",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "43109d5d2ff9b6e4a37e937296882b9f637b6035b5181ec452f56829a8662a9e"
+    },
+    {
+      "id": "delivery:obs",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-obs",
+          "-DHYLE_SMOKE_COMPONENT=obs",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "d6601a9d594af5338e0e0918ca20370a8e571c892465a2a1dbe2fad2c4d36613",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "a1b1b57b35e731a436a0e33d1542631cfb50127447ac4052aa7285f9e75535fe"
+    },
+    {
+      "id": "delivery:platform",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-platform",
+          "-DHYLE_SMOKE_COMPONENT=platform",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "7a54f2c592abd812787bd850be30b20e7b9ba0ab177f469a54a7ff775cfae37b",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "510e226044eaf6429ef6bce09c16a839e8c6b7d3df8ee50fef03bd162e888096"
+    },
+    {
+      "id": "delivery:process",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-process",
+          "-DHYLE_SMOKE_COMPONENT=process",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "038faf4a60f7fda8192532f79dc83fda77925162fe919de695f23b76d72f6c56",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "1f08a728223b1c5072b89ebd5c055be439176f065b3b06644cd63d14ae7d68d9"
+    },
+    {
+      "id": "delivery:sched",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-sched",
+          "-DHYLE_SMOKE_COMPONENT=sched",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "dfbcfb48248c44d3e5ced49b99da3422b00ad6cd19ac5aac1fb84cf2a9ee126e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "2c756bfbcefc354cffaa23b13000665a0473006745414db5797f21802e40818d"
+    },
+    {
+      "id": "delivery:simd",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-simd",
+          "-DHYLE_SMOKE_COMPONENT=simd",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "257447c71dae9643cd8b47fc052b736ca8fe375d41f405c79271562f4d463ff1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "d34f246699712d8906ce71aa606e1cbb7fb000fea50f48fc5a4eadf13c022ff2"
+    },
+    {
+      "id": "delivery:time",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-time",
+          "-DHYLE_SMOKE_COMPONENT=time",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "c74eed44d217b14829a3342179cef31adfafde24e21db78936886993abaa5777",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "6a0eb9994d6f6d19ff11ae5358b7f4a7260ace70496db94b31aae82e9d1c8204"
+    },
+    {
+      "id": "delivery:util",
+      "kind": "delivery",
+      "status": "SKIPPED",
+      "reason": "no delivery boundary change for this product",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-util",
+          "-DHYLE_SMOKE_COMPONENT=util",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "8dd502e87814a4b6e5f730bba8ec0ab2f4d9db8abdd73d837826e35cacfa697a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "0518d883b24f44a90da53196dd7dc380148744461fff572b85adc42ebd626a76"
+    },
+    {
+      "id": "p1",
+      "kind": "performance",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic",
+      "factors": [],
+      "commands": [],
+      "identity": {
+        "candidate_tree": "0ad631665ab5136e20ec2ab8d308b9a77226fc77",
+        "contract_hash": "38d7d8c83d99d69ae7f5bd883b8fde61b77da54c73525e3185e18cfa4dcfea04",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "23c4b98acb44a1d885020e4f290d18449598ff348cfa10af7109c928faec8e3c"
+      },
+      "cache_key": "e57fd3ce15eaa410449ad59b211396698114a1058befecac4309572948ab8ac2"
+    }
+  ]
+}
