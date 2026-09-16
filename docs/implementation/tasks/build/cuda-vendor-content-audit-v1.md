@@ -1,6 +1,6 @@
 # CUDA vendor 内容身份与消费前校验
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
 
 - baseline：`bf685ea3b2d3317d67802c4d1436c9bf1f440267`；owner 为
   `compute_provider_marlin`、`compute_provider_cuda`，仅重开依赖锁与构建 seam。
@@ -53,3 +53,22 @@ V2 FIX：两 owning CMake 的 `HYLE_COMPUTE_CUDA_ENABLED` 分支在 `enable_lang
 已完成：15 个三交付门 PASS、93 个身份匹配门 REUSED、7 个有原因的 SKIPPED，聚合 PASS。
 复用记录逐项核对 candidate 与原日志摘要，未运行项没有改写为 PASS。
 按本卡 stop 进入 terminal 裁决，不重跑既有 GPU P1 或外推未测架构。
+
+## Terminal / 七门裁决
+
+候选固定为上列 `cbedb837`，V1/V2 完成；本轮 CLOSED。后续 R5/R6 产品施工不能反向改变
+这份已核对的 vendor 身份或扩展本卡范围。
+
+| 工程门 | 裁决与证据 |
+|---|---|
+| 第三方路径 | PASS：原 pin、逐文件 blob 与许可证不变；规范摘要独立复算，enabled 消费前校验接通 |
+| 功能完整 | PASS：完整源码 archive 和两个被篡改验证副本覆盖本轮正/负真实消费旅程 |
+| 内部复用 | PASS：复用现有中央树审计，不复制哈希算法，不修改 CUDA 运行实现 |
+| 性能 | PASS / P0：仅配置期线性文件摘要；没有热路径成本。R4 P1 资格和方向按继承记录原样保留 |
+| 交付边界 | PASS：没有新 API/ABI/FFI；错误在 owning consumer 配置前明确报告 |
+| 构建交付 | PASS：Windows/Air source audit、实际三交付及最终 selected receipts；OFF 无新增 vendor 责任 |
+| 易用与文档 | PASS：依赖锁与消费入口一致，本卡解释旧摘要更正与原始证据的关系 |
+
+性能限制仍为 R4 实测 RTX 4070 / SM89 与对应 driver/toolkit 组合；不签其它架构 SOTA。
+CPU decode 的批准例外不属于本卡，保持不变。重开条件为实际 vendor 内容/pin/许可证变更、
+已复现的审计绕过或新的 source/package 消费失败；单纯文档提交或验证副本变化不触发重测。
