@@ -11,5 +11,5 @@ baseline：`0ca1cd0da9e476be44419a50b5ddfdc34544e293`。
   `--forward-unknown-to-host-compiler`；普通 shipping 构建的参数保持不变。
 
 实际普通回归、cuBLAS 分配失败检查及 WSL ASan/UBSan/TSan 仍待执行。系统 CUDA/第三方 device
-kernel 的内部空间不由这些 host 检查完整覆盖。原始日志在 [raw archive](raw-dryrun.zip)，
+kernel 的内部空间不由这些 host 检查完整覆盖。可读日志仅规范化换行及行尾空白；原始字节保存在 [raw archive](raw-dryrun.zip)，
 源文件身份及限制在 [preflight](preflight.json)，文件哈希见 [manifest](sha256.json)。
