@@ -15,6 +15,8 @@ namespace hyle::compute::cuda_native {
 
 inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
                                         0x435544414b455201ULL};
+inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
+                                              0x53474c4143540001ULL};
 
 // Expert composition factory for HYLE's native CUDA SwiGLU fragment.
 // Supports dense FP16/FP32 separate inputs or [..., gate | value] packed
@@ -25,6 +27,13 @@ inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
 // is cold; the shared CUDA stream also permits native Graph capture.
 #if defined(HYLE_COMPUTE_CUDA)
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
+
+// Pinned precise SGLang implementation under the same native ownership and
+// completion contract. Packed halves only, 16-byte tensor alignment, FP16
+// hidden dimension divisible by 8 or FP32 by 4. FP32 intermediates and one
+// final output conversion; no fast-math, PDL, filtering, or input reuse.
+// The ordinary CUDA route selects it in this domain during preparation.
+HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 #endif
 
 } // namespace hyle::compute::cuda_native

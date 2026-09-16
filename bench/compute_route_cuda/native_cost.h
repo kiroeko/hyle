@@ -22,7 +22,7 @@ public:
     check(compute::marlin::native::prepare(
         static_cast<int>(data.rows), static_cast<int>(2 * kHidden),
         static_cast<int>(kInner), processors, shared, &first_));
-    check(compute::cuda_native::native::prepare(
+    check(compute::cuda_native::native::sglang_prepare(
         true, true, static_cast<unsigned>(data.rows * kHidden),
         static_cast<unsigned>(kHidden), &middle_));
     weights_ =
@@ -192,8 +192,8 @@ private:
   void enqueue(Slot &slot) {
     check(compute::marlin::native::launch(first_, slot.x, weights_, scales_,
                                           slot.gate_up, slot.scratch, stream_));
-    check(compute::cuda_native::native::launch(middle_, slot.gate_up, nullptr,
-                                               slot.activation, stream_));
+    check(compute::cuda_native::native::sglang_launch(
+        middle_, slot.gate_up, nullptr, slot.activation, stream_));
     constexpr float alpha = 1, beta = 0;
     blas(cublasLtMatmul(slot.handle, operation_, &alpha, slot.activation,
                         layouts_[0], down_, layouts_[1], &beta, slot.y,

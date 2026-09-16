@@ -36,6 +36,7 @@ Status create_context(const Provider &, Device device, void *backend_state,
 
 void destroy_context(void *, mem::AllocatorRef) noexcept {}
 
+template <bool Sglang>
 Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs) noexcept {
   const auto *gated = operation.get_if<GatedActivation>();
@@ -68,6 +69,13 @@ Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
         in.back() != out.back() * multiplier)
       return Status::InvalidArgument("CUDA SwiGLU shapes do not agree");
   }
+  if constexpr (Sglang) {
+    const auto width = output.data_type() == DataType::kFloat16 ? 8 : 4;
+    if (gated->inputs != GatedInputKind::kPackedHalves ||
+        output.dimensions().back() % width != 0)
+      return Status::Unimplemented(
+          "SGLang SwiGLU requires packed complete 16-byte vectors");
+  }
   return Status::Ok();
 }
 
@@ -81,6 +89,7 @@ constexpr ProviderRuntimeProperties kRuntime{
     .capture_compatible = true,
 };
 
+template <bool Sglang>
 Status propose(void *, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
@@ -94,15 +103,16 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument(
         "CUDA kernel proposal binding counts differ");
   HYLE_RETURN_IF_ERROR(
-      select_shape(request.operation, request.inputs, request.outputs));
+      select_shape<Sglang>(request.operation, request.inputs, request.outputs));
   const detail::ResourceBindingRequirement tensor{
       .required_properties = mem::MemoryProperty::kDeviceAccessible,
-      .minimum_alignment = data_type_size(request.outputs[0].data_type()),
+      .minimum_alignment =
+          Sglang ? 16 : data_type_size(request.outputs[0].data_type()),
   };
   std::fill(inputs.begin(), inputs.end(), tensor);
   outputs[0] = tensor;
   *proposal = detail::ProviderOperationProposal{
-      .route = 1,
+      .route = Sglang ? 2U : 1U,
       .runtime = kRuntime,
       .cost = {.workspace = WorkspaceRequirement{},
                .persistent_bytes = sizeof(Prepared),
@@ -110,7 +120,7 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
                .repack_bytes = 0,
                .synchronization_count = 0,
                .dispatch_count = 1},
-      .profile_key = ProviderRouteKey{1},
+      .profile_key = ProviderRouteKey{Sglang ? 2U : 1U},
   };
   return Status::Ok();
 }
@@ -137,6 +147,7 @@ AliasSupport alias_support(void *, std::size_t, std::size_t) noexcept {
   return {};
 }
 
+template <bool Sglang>
 detail::EnqueueResult submit(void *state, void *, Queue &queue,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
@@ -165,18 +176,25 @@ detail::EnqueueResult submit(void *state, void *, Queue &queue,
     return detail::EnqueueResult::rejected(scope.status());
   // Runtime errors may include a prior asynchronous failure. Preserve the
   // accepted Queue prefix and real backend terminal conservatively.
-  return detail::EnqueueResult::accepted_command(cuda::status(
-      native::launch(prepared.program, *first, second, *output, *stream)));
+  if constexpr (Sglang)
+    return detail::EnqueueResult::accepted_command(
+        cuda::status(native::sglang_launch(prepared.program, *first, second,
+                                           *output, *stream)));
+  else
+    return detail::EnqueueResult::accepted_command(cuda::status(
+        native::launch(prepared.program, *first, second, *output, *stream)));
 }
 
+template <bool Sglang>
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_prepared,
     .alias_support = &alias_support,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .shared_submit = &submit,
+    .shared_submit = &submit<Sglang>,
 };
 
+template <bool Sglang>
 ProviderPrepareOutcome prepare(void *state,
                                const detail::ProviderPrepareRequest &request,
                                mem::AllocatorRef allocator,
@@ -185,11 +203,11 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
-  if (request.route != 1 || !request.shape.exact())
+  if (request.route != (Sglang ? 2U : 1U) || !request.shape.exact())
     return ProviderPrepareOutcome::error(Status::InvalidArgument(
         "CUDA kernel exact prepare request is invalid"));
   Status status =
-      select_shape(request.operation, request.inputs, request.outputs);
+      select_shape<Sglang>(request.operation, request.inputs, request.outputs);
   if (!status.ok())
     return status.IsUnimplemented()
                ? ProviderPrepareOutcome::unsupported(std::move(status))
@@ -200,7 +218,8 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(scope.status());
   const auto &description = request.outputs[0];
   native::Program program;
-  const auto configured = native::prepare(
+  constexpr auto configure = Sglang ? native::sglang_prepare : native::prepare;
+  const auto configured = configure(
       description.data_type() == DataType::kFloat16,
       request.operation.get_if<GatedActivation>()->inputs ==
           GatedInputKind::kPackedHalves,
@@ -212,10 +231,10 @@ ProviderPrepareOutcome prepare(void *state,
   if (storage == nullptr)
     return ProviderPrepareOutcome::resource_declined(
         Status::ResourceExhausted("CUDA kernel prepared allocation failed"));
-  auto *prepared = ::new (storage)
-      Prepared{primary, program, data_type_size(description.data_type())};
+  auto *prepared = ::new (storage) Prepared{
+      primary, program, Sglang ? 16 : data_type_size(description.data_type())};
   *output = detail::ProviderPrepared{
-      .vtable = &kPreparedVTable,
+      .vtable = &kPreparedVTable<Sglang>,
       .state = prepared,
       .runtime = kRuntime,
       .persistent_bytes = sizeof(Prepared),
@@ -225,21 +244,26 @@ ProviderPrepareOutcome prepare(void *state,
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }
+template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
-    .identity = {.id = kProviderId,
-                 .name = "hyle-cuda",
-                 .version = "v1-swiglu"},
+    .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
+                 .name = Sglang ? "sglang-cuda" : "hyle-cuda",
+                 .version = Sglang ? "06992c92-precise-swiglu" : "v1-swiglu"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
-    .propose = &propose,
-    .prepare = &prepare,
+    .propose = &propose<Sglang>,
+    .prepare = &prepare<Sglang>,
     .drain_context = &drain_context,
 };
 
 } // namespace
 
 Provider provider() noexcept {
-  return detail::ProviderAccess::make(&kProviderVTable, std::uint8_t{0});
+  return detail::ProviderAccess::make(&kProviderVTable<false>, std::uint8_t{0});
+}
+
+Provider sglang_provider() noexcept {
+  return detail::ProviderAccess::make(&kProviderVTable<true>, std::uint8_t{0});
 }
 
 } // namespace hyle::compute::cuda_native

@@ -183,9 +183,9 @@ Compute/Graph 包含可选 CUDA 默认路线。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` �
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
 CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
 都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`
-找到。选择公开产品会接入 cuBLASLt、Marlin 和 HYLE SwiGLU 的已实现默认组合；Direct 使用
+找到。选择公开产品会接入 cuBLASLt、Marlin、SGLang precise 与 HYLE SwiGLU 的已实现默认组合；Direct 使用
 `compute::cuda::create_context()`，Graph 使用 `graph::cuda::create_context/compile/prepare_replay()`。
-Marlin 的 Apache-2.0 LICENSE/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。R4 的当前
+Marlin 与 SGLang activation 的 Apache-2.0 LICENSE/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。R4 的当前
 三交付/性能验收状态见 module-status，不把可编译入口当作全部路线已验收。Windows 运行时将实际
 HYLE、CUDA Runtime、cuBLASLt 及所需 VC runtime DLL 放在 exe 同目录；不要依赖偶然的 PATH。
 Metal/MLX、Vulkan 或其他 provider 仍须在独立 factor 具备实现、依赖

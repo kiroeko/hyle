@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/sgl-project/sglang.git",
+  "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+  "files": {
+    "python/sglang/kernels/jit/csrc/elementwise/activation.cuh": "f1b56af7476695688d11bb004dc6cee144cd8922a56683a12c504c53aec26c47",
+    "python/sglang/kernels/ops/activation/activation.py": "c8ea8e9480ccc488b5b4721fe991e4e901e63fb88e6fe89286767f30e23d9ab6",
+    "python/sglang/kernels/jit/utils/arch.py": "e9e6359469bfd46e1bfa16b197b9d88cc89d500ebb8f9ccf05b2ab1374063eb7",
+    "LICENSE": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747"
+  },
+  "hash_semantics": "SHA-256 of the original upstream Git blob",
+  "adaptations": [
+    "Extract ActivationKind, FP32 activation and packed act_and_mul device body; omit TVM/Python host and unary wrapper.",
+    "Replace global sglang namespace with hyle::compute::cuda_native::sglang_vendor to isolate the independent benchmark reference.",
+    "Rename SGL_DEVICE to HYLE_SGL_DEVICE; undefine the private support macro after the fragment.",
+    "HYLE standalone vector/cast/disabled-PDL support lives in src/compute_provider_cuda/sglang_device_compat.cuh; arithmetic and indexing are unchanged."
+  ],
+  "configuration": {
+    "fast_math": false,
+    "pdl": false,
+    "filter_expert": false,
+    "round_activation": false,
+    "reuse_input": false,
+    "vector_bytes": 16
+  },
+  "qualification": "R4 W1 SM89 full FFN v2 evidence; final default integration acceptance remains in the owning task."
+}

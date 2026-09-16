@@ -9,7 +9,7 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
   {
     auto owner =
         cuda::create_context({.metadata_allocator = stats.get()}).value();
-    EXPECT_EQ(owner.provider_count(), 3U);
+    EXPECT_EQ(owner.provider_count(), 4U);
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
     Linear first(owner, resource.ref(), type, 128, 256, first_q4, 1);
@@ -43,7 +43,8 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
     ASSERT_TRUE(c.has_value()) << c.error().message();
     std::array programs{std::move(*a), std::move(*b), std::move(*c)};
     EXPECT_EQ(programs[0].provider().id, first.provider());
-    EXPECT_EQ(programs[1].provider().id, compute::cuda_native::kProviderId);
+    EXPECT_EQ(programs[1].provider().id,
+              compute::cuda_native::kSglangProviderId);
     EXPECT_EQ(programs[2].provider().id, second.provider());
     std::array queues{owner.create_queue().value(),
                       owner.create_queue().value()};
@@ -124,6 +125,42 @@ TEST(CudaDefaultCompute, RejectsInvalidDeviceAndUnsupportedOperations) {
   EXPECT_TRUE(unsupported.error().IsUnimplemented());
   ASSERT_TRUE(owner.close().ok());
   EXPECT_FALSE(owner.create_queue().has_value());
+}
+
+TEST(CudaDefaultCompute, DefaultRulesRetainSeparateAndPackedTailCapability) {
+  auto owner = cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  for (const bool packed : {false, true}) {
+    const std::int64_t hidden = packed ? 127 : 128;
+    Tensor first(
+        matrix(compute::DataType::kFloat32, 1, hidden * (packed ? 2 : 1)),
+        resource.ref());
+    Tensor second(matrix(compute::DataType::kFloat32, 1, hidden),
+                  resource.ref());
+    Tensor output(matrix(compute::DataType::kFloat32, 1, hidden),
+                  resource.ref());
+    first.write(std::vector<float>(
+        static_cast<std::size_t>(hidden) * (packed ? 2 : 1), 1.0F));
+    second.write(std::vector<float>(static_cast<std::size_t>(hidden), 1.0F));
+    const std::array all_inputs{first.view.as_const(), second.view.as_const()};
+    const auto inputs = std::span(all_inputs).first(packed ? 1 : 2);
+    auto prepared = compute::prepare(
+        owner,
+        compute::Operation(compute::GatedActivation{
+            .inputs = packed ? compute::GatedInputKind::kPackedHalves
+                             : compute::GatedInputKind::kSeparate}),
+        inputs, std::array{output.view});
+    ASSERT_TRUE(prepared.has_value());
+    EXPECT_EQ(prepared->provider().id, compute::cuda_native::kProviderId);
+    auto lane = prepared->create_invocation().value();
+    auto done = lane.submit(queue, inputs, std::array{output.view});
+    ASSERT_TRUE(done.has_value());
+    ASSERT_TRUE(done->wait().ok());
+    for (const auto value : output.read())
+      EXPECT_NEAR(value, 1.0 / (1.0 + std::exp(-1.0)), 0.000001);
+  }
 }
 
 } // namespace

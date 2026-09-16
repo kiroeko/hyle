@@ -22,10 +22,9 @@ namespace compute = hyle::compute;
 namespace cuda = compute::cuda;
 namespace mem = hyle::mem;
 
-compute::Context context() {
-  return compute::Context::create(cuda::device(0).value(),
-                                  compute::cuda_native::provider())
-      .value();
+compute::Context
+context(compute::Provider selected = compute::cuda_native::provider()) {
+  return compute::Context::create(cuda::device(0).value(), selected).value();
 }
 
 compute::TensorDesc matrix(compute::DataType type, std::int64_t rows,
@@ -50,8 +49,9 @@ template <> float to_float(__half value) { return __half2float(value); }
 
 template <class T>
 void run_shape(compute::DataType type, bool packed, std::int64_t rows,
-               std::int64_t hidden) {
-  auto owner = context();
+               std::int64_t hidden,
+               compute::Provider selected = compute::cuda_native::provider()) {
+  auto owner = context(selected);
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   const auto desc = matrix(type, rows, hidden);
@@ -68,7 +68,7 @@ void run_shape(compute::DataType type, bool packed, std::int64_t rows,
                                  std::array{outputs[0].view});
   ASSERT_TRUE(result.has_value()) << result.error().message();
   auto prepared = std::move(*result);
-  EXPECT_EQ(prepared.provider().id, compute::cuda_native::kProviderId);
+  EXPECT_EQ(prepared.provider().id, selected.id());
   EXPECT_EQ(prepared.workspace_requirement().size, 0u);
   EXPECT_EQ(prepared.invocation_private_bytes(), 0u);
   EXPECT_TRUE(prepared.capture_compatible());
@@ -152,6 +152,109 @@ TEST(CudaKernels, FloatAndHalfPackedSeparateTailsAndChangedInputs) {
   }
 }
 
+TEST(CudaKernels, PreciseSglangVectorsUseIndependentOracleAndSlots) {
+  const auto selected = compute::cuda_native::sglang_provider();
+  for (const auto rows : {1, 7, 17}) {
+    for (const auto hidden : {8, 128, 11008}) {
+      SCOPED_TRACE(::testing::Message() << rows << "," << hidden);
+      run_shape<float>(compute::DataType::kFloat32, true, rows, hidden,
+                       selected);
+      run_shape<__half>(compute::DataType::kFloat16, true, rows, hidden,
+                        selected);
+    }
+  }
+}
+
+template <class T> void vector_binding_boundaries(compute::DataType type) {
+  auto owner = context(compute::cuda_native::sglang_provider());
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto in = matrix(type, 1, 256), out = matrix(type, 1, 128);
+  const auto in_bytes = in.required_bytes().value();
+  const auto out_bytes = out.required_bytes().value();
+  auto input = mem::Buffer::create(resource.ref(), in_bytes + 16, 256).value();
+  auto output =
+      mem::Buffer::create(resource.ref(), out_bytes + 16, 256).value();
+  std::vector<T> values((in_bytes + 16) / sizeof(T), from_float<T>(1.0F));
+  ASSERT_TRUE(input.view().write(std::as_bytes(std::span(values))).ok());
+  const auto first = compute::ConstTensorView::create(
+                         in, input.view().subview(0, in_bytes).value())
+                         .value();
+  const auto shifted_first =
+      compute::ConstTensorView::create(
+          in, input.view().subview(sizeof(T), in_bytes).value())
+          .value();
+  const auto result = compute::TensorView::create(
+                          out, output.view().subview(0, out_bytes).value())
+                          .value();
+  const auto shifted_result =
+      compute::TensorView::create(
+          out, output.view().subview(sizeof(T), out_bytes).value())
+          .value();
+  auto program =
+      compute::prepare(owner, compute::Operation(compute::GatedActivation{}),
+                       std::array{first}, std::array{result})
+          .value();
+  auto lane = program.create_invocation().value();
+  auto queue = owner.create_queue().value();
+  EXPECT_FALSE(lane.submit(queue, shifted_first, result).has_value());
+  EXPECT_FALSE(lane.submit(queue, first, shifted_result).has_value());
+  const auto alias = compute::TensorView::create(
+                         out, input.view().subview(0, out_bytes).value())
+                         .value();
+  auto aliased = lane.submit(queue, first, alias);
+  ASSERT_FALSE(aliased.has_value());
+  EXPECT_TRUE(aliased.error().IsInvalidArgument());
+  EXPECT_FALSE(lane.in_flight());
+  auto done = lane.submit(queue, first, result);
+  ASSERT_TRUE(done.has_value());
+  ASSERT_TRUE(done->wait().ok());
+  std::vector<T> actual(128);
+  ASSERT_TRUE(
+      result.storage().read(std::as_writable_bytes(std::span(actual))).ok());
+  for (const auto value : actual)
+    EXPECT_NEAR(to_float(value), 1.0 / (1.0 + std::exp(-1.0)),
+                sizeof(T) == 2 ? 0.001 : 0.000001);
+
+  // The scalar implementation retains its smaller native alignment. The
+  // explicit expert choice requires no hidden copy or runtime route search.
+  auto scalar_owner = context();
+  auto scalar =
+      compute::prepare(scalar_owner,
+                       compute::Operation(compute::GatedActivation{}),
+                       std::array{shifted_first}, std::array{shifted_result})
+          .value();
+  auto scalar_lane = scalar.create_invocation().value();
+  auto scalar_queue = scalar_owner.create_queue().value();
+  auto scalar_done =
+      scalar_lane.submit(scalar_queue, shifted_first, shifted_result);
+  ASSERT_TRUE(scalar_done.has_value());
+  ASSERT_TRUE(scalar_done->wait().ok());
+  ASSERT_TRUE(shifted_result.storage()
+                  .read(std::as_writable_bytes(std::span(actual)))
+                  .ok());
+  for (const auto value : actual)
+    EXPECT_NEAR(to_float(value), 1.0 / (1.0 + std::exp(-1.0)),
+                sizeof(T) == 2 ? 0.001 : 0.000001);
+
+  auto tail = compute::prepare(owner, compute::GatedActivation{},
+                               matrix(type, 1, 254), resource.ref());
+  ASSERT_FALSE(tail.has_value());
+  EXPECT_TRUE(tail.error().IsUnimplemented());
+  auto separate =
+      compute::prepare(owner,
+                       compute::Operation(compute::GatedActivation{
+                           .inputs = compute::GatedInputKind::kSeparate}),
+                       std::array{out, out}, std::array{out}, resource.ref());
+  ASSERT_FALSE(separate.has_value());
+  EXPECT_TRUE(separate.error().IsUnimplemented());
+}
+
+TEST(CudaKernels, VectorRejectionPreservesSlotAndScalarAlignmentCapability) {
+  vector_binding_boundaries<float>(compute::DataType::kFloat32);
+  vector_binding_boundaries<__half>(compute::DataType::kFloat16);
+}
+
 TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   auto owner = context();
   auto resource =
@@ -201,8 +304,8 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   EXPECT_FALSE(lane.in_flight());
 }
 
-TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
-  auto owner = context();
+void pending_completion_retains_program(compute::Provider selected) {
+  auto owner = context(selected);
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   auto queue = owner.create_queue().value();
@@ -294,10 +397,10 @@ struct MetadataAllocator final {
   }
 };
 
-TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
+void metadata_failures_rollback(compute::Provider selected) {
   MetadataAllocator allocator;
   {
-    const std::array providers{compute::cuda_native::provider()};
+    const std::array providers{selected};
     auto owner =
         compute::Context::create(
             cuda::device(0).value(),
@@ -362,6 +465,16 @@ TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
     EXPECT_EQ(allocator.attempts, replay_begin);
   }
   EXPECT_EQ(allocator.live, 0u);
+}
+
+TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
+  pending_completion_retains_program(compute::cuda_native::provider());
+  pending_completion_retains_program(compute::cuda_native::sglang_provider());
+}
+
+TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
+  metadata_failures_rollback(compute::cuda_native::provider());
+  metadata_failures_rollback(compute::cuda_native::sglang_provider());
 }
 
 } // namespace

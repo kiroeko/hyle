@@ -28,6 +28,7 @@
   },
   "vendored_input_owners": {
     "third_party/marlin/": ["compute_provider_marlin"],
+    "third_party/sglang_activation/": ["compute_provider_cuda"],
     "third_party/mimalloc/": ["mem"],
     "third_party/xxhash/": ["container"],
     "third_party/wyhash/": ["container"],

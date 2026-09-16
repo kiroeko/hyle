@@ -28,7 +28,9 @@ struct DefaultContextOptions final {
 using QuantizedWeights = marlin::QuantizedWeights;
 
 // Fixed development rules: dense FP16/FP32 MatMul uses cuBLASLt; the exact Q4
-// carrier uses Marlin; packed/separate FP16/FP32 SwiGLU uses HYLE CUDA kernels.
+// carrier uses Marlin. Packed FP16/FP32 SwiGLU uses pinned precise SGLang for
+// complete 16-byte vectors (hidden % 8/4 == 0), with 16-byte tensor alignment.
+// Separate inputs and non-vector tails use HYLE CUDA kernels.
 // Prepare binds these implementations once. Unsupported domains are errors;
 // no timing search, CPU fallback, or caller-supplied Provider order is needed.
 // Native MemoryResource and stream interop live in compute/backends/cuda.h.

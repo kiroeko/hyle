@@ -235,6 +235,37 @@
       "license": { "expression": "BSD-3-Clause", "files": [
         { "root": "dependency", "path": "LICENSE", "sha256": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940" }
       ] }
+    },
+    {
+      "name": "sglang_activation",
+      "class": "in_tree",
+      "repository": "https://github.com/sgl-project/sglang.git",
+      "version": "sglang-snapshot-06992c92ad44",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "git_tree": "6504cefc56f2b228800eb72a513420e956e21846",
+      "archive": {
+        "url": "https://codeload.github.com/sgl-project/sglang/tar.gz/06992c92ad4494fe9f9636e75be3e35040512447",
+        "sha256": "e31827d3f8ef3ae171da08242c2f249110c763cab8d89603dc4c6c57076c3796"
+      },
+      "vendored": {
+        "path": "third_party/sglang_activation",
+        "tree_sha256": "46b190d809760271bb91ec481c4a04536d54f893acfb69c1845df31b87dd1d37"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/sglang_activation/LICENSE",
+            "sha256": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/sglang_activation/NOTICE",
+            "sha256": "7cfaa4f6be2e8ed2b80ac324f1fedf2ccb0af53bb74efd75968276dd03906314"
+          }
+        ]
+      }
     }
   ]
 }

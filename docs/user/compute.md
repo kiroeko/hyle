@@ -4,7 +4,7 @@
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 Native/oneDNN 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
-> command capture 基础运行时。R4 已接入 cuBLASLt、Marlin 和 HYLE SwiGLU 的独立 Provider，
+> command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
 > 普通 CUDA Direct/Graph 入口与真实 FFN/capture 已实现；R4 三交付与性能验收仍在进行。
 > Apple MLX/Metal、Vulkan/SPIR-V 是后续独立纵切。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
@@ -23,7 +23,7 @@
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。
 
-设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的三个计算 Provider 已有初始 GPU 验证，
+设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的计算 Provider 已有实际 GPU 验证，
 普通入口和完整 FFN Graph 已通过 W1 正确性，三交付与性能尚未完成路线验收；Apple/Vulkan 尚未交付。
 HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
 提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
@@ -66,12 +66,17 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 |---|---|
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
-| HYLE SwiGLU | dense FP16/FP32 packed halves 或 separate，SiLU；非空，输出元素数<=INT32_MAX，输入输出不重叠 |
+| SGLang precise SwiGLU | dense FP16/FP32 packed halves，FP32 SiLU 与乘法、输出一次舍入；FP16 hidden%8、FP32 hidden%4；输入输出16字节对齐，非空、输出元素数<=INT32_MAX，不重叠 |
+| HYLE SwiGLU | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/FP32、同样精度与元素数/不重叠限制 |
 
 权重用 `cuda::QuantizedWeights::pack()` 冷准备，owner 只保留 Q4 payload 与 FP16 scales；
 `weights()/scales()` 借用 owner，搭配 `QuantizedWeights::operation()` 使用。普通用户无需认识
 vendor permutation。其余 dtype/shape/operation 明确拒绝；prepare 绑定规则与 vendor tactic，
-执行期不搜索、计时或重新 packing。当前真机资格是 RTX 4070/SM89，不外推其它 SM 的性能。
+执行期不搜索、计时或重新 packing。向量域在 prepare 固定16字节对齐合同，运行绑定不满足时明确拒绝，
+不会热切换或隐藏 copy；专家可用 `cuda_native::provider()` 保留2/4字节对齐的 HYLE 路径。
+默认激活规则依据完整 FFN 比较：HYLE 未呈现跨实验顺序成立的明确优势，采用合格成熟实现。
+硬件/版本条件仍可在冷匹配时使用；当前性能资格只覆盖 RTX 4070/SM89、driver 610.62、
+Toolkit 13.3.73，不外推其它 GPU 或版本。
 
 Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自借用和在途工作。每槽的 workspace
 与可变 vendor handle 独立，成功完成后复用；失败终态后重建槽。vendor/driver 私有存储可能无法
@@ -156,6 +161,7 @@ Direct/Graph FFN 已接线，完整 CUDA 三交付与 P1 尚待验收，不能�
 |---|---|---|
 | `compute_provider_cublas` / `compute/providers/cublas.h` | `cublas::provider()` | FP16/FP32 rank-2 MatMul；输入 row/column-major、输出 dense row-major；FP32 累加；冷绑定算法，每槽独立 handle/workspace |
 | `compute_provider_marlin` / `compute/providers/marlin.h` | `marlin::provider()`、`marlin::QuantizedWeights::pack()` | FP16 activation/output、signed symmetric group128 Q4、FP32 累加；M=1..64、K%128=0、N%64=0、N*K<=INT32_MAX；冷 packing 后只常驻 Q4/scales |
+| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::sglang_provider()` | 锁定 SGLang precise packed SwiGLU，支持域与16字节对齐要求见默认规则；不引入 TVM/Python runtime |
 | `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/FP32 SwiGLU，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；非空、输出元素数<=INT32_MAX；不允许输入输出重叠 |
 
 SwiGLU 不需要 caller workspace 或额外 native invocation 存储；Kernel 与 launch 配置在 prepare

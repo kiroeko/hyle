@@ -6,10 +6,13 @@ product Provider. Build the owning Compute/Graph benchmark targets in a static,
 CUDA-enabled configuration; ordinary product and SDK builds do not include it.
 
 Both rows execute Q4 gate/up → precise SwiGLU → FP16 dense down, with M=1/16,
-K=4096, hidden=11008 and output=4096. The ordinary route uses HYLE activation;
-the peer uses the pinned SGLang precise activation through the same public
-Provider lifecycle. The remaining implementations and numerical contracts are
-identical. Graph requires actual native capture on both sides.
+K=4096, hidden=11008 and output=4096. The ordinary route now uses the qualified
+SGLang precise activation; the peer retains its independent adapter at the same
+pin through the same public Provider lifecycle. The remaining implementations
+and numerical contracts are identical. Graph requires actual native capture
+on both sides. The v2 evidence compared the previous HYLE activation and found
+no complete-chain advantage across all placements and orders. Final-default
+A/A and non-inferiority results are not HYLE algorithm wins.
 
 The two contexts borrow one device memory resource and immutable compressed
 constants. They have independent queues, buffers and two invocation/output
@@ -24,7 +27,7 @@ Controls use the existing instrument conventions:
 - `HYLE_BENCH_VERIFY_ONLY=1`: independent full-shape double-accumulation oracle
   with FP16 stage boundaries; no timing. Normal runs still compare every output
   between the two implementations and verify that changed inputs change output.
-- `HYLE_BENCH_AA_ROUTE=selected|native`: run the same HYLE or reference composition
+- `HYLE_BENCH_AA_ROUTE=selected|native`: run the same default or reference composition
   on both sides, without changing resources, completion boundaries or topology.
 - `HYLE_BENCH_RIVAL_FIRST=1` and `HYLE_BENCH_PEER_ALLOCATION_FIRST=1`: independent
   execution and allocation order controls. Separate placement targets retain the
@@ -57,7 +60,7 @@ remain separate gates under the R4 contract.
 
 The separate `hyle_compute_cuda_native_cost_bench` and
 `hyle_graph_cuda_native_cost_bench` targets use the same frozen Marlin launcher,
-HYLE precise activation and cuBLASLt descriptor/heuristic settings. The caller
+default SGLang precise activation and cuBLASLt descriptor/heuristic settings. The caller
 owns two native workspaces, cuBLAS handles, the stream, event and captured graph
 executables. A complete call restores the CUDA context, launches the full chain
 or captured graph, records one final event and waits for it. Native errors stop

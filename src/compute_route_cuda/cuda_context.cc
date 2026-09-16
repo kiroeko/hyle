@@ -13,6 +13,7 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
   if (!selected)
     return std::unexpected(std::move(selected).error());
   const std::array providers{cublas::provider(), marlin::provider(),
+                             cuda_native::sglang_provider(),
                              cuda_native::provider()};
   return Context::create(*selected,
                          {.metadata_allocator = options.metadata_allocator,

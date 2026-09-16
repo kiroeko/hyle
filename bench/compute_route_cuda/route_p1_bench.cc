@@ -328,7 +328,7 @@ public:
     if (prepared_[0].provider().id != compute::marlin::kProviderId ||
         prepared_[1].provider().id !=
             (reference ? compute::sglang_reference::kProviderId
-                       : compute::cuda_native::kProviderId) ||
+                       : compute::cuda_native::kSglangProviderId) ||
         prepared_[2].provider().id != compute::cublas::kProviderId)
       fail("cold Provider binding");
     for (auto &slot : slots_)

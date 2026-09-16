@@ -62,7 +62,7 @@ void run_graph(compute::DataType type, std::int64_t rows, bool first_q4,
               logical.constants.size());
     EXPECT_EQ(compiled->report.step(0)->provider.id, first.provider());
     EXPECT_EQ(compiled->report.step(1)->provider.id,
-              compute::cuda_native::kProviderId);
+              compute::cuda_native::kSglangProviderId);
     EXPECT_EQ(compiled->report.step(2)->provider.id, second.provider());
     std::array inputs{Tensor(matrix(type, rows, 128), resource.ref()),
                       Tensor(matrix(type, rows, 128), resource.ref())};
@@ -159,6 +159,58 @@ TEST(CudaDefaultGraph, DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs) {
 
 TEST(CudaDefaultGraph, ExplicitCommandsUseTheSameNumericalChain) {
   run_graph(compute::DataType::kFloat16, 7, true, false, true);
+}
+
+TEST(CudaDefaultGraph, DefaultRulesCaptureSeparateAndPackedTailCapability) {
+  auto owner = graph::cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  for (const bool packed : {false, true}) {
+    SCOPED_TRACE(packed);
+    const std::int64_t hidden = packed ? 127 : 128;
+    Tensor first(
+        matrix(compute::DataType::kFloat32, 1, hidden * (packed ? 2 : 1)),
+        resource.ref());
+    Tensor second(matrix(compute::DataType::kFloat32, 1, hidden),
+                  resource.ref());
+    Tensor output(matrix(compute::DataType::kFloat32, 1, hidden),
+                  resource.ref());
+    auto builder = graph::GraphBuilder::create().value();
+    const auto input = builder.input(first.view.description()).value();
+    const auto second_input =
+        packed ? input : builder.input(second.view.description()).value();
+    const compute::GatedActivation operation{
+        .inputs = packed ? compute::GatedInputKind::kPackedHalves
+                         : compute::GatedInputKind::kSeparate};
+    const auto result =
+        packed ? builder.add(operation, input).value()
+               : builder.add(operation, input, second_input).value();
+    ASSERT_TRUE(builder.publish(result).ok());
+    auto logical = std::move(builder).finish().value();
+    auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+    ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+    ASSERT_EQ(compiled->report.step_count(), 1U);
+    EXPECT_EQ(compiled->report.step(0)->provider.id,
+              compute::cuda_native::kProviderId);
+    auto slot = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(slot.bind(input, first.view.as_const()).ok());
+    if (!packed)
+      ASSERT_TRUE(slot.bind(second_input, second.view.as_const()).ok());
+    ASSERT_TRUE(slot.bind(result, output.view).ok());
+    ASSERT_TRUE(graph::cuda::prepare_replay(slot, queue).ok());
+    EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCaptured);
+    for (const float value : {1.0F, 2.0F}) {
+      first.write(std::vector<float>(
+          static_cast<std::size_t>(hidden) * (packed ? 2 : 1), value));
+      second.write(std::vector<float>(static_cast<std::size_t>(hidden), value));
+      auto done = slot.submit(queue);
+      ASSERT_TRUE(done.has_value()) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      for (const auto actual : output.read())
+        EXPECT_NEAR(actual, value * value / (1.0 + std::exp(-value)), 0.000001);
+    }
+  }
 }
 
 TEST(CudaDefaultGraph, RejectsMissingResourcesAndUnsupportedOperations) {

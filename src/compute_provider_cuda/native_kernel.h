@@ -18,4 +18,10 @@ cudaError_t launch(const Program &program, const void *first,
                    const void *second, void *output,
                    cudaStream_t stream) noexcept;
 
+cudaError_t sglang_prepare(bool half, bool packed, unsigned elements,
+                           unsigned hidden, Program *output) noexcept;
+cudaError_t sglang_launch(const Program &program, const void *first,
+                          const void *second, void *output,
+                          cudaStream_t stream) noexcept;
+
 } // namespace hyle::compute::cuda_native::native

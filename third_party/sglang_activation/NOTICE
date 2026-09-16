@@ -1,0 +1,6 @@
+This distribution contains a narrow SGLang device-kernel fragment.
+Origin: https://github.com/sgl-project/sglang
+Revision: 06992c92ad4494fe9f9636e75be3e35040512447
+Licensed under Apache-2.0; see LICENSE. HYLE adaptations isolate the
+namespace and support macro and omit unrelated host glue. The original
+activation arithmetic and packed indexing are retained.
