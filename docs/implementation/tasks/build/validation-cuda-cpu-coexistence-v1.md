@@ -1,6 +1,6 @@
 # Selector：CPU / CUDA 联合验证配置
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## 独立工具卡
 
@@ -32,3 +32,10 @@ selector 仅执行 docs/closure/tool 三项，其余 108 项跳过，不建产�
 [修正后](../../../../evidence/correctness/validation-cuda-cpu-coexistence-v1/tool-regression-after.log)与
 [selector 结果](../../../../evidence/correctness/validation-cuda-cpu-coexistence-v1/tool-fix-validation.json)已保留。
 下一步在提交后的配置表上复核真实 broad configure，然后停止本工具卡；不追加工具机制。
+
+## CLOSED
+
+候选 `0ca1cd0da9e476be44419a50b5ddfdc34544e293` 的真实 broad configure 已通过，并完成 C5 全部 106 项 selected
+门，见 [C5 原始记录](../../../../evidence/correctness/cuda-r4-product-delivery/selected-summary.json)。
+VC1/VC2 与工具 46/46 回归成立，20 分钟实施预算内完成；没有改变 selector 算法或产品性能。
+后续 MSBuild 路径问题属于验证目录环境，按原配置短路径重试；本工具卡停止，不扩建公共工具。

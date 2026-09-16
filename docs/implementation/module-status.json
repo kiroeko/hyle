@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "container_concurrent",
@@ -353,9 +355,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "compute_ops",
@@ -386,9 +390,10 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "compute_backend_cuda",
@@ -398,9 +403,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。"
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "compute_sched",
@@ -409,15 +415,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。",
-      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md"
+      "state": "CANDIDATE",
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "summary": "R4 C5 定向交付 AUDITED：D1–D3 已固定，允许公开产品接入两个真实 CUDA route roots 与迁移真实 FFN 用户样例、三交付验证；八个旧 factor 的 C++/算法/CPU 规则不改，原候选/性能数据和例外保留。",
-      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md"
+      "state": "CANDIDATE",
+      "summary": "R4 C5 CANDIDATE：公开 CUDA roots 与真实 Direct/Graph 样例已固定；Win/WSL 三交付、隔离和 selected gates 完成，旧 CPU 算法及测量身份保持。",
+      "record": "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
+      "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e"
     },
     {
       "module": "compute_provider_cublas",

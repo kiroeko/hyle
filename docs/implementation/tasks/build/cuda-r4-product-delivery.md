@@ -1,6 +1,6 @@
 # R4 C5：普通产品与 CUDA 三交付接线
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - baseline：`d2e631b4e9eda584d94f5b9936f68e01f4a5a3c7`，工作树干净；C4 的三个真实 Provider、
   普通 factory 和 native captured FFN 已验证，公开产品 roots 尚未加入这两个路线 factor。
@@ -81,3 +81,16 @@ source、relocated static/shared 均通过真实 Direct/Graph FFN，每种消费
 中央 seam 的 broad selector 尚未完成；其配置表产生 oneDNN ON + CPU OFF 的真实冲突，交由
 [独立配置修复卡](validation-cuda-cpu-coexistence-v1.md) 定向处理。工具预算固定，不修改 selector
 算法或扩大产品 scope；上述产品交付结果保留，尚未运行的 selected gates 不写 PASS。
+
+## 不可变交付候选
+
+产品 `f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e` 已停止变化；`0ca1cd0da9e476be44419a50b5ddfdc34544e293` 只补证据和独立 selector 配置修正。
+[最终 selected 记录](../../../../evidence/correctness/cuda-r4-product-delivery/selected-summary.json)
+的 106 项全部 PASS（含按精确身份复用），skipped reasons 与原始命令/日志保留在同目录 raw zip。
+原长目录导致 MSBuild tracking file 创建失败，改用短验证目录后接续未执行项；没有重跑已通过的
+90 项 native/tool 检查。上游 /MP 叠加的问题以验证进程亲和性约束处理，后续使用 Ninja；没有 P1。
+
+本卡只签 D1–D3：真实公开三交付、隔离、依赖/许可和旧产品 P0；主卡的 host 插桩、cuBLAS OOM
+尾项及 CUDA P1 仍待完成。八个旧 owner 进入 CANDIDATE，六个 CUDA owner 继续由 R4 主卡 AUDITED。
+
+95 项完成后，将未完成交付检查迁至同提交的 Windows detached 验证副本 `C:/hvr4`，继续复用精确身份的 PASS receipts。原 Graph 启动被主动终止，不伪装为产品故障或 PASS；主工作区仍是产品真相。
