@@ -105,9 +105,10 @@ void run_shape(compute::DataType type, bool packed, std::int64_t rows,
                         static_cast<double>(to_float(value));
     }
     ASSERT_TRUE(first.storage.view().write(std::as_bytes(std::span(a))).ok());
-    if (!packed)
+    if (!packed) {
       ASSERT_TRUE(
           second.storage.view().write(std::as_bytes(std::span(b))).ok());
+    }
     auto first_done =
         lanes[0].submit(queues[0], inputs, std::array{outputs[0].view});
     auto second_done =
