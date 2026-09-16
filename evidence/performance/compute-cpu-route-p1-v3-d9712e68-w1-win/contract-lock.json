@@ -1,0 +1,631 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract",
+        "compute-route-workload-aa"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "compute_route_cpu",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/compute/cpu.h",
+      "revision": "runtime-bound",
+      "target": "hyle_compute_route_cpu"
+    },
+    "claim": "P1 engineering qualification of the ordinary CPU default entry, retaining applicable complete Native and oneDNN implementations; caller-thread serial contract, same resources and terminal completion, with a 5% practical margin.",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      },
+      {
+        "id": "placement",
+        "kind": "placement",
+        "parameters": {}
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "BUILD_SHARED_LIBS": "OFF",
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_COMPONENTS": "compute",
+            "HYLE_COMPUTE_CPU": "ON",
+            "HYLE_COMPUTE_CUDA": "OFF",
+            "HYLE_COMPUTE_ONEDNN": "ON",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF"
+          },
+          "peer_cache": {
+            "hyle-native": "HYLE_COMPUTE_NATIVE_SOURCE_DIR",
+            "onednn": "FETCHCONTENT_SOURCE_DIR_ONEDNN"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+          "HYLE_BENCH_APPLE_QOS",
+          "HYLE_PERF_APPLE_QOS",
+          "HYLE_BENCH_AA_ROUTE"
+        ],
+        "executables": [
+          {
+            "id": "compute-route-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_compute_route_bench",
+            "target": "hyle_compute_route_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_COMPUTE_ROUTE_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "decode-row-major-f32-matmul-m1-k1024-n1024",
+                "title": "compute route row-major MatMul M=1 K=1024 N=1024"
+              },
+              {
+                "id": "decode-row-major-f32-matmul-m4-k1024-n1024",
+                "title": "compute route row-major MatMul M=4 K=1024 N=1024"
+              },
+              {
+                "id": "short-prefill-row-major-f32-matmul-m32-k512-n1024",
+                "title": "compute route row-major MatMul M=32 K=512 N=1024"
+              },
+              {
+                "id": "decode-transposed-weight-f32-matmul-m1-k1024-n1024",
+                "title": "compute route transposed-weight MatMul M=1 K=1024 N=1024"
+              }
+            ]
+          },
+          {
+            "id": "compute-route-placement",
+            "measurement_batch": 1,
+            "stem": "hyle_compute_route_bench_placement",
+            "target": "hyle_compute_route_bench_placement",
+            "target_variant": "placement",
+            "telemetry_prefixes": [
+              "# HYLE_COMPUTE_ROUTE_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "decode-row-major-f32-matmul-m1-k1024-n1024",
+                "title": "compute route row-major MatMul M=1 K=1024 N=1024"
+              },
+              {
+                "id": "decode-row-major-f32-matmul-m4-k1024-n1024",
+                "title": "compute route row-major MatMul M=4 K=1024 N=1024"
+              },
+              {
+                "id": "short-prefill-row-major-f32-matmul-m32-k512-n1024",
+                "title": "compute route row-major MatMul M=32 K=512 N=1024"
+              },
+              {
+                "id": "decode-transposed-weight-f32-matmul-m1-k1024-n1024",
+                "title": "compute route transposed-weight MatMul M=1 K=1024 N=1024"
+              }
+            ]
+          }
+        ],
+        "measurement_adapter": "nanobench-paired-rows-v1",
+        "profiles": {
+          "W1-WIN": {
+            "cache": {},
+            "compiler_id": "MSVC",
+            "compiler_version_prefix": "19.50",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          },
+          {
+            "command": [
+              "{python}",
+              "scripts/validate-compute-route-p1-bench.py",
+              "--build",
+              "{build}",
+              "--caller-cpu",
+              "2"
+            ],
+            "id": "compute-route-workload-aa",
+            "kind": "command"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "windows"
+      ],
+      "certification_platforms": [
+        "windows"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WIN"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "compute-cpu-route-p1-v3",
+    "module": "compute_route_cpu",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "source",
+          "role": "Explicit Native implementation from the same immutable product/benchmark candidate; the peer checkout and the compiled Native sources have identical identities.",
+          "route": "HYLE-native SIMD/fat-kernel route selected once during prepare",
+          "semantic_delta": "No operation semantics delta; the ordinary default factory cold-binds an eligible implementation."
+        },
+        "id": "hyle-native",
+        "revision": "d9712e68d2b812449a170f474d71a347a27b0ba1"
+      },
+      {
+        "configuration": {
+          "algorithm": "experimental x64 float32 BRGEMM ukernel with caller-owned workspace and overwrite-output semantics",
+          "delivery_shape": "static library built from a clean source checkout",
+          "role": "pinned private implementation dependency of the selected M=32 route, independently qualified by compute-onednn-provider-p1-v1",
+          "version": "v3.13.2"
+        },
+        "id": "onednn",
+        "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "id": "primary-candidate-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "primary-candidate-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "id": "placement-candidate-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "placement-candidate-first-peer-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-peer-allocation-first",
+        "target_variant": "placement"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "one complete public OperationInvocation submit",
+          "one synchronous Completion wait",
+          "the selected and native routes' identical tensor, alias, context, queue and resource checks"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/decode/row-major-projection-m1",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "diagnostic",
+        "id": "decode-row-major-f32-matmul-m1-k1024-n1024",
+        "input": {
+          "distribution": "shared caller-owned immutable finite signed float32 inputs and one shared mutable output, all first-touched before timing",
+          "scale": {
+            "columns": 1024,
+            "inner": 1024,
+            "rows": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one decode row-major f32 projection",
+          "derivation": "M=1 is the stable token-decode matrix-vector shape present in all reviewed inference engines",
+          "frequency": 1,
+          "unit": "prepared-matmul",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "The ordinary CPU default Context prepares the operation once, records an honest native fallback, and repeatedly submits one exclusive invocation over caller buffers",
+          "equivalence": "Both arms use the same public TensorDesc, Buffer, Queue, PreparedOperation, OperationInvocation and Completion contract, shared immutable input tensors, one shared mutable output tensor, serial execution and native arithmetic; setup, route selection, allocation, first touch and alternating warmup are outside measurement",
+          "peer": "One explicit Native Context prepares and repeatedly submits the same HYLE-native operation over the shared immutable inputs and one shared mutable output"
+        },
+        "pair": {
+          "candidate": "HYLE selected MatMul M=1 K=1024 N=1024",
+          "peer": "HYLE native MatMul M=1 K=1024 N=1024"
+        },
+        "peer_id": "hyle-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute/consumer_shapes_v1.json",
+          "sha256": "184b0fdad6bc1f580a1edc89acdd95e2b3e566686d547a88aaeb5fa64a7bdfbf"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Overwrite C[1,1024] with row-major float32 A[1,1024] multiplied by row-major float32 B[1024,1024], returning after the synchronous Completion",
+        "setup": "Create both contexts, queues, descriptions, caller buffers, prepared artifacts and invocations, then execute and compare one warm result before eight alternating complete warm operations and nanobench paired compare",
+        "tier": "mechanism"
+      },
+      {
+        "charged_phases": [
+          "one complete public OperationInvocation submit",
+          "one synchronous Completion wait",
+          "the same fixed public validation and native arithmetic on both arms"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/decode/row-major-projection-m4",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "diagnostic",
+        "id": "decode-row-major-f32-matmul-m4-k1024-n1024",
+        "input": {
+          "distribution": "the same deterministic finite float32 family as the M=1 row",
+          "scale": {
+            "columns": 1024,
+            "inner": 1024,
+            "rows": 4
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one small-batch row-major f32 projection",
+          "derivation": "M=4 covers speculative/small-batch decode without letting a long prefill kernel hide route overhead",
+          "frequency": 1,
+          "unit": "prepared-matmul",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "The oneDNN-enabled Context records the M<16 native fallback during prepare and retains no provider work in submit",
+          "equivalence": "The ownership, storage, validation, arithmetic and completion contract is identical to the M=1 row; allocation and execution order are crossed independently",
+          "peer": "The explicit Native Context prepares the identical native route"
+        },
+        "pair": {
+          "candidate": "HYLE selected MatMul M=4 K=1024 N=1024",
+          "peer": "HYLE native MatMul M=4 K=1024 N=1024"
+        },
+        "peer_id": "hyle-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute/consumer_shapes_v1.json",
+          "sha256": "184b0fdad6bc1f580a1edc89acdd95e2b3e566686d547a88aaeb5fa64a7bdfbf"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Overwrite C[4,1024] with row-major float32 A[4,1024] multiplied by row-major float32 B[1024,1024], returning after the synchronous Completion",
+        "setup": "The same cold-path exclusion and correctness-checked warmup contract as the M=1 row",
+        "tier": "mechanism"
+      },
+      {
+        "charged_phases": [
+          "one complete public OperationInvocation submit",
+          "one synchronous Completion wait",
+          "oneDNN hardware-context set/execute/release on the selected arm",
+          "the native fat-kernel on the peer arm"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/short-prefill/row-major-projection-m32",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "short-prefill-row-major-f32-matmul-m32-k512-n1024",
+        "input": {
+          "distribution": "the same deterministic finite float32 family as the decode rows",
+          "scale": {
+            "columns": 1024,
+            "inner": 512,
+            "rows": 32
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one short-prefill row-major f32 projection",
+          "derivation": "This exact shape exposed the prior 10.4--16.1% native loss and is retained as the mechanism-sensitive route-selection row",
+          "frequency": 1,
+          "unit": "prepared-matmul",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "The oneDNN-enabled Context selects the closed oneDNN BRGEMM provider during prepare; its exclusive invocation owns caller-allocated reported workspace",
+          "equivalence": "Both arms expose and charge the complete same public Compute operation, serial execution, caller storage and completion contract; the different internal workspace is an honest algorithm requirement allocated and first-touched outside repeated submit",
+          "peer": "The explicit Native Context selects HYLE's native AVX fat-kernel during prepare and requires no workspace"
+        },
+        "pair": {
+          "candidate": "HYLE selected MatMul M=32 K=512 N=1024",
+          "peer": "HYLE native MatMul M=32 K=512 N=1024"
+        },
+        "peer_id": "hyle-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute/consumer_shapes_v1.json",
+          "sha256": "184b0fdad6bc1f580a1edc89acdd95e2b3e566686d547a88aaeb5fa64a7bdfbf"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Overwrite C[32,1024] with row-major float32 A[32,512] multiplied by row-major float32 B[512,1024], returning after the synchronous Completion",
+        "setup": "Prepare/JIT, workspace and tensor allocation, mapping, first touch, warm execution and output comparison all occur before eight alternating complete warm operations and nanobench paired compare",
+        "tier": "consumer"
+      },
+      {
+        "charged_phases": [
+          "one complete public OperationInvocation submit",
+          "one synchronous Completion wait",
+          "1024 HYLE SIMD contiguous dot calls on both arms"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-runtime/decode/transposed-weight-projection-m1",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "diagnostic",
+        "id": "decode-transposed-weight-f32-matmul-m1-k1024-n1024",
+        "input": {
+          "distribution": "the same deterministic finite float32 family as the row-major rows",
+          "scale": {
+            "columns": 1024,
+            "inner": 1024,
+            "rows": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one decode transposed-weight f32 projection",
+          "derivation": "Physical [N,K] weights with a logical [K,N] transpose are the common inference layout and orthogonalize route correctness from row-major BRGEMM",
+          "frequency": 1,
+          "unit": "prepared-matmul",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "The oneDNN-enabled Context rejects the unsupported physical [N,K] layout during prepare and records the native contiguous-dot fallback",
+          "equivalence": "Both arms use the same zero-copy logical transpose, public safety checks, HYLE SIMD dot body and synchronous Completion; no packing or hidden copy occurs",
+          "peer": "The explicit Native Context selects the same native contiguous-dot route"
+        },
+        "pair": {
+          "candidate": "HYLE selected transposed MatMul M=1 K=1024 N=1024",
+          "peer": "HYLE native transposed MatMul M=1 K=1024 N=1024"
+        },
+        "peer_id": "hyle-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute/consumer_shapes_v1.json",
+          "sha256": "184b0fdad6bc1f580a1edc89acdd95e2b3e566686d547a88aaeb5fa64a7bdfbf"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "Overwrite C[1,1024] with float32 A[1,1024] multiplied by a zero-copy logical [1024,1024] transpose over physical row-major [1024,1024] weights, returning after the synchronous Completion",
+        "setup": "The same cold-path exclusion and correctness-checked warmup contract as the row-major decode rows",
+        "tier": "mechanism"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "9ab2319d30eec1e7abd3ac816ceaa49718ee9b6fda7fb9453de592a34c8d1a17",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

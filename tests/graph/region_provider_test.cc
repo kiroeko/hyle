@@ -122,6 +122,7 @@ struct RegionProbe final {
   std::size_t reserve_completion_count = 0;
   std::size_t last_reserved_completions = 0;
   std::size_t transfer_query_count = 0;
+  mutable std::atomic<std::size_t> resource_validation_count{0};
   std::size_t copy_count = 0;
   std::size_t capture_begin_count = 0;
   std::size_t capture_end_count = 0;
@@ -1543,6 +1544,7 @@ Status validate_async_resource(const hyle::compute::Device &device,
   const auto *probe =
       hyle::compute::detail::DeviceAccess::payload<AsyncBackendPayload>(device)
           .probe;
+  probe->resource_validation_count.fetch_add(1, std::memory_order_relaxed);
   if (probe->validation_failure_resource == resource)
     return probe->validation_failure;
   if (probe->backend_only_resource.valid() &&
@@ -4085,6 +4087,83 @@ TEST(GraphRegions, UnavailableFinalOutputCopyFailsBeforeAnyArtifact) {
     EXPECT_EQ(probe.single_artifact_count, 0u);
     EXPECT_EQ(probe.destroy_prepared_count, 0u);
   }
+}
+
+TEST(GraphRegions, PreparedRegionReplayKeepsResourceValidationCold) {
+  RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+  const auto logical = make_negations(2);
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  auto invocation = compiled.executable.create_invocation().value();
+  auto input = make_tensor(row(8));
+  auto output = make_tensor(row(8));
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{hyle::graph::QueueBinding{
+      .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto cold_checks =
+      probe.resource_validation_count.load(std::memory_order_relaxed);
+  ASSERT_GT(cold_checks, 0u);
+  for (float first : {1.F, 9.F}) {
+    const std::array values{first, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+    write(input, values);
+    auto completion = invocation.submit(queue);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    EXPECT_EQ(read(output, 8),
+              std::vector<float>(values.begin(), values.end()));
+  }
+  EXPECT_EQ(probe.resource_validation_count.load(std::memory_order_relaxed),
+            cold_checks);
+  EXPECT_EQ(probe.submit_count, 2u);
+
+  HostResource other_resource;
+  auto foreign =
+      make_tensor(row(8), hyle::mem::MemoryResourceRef(other_resource));
+  EXPECT_TRUE(invocation.bind(logical.input, foreign.view).IsInvalidArgument());
+}
+
+TEST(GraphRegions, PreparedReplayChecksReplacedQueueOwnerAndClosedContext) {
+  RegionProbe probe;
+  RegionProbe other_probe;
+  const auto logical = make_negations(2);
+  auto context = make_context(probe);
+  auto other_context = make_context(other_probe);
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  auto invocation = compiled.executable.create_invocation().value();
+  auto input = make_tensor(row(8));
+  auto output = make_tensor(row(8));
+  const std::array values{1.F, -2.F, 3.F, -4.F, 5.F, -6.F, 7.F, -8.F};
+  write(input, values);
+  ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{hyle::graph::QueueBinding{
+      .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+
+  queue = other_context.create_queue().value();
+  auto rejected = invocation.submit(queue);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  EXPECT_FALSE(invocation.in_flight());
+  EXPECT_EQ(probe.submit_count + other_probe.submit_count, 0u);
+
+  queue = context.create_queue().value();
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  auto completion = invocation.submit(queue);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  EXPECT_EQ(read(output, 8), std::vector<float>(values.begin(), values.end()));
+  EXPECT_EQ(probe.submit_count, 1u);
+  ASSERT_TRUE(context.close().ok());
+  auto closed = invocation.submit(queue);
+  ASSERT_FALSE(closed);
+  EXPECT_TRUE(closed.error().IsFailedPrecondition());
+  EXPECT_EQ(probe.submit_count, 1u);
 }
 
 TEST(GraphRegions, CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps) {

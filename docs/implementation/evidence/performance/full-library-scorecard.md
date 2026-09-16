@@ -166,3 +166,16 @@ python scripts/check-docs.py
 | two-worker-native-sequence-17x129x257 | 1.268071–1.317464 | 1.242161–1.330614 | WIN | PASS |
 
 用户已要求专门审计同实现包装税；当前工程动作 INVESTIGATE，旧候选停止采样。
+
+## 2026-09-16：R3 CPU Direct 默认入口
+
+[原始工程证据](../../../../evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md)
+资格、全部 controls 与 4/4 非劣门 PASS，n=15 即停止；严格方向 1 WIN / 3 INCONCLUSIVE。
+R3 尚待 Graph，因此暂不并入上文历史 CLOSED 计数。
+
+| Workload | median ratio 范围 | 全部分层 CI 外界 | 严格方向 | 非劣门 |
+|---|---|---|---|---|
+| decode-row-major-f32-matmul-m1-k1024-n1024 | 0.996999–1.001596 | 0.970106–1.021232 | INCONCLUSIVE | PASS |
+| decode-row-major-f32-matmul-m4-k1024-n1024 | 0.997917–1.003004 | 0.993853–1.006296 | INCONCLUSIVE | PASS |
+| short-prefill-row-major-f32-matmul-m32-k512-n1024 | 1.047825–1.063461 | 1.027823–1.076037 | WIN | PASS |
+| decode-transposed-weight-f32-matmul-m1-k1024-n1024 | 0.997157–1.003399 | 0.981472–1.011034 | INCONCLUSIVE | PASS |

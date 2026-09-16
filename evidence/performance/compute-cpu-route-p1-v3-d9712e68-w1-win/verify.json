@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "9ab2319d30eec1e7abd3ac816ceaa49718ee9b6fda7fb9453de592a34c8d1a17",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "C:\\hyle-scratch\\r3-cpu-20260916\\p1-direct-engineering\\manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

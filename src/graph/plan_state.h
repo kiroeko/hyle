@@ -51,9 +51,9 @@ public:
 
   bool valid() const noexcept { return prepared_ != nullptr; }
   compute::detail::EnqueueResult
-  enqueue(compute::detail::QueueSequence &sequence,
-          std::span<const compute::ConstTensorView> inputs,
-          std::span<const compute::TensorView> outputs) noexcept;
+  enqueue_prevalidated(compute::detail::QueueSequence &sequence,
+                       std::span<const compute::ConstTensorView> inputs,
+                       std::span<const compute::TensorView> outputs) noexcept;
   compute::detail::CompletionEndpoint delegated_endpoint() const noexcept;
   bool can_import_endpoint(
       compute::detail::CompletionEndpoint source) const noexcept;
@@ -134,9 +134,10 @@ public:
   create_invocation(mem::BufferView workspace,
                     const mem::AllocatorRef &allocator) const noexcept;
   compute::detail::EnqueueResult
-  enqueue(void *invocation, compute::detail::QueueSequence &sequence,
-          std::span<const compute::ConstTensorView> inputs,
-          std::span<const compute::TensorView> outputs) const noexcept;
+  enqueue_prevalidated(
+      void *invocation, compute::detail::QueueSequence &sequence,
+      std::span<const compute::ConstTensorView> inputs,
+      std::span<const compute::TensorView> outputs) const noexcept;
   compute::detail::CompletionEndpoint
   delegated_endpoint(void *invocation) const noexcept;
   bool can_import_endpoint(
@@ -187,7 +188,7 @@ inline void RegionInvocation::reset() noexcept {
   state_ = nullptr;
 }
 
-inline compute::detail::EnqueueResult RegionInvocation::enqueue(
+inline compute::detail::EnqueueResult RegionInvocation::enqueue_prevalidated(
     compute::detail::QueueSequence &sequence,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
@@ -195,7 +196,7 @@ inline compute::detail::EnqueueResult RegionInvocation::enqueue(
     return compute::detail::EnqueueResult::rejected(
         Status::FailedPrecondition("graph region invocation is invalid"));
   }
-  return prepared_->enqueue(state_, sequence, inputs, outputs);
+  return prepared_->enqueue_prevalidated(state_, sequence, inputs, outputs);
 }
 
 inline compute::detail::CompletionEndpoint
@@ -255,27 +256,24 @@ inline Result<RegionInvocation> PreparedRegion::create_invocation(
   return RegionInvocation(this, episode.state, allocator);
 }
 
-inline compute::detail::EnqueueResult PreparedRegion::enqueue(
+inline compute::detail::EnqueueResult PreparedRegion::enqueue_prevalidated(
     void *invocation, compute::detail::QueueSequence &sequence,
     std::span<const compute::ConstTensorView> inputs,
     std::span<const compute::TensorView> outputs) const noexcept {
-  struct Episode final {
-    const PreparedRegion *region = nullptr;
-    void *invocation = nullptr;
-    std::span<const compute::ConstTensorView> inputs{};
-    std::span<const compute::TensorView> outputs{};
-  } episode{this, invocation, inputs, outputs};
-  return compute::detail::ProviderExtensionAccess::enqueue_admitted(
-      extension_, sequence, inputs, outputs,
-      +[](void *, const void *, void *opaque,
-          compute::Queue &submitted_queue) noexcept
-          -> compute::detail::EnqueueResult {
-        auto &call = *static_cast<Episode *>(opaque);
-        return call.region->prepared_.vtable->shared_submit(
-            call.region->prepared_.state, call.invocation, submitted_queue,
-            call.inputs, call.outputs);
-      },
-      &episode);
+  if (!valid() || !sequence.valid() ||
+      prepared_.properties.runtime.mode !=
+          compute::ProviderRuntimeMode::kSharedQueue ||
+      prepared_.vtable->shared_submit == nullptr) {
+    return compute::detail::EnqueueResult::rejected(
+        Status::Internal("prevalidated graph region route is invalid"));
+  }
+  // Compile/bind established the exact port resources and prepare_replay()
+  // cached these views. Both replay preparation and submit check the lane's
+  // current Queue owner; the sequence retains Context/Queue admission. The
+  // extension still owns the provider lifetime, so replay needs only the
+  // already-bound region call, not another per-port resource validation.
+  return prepared_.vtable->shared_submit(prepared_.state, invocation,
+                                        sequence.queue(), inputs, outputs);
 }
 
 inline compute::detail::CompletionEndpoint

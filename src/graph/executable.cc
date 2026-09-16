@@ -1278,7 +1278,7 @@ enqueue_segment_steps(detail::InvocationState &invocation,
         all_outputs.subspan(step.output_begin, step.output_count);
     compute::detail::EnqueueResult enqueued;
     if (step.kind == detail::PlanStepKind::kRegion) {
-      enqueued = invocation.invocations[step_index].region.enqueue(
+      enqueued = invocation.invocations[step_index].region.enqueue_prevalidated(
           sequence, step_inputs, step_outputs);
     } else if (step.kind == detail::PlanStepKind::kOperation) {
       enqueued =
@@ -7566,6 +7566,13 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
         state_->queues[lane] != binding.queue) {
       return std::unexpected(Status::InvalidArgument(
           "graph submit queues differ from prepared replay queues"));
+    }
+    // The Queue object can keep its address while move-assignment replaces
+    // its Context. Prepared region calls rely on this current-owner check.
+    const ExecutionTargetId target = plan.lanes[lane].target;
+    if (!plan.targets[target.ordinal()].context.owns(*binding.queue)) {
+      return std::unexpected(Status::InvalidArgument(
+          "graph submit queue belongs to a different compute context"));
     }
     state_->queue_seen[lane] = 1;
   }

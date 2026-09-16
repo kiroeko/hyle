@@ -86,3 +86,19 @@ identity，完整继承 v2 的 12 workload、资源/affinity/idle、A/A 门、�
 七问：第三方锁/许可证和数学实现不变；正常反复提交与普通多算子是既有真实消费；不重开底层；
 成本来自源码中已证明的重复验证；无 FFI/公开 API 变化；三交付相同实现；普通用户调用不变。
 有限 FIX 至此冻结。原产品性能门仍未通过，AUDITED 仅表示允许上述定向实现。
+
+## 实现与首轮正确性
+
+RC1 已在两个 Graph 私有文件落地：region 改用显式命名的 enqueue_prevalidated；每 lane 在提交前
+检查当前 Queue 的 Context，原始 Queue/Context admission、Completion、coherence 与数学调用未改。
+RC2 新增两个回归检查：异步 region 在变化输入下重放不再调用 backend resource validator，错误资源
+仍在 bind 被拒绝；相同 Queue 对象换成不同 Context 后在接纳前拒绝，恢复合法 Queue 后可再次执行，
+Context close 后仍拒绝。没有 Compute、Provider 数学实现或 Sched 产品改动。
+
+Windows / MSVC / HYLE_WERROR=ON 的七项 source 检查已通过，包含完整 Graph/Executable、真实
+oneDNN region、默认 CPU Graph、public Sched consumer 与两个普通 source 消费者。实际 DLL 均先
+放到 exe 同目录，加载预检后运行。selector 只选择 Graph 三个相关 factor、configure/docs/closure，
+其余 94 项 skipped；未因这次内部修正重复 Direct P1。
+
+后续 Graph 平台/交付/sanitizer 与新候选 P1 尚待执行；当前不得 CLOSED。已完成的独立 Direct
+工程 P1 4/4 PASS，原始包另行保留。这里的测试计数不是性能方向或整个 R3 的完成证明。

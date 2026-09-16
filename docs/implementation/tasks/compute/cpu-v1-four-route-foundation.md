@@ -247,3 +247,12 @@ Graph 资格及全部 controls PASS，12 项中 11 项非劣门 PASS；双 worke
 在 n=31 仍有两个 CI 跨 5% 边界，聚合 INCONCLUSIVE。三个 Graph owner 进入其当前
 [停止记录](cpu-graph-external-caller-qualification.md)。用户随后明确要求专门调研此成本阻塞；
 另立有限源码审计，不重复原样采样。Direct 正确工程模式正在独立完成，R3 尚未关闭。
+
+## Direct 工程 P1 已通过
+
+候选 d9712e68 / compute-cpu-route-p1-v3 的 engineering qualify-platform 已实际完成：
+qualification、所有 controls、4/4 非劣门与 deep verify 全部 PASS，n=15 即停止。严格方向为
+M=32 1.047825–1.063461 WIN，其余三个 Native 域 INCONCLUSIVE；不把它们标作 parity。
+[完整证据](../../../../evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md)
+已保留。旧误用 Formal 的 DIAGNOSTIC 不改写；本轮不再测 Direct。Graph 按用户要求进入
+[定向成本修正](cpu-graph-replay-cost-audit.md)，其产品/普通验证与 P1 尚未完成，R3 仍未 CLOSED。
