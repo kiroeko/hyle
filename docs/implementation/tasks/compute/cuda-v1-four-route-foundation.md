@@ -339,3 +339,5 @@ memcheck 对 Direct/Graph 完整链路均为 0 errors / 0 bytes leaked。新 cuB
   没有新事实不重启同一 P1，不增加样本、偷偷换 affinity 或自动给予性能例外。
 - 本次停止不改变完整 goal；尚未完成 R4，更未完成四路线。统一 LOC 在 `7b3279c8` 为
   **32,665 行 / 107 实现文件**，排除测试和第三方，self-check PASS。
+
+[有界进度诊断](cuda-r4-progress-diagnosis.md) 单独限定现场捕获与源码归因，不解除上述 BLOCKED。
