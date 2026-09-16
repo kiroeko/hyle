@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：AUDITED；owner 为 `compute` 与 `graph`。`8f3cffdc` 完成合法 CLOSED → SCOPED。
+- 状态：CANDIDATE；owner 为 `compute` 与 `graph`。`8f3cffdc` 完成合法 CLOSED → SCOPED。
 - baseline：`ab6d87b349345342258b5b3090953119c06167a0`。
 - trigger：R4 Marlin 的 per-invocation workspace 含 native locks；成功完成会复位，失败完成不能
   保证复位。`src/compute/operation.cc::mark_operation_terminal` 忽略 terminal Status，Graph 的
@@ -83,13 +83,13 @@ F1–F3 已固定。源码定位还覆盖 terminal attachment 失败分支：只
 
 | Gate | 当前裁决 |
 |---|---|
-| scope | AUDITED，F1–F3 固定 |
-| architecture | AUDITED；复用现有状态字节与 Completion 协议 |
-| correctness | UNPROVEN |
-| delivery | UNPROVEN |
-| usability_docs | UNPROVEN |
-| red_team | UNPROVEN |
-| engineering_performance | UNPROVEN；仅 P0，禁止本卡启动 CPU 追加 P1 |
+| scope | PASS；F1–F3 固定且完成 |
+| architecture | PASS；复用现有状态字节与 Completion 协议 |
+| correctness | PASS；四环境普通回归、真实 CUDA consumers、WSL 三种 sanitizer |
+| delivery | PASS；四环境 source/static/shared 公开执行槽旅程 |
+| usability_docs | PASS；Direct/delegated/Graph 注释及普通指南说明退役与重建 |
+| red_team | PASS；失败后入口封闭、拒绝回滚、真实终态保活和独立槽复核 |
+| engineering_performance | PASS；P0 源码与生成代码；未追加 CPU P1 |
 
 ### 实现检查点
 
@@ -119,3 +119,25 @@ Windows harness 两个问题已定向处理：tests/install 分开配置；同 e
 保留失败日志，不修改产品/公共治理。CUDA Provider 本身仍由 R4 各自的 card 范围继续验收。
 剩余适用项仅 WSL ASan/UBSan/TSan，正在按原声明串行执行；聚合 correctness 尚未最终裁决，
 不重跑已通过的普通门、不追加 CPU P1。当前全实现 LOC 随 C3 为 **32,562 行**，不含测试/第三方。
+
+### CANDIDATE 冻结与最终验证
+
+产品 candidate：`a116280bd73678db2790de6ea1d2758ea34b1bf0`。没有在跨平台验证期间改变本卡
+产品/测试；C3/C4 的独立 CUDA 工作不属于该 candidate。WSL ASan、UBSan、TSan 各 **12/12**
+受影响 runtime CTest 通过；TSan 按环境合同使用 `setarch -R`。原始 configure/build/test/LastTest/
+CMakeCache 与完整 archive 身份保存在 `wsl-sanitizers.tar.gz`。外部 oneDNN/JIT 没有随 HYLE
+插桩，不据此声称其内部已 sanitizer 验证。W1 CUDA backend 的三个回归单独归档。
+
+独立于实现的一遍红队确认：所有 shared/internal delegated/public delegated 与 Graph 终态都
+发布 idle/failed；未受理错误由原 rollback 恢复 idle，受理后的 assembly/attachment 错误先等待
+已有前缀，不在返回时提前释放 native scratch。失败槽的 submit/bind/reset/prepare_replay 无绕过，
+Provider 自有 completion owner 未被覆盖，独立槽与重建槽通过真实 consumer 验证。测试 fixture
+只证明受控协议；不声称修复 device loss 或失败 native runtime。
+
+性能裁决限定 P0：一字节状态的大小/对齐与成功原子次数保持，增加必要终态 Status 解码，没有新增
+热分配、搜索、memset、Provider callback 或正常路径等待。旧 CPU P1 仍绑定原 candidate，用户
+批准的唯一验收例外不变。七门均 PASS，进入 CANDIDATE；下一状态转换仅记录终审，不重建或重跑 P1。
+
+重开条件：可复现的失败槽重入、过早释放、终态/取消竞争、拒绝后无法重试或与真实 Provider 的
+恢复合同冲突。新算法、其它路线的性能或无具体缺陷的再审均不属于本卡。candidate 全实现 LOC
+**32,252 行**，当前已提交 HEAD 为 **32,562 行**，不含测试/第三方；不是新架构完成百分比。

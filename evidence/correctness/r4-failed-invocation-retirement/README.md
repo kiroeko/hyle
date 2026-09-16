@@ -1,7 +1,7 @@
-# R4 失败执行槽退役：初始产品验证
+# R4 失败执行槽退役：产品验证
 
 Owner `compute` / `graph` 的[当前施工卡](../../../docs/implementation/tasks/compute/r4-failed-invocation-retirement.md)
-仍为 AUDITED。本目录保存本次实际产品改动的初始 W1 验证，不签完整 CUDA 路线或跨平台交付。
+现为 CANDIDATE，产品冻结于 `a116280b`。本目录覆盖该有限修复的跨平台验证，不签完整 CUDA 路线。
 
 ## 已运行
 
@@ -43,3 +43,11 @@ Windows source 配置首次同时指定 tests/install，构建合同正确拒绝
 C3 加入本卡的完成证明。适用 WSL ASan/UBSan/TSan 正在串行运行，尚未记 PASS；本卡未结案。
 C7 候选 Compute + Graph 全实现 **32,252 行**；C3 检查点后的当前全实现 **32,562 行**，均不含
 测试/第三方，统一脚本 self-check PASS；代码规模包含既有资产。
+
+## 最终 sanitizer / 红队
+
+WSL ASan、UBSan、TSan 各 12/12 runtime CTest 通过，使用同一个不可变完整源 archive；重型串行、
+Ninja 并行度 2。TSan 依既有环境设置 `setarch -R`；外部 oneDNN/JIT 未插桩范围如实保留。
+`wsl-sanitizers.tar.gz` 包含三套完整日志及候选/配置身份，`windows-cuda-backend.zip` 保存三个
+CUDA backend 回归。全部预声明门已完成，红队/P0 限制和精确命令由当前施工卡与本目录日志记录。
+本次状态记录不重建，不启动 CPU P1；R4 普通入口/完整 FFN/交付/性能仍由其独立 owner 完成。

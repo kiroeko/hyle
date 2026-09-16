@@ -3,9 +3,11 @@
   "mini-ordinary.tar.gz": "68d4b2abfdb8d58beffd528a86d7c6ce5ab3badef55b7e2da655f5f39668d75f",
   "ordinary-projection.json": "b927ffb4734d3603c0914fe0cb6f3fff3f7f7b0d041db2d89a759331f44160cb",
   "p0-codegen.json": "8ff9429788e41646c36a72372cbcaded0fe0d4555be4d0fe031a55d2978a9934",
-  "README.md": "98fc8c14e330bc49a54ba427f407d962783b251ee1bf52d93505739e8e234c6b",
+  "README.md": "6ac2e7eaee9276e57c23bb92907be885b54764dd43efdac677fde677fb4cb86b",
   "source-hashes.json": "007b2dbbb60bb8c2e54b65b772298c03212bde27d76d0c4cd01bd229de565b47",
+  "windows-cuda-backend.zip": "a49fb72b5dc5ded7a17fd1f5e89cb5841ddebeb7dc2b3751409196bede70e939",
   "windows-delivery.zip": "bda627ea688f71053ec875fc8d6cc309bf66e4fb886e4f4bd034c69edc813af8",
   "windows-initial.zip": "cd5315166f631e2b11ad42525366dfb2c5b7143067812cd0547d1e8791c84ee3",
-  "wsl-ordinary.tar.gz": "f7be7d1ae992239742b198c8cc85fd2fd331c7a4cd6a469dcbaae68f5a1f8898"
+  "wsl-ordinary.tar.gz": "f7be7d1ae992239742b198c8cc85fd2fd331c7a4cd6a469dcbaae68f5a1f8898",
+  "wsl-sanitizers.tar.gz": "cf6b8f9201d78fcaca726ba82c9c05245162ace15d22533905e212054c5596c6"
 }
