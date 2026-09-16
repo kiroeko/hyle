@@ -372,9 +372,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md",
-      "summary": "R3 Graph 验收环境纠正 SCOPED：基于共核诊断与用户性能模式要求，冻结外部 caller + 两 worker 三个 P 核的新合同；产品保持 d9712e68，旧 A/A 失败保留，新门尚未通过。"
+      "summary": "R3 Graph 验收环境纠正 AUDITED：固定 E1–E3，仅 benchmark 低延迟、独立 caller 拓扑与 v2 合同；产品 d9712e68 不变，原统计停止线不变。"
     },
     {
       "module": "compute_ops",
@@ -422,8 +422,8 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "summary": "R3 Graph 验收环境纠正 SCOPED：基于共核诊断与用户性能模式要求，冻结外部 caller + 两 worker 三个 P 核的新合同；产品保持 d9712e68，旧 A/A 失败保留，新门尚未通过。",
+      "state": "AUDITED",
+      "summary": "R3 Graph 验收环境纠正 AUDITED：固定 E1–E3，仅 benchmark 低延迟、独立 caller 拓扑与 v2 合同；产品 d9712e68 不变，原统计停止线不变。",
       "record": "docs/implementation/tasks/compute/cpu-graph-external-caller-qualification.md"
     }
   ]

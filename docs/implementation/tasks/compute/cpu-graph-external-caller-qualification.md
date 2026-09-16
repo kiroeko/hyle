@@ -1,6 +1,6 @@
 # R3 Graph：独立 caller 的验收环境纠正
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -29,7 +29,7 @@
 - 适用验证：selector、合同 validate、validator 的 cold policy/telemetry 检查、两个 benchmark
   target 构建、上述一次 A/A/P1、docs/closure/diff；产品文件未变，复用现有正确性、交付与 sanitizer。
 
-## 待审计的有限接线
+## AUDITED：固定 E1～E3
 
 | ID | 缺口 | 允许纠正 | 验收 |
 |---|---|---|---|
@@ -39,3 +39,10 @@
 
 七问的产品答案继续沿父 R3 卡；本轮无第三方升级、API、布局、分配或新依赖。Sched 完成通知
 末尾忙等仍只是具体嫌疑，尚无可复现的独立因果证明；不将配置纠正包装为 Sched 缺陷修复。
+
+源码审计：`region_p1_bench.cc` 的 main 在启动 executor 前已经 pin caller；executor worker hook
+逐线程验证 SetThreadAffinityMask 与当前 CPU。`ParallelExecutorRef` 的 admission/同步完成不变；
+修改只在 setup。模块 validator 可直接复用 `probe_machine`、`expected_child_policy` 和 runner
+的 `_child_environment` / `_apply_sampling_policy`，无需手写另一套 mask 或线程环境。v2 只复制
+v1 并更新实验 ID、资源/模式说明、topology 及 validator argv，不改十二项数值/计费合同。
+有限 FIX 到此冻结；没有发现允许产品算法或 Sched 改动的新事实。
