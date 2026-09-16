@@ -79,3 +79,7 @@ fixture 通过 MSVC /W4 /WX 语法检查；validator 通过 Python 语法检查�
 
 证据 `graph-correction-aa-stop.zip` 保留全部 16 次 A/A 原始输出、失败诊断、拒绝计时日志、
 固定合同/命令和构建 cache。普通交付与 sanitizer 尚按父卡完成；它们不能代替性能资格。
+
+WSL 后续实际启用 HYLE_WERROR 时，GCC 14.2 指出已有 region 测试的六处 GoogleTest 宏
+位于无花括号的 if 中（dangling-else）。只给这六个测试分支加花括号；产品/benchmark 候选
+仍为 d9712e68，Graph 性能 BLOCKED 不解除，不因此重跑 P1。首次构建失败日志保留。

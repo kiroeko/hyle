@@ -133,8 +133,9 @@ GatedMlp make_gated_mlp(std::size_t rows, std::size_t inner, std::size_t hidden,
                     .add_node(hyle::compute::Operation(RmsNorm{}),
                               std::array{projected_input})
                     .value();
-    if (order == MlpOrder::kControlReentry)
+    if (order == MlpOrder::kControlReentry) {
       EXPECT_TRUE(builder.depends_on(side_node, gate_node).ok());
+    }
   }
   if (order != MlpOrder::kUpFirst)
     up = builder.add(MatMul{}, projected_input, result.up_weight).value();
@@ -145,16 +146,18 @@ GatedMlp make_gated_mlp(std::size_t rows, std::size_t inner, std::size_t hidden,
                         .inputs = GatedInputKind::kSeparate}),
                     std::array{result.gate, up})
           .value();
-  if (order == MlpOrder::kControlReentry)
+  if (order == MlpOrder::kControlReentry) {
     EXPECT_TRUE(builder.depends_on(gated_node, side_node).ok());
+  }
   const ValueId gated = builder.result(gated_node).value();
   result.output = builder.add(MatMul{}, gated, result.down_weight).value();
   if (consume_gate) {
     const ValueId diagnostic = builder.add(RmsNorm{}, result.gate).value();
     EXPECT_TRUE(builder.publish(diagnostic).ok());
   }
-  if (publish_gate)
+  if (publish_gate) {
     EXPECT_TRUE(builder.publish(result.gate).ok());
+  }
   for (std::size_t index = 0; index < unrelated_nodes; ++index)
     EXPECT_TRUE(builder.add(RmsNorm{}, result.activation).has_value());
   EXPECT_TRUE(builder.publish(result.output).ok());
@@ -350,8 +353,9 @@ void run_gated_mlp_shape(std::size_t rows, std::size_t inner,
     ASSERT_EQ(compiled.report.fallback_operation_count(), 1u);
     for (std::size_t index = 0; index < compiled.report.step_count(); ++index) {
       const auto step = compiled.report.step(index).value();
-      if (step.kind == CompileStepKind::kProviderRegion)
+      if (step.kind == CompileStepKind::kProviderRegion) {
         EXPECT_FALSE(step.nodes_contiguous);
+      }
     }
   }
   auto invocation = compiled.executable.create_invocation().value();
@@ -733,8 +737,9 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
     auto limited = std::move(*limited_result);
     EXPECT_EQ(limited.report.region_count(), expected_regions);
     EXPECT_EQ(limited.report.workspace_bytes(), workspace_limit);
-    if (use_leaf)
+    if (use_leaf) {
       EXPECT_GT(limited.report.search().route_plan_rejections, 0U);
+    }
     EXPECT_FALSE(limited.report.search().optimization_limited());
     if (use_leaf) {
       for (std::size_t index = 0; index < limited.report.step_count(); ++index)
@@ -1068,8 +1073,9 @@ TEST(OneDnnRegionProvider,
       EXPECT_TRUE(result.IsResourceExhausted()) << result.message();
       EXPECT_EQ(bounded_writer.size(), 0U);
     }
-    if (limit == 0)
+    if (limit == 0) {
       EXPECT_EQ(scratch_probe.attempts.load(), 0U);
+    }
     EXPECT_EQ(bounded.used(), 0U);
     EXPECT_EQ(stats.snapshot().live_bytes, 0U);
     EXPECT_EQ(context_probe.attempts.load(), context_allocations);
