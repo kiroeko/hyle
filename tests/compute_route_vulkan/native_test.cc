@@ -269,7 +269,9 @@ TEST(VulkanTyped, InvalidDomainsAndForeignDeviceAreRejected) {
   ASSERT_TRUE(slot);
   EXPECT_FALSE(slot->submit());
   EXPECT_FALSE(slot->bind(*foreign, *foreign).ok());
-  EXPECT_FALSE(v::prepare(*context, c::Unary{c::UnaryKind::kNeg}, description));
+  const auto integers =
+      c::TensorDesc::dense(c::DataType::kInt32, description.dimensions()).value();
+  EXPECT_FALSE(v::prepare(*context, c::Unary{c::UnaryKind::kNeg}, integers));
   EXPECT_FALSE(
       v::prepare(*context, c::MatMul{}, description, t::dense({3, 2})));
   EXPECT_FALSE(
