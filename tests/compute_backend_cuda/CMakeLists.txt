@@ -1,7 +1,6 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  # Product code is pure C++ and only discovers the machine CUDA SDK. This
-  # consumer probe deliberately enables nvcc in its own scope to prove that a
-  # normal .cu kernel can be submitted through the typed HYLE stream seam.
+  # This consumer also compiles ordinary .cu kernels through the typed HYLE
+  # stream seam; the backend's own CUDA TU only merges device status words.
   enable_language(CUDA)
   hyle_add_header_self_contained_test(compute_backend_cuda
     HEADER_DIR compute
@@ -9,6 +8,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     EXTRA_INCLUDE_DIRS ${HYLE_CUDA_PUBLIC_INCLUDE_DIRS})
   hyle_add_test(compute_backend_cuda SOURCES
     cuda_backend_test.cc
+    device_status_test.cc
     cuda_test_kernel.cu)
   hyle_add_test(compute_backend_cuda NAME late_failure SOURCES
     cuda_failure_test.cc

@@ -152,6 +152,10 @@ Status destroy_event_block(EventBlock *block, ContextState *context) noexcept {
       block->slots[index].event = nullptr;
     }
   }
+  if (block->device_status != nullptr)
+    result.Update(runtime_status(cudaFree(block->device_status)));
+  if (block->host_status != nullptr)
+    result.Update(runtime_status(cudaFreeHost(block->host_status)));
   const mem::AllocatorRef allocator = context->allocator;
   block->~EventBlock();
   allocator.deallocate(block, sizeof(EventBlock), alignof(EventBlock));
@@ -190,6 +194,8 @@ void QueueState::destroy() noexcept {
     if (abandoned != nullptr)
       runtime_status(cudaGraphDestroy(abandoned)).IgnoreError();
   }
+  if (capture_device_status != nullptr)
+    runtime_status(cudaFree(capture_device_status)).IgnoreError();
   if (stream != nullptr && ownership != StreamOwnership::kBorrowed)
     runtime_status(cudaStreamDestroy(stream)).IgnoreError();
 
@@ -224,6 +230,18 @@ Status QueueState::reserve(std::size_t minimum) noexcept {
       allocator.deallocate(block, sizeof(EventBlock), alignof(EventBlock));
       return scope.status();
     }
+    Status status_storage = runtime_status(
+        cudaMalloc(reinterpret_cast<void **>(&block->device_status),
+                   kEventSlotsPerBlock * sizeof(unsigned)));
+    if (status_storage.ok()) {
+      status_storage = runtime_status(cudaHostAlloc(
+          reinterpret_cast<void **>(&block->host_status),
+          kEventSlotsPerBlock * sizeof(unsigned), cudaHostAllocDefault));
+    }
+    if (!status_storage.ok()) {
+      destroy_event_block(block, context).IgnoreError();
+      return status_storage;
+    }
     for (; block->initialized < kEventSlotsPerBlock; ++block->initialized) {
       cudaEvent_t event = nullptr;
       const Status event_status = runtime_status(
@@ -235,6 +253,9 @@ Status QueueState::reserve(std::size_t minimum) noexcept {
       EventSlot &slot = block->slots[block->initialized];
       slot.owner = this;
       slot.event = event;
+      slot.device_status = block->device_status + block->initialized;
+      slot.host_status = block->host_status + block->initialized;
+      *slot.host_status = 0;
     }
 
     {
@@ -244,6 +265,10 @@ Status QueueState::reserve(std::size_t minimum) noexcept {
       for (EventSlot &slot : block->slots) {
         slot.next = free_slots;
         free_slots = &slot;
+      }
+      for (auto &reference : block->status_references) {
+        reference.next = free_status_references;
+        free_status_references = &reference;
       }
       capacity += kEventSlotsPerBlock;
     }
@@ -261,6 +286,11 @@ Result<EventSlot *> QueueState::acquire() noexcept {
         slot->fence = FenceKind::kReserved;
         slot->lifetime = {};
         slot->terminal_hint = Status::Ok();
+        slot->references.store(1, std::memory_order_relaxed);
+        slot->status_used = false;
+        slot->status_copied = false;
+        slot->report_device_status = false;
+        *slot->host_status = 0;
         incref();
         return slot;
       }
@@ -278,6 +308,9 @@ Result<EventSlot *> QueueState::acquire() noexcept {
 
 void QueueState::release(EventSlot *slot) noexcept {
   HYLE_FATAL_ASSERT(slot != nullptr && slot->owner == this);
+  if (slot->references.fetch_sub(1, std::memory_order_acq_rel) != 1)
+    return;
+  HYLE_FATAL_ASSERT(slot->status_references == nullptr);
   slot->fence = FenceKind::kReserved;
   slot->lifetime = {};
   slot->terminal_hint = Status::Ok();
@@ -325,21 +358,32 @@ Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
     return std::unexpected(
         Status::Internal("CUDA completion was not recorded"));
 
-  if (result == cudaSuccess)
+  if (result == cudaSuccess) {
+    settle_status_references(slot);
+    auto status = completed_device_status(slot);
+    if (!status.ok())
+      return std::unexpected(std::move(status));
     return CompletionPoll::kComplete;
+  }
   if (result == cudaErrorNotReady)
     return CompletionPoll::kPending;
+  settle_status_references(slot);
   return std::unexpected(runtime_status(result));
 }
 
 Status wait_slot(EventSlot *slot) noexcept {
   if (slot == nullptr || slot->owner == nullptr)
     return Status::Internal("CUDA completion slot is invalid");
+  cudaError_t result = cudaSuccess;
   if (slot->fence == FenceKind::kEvent)
-    return runtime_status(cudaEventSynchronize(slot->event));
-  if (slot->fence == FenceKind::kStreamFallback)
-    return runtime_status(cudaStreamSynchronize(slot->owner->stream));
-  return Status::Internal("CUDA completion was not recorded");
+    result = cudaEventSynchronize(slot->event);
+  else if (slot->fence == FenceKind::kStreamFallback)
+    result = cudaStreamSynchronize(slot->owner->stream);
+  else
+    return Status::Internal("CUDA completion was not recorded");
+  settle_status_references(slot);
+  return result == cudaSuccess ? completed_device_status(slot)
+                               : runtime_status(result);
 }
 
 void finish_abandoned(EventSlot *slot, Status observed) noexcept {
@@ -624,14 +668,44 @@ Status create_context_impl(const Device &value, mem::AllocatorRef allocator,
     return result.WithContext("starting CUDA completion reaper");
   }
 
+  // Resolve lazy CUDA code loading before any admitted sequence can wait on
+  // another stream. A first-use module load there could synchronize that
+  // context and deadlock behind work whose producer is still on the host.
+  const void *merge_kernel = cuda::detail::device_status_merge_kernel();
+  {
+    cuda::detail::ScopedPrimaryContext scope(primary);
+    if (!scope)
+      result = scope.status();
+    else {
+      cudaFuncAttributes attributes{};
+      const auto loaded = cudaFuncGetAttributes(&attributes, merge_kernel);
+      if (loaded == cudaErrorNoKernelImageForDevice ||
+          loaded == cudaErrorInvalidDeviceFunction) {
+        // Preserve preexisting pure-backend uses on a GPU outside this build's
+        // kernel architectures. Only the new checked-status bridge declines.
+        merge_kernel = nullptr;
+        const auto last = cudaGetLastError();
+        if (last != cudaSuccess && last != loaded)
+          result = status(last);
+      } else
+        result = status(loaded);
+    }
+  }
+  if (!result.ok()) {
+    (void)cuDevicePrimaryCtxRelease(driver_device);
+    return result.WithContext("preparing CUDA device-status code");
+  }
+
   void *storage = allocator.allocate(sizeof(cuda::detail::ContextState),
                                      alignof(cuda::detail::ContextState));
   if (storage == nullptr) {
     (void)cuDevicePrimaryCtxRelease(driver_device);
     return Status::ResourceExhausted("CUDA context-state allocation failed");
   }
-  *output = ::new (storage) cuda::detail::ContextState(
+  auto *created = ::new (storage) cuda::detail::ContextState(
       value, payload.ordinal, execution, primary, allocator);
+  created->status_merge_kernel = merge_kernel;
+  *output = created;
   return Status::Ok();
 }
 
@@ -723,10 +797,14 @@ Status begin_sequence_impl(void *queue, void **sequence) noexcept {
   if (sequence == nullptr)
     return Status::InvalidArgument("CUDA sequence output is null");
   *sequence = nullptr;
-  auto slot = static_cast<cuda::detail::QueueState *>(queue)->acquire();
+  auto *selected = static_cast<cuda::detail::QueueState *>(queue);
+  if (selected->active_sequence != nullptr)
+    return Status::FailedPrecondition("CUDA sequence is already active");
+  auto slot = selected->acquire();
   if (!slot)
     return std::move(slot).error();
   *sequence = *slot;
+  selected->active_sequence = *slot;
   return Status::Ok();
 }
 
@@ -738,13 +816,26 @@ Completion finish_sequence_impl(void *queue, void *sequence, bool accepted,
     return Completion::completed(
         Status::Internal("CUDA sequence slot does not belong to queue"));
   }
+  queue_state->active_sequence = nullptr;
   if (!accepted) {
+    cuda::detail::settle_status_references(slot);
     queue_state->release(slot);
     return Completion::completed(std::move(terminal));
   }
 
+  if (slot->status_used) {
+    const auto copied = cudaMemcpyAsync(
+        slot->host_status, slot->device_status, sizeof(unsigned),
+        cudaMemcpyDeviceToHost, queue_state->stream);
+    slot->status_copied = copied == cudaSuccess;
+    terminal.Update(status(copied));
+  }
+
   const cudaError_t recorded =
       cudaEventRecord(slot->event, queue_state->stream);
+  // A software diagnostic must not replace an already-observed enqueue/copy/
+  // event error. Asynchronous CUDA runtime failures still take precedence.
+  slot->report_device_status = terminal.ok() && recorded == cudaSuccess;
   slot->fence = recorded == cudaSuccess
                     ? cuda::detail::FenceKind::kEvent
                     : cuda::detail::FenceKind::kStreamFallback;
@@ -836,6 +927,41 @@ wait_completion_impl(void *queue,
     return compute::detail::EnqueueResult::rejected(Status::Unimplemented(
         "CUDA completion is not an event from the same context"));
   }
+  if (source->status_used) {
+    // Graph imports live prefix dependencies when submitting its segment,
+    // outside recording. Capturing a mutable external Completion address
+    // would falsely bind that one run as every future replay's dependency.
+    if (destination->capture_owned)
+      return compute::detail::EnqueueResult::rejected(
+          Status::Unimplemented("CUDA checked dependencies must be imported "
+                                "outside capture recording"));
+    if (destination->active_sequence == nullptr)
+      return compute::detail::EnqueueResult::rejected(Status::Internal(
+          "CUDA status dependency requires an admitted sequence"));
+    cuda::detail::ScopedPrimaryContext scope(destination->context->primary);
+    if (!scope)
+      return compute::detail::EnqueueResult::rejected(scope.status());
+    auto retained = destination->acquire_status_reference();
+    if (!retained)
+      return compute::detail::EnqueueResult::rejected(
+          std::move(retained).error());
+    source->references.fetch_add(1, std::memory_order_relaxed);
+    (*retained)->source = source;
+    (*retained)->next = destination->active_sequence->status_references;
+    destination->active_sequence->status_references = *retained;
+    unsigned *word = nullptr;
+    auto initialized = cuda::detail::acquire_device_status(destination, &word);
+    if (!initialized.status.ok())
+      return initialized;
+    const auto waited =
+        cudaStreamWaitEvent(destination->stream, source->event, 0);
+    if (waited != cudaSuccess)
+      return compute::detail::EnqueueResult::accepted_command(status(waited));
+    return compute::detail::EnqueueResult::accepted_command(
+        status(cuda::detail::merge_device_status(
+            destination->context->status_merge_kernel, source->device_status,
+            word, destination->stream)));
+  }
   const cudaError_t result =
       cudaStreamWaitEvent(destination->stream, source->event, 0);
   return compute::detail::EnqueueResult::accepted_command(status(result));
@@ -874,11 +1000,7 @@ inline constexpr BackendExtensionId kCudaExtensionId{0x48594c4500000001ULL,
 struct CudaExtensionV1 final {};
 const CudaExtensionV1 kCudaExtension{};
 
-struct CapturedCommandsState final {
-  cuda::detail::ContextState *context = nullptr;
-  cudaGraphExec_t executable = nullptr;
-  mem::AllocatorRef allocator{};
-};
+using cuda::detail::CapturedCommandsState;
 
 Status begin_capture(void *backend_context, void *backend_queue) noexcept {
   auto *context = static_cast<cuda::detail::ContextState *>(backend_context);
@@ -887,10 +1009,21 @@ Status begin_capture(void *backend_context, void *backend_queue) noexcept {
     return Status::InvalidArgument("CUDA capture queue is invalid");
   if (queue->capture_owned)
     return Status::FailedPrecondition("CUDA queue capture is already active");
+  cuda::detail::ScopedPrimaryContext scope(context->primary);
+  if (!scope)
+    return scope.status();
+  unsigned *device_status = nullptr;
+  HYLE_RETURN_IF_ERROR(status(
+      cudaMalloc(reinterpret_cast<void **>(&device_status), sizeof(unsigned))));
   const Status begun = status(
       cudaStreamBeginCapture(queue->stream, cudaStreamCaptureModeThreadLocal));
-  if (begun.ok())
+  if (begun.ok()) {
     queue->capture_owned = true;
+    queue->capture_device_status = device_status;
+    queue->capture_status_used = false;
+  } else {
+    status(cudaFree(device_status)).IgnoreError();
+  }
   return begun;
 }
 
@@ -909,6 +1042,14 @@ Status end_capture(void *backend_context, void *backend_queue,
   cudaGraph_t graph = nullptr;
   const cudaError_t ended = cudaStreamEndCapture(queue->stream, &graph);
   queue->capture_owned = false;
+  const bool used_status = std::exchange(queue->capture_status_used, false);
+  struct StatusStorage final {
+    unsigned *word;
+    ~StatusStorage() {
+      if (word != nullptr)
+        status(cudaFree(word)).IgnoreError();
+    }
+  } device_status{std::exchange(queue->capture_device_status, nullptr)};
   if (ended != cudaSuccess) {
     if (graph != nullptr)
       status(cudaGraphDestroy(graph)).IgnoreError();
@@ -933,8 +1074,13 @@ Status end_capture(void *backend_context, void *backend_queue,
     return Status::ResourceExhausted("CUDA graph artifact allocation failed");
   }
   context->incref();
-  *captured_commands =
-      ::new (storage) CapturedCommandsState{context, executable, allocator};
+  auto *captured = ::new (storage) CapturedCommandsState{};
+  captured->context = context;
+  captured->executable = executable;
+  captured->allocator = allocator;
+  if (used_status)
+    captured->device_status = std::exchange(device_status.word, nullptr);
+  *captured_commands = captured;
   return Status::Ok();
 }
 
@@ -951,24 +1097,18 @@ Status abort_capture(void *backend_context, void *backend_queue) noexcept {
   Status result = status(ended);
   if (graph != nullptr)
     result.Update(status(cudaGraphDestroy(graph)));
+  if (queue->capture_device_status != nullptr)
+    result.Update(
+        status(cudaFree(std::exchange(queue->capture_device_status, nullptr))));
+  queue->capture_status_used = false;
   return result;
 }
 
-void destroy_capture(void *captured_commands,
-                     mem::AllocatorRef allocator) noexcept {
+void destroy_capture(void *captured_commands, mem::AllocatorRef) noexcept {
   auto *captured = static_cast<CapturedCommandsState *>(captured_commands);
   if (captured == nullptr)
     return;
-  cuda::detail::ContextState *context = captured->context;
-  {
-    cuda::detail::ScopedPrimaryContext scope(context->primary);
-    if (scope)
-      status(cudaGraphExecDestroy(captured->executable)).IgnoreError();
-  }
-  captured->~CapturedCommandsState();
-  allocator.deallocate(captured, sizeof(CapturedCommandsState),
-                       alignof(CapturedCommandsState));
-  context->decref();
+  captured->decref();
 }
 
 compute::detail::EnqueueResult
@@ -981,6 +1121,42 @@ launch_capture(void *backend_context, void *backend_queue,
       queue->context != context || captured->context != context) {
     return compute::detail::EnqueueResult::rejected(
         Status::InvalidArgument("CUDA graph launch context is invalid"));
+  }
+  if (captured->device_status != nullptr) {
+    if (queue->capture_owned || queue->active_sequence == nullptr)
+      return compute::detail::EnqueueResult::rejected(
+          Status::FailedPrecondition("checked CUDA capture requires an "
+                                     "ordinary admitted replay sequence"));
+    cuda::detail::ScopedPrimaryContext scope(context->primary);
+    if (!scope)
+      return compute::detail::EnqueueResult::rejected(scope.status());
+    bool idle = false;
+    if (!captured->status_busy.compare_exchange_strong(
+            idle, true, std::memory_order_acq_rel, std::memory_order_acquire))
+      return compute::detail::EnqueueResult::rejected(
+          Status::FailedPrecondition(
+              "checked CUDA capture still has an outstanding replay"));
+    auto retained = queue->acquire_status_reference();
+    if (!retained) {
+      captured->status_busy.store(false, std::memory_order_release);
+      return compute::detail::EnqueueResult::rejected(
+          std::move(retained).error());
+    }
+    captured->incref();
+    (*retained)->capture = captured;
+    (*retained)->next = queue->active_sequence->status_references;
+    queue->active_sequence->status_references = *retained;
+    unsigned *word = nullptr;
+    auto initialized = cuda::detail::acquire_device_status(queue, &word);
+    if (!initialized.status.ok())
+      return initialized;
+    const auto launched = cudaGraphLaunch(captured->executable, queue->stream);
+    if (launched != cudaSuccess)
+      return compute::detail::EnqueueResult::accepted_command(status(launched));
+    return compute::detail::EnqueueResult::accepted_command(
+        status(cuda::detail::merge_device_status(context->status_merge_kernel,
+                                                 captured->device_status, word,
+                                                 queue->stream)));
   }
   const cudaError_t launched =
       cudaGraphLaunch(captured->executable, queue->stream);

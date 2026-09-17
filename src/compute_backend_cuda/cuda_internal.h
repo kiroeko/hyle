@@ -26,6 +26,13 @@ extern const char kMemoryDomainAuthority;
 struct ContextState;
 struct QueueState;
 struct EventSlot;
+struct CapturedCommandsState;
+
+struct StatusReference final {
+  StatusReference *next = nullptr;
+  EventSlot *source = nullptr;
+  CapturedCommandsState *capture = nullptr;
+};
 
 enum class StreamOwnership : unsigned char {
   kOwned = 0,
@@ -46,12 +53,24 @@ struct EventSlot final {
   FenceKind fence = FenceKind::kReserved;
   compute::detail::CompletionLifetime lifetime{};
   Status terminal_hint{};
+  std::atomic<std::size_t> references{0};
+  unsigned *device_status = nullptr;
+  unsigned *host_status = nullptr;
+  StatusReference *status_references = nullptr;
+  bool status_used = false;
+  bool status_copied = false;
+  bool report_device_status = false;
 };
 
 struct EventBlock final {
   EventBlock *next = nullptr;
   std::size_t initialized = 0;
   std::array<EventSlot, kEventSlotsPerBlock> slots{};
+  unsigned *device_status = nullptr;
+  unsigned *host_status = nullptr;
+  // Cold capacity for imported status sources and captured programs. These
+  // are independent of EventSlot's free/reaper links and never grow at submit.
+  std::array<StatusReference, 2 * kEventSlotsPerBlock> status_references{};
 };
 
 struct ContextState final : util::RefCounted<ContextState> {
@@ -71,6 +90,16 @@ struct ContextState final : util::RefCounted<ContextState> {
   mem::AllocatorRef allocator{};
   util::SpinLock queues_lock{};
   QueueState *queues = nullptr;
+  const void *status_merge_kernel = device_status_merge_kernel();
+};
+
+struct CapturedCommandsState final : util::RefCounted<CapturedCommandsState> {
+  void destroy() noexcept;
+  ContextState *context = nullptr;
+  cudaGraphExec_t executable = nullptr;
+  mem::AllocatorRef allocator{};
+  unsigned *device_status = nullptr;
+  std::atomic<bool> status_busy{false};
 };
 
 struct QueueState final : util::RefCounted<QueueState> {
@@ -86,6 +115,8 @@ struct QueueState final : util::RefCounted<QueueState> {
   Status reserve(std::size_t minimum) noexcept;
   Result<EventSlot *> acquire() noexcept;
   void release(EventSlot *slot) noexcept;
+  Result<StatusReference *> acquire_status_reference() noexcept;
+  void release_status_reference(StatusReference *reference) noexcept;
 
   ContextState *context = nullptr;
   cudaStream_t stream = nullptr;
@@ -94,10 +125,14 @@ struct QueueState final : util::RefCounted<QueueState> {
   util::SpinLock slots_lock{};
   EventBlock *blocks = nullptr;
   EventSlot *free_slots = nullptr;
+  StatusReference *free_status_references = nullptr;
   std::size_t capacity = 0;
   QueueState *context_next = nullptr;
   // Protected by Compute's one-active-QueueSequence admission contract.
   bool capture_owned = false;
+  EventSlot *active_sequence = nullptr;
+  unsigned *capture_device_status = nullptr;
+  bool capture_status_used = false;
 };
 
 class CudaResourceBase : public mem::MemoryResource {
@@ -150,6 +185,11 @@ Result<QueueState *> create_queue_state(ContextState *context,
 Status runtime_status(cudaError_t error) noexcept;
 Status driver_status(CUresult error) noexcept;
 Status combine_terminal(Status observed, Status hint) noexcept;
+
+compute::detail::EnqueueResult
+acquire_device_status(QueueState *queue, unsigned **device_word) noexcept;
+void settle_status_references(EventSlot *slot) noexcept;
+Status completed_device_status(const EventSlot *slot) noexcept;
 
 Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept;
 Status wait_slot(EventSlot *slot) noexcept;

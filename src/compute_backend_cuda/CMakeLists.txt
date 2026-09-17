@@ -1,10 +1,28 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
+    set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
+  endif()
+  enable_language(CUDA)
   # Keep Toolkit ownership in the CUDA factor so source and installed
   # consumers see the same public header contract while the Driver API remains
   # implementation-private.
   hyle_add_module(compute_backend_cuda SOURCES
     cuda_backend.cc
-    cuda_memory.cc)
+    cuda_memory.cc
+    cuda_device_status.cc
+    device_status_kernel.cu)
+  set_target_properties(hyle_compute_backend_cuda PROPERTIES
+    CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
+  if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")
+    target_compile_options(hyle_compute_backend_cuda PRIVATE
+      "$<$<COMPILE_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
+    target_link_options(hyle_compute_backend_cuda PRIVATE
+      "$<$<LINK_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
+  endif()
+  if(MSVC)
+    target_compile_options(hyle_compute_backend_cuda PRIVATE
+      "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
+  endif()
   target_include_directories(hyle_compute_backend_cuda PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute")
   target_link_libraries(hyle_compute_backend_cuda
