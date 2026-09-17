@@ -16,6 +16,7 @@
 #include <mlx/primitives.h>
 #include <mlx/transforms.h>
 
+#include "apple_checks.h"
 #include "apple_internal.h"
 #include "completion_internal.h"
 #include "hyle/compute/detail/generated_result.h"
@@ -33,6 +34,48 @@ Environment read_environment();
 struct RegionFailure {
   Status status;
 };
+
+struct DeviceCheck {
+  std::uintptr_t result;
+  mx::array status;
+};
+
+// HYLE only builds this list during native tracing. Each Context has its own
+// native owner thread; RAII also restores it if a region throws while tracing.
+thread_local std::vector<DeviceCheck> *active_checks = nullptr;
+struct CheckTrace {
+  std::vector<DeviceCheck> checks;
+  std::vector<DeviceCheck> *previous = active_checks;
+  CheckTrace() { active_checks = &checks; }
+  ~CheckTrace() { active_checks = previous; }
+  CheckTrace(const CheckTrace &) = delete;
+  CheckTrace &operator=(const CheckTrace &) = delete;
+};
+
+Result<mx::array> with_device_status(mx::array output, mx::array status,
+                                     mx::Stream stream) {
+  if (active_checks == nullptr)
+    return std::unexpected(Status::FailedPrecondition(
+        "Apple checked lowering requires managed Context tracing"));
+  auto result = mx::array(output.shape(), output.dtype(),
+                          std::make_shared<mx::Depends>(stream),
+                          std::vector{output, status});
+  active_checks->push_back({result.id(), std::move(status)});
+  return result;
+}
+
+Status algorithm_status(std::int32_t code) {
+  switch (code) {
+  case 0:
+    return Status::Ok();
+  case kIndexOutOfRange:
+    return Status::OutOfRange("Apple index is outside the selected axis");
+  case kScanOverflow:
+    return Status::OutOfRange("Apple integer Scan prefix exceeds I32");
+  default:
+    return Status::Internal("Apple region returned an unknown device status");
+  }
+}
 
 Status native_exception() noexcept {
   try {
@@ -56,7 +99,8 @@ using detail::native_exception;
 
 // Cold only. Native primitives remain in one MLX GPU stream; the complete
 // compiled region is one hot invocation. Reuse the existing fallible hash set.
-void validate_region(const std::vector<mx::array> &outputs, mx::Stream stream) {
+bool validate_region(std::vector<mx::array> &outputs, mx::Stream stream,
+                     const detail::CheckTrace &trace) {
   if (outputs.empty())
     throw std::invalid_argument("Apple region must return at least one array");
   container::FlatHashSet<std::uintptr_t> visited;
@@ -78,6 +122,17 @@ void validate_region(const std::vector<mx::array> &outputs, mx::Stream stream) {
       throw std::invalid_argument("Apple region captures a pending array");
     }
   }
+  std::optional<mx::array> status;
+  for (const auto &check : trace.checks) {
+    if (!visited.contains(check.result))
+      continue; // Dead pure expressions do not add failures to the program.
+    status = status ? mx::where(mx::equal(*status, mx::array(0), stream),
+                                check.status, *status, stream)
+                    : check.status;
+  }
+  if (status)
+    outputs.push_back(std::move(*status));
+  return status.has_value();
 }
 
 void deliver(cd::CompletionLifetime lifetime, Status terminal,
@@ -216,6 +271,11 @@ Status run_cold(Runtime &runtime,
 struct ProgramState {
   std::shared_ptr<Runtime> runtime;
   std::vector<InputSpec> inputs;
+  // Shared with the retained MLX tracing callable, never a ProgramState cycle.
+  struct CheckContract {
+    bool present = false;
+  };
+  std::shared_ptr<CheckContract> checks = std::make_shared<CheckContract>();
   std::function<std::vector<mx::array>(const std::vector<mx::array> &)>
       compiled;
 };
@@ -293,6 +353,11 @@ void execute_invocation(Job *job) noexcept {
       // publishing the release/acquire terminal word to arbitrary waiters.
       for (auto &array : state.values->arrays)
         array.wait();
+      if (state.program->checks->present) {
+        const auto code = state.values->arrays.back().data<std::int32_t>()[0];
+        state.values->arrays.pop_back(); // Never expose the private status.
+        terminal = algorithm_status(code);
+      }
     } catch (...) {
       terminal = native_exception();
       // Native construction/eval may already have accepted a prefix. Keep
@@ -439,12 +504,13 @@ Context::compile(RegionFunction region,
       const auto stream = *state_->stream;
       try {
         program->compiled = mx::compile(
-            [fn = std::move(region),
+            [fn = std::move(region), checks = program->checks,
              stream](const std::vector<mx::array> &inputs) {
+              detail::CheckTrace trace;
               auto outputs = fn(inputs, stream);
               if (!outputs)
                 throw detail::RegionFailure{std::move(outputs).error()};
-              validate_region(*outputs, stream);
+              checks->present = validate_region(*outputs, stream, trace);
               return std::move(*outputs);
             },
             false);

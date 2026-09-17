@@ -63,7 +63,7 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
 
 - F32/F16/BF16 的 Unary、广播 Binary、浮点 Cast、三种 GatedActivation，以及 RMSNorm/LayerNorm。
   gate/norm 在 F32 求值，最终一次回到输入存储类型；norm 可用相同类型或 F32 scale/bias。
-- F32/F16/BF16/I32/Bool 的 View、Copy、Fill、Select 和 Concat；Select 使用 Bool mask。
+- F32/F16/BF16/I32/I64/Bool 的 View、Copy、Fill、Select 和 Concat；Select 使用 Bool mask。
   支持 scalar、空维度、rank≤8、原生转置与广播，实际布局由 MLX 持有。
 - F32/F16/BF16 的 Reduce Sum/Mean/Min/Max、Softmax/LogSoftmax 与 TopK。Reduce 支持任意
   axis 集/keep-dim，空集合为 0/NaN/+Inf/-Inf，Min/Max 传播 NaN 并保留 ±0 优先级；half Reduce
@@ -73,6 +73,12 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   largest/smallest 均可，sorted=false 仍返回有序结果。k=1 用原生线性 ArgMin，k>1 用原生稳定
   merge sort；MLX 内部排序空间和必要布局/精度转换仍有实际成本。Graph 用 `add_node()` 与
   `result(node, 0/1)` 消费两个输出，Direct 从成功 result 的 `arrays()[0/1]` 读取。
+- Gather 接收上述六类 source 存储与 I32/I64 indices，支持任意轴、scalar/多维索引和原生布局；
+  输出保留原始位。默认 checked 在 GPU 检查索引，负值和越界通过完成结果返回 OutOfRange，
+  不采用 MLX 的负索引 wrap。空输出不读取 payload；unchecked 要求调用方保证所有索引合法。
+- Scan 支持 I32/F32 任意轴 inclusive/exclusive 前缀。I32 检查所有数学前缀，包括 exclusive
+  未写出的最终总和；溢出返回 OutOfRange。F32 允许原生并行重结合。非空 Scan、Gather output/
+  indices 的元素数≤INT32_MAX；整数 Scan 使用 I64 原生临时，成本包含转换、检查及最终状态读取。
 - 二维 F32 MatMul、二维 unsigned affine Q4/group64/F32。其它 typed 域明确拒绝。
 
 Q4 weight 的 native dtype 是 uint32，shape
@@ -82,8 +88,15 @@ Graph 描述用 `apple::affine_q4_description(N,K)`，不把 Marlin/GGUF/其它�
 typed 准备也可以只给元数据，例如
 `context.prepare(RmsNorm{}, std::array{apple::InputSpec{{1,2048}, mx::bfloat16},
 apple::InputSpec{{2048}, mx::float32}})`；不需要制造用户 payload。精度或形状不合格时准备返回
-具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 tensor/gate/norm/reduce/softmax/TopK 域的完整
-性能资格待 C1 验收，不能继承 R5 FFN 的性能结论。checked 索引与 Scan 尚未在该批 typed 接线中准入。
+具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 typed 域的完整性能资格待 C1 验收，不能继承
+R5 FFN 的性能结论。有序 Scatter 尚未接入，不能以 MLX atomic scatter 代替规定的重复更新顺序。
+
+checked Gather 与整数 Scan 的低层 `apple::lower()` 必须在 `Context::prepare/compile` 的 managed
+tracing 内调用，才能把设备状态绑定到完成结果；在外部直接调用会明确拒绝。准备不以隔离暖机
+的状态裁决用户 payload。执行时，只有可达 checked 表达式的错误参与首错回报；没有此类表达式
+的程序不添加状态输出。有检查的 region 增加一个隐藏 I32 native 数组，沿既有同步完成后读取，
+它不会出现在 `Results::arrays()` 中。GPU 内部临时结果不会在失败时成为成功 lease；输入、共享
+常量与此前结果仍保持不变。
 
 `context.compile(callable, input_specs)` 表达更完整的原生 region。`InputSpec` 只含 shape/dtype；
 也可给 ready examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数组列表或
@@ -125,7 +138,8 @@ HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝
 - 同一 Invocation 在执行中或旧结果 lease 未释放时不能覆盖；不同槽可以保留旧结果。拥有型结果
   使用 MLX 生成的原始数组，不进行影子输出 copy；复制某个原生 array 句柄仍保有其独立原生 owner。
 - Completion/OwnedResult 析构不隐式等待；取消仍等真实已接纳 GPU 工作排空后才回收。失败/取消槽
-  不复用。原生执行错误会封闭 Context 的后续接纳，先 close 再创建新 Context。
+  不复用。checked 索引/整数溢出只使当前槽失败，可在同一 Context 创建新槽继续；原生执行错误
+  会封闭 Context 的后续接纳，先 close 再创建新 Context。
 - `close()` 停止接纳、排空并 join，Context 析构同样有 drain 成本。Program/Invocation/结果可比该
   Context 句柄长寿；关闭后新提交失败，成功结果仍可读。
 - 这是 managed replay：每次一次外层提交、原生 MLX metadata/array/cache 成本、锁/原子/唤醒和一次

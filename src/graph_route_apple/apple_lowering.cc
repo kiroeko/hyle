@@ -50,12 +50,15 @@ Result<ca::InputSpec> native_spec(const compute::TensorDesc &description) {
   case compute::DataType::kInt32:
     result.dtype = mx::int32;
     break;
+  case compute::DataType::kInt64:
+    result.dtype = mx::int64;
+    break;
   case compute::DataType::kBool:
     result.dtype = mx::bool_;
     break;
   default:
     return std::unexpected(Status::Unimplemented(
-        "Apple Graph admits F32/F16/BF16/I32/Bool logical tensors"));
+        "Apple Graph admits F32/F16/BF16/I32/I64/Bool logical tensors"));
   }
   for (auto dimension : description.dimensions()) {
     if (dimension > (std::numeric_limits<int>::max)())
@@ -151,11 +154,13 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       report->numerical_policy =
           "Typed F32/F16/BF16 tensor, F32 gate/norm/reduce/softmax and stable "
           "TopK; "
-          "I32/Bool storage and affine Q4/group64; each node retains its "
+          "I32/I64/Bool storage, checked Gather/Scan and affine Q4/group64; "
+          "each node retains its "
           "schema contract; MLX private intermediates unknown";
       report->boundary_policy =
           "Caller inputs/constants must be ready; no HYLE shadow output copy; "
-          "native result leases retain MLX outputs; internal fusion/copies "
+          "native result leases retain MLX outputs; private GPU algorithm "
+          "status is read after completion; internal fusion/copies "
           "unknown";
       report->concurrency_policy =
           "Independent Invocation/results; one Context owner executes FIFO "

@@ -35,6 +35,8 @@ inline c::DataType logical(mx::Dtype type) {
     return c::DataType::kBFloat16;
   if (type == mx::int32)
     return c::DataType::kInt32;
+  if (type == mx::int64)
+    return c::DataType::kInt64;
   if (type == mx::bool_)
     return c::DataType::kBool;
   return c::DataType::kFloat32;
@@ -87,6 +89,8 @@ inline std::vector<double> values(const mx::array &array) {
     else if (array.dtype() == mx::int32)
       result[i] =
           std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(raw[i]));
+    else if (array.dtype() == mx::int64)
+      result[i] = static_cast<double>(std::bit_cast<std::int64_t>(raw[i]));
     else
       result[i] = raw[i] != 0;
   }

@@ -76,8 +76,9 @@ affine_q4_description(std::int64_t output_channels,
 
 // Cold typed lowering, useful inside a native region and shared by Graph.
 // Fixed MLX rules cover the documented typed tensor, floating arithmetic,
-// gate/norm/reduce/softmax, stable TopK and F32 MatMul/affine Q4 domains.
-// Native arrays own their layouts;
+// gate/norm/reduce/softmax, TopK, Gather/Scan and F32 MatMul/affine Q4 domains.
+// Checked operations require Context::prepare/compile tracing, which carries
+// their GPU status to Completion. Native arrays own their layouts;
 // this is not a Mem buffer adapter. Unsupported domains return an error.
 HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
 lower(const Operation &operation, std::span<const mlx::core::array> inputs,

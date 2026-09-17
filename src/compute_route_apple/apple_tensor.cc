@@ -12,6 +12,7 @@
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 
+#include "apple_indexing.h"
 #include "apple_internal.h"
 #include "apple_reduction.h"
 
@@ -27,10 +28,12 @@ Result<DataType> logical_type(mx::Dtype type) {
     return DataType::kBFloat16;
   if (type == mx::int32)
     return DataType::kInt32;
+  if (type == mx::int64)
+    return DataType::kInt64;
   if (type == mx::bool_)
     return DataType::kBool;
   return std::unexpected(Status::Unimplemented(
-      "Apple tensor lowering admits F32/F16/BF16/I32/Bool storage"));
+      "Apple tensor lowering admits F32/F16/BF16/I32/I64/Bool storage"));
 }
 Result<mx::Dtype> native_type(DataType type) {
   switch (type) {
@@ -42,11 +45,13 @@ Result<mx::Dtype> native_type(DataType type) {
     return mx::bfloat16;
   case DataType::kInt32:
     return mx::int32;
+  case DataType::kInt64:
+    return mx::int64;
   case DataType::kBool:
     return mx::bool_;
   default:
     return std::unexpected(Status::Unimplemented(
-        "Apple tensor output requires F32/F16/BF16/I32/Bool storage"));
+        "Apple tensor output requires F32/F16/BF16/I32/I64/Bool storage"));
   }
 }
 bool floating(mx::Dtype type) {
@@ -88,6 +93,8 @@ mx::array scalar(ScalarValue value, mx::Stream stream) {
   case DataType::kInt32:
     return mx::array(
         std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(bits)));
+  case DataType::kInt64:
+    return mx::array(std::bit_cast<std::int64_t>(bits));
   case DataType::kBool:
     return mx::array(bits != 0);
   default:
@@ -192,6 +199,8 @@ bool admitted(OperationKind kind) {
   case OperationKind::kReduce:
   case OperationKind::kSoftmax:
   case OperationKind::kTopK:
+  case OperationKind::kGather:
+  case OperationKind::kScan:
     return true;
   default:
     return false;
@@ -224,6 +233,9 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
+    if (operation.kind() == OperationKind::kGather ||
+        operation.kind() == OperationKind::kScan)
+      return lower_indexing(operation, inputs, shape, stream);
     if (const auto *fill = operation.get_if<Fill>())
       return std::vector{
           mx::full(shape, scalar(fill->value, stream), type, stream)};
