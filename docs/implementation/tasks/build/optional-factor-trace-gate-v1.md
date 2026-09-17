@@ -1,0 +1,21 @@
+# 可选 factor 的 TRACE 构建门修正
+
+## Tool card / SCOPED
+
+- baseline：`14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220`。
+- owner：build helper；六个 TRACE 消费者由 [R7 当前卡](../compute/four-route-foundation-final-review.md)
+  绑定，不新增 runtime component、不改 selector 或 closure/performance 核心。
+- 可复现源码反例：`cmake/HyleModule.cmake` 禁止 `OPTIONAL_ABSENT TRACE`，又无条件要求
+  中央 TRACE consumer 传 TRACE；Apple/Vulkan 四个路线在 OFF 分支必须 OPTIONAL_ABSENT。
+  因而合法的可选跟踪消费者不能同时满足 enabled 和 absent 两种配置。
+- 有限改动：仅在 OPTIONAL_ABSENT 时豁免“真实 target 遗漏 TRACE”的检查。仍拒绝 absent
+  带 SOURCES/TRACE/TESTING；enabled 的中央声明、真实调用与 TRACE 参数必须一致。
+  不修改 token scanner、依赖下载器、中央产品 roots 或 trace runtime 本身。
+- 调查预算：上述条件与实际四个 OFF 分支一遍，之后停止；性能 P0 冷 configure 条件。
+- 预声明验证：enabled 正例；enabled 遗漏 TRACE、未中央授权 TRACE、无真实 hook TRACE、
+  未声明但真实调用 hook 四种拒绝；absent 中央 TRACE 正例以及 SOURCES/TRACE/TESTING 拒绝。
+  检查 absent 无实现/private 链/Tracy 依赖，实际 R7 普通 OFF/ON source/static/shared 由主卡承担。
+- 停止：有限配置门与主卡受影响交付通过后 CLOSED；不以测试需求扩大通用构建工具。
+
+当前只建立 scope；AUDITED 后才允许修改 helper。配置测试是独立临时 consumer 或现有构建合同
+测试的窄扩展，不需要为这个问题执行性能仪器或改产品算法。

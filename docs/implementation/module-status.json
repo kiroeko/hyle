@@ -271,25 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
+      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
+      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
     },
     {
       "module": "container_concurrent",
@@ -522,49 +512,27 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
+      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
+      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "summary": "R6 CLOSED：真实 Vulkan Direct/Graph、成熟 shader 与 custom 组合、原生资源/完成失败寿命、冷规则和回放已交付；Windows/Air 正确性/host 插桩/三交付、111 个 selected gates、四份正式 P1 原 5% 门及四项自然成本完成。资格限已测域，Air Graph 四个小 LOSS 保留；R7 待完成。",
-      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
+      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "summary": "R6 CLOSED：真实 Vulkan Direct/Graph、成熟 shader 与 custom 组合、原生资源/完成失败寿命、冷规则和回放已交付；Windows/Air 正确性/host 插桩/三交付、111 个 selected gates、四份正式 P1 原 5% 门及四项自然成本完成。资格限已测域，Air Graph 四个小 LOSS 保留；R7 待完成。",
-      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
+      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
     }
   ]
 }

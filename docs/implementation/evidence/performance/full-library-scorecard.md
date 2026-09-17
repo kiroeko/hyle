@@ -1,5 +1,9 @@
 # HYLE 全库性能账本（2026-09-17）
 
+> R7 施工说明：下方机器绑定是 `14e78c45` 的 R6 终局快照。六个 owner 已按
+> [R7 当前卡](../../tasks/compute/four-route-foundation-final-review.md)进入诊断/观测施工，当前状态
+> 只看 registry；下方旧 CLOSED 数量不授予 R7 验收。终局再按实际候选与继承证明同步绑定。
+
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 [`module-status.json`](../../module-status.json) 中当前 48 个 `CLOSED` factor，覆盖 R2 共同语义、
 Mem 定向尾项与 R3–R6 四条路线的有限验收。R7 最小 opt-in Obs、终审与清理尚待完成，整个四路线

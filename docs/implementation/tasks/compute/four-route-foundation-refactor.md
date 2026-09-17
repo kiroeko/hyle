@@ -23,7 +23,7 @@ M4 限定域的最终 P1，在 `a767bdc4` CLOSED。
 插桩、[最终三交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)、四份正式
 P1 原 5% 门、四项自然边界诊断及全部 111 个 selected gates 完成。十三已有 owner 的 Vulkan
 roots/交付轮同时关闭，原运行时、性能资格与 CPU 例外按身份继承。当前只剩 R7 的有限终审、
-最小 opt-in Obs 和清理；完整基础架构尚未结案。
+最小 opt-in Obs 和清理，已绑定 [R7 当前卡](four-route-foundation-final-review.md)；完整基础架构尚未结案。
 
 ## 目标与不做项
 
