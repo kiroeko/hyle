@@ -39,6 +39,13 @@ struct Tensor final {
   }
 };
 
+void expect_same_bits(std::span<const Value> actual,
+                      std::span<const Value> expected) {
+  ASSERT_EQ(actual.size(), expected.size());
+  for (std::size_t index = 0; index < actual.size(); ++index)
+    ASSERT_EQ(actual[index].bits, expected[index].bits) << index;
+}
+
 TEST(CudaDefaultGraph,
      CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
@@ -163,9 +170,9 @@ TEST(CudaDefaultGraph,
           }
           for (std::size_t lane = 0; lane < 2; ++lane) {
             if (repeat == 2 && lane == 0) {
-              EXPECT_EQ(gathered[lane].read<Value>(), retained_gather);
-              EXPECT_EQ(normals[lane].read<Value>(), retained_norm);
-              EXPECT_EQ(outputs[lane].read<Value>(), retained_output);
+              expect_same_bits(gathered[lane].read<Value>(), retained_gather);
+              expect_same_bits(normals[lane].read<Value>(), retained_norm);
+              expect_same_bits(outputs[lane].read<Value>(), retained_output);
               continue;
             }
             ASSERT_TRUE(done[lane].wait().ok());
@@ -177,7 +184,7 @@ TEST(CudaDefaultGraph,
               for (std::size_t col = 0; col < static_cast<std::size_t>(width);
                    ++col) {
                 const auto value = table_values[ids[lane][row] * width + col];
-                EXPECT_EQ(actual_gather[row * width + col], value);
+                EXPECT_EQ(actual_gather[row * width + col].bits, value.bits);
                 const auto x = half_test::decode(value);
                 squares += x * x;
               }
@@ -211,9 +218,9 @@ TEST(CudaDefaultGraph,
                             direct_norm.view.as_const(), direct_output.view)
                     .value();
             ASSERT_TRUE(da.wait().ok());
-            EXPECT_EQ(direct_gather.read<Value>(), actual_gather);
-            EXPECT_EQ(direct_norm.read<Value>(), actual_norm);
-            EXPECT_EQ(direct_output.read<Value>(), actual_output);
+            expect_same_bits(direct_gather.read<Value>(), actual_gather);
+            expect_same_bits(direct_norm.read<Value>(), actual_norm);
+            expect_same_bits(direct_output.read<Value>(), actual_output);
             if (lane == 0) {
               retained_gather = actual_gather;
               retained_norm = actual_norm;
