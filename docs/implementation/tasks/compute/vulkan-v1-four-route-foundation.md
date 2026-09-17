@@ -282,6 +282,11 @@ Air 首次 selector 在创建 Context 前发现 loader 路径未传入，尚未�
 已有 `ContextOptions.loader_path` 为候选/参考使用同一路径。没有弱化环境清理、修改产品 API、
 shader 或公共统计工具；新的 Apple benchmark 快照独立记身份，Windows `3894b72e` P1 不重跑。
 
+两次启动失败的[完整保留记录](../../../../evidence/correctness/vulkan-r6-air-loader-setup/README.md)
+已归档并校验；修正后的 Apple 测量快照为 `a41d43d5`。V1–V7 的
+[候选源码复核](../../../../evidence/review/vulkan-r6-candidate/README.md)完成一遍，未发现新的产品
+缺陷；已校正总入口文档。源码 review 不代替尚未完成的运行、交付和性能门。
+
 [WSL 实际盘点](../../../../evidence/research/vulkan-r6-wsl-inventory/README.md)只枚举到 CPU 软件
 device llvmpipe；不计原生 GPU 或路线验收。当前 Windows / Air 的验证域不外推到 Linux GPU、
 AMD/Intel 或其它数值格式。

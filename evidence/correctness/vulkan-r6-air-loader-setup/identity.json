@@ -1,0 +1,12 @@
+{
+  "classification": "verification setup failures before timing; no product or performance verdict",
+  "failed_measurement_snapshot": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+  "corrected_apple_measurement_snapshot": "a41d43d531365a1fb8617d60113b37924e9a9864",
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "archive": {
+    "file": "raw.zip",
+    "sha256": "f62fecb6ffd7361beb583b9f041417fcebacb08270fb36926b955fbc76be2243",
+    "entries": 36
+  },
+  "valid_timing_samples": 0
+}
