@@ -1,6 +1,8 @@
 # R6 Vulkan：原生计算程序、资源与 Graph
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
+
+当前裁决见文末终局。本卡建卡时的缺口、审计与中间检查点按历史读取；V1–V7 已完成并停止施工。
 
 - owner：`compute_route_vulkan`、`graph_route_vulkan`；身份已在 `9059ad30` 登记为 QUEUED。
 - baseline：`9059ad30`，保留 R5 不可变候选 `1636365b` 及其仍在运行的串行验收。
@@ -358,3 +360,57 @@ ASan 和两系统三交付均已执行完成。没有为收口增加采样或未
 该测试维护已在 `756d6220` 实际通过完整 251 项 Sched 与该用例 32 次重复，且七项 shipping
 输入与原快照完全相同，原失败和修正后证据分别归档。没有新增产品 FIX；剩余 26 门已在原
 `3894b72e` 快照上独立续跑，仍按各自实际结果收口。
+
+## 终局（2026-09-17）
+
+V1–V7 已完成。产品候选保持 `8e45b10423686a0753aaa9d461c4ef3b117412c5`；Windows
+验证/测量快照 `3894b72e`、Air `a41d43d5` 与最终源码交付 `20a029ad` 的 shipping 输入
+[逐树一致](../../../../evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json)。
+最后的 [Windows selector](../../../../evidence/correctness/vulkan-r6-windows-selector/README.md)
+已补齐 111 个选定门的验收覆盖：原 84 门 PASS、同快照续跑 26 门 PASS，另一个 Sched 测试
+在修正错误的完成顺序假设后通过完整 251 项与定向 32 次检查。原 BLOCKED result 与失败
+日志完整保留；修正测试快照 `756d6220` 的全部 shipping 输入与原快照相同，不伪造原整批
+PASS。每项命令、receipt 身份、日志 hash 与 skipped reasons 均归档。没有重跑 84 个已通过门
+或已完成的正式 P1。
+
+| Gate | 最终证据与边界 | Verdict |
+|---|---|---|
+| scope | V1–V7；普通完整 FFN 与 native custom/资源管线两种真实消费；typed F32 有限域 | PASS |
+| architecture | 独立 Vulkan 原生程序/运行槽；Graph 冷 lowering；成熟 shader 与自定义 SPIR-V 同设备组合，规则只冷绑定 | PASS |
+| correctness | 修正后 Windows/Air 各 17 项 native GTest、逐头与实际 SYNC validation；最终 ASan 17 项，旧 UBSan/TSan 只继承未变 host 路径 | PASS |
+| delivery | 最终同一 source ZIP 的 Windows/Air source/static/shared，迁移 SDK、隐藏 producer、offline、DLL 邻置；111 个 selected gates | PASS |
+| usability_docs | 普通 Direct prepare/bind/submit、Graph DAG 和两种 owning/fixed-buffer 责任；真实公开 target 消费及 Vulkan 指南 | PASS |
+| red_team | 冻结后的独立阶段源码复核已完成一遍，没有新增产品 FIX；实际风险门由各自 receipts 证明 | PASS |
+| engineering_performance | P0；四份合格 P1 的原 5% NI 各 16 项全过，n15 停止；四项原生诊断完整保留且不排名 | PASS |
+
+正确性和寿命证据覆盖 submit OOM 后安全重试、部分资源失败回滚、晚到观察错误保持 pending
+直至真实退役、取消/abandon 不隐藏等待、close 排空、两个运行槽/保留旧结果、外借 native owner、
+两线程回放与并发 collect。实际 compute 和 transfer 始终使用真实设备；测试内 PFN 拒绝与
+coherency flag 分支只证明所列机制，不冒充 GPU device-loss 或物理非一致 memory-type 资格。
+详细命令和输入/制品身份见[修正后原生证据](../../../../evidence/correctness/vulkan-r6-f32-corrected/README.md)、
+[最终 ASan](../../../../evidence/correctness/vulkan-r6-final-asan/README.md)、
+[最终三交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)和上述 selector。
+
+四份正式 P1 的工程门 PASS 与严格方向分开：Windows 两入口全部严格区间未决；Air Direct
+分层存在 WIN 与未决，Air Graph M16 仍有四个 peer-allocation-first LOSS，median 额外延迟
+约 1.2%–1.5%，均通过原 5% 门。每个 workload 的整体方向保持 INCONCLUSIVE。
+同合同参考为独立原样 ggml shader 加完整等责生命周期 adapter，不声称战胜整个 ggml runtime
+或取得 HYLE 算法优势。裸原生 submit/fence 缺少取消、quarantine、结果 lease 等责任，四项
+NATURAL_ROUTE 诊断不签 NI/排名。完整正负方向进入
+[Compute/Graph 总账](../../evidence/performance/benchmarks-compute-graph.md)与
+[全库账本](../../evidence/performance/full-library-scorecard.md)，不追加采样。
+
+限制：strict F32 二维 MatMul/SiLU、pure 固定 shape Graph，借入 buffer 必须同设备/queue family
+且已完成可见性交接；可重绑定槽需要已声明的 descriptor feature。实际资格限 Windows RTX 4070
+与 Air M4/MoltenVK 的已记录版本域；WSL 只有 llvmpipe，不签 Linux 原生 GPU、AMD/Intel、其它
+数值格式或未知设备 SOTA。host 插桩不覆盖外部 loader/driver/GPU；quota 计真实 VkDeviceMemory，
+不承诺 opaque driver/pipeline 的全设备硬预算。没有故意 GPU hang/device-loss 实验。
+
+统一 `scripts/loc-report.py --module compute_graph --module-path ... --json` 在 clean `3335aa1b`
+统计全部 Compute + Graph 实现 **36,765 行 / 129 个代码文件**，不含测试/bench/vendor；完整路径与
+原始结果保存在本轮 selector evidence 的 `implementation-loc.json`。本次仅归档/状态/文档，代码未变。
+两个 Vulkan owner 进入 CLOSED；十三 facade owner 在独立交付卡同时关闭。R6 完成，R7 尚待
+有限终审/最小 opt-in Obs 与清理，整个 goal 尚未完成。
+
+停止本卡产品施工。reopen 只接受可复现正确性/寿命/并发/交付缺陷、真实消费者必需能力或公开
+合同变化、采用依赖的相关升级、合格同合同 material 回归；不因未知硬件或小幅点值重开。

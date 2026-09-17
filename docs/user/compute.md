@@ -7,7 +7,7 @@
 > command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
 > 普通 CUDA Direct/Graph 入口、真实 FFN/capture、Win/WSL 三交付与当前 SM89 工程性能验收已完成。
 > Apple MLX/Metal 的原生 Direct/Graph、三交付和 M4 限定性能验收已完成；
-> Vulkan/SPIR-V 已实现，仍在完成 R6 候选验收，不能由本页声明整条路线已收口。
+> Vulkan/SPIR-V 的 R6 也已完成真实计算、三交付与已测设备/版本域的有限性能验收。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
@@ -29,7 +29,7 @@ Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct
 sampling 和 serving 留在推理引擎。
 
 计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的普通入口和完整 FFN Graph
-已完成 R4 正确性、三交付与适用性能验收；Apple 的 R5 已完成，Vulkan 的 R6 尚在验收。
+已完成 R4 正确性、三交付与适用性能验收；Apple R5 与 Vulkan R6 也已完成各自有限验收。
 HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
 提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
 自动交给 CPU。完整范围见 [架构边界](../architecture/compute-design.md#13-四条独立路线与明确非目标)。

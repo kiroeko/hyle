@@ -9,8 +9,8 @@
 > event import 与 single-queue capture 已真机资格化；普通 CUDA dense/Q4 FFN 已通过 W1 实际
 > Provider 组合与 captured replay 验证，完整 R4 三交付及当前 SM89 工程性能验收已完成。
 
-[Apple MLX/Metal](apple-compute.md) 已完成 R5；[Vulkan](vulkan-compute.md) 的真实原生路线已实现，
-R6 候选验收仍在进行。两条路线各有冷编译、Program 与运行槽；本文后续 shared Queue、
+[Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md) 分别完成 R5/R6 的真实计算、
+三交付与有限性能验收。两条路线各有冷编译、Program 与运行槽；本文后续 shared Queue、
 target/storage/lane 和 replay 细节主要描述 CPU/CUDA 路径，不是四条路线共用执行器的要求。
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
@@ -24,8 +24,8 @@ unknown 约束见下文，不把 driver 未公开的字节数算作零。完整�
 
 编译已经移除用户 timing profile 接收与多计划性能竞赛；四路线
 [应用研发时已验证的优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
-具体路线默认规则仍随各路线实施和验收。未接入的 GPU Provider 尚不可用，Q4 转 F32 样例
-也不代表正式压缩量化 Graph 路线已交付。
+各路线已交付的默认规则与设备/版本/数值范围见对应指南；CUDA 和 Apple 的正式压缩量化
+FFN 已分别验收。历史 Q4 转 F32 样例不承担这些资格，未接入的 Provider 仍不可用。
 
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched

@@ -1,6 +1,8 @@
 # R6 Vulkan：公开产品与三种 C++ 交付
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
+
+当前裁决见文末终局。下列 baseline、trigger 与中间检查点保留建卡时的事实；D1–D3 已完成。
 
 - baseline：`a1329dd2bbed2cf2b4e334345273b6c970052702`。R1–R5 与 Vulkan Windows 原生检查点保留。
 - owner：`compute`、`graph`、`compute_backend_cpu`、`compute_backend_cuda`、
@@ -99,3 +101,33 @@ D1–D3 的最终三交付义务已兑现；中央 roots 引起的 broad selecte
 最后 selector 已通过 84 门，在一个旧 Sched 测试的结果就绪/scope 完成顺序假设处停止；
 [原始失败与定向维护](../../../../evidence/correctness/sched-first-error-test-order/README.md)
 分别保留。产品没有变化；仅补验正确同步后的测试并续跑尚未执行的 26 门，不伪造原候选整批 PASS。
+
+## 终局（2026-09-17）
+
+D1–D3 已完成；十三 owner 的本轮候选仍为 `8e45b10423686a0753aaa9d461c4ef3b117412c5`。
+最后的 [Windows selector](../../../../evidence/correctness/vulkan-r6-windows-selector/README.md)
+补齐 111 个选定门：原 84 门与原快照续跑 26 门通过，一个旧 Sched 测试修正完成顺序假设后
+在相同产品的独立测试快照通过。原 BLOCKED result 和失败日志保留，完整命令、身份与日志归档；
+本卡两平台真实三交付不再存在未运行项。
+
+| Gate | 最终证据 | Verdict |
+|---|---|---|
+| scope | D1–D3；十三既有 facade roots 的 Vulkan 交付接线 | PASS |
+| architecture | 复用现有 package registry/locked assets，Direct 不依赖 Graph，OFF 不引入路线 SDK/实现 | PASS |
+| correctness | 两平台 source/static/shared 各六个真实普通消费者，FFN + custom、变化输入、回放与独立 oracle；selected regressions | PASS |
+| delivery | 同一完整 source ZIP，SDK relocation、隐藏 producer source/build、offline、头/导出/许可证、Windows DLL 邻置及其它路线 binary 缺席 | PASS |
+| usability_docs | public compute/graph roots、同源普通样例与 Vulkan 指南；不要求用户选择内部 factor 或 Provider 顺序 | PASS |
+| red_team | R6 候选独立阶段复核与最终 isolated consumer 旅程，未发现额外交付 FIX | PASS |
+| engineering_performance | P0：十三 owner 的源码/API 十五棵 tree 不变，改动只在冷构建/交付；原 runtime/P1 与 CPU 例外按快照继承 | PASS |
+
+实际命令与制品见[最终三交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)
+及上述 selector；[原 baseline](../../../../evidence/correctness/vulkan-r6-product-delivery/inherited-baseline.json)
+与 [P0 逐树身份](../../../../evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json)保留继承边界。
+不把 roots 接线签成旧 CPU/CUDA/Apple 算法或性能重新通过；各自的设备/版本限制、CPU 用户例外
+和原严格负向方向保持不变。源码消费者需要 glslang，二进制 SDK 不依赖 producer shader 文件，
+仍需用户系统 loader/driver；没有新 C/FFI 层。
+
+统一脚本在 clean `3335aa1b` 统计全部 Compute + Graph 实现 **36,765 行 / 129 个代码文件**，
+不含测试/bench/vendor；本次文档/状态没有代码变化。十三 owner 进入 CLOSED，Vulkan 主卡独立
+裁决其 P1。R7 仍待处理，不签整个基础架构完成。停止本卡施工；只有可复现交付缺陷、真实消费者
+必需能力/公开合同变化、依赖升级或合格 material 回归可按协议建立新轮。

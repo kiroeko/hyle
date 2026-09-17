@@ -1,0 +1,139 @@
+{
+  "schema": 3,
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "3335aa1b430219cf4327302f409fdd5c517b176b",
+    "dirty": false,
+    "tracked_regular_files": 5173,
+    "tracked_missing_files": []
+  },
+  "policy": {
+    "snapshot": "current contents of Git-tracked regular files",
+    "untracked": "not counted; still makes dirty=true",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "compute_graph",
+    "boundary": "explicit",
+    "paths": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute",
+      "src/compute_backend_cpu",
+      "src/compute_backend_cuda",
+      "src/compute_ops",
+      "src/compute_provider_cublas",
+      "src/compute_provider_cuda",
+      "src/compute_provider_ggml",
+      "src/compute_provider_marlin",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn",
+      "src/compute_route_apple",
+      "src/compute_route_cpu",
+      "src/compute_route_cuda",
+      "src/graph",
+      "src/graph_provider_onednn",
+      "src/graph_route_apple",
+      "src/graph_route_cpu",
+      "src/graph_route_cuda",
+      "src/compute_route_vulkan",
+      "src/graph_route_vulkan"
+    ],
+    "modules": null
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 794072,
+      "files": 2364,
+      "selected_files": 5173,
+      "paths": [
+        "Git-tracked regular files (current working tree)"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 131950,
+      "files": 480,
+      "selected_files": 535,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute_graph)",
+      "code": 36765,
+      "files": 129,
+      "selected_files": 152,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute",
+        "src/compute_backend_cpu",
+        "src/compute_backend_cuda",
+        "src/compute_ops",
+        "src/compute_provider_cublas",
+        "src/compute_provider_cuda",
+        "src/compute_provider_ggml",
+        "src/compute_provider_marlin",
+        "src/compute_provider_native",
+        "src/compute_provider_onednn",
+        "src/compute_route_apple",
+        "src/compute_route_cpu",
+        "src/compute_route_cuda",
+        "src/graph",
+        "src/graph_provider_onednn",
+        "src/graph_route_apple",
+        "src/graph_route_cpu",
+        "src/graph_route_cuda",
+        "src/compute_route_vulkan",
+        "src/graph_route_vulkan"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++"
+      ]
+    }
+  ]
+}

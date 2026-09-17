@@ -2,9 +2,10 @@
 
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
 HYLE 在准备期绑定成熟 ggml shader，Graph 冷期规划资源，重复执行复用录制好的命令。
-普通用户只选路线，不排序 Provider 或提供 timing profile。当前 R6 的 Windows/MoltenVK 原生
-检查点已通过，[三交付与性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)
-仍在进行，本页不授予未完成的性能资格。
+普通用户只选路线，不排序 Provider 或提供 timing profile。当前支持域已完成 Windows RTX 4070
+与 Air M4/MoltenVK 的真实计算、资源寿命、三交付和
+[有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
+资格限所记录的设备/软件与 F32 shape 域，不承诺其它设备或完整推理模型的性能。
 
 ## 构建与运行条件
 

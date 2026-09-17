@@ -1,35 +1,39 @@
 # HYLE 全库性能账本（2026-09-17）
 
-本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本只绑定
-[`module-status.json`](../../module-status.json) 中当前 44 个 `CLOSED` factor，包含 R2 已收口的
-compute_ops schema、Mem reservation 尾项、R3 CPU 和 R4 CUDA。CPU 唯一已量化的 Graph 小片段未决项经用户
-批准接受，原 LOSS/INCONCLUSIVE 保留；ggml 与 compute_sched 未收口身份不计入数量，Apple/Vulkan 尚未交付。旧 CUDA copy 与跨域 Graph 数字保留在
-[历史证据](benchmarks-compute-graph.md)，不作为四路线基础架构完成证明。账本不授予跨平台、跨能力的
-永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是 2026-09-14 原审计时的事实。
+本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
+[`module-status.json`](../../module-status.json) 中当前 48 个 `CLOSED` factor，覆盖 R2 共同语义、
+Mem 定向尾项与 R3–R6 四条路线的有限验收。R7 最小 opt-in Obs、终审与清理尚待完成，整个四路线
+基础架构 goal 尚未结案。CPU 唯一已量化的 Graph 小片段未决项经用户批准接受，原 LOSS /
+INCONCLUSIVE 保留；ggml CPU 与 compute_sched 未收口身份不计入数量。旧 copy/跨域 Graph 数据
+仍在[历史证据](benchmarks-compute-graph.md)，不作为新路线完成证明。
 
-R4 公开产品接线的八个既有 Compute/Graph/CPU root owner 已完成
-[定向交付轮](../../tasks/build/cuda-r4-product-delivery.md)，恢复 CLOSED 与原始 CPU/C7 claims；
-[原候选与完整 claim 快照](../../../../evidence/correctness/cuda-r4-product-delivery/inherited-baseline.json)
-保留 R3 CPU 数据/用户例外及 C7 P0，继承的 measured candidate 和统计值均未改写。新增 C5 claim
-只证明公开 roots/消费的 P0 交付成本；没有更改 CPU 算法、追加 CPU P1 或签署 CUDA 性能结论。
+十三个已有 Compute/Graph roots 的 R6 变化仅属
+[Vulkan 交付轮](../../tasks/build/vulkan-r6-product-delivery.md)：
+[baseline](../../../../evidence/correctness/vulkan-r6-product-delivery/inherited-baseline.json) 与
+[逐树身份](../../../../evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json)证明原 C++/API
+未变，继承 CPU/CUDA/Apple 的测量候选、统计值和 CPU 例外。
+[两个 CUDA vendor owner](../../tasks/build/cuda-vendor-content-audit-v1.md)只完成冷内容准入修正，
+原 runtime/算法 blobs 与限定性能同样继承。新增交付/规则 P0 claim 不计作性能胜项。
+账本不授予跨平台、跨能力的永久 SOTA 标签，也不重新审计无关模块；其它 peer freshness 仍是
+2026-09-14 原审计时的事实。
 
 ## 结论先行
 
-HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 81 个去重合同组的严格
+HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明“全库 SOTA”。当前 98 个去重合同组的严格
 方向为：
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
 | `WIN` | 26 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
 | `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
-| `INCONCLUSIVE` | 29 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 19 | 结构/规则证据或不同责任边界的原生诊断；没有计时排名 |
+| `INCONCLUSIVE` | 37 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
+| `N/A` | 28 | 结构/规则证据或不同责任边界的原生诊断；没有计时排名 |
 | `LOSS` | 4 | CPU Graph v3 原负向方向；三项通过 5% 非劣门，一项保持未决并接受用户例外 |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-35 个 claim 在仓库中保留完整合格机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，17 个是结构/规则证明，2 个为明确排除同合同排名的原生诊断。后三类不能承担最强性能宣传声明。
+43 个 claim 在仓库中保留完整合格机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，22 个是结构/规则证明，6 个为明确排除同合同排名的原生诊断。后三类不能承担最强性能宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -83,7 +87,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | compute_ops 为 P0 schema；CPU Direct 4/4 非劣 PASS，Graph v3 11/12 非劣 PASS + 1 项用户验收例外，原统计聚合未决 | R3、C7 失败槽修复、C5 三交付已验收；CUDA 主卡插桩/P1 未完，Apple/Vulkan 新路线未验收；历史 copy/跨域结果不继承 |
+| Compute / Graph | CPU Direct 4/4 NI PASS；CPU Graph 11/12 NI PASS + 1 项用户例外；CUDA/Apple/Vulkan 的已声明完整 FFN 门通过，各 workload 整体严格方向未决 | 四路线普通 C++ 与各自三交付/寿命已验收；范围限已测设备/版本/格式/shape，未覆盖算子目录与完整模型；R7 最小观测/终审尚待完成 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线
@@ -97,7 +101,9 @@ Build/package 是横向交付单元而非 runtime factor。source embed、instal
 ## 所有当前负向事实
 
 已收口机器账本中的 CPU Graph v3 有四项固定 LOSS：三项通过原 5% 非劣门，一项保留统计未决并经
-用户明确接受工程取舍。v2 的五项保留为历史事实，不重复计数，完整列于下方。其它负向事实也继续保留：
+用户明确接受工程取舍。v2 的五项保留为历史事实，不重复计数，完整列于下方。CUDA Graph M1 一个
+分层、Air Vulkan Graph M16 四个分层也有严格小幅 LOSS，均通过原 5% NI；它们所属 workload 因
+其余分层方向/区间不一致而整体 INCONCLUSIVE，未被上述合同组计数掩盖。其它负向事实也继续保留：
 
 | 路线 | 事实 | 根因 / 行动 |
 |---|---|---|
@@ -119,11 +125,12 @@ validation + connection retirement：128×1 KiB 为 `INCONCLUSIVE` 且 5% NI 通
 为约 `3.03x WIN`。TLS、HTTP/2、Range resume、Sched fan-out、model-cache LRU、Mem range/VM，以及 SIMD
 推理/Compute row 也使用真实消费者形状，而非单指令纳秒循环。
 
-但这些仍不是完整推理引擎：上一轮曾验证 CPU RMSNorm → MatMul → SiluAndMul 多算子纵切；Compute 与
-Graph 已因真实能力缺口重开，所以该结果现在只是历史基线，不代表当前候选。项目仍未把 model open/map、
-metadata、tensor preparation、scheduler、多 provider 计划、kernel、token stream、HTTP/TLS 一次性计入
-同一 P2；没有 tokens/s、time-to-first-token、p99、峰值 RSS、内存带宽和 energy/token；也没有完整路由、
-handler、JSON/SSE 应用层服务器比较。任何“HYLE 推理端到端更快”都没有证据资格。
+四路线目前各自已有真实 Direct/Graph FFN、变化输入、资源寿命及普通三交付证据；CPU、CUDA、
+Apple 和 Vulkan 的默认实现、数值格式及完成责任分别按自己的有限合同验收，不能跨合同拼出排名。
+项目仍未把 model open/map、metadata、tensor preparation、scheduler、多 provider 计划、kernel、
+token stream、HTTP/TLS 一次性计入同一 P2；没有完整模型的 tokens/s、time-to-first-token、p99、
+峰值 RSS、内存带宽和 energy/token，也没有完整路由、handler、JSON/SSE 应用层服务器比较。
+任何“HYLE 推理端到端更快”都没有证据资格。
 
 后续 P2 的正确触发点不是再跑全部模块，而是第一个真实 HYLE inference/service consumer 可执行时冻结：
 
@@ -150,7 +157,7 @@ python scripts/check-docs.py
 
 ## 2026-09-16：R3 Graph v2（历史候选）
 
-以下 owner 尚未 CLOSED，单独列出完整性能方向，不并入上文当前 CLOSED 数量。
+该历史候选记录时 owner 尚未 CLOSED；以下完整方向不重复并入当前 v3 合同组数量。
 [原始工程证据](../../../../evidence/performance/graph-cpu-route-p1-v2-2b613413-w1-win/README.md)
 资格及 controls PASS，n=31 已到上限；工程门 11/12 PASS，聚合 INCONCLUSIVE。
 严格方向 5 LOSS / 2 WIN / 5 INCONCLUSIVE；LOSS 未被 5% 非劣 PASS 改名。
@@ -227,3 +234,34 @@ INCONCLUSIVE；Graph M1 单个分层的小幅 LOSS 在证据中保留。默认�
 `REJECTED_DIAGNOSTIC` 在此表示排除可比性排名，并非数值检查失败。差值、冷准备范围、opaque SDK
 存储限制与所有原始数据保留。性能资格仅签 RTX4070/SM89、driver610.62、Toolkit13.3.73 的两个
 resident FFN 原型，不签其它 GPU、版本、shape 或模型吞吐，也不代替 R5/R6/R7。
+
+## 2026-09-17：R5 Apple 与 R6 Vulkan
+
+[Apple 最终原始证据](../../../../evidence/performance/apple-r5-final-1636365b-m1-mac/README.md)
+对应产品 `1636365b`，由 R6 逐树身份继承到当前交付候选。Direct/Graph × M1/M16 四个完整量化
+FFN workload 的原 5% NI 全过，n15 停止；严格区间均跨 1，各组 INCONCLUSIVE。默认采用成熟
+MLX full-region，独立参考拥有相同原生 owner/lifecycle；caller-thread 裸 MLX 两项成本诊断
+属于 NATURAL_ROUTE / NOT_COMPARABLE。资格限 M4 与所记录的 MLX/macOS/SDK 域。
+
+Vulkan 产品 `8e45b104` 的 Windows
+[Direct](../../../../evidence/performance/vulkan-r6-w1-direct-8e45b104/README.md) /
+[Graph](../../../../evidence/performance/vulkan-r6-w1-graph-8e45b104/README.md) 与 Air
+[Direct](../../../../evidence/performance/vulkan-r6-m1-direct-8e45b104/README.md) /
+[Graph](../../../../evidence/performance/vulkan-r6-m1-graph-8e45b104/README.md) 全部完成资格、controls、
+独立 full-output oracle 及原 5% NI；每入口/profile 的 16 门全过，n15 停止。四个去重 workload
+各自纳入两个 profile，整体方向均 INCONCLUSIVE；Air Graph M16 四个 peer-allocation-first
+分层的 median 额外延迟约 1.2%–1.5%，严格 LOSS 保留。采用原样 ggml strict-F32 shader 的
+同合同接入比较不构成 HYLE 算法胜利或整个 ggml runtime 排名。
+
+Vulkan [Windows](../../../../evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/README.md)
+与 [Air](../../../../evidence/performance/vulkan-r6-m1-native-boundary-8e45b104/README.md) 的
+Direct/Graph 原生成本均完成四顺序分层 × n15；裸 submit/fence 不承担完整取消、quarantine
+及生成结果 lease，继续排除 NI/排名。正负差额不隔离 host 包装成本，不以缓存猜测解释方向。
+资格限已记录的 RTX 4070 / M4-MoltenVK、strict F32 和固定 shape；没有 Linux 原生 GPU、
+AMD/Intel 或其它数值格式的性能资格。两路线的普通三交付、host 插桩和失败寿命分别由
+[R5 terminal](../../tasks/compute/apple-v1-four-route-foundation.md) 与
+[R6 terminal](../../tasks/compute/vulkan-v1-four-route-foundation.md)持有。
+
+本次补齐四个 Apple 与四个 Vulkan workload、两项规则、四项不可排名诊断、两项冷交付和一项
+CUDA vendor 内容准入，共 17 个 claim。原 81 个合同组的统计值、方向与工程结果没有改写，
+只按真实源码身份更新当前 owner 绑定。R7 尚未完成，不由账本登记签署整个基础架构结束。

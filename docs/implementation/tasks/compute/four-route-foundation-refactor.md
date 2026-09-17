@@ -16,12 +16,12 @@ host/device 检查；性能资格的长停顿已在独立 CUDA 中复现并取�
 基线完整链 P1 均通过原5%门、n=15停止。完整域没有 HYLE 明确优势，已接入成熟默认激活；
 最终默认规则、三交付、最终候选 P1 与原生边界成本均已验收，R4 在 `553a7d65` CLOSED。
 [R5 Apple](apple-v1-four-route-foundation.md) 已完成真实 Direct/Graph、三交付、host 插桩与
-M4 限定域的最终 P1，在 `a767bdc4` CLOSED。当前进入
-[R6 Vulkan](vulkan-v1-four-route-foundation.md)：Windows / Air 真实计算、host 插桩及
-[最终两系统三交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)已通过；
-四份正式 P1 原 5% 门、四项自然边界诊断和最终 ASan 已完成，剩余已启动的中央构建回归与
-terminal 汇总。十三已有 owner 当前重新绑定的只是 Vulkan 公开
-roots/交付变化，原运行时和性能资格继承。R6–R7 尚未完成，完整基础架构未结案。
+M4 限定域的最终 P1，在 `a767bdc4` CLOSED。
+[R6 Vulkan](vulkan-v1-four-route-foundation.md)也已 CLOSED：Windows / Air 的真实计算、host
+插桩、[最终三交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)、四份正式
+P1 原 5% 门、四项自然边界诊断及全部 111 个 selected gates 完成。十三已有 owner 的 Vulkan
+roots/交付轮同时关闭，原运行时、性能资格与 CPU 例外按身份继承。当前只剩 R7 的有限终审、
+最小 opt-in Obs 和清理；完整基础架构尚未结案。
 
 ## 目标与不做项
 

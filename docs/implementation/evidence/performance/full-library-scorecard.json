@@ -2,7 +2,7 @@
   "schema": "hyle.performance.scorecard/v1",
   "as_of": "2026-09-17",
   "registry": "docs/implementation/module-status.json",
-  "baseline": "7fa6dc0a8b3b857a1835525de0d0e7be5f8db5e9",
+  "baseline": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
   "ratio_definition": "greater than one favors the shipped HYLE route",
   "excluded_modules": ["compute_provider_ggml", "compute_sched"],
   "peer_freshness": [
@@ -34,30 +34,34 @@
     {"module": "sched", "candidate": "ad5bff895125fb0d95281b36559010435c3d7892", "claims": ["sched-fanout", "sched-completion"]},
     {"module": "io_core", "candidate": "4f0529a8d75cf5df33c27c703645ff0b0060186f", "claims": ["io-core-anonymous-adopt", "http1-small", "http1-fragmented"]},
     {"module": "io_tls", "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d", "claims": ["io-tls-identity", "tls-handshake", "tls-small-record"]},
-    {"module": "io_http", "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7", "claims": ["io-http-upgrade", "http1-small", "http1-fragmented"]},
+    {"module": "io_http", "candidate": "f231b6f41ca8e4599994c4d5fd71da6b80f6b2b7", "claims": ["http1-small", "http1-fragmented", "io-http-upgrade"]},
     {"module": "io_http2", "candidate": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3", "claims": ["http2-small", "http2-large"]},
     {"module": "io_transfer", "candidate": "18bf62f81a91975e0776439d88fca3891f10e560", "claims": ["transfer-local", "transfer-range"]},
+    {"module": "compute", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["compute-graph-failed-slot-retirement", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "graph", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["compute-graph-failed-slot-retirement", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
     {"module": "container_concurrent", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-concurrent-membership"]},
     {"module": "container_queue", "candidate": "111c28eab99daff6257427473a2a1b11ac1cfd0c", "claims": ["container-mpmc"]},
     {"module": "container_text", "candidate": "e50a2d94f601ba0d9b7d87c854c868126ca4e596", "claims": ["container-utf", "base64-decode", "base64-encode"]},
     {"module": "io_watch", "candidate": "fa5718715aaf7a9d867e0ef9ce81f435b8f5b116", "claims": ["io-watch-recursive", "io-watch-exact-file", "io-watch-directory-burst"]},
     {"module": "process", "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739", "claims": ["process-structural"]},
     {"module": "io_websocket", "candidate": "35af7e364a5b0ff5bcada42e975375f4ce141b99", "claims": ["websocket-mask"]},
+    {"module": "compute_provider_onednn", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "graph_provider_onednn", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
     {"module": "compute_ops", "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d", "claims": ["compute-ops-quantized-schema"]},
-    {"module": "compute", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["compute-graph-failed-slot-retirement", "cuda-c5-public-delivery"]},
-    {"module": "graph", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["compute-graph-failed-slot-retirement", "cuda-c5-public-delivery"]},
-    {"module": "compute_provider_onednn", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024", "cuda-c5-public-delivery"]},
-    {"module": "graph_provider_onednn", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257", "cuda-c5-public-delivery"]},
-    {"module": "compute_backend_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-foundation-cold-binding", "cuda-c5-public-delivery"]},
-    {"module": "compute_provider_native", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024", "cuda-c5-public-delivery"]},
-    {"module": "compute_route_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024", "cuda-c5-public-delivery"]},
-    {"module": "graph_route_cpu", "candidate": "f735271b725d2f3b1d9016dd35a2a9d7b0d43b5e", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257", "cuda-c5-public-delivery"]},
-    {"module": "compute_backend_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
+    {"module": "compute_backend_cpu", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cpu-foundation-cold-binding", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "compute_backend_cuda", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "compute_provider_native", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cpu-foundation-cold-binding", "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "compute_route_cpu", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024", "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024", "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024", "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "graph_route_cpu", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cpu-graph-r3-decode-fused-boundary-1x256x512", "cpu-graph-r3-decode-natural-sequence-1x256x512", "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024", "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024", "cpu-graph-r3-holdout-fused-boundary-17x129x257", "cpu-graph-r3-holdout-natural-sequence-17x129x257", "cpu-graph-r3-decode-native-sequence-1x256x512", "cpu-graph-r3-short-prefill-native-sequence-16x512x1024", "cpu-graph-r3-holdout-native-sequence-17x129x257", "cpu-graph-r3-two-worker-fused-boundary-17x129x257", "cpu-graph-r3-two-worker-natural-sequence-17x129x257", "cpu-graph-r3-two-worker-native-sequence-17x129x257", "cuda-c5-public-delivery", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
     {"module": "compute_provider_cublas", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
-    {"module": "compute_provider_marlin", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
-    {"module": "compute_provider_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
-    {"module": "compute_route_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost"]},
-    {"module": "graph_route_cuda", "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-graph-native-boundary-cost"]}
+    {"module": "compute_provider_marlin", "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost", "cuda-vendor-content-admission"]},
+    {"module": "compute_provider_cuda", "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost", "cuda-vendor-content-admission"]},
+    {"module": "compute_route_cuda", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-compute-decode-q4-ffn-m1", "cuda-r4-compute-short-prefill-q4-ffn-m16", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-compute-native-boundary-cost", "cuda-r4-graph-native-boundary-cost", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "graph_route_cuda", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["cuda-r4-cold-default-and-resource-contract", "cuda-r4-graph-decode-q4-ffn-m1", "cuda-r4-graph-short-prefill-q4-ffn-m16", "cuda-r4-graph-native-boundary-cost", "apple-r5-public-delivery", "vulkan-r6-public-delivery"]},
+    {"module": "compute_route_apple", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["apple-r5-compute-decode-affine-q4-ffn-m1", "apple-r5-compute-short-prefill-affine-q4-ffn-m16", "apple-r5-graph-decode-affine-q4-ffn-m1", "apple-r5-graph-short-prefill-affine-q4-ffn-m16", "apple-r5-cold-default-and-resource-contract", "apple-r5-compute-native-boundary-cost", "apple-r5-graph-native-boundary-cost", "vulkan-r6-public-delivery"]},
+    {"module": "graph_route_apple", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["apple-r5-graph-decode-affine-q4-ffn-m1", "apple-r5-graph-short-prefill-affine-q4-ffn-m16", "apple-r5-cold-default-and-resource-contract", "apple-r5-graph-native-boundary-cost", "vulkan-r6-public-delivery"]},
+    {"module": "compute_route_vulkan", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["vulkan-r6-compute-decode-f32-ffn-m1", "vulkan-r6-compute-short-prefill-f32-ffn-m16", "vulkan-r6-graph-decode-f32-ffn-m1", "vulkan-r6-graph-short-prefill-f32-ffn-m16", "vulkan-r6-cold-default-and-resource-contract", "vulkan-r6-compute-native-boundary-cost", "vulkan-r6-graph-native-boundary-cost"]},
+    {"module": "graph_route_vulkan", "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5", "claims": ["vulkan-r6-graph-decode-f32-ffn-m1", "vulkan-r6-graph-short-prefill-f32-ffn-m16", "vulkan-r6-cold-default-and-resource-contract", "vulkan-r6-graph-native-boundary-cost"]}
   ],
   "claims": [
     {
@@ -684,11 +688,7 @@
       "sensitivity": "W1 MSVC Release object disassembly plus four-platform source/static/shared and WSL sanitizers",
       "mechanism": "idle/running/failed encodes retirement in the existing byte; no new normal allocation, search, memset, callback or wait",
       "limitations": "P0 only; old CPU P1 and its accepted exception retain their original candidates; does not recover a lost device or qualify full CUDA route performance",
-      "evidence": [
-        "docs/implementation/tasks/compute/r4-failed-invocation-retirement.md",
-        "evidence/correctness/r4-failed-invocation-retirement/README.md",
-        "evidence/correctness/r4-failed-invocation-retirement/p0-codegen.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/r4-failed-invocation-retirement.md", "evidence/correctness/r4-failed-invocation-retirement/README.md", "evidence/correctness/r4-failed-invocation-retirement/p0-codegen.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-foundation-cold-binding",
@@ -714,11 +714,7 @@
       "sensitivity": "No cross-machine or unmeasured-op throughput inference.",
       "mechanism": "Reuse Context/PreparedOperation, native CPU executor hooks, oneDNN BRGEMM and complete regions; fixed eligibility without timing profiles.",
       "limitations": "This does not claim new P1 coverage for every retained Native operator or a CPU Q4 kernel.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md",
-        "evidence/correctness/compute-cpu-r3-foundation/README.md"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "docs/implementation/tasks/compute/cpu-v1-four-route-foundation.md", "evidence/correctness/compute-cpu-r3-foundation/README.md", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-direct-r3-decode-row-major-f32-matmul-m1-k1024-n1024",
@@ -743,12 +739,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [15].",
       "mechanism": "Development-fixed CPU route: oneDNN for eligible serial M>=16 dense MatMul; Native for small-row and transposed-weight domains.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round. Provider factor bytes match their earlier registered candidate; default route candidate is d9712e68.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-direct-r3-decode-row-major-f32-matmul-m4-k1024-n1024",
@@ -773,12 +764,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [15].",
       "mechanism": "Development-fixed CPU route: oneDNN for eligible serial M>=16 dense MatMul; Native for small-row and transposed-weight domains.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round. Provider factor bytes match their earlier registered candidate; default route candidate is d9712e68.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-direct-r3-short-prefill-row-major-f32-matmul-m32-k512-n1024",
@@ -803,12 +789,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [15].",
       "mechanism": "Development-fixed CPU route: oneDNN for eligible serial M>=16 dense MatMul; Native for small-row and transposed-weight domains.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round. Provider factor bytes match their earlier registered candidate; default route candidate is d9712e68.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-direct-r3-decode-transposed-weight-f32-matmul-m1-k1024-n1024",
@@ -833,12 +814,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [15].",
       "mechanism": "Development-fixed CPU route: oneDNN for eligible serial M>=16 dense MatMul; Native for small-row and transposed-weight domains.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round. Provider factor bytes match their earlier registered candidate; default route candidate is d9712e68.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json",
-        "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/README.md", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/summary.json", "evidence/performance/compute-cpu-route-p1-v3-d9712e68-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-decode-fused-boundary-1x256x512",
@@ -863,12 +839,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Only this roughly 12 us decode-fused item is accepted by explicit user decision on 2026-09-16: n=31 exhausted, one CI permits about 5.07% regression. Statistical NI remains INCONCLUSIVE and direction LOSS.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-decode-natural-sequence-1x256x512",
@@ -893,12 +864,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
@@ -923,12 +889,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
@@ -953,12 +914,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-holdout-fused-boundary-17x129x257",
@@ -983,12 +939,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-holdout-natural-sequence-17x129x257",
@@ -1013,12 +964,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-decode-native-sequence-1x256x512",
@@ -1043,12 +989,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-short-prefill-native-sequence-16x512x1024",
@@ -1073,12 +1014,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-holdout-native-sequence-17x129x257",
@@ -1103,12 +1039,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
@@ -1133,12 +1064,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
@@ -1163,12 +1089,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cpu-graph-r3-two-worker-native-sequence-17x129x257",
@@ -1193,12 +1114,7 @@
       "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
       "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
       "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
-      "evidence": [
-        "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
-        "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json", "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cuda-c5-public-delivery",
@@ -1219,7 +1135,7 @@
       "practical_result": "PASS",
       "engineering_action": "KEEP",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "Public compute/graph source and relocated static/shared CUDA FFN consumers; CPU-only/no-backend/core isolation",
       "contract": "Delivery-only root/consumer change; eight inherited factors have identical C++ source/header trees to d2e631b4",
       "peer": "No new runtime timing comparison",
@@ -1228,12 +1144,8 @@
       "ratio_ci": "N/A",
       "sensitivity": "Exact Git product projection plus Windows/WSL source/static/shared; macOS CUDA OFF configuration only",
       "mechanism": "Expose the implemented optional CUDA route through existing public product targets and package manifests",
-      "limitations": "Old CPU evidence retains original candidates and acceptance exception; full CUDA P1 and host sanitizer verdicts belong to the active R4 card",
-      "evidence": [
-        "docs/implementation/tasks/build/cuda-r4-product-delivery.md",
-        "evidence/correctness/cuda-r4-product-delivery/README.md",
-        "evidence/correctness/cuda-r4-product-delivery/p0-unchanged.json"
-      ]
+      "limitations": "Old CPU evidence retains original candidates and the acceptance exception; full CUDA P1 and host sanitizer verdicts remain in the separately completed R4 route card",
+      "evidence": ["docs/implementation/tasks/build/cuda-r4-product-delivery.md", "evidence/correctness/cuda-r4-product-delivery/README.md", "evidence/correctness/cuda-r4-product-delivery/p0-unchanged.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
     },
     {
       "id": "cuda-r4-cold-default-and-resource-contract",
@@ -1252,7 +1164,7 @@
       "practical_result": "PASS",
       "engineering_action": "KEEP",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "Ordinary CUDA Direct and captured Q4 gate/up -> SwiGLU -> dense down FFN; independent dense transform",
       "contract": "Cold cuBLASLt/Marlin/SGLang binding; HYLE separate/tail fallback; real resource admission, terminal completion and failed-slot retirement",
       "peer": "Locked cuBLASLt, vLLM Marlin and SGLang precise fragment; previous v2 full-chain HYLE comparison retained",
@@ -1262,10 +1174,7 @@
       "sensitivity": "Win/WSL real source/static/shared FFN; host/device checks; two Mac CUDA-OFF dependency projection checks",
       "mechanism": "Reuse native stream/context owner; cold captured executable and per-slot workspace; preserve mature fusion/resource ownership",
       "limitations": "Only SM89/RTX4070 qualified; SM80+ compilation support does not establish SOTA; no unsupported-format CPU fallback",
-      "evidence": [
-        "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-        "evidence/correctness/cuda-r4-mature-default/README.md"
-      ]
+      "evidence": ["docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md", "evidence/correctness/cuda-r4-mature-default/README.md", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
     },
     {
       "id": "cuda-r4-compute-decode-q4-ffn-m1",
@@ -1283,7 +1192,7 @@
       "practical_result": "PASS",
       "engineering_action": "KEEP",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "compute decode-q4-ffn-m1: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
       "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
       "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
@@ -1293,11 +1202,7 @@
       "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
       "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
       "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
-      "evidence": [
-        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
-        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
-        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
-      ]
+      "evidence": ["evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md", "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json", "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
     },
     {
       "id": "cuda-r4-compute-short-prefill-q4-ffn-m16",
@@ -1315,7 +1220,7 @@
       "practical_result": "PASS",
       "engineering_action": "KEEP",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "compute short-prefill-q4-ffn-m16: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
       "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
       "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
@@ -1325,11 +1230,7 @@
       "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
       "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
       "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
-      "evidence": [
-        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
-        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
-        "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
-      ]
+      "evidence": ["evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md", "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json", "evidence/performance/compute-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
     },
     {
       "id": "cuda-r4-graph-decode-q4-ffn-m1",
@@ -1348,7 +1249,7 @@
       "practical_result": "PASS",
       "engineering_action": "KEEP",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "graph decode-q4-ffn-m1: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
       "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
       "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
@@ -1358,11 +1259,7 @@
       "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
       "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
       "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
-      "evidence": [
-        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
-        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
-        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
-      ]
+      "evidence": ["evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md", "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json", "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
     },
     {
       "id": "cuda-r4-graph-short-prefill-q4-ffn-m16",
@@ -1381,7 +1278,7 @@
       "practical_result": "PASS",
       "engineering_action": "KEEP",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "graph short-prefill-q4-ffn-m16: K4096, hidden11008, output4096; W4A16 gate/up, precise activation, FP16 down",
       "contract": "Same HYLE ownership, failure and actual completion services; natural default versus independent SGLang precise adapter; two changed-input slots",
       "peer": "Same locked SGLang 06992c92 precise device body with independent host adapter; identical Marlin and cuBLASLt",
@@ -1391,11 +1288,7 @@
       "sensitivity": "Actual same-artifact A/A, five controls, two placements and both orders; raw replay QUALIFIED/CURRENT/EXACT",
       "mechanism": "Fixed mature default math and native execution; this gate checks integration cost and cannot establish a HYLE algorithm advantage",
       "limitations": "W1 RTX4070/SM89, driver610.62, Toolkit13.3.73 only; two provisional FFN archetypes, not model throughput; small stratum directions retained",
-      "evidence": [
-        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md",
-        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json",
-        "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json"
-      ]
+      "evidence": ["evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/README.md", "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/summary.json", "evidence/performance/graph-cuda-ffn-p1-v3-755fb7c7-w1-win/verify.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
     },
     {
       "id": "cuda-r4-compute-native-boundary-cost",
@@ -1413,7 +1306,7 @@
       "practical_result": "N/A",
       "engineering_action": "N/A",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "compute full M1/M16 resident FFN versus same-math raw native execution",
       "contract": "Different public services: raw side has one terminal event and caller-managed ownership; HYLE includes admission, retained owners and failed-slot retirement",
       "peer": "Same frozen Marlin/SGLang/cuBLASLt, same precision/resources; Graph side also genuinely captured",
@@ -1423,10 +1316,7 @@
       "sensitivity": "Same-build A/A and independent full-chain double oracle; native-runtime-pair and physically staged DLLs",
       "mechanism": "Full interface-boundary costs; no phase instrumentation attributes individual microseconds to locks, atomics or driver calls",
       "limitations": "Diagnostic classification rejects comparability, not data correctness; cold pair preparation excludes weight packing, opaque SDK peak memory unknown, teardown not separately timed",
-      "evidence": [
-        "evidence/performance/cuda-r4-native-boundary-v1/README.md",
-        "evidence/performance/cuda-r4-native-boundary-v1/summary.json"
-      ]
+      "evidence": ["evidence/performance/cuda-r4-native-boundary-v1/README.md", "evidence/performance/cuda-r4-native-boundary-v1/summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
     },
     {
       "id": "cuda-r4-graph-native-boundary-cost",
@@ -1445,7 +1335,7 @@
       "practical_result": "N/A",
       "engineering_action": "N/A",
       "consumer_weight": "HIGH",
-      "candidate_binding": "EXACT",
+      "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
       "consumer_shape": "graph full M1/M16 resident FFN versus same-math raw native execution",
       "contract": "Different public services: raw side has one terminal event and caller-managed ownership; HYLE includes admission, retained owners and failed-slot retirement",
       "peer": "Same frozen Marlin/SGLang/cuBLASLt, same precision/resources; Graph side also genuinely captured",
@@ -1455,10 +1345,262 @@
       "sensitivity": "Same-build A/A and independent full-chain double oracle; native-runtime-pair and physically staged DLLs",
       "mechanism": "Full interface-boundary costs; no phase instrumentation attributes individual microseconds to locks, atomics or driver calls",
       "limitations": "Diagnostic classification rejects comparability, not data correctness; cold pair preparation excludes weight packing, opaque SDK peak memory unknown, teardown not separately timed",
-      "evidence": [
-        "evidence/performance/cuda-r4-native-boundary-v1/README.md",
-        "evidence/performance/cuda-r4-native-boundary-v1/summary.json"
-      ]
+      "evidence": ["evidence/performance/cuda-r4-native-boundary-v1/README.md", "evidence/performance/cuda-r4-native-boundary-v1/summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"]
+    },
+    {
+      "id": "apple-r5-compute-decode-affine-q4-ffn-m1", "modules": ["compute_route_apple"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "compute decode-affine-q4-ffn-m1, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same Context admission, owner thread, GPU completion and owning-result release; independent native MLX expression",
+      "peer": "Locked MLX v0.32.2 compiled region, affine Q4/group64 gate/up, F32 down",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "M1-MAC: public 2870.593639 to 2900.316134 us, peer 2865.740077 to 2900.820932 us",
+      "ratio_ci": "M1-MAC: median 0.999017 to 1.000872, CI endpoints 0.995968 to 1.002541, strict strata {'INCONCLUSIVE': 8}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "Only Air Mac16,12/M4, macOS 27.0/26A428, locked MLX/toolchain; engineering QoS, no hard P-core or Formal claim; not model throughput or M5/NAX qualification",
+      "evidence": ["evidence/performance/apple-r5-final-1636365b-m1-mac/README.md", "evidence/performance/apple-r5-final-1636365b-m1-mac/compute-p1-summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "apple-r5-compute-short-prefill-affine-q4-ffn-m16", "modules": ["compute_route_apple"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "compute short-prefill-affine-q4-ffn-m16, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same Context admission, owner thread, GPU completion and owning-result release; independent native MLX expression",
+      "peer": "Locked MLX v0.32.2 compiled region, affine Q4/group64 gate/up, F32 down",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "M1-MAC: public 4917.146088 to 5005.506057 us, peer 4914.004914 to 5009.769050 us",
+      "ratio_ci": "M1-MAC: median 0.998700 to 1.003551, CI endpoints 0.990600 to 1.008972, strict strata {'INCONCLUSIVE': 8}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "Only Air Mac16,12/M4, macOS 27.0/26A428, locked MLX/toolchain; engineering QoS, no hard P-core or Formal claim; not model throughput or M5/NAX qualification",
+      "evidence": ["evidence/performance/apple-r5-final-1636365b-m1-mac/README.md", "evidence/performance/apple-r5-final-1636365b-m1-mac/compute-p1-summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "apple-r5-graph-decode-affine-q4-ffn-m1", "modules": ["compute_route_apple", "graph_route_apple"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "graph decode-affine-q4-ffn-m1, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same Context admission, owner thread, GPU completion and owning-result release; independent native MLX expression",
+      "peer": "Locked MLX v0.32.2 compiled region, affine Q4/group64 gate/up, F32 down",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "M1-MAC: public 2891.426919 to 2926.629401 us, peer 2885.419973 to 2929.973630 us",
+      "ratio_ci": "M1-MAC: median 0.998156 to 1.000970, CI endpoints 0.994812 to 1.004139, strict strata {'INCONCLUSIVE': 8}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "Only Air Mac16,12/M4, macOS 27.0/26A428, locked MLX/toolchain; engineering QoS, no hard P-core or Formal claim; not model throughput or M5/NAX qualification",
+      "evidence": ["evidence/performance/apple-r5-final-1636365b-m1-mac/README.md", "evidence/performance/apple-r5-final-1636365b-m1-mac/graph-p1-summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "apple-r5-graph-short-prefill-affine-q4-ffn-m16", "modules": ["compute_route_apple", "graph_route_apple"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "graph short-prefill-affine-q4-ffn-m16, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same Context admission, owner thread, GPU completion and owning-result release; independent native MLX expression",
+      "peer": "Locked MLX v0.32.2 compiled region, affine Q4/group64 gate/up, F32 down",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "M1-MAC: public 4936.808847 to 5788.712012 us, peer 4951.965930 to 5776.673791 us",
+      "ratio_ci": "M1-MAC: median 0.998105 to 1.003708, CI endpoints 0.988838 to 1.010035, strict strata {'INCONCLUSIVE': 8}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "Only Air Mac16,12/M4, macOS 27.0/26A428, locked MLX/toolchain; engineering QoS, no hard P-core or Formal claim; not model throughput or M5/NAX qualification",
+      "evidence": ["evidence/performance/apple-r5-final-1636365b-m1-mac/README.md", "evidence/performance/apple-r5-final-1636365b-m1-mac/graph-p1-summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "apple-r5-cold-default-and-resource-contract", "modules": ["compute_route_apple", "graph_route_apple"], "kind": "ROUTE_POLICY",
+      "comparison": "PROVIDER_SELECTION", "qualification": "STRUCTURAL", "direction": "N/A",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "Ordinary Direct and fixed-shape Graph full FFN plus a same-device custom native fragment",
+      "contract": "The user chooses a route; preparation matches fixed legality and maturity rules; replay does not rank Providers, time candidates or rebuild a generic DAG",
+      "peer": "MLX v0.32.2 native compiled region and its resource management",
+      "scale": "Shared immutable code/constants, independent admitted invocations and owning output lifetime",
+      "absolute": "P0: cold compile/planning and native allocation; no HYLE hot timing search, private universal queue or per-kernel Provider vtable",
+      "ratio_ci": "N/A: policy and resource structure are not a timed algorithm ranking",
+      "sensitivity": "Two Mac native and three-delivery journeys, host-only sanitizers; platform/version facts stored by Context",
+      "mechanism": "Preserve mature MLX region fusion and lazy/native ownership; HYLE owns region admission, terminal completion and graph boundary",
+      "limitations": "Finite typed F32 MatMul, affine Q4/group64 and SiLU domain; pure fixed-shape Graph; no arbitrary MTLBuffer/queue import; driver storage is opaque",
+      "evidence": ["docs/implementation/tasks/compute/apple-v1-four-route-foundation.md", "evidence/correctness/apple-r5-candidate-review/README.md", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "vulkan-r6-compute-decode-f32-ffn-m1", "modules": ["compute_route_vulkan"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "compute decode-f32-ffn-m1, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same original strict-F32 shader mathematics and HYLE native lifecycle adapter; independent locked-ggml recipe; Direct fixed caller buffers and Graph generated output are compared separately",
+      "peer": "Original ggml shaders at 456172ec733a135778adcd32d00e576a58232e45, independently compiled and described",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "W1-WIN: public 1239.556735 to 1273.982725 us, peer 1232.270705 to 1279.656028 us; M1-MAC: public 5341.024408 to 5385.899715 us, peer 5348.737698 to 5389.092477 us",
+      "ratio_ci": "W1-WIN: median 0.990494 to 1.004220, CI endpoints 0.981211 to 1.025657, strict strata {'INCONCLUSIVE': 8}; M1-MAC: median 1.000268 to 1.001713, CI endpoints 0.999893 to 1.002139, strict strata {'WIN': 7, 'INCONCLUSIVE': 1}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "W1 RTX4070/driver610.62 and Air M4/MoltenVK1.4.1 only; strict F32; no Linux-GPU/AMD/Intel or other-version qualification. Air Graph M16 retains four small LOSS strata despite 5% NI PASS; allocation-order association does not prove a driver/cache cause",
+      "evidence": ["evidence/performance/vulkan-r6-w1-direct-8e45b104/README.md", "evidence/performance/vulkan-r6-w1-direct-8e45b104/summary.json", "evidence/performance/vulkan-r6-m1-direct-8e45b104/README.md", "evidence/performance/vulkan-r6-m1-direct-8e45b104/summary.json"]
+    },
+    {
+      "id": "vulkan-r6-compute-short-prefill-f32-ffn-m16", "modules": ["compute_route_vulkan"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "compute short-prefill-f32-ffn-m16, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same original strict-F32 shader mathematics and HYLE native lifecycle adapter; independent locked-ggml recipe; Direct fixed caller buffers and Graph generated output are compared separately",
+      "peer": "Original ggml shaders at 456172ec733a135778adcd32d00e576a58232e45, independently compiled and described",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "W1-WIN: public 4458.911134 to 4602.356406 us, peer 4455.335264 to 4604.687572 us; M1-MAC: public 25967.281226 to 26427.061311 us, peer 26028.110359 to 26932.399677 us",
+      "ratio_ci": "W1-WIN: median 0.991878 to 1.005471, CI endpoints 0.968628 to 1.021457, strict strata {'INCONCLUSIVE': 8}; M1-MAC: median 0.988563 to 1.021558, CI endpoints 0.982835 to 1.025047, strict strata {'WIN': 4, 'INCONCLUSIVE': 4}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "W1 RTX4070/driver610.62 and Air M4/MoltenVK1.4.1 only; strict F32; no Linux-GPU/AMD/Intel or other-version qualification. Air Graph M16 retains four small LOSS strata despite 5% NI PASS; allocation-order association does not prove a driver/cache cause",
+      "evidence": ["evidence/performance/vulkan-r6-w1-direct-8e45b104/README.md", "evidence/performance/vulkan-r6-w1-direct-8e45b104/summary.json", "evidence/performance/vulkan-r6-m1-direct-8e45b104/README.md", "evidence/performance/vulkan-r6-m1-direct-8e45b104/summary.json"]
+    },
+    {
+      "id": "vulkan-r6-graph-decode-f32-ffn-m1", "modules": ["compute_route_vulkan", "graph_route_vulkan"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "graph decode-f32-ffn-m1, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same original strict-F32 shader mathematics and HYLE native lifecycle adapter; independent locked-ggml recipe; Direct fixed caller buffers and Graph generated output are compared separately",
+      "peer": "Original ggml shaders at 456172ec733a135778adcd32d00e576a58232e45, independently compiled and described",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "W1-WIN: public 1254.972830 to 1289.208040 us, peer 1253.635543 to 1279.934467 us; M1-MAC: public 5354.752343 to 5403.652869 us, peer 5360.493165 to 5410.377103 us",
+      "ratio_ci": "W1-WIN: median 0.994071 to 1.004920, CI endpoints 0.977704 to 1.024982, strict strata {'INCONCLUSIVE': 8}; M1-MAC: median 0.999569 to 1.001189, CI endpoints 0.998759 to 1.001893, strict strata {'WIN': 2, 'INCONCLUSIVE': 6}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "W1 RTX4070/driver610.62 and Air M4/MoltenVK1.4.1 only; strict F32; no Linux-GPU/AMD/Intel or other-version qualification. Air Graph M16 retains four small LOSS strata despite 5% NI PASS; allocation-order association does not prove a driver/cache cause",
+      "evidence": ["evidence/performance/vulkan-r6-w1-graph-8e45b104/README.md", "evidence/performance/vulkan-r6-w1-graph-8e45b104/summary.json", "evidence/performance/vulkan-r6-m1-graph-8e45b104/README.md", "evidence/performance/vulkan-r6-m1-graph-8e45b104/summary.json"]
+    },
+    {
+      "id": "vulkan-r6-graph-short-prefill-f32-ffn-m16", "modules": ["compute_route_vulkan", "graph_route_vulkan"], "kind": "P1_WORKLOAD",
+      "comparison": "SAME_CONTRACT_INTERNAL", "qualification": "QUALIFIED_RETAINED", "direction": "INCONCLUSIVE",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "graph short-prefill-f32-ffn-m16, complete resident K4096/H11008/O4096 FFN; two changed inputs",
+      "contract": "Same original strict-F32 shader mathematics and HYLE native lifecycle adapter; independent locked-ggml recipe; Direct fixed caller buffers and Graph generated output are compared separately",
+      "peer": "Original ggml shaders at 456172ec733a135778adcd32d00e576a58232e45, independently compiled and described",
+      "scale": "M1 primary / M16 holdout; each profile has two placements x both execution orders x both allocation orders, n=15 with no escalation",
+      "absolute": "W1-WIN: public 4481.692287 to 4587.576842 us, peer 4489.740942 to 4580.642206 us; M1-MAC: public 26048.450117 to 27716.186253 us, peer 26322.716504 to 27570.995313 us",
+      "ratio_ci": "W1-WIN: median 0.991991 to 1.004861, CI endpoints 0.963653 to 1.018777, strict strata {'INCONCLUSIVE': 8}; M1-MAC: median 0.985050 to 1.011573, CI endpoints 0.970975 to 1.019268, strict strata {'INCONCLUSIVE': 4, 'LOSS': 4}",
+      "sensitivity": "Separate profile/order/placement results retained, no pooled interval; each entry/profile completed 16 A/A, 120 product and 30 control processes; raw identity replay is not a statistical rerun",
+      "mechanism": "Cold compile and fixed binding reuse the mature implementation; same-contract gate qualifies integration, not an independent HYLE algorithm win",
+      "limitations": "W1 RTX4070/driver610.62 and Air M4/MoltenVK1.4.1 only; strict F32; no Linux-GPU/AMD/Intel or other-version qualification. Air Graph M16 retains four small LOSS strata despite 5% NI PASS; allocation-order association does not prove a driver/cache cause",
+      "evidence": ["evidence/performance/vulkan-r6-w1-graph-8e45b104/README.md", "evidence/performance/vulkan-r6-w1-graph-8e45b104/summary.json", "evidence/performance/vulkan-r6-m1-graph-8e45b104/README.md", "evidence/performance/vulkan-r6-m1-graph-8e45b104/summary.json"]
+    },
+    {
+      "id": "vulkan-r6-cold-default-and-resource-contract", "modules": ["compute_route_vulkan", "graph_route_vulkan"], "kind": "ROUTE_POLICY",
+      "comparison": "PROVIDER_SELECTION", "qualification": "STRUCTURAL", "direction": "N/A",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "Ordinary Direct and fixed-shape Graph full FFN plus a same-device custom native fragment",
+      "contract": "The user chooses a route; preparation matches fixed legality and maturity rules; replay does not rank Providers, time candidates or rebuild a generic DAG",
+      "peer": "Audited original ggml strict-F32 shader subset; native Vulkan buffers/pipelines/commands and host completion ownership",
+      "scale": "Shared immutable code/constants, independent admitted invocations and owning output lifetime",
+      "absolute": "P0: cold compile/planning and native allocation; no HYLE hot timing search, private universal queue or per-kernel Provider vtable",
+      "ratio_ci": "N/A: policy and resource structure are not a timed algorithm ranking",
+      "sensitivity": "Windows RTX4070 and Air MoltenVK native numerical/lifetime/validation evidence; actual BK32/shared-memory and legal aligned-load conditions checked before P1",
+      "mechanism": "Cold typed lowering, shared packing, liveness storage planning and reusable native commands; retain only constants used by final dispatches",
+      "limitations": "Finite typed 2-D F32 MatMul and SiLU; ready-buffer/custom SPIR-V native extension; quota counts actual VkDeviceMemory, not opaque pipeline/driver allocations",
+      "evidence": ["docs/implementation/tasks/compute/vulkan-r6-performance-contract.md", "evidence/review/vulkan-r6-candidate/README.md", "evidence/correctness/vulkan-r6-f32-corrected/README.md"]
+    },
+    {
+      "id": "apple-r5-compute-native-boundary-cost", "modules": ["compute_route_apple"], "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE", "qualification": "REJECTED_DIAGNOSTIC", "direction": "N/A",
+      "practical_result": "N/A", "engineering_action": "N/A", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "compute complete affine-Q4/F32 FFN M1/M16 against caller-thread MLX",
+      "contract": "Same mathematics and checked GPU synchronization; bare MLX lacks HYLE admission/owner-thread/cancel/close/result services",
+      "peer": "Same locked MLX v0.32.2 compiled region with independent caller-thread execution",
+      "scale": "Four order strata x 15 independent processes, two shapes/process, no escalation or additional placement",
+      "absolute": "decode-affine-q4-ffn-m1: paired extra median 5.718939 to 9.711917 us; short-prefill-affine-q4-ffn-m16: paired extra median -4.229463 to 6.784605 us",
+      "ratio_ci": "Individual intervals retained; no pooled CI, NI, equivalence or algorithm ranking",
+      "sensitivity": "Corresponding same-build A/A, full-output oracle and actual interactive QoS/machine checks",
+      "mechanism": "Whole natural boundary cost; cannot assign individual microseconds to owner-thread, locks or native driver work",
+      "limitations": "REJECTED_DIAGNOSTIC excludes comparability ranking, not data correctness; opaque GPU memory peaks and independent teardown latency unmeasured; no cross-entry absolute-time comparison",
+      "evidence": ["evidence/performance/apple-r5-final-1636365b-m1-mac/README.md", "evidence/performance/apple-r5-final-1636365b-m1-mac/compute-natural-summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "apple-r5-graph-native-boundary-cost", "modules": ["compute_route_apple", "graph_route_apple"], "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE", "qualification": "REJECTED_DIAGNOSTIC", "direction": "N/A",
+      "practical_result": "N/A", "engineering_action": "N/A", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "graph complete affine-Q4/F32 FFN M1/M16 against caller-thread MLX",
+      "contract": "Same mathematics and checked GPU synchronization; bare MLX lacks HYLE admission/owner-thread/cancel/close/result services",
+      "peer": "Same locked MLX v0.32.2 compiled region with independent caller-thread execution",
+      "scale": "Four order strata x 15 independent processes, two shapes/process, no escalation or additional placement",
+      "absolute": "decode-affine-q4-ffn-m1: paired extra median 4.198099 to 11.062172 us; short-prefill-affine-q4-ffn-m16: paired extra median 5.719208 to 12.185361 us",
+      "ratio_ci": "Individual intervals retained; no pooled CI, NI, equivalence or algorithm ranking",
+      "sensitivity": "Corresponding same-build A/A, full-output oracle and actual interactive QoS/machine checks",
+      "mechanism": "Whole natural boundary cost; cannot assign individual microseconds to owner-thread, locks or native driver work",
+      "limitations": "REJECTED_DIAGNOSTIC excludes comparability ranking, not data correctness; opaque GPU memory peaks and independent teardown latency unmeasured; no cross-entry absolute-time comparison",
+      "evidence": ["evidence/performance/apple-r5-final-1636365b-m1-mac/README.md", "evidence/performance/apple-r5-final-1636365b-m1-mac/graph-natural-summary.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "vulkan-r6-compute-native-boundary-cost", "modules": ["compute_route_vulkan"], "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE", "qualification": "REJECTED_DIAGNOSTIC", "direction": "N/A",
+      "practical_result": "N/A", "engineering_action": "N/A", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "compute complete resident strict-F32 K4096/H11008/O4096 FFN, M1/M16, against bare native Vulkan",
+      "contract": "Same shader mathematics and checked submit/fence; bare route omits public admission, retained-owner/cancel/quarantine and generated-result-lease responsibilities",
+      "peer": "Independent original ggml 456172ec shader recipe and recorded native command buffers",
+      "scale": "Each declared profile: four execution/allocation-order strata x 15 independent processes; two shapes/process, primary placement, no escalation",
+      "ratio_ci": "All individual intervals retained; no pooled CI, NI, equivalence or algorithm ranking",
+      "sensitivity": "Separate Windows P-core pair and Air interactive-QoS observations; corresponding formal A/A plus independent full-output oracle; no cross-entry absolute latency comparison",
+      "mechanism": "Natural complete-boundary diagnostic; signed differences do not isolate host service costs or establish negative/zero overhead",
+      "limitations": "Different service responsibility prevents ranking; no phase instrumentation attributes differences to driver/cache/locks; no unknown-device or production-model claim",
+      "evidence": ["evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/README.md", "evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/compute-summary.json", "evidence/performance/vulkan-r6-m1-native-boundary-8e45b104/README.md", "evidence/performance/vulkan-r6-m1-native-boundary-8e45b104/compute-summary.json"],
+      "absolute": "W1-WIN decode-f32-ffn-m1: paired extra median -8.310666 to 5.553354 us; W1-WIN short-prefill-f32-ffn-m16: paired extra median -36.228694 to 18.401875 us; M1-MAC decode-f32-ffn-m1: paired extra median -9.430380 to -3.191387 us; M1-MAC short-prefill-f32-ffn-m16: paired extra median -553.650614 to -121.437668 us"
+    },
+    {
+      "id": "vulkan-r6-graph-native-boundary-cost", "modules": ["compute_route_vulkan", "graph_route_vulkan"], "kind": "P1_WORKLOAD",
+      "comparison": "NATURAL_ROUTE", "qualification": "REJECTED_DIAGNOSTIC", "direction": "N/A",
+      "practical_result": "N/A", "engineering_action": "N/A", "consumer_weight": "HIGH", "candidate_binding": "EXACT",
+      "consumer_shape": "graph complete resident strict-F32 K4096/H11008/O4096 FFN, M1/M16, against bare native Vulkan",
+      "contract": "Same shader mathematics and checked submit/fence; bare route omits public admission, retained-owner/cancel/quarantine and generated-result-lease responsibilities",
+      "peer": "Independent original ggml 456172ec shader recipe and recorded native command buffers",
+      "scale": "Each declared profile: four execution/allocation-order strata x 15 independent processes; two shapes/process, primary placement, no escalation",
+      "ratio_ci": "All individual intervals retained; no pooled CI, NI, equivalence or algorithm ranking",
+      "sensitivity": "Separate Windows P-core pair and Air interactive-QoS observations; corresponding formal A/A plus independent full-output oracle; no cross-entry absolute latency comparison",
+      "mechanism": "Natural complete-boundary diagnostic; signed differences do not isolate host service costs or establish negative/zero overhead",
+      "limitations": "Different service responsibility prevents ranking; no phase instrumentation attributes differences to driver/cache/locks; no unknown-device or production-model claim",
+      "evidence": ["evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/README.md", "evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/graph-summary.json", "evidence/performance/vulkan-r6-m1-native-boundary-8e45b104/README.md", "evidence/performance/vulkan-r6-m1-native-boundary-8e45b104/graph-summary.json"],
+      "absolute": "W1-WIN decode-f32-ffn-m1: paired extra median -3.995326 to 8.392921 us; W1-WIN short-prefill-f32-ffn-m16: paired extra median -8.800469 to 7.360866 us; M1-MAC decode-f32-ffn-m1: paired extra median -1.750265 to -1.162695 us; M1-MAC short-prefill-f32-ffn-m16: paired extra median -389.370680 to 432.296160 us"
+    },
+    {
+      "id": "apple-r5-public-delivery", "modules": ["compute", "graph", "compute_provider_onednn", "graph_provider_onednn", "compute_backend_cpu", "compute_backend_cuda", "compute_provider_native", "compute_route_cpu", "graph_route_cpu", "compute_route_cuda", "graph_route_cuda"], "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+      "consumer_shape": "Ordinary public Compute/Graph source embedding and relocated static/shared SDK native FFN/custom consumers",
+      "contract": "Optional route roots and native runtime assets are projected through existing public C++ targets; inherited CPU/CUDA runtime implementations and evidence remain unchanged",
+      "peer": "No new runtime timing comparison; delivery and resource discoverability are structural obligations",
+      "scale": "Source/static/shared, independent consumers, offline dependency inputs, actual native calculation and changed inputs",
+      "absolute": "P0 only: cold configuration/packaging/staging; no added hot timing search, route dispatch or runtime algorithm",
+      "ratio_ci": "N/A",
+      "sensitivity": "Two native Macs with relocated SDK/producer metallib fallback removed; Windows broad selected and WSL Apple-OFF isolation",
+      "mechanism": "Project generated MLX metallib beside static consumer/shared runtime and retain one MLX native runtime",
+      "limitations": "This delivery claim does not extend runtime P1 qualification, certify untested devices or change the CPU acceptance exception",
+      "evidence": ["docs/implementation/tasks/build/apple-r5-product-delivery.md", "evidence/correctness/apple-r5-product-delivery/inherited-baseline.json", "evidence/correctness/apple-r5-product-delivery/README.md", "evidence/correctness/apple-r5-final-mini/README.md", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"]
+    },
+    {
+      "id": "vulkan-r6-public-delivery", "modules": ["compute", "graph", "compute_provider_onednn", "graph_provider_onednn", "compute_backend_cpu", "compute_backend_cuda", "compute_provider_native", "compute_route_cpu", "graph_route_cpu", "compute_route_cuda", "graph_route_cuda", "compute_route_apple", "graph_route_apple"], "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "STRUCTURAL",
+      "consumer_shape": "Ordinary public Compute/Graph source embedding and relocated static/shared SDK native FFN/custom consumers",
+      "contract": "Optional route roots and native runtime assets are projected through existing public C++ targets; inherited CPU/CUDA runtime implementations and evidence remain unchanged",
+      "peer": "No new runtime timing comparison; delivery and resource discoverability are structural obligations",
+      "scale": "Source/static/shared, independent consumers, offline dependency inputs, actual native calculation and changed inputs",
+      "absolute": "P0 only: cold configuration/packaging/staging; no added hot timing search, route dispatch or runtime algorithm",
+      "ratio_ci": "N/A",
+      "sensitivity": "Windows RTX4070 and Air MoltenVK, same complete source ZIP; all producer source/build directories hidden before SDK consumption; actual Windows DLL adjacency",
+      "mechanism": "Expose real Vulkan route roots and embedded original shader assets; binary consumers need the system loader/driver, not glslang or producer shader files",
+      "limitations": "This delivery claim does not extend runtime P1 qualification, certify untested devices or change the CPU acceptance exception",
+      "evidence": ["docs/implementation/tasks/build/vulkan-r6-product-delivery.md", "evidence/correctness/vulkan-r6-product-delivery/inherited-baseline.json", "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json", "evidence/correctness/vulkan-r6-final-delivery/README.md"]
+    },
+    {
+      "id": "cuda-vendor-content-admission", "modules": ["compute_provider_marlin", "compute_provider_cuda"], "kind": "P0_STRUCTURAL",
+      "comparison": "NO_COMPARABLE_PEER", "qualification": "STRUCTURAL", "direction": "N/A",
+      "practical_result": "PASS", "engineering_action": "KEEP", "consumer_weight": "HIGH", "candidate_binding": "STRUCTURAL",
+      "consumer_shape": "Complete source archive and CUDA-enabled consumer configuration with locked Marlin/SGLang content",
+      "contract": "Canonical case-sensitive path manifest and enabled-consumer validation; CUDA-OFF does not acquire an unrelated vendor obligation",
+      "peer": "Existing HYLE locked-source audit; unchanged Marlin and SGLang algorithm blobs",
+      "scale": "One cold linear file-content audit at enabled configuration, no per-execution work",
+      "absolute": "Not timed; original CUDA runtime/algorithm/layout unchanged",
+      "ratio_ci": "N/A",
+      "sensitivity": "Windows/Air independent manifest reproduction and modified-copy rejection before consumer configuration; final R5 selector receipts",
+      "mechanism": "Correct two manifest hashes and call the existing audit at owning factor admission",
+      "limitations": "No new GPU timing or broader hardware/version qualification; earlier measured manifest-order values remain historical, measured source bytes are unchanged",
+      "evidence": ["docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md", "evidence/correctness/cuda-vendor-content-audit-v1/README.md"]
     }
   ]
 }
