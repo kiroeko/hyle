@@ -494,13 +494,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q AUDITED：P的typed张量/门控/mixed norm已实现，Air/Mini各22 case及两个头检查通过；Q01–Q04固定归约/Softmax/稳定TopK及普通两输出组合，尚未实施。checked索引/Scan、完整C1权重/三交付/P1待完成。"
+      "summary": "LLM/MoE C1-P/Q AUDITED：typed张量/门控/mixed norm及归约/Softmax/稳定TopK已实现，普通Direct/Graph两输出组合接通；Q候选Air/Mini各27 case及两个头检查首次通过。checked索引/Scan、完整C1权重/三交付/P1待完成，矩阵仍未证明。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q AUDITED：P的typed张量/门控/mixed norm已实现，Air/Mini各22 case及两个头检查通过；Q01–Q04固定归约/Softmax/稳定TopK及普通两输出组合，尚未实施。checked索引/Scan、完整C1权重/三交付/P1待完成。"
+      "summary": "LLM/MoE C1-P/Q AUDITED：typed张量/门控/mixed norm及归约/Softmax/稳定TopK已实现，普通Direct/Graph两输出组合接通；Q候选Air/Mini各27 case及两个头检查首次通过。checked索引/Scan、完整C1权重/三交付/P1待完成，矩阵仍未证明。"
     },
     {
       "module": "compute_route_vulkan",

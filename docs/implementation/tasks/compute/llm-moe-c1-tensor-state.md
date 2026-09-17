@@ -717,4 +717,27 @@ merge sort 的比较/合并在相等时保持原序。直接 float Min/Max 的�
 现有 `infer_output_descriptions`。不接 checked Gather/Scatter/Scan，不变 Context 运行状态机、
 共同 Graph/API、依赖 pin 或公共治理。本轮不启动 P1；实现稳定后运行具名正确性，不反复追加姿势。
 
+### C1-Q 实施事实
+
+- `fe5362e3` 完成 Q01–Q04：原生归约/Softmax/稳定 TopK，共同冷推导支持两个输出；Direct 和
+  普通 Graph 共享 lowering。Air `Mac16,12`、Mini `Mac16,10` 的 Release/WERROR 首次均通过
+  Direct **19**、Graph **8**，合计 **27 case**，另各两个独立公开头检查。没有产品纠正、
+  依赖变更或容差调整；[命令、两机日志与哈希](../../../../evidence/correctness/compute-llm-moe-c1/q-apple-focused.json)。
+- 三浮点 Reduce 的独立 FP64 oracle 覆盖多/负 axes、keep-dim、rank8、native 转置、scalar、
+  空集合与空输出；Min/Max 的混合 ±0、NaN 与 Inf 通过。Softmax/LogSoftmax 实测
+  width0/1/17/127/129/2048/8193、非末轴/转置、负 scale、广播 Bool/同类型 additive mask；
+  masked NaN 被排除，未屏蔽 NaN/+Inf、全 -Inf 与全 false 行全 NaN，F32 大共同偏置不丢失
+  `-log(4)`。独立公式与既定存储舍入容差通过。
+- TopK 的独立 stable scalar ordering 和源存储逐位对照覆盖 k=1、全选、实际 E/k 与
+  4097 列跨 native sort tile；largest/smallest、sorted/stable flags、任意轴/转置、NaN/±Inf/
+  ±0、不同 NaN payload、空域和准备拒绝均通过。score→Softmax→TopK→Reduce→选中权重归一化
+  的普通 Graph 实测 rows/experts/k 为 1/128/6、17/256/8、23/897/8、129/129/6、0/256/8；
+  两 invocation、三次变化输入、源 Graph 释放、旧 values/indices 保活、输入不变和 close 通过。
+  同程序 Direct 逐位对照之外使用独立数值/排序 oracle，既有 OOM/取消/late failure/排空回归通过。
+- 统一 LOC self-check：Compute+Graph 实现 **42,916 行 / 170 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/q-implementation-loc.json)。Windows/Air
+  selector 保留 112/110 项 skipped reasons；本批只运行两台 Mac configure、两个 factor 和两个
+  头检查。完整 C1 真实权重、三交付/其他环境、等责 P1 和矩阵逐格验收仍待完成；没有性能胜出
+  或四路线完成结论。下一具名缺口是 Apple checked Gather/Scatter/Scan，不扩大至新模型策略。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
