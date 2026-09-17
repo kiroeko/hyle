@@ -1,0 +1,61 @@
+{
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "measurement_snapshot": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+  "profile": "W1-WIN engineering, RTX 4070 / strict F32",
+  "verdict": "PASS; two workloads, 16 NI gates at the original 5%, n15; all strict directions inconclusive",
+  "qualification": "QUALIFIED",
+  "workloads": [
+    {
+      "workload": "decode-f32-ffn-m1",
+      "ni_gate": "PASS",
+      "median_advantage_ratio_range": [
+        0.9904937553379792,
+        1.0042195162128258
+      ],
+      "strict_directions": [
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE"
+      ]
+    },
+    {
+      "workload": "short-prefill-f32-ffn-m16",
+      "ni_gate": "PASS",
+      "median_advantage_ratio_range": [
+        0.9918781237985389,
+        1.0054713995026001
+      ],
+      "strict_directions": [
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE"
+      ]
+    }
+  ],
+  "contract_sha256": "e1bdc392cebcbc422ec604db7b30f6019705d48576bea0a89b9167e0b5fc43be",
+  "summary_sha256": "4437ced802265df9b5ec2cae35f95af6ea5335df1f8d99b9304aeb9ff4343cf4",
+  "archive": {
+    "path": "raw.zip",
+    "sha256": "11febb38def80123a1ecb940e10f5857a9ca5bbb5f87c1f541d4548f73e38423",
+    "bytes": 564938,
+    "entries": 205,
+    "per_entry_integrity": "PASS"
+  },
+  "skipped_gates": 112,
+  "remaining": [
+    "Windows Graph P1",
+    "Air Direct and Graph P1",
+    "natural boundary diagnostics",
+    "final delivery/selector and route review"
+  ]
+}

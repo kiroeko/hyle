@@ -252,3 +252,14 @@ validation 通过；Air 四个完整 FFN 程序的两组输入/全输出独立 d
 独立 peer 的 Windows 反斜杠被 CMake 的 `CONFIGURE_DEPENDS` 写入无效转义；此时没有 A/A 或
 性能样本。只在 Vulkan benchmark 的 CMake 局部规范化该路径，保留失败日志；产品 `8e45b104`
 不变，修正后的 benchmark commit 作为测量制品身份，原性能预算未消耗。
+
+### Windows Direct P1 检查点
+
+[实际统一仪器证据](../../../../evidence/performance/vulkan-r6-w1-direct-8e45b104/README.md)
+已通过 A/A、公共 controls 与输入/制品/host 一致性。两个完整 FFN shape 的 16 项原 5% 非劣门
+全部 PASS，n=15 停止；严格方向均为 INCONCLUSIVE，不声称 HYLE 算法胜出。测量快照
+`3894b72e`，产品候选仍为 `8e45b104`。Windows Graph 与 Air 两入口、原生边界诊断、最终交付/
+selector 和路线终审未由本检查点签证，两个 Vulkan owner 继续 CANDIDATE。
+
+同一 `loc-report.py` 口径在 clean `87a2da74` 统计 Compute + Graph 全部自实现为 36,765 行、
+129 个文件，不含测试/bench/vendor；包含尚未 CLOSED 的 Vulkan 实现，LOC 不等于完成度。
