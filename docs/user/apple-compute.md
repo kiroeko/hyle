@@ -65,6 +65,14 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   gate/norm 在 F32 求值，最终一次回到输入存储类型；norm 可用相同类型或 F32 scale/bias。
 - F32/F16/BF16/I32/Bool 的 View、Copy、Fill、Select 和 Concat；Select 使用 Bool mask。
   支持 scalar、空维度、rank≤8、原生转置与广播，实际布局由 MLX 持有。
+- F32/F16/BF16 的 Reduce Sum/Mean/Min/Max、Softmax/LogSoftmax 与 TopK。Reduce 支持任意
+  axis 集/keep-dim，空集合为 0/NaN/+Inf/-Inf，Min/Max 传播 NaN 并保留 ±0 优先级；half Reduce
+  和所有 Softmax 必须显式 F32 accumulation。Softmax 支持 scale、广播 Bool 或同类型 additive
+  mask、任意 axis；未屏蔽的 NaN/+Inf 或全 -Inf 行产生全 NaN。
+- TopK 返回原始存储类型 values 与 I32 indices。同分含 ±0 按小索引优先，NaN 总在最后；
+  largest/smallest 均可，sorted=false 仍返回有序结果。k=1 用原生线性 ArgMin，k>1 用原生稳定
+  merge sort；MLX 内部排序空间和必要布局/精度转换仍有实际成本。Graph 用 `add_node()` 与
+  `result(node, 0/1)` 消费两个输出，Direct 从成功 result 的 `arrays()[0/1]` 读取。
 - 二维 F32 MatMul、二维 unsigned affine Q4/group64/F32。其它 typed 域明确拒绝。
 
 Q4 weight 的 native dtype 是 uint32，shape
@@ -74,8 +82,8 @@ Graph 描述用 `apple::affine_q4_description(N,K)`，不把 Marlin/GGUF/其它�
 typed 准备也可以只给元数据，例如
 `context.prepare(RmsNorm{}, std::array{apple::InputSpec{{1,2048}, mx::bfloat16},
 apple::InputSpec{{2048}, mx::float32}})`；不需要制造用户 payload。精度或形状不合格时准备返回
-具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 tensor/gate/norm 域的完整性能资格待 C1 验收，
-不能继承 R5 FFN 的性能结论。checked 索引、Scan、Reduce、Softmax/TopK 尚未在该批 typed 接线中准入。
+具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 tensor/gate/norm/reduce/softmax/TopK 域的完整
+性能资格待 C1 验收，不能继承 R5 FFN 的性能结论。checked 索引与 Scan 尚未在该批 typed 接线中准入。
 
 `context.compile(callable, input_specs)` 表达更完整的原生 region。`InputSpec` 只含 shape/dtype；
 也可给 ready examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数组列表或

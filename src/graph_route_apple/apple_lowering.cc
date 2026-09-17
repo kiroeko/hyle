@@ -149,7 +149,8 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       report->implementation_policy = "One MLX GPU region; fixed typed "
                                       "lowering plus same-runtime custom nodes";
       report->numerical_policy =
-          "Typed F32/F16/BF16 tensor and F32-accumulating gate/norm; "
+          "Typed F32/F16/BF16 tensor, F32 gate/norm/reduce/softmax and stable "
+          "TopK; "
           "I32/Bool storage and affine Q4/group64; each node retains its "
           "schema contract; MLX private intermediates unknown";
       report->boundary_policy =

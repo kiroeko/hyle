@@ -13,6 +13,7 @@
 #include <mlx/ops.h>
 
 #include "apple_internal.h"
+#include "apple_reduction.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -188,6 +189,9 @@ bool admitted(OperationKind kind) {
   case OperationKind::kGatedActivation:
   case OperationKind::kRmsNorm:
   case OperationKind::kLayerNorm:
+  case OperationKind::kReduce:
+  case OperationKind::kSoftmax:
+  case OperationKind::kTopK:
     return true;
   default:
     return false;
@@ -214,8 +218,10 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       HYLE_ASSIGN_OR_RETURN(auto desc, description(input));
       descriptions.push_back(desc);
     }
-    HYLE_ASSIGN_OR_RETURN(auto output,
-                          infer_single_output(operation, descriptions));
+    std::vector<TensorDesc> outputs(operation_traits(operation).outputs);
+    HYLE_RETURN_IF_ERROR(
+        infer_output_descriptions(operation, descriptions, outputs));
+    const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
     if (const auto *fill = operation.get_if<Fill>())
@@ -272,6 +278,10 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     if (!floating(inputs[0].dtype()) || !floating(type))
       return std::unexpected(Status::Unimplemented(
           "Apple arithmetic and Cast require F32/F16/BF16"));
+    if (operation.kind() == OperationKind::kReduce ||
+        operation.kind() == OperationKind::kSoftmax ||
+        operation.kind() == OperationKind::kTopK)
+      return lower_reduction(operation, inputs, shape, stream);
     if (operation.kind() == OperationKind::kCast)
       return std::vector{mx::astype(inputs[0], type, stream)};
     auto first = mx::astype(inputs[0], mx::float32, stream);
