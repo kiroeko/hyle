@@ -17,8 +17,8 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；其余五个 owner
-  保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05
+  进入 AUDITED；`graph` 与 Vulkan 两个 owner 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -636,5 +636,33 @@ I32 两次完整读取与L状态reset/回报/merge如实计费；不拿unchecked
   [统计](../../../../evidence/correctness/compute-llm-moe-c1/o-implementation-loc.json)。selector 保留
   109 项 skipped reasons；本子集只运行 configure 与上述三个 factor。完整 C1 真实权重片段、
   公开头/三交付增量、WSL/macOS 与等责 P1 尚未运行，矩阵仍 UNPROVEN，不签四路线共同完成。
+
+### C1-P：Apple typed 张量、门控与归一化（AUDITED）
+
+baseline `a466b406`，owner `/root` / `compute_route_apple` 与 `graph_route_apple`。本地 BF16
+embedding/norm/gate/residual 和 FP32 gate 参数必须沿普通 typed Direct/Graph 到达 MLX GPU。
+实际缺口是 `apple_operations.cc` 仅接 F32 GEMM/Q4/SiLU，`apple_lowering.cc` 拒绝非 dense F32
+描述；现有 Context、原生编译/结果 owner 与失败排空可复用，没有重写其执行器的证据。
+
+本轮只读锁定 MLX `1f8e74e3f12f31365464a6867c6579f0e9b29d85` 的 `mlx/ops.h/.cpp`、
+`mlx/fast.cpp` 与对应 Metal kernels/NN activation 公式。相邻研究 checkout 的 HEAD 不同，
+已从上述精确 Git revision 读取；不升级依赖。`BORROW` MLX tensor/elementwise/fast norm 与
+完整编译 region；`OWN` HYLE schema、数值提升/最终舍入和薄 typed 适配。归一化显式使用 F32
+输入/参数调用原生 fast RMSNorm/LayerNorm，最后一次回到输入存储类型，避免半精度 affine 中间
+舍入；必要转换及 MLX 私有存储不是零成本。F32/半精度 Unary/Gated 同样在 F32 求值后一次舍入。
+
+| FIX | 固定改动与 owner | P0 / 必需验证 |
+|---|---|---|
+| P01 | Compute Apple 的 logical dtype/shape 检查扩至 F32/F16/BF16/I32/Bool、rank0–8/empty；普通 typed prepare 增加 InputSpec overload，复用既有冷 compile | 形状/精度/模式先按共同 schema 推导再资格检查；元数据准备不读用户 payload。MLX 自己持有物理布局，不引入 Mem buffer 导入或 HYLE shadow copy；原 F32 GEMM/affine Q4 域保持其资格 |
+| P02 | Compute Apple 接 View/Copy/Fill/浮点 Cast/Unary/Binary/Select/Concat | View 的 reshape/slice/permute/broadcast 与原生 stride，Select Bool mask，Fill 原始 scalar bits；计算只准入三种浮点，I32/Bool 用于搬运/选择/形状。稳定 softplus、NaN 与负无穷 activation、fmin/fmax 的 NaN 规则；广播与任意 Concat arity。全部使用同 stream 的 MLX ops，由完整 region 融合；HYLE 只冷期映射，不增加逐节点热调度 |
+| P03 | Compute Apple 接三种 GatedActivation、RMSNorm/LayerNorm 与 mixed-F32 参数 | packed/separate、F32 累加、空域、独立参数类型/epsilon 诊断；使用原生 fast norm，半精度在最终 affine/gate 后舍入一次；未知/其他 accumulation 域明确拒绝。不是逐元素自写 Metal，也不添加模型层 API |
+| P04 | Graph Apple 接同一 dtype/shape 和 View 派生逻辑描述，继续共享 lower/单个 compiled region；报告反映实际精度域 | native array 按逻辑 shape/dtype 匹配，物理 strides/必要布局整理由 MLX 管理；纯计算的 functional 输入/新结果保活，旧结果不能被另一槽覆盖；不修改通用 Graph、effect/control 或通用执行层 |
+| P05 | 两 owner 普通入口/独立数值与布局 oracle、生命周期及指南 | F32/F16/BF16、2048 hidden、0/1/127/128/129/257、rank8/scalar/原生转置和广播/各 View/5输入Concat/Bool mask/特殊值；独立舍入和 FP64 norm/gate，metadata-only prepare/拒绝、两槽三次变输入/保留旧结果/close、现有 OOM/取消/错误排空回归。先 Air 与 Mini 对应 factor/公开头；完整 C1 权重片段/三交付/其它路线/等责 P1 随固定 bundle |
+
+已审成本是冷期 HYLE schema/MLX tracing，热期仍一次原生 compiled region 的 managed replay；
+原生布局整理、F32 临时量、编译/常量/结果 owner 成本沿现有报告如实记账，不能声称零分配或
+零拷贝适用于任意 native stride。空 tensor 不运行 norm 计算。P 不接 Reduce/Softmax/TopK 或
+checked Gather/Scatter/Scan；它们的数值/异步错误合同继续在 C1 后续有限 FIX 内处理，不继承 P。
+本次不启动 P1，不改 MLX pin、公共治理、Mem/Sched 或原生执行状态机。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
