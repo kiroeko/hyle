@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "6ca713fbb7c00dc0a8595744afde2a7b46843c0694bd75d3cd195c97668a9d21",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "/Users/kiro/hyle-verify/r5-apple-20260917/selected-final/graph/cf877bcb5a0bcc31bddc/p1-evidence/manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

@@ -1,0 +1,12 @@
+{
+  "remote_archive": "/Users/kiro/hyle-verify/r5-apple-20260917/r5-final-performance-raw.zip",
+  "bytes": 789932,
+  "entries": 498,
+  "candidate": "1636365bbe47779de24e84d7c7d1ed8088fe1af2",
+  "tree": "8e5c24179c53b203ba1509a8d5dff0b805548052",
+  "profile": "M1-MAC engineering, Mac16,12 / Apple M4",
+  "per_file_integrity": "PASS; all archived entries rehashed after transfer",
+  "remote_source_archive_sha256": "bb0159700932c1cf0adc9eb84e8cfe09edd272ed220e4894e400ced546db1538",
+  "sha256": "18e4574786958a54dc1fd479aa1b319ef1614862bb455e9123fbf34aa617eca1",
+  "retention": "All P1/native data, validators, raw logs, manifests, selected receipts and executed scripts; redundant correctness build directories excluded."
+}

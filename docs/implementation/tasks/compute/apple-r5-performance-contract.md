@@ -1,7 +1,8 @@
 # R5 Apple 性能：完整 region 与同生命周期比较
 
-本记录从属 [R5 主卡](apple-v1-four-route-foundation.md) A5/A6。当前为 CANDIDATE；在计时前固定比较口径，
-不是新的产品 owner；源码和合同已接线，尚未开始正式 P1，不能以编译或一次点值声明通过。
+本记录从属 [R5 主卡](apple-v1-four-route-foundation.md) A5/A6，保存计时前固定的比较口径，
+不是新的产品 owner。[最终证据](../../../../evidence/performance/apple-r5-final-1636365b-m1-mac/README.md)
+已完成两入口 n15、原定非劣门及自然成本；未增加预算或修改合同以适应结果。
 
 ## 比较与成本
 

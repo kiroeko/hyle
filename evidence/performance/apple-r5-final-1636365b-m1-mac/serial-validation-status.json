@@ -1,0 +1,128 @@
+{
+  "status": "PASS",
+  "waiting_pid": 67472,
+  "steps": [
+    {
+      "step": "air-host-sanitizers",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "kiro@172.22.10.198",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/run-air-host-sanitizers.py"
+      ],
+      "started_utc_seconds": 1789601756.608911,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789601863.0590956
+    },
+    {
+      "step": "mini-native",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "-i",
+        "C:/Users/kiro/.ssh/codex_mac_172_22_10_107_win",
+        "kiro@172.22.10.107",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/run-mini-native.py"
+      ],
+      "started_utc_seconds": 1789601863.0590956,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789601922.5353315
+    },
+    {
+      "step": "mini-static",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "-i",
+        "C:/Users/kiro/.ssh/codex_mac_172_22_10_107_win",
+        "kiro@172.22.10.107",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/verify-mini-static-delivery.py"
+      ],
+      "started_utc_seconds": 1789601922.536332,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789601978.5433326
+    },
+    {
+      "step": "mini-source-shared",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "-i",
+        "C:/Users/kiro/.ssh/codex_mac_172_22_10_107_win",
+        "kiro@172.22.10.107",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/verify-mini-shared-source-delivery.py"
+      ],
+      "started_utc_seconds": 1789601978.543835,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789602045.2943025
+    },
+    {
+      "step": "air-compute-p1",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "kiro@172.22.10.198",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/run-air-final-p1.py",
+        "--mode",
+        "compute"
+      ],
+      "started_utc_seconds": 1789602045.295303,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789603160.7089362
+    },
+    {
+      "step": "air-graph-p1",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "kiro@172.22.10.198",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/run-air-final-p1.py",
+        "--mode",
+        "graph"
+      ],
+      "started_utc_seconds": 1789603160.7099698,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789604304.4797754
+    },
+    {
+      "step": "air-compute-natural",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "kiro@172.22.10.198",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/run-air-final-p1.py",
+        "--mode",
+        "compute",
+        "--natural"
+      ],
+      "started_utc_seconds": 1789604304.4797754,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789604549.661649
+    },
+    {
+      "step": "air-graph-natural",
+      "status": "PASS",
+      "command": [
+        "ssh",
+        "kiro@172.22.10.198",
+        "python3",
+        "/Users/kiro/hyle-verify/r5-apple-20260917/run-air-final-p1.py",
+        "--mode",
+        "graph",
+        "--natural"
+      ],
+      "started_utc_seconds": 1789604549.6626525,
+      "exit_code": 0,
+      "finished_utc_seconds": 1789604811.441305
+    }
+  ],
+  "windows_result": "C:\\hyle-scratch\\r5-apple-20260917\\selected-windows\\logs\\selected-result.json",
+  "current": null
+}

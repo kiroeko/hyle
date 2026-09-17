@@ -344,3 +344,27 @@ Graph −1.481～0.851 μs，完整 FFN 约307～318 μs。差值按分层报告
 
 结合主卡正确性/资源/三交付证据，六个 R4 CUDA owner 按协议 CLOSED。CPU 例外、未交付的
 Apple/Vulkan 和 R7 终审保持原状态；本结案不代表整个四路线基础架构已经完成。
+
+## R5 Apple 完整 region（2026-09-17）
+
+候选 `1636365b`，Air Mac16,12/M4、macOS 27.0/26A428、锁定 MLX v0.32.2，M1-MAC engineering
+profile；实际 interactive QoS、AC，无硬 P-core pin 或 Formal 身份声明。Direct/Graph 默认采用
+成熟 MLX compiled region，参考独立表达相同数学链并承担相同 Context/owner/checked completion/
+结果寿命。完整 [原始证据与成本记录](../../../../evidence/performance/apple-r5-final-1636365b-m1-mac/README.md)
+已归档；全部 A/A、controls、validator、两个 FFN oracle 与八分层 n15 通过，未扩样或纠正产品。
+
+| 路径 / workload | median ratio 范围 | 严格方向 | 5% NI |
+|---|---|---|---|
+| Direct M1 | 0.999017–1.000872 | 8 INCONCLUSIVE | PASS |
+| Direct M16 | 0.998700–1.003551 | 8 INCONCLUSIVE | PASS |
+| Graph M1 | 0.998156–1.000970 | 8 INCONCLUSIVE | PASS |
+| Graph M16 | 0.998105–1.003708 | 8 INCONCLUSIVE | PASS |
+
+每一严格 CI 均跨 1；practical PARITY 不等于严格等速或 HYLE 算法胜利。原生 caller-thread MLX
+另跑四层×15进程，保留相同数学/GPU同步，但没有 HYLE admission/owner-thread/cancel/close 服务，
+故为 NATURAL_ROUTE / NOT_COMPARABLE。Direct M1 配对增量 5.719–9.712µs、M16 −4.229–6.785µs；
+Graph M1 4.198–11.062µs、M16 5.719–12.185µs，均为分层中位数范围，不合成 CI 或跨入口输赢。
+这是约2.9–6.0ms完整 resident FFN 的自然成本，不外推其它硬件、数值或生产模型吞吐。
+
+R5 两 owner 结合实际正确性、host 插桩和两 Mac 三交付按协议 CLOSED。R6/R7 继续按当前卡施工；
+CPU 已批准例外、未测硬件与未插桩 vendor/GPU 的限制保留。

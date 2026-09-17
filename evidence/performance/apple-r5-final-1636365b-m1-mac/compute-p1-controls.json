@@ -1,0 +1,185 @@
+[
+  {
+    "details": {
+      "kind": "aa",
+      "maximum_bias_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9997924178864273,
+              1.0002843804680162
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.000029583804012,
+            "sample_count": 15
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        },
+        "peer-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9988623580683589,
+              1.0009317651952505
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9999719346436193,
+            "sample_count": 15
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        }
+      }
+    },
+    "gate": "PASS",
+    "id": "aa"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.025,
+        1.075
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.049638694466099,
+            1.0502799259051872
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.0499202895980375,
+          "sample_count": 15
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0489201406505997,
+            1.051263638425043
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.049936849202497,
+          "sample_count": 15
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta5"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.05,
+        1.15
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 10.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.0994499628568828,
+            1.1004484458125685
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.1000600408997308,
+          "sample_count": 15
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0989892137757524,
+            1.1011073422488125
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.1000427965161135,
+          "sample_count": 15
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta10"
+  },
+  {
+    "details": {
+      "kind": "timer-floor",
+      "minimum_workload_floor_multiple": 20.0,
+      "workloads": [
+        {
+          "candidate_median_ns_per_op": 2885211.847280287,
+          "conservative_floor_ns_per_op": 0.24058058041321134,
+          "gate": "PASS",
+          "id": "decode-affine-q4-ffn-m1",
+          "measurement_batch": 1,
+          "observed_multiple": 11990110.194443915,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.2391476141864623,
+              "peer_median_ns_per_op": 0.24058058041321134
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.2319230622796501,
+              "peer_median_ns_per_op": 0.2304443085773873
+            }
+          },
+          "peer_median_ns_per_op": 2884587.6697976794
+        },
+        {
+          "candidate_median_ns_per_op": 4957489.774026845,
+          "conservative_floor_ns_per_op": 0.24058058041321134,
+          "gate": "PASS",
+          "id": "short-prefill-affine-q4-ffn-m16",
+          "measurement_batch": 1,
+          "observed_multiple": 20606358.85702854,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.2391476141864623,
+              "peer_median_ns_per_op": 0.24058058041321134
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.2319230622796501,
+              "peer_median_ns_per_op": 0.2304443085773873
+            }
+          },
+          "peer_median_ns_per_op": 4960563.629874854
+        }
+      ]
+    },
+    "gate": "PASS",
+    "id": "timer-floor"
+  },
+  {
+    "details": {
+      "kind": "placement",
+      "target_variants": [
+        "placement",
+        "primary"
+      ]
+    },
+    "gate": "PASS",
+    "id": "placement"
+  }
+]

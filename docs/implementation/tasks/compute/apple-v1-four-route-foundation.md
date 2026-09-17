@@ -2,8 +2,8 @@
 
 ## Closure card
 
-- 状态：`CANDIDATE`。身份在 `32aade77` 以 `QUEUED` 登记、`8c2f6962` 进入 SCOPED；
-  A1–A6 经 AUDITED 实施后，API、算法、交付输入与有限性能接线现已固定，尚无路线完成声明。
+- 状态：`CLOSED`。身份在 `32aade77` 以 `QUEUED` 登记、`8c2f6962` 进入 SCOPED；
+  A1–A6 经 AUDITED 实施、不可变候选验证后完成下列七门；历史检查点按当时事实保留。
 - candidate：`1636365bbe47779de24e84d7c7d1ed8088fe1af2`，tree
   `8e5c24179c53b203ba1509a8d5dff0b805548052`。后续文档/状态不改变产品候选或触发重测。
 - owner：`compute_route_apple` 与 `graph_route_apple`；canonical baseline
@@ -136,13 +136,13 @@ commit `f567ed836e4cbb85788c42115a2682bbe68097ee`；136 个 .hpp 与 MLX 所指�
 
 | Gate | 适用风险 / 预声明证据 | 当前 verdict |
 |---|---|---|
-| scope | 两 owner、A1–A6、两个真实消费形状 | AUDITED |
-| architecture | 依赖隔离、原生 full-region、正确输出 owner 与线程/完成源码审计已固定；产品回放待验 | AUDITED |
-| correctness | Air + mini 真 Metal；Q4 独立解码 oracle、变化输入、非法域、两槽、lease、故障、并发/close | UNPROVEN |
-| delivery | 两 Mac source/static/shared 与 relocation；Windows/WSL Apple OFF 无探测；public headers | UNPROVEN |
-| usability_docs | 普通 Direct/Graph sample、默认规则边界、native custom、成本和误用 | UNPROVEN |
-| red_team | 候选后的独立审阅视角；不用未授权 subagent，检查失败/并发/数值/交付反例 | UNPROVEN |
-| engineering_performance | P0、Air 冻结候选的适用 P1；host ASan/UBSan/TSan 按实际可支持边界说明 | UNPROVEN |
+| scope | 两 owner、A1–A6、量化 FFN 与数值/custom 两种真实消费形状 | PASS |
+| architecture | 独立 MLX full-region、固定原生 owner；Graph 冷 lowering、原数组结果 | PASS |
+| correctness | Air/Mini 真 Metal、15 项 native 用例；完整 Q4 oracle、失败/并发/关闭；Air host ASan/UBSan/TSan | PASS |
+| delivery | 两 Mac 三交付/relocation；Windows/WSL OFF、逐头及 Windows selected batch 完成 | PASS |
+| usability_docs | 普通 Direct/Graph sample、用户指南、默认规则与 native custom，真实三交付消费 | PASS |
+| red_team | 候选后的独立源码审阅与已执行风险检查，没有新的产品 FIX | PASS |
+| engineering_performance | P0、Air Direct/Graph 两 workload 原定 5% NI 全过；n15，严格方向全部 INCONCLUSIVE | PASS |
 
 MLX 自带 USE_TSAN 在 macOS 拒绝配置；须核对 HYLE host 插桩与 vendor 边界，不能把未跑 TSan 写 PASS，
 也不能据此无声把整条并发检查列为不适用。故意 GPU hang/device loss 不注入，相关限制如实记录。
@@ -211,4 +211,31 @@ WSL Apple OFF 已有实际隔离/逐头证据；Mini、host 插桩、最终 A/A/
 native 正确性、两个逐头检查和完整三交付全部通过。[Air host 插桩](../../../../evidence/correctness/apple-r5-final-air/README.md)
 分别实际运行 ASan、UBSan、TSan，覆盖 HYLE host 实现及测试；MLX vendor/Metal shader 未插桩，
 不能将 host PASS 外推为 GPU sanitizer。Windows/Air/Mini 的证据与 WSL OFF 共同补齐本轮平台/
-交付义务。最终 P1 正按冻结合同串行执行，剩余未裁决项继续保持 UNPROVEN。
+交付义务。最终 P1 与自然成本已按冻结合同串行执行完成，见下列终局。
+
+## 终局（2026-09-17）
+
+[最终性能证据](../../../../evidence/performance/apple-r5-final-1636365b-m1-mac/README.md)保留 Direct/Graph
+的 A/A、八分层 n15、controls、oracle、validator、原始观察值及 manifest。两入口 M1/M16 全部通过
+原定 5% 非劣门，没有追加 n31 或性能纠正。每一严格 CI 均跨过 1，方向仍为 INCONCLUSIVE；
+仪器 practical PARITY 不改写为 HYLE 算法优势。同合同两侧使用相同原生 owner 和生命周期，
+独立 MLX region 为成熟完整基线；已实际执行的 caller-thread 原生诊断保留 NATURAL_ROUTE /
+NOT_COMPARABLE，不签 NI 或排名。
+
+当前 typed 域与 pure 固定 shape Graph 已在普通 C++ 入口、两 Mac 三交付中走通。常量、运行槽、
+原生结果与 Context 的寿命/失败/关闭均有实际验证；用户无需 Provider 排序或 timing profile。
+host 插桩通过不外推到未插桩的 MLX/Metal shader。不故意注入 GPU hang/device loss；ready 输入、
+pure callback、单 Context 串行 owner 和 managed MLX 分配成本仍是明确合同。无任意外部
+MTLBuffer/Queue 零拷贝桥、CPU 模型 fallback、M5/NAX 资格或未知设备 SOTA 声明。
+
+产品/性能候选仍为 `1636365b`；交付候选 `cbedb837` 到它的 shipping source diff 为空，身份见
+Mini/Air 交付记录，未用文档提交触发新构建。两个 manifest 的 `hyle-perf.py verify` 均返回
+QUALIFIED/CURRENT/EXACT、路径校验通过；实际 product gate 由同时归档的 selector/raw 数据证明。
+方向已登记到 [Compute/Graph 总账](../../evidence/performance/benchmarks-compute-graph.md)。
+
+统一 `loc-report.py`：本候选 Compute+Graph 全部实现 **33,815 行 / 116 文件**；2026-09-17 工作树
+为 **36,753 行 / 129 文件**，包含尚未验收的 R6，均不含测试/bench/third_party。LOC 不折算完成度。
+R5 完成；R6/R7 与 Mem 依赖尾项仍按各 owner 推进，整个 goal 尚未完成。
+
+停止本卡产品施工。reopen 限可复现正确性/寿命/并发/交付缺陷、真实 consumer 新能力或公开合同
+变化、采用依赖升级及合格同合同 material 回归，不凭未知硬件或微小点值重开。

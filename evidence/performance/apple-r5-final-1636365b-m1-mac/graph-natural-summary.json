@@ -1,0 +1,326 @@
+{
+  "collection": "PASS",
+  "classification": "NATURAL_ROUTE / NOT_COMPARABLE",
+  "ranking": null,
+  "noninferiority_gate": null,
+  "sample_escalation": false,
+  "strata": [
+    {
+      "workload": "decode-affine-q4-ffn-m1",
+      "stratum": "primary-candidate-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9962004756656421,
+        "confidence_interval": [
+          0.9947015290696001,
+          0.9987624491720195
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 2926.800714139374,
+      "native_median_us": 2918.77061381746,
+      "paired_extra_median_us": 11.062172342149097
+    },
+    {
+      "workload": "decode-affine-q4-ffn-m1",
+      "stratum": "primary-candidate-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9971710605513423,
+        "confidence_interval": [
+          0.9942087259197023,
+          0.9991869429053241
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 3018.047926601075,
+      "native_median_us": 3009.5100517635733,
+      "paired_extra_median_us": 8.537874837501477
+    },
+    {
+      "workload": "decode-affine-q4-ffn-m1",
+      "stratum": "primary-peer-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9985378440366973,
+        "confidence_interval": [
+          0.9967817177950339,
+          1.0014052756389613
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 2904.275092936803,
+      "native_median_us": 2897.7108084613155,
+      "paired_extra_median_us": 4.198099179714518
+    },
+    {
+      "workload": "decode-affine-q4-ffn-m1",
+      "stratum": "primary-peer-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9983409248589786,
+        "confidence_interval": [
+          0.9968125093970831,
+          1.0001805869074492
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 3016.682252858306,
+      "native_median_us": 3010.2347983142686,
+      "paired_extra_median_us": 5.012917394916258
+    },
+    {
+      "workload": "short-prefill-affine-q4-ffn-m16",
+      "stratum": "primary-candidate-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9988024669181487,
+        "confidence_interval": [
+          0.9968553459119497,
+          1.0043553487262096
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 5982.292414453219,
+      "native_median_us": 5970.505701832945,
+      "paired_extra_median_us": 7.179024530012612
+    },
+    {
+      "workload": "short-prefill-affine-q4-ffn-m16",
+      "stratum": "primary-candidate-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9979434749397732,
+        "confidence_interval": [
+          0.9955736543909348,
+          1.0035110687931446
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 5912.611600543961,
+      "native_median_us": 5899.008966493629,
+      "paired_extra_median_us": 12.108602568457172
+    },
+    {
+      "workload": "short-prefill-affine-q4-ffn-m16",
+      "stratum": "primary-peer-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9979666287901441,
+        "confidence_interval": [
+          0.9962962962962962,
+          1.0032194598461814
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 5976.214665630789,
+      "native_median_us": 5973.715651135006,
+      "paired_extra_median_us": 12.185361118570654
+    },
+    {
+      "workload": "short-prefill-affine-q4-ffn-m16",
+      "stratum": "primary-peer-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.999043862794311,
+        "confidence_interval": [
+          0.9950341031470624,
+          1.0009002520705799
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 5996.282304970918,
+      "native_median_us": 5987.306909352173,
+      "paired_extra_median_us": 5.719208073268419
+    }
+  ],
+  "wall_seconds": 257.190476583,
+  "probe_after": {
+    "schema": "hyle-perf-machine-probe-v1",
+    "observed_at_utc": "2026-09-17T00:26:52.645944+00:00",
+    "environment": "macos",
+    "host": {
+      "system": "Darwin",
+      "release": "27.0.0",
+      "machine": "arm64",
+      "logical_cpu_count": 10,
+      "node_sha256": "093a49ffd60f74120c953185b5ced531218dc8cab388ccda37feca43bb37de0a",
+      "stable_machine_id": {
+        "source": "macos-platform-uuid-sha256",
+        "sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+        "raw_identifier_recorded": false
+      },
+      "identity_facts": {
+        "system": "Darwin",
+        "architecture": "arm64",
+        "model": "Mac16,12",
+        "cpu_model": "Apple M4",
+        "logical_cpu_count": 10,
+        "memory_bytes": 17179869184,
+        "os_product_version": "27.0",
+        "os_build": "26A428"
+      }
+    },
+    "filesystem": {
+      "paths": [
+        {
+          "label": "build",
+          "path": "/Users/kiro/hyle-verify/r5-apple-20260917/selected-final/graph/cf877bcb5a0bcc31bddc/p1-build",
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "mountpoint": "/System/Volumes/Data",
+          "internal": true,
+          "solid_state": true,
+          "local_fixed": true,
+          "qualifies_for_performance": true
+        }
+      ],
+      "all_paths_qualified": true
+    },
+    "power": {
+      "source": "ac",
+      "low_power_mode": 0,
+      "settings": {
+        "lowpowermode": 0,
+        "standby": 1,
+        "ttyskeepawake": 1,
+        "hibernatemode": 3,
+        "powernap": 1,
+        "displaysleep": 30,
+        "womp": 1,
+        "networkoversleep": 0,
+        "sleep": 1,
+        "tcpkeepalive": 1,
+        "disksleep": 10
+      }
+    },
+    "scheduler": {
+      "hard_affinity_supported": false,
+      "qos": {
+        "supported": true,
+        "process_class": "interactive",
+        "raw_value": 33,
+        "expected_class": "interactive",
+        "matches_expected": true
+      }
+    },
+    "formal_capability": {
+      "windows": false,
+      "macos-qos": true,
+      "native-linux": false,
+      "wsl2": false,
+      "independent-hardware": true
+    }
+  },
+  "machine_gate_after": {
+    "gate": "PASS",
+    "profile_id": "M1-MAC",
+    "role": "engineering",
+    "formal_claim": null,
+    "physical_host_identity": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "M1-MAC",
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "environment": "macos",
+      "independent_hardware": true,
+      "profile_provisioned": true,
+      "registration_state": "UNREGISTERED",
+      "stable_machine_id_source": "macos-platform-uuid-sha256",
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_matches_registered": false,
+      "required_host_facts_match": false,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "raw_identifier_recorded": false
+    },
+    "expected_child_policy": {
+      "environment": "macos",
+      "hard_affinity_supported": false,
+      "qos": "interactive",
+      "applied_by": "benchmark-child"
+    },
+    "errors": [],
+    "warnings": [
+      "engineering evidence is explicitly unbound from a registered stable-machine identity and cannot be promoted to Formal"
+    ]
+  },
+  "raw_sha256": {
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-01.log": "7b68f1500f848b425ae87b7111b3ecc4f2a0b72edb87d1f2be019b0011d2a79b",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-02.log": "93d030fed8d49232dfb13e0062ec1152016c5280780f1cfb496345805976a8f6",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-03.log": "98379e989392c5bb35a118f8b7b1521ac430f50fe53814dded03e1a155d47f00",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-04.log": "7e71629254654d5d1170f94e3fff65c82e5ac635e834eac3b4852fa043d67525",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-05.log": "14c4005fd7dfbcb4a93612a90c5891aae93371a4d675b4eb5107dced01ac205f",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-06.log": "f601e3fb522a6828bfec79bb92a62c76a63709a7d2a5edb28da1c3712b51a650",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-07.log": "fc939aec5f7ed774344b72a033e37f741dda0bd392aafd8f9a4865751abb8573",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-08.log": "87d7ca62eda1786f99f98cb3cb88c5588fc375917a8df47e437e1ba8fdf9f0c2",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-09.log": "fcc142291e2794880ef8514cd95e8bce0a06440de5e44bd43a52f272a3adf248",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-10.log": "5787fe233a34b891acea2fee7ff43c540441a8e65ada45583a581e07e746b032",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-11.log": "5300f331e64d4610b37d3f7a1e2560f9b75a4a43e5badc14611c12a35a506d95",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-12.log": "63912d49cbaf378d2e490c3c27644ad8d31f2126219b44514ac1e6608710444b",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-13.log": "8073b262f96eaa3984f1b42a7dc48e0efc0b63c0876f18f579fa70c822883e7f",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-14.log": "27a9e85111a0204809e775e82043e5d17d24467872fd96b359f1339aa8b1f890",
+    "product-primary-candidate-first-candidate-allocation-first-graph-apple-native-boundary-run-15.log": "260073bef224b07caaab1683be38c878833beb3c7534088edb5076c0765649ee",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-01.log": "51a1ce37a75a5ccc7d632021fe80edd198aa03657b19e564081a4edb5ff18c0c",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-02.log": "e0ec8682c5bd415d7a3f79c9c8a2a8f4f35bb7c8bd1dd30ad5ece2c79ac0ee87",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-03.log": "e16ba26259422a5025dc3c2a8e6b75831e03c01359ceff6efa1dd0db028d10a8",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-04.log": "d6aabc8d5a1fbee4a33a44d006c90fa4fe34091369c80b2f71d6b047845fb9d5",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-05.log": "6abbe01ebdf6e56477368e6d4222bdfae7ee0e98d4dd5d828d4a989478d4559a",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-06.log": "a80fd0c2546163e251b4e1267da5474b628d7cd2a2c39a446b20a2367bc6e649",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-07.log": "b7b6f716c481581f3a72a26ecb5797eedbbd5f1d264f64e6a595956ba1c17a29",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-08.log": "75f0859fe2f7ed3b60254047bf51859aa9ee1c0e4bc3f604bfac9292db4c1bad",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-09.log": "117ec8cd4aa74ba131839d985276c0a2409701089aa7473994a140f9fb8d6aef",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-10.log": "f9db3e2af2c183038c34207cf003703611515687db0ce722234628e22af4d149",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-11.log": "db3359460c973c166b01164863fe5c4bd3d2df81eb2e087d7897d326cfc63a67",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-12.log": "3fcbd5a8a0ba25c3d2b790b70a80ccefca7850066cbb83213a00be6450b41a06",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-13.log": "e56e01893c05740cabcbe4c9b55d8e237777fca98ee32eee749742c1bd1d7487",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-14.log": "291841389b706ddea96cd77fb61dc03dc113eeb5573692bd65c3716228621d0f",
+    "product-primary-candidate-first-peer-allocation-first-graph-apple-native-boundary-run-15.log": "8d0ae018fa050edb8130ff687620ec933a0a397c458ba7343c924db4bde44418",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-01.log": "dfe9df5f114b36204ffa68f49e482a13c610c76f4aaf3adfca2860d9a9dc88b9",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-02.log": "dfad900748a8442c5208cec505e79ebf69531736aed4e9c53cd09c172a5e97ca",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-03.log": "f9513acef5a133e8f3f0819f14e1ffff05e97b2da5b148b076d3ff7337a1e154",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-04.log": "9eadce620e68492f278add6c063c9a647998595b562ee2b93d3e3de3baf4ef61",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-05.log": "935fc98a4a0c4b1c86df48c79e78e7c266597ab531d442ba01d9476d6d8d5f38",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-06.log": "d83e4f1a3561d72bcc47df551e4d0298c848f6ac02bd7710871252d4d7206f1e",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-07.log": "87cafd16d6ed525c4d75d630bd5b20e9c3a94874694dd9b1c5c6ead6fa7d8c9d",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-08.log": "493701e60f3252d88ec5d361c1dc933a199ffcddc3fa0af23284ca1046abface",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-09.log": "100e378caf26ca0a97b9c81a14044fcfd30a7715915ed566335ab934c3fd2a6a",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-10.log": "8e2241191560359fec0c4d0b607482b044cabb36a6a9486bae05a120797a054f",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-11.log": "08993987bff23a7efb0355afa4ef6d88c796f98199742262cb15b0550087cfad",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-12.log": "e556c11f43d6da94266c3d921b40595e347faeb733ec4bd146f9eaef6a1d0c9f",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-13.log": "c70166219eaaabde4fb2bdf8b7ff455d62d743519caf0c989d4b13269a6f85ba",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-14.log": "769d186d4f08f21f1051c5e82ea1392af0b6d02e3689b5a95cd6564224638971",
+    "product-primary-peer-first-candidate-allocation-first-graph-apple-native-boundary-run-15.log": "2b9995d04a690d55555a20cf709aa516d1455e3b18be5b548b6128a16de8e5aa",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-01.log": "2c85ce871d24630b03748138b990f2dd36df737e49516b34f7b6b8f07b591552",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-02.log": "3f0a385aaceb5419fdbd1aaf2c6a2721a6a6bfa0a8cca2f314a4bce1b79fd1c9",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-03.log": "521cd78d7bc1571521a9eb7ff29a15488e2e6d4dd8529d5dbf76699f604bab3b",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-04.log": "39555db076c182d461d3126a0074d3867c7cd1475787ed8750568b177e50412d",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-05.log": "8e9f4d4ad6a475972d2aca4da49aedff10988321933d990f7c411192de216917",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-06.log": "b5005986bb37517fcc3bc657c18984eb2a35e7e90c1eca9b4eea63f36eec84b8",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-07.log": "051580f6d415718ec36cbf1c73cadd42d20a99d87707f63a0799f40c10969c78",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-08.log": "70ed8713dd77d8ef3dc69790761cb072c574da51794b2ee5791c70ec316ef48b",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-09.log": "91f0f1d37ad646e314932273046c4b80713195f395f7e663a09afa16cbda90c1",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-10.log": "67ba7c2a4328f2ac14e56969815e92736bd4ad7237376e63dd70ad22ad9978bd",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-11.log": "a197f363326da8a9f33aff5cbc4d67577c4a82bda39c5603fb6ca54146cf41ce",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-12.log": "8db328b26c0f6537e7228209706a06aefbace0af95c61f4189a877b1827ec45f",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-13.log": "154f7c58bd016a60aba0457474ad84758179c401c4c996b6d12715bed3232a6a",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-14.log": "9e1c41d8113441a5da5a7fd50f31e1b42c78a26cd5d4dd27c2959ccb4c9ea99a",
+    "product-primary-peer-first-peer-allocation-first-graph-apple-native-boundary-run-15.log": "4c119faf85575b1497b9573581ea4f75c8b35db1b7d089e816c2b9372ae70c1a"
+  }
+}
