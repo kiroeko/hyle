@@ -3,6 +3,7 @@
 #include <cooperative_groups/reduce.h>
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
+#include <math_constants.h>
 
 namespace hyle::compute::cuda_native::native {
 namespace {
