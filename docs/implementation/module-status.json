@@ -271,25 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "container_concurrent",
@@ -363,14 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_provider_ggml",
@@ -384,14 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_ops",
@@ -406,36 +386,21 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_sched",
@@ -444,25 +409,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_provider_cublas",
@@ -500,49 +455,27 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CLOSED",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "graph_route_cuda",
-      "state": "CLOSED",
-      "summary": "R5 Apple 交付 CLOSED：公开 roots、metallib 资源投影/邻置和自然 C++ 样例完成；两 Mac source/static/shared relocation、Windows selected、WSL OFF 与七门通过。纯交付 P0，旧 CPU/CUDA C++、限定 P1 与 CPU 例外继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "summary": "R5 A1-A6 CLOSED: native MLX Direct/Graph, result/failure lifecycle, two-Mac source/static/shared and host sanitizers pass. M4 same-lifecycle FFN P1 passes 5% NI at n15; strict directions remain INCONCLUSIVE; bare MLX stays NATURAL_ROUTE.",
-      "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md",
-      "candidate": "1636365bbe47779de24e84d7c7d1ed8088fe1af2",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "summary": "R5 A1-A6 CLOSED: native MLX Direct/Graph, result/failure lifecycle, two-Mac source/static/shared and host sanitizers pass. M4 same-lifecycle FFN P1 passes 5% NI at n15; strict directions remain INCONCLUSIVE; bare MLX stays NATURAL_ROUTE.",
-      "record": "docs/implementation/tasks/compute/apple-v1-four-route-foundation.md",
-      "candidate": "1636365bbe47779de24e84d7c7d1ed8088fe1af2",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
+      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
     },
     {
       "module": "compute_route_vulkan",

@@ -185,3 +185,6 @@ MSVC 测试环境读取。按源码根因修复后一次完整复验通过，保
 
 R5 已独立 CLOSED，后续重型验证可串行使用 Air。MoltenVK、host 插桩、公开 facade/三交付、
 规则/P0/P1 与终审仍须完成；中央构建导致的 broad selected gates 尚未执行，不计 PASS。
+
+公开 facade 和跨路线交付 owner 已另立[有限交付卡](../build/vulkan-r6-product-delivery.md)，
+按当时十三个既有 roots 绑定，不借旧 Apple CLOSED 卡授权 Vulkan 变更。
