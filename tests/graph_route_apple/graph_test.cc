@@ -51,8 +51,7 @@ hyle::Result<g::Graph> ffn_graph(int rows) {
                   gate, up));
   HYLE_ASSIGN_OR_RETURN(auto output, builder.add(c::MatMul{}, product, down));
   // Pure unsupported dead work must not become a runtime boundary or failure.
-  HYLE_ASSIGN_OR_RETURN(auto dead,
-                        builder.add(c::Unary{c::UnaryKind::kNeg}, x));
+  HYLE_ASSIGN_OR_RETURN(auto dead, builder.add(c::Reduce{}, x));
   (void)dead;
   HYLE_RETURN_IF_ERROR(builder.publish(output));
   return std::move(builder).finish();

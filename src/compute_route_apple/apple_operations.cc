@@ -6,6 +6,7 @@
 #include <mlx/ops.h>
 
 #include "apple_internal.h"
+#include "apple_tensor.h"
 
 namespace hyle::compute::apple {
 namespace mx = mlx::core;
@@ -43,10 +44,8 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
   try {
     const auto *matmul = operation.get_if<MatMul>();
     const auto *qmm = operation.get_if<QuantizedMatMul>();
-    const auto *gated = operation.get_if<GatedActivation>();
-    if (matmul == nullptr && qmm == nullptr && gated == nullptr)
-      return std::unexpected(Status::Unimplemented(
-          "Apple typed operation has no admitted MLX lowering"));
+    if (matmul == nullptr && qmm == nullptr)
+      return detail::lower_tensor(operation, inputs, stream);
     if (!operation_traits(operation).inputs.accepts(inputs.size()))
       return std::unexpected(Status::InvalidArgument(
           "Apple typed operation input count mismatch"));
@@ -64,9 +63,6 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
                 inputs[1].dtype() != mx::uint32))
       return std::unexpected(Status::Unimplemented(
           "Apple Q4 admits 2-D affine group64 F32 with uint32 packed weights"));
-    if (gated && gated->activation != GatedActivationKind::kSilu)
-      return std::unexpected(
-          Status::Unimplemented("Apple typed gated activation admits SiLU"));
 
     std::array<TensorDesc, 4> descriptions{};
     for (std::size_t i = 0; i < inputs.size(); ++i) {
@@ -86,22 +82,9 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
 
     if (matmul)
       return std::vector<mx::array>{mx::matmul(inputs[0], inputs[1], stream)};
-    if (qmm)
-      return std::vector<mx::array>{
-          mx::quantized_matmul(inputs[0], inputs[1], inputs[2], inputs[3], true,
-                               64, 4, "affine", stream)};
-
-    mx::array gate = inputs[0];
-    mx::array up = inputs[0];
-    if (gated->inputs == GatedInputKind::kSeparate) {
-      up = inputs[1];
-    } else {
-      auto halves = mx::split(inputs[0], 2, -1, stream);
-      gate = std::move(halves[0]);
-      up = std::move(halves[1]);
-    }
-    return std::vector<mx::array>{mx::multiply(
-        mx::multiply(gate, mx::sigmoid(gate, stream), stream), up, stream)};
+    return std::vector<mx::array>{
+        mx::quantized_matmul(inputs[0], inputs[1], inputs[2], inputs[3], true,
+                             64, 4, "affine", stream)};
   } catch (...) {
     return std::unexpected(detail::native_exception());
   }
@@ -116,6 +99,20 @@ Context::prepare(const Operation &operation,
           return lower(operation, inputs, stream);
         },
         examples);
+  } catch (...) {
+    return std::unexpected(detail::native_exception());
+  }
+}
+
+Result<Program>
+Context::prepare(const Operation &operation,
+                 std::span<const InputSpec> inputs) const noexcept {
+  try {
+    return compile(
+        [operation](const auto &values, mx::Stream stream) {
+          return lower(operation, values, stream);
+        },
+        inputs);
   } catch (...) {
     return std::unexpected(detail::native_exception());
   }

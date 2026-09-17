@@ -33,19 +33,40 @@ struct Plan {
 };
 
 Result<ca::InputSpec> native_spec(const compute::TensorDesc &description) {
-  if (!description.valid() || !description.is_dense() ||
-      description.data_type() != compute::DataType::kFloat32)
-    return std::unexpected(Status::Unimplemented(
-        "Apple Graph requires dense F32 logical tensors"));
+  if (!description.valid())
+    return std::unexpected(Status::InvalidArgument(
+        "Apple Graph requires a valid logical tensor description"));
   ca::InputSpec result;
+  switch (description.data_type()) {
+  case compute::DataType::kFloat32:
+    result.dtype = mx::float32;
+    break;
+  case compute::DataType::kFloat16:
+    result.dtype = mx::float16;
+    break;
+  case compute::DataType::kBFloat16:
+    result.dtype = mx::bfloat16;
+    break;
+  case compute::DataType::kInt32:
+    result.dtype = mx::int32;
+    break;
+  case compute::DataType::kBool:
+    result.dtype = mx::bool_;
+    break;
+  default:
+    return std::unexpected(Status::Unimplemented(
+        "Apple Graph admits F32/F16/BF16/I32/Bool logical tensors"));
+  }
   for (auto dimension : description.dimensions()) {
-    if (dimension <= 0 || dimension > (std::numeric_limits<int>::max)())
+    if (dimension > (std::numeric_limits<int>::max)())
       return std::unexpected(Status::InvalidArgument(
           "Apple Graph dimension is outside native range"));
     result.shape.push_back(static_cast<int>(dimension));
   }
   if (!description.is_plain()) {
-    if (description.rank() != 2 ||
+    if (!description.is_dense() ||
+        description.data_type() != compute::DataType::kFloat32 ||
+        description.rank() != 2 ||
         description.storage_format().id() != ca::kAffineQ4Format)
       return std::unexpected(Status::Unimplemented(
           "Apple Graph storage encoding is not admitted"));
@@ -128,9 +149,9 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       report->implementation_policy = "One MLX GPU region; fixed typed "
                                       "lowering plus same-runtime custom nodes";
       report->numerical_policy =
-          "Built-in F32 and affine Q4/group64; each node retains its schema "
-          "precision and accumulation contract; MLX private intermediates "
-          "unknown";
+          "Typed F32/F16/BF16 tensor and F32-accumulating gate/norm; "
+          "I32/Bool storage and affine Q4/group64; each node retains its "
+          "schema contract; MLX private intermediates unknown";
       report->boundary_policy =
           "Caller inputs/constants must be ready; no HYLE shadow output copy; "
           "native result leases retain MLX outputs; internal fusion/copies "

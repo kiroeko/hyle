@@ -75,9 +75,9 @@ affine_q4_description(std::int64_t output_channels,
                       std::int64_t input_channels) noexcept;
 
 // Cold typed lowering, useful inside a native region and shared by Graph.
-// Current fixed rule: MLX F32 MatMul (2-D), affine Q4/group64 (2-D), and SiLU
-// gated activation (separate inputs or packed halves). Unsupported domains
-// return an error; there is no provider ranking, timing or CPU fallback.
+// Fixed MLX rules cover the documented typed tensor, floating arithmetic,
+// gate/norm and F32 MatMul/affine Q4 domains. Native arrays own their layouts;
+// this is not a Mem buffer adapter. Unsupported domains return an error.
 HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
 lower(const Operation &operation, std::span<const mlx::core::array> inputs,
       mlx::core::Stream stream) noexcept;
@@ -139,12 +139,20 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   prepare(const Operation &operation,
           std::span<const mlx::core::array> input_examples) const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
+  prepare(const Operation &operation,
+          std::span<const InputSpec> inputs) const noexcept;
   template <class Descriptor>
     requires(!std::same_as<Descriptor, Operation>) &&
             std::constructible_from<Operation, Descriptor>
   Result<Program>
   prepare(Descriptor operation,
           std::span<const mlx::core::array> inputs) const noexcept;
+  template <class Descriptor>
+    requires(!std::same_as<Descriptor, Operation>) &&
+            std::constructible_from<Operation, Descriptor>
+  Result<Program> prepare(Descriptor operation,
+                          std::span<const InputSpec> inputs) const noexcept;
 
   // Stops admission, drains every accepted prefix, joins the native owner.
   // Idempotent. Destruction performs this same explicit lifetime duty. Result
@@ -205,6 +213,14 @@ template <class Descriptor>
 Result<Program>
 Context::prepare(Descriptor operation,
                  std::span<const mlx::core::array> inputs) const noexcept {
+  return prepare(Operation(std::move(operation)), inputs);
+}
+template <class Descriptor>
+  requires(!std::same_as<Descriptor, Operation>) &&
+          std::constructible_from<Operation, Descriptor>
+Result<Program>
+Context::prepare(Descriptor operation,
+                 std::span<const InputSpec> inputs) const noexcept {
   return prepare(Operation(std::move(operation)), inputs);
 }
 } // namespace hyle::compute::apple

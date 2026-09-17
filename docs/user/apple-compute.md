@@ -59,10 +59,23 @@ HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
 const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lease
 ```
 
-当前 typed 域：二维 F32 MatMul；二维 unsigned affine Q4/group64/F32；F32 SiLU 门控，支持 separate
-inputs 和 packed halves。其它 typed 域明确拒绝。Q4 weight 的 native dtype 是 uint32，shape
+当前 typed 域还包括：
+
+- F32/F16/BF16 的 Unary、广播 Binary、浮点 Cast、三种 GatedActivation，以及 RMSNorm/LayerNorm。
+  gate/norm 在 F32 求值，最终一次回到输入存储类型；norm 可用相同类型或 F32 scale/bias。
+- F32/F16/BF16/I32/Bool 的 View、Copy、Fill、Select 和 Concat；Select 使用 Bool mask。
+  支持 scalar、空维度、rank≤8、原生转置与广播，实际布局由 MLX 持有。
+- 二维 F32 MatMul、二维 unsigned affine Q4/group64/F32。其它 typed 域明确拒绝。
+
+Q4 weight 的 native dtype 是 uint32，shape
 `[N,K/8]`，每 word 按 K 顺序从低 nibble 开始；scale/bias 是 F32 `[N,K/64]`，公式为 `q*scale+bias`。
 Graph 描述用 `apple::affine_q4_description(N,K)`，不把 Marlin/GGUF/其它四位格式直接传入。
+
+typed 准备也可以只给元数据，例如
+`context.prepare(RmsNorm{}, std::array{apple::InputSpec{{1,2048}, mx::bfloat16},
+apple::InputSpec{{2048}, mx::float32}})`；不需要制造用户 payload。精度或形状不合格时准备返回
+具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 tensor/gate/norm 域的完整性能资格待 C1 验收，
+不能继承 R5 FFN 的性能结论。checked 索引、Scan、Reduce、Softmax/TopK 尚未在该批 typed 接线中准入。
 
 `context.compile(callable, input_specs)` 表达更完整的原生 region。`InputSpec` 只含 shape/dtype；
 也可给 ready examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数组列表或
@@ -84,8 +97,9 @@ constants 按 `Graph::constant_id()` 的顺序，bind inputs 按 `input_id()` �
 Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes，MLX 保有整段融合；热期不遍历
 HYLE DAG。完整例见 [Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)。
 
-此 Graph lowering 当前接受固定 dense F32 schema 和上述 Q4 编码。native arrays 自身的 stride
-处理仍由 MLX 管理；不是把任意 HYLE buffer 导入 MLX。符号维度、资源效果、显式 control edges 和
+此 Graph lowering 接受固定 F32/F16/BF16/I32/Bool 逻辑 schema、View 派生描述和上述 Q4 编码。
+native arrays 的物理 stride、View 和必要布局整理仍由 MLX 管理；布局转换可能有成本，不能从
+HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝。符号维度、资源效果、显式 control edges 和
 未接入的 typed 操作会拒绝；需要这些能力时不能声称 Apple 已覆盖其它 Graph 路线的全部功能。
 
 纯 custom Operation 可通过 `graph::apple::CompileOptions::custom` 在冷追踪时映射到
