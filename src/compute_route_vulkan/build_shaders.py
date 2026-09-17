@@ -1,4 +1,4 @@
-"""Compile the admitted ggml F32 subset into the native route artifact.
+"""Compile admitted ggml F32 and HYLE tensor shaders into the native artifact.
 
 This build step has no runtime cache, device probe or algorithm selection.
 The dependency lock authenticates inputs before CMake reaches this command.
@@ -14,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--compiler', required=True)
     parser.add_argument('--source', type=Path, required=True)
+    parser.add_argument('--tensor-source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -31,6 +32,7 @@ def main():
          dict(common, USE_SUBGROUP_ADD_NO_SHMEM='1'), {1, 61, 63}),
         ('swiglu_f32', 'swiglu.comp', dict(A_TYPE='float', D_TYPE='float'), {1}),
         ('copy_f32', 'copy.comp', dict(A_TYPE='float', D_TYPE='float', DATA_A_F32='1'), {1}),
+        ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
     ]
     header = ['#pragma once', '#include <cstdint>', '#include <span>',
               'namespace hyle::compute::vulkan::detail::shaders {']

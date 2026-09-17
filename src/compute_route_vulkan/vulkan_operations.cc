@@ -1,5 +1,6 @@
 #include "vulkan_program_internal.h"
 #include "vulkan_shaders.h"
+#include "vulkan_tensor.h"
 
 #include <algorithm>
 #include <array>
@@ -306,7 +307,9 @@ lower_matmul(ProgramState &program, const PlanStep &step,
 Status lower_gate(ProgramState &program, const PlanStep &step) {
   const auto *operation = step.operation.get_if<GatedActivation>();
   if (operation == nullptr ||
-      operation->activation != GatedActivationKind::kSilu)
+      operation->activation != GatedActivationKind::kSilu ||
+      program.values[step.inputs[0]].description.data_type() !=
+          DataType::kFloat32)
     return Status::Unimplemented(
         "Vulkan gated activation currently supports SiLU");
   auto status = check_flat_shader(*program.runtime->device);
@@ -400,8 +403,7 @@ Status lower_operation(
       return lower_matmul(program, step, packs);
     if (step.operation.kind() == OperationKind::kGatedActivation)
       return lower_gate(program, step);
-    return Status::Unimplemented(
-        "operation is outside the Vulkan typed F32 domain");
+    return lower_tensor(program, step);
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan typed operation metadata");
   }

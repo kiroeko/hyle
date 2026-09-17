@@ -1,7 +1,7 @@
 # Vulkan：Direct Compute 与 Graph
 
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
-HYLE 在准备期绑定成熟 ggml shader，Graph 冷期规划资源，重复执行复用录制好的命令。
+HYLE 在准备期绑定 ggml 或 HYLE shader，Graph 冷期规划资源，重复执行复用录制好的命令。
 普通用户只选路线，不排序 Provider 或提供 timing profile。当前支持域已完成 Windows RTX 4070
 与 Air M4/MoltenVK 的真实计算、资源寿命、三交付和
 [有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
@@ -70,9 +70,27 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 已经 ready 的常量。示例把 weight 捕获并冷 packing；变化的 RHS 可以改传其描述，随后
 `slot.bind(input, weight)`。变化 RHS 的布局转换发生在 GPU 程序内，成本与 scratch 不会消失。
 
-当前 typed 域为二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的
-dense view；F32 SiLU 门控支持 separate/packed-halves。其它数值和格式明确拒绝，不暗中降为
-FP16 或套用其它路线的 Q4。普通 prepare 无 Graph 依赖。
+当前 typed 域包括：
+
+- 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
+  F32 SiLU 门控支持 separate/packed-halves。这部分保持已有设备/shape 性能资格。
+- Copy/Fill/Select 支持 F32/F16/BF16/I32/I64/Bool 原始存储，Select 使用 Bool mask；
+  浮点 Cast、13 种 Unary（包括稳定 Softplus）和六种广播 Binary 支持 F32/F16/BF16。
+  浮点在 F32 求值后舍入至输出存储；整数和 Bool 只承诺本批存储操作，不承诺整数算术。
+- 张量操作支持 scalar、空域、rank≤8、合法 byte stride/广播输入与 dense output。
+  输出独立于输入；可选择别名的共同操作在本路线使用独立结果。必须别名的 View 尚待接入。
+  非空元素数≤INT32_MAX，物理 byte span 和 stride 必须落在设备 buffer range/U32 地址域内。
+
+新张量域使用 U32 storage 和固定 specialization 的原生 SPIR-V，128-lane workgroup；
+不要求可选的 shaderFloat16/Int8/Int16/Int64。每个输出 word 单 writer，半精度和 Bool 尾块
+没有并发位覆盖。必要转换、结果/scratch、pipeline 和 descriptor 有实际成本；性能和完整
+三交付资格随 C1 验收，不能继承旧 F32 FFN 结论。其它域明确拒绝，普通 prepare 无 Graph 依赖。
+
+`allocate` 为逻辑 byte span 向上补齐到四字节，并为 empty tensor 保留至少四字节 native
+容量；`upload/download` 的 span 仍必须恰好等于 `description.required_bytes()`，只传逻辑字节。
+空传输不录制 copy，但仍检查设备、closed 和失败状态。`borrow_ready` 的 `available_bytes`
+必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
+不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
 ## Graph 与原生片段
 

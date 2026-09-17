@@ -1,4 +1,5 @@
 #include "vulkan_program_internal.h"
+#include "vulkan_tensor.h"
 
 #include "hyle/obs/trace.h"
 
@@ -28,8 +29,13 @@ Status plan_storage(ProgramState &program) noexcept {
         first[value] = (std::min)(first[value], index);
         last[value] = index;
       }
-    for (const auto output : program.outputs)
+    for (const auto output : program.outputs) {
       last[output] = static_cast<std::uint32_t>(program.dispatches.size());
+      // An empty computed value still has a valid result owner, even when no
+      // payload dispatch needs it. Keep separate published outputs distinct.
+      if (first[output] == none)
+        first[output] = 0;
+    }
     std::vector<std::uint32_t> order(count);
     std::iota(order.begin(), order.end(), 0u);
     std::ranges::stable_sort(order, [&](auto left, auto right) {
@@ -40,7 +46,9 @@ Status plan_storage(ProgramState &program) noexcept {
     for (const auto value : order) {
       if (external[value] || first[value] == none)
         continue;
-      const auto bytes = *program.values[value].description.required_bytes();
+      HYLE_ASSIGN_OR_RETURN(
+          auto bytes,
+          buffer_capacity(*program.values[value].description.required_bytes()));
       std::uint32_t selected = none;
       VkDeviceSize smallest_growth = (std::numeric_limits<VkDeviceSize>::max)();
       for (std::uint32_t block = 0; block < block_last.size(); ++block) {
@@ -128,15 +136,17 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       const auto bytes = description.required_bytes();
       const auto elements = description.element_count();
       if (!description.valid() ||
-          description.data_type() != DataType::kFloat32 ||
-          !description.is_plain() || !bytes || *bytes == 0 ||
+          !tensor_storage_type(description.data_type()) ||
+          !description.is_plain() || !bytes ||
           *bytes > runtime->device->properties.limits.maxStorageBufferRange ||
-          !elements || *elements == 0 ||
-          *elements > (std::numeric_limits<std::uint32_t>::max)() / 4 ||
-          std::ranges::any_of(description.dimensions(),
-                              [](auto dim) { return dim <= 0; }))
+          !elements || *elements > (std::numeric_limits<std::int32_t>::max)())
         return std::unexpected(Status::Unimplemented(
-            "Vulkan plan requires nonempty fixed F32 tensors"));
+            "Vulkan plan requires fixed plain F32/F16/BF16/I32/I64/Bool "
+            "tensors within device limits"));
+      HYLE_ASSIGN_OR_RETURN(auto capacity, buffer_capacity(*bytes));
+      if (capacity > runtime->device->properties.limits.maxStorageBufferRange)
+        return std::unexpected(Status::Unimplemented(
+            "Vulkan padded storage exceeds device limits"));
       if (value.constant) {
         if (value.constant.description() != description ||
             Access::buffer(value.constant)->device != runtime->device)
@@ -154,8 +164,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     for (const auto &step : plan.steps) {
       const auto traits = operation_traits(step.operation);
       if (traits.effect != EffectKind::kPure ||
-          traits.alias != AliasPolicy::kNone || traits.outputs != 1 ||
-          !traits.inputs.accepts(step.inputs.size()) ||
+          traits.alias == AliasPolicy::kMustAliasInput0 ||
+          traits.outputs != 1 || !traits.inputs.accepts(step.inputs.size()) ||
           step.output >= available.size() || available[step.output])
         return std::unexpected(Status::Unimplemented(
             "Vulkan requires pure single-output SSA operations"));

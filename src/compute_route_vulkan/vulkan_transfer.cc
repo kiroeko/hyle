@@ -8,14 +8,15 @@ namespace {
 
 Status transfer(const std::shared_ptr<detail::Runtime> &runtime,
                 const Tensor &tensor, const std::byte *source,
-                std::byte *destination, std::size_t bytes) noexcept {
-  const bool upload = source != nullptr;
-  if (!runtime || !tensor || (source == nullptr && destination == nullptr))
+                std::byte *destination, std::size_t bytes,
+                bool upload) noexcept {
+  if (!runtime || !tensor ||
+      (bytes != 0 && (upload ? source == nullptr : destination == nullptr)))
     return Status::InvalidArgument("invalid Vulkan transfer");
   const auto &native = detail::Access::buffer(tensor);
   const auto required = tensor.description().required_bytes();
   if (!required || native->device != runtime->device || bytes != *required ||
-      bytes > native->bytes || bytes % 4 != 0)
+      bytes > native->bytes)
     return Status::InvalidArgument(
         "Vulkan transfer device or byte range mismatch");
   // The explicit transfer is synchronous, but still uses the same retained
@@ -28,6 +29,8 @@ Status transfer(const std::shared_ptr<detail::Runtime> &runtime,
       if (!runtime->failure.ok())
         return runtime->failure;
     }
+    if (bytes == 0)
+      return Status::Ok();
     auto staging = detail::allocate_buffer(runtime->device, bytes, true);
     if (!staging)
       return std::move(staging).error();
@@ -128,11 +131,12 @@ Context::upload(const TensorDesc &description,
 }
 Status Context::upload(const Tensor &destination,
                        std::span<const std::byte> bytes) const noexcept {
-  return transfer(state_, destination, bytes.data(), nullptr, bytes.size());
+  return transfer(state_, destination, bytes.data(), nullptr, bytes.size(),
+                  true);
 }
 Status Context::download(const Tensor &source,
                          std::span<std::byte> bytes) const noexcept {
-  return transfer(state_, source, nullptr, bytes.data(), bytes.size());
+  return transfer(state_, source, nullptr, bytes.data(), bytes.size(), false);
 }
 
 } // namespace hyle::compute::vulkan

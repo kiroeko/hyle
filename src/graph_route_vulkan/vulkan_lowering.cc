@@ -33,10 +33,12 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed original ggml F32 shaders plus cold custom SPIR-V; "
+          "Fixed ggml F32 and HYLE typed tensor shaders plus cold custom "
+          "SPIR-V; "
           "device feature/limit matching, no runtime timing or provider search";
       report->numerical_policy =
-          "Strict F32 built-ins without reduced-precision reassociation; "
+          "F32/F16/BF16 tensor arithmetic with F32 evaluation and storage RNE; "
+          "I32/I64/Bool exact storage operations; "
           "custom nodes retain their declared schema contract";
       report->boundary_policy =
           "Ready same-device inputs/constants; cold weight packing; "
@@ -97,7 +99,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       }
       if (!needed)
         continue;
-      if (output_count != 1 || traits.alias != compute::AliasPolicy::kNone)
+      if (output_count != 1 ||
+          traits.alias == compute::AliasPolicy::kMustAliasInput0)
         return std::unexpected(Status::Unimplemented(
             "Vulkan Graph requires non-aliasing single-output nodes"));
       cv::detail::PlanStep step;

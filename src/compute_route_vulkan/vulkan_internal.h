@@ -182,6 +182,8 @@ struct Access final {
 };
 
 Status native_status(VkResult result, const char *operation) noexcept;
+// Shader storage is U32-addressable, even for sub-word/empty logical tensors.
+Result<VkDeviceSize> buffer_capacity(VkDeviceSize logical_bytes) noexcept;
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                 bool staging) noexcept;

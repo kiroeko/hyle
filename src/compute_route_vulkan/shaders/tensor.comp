@@ -1,0 +1,193 @@
+#version 450
+
+// Core U32 storage avoids optional 8/16/64-bit shader capabilities. Address
+// mapping is fixed by native specialization; every output word has one writer.
+layout(local_size_x = 128) in;
+layout(binding = 0) readonly buffer A { uint a[]; };
+layout(binding = 1) readonly buffer B { uint b[]; };
+layout(binding = 2) readonly buffer C { uint c[]; };
+layout(binding = 3) writeonly buffer D { uint d[]; };
+layout(constant_id = 0) const uint operation = 0;
+layout(constant_id = 1) const uint type_a = 0;
+layout(constant_id = 2) const uint type_b = 0;
+layout(constant_id = 3) const uint type_c = 0;
+layout(constant_id = 4) const uint type_d = 0;
+layout(constant_id = 5) const uint mode = 0;
+layout(constant_id = 6) const uint count = 1;
+layout(constant_id = 7) const uint fill_lo = 0;
+layout(constant_id = 8) const uint fill_hi = 0;
+layout(constant_id = 9) const uint reserved = 0;
+layout(constant_id = 10) const uint dim0 = 1;
+layout(constant_id = 11) const uint dim1 = 1;
+layout(constant_id = 12) const uint dim2 = 1;
+layout(constant_id = 13) const uint dim3 = 1;
+layout(constant_id = 14) const uint dim4 = 1;
+layout(constant_id = 15) const uint dim5 = 1;
+layout(constant_id = 16) const uint dim6 = 1;
+layout(constant_id = 17) const uint dim7 = 1;
+layout(constant_id = 18) const uint sa0 = 0;
+layout(constant_id = 19) const uint sa1 = 0;
+layout(constant_id = 20) const uint sa2 = 0;
+layout(constant_id = 21) const uint sa3 = 0;
+layout(constant_id = 22) const uint sa4 = 0;
+layout(constant_id = 23) const uint sa5 = 0;
+layout(constant_id = 24) const uint sa6 = 0;
+layout(constant_id = 25) const uint sa7 = 0;
+layout(constant_id = 26) const uint sb0 = 0;
+layout(constant_id = 27) const uint sb1 = 0;
+layout(constant_id = 28) const uint sb2 = 0;
+layout(constant_id = 29) const uint sb3 = 0;
+layout(constant_id = 30) const uint sb4 = 0;
+layout(constant_id = 31) const uint sb5 = 0;
+layout(constant_id = 32) const uint sb6 = 0;
+layout(constant_id = 33) const uint sb7 = 0;
+layout(constant_id = 34) const uint sc0 = 0;
+layout(constant_id = 35) const uint sc1 = 0;
+layout(constant_id = 36) const uint sc2 = 0;
+layout(constant_id = 37) const uint sc3 = 0;
+layout(constant_id = 38) const uint sc4 = 0;
+layout(constant_id = 39) const uint sc5 = 0;
+layout(constant_id = 40) const uint sc6 = 0;
+layout(constant_id = 41) const uint sc7 = 0;
+void address_axis(inout uint remaining, inout uvec3 offsets, uint dimension, uvec3 stride) {
+    offsets += (remaining % dimension) * stride;
+    remaining /= dimension;
+}
+
+uint width(uint type) { return type == 4 ? 8 : type == 5 ? 1 : (type == 1 || type == 2) ? 2 : 4; }
+uint word(uint port, uint index) { return port == 0 ? a[index] : port == 1 ? b[index] : c[index]; }
+uint load_bytes(uint port, uint offset, uint size) {
+    uint shift = (offset & 3u) * 8u;
+    uint value = word(port, offset / 4u) >> shift;
+    if (shift + size * 8u > 32u)
+        value |= word(port, offset / 4u + 1u) << (32u - shift);
+    return size == 4 ? value : value & ((1u << (size * 8u)) - 1u);
+}
+float decode(uint value, uint type) {
+    if (type == 1) return unpackHalf2x16(value).x;
+    if (type == 2) return uintBitsToFloat(value << 16u);
+    return uintBitsToFloat(value);
+}
+uint half_rne(float value) {
+    uint bits = floatBitsToUint(value), sign_bit = (bits >> 16u) & 0x8000u;
+    uint exponent = (bits >> 23u) & 255u, mantissa = bits & 0x7fffffu;
+    if (exponent == 255u)
+        return sign_bit | 0x7c00u | (mantissa == 0 ? 0u : 0x200u | (mantissa >> 13u));
+    int e = int(exponent) - 127;
+    if (e > 15) return sign_bit | 0x7c00u;
+    if (e < -25) return sign_bit;
+    uint high, remainder, midpoint;
+    if (e >= -14) {
+        high = (uint(e + 15) << 10u) | (mantissa >> 13u);
+        remainder = mantissa & 0x1fffu;
+        midpoint = 0x1000u;
+    } else {
+        uint shift = uint(-e - 1);
+        mantissa |= 0x800000u;
+        high = mantissa >> shift;
+        remainder = mantissa & ((1u << shift) - 1u);
+        midpoint = 1u << (shift - 1u);
+    }
+    high += uint(remainder > midpoint || (remainder == midpoint && (high & 1u) != 0u));
+    return sign_bit | high;
+}
+uint encode(float value, uint type) {
+    if (type == 1) return half_rne(value);
+    uint bits = floatBitsToUint(value);
+    if (type == 2) {
+        if ((bits & 0x7fffffffu) > 0x7f800000u) return (bits >> 16u) | 0x40u;
+        return (bits + 0x7fffu + ((bits >> 16u) & 1u)) >> 16u;
+    }
+    return bits;
+}
+float sigmoid(float x) {
+    float e = exp(-abs(x));
+    return x >= 0 ? 1.0 / (1.0 + e) : e / (1.0 + e);
+}
+// A&S 7.1.26 coefficients also used by pinned ggml unary.comp (MIT).
+// HYLE keeps its IEEE boundary handling and storage-rounding contract here.
+float gelu_erf(float x) {
+    float z = abs(x) * 0.7071067811865475244;
+    float t = 1.0 / (1.0 + 0.3275911 * z);
+    float tail = (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+                    - 0.284496736) * t + 0.254829592) * t * exp(-z * z);
+    return 0.5 * x * (x < 0 ? tail : 2.0 - tail);
+}
+float unary(float x) {
+    if (isnan(x)) return x;
+    if (mode == 0) return abs(x);
+    if (mode == 1) return -x;
+    if (mode == 2) return isinf(x) ? (x > 0 ? x : 0.0) : exp(x);
+    if (mode == 3) return x < 0 ? uintBitsToFloat(0x7fc00000u) : x == 0 ? uintBitsToFloat(0xff800000u) : log(x);
+    if (mode == 4) return x < 0 ? uintBitsToFloat(0x7fc00000u) : x == 0 ? x : sqrt(x);
+    if (mode == 5) return x < 0 ? uintBitsToFloat(0x7fc00000u) : x == 0 ?
+        uintBitsToFloat(0x7f800000u | (floatBitsToUint(x) & 0x80000000u)) : inversesqrt(x);
+    if (mode == 6) return isinf(x) ? sign(x) : x == 0 ? x : tanh(x);
+    if (mode == 7) return sigmoid(x);
+    if (mode == 8) return x > 0 ? x : 0.0;
+    if (mode == 12) {
+        float e = exp(-abs(x)), sum = 1.0 + e;
+        // Compensated log1p avoids cancellation for large negative inputs.
+        float small = sum == 1.0 ? e : log(sum) * (e / (sum - 1.0));
+        return max(x, 0.0) + small;
+    }
+    if (isinf(x)) return x > 0 ? x : 0.0;
+    if (mode == 9) return gelu_erf(x);
+    if (mode == 10) {
+        float z = 0.7978845608028653559 * x * (1.0 + 0.044715 * x * x);
+        return x * sigmoid(2.0 * z);
+    }
+    return x * sigmoid(x);
+}
+float binary(float x, float y) {
+    if (mode == 0) return x + y;
+    if (mode == 1) return x - y;
+    if (mode == 2) return x * y;
+    if (mode == 3) return x / y;
+    if (isnan(x)) return y;
+    if (isnan(y)) return x;
+    if (x == 0 && y == 0)
+        return uintBitsToFloat(mode == 4 ? floatBitsToUint(x) | floatBitsToUint(y)
+                                        : floatBitsToUint(x) & floatBitsToUint(y));
+    return mode == 4 ? min(x, y) : max(x, y);
+}
+uint evaluate(uint index, uint half_word) {
+    if (operation == 1) return half_word == 0 ? fill_lo : fill_hi;
+    uvec3 offsets = uvec3(0);
+    uint remaining = index;
+    address_axis(remaining, offsets, dim7, uvec3(sa7,sb7,sc7));
+    address_axis(remaining, offsets, dim6, uvec3(sa6,sb6,sc6));
+    address_axis(remaining, offsets, dim5, uvec3(sa5,sb5,sc5));
+    address_axis(remaining, offsets, dim4, uvec3(sa4,sb4,sc4));
+    address_axis(remaining, offsets, dim3, uvec3(sa3,sb3,sc3));
+    address_axis(remaining, offsets, dim2, uvec3(sa2,sb2,sc2));
+    address_axis(remaining, offsets, dim1, uvec3(sa1,sb1,sc1));
+    address_axis(remaining, offsets, dim0, uvec3(sa0,sb0,sc0));
+    if (operation == 5) {
+        bool choice = load_bytes(0, offsets.x, 1) != 0;
+        return load_bytes(choice ? 1u : 2u, (choice ? offsets.y : offsets.z) + half_word * 4u,
+                          min(width(type_d), 4u));
+    }
+    uint bits = load_bytes(0, offsets.x + half_word * 4u, min(width(type_a), 4u));
+    if (operation == 0) return bits;
+    float value = decode(bits, type_a);
+    if (operation == 3) value = unary(value);
+    if (operation == 4) value = binary(value, decode(load_bytes(1, offsets.y, width(type_b)), type_b));
+    return encode(value, type_d);
+}
+void main() {
+    uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
+    uint size = width(type_d), bytes = count * size;
+    if (index >= (bytes + 3u) / 4u) return;
+    uint output_word = 0;
+    if (size == 8) output_word = evaluate(index / 2u, index % 2u);
+    else {
+        uint lanes = 4u / size;
+        for (uint lane = 0; lane < lanes; ++lane) {
+            uint element = index * lanes + lane;
+            uint mask = size == 4 ? 0xffffffffu : (1u << (size * 8u)) - 1u;
+            if (element < count) output_word |= (evaluate(element, 0) & mask) << (lane * size * 8u);
+        }
+    }
+    d[index] = output_word;
+}

@@ -134,6 +134,8 @@ public:
 
   // Uninitialized storage for native producers. Reading before initialization
   // is a caller error. Ordinary host input construction uses upload instead.
+  // Native capacity rounds logical bytes up to four, with a four-byte minimum
+  // for empty tensors. Transfers consume exactly the logical byte span.
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
   allocate(const TensorDesc &description) const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
@@ -150,6 +152,8 @@ public:
   // Ready, visible buffer in this exact VkDevice and queue family. The owner
   // must retain its buffer and memory; external producers must have finished.
   // No pending semaphore, ownership transfer or cross-device bridge is implied.
+  // available_bytes must cover the same four-byte padded capacity as allocate;
+  // offset must satisfy both the native storage alignment and four bytes.
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
   borrow_ready(const TensorDesc &description, VkBuffer buffer,
                VkDeviceSize offset, VkDeviceSize available_bytes,

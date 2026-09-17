@@ -355,10 +355,18 @@ Result<std::shared_ptr<Device>> create_device(ContextOptions options) noexcept {
 
 } // namespace
 
+Result<VkDeviceSize> buffer_capacity(VkDeviceSize logical_bytes) noexcept {
+  if (logical_bytes > (std::numeric_limits<VkDeviceSize>::max)() - 3)
+    return std::unexpected(
+        Status::OutOfRange("Vulkan storage capacity overflows"));
+  return (std::max)(VkDeviceSize{4}, (logical_bytes + 3) & ~VkDeviceSize{3});
+}
+
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                 bool staging) noexcept {
-  if (bytes == 0 || bytes > (std::numeric_limits<std::size_t>::max)() ||
+  HYLE_ASSIGN_OR_RETURN(bytes, buffer_capacity(bytes));
+  if (bytes > (std::numeric_limits<std::size_t>::max)() ||
       (!staging && bytes > device->properties.limits.maxStorageBufferRange))
     return std::unexpected(
         Status::InvalidArgument("Vulkan buffer size exceeds domain"));
@@ -539,9 +547,11 @@ Context::borrow_ready(const TensorDesc &description, VkBuffer buffer,
   if (!bytes)
     return std::unexpected(std::move(bytes).error());
   const auto &limits = state_->device->properties.limits;
-  if (*bytes == 0 || *bytes > available_bytes ||
-      *bytes > limits.maxStorageBufferRange ||
-      offset % limits.minStorageBufferOffsetAlignment != 0 ||
+  HYLE_ASSIGN_OR_RETURN(auto capacity, detail::buffer_capacity(*bytes));
+  if (capacity > available_bytes || capacity > limits.maxStorageBufferRange ||
+      offset % (std::max)(VkDeviceSize{4},
+                          limits.minStorageBufferOffsetAlignment) !=
+          0 ||
       available_bytes > (std::numeric_limits<VkDeviceSize>::max)() - offset)
     return std::unexpected(
         Status::InvalidArgument("Vulkan borrowed buffer range/alignment"));
@@ -557,7 +567,7 @@ Context::borrow_ready(const TensorDesc &description, VkBuffer buffer,
     native->external_owner = std::move(owner);
     native->handle = buffer;
     native->offset = offset;
-    native->bytes = *bytes;
+    native->bytes = capacity;
     return detail::Access::tensor(description, std::move(native));
   } catch (const std::bad_alloc &) {
     return std::unexpected(

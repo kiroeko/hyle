@@ -147,8 +147,7 @@ Status record(const std::shared_ptr<Run> &run,
               std::span<const Dispatch> dispatches,
               std::vector<DescriptorBinding> *dynamic_bindings) noexcept {
   auto &device = *run->runtime->device;
-  if (dispatches.empty() ||
-      dispatches.size() > (std::numeric_limits<std::uint32_t>::max)() ||
+  if (dispatches.size() > (std::numeric_limits<std::uint32_t>::max)() ||
       run->retained_buffers.size() != values.size() ||
       run->descriptor_pool != VK_NULL_HANDLE)
     return Status::InvalidArgument("invalid Vulkan recording recipe");
@@ -194,21 +193,24 @@ Status record(const std::shared_ptr<Run> &run,
           current, current + descriptors, std::memory_order_relaxed));
       run->descriptor_count = static_cast<std::uint32_t>(descriptors);
     }
-    VkDescriptorPoolSize size{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                              static_cast<std::uint32_t>(descriptors)};
-    VkDescriptorPoolCreateInfo pool{};
-    pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool.flags =
-        rebindable ? VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT : 0u;
-    pool.maxSets = static_cast<std::uint32_t>(dispatches.size());
-    pool.poolSizeCount = 1;
-    pool.pPoolSizes = &size;
-    auto status = native_status(
-        device.fn.CreateDescriptorPool(device.native.device, &pool, nullptr,
-                                       &run->descriptor_pool),
-        "vkCreateDescriptorPool");
-    if (!status.ok())
-      return status;
+    auto status = Status::Ok();
+    if (!dispatches.empty()) {
+      VkDescriptorPoolSize size{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                static_cast<std::uint32_t>(descriptors)};
+      VkDescriptorPoolCreateInfo pool{};
+      pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+      pool.flags =
+          rebindable ? VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT : 0u;
+      pool.maxSets = static_cast<std::uint32_t>(dispatches.size());
+      pool.poolSizeCount = 1;
+      pool.pPoolSizes = &size;
+      status = native_status(
+          device.fn.CreateDescriptorPool(device.native.device, &pool, nullptr,
+                                         &run->descriptor_pool),
+          "vkCreateDescriptorPool");
+      if (!status.ok())
+        return status;
+    }
     VkCommandBufferBeginInfo begin{};
     begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     status = native_status(device.fn.BeginCommandBuffer(run->command, &begin),
@@ -235,12 +237,14 @@ Status record(const std::shared_ptr<Run> &run,
            ++binding) {
         const auto value = dispatch.values[binding];
         const auto bytes = values[value].description.required_bytes();
-        if (!bytes || *bytes == 0 ||
-            *bytes > device.properties.limits.maxStorageBufferRange)
+        if (!bytes || *bytes > device.properties.limits.maxStorageBufferRange)
           return Status::InvalidArgument("Vulkan descriptor range");
+        HYLE_ASSIGN_OR_RETURN(auto capacity, buffer_capacity(*bytes));
+        if (capacity > device.properties.limits.maxStorageBufferRange)
+          return Status::InvalidArgument("Vulkan padded descriptor range");
         DescriptorBinding entry;
         entry.value = value;
-        entry.buffer.range = *bytes;
+        entry.buffer.range = capacity;
         entry.write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         entry.write.dstSet = descriptor;
         entry.write.dstBinding = binding;

@@ -3,16 +3,18 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   set(_shader_source "${HYLE_SOURCE_DIR}/third_party/ggml_vulkan_shaders/shaders")
   set(_shader_output "${CMAKE_CURRENT_BINARY_DIR}/shaders")
   file(GLOB _shader_inputs CONFIGURE_DEPENDS "${_shader_source}/*")
+  file(GLOB _tensor_shaders CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*")
   add_custom_command(
     OUTPUT "${_shader_output}/vulkan_shaders.cc" "${_shader_output}/vulkan_shaders.h"
     COMMAND "${HYLE_VULKAN_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/build_shaders.py"
       --compiler "${HYLE_VULKAN_GLSLANG}" --source "${_shader_source}"
+      --tensor-source "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
       --output "${_shader_output}"
-    DEPENDS build_shaders.py ${_shader_inputs}
+    DEPENDS build_shaders.py ${_shader_inputs} ${_tensor_shaders}
     VERBATIM)
   hyle_add_module(compute_route_vulkan TRACE SOURCES
     vulkan_device.cc vulkan_run.cc vulkan_transfer.cc
-    vulkan_pipeline.cc vulkan_operations.cc vulkan_program.cc vulkan_recorder.cc
+    vulkan_pipeline.cc vulkan_operations.cc vulkan_tensor.cc vulkan_program.cc vulkan_recorder.cc
     "${_shader_output}/vulkan_shaders.cc")
   target_include_directories(hyle_compute_route_vulkan PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute" "${CMAKE_CURRENT_BINARY_DIR}"
