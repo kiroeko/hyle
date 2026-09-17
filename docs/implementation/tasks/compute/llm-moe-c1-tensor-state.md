@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 仅对 E01–E03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03 和 G01–G04 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -263,5 +263,35 @@ Apple/Vulkan 继续使用各自原生编译/准备对象，在本卡对应路线
 它们共享 Compute Context，不预签其能力。现有 Graph compile 已绑定真实程序，本次不改图规划。
 验证只运行受影响 compute/backend/custom/Native 与默认 CPU/CUDA 消费者；共享 API 的完整交付
 继续按 C1 定型候选执行。无新 API、无新依赖、无 P1，C1 整包仍未完成。
+
+### C1-G：CUDA 基本张量与数值运算（AUDITED）
+
+baseline `23297530`。真实 C0 模型和 F01/F02.3/F03 需要 BF16 residual、gate 广播、F32 softplus、
+转换与 head-interleaved view。定向审计现有 CUDA provider/native kernel、共同 View alias helper，
+以及固定 ggml 的 `src/ggml-cuda/unary.cu` / `binbcast.cu` / `cpy.cu`：成熟实现同样以 FP32 数学加
+末次 half 转换、显式 stride/broadcast 实现这些机制。ggml 的四维 ggml_tensor/PDL 接口和部分数值
+边界（ReLU NaN、Softplus 阈值）不等同 HYLE rank8/稳定数学合同，直接接入不能免除适配。
+承载裁决为 CUDA 工具链 math/half 原语加 HYLE 薄张量接线；不移植其整套 tensor runtime，不改成熟
+门控片段，也不基于尚未运行的性能宣称优于成熟实现。完整等责 bundle 仍是本包固定验收项。
+
+| FIX | 有限实施范围 | 数值 / 生命周期 / P0 / 验证 |
+|---|---|---|
+| G01 | HYLE CUDA provider 的 View/Copy/Fill/浮点 Cast | plain View 复用共同 byte-offset，submit 无 device payload；Copy/Fill 按1/2/4/8字节精确搬运，Cast 仅 F32/F16/BF16，RNE 一次；整数 Cast 和 FP8 运算另按已冻结需求资格；dense 输出，rank≤8，非负/zero/奇数 byte stride、empty/one/tail；Copy/Cast 不允许重叠 |
+| G02 | 所有已公开 Unary 与 Binary 模式、Select 的实际 F32/F16/BF16 消费域 | FP32 数学、最后一次舍入；stable sigmoid/softplus、ReLU/GELU/SiLU 特殊值与 Native 独立数学合同一致；Min/Max 为 fmin/fmax；Select 按 Bool mask 保留所选值原始位；rank0 和尾维广播，Select/Copy/Fill 同时支持 I32 等 plain storage 位搬运 |
+| G03 | 私有 CUDA tensor 程序、冷期 dtype/mode/layout kernel 绑定与默认接入 | 不扩大既有 gated Prepared/Program，不增加执行器/Provider；每个非空原子一次 GPU launch、零 workspace/slot私有状态，无 host payload fallback/copy；dense 直接索引，general O(N·rank) byte-safe 索引；仅逐元素且 input desc 精确等于 output 时允许原位；空输出不取 device pointer；CUDA capture 与真实 Completion 保留 |
+| G04 | Direct/default CUDA Graph 重放、数值/边界/alias/资源/文档 | 三 dtype 的独立 double/位级 oracle，真实2048与6144宽度、0/1/127/129/奇数stride/广播/NaN/Inf；two slots/三次变更输入/旧结果保留，非法重叠拒绝、关闭、default factory binding 和 capture；已有门控回归；三交付/P1 随固定 C1 bundle |
+
+CUDA tensor count 冷期限定 ≤INT32_MAX（View 不读取 payload）；所有 byte span 仍由 TensorDesc/共同
+binding 验证。input metadata 只在准备阶段参与索引计划，执行直接调用已绑定 native function；不传
+公共 C++23 descriptor 到 CUDA20 TU。新源码仅加入既有 owner 的 source list，不改公共构建治理。
+Concat、Reduce/norm、Softmax/TopK、checked indices/Scan 不由本子集授权，仍保留明确缺口。
+
+### C1-F 实施事实
+
+`23297530` 已实现准备拒绝诊断和 descriptor 能力旅程。W1 MSVC Release/WERROR 编译及 21 个
+selected-factor test executable 全部实际 PASS，包含普通 CPU/CUDA、Graph、Native/custom/provider、
+CUDA accepted-prefix/late-failure 与 Vulkan 直接消费者；[原始命令及日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/f-windows-focused.json)。
+无 payload 的真实 resource 资格、关闭拒绝和 fatal Unimplemented 不被 fallback 均已运行。
+未跑其他环境、public header/三交付增量或 P1；本证据不签 C1 整包。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

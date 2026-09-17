@@ -1,0 +1,120 @@
+{
+  "candidate": "232975305963f9932b862dc9e98c6ce020249b27",
+  "tree": "a5d0462d5b6449e9e073adad296e70c14aec228e",
+  "kind": "C1-F selected factor correctness; deliveries and public header gates held for fixed C1 bundle; no P1",
+  "build": "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+  "reused_dependency_build_from": "782c575e458f8437746df7df60a680552abf7717",
+  "context": {
+    "toolchain": {
+      "id": "msvc-19.50.35728.0-x64",
+      "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "compiler_id": "MSVC",
+      "compiler_version": "19.50.35728.0",
+      "stdlib": {
+        "id": "msvc-stl-145-202508"
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+      }
+    },
+    "machine_profile": {
+      "id": "W1-WIN",
+      "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+      "role": "engineering"
+    }
+  },
+  "commands": [
+    {
+      "label": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_ONEDNN=ON",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DCMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc",
+        "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+      ],
+      "exit_code": 0,
+      "seconds": 11.375,
+      "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\f-preparation-configure.log",
+      "sha256": "7d0d2c318cc3ad4e3dedb83944802dc9f9cf4707681799bb13a796a08d235e4b"
+    },
+    {
+      "label": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+        "--config",
+        "Release",
+        "--target",
+        "hyle_compute_tests",
+        "hyle_compute_backend_cpu_tests",
+        "hyle_compute_backend_cuda_tests",
+        "hyle_compute_provider_cublas_tests",
+        "hyle_compute_provider_cuda_tests",
+        "hyle_compute_provider_marlin_tests",
+        "hyle_compute_provider_native_tests",
+        "hyle_compute_provider_onednn_tests",
+        "hyle_compute_route_cpu_tests",
+        "hyle_compute_route_cuda_tests",
+        "hyle_compute_route_vulkan_tests",
+        "hyle_graph_tests",
+        "hyle_graph_provider_onednn_tests",
+        "hyle_graph_route_cpu_tests",
+        "hyle_graph_route_cuda_tests",
+        "hyle_graph_route_vulkan_tests",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 92.06199999991804,
+      "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\f-preparation-build.log",
+      "sha256": "d73d5908eb3e954018b9b758d9888ee0d49c9240c1c2dfc3e9541608ed51c58e"
+    },
+    {
+      "label": "test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute|compute_backend_cpu|compute_backend_cuda|compute_provider_cublas|compute_provider_cuda|compute_provider_marlin|compute_provider_native|compute_provider_onednn|compute_route_cpu|compute_route_cuda|compute_route_vulkan|graph|graph_provider_onednn|graph_route_cpu|graph_route_cuda|graph_route_vulkan)$",
+        "-LE",
+        "headers"
+      ],
+      "exit_code": 0,
+      "seconds": 13.344000000040978,
+      "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\f-preparation-test.log",
+      "sha256": "ef15c20350250bd12fc549fca1ad7e358c45892b0e1384c4332083170d2cb00c"
+    }
+  ],
+  "verdict": "PASS",
+  "scope": "C1-F Windows MSVC Release/WERROR selected factor correctness; 21 test executables passed",
+  "limitations": [
+    "No P1",
+    "No other-environment or full C1 verdict",
+    "Public header and source/static/shared gates pending immutable C1 bundle",
+    "No payload execution during descriptor capability check; actual programs exercised by existing default consumers"
+  ]
+}

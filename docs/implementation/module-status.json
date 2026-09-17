@@ -273,7 +273,7 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-D/F AUDITED：Scan typed prepare 已实施并通过 W1 局部验证；F01–F02 固定复用普通 prepare 作真实能力检查、保留具体拒绝诊断及无 payload 准备验证，不新增查询运行时；C1 未完成。"
+      "summary": "LLM/MoE C1-D/F AUDITED：Scan typed prepare 与 descriptor 能力/具体拒绝诊断已实施，W1 受影响 21 测试程序通过；其他环境与共享公开面交付待固定 C1 候选；不新增查询运行时。"
     },
     {
       "module": "graph",
@@ -471,7 +471,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E AUDITED：BF16/三种门控、SGLang 实例化与空执行已实施；W1 provider/default Direct/Graph capture 通过。其余 C1 CUDA 张量能力、三交付及完整优选 P1 待完成。"
+      "summary": "LLM/MoE C1-E/G AUDITED：BF16 三门控与空执行已实施、W1 Direct/Graph capture 通过；G01–G04 固定基本张量/数值/原生程序接线；其余 CUDA 索引/norm 和完整 C1 验收待完成。"
     },
     {
       "module": "compute_route_cuda",
