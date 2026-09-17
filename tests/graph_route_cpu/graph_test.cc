@@ -288,4 +288,65 @@ TEST(CpuDefaultGraph, HalfTensorFragmentHasIndependentReplayState) {
   expect_half_state_graph<hyle::simd::bfloat16_t>();
 }
 
+TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto counts_desc =
+      compute::TensorDesc::dense(compute::DataType::kInt32,
+                                 std::array<std::int64_t, 1>{5})
+          .value();
+  const auto data_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 1>{6})
+          .value();
+  const auto output_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 1>{5})
+          .value();
+  const std::array<float, 6> data{10, 20, 30, 40, 50, 60};
+  const std::array<std::array<std::int32_t, 5>, 2> counts{
+      {{0, 3, 0, 2, 1}, {1, 0, 1, 0, 4}}};
+  const std::array<std::array<float, 5>, 2> expected{
+      {{10, 10, 40, 40, 60}, {10, 20, 20, 30, 30}}};
+  auto data_buffer = half_test::buffer<float>(data);
+  auto counts_buffer = half_test::buffer<std::int32_t>(counts[0]);
+  auto output_buffer = half_test::buffer<float>(expected[0]);
+  auto builder = graph::GraphBuilder::create().value();
+  const auto input = builder.input(counts_desc).value();
+  const auto table = builder.constant(data_desc).value();
+  const auto offsets =
+      builder.add(compute::Scan{.exclusive = true}, input).value();
+  const auto gathered = builder.add(compute::Gather{}, table, offsets).value();
+  ASSERT_TRUE(builder.publish(gathered).ok());
+  auto logical = std::move(builder).finish().value();
+  const std::array constants{graph::ConstantBinding{
+      table,
+      compute::ConstTensorView::create(data_desc, data_buffer.view()).value()}};
+  auto compiled = graph::compile(logical, context, {.constants = constants});
+  ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(input, compute::ConstTensorView::create(
+                                   counts_desc, counts_buffer.view())
+                                   .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(gathered, compute::TensorView::create(
+                                      output_desc, output_buffer.view())
+                                      .value())
+                  .ok());
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (std::size_t run = 0; run < counts.size(); ++run) {
+    ASSERT_TRUE(
+        counts_buffer.view().write(std::as_bytes(std::span(counts[run]))).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done.has_value()) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    EXPECT_EQ(half_test::read<float>(output_buffer),
+              std::vector<float>(expected[run].begin(), expected[run].end()));
+  }
+}
+
 } // namespace

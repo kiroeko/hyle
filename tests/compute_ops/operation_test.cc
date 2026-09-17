@@ -83,8 +83,8 @@ TEST(OperationViewAlias, RejectsUnrepresentableOffsetsAndInconsistentSpans) {
   EXPECT_FALSE(detail::view_alias_offset(View{}, {}, {}).has_value());
 }
 
-TEST(OperationCatalog, HasTwentyTypedBuiltinFamiliesAndInvalidDefault) {
-  const std::array<Operation, 20> operations{
+TEST(OperationCatalog, HasTwentyOneTypedBuiltinFamiliesAndInvalidDefault) {
+  const std::array<Operation, 21> operations{
       Operation(View::reshape(shape(2, 3)).value()),
       Operation(Copy{}),
       Operation(Fill{shape(2), DataType::kFloat32, ScalarValue(0.0F)}),
@@ -104,7 +104,8 @@ TEST(OperationCatalog, HasTwentyTypedBuiltinFamiliesAndInvalidDefault) {
       Operation(Softmax{}),
       Operation(TopK{}),
       Operation(ScaledDotProductAttention{}),
-      Operation(QuantizedMatMul{})};
+      Operation(QuantizedMatMul{}),
+      Operation(Scan{})};
 
   Operation invalid;
   EXPECT_FALSE(invalid.valid());
@@ -124,6 +125,35 @@ TEST(OperationCatalog, HasTwentyTypedBuiltinFamiliesAndInvalidDefault) {
             AliasPolicy::kMustAliasInput0);
   EXPECT_FALSE(operation_traits(operations[0]).materializes);
   EXPECT_EQ(operation_traits(operations[3]).alias, AliasPolicy::kNone);
+}
+
+TEST(OperationScan, ChecksAxisAndInputDomainWithoutPayload) {
+  for (const auto type : {DataType::kInt32, DataType::kFloat32}) {
+    const auto input = tensor(type, 2, 0, 17);
+    for (const auto axis : {-3, -1, 0, 1, 2})
+      for (const bool exclusive : {false, true})
+        EXPECT_EQ(
+            infer_one(Operation(Scan{axis, exclusive}), std::array{input}),
+            input);
+    std::array<TensorDesc, 1> outputs{};
+    for (const auto axis : {-4, 3})
+      EXPECT_TRUE(infer_output_descriptions(Operation(Scan{.axis = axis}),
+                                            std::array{input}, outputs)
+                      .IsInvalidArgument());
+    EXPECT_TRUE(infer_output_descriptions(Operation(Scan{}),
+                                          std::array{tensor(type)}, outputs)
+                    .IsInvalidArgument());
+  }
+  for (const auto type : {DataType::kBool, DataType::kInt64, DataType::kFloat16,
+                          DataType::kBFloat16}) {
+    std::array<TensorDesc, 1> outputs{};
+    EXPECT_TRUE(infer_output_descriptions(Operation(Scan{}),
+                                          std::array{tensor(type, 3)}, outputs)
+                    .IsInvalidArgument());
+  }
+  const auto traits = operation_traits(Operation(Scan{}));
+  EXPECT_EQ(traits.alias, AliasPolicy::kMayAliasInput0);
+  EXPECT_EQ(traits.precision, PrecisionPolicy::kAccumulateInOutputType);
 }
 
 TEST(OperationViews, InferReshapeSlicePermutationAndBroadcastWithoutKernel) {

@@ -302,6 +302,10 @@ prepare(const Context &context, Select operation, TensorDesc condition,
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Reduce operation, TensorDesc input,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
+
+HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Scan operation, TensorDesc input,
+        mem::MemoryResourceRef resource = mem::system_resource()) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, LayerNorm operation, TensorDesc input,
         mem::MemoryResourceRef resource = mem::system_resource()) noexcept;

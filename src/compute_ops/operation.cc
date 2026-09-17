@@ -156,6 +156,7 @@ Status validate_operation_modes(const Operation &operation) noexcept {
   case OperationKind::kLayerNorm:
   case OperationKind::kMatMul:
   case OperationKind::kConcat:
+  case OperationKind::kScan:
   case OperationKind::kTopK:
   case OperationKind::kCustom:
     break;
@@ -764,6 +765,8 @@ std::string_view operation_name(OperationKind operation) noexcept {
     return "select";
   case OperationKind::kReduce:
     return "reduce";
+  case OperationKind::kScan:
+    return "scan";
   case OperationKind::kRmsNorm:
     return "rms-norm";
   case OperationKind::kLayerNorm:
@@ -810,6 +813,14 @@ std::string_view operation_name(const Operation &operation) noexcept {
 OperationTraits operation_traits(const Operation &operation) noexcept {
   OperationTraits result;
   switch (operation.kind()) {
+  case OperationKind::kScan:
+    return {{1, 1},
+            1,
+            AliasPolicy::kMayAliasInput0,
+            EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInOutputType,
+            DataType::kUnknown,
+            true};
   case OperationKind::kView:
     return {{1, 1},
             1,
@@ -1192,6 +1203,20 @@ Status infer_output_descriptions(const Operation &operation,
     }
     first =
         TensorDesc::dense(inputs[1].data_type(), branch_shape->dimensions());
+    break;
+  }
+  case OperationKind::kScan: {
+    const DataType type = inputs[0].data_type();
+    if (!inputs[0].is_plain() ||
+        (type != DataType::kInt32 && type != DataType::kFloat32)) {
+      first = std::unexpected(Status::InvalidArgument(
+          "Scan requires plain int32 or float32 input"));
+      break;
+    }
+    auto axis =
+        normalize_axis(operation.get_if<Scan>()->axis, inputs[0].rank());
+    first = axis ? dense_like(inputs[0], type)
+                 : std::unexpected(std::move(axis).error());
     break;
   }
   case OperationKind::kReduce: {

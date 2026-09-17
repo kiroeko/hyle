@@ -1363,6 +1363,17 @@ Result<PreparedOperation> prepare(const Context &context, LayerNorm operation,
   return prepare(context, Operation(operation), inputs, outputs, resource);
 }
 
+Result<PreparedOperation> prepare(const Context &context, Scan operation,
+                                  TensorDesc input,
+                                  mem::MemoryResourceRef resource) noexcept {
+  const std::array inputs{input};
+  auto output = infer_single_output(Operation(operation), inputs);
+  if (!output)
+    return std::unexpected(std::move(output).error());
+  const std::array outputs{*output};
+  return prepare(context, Operation(operation), inputs, outputs, resource);
+}
+
 Result<PreparedOperation> prepare(const Context &context, LayerNorm operation,
                                   TensorDesc input, TensorDesc scale,
                                   mem::MemoryResourceRef resource) noexcept {

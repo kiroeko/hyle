@@ -39,6 +39,7 @@ enum class OperationKind : std::uint8_t {
   kTopK,
   kScaledDotProductAttention,
   kQuantizedMatMul,
+  kScan,
   kCustom,
 };
 
@@ -302,6 +303,15 @@ struct Reduce final {
   DataType accumulation_type = DataType::kUnknown;
 };
 
+// Prefix sum along one axis, inclusive by default or exclusive from zero.
+// Plain int32/float32 input, same shape/type dense output. Integer prefixes,
+// including the final total for an exclusive scan, must fit int32; overflow
+// fails without writing any output. Float32 permits arithmetic reassociation.
+struct Scan final {
+  std::int32_t axis = -1;
+  bool exclusive = false;
+};
+
 // Norm parameters match the input type or use float32 for float16/bfloat16
 // input. Output keeps the input type; accumulation is explicitly declared.
 struct RmsNorm final {
@@ -493,6 +503,7 @@ public:
   constexpr explicit Operation(Binary value) noexcept : value_(value) {}
   constexpr explicit Operation(Select value) noexcept : value_(value) {}
   constexpr explicit Operation(Reduce value) noexcept : value_(value) {}
+  constexpr explicit Operation(Scan value) noexcept : value_(value) {}
   constexpr explicit Operation(RmsNorm value) noexcept : value_(value) {}
   constexpr explicit Operation(LayerNorm value) noexcept : value_(value) {}
   constexpr explicit Operation(MatMul value) noexcept : value_(value) {}
@@ -560,7 +571,7 @@ private:
       std::variant<std::monostate, View, Copy, Fill, Cast, Unary, Binary,
                    Select, Reduce, RmsNorm, LayerNorm, MatMul, GatedActivation,
                    Gather, Scatter, Concat, RoPE, Softmax, TopK,
-                   ScaledDotProductAttention, QuantizedMatMul,
+                   ScaledDotProductAttention, QuantizedMatMul, Scan,
                    detail::CustomOperationValue>;
   static_assert(std::variant_size_v<Value> ==
                 static_cast<std::size_t>(OperationKind::kCustom) + 1);
@@ -603,7 +614,7 @@ HYLE_COMPUTE_OPS_API Result<TensorDesc>
 infer_single_output(const Operation &operation,
                     std::span<const TensorDesc> inputs) noexcept;
 
-static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 22);
+static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 23);
 static_assert(std::is_trivially_copyable_v<Operation>);
 static_assert(sizeof(Operation) <= 256);
 

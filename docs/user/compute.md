@@ -97,7 +97,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 设备发现 | `Backend::device_count/device` | 每个显式 backend 只枚举自己的设备；`cpu::device()` 直接取得唯一 CPU |
 | 执行域 | `Backend -> Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有全局 registry、隐藏 worker 或默认设备 |
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
-| operation schema | 20 个 typed family + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
+| operation schema | 21 个 typed family + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
@@ -105,6 +105,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 双目计算 | `Binary` | f32/f16/bf16 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
 | 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
 | reduction | `Reduce` | f32/f16/bf16 Sum/Mean/Min/Max，半精度显式 F32 accumulation；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
+| 前缀求和 | `Scan` | i32/f32，inclusive 或从零开始 exclusive，正负 axis、普通 byte stride；整数溢出不写任何 output；dense input 可精确原地执行 |
 | normalization | `RmsNorm` / `LayerNorm` | dense f32/f16/bf16 `[..., hidden]`，F32 accumulation；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；半精度参数也可用 F32；允许精确 input/output in-place |
 | matrix multiply | `MatMul` | f32 `[...,M,K] * [...,K,N]` 与 NumPy-style batch broadcast；两端 batch 都可广播，B 的末两维可 row-major 或物理 `[...,N,K]` 的转置 view |
 | gated activation | `GatedActivation` | dense f32/f16/bf16 packed `[...,2*d]` 或 separate gate/value；SiLU、exact GELU、GELU-tanh 三种模式均产生 `[...,d]`；半精度在 F32 activation 与乘法完成后一次舍入 |
@@ -124,9 +125,8 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、replay 成本类别、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
-公共 schema 已能描述 View、Copy/Fill/Cast、elementwise、reduction、normalization、batched MatMul、
-gated activation、Gather/Scatter/Concat、RoPE、Softmax、TopK 和 SDPA 共 19 个 family，并能做纯描述推导。
-**当前 HYLE-native provider 已签发上述 19 个 family 的 CPU executable route。** 这不表示每种 dtype、
+公共 schema 包括上表的普通张量运算、Scan 和 QuantizedMatMul，共 21 个 family，并能做纯描述推导。
+Native 承载其中除 QuantizedMatMul 外的 20 个 family，具体 dtype/layout 域见上表。这不表示每种 dtype、
 layout 或 encoding 都由同一个 provider 执行：当前 SDPA 是 f32 reference/optimized fallback；block/opaque
 storage、量化 kernel 与窄 storage attention 仍应由理解相应格式的 provider 接管，不会被隐藏 materialize。
 
@@ -303,6 +303,11 @@ overlap 在通用 runtime 更早被拒绝。`Minimum/Maximum` 使用 `std::fmin/
 NaN 选择另一侧数值，并保留 IEEE signed-zero 规则；它们不是由某条 ISA 的偶然 min/max 行为定义。
 
 ## Reduction 与 LayerNorm
+
+`Scan{.axis = -1, .exclusive = true}` 把 counts 转为前缀 offsets；默认 inclusive 也可计算 F32
+gate 前缀。输出保持输入 shape/type 并 materialize 为 dense。I32 包括最后总和在内的全部前缀都须
+可表示，任一溢出以 `OutOfRange` 完成且不写 output；F32 允许固定执行路线的重结合。Native dense
+连续 row 复用 SIMD，其余按逻辑 axis 遍历；没有隐藏 heap scratch。
 
 `Reduce` 的 typed `prepare()` 根据 axis 和 `keep_dimensions` 推导 dense output。当前 Native route 支持
 f32/f16/bf16 Sum/Mean/Minimum/Maximum；半精度必须显式设置 `accumulation_type = DataType::kFloat32`，

@@ -378,4 +378,156 @@ TEST(NativeReduction, HalfPreservesEmptyAndNonFiniteRules) {
   expect_half_reduction_edges<hyle::simd::bfloat16_t>();
 }
 
+template <class Value> void expect_scan_layouts() {
+  constexpr auto type =
+      std::is_same_v<Value, float> ? DataType::kFloat32 : DataType::kInt32;
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const std::int64_t length : {0, 1, 127, 129}) {
+    for (const std::int64_t inner : {1, 3}) {
+      for (const bool strided : {false, true}) {
+        const std::array<std::int64_t, 3> shape{2, length, inner};
+        const auto output_desc = TensorDesc::dense(type, shape).value();
+        const std::int64_t step = strided ? 5 : sizeof(Value);
+        const auto input_desc =
+            TensorDesc::strided_bytes(
+                type, shape,
+                std::array<std::int64_t, 3>{length * inner * step, inner * step,
+                                            step})
+                .value();
+        std::vector<Value> original(
+            static_cast<std::size_t>(2 * length * inner));
+        std::vector<std::byte> storage(input_desc.required_bytes().value());
+        for (std::size_t i = 0; i < original.size(); ++i) {
+          original[i] = static_cast<Value>(static_cast<int>(i % 17) - 5);
+          if constexpr (std::is_same_v<Value, float>)
+            original[i] /= 16;
+          std::memcpy(storage.data() + i * static_cast<std::size_t>(step),
+                      &original[i], sizeof(Value));
+        }
+        auto input =
+            Buffer::create(hyle::mem::system_resource(), storage.size(), 64)
+                .value();
+        auto output = Buffer::create(hyle::mem::system_resource(),
+                                     original.size() * sizeof(Value), 64)
+                          .value();
+        for (const bool exclusive : {false, true}) {
+          SCOPED_TRACE(length);
+          SCOPED_TRACE(inner);
+          SCOPED_TRACE(strided);
+          SCOPED_TRACE(exclusive);
+          ASSERT_TRUE(input.view().write(storage).ok());
+          auto prepared = hyle::compute::prepare(
+              context, hyle::compute::Scan{.axis = -2, .exclusive = exclusive},
+              input_desc);
+          ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+          EXPECT_EQ(prepared->workspace_requirement().size, 0U);
+          auto invocation = prepared->create_invocation().value();
+          const auto source =
+              ConstTensorView::create(input_desc, input.view()).value();
+          auto done = invocation.submit(
+              queue, source,
+              TensorView::create(output_desc, output.view()).value());
+          ASSERT_TRUE(done.has_value()) << done.error().message();
+          ASSERT_TRUE(done->wait().ok());
+          std::vector<Value> expected(original.size());
+          for (std::int64_t group = 0; group < 2; ++group) {
+            for (std::int64_t column = 0; column < inner; ++column) {
+              double carry = 0;
+              for (std::int64_t position = 0; position < length; ++position) {
+                const auto index = static_cast<std::size_t>(
+                    (group * length + position) * inner + column);
+                const double next = carry + original[index];
+                expected[index] = static_cast<Value>(exclusive ? carry : next);
+                carry = next;
+              }
+            }
+          }
+          EXPECT_EQ(half_test::read<Value>(output), expected);
+          if (!strided) {
+            auto alias_done = invocation.submit(
+                queue, source,
+                TensorView::create(output_desc, input.view()).value());
+            ASSERT_TRUE(alias_done.has_value()) << alias_done.error().message();
+            ASSERT_TRUE(alias_done->wait().ok());
+            EXPECT_EQ(half_test::read<Value>(input), expected);
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(NativeScan, DenseStridedMiddleAxisAndAliasMatchIndependentPrefixes) {
+  expect_scan_layouts<std::int32_t>();
+  expect_scan_layouts<float>();
+}
+
+TEST(NativeScan, IntegerOverflowInLaterRowPreservesEveryOutput) {
+  const auto desc =
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 2>{2, 3})
+          .value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const bool exclusive : {false, true}) {
+    auto prepared =
+        hyle::compute::prepare(
+            context, hyle::compute::Scan{.exclusive = exclusive}, desc)
+            .value();
+    auto invocation = prepared.create_invocation().value();
+    for (const bool negative : {false, true}) {
+      const std::array<std::int32_t, 6> data{
+          1, 2, 3, negative ? INT32_MIN : INT32_MAX, 0, negative ? -1 : 1};
+      auto input = make_buffer(data);
+      const std::array<std::int32_t, 6> sentinel{91, 92, 93, 94, 95, 96};
+      auto output = make_buffer(sentinel);
+      const auto source = ConstTensorView::create(desc, input.view()).value();
+      for (const bool alias : {false, true}) {
+        auto done = invocation.submit(
+            queue, source,
+            TensorView::create(desc, alias ? input.view() : output.view())
+                .value());
+        ASSERT_TRUE(done.has_value()) << done.error().message();
+        EXPECT_TRUE(done->wait().IsOutOfRange());
+        EXPECT_EQ((read_buffer<std::int32_t, 6>(input)), data);
+        EXPECT_EQ((read_buffer<std::int32_t, 6>(output)), sentinel);
+      }
+    }
+  }
+}
+
+TEST(NativeScan, FloatNonFinitePrefixesFollowDeclaredOrder) {
+  const auto desc =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{7})
+          .value();
+  const std::array<float, 7> values{1, -2, INFINITY, 3, -INFINITY, 1, NAN};
+  auto input = make_buffer(values);
+  auto output = make_buffer(std::array<float, 7>{});
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const bool exclusive : {false, true}) {
+    auto prepared =
+        hyle::compute::prepare(
+            context, hyle::compute::Scan{.exclusive = exclusive}, desc)
+            .value();
+    auto invocation = prepared.create_invocation().value();
+    auto done = invocation.submit(
+        queue, ConstTensorView::create(desc, input.view()).value(),
+        TensorView::create(desc, output.view()).value());
+    ASSERT_TRUE(done.has_value());
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = read_buffer<float, 7>(output);
+    float carry = 0;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      const float next = carry + values[i];
+      const float expected = exclusive ? carry : next;
+      if (std::isnan(expected))
+        EXPECT_TRUE(std::isnan(actual[i]));
+      else
+        EXPECT_EQ(actual[i], expected);
+      carry = next;
+    }
+  }
+}
+
 } // namespace
