@@ -68,11 +68,12 @@ template <TensorKind Kind> __device__ float unary(float x) {
     if (isinf(x) && x < 0)
       return 0;
     if constexpr (Kind == TensorKind::kGelu)
-      return 0.5F * x * (1 + erff(x * 0.7071067811865475F));
+      // erfc retains the negative tail that 1 + erf rounds away in FP32.
+      return 0.5F * x * erfcf(-x * 0.7071067811865475F);
     else if constexpr (Kind == TensorKind::kGeluTanh)
-      return 0.5F * x *
-             (1 +
-              tanhf(0.7978845608028654F * x * fmaf(0.044715F, x * x, 1.0F)));
+      // (1 + tanh(z))/2 = sigmoid(2*z), without negative-tail cancellation.
+      return x *
+             sigmoid(1.5957691216057308F * x * fmaf(0.044715F, x * x, 1.0F));
     else {
       static_assert(Kind == TensorKind::kSilu);
       return x * sigmoid(x);
