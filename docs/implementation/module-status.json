@@ -494,13 +494,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q/R AUDITED：P/Q已实现，Q候选Air/Mini各27 case及两个头检查通过；R01–R04固定Apple GPU算法状态、checked Gather和Scan及I64逻辑存储，尚未实施。有序Scatter、完整C1权重/三交付/P1待完成。"
+      "summary": "LLM/MoE C1-P/Q/R AUDITED：P/Q/R已实现；R候选Air/Mini各34 case及两个头检查通过，Apple GPU算法状态、checked Gather、Scan与I64存储已接通。有序Scatter、Vulkan与完整C1权重/三交付/P1待完成，不签整包PASS。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q/R AUDITED：P/Q已实现，Q候选Air/Mini各27 case及两个头检查通过；R01–R04固定Apple GPU算法状态、checked Gather和Scan及I64逻辑存储，尚未实施。有序Scatter、完整C1权重/三交付/P1待完成。"
+      "summary": "LLM/MoE C1-P/Q/R AUDITED：P/Q/R已实现；R候选Air/Mini各34 case及两个头检查通过，Apple GPU算法状态、checked Gather、Scan与I64存储已接通。有序Scatter、Vulkan与完整C1权重/三交付/P1待完成，不签整包PASS。"
     },
     {
       "module": "compute_route_vulkan",

@@ -757,12 +757,41 @@ native Gather 允许负索引偏移且没有 HYLE 边界错误回报；native Sc
 | FIX | 固定实施范围 | P0 / 必需验证 |
 |---|---|---|
 | R01 | Apple 私有冷 trace 收集 checked 表达式，将可达错误合并为一个隐藏 I32 原生输出；Completion 在现有 GPU synchronize/array.wait 后解读 | 冷期 thread-local RAII scope 只记录 typed lowering 构图，原生 Depends 为数据/检查建立唯一可达锚点；死节点检查不进入终态。每程序冷 metadata 保存是否存在检查，未含检查的程序不增加 native status output；热期无 collector、图遍历或 provider 搜索。有检查时一个逻辑4字节状态原生数组/最终读取，实际 MLX 分配如实计费。仅算法 OutOfRange 退役当前槽、不 poison Context；native 执行异常仍沿原失败排空。不公开新 runtime/type/虚表 |
-| R02 | checked/unchecked Gather：F32/F16/BF16/I32/I64/Bool source、I32/I64 indices、任意合法轴/原生布局，原始存储位输出；必要 I64 storage/Graph logical 描述接线 | 同一 GPU 验证全部非空 indices，checked 执行使用安全 clamp，禁止负索引 wrap 成成功；零 source-axis 且非空输出以安全占位结果＋错误，不越界访问。失败不发布结果 lease，functional 输入与旧结果不变。空输出不读 payload；nonempty 计数≤INT32_MAX、维度≤native int。低层 checked lower 只能在 managed Context tracing 内登记错误，外部调用明确拒绝，不能静默丢错误 |
+| R02 | checked/unchecked Gather：F32/F16/BF16/I32/I64/Bool source、I32/I64 indices、任意合法轴/原生布局，原始存储位输出；必要 I64 storage/Graph logical 描述接线 | 同一 GPU 验证全部非空 indices，checked 执行使用安全 clamp，禁止负索引 wrap 成成功；零 source-axis 且非空输出以安全占位结果＋错误，不越界访问。失败不发布结果 lease，functional 输入与旧结果不变。空输出不读 payload；非空 output/indices 计数≤INT32_MAX、维度≤native int。低层 checked lower 只能在 managed Context tracing 内登记错误，外部调用明确拒绝，不能静默丢错误 |
 | R03 | I32/F32 inclusive/exclusive Scan，任意轴/native stride/empty | I32 用原生 I64 inclusive scan，检查全部前缀含最终 exclusive 总和；计数≤INT32_MAX 保证 I64 累加不溢出。非法前缀 GPU 合并 overflow，结果不发布；合法输出转回 I32，exclusive 移位前缀，不用减当前值。F32 直接原生 scan，保留浮点重结合及 NaN/Inf；O(N)，I64 全尺寸临时、状态归约/转换和必要原生布局整理计费，无 host payload fallback |
 | R04 | 自然 Direct/Graph 及失败/寿命/指南 | 独立位级 gather/I64或FP64 prefix，I32/I64极值坏索引、重复/scalar/多维/rank8/转置/广播/empty、尾块和非有限；临时整数溢出恢复、后行错误、仅最终exclusive溢出。prepare 不以隔离 warm 值裁决用户 payload；实际 checked 图、两槽/变输入/旧结果、失败槽退役/fresh恢复、close/丢弃 completion/owner保活、死检查、首错优先及已有异常/OOM回归。Air/Mini factors，完整权重/三交付/其他环境/等责P1随C1固定bundle |
 
 本轮不改变公共 Operation、共同 Graph、MLX pin、公共仪器或其他模块 owner。新增冷 scope 必须
 异常安全、按线程隔离且退出恢复；原生检查依赖留在同一个 MLX compiled region。payload 错误
 不能借 warmup 提前拒绝或在失败后换 Provider 重算。本子集不运行 P1，不能由 correctness 宣称 SOTA。
+
+### C1-R 实施事实
+
+- `b3095468` 完成 R01–R04：同一 MLX compiled region 内合并可达算法检查，接通 checked/unchecked
+  Gather、I32/F32 Scan、I64 storage 与普通 Graph。Air `Mac16,12`、Mini `Mac16,10` 的
+  Release/WERROR 首次均通过 Direct **25**、Graph **9**，共 **34 case**，另各两个独立公开头
+  检查。没有产品纠正、依赖变更或容差调整；Mini 只签 correctness/portability。
+  [命令、两机日志与哈希](../../../../evidence/correctness/compute-llm-moe-c1/r-apple-focused.json)。
+- 六种 source storage 与两种 index 宽度的 Gather 通过独立原始位 oracle；覆盖 scalar/多维
+  indices、重复和边界、rank8/native 转置/广播、I64 极值存储、空源/空输出。负索引、extent
+  与整数极值坏索引均回报 OutOfRange，失败不发布结果，输入和旧结果不变。Scan 覆盖
+  width0/1/17/127/129/1025/8193/65537、中轴/负 axis/native stride、inclusive/exclusive；
+  本测试域 I32 前缀使用可精确表示整数和的独立 FP64 oracle，F32 使用独立 FP64 参考。
+  NaN/Inf、正负临时溢出后恢复、仅最终 exclusive 总和溢出均通过。
+- warmup 不裁决用户 payload：捕获坏常量的程序可准备，实际调用才失败；不可达的坏表达式
+  不影响成功，首错优先、冷 trace 异常回滚、非 managed tracing 拒绝均通过。失败槽退役、
+  同 Context 新槽恢复；测试原生 checkpoint 持有真实已接纳 GPU 前缀，释放 Program/Invocation
+  后仍安全完成错误回报。丢弃 Completion、旧结果跨 close 保活和既有 OOM/取消/native 异常
+  排空测试通过；算法错误没有误 poison Context。
+- 普通 Graph 实测 I64 IDs→F16/BF16 embedding Gather→mixed RMSNorm→residual，以及 counts→
+  exclusive Scan、F32 Softplus→Scan；rows/width/experts 为 1/129/17、17/2048/128、
+  23/129/257、128/2048/129。三个公开结果不暴露内部状态；同 lower Direct 逐位对照之外，
+  使用独立索引/FP64/存储舍入参考。两槽、三次变化输入、源 Graph 释放、保留旧值、两类算法
+  失败与新槽恢复通过。本批使用诊断权重，不冒称完整 C1 的真实模型权重消费。
+- 统一 LOC self-check：Compute+Graph 实现 **43,133 行 / 173 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/r-implementation-loc.json)。Windows/Air
+  selector 保留 112/110 项 skipped reasons；本子集实际运行两台 Mac configure、两个 factor
+  与两个头检查。完整 C1 真实权重、三交付/其他环境、等责 P1 和矩阵逐格验收仍待完成；
+  Apple 有序 Scatter 与 Vulkan 继续按有限 FIX 推进，不签四路线完成或性能胜出。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
