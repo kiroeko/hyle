@@ -287,7 +287,9 @@ ProviderPrepareOutcome prepare(void *state,
                .alias_source = request.inputs[0] == request.outputs[0]};
   *output = {.vtable = &kPreparedVTable,
              .state = prepared,
-             .workspace = {program.workspace_bytes, kWorkspaceAlignment},
+             .workspace = {program.workspace_bytes, program.workspace_bytes == 0
+                                                        ? 1
+                                                        : kWorkspaceAlignment},
              .runtime = kRuntime,
              .persistent_bytes = sizeof(Prepared),
              .invocation_private_bytes = program.workspace_bytes == 0

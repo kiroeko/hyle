@@ -149,27 +149,35 @@ template <class T, bool Add, class Index, bool SourceDense, bool UpdateDense,
           bool Checked>
 __global__ void single_update(const void *source, const void *indices,
                               const void *updates, T *output,
-                              const unsigned *status, ScatterLayout layout) {
+                              const unsigned *status, ScatterLayout layout,
+                              bool in_place) {
   const unsigned index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index >= layout.elements)
+  if (index >= (in_place ? layout.updates : layout.elements))
     return;
   if constexpr (Checked)
     if (*status != 0)
       return;
-  T value = read_source<T, SourceDense>(source, index, layout);
+  const unsigned selected =
+      layout.indices == 0 ? 0 : static_cast<unsigned>(load<Index>(indices, 0));
+  const unsigned destination =
+      in_place
+          ? ((index / layout.inner) * layout.extent + selected) * layout.inner +
+                index % layout.inner
+          : index;
+  T value = read_source<T, SourceDense>(source, destination, layout);
   if (layout.indices != 0 &&
-      (index / layout.inner) % layout.extent ==
-          static_cast<unsigned>(load<Index>(indices, 0))) {
+      (in_place || (index / layout.inner) % layout.extent == selected)) {
     const auto ordinal =
-        (index / (layout.extent * layout.inner)) * layout.inner +
-        index % layout.inner;
+        in_place ? index
+                 : (index / (layout.extent * layout.inner)) * layout.inner +
+                       index % layout.inner;
     const auto update = read_update<T, UpdateDense>(updates, ordinal, layout);
     if constexpr (Add)
       value = add(value, update);
     else
       value = update;
   }
-  output[index] = value;
+  output[destination] = value;
 }
 template <class T, bool Add, class Index, bool SourceDense, bool UpdateDense>
 void bind_values(bool checked, ScatterProgram &program) {
@@ -411,9 +419,14 @@ cudaError_t scatter_launch(const ScatterProgram &program,
       return result;
   }
   if (layout.indices <= 1) {
-    void *arguments[]{&source, &indices, &updates, &output, &status, &layout};
+    bool in_place = source == output;
+    const auto elements = in_place ? layout.updates : layout.elements;
+    if (elements == 0)
+      return cudaSuccess;
+    void *arguments[]{&source, &indices, &updates, &output,
+                      &status, &layout,  &in_place};
     return cudaLaunchKernel(program.single,
-                            dim3((layout.elements + kThreads - 1) / kThreads),
+                            dim3((elements + kThreads - 1) / kThreads),
                             dim3(kThreads), arguments, 0, stream);
   }
   auto result = launch_sort(*sort, stream);

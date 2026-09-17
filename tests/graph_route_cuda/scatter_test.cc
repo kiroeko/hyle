@@ -310,6 +310,8 @@ void failure_case(bool abandon) {
           {.mode = graph::ReplayMode::kRequireCapture,
            .host_wait = graph::HostWaitPolicy::kReject});
     };
+    const auto caller_bytes =
+        resource.ref().resource().stats().value().used_bytes;
     auto slot = compiled.executable.create_invocation().value();
     ASSERT_TRUE(bind(slot).ok());
     EXPECT_EQ(output.read<int>(), (std::vector{-23, -24, -25, -26}));
@@ -352,6 +354,19 @@ void failure_case(bool abandon) {
       EXPECT_TRUE(pending.wait().IsOutOfRange());
     ASSERT_TRUE(owner.drain().ok());
     EXPECT_EQ(output.read<int>(), (std::vector{11, 32, 13, 31}));
+    failed = {};
+    good = {};
+    pending = {};
+    // The caller owns the workspace resource. An abandoned completion releases
+    // its retained Graph invocation asynchronously, even after GPU drain.
+    const auto cleanup_deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (resource.ref().resource().stats().value().used_bytes !=
+               caller_bytes &&
+           std::chrono::steady_clock::now() < cleanup_deadline)
+      std::this_thread::yield();
+    EXPECT_EQ(resource.ref().resource().stats().value().used_bytes,
+              caller_bytes);
   }
   const auto deadline =
       std::chrono::steady_clock::now() + std::chrono::seconds(2);
