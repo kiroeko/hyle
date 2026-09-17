@@ -273,7 +273,7 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-D AUDITED：只授权 Scan 的自然 typed prepare 接线；共同 schema/数值合同与 Native 有限 FIX 已固定。普通 capability query 和其他公共运行机制尚未授权实施。"
+      "summary": "LLM/MoE C1-D AUDITED：Scan 自然 typed prepare 已实施并通过 W1 局部 correctness/default Graph；能力查询与其他公共运行机制仍待有限审计，C1 未完成。"
     },
     {
       "module": "graph",
@@ -387,7 +387,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B/D AUDITED：Softplus、mixed norm 已实施；D01 的 I32/F32 Scan schema 已固定。公开面、消费者与交付按不可变候选验证；四路线覆盖未完成。"
+      "summary": "LLM/MoE C1-A/B/D AUDITED：Softplus、mixed norm、I32/F32 Scan schema 已实施；W1 35 case 通过。A/B 的完整 Windows selected gates 已通过，Scan 新公开面其余门待固定 C1 候选。"
     },
     {
       "module": "compute_backend_cpu",
@@ -415,7 +415,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B/C/D AUDITED：半精度 tensor/norm/reduce/gate/index/softmax/top-k 已实施，C 子集待验证；D02 checked I32/F32 Scan 已固定。C1 整包未完成。"
+      "summary": "LLM/MoE C1-A/B/C/D AUDITED：半精度 tensor/norm/reduce/gate/index/softmax/top-k 及 checked Scan 已实施；W1 Native 106 case 与默认 CPU Graph 片段通过。其他环境、真实权重片段及 C1 bundle 待验收。"
     },
     {
       "module": "compute_sched",
@@ -471,7 +471,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E AUDITED：仅固定 E01–E03 的 CUDA BF16/三种门控、现有 SGLang 片段实例化与空工作负载；不改原生 stream/capture/完成协议。其余 C1 CUDA 能力仍待定界。"
+      "summary": "LLM/MoE C1-E AUDITED：BF16/三种门控、SGLang 实例化与空执行已实施；W1 provider/default Direct/Graph capture 通过。其余 C1 CUDA 张量能力、三交付及完整优选 P1 待完成。"
     },
     {
       "module": "compute_route_cuda",

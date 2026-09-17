@@ -159,9 +159,18 @@ invocation 与参数保留；已有 F32 回归和 selector 对应门。C1-A 与 
   selected gates 全部实际 PASS，包括受影响 correctness/header/直接消费者、Compute 与 Graph 各自
   source/installed-static/installed-shared；[完整门清单及原始日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/ab-windows-selected.json)
   保留 95 个 skipped reasons。该证据只覆盖 A/B 与 W1，不覆盖后续 C/D/E 或其他环境。
-- C1-C `06d28274`、D `f626fb48`、E `3997c621` 已形成有限实现；`3997c621` 的 owning factors
-  与普通 CPU/CUDA Direct/Graph consumer 正在串行验证。验证副本只在 A/B 全部门结束后前移，复用
-  未改变的依赖 object，产品源码仍由 Windows canonical 提交提供；未运行 gate 未签 PASS。
+- C1-C `06d28274`、D `f626fb48`、E `3997c621` 已形成有限实现。`3997c621` W1 Release/WERROR
+  编译通过，普通 CPU/CUDA Direct/Graph consumers、CUDA provider 等 6 个 test executable 实际
+  PASS；Scan 的两处新测试分别错用了轴错误码和失败 slot 生命周期。`561aea36` 只纠正测试，
+  未改产品，compute_ops 35 case + Native 106 case 重跑全部 PASS。联合覆盖的 8 个 test executable
+  及初次失败保存在[focused receipt](../../../../evidence/correctness/compute-llm-moe-c1/cde-windows-focused.json)。
+- 实际新消费包括 F16/BF16 2048-hidden embedding/norm/gate/residual/scatter/softmax 图的两
+  invocation/三次改变输入/旧结果保留，Scan→Gather offsets，BF16 三门控的默认 Direct 与 CUDA
+  capture 重放。合成输入只签这些机制，不称为本地完整 2B 权重片段验收。
+- 验证副本只在 A/B 全部门结束后前移，复用未改变的依赖 object，产品源码仍由 Windows canonical
+  提交提供。Scan 新公开接口的 full selector/其他环境与 C1 固定 bundle 仍未执行，不继承 A/B 的交付。
+- `561aea36` 统一 LOC self-check：Compute+Graph 全部实现 **37,929 行 / 131 文件**，不含测试/vendor，
+  与 C0 37,035 行口径一致；[原始统计](../../../../evidence/correctness/compute-llm-moe-c1/cde-implementation-loc.json)。
 - 无 P1；无 C1 整包、整模型或 GPU 新覆盖 verdict。矩阵仍 UNPROVEN。
 - registry 摘要曾仍写 C1-A 限定，现已同步 A/B/C。实际有限 FIX 分别已在 `ffef1a5f`、
   `885f5f3d`、`9181710f` 独立卡提交后才写各自产品；owner 持续 AUDITED，没有状态跳级。

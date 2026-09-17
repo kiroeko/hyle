@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "scope": "C1-C/D/E focused Windows correctness and default CPU/CUDA Direct/Graph consumers",
+  "product_candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+  "test_correction_candidate": "561aea3665b097bf8e14c33b0f9dd23b2c1adb1a",
+  "verdict": "PASS",
+  "product_changes_between_candidates": false,
+  "context": {
+    "toolchain": {
+      "id": "msvc-19.50.35728.0-x64",
+      "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "compiler_id": "MSVC",
+      "compiler_version": "19.50.35728.0",
+      "stdlib": {
+        "id": "msvc-stl-145-202508"
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+      }
+    },
+    "machine_profile": {
+      "id": "W1-WIN",
+      "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+      "role": "engineering"
+    }
+  },
+  "selected_test_executables": [
+    {
+      "test": "hyle_compute_route_cpu_test",
+      "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_graph_route_cpu_test",
+      "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_graph_route_cpu_cpu_executor_test",
+      "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_compute_provider_cuda_test",
+      "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_compute_route_cuda_test",
+      "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_graph_route_cuda_test",
+      "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_compute_ops_test",
+      "candidate": "561aea3665b097bf8e14c33b0f9dd23b2c1adb1a",
+      "verdict": "PASS"
+    },
+    {
+      "test": "hyle_compute_provider_native_test",
+      "candidate": "561aea3665b097bf8e14c33b0f9dd23b2c1adb1a",
+      "verdict": "PASS"
+    }
+  ],
+  "initial_test_failures": {
+    "candidate": "3997c62146eed44033c6031e2ce366a74a7f2592",
+    "count": 2,
+    "causes": [
+      "Scan schema test expected InvalidArgument instead of existing normalized-axis OutOfRange",
+      "Integer overflow test reused a failed invocation instead of recreating it"
+    ],
+    "resolution": "Test expectations/lifetime corrected; no product-code change; compute_ops and Native rerun PASS"
+  },
+  "case_counts_at_correction": {
+    "compute_ops": 35,
+    "compute_provider_native": 106
+  },
+  "raw": [
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\cde-focused-result.json",
+      "sha256": "11c65e589497989d6ae79f95d47c7f3bb8962391543e7f558bff1132769094ab"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\scan-test-fix-focused-result.json",
+      "sha256": "74e0c0d4926b50886b839d147184c48735137a221c3b83b57ca3b986b9207f77"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\cde-configure.log",
+      "sha256": "81c5cbf5611038d9af4031c3f6172a679886ec9e6a2403c2840c517e5e7ba10e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\cde-build.log",
+      "sha256": "c2d026fc1118dcfb7bf0a91250a68f0d343687abb41e7e4f518d23010f295fd1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\cde-test.log",
+      "sha256": "7cc80dbd731907a76e3f68b500fc2f3bb8386165e3950e036348edb74449b006"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\scan-test-fix-configure.log",
+      "sha256": "7d0d2c318cc3ad4e3dedb83944802dc9f9cf4707681799bb13a796a08d235e4b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\scan-test-fix-build.log",
+      "sha256": "a80b3fd9cc8cb176de6ce46c26eac33ff85618d332c337142c2e2ce1344b25f3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\scan-test-fix-test.log",
+      "sha256": "605b73f3266b9a757cce72f437d24f2b37a96a9cec8232fc9649e3f6ea4b08b1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\scan-test-fix-last-test.log",
+      "sha256": "4dc22e983f524d688ebe2042b2fb4a5620fd9e33e246168584c65f667aab3fb5"
+    }
+  ],
+  "limitations": [
+    "Focused correctness only; does not claim full selector for the new public Scan interface",
+    "New CUDA BF16/GELU performance rules require the fixed C1 bundle P1; old SwiGLU P1 is not extended",
+    "Other environments, C1 complete local-model fragment and route deliveries remain unproven",
+    "No C1 package or four-route coverage verdict"
+  ]
+}
