@@ -127,6 +127,28 @@ TEST(CudaDefaultCompute, RejectsInvalidDeviceAndUnsupportedOperations) {
   EXPECT_FALSE(owner.create_queue().has_value());
 }
 
+TEST(CudaDefaultCompute,
+     DescriptorPreparationChecksDeviceResourcesBeforePayload) {
+  auto owner = cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto description = matrix(compute::DataType::kBFloat16, 1, 4096);
+  auto prepared = compute::prepare(owner, compute::GatedActivation{},
+                                   description, resource.ref());
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, compute::cuda_native::kSglangProviderId);
+  EXPECT_TRUE(prepared->capture_compatible());
+  auto wrong_resource = compute::prepare(owner, compute::GatedActivation{},
+                                         description, mem::system_resource());
+  ASSERT_FALSE(wrong_resource.has_value());
+  EXPECT_TRUE(wrong_resource.error().IsUnimplemented());
+  ASSERT_TRUE(owner.close().ok());
+  auto closed = compute::prepare(owner, compute::GatedActivation{}, description,
+                                 resource.ref());
+  ASSERT_FALSE(closed.has_value());
+  EXPECT_TRUE(closed.error().IsFailedPrecondition());
+}
+
 TEST(CudaDefaultCompute, DefaultRulesRetainSeparateAndPackedTailCapability) {
   auto owner = cuda::create_context().value();
   auto resource =

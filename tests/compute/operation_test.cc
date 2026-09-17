@@ -213,6 +213,33 @@ TEST(PreparedOperation, ExposesColdRouteAndShapeDiagnostics) {
   EXPECT_TRUE(bad_output.error().IsOutOfRange());
 }
 
+TEST(PreparedOperation, DescriptorCapabilityUsesResourcesWithoutPayloadAccess) {
+  InstrumentedResource resource;
+  resource.fail_mapping(true);
+  auto context = hyle::compute::test::native_context().value();
+  const auto description = row_description(8);
+  auto prepared = hyle::compute::prepare(context, RmsNorm{}, description,
+                                         MemoryResourceRef(resource));
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, hyle::compute::native::kProviderId);
+  EXPECT_EQ(prepared->output_description().value(), description);
+  EXPECT_EQ(resource.maps(), 0);
+  EXPECT_EQ(resource.unmaps(), 0);
+  EXPECT_EQ(resource.flushes(), 0);
+  EXPECT_EQ(resource.invalidates(), 0);
+
+  resource.host_accessible(false);
+  auto unsupported = hyle::compute::prepare(context, RmsNorm{}, description,
+                                            MemoryResourceRef(resource));
+  ASSERT_FALSE(unsupported.has_value());
+  EXPECT_TRUE(unsupported.error().IsUnimplemented());
+  EXPECT_EQ(resource.maps(), 0);
+  ASSERT_TRUE(context.close().ok());
+  auto closed = hyle::compute::prepare(context, RmsNorm{}, description);
+  ASSERT_FALSE(closed.has_value());
+  EXPECT_TRUE(closed.error().IsFailedPrecondition());
+}
+
 TEST(PreparedOperation, RejectsUnsupportedOrInconsistentPreparation) {
   Context context = hyle::compute::test::native_context().value();
   const TensorDesc row = row_description(8);

@@ -43,6 +43,19 @@ factor seam，也不要把单个 family 的域支持当成整个算子目录都�
 
 ## 普通 CUDA 入口
 
+### 执行前检查具体请求
+
+CPU/CUDA 用描述符和 memory resource 调用普通 `prepare()`，即可检查所选设备上实际的
+dtype、shape、layout 与资源是否可执行；此时无需分配 tensor payload 或创建 Queue。
+准备可能编译并分配程序状态，但不读取或执行输入数据。保留成功结果供后续 invocation 使用，
+无需另做一次查询或再次准备。`infer_output_descriptions()` 只检查共同数学描述，不证明路线支持。
+
+准备失败保留具体原因：`InvalidArgument`/`OutOfRange` 表示请求不合法，`Unimplemented` 表示
+当前资格条件不受支持，资源不足和编译错误按实际错误返回。所有实现都不支持时，错误包含 Provider
+名字和其拒绝原因；已进入实际准备的明确拒绝优先于后续更宽泛的 proposal 拒绝。执行期不重新选择。
+
+### 创建 CUDA 程序
+
 选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_CUDA=ON`；CUDA-only 再设
 `HYLE_COMPUTE_CPU=OFF`。源码与安装包均链接 `hyle::compute`：
 

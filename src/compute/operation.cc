@@ -11,6 +11,7 @@
 #include <new>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -1111,12 +1112,21 @@ Result<PreparedOperation> prepare_for_mode(const Context &context,
         "operation proposal requirement allocation failed"));
   }
 
+  Status unsupported;
+  std::string_view unsupported_provider;
+  bool prepared_decline = false;
   for (std::size_t index = 0; index < state->provider_count; ++index) {
     auto proposal = detail::OperationPreparationAccess::propose(
         context, index, operation, inputs, outputs, input_requirements.span(),
         output_requirements.span());
-    if (!proposal && proposal.error().IsUnimplemented())
+    if (!proposal && proposal.error().IsUnimplemented()) {
+      if (!prepared_decline) {
+        unsupported = std::move(proposal).error();
+        unsupported_provider =
+            state->providers()[index].provider.identity().name;
+      }
       continue;
+    }
     if (!proposal)
       return std::unexpected(std::move(proposal).error());
     // Bind mode once at prepare, preserving each public invocation's type
@@ -1130,12 +1140,22 @@ Result<PreparedOperation> prepare_for_mode(const Context &context,
       return std::unexpected(std::move(attempt).error());
     if (attempt->succeeded())
       return std::move(attempt->prepared);
-    if (attempt->decline == detail::ProviderPrepareDecline::kUnsupported)
+    if (attempt->decline == detail::ProviderPrepareDecline::kUnsupported) {
+      // A prepared candidate reached a more specific qualification boundary
+      // than a proposal rejection. Preserve that reason across later misses.
+      unsupported = std::move(attempt->reason);
+      unsupported_provider = proposal->provider.name;
+      prepared_decline = true;
       continue;
+    }
     return std::unexpected(std::move(attempt->reason));
   }
-  return std::unexpected(Status::Unimplemented(
-      "no configured compute provider supports this operation"));
+  if (unsupported.ok())
+    return std::unexpected(Status::Unimplemented(
+        "no configured compute provider supports this invocation mode"));
+  if (!unsupported_provider.empty())
+    unsupported = std::move(unsupported).WithContext(unsupported_provider);
+  return std::unexpected(std::move(unsupported));
 }
 } // namespace
 

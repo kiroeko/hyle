@@ -134,6 +134,12 @@ struct AliasSupport final {
 class PreparedOperation;
 class OperationInvocation;
 
+// Descriptor preparation is the executable capability check for the selected
+// device, dtype/shape and resources. It may compile/allocate program state but
+// does not read or execute tensor payloads, and needs no Queue or tensor
+// storage. Retain the result for execution; schema inference alone proves no
+// support.
+
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
         std::span<const TensorDesc> inputs,

@@ -44,6 +44,7 @@ struct Affine final {
 enum class Fault {
   kNone,
   kProposalError,
+  kProposalUnsupported,
   kUnsupported,
   kResourceDecline,
   kFatalUnsupported,
@@ -150,6 +151,8 @@ struct alignas(128) Factory final {
     ++config->probe->proposals;
     if (config->probe->fault == Fault::kProposalError)
       return std::unexpected(Status::Internal("proposal failed"));
+    if (config->probe->fault == Fault::kProposalUnsupported)
+      return std::unexpected(Status::Unimplemented("proposal declined"));
     if (request.device.backend_id() != cpu::kBackendId ||
         !request.operation.custom_as<Affine>())
       return std::unexpected(Status::Unimplemented("not an affine kernel"));

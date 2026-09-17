@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <vector>
 
 #include "hyle/compute/cpu.h"
@@ -165,6 +166,8 @@ TEST(CpuDefaultContext, InvalidAndUnsupportedInputsRemainErrors) {
   auto unsupported = prepare(context, MatMul{}, integer, integer);
   ASSERT_FALSE(unsupported.has_value());
   EXPECT_TRUE(unsupported.error().IsUnimplemented());
+  EXPECT_NE(unsupported.error().message().find("hyle-native"),
+            std::string_view::npos);
 }
 
 } // namespace

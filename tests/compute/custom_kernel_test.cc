@@ -334,10 +334,40 @@ TEST(CustomKernel,
     EXPECT_EQ(first.kernels, 0);
     if (fault == Fault::kFatalUnsupported) {
       EXPECT_TRUE(result.error().IsUnimplemented());
+      EXPECT_EQ(result.error().message(), "fatal");
+      EXPECT_EQ(fallback.proposals, 0);
     }
     if (fault == Fault::kResourceDecline) {
       EXPECT_TRUE(result.error().IsResourceExhausted());
     }
+  }
+}
+
+TEST(CustomKernel, DescriptorPreparationPreservesQualifiedDeclineDiagnostics) {
+  for (const bool qualified : {false, true}) {
+    Probe first, last;
+    first.fault = qualified ? Fault::kUnsupported : Fault::kProposalUnsupported;
+    last.fault = Fault::kProposalUnsupported;
+    const std::array providers{provider(first).value(), provider(last).value()};
+    auto context =
+        Context::create(cpu::device(), {.providers = providers}).value();
+    const std::array descriptions{description()};
+    auto result = prepare(context, Operation::custom(Affine{}), descriptions,
+                          descriptions, hyle::mem::system_resource());
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(result.error().IsUnimplemented());
+    const auto message = result.error().message();
+    EXPECT_NE(message.find("owning-affine"), std::string_view::npos);
+    EXPECT_NE(message.find(qualified ? "declined" : "proposal declined"),
+              std::string_view::npos);
+    if (qualified)
+      EXPECT_EQ(message.find("proposal declined"), std::string_view::npos);
+    EXPECT_EQ(first.preparations, qualified ? 1 : 0);
+    EXPECT_EQ(last.preparations, 0);
+    EXPECT_EQ(first.kernels, 0);
+    EXPECT_EQ(last.kernels, 0);
+    EXPECT_EQ(first.executions, 0);
+    EXPECT_EQ(last.executions, 0);
   }
 }
 
