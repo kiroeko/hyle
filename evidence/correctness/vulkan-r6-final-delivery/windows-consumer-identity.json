@@ -1,0 +1,412 @@
+{
+  "snapshot": "20a029aded4bc00c9fc80a182bd3051853e7c99e",
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "state": "PASS",
+  "source_archive": "C:\\hyle-scratch\\r6-vulkan-20260917\\source-package-20a029ad\\dist\\hyle-0.1.0-source.zip",
+  "source_archive_sha256": "22d4cce9a4f9c9f912b62877c8bc2a13a6d17f08a96d40c5499a3dbb5e3c5fa6",
+  "platform": "Windows",
+  "records": [
+    {
+      "label": "source-build-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\source-consumer",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:\\public\\project-hyle\\.deps\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f"
+      ],
+      "exit_code": 0,
+      "seconds": 7.469000000040978
+    },
+    {
+      "label": "source-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\source-build",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 26.42199999978766
+    },
+    {
+      "label": "source-build-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\source-build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.828999999910593
+    },
+    {
+      "label": "source-build-vulkan_source_compute-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\source-build\\vulkan_source_compute.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.030999999959021807
+    },
+    {
+      "label": "source-build-vulkan_source_graph-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\source-build\\vulkan_source_graph.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01500000013038516
+    },
+    {
+      "label": "public-static-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\complete-source\\hyle-0.1.0-source",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\public-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:\\public\\project-hyle\\.deps\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f"
+      ],
+      "exit_code": 0,
+      "seconds": 2.828999999910593
+    },
+    {
+      "label": "static-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\public-static",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 24.921000000089407
+    },
+    {
+      "label": "static-install",
+      "command": [
+        "cmake",
+        "--install",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\public-static",
+        "--prefix",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\sdk-static"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4380000000819564
+    },
+    {
+      "label": "public-shared-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\complete-source\\hyle-0.1.0-source",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\public-shared",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:\\public\\project-hyle\\.deps\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f"
+      ],
+      "exit_code": 0,
+      "seconds": 2.5779999997466803
+    },
+    {
+      "label": "shared-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\public-shared",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 25.780999999959022
+    },
+    {
+      "label": "shared-install",
+      "command": [
+        "cmake",
+        "--install",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\public-shared",
+        "--prefix",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\sdk-shared"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6409999998286366
+    },
+    {
+      "label": "consumer-static-compute-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\independent-consumers\\compute\\cpp",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-compute",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\relocated-sdk-static"
+      ],
+      "exit_code": 0,
+      "seconds": 0.75
+    },
+    {
+      "label": "consumer-static-compute-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-compute",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5630000000819564
+    },
+    {
+      "label": "consumer-static-compute-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-compute",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.42100000008940697
+    },
+    {
+      "label": "consumer-static-compute-hyle_package_compute_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-compute\\hyle_package_compute_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.015999999828636646
+    },
+    {
+      "label": "consumer-static-graph-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\independent-consumers\\graph\\cpp",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-graph",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\relocated-sdk-static"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7660000002942979
+    },
+    {
+      "label": "consumer-static-graph-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-graph",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5779999997466803
+    },
+    {
+      "label": "consumer-static-graph-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-graph",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.42200000025331974
+    },
+    {
+      "label": "consumer-static-graph-hyle_package_graph_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-static-graph\\hyle_package_graph_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.014999999664723873
+    },
+    {
+      "label": "consumer-shared-compute-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\independent-consumers\\compute\\cpp",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-compute",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\relocated-sdk-shared"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9529999997466803
+    },
+    {
+      "label": "consumer-shared-compute-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-compute",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6559999999590218
+    },
+    {
+      "label": "consumer-shared-compute-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-compute",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3130000000819564
+    },
+    {
+      "label": "consumer-shared-compute-hyle_package_compute_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-compute\\hyle_package_compute_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01500000013038516
+    },
+    {
+      "label": "consumer-shared-graph-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\independent-consumers\\graph\\cpp",
+        "-B",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-graph",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\relocated-sdk-shared"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7969999997876585
+    },
+    {
+      "label": "consumer-shared-graph-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-graph",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 1.641000000294298
+    },
+    {
+      "label": "consumer-shared-graph-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-graph",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2809999999590218
+    },
+    {
+      "label": "consumer-shared-graph-hyle_package_graph_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hyle-scratch\\r6-vulkan-20260917\\final-delivery-20a029ad\\consumer-shared-graph\\hyle_package_graph_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01500000013038516
+    }
+  ],
+  "executables": {
+    "source-build/vulkan_source_compute": "803737fed9a3115c60fe7b4160b201330b4d185e3bb2d5379f062f386c835a82",
+    "source-build/vulkan_source_graph": "51b752305e07099bd1a7d73b9d3bb6e2fa889454d58374ff2d06abcb01c5e551",
+    "consumer-static-compute/hyle_package_compute_cpp": "78657fd14eed658e37c410e09f9f918ae9938f2d2d2c35de84c654b49d1c9985",
+    "consumer-static-graph/hyle_package_graph_cpp": "d29272ef966bec94fc6315254f6075ba5bddf6c4060121aec22b33008d2cb866",
+    "consumer-shared-compute/hyle_package_compute_cpp": "db80888b5361d0ac92b6c1c7561fad2642cec17cf81ac0574e193cb4f0fd6e26",
+    "consumer-shared-graph/hyle_package_graph_cpp": "cbeabbf250579b7e1d249912e7b26a11c28a6a4221edc7ae38d78921562df312"
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "finished": 1789623392.162531
+}

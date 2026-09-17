@@ -84,3 +84,14 @@ CPU/CUDA/Apple 原测量候选、限定域与 CPU 用户例外继续按 baseline
 另对 `8e45b104`、Windows 测量 `3894b72e`、Apple 测量 `a41d43d5` 与最终源码快照 `20a029ad`
 核对顶层 CMake、cmake/include/src/third_party/scripts/samples 七项 shipping 输入身份，全部相同。
 不同的是 benchmark、文档、状态和证据；这不把尚未执行的最终三交付或 selected gates 写成 PASS。
+
+## 最终两系统三交付通过
+
+[最终原始记录](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)已实际完成同一
+`20a029ad` source ZIP 的 Windows / Air source/static/shared，每系统六个普通 Direct/Graph
+消费者均执行 FFN + custom、变化输入、重复回放和独立 oracle。两系统 installed 消费前均
+隐藏 producer source/build，迁移 SDK 前缀，核对 offline、头/导出/许可证及其它路线 binary
+缺席；Windows 所需 DLL 已邻置。全部命令、制品及 79/78 个归档条目已校验。
+
+D1–D3 的最终三交付义务已兑现；中央 roots 引起的 broad selected gates 正在按原计划执行。
+十三 owner 继续 CANDIDATE，待该门及 terminal 汇总后依法关闭，不重跑其原 CPU/CUDA/Apple P1。

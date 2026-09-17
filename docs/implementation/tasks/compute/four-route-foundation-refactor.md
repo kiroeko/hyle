@@ -18,8 +18,9 @@ host/device 检查；性能资格的长停顿已在独立 CUDA 中复现并取�
 [R5 Apple](apple-v1-four-route-foundation.md) 已完成真实 Direct/Graph、三交付、host 插桩与
 M4 限定域的最终 P1，在 `a767bdc4` CLOSED。当前进入
 [R6 Vulkan](vulkan-v1-four-route-foundation.md)：Windows / Air 真实计算、host 插桩及
-[两系统三交付](../../../../evidence/correctness/vulkan-r6-three-delivery/README.md)已通过；
-默认规则/性能、剩余构建门和终审尚未完成。十三已有 owner 当前重新绑定的只是 Vulkan 公开
+[最终两系统三交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)已通过；
+四份正式 P1 原 5% 门、四项自然边界诊断和最终 ASan 已完成，剩余已启动的中央构建回归与
+terminal 汇总。十三已有 owner 当前重新绑定的只是 Vulkan 公开
 roots/交付变化，原运行时和性能资格继承。R6–R7 尚未完成，完整基础架构未结案。
 
 ## 目标与不做项
@@ -71,7 +72,7 @@ correctness + performance**，不是最后才拼 Graph。R2 提供可用共同�
 | CPU backend、Native/SIMD kernels、oneDNN SEQ ukernel 与 region | 底层机制和胜出算法是复用候选，API/包装按新合同迁移；没有新机制问题不重做 kernel；公开 persistent executor 已有可用组合 | CPU/native/oneDNN owners；R3 |
 | CUDA backend memory/stream/event/capture | 复用符合新合同的 native 机制，因实际接口/交付变化才重开其 CLOSED 卡；不按单词删除 capture+普通命令的 `hybrid replay` | CUDA owner；R1/R4 |
 | `compute_provider_ggml` BLOCKED，`compute_sched` QUEUED | CPU ggml 恢复条件保持；不强制它成为 CPU 必经路径。现有 public Sched 组合成立，不为预留名称实现冗余 pool；其身份是否退役另按组件合同处理 | 原 owner；不自动解锁/建空实现 |
-| `mem` v10 Reservation / Graph quota 消费 | 已实现未终局验收的定向依赖尾项，纳入资源回收回放与本轮结案；不复制 quota，也不把 Mem 误记为已完成该轮 | Mem 当前卡 + Graph；R2/R7 |
+| `mem` v10 Reservation / Graph quota 消费 | 已按 v10 定向卡完成验收并 CLOSED；R7 只复核其证据和 Graph 消费，不复制 quota 或扩成 Mem 重审 | Mem v10 terminal + Graph；R2/R7 |
 | research 程序、旧 Q4 展开案例、历史证据、bench fixtures | 原生研究可转成具名 consumer，但不是 shipping；旧全量展开路线不恢复为量化默认；模拟测试只覆盖协议分支，不能代替 native lifetime/性能 | 对应包；R7 检漏 |
 
 当前 owner/record 仍只看 registry。R2 开始前，把需改动的现有 AUDITED owner 依法重新定界/更新活动卡，

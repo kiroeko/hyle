@@ -273,14 +273,14 @@
       "module": "compute",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
@@ -357,7 +357,7 @@
       "module": "compute_provider_onednn",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
@@ -374,7 +374,7 @@
       "module": "graph_provider_onednn",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
@@ -392,21 +392,21 @@
       "module": "compute_backend_cpu",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_backend_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_provider_native",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
@@ -418,14 +418,14 @@
       "module": "compute_route_cpu",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_cpu",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
@@ -466,41 +466,41 @@
       "module": "compute_route_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "summary": "R6 Vulkan 交付 CANDIDATE：公开 roots/嵌入资源与普通样例固定于 8e45b104；最终 Windows/Air source/static/shared、SDK relocation、隐藏 producer、offline 与 DLL 邻置通过。十三旧 owner 源码不变、原性能/CPU 例外继承；中央 selector 与 terminal 待完成。",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE 8e45b104: all four Windows/Air Direct/Graph qualified P1 runs passed every original 5% gate at n15; strict directions, including four Air Graph M16 LOSS strata, retained. Native-boundary diagnostics and final ASan/delivery/selector closure remain pending.",
+      "summary": "R6 V1-V7 CANDIDATE：8e45b104 原生 Direct/Graph、规则与寿命已固定；Windows/Air 四份正式 P1 原 5% 门、四项自然边界诊断、最终 ASan 17 项和两系统三交付完成。严格方向及 Air Graph 四个小 LOSS 保留；中央 selector 正在执行，terminal 尚待完成。",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE 8e45b104: all four Windows/Air Direct/Graph qualified P1 runs passed every original 5% gate at n15; strict directions, including four Air Graph M16 LOSS strata, retained. Native-boundary diagnostics and final ASan/delivery/selector closure remain pending.",
+      "summary": "R6 V1-V7 CANDIDATE：8e45b104 原生 Direct/Graph、规则与寿命已固定；Windows/Air 四份正式 P1 原 5% 门、四项自然边界诊断、最终 ASan 17 项和两系统三交付完成。严格方向及 Air Graph 四个小 LOSS 保留；中央 selector 正在执行，terminal 尚待完成。",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     }

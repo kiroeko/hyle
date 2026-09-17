@@ -1,0 +1,17 @@
+{
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "verification_snapshot": "a41d43d531365a1fb8617d60113b37924e9a9864",
+  "host": "Mac16,12 / M1-MAC",
+  "result": "PASS",
+  "sanitizer": "ASan",
+  "gtest_cases": 17,
+  "ctest_programs": 2,
+  "instrumented_own_units": 12,
+  "scope": "HYLE host implementation and tests; external loader/driver/GPU uninstrumented",
+  "archive": {
+    "file": "raw.zip",
+    "sha256": "2dfb13231ffb896b6d00a73685b204fe119b2b85e0cafa2e5edf5ca31e37523f",
+    "entries": 10,
+    "per_entry_integrity": "PASS"
+  }
+}

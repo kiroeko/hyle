@@ -1,0 +1,19 @@
+{
+  "candidate": "a41d43d531365a1fb8617d60113b37924e9a9864",
+  "sanitizer": "asan",
+  "scope": "HYLE host C++ and tests; Vulkan loader/driver and GPU uninstrumented",
+  "instrumented_own_units": 12,
+  "native_vulkan_driver_instrumented": false,
+  "commands_sha256": "2a608758af8b31c2a4ee4aaae0b60e8325d7bc7f72edb47a691f3b4e030430cb",
+  "artifacts": {
+    "hyle_compute_route_vulkan_test": "bcc41a7480fc6a9e1b2a53f91710f65ba937230df097735cbe10155d48eafe06",
+    "hyle_graph_route_vulkan_test": "a5c80edd50061071a1aecfa4155a168a7394b107d1effcd65312f96dd33f5cc9"
+  },
+  "result": "PASS",
+  "logs": {
+    "configure.log": "0b78125c31f4f49aea2563a8cbd9cca35d1001f6818cb389f098aca56f3ca7d4",
+    "ctest.log": "594dc1098f84aeabc1a22ecd3da2700f26cf71fd27cdf076c0c3a3b54000fb45",
+    "LastTest.log": "72715b7a752d56b6fe5d32fbd1740a49c2b7c349b8ee02d575c91ddbbe585d94",
+    "build.log": "01845d7d80931d6064e036f2c216e00e01de2e44ad69f2a5ca7f5918a13ff5e9"
+  }
+}

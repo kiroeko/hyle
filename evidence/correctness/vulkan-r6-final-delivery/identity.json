@@ -1,0 +1,32 @@
+{
+  "windows": {
+    "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+    "source_snapshot": "20a029aded4bc00c9fc80a182bd3051853e7c99e",
+    "source_archive_sha256": "22d4cce9a4f9c9f912b62877c8bc2a13a6d17f08a96d40c5499a3dbb5e3c5fa6",
+    "platform": "Windows",
+    "delivery": "PASS",
+    "source_static_shared_consumer_executables": 6,
+    "producer_paths_hidden_before_sdk_consumption": true,
+    "archive": {
+      "file": "raw.zip",
+      "sha256": "94084a42c92e9b8d46da96306bbe1291b0e1ca4878adf9d75d16fb4d9edad6ce",
+      "entries": 79,
+      "per_entry_integrity": "PASS"
+    }
+  },
+  "air": {
+    "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+    "source_snapshot": "20a029aded4bc00c9fc80a182bd3051853e7c99e",
+    "source_archive_sha256": "22d4cce9a4f9c9f912b62877c8bc2a13a6d17f08a96d40c5499a3dbb5e3c5fa6",
+    "platform": "Air Mac16,12",
+    "delivery": "PASS",
+    "source_static_shared_consumer_executables": 6,
+    "producer_paths_hidden_before_sdk_consumption": true,
+    "archive": {
+      "file": "raw.zip",
+      "sha256": "bedcc3773ace5027864afcce3ea53ec5c478b15ce41170817dd8ea255474d61b",
+      "entries": 78,
+      "per_entry_integrity": "PASS"
+    }
+  }
+}

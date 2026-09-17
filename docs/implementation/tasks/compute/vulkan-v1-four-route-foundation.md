@@ -319,3 +319,29 @@ PASS，n=15 停止。M1 为 2 WIN / 6 INCONCLUSIVE，M16 为 4 LOSS / 4 INCONCLU
 按冻结合同保持 NATURAL_ROUTE / NOT_COMPARABLE；裸 submit/fence 缺少完整取消/quarantine/结果
 lease 服务，不签非劣或排名。全部分层、原始日志和成本差额已归档；Air 相同有限诊断串行接续。
 这项证据不改变产品候选、四份正式 P1 或其余未完成门，路线仍为 CANDIDATE。
+
+### 全部边界诊断与最终 ASan 完成
+
+[Air Direct/Graph 诊断](../../../../evidence/performance/vulkan-r6-m1-native-boundary-8e45b104/README.md)
+各完成四层 × 15 个独立进程、两个完整 FFN shape，oracle/机器/制品与收集检查通过；至此两系统
+四项自然成本诊断全部结束，保持 NATURAL_ROUTE / NOT_COMPARABLE，不增加 NI 或算法排名。
+原始正负差额、顺序关系和参考责任差异均保留，不追加采样。
+
+[最终 host ASan](../../../../evidence/correctness/vulkan-r6-final-asan/README.md)在 `a41d43d5`
+验证快照实际覆盖 12 个插桩编译单元、14 Compute + 3 Graph GTest，全部通过。新增常量 owner
+释放的寿命路径已补验；旧 UBSan/TSan 仅继承未变化的具体 host 路径，候选/数量与外部 GPU
+未插桩限制按证据保留。两项归档在 Windows 重算全部条目 hash，通过。
+
+产品仍为 `8e45b104`，两个路线 owner 继续 CANDIDATE；剩余最终 Windows/Air 三交付、中央
+selector 和 terminal 汇总按既定串行任务执行，不能由上述结果提前签路线完成。
+
+### 最终 source/static/shared 完成
+
+[最终两系统交付](../../../../evidence/correctness/vulkan-r6-final-delivery/README.md)已通过；相同
+完整源码包在 Windows / Air 各生成并实际运行六个普通消费者，覆盖 Direct/Graph 完整 FFN、
+custom、变化输入与回放。SDK relocation、隐藏原 source/build、offline、许可证与导出、Windows
+DLL 邻置均完成。详细 D1–D3 归属仍在独立交付卡，十三 owner 的旧实现/性能保持继承。
+
+当前只剩已经启动的中央 broad selector 和 terminal 汇总；四份正式 P1、四项自然成本、最终
+ASan 和两系统三交付均已执行完成。没有为收口增加采样或未知设备资格，两个 Vulkan owner
+继续 CANDIDATE，等待最后适用门的实际 verdict。
