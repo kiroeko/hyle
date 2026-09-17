@@ -67,7 +67,7 @@ def main():
     header.append('} // namespace hyle::compute::vulkan::detail::shaders')
     source.append('} // namespace hyle::compute::vulkan::detail::shaders')
     for filename, lines in [('vulkan_shaders.h', header), ('vulkan_shaders.cc', source)]:
-        (args.output / filename).write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+        (args.output / filename).write_bytes(('\n'.join(lines) + '\n').encode('utf-8'))
 
 
 if __name__ == '__main__':
