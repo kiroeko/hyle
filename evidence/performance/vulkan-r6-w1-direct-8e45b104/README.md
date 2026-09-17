@@ -28,5 +28,8 @@
 A/A、控制、机器/制品身份、合同锁、selector receipts/跳过原因、链接 map、controller 与失败记录。
 归档全部 entry 已重新校验；原 scratch 中制品保留供公共 verify 检查绝对路径。
 
+[reference-shaders.zip](reference-shaders.zip) 另保留独立参考的实际 SPIR-V、生成头及完整来源/
+编译命令 manifest；其身份与已通过的 A/A 匹配，hash 记在 identity.json，原 raw.zip 不变。
+
 本记录只签 Windows Direct；Windows Graph、Air Direct/Graph、单列的原生边界成本、最终交付与
 中央 selector/终审仍待完成。未知设备、其它数值格式和整个 Vulkan 路线不由这一次 P1 自动签证。

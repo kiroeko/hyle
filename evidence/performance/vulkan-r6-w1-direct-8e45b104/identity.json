@@ -57,5 +57,11 @@
     "Air Direct and Graph P1",
     "natural boundary diagnostics",
     "final delivery/selector and route review"
-  ]
+  ],
+  "reference_shader_archive": {
+    "file": "reference-shaders.zip",
+    "sha256": "6a8f75323e1d71de7c911f55c81258d2caa5de20926dfb1179a9423776d76eda",
+    "entries": 7,
+    "identity_matches_qualified_aa": true
+  }
 }

@@ -45,7 +45,7 @@
    pins、MoltenVK 与启用 feature；compiler 识别扩展不等于设备可用。固定实际可维护的 shader
    变体与合法基线，按设备/架构/driver/SDK/数值/shape 冷绑定，热态不查库或计时。
 
-## 能力承载待裁决
+## 初始能力盘点（SCOPED 阶段）
 
 | 能力族 | 层级与来源 | 当前状态 | 审计方向 |
 |---|---|---|---|
@@ -59,9 +59,9 @@
 下节固定普通 C++ 调用、资源与失败边界、默认规则、有限 shader/格式域、交付 shape、
 完整成本账单、代码/测试 owner 和有限 FIX。此前 SCOPED 阶段未写产品代码。
 
-## 验证状态
+## 注册阶段验证状态（历史）
 
-所有 R6 产品门仍为 UNPROVEN。注册 QUEUED 身份的 selector 原始计划保存在
+注册时所有 R6 产品门仍为 UNPROVEN。注册 QUEUED 身份的 selector 原始计划保存在
 `.scratch/validation/vulkan-r6-identities-plan.json`；中央 manifest 触发的 broad build gates 未执行，
 不计 PASS，也不为只有身份登记的改动另开一批重型构建。真实依赖/target 接入后按冻结候选的
 实际影响面执行与复用证据。当前 docs/closure 与状态迁移检查通过；R5 的运行中验收保持独立。
@@ -263,3 +263,25 @@ selector 和路线终审未由本检查点签证，两个 Vulkan owner 继续 CA
 
 同一 `loc-report.py` 口径在 clean `87a2da74` 统计 Compute + Graph 全部自实现为 36,765 行、
 129 个文件，不含测试/bench/vendor；包含尚未 CLOSED 的 Vulkan 实现，LOC 不等于完成度。
+
+### Windows Graph P1 与剩余验收
+
+[Windows Graph 原始证据](../../../../evidence/performance/vulkan-r6-w1-graph-8e45b104/README.md)
+同样通过 A/A、公共控制项和身份检查；两个 shape 的 16 项原 5% 非劣门全过，n=15 停止。
+严格方向全部 INCONCLUSIVE。Windows Direct/Graph 的正式 P1 均已完成，不因后续文档或状态
+修改重测；原生服务边界的单列成本诊断仍待执行。
+
+Air 首次 selector 在创建 Context 前发现 loader 路径未传入，尚未开始 A/A/P1。
+实际进程探查证明 `/usr/bin/python3` 启动会丢弃该环境变量，直接使用它解析后的
+`/Library/Developer/CommandLineTools/usr/bin/python3` 可保留；只修正任务启动器并保留失败，
+不修改产品或公共仪器。Air 两入口性能、最终三交付/selector、适用 ASan 和终审仍待完成。
+
+该启动器修正使 Air 两个 native factor 全部通过；进入 A/A 后，公共性能仪器按既有合同清理
+`DYLD_LIBRARY_PATH`，因此仍在第一次 native Context 创建时拒绝启动，正式样本由 A/A guard
+拒绝计时。保留这次完整日志；只在 Vulkan benchmark 的 Apple 冷配置中定位 loader，并通过
+已有 `ContextOptions.loader_path` 为候选/参考使用同一路径。没有弱化环境清理、修改产品 API、
+shader 或公共统计工具；新的 Apple benchmark 快照独立记身份，Windows `3894b72e` P1 不重跑。
+
+[WSL 实际盘点](../../../../evidence/research/vulkan-r6-wsl-inventory/README.md)只枚举到 CPU 软件
+device llvmpipe；不计原生 GPU 或路线验收。当前 Windows / Air 的验证域不外推到 Linux GPU、
+AMD/Intel 或其它数值格式。

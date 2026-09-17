@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "container_concurrent",
@@ -353,9 +355,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_ops",
@@ -386,21 +390,24 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_sched",
@@ -409,15 +416,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,39 +464,43 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
+      "summary": "R6 Vulkan delivery CANDIDATE: D1-D3 frozen at 8e45b104; earlier two-system three-delivery checkpoint passed. Final artifact/selector review pending; inherited CPU/CUDA/Apple runtime and performance unchanged.",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE: native API, strict-F32 rules, packed ownership and Graph implementation frozen at 8e45b104; Windows/Air native correctness and complete FFN oracle passed. P1, final delivery/selector review and closure remain pending.",
+      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows/Air native correctness and full FFN oracle passed; Windows Direct/Graph qualified P1 passed all original 5% gates at n15. Air P1, native-boundary costs and final delivery/selector closure remain pending.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE: native API, strict-F32 rules, packed ownership and Graph implementation frozen at 8e45b104; Windows/Air native correctness and complete FFN oracle passed. P1, final delivery/selector review and closure remain pending.",
+      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows/Air native correctness and full FFN oracle passed; Windows Direct/Graph qualified P1 passed all original 5% gates at n15. Air P1, native-boundary costs and final delivery/selector closure remain pending.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     }

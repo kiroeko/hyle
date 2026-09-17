@@ -18,6 +18,14 @@ if(HYLE_STATIC AND HYLE_COMPUTE_VULKAN_ENABLED)
   hyle_apply_warnings(hyle_vulkan_reference)
   set_property(TARGET hyle_vulkan_reference PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 
+  if(APPLE)
+    # The performance runner intentionally removes DYLD_LIBRARY_PATH. Resolve
+    # the native loader cold and use the public ContextOptions on both arms.
+    find_file(HYLE_VULKAN_BENCH_LOADER NAMES libvulkan.1.dylib
+      HINTS /opt/homebrew/opt/vulkan-loader/lib /usr/local/opt/vulkan-loader/lib
+      REQUIRED)
+  endif()
+
   function(hyle_configure_vulkan_ffn_bench target owner graph_mode placement natural)
     target_compile_definitions(${target} PRIVATE HYLE_VULKAN_GRAPH_BENCH=${graph_mode}
       HYLE_VULKAN_PLACEMENT=${placement} HYLE_VULKAN_NATIVE_COST=${natural})
@@ -25,6 +33,8 @@ if(HYLE_STATIC AND HYLE_COMPUTE_VULKAN_ENABLED)
       target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
       target_link_options(${target} PRIVATE "/MAP:${CMAKE_CURRENT_BINARY_DIR}/${target}.map")
     elseif(APPLE)
+      target_compile_definitions(${target} PRIVATE
+        HYLE_VULKAN_BENCH_LOADER="${HYLE_VULKAN_BENCH_LOADER}")
       target_link_options(${target} PRIVATE "-Wl,-map,${CMAKE_CURRENT_BINARY_DIR}/${target}.map")
     endif()
     target_link_libraries(${target} PRIVATE hyle_${owner} hyle_vulkan_reference nanobench)

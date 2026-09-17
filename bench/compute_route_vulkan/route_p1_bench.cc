@@ -147,7 +147,11 @@ class Harness {
 public:
   Harness(const Data &data, bool peer, bool raw = false)
       : data_(data), quota_(hyle::mem::system_allocator()),
-        context_(take(v::Context::create({.memory_quota = &quota_}))),
+        context_(take(v::Context::create({
+#if defined(HYLE_VULKAN_BENCH_LOADER)
+            .loader_path = HYLE_VULKAN_BENCH_LOADER,
+#endif
+            .memory_quota = &quota_}))),
         raw_(raw) {
     const auto &f = context_.environment();
     std::fprintf(

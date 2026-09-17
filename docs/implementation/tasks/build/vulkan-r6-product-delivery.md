@@ -1,6 +1,6 @@
 # R6 Vulkan：公开产品与三种 C++ 交付
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - baseline：`a1329dd2bbed2cf2b4e334345273b6c970052702`。R1–R5 与 Vulkan Windows 原生检查点保留。
 - owner：`compute`、`graph`、`compute_backend_cpu`、`compute_backend_cuda`、
@@ -61,3 +61,15 @@ P0；纯 C++ 无 FFI；同源三交付；ordinary 与 native 专家责任可发�
 
 本检查点只补交付证据，没有修改产品或启动 P1。中央 public roots 引起的 broad selected gates
 仍须按输入身份执行或复用，且最终 review 尚未完成；十三 owner 保持 AUDITED，不提前签 CLOSED。
+
+## 候选冻结
+
+D1–D3 的公开 roots、依赖/嵌入资源和普通消费者已经固定，十三 owner 从 AUDITED 进入 CANDIDATE，
+产品 commit 为 `8e45b10423686a0753aaa9d461c4ef3b117412c5`。它们原 C++/算法/规则与性能证据仍
+沿本卡继承快照；本轮冻结的是 Vulkan 交付变化，不重新裁决 CPU/CUDA/Apple 性能。
+
+最终完整源码交付快照为 `20a029aded4bc00c9fc80a182bd3051853e7c99e`；与产品候选的差异只有
+benchmark 路径规范化、文档/状态/证据，包含校正后的路线导航。Windows 的原有 source-package
+target 已生成并校验完整源码包，SHA256
+`22d4cce9a4f9c9f912b62877c8bc2a13a6d17f08a96d40c5499a3dbb5e3c5fa6`。
+生成包不等于消费验收：最终两系统 source/static/shared、中央 selector 及收口仍须完成。
