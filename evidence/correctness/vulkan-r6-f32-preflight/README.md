@@ -32,3 +32,9 @@ receipts to a different artifact; final A/A binds its actual executables separat
 
 MoltenVK verification of these V3 changes, finite A/A, immutable-candidate P1 and
 the remaining delivery/selector review are still pending at this checkpoint.
+
+Subsequent Air verification rejected the initial shared-memory estimate: the
+original `DATA_A_F32` shader hard-codes BK32 despite host recipe ID3=16. This
+Windows receipt remains a historical pass on its 48 KiB device, and does not
+qualify that incorrect resource rule on the Air's 32 KiB device. See the linked
+performance contract for the correction and retained failure.

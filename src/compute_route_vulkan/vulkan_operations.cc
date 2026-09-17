@@ -252,9 +252,9 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     std::uint32_t tile = m <= 32 || n <= 32   ? 32u
                          : m <= 64 || n <= 64 ? 64u
                                               : 128u;
-    // The upstream floating-point recipe uses BK=16; BK=32 belongs to its
-    // quantized recipe. Both shared arrays hold vec2 with one padding column.
-    constexpr std::uint32_t reduction_tile = 16;
+    // DATA_A_F32 hard-codes BK=32 in the shader. The host recipe's ID3=16 is
+    // inactive for this variant; limits must follow the actual shared arrays.
+    constexpr std::uint32_t reduction_tile = 32;
     constexpr std::uint32_t shared_row_bytes = (reduction_tile / 2 + 1) * 8;
     while (tile > 32 &&
            2 * tile * shared_row_bytes > device.environment.shared_memory_bytes)
@@ -274,7 +274,7 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     const std::array<std::uint32_t, 12> recipe{block,
                                                tile,
                                                tile,
-                                               reduction_tile,
+                                               16, // Upstream ID3; inactive for F32.
                                                tile == 128 ? 64u : 32u,
                                                tile == 128 ? 64u : 32u,
                                                2,

@@ -214,9 +214,9 @@ R6 当前未完成项为默认规则与完整成本的性能资格、中央构�
 ### V3 / V6 性能前源码裁决
 
 [性能合同](vulkan-r6-performance-contract.md)固定了独立 ggml strict-F32 shader 参考、各入口
-相同生命周期及单列的裸原生成本。源码预审发现当前 BK32 误用了量化 tile，且未应用合法的完整
-tile vector-load 变体；V3 内有限 FIX 为 BK16/真实共享内存账单和不依赖 padding 的完整 tile
-aligned 条件。shader 原样、公开 API、owner、运行状态与完成协议不变；未启动 P1。
+相同生命周期及单列的裸原生成本。初次预审把上游 host recipe 的 BK16 当成 F32 shader 的实际
+归约分块，此判断已被下文 Air 实测纠正；同时接入不依赖隐藏 padding 的完整 tile vector-load
+变体。shader 原样、公开 API、owner、运行状态与完成协议不变；未启动 P1。
 
 同轮发现冷 packing 后仍持有不再引用的原始 dense 权重；V3 在全部 lowering/共享处理完成后
 释放最终 dispatch 不使用的常量 owner。public owner/quota 与后续真实计算测试覆盖该修正，
@@ -228,3 +228,8 @@ Khronos synchronization validation 无错误；完整 K4096/H11008/O4096、M1/M1
 两个入口、两个机器 profile 的性能合同与模块局部 A/A validator 已接线，复用公共机器合同和
 nanobench parser；Windows 子进程证明 P 核 caller/mask，Air 证明 interactive QoS。资格矩阵仍为
 两侧实现×两种 placement×执行正反序×分配正反序，共每入口/profile 16 个进程；未运行项不签 PASS。
+
+Air `82c14c7e` 补验推翻了上段初次 P0 的 BK 判断：shader 的 `DATA_A_F32` 分支硬编码 BK32，
+host recipe 的 ID3=16 不参与它的计算；按 16 估算共享内存导致 128 tile 超过 32 KiB。
+本卡 V3 定向修正实际资源账单，保留原始 shader、合法完整 tile 分支与常量释放；不修改数值门
+或性能预算。失败原始记录保留，正式 P1 继续等待修正后的两平台正确性。

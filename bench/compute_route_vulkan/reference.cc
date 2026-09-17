@@ -75,7 +75,8 @@ NativeStep matrix(const v::Context &context, std::uint32_t m, std::uint32_t k,
     std::uint32_t tile = std::min(m, n) <= 32   ? 32
                          : std::min(m, n) <= 64 ? 64
                                                 : 128;
-    while (tile > 32 && 2 * tile * 9 * 8 > facts.shared_memory_bytes)
+    // The DATA_A_F32 preprocessor branch fixes BK32, ignoring host ID3=16.
+    while (tile > 32 && 2 * tile * 17 * 8 > facts.shared_memory_bytes)
       tile /= 2;
     // Exact-range handoff forbids upstream padding assumptions. This comparator
     // uses the same safe domain; the M16 workload has a partial tile.

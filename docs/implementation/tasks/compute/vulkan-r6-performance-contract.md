@@ -9,12 +9,15 @@
 独立只读 checkout `C:/public/project-hyle/ggml`，commit
 `456172ec733a135778adcd32d00e576a58232e45`，HEAD 与工作树已核对。以下行号绑定该 pin：
 
-- `ggml-vulkan.cpp:4502` 的非 cooperative 浮点 tile 是 BK16；`:4506` 的 BK32 是量化
-  tile。`:5463` 按矩阵的短边选 32/64/128；`:5535` 创建 F32 matvec 的 shared/subgroup/hybrid
+- `ggml-vulkan.cpp:4502` 的非 cooperative 浮点 host recipe 在 ID3 填 16；这不等于 F32
+  shader 的实际 BK。`:5463` 按矩阵的短边选 32/64/128；`:5535` 创建 F32 matvec 的 shared/subgroup/hybrid
   变体；`:8106` 为 NVIDIA 非 pre-Turing、N≤8192/K≥1024 选择较大的工作组。
-- `vulkan-shaders/mul_mm.comp:175` 明确 F32 BK16 与量化 BK32；`:192` 的共享内存是
-  `(BM+BN)*(BK/2+1)*sizeof(vec2)`。HYLE 初始接线错误沿用了量化 BK32 的 recipe/成本估计，
-  尚无完整收益证据。V3 内有限 FIX：采用成熟 F32 BK16，修正共享内存账单，保持 shader 原样。
+- `vulkan-shaders/mul_mm.comp:172–177` 在 `DATA_A_F32` 分支直接 `#define BK 32`，
+  ID3 的 specialization 只存在于其它分支；`:192` 的共享内存是
+  `(BM+BN)*(BK/2+1)*sizeof(vec2)`。初次 P0 把 host recipe 的 16 误当作 F32 的实际 BK，
+  `82c14c7e` 的 Windows 48 KiB 设备未暴露此错，Air 32 KiB 设备真实 validation 拒绝
+  128 tile 的 34,816 bytes pipeline。V3 定向纠正：按实际 BK32 计共享内存，使 Air 选择
+  合法 64 tile；保留上游 ID3 recipe 值（在 F32 中不生效）和原样 shader。此时尚未启动 P1。
 - `mul_mm_funcs.glsl:34` 的 aligned load 省略边缘保护；ggml `:9531` 的选择还依赖其 buffer
   承载。HYLE ready native buffer 只保证公开 range，不能借用 ggml 的额外 padding 假设。
   V3 同项 FIX：仅在 M/N 都整 tile、K 整 tile、设备最小 storage offset alignment≥16 时
