@@ -127,3 +127,13 @@ fixture 构建和独立数值 oracle、最终红队与证据汇总。当前不�
 寿命、交付与性能记录，保留具体平台和格式限制；R7 未运行项仍明确待验。
 [候选后的有限源码复核](../../../../evidence/correctness/compute-graph-r7/source-review.md)已完成，
 未新增产品 FIX，不代替尚未完成的运行验收。
+
+### Windows 选定门完成
+
+[111 门覆盖记录](../../../../evidence/correctness/compute-graph-r7/windows-selected-identity.json)已完成：
+39 个原批 PASS、9 个测试修正后的既有 PASS、63 个最终续跑 PASS 去重覆盖全部选定门，七个 skipped
+reasons 与原始失败分别保留。十五个公共产品的三交付全部通过；主 factor/header 使用 Ninja，续跑
+package smoke 实际使用同 MSVC 的 MSBuild，身份如实记录。没有重测已完成 P1。
+
+Mac ASan/UBSan 已按既定串行任务启动；其后仍需实际完成 TRACE OFF/ON 三交付与 F5 fixture 门。
+Windows 覆盖完成不代替这些尚未运行的验收，六个 owner 继续 CANDIDATE。

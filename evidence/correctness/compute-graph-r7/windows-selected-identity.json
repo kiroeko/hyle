@@ -1,0 +1,2931 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "coverage_verdict": "PASS",
+  "selected_gate_count": 111,
+  "original_verdict_preserved": "BLOCKED",
+  "prior_continuation_verdicts_preserved": [
+    "BLOCKED",
+    "BLOCKED"
+  ],
+  "basis_counts": {
+    "CONTINUATION_3": 63,
+    "ORIGINAL_PASS": 39,
+    "CONTINUATION_1": 9
+  },
+  "shipping_input_trees": {
+    "src": "12b556428aae06f76537557811b9ac310f27dc9e",
+    "include": "9b7257c325419bf60c27e9c1657feb24ca75504f",
+    "cmake": "78dc10da511738a42bf23c794b8eeaed00d092c7",
+    "samples": "89888e611af4a65e3ece3b82d031999ca346a9ee",
+    "bench": "2897664b03d0c352d67ac56875308148be6feb7e",
+    "scripts": "3b66cd36e20b8dd691b131c9bbe86a79a5e98e3d"
+  },
+  "test_only_snapshots": [
+    "6bccb96b248eb5eef03240c149dbc129f0fa4875",
+    "81ed40dd558824ea9a45841fb19d35661d130bb7",
+    "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+    "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff"
+  ],
+  "failures": "Original Graph assertion incorrectly expected kAccumulateInFloat32 instead of declared-type F32. First continuation exposed a nontrivial custom descriptor in the new native lifetime fixtures. Second continuation exposed the same wrong MatMul precision assertion in native FFN report tests. All three corrections only changed tests; original failures are preserved.",
+  "generator_boundary": "Main selected factor/header build is Ninja Release with MSVC 19.50. The continuation did not inherit CMAKE_GENERATOR=Ninja into the ordinary package smoke scripts, which therefore used Visual Studio/MSBuild Release with the same MSVC toolchain and explicit --parallel 2. Those package receipts are recorded as actually run, not assigned Ninja identity.",
+  "scope": "Windows selected ordinary correctness/header/component/source-static-shared gates; not Air native runtime or TRACE ON acceptance; no P1 samples.",
+  "gate_coverage": [
+    {
+      "id": "closure",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/closure-0.log",
+          "sha256": "24d30e6d76fec588355331431ff02805ba0bdabc6e93d37bcbd23cdd70e5cd11"
+        }
+      ]
+    },
+    {
+      "id": "component-contract",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/component-contract-0.log",
+          "sha256": "4b9541d90e6cc270fffba942b21a39855cdcab3c202971aa73424eedb24d22e4"
+        }
+      ]
+    },
+    {
+      "id": "configure",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/configure-0.log",
+          "sha256": "ae47098b0b26a432a542c20de4df66581d642a93bc9b1d5f91ee08ab075aae7e"
+        }
+      ]
+    },
+    {
+      "id": "delivery:compute",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-compute-0.log",
+          "sha256": "5c95a5bd4cc07614aa9d990ca681914dafb77d58339b000b5feedc13e5e3a62b"
+        }
+      ]
+    },
+    {
+      "id": "delivery:container",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-container-0.log",
+          "sha256": "62b0c09371bfc77b7e650f4bcac1f08c486b8d9df448e862f56aa644776244c3"
+        }
+      ]
+    },
+    {
+      "id": "delivery:core",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-core-0.log",
+          "sha256": "c2c0e150d68d578adf233004f78a803a32ec22686f631c18704baaaa5eb3383c"
+        }
+      ]
+    },
+    {
+      "id": "delivery:error",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-error-0.log",
+          "sha256": "23d4118ddcad2f3b369625ca8e2f3e50f239ad892ac3a6491a51fd00704d61a6"
+        }
+      ]
+    },
+    {
+      "id": "delivery:graph",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-graph-0.log",
+          "sha256": "c762e4a914f8f91a1c2fee35a3dc45190b32d40306ba9cb2aa9e2bda18e031d9"
+        }
+      ]
+    },
+    {
+      "id": "delivery:io",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-io-0.log",
+          "sha256": "23b85d5e93855d7a0cf4b90af89041b0577a75de86fc59978a504ba0302bc51b"
+        }
+      ]
+    },
+    {
+      "id": "delivery:math",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-math-0.log",
+          "sha256": "713bfcc2dd16c544f0782d21b9e377bc0df6d05ce2be02f991e38ff26dbc145f"
+        }
+      ]
+    },
+    {
+      "id": "delivery:mem",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-mem-0.log",
+          "sha256": "7c23e62a9a5173ab328e7aaae1733aebe1aab4458986a34b627e72fee2cf54fe"
+        }
+      ]
+    },
+    {
+      "id": "delivery:obs",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-obs-0.log",
+          "sha256": "f0a03df3b715db886cb0be93b261bdf40c7374790050a39d44e7a776ef181f3a"
+        }
+      ]
+    },
+    {
+      "id": "delivery:platform",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-platform-0.log",
+          "sha256": "e529300110cb2986338d7ee75d9ed7e810b516d91b01565b2c32f4bd0e66c538"
+        }
+      ]
+    },
+    {
+      "id": "delivery:process",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-process-0.log",
+          "sha256": "f296fc20a20436be27499d57eff9c0312c8853e8e4ec135f9b72c2376270c8ac"
+        }
+      ]
+    },
+    {
+      "id": "delivery:sched",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-sched-0.log",
+          "sha256": "b620319e25d058be2d28f412f2dd36269745a4cd596dd45ee6e04ec344be5801"
+        }
+      ]
+    },
+    {
+      "id": "delivery:simd",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-simd-0.log",
+          "sha256": "564dd29ddcb7f68c50631b7ec49964609bad0fd92168015605bbc9d001de8299"
+        }
+      ]
+    },
+    {
+      "id": "delivery:time",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-time-0.log",
+          "sha256": "ebd14ac0895b427273ec378d6ce6c3f1536fb18596cc18cc9cfb2580ddbc7dc3"
+        }
+      ]
+    },
+    {
+      "id": "delivery:util",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/delivery-util-0.log",
+          "sha256": "da3656da2c96f14c8b19e7c8ecd10102f5e01d97a293ca130478daf9c9b9559b"
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/docs-0.log",
+          "sha256": "8a06994e6b4f1c8e7890328ae73719f23821b54039014d0e15cfbd53dced78f6"
+        }
+      ]
+    },
+    {
+      "id": "factor:compute",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/6003d78067c2a8bd51a735ad40bd63fb342d9372d5d02e42b4b71c3fcc95c674.json",
+      "record_sha256": "1f06bf06836179bfd84b6e5334d40cb73b5d9d86e7a4c86e01593ddc545c51bc"
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/01296497fcce30bffc97f7f20184bf4c429d9fd9994c61865ebac66e3a8fed9b.json",
+      "record_sha256": "42379b223679002e827482b1d292403b1406cba6586bb4a695323001deae9848"
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/588188017e6e1a98764cc7039c49fd699a5b456dee910f39d85432fe92cedca0.json",
+      "record_sha256": "572700e093c914a175960ccb4e301bd82e1e09f72b8e308118e670dced1aeed7"
+    },
+    {
+      "id": "factor:compute_ops",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/dd0ae9ab9da479d227475794dfb9bc5141f92cf9a4ad19ece4b5610861fad3ff.json",
+      "record_sha256": "c78440b8808e37b8272f6d22fdc7ccea05a0dbfaf43d927e55448d5f532fce1b"
+    },
+    {
+      "id": "factor:compute_provider_cublas",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/164b1b42548da4b29be31eebedaba073d38c8aea84d76c484aa566631c4b4b47.json",
+      "record_sha256": "8d2a975ce39948d8b2eed954e7f500fe9ea3fb15541a2ea0db52c4c96a1ecf53"
+    },
+    {
+      "id": "factor:compute_provider_cuda",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/d635b90cb0c65e36a5f0a75a69f1c2ce8dcd3c20f0bf5ba50d543b6464297171.json",
+      "record_sha256": "0fbfb539fced36004390be7e6dced946ad84e800934905f26e1c93fd7ae19b49"
+    },
+    {
+      "id": "factor:compute_provider_marlin",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/7767b71b88131b33e50be017223f34447d80851a795668b2e0d73dec124119b7.json",
+      "record_sha256": "8c41b085f92771e412eb7211802d7124293bf84f7b918fc81e86ac324db1f04f"
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/c5a5744e2e76549ff9cc2e34734781b27f17e649d448b2e695911f19cdf54420.json",
+      "record_sha256": "2f47cf89c7b0a3f3cc9aa63a721ac931838033f83544c90eea222b34b7612120"
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/b84f4a8c9b47af54e12d7507e5af36e78b9374e3c0f87965506e5bbb5fbe6a5a.json",
+      "record_sha256": "a0444fbaad04a15fa0ea41d480030a1bc0fbcf3a27aa64fb873016463311a615"
+    },
+    {
+      "id": "factor:compute_route_cpu",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/afc646415d2dcb47f8bee888f34ce72f68d0ba255a3f32add84d18d754827ee1.json",
+      "record_sha256": "4e5249198da11004d6b8f35ba44de39d3ebb08f0926db5be47e8bac788fc4bab"
+    },
+    {
+      "id": "factor:compute_route_cuda",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/5a86cff970e00f4abb31aa9217a063a472c9238d7d10edee0874db0e9f8b1cf2.json",
+      "record_sha256": "c6f2b6d99ec5c5b045427920d45320af72d4717db226e3e809bd990b4273d69c"
+    },
+    {
+      "id": "factor:compute_route_vulkan",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/167452584bd9d792f83615f6fd07d79dd66bfd1d633ce03a0899df75d475fa18.json",
+      "record_sha256": "edc86fa8d4e7307dda176af744a0466bcc8620f82ae8b64d217ad77cd48eef85"
+    },
+    {
+      "id": "factor:container",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/dd49837ddb91a7cdfcfd0eb9d8deaf713632056676021bde565b08468c3fab51.json",
+      "record_sha256": "f57ac4b63e9224b5a00342ad7cbdff8ac3d3e98a496f5ae7d59898d7ca4166d2"
+    },
+    {
+      "id": "factor:container_concurrent",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/87868eb4178dfbab542f781edf4739c1782b4bfe07f031fdd6c57077e9081e6f.json",
+      "record_sha256": "c94818831c0cf32911fe12d6a780df71f7fd36b01efcce890bf41dcec857b538"
+    },
+    {
+      "id": "factor:container_intrusive",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/83ff7cefa856c1ca8e320cd4934ca60d99b091b19f0f32c006550698d2f4886b.json",
+      "record_sha256": "22dff038126bb745fd095a84736ba8dc33ebf1ed92c37eb242a44c790406b016"
+    },
+    {
+      "id": "factor:container_queue",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/f0fc7be23dad4bdebe5103bf2f49bf46c94532cc0a55bdc5bcef6bfd528d0053.json",
+      "record_sha256": "7944107a738c7e9c6f0e3de6a520a436733a07bf4fef27e85fa873c968e255a8"
+    },
+    {
+      "id": "factor:container_text",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/d1492cb94165c0322436118d61c83f364aca057f2a790580ea0b11c70f42acbe.json",
+      "record_sha256": "c13a658dc7247c6bca3532b176cf68ce03c450365154257bba8a4cf5161a7bc7"
+    },
+    {
+      "id": "factor:core",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/69d7aea6df4b5acf2cc04227271f992c6901a899c6e8c062a37ca496fab34a79.json",
+      "record_sha256": "d7dcd56cf51283dcbd58c4cd680e8b21f91f4d49ed6135612c6549cadb477874"
+    },
+    {
+      "id": "factor:error",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/2bdfc1098a7440ed391a7515fe02baa259fd5ce6de353910fb869dc6b8c4a3ca.json",
+      "record_sha256": "2803248ec2aa2a8a1995e41d20cdf669cbfbbf36380b6173d2ff7bcd6dcc3cae"
+    },
+    {
+      "id": "factor:graph",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/factor-graph-0.log",
+          "sha256": "ca7fcee98ad45a9dca47b01cf9712d99b7dfcf332034d61a16498fe73abefd52"
+        },
+        {
+          "path": "continuation-1/factor-graph-1.log",
+          "sha256": "d90c14718807285dec1b8fb625d2eda865a65fe4f2773a80aa3b38f98b06cc5e"
+        }
+      ]
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/factor-graph_provider_onednn-0.log",
+          "sha256": "3cc3fc9511afbab4ceda0e5b737c1a5fafa0bd3c94ec17d9ec83dccf51fce54d"
+        },
+        {
+          "path": "continuation-1/factor-graph_provider_onednn-1.log",
+          "sha256": "eaef8d917dc5f0a4ab991150be88f9a974c1224bc5564eb5cd49851a86fb8236"
+        }
+      ]
+    },
+    {
+      "id": "factor:graph_route_cpu",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/factor-graph_route_cpu-0.log",
+          "sha256": "b536738c02b9d6e7424230be2c20b78e91498fddc992e55dc1f350aec24787d1"
+        },
+        {
+          "path": "continuation-1/factor-graph_route_cpu-1.log",
+          "sha256": "2da72e3f77db81cd406a5f51e41346597bf3dbb4e3ced66aab8640346177c71d"
+        }
+      ]
+    },
+    {
+      "id": "factor:graph_route_cuda",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/factor-graph_route_cuda-0.log",
+          "sha256": "3dd9b0e2ba10f58182ebe27f5a348d2934ae81d8fdb4245f1c71505baf2a3a15"
+        },
+        {
+          "path": "continuation-1/factor-graph_route_cuda-1.log",
+          "sha256": "b28bb1eabd9dd6cebada180a00ef2773e12bdb35256eb689cca453980717b7d7"
+        }
+      ]
+    },
+    {
+      "id": "factor:graph_route_vulkan",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-graph_route_vulkan-0.log",
+          "sha256": "39e8baa6200b005e589865a824bcfad8f985ee586ab4cca98eaac11fd70208e9"
+        },
+        {
+          "path": "continuation-3/factor-graph_route_vulkan-1.log",
+          "sha256": "9d0c72ae031ce91c6e778d2d38f3a957bee32afcccb66a0c0480ddf270f30da5"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_core",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_core-0.log",
+          "sha256": "e728fcf4a0548c8c20cd3e2c8921e2417dd9aeca355d5a634fe93f8d41f0676d"
+        },
+        {
+          "path": "continuation-3/factor-io_core-1.log",
+          "sha256": "1e7e549290183b911c3289bdfefab1170bf5b567b417af05724f978150abcd05"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_http",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_http-0.log",
+          "sha256": "7fd29c4d4b80b4b46031bce34f73baa2c63e28dc7a8f095cf7401900d6b34c0e"
+        },
+        {
+          "path": "continuation-3/factor-io_http-1.log",
+          "sha256": "03c41ca64973410425fa70596844ebb5f543bb6377bd4c5af46aaab4751beef9"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_http2",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_http2-0.log",
+          "sha256": "885e4d61fa82c6b04b0bd0ddbba5fdb1a3de52e79e79e5773e34b2a4ea68f9a7"
+        },
+        {
+          "path": "continuation-3/factor-io_http2-1.log",
+          "sha256": "baca3f1aca1a0c01234efe141789ebbc31ca00aa63eaffbf5f72f37d7b510af8"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_tls",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_tls-0.log",
+          "sha256": "06eeceed6560a2df8fea77f1961d551e20ab8502dec00a84d118503d48640e33"
+        },
+        {
+          "path": "continuation-3/factor-io_tls-1.log",
+          "sha256": "d1124a09e8359fc09a4b08b06fa334b589935747a2d539afdb32b70ff866629c"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_transfer",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_transfer-0.log",
+          "sha256": "ff179b62248adb21648417bf33bd40a26c5db2e3fb3c99adbe7092dc9f35b16b"
+        },
+        {
+          "path": "continuation-3/factor-io_transfer-1.log",
+          "sha256": "877d1faa405e07be1adb0022209387968cf8fd05d2466dd157ca762bdeecf58b"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_watch",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_watch-0.log",
+          "sha256": "a1685c02a32ce1f73b1bba9199ceb1ca3bb9188af56c00b0e8336567fceb32d5"
+        },
+        {
+          "path": "continuation-3/factor-io_watch-1.log",
+          "sha256": "a8a0b9eb0db470d687f5b1501e97ff5285f49c53f37427c9acd5cddf4b948833"
+        }
+      ]
+    },
+    {
+      "id": "factor:io_websocket",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-io_websocket-0.log",
+          "sha256": "d7e64986c0da77c3c15f5e4cd6212ed306ddf0eab783e6fe48bf7132cb03434e"
+        },
+        {
+          "path": "continuation-3/factor-io_websocket-1.log",
+          "sha256": "605426a13283b76e9cef7e691f43ae0fb8cd0d8f2a84b8d75514a85c6881ef1b"
+        }
+      ]
+    },
+    {
+      "id": "factor:math",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-math-0.log",
+          "sha256": "d77f871888eaa3eb52a1223b38b2a1163ab89c6e9238113446019aaff44ae610"
+        },
+        {
+          "path": "continuation-3/factor-math-1.log",
+          "sha256": "7611e9b290ae193529f613abbd0ab2070473eca4f703c9029de46d6483e9e718"
+        }
+      ]
+    },
+    {
+      "id": "factor:mem",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-mem-0.log",
+          "sha256": "f3086599d7fec1af5f8c3e5caa80ff314dd4d85c97d49a3678bdb72d043637e8"
+        },
+        {
+          "path": "continuation-3/factor-mem-1.log",
+          "sha256": "0134f7ec322848dd7e4aae52b6ad656e723be32053abcf6fb2fc57c297ce3fc6"
+        }
+      ]
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-mem_reclaim-0.log",
+          "sha256": "06436ebc720bf8aae1c25fcaccd8aaf9447b1f55c90d9689384c08cf47084f41"
+        },
+        {
+          "path": "continuation-3/factor-mem_reclaim-1.log",
+          "sha256": "05a0f8d10239a8accaf47670801c9ccda16a6bded87435aa45283bba23d091ed"
+        }
+      ]
+    },
+    {
+      "id": "factor:mem_vm",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-mem_vm-0.log",
+          "sha256": "5b23e3e280c713bf3b4437bcff933d4525e29a58fe0801a52fd7086e210b6edf"
+        },
+        {
+          "path": "continuation-3/factor-mem_vm-1.log",
+          "sha256": "972dc61d8c8d5ca9478c9cce23d6d22de042d1882f13bf4cf218c30d863f2366"
+        }
+      ]
+    },
+    {
+      "id": "factor:obs",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-obs-0.log",
+          "sha256": "ee03c0e96964e178c952819194dc3ec38e78dc46169ff3ef9d32dd4e0d0ce02e"
+        },
+        {
+          "path": "continuation-3/factor-obs-1.log",
+          "sha256": "7d3e9b7544402b3f1f8849c7544c2c06306f76e38ea491717fa37a0794a518b4"
+        }
+      ]
+    },
+    {
+      "id": "factor:platform",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-platform-0.log",
+          "sha256": "2967a4368bf35903336a92303680f91811e0b7d258fcbfac7ae71715407b6a98"
+        },
+        {
+          "path": "continuation-3/factor-platform-1.log",
+          "sha256": "6386a47301feca147771e28ba852e67c65b034cfb740a6c9908ffbc1e0d42e8f"
+        }
+      ]
+    },
+    {
+      "id": "factor:platform_fs",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-platform_fs-0.log",
+          "sha256": "041f78b0e72596f093e0092f71ee6acb72ce5110b8f6d41d979f64cd78e99260"
+        },
+        {
+          "path": "continuation-3/factor-platform_fs-1.log",
+          "sha256": "350e8a3f166cfd0aadff4bc3380e96f72a0123a5c6054e4b1ad3fd770d2add46"
+        }
+      ]
+    },
+    {
+      "id": "factor:platform_thread",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-platform_thread-0.log",
+          "sha256": "272aa43593160ad368b00bf007983125d4bbdeb2d278b996fabf4028f53d12d2"
+        },
+        {
+          "path": "continuation-3/factor-platform_thread-1.log",
+          "sha256": "60639d6a9c2bed7e29aadfa0bd4340cce8308fb63856e22fb00fc83f6e03c630"
+        }
+      ]
+    },
+    {
+      "id": "factor:process",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-process-0.log",
+          "sha256": "4aa3aa8bf186ecd42b1a3cf13de125109a31ae2cc4b63e9c5647169df79b3565"
+        },
+        {
+          "path": "continuation-3/factor-process-1.log",
+          "sha256": "bb0050e303d860e285e569919b548d4ef3a589f3f2644c6c85acd61f32f6f43b"
+        }
+      ]
+    },
+    {
+      "id": "factor:sched",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-sched-0.log",
+          "sha256": "2988b623723c449a1b3d44d0d4feb756a7975925544f7f1dc8f9abce392c5b83"
+        },
+        {
+          "path": "continuation-3/factor-sched-1.log",
+          "sha256": "5799846b4767682f04fdc64ce508756187f9eecd76c08b661b5b6da91827aa74"
+        }
+      ]
+    },
+    {
+      "id": "factor:simd",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-simd-0.log",
+          "sha256": "9939f44dc828a8e925514b7248f79e6b22d511b4e237895d0a43bb813ac6b450"
+        },
+        {
+          "path": "continuation-3/factor-simd-1.log",
+          "sha256": "60aeb7f900c120d397d518ba087fd39eb8180eb1157a6e05f117b89f60309bb2"
+        }
+      ]
+    },
+    {
+      "id": "factor:time",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-time-0.log",
+          "sha256": "2a9c1731de01854b73b4285e598b8613ab39f3a2c86aed1f33aed67d6738f8a2"
+        },
+        {
+          "path": "continuation-3/factor-time-1.log",
+          "sha256": "135ac594f4ea97d2c8d54cd0c394ac3b1b94d27f0afa17f98794c36d3bf87fdb"
+        }
+      ]
+    },
+    {
+      "id": "factor:timer_queue",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-timer_queue-0.log",
+          "sha256": "513945211ba5d7c260bf8b81f14bd1a6e40b1785e09740b2405e4318e617a616"
+        },
+        {
+          "path": "continuation-3/factor-timer_queue-1.log",
+          "sha256": "11e1f2d67390ed4f66b95784139cfedb7f91dd951cb1455cdaff240421decca3"
+        }
+      ]
+    },
+    {
+      "id": "factor:util_core",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-util_core-0.log",
+          "sha256": "3bbb4c71e15bf2a263a4f3fd80a707582ea1a1b546bffd2defbfa90edb86bd6d"
+        },
+        {
+          "path": "continuation-3/factor-util_core-1.log",
+          "sha256": "2687ff961cbe03130af7bd9d9647144bb6b47ace703f06ab2f6c9486b74953f9"
+        }
+      ]
+    },
+    {
+      "id": "factor:util_runtime",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/factor-util_runtime-0.log",
+          "sha256": "b4f92d7ff93629b2ccc04c4964442b6e53d6b7a62c8806979de29a6f273e156c"
+        },
+        {
+          "path": "continuation-3/factor-util_runtime-1.log",
+          "sha256": "14ee4eb941868cf605d280ef6e031d735a63cc15f94a083a380a226a0e84ed1f"
+        }
+      ]
+    },
+    {
+      "id": "headers:compute",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/5226c1b60be4919732e7038a2ac212058b88c654a57ebbb8670979ef25702493.json",
+      "record_sha256": "a180008c80d6fdda417e70f2598a0b1b946ee4ac79e6731bbe6c77f7588bca7c"
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/2a111060bb9f5c7a0d01239bc2ac46090a2ecece68949f43b9943e58858fff86.json",
+      "record_sha256": "154e8c81f6cf17c369f60bda8eb0036f6af43560806800c299c19912495ac261"
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/f604e8f612973f6b0faa1d396b9c107d95a8f72b1d28ba87bf9dfafcbd243ab0.json",
+      "record_sha256": "651d589681d4c2e22a983c885eab776002466b47b4007daa51b43562c61be28b"
+    },
+    {
+      "id": "headers:compute_ops",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/bf8d00172f195ff2fe701d173004b1ac646cd18a1f09cc3ac4a01d014589a592.json",
+      "record_sha256": "2c72f9d20eb0b028ef3af21b1536ac113b8e735a1dc6ae3496e8e323a9e1e250"
+    },
+    {
+      "id": "headers:compute_provider_cublas",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/272ed85d613cbf9a30dd5af1b8e5410676f30e3fba8ae313c23ba3c7b0d457be.json",
+      "record_sha256": "55c9ff6d847836f964d4875be278d9385cd27e99e9a5d43a8ecb4ecedcf12fa2"
+    },
+    {
+      "id": "headers:compute_provider_cuda",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/ce9bd7ef60cd57dec88efcefda1376e63e8b6a196a5065d4b31ba3072b7bfda0.json",
+      "record_sha256": "ef4048bc383511d9078ce23051d8fac763f9bd9d9ef3c593460eab440783faa8"
+    },
+    {
+      "id": "headers:compute_provider_marlin",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/431a55ee08b79aab93d953220c65c75083c95b1a183db67fa8f5ffdb3fded159.json",
+      "record_sha256": "39865c6d98e50eb487a194ee5fd63315a6d50698089e17baec93ff8538bb9683"
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/85c8b58eae00c1cda91a796d03a09b70b1cae1b52a025f1a6f552c8d96e2d56a.json",
+      "record_sha256": "bfe031cfea5f790911a58d0035edb69114fd3b7284d966b16da0e30319cd680a"
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/a9f4a8b524d78df0cc25a13262b904480c6111f3910570cd847d8aaa3fce9c1f.json",
+      "record_sha256": "a20bbb185670442666c8e32769d5032923a957afb66a385714528fa6639789bc"
+    },
+    {
+      "id": "headers:compute_route_apple",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/0cffecf78364b1f37a77dea82ece1bda4d6dee10cd63ad72cc22fc4f082b123a.json",
+      "record_sha256": "130ee2721cd93cf97d4ff30590a581ffe8d58723c88b57ca35e70cb7ca0f3b9b"
+    },
+    {
+      "id": "headers:compute_route_cpu",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/93c202e858579bd2922607d8d0a0bf630e92ad631449fd966cea63c3933fc134.json",
+      "record_sha256": "fef6fc5315b4dbc36ea65bb7fd62cfac44a6ee1d72406fe6256bbf5eca4f6999"
+    },
+    {
+      "id": "headers:compute_route_cuda",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/960a12e76df30349c10b55fa915dcb0167d168abd26e46dcd36bedfdb86fc5eb.json",
+      "record_sha256": "728e1d25a39e0586d9351cbd58c67e3e24e69259d00d9379122b08b6671f6e85"
+    },
+    {
+      "id": "headers:compute_route_vulkan",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/84a8c02cf41cdf501806d865007b7636c171508e2b371fa1664265a1218f2e6e.json",
+      "record_sha256": "146efdb937364e917b63621f256fac65b8e937f2d9a7d6a0b94b800eec101ba0"
+    },
+    {
+      "id": "headers:container",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/68c52647bdd59dc1ae86117f4af073b243345c5cd0091a5a6b77e8550929329b.json",
+      "record_sha256": "e337d8f18d9232c25ffdb4c9f2b2281839f3bb0c4efa7c0573caaf24ec4e8a07"
+    },
+    {
+      "id": "headers:container_concurrent",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/1e22f0d49dace71ce7aacbb41a277707d89da9e21dd08d41d298dea2932c657d.json",
+      "record_sha256": "ca127dd6d2c9595847c9f451bb6d6bf96eed91a0c08c718c43071338b7948708"
+    },
+    {
+      "id": "headers:container_intrusive",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/425f98b4588fe81900deaf01e3cdb46d8835cb4c00f36066d22fcd21533b2a89.json",
+      "record_sha256": "37d8a6ab10b10507d6019f4a3ed152c4855a81654df666a80832884b34b9415a"
+    },
+    {
+      "id": "headers:container_queue",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/1ab299ae4b9eeaef0c6128671d63b880e983abee35349c8fbbe05c9f9d93c838.json",
+      "record_sha256": "17f4785c28a74fa9367a3038f962567db1540fd5cf41ebf8213ff2236f3f3ee4"
+    },
+    {
+      "id": "headers:container_text",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/210dc940f5ab3e66af495ef74716f97b6a58ead278b0571fce94b831c7328179.json",
+      "record_sha256": "623130e4c0981c9d3b12424847dd4ebbe2d6228a21e09ce2f7dcd9158e7d659c"
+    },
+    {
+      "id": "headers:core",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/0b8a7a14c2d431f35c67b2494b4538f22c4ba840d41fc60d4ebf15b540d263cc.json",
+      "record_sha256": "dba26a382dc74307270a954736b094921aedbfffdc8da904db85fd35041e5929"
+    },
+    {
+      "id": "headers:error",
+      "verdict": "PASS",
+      "basis": "ORIGINAL_PASS",
+      "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+      "record": "original/receipts/9ea0cec16c08d01d50b74d4fc51685e2521f52055a6325a6bbfd4dea0b74d9b6.json",
+      "record_sha256": "caf4465931f0ea4db3ca84969e39e8dc6db869b39e35cbf05f6091ccb451b91e"
+    },
+    {
+      "id": "headers:graph",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/headers-graph-0.log",
+          "sha256": "b74bd1c4acb6e66e1f333fba9c4e52d6c826a1b6580ea1c6d6f753d9dfa9d38a"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/headers-graph_provider_onednn-0.log",
+          "sha256": "145c8ed4ec561e0d47715045efa5094df6bc57b186c94b7b4ba193915be68fa1"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph_route_apple",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/headers-graph_route_apple-0.log",
+          "sha256": "6e8024e4f4ecc1bc4117111741fbaaf62bc4262dd5d1437d3278860e1af943de"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph_route_cpu",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/headers-graph_route_cpu-0.log",
+          "sha256": "f0e5a39edf4fe40d23939d79479ac04aae40ce03faf3d88367e60e51ba7919ea"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph_route_cuda",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_1",
+      "candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+      "record": "continuation-1/result.json",
+      "record_sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991",
+      "logs": [
+        {
+          "path": "continuation-1/headers-graph_route_cuda-0.log",
+          "sha256": "dea130faef932a6cee9e3350f4b702b9275e03bd1945814aad2d0f7e5d4f188a"
+        }
+      ]
+    },
+    {
+      "id": "headers:graph_route_vulkan",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-graph_route_vulkan-0.log",
+          "sha256": "7649ad9c7771d82c2ba663a936a8b0c913adbe2b2bdc1449354c544e43dde844"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_http",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-io_http-0.log",
+          "sha256": "641a9dede9b96882f3323a8a7b07e8fa70396feca39305c61be00adcb3edb39b"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_http2",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-io_http2-0.log",
+          "sha256": "8059bf8bfa03807f05d34b2ff1f01c6519f44040724a8a6ee73a2ec96c97dfae"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_tls",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-io_tls-0.log",
+          "sha256": "2519c42a480f79160e0334b2f186bddabc2e1fa0c1d49a0402b490a41ff81fac"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_transfer",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-io_transfer-0.log",
+          "sha256": "9dfcf984e931c9147b445a3c7bdeaa80b61aa155a3e4390270c8000037b1cd56"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_watch",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-io_watch-0.log",
+          "sha256": "b6863e0713bbdcd80e70a957495fb3d592f2618c0c74dbc6dd8d1fe555a11300"
+        }
+      ]
+    },
+    {
+      "id": "headers:io_websocket",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-io_websocket-0.log",
+          "sha256": "b0506c70c783d06be97ef47c265b0c7d46390fdaf67ce17cdb30770d2c9a9825"
+        }
+      ]
+    },
+    {
+      "id": "headers:math",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-math-0.log",
+          "sha256": "cccdecf487d6f2bb05d29b7a79c0e129fdad7ed7959c6879873939b3d4433ae9"
+        }
+      ]
+    },
+    {
+      "id": "headers:mem",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-mem-0.log",
+          "sha256": "0a6c8c63f8ecb000da227fbfb79adb92a460299fad31d81b5f0580716701dcbd"
+        }
+      ]
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-mem_reclaim-0.log",
+          "sha256": "dd60cbc0d5308b2b62d022a324709380ea91d6509fc2ba997840652865ddd77d"
+        }
+      ]
+    },
+    {
+      "id": "headers:mem_vm",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-mem_vm-0.log",
+          "sha256": "eb37bb7d79bd800a7a23e907a0ab80abda31989af65dd22cef962b1c19266deb"
+        }
+      ]
+    },
+    {
+      "id": "headers:obs",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-obs-0.log",
+          "sha256": "dd4da7ded47d3edbdafd358fef41648ff975c301cb1a2f486c7654bd89a6b824"
+        }
+      ]
+    },
+    {
+      "id": "headers:platform",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-platform-0.log",
+          "sha256": "6350a22e81e883012eeb48b7361e7f80095b0236479e7385816e5a81a21fd25f"
+        }
+      ]
+    },
+    {
+      "id": "headers:platform_fs",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-platform_fs-0.log",
+          "sha256": "8879b577e9741921266a1f9d688db5873cb169ac8e342d8243ce9fcf6767ed36"
+        }
+      ]
+    },
+    {
+      "id": "headers:platform_thread",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-platform_thread-0.log",
+          "sha256": "8a3f195d364a5691af9ef0b2ac905f0ab53bbc86265910db5b0f31944a311a81"
+        }
+      ]
+    },
+    {
+      "id": "headers:process",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-process-0.log",
+          "sha256": "f2774291b6c25ebc1ef97c4b6dfc51c4033ed1efaeed2c0b8cc878e81a57c185"
+        }
+      ]
+    },
+    {
+      "id": "headers:sched",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-sched-0.log",
+          "sha256": "ebb92b8c34e291871b685cab49f3b27bf99a46786f56098ba562074877d51b04"
+        }
+      ]
+    },
+    {
+      "id": "headers:time",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-time-0.log",
+          "sha256": "228dcd3b3e095e6680037306d93a900ff731fd8eef6026284e31bf3c2768a882"
+        }
+      ]
+    },
+    {
+      "id": "headers:timer_queue",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-timer_queue-0.log",
+          "sha256": "61610e42f56eacd0f5b00dec4c7a315b29689f976dde4719ce5021f5b5df6cdd"
+        }
+      ]
+    },
+    {
+      "id": "headers:util_core",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-util_core-0.log",
+          "sha256": "edc643f7ff71a49371dbda03b9fc1768e34ede7189c63544b7c70443b0b84e68"
+        }
+      ]
+    },
+    {
+      "id": "headers:util_runtime",
+      "verdict": "PASS",
+      "basis": "CONTINUATION_3",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "record": "continuation-3/result.json",
+      "record_sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485",
+      "logs": [
+        {
+          "path": "continuation-3/headers-util_runtime-0.log",
+          "sha256": "59a0f90c916798df6f4157eb8780ab24dff7536beb19adf2f0d047a1e6f82398"
+        }
+      ]
+    }
+  ],
+  "skipped_gates": [
+    {
+      "id": "factor:compute_provider_ggml",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "ee4001fecbff1b6be05308ba7dd1cac2c61728f91678d13406b0c408ebcb6551",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "28b266f26effd5bf704de12309f1ec47d65dd040b391001c6f2256ecc7562d0b"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "cf83a435d1d2e1663d17d1ddc697a4b8caa7298a649c23c56be1332441622dfd",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "82dc8250342fe571dd982fe7ef5d0383484ca06029ebe3739eb128c98d2bac46"
+    },
+    {
+      "id": "factor:compute_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected",
+      "factors": [
+        "compute_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "e8602f74353253685e373ecda1907021449f3c89e44a4af4ab20868c1733407b",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "6d24058e759720c148620c03400e3442c49c4ed2f91eb56cf5513b73eea3803a"
+    },
+    {
+      "id": "factor:graph_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected",
+      "factors": [
+        "graph_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "8cbd414aa798eadc1317a9658e3aabe3d244ced72a05863159f8ef3c774ef597",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "733a16922bd6672c16862b6326302a1df76cf73a9765ad2f0c3289cf2b92424d"
+    },
+    {
+      "id": "headers:io_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "33013f8eb1aa2a8a20b876c370bd6e601598dbf8b4d701854ff0b8ce29658f13",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "168e9d18671eb29128eae587c7d9622455230497272d19698fa4a9f58398f56b"
+    },
+    {
+      "id": "headers:simd",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "3638958cedc819ebc892e74df9f9e5ef6a5dff93977a7f4ae0940226bf4751cb",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "7646d4bcf983ca9a9e6a07f49a72c2e259b78e74b4407ea06707bf580fe2c04b"
+    },
+    {
+      "id": "p1",
+      "kind": "performance",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic",
+      "factors": [],
+      "commands": [],
+      "identity": {
+        "candidate_tree": "414a06792ff4ea452f6156388e37ae1000da9745",
+        "contract_hash": "438ed67fba2f25bc4c404b9f45fcfb6de2feb4a27868fa0ba3a8676c5a6b8b85",
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:/public/tools/glslang;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "452a463c08d7f8c2be2002d6e6d038ce230357c17d970e124e26fb70f35a4a1b"
+      },
+      "cache_key": "1f59f9eebff333009e5221424b1f1abb51cd465671041b6085fc671ad563220b"
+    }
+  ],
+  "archive": {
+    "path": "windows-selected-raw.zip",
+    "sha256": "8ce94b4cc41c57e3108c9bec30db644117595148d377d7b88af8dd599b38d830",
+    "entries": [
+      {
+        "path": "continuation-1/closure-0.log",
+        "sha256": "24d30e6d76fec588355331431ff02805ba0bdabc6e93d37bcbd23cdd70e5cd11"
+      },
+      {
+        "path": "continuation-1/configure-0.log",
+        "sha256": "dfcf20650499e690b6d4a7adeeecc988a98efc2e4e0dd174d14cbbc72648c8c9"
+      },
+      {
+        "path": "continuation-1/docs-0.log",
+        "sha256": "8a06994e6b4f1c8e7890328ae73719f23821b54039014d0e15cfbd53dced78f6"
+      },
+      {
+        "path": "continuation-1/factor-graph-0.log",
+        "sha256": "ca7fcee98ad45a9dca47b01cf9712d99b7dfcf332034d61a16498fe73abefd52"
+      },
+      {
+        "path": "continuation-1/factor-graph-1.log",
+        "sha256": "d90c14718807285dec1b8fb625d2eda865a65fe4f2773a80aa3b38f98b06cc5e"
+      },
+      {
+        "path": "continuation-1/factor-graph_provider_onednn-0.log",
+        "sha256": "3cc3fc9511afbab4ceda0e5b737c1a5fafa0bd3c94ec17d9ec83dccf51fce54d"
+      },
+      {
+        "path": "continuation-1/factor-graph_provider_onednn-1.log",
+        "sha256": "eaef8d917dc5f0a4ab991150be88f9a974c1224bc5564eb5cd49851a86fb8236"
+      },
+      {
+        "path": "continuation-1/factor-graph_route_cpu-0.log",
+        "sha256": "b536738c02b9d6e7424230be2c20b78e91498fddc992e55dc1f350aec24787d1"
+      },
+      {
+        "path": "continuation-1/factor-graph_route_cpu-1.log",
+        "sha256": "2da72e3f77db81cd406a5f51e41346597bf3dbb4e3ced66aab8640346177c71d"
+      },
+      {
+        "path": "continuation-1/factor-graph_route_cuda-0.log",
+        "sha256": "3dd9b0e2ba10f58182ebe27f5a348d2934ae81d8fdb4245f1c71505baf2a3a15"
+      },
+      {
+        "path": "continuation-1/factor-graph_route_cuda-1.log",
+        "sha256": "b28bb1eabd9dd6cebada180a00ef2773e12bdb35256eb689cca453980717b7d7"
+      },
+      {
+        "path": "continuation-1/factor-graph_route_vulkan-0.log",
+        "sha256": "69310056d1a69c64ea6abce569ba095ac41f85de8c5e93c8795357f0eef0db7a"
+      },
+      {
+        "path": "continuation-1/headers-graph-0.log",
+        "sha256": "b74bd1c4acb6e66e1f333fba9c4e52d6c826a1b6580ea1c6d6f753d9dfa9d38a"
+      },
+      {
+        "path": "continuation-1/headers-graph_provider_onednn-0.log",
+        "sha256": "145c8ed4ec561e0d47715045efa5094df6bc57b186c94b7b4ba193915be68fa1"
+      },
+      {
+        "path": "continuation-1/headers-graph_route_apple-0.log",
+        "sha256": "6e8024e4f4ecc1bc4117111741fbaaf62bc4262dd5d1437d3278860e1af943de"
+      },
+      {
+        "path": "continuation-1/headers-graph_route_cpu-0.log",
+        "sha256": "f0e5a39edf4fe40d23939d79479ac04aae40ce03faf3d88367e60e51ba7919ea"
+      },
+      {
+        "path": "continuation-1/headers-graph_route_cuda-0.log",
+        "sha256": "dea130faef932a6cee9e3350f4b702b9275e03bd1945814aad2d0f7e5d4f188a"
+      },
+      {
+        "path": "continuation-1/plan.json",
+        "sha256": "55889da475d78777b64a871f780e260b101b8bc3d0ff80cdcfea827b98140bcc"
+      },
+      {
+        "path": "continuation-1/result.json",
+        "sha256": "a55ac5339dd73cbf1dee76e949c872ef78c40b2830a78bf2bb5a02524851c991"
+      },
+      {
+        "path": "continuation-2/closure-0.log",
+        "sha256": "24d30e6d76fec588355331431ff02805ba0bdabc6e93d37bcbd23cdd70e5cd11"
+      },
+      {
+        "path": "continuation-2/configure-0.log",
+        "sha256": "04512ef342dea40e694bc3e115042024df5c5f6e1784050e6a9b0386faa59719"
+      },
+      {
+        "path": "continuation-2/docs-0.log",
+        "sha256": "8a06994e6b4f1c8e7890328ae73719f23821b54039014d0e15cfbd53dced78f6"
+      },
+      {
+        "path": "continuation-2/factor-graph_route_vulkan-0.log",
+        "sha256": "39e8baa6200b005e589865a824bcfad8f985ee586ab4cca98eaac11fd70208e9"
+      },
+      {
+        "path": "continuation-2/factor-graph_route_vulkan-1.log",
+        "sha256": "62e11d1f863bf4ae41f50a1ec6f1297646632c11b03f3efe0d7c01b18a17ff8e"
+      },
+      {
+        "path": "continuation-2/plan.json",
+        "sha256": "2b8cc0bada6e461db37fa69f7049c1be28e75246575aaf462a010bb26e974043"
+      },
+      {
+        "path": "continuation-2/result.json",
+        "sha256": "1c7b295ce549efe12eca13827d4390862bb7c05a51ee3a0a54a2507a1d48d2ca"
+      },
+      {
+        "path": "continuation-3/closure-0.log",
+        "sha256": "24d30e6d76fec588355331431ff02805ba0bdabc6e93d37bcbd23cdd70e5cd11"
+      },
+      {
+        "path": "continuation-3/component-contract-0.log",
+        "sha256": "4b9541d90e6cc270fffba942b21a39855cdcab3c202971aa73424eedb24d22e4"
+      },
+      {
+        "path": "continuation-3/configure-0.log",
+        "sha256": "ae47098b0b26a432a542c20de4df66581d642a93bc9b1d5f91ee08ab075aae7e"
+      },
+      {
+        "path": "continuation-3/delivery-compute-0.log",
+        "sha256": "5c95a5bd4cc07614aa9d990ca681914dafb77d58339b000b5feedc13e5e3a62b"
+      },
+      {
+        "path": "continuation-3/delivery-container-0.log",
+        "sha256": "62b0c09371bfc77b7e650f4bcac1f08c486b8d9df448e862f56aa644776244c3"
+      },
+      {
+        "path": "continuation-3/delivery-core-0.log",
+        "sha256": "c2c0e150d68d578adf233004f78a803a32ec22686f631c18704baaaa5eb3383c"
+      },
+      {
+        "path": "continuation-3/delivery-error-0.log",
+        "sha256": "23d4118ddcad2f3b369625ca8e2f3e50f239ad892ac3a6491a51fd00704d61a6"
+      },
+      {
+        "path": "continuation-3/delivery-graph-0.log",
+        "sha256": "c762e4a914f8f91a1c2fee35a3dc45190b32d40306ba9cb2aa9e2bda18e031d9"
+      },
+      {
+        "path": "continuation-3/delivery-io-0.log",
+        "sha256": "23b85d5e93855d7a0cf4b90af89041b0577a75de86fc59978a504ba0302bc51b"
+      },
+      {
+        "path": "continuation-3/delivery-math-0.log",
+        "sha256": "713bfcc2dd16c544f0782d21b9e377bc0df6d05ce2be02f991e38ff26dbc145f"
+      },
+      {
+        "path": "continuation-3/delivery-mem-0.log",
+        "sha256": "7c23e62a9a5173ab328e7aaae1733aebe1aab4458986a34b627e72fee2cf54fe"
+      },
+      {
+        "path": "continuation-3/delivery-obs-0.log",
+        "sha256": "f0a03df3b715db886cb0be93b261bdf40c7374790050a39d44e7a776ef181f3a"
+      },
+      {
+        "path": "continuation-3/delivery-platform-0.log",
+        "sha256": "e529300110cb2986338d7ee75d9ed7e810b516d91b01565b2c32f4bd0e66c538"
+      },
+      {
+        "path": "continuation-3/delivery-process-0.log",
+        "sha256": "f296fc20a20436be27499d57eff9c0312c8853e8e4ec135f9b72c2376270c8ac"
+      },
+      {
+        "path": "continuation-3/delivery-sched-0.log",
+        "sha256": "b620319e25d058be2d28f412f2dd36269745a4cd596dd45ee6e04ec344be5801"
+      },
+      {
+        "path": "continuation-3/delivery-simd-0.log",
+        "sha256": "564dd29ddcb7f68c50631b7ec49964609bad0fd92168015605bbc9d001de8299"
+      },
+      {
+        "path": "continuation-3/delivery-time-0.log",
+        "sha256": "ebd14ac0895b427273ec378d6ce6c3f1536fb18596cc18cc9cfb2580ddbc7dc3"
+      },
+      {
+        "path": "continuation-3/delivery-util-0.log",
+        "sha256": "da3656da2c96f14c8b19e7c8ecd10102f5e01d97a293ca130478daf9c9b9559b"
+      },
+      {
+        "path": "continuation-3/docs-0.log",
+        "sha256": "8a06994e6b4f1c8e7890328ae73719f23821b54039014d0e15cfbd53dced78f6"
+      },
+      {
+        "path": "continuation-3/factor-graph_route_vulkan-0.log",
+        "sha256": "39e8baa6200b005e589865a824bcfad8f985ee586ab4cca98eaac11fd70208e9"
+      },
+      {
+        "path": "continuation-3/factor-graph_route_vulkan-1.log",
+        "sha256": "9d0c72ae031ce91c6e778d2d38f3a957bee32afcccb66a0c0480ddf270f30da5"
+      },
+      {
+        "path": "continuation-3/factor-io_core-0.log",
+        "sha256": "e728fcf4a0548c8c20cd3e2c8921e2417dd9aeca355d5a634fe93f8d41f0676d"
+      },
+      {
+        "path": "continuation-3/factor-io_core-1.log",
+        "sha256": "1e7e549290183b911c3289bdfefab1170bf5b567b417af05724f978150abcd05"
+      },
+      {
+        "path": "continuation-3/factor-io_http-0.log",
+        "sha256": "7fd29c4d4b80b4b46031bce34f73baa2c63e28dc7a8f095cf7401900d6b34c0e"
+      },
+      {
+        "path": "continuation-3/factor-io_http-1.log",
+        "sha256": "03c41ca64973410425fa70596844ebb5f543bb6377bd4c5af46aaab4751beef9"
+      },
+      {
+        "path": "continuation-3/factor-io_http2-0.log",
+        "sha256": "885e4d61fa82c6b04b0bd0ddbba5fdb1a3de52e79e79e5773e34b2a4ea68f9a7"
+      },
+      {
+        "path": "continuation-3/factor-io_http2-1.log",
+        "sha256": "baca3f1aca1a0c01234efe141789ebbc31ca00aa63eaffbf5f72f37d7b510af8"
+      },
+      {
+        "path": "continuation-3/factor-io_tls-0.log",
+        "sha256": "06eeceed6560a2df8fea77f1961d551e20ab8502dec00a84d118503d48640e33"
+      },
+      {
+        "path": "continuation-3/factor-io_tls-1.log",
+        "sha256": "d1124a09e8359fc09a4b08b06fa334b589935747a2d539afdb32b70ff866629c"
+      },
+      {
+        "path": "continuation-3/factor-io_transfer-0.log",
+        "sha256": "ff179b62248adb21648417bf33bd40a26c5db2e3fb3c99adbe7092dc9f35b16b"
+      },
+      {
+        "path": "continuation-3/factor-io_transfer-1.log",
+        "sha256": "877d1faa405e07be1adb0022209387968cf8fd05d2466dd157ca762bdeecf58b"
+      },
+      {
+        "path": "continuation-3/factor-io_watch-0.log",
+        "sha256": "a1685c02a32ce1f73b1bba9199ceb1ca3bb9188af56c00b0e8336567fceb32d5"
+      },
+      {
+        "path": "continuation-3/factor-io_watch-1.log",
+        "sha256": "a8a0b9eb0db470d687f5b1501e97ff5285f49c53f37427c9acd5cddf4b948833"
+      },
+      {
+        "path": "continuation-3/factor-io_websocket-0.log",
+        "sha256": "d7e64986c0da77c3c15f5e4cd6212ed306ddf0eab783e6fe48bf7132cb03434e"
+      },
+      {
+        "path": "continuation-3/factor-io_websocket-1.log",
+        "sha256": "605426a13283b76e9cef7e691f43ae0fb8cd0d8f2a84b8d75514a85c6881ef1b"
+      },
+      {
+        "path": "continuation-3/factor-math-0.log",
+        "sha256": "d77f871888eaa3eb52a1223b38b2a1163ab89c6e9238113446019aaff44ae610"
+      },
+      {
+        "path": "continuation-3/factor-math-1.log",
+        "sha256": "7611e9b290ae193529f613abbd0ab2070473eca4f703c9029de46d6483e9e718"
+      },
+      {
+        "path": "continuation-3/factor-mem-0.log",
+        "sha256": "f3086599d7fec1af5f8c3e5caa80ff314dd4d85c97d49a3678bdb72d043637e8"
+      },
+      {
+        "path": "continuation-3/factor-mem-1.log",
+        "sha256": "0134f7ec322848dd7e4aae52b6ad656e723be32053abcf6fb2fc57c297ce3fc6"
+      },
+      {
+        "path": "continuation-3/factor-mem_reclaim-0.log",
+        "sha256": "06436ebc720bf8aae1c25fcaccd8aaf9447b1f55c90d9689384c08cf47084f41"
+      },
+      {
+        "path": "continuation-3/factor-mem_reclaim-1.log",
+        "sha256": "05a0f8d10239a8accaf47670801c9ccda16a6bded87435aa45283bba23d091ed"
+      },
+      {
+        "path": "continuation-3/factor-mem_vm-0.log",
+        "sha256": "5b23e3e280c713bf3b4437bcff933d4525e29a58fe0801a52fd7086e210b6edf"
+      },
+      {
+        "path": "continuation-3/factor-mem_vm-1.log",
+        "sha256": "972dc61d8c8d5ca9478c9cce23d6d22de042d1882f13bf4cf218c30d863f2366"
+      },
+      {
+        "path": "continuation-3/factor-obs-0.log",
+        "sha256": "ee03c0e96964e178c952819194dc3ec38e78dc46169ff3ef9d32dd4e0d0ce02e"
+      },
+      {
+        "path": "continuation-3/factor-obs-1.log",
+        "sha256": "7d3e9b7544402b3f1f8849c7544c2c06306f76e38ea491717fa37a0794a518b4"
+      },
+      {
+        "path": "continuation-3/factor-platform-0.log",
+        "sha256": "2967a4368bf35903336a92303680f91811e0b7d258fcbfac7ae71715407b6a98"
+      },
+      {
+        "path": "continuation-3/factor-platform-1.log",
+        "sha256": "6386a47301feca147771e28ba852e67c65b034cfb740a6c9908ffbc1e0d42e8f"
+      },
+      {
+        "path": "continuation-3/factor-platform_fs-0.log",
+        "sha256": "041f78b0e72596f093e0092f71ee6acb72ce5110b8f6d41d979f64cd78e99260"
+      },
+      {
+        "path": "continuation-3/factor-platform_fs-1.log",
+        "sha256": "350e8a3f166cfd0aadff4bc3380e96f72a0123a5c6054e4b1ad3fd770d2add46"
+      },
+      {
+        "path": "continuation-3/factor-platform_thread-0.log",
+        "sha256": "272aa43593160ad368b00bf007983125d4bbdeb2d278b996fabf4028f53d12d2"
+      },
+      {
+        "path": "continuation-3/factor-platform_thread-1.log",
+        "sha256": "60639d6a9c2bed7e29aadfa0bd4340cce8308fb63856e22fb00fc83f6e03c630"
+      },
+      {
+        "path": "continuation-3/factor-process-0.log",
+        "sha256": "4aa3aa8bf186ecd42b1a3cf13de125109a31ae2cc4b63e9c5647169df79b3565"
+      },
+      {
+        "path": "continuation-3/factor-process-1.log",
+        "sha256": "bb0050e303d860e285e569919b548d4ef3a589f3f2644c6c85acd61f32f6f43b"
+      },
+      {
+        "path": "continuation-3/factor-sched-0.log",
+        "sha256": "2988b623723c449a1b3d44d0d4feb756a7975925544f7f1dc8f9abce392c5b83"
+      },
+      {
+        "path": "continuation-3/factor-sched-1.log",
+        "sha256": "5799846b4767682f04fdc64ce508756187f9eecd76c08b661b5b6da91827aa74"
+      },
+      {
+        "path": "continuation-3/factor-simd-0.log",
+        "sha256": "9939f44dc828a8e925514b7248f79e6b22d511b4e237895d0a43bb813ac6b450"
+      },
+      {
+        "path": "continuation-3/factor-simd-1.log",
+        "sha256": "60aeb7f900c120d397d518ba087fd39eb8180eb1157a6e05f117b89f60309bb2"
+      },
+      {
+        "path": "continuation-3/factor-time-0.log",
+        "sha256": "2a9c1731de01854b73b4285e598b8613ab39f3a2c86aed1f33aed67d6738f8a2"
+      },
+      {
+        "path": "continuation-3/factor-time-1.log",
+        "sha256": "135ac594f4ea97d2c8d54cd0c394ac3b1b94d27f0afa17f98794c36d3bf87fdb"
+      },
+      {
+        "path": "continuation-3/factor-timer_queue-0.log",
+        "sha256": "513945211ba5d7c260bf8b81f14bd1a6e40b1785e09740b2405e4318e617a616"
+      },
+      {
+        "path": "continuation-3/factor-timer_queue-1.log",
+        "sha256": "11e1f2d67390ed4f66b95784139cfedb7f91dd951cb1455cdaff240421decca3"
+      },
+      {
+        "path": "continuation-3/factor-util_core-0.log",
+        "sha256": "3bbb4c71e15bf2a263a4f3fd80a707582ea1a1b546bffd2defbfa90edb86bd6d"
+      },
+      {
+        "path": "continuation-3/factor-util_core-1.log",
+        "sha256": "2687ff961cbe03130af7bd9d9647144bb6b47ace703f06ab2f6c9486b74953f9"
+      },
+      {
+        "path": "continuation-3/factor-util_runtime-0.log",
+        "sha256": "b4f92d7ff93629b2ccc04c4964442b6e53d6b7a62c8806979de29a6f273e156c"
+      },
+      {
+        "path": "continuation-3/factor-util_runtime-1.log",
+        "sha256": "14ee4eb941868cf605d280ef6e031d735a63cc15f94a083a380a226a0e84ed1f"
+      },
+      {
+        "path": "continuation-3/headers-graph_route_vulkan-0.log",
+        "sha256": "7649ad9c7771d82c2ba663a936a8b0c913adbe2b2bdc1449354c544e43dde844"
+      },
+      {
+        "path": "continuation-3/headers-io_http-0.log",
+        "sha256": "641a9dede9b96882f3323a8a7b07e8fa70396feca39305c61be00adcb3edb39b"
+      },
+      {
+        "path": "continuation-3/headers-io_http2-0.log",
+        "sha256": "8059bf8bfa03807f05d34b2ff1f01c6519f44040724a8a6ee73a2ec96c97dfae"
+      },
+      {
+        "path": "continuation-3/headers-io_tls-0.log",
+        "sha256": "2519c42a480f79160e0334b2f186bddabc2e1fa0c1d49a0402b490a41ff81fac"
+      },
+      {
+        "path": "continuation-3/headers-io_transfer-0.log",
+        "sha256": "9dfcf984e931c9147b445a3c7bdeaa80b61aa155a3e4390270c8000037b1cd56"
+      },
+      {
+        "path": "continuation-3/headers-io_watch-0.log",
+        "sha256": "b6863e0713bbdcd80e70a957495fb3d592f2618c0c74dbc6dd8d1fe555a11300"
+      },
+      {
+        "path": "continuation-3/headers-io_websocket-0.log",
+        "sha256": "b0506c70c783d06be97ef47c265b0c7d46390fdaf67ce17cdb30770d2c9a9825"
+      },
+      {
+        "path": "continuation-3/headers-math-0.log",
+        "sha256": "cccdecf487d6f2bb05d29b7a79c0e129fdad7ed7959c6879873939b3d4433ae9"
+      },
+      {
+        "path": "continuation-3/headers-mem-0.log",
+        "sha256": "0a6c8c63f8ecb000da227fbfb79adb92a460299fad31d81b5f0580716701dcbd"
+      },
+      {
+        "path": "continuation-3/headers-mem_reclaim-0.log",
+        "sha256": "dd60cbc0d5308b2b62d022a324709380ea91d6509fc2ba997840652865ddd77d"
+      },
+      {
+        "path": "continuation-3/headers-mem_vm-0.log",
+        "sha256": "eb37bb7d79bd800a7a23e907a0ab80abda31989af65dd22cef962b1c19266deb"
+      },
+      {
+        "path": "continuation-3/headers-obs-0.log",
+        "sha256": "dd4da7ded47d3edbdafd358fef41648ff975c301cb1a2f486c7654bd89a6b824"
+      },
+      {
+        "path": "continuation-3/headers-platform-0.log",
+        "sha256": "6350a22e81e883012eeb48b7361e7f80095b0236479e7385816e5a81a21fd25f"
+      },
+      {
+        "path": "continuation-3/headers-platform_fs-0.log",
+        "sha256": "8879b577e9741921266a1f9d688db5873cb169ac8e342d8243ce9fcf6767ed36"
+      },
+      {
+        "path": "continuation-3/headers-platform_thread-0.log",
+        "sha256": "8a3f195d364a5691af9ef0b2ac905f0ab53bbc86265910db5b0f31944a311a81"
+      },
+      {
+        "path": "continuation-3/headers-process-0.log",
+        "sha256": "f2774291b6c25ebc1ef97c4b6dfc51c4033ed1efaeed2c0b8cc878e81a57c185"
+      },
+      {
+        "path": "continuation-3/headers-sched-0.log",
+        "sha256": "ebb92b8c34e291871b685cab49f3b27bf99a46786f56098ba562074877d51b04"
+      },
+      {
+        "path": "continuation-3/headers-time-0.log",
+        "sha256": "228dcd3b3e095e6680037306d93a900ff731fd8eef6026284e31bf3c2768a882"
+      },
+      {
+        "path": "continuation-3/headers-timer_queue-0.log",
+        "sha256": "61610e42f56eacd0f5b00dec4c7a315b29689f976dde4719ce5021f5b5df6cdd"
+      },
+      {
+        "path": "continuation-3/headers-util_core-0.log",
+        "sha256": "edc643f7ff71a49371dbda03b9fc1768e34ede7189c63544b7c70443b0b84e68"
+      },
+      {
+        "path": "continuation-3/headers-util_runtime-0.log",
+        "sha256": "59a0f90c916798df6f4157eb8780ab24dff7536beb19adf2f0d047a1e6f82398"
+      },
+      {
+        "path": "continuation-3/plan.json",
+        "sha256": "45c86d8475326e42b80ee53b59da928021e16f2e4922928bd87ced43803b2276"
+      },
+      {
+        "path": "continuation-3/result.json",
+        "sha256": "594510ec6709367cdb9a587cf01d50eb3fe488ac4adb15c2d51b974f2aab0485"
+      },
+      {
+        "path": "original/context.json",
+        "sha256": "bc016162d5d0574a4b33f68226be412adfd7c381f827ace080b1757577dec94a"
+      },
+      {
+        "path": "original/paths.json",
+        "sha256": "e31f49ee4980527456cd16f2755ffb0694c211323c7e00839fbd0572b74ee0a7"
+      },
+      {
+        "path": "original/plan.json",
+        "sha256": "7d6fd089e749a32c47144471a79e6833e6913daaac1bd9cabdb6b59ef4e42ea3"
+      },
+      {
+        "path": "original/receipts/01296497fcce30bffc97f7f20184bf4c429d9fd9994c61865ebac66e3a8fed9b-0.log",
+        "sha256": "5fe60d298a9c1232fa144429be36407021db0a49cb5dd4df4cbd22f741b9be9b"
+      },
+      {
+        "path": "original/receipts/01296497fcce30bffc97f7f20184bf4c429d9fd9994c61865ebac66e3a8fed9b-1.log",
+        "sha256": "659d92234737908c7a0aae111fdd0a1f12536ed86d33c0e0c02a7fd3df657c15"
+      },
+      {
+        "path": "original/receipts/01296497fcce30bffc97f7f20184bf4c429d9fd9994c61865ebac66e3a8fed9b.json",
+        "sha256": "42379b223679002e827482b1d292403b1406cba6586bb4a695323001deae9848"
+      },
+      {
+        "path": "original/receipts/0b8a7a14c2d431f35c67b2494b4538f22c4ba840d41fc60d4ebf15b540d263cc-0.log",
+        "sha256": "1aa3689be8b3545919f68bb3becc259bff76fd7f380d68621ca4b8eb1ec60956"
+      },
+      {
+        "path": "original/receipts/0b8a7a14c2d431f35c67b2494b4538f22c4ba840d41fc60d4ebf15b540d263cc.json",
+        "sha256": "dba26a382dc74307270a954736b094921aedbfffdc8da904db85fd35041e5929"
+      },
+      {
+        "path": "original/receipts/0cffecf78364b1f37a77dea82ece1bda4d6dee10cd63ad72cc22fc4f082b123a-0.log",
+        "sha256": "5c7ce29313b4267ab7188bd736a1f0bd4bb98450b656a0b784f8c6ec4e5b3ad8"
+      },
+      {
+        "path": "original/receipts/0cffecf78364b1f37a77dea82ece1bda4d6dee10cd63ad72cc22fc4f082b123a.json",
+        "sha256": "130ee2721cd93cf97d4ff30590a581ffe8d58723c88b57ca35e70cb7ca0f3b9b"
+      },
+      {
+        "path": "original/receipts/164b1b42548da4b29be31eebedaba073d38c8aea84d76c484aa566631c4b4b47-0.log",
+        "sha256": "ba2e93cb30cc4c52d485fe607b8a4b28101cd1eb2da1b4d030c821ed48d0eb86"
+      },
+      {
+        "path": "original/receipts/164b1b42548da4b29be31eebedaba073d38c8aea84d76c484aa566631c4b4b47-1.log",
+        "sha256": "00f40929140589f70974b3162e8c9f05b4d9d55a148b68f1f5fa86575f6ccc64"
+      },
+      {
+        "path": "original/receipts/164b1b42548da4b29be31eebedaba073d38c8aea84d76c484aa566631c4b4b47.json",
+        "sha256": "8d2a975ce39948d8b2eed954e7f500fe9ea3fb15541a2ea0db52c4c96a1ecf53"
+      },
+      {
+        "path": "original/receipts/167452584bd9d792f83615f6fd07d79dd66bfd1d633ce03a0899df75d475fa18-0.log",
+        "sha256": "ca8fd64adbbbfef5f0e52d0fede85cc86ae030730a6ecb6002cb2894d608c143"
+      },
+      {
+        "path": "original/receipts/167452584bd9d792f83615f6fd07d79dd66bfd1d633ce03a0899df75d475fa18-1.log",
+        "sha256": "75d8158a31299ea21c7d3c69dc50ef034488db7cef193b28f8d3d042dd5c4c85"
+      },
+      {
+        "path": "original/receipts/167452584bd9d792f83615f6fd07d79dd66bfd1d633ce03a0899df75d475fa18.json",
+        "sha256": "edc86fa8d4e7307dda176af744a0466bcc8620f82ae8b64d217ad77cd48eef85"
+      },
+      {
+        "path": "original/receipts/1ab299ae4b9eeaef0c6128671d63b880e983abee35349c8fbbe05c9f9d93c838-0.log",
+        "sha256": "051252f481b662d1a27b7ca7276a8221dc7498e51cdf68f525cee4d813981fdb"
+      },
+      {
+        "path": "original/receipts/1ab299ae4b9eeaef0c6128671d63b880e983abee35349c8fbbe05c9f9d93c838.json",
+        "sha256": "17f4785c28a74fa9367a3038f962567db1540fd5cf41ebf8213ff2236f3f3ee4"
+      },
+      {
+        "path": "original/receipts/1e22f0d49dace71ce7aacbb41a277707d89da9e21dd08d41d298dea2932c657d-0.log",
+        "sha256": "140359a346dd30d4eb3a7e01e10a3360c54105b0dbded46ae99bd3427382b018"
+      },
+      {
+        "path": "original/receipts/1e22f0d49dace71ce7aacbb41a277707d89da9e21dd08d41d298dea2932c657d.json",
+        "sha256": "ca127dd6d2c9595847c9f451bb6d6bf96eed91a0c08c718c43071338b7948708"
+      },
+      {
+        "path": "original/receipts/210dc940f5ab3e66af495ef74716f97b6a58ead278b0571fce94b831c7328179-0.log",
+        "sha256": "8e4bf349e70f1a4df6dbbadf10673b83a4658de6b96149daafc297f0034192a2"
+      },
+      {
+        "path": "original/receipts/210dc940f5ab3e66af495ef74716f97b6a58ead278b0571fce94b831c7328179.json",
+        "sha256": "623130e4c0981c9d3b12424847dd4ebbe2d6228a21e09ce2f7dcd9158e7d659c"
+      },
+      {
+        "path": "original/receipts/272ed85d613cbf9a30dd5af1b8e5410676f30e3fba8ae313c23ba3c7b0d457be-0.log",
+        "sha256": "e5e41506822d17b006a9f72b87c414b95136d560e7e58da921290638d5c69f5f"
+      },
+      {
+        "path": "original/receipts/272ed85d613cbf9a30dd5af1b8e5410676f30e3fba8ae313c23ba3c7b0d457be.json",
+        "sha256": "55c9ff6d847836f964d4875be278d9385cd27e99e9a5d43a8ecb4ecedcf12fa2"
+      },
+      {
+        "path": "original/receipts/2a111060bb9f5c7a0d01239bc2ac46090a2ecece68949f43b9943e58858fff86-0.log",
+        "sha256": "badb1a6e7add15a66f5ebda0b37cb2f01c688f9a55a79eafcd88946e74d2be90"
+      },
+      {
+        "path": "original/receipts/2a111060bb9f5c7a0d01239bc2ac46090a2ecece68949f43b9943e58858fff86.json",
+        "sha256": "154e8c81f6cf17c369f60bda8eb0036f6af43560806800c299c19912495ac261"
+      },
+      {
+        "path": "original/receipts/2bdfc1098a7440ed391a7515fe02baa259fd5ce6de353910fb869dc6b8c4a3ca-0.log",
+        "sha256": "2fed0ae34f8afa2eb7d37c7161bf8c43ad1e7517304e162cfe752d5829fcf1d2"
+      },
+      {
+        "path": "original/receipts/2bdfc1098a7440ed391a7515fe02baa259fd5ce6de353910fb869dc6b8c4a3ca-1.log",
+        "sha256": "d11161cfd272e6f5cf54c10dd9d6e019f2184fa023e32c9791182e8ceb019261"
+      },
+      {
+        "path": "original/receipts/2bdfc1098a7440ed391a7515fe02baa259fd5ce6de353910fb869dc6b8c4a3ca.json",
+        "sha256": "2803248ec2aa2a8a1995e41d20cdf669cbfbbf36380b6173d2ff7bcd6dcc3cae"
+      },
+      {
+        "path": "original/receipts/425f98b4588fe81900deaf01e3cdb46d8835cb4c00f36066d22fcd21533b2a89-0.log",
+        "sha256": "9aea53e43a5e5e5c2e7e145e70b544114811323f72d3e43bcebcf5b4cfa00280"
+      },
+      {
+        "path": "original/receipts/425f98b4588fe81900deaf01e3cdb46d8835cb4c00f36066d22fcd21533b2a89.json",
+        "sha256": "37d8a6ab10b10507d6019f4a3ed152c4855a81654df666a80832884b34b9415a"
+      },
+      {
+        "path": "original/receipts/431a55ee08b79aab93d953220c65c75083c95b1a183db67fa8f5ffdb3fded159-0.log",
+        "sha256": "b645e260a0ff70219b9a56a4c14f2349484afcbc251eaa15e3a90caf5e0984e4"
+      },
+      {
+        "path": "original/receipts/431a55ee08b79aab93d953220c65c75083c95b1a183db67fa8f5ffdb3fded159.json",
+        "sha256": "39865c6d98e50eb487a194ee5fd63315a6d50698089e17baec93ff8538bb9683"
+      },
+      {
+        "path": "original/receipts/4fc00d4b90e90065f64c0864dd648fd619ede3b51ef4bd3bc50d8b22c3049f9c-0.log",
+        "sha256": "701963670cef187bd943d5fddb7cf00b87b3ec6923b397a628261bb4cb0bd747"
+      },
+      {
+        "path": "original/receipts/4fc00d4b90e90065f64c0864dd648fd619ede3b51ef4bd3bc50d8b22c3049f9c.json",
+        "sha256": "380993b4e92356b9662afbc9321874a2d506c7185a49cf9c4f99da2b7ecace64"
+      },
+      {
+        "path": "original/receipts/5226c1b60be4919732e7038a2ac212058b88c654a57ebbb8670979ef25702493-0.log",
+        "sha256": "00b59ab7900ec7fcf9125af914cbf9dcbd15b54166aa5e419ad4d74db3145857"
+      },
+      {
+        "path": "original/receipts/5226c1b60be4919732e7038a2ac212058b88c654a57ebbb8670979ef25702493.json",
+        "sha256": "a180008c80d6fdda417e70f2598a0b1b946ee4ac79e6731bbe6c77f7588bca7c"
+      },
+      {
+        "path": "original/receipts/588188017e6e1a98764cc7039c49fd699a5b456dee910f39d85432fe92cedca0-0.log",
+        "sha256": "f7a7e865b427b3ed986a3322b973c2e257aac5e011377b2f56a8297c756b446e"
+      },
+      {
+        "path": "original/receipts/588188017e6e1a98764cc7039c49fd699a5b456dee910f39d85432fe92cedca0-1.log",
+        "sha256": "7e4f6847eedd0f24f814f5e445042b680f694425f3fbb8674d49fc1bd897bbbf"
+      },
+      {
+        "path": "original/receipts/588188017e6e1a98764cc7039c49fd699a5b456dee910f39d85432fe92cedca0.json",
+        "sha256": "572700e093c914a175960ccb4e301bd82e1e09f72b8e308118e670dced1aeed7"
+      },
+      {
+        "path": "original/receipts/5a86cff970e00f4abb31aa9217a063a472c9238d7d10edee0874db0e9f8b1cf2-0.log",
+        "sha256": "859f6cd06523ef052e6491dd9fb38006bd1002ac258918b63626210fddbca668"
+      },
+      {
+        "path": "original/receipts/5a86cff970e00f4abb31aa9217a063a472c9238d7d10edee0874db0e9f8b1cf2-1.log",
+        "sha256": "804250cc8061af40a21359052f755bf54b906eae54e8cf72fbcd7653f84c0f0f"
+      },
+      {
+        "path": "original/receipts/5a86cff970e00f4abb31aa9217a063a472c9238d7d10edee0874db0e9f8b1cf2.json",
+        "sha256": "c6f2b6d99ec5c5b045427920d45320af72d4717db226e3e809bd990b4273d69c"
+      },
+      {
+        "path": "original/receipts/6003d78067c2a8bd51a735ad40bd63fb342d9372d5d02e42b4b71c3fcc95c674-0.log",
+        "sha256": "edd0b2872596c6fdbe4e19f53387f513dc2eb681092153afa87839236ea4adbb"
+      },
+      {
+        "path": "original/receipts/6003d78067c2a8bd51a735ad40bd63fb342d9372d5d02e42b4b71c3fcc95c674-1.log",
+        "sha256": "f3156d6294cb3d522b7989361acdde94d469e3a7dfe0e6cc5a272360601e537a"
+      },
+      {
+        "path": "original/receipts/6003d78067c2a8bd51a735ad40bd63fb342d9372d5d02e42b4b71c3fcc95c674.json",
+        "sha256": "1f06bf06836179bfd84b6e5334d40cb73b5d9d86e7a4c86e01593ddc545c51bc"
+      },
+      {
+        "path": "original/receipts/68c52647bdd59dc1ae86117f4af073b243345c5cd0091a5a6b77e8550929329b-0.log",
+        "sha256": "b8e36b7223ec22db93572e9d6f6220da2f70fdd7f6cd591d3d007acc167ac4f4"
+      },
+      {
+        "path": "original/receipts/68c52647bdd59dc1ae86117f4af073b243345c5cd0091a5a6b77e8550929329b.json",
+        "sha256": "e337d8f18d9232c25ffdb4c9f2b2281839f3bb0c4efa7c0573caaf24ec4e8a07"
+      },
+      {
+        "path": "original/receipts/69d7aea6df4b5acf2cc04227271f992c6901a899c6e8c062a37ca496fab34a79-0.log",
+        "sha256": "ee648366862931219d3e63e7a479698938745149ac32457df883fb8a2238b8dc"
+      },
+      {
+        "path": "original/receipts/69d7aea6df4b5acf2cc04227271f992c6901a899c6e8c062a37ca496fab34a79-1.log",
+        "sha256": "62d9d4c2f2d67568a1abca0f3e67d25731ec806ea2459a983f66f441f9c99ffd"
+      },
+      {
+        "path": "original/receipts/69d7aea6df4b5acf2cc04227271f992c6901a899c6e8c062a37ca496fab34a79.json",
+        "sha256": "d7dcd56cf51283dcbd58c4cd680e8b21f91f4d49ed6135612c6549cadb477874"
+      },
+      {
+        "path": "original/receipts/770608ed4ece6a1c0eed5282921c34aa143e6f73902a190a0f0bc97cbf48d937-0.log",
+        "sha256": "781a68775b5d4f1c0b4a075861fa071e5cb9ae592a95d5c4e6e08b95867c0855"
+      },
+      {
+        "path": "original/receipts/770608ed4ece6a1c0eed5282921c34aa143e6f73902a190a0f0bc97cbf48d937-1.log",
+        "sha256": "ea2b572fc26c1c2af0a3fe5b9530f02eea9dff0016e1e8b253d406d53e2e9c86"
+      },
+      {
+        "path": "original/receipts/770608ed4ece6a1c0eed5282921c34aa143e6f73902a190a0f0bc97cbf48d937.json",
+        "sha256": "ba3a01fc52383f62f1711247cf425f4672d5aa86bd9f1bdb880f65588f5260cd"
+      },
+      {
+        "path": "original/receipts/7767b71b88131b33e50be017223f34447d80851a795668b2e0d73dec124119b7-0.log",
+        "sha256": "712cd5de9b95b7182c0bd8f4827534e60e96db49b9c216775d9300417af3d398"
+      },
+      {
+        "path": "original/receipts/7767b71b88131b33e50be017223f34447d80851a795668b2e0d73dec124119b7-1.log",
+        "sha256": "752b6e491602f2a86a58f3c481f933c595d38505ae7584c986ec563ebfaf5ac2"
+      },
+      {
+        "path": "original/receipts/7767b71b88131b33e50be017223f34447d80851a795668b2e0d73dec124119b7.json",
+        "sha256": "8c41b085f92771e412eb7211802d7124293bf84f7b918fc81e86ac324db1f04f"
+      },
+      {
+        "path": "original/receipts/83ff7cefa856c1ca8e320cd4934ca60d99b091b19f0f32c006550698d2f4886b-0.log",
+        "sha256": "1821accb4a629276bdcfe1ae8000a4e42c2cc812f319ab736ca64238f497e524"
+      },
+      {
+        "path": "original/receipts/83ff7cefa856c1ca8e320cd4934ca60d99b091b19f0f32c006550698d2f4886b-1.log",
+        "sha256": "37fffca03f74a2595dc1e4470794813f5aa03a60b54b65b10ee50deb77fe81f5"
+      },
+      {
+        "path": "original/receipts/83ff7cefa856c1ca8e320cd4934ca60d99b091b19f0f32c006550698d2f4886b.json",
+        "sha256": "22dff038126bb745fd095a84736ba8dc33ebf1ed92c37eb242a44c790406b016"
+      },
+      {
+        "path": "original/receipts/84a8c02cf41cdf501806d865007b7636c171508e2b371fa1664265a1218f2e6e-0.log",
+        "sha256": "020f64a90c4033f2830990b75a01bd8f9b490996897dfb26f4cf6f720013fb4b"
+      },
+      {
+        "path": "original/receipts/84a8c02cf41cdf501806d865007b7636c171508e2b371fa1664265a1218f2e6e.json",
+        "sha256": "146efdb937364e917b63621f256fac65b8e937f2d9a7d6a0b94b800eec101ba0"
+      },
+      {
+        "path": "original/receipts/85c8b58eae00c1cda91a796d03a09b70b1cae1b52a025f1a6f552c8d96e2d56a-0.log",
+        "sha256": "53ef1663db9b6456c7c78a4cc9ba38413d6d1f96e1f278091c49bd622ccab416"
+      },
+      {
+        "path": "original/receipts/85c8b58eae00c1cda91a796d03a09b70b1cae1b52a025f1a6f552c8d96e2d56a.json",
+        "sha256": "bfe031cfea5f790911a58d0035edb69114fd3b7284d966b16da0e30319cd680a"
+      },
+      {
+        "path": "original/receipts/87868eb4178dfbab542f781edf4739c1782b4bfe07f031fdd6c57077e9081e6f-0.log",
+        "sha256": "814c1d88642aad9862f3773c9abb4367b44c44a40bdf63d0c0c4628e8b099f69"
+      },
+      {
+        "path": "original/receipts/87868eb4178dfbab542f781edf4739c1782b4bfe07f031fdd6c57077e9081e6f-1.log",
+        "sha256": "85044072c11b66aefa0d8abe910a64c6367721d16fa3a1134ee1f80fe5681756"
+      },
+      {
+        "path": "original/receipts/87868eb4178dfbab542f781edf4739c1782b4bfe07f031fdd6c57077e9081e6f.json",
+        "sha256": "c94818831c0cf32911fe12d6a780df71f7fd36b01efcce890bf41dcec857b538"
+      },
+      {
+        "path": "original/receipts/93c202e858579bd2922607d8d0a0bf630e92ad631449fd966cea63c3933fc134-0.log",
+        "sha256": "3633a59eaad0b50beafb5432f65d886b4039aac0c9287f2f801aa9b3859c5832"
+      },
+      {
+        "path": "original/receipts/93c202e858579bd2922607d8d0a0bf630e92ad631449fd966cea63c3933fc134.json",
+        "sha256": "fef6fc5315b4dbc36ea65bb7fd62cfac44a6ee1d72406fe6256bbf5eca4f6999"
+      },
+      {
+        "path": "original/receipts/960a12e76df30349c10b55fa915dcb0167d168abd26e46dcd36bedfdb86fc5eb-0.log",
+        "sha256": "101cb9588bb869ef6c40fe92d7ea19f8cc7ea2dcfd5c972f686f4dd725ba497f"
+      },
+      {
+        "path": "original/receipts/960a12e76df30349c10b55fa915dcb0167d168abd26e46dcd36bedfdb86fc5eb.json",
+        "sha256": "728e1d25a39e0586d9351cbd58c67e3e24e69259d00d9379122b08b6671f6e85"
+      },
+      {
+        "path": "original/receipts/9ea0cec16c08d01d50b74d4fc51685e2521f52055a6325a6bbfd4dea0b74d9b6-0.log",
+        "sha256": "d65abd190add01e11dc1d56b76770996c0ea9b67fb499a60c980008aec3fe65a"
+      },
+      {
+        "path": "original/receipts/9ea0cec16c08d01d50b74d4fc51685e2521f52055a6325a6bbfd4dea0b74d9b6.json",
+        "sha256": "caf4465931f0ea4db3ca84969e39e8dc6db869b39e35cbf05f6091ccb451b91e"
+      },
+      {
+        "path": "original/receipts/a9f4a8b524d78df0cc25a13262b904480c6111f3910570cd847d8aaa3fce9c1f-0.log",
+        "sha256": "4514ac226554aff30682c92adfb81d84c20858a1d43d46ce3201ec487798cdc9"
+      },
+      {
+        "path": "original/receipts/a9f4a8b524d78df0cc25a13262b904480c6111f3910570cd847d8aaa3fce9c1f.json",
+        "sha256": "a20bbb185670442666c8e32769d5032923a957afb66a385714528fa6639789bc"
+      },
+      {
+        "path": "original/receipts/afc646415d2dcb47f8bee888f34ce72f68d0ba255a3f32add84d18d754827ee1-0.log",
+        "sha256": "445a1f46ed95626f276cd449a52c9c22c858a088ecc4dd6ca2b090cb676b2376"
+      },
+      {
+        "path": "original/receipts/afc646415d2dcb47f8bee888f34ce72f68d0ba255a3f32add84d18d754827ee1-1.log",
+        "sha256": "2cdfe6459f2dccf687d24e57b31d072120b88ded52003de4f7a86ee99821c47d"
+      },
+      {
+        "path": "original/receipts/afc646415d2dcb47f8bee888f34ce72f68d0ba255a3f32add84d18d754827ee1.json",
+        "sha256": "4e5249198da11004d6b8f35ba44de39d3ebb08f0926db5be47e8bac788fc4bab"
+      },
+      {
+        "path": "original/receipts/b84f4a8c9b47af54e12d7507e5af36e78b9374e3c0f87965506e5bbb5fbe6a5a-0.log",
+        "sha256": "d69967c3eaf3500d72be48e69d9084fb5495f56faa513545f2f8f4261500818b"
+      },
+      {
+        "path": "original/receipts/b84f4a8c9b47af54e12d7507e5af36e78b9374e3c0f87965506e5bbb5fbe6a5a-1.log",
+        "sha256": "48de9d8d2bd552ebe9e6aaa8b32fce6ac8987eb985a0eff34db37e5d3b57f772"
+      },
+      {
+        "path": "original/receipts/b84f4a8c9b47af54e12d7507e5af36e78b9374e3c0f87965506e5bbb5fbe6a5a.json",
+        "sha256": "a0444fbaad04a15fa0ea41d480030a1bc0fbcf3a27aa64fb873016463311a615"
+      },
+      {
+        "path": "original/receipts/bf8d00172f195ff2fe701d173004b1ac646cd18a1f09cc3ac4a01d014589a592-0.log",
+        "sha256": "b8e72a8289f9aacea944236872c0a2bb6c929d805ed2bda4cbf4db46898747ae"
+      },
+      {
+        "path": "original/receipts/bf8d00172f195ff2fe701d173004b1ac646cd18a1f09cc3ac4a01d014589a592.json",
+        "sha256": "2c72f9d20eb0b028ef3af21b1536ac113b8e735a1dc6ae3496e8e323a9e1e250"
+      },
+      {
+        "path": "original/receipts/c4465334f371da871f480846f8cb52bd82a71d353437d5f167e1a73a2f8bd34a-0.log",
+        "sha256": "24d30e6d76fec588355331431ff02805ba0bdabc6e93d37bcbd23cdd70e5cd11"
+      },
+      {
+        "path": "original/receipts/c4465334f371da871f480846f8cb52bd82a71d353437d5f167e1a73a2f8bd34a.json",
+        "sha256": "622520c298de8bd54327f33468383d35f2553d8423b2b6900eb48ec376413ea7"
+      },
+      {
+        "path": "original/receipts/c5a5744e2e76549ff9cc2e34734781b27f17e649d448b2e695911f19cdf54420-0.log",
+        "sha256": "87006256a8de0aef8c81d58fed9cdcf74f881820a4939de3de92d939237db508"
+      },
+      {
+        "path": "original/receipts/c5a5744e2e76549ff9cc2e34734781b27f17e649d448b2e695911f19cdf54420-1.log",
+        "sha256": "216693c48b5d4898e68d57d71e6275a32889b96d1d0e9c10094f3b8606e78233"
+      },
+      {
+        "path": "original/receipts/c5a5744e2e76549ff9cc2e34734781b27f17e649d448b2e695911f19cdf54420.json",
+        "sha256": "2f47cf89c7b0a3f3cc9aa63a721ac931838033f83544c90eea222b34b7612120"
+      },
+      {
+        "path": "original/receipts/cdbc049c636ed83b17b13b71a6108120fb19d0e27945accc84ac5b0c3fd3cfa6-0.log",
+        "sha256": "8a06994e6b4f1c8e7890328ae73719f23821b54039014d0e15cfbd53dced78f6"
+      },
+      {
+        "path": "original/receipts/cdbc049c636ed83b17b13b71a6108120fb19d0e27945accc84ac5b0c3fd3cfa6.json",
+        "sha256": "cb79797a523b3dca59f4fe5f423bd4e7c0a2ad97e34e56d5f47ddcc6eacd41e4"
+      },
+      {
+        "path": "original/receipts/ce9bd7ef60cd57dec88efcefda1376e63e8b6a196a5065d4b31ba3072b7bfda0-0.log",
+        "sha256": "f8e0c484d392284532cfcadf8fca2a94e78036f2f6420347be05ee8d9cf14c43"
+      },
+      {
+        "path": "original/receipts/ce9bd7ef60cd57dec88efcefda1376e63e8b6a196a5065d4b31ba3072b7bfda0.json",
+        "sha256": "ef4048bc383511d9078ce23051d8fac763f9bd9d9ef3c593460eab440783faa8"
+      },
+      {
+        "path": "original/receipts/d1492cb94165c0322436118d61c83f364aca057f2a790580ea0b11c70f42acbe-0.log",
+        "sha256": "e85cabcbab4393283d274e8246bcab8e8a5d3cd8f16623543b4b782e85d0942a"
+      },
+      {
+        "path": "original/receipts/d1492cb94165c0322436118d61c83f364aca057f2a790580ea0b11c70f42acbe-1.log",
+        "sha256": "0dc1a1ede263f70937d3abb7af3b97dd9068c38a607fa8e1d61a839da1174cce"
+      },
+      {
+        "path": "original/receipts/d1492cb94165c0322436118d61c83f364aca057f2a790580ea0b11c70f42acbe.json",
+        "sha256": "c13a658dc7247c6bca3532b176cf68ce03c450365154257bba8a4cf5161a7bc7"
+      },
+      {
+        "path": "original/receipts/d635b90cb0c65e36a5f0a75a69f1c2ce8dcd3c20f0bf5ba50d543b6464297171-0.log",
+        "sha256": "7143cccd9bffbd03d13aa559bf49d9ee9378357250d7708cb8dd2c5d701789aa"
+      },
+      {
+        "path": "original/receipts/d635b90cb0c65e36a5f0a75a69f1c2ce8dcd3c20f0bf5ba50d543b6464297171-1.log",
+        "sha256": "aaa92aef17d095d7eab37faf6e83fa6aef19fab575a8929a62f41f5e05df6a71"
+      },
+      {
+        "path": "original/receipts/d635b90cb0c65e36a5f0a75a69f1c2ce8dcd3c20f0bf5ba50d543b6464297171.json",
+        "sha256": "0fbfb539fced36004390be7e6dced946ad84e800934905f26e1c93fd7ae19b49"
+      },
+      {
+        "path": "original/receipts/dd0ae9ab9da479d227475794dfb9bc5141f92cf9a4ad19ece4b5610861fad3ff-0.log",
+        "sha256": "c82d1c4207be5d70ce84d2442dbd0d0a09ddf6062b3d227dee4e5d462867fd90"
+      },
+      {
+        "path": "original/receipts/dd0ae9ab9da479d227475794dfb9bc5141f92cf9a4ad19ece4b5610861fad3ff-1.log",
+        "sha256": "29301ef415a3b9e7691267729bc706926600ea34c053a469b05bfbe8ccc7f417"
+      },
+      {
+        "path": "original/receipts/dd0ae9ab9da479d227475794dfb9bc5141f92cf9a4ad19ece4b5610861fad3ff.json",
+        "sha256": "c78440b8808e37b8272f6d22fdc7ccea05a0dbfaf43d927e55448d5f532fce1b"
+      },
+      {
+        "path": "original/receipts/dd49837ddb91a7cdfcfd0eb9d8deaf713632056676021bde565b08468c3fab51-0.log",
+        "sha256": "697e9d26b39d134ef80afdca45041f981c288170f98a89a053bcb6fef65aa7f1"
+      },
+      {
+        "path": "original/receipts/dd49837ddb91a7cdfcfd0eb9d8deaf713632056676021bde565b08468c3fab51-1.log",
+        "sha256": "7a733d5c117a85c387abbfcc728bdfefbb27a4747ef166e21fcd03a1f67a7179"
+      },
+      {
+        "path": "original/receipts/dd49837ddb91a7cdfcfd0eb9d8deaf713632056676021bde565b08468c3fab51.json",
+        "sha256": "f57ac4b63e9224b5a00342ad7cbdff8ac3d3e98a496f5ae7d59898d7ca4166d2"
+      },
+      {
+        "path": "original/receipts/f0fc7be23dad4bdebe5103bf2f49bf46c94532cc0a55bdc5bcef6bfd528d0053-0.log",
+        "sha256": "c8bd5cd5b0d4d1b0c1ad2bac3a2863076134fc11f892e72957f461dfcf3f91c1"
+      },
+      {
+        "path": "original/receipts/f0fc7be23dad4bdebe5103bf2f49bf46c94532cc0a55bdc5bcef6bfd528d0053-1.log",
+        "sha256": "779e301c2c2e2f0ac9e82154d33d9497ec27a42ae82133cb9453e1ea447976e7"
+      },
+      {
+        "path": "original/receipts/f0fc7be23dad4bdebe5103bf2f49bf46c94532cc0a55bdc5bcef6bfd528d0053.json",
+        "sha256": "7944107a738c7e9c6f0e3de6a520a436733a07bf4fef27e85fa873c968e255a8"
+      },
+      {
+        "path": "original/receipts/f604e8f612973f6b0faa1d396b9c107d95a8f72b1d28ba87bf9dfafcbd243ab0-0.log",
+        "sha256": "b5533b4af481cce2d9c98788668d4666047e7a56d859fb2404dd8b5eb870d348"
+      },
+      {
+        "path": "original/receipts/f604e8f612973f6b0faa1d396b9c107d95a8f72b1d28ba87bf9dfafcbd243ab0.json",
+        "sha256": "651d589681d4c2e22a983c885eab776002466b47b4007daa51b43562c61be28b"
+      },
+      {
+        "path": "original/result.json",
+        "sha256": "557888eaaebc07120244df7e67dacce363c8685d406500b2bd5d3aa3f1d64970"
+      },
+      {
+        "path": "scripts/continue-selected-windows-v2.py",
+        "sha256": "062f04d3c0de55d6c27eef43cb96cf5c601ea523cdf8c4626db6a9e5fcaa86da"
+      },
+      {
+        "path": "scripts/continue-selected-windows-v3.ps1",
+        "sha256": "f5ccdbaaf1f8f4556ba257988fe54974eeee5af6ecdd24f8cef6174e9bad3fd5"
+      },
+      {
+        "path": "scripts/continue-selected-windows-v3.py",
+        "sha256": "6a240976c16c1311ba328b52a1edcb36209422ec074d0e013b61b638a51130fd"
+      },
+      {
+        "path": "scripts/continue-selected-windows.py",
+        "sha256": "7a73b5596a59eb754e1d667ef41bd3ac1b36a04e98ff81e8a2c04079630d8e29"
+      }
+    ]
+  }
+}

@@ -31,6 +31,24 @@ TRACE ON 的 profiler 成本不属于 OFF 性能证据。原 TSan 不记作本�
 
 ## 待完成
 
-Windows broad selector 的失败原始记录与定向测试修正后续跑分别保留，待全部 selected gates 完成后
-归档覆盖表。其余有限验收按 [R7 当前卡](../../../docs/implementation/tasks/compute/four-route-foundation-final-review.md)
+Windows broad selector 已完成下述覆盖。Mac host sanitizer、TRACE OFF/ON 三交付与 F5 fixture
+检查继续按 [R7 当前卡](../../../docs/implementation/tasks/compute/four-route-foundation-final-review.md)
 执行；未执行项保持待验，六个 owner 尚未 CLOSED。
+
+## Windows 111 门覆盖完成
+
+[覆盖身份](windows-selected-identity.json)逐项列出全部 111 个选定门及七个 skipped reasons，
+[原始归档](windows-selected-raw.zip)保留原 selector、两个失败续跑与最终成功续跑的结果、
+命令、日志、receipts、context 和执行脚本，228 个条目已逐一重算 hash。
+
+最终去重覆盖来自 39 个原批 PASS、9 个第一轮修正测试后的 PASS、63 个最终续跑 PASS。公共
+docs/closure/configure 以较新的实际记录计一次；这不是把原来的 BLOCKED 整批改成 PASS。
+
+三次失败均属于新增测试：Generic Graph 错将 declared-type F32 累加预期为另一枚举；native custom
+寿命 fixture 把 shared_ptr 放进要求 trivially copyable 的 descriptor；native FFN 又出现同一枚举
+预期错误。三个具名测试提交修正了假设，shipping 输入逐树不变；失败原始日志没有删除。
+
+主 factor/header build 是 MSVC 19.50 / Ninja Release。续跑的 package smoke 没有继承
+`CMAKE_GENERATOR=Ninja`，因此实际采用相同 MSVC 的 Visual Studio/MSBuild Release，显式
+`--parallel 2`；记录按实际 generator 保留。全部十五个产品的 source/static/shared 消费通过，
+不把这些 OFF 普通门冒充后续 TRACE ON 或 Apple 原生验证。
