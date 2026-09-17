@@ -66,7 +66,7 @@ struct Fixture final {
     return values.write(0, std::as_bytes(data));
   }
   hyle::Status check(QueueSequence &sequence, std::size_t count,
-                     bool scan = false) {
+                     bool scan = false, std::size_t element_offset = 0) {
     auto pointer = cuda::pointer<int>(values.view());
     if (!pointer)
       return pointer.error();
@@ -79,17 +79,20 @@ struct Fixture final {
       return status;
     const auto stream = cuda::stream(sequence.queue()).value();
     const auto recorded =
-        scan ? launch_scan_validation(stream, *pointer, count, word)
-             : launch_index_validation(stream, *pointer, count, 1024, word);
+        scan ? launch_scan_validation(stream, *pointer + element_offset, count,
+                                      word)
+             : launch_index_validation(stream, *pointer + element_offset, count,
+                                       1024, word);
     sequence.record(EnqueueResult::accepted_command(cuda::status(recorded)));
     return cuda::status(recorded);
   }
-  hyle::Result<compute::Completion>
-  submit(compute::Queue &queue, std::size_t count, bool scan = false) {
+  hyle::Result<compute::Completion> submit(compute::Queue &queue,
+                                           std::size_t count, bool scan = false,
+                                           std::size_t element_offset = 0) {
     auto sequence = QueueSequence::begin(queue);
     if (!sequence)
       return std::unexpected(sequence.error());
-    auto checked = check(*sequence, count, scan);
+    auto checked = check(*sequence, count, scan, element_offset);
     if (!checked.ok() && sequence->terminal().ok())
       sequence->record(EnqueueResult::rejected(checked));
     return sequence->finish();
@@ -117,8 +120,20 @@ struct Fixture final {
 
 struct Gate final {
   std::atomic<bool> released{false};
+  std::atomic<const char *> phase{"unlabeled command"};
+  const char *stalled_at = nullptr;
+  ~Gate() { EXPECT_EQ(stalled_at, nullptr) << stalled_at; }
   static void CUDART_CB wait(void *raw) {
-    static_cast<Gate *>(raw)->released.wait(false, std::memory_order_acquire);
+    auto &gate = *static_cast<Gate *>(raw);
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (!gate.released.load(std::memory_order_acquire)) {
+      if (std::chrono::steady_clock::now() >= deadline) {
+        gate.stalled_at = gate.phase.load(std::memory_order_acquire);
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
   }
   void release() {
     released.store(true, std::memory_order_release);
@@ -193,7 +208,9 @@ TEST(CudaDeviceStatus,
      ImportsRetainSourceWordsAfterEarlyObservationAndSlotReuse) {
   Fixture fixture;
   for (const bool abandon : {false, true}) {
-    ASSERT_TRUE(fixture.write(std::array{-1, 4, 5}).ok());
+    // Stage both inputs before the artificial gate. A synchronous pageable
+    // host transfer is not part of the cross-queue status-retention contract.
+    ASSERT_TRUE(fixture.write(std::array{-1, 4, 5, 1, 4, 5}).ok());
     auto source = fixture.submit(fixture.first, 3).value();
     Gate gate;
     Release release{gate, cuda::stream(fixture.second).value()};
@@ -201,20 +218,25 @@ TEST(CudaDeviceStatus,
                                  &Gate::wait, &gate),
               cudaSuccess);
     auto sequence = QueueSequence::begin(fixture.second).value();
+    gate.phase.store("import source status", std::memory_order_release);
     auto waited = sequence.enqueue_wait(source);
     ASSERT_TRUE(waited.status.ok()) << waited.status.message();
     EXPECT_TRUE(waited.accepted);
     sequence.record(std::move(waited));
+    gate.phase.store("finish destination", std::memory_order_release);
     auto destination = sequence.finish().value();
     EXPECT_EQ(destination.poll().value(), compute::CompletionPoll::kPending);
+    gate.phase.store("observe or abandon source", std::memory_order_release);
     if (abandon)
       source = {};
     else
       EXPECT_TRUE(source.wait().IsOutOfRange());
+    gate.phase.store("drain source queue", std::memory_order_release);
     ASSERT_TRUE(fixture.first.drain().ok());
-    ASSERT_TRUE(fixture.write(std::array{1, 4, 5}).ok());
     for (int repeat = 0; repeat < 40; ++repeat) {
-      auto fresh = fixture.submit(fixture.first, 3).value();
+      gate.phase.store("submit fresh source", std::memory_order_release);
+      auto fresh = fixture.submit(fixture.first, 3, false, 3).value();
+      gate.phase.store("wait fresh source", std::memory_order_release);
       ASSERT_TRUE(fresh.wait().ok());
     }
     ASSERT_TRUE(fixture.context.is_open());
@@ -297,7 +319,7 @@ TEST(CudaDeviceStatus, PureCaptureAndPrefixAddNoStatusCommands) {
   unsigned long long capture_id = 0;
   cudaGraph_t graph = nullptr;
   ASSERT_EQ(cudaStreamGetCaptureInfo(stream, &capture_status, &capture_id,
-                                    &graph, nullptr, nullptr, nullptr),
+                                     &graph, nullptr, nullptr, nullptr),
             cudaSuccess);
   std::size_t nodes = 0;
   ASSERT_EQ(cudaGraphGetNodes(graph, nullptr, &nodes), cudaSuccess);
