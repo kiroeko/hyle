@@ -20,5 +20,25 @@ while retaining the original first-error and full-drain assertions.
 
 This is bounded test maintenance under the
 [task record](../../../docs/implementation/tasks/sched/sched-first-error-test-order.md).
-No Sched product/API or performance change is authorized. Corrected validation
-and the remaining R6 selector gates are pending; the original failure is not PASS.
+No Sched product/API or performance change was made. The original failure is
+not PASS; remaining R6 selector gates are validated separately.
+
+## Corrected test validation
+
+Immutable test snapshot `756d62206dbfd412ee95d1446a4f6fe64b73a90d` passed the four
+selected docs/closure/configure/Sched gates. Actual CTest `LastTest.log` records
+all **251 Sched tests passing**. The same executable then passed **32 bounded
+repetitions** of the corrected case. No extra sampling or product P1 was run.
+
+`corrected-sched.zip` retains the exact commands/receipts, full native test log,
+repeat log, executable identity, changed test source and product identity proof.
+All 17 archived entries and all public receipt log hashes were verified. SHA-256:
+`a92b0665c086143fe2023013d859a007cf474c458ba2418c913174740530ea5b`.
+The raw Windows CTest log, including its local-encoding timestamp, is preserved
+byte for byte; only ASCII test-count markers were parsed for the count check.
+
+`corrected-identity.json` records the actual results and seven unchanged shipping
+Git trees/files: top-level CMake, cmake/include/src/third_party/scripts/samples.
+Only `tests/sched/task_scope_test.cc` changed within tests. This supplies a
+corrected test obligation for the unchanged R6/Sched product; it does not turn
+the original aggregate BLOCKED selector into a fictitious PASS receipt.

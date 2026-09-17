@@ -1,0 +1,39 @@
+{
+  "test_candidate": "756d62206dbfd412ee95d1446a4f6fe64b73a90d",
+  "candidate_tree": "4ec5521fd5332cb49e41167abdc452a83b87cf13",
+  "selected_gates": [
+    "docs",
+    "closure",
+    "configure",
+    "factor:sched"
+  ],
+  "verdict": "PASS",
+  "full_sched_tests": 251,
+  "targeted_repetitions": 32,
+  "product_unchanged": {
+    "original_snapshot": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+    "corrected_test_snapshot": "756d62206dbfd412ee95d1446a4f6fe64b73a90d",
+    "shipping_projection_diff": [],
+    "test_diff": [
+      "tests/sched/task_scope_test.cc"
+    ],
+    "tree_identity": {
+      "CMakeLists.txt": "c9b7f46d67f7d5ad56ec3f13ad20af1a1dc3ae12",
+      "cmake": "d57968cc6ae25a075315eb5c31d3e58664f6f736",
+      "src": "1204f927bff63c2aafdf9be3fc72cd37ebebf7a9",
+      "include": "180ec90ca7b2991238ac4d8cf85097ceaed24da8",
+      "third_party": "2f25165f5b9a9ebaa26c54c51c373ec636acb788",
+      "scripts": "5be62884c242a9fd593d095b880f1dccd9a00bcb",
+      "samples": "e7ddec29bf5b07c0de4b51e515d0ddeb7e0212f7"
+    },
+    "public_selector_sha256": "a2d7fb823ca8cf52ad424487ca476aa1562e66af7a0830a05eb63c6a16bb5590"
+  },
+  "original_failure_retained": true,
+  "p1_run": false,
+  "archive": {
+    "file": "corrected-sched.zip",
+    "sha256": "a92b0665c086143fe2023013d859a007cf474c458ba2418c913174740530ea5b",
+    "entries": 17,
+    "per_entry_integrity": "PASS"
+  }
+}
