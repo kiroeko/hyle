@@ -33,6 +33,16 @@ inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
 // is allowed. One kernel per nonempty norm, no caller workspace or per-slot
 // device state; ordinary prepare binds the compiled SDK collective once.
 //
+// Reduce Sum/Mean/Min/Max and Softmax/LogSoftmax accept plain FP32/FP16/BF16,
+// arbitrary axes/byte strides and dense output. Accumulation is FP32 and must
+// be explicit for half Reduce. Empty reductions write their scalar identities;
+// Min/Max propagate any NaN. Reduce never aliases input. Softmax supports
+// scale, broadcast Bool/same-type additive masks and exact input0 aliases; an
+// invalid normalization row yields NaN. One native kernel, no caller workspace
+// or slot state. Softmax caches <=8192 columns in <=32 KiB of FP32 shared
+// memory; longer rows read their input three times. Input/output count <=
+// INT32_MAX.
+//
 // Gated activation:
 // Supports SiLU/GELU/GELU-tanh, dense FP16/BF16/FP32 separate inputs or [...,
 // gate | value] packed halves. Arithmetic is FP32 with one final conversion to

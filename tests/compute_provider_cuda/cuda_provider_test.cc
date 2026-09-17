@@ -406,7 +406,11 @@ void pending_completion_retains_program(
                  ? 512
                  : 256),
       resource.ref());
-  Tensor output(matrix(compute::DataType::kFloat32, 1, 256), resource.ref());
+  std::array<compute::TensorDesc, 1> output_desc;
+  ASSERT_TRUE(compute::infer_output_descriptions(
+                  operation, std::array{input.view.description()}, output_desc)
+                  .ok());
+  Tensor output(output_desc[0], resource.ref());
   std::vector<float> values(
       operation.kind() == compute::OperationKind::kGatedActivation ? 512 : 256,
       1.0F);
@@ -446,15 +450,17 @@ void pending_completion_retains_program(
   ASSERT_TRUE(owner.close().ok());
   gate.release();
   ASSERT_TRUE(done->wait().ok());
-  std::vector<float> actual(256);
+  std::vector<float> actual(output.storage.size() / sizeof(float));
   ASSERT_TRUE(output.storage.view()
                   .read(std::as_writable_bytes(std::span(actual)))
                   .ok());
-  const double expected = operation.kind() == compute::OperationKind::kLayerNorm
-                              ? 0
-                          : operation.kind() == compute::OperationKind::kRmsNorm
-                              ? 1 / std::sqrt(1.0 + 1e-5)
-                              : 1.0 / (1.0 + std::exp(-1.0));
+  const double expected =
+      operation.kind() == compute::OperationKind::kReduce      ? 256
+      : operation.kind() == compute::OperationKind::kSoftmax   ? 1.0 / 256
+      : operation.kind() == compute::OperationKind::kLayerNorm ? 0
+      : operation.kind() == compute::OperationKind::kRmsNorm
+          ? 1 / std::sqrt(1.0 + 1e-5)
+          : 1.0 / (1.0 + std::exp(-1.0));
   for (const auto value : actual)
     EXPECT_NEAR(value, expected, 0.000001);
 }
@@ -517,7 +523,12 @@ void metadata_failures_rollback(
                    ? 512
                    : 256),
         resource.ref());
-    Tensor output(matrix(compute::DataType::kFloat32, 1, 256), resource.ref());
+    std::array<compute::TensorDesc, 1> output_desc;
+    ASSERT_TRUE(
+        compute::infer_output_descriptions(
+            operation, std::array{input.view.description()}, output_desc)
+            .ok());
+    Tensor output(output_desc[0], resource.ref());
     const std::array inputs{input.view.as_const()};
     const std::array outputs{output.view};
     const auto prepare = [&] {
@@ -586,6 +597,10 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
                                      compute::Operation(compute::RmsNorm{}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::LayerNorm{}));
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::Reduce{}));
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::Softmax{}));
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
@@ -598,6 +613,10 @@ TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
                              compute::Operation(compute::RmsNorm{}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::LayerNorm{}));
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::Reduce{}));
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::Softmax{}));
 }
 
 } // namespace

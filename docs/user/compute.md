@@ -95,7 +95,13 @@ device storage。View 按共同 byte offset 必须别名原 storage；其余逐�
 FP32 中间值并在末尾舍入一次，Cast 窄化为 RNE。Norm 参数在计算前保持 F32，不先窄化；允许精确
 input0 原位，其他参数和部分重叠拒绝。非连续 norm 输入先用普通 Copy materialize，并计入实际成本。
 Norm 使用 CUDA SDK Cooperative Groups 的行归约，一次 native launch、零 workspace/槽私有状态。
-整数/FP8 Cast 与算术、Concat、Reduce/Softmax/index 等
+Reduce 和 Softmax/LogSoftmax 支持 F32/F16/BF16、任意轴/普通 byte stride、dense output 和 F32
+累加；半精度 Reduce 必须显式声明 F32。Reduce 不允许原位，空集合仍写约定 identity，Min/Max
+传播 NaN；Softmax 可用广播 Bool/同类型 additive mask、scale 和精确 input0 原位，无有效值的行
+产生 NaN。每个原子一次 native launch，无 caller workspace 或槽私有状态；Softmax 在≤8192列时
+缓存 F32 行（最多32 KiB片上空间），更长行读取输入三遍。上述输入/输出非空元素数≤INT32_MAX。
+这些新能力尚待 C1 完整片段的等责性能和全部交付验收，不从正确性推断最快规则。
+整数/FP8 Cast 与算术、Concat、TopK/index 等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 

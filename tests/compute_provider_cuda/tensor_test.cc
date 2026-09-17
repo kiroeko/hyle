@@ -621,4 +621,387 @@ TEST(CudaTensor, NormalizationHandlesSpecialValuesAndStableVariance) {
   ASSERT_FALSE(overlap.has_value());
   EXPECT_TRUE(overlap.error().IsInvalidArgument());
 }
+TensorDesc reduction_desc(DataType type, std::span<const std::int64_t> shape,
+                          bool odd_stride) {
+  if (!odd_stride)
+    return TensorDesc::dense(type, shape).value();
+  std::vector<std::int64_t> strides(shape.size());
+  auto stride = static_cast<std::int64_t>(data_type_size(type) + 1);
+  for (std::size_t axis = shape.size(); axis-- > 0;) {
+    strides[axis] = stride;
+    stride *= std::max<std::int64_t>(shape[axis], 1);
+  }
+  return TensorDesc::strided_bytes(type, shape, strides).value();
+}
+
+// The reference enumerates input coordinates and groups their values by the
+// surviving output coordinates; it does not use the device's row/column map.
+template <class T>
+void check_reduce(Fixture &fixture, const TensorDesc &description,
+                  std::span<const T> values, const Axes &axes, bool keep,
+                  ReductionKind kind) {
+  const Reduce operation{.kind = kind,
+                         .axes = axes,
+                         .keep_dimensions = keep,
+                         .accumulation_type = DataType::kFloat32};
+  auto prepared =
+      prepare(fixture.owner, operation, description, fixture.resource.ref());
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  const auto output_desc = prepared->output_description().value();
+  EXPECT_EQ(prepared->workspace_requirement().size, 0U);
+  EXPECT_EQ(prepared->invocation_private_bytes(), 0U);
+  EXPECT_TRUE(prepared->capture_compatible());
+  Tensor input(description, fixture.resource.ref()),
+      output(output_desc, fixture.resource.ref());
+  ASSERT_TRUE(input.write<T>(values).ok());
+  std::vector<T> sentinel(*output_desc.element_count(),
+                          half_test::encode<T>(37));
+  ASSERT_TRUE(output.write<T>(sentinel).ok());
+  auto slot = prepared->create_invocation().value();
+  auto done = slot.submit(fixture.queue, input.view.as_const(), output.view);
+  ASSERT_TRUE(done.has_value()) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::array<bool, 8> reduced{};
+  for (std::size_t axis = 0; axis < description.rank(); ++axis)
+    reduced[axis] = axes.is_all();
+  for (const auto requested : axes.values())
+    reduced[requested < 0 ? requested + static_cast<int>(description.rank())
+                          : requested] = true;
+  const double identity = kind == ReductionKind::kMinimum   ? INFINITY
+                          : kind == ReductionKind::kMaximum ? -INFINITY
+                                                            : 0;
+  std::vector<double> expected(sentinel.size(), identity);
+  std::vector<std::size_t> counts(expected.size());
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    std::array<std::size_t, 8> coordinate{};
+    std::size_t remaining = index;
+    for (std::size_t axis = description.rank(); axis-- > 0;) {
+      coordinate[axis] = remaining % description.dimensions()[axis];
+      remaining /= description.dimensions()[axis];
+    }
+    std::size_t output_index = 0;
+    for (std::size_t axis = 0; axis < description.rank(); ++axis)
+      if (!reduced[axis])
+        output_index =
+            output_index * description.dimensions()[axis] + coordinate[axis];
+    const auto value = half_test::decode(values[index]);
+    auto &result = expected[output_index];
+    if (std::isnan(result) || std::isnan(value))
+      result = NAN;
+    else if (kind == ReductionKind::kMinimum)
+      result = std::fmin(result, value);
+    else if (kind == ReductionKind::kMaximum)
+      result = std::fmax(result, value);
+    else
+      result += value;
+    ++counts[output_index];
+  }
+  const auto actual = output.read<T>();
+  for (std::size_t index = 0; index < actual.size(); ++index) {
+    if (kind == ReductionKind::kMean)
+      expected[index] =
+          counts[index] == 0 ? NAN : expected[index] / counts[index];
+    expect_value(actual[index], expected[index]);
+  }
+}
+
+template <class T> void reduction_cases() {
+  Fixture fixture;
+  const std::vector<std::vector<std::int64_t>> shapes{{},
+                                                      {0},
+                                                      {1},
+                                                      {129},
+                                                      {2048},
+                                                      {8193},
+                                                      {2, 0, 3},
+                                                      {0, 7},
+                                                      {2, 3, 5},
+                                                      {2, 3, 129},
+                                                      {2, 2, 2, 1, 3, 1, 2, 5}};
+  for (const auto &shape : shapes) {
+    for (const bool strided : {false, true}) {
+      const auto desc =
+          reduction_desc(half_test::data_type<T>(), shape, strided);
+      std::vector<T> values(desc.element_count().value());
+      for (std::size_t i = 0; i < values.size(); ++i)
+        values[i] = half_test::encode<T>(
+            (static_cast<int>(i % 29) - 14) * 0.125 + 0.0625);
+      std::vector<Axes> choices{
+          Axes::all(), Axes::from(std::span<const std::int32_t>{}).value()};
+      if (!shape.empty())
+        choices.push_back(Axes::from(std::array<std::int32_t, 1>{-1}).value());
+      if (shape.size() > 1)
+        choices.push_back(
+            Axes::from(std::array<std::int32_t, 2>{0, -1}).value());
+      if (shape.size() > 2)
+        choices.push_back(Axes::from(std::array<std::int32_t, 1>{1}).value());
+      for (const auto &axes : choices) {
+        for (const bool keep : {false, true}) {
+          for (const auto kind :
+               {ReductionKind::kSum, ReductionKind::kMean,
+                ReductionKind::kMinimum, ReductionKind::kMaximum}) {
+            SCOPED_TRACE(::testing::Message()
+                         << "rank=" << shape.size()
+                         << " count=" << values.size() << " strided=" << strided
+                         << " axes-all=" << axes.is_all() << " keep=" << keep
+                         << " kind=" << static_cast<int>(kind));
+            check_reduce<T>(fixture, desc, values, axes, keep, kind);
+          }
+        }
+      }
+    }
+  }
+}
+TEST(CudaReduction, AxesKeepDimensionsStridesEmptyAndHalfAccumulation) {
+  reduction_cases<float>();
+  reduction_cases<hyle::simd::float16_t>();
+  reduction_cases<hyle::simd::bfloat16_t>();
+}
+
+TEST(CudaReduction, NonFiniteValuesPropagateAcrossWarpAndTileBoundaries) {
+  Fixture fixture;
+  const auto desc = TensorDesc::dense(DataType::kFloat32,
+                                      std::array<std::int64_t, 2>{2, 8193})
+                        .value();
+  std::vector<float> values(*desc.element_count(), 2);
+  for (const auto index : {0, 31, 32, 128, 256, 8192}) {
+    for (const float value : {NAN, INFINITY, -INFINITY}) {
+      values[index] = value;
+      for (const auto kind : {ReductionKind::kSum, ReductionKind::kMean,
+                              ReductionKind::kMinimum, ReductionKind::kMaximum})
+        check_reduce<float>(fixture, desc, values,
+                            Axes::from(std::array<std::int32_t, 1>{-1}).value(),
+                            false, kind);
+      values[index] = 2;
+    }
+  }
+  // Broadcast storage is read once per logical element, not once per address.
+  const auto broadcast =
+      TensorDesc::strided_bytes(DataType::kFloat32,
+                                std::array<std::int64_t, 2>{3, 129},
+                                std::array<std::int64_t, 2>{0, 4})
+          .value();
+  values.assign(*broadcast.element_count(), 1.25F);
+  check_reduce<float>(fixture, broadcast, values, Axes::all(), false,
+                      ReductionKind::kSum);
+}
+
+std::size_t broadcast_index(std::size_t logical,
+                            std::span<const std::int64_t> shape,
+                            std::span<const std::int64_t> mask) {
+  std::size_t result = 0, step = 1;
+  for (std::size_t axis = shape.size(); axis-- > 0;) {
+    const auto coordinate = logical % shape[axis];
+    logical /= shape[axis];
+    if (mask[axis] != 1)
+      result += coordinate * step;
+    step *= mask[axis];
+  }
+  return result;
+}
+
+template <class T>
+void check_softmax(Fixture &fixture, std::span<const std::int64_t> shape,
+                   int axis, bool strided, bool inplace, SoftmaxKind kind,
+                   MaskKind mask_kind, bool scalar_mask, bool special) {
+  const auto desc = reduction_desc(half_test::data_type<T>(), shape, strided);
+  const auto output_desc =
+      TensorDesc::dense(half_test::data_type<T>(), shape).value();
+  Tensor input(desc, fixture.resource.ref()),
+      output(output_desc, fixture.resource.ref());
+  std::vector<T> values(*desc.element_count());
+  for (std::size_t i = 0; i < values.size(); ++i)
+    values[i] = half_test::encode<T>((static_cast<int>(i % 67) - 33) * 0.3125);
+  std::vector<std::int64_t> mask_shape(shape.begin(), shape.end());
+  if (scalar_mask)
+    std::fill(mask_shape.begin(), mask_shape.end(), 1);
+  else
+    mask_shape[0] = 1;
+  const auto mask_desc = reduction_desc(mask_kind == MaskKind::kBoolean
+                                            ? DataType::kBool
+                                            : half_test::data_type<T>(),
+                                        mask_shape, strided);
+  Tensor mask(mask_desc, fixture.resource.ref());
+  std::vector<std::uint8_t> boolean(*mask_desc.element_count());
+  std::vector<T> additive(boolean.size());
+  for (std::size_t i = 0; i < boolean.size(); ++i) {
+    boolean[i] = i % 3 == 0 ? 0 : 1;
+    additive[i] = half_test::encode<T>(
+        i % 3 == 0 ? -INFINITY : (static_cast<int>(i % 7) - 3) * 0.125);
+  }
+  if (special && !values.empty()) {
+    // One ordinary finite row, one all -Inf row, one unmasked +Inf/NaN row;
+    // masked NaNs must be ignored. Cover every normalization classification.
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      const auto col = i % shape.back();
+      const auto row = i / shape.back();
+      double value = row == 1               ? -INFINITY
+                     : row == 2 && col == 1 ? INFINITY
+                     : row == 3 && col == 1 ? NAN
+                     : col == 0             ? NAN
+                     : col % 2 == 0         ? 10000
+                                            : -10000;
+      values[i] = half_test::encode<T>(value);
+    }
+  }
+  ASSERT_TRUE(input.write<T>(values).ok());
+  if (mask_kind == MaskKind::kBoolean)
+    ASSERT_TRUE(mask.write<std::uint8_t>(boolean).ok());
+  else if (mask_kind == MaskKind::kAdditive)
+    ASSERT_TRUE(mask.write<T>(additive).ok());
+  const float scale = special ? 1 : -0.75F;
+  const Softmax op{
+      .axis = axis, .scale = scale, .kind = kind, .mask = mask_kind};
+  const std::array inputs{input.view.as_const(), mask.view.as_const()};
+  const auto status = fixture.execute(
+      Operation(op),
+      std::span(inputs).first(mask_kind == MaskKind::kNone ? 1 : 2),
+      inplace ? input.view : output.view);
+  ASSERT_TRUE(status.ok()) << status.message();
+  const auto actual = inplace ? input.read<T>() : output.read<T>();
+  const auto normalized_axis =
+      axis < 0 ? axis + static_cast<int>(shape.size()) : axis;
+  std::size_t outer = 1, inner = 1;
+  for (int dim = 0; dim < normalized_axis; ++dim)
+    outer *= shape[dim];
+  for (std::size_t dim = normalized_axis + 1; dim < shape.size(); ++dim)
+    inner *= shape[dim];
+  const auto width = static_cast<std::size_t>(shape[normalized_axis]);
+  for (std::size_t row = 0; row < outer; ++row) {
+    for (std::size_t part = 0; part < inner; ++part) {
+      std::vector<double> reference_values(width);
+      double maximum = -INFINITY;
+      bool invalid = false;
+      for (std::size_t col = 0; col < width; ++col) {
+        const auto logical = (row * width + col) * inner + part;
+        float value =
+            static_cast<float>(half_test::decode(values[logical])) * scale;
+        if (mask_kind != MaskKind::kNone) {
+          const auto index = broadcast_index(logical, shape, mask_shape);
+          if (mask_kind == MaskKind::kBoolean) {
+            if (boolean[index] == 0)
+              value = -INFINITY;
+          } else
+            value += static_cast<float>(half_test::decode(additive[index]));
+        }
+        reference_values[col] = value;
+        invalid |= std::isnan(value) || value == INFINITY;
+        maximum = std::max(maximum, static_cast<double>(value));
+      }
+      invalid |= maximum == -INFINITY;
+      double sum = 0;
+      for (const auto value : reference_values)
+        sum += std::exp(value - maximum);
+      for (std::size_t col = 0; col < width; ++col) {
+        const double expected =
+            invalid ? NAN
+            : kind == SoftmaxKind::kSoftmax
+                ? std::exp(reference_values[col] - maximum) / sum
+                : (reference_values[col] - maximum) - std::log(sum);
+        expect_value(actual[(row * width + col) * inner + part], expected);
+      }
+    }
+  }
+}
+
+template <class T> void softmax_cases() {
+  Fixture fixture;
+  for (const auto kind : {SoftmaxKind::kSoftmax, SoftmaxKind::kLogSoftmax}) {
+    for (const std::int64_t width : {0, 1, 127, 129, 2048, 8192, 8193, 32769}) {
+      for (const bool inplace : {false, true}) {
+        for (const auto mask :
+             {MaskKind::kNone, MaskKind::kBoolean, MaskKind::kAdditive}) {
+          SCOPED_TRACE(::testing::Message()
+                       << "width=" << width << " inplace=" << inplace
+                       << " mask=" << static_cast<int>(mask)
+                       << " kind=" << static_cast<int>(kind));
+          check_softmax<T>(fixture, std::array<std::int64_t, 2>{2, width}, -1,
+                           false, inplace, kind, mask, false, false);
+        }
+      }
+    }
+    for (const int axis : {0, 1, -1}) {
+      for (const bool strided : {false, true}) {
+        for (const auto mask :
+             {MaskKind::kNone, MaskKind::kBoolean, MaskKind::kAdditive}) {
+          SCOPED_TRACE(::testing::Message()
+                       << "axis=" << axis << " strided=" << strided
+                       << " mask=" << static_cast<int>(mask));
+          check_softmax<T>(fixture, std::array<std::int64_t, 3>{2, 129, 3},
+                           axis, strided, !strided, kind, mask, false, false);
+          check_softmax<T>(fixture, std::array<std::int64_t, 3>{2, 129, 3},
+                           axis, strided, !strided, kind, mask, true, false);
+        }
+      }
+    }
+    for (const std::int64_t width : {129, 8193})
+      for (const auto mask :
+           {MaskKind::kNone, MaskKind::kBoolean, MaskKind::kAdditive})
+        check_softmax<T>(fixture, std::array<std::int64_t, 2>{4, width}, -1,
+                         false, true, kind, mask, false, true);
+  }
+}
+TEST(CudaReduction, SoftmaxFloatAndHalfMasksAxesCacheBoundaryAndLongRows) {
+  softmax_cases<float>();
+  softmax_cases<hyle::simd::float16_t>();
+  softmax_cases<hyle::simd::bfloat16_t>();
+}
+
+TEST(CudaReduction, PreparationRejectsPrecisionAndUnsafeAliasesWithoutWriting) {
+  Fixture fixture;
+  const auto half = TensorDesc::dense(DataType::kBFloat16,
+                                      std::array<std::int64_t, 2>{2, 129})
+                        .value();
+  auto implicit_half =
+      prepare(fixture.owner, Reduce{}, half, fixture.resource.ref());
+  ASSERT_FALSE(implicit_half.has_value());
+  EXPECT_TRUE(implicit_half.error().IsUnimplemented());
+  for (const bool softmax : {false, true}) {
+    auto rejected =
+        softmax ? prepare(fixture.owner,
+                          Softmax{.accumulation_type = DataType::kFloat64},
+                          half, fixture.resource.ref())
+                : prepare(fixture.owner,
+                          Reduce{.accumulation_type = DataType::kFloat64}, half,
+                          fixture.resource.ref());
+    ASSERT_FALSE(rejected.has_value());
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+  }
+  const auto desc =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{129})
+          .value();
+  Tensor input(desc, fixture.resource.ref());
+  std::vector<float> values(129, 1);
+  ASSERT_TRUE(input.write<float>(values).ok());
+  auto reduction =
+      prepare(fixture.owner, Reduce{}, desc, fixture.resource.ref()).value();
+  auto reduced_output =
+      TensorView::create(reduction.output_description().value(),
+                         input.storage.view().subview(0, sizeof(float)).value())
+          .value();
+  auto reduce_slot = reduction.create_invocation().value();
+  auto alias =
+      reduce_slot.submit(fixture.queue, input.view.as_const(), reduced_output);
+  ASSERT_FALSE(alias.has_value());
+  EXPECT_TRUE(alias.error().IsInvalidArgument());
+  EXPECT_EQ(input.read<float>(), values);
+  auto backing =
+      mem::Buffer::create(fixture.resource.ref(), 130 * sizeof(float), 256)
+          .value();
+  auto source =
+      ConstTensorView::create(
+          desc, backing.view().subview(0, 129 * sizeof(float)).value())
+          .value();
+  auto destination =
+      TensorView::create(
+          desc,
+          backing.view().subview(sizeof(float), 129 * sizeof(float)).value())
+          .value();
+  auto softmax =
+      prepare(fixture.owner, Softmax{}, desc, fixture.resource.ref()).value();
+  auto softmax_slot = softmax.create_invocation().value();
+  auto partial = softmax_slot.submit(fixture.queue, source, destination);
+  ASSERT_FALSE(partial.has_value());
+  EXPECT_TRUE(partial.error().IsInvalidArgument());
+}
 } // namespace
