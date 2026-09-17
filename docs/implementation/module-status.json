@@ -494,13 +494,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q/R AUDITED：P/Q/R已实现；R候选Air/Mini各34 case及两个头检查通过，Apple GPU算法状态、checked Gather、Scan与I64存储已接通。有序Scatter、Vulkan与完整C1权重/三交付/P1待完成，不签整包PASS。"
+      "summary": "LLM/MoE C1-P/Q/R/S AUDITED：P/Q/R已实现，R候选Air/Mini各34 case及两个头检查通过；S01–S03固定MLX稳定排序及原生Metal有序Scatter、普通状态消费和独立验证，尚未实施。Vulkan与完整C1权重/三交付/P1待完成。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q/R AUDITED：P/Q/R已实现；R候选Air/Mini各34 case及两个头检查通过，Apple GPU算法状态、checked Gather、Scan与I64存储已接通。有序Scatter、Vulkan与完整C1权重/三交付/P1待完成，不签整包PASS。"
+      "summary": "LLM/MoE C1-P/Q/R/S AUDITED：P/Q/R已实现，R候选Air/Mini各34 case及两个头检查通过；S01–S03固定MLX稳定排序及原生Metal有序Scatter、普通状态消费和独立验证，尚未实施。Vulkan与完整C1权重/三交付/P1待完成。"
     },
     {
       "module": "compute_route_vulkan",

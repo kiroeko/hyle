@@ -17,7 +17,7 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
   进入 AUDITED；`graph` 与 Vulkan 两个 owner 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
@@ -793,5 +793,27 @@ native Gather 允许负索引偏移且没有 HYLE 边界错误回报；native Sc
   selector 保留 112/110 项 skipped reasons；本子集实际运行两台 Mac configure、两个 factor
   与两个头检查。完整 C1 真实权重、三交付/其他环境、等责 P1 和矩阵逐格验收仍待完成；
   Apple 有序 Scatter 与 Vulkan 继续按有限 FIX 推进，不签四路线完成或性能胜出。
+
+### C1-S：Apple 有序 Scatter（AUDITED）
+
+baseline `babd0d36`，owner `/root` / `compute_route_apple` 与 `graph_route_apple`。F02.2/F02.4/F19
+的状态写回与重复目标累加要求与 C1-N 相同的逻辑行主序：assign 最后项胜出，add 每次 F32 求值
+后舍入到 storage。Apple 保持 functional 输入/新结果，接 R 的算法状态；不新增原位 Mem 导入。
+
+具名来源仍为 MLX `1f8e74e`：Metal `kernels/indexing/scatter.h` 使用原子更新，不能继承有序
+语义；`kernels/sort.h` 的 merge argsort 稳定。`fast.h`、`backend/common/metal_kernel.cpp`、
+`backend/metal/custom_kernel.cpp` 提供同 stream 的 lazy CustomKernel、native 输入布局整理、
+临时数组保活与 Safe math 编译模式。`BORROW` MLX 排序/编译/分配/执行，`OWN` 有序更新片段；
+没有另建 Queue、逐 kernel vtable 或 host payload 路径，亦不改 vendor pin。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| S01 | Apple Scatter assign 接六种已有 storage，add 接 F32/F16/BF16；I32/I64 索引、任意轴/scalar/多维/native layout | 非空 output/indices/updates 元素数≤INT32_MAX；空 output 不读 payload，空 indices 保留原始 source。默认 checked 在同 GPU 检查全部索引，失败不发布结果，输入与旧状态不变；unchecked 合法域同结果。整数/Bool add 明确拒绝 |
+| S02 | 多索引复用 native stable argsort；一个 MLX managed Metal 片段按目标有序更新，单索引省略排序 | 每个目标元素一个 writer；每个 threadgroup 一次二分得到稳定索引段，assign 取最后 ordinal，add 顺序读 updates、每步 F32→storage。输入/未更新/assign 使用原始整数位，禁止浮点 NaN 规范化。复杂度 O(K log K + N + U + G log K)，K为索引数、N为output、U为updates、G为输出threadgroup数；共享8字节段界，无axis大小索引表、无N×K全扫描。MLX 原生布局整理、索引排序、结果/临时量及 checked 状态均计费；不声称零拷贝或性能胜出 |
+| S03 | 普通 Direct/Graph 状态消费、独立有序舍入 oracle、生命周期和指南 | 六storage/两index宽度、scalar/多维/中负轴/rank8/转置/广播、空/单/17/129/4097索引、真实128/129/2048宽度、全偏斜与分散重复、NaN/Inf/负零/原始payload；半精度逐次舍入和F32取消反例。Scatter→Gather→mixed norm/residual、两槽三次变化、结果作下次状态、旧状态保活、坏索引失败/fresh恢复/owner释放/close，现有OOM与native错误回归。Air/Mini两factors与头检查；完整真实权重/三交付/其他环境/等责P1随C1固定bundle |
+
+只改两 Apple owner 的私有 lowering、source list、直接测试和文档。复用 R completion/失败槽机制，
+不改公共 Operation、通用 Graph、Context 状态机、其他模块或公共仪器。本子集不启动 P1；未运行的
+完整 C1 门继续未通过，排序原语或局部核通过不代替四路线共同验收。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
