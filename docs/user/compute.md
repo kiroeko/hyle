@@ -6,7 +6,8 @@
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
 > 普通 CUDA Direct/Graph 入口、真实 FFN/capture、Win/WSL 三交付与当前 SM89 工程性能验收已完成。
-> Apple MLX/Metal、Vulkan/SPIR-V 是后续独立纵切。
+> Apple MLX/Metal 的原生 Direct/Graph、三交付和 M4 限定性能验收已完成；
+> Vulkan/SPIR-V 已实现，仍在完成 R6 候选验收，不能由本页声明整条路线已收口。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
@@ -15,7 +16,11 @@
 普通用户不排列 Provider 或提供性能资料；规则与性能验收状态由当前 CPU 任务卡记录。
 路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
-构建时默认 `HYLE_COMPUTE_CPU=ON`。CUDA-only SDK 显式设 CPU OFF、CUDA ON；两者都 OFF 时仅有
+Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct/Graph 用法分别见
+[Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的
+细节属于 CPU/CUDA 接入，不要求这两条原生路线采用同一执行器。
+
+构建时默认 `HYLE_COMPUTE_CPU=ON`。CUDA-only SDK 显式设 CPU OFF、CUDA ON；四条路线都 OFF 时仅有
 计算语义/资源合同底座，无 CPU/Native 入口。安装包的实际 capability、头与 CMake 选项见
 [交付配置](distribution.md#4-消费安装包)。
 
@@ -23,8 +28,8 @@
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。
 
-设计中的推理计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的计算 Provider 已有实际 GPU 验证，
-普通入口和完整 FFN Graph 已完成 R4 正确性、三交付与适用性能验收；Apple/Vulkan 尚未交付。
+计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的普通入口和完整 FFN Graph
+已完成 R4 正确性、三交付与适用性能验收；Apple 的 R5 已完成，Vulkan 的 R6 尚在验收。
 HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
 提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
 自动交给 CPU。完整范围见 [架构边界](../architecture/compute-design.md#13-四条独立路线与明确非目标)。
@@ -578,7 +583,7 @@ oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
   `result()` 只 poll，pending 明确返回 FailedPrecondition，失败/取消不产生 ready lease。保留 lease 后，
   原提交对象和生产槽可销毁；同槽仍有结果引用时不能覆盖，另一槽可继续使用。T 的 runtime 决定如何读其数据，
   HYLE 不把它伪装为 Mem allocation，也不隐式创建 host shadow copy。注入 allocator 必须活过所有结果引用。
-  这些共同接口尚不代表 MLX/Metal 或 Vulkan 路线已经交付；原生 Program 与默认规则由对应路线落实。
+  这些共同接口不描述 MLX/Metal 或 Vulkan 的原生 Program；其默认规则和验收范围见对应路线指南。
 - RMSNorm 允许 input/output 精确同址；所有 operation 拒绝不安全 partial overlap 和第二输入/output
   overlap。CPU route 要求 host-accessible storage，并如实调用 non-coherent resource 的 invalidate/flush。
 - 不同 Queue 可并发；同一 ordered Queue 是单 producer 提交域，两个线程同时录入会明确失败。Graph 会用

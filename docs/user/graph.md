@@ -9,6 +9,10 @@
 > event import 与 single-queue capture 已真机资格化；普通 CUDA dense/Q4 FFN 已通过 W1 实际
 > Provider 组合与 captured replay 验证，完整 R4 三交付及当前 SM89 工程性能验收已完成。
 
+[Apple MLX/Metal](apple-compute.md) 已完成 R5；[Vulkan](vulkan-compute.md) 的真实原生路线已实现，
+R6 候选验收仍在进行。两条路线各有冷编译、Program 与运行槽；本文后续 shared Queue、
+target/storage/lane 和 replay 细节主要描述 CPU/CUDA 路径，不是四条路线共用执行器的要求。
+
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、
 常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入、
