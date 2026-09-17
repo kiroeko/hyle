@@ -1,5 +1,9 @@
 # R3 CPU：具名性能例外与终局验收
 
+> 当前解释见 [2026-09-17 比较边界校准](cpu-r3-comparison-boundary-clarification.md)：这里的
+> decode 例外是完整 Graph 相对裸 direct 的接口成本预算取舍，双方 API 服务不等价，不能作为
+> 同合同算法退化。下文保留当时验收与统计记录；原数据和用户决定未撤销，也未改写为性能 PASS。
+
 ## Closure card
 
 - 状态：`CLOSED`；baseline `42ae3005899cbd6117494b2a609afae6133eae6b`。

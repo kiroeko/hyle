@@ -2,7 +2,8 @@
 
 <!-- PROJECT UNIT REVIEW: CLOSED -->
 
-R3 已完成实现和适用验证，并经用户批准登记唯一已量化的 CPU Graph 小片段性能例外。
+R3 已完成实现和适用验证；用户当时接受的 CPU Graph 小片段是接口成本预算取舍，
+其[比较服务不等价](cpu-r3-comparison-boundary-clarification.md)，不应解释为算法性能退化。
 当前终局记录为[具名验收卡](cpu-r3-acceptance-exception.md)；下文保留实施时序，不再启动 CPU P1。
 
 ## Closure card

@@ -4,6 +4,9 @@
 R5 Apple 的最终结果与 R6 Vulkan 的已完成检查点见本页后段。以下前段保留旧候选的 CPU/CUDA
 历史证据，不用旧 copy 或跨域样例签新路线完成。
 
+R3 CPU Graph 的 fused/natural 裸 direct 对照经[服务边界核对](../../tasks/compute/cpu-r3-comparison-boundary-clarification.md)
+改为成本诊断，不承担同合同排名。原 decode 用户取舍、原测量与旧表均保留，不解释为算法或 Sched 退化。
+
 本页分别裁决 2026-09-12 的 CPU one-op 抽象税与 x64 oneDNN provider 边界，不声称完整 Compute/Graph、
 完整算子目录或 GPU backend 已完成。one-op 冻结合同是
 [`compute-graph-one-op-tax-p1-v1.contract.json`](compute-graph-one-op-tax-p1-v1.contract.json)（v2 已从活动

@@ -11,6 +11,8 @@
 与七门已完成，R1 CLOSED；[R2 共同语义及定向尾项](four-route-common-semantics-v1.md) 也已完成。
 [R3 CPU](cpu-v1-four-route-foundation.md) 的实现与适用验证已完成，唯一已量化的小片段性能未决项经
 用户批准[登记验收例外并结案](cpu-r3-acceptance-exception.md)，原始统计结果保留。
+该项后经[比较边界校准](cpu-r3-comparison-boundary-clarification.md)，明确为 Graph 相对裸 direct
+的接口成本预算取舍，API 服务不等价，不作为同合同算法性能输赢。
 当前 [R4 CUDA](cuda-v1-four-route-foundation.md) 已形成真实 Direct/Graph 计算链、三交付和适用
 host/device 检查；性能资格的长停顿已在独立 CUDA 中复现并取得调度干预证据，修正后 Direct/Graph
 基线完整链 P1 均通过原5%门、n=15停止。完整域没有 HYLE 明确优势，已接入成熟默认激活；

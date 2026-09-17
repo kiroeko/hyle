@@ -3,8 +3,9 @@
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 [`module-status.json`](../../module-status.json) 中当前 48 个 `CLOSED` factor，覆盖 R2 共同语义、
 Mem 定向尾项与 R3–R6 四条路线的有限验收。R7 最小 opt-in Obs、终审与清理尚待完成，整个四路线
-基础架构 goal 尚未结案。CPU 唯一已量化的 Graph 小片段未决项经用户批准接受，原 LOSS /
-INCONCLUSIVE 保留；ggml CPU 与 compute_sched 未收口身份不计入数量。旧 copy/跨域 Graph 数据
+基础架构 goal 尚未结案。CPU 小片段当时获准接受的是 Graph 接口成本预算；
+[比较边界校准](../../tasks/compute/cpu-r3-comparison-boundary-clarification.md)确认裸 direct 与完整
+Graph 服务不等价，八项改作自然路线诊断，原统计保留；ggml CPU 与 compute_sched 未收口身份不计入数量。旧 copy/跨域 Graph 数据
 仍在[历史证据](benchmarks-compute-graph.md)，不作为新路线完成证明。
 
 十三个已有 Compute/Graph roots 的 R6 变化仅属
@@ -24,16 +25,17 @@ HYLE 目前可以证明一批有价值的局部最优路线，但还不能证明
 
 | 方向 | 合同组 | 正确读法 |
 |---|---:|---|
-| `WIN` | 26 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
+| `WIN` | 25 | 指定合同、peer、平台和规模下，合格区间固定有利于 shipping HYLE route |
 | `PARITY` | 3 | 没有 material 固定方向，且有双边 practical equivalence 或相同热路 codegen 依据 |
-| `INCONCLUSIVE` | 37 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
-| `N/A` | 28 | 结构/规则证据或不同责任边界的原生诊断；没有计时排名 |
-| `LOSS` | 4 | CPU Graph v3 原负向方向；三项通过 5% 非劣门，一项保持未决并接受用户例外 |
+| `INCONCLUSIVE` | 33 | 区间跨 1、跨平台/顺序方向不同，或当前数据不能解析方向 |
+| `N/A` | 36 | 结构/规则证据或不同责任边界的自然路线诊断；没有计时排名 |
+| `LOSS` | 1 | CPU Graph holdout 对完整 Native Graph 的负向方向，通过原 5% 非劣门 |
 
 这些数量只用于导航，禁止计算胜率或平均加速比：一个合同组可能覆盖多个规模或同机制工作负载；SIMD
 的 34 个 HYLE winner scope 被去重为一个 route-policy claim，而不是人为记 34 次胜利。证据质量也不相同：
-43 个 claim 在仓库中保留完整合格机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
-恢复，22 个是结构/规则证明，6 个为明确排除同合同排名的原生诊断。后三类不能承担最强性能宣传声明。
+35 个 claim 在仓库中保留完整合格可比机器 bundle，20 个绑定外部 hashed bundle，7 个只能从当前报告和审计数据
+恢复，22 个是结构/规则证明，14 个为明确排除同合同排名的自然路线诊断。诊断也保留原始数据；
+排除的是比较资格，不是否认测量发生。后三类不能承担最强性能宣传声明。
 
 Peer freshness 也属于资格：比较对象采用当前锁定的稳定 release/snapshot，而不是无条件追逐参考仓库
 未发布 HEAD。本轮确认 Highway/xsimd 直接产品 lock 与当前参考身份一致；Error 使用的 Abseil 旧 identity
@@ -87,7 +89,7 @@ HYLE 实际锁定的 simdutf v9.1.0 与 nghttp2 v1.70.0，不能宣传为战胜�
 | Sched | fan-out、completion wake | context switch、steal、priority、TaskScope、channel、locks、timers、blocking、cancel/shutdown 的其它真实混合 |
 | IO / Process | HTTP/1、HTTP/2、TLS、Transfer、Watch、WebSocket mask | TCP/UDP/local/DNS/file/signal、完整 WebSocket message/server、recursive watch、process lifecycle、跨网络与多 worker |
 | Obs | owner/shared metrics | log、trace、sink fan-out、structured model-load 和 exporter 的同合同外部 P1 |
-| Compute / Graph | CPU Direct 4/4 NI PASS；CPU Graph 11/12 NI PASS + 1 项用户例外；CUDA/Apple/Vulkan 的已声明完整 FFN 门通过，各 workload 整体严格方向未决 | 四路线普通 C++ 与各自三交付/寿命已验收；范围限已测设备/版本/格式/shape，未覆盖算子目录与完整模型；R7 最小观测/终审尚待完成 |
+| Compute / Graph | CPU Direct 原四项记录；CPU Graph 对完整 Native 的 4/4 NI PASS，另八项为裸 direct 成本诊断，decode 保留用户预算取舍；CUDA/Apple/Vulkan 已声明完整 FFN 门通过，各 workload 整体严格方向未决 | 四路线普通 C++ 与各自三交付/寿命已验收；范围限已测设备/版本/格式/shape，未覆盖算子目录与完整模型；R7 最小观测/终审尚待完成 |
 
 这张表是当前最大的不确定性：没有证据的能力不得默认为 PARITY，更不能因模块已 `CLOSED` 就继承 SOTA。
 新增计时也不按表机械铺开；只有真实 consumer profile、成熟 peer 的明确复杂度优势或跨模块 P2 将某路线
@@ -100,8 +102,10 @@ Build/package 是横向交付单元而非 runtime factor。source embed、instal
 
 ## 所有当前负向事实
 
-已收口机器账本中的 CPU Graph v3 有四项固定 LOSS：三项通过原 5% 非劣门，一项保留统计未决并经
-用户明确接受工程取舍。v2 的五项保留为历史事实，不重复计数，完整列于下方。CUDA Graph M1 一个
+CPU Graph v3 原四项负向观察完整保留：其中三项是完整 Graph 对裸 direct 的成本差额，不能计作
+同等服务 LOSS；decode 的成本目标未决由用户接受。另一项 holdout 对完整 Native Graph 仍为
+同合同 LOSS，原 5% NI 通过。原正向 two-worker natural 也同样退出排名，不能只排除负数。
+v2 的五项保留为历史事实，不重复计数，完整列于下方。CUDA Graph M1 一个
 分层、Air Vulkan Graph M16 四个分层也有严格小幅 LOSS，均通过原 5% NI；它们所属 workload 因
 其余分层方向/区间不一致而整体 INCONCLUSIVE，未被上述合同组计数掩盖。其它负向事实也继续保留：
 
@@ -195,13 +199,16 @@ R3 已结案，这四项完整纳入上文当前 CLOSED 计数。
 ## 2026-09-16：R3 Graph v3 原统计未决，用户接受具名例外
 
 [完整原始包](../../../../evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md)：
-资格、实际 workload A/A、五项 controls 与身份深检 PASS，n=31 已到上限；11/12 非劣门 PASS。
+当时的仪器资格、实际 workload A/A、五项 controls 与身份深检 PASS，n=31 已到上限；原程序输出
+11/12 门 PASS。这些仪器结果不能替代 API 服务等价性；其中八项现在按自然路线成本解释。
 原双 worker 同实现项已过门。唯一未决为约 12 微秒 decode-fused 的一个 CI，下界
 0.9517370300 仍低于 1/1.05；中位额外耗时约 2.6%–3.5%，其 CI 允许的退化上界约 5.07%。
 不能把该项写为统计 PASS，也没有足够结论写成 material FAIL。用户已明确批准
 [具名验收例外](../../tasks/compute/cpu-r3-acceptance-exception.md)，三个 Graph owner 按协议结案。
 工程动作是 ACCEPT_TRADEOFF，原统计聚合仍 INCONCLUSIVE；本候选不再采样。
-当前 4 LOSS / 2 WIN / 6 INCONCLUSIVE 全部纳入机器账本，没有删去负向 workload。
+下表保留当时 4 LOSS / 2 WIN / 6 INCONCLUSIVE 的原输出，不把它当作当前同合同计数。
+八个 fused/natural 裸 direct 对照均已降为诊断；四个完整 Native Graph 对照保持 1 LOSS /
+1 WIN / 2 INCONCLUSIVE。原绝对值、比值、CI 与样本均未修改。
 
 | Workload | median ratio 范围 | 全部分层 CI 外界 | 严格方向 | 非劣门 |
 |---|---|---|---|---|
@@ -265,3 +272,11 @@ AMD/Intel 或其它数值格式的性能资格。两路线的普通三交付、h
 本次补齐四个 Apple 与四个 Vulkan workload、两项规则、四项不可排名诊断、两项冷交付和一项
 CUDA vendor 内容准入，共 17 个 claim。原 81 个合同组的统计值、方向与工程结果没有改写，
 只按真实源码身份更新当前 owner 绑定。R7 尚未完成，不由账本登记签署整个基础架构结束。
+
+## 2026-09-17：CPU Graph 比较资格校准
+
+上述 R6 登记之后，按用户要求复核先前的独立调查并修正落账：四个 fused-boundary 和四个
+natural-sequence 对照没有 Graph 的接纳/排他/关闭/Completion 服务，不能继续标作同合同。
+八项的原有利与不利统计对称保留，当前比较均为 NATURAL_ROUTE，排名/同合同 NI 为 N/A。
+[逐项前后记录](../../../../evidence/review/cpu-r3-comparison-boundary/identity.json)证明全部 98 项
+绝对值、ratio/CI、采样事实不变，其他 90 个 claim 完全不变。没有新的计时、产品修正或性能 PASS。

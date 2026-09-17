@@ -1,0 +1,579 @@
+{
+  "baseline": "647ff7feaba0f0b2849304a47657958c1f289a7c",
+  "runner": "7fa6dc0a8b3b857a1835525de0d0e7be5f8db5e9",
+  "product": "1a3a8d0e40a2a17250119369331c712718a4d880",
+  "new_measurements": false,
+  "product_changes": false,
+  "source_identity": [
+    {
+      "path": "bench/graph_route_cpu/region_p1_bench.cc",
+      "git_blob": "61f9cd4dba9c5dcb7a790c12ec11a25dee89bb66",
+      "git_bytes_sha256": "209fed96dc33171a829e9df00ad95bad168fec1c71baf16119bcc38f588c0201",
+      "validation_copy_lf_equivalent": true
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "git_blob": "ba971a6334ccb92359b112b212bc8a2e9e37936f",
+      "git_bytes_sha256": "a1718c8120f4766d7a2cedd5d23993b4ccfe2705033e71fc4e4f5d40e92527d7",
+      "validation_copy_lf_equivalent": true
+    },
+    {
+      "path": "src/compute/device.cc",
+      "git_blob": "e255abd20e994dc7570b3c98b0d78a61f828ca19",
+      "git_bytes_sha256": "aec044c92fff3026318ef021cfe148a6ab1ccb1225dc1b33b0bb2eca3c2b6533",
+      "validation_copy_lf_equivalent": true
+    },
+    {
+      "path": "src/compute/context_state.h",
+      "git_blob": "cae505f753e6f9f7a0c11b5e53167a868dddeac5",
+      "git_bytes_sha256": "8771666526ac0b16864ef1196ee358e8938d0d12693d4d566b2610741a7d0559",
+      "validation_copy_lf_equivalent": true
+    }
+  ],
+  "classification_corrections": [
+    {
+      "id": "cpu-graph-r3-decode-fused-boundary-1x256x512",
+      "before": {
+        "id": "cpu-graph-r3-decode-fused-boundary-1x256x512",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "LOSS",
+        "practical_result": "INCONCLUSIVE",
+        "engineering_action": "ACCEPT_TRADEOFF",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "decode-fused-boundary-1x256x512",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "decode-fused-boundary-1x256x512",
+        "absolute": "HYLE [81348.9, 84787.45] op/s; peer [84825.69, 87020.8] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.966130983711794, 0.9742631711594231]; retained stratum CI envelope [0.9517370300377059, 0.9844226604047353].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Only this roughly 12 us decode-fused item is accepted by explicit user decision on 2026-09-16: n=31 exhausted, one CI permits about 5.07% regression. Statistical NI remains INCONCLUSIVE and direction LOSS.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-decode-fused-boundary-1x256x512",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "ACCEPT_TRADEOFF",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "decode-fused-boundary-1x256x512",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "decode-fused-boundary-1x256x512",
+        "absolute": "HYLE [81348.9, 84787.45] op/s; peer [84825.69, 87020.8] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.966130983711794, 0.9742631711594231]; retained stratum CI envelope [0.9517370300377059, 0.9844226604047353].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=LOSS, cost-objective result=INCONCLUSIVE, engineering action=ACCEPT_TRADEOFF; all original samples, ratios and intervals remain unchanged. The user accepted the roughly 12 us decode interface-cost objective after n=31; one interval permits about 5.07% extra cost. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-decode-natural-sequence-1x256x512",
+      "before": {
+        "id": "cpu-graph-r3-decode-natural-sequence-1x256x512",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "INCONCLUSIVE",
+        "practical_result": "PASS",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "decode-natural-sequence-1x256x512",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "decode-natural-sequence-1x256x512",
+        "absolute": "HYLE [84589.42, 86035.98] op/s; peer [85745.01, 86594.48] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9874768407957689, 0.995959245736672]; retained stratum CI envelope [0.977373167199501, 1.0052401287707076].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-decode-natural-sequence-1x256x512",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "decode-natural-sequence-1x256x512",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "decode-natural-sequence-1x256x512",
+        "absolute": "HYLE [84589.42, 86035.98] op/s; peer [85745.01, 86594.48] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9874768407957689, 0.995959245736672]; retained stratum CI envelope [0.977373167199501, 1.0052401287707076].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=INCONCLUSIVE, cost-objective result=PASS, engineering action=KEEP; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
+      "before": {
+        "id": "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "INCONCLUSIVE",
+        "practical_result": "PASS",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "short-prefill-fused-boundary-16x512x1024",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "short-prefill-fused-boundary-16x512x1024",
+        "absolute": "HYLE [1828.06, 1873.54] op/s; peer [1824.91, 1870.12] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9904095065362819, 1.0028045307302649]; retained stratum CI envelope [0.9855837058578695, 1.0147309660412467].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-short-prefill-fused-boundary-16x512x1024",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "short-prefill-fused-boundary-16x512x1024",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "short-prefill-fused-boundary-16x512x1024",
+        "absolute": "HYLE [1828.06, 1873.54] op/s; peer [1824.91, 1870.12] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9904095065362819, 1.0028045307302649]; retained stratum CI envelope [0.9855837058578695, 1.0147309660412467].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=INCONCLUSIVE, cost-objective result=PASS, engineering action=KEEP; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
+      "before": {
+        "id": "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "INCONCLUSIVE",
+        "practical_result": "PASS",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "short-prefill-natural-sequence-16x512x1024",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "short-prefill-natural-sequence-16x512x1024",
+        "absolute": "HYLE [1716.43, 1841.13] op/s; peer [1692.9, 1850.46] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9936612385542685, 1.0031420512094447]; retained stratum CI envelope [0.985273028130171, 1.0152406102385376].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-short-prefill-natural-sequence-16x512x1024",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "short-prefill-natural-sequence-16x512x1024",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "short-prefill-natural-sequence-16x512x1024",
+        "absolute": "HYLE [1716.43, 1841.13] op/s; peer [1692.9, 1850.46] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9936612385542685, 1.0031420512094447]; retained stratum CI envelope [0.985273028130171, 1.0152406102385376].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=INCONCLUSIVE, cost-objective result=PASS, engineering action=KEEP; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-holdout-fused-boundary-17x129x257",
+      "before": {
+        "id": "cpu-graph-r3-holdout-fused-boundary-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "LOSS",
+        "practical_result": "PASS",
+        "engineering_action": "ACCEPT_TRADEOFF",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "holdout-fused-boundary-17x129x257",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "holdout-fused-boundary-17x129x257",
+        "absolute": "HYLE [33970.79, 34499.29] op/s; peer [34198.59, 34781.07] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9876778298639768, 0.9951140116492188]; retained stratum CI envelope [0.981875290083309, 0.9997918278829423].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-holdout-fused-boundary-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "ACCEPT_TRADEOFF",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "holdout-fused-boundary-17x129x257",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "holdout-fused-boundary-17x129x257",
+        "absolute": "HYLE [33970.79, 34499.29] op/s; peer [34198.59, 34781.07] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9876778298639768, 0.9951140116492188]; retained stratum CI envelope [0.981875290083309, 0.9997918278829423].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=LOSS, cost-objective result=PASS, engineering action=ACCEPT_TRADEOFF; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-holdout-natural-sequence-17x129x257",
+      "before": {
+        "id": "cpu-graph-r3-holdout-natural-sequence-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "INCONCLUSIVE",
+        "practical_result": "PASS",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "holdout-natural-sequence-17x129x257",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "holdout-natural-sequence-17x129x257",
+        "absolute": "HYLE [33925.75, 34448.79] op/s; peer [34277.05, 34726.51] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9916226240379434, 0.9944122171358672]; retained stratum CI envelope [0.9837587605205194, 1.0017425949844525].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-holdout-natural-sequence-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "holdout-natural-sequence-17x129x257",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "holdout-natural-sequence-17x129x257",
+        "absolute": "HYLE [33925.75, 34448.79] op/s; peer [34277.05, 34726.51] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9916226240379434, 0.9944122171358672]; retained stratum CI envelope [0.9837587605205194, 1.0017425949844525].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=INCONCLUSIVE, cost-objective result=PASS, engineering action=KEEP; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
+      "before": {
+        "id": "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "LOSS",
+        "practical_result": "PASS",
+        "engineering_action": "ACCEPT_TRADEOFF",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "two-worker-fused-boundary-17x129x257",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "two-worker-fused-boundary-17x129x257",
+        "absolute": "HYLE [33218.64, 34073.82] op/s; peer [34069.34, 34602.23] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9726515535640414, 0.977621146999906]; retained stratum CI envelope [0.9618143462319378, 0.9934537950273039].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-two-worker-fused-boundary-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "ACCEPT_TRADEOFF",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "two-worker-fused-boundary-17x129x257",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Same oneDNN BRGEMM + HYLE SIMD direct fused FFN",
+        "scale": "two-worker-fused-boundary-17x129x257",
+        "absolute": "HYLE [33218.64, 34073.82] op/s; peer [34069.34, 34602.23] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [0.9726515535640414, 0.977621146999906]; retained stratum CI envelope [0.9618143462319378, 0.9934537950273039].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=LOSS, cost-objective result=PASS, engineering action=ACCEPT_TRADEOFF; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    },
+    {
+      "id": "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
+      "before": {
+        "id": "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "SAME_CONTRACT_INTERNAL",
+        "qualification": "QUALIFIED_RETAINED",
+        "direction": "WIN",
+        "practical_result": "PASS",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "two-worker-natural-sequence-17x129x257",
+        "contract": "graph CPU normal public entry; same numeric, shape, resource, executor and terminal-completion boundary. Original 5% non-inferiority gate retained.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "two-worker-natural-sequence-17x129x257",
+        "absolute": "HYLE [33464.15, 33686.07] op/s; peer [28726.74, 29027.23] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [1.1629587861210777, 1.1751374471627072]; retained stratum CI envelope [1.1448842963178578, 1.1876155108080857].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "Engineering NI PASS does not establish parity or cross-platform SOTA; strict direction is preserved. No additional sampling in acceptance round.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json"
+        ]
+      },
+      "after": {
+        "id": "cpu-graph-r3-two-worker-natural-sequence-17x129x257",
+        "modules": [
+          "graph_provider_onednn",
+          "graph_route_cpu"
+        ],
+        "kind": "P1_WORKLOAD",
+        "comparison": "NATURAL_ROUTE",
+        "qualification": "REJECTED_DIAGNOSTIC",
+        "direction": "N/A",
+        "practical_result": "N/A",
+        "engineering_action": "KEEP",
+        "consumer_weight": "HIGH",
+        "candidate_binding": "INHERITED_UNCHANGED_ROUTE",
+        "consumer_shape": "two-worker-natural-sequence-17x129x257",
+        "contract": "Warm complete Graph API versus hand-written direct FFN; same F32 input/output and terminal boundary, but direct omits Invocation exclusion, Context/Queue admission/close and Completion services. The historical 5% test is an interface-cost objective, not equivalent-service peer NI.",
+        "peer": "Natural unfused oneDNN + HYLE SIMD FFN sequence",
+        "scale": "two-worker-natural-sequence-17x129x257",
+        "absolute": "HYLE [33464.15, 33686.07] op/s; peer [28726.74, 29027.23] op/s; per-stratum medians, not pooled ratio estimates.",
+        "ratio_ci": "Paired median ratio range [1.1629587861210777, 1.1751374471627072]; retained stratum CI envelope [1.1448842963178578, 1.1876155108080857].",
+        "sensitivity": "Both execution/allocation orders and two placements; actual-workload A/A and five controls passed; independent runs [31].",
+        "mechanism": "Frozen normal CPU Graph selection, retained oneDNN region fusion and scratch, cold resource validation, current Queue owner check and one real completion boundary.",
+        "limitations": "2026-09-17 source clarification excludes same-contract ranking. Historical direction=WIN, cost-objective result=PASS, engineering action=KEEP; all original samples, ratios and intervals remain unchanged. This does not establish algorithm or Sched regression, parity or superiority; fixed-content warm replay is not model throughput.",
+        "evidence": [
+          "docs/implementation/tasks/compute/cpu-r3-acceptance-exception.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/README.md",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/summary.json",
+          "evidence/performance/graph-cpu-route-p1-v3-7fa6dc0a-w1-win/manifest.json",
+          "evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json",
+          "docs/implementation/tasks/compute/cpu-r3-comparison-boundary-clarification.md"
+        ]
+      }
+    }
+  ],
+  "all_98_numeric_observations_unchanged": true,
+  "other_90_claims_unchanged": true,
+  "directions": {
+    "N/A": 36,
+    "INCONCLUSIVE": 33,
+    "WIN": 25,
+    "PARITY": 3,
+    "LOSS": 1
+  },
+  "qualifications": {
+    "STRUCTURAL": 22,
+    "CURRENT_DOCUMENT_ONLY": 7,
+    "QUALIFIED_HASHED_EXTERNAL": 20,
+    "QUALIFIED_RETAINED": 35,
+    "REJECTED_DIAGNOSTIC": 14
+  }
+}
