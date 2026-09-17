@@ -296,8 +296,8 @@ TEST(CudaDeviceStatus, PureCaptureAndPrefixAddNoStatusCommands) {
   cudaStreamCaptureStatus capture_status{};
   unsigned long long capture_id = 0;
   cudaGraph_t graph = nullptr;
-  ASSERT_EQ(cudaStreamGetCaptureInfo_v2(stream, &capture_status, &capture_id,
-                                        &graph, nullptr, nullptr),
+  ASSERT_EQ(cudaStreamGetCaptureInfo(stream, &capture_status, &capture_id,
+                                    &graph, nullptr, nullptr, nullptr),
             cudaSuccess);
   std::size_t nodes = 0;
   ASSERT_EQ(cudaGraphGetNodes(graph, nullptr, &nodes), cudaSuccess);
