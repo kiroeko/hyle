@@ -14,8 +14,11 @@
     "Requirement mappings are family-level; C0 must freeze exact numerical/domain/branch cases.",
     "Configuration summaries omit fields and summarize layer lists; immutable config URL and SHA-256 are authoritative inputs.",
     "Large-model full-checkpoint inference is not required on current hardware.",
-    "No weights downloaded and no reference or HYLE model executions performed in this planning task.",
-    "Source inspection does not qualify an oracle, shipping provider, dependency upgrade, or performance result."
+    "Source inspection does not qualify an oracle, shipping provider, dependency upgrade, or performance result.",
+    "The sole local end-to-end model is the user-supplied Qwen3.5-2B directory; its file inventory, not an assumed upstream checkout, identifies actual test inputs.",
+    "Other machines receive copies of the local original and derived artifacts; model downloads are not part of the execution plan.",
+    "The previous 0.8B requirement is removed from the active plan.",
+    "No HYLE/reference model inference or derived quantization generation was performed during this revision."
   ],
   "models": [
     {
@@ -543,62 +546,10 @@
       "execution_evidence": "NOT_RUN"
     },
     {
-      "id": "qwen35_08b",
-      "repository": "Qwen/Qwen3.5-0.8B",
-      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
-      "role": "local_end_to_end_fast",
-      "scope": "language_backbone_and_local_moe_only",
-      "config_url": "https://huggingface.co/Qwen/Qwen3.5-0.8B/resolve/2fc06364715b967f1860aea9cf38778875588b17/config.json",
-      "config_sha256": "b90b86f35c8e6925ef74ee04d0e758f0a845c83a42089ad82bbaa948de9b4204",
-      "model_card_url": "https://huggingface.co/Qwen/Qwen3.5-0.8B/blob/2fc06364715b967f1860aea9cf38778875588b17/README.md",
-      "architectures": [
-        "Qwen3_5ForConditionalGeneration"
-      ],
-      "declared_tensor_parameter_count": 873438784,
-      "requirement_families": [
-        "F01",
-        "F02",
-        "F03",
-        "F04",
-        "F05",
-        "F07",
-        "F08",
-        "F09",
-        "F10",
-        "F19"
-      ],
-      "text_configuration_summary": {
-        "model_type": "qwen3_5_text",
-        "dtype": "bfloat16",
-        "hidden_size": 1024,
-        "intermediate_size": 3584,
-        "num_hidden_layers": 24,
-        "num_attention_heads": 8,
-        "num_key_value_heads": 2,
-        "head_dim": 256,
-        "vocab_size": 248320,
-        "linear_conv_kernel_dim": 4,
-        "linear_num_key_heads": 16,
-        "linear_num_value_heads": 16,
-        "linear_key_head_dim": 128,
-        "linear_value_head_dim": 128,
-        "mamba_ssm_dtype": "float32",
-        "hidden_act": "silu",
-        "attn_output_gate": true,
-        "mtp_num_hidden_layers": 1,
-        "layer_types_counts": {
-          "linear_attention": 18,
-          "full_attention": 6
-        }
-      },
-      "quantization_configuration_summary": null,
-      "execution_evidence": "NOT_RUN"
-    },
-    {
       "id": "qwen35_2b",
       "repository": "Qwen/Qwen3.5-2B",
       "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
-      "role": "local_end_to_end_primary",
+      "role": "sole_local_end_to_end_model",
       "scope": "language_backbone_and_local_moe_only",
       "config_url": "https://huggingface.co/Qwen/Qwen3.5-2B/resolve/15852e8c16360a2fea060d615a32b45270f8a8fc/config.json",
       "config_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
@@ -617,6 +568,7 @@
         "F08",
         "F09",
         "F10",
+        "F14",
         "F19"
       ],
       "text_configuration_summary": {
@@ -644,7 +596,23 @@
         }
       },
       "quantization_configuration_summary": null,
-      "execution_evidence": "NOT_RUN"
+      "execution_evidence": "NOT_RUN",
+      "actual_test_input": {
+        "manifest": "qwen35-2b-local-input.json",
+        "source_directory": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B",
+        "artifact_identity_sha256": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "identity_policy": "local_manifest_is_authoritative; upstream config match does not prove complete upstream weight identity"
+      },
+      "test_profiles": [
+        "B16",
+        "Q4-S128",
+        "Q8-B32",
+        "F8-B128"
+      ],
+      "derived_profile_requirement_families": [
+        "F06",
+        "F18"
+      ]
     }
   ],
   "implementation_sources": [
@@ -762,5 +730,7 @@
       "finding": "Bind configured additional heads to actual weights and forward paths; generic model next-token output does not prove MTP execution.",
       "resolution_package": "C0"
     }
-  ]
+  ],
+  "plan_revision": 2,
+  "plan_revision_baseline": "c292b2cedf4b5d38bfe596657547e2b186832a74"
 }

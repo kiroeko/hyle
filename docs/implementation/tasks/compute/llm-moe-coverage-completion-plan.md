@@ -6,9 +6,13 @@
 Pro / Flash、GLM 5.3 / Flash 的语言主干与 MoE 为覆盖目标，避免同一能力在四路线缺席。
 用户已明确：大模型定义**算子覆盖需求**，不要求现有机器完整加载；本机另选小模型做完整旅程。
 
-- baseline：`39f22b29fd88d6eb57ce6ab3ed9c619933d30778`，`main`，核对时工作树干净。
+- 原计划 baseline：`39f22b29fd88d6eb57ce6ab3ed9c619933d30778`。本次本地模型修订 baseline：
+  `c292b2cedf4b5d38bfe596657547e2b186832a74`，`main`，核对时工作树干净。
+- 本页是用户下一轮新 goal 的唯一执行计划。模型数据、同步、量化与验证安排均合并在本页；
+  旁边的 JSON 只保存来源/文件清单，不形成另一份施工队列。本次修订没有启动产品实施。
 - [四路线基础架构](four-route-foundation-acceptance.md)已经完成。本计划是下一阶段的有限能力扩充，
-  不是恢复 R1–R7、旧大 goal 或旧百分比。本次仅制定计划，不创建 goal、不修改产品或 registry。
+  不是恢复 R1–R7、旧大 goal 或旧百分比。后续用户授权执行时，依 C0–C7 和 owner 协议实际实施；
+  这次计划交付的“仅文档”事实不限制下一轮授权。
 - 长期合同仍见 [Compute](../../../architecture/compute-design.md)、
   [Graph](../../../architecture/graph-design.md)、[四路线](../../../architecture/compute-routes.md)
   与[能力准入](../../../architecture/capability-completeness.md)。
@@ -25,7 +29,8 @@ Pro / Flash、GLM 5.3 / Flash 的语言主干与 MoE 为覆盖目标，避免同
 
 完整模型 ID、不可变 revision、配置摘要与 SHA-256、实现源码 pins 见
 [模型来源快照](llm-moe-model-sources.json)。它记录需求来源，不记录产品 PASS，也不是第二份 registry。
-原始权重未下载、模型未运行。以下是源码/配置调查结果，详细数学合同在 C0 固定。
+七个大模型只作需求来源，不下载它们的完整权重；本地 2B 权重已由用户提供，见第 2 节。
+以下是源码/配置调查结果，详细数学合同在 C0 固定；本次没有运行模型。
 
 | 需求模型 | 已核对的区别 | 必须落到能力与验证中的内容 |
 |---|---|---|
@@ -55,25 +60,92 @@ Pro / Flash、GLM 5.3 / Flash 的语言主干与 MoE 为覆盖目标，避免同
 
 这些是参考资格问题，不是推翻四路线架构的理由。每项只调查具名分支和公式，预算见 C0。
 
-## 2. 验收小模型
+## 2. 唯一本地验收模型、同步与量化数据
 
-| 模型 | 角色 | 本地验收边界 |
+### 2.1 固定用户已下载的 2B
+
+用户指定 `C:\Users\kiro\Downloads\Qwen3.5-2B` 为本轮唯一原始模型数据来源。
+移除原计划的 0.8B 要求；快速回归和完整验收都使用这份 2B，不再为增加另一个小模型下载权重。
+各机器只接受从 Windows 本地数据同步的验证副本，缺文件时先报缺失，不能自动访问 HF 下载替代品。
+
+本次已只读核对本地实物，完整文件身份见 [本地模型清单](qwen35-2b-local-input.json)：
+
+- 13 个文件，共 4,571,274,023 bytes；唯一 Safetensors 权重文件为
+  `model.safetensors-00001-of-00001.safetensors`，4,548,221,488 bytes。
+- 权重头有 632 个张量：596 个 BF16、36 个 F32；分别为 2,274,067,232 和 2,592 个数值元素。
+  index 与 header 的名称/分片映射一致，shape/dtype/字节长度与 payload offsets 完整且无重叠。
+- 24 个语言层、18 DeltaNet + 6 full attention；本地还含 `mtp.*` 权重。MTP 的实际 forward
+  资格仍须 C0 绑定，存在文件不代替运算验证。
+- 所有文件已计算 SHA-256；整个清单的身份为
+  `4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155`。
+  本地 config 与既有 `15852e8c16360a2fea060d615a32b45270f8a8fc` 配置哈希一致；未重新联网
+  比较全部权重字节，不声称已经验证整个本地目录等同于该远程 revision。实际验收以本地清单为准。
+
+本地原目录只读消费。权重、量化派生物和完整参考张量放仓库外，Git 只保存来源、参数、哈希与结果。
+4.55 GB 是整个权重文件大小；语言主干实际常驻量、状态、workspace、runtime 和加载峰值分别记录。
+
+### 2.2 跨机器只同步本地资产
+
+| 环境 | 输入方式 / 预定缓存 | 核对与运行责任 |
 |---|---|---|
-| [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | 快速回归 | 24 层，18 DeltaNet + 6 full attention；真实权重、完整语言主干，四路线固定 token 输入到 logits / 多步 decode |
-| [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | 主要整模型验收 | 同类混合架构、更大 hidden/FFN；四路线完整文本计算、变化输入与持续状态、短上下文 BF16 起步 |
+| Windows | 直接读取用户原目录；派生物放 `C:\hyle-cache\models\qwen35-2b\<source-id>\<profile>` | 原始模型和量化制品的 canonical 来源；不在 Downloads 中原地改格式 |
+| WSL | 从 `/mnt/c/Users/kiro/Downloads/Qwen3.5-2B` 本地复制到 `~/.cache/hyle/models/qwen35-2b/<source-id>/original` | 首次按清单校验；正式运行使用 Linux 本地文件系统，不从互联网重新取得权重 |
+| MacBook Air | 从 Windows 经 `ssh kiro@172.22.10.198` 对应的 OpenSSH 传输连接同步到 `/Users/kiro/.cache/hyle/models/qwen35-2b/<source-id>/original` | 默认身份；承担已声明的 Apple / MoltenVK 正确性与 Air 性能资格 |
+| Mac mini | 从 Windows 经 `ssh -i C:\Users\kiro\.ssh\codex_mac_172_22_10_107_win kiro@172.22.10.107` 对应连接同步到同样的用户缓存结构 | 只按既定 correctness/portability 范围验证；不替 Air 签性能 |
 
-2B repo 元数据约 2.274B 个参数，按全部两字节估算约 4.55 GB 权重；0.8B repo 约 0.873B、
-约 1.75 GB。这里只是容量估算，包含模型包的估计不等于实际语言主干常驻量；运行时还需状态、
-workspace、allocator/runtime 及系统余量。实际峰值、加载方式与量化副本分别记录。
+`source-id` 使用完整清单身份，报告可显示前 12 位；profile 为 original 或具名派生格式。
+C0 首次准备时串行同步，先写新的 `.partial` 目录，核对每个文件大小/SHA-256 后发布为可用缓存，
+记录接收 receipt。已有身份一致的副本直接复用；缺失或损坏只重传相应文件，不每轮重传 4.55 GB。
+失败的副本不得参与验证，也不反向覆盖 Windows。产品源码仍按既有 Git / 完整 archive 规则同步，
+模型数据清单不替代源码候选身份。
 
-先固定 batch=1、prompt 长度 1/17/128、8 个续写步骤；0.8B 追加 257-token 的分块等价用例。
-更长上下文和 batch=2 在有限片段验证中覆盖，不把模型默认 262144 context 全部预分配。
-具体输入 token、权重 revision、reference logits、容差在候选之前冻结；生成自然语言仅辅助检查。
+验证进程只使用显式本地路径并关闭模型自动下载。软件依赖另按具名版本与已有缓存准备；缺少依赖
+要报出具体项，不能顺带抓取模型。参考框架和 HYLE 串行运行、释放前一套 GPU 权重后再开始下一套；
+传输/加载峰值单独计费，稳态计算比较从双方已完成约定准备的边界开始。本次尚未分发或加载模型。
 
-这两个模型是 dense 模型。七个需求模型还必须各有来自其实现的真实维度算子/片段、状态转移和
-缩小容量的组合图验证；不能以小模型可生成文字证明 MoE、CSA/HCA、mHC 或 MXFP4 已覆盖。
-大模型原尺寸层若超出资源容量，按独立专家、真实宽度块和状态边界拆验证单元，并记录未执行的
-原尺寸组合；不能把缩小专家数/hidden 的测试标为原始整层或整模型通过。
+### 2.3 四路线共用的 BF16 / 4bit / 8bit 验收档位
+
+从同一份本地 BF16 权重离线生成有限派生物；使用具名成熟工具/公式，冻结版本、目标 tensor 名称、
+参数、校准输入（如适用）、输出 codes/scales 与哈希。只生成一次，在四路线同步同一套逻辑量化值。
+各路线可另做无损 packing，不能各自重新量化后把不同权重当成相同输入。
+
+| 档位 | 数值合同与完整模型要求 | 首次验收 |
+|---|---|---|
+| B16 | 本地原始 BF16 语言主干与规定的 F32 参数/状态 | C3：四路完整 prefill/decode；作为原始模型基线 |
+| Q4-S128 | signed symmetric INT4、group128、FP16 scale；矩阵 activation/output 为 FP16，F32 累加，所需转换显式入图 | C2 片段，C3 四路量化 2B 完整语言主干 |
+| Q8-B32 | Q8_0 数值编码：每 32 个 signed INT8 权重一个 FP16 scale；W8A16/F32 累加路径，不能静默把 activation 再量化成 INT8 | C2 片段，C3 四路量化 2B 完整语言主干 |
+| F8-B128 | E4M3 FP8 权重 block128×128、动态 activation group128 与具名 scale/rounding；以 W8A8 计算合同验证 | C6：四路 FP8 2B 完整语言主干及目标模型片段 |
+| 其余已准入域 | affine Q4/group64；目标模型的 UE8M0 scale、MXFP4/MXFP8、索引量化等分别列行 | C2/C6 四路完整计算片段；本地 2B 不冒充具名大模型的所有量化组合 |
+
+Q8_0 是这里准入的权重数值编码，不代表 HYLE 加入 GGUF 模型加载器或自动支持所有 Q8/INT8 方案。
+来源为已登记 ggml/llama.cpp/ds4 的 block storage 消费，C0 绑定精确 codec 和同合同执行对照。
+Q4/Q8/FP8 档位只量化冻结名单中的语言线性权重；embedding/tied head、Norm、卷积、状态、门控参数等
+如何保留高精度在 C0 按名称明确，不从“4bit 模型”推导所有张量都四位。每档报告实际量化比例和字节数。
+
+FP8 等格式在缺少原生指令的设备上仍需同设备的合格执行路径，转换/分块解码成本计入；实现为空、
+CPU fallback 或整个模型浮点展开常驻都不满足四路线共同覆盖门。BF16 跑通不能代替 Q4/Q8/FP8 验收。
+
+### 2.4 独立测试消费者与分层验证
+
+模型知识由仓库测试目录的独立 consumer 持有，不进入安装 SDK，不向 HYLE 增加模型加载/采样 API。
+验证工具用成熟解析器读取本地 Safetensors/config/tokenizer，准备命名 tensor 和固定 token IDs；
+小型 C++ consumer 用公开 Direct/Graph 接口构造计算并绑定资源，所有被测计算实际经过相应 HYLE 路线。
+参考工具另行执行相同输入/量化值并保存输出。数据读取器、reference、consumer 各有独立位置与身份。
+
+| 验证层 | 固定范围 | 能证明什么 |
+|---|---|---|
+| 快速回归 | 取这份 2B 的真实权重片段；一个 DeltaNet + 一个 full-attention/FFN，变化输入与状态 | 短周期查接口、数值、量化与状态问题；不标为整模型 |
+| 完整语言主干 | B16/Q4-S128/Q8-B32/F8-B128 各在四路执行 24 层；batch=1，prompt 1/17/128，8 步 teacher-forced decode | 完整图、持续状态、logits 与量化组合；reference 和 HYLE 顺序执行 |
+| 状态边界 | 257-token 分块与逐 token 等价、非零初始状态/reset；batch=2/更长边界放有限片段 | 防止短模型 smoke 漏掉 chunk、序列隔离和缓存偏移 |
+| 七个大模型的计算需求 | 已冻结配置/源码下的真实宽度、head 比例、专家数、格式与状态规则；有界输入和缩小容量的组合图 | 覆盖大模型独有 MoE/MLA/CSA/HCA/mHC 等机制；不称为运行过大模型 checkpoint |
+
+大模型测试无需下载完整权重；确定性输入/权重用例必须保留被测机制和真实维度，并由独立公式/
+合格参考执行核对。若个别问题确需额外真实权重片段，单独记录最小需求和获取条件，不能自动改为
+全模型下载。原尺寸整层超容量时，按独立专家、真实宽度块和状态边界拆验证单元，明确组合限制。
+
+实现正确性使用同一份量化 codes/scales/激活规则作对照；与 B16 比较量化损失单列，不能混成一个
+宽松容差。固定 token、分层抽样、最终 logits/状态、误差门与量化基线在 candidate 前冻结；
+不把生成了自然语言当成正确性通过，也不把模型默认 262144 context 全部预分配。
 
 ## 3. 四路线覆盖合同
 
@@ -87,6 +159,8 @@ workspace、allocator/runtime 及系统余量。实际峰值、加载方式与�
   精确的中间提升、舍入、epsilon、广播、NaN/Inf、饱和与越界合同逐能力固定。
 - 现有 signed symmetric Q4 group128 与 affine Q4 group64 分别登记；二者不是同一种 Q4。
   先统一逻辑 codes / scales / zero 或 bias 语义，再允许路线自己的 packing。
+- 本地量化 2B 增加 Q8_0 / W8A16 的有限 INT8 权重档位；block32、FP16 scale 与实际激活精度
+  单独验收。它与 FP8/W8A8 是不同的八位计算合同，不能互相代签。
 - 新准入：官方实现要求的 E4M3 FP8 block scaling（含 FP32 与 UE8M0 scale 的区别）、
   E2M1 FP4 group32 / UE8M0，以及经来源资格确认的激活量化。权重、激活、KV/index quantization
   是不同能力；精确 block/scale/rounding 独立列行。不会顺带承诺所有 GGUF / AWQ / GPTQ 格式。
@@ -113,7 +187,7 @@ workspace、allocator/runtime 及系统余量。实际峰值、加载方式与�
 | F03 | residual、逐元素运算、SiLU/SwiGLU、clamp、softplus/sqrt、SiTU、输出门 | 部分 | 部分 | 部分 | 部分 | C1 |
 | F04 | RMSNorm/LayerNorm/L2Norm、gated norm、稳定 reduce/softmax/top-k | 部分 | 缺 | 缺 | 缺 | C1 |
 | F05 | dense/batched/broadcast MatMul/GEMV、模型所需 transpose/stride、FP16/BF16 | 部分 | 部分 | 部分 | 部分 | C2 |
-| F06 | 现有两类 Q4 的逻辑 carrier、压缩驻留和 MatMul | 缺 | 部分 | 部分 | 缺 | C2 |
+| F06 | 两类 Q4 与 Q8_0 的逻辑 carrier、压缩驻留和 MatMul | 缺 | 部分 | 部分 | 缺 | C2 |
 | F07 | causal GQA/MQA、mask/ragged、KV 读写/追加/间接访问、门控 attention | 部分 | 缺 | 缺 | 缺 | C2 |
 | F08 | partial/interleaved RoPE、位置偏移、YaRN、需要的 Hadamard rotation | 部分 | 缺 | 缺 | 缺 | C2 |
 | F09 | causal depthwise conv1d，prefill 与带历史状态的 update | 缺 | 缺 | 缺 | 缺 | C3 |
@@ -134,21 +208,33 @@ workspace、allocator/runtime 及系统余量。实际峰值、加载方式与�
 ## 4. 横向工作包
 
 每包的四路线缺一不可；允许在包内逐路提交，实现和适用证据齐全后才签该包完成。
-先达到 0.8B/2B 的自然完整用法，再补目标模型独有的 MoE/Attention/低精度机制。
+先达到本地 2B 的 B16/Q4/Q8 自然完整用法，再补目标模型独有的 MoE/Attention/FP8/FP4 机制。
 
 | 包 | 有限产物 | 当包必须完成的真实消费与停止点 |
 |---|---|---|
-| C0 来源与共同合同 | 解决三个来源问题；F01–F19 展开为有限 profile/domain/case 表；明确 KEEP/BORROW/SELF/APPLICATION；分配 owner 与卡 | 所有 MUST 有来源、四路线承载方案、普通调用草图、数值 oracle、预算与直接消费者；缺哪一项明确阻塞该项，不先写产品 |
+| C0 本地输入与共同合同 | 按清单同步 2B，取得本地 B16 参考输出；绑定独立测试 consumer、离线量化工具/张量名单；解决三个来源问题；F01–F19 展开为有限 profile/domain/case 表；分配 owner 与卡 | 数据同源可复现；MUST 有来源、四路承载、自然调用草图、数值 oracle、预算与直接消费者；各 owner AUDITED 前不写产品 |
 | C1 基本张量与状态边界 | F01–F04；四路 shape/parameter/资源读写的必要补齐；先固定 state 输入/输出、alias 和拒绝合同 | embedding → norm/gate → residual/索引片段；两独立运行状态、错误/别名/关闭；Direct + Graph + 三交付 |
-| C2 线性与常规 Attention | F05–F08；两类既有 Q4 的跨路线落实；有界 cache 访问机制 | dense FFN、门控 GQA 的 prefill→decode，真实 head 比例、offset、padding；压缩常驻和 CPU/两 GPU 路线域差异消除 |
-| C3 递归混合计算 | F09–F11；卷积、DeltaNet、KDA 的 chunk/update 与 state effects | 四路 Qwen3.5-0.8B/2B 完整语言主干和多步 decode；Qwen3.8 真实宽度块；Kimi/GLM KDA 状态用例，不能只用单 token 无状态测试 |
+| C2 线性与常规 Attention | F05–F08；两类 Q4 与 Q8_0 的跨路线落实；有界 cache 访问机制 | dense FFN、门控 GQA 的 prefill→decode；本地 Q4/Q8 真实片段；head 比例、offset、padding、压缩驻留与显式精度转换完整 |
+| C3 递归混合计算 | F09–F11；卷积、DeltaNet、KDA 的 chunk/update 与 state effects | 四路本地 2B 的 B16/Q4-S128/Q8-B32 完整语言主干和多步 decode；Qwen3.8 真实宽度块；Kimi/GLM KDA 状态用例 |
 | C4 MoE 与层间组合 | F12–F14；shared/latent expert、SiTU 组合、mHC/AttnRes、具名 MTP 计算 | 四个 MoE 家族各自规则的完整本地 dispatch→expert→combine；空专家/偏斜/ties；跨层残差与附加 head 的组合/寿命 |
 | C5 稀疏与压缩 Attention | F15–F17；压缩状态、index 复用、窗口与位置边界 | Kimi gated MLA、DeepSeek Pro/Flash CSA/HCA、GLM full/shared index 与 Flash pooled-tail；真实维度片段 + 缩小容量的模型组合图 |
-| C6 现代低精度完整链 | F18；FP8/MXFP4 carrier/scale/rounding、同设备执行、冷 packing 共享 | 在 C4/C5 的真实 dense/MoE/Attention 链中使用对应格式；独立解码 oracle、峰值驻留/带宽/同步/完整性能；不只演示转换或 copy |
-| C7 覆盖终审 | 汇总每包已完成的矩阵/receipts、普通 C++ recipes、默认能力查询与限制 | MUST 无缺席/未运行；七个需求模型的计算回映闭合，两个小模型四路线旅程通过；清理无需求双轨实现后结束，不首次接线算子 |
+| C6 现代低精度完整链 | F18；FP8/MXFP4 carrier/scale/rounding、同设备执行、冷 packing 共享 | 四路本地 2B 的 F8-B128 完整旅程；C4/C5 的量化 dense/MoE/Attention 链；独立解码 oracle、峰值驻留/带宽/同步/完整性能 |
+| C7 覆盖终审 | 汇总每包已完成的矩阵/receipts、普通 C++ recipes、默认能力查询与限制 | MUST 无缺席/未运行；七个需求模型计算回映闭合，本地 2B 的 B16/Q4/Q8/FP8 四路旅程通过；不首次接线算子 |
 
 C3 的小模型验收随此前能力新增/修改按 selector 重放受影响路径；其余不改的性能证据复用。
 后续每个需求家族的组合用例在 C4–C6 当包引入，不把模型图接线全部推迟到 C7。
+来源未裁决只阻塞相应需求行；可独立固定的本地 2B 能力由各自卡继续推进，不能让无关分支造成全线
+停工。该安排不减少 MUST，也不把有未决项的包或 C7 写成已完成。
+
+### 下一轮 goal 的启动动作
+
+1. 核对实际 HEAD、工作树、AGENTS 与 registry，保留计划提交之后的改动，不回退到本页 baseline。
+2. 核对本地模型清单；在 C0 记录验证副本、参考依赖与数据身份，执行首次必要同步和有限 B16 参考
+   forward，保存固定输入、分层抽样、logits 与状态。外部参考通过只签数据/reference 资格。
+3. 为受影响 owner 建立当前卡，先 SCOPED，再按有限 FIX 到 AUDITED；C0 的参考/夹具只作准备，
+   C1 开始真正补产品。首次可运行里程碑是 C3 的四路线 B16/Q4/Q8 2B 完整文本计算。
+4. 继续 C4–C6 补齐大模型独有机制和 FP8/FP4，C7 汇总所有适用证据后结束。任何预算到点或实质
+   外部 blocker 都给具名问题与恢复条件，不虚报通过、不无限调查，不自动启动下一代模型目录。
 
 ### owner 与实施协议
 
@@ -187,7 +273,7 @@ C3 的小模型验收随此前能力新增/修改按 selector 重放受影响路
 5. **图与 Direct**：同逻辑输入/参数/状态得到同域结果；参数变化不误用旧 capture/packing；
    effects/alias 真实，两个 Invocation 状态独立，constants 可共享；失败后接受的工作及 owner 不丢。
    冷编译与稳态重放成本分开，有限 shape 变体/运行参数满足模型片段，禁止 token 循环重建整张图。
-6. **模型**：0.8B/2B 固定 token 输入、逐层抽样、logits 与多步 teacher-forced decode 对比；
+6. **模型**：本地 2B 的 B16/Q4/Q8/FP8 固定 token 输入、逐层抽样、logits 与多步 teacher-forced decode 对比；
    检查 greedy 结果时记录 top-1 margin，浮点近 tie 用预声明数值规则裁决，不要求随机采样文本相同。
    每个大模型的完整计算路径还需缩小容量的结构用例；它与原尺寸片段证据共同证明需求回映。
 7. **误差**：在 candidate 前为各 profile 固定 atol/rtol、范数误差、state 漂移/步数及量化误差标准。
@@ -235,7 +321,7 @@ C3 的小模型验收随此前能力新增/修改按 selector 重放受影响路
 - 功能进度分别报告已验证的共同能力行/总行，以及四路线详细单元格；同一公共数学能力不因多个
   wrapper 或模型重复计数。文档、研究、枚举、schema 和旧 CLOSED 都不算本阶段实现进度。
 - C7 完成要求所有 MUST 明细都有四路自然入口、正确性/状态/资源、三交付与适用性能裁决，
-  两个小模型完整文本旅程通过，七个需求模型回映无遗漏；没有“以后再补另一路”的收尾。
+  本地 2B 的四种规定数值档位完整文本旅程通过，七个需求模型回映无遗漏；没有“以后再补另一路”的收尾。
 - 容量不足的原始大模型整层/整模型运行不在本地 MUST；报告清楚实际执行的验证单元和组合限制。
   能力本身因缺实现/来源/适用验证无法裁决时必须 BLOCKED，不能用容量说明掩盖。
 - 模块状态仍唯一来自 registry。每包完成/重大范围变化/用户询问时报告实现、验证、缺口、阻塞，
@@ -245,9 +331,11 @@ C3 的小模型验收随此前能力新增/修改按 selector 重放受影响路
 
 ## 本次计划交付
 
-仅新增计划与模型来源快照、更新任务导航。产品没有变动，当前模块状态不变。
+本次修订将本地模型、跨机器同步、离线 Q4/Q8/FP8 与测试消费者统一合并到本页；移除 0.8B 依赖，
+保存实际文件清单与结构检查结果。没有创建新 goal、修改产品或改变当前模块状态。
 统一 LOC 脚本 `--self-check`：Compute+Graph 实现 37,035 行 / 130 个文件，不含测试；
 边界复用 [R7 完整路径清单](../../../../evidence/correctness/compute-graph-r7/terminal-loc.json)。
-维护验证：change-impact selector 的 docs/closure 两门 PASS，其余 116 门按影响面跳过；
-来源快照的模型 ID/revision/hash 与本地取得配置一致，`git diff --check` 通过。
-不构建、不运行模型或 P1；来源问题留给具名 C0 核对，不计为产品 blocker 已解决。
+维护验证：selector 的 docs/closure 两门 PASS，其余 116 门按影响面跳过；来源/清单的元数据
+一致性检查与 `git diff --check` PASS。不构建、不运行模型或 P1。
+本地 header/index/大小/文件哈希已核对，尚未同步到其它机器、生成量化派生物或取得计算正确性证据。
+源码中的未决来源问题仍留给具名 C0 核对，不计为产品 blocker 已解决。
