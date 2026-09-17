@@ -194,6 +194,78 @@ TEST(AppleTensor, ViewsCopiesFillCastSelectionAndConcatPreserveLogicalStorage) {
   }
 }
 
+TEST(AppleTensor, ScalarStorageBitsSurviveCompiledSelectionAndIntegerLayouts) {
+  auto context = a::Context::create().value();
+  const auto shape =
+      c::TensorShape::create(std::array<std::int64_t, 1>{17}).value();
+  std::array<std::uint8_t, 17> flags{};
+  for (std::size_t i = 0; i < flags.size(); ++i)
+    flags[i] = i % 3 != 1;
+  const std::array mask{mx::array(flags.data(), mx::Shape{17}, mx::bool_)};
+  for (auto type : {mx::float32, mx::float16, mx::bfloat16}) {
+    const std::uint64_t payload = type == mx::float32   ? 0xffc01234ULL
+                                  : type == mx::float16 ? 0xfe37ULL
+                                                        : 0xffc3ULL;
+    const c::Fill value{shape, logical(type),
+                        c::ScalarValue::from_bits(logical(type), payload)};
+    const c::Fill zero{c::TensorShape::scalar(), logical(type),
+                       c::ScalarValue::from_bits(logical(type), 0)};
+    auto direct = execute(context, value, std::span<const mx::array>{});
+    ASSERT_TRUE(direct) << direct.error().message();
+    EXPECT_EQ(bits(*direct), std::vector<std::uint64_t>(17, payload));
+    auto program = context.compile(
+        [value, zero](const auto &inputs, mx::Stream stream)
+            -> hyle::Result<std::vector<mx::array>> {
+          HYLE_ASSIGN_OR_RETURN(auto v,
+                                a::lower(c::Operation(value),
+                                         std::span<const mx::array>{}, stream));
+          HYLE_ASSIGN_OR_RETURN(auto z,
+                                a::lower(c::Operation(zero),
+                                         std::span<const mx::array>{}, stream));
+          return a::lower(c::Operation(c::Select{}),
+                          std::array{inputs[0], v[0], z[0]}, stream);
+        },
+        std::array{a::InputSpec{{17}, mx::bool_}});
+    ASSERT_TRUE(program) << program.error().message();
+    auto slot = program->create_invocation().value();
+    ASSERT_TRUE(slot.bind(mask).ok());
+    auto work = slot.submit().value();
+    auto result = work.wait().value();
+    std::vector<std::uint64_t> expected(17);
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      expected[i] = flags[i] ? payload : 0;
+    EXPECT_EQ(bits(result.get()->arrays()[0]), expected);
+  }
+  for (auto type : {mx::int32, mx::bool_}) {
+    const auto input = type == mx::int32
+                           ? mx::array({-7, 5, 3, -1}, {2, 2})
+                           : mx::array({true, false, false, true}, {2, 2});
+    const auto original = bits(input);
+    auto transposed = execute(
+        context, c::View::permute(std::array<std::int32_t, 2>{1, 0}).value(),
+        std::array{input});
+    ASSERT_TRUE(transposed);
+    auto copy = execute(context, c::Copy{}, std::array{*transposed});
+    ASSERT_TRUE(copy);
+    EXPECT_EQ(bits(*copy),
+              (std::vector<std::uint64_t>{original[0], original[2], original[1],
+                                          original[3]}));
+    auto selection =
+        execute(context, c::Select{},
+                std::array{mx::array({true, false}, {2, 1}), input, *copy});
+    ASSERT_TRUE(selection);
+    EXPECT_EQ(bits(*selection),
+              (std::vector<std::uint64_t>{original[0], original[1], original[1],
+                                          original[3]}));
+    auto joined = execute(context, c::Concat{}, std::array{input, *selection});
+    ASSERT_TRUE(joined);
+    auto expected = original;
+    const auto selected = bits(*selection);
+    expected.insert(expected.end(), selected.begin(), selected.end());
+    EXPECT_EQ(bits(*joined), expected);
+  }
+}
+
 TEST(AppleTensor, MixedParameterNormsMatchFp64AndRejectWrongPrecision) {
   auto context = a::Context::create().value();
   for (auto type : {mx::float32, mx::float16, mx::bfloat16})
