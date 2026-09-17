@@ -273,7 +273,7 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-D AUDITED：Scan 自然 typed prepare 已实施并通过 W1 局部 correctness/default Graph；能力查询与其他公共运行机制仍待有限审计，C1 未完成。"
+      "summary": "LLM/MoE C1-D/F AUDITED：Scan typed prepare 已实施并通过 W1 局部验证；F01–F02 固定复用普通 prepare 作真实能力检查、保留具体拒绝诊断及无 payload 准备验证，不新增查询运行时；C1 未完成。"
     },
     {
       "module": "graph",

@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 接线进入 AUDITED；`compute_provider_cuda` 仅对 E01–E03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 仅对 E01–E03 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -241,5 +241,27 @@ typed GELU/GELU-tanh 门控。已经 vendored 的固定 SGLang `activation.cuh` 
 非空路径的 dispatch 数仍为一。空路径不虚报实际发出 kernel；其结构 cost 的 dispatch 项保持未声明。
 三交付、默认优选与完整等责 P1 在本包固定 CUDA bundle 执行；当前门控子集没有 CUDA 新覆盖 PASS。
 普通索引的运行时越界、其他张量算子、能力查询仍另行审计，E01 不授权改公共 completion 协议。
+
+### C1-F：普通准备即真实能力检查（AUDITED）
+
+baseline `1c55aae7`。本地模型 consumer 需要在分配 activation/状态和执行前确认具体 dtype、shape、
+resource 与已选设备可执行，而不只调用 schema inference。源码审计确认现有 descriptor/resource
+版 `prepare()` 已通过同一 `propose → prepare_candidate` 完成全部资格检查；成功返回可直接复用的
+程序。单独只调用 propose 的布尔查询会误报后续明确 decline 或编译失败的请求；再次 prepare 后丢弃
+结果则重复编译。故复用既有普通 prepare，不新增另一套支持列表、查询对象或公共运行机制。
+
+具体缺陷是 `prepare_for_mode` 丢弃所有合法 unsupported 原因，最终只返回通用无 Provider 错误；
+用户看不到实际 dtype/layout/资源限制。源码 `operation.cc` 的共同验证、resource match、context
+admission 及 explicit decline/error 语义已经足够，不需要 backend 或 Graph runtime 改动。
+
+| FIX | 固定实施范围 | 验收 / 成本 |
+|---|---|---|
+| F01 | `compute` 普通 shared/delegated prepare 在全部候选不支持时保留具名 Provider 的实际拒绝原因 | 优先已有完整 proposal 的 prepare decline，否则保留固定规则顺序中最后一个 proposal unsupported；资源错误/编译失败/其他 fatal 原样返回，不增加重试；只在最终失败追加 Provider 名，成功路径不拼接文本；不新增常态对象字段或执行期开销 |
+| F02 | 公开头/指南说明 descriptor prepare 是实际能力检查和程序绑定；普通 CPU/CUDA 与必要故障测试 | 成功后保留程序用于执行，不要求 payload/Queue；dtype/shape/resource/closed 真实拒绝；propose 不支持和 prepare 明确 decline 均可诊断，fatal Unimplemented 不被当作 fallback；准备不映射输入或执行 kernel |
+
+Apple/Vulkan 继续使用各自原生编译/准备对象，在本卡对应路线审计中落实同等普通旅程；本子集不强迫
+它们共享 Compute Context，不预签其能力。现有 Graph compile 已绑定真实程序，本次不改图规划。
+验证只运行受影响 compute/backend/custom/Native 与默认 CPU/CUDA 消费者；共享 API 的完整交付
+继续按 C1 定型候选执行。无新 API、无新依赖、无 P1，C1 整包仍未完成。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
