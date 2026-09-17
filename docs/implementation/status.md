@@ -35,8 +35,8 @@
 | io_http | CLOSED | P0 / [PASS](tasks/io/io-http-v4-upgrade-handoff.md) | [record](tasks/io/io-http-v4-upgrade-handoff.md) | io_http v4 CLOSED：协议无关 Upgrade owner 以 O(1) move 安全移交 transport 与预读 bytes，普通 HTTP 零常态成本；三平台、sanitizer、三交付、直接 WebSocket consumer 与红队全部通过。 |
 | io_http2 | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。 |
 | io_transfer | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-transfer-v1.md) | io_transfer v1 CLOSED：可靠 local/HTTP(S) transfer、resume、checksum 与 atomic publish 通过三平台、sanitizer、三交付、易用性和红队；P1 的 local publish 非劣、Range resume 双顺序 WIN，5% 门全过。 |
-| compute | AUDITED | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。 |
-| graph | AUDITED | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。 |
+| compute | CANDIDATE | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。 |
+| graph | CANDIDATE | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。 |
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
@@ -58,10 +58,10 @@
 | compute_provider_cuda | CLOSED | P0 / [PASS](tasks/build/cuda-vendor-content-audit-v1.md) | [record](tasks/build/cuda-vendor-content-audit-v1.md) | CUDA vendor audit CLOSED：V1/V2 正规范摘要与 enabled 消费前校验完成；Windows/Air source 正负检查和最终 selector 通过。纯配置 P0，R4 运行代码、限定 P1 资格与方向继承，无 GPU 重测。 |
 | compute_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
-| compute_route_apple | AUDITED | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。 |
-| graph_route_apple | AUDITED | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。 |
+| compute_route_apple | CANDIDATE | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。 |
+| graph_route_apple | CANDIDATE | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。 |
+| compute_route_vulkan | CANDIDATE | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。 |
+| graph_route_vulkan | CANDIDATE | — | [record](tasks/compute/four-route-foundation-final-review.md) | R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

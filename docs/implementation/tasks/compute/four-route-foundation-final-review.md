@@ -1,6 +1,6 @@
 # R7：四路线基础终审、诊断与清理
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - baseline：`14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220`，Windows canonical 工作树干净。
 - owner：`compute`、`graph`、`compute_route_apple`、`graph_route_apple`、
@@ -105,3 +105,19 @@ mock 或 copy 当成新路线完成。新增诊断只使用元数据，不加入
 selector 所选 docs/closure，保留 skipped reasons。终局核对当前性能账本与 owner binding；施工期间
 原账本是 R6 终局快照，不能用它代替本卡当前 registry 状态。LOC 使用统一脚本统计整个 Compute +
 Graph，不含测试/bench/vendor；baseline 为 **36,765 行 / 129 个代码文件**。
+
+## 不可变候选与验收进展（2026-09-17）
+
+六个 owner 进入 CANDIDATE，绑定 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。F1–F5 的产品 API、
+算法、运行对象布局和活动比较入口已冻结；F4 的最终 MUST 索引与终局证据尚待剩余验收。
+本轮产品来自 `e84a7ad3`，其后三次提交仅修正新增测试的语义假设和 descriptor 形状；
+`src/include/cmake/samples/bench/scripts` 逐树一致，不触发新的性能采样。
+
+[已归档 P0 与配置证据](../../../../evidence/correctness/compute-graph-r7/README.md)覆盖九个 B1
+正反 configure、四份 trace-only 运行源、十五份未变算法/依赖树，以及 29 个真实 Release OFF
+函数的指令与调用目标比较。只对已核实的源码位置身份做归一化，未掩盖执行成本变化。
+统一脚本统计本候选整个 Compute + Graph **37,035 行 / 130 个代码文件**，不含测试/bench/vendor。
+
+Windows 普通门在不可变验证副本执行；原失败和定向测试修正后的续跑记录分别保留，不伪造原整批
+PASS。剩余适用项目为跨平台 report 寿命/OOM 与 host sanitizer、真实 TRACE OFF/ON 三交付、F5
+fixture 构建和独立数值 oracle、最终红队与证据汇总。当前不能签 CLOSED 或宣布基础架构完成。

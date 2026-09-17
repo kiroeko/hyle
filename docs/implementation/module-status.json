@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
+      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
+      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
     },
     {
       "module": "container_concurrent",
@@ -512,27 +514,31 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
+      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
+      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
+      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
+      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
     }
   ]
 }

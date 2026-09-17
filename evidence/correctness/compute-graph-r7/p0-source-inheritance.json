@@ -1,0 +1,104 @@
+{
+  "baseline": "14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220",
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "verdict": "PASS",
+  "tier": "P0",
+  "performance_samples": 0,
+  "trace_only_runtime_files": [
+    {
+      "file": "src/compute/completion.cc",
+      "baseline_blob": "57db85ed249500b2b2e9db1eef834b1e01a4defc",
+      "candidate_blob": "31c780c04c8ffab09878f39caea84d2cce53a1fd",
+      "only_trace_include_and_static_zones": true
+    },
+    {
+      "file": "src/compute/operation.cc",
+      "baseline_blob": "fcf960514b8cf9a3ced9f877e7d655b188707cd4",
+      "candidate_blob": "6d5b480c352be903551e9c35275b44ed35a18cb0",
+      "only_trace_include_and_static_zones": true
+    },
+    {
+      "file": "src/compute_route_apple/apple_context.cc",
+      "baseline_blob": "a70acb0175de0626f287cfaac6c0922fe5efd951",
+      "candidate_blob": "fe99b98565c6cce279df32b5504b305062ec9ced",
+      "only_trace_include_and_static_zones": true
+    },
+    {
+      "file": "src/compute_route_vulkan/vulkan_run.cc",
+      "baseline_blob": "e82075003171b27d0d8db19954dd8e4d75a5964d",
+      "candidate_blob": "f81a9adc1af0538d748078461b5cb5a83f27ab99",
+      "only_trace_include_and_static_zones": true
+    }
+  ],
+  "unchanged_algorithms_and_dependencies": [
+    {
+      "path": "src/compute_backend_cpu",
+      "git_object": "68175779ac7434005d9560dcf4a3fe7ca55777a6"
+    },
+    {
+      "path": "src/compute_backend_cuda",
+      "git_object": "5f3beecd1951ae86dea9678dcceb316f91957eb4"
+    },
+    {
+      "path": "src/compute_provider_native",
+      "git_object": "c8430547a64b84eb75b492c79ad8dbeb3a9ca18b"
+    },
+    {
+      "path": "src/compute_provider_onednn",
+      "git_object": "732a43e5e391c815abade75916d1c0fc169f1eec"
+    },
+    {
+      "path": "src/compute_provider_cublas",
+      "git_object": "88da117dae47ddac0624663df24bedfbca235ed2"
+    },
+    {
+      "path": "src/compute_provider_cuda",
+      "git_object": "694106085aa25d86bfef98b6e8340dc51d10ae2d"
+    },
+    {
+      "path": "src/compute_provider_marlin",
+      "git_object": "064d79c28d8360ff6debca2444b06395443d604b"
+    },
+    {
+      "path": "src/compute_route_cpu",
+      "git_object": "df76bcf06f86b699a186ff2e5c649a216f5c7701"
+    },
+    {
+      "path": "src/compute_route_cuda",
+      "git_object": "bf151c22b220bf15ec0571553475741b6b60058e"
+    },
+    {
+      "path": "src/graph_provider_onednn",
+      "git_object": "2d8d4d6988b1915e4261426d33ca52c925a525bc"
+    },
+    {
+      "path": "src/graph_route_cpu",
+      "git_object": "8bc1c78c097cd79c96aff6bf948ac0c361fb4832"
+    },
+    {
+      "path": "src/graph_route_cuda",
+      "git_object": "affc15fa8a018aad4b935b93c3adb3b7a2aa43a8"
+    },
+    {
+      "path": "src/simd",
+      "git_object": "ea9691639185872abc7ba00ac5451d6506fb1dfe"
+    },
+    {
+      "path": "third_party",
+      "git_object": "2f25165f5b9a9ebaa26c54c51c373ec636acb788"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "git_object": "a120bb2862c5df737e789c7a9e774eb5cd86b979"
+    }
+  ],
+  "cold_changes": [
+    "Graph ReportState nodes and indexed pure-value query",
+    "Apple Graph optional owning cold metadata",
+    "Vulkan optional PlanFacts output and owning cold Graph metadata"
+  ],
+  "concurrency": "No new shared mutable execution state, atomics, locks, queues or cancellation protocol. Native report output is caller-owned and borrowed only for the cold compile call; independent compiles require independent mutable outputs. Prior TSan proves unchanged execution paths, not a new TSan run.",
+  "cost": "CPU/CUDA node report O(nodes) cold copy; native report opt-in only. Default route rules, Program/Invocation/Completion hot layouts, kernels and math unchanged. Tracy ON is host observation with its own overhead and is not covered by OFF performance receipts.",
+  "codegen": "off-codegen-final.json: 29 real MSVC Release TRACE-OFF function/COMDAT bodies; unchanged instructions/callees except proven TU identity and fatal-assert source metadata.",
+  "limitations": "P0 supports inheritance of exact historical machine/format/shape-qualified performance. It does not assert unchanged whole-binary placement or qualify unknown devices/versions."
+}

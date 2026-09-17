@@ -1,0 +1,142 @@
+{
+  "scope": "configuration semantics only; real OFF/ON runtime and delivery use R7 acceptance",
+  "helper_sha256": "f891232833c921ed872a4cd1ea6ed9a7d86c00dd000cba0156579d40bbf0e05e",
+  "cases": [
+    {
+      "case": "enabled",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\enabled",
+        "-B",
+        "C:\\h7\\b1-configure\\enabled\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": null,
+      "exit_code": 0,
+      "verdict": "PASS"
+    },
+    {
+      "case": "enabled-missing-trace",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\enabled-missing-trace",
+        "-B",
+        "C:\\h7\\b1-configure\\enabled-missing-trace\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "real target omitted TRACE",
+      "exit_code": 1,
+      "verdict": "PASS"
+    },
+    {
+      "case": "enabled-unauthorized-trace",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\enabled-unauthorized-trace",
+        "-B",
+        "C:\\h7\\b1-configure\\enabled-unauthorized-trace\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "not declare this trace consumer",
+      "exit_code": 1,
+      "verdict": "PASS"
+    },
+    {
+      "case": "enabled-no-hook",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\enabled-no-hook",
+        "-B",
+        "C:\\h7\\b1-configure\\enabled-no-hook\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "no HYLE_TRACE use exists",
+      "exit_code": 1,
+      "verdict": "PASS"
+    },
+    {
+      "case": "enabled-undeclared-hook",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\enabled-undeclared-hook",
+        "-B",
+        "C:\\h7\\b1-configure\\enabled-undeclared-hook\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "module did not declare TRACE",
+      "exit_code": 1,
+      "verdict": "PASS"
+    },
+    {
+      "case": "absent",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\absent",
+        "-B",
+        "C:\\h7\\b1-configure\\absent\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": null,
+      "exit_code": 0,
+      "verdict": "PASS"
+    },
+    {
+      "case": "absent-sources",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\absent-sources",
+        "-B",
+        "C:\\h7\\b1-configure\\absent-sources\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "SOURCES are contradictory",
+      "exit_code": 1,
+      "verdict": "PASS"
+    },
+    {
+      "case": "absent-trace",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\absent-trace",
+        "-B",
+        "C:\\h7\\b1-configure\\absent-trace\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "TRACE/TESTING require an implementation",
+      "exit_code": 1,
+      "verdict": "PASS"
+    },
+    {
+      "case": "absent-testing",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\b1-configure\\absent-testing",
+        "-B",
+        "C:\\h7\\b1-configure\\absent-testing\\build",
+        "-G",
+        "Ninja"
+      ],
+      "expected_refusal": "TRACE/TESTING require an implementation",
+      "exit_code": 1,
+      "verdict": "PASS"
+    }
+  ],
+  "verdict": "PASS"
+}

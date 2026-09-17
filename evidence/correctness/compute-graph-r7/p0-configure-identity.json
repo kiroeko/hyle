@@ -1,0 +1,243 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "original_product_candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+  "shipping_inputs_equal": {
+    "src": "12b556428aae06f76537557811b9ac310f27dc9e",
+    "include": "9b7257c325419bf60c27e9c1657feb24ca75504f",
+    "cmake": "78dc10da511738a42bf23c794b8eeaed00d092c7",
+    "samples": "89888e611af4a65e3ece3b82d031999ca346a9ee",
+    "bench": "2897664b03d0c352d67ac56875308148be6feb7e",
+    "scripts": "3b66cd36e20b8dd691b131c9bbe86a79a5e98e3d"
+  },
+  "test_only_changes": [
+    "tests/graph/executable_test.cc",
+    "tests/graph_route_apple/graph_test.cc",
+    "tests/graph_route_vulkan/graph_test.cc"
+  ],
+  "p0_verdict": "PASS",
+  "b1_configure_verdict": "PASS",
+  "b1_cases": 9,
+  "runtime_delivery_acceptance": "PENDING; this receipt does not close R7 or B1",
+  "performance_samples": 0,
+  "codegen_identity_note": "off-codegen-final.json preserves the actually observed e84a7ad3 product object identity and the then-current 81ed40dd test-only snapshot; shipping tree equality above extends that P0 evidence to 87ae5834 without relabeling or rerunning it.",
+  "archive": {
+    "file": "p0-configure-raw.zip",
+    "sha256": "8a16ed7d735830d3404e0c2f132c5307a16a4f33aae591694d51c441975b1812",
+    "entries": [
+      {
+        "path": "b1/absent-sources/CMakeLists.txt",
+        "sha256": "fc75965a8d15dff56a29ec30c08e016a7fc4bda149318686848eaa5746df6a5e"
+      },
+      {
+        "path": "b1/absent-sources/build/CMakeCache.txt",
+        "sha256": "782178f0a4e3ecd506fe3e1fcf521681d06e0c4bca2e75632282f0726c438188"
+      },
+      {
+        "path": "b1/absent-sources/configure.log",
+        "sha256": "6f7f0b74c5462af53ccd9d94d8333df9925f9f4c044814d68af0bd49002dc301"
+      },
+      {
+        "path": "b1/absent-sources/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/absent-sources/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/absent-testing/CMakeLists.txt",
+        "sha256": "7bdcaf1321d584df321b6d6c158a76c2ea974bde3f22892371ba58ac6c00f485"
+      },
+      {
+        "path": "b1/absent-testing/build/CMakeCache.txt",
+        "sha256": "b939a456d0eb234cf25e3fbaff26d68ff97b4c9186b77c14110a3240f3dbc560"
+      },
+      {
+        "path": "b1/absent-testing/configure.log",
+        "sha256": "e761fd015b1385a6d3afb758835c529743e0f5fc69d760e8c62c11a5adf7db98"
+      },
+      {
+        "path": "b1/absent-testing/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/absent-testing/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/absent-trace/CMakeLists.txt",
+        "sha256": "a3e5620126dbe0ef199c48ad0b090f8189849ed227c0031670105f23b1ea105b"
+      },
+      {
+        "path": "b1/absent-trace/build/CMakeCache.txt",
+        "sha256": "cbc625e384769caf68d2e2319b12fdec4f0bfc62495bfc2be7f79c2c206fa82b"
+      },
+      {
+        "path": "b1/absent-trace/configure.log",
+        "sha256": "e761fd015b1385a6d3afb758835c529743e0f5fc69d760e8c62c11a5adf7db98"
+      },
+      {
+        "path": "b1/absent-trace/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/absent-trace/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/absent/CMakeLists.txt",
+        "sha256": "c9ab7b6a53f144cde18317bda85228b6bee7312b6543c6ef175866c29385ee8e"
+      },
+      {
+        "path": "b1/absent/build/CMakeCache.txt",
+        "sha256": "f1ea912dae2524955d66ba0941e1c18aca27ca126984bc269ac5dc4706393d11"
+      },
+      {
+        "path": "b1/absent/configure.log",
+        "sha256": "1145cb45c2216d51c1b2ca15804f30d70fe9c45d4253cc27516eb0db28cc1ec8"
+      },
+      {
+        "path": "b1/absent/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/absent/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/enabled-missing-trace/CMakeLists.txt",
+        "sha256": "8c02415a804b4d9ab5ff6271ef9d711bdc66cb8139c25fe6a9e1d0ca6a60a04d"
+      },
+      {
+        "path": "b1/enabled-missing-trace/build/CMakeCache.txt",
+        "sha256": "d59e75a66953ad69422e611754ed9a32198cad041aa799712c5a1b5de8b0d8f1"
+      },
+      {
+        "path": "b1/enabled-missing-trace/configure.log",
+        "sha256": "d00d049b0881ae3975c4950b03ad2bba95deea27de34a2694411bccaba5f95fc"
+      },
+      {
+        "path": "b1/enabled-missing-trace/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/enabled-missing-trace/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/enabled-no-hook/CMakeLists.txt",
+        "sha256": "1c173d03f30211e561737e451815339a886eeaf671fd002c366503ccfa4c01b2"
+      },
+      {
+        "path": "b1/enabled-no-hook/build/CMakeCache.txt",
+        "sha256": "d9f4ee1762c31fb7c83bb15fc7105fe40e5753db6baaf7add22ef44d9498a6e2"
+      },
+      {
+        "path": "b1/enabled-no-hook/configure.log",
+        "sha256": "46864ff09d2603ea1407bacdbf38a5d40296a45e9797fa2abbb7c7e35d79615a"
+      },
+      {
+        "path": "b1/enabled-no-hook/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/enabled-no-hook/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/enabled-unauthorized-trace/CMakeLists.txt",
+        "sha256": "ff2f40ddfe875ec5c7887a93e959b772ac2375c281fd2177ba6fa0f350a940a9"
+      },
+      {
+        "path": "b1/enabled-unauthorized-trace/build/CMakeCache.txt",
+        "sha256": "f30b2adc258645b9a7c1cc6791c4ef91c218b9c17f25c5a8f563fe003baa2574"
+      },
+      {
+        "path": "b1/enabled-unauthorized-trace/configure.log",
+        "sha256": "e37f24a68653a391efeadbb01abd59b1349c63a35211fe8ba7b9c192a6dfa38e"
+      },
+      {
+        "path": "b1/enabled-unauthorized-trace/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/enabled-unauthorized-trace/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/enabled-undeclared-hook/CMakeLists.txt",
+        "sha256": "e6fc49005c570dc43ce4d67dc95d056111b4584294ee427ef9a23308b4649c69"
+      },
+      {
+        "path": "b1/enabled-undeclared-hook/build/CMakeCache.txt",
+        "sha256": "24162331bb1522ef15597dd42fc81e067cd5e00b50ebef73cfdc08d89af6a1cc"
+      },
+      {
+        "path": "b1/enabled-undeclared-hook/configure.log",
+        "sha256": "ca2a62cfbb4a8ab5367142cd71b338868c4a72841d417ad409159439863d157c"
+      },
+      {
+        "path": "b1/enabled-undeclared-hook/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/enabled-undeclared-hook/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "b1/enabled/CMakeLists.txt",
+        "sha256": "0ecbeb50642c6c083eb4cc1120715de1b683cb0feb1fc9c856c9503bdf9f934e"
+      },
+      {
+        "path": "b1/enabled/build/CMakeCache.txt",
+        "sha256": "89f15ec3f1b04760eb793022679f2062b2896dfc11238dbbabc81d82e5cad4d5"
+      },
+      {
+        "path": "b1/enabled/configure.log",
+        "sha256": "383f8ba2e557df119ea5b9b2446f4c2eb03f3020ee810c0ff159925752c59cd3"
+      },
+      {
+        "path": "b1/enabled/hook.cc",
+        "sha256": "afb740e54be908e46e8d31f32679431beed1bccf25d067c6e9b6a46ee66aac20"
+      },
+      {
+        "path": "b1/enabled/plain.cc",
+        "sha256": "93983f3171cb7ee2dede547922124bfbe30e7d0ce86f01ad0ecc77ab7629b7fb"
+      },
+      {
+        "path": "p0/compare-off-codegen.py",
+        "sha256": "0f3be5a6534fa9a80f9e97473c65669846a602a24e7841f79003e672a8381896"
+      },
+      {
+        "path": "p0/finalize-off-codegen.py",
+        "sha256": "72e46f1fed1e9edf839f8530542ba173d954dd5966677be25ef56d14b49ae6b9"
+      },
+      {
+        "path": "p0/off-codegen-progress.json",
+        "sha256": "85722ca64a537d7766786d31ed927926c50456b4145d1c77880bc30464540ffa"
+      },
+      {
+        "path": "scripts/r7-b1-configure.py",
+        "sha256": "2c0615ca73dd65a6ea139062763de1c842f2cfdaa6c05a5c6c6d24301970bc1f"
+      },
+      {
+        "path": "source-archive/0.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "source-archive/1.log",
+        "sha256": "f06c9ab8fb831c25765a1404ae2e530cef2a045cc0b3866625579b367d959299"
+      },
+      {
+        "path": "source-archive/identity.json",
+        "sha256": "97b99690c261a95f6eb39b2b76ef0c0c9ad004897c7bbe7430ea1f8b47f9ad55"
+      }
+    ]
+  },
+  "files": {
+    "off-codegen-final.json": "809e1e01ef3ea28bf4edd42e8b2f8f54dfdce6d989e7b0bf61d0649d3e987814",
+    "p0-source-inheritance.json": "4c49df22f59317097074e595fc1eaf776a158425700b1115426e214d55b9ea4e",
+    "implementation-loc.json": "815acfc3e927e8685c471c9dad432da0deaf5b3505310cb5e43e796e3a06ec5b",
+    "b1-configure.json": "88d84800645b631a21a413f4ecbb594bd76530929ba52e7fc0460e6fd74f6aec"
+  }
+}

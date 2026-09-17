@@ -1,0 +1,3175 @@
+{
+  "baseline_binary_candidate": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+  "candidate": "e84a7ad3950ee6d7a4fbed88a6d58a8f4c08c4ff",
+  "scope": "MSVC 19.50 Release shared TRACE=OFF; real function instructions and symbolic relocation targets. No performance sampling; cold reports excluded. This is a P0 cost proof, not an elapsed-time or profiler-ON performance claim.",
+  "entries": [
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/completion.cc.obj",
+      "symbol": "?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+      "baseline_object_sha256": "ed0786f854d334f5e7263dc9f4df98b7a4803c603eff1f14d09c92f012f0fbe9",
+      "candidate_object_sha256": "af58da4b3a943b3f373ea502b805f87f74f310b7faff54ed11fc1af683df7aed",
+      "before": {
+        "bytes": "c591bb590e8bf0c81dd9122d2df21aa3bf291a55c90d88a8502cf658c7693366",
+        "size": 219,
+        "relocations": [
+          [
+            43,
+            "??_C@_0BG@HJKCENOC@completion?5is?5invalid@",
+            4
+          ],
+          [
+            49,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            120,
+            "??_C@_0CE@DEIPIIMJ@completion?5wait?5callback?5is?5mis@",
+            4
+          ],
+          [
+            126,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            178,
+            "?settle@Completion@compute@hyle@@AEBAXVStatus@3@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "c591bb590e8bf0c81dd9122d2df21aa3bf291a55c90d88a8502cf658c7693366",
+        "size": 219,
+        "relocations": [
+          [
+            43,
+            "??_C@_0BG@HJKCENOC@completion?5is?5invalid@",
+            4
+          ],
+          [
+            49,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            120,
+            "??_C@_0CE@DEIPIIMJ@completion?5wait?5callback?5is?5mis@",
+            4
+          ],
+          [
+            126,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            178,
+            "?settle@Completion@compute@hyle@@AEBAXVStatus@3@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "54b01c541c96cd2f73367ba7d07297dabc446ffedcf8825ef3f27e00e0b2df4f",
+        "size": 1297,
+        "relocations": [
+          [
+            54,
+            "??_C@_0CA@DCDAGKFH@operation?5invocation?5is?5invalid@",
+            4
+          ],
+          [
+            80,
+            "??_C@_0BB@IKNAMPLD@queue?5is?5invalid@",
+            4
+          ],
+          [
+            117,
+            "??_C@_0DM@HMMLPJFO@queue?5and?5operation?5invocation?5@",
+            4
+          ],
+          [
+            123,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            172,
+            "?validate_bindings@?A0x203a2514@compute@hyle@@YA?AVStatus@3@AEBUPreparedState@detail@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z",
+            4
+          ],
+          [
+            219,
+            "??_C@_0CO@NADDBGPK@failed?5operation?5invocation?5mus@",
+            4
+          ],
+          [
+            226,
+            "??_C@_0DA@DBKIBLND@operation?5invocation?5already?5ha@",
+            4
+          ],
+          [
+            240,
+            "strlen",
+            4
+          ],
+          [
+            278,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            327,
+            "?begin@QueueSequence@detail@compute@hyle@@SA?AV?$Result@VQueueSequence@detail@compute@hyle@@@4@AEAVQueue@34@@Z",
+            4
+          ],
+          [
+            397,
+            "??_C@_0CA@DCDAGKFH@operation?5invocation?5is?5invalid@",
+            4
+          ],
+          [
+            405,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            437,
+            "??_C@_0CC@GOLGGKF@compute?5queue?5sequence?5is?5inval@",
+            4
+          ],
+          [
+            445,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            596,
+            "??_C@_0CO@HDICHFPA@prevalidated?5graph?5operation?5ro@",
+            4
+          ],
+          [
+            602,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            645,
+            "?record@QueueSequence@detail@compute@hyle@@QEAAXUEnqueueResult@234@@Z",
+            4
+          ],
+          [
+            658,
+            "?finish@QueueSequence@detail@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@XZ",
+            4
+          ],
+          [
+            695,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            710,
+            "??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            736,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            793,
+            "?mark_operation_terminal@?A0x203a2514@compute@hyle@@YAXPEAXAEBVStatus@3@@Z",
+            4
+          ],
+          [
+            804,
+            "?release_operation_lifetime@?A0x203a2514@compute@hyle@@YAXPEAX@Z",
+            4
+          ],
+          [
+            828,
+            "?attach_lifetime@CompletionAccess@detail@compute@hyle@@SA?AVStatus@4@AEAVCompletion@34@AEAUCompletionLifetime@234@@Z",
+            4
+          ],
+          [
+            856,
+            "?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            872,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            944,
+            "??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            961,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            977,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            992,
+            "??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1009,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1049,
+            "??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            1077,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1100,
+            "?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            1142,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1165,
+            "??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            1199,
+            "??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1216,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1232,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1247,
+            "??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1264,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1292,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "54b01c541c96cd2f73367ba7d07297dabc446ffedcf8825ef3f27e00e0b2df4f",
+        "size": 1297,
+        "relocations": [
+          [
+            54,
+            "??_C@_0CA@DCDAGKFH@operation?5invocation?5is?5invalid@",
+            4
+          ],
+          [
+            80,
+            "??_C@_0BB@IKNAMPLD@queue?5is?5invalid@",
+            4
+          ],
+          [
+            117,
+            "??_C@_0DM@HMMLPJFO@queue?5and?5operation?5invocation?5@",
+            4
+          ],
+          [
+            123,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            172,
+            "?validate_bindings@?A0x92d75b16@compute@hyle@@YA?AVStatus@3@AEBUPreparedState@detail@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z",
+            4
+          ],
+          [
+            219,
+            "??_C@_0CO@NADDBGPK@failed?5operation?5invocation?5mus@",
+            4
+          ],
+          [
+            226,
+            "??_C@_0DA@DBKIBLND@operation?5invocation?5already?5ha@",
+            4
+          ],
+          [
+            240,
+            "strlen",
+            4
+          ],
+          [
+            278,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            327,
+            "?begin@QueueSequence@detail@compute@hyle@@SA?AV?$Result@VQueueSequence@detail@compute@hyle@@@4@AEAVQueue@34@@Z",
+            4
+          ],
+          [
+            397,
+            "??_C@_0CA@DCDAGKFH@operation?5invocation?5is?5invalid@",
+            4
+          ],
+          [
+            405,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            437,
+            "??_C@_0CC@GOLGGKF@compute?5queue?5sequence?5is?5inval@",
+            4
+          ],
+          [
+            445,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            596,
+            "??_C@_0CO@HDICHFPA@prevalidated?5graph?5operation?5ro@",
+            4
+          ],
+          [
+            602,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            645,
+            "?record@QueueSequence@detail@compute@hyle@@QEAAXUEnqueueResult@234@@Z",
+            4
+          ],
+          [
+            658,
+            "?finish@QueueSequence@detail@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@XZ",
+            4
+          ],
+          [
+            695,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            710,
+            "??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            736,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            793,
+            "?mark_operation_terminal@?A0x92d75b16@compute@hyle@@YAXPEAXAEBVStatus@3@@Z",
+            4
+          ],
+          [
+            804,
+            "?release_operation_lifetime@?A0x92d75b16@compute@hyle@@YAXPEAX@Z",
+            4
+          ],
+          [
+            828,
+            "?attach_lifetime@CompletionAccess@detail@compute@hyle@@SA?AVStatus@4@AEAVCompletion@34@AEAUCompletionLifetime@234@@Z",
+            4
+          ],
+          [
+            856,
+            "?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            872,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            944,
+            "??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            961,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            977,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            992,
+            "??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1009,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1049,
+            "??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            1077,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1100,
+            "?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            1142,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1165,
+            "??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            1199,
+            "??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1216,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1232,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1247,
+            "??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1264,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1292,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "verdict": "DIFFERENT",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@AEBVTensorView@23@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "05912d9a8921b56768a09f179af7ab8e4c8ab686d5d0f809ca37c79a68b78773",
+        "size": 69,
+        "relocations": [
+          [
+            56,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "05912d9a8921b56768a09f179af7ab8e4c8ab686d5d0f809ca37c79a68b78773",
+        "size": 69,
+        "relocations": [
+          [
+            56,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@AEBVTensorView@23@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "9eb7bc66665ff99e0a1a2ca9d8bf8935d0663541ce9a0cf4c7ed846099b078e6",
+        "size": 61,
+        "relocations": [
+          [
+            48,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "9eb7bc66665ff99e0a1a2ca9d8bf8935d0663541ce9a0cf4c7ed846099b078e6",
+        "size": 61,
+        "relocations": [
+          [
+            48,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@AEBVConstTensorView@23@AEBVTensorView@23@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "0e9255c34ff6aa9e295bbcf0965bf32211819a8dc0b8f4b8f5ad20dda864bc1e",
+        "size": 69,
+        "relocations": [
+          [
+            56,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "0e9255c34ff6aa9e295bbcf0965bf32211819a8dc0b8f4b8f5ad20dda864bc1e",
+        "size": 69,
+        "relocations": [
+          [
+            56,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@AEBVConstTensorView@23@1AEBVTensorView@23@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "5434dd09ee3cc8bd5e2ddd28a63ca7a45d63c18cbb7a4d7376c510f99711eaef",
+        "size": 444,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            405,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            423,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "5434dd09ee3cc8bd5e2ddd28a63ca7a45d63c18cbb7a4d7376c510f99711eaef",
+        "size": 444,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            405,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            423,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@AEBVConstTensorView@23@11AEBVTensorView@23@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "5aec9a5a7a565c976892246eedd7624127c3eb17a138212b8d0a450987f89296",
+        "size": 622,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            583,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            601,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "5aec9a5a7a565c976892246eedd7624127c3eb17a138212b8d0a450987f89296",
+        "size": 622,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            583,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            601,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@AEBVConstTensorView@23@111AEBVTensorView@23@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "fa89e7e2f412dd7be4e729ae8e2021ca1fc2768e97a0947b0064ddc4c193a9d6",
+        "size": 800,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            761,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            779,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "fa89e7e2f412dd7be4e729ae8e2021ca1fc2768e97a0947b0064ddc4c193a9d6",
+        "size": 800,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            761,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            779,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@AEBVConstTensorView@23@AEBVTensorView@23@2@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "b04d1798f36f1786a195f90cde3bd65dbea88206101f9841a68effff8ae52911",
+        "size": 431,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            392,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            410,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "b04d1798f36f1786a195f90cde3bd65dbea88206101f9841a68effff8ae52911",
+        "size": 431,
+        "relocations": [
+          [
+            24,
+            "__security_cookie",
+            4
+          ],
+          [
+            392,
+            "?submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z",
+            4
+          ],
+          [
+            410,
+            "__security_check_cookie",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@6@V?$span@$$CBVTensorView@compute@hyle@@$0?0@6@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "f33980472a6d7faf10410967d2034e328216842956b65c158c031baf74116eee",
+        "size": 1078,
+        "relocations": [
+          [
+            59,
+            "??_C@_0CA@GCCJDPEB@delegated?5invocation?5is?5invalid@",
+            4
+          ],
+          [
+            89,
+            "??_C@_0CD@NPELNGCH@delegated?5submit?5is?5already?5act@",
+            4
+          ],
+          [
+            100,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            193,
+            "??_C@_0CH@ILKNIPMG@delegated?5dependency?5capacity?5e@",
+            4
+          ],
+          [
+            205,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            296,
+            "?validate_bindings@?A0x203a2514@compute@hyle@@YA?AVStatus@3@AEBUPreparedState@detail@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z",
+            4
+          ],
+          [
+            381,
+            "?dependency@CompletionAccess@detail@compute@hyle@@SA?AUCompletionDependency@234@AEBVCompletion@34@@Z",
+            4
+          ],
+          [
+            510,
+            "?submit_delegated_borrowed_prevalidated@OperationInvocationAccess@detail@compute@hyle@@SA?AV?$Result@VCompletion@compute@hyle@@@4@AEAVOperationInvocation@34@V?$span@$$CBUCompletionDependency@detail@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z",
+            4
+          ],
+          [
+            562,
+            "??_C@_0CA@PDFBGI@delegated?5dependency?5is?5invalid@",
+            4
+          ],
+          [
+            574,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            632,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@SA@PEAXAEBVStatus@5@@Z",
+            4
+          ],
+          [
+            652,
+            "?<lambda_invoker_cdecl>@<lambda_2>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@SA@PEAX@Z",
+            4
+          ],
+          [
+            672,
+            "?attach_retention@CompletionAccess@detail@compute@hyle@@SA?AVStatus@4@AEAVCompletion@34@AEAUCompletionRetention@234@@Z",
+            4
+          ],
+          [
+            710,
+            "??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            744,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            760,
+            "??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            778,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            790,
+            "??_C@_0CO@COIDNMBL@failed?5delegated?5invocation?5mus@",
+            4
+          ],
+          [
+            797,
+            "??_C@_0CH@CODJGMAK@delegated?5invocation?5is?5still?5r@",
+            4
+          ],
+          [
+            809,
+            "strlen",
+            4
+          ],
+          [
+            882,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            943,
+            "??0?$span@$$CBUFatalField@core@hyle@@$0?0@std@@QEAA@XZ",
+            4
+          ],
+          [
+            950,
+            "??_C@_0EP@BFGPNKL@C?3?2hyle?9scratch?2r6?9vulkan?920260@",
+            4
+          ],
+          [
+            962,
+            "??0?$basic_string_view@DU?$char_traits@D@std@@@std@@QEAA@QEBD@Z",
+            4
+          ],
+          [
+            974,
+            "??0?$basic_string_view@DU?$char_traits@D@std@@@std@@QEAA@XZ",
+            4
+          ],
+          [
+            981,
+            "??_C@_0O@HBKPCLIL@attached?4ok?$CI?$CJ@",
+            4
+          ],
+          [
+            1007,
+            "??0?$basic_string_view@DU?$char_traits@D@std@@@std@@QEAA@QEBD@Z",
+            4
+          ],
+          [
+            1052,
+            "?fatal_assert_failed@detail@core@hyle@@YAXW4FatalKind@23@V?$basic_string_view@DU?$char_traits@D@std@@@std@@11HV?$span@$$CBUFatalField@core@hyle@@$0?0@6@@Z",
+            4
+          ],
+          [
+            1073,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "dc245e2e7b4d7b80ac05b06a1e44581074fe6d4cc6ba5ac32cfb795e22c36020",
+        "size": 1078,
+        "relocations": [
+          [
+            59,
+            "??_C@_0CA@GCCJDPEB@delegated?5invocation?5is?5invalid@",
+            4
+          ],
+          [
+            89,
+            "??_C@_0CD@NPELNGCH@delegated?5submit?5is?5already?5act@",
+            4
+          ],
+          [
+            100,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            193,
+            "??_C@_0CH@ILKNIPMG@delegated?5dependency?5capacity?5e@",
+            4
+          ],
+          [
+            205,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            296,
+            "?validate_bindings@?A0x92d75b16@compute@hyle@@YA?AVStatus@3@AEBUPreparedState@detail@23@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z",
+            4
+          ],
+          [
+            381,
+            "?dependency@CompletionAccess@detail@compute@hyle@@SA?AUCompletionDependency@234@AEBVCompletion@34@@Z",
+            4
+          ],
+          [
+            510,
+            "?submit_delegated_borrowed_prevalidated@OperationInvocationAccess@detail@compute@hyle@@SA?AV?$Result@VCompletion@compute@hyle@@@4@AEAVOperationInvocation@34@V?$span@$$CBUCompletionDependency@detail@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z",
+            4
+          ],
+          [
+            562,
+            "??_C@_0CA@PDFBGI@delegated?5dependency?5is?5invalid@",
+            4
+          ],
+          [
+            574,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            632,
+            "?<lambda_invoker_cdecl>@<lambda_1>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@SA@PEAXAEBVStatus@5@@Z",
+            4
+          ],
+          [
+            652,
+            "?<lambda_invoker_cdecl>@<lambda_2>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@SA@PEAX@Z",
+            4
+          ],
+          [
+            672,
+            "?attach_retention@CompletionAccess@detail@compute@hyle@@SA?AVStatus@4@AEAVCompletion@34@AEAUCompletionRetention@234@@Z",
+            4
+          ],
+          [
+            710,
+            "??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            744,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            760,
+            "??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            778,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            790,
+            "??_C@_0CO@COIDNMBL@failed?5delegated?5invocation?5mus@",
+            4
+          ],
+          [
+            797,
+            "??_C@_0CH@CODJGMAK@delegated?5invocation?5is?5still?5r@",
+            4
+          ],
+          [
+            809,
+            "strlen",
+            4
+          ],
+          [
+            882,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            943,
+            "??0?$span@$$CBUFatalField@core@hyle@@$0?0@std@@QEAA@XZ",
+            4
+          ],
+          [
+            950,
+            "??_C@_0CJ@MHCLFHN@C?3?2h7?2candidate?2src?2compute?2ope@",
+            4
+          ],
+          [
+            962,
+            "??0?$basic_string_view@DU?$char_traits@D@std@@@std@@QEAA@QEBD@Z",
+            4
+          ],
+          [
+            974,
+            "??0?$basic_string_view@DU?$char_traits@D@std@@@std@@QEAA@XZ",
+            4
+          ],
+          [
+            981,
+            "??_C@_0O@HBKPCLIL@attached?4ok?$CI?$CJ@",
+            4
+          ],
+          [
+            1007,
+            "??0?$basic_string_view@DU?$char_traits@D@std@@@std@@QEAA@QEBD@Z",
+            4
+          ],
+          [
+            1052,
+            "?fatal_assert_failed@detail@core@hyle@@YAXW4FatalKind@23@V?$basic_string_view@DU?$char_traits@D@std@@@std@@11HV?$span@$$CBUFatalField@core@hyle@@$0?0@6@@Z",
+            4
+          ],
+          [
+            1073,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "verdict": "DIFFERENT",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [
+        {
+          "kind": "fatal_assert_line_immediate",
+          "offset": 1047,
+          "before": 2104,
+          "after": 2109
+        },
+        {
+          "kind": "assert_source_path",
+          "before": [
+            950,
+            "??_C@_0EP@BFGPNKL@C?3?2hyle?9scratch?2r6?9vulkan?920260@",
+            4
+          ],
+          "after": [
+            950,
+            "??_C@_0CJ@MHCLFHN@C?3?2h7?2candidate?2src?2compute?2ope@",
+            4
+          ]
+        }
+      ],
+      "instruction_bytes_identical": false
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "??1RunRollback@?1??submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@AEAVQueue@34@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@QEAA@XZ",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "1b9f2cf5b43f7182220b9054c0e775d16f22805b38899434bcc1b6d97785ca3b",
+        "size": 15,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "1b9f2cf5b43f7182220b9054c0e775d16f22805b38899434bcc1b6d97785ca3b",
+        "size": 15,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?disarm@RunRollback@?1??submit@OperationInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@AEAVQueue@45@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@std@@V?$span@$$CBVTensorView@compute@hyle@@$0?0@9@@Z@QEAAXXZ",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "13dacda5d1f956a6bf3b0b3b645d15f694c453cc1bb3a8d954606894adce7960",
+        "size": 5,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "13dacda5d1f956a6bf3b0b3b645d15f694c453cc1bb3a8d954606894adce7960",
+        "size": 5,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "??1SubmitGuard@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@7@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z@QEAA@XZ",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "2a82d7df3f15365ce53a04ddce1b3f224e8dc7da94ea2359e4142c599a5d306f",
+        "size": 32,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "2a82d7df3f15365ce53a04ddce1b3f224e8dc7da94ea2359e4142c599a5d306f",
+        "size": 32,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "??R<lambda_1>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@7@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z@QEBA@PEAXAEBVStatus@4@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "fd53721e285eb2d90e4103cfcfa2920fb28b67a8e19d11805ab05c9e6cc37ada",
+        "size": 27,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "fd53721e285eb2d90e4103cfcfa2920fb28b67a8e19d11805ab05c9e6cc37ada",
+        "size": 27,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?<lambda_invoker_cdecl>@<lambda_1>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@SA@PEAXAEBVStatus@5@@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "bceb3277528182e365aa36d5403bfa278c728a26e68493b1753ac37503a084b7",
+        "size": 27,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "bceb3277528182e365aa36d5403bfa278c728a26e68493b1753ac37503a084b7",
+        "size": 27,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "??R<lambda_2>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@7@V?$span@$$CBVTensorView@compute@hyle@@$0?0@7@@Z@QEBA@PEAX@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "fc8b1c466e1d5df42ec9148560cf5713a519acf45bda7976b2154b9972756904",
+        "size": 76,
+        "relocations": [
+          [
+            44,
+            "?release@detail@compute@hyle@@YAXPEAUInvocationState@123@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "fc8b1c466e1d5df42ec9148560cf5713a519acf45bda7976b2154b9972756904",
+        "size": 76,
+        "relocations": [
+          [
+            44,
+            "?release@detail@compute@hyle@@YAXPEAUInvocationState@123@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute/CMakeFiles/hyle_compute.dir/operation.cc.obj",
+      "symbol": "?<lambda_invoker_cdecl>@<lambda_2>@?1??submit_after@DelegatedInvocation@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@QEBVCompletion@compute@hyle@@$0?0@std@@V?$span@$$CBVConstTensorView@compute@hyle@@$0?0@8@V?$span@$$CBVTensorView@compute@hyle@@$0?0@8@@Z@SA@PEAX@Z",
+      "baseline_object_sha256": "ea166c3cffd44fbc58de9e89d8343b7307e6d198e4138af96005b64c6b473c98",
+      "candidate_object_sha256": "71a13c857cc22ede20f98d53614e28607dd55264358ce54f8e9dc48a207bf478",
+      "before": {
+        "bytes": "10811e16e49b6996b1d158a582da0831f6d6665fef2a68f7b612efb0dbfb625c",
+        "size": 76,
+        "relocations": [
+          [
+            44,
+            "?release@detail@compute@hyle@@YAXPEAUInvocationState@123@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "10811e16e49b6996b1d158a582da0831f6d6665fef2a68f7b612efb0dbfb625c",
+        "size": 76,
+        "relocations": [
+          [
+            44,
+            "?release@detail@compute@hyle@@YAXPEAUInvocationState@123@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@XZ",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "ce541fb72cf30f6f0448fdb9f0de16243a56b2036325f1e30ca78367901d659a",
+        "size": 308,
+        "relocations": [
+          [
+            37,
+            "??_C@_0BG@HGHFDPMC@invocation?5is?5invalid@",
+            4
+          ],
+          [
+            49,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            123,
+            "??_C@_0DO@LMLIGBA@queue?9free?5submit?5requires?5a?5gr@",
+            4
+          ],
+          [
+            135,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            207,
+            "?prepare_replay@Invocation@graph@hyle@@QEAA?AVStatus@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@UReplayOptions@23@@Z",
+            4
+          ],
+          [
+            279,
+            "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z",
+            4
+          ],
+          [
+            303,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "ce541fb72cf30f6f0448fdb9f0de16243a56b2036325f1e30ca78367901d659a",
+        "size": 308,
+        "relocations": [
+          [
+            37,
+            "??_C@_0BG@HGHFDPMC@invocation?5is?5invalid@",
+            4
+          ],
+          [
+            49,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            123,
+            "??_C@_0DO@LMLIGBA@queue?9free?5submit?5requires?5a?5gr@",
+            4
+          ],
+          [
+            135,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            207,
+            "?prepare_replay@Invocation@graph@hyle@@QEAA?AVStatus@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@UReplayOptions@23@@Z",
+            4
+          ],
+          [
+            279,
+            "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z",
+            4
+          ],
+          [
+            303,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@compute@3@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "e2b9e55f0d050270958dab2f2c4b83a9d48505c880ee7f56b4fc564995d9f372",
+        "size": 411,
+        "relocations": [
+          [
+            13,
+            "__security_cookie",
+            4
+          ],
+          [
+            50,
+            "??_C@_0BG@HGHFDPMC@invocation?5is?5invalid@",
+            4
+          ],
+          [
+            62,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            122,
+            "??_C@_0DP@DJEHGAOD@single?9queue?5submit?5requires?5ex@",
+            4
+          ],
+          [
+            134,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            307,
+            "?prepare_replay@Invocation@graph@hyle@@QEAA?AVStatus@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@UReplayOptions@23@@Z",
+            4
+          ],
+          [
+            371,
+            "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z",
+            4
+          ],
+          [
+            387,
+            "__security_check_cookie",
+            4
+          ],
+          [
+            406,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "e2b9e55f0d050270958dab2f2c4b83a9d48505c880ee7f56b4fc564995d9f372",
+        "size": 411,
+        "relocations": [
+          [
+            13,
+            "__security_cookie",
+            4
+          ],
+          [
+            50,
+            "??_C@_0BG@HGHFDPMC@invocation?5is?5invalid@",
+            4
+          ],
+          [
+            62,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            122,
+            "??_C@_0DP@DJEHGAOD@single?9queue?5submit?5requires?5ex@",
+            4
+          ],
+          [
+            134,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            307,
+            "?prepare_replay@Invocation@graph@hyle@@QEAA?AVStatus@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@UReplayOptions@23@@Z",
+            4
+          ],
+          [
+            371,
+            "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z",
+            4
+          ],
+          [
+            387,
+            "__security_check_cookie",
+            4
+          ],
+          [
+            406,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "?submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "04e8a3db403f6371a8e4f4ff8bc486ae91e96905630ae043a56ceb69e781133a",
+        "size": 4818,
+        "relocations": [
+          [
+            67,
+            "??_C@_0BG@HGHFDPMC@invocation?5is?5invalid@",
+            4
+          ],
+          [
+            96,
+            "??_C@_0CK@MDCDDJAK@failed?5graph?5invocation?5must?5be@",
+            4
+          ],
+          [
+            103,
+            "??_C@_0CG@PEBLCNLH@invocation?5already?5has?5work?5in?5@",
+            4
+          ],
+          [
+            115,
+            "strlen",
+            4
+          ],
+          [
+            157,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            240,
+            "??_C@_0DO@HJGCEAKG@a?5provider?5in?5this?5executable?5r@",
+            4
+          ],
+          [
+            265,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            300,
+            "??$?0VStatus@hyle@@@?$Result@VCompletion@compute@hyle@@@hyle@@QEAA@$$QEAV?$unexpected@VStatus@hyle@@@std@@@Z",
+            4
+          ],
+          [
+            321,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            379,
+            "??_C@_0DC@KGJNCFIJ@multi?9domain?5invocation?5require@",
+            4
+          ],
+          [
+            391,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            504,
+            "??_C@_0DM@EALOMFLF@submit?5requires?5one?5queue?5for?5e@",
+            4
+          ],
+          [
+            516,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            550,
+            "??$?0VStatus@hyle@@@?$Result@VCompletion@compute@hyle@@@hyle@@QEAA@$$QEAV?$unexpected@VStatus@hyle@@@std@@@Z",
+            4
+          ],
+          [
+            571,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            787,
+            "__imp_?owns@ContextRef@detail@compute@hyle@@QEBA_NAEBVQueue@34@@Z",
+            4
+          ],
+          [
+            982,
+            "__xmm@00000000000000000000000000000001",
+            4
+          ],
+          [
+            1099,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            1110,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1270,
+            "??_C@_0DK@OAOGKKCP@graph?5submit?5queue?5belongs?5to?5a@",
+            4
+          ],
+          [
+            1282,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            1316,
+            "??$?0VStatus@hyle@@@?$Result@VCompletion@compute@hyle@@@hyle@@QEAA@$$QEAV?$unexpected@VStatus@hyle@@@std@@@Z",
+            4
+          ],
+          [
+            1338,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1356,
+            "??_C@_0DH@KHBFOLGK@graph?5submit?5queues?5differ?5from@",
+            4
+          ],
+          [
+            1367,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            1405,
+            "??_C@_0CG@MGMBICIA@graph?5submit?5queue?5binding?5is?5i@",
+            4
+          ],
+          [
+            1420,
+            "??_C@_0CG@NEHNFCNB@graph?5submit?5queue?5binding?5is?5m@",
+            4
+          ],
+          [
+            1532,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            1619,
+            "__imp_?begin@QueueSequence@detail@compute@hyle@@SA?AV?$Result@VQueueSequence@detail@compute@hyle@@@4@AEAVQueue@34@@Z",
+            4
+          ],
+          [
+            1729,
+            "__imp_?enqueue_wait@QueueSequence@detail@compute@hyle@@QEAA?AUEnqueueResult@234@AEBVCompletion@34@@Z",
+            4
+          ],
+          [
+            1771,
+            "__imp_?status_heap_code@detail@hyle@@YA?AW4StatusCode@2@_K@Z",
+            4
+          ],
+          [
+            1794,
+            "??_C@_0DC@LFILAHKA@prepared?5graph?5completion?9wait?5@",
+            4
+          ],
+          [
+            1811,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            1888,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1943,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1979,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2020,
+            "__imp_?record@QueueSequence@detail@compute@hyle@@QEAAXUEnqueueResult@234@@Z",
+            4
+          ],
+          [
+            2049,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2176,
+            "__imp_?enqueue@CapturedCommands@detail@compute@hyle@@QEAA?AUEnqueueResult@234@AEAVQueueSequence@234@@Z",
+            4
+          ],
+          [
+            2217,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2279,
+            "__imp_?record@QueueSequence@detail@compute@hyle@@QEAAXUEnqueueResult@234@@Z",
+            4
+          ],
+          [
+            2298,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2317,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2337,
+            "__imp_?finish@QueueSequence@detail@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@XZ",
+            4
+          ],
+          [
+            2378,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            2394,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            2410,
+            "?enqueue_segment_steps@?A0x5832d5cd@graph@hyle@@YA?AVStatus@3@AEAUInvocationState@detail@23@AEBUPlanSegment@623@AEAVQueueSequence@6compute@3@@Z",
+            4
+          ],
+          [
+            2439,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2485,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2509,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2526,
+            "__imp_??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            2614,
+            "__imp_?dependency@CompletionAccess@detail@compute@hyle@@SA?AUCompletionDependency@234@AEBVCompletion@34@@Z",
+            4
+          ],
+          [
+            2787,
+            "?submit_delegated_segment@?A0x5832d5cd@graph@hyle@@YA?AV?$Result@VCompletion@compute@hyle@@@3@AEAUInvocationState@detail@23@AEBUPlanSegment@623@V?$span@$$CBUCompletionDependency@detail@compute@hyle@@$0?0@std@@@Z",
+            4
+          ],
+          [
+            2824,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2875,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            2891,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            2912,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2978,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3012,
+            "??_C@_0CL@PBFEIDNB@prepared?5graph?5dependency?5route@",
+            4
+          ],
+          [
+            3024,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            3050,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3366,
+            "??R<lambda_1>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA@V?$span@$$CBI$0?0@7@@Z",
+            4
+          ],
+          [
+            3403,
+            "??R<lambda_2>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA?AVStatus@4@V?$span@$$CBI$0?0@7@AEBV84@@Z",
+            4
+          ],
+          [
+            3482,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            3504,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3608,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3625,
+            "??_C@_0CK@NHABNBPA@graph?5segment?5dependency?5is?5not@",
+            4
+          ],
+          [
+            3664,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3694,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            3707,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3724,
+            "__imp_??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            3749,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3784,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3816,
+            "__imp_??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            3833,
+            "??_C@_0DA@EDNPAJJN@prepared?5graph?5shared?5lane?5has?5@",
+            4
+          ],
+          [
+            3845,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            3895,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3957,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3997,
+            "__imp_?completed@Completion@compute@hyle@@SA?AV123@VStatus@3@@Z",
+            4
+          ],
+          [
+            4010,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            4021,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4055,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            4136,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4149,
+            "__imp_??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            4165,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4200,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4247,
+            "??R<lambda_1>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA@V?$span@$$CBI$0?0@7@@Z",
+            4
+          ],
+          [
+            4297,
+            "??R<lambda_2>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA?AVStatus@4@V?$span@$$CBI$0?0@7@AEBV84@@Z",
+            4
+          ],
+          [
+            4376,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            4398,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4485,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4513,
+            "?mark_invocation_terminal@?A0x5832d5cd@graph@hyle@@YAXPEAXAEBVStatus@3@@Z",
+            4
+          ],
+          [
+            4538,
+            "?release_invocation_lifetime@?A0x5832d5cd@graph@hyle@@YAXPEAX@Z",
+            4
+          ],
+          [
+            4566,
+            "__imp_?attach_lifetime@CompletionAccess@detail@compute@hyle@@SA?AVStatus@4@AEAVCompletion@34@AEAUCompletionLifetime@234@@Z",
+            4
+          ],
+          [
+            4594,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            4612,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4707,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4717,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4735,
+            "__imp_??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            4756,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4770,
+            "??_C@_0EE@LDLDGIKK@prepared?5graph?5replay?5lost?5a?5bi@",
+            4
+          ],
+          [
+            4782,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            4813,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "04e8a3db403f6371a8e4f4ff8bc486ae91e96905630ae043a56ceb69e781133a",
+        "size": 4818,
+        "relocations": [
+          [
+            67,
+            "??_C@_0BG@HGHFDPMC@invocation?5is?5invalid@",
+            4
+          ],
+          [
+            96,
+            "??_C@_0CK@MDCDDJAK@failed?5graph?5invocation?5must?5be@",
+            4
+          ],
+          [
+            103,
+            "??_C@_0CG@PEBLCNLH@invocation?5already?5has?5work?5in?5@",
+            4
+          ],
+          [
+            115,
+            "strlen",
+            4
+          ],
+          [
+            157,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            240,
+            "??_C@_0DO@HJGCEAKG@a?5provider?5in?5this?5executable?5r@",
+            4
+          ],
+          [
+            265,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            300,
+            "??$?0VStatus@hyle@@@?$Result@VCompletion@compute@hyle@@@hyle@@QEAA@$$QEAV?$unexpected@VStatus@hyle@@@std@@@Z",
+            4
+          ],
+          [
+            321,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            379,
+            "??_C@_0DC@KGJNCFIJ@multi?9domain?5invocation?5require@",
+            4
+          ],
+          [
+            391,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            504,
+            "??_C@_0DM@EALOMFLF@submit?5requires?5one?5queue?5for?5e@",
+            4
+          ],
+          [
+            516,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            550,
+            "??$?0VStatus@hyle@@@?$Result@VCompletion@compute@hyle@@@hyle@@QEAA@$$QEAV?$unexpected@VStatus@hyle@@@std@@@Z",
+            4
+          ],
+          [
+            571,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            787,
+            "__imp_?owns@ContextRef@detail@compute@hyle@@QEBA_NAEBVQueue@34@@Z",
+            4
+          ],
+          [
+            982,
+            "__xmm@00000000000000000000000000000001",
+            4
+          ],
+          [
+            1099,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            1110,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            1270,
+            "??_C@_0DK@OAOGKKCP@graph?5submit?5queue?5belongs?5to?5a@",
+            4
+          ],
+          [
+            1282,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            1316,
+            "??$?0VStatus@hyle@@@?$Result@VCompletion@compute@hyle@@@hyle@@QEAA@$$QEAV?$unexpected@VStatus@hyle@@@std@@@Z",
+            4
+          ],
+          [
+            1338,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1356,
+            "??_C@_0DH@KHBFOLGK@graph?5submit?5queues?5differ?5from@",
+            4
+          ],
+          [
+            1367,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            1405,
+            "??_C@_0CG@MGMBICIA@graph?5submit?5queue?5binding?5is?5i@",
+            4
+          ],
+          [
+            1420,
+            "??_C@_0CG@NEHNFCNB@graph?5submit?5queue?5binding?5is?5m@",
+            4
+          ],
+          [
+            1532,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            1619,
+            "__imp_?begin@QueueSequence@detail@compute@hyle@@SA?AV?$Result@VQueueSequence@detail@compute@hyle@@@4@AEAVQueue@34@@Z",
+            4
+          ],
+          [
+            1729,
+            "__imp_?enqueue_wait@QueueSequence@detail@compute@hyle@@QEAA?AUEnqueueResult@234@AEBVCompletion@34@@Z",
+            4
+          ],
+          [
+            1771,
+            "__imp_?status_heap_code@detail@hyle@@YA?AW4StatusCode@2@_K@Z",
+            4
+          ],
+          [
+            1794,
+            "??_C@_0DC@LFILAHKA@prepared?5graph?5completion?9wait?5@",
+            4
+          ],
+          [
+            1811,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            1888,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1943,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            1979,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2020,
+            "__imp_?record@QueueSequence@detail@compute@hyle@@QEAAXUEnqueueResult@234@@Z",
+            4
+          ],
+          [
+            2049,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2176,
+            "__imp_?enqueue@CapturedCommands@detail@compute@hyle@@QEAA?AUEnqueueResult@234@AEAVQueueSequence@234@@Z",
+            4
+          ],
+          [
+            2217,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2279,
+            "__imp_?record@QueueSequence@detail@compute@hyle@@QEAAXUEnqueueResult@234@@Z",
+            4
+          ],
+          [
+            2298,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2317,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2337,
+            "__imp_?finish@QueueSequence@detail@compute@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@XZ",
+            4
+          ],
+          [
+            2378,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            2394,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            2410,
+            "?enqueue_segment_steps@?A0x0847ff74@graph@hyle@@YA?AVStatus@3@AEAUInvocationState@detail@23@AEBUPlanSegment@623@AEAVQueueSequence@6compute@3@@Z",
+            4
+          ],
+          [
+            2439,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2485,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2509,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2526,
+            "__imp_??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            2614,
+            "__imp_?dependency@CompletionAccess@detail@compute@hyle@@SA?AUCompletionDependency@234@AEBVCompletion@34@@Z",
+            4
+          ],
+          [
+            2787,
+            "?submit_delegated_segment@?A0x0847ff74@graph@hyle@@YA?AV?$Result@VCompletion@compute@hyle@@@3@AEAUInvocationState@detail@23@AEBUPlanSegment@623@V?$span@$$CBUCompletionDependency@detail@compute@hyle@@$0?0@std@@@Z",
+            4
+          ],
+          [
+            2824,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2875,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            2891,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            2912,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            2978,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3012,
+            "??_C@_0CL@PBFEIDNB@prepared?5graph?5dependency?5route@",
+            4
+          ],
+          [
+            3024,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            3050,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3366,
+            "??R<lambda_1>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA@V?$span@$$CBI$0?0@7@@Z",
+            4
+          ],
+          [
+            3403,
+            "??R<lambda_2>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA?AVStatus@4@V?$span@$$CBI$0?0@7@AEBV84@@Z",
+            4
+          ],
+          [
+            3482,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            3504,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3608,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3625,
+            "??_C@_0CK@NHABNBPA@graph?5segment?5dependency?5is?5not@",
+            4
+          ],
+          [
+            3664,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3694,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            3707,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3724,
+            "__imp_??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            3749,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3784,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3816,
+            "__imp_??1QueueSequence@detail@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            3833,
+            "??_C@_0DA@EDNPAJJN@prepared?5graph?5shared?5lane?5has?5@",
+            4
+          ],
+          [
+            3845,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            3895,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3957,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            3997,
+            "__imp_?completed@Completion@compute@hyle@@SA?AV123@VStatus@3@@Z",
+            4
+          ],
+          [
+            4010,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            4021,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4055,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            4136,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4149,
+            "__imp_??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            4165,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4200,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4247,
+            "??R<lambda_1>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA@V?$span@$$CBI$0?0@7@@Z",
+            4
+          ],
+          [
+            4297,
+            "??R<lambda_2>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA?AVStatus@4@V?$span@$$CBI$0?0@7@AEBV84@@Z",
+            4
+          ],
+          [
+            4376,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            4398,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4485,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4513,
+            "?mark_invocation_terminal@?A0x0847ff74@graph@hyle@@YAXPEAXAEBVStatus@3@@Z",
+            4
+          ],
+          [
+            4538,
+            "?release_invocation_lifetime@?A0x0847ff74@graph@hyle@@YAXPEAX@Z",
+            4
+          ],
+          [
+            4566,
+            "__imp_?attach_lifetime@CompletionAccess@detail@compute@hyle@@SA?AVStatus@4@AEAVCompletion@34@AEAUCompletionLifetime@234@@Z",
+            4
+          ],
+          [
+            4594,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            4612,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4707,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4717,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            4735,
+            "__imp_??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            4756,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            4770,
+            "??_C@_0EE@LDLDGIKK@prepared?5graph?5replay?5lost?5a?5bi@",
+            4
+          ],
+          [
+            4782,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            4813,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "verdict": "DIFFERENT",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??1RunRollback@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEAA@XZ",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "d6e7f2a8e48a7652aa919ddac53b244544f3db9cd56324327b33dbc7454ecc54",
+        "size": 39,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "d6e7f2a8e48a7652aa919ddac53b244544f3db9cd56324327b33dbc7454ecc54",
+        "size": 39,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "?disarm@RunRollback@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@5@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEAAXXZ",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "43cf32cc366eef572c4b759db6a0dada84d6862abf8a9f58db146f4e0ea8c742",
+        "size": 5,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "43cf32cc366eef572c4b759db6a0dada84d6862abf8a9f58db146f4e0ea8c742",
+        "size": 5,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??R<lambda_1>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA@V?$span@$$CBI$0?0@7@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "6b6ee1232951b27836d0ebc93a322730f518f5e5adb8d569b2a1ece34ec2de36",
+        "size": 384,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "6b6ee1232951b27836d0ebc93a322730f518f5e5adb8d569b2a1ece34ec2de36",
+        "size": 384,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??0<lambda_1>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEAA@AEBUPlanState@detail@34@PEAV234@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "296bf41836ac6ef64f6564f13efc21b04ed8d2572a2389cccdd3052a12c4fc49",
+        "size": 11,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "296bf41836ac6ef64f6564f13efc21b04ed8d2572a2389cccdd3052a12c4fc49",
+        "size": 11,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??R<lambda_2>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA?AVStatus@4@V?$span@$$CBI$0?0@7@AEBV84@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "e5f0e3abda5bb5868368fe5cfa64b4bf239b22b3c26d1a0593af3691580462cf",
+        "size": 715,
+        "relocations": [
+          [
+            170,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            206,
+            "__imp_?append_terminal@CompletionAccess@detail@compute@hyle@@SAXAEAVCompletion@34@VStatus@4@@Z",
+            4
+          ],
+          [
+            236,
+            "??_C@_0DJ@COHDJKEA@graph?5completion?5segment?5is?5una@",
+            4
+          ],
+          [
+            242,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            413,
+            "_Thrd_yield",
+            4
+          ],
+          [
+            443,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            461,
+            "?kAggregateCompletionVTable@?A0x5832d5cd@graph@hyle@@3UCompletionVTable@detail@compute@3@B",
+            4
+          ],
+          [
+            488,
+            "__imp_?make@CompletionAccess@detail@compute@hyle@@SA?AVCompletion@34@PEBUCompletionVTable@234@PEAX@Z",
+            4
+          ],
+          [
+            503,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            514,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            594,
+            "_Thrd_yield",
+            4
+          ],
+          [
+            673,
+            "__imp_?append_terminal@CompletionAccess@detail@compute@hyle@@SAXAEAVCompletion@34@VStatus@4@@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "e5f0e3abda5bb5868368fe5cfa64b4bf239b22b3c26d1a0593af3691580462cf",
+        "size": 715,
+        "relocations": [
+          [
+            170,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            206,
+            "__imp_?append_terminal@CompletionAccess@detail@compute@hyle@@SAXAEAVCompletion@34@VStatus@4@@Z",
+            4
+          ],
+          [
+            236,
+            "??_C@_0DJ@COHDJKEA@graph?5completion?5segment?5is?5una@",
+            4
+          ],
+          [
+            242,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            413,
+            "_Thrd_yield",
+            4
+          ],
+          [
+            443,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            461,
+            "?kAggregateCompletionVTable@?A0x0847ff74@graph@hyle@@3UCompletionVTable@detail@compute@3@B",
+            4
+          ],
+          [
+            488,
+            "__imp_?make@CompletionAccess@detail@compute@hyle@@SA?AVCompletion@34@PEBUCompletionVTable@234@PEAX@Z",
+            4
+          ],
+          [
+            503,
+            "__imp_??4Completion@compute@hyle@@QEAAAEAV012@$$QEAV012@@Z",
+            4
+          ],
+          [
+            514,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            594,
+            "_Thrd_yield",
+            4
+          ],
+          [
+            673,
+            "__imp_?append_terminal@CompletionAccess@detail@compute@hyle@@SAXAEAVCompletion@34@VStatus@4@@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "DIFFERENT",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??0<lambda_2>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEAA@PEAV234@AEAVCompletion@compute@4@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "296bf41836ac6ef64f6564f13efc21b04ed8d2572a2389cccdd3052a12c4fc49",
+        "size": 11,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "296bf41836ac6ef64f6564f13efc21b04ed8d2572a2389cccdd3052a12c4fc49",
+        "size": 11,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??R<lambda_3>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEBA@AEBVStatus@4@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "ce8ab3d23e6c1d5c58e8a24b76af5d9f596e19f7b43c2a0d66ceda95c98c0afb",
+        "size": 210,
+        "relocations": [
+          [
+            81,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            101,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "ce8ab3d23e6c1d5c58e8a24b76af5d9f596e19f7b43c2a0d66ceda95c98c0afb",
+        "size": 210,
+        "relocations": [
+          [
+            81,
+            "__imp_?wait@Completion@compute@hyle@@QEBA?AVStatus@3@XZ",
+            4
+          ],
+          [
+            101,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ]
+        ]
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/graph/CMakeFiles/hyle_graph.dir/executable.cc.obj",
+      "symbol": "??0<lambda_3>@?1??submit@Invocation@graph@hyle@@QEAA?AV?$Result@VCompletion@compute@hyle@@@4@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@@Z@QEAA@PEAV234@AEAURunRollback@?1??1234@QEAA?AV54@0@Z@@Z",
+      "baseline_object_sha256": "11041daf9481fa435572962611056971d922f0048df610979196f889e382fa4a",
+      "candidate_object_sha256": "149543ec52417956998f4664e6ece83178e6e45a0d16c232b1a8b18c82d798be",
+      "before": {
+        "bytes": "296bf41836ac6ef64f6564f13efc21b04ed8d2572a2389cccdd3052a12c4fc49",
+        "size": 11,
+        "relocations": []
+      },
+      "after": {
+        "bytes": "296bf41836ac6ef64f6564f13efc21b04ed8d2572a2389cccdd3052a12c4fc49",
+        "size": 11,
+        "relocations": []
+      },
+      "verdict": "IDENTICAL",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    },
+    {
+      "file": "src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_run.cc.obj",
+      "symbol": "?submit_locked@detail@vulkan@compute@hyle@@YA?AV?$Result@VCompletion@compute@hyle@@@4@AEBV?$shared_ptr@URun@detail@vulkan@compute@hyle@@@std@@_N@Z",
+      "baseline_object_sha256": "7e4644389629e906a3d7810a3bee8d7434624c4c11eb04cfa9c319d32abf9431",
+      "candidate_object_sha256": "6591183738704fdc381b93f2964a6ea7ea468146884a249e9742ea321607bd72",
+      "before": {
+        "bytes": "d57ac4ec7f15121a76dd2aef3837c5bedeb697f2d134bc96d6ed03688827b716",
+        "size": 886,
+        "relocations": [
+          [
+            66,
+            "??_C@_0BJ@GJAPOHJD@Vulkan?5context?5is?5closed@",
+            4
+          ],
+          [
+            72,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            242,
+            "??_C@_0O@DNPNOMFA@vkResetFences@",
+            4
+          ],
+          [
+            251,
+            "?native_status@detail@vulkan@compute@hyle@@YA?AVStatus@4@W4VkResult@@PEBD@Z",
+            4
+          ],
+          [
+            358,
+            "??_C@_0O@IHLADMGD@vkQueueSubmit@",
+            4
+          ],
+          [
+            369,
+            "?native_status@detail@vulkan@compute@hyle@@YA?AVStatus@4@W4VkResult@@PEBD@Z",
+            4
+          ],
+          [
+            396,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            425,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            457,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            524,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            556,
+            "??4Status@hyle@@QEAAAEAV01@$$QEAV01@@Z",
+            4
+          ],
+          [
+            571,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            598,
+            "??4Status@hyle@@QEAAAEAV01@$$QEAV01@@Z",
+            4
+          ],
+          [
+            613,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            640,
+            "??4Status@hyle@@QEAAAEAV01@$$QEAV01@@Z",
+            4
+          ],
+          [
+            655,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            690,
+            "??4?$shared_ptr@URun@detail@vulkan@compute@hyle@@@std@@QEAAAEAV01@AEBV01@@Z",
+            4
+          ],
+          [
+            705,
+            "??4?$shared_ptr@URun@detail@vulkan@compute@hyle@@@std@@QEAAAEAV01@AEBV01@@Z",
+            4
+          ],
+          [
+            767,
+            "?completion_vtable@?A0xfc561c3b@detail@vulkan@compute@hyle@@3UCompletionVTable@245@B",
+            4
+          ],
+          [
+            777,
+            "__imp_?make@CompletionAccess@detail@compute@hyle@@SA?AVCompletion@34@PEBUCompletionVTable@234@PEAX@Z",
+            4
+          ],
+          [
+            789,
+            "__imp_??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            803,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            822,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            845,
+            "??_C@_0BO@IFJKJKLA@Vulkan?5slot?5is?5still?5retained@",
+            4
+          ],
+          [
+            851,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            881,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "after": {
+        "bytes": "d57ac4ec7f15121a76dd2aef3837c5bedeb697f2d134bc96d6ed03688827b716",
+        "size": 886,
+        "relocations": [
+          [
+            66,
+            "??_C@_0BJ@GJAPOHJD@Vulkan?5context?5is?5closed@",
+            4
+          ],
+          [
+            72,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            242,
+            "??_C@_0O@DNPNOMFA@vkResetFences@",
+            4
+          ],
+          [
+            251,
+            "?native_status@detail@vulkan@compute@hyle@@YA?AVStatus@4@W4VkResult@@PEBD@Z",
+            4
+          ],
+          [
+            358,
+            "??_C@_0O@IHLADMGD@vkQueueSubmit@",
+            4
+          ],
+          [
+            369,
+            "?native_status@detail@vulkan@compute@hyle@@YA?AVStatus@4@W4VkResult@@PEBD@Z",
+            4
+          ],
+          [
+            396,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            425,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            457,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            524,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            556,
+            "??4Status@hyle@@QEAAAEAV01@$$QEAV01@@Z",
+            4
+          ],
+          [
+            571,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            598,
+            "??4Status@hyle@@QEAAAEAV01@$$QEAV01@@Z",
+            4
+          ],
+          [
+            613,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            640,
+            "??4Status@hyle@@QEAAAEAV01@$$QEAV01@@Z",
+            4
+          ],
+          [
+            655,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            690,
+            "??4?$shared_ptr@URun@detail@vulkan@compute@hyle@@@std@@QEAAAEAV01@AEBV01@@Z",
+            4
+          ],
+          [
+            705,
+            "??4?$shared_ptr@URun@detail@vulkan@compute@hyle@@@std@@QEAAAEAV01@AEBV01@@Z",
+            4
+          ],
+          [
+            767,
+            "?completion_vtable@?A0x8cf76de6@detail@vulkan@compute@hyle@@3UCompletionVTable@245@B",
+            4
+          ],
+          [
+            777,
+            "__imp_?make@CompletionAccess@detail@compute@hyle@@SA?AVCompletion@34@PEBUCompletionVTable@234@PEAX@Z",
+            4
+          ],
+          [
+            789,
+            "__imp_??0Completion@compute@hyle@@QEAA@$$QEAV012@@Z",
+            4
+          ],
+          [
+            803,
+            "__imp_??1Completion@compute@hyle@@QEAA@XZ",
+            4
+          ],
+          [
+            822,
+            "__imp_?status_release@detail@hyle@@YAX_K@Z",
+            4
+          ],
+          [
+            845,
+            "??_C@_0BO@IFJKJKLA@Vulkan?5slot?5is?5still?5retained@",
+            4
+          ],
+          [
+            851,
+            "__imp_?status_make_heap@detail@hyle@@YA_KW4StatusCode@2@PEBD_K@Z",
+            4
+          ],
+          [
+            881,
+            "?result_from_ok_abort@detail@hyle@@YAXXZ",
+            4
+          ]
+        ]
+      },
+      "verdict": "DIFFERENT",
+      "semantic_verdict": "IDENTICAL_INSTRUCTIONS_AND_CALLEES_EXCEPT_VERIFIED_DEBUG_IDENTITY",
+      "explicit_metadata_differences": [],
+      "instruction_bytes_identical": true
+    }
+  ],
+  "current_test_only_candidate": "81ed40dd558824ea9a45841fb19d35661d130bb7",
+  "normalizations": [
+    "MSVC anonymous namespace TU path hash (?A0x...) is normalized; function names, relocation offsets and kinds remain exact.",
+    "DelegatedInvocation::submit_after has the same fatal-assert instruction but line immediate 2104 -> 2109 and source-file string relocation changed with checkout path. No other byte is normalized."
+  ],
+  "assert_source": {
+    "file": "src/compute/operation.cc",
+    "before_line": 2104,
+    "after_line": 2109,
+    "text": "HYLE_FATAL_ASSERT(attached.ok());"
+  },
+  "verdict": "PASS"
+}
