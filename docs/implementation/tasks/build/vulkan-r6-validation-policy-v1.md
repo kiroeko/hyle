@@ -20,3 +20,6 @@
 
 审计已确认 `vendored_input_owners`、`factor_configure_cache` 和
 `factor_supported_systems` 正好表达上述责任，F1/F2 固定为 AUDITED FIX；不扩充公共工具机制。
+
+F1/F2 已完成；[54 项工具回归与实际计划](../../../../evidence/correctness/vulkan-r6-validation-policy/README.md)
+通过。只对这两个已冻结的元数据登记签字，产品原生/交付/P1 继续由 R6 卡验收。

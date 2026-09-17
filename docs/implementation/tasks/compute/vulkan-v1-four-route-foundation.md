@@ -153,3 +153,21 @@ V1–V7 不授权公共治理/统计核心修改。API/算法尚在实现阶段�
 资源和完成合同下最强适用成熟完整片段及 same-kernel direct 成本为基线。ggml 的不同精度自然路线
 另报；无完整收益证据时保留合格成熟实现，不生造赢家。AMD/Intel、FP16/cooperative-matrix 等
 未准入数值/设备域保持明确未资格化，不能将其编译/枚举结果补成 PASS。
+
+## 实现阶段接线记录（未验收）
+
+原生 Context/Tensor、typed Program/Invocation、Recorder、完成/取消/回收和 Graph 冷 lowering
+已经写入工作树，尚未签 GPU 正确性或路线完成。严格 MSVC 语法检查覆盖八个产品单元及新增的
+原生正确性/生命周期测试；实际 GPU、validation、三交付和 P1 仍待执行。
+
+普通运行槽的可重绑定 descriptor 使用设备真实支持且显式启用的
+`descriptorBindingStorageBufferUpdateAfterBind`，layout/pool 同时采用对应 flag。普通无此
+feature 的 Context 不能创建需要更新绑定的 Invocation；固定 caller buffers 的 Recorder 保留
+其原生路径。Windows RTX 4070 与 Air M4 的实际 feature/limit inventory 支持该前提。依据
+[vkUpdateDescriptorSets](https://docs.vulkan.org/refpages/latest/refpages/source/vkUpdateDescriptorSets.html)，
+这避免在更新普通 descriptor 后误复用已失效 command buffer；pending 状态仍禁止更新。
+
+实际 selector 已正确确认两个产品 owner 为 AUDITED，但新 vendor 前缀和原生 ON 配置需要
+[独立的有限策略登记](../build/vulkan-r6-validation-policy-v1.md)。只登记既有 JSON 字段，不修改
+selector 执行引擎或性能仪器。上游两个 shader include 的末尾空行按原始 blob 保留；源码
+身份优先于重新格式化 vendor，产品自身的 diff 空白检查单独执行。

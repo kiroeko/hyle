@@ -1,0 +1,45 @@
+{
+  "baseline_commit": "05917b22ddbf12b638c84ffe5ffb63cc0bf6d6c9",
+  "candidate_commit": null,
+  "candidate_tree": "dae46c1f5b600de72524560ee84728d27eb175f3",
+  "verdict": "READY",
+  "unknown_paths": [],
+  "product_authorization": {
+    "owners": [
+      "compute_route_vulkan",
+      "graph_route_vulkan"
+    ],
+    "states": {
+      "compute_route_vulkan": "AUDITED",
+      "graph_route_vulkan": "AUDITED"
+    },
+    "issues": []
+  },
+  "kind": "Selection only; no native product gate or P1 is signed.",
+  "configure_commands": [
+    [
+      [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "{build}",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,container,container_concurrent,container_intrusive,container_queue,container_text,core,error,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan,io_core,io_http,io_http2,io_tls,io_transfer,io_watch,io_websocket,math,mem,mem_reclaim,mem_vm,obs,platform,platform_fs,platform_thread,process,sched,simd,time,timer_queue,util_core,util_runtime",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_ONEDNN=ON",
+        "-DHYLE_COMPUTE_VULKAN=ON"
+      ]
+    ]
+  ],
+  "policy_sha256": "6e0063e7adf39199afe00b3481dceb583546bc9f37c82921cc9b645a742c2198",
+  "regression_sha256": "3149808b23d187e86ae59e77c55cd6c92784257c2ae1446cf2a798776e736b52"
+}

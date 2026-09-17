@@ -30,6 +30,12 @@
     },
     "graph_route_apple": {
       "HYLE_COMPUTE_APPLE": "ON"
+    },
+    "compute_route_vulkan": {
+      "HYLE_COMPUTE_VULKAN": "ON"
+    },
+    "graph_route_vulkan": {
+      "HYLE_COMPUTE_VULKAN": "ON"
     }
   },
   "factor_supported_systems": {
@@ -40,9 +46,12 @@
     "compute_route_cuda": ["Windows", "Linux"],
     "graph_route_cuda": ["Windows", "Linux"],
     "compute_route_apple": ["Darwin"],
-    "graph_route_apple": ["Darwin"]
+    "graph_route_apple": ["Darwin"],
+    "compute_route_vulkan": ["Windows", "Linux", "Darwin"],
+    "graph_route_vulkan": ["Windows", "Linux", "Darwin"]
   },
   "vendored_input_owners": {
+    "third_party/ggml_vulkan_shaders/": ["compute_route_vulkan"],
     "third_party/marlin/": ["compute_provider_marlin"],
     "third_party/sglang_activation/": ["compute_provider_cuda"],
     "third_party/mimalloc/": ["mem"],

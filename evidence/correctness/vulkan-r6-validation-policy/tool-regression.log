@@ -1,0 +1,9 @@
+.........RUN docs: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-docs.py']
+RUN closure: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-module-closure.py', '--previous-ref', '7914c75065346a4e06a5c87ef6211112ee55be3c']
+........................RUN docs: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-docs.py']
+RUN closure: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-module-closure.py']
+.....................
+----------------------------------------------------------------------
+Ran 54 tests in 102.863s
+
+OK

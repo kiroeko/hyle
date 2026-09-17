@@ -203,6 +203,36 @@ class ImpactTest(unittest.TestCase):
         self.assertNotIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
         self.assertNotIn("-DHYLE_COMPUTE_CUDA=ON", configure)
         self.assertNotIn("-DHYLE_COMPUTE_APPLE=ON", configure)
+        self.assertNotIn("-DHYLE_COMPUTE_VULKAN=ON", configure)
+
+    def test_vulkan_requires_native_on_on_each_supported_system(self):
+        self.write("src/compute_route_vulkan/change.cc", "int value = 2;\n")
+        self.commit()
+        for system in ("Windows", "Linux", "Darwin"):
+            with self.subTest(system=system), patch.object(selector.platform, "system", return_value=system):
+                plan = self.plan()
+                configure = self.row(plan, "configure")["commands"][0]
+                self.assertIn("-DHYLE_COMPUTE_VULKAN=ON", configure)
+                self.assertIn("factor:compute_route_vulkan", self.selected(plan))
+                # A source-only fixture need not yet carry the Graph edge; the
+                # ordinary reverse-closure tests independently enforce edges.
+                self.assertNotIn("-DHYLE_COMPUTE_CUDA=ON", configure)
+                self.assertNotIn("-DHYLE_COMPUTE_APPLE=ON", configure)
+
+    def test_vulkan_vendor_content_keeps_product_owner_authorization(self):
+        self.write("third_party/ggml_vulkan_shaders/shaders/mul_mm.comp", "void main() {}\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["unknown_paths"], [])
+        self.assertEqual(plan["product_authorization"]["owners"], ["compute_route_vulkan"])
+        self.assertIn("factor:compute_route_vulkan", self.selected(plan))
+        self.set_state("compute_route_vulkan", "CLOSED")
+        self.base = self.commit()
+        self.write("third_party/ggml_vulkan_shaders/shaders/mul_mm.comp", "void main() { int value = 1; }\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertTrue(plan["product_authorization"]["issues"])
 
     def test_product_change_requires_audited_owner(self):
         self.set_state("container_queue", "CLOSED")
