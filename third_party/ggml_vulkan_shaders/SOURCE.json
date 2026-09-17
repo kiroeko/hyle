@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/ggml-org/ggml.git",
+  "revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "upstream_directory": "src/ggml-vulkan/vulkan-shaders",
+  "files": {
+    "copy.comp": "5c81290b4d3656816b2398e22a1f8ab8a097ca45e468ced5a870ef31ef89f712",
+    "dequant_funcs.glsl": "ace32238d4983d9b56656119fa65974a221782d4155fb599ed129003ce03357d",
+    "dot_product_funcs.glsl": "79678679e01db7932fb81a15e5a7cbe45d66acc532681291206f9cb108002ce4",
+    "generic_unary_head.glsl": "7d275914c03500ba7783457f0a95b5cd0fc9154459f05e6258f9e38533d471d5",
+    "ggml_type_ids.glsl": "1044c8dc42da7f4f245e3ab97887a940ddfdb133e53116a287f22093f20d364c",
+    "glu_head.glsl": "72fa74eeb139bdea5172ce75fa34574b3fc784360ba6645684f437bb73f3aa28",
+    "glu_main.glsl": "dde88c77c7aef6b09060a10f02f64ceed53bd1c7fc16ab3eb20918d03e7c2098",
+    "iq_shmem_init.glsl": "d8c55320d6bf9c0cd3f2f7e6ef77ad0bea59c08ba5a55a22fedd70c1a4f8741d",
+    "mul_mat_vec.comp": "d1375d407004ac5e2f7c590340be9aa7edcb203dd966ec3af29f807e5d866865",
+    "mul_mat_vec_base.glsl": "fc7bb5cc47bd9761f8a3484466e10b61d7866df41a150cdd47cfa1f389110323",
+    "mul_mat_vec_iface.glsl": "e5b825d83c6250e4b75459c2584e6530bb443e08252df7069e107ec1eb6bd001",
+    "mul_mm.comp": "2f850b66c47f100383fa376768f909150cd36781664a1498f871fdb87a176753",
+    "mul_mm_funcs.glsl": "6e08fa7e1f754dd7bbaf1ef6c38eeb648c8ac500cb1ab521970048b51361f310",
+    "mul_mm_id_funcs.glsl": "61ec51be19c4ea044d18d386d1acfd59501538ab837ffeb13e19aac2141dc24c",
+    "swiglu.comp": "cd10f81a22d2a1d2435a5d229656a5b187cdaf664b45867da894452586b1943a",
+    "types.glsl": "66531aa893ca65100a2dc898d753441392b84d15f7b63a1728896f3e9628ea50",
+    "utils.glsl": "01905c09f8e295556dd569a7074f482d34d0af7ee349ee248fcdd4db4c8584fc"
+  },
+  "modifications": "None. Exact Git blobs; only a shader subset is included."
+}

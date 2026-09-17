@@ -452,9 +452,14 @@ _hyle_declare_component(graph_route_apple
   PUBLIC_DEPS core compute_ops compute_route_apple error graph
   SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
-# R6 identities; the bounded Vulkan audit admits their dependencies and targets.
-_hyle_declare_component(compute_route_vulkan QUEUED)
-_hyle_declare_component(graph_route_vulkan QUEUED)
+# Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
+_hyle_declare_component(compute_route_vulkan
+  PRIVATE_DEPS platform time
+  PUBLIC_DEPS core compute compute_ops error mem
+  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/detail/vulkan_plan.h)
+_hyle_declare_component(graph_route_vulkan
+  PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
+  SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

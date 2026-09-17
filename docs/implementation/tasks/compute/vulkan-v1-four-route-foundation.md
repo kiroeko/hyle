@@ -171,3 +171,17 @@ feature 的 Context 不能创建需要更新绑定的 Invocation；固定 caller
 [独立的有限策略登记](../build/vulkan-r6-validation-policy-v1.md)。只登记既有 JSON 字段，不修改
 selector 执行引擎或性能仪器。上游两个 shader include 的末尾空行按原始 blob 保留；源码
 身份优先于重新格式化 vendor，产品自身的 diff 空白检查单独执行。
+
+### Windows 原生检查点（2026-09-17，仍 AUDITED）
+
+[实际 GPU 记录](../../../../evidence/correctness/vulkan-r6-windows-native/README.md)：13 项 Compute、
+3 项 Graph 及两个逐头 CTest 全过；Khronos 1.4.357 与 synchronization validation 已实际启用，
+无 VUID/SYNC-HAZARD。完整 FFN、变化 RHS/转置、同设备 custom SPIR-V、保留旧结果、失败/取消/
+关闭及两线程槽回放均有真实执行。测试内非一致内存分支不冒充物理非一致 memory-type 资格。
+
+首轮明确暴露矩阵 push 中 `k_split` 应为归约长度 K，而非分片数量 1；另纠正版本生成变量和
+MSVC 测试环境读取。按源码根因修复后一次完整复验通过，保留全部失败记录，未改原样 vendor、
+数值门或性能预算。源码输入已由 controller 哈希固定；这仍是实现检查点，不是 P1 候选。
+
+R5 已独立 CLOSED，后续重型验证可串行使用 Air。MoltenVK、host 插桩、公开 facade/三交付、
+规则/P0/P1 与终审仍须完成；中央构建导致的 broad selected gates 尚未执行，不计 PASS。

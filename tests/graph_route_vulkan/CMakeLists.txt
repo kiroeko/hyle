@@ -1,0 +1,13 @@
+hyle_add_header_self_contained_test(graph_route_vulkan
+  HEADER_DIR graph HEADERS vulkan.h)
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/affine.spv"
+    COMMAND "${HYLE_VULKAN_GLSLANG}" -V --target-env vulkan1.2 -S comp
+      -o "${CMAKE_CURRENT_BINARY_DIR}/affine.spv"
+      "${HYLE_SOURCE_DIR}/tests/compute_route_vulkan/affine.comp"
+    DEPENDS "${HYLE_SOURCE_DIR}/tests/compute_route_vulkan/affine.comp" VERBATIM)
+  hyle_add_test(graph_route_vulkan SOURCES graph_test.cc
+    "${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
+  target_compile_definitions(hyle_graph_route_vulkan_test PRIVATE
+    HYLE_VULKAN_TEST_SHADER="${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
+endif()

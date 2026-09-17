@@ -1,0 +1,6 @@
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  hyle_add_module(graph_route_vulkan SOURCES vulkan_lowering.cc)
+else()
+  hyle_add_module(graph_route_vulkan OPTIONAL_ABSENT)
+  set_property(TARGET hyle_graph_route_vulkan PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
+endif()

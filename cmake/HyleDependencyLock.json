@@ -358,6 +358,37 @@
           }
         ]
       }
+    },
+    {
+      "name": "ggml_vulkan_shaders",
+      "class": "in_tree",
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "version": "ggml-snapshot-456172ec733a",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/456172ec733a135778adcd32d00e576a58232e45",
+        "sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34"
+      },
+      "vendored": {
+        "path": "third_party/ggml_vulkan_shaders",
+        "tree_sha256": "70a5bf823af7bc52a7192118c81557d105145064ff3f510e35de233d6d66b183"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_vulkan_shaders/LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_vulkan_shaders/NOTICE.md",
+            "sha256": "56099101407005113fdce3456b5ab7b2fa13d8a0450462086628eb362b58a622"
+          }
+        ]
+      }
     }
   ]
 }

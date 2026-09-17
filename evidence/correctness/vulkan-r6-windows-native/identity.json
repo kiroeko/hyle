@@ -1,0 +1,15 @@
+{
+  "status": "PASS native checkpoint, not CANDIDATE or route closure",
+  "head_before_checkpoint": "9f0ee2f64f47594574aec9f8ad4b9874118b3117",
+  "input_manifest": "raw.zip/native-corrected-02-controller.json",
+  "archive_sha256": "0f7dd515dceb28a1881a1f619f3bef80902cb5755c42edd5ed11e8339ef01405",
+  "bytes": 138214,
+  "entries": 23,
+  "tests": {
+    "compute_gtests": 13,
+    "graph_gtests": 3,
+    "headers": 2
+  },
+  "validation": "Khronos 1.4.357; synchronization validation enabled; no VUID or SYNC-HAZARD in actual LastTest.log",
+  "scope": "Windows RTX 4070; MSVC Release WERROR, two-way build parallelism, serial CTest; no P1 or delivery claim"
+}
