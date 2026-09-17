@@ -396,3 +396,13 @@ Direct 的固定 caller buffers 与 Graph 的 generated owning result 各自和�
 [原生边界合同](../../tasks/compute/vulkan-r6-performance-contract.md)单独诊断，不由本表签证。
 Air 两入口 P1、原生边界诊断、最终交付/selector 与 R6 终审尚未全部完成；两个 Vulkan owner
 继续 CANDIDATE。本检查点不外推 Linux GPU、AMD/Intel、其它数值格式或生产模型吞吐。
+
+### Air Direct 同合同检查点
+
+Apple 测量快照 `a41d43d5`，产品仍为 `8e45b104`；M1-MAC engineering、Air Mac16,12 / M4、
+MoltenVK 1.4.1，实际 interactive QoS。[完整原始证据](../../../../evidence/performance/vulkan-r6-m1-direct-8e45b104/README.md)
+包含 16 个 A/A、120 个产品进程、30 个 control 进程及 identity/placement 复核；16 项原 5% NI
+全部 PASS，n=15 停止。M1 的八分层 median 比为 1.000268–1.001713，严格方向 7 WIN / 1
+INCONCLUSIVE；M16 为 0.988563–1.021558，4 WIN / 4 INCONCLUSIVE。两个 workload 的整体方向
+均未决；保留每个分层的原始方向，不把成熟数学链的接入差异写成 HYLE 算法优胜。
+Air Graph 和上述其它 R6 门继续按主卡执行，不因本检查点重复 Windows 或 Air Direct P1。

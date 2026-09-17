@@ -290,3 +290,12 @@ shader 或公共统计工具；新的 Apple benchmark 快照独立记身份，Wi
 [WSL 实际盘点](../../../../evidence/research/vulkan-r6-wsl-inventory/README.md)只枚举到 CPU 软件
 device llvmpipe；不计原生 GPU 或路线验收。当前 Windows / Air 的验证域不外推到 Linux GPU、
 AMD/Intel 或其它数值格式。
+
+### Air Direct P1 检查点
+
+[Air Direct 原始证据](../../../../evidence/performance/vulkan-r6-m1-direct-8e45b104/README.md)
+在 `a41d43d5` 测量快照完成：16 个 A/A、120 个产品进程、30 个 control 进程，资格与全部身份
+检查通过；M1/M16 共 16 项原 5% 非劣门全部 PASS，n=15 停止。M1 严格分层为 7 WIN / 1
+INCONCLUSIVE，M16 为 4 WIN / 4 INCONCLUSIVE；两个 workload 整体方向均未决，不签算法胜出。
+完整归档已在 Windows 复核逐项 hash。产品候选仍是 `8e45b104`；Air Graph 已串行接续，原生边界
+诊断、最终交付/selector、ASan 及终审仍未由本检查点签证。两个 Vulkan owner 继续 CANDIDATE。

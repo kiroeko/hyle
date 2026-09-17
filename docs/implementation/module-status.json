@@ -493,14 +493,14 @@
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows/Air native correctness and full FFN oracle passed; Windows Direct/Graph qualified P1 passed all original 5% gates at n15. Air P1, native-boundary costs and final delivery/selector closure remain pending.",
+      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows Direct/Graph and Air Direct qualified P1 passed every original 5% gate at n15. Air Graph, native-boundary costs and final ASan/delivery/selector closure remain pending; candidate unchanged.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows/Air native correctness and full FFN oracle passed; Windows Direct/Graph qualified P1 passed all original 5% gates at n15. Air P1, native-boundary costs and final delivery/selector closure remain pending.",
+      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows Direct/Graph and Air Direct qualified P1 passed every original 5% gate at n15. Air Graph, native-boundary costs and final ASan/delivery/selector closure remain pending; candidate unchanged.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     }

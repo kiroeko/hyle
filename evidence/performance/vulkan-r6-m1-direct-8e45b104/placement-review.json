@@ -1,0 +1,39 @@
+{
+  "placements": {
+    "primary": {
+      "map_sha256": "84fa33fa38d719baa8ffc3c1da7987ad6ceb66ee73fa1045459f7ec48102fd85",
+      "functions": {
+        "submit_locked": {
+          "address": "0x10000CAB0",
+          "size": "0x0000033C",
+          "line": "0x10000CAB0\t0x0000033C\t[  3] __ZN4hyle7compute6vulkan6detail13submit_lockedERKNSt3__110shared_ptrINS2_3RunEEEb"
+        },
+        "observe": {
+          "address": "0x10000D1CC",
+          "size": "0x000004CC",
+          "line": "0x10000D1CC\t0x000004CC\t[  3] __ZN4hyle7compute6vulkan6detail12_GLOBAL__N_17observeERKNSt3__110shared_ptrINS2_3RunEEEb"
+        }
+      }
+    },
+    "placement": {
+      "map_sha256": "c62f1f6b8fb0f1799d359190058592b2925de95956469f3b396e80cbb8103550",
+      "functions": {
+        "submit_locked": {
+          "address": "0x10000CAF4",
+          "size": "0x0000033C",
+          "line": "0x10000CAF4\t0x0000033C\t[  4] __ZN4hyle7compute6vulkan6detail13submit_lockedERKNSt3__110shared_ptrINS2_3RunEEEb"
+        },
+        "observe": {
+          "address": "0x10000D210",
+          "size": "0x000004CC",
+          "line": "0x10000D210\t0x000004CC\t[  4] __ZN4hyle7compute6vulkan6detail12_GLOBAL__N_17observeERKNSt3__110shared_ptrINS2_3RunEEEb"
+        }
+      }
+    }
+  },
+  "function_address_delta_bytes": {
+    "submit_locked": 68,
+    "observe": 68
+  },
+  "scope": "Existing cold prefix moves actual hot functions; unchanged function sizes; no LTO or hot padding."
+}
