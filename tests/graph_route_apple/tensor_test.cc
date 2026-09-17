@@ -16,8 +16,8 @@ TEST(AppleGraph, HalfNormGateResidualAndViewsRetainIndependentNativeResults) {
   for (auto type : {mx::float16, mx::bfloat16}) {
     for (int width : {129, 2048}) {
       for (int rows : {0, 1, 17, 23, 129}) {
-        SCOPED_TRACE(::testing::Message()
-                     << static_cast<int>(type) << '/' << rows << '/' << width);
+        SCOPED_TRACE(::testing::Message() << static_cast<int>(logical(type))
+                                          << '/' << rows << '/' << width);
         auto context = a::Context::create().value();
         auto builder = g::GraphBuilder::create().value();
         const auto desc =
