@@ -27,6 +27,10 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   endif()
   target_compile_definitions(hyle_compute_provider_cuda PUBLIC HYLE_COMPUTE_CUDA=1)
   if(MSVC)
+    # SDK collectives include CCCL headers, which require the conforming
+    # preprocessor in nvcc's MSVC host preprocessing phase.
+    set_property(SOURCE norm_kernel.cu APPEND PROPERTY
+      COMPILE_OPTIONS -Xcompiler=/Zc:preprocessor)
     target_compile_options(hyle_compute_provider_cuda PRIVATE
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
   endif()
