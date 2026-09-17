@@ -95,3 +95,7 @@ CPU/CUDA/Apple 原测量候选、限定域与 CPU 用户例外继续按 baseline
 
 D1–D3 的最终三交付义务已兑现；中央 roots 引起的 broad selected gates 正在按原计划执行。
 十三 owner 继续 CANDIDATE，待该门及 terminal 汇总后依法关闭，不重跑其原 CPU/CUDA/Apple P1。
+
+最后 selector 已通过 84 门，在一个旧 Sched 测试的结果就绪/scope 完成顺序假设处停止；
+[原始失败与定向维护](../../../../evidence/correctness/sched-first-error-test-order/README.md)
+分别保留。产品没有变化；仅补验正确同步后的测试并续跑尚未执行的 26 门，不伪造原候选整批 PASS。

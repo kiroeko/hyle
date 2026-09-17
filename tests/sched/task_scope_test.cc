@@ -511,6 +511,18 @@ TEST(TaskScope, AggregatesFirstStatusFailureAndStillDrains) {
   ASSERT_TRUE(first_result.has_value());
   ASSERT_TRUE(first_result->IsNotFound());
 
+  // A typed result is published before the Scheduler finish hook releases the
+  // Task/Fiber and publishes this child's scope completion. Establish that
+  // latter boundary before another child can compete for the scope's first
+  // error; joining the typed handle alone does not order scope publication.
+  const auto deadline =
+      std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (scope.remaining() != 0u &&
+         std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::yield();
+  }
+  EXPECT_EQ(scope.remaining(), 0u);
+
   auto second = scope.spawn(status_task(
       system_allocator(), Status::Internal("later child"), &completed));
   second.detach();

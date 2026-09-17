@@ -1,0 +1,22 @@
+{
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "verification_snapshot": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+  "candidate_tree": "4491aedea6ae17cd8787c2f74e6918c17559c5ec",
+  "original_verdict": "BLOCKED",
+  "gate_counts": {
+    "PASS": 84,
+    "FAIL": 1,
+    "BLOCKED": 26
+  },
+  "failure": "TaskScope.AggregatesFirstStatusFailureAndStillDrains: typed JoinHandle readiness does not order full scope completion",
+  "original_test_count": 251,
+  "original_test_pass": 250,
+  "original_test_fail": 1,
+  "archive": {
+    "file": "original-selector.zip",
+    "sha256": "79059b54958e83e466b11ee29e30a487d16f11cc4bfceed51292ede7aea4ec29",
+    "entries": 218,
+    "per_entry_integrity": "PASS"
+  },
+  "all_receipt_log_hashes": "PASS"
+}

@@ -345,3 +345,12 @@ DLL 邻置均完成。详细 D1–D3 归属仍在独立交付卡，十三 owner 
 当前只剩已经启动的中央 broad selector 和 terminal 汇总；四份正式 P1、四项自然成本、最终
 ASan 和两系统三交付均已执行完成。没有为收口增加采样或未知设备资格，两个 Vulkan owner
 继续 CANDIDATE，等待最后适用门的实际 verdict。
+
+### 最后 selector 的具名测试问题
+
+原 Windows batch 已通过 84 门，在 Sched 的 251 项测试中遇到一个旧测试顺序错误，剩余 26 门
+没有执行。[原始失败](../../../../evidence/correctness/sched-first-error-test-order/README.md)已完整
+保存：typed `JoinHandle` 结果就绪早于 scope 完整清理/首错发布，旧测试没有建立后者的顺序。
+[定向测试维护](../sched/sched-first-error-test-order.md)只改测试同步，不改变 Sched 或 R6 产品。
+补验该用例后独立续跑尚未执行门；原 BLOCKED result 与新测试快照分别保留，不重跑 84 个已通过门
+或任何 P1。路线仍为 CANDIDATE，直到覆盖证据完整。
