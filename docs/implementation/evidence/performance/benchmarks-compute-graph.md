@@ -406,3 +406,16 @@ MoltenVK 1.4.1，实际 interactive QoS。[完整原始证据](../../../../evide
 INCONCLUSIVE；M16 为 0.988563–1.021558，4 WIN / 4 INCONCLUSIVE。两个 workload 的整体方向
 均未决；保留每个分层的原始方向，不把成熟数学链的接入差异写成 HYLE 算法优胜。
 Air Graph 和上述其它 R6 门继续按主卡执行，不因本检查点重复 Windows 或 Air Direct P1。
+
+### Air Graph 同合同检查点
+
+[Graph 完整证据](../../../../evidence/performance/vulkan-r6-m1-graph-8e45b104/README.md)与 Direct
+使用同一产品/Apple 测量快照；16 个 A/A、120 个产品、30 个 control 进程及 identity/placement
+复核完成，16 项原 5% NI 全部 PASS，n=15 停止。M1 八分层 median 比为 0.999569–1.001189，
+方向 2 WIN / 6 INCONCLUSIVE；M16 为 0.985050–1.011573，4 LOSS / 4 INCONCLUSIVE。
+M16 的四个 peer-allocation-first 分层在正反执行顺序、两种 placement 下都保持约 1.2%–1.5%
+的负向延迟，继续记 LOSS；其余分层未决。分配顺序与方向有关，但本证据没有确定 driver/cache
+机制，不作额外归因或为这组已通过工程门的结果重测。
+
+Vulkan 四份正式 P1（Windows/Air × Direct/Graph）均已通过原门并停止，全部严格方向保留。
+R6 仍待原生边界诊断、最终 ASan/三交付/selector 与终审；本页没有提前签路线 CLOSED。

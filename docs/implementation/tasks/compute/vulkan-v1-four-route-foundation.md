@@ -299,3 +299,15 @@ AMD/Intel 或其它数值格式。
 INCONCLUSIVE，M16 为 4 WIN / 4 INCONCLUSIVE；两个 workload 整体方向均未决，不签算法胜出。
 完整归档已在 Windows 复核逐项 hash。产品候选仍是 `8e45b104`；Air Graph 已串行接续，原生边界
 诊断、最终交付/selector、ASan 及终审仍未由本检查点签证。两个 Vulkan owner 继续 CANDIDATE。
+
+### 四份正式 P1 已完成
+
+[Air Graph 原始证据](../../../../evidence/performance/vulkan-r6-m1-graph-8e45b104/README.md)
+也完成 16 个 A/A、120 个产品及 30 个 control 进程；全部资格/身份检查及 16 项原 5% 非劣门
+PASS，n=15 停止。M1 为 2 WIN / 6 INCONCLUSIVE，M16 为 4 LOSS / 4 INCONCLUSIVE；后者的
+四个 peer-allocation-first 分层 median 延迟约高 1.2%–1.5%，原始负向和通过非劣门的事实分别保存。
+两个 workload 的整体方向仍未决，不签算法胜出，不追加采样。
+
+至此 Windows / Air × Direct / Graph 四份正式 P1 全部完成并通过；产品仍固定为 `8e45b104`。
+原生边界成本诊断已开始按既定顺序串行执行；最终 ASan、两系统三交付、中央 selector 与终审仍待
+完成，两个 Vulkan owner 继续 CANDIDATE。后续文档、状态或证据修改不触发这四份 P1 重跑。

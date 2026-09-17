@@ -493,14 +493,14 @@
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows Direct/Graph and Air Direct qualified P1 passed every original 5% gate at n15. Air Graph, native-boundary costs and final ASan/delivery/selector closure remain pending; candidate unchanged.",
+      "summary": "R6 Vulkan CANDIDATE 8e45b104: all four Windows/Air Direct/Graph qualified P1 runs passed every original 5% gate at n15; strict directions, including four Air Graph M16 LOSS strata, retained. Native-boundary diagnostics and final ASan/delivery/selector closure remain pending.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
-      "summary": "R6 Vulkan CANDIDATE 8e45b104: Windows Direct/Graph and Air Direct qualified P1 passed every original 5% gate at n15. Air Graph, native-boundary costs and final ASan/delivery/selector closure remain pending; candidate unchanged.",
+      "summary": "R6 Vulkan CANDIDATE 8e45b104: all four Windows/Air Direct/Graph qualified P1 runs passed every original 5% gate at n15; strict directions, including four Air Graph M16 LOSS strata, retained. Native-boundary diagnostics and final ASan/delivery/selector closure remain pending.",
       "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
       "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     }

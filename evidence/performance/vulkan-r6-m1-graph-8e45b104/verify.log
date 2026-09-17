@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "ab0299a1092524006502ae0869198ab1cd2c645d83cd0fed76652ca64e50cf75",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "/Users/kiro/hyle-verify/r6-vulkan-20260917/selected-m1-a41d43d5/graph/fa47fd5b816b92adeef3/p1-evidence/manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

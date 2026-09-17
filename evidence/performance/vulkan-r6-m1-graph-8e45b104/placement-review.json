@@ -1,0 +1,39 @@
+{
+  "placements": {
+    "primary": {
+      "map_sha256": "cfbf6e6afd6759eadffbdf20766b5965e987650b1024d8d5e86cedbb371abffd",
+      "functions": {
+        "submit_locked": {
+          "address": "0x100037E68",
+          "size": "0x0000033C",
+          "line": "0x100037E68\t0x0000033C\t[  8] __ZN4hyle7compute6vulkan6detail13submit_lockedERKNSt3__110shared_ptrINS2_3RunEEEb"
+        },
+        "observe": {
+          "address": "0x100038584",
+          "size": "0x000004CC",
+          "line": "0x100038584\t0x000004CC\t[  8] __ZN4hyle7compute6vulkan6detail12_GLOBAL__N_17observeERKNSt3__110shared_ptrINS2_3RunEEEb"
+        }
+      }
+    },
+    "placement": {
+      "map_sha256": "f8c6da650b1b240773ba9178eef71df14b3c1858c018557cda2a051bad8e4345",
+      "functions": {
+        "submit_locked": {
+          "address": "0x100037EAC",
+          "size": "0x0000033C",
+          "line": "0x100037EAC\t0x0000033C\t[  9] __ZN4hyle7compute6vulkan6detail13submit_lockedERKNSt3__110shared_ptrINS2_3RunEEEb"
+        },
+        "observe": {
+          "address": "0x1000385C8",
+          "size": "0x000004CC",
+          "line": "0x1000385C8\t0x000004CC\t[  9] __ZN4hyle7compute6vulkan6detail12_GLOBAL__N_17observeERKNSt3__110shared_ptrINS2_3RunEEEb"
+        }
+      }
+    }
+  },
+  "function_address_delta_bytes": {
+    "submit_locked": 68,
+    "observe": 68
+  },
+  "scope": "Existing cold prefix moves actual hot functions; unchanged function sizes; no LTO or hot padding."
+}

@@ -1,0 +1,62 @@
+{
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "measurement_snapshot": "a41d43d531365a1fb8617d60113b37924e9a9864",
+  "profile": "M1-MAC engineering; Air Mac16,12 / Apple M4 / MoltenVK / strict F32",
+  "qualification": "QUALIFIED",
+  "workloads": [
+    {
+      "workload": "decode-f32-ffn-m1",
+      "ni_gate": "PASS",
+      "median_advantage_ratio_range": [
+        0.9995685005393743,
+        1.001189446366782
+      ],
+      "strict_directions": [
+        "WIN",
+        "INCONCLUSIVE",
+        "WIN",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE",
+        "INCONCLUSIVE"
+      ],
+      "sample_counts": [
+        15
+      ]
+    },
+    {
+      "workload": "short-prefill-f32-ffn-m16",
+      "ni_gate": "PASS",
+      "median_advantage_ratio_range": [
+        0.9850502854036424,
+        1.011573436208322
+      ],
+      "strict_directions": [
+        "INCONCLUSIVE",
+        "LOSS",
+        "INCONCLUSIVE",
+        "LOSS",
+        "INCONCLUSIVE",
+        "LOSS",
+        "INCONCLUSIVE",
+        "LOSS"
+      ],
+      "sample_counts": [
+        15
+      ]
+    }
+  ],
+  "contract_sha256": "ab0299a1092524006502ae0869198ab1cd2c645d83cd0fed76652ca64e50cf75",
+  "summary_sha256": "19e62cac5e58b3b0ff4c9e065b1d8b0381c86a33c0ee050247df8fcf1dbbd6a5",
+  "archive": {
+    "file": "raw.zip",
+    "sha256": "42ca72fa0c23b55f03fec9c6ba6244cf13bf94e6e92a21c712a6c9da57e0620f",
+    "bytes": 534078,
+    "entries": 210,
+    "per_entry_integrity": "PASS"
+  },
+  "reference_identity_matches_qualified_aa": true,
+  "placement_review": "placement-review.json",
+  "skipped_gates": 112
+}
