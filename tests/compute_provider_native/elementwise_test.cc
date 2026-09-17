@@ -6,9 +6,12 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <numbers>
 #include <span>
+#include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -237,6 +240,185 @@ TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
     EXPECT_NEAR(strided_actual[index], expected,
                 std::abs(expected) * 5.0e-6F + 1.0e-43F);
   }
+}
+
+double unary_reference_wide(UnaryKind kind, double value) {
+  switch (kind) {
+  case UnaryKind::kAbs:
+    return std::abs(value);
+  case UnaryKind::kNeg:
+    return -value;
+  case UnaryKind::kExp:
+    return std::exp(value);
+  case UnaryKind::kLog:
+    return std::log(value);
+  case UnaryKind::kSqrt:
+    return std::sqrt(value);
+  case UnaryKind::kRsqrt:
+    return 1.0 / std::sqrt(value);
+  case UnaryKind::kTanh:
+    return std::tanh(value);
+  case UnaryKind::kSigmoid:
+    return 1.0 / (1.0 + std::exp(-value));
+  case UnaryKind::kRelu:
+    return std::isnan(value) ? value : std::fmax(value, 0.0);
+  case UnaryKind::kGelu:
+    return value == -std::numeric_limits<double>::infinity()
+               ? 0.0
+               : 0.5 * value * (1.0 + std::erf(value / std::numbers::sqrt2));
+  case UnaryKind::kGeluTanh:
+    return value == -std::numeric_limits<double>::infinity()
+               ? 0.0
+               : 0.5 * value *
+                     (1.0 +
+                      std::tanh(std::sqrt(2.0 / std::numbers::pi) *
+                                (value + 0.044715 * value * value * value)));
+  case UnaryKind::kSilu:
+    return value == -std::numeric_limits<double>::infinity()
+               ? 0.0
+               : value / (1.0 + std::exp(-value));
+  case UnaryKind::kSoftplus:
+    return std::log1p(std::exp(value));
+  }
+  return std::numeric_limits<double>::quiet_NaN();
+}
+
+template <class Value> void expect_half_elementwise(std::size_t count) {
+  const TensorDesc description =
+      TensorDesc::dense(
+          half_test::data_type<Value>(),
+          std::array<std::int64_t, 1>{static_cast<std::int64_t>(count)})
+          .value();
+  std::vector<Value> values(count);
+  std::vector<Value> right(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    values[index] = half_test::encode<Value>(
+        static_cast<double>(static_cast<int>(index % 65) - 32) / 8.0);
+    right[index] = half_test::encode<Value>(
+        static_cast<double>(static_cast<int>(index % 11) - 5) / 4.0);
+  }
+  if (count == 257) {
+    values[253] = half_test::encode<Value>(100.0);
+    values[254] = half_test::encode<Value>(-100.0);
+    values[255] =
+        half_test::encode<Value>(std::numeric_limits<double>::infinity());
+    values[256] =
+        half_test::encode<Value>(std::numeric_limits<double>::quiet_NaN());
+  }
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  Buffer storage = half_test::buffer<Value>(values);
+  Buffer right_storage = half_test::buffer<Value>(right);
+  const auto alias = TensorView::create(description, storage.view()).value();
+  const auto right_view =
+      ConstTensorView::create(description, right_storage.view()).value();
+  for (const auto kind :
+       {UnaryKind::kAbs, UnaryKind::kNeg, UnaryKind::kExp, UnaryKind::kLog,
+        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh,
+        UnaryKind::kSigmoid, UnaryKind::kRelu, UnaryKind::kGelu,
+        UnaryKind::kGeluTanh, UnaryKind::kSilu, UnaryKind::kSoftplus}) {
+    ASSERT_TRUE(storage.view().write(std::as_bytes(std::span(values))).ok());
+    auto prepared = hyle::compute::prepare(context, Unary{kind}, description);
+    ASSERT_TRUE(prepared.has_value());
+    auto invocation = prepared->create_invocation().value();
+    ASSERT_TRUE(invocation.submit(queue, alias.as_const(), alias)->wait().ok());
+    const auto actual = half_test::read<Value>(storage);
+    for (std::size_t index = 0; index < count; ++index) {
+      SCOPED_TRACE(index);
+      SCOPED_TRACE(static_cast<int>(kind));
+      half_test::expect_near(
+          actual[index],
+          unary_reference_wide(kind, half_test::decode(values[index])));
+    }
+  }
+  for (const auto kind :
+       {BinaryKind::kAdd, BinaryKind::kSubtract, BinaryKind::kMultiply,
+        BinaryKind::kDivide, BinaryKind::kMinimum, BinaryKind::kMaximum}) {
+    ASSERT_TRUE(storage.view().write(std::as_bytes(std::span(values))).ok());
+    auto prepared =
+        hyle::compute::prepare(context, Binary{kind}, description, description);
+    ASSERT_TRUE(prepared.has_value());
+    auto invocation = prepared->create_invocation().value();
+    ASSERT_TRUE(invocation.submit(queue, alias.as_const(), right_view, alias)
+                    ->wait()
+                    .ok());
+    const auto actual = half_test::read<Value>(storage);
+    for (std::size_t index = 0; index < count; ++index) {
+      const auto expected = half_test::encode<Value>(binary_reference(
+          kind, static_cast<float>(half_test::decode(values[index])),
+          static_cast<float>(half_test::decode(right[index]))));
+      if (std::isnan(half_test::decode(expected)))
+        EXPECT_TRUE(std::isnan(half_test::decode(actual[index])));
+      else
+        EXPECT_EQ(actual[index].bits, expected.bits) << index;
+    }
+  }
+}
+
+TEST(NativeElementwise, HalfStorageExecutesAllModesAndRoundsOnce) {
+  for (const std::size_t count : {0, 1, 127, 128, 129, 257}) {
+    SCOPED_TRACE(count);
+    expect_half_elementwise<hyle::simd::float16_t>(count);
+    expect_half_elementwise<hyle::simd::bfloat16_t>(count);
+  }
+}
+
+template <class Value> void expect_half_strided_broadcast() {
+  const auto type = half_test::data_type<Value>();
+  const auto left_desc =
+      TensorDesc::strided_bytes(type, std::array<std::int64_t, 2>{2, 3},
+                                std::array<std::int64_t, 2>{9, 3})
+          .value();
+  const auto right_desc =
+      TensorDesc::dense(type, std::array<std::int64_t, 1>{3}).value();
+  const auto out_desc =
+      TensorDesc::dense(type, std::array<std::int64_t, 2>{2, 3}).value();
+  std::array<std::byte, 17> padded{};
+  std::array<Value, 3> right{};
+  for (std::size_t index = 0; index < 6; ++index) {
+    const Value value =
+        half_test::encode<Value>(static_cast<double>(index) / 2);
+    std::memcpy(padded.data() + index * 3, &value, sizeof(value));
+  }
+  for (std::size_t index = 0; index < 3; ++index)
+    right[index] = half_test::encode<Value>(static_cast<double>(index) + 0.25);
+  Buffer left = make_buffer(padded);
+  Buffer rhs = make_buffer(right);
+  Buffer result = make_buffer(std::array<Value, 6>{});
+  const auto left_view =
+      ConstTensorView::create(left_desc, left.view()).value();
+  const auto right_view =
+      ConstTensorView::create(right_desc, rhs.view()).value();
+  const auto output = TensorView::create(out_desc, result.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  auto prepared = hyle::compute::prepare(context, Binary{BinaryKind::kAdd},
+                                         left_desc, right_desc)
+                      .value();
+  auto invocation = prepared.create_invocation().value();
+  ASSERT_TRUE(
+      invocation.submit(queue, left_view, right_view, output)->wait().ok());
+  const auto actual = half_test::read<Value>(result);
+  for (std::size_t index = 0; index < 6; ++index)
+    EXPECT_EQ(actual[index].bits,
+              half_test::encode<Value>(static_cast<double>(index) / 2 +
+                                       static_cast<double>(index % 3) + 0.25)
+                  .bits);
+  auto unary =
+      hyle::compute::prepare(context, Unary{UnaryKind::kSoftplus}, left_desc)
+          .value();
+  auto unary_invocation = unary.create_invocation().value();
+  ASSERT_TRUE(unary_invocation.submit(queue, left_view, output)->wait().ok());
+  const auto unary_actual = half_test::read<Value>(result);
+  for (std::size_t index = 0; index < 6; ++index)
+    half_test::expect_near(
+        unary_actual[index],
+        std::log1p(std::exp(static_cast<double>(index) / 2)));
+}
+
+TEST(NativeElementwise, HalfStorageSupportsOddByteStridesAndBroadcast) {
+  expect_half_strided_broadcast<hyle::simd::float16_t>();
+  expect_half_strided_broadcast<hyle::simd::bfloat16_t>();
 }
 
 TEST(NativeElementwise, MaterializesUnalignedStridedUnary) {
@@ -509,9 +691,9 @@ TEST(NativeElementwise, RejectsUnsafeStridedAliasAndUnsupportedArithmeticType) {
   ASSERT_FALSE(completion.has_value());
   EXPECT_TRUE(completion.error().IsInvalidArgument());
 
-  const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
+  const TensorDesc f64 = TensorDesc::dense(DataType::kFloat64, shape).value();
   auto unsupported_unary =
-      hyle::compute::prepare(context, Unary{UnaryKind::kSilu}, f16);
+      hyle::compute::prepare(context, Unary{UnaryKind::kSilu}, f64);
   ASSERT_FALSE(unsupported_unary.has_value());
   EXPECT_TRUE(unsupported_unary.error().IsUnimplemented());
 

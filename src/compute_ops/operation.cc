@@ -394,7 +394,11 @@ Result<TensorDesc> infer_binary(const TensorDesc &left,
 Status validate_vector_parameter(const TensorDesc &parameter,
                                  const TensorDesc &input,
                                  std::string_view name) noexcept {
-  if (parameter.data_type() != input.data_type() || parameter.rank() != 1 ||
+  const bool promoted_parameter = (input.data_type() == DataType::kFloat16 ||
+                                   input.data_type() == DataType::kBFloat16) &&
+                                  parameter.data_type() == DataType::kFloat32;
+  if ((!promoted_parameter && parameter.data_type() != input.data_type()) ||
+      parameter.rank() != 1 ||
       parameter.dimensions()[0] != input.dimensions().back()) {
     return Status::InvalidArgument(name);
   }

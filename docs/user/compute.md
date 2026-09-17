@@ -101,7 +101,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
-| 单目计算/激活 | `Unary` | f32 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU/Softplus；dense 复用 SIMD，Softplus 使用固定大小栈上分块，plain stride 可 materialize |
+| 单目计算/激活 | `Unary` | f32/f16/bf16 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU/Softplus；dense 复用 SIMD，半精度和 Softplus 使用固定大小栈上分块，plain stride 可 materialize |
 | 双目计算 | `Binary` | f32 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
 | 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
 | reduction | `Reduce` | f32 Sum/Mean/Min/Max；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
@@ -283,7 +283,7 @@ auto done = invocation->submit(queue, output_view);
 ## Elementwise 与广播
 
 `Unary`、`Binary` 与 `Select` 的 typed `prepare()` 都会推导 dense 输出，不要求调用者重复写 output descriptor。
-Unary/Binary 当前 arithmetic route 是 f32；Select 不做数值转换，因此可选择全部已登记的普通 1/2/4/8-byte
+Native Unary/Binary 支持 f32/f16/bf16，半精度在 F32 计算后一次 RNE 舍入回输入类型；Select 不做数值转换，因此可选择全部已登记的普通 1/2/4/8-byte
 scalar storage。Binary 和 Select 使用 NumPy-style 尾轴对齐广播，输入也可携带普通 byte stride；输出始终
 materialize 为 dense storage。
 
@@ -309,8 +309,10 @@ Sum/Mean/Minimum/Maximum；任意普通 byte-strided input 都按逻辑坐标读
 Min/Max 遇到任一 NaN 会传播 NaN。Reduce 不允许 output alias input。
 
 `LayerNorm` 对最后一轴逐 row 计算，可不带参数、只带 scale，或同时带 scale+bias；三种 typed prepare 都
-自动推导与 input 同形的 dense output。output 可以精确 alias input，但不能 alias scale/bias。当前只签发
-dense f32 storage 与 f32 accumulation；f16/bf16 等窄 storage 由后续 provider 资格化，不发生隐藏 Cast。
+自动推导与 input 同形的 dense output。output 可以精确 alias input，但不能 alias scale/bias。Native 的
+RMSNorm/LayerNorm 支持 dense f32/f16/bf16 与 F32 accumulation。半精度输入的 scale/bias 可以各自使用
+输入类型或 F32，计算保持 F32，affine 完成后一次 RNE 舍入回输入类型。固定大小栈上分块不会展开整张量。
+Gemma 的 `1+gamma` 应通过普通 Binary/常量明确组成。
 
 ```cpp
 auto reduced = prepare(context,

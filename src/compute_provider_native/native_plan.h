@@ -210,10 +210,10 @@ Status prepare_reduction(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,
                          NativePlan &plan) noexcept;
-Status prepare_layer_norm(Operation operation,
-                          std::span<const TensorDesc> inputs,
-                          std::span<const TensorDesc> outputs,
-                          NativePlan &plan) noexcept;
+Status prepare_normalization(Operation operation,
+                             std::span<const TensorDesc> inputs,
+                             std::span<const TensorDesc> outputs,
+                             NativePlan &plan) noexcept;
 Status prepare_indexing(Operation operation, std::span<const TensorDesc> inputs,
                         std::span<const TensorDesc> outputs,
                         NativePlan &plan) noexcept;

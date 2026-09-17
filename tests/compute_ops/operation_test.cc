@@ -224,6 +224,33 @@ TEST(OperationReductionAndNorm, PreserveExplicitAxesAndParameterShapes) {
             input);
 }
 
+TEST(OperationReductionAndNorm, HalfInputPreservesFloat32LearnedParameters) {
+  for (const auto type : {DataType::kFloat16, DataType::kBFloat16}) {
+    const auto input = tensor(type, 2, 17, 2048);
+    const auto scale = tensor(DataType::kFloat32, 2048);
+    const auto bias = tensor(type, 2048);
+    EXPECT_EQ(infer_one(Operation(RmsNorm{}), std::array{input, scale}), input);
+    EXPECT_EQ(infer_one(Operation(LayerNorm{}), std::array{input, scale, bias}),
+              input);
+    EXPECT_EQ(infer_one(Operation(LayerNorm{}), std::array{input, bias, scale}),
+              input);
+    for (const auto invalid :
+         {tensor(DataType::kFloat64, 2048), tensor(DataType::kInt32, 2048),
+          tensor(DataType::kFloat32, 2047),
+          tensor(DataType::kFloat32, 1, 2048)}) {
+      EXPECT_TRUE(
+          infer_single_output(Operation(RmsNorm{}), std::array{input, invalid})
+              .error()
+              .IsInvalidArgument());
+    }
+  }
+  EXPECT_TRUE(infer_single_output(Operation(RmsNorm{}),
+                                  std::array{tensor(DataType::kFloat32, 2, 7),
+                                             tensor(DataType::kFloat16, 7)})
+                  .error()
+                  .IsInvalidArgument());
+}
+
 TensorDesc packed_q4(DataType type, std::int64_t channels,
                       std::int64_t reduction) {
   const auto format = StorageFormat::blocked({0x48594c4554455354ULL, 4}, 2, 1)

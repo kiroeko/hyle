@@ -1,8 +1,12 @@
 #include "native_plan.h"
+#include "numeric.h"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/math/scalar.h"
@@ -27,38 +31,99 @@ void close_ignoring_errors(std::array<mem::HostMapping, 3> &mappings,
     mapping.close().IgnoreError();
 }
 
-struct LayerNormEpisode final {
+struct NormEpisode final {
   const NativePlan *plan = nullptr;
-  const float *input = nullptr;
-  const float *scale = nullptr;
-  const float *bias = nullptr;
-  float *output = nullptr;
+  const void *input = nullptr;
+  const void *scale = nullptr;
+  const void *bias = nullptr;
+  void *output = nullptr;
 };
 
 void run_layer_norm_range(void *context, std::size_t, std::size_t begin,
                           std::size_t end) noexcept {
-  auto &episode = *static_cast<LayerNormEpisode *>(context);
+  auto &episode = *static_cast<NormEpisode *>(context);
   const std::size_t hidden = episode.plan->parameters[1];
+  const auto *scale = static_cast<const float *>(episode.scale);
+  const auto *bias = static_cast<const float *>(episode.bias);
   for (std::size_t row = begin; row < end; ++row) {
-    const float *row_input = episode.input + row * hidden;
-    float *row_output = episode.output + row * hidden;
-    if (episode.bias != nullptr) {
-      simd::layer_norm_f32(row_input, episode.scale, episode.bias, row_output,
-                           hidden, episode.plan->scalar);
+    const auto *row_input =
+        static_cast<const float *>(episode.input) + row * hidden;
+    auto *row_output = static_cast<float *>(episode.output) + row * hidden;
+    if (bias != nullptr) {
+      simd::layer_norm_f32(row_input, scale, bias, row_output, hidden,
+                           episode.plan->scalar);
     } else {
       simd::layer_norm_f32(row_input, row_output, hidden, episode.plan->scalar);
-      if (episode.scale != nullptr)
-        simd::multiply(row_output, episode.scale, row_output, hidden);
+      if (scale != nullptr)
+        simd::multiply(row_output, scale, row_output, hidden);
     }
   }
 }
 
+template <class Value, class Scale, class Bias, bool Rms>
+void run_narrow_norm_range(void *context, std::size_t, std::size_t begin,
+                           std::size_t end) noexcept {
+  auto &episode = *static_cast<NormEpisode *>(context);
+  const std::size_t hidden = episode.plan->parameters[1];
+  std::array<float, 128> values;
+  std::array<float, 128> parameter;
+  for (std::size_t row = begin; row < end; ++row) {
+    const std::size_t offset = row * hidden;
+    float mean = 0.0F;
+    if constexpr (!Rms) {
+      float sum = 0.0F;
+      for (std::size_t column = 0; column < hidden; column += values.size()) {
+        const std::size_t size = (std::min)(values.size(), hidden - column);
+        numeric::load_tile<Value>(episode.input, offset + column, values.data(),
+                                  size);
+        sum += simd::sum(values.data(), size);
+      }
+      mean = sum / static_cast<float>(hidden);
+    }
+    float squares = 0.0F;
+    for (std::size_t column = 0; column < hidden; column += values.size()) {
+      const std::size_t size = (std::min)(values.size(), hidden - column);
+      numeric::load_tile<Value>(episode.input, offset + column, values.data(),
+                                size);
+      if constexpr (!Rms)
+        for (std::size_t index = 0; index < size; ++index)
+          values[index] -= mean;
+      squares += simd::dot(values.data(), values.data(), size);
+    }
+    const float inverse =
+        1.0F /
+        std::sqrt(squares / static_cast<float>(hidden) + episode.plan->scalar);
+
+    // Reductions finish before the first write, including exact input alias.
+    // Parameters stay in their declared storage and output is rounded once.
+    for (std::size_t column = 0; column < hidden; column += values.size()) {
+      const std::size_t size = (std::min)(values.size(), hidden - column);
+      numeric::load_tile<Value>(episode.input, offset + column, values.data(),
+                                size);
+      for (std::size_t index = 0; index < size; ++index)
+        values[index] = (values[index] - mean) * inverse;
+      if (episode.scale != nullptr) {
+        numeric::load_tile<Scale>(episode.scale, column, parameter.data(),
+                                  size);
+        simd::multiply(values.data(), parameter.data(), values.data(), size);
+      }
+      if (episode.bias != nullptr) {
+        numeric::load_tile<Bias>(episode.bias, column, parameter.data(), size);
+        simd::add(values.data(), parameter.data(), values.data(), size);
+      }
+      numeric::store_tile<Value>(values.data(), episode.output, offset + column,
+                                 size);
+    }
+  }
+}
+
+template <class Value, class Scale, class Bias, bool Rms>
 detail::EnqueueResult
-submit_layer_norm(const NativePlan &plan,
-                  std::span<const ConstTensorView> inputs,
-                  std::span<const TensorView> outputs) noexcept {
+submit_normalization(const NativePlan &plan,
+                     std::span<const ConstTensorView> inputs,
+                     std::span<const TensorView> outputs) noexcept {
   if (inputs.empty() || inputs.size() > 3 || outputs.size() != 1)
-    return completed(Status::Internal("native LayerNorm plan is invalid"));
+    return completed(Status::Internal("native normalization plan is invalid"));
   const std::size_t rows = plan.parameters[0];
   const std::size_t hidden = plan.parameters[1];
   if (rows == 0 || hidden == 0)
@@ -84,9 +149,9 @@ submit_layer_norm(const NativePlan &plan,
   }
 
   std::array<mem::HostMapping, 3> input_mappings{};
-  std::array<const float *, 3> source_data{};
+  std::array<const void *, 3> source_data{};
   mem::HostMapping output_mapping;
-  float *output_data = nullptr;
+  void *output_data = nullptr;
 
   if (in_place) {
     auto mapping = output_storage.map_host(mem::HostAccess::kReadWrite);
@@ -98,7 +163,7 @@ submit_layer_norm(const NativePlan &plan,
       output_mapping.close().IgnoreError();
       return completed(std::move(writable).error());
     }
-    output_data = reinterpret_cast<float *>(writable->data());
+    output_data = writable->data();
     source_data[0] = output_data;
   }
 
@@ -120,8 +185,7 @@ submit_layer_norm(const NativePlan &plan,
       return completed(std::move(mapping).error());
     }
     input_mappings[index] = std::move(*mapping);
-    source_data[index] =
-        reinterpret_cast<const float *>(input_mappings[index].bytes().data());
+    source_data[index] = input_mappings[index].bytes().data();
   }
 
   if (!in_place) {
@@ -136,7 +200,7 @@ submit_layer_norm(const NativePlan &plan,
       close_ignoring_errors(input_mappings, output_mapping);
       return completed(std::move(writable).error());
     }
-    output_data = reinterpret_cast<float *>(writable->data());
+    output_data = writable->data();
   }
 
   bool aligned = aligned_for_storage(
@@ -149,19 +213,23 @@ submit_layer_norm(const NativePlan &plan,
   if (!aligned) {
     close_ignoring_errors(input_mappings, output_mapping);
     return completed(Status::FailedPrecondition(
-        "CPU LayerNorm mapping does not satisfy tensor alignment"));
+        "CPU normalization mapping does not satisfy tensor alignment"));
   }
 
-  const float *scale = inputs.size() > 1 ? source_data[1] : nullptr;
-  const float *bias = inputs.size() > 2 ? source_data[2] : nullptr;
-  LayerNormEpisode episode{
+  NormEpisode episode{
       .plan = &plan,
       .input = source_data[0],
-      .scale = scale,
-      .bias = bias,
+      .scale = inputs.size() > 1 ? source_data[1] : nullptr,
+      .bias = inputs.size() > 2 ? source_data[2] : nullptr,
       .output = output_data,
   };
-  parallel_for_ranges(plan, rows, &run_layer_norm_range, &episode);
+  if constexpr (std::is_same_v<Value, float>) {
+    static_assert(!Rms);
+    parallel_for_ranges(plan, rows, &run_layer_norm_range, &episode);
+  } else {
+    parallel_for_ranges(
+        plan, rows, &run_narrow_norm_range<Value, Scale, Bias, Rms>, &episode);
+  }
 
   Status terminal = Status::Ok();
   if (!output_storage.resource().properties().has(
@@ -181,46 +249,69 @@ Result<std::size_t> outer_count(const TensorDesc &description) noexcept {
     auto value = math::try_integer_cast<std::size_t>(dimensions[axis]);
     if (!value)
       return std::unexpected(
-          Status::OutOfRange("LayerNorm dimension exceeds size_t"));
+          Status::OutOfRange("normalization dimension exceeds size_t"));
     auto next = math::try_multiply(result, *value);
     if (!next)
       return std::unexpected(
-          Status::OutOfRange("LayerNorm row count overflows size_t"));
+          Status::OutOfRange("normalization row count overflows size_t"));
     result = *next;
   }
   return result;
 }
 
-Status validate_dense_f32(const TensorDesc &description) noexcept {
-  if (description.data_type() != DataType::kFloat32 ||
+Status validate_dense_arithmetic(const TensorDesc &description) noexcept {
+  const DataType type = description.data_type();
+  if ((type != DataType::kFloat32 && type != DataType::kFloat16 &&
+       type != DataType::kBFloat16) ||
       !description.is_plain() || !description.is_dense()) {
     return Status::Unimplemented(
-        "native LayerNorm currently requires dense plain float32 tensors");
+        "native normalization requires dense plain float32/float16/bfloat16");
   }
   return Status::Ok();
 }
 
+template <class Value, bool Rms>
+SubmitRoute select_narrow_norm(std::span<const TensorDesc> inputs) noexcept {
+  const bool scale_f32 =
+      inputs.size() > 1 && inputs[1].data_type() == DataType::kFloat32;
+  if constexpr (Rms) {
+    return scale_f32 ? &submit_normalization<Value, float, Value, true>
+                     : &submit_normalization<Value, Value, Value, true>;
+  }
+  const bool bias_f32 =
+      inputs.size() > 2 && inputs[2].data_type() == DataType::kFloat32;
+  if (scale_f32) {
+    return bias_f32 ? &submit_normalization<Value, float, float, Rms>
+                    : &submit_normalization<Value, float, Value, Rms>;
+  }
+  return bias_f32 ? &submit_normalization<Value, Value, float, Rms>
+                  : &submit_normalization<Value, Value, Value, Rms>;
+}
+
 } // namespace
 
-Status prepare_layer_norm(Operation operation,
-                          std::span<const TensorDesc> inputs,
-                          std::span<const TensorDesc> outputs,
-                          NativePlan &plan) noexcept {
+Status prepare_normalization(Operation operation,
+                             std::span<const TensorDesc> inputs,
+                             std::span<const TensorDesc> outputs,
+                             NativePlan &plan) noexcept {
   if (inputs.empty() || inputs.size() > 3 || outputs.size() != 1)
-    return Status::Internal("native LayerNorm arity is invalid");
-  const LayerNorm *normalization = operation.get_if<LayerNorm>();
-  if (normalization == nullptr)
-    return Status::Internal("native LayerNorm descriptor is missing");
-  if (normalization->accumulation_type != DataType::kFloat32) {
+    return Status::Internal("native normalization arity is invalid");
+  const LayerNorm *layer = operation.get_if<LayerNorm>();
+  const RmsNorm *rms = operation.get_if<RmsNorm>();
+  if (layer == nullptr && rms == nullptr)
+    return Status::Internal("native normalization descriptor is missing");
+  const DataType accumulation =
+      layer != nullptr ? layer->accumulation_type : rms->accumulation_type;
+  if (accumulation != DataType::kFloat32) {
     return Status::Unimplemented(
-        "native LayerNorm currently supports float32 accumulation");
+        "native normalization supports float32 accumulation");
   }
   for (const TensorDesc &input : inputs) {
-    Status status = validate_dense_f32(input);
+    Status status = validate_dense_arithmetic(input);
     if (!status.ok())
       return status;
   }
-  Status output_status = validate_dense_f32(outputs[0]);
+  Status output_status = validate_dense_arithmetic(outputs[0]);
   if (!output_status.ok())
     return output_status;
 
@@ -230,11 +321,29 @@ Status prepare_layer_norm(Operation operation,
   auto hidden = math::try_integer_cast<std::size_t>(
       inputs[0].dimensions()[inputs[0].rank() - 1]);
   if (!hidden)
-    return Status::OutOfRange("LayerNorm hidden dimension exceeds size_t");
+    return Status::OutOfRange("normalization hidden dimension exceeds size_t");
   plan.parameters = {*rows, *hidden, 0};
-  plan.scalar = normalization->epsilon;
+  plan.scalar = layer != nullptr ? layer->epsilon : rms->epsilon;
   plan.alias_input_mask = 1;
-  plan.submit_route = &submit_layer_norm;
+  switch (inputs[0].data_type()) {
+  case DataType::kFloat32:
+    if (rms != nullptr)
+      return Status::Internal("float32 RMSNorm uses its native float route");
+    plan.submit_route = &submit_normalization<float, float, float, false>;
+    break;
+  case DataType::kFloat16:
+    plan.submit_route =
+        rms != nullptr ? select_narrow_norm<simd::float16_t, true>(inputs)
+                       : select_narrow_norm<simd::float16_t, false>(inputs);
+    break;
+  case DataType::kBFloat16:
+    plan.submit_route =
+        rms != nullptr ? select_narrow_norm<simd::bfloat16_t, true>(inputs)
+                       : select_narrow_norm<simd::bfloat16_t, false>(inputs);
+    break;
+  default:
+    return Status::Unimplemented("unsupported native normalization data type");
+  }
   return Status::Ok();
 }
 

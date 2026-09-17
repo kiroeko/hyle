@@ -794,12 +794,20 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   }
   case OperationKind::kLayerNorm: {
     Status status =
-        internal::prepare_layer_norm(operation, inputs, outputs, plan);
+        internal::prepare_normalization(operation, inputs, outputs, plan);
     if (!status.ok())
       return status;
     break;
   }
   case OperationKind::kRmsNorm: {
+    if (inputs[0].data_type() == DataType::kFloat16 ||
+        inputs[0].data_type() == DataType::kBFloat16) {
+      Status status =
+          internal::prepare_normalization(operation, inputs, outputs, plan);
+      if (!status.ok())
+        return status;
+      break;
+    }
     Status status = validate_dense_f32(inputs[0]);
     if (!status.ok())
       return status;

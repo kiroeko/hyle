@@ -1,4 +1,5 @@
 #include "native_plan.h"
+#include "numeric.h"
 
 #include <algorithm>
 #include <array>
@@ -7,6 +8,7 @@
 #include <cstring>
 #include <limits>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/math/scalar.h"
@@ -117,13 +119,23 @@ void unary_linear(const void *first, const void *, const void *, void *output,
   }
 }
 
-template <UnaryKind Kind>
+template <UnaryKind Kind, class Value>
+void unary_narrow_linear(const void *first, const void *, const void *,
+                         void *output, std::size_t count) noexcept {
+  std::array<float, 128> values;
+  for (std::size_t begin = 0; begin < count; begin += values.size()) {
+    const std::size_t size = (std::min)(values.size(), count - begin);
+    numeric::load_tile<Value>(first, begin, values.data(), size);
+    unary_linear<Kind>(values.data(), nullptr, nullptr, values.data(), size);
+    numeric::store_tile<Value>(values.data(), output, begin, size);
+  }
+}
+
+template <UnaryKind Kind, class Value>
 void unary_scalar(const std::byte *first, const std::byte *, const std::byte *,
                   std::byte *output) noexcept {
-  float source = 0.0F;
-  std::memcpy(&source, first, sizeof(source));
-  const float destination = evaluate_unary<Kind>(source);
-  std::memcpy(output, &destination, sizeof(destination));
+  numeric::store<Value>(output,
+                        evaluate_unary<Kind>(numeric::load<Value>(first)));
 }
 
 template <BinaryKind Kind>
@@ -166,15 +178,26 @@ void binary_linear(const void *first, const void *second, const void *,
   }
 }
 
-template <BinaryKind Kind>
+template <BinaryKind Kind, class Value>
+void binary_narrow_linear(const void *first, const void *second, const void *,
+                          void *output, std::size_t count) noexcept {
+  std::array<float, 128> left;
+  std::array<float, 128> right;
+  for (std::size_t begin = 0; begin < count; begin += left.size()) {
+    const std::size_t size = (std::min)(left.size(), count - begin);
+    numeric::load_tile<Value>(first, begin, left.data(), size);
+    numeric::load_tile<Value>(second, begin, right.data(), size);
+    binary_linear<Kind>(left.data(), right.data(), nullptr, left.data(), size);
+    numeric::store_tile<Value>(left.data(), output, begin, size);
+  }
+}
+
+template <BinaryKind Kind, class Value>
 void binary_scalar(const std::byte *first, const std::byte *second,
                    const std::byte *, std::byte *output) noexcept {
-  float left = 0.0F;
-  float right = 0.0F;
-  std::memcpy(&left, first, sizeof(left));
-  std::memcpy(&right, second, sizeof(right));
-  const float destination = evaluate_binary<Kind>(left, right);
-  std::memcpy(output, &destination, sizeof(destination));
+  numeric::store<Value>(output,
+                        evaluate_binary<Kind>(numeric::load<Value>(first),
+                                              numeric::load<Value>(second)));
 }
 
 template <std::size_t ElementSize>
@@ -383,11 +406,16 @@ submit_elementwise(const NativePlan &plan,
   return completed(std::move(terminal));
 }
 
+template <class Value>
 bool select_unary(UnaryKind kind, NativePlan &plan) noexcept {
 #define HYLE_NATIVE_SELECT_UNARY(name)                                         \
   case UnaryKind::name:                                                        \
-    plan.linear_elementwise_route = &unary_linear<UnaryKind::name>;            \
-    plan.scalar_elementwise_route = &unary_scalar<UnaryKind::name>;            \
+    if constexpr (std::is_same_v<Value, float>)                                \
+      plan.linear_elementwise_route = &unary_linear<UnaryKind::name>;          \
+    else                                                                       \
+      plan.linear_elementwise_route =                                          \
+          &unary_narrow_linear<UnaryKind::name, Value>;                        \
+    plan.scalar_elementwise_route = &unary_scalar<UnaryKind::name, Value>;     \
     return true
 
   switch (kind) {
@@ -410,11 +438,16 @@ bool select_unary(UnaryKind kind, NativePlan &plan) noexcept {
 #undef HYLE_NATIVE_SELECT_UNARY
 }
 
+template <class Value>
 bool select_binary(BinaryKind kind, NativePlan &plan) noexcept {
 #define HYLE_NATIVE_SELECT_BINARY(name)                                        \
   case BinaryKind::name:                                                       \
-    plan.linear_elementwise_route = &binary_linear<BinaryKind::name>;          \
-    plan.scalar_elementwise_route = &binary_scalar<BinaryKind::name>;          \
+    if constexpr (std::is_same_v<Value, float>)                                \
+      plan.linear_elementwise_route = &binary_linear<BinaryKind::name>;        \
+    else                                                                       \
+      plan.linear_elementwise_route =                                          \
+          &binary_narrow_linear<BinaryKind::name, Value>;                      \
+    plan.scalar_elementwise_route = &binary_scalar<BinaryKind::name, Value>;   \
     return true
 
   switch (kind) {
@@ -428,6 +461,32 @@ bool select_binary(BinaryKind kind, NativePlan &plan) noexcept {
   return false;
 
 #undef HYLE_NATIVE_SELECT_BINARY
+}
+
+bool select_unary(UnaryKind kind, DataType type, NativePlan &plan) noexcept {
+  switch (type) {
+  case DataType::kFloat32:
+    return select_unary<float>(kind, plan);
+  case DataType::kFloat16:
+    return select_unary<simd::float16_t>(kind, plan);
+  case DataType::kBFloat16:
+    return select_unary<simd::bfloat16_t>(kind, plan);
+  default:
+    return false;
+  }
+}
+
+bool select_binary(BinaryKind kind, DataType type, NativePlan &plan) noexcept {
+  switch (type) {
+  case DataType::kFloat32:
+    return select_binary<float>(kind, plan);
+  case DataType::kFloat16:
+    return select_binary<simd::float16_t>(kind, plan);
+  case DataType::kBFloat16:
+    return select_binary<simd::bfloat16_t>(kind, plan);
+  default:
+    return false;
+  }
 }
 
 bool select_select(DataType data_type, std::size_t element_size,
@@ -495,11 +554,13 @@ std::size_t dense_broadcast_suffix(
   return chunk > 1 ? chunk : 0;
 }
 
-Status validate_plain_f32(const TensorDesc &description) noexcept {
-  if (description.data_type() != DataType::kFloat32 ||
+Status validate_plain_arithmetic(const TensorDesc &description) noexcept {
+  const DataType type = description.data_type();
+  if ((type != DataType::kFloat32 && type != DataType::kFloat16 &&
+       type != DataType::kBFloat16) ||
       !description.is_plain()) {
-    return Status::Unimplemented(
-        "native elementwise arithmetic currently requires plain float32");
+    return Status::Unimplemented("native elementwise arithmetic requires plain "
+                                 "float32/float16/bfloat16");
   }
   return Status::Ok();
 }
@@ -521,14 +582,15 @@ Status prepare_elementwise(Operation operation,
   case OperationKind::kUnary: {
     if (inputs.size() != 1)
       return Status::Internal("native Unary arity is invalid");
-    Status status = validate_plain_f32(inputs[0]);
+    Status status = validate_plain_arithmetic(inputs[0]);
     if (!status.ok())
       return status;
-    status = validate_plain_f32(outputs[0]);
+    status = validate_plain_arithmetic(outputs[0]);
     if (!status.ok())
       return status;
     const Unary *unary = operation.get_if<Unary>();
-    if (unary == nullptr || !select_unary(unary->kind, plan))
+    if (unary == nullptr ||
+        !select_unary(unary->kind, inputs[0].data_type(), plan))
       return Status::InvalidArgument("native Unary kind is invalid");
     linear = dense_same_shape(inputs[0], outputs[0]);
     break;
@@ -537,15 +599,16 @@ Status prepare_elementwise(Operation operation,
     if (inputs.size() != 2)
       return Status::Internal("native Binary arity is invalid");
     for (const TensorDesc &input : inputs) {
-      Status status = validate_plain_f32(input);
+      Status status = validate_plain_arithmetic(input);
       if (!status.ok())
         return status;
     }
-    Status status = validate_plain_f32(outputs[0]);
+    Status status = validate_plain_arithmetic(outputs[0]);
     if (!status.ok())
       return status;
     const Binary *binary = operation.get_if<Binary>();
-    if (binary == nullptr || !select_binary(binary->kind, plan))
+    if (binary == nullptr ||
+        !select_binary(binary->kind, inputs[0].data_type(), plan))
       return Status::InvalidArgument("native Binary kind is invalid");
     linear = dense_same_shape(inputs[0], outputs[0]) &&
              dense_same_shape(inputs[1], outputs[0]);

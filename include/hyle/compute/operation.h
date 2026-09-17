@@ -302,6 +302,8 @@ struct Reduce final {
   DataType accumulation_type = DataType::kUnknown;
 };
 
+// Norm parameters match the input type or use float32 for float16/bfloat16
+// input. Output keeps the input type; accumulation is explicitly declared.
 struct RmsNorm final {
   float epsilon = 1.0e-5F;
   DataType accumulation_type = DataType::kFloat32;

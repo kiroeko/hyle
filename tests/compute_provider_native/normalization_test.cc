@@ -5,8 +5,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -163,13 +165,155 @@ TEST(NativeLayerNorm, AcceptsAnEmptyLastDimension) {
   EXPECT_TRUE(invocation.submit(queue, input, output)->wait().ok());
 }
 
+template <class Value, class Scale, class Bias>
+void expect_half_norm(std::size_t hidden, bool rms, std::size_t arity,
+                      float epsilon = 1.0e-6F) {
+  constexpr std::size_t rows = 3;
+  const auto width = static_cast<std::int64_t>(hidden);
+  const auto desc = TensorDesc::dense(half_test::data_type<Value>(),
+                                      std::array<std::int64_t, 2>{rows, width})
+                        .value();
+  const auto scale_desc = TensorDesc::dense(half_test::data_type<Scale>(),
+                                            std::array<std::int64_t, 1>{width})
+                              .value();
+  const auto bias_desc = TensorDesc::dense(half_test::data_type<Bias>(),
+                                           std::array<std::int64_t, 1>{width})
+                             .value();
+  std::vector<Value> values(rows * hidden);
+  std::vector<Value> other(rows * hidden);
+  std::vector<Scale> scale(hidden);
+  std::vector<Bias> bias(hidden);
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    const double value =
+        index / hidden == 1
+            ? 2.0
+            : static_cast<double>(static_cast<int>(index % 97) - 48) / 16;
+    values[index] = half_test::encode<Value>(value);
+    other[index] = half_test::encode<Value>(value * 0.5 - 0.25);
+  }
+  for (std::size_t index = 0; index < hidden; ++index) {
+    scale[index] =
+        half_test::encode<Scale>(1.001 + static_cast<double>(index % 7) / 16);
+    bias[index] =
+        half_test::encode<Bias>(0.101 + static_cast<double>(index % 5) / 32);
+  }
+  // An F32 scale cannot be narrowed to F16 before the affine step: this
+  // finite parameter is outside F16, while the selected output is finite.
+  if constexpr (std::is_same_v<Value, hyle::simd::float16_t> &&
+                std::is_same_v<Scale, float>) {
+    if (hidden > 1) {
+      scale[0] = 100000.0F;
+      values[0] = half_test::encode<Value>(0.03125);
+      other[0] = half_test::encode<Value>(0.015625);
+    }
+  }
+  Buffer first = half_test::buffer<Value>(values);
+  Buffer second = half_test::buffer<Value>(other);
+  Buffer scale_buffer = half_test::buffer<Scale>(scale);
+  Buffer bias_buffer = half_test::buffer<Bias>(bias);
+  const auto first_view = TensorView::create(desc, first.view()).value();
+  const auto second_view = TensorView::create(desc, second.view()).value();
+  const auto scale_view =
+      ConstTensorView::create(scale_desc, scale_buffer.view()).value();
+  const auto bias_view =
+      ConstTensorView::create(bias_desc, bias_buffer.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  auto prepared = [&] {
+    if (rms) {
+      const hyle::compute::RmsNorm operation{.epsilon = epsilon};
+      return arity == 1
+                 ? hyle::compute::prepare(context, operation, desc)
+                 : hyle::compute::prepare(context, operation, desc, scale_desc);
+    }
+    const LayerNorm operation{.epsilon = epsilon};
+    if (arity == 1)
+      return hyle::compute::prepare(context, operation, desc);
+    return arity == 2
+               ? hyle::compute::prepare(context, operation, desc, scale_desc)
+               : hyle::compute::prepare(context, operation, desc, scale_desc,
+                                        bias_desc);
+  }();
+  ASSERT_TRUE(prepared.has_value());
+  EXPECT_EQ(prepared->output_description().value(), desc);
+  auto first_invocation = prepared->create_invocation().value();
+  auto second_invocation = prepared->create_invocation().value();
+  const auto run = [&](auto &invocation, const TensorView &view) {
+    const std::array inputs{view.as_const(), scale_view, bias_view};
+    return invocation.submit(queue, std::span(inputs).first(arity), view)
+        ->wait();
+  };
+  ASSERT_TRUE(run(first_invocation, first_view).ok());
+  const auto retained = half_test::read<Value>(first);
+  ASSERT_TRUE(run(second_invocation, second_view).ok());
+  const auto second_output = half_test::read<Value>(second);
+  const auto still_retained = half_test::read<Value>(first);
+  for (std::size_t index = 0; index < retained.size(); ++index)
+    EXPECT_EQ(still_retained[index].bits, retained[index].bits);
+  const auto check = [&](std::span<const Value> source,
+                         std::span<const Value> output) {
+    for (std::size_t row = 0; hidden != 0 && row < rows; ++row) {
+      double mean = 0.0;
+      if (!rms) {
+        for (std::size_t column = 0; column < hidden; ++column)
+          mean += half_test::decode(source[row * hidden + column]);
+        mean /= static_cast<double>(hidden);
+      }
+      double squares = 0.0;
+      for (std::size_t column = 0; column < hidden; ++column) {
+        const double centered =
+            half_test::decode(source[row * hidden + column]) - mean;
+        squares += centered * centered;
+      }
+      const double inverse =
+          1.0 / std::sqrt(squares / static_cast<double>(hidden) + epsilon);
+      for (std::size_t column = 0; column < hidden; ++column) {
+        double expected =
+            (half_test::decode(source[row * hidden + column]) - mean) * inverse;
+        if (arity > 1)
+          expected *= half_test::decode(scale[column]);
+        if (arity > 2)
+          expected += half_test::decode(bias[column]);
+        SCOPED_TRACE(row * hidden + column);
+        half_test::expect_near(output[row * hidden + column], expected);
+      }
+    }
+  };
+  check(values, retained);
+  check(other, second_output);
+}
+
+template <class Value> void expect_half_norm_domains() {
+  for (const std::size_t hidden : {0, 1, 127, 128, 129, 257, 2048}) {
+    SCOPED_TRACE(hidden);
+    for (const bool rms : {false, true}) {
+      SCOPED_TRACE(rms);
+      expect_half_norm<Value, Value, Value>(hidden, rms, 1);
+      expect_half_norm<Value, Value, Value>(hidden, rms, 2);
+      expect_half_norm<Value, float, Value>(hidden, rms, 2);
+      if (!rms) {
+        expect_half_norm<Value, Value, Value>(hidden, false, 3);
+        expect_half_norm<Value, Value, float>(hidden, false, 3);
+        expect_half_norm<Value, float, Value>(hidden, false, 3);
+        expect_half_norm<Value, float, float>(hidden, false, 3);
+      }
+    }
+  }
+  expect_half_norm<Value, Value, Value>(1, false, 1, 0.0F);
+}
+
+TEST(NativeNormalization, HalfStorageKeepsParametersAndIndependentInvocations) {
+  expect_half_norm_domains<hyle::simd::float16_t>();
+  expect_half_norm_domains<hyle::simd::bfloat16_t>();
+}
+
 TEST(NativeLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
-  const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
+  const TensorDesc f64 = TensorDesc::dense(DataType::kFloat64, shape).value();
   const TensorDesc f32 = TensorDesc::dense(DataType::kFloat32, shape).value();
   auto context = hyle::compute::test::native_context().value();
 
-  auto storage = hyle::compute::prepare(context, LayerNorm{}, f16);
+  auto storage = hyle::compute::prepare(context, LayerNorm{}, f64);
   ASSERT_FALSE(storage.has_value());
   EXPECT_TRUE(storage.error().IsUnimplemented());
 
