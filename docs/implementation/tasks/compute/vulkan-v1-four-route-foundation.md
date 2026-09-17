@@ -311,3 +311,11 @@ PASS，n=15 停止。M1 为 2 WIN / 6 INCONCLUSIVE，M16 为 4 LOSS / 4 INCONCLU
 至此 Windows / Air × Direct / Graph 四份正式 P1 全部完成并通过；产品仍固定为 `8e45b104`。
 原生边界成本诊断已开始按既定顺序串行执行；最终 ASan、两系统三交付、中央 selector 与终审仍待
 完成，两个 Vulkan owner 继续 CANDIDATE。后续文档、状态或证据修改不触发这四份 P1 重跑。
+
+### Windows 原生边界诊断完成
+
+[Windows Direct/Graph 原始记录](../../../../evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/README.md)
+各完成四个顺序分层 × 15 个独立进程，oracle、machine/input/artifact 一致性与收集通过，未扩样。
+按冻结合同保持 NATURAL_ROUTE / NOT_COMPARABLE；裸 submit/fence 缺少完整取消/quarantine/结果
+lease 服务，不签非劣或排名。全部分层、原始日志和成本差额已归档；Air 相同有限诊断串行接续。
+这项证据不改变产品候选、四份正式 P1 或其余未完成门，路线仍为 CANDIDATE。

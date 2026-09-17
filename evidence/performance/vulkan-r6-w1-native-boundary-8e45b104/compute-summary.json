@@ -1,0 +1,572 @@
+{
+  "collection": "PASS",
+  "classification": "NATURAL_ROUTE / NOT_COMPARABLE",
+  "ranking": null,
+  "noninferiority_gate": null,
+  "sample_escalation": false,
+  "strata": [
+    {
+      "workload": "decode-f32-ffn-m1",
+      "stratum": "primary-candidate-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.995940220426958,
+        "confidence_interval": [
+          0.9872515125324114,
+          1.0129111919365446
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 1349.0361136967638,
+      "native_median_us": 1350.4753673292998,
+      "paired_extra_median_us": 5.553354179662165
+    },
+    {
+      "workload": "decode-f32-ffn-m1",
+      "stratum": "primary-candidate-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9960426499783069,
+        "confidence_interval": [
+          0.9772341193938016,
+          1.0192122828632935
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 1333.9736406808602,
+      "native_median_us": 1337.5958052995545,
+      "paired_extra_median_us": 5.223534875518908
+    },
+    {
+      "workload": "decode-f32-ffn-m1",
+      "stratum": "primary-peer-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 1.0064993564993565,
+        "confidence_interval": [
+          0.988338192419825,
+          1.0146381515645246
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 1276.4382267720155,
+      "native_median_us": 1283.7464857439952,
+      "paired_extra_median_us": -8.310666196990496
+    },
+    {
+      "workload": "decode-f32-ffn-m1",
+      "stratum": "primary-peer-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9964554379701646,
+        "confidence_interval": [
+          0.9845231958762887,
+          1.0120541991563339
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 1281.082258291805,
+      "native_median_us": 1277.2533943008955,
+      "paired_extra_median_us": 4.5354719390873015
+    },
+    {
+      "workload": "short-prefill-f32-ffn-m16",
+      "stratum": "primary-candidate-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9996621621621622,
+        "confidence_interval": [
+          0.9848837762038313,
+          1.014036949495924
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 4797.773832941515,
+      "native_median_us": 4812.78275098662,
+      "paired_extra_median_us": 1.6310425232359194
+    },
+    {
+      "workload": "short-prefill-f32-ffn-m16",
+      "stratum": "primary-candidate-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 1.007546074590045,
+        "confidence_interval": [
+          0.9807637906647808,
+          1.0182483509076026
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 4773.497541648766,
+      "native_median_us": 4814.86831335163,
+      "paired_extra_median_us": -36.2286936004848
+    },
+    {
+      "workload": "short-prefill-f32-ffn-m16",
+      "stratum": "primary-peer-first-candidate-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 1.0069283011987784,
+        "confidence_interval": [
+          0.9946314174862402,
+          1.0178833647996643
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 4540.707442219498,
+      "native_median_us": 4559.547692868868,
+      "paired_extra_median_us": -31.362551259691827
+    },
+    {
+      "workload": "short-prefill-f32-ffn-m16",
+      "stratum": "primary-peer-first-peer-allocation-first",
+      "ratio": {
+        "estimator": "process-median",
+        "median_advantage_ratio": 0.9960067930417221,
+        "confidence_interval": [
+          0.9896765313145217,
+          1.0064504238849983
+        ],
+        "sample_count": 15,
+        "independent_clusters": 15,
+        "confidence_level": 0.99261474609375
+      },
+      "public_median_us": 4599.3928801398215,
+      "native_median_us": 4588.2083046570315,
+      "paired_extra_median_us": 18.40187538376904
+    }
+  ],
+  "wall_seconds": 427.4849999998696,
+  "probe_after": {
+    "schema": "hyle-perf-machine-probe-v1",
+    "observed_at_utc": "2026-09-17T04:55:40.440679+00:00",
+    "environment": "windows",
+    "host": {
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "logical_cpu_count": 32,
+      "node_sha256": "90275dfb23dc5a103ca7fd8ee76c882075840f3b255ea1e08fd4c178701781e7",
+      "stable_machine_id": {
+        "source": "windows-machine-guid-sha256",
+        "sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+        "raw_identifier_recorded": false
+      },
+      "identity_facts": {
+        "system": "Windows",
+        "os_release": "11",
+        "os_version": "10.0.26200",
+        "architecture": "AMD64",
+        "logical_cpu_count": 32,
+        "processor_identifier": "Intel64 Family 6 Model 183 Stepping 1",
+        "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "cpu_vendor": "GenuineIntel",
+        "bios_version": "3001",
+        "system_manufacturer": "ASUS",
+        "system_product": "System Product Name",
+        "baseboard_manufacturer": "ASUSTeK COMPUTER INC.",
+        "baseboard_product": "ROG STRIX Z790-E GAMING WIFI",
+        "installed_memory_bytes": 68719476736
+      }
+    },
+    "filesystem": {
+      "paths": [
+        {
+          "label": "build",
+          "path": "C:\\hyle-scratch\\r6-vulkan-20260917\\selected-w1-v2\\compute\\305895ce49352b4cc9bb\\p1-build",
+          "root": "C:\\",
+          "filesystem": "NTFS",
+          "drive_type": "fixed",
+          "local_fixed": true,
+          "qualifies_for_performance": true
+        }
+      ],
+      "all_paths_qualified": true
+    },
+    "power": {
+      "active_scheme_guid": "e9a42b02-d5df-448d-aa00-03f14749eb61",
+      "active_scheme_name": "\u5353\u8d8a\u6027\u80fd",
+      "source": "ac",
+      "battery_present": false,
+      "processor_settings_sha256": "7f165b4ff4207e5404effb568f8921b5749e354a39dd1bbfc4666e0500bd0c3e"
+    },
+    "scheduler": {
+      "cpu_sets": [
+        {
+          "id": 256,
+          "group": 0,
+          "logical_processor_index": 0,
+          "core_index": 0,
+          "efficiency_class": 1
+        },
+        {
+          "id": 257,
+          "group": 0,
+          "logical_processor_index": 1,
+          "core_index": 0,
+          "efficiency_class": 1
+        },
+        {
+          "id": 258,
+          "group": 0,
+          "logical_processor_index": 2,
+          "core_index": 2,
+          "efficiency_class": 1
+        },
+        {
+          "id": 259,
+          "group": 0,
+          "logical_processor_index": 3,
+          "core_index": 2,
+          "efficiency_class": 1
+        },
+        {
+          "id": 260,
+          "group": 0,
+          "logical_processor_index": 4,
+          "core_index": 4,
+          "efficiency_class": 1
+        },
+        {
+          "id": 261,
+          "group": 0,
+          "logical_processor_index": 5,
+          "core_index": 4,
+          "efficiency_class": 1
+        },
+        {
+          "id": 262,
+          "group": 0,
+          "logical_processor_index": 6,
+          "core_index": 6,
+          "efficiency_class": 1
+        },
+        {
+          "id": 263,
+          "group": 0,
+          "logical_processor_index": 7,
+          "core_index": 6,
+          "efficiency_class": 1
+        },
+        {
+          "id": 264,
+          "group": 0,
+          "logical_processor_index": 8,
+          "core_index": 8,
+          "efficiency_class": 1
+        },
+        {
+          "id": 265,
+          "group": 0,
+          "logical_processor_index": 9,
+          "core_index": 8,
+          "efficiency_class": 1
+        },
+        {
+          "id": 266,
+          "group": 0,
+          "logical_processor_index": 10,
+          "core_index": 10,
+          "efficiency_class": 1
+        },
+        {
+          "id": 267,
+          "group": 0,
+          "logical_processor_index": 11,
+          "core_index": 10,
+          "efficiency_class": 1
+        },
+        {
+          "id": 268,
+          "group": 0,
+          "logical_processor_index": 12,
+          "core_index": 12,
+          "efficiency_class": 1
+        },
+        {
+          "id": 269,
+          "group": 0,
+          "logical_processor_index": 13,
+          "core_index": 12,
+          "efficiency_class": 1
+        },
+        {
+          "id": 270,
+          "group": 0,
+          "logical_processor_index": 14,
+          "core_index": 14,
+          "efficiency_class": 1
+        },
+        {
+          "id": 271,
+          "group": 0,
+          "logical_processor_index": 15,
+          "core_index": 14,
+          "efficiency_class": 1
+        },
+        {
+          "id": 272,
+          "group": 0,
+          "logical_processor_index": 16,
+          "core_index": 16,
+          "efficiency_class": 0
+        },
+        {
+          "id": 273,
+          "group": 0,
+          "logical_processor_index": 17,
+          "core_index": 17,
+          "efficiency_class": 0
+        },
+        {
+          "id": 274,
+          "group": 0,
+          "logical_processor_index": 18,
+          "core_index": 18,
+          "efficiency_class": 0
+        },
+        {
+          "id": 275,
+          "group": 0,
+          "logical_processor_index": 19,
+          "core_index": 19,
+          "efficiency_class": 0
+        },
+        {
+          "id": 276,
+          "group": 0,
+          "logical_processor_index": 20,
+          "core_index": 20,
+          "efficiency_class": 0
+        },
+        {
+          "id": 277,
+          "group": 0,
+          "logical_processor_index": 21,
+          "core_index": 21,
+          "efficiency_class": 0
+        },
+        {
+          "id": 278,
+          "group": 0,
+          "logical_processor_index": 22,
+          "core_index": 22,
+          "efficiency_class": 0
+        },
+        {
+          "id": 279,
+          "group": 0,
+          "logical_processor_index": 23,
+          "core_index": 23,
+          "efficiency_class": 0
+        },
+        {
+          "id": 280,
+          "group": 0,
+          "logical_processor_index": 24,
+          "core_index": 24,
+          "efficiency_class": 0
+        },
+        {
+          "id": 281,
+          "group": 0,
+          "logical_processor_index": 25,
+          "core_index": 25,
+          "efficiency_class": 0
+        },
+        {
+          "id": 282,
+          "group": 0,
+          "logical_processor_index": 26,
+          "core_index": 26,
+          "efficiency_class": 0
+        },
+        {
+          "id": 283,
+          "group": 0,
+          "logical_processor_index": 27,
+          "core_index": 27,
+          "efficiency_class": 0
+        },
+        {
+          "id": 284,
+          "group": 0,
+          "logical_processor_index": 28,
+          "core_index": 28,
+          "efficiency_class": 0
+        },
+        {
+          "id": 285,
+          "group": 0,
+          "logical_processor_index": 29,
+          "core_index": 29,
+          "efficiency_class": 0
+        },
+        {
+          "id": 286,
+          "group": 0,
+          "logical_processor_index": 30,
+          "core_index": 30,
+          "efficiency_class": 0
+        },
+        {
+          "id": 287,
+          "group": 0,
+          "logical_processor_index": 31,
+          "core_index": 31,
+          "efficiency_class": 0
+        }
+      ],
+      "maximum_efficiency_class": 1,
+      "hard_affinity_supported": true
+    },
+    "formal_capability": {
+      "windows": true,
+      "macos-qos": false,
+      "native-linux": false,
+      "wsl2": false,
+      "independent-hardware": true
+    }
+  },
+  "machine_gate_after": {
+    "gate": "PASS",
+    "profile_id": "W1-WIN",
+    "role": "engineering",
+    "formal_claim": null,
+    "physical_host_identity": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "W1-WIN",
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "environment": "windows",
+      "independent_hardware": true,
+      "profile_provisioned": true,
+      "registration_state": "REGISTERED_MATCH",
+      "stable_machine_id_source": "windows-machine-guid-sha256",
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_matches_registered": true,
+      "required_host_facts_match": true,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "raw_identifier_recorded": false
+    },
+    "expected_child_policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed"
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "gpu_after": {
+    "name": "NVIDIA GeForce RTX 4070",
+    "uuid": "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+    "driver_version": "610.62",
+    "pstate": "P0",
+    "temperature.gpu": "45",
+    "power.draw": "92.88",
+    "clocks.sm": "2835",
+    "clocks.mem": "10501",
+    "utilization.gpu": "42",
+    "clocks_event_reasons.sw_thermal_slowdown": "Not Active",
+    "clocks_event_reasons.hw_thermal_slowdown": "Not Active"
+  },
+  "raw_sha256": {
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-01.log": "c7ecf28dbd8d38be5d089717bda845cd00cbd68454f427320e55c552db9aa12b",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-02.log": "d8d57a908501c6d12fde607876fb1a2603be4c21523bdd8bf72e0eb4e60370af",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-03.log": "8e626b2ba7759236fc87096fefc3b4e7bee6b18948f4abbdacb9251c1a645a43",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-04.log": "4126351cf3d66def4ae152514b6dcdd82cd0291ffab8bcaa84c5531b9a6f65e0",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-05.log": "adc79d922a46dd36c337f6e496eb14e0a3c774e5a3015941f14095e90bc3b0cb",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-06.log": "d888988bb288f141517ce420dff3aade4cf8ee852f937bd0b761a0fbeb16cb1e",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-07.log": "383eb91ebcdc59dd5f869bfba1d42d3287d633dc66767487915ce4876f6e6d5e",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-08.log": "249c8e9fb4e0749a7126fa8a0e6d8ee4ea60a6c537d3423c3abc75f660f1bfaf",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-09.log": "5f55978d0ed43a5bd504b53d42544d78b762103df701697fae8c33460c05de12",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-10.log": "8397f05eb90ac338b7da33b01198eec4f02f64dafc92139a5018c2ad3aab415f",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-11.log": "c1e2618f7ef0be4b7b213eb944761619cb3c81b841a1fa260ac117f013b87ca3",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-12.log": "a1a81e570146d6df944b10358645568a48adcd147e52e9e236faf5ec4ebfb9b7",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-13.log": "824dfe4eafdfe2b08102e7a632c08963b1b8029749474df5c08dc6e9e97f023c",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-14.log": "bec2e7054a8da3078f601e9034660f246cd1335f6fffb86111324480acbf4892",
+    "product-primary-candidate-first-candidate-allocation-first-compute-vulkan-native-boundary-run-15.log": "790682081710f6d5b41b5937b88309f8d76f481aa8747524a84346e841acd2fb",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-01.log": "9d5c5b7253b8ccf642e1cd357bccf737cd6c86648044b192d20c8968636afdd6",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-02.log": "85bd06ed193b246cd326d3a82485d7b8bacc5a202e7d22dc7f4101c5bc3cf54a",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-03.log": "edb6b469141ffd34d98dfa310b8def0c9927ca5f63df13f975b8ed998c5a3c8b",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-04.log": "d8150690c92a3e2830e371cec64b8bb8531761cb71b4952d89a2d9634fcd24b6",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-05.log": "8d86f81b7ccf78b5e44e95951daa325cd42216cb50151c0c5dce517ffc597b29",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-06.log": "bcf5d72b576bfb5f6134ae1d9f334913d4a67e9a3908d38a779fe291251b8291",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-07.log": "c1abc77066c522ae8993b2045b5ba3fdded047fb41c070c013765bdf80a33711",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-08.log": "fc1c47981f179921fd3024ef686fb6486c0b8f8699f08b51c37926cbdfde016e",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-09.log": "c086683fad7cc08b330c83147ec28e465814ca5fc938a43e9dc7a3fba954b927",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-10.log": "8bb6434b6fba957e9fe5ec57640ac5b2f14a9cf29676a67c17a9043f6c663bc5",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-11.log": "fb58038df4fff99b6ce3011d16f0a8a09cd28136aef3746b12d35b046bbd6f04",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-12.log": "3400ccbe05d5dc7582d74f918738b65846ae6ed9a778c77ff77373a464508f1b",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-13.log": "a933ae6e4cdb6e02a8af61556dda96a118562e2acbc71143431f48aa41f7ad2e",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-14.log": "df568d8c39eaee6956287c2ad926c87973761f56ca7796aac58006d29230464b",
+    "product-primary-candidate-first-peer-allocation-first-compute-vulkan-native-boundary-run-15.log": "2a852964ada1abdc182f204b25cb01a79895157e0bc36d55fab634a648602af5",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-01.log": "acb8a9b5848a19ae810ba6a8dea4bcfa61b0e202a8623b43557054fdd5488466",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-02.log": "972cef15077e03bb8ce254ef8a62a6a606ae123a5ab901f83f16798532437a50",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-03.log": "a2eeb64fa90e7f56d4653683622a2509e77c283dc19ed4fadacd74c624d65290",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-04.log": "6926620e27583bc7893e0835c3456fbd5fcf6f324d870c50f4fb179654b9d893",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-05.log": "18139a6d5f6f351d9dd6ce3cff190dd8d7340dd0b23da6bca38cb78c4ca59076",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-06.log": "4a731d82230a3eb2663f15103c4c303e63266f7eaed2c8fe59768dc09b346150",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-07.log": "a30ec495543cdd97352132f476a7fa59b9f417779e2a3bbcd942ad01038fcbe1",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-08.log": "ed91b482a4eab12ab77d83e9e21ea591c12a076b1ccbe840a4a9e6ba8ca2e968",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-09.log": "02208e3073a3dc7ba133318054eb8bdc6125276e350c4af4242529eab893f1b1",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-10.log": "30968ed7d5536c08b3a772fde89a523c48f4741942eaf77b853f67fbfd7eb1b3",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-11.log": "b7ccfdb4aab6fba5253db6012dafd87299faed71785618ed500f9ae0ea1c568d",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-12.log": "204cf5e5717607d5fc8e2985ca11c2d56561beb7d6cf0db6b004c7397045ead7",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-13.log": "bf26a3b5af5460305ae36e05552be1a5637b09c0310450e79142d7a0019be539",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-14.log": "fd7e289bd2d28eaca3e5714a7d1663e2ab509f103cc247e2d23925b0f37d1719",
+    "product-primary-peer-first-candidate-allocation-first-compute-vulkan-native-boundary-run-15.log": "ba74948265c95175c86b017c7f0b582a3529bd2bff54a944b222b4ec86280b47",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-01.log": "7bf4b84065148a0742c2a1c6cea86c4f667f49bee16e3e91afb6f6c7730450c5",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-02.log": "8938d3246ac1ff0f9399c4eb1cfab0a82ef852665625dcea00bfa922518fcf4f",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-03.log": "12c15b05e2e8cf181d9665632a0f0dd7b26bba9b8c56e74b8b14d91bf4b108b5",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-04.log": "4e925d7846e9f66b73327a4d9974fa62400af560e137f36ab0d53a6482fc44f5",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-05.log": "b7cbabb7ea7ea09d9c6f4d1ceb17f23e5b126c24573038e4ad5afe88987a0299",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-06.log": "c4f0d9f84000a42a065ecc61995281a6c8275f6d5d9b1765575d28398e96a6c8",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-07.log": "8e967692b69d727fd742d0301004098d75fec0c2402fc497f6a96f0367b9ff17",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-08.log": "54145e735e664c3ee485f4c1b154451d4fa9c72c75a3edaf9efd056e6ea97f4a",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-09.log": "51c1a8b5d873d478daf7236793f929355481906f1042c468f7ced70b7afd85cf",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-10.log": "ab2bf5c70a2f902122d77aa97764628469730dd9b7449159d113b4814224e3dc",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-11.log": "3e550bfdc584cf8983aef9c559f90cf6aead7f4b1744f41e3a0d88fd0d100610",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-12.log": "36380c303200056422a769a996ea5d634bebf91ae38cd7cdd39a63c2c3ef4d2f",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-13.log": "57591bf781325db3285c9b67f66657c4f25a39a73c0e207f65519b4adee03926",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-14.log": "ccb270345e40a99c900d90fd041b8c41c0a94a9a218b4356565977e91737c588",
+    "product-primary-peer-first-peer-allocation-first-compute-vulkan-native-boundary-run-15.log": "dafc31f5318ee9ad0cf96578dfa7ee59dfb06c21f4282ffd8a6838a1a66e0e59"
+  }
+}

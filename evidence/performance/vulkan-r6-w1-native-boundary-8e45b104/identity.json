@@ -1,0 +1,79 @@
+{
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "measurement_snapshot": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+  "profile": "W1-WIN",
+  "collection": "PASS",
+  "classification": "NATURAL_ROUTE / NOT_COMPARABLE",
+  "modes": {
+    "compute": {
+      "decode-f32-ffn-m1": {
+        "public_median_us_range": [
+          1276.4382267720155,
+          1349.0361136967638
+        ],
+        "native_median_us_range": [
+          1277.2533943008955,
+          1350.4753673292998
+        ],
+        "paired_extra_median_us_range": [
+          -8.310666196990496,
+          5.553354179662165
+        ],
+        "interpretation": "Range of four separate order-stratum medians; no pooled CI, equivalence or ranking."
+      },
+      "short-prefill-f32-ffn-m16": {
+        "public_median_us_range": [
+          4540.707442219498,
+          4797.773832941515
+        ],
+        "native_median_us_range": [
+          4559.547692868868,
+          4814.86831335163
+        ],
+        "paired_extra_median_us_range": [
+          -36.2286936004848,
+          18.40187538376904
+        ],
+        "interpretation": "Range of four separate order-stratum medians; no pooled CI, equivalence or ranking."
+      }
+    },
+    "graph": {
+      "decode-f32-ffn-m1": {
+        "public_median_us_range": [
+          1264.5902095425977,
+          1283.9937341105774
+        ],
+        "native_median_us_range": [
+          1249.8593908185328,
+          1277.987935793886
+        ],
+        "paired_extra_median_us_range": [
+          -3.995325759430898,
+          8.392920503134974
+        ],
+        "interpretation": "Range of four separate order-stratum medians; no pooled CI, equivalence or ranking."
+      },
+      "short-prefill-f32-ffn-m16": {
+        "public_median_us_range": [
+          4489.13629017777,
+          4590.94665319989
+        ],
+        "native_median_us_range": [
+          4464.68434681668,
+          4592.000734720117
+        ],
+        "paired_extra_median_us_range": [
+          -8.800469316456656,
+          7.360865819061473
+        ],
+        "interpretation": "Range of four separate order-stratum medians; no pooled CI, equivalence or ranking."
+      }
+    }
+  },
+  "archive": {
+    "file": "raw.zip",
+    "sha256": "4a11b5e79d5497fe9030152ad6fe5b885d3a9c3448c4b3d2d58f9aa4fd9c812f",
+    "entries": 155,
+    "per_entry_integrity": "PASS"
+  }
+}

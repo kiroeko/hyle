@@ -419,3 +419,12 @@ M16 的四个 peer-allocation-first 分层在正反执行顺序、两种 placeme
 
 Vulkan 四份正式 P1（Windows/Air × Direct/Graph）均已通过原门并停止，全部严格方向保留。
 R6 仍待原生边界诊断、最终 ASan/三交付/selector 与终审；本页没有提前签路线 CLOSED。
+
+### Windows 原生边界诊断
+
+[完整记录](../../../../evidence/performance/vulkan-r6-w1-native-boundary-8e45b104/README.md)
+按每入口四个顺序分层 × 15 个进程完成，两个 FFN shape 的完整 oracle 与全部身份检查通过。
+Direct M1/M16 的成对额外延迟中位数范围分别为 −8.311–5.553µs / −36.229–18.402µs；
+Graph 为 −3.995–8.393µs / −8.800–7.361µs。各范围只汇报独立分层，不合成 CI 或跨入口排名。
+裸原生责任较少，始终分类 NATURAL_ROUTE / NOT_COMPARABLE；负差不等于 HYLE 零开销或算法胜出。
+对应正式 P1 不重复，Air 和其它未完成验收继续按主卡串行执行。
