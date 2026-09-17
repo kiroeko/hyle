@@ -110,7 +110,13 @@ Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byt
 逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
 双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
 或槽私有状态。普通 Graph 可直接组合 View→Concat 和窗口 append，并使用原生 capture。
-整数/FP8 Cast 与算术、Gather/Scatter/Scan 等
+Gather 支持 plain1/2/4/8字节 source、I32/I64 indices、任意axis/byte stride和dense output，逐位
+保留数据。默认 checked 在 GPU 验证全部索引后才写结果；越界通过真实 Completion 返回 OutOfRange，
+该 Gather 的 output 保持不变，失败的 Invocation 需重新创建。无需下载索引或模型数据到 host。
+source/indices/output 不能重叠；非空 output/indices 元素数≤INT32_MAX，source 轴与地址计算保留64位。
+连续后缀按16字节块或原标量宽度搬运，非16字节对齐的合法输入仍可执行；无 caller workspace 或
+槽私有状态。checked prefix 的状态 reset/4字节回报，以及原生 capture 的状态合并仍有实际成本。
+整数/FP8 Cast 与算术、Scatter/Scan 等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 

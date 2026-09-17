@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -393,6 +394,21 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   EXPECT_FALSE(lane.in_flight());
 }
 
+void append_gather_index(compute::Operation operation,
+                         mem::MemoryResourceRef resource,
+                         std::vector<compute::TensorDesc> &descriptions,
+                         std::vector<compute::ConstTensorView> &inputs,
+                         std::optional<Tensor> &indices) {
+  if (operation.kind() != compute::OperationKind::kGather)
+    return;
+  indices.emplace(matrix(compute::DataType::kInt32, 1, 1), resource);
+  const std::array<std::int32_t, 1> zero{0};
+  EXPECT_TRUE(
+      indices->storage.view().write(std::as_bytes(std::span(zero))).ok());
+  descriptions.push_back(indices->view.description());
+  inputs.push_back(indices->view.as_const());
+}
+
 void pending_completion_retains_program(
     compute::Provider selected,
     compute::Operation operation =
@@ -410,8 +426,11 @@ void pending_completion_retains_program(
   std::array<compute::TensorDesc, 2> output_desc;
   const auto arity =
       operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
-  const std::vector input_desc(arity, input.view.description());
-  const std::vector inputs(arity, input.view.as_const());
+  std::vector input_desc(arity, input.view.description());
+  std::vector inputs(arity, input.view.as_const());
+  std::optional<Tensor> gather_indices;
+  append_gather_index(operation, resource.ref(), input_desc, inputs,
+                      gather_indices);
   const auto descriptions =
       std::span(output_desc)
           .first(compute::operation_traits(operation).outputs);
@@ -469,6 +488,7 @@ void pending_completion_retains_program(
                   .ok());
   const double expected =
       operation.kind() == compute::OperationKind::kTopK ||
+              operation.kind() == compute::OperationKind::kGather ||
               operation.kind() == compute::OperationKind::kConcat
           ? 1
       : operation.kind() == compute::OperationKind::kReduce    ? 256
@@ -551,8 +571,11 @@ void metadata_failures_rollback(
     std::array<compute::TensorDesc, 2> output_desc;
     const auto arity =
         operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
-    const std::vector input_desc(arity, input.view.description());
-    const std::vector inputs(arity, input.view.as_const());
+    std::vector input_desc(arity, input.view.description());
+    std::vector inputs(arity, input.view.as_const());
+    std::optional<Tensor> gather_indices;
+    append_gather_index(operation, resource.ref(), input_desc, inputs,
+                        gather_indices);
     const auto descriptions =
         std::span(output_desc)
             .first(compute::operation_traits(operation).outputs);
@@ -623,6 +646,8 @@ void metadata_failures_rollback(
 }
 
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::Gather{}));
   pending_completion_retains_program(compute::cuda_native::provider());
   pending_completion_retains_program(compute::cuda_native::sglang_provider());
   pending_completion_retains_program(
@@ -644,6 +669,8 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::Gather{}));
   metadata_failures_rollback(compute::cuda_native::provider());
   metadata_failures_rollback(compute::cuda_native::sglang_provider());
   metadata_failures_rollback(
