@@ -28,7 +28,6 @@ public:
                                   const v::Tensor &input) const;
   v::RecordedProgram record(const v::Context &,
                             const std::array<v::Tensor, 8> &) const;
-  const std::vector<NativeStep> &steps() const { return steps_; }
 
 private:
   std::array<compute::TensorDesc, 8> descriptions_;
@@ -36,17 +35,4 @@ private:
   std::vector<NativeStep> steps_;
 };
 
-// Checked native submission only: fixed caller-owned outputs, no async result
-// lease/cancel/quarantine. Its measurements are NATURAL_ROUTE, never peer NI.
-class RawProgram {
-public:
-  RawProgram(const v::Context &, const Reference &,
-             const std::array<v::Tensor, 8> &);
-  ~RawProgram();
-  void run();
-
-private:
-  struct State;
-  std::unique_ptr<State> state_;
-};
 } // namespace hyle::bench::vulkan

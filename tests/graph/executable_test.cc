@@ -626,6 +626,10 @@ TEST(GraphVariants, ConstantCopyIsSharedAndReportsDoNotRetainPayload) {
   EXPECT_TRUE(child.create_invocation());
   child = {};
   EXPECT_EQ(resource.live_allocations, 0U);
+  ASSERT_TRUE(report.node(0));
+  ASSERT_TRUE(child_report.node(0));
+  EXPECT_EQ(report.node(0)->kind, hyle::compute::OperationKind::kRmsNorm);
+  EXPECT_EQ(child_report.node(0)->traits.accumulation_type, DataType::kFloat32);
   EXPECT_EQ(report.materialized_constant_bytes(), 16U);
   EXPECT_EQ(child_report.materialized_constant_bytes(), 16U);
   EXPECT_EQ(report.exact_variant(0)->materialized_constant_bytes(), 16U);
@@ -1279,6 +1283,23 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_EQ(compiled.report.backend(), hyle::compute::cpu::kBackendId);
   EXPECT_EQ(compiled.report.provider().id, hyle::compute::native::kProviderId);
   EXPECT_EQ(compiled.report.node_count(), 3u);
+  EXPECT_TRUE(
+      hyle::graph::CompileReport{}.node(0).error().IsFailedPrecondition());
+  EXPECT_TRUE(compiled.report.node(3).error().IsOutOfRange());
+  const std::array expected_kinds{
+      hyle::compute::OperationKind::kRmsNorm,
+      hyle::compute::OperationKind::kMatMul,
+      hyle::compute::OperationKind::kGatedActivation};
+  for (std::size_t i = 0; i < expected_kinds.size(); ++i) {
+    const auto node = compiled.report.node(i);
+    ASSERT_TRUE(node);
+    EXPECT_EQ(node->ordinal, i);
+    EXPECT_EQ(node->kind, expected_kinds[i]);
+  }
+  EXPECT_EQ(compiled.report.node(0)->traits.accumulation_type,
+            DataType::kFloat32);
+  EXPECT_EQ(compiled.report.node(1)->traits.precision,
+            hyle::compute::PrecisionPolicy::kAccumulateInOutputType);
   EXPECT_GT(compiled.report.workspace_bytes(), 0u);
   EXPECT_GT(compiled.report.workspace_backing_count(), 0u);
   EXPECT_EQ(compiled.report.workspace_bytes(),
@@ -3814,6 +3835,11 @@ TEST(GraphViews, DerivedFlattenNormAndRestoreUseRealLayoutsIncludingEmpty) {
   auto general = hyle::graph::compile(
       graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
   ASSERT_TRUE(general) << general.error().message();
+  ASSERT_EQ(general->report.node_count(), 3U);
+  EXPECT_EQ(general->report.node(0)->kind, hyle::compute::OperationKind::kView);
+  EXPECT_EQ(general->report.node(2)->kind, hyle::compute::OperationKind::kView);
+  EXPECT_EQ(general->report.node(0)->traits.precision,
+            hyle::compute::PrecisionPolicy::kExact);
   for (const std::int64_t b : {0, 1, 2}) {
     for (const std::int64_t t : {0, 1, 3}) {
       SCOPED_TRACE("batch=" + std::to_string(b) +

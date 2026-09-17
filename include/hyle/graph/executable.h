@@ -11,6 +11,7 @@
 #include "hyle/compute/provider.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/error/result.h"
+#include "hyle/graph/compile_report.h"
 #include "hyle/graph/graph.h"
 #include "hyle/graph/visibility.h"
 #include "hyle/mem/buffer.h"
@@ -553,6 +554,10 @@ public:
   HYLE_GRAPH_API std::size_t workspace_bytes() const noexcept;
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;
+  // Logical node order, independently owned including precision/accumulation
+  // policy. Custom schema state and tensor payload are never retained here.
+  HYLE_GRAPH_API Result<CompileNodeReport>
+  node(std::size_t index) const noexcept;
   HYLE_GRAPH_API std::size_t target_count() const noexcept;
   HYLE_GRAPH_API std::size_t storage_domain_count() const noexcept;
   HYLE_GRAPH_API std::size_t lane_count() const noexcept;

@@ -796,6 +796,8 @@ segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt
   `route_search_states` 尝试状态数、`route_plan_rejections` 不可行组合数、
   `region_route_rejections/operation_route_rejections` 候选拒绝数和是否因
   容量省略了候选/provider；正常拒绝不等于搜索容量耗尽；
+- `node(index)` 的原节点 ordinal、OperationKind 与 OperationTraits，包含精度及累加 dtype，
+  symbolic View 也有独立条目；不保留 custom Operation payload；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
 - `constant(index)` 按 Graph 常量顺序给出 value、borrow/materialize policy、storage、TensorDesc 和
@@ -914,3 +916,10 @@ Region 编译收到按域合并的访问集与 backing 声明。Provider 必须�
 
 source、headers + static、headers + shared 都选择 `hyle::graph`。三种交付是同一 C++23 surface，不是
 Native FFI，也不承诺跨编译器/STL 的 C++ ABI。
+
+
+## 可选主机跟踪
+
+构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client 观察真实 compile/submit/wait 的主机范围。
+默认 OFF 不求值跟踪参数或创建 profiler 状态；没有逐 kernel GPU timestamp。Apple/Vulkan 的原生
+报告与 owner 执行范围见对应路线指南。跟踪开启时的运行成本不使用关闭状态的性能结论。

@@ -1,8 +1,5 @@
-// Architecture qualification for the first real Graph region.  The first
-// pair compares the public Graph journey with the identical fused BRGEMM/SIMD
-// leaf sequence.  The second pair compares it with the natural unfused
-// sequence, including each operation's independent mapping boundary.  No
-// benchmark-only product operation or provider is introduced.
+// Same-service CPU Graph comparison: both arms own the complete public
+// Graph/Invocation/Completion journey. Bare leaf-call pairs were retired in R7.
 #include <nanobench.h>
 
 #include <algorithm>
@@ -23,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "brgemm_internal.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
@@ -33,14 +29,12 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
-#include "hyle/simd/math.h"
 
 #include "../common/perf_process.h"
 #include "executor.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
-namespace brgemm = hyle::compute::onednn::internal;
 
 using hyle::Status;
 using hyle::compute::ConstTensorView;
@@ -61,8 +55,6 @@ using hyle::graph::GraphBuilder;
 using hyle::graph::Invocation;
 using hyle::graph::ValueId;
 using hyle::mem::Buffer;
-using hyle::mem::HostAccess;
-using hyle::mem::HostMapping;
 
 constexpr std::size_t kAlignment = 64;
 
@@ -336,230 +328,6 @@ public:
       : GraphRoute(problem, false, executor) {}
 };
 
-class PlanOwner final {
-public:
-  PlanOwner(brgemm::BrgemmShape shape, std::size_t task_count) {
-    require(brgemm::create_brgemm_plan(shape, task_count,
-                                       hyle::mem::system_allocator(), &plan_),
-            "create direct BRGEMM plan");
-  }
-  PlanOwner(const PlanOwner &) = delete;
-  PlanOwner &operator=(const PlanOwner &) = delete;
-  ~PlanOwner() {
-    brgemm::destroy_brgemm_plan(plan_, hyle::mem::system_allocator());
-  }
-  const brgemm::BrgemmPlan *get() const noexcept { return plan_; }
-
-private:
-  brgemm::BrgemmPlan *plan_ = nullptr;
-};
-
-class DirectBase {
-public:
-  explicit DirectBase(Problem &problem, ParallelExecutorRef executor = {})
-      : problem_(problem), output_(make_tensor(problem.output_desc)),
-        gate_(take(Buffer::create(hyle::mem::system_resource(),
-                                  problem.rows * problem.hidden * sizeof(float),
-                                  kAlignment),
-                   "allocate direct gate workspace")),
-        up_(take(Buffer::create(hyle::mem::system_resource(),
-                                problem.rows * problem.hidden * sizeof(float),
-                                kAlignment),
-                 "allocate direct up workspace")),
-        gate_up_plan_({problem.rows, problem.inner, problem.hidden},
-                      brgemm::recommended_brgemm_task_count(
-                          problem.hidden, executor.concurrency())),
-        down_plan_({problem.rows, problem.hidden, problem.inner},
-                   brgemm::recommended_brgemm_task_count(
-                       problem.inner, executor.concurrency())),
-        executor_(executor) {
-    const std::size_t scratch_size =
-        (std::max)(brgemm::brgemm_scratchpad_size(gate_up_plan_.get()),
-                   brgemm::brgemm_scratchpad_size(down_plan_.get()));
-    scratch_ = take(
-        Buffer::create(hyle::mem::system_resource(), scratch_size, kAlignment),
-        "allocate direct scratch");
-    scratch_mapping_ = take(scratch_.view().map_host(HostAccess::kReadWrite),
-                            "map direct scratch");
-    auto bytes =
-        take(scratch_mapping_.writable_bytes(), "resolve direct scratch");
-    scratch_data_ = bytes.data();
-  }
-
-  DirectBase(const DirectBase &) = delete;
-  DirectBase &operator=(const DirectBase &) = delete;
-
-  std::vector<float> output(std::size_t count) const {
-    return read_tensor(output_, count);
-  }
-
-protected:
-  static void activate_tile(void *context_value, std::size_t rows,
-                            std::size_t leading_columns,
-                            brgemm::BrgemmTaskRange range) noexcept {
-    auto &context = *static_cast<std::array<float *, 2> *>(context_value);
-    if (range.first_column == 0 && range.column_count == leading_columns) {
-      hyle::simd::swiglu_f32_batch(context[0], context[1], context[0],
-                                   rows * leading_columns);
-      return;
-    }
-    for (std::size_t row = 0; row < rows; ++row) {
-      const std::size_t offset = row * leading_columns + range.first_column;
-      hyle::simd::swiglu_f32_batch(context[0] + offset, context[1] + offset,
-                                   context[0] + offset, range.column_count);
-    }
-  }
-
-  Problem &problem_;
-  OwnedTensor output_{};
-  Buffer gate_{};
-  Buffer up_{};
-  Buffer scratch_{};
-  HostMapping scratch_mapping_{};
-  std::byte *scratch_data_ = nullptr;
-  PlanOwner gate_up_plan_;
-  PlanOwner down_plan_;
-  ParallelExecutorRef executor_{};
-};
-
-class DirectFusedRoute final : public DirectBase {
-public:
-  explicit DirectFusedRoute(Problem &problem, ParallelExecutorRef executor = {})
-      : DirectBase(problem, executor) {
-    gate_mapping_ = take(gate_.view().map_host(HostAccess::kReadWrite),
-                         "map fused gate workspace");
-    up_mapping_ = take(up_.view().map_host(HostAccess::kReadWrite),
-                       "map fused up workspace");
-    gate_data_ = reinterpret_cast<float *>(
-        take(gate_mapping_.writable_bytes(), "resolve fused gate").data());
-    up_data_ = reinterpret_cast<float *>(
-        take(up_mapping_.writable_bytes(), "resolve fused up").data());
-  }
-
-  std::uint64_t run() noexcept {
-    auto activation = problem_.activation.buffer.view().map_host();
-    auto gate_weight = problem_.gate_weight.buffer.view().map_host();
-    auto up_weight = problem_.up_weight.buffer.view().map_host();
-    auto down_weight = problem_.down_weight.buffer.view().map_host();
-    auto output = output_.buffer.view().map_host(HostAccess::kWrite);
-    if (!activation || !gate_weight || !up_weight || !down_weight || !output)
-      fail("map fused route boundaries");
-    auto output_bytes = output->writable_bytes();
-    if (!output_bytes)
-      fail("resolve fused route output", output_bytes.error().message());
-    const auto *activation_data =
-        reinterpret_cast<const float *>(activation->bytes().data());
-    const auto *gate_weight_data =
-        reinterpret_cast<const float *>(gate_weight->bytes().data());
-    const auto *up_weight_data =
-        reinterpret_cast<const float *>(up_weight->bytes().data());
-    const auto *down_weight_data =
-        reinterpret_cast<const float *>(down_weight->bytes().data());
-    auto *output_data = reinterpret_cast<float *>(output_bytes->data());
-    std::array activation_context{gate_data_, up_data_};
-    require(brgemm::execute_brgemm_pair(
-                gate_up_plan_.get(), executor_, activation_data,
-                gate_weight_data, up_weight_data, gate_data_, up_data_,
-                scratch_data_, &activate_tile, &activation_context),
-            "execute fused gate/up");
-    require(brgemm::execute_brgemm(down_plan_.get(), executor_, gate_data_,
-                                   down_weight_data, output_data,
-                                   scratch_data_),
-            "execute fused down");
-    require(output->close(), "close fused output mapping");
-    require(down_weight->close(), "close fused down-weight mapping");
-    require(up_weight->close(), "close fused up-weight mapping");
-    require(gate_weight->close(), "close fused gate-weight mapping");
-    require(activation->close(), "close fused activation mapping");
-    nb::doNotOptimizeAway(output_.buffer.native_handle());
-    return 1;
-  }
-
-private:
-  HostMapping gate_mapping_{};
-  HostMapping up_mapping_{};
-  float *gate_data_ = nullptr;
-  float *up_data_ = nullptr;
-};
-
-class DirectSequentialRoute final : public DirectBase {
-public:
-  explicit DirectSequentialRoute(Problem &problem,
-                                 ParallelExecutorRef executor = {})
-      : DirectBase(problem, executor) {}
-
-  std::uint64_t run() noexcept {
-    project(problem_.gate_weight, gate_, gate_up_plan_.get(),
-            "execute sequential gate");
-    project(problem_.up_weight, up_, gate_up_plan_.get(),
-            "execute sequential up");
-    activate();
-    project_down();
-    nb::doNotOptimizeAway(output_.buffer.native_handle());
-    return 1;
-  }
-
-private:
-  void project(OwnedTensor &weight, Buffer &destination,
-               const brgemm::BrgemmPlan *plan, std::string_view operation) {
-    auto activation = problem_.activation.buffer.view().map_host();
-    auto weight_mapping = weight.buffer.view().map_host();
-    auto destination_mapping = destination.view().map_host(HostAccess::kWrite);
-    if (!activation || !weight_mapping || !destination_mapping)
-      fail("map sequential projection");
-    auto destination_bytes = destination_mapping->writable_bytes();
-    if (!destination_bytes)
-      fail("resolve sequential projection output");
-    require(brgemm::execute_brgemm(
-                plan, executor_,
-                reinterpret_cast<const float *>(activation->bytes().data()),
-                reinterpret_cast<const float *>(weight_mapping->bytes().data()),
-                reinterpret_cast<float *>(destination_bytes->data()),
-                scratch_data_),
-            operation);
-    require(destination_mapping->close(), "close projection output mapping");
-    require(weight_mapping->close(), "close projection weight mapping");
-    require(activation->close(), "close projection input mapping");
-  }
-
-  void activate() {
-    auto gate_mapping = gate_.view().map_host(HostAccess::kReadWrite);
-    auto up_mapping = up_.view().map_host();
-    if (!gate_mapping || !up_mapping)
-      fail("map sequential activation");
-    auto gate_bytes = gate_mapping->writable_bytes();
-    if (!gate_bytes)
-      fail("resolve sequential activation output");
-    auto *gate_data = reinterpret_cast<float *>(gate_bytes->data());
-    const auto *up_data =
-        reinterpret_cast<const float *>(up_mapping->bytes().data());
-    hyle::simd::swiglu_f32_batch(gate_data, up_data, gate_data,
-                                 problem_.rows * problem_.hidden);
-    require(up_mapping->close(), "close activation up mapping");
-    require(gate_mapping->close(), "close activation gate mapping");
-  }
-
-  void project_down() {
-    auto gate_mapping = gate_.view().map_host();
-    auto weight_mapping = problem_.down_weight.buffer.view().map_host();
-    auto output_mapping = output_.buffer.view().map_host(HostAccess::kWrite);
-    if (!gate_mapping || !weight_mapping || !output_mapping)
-      fail("map sequential down projection");
-    auto output_bytes = output_mapping->writable_bytes();
-    if (!output_bytes)
-      fail("resolve sequential down output");
-    require(brgemm::execute_brgemm(
-                down_plan_.get(), executor_,
-                reinterpret_cast<const float *>(gate_mapping->bytes().data()),
-                reinterpret_cast<const float *>(weight_mapping->bytes().data()),
-                reinterpret_cast<float *>(output_bytes->data()), scratch_data_),
-            "execute sequential down");
-    require(output_mapping->close(), "close sequential output mapping");
-    require(weight_mapping->close(), "close sequential down-weight mapping");
-    require(gate_mapping->close(), "close sequential gate mapping");
-  }
-};
-
 template <class Peer, class Candidate = DefaultRoute> class PairFixture final {
 public:
   PairFixture(std::size_t rows, std::size_t inner, std::size_t hidden,
@@ -611,6 +379,8 @@ template <class Peer, class Candidate>
 void measure(PairFixture<Peer, Candidate> &fixture, bool peer_first,
              std::string_view title, std::string_view candidate_name,
              std::string_view peer_name) {
+  if (environment_present("HYLE_BENCH_VERIFY_ONLY"))
+    return;
   nb::Bench bench;
   bench.title(std::string(title))
       .relative(true)
@@ -639,26 +409,10 @@ template <AaRoute Mode>
 void run_shape(std::size_t rows, std::size_t inner, std::size_t hidden,
                bool peer_first, bool peer_allocation_first,
                std::string_view shape_name, ParallelExecutorRef executor = {}) {
-  ModeFixture<Mode, DirectFusedRoute> tax(rows, inner, hidden, peer_allocation_first,
-                                    executor);
-  const std::string tax_title =
-      "graph oneDNN MLP abstraction " + std::string(shape_name);
-  const std::string graph_name =
-      "HYLE Graph oneDNN region " + std::string(shape_name);
-  const std::string direct_name =
-      "direct fused oneDNN region " + std::string(shape_name);
-  measure(tax, peer_first, tax_title, graph_name, direct_name);
-
-  ModeFixture<Mode, DirectSequentialRoute> benefit(rows, inner, hidden,
-                                             peer_allocation_first, executor);
-  const std::string benefit_title =
-      "graph oneDNN MLP region benefit " + std::string(shape_name);
-  const std::string sequential_name =
-      "direct sequential oneDNN operations " + std::string(shape_name);
-  measure(benefit, peer_first, benefit_title, graph_name, sequential_name);
-
   ModeFixture<Mode, NativeRoute> native(rows, inner, hidden, peer_allocation_first,
                                   executor);
+  const std::string graph_name =
+      "HYLE Graph oneDNN region " + std::string(shape_name);
   const std::string native_title =
       "graph CPU default versus Native " + std::string(shape_name);
   const std::string native_name =

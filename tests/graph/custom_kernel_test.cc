@@ -570,6 +570,9 @@ TEST(GraphCustomKernel, ReportOwnsProviderTextWithoutKeepingExecutionAlive) {
     EXPECT_FALSE(copy);
     EXPECT_EQ(moved.provider().name, name);
     EXPECT_EQ(moved.provider().version, version);
+    ASSERT_TRUE(moved.node(0));
+    EXPECT_EQ(moved.node(0)->kind, OperationKind::kCustom);
+    EXPECT_EQ(moved.node(1)->ordinal, 1U);
     EXPECT_EQ(moved.step(0)->provider.name, name);
     EXPECT_EQ(moved.step(1)->provider.version, version);
   }

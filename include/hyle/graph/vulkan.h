@@ -17,11 +17,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <span>
+#include <string>
 #include <vector>
 
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
+#include "hyle/graph/compile_report.h"
 
 namespace hyle::graph::vulkan {
 
@@ -40,8 +43,38 @@ using CustomLowering = std::function<Result<CustomDispatch>(
     const compute::vulkan::Context &, const compute::Operation &,
     std::span<const compute::TensorDesc>, const compute::TensorDesc &)>;
 
+// Cold, independently owned facts; never retains Graph/Program/Buffer/Kernel,
+// Context or custom payload. Unknown status means no attempt. Failure resets
+// all successful facts and preserves only the returned error Status.
+struct CompileReport final {
+  Status status = Status::Unknown();
+  compute::vulkan::Environment environment;
+  std::vector<compute::TensorDesc> inputs;
+  std::vector<compute::TensorDesc> outputs;
+  std::vector<CompileNodeReport> nodes; // Live nodes in original ordinal order.
+  std::size_t native_dispatch_count = 0;
+  // Actual planned logical capacities for one owning Invocation, including
+  // outputs and reusable scratch. Native allocation alignment and driver
+  // objects are additional; separate slots never share these mutable blocks.
+  std::vector<std::size_t> invocation_storage_block_bytes;
+  // Deduplicated by HYLE Buffer owner after cold packing and unused-owner
+  // removal, not by logical value. Borrowed owners may alias external memory.
+  std::size_t retained_constant_owner_count = 0;
+  std::size_t retained_constant_capacity_bytes = 0;
+  std::size_t owned_constant_allocation_bytes = 0;
+  bool has_borrowed_constants = false;
+  std::optional<std::size_t> opaque_storage_bytes; // Driver/pipelines: unknown.
+  std::string implementation_policy;
+  std::string numerical_policy;
+  std::string boundary_policy;
+  std::string concurrency_policy;
+};
+
 struct CompileOptions final {
   CustomLowering custom;
+  // Borrowed only during this call, reset before every attempt. Metadata OOM
+  // rejects compilation. Null adds no report construction or retained state.
+  CompileReport *report = nullptr;
 };
 
 // Fixed pure F32 DAG -> native pipelines and an immutable recording recipe.

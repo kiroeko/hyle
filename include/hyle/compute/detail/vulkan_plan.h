@@ -35,8 +35,20 @@ struct Plan final {
   std::vector<PlanStep> steps;
 };
 
+// Optional cold snapshot for Graph diagnostics. It owns only capacities and
+// counts from the final native plan, with no native or tensor handles.
+struct PlanFacts final {
+  std::size_t native_dispatch_count = 0;
+  std::vector<std::size_t> invocation_storage_block_bytes;
+  std::size_t retained_constant_owner_count = 0;
+  std::size_t retained_constant_capacity_bytes = 0;
+  std::size_t owned_constant_allocation_bytes = 0;
+  bool has_borrowed_constants = false;
+};
+
 HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program>
-prepare_plan(const Context &context, const Plan &plan) noexcept;
+prepare_plan(const Context &context, const Plan &plan,
+             PlanFacts *facts = nullptr) noexcept;
 
 } // namespace hyle::compute::vulkan::detail
 #endif

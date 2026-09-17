@@ -4,9 +4,12 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "../graph/native_report_allocation_failure.h"
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 
@@ -62,8 +65,25 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
     ASSERT_TRUE(context);
     auto graph = ffn_graph(rows);
     ASSERT_TRUE(graph) << graph.error().message();
-    auto program = ga::compile(*context, *graph, fixture.constants);
+    ga::CompileReport report;
+    auto program =
+        ga::compile(*context, *graph, fixture.constants, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
+    EXPECT_TRUE(report.status.ok());
+    EXPECT_FALSE(report.environment.device_name.empty());
+    ASSERT_EQ(report.nodes.size(), 4U); // unsupported dead node is absent
+    ASSERT_EQ(report.inputs.size(), 1U);
+    ASSERT_EQ(report.outputs.size(), 1U);
+    for (std::size_t i = 0; i < report.nodes.size(); ++i)
+      EXPECT_EQ(report.nodes[i].ordinal, i);
+    EXPECT_EQ(report.nodes[3].kind, c::OperationKind::kMatMul);
+    EXPECT_EQ(report.nodes[3].traits.precision,
+              c::PrecisionPolicy::kAccumulateInOutputType);
+    EXPECT_EQ(report.declared_constant_count, 7U);
+    EXPECT_EQ(report.logical_constant_bytes, 9216U);
+    EXPECT_FALSE(report.private_storage_bytes);
+    EXPECT_EQ(report.nodes[0].kind, c::OperationKind::kQuantizedMatMul);
+    EXPECT_EQ(report.nodes[0].traits.accumulation_type, c::DataType::kFloat32);
     graph = g::Graph{};
     fixture.constants.clear(); // the native program must retain the constants
     auto first = program->create_invocation();
@@ -97,6 +117,7 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
 }
 
 struct Affine final {
+  std::shared_ptr<int> lifetime;
   static constexpr c::OperationId operation_id{0x68796c657235ULL, 1};
   static constexpr auto operation_name = "apple-test-affine";
   c::OperationTraits operation_traits() const noexcept {
@@ -242,4 +263,76 @@ TEST(AppleGraph, CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms) 
   ASSERT_TRUE(result);
   EXPECT_FLOAT_EQ(result->get()->arrays()[0].data<float>()[3], 9.f);
 }
+
+TEST(AppleGraph, ReportOutlivesConstantsCustomPayloadAndContext) {
+  ga::CompileReport report;
+  std::weak_ptr<mx::array::Data> constant_owner;
+  std::weak_ptr<int> payload_owner;
+  {
+    auto context = a::Context::create();
+    ASSERT_TRUE(context);
+    const std::array constants{mx::array({2.f, 0.f, 0.f, 3.f}, {2, 2})};
+    constant_owner = constants[0].data_shared_ptr();
+    auto payload = std::make_shared<int>(7);
+    payload_owner = payload;
+    auto builder = g::GraphBuilder::create().value();
+    const auto x = builder.input(dense({2, 2})).value();
+    const auto w = builder.constant(dense({2, 2})).value();
+    const auto mm = builder.add(c::MatMul{}, x, w).value();
+    const auto out =
+        builder.add(c::Operation::custom(Affine{payload}), mm).value();
+    ASSERT_TRUE(builder.publish(out).ok());
+    auto graph = std::move(builder).finish().value();
+    auto program = ga::compile(
+        *context, graph, constants,
+        {.custom = [](const auto &, auto inputs, mx::Stream stream)
+             -> hyle::Result<std::vector<mx::array>> {
+           return std::vector{mx::add(inputs[0], mx::array(1.f), stream)};
+         },
+         .report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(report.declared_constant_count, 1U);
+    EXPECT_EQ(report.logical_constant_bytes, 4U * sizeof(float));
+    ASSERT_TRUE(context->close().ok());
+  }
+  EXPECT_TRUE(constant_owner.expired());
+  EXPECT_TRUE(payload_owner.expired());
+  ASSERT_TRUE(report.status.ok());
+  ASSERT_EQ(report.nodes.size(), 2U);
+  EXPECT_EQ(report.nodes[1].kind, c::OperationKind::kCustom);
+  auto saved = report;
+  EXPECT_FALSE(ga::compile({}, {}, {}, {.report = &report}));
+  EXPECT_TRUE(report.status.IsInvalidArgument());
+  EXPECT_TRUE(report.nodes.empty());
+  EXPECT_TRUE(report.environment.device_name.empty());
+  EXPECT_EQ(report.logical_constant_bytes, 0U);
+  EXPECT_TRUE(saved.status.ok());
+  EXPECT_FALSE(saved.boundary_policy.empty());
+}
+
+#if defined(HYLE_STATIC) && !defined(HYLE_TRACE_TRACY)
+TEST(AppleGraph, MetadataAllocationFailureResetsReportBeforeNativeCompilation) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  apple_test::Ffn fixture;
+  auto graph = ffn_graph(1);
+  ASSERT_TRUE(graph);
+  ga::CompileReport report;
+  report.nodes.resize(3);
+  native_report_test::failed = false;
+  native_report_test::fail_next = true;
+  auto refused =
+      ga::compile(*context, *graph, fixture.constants, {.report = &report});
+  native_report_test::fail_next = false;
+  ASSERT_TRUE(native_report_test::failed);
+  ASSERT_FALSE(refused);
+  EXPECT_TRUE(refused.error().IsResourceExhausted());
+  EXPECT_TRUE(report.status.IsResourceExhausted());
+  EXPECT_TRUE(report.nodes.empty());
+  EXPECT_TRUE(report.environment.device_name.empty());
+  EXPECT_TRUE(
+      ga::compile(*context, *graph, fixture.constants, {.report = &report}));
+  EXPECT_TRUE(report.status.ok());
+}
+#endif
 } // namespace

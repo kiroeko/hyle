@@ -281,6 +281,7 @@ _hyle_declare_component(io_transfer
 # expose Error and Mem types; schema remains in compute_ops and backend/native
 # implementations remain independent factors.
 _hyle_declare_component(compute
+  TRACE
   PRIVATE_DEPS util_core
   PUBLIC_DEPS core error mem compute_ops)
 # Graph owns logical tensor-DAG publication, provider-region partition and
@@ -289,6 +290,7 @@ _hyle_declare_component(compute
 # lifetime/workspace planning are private factors; no task scheduler becomes
 # part of Graph's execution contract.
 _hyle_declare_component(graph
+  TRACE
   PRIVATE_DEPS container util_core math
   PUBLIC_DEPS core error compute_ops compute mem)
 # Container's consumer-facing product remains one facade, while independent
@@ -445,19 +447,23 @@ _hyle_declare_component(graph_route_cuda
 
 # Native MLX region ownership is independent of the common Queue executor.
 _hyle_declare_component(compute_route_apple
+  TRACE
   PRIVATE_DEPS container platform_thread
   PUBLIC_DEPS core compute compute_ops error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/apple.h)
 _hyle_declare_component(graph_route_apple
+  TRACE
   PUBLIC_DEPS core compute_ops compute_route_apple error graph
   SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
 # Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
 _hyle_declare_component(compute_route_vulkan
+  TRACE
   PRIVATE_DEPS platform time
   PUBLIC_DEPS core compute compute_ops error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/detail/vulkan_plan.h)
 _hyle_declare_component(graph_route_vulkan
+  TRACE
   PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
   SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
 

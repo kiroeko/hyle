@@ -277,49 +277,7 @@ private:
   int next_ = 0;
 };
 
-#if HYLE_APPLE_NATIVE_COST
-class NativeHarness final {
-public:
-  NativeHarness(const Data &data, bool)
-      : data_(data), stream_(mx::new_stream(mx::Device::gpu)) {
-    inputs_ = resident_inputs(data);
-    compiled_ =
-        mx::compile([w = data.weights, stream = stream_](const auto &x) {
-          return native_region(x, w, stream);
-        });
-    const std::vector zeros{mx::zeros({data.rows, k}, mx::float32, stream_)};
-    auto warm = compiled_(zeros);
-    mx::async_eval(warm);
-    mx::synchronize(stream_);
-  }
-  void run() { execute(next_++ % slots); }
-  std::vector<float> output_at(int slot) {
-    execute(slot);
-    const auto &x = values_[slot][0];
-    return {x.data<float>(), x.data<float>() + data_.rows * output};
-  }
-
-private:
-  void execute(int slot) {
-    values_[slot] = compiled_(inputs_[slot]);
-    mx::async_eval(values_[slot]);
-    mx::synchronize(stream_);
-    for (auto &value : values_[slot])
-      value.wait();
-    nb::doNotOptimizeAway(values_[slot]);
-  }
-  const Data &data_;
-  mx::Stream stream_;
-  std::function<std::vector<mx::array>(const std::vector<mx::array> &)>
-      compiled_;
-  std::array<std::vector<mx::array>, slots> values_;
-  std::array<std::vector<mx::array>, slots> inputs_;
-  int next_ = 0;
-};
-using Peer = NativeHarness;
-#else
 using Peer = Harness;
-#endif
 
 void verify(std::span<const float> actual, std::span<const float> expected,
             bool oracle) {
@@ -408,9 +366,7 @@ void measure(int rows, bool peer_first, bool allocation_first,
   const std::string title =
       kind + " M=" + std::to_string(rows) + " K=4096 H=11008 N=4096";
   const auto c_name = "HYLE Apple " + title;
-  const auto p_name =
-      std::string(HYLE_APPLE_NATIVE_COST ? "Raw MLX " : "MLX lifecycle ") +
-      title;
+  const auto p_name = std::string("MLX lifecycle ") + title;
   nb::Bench b;
   b.title(title)
       .batch(1)
@@ -427,8 +383,7 @@ void measure(int rows, bool peer_first, bool allocation_first,
 }
 
 void require_aa(bool aa, bool verify) {
-  if (aa || verify || env("HYLE_PERF_RUN_NONCE").empty() ||
-      HYLE_APPLE_NATIVE_COST)
+  if (aa || verify || env("HYLE_PERF_RUN_NONCE").empty())
     return;
   std::uint32_t size = 0;
   (void)_NSGetExecutablePath(nullptr, &size);
@@ -456,19 +411,17 @@ int main() {
     const auto aa = env("HYLE_BENCH_AA_ROUTE");
     if (!aa.empty() && aa != "native" && aa != "selected")
       fail("invalid A/A route");
-    if (HYLE_APPLE_NATIVE_COST && !aa.empty())
-      fail("raw MLX is NATURAL_ROUTE only");
     require_aa(!aa.empty(), verify_only);
     std::fprintf(
         stderr,
         "# HYLE_APPLE_FFN_RUN mode=%s execution_order=%s allocation_order=%s "
         "aa_route=%s paired_mode=nanobench-compare apple_qos=%s qos_ok=%s "
-        "run_nonce=%s verify_only=%d natural_route=%d\n",
+        "run_nonce=%s verify_only=%d\n",
         HYLE_APPLE_GRAPH_BENCH ? "graph" : "direct",
         peer_first ? "peer-first" : "candidate-first",
         allocation_first ? "peer-first" : "candidate-first",
         aa.empty() ? "none" : aa.c_str(), qos.name, qos.ok,
-        hyle::bench::perf::run_nonce(), verify_only, HYLE_APPLE_NATIVE_COST);
+        hyle::bench::perf::run_nonce(), verify_only);
     measure(1, peer_first, allocation_first, aa, verify_only);
     measure(16, peer_first, allocation_first, aa, verify_only);
   } catch (const std::exception &e) {

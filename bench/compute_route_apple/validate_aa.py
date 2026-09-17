@@ -157,7 +157,7 @@ def main() -> int:
                                 'aa_route': route, 'paired_mode': 'nanobench-compare',
                                 'apple_qos': 'user-interactive', 'qos_ok': '1',
                                 'run_nonce': environment['HYLE_PERF_RUN_NONCE'],
-                                'verify_only': '0', 'natural_route': '0'}
+                                'verify_only': '0'}
                     if any(observed.get(k) != v for k, v in expected.items()):
                         raise RuntimeError(f'Apple A/A telemetry mismatch: {observed}')
                     facts = [s for s in text.splitlines() if s.startswith('# APPLE_ENV ')]

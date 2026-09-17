@@ -209,49 +209,4 @@ Reference::record(const v::Context &context,
   return take(recorder.finish());
 }
 
-struct RawProgram::State {
-  const v::Context &context;
-  std::shared_ptr<d::Run> run;
-  std::function<Status(VkQueue)> submit;
-  explicit State(const v::Context &c) : context(c) {}
-};
-RawProgram::RawProgram(const v::Context &context, const Reference &reference,
-                       const std::array<v::Tensor, 8> &values)
-    : state_(std::make_unique<State>(context)) {
-  state_->run = take(d::create_run(d::Access::runtime(context)));
-  auto recipe = std::make_shared<Reference>(reference);
-  state_->run->recording_owner = recipe;
-  std::vector<d::PlanValue> descriptions;
-  for (const auto &value : values) {
-    descriptions.push_back({value.description(), value});
-    state_->run->retained_buffers.push_back(d::Access::buffer(value));
-  }
-  std::vector<d::Dispatch> dispatches;
-  for (const auto &step : reference.steps())
-    dispatches.push_back({d::Access::pipeline(step.kernel), step.bindings,
-                          step.push, step.groups});
-  check(d::record(state_->run, descriptions, dispatches));
-  state_->submit = [state = state_.get()](VkQueue queue) -> Status {
-    const auto &run = *state->run;
-    const auto &device = *run.runtime->device;
-    HYLE_RETURN_IF_ERROR(d::native_status(
-        device.fn.ResetFences(device.native.device, 1, &run.fence),
-        "raw reset"));
-    VkSubmitInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    info.commandBufferCount = 1;
-    info.pCommandBuffers = &run.command;
-    HYLE_RETURN_IF_ERROR(d::native_status(
-        device.fn.QueueSubmit(queue, 1, &info, run.fence), "raw submit"));
-    auto result =
-        device.fn.WaitForFences(device.native.device, 1, &run.fence, VK_TRUE,
-                                (std::numeric_limits<std::uint64_t>::max)());
-    if (result != VK_SUCCESS && result != VK_ERROR_DEVICE_LOST)
-      check(d::native_status(device.fn.QueueWaitIdle(queue),
-                             "raw exceptional drain"));
-    return d::native_status(result, "raw wait");
-  };
-}
-RawProgram::~RawProgram() = default;
-void RawProgram::run() { check(state_->context.with_queue(state_->submit)); }
 } // namespace hyle::bench::vulkan

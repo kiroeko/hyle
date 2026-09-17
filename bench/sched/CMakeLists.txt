@@ -297,7 +297,8 @@ if(HYLE_BENCH_MARL)
                                                         ${_hyle_bench_marl_target})
   hyle_apply_warnings(hyle_sched_marl_bench)
 
-  # sched-v1 P1 closure evidence. Keep candidate and peer in separate
+  # Current sched-p1-v3 keeps only request/collection and completion wake.
+  # The mismatched typed-join row is retired. Keep the peers in separate
   # executables so neither product changes the other's layout or link graph.
   # The shared instrument launches both under the same four-physical-core
   # policy and owns pairing, calibration and statistical verdicts.
@@ -312,7 +313,7 @@ if(HYLE_BENCH_MARL)
     hyle_apply_warnings(hyle_sched_p1_peer_bench)
 
     # sched-v2 batch-structured P1 pair.  Keep it separate from the historical
-    # rich schedule_task-vs-batch row so old raw evidence stays reproducible.
+    # rich schedule_task-vs-batch row, reproducible only at its frozen revision.
     add_executable(hyle_sched_bulk_p1_candidate_marl_bench
       bulk_p1_candidate_bench.cc)
     target_link_libraries(hyle_sched_bulk_p1_candidate_marl_bench PRIVATE

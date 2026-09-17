@@ -14,7 +14,9 @@
 
 #if defined(HYLE_COMPUTE_APPLE)
 #include <functional>
+#include <optional>
 #include <span>
+#include <string>
 #include <vector>
 
 #include <mlx/array.h>
@@ -22,6 +24,7 @@
 
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
+#include "hyle/graph/compile_report.h"
 
 namespace hyle::graph::apple {
 
@@ -33,8 +36,32 @@ using CustomLowering = std::function<Result<std::vector<mlx::core::array>>(
     const compute::Operation &, std::span<const mlx::core::array>,
     mlx::core::Stream)>;
 
+// Independently owned cold diagnostics. No Graph, Program, MLX array, custom
+// payload or Context is retained. Copies use the consumer's ordinary C++
+// allocator/STL contract. An unattempted report has Unknown status; a rejected
+// compilation contains only its failure Status, never stale success facts.
+struct CompileReport final {
+  Status status = Status::Unknown();
+  compute::apple::Environment environment;
+  std::vector<compute::TensorDesc> inputs;
+  std::vector<compute::TensorDesc> outputs;
+  std::vector<CompileNodeReport> nodes; // Live nodes in original ordinal order.
+  std::size_t declared_constant_count = 0;
+  // Sum of declared logical views, including repeated bindings. This is not
+  // unique resident memory, RSS or a bound on MLX's private allocator.
+  std::size_t logical_constant_bytes = 0;
+  std::optional<std::size_t> private_storage_bytes; // MLX/driver: unknown.
+  std::string implementation_policy;
+  std::string numerical_policy;
+  std::string boundary_policy;
+  std::string concurrency_policy;
+};
+
 struct CompileOptions final {
   CustomLowering custom;
+  // Borrowed only until compile returns; reset before every attempt. Metadata
+  // allocation failure rejects compilation. Null adds no report construction.
+  CompileReport *report = nullptr;
 };
 
 // Cold typed DAG -> one compiled MLX region. Constants are ready native owners

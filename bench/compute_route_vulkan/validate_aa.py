@@ -227,7 +227,7 @@ def main() -> int:
                                 'allocation_order': 'peer-first' if allocation_first else 'candidate-first',
                                 'aa_route': route, 'paired_mode': 'nanobench-compare',
                                 'run_nonce': environment['HYLE_PERF_RUN_NONCE'],
-                                'verify_only': '0', 'natural_route': '0',
+                                'verify_only': '0',
                                 'placement': '1' if variant == 'placement' else '0'}
                     if windows:
                         expected.update(affinity_topology=topology,

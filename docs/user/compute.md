@@ -657,8 +657,9 @@ Native FFI，也不承诺跨工具链 C++ ABI。
 配置、typed kernel、typed Invocation 各有冷分配；内置 Provider 仍用 inline 配置。HYLE 的 warm 调用
 直接进入 typed trampoline，没有额外虚函数层；用户 kernel 的分配、同步和线程必须符合自己声明的
 prepared/managed 成本。此 factory 当前为 exact-point；Windows CPU/CUDA 示例已验证三种交付，其中
-CUDA 使用真实 native kernel、双 Queue 和 exact Graph capture。完整 bounded domain、Apple、跨平台
-sanitizer 和基础终局性能仍随基础任务验证，不能把一个已运行的示例外推为所有 backend 路线通过。
+CUDA 使用真实 native kernel、双 Queue 和 exact Graph capture。此 factory 的 exact-point 限制仍在；
+Apple/Vulkan 使用各自原生 Program 与 custom lowering，见路线指南。四路线的正确性、三交付、
+sanitizer 和有限性能证据各有适用范围，不能把 shared-Queue factory 外推为所有 native runtime 的接口。
 
 ## Custom operation 的外部资源访问
 

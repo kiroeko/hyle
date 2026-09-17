@@ -90,6 +90,9 @@ int main() {
   auto queue = context->create_queue();
   auto compiled = compile(*logical, *context);
   if (!queue || !compiled || compiled->report.node_count() != 3 ||
+      !compiled->report.node(0) ||
+      compiled->report.node(0)->kind !=
+          hyle::compute::OperationKind::kRmsNorm ||
       compiled->report.workspace_bytes() == 0 ||
       compiled->report.copy_bytes() != 0 ||
       compiled->report.mixed_providers()) {

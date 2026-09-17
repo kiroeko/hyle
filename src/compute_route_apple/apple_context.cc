@@ -1,5 +1,7 @@
 #include "hyle/compute/apple.h"
 
+#include "hyle/obs/trace.h"
+
 #include <atomic>
 #include <exception>
 #include <mutex>
@@ -271,6 +273,7 @@ void finish(InvocationState &state, Status terminal) noexcept {
 }
 
 void execute_invocation(Job *job) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.apple.execute");
   auto &state = *static_cast<InvocationState *>(job);
   auto &runtime = *state.program->runtime;
   Status terminal;
@@ -424,6 +427,7 @@ Context::compile(RegionFunction region,
 Result<Program>
 Context::compile(RegionFunction region,
                  std::span<const InputSpec> inputs) const noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.apple.prepare");
   if (!state_ || !region)
     return std::unexpected(
         Status::InvalidArgument("invalid Apple Context or region"));
@@ -531,6 +535,7 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
 }
 
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.apple.submit");
   if (!state_)
     return std::unexpected(
         Status::FailedPrecondition("invalid Apple Invocation"));

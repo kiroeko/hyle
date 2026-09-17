@@ -1,4 +1,6 @@
 #include "hyle/compute/delegated_operation.h"
+
+#include "hyle/obs/trace.h"
 #include "hyle/compute/prepared_operation.h"
 
 #include <algorithm>
@@ -1091,6 +1093,7 @@ Result<PreparedOperation> prepare_for_mode(const Context &context,
                                            std::span<const TensorDesc> outputs,
                                            OperationResourceBindings resources,
                                            ProviderRuntimeMode mode) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.compute.prepare");
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -1616,6 +1619,7 @@ Result<Completion>
 OperationInvocation::submit(Queue &queue,
                             std::span<const ConstTensorView> inputs,
                             std::span<const TensorView> outputs) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.compute.submit");
   if (state_ == nullptr) {
     return std::unexpected(
         Status::FailedPrecondition("operation invocation is invalid"));
@@ -2039,6 +2043,7 @@ Result<Completion> DelegatedInvocation::submit_after(
     std::span<const Completion *const> dependencies,
     std::span<const ConstTensorView> inputs,
     std::span<const TensorView> outputs) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.compute.delegated.submit");
   if (!valid())
     return std::unexpected(
         Status::FailedPrecondition("delegated invocation is invalid"));

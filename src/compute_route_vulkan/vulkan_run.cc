@@ -1,5 +1,7 @@
 #include "vulkan_internal.h"
 
+#include "hyle/obs/trace.h"
+
 #include <limits>
 #include <new>
 #include <utility>
@@ -232,6 +234,7 @@ const cd::CompletionVTable completion_vtable{
 
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.vulkan.submit");
   auto &runtime = *run->runtime;
   const auto &device = *runtime.device;
   if (runtime.closed && !allow_closed)

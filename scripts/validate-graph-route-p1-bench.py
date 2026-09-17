@@ -41,8 +41,6 @@ WORKLOADS = tuple(
         "two-worker f32 M=17 K=129 H=257",
     )
     for title, peer in (
-        ("graph oneDNN MLP abstraction ", "direct fused oneDNN region "),
-        ("graph oneDNN MLP region benefit ", "direct sequential oneDNN operations "),
         ("graph CPU default versus Native ", "HYLE Graph explicit Native "),
     )
 )

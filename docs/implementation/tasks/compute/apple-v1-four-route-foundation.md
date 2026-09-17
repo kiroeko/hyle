@@ -235,7 +235,8 @@ QUALIFIED/CURRENT/EXACT、路径校验通过；实际 product gate 由同时归�
 
 统一 `loc-report.py`：本候选 Compute+Graph 全部实现 **33,815 行 / 116 文件**；2026-09-17 工作树
 为 **36,753 行 / 129 文件**，包含尚未验收的 R6，均不含测试/bench/third_party。LOC 不折算完成度。
-R5 完成；R6/R7 与 Mem 依赖尾项仍按各 owner 推进，整个 goal 尚未完成。
+R5 完成。当前续注：R6 和 Mem v10 依赖尾项也已完成，R7 按
+[终审卡](four-route-foundation-final-review.md)推进；本卡历史 receipt 不替代 R7 当前验收。
 
 停止本卡产品施工。reopen 限可复现正确性/寿命/并发/交付缺陷、真实 consumer 新能力或公开合同
 变化、采用依赖升级及合格同合同 material 回归，不凭未知硬件或微小点值重开。

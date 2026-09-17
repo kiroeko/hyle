@@ -1,9 +1,13 @@
 #include "vulkan_program_internal.h"
 
+#include "hyle/obs/trace.h"
+
 #include <algorithm>
+#include <functional>
 #include <limits>
 #include <new>
 #include <numeric>
+#include <utility>
 
 namespace hyle::compute::vulkan::detail {
 
@@ -95,8 +99,11 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
   }
 }
 
-Result<Program> prepare_plan(const Context &context,
-                             const Plan &plan) noexcept {
+Result<Program> prepare_plan(const Context &context, const Plan &plan,
+                             PlanFacts *facts) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.vulkan.prepare");
+  if (facts != nullptr)
+    *facts = {};
   const auto &runtime = Access::runtime(context);
   if (!runtime || plan.values.empty() || plan.steps.empty() ||
       plan.outputs.empty() ||
@@ -204,6 +211,46 @@ Result<Program> prepare_plan(const Context &context,
     auto status = plan_storage(*program);
     if (!status.ok())
       return std::unexpected(status);
+    if (facts != nullptr) {
+      PlanFacts snapshot;
+      snapshot.native_dispatch_count = program->dispatches.size();
+      snapshot.invocation_storage_block_bytes.reserve(
+          program->block_bytes.size());
+      for (const auto bytes : program->block_bytes) {
+        if (!std::in_range<std::size_t>(bytes))
+          return std::unexpected(Status::ResourceExhausted(
+              "Vulkan report block capacity overflows"));
+        snapshot.invocation_storage_block_bytes.push_back(
+            static_cast<std::size_t>(bytes));
+      }
+      std::vector<const Buffer *> constants;
+      for (const auto &value : program->values)
+        if (value.constant)
+          constants.push_back(Access::buffer(value.constant).get());
+      std::ranges::sort(constants, std::less<>{});
+      const auto duplicate = std::ranges::unique(constants);
+      constants.erase(duplicate.begin(), duplicate.end());
+      snapshot.retained_constant_owner_count = constants.size();
+      for (const auto *buffer : constants) {
+        if (buffer->bytes >
+            SIZE_MAX - snapshot.retained_constant_capacity_bytes)
+          return std::unexpected(Status::ResourceExhausted(
+              "Vulkan report constant capacity overflows"));
+        snapshot.retained_constant_capacity_bytes +=
+            static_cast<std::size_t>(buffer->bytes);
+        if (buffer->memory == VK_NULL_HANDLE) {
+          snapshot.has_borrowed_constants = true;
+        } else {
+          if (buffer->allocation_bytes >
+              SIZE_MAX - snapshot.owned_constant_allocation_bytes)
+            return std::unexpected(Status::ResourceExhausted(
+                "Vulkan report constant allocation overflows"));
+          snapshot.owned_constant_allocation_bytes +=
+              static_cast<std::size_t>(buffer->allocation_bytes);
+        }
+      }
+      *facts = std::move(snapshot);
+    }
     return Access::program(std::move(program));
   } catch (const std::bad_alloc &) {
     return std::unexpected(

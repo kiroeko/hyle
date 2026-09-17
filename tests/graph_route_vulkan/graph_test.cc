@@ -3,9 +3,12 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include "../graph/native_report_allocation_failure.h"
 
 #include "../compute_route_vulkan/fixture.h"
 
@@ -47,8 +50,28 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
     auto constants = fixture.constants(*context);
     auto graph = ffn_graph(rows);
     ASSERT_TRUE(constants && graph);
-    auto program = gv::compile(*context, *graph, *constants);
+    gv::CompileReport report;
+    auto program =
+        gv::compile(*context, *graph, *constants, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
+    EXPECT_TRUE(report.status.ok());
+    EXPECT_FALSE(report.environment.device_name.empty());
+    ASSERT_EQ(report.nodes.size(), 4U); // unsupported dead node is absent
+    ASSERT_EQ(report.inputs.size(), 1U);
+    ASSERT_EQ(report.outputs.size(), 1U);
+    for (std::size_t i = 0; i < report.nodes.size(); ++i)
+      EXPECT_EQ(report.nodes[i].ordinal, i);
+    EXPECT_EQ(report.nodes[3].kind, c::OperationKind::kMatMul);
+    EXPECT_EQ(report.nodes[3].traits.precision,
+              c::PrecisionPolicy::kAccumulateInOutputType);
+    EXPECT_EQ(report.native_dispatch_count, 4U);
+    EXPECT_EQ(report.retained_constant_owner_count, 3U);
+    EXPECT_GT(report.retained_constant_capacity_bytes, 0U);
+    EXPECT_GE(report.owned_constant_allocation_bytes,
+              report.retained_constant_capacity_bytes);
+    EXPECT_FALSE(report.has_borrowed_constants);
+    EXPECT_FALSE(report.opaque_storage_bytes);
+    EXPECT_FALSE(report.invocation_storage_block_bytes.empty());
     graph = g::Graph{};
     constants = std::array<v::Tensor, 3>{};
     auto first = program->create_invocation();
@@ -89,6 +112,7 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
 }
 
 struct Affine final {
+  std::shared_ptr<int> lifetime;
   static constexpr c::OperationId operation_id{0x68796c657236ULL, 1};
   static constexpr auto operation_name = "vulkan-test-affine";
   c::OperationTraits operation_traits() const noexcept {
@@ -191,4 +215,96 @@ TEST(VulkanGraph, RejectsMissingMismatchedConstantsAndInputOnlyOutput) {
   EXPECT_FALSE(gv::compile(*context, *graph));
 }
 
+TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
+  gv::CompileReport report;
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
+  std::weak_ptr<const void> constant_owner;
+  std::weak_ptr<int> payload_owner;
+  {
+    auto context = t::context(&quota);
+    ASSERT_TRUE(context);
+    auto weight = t::upload(*context, t::dense({4}), t::data(4, 2));
+    ASSERT_TRUE(weight);
+    constant_owner = weight->native_owner();
+    auto borrowed = context->borrow_ready(
+        weight->description(), weight->native_buffer(), weight->native_offset(),
+        4 * sizeof(float), weight->native_owner());
+    ASSERT_TRUE(borrowed);
+    auto payload = std::make_shared<int>(7);
+    payload_owner = payload;
+    auto builder = g::GraphBuilder::create().value();
+    const auto a = builder.constant(t::dense({4})).value();
+    const auto b = builder.constant(t::dense({4})).value();
+    const auto gate =
+        builder
+            .add(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}, a,
+                 b)
+            .value();
+    const auto out =
+        builder.add(c::Operation::custom(Affine{payload}), gate).value();
+    ASSERT_TRUE(builder.publish(out).ok());
+    auto graph = std::move(builder).finish().value();
+    auto kernel = t::affine(*context);
+    ASSERT_TRUE(kernel);
+    const std::array constants{*borrowed, *borrowed};
+    auto program = gv::compile(
+        *context, graph, constants,
+        {.custom = [&](const auto &, const auto &, auto,
+                       const auto &) -> hyle::Result<gv::CustomDispatch> {
+           return gv::CustomDispatch{*kernel, {1, 1, 1}, t::count_push(4)};
+         },
+         .report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(report.native_dispatch_count, 2U);
+    EXPECT_EQ(report.retained_constant_owner_count, 1U); // two aliases
+    EXPECT_EQ(report.retained_constant_capacity_bytes, 4U * sizeof(float));
+    EXPECT_EQ(report.owned_constant_allocation_bytes, 0U);
+    EXPECT_TRUE(report.has_borrowed_constants);
+    ASSERT_TRUE(context->close().ok());
+  }
+  EXPECT_TRUE(constant_owner.expired());
+  EXPECT_TRUE(payload_owner.expired());
+  EXPECT_EQ(quota.used(), 0U);
+  ASSERT_TRUE(report.status.ok());
+  ASSERT_EQ(report.nodes.size(), 2U);
+  EXPECT_EQ(report.nodes[1].kind, c::OperationKind::kCustom);
+  auto saved = report;
+  EXPECT_FALSE(gv::compile({}, {}, {}, {.report = &report}));
+  EXPECT_TRUE(report.status.IsInvalidArgument());
+  EXPECT_TRUE(report.nodes.empty());
+  EXPECT_TRUE(report.environment.device_name.empty());
+  EXPECT_TRUE(report.invocation_storage_block_bytes.empty());
+  EXPECT_EQ(report.retained_constant_owner_count, 0U);
+  EXPECT_TRUE(saved.status.ok());
+  EXPECT_FALSE(saved.boundary_policy.empty());
+}
+
+#if defined(HYLE_STATIC) && !defined(HYLE_TRACE_TRACY)
+TEST(VulkanGraph,
+     MetadataAllocationFailureResetsReportAndLeaksNoDeviceStorage) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
+  auto context = t::context(&quota);
+  ASSERT_TRUE(context);
+  t::Ffn fixture;
+  auto constants = fixture.constants(*context);
+  auto graph = ffn_graph(1);
+  ASSERT_TRUE(constants && graph);
+  gv::CompileReport report;
+  report.nodes.resize(3); // stale successful metadata must be cleared
+  const auto before = quota.used();
+  native_report_test::failed = false;
+  native_report_test::fail_next = true;
+  auto refused = gv::compile(*context, *graph, *constants, {.report = &report});
+  native_report_test::fail_next = false;
+  ASSERT_TRUE(native_report_test::failed);
+  ASSERT_FALSE(refused);
+  EXPECT_TRUE(refused.error().IsResourceExhausted());
+  EXPECT_TRUE(report.status.IsResourceExhausted());
+  EXPECT_TRUE(report.nodes.empty());
+  EXPECT_TRUE(report.environment.device_name.empty());
+  EXPECT_EQ(quota.used(), before);
+  EXPECT_TRUE(gv::compile(*context, *graph, *constants, {.report = &report}));
+  EXPECT_TRUE(report.status.ok());
+}
+#endif
 } // namespace

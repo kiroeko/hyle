@@ -33,7 +33,8 @@ its own machine and toolchain contract. Exact reference inputs/SPIR-V, executabl
 machine and child-policy identities bind A/A reuse. A failed finite attempt cannot
 be silently repeated by the validator.
 
-The `*_vulkan_native_cost_bench` targets compare with a raw recorded Vulkan submit
-and checked fence wait. That arm lacks cancellation, abandoned-work quarantine and
-owning output leases: it is `NATURAL_ROUTE/NOT_COMPARABLE`, never a product NI gate.
-No P1 result has been recorded by creating these benchmarks.
+R7 retired `*_vulkan_native_cost_bench` and the raw submission branch. Its checked
+fence wait lacked cancellation, abandoned-work quarantine and owning output
+leases, so the pair cannot establish a public-route NI verdict. Historical R6
+raw observations remain at their frozen source/evidence identity. Current
+same-service shader references and independent oracles remain; R7 does not run P1.

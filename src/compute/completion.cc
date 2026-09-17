@@ -1,5 +1,7 @@
 #include "hyle/compute/completion.h"
 
+#include "hyle/obs/trace.h"
+
 #include <utility>
 
 #include "completion_internal.h"
@@ -147,6 +149,7 @@ Result<CompletionPoll> Completion::poll() const noexcept {
 }
 
 Status Completion::wait() const noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.compute.wait");
   if (!valid_)
     return Status::FailedPrecondition("completion is invalid");
   if (vtable_ != nullptr) {

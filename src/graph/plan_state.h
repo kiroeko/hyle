@@ -805,12 +805,12 @@ struct ReportState final : util::RefCounted<ReportState> {
   ReportState(mem::AllocatorRef allocator_value,
               std::size_t allocation_bytes_value) noexcept
       : allocator(allocator_value), allocation_bytes(allocation_bytes_value),
-        steps(allocator_value), targets(allocator_value),
-        storage_domains(allocator_value), lanes(allocator_value),
-        segments(allocator_value), physical_values(allocator_value),
-        constants(allocator_value), step_inputs(allocator_value),
-        step_outputs(allocator_value), step_nodes(allocator_value),
-        step_node_begins(allocator_value),
+        nodes(allocator_value), steps(allocator_value),
+        targets(allocator_value), storage_domains(allocator_value),
+        lanes(allocator_value), segments(allocator_value),
+        physical_values(allocator_value), constants(allocator_value),
+        step_inputs(allocator_value), step_outputs(allocator_value),
+        step_nodes(allocator_value), step_node_begins(allocator_value),
         segment_dependencies(allocator_value), exact_variants(allocator_value) {
   }
 
@@ -824,6 +824,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   mem::AllocatorRef allocator{};
   // Provider identity text is owned in this allocation's immutable tail.
   std::size_t allocation_bytes = 0;
+  container::SmallVector<CompileNodeReport, 0, mem::AllocatorRef> nodes;
   CompileStepReports steps;
   CompileTargetReports targets;
   CompileStorageReports storage_domains;

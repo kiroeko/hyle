@@ -1,6 +1,6 @@
 # Backend/provider-neutral runtime only. CPU device hooks and native kernels
 # are independent factors, so other backends do not inherit host/SIMD code.
-hyle_add_module(compute SOURCES
+hyle_add_module(compute TRACE SOURCES
   command_capture.cc
   completion.cc
   custom_kernel.cc

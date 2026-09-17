@@ -1,5 +1,7 @@
 #include "hyle/graph/executable.h"
 
+#include "hyle/obs/trace.h"
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -5768,7 +5770,8 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     identity.version = copy_text(identity.version);
   });
   state->search = plan.search;
-  if (!state->steps.try_resize(plan.steps.size()) ||
+  if (!state->nodes.try_resize(graph.nodes.size()) ||
+      !state->steps.try_resize(plan.steps.size()) ||
       !state->targets.try_resize(plan.targets.size()) ||
       !state->storage_domains.try_resize(plan.storage_domains.size()) ||
       !state->lanes.try_resize(plan.lanes.size()) ||
@@ -5783,6 +5786,14 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
           plan.segment_dependencies.size())) {
     detail::release(state);
     return std::unexpected(plan_allocation_failure());
+  }
+  for (std::size_t index = 0; index < graph.nodes.size(); ++index) {
+    const auto &node = graph.nodes[index];
+    state->nodes[index] = CompileNodeReport{
+        .ordinal = static_cast<std::uint32_t>(index),
+        .kind = node.kind(),
+        .traits = node.traits(),
+    };
   }
   std::copy(plan.node_inputs.begin(), plan.node_inputs.end(),
             state->step_inputs.begin());
@@ -6229,6 +6240,16 @@ std::size_t CompileReport::workspace_backing_count() const noexcept {
 
 std::size_t CompileReport::node_count() const noexcept {
   return state_ != nullptr ? state_->node_count : 0;
+}
+
+Result<CompileNodeReport>
+CompileReport::node(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(
+        Status::FailedPrecondition("compile report is invalid"));
+  if (index >= state_->nodes.size())
+    return std::unexpected(Status::OutOfRange("compile report node index"));
+  return state_->nodes[index];
 }
 
 std::size_t CompileReport::target_count() const noexcept {
@@ -7522,6 +7543,7 @@ Result<compute::Completion> Invocation::submit() noexcept {
 
 Result<compute::Completion>
 Invocation::submit(std::span<const QueueBinding> queues) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.graph.submit");
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
@@ -8418,6 +8440,7 @@ Result<CompiledGraph> compile_family(const Graph &graph,
 Result<CompiledGraph> compile(const Graph &graph,
                               CompileEnvironment environment,
                               CompileOptions options) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.graph.compile");
   HYLE_ASSIGN_OR_RETURN(auto result,
                         compile_family(graph, environment, options));
   const auto &plan = *detail::ExecutableAccess::state(result.executable);

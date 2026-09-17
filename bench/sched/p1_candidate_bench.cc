@@ -9,7 +9,6 @@
 
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/cancel.h"
-#include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 #include "hyle/sched/waker.h"
@@ -20,7 +19,6 @@ namespace p1 = hyle::bench::sched_p1;
 using hyle::mem::AllocatorRef;
 using hyle::sched::CancelToken;
 using hyle::sched::Channel;
-using hyle::sched::JoinHandle;
 using hyle::sched::Scheduler;
 using hyle::sched::WaitGroup;
 
@@ -90,85 +88,6 @@ RequestRun run_request_replay(Scheduler& scheduler, AllocatorRef allocator,
     p1::fail("HYLE request replay violated its cancellation/channel contract");
   }
   return {p1::elapsed_ns(start, finish), checksum};
-}
-
-struct StructuredRun {
-  double wall_ns = 0.0;
-  std::uint64_t checksum = 0;
-};
-
-StructuredRun run_structured_body(
-    Scheduler& scheduler, AllocatorRef allocator,
-    std::span<const std::uint64_t> input, std::size_t rounds,
-    std::size_t fanout, p1::WorkerHits& hits) {
-  std::vector<JoinHandle<std::uint64_t>> handles;
-  handles.reserve(fanout);
-  std::uint64_t expected_checksum = 0;
-  for (std::size_t round = 0; round < rounds; ++round) {
-    for (std::size_t task = 0; task < fanout; ++task) {
-      const auto seed = static_cast<std::uint64_t>(round * fanout + task + 1);
-      expected_checksum += p1::tile_digest(input, seed);
-    }
-  }
-
-  std::uint64_t checksum = 0;
-  const auto start = p1::Clock::now();
-  for (std::size_t round = 0; round < rounds; ++round) {
-    handles.clear();
-    for (std::size_t task = 0; task < fanout; ++task) {
-      const auto seed = static_cast<std::uint64_t>(round * fanout + task + 1);
-      handles.push_back(hyle::sched::schedule_task(
-          scheduler, allocator, [input, seed, &hits]() noexcept {
-            hits.hit(hyle::sched::current_worker_index());
-            return p1::tile_digest(input, seed);
-          }));
-    }
-    hyle::sched::when_all(
-        std::span<JoinHandle<std::uint64_t>>(handles.data(), handles.size()));
-    for (auto& handle : handles) {
-      auto result = handle.join();
-      if (!result)
-        p1::fail("HYLE structured task failed to join");
-      checksum += *result;
-    }
-  }
-  const auto finish = p1::Clock::now();
-  handles.clear();
-
-  if (checksum != expected_checksum)
-    p1::fail("HYLE structured replay produced a wrong result");
-  return {p1::elapsed_ns(start, finish), checksum};
-}
-
-struct StructuredContext {
-  Scheduler* scheduler = nullptr;
-  AllocatorRef allocator{};
-  std::span<const std::uint64_t> input{};
-  std::size_t rounds = 0;
-  std::size_t fanout = 0;
-  p1::WorkerHits* hits = nullptr;
-  WaitGroup done{1};
-  StructuredRun result{};
-};
-
-void structured_root(void* raw) noexcept {
-  auto* context = static_cast<StructuredContext*>(raw);
-  context->result = run_structured_body(
-      *context->scheduler, context->allocator, context->input,
-      context->rounds, context->fanout, *context->hits);
-  context->done.done();
-}
-
-StructuredRun run_structured_replay(
-    Scheduler& scheduler, AllocatorRef allocator,
-    std::span<const std::uint64_t> input, std::size_t rounds,
-    std::size_t fanout, p1::WorkerHits& hits) {
-  StructuredContext context{&scheduler, allocator, input, rounds, fanout,
-                            &hits};
-  if (!scheduler.spawn_detached(&structured_root, &context).ok())
-    p1::fail("HYLE rejected the structured root fiber");
-  context.done.wait();
-  return context.result;
 }
 
 struct WakeContext;
@@ -280,7 +199,7 @@ int main() {
   if (!affinity.exact())
     p1::fail("HYLE worker placement differs from the requested CPU set");
 
-  std::vector<std::uint64_t> input(p1::kStructuredTileElements);
+  std::vector<std::uint64_t> input(p1::kRequestTileElements);
   for (std::size_t i = 0; i < input.size(); ++i)
     input[i] = static_cast<std::uint64_t>(i * 17 + 3);
 
@@ -299,22 +218,6 @@ int main() {
       static_cast<double>(p1::kRequestCount) * 1e9 / request.wall_ns,
       p1::kRequestCount, 1, p1::kRequestCount, request.checksum,
       request.wall_ns, request_hits, affinity);
-
-  p1::WorkerHits structured_hits;
-  (void)run_structured_replay(
-      scheduler, allocator, input, 1, p1::kStructuredWarmupFanout,
-      structured_hits);
-  structured_hits.reset();
-  const StructuredRun structured = run_structured_replay(
-      scheduler, allocator, input, p1::kStructuredRounds,
-      p1::kStructuredFanout, structured_hits);
-  const std::uint64_t structured_callbacks =
-      p1::kStructuredRounds * p1::kStructuredFanout;
-  p1::print_measurement(
-      "structured-spawn-join",
-      static_cast<double>(structured_callbacks) * 1e9 / structured.wall_ns,
-      p1::kStructuredRounds, p1::kStructuredFanout, structured_callbacks,
-      structured.checksum, structured.wall_ns, structured_hits, affinity);
 
   p1::WorkerHits wake_hits;
   const WakeRun wake = run_completion_replay(scheduler, wake_hits);

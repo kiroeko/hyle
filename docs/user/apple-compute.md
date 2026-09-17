@@ -113,3 +113,30 @@ HYLE DAG。完整例见 [Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)
 `context.environment()` 提供冷创建时记录的 GPU 名称/架构、macOS runtime/build、编译 SDK/部署下限、
 Metal compiler 和 MLX pin。规则可匹配这些事实；执行中不探测或计时选优。未知硬件采用合法的成熟
 MLX 基线，不外推 SOTA。默认 deployment 14.4 的构建未启用 NAX，不能拿 M4 验证声明 M5/NAX 资格。
+
+## 可选编译诊断
+
+需要保存编译依据时，传入一个独立报告：
+
+```cpp
+hyle::graph::apple::CompileReport report;
+auto program = hyle::graph::apple::compile(
+    context, graph, ready_constants, {.report = &report});
+if (!program) {
+  // report.status 与返回错误一致；没有上一次成功编译的残留统计。
+  return program.error();
+}
+```
+
+报告复制环境/版本、输入输出描述、live 节点原 ordinal 及数值 traits、固定实现规则、边界和并发
+政策。它不保留 Graph、Program、常量、custom payload 或设备 owner，资源释放后仍可读。
+每次 compile 先 reset；报告自身内存不足也会拒绝编译。默认不传报告，执行期不构造诊断信息。
+同一个 report 不能被并发编译写入。
+
+`declared_constant_count` 与 `logical_constant_bytes` 按声明 views 统计，重复引用也重复计数；
+它们不是实际驻留内存。`private_storage_bytes` 保持 unknown，MLX 内部融合、私有 heap 和 driver
+分配不能从逻辑 shape 精确推断。
+
+需要主机调用跟踪时，构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client。
+prepare/compile、submit、checked wait 或 native owner 的执行范围随实际入口记录；默认 OFF 不
+求值跟踪参数、不创建 profiler 状态。这些是主机范围，不能解释为 GPU kernel 时间。

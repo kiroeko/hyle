@@ -7,10 +7,7 @@ if(HYLE_STATIC AND HYLE_COMPUTE_ONEDNN_ENABLED AND TARGET hyle_sched)
       hyle_graph_provider_onednn
       hyle_compute_provider_onednn
       hyle_compute_backend_cpu
-      hyle_simd
       nanobench)
-    target_include_directories(${target} PRIVATE
-      "${PROJECT_SOURCE_DIR}/src/compute_provider_onednn")
     set_property(TARGET ${target}
       PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(${target})

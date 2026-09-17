@@ -51,22 +51,34 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
                         builder.add(c::Operation::custom(Affine{}), projected));
   HYLE_RETURN_IF_ERROR(builder.publish(output));
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
-  return gv::compile(
+  gv::CompileReport report;
+  auto program = gv::compile(
       context, graph, constants,
       {.custom = [](const v::Context &owner, const c::Operation &operation,
                     std::span<const c::TensorDesc>,
                     const c::TensorDesc &description)
            -> hyle::Result<gv::CustomDispatch> {
-        if (!operation.custom_as<Affine>())
-          return std::unexpected(
-              hyle::Status::Unimplemented("unknown application schema"));
-        HYLE_ASSIGN_OR_RETURN(auto kernel, s::affine(owner));
-        HYLE_ASSIGN_OR_RETURN(auto elements, description.element_count());
-        const auto count = static_cast<std::uint32_t>(elements);
-        return gv::CustomDispatch{
-            std::move(kernel), {(count + 63) / 64, 1, 1}, s::count_push(count)};
-      }});
+         if (!operation.custom_as<Affine>())
+           return std::unexpected(
+               hyle::Status::Unimplemented("unknown application schema"));
+         HYLE_ASSIGN_OR_RETURN(auto kernel, s::affine(owner));
+         HYLE_ASSIGN_OR_RETURN(auto elements, description.element_count());
+         const auto count = static_cast<std::uint32_t>(elements);
+         return gv::CustomDispatch{std::move(kernel),
+                                   {(count + 63) / 64, 1, 1},
+                                   s::count_push(count)};
+       },
+       .report = &report});
+  if (!program)
+    return program;
+  if (!report.status.ok() || report.nodes.size() != 5 ||
+      report.native_dispatch_count != 5 ||
+      report.invocation_storage_block_bytes.empty() ||
+      report.opaque_storage_bytes)
+    return std::unexpected(
+        hyle::Status::Internal("incomplete Vulkan compilation report"));
   // Native pipelines/constants survive this local Graph and its tensors.
+  return program;
 }
 
 inline hyle::Status run() {

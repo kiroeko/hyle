@@ -145,14 +145,13 @@ v::Program graph_program(const v::Context &context, const Data &data) {
 
 class Harness {
 public:
-  Harness(const Data &data, bool peer, bool raw = false)
+  Harness(const Data &data, bool peer)
       : data_(data), quota_(hyle::mem::system_allocator()),
         context_(take(v::Context::create({
 #if defined(HYLE_VULKAN_BENCH_LOADER)
             .loader_path = HYLE_VULKAN_BENCH_LOADER,
 #endif
-            .memory_quota = &quota_}))),
-        raw_(raw) {
+            .memory_quota = &quota_}))) {
     const auto &f = context_.environment();
     std::fprintf(
         stderr,
@@ -168,30 +167,21 @@ public:
       inputs_[slot] =
           take(context_.upload(dense(data.rows, inner),
                                std::as_bytes(std::span(data.inputs[slot]))));
-    if (peer || raw_)
+    if (peer)
       reference_ = std::make_unique<reference::Reference>(
           context_, data.rows, inner, hidden, output, data.weights);
 #if HYLE_VULKAN_GRAPH_BENCH
-    if (!raw_) {
-      program_ = peer ? reference_->owning_program(context_)
-                      : graph_program(context_, data);
-      for (auto &slot : invocations_)
-        slot = take(program_.create_invocation());
-    } else {
+    program_ = peer ? reference_->owning_program(context_)
+                    : graph_program(context_, data);
+    for (auto &slot : invocations_)
+      slot = take(program_.create_invocation());
 #else
-    if (peer || raw_) {
-#endif
+    if (peer) {
       for (int slot = 0; slot < slots; ++slot) {
         values_[slot] = reference_->values(context_, inputs_[slot]);
-        if (raw_)
-          raw_programs_[slot] = std::make_unique<reference::RawProgram>(
-              context_, *reference_, values_[slot]);
-        else
-          recorded_[slot] = reference_->record(context_, values_[slot]);
+        recorded_[slot] = reference_->record(context_, values_[slot]);
       }
-    }
-#if !HYLE_VULKAN_GRAPH_BENCH
-    else {
+    } else {
       auto weights = upload_weights(context_, data);
       const auto input = dense(data.rows, inner),
                  middle = dense(data.rows, hidden);
@@ -224,9 +214,9 @@ public:
 #endif
     resident_bytes_ = quota_.used();
     std::fprintf(stderr,
-                 "# VULKAN_RESOURCES rows=%d peer=%d raw=%d resident_bytes=%zu "
+                 "# VULKAN_RESOURCES rows=%d peer=%d resident_bytes=%zu "
                  "peak_bytes=%zu\n",
-                 data.rows, peer, raw_, quota_.used(), quota_.peak());
+                 data.rows, peer, quota_.used(), quota_.peak());
   }
   ~Harness() { require(context_.close()); }
   void run() { execute(next_++ % slots, nullptr); }
@@ -240,11 +230,6 @@ public:
 
 private:
   void execute(int slot, std::vector<float> *host) {
-    if (raw_) {
-      raw_programs_[slot]->run();
-      read(values_[slot][7], host);
-      return;
-    }
 #if HYLE_VULKAN_GRAPH_BENCH
     auto &invocation = invocations_[slot];
     require(invocation.bind(inputs_[slot]));
@@ -266,14 +251,12 @@ private:
   const Data &data_;
   hyle::mem::QuotaAllocator quota_;
   v::Context context_;
-  bool raw_;
   std::unique_ptr<reference::Reference> reference_;
   v::Program program_;
   std::array<v::Tensor, slots> inputs_;
   std::array<std::array<v::Tensor, 8>, slots> values_;
   std::array<v::Invocation, slots> invocations_;
   std::array<v::RecordedProgram, slots> recorded_;
-  std::array<std::unique_ptr<reference::RawProgram>, slots> raw_programs_;
   std::size_t resident_bytes_ = 0;
   std::uint64_t next_ = 0;
 };
@@ -316,13 +299,11 @@ void measure(int rows, bool peer_first, bool allocation_first,
   std::unique_ptr<Harness> candidate, peer;
   const auto begin = std::chrono::steady_clock::now();
   if (allocation_first) {
-    peer = std::make_unique<Harness>(data, aa != "selected",
-                                     HYLE_VULKAN_NATIVE_COST);
+    peer = std::make_unique<Harness>(data, aa != "selected");
     candidate = std::make_unique<Harness>(data, aa == "native");
   } else {
     candidate = std::make_unique<Harness>(data, aa == "native");
-    peer = std::make_unique<Harness>(data, aa != "selected",
-                                     HYLE_VULKAN_NATIVE_COST);
+    peer = std::make_unique<Harness>(data, aa != "selected");
   }
   std::fprintf(stderr, "# VULKAN_COLD rows=%d pair_prepare_ms=%.3f\n", rows,
                std::chrono::duration<double, std::milli>(
@@ -357,10 +338,7 @@ void measure(int rows, bool peer_first, bool allocation_first,
   const auto title =
       kind + " M=" + std::to_string(rows) + " K=4096 H=11008 N=4096";
   const auto candidate_name = "HYLE Vulkan " + title;
-  const auto peer_name =
-      std::string(HYLE_VULKAN_NATIVE_COST ? "Raw Vulkan "
-                                          : "ggml shader lifecycle ") +
-      title;
+  const auto peer_name = std::string("ggml shader lifecycle ") + title;
   nb::Bench bench;
   bench.title(title)
       .batch(1)
@@ -394,10 +372,7 @@ int main(int argc, char **argv) {
     const auto aa = env("HYLE_BENCH_AA_ROUTE");
     if (!aa.empty() && aa != "native" && aa != "selected")
       fail("invalid A/A route");
-    if (HYLE_VULKAN_NATIVE_COST && !aa.empty())
-      fail("raw Vulkan is NATURAL_ROUTE only");
-    if (!verify_only && aa.empty() && !HYLE_VULKAN_NATIVE_COST &&
-        !env("HYLE_PERF_RUN_NONCE").empty()) {
+    if (!verify_only && aa.empty() && !env("HYLE_PERF_RUN_NONCE").empty()) {
       std::string status;
       const auto ready =
           std::filesystem::absolute(argv[0]).parent_path() /
@@ -413,14 +388,13 @@ int main(int argc, char **argv) {
         "aa_route=%s paired_mode=nanobench-compare apple_qos=%s qos_ok=%s "
         "affinity_topology=%s caller_cpu=%s affinity_ok=%s parent_mask=%s "
         "priority=%s "
-        "run_nonce=%s verify_only=%d natural_route=%d placement=%d\n",
+        "run_nonce=%s verify_only=%d placement=%d\n",
         HYLE_VULKAN_GRAPH_BENCH ? "graph" : "direct",
         peer_first ? "peer-first" : "candidate-first",
         allocation_first ? "peer-first" : "candidate-first",
         aa.empty() ? "none" : aa.c_str(), qos.name, qos.ok, affinity.topology,
         affinity.cpu, affinity.ok, host.mask.c_str(), host.priority,
-        hyle::bench::perf::run_nonce(), verify_only, HYLE_VULKAN_NATIVE_COST,
-        HYLE_VULKAN_PLACEMENT);
+        hyle::bench::perf::run_nonce(), verify_only, HYLE_VULKAN_PLACEMENT);
     measure(1, peer_first, allocation_first, aa, verify_only);
     measure(16, peer_first, allocation_first, aa, verify_only);
   } catch (const std::exception &error) {

@@ -10,7 +10,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
       --output "${_shader_output}"
     DEPENDS build_shaders.py ${_shader_inputs}
     VERBATIM)
-  hyle_add_module(compute_route_vulkan SOURCES
+  hyle_add_module(compute_route_vulkan TRACE SOURCES
     vulkan_device.cc vulkan_run.cc vulkan_transfer.cc
     vulkan_pipeline.cc vulkan_operations.cc vulkan_program.cc vulkan_recorder.cc
     "${_shader_output}/vulkan_shaders.cc")

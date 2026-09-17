@@ -62,24 +62,14 @@ now pass qualification and the unchanged 5% NI gate at n=15. Both use the same
 precise mature device implementation, so this is integration qualification,
 not a HYLE algorithm win. The small negative Graph decode stratum is retained.
 
-## Raw native cost diagnostic
+## Retired raw-call comparison
 
-The separate `hyle_compute_cuda_native_cost_bench` and
-`hyle_graph_cuda_native_cost_bench` targets use the same frozen Marlin launcher,
-default SGLang precise activation and cuBLASLt descriptor/heuristic settings. The caller
-owns two native workspaces, cuBLAS handles, the stream, event and captured graph
-executables. A complete call restores the CUDA context, launches the full chain
-or captured graph, records one final event and waits for it. Native errors stop
-the diagnostic; this does not provide the public API's admission, retained
-ownership, recoverable error or failure-slot retirement services.
+R7 removed the two `*_cuda_native_cost_bench` targets and their raw native
+branches. One native event did not supply Direct's three Completion boundaries,
+admission, retained ownership, recoverable errors or slot retirement. That pair
+cannot establish an implementation ranking or a public-route NI verdict.
 
-These rows are `NATURAL_ROUTE` only. They quantify the complete native boundary
-and wrapper cost without pretending that one raw event supplies Direct's three
-Completion objects and lifetime services. They reject the A/A environment knob
-and cannot be used as the SAME_CONTRACT peer. They require their own full-chain
-oracle check before any cost diagnostic is interpreted.
-
-The [completed bounded diagnostic](../../evidence/performance/cuda-r4-native-boundary-v1/README.md)
-retains raw observations, same-build A/A, independent oracle, all four order
-strata and the explicit differences in lifetime services. No NI or algorithm
-ranking is assigned to it.
+The [frozen diagnostic](../../evidence/performance/cuda-r4-native-boundary-v1/README.md)
+retains its original source identity, oracle and raw observations. Reproduce it
+only at that historical revision. Current targets retain the same-service
+SGLang reference and the independent numeric oracle; R7 creates no new P1 result.

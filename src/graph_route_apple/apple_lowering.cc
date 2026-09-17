@@ -1,5 +1,7 @@
 #include "hyle/graph/apple.h"
 
+#include "hyle/obs/trace.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -104,9 +106,11 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
 }
 } // namespace
 
-Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
-                            std::span<const mx::array> constants,
-                            CompileOptions options) noexcept {
+static Result<ca::Program> compile_impl(const ca::Context &context,
+                                        const Graph &graph,
+                                        std::span<const mx::array> constants,
+                                        CompileOptions options) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.graph.apple.compile");
   if (!context || !graph || graph.output_count() == 0)
     return std::unexpected(Status::InvalidArgument(
         "Apple Graph needs a Context and published outputs"));
@@ -117,6 +121,25 @@ Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
     return std::unexpected(
         Status::InvalidArgument("Apple Graph constant count mismatch"));
   try {
+    auto *report = options.report;
+    if (report != nullptr) {
+      HYLE_ASSIGN_OR_RETURN(const auto &environment, context.environment());
+      report->environment = environment;
+      report->implementation_policy = "One MLX GPU region; fixed typed "
+                                      "lowering plus same-runtime custom nodes";
+      report->numerical_policy =
+          "Built-in F32 and affine Q4/group64; each node retains its schema "
+          "precision and accumulation contract; MLX private intermediates "
+          "unknown";
+      report->boundary_policy =
+          "Caller inputs/constants must be ready; no HYLE shadow output copy; "
+          "native result leases retain MLX outputs; internal fusion/copies "
+          "unknown";
+      report->concurrency_policy =
+          "Independent Invocation/results; one Context owner executes FIFO "
+          "and checks native completion before releasing admitted resources";
+      report->declared_constant_count = constants.size();
+    }
     auto plan = std::make_shared<Plan>();
     plan->custom = std::move(options.custom);
     plan->descriptions.resize(graph.value_count());
@@ -147,6 +170,14 @@ Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
           match(plan->descriptions[id.ordinal()], constants[i]));
       plan->constants.push_back(id.ordinal());
       plan->values.push_back(constants[i]);
+      if (report != nullptr) {
+        HYLE_ASSIGN_OR_RETURN(
+            auto bytes, plan->descriptions[id.ordinal()].required_bytes());
+        if (bytes > SIZE_MAX - report->logical_constant_bytes)
+          return std::unexpected(Status::ResourceExhausted(
+              "Apple report logical constant bytes overflow"));
+        report->logical_constant_bytes += bytes;
+      }
     }
     std::vector<bool> live(graph.value_count(), false);
     for (std::size_t i = 0; i < graph.output_count(); ++i) {
@@ -190,9 +221,23 @@ Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
       }
       nodes[i - 1] = std::move(node);
     }
-    for (auto &node : nodes) {
-      if (node)
-        plan->nodes.push_back(std::move(*node));
+    for (std::size_t index = 0; index < nodes.size(); ++index) {
+      auto &node = nodes[index];
+      if (!node)
+        continue;
+      if (report != nullptr)
+        report->nodes.push_back(CompileNodeReport{
+            .ordinal = static_cast<std::uint32_t>(index),
+            .kind = node->operation.kind(),
+            .traits = compute::operation_traits(node->operation),
+        });
+      plan->nodes.push_back(std::move(*node));
+    }
+    if (report != nullptr) {
+      for (const auto input : plan->inputs)
+        report->inputs.push_back(plan->descriptions[input]);
+      for (const auto output : plan->outputs)
+        report->outputs.push_back(plan->descriptions[output]);
     }
     return context.compile(
         [plan = std::move(plan)](const auto &inputs, mx::Stream stream) {
@@ -208,4 +253,22 @@ Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
     return std::unexpected(Status::Internal("Apple Graph preparation failed"));
   }
 }
+Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
+                            std::span<const mx::array> constants,
+                            CompileOptions options) noexcept {
+  auto *report = options.report;
+  if (report != nullptr)
+    *report = {};
+  auto program = compile_impl(context, graph, constants, std::move(options));
+  if (report != nullptr) {
+    if (!program) {
+      *report = {};
+      report->status = program.error();
+    } else {
+      report->status = Status::Ok();
+    }
+  }
+  return program;
+}
+
 } // namespace hyle::graph::apple

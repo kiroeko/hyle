@@ -132,70 +132,6 @@ RequestRun run_request_replay(marl::Scheduler& scheduler,
   return {p1::elapsed_ns(start, finish), checksum};
 }
 
-struct StructuredRun {
-  double wall_ns = 0.0;
-  std::uint64_t checksum = 0;
-};
-
-StructuredRun run_structured_body(
-    marl::Scheduler& scheduler, std::span<const std::uint64_t> input,
-    std::size_t rounds, std::size_t fanout, p1::WorkerHits& hits) {
-  std::vector<std::uint64_t> results(fanout);
-  std::uint64_t expected_checksum = 0;
-  for (std::size_t round = 0; round < rounds; ++round) {
-    for (std::size_t task = 0; task < fanout; ++task) {
-      const auto seed = static_cast<std::uint64_t>(round * fanout + task + 1);
-      expected_checksum += p1::tile_digest(input, seed);
-    }
-  }
-
-  std::uint64_t checksum = 0;
-  const auto start = p1::Clock::now();
-  for (std::size_t round = 0; round < rounds; ++round) {
-    marl::WaitGroup done(static_cast<unsigned>(fanout));
-    for (std::size_t task = 0; task < fanout; ++task) {
-      const auto seed = static_cast<std::uint64_t>(round * fanout + task + 1);
-      scheduler.enqueue(marl::Task([&, task, seed] {
-        hits.hit(peer_worker_index);
-        results[task] = p1::tile_digest(input, seed);
-        done.done();
-      }));
-    }
-    done.wait();
-    for (std::size_t task = 0; task < fanout; ++task)
-      checksum += results[task];
-  }
-  const auto finish = p1::Clock::now();
-
-  if (checksum != expected_checksum)
-    p1::fail("Marl structured replay produced a wrong result");
-  return {p1::elapsed_ns(start, finish), checksum};
-}
-
-struct StructuredContext {
-  marl::Scheduler* scheduler = nullptr;
-  std::span<const std::uint64_t> input{};
-  std::size_t rounds = 0;
-  std::size_t fanout = 0;
-  p1::WorkerHits* hits = nullptr;
-  marl::WaitGroup done{1};
-  StructuredRun result{};
-};
-
-StructuredRun run_structured_replay(
-    marl::Scheduler& scheduler, std::span<const std::uint64_t> input,
-    std::size_t rounds, std::size_t fanout, p1::WorkerHits& hits) {
-  StructuredContext context{&scheduler, input, rounds, fanout, &hits};
-  scheduler.enqueue(marl::Task([&context] {
-    context.result = run_structured_body(
-        *context.scheduler, context.input, context.rounds, context.fanout,
-        *context.hits);
-    context.done.done();
-  }));
-  context.done.wait();
-  return context.result;
-}
-
 struct WakeContext;
 struct WakeSlot {
   WakeContext* context = nullptr;
@@ -333,7 +269,7 @@ int main() {
   if (!affinity.exact())
     p1::fail("Marl worker placement differs from the requested CPU set");
 
-  std::vector<std::uint64_t> input(p1::kStructuredTileElements);
+  std::vector<std::uint64_t> input(p1::kRequestTileElements);
   for (std::size_t i = 0; i < input.size(); ++i)
     input[i] = static_cast<std::uint64_t>(i * 17 + 3);
 
@@ -352,21 +288,6 @@ int main() {
       static_cast<double>(p1::kRequestCount) * 1e9 / request.wall_ns,
       p1::kRequestCount, 1, p1::kRequestCount, request.checksum,
       request.wall_ns, request_hits, affinity);
-
-  p1::WorkerHits structured_hits;
-  (void)run_structured_replay(scheduler, input, 1,
-                              p1::kStructuredWarmupFanout, structured_hits);
-  structured_hits.reset();
-  const StructuredRun structured = run_structured_replay(
-      scheduler, input, p1::kStructuredRounds, p1::kStructuredFanout,
-      structured_hits);
-  const std::uint64_t structured_callbacks =
-      p1::kStructuredRounds * p1::kStructuredFanout;
-  p1::print_measurement(
-      "structured-spawn-join",
-      static_cast<double>(structured_callbacks) * 1e9 / structured.wall_ns,
-      p1::kStructuredRounds, p1::kStructuredFanout, structured_callbacks,
-      structured.checksum, structured.wall_ns, structured_hits, affinity);
 
   p1::WorkerHits wake_hits;
   const WakeRun wake = run_completion_replay(scheduler, wake_hits);

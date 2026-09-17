@@ -1,5 +1,7 @@
 #include "hyle/graph/vulkan.h"
 
+#include "hyle/obs/trace.h"
+
 #include <exception>
 #include <limits>
 #include <new>
@@ -11,9 +13,11 @@
 namespace hyle::graph::vulkan {
 namespace cv = compute::vulkan;
 
-Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
-                            std::span<const cv::Tensor> constants,
-                            CompileOptions options) noexcept {
+static Result<cv::Program> compile_impl(const cv::Context &context,
+                                        const Graph &graph,
+                                        std::span<const cv::Tensor> constants,
+                                        CompileOptions options) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.graph.vulkan.compile");
   if (!context || !graph || graph.output_count() == 0 ||
       graph.value_count() > (std::numeric_limits<std::uint32_t>::max)() / 2)
     return std::unexpected(Status::InvalidArgument(
@@ -25,6 +29,25 @@ Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
     return std::unexpected(
         Status::InvalidArgument("Vulkan Graph constant count mismatch"));
   try {
+    auto *report = options.report;
+    if (report != nullptr) {
+      report->environment = context.environment();
+      report->implementation_policy =
+          "Fixed original ggml F32 shaders plus cold custom SPIR-V; "
+          "device feature/limit matching, no runtime timing or provider search";
+      report->numerical_policy =
+          "Strict F32 built-ins without reduced-precision reassociation; "
+          "custom nodes retain their declared schema contract";
+      report->boundary_policy =
+          "Ready same-device inputs/constants; cold weight packing; "
+          "explicit compute visibility barriers; no host output copy; "
+          "imported buffers require a completed visibility handoff";
+      report->concurrency_policy =
+          "Each Invocation owns commands, descriptors, fence and mutable "
+          "storage blocks; admission is serialized on the Context native "
+          "queue; "
+          "retained results keep their slot until released";
+    }
     cv::detail::Plan plan;
     plan.values.resize(graph.value_count());
     auto describe = [&](ValueId id) -> Status {
@@ -89,7 +112,8 @@ Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
       }
       nodes[index - 1] = std::move(step);
     }
-    for (auto &node : nodes) {
+    for (std::size_t index = 0; index < nodes.size(); ++index) {
+      auto &node = nodes[index];
       if (!node)
         continue;
       if (node->operation.kind() == compute::OperationKind::kCustom) {
@@ -107,9 +131,36 @@ Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
         node->groups = native.groups;
         node->push_constants = std::move(native.push_constants);
       }
+      if (report != nullptr)
+        report->nodes.push_back(CompileNodeReport{
+            .ordinal = static_cast<std::uint32_t>(index),
+            .kind = node->operation.kind(),
+            .traits = compute::operation_traits(node->operation),
+        });
       plan.steps.push_back(std::move(*node));
     }
-    return cv::detail::prepare_plan(context, plan);
+    cv::detail::PlanFacts facts;
+    auto program = cv::detail::prepare_plan(
+        context, plan, report != nullptr ? &facts : nullptr);
+    if (!program)
+      return program;
+    if (report != nullptr) {
+      for (const auto input : plan.inputs)
+        report->inputs.push_back(plan.values[input].description);
+      for (const auto output : plan.outputs)
+        report->outputs.push_back(plan.values[output].description);
+      report->native_dispatch_count = facts.native_dispatch_count;
+      report->invocation_storage_block_bytes =
+          std::move(facts.invocation_storage_block_bytes);
+      report->retained_constant_owner_count =
+          facts.retained_constant_owner_count;
+      report->retained_constant_capacity_bytes =
+          facts.retained_constant_capacity_bytes;
+      report->owned_constant_allocation_bytes =
+          facts.owned_constant_allocation_bytes;
+      report->has_borrowed_constants = facts.has_borrowed_constants;
+    }
+    return program;
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted(
         "Vulkan Graph preparation allocation failed"));
@@ -119,6 +170,24 @@ Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
     return std::unexpected(
         Status::Internal("Vulkan Graph custom lowering failed"));
   }
+}
+
+Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
+                            std::span<const cv::Tensor> constants,
+                            CompileOptions options) noexcept {
+  auto *report = options.report;
+  if (report != nullptr)
+    *report = {};
+  auto program = compile_impl(context, graph, constants, std::move(options));
+  if (report != nullptr) {
+    if (!program) {
+      *report = {};
+      report->status = program.error();
+    } else {
+      report->status = Status::Ok();
+    }
+  }
+  return program;
 }
 
 } // namespace hyle::graph::vulkan

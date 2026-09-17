@@ -127,3 +127,32 @@ Kernel 的 storage bindings 按输入顺序再接输出，使用一个 set 和�
 shared memory、header/compiler 和 shader pin。默认规则在冷期匹配，执行不重新探测。未资格化
 设备采用满足限制的成熟基线或明确拒绝；Windows NVIDIA 和 MoltenVK 的证据互不冒充，AMD/Intel
 及其它 dtype 的性能保持未资格化。
+
+## 可选编译诊断
+
+需要保存编译依据时，传入一个独立报告：
+
+```cpp
+hyle::graph::vulkan::CompileReport report;
+auto program = hyle::graph::vulkan::compile(
+    context, graph, ready_constants, {.report = &report});
+if (!program) {
+  // report.status 与返回错误一致；没有上一次成功编译的残留统计。
+  return program.error();
+}
+```
+
+报告复制环境/版本、输入输出描述、live 节点原 ordinal 及数值 traits、固定实现规则、边界和并发
+政策。它不保留 Graph、Program、常量、custom payload 或设备 owner，资源释放后仍可读。
+每次 compile 先 reset；报告自身内存不足也会拒绝编译。默认不传报告，执行期不构造诊断信息。
+同一个 report 不能被并发编译写入。
+
+`native_dispatch_count` 是最终原生 dispatch 数；`invocation_storage_block_bytes` 给出每个槽
+规划的输出及可复用 scratch 容量，实际分配还可能有对齐成本。常量容量按 HYLE buffer owner 去重，
+`owned_constant_allocation_bytes` 只计已知 owned VkDeviceMemory；`has_borrowed_constants` 标明
+外借 owner，其外部物理别名和分配大小未知。`opaque_storage_bytes` 保持 unknown，不把 driver/
+pipeline 私有分配计成零。
+
+需要主机调用跟踪时，构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client。
+prepare/compile、submit、checked wait 或 native owner 的执行范围随实际入口记录；默认 OFF 不
+求值跟踪参数、不创建 profiler 状态。这些是主机范围，不能解释为 GPU kernel 时间。

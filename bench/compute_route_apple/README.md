@@ -9,8 +9,10 @@ not an operator inventory or a model inference engine.
   with an independent pinned MLX expression under the same real Context lifecycle.
 - `hyle_graph_route_apple_bench` and its placement variant compare a public typed Graph
   with that native expression; both become one whole compiled MLX region.
-- `hyle_{compute,graph}_apple_native_cost_bench` uses bare caller-thread MLX as a
-  NATURAL_ROUTE diagnostic. It cannot sign noninferiority or an algorithm ranking.
+- R7 retired `hyle_{compute,graph}_apple_native_cost_bench` and the bare caller-thread
+  MLX branch: it lacked the managed owner, admission, checked completion and
+  result lifetime services. Historical R5 observations remain bound to their
+  frozen revision; no current target can repeat this mismatched A/B.
 - `HYLE_BENCH_VERIFY_ONLY=1` checks complete outputs against an independent double oracle
   decoded from actual unsigned Q4/group64 packed weights, scales and additive biases.
   Deterministic mixed-index data avoids short-period cancellation. F32 oracle tolerance

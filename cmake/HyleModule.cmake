@@ -252,7 +252,8 @@ function(hyle_add_module name)
     message(FATAL_ERROR
       "hyle_add_module(${name} TRACE): the central component manifest does "
       "not declare this trace consumer")
-  elseif(_HYLE_TRACE_${_hyle_component_upper} AND NOT ARG_TRACE)
+  elseif(_HYLE_TRACE_${_hyle_component_upper} AND NOT ARG_TRACE
+         AND NOT ARG_OPTIONAL_ABSENT)
     message(FATAL_ERROR
       "hyle_add_module(${name}): the central component manifest declares a "
       "TRACE consumer but the real target omitted TRACE")
