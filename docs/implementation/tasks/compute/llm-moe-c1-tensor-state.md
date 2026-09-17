@@ -14,7 +14,7 @@
   `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
-- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A 的 AUDITED；其余七个 owner
+- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B 的 AUDITED；其余七个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -118,5 +118,33 @@ Graph 仍消费 `Operation(Unary{...})`，无模型字段、Provider 排序或�
 不超 double exp 域）、极小负值/大正值/±Inf/NaN、dense128边界与非连续布局/精确 alias；selector
 选中的当前 owner 和直接消费者/公开头。三交付与四路线完整片段随 C1 固定候选执行；此子集不跑 P1，
 未执行项保持未证明。仅这两个 FIX 已固定，产品 commit 前 owner 必须已在独立提交进入 AUDITED。
+
+### C1-B：Native F16/BF16 基本算术与归一化（AUDITED）
+
+审计 baseline `0449facf`。C0 的实际 320 张量及 Torch reference 已证明：embedding 和 residual
+保持 BF16，Qwen 的 norm 在 F32 计算并使用 F32 learned scale，再舍入回输入类型；Q4/Q8 验收还需
+F16 激活。源码检查确认 Native 的 Gather/Select/Copy/Concat 已按标量字节宽度实现，应复用；
+`elementwise.cc` 的 arithmetic、`normalization.cc` 的 LayerNorm、`native_provider.cc` 的 RMSNorm
+目前硬拒绝半精度。现有 SIMD conversion、数学核和 row executor 足以承载本子集，不引入依赖。
+
+| FIX | 固定允许改动 | 数值 / 成本 / 验收 |
+|---|---|---|
+| B01 | 共同 RMSNorm/LayerNorm 允许 F16/BF16 input 搭配同类型或 F32 scale/bias | 每个参数独立验证 dtype、rank、hidden；输出保持 input dtype；F64/整数及不匹配宽度仍按合同拒绝；这是实际 Qwen 参数类型，不降级权重 |
+| B02 | Native Unary/Binary 扩到 F16/BF16，复用已有 dense/广播/stride/alias 机制 | 在 F32 计算、输出 RNE 一次；dense 固定 128 元素分块转换后调用既有 SIMD；strided 使用安全 byte load/store；无整张量展开、堆分配、线程或新 metadata |
+| B03 | Native RMSNorm/LayerNorm 扩到 dense F16/BF16 和 B01 参数域 | 明确 F32 accumulation；固定 128 元素栈分块，RMS 两遍、LayerNorm 三遍，复用 SIMD sum/dot 与 conversion；只在最终 affine 完成后舍入；按既有 row executor 分工，exact input alias 安全，旧 F32 核保留 |
+
+承载为 `BORROW` 既有 SIMD + `OWN` 薄的类型/分块接线。定型不新增公共对象或 NativePlan 字段。
+半精度 GEMM、GatedActivation、Reduce/Softmax/TopK、Scatter-add 和 scan 尚未由本子集授权；它们
+有各自的累加/舍入或状态合同，继续按 C1/C2 的具名 consumer 审计，不将当前接线算作 F01–F04 完成。
+
+普通 Direct/Graph 沿用 Unary/Binary/RmsNorm/LayerNorm；Gemma 的 `1+gamma` 仍通过明确的普通
+Binary/常量组成，不引入模型专用参数。prepare 根据 dtype 绑定模板实例，执行不重新选择实现。
+生命周期和 completion 复用现有 Native；不改变关闭、并发、failure-prefix 或 allocator 合同。
+
+适用验证：共同 mixed-parameter 推导/拒绝；每个 dtype 的独立 double 数值 oracle 和位级舍入；
+全部 Unary/Binary 模式、广播和奇数字节 stride、精确 alias、空/1/127/128/129/257、极值/NaN/Inf；
+RMS/LayerNorm 的 F32 与同类型 scale/bias、常量 row、零 epsilon、129 与实际 2048 hidden、两个
+invocation 与参数保留；已有 F32 回归和 selector 对应门。C1-A 与 B 共用一次稳定子候选的公开面/
+消费者检查，不因文档变化重建。完整模型片段、四路线三交付与 P1 仍按 C1 整包固定候选执行。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
