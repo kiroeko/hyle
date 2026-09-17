@@ -102,10 +102,10 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
 | 单目计算/激活 | `Unary` | f32/f16/bf16 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU/Softplus；dense 复用 SIMD，半精度和 Softplus 使用固定大小栈上分块，plain stride 可 materialize |
-| 双目计算 | `Binary` | f32 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
+| 双目计算 | `Binary` | f32/f16/bf16 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
 | 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
 | reduction | `Reduce` | f32 Sum/Mean/Min/Max；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
-| normalization | `RmsNorm` / `LayerNorm` | dense f32 `[..., hidden]`；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；逐 row、允许精确 input/output in-place |
+| normalization | `RmsNorm` / `LayerNorm` | dense f32/f16/bf16 `[..., hidden]`，F32 accumulation；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；半精度参数也可用 F32；允许精确 input/output in-place |
 | matrix multiply | `MatMul` | f32 `[...,M,K] * [...,K,N]` 与 NumPy-style batch broadcast；两端 batch 都可广播，B 的末两维可 row-major 或物理 `[...,N,K]` 的转置 view |
 | gated activation | `GatedActivation` | dense f32 packed `[...,2*d]` 或 separate gate/value；SiLU、exact GELU、GELU-tanh 三种模式均产生 `[...,d]` |
 | 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 当前为 f32，并可精确原地更新 input0 |

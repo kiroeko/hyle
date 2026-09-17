@@ -14,7 +14,7 @@
   `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
-- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B 的 AUDITED；其余七个 owner
+- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C 的 AUDITED；其余七个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -146,5 +146,38 @@ Binary/常量组成，不引入模型专用参数。prepare 根据 dtype 绑定�
 RMS/LayerNorm 的 F32 与同类型 scale/bias、常量 row、零 epsilon、129 与实际 2048 hidden、两个
 invocation 与参数保留；已有 F32 回归和 selector 对应门。C1-A 与 B 共用一次稳定子候选的公开面/
 消费者检查，不因文档变化重建。完整模型片段、四路线三交付与 P1 仍按 C1 整包固定候选执行。
+
+### C1-A/B 实施事实
+
+- `0449facf`：Softplus schema + Native F32；W1 MSVC Release/WERROR，compute_ops 与 Native
+  correctness 实际通过，极值/stride/alias 已运行。
+- `782c575e`：Native F16/BF16 Unary/Binary、RMSNorm/LayerNorm 和 F32 norm 参数；W1 相同
+  工具链两个 suite 共 127 case 实际通过。独立半精度 oracle 用数学解码和相邻可表示值搜索，未复用
+  产品 conversion；覆盖 0/1/127/128/129/257、2048 hidden、混合参数、两 invocation 与旧结果保留。
+- 原始 build/test 日志位于 `C:\hyle-scratch\llm-moe-c1-20260917`。公开面/消费者/交付 selected
+  gates 正在独立、只读的 Windows `782c575e` worktree 执行；未完成的门未签 PASS。
+- 无 P1；无 C1 整包、整模型或 GPU 新覆盖 verdict。矩阵仍 UNPROVEN。
+
+### C1-C：Native 剩余半精度归约与门控（AUDITED）
+
+baseline `782c575e`。真实需求沿用 F02–F04：Torch 的 half attention softmax 在 F32 求值后回到
+activation dtype；SwiGLU 在乘法完成后舍入；MoE router 的 TopK/归约/重复索引回收及 residual
+需要相同普通入口。已定向读取 `reduction.cc`、`native_provider.cc` 的 gated 路径、`indexing.cc`、
+`transformer.cc` 的 Softmax/TopK 与当前公共精度 traits。无需新 Provider 或新依赖。
+
+| FIX | 固定改动与语义 | P0 / 必需验证 |
+|---|---|---|
+| C01 | F16/BF16 Reduce 的 Sum/Mean/Min/Max，明确 `accumulation_type=F32`；Unknown 的半精度累加域保持拒绝 | dense all/last-axis 128 元素分块；general 按 output/reduced 坐标走一次输入，O(N·rank)，不按 output 分块重扫全输入；最终一次舍入；多轴/stride/empty/NaN/Inf |
+| C02 | half packed/separate GatedActivation 的 SiLU/exact GELU/GELU-tanh | F32 activation 与乘法后一次输出舍入；128 元素两块 scratch；复用既有一次 host mapping 与 row executor；无整张量展开、无新增 plan 字段；真实 hidden、尾块、两种输入形状 |
+| C03 | half Scatter-add | 沿既有 updates 逻辑行主序，每个加法在 F32 求值并舍入写回 storage；保留 checked indices 在任何 output 写入前拒绝、assign 与 exact input0 alias；重复索引、溢出拒绝不改输出 |
+| C04 | half Softmax/LogSoftmax，Bool 与同类型 additive mask，F32 accumulation | 每 invocation 显式一个 F32 row workspace，冷期 checked size；每 row 转换/应用 mask 后复用完整 SIMD softmax，再一次输出舍入；任意 axis/stride、全 mask、极值、alias、workspace 失败；F32 旧核不变 |
+| C05 | half TopK values + i32 indices，既有 stable/NaN/tie 规则 | 复用已有 row F32 workspace 与成熟 top-k；workspace 在 prepare 明确并复用；不展平整个 tensor；任意 axis、tail、sorted/unsorted、重复分数、NaN 与两 invocation |
+
+承载仍为既有 SIMD 与 Native 的薄类型接线。F32 路径保留；精度、mask 或 scratch 条件不满足时准备
+拒绝，运行不另找 Provider。当前不改 softmax mask 公共 dtype 合同，不顺手改 RoPE/attention/GEMM，
+后者按对应包处理。上述五项的 finite FIX 在产品修改前独立提交；不因 enum 或测试行机械填全目录。
+
+验证沿用 C1 卡，增加具名 double/排序/顺序舍入 oracle 和 workspace/checked-index 失败测试；本次
+实现没有公开 API 改动时只跑 owning factor 与 selector 直接消费者。完整 bundle 三交付/P1 仍待 C1。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
