@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "tensor_test_support.h"
+#include "vulkan_internal.h"
 
 namespace {
 using namespace vulkan_tensor_test;
@@ -76,6 +77,40 @@ TEST(VulkanTensor, ExactStorageHandlesOddStridesWordsAndEmptyTransfers) {
           capacity, copy->native_owner());
       ASSERT_TRUE(borrowed) << borrowed.error().message();
       EXPECT_EQ(bits(context, *borrowed), raw);
+      if (count == 3) {
+        // Physical padding belongs to the borrowed slice. Neither neighboring
+        // slice may change when the packed last word is written.
+        const auto alignment = std::max(
+            VkDeviceSize{4},
+            v::detail::Access::runtime(context)
+                ->device->properties.limits.minStorageBufferOffsetAlignment);
+        std::vector<std::byte> guarded(alignment + capacity + 8,
+                                       std::byte{0x5a});
+        const auto backing =
+            context
+                .upload(dense(c::DataType::kBool,
+                              {static_cast<std::int64_t>(guarded.size())}),
+                        guarded)
+                .value();
+        const auto slice =
+            context
+                .borrow_ready(copy->description(), backing.native_buffer(),
+                              alignment, capacity, backing.native_owner())
+                .value();
+        const auto program = v::prepare(context, c::Copy{}, desc).value();
+        auto recorder = v::Recorder::create(context).value();
+        ASSERT_TRUE(
+            recorder.append(program, std::array{input}, std::array{slice})
+                .ok());
+        auto recording = recorder.finish().value();
+        auto work = recording.submit().value();
+        ASSERT_TRUE(work.wait().ok());
+        EXPECT_EQ(bits(context, slice), raw);
+        const auto observed = bytes(context, backing);
+        for (std::size_t i = 0; i < observed.size(); ++i)
+          if (i < alignment || i >= alignment + capacity)
+            EXPECT_EQ(observed[i], guarded[i]) << i;
+      }
       EXPECT_FALSE(context.borrow_ready(
           copy->description(), copy->native_buffer(), copy->native_offset() + 1,
           capacity, copy->native_owner()));
