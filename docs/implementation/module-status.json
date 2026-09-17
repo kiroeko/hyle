@@ -402,14 +402,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-cuda-device-status.md",
+      "summary": "LLM/MoE C1-L SCOPED：checked GPU 索引与 I32 Scan 需要可恢复的异步算法状态；仅审计 CUDA 原生 Completion/capture/依赖的定向缺口，有限 FIX 待固定。"
     },
     {
       "module": "compute_provider_native",
