@@ -157,6 +157,8 @@ invocation 与参数保留；已有 F32 回归和 selector 对应门。C1-A 与 
 - 原始 build/test 日志位于 `C:\hyle-scratch\llm-moe-c1-20260917`。公开面/消费者/交付 selected
   gates 正在独立、只读的 Windows `782c575e` worktree 执行；未完成的门未签 PASS。
 - 无 P1；无 C1 整包、整模型或 GPU 新覆盖 verdict。矩阵仍 UNPROVEN。
+- registry 摘要曾仍写 C1-A 限定，现已同步 A/B/C。实际有限 FIX 分别已在 `ffef1a5f`、
+  `885f5f3d`、`9181710f` 独立卡提交后才写各自产品；owner 持续 AUDITED，没有状态跳级。
 
 ### C1-C：Native 剩余半精度归约与门控（AUDITED）
 
@@ -169,9 +171,13 @@ activation dtype；SwiGLU 在乘法完成后舍入；MoE router 的 TopK/归约/
 |---|---|---|
 | C01 | F16/BF16 Reduce 的 Sum/Mean/Min/Max，明确 `accumulation_type=F32`；Unknown 的半精度累加域保持拒绝 | dense all/last-axis 128 元素分块；general 按 output/reduced 坐标走一次输入，O(N·rank)，不按 output 分块重扫全输入；最终一次舍入；多轴/stride/empty/NaN/Inf |
 | C02 | half packed/separate GatedActivation 的 SiLU/exact GELU/GELU-tanh | F32 activation 与乘法后一次输出舍入；128 元素两块 scratch；复用既有一次 host mapping 与 row executor；无整张量展开、无新增 plan 字段；真实 hidden、尾块、两种输入形状 |
-| C03 | half Scatter-add | 沿既有 updates 逻辑行主序，每个加法在 F32 求值并舍入写回 storage；保留 checked indices 在任何 output 写入前拒绝、assign 与 exact input0 alias；重复索引、溢出拒绝不改输出 |
+| C03 | half Scatter-add | 沿既有 updates 逻辑行主序，每个加法在 F32 求值并舍入写回 storage；保留 checked indices 在任何 output 写入前拒绝、assign 与 exact input0 alias；重复索引、索引越界拒绝不改输出 |
 | C04 | half Softmax/LogSoftmax，Bool 与同类型 additive mask，F32 accumulation | 每 invocation 显式一个 F32 row workspace，冷期 checked size；每 row 转换/应用 mask 后复用完整 SIMD softmax，再一次输出舍入；任意 axis/stride、全 mask、极值、alias、workspace 失败；F32 旧核不变 |
 | C05 | half TopK values + i32 indices，既有 stable/NaN/tie 规则 | 复用已有 row F32 workspace 与成熟 top-k；workspace 在 prepare 明确并复用；不展平整个 tensor；任意 axis、tail、sorted/unsorted、重复分数、NaN 与两 invocation |
+
+源码反例收回 B03 的精度检查：旧 F32 RMSNorm 分支未检查 `accumulation_type`，会接受声明 F64
+而实际调用 F32 SIMD。当前同 owner 的有限修复必须在冷期拒绝该域，并补拒绝测试；没有改默认 F32
+算法或依赖 owner。C04/C05 的零 output 域明确 workspace=0，不能让空工作负载分配整行 scratch。
 
 承载仍为既有 SIMD 与 Native 的薄类型接线。F32 路径保留；精度、mask 或 scratch 条件不满足时准备
 拒绝，运行不另找 Provider。当前不改 softmax mask 公共 dtype 合同，不顺手改 RoPE/attention/GEMM，

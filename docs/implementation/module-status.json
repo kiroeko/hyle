@@ -387,7 +387,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A AUDITED：固定 F03.2 Softplus 的共同 Unary 语义和 Native F32 执行，复用既有 SIMD exp/log1p 与原生寿命；仅允许卡中 A01/A02，其他 C1 能力继续 SCOPED 审计。"
+      "summary": "LLM/MoE C1-A/B AUDITED：Softplus 共同语义及半精度 norm 的 F32 参数域已实施，W1 对应 correctness 通过；按 C1 卡固定 FIX，公开面/消费者/交付检查进行中；整包未裁决。"
     },
     {
       "module": "compute_backend_cpu",
@@ -415,7 +415,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A AUDITED：固定 F03.2 Softplus 的共同 Unary 语义和 Native F32 执行，复用既有 SIMD exp/log1p 与原生寿命；仅允许卡中 A01/A02，其他 C1 能力继续 SCOPED 审计。"
+      "summary": "LLM/MoE C1-A/B/C AUDITED：Softplus、F16/BF16 Unary/Binary 与 mixed norm 已实施并通过 W1 局部 correctness；C01–C05 半精度归约/门控/Scatter-add/Softmax/TopK 已固定，正在实施；四路线 C1 未完成。"
     },
     {
       "module": "compute_sched",
