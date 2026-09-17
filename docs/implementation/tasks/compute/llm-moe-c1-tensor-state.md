@@ -17,7 +17,7 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04
   进入 AUDITED；`graph` 与 Vulkan 两个 owner 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
@@ -691,5 +691,30 @@ checked Gather/Scatter/Scan；它们的数值/异步错误合同继续在 C1 后
   selector 分别保留 112/110 项 skipped reasons；本子集实际执行两台 Mac configure、两个 factor
   与两个头检查。完整 C1 真实权重、三交付/其他环境与等责 P1 尚未运行；Apple 剩余归约/索引/
   Scan、Vulkan 及整包验收继续按有限 FIX 推进，矩阵仍 UNPROVEN，不签四路线共同完成。
+
+### C1-Q：Apple 归约、Softmax 与稳定 TopK（AUDITED）
+
+baseline `2b411b37`，owner `/root` / `compute_route_apple` 与 `graph_route_apple`。F04 的归一化、
+router score→TopK→选中权重归一化，以及 F10 的 L2 norm 组合需要这组能力；复用已有共同 schema，
+不加入 MoE 策略或新公开对象。P 的一次产品纠正已记录；Q 是此前明确留下的不同算法机制。
+
+已核对同一 MLX pin `1f8e74e` 的 `mlx/ops.cpp`、Metal `kernels/reduction/ops.h`、
+`kernels/softmax.h`、`kernels/arg_reduce.metal`、`kernels/sort.h` 与 `sort.cpp`。
+MLX GPU ArgPartition 当前也是全排序，不能将其声称为更低复杂度选择；ArgMin 对等值取小 index，
+merge sort 的比较/合并在相等时保持原序。直接 float Min/Max 的标量比较未定义混合 ±0 优先级，
+不能继承为 HYLE 的 signed-zero 合同。共同语义来自 C1-C/J 已绑定的真实 consumer 和独立公式，
+本轮不改变它们。`BORROW` 原生归约/softmax/稳定排序与资源管理；`OWN` 精度、空域、排序 key
+和最终输出的薄适配；不复制 vendor kernel、不自建逐 kernel 执行器。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| Q01 | Apple Reduce Sum/Mean/Min/Max，F32/F16/BF16、任意合法 axis 集/keep-dim/native layout；F32 累加，half 必须显式声明 | 空集合 Sum=0、Mean=NaN、Min=+Inf、Max=-Inf；空输出不启动归约。Sum/Mean 借原生 F32；Min/Max 将 IEEE F32 位映射为单调 U32 key，NaN 映至胜出 sentinel，借一次原生整数归约再逆映射，保护 NaN 传播和 ±0。O(N)，key/精度转换与 native 临时成本计费 |
+| Q02 | Apple Softmax/LogSoftmax，三浮点、任意轴、scale、广播 Bool/同类型 additive mask、显式 F32 accumulation | Bool false 覆盖坏输入为 -Inf；先 F32 scale/mask，最终一次 storage 舍入。Softmax 借原生 precise；LogSoftmax 用减行最大值后的 exp/sum/log，避免大共同偏置抵消。任何未屏蔽 NaN/+Inf 或全 -Inf 行全输出 NaN；空域不归约。O(N)，融合/布局/中间量如实计费 |
+| Q03 | Apple TopK 两输出，F32/F16/BF16、任意轴，values 保留原始位、I32 indices；largest/smallest、stable/sorted flags | 同分含 ±0 按小索引优先，NaN 总在最后；U32 ordered key 合并 ±0、统一 NaN 排序，k=1 原生 ArgMin O(N)，k>1 原生 stable merge argsort O(N log N) 后切片，原始整数 view 取值后还原 storage。允许 sorted=false 仍有序；空非axis域不排序。不把 MLX 私有 scratch 写为零，也不声称胜过未比较 peer |
+| Q04 | 普通 Direct/Graph 两输出和组合、报告/指南、独立 oracle 与生命周期 | 三 dtype、多轴/负轴/rank8/native transpose/broadcast、空/scalar/1/127/129/2048；TopK 实际 E/k 与跨 2048 tile 长行、ties/NaN/±Inf/±0、原位 bits oracle；softmax 非有限/mask/大偏置、拒绝域；score→Softmax→TopK→Reduce→归一化，两个槽/变更输入/保留旧结果/close，既有 OOM/错误回归。Air/Mini 对应 factors；完整真实权重/三交付/其他环境/等责 P1 仍随 C1 固定 bundle |
+
+本子集只改 Apple 两 owner 的私有 lowering/source list、自然 consumer/文档；多输出冷推导复用
+现有 `infer_output_descriptions`。不接 checked Gather/Scatter/Scan，不变 Context 运行状态机、
+共同 Graph/API、依赖 pin 或公共治理。本轮不启动 P1；实现稳定后运行具名正确性，不反复追加姿势。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
