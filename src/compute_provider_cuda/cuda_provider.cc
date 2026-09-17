@@ -8,6 +8,7 @@
 
 #include "native_context.h"
 #include "native_kernel.h"
+#include "norm_provider.h"
 #include "provider_internal.h"
 #include "tensor_provider.h"
 
@@ -107,6 +108,9 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (!Sglang) {
+    if (request.operation.kind() == OperationKind::kRmsNorm ||
+        request.operation.kind() == OperationKind::kLayerNorm)
+      return normalization::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() != OperationKind::kGatedActivation)
       return tensor::propose(request, inputs, outputs, proposal);
   }
@@ -222,6 +226,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (!Sglang) {
+    if (request.route == normalization::kRoute && request.shape.exact())
+      return normalization::prepare(state, request, allocator, output);
     if (request.route == tensor::kRoute && request.shape.exact())
       return tensor::prepare(state, request, allocator, output);
   }
@@ -290,7 +296,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-gated" : "v3-tensor"},
+                 .version = Sglang ? "06992c92-precise-gated" : "v4-norm"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

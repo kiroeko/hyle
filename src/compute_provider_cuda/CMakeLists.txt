@@ -6,7 +6,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   enable_language(CUDA)
   hyle_add_module(compute_provider_cuda SOURCES
     cuda_provider.cc native_kernel.cu sglang_kernel.cu
-    tensor_provider.cc tensor_kernel.cu)
+    tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu)
   set_target_properties(hyle_compute_provider_cuda PROPERTIES
     CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
   target_include_directories(hyle_compute_provider_cuda PRIVATE

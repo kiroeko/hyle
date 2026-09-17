@@ -392,27 +392,29 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   EXPECT_FALSE(lane.in_flight());
 }
 
-void pending_completion_retains_program(compute::Provider selected,
-                                        bool unary = false) {
+void pending_completion_retains_program(
+    compute::Provider selected,
+    compute::Operation operation =
+        compute::Operation(compute::GatedActivation{})) {
   auto owner = context(selected);
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   auto queue = owner.create_queue().value();
-  Tensor input(matrix(compute::DataType::kFloat32, 1, unary ? 256 : 512),
-               resource.ref());
+  Tensor input(
+      matrix(compute::DataType::kFloat32, 1,
+             operation.kind() == compute::OperationKind::kGatedActivation
+                 ? 512
+                 : 256),
+      resource.ref());
   Tensor output(matrix(compute::DataType::kFloat32, 1, 256), resource.ref());
-  std::vector<float> values(unary ? 256 : 512, 1.0F);
+  std::vector<float> values(
+      operation.kind() == compute::OperationKind::kGatedActivation ? 512 : 256,
+      1.0F);
   ASSERT_TRUE(
       input.storage.view().write(std::as_bytes(std::span(values))).ok());
   const std::array inputs{input.view.as_const()};
   const std::array outputs{output.view};
-  auto prepared =
-      compute::prepare(
-          owner,
-          unary ? compute::Operation(compute::Unary{compute::UnaryKind::kSilu})
-                : compute::Operation(compute::GatedActivation{}),
-          inputs, outputs)
-          .value();
+  auto prepared = compute::prepare(owner, operation, inputs, outputs).value();
   auto lane = prepared.create_invocation().value();
   auto warm = lane.submit(queue, inputs, outputs).value();
   ASSERT_TRUE(warm.wait().ok());
@@ -448,8 +450,13 @@ void pending_completion_retains_program(compute::Provider selected,
   ASSERT_TRUE(output.storage.view()
                   .read(std::as_writable_bytes(std::span(actual)))
                   .ok());
+  const double expected = operation.kind() == compute::OperationKind::kLayerNorm
+                              ? 0
+                          : operation.kind() == compute::OperationKind::kRmsNorm
+                              ? 1 / std::sqrt(1.0 + 1e-5)
+                              : 1.0 / (1.0 + std::exp(-1.0));
   for (const auto value : actual)
-    EXPECT_NEAR(value, 1.0 / (1.0 + std::exp(-1.0)), 0.000001);
+    EXPECT_NEAR(value, expected, 0.000001);
 }
 
 struct MetadataAllocator final {
@@ -490,8 +497,10 @@ struct MetadataAllocator final {
   }
 };
 
-void metadata_failures_rollback(compute::Provider selected,
-                                bool unary = false) {
+void metadata_failures_rollback(
+    compute::Provider selected,
+    compute::Operation operation =
+        compute::Operation(compute::GatedActivation{})) {
   MetadataAllocator allocator;
   {
     const std::array providers{selected};
@@ -502,17 +511,17 @@ void metadata_failures_rollback(compute::Provider selected,
             .value();
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
-    Tensor input(matrix(compute::DataType::kFloat32, 1, unary ? 256 : 512),
-                 resource.ref());
+    Tensor input(
+        matrix(compute::DataType::kFloat32, 1,
+               operation.kind() == compute::OperationKind::kGatedActivation
+                   ? 512
+                   : 256),
+        resource.ref());
     Tensor output(matrix(compute::DataType::kFloat32, 1, 256), resource.ref());
     const std::array inputs{input.view.as_const()};
     const std::array outputs{output.view};
     const auto prepare = [&] {
-      return compute::prepare(
-          owner,
-          unary ? compute::Operation(compute::Unary{compute::UnaryKind::kSilu})
-                : compute::Operation(compute::GatedActivation{}),
-          inputs, outputs);
+      return compute::prepare(owner, operation, inputs, outputs);
     };
     const auto begin = allocator.attempts;
     {
@@ -550,7 +559,10 @@ void metadata_failures_rollback(compute::Provider selected,
     auto lane = prepared.create_invocation().value();
     auto queue = owner.create_queue().value();
     ASSERT_TRUE(queue.reserve_completions(1).ok());
-    std::vector<float> values(unary ? 256 : 512, 1.0F);
+    std::vector<float> values(
+        operation.kind() == compute::OperationKind::kGatedActivation ? 512
+                                                                     : 256,
+        1.0F);
     ASSERT_TRUE(
         input.storage.view().write(std::as_bytes(std::span(values))).ok());
     const auto replay_begin = allocator.attempts;
@@ -567,13 +579,25 @@ void metadata_failures_rollback(compute::Provider selected,
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
   pending_completion_retains_program(compute::cuda_native::provider());
   pending_completion_retains_program(compute::cuda_native::sglang_provider());
-  pending_completion_retains_program(compute::cuda_native::provider(), true);
+  pending_completion_retains_program(
+      compute::cuda_native::provider(),
+      compute::Operation(compute::Unary{compute::UnaryKind::kSilu}));
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::RmsNorm{}));
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::LayerNorm{}));
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
   metadata_failures_rollback(compute::cuda_native::provider());
   metadata_failures_rollback(compute::cuda_native::sglang_provider());
-  metadata_failures_rollback(compute::cuda_native::provider(), true);
+  metadata_failures_rollback(
+      compute::cuda_native::provider(),
+      compute::Operation(compute::Unary{compute::UnaryKind::kSilu}));
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::RmsNorm{}));
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::LayerNorm{}));
 }
 
 } // namespace

@@ -416,4 +416,209 @@ TEST(CudaTensor, ViewUsesRequiredStorageOffsetAndCopyRejectsOverlap) {
       copy_slot.submit(fixture.queue, input.view.as_const(), input.view)
           .has_value());
 }
+template <class T, class Weight, class Bias>
+void normalization_case(Fixture &fixture, std::int64_t width, bool layer,
+                        unsigned parameters, float epsilon, bool inplace) {
+  const auto description =
+      TensorDesc::dense(half_test::data_type<T>(),
+                        std::array<std::int64_t, 2>{3, width})
+          .value();
+  const auto weight_desc =
+      TensorDesc::dense(half_test::data_type<Weight>(), std::array{width})
+          .value();
+  const auto bias_desc =
+      TensorDesc::dense(half_test::data_type<Bias>(), std::array{width})
+          .value();
+  Tensor input(description, fixture.resource.ref()),
+      output(description, fixture.resource.ref());
+  Tensor scale(weight_desc, fixture.resource.ref()),
+      bias(bias_desc, fixture.resource.ref());
+  std::vector<T> values(static_cast<std::size_t>(3 * width));
+  std::vector<Weight> weights(static_cast<std::size_t>(width));
+  std::vector<Bias> biases(static_cast<std::size_t>(width));
+  for (std::size_t i = 0; i < values.size(); ++i) {
+    const double value = i < static_cast<std::size_t>(width)
+                             ? 0.75
+                             : (static_cast<int>(i % 37) - 18) * 0.1875;
+    values[i] = half_test::encode<T>(value);
+  }
+  for (std::size_t i = 0; i < weights.size(); ++i) {
+    weights[i] = half_test::encode<Weight>(1 + (i % 17) * 0.0031);
+    biases[i] = half_test::encode<Bias>((static_cast<int>(i % 7) - 3) * 0.0159);
+  }
+  ASSERT_TRUE(input.write<T>(values).ok());
+  ASSERT_TRUE(scale.write<Weight>(weights).ok());
+  ASSERT_TRUE(bias.write<Bias>(biases).ok());
+  const std::array all_inputs{input.view.as_const(), scale.view.as_const(),
+                              bias.view.as_const()};
+  const auto operation =
+      layer ? Operation(LayerNorm{epsilon}) : Operation(RmsNorm{epsilon});
+  const auto status =
+      fixture.execute(operation, std::span(all_inputs).first(1 + parameters),
+                      inplace ? input.view : output.view);
+  ASSERT_TRUE(status.ok()) << status.message();
+  const auto actual = inplace ? input.read<T>() : output.read<T>();
+  if (width == 0) {
+    EXPECT_TRUE(actual.empty());
+    return;
+  }
+  for (std::size_t row = 0; row < 3; ++row) {
+    double mean = 0;
+    if (layer) {
+      for (std::int64_t col = 0; col < width; ++col)
+        mean += half_test::decode(values[row * width + col]);
+      mean /= width;
+    }
+    double variance = 0;
+    for (std::int64_t col = 0; col < width; ++col) {
+      const double centered =
+          half_test::decode(values[row * width + col]) - mean;
+      variance += centered * centered;
+    }
+    variance /= width;
+    const double inverse = 1 / std::sqrt(variance + epsilon);
+    for (std::int64_t col = 0; col < width; ++col) {
+      double expected =
+          (half_test::decode(values[row * width + col]) - mean) * inverse;
+      if (parameters > 0)
+        expected *= half_test::decode(weights[col]);
+      if (parameters > 1)
+        expected += half_test::decode(biases[col]);
+      expect_value(actual[row * width + col], expected);
+    }
+  }
+}
+
+template <class T> void normalization_cases() {
+  Fixture fixture;
+  for (const std::int64_t width :
+       {0, 1, 127, 128, 129, 2048, 5120, 6144, 7168}) {
+    SCOPED_TRACE(width);
+    for (const bool inplace : {false, true}) {
+      normalization_case<T, T, T>(fixture, width, false, 0, 1e-5F, inplace);
+      normalization_case<T, T, T>(fixture, width, false, 1, 1e-5F, inplace);
+      normalization_case<T, float, T>(fixture, width, false, 1, 1e-5F, inplace);
+      normalization_case<T, T, T>(fixture, width, true, 0, 1e-5F, inplace);
+      normalization_case<T, T, T>(fixture, width, true, 1, 1e-5F, inplace);
+      normalization_case<T, float, T>(fixture, width, true, 1, 1e-5F, inplace);
+      normalization_case<T, T, T>(fixture, width, true, 2, 1e-5F, inplace);
+      normalization_case<T, float, T>(fixture, width, true, 2, 1e-5F, inplace);
+      normalization_case<T, T, float>(fixture, width, true, 2, 1e-5F, inplace);
+      normalization_case<T, float, float>(fixture, width, true, 2, 1e-5F,
+                                          inplace);
+    }
+  }
+  normalization_case<T, T, T>(fixture, 129, false, 0, 0, false);
+  normalization_case<T, T, T>(fixture, 129, true, 0, 0, false);
+}
+TEST(CudaTensor,
+     NormalizationUsesFloatAccumulationAndIndependentParameterTypes) {
+  normalization_cases<float>();
+  normalization_cases<hyle::simd::float16_t>();
+  normalization_cases<hyle::simd::bfloat16_t>();
+}
+
+template <class T> void precise_parameters() {
+  Fixture fixture;
+  const auto description = TensorDesc::dense(half_test::data_type<T>(),
+                                             std::array<std::int64_t, 1>{2})
+                               .value();
+  const auto parameter_desc =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{2})
+          .value();
+  Tensor input(description, fixture.resource.ref()),
+      output(description, fixture.resource.ref());
+  Tensor weight(parameter_desc, fixture.resource.ref()),
+      bias(parameter_desc, fixture.resource.ref());
+  const std::array<T, 2> values{half_test::encode<T>(-1),
+                                half_test::encode<T>(1)};
+  const std::array<float, 2> scale{1.0001F, 1.0001F}, offset{1.0F, -1.0F};
+  ASSERT_TRUE(input.write<T>(values).ok());
+  ASSERT_TRUE(weight.write<float>(scale).ok());
+  ASSERT_TRUE(bias.write<float>(offset).ok());
+  ASSERT_TRUE(
+      fixture
+          .execute(Operation(LayerNorm{.epsilon = 0}),
+                   std::array{input.view.as_const(), weight.view.as_const(),
+                              bias.view.as_const()},
+                   output.view)
+          .ok());
+  const auto actual = output.read<T>();
+  EXPECT_EQ(half_test::decode(actual[0]),
+            half_test::decode(half_test::encode<T>(1.0F - 1.0001F)));
+  EXPECT_EQ(half_test::decode(actual[1]),
+            half_test::decode(half_test::encode<T>(1.0001F - 1.0F)));
+  EXPECT_NE(half_test::decode(actual[1]), 0.0);
+}
+TEST(CudaTensor, FloatNormParametersAreNotNarrowedBeforeAffineArithmetic) {
+  precise_parameters<hyle::simd::float16_t>();
+  precise_parameters<hyle::simd::bfloat16_t>();
+}
+
+TEST(CudaTensor, NormalizationHandlesSpecialValuesAndStableVariance) {
+  Fixture fixture;
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 2>{4, 128})
+          .value();
+  Tensor input(description, fixture.resource.ref()),
+      output(description, fixture.resource.ref());
+  std::vector<float> values(512, 0);
+  values[128] = NAN;
+  values[256] = INFINITY;
+  for (std::size_t i = 384; i < values.size(); ++i)
+    values[i] = 10000 + (i % 2 == 0 ? -0.25F : 0.25F);
+  ASSERT_TRUE(input.write<float>(values).ok());
+  for (const bool layer : {false, true}) {
+    const auto op = layer ? Operation(LayerNorm{.epsilon = 0})
+                          : Operation(RmsNorm{.epsilon = 0});
+    ASSERT_TRUE(
+        fixture.execute(op, std::array{input.view.as_const()}, output.view)
+            .ok());
+    const auto actual = output.read<float>();
+    for (std::size_t i = 0; i < 256; ++i)
+      EXPECT_TRUE(std::isnan(actual[i]));
+    for (std::size_t i = 256; i < 384; ++i) {
+      if (layer || i == 256)
+        EXPECT_TRUE(std::isnan(actual[i]));
+      else
+        EXPECT_EQ(actual[i], 0);
+    }
+    if (layer)
+      for (std::size_t i = 384; i < actual.size(); ++i)
+        EXPECT_FLOAT_EQ(actual[i], i % 2 == 0 ? -1.0F : 1.0F);
+  }
+  auto unsupported =
+      prepare(fixture.owner, RmsNorm{.accumulation_type = DataType::kFloat64},
+              description, fixture.resource.ref());
+  ASSERT_FALSE(unsupported.has_value());
+  EXPECT_TRUE(unsupported.error().IsUnimplemented());
+  const auto strided = TensorDesc::strided_bytes(
+                           DataType::kFloat32, std::array<std::int64_t, 1>{128},
+                           std::array<std::int64_t, 1>{8})
+                           .value();
+  auto noncontiguous =
+      prepare(fixture.owner, RmsNorm{}, strided, fixture.resource.ref());
+  ASSERT_FALSE(noncontiguous.has_value());
+  EXPECT_TRUE(noncontiguous.error().IsUnimplemented());
+  auto prepared =
+      prepare(fixture.owner, RmsNorm{}, description, fixture.resource.ref())
+          .value();
+  auto invocation = prepared.create_invocation().value();
+  auto partial = TensorView::create(description, input.storage.view()).value();
+  // A larger backing range allows a genuinely overlapping, non-equal binding.
+  auto backing =
+      mem::Buffer::create(fixture.resource.ref(), input.storage.size() + 4, 256)
+          .value();
+  const auto source =
+      ConstTensorView::create(
+          description, backing.view().subview(0, input.storage.size()).value())
+          .value();
+  partial =
+      TensorView::create(
+          description, backing.view().subview(4, input.storage.size()).value())
+          .value();
+  auto overlap = invocation.submit(fixture.queue, source, partial);
+  ASSERT_FALSE(overlap.has_value());
+  EXPECT_TRUE(overlap.error().IsInvalidArgument());
+}
 } // namespace

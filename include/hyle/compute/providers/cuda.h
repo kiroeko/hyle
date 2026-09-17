@@ -27,6 +27,12 @@ inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
 // only exact input/output aliases with identical descriptions; Copy/Cast do not
 // overlap. These primitives require no native workspace or per-slot state.
 //
+// RMSNorm/LayerNorm use dense FP32/FP16/BF16, FP32 accumulation on the last
+// axis, and independently typed scale/bias (input type or FP32 for half input).
+// LayerNorm uses two-pass centered variance. Only exact input0/output aliasing
+// is allowed. One kernel per nonempty norm, no caller workspace or per-slot
+// device state; ordinary prepare binds the compiled SDK collective once.
+//
 // Gated activation:
 // Supports SiLU/GELU/GELU-tanh, dense FP16/BF16/FP32 separate inputs or [...,
 // gate | value] packed halves. Arithmetic is FP32 with one final conversion to
