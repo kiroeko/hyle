@@ -1,6 +1,6 @@
 # R5 A1/A6：Apple 公开产品与原生资源交付
 
-## Closure card / CANDIDATE
+## Closure card / CLOSED
 
 - baseline：`9e41c15aab5a97206e82ebc70a0bee0d916e112f`；产品仍为 `d900a8ce`，后续仅 LOC 工具。
 - 当前 owner：`compute`、`graph`、`compute_backend_cpu`、`compute_backend_cuda`、
@@ -74,3 +74,22 @@ FIX 已冻结，进入实现；其它 A5/A6 与 R5 最终 P1 留在主卡中执�
 D1–D4 不可变交付候选为 `cbedb837791da15392019299f2652d9d3d70ec9d`；其全部 shipping inputs
 与 Apple 最终候选 `1636365bbe47779de24e84d7c7d1ed8088fe1af2` 相同，逐路径身份记录随 Mini
 证据保存。本卡进入 CANDIDATE 后做七门 terminal 裁决；R5 P1 仍归主卡，不因交付通过提前签字。
+
+## Terminal / D1–D4 完成
+
+本轮十一交付 owner 在 `cbedb837` 候选完成以下门，CLOSED。两 Apple native owner 仍按主卡
+保留自己的候选与剩余性能义务；这里不替它们签路线完成。
+
+| 工程门 | 裁决及可复核依据 |
+|---|---|
+| scope | PASS：D1–D4、十一 owner 与公开 roots 范围固定，没有扩到旧 CPU/CUDA 实现 |
+| architecture | PASS：真实 Apple roots、MLX 唯一 runtime、原生资源邻置，复用 package registry 与现有 Windows staging |
+| correctness | PASS：两 Mac Direct/Graph 数值消费与变化输入；资源缺失负控、许可证/内容/路径检查及工具回归 |
+| delivery | PASS：两 Mac 完整 source、relocated static/shared；Windows broad selected 和 WSL OFF 隔离/逐头检查 |
+| usability_docs | PASS：同一普通 C++ 样例、显式 staging helper、SDK/部署要求、结果与 native lifetime 用法已交付 |
+| red_team | PASS：隐藏 producer metallib、移走 SDK、核对实际 dylib 唯一性、篡改 vendor 的早期拒绝；不靠维护机 fallback |
+| engineering_performance | PASS / P0：本轮只改冷期 roots/交付资源投影，十一 owner 的原 C++ blob 相同；旧 P1/CPU 例外按 baseline 继承 |
+
+七问归属：第三方 pin/许可证在 lock；功能由两条真实计算旅程证明；内部复用在 D1/D2；
+性能按上述 P0；纯 C++ 无新增 FFI；三交付及用户文档均完成。重开仅接受具体资源发现、
+公开 root 或 source/package 消费变化；本卡不作为后续 Vulkan facade 修改授权。
