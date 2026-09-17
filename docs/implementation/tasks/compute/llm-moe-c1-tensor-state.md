@@ -18,7 +18,7 @@
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
-  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -902,5 +902,29 @@ padding，不能把二者混为一谈。
   [self-check PASS](../../../../evidence/correctness/compute-llm-moe-c1/t-implementation-loc.json)。
 - 本批为诊断数据，真实模型权重消费、四路线共同逐格验收、三交付/其余适用环境和等责 P1 仍待
   完整 C1 固定 bundle；下一步仅审计 Vulkan 尚缺的具名布局/门控/归约/索引机制，不扩模型策略。
+
+### C1-U：Vulkan 零拷贝 View 与别名资源规划（AUDITED）
+
+baseline `1d1ed881`，owner `/root` / `compute_route_vulkan`、`graph_route_vulkan`。F01 的
+reshape/slice/permute/broadcast 为 MustAlias，不能以 materialize 冒签。现有 Buffer 只有 descriptor
+对齐的起点、liveness 逐 value 分配、结果 owner 在冷期绑定，无法承载 slice 的 byte offset 或
+输入别名输出。先完成这个原生资源机制；Concat/gates/norm/reduce/index 等算法仍按后续具名批次实施。
+
+证据：共同 `infer_view` / `view_alias_offset` 已有正步长、empty 和 span 验证；固定 ggml
+`456172ec` 的 `generic_unary_head.glsl` 通过对齐 descriptor 加 shader offset 访问子区域。
+其 F32 GEMM 不承诺任意 byte origin。本批复用共同语义和现有 SPIR-V/native Program，不更改 vendor。
+[Vulkan descriptor 范围](https://docs.vulkan.org/refpages/latest/refpages/source/VkDescriptorBufferInfo.html)
+及 [command buffer 重新录制条件](https://docs.vulkan.org/refpages/latest/refpages/source/vkBeginCommandBuffer.html)
+约束本批实现：空闲槽、允许 reset 的原生 command pool，复用原 descriptor/pipeline/存储。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| U01 | 自然 `Tensor::view`、普通 View prepare/Graph；六 storage，四种共同 View，真实别名 owner | 只建 host metadata，原 native buffer 和逻辑 offset 可见，无 payload copy/dispatch。flatten alias root 与累计 byte offset；计算 root 的最后读取/发布寿命包含全部别名，constant/root owner 不因零 dispatch 被裁掉。empty 沿共同 offset=0 合同 |
+| U02 | typed shader 的 descriptor 对齐与 byte origin；固定 invocation 的原生绑定/录制 | descriptor 向下对齐、range 包含必要 prefix 和 word padding，输入 origins 用 12B push 常量；已有数值公式不变。仅当绑定的 origin 余数变化时在 idle 槽重录命令，复用 descriptor sets/pipeline/buffer；同 origin 更换 buffer 仍只更新 descriptor，submit 不分配/重录/搜索。host OOM/native record 错误拒绝接纳，未成功重录不得提交 |
+| U03 | 别名输出保活、rebind 与固定 Recorder 语义 | alias metadata 冷分配；input rebind 更新内部别名但导出的别名/owner token 在释放前阻止覆盖。旧 root、独立槽、close/abandon 保活。Recorder 的 View 输出必须实际指向已外部绑定输入的对应范围，不将 caller 独立输出变成假别名；内部 root 无法由 caller 输出表达时明确拒绝。typed Recorder 不向 View slice 写 padded 尾字，使用独立或具名 borrow_ready 输出。旧 F32 GEMM/SiLU/custom 的 descriptor 对齐域保留，未资格化视图需显式 Copy |
+| U04 | 独立位级 View/地址与寿命验证、普通 Direct/Graph 和指南 | 六 storage、reshape/permute/broadcast/正步长 slice/嵌套/rank8/empty/非零和奇数 origin，实测原 buffer identity/offset 与无设备分配；View→Copy/算术、constant view、root 最后使用后仍发布的别名、两槽/变绑定/旧结果/native token/close。录制计数证明正常重放不重录、余数变化才重录，并注入重录失败。W1 与 Air/Mini 两 factors/公开头；整包真实权重、三交付/其余适用环境和等责P1仍随C1固定bundle |
+
+本批不改共同 TensorDesc、通用 Graph/Queue、依赖 pin、公共构建或统计仪器，不运行 P1。
+View 的 descriptor prefix、别名保活和必要重录是显式成本，不签零成本执行或性能胜出。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
