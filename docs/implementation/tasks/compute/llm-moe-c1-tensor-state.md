@@ -14,7 +14,8 @@
   `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
-- 状态：SCOPED。以下是有界审计对象；各 owner 完成 AUDITED 与最终 FIX/API freeze 前不写产品。
+- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A 的 AUDITED；其余七个 owner
+  保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
 - 正交 consumer：F32/F16 带 stride 的批量变换、空/尾块、共享不可变表与独立索引更新。
@@ -93,5 +94,29 @@ auto op = compute::prepare(*context, compute::RmsNorm{.epsilon = 1e-6F}, input, 
 
 ## 当前裁决
 
-SCOPED；尚无 C1 产品修改、candidate 或 PASS。下一步冻结 API/错误/数值/原生状态选择与有限 FIX，
-逐 owner 进入 AUDITED 后实施。旧 CLOSED/BLOCKED 卡不授权本包改动。
+### C1-A：Softplus 共同语义与 Native F32（AUDITED）
+
+SCOPED baseline `f968e6f0`；真实 consumer 是 Qwen DeltaNet 的
+`g = -exp(A_log) * softplus(a.float() + dt_bias)` 与 DeepSeek 的 `sqrt(softplus(router_score))`。
+两处都实际需要 F32，源于 C0 固定 Torch Qwen 实现与 SGLang
+`kernels/jit/csrc/deepseek_v4/hash_topk.cuh:19-21`。正交任务是稳定逐元素数值变换。
+
+| FIX | 固定允许改动 | API / 数值 / 成本与验收 |
+|---|---|---|
+| A01 | 在既有 Unary 增加 `UnaryKind::kSoftplus` 并更新共同 mode 验证 | beta=1 的 log(1+exp(x))；同 input/output shape/type、既有 floating 域；pure、alias 不变；只追加 enum 值，不加对象字段或新 runtime |
+| A02 | Native F32 dense/strided 的 Softplus 实现与差分/别名测试 | 稳定 `max(x,0)+log1p(exp(-abs(x)))`；NaN 传播，-Inf→+0，+Inf→+Inf；dense 复用 SIMD exp/log1p、固定 128-float 栈 scratch，strided 走标量；无堆分配、锁、syscall 或新增 vtable |
+
+承载裁决：`BORROW` 已有 HYLE SIMD 的数学核与 C++ scalar math；复用 Native 的 tensor/index/alias/
+completion 机制，不复制 SIMD dispatch。F16/BF16 扩域、其他 Unary/scan/query 和 GPU 路线仍按本卡
+后续审计推进，不把当前子集签为 F03.2、C1 或四路线完成。
+
+自然 Direct 为 `compute::prepare(context, compute::Unary{compute::UnaryKind::kSoftplus}, desc)`；
+Graph 仍消费 `Operation(Unary{...})`，无模型字段、Provider 排序或新 convenience runtime。
+错误、move、并发、teardown、output owner 与既有 Unary 完全相同；空 tensor 不触摸 storage。
+
+当前适用验证：compute_ops schema、Native Direct 的独立 FP64 `log1p(exp(x))` oracle（有限测试输入
+不超 double exp 域）、极小负值/大正值/±Inf/NaN、dense128边界与非连续布局/精确 alias；selector
+选中的当前 owner 和直接消费者/公开头。三交付与四路线完整片段随 C1 固定候选执行；此子集不跑 P1，
+未执行项保持未证明。仅这两个 FIX 已固定，产品 commit 前 owner 必须已在独立提交进入 AUDITED。
+
+当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
