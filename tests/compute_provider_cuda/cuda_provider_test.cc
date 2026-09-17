@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 
@@ -407,12 +408,16 @@ void pending_completion_retains_program(
                  : 256),
       resource.ref());
   std::array<compute::TensorDesc, 2> output_desc;
+  const auto arity =
+      operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
+  const std::vector input_desc(arity, input.view.description());
+  const std::vector inputs(arity, input.view.as_const());
   const auto descriptions =
       std::span(output_desc)
           .first(compute::operation_traits(operation).outputs);
-  ASSERT_TRUE(compute::infer_output_descriptions(
-                  operation, std::array{input.view.description()}, descriptions)
-                  .ok());
+  ASSERT_TRUE(
+      compute::infer_output_descriptions(operation, input_desc, descriptions)
+          .ok());
   std::vector<Tensor> output_storage;
   std::vector<compute::TensorView> outputs;
   output_storage.reserve(descriptions.size());
@@ -425,7 +430,6 @@ void pending_completion_retains_program(
       1.0F);
   ASSERT_TRUE(
       input.storage.view().write(std::as_bytes(std::span(values))).ok());
-  const std::array inputs{input.view.as_const()};
   auto prepared = compute::prepare(owner, operation, inputs, outputs).value();
   auto lane = prepared.create_invocation().value();
   auto warm = lane.submit(queue, inputs, outputs).value();
@@ -464,7 +468,9 @@ void pending_completion_retains_program(
                   .read(std::as_writable_bytes(std::span(actual)))
                   .ok());
   const double expected =
-      operation.kind() == compute::OperationKind::kTopK        ? 1
+      operation.kind() == compute::OperationKind::kTopK ||
+              operation.kind() == compute::OperationKind::kConcat
+          ? 1
       : operation.kind() == compute::OperationKind::kReduce    ? 256
       : operation.kind() == compute::OperationKind::kSoftmax   ? 1.0 / 256
       : operation.kind() == compute::OperationKind::kLayerNorm ? 0
@@ -543,12 +549,15 @@ void metadata_failures_rollback(
                    : 256),
         resource.ref());
     std::array<compute::TensorDesc, 2> output_desc;
+    const auto arity =
+        operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
+    const std::vector input_desc(arity, input.view.description());
+    const std::vector inputs(arity, input.view.as_const());
     const auto descriptions =
         std::span(output_desc)
             .first(compute::operation_traits(operation).outputs);
     ASSERT_TRUE(
-        compute::infer_output_descriptions(
-            operation, std::array{input.view.description()}, descriptions)
+        compute::infer_output_descriptions(operation, input_desc, descriptions)
             .ok());
     std::vector<Tensor> output_storage;
     std::vector<compute::TensorView> outputs;
@@ -557,7 +566,6 @@ void metadata_failures_rollback(
       output_storage.emplace_back(desc, resource.ref());
       outputs.push_back(output_storage.back().view);
     }
-    const std::array inputs{input.view.as_const()};
     const auto prepare = [&] {
       return compute::prepare(owner, operation, inputs, outputs);
     };
@@ -631,6 +639,8 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
   pending_completion_retains_program(
       compute::cuda_native::provider(),
       compute::Operation(compute::TopK{.count = 6}));
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::Concat{}));
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
@@ -649,6 +659,81 @@ TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
                              compute::Operation(compute::Softmax{}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::TopK{.count = 6}));
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::Concat{}));
+}
+
+TEST(CudaConcat, LaterGroupPointerFailureKeepsRealPrefixCompletion) {
+  auto owner = context();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  const auto desc = matrix(compute::DataType::kFloat32, 1, 129);
+  Tensor input(desc, resource.ref());
+  const std::vector<float> values(129, 3.0F);
+  ASSERT_TRUE(
+      input.storage.view().write(std::as_bytes(std::span(values))).ok());
+  std::array<compute::TensorDesc, 9> descriptions;
+  descriptions.fill(desc);
+  auto program = compute::prepare(owner, compute::Concat{.axis = 1},
+                                  descriptions, resource.ref())
+                     .value();
+  auto slot = program.create_invocation().value();
+  Tensor output(program.output_description().value(), resource.ref());
+  const std::vector<float> sentinel(9 * 129, -7.0F);
+  ASSERT_TRUE(
+      output.storage.view().write(std::as_bytes(std::span(sentinel))).ok());
+  std::array<compute::ConstTensorView, 9> inputs;
+  inputs.fill(input.view.as_const());
+  // Public submit checks bindings before acceptance. This deliberately injects
+  // the fault at the existing provider/Graph seam after that check, so the
+  // second group's pointer failure is exercised without an illegal GPU access
+  // or a device assertion that would poison the process's CUDA context.
+  inputs[4] = {};
+  ASSERT_TRUE(queue.reserve_completions(1).ok());
+  struct Gate final {
+    std::atomic<bool> released{false};
+    static void CUDART_CB wait(void *raw) {
+      static_cast<Gate *>(raw)->released.wait(false, std::memory_order_acquire);
+    }
+    void release() {
+      released.store(true, std::memory_order_release);
+      released.notify_all();
+    }
+  } gate;
+  struct Release final {
+    Gate &gate;
+    compute::Context &owner;
+    ~Release() {
+      gate.release();
+      owner.drain().IgnoreError();
+    }
+  } release{gate, owner};
+  ASSERT_EQ(cudaLaunchHostFunc(cuda::stream(queue).value(), &Gate::wait, &gate),
+            cudaSuccess);
+  auto sequence = compute::detail::QueueSequence::begin(queue).value();
+  auto enqueued =
+      compute::detail::OperationInvocationAccess::enqueue_prevalidated(
+          slot, sequence, inputs, std::array{output.view});
+  EXPECT_TRUE(enqueued.accepted);
+  EXPECT_TRUE(enqueued.status.IsInvalidArgument());
+  sequence.record(std::move(enqueued));
+  auto done = sequence.finish();
+  ASSERT_TRUE(done.has_value()) << done.error().message();
+  EXPECT_EQ(done->poll().value(), compute::CompletionPoll::kPending);
+  ASSERT_TRUE(owner.close().ok());
+  gate.release();
+  EXPECT_TRUE(done->wait().IsInvalidArgument());
+  std::vector<float> actual(sentinel.size());
+  ASSERT_TRUE(output.storage.view()
+                  .read(std::as_writable_bytes(std::span(actual)))
+                  .ok());
+  for (std::size_t index = 0; index < actual.size(); ++index)
+    EXPECT_EQ(actual[index], index < 4 * 129 ? 3.0F : -7.0F);
+  // The prevalidated seam borrows program/slot owners through Completion.
+  // Ordinary submit's retained-owner path is covered above for all nine inputs.
+  slot = {};
+  program = {};
 }
 
 } // namespace

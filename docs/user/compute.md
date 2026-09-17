@@ -106,7 +106,11 @@ byte stride，两个输出 dense，输入与输出及两输出之间都不重叠
 NaN 排在全部非 NaN 后；largest/smallest 均可，sorted=false 仍可返回有序结果。k=1 使用 SDK
 选择，k>1 对≤4096列使用 CUB BlockRadixSort；都一次 native launch、无 caller workspace/槽
 私有状态，片上排序 scratch 和 code storage 仍有实际成本。长序列 k>1 当前准备时明确拒绝。
-整数/FP8 Cast 与算术、Concat、Gather/Scatter/Scan 等
+Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byte stride 和 dense output，
+逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
+双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
+或槽私有状态。普通 Graph 可直接组合 View→Concat 和窗口 append，并使用原生 capture。
+整数/FP8 Cast 与算术、Gather/Scatter/Scan 等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 

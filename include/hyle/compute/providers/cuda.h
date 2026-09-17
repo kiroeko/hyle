@@ -50,6 +50,12 @@ inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
 // block radix sort for rows <=4096 columns. Both use one launch, no caller
 // workspace/slot state; native on-chip scratch and code storage are not zero.
 //
+// Concat accepts variadic plain 1/2/4/8-byte scalar inputs and dense output,
+// arbitrary axis/byte strides, and preserves storage bits exactly. No input/
+// output overlap. Up to four inputs per native kernel (one for the common two
+// inputs); empty groups do not launch or access pointers. Cold metadata scales
+// with arity, no caller workspace or slot state. Output count <= INT32_MAX.
+//
 // Gated activation:
 // Supports SiLU/GELU/GELU-tanh, dense FP16/BF16/FP32 separate inputs or [...,
 // gate | value] packed halves. Arithmetic is FP32 with one final conversion to

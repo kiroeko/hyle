@@ -6,6 +6,7 @@
 #include <new>
 #include <utility>
 
+#include "concat_provider.h"
 #include "native_context.h"
 #include "native_kernel.h"
 #include "norm_provider.h"
@@ -110,6 +111,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (!Sglang) {
+    if (request.operation.kind() == OperationKind::kConcat)
+      return concatenation::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kTopK)
       return selection::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kReduce ||
@@ -234,6 +237,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (!Sglang) {
+    if (request.route == concatenation::kRoute && request.shape.exact())
+      return concatenation::prepare(state, request, allocator, output);
     if (request.route == selection::kRoute && request.shape.exact())
       return selection::prepare(state, request, allocator, output);
     if (request.route == reduction::kRoute && request.shape.exact())
@@ -308,7 +313,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-gated" : "v6-topk"},
+                 .version = Sglang ? "06992c92-precise-gated" : "v7-concat"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

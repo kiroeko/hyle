@@ -1303,4 +1303,175 @@ TEST(CudaSelection, TopKRejectsInvalidCountsCapacityAndEveryOverlap) {
   EXPECT_TRUE(result.error().IsInvalidArgument());
   EXPECT_EQ(input.read<float>(), original);
 }
+void concat_bits_case(Fixture &fixture, DataType type,
+                      std::span<const std::int64_t> shape, std::int32_t axis,
+                      std::span<const std::int64_t> extents, bool strided) {
+  const auto normalized = static_cast<std::size_t>(
+      axis < 0 ? axis + static_cast<int>(shape.size()) : axis);
+  const auto bytes = data_type_size(type);
+  std::vector<Tensor> storage;
+  std::vector<TensorDesc> descriptions;
+  std::vector<ConstTensorView> inputs;
+  std::vector<std::vector<std::byte>> logical;
+  storage.reserve(extents.size());
+  for (std::size_t source = 0; source < extents.size(); ++source) {
+    std::vector<std::int64_t> dimensions(shape.begin(), shape.end());
+    dimensions[normalized] = extents[source];
+    const auto desc =
+        reduction_desc(type, dimensions, strided && source % 2 == 0);
+    descriptions.push_back(desc);
+    storage.emplace_back(desc, fixture.resource.ref());
+    inputs.push_back(storage.back().view.as_const());
+    logical.emplace_back(desc.element_count().value() * bytes);
+    auto &values = logical.back();
+    std::vector<std::byte> physical(desc.required_bytes().value(),
+                                    std::byte{0x5a});
+    for (std::size_t index = 0; index < values.size() / bytes; ++index) {
+      const std::uint64_t bits =
+          index == 0   ? 0
+          : index == 1 ? UINT64_MAX
+                       : 0x7ff87fc07fc07e01ULL ^
+                             ((index + source * 37) * 0x9e3779b97f4a7c15ULL);
+      std::memcpy(values.data() + index * bytes, &bits, bytes);
+      std::size_t remainder = index, offset = 0;
+      for (std::size_t dim = desc.rank(); dim-- > 0;) {
+        offset +=
+            (remainder % desc.dimensions()[dim]) * desc.byte_strides()[dim];
+        remainder /= desc.dimensions()[dim];
+      }
+      std::memcpy(physical.data() + offset, &bits, bytes);
+    }
+    ASSERT_TRUE(storage.back().storage.view().write(physical).ok());
+  }
+  auto program = prepare(fixture.owner, Concat{.axis = axis}, descriptions,
+                         fixture.resource.ref());
+  ASSERT_TRUE(program.has_value()) << program.error().message();
+  EXPECT_EQ(program->workspace_requirement().size, 0U);
+  EXPECT_EQ(program->invocation_private_bytes(), 0U);
+  EXPECT_TRUE(program->capture_compatible());
+  Tensor output(program->output_description().value(), fixture.resource.ref());
+  std::size_t inner = 1, outer = 1;
+  for (std::size_t dim = 0; dim < normalized; ++dim)
+    outer *= shape[dim];
+  for (std::size_t dim = normalized + 1; dim < shape.size(); ++dim)
+    inner *= shape[dim];
+  // Independent host concatenation of dense logical rows: no device grouping,
+  // per-element boundary selection, dtype conversion or provider result oracle.
+  std::vector<std::byte> expected;
+  for (std::size_t row = 0; row < outer; ++row) {
+    for (std::size_t source = 0; source < extents.size(); ++source) {
+      const auto chunk =
+          static_cast<std::size_t>(extents[source]) * inner * bytes;
+      expected.insert(expected.end(), logical[source].begin() + row * chunk,
+                      logical[source].begin() + (row + 1) * chunk);
+    }
+  }
+  auto slot = program->create_invocation().value();
+  auto done = slot.submit(fixture.queue, inputs, output.view);
+  ASSERT_TRUE(done.has_value()) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::vector<std::byte> actual(output.storage.size());
+  ASSERT_TRUE(output.storage.view().read(actual).ok());
+  EXPECT_EQ(actual, expected);
+}
+
+TEST(CudaConcat, VariadicStorageBitsAcrossAxesByteStridesAndEmptyGroups) {
+  Fixture fixture;
+  for (const auto type :
+       {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16,
+        DataType::kInt32, DataType::kUInt8, DataType::kInt64}) {
+    for (const auto arity : {1U, 2U, 3U, 4U, 5U, 9U}) {
+      std::vector<std::int64_t> extents(arity);
+      for (std::size_t input = 0; input < arity; ++input)
+        extents[input] = input % 4 == 1 ? 0 : 1 + input % 3;
+      for (const bool strided : {false, true}) {
+        SCOPED_TRACE(::testing::Message() << static_cast<int>(type) << '/'
+                                          << arity << '/' << strided);
+        concat_bits_case(fixture, type, std::array<std::int64_t, 2>{1, 129}, 0,
+                         extents, strided);
+        concat_bits_case(fixture, type, std::array<std::int64_t, 3>{2, 1, 128},
+                         1, extents, strided);
+        concat_bits_case(fixture, type, std::array<std::int64_t, 3>{2, 3, 1},
+                         -1, extents, strided);
+        concat_bits_case(fixture, type,
+                         std::array<std::int64_t, 8>{2, 1, 2, 1, 2, 1, 1, 3}, 6,
+                         extents, strided);
+      }
+    }
+    for (const auto extents :
+         {std::array<std::int64_t, 9>{0, 0, 0, 0, 2, 0, 1, 0, 3},
+          std::array<std::int64_t, 9>{2, 0, 3, 0, 0, 0, 0, 0, 0},
+          std::array<std::int64_t, 9>{0, 0, 0, 0, 0, 0, 0, 0, 0}}) {
+      concat_bits_case(fixture, type, std::array<std::int64_t, 3>{2, 1, 129}, 1,
+                       extents, true);
+      concat_bits_case(fixture, type, std::array<std::int64_t, 3>{0, 1, 129}, 1,
+                       extents, false);
+    }
+  }
+}
+
+TEST(CudaConcat, BroadcastSharedInputsAndUnsupportedBindingsAreExplicit) {
+  Fixture fixture;
+  const auto desc = TensorDesc::strided_bytes(DataType::kFloat32,
+                                              std::array<std::int64_t, 2>{2, 3},
+                                              std::array<std::int64_t, 2>{0, 0})
+                        .value();
+  Tensor input(desc, fixture.resource.ref());
+  constexpr std::array bits{0x7fc12345U};
+  ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(bits))).ok());
+  std::array<TensorDesc, 9> descriptions;
+  descriptions.fill(desc);
+  auto program = prepare(fixture.owner, Concat{.axis = -1}, descriptions,
+                         fixture.resource.ref())
+                     .value();
+  Tensor output(program.output_description().value(), fixture.resource.ref());
+  std::array<ConstTensorView, 9> inputs;
+  inputs.fill(input.view.as_const());
+  auto slot = program.create_invocation().value();
+  auto done = slot.submit(fixture.queue, inputs, output.view);
+  ASSERT_TRUE(done.has_value());
+  ASSERT_TRUE(done->wait().ok());
+  EXPECT_EQ(output.read<std::uint32_t>(),
+            std::vector<std::uint32_t>(54, 0x7fc12345U));
+  const auto dense =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{129})
+          .value();
+  Tensor storage(dense, fixture.resource.ref());
+  auto single = prepare(fixture.owner, Concat{}, std::array{dense},
+                        fixture.resource.ref())
+                    .value();
+  auto single_slot = single.create_invocation().value();
+  auto overlap =
+      single_slot.submit(fixture.queue, storage.view.as_const(), storage.view);
+  ASSERT_FALSE(overlap.has_value());
+  EXPECT_TRUE(overlap.error().IsInvalidArgument());
+  EXPECT_FALSE(single_slot.in_flight());
+  const auto invalid_axis = prepare(fixture.owner, Concat{.axis = 2},
+                                    std::array{dense}, fixture.resource.ref());
+  ASSERT_FALSE(invalid_axis.has_value());
+  EXPECT_TRUE(invalid_axis.error().IsOutOfRange());
+  const auto huge =
+      TensorDesc::dense(
+          DataType::kUInt8,
+          std::array<std::int64_t, 1>{static_cast<std::int64_t>(INT32_MAX) + 1})
+          .value();
+  const auto unsupported = prepare(fixture.owner, Concat{}, std::array{huge},
+                                   fixture.resource.ref());
+  ASSERT_FALSE(unsupported.has_value());
+  EXPECT_TRUE(unsupported.error().IsUnimplemented());
+  const auto empty =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 2>{
+                            0, static_cast<std::int64_t>(INT32_MAX) + 1})
+          .value();
+  auto no_op = prepare(fixture.owner, Concat{}, std::array{empty, empty},
+                       fixture.resource.ref());
+  ASSERT_TRUE(no_op.has_value()) << no_op.error().message();
+  Tensor no_storage(empty, fixture.resource.ref());
+  auto empty_slot = no_op->create_invocation().value();
+  done = empty_slot.submit(fixture.queue, no_storage.view.as_const(),
+                           no_storage.view.as_const(), no_storage.view);
+  ASSERT_TRUE(done.has_value()) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+}
 } // namespace
