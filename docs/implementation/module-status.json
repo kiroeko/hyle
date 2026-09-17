@@ -402,9 +402,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-cuda-device-status.md",
-      "summary": "LLM/MoE C1-L SCOPED：checked GPU 索引与 I32 Scan 需要可恢复的异步算法状态；仅审计 CUDA 原生 Completion/capture/依赖的定向缺口，有限 FIX 待固定。"
+      "summary": "LLM/MoE C1-L AUDITED：L01–L04 固定 CUDA prefix 设备错误字、真实完成/跨 Queue 传播、原生 capture 状态与原生 merge；仅本轮定向机制，尚未实现或验收。"
     },
     {
       "module": "compute_provider_native",

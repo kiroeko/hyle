@@ -11,13 +11,15 @@
   typed 普通入口只有窄 GEMM/SiLU 域。是具名真实 consumer 的缺失能力，不重审已验收基础设施。
 - 当前施工 owner：`compute_ops`（schema/shape）、`compute`（普通查询/准备事实）、`graph`
   （必要共同 shape/effect 边界）、`compute_provider_native`、`compute_provider_cuda`、
-  `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`。
+  `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`；新增直接依赖
+  `compute_backend_cuda` 只按下述 C1-L 卡施工。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03 和 K01–K03 进入 AUDITED；其余五个 owner
-  保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
+  保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
 - 正交 consumer：F32/F16 带 stride 的批量变换、空/尾块、共享不可变表与独立索引更新。
