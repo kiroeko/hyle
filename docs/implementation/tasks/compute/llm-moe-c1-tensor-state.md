@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03 和 I01–I03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03 和 J01–J03 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -345,7 +345,7 @@ TopK、Concat、checked index/Scan 仍待各自有限审计。有限实现与必
   添加 SDK collective 所需 MSVC 标准预处理器选项。前一次编译被 SDK 的传统预处理器检查拒绝，
   没有运行测试；固定后 W1 Release/WERROR 编译、provider 16 case、Direct 4 case、Graph 7 case
   共 **27 case PASS**。[命令、原始日志哈希与初次失败](../../../../evidence/correctness/compute-llm-moe-c1/h-windows-focused.json)。
-- 实際数值包括三 dtype、F32 scale/bias 不能提前窄化、大均值小方差、空行/NaN/Inf/精确原位；
+- 实际数值包括三 dtype、F32 scale/bias 不能提前窄化、大均值小方差、空行/NaN/Inf/精确原位；
   BF16 Graph 的 F32 `1+gamma` → norm → F32 swish gate → BF16 两槽 capture、三次变化输入、
   另一槽旧结果保留和共享参数不变通过，热重放无 metadata allocation。cold OOM 回滚和在途
   norm owner 保留至完成实际通过；没有重写 backend 或已有门控。
@@ -384,5 +384,49 @@ I 的第一轮数值反例（`45edb0e4`，W1）：默认 Direct/Graph、NaN/Inf 
 列号，8字节）和排除一个最大项后的 F32 tail sum，再算 `log1p(tail)`；仍两次 collective、同一
 cache/launch/workspace合同，普通 Softmax 路径不变，非有限最大值仍全行 NaN。原独立门限不放宽，
 补近1概率与重复最大值回归；不采用 F64 常态求和或扩大到其他 owner。
+
+### C1-I 实施事实
+
+- `2ddc093d` 接入 CUDA Reduce/Softmax/LogSoftmax；`45edb0e4` 补齐该 TU 的 CUDA constants
+  include；`c4a0f216` 完成上面的 LogSoftmax 定向修复和测试纠正。原门限不变，没有借 host
+  payload fallback、F64 累加或增加额外 dispatch 通过数值门。
+- `c4a0f216` W1 Release/WERROR 实际 provider 22 case、Direct 4 case、Graph 8 case 共
+  **34 case PASS**。[三次原始运行、失败原因和最终日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/i-windows-focused.json)。
+  Reduce 的多轴/rank0/rank8/odd stride/空 identity/huge-empty、Softmax 三 dtype/任意轴/
+  mask/原位/8192与8193边界/32769长行/非有限值与近1概率回归均实际运行。
+- 默认 BF16→F32 平方和→epsilon→rsqrt→L2 与 BF16 masked probability Graph，M=1/17/23、
+  head128，两槽原生 capture、三次变化输入和mask、保留另一槽旧结果均通过；Direct Reduce
+  和 Softmax 复用同实现程序，结果与 Graph 一致；独立 FP64/位级 oracle 另签数学正确性。
+  metadata OOM 回滚、已接纳操作的 owner 在关闭后保留至完成、热重放无 metadata 分配已通过。
+- 统一 LOC self-check：Compute+Graph 实现 **39,552 行 / 143 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/i-implementation-loc.json)。SDK 的片上 scratch/
+  row cache 与 driver code storage 如实保留成本；零 caller workspace 不等于零临时硬件资源。
+- 当前只签 W1 局部正确性。完整 C1 权重片段、其他环境、三交付/公开头增量、默认优选与 P1
+  仍未运行，矩阵保持 UNPROVEN；不把当前 34 case 扩成整包或四路线覆盖 verdict。
+
+### C1-J：CUDA TopK 的 values/indices（AUDITED）
+
+baseline `c4a0f216`，owner `/root` / `compute_provider_cuda`。F04.6 与冻结七模型路由实际要求
+E=256/288/384/512/896，k=1/6/8/10/16/E，F32 scores 和 I32 indices；后续量化激活的同类型
+片段也需 F16/BF16。普通入口沿用 `TopK`，同时返回 values/indices；不添加 MoE/model facade。
+正交域为非连续和中轴数据选择、smallest、重复分数与完整排序，不把单一 E 做成公共形状。
+
+定向源码：固定 ggml `456172ec` 的 `top-k.cu` / `argsort.cu`，固定 SGLang `06992c92` 的
+`kernels/jit/csrc/elementwise/fast_topk.cuh`。ggml 的 CUB DeviceTopK 分支明确要求非确定/无序且
+逐 row 提交，SGLang fast-topk 只输出无序 indices，均不直接满足稳定 tie、完整 values 和 NaN
+合同；其 radix/SDK 承载可借鉴，不复制 peer runtime 或牺牲共同语义。CUDA Toolkit13.3 自带
+CUB `300304` 的 BlockRadixSort 提供线程块内排序，现有 SDK collective 承载 k=1 选择。
+
+| FIX | 固定范围 | 语义 / P0 / 必需验证 |
+|---|---|---|
+| J01 | 私有 CUDA TopK proposal/prepare/program，F32/F16/BF16 input、同 dtype values、I32 indices | 任意 axis/普通 byte stride，dense 两输出，无任何输入或输出相互重叠；NaN 总在有限值/Inf 后，同分含±0按小列号优先，largest/smallest，允许 sorted=false 仍返回排序结果；输出值保留源 storage bits；rank≥1，k合法、INT32_MAX非空input/output计数；非axis空域无launch |
+| J02 | k=1 复用SDK带索引选择；k>1 的行长≤4096复用CUB BlockRadixSort | HYLE只编码数值顺序+反向列号的64位key（NaN/zero/padding显式处理），CUB排序后解码列号并精确读取选中值；一次CTA/row和native launch，零caller workspace/slot私有状态；256threads、每线程1/2/4/8/16项按容量冷绑定；kernel与dtype/axis资格执行期不再匹配；不重写SDK排序/归约 |
+| J03 | 独立稳定标量oracle、默认Direct/Graph、生命周期与文档 | 三dtype、实际E/k、1/127/129/897/4096尾块、largest/smallest、sorted/stable flags、all equal/NaN/±Inf/±0、任意轴/odd stride/empty；values与indices都验，Softmax→TopK→Reduce等普通组合，两slots/capture/变化输入/保留结果、OOM/accepted owner/close；完整等责P1和三交付随C1固定bundle |
+
+4096 是本子集 block-sort 容量边界，不能伪装为覆盖任意长序列的 sparse-attention selection。
+后者按 C3 的真实大 N/大 k 片段定向审计接入成熟选择程序；当下普通 prepare 必须明确拒绝超界
+k>1 请求。k=1 可按一次全行SDK选择处理更长行。CUB/SDK源码不复制，不新增公共依赖/runtime；
+编译只在 CUDA owner source list/该TU的MSVC预处理选项。完整 P1 将计入 key 排序和读回 values
+的成本，当前没有“已优于成熟库”的结论。Concat、checked index/Scan 与其他 owner 不由 J 授权。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
