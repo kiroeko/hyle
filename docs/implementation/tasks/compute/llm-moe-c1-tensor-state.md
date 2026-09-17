@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04 和 H01–H03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03 和 I01–I03 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -338,5 +338,43 @@ ggml 的 LayerNorm 使用 E[x²]-E[x]²，在大均值小方差域不满足本�
 materialize，转换成本计入实际消费者；不声称新 norm 覆盖任意 layout。其余 Reduce/L2、Softmax、
 TopK、Concat、checked index/Scan 仍待各自有限审计。有限实现与必要测试只改当前 CUDA owner 及
 直接 consumer 测试/指南，公共治理和性能仪器不动；没有本轮适用 P1 verdict。
+
+### C1-H 实施事实
+
+- `3cfc1e71` 实现 mixed-F32 参数的 CUDA RMS/LayerNorm；`418b3217` 只给 norm CUDA TU
+  添加 SDK collective 所需 MSVC 标准预处理器选项。前一次编译被 SDK 的传统预处理器检查拒绝，
+  没有运行测试；固定后 W1 Release/WERROR 编译、provider 16 case、Direct 4 case、Graph 7 case
+  共 **27 case PASS**。[命令、原始日志哈希与初次失败](../../../../evidence/correctness/compute-llm-moe-c1/h-windows-focused.json)。
+- 实際数值包括三 dtype、F32 scale/bias 不能提前窄化、大均值小方差、空行/NaN/Inf/精确原位；
+  BF16 Graph 的 F32 `1+gamma` → norm → F32 swish gate → BF16 两槽 capture、三次变化输入、
+  另一槽旧结果保留和共享参数不变通过，热重放无 metadata allocation。cold OOM 回滚和在途
+  norm owner 保留至完成实际通过；没有重写 backend 或已有门控。
+- 统一 LOC self-check：Compute+Graph 实现 **38,923 行 / 139 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/h-implementation-loc.json)。无新 P1、三交付或其他
+  环境 verdict；合成真实形状不是完整本地权重片段。矩阵仍 UNPROVEN。
+
+### C1-I：CUDA Reduce 与 masked Softmax（AUDITED）
+
+baseline `418b3217`，owner `/root` / `compute_provider_cuda`。F04.3 的 Qwen DeltaNet head128 L2
+需要 F32 平方和；F04.5 与 router/attention 概率要求按轴 F32 累加、Bool/additive mask 和稳定
+Softmax。已定向核对共同 schema、Native `reduction.cc` / `transformer.cc`，以及固定 ggml
+`456172ec` 的 `src/ggml-cuda/sumrows.cu` / `softmax.cu`。后者的行归约、F32 片上行缓存有实际成本
+依据，但其 F32-only、四维对象、sinks/alibi 和异常数值语义不能直接替代当前合同。
+
+`BORROW` 现有 CUDA SDK Cooperative Groups collective、math/half 原语；HYLE 只承载薄的
+dtype/axis/byte-stride/mask 公式和程序绑定。SDK less/greater 并不传播 NaN，Min/Max combine
+必须显式保留共同 NaN 语义；不自写 warp/shuffle，不引入另一个 tensor runtime。
+
+| FIX | 固定有限范围 | 数值 / P0 / 必需验证 |
+|---|---|---|
+| I01 | HYLE CUDA Reduce Sum/Mean/Min/Max，F32/F16/BF16，任意合法 axes/keepdim/byte stride | F32 累加，half 必须显式声明；输出 dense 同类型且不与输入重叠；每 output 一 SDK tile，dense suffix/all 直接索引，其余 O(N·rank)，一次 launch、零 caller workspace；空集合 Sum=0/Mean=NaN/Min=+Inf/Max=-Inf，任一 NaN 传播；rank0、空 axes、负轴、多轴、奇数 stride 和真实宽度 |
+| I02 | Softmax/LogSoftmax，同三 dtype，任意 axis、scale、Bool 或同 dtype additive 广播 mask | F32 max/exp/sum 后一次 RNE；Bool false 覆盖输入 NaN 为 -Inf，无有效值的行和非有限归一化产生 NaN；dense output，仅输入0与输出描述相同的精确 alias；≤8192 列的行使用最多32 KiB F32片上缓存，较长行三遍读取、无整张量浮点展开或 caller workspace；SDK 两次 collective、一 CTA/row、一次 launch |
+| I03 | 默认 Direct/Graph 接线、生命周期、数值/成本与指南 | FP64独立 oracle，0/1/127/129/2048/8192/8193及长行，FP16/BF16、mask broadcast/全false/NaN/Inf/极端logits，任意轴/原位；BF16→F32 L2完整公式和masked概率的两槽capture/变更输入/保留结果；准备拒绝、OOM回滚、accepted owner/drain；完整三交付/等责P1仍在C1固定bundle |
+
+input/output 非空 element count≤INT32_MAX；空归约有非空 output 时必须写真实 identity，不能
+当作 no-op，也不能取得空输入的 device pointer。shape/dtype/kernel/cache 布局冷期绑定，执行
+不重新搜规则、不计时；现有 gated/norm Prepared 不扩大。源码列表和 MSVC collective TU 选项
+只在当前 owner 扩展。长行的三遍读、片上缓存的占用和所有 Graph Cast/临时结果均计入完整 P0/P1；
+未比较不声称默认选择最快或已完成四路线优选。TopK、Concat、checked index/Scan 不属本子集。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
