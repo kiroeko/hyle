@@ -1,6 +1,6 @@
 # 可选 factor 的 TRACE 构建门修正
 
-## Tool card / SCOPED
+## Tool card / AUDITED
 
 - baseline：`14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220`。
 - owner：build helper；六个 TRACE 消费者由 [R7 当前卡](../compute/four-route-foundation-final-review.md)
@@ -17,5 +17,7 @@
   检查 absent 无实现/private 链/Tracy 依赖，实际 R7 普通 OFF/ON source/static/shared 由主卡承担。
 - 停止：有限配置门与主卡受影响交付通过后 CLOSED；不以测试需求扩大通用构建工具。
 
-当前只建立 scope；AUDITED 后才允许修改 helper。配置测试是独立临时 consumer 或现有构建合同
-测试的窄扩展，不需要为这个问题执行性能仪器或改产品算法。
+scope 已在 `ecfed35f` 固定；独立源码审计确认两条条件确实矛盾，实际四个 OPTIONAL_ABSENT 分支
+无 implementation source，公开头不需要 trace hook。唯一 FIX B1 冻结为给中央遗漏 TRACE 检查增加
+`NOT ARG_OPTIONAL_ABSENT` 条件；其它检查与依赖投影保持。配置测试是独立临时 consumer 或现有
+构建合同测试的窄扩展，不为此执行性能仪器或改产品算法。B1 与 R7 F1 必须在同一组合候选验证。

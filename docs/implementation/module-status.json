@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
+      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
+      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
     },
     {
       "module": "container_concurrent",
@@ -512,27 +512,27 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
+      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
+      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
+      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 SCOPED：绑定最小 opt-in host trace、独立冷编译诊断与有限终审；原计算/规则/运行寿命和 P1 按明确身份继承，CPU 裸 direct 仅作成本诊断。未授权算法或热布局变更。"
+      "summary": "R7 AUDITED：F1–F5 已冻结，最小 host trace、独立冷编译报告与不等责比较入口清理；不改计算规则、算法或运行对象布局，按 P0 与匹配身份继承原资格。"
     }
   ]
 }

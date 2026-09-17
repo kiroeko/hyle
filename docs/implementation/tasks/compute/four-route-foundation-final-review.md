@@ -1,6 +1,6 @@
 # R7：四路线基础终审、诊断与清理
 
-## Closure card / SCOPED
+## Closure card / AUDITED
 
 - baseline：`14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220`，Windows canonical 工作树干净。
 - owner：`compute`、`graph`、`compute_route_apple`、`graph_route_apple`、
@@ -49,7 +49,51 @@
 | 不等责配对测试 | 旧 Sched typed join 对 Marl 较轻服务；四路线保留的裸 native 诊断须与同合同入口分清 | 有界核对现行入口并冻结清理，禁止苹果对橘子形成新 A/B 验收 |
 | 全库/模型策略 | 不属于本轮基础功能 | OUT_OF_SCOPE |
 
-具体 API、owner/常态成本与有限 FIX 在 AUDITED 后冻结；SCOPED 不授权产品代码。
+## 有限 FIX 与 API 冻结（2026-09-17）
+
+SCOPED 提交 `ecfed35fd9d1d6d5c70f201213c98f2f4c2f10e6`。已完成上述具体源码一遍；
+没有发现需要改变四路线执行架构的反例。以下集合冻结后开始实现，不追加算子或测量任务。
+
+| ID | 证据 / 允许改动 | 验收 |
+|---|---|---|
+| F1 | 六 owner 实现文件调用现有 `HYLE_TRACE_ZONE_NAMED`，中央与 factor 声明 TRACE；CPU/CUDA 实际入口在共同 compute/graph；Apple 含 native owner 执行范围；Vulkan 含冷准备与真实 submit | 默认 OFF 无状态/分配/诊断调用，ON 真实入口可编译运行且单一 Tracy client；仅 host 范围，非 GPU timing |
+| F2 | 共享纯值 `CompileNodeReport`（原节点 ordinal、OperationKind、OperationTraits）；CPU/CUDA 现有独立 report 增加 indexed node 数值/累加政策；native CompileOptions 增加只在 compile 借用的 report 指针 | 现有 ReportState 与冷 metadata 可变，Program/Invocation/Completion 热布局不变；不复制 Operation custom payload |
+| F3 | Apple/Vulkan 原生 CompileReport 各自持有 Status、环境字符串、输入/输出描述、live node metadata、固定实现/数值/边界/并发政策和本路线可证明的资源事实 | 独立 owning，编译前 reset，失败不残留成功统计；保留 report 后 Graph/Program/constant/custom owner 真正释放；cold OOM 返回 error |
+| F4 | 当前指南、前六包证据对照与旧入口校准；已无消费者的旧 timing profile 面不恢复，实际资源可行性规划保留；修正 R5 当前 Mem 尾项措辞 | 每个 MUST 有实际证据或明确限制，不以研究/旧 CLOSED 代替实际能力 |
+| F5 | 用户要求的有界比较清理：Sched v1 `structured-spawn-join` 裸对照、CPU Graph 四 fused/四 natural 裸对照，CUDA/Apple/Vulkan 六个 bare-native cost targets/专用分支退出现行 A/B；历史源码/合同/数据以冻结提交追溯 | 现行入口不再产出不等责双边计时；完整服务对照及独立数值 oracle 保留；不改产品、不新计时、不把移除数据改成 WIN/PASS |
+
+### F2/F3 值语义与成本
+
+- `include/hyle/graph/compile_report.h` 仅定义共享节点语义值，不含执行器或 runtime 类型。
+  `CompileReport::node(index)` 查询 CPU/CUDA 冷报告；原节点数与数值 traits 使用 GraphState 的
+  `kind()/traits()`，包括 symbolic View，O(1) 查询、O(nodes) 冷复制，不重新运行 schema/payload。
+- `graph::apple::CompileReport` 与 `graph::vulkan::CompileReport` 是各自可复制的冷值结构。
+  `CompileOptions::report=nullptr` 为默认；只借用到 compile 返回，不进入 native callback/制品。
+  错误使用现有 `Status`（只持有错误文本/原生错误值，不持有 tensor/native owner），不造私有错误协议。
+- Apple：报告 MLX managed whole-region、F32/affine-Q4 及 typed traits、就绪常量/原生结果无影子拷贝、
+  每槽独立但 Context owner FIFO 执行；logical constant bytes 只按声明 views 计数。MLX fusion、
+  私有 heap、driver 和运行输出实际字节保持 unknown，不能把 logical bytes 当 RSS/硬配额。
+- Vulkan：窄 `detail::PlanFacts` 可选冷输出从最终 prepare_plan 取得实际 dispatch 数、每槽 storage
+  block capacities、去重 HYLE Buffer owner 的常量容量/已知 owned VkDeviceMemory 与 borrowed 标志。
+  Graph 不从共享 Context quota 前后差估算资源，不把外借 buffer 或 opaque driver 空间算成零。
+  规则、strict F32、cold packing、compute barriers/ready handoff、独立 native slot 责任单独说明。
+- 默认不构建 native report，不新增常态 metadata/atomic/lock/registry；公共 C++ 值对象遵守已有
+  同编译器/STL 的三交付约定。新增不属于 public API 的诊断助手保持 owner 私有。
+
+### 七问与验收适用性
+
+1. 外部依赖仍为已审锁定 Tracy/oneDNN/CUDA/MLX/ggml shader，无版本升级或新 vendor。
+2. 主 FFN 与正交 custom/resource 两条旅程覆盖报告与跟踪；图外 Direct 仍直接用各 native 路线。
+3. 复用 Obs 宏、Error Status、现有 shape/traits 与 prepare_plan，不建立另一套观测或内存计费器。
+4. P0 只新增冷复制；OFF hooks 消除，运行布局不变。F5 的同合同资格先按源码责任核对，计时不能
+   证明合同等价；原 LOSS/INCONCLUSIVE 和 CPU 成本取舍如实保留。
+5. 不恢复旧 C/FFI、不制造统一 kernel vtable；共享 metadata 不要求共用 Queue。
+6. 中央 TRACE helper 矛盾由独立工具卡修复；实际 OFF/ON consumer 与 source/static/shared 验证。
+7. 指南说明 host zones、report lifetime、unknown memory 与明确失败；不要求用户理解内部 factor。
+
+新增语义风险为 cold metadata OOM、reset/拒绝与 owner 意外保活，须有行为测试及适用 sanitizer。
+跨线程执行算法不变，原竞态/失败测试复用需要逐路径证明；新 trace ON 含外部 profiler，仅签 host
+观察功能，不继承性能数据。F5 只做构建/独立 oracle 与入口负检查，不做新的 P1 比较。
 
 ## 预声明验收与停止
 
