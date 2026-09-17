@@ -816,4 +816,31 @@ baseline `babd0d36`，owner `/root` / `compute_route_apple` 与 `graph_route_app
 不改公共 Operation、通用 Graph、Context 状态机、其他模块或公共仪器。本子集不启动 P1；未运行的
 完整 C1 门继续未通过，排序原语或局部核通过不代替四路线共同验收。
 
+### C1-S 实施事实
+
+- `373bbeee` 完成 S01–S03：多索引 native stable argsort、单索引免排序、MLX managed Metal
+  有序更新与普通 Direct/Graph；原始位 assign、每次 F32→storage 舍入的 add 和 R 算法状态接通。
+  Air `Mac16,12`、Mini `Mac16,10` 的 Release/WERROR 首次均通过 Direct **29**、Graph **10**，
+  共 **39 case**，另各两个独立头检查；没有产品纠正、容差放宽或依赖变更，Mini 只签
+  correctness/portability。[命令、两机日志与哈希](../../../../evidence/correctness/compute-llm-moe-c1/s-apple-focused.json)。
+- Assign 的六类 storage/两索引宽度、scalar/多维/rank8/中负轴/native 转置与广播、原始 NaN
+  payload/±0/大 I64 位模式通过独立逻辑更新 oracle。Add 的三浮点、全偏斜与分散重复、
+  count/width1/1、17/129、129/128、4097/3、17/2048 通过独立逐次 F32/数学 storage 舍入
+  oracle；含 NaN/Inf、F32 取消和半精度末次才舍入会出错的反例。数值与零符号精确核对，NaN
+  单独分类，不借宽松容差签有序语义。
+- 单/257 索引的 checked assign/add 对负值、extent、I32/I64 极值均返回 OutOfRange；不发布
+  成功结果，输入/updates/旧状态不变，failed 槽退役、fresh 槽恢复。空 indices 保留原始 source，
+  空 output 忽略坏索引 payload；整数/Bool add 与错误 update shape 在准备时明确拒绝。
+  已接纳 native prefix 生命周期测试同时覆盖 Gather/Scatter，释放 Program/Invocation 后错误
+  仍安全完成；既有 OOM/取消/晚期 native 异常/独立 Context/排空回归通过。
+- 普通 F16/BF16 Scatter-add→Gather→mixed-F32 RMSNorm→residual 实测 rows/width 为
+  1/128、17/2048、23/129、128/2048；两槽、三次变化输入，真实 native 结果作为下次状态输入。
+  同 lower Direct 逐位对照和独立有序状态/FP64 norm 参考通过；源 Graph 释放、旧状态与结果
+  保活、坏索引失败、新槽恢复和 close 通过。本批仍为诊断权重，不算完整 C1 真实权重验收。
+- 统一 LOC self-check：Compute+Graph 实现 **43,260 行 / 174 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/s-implementation-loc.json)。Windows/Air
+  selector 保留 112/110 项 skipped reasons；Air 单独 selector 首次因默认 SSH PATH 没有 cmake
+  失败，补用验证脚本同一工具 PATH 后通过，未重建或重跑测试。完整 C1 真实权重、三交付/
+  其他环境、等责 P1 和矩阵逐格验收仍待完成；下一具名路线缺口为 Vulkan，不签 C1 整包 PASS。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
