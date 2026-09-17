@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "container_concurrent",
@@ -353,9 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_ops",
@@ -386,21 +386,21 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_sched",
@@ -409,15 +409,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_provider_cublas",
@@ -455,27 +455,27 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan delivery SCOPED: bind existing facade roots for ordinary source/static/shared consumers; prior runtime/algorithm and qualified performance remain inherited."
+      "summary": "R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged."
     },
     {
       "module": "compute_route_vulkan",

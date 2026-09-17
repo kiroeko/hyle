@@ -1,6 +1,6 @@
 # R6 Vulkan：公开产品与三种 C++ 交付
 
-## Closure card / SCOPED
+## Closure card / AUDITED
 
 - baseline：`a1329dd2bbed2cf2b4e334345273b6c970052702`。R1–R5 与 Vulkan Windows 原生检查点保留。
 - owner：`compute`、`graph`、`compute_backend_cpu`、`compute_backend_cuda`、
@@ -31,4 +31,21 @@
 | D2 | 嵌入 SPIR-V、Vulkan-Headers 与系统 loader 的源码/二进制责任 | shader 来源/许可证和 locked headers 随包；二进制用户不依赖 glslang/producer build |
 | D3 | 普通 Direct/Graph 和 native custom 的同源样例与指南 | 两系统 source/static/shared、relocation/offline、checked 数值与资源生命周期 |
 
-先固定 AUDITED FIX 再修改公开产品 roots。当前仅登记 scope，未签交付完成。
+## 审计裁决与有限 FIX
+
+- D1 FIX：只给现有 Compute/Graph facade 分别追加真实 Vulkan root。依赖方向仍从 Graph Vulkan
+  指向 Compute Vulkan；两个因子的 OFF 已有 INTERNAL_ONLY_ABSENT，普通通用头不带 SDK。
+- D2 KEEP/FIX：沿现有 locked FetchContent、package registry 的 EXPORT_TARGETS、
+  DEVELOPMENT_DIRECTORY_SPECS 和许可证投影。SPIR-V 已实际编译后嵌入产品 C++，安装库不依赖
+  glslang、外部 shader 文件或 producer build 路径。Vulkan-Headers 是公开 native 接口的一部分，
+  Vulkan loader/driver 属用户系统 runtime；HYLE 用既有 Platform DynLib 冷加载，不隐式下载 driver。
+  Windows HYLE shared DLL 继续由现有 helper 邻置；不新增无需要的资源 staging 系统。
+- D3 FIX：现有 package Direct/Graph 样例按 HYLE_COMPUTE_VULKAN 条件增加完整 F32 FFN，
+  使用相同权重/独立 oracle、M1/M16、变化输入与 replay；同一已编译 custom SPIR-V 在源码和两种
+  SDK 交付中组合。Graph 用普通 typed DAG，Direct 使用原生 Recorder 与 typed prepared 片段，
+  不引入私有通用 DAG、测试 Provider 或只 copy 的假消费。指南区分 generated owning result 与
+  native fixed caller-output 合同，展示普通单算子 prepare/bind/submit。
+
+七问：第三方 pin/许可明确；完整计算和资源消费驱动；复用原生路线/package/Platform；本卡仅冷交付
+P0；纯 C++ 无 FFI；同源三交付；ordinary 与 native 专家责任可发现。D1–D3 固定为 AUDITED FIX，
+适用门仍未验收。十三旧 owner 的 C++/规则/P1 沿 baseline，不因 roots 变动重跑性能。
