@@ -181,23 +181,26 @@ void QueueState::destroy() noexcept {
     *cursor = context_next;
   }
 
-  EventBlock *block = blocks;
-  while (block != nullptr) {
-    EventBlock *next = block->next;
-    destroy_event_block(block, context).IgnoreError();
-    block = next;
+  {
+    ScopedPrimaryContext scope(context->primary);
+    EventBlock *block = blocks;
+    while (block != nullptr) {
+      EventBlock *next = block->next;
+      destroy_event_block(block, context).IgnoreError();
+      block = next;
+    }
+    if (capture_owned && stream != nullptr) {
+      cudaGraph_t abandoned = nullptr;
+      (void)cudaStreamEndCapture(stream, &abandoned);
+      capture_owned = false;
+      if (abandoned != nullptr)
+        runtime_status(cudaGraphDestroy(abandoned)).IgnoreError();
+    }
+    if (capture_device_status != nullptr)
+      runtime_status(cudaFree(capture_device_status)).IgnoreError();
+    if (stream != nullptr && ownership != StreamOwnership::kBorrowed)
+      runtime_status(cudaStreamDestroy(stream)).IgnoreError();
   }
-  if (capture_owned && stream != nullptr) {
-    cudaGraph_t abandoned = nullptr;
-    (void)cudaStreamEndCapture(stream, &abandoned);
-    capture_owned = false;
-    if (abandoned != nullptr)
-      runtime_status(cudaGraphDestroy(abandoned)).IgnoreError();
-  }
-  if (capture_device_status != nullptr)
-    runtime_status(cudaFree(capture_device_status)).IgnoreError();
-  if (stream != nullptr && ownership != StreamOwnership::kBorrowed)
-    runtime_status(cudaStreamDestroy(stream)).IgnoreError();
 
   ContextState *selected_context = context;
   const mem::AllocatorRef selected_allocator = allocator;

@@ -4,6 +4,7 @@
 
 #include "device_status_kernel.h"
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/queue_sequence.h"
 
 namespace hyle::compute::cuda::detail {
 
