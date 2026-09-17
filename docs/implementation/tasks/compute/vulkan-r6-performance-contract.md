@@ -94,3 +94,9 @@ budget 与 caller pin；macOS 采用实际 interactive QoS，不能声称硬锁 
 API/算法/普通交付稳定后的 Direct、Graph 各一次 P1，5% NI 与严格方向分开记；n15 仅合格 CI
 未决时最多31，最多一次有源码与 consumer 双重证据的性能纠正。资格、oracle 或生命周期不等价
 时在完整采样前停止，不能换一个容易通过的 peer 或缩小形状。
+
+裸原生边界诊断的预算另固定为：每个入口/已声明机器 profile，primary 制品的执行正反序×分配
+正反序四 strata，各 15 个独立进程，每进程包含 M1/M16；不追加样本或 placement。只复用公共
+collector、machine/sampling policy 和 process-median estimator，保留完整 oracle、原始日志、
+版本/制品 hash 与源码账单。报告公开入口、裸原生延迟及成对差额，分类始终为
+`NATURAL_ROUTE / NOT_COMPARABLE`，不产生 NI 或算法输赢；在对应正式 A/A 通过后串行执行。
