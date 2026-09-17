@@ -63,7 +63,8 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
       EXPECT_EQ(report.nodes[i].ordinal, i);
     EXPECT_EQ(report.nodes[3].kind, c::OperationKind::kMatMul);
     EXPECT_EQ(report.nodes[3].traits.precision,
-              c::PrecisionPolicy::kAccumulateInOutputType);
+              c::PrecisionPolicy::kAccumulateInDeclaredType);
+    EXPECT_EQ(report.nodes[3].traits.accumulation_type, c::DataType::kFloat32);
     EXPECT_EQ(report.native_dispatch_count, 4U);
     EXPECT_EQ(report.retained_constant_owner_count, 3U);
     EXPECT_GT(report.retained_constant_capacity_bytes, 0U);

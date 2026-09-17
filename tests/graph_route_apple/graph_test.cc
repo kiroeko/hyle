@@ -78,7 +78,8 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
       EXPECT_EQ(report.nodes[i].ordinal, i);
     EXPECT_EQ(report.nodes[3].kind, c::OperationKind::kMatMul);
     EXPECT_EQ(report.nodes[3].traits.precision,
-              c::PrecisionPolicy::kAccumulateInOutputType);
+              c::PrecisionPolicy::kAccumulateInDeclaredType);
+    EXPECT_EQ(report.nodes[3].traits.accumulation_type, c::DataType::kFloat32);
     EXPECT_EQ(report.declared_constant_count, 7U);
     EXPECT_EQ(report.logical_constant_bytes, 9216U);
     EXPECT_FALSE(report.private_storage_bytes);
