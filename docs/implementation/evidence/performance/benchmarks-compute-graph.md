@@ -1,7 +1,8 @@
 # Compute / Graph 性能证据
 
-当前四路线工作中，R3 CPU 的原统计与具名例外见[全库账本](full-library-scorecard.md)；R4 CUDA
-最终结果见本页末尾。以下前段保留旧候选的 CPU/CUDA 历史证据，不用旧 copy 或跨域样例签新路线完成。
+当前四路线工作中，R3 CPU 的原统计与具名例外见[全库账本](full-library-scorecard.md)；R4 CUDA、
+R5 Apple 的最终结果与 R6 Vulkan 的已完成检查点见本页后段。以下前段保留旧候选的 CPU/CUDA
+历史证据，不用旧 copy 或跨域样例签新路线完成。
 
 本页分别裁决 2026-09-12 的 CPU one-op 抽象税与 x64 oneDNN provider 边界，不声称完整 Compute/Graph、
 完整算子目录或 GPU backend 已完成。one-op 冻结合同是
@@ -368,3 +369,30 @@ Graph M1 4.198–11.062µs、M16 5.719–12.185µs，均为分层中位数范围
 
 R5 两 owner 结合实际正确性、host 插桩和两 Mac 三交付按协议 CLOSED。R6/R7 继续按当前卡施工；
 CPU 已批准例外、未测硬件与未插桩 vendor/GPU 的限制保留。
+
+## R6 Vulkan Windows 完整 F32 片段检查点（2026-09-17）
+
+产品候选 `8e45b104`，Windows 测量快照 `3894b72e`；W1-WIN engineering、RTX 4070、
+strict F32，实际 caller CPU 2、process mask 0x14。独立参考使用锁定 ggml `456172ec` 的
+原样 shader 与独立数学 recipe，两侧承担相同 HYLE native 生命周期 adapter。本比较验证
+成熟实现接入、规则绑定及 Graph 编译的非劣性，不是整个 ggml runtime 或 HYLE 算法的排名。
+
+| 入口 / workload | 八分层 median 吞吐比范围（candidate/peer） | 严格方向 | 原 5% NI |
+|---|---|---|---|
+| Direct M1 | 0.990494–1.004220 | 8 INCONCLUSIVE | PASS |
+| Direct M16 | 0.991878–1.005471 | 8 INCONCLUSIVE | PASS |
+| Graph M1 | 0.994071–1.004920 | 8 INCONCLUSIVE | PASS |
+| Graph M16 | 0.991991–1.004861 | 8 INCONCLUSIVE | PASS |
+
+[Direct 原始证据](../../../../evidence/performance/vulkan-r6-w1-direct-8e45b104/README.md)与
+[Graph 原始证据](../../../../evidence/performance/vulkan-r6-w1-graph-8e45b104/README.md)各自完成
+16 个 A/A 资格进程、120 个产品进程及 30 个公共 control 进程；每入口两个完整 FFN shape 的
+16 项非劣门均在 n=15 通过并停止。全部严格 CI 包含 1，不把工程非劣改写成严格等速或算法胜出。
+输入、制品及 host 身份稳定，公共 `verify` 为 EXACT/CURRENT/QUALIFIED；两种 placement 的
+实际热函数地址变化已由原始链接 map 核对，未用热路径 padding 或 LTO 制造差异。
+
+Direct 的固定 caller buffers 与 Graph 的 generated owning result 各自和同合同参考比较，
+不跨入口排名。裸 Vulkan submit/fence 的取消、quarantine 和结果 lease 责任不同，仍按
+[原生边界合同](../../tasks/compute/vulkan-r6-performance-contract.md)单独诊断，不由本表签证。
+Air 两入口 P1、原生边界诊断、最终交付/selector 与 R6 终审尚未全部完成；两个 Vulkan owner
+继续 CANDIDATE。本检查点不外推 Linux GPU、AMD/Intel、其它数值格式或生产模型吞吐。
