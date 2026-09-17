@@ -429,4 +429,10 @@ k>1 请求。k=1 可按一次全行SDK选择处理更长行。CUB/SDK源码不�
 编译只在 CUDA owner source list/该TU的MSVC预处理选项。完整 P1 将计入 key 排序和读回 values
 的成本，当前没有“已优于成熟库”的结论。Concat、checked index/Scan 与其他 owner 不由 J 授权。
 
+J03 的默认接线发现当前同 owner 的具体反例：SGLang adapter 在判断 operation family 前把
+`outputs.size()!=1` 当作 binding mismatch，合法的两输出 TopK 会提前 fatal，阻止后面的 HYLE
+provider。固定修复仅令 proposal binding 数量与 `request.outputs.size()` 比较，随后沿现有
+`select_shape` 对非 gated family 返回 unsupported；cuBLASLt/Marlin 已是这个正确顺序，不重开。
+默认 Direct/Graph TopK 和原门控回归必须同时通过，不能只用显式 HYLE provider 绕过此缺陷。
+
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
