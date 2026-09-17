@@ -247,3 +247,8 @@ validation 通过；Air 四个完整 FFN 程序的两组输入/全输出独立 d
 下一步按四份 Direct/Graph × W1/M1 合同运行统一仪器：每入口先一次有限 A/A，通过后 n15，只有
 资格成立而区间未决时最多 n31；原生边界成本单列为不可排名诊断。适用的最终交付/selector 门、
 候选红队与全部性能仍未签 PASS。十三 facade 交付 owner 保持自己的活动卡，不恢复旧施工队列。
+
+首个 W1 selector 已通过前置 docs/closure、configure 与两个原生 factor。P1 在构建阶段遇到
+独立 peer 的 Windows 反斜杠被 CMake 的 `CONFIGURE_DEPENDS` 写入无效转义；此时没有 A/A 或
+性能样本。只在 Vulkan benchmark 的 CMake 局部规范化该路径，保留失败日志；产品 `8e45b104`
+不变，修正后的 benchmark commit 作为测量制品身份，原性能预算未消耗。

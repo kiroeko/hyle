@@ -1,13 +1,14 @@
 if(HYLE_STATIC AND HYLE_COMPUTE_VULKAN_ENABLED)
-  if(NOT EXISTS "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}/src/ggml-vulkan/ggml-vulkan.cpp")
+  file(TO_CMAKE_PATH "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}" _reference_source)
+  if(NOT EXISTS "${_reference_source}/src/ggml-vulkan/ggml-vulkan.cpp")
     message(FATAL_ERROR "Vulkan benchmarks require the pinned independent HYLE_VULKAN_REFERENCE_SOURCE_DIR")
   endif()
   set(_reference_output "${CMAKE_CURRENT_BINARY_DIR}/reference-shaders")
   file(GLOB _reference_inputs CONFIGURE_DEPENDS
-    "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}/src/ggml-vulkan/vulkan-shaders/*")
+    "${_reference_source}/src/ggml-vulkan/vulkan-shaders/*")
   add_custom_command(OUTPUT "${_reference_output}/reference_spirv.h"
     COMMAND "${HYLE_VULKAN_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/reference_shaders.py"
-      --peer "${HYLE_VULKAN_REFERENCE_SOURCE_DIR}" --compiler "${HYLE_VULKAN_GLSLANG}"
+      --peer "${_reference_source}" --compiler "${HYLE_VULKAN_GLSLANG}"
       --output "${_reference_output}"
     DEPENDS reference_shaders.py ${_reference_inputs} VERBATIM)
   add_library(hyle_vulkan_reference STATIC reference.cc "${_reference_output}/reference_spirv.h")
