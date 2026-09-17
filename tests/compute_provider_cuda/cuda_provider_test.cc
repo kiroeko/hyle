@@ -517,8 +517,12 @@ void pending_completion_retains_program(
       : operation.kind() == compute::OperationKind::kRmsNorm
           ? 1 / std::sqrt(1.0 + 1e-5)
           : 1.0 / (1.0 + std::exp(-1.0));
-  for (const auto value : actual)
-    EXPECT_NEAR(value, expected, 0.000001);
+  for (std::size_t index = 0; index < actual.size(); ++index)
+    EXPECT_NEAR(actual[index],
+                operation.kind() == compute::OperationKind::kScan
+                    ? static_cast<double>(index + 1)
+                    : expected,
+                0.000001);
   if (operation.kind() == compute::OperationKind::kTopK) {
     std::vector<std::int32_t> indices(actual.size());
     ASSERT_TRUE(output_storage[1]
@@ -671,6 +675,8 @@ void metadata_failures_rollback(
 
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
   pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::Scan{}));
+  pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Scatter{}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Gather{}));
@@ -695,6 +701,8 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::Scan{}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Scatter{}));
   metadata_failures_rollback(compute::cuda_native::provider(),

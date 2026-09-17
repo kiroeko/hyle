@@ -125,7 +125,12 @@ Scatter输出保持原值，通过Completion报告；失败槽退役后可建新
 普通Direct复用它，外层CUDA Graph接入原生child graph；执行期不重新调用排序准备。原位更新省去
 整状态复制，opaque CUDA graph私有内存如实报告unknown，不能当成零内存。完整成本包括索引检查、
 排序、必要source复制、逐目标有序更新与完成回报，不等同于无序atomic scatter。
-整数/FP8 Cast 与算术、Scan 等
+CUDA `Scan` 支持I32/F32、inclusive/exclusive、任意axis/普通byte stride、dense输出和同描述精确
+原位执行；非空总元素≤INT32_MAX，空域不访问payload。SDK BlockScan以固定CTA分块沿row求和，
+零caller workspace/槽私有状态；F32一次launch，exclusive直接求前缀而非减去当前元素。I32先用
+I64检查所有row的全部前缀（包括exclusive的最后总和），再第二次读取并写出；任一溢出报告
+OutOfRange且所有output保持原值。整数检查/状态回报和长行跨tile carry的成本均属于该路线。
+整数/FP8 Cast 与算术等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 

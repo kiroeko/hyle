@@ -13,6 +13,7 @@
 #include "norm_provider.h"
 #include "provider_internal.h"
 #include "reduction_provider.h"
+#include "scan_provider.h"
 #include "scatter_provider.h"
 #include "tensor_provider.h"
 #include "topk_provider.h"
@@ -113,6 +114,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (!Sglang) {
+    if (request.operation.kind() == OperationKind::kScan)
+      return scanning::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kScatter)
       return scattering::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kGather)
@@ -243,6 +246,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (!Sglang) {
+    if (request.route == scanning::kRoute && request.shape.exact())
+      return scanning::prepare(state, request, allocator, output);
     if (request.route == scattering::kRoute && request.shape.exact())
       return scattering::prepare(state, request, allocator, output);
     if (request.route == gathering::kRoute && request.shape.exact())
@@ -323,7 +328,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-gated" : "v9-scatter"},
+                 .version = Sglang ? "06992c92-precise-gated" : "v10-scan"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,
