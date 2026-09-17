@@ -1,0 +1,10 @@
+#version 450
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer Input { float x[]; };
+layout(binding = 1) writeonly buffer Output { float y[]; };
+layout(push_constant) uniform Shape { uint count; } shape;
+void main() {
+  uint index = gl_GlobalInvocationID.x;
+  if (index < shape.count)
+    y[index] = 2.0 * x[index] + 1.0;
+}

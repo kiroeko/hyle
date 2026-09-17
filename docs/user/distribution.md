@@ -188,8 +188,10 @@ CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE �
 Marlin 与 SGLang activation 的 Apache-2.0 LICENSE/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。R4 的当前
 三交付/性能验收状态见 module-status，不把可编译入口当作全部路线已验收。Windows 运行时将实际
 HYLE、CUDA Runtime、cuBLASLt 及所需 VC runtime DLL 放在 exe 同目录；不要依赖偶然的 PATH。
-Metal/MLX、Vulkan 或其他 provider 仍须在独立 factor 具备实现、依赖
-owner、三交付验证与性能结论后登记。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
+Apple MLX/Metal 的构建、metallib 邻置与已验收边界见 [Apple 指南](apple-compute.md)。
+Vulkan 的 ON/OFF、系统 loader、嵌入 SPIR-V 与当前交付验收见 [Vulkan 指南](vulkan-compute.md)；
+开启 Vulkan 不取得 CPU/CUDA/MLX 实现，二进制 SDK 不要求 glslang。各路线的验收状态以 registry
+和当前卡为准。HIP/ROCm 当前无限期不纳入产品，不提供占位组件或配置项。
 当前 trace 只有 Tracy，不存在 `HYLE_TRACE_BACKEND` 选择项。
 
 ## 5. 配置合同

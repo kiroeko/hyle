@@ -10,6 +10,10 @@
 #include <cstdio>
 #endif
 #include <hyle/graph/executable.h>
+#if defined(HYLE_COMPUTE_VULKAN)
+#include "vulkan_ffn.h"
+#include <cstdio>
+#endif
 #include <hyle/mem/buffer.h>
 
 #if defined(HYLE_GRAPH_ONEDNN)
@@ -218,6 +222,14 @@ int main() {
     const auto message = apple_status.message();
     std::fprintf(stderr, "Apple graph FFN: %.*s\n", static_cast<int>(message.size()), message.data());
     return 27;
+  }
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+  const auto vulkan_status = sample_vulkan_graph::run();
+  if (!vulkan_status.ok()) {
+    const auto message = vulkan_status.message();
+    std::fprintf(stderr, "Vulkan graph FFN: %.*s\n", static_cast<int>(message.size()), message.data());
+    return 28;
   }
 #endif
   return 0;

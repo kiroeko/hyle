@@ -10,6 +10,10 @@
 #include <cstdio>
 #endif
 #include <hyle/compute/operation.h>
+#if defined(HYLE_COMPUTE_VULKAN)
+#include "vulkan_ffn.h"
+#include <cstdio>
+#endif
 #include <hyle/compute/prepared_operation.h>
 #if defined(HYLE_COMPUTE_ONEDNN)
 #include <hyle/compute/providers/onednn.h>
@@ -175,6 +179,14 @@ int main() {
     const auto message = apple_status.message();
     std::fprintf(stderr, "Apple FFN: %.*s\n", static_cast<int>(message.size()), message.data());
     return 19;
+  }
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+  const auto vulkan_status = sample_vulkan_direct::run();
+  if (!vulkan_status.ok()) {
+    const auto message = vulkan_status.message();
+    std::fprintf(stderr, "Vulkan FFN: %.*s\n", static_cast<int>(message.size()), message.data());
+    return 20;
   }
 #endif
   return 0;

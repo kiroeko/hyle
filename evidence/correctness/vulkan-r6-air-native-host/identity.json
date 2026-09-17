@@ -1,0 +1,10 @@
+{
+  "archive": "/Users/kiro/hyle-verify/r6-vulkan-20260917/air-native-and-host-ecdd92a7.zip",
+  "sha256": "08c76c0fcfc895f244b6a8901d09f15598138843771e38818e6e8de75ea1d262",
+  "bytes": 45993,
+  "entries": 32,
+  "commit": "ecdd92a7a5e343618b1d3f32fa2e459a641e29aa",
+  "native": "13 Compute + 3 Graph + 2 header CTests PASS; real MoltenVK with Khronos synchronization validation",
+  "host_sanitizers": "ASan/UBSan/TSan actual native tests PASS; external Vulkan driver/GPU uninstrumented",
+  "integrity": "all archived entries rehashed after transfer"
+}

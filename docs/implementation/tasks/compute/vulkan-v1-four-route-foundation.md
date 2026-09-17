@@ -188,3 +188,15 @@ R5 已独立 CLOSED，后续重型验证可串行使用 Air。MoltenVK、host �
 
 公开 facade 和跨路线交付 owner 已另立[有限交付卡](../build/vulkan-r6-product-delivery.md)，
 按当时十三个既有 roots 绑定，不借旧 Apple CLOSED 卡授权 Vulkan 变更。
+
+### MoltenVK 与 host 插桩检查点
+
+[Air 原始证据](../../../../evidence/correctness/vulkan-r6-air-native-host/README.md)：同一 16 项
+真实 native GTest、两个逐头检查及 Khronos synchronization validation 通过。ASan/UBSan/TSan
+分别实际编译并运行全部 16 项测试，各保留 12 个已插桩编译单元的命令和 executable hash；
+只签 HYLE host，外部 loader/driver/GPU 未插桩。
+
+唯一新增产品修正是 shader 生成脚本兼容系统 Python 3.9；Windows 八个生成文件逐字节相同，
+没有改变 shader、数值门或 API。产品候选尚未冻结，未启动性能采样。普通 public roots 和
+Direct/Graph FFN+custom 同源样例已接线，Windows installed static 首次真实计算通过；
+relocation、其余交付形态与两系统完整闭包仍按交付卡验收，不由此签 R6 完成。

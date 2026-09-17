@@ -32,6 +32,7 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [compute](compute.md)：显式 CPU execution、tensor binding、prepared operation 与 typed host kernel
 - [graph](graph.md)：逻辑计算图、冷编译、可共享 Executable 与独占 Invocation
 - [Apple MLX/Metal](apple-compute.md)：原生 Direct/Graph region、结果 owner、资源随包交付与限制
+- [Vulkan](vulkan-compute.md)：原生录制、Direct/Graph、自定义 SPIR-V、结果寿命和三交付
 
 未列在上述模块指南中的组件可能还没有经过审查的正常用户 journey；以施工状态和实际用户页为准。
 仓库中的 header、sample 或历史任务不能替代用户合同。模块进入 `CLOSED` 前必须补齐适用的正常

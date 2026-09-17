@@ -1,8 +1,8 @@
 # Apple MLX/Metal：Direct Compute 与 Graph
 
 Apple 路线在同一个 MLX Metal runtime 中保留原生 arrays、编译融合与内存管理。普通 typed Direct
-和 Graph 应用固定的成熟 MLX 规则；用户不排序 Provider、不提交 timing profile。当前 R5 仍在
-[验证中](../implementation/tasks/compute/apple-v1-four-route-foundation.md)，不要将本页当成最终性能证书。
+和 Graph 应用固定的成熟 MLX 规则；用户不排序 Provider、不提交 timing profile。R5 已完成
+[限定环境验收](../implementation/tasks/compute/apple-v1-four-route-foundation.md)，性能资格不外推其它硬件。
 
 ## 构建与三种 C++ 交付
 
