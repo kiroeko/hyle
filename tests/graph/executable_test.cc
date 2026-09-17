@@ -1299,7 +1299,9 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_EQ(compiled.report.node(0)->traits.accumulation_type,
             DataType::kFloat32);
   EXPECT_EQ(compiled.report.node(1)->traits.precision,
-            hyle::compute::PrecisionPolicy::kAccumulateInOutputType);
+            hyle::compute::PrecisionPolicy::kAccumulateInDeclaredType);
+  EXPECT_EQ(compiled.report.node(1)->traits.accumulation_type,
+            DataType::kFloat32);
   EXPECT_GT(compiled.report.workspace_bytes(), 0u);
   EXPECT_GT(compiled.report.workspace_backing_count(), 0u);
   EXPECT_EQ(compiled.report.workspace_bytes(),
