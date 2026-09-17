@@ -2,7 +2,7 @@
 
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
 HYLE 在准备期绑定 ggml 或 HYLE shader，Graph 冷期规划资源，重复执行复用录制好的命令。
-普通用户只选路线，不排序 Provider 或提供 timing profile。当前支持域已完成 Windows RTX 4070
+普通用户只选路线，不排序 Provider 或提供 timing profile。既有 F32 基础支持域已完成 Windows RTX 4070
 与 Air M4/MoltenVK 的真实计算、资源寿命、三交付和
 [有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
 资格限所记录的设备/软件与 F32 shape 域，不承诺其它设备或完整推理模型的性能。
@@ -88,7 +88,8 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 
 `allocate` 为逻辑 byte span 向上补齐到四字节，并为 empty tensor 保留至少四字节 native
 容量；`upload/download` 的 span 仍必须恰好等于 `description.required_bytes()`，只传逻辑字节。
-空传输不录制 copy，但仍检查设备、closed 和失败状态。`borrow_ready` 的 `available_bytes`
+空传输不录制 copy，仍检查设备和失败状态；upload 要求 Context 未关闭，已保活结果的 download
+与非空传输一样允许在 close 后读取。`borrow_ready` 的 `available_bytes`
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
@@ -105,7 +106,7 @@ HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
 constants 按 Graph 常量顺序，bind 按输入顺序，结果按 publish 顺序。编译后可以销毁原 Graph 和
 常量句柄；Program 保有自己的原生 owner。Graph 冷期删除 dead pure nodes、规划中间 buffer
 生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。重放不遍历原 DAG。
-当前只接受固定 shape、pure、单输出 node；符号、资源效果、control edge、alias schema 和直接
+当前只接受固定 shape、pure、单输出 node；符号、资源效果、control edge、必须别名的节点和直接
 publish 输入/常量会明确拒绝。
 
 [Direct FFN 样例](../../samples/package/compute/cpp/vulkan_ffn.h)展示 typed prepare 和 Recorder

@@ -873,4 +873,34 @@ padding，不能把二者混为一谈。
 下一批具名算法/资源机制，不能改成缺席或由consumer重复实现。当前不改通用Graph、Mem、依赖pin、
 公共构建治理或性能工具，不运行P1；owned shader/source编译只在Vulkan模块CMake内接线。
 
+### C1-T 实施事实
+
+- `83971269` 实现 T01–T04：六 storage 的 native word buffer、空/尾字节传输与结果 owner，
+  Copy/Fill/Select，以及三浮点 Cast、13 Unary、六 Binary 的原生 SPIR-V。输入支持 rank0–8、
+  odd/zero byte stride 和广播，输出 dense；F32 求值、半精度 RNE，存储操作保留原始位。
+  普通 prepare、Direct Recorder 和 Graph 共享 lower；optional alias 使用独立输出，MustAlias
+  继续明确拒绝。旧 F32 GEMM/SiLU 保留具名 dtype 资格，未向半精度误放行。
+- Windows RTX 4070 / driver 610.62、Air `Mac16,12`、Mini `Mac16,10` 各 **17 Direct + 6 Graph**
+  用例和两个公开头检查通过。三浮点独立 FP64/codec 参考、六 storage 原始位与 NaN payload、
+  scalar/empty/rank8、0/1/127/128/129/257/2048、舍入中点/溢出/次正规数/±0、borrow 对齐/容量、
+  metadata-only 准备和现有 OOM/native 失败回归均有实际结果。
+- 普通 half residual→Softplus→Bool mask 图以 0/129、1/128、17/2048、23/129 的 rows/width
+  运行；同 lower 的 Direct 录制仅作正确性对照，同时使用独立数学参考。两槽、三次变化输入、
+  两输出、源 Graph 销毁、输入不变、旧结果保留、abandon 和 close 后读取通过。
+- 预候选 shader 初编译发现 glslang 不接受 specialization 构造的全局 const 数组，改为显式
+  八轴地址步骤后通过。W1 首轮唯一测试失败是旧卡要求 F32 Neg 不支持；`690d3582` 将拒绝域改为
+  仍不支持的 I32 Neg，仅重跑 Direct，保留同产品的 Graph/头证据。未修改数值容差或运行算法。
+- `bc7b6062` 补齐预声明的外部输出保护区检查：六 storage 的借用 slice 在真实非零 native offset
+  写入，padding 以外的前后区域逐字节保持不变。三台机器各只补跑该变化用例。以上后续提交均未
+  改产品实现；Windows/Air validation-layer 日志无 VUID/同步错误。Mini 使用已有 Air 安装的
+  loader/MoltenVK/glslang 本地验证工具包，散列核对后置于隔离目录；未安装系统工具或验证层。
+- 见[结果与全部尝试](../../../../evidence/correctness/compute-llm-moe-c1/t-vulkan-focused.json)及
+  [原始日志包](../../../../evidence/correctness/compute-llm-moe-c1/t-vulkan-focused-raw.zip)。selector
+  在 W1/Air 保留 110 项 skipped reasons；delivery/P1 等整包门未以本批结果冒签。
+  [独立 LOC 工具卡](../build/loc-glsl-accounting-v1.md)补计此前静默遗漏的 GLSL，统一脚本对同一
+  不可变产品统计 **43,605 行 / 177 文件**，包含 186 行 shader，不含测试/bench/第三方，
+  [self-check PASS](../../../../evidence/correctness/compute-llm-moe-c1/t-implementation-loc.json)。
+- 本批为诊断数据，真实模型权重消费、四路线共同逐格验收、三交付/其余适用环境和等责 P1 仍待
+  完整 C1 固定 bundle；下一步仅审计 Vulkan 尚缺的具名布局/门控/归约/索引机制，不扩模型策略。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

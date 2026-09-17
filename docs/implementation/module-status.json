@@ -506,13 +506,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-T AUDITED：T01–T04固定Vulkan六类word storage、空/尾字节资源边界、Copy/Fill/Cast/Unary/Binary/Select与普通Graph，尚未实施。View别名、norm/reduce/index等后续机制和完整C1验收仍待完成。"
+      "summary": "LLM/MoE C1-T AUDITED：T01–T04 已实现六 storage、三浮点逐元素/转换与普通 Direct/Graph；W1/Air/Mini 各23例及2个头检查通过，外部缓冲区保护区补测通过。完整 C1 的 View/Concat/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-T AUDITED：T01–T04固定Vulkan六类word storage、空/尾字节资源边界、Copy/Fill/Cast/Unary/Binary/Select与普通Graph，尚未实施。View别名、norm/reduce/index等后续机制和完整C1验收仍待完成。"
+      "summary": "LLM/MoE C1-T AUDITED：T01–T04 已实现六 storage、三浮点逐元素/转换与普通 Direct/Graph；W1/Air/Mini 各23例及2个头检查通过，外部缓冲区保护区补测通过。完整 C1 的 View/Concat/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # 统一 LOC：GLSL 实现计入
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## 独立工具卡 / SCOPED → AUDITED
 
@@ -20,3 +20,12 @@
 - stop：上述有限项成立即 CLOSED。后续只有新的正式实现语言被漏计才重开。
 
 审计已复现两个静态范围缺口；复用现有 cloc、不可变快照和 central owner 机制。
+
+## CLOSED
+
+工具候选 `96323e06` 已补齐两个白名单；工具回归、actual cloc/owner 反例和 selector 的
+docs/closure/tool 门通过，其余 116 项保留 skipped reasons。未构建产品或运行 P1。
+同一不可变产品 `83971269` 的统一 Compute + Graph 统计为 **43,605 行 / 177 文件**，
+包含 186 行 GLSL，不含测试、bench 或第三方，self-check PASS，见
+[统一 JSON](../../../../evidence/correctness/compute-llm-moe-c1/t-implementation-loc.json)。
+历史记录保留原事实，本次修正不计为产品能力进度；本工具卡停止。
