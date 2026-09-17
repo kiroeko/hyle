@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 接线进入 AUDITED，其余六个 owner
+  对 D01 的 typed prepare 接线进入 AUDITED；`compute_provider_cuda` 仅对 E01–E03 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -208,5 +208,24 @@ modulo 运算无 signed overflow UB。Compute 的 checked overflow 要求更强�
 本次新增 schema/自然接口不宣称 GPU 已实现。共享 API 的 selected 消费者/headers/三交付与后续 C1
 接口定型候选合并执行，期间未运行项保持未证明；先运行新增 owner 的局部正确性，不运行 P1。
 能力 query、CUDA checked-index 完成时错误等仍待各自有限审计，D01 不授权改这些公共运行机制。
+
+### C1-E：CUDA 原生门控与成熟片段扩域（AUDITED）
+
+baseline `f626fb48`。F03.2 的本地 2B BF16 SwiGLU 是实际缺口；固定七模型的激活域还要求既有
+typed GELU/GELU-tanh 门控。已经 vendored 的固定 SGLang `activation.cuh` 同时拥有这三种数学核，
+当前 HYLE 接线只实例化 F16/F32 SiLU。`sglang_device_compat.cuh` 缺 BF16 include；原生
+`native_kernel.cu`、private `native_kernel.h` 与 `cuda_provider.cc` 也用 bool half 限定域。
+这是现有片段扩域，不引入新依赖、版本、provider、执行器或 CUDA backend 修改。
+
+| FIX | 固定实施范围 | 承载 / 成本 / 验收 |
+|---|---|---|
+| E01 | 私有 dtype/activation 冷绑定扩为 F32/F16/BF16 × SiLU/GELU/GELU-tanh；支持合法零 output | 不把公共 C++23 descriptor 搬进 CUDA20 TU；HYLE packed/separate kernel 复用既有逐元素索引，非空 prepare 解析函数与 launch 参数，submit 无模式搜索；零元素 submit 不取 device payload 指针、不发 kernel |
+| E02 | 已固定 SGLang packed 完整 16-byte vector 的同三种激活、BF16 实例化 | `BORROW` 原片段，不改 vendor 数学；无 PDL/fast-math/提前 half activation 舍入；BF16/F16 width%8、F32 width%4 及 alignment16 仍为资格条件；默认工厂顺序不变，原 F16/F32 SwiGLU 规则保留 |
+| E03 | 数值/生命周期/default factory/Graph 与 user header、指南回映 | 两 invocation、真实 completion、capture 重放、2048/6144/tails、±Inf/NaN/极值、packed/separate、F16/BF16 最终一次舍入；零 output 不需要有效 device allocation；原 tail/不安全 alias/关闭/故障保持可判定 |
+
+现有 Program/Prepared 元数据不因新 dtype/模式增加常态字段；private prepare 参数用具名 enum。
+非空路径的 dispatch 数仍为一。空路径不虚报实际发出 kernel；其结构 cost 的 dispatch 项保持未声明。
+三交付、默认优选与完整等责 P1 在本包固定 CUDA bundle 执行；当前门控子集没有 CUDA 新覆盖 PASS。
+普通索引的运行时越界、其他张量算子、能力查询仍另行审计，E01 不授权改公共 completion 协议。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

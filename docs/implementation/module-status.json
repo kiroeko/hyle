@@ -469,9 +469,9 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
+      "summary": "LLM/MoE C1-E AUDITED：仅固定 E01–E03 的 CUDA BF16/三种门控、现有 SGLang 片段实例化与空工作负载；不改原生 stream/capture/完成协议。其余 C1 CUDA 能力仍待定界。"
     },
     {
       "module": "compute_route_cuda",
