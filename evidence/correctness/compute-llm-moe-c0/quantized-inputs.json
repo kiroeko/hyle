@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "kind": "local_quantized_inputs_not_model_acceptance",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "profiles": [
+    {
+      "profile": "Q4-S128",
+      "directory": "C:\\hyle-cache\\models\\qwen35-2b\\4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155\\Q4-S128",
+      "artifact": "quantized.safetensors",
+      "bytes": 668305656,
+      "sha256": "48451a3540f3426639a22858d24141b6992999584a24eded928cd64e50bbf8a6",
+      "tensors": 132,
+      "max_tensor_relative_l2_weight_error": 0.1891399311552098,
+      "reference": "receipt.json in artifact directory retains per-tensor statistics and source snapshots"
+    },
+    {
+      "profile": "Q8-B32",
+      "directory": "C:\\hyle-cache\\models\\qwen35-2b\\4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155\\Q8-B32",
+      "artifact": "quantized.safetensors",
+      "bytes": 1377077728,
+      "sha256": "f758fd6bc3d9efde0ef80a1b5d613625dbfc43c470aa37799a6b9cab4e98f9d8",
+      "tensors": 132,
+      "max_tensor_relative_l2_weight_error": 0.007727252219302682,
+      "reference": "receipt.json in artifact directory retains per-tensor statistics and source snapshots"
+    },
+    {
+      "profile": "F8-B128",
+      "directory": "C:\\hyle-cache\\models\\qwen35-2b\\4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155\\F8-B128",
+      "artifact": "quantized.safetensors",
+      "bytes": 1296390752,
+      "sha256": "ef1e2b0791498f918038e5660302ee33265b42e9f1491927d6337427073a495b",
+      "tensors": 132,
+      "max_tensor_relative_l2_weight_error": 0.026553058534184503,
+      "reference": "receipt.json in artifact directory retains per-tensor statistics and source snapshots"
+    }
+  ],
+  "independent_codec_check": "E4M3 all 254 finite encodings and 100003 values compared with Torch; Q4 signed/nibble/tie/zero cases; Q8 C-roundf half ties and underflowed F16 scale; 12 small tool tests",
+  "model_correctness": "not yet executed for quantized profiles; C3/C6 gates remain required"
+}

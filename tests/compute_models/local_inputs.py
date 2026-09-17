@@ -70,9 +70,17 @@ def copy_local(source: Path, destination: Path, inventory: dict) -> dict:
     destination = destination.resolve()
     if source == destination or source in destination.parents or destination in source.parents:
         raise ValueError("source and destination must be disjoint directories")
-    if destination.exists():
-        return verify(destination, inventory)
     partial = destination.with_name(destination.name + ".partial")
+    if destination.exists():
+        try:
+            return verify(destination, inventory)
+        except ValueError:
+            # Withdraw a damaged cache before repair. Both fully resolved
+            # targets stay in the explicitly named destination parent; the
+            # canonical source is disjoint and is never moved or modified.
+            if partial.exists() or partial.parent != destination.parent:
+                raise ValueError("damaged cache has a conflicting partial directory")
+            destination.rename(partial)
     partial.mkdir(parents=True, exist_ok=True)
     for entry in inventory["files"]:
         if matches(partial, entry):

@@ -2814,7 +2814,8 @@
       "activation_output": "float16",
       "accumulation": "float32",
       "formula": "Marlin test.py gen_quant4: input F16; scale=F16(max(abs(group))*2/15); code=clamp(round_nearest_even(F16(x/scale)),-8,7); store q+8, low nibble first",
-      "zero_group": "codes q=0, scale=0"
+      "zero_group": "codes q=0, scale=0",
+      "dequantized_weight": "F16 round-nearest-even after signed code * stored F16 scale; F32 accumulate with F16 activation"
     },
     "Q8-B32": {
       "group_axis": "last/K",
@@ -2824,7 +2825,9 @@
       "activation_output": "float16",
       "accumulation": "float32",
       "formula": "ggml quantize_row_q8_0_ref: d=max(abs(group))/127 in F32; code=round_half_away_from_zero(x/d); stored scale=F16(d)",
-      "activation_quantization": false
+      "activation_quantization": false,
+      "dequantized_weight": "F16 round-nearest-even after signed code * stored F16 scale; F32 accumulate with F16 activation",
+      "zero_or_underflowed_scale": "stored F16 scale=0 -> all codes=0; decoded values exactly zero; avoids F32 reciprocal overflow"
     },
     "F8-B128": {
       "weight_block": [

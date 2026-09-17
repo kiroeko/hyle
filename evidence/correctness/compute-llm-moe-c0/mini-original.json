@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "kind": "local_model_input_receipt_not_compute_evidence",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "directory": "/Users/kiro/.cache/hyle/models/qwen35-2b/4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155/original",
+  "machine": "Mac",
+  "platform": "darwin",
+  "files_verified": 13,
+  "bytes_verified": 4571274023,
+  "verification": "size_and_sha256_every_file",
+  "result": "PASS"
+}

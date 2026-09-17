@@ -271,25 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "container_concurrent",
@@ -395,14 +385,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-ops-v4-quantized-matmul.md",
-      "summary": "compute_ops R2-Q CLOSED：完整 grouped Q4 schema、既有 custom/resource/View 尾项、四环境正确性、Windows 三交付/relocation、WSL UBSan 与 P0 通过；仅关闭逻辑 schema，native kernel/默认规则仍归 R3–R6。",
-      "candidate": "210044ce0b8b4df0ab6b796e00331536d3f0263d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-ops-v4-quantized-matmul.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "compute_backend_cpu",
@@ -428,14 +413,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "compute_sched",
@@ -489,14 +469,9 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md",
-      "summary": "CUDA vendor audit CLOSED：V1/V2 正规范摘要与 enabled 消费前校验完成；Windows/Air source 正负检查和最终 selector 通过。纯配置 P0，R4 运行代码、限定 P1 资格与方向继承，无 GPU 重测。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "compute_route_cuda",
@@ -522,47 +497,27 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
+      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
     }
   ]
 }

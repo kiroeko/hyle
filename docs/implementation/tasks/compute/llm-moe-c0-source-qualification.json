@@ -119,7 +119,7 @@
       "verdict": "RESOLVED_DISTINCT_BRANCHES",
       "models": [
         "qwen38_27b",
-        "qwen38_2p4t_a95b"
+        "qwen38_24t"
       ],
       "conclusion": "output_gate_type is consumed by GatedDeltaNet RMSNormGated, with swish = z*sigmoid(z); regular full-attention output gating remains sigmoid. The earlier comparison against Qwen3_5Attention inspected a different branch, and does not establish a missing swish implementation.",
       "anchors": [
@@ -158,9 +158,9 @@
       "branches": [
         {
           "models": [
-            "qwen35_2b_local",
+            "qwen35_2b",
             "qwen38_27b",
-            "qwen38_2p4t_a95b"
+            "qwen38_24t"
           ],
           "count": 1,
           "weights": "mtp.fc; pre_fc_norm_embedding; pre_fc_norm_hidden; layers.0; norm; base tied embeddings/head unless config explicitly supplies dedicated ones",

@@ -1,0 +1,97 @@
+# C1：四路线基本张量与状态边界
+
+## Closure card
+
+- round / current owner：LLM/MoE C1，`/root`。
+- baseline：`e346e8fadfce7d4d9a7d94b5b1ebb4e80f1b87d1`。
+- 上位范围：[唯一计划](llm-moe-coverage-completion-plan.md)；输入/来源准备见
+  [C0](llm-moe-c0-local-contracts.md)；逐需求见 [64 行矩阵](llm-moe-coverage-matrix.json)。
+- trigger：实际本地 2B 语言权重/参考计算与七个模型源码要求 F16/BF16 embedding、norm、
+  softplus、广播、索引及持续状态；目前 CPU 普遍限 F32，CUDA 缺普通索引/norm，Apple/Vulkan
+  typed 普通入口只有窄 GEMM/SiLU 域。是具名真实 consumer 的缺失能力，不重审已验收基础设施。
+- 当前施工 owner：`compute_ops`（schema/shape）、`compute`（普通查询/准备事实）、`graph`
+  （必要共同 shape/effect 边界）、`compute_provider_native`、`compute_provider_cuda`、
+  `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`。
+  `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
+  oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
+- 状态：SCOPED。以下是有界审计对象；各 owner 完成 AUDITED 与最终 FIX/API freeze 前不写产品。
+- 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
+  输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
+- 正交 consumer：F32/F16 带 stride 的批量变换、空/尾块、共享不可变表与独立索引更新。
+- scope：矩阵 C1 的 F01–F04、F19，后续能力只消费这些机制。新增 softplus、必要 scan 与已有
+  schema 的完整实际执行；L2/gated norm 优先复用原子并让 provider 保留融合，不造模型层类型。
+- non-goals：GEMM/QMM 扩域、attention/conv/DeltaNet/KDA/MoE 完整片段、模型加载/策略、公共
+  治理/统计工具改写、全库依赖重审；它们按后续包推进，不顺手塞入本包。
+- tier：P0 + 候选固定后每路线一个具名 C1 bundle 的 P1；当前不运行 P1。
+- 调查预算：每个具体未决机制最多 60 分钟/两个具名来源；本包产品纠正最多两轮。超出时按具体
+  反例重新定界或记录 blocker，不反复推翻四路线架构。
+
+## 已完成的源码审计输入
+
+| owner | 当前事实 / 源码 | C1 缺口与承载方向 |
+|---|---|---|
+| compute_ops | `operation.h` Unary 止于 SiLU；已有 View/Cast/Reduce/RmsNorm/LayerNorm/Gather/Scatter/TopK；operation.cc 完成共同 shape 检查 | softplus 与必要 scan 的 typed schema；保留既有数学/alias 语义，明确半精度舍入 |
+| compute | operation.cc 已有 cold propose → prepare 与明确 decline/error；普通入口不能只查 schema 推断硬件可用 | 普通 capability query 与准备拒绝复用同一资格判断；不执行 payload，不变热路径 |
+| Native | elementwise/normalization/indexing/reduction/transform 分文件；SIMD F32 优势与 CPU executor 已存在 | F16/BF16 所需路径和稳定数学；按实际消费融合、尾块/stride；不每元素分配或调用 vtable |
+| CUDA | native_kernel.cu + SGLang SwiGLU 与 cuBLAS/Marlin 工厂组合；有自己的 native stream/capture | 成熟 CUDA kernel 承载必要 tensor/index/norm；HYLE 控制边界、失败和数值，不借 CPU 模型 fallback |
+| Apple | apple_operations.cc 仅 F32 2-D GEMM/affine Q4/SiLU；apple_lowering.cc 拒绝非纯/非固定域 | MLX GPU ops/完整 region 的 typed 接线；functional state 输入输出、实际 dtype/shape；保持数组 owner |
+| Vulkan | vulkan_operations.cc 的录制/packing/liveness 已完成；vulkan_lowering.cc 只接 pure fixed 图 | 扩 SPIR-V tensor/index/norm 与真实 visibility/state 边界；有界原生程序，不引入通用逐 kernel executor |
+| Graph | 通用 Graph 已有 derived shape、资源 effects、alias、独立 invocation；两条原生 lowering 较窄 | 在路线本身落实所需 shape/参数/state；不因 native 不同复制一套逻辑模型图 |
+
+审计继续只核对本表直接源码、已登记 peers 与 C0 固定输入。新依赖引入须同时有 pin/license/三交付。
+CPU 通过成熟 SIMD/oneDNN 及受审局部算法；CUDA 优先具名成熟 kernel；Apple 优先 MLX 组合；
+Vulkan 优先受审 ggml shaders。各自细节在 AUDITED 时固定，不能把方向表当成已经接线。
+
+## 有限 FIX 草案（尚不授权产品实施）
+
+| ID | 允许改动 | 必需验收 |
+|---|---|---|
+| C1-01 | 共同 softplus/scan 语义、必要数值/索引/alias 域及普通能力查询 | 真实请求同准备资格一致；invalid/overflow/unsupported 清楚；新增公共面回映需求 |
+| C1-02 | Native F16/BF16 tensor/index/norm 与现有 F32 能力复用 | BF16 真实输入、尾块/stride、特殊值、重复索引、独立状态；无全权重浮点常驻 |
+| C1-03 | CUDA 同一组能力和默认规则，保留 native stream/capture | 实际 GPU kernel、同精度 reference、准备失败与接纳后 drain；无 host payload fallback |
+| C1-04 | Apple MLX typed 普通入口、原生图 lowerings 与状态结果 | 同 runtime GPU region、旧结果保活、两个状态、所需 dtype/shape；无用户 custom adapter |
+| C1-05 | Vulkan 同能力的原生 pipeline/录制与数据参数 | 真 SPIR-V 算法、同步/alias/scratch、重复执行与失败；无 empty target/copy 代签 |
+| C1-06 | 受影响 Graph shape/parameter/effect/查询与 C++ consumer/指南 | Direct 和 Graph 结果/状态一致；编译不改输入；稳定程序按输入位置/索引重放 |
+| C1-07 | 本包逐路线 source/static/shared、正确性、P0/P1、红队与结果回映 | C1 MUST 所有格有实际 receipt，普通用户无需选 Provider；不留到 C7 首次验证 |
+
+## 自然调用与生命周期草图
+
+下面是沿用现有对象的设计草图，新增 schema/query 的精确签名仍待 AUDITED；不是可复制的已交付示例。
+
+```cpp
+auto context = compute::cpu::create_context(/* caller executor optional */);
+auto op = compute::prepare(*context, compute::RmsNorm{.epsilon = 1e-6F}, input, weight);
+// Query/preparation use actual dtype/shape/resource facts and the route's fixed rules.
+// Bind native resources to independent invocations, run, observe completion, retain results.
+// The Graph consumer adds the same typed operations and compiles once for its route.
+```
+
+- Compute 与 Graph 保持现有两入口；用户提供路线、计算、数据/参数，不提供排名或 timing profile。
+- GPU 的不同对象/输出 owner 保留；Apple 的 functional state 是输入数组到新状态数组，native
+  runtime 保活旧结果；CPU/CUDA/Vulkan 可在声明的独占、alias 和真实完成边界内更新状态资源。
+- 位置、有效长度、索引内容等是运行数据；只在合法性确实变化时选择已准备的有限 variant。不把
+  token 循环变为重建模型图，不把 MLX 私有内存写成零。
+- 热路径只调用绑定程序与必要 native dispatch；无查询、计时、Provider 搜索、每元素 vtable。
+- OOM、非法输入与预算在可证明的接纳前拒绝；接纳后错误保留 owner 至终态并 drain，不换 Provider 重跑。
+
+## 预声明验证与性能边界
+
+- correctness：F32/FP16/BF16、真实 2B embedding/norm/gate/residual/index 片段；batch1 prompt
+  1/17/128，holdout batch2/23/129；非连续布局、空/one、tile tails、mask 全 false、重复索引、
+  NaN/Inf/极端 softplus；独立标量/位级 oracle 与实际参考。
+- lifecycle：两 invocation、共享常量、独立可变状态、保留旧结果、非法 alias、cold rollback、
+  accepted-prefix failure、关闭/drain。host sanitizer 只签实际观测 host 域，device 工具按路线适用。
+- 平台/交付：Windows/WSL CPU 和 CUDA；Air CPU/Apple/Vulkan；Mini CPU/Apple portability；
+  source/installed static/installed shared 同一普通组合，每次低并行 build2/CTest1，重型串行。
+- P0：逐片段 allocation/copy/launch/reduction、layout 转换、同步和常驻/临时字节。纯数据/文档无 P1。
+- P1 bundle：各路线同一 C1 片段，在不可变 candidate、相同 profile、输入/状态、最终完成及输出
+  责任下，对直接原生等责组合；有成熟完整融合 peer 时同时核对其语义。normal M=1/17/128、holdout
+  M=23/129；冻结 A/A、A/B+B/A，n=15 上限31，5% 工程 material margin。未过 preflight 不进完整采样。
+  短操作按真实完整片段聚合；不拿裸 kernel 与拥有完整结果寿命的 Graph 排名。适用快慢方向如实记录。
+- 性能纠正只在机制与消费者影响都成立时启动，最多两轮；新候选重回 AUDITED，文档变化不重跑。
+- 维护：selector selected gates，closure `--previous-ref`，docs，diff check；工作包交付时统一 LOC。
+
+## 当前裁决
+
+SCOPED；尚无 C1 产品修改、candidate 或 PASS。下一步冻结 API/错误/数值/原生状态选择与有限 FIX，
+逐 owner 进入 AUDITED 后实施。旧 CLOSED/BLOCKED 卡不授权本包改动。

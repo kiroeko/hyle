@@ -14,7 +14,9 @@
 - 产品 owner：共同 tensor/op 语义 `compute` / `compute_ops`；逻辑 DAG `graph`；原生执行分别归
   CPU/CUDA backend/provider/route 与 Apple/Vulkan route。每个即将修改的 owner 在新卡先依法
   SCOPED → AUDITED；C0 的数据/测试维护不伪造 CLOSED 产品的 reopen 或新产品完成。
-- 当前 registry 不变；`compute_provider_ggml` 的 BLOCKED 与 `compute_sched` 的 QUEUED 不自动解除。
+- C0 数据维护阶段保持产品状态；C0-06 最后将即将修改的九个 owner 依法绑定到
+  [C1 SCOPED 卡](llm-moe-c1-tensor-state.md)。`compute_provider_ggml` 的 BLOCKED 与
+  `compute_sched` 的 QUEUED 不自动解除。
 - 直接依赖：标准 Python、已有 Torch/Transformers/Safetensors、SSH，以及既有文件清单。
 - tier：P0，只审准备阶段资源与测试边界；无 HYLE 产品/API/算法变更，不构建、不运行 P1。
 - 预算：三个未决来源合计最多 90 分钟、各最多两个具名实现路径；输入工具与参考至多两轮源码驱动
@@ -47,11 +49,14 @@
 
 ## 执行结果
 
-实施中，已完成以下实际准备：
+本包有限准备已完成，实际结果如下：
 
 - Windows 用户原始文件与 WSL 本地副本：13 个文件、4,571,274,023 bytes 全部大小/SHA-256 一致。
   [Windows receipt](../../../../evidence/correctness/compute-llm-moe-c0/windows-original.json)、
-  [WSL receipt](../../../../evidence/correctness/compute-llm-moe-c0/wsl-original.json)。两台 Mac 尚待接收。
+  [WSL receipt](../../../../evidence/correctness/compute-llm-moe-c0/wsl-original.json)。
+  [Air receipt](../../../../evidence/correctness/compute-llm-moe-c0/air-original.json) 与
+  [Mini receipt](../../../../evidence/correctness/compute-llm-moe-c0/mini-original.json)同样通过；同步的是
+  用户同一份本地数据，无网络模型下载。两台 Mac 的初版输入工具 6 项标准库测试实际通过。
 - [B16 参考 receipt](../../../../evidence/correctness/compute-llm-moe-c0/b16-reference.json)：
   本地实际 320 个语言权重、24 层，prompt 1/17/128，各 8 步 teacher-forced decode；保存所有层
   每步末 token、完整 logits、最终 conv/recurrent/KV 状态，均 finite。RTX 4070 Torch 峰值 allocated
@@ -67,6 +72,28 @@
   及官方实现：Qwen 的 swish 是 DeltaNet gated RMS，普通 Attention 另用 sigmoid；K3 的 W4A8
   activation 由 runtime profile 决定，不能用 BF16 路径代签；Qwen、DeepSeek、GLM 的 MTP 分别
   绑定真实数学分支，冻结的 Kimi config 则为 0 个 MTP head。这些结论只关闭来源疑问，未签产品通过。
+- [有限能力明细](llm-moe-coverage-matrix.json)固定 64 个需求域，回映 19 族和 8 个具名模型输入；
+  每行有 dtype/profile、shape/domain、普通入口、oracle、Direct/Graph/resource/delivery/P1 case
+  身份、四路 owner/承载方向。全部新产品格仍为 UNPROVEN，后续用实际结果回映。
+- [离线量化输入](../../../../evidence/correctness/compute-llm-moe-c0/quantized-inputs.json)已在 Windows
+  生成：Q4-S128 668,305,656 bytes，Q8-B32 1,377,077,728 bytes，F8-B128 1,296,390,752 bytes，
+  各 132 个权重、同一 source ID，精确 recipe/codes/scales hash 在产物 receipt。保留权重仍引用原文件。
+  这不是量化整模型正确性或质量验收；C3/C6 必须按相同量化值独立对拍，派生物到时按需同步而不重算。
+- Q8 首次发现真实极小 BF16 权重导致 F32 reciprocal overflow；其 F16 scale 已下溢为零，解码
+  值恒零。旧产物隔离保留；编码明确这些 group 的 codes 为零，加入极小值回归并对同一输入纠正一次。
+  修正后无算术告警，数据 hash 与初次产物相同，但只有修正后的定义/receipt 获生成资格。
+- E4M3FN 的全部 254 个 finite 编码、ties/signed zero/饱和和 block 几何由独立标量核对，另用
+  Torch conversion 对拍 100,003 个值。当前 12 项小测试通过，覆盖输入修复与所有模型族回映。
+- red team：分离复核输入、oracle、产品边界和数值域。发现 Transformers 5.3.0 的 cached 多 token
+  DeltaNet 分支重置 initial state；本轮参考只用首次 prefill + 单 token decode，不签 chunk continuation。
+  C3 的非零初态 chunk 必须走独立函数 oracle，已写入测试说明。没有因参考缺陷削减产品要求。
+
+维护记录：首批不可变提交 `e346e8fadfce7d4d9a7d94b5b1ebb4e80f1b87d1` 的 selector 四门 PASS，
+54 项 selector 回归与当时 6 项输入工具测试通过，116 门跳过。此前一次维护运行期间文档继续变化，
+selector 正确拒绝签原 tree；保留其实际失败，没有修改工具规则或伪写 PASS。本次收尾只跑新改动的
+维护工具/docs/closure，未构建产品、未运行 P1。
 
 上述均为输入/参考准备，没有新增 HYLE 产品执行证据，不给能力表或产品验证填 PASS。
-有限能力明细与 C1 owner/card 仍在本包内推进。
+统一 LOC 脚本 self-check：[Compute+Graph 37,035 行 / 130 文件](../../../../evidence/correctness/compute-llm-moe-c0/implementation-loc.json)，
+不含测试；新增 Python/数据和文档不计入产品完成度。C0 停止输入/来源调查，C1 已合法 SCOPED，
+下一步按该卡冻结当前 owner 的有限 FIX 再实施。没有需要用户决策的阻塞。
