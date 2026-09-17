@@ -122,3 +122,8 @@ Graph，不含测试/bench/vendor；baseline 为 **36,765 行 / 129 个代码文
 Windows 普通门在不可变验证副本执行；原失败和定向测试修正后的续跑记录分别保留，不伪造原整批
 PASS。剩余适用项目为跨平台 report 寿命/OOM 与 host sanitizer、真实 TRACE OFF/ON 三交付、F5
 fixture 构建和独立数值 oracle、最终红队与证据汇总。当前不能签 CLOSED 或宣布基础架构完成。
+
+[MUST / evidence 索引](four-route-foundation-acceptance.md)已逐项连接 R1–R6 的真实 consumer、规则、
+寿命、交付与性能记录，保留具体平台和格式限制；R7 未运行项仍明确待验。
+[候选后的有限源码复核](../../../../evidence/correctness/compute-graph-r7/source-review.md)已完成，
+未新增产品 FIX，不代替尚未完成的运行验收。

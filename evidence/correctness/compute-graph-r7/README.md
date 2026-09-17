@@ -23,6 +23,9 @@ callback 中。`src/include/cmake/samples/bench/scripts` 在两个候选间逐�
 本轮没有新增 P1 采样。历史资格仅按已证明不变的计算路径及原机器、版本、格式和 shape 继承；
 TRACE ON 的 profiler 成本不属于 OFF 性能证据。原 TSan 不记作本轮重跑。
 
+[候选后的有限源码复核](source-review.md)已完成，未新增产品 FIX；报告 ownership、失败清理、
+冷热成本、依赖传播和比较资格的检查与运行门分开记录。
+
 统一 [LOC 原始结果](implementation-loc.json)统计整个 Compute + Graph 为 **37,035 行 / 130 个
 代码文件**，不含测试、bench 或 vendor。它包含所有已登记 backend/provider，不是完成百分比。
 
