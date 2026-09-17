@@ -479,15 +479,17 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
-      "summary": "R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim.",
-      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R6 Vulkan CANDIDATE: native API, strict-F32 rules, packed ownership and Graph implementation frozen at 8e45b104; Windows/Air native correctness and complete FFN oracle passed. P1, final delivery/selector review and closure remain pending.",
+      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
-      "summary": "R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim.",
-      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md"
+      "state": "CANDIDATE",
+      "summary": "R6 Vulkan CANDIDATE: native API, strict-F32 rules, packed ownership and Graph implementation frozen at 8e45b104; Windows/Air native correctness and complete FFN oracle passed. P1, final delivery/selector review and closure remain pending.",
+      "record": "docs/implementation/tasks/compute/vulkan-v1-four-route-foundation.md",
+      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5"
     }
   ]
 }

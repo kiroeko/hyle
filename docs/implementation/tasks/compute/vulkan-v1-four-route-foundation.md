@@ -1,6 +1,6 @@
 # R6 Vulkan：原生计算程序、资源与 Graph
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - owner：`compute_route_vulkan`、`graph_route_vulkan`；身份已在 `9059ad30` 登记为 QUEUED。
 - baseline：`9059ad30`，保留 R5 不可变候选 `1636365b` 及其仍在运行的串行验收。
@@ -233,3 +233,17 @@ Air `82c14c7e` 补验推翻了上段初次 P0 的 BK 判断：shader 的 `DATA_A
 host recipe 的 ID3=16 不参与它的计算；按 16 估算共享内存导致 128 tile 超过 32 KiB。
 本卡 V3 定向修正实际资源账单，保留原始 shader、合法完整 tile 分支与常量释放；不修改数值门
 或性能预算。失败原始记录保留，正式 P1 继续等待修正后的两平台正确性。
+
+## 不可变候选 `8e45b104`
+
+V1–V5 的 API、算法/规则、资源与运行状态实现已固定在
+`8e45b10423686a0753aaa9d461c4ef3b117412c5`。V6/V7 的验收继续执行，不能把候选登记当作路线完成。
+[修正后的原始证据](../../../../evidence/correctness/vulkan-r6-f32-corrected/README.md)保存 Air 失败与
+修正后的两平台结果：Windows / Air 各 17 项 native GTest、两个逐头检查和真实 synchronization
+validation 通过；Air 四个完整 FFN 程序的两组输入/全输出独立 double oracle 通过。Windows 同
+形状 oracle 复用前一检查点，修正只影响 128 tile 在 32 KiB 设备上的准入，不改变 M1/M16 shader
+或 Windows 48 KiB 设备的选择。
+
+下一步按四份 Direct/Graph × W1/M1 合同运行统一仪器：每入口先一次有限 A/A，通过后 n15，只有
+资格成立而区间未决时最多 n31；原生边界成本单列为不可排名诊断。适用的最终交付/selector 门、
+候选红队与全部性能仍未签 PASS。十三 facade 交付 owner 保持自己的活动卡，不恢复旧施工队列。

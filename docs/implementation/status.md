@@ -60,8 +60,8 @@
 | graph_route_cuda | AUDITED | — | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged. |
 | compute_route_apple | AUDITED | — | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged. |
 | graph_route_apple | AUDITED | — | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan delivery AUDITED: D1-D3 fixed for real facade roots, embedded shader/locked header delivery and ordinary full-compute C++ consumers; inherited runtime/algorithm/P1 unchanged. |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim. |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan AUDITED: V1-V7 frozen for native resources/recorded execution, mature F32 compute, native handoff, Graph planning and complete route validation; no product completion claim. |
+| compute_route_vulkan | CANDIDATE | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan CANDIDATE: native API, strict-F32 rules, packed ownership and Graph implementation frozen at 8e45b104; Windows/Air native correctness and complete FFN oracle passed. P1, final delivery/selector review and closure remain pending. |
+| graph_route_vulkan | CANDIDATE | — | [record](tasks/compute/vulkan-v1-four-route-foundation.md) | R6 Vulkan CANDIDATE: native API, strict-F32 rules, packed ownership and Graph implementation frozen at 8e45b104; Windows/Air native correctness and complete FFN oracle passed. P1, final delivery/selector review and closure remain pending. |
 
 <!-- END GENERATED MODULE STATUS -->
 
