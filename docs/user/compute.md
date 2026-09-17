@@ -101,7 +101,12 @@ Reduce 和 Softmax/LogSoftmax 支持 F32/F16/BF16、任意轴/普通 byte stride
 产生 NaN。每个原子一次 native launch，无 caller workspace 或槽私有状态；Softmax 在≤8192列时
 缓存 F32 行（最多32 KiB片上空间），更长行读取输入三遍。上述输入/输出非空元素数≤INT32_MAX。
 这些新能力尚待 C1 完整片段的等责性能和全部交付验收，不从正确性推断最快规则。
-整数/FP8 Cast 与算术、Concat、TopK/index 等
+TopK 使用同一普通入口，返回原始位模式的 F32/F16/BF16 values 与 I32 indices；支持任意轴和
+byte stride，两个输出 dense，输入与输出及两输出之间都不重叠。同分（包括±0）按较小列号优先，
+NaN 排在全部非 NaN 后；largest/smallest 均可，sorted=false 仍可返回有序结果。k=1 使用 SDK
+选择，k>1 对≤4096列使用 CUB BlockRadixSort；都一次 native launch、无 caller workspace/槽
+私有状态，片上排序 scratch 和 code storage 仍有实际成本。长序列 k>1 当前准备时明确拒绝。
+整数/FP8 Cast 与算术、Concat、Gather/Scatter/Scan 等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 

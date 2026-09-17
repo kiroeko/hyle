@@ -12,6 +12,7 @@
 #include "provider_internal.h"
 #include "reduction_provider.h"
 #include "tensor_provider.h"
+#include "topk_provider.h"
 
 namespace hyle::compute::cuda_native {
 namespace {
@@ -109,6 +110,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (!Sglang) {
+    if (request.operation.kind() == OperationKind::kTopK)
+      return selection::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kReduce ||
         request.operation.kind() == OperationKind::kSoftmax)
       return reduction::propose(request, inputs, outputs, proposal);
@@ -121,7 +124,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
   if (!request.shape.exact())
     return Status::Unimplemented(
         "CUDA gated activation requires an exact shape");
-  if (inputs.size() != request.inputs.size() || outputs.size() != 1)
+  if (inputs.size() != request.inputs.size() ||
+      outputs.size() != request.outputs.size())
     return Status::InvalidArgument(
         "CUDA kernel proposal binding counts differ");
   HYLE_RETURN_IF_ERROR(
@@ -230,6 +234,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (!Sglang) {
+    if (request.route == selection::kRoute && request.shape.exact())
+      return selection::prepare(state, request, allocator, output);
     if (request.route == reduction::kRoute && request.shape.exact())
       return reduction::prepare(state, request, allocator, output);
     if (request.route == normalization::kRoute && request.shape.exact())
@@ -302,7 +308,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-gated" : "v5-reduction"},
+                 .version = Sglang ? "06992c92-precise-gated" : "v6-topk"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

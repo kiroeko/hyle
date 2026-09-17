@@ -406,18 +406,26 @@ void pending_completion_retains_program(
                  ? 512
                  : 256),
       resource.ref());
-  std::array<compute::TensorDesc, 1> output_desc;
+  std::array<compute::TensorDesc, 2> output_desc;
+  const auto descriptions =
+      std::span(output_desc)
+          .first(compute::operation_traits(operation).outputs);
   ASSERT_TRUE(compute::infer_output_descriptions(
-                  operation, std::array{input.view.description()}, output_desc)
+                  operation, std::array{input.view.description()}, descriptions)
                   .ok());
-  Tensor output(output_desc[0], resource.ref());
+  std::vector<Tensor> output_storage;
+  std::vector<compute::TensorView> outputs;
+  output_storage.reserve(descriptions.size());
+  for (const auto &desc : descriptions) {
+    output_storage.emplace_back(desc, resource.ref());
+    outputs.push_back(output_storage.back().view);
+  }
   std::vector<float> values(
       operation.kind() == compute::OperationKind::kGatedActivation ? 512 : 256,
       1.0F);
   ASSERT_TRUE(
       input.storage.view().write(std::as_bytes(std::span(values))).ok());
   const std::array inputs{input.view.as_const()};
-  const std::array outputs{output.view};
   auto prepared = compute::prepare(owner, operation, inputs, outputs).value();
   auto lane = prepared.create_invocation().value();
   auto warm = lane.submit(queue, inputs, outputs).value();
@@ -450,12 +458,14 @@ void pending_completion_retains_program(
   ASSERT_TRUE(owner.close().ok());
   gate.release();
   ASSERT_TRUE(done->wait().ok());
+  const auto &output = output_storage[0];
   std::vector<float> actual(output.storage.size() / sizeof(float));
   ASSERT_TRUE(output.storage.view()
                   .read(std::as_writable_bytes(std::span(actual)))
                   .ok());
   const double expected =
-      operation.kind() == compute::OperationKind::kReduce      ? 256
+      operation.kind() == compute::OperationKind::kTopK        ? 1
+      : operation.kind() == compute::OperationKind::kReduce    ? 256
       : operation.kind() == compute::OperationKind::kSoftmax   ? 1.0 / 256
       : operation.kind() == compute::OperationKind::kLayerNorm ? 0
       : operation.kind() == compute::OperationKind::kRmsNorm
@@ -463,6 +473,15 @@ void pending_completion_retains_program(
           : 1.0 / (1.0 + std::exp(-1.0));
   for (const auto value : actual)
     EXPECT_NEAR(value, expected, 0.000001);
+  if (operation.kind() == compute::OperationKind::kTopK) {
+    std::vector<std::int32_t> indices(actual.size());
+    ASSERT_TRUE(output_storage[1]
+                    .storage.view()
+                    .read(std::as_writable_bytes(std::span(indices)))
+                    .ok());
+    for (std::size_t index = 0; index < indices.size(); ++index)
+      EXPECT_EQ(indices[index], index);
+  }
 }
 
 struct MetadataAllocator final {
@@ -523,14 +542,22 @@ void metadata_failures_rollback(
                    ? 512
                    : 256),
         resource.ref());
-    std::array<compute::TensorDesc, 1> output_desc;
+    std::array<compute::TensorDesc, 2> output_desc;
+    const auto descriptions =
+        std::span(output_desc)
+            .first(compute::operation_traits(operation).outputs);
     ASSERT_TRUE(
         compute::infer_output_descriptions(
-            operation, std::array{input.view.description()}, output_desc)
+            operation, std::array{input.view.description()}, descriptions)
             .ok());
-    Tensor output(output_desc[0], resource.ref());
+    std::vector<Tensor> output_storage;
+    std::vector<compute::TensorView> outputs;
+    output_storage.reserve(descriptions.size());
+    for (const auto &desc : descriptions) {
+      output_storage.emplace_back(desc, resource.ref());
+      outputs.push_back(output_storage.back().view);
+    }
     const std::array inputs{input.view.as_const()};
-    const std::array outputs{output.view};
     const auto prepare = [&] {
       return compute::prepare(owner, operation, inputs, outputs);
     };
@@ -601,6 +628,9 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
                                      compute::Operation(compute::Reduce{}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Softmax{}));
+  pending_completion_retains_program(
+      compute::cuda_native::provider(),
+      compute::Operation(compute::TopK{.count = 6}));
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
@@ -617,6 +647,8 @@ TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
                              compute::Operation(compute::Reduce{}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Softmax{}));
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::TopK{.count = 6}));
 }
 
 } // namespace
