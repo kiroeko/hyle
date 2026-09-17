@@ -76,6 +76,12 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
 - Gather 接收上述六类 source 存储与 I32/I64 indices，支持任意轴、scalar/多维索引和原生布局；
   输出保留原始位。默认 checked 在 GPU 检查索引，负值和越界通过完成结果返回 OutOfRange，
   不采用 MLX 的负索引 wrap。空输出不读取 payload；unchecked 要求调用方保证所有索引合法。
+- Scatter assign 接上述六类 storage，保留原始位；add 接 F32/F16/BF16。重复目标按逻辑行主序
+  更新：assign 最后项胜出，add 每次 F32 求和后舍入到 storage。返回新状态数组，输入与旧结果
+  保持不变；结果可绑定为下次调用的状态输入。任意轴、scalar/多维 I32/I64 indices 和原生布局
+  均可使用，默认 checked 错误通过完成结果返回；空 output 跳过 payload，空 indices 保留 source。
+  非空 output/indices/updates 的元素数≤INT32_MAX。多索引采用原生稳定排序和 MLX 管理的
+  Metal 有序更新片段；单索引不排序。排序、必要布局整理、新结果及检查都计入资源和执行成本。
 - Scan 支持 I32/F32 任意轴 inclusive/exclusive 前缀。I32 检查所有数学前缀，包括 exclusive
   未写出的最终总和；溢出返回 OutOfRange。F32 允许原生并行重结合。非空 Scan、Gather output/
   indices 的元素数≤INT32_MAX；整数 Scan 使用 I64 原生临时，成本包含转换、检查及最终状态读取。
@@ -89,9 +95,9 @@ typed 准备也可以只给元数据，例如
 `context.prepare(RmsNorm{}, std::array{apple::InputSpec{{1,2048}, mx::bfloat16},
 apple::InputSpec{{2048}, mx::float32}})`；不需要制造用户 payload。精度或形状不合格时准备返回
 具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 typed 域的完整性能资格待 C1 验收，不能继承
-R5 FFN 的性能结论。有序 Scatter 尚未接入，不能以 MLX atomic scatter 代替规定的重复更新顺序。
+R5 FFN 的性能结论。
 
-checked Gather 与整数 Scan 的低层 `apple::lower()` 必须在 `Context::prepare/compile` 的 managed
+checked Gather/Scatter 与整数 Scan 的低层 `apple::lower()` 必须在 `Context::prepare/compile` 的 managed
 tracing 内调用，才能把设备状态绑定到完成结果；在外部直接调用会明确拒绝。准备不以隔离暖机
 的状态裁决用户 payload。执行时，只有可达 checked 表达式的错误参与首错回报；没有此类表达式
 的程序不添加状态输出。有检查的 region 增加一个隐藏 I32 native 数组，沿既有同步完成后读取，

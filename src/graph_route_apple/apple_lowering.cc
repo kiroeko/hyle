@@ -154,7 +154,8 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       report->numerical_policy =
           "Typed F32/F16/BF16 tensor, F32 gate/norm/reduce/softmax and stable "
           "TopK; "
-          "I32/I64/Bool storage, checked Gather/Scan and affine Q4/group64; "
+          "I32/I64/Bool storage, checked Gather/ordered Scatter/Scan and "
+          "affine Q4/group64; "
           "each node retains its "
           "schema contract; MLX private intermediates unknown";
       report->boundary_policy =

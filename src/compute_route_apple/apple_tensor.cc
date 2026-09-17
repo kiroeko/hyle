@@ -200,6 +200,7 @@ bool admitted(OperationKind kind) {
   case OperationKind::kSoftmax:
   case OperationKind::kTopK:
   case OperationKind::kGather:
+  case OperationKind::kScatter:
   case OperationKind::kScan:
     return true;
   default:
@@ -234,6 +235,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
     if (operation.kind() == OperationKind::kGather ||
+        operation.kind() == OperationKind::kScatter ||
         operation.kind() == OperationKind::kScan)
       return lower_indexing(operation, inputs, shape, stream);
     if (const auto *fill = operation.get_if<Fill>())

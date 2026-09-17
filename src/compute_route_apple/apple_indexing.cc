@@ -116,10 +116,19 @@ Result<std::vector<mx::array>> lower_indexing(const Operation &operation,
             "Apple indexed output exceeds the INT32_MAX element domain"));
       count *= dimension;
     }
-    if (operation.kind() == OperationKind::kGather &&
+    if ((operation.kind() == OperationKind::kGather ||
+         operation.kind() == OperationKind::kScatter) &&
         inputs[1].size() > maximum)
       return std::unexpected(Status::Unimplemented(
-          "Apple Gather indices exceed the INT32_MAX element domain"));
+          "Apple indices exceed the INT32_MAX element domain"));
+    if (operation.kind() == OperationKind::kScatter &&
+        inputs[2].size() > maximum)
+      return std::unexpected(Status::Unimplemented(
+          "Apple Scatter updates exceed the INT32_MAX element domain"));
+  }
+  if (const auto *scatter = operation.get_if<Scatter>()) {
+    HYLE_ASSIGN_OR_RETURN(auto result, lower_scatter(*scatter, inputs, stream));
+    return std::vector{std::move(result)};
   }
   auto result =
       operation.kind() == OperationKind::kGather

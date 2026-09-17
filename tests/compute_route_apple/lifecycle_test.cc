@@ -255,37 +255,46 @@ TEST(AppleLifetime, IndependentContextsOwnIndependentNativeSubmissionThreads) {
 
 TEST(AppleLifetime,
      CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway) {
-  auto boundary = std::make_shared<NativeBoundary>();
-  auto context = a::Context::create().value();
-  ReleaseBoundary release{boundary};
-  auto program = context.compile(
-      [boundary](const auto &inputs,
-                 mx::Stream stream) -> hyle::Result<std::vector<mx::array>> {
-        auto prefix = mx::square(inputs[0], stream);
-        auto held =
-            mx::array(prefix.shape(), prefix.dtype(),
-                      std::make_shared<Checkpoint>(stream, boundary), {prefix});
-        return a::lower(c::Operation(c::Gather{}), std::array{held, inputs[1]},
-                        stream);
-      },
-      std::array{a::InputSpec{{4}, mx::float32}, a::InputSpec{{2}, mx::int32}});
-  ASSERT_TRUE(program) << program.error().message();
-  auto slot = program->create_invocation().value();
-  ASSERT_TRUE(
-      slot.bind(std::array{mx::array({1.f, 2.f, 3.f, 4.f}), mx::array({0, 4})})
-          .ok());
-  boundary->arm();
-  auto work = slot.submit();
-  ASSERT_TRUE(work) << work.error().message();
-  ASSERT_TRUE(boundary->entered());
-  EXPECT_FALSE(work->result());
-  slot = {};
-  *program = {};
-  boundary->release();
-  EXPECT_TRUE(context.close().ok());
-  auto result = work->wait();
-  ASSERT_FALSE(result);
-  EXPECT_TRUE(result.error().IsOutOfRange());
+  for (bool scatter : {false, true}) {
+    auto boundary = std::make_shared<NativeBoundary>();
+    auto context = a::Context::create().value();
+    ReleaseBoundary release{boundary};
+    auto program = context.compile(
+        [boundary, scatter](const auto &inputs, mx::Stream stream)
+            -> hyle::Result<std::vector<mx::array>> {
+          auto prefix = mx::square(inputs[0], stream);
+          auto held = mx::array(prefix.shape(), prefix.dtype(),
+                                std::make_shared<Checkpoint>(stream, boundary),
+                                {prefix});
+          if (scatter)
+            return a::lower(
+                c::Operation(c::Scatter{.kind = c::ScatterKind::kAdd}),
+                std::array{held, inputs[1],
+                           mx::slice(inputs[0], {0}, {2}, stream)},
+                stream);
+          return a::lower(c::Operation(c::Gather{}),
+                          std::array{held, inputs[1]}, stream);
+        },
+        std::array{a::InputSpec{{4}, mx::float32},
+                   a::InputSpec{{2}, mx::int32}});
+    ASSERT_TRUE(program) << program.error().message();
+    auto slot = program->create_invocation().value();
+    ASSERT_TRUE(slot.bind(std::array{mx::array({1.f, 2.f, 3.f, 4.f}),
+                                     mx::array({0, 4})})
+                    .ok());
+    boundary->arm();
+    auto work = slot.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    ASSERT_TRUE(boundary->entered());
+    EXPECT_FALSE(work->result());
+    slot = {};
+    *program = {};
+    boundary->release();
+    EXPECT_TRUE(context.close().ok());
+    auto result = work->wait();
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsOutOfRange());
+  }
 }
 
 TEST(AppleLifetime, AllocationRefusalsPublishNoPartialProgramOrResult) {
