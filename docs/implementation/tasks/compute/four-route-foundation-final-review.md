@@ -137,3 +137,13 @@ package smoke 实际使用同 MSVC 的 MSBuild，身份如实记录。没有重�
 
 Mac ASan/UBSan 已按既定串行任务启动；其后仍需实际完成 TRACE OFF/ON 三交付与 F5 fixture 门。
 Windows 覆盖完成不代替这些尚未运行的验收，六个 owner 继续 CANDIDATE。
+
+### Mac host sanitizer 完成
+
+[ASan/UBSan 记录](../../../../evidence/correctness/compute-graph-r7/air-host-identity.json)在同一候选的
+Air 验证副本上分别通过 7 个程序 / 395 个 GTest，49 个具名插桩编译单元，另有六个公共头门。
+Apple/Vulkan 报告在 constant/custom/Context owner 释放后仍可读，reset、OOM 与重试均实测通过；
+Vulkan borrowed/owned 统计和 quota 回收、Generic Graph 逐分配点回滚也通过。
+
+只签 HYLE host C++，不签 vendor/driver/GPU 插桩；TSan 保持源码限定继承。Mac 的 TRACE OFF 源码
+普通消费者已通过，其余 OFF/ON 静态/动态及 Windows/WSL 交付和 F5 fixture 门按已启动的串行任务执行。

@@ -1,0 +1,123 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "verdict": "PASS",
+  "host": {
+    "system": "Darwin",
+    "node": "Kiros-MacBook-Air.local",
+    "release": "27.0.0",
+    "version": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132",
+    "machine": "arm64"
+  },
+  "configuration": "Air, Release static TRACE OFF, CPU Native + Apple MLX + Vulkan/MoltenVK; ASan then UBSan in the same build with recorded distinct flags and artifact hashes",
+  "scope": "HYLE host C++ correctness and native report lifetime/reset/OOM; vendor MLX, loader/driver and GPU instructions are not instrumented. No new TSan run and no P1 samples.",
+  "tests": {
+    "asan": {
+      "test_executables": 7,
+      "gtests": 395,
+      "per_executable": [
+        48,
+        31,
+        280,
+        11,
+        6,
+        14,
+        5
+      ]
+    },
+    "ubsan": {
+      "test_executables": 7,
+      "gtests": 395,
+      "per_executable": [
+        48,
+        31,
+        280,
+        11,
+        6,
+        14,
+        5
+      ]
+    }
+  },
+  "public_header_gates": 6,
+  "native_report_cases": [
+    "AppleGraph.ReportOutlivesConstantsCustomPayloadAndContext",
+    "AppleGraph.MetadataAllocationFailureResetsReportBeforeNativeCompilation",
+    "VulkanGraph.ReportOutlivesBorrowedConstantsCustomPayloadAndDevice",
+    "VulkanGraph.MetadataAllocationFailureResetsReportAndLeaksNoDeviceStorage"
+  ],
+  "instrumented_units": {
+    "asan": 49,
+    "ubsan": 49
+  },
+  "original_identity_sha256": "56d39f47c4abbfdb3cde48f8cba18eb03a379c84489d01559566483754648511",
+  "archive": {
+    "path": "air-host-raw.zip",
+    "sha256": "fcd9991426ddb8156d3b34101a8656a8ce7b212468dac96317bcca58609dec59",
+    "entries": [
+      {
+        "path": "r7-air-host-tests.py",
+        "sha256": "fca38cff3d44f0e4fcded499123aca2daffe055e7f9d4147211777c9109ac98e"
+      },
+      {
+        "path": "raw/asan-CMakeCache.txt",
+        "sha256": "1cd97bc636e905573b532caa17d2623717f87a32c30f5c9695ee32f9abeafc7f"
+      },
+      {
+        "path": "raw/asan-LastTest.log",
+        "sha256": "13fcb8a463ad7667e474c72f2f1c4b425a1673e0ee12cffc43cc79eedde0060f"
+      },
+      {
+        "path": "raw/asan-build.log",
+        "sha256": "2ef971506879de778ae916b3c582173e385e4158d4fe74be334aca0c1890c2df"
+      },
+      {
+        "path": "raw/asan-configure.log",
+        "sha256": "bab266354886f8badf1ca8221879ab284d7ca49bc7635ba5dde042ad4db6b03f"
+      },
+      {
+        "path": "raw/asan-instrumented-commands.json",
+        "sha256": "390d98f132eb4c0917890b2a6177e2d73e34e7de88307f0797570c56851b9773"
+      },
+      {
+        "path": "raw/asan-tests.log",
+        "sha256": "0b5656d9747881364ecf2e03b07713f5b32946e093447d9850a0bff67b5ca58c"
+      },
+      {
+        "path": "raw/headers-LastTest.log",
+        "sha256": "b9b43760a5bf673c07be67a650197c747a54a9248d1c7fe99e7146eabbc7afcc"
+      },
+      {
+        "path": "raw/identity.json",
+        "sha256": "56d39f47c4abbfdb3cde48f8cba18eb03a379c84489d01559566483754648511"
+      },
+      {
+        "path": "raw/public-headers.log",
+        "sha256": "297805c4126deb0371b5c15e3e02bf884b353a308761e6b7a808e8ff0ed0c91f"
+      },
+      {
+        "path": "raw/ubsan-CMakeCache.txt",
+        "sha256": "ba992ef700673fb91fa7d3ef8feb353a853003687f191ae77a9570cf3ad45b18"
+      },
+      {
+        "path": "raw/ubsan-LastTest.log",
+        "sha256": "d55831d0a6c51a1745283f4844b4bc72ad71752ab7d0f9701ddf8a77e699a5f4"
+      },
+      {
+        "path": "raw/ubsan-build.log",
+        "sha256": "b1ee7f70246f2f56b51ac0fe01a7fc2399f2f01c4852b584529e3ca32f25effa"
+      },
+      {
+        "path": "raw/ubsan-configure.log",
+        "sha256": "cd627df3fc348f56bb99675c6b751998ba62623b6bc582ae5c89c21d6f5875f2"
+      },
+      {
+        "path": "raw/ubsan-instrumented-commands.json",
+        "sha256": "4b462016720e8ce918f93893d422dd42eaf2f837ae5f8382218f4587b0f919fc"
+      },
+      {
+        "path": "raw/ubsan-tests.log",
+        "sha256": "272e7f17c2e33c55afe2523647adcec25f3bbd57fc471b03873c9c1965d0334f"
+      }
+    ]
+  }
+}

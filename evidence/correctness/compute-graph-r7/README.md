@@ -31,7 +31,7 @@ TRACE ON 的 profiler 成本不属于 OFF 性能证据。原 TSan 不记作本�
 
 ## 待完成
 
-Windows broad selector 已完成下述覆盖。Mac host sanitizer、TRACE OFF/ON 三交付与 F5 fixture
+Windows broad selector 与 Mac host sanitizer 已完成下述覆盖。TRACE OFF/ON 三交付与 F5 fixture
 检查继续按 [R7 当前卡](../../../docs/implementation/tasks/compute/four-route-foundation-final-review.md)
 执行；未执行项保持待验，六个 owner 尚未 CLOSED。
 
@@ -52,3 +52,17 @@ docs/closure/configure 以较新的实际记录计一次；这不是把原来的
 `CMAKE_GENERATOR=Ninja`，因此实际采用相同 MSVC 的 Visual Studio/MSBuild Release，显式
 `--parallel 2`；记录按实际 generator 保留。全部十五个产品的 source/static/shared 消费通过，
 不把这些 OFF 普通门冒充后续 TRACE ON 或 Apple 原生验证。
+
+## Mac host ASan / UBSan 完成
+
+[插桩身份](air-host-identity.json)与[原始归档](air-host-raw.zip)记录 Air 的 Release static、TRACE OFF、
+CPU Native + Apple MLX + Vulkan/MoltenVK。两种 sanitizer 各覆盖 49 个具名插桩编译单元、7 个测试
+程序 / 395 个 GTest；六个公共头门也已通过。原始命令、编译选项、日志、执行脚本与各自制品 hash
+独立保存；复用 build 切换 sanitizer，不把第二次制品冒充第一次制品。
+
+Apple/Vulkan 新增报告的 owner 释放、复制后读取、reset、metadata OOM 与失败后重试用例都实际通过；
+Vulkan 的借入常量去重、owned/borrowed 字节边界及 quota 回收也有行为检查。Generic Graph 原有的
+逐分配点失败回滚检查同时通过。
+
+范围限 HYLE host C++；MLX vendor、loader/driver 与 GPU 指令没有因此获得 sanitizer 资格。
+未重新运行 TSan，也没有新增 P1；TRACE ON 和三交付仍由独立后续门裁决。
