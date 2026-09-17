@@ -221,18 +221,25 @@ Status QueueState::reserve(std::size_t minimum) noexcept {
         return Status::Ok();
     }
 
+    ScopedPrimaryContext scope(context->primary);
+    if (!scope)
+      return scope.status();
+    // Growing the pool allocates native device/pinned storage. Reject before
+    // those capture-unsafe calls, including first submit into an external
+    // capture. A reserved hot prefix never reaches this cold check.
+    cudaStreamCaptureStatus capture = cudaStreamCaptureStatusNone;
+    HYLE_RETURN_IF_ERROR(
+        runtime_status(cudaStreamIsCapturing(stream, &capture)));
+    if (capture != cudaStreamCaptureStatusNone)
+      return Status::FailedPrecondition(
+          "CUDA completion pool cannot grow during stream capture");
+
     void *storage = allocator.allocate(sizeof(EventBlock), alignof(EventBlock));
     if (storage == nullptr) {
       return Status::ResourceExhausted(
           "CUDA completion event-block allocation failed");
     }
     auto *block = ::new (storage) EventBlock;
-    ScopedPrimaryContext scope(context->primary);
-    if (!scope) {
-      block->~EventBlock();
-      allocator.deallocate(block, sizeof(EventBlock), alignof(EventBlock));
-      return scope.status();
-    }
     Status status_storage = runtime_status(
         cudaMalloc(reinterpret_cast<void **>(&block->device_status),
                    kEventSlotsPerBlock * sizeof(unsigned)));
