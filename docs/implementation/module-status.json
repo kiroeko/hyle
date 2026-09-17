@@ -504,15 +504,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
+      "summary": "LLM/MoE C1-T AUDITED：T01–T04固定Vulkan六类word storage、空/尾字节资源边界、Copy/Fill/Cast/Unary/Binary/Select与普通Graph，尚未实施。View别名、norm/reduce/index等后续机制和完整C1验收仍待完成。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
+      "summary": "LLM/MoE C1-T AUDITED：T01–T04固定Vulkan六类word storage、空/尾字节资源边界、Copy/Fill/Cast/Unary/Binary/Select与普通Graph，尚未实施。View别名、norm/reduce/index等后续机制和完整C1验收仍待完成。"
     }
   ]
 }

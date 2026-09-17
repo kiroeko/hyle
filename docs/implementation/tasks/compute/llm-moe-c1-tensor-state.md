@@ -18,7 +18,7 @@
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
-  进入 AUDITED；`graph` 与 Vulkan 两个 owner 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -842,5 +842,35 @@ baseline `babd0d36`，owner `/root` / `compute_route_apple` 与 `graph_route_app
   selector 保留 112/110 项 skipped reasons；Air 单独 selector 首次因默认 SSH PATH 没有 cmake
   失败，补用验证脚本同一工具 PATH 后通过，未重建或重跑测试。完整 C1 真实权重、三交付/
   其他环境、等责 P1 和矩阵逐格验收仍待完成；下一具名路线缺口为 Vulkan，不签 C1 整包 PASS。
+
+### C1-T：Vulkan typed storage 与逐元素计算（AUDITED）
+
+baseline `f3552f36`，owner `/root` / `compute_route_vulkan` 与 `graph_route_vulkan`。F01/F03 的
+半精度残差、gate 参数变换、mask 选择和原始存储搬运，需要先解除三个具名缺口：prepare_plan
+只接非空 F32，transfer 拒绝非四字节倍数，以及 optional alias 被当作必须原位而整体拒绝。
+现有 native Program/Invocation、录制、barrier、结果保留和故障排空继续复用。
+
+核对来源为固定 ggml `456172ec` 的 Vulkan `types.glsl`、`generic_unary_head.glsl`、
+`unary.comp`：已登记原版 shader 的布局为 rank≤4，半精度 typed storage 需要额外 Vulkan
+能力；其 Softplus 与特殊值处理不能直接签本轮合同。保留既有已资格化 F32 GEMM/SiLU 核，
+本批 `OWN` rank≤8/byte-stride 与 word storage 适配，`BORROW` 同一原生 SPIR-V 工具链及成熟
+逐元素公式（GELU-erf 沿该 pin 的 A&S 近似）。半精度 RNE 使用整数位转换，不要求设备启用
+shaderFloat16/Int8/Int16/Int64；I64 在存储操作中保留两个 U32，不承诺本批整数算术。
+
+[Vulkan buffer copy 合同](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdCopyBuffer.html)
+和 [VkBufferCopy](https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferCopy.html) 允许非零
+任意字节长度；原 `%4` 限制不是原生 copy 的要求。shader 的 U32 storage 访问另要求物理尾部
+padding，不能把二者混为一谈。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| T01 | Vulkan 原生 allocation/borrow/transfer/descriptor 支持六 storage、空 tensor 与非4倍数长度 | logical byte span 与4字节向上取整、至少4字节的 native storage 分开；自有分配自动padding，borrow显式要求足够物理容量与max(4,native alignment)对齐，不读写caller范围外。上传下载只传逻辑bytes；空传输无copy命令，仍检查closed/device/错误。quota和PlanFacts报告真实capacity；空输出保留合法owner，零dispatch程序录制/完成与寿命正常，无假payload |
+| T02 | 普通 Copy/Fill/Select 接F32/F16/BF16/I32/I64/Bool，Cast/13Unary/6Binary 接三浮点 | rank0–8、native byte stride/广播/empty，dense output，合法非空byte/count域匹配原生32位索引/设备range。按共同schema冷推导后固定SPIR-V specialization，每个output word单writer，半精度/Bool尾块无原子写冲突；原始位storage操作、浮点F32求值后RNE。稳定Softplus/Sigmoid、GELU/SiLU负Inf极限、NaN/fmin/fmax/±0；未知精度明确拒绝 |
+| T03 | 普通 Graph 共享T02；optional alias允许选择独立输出，保持MustAlias View拒绝直到单独规划 | native recorded dispatch与固定scratch复用，不加逐节点热解释。空输出无dispatch但有结果owner；旧F32 GEMM/SiLU明确保留dtype资格，不能因扩大计划storage误将half交给F32核。公开指南、borrow padding和原生资源成本清楚；源码list只扩本owner，既有vendor snapshot/pin不变 |
+| T04 | 三浮点独立数值/codec与六storage位级oracle、普通Direct/Graph及生命周期 | scalar/0/1/127/128/129/257、2048宽、rank8、odd/zero byte stride、广播与Bool选择、F16/BF16舍入中点/边界/NaN/Inf/±0；空和1/2/3byte传输、borrow容量/对齐拒绝、保护区与metadata-only准备。half residual/Softplus/mask组合、两槽变输入、旧结果保留、关闭/abandon/现有OOM/native失败回归。W1真实Vulkan GPU及Air/Mini MoltenVK对应factors/公开头；完整权重/三交付/其他适用环境/等责P1随C1固定bundle |
+
+本批不接 View 的必须别名规划、Concat/gates/norm/reduce/Softmax/TopK/索引/Scan；这些仍是本包
+下一批具名算法/资源机制，不能改成缺席或由consumer重复实现。当前不改通用Graph、Mem、依赖pin、
+公共构建治理或性能工具，不运行P1；owned shader/source编译只在Vulkan模块CMake内接线。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
