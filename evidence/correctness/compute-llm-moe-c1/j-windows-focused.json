@@ -1,0 +1,216 @@
+{
+  "kind": "C1-J Windows focused stable TopK correctness",
+  "candidate": "32deca71af3dabefc0ff32df2e3980c181bf8024",
+  "tree": "5fd2818a33a97449626de70060618c3d29ba6fe6",
+  "verdict": "PASS",
+  "attempts": [
+    {
+      "candidate": "6feef13b4daa2e5bdf8b6d326f99e5bbd4e3838d",
+      "tree": "1c39108acca4dbd842354895a4c58fda2225d43a",
+      "kind": "C1-J CUDA TopK focused correctness; not full selector or P1",
+      "build": "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+      "reused_dependency_build_from": "782c575e458f8437746df7df60a680552abf7717",
+      "context": {
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        }
+      },
+      "commands": [
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_CUDA=ON",
+            "-DHYLE_COMPUTE_ONEDNN=ON",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DCMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "seconds": 11.32799999974668,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\j-topk-configure.log",
+          "sha256": "b3ce2e5a40b89493058a40bb013020536908effe887edc8a2619d5dfd5c20e79"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_compute_provider_cuda_tests",
+            "hyle_compute_route_cuda_tests",
+            "hyle_graph_route_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          "exit_code": 2,
+          "seconds": 32.688000000081956,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\j-topk-build.log",
+          "sha256": "688dc94459857990e7a1d0a437e9a56212272e2fecef0f1e2f5bdddec174b43e"
+        }
+      ],
+      "verdict": "FAIL"
+    },
+    {
+      "candidate": "32deca71af3dabefc0ff32df2e3980c181bf8024",
+      "tree": "5fd2818a33a97449626de70060618c3d29ba6fe6",
+      "kind": "C1-J CUDA TopK focused correctness; not full selector or P1",
+      "build": "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+      "reused_dependency_build_from": "782c575e458f8437746df7df60a680552abf7717",
+      "context": {
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        }
+      },
+      "commands": [
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_CUDA=ON",
+            "-DHYLE_COMPUTE_ONEDNN=ON",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DCMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "seconds": 11.171999999787658,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\j-test-include-fix-configure.log",
+          "sha256": "bb9e6c39d2a9488a4d57b1cf2c0e0b0c5936795a97ef56f3bad9dd95c866294e"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_compute_provider_cuda_tests",
+            "hyle_compute_route_cuda_tests",
+            "hyle_graph_route_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          "exit_code": 0,
+          "seconds": 10.0,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\j-test-include-fix-build.log",
+          "sha256": "48a16fad168bfe23d5d86cef39fff8b31c12d606cb7c5123191cca0ac09f5bff"
+        },
+        {
+          "label": "test",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^(compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+            "-LE",
+            "headers"
+          ],
+          "exit_code": 0,
+          "seconds": 4.75,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\j-test-include-fix-test.log",
+          "sha256": "637694f009d38861cf4bb45c99d3e317e7afbeaf2c7dd714c8221f44c0070f18"
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "scope": [
+    "CUDA provider: 25 cases",
+    "ordinary CUDA Direct: 4 cases",
+    "ordinary CUDA Graph: 9 cases"
+  ],
+  "initial_findings": [
+    "J default-entry source audit found the SGLang adapter rejecting every multi-output operation before declining unsupported families; the binding-count check now matches request.outputs, preserving foreign-family fallback. Existing cuBLASLt/Marlin adapters already use that contract and were not modified.",
+    "Product 6feef13b CUDA/C++ sources compiled. Its independent test used std::stable_sort/sort without including algorithm; 32deca71 adds only the missing test header. The first attempt ran no tests."
+  ],
+  "case_log": {
+    "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\j-test-include-fix-last-test.log",
+    "sha256": "2ae82f1e1c774c58244f744839e54f920ff2999f529cffdf5912856f5412e39b"
+  },
+  "mechanisms": [
+    "three floating storage types and bit-exact selected values/I32 indices",
+    "actual expert widths 256/288/384/512/896 and k=1/6/8/10/16/E; tails/padding, rank8/middle axes, odd/zero strides, non-axis empty tensors",
+    "stable ties, both numerical directions, sorted/stable flags, signed zeros, all NaNs and NaN payloads; k=1 through 65537 columns",
+    "invalid counts/empty selection dimension, k>1 4096-column capacity, every input/output and output/output overlap rejected",
+    "ordinary Direct and Graph softmax -> TopK -> selected sum -> normalized weights; two slots, three changed inputs, retained old outputs, native capture, zero metadata replay allocation",
+    "cold OOM rollback and accepted owner retention after close, including both TopK outputs"
+  ],
+  "limits": [
+    "No P1 or full C1 verdict",
+    "No full selector/public-header/source/static/shared increment or other-environment verdict",
+    "Actual model shapes with synthetic values, not complete local 2B weights",
+    "k>1 row lengths >4096 remain explicitly unsupported; C3 must qualify long-sequence selection with its actual sparse-attention requirements",
+    "Concat, checked Gather/Scatter/Scan, Apple/Vulkan and complete C1 bundle remain pending"
+  ]
+}

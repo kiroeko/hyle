@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03 和 J01–J03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03 和 K01–K03 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -434,5 +434,39 @@ J03 的默认接线发现当前同 owner 的具体反例：SGLang adapter 在判
 provider。固定修复仅令 proposal binding 数量与 `request.outputs.size()` 比较，随后沿现有
 `select_shape` 对非 gated family 返回 unsupported；cuBLASLt/Marlin 已是这个正确顺序，不重开。
 默认 Direct/Graph TopK 和原门控回归必须同时通过，不能只用显式 HYLE provider 绕过此缺陷。
+
+### C1-J 实施事实
+
+- `6feef13b` 完成 SDK k=1 选择与 CUB 块排序、原始 values/I32 indices、默认多输出 fallback；
+  `32deca71` 只补独立排序 oracle 的 `<algorithm>` include。前一次产品 CUDA/C++ 编译成功，
+  测试编译缺头，未运行测试；修正后 W1 Release/WERROR 的 provider 25 case、Direct 4 case、
+  Graph 9 case 共 **38 case PASS**。[原始日志/哈希](../../../../evidence/correctness/compute-llm-moe-c1/j-windows-focused.json)。
+- 三 dtype 的独立 stable scalar ordering 和原始位比较实际通过；包括实际 E/k、4096容量、
+  k=1 的65537长行、rank8/中轴/odd与zero stride、全NaN/payload/±0/±Inf、双输出与输入之间
+  的各类重叠拒绝。默认 F32 Softmax→TopK→选中和→归一化权重图覆盖 M=1/17/23、五组真实
+  E/k、k=1，两槽 capture/三次变更输入/保留旧values和indices；普通 Direct 跑同一程序且两输出
+  与图一致，热重放无 metadata 分配。TopK cold OOM 回滚和关闭后已接纳 owner 保留也通过。
+- 统一 LOC self-check：Compute+Graph 实现 **39,959 行 / 147 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/j-implementation-loc.json)。无适用完整 P1、三交付/
+  公开头增量或其他环境 verdict，C1 整包和矩阵仍未证明。C3 大 N/k 的选择域不会继承当前容量证据。
+
+### C1-K：CUDA Concat（AUDITED）
+
+baseline `32deca71`，owner `/root` / `compute_provider_cuda`。F01 的 slice/split/reassemble 和
+状态窗口 append 需要真实张量拼接；共同 `Concat` 已有任意合法输入数量、正负 axis、同 dtype/
+非axis维相同的 schema，Native 已按 exact storage bits 拼接。已读固定 ggml `456172ec` 的
+`src/ggml-cuda/concat.cu`：dense 双输入一遍读取/写出，非连续显式 byte stride；HYLE 保持同样
+成本结构，适配 rank8、变参输入和已有资源合同，不复制 ggml 的四维对象/PDL runtime。
+
+| FIX | 固定实施范围 | P0 / 数值 / 适用验收 |
+|---|---|---|
+| K01 | HYLE CUDA Concat cold proposal/prepare，plain1/2/4/8字节同类型storage、dense输出、合法axis/rank与变参数量 | bit exact，无算术和格式窄化；output≤INT32_MAX非空元素，无输入输出重叠；每最多4输入一组私有已编译程序，常见双输入一次launch，任意N为ceil(N/4)组；不扩大已有tensor/gated元数据、不新增API/Provider |
+| K02 | 原生分组拼接kernel，dense直接索引与general byte-safe索引 | 每组输出分片一次读/写，组内最多4个边界匹配，O(elements·rank)，无O(elements·input_count)扫描；所有shape/stride/axis前缀和kernel在冷期绑定，热路径只取得至多4个资源指针并launch；空组跳过指针/launch，零caller workspace/slot状态；group metadata按实际arity冷分配且如实计persistent bytes |
+| K03 | Direct/default Graph、数值和生命周期/文档 | 1/2/3/4/5/9输入，F32/F16/BF16/I32与1/8字节位模式，真实head/hidden宽度、0/1/tail、rank8、中轴/odd/zero stride、部分为空/全空/共享输入；View→Concat与窗口拼接，两slots/capture/变更输入/保留结果，alias拒绝、cold OOM、已接纳prefix错误后drain；当前局部correctness后，完整三交付/P1仍随C1固定bundle |
+
+分组数量与dispatch成本冷期计算；若某组已提交后后续指针/launch失败，必须报告已接纳prefix的
+真实Completion并保留owner，不改成同步拒绝或重跑。所有组写不同output片段，不需要组间额外
+barrier或独立Queue。仅 CUDA owner/source list 与直接consumer测试/指南可改；checked indices/
+Scan 的异步算法错误回报不属于 K，也不以 unchecked 或 host payload fallback 冒充完成。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

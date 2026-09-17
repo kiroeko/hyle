@@ -471,7 +471,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E/G/H/I/J AUDITED：门控、tensor、norm、Reduce/masked Softmax 已实现，W1 provider/default Direct/Graph 共34 case 通过；J01–J03 固定 SDK TopK values/indices；其余索引与 C1 完整验收待完成。"
+      "summary": "LLM/MoE C1-E/G/H/I/J/K AUDITED：门控、tensor、norm、归约和TopK已实现，W1 provider/default Direct/Graph 共38 case通过；K01–K03 固定CUDA Concat；checked索引/Scan与C1完整验收待完成。"
     },
     {
       "module": "compute_route_cuda",
