@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "kind": "bounded_source_qualification_not_product_verdict",
+  "baseline": "2e85b8942d14a395e148da8b60fd5ea24562f472",
+  "sources": [
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/qwen3_5.py",
+      "sha256": "451439c233728c7025211dd2472e5062eb573ea51eb9936d44b4c5440ffa2f09",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/qwen3_5.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/ops/attention/fla/layernorm_gated.py",
+      "sha256": "27f1c3d591b1a8cf393d5665d5418f830b46a64897be338ecfbf262cba18a2ad",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/kernels/ops/attention/fla/layernorm_gated.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/kimi_k3.py",
+      "sha256": "7a3ef867394a2fd52b3a71a979c053b51e9f2310c35cd4c12ef3aa8e7be172e5",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/kimi_k3.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/layers/quantization/mxfp4.py",
+      "sha256": "cfc807fcd854aaf279ded8b0c8b0996fc185141d00aa619cb89fbddff3215626",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/layers/quantization/mxfp4.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/ops/quantization/per_token_group_quant.py",
+      "sha256": "5b0f1f929a1e142d4fcdcfcb1445a641847e6697861e6d7c2fcf21871fa2d15e",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/kernels/ops/quantization/per_token_group_quant.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/jit/csrc/gemm/per_token_group_quant.cuh",
+      "sha256": "238d3d4db7a36ae36e118bed8d37aeb9893cb40d0f5c2670cb307416499e9678",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/kernels/jit/csrc/gemm/per_token_group_quant.cuh"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/jit/include/sgl_kernel/deepseek_v4/fp8_utils.cuh",
+      "sha256": "6b686494e4ee7ac6f12f972e1033837ff020d1629e833e06f57f304ed0c5f022",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/kernels/jit/include/sgl_kernel/deepseek_v4/fp8_utils.cuh"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/qwen3_5_mtp.py",
+      "sha256": "1ebc9643333046d5621ad8b1bd6bd005686988c0104576bd1ea6c3d5e51acf24",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/qwen3_5_mtp.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/deepseek_v4_nextn.py",
+      "sha256": "918246d07dd261abd268e055733d8d3c1488c3484818ef04aa42d8c9cac1f454",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/deepseek_v4_nextn.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/deepseek_nextn.py",
+      "sha256": "56cf0d2267400050765fe6c870a2b89068bc7e032a24fd493d31da7ffc52d84f",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/deepseek_nextn.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/glm5_next_nextn.py",
+      "sha256": "ae00f0aa187d3f797a011e0691d9540e5a9ad84c350660670fc69ff78a40c153",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/glm5_next_nextn.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/glm4_moe.py",
+      "sha256": "5d4d9d01b1110c537470ee328678fa040bd9e814ff9b83341c2969008f0d7391",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/glm4_moe.py"
+    },
+    {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/configs/model_config.py",
+      "sha256": "85c36b134e3e4a39bce382d9172aa4fe4819f02996d55cbdf779846da4cfb8c8",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/configs/model_config.py"
+    },
+    {
+      "repository": "ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-quants.c",
+      "sha256": "07143d7068936ae46b3c528b2f3d4bbb666e74d88992165716174d243573965d"
+    },
+    {
+      "repository": "llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/qwen35.cpp",
+      "sha256": "ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671"
+    },
+    {
+      "repository": "marlin",
+      "revision": "1f25790bdd49fba53106164a24666dade68d7c90",
+      "path": "test.py",
+      "sha256": "0bcd4c7657b6f31dd1fc0ec15fc66efc10c248cc01f7cd7661e3704f656553a7"
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q38_OUTPUT_GATE",
+      "verdict": "RESOLVED_DISTINCT_BRANCHES",
+      "models": [
+        "qwen38_27b",
+        "qwen38_2p4t_a95b"
+      ],
+      "conclusion": "output_gate_type is consumed by GatedDeltaNet RMSNormGated, with swish = z*sigmoid(z); regular full-attention output gating remains sigmoid. The earlier comparison against Qwen3_5Attention inspected a different branch, and does not establish a missing swish implementation.",
+      "anchors": [
+        "srt/models/qwen3_5.py:355,462-473",
+        "kernels/ops/attention/fla/layernorm_gated.py:138-141,190-193"
+      ],
+      "requirements": [
+        "F03_OUTPUT_GATE_SIGMOID",
+        "F04_RMS_SWISH_GATE"
+      ],
+      "oracle": "separate full-attention sigmoid and post-RMS swish formulas; Qwen3.5 reference qualifies only the shared formula and local checkpoint, not full Qwen3.8 execution"
+    },
+    {
+      "id": "K3_ACTIVATION_QUANTIZATION",
+      "verdict": "RESOLVED_RUNTIME_PROFILE_DEPENDENT",
+      "models": [
+        "kimi_k3"
+      ],
+      "conclusion": "Checkpoint input_activations=null does not remove runtime activation quantization. The declared W4A8 path uses MXFP4 E2M1/UE8M0 group32 weights and E4M3/UE8M0 group32 dynamic activations. SGLang explicitly distinguishes this SM100 default route from BF16-activation routes (Marlin/cutlass/precision=bf16); compare only identical named profiles.",
+      "anchors": [
+        "srt/models/kimi_k3.py:1129-1170",
+        "srt/layers/quantization/mxfp4.py:78-119",
+        "kernels/jit/csrc/gemm/per_token_group_quant.cuh:296-330"
+      ],
+      "activation_contract": "finite values; amax=max(group_absmax,1e-10); raw scale=amax/448; round scale upward to representable power-of-two UE8M0; E4M3 nearest-even SATFINITE; input dtype intermediate multiply preserved as declared; apply at expert gate/up and down GEMM inputs",
+      "requirements": [
+        "F18_MXFP4_W4A8",
+        "F18_MXFP8_ACTIVATION"
+      ],
+      "oracle": "independent scalar format decoder/encoder plus same codes/scales W4A8 composition; a dequantized BF16 engine is not a W4A8 performance peer",
+      "hardware": "No SM100/107 validation exists on RTX4070 SM89; four-route emulation must preserve the same quantized values and charge costs."
+    },
+    {
+      "id": "MTP_BRANCH_BINDING",
+      "verdict": "RESOLVED_MODEL_SPECIFIC_COMPOSITION",
+      "branches": [
+        {
+          "models": [
+            "qwen35_2b_local",
+            "qwen38_27b",
+            "qwen38_2p4t_a95b"
+          ],
+          "count": 1,
+          "weights": "mtp.fc; pre_fc_norm_embedding; pre_fc_norm_hidden; layers.0; norm; base tied embeddings/head unless config explicitly supplies dedicated ones",
+          "formula": "target post-final-norm hidden + next-token embedding; each Gemma RMS (1+weight); concatenate [embedding,hidden]; fc; one full-attention decoder; MTP norm; tied head",
+          "evidence": "SGLang qwen3_5_mtp.py plus llama.cpp qwen35.cpp lines205-209,540-550,624-638; local input contains all15 MTP tensors",
+          "acceptance": "C4 actual local MTP tensor fragment; request scheduling and acceptance policy remain test consumer"
+        },
+        {
+          "models": [
+            "deepseek_v4_pro",
+            "deepseek_v4_flash"
+          ],
+          "count": 1,
+          "weights": "mtp layer e_proj,h_proj,enorm,hnorm,norm,hc_head_fn/base/scale and inherited block; shared embedding/head",
+          "formula": "enorm(embedding)->e_proj broadcast over HC + h_proj(hnorm(HC hidden)); one nextn block; HC head and norm",
+          "evidence": "pinned official inference/model.py MTPBlock and SGLang deepseek_v4_nextn.py",
+          "acceptance": "C4 HC/MTP composition with real widths; inherited sparse attention dependencies completed C5"
+        },
+        {
+          "models": [
+            "glm53",
+            "glm53_flash"
+          ],
+          "count": 1,
+          "weights": "model.layers.<num_hidden_layers> NextN-specific enorm,hnorm,eh_proj,shared_head.norm and decoder tensors; Flash may use model.language_model prefix",
+          "formula": "concat normalized next embedding and previous hidden; eh_proj; decoder with MTP index carry; shared head norm/head. Respect checkpoint quantization ignore entries (Flash BF16 NextN).",
+          "evidence": "SGLang glm4_moe.py GlmMoeDsaForCausalLMNextN; glm5_next_nextn.py; deepseek_nextn.py forward; config model mapping",
+          "acceptance": "C4 math and index owner/lifetime with C5 final DSA composition, no speculative sampling in SDK"
+        },
+        {
+          "models": [
+            "kimi_k3"
+          ],
+          "count": 0,
+          "weights": "none required by frozen config",
+          "formula": "no MTP head requirement; ordinary KDA chunk/ragged mechanisms remain MUST",
+          "evidence": "pinned config num_nextn_predict_layers=0"
+        }
+      ],
+      "oracle": "Each branch has an independent formula fixture; ordinary base-model logits do not sign MTP."
+    }
+  ]
+}

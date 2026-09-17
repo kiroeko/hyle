@@ -66,6 +66,10 @@
   },
   "tool_suites": [
     {
+      "paths": ["tests/compute_models/*"],
+      "tests": ["tests/compute_models/inputs_test.py"]
+    },
+    {
       "paths": ["scripts/validation-*", "tests/tooling/validation_selector_test.py", ".github/workflows/*"],
       "tests": ["tests/tooling/validation_selector_test.py"]
     },
