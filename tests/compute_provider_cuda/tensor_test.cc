@@ -64,7 +64,9 @@ struct Fixture final {
     if (!slot)
       return slot.error();
     auto done = slot->submit(queue, inputs, std::array{output});
-    return done ? done->wait() : done.error();
+    if (!done)
+      return done.error();
+    return done->wait();
   }
 };
 
