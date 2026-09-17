@@ -71,6 +71,23 @@ template <bool Maximum> struct Extremum final {
   }
 };
 
+struct IndexedMaximum final {
+  float value;
+  unsigned column;
+};
+struct SelectMaximum final {
+  __device__ IndexedMaximum operator()(IndexedMaximum left,
+                                       IndexedMaximum right) const {
+    if (isnan(left.value))
+      return left;
+    if (isnan(right.value))
+      return right;
+    if (left.value != right.value)
+      return left.value > right.value ? left : right;
+    return left.column < right.column ? left : right;
+  }
+};
+
 template <class T, ReductionKind Kind, bool Dense>
 __global__ void reduce(const void *input, const void *, T *output,
                        ReductionLayout layout) {
@@ -121,15 +138,25 @@ __global__ void softmax(const void *input, const void *mask, T *output,
   const auto tile = cg::tiled_partition<kThreads>(cg::this_thread_block());
   extern __shared__ float values[];
   float local = -CUDART_INF_F;
+  IndexedMaximum chosen{-CUDART_INF_F, ~0U};
   for (unsigned column = threadIdx.x; column < layout.width;
        column += kThreads) {
     const float value =
         masked_value<T, Mask, Dense>(input, mask, layout, blockIdx.x, column);
     if constexpr (Cached)
       values[column] = value;
-    local = Extremum<true>{}(local, value);
+    if constexpr (Log)
+      chosen = SelectMaximum{}(chosen, {value, column});
+    else
+      local = Extremum<true>{}(local, value);
   }
-  const float maximum = cg::reduce(tile, local, Extremum<true>{});
+  float maximum;
+  if constexpr (Log) {
+    chosen = cg::reduce(tile, chosen, SelectMaximum{});
+    maximum = chosen.value;
+  } else {
+    maximum = cg::reduce(tile, local, Extremum<true>{});
+  }
   local = 0;
   for (unsigned column = threadIdx.x; column < layout.width;
        column += kThreads) {
@@ -140,12 +167,20 @@ __global__ void softmax(const void *input, const void *mask, T *output,
       value =
           masked_value<T, Mask, Dense>(input, mask, layout, blockIdx.x, column);
     const float exponential = expf(value - maximum);
-    local += exponential;
+    if constexpr (Log) {
+      // Keep the maximum's exact exp(0)=1 out of the sum. Otherwise FP32
+      // rounds small positive tails away before log, even for BF16 output.
+      if (column != chosen.column)
+        local += exponential;
+    } else {
+      local += exponential;
+    }
     if constexpr (Cached && !Log)
       values[column] = exponential;
   }
   const float sum = cg::reduce(tile, local, cg::plus<float>());
-  const float normalizer = Log ? logf(sum) : 1 / sum;
+  const float normalizer =
+      Log ? (isfinite(maximum) ? log1pf(sum) : CUDART_NAN_F) : 1 / sum;
   // Both collectives complete before any output write; even an in-place row
   // keeps all values needed by other threads. Different rows are disjoint.
   for (unsigned column = threadIdx.x; column < layout.width;

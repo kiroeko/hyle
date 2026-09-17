@@ -726,8 +726,7 @@ template <class T> void reduction_cases() {
       for (std::size_t i = 0; i < values.size(); ++i)
         values[i] = half_test::encode<T>(
             (static_cast<int>(i % 29) - 14) * 0.125 + 0.0625);
-      std::vector<Axes> choices{
-          Axes::all(), Axes::from(std::span<const std::int32_t>{}).value()};
+      std::vector<Axes> choices{Axes::all()};
       if (!shape.empty())
         choices.push_back(Axes::from(std::array<std::int32_t, 1>{-1}).value());
       if (shape.size() > 1)
@@ -949,6 +948,9 @@ TEST(CudaReduction, SoftmaxFloatAndHalfMasksAxesCacheBoundaryAndLongRows) {
 
 TEST(CudaReduction, PreparationRejectsPrecisionAndUnsafeAliasesWithoutWriting) {
   Fixture fixture;
+  const auto empty_axes = Axes::from(std::span<const std::int32_t>{});
+  ASSERT_FALSE(empty_axes.has_value());
+  EXPECT_TRUE(empty_axes.error().IsInvalidArgument());
   const auto half = TensorDesc::dense(DataType::kBFloat16,
                                       std::array<std::int64_t, 2>{2, 129})
                         .value();
@@ -1003,5 +1005,54 @@ TEST(CudaReduction, PreparationRejectsPrecisionAndUnsafeAliasesWithoutWriting) {
   auto partial = softmax_slot.submit(fixture.queue, source, destination);
   ASSERT_FALSE(partial.has_value());
   EXPECT_TRUE(partial.error().IsInvalidArgument());
+}
+
+template <class T> void log_softmax_tail_cases() {
+  Fixture fixture;
+  for (const std::int64_t width : {129, 8193}) {
+    const auto desc = TensorDesc::dense(half_test::data_type<T>(),
+                                        std::array<std::int64_t, 2>{3, width})
+                          .value();
+    Tensor input(desc, fixture.resource.ref());
+    std::vector<T> values(*desc.element_count(), half_test::encode<T>(-20));
+    values[static_cast<std::size_t>(width) - 1] = half_test::encode<T>(0);
+    values[static_cast<std::size_t>(width)] = half_test::encode<T>(0);
+    values[static_cast<std::size_t>(width * 2) - 1] = half_test::encode<T>(0);
+    for (std::size_t i = static_cast<std::size_t>(width * 2); i < values.size();
+         ++i)
+      values[i] = half_test::encode<T>(0);
+    ASSERT_TRUE(input.write<T>(values).ok());
+    const auto status =
+        fixture.execute(Operation(Softmax{.kind = SoftmaxKind::kLogSoftmax}),
+                        std::array{input.view.as_const()}, input.view);
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = input.read<T>();
+    for (std::size_t row = 0; row < 3; ++row) {
+      const auto maxima = row == 2 ? static_cast<std::size_t>(width) : row + 1;
+      const double log_partition =
+          std::log(static_cast<double>(maxima)) +
+          std::log1p((width - maxima) * std::exp(-20.0) / maxima);
+      for (std::size_t col = 0; col < static_cast<std::size_t>(width); ++col) {
+        const auto index = row * width + col;
+        expect_value(actual[index],
+                     half_test::decode(values[index]) - log_partition);
+      }
+    }
+  }
+}
+TEST(CudaReduction, LogSoftmaxPreservesNearOneTailsAndCountsEqualMaxima) {
+  log_softmax_tail_cases<float>();
+  log_softmax_tail_cases<hyle::simd::float16_t>();
+  log_softmax_tail_cases<hyle::simd::bfloat16_t>();
+}
+
+TEST(CudaReduction, EmptyStorageWithHugeDimensionStillWritesIdentities) {
+  Fixture fixture;
+  const auto desc = TensorDesc::dense(
+      DataType::kFloat32, std::array<std::int64_t, 2>{INT64_MAX, 0});
+  ASSERT_TRUE(desc.has_value()) << desc.error().message();
+  for (const auto kind : {ReductionKind::kSum, ReductionKind::kMean,
+                          ReductionKind::kMinimum, ReductionKind::kMaximum})
+    check_reduce<float>(fixture, *desc, {}, Axes::all(), false, kind);
 }
 } // namespace
