@@ -117,7 +117,6 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
 }
 
 struct Affine final {
-  std::shared_ptr<int> lifetime;
   static constexpr c::OperationId operation_id{0x68796c657235ULL, 1};
   static constexpr auto operation_name = "apple-test-affine";
   c::OperationTraits operation_traits() const noexcept {
@@ -280,14 +279,15 @@ TEST(AppleGraph, ReportOutlivesConstantsCustomPayloadAndContext) {
     const auto w = builder.constant(dense({2, 2})).value();
     const auto mm = builder.add(c::MatMul{}, x, w).value();
     const auto out =
-        builder.add(c::Operation::custom(Affine{payload}), mm).value();
+        builder.add(c::Operation::custom(Affine{}), mm).value();
     ASSERT_TRUE(builder.publish(out).ok());
     auto graph = std::move(builder).finish().value();
     auto program = ga::compile(
         *context, graph, constants,
-        {.custom = [](const auto &, auto inputs, mx::Stream stream)
+        {.custom = [payload](const auto &, auto inputs, mx::Stream stream)
              -> hyle::Result<std::vector<mx::array>> {
-           return std::vector{mx::add(inputs[0], mx::array(1.f), stream)};
+           return std::vector{mx::add(
+               inputs[0], mx::array(static_cast<float>(*payload - 6)), stream)};
          },
          .report = &report});
     ASSERT_TRUE(program) << program.error().message();

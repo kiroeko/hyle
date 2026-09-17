@@ -112,7 +112,6 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
 }
 
 struct Affine final {
-  std::shared_ptr<int> lifetime;
   static constexpr c::OperationId operation_id{0x68796c657236ULL, 1};
   static constexpr auto operation_name = "vulkan-test-affine";
   c::OperationTraits operation_traits() const noexcept {
@@ -241,7 +240,7 @@ TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
                  b)
             .value();
     const auto out =
-        builder.add(c::Operation::custom(Affine{payload}), gate).value();
+        builder.add(c::Operation::custom(Affine{}), gate).value();
     ASSERT_TRUE(builder.publish(out).ok());
     auto graph = std::move(builder).finish().value();
     auto kernel = t::affine(*context);
@@ -249,9 +248,11 @@ TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
     const std::array constants{*borrowed, *borrowed};
     auto program = gv::compile(
         *context, graph, constants,
-        {.custom = [&](const auto &, const auto &, auto,
-                       const auto &) -> hyle::Result<gv::CustomDispatch> {
-           return gv::CustomDispatch{*kernel, {1, 1, 1}, t::count_push(4)};
+        {.custom = [&, payload](const auto &, const auto &, auto,
+                                const auto &) -> hyle::Result<gv::CustomDispatch> {
+           return gv::CustomDispatch{
+               *kernel, {1, 1, 1},
+               t::count_push(static_cast<std::uint32_t>(*payload - 3))};
          },
          .report = &report});
     ASSERT_TRUE(program) << program.error().message();
