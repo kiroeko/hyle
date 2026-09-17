@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "container_concurrent",
@@ -353,9 +355,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +372,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_ops",
@@ -386,21 +390,24 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。"
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_sched",
@@ -409,15 +416,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
+      "state": "CANDIDATE",
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
+      "state": "CANDIDATE",
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,15 +464,17 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
+      "state": "CANDIDATE",
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
-      "summary": "R5 Apple 交付 AUDITED：D1–D4 固定为公开 roots、生成资源投影/邻置、三交付样例与文档；旧 C++/性能继承。",
-      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md"
+      "state": "CANDIDATE",
+      "summary": "R5 Apple 交付 CANDIDATE：D1–D4 shipping inputs 在 cbedb837 固定；两 Mac 三交付/relocation、Windows selected、WSL OFF 完成，待 terminal 七门裁决。旧 CPU/CUDA C++ 与 P1 继承。",
+      "record": "docs/implementation/tasks/build/apple-r5-product-delivery.md",
+      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d"
     },
     {
       "module": "compute_route_apple",

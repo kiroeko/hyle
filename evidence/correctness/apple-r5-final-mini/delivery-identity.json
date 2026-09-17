@@ -1,0 +1,14 @@
+{
+  "delivery_candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
+  "route_candidate": "1636365bbe47779de24e84d7c7d1ed8088fe1af2",
+  "compared_paths": [
+    "include",
+    "src",
+    "cmake",
+    "samples",
+    "third_party",
+    "CMakeLists.txt"
+  ],
+  "changed_paths": [],
+  "inheritance": "Identical shipping inputs; final candidate changes tests, benchmark and documentation only."
+}

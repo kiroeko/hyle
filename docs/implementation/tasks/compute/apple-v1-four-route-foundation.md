@@ -203,3 +203,12 @@ WSL Apple OFF 已有实际隔离/逐头证据；Mini、host 插桩、最终 A/A/
 [候选后的独立审阅视角](../../../../evidence/correctness/apple-r5-candidate-review/README.md)已检查公开入口、
 失败/取消保活、并发关闭、Graph 冷/热边界、数值与比较责任、资源交付及用法，没有产生新的产品 FIX。
 该源码审阅不替代尚未运行的 host 插桩、Mini 和最终性能门；候选保持不变。
+
+## 最终平台与插桩证据
+
+候选不变。[Windows selected batch](../../../../evidence/correctness/apple-r5-windows-selector/README.md)
+已完成全部适用门；[Mini](../../../../evidence/correctness/apple-r5-final-mini/README.md)的 15 项
+native 正确性、两个逐头检查和完整三交付全部通过。[Air host 插桩](../../../../evidence/correctness/apple-r5-final-air/README.md)
+分别实际运行 ASan、UBSan、TSan，覆盖 HYLE host 实现及测试；MLX vendor/Metal shader 未插桩，
+不能将 host PASS 外推为 GPU sanitizer。Windows/Air/Mini 的证据与 WSL OFF 共同补齐本轮平台/
+交付义务。最终 P1 正按冻结合同串行执行，剩余未裁决项继续保持 UNPROVEN。

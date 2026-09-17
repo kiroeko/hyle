@@ -1,0 +1,31 @@
+{
+  "machine": "air",
+  "directories": [
+    "logs/host-sanitizers-1636365b"
+  ],
+  "archive_sha256": "f78f1c61dc1ea100e2efb9f76532946e2118c0ead9b5b1f34f7e1cf6de48110b",
+  "files": {
+    "logs/host-sanitizers-1636365b/asan/CMakeCache.txt": "1b95f89b144c45450e343926ded036429f91beff2048a06aa7ca7fd34ca17fc4",
+    "logs/host-sanitizers-1636365b/asan/LastTest.log": "724ecfbb1f455c9e5fb65b2d42b8cc7dea1c00fd9d515efef1e0872f3270c34c",
+    "logs/host-sanitizers-1636365b/asan/build.log": "1b00929c2fd170d0bd80261f96b514be592968dd05e70ac659d923b3f06e73c4",
+    "logs/host-sanitizers-1636365b/asan/configure.log": "a171194249a7e7d4d483169228b75bb09f701d28819b1937ece5ace835c3df1c",
+    "logs/host-sanitizers-1636365b/asan/ctest.log": "31d46d241032e5ae8d67a1de2632fefc26e5150d4a4bb5f2c64e8b61a16123d8",
+    "logs/host-sanitizers-1636365b/asan/instrumented-commands.json": "2d47fbb73553ac2df410cde28ef2bf892b504c14a78792c0bee0ff945082f397",
+    "logs/host-sanitizers-1636365b/asan/receipt.json": "ea91adb466ea21d63972c9bcfb2e08f63513b1b3379980f5fb607970bf9f85d1",
+    "logs/host-sanitizers-1636365b/tsan/CMakeCache.txt": "dcb5a86ddbc56248ff3d95cfa80d572b892cfc5e75ae29a703a11fb9ee14e3ff",
+    "logs/host-sanitizers-1636365b/tsan/LastTest.log": "fa052e494647eed8654097f718d345fd04fa42af36db5f80bd1bbaebc3e69ae4",
+    "logs/host-sanitizers-1636365b/tsan/build.log": "325fb82728399175eff014a629d6981569481e03189454bf30a5e9d82e3b7107",
+    "logs/host-sanitizers-1636365b/tsan/configure.log": "f59ec1c91edf4f319fa1cacf4c18d2b0e1137038de2d163be76e4f8d5d99b572",
+    "logs/host-sanitizers-1636365b/tsan/ctest.log": "d6186fcc0ecc0fe4e9cb14c148698076d62ef5bb65e51c581e8dfb4ce320d362",
+    "logs/host-sanitizers-1636365b/tsan/instrumented-commands.json": "2c7cd47c9f34b3682e0deb2a5b052ecff315fb40026311036169e374447696ff",
+    "logs/host-sanitizers-1636365b/tsan/receipt.json": "d1ca38cbd0d1df148b8354fd6508a2e9ccc80034a9f0a0fb0668c066bd71b44e",
+    "logs/host-sanitizers-1636365b/ubsan/CMakeCache.txt": "e9dc8875540db22ae3ea5b20cc9e966d6dd6626c03f64836b0ccab5f3364e130",
+    "logs/host-sanitizers-1636365b/ubsan/LastTest.log": "5dcffca0c152a4ccd9716590a1c32d16ad3bb80ac709486a5d980f0d1e408136",
+    "logs/host-sanitizers-1636365b/ubsan/build.log": "201bbe9252000b9509b687d8326d9e49c2fca238e2bb77245a01a98d6ecabdd2",
+    "logs/host-sanitizers-1636365b/ubsan/configure.log": "b4a3249ba28f9a4070667a1a3e47c3dafe8bbdd9d971a0b52a7a6f1b13b2c0a2",
+    "logs/host-sanitizers-1636365b/ubsan/ctest.log": "ebe69f97836edcb7009d6fe85b1aa11d45277d41129eb5f2a33ece99e0c1d08d",
+    "logs/host-sanitizers-1636365b/ubsan/instrumented-commands.json": "20fab289ab12db01df9def64a4e5d92af52a746232baa4e712c0d2c1c0241afc",
+    "logs/host-sanitizers-1636365b/ubsan/receipt.json": "8a76719fdbd6ba3789dc43dfcc1914f83042247fc6316641c3fbd953bd4563e8",
+    "run-air-host-sanitizers.py": "2066471a4576deeb19e4d996a3ef30680be57a69e7c6e9e0a4e6760d66009b4e"
+  }
+}

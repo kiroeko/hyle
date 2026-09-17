@@ -1,6 +1,6 @@
 # R5 A1/A6：Apple 公开产品与原生资源交付
 
-## Closure card / AUDITED
+## Closure card / CANDIDATE
 
 - baseline：`9e41c15aab5a97206e82ebc70a0bee0d916e112f`；产品仍为 `d900a8ce`，后续仅 LOC 工具。
 - 当前 owner：`compute`、`graph`、`compute_backend_cpu`、`compute_backend_cuda`、
@@ -69,4 +69,8 @@ FIX 已冻结，进入实现；其它 A5/A6 与 R5 最终 P1 留在主卡中执�
 [Air 三交付与 WSL OFF 证据](../../../../evidence/correctness/apple-r5-product-delivery/README.md)
 已归档：真正的 Q4 FFN/RMSNorm、变化输入、完整 source、installed static/shared relocation、
 撤去 producer metallib fallback、单 MLX runtime、许可证与导出检查通过。
-Windows broad 的余下三交付和 Mini 仍待验收；不因这些局部 PASS 提前关闭 owner。
+最终 [Windows broad selector](../../../../evidence/correctness/apple-r5-windows-selector/README.md)
+和 [Mini 原生/三交付](../../../../evidence/correctness/apple-r5-final-mini/README.md)现已完成。
+D1–D4 不可变交付候选为 `cbedb837791da15392019299f2652d9d3d70ec9d`；其全部 shipping inputs
+与 Apple 最终候选 `1636365bbe47779de24e84d7c7d1ed8088fe1af2` 相同，逐路径身份记录随 Mini
+证据保存。本卡进入 CANDIDATE 后做七门 terminal 裁决；R5 P1 仍归主卡，不因交付通过提前签字。
