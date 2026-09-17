@@ -497,14 +497,14 @@ backend/provider/default Direct/Graph 共 **79 case PASS**（新增机制10项�
 [原始尝试与失败记录](../../../../evidence/correctness/compute-llm-moe-c1/l-windows-focused.json)。
 一个冷期扩池/外部 capture 顺序缺陷已在两轮产品纠正预算内解决；并发测试移除 SDK 明确禁止的
 host callback 对未来独立 GPU 工作的等待，保留原错误字、提前观察/丢弃与40次池重用的确定性验证。
-这只是实际 checked Gather/Scatter/Scan 的基础机制，三者仍未接入。后续在本 owner 卡继续固定
+这只是实际 checked Gather/Scatter/Scan 的基础机制，截至 L 记录三者尚未接入。后续在本 owner 卡继续固定
 有限算子 FIX；完整 C1 权重片段、三交付/公开头增量、其它环境与 P1 没有新的 PASS。
 统一 LOC 为 Compute+Graph **40,733行 / 154文件**，不含测试；
 [统计](../../../../evidence/correctness/compute-llm-moe-c1/l-implementation-loc.json)。
 
 ### C1-M：CUDA checked Gather（AUDITED）
 
-baseline `59190011`，当前 owner `/root` / `compute_provider_cuda`。F02.1/2 与 F19 的真实输入是
+baseline `59190011`，当前 owner `/root` / `compute_provider_cuda`。F02.1、F02.4 的 Gather 部分与 F19 的真实输入是
 本地 BF16 embedding table、每次变化的 token IDs，以及 routing/state 的重新索引。主路径为
 Gather→mixed-F32 RMSNorm→residual；正交域为任意 axis、I64/scalar/多维 indices 与 byte strides。
 现有共同 schema 与 Native 数学合同已满足，C1-L 提供设备异步错误来源；本次不重开共同层/backend。
@@ -523,5 +523,27 @@ Gather→mixed-F32 RMSNorm→residual；正交域为任意 axis、I64/scalar/多
 只扩当前CUDA owner/source list与直接consumer测试/指南。checked比较对象必须承担同样的索引验证、
 失败回报、同步和结果寿命，不能用unchecked裸getrows给它排名；当前没有性能胜出结论。Scatter
 重复更新的顺序/半精度舍入和Scan全部prefix溢出另行固定有限FIX，不把Gather机制代签二者。
+
+### C1-M 实施事实
+
+- `caa7f33b` 完成真实 checked CUDA Gather、默认 Direct/Graph 接线和指南；`a60adc0b` 只把
+  Graph 测试的 BF16 比较改为显式 storage bits 比较，因为该类型没有 `operator==`。首次产品
+  CUDA/C++ 已编译，Graph 测试编译失败且未运行；修正后 W1 Release/WERROR 的 provider 32 case、
+  Direct 4 case、Graph 12 case 共 **48 case PASS**，未改变产品算法或数值容差。
+  [原始尝试、命令与日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/m-windows-focused.json)。
+- U8/F16/BF16/F32/I64 原始位、I32/I64 索引、scalar/多维/rank8、中轴/负 axis、odd/zero stride、
+  width1/128/129/2048、16-byte 非对齐向量地址及输出保护区实际通过。source axis 为 `2^40`、
+  索引超过 INT32_MAX 的 zero-stride 合法输入也保持完整 I64 地址域。257 索引尾块中的负值、
+  等于 extent 及整数极值均报告 OutOfRange，整个输出不变；failed 槽退役，fresh 槽恢复，空输出
+  不取 payload，静态空 source axis 与输入输出重叠拒绝均通过。
+- 默认 BF16 Gather→mixed-F32 RMSNorm→residual 在 M=1/17/23/128、width128/129/2048 下，
+  两个 native captured 槽、三次变化 indices、保留另一槽旧结果均通过。普通 Direct 同程序结果
+  与 Graph 逐位一致，另由独立 host Gather/FP64 norm oracle 核对；热重放无 metadata 分配。
+  坏索引存在时 capture prepare 不执行 payload；pending 错误在程序/槽释放、context close
+  或 Completion 丢弃后仍保留 owner 至真实完成，cold metadata OOM 逐点回滚检查通过。
+- 统一 LOC self-check：Compute+Graph 实现 **41,186 行 / 158 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/m-implementation-loc.json)。selector 的
+  109 项 skipped reasons 已保留；当前仅完成 configure 与上述三个 factor。完整 C1 权重片段、
+  公开头/三交付增量、WSL/macOS 与等责 P1 尚未运行，矩阵保持 UNPROVEN。Scatter/Scan 仍待实施。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
