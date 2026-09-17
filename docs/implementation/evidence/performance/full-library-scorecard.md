@@ -1,15 +1,15 @@
 # HYLE 全库性能账本（2026-09-17）
 
-> R7 施工说明：下方机器绑定是 `14e78c45` 的 R6 终局快照。六个 owner 已按
-> [R7 当前卡](../../tasks/compute/four-route-foundation-final-review.md)进入诊断/观测施工，当前状态
-> 只看 registry；下方旧 CLOSED 数量不授予 R7 验收。终局再按实际候选与继承证明同步绑定。
-
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
 [`module-status.json`](../../module-status.json) 中当前 48 个 `CLOSED` factor，覆盖 R2 共同语义、
-Mem 定向尾项与 R3–R6 四条路线的有限验收。R7 最小 opt-in Obs、终审与清理尚待完成，整个四路线
-基础架构 goal 尚未结案。CPU 小片段当时获准接受的是 Graph 接口成本预算；
+Mem 定向尾项、R3–R6 四路线及 [R7 终局](../../tasks/compute/four-route-foundation-final-review.md)。
+基础架构重构完成；六个 R7 owner 绑定 `87ae5834`，以 P0 源码及关闭跟踪的代表性 codegen 证明继承
+未变执行路径。没有新增 P1、没有宣称整个 binary placement 不变，TRACE ON 不继承 OFF 性能资格。
+
+CPU 小片段当时获准接受的是 Graph 接口成本预算；
 [比较边界校准](../../tasks/compute/cpu-r3-comparison-boundary-clarification.md)确认裸 direct 与完整
-Graph 服务不等价，八项改作自然路线诊断，原统计保留；ggml CPU 与 compute_sched 未收口身份不计入数量。旧 copy/跨域 Graph 数据
+Graph 服务不等价，八项为历史自然路线诊断。R7 已退役这些活动配对入口及旧 Sched 不等责比较；
+原统计和负向方向保留。ggml CPU 与 compute_sched 未收口身份不计入数量，旧 copy/跨域 Graph 数据
 仍在[历史证据](benchmarks-compute-graph.md)，不作为新路线完成证明。
 
 十三个已有 Compute/Graph roots 的 R6 变化仅属

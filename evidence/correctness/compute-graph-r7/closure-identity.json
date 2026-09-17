@@ -1,0 +1,128 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "previous_registry_commit": "78483a6b6ba3dacb8e2c09daef0602c89f9ca484",
+  "verdict": "PASS",
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "evidence": {
+    "windows-selected-identity.json": {
+      "sha256": "cc5b8427c52d7f360d444b99b5673b00a9b7844cdc29deabd54948d2514d61ea",
+      "verdict": "PASS"
+    },
+    "air-host-identity.json": {
+      "sha256": "11c7eb587696a6e6999c165c0e9b90f421d69dc5435298d21ebd060ae631610d",
+      "verdict": "PASS"
+    },
+    "air-delivery-identity.json": {
+      "sha256": "7927b1f3a2b76a7abd6f8935d8c091ad67b7ef593b4cf4e0eb0fc2231d25b549",
+      "verdict": "PASS"
+    },
+    "air-fixtures-identity.json": {
+      "sha256": "3347952397280ecc39a6d65ffd9c09a644c3a239ba102ed139f1263fc8724579",
+      "verdict": "PASS"
+    },
+    "windows-delivery-identity.json": {
+      "sha256": "f4b976c0bd903654da322eb1f418ae6f9a5d1774dab8f911e3f1321ff8b4a465",
+      "verdict": "PASS"
+    },
+    "windows-fixtures-identity.json": {
+      "sha256": "685882d52ca4b76b809cd6a1c49831571f18ca03790fd327b893b47290cd0f5a",
+      "verdict": "PASS"
+    },
+    "wsl-delivery-identity.json": {
+      "sha256": "decb8ae9c0909d941b602f33bbb1eb3f217188e12702df107378edd637f5f8c3",
+      "verdict": "PASS"
+    }
+  },
+  "p0_identity_sha256": "bc682000014c9dece8c53a949a801355561ffde02484132325ae8d67f7a0865a",
+  "source_review_sha256": "38411c0143274cd587fcb718dfa67b4c6ba69313d805b5b5aa37950fd93b3c98",
+  "delivery_journeys": 36,
+  "new_p1_samples": 0,
+  "implementation_loc": {
+    "code": 37035,
+    "files": 130,
+    "receipt": "terminal-loc.json",
+    "sha256": "2c8890530b08f500d138782fb1168f9c40f66b79a0ed6865914c99bcf94a2947",
+    "normalization": "CRLF to LF only; original stdout bytes retained in serial archive.",
+    "original_stdout": "loc-final-78483a6b-stdout.json"
+  },
+  "serial_archive": {
+    "path": "serial-raw.zip",
+    "sha256": "fee1e0e35d7dddff7312a1dfcfd25b11c0e9cffc14bbbb809ffbacb83b308b7f",
+    "entries": [
+      {
+        "path": "r7-windows-delivery-on.py",
+        "sha256": "e0390687ac139c9feac40b93423b776709dbbe7377995aa0d08f246c06a320c0"
+      },
+      {
+        "path": "remaining-serial-02.json",
+        "sha256": "b6e843486db74cc300b0d90c20a8972473997c8eb1dfb7aa2eb020b907994ef7"
+      },
+      {
+        "path": "remaining-serial-03.json",
+        "sha256": "13b9828cdd4c45d0b69339dfa58ac5db54d98e14609f1f35495d573560f44f21"
+      },
+      {
+        "path": "remaining-serial-04.json",
+        "sha256": "6cbacdd91a36ef7cad0ad49cb87d1ad697e0c7a0e4cf1a603a6c7d9c8157cd51"
+      },
+      {
+        "path": "remaining-serial.json",
+        "sha256": "f16409888c68e86a659e94ee3888ca523c43d44b3cc5b76fba6cce9558f7cdd1"
+      },
+      {
+        "path": "run-delivery-wsl.sh",
+        "sha256": "1b59560240feb0e7833c6a175faefdb77b73250c5862adcdd95934eaeb906fe2"
+      },
+      {
+        "path": "run-r7-remaining-serial-v2.ps1",
+        "sha256": "254b06215502a75143409d410b47353db001d16b8691fa4e0c9c77aabb5d4b28"
+      },
+      {
+        "path": "run-r7-remaining-serial-v3.ps1",
+        "sha256": "89fd55a7642b36953ba5273027f83c1b7b795f6e7becd1dd38428207e16c8cb1"
+      },
+      {
+        "path": "run-r7-remaining-serial-v4.ps1",
+        "sha256": "7dd65e25917a9d00b48308889d824f229b797b25ad185b0bf60cb0f31861c1eb"
+      },
+      {
+        "path": "run-r7-remaining-serial.ps1",
+        "sha256": "503befceeb7cb6d3341859bc036322addb484b5205c7abdfbb3db8c8d20fa278"
+      },
+      {
+        "path": "windows-trace-firewall-events.json",
+        "sha256": "e99f1af175d3e08477e48a6d5a9d439c5021749eb9972e535e7583306e29333c"
+      },
+      {
+        "path": "wsl-launcher-environment.json",
+        "sha256": "bd349f041233eddd94e04c8ae9da104d946601e318d96c0b387086964f3f5493"
+      },
+      {
+        "path": "loc-final-78483a6b-stdout.json",
+        "sha256": "73adcb53d15571fdd606a9ede7bc24a39d2c73ff33195821ff525b74438378ce"
+      }
+    ]
+  },
+  "limitations": "Named routes, machines, versions, formats and shapes only; TRACE ON has no inherited performance qualification; host sanitizers do not instrument vendor, driver or GPU code; historical directions and unequal-contract diagnostics preserved.",
+  "terminal_maintenance": {
+    "verdict": "PASS",
+    "gates": [
+      "docs",
+      "closure"
+    ],
+    "skipped_or_reused": 116,
+    "tested_worktree_tree": "e61bb20870c5f8980fd4f4c7804a2e1642db3cef",
+    "previous_registry_commit": "78483a6b6ba3dacb8e2c09daef0602c89f9ca484",
+    "scope": "Final docs and legal CANDIDATE-to-CLOSED registry transition; these receipt/archive additions occur after validation, no product inputs change.",
+    "archive": "terminal-maintenance-raw.zip",
+    "sha256": "7bef97953f95cb58315794c0ee4ca279136ef424ab89f034d47dfc7ddae288e7"
+  }
+}

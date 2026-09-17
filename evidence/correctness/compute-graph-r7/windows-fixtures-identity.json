@@ -1,0 +1,101 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "verdict": "PASS",
+  "host": {
+    "system": "Windows",
+    "node": "kiro-workstation",
+    "release": "11",
+    "version": "10.0.26200",
+    "machine": "AMD64",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel"
+  },
+  "peers": {
+    "ggml": {
+      "path": "C:\\public\\project-hyle\\ggml",
+      "commit": "456172ec733a135778adcd32d00e576a58232e45",
+      "dirty": false
+    },
+    "marl": {
+      "path": "C:\\public\\project-hyle\\marl",
+      "commit": "b8406ab0a82524170ead6dd6c371b579bbc28b3e",
+      "dirty": false
+    }
+  },
+  "scope": "Retained primary and placement fixtures build; real primary route correctness; six retired target names and retired CPU/Sched source-row names absent. Sched, when present, is built only.",
+  "built_executables": 12,
+  "correctness_executables": 5,
+  "p1_samples": 0,
+  "cold_telemetry": "Existing aggregate cold-prepare timestamps in fixture logs do not produce execution samples or P1 verdicts.",
+  "harness_correction": "Dedicated developer-factor build; first configure lacked an explicit benchmark vendor directory and was rejected. Continuation binds existing clean pinned Highway/xsimd checkouts; original failure and harness preserved. TRACE OFF, no new P1.",
+  "original_identity_sha256": "d2fe9fcc2cc54869bda4fdde4f9d8a2438b2b63f6a1ab0880bbdcc3fe716f3a5",
+  "archive": {
+    "path": "windows-fixtures-raw.zip",
+    "sha256": "3fc7b9bc483eea29196e9d83a817f83c9f2273ff3e0492f1fd4aecc21f49c034",
+    "entries": [
+      {
+        "path": "preserved-first-attempt/fixture-checks-02/configure.log",
+        "sha256": "6ab72a8ef02fb3242698b5b8f7e729dc03fe5c8a15b4a24c080c01d43f23eb47"
+      },
+      {
+        "path": "preserved-first-attempt/fixture-checks-02/identity.json",
+        "sha256": "22c883a7e53db896f37ac176373436fdd4088dea2324b85a88a8dab021a89ba2"
+      },
+      {
+        "path": "preserved-first-attempt/r7-fixture-checks.py",
+        "sha256": "7b90fda0bf2d5963fb8108ee841608f1623d617ba750ea7497b67580207c72aa"
+      },
+      {
+        "path": "preserved-first-attempt/run-delivery-wsl-original.sh",
+        "sha256": "d8a3052bc1de6e56f2c779707e17d3ecce5b5239ce6154c3065c033d60e6d29d"
+      },
+      {
+        "path": "r7-fixture-checks.py",
+        "sha256": "8df010a12b2a9fbcbc7fcf4a2142273a4c1f51cf6daab31f46a6f4cf1b73d6af"
+      },
+      {
+        "path": "raw/CMakeCache.txt",
+        "sha256": "7c3a4489e5a54712a92a80bc6df8da4293b21f991da6eed6a0e3ddf44f401697"
+      },
+      {
+        "path": "raw/build.log",
+        "sha256": "c39116bb920d7bb508e690108f2ac750a1788ec97297d2f6c12c12a3891c5d71"
+      },
+      {
+        "path": "raw/compile_commands.json",
+        "sha256": "3aec99de53fc8adabfa7575092ab169797678739300fec8f1089bbb36ec9e5bf"
+      },
+      {
+        "path": "raw/configure.log",
+        "sha256": "a436c59b208e8c3a9155ef7c8f824d0b1018a980312c83dafb9f9dd63dce3d94"
+      },
+      {
+        "path": "raw/hyle_compute_route_cuda_bench-oracle.log",
+        "sha256": "2cab0b7bdf97a822d73443b04c84f4137baa6b5695fb9c579cc3e19854ecffa2"
+      },
+      {
+        "path": "raw/hyle_compute_route_vulkan_bench-oracle.log",
+        "sha256": "5914844114185a31dffdb527f3c016bd8355ba2b99f75ca9d6a5d155bf43db3d"
+      },
+      {
+        "path": "raw/hyle_graph_onednn_region_bench-oracle.log",
+        "sha256": "f14b3d8c3eb41f72c46d12a8beeeec02453326514c7217eeb3dda35c8d96536f"
+      },
+      {
+        "path": "raw/hyle_graph_route_cuda_bench-oracle.log",
+        "sha256": "0c1d1823599f0269d81139edb0e0d756cb6c53c67f0b77274ff42c52f392b39a"
+      },
+      {
+        "path": "raw/hyle_graph_route_vulkan_bench-oracle.log",
+        "sha256": "ad24a8f03268242c0c8b698fa60b4468f3e1f3f22239743ddd32ae087408efc0"
+      },
+      {
+        "path": "raw/identity.json",
+        "sha256": "d2fe9fcc2cc54869bda4fdde4f9d8a2438b2b63f6a1ab0880bbdcc3fe716f3a5"
+      },
+      {
+        "path": "raw/target-inventory.log",
+        "sha256": "b197e283cfb6926220850e1d4a5e562b565ad2063d3ae50d5ab5693dda568d7b"
+      }
+    ]
+  }
+}

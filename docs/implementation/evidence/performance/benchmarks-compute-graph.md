@@ -443,3 +443,12 @@ Graph 为 −3.995–8.393µs / −8.800–7.361µs。各范围只汇报独立�
 
 两系统四项自然边界诊断至此全部停止采样。四份同合同 P1 仍按前述原门与严格方向保留；
 最终 host ASan 已完成，三交付/selector 与路线 terminal 继续按主卡验收。
+
+## R7 基础终审结案（2026-09-17）
+
+[R7 terminal](../../tasks/compute/four-route-foundation-final-review.md)完成冷报告、主机 trace 与不等责
+比较清理；六 owner 绑定 `87ae5834`。[全库账本](full-library-scorecard.json)同步候选，以 P0/源码及
+代表性 OFF codegen 继承未变计算路径。98 个原 claim 的数值与严格方向均保留，0 次新增 P1。
+CPU 裸 Direct、六个 GPU native cost targets 和旧 Sched structured-spawn-join 不等责配对已退役；
+历史诊断不是同合同输赢。Windows/Air/WSL 共 36 条 OFF/ON 三交付、Windows/Mac fixture 数值门及
+host sanitizer 等适用验收实际完成。基础架构重构完成，停止本轮施工；未知设备与格式资格不外推。

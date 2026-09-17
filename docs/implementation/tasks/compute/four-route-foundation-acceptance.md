@@ -1,7 +1,7 @@
 # 四路线基础架构验收索引
 
-本页逐项对应四路线基础架构的 MUST 与实际 evidence。当前 R7 验收尚未完成；各包记录只证明其具名
-候选与设备范围，不能替代 R7 新增诊断、跟踪及交付门。
+本页逐项对应已完成的四路线基础架构 MUST 与实际 evidence。R1–R7 均已结案；R7 不可变候选为
+`87ae583407cbb5ed13108c3837b020e6e343a3ca`。各记录的资格限于其具名设备、版本、格式与 shape。
 
 ## 基础能力与实际证据
 
@@ -17,8 +17,8 @@
 | 开发时固定 best-of、准备时匹配 | 规则按 device/能力、格式、shape 及适用版本域设计；普通用户不排 Provider、不提供 timing profile；运行不重新计时或裁决 | R3–R6 普通入口、默认规则与留出 shape 验证；[路线合同](../../../architecture/compute-routes.md) |
 | 准备/运行成本可解释 | HYLE 保留必要图规划、共享常量与可复用运行槽；第三方 whole region 不被拆成逐 kernel 通用 vtable；MLX managed 真实成本单独声明 | R3–R6 各自的资源、失败、并发与完整服务性能账单 |
 | Mem 依赖尾项 | v10 Reservation / 外部字节配额，按原卡完成平台与失败回收验证 | [Mem v10](../mem/mem-v10-external-byte-reservation.md)，未扩为 Mem 全库重审 |
-| 独立冷编译报告和 opt-in host 跟踪 | 共同节点数值语义；Apple/Vulkan owning metadata、明确 unknown 内存、reset/拒绝；默认 OFF 无新增热态工作，Tracy ON 复用单一 client | [R7](four-route-foundation-final-review.md)、[P0 / Windows / Mac host 插桩](../../../../evidence/correctness/compute-graph-r7/README.md)；TRACE OFF/ON 组合交付待完成 |
-| 公平比较与旧入口清理 | 不等责裸 Direct / native 与 typed Sched 对照退出活动 A/B；历史数据和负向方向保留 | [比较边界](../../../../bench/comparison-boundaries.md)、[CPU 修正](cpu-r3-comparison-boundary-clarification.md)；本轮 fixture 构建/独立 oracle 待完成 |
+| 独立冷编译报告和 opt-in host 跟踪 | 共同节点数值语义；Apple/Vulkan owning metadata、明确 unknown 内存、reset/拒绝；默认 OFF 无新增热态工作，Tracy ON 复用单一 client | [R7](four-route-foundation-final-review.md)、[P0 / Windows / Mac host 插桩](../../../../evidence/correctness/compute-graph-r7/README.md)；Windows/Air/WSL 共 36 条 TRACE OFF/ON 三交付旅程通过 |
+| 公平比较与旧入口清理 | 不等责裸 Direct / native 与 typed Sched 对照退出活动 A/B；历史数据和负向方向保留 | [比较边界](../../../../bench/comparison-boundaries.md)、[CPU 修正](cpu-r3-comparison-boundary-clarification.md)；Windows/Mac 共 20 个 fixture 构建、9 个独立数值 oracle 与退役入口负检查通过 |
 
 ## 资格限制
 
@@ -36,4 +36,6 @@
 
 ## 最终裁决
 
-待 R7 所有已声明适用验收完成后填写；当前不能宣布基础架构完成。
+基础架构重构完成。[R7 terminal](four-route-foundation-final-review.md)七门 PASS，
+[完整证据](../../../../evidence/correctness/compute-graph-r7/closure-identity.json)与当前 registry 已对应。
+没有新增 P1 或改变原正负方向；实现共 37,035 行 / 130 个文件，不含测试。停止本轮施工，等待下一阶段讨论。

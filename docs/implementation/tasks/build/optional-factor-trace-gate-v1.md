@@ -1,6 +1,6 @@
 # 可选 factor 的 TRACE 构建门修正
 
-## Tool card / AUDITED
+## Terminal tool record / CLOSED
 
 - baseline：`14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220`。
 - owner：build helper；六个 TRACE 消费者由 [R7 当前卡](../compute/four-route-foundation-final-review.md)
@@ -21,3 +21,13 @@ scope 已在 `ecfed35f` 固定；独立源码审计确认两条条件确实矛�
 无 implementation source，公开头不需要 trace hook。唯一 FIX B1 冻结为给中央遗漏 TRACE 检查增加
 `NOT ARG_OPTIONAL_ABSENT` 条件；其它检查与依赖投影保持。配置测试是独立临时 consumer 或现有
 构建合同测试的窄扩展，不为此执行性能仪器或改产品算法。B1 与 R7 F1 必须在同一组合候选验证。
+
+## 终局（2026-09-17）
+
+唯一 FIX B1 已完成，候选 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。
+[九个配置门](../../../../evidence/correctness/compute-graph-r7/b1-configure.json)全部通过；
+[R7 终局](../compute/four-route-foundation-final-review.md)完成 Windows/Air/WSL 的 OFF/ON 三交付，
+实际 absent/enabled 路线、消费者定义和单一 Tracy client 均有证据。scope、architecture、correctness、
+delivery、usability_docs、red_team、engineering_performance 七门 PASS；P0 为冷 configure 条件，
+不启动性能采样。命令与日志见 [R7 evidence](../../../../evidence/correctness/compute-graph-r7/README.md)。
+本卡关闭，不扩大公共构建工具。仅在真实 enabled/absent TRACE 回归、依赖传播或公开交付合同变化时重开。

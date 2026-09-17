@@ -271,17 +271,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
+      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
+      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -514,31 +522,47 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
+      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
+      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
+      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/four-route-foundation-final-review.md",
-      "summary": "R7 CANDIDATE：host trace、独立冷报告与不等责比较入口清理已冻结；P0/配置门完成，跨平台、插桩及 TRACE 开关三交付等有限验收进行中。",
-      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca"
+      "summary": "R7 CLOSED：独立冷报告、opt-in host trace 与不等责比较入口清理完成；Windows 111 门、Air host 插桩、三环境 OFF/ON 三交付及保留 fixture 数值验收通过；P0 继承限定性能，0 次新增 P1。",
+      "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/four-route-foundation-final-review.md"
+      }
     }
   ]
 }

@@ -1,7 +1,7 @@
-# R7 验收证据（进行中）
+# R7 验收证据（CLOSED）
 
-当前不可变候选为 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。R7 仍在验收，不能由本页已完成的
-项目代替剩余 Windows/WSL TRACE OFF/ON 三交付与 Windows fixture 检查。
+不可变候选为 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。预声明适用门均已完成，六个 owner
+进入 CLOSED。[终局身份](closure-identity.json)绑定实际记录、七门、串行执行历史和实现 LOC。
 
 ## 已完成的结构与配置检查
 
@@ -28,13 +28,6 @@ TRACE ON 的 profiler 成本不属于 OFF 性能证据。原 TSan 不记作本�
 
 统一 [LOC 原始结果](implementation-loc.json)统计整个 Compute + Graph 为 **37,035 行 / 130 个
 代码文件**，不含测试、bench 或 vendor。它包含所有已登记 backend/provider，不是完成百分比。
-
-## 待完成
-
-Windows broad selector、Mac host sanitizer、Mac 三交付与 F5 fixture 已完成下述覆盖。Windows/WSL
-TRACE OFF/ON 三交付与 Windows F5 fixture
-检查继续按 [R7 当前卡](../../../docs/implementation/tasks/compute/four-route-foundation-final-review.md)
-执行；未执行项保持待验，六个 owner 尚未 CLOSED。
 
 ## Windows 111 门覆盖完成
 
@@ -83,3 +76,30 @@ linkage、报告与完整 FFN/custom 结果均检查。OFF 没有 Tracy client�
 第一轮 fixture 配置把 public-product build 改成 developer-factor roots，被现有互斥门正确拒绝，
 未进入编译。验证脚本改为独立的 fresh maintenance build 后通过；失败脚本、配置日志和 BLOCKED
 记录与修正后的 PASS 均保存。没有修改公共构建门，也没有重跑已经通过的 Mac 交付。
+
+## Windows / WSL OFF/ON 三交付与最终 fixture
+
+[Windows 交付](windows-delivery-identity.json)和[原始归档](windows-delivery-raw.zip)记录 CPU Native/
+oneDNN、CUDA、Vulkan 的 12 条真实消费旅程；[WSL 交付](wsl-delivery-identity.json)及
+[原始归档](wsl-delivery-raw.zip)记录 Linux CPU Native/CUDA 的同样 12 条旅程。结合 Air 共 36 条。
+所有 SDK 均 relocation 且隐藏原 source/build 后消费；Windows 所需 DLL 放在 EXE 同目录。
+OFF 无 Tracy client，ON 的静态/动态交付各只有一个实际 client，编译定义和动态链接均归档。
+
+Windows 首次 ON configure 因离线缓存缺少已锁定 Tracy 而停止；现有缓存工具只补齐锁定版本。
+仅续跑 ON，原 25 个 OFF 成功命令及首次 FAIL 保持原字节，归档同时保留原 recipe、续跑脚本和日志。
+新版 Windows CTest 成功摘要省略 `0 tests failed`，归档脚本按退出码、逐测试 Passed 以及 LastTest
+确认成功，没有重跑已通过测试。
+
+Windows ON 自建消费脚本漏设既有 `TRACY_ONLY_LOCALHOST=1`，触发本轮测试 EXE 的防火墙授权弹窗。
+系统事件见串行归档，原环境与结果保持；后续启动环境限定本机监听，WSL 实际使用该变量，后续
+Windows fixture 已在 TRACE OFF 下通过。未修改 UAC/防火墙设置。
+
+[Windows F5](windows-fixtures-identity.json)与[原始归档](windows-fixtures-raw.zip)记录 12 个保留程序
+构建、5 个真实数值 oracle。Sched 只构建；旧不等责配对入口做负检查，0 次新增性能采样。
+Mac 对应 8 个构建、4 个 oracle，合计 20 / 9。原历史统计和负向方向完整保留。
+Windows fixture 初次因源码归档默认相邻路径缺少 benchmark peers 而配置失败；显式绑定已有锁定且
+干净的 Highway/xsimd checkout 后继续，原 FAIL 和脚本保存在 Windows fixture 归档。
+
+[串行原始记录](serial-raw.zip)保留各次执行及环境/脚本失败，不能把早期 FAIL 改写为整批 PASS。
+[当前 LOC](terminal-loc.json)由统一脚本在 `78483a6b` 统计为 37,035 行 / 130 个实现文件；其后只改
+状态、文档与证据。所有具名命令、制品和源码身份由上述 archive/identity 追溯。

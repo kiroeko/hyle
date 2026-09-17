@@ -1,6 +1,11 @@
 # R7：四路线基础终审、诊断与清理
 
-## Closure card / CANDIDATE
+## Terminal record / CLOSED
+
+R1–R7 的基础能力及本卡适用验收已完成。六个 owner 绑定不可变候选
+`87ae583407cbb5ed13108c3837b020e6e343a3ca`；[最终验收索引](four-route-foundation-acceptance.md)
+与[终局证据](../../../../evidence/correctness/compute-graph-r7/closure-identity.json)记录实际完成项。
+以下施工阶段记录保留历史身份，最终裁决见本文末尾。
 
 - baseline：`14e78c45cd58c2836ffc6b3bcc0394fdb4fbc220`，Windows canonical 工作树干净。
 - owner：`compute`、`graph`、`compute_route_apple`、`graph_route_apple`、
@@ -107,7 +112,7 @@ selector 所选 docs/closure，保留 skipped reasons。终局核对当前性能
 原账本是 R6 终局快照，不能用它代替本卡当前 registry 状态。LOC 使用统一脚本统计整个 Compute +
 Graph，不含测试/bench/vendor；baseline 为 **36,765 行 / 129 个代码文件**。
 
-## 不可变候选与验收进展（2026-09-17）
+## 不可变候选与验收进展（历史检查点，2026-09-17）
 
 六个 owner 进入 CANDIDATE，绑定 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。F1–F5 的产品 API、
 算法、运行对象布局和活动比较入口已冻结；F4 的最终 MUST 索引与终局证据尚待剩余验收。
@@ -159,3 +164,57 @@ Vulkan borrowed/owned 统计和 quota 回收、Generic Graph 逐分配点回滚�
 fixture 首次因验证脚本混用 product/developer build 入口在配置期被拒绝，原失败保留；改用独立构建
 目录后通过。产品候选与公共工具不变。剩余仅 Windows/WSL OFF/ON 三交付、Windows F5 fixture、终局
 证据与账本绑定，继续按既定低并行串行任务执行。
+
+## 终局（2026-09-17）
+
+F1–F5 全部完成，产品候选保持 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。R1–R6 的真实路线、
+默认规则、生命周期、三交付和适用性能按 [MUST 索引](four-route-foundation-acceptance.md)逐项对应，
+没有用文档、旧状态或研究探针代替实现。B1 的九个正反配置和实际组合交付均已完成。
+
+| Gate | 实际证据与边界 | Verdict |
+|---|---|---|
+| scope | 有限 F1–F5；四路线普通 FFN 与 custom/resource 纵切；Mem v10 尾项已有具名 terminal | PASS |
+| architecture | owning 冷报告、无 native owner 保活；静态 host trace；原生执行器、默认规则和热对象布局不变 | PASS |
+| correctness | Windows 全部 111 个选定门；Air ASan/UBSan 各 7 个程序 / 395 个用例及 6 个公共头门；metadata OOM/reset/拒绝与 owner 释放 | PASS |
+| delivery | Windows、Air、WSL 各 OFF/ON × source/static/shared × Compute/Graph，合计 36 条真实旅程；relocation/隐藏 producer；Windows DLL 邻置；ON 单一 Tracy client | PASS |
+| usability_docs | 四路线普通入口指南、独立报告寿命与 unknown 内存边界；MUST 索引和完整可编译 package consumers | PASS |
+| red_team | 候选后的独立阶段源码复核一遍，无新增产品 FIX；证据身份、完整性与最终责任边界已核对 | PASS |
+| engineering_performance | P0 源码与 29 个 Release OFF 函数 codegen；仅继承已证明未变的计算路径；F5 构建和数值 oracle；0 次新增 P1 | PASS |
+
+Windows 的 OFF 三交付先通过；ON 配置发现本机离线缓存缺少已锁定 Tracy 源码，按现有缓存工具补齐
+同一版本后只续跑 ON。原 FAIL、25 个原 OFF 命令和续跑命令独立保留。Mac fixture 的首次验证脚本
+混用 product/developer roots 被配置门拒绝，改用独立构建目录后通过。Windows 归档脚本兼容了新版
+CTest 的成功摘要，未重跑测试。Windows fixture 首次还缺显式 benchmark vendor 路径，配置期拒绝后
+绑定已有 clean/pinned Highway/xsimd 路径，仅续跑未完成门。这些属于验证环境/脚本纠正，没有修改
+产品候选或降低验收要求。
+
+Windows ON 消费脚本遗漏既有 `TRACY_ONLY_LOCALHOST=1` 约定，使 Tracy 默认监听全部接口，触发
+防火墙授权弹窗；系统事件已关联到本轮测试 EXE。相关进程已结束，后续验证启动环境限定本机监听，
+不修改 UAC/防火墙设置。原 Windows 交付记录保留当时真实环境，不追改为已设置该变量；其功能结果
+仍有效。WSL 后续实际使用本机监听环境；后续 Windows fixture 已在 TRACE OFF 下通过。
+
+[Windows F5](../../../../evidence/correctness/compute-graph-r7/windows-fixtures-identity.json)实际构建
+12 个保留程序并运行 5 个数值 oracle；Mac 构建 8 个并运行 4 个。Sched 只构建、不采样；六个已退役
+native cost target 和 CPU/Sched 不等责源码行均做负检查。原始性能数值及 WIN/LOSS/INCONCLUSIVE
+方向保留，不把移除错误比较改写为 WIN。CPU 旧例外明确属于 Graph 相对裸计算的生命周期成本预算；
+不再解释为算法或 Sched 实现劣化。
+
+具体命令、compiler inputs、制品、日志、原始失败及继承依据见
+[证据目录](../../../../evidence/correctness/compute-graph-r7/README.md)。冷报告按节点 O(N) 复制；
+Vulkan 常量去重另为 O(C log C) 冷排序。默认 OFF 不新增运行分配/锁/原子，TRACE ON 只签主机观测功能，
+不继承 OFF 性能或声称 GPU timing。原 TSan 仅以无新共享可变状态的源码证明继承，不冒充重跑。
+
+性能资格继续受原机器、toolchain/driver、格式和 shape 限定；没有 AMD/Intel/M5 等未知设备 SOTA
+资格。Apple 是 MLX managed 路线；Vulkan 首批 typed 内建限二维 F32 MatMul/SiLU 与 pure fixed-shape
+Graph。私有 runtime/driver 内存保持 unknown，host 插桩不覆盖 vendor/driver/GPU；没有故意制造
+GPU hang/device loss。不扩算子目录、模型 CPU+GPU 联合推理、HIP、分布式或推理引擎。
+
+统一 `scripts/loc-report.py --module compute_graph --commit HEAD --self-check --json` 使用既定 22 个
+实现路径，于 `78483a6b` 统计 **37,035 行 / 130 个代码文件**；不含测试、bench、vendor。
+[原始结果](../../../../evidence/correctness/compute-graph-r7/terminal-loc.json)保存完整参数边界；
+其后只有证据、状态和文档变更，产品实现未变。六个 owner 进入 CLOSED，账本更新到实际候选并保留
+所有历史统计。Mem v10、ggml CPU BLOCKED 和 compute_sched QUEUED 保持原约束。
+
+基础架构重构完成。停止本轮施工，等待用户讨论下一阶段。reopen 仅接受可复现的正确性/UB/寿命/
+并发/交付缺陷、真实消费者证明的必需能力或公开合同变化、相关已采用依赖升级、合格同合同的 material
+回归；不因未知设备、单次点值或已完成文档修改重开。

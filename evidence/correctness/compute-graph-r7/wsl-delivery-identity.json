@@ -1,0 +1,319 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "verdict": "PASS",
+  "host": {
+    "system": "Linux",
+    "node": "kiro-workstation",
+    "release": "6.18.33.2-microsoft-standard-WSL2",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
+    "machine": "x86_64",
+    "processor": "x86_64"
+  },
+  "source_archive_sha256": "4e542af0692906a37fb8bf9048771e06dfe4e578051eb2261057d01f0b0220db",
+  "scope": "CPU Native + CUDA",
+  "deliveries": "TRACE OFF and ON; complete source, relocated static SDK and relocated shared SDK; real ordinary Compute/Graph consumers",
+  "consumer_journeys": 12,
+  "ctest_commands": 10,
+  "producers_hidden_during_sdk_consumption": true,
+  "tracy_contract": "OFF absent, ON one static client archive or one actual shared client DSO, with actual compiler definitions and runtime linkage recorded",
+  "performance": "No P1 samples; TRACE ON does not inherit OFF performance qualification",
+  "original_identity_sha256": "a958e8d8f1f13691d5a73179d20f95d5ae622dfd55a331bb3fdfa41be62bc1f5",
+  "continuation": null,
+  "launcher_environment": {
+    "TRACY_ONLY_LOCALHOST": "1"
+  },
+  "archive": {
+    "path": "wsl-delivery-raw.zip",
+    "sha256": "da2292efd96a92df35a5ab6f1a9410303623c565b1632dbbca93abe65419967a",
+    "entries": [
+      {
+        "path": "r7-delivery.py",
+        "sha256": "46c2d3de3b2324fefc6005cdd36392655e83648c2516e23b7e47d1130d467f6f"
+      },
+      {
+        "path": "raw/identity.json",
+        "sha256": "a958e8d8f1f13691d5a73179d20f95d5ae622dfd55a331bb3fdfa41be62bc1f5"
+      },
+      {
+        "path": "raw/off-shared-CMakeCache.txt",
+        "sha256": "9ce04e1937432d4939e404940cb427ee748a5e16cc4a46a71539405bdafa4be1"
+      },
+      {
+        "path": "raw/off-shared-build.log",
+        "sha256": "43380a9fcde5f7c0da6dc13f1d7cec45716eeb199d895215af7891c953f97fc0"
+      },
+      {
+        "path": "raw/off-shared-compile_commands.json",
+        "sha256": "cc335b752421673fda040b47c168bd53f7f7151c31f8b4275c3c894f72d2cee3"
+      },
+      {
+        "path": "raw/off-shared-compute-LastTest.log",
+        "sha256": "ae90ed724dd9a31676574bf8016e43401f5e14e7063cee59f5a8a98449882bb8"
+      },
+      {
+        "path": "raw/off-shared-compute-build.log",
+        "sha256": "532c7fd6beb4a312f0f85b7eacc83d9c69572f4c2668d76f478da5bb202be066"
+      },
+      {
+        "path": "raw/off-shared-compute-configure.log",
+        "sha256": "add5736becdce27fc7cfeed4ff5fcad332b79056d76a8e466dc4ea7998436c93"
+      },
+      {
+        "path": "raw/off-shared-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "c0359cf080b297bbc55c546058c9abe633c2b86cf1f2cdbf96a1c567d514dad0"
+      },
+      {
+        "path": "raw/off-shared-compute-test.log",
+        "sha256": "3e5d9c5dae33c3f03e368bcda37d352442f5a139560abf7525115252b4875885"
+      },
+      {
+        "path": "raw/off-shared-configure.log",
+        "sha256": "675e7237b29e7b7c4dbf0728512a105b326b6f86c417be1a1e7031327c561bbe"
+      },
+      {
+        "path": "raw/off-shared-graph-LastTest.log",
+        "sha256": "71f186ddb028fd51d3e2a4f142287376be0fc42779eadfd584e11878232f61d5"
+      },
+      {
+        "path": "raw/off-shared-graph-build.log",
+        "sha256": "a161baa1bfb0df86e6b792012114487e673c79676c2991579f5993849ab860ec"
+      },
+      {
+        "path": "raw/off-shared-graph-configure.log",
+        "sha256": "283cbaac8d51f4d8e59af8a1ddde44a31ff55d260b518ad9f2b6d68bb3aab608"
+      },
+      {
+        "path": "raw/off-shared-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "25fd83eec5f80232f0dde7a66b4073c417f5669a861e56ee44b11a69dcf02df5"
+      },
+      {
+        "path": "raw/off-shared-graph-test.log",
+        "sha256": "f7a372472c7f5cf557d62a2dd3791726e04546128c5ba796e406ebfa0ba1e8ab"
+      },
+      {
+        "path": "raw/off-shared-install.log",
+        "sha256": "5abfed3fc7a6bfb16002e4391bf82beb10f178b55ce9a3aacc71f628fafd2616"
+      },
+      {
+        "path": "raw/off-source-LastTest.log",
+        "sha256": "dec98d7f2ea8492bc5bd74c148c5b782371ce874077aabf4f616dc6dd20b6095"
+      },
+      {
+        "path": "raw/off-source-build.log",
+        "sha256": "8e2332e839c6851e3374bf0bf54ffaccbfe9e0ae62593049c8ddb9790caf5433"
+      },
+      {
+        "path": "raw/off-source-configure.log",
+        "sha256": "1a20bd6701398d8e89fc83e07922dedf55c9cceffb54849d54cb1fda46b987f4"
+      },
+      {
+        "path": "raw/off-source-r7_source_compute-linkage.log",
+        "sha256": "34e2e3532e627578550f3b0bddf9524f3eda40da40b671a7c9f3f7088e03fa99"
+      },
+      {
+        "path": "raw/off-source-r7_source_graph-linkage.log",
+        "sha256": "da87a09a9b9650557dec10ec2e0297c9dc51ce40fb50f84f0d6c1a75f4aab08f"
+      },
+      {
+        "path": "raw/off-source-test.log",
+        "sha256": "93ba731611430a4c1fcb6e19659c5b86f406981042186e4ae33de61ddf98a018"
+      },
+      {
+        "path": "raw/off-static-CMakeCache.txt",
+        "sha256": "2857b00737b1ac6229e6b4e5956d09fca71cc7850b922573a84120a653f1c7c8"
+      },
+      {
+        "path": "raw/off-static-compile_commands.json",
+        "sha256": "d4517451a1c3881ecfe86aeb403ca2ab9bf49c3574c094bd8c08edbeb0ba61ca"
+      },
+      {
+        "path": "raw/off-static-compute-LastTest.log",
+        "sha256": "1cf32556264645fb50ed2c64f08b487c675ce5048d00ccd4bc1589b04bba0a6c"
+      },
+      {
+        "path": "raw/off-static-compute-build.log",
+        "sha256": "532c7fd6beb4a312f0f85b7eacc83d9c69572f4c2668d76f478da5bb202be066"
+      },
+      {
+        "path": "raw/off-static-compute-configure.log",
+        "sha256": "7f068cbd3c4638da96b5371395c0308a5919d98ebc2c25068b0ea551a55e7b1c"
+      },
+      {
+        "path": "raw/off-static-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "992dc912112f3e1d21c387770c2850d6de93510dd87499fe9cb91e3ba70d3cc7"
+      },
+      {
+        "path": "raw/off-static-compute-test.log",
+        "sha256": "605e204a78e19000a8b8ead298efdb38a76f02d3725f1a4826429d76276f86a6"
+      },
+      {
+        "path": "raw/off-static-graph-LastTest.log",
+        "sha256": "7c61bc92b49218c4c39ed15d1660e57ca64b941f461c6c1c8fee5dcc324aa86d"
+      },
+      {
+        "path": "raw/off-static-graph-build.log",
+        "sha256": "a161baa1bfb0df86e6b792012114487e673c79676c2991579f5993849ab860ec"
+      },
+      {
+        "path": "raw/off-static-graph-configure.log",
+        "sha256": "2caf6602cc2acb49032430575c4187b84f014eb9529e0da47a6aed879ade4450"
+      },
+      {
+        "path": "raw/off-static-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "0650b8811dde3162ff3409b58ba865b9e970281e59fb8354b1cdf5ae1652c185"
+      },
+      {
+        "path": "raw/off-static-graph-test.log",
+        "sha256": "d3b8b84a5fc376e592bed37b5b54062ea90a0be975a916fec4da2e537c39679d"
+      },
+      {
+        "path": "raw/off-static-install.log",
+        "sha256": "175b268cf0dd31248b656cbbeab33ac65c4f018ed103ebd95fa69d9be71fcb4b"
+      },
+      {
+        "path": "raw/on-shared-CMakeCache.txt",
+        "sha256": "95a2a401730f929bb9eb9e4cada513b66cdc83a1ed31aed8a7dd1397eb0868ee"
+      },
+      {
+        "path": "raw/on-shared-build.log",
+        "sha256": "4de5fc7812762a83db3e5d8ee618a62d3bc2631c1369748558a3c558db91b641"
+      },
+      {
+        "path": "raw/on-shared-compile_commands.json",
+        "sha256": "ee8dd71e2ff43640d1a296e4d5e89faed3bc21f342b08830efef0ad586449f57"
+      },
+      {
+        "path": "raw/on-shared-compute-LastTest.log",
+        "sha256": "c88c716b42f136149367b4a3b35192372b82a1f995442ffa149267fe03c7cc85"
+      },
+      {
+        "path": "raw/on-shared-compute-build.log",
+        "sha256": "532c7fd6beb4a312f0f85b7eacc83d9c69572f4c2668d76f478da5bb202be066"
+      },
+      {
+        "path": "raw/on-shared-compute-configure.log",
+        "sha256": "de9d4865aaf204e4d6374f6bad6086dd266d6e96113c10dc39e0610dacb73fcb"
+      },
+      {
+        "path": "raw/on-shared-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "1c4d3ca6a2fa77c4162b4f9b1ad785da77aae15f19a6ce64874e266e849fc058"
+      },
+      {
+        "path": "raw/on-shared-compute-test.log",
+        "sha256": "8e085757678b2c684ac4582b2f3e60ebdd4ae47623c32a5f276dce116281e7ce"
+      },
+      {
+        "path": "raw/on-shared-configure.log",
+        "sha256": "f10658806dc3801a08fa1477b419bc1158646e42b2aaa827005479d1ce68843c"
+      },
+      {
+        "path": "raw/on-shared-graph-LastTest.log",
+        "sha256": "313f0786d99a88c46d795867513ba4736681914a206b236290e2166526e10793"
+      },
+      {
+        "path": "raw/on-shared-graph-build.log",
+        "sha256": "a161baa1bfb0df86e6b792012114487e673c79676c2991579f5993849ab860ec"
+      },
+      {
+        "path": "raw/on-shared-graph-configure.log",
+        "sha256": "915cc558b9cecacd30d0939b23993cfcca4eb4c195f4f270b086303fde52d467"
+      },
+      {
+        "path": "raw/on-shared-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "082bfe2d28d522b52008bdef502cd63664ae0b63f30cd51467eed47be015e164"
+      },
+      {
+        "path": "raw/on-shared-graph-test.log",
+        "sha256": "9b04b7d22e1e0c9a332631cf0547f554ee9398c1dbd4b51e5bf1732ca139e2f6"
+      },
+      {
+        "path": "raw/on-shared-install.log",
+        "sha256": "5dc82d92b9d257c9599892f44b38ecec6ed80c4cd135b138d8537d5e682555cd"
+      },
+      {
+        "path": "raw/on-source-LastTest.log",
+        "sha256": "c774772f530121654e05811f28d838c2506355209a047c423224a8be01593d13"
+      },
+      {
+        "path": "raw/on-source-build.log",
+        "sha256": "e04767dfedc198c0076ef34c1f9404e39ce89f850786af878a349257a77bf6bc"
+      },
+      {
+        "path": "raw/on-source-configure.log",
+        "sha256": "6ac0d91298977fd9d1067cf2edeb87620d3dcf7742ee4667308ece15b846ffe7"
+      },
+      {
+        "path": "raw/on-source-r7_source_compute-linkage.log",
+        "sha256": "860ced541f0b07ac2f5a5e4ff2ed82c15e32142b62f6ff35f32da92ebd204618"
+      },
+      {
+        "path": "raw/on-source-r7_source_graph-linkage.log",
+        "sha256": "c000007f369b44fd4cefa65c978bf95ba6c2d476faf5c712f9216357bfce3bbb"
+      },
+      {
+        "path": "raw/on-source-test.log",
+        "sha256": "ef3338fa090a147898a2f793829a797522308931f62d3e3b308265fca44b9425"
+      },
+      {
+        "path": "raw/on-static-CMakeCache.txt",
+        "sha256": "9b56d150a1be5666d4a74b37bfa67e144d2a219d8ed5f053185eb52ce0b077c1"
+      },
+      {
+        "path": "raw/on-static-compile_commands.json",
+        "sha256": "c0102fe02efd033cf2896659f04da22868024527ded5f11db8bb75378576876c"
+      },
+      {
+        "path": "raw/on-static-compute-LastTest.log",
+        "sha256": "db5794f7e87dafdf938a402c9273a2c4cfc23621b94e2b89d9241398c80e86b8"
+      },
+      {
+        "path": "raw/on-static-compute-build.log",
+        "sha256": "532c7fd6beb4a312f0f85b7eacc83d9c69572f4c2668d76f478da5bb202be066"
+      },
+      {
+        "path": "raw/on-static-compute-configure.log",
+        "sha256": "17cb66255430a550f2b2655c0ba6e59dda2392b56de953878a394baa89796b78"
+      },
+      {
+        "path": "raw/on-static-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "70fc1f6fe4fe49f805cde13d5d1db86d9550549272a70a1ce0161329416a2610"
+      },
+      {
+        "path": "raw/on-static-compute-test.log",
+        "sha256": "9dec9dad100c92d12c7b212a8ae13e68967304f930b407753476d6278faa4cf3"
+      },
+      {
+        "path": "raw/on-static-graph-LastTest.log",
+        "sha256": "34476c78008d1ae649ae385b86acd125c3feb42c8e842955a6381a8cd1370aee"
+      },
+      {
+        "path": "raw/on-static-graph-build.log",
+        "sha256": "a161baa1bfb0df86e6b792012114487e673c79676c2991579f5993849ab860ec"
+      },
+      {
+        "path": "raw/on-static-graph-configure.log",
+        "sha256": "10fd954aee2fbd0a19e4cb8612b472b53c5dd904fd93bebf6eb1faeab92ff072"
+      },
+      {
+        "path": "raw/on-static-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "fdfb35849806909425c6f28700e949222fc1728d9b1da1bc1e60007854ad8b2f"
+      },
+      {
+        "path": "raw/on-static-graph-test.log",
+        "sha256": "a6cd2910719ecf2dd25a7c51081f36e1e9704cb9c3cb9d5fcd55e278d16c711c"
+      },
+      {
+        "path": "raw/on-static-install.log",
+        "sha256": "f7c21dc50ee3a27567b22913fe44b66da74913d5e2574c930d7595dbf6c7605b"
+      },
+      {
+        "path": "run-delivery-wsl.sh",
+        "sha256": "1b59560240feb0e7833c6a175faefdb77b73250c5862adcdd95934eaeb906fe2"
+      },
+      {
+        "path": "wsl-launcher-environment.json",
+        "sha256": "bd349f041233eddd94e04c8ae9da104d946601e318d96c0b387086964f3f5493"
+      }
+    ]
+  }
+}
