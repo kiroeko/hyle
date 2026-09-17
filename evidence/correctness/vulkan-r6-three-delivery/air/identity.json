@@ -1,0 +1,571 @@
+{
+  "commit": "60de42121b1361cc9fadecc33806404ddc84a2df",
+  "state": "PASS",
+  "bytes": 47246,
+  "archive_sha256": "aa5d31d82fe6e885c4bf585c52efa11cca879d679ccd844ab614c396a0c1daaf",
+  "entry_count": 40,
+  "execution_identity": {
+    "commit": "60de42121b1361cc9fadecc33806404ddc84a2df",
+    "state": "PASS",
+    "records": [
+      {
+        "label": "source-build-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/source-consumer-60de4212",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/source-build-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f"
+        ],
+        "exit_code": 0,
+        "seconds": 0.8651027679443359
+      },
+      {
+        "label": "source-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/source-build-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 12.707141160964966
+      },
+      {
+        "label": "source-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/source-build-60de4212",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 1.4288339614868164
+      },
+      {
+        "label": "public-static-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/complete-source-60de4212/hyle-0.1.0-source",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/public-static-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f"
+        ],
+        "exit_code": 0,
+        "seconds": 0.9086167812347412
+      },
+      {
+        "label": "static-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/public-static-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 12.210902690887451
+      },
+      {
+        "label": "static-install",
+        "command": [
+          "cmake",
+          "--install",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/public-static-60de4212",
+          "--prefix",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/sdk-static-60de4212"
+        ],
+        "exit_code": 0,
+        "seconds": 0.14161276817321777
+      },
+      {
+        "label": "public-shared-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/complete-source-60de4212/hyle-0.1.0-source",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/public-shared-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_STATIC=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f"
+        ],
+        "exit_code": 0,
+        "seconds": 0.846531867980957
+      },
+      {
+        "label": "shared-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/public-shared-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 12.201961040496826
+      },
+      {
+        "label": "shared-install",
+        "command": [
+          "cmake",
+          "--install",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/public-shared-60de4212",
+          "--prefix",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/sdk-shared-60de4212"
+        ],
+        "exit_code": 0,
+        "seconds": 0.1394181251525879
+      },
+      {
+        "label": "delivery-static-compute-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/independent-consumers-60de4212/compute/cpp",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-compute-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/r6-vulkan-20260917/relocated-sdk-static-60de4212"
+        ],
+        "exit_code": 0,
+        "seconds": 0.2083272933959961
+      },
+      {
+        "label": "delivery-static-compute-60de4212-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-compute-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6300809383392334
+      },
+      {
+        "label": "delivery-static-compute-60de4212-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-compute-60de4212",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 0.8839340209960938
+      },
+      {
+        "label": "delivery-static-compute-60de4212-linkage",
+        "command": [
+          "/usr/bin/otool",
+          "-L",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-compute-60de4212/hyle_package_compute_cpp"
+        ],
+        "exit_code": 0,
+        "seconds": 0.01188206672668457
+      },
+      {
+        "label": "delivery-static-graph-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/independent-consumers-60de4212/graph/cpp",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-graph-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/r6-vulkan-20260917/relocated-sdk-static-60de4212"
+        ],
+        "exit_code": 0,
+        "seconds": 0.2075209617614746
+      },
+      {
+        "label": "delivery-static-graph-60de4212-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-graph-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6300759315490723
+      },
+      {
+        "label": "delivery-static-graph-60de4212-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-graph-60de4212",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 0.8410120010375977
+      },
+      {
+        "label": "delivery-static-graph-60de4212-linkage",
+        "command": [
+          "/usr/bin/otool",
+          "-L",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-static-graph-60de4212/hyle_package_graph_cpp"
+        ],
+        "exit_code": 0,
+        "seconds": 0.01220703125
+      },
+      {
+        "label": "delivery-shared-compute-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/independent-consumers-60de4212/compute/cpp",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-compute-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/r6-vulkan-20260917/relocated-sdk-shared-60de4212"
+        ],
+        "exit_code": 0,
+        "seconds": 0.20213913917541504
+      },
+      {
+        "label": "delivery-shared-compute-60de4212-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-compute-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6300239562988281
+      },
+      {
+        "label": "delivery-shared-compute-60de4212-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-compute-60de4212",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 2.287943124771118
+      },
+      {
+        "label": "delivery-shared-compute-60de4212-linkage",
+        "command": [
+          "/usr/bin/otool",
+          "-L",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-compute-60de4212/hyle_package_compute_cpp"
+        ],
+        "exit_code": 0,
+        "seconds": 0.026523113250732422
+      },
+      {
+        "label": "delivery-shared-graph-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/independent-consumers-60de4212/graph/cpp",
+          "-B",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-graph-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/r6-vulkan-20260917/relocated-sdk-shared-60de4212"
+        ],
+        "exit_code": 0,
+        "seconds": 0.2554643154144287
+      },
+      {
+        "label": "delivery-shared-graph-60de4212-build",
+        "command": [
+          "cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-graph-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6301708221435547
+      },
+      {
+        "label": "delivery-shared-graph-60de4212-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-graph-60de4212",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 1.2084441184997559
+      },
+      {
+        "label": "delivery-shared-graph-60de4212-linkage",
+        "command": [
+          "/usr/bin/otool",
+          "-L",
+          "/Users/kiro/hyle-verify/r6-vulkan-20260917/delivery-shared-graph-60de4212/hyle_package_graph_cpp"
+        ],
+        "exit_code": 0,
+        "seconds": 0.025485992431640625
+      }
+    ],
+    "source_archive_sha256": "2114f5381ec4f1450bb173f2a9dcea8db18b0bb6e513c375570f873e860456b2",
+    "environment": {
+      "PATH": "/opt/homebrew/bin:/Users/kiro/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+      "MACOSX_DEPLOYMENT_TARGET": "14.4",
+      "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/vulkan-loader/lib",
+      "VK_LOADER_LAYERS_DISABLE": "~implicit~",
+      "CMAKE_BUILD_PARALLEL_LEVEL": "2",
+      "CTEST_PARALLEL_LEVEL": "1"
+    },
+    "producer_paths_hidden_before_sdk_consumption": true,
+    "executables": {
+      "delivery-static-compute-60de4212": "164742e9894f89f60351e69e138ff4ca7eab5f86b2d39ff4aa00573aa38da67f",
+      "delivery-static-graph-60de4212": "0ffbe988af57b4ead3f22638ebc0e84346d381753550f0a6cf9db70a49fb270e",
+      "delivery-shared-compute-60de4212": "bddec934ee2ec861bd45ed3471225182cb233cfceefd9a546dc74d3435a93bf2",
+      "delivery-shared-graph-60de4212": "124a5877188613e038a298df05f29634a43f23dce04eb189214c6af26b3ca05a"
+    },
+    "finished": 1789607570.252678
+  },
+  "entries": {
+    "air-delivery-60de4212/delivery-shared-compute-60de4212-LastTest.log": {
+      "bytes": 791,
+      "sha256": "6cb70aee6db5c13d0dbde0a4343a758920f2a0b228a53bad8a82ea62b9c38eec"
+    },
+    "air-delivery-60de4212/delivery-shared-compute-60de4212-build.log": {
+      "bytes": 130,
+      "sha256": "532c7fd6beb4a312f0f85b7eacc83d9c69572f4c2668d76f478da5bb202be066"
+    },
+    "air-delivery-60de4212/delivery-shared-compute-60de4212-configure.log": {
+      "bytes": 441,
+      "sha256": "10f93ac5428aa10a2cf564bcd5da1d3c322732ba0c16d4d3543008b32490ef10"
+    },
+    "air-delivery-60de4212/delivery-shared-compute-60de4212-linkage.log": {
+      "bytes": 814,
+      "sha256": "d343bc0f913d477f653a5208bf8ed49122df1bc2d99a61d8a5c660391f511817"
+    },
+    "air-delivery-60de4212/delivery-shared-compute-60de4212-test.log": {
+      "bytes": 277,
+      "sha256": "51fb99903c1444ac79a78900cdb1416db7dd65d3997a197fe24939d2be20dc08"
+    },
+    "air-delivery-60de4212/delivery-shared-graph-60de4212-LastTest.log": {
+      "bytes": 775,
+      "sha256": "4756c6c0538cfad39ca48ef722fdd70a3eac919932711f023f3f69a68d41554c"
+    },
+    "air-delivery-60de4212/delivery-shared-graph-60de4212-build.log": {
+      "bytes": 126,
+      "sha256": "a161baa1bfb0df86e6b792012114487e673c79676c2991579f5993849ab860ec"
+    },
+    "air-delivery-60de4212/delivery-shared-graph-60de4212-configure.log": {
+      "bytes": 439,
+      "sha256": "0c0126aa756d57a6c3c37aa5eeff5237ea0afc9daee8ca9e18cbda8003e88634"
+    },
+    "air-delivery-60de4212/delivery-shared-graph-60de4212-linkage.log": {
+      "bytes": 997,
+      "sha256": "1e6e7439d33a6e4996e6aa3009b4fa5173e26a18551280959ec7fe5a9ffbeafa"
+    },
+    "air-delivery-60de4212/delivery-shared-graph-60de4212-test.log": {
+      "bytes": 273,
+      "sha256": "e85b935e483af326d5db09b4eb7f4c1fe12f1c19067d7b0b11bcf65c6fc98363"
+    },
+    "air-delivery-60de4212/delivery-static-compute-60de4212-LastTest.log": {
+      "bytes": 791,
+      "sha256": "53fc258ee1e64f62f1dd14161d3c1630701511a3b12dcd0e92bfc5a6ed560765"
+    },
+    "air-delivery-60de4212/delivery-static-compute-60de4212-build.log": {
+      "bytes": 130,
+      "sha256": "532c7fd6beb4a312f0f85b7eacc83d9c69572f4c2668d76f478da5bb202be066"
+    },
+    "air-delivery-60de4212/delivery-static-compute-60de4212-configure.log": {
+      "bytes": 441,
+      "sha256": "783f479e4ef4c8788617739e4f701d6c91bbaee2b77eb76cb41600784654131a"
+    },
+    "air-delivery-60de4212/delivery-static-compute-60de4212-linkage.log": {
+      "bytes": 268,
+      "sha256": "24d046e4985f32af0d524dd13e2efc737e9486f8039ef4ded63bf6021e1747ab"
+    },
+    "air-delivery-60de4212/delivery-static-compute-60de4212-test.log": {
+      "bytes": 277,
+      "sha256": "955c9440c603ccecf7c6e0038b8fced132d1ef94bd4d5720fd77d0afb32e7a2a"
+    },
+    "air-delivery-60de4212/delivery-static-graph-60de4212-LastTest.log": {
+      "bytes": 775,
+      "sha256": "6979ee98149c3376f0b9bc404fd7267cf75b9e935d9c777de80e957decf183bf"
+    },
+    "air-delivery-60de4212/delivery-static-graph-60de4212-build.log": {
+      "bytes": 126,
+      "sha256": "a161baa1bfb0df86e6b792012114487e673c79676c2991579f5993849ab860ec"
+    },
+    "air-delivery-60de4212/delivery-static-graph-60de4212-configure.log": {
+      "bytes": 439,
+      "sha256": "28f350d7d7e112cfe13a11d6419d49a3de3e483432e29d999fa437fa9e77d3d9"
+    },
+    "air-delivery-60de4212/delivery-static-graph-60de4212-linkage.log": {
+      "bytes": 264,
+      "sha256": "503e55cdf9537d0e3efdd515af6f80fc1a0c40e70bc38ca696ed55fd415b4e48"
+    },
+    "air-delivery-60de4212/delivery-static-graph-60de4212-test.log": {
+      "bytes": 273,
+      "sha256": "79f9fd353935d7fa56af24fc089500a76470e9774911be853b133921dc9cc6f6"
+    },
+    "air-delivery-60de4212/identity.json": {
+      "bytes": 12773,
+      "sha256": "5de0e9aeb490680ed67e82b9672c6785396c1d15815f53e19678e25b2f706455"
+    },
+    "air-delivery-60de4212/public-shared-60de4212-CMakeCache.txt": {
+      "bytes": 22183,
+      "sha256": "b9c1d0fe314140ce598e5875ca5b47213cad595abcca0c1118a43d2ad5a252bb"
+    },
+    "air-delivery-60de4212/public-shared-60de4212-compile_commands.json": {
+      "bytes": 68329,
+      "sha256": "c1dff833655accf491e3a3e0682088863a10ba606d678278d33720189940facb"
+    },
+    "air-delivery-60de4212/public-shared-60de4212-configure.log": {
+      "bytes": 2161,
+      "sha256": "d19e106eaa85ce3365665f32fb192046b9a35e8876858525fc908c46c251c4d1"
+    },
+    "air-delivery-60de4212/public-static-60de4212-CMakeCache.txt": {
+      "bytes": 22182,
+      "sha256": "d9ca1dac6c16bfcd04a6ba7b354b0675f63e255417ea9601e0b6f1ff09972ec1"
+    },
+    "air-delivery-60de4212/public-static-60de4212-compile_commands.json": {
+      "bytes": 65044,
+      "sha256": "66895ad8659552bc4c9b0a025750a77a9054aaeae99858a789cccaa03c4556e1"
+    },
+    "air-delivery-60de4212/public-static-60de4212-configure.log": {
+      "bytes": 2161,
+      "sha256": "cf9988458d518566e52d4cea9c84a19488371f726af70ccd8e2181d7ff630b92"
+    },
+    "air-delivery-60de4212/shared-artifacts.json": {
+      "bytes": 719,
+      "sha256": "4c823389fbd732ca13df04b0e98f51bffe393ebb22bbe1c13e7e52e8f5082e85"
+    },
+    "air-delivery-60de4212/shared-build.log": {
+      "bytes": 7787,
+      "sha256": "39f066da2d60e5209bf0fdd3322684d1bf9c8d68acb09887dc7a5628c5ec4f08"
+    },
+    "air-delivery-60de4212/shared-install.log": {
+      "bytes": 24106,
+      "sha256": "8e6b2cadd0547b5996a3314cc5a1a423b19501123bd320947480d8be6a4f627a"
+    },
+    "air-delivery-60de4212/source-LastTest.log": {
+      "bytes": 1369,
+      "sha256": "70df1fdfbeb4a94d83e92a90c1f3d578231f7aadbb4ab0d058251062d61f8cb3"
+    },
+    "air-delivery-60de4212/source-build-60de4212-CMakeCache.txt": {
+      "bytes": 19385,
+      "sha256": "cd959f0d88b4fa9ed8a0dee1ad866350849e409d2dbd9723361f6fbf7d1d936c"
+    },
+    "air-delivery-60de4212/source-build-60de4212-compile_commands.json": {
+      "bytes": 68056,
+      "sha256": "999cdc3d74fb12c125318602b12fddabfc27af3cb74f819052b30dd6f8a66b04"
+    },
+    "air-delivery-60de4212/source-build-60de4212-configure.log": {
+      "bytes": 2084,
+      "sha256": "5bf8d30e1bb17d5adbd967a92f81034d65c36e970f3a6a81e94eeaf1d6f8ada5"
+    },
+    "air-delivery-60de4212/source-build.log": {
+      "bytes": 8030,
+      "sha256": "2d04fd25c30fe31f90e2db364d82093cee0618aee2ad4c72c48c2f07571f82da"
+    },
+    "air-delivery-60de4212/source-test.log": {
+      "bytes": 365,
+      "sha256": "35202c03af4296ae2b7658abe8a26a097c5e0ef522cf58de5688d9e9f4a2942d"
+    },
+    "air-delivery-60de4212/static-artifacts.json": {
+      "bytes": 310,
+      "sha256": "9ecacbbb3790d8240e0d92271c2944b9f2d5b5f817d0b90166868c2e8120681c"
+    },
+    "air-delivery-60de4212/static-build.log": {
+      "bytes": 7000,
+      "sha256": "a4f82ed0caf840dcfe21f9bd10c6a4d14c4404f7c714aaf56b3aa87885b1f731"
+    },
+    "air-delivery-60de4212/static-install.log": {
+      "bytes": 22927,
+      "sha256": "b5ebf8246af2d27a2164facb345322c96ae3c7771e47cf5375225b8485b2b0be"
+    },
+    "controller/verify-air-delivery.py": {
+      "bytes": 8166,
+      "sha256": "e8308e89f92d7f69fd8332205158f72eed52c2fd3bc62546f63cf84e2f2cae0b"
+    }
+  }
+}

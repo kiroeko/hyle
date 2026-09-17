@@ -200,3 +200,13 @@ R5 已独立 CLOSED，后续重型验证可串行使用 Air。MoltenVK、host �
 没有改变 shader、数值门或 API。产品候选尚未冻结，未启动性能采样。普通 public roots 和
 Direct/Graph FFN+custom 同源样例已接线，Windows installed static 首次真实计算通过；
 relocation、其余交付形态与两系统完整闭包仍按交付卡验收，不由此签 R6 完成。
+
+### 两系统三交付检查点
+
+`60de4212` 的[实际交付证据](../../../../evidence/correctness/vulkan-r6-three-delivery/README.md)
+已完成 Windows / Air source/static/shared 的普通 Direct/Graph FFN、自定义 SPIR-V、变化输入、
+重复执行和独立 oracle；验证 SDK relocation/offline、Windows DLL 邻置以及 Air producer 隐藏。
+这些工作分别在两系统串行完成，不重跑此前已通过的 native/host 插桩。
+
+R6 当前未完成项为默认规则与完整成本的性能资格、中央构建所选门的执行/有效复用及候选终审。
+本次只归档交付检查点，不改变算法/API、不启动 P1，也不把路线或十三交付 owner 写成 CLOSED。

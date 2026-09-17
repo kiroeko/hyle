@@ -49,3 +49,15 @@
 七问：第三方 pin/许可明确；完整计算和资源消费驱动；复用原生路线/package/Platform；本卡仅冷交付
 P0；纯 C++ 无 FFI；同源三交付；ordinary 与 native 专家责任可发现。D1–D3 固定为 AUDITED FIX，
 适用门仍未验收。十三旧 owner 的 C++/规则/P1 沿 baseline，不因 roots 变动重跑性能。
+
+## 两系统三交付检查点
+
+`60de42121b1361cc9fadecc33806404ddc84a2df` 的
+[Windows / Air 原始证据](../../../../evidence/correctness/vulkan-r6-three-delivery/README.md)
+已完成 source/static/shared 的真实 Direct/Graph FFN + custom、变化输入与重复执行。
+同一完整源码包在两系统以离线锁定依赖消费；两种 installed SDK 均迁移前缀，Windows shared DLL
+邻置，Air 还隐藏全部原 producer 源码/build 路径后再编译运行独立消费者。头文件、嵌入 shader、
+许可证和其它路线 binary 缺席检查通过；保留实际命令、日志、链接和 archive/entry hash。
+
+本检查点只补交付证据，没有修改产品或启动 P1。中央 public roots 引起的 broad selected gates
+仍须按输入身份执行或复用，且最终 review 尚未完成；十三 owner 保持 AUDITED，不提前签 CLOSED。

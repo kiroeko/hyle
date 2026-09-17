@@ -1,0 +1,497 @@
+{
+  "commit": "60de42121b1361cc9fadecc33806404ddc84a2df",
+  "state": "PASS",
+  "archive_sha256": "0e4ed7dc96b41cf505b7d0b60ee8797e8df5483e4b59b7331321716cecfd9403",
+  "bytes": 58719,
+  "entry_count": 47,
+  "execution_identity": {
+    "commit": "60de42121b1361cc9fadecc33806404ddc84a2df",
+    "state": "PASS",
+    "records": [
+      {
+        "label": "relocated-static-compute-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\independent-consumer-sources\\compute\\cpp",
+          "-B",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-static-compute",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-sdk-static"
+        ],
+        "exit_code": 0,
+        "seconds": 0.8508849143981934
+      },
+      {
+        "label": "relocated-static-compute-build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-static-compute",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 1.54302978515625
+      },
+      {
+        "label": "relocated-static-compute-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-static-compute",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 0.25797533988952637
+      },
+      {
+        "label": "relocated-static-graph-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\independent-consumer-sources\\graph\\cpp",
+          "-B",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-static-graph",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-sdk-static"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6869738101959229
+      },
+      {
+        "label": "relocated-static-graph-build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-static-graph",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 1.5580170154571533
+      },
+      {
+        "label": "relocated-static-graph-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-static-graph",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 0.24515724182128906
+      },
+      {
+        "label": "public-shared-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\public-shared",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_STATIC=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+          "-DHYLE_DEP_SOURCE_CACHE=C:/public/project-hyle/.deps",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:/hyle-scratch/r6-vulkan-20260917/locked-sources/vulkan_headers/Vulkan-Headers-e3b1eec08173d6b825cd3ac88c885a63b621504a"
+        ],
+        "exit_code": 0,
+        "seconds": 2.6828763484954834
+      },
+      {
+        "label": "shared-build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\public-shared",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 25.480190992355347
+      },
+      {
+        "label": "shared-install",
+        "command": [
+          "cmake",
+          "--install",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\public-shared",
+          "--prefix",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\sdk-shared"
+        ],
+        "exit_code": 0,
+        "seconds": 0.561776876449585
+      },
+      {
+        "label": "relocated-shared-compute-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\independent-consumer-sources\\compute\\cpp",
+          "-B",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-shared-compute",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-sdk-shared"
+        ],
+        "exit_code": 0,
+        "seconds": 0.7328007221221924
+      },
+      {
+        "label": "relocated-shared-compute-build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-shared-compute",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 1.5917446613311768
+      },
+      {
+        "label": "relocated-shared-compute-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-shared-compute",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 0.29900455474853516
+      },
+      {
+        "label": "relocated-shared-graph-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\independent-consumer-sources\\graph\\cpp",
+          "-B",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-shared-graph",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-sdk-shared"
+        ],
+        "exit_code": 0,
+        "seconds": 0.7682409286499023
+      },
+      {
+        "label": "relocated-shared-graph-build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-shared-graph",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 1.6107120513916016
+      },
+      {
+        "label": "relocated-shared-graph-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\relocated-shared-graph",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 0.29058313369750977
+      },
+      {
+        "label": "complete-source-package",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\public-static",
+          "--target",
+          "hyle_source_package",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 1.6194441318511963
+      },
+      {
+        "label": "source-build-60de4212-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\source-consumer-60de4212",
+          "-B",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\source-build-60de4212",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+          "-DHYLE_DEP_SOURCE_CACHE=C:/public/project-hyle/.deps",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:/hyle-scratch/r6-vulkan-20260917/locked-sources/vulkan_headers/Vulkan-Headers-e3b1eec08173d6b825cd3ac88c885a63b621504a"
+        ],
+        "exit_code": 0,
+        "seconds": 3.9684629440307617
+      },
+      {
+        "label": "source-build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\source-build-60de4212",
+          "--parallel",
+          "2"
+        ],
+        "exit_code": 0,
+        "seconds": 26.12191891670227
+      },
+      {
+        "label": "source-test",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\hyle-scratch\\r6-vulkan-20260917\\source-build-60de4212",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--timeout",
+          "120"
+        ],
+        "exit_code": 0,
+        "seconds": 1.2320363521575928
+      }
+    ],
+    "source_archive": "C:\\hyle-scratch\\r6-vulkan-20260917\\public-static\\dist\\hyle-0.1.0-source.zip",
+    "source_archive_sha256": "2114f5381ec4f1450bb173f2a9dcea8db18b0bb6e513c375570f873e860456b2"
+  },
+  "entries": {
+    "controller/loc-60de4212.json": {
+      "bytes": 3499,
+      "sha256": "3d1e66af8097f1bc467fd35be0d11680a48650eceb855c467942919464d7fab7"
+    },
+    "controller/run-windows-public-static.ps1": {
+      "bytes": 2449,
+      "sha256": "920aa8a1f7f416e3d72a7b360ece6f8651040e7be0598ec00a785bc52f6a5917"
+    },
+    "controller/verify-windows-delivery.py": {
+      "bytes": 6187,
+      "sha256": "c1a038b7d7751bbbfe7a631aefb945a5a8d9c0e2e95001a93ae2e6223d95837a"
+    },
+    "public-shared/CMakeCache.txt": {
+      "bytes": 24005,
+      "sha256": "f7b677c4ac0418b9ec0e25de9004e2c3e29cdabbe043d473ae8051f1236c2e66"
+    },
+    "public-shared/install_manifest.txt": {
+      "bytes": 17163,
+      "sha256": "5c45b13cbc6a39a9f946eaa06d6ff3ddc70ea8c80172860a9a98012d4b642f6e"
+    },
+    "public-static-logs/build.log": {
+      "bytes": 6983,
+      "sha256": "24104b427ec5fca44de55e307beb619fe76fd5bdabef0e66bb5a4af7600d06e0"
+    },
+    "public-static-logs/compute-build.log": {
+      "bytes": 399,
+      "sha256": "45dfebc86c5af7ff1bf0a7eea37ae1994fa5a285afb50e0596985c3a6875124a"
+    },
+    "public-static-logs/compute-configure.log": {
+      "bytes": 516,
+      "sha256": "392777979b13df3036772765d81ad73e98bbf03ca65836bf57360198077778fa"
+    },
+    "public-static-logs/compute-test.log": {
+      "bytes": 251,
+      "sha256": "34a4d416f8fb5122378bd423e73880c6fe6f5dee1838d87b62aa2ac0060c02bb"
+    },
+    "public-static-logs/configure.log": {
+      "bytes": 2191,
+      "sha256": "e49a817e02f6d8723fcf5c19b5495509e2fb495ecfea2300234eb9bbdbf97031"
+    },
+    "public-static-logs/graph-build.log": {
+      "bytes": 389,
+      "sha256": "0ae9a203a181df39a7e73b23aad3a2d72090792c1991e640f6b3cf3978647ff8"
+    },
+    "public-static-logs/graph-configure.log": {
+      "bytes": 514,
+      "sha256": "3dfb60919f26d3ebb8727b7d3ee1b18fd2bec32d2f47c8444e0fedb7df35f5f3"
+    },
+    "public-static-logs/graph-test.log": {
+      "bytes": 247,
+      "sha256": "545e78ba000df9f78f9e7f120418153b047cf14eae6d6a1a0d9d429fb97b1530"
+    },
+    "public-static-logs/install.log": {
+      "bytes": 19668,
+      "sha256": "649f1bdfdc461869f692851b71d8547708a0d5fb785508035f149948534e7116"
+    },
+    "public-static/CMakeCache.txt": {
+      "bytes": 24005,
+      "sha256": "9118dee892bd3b1ea9e83d2e496028162cf3bf68445e3f01714bcd6d64b7de5b"
+    },
+    "public-static/install_manifest.txt": {
+      "bytes": 16458,
+      "sha256": "e22a1d210113b7ea9f20a54752f0e2359fa866c5a341aaf37983bc811802e34e"
+    },
+    "relocated-shared-compute/CMakeCache.txt": {
+      "bytes": 14953,
+      "sha256": "733433abef94fe77b079705b7305f0e38a6c3aba6f0acdd3ff7d110ebaef8976"
+    },
+    "relocated-shared-compute/Testing/Temporary/LastTest.log": {
+      "bytes": 817,
+      "sha256": "5d983ad0eaeaa706ac73de8042b971064529703a2b8b7eecb11ace0ff5069dc3"
+    },
+    "relocated-shared-graph/CMakeCache.txt": {
+      "bytes": 14931,
+      "sha256": "0987511353e22245d343f3b3cd7f7d5815a17c01abe4272eaf7e1794660942dc"
+    },
+    "relocated-shared-graph/Testing/Temporary/LastTest.log": {
+      "bytes": 801,
+      "sha256": "364a40c6017a5f04746bb316c2b006eb9f9f96c97e51793191e1b7e33a36d8e3"
+    },
+    "relocated-static-compute/CMakeCache.txt": {
+      "bytes": 14953,
+      "sha256": "f911031c0ef1057b6dfaf3f21cbe1653c1a0837201bc22717678cb55d5505984"
+    },
+    "relocated-static-compute/Testing/Temporary/LastTest.log": {
+      "bytes": 817,
+      "sha256": "4e7da15ac2606af55e2821ed02dba260f17ad95c4df1712f12e0597bd07b2f85"
+    },
+    "relocated-static-graph/CMakeCache.txt": {
+      "bytes": 14931,
+      "sha256": "1b14467a6001c3f8aca353d498a321d6ffb03da72bcacd2aabb841afb11e09a9"
+    },
+    "relocated-static-graph/Testing/Temporary/LastTest.log": {
+      "bytes": 801,
+      "sha256": "2d3bf504471fe42f3696fcc388fffee47d4f1e1743a539298d3f3fa5edb80d08"
+    },
+    "source-build-60de4212/CMakeCache.txt": {
+      "bytes": 21266,
+      "sha256": "64fb56e64b98bea3631123bb7d189e75c02136998ef1e22b8096be1b4c866e15"
+    },
+    "source-build-60de4212/Testing/Temporary/LastTest.log": {
+      "bytes": 1432,
+      "sha256": "da3fdaf0438cad51166e751a08afa3732103de9ef49811face404fdc26db14e9"
+    },
+    "windows-delivery-60de4212/complete-source-package.log": {
+      "bytes": 275,
+      "sha256": "058a344e7146677454e8d66e17fde8113cfa9d93d7b798df34f44f75113680bf"
+    },
+    "windows-delivery-60de4212/identity.json": {
+      "bytes": 8982,
+      "sha256": "1716e17c0c711770419a9506412c287983effa84f1bcb0e61797f4c5314b5ca3"
+    },
+    "windows-delivery-60de4212/public-shared-configure.log": {
+      "bytes": 2167,
+      "sha256": "9195a9dc78fe7ab9fdb9b5a3c754f3401f96a001b1eeb85a18357e92e2e2b745"
+    },
+    "windows-delivery-60de4212/relocated-shared-compute-build.log": {
+      "bytes": 401,
+      "sha256": "a9a50e16fcc6ef1a8ed3f23169fe2e971c978cdb1400d9ad95ee30bf04645574"
+    },
+    "windows-delivery-60de4212/relocated-shared-compute-configure.log": {
+      "bytes": 508,
+      "sha256": "db9b5db41b455f8c1fe50f2b3681445294d6350dd698b4da062e57e99a365220"
+    },
+    "windows-delivery-60de4212/relocated-shared-compute-test.log": {
+      "bytes": 245,
+      "sha256": "3ff5bc284ec2f050fbb43034e7bf6a581b4920909407e2e8594b2207916f3bb2"
+    },
+    "windows-delivery-60de4212/relocated-shared-graph-build.log": {
+      "bytes": 391,
+      "sha256": "92443e27b08c0f7dacc6b2de1b0fb2a313e9d869d110331d35308f06a8268c22"
+    },
+    "windows-delivery-60de4212/relocated-shared-graph-configure.log": {
+      "bytes": 506,
+      "sha256": "7825a6779926028c5cf500655bb26649ba782feef97a64fcaf14abc4a90bbb3a"
+    },
+    "windows-delivery-60de4212/relocated-shared-graph-test.log": {
+      "bytes": 241,
+      "sha256": "399289a606cee8b45346e6bde4f2f479d7488315ed192c0073d7b008e32ba2e4"
+    },
+    "windows-delivery-60de4212/relocated-static-compute-build.log": {
+      "bytes": 401,
+      "sha256": "27d15d5dcb9191ff797e1a827bb247b80e6be190976ca68ea13c9746672247f7"
+    },
+    "windows-delivery-60de4212/relocated-static-compute-configure.log": {
+      "bytes": 508,
+      "sha256": "4a1be9a4f7d5db6667ae1319bdff136eb593087913af52f72c8d2995a26d2f20"
+    },
+    "windows-delivery-60de4212/relocated-static-compute-test.log": {
+      "bytes": 245,
+      "sha256": "739c0d64ed1aa04643c70a438798b45a169ebd17f83248807cc9c851ee66e1dc"
+    },
+    "windows-delivery-60de4212/relocated-static-graph-build.log": {
+      "bytes": 391,
+      "sha256": "8ad858f7f2d3f6ead303e98b4c59148ac6dae1a2775d8ccf95ede30c4f15d2aa"
+    },
+    "windows-delivery-60de4212/relocated-static-graph-configure.log": {
+      "bytes": 506,
+      "sha256": "ec391c22fa8a7dbc0118d98a6d73f5dbd0d618a34031a7ea2abb6eedd7d457f6"
+    },
+    "windows-delivery-60de4212/relocated-static-graph-test.log": {
+      "bytes": 241,
+      "sha256": "d6ffc1cb388ae0d3f3fdb69a39870a9a53bfea03965f566c268221025fccc8f8"
+    },
+    "windows-delivery-60de4212/shared-build.log": {
+      "bytes": 6983,
+      "sha256": "ed4ba1e310ae3165533dccb2bc3732d396ca7bdbb47becf8cfaf585935c219e4"
+    },
+    "windows-delivery-60de4212/shared-install.log": {
+      "bytes": 20309,
+      "sha256": "e3a19f1be2d04548c2732b8c18f6992f6e49a343a2bb679b03585ed2a17b403d"
+    },
+    "windows-delivery-60de4212/source-build-60de4212-configure.log": {
+      "bytes": 2175,
+      "sha256": "c33ff2a7e46c2db3e63b2d4e1653bc4bd0d0f91e37c92eb10285da82496d1719"
+    },
+    "windows-delivery-60de4212/source-build.log": {
+      "bytes": 8823,
+      "sha256": "d65b6d424158341581c3e1f1f2500b3b659d506e4896fef5ef69d5faec351d53"
+    },
+    "windows-delivery-60de4212/source-test.log": {
+      "bytes": 341,
+      "sha256": "4651ae3147fbcbafddd40d02ee35c4dfd2e8ea55e94415aaa15ecc238430cb26"
+    },
+    "windows-delivery-60de4212/staged-dlls.json": {
+      "bytes": 1632,
+      "sha256": "f3186b0d4a167e7c67e9efd316d0a3569374ee1efa01e06eafd026b79893bf0d"
+    }
+  }
+}
