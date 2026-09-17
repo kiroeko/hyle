@@ -14,7 +14,8 @@
   `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
-- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C 的 AUDITED；其余七个 owner
+- 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
+  对 D01 的 typed prepare 接线进入 AUDITED，其余六个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -185,5 +186,27 @@ activation dtype；SwiGLU 在乘法完成后舍入；MoE router 的 TopK/归约/
 
 验证沿用 C1 卡，增加具名 double/排序/顺序舍入 oracle 和 workspace/checked-index 失败测试；本次
 实现没有公开 API 改动时只跑 owning factor 与 selector 直接消费者。完整 bundle 三交付/P1 仍待 C1。
+
+### C1-D：有界前缀求和（AUDITED）
+
+baseline `06d28274`。F02.4 的 I32 expert counts→offsets 需要 exclusive scan；C3 已登记的
+DeltaNet gate chunk 需要 F32 inclusive scan。定向源码为固定 SGLang revision 的
+`python/sglang/kernels/jit/csrc/moe/moe_align_kernel.cu:103-235` 和
+`python/sglang/kernels/ops/attention/fla/cumsum.py:60-70`。前者明确 i32 exclusive-prefix，后者
+把 gate 提升到 F32 后沿 chunk 时间轴求和；本子集不引入 MoE packing、ragged 或模型层类型。
+
+现有 `hyle/simd/scan.h` 已有 O(N)、O(1) scratch 的 inclusive/exclusive kernel，并保证整数
+modulo 运算无 signed overflow UB。Compute 的 checked overflow 要求更强，需先验证全部整数
+前缀再写任何 output，不能直接把 modulo 当作 counts 合同。浮点允许固定路线的并行重结合。
+
+| FIX | 固定实施范围 | 数值 / 成本 / 验收 |
+|---|---|---|
+| D01 | `compute_ops` 增加 `Scan{axis=-1, exclusive=false}`、kind/name/traits/infer；`compute` 只增加自然 typed `prepare(context, Scan, desc)` | 单输入/同 shape/type dense 输出，rank≥1，正负 axis；本轮共同数值域 I32/F32；inclusive 含当前元素、exclusive 从零开始；整数全部前缀（含最终总和）必须可表示，失败不写输出；pure，可精确 alias input0；不新增对象或执行器 |
+| D02 | Native I32/F32 dense/byte-strided Scan | dense 最后一轴复用 SIMD scan；其余按 axis row 顺序遍历，O(N·rank)、O(1) scratch；I32 两遍（先 checked，再写），F32 一遍；无堆分配/模型常驻展开；冷绑定 dtype/exclusive，复用原 invocation/completion；不改 SIMD owner |
+| D03 | schema、Direct、默认 Graph consumer 和文档 | counts→offsets→Gather 的真实组合、empty/one/tails、负 axis/中轴/odd byte stride、dense exact alias、正负溢出且 output 不变；F32 独立标量 oracle、NaN/Inf；更新 family 表；四路线具体执行仍分别验收 |
+
+本次新增 schema/自然接口不宣称 GPU 已实现。共享 API 的 selected 消费者/headers/三交付与后续 C1
+接口定型候选合并执行，期间未运行项保持未证明；先运行新增 owner 的局部正确性，不运行 P1。
+能力 query、CUDA checked-index 完成时错误等仍待各自有限审计，D01 不授权改这些公共运行机制。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

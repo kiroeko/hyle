@@ -271,9 +271,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
+      "summary": "LLM/MoE C1-D AUDITED：只授权 Scan 的自然 typed prepare 接线；共同 schema/数值合同与 Native 有限 FIX 已固定。普通 capability query 和其他公共运行机制尚未授权实施。"
     },
     {
       "module": "graph",
@@ -387,7 +387,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B AUDITED：Softplus 共同语义及半精度 norm 的 F32 参数域已实施，W1 对应 correctness 通过；按 C1 卡固定 FIX，公开面/消费者/交付检查进行中；整包未裁决。"
+      "summary": "LLM/MoE C1-A/B/D AUDITED：Softplus、mixed norm 已实施；D01 的 I32/F32 Scan schema 已固定。公开面、消费者与交付按不可变候选验证；四路线覆盖未完成。"
     },
     {
       "module": "compute_backend_cpu",
@@ -415,7 +415,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B/C AUDITED：Softplus、F16/BF16 Unary/Binary 与 mixed norm 已实施并通过 W1 局部 correctness；C01–C05 半精度归约/门控/Scatter-add/Softmax/TopK 已固定，正在实施；四路线 C1 未完成。"
+      "summary": "LLM/MoE C1-A/B/C/D AUDITED：半精度 tensor/norm/reduce/gate/index/softmax/top-k 已实施，C 子集待验证；D02 checked I32/F32 Scan 已固定。C1 整包未完成。"
     },
     {
       "module": "compute_sched",
