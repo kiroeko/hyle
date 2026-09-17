@@ -191,6 +191,16 @@ Result<Program> prepare_plan(const Context &context,
       if (!status.ok())
         return std::unexpected(status);
     }
+    // Packing may replace a dense captured buffer with an immutable native
+    // layout. Keep originals through all lowering for deduplication, then drop
+    // owners no final dispatch uses instead of retaining two complete weights.
+    std::vector<bool> referenced(program->values.size(), false);
+    for (const auto &dispatch : program->dispatches)
+      for (const auto value : dispatch.values)
+        referenced[value] = true;
+    for (std::size_t value = 0; value < program->values.size(); ++value)
+      if (!referenced[value])
+        program->values[value].constant = {};
     auto status = plan_storage(*program);
     if (!status.ok())
       return std::unexpected(status);

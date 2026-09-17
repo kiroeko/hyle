@@ -1,0 +1,102 @@
+{
+  "kind": "Windows implementation preflight, not P1",
+  "entries": [
+    {
+      "path": "build-performance-preflight.ps1",
+      "bytes": 1626,
+      "sha256": "e9c420b2339fff12e522b8956c83bac671a6c0d6975cd15fce34dc3582973e21"
+    },
+    {
+      "path": "native-f32-preflight-01/build.log",
+      "bytes": 2033,
+      "sha256": "c842d4adee6d01f27a80d5445761f448ad5450dc00f3ac1b0c1cf30ea8529932"
+    },
+    {
+      "path": "native-f32-preflight-01/CMakeCache.txt",
+      "bytes": 24958,
+      "sha256": "ab58dc6a0ffbcd6e675e923b1e11a79e0ae2e691f5b4ce4ac8542499470bab78"
+    },
+    {
+      "path": "native-f32-preflight-01/ctest.log",
+      "bytes": 912,
+      "sha256": "10fc39cce3d0b187ad6c5d70fe09dd56d37bce7cf5dff70be52e09173b318ee0"
+    },
+    {
+      "path": "native-f32-preflight-01/LastTest.log",
+      "bytes": 7801,
+      "sha256": "ac9073cadeff91749877c63741822de4ae1c7eda7618133074a87b0505fd9b4c"
+    },
+    {
+      "path": "native-f32-preflight-01-controller.json",
+      "bytes": 67202,
+      "sha256": "ae0059cf95560f7e286c8dab2296bd06ca7c3f7f8dbfdc687d2d5b8c71ad06bf"
+    },
+    {
+      "path": "native-f32-preflight-01-controller.log",
+      "bytes": 1002,
+      "sha256": "92cdd43454b1592881ece6d179e6c0731bcc04079a1e80fdec8c585a7b7cac04"
+    },
+    {
+      "path": "performance-build-01/build.log",
+      "bytes": 2807,
+      "sha256": "0c84f47708b74dca8a63a49aa8ad2b5a5625eac47e3c6a3173c9e5df8ddc21fb"
+    },
+    {
+      "path": "performance-build-01/configure.log",
+      "bytes": 782,
+      "sha256": "a397e78b5514d114033cdf6f95ac236de4f37c9a420ba1ec81ecb6e15227d5a5"
+    },
+    {
+      "path": "performance-build-01/ctest.log",
+      "bytes": 912,
+      "sha256": "0e742526f807f2b1f6a453cb604e2c22f57455260e03035aa07f0988f8dd7f0e"
+    },
+    {
+      "path": "performance-build-01/LastTest.log",
+      "bytes": 7965,
+      "sha256": "242c38b29c4ce79b15f8b697c29369af1e5d15593daece5de5215b1bc419dce7"
+    },
+    {
+      "path": "performance-oracle-01/hyle_compute_route_vulkan_bench.log",
+      "bytes": 3304,
+      "sha256": "175713d045bb0218785cf41b7b63c1006a7e2bfde4384d390ae42a97db04afc1"
+    },
+    {
+      "path": "performance-oracle-01/hyle_compute_vulkan_native_cost_bench.log",
+      "bytes": 3304,
+      "sha256": "cf89ab9d162fbe8f93792513df39099bf931e42ec600b30510de868520cd4c8d"
+    },
+    {
+      "path": "performance-oracle-01/hyle_graph_route_vulkan_bench.log",
+      "bytes": 3303,
+      "sha256": "d247c0479c668256aac0dd23fe2193092887f9e683408d952e2308dad94ddc64"
+    },
+    {
+      "path": "performance-oracle-01/hyle_graph_vulkan_native_cost_bench.log",
+      "bytes": 3303,
+      "sha256": "4b400a5a88ce9b89911e1ab26aaefe5f2c0fbe8dd1110ccd8eebd0c9cd9f3b6b"
+    },
+    {
+      "path": "performance-oracle-01/identity.json",
+      "bytes": 68331,
+      "sha256": "8d9ea96e788fa50d33f881e7ca252f2e4576bff8d9927acbe0a8f0b5fcad589c"
+    },
+    {
+      "path": "run-native-f32-preflight-01.ps1",
+      "bytes": 1959,
+      "sha256": "d3bb0ec92ed7e396ee5845509d57b31b0fff932be88492949dc6194a37758d60"
+    },
+    {
+      "path": "run-native-f32-preflight-01.py",
+      "bytes": 1902,
+      "sha256": "f4363b4d6a5e49f9a9912e9cd2914ec31ccf1e68ee61c929e659db4c05cb7bb2"
+    },
+    {
+      "path": "verify-performance-oracle.py",
+      "bytes": 2836,
+      "sha256": "1f9785e476f4d08e0bac9b09a6852d4819960ef4f7af667a92a4596ced48dcf4"
+    }
+  ],
+  "archive_sha256": "4b8cd9e0bf34ce84b52cf3dc5e06982deac2f702b3e7ce13f4568b470a2315ac",
+  "bytes": 79501
+}

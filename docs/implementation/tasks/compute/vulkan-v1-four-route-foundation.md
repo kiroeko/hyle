@@ -210,3 +210,21 @@ relocation、其余交付形态与两系统完整闭包仍按交付卡验收，�
 
 R6 当前未完成项为默认规则与完整成本的性能资格、中央构建所选门的执行/有效复用及候选终审。
 本次只归档交付检查点，不改变算法/API、不启动 P1，也不把路线或十三交付 owner 写成 CLOSED。
+
+### V3 / V6 性能前源码裁决
+
+[性能合同](vulkan-r6-performance-contract.md)固定了独立 ggml strict-F32 shader 参考、各入口
+相同生命周期及单列的裸原生成本。源码预审发现当前 BK32 误用了量化 tile，且未应用合法的完整
+tile vector-load 变体；V3 内有限 FIX 为 BK16/真实共享内存账单和不依赖 padding 的完整 tile
+aligned 条件。shader 原样、公开 API、owner、运行状态与完成协议不变；未启动 P1。
+
+同轮发现冷 packing 后仍持有不再引用的原始 dense 权重；V3 在全部 lowering/共享处理完成后
+释放最终 dispatch 不使用的常量 owner。public owner/quota 与后续真实计算测试覆盖该修正，
+仍被其它 dispatch 使用的常量继续保活。Windows 当前 14 Compute + 3 Graph 和逐头检查通过，
+Khronos synchronization validation 无错误；完整 K4096/H11008/O4096、M1/M16 的 Direct/Graph
+及原生成本参考全部通过两组输入的独立 double oracle。
+原始命令、输入/制品身份和日志见 [F32 检查点](../../../../evidence/correctness/vulkan-r6-f32-preflight/README.md)。
+
+两个入口、两个机器 profile 的性能合同与模块局部 A/A validator 已接线，复用公共机器合同和
+nanobench parser；Windows 子进程证明 P 核 caller/mask，Air 证明 interactive QoS。资格矩阵仍为
+两侧实现×两种 placement×执行正反序×分配正反序，共每入口/profile 16 个进程；未运行项不签 PASS。

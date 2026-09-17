@@ -252,19 +252,29 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     std::uint32_t tile = m <= 32 || n <= 32   ? 32u
                          : m <= 64 || n <= 64 ? 64u
                                               : 128u;
+    // The upstream floating-point recipe uses BK=16; BK=32 belongs to its
+    // quantized recipe. Both shared arrays hold vec2 with one padding column.
+    constexpr std::uint32_t reduction_tile = 16;
+    constexpr std::uint32_t shared_row_bytes = (reduction_tile / 2 + 1) * 8;
     while (tile > 32 &&
-           2 * tile * 17 * 8 > device.environment.shared_memory_bytes)
+           2 * tile * shared_row_bytes > device.environment.shared_memory_bytes)
       tile /= 2;
     const std::uint32_t block = tile == 32 ? 32u : 128u;
-    if (2 * tile * 17 * 8 > device.environment.shared_memory_bytes ||
+    if (2 * tile * shared_row_bytes > device.environment.shared_memory_bytes ||
         block > device.properties.limits.maxComputeWorkGroupInvocations ||
         block > device.properties.limits.maxComputeWorkGroupSize[0])
       return Status::Unavailable(
           "Vulkan F32 matmul tile exceeds device limits");
+    // Upstream aligned loads omit edge checks. A native borrowed range carries
+    // no hidden padding promise, so only complete tiles may use that variant.
+    // The native bind/borrow contract then guarantees vec4-aligned offsets.
+    const bool aligned =
+        m % tile == 0 && n % tile == 0 && k % tile == 0 &&
+        device.properties.limits.minStorageBufferOffsetAlignment >= 16;
     const std::array<std::uint32_t, 12> recipe{block,
                                                tile,
                                                tile,
-                                               32,
+                                               reduction_tile,
                                                tile == 128 ? 64u : 32u,
                                                tile == 128 ? 64u : 32u,
                                                2,
@@ -272,7 +282,7 @@ lower_matmul(ProgramState &program, const PlanStep &step,
                                                tile == 128 ? 4u : 2u,
                                                1,
                                                32,
-                                               0};
+                                               aligned ? 1u : 0u};
     std::array<SpecializationConstant, 12> specialization{};
     for (std::uint32_t index = 0; index < specialization.size(); ++index)
       specialization[index] = {index, recipe[index]};

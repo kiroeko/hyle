@@ -1,0 +1,27 @@
+{
+  "schema": "hyle.bench.consumer-shapes/v1",
+  "module": "compute_route_vulkan",
+  "qualification": "PROVISIONAL_ARCHETYPE",
+  "sources": [
+    {
+      "name": "vLLM",
+      "revision": "51918e252af4dfff381001f42b7ebe6a0454501b",
+      "paths": ["benchmarks/kernels/benchmark_shapes.py", "benchmarks/kernels/benchmark_marlin.py"],
+      "evidence": "Llama-2-7b TP1 has K4096, gate/up hidden 11008 and down 11008x4096. The registered benchmark includes M1 and M16. Only these dimensions are reused; the Vulkan contract is entirely F32."
+    },
+    {
+      "name": "ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "paths": ["src/ggml-vulkan/ggml-vulkan.cpp", "src/ggml-vulkan/vulkan-shaders/mul_mm.comp", "src/ggml-vulkan/vulkan-shaders/mul_mat_vec.comp", "src/ggml-vulkan/vulkan-shaders/swiglu.comp"],
+      "evidence": "Non-cooperative strict F32 matrix/vector kernels and fused SiLU multiply; original shader sources, F32 storage and reduction, no implicit F16. Exact buffer ranges require a narrower aligned-load domain than a padded carrier."
+    }
+  ],
+  "workloads": [
+    {"id": "decode-f32-ffn-m1", "role": "primary", "rows": 1, "inner": 4096, "hidden": 11008, "output": 4096},
+    {"id": "short-prefill-f32-ffn-m16", "role": "holdout", "rows": 16, "inner": 4096, "hidden": 11008, "output": 4096}
+  ],
+  "shape_policy": "Finite complete-chain architecture comparison, not a production trace, model throughput claim or inferred invocation frequency.",
+  "numerics": "F32 weights, activations, reductions, SiLU and outputs. No Q4, F16, cooperative matrix or TF32 ranking.",
+  "storage": "Identical contents in separate native contexts, immutable resident weights and two independent input/run/output slots per arm. Cold transpose and upload are reported separately; no dense shadow weight copy remains resident.",
+  "selection_policy": "Qualify mature shader integration and fixed native rules at actual device/driver/compiler versions. No claim of an HYLE algorithm win or of beating the complete ggml runtime; unknown hardware remains unqualified."
+}

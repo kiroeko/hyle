@@ -1,0 +1,460 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "compute-vulkan-ffn-m1-p1-v1",
+  "module": "compute_route_vulkan",
+  "claim": "M1-MAC engineering qualification of strict F32 mature ggml shader integration through ordinary Vulkan Direct FFN, with identical native ownership/completion. No HYLE algorithm win, complete ggml runtime ranking or extrapolation to unmeasured devices/toolchains.",
+  "candidate": {
+    "target": "hyle_compute_route_vulkan",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "compute_route_vulkan",
+    "entrypoint": "include/hyle/compute/vulkan.h"
+  },
+  "peers": [
+    {
+      "id": "ggml-vulkan-f32",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "Independent unchanged strict-F32 shaders and native recipe, same HYLE lifecycle adapter; no candidate typed lowering or Graph compilation.",
+        "flags": "Vulkan 1.2 SPIR-V, non-cooperative F32, original pinned sources, no LTO; actual shader compiler/header/API/driver recorded.",
+        "precision": "F32 weights/activation/reduction/SiLU/output, no F16 or cooperative-matrix internal conversion.",
+        "scope": "Complete resident FFN and actual checked completion/owner release. Cold packing/upload/pipeline construction reported separately."
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "decode-f32-ffn-m1",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/decode/f32-ffn",
+      "provenance": {
+        "path": "bench/compute_route_vulkan/consumer_shapes_v1.json",
+        "sha256": "86b34b033f04931eaeb9da477f7e06a86db20c90d5dcfe5681d050731815ed24"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary typed Vulkan preparation and Recorder, fixed caller outputs, two recorded slots.",
+        "peer": "Independent original ggml shader recipe through the same Recorder and fixed caller buffers.",
+        "equivalence": "Separate native contexts and allocations, identical resident contents, queue admission, actual checked fence completion, release and failure responsibilities; neither arm retains an unused dense shadow of packed weights."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-ffn",
+        "budget": 5,
+        "denominator": "one complete resident FFN through actual terminal completion and result release",
+        "derivation": "PROVISIONAL_ARCHETYPE from registered vLLM dimensions; strict F32 Vulkan contract, M1 primary/M16 holdout, not production frequency or model KPI."
+      },
+      "semantic_contract": "Y[1,4096]=down(SiLU(gate(X))*up(X)); F32 at every public node, three strict-F32 matrix/vector operations and a fused SiLU multiply; actual checked fence and owner release before return.",
+      "comparability": "COMPARABLE",
+      "peer_id": "ggml-vulkan-f32",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic full-index mixed F32 weights and two different ready resident inputs; isolated native contexts with identical data; no short-period cancellation.",
+        "scale": {
+          "rows": 1,
+          "inner": 4096,
+          "hidden": 11008,
+          "output": 4096
+        }
+      },
+      "setup": "Cold immutable weight packing/upload, pipeline preparation and native command recording, two slots. Complete independent double oracle before timing (F32 node rounding, 1e-5+1e-4*abs(expected), at least half outputs reject zero); per-process arm equivalence then eight alternating complete warm calls.",
+      "charged_phases": [
+        "Fixed caller output submission, actual GPU work and checked fence completion, pending unlink and this call Completion/owner release."
+      ],
+      "pair": {
+        "candidate": "HYLE Vulkan Direct FFN M=1 K=4096 H=11008 N=4096",
+        "peer": "ggml shader lifecycle Direct FFN M=1 K=4096 H=11008 N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "short-prefill-f32-ffn-m16",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/short-prefill/f32-ffn",
+      "provenance": {
+        "path": "bench/compute_route_vulkan/consumer_shapes_v1.json",
+        "sha256": "86b34b033f04931eaeb9da477f7e06a86db20c90d5dcfe5681d050731815ed24"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary typed Vulkan preparation and Recorder, fixed caller outputs, two recorded slots.",
+        "peer": "Independent original ggml shader recipe through the same Recorder and fixed caller buffers.",
+        "equivalence": "Separate native contexts and allocations, identical resident contents, queue admission, actual checked fence completion, release and failure responsibilities; neither arm retains an unused dense shadow of packed weights."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-ffn",
+        "budget": 5,
+        "denominator": "one complete resident FFN through actual terminal completion and result release",
+        "derivation": "PROVISIONAL_ARCHETYPE from registered vLLM dimensions; strict F32 Vulkan contract, M1 primary/M16 holdout, not production frequency or model KPI."
+      },
+      "semantic_contract": "Y[16,4096]=down(SiLU(gate(X))*up(X)); F32 at every public node, three strict-F32 matrix/vector operations and a fused SiLU multiply; actual checked fence and owner release before return.",
+      "comparability": "COMPARABLE",
+      "peer_id": "ggml-vulkan-f32",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Deterministic full-index mixed F32 weights and two different ready resident inputs; isolated native contexts with identical data; no short-period cancellation.",
+        "scale": {
+          "rows": 16,
+          "inner": 4096,
+          "hidden": 11008,
+          "output": 4096
+        }
+      },
+      "setup": "Cold immutable weight packing/upload, pipeline preparation and native command recording, two slots. Complete independent double oracle before timing (F32 node rounding, 1e-5+1e-4*abs(expected), at least half outputs reject zero); per-process arm equivalence then eight alternating complete warm calls.",
+      "charged_phases": [
+        "Fixed caller output submission, actual GPU work and checked fence completion, pending unlink and this call Completion/owner release."
+      ],
+      "pair": {
+        "candidate": "HYLE Vulkan Direct FFN M=16 K=4096 H=11008 N=4096",
+        "peer": "ggml shader lifecycle Direct FFN M=16 K=4096 H=11008 N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "vulkan-ffn-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "OFF",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "compute_route_vulkan",
+          "HYLE_COMPUTE_CUDA": "OFF",
+          "HYLE_COMPUTE_CPU": "OFF",
+          "HYLE_COMPUTE_ONEDNN": "OFF",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_COMPUTE_APPLE": "OFF",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "FETCHCONTENT_FULLY_DISCONNECTED": "ON",
+          "HYLE_COMPUTE_VULKAN": "ON"
+        },
+        "peer_cache": {
+          "ggml-vulkan-f32": "HYLE_VULKAN_REFERENCE_SOURCE_DIR"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "compute-vulkan-primary",
+          "target": "hyle_compute_route_vulkan_bench",
+          "stem": "hyle_compute_route_vulkan_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_VULKAN_FFN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "decode-f32-ffn-m1",
+              "title": "Direct FFN M=1 K=4096 H=11008 N=4096"
+            },
+            {
+              "id": "short-prefill-f32-ffn-m16",
+              "title": "Direct FFN M=16 K=4096 H=11008 N=4096"
+            }
+          ]
+        },
+        {
+          "id": "compute-vulkan-placement",
+          "target": "hyle_compute_route_vulkan_bench_placement",
+          "stem": "hyle_compute_route_vulkan_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_VULKAN_FFN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "decode-f32-ffn-m1",
+              "title": "Direct FFN M=1 K=4096 H=11008 N=4096"
+            },
+            {
+              "id": "short-prefill-f32-ffn-m16",
+              "title": "Direct FFN M=16 K=4096 H=11008 N=4096"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "vulkan-ffn-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "bench/compute_route_vulkan/validate_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}",
+            "--mode",
+            "compute",
+            "--profile",
+            "M1-MAC"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    }
+  }
+}

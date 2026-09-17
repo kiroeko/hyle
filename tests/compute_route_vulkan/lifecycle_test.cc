@@ -222,6 +222,37 @@ TEST(VulkanLifetime,
   EXPECT_TRUE(program->create_invocation());
 }
 
+TEST(VulkanLifetime, PackedProgramDoesNotRetainAnUnusedDenseWeightCopy) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 1024 * 1024);
+  auto context = t::context(&quota);
+  ASSERT_TRUE(context);
+  const auto host = t::data(67 * 37, 2);
+  auto weights = t::upload(*context, t::dense({67, 37}), host);
+  ASSERT_TRUE(weights);
+  const auto one_allocation = quota.used();
+  std::weak_ptr<const void> original = weights->native_owner();
+  auto program = v::prepare(*context, c::MatMul{}, t::dense({1, 67}), *weights);
+  ASSERT_TRUE(program) << program.error().message();
+  *weights = {};
+  EXPECT_TRUE(original.expired());
+  EXPECT_EQ(quota.used(), one_allocation);
+  const auto input_host = t::data(67, 3);
+  auto input = t::upload(*context, t::dense({1, 67}), input_host);
+  ASSERT_TRUE(input);
+  auto slot = program->create_invocation();
+  ASSERT_TRUE(slot);
+  ASSERT_TRUE(slot->bind(*input).ok());
+  auto work = slot->submit();
+  ASSERT_TRUE(work);
+  auto lease = work->wait();
+  ASSERT_TRUE(lease);
+  auto actual = t::read(*context, (*lease)->tensors()[0]);
+  ASSERT_TRUE(actual);
+  const auto expected = t::matmul(input_host, host, 1, 67, 37);
+  for (std::size_t i = 0; i < expected.size(); ++i)
+    EXPECT_NEAR((*actual)[i], expected[i], 1e-4f);
+}
+
 TEST(VulkanLifetime,
      CancellationAndAbandonmentKeepOwnersWithoutDestructorWait) {
   auto context = t::context();

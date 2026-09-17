@@ -75,7 +75,9 @@ TEST(VulkanTyped, MatMulDenseConstantChangingAndTransposedRhs) {
   ASSERT_TRUE(context) << context.error().message();
   for (const auto shape :
        {std::array{1, 67, 37}, std::array{7, 96, 35}, std::array{16, 67, 37},
-        std::array{65, 65, 71}, std::array{129, 65, 129}}) {
+        std::array{65, 65, 71}, std::array{129, 65, 129},
+        std::array{32, 64, 32}, std::array{64, 128, 64},
+        std::array{128, 128, 128}}) {
     const auto [m, k, n] = shape;
     SCOPED_TRACE(::testing::Message() << "M=" << m << " K=" << k << " N=" << n);
     const auto a_desc = t::dense({m, k});
