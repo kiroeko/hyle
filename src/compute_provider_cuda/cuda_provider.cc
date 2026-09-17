@@ -40,41 +40,49 @@ template <bool Sglang>
 Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs) noexcept {
   const auto *gated = operation.get_if<GatedActivation>();
-  if (gated == nullptr || gated->activation != GatedActivationKind::kSilu ||
+  if (gated == nullptr ||
+      (gated->activation != GatedActivationKind::kSilu &&
+       gated->activation != GatedActivationKind::kGelu &&
+       gated->activation != GatedActivationKind::kGeluTanh) ||
       (gated->inputs != GatedInputKind::kPackedHalves &&
        gated->inputs != GatedInputKind::kSeparate) ||
       inputs.size() != (gated->inputs == GatedInputKind::kSeparate ? 2U : 1U) ||
       outputs.size() != 1)
-    return Status::Unimplemented("CUDA kernels implement SwiGLU only");
+    return Status::Unimplemented(
+        "CUDA kernels require a supported gated activation");
   const auto &output = outputs[0];
   if (!output.valid() || !output.is_plain() || !output.is_dense() ||
       output.rank() == 0 ||
       (output.data_type() != DataType::kFloat16 &&
-       output.data_type() != DataType::kFloat32))
-    return Status::Unimplemented("CUDA SwiGLU requires dense FP16/FP32");
+       output.data_type() != DataType::kFloat32 &&
+       output.data_type() != DataType::kBFloat16))
+    return Status::Unimplemented(
+        "CUDA gated activation requires dense FP16/BF16/FP32");
   HYLE_ASSIGN_OR_RETURN(const auto count, output.element_count());
-  if (count == 0 || count > INT32_MAX)
-    return Status::Unimplemented("CUDA SwiGLU requires 1..INT32_MAX elements");
+  if (count > INT32_MAX)
+    return Status::Unimplemented(
+        "CUDA gated activation requires at most INT32_MAX elements");
   for (const auto &input : inputs) {
     if (!input.valid() || !input.is_plain() || !input.is_dense() ||
         input.rank() != output.rank() ||
         input.data_type() != output.data_type())
       return Status::Unimplemented(
-          "CUDA SwiGLU requires matching dense inputs");
+          "CUDA gated activation requires matching dense inputs");
     const auto in = input.dimensions();
     const auto out = output.dimensions();
     const auto multiplier =
         gated->inputs == GatedInputKind::kPackedHalves ? 2 : 1;
     if (!std::equal(in.begin(), in.end() - 1, out.begin()) ||
         in.back() != out.back() * multiplier)
-      return Status::InvalidArgument("CUDA SwiGLU shapes do not agree");
+      return Status::InvalidArgument(
+          "CUDA gated activation shapes do not agree");
   }
   if constexpr (Sglang) {
-    const auto width = output.data_type() == DataType::kFloat16 ? 8 : 4;
+    const auto width = output.data_type() == DataType::kFloat32 ? 4 : 8;
     if (gated->inputs != GatedInputKind::kPackedHalves ||
         output.dimensions().back() % width != 0)
       return Status::Unimplemented(
-          "SGLang SwiGLU requires packed complete 16-byte vectors");
+          "SGLang gated activation requires packed complete 16-byte vectors");
   }
   return Status::Ok();
 }
@@ -98,7 +106,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if (!request.shape.exact())
-    return Status::Unimplemented("CUDA SwiGLU requires an exact shape");
+    return Status::Unimplemented(
+        "CUDA gated activation requires an exact shape");
   if (inputs.size() != request.inputs.size() || outputs.size() != 1)
     return Status::InvalidArgument(
         "CUDA kernel proposal binding counts differ");
@@ -119,7 +128,9 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
                .copy_bytes = 0,
                .repack_bytes = 0,
                .synchronization_count = 0,
-               .dispatch_count = 1},
+               .dispatch_count = *request.outputs[0].element_count() == 0
+                                     ? std::optional<std::uint32_t>{}
+                                     : std::optional<std::uint32_t>{1}},
       .profile_key = ProviderRouteKey{Sglang ? 2U : 1U},
   };
   return Status::Ok();
@@ -152,6 +163,8 @@ detail::EnqueueResult submit(void *state, void *, Queue &queue,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<Prepared *>(state);
+  if (prepared.program.elements == 0)
+    return detail::EnqueueResult::no_op();
   auto stream = cuda::stream(queue);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
@@ -218,9 +231,29 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(scope.status());
   const auto &description = request.outputs[0];
   native::Program program;
+  const auto type = description.data_type() == DataType::kFloat32
+                        ? native::ElementType::kFloat32
+                    : description.data_type() == DataType::kFloat16
+                        ? native::ElementType::kFloat16
+                        : native::ElementType::kBFloat16;
+  native::Activation activation;
+  switch (request.operation.get_if<GatedActivation>()->activation) {
+  case GatedActivationKind::kSilu:
+    activation = native::Activation::kSilu;
+    break;
+  case GatedActivationKind::kGelu:
+    activation = native::Activation::kGelu;
+    break;
+  case GatedActivationKind::kGeluTanh:
+    activation = native::Activation::kGeluTanh;
+    break;
+  default:
+    return ProviderPrepareOutcome::error(
+        Status::InvalidArgument("CUDA gated activation kind is invalid"));
+  }
   constexpr auto configure = Sglang ? native::sglang_prepare : native::prepare;
   const auto configured = configure(
-      description.data_type() == DataType::kFloat16,
+      type, activation,
       request.operation.get_if<GatedActivation>()->inputs ==
           GatedInputKind::kPackedHalves,
       static_cast<unsigned>(*description.element_count()),
@@ -248,7 +281,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-swiglu" : "v1-swiglu"},
+                 .version = Sglang ? "06992c92-precise-gated" : "v2-gated"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

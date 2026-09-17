@@ -1,10 +1,100 @@
 #include "hyle/graph/cuda.h"
 
+#include "../compute_provider_native/half_test_support.h"
 #include "../compute_route_cuda/ffn_support.h"
 
 namespace {
 using namespace cuda_route_test;
 namespace graph = hyle::graph;
+
+TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndCapturedGraphEntries) {
+  using Value = hyle::simd::bfloat16_t;
+  auto owner = graph::cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  for (const std::int64_t width : {129, 2048}) {
+    const auto input_desc = matrix(compute::DataType::kBFloat16, 2, 2 * width);
+    const auto output_desc = matrix(compute::DataType::kBFloat16, 2, width);
+    auto input = mem::Buffer::create(resource.ref(),
+                                     input_desc.required_bytes().value(), 256)
+                     .value();
+    auto direct_output =
+        mem::Buffer::create(resource.ref(),
+                            output_desc.required_bytes().value(), 256)
+            .value();
+    auto graph_output =
+        mem::Buffer::create(resource.ref(),
+                            output_desc.required_bytes().value(), 256)
+            .value();
+    const auto source =
+        compute::ConstTensorView::create(input_desc, input.view()).value();
+    const auto direct_view =
+        compute::TensorView::create(output_desc, direct_output.view()).value();
+    for (const auto kind : {compute::GatedActivationKind::kSilu,
+                            compute::GatedActivationKind::kGelu,
+                            compute::GatedActivationKind::kGeluTanh}) {
+      const compute::GatedActivation operation{.activation = kind};
+      auto direct =
+          compute::prepare(owner, operation, input_desc, resource.ref());
+      ASSERT_TRUE(direct.has_value()) << direct.error().message();
+      const auto selected = width % 8 == 0
+                                ? compute::cuda_native::kSglangProviderId
+                                : compute::cuda_native::kProviderId;
+      EXPECT_EQ(direct->provider().id, selected);
+      auto direct_slot = direct->create_invocation().value();
+      auto builder = graph::GraphBuilder::create().value();
+      const auto input_id = builder.input(input_desc).value();
+      const auto output_id = builder.add(operation, input_id).value();
+      ASSERT_TRUE(builder.publish(output_id).ok());
+      auto logical = std::move(builder).finish().value();
+      auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+      ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+      EXPECT_EQ(compiled->report.step(0)->provider.id, selected);
+      auto graph_slot = compiled->executable.create_invocation().value();
+      ASSERT_TRUE(graph_slot.bind(input_id, source).ok());
+      ASSERT_TRUE(graph_slot
+                      .bind(output_id, compute::TensorView::create(
+                                           output_desc, graph_output.view())
+                                           .value())
+                      .ok());
+      ASSERT_TRUE(graph::cuda::prepare_replay(graph_slot, queue).ok());
+      EXPECT_EQ(graph_slot.replay_route(), graph::ReplayRoute::kCaptured);
+      std::vector<Value> values(static_cast<std::size_t>(4 * width));
+      for (int seed : {1, 3, 7}) {
+        for (std::size_t i = 0; i < values.size(); ++i)
+          values[i] = half_test::encode<Value>(
+              (static_cast<int>(i % 23) - 11 + seed) / 16.0);
+        ASSERT_TRUE(input.view().write(std::as_bytes(std::span(values))).ok());
+        auto direct_done = direct_slot.submit(queue, source, direct_view);
+        ASSERT_TRUE(direct_done.has_value());
+        ASSERT_TRUE(direct_done->wait().ok());
+        auto graph_done = graph_slot.submit(queue);
+        ASSERT_TRUE(graph_done.has_value());
+        ASSERT_TRUE(graph_done->wait().ok());
+        const auto direct_values = half_test::read<Value>(direct_output);
+        const auto graph_values = half_test::read<Value>(graph_output);
+        for (std::size_t i = 0; i < direct_values.size(); ++i) {
+          const auto column = i % static_cast<std::size_t>(width);
+          const auto row = i / static_cast<std::size_t>(width);
+          const auto base = row * static_cast<std::size_t>(2 * width) + column;
+          const double gate = half_test::decode(values[base]);
+          const double value =
+              half_test::decode(values[base + static_cast<std::size_t>(width)]);
+          double activated = gate / (1 + std::exp(-gate));
+          if (kind == compute::GatedActivationKind::kGelu)
+            activated = 0.5 * gate * (1 + std::erf(gate / std::sqrt(2.0)));
+          else if (kind == compute::GatedActivationKind::kGeluTanh)
+            activated = 0.5 * gate *
+                        (1 + std::tanh(std::sqrt(2.0 / 3.14159265358979323846) *
+                                       (gate + 0.044715 * gate * gate * gate)));
+          half_test::expect_near(direct_values[i], activated * value);
+          EXPECT_EQ(graph_values[i].bits, direct_values[i].bits);
+        }
+      }
+    }
+  }
+}
 
 struct FfnGraph final {
   graph::Graph logical;

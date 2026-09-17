@@ -71,8 +71,8 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 |---|---|
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
-| SGLang precise SwiGLU | dense FP16/FP32 packed halves，FP32 SiLU 与乘法、输出一次舍入；FP16 hidden%8、FP32 hidden%4；输入输出16字节对齐，非空、输出元素数<=INT32_MAX，不重叠 |
-| HYLE SwiGLU | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/FP32、同样精度与元素数/不重叠限制 |
+| SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
+| HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
 
 权重用 `cuda::QuantizedWeights::pack()` 冷准备，owner 只保留 Q4 payload 与 FP16 scales；
 `weights()/scales()` 借用 owner，搭配 `QuantizedWeights::operation()` 使用。普通用户无需认识
@@ -170,10 +170,11 @@ Direct/Graph FFN、完整 CUDA 三交付与当前支持域 P1 已验收；单个
 |---|---|---|
 | `compute_provider_cublas` / `compute/providers/cublas.h` | `cublas::provider()` | FP16/FP32 rank-2 MatMul；输入 row/column-major、输出 dense row-major；FP32 累加；冷绑定算法，每槽独立 handle/workspace |
 | `compute_provider_marlin` / `compute/providers/marlin.h` | `marlin::provider()`、`marlin::QuantizedWeights::pack()` | FP16 activation/output、signed symmetric group128 Q4、FP32 累加；M=1..64、K%128=0、N%64=0、N*K<=INT32_MAX；冷 packing 后只常驻 Q4/scales |
-| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::sglang_provider()` | 锁定 SGLang precise packed SwiGLU，支持域与16字节对齐要求见默认规则；不引入 TVM/Python runtime |
-| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/FP32 SwiGLU，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；非空、输出元素数<=INT32_MAX；不允许输入输出重叠 |
+| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::sglang_provider()` | 锁定 SGLang precise packed 门控片段，支持域与16字节对齐要求见默认规则；不引入 TVM/Python runtime |
+| `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/BF16/FP32 SiLU/GELU/GELU-tanh 门控，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；输出元素数<=INT32_MAX；不允许输入输出重叠 |
 
-SwiGLU 不需要 caller workspace 或额外 native invocation 存储；Kernel 与 launch 配置在 prepare
+这些门控不需要 caller workspace 或额外 native invocation 存储；空 output 不要求 device payload
+allocation，也不发 kernel。Kernel 与 launch 配置在 prepare
 绑定，热提交仅在已有 CUDA stream 上 launch。共同层仍为每个 invocation 管理准入与真实完成。
 CUDA driver/code image 的全局开销不假报为零；payload 必须保活到 Completion 终态。所有 Provider
 失败执行槽都须按本页执行槽合同重建；设备失效仍受 backend 恢复限制。

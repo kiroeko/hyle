@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include <cuda_bf16.h>
 #include <cuda_fp16.h>
 #include <gtest/gtest.h>
 
@@ -44,13 +45,21 @@ struct Tensor final {
 
 template <class T> T from_float(float value) { return value; }
 template <> __half from_float(float value) { return __float2half(value); }
+template <> __nv_bfloat16 from_float(float value) {
+  return __float2bfloat16(value);
+}
 template <class T> float to_float(T value) { return value; }
 template <> float to_float(__half value) { return __half2float(value); }
+template <> float to_float(__nv_bfloat16 value) {
+  return __bfloat162float(value);
+}
 
 template <class T>
 void run_shape(compute::DataType type, bool packed, std::int64_t rows,
                std::int64_t hidden,
-               compute::Provider selected = compute::cuda_native::provider()) {
+               compute::Provider selected = compute::cuda_native::provider(),
+               compute::GatedActivationKind activation =
+                   compute::GatedActivationKind::kSilu) {
   auto owner = context(selected);
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
@@ -62,6 +71,7 @@ void run_shape(compute::DataType type, bool packed, std::int64_t rows,
   const std::array all_inputs{first.view.as_const(), second.view.as_const()};
   const auto inputs = std::span(all_inputs).first(packed ? 1 : 2);
   const compute::GatedActivation op{
+      .activation = activation,
       .inputs = packed ? compute::GatedInputKind::kPackedHalves
                        : compute::GatedInputKind::kSeparate};
   auto result = compute::prepare(owner, compute::Operation(op), inputs,
@@ -101,8 +111,17 @@ void run_shape(compute::DataType type, bool packed, std::int64_t rows,
       else
         b[index] = value;
       const double rounded_gate = to_float(a[gate_index]);
-      expected[index] = (rounded_gate / (1.0 + std::exp(-rounded_gate))) *
-                        static_cast<double>(to_float(value));
+      double activated = rounded_gate / (1.0 + std::exp(-rounded_gate));
+      if (activation == compute::GatedActivationKind::kGelu)
+        activated =
+            0.5 * rounded_gate * (1 + std::erf(rounded_gate / std::sqrt(2.0)));
+      else if (activation == compute::GatedActivationKind::kGeluTanh)
+        activated =
+            0.5 * rounded_gate *
+            (1 + std::tanh(std::sqrt(2.0 / 3.14159265358979323846) *
+                           (rounded_gate + 0.044715 * rounded_gate *
+                                               rounded_gate * rounded_gate)));
+      expected[index] = activated * static_cast<double>(to_float(value));
     }
     ASSERT_TRUE(first.storage.view().write(std::as_bytes(std::span(a))).ok());
     if (!packed) {
@@ -129,7 +148,9 @@ void run_shape(compute::DataType type, bool packed, std::int64_t rows,
         else if (std::isinf(expected[index]))
           EXPECT_EQ(value, expected[index]);
         else {
-          const auto epsilon = sizeof(T) == 2 ? 0.001 : 0.000001;
+          const auto epsilon = type == compute::DataType::kBFloat16 ? 0.008
+                               : sizeof(T) == 2                     ? 0.001
+                                                                    : 0.000001;
           EXPECT_NEAR(value, expected[index],
                       epsilon * (1 + std::abs(expected[index])))
               << "index=" << index << " seed=" << seed;
@@ -161,6 +182,73 @@ TEST(CudaKernels, PreciseSglangVectorsUseIndependentOracleAndSlots) {
                        selected);
       run_shape<__half>(compute::DataType::kFloat16, true, rows, hidden,
                         selected);
+    }
+  }
+}
+
+TEST(CudaKernels, AllGatesBfloatAndRealWidthsKeepFloatIntermediates) {
+  for (const auto activation : {compute::GatedActivationKind::kSilu,
+                                compute::GatedActivationKind::kGelu,
+                                compute::GatedActivationKind::kGeluTanh}) {
+    for (const bool packed : {false, true}) {
+      for (const auto width : {129, 2048, 6144}) {
+        SCOPED_TRACE(static_cast<int>(activation));
+        SCOPED_TRACE(width);
+        SCOPED_TRACE(packed);
+        run_shape<__nv_bfloat16>(compute::DataType::kBFloat16, packed, 2, width,
+                                 compute::cuda_native::provider(), activation);
+        if (activation != compute::GatedActivationKind::kSilu) {
+          run_shape<__half>(compute::DataType::kFloat16, packed, 2, width,
+                            compute::cuda_native::provider(), activation);
+          run_shape<float>(compute::DataType::kFloat32, packed, 2, width,
+                           compute::cuda_native::provider(), activation);
+        }
+        if (packed && width % 8 == 0) {
+          run_shape<__nv_bfloat16>(compute::DataType::kBFloat16, true, 2, width,
+                                   compute::cuda_native::sglang_provider(),
+                                   activation);
+          if (activation != compute::GatedActivationKind::kSilu) {
+            run_shape<__half>(compute::DataType::kFloat16, true, 2, width,
+                              compute::cuda_native::sglang_provider(),
+                              activation);
+            run_shape<float>(compute::DataType::kFloat32, true, 2, width,
+                             compute::cuda_native::sglang_provider(),
+                             activation);
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(CudaKernels, EmptyGatesDoNotRequireDevicePayloadAllocations) {
+  for (const auto selected : {compute::cuda_native::provider(),
+                              compute::cuda_native::sglang_provider()}) {
+    auto owner = context(selected);
+    auto queue = owner.create_queue().value();
+    auto resource =
+        cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+    auto empty = mem::Buffer::create(resource.ref(), 0, 256).value();
+    EXPECT_EQ(empty.native_handle(), nullptr);
+    for (const auto type :
+         {compute::DataType::kFloat32, compute::DataType::kFloat16,
+          compute::DataType::kBFloat16}) {
+      for (const auto dimensions : {std::array<std::int64_t, 2>{0, 256},
+                                    std::array<std::int64_t, 2>{2, 0}}) {
+        const auto input = compute::TensorDesc::dense(type, dimensions).value();
+        auto prepared = compute::prepare(owner, compute::GatedActivation{},
+                                         input, resource.ref());
+        ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+        auto invocation = prepared->create_invocation().value();
+        auto done = invocation.submit(
+            queue,
+            compute::ConstTensorView::create(input, empty.view()).value(),
+            compute::TensorView::create(prepared->output_description().value(),
+                                        empty.view())
+                .value());
+        ASSERT_TRUE(done.has_value()) << done.error().message();
+        ASSERT_TRUE(done->wait().ok());
+      }
     }
   }
 }
@@ -253,6 +341,7 @@ template <class T> void vector_binding_boundaries(compute::DataType type) {
 TEST(CudaKernels, VectorRejectionPreservesSlotAndScalarAlignmentCapability) {
   vector_binding_boundaries<float>(compute::DataType::kFloat32);
   vector_binding_boundaries<__half>(compute::DataType::kFloat16);
+  vector_binding_boundaries<__nv_bfloat16>(compute::DataType::kBFloat16);
 }
 
 TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
@@ -269,15 +358,14 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
                             std::array{input, input}, std::array{output},
                             memory);
   };
-  EXPECT_FALSE(unsupported({.activation = compute::GatedActivationKind::kGelu,
-                            .inputs = compute::GatedInputKind::kSeparate},
-                           desc, desc, resource.ref())
-                   .has_value());
+  EXPECT_FALSE(
+      unsupported({.activation = static_cast<compute::GatedActivationKind>(255),
+                   .inputs = compute::GatedInputKind::kSeparate},
+                  desc, desc, resource.ref())
+          .has_value());
   EXPECT_FALSE(unsupported(op, desc, desc, mem::system_resource()).has_value());
   const auto huge = matrix(compute::DataType::kFloat32, 2, INT32_MAX);
   EXPECT_FALSE(unsupported(op, huge, huge, resource.ref()).has_value());
-  const auto empty = matrix(compute::DataType::kFloat32, 0, 128);
-  EXPECT_FALSE(unsupported(op, empty, empty, resource.ref()).has_value());
   const auto strided =
       compute::TensorDesc::strided_bytes(compute::DataType::kFloat32,
                                          std::array<std::int64_t, 2>{2, 128},
