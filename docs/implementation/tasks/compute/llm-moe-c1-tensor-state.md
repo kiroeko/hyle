@@ -17,7 +17,7 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03 和 N01–N04 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；其余五个 owner
   保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
@@ -595,5 +595,26 @@ unknown，不用一次 graph launch 冒充一次 kernel。checked 的状态 rese
   [统计](../../../../evidence/correctness/compute-llm-moe-c1/n-implementation-loc.json)。selector 保留
   109 项 skipped reasons；本子集只运行 configure 和上述三个 factor。完整 C1 权重片段、公开头/
   三交付增量、WSL/macOS 与等责 P1 仍未运行，不签四路线完成或性能胜出。CUDA Scan 仍待实施。
+
+### C1-O：CUDA checked Scan（AUDITED）
+
+baseline `c77c11e7`，owner `/root` / `compute_provider_cuda`。沿 D01 的共同合同完成 F02.4 的
+expert counts→offsets 和 C3 已登记的 F32 DeltaNet chunk gate 前缀；不新增 schema/API，也不扩大
+至未声明的分段/ragged scan。已核对 Native 的全部整数前缀检查和固定路线 F32 重结合合同。
+
+具名来源为固定 ggml `456172ec` 的 `src/ggml-cuda/cumsum.cu`（CUB 块扫描＋跨 tile carry，
+长连续行另有 DeviceScan 路线）和本机 CUDA 13.3 `cccl/cub/block/block_scan.cuh`。本轮真实
+expert/chunk 的短行、任意轴/byte stride 与整数全量失败原子性，采用 SDK BlockScan 的行内
+分块方式；长行同样分块线性处理，不按 benchmark 人为截断支持域，也不声称长行已胜过 DeviceScan。
+`BORROW` SDK 扫描 collective 与 prefix callback；`OWN` 描述适配、I64 检查和输出提交边界。
+
+| FIX | 固定实施范围 | P0 / 数值 / 必需验证 |
+|---|---|---|
+| O01 | CUDA Scan proposal/prepare/program，I32/F32、inclusive/exclusive、rank1–8正负axis/odd与zero byte stride、同shape/type dense输出 | 非空总元素≤INT32_MAX，空域不取payload/launch；仅同描述input0精确alias。冷绑定dtype/exclusive/layout/kernel；32/64/128/256 threads覆盖短行，≥1024行宽每thread4项、其余1项，跨tile carry；无caller workspace/槽私有存储 |
+| O02 | SDK BlockScan 行扫描与 checked整数两阶段 | 一CTA/row，O(elements·rank)，只用固定CTA共享存储/寄存器；I32先I64 inclusive prefixes验证所有rows/全部prefix含最终exclusive总和，再单独kernel写结果，任何溢出atomic first-error并使整个output不变。给定计数边界I64求和无溢出；F32允许固定并行重结合，exclusive直接用SDK exclusive而非inclusive减当前值，保护Inf/NaN前缀。精确alias全tile读完再写，跨tile共享存储有barrier；复用L错误字/Completion，无host payload fallback |
+| O03 | 普通Direct/default Graph与独立oracle、生命周期/文档 | 空/1/17/127/128/129/255/256/257/1023/1024/1025/8193及长行、rank8/中轴/stride/alias；I64/FP64独立prefix、F32非二进制输入和NaN/±Inf；正负溢出、临时溢出后总和恢复、仅最终exclusive总和溢出、后行失败全输出不变、failed/fresh槽。counts→Scan→Gather和F32 gate前缀，两captured槽/变更输入/保留旧结果/prepare不执行、metadata OOM/accepted owner/close/abandon。完整权重/三交付/其它环境/等责P1仍随C1固定bundle |
+
+I32 两次完整读取与L状态reset/回报/merge如实计费；不拿unchecked模加或浮点单遍给它排名。
+本子集只改 CUDA owner/source list 与直接 consumer/指南；无共同层、backend 或公共仪器修改。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
