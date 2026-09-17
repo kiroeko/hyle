@@ -1,6 +1,6 @@
 # R6 Vulkan 验证策略登记
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 - unit / owner：build-package TOOL / HYLE maintainers；不新增产品 component。
 - baseline：`05917b22`；产品 owner `compute_route_vulkan`、`graph_route_vulkan` 均已 AUDITED。
@@ -23,3 +23,9 @@
 
 F1/F2 已完成；[54 项工具回归与实际计划](../../../../evidence/correctness/vulkan-r6-validation-policy/README.md)
 通过。只对这两个已冻结的元数据登记签字，产品原生/交付/P1 继续由 R6 卡验收。
+
+## Terminal
+
+- candidate：`bf8f7b360d372e8227b5fbfa9c2a907cf7f53a12`；F1/F2、54 项回归与 R6 实际 READY 计划完成，CLOSED。
+- 性能 P0：只有既有冷期策略表新增条目；没有产品热路径或统计变化，不运行 P1。
+- 重开条件：已复现的新 vendor owner 映射或原生 feature/platform 误选；设备或编译器缺失仍按路线卡处理，不能改成自动跳过。
