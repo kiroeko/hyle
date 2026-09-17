@@ -367,7 +367,7 @@ dtype/axis/byte-stride/mask 公式和程序绑定。SDK less/greater 并不传�
 
 | FIX | 固定有限范围 | 数值 / P0 / 必需验证 |
 |---|---|---|
-| I01 | HYLE CUDA Reduce Sum/Mean/Min/Max，F32/F16/BF16，任意合法 axes/keepdim/byte stride | F32 累加，half 必须显式声明；输出 dense 同类型且不与输入重叠；每 output 一 SDK tile，dense suffix/all 直接索引，其余 O(N·rank)，一次 launch、零 caller workspace；空集合 Sum=0/Mean=NaN/Min=+Inf/Max=-Inf，任一 NaN 传播；rank0、空 axes、负轴、多轴、奇数 stride 和真实宽度 |
+| I01 | HYLE CUDA Reduce Sum/Mean/Min/Max，F32/F16/BF16，任意合法 axes/keepdim/byte stride | F32 累加，half 必须显式声明；输出 dense 同类型且不与输入重叠；每 output 一 SDK tile，dense suffix/all 直接索引，其余 O(N·rank)，一次 launch、零 caller workspace；空集合 Sum=0/Mean=NaN/Min=+Inf/Max=-Inf，任一 NaN 传播；rank0、显式空 axes 拒绝、负轴、多轴、奇数 stride 和真实宽度 |
 | I02 | Softmax/LogSoftmax，同三 dtype，任意 axis、scale、Bool 或同 dtype additive 广播 mask | F32 max/exp/sum 后一次 RNE；Bool false 覆盖输入 NaN 为 -Inf，无有效值的行和非有限归一化产生 NaN；dense output，仅输入0与输出描述相同的精确 alias；≤8192 列的行使用最多32 KiB F32片上缓存，较长行三遍读取、无整张量浮点展开或 caller workspace；SDK 两次 collective、一 CTA/row、一次 launch |
 | I03 | 默认 Direct/Graph 接线、生命周期、数值/成本与指南 | FP64独立 oracle，0/1/127/129/2048/8192/8193及长行，FP16/BF16、mask broadcast/全false/NaN/Inf/极端logits，任意轴/原位；BF16→F32 L2完整公式和masked概率的两槽capture/变更输入/保留结果；准备拒绝、OOM回滚、accepted owner/drain；完整三交付/等责P1仍在C1固定bundle |
 
@@ -376,5 +376,13 @@ input/output 非空 element count≤INT32_MAX；空归约有非空 output 时必
 不重新搜规则、不计时；现有 gated/norm Prepared 不扩大。源码列表和 MSVC collective TU 选项
 只在当前 owner 扩展。长行的三遍读、片上缓存的占用和所有 Graph Cast/临时结果均计入完整 P0/P1；
 未比较不声称默认选择最快或已完成四路线优选。TopK、Concat、checked index/Scan 不属本子集。
+
+I 的第一轮数值反例（`45edb0e4`，W1）：默认 Direct/Graph、NaN/Inf 与生命周期已通过；Reduce
+测试在 `Axes::from({}).value()` 抛异常，因为共同合同本就拒绝显式空列表，纠正测试与上表即可，
+不改公共 schema。BF16 LogSoftmax 对概率接近1的输出约 -4.34e-7，旧 `log(sum(exp))` 在 F32
+先把 1+tail 舍入，变成约 -4.77e-7。固定本轮唯一数值修复为 LogSoftmax 的 SDK argmax（值+i32
+列号，8字节）和排除一个最大项后的 F32 tail sum，再算 `log1p(tail)`；仍两次 collective、同一
+cache/launch/workspace合同，普通 Softmax 路径不变，非有限最大值仍全行 NaN。原独立门限不放宽，
+补近1概率与重复最大值回归；不采用 F64 常态求和或扩大到其他 owner。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
