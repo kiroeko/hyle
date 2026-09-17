@@ -294,4 +294,24 @@ CUDA accepted-prefix/late-failure 与 Vulkan 直接消费者；[原始命令及�
 无 payload 的真实 resource 资格、关闭拒绝和 fatal Unimplemented 不被 fallback 均已运行。
 未跑其他环境、public header/三交付增量或 P1；本证据不签 C1 整包。
 
+### C1-G 实施事实
+
+- `0408da5d`：CUDA View/Copy/Fill/Cast/Unary/Binary/Select 的 native 程序、默认 Provider 接线，
+  独立半精度 oracle、资源/别名/metadata OOM、普通 Direct 与 Graph 两槽 capture consumer。
+  最初编译仅测试 helper 的 `Status/ResultError` 三元表达式有歧义，`23e4da3d` 显式返回纠正。
+- 实际差分发现 Unary GELU/GELU-tanh 在负尾部的 `1+erf/tanh` FP32 相消；`7232228b` 改用等价
+  erfc/stable sigmoid 公式，原数值门限不变。没有改原有成熟 gated 片段、公共语义或运行对象。
+- `7232228b` W1 Release/WERROR 编译及 provider 13 case、普通 Direct 4 case、Graph 6 case
+  全部 PASS。包括 BF16 交错 slice→Copy→F32 Softplus→BF16→residual→广播 mask 的
+  129/2048/6144 宽度，两 invocation、三次变更输入、保留另一槽旧结果、原生 capture；Direct
+  复用同一 byte-strided Copy 程序，热重放无 metadata allocation；在途 owner 保留/关闭、冷期
+  allocation failure rollback 均实际运行。[原始记录与两次问题](../../../../evidence/correctness/compute-llm-moe-c1/g-windows-focused.json)。
+- 统一 LOC `--self-check`：Compute+Graph 全部实现 **38,582 行 / 135 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/g-implementation-loc.json)。
+- 新程序不扩大既有 gated Prepared/Program；每个非空 tensor 一次 native launch，无 workspace/
+  invocation device storage/host payload fallback；View 不发 kernel。新增 kernel/模板 code storage
+  由 CUDA driver 管理，不写成零 resident cost。完整 P1/三交付/其他环境与真实权重片段仍待 C1。
+- 下一有限审计为 CUDA norms/reduction/index 及各自 native 失败边界，不把当前 pointwise 证据
+  扩张为 F01–F04 或 C1 整包完成。
+
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
