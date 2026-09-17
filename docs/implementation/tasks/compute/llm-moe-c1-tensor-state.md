@@ -469,4 +469,21 @@ baseline `32deca71`，owner `/root` / `compute_provider_cuda`。F01 的 slice/sp
 barrier或独立Queue。仅 CUDA owner/source list 与直接consumer测试/指南可改；checked indices/
 Scan 的异步算法错误回报不属于 K，也不以 unchecked 或 host payload fallback 冒充完成。
 
+### C1-K 实施事实
+
+- `529411e6` 完成 CUDA variadic Concat；W1 Release/WERROR 编译、provider 28 case、默认 Direct
+  4 case、Graph 10 case 共 **42 case PASS**。[原始命令/日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/k-windows-focused.json)。
+  此次候选一次通过，未追加性能采样或改变既有算子门限。
+- 1/2/3/4/5/9 输入、F32/F16/BF16/I32/U8/I64 原始位、rank8/任意轴/odd byte stride、zero-stride
+  广播/共享输入、前后整组为空/全空/huge-empty 实际通过。默认 BF16 View→五输入 Concat 与双输入
+  窗口 append 图覆盖 M=1/17/23、width128/129/2048，两槽 capture、三次变化输入、另一槽旧结果保留；
+  普通 Direct 与独立 host 拼接 oracle 都逐位一致，热重放无 metadata 分配。
+- 九输入程序/组数组/运行槽逐次 metadata OOM 回滚，已接纳九输入操作在 close 后保留 owner 至完成
+  已通过。另在既有 prevalidated provider/Graph seam 定向注入第二组指针错误：第一组确实已提交，
+  返回 pending 的真实 Completion，待其终态报告 InvalidArgument，仅第一组目标片段被写入；借用
+  程序/槽保留至完成。没有通过非法 GPU 访问/device assertion 破坏 CUDA context。
+- 统一 LOC self-check：Compute+Graph 实现 **40,385 行 / 151 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/k-implementation-loc.json)。完整 C1 权重片段、公开头/
+  三交付增量、其他环境及等责 P1 尚未运行，矩阵保持 UNPROVEN。
+
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
