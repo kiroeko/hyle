@@ -17,7 +17,7 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04
   进入 AUDITED；`graph` 与 Vulkan 两个 owner 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
@@ -739,5 +739,30 @@ merge sort 的比较/合并在相等时保持原序。直接 float Min/Max 的�
   selector 保留 112/110 项 skipped reasons；本批只运行两台 Mac configure、两个 factor 和两个
   头检查。完整 C1 真实权重、三交付/其他环境、等责 P1 和矩阵逐格验收仍待完成；没有性能胜出
   或四路线完成结论。下一具名缺口是 Apple checked Gather/Scatter/Scan，不扩大至新模型策略。
+
+### C1-R：Apple 算法失败回报、checked Gather 与 Scan（AUDITED）
+
+baseline `1936a2e6`，owner `/root` / `compute_route_apple` 与 `graph_route_apple`。F02 的真实
+token IDs/embedding、counts→offsets 和 F10 gate 前缀需要索引与 Scan。具体基础缺口是 Apple
+当前只将 native 异常写入 Completion，没有设备算法状态路径；因此本有限子集依法纳入同 owner
+的 `apple_context.cc`，不重审 Context 线程/FIFO/close 架构或其他 backend。
+
+具名源码仍为 MLX `1f8e74e`：`mlx/ops.cpp` 的 Take/Depends/CumSum、Metal
+`kernels/indexing/gather.h`、`kernels/scan.h/.metal`、`scan.cpp` 与 `primitives.h`。
+native Gather 允许负索引偏移且没有 HYLE 边界错误回报；native Scatter 使用原子更新，不能证明
+重复浮点更新的规定顺序。故 R 先完成共享失败通路及 Gather/Scan；Scatter 保留给下一次具名
+有序更新审计，不能由 native atomic scatter 冒签。MLX 已有 I64 GPU scan，exclusive 原生为移位
+写出而非 inclusive-current；借用它的原生算法与数组资源，不下载用户 indices/payload 作 host 运算。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| R01 | Apple 私有冷 trace 收集 checked 表达式，将可达错误合并为一个隐藏 I32 原生输出；Completion 在现有 GPU synchronize/array.wait 后解读 | 冷期 thread-local RAII scope 只记录 typed lowering 构图，原生 Depends 为数据/检查建立唯一可达锚点；死节点检查不进入终态。每程序冷 metadata 保存是否存在检查，未含检查的程序不增加 native status output；热期无 collector、图遍历或 provider 搜索。有检查时一个逻辑4字节状态原生数组/最终读取，实际 MLX 分配如实计费。仅算法 OutOfRange 退役当前槽、不 poison Context；native 执行异常仍沿原失败排空。不公开新 runtime/type/虚表 |
+| R02 | checked/unchecked Gather：F32/F16/BF16/I32/I64/Bool source、I32/I64 indices、任意合法轴/原生布局，原始存储位输出；必要 I64 storage/Graph logical 描述接线 | 同一 GPU 验证全部非空 indices，checked 执行使用安全 clamp，禁止负索引 wrap 成成功；零 source-axis 且非空输出以安全占位结果＋错误，不越界访问。失败不发布结果 lease，functional 输入与旧结果不变。空输出不读 payload；nonempty 计数≤INT32_MAX、维度≤native int。低层 checked lower 只能在 managed Context tracing 内登记错误，外部调用明确拒绝，不能静默丢错误 |
+| R03 | I32/F32 inclusive/exclusive Scan，任意轴/native stride/empty | I32 用原生 I64 inclusive scan，检查全部前缀含最终 exclusive 总和；计数≤INT32_MAX 保证 I64 累加不溢出。非法前缀 GPU 合并 overflow，结果不发布；合法输出转回 I32，exclusive 移位前缀，不用减当前值。F32 直接原生 scan，保留浮点重结合及 NaN/Inf；O(N)，I64 全尺寸临时、状态归约/转换和必要原生布局整理计费，无 host payload fallback |
+| R04 | 自然 Direct/Graph 及失败/寿命/指南 | 独立位级 gather/I64或FP64 prefix，I32/I64极值坏索引、重复/scalar/多维/rank8/转置/广播/empty、尾块和非有限；临时整数溢出恢复、后行错误、仅最终exclusive溢出。prepare 不以隔离 warm 值裁决用户 payload；实际 checked 图、两槽/变输入/旧结果、失败槽退役/fresh恢复、close/丢弃 completion/owner保活、死检查、首错优先及已有异常/OOM回归。Air/Mini factors，完整权重/三交付/其他环境/等责P1随C1固定bundle |
+
+本轮不改变公共 Operation、共同 Graph、MLX pin、公共仪器或其他模块 owner。新增冷 scope 必须
+异常安全、按线程隔离且退出恢复；原生检查依赖留在同一个 MLX compiled region。payload 错误
+不能借 warmup 提前拒绝或在失败后换 Provider 重算。本子集不运行 P1，不能由 correctness 宣称 SOTA。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
