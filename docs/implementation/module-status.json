@@ -466,7 +466,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E/G/H/I/J/K/M/N AUDITED：门控至checked Gather已实现，M的W1三factor共48 case PASS；N01–N04固定CUB稳定排序和有序Scatter的资源/执行/验证，尚未实施。Scan及完整C1权重/三交付/其它环境/P1待完成，矩阵仍未证明。"
+      "summary": "LLM/MoE C1-E/G/H/I/J/K/M/N AUDITED：门控至checked Gather/有序Scatter已实现；N的W1 provider/默认Direct/Graph共54 case PASS，含固定CUB排序、逐次舍入、capture状态回传及失败寿命。Scan与完整C1权重/三交付/其它环境/P1待完成，矩阵仍未证明。"
     },
     {
       "module": "compute_route_cuda",

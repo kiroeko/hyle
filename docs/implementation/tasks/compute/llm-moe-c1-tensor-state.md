@@ -571,4 +571,29 @@ unknown，不用一次 graph launch 冒充一次 kernel。checked 的状态 rese
 同合同性能对照必须包含顺序、舍入、检查及结果寿命；当前没有性能胜出结论。只改 CUDA owner
 及直接 consumer/source list/指南；Scan、共同 API、通用 Graph/backend 与治理工具不在 N 授权内。
 
+### C1-N 实施事实
+
+- `47592ccc` 实现有序 CUDA Scatter；`8b2066ab` 完成一次产品纠正：空/单索引路径的零 workspace
+  对齐事实与 proposal 一致，单索引精确原位更新只访问目标行，避免遍历整份状态。初次产品和测试
+  编译成功，但上述对齐不一致被共同层拒绝，不能记 PASS。Graph 丢弃测试另修正调用方 resource
+  寿命：按 [Graph caller-borrow 合同](../../../user/graph.md)保持 workspace resource，直到已接纳工作
+  及内部 Invocation 的异步保活回收完成；未改 backend/Graph 合同。
+  最终 W1 Release/WERROR provider 36、默认 Direct 4、Graph 14 共 **54 case PASS**；
+  [原始尝试、命令与日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/n-windows-focused.json)。
+- Assign 的 U8/F16/BF16/F32/I64 原始位、两索引位宽、空/scalar/多维索引、rank8/中轴/负 axis、
+  odd/zero stride、末项覆盖与精确 source alias 已过；4097 项索引实际跨 SDK 排序 tile。
+  F32/F16/BF16 add 用独立逐次 F32→storage 舍入 oracle 核对全偏斜重复目标、取消/中点反例、
+  NaN/Inf、1/17/128/129/4097 项及 128/129/2048 宽度。单/257 索引路径中的负值、等于 extent
+  和 I64 极值均不改变整个 output；failed 槽退役、fresh 排序槽恢复、unchecked 合法 zero-stride、
+  空输出、缺失/过短/错误 resource 的 workspace 与非法 alias 均通过。
+- 默认 BF16 Scatter→Gather→mixed-F32 RMSNorm→residual 运行 M=1/17/23/128、width128/129/2048；
+  两个 native captured 槽独立排序图和 workspace、三次变化输入、GPU 结果回传下一步状态输入，
+  保留另一槽旧状态/结果。Direct 相同程序逐位一致，另由独立顺序状态和 FP64 norm oracle 核对。
+  cold prepare/capture 不执行坏 payload，pending 错误在 executable/槽释放、close/abandon 后
+  仍完成并释放内部 workspace；逐点 HYLE metadata OOM 回滚及热重放零新增 metadata 分配通过。
+- 统一 LOC self-check：Compute+Graph 实现 **41,999 行 / 162 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/n-implementation-loc.json)。selector 保留
+  109 项 skipped reasons；本子集只运行 configure 和上述三个 factor。完整 C1 权重片段、公开头/
+  三交付增量、WSL/macOS 与等责 P1 仍未运行，不签四路线完成或性能胜出。CUDA Scan 仍待实施。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
