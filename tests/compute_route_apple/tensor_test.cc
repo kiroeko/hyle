@@ -23,7 +23,8 @@ TEST(AppleTensor, FloatingUnaryBroadcastBinaryAndGatesUseIndependentFormulas) {
          ++mode) {
       const auto kind = static_cast<c::UnaryKind>(mode);
       SCOPED_TRACE(::testing::Message()
-                   << static_cast<int>(logical(type)) << '/' << mode);
+                   << static_cast<int>(apple_tensor_test::logical(type)) << '/'
+                   << mode);
       auto result = execute(context, c::Unary{kind}, std::array{x});
       ASSERT_TRUE(result) << result.error().message();
       std::vector<double> expected;
