@@ -193,6 +193,20 @@ TEST(OperationElementwise, AppliesBroadcastAndSelectTypeRules) {
                   .IsInvalidArgument());
 }
 
+TEST(OperationElementwise, SoftplusPreservesFloatingDomainAndRejectsInteger) {
+  const Operation operation(Unary{UnaryKind::kSoftplus});
+  for (DataType type :
+       {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16}) {
+    const auto input = tensor(type, 2, 17);
+    EXPECT_EQ(infer_one(operation, std::array{input}), input);
+  }
+  EXPECT_TRUE(infer_single_output(operation,
+                                  std::array{tensor(DataType::kInt32, 17)})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_EQ(operation_traits(operation).effect, EffectKind::kPure);
+}
+
 TEST(OperationReductionAndNorm, PreserveExplicitAxesAndParameterShapes) {
   const TensorDesc input = tensor(DataType::kFloat16, 2, 3, 4);
   const std::array<std::int32_t, 2> requested{0, -1};

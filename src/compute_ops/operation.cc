@@ -84,7 +84,7 @@ Status validate_operation_modes(const Operation &operation) noexcept {
     }
     break;
   case OperationKind::kUnary:
-    if (!enum_in_range(operation.get_if<Unary>()->kind, UnaryKind::kSilu)) {
+    if (!enum_in_range(operation.get_if<Unary>()->kind, UnaryKind::kSoftplus)) {
       return Status::InvalidArgument("Unary kind is invalid");
     }
     break;

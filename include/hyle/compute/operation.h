@@ -62,6 +62,9 @@ enum class UnaryKind : std::uint8_t {
   kGelu,
   kGeluTanh,
   kSilu,
+  // log(1 + exp(x)), beta=1, evaluated without overflow for large positive x.
+  // Floating input/output; NaN propagates, -infinity maps to +0.
+  kSoftplus,
 };
 
 enum class BinaryKind : std::uint8_t {

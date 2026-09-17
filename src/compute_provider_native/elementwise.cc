@@ -60,6 +60,8 @@ template <UnaryKind Kind> float evaluate_unary(float value) noexcept {
     const float inner =
         kSqrt2OverPi * value * std::fma(kGeluCoefficient, value * value, 1.0F);
     return 0.5F * value * (1.0F + std::tanh(inner));
+  } else if constexpr (Kind == UnaryKind::kSoftplus) {
+    return std::fmax(value, 0.0F) + std::log1p(std::exp(-std::abs(value)));
   } else {
     static_assert(Kind == UnaryKind::kSilu);
     if (value == -std::numeric_limits<float>::infinity())
@@ -95,6 +97,20 @@ void unary_linear(const void *first, const void *, const void *, void *output,
     simd::gelu_tanh_f32_batch(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kSilu) {
     simd::silu_f32_batch(source, destination, count);
+  } else if constexpr (Kind == UnaryKind::kSoftplus) {
+    // Reuse the qualified math kernels in bounded stack tiles. Capturing the
+    // exponential before writing the result also preserves exact input alias.
+    std::array<float, 128> scratch;
+    for (std::size_t begin = 0; begin < count; begin += scratch.size()) {
+      const std::size_t size = (std::min)(scratch.size(), count - begin);
+      simd::abs(source + begin, scratch.data(), size);
+      simd::negate(scratch.data(), scratch.data(), size);
+      simd::exp_f32_batch(scratch.data(), scratch.data(), size);
+      simd::log1p_f32_batch(scratch.data(), scratch.data(), size);
+      for (std::size_t index = 0; index < size; ++index)
+        destination[begin + index] =
+            std::fmax(source[begin + index], 0.0F) + scratch[index];
+    }
   } else {
     static_assert(Kind == UnaryKind::kRsqrt);
     simd::reciprocal_sqrt(source, destination, count);
@@ -387,6 +403,7 @@ bool select_unary(UnaryKind kind, NativePlan &plan) noexcept {
     HYLE_NATIVE_SELECT_UNARY(kGelu);
     HYLE_NATIVE_SELECT_UNARY(kGeluTanh);
     HYLE_NATIVE_SELECT_UNARY(kSilu);
+    HYLE_NATIVE_SELECT_UNARY(kSoftplus);
   }
   return false;
 

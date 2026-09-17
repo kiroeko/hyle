@@ -74,6 +74,8 @@ float unary_reference(UnaryKind kind, float value) {
     if (value == -std::numeric_limits<float>::infinity())
       return 0.0F;
     return value * sigmoid(value);
+  case UnaryKind::kSoftplus:
+    return static_cast<float>(std::log1p(std::exp(static_cast<double>(value))));
   }
   return std::numeric_limits<float>::quiet_NaN();
 }
@@ -131,7 +133,8 @@ TEST(NativeElementwise, ExecutesEveryDenseUnaryModeAndExactAlias) {
       UnaryKind::kAbs,  UnaryKind::kNeg,      UnaryKind::kExp,
       UnaryKind::kLog,  UnaryKind::kSqrt,     UnaryKind::kRsqrt,
       UnaryKind::kTanh, UnaryKind::kSigmoid,  UnaryKind::kRelu,
-      UnaryKind::kGelu, UnaryKind::kGeluTanh, UnaryKind::kSilu};
+      UnaryKind::kGelu, UnaryKind::kGeluTanh, UnaryKind::kSilu,
+      UnaryKind::kSoftplus};
   const TensorDesc description =
       TensorDesc::dense(DataType::kFloat32, shape).value();
   Buffer input_storage = make_buffer(values);
@@ -166,6 +169,74 @@ TEST(NativeElementwise, ExecutesEveryDenseUnaryModeAndExactAlias) {
   const auto actual = read_buffer<float, values.size()>(input_storage);
   for (std::size_t index = 0; index < values.size(); ++index)
     EXPECT_FLOAT_EQ(actual[index], -values[index]);
+}
+
+TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
+  constexpr std::size_t count = 257;
+  std::array<float, count> values{};
+  for (std::size_t index = 0; index < count; ++index)
+    values[index] = static_cast<float>(static_cast<int>(index % 201) - 100);
+  values[253] = std::numeric_limits<float>::infinity();
+  values[254] = -std::numeric_limits<float>::infinity();
+  values[255] = std::numeric_limits<float>::quiet_NaN();
+  values[256] = -0.0F;
+  const TensorDesc description =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 1>{count})
+          .value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  auto prepared =
+      hyle::compute::prepare(context, Unary{UnaryKind::kSoftplus}, description)
+          .value();
+  auto invocation = prepared.create_invocation().value();
+  Buffer storage = make_buffer(values);
+  const TensorView alias = TensorView::create(description, storage.view()).value();
+  ASSERT_TRUE(invocation.submit(queue, alias.as_const(), alias)->wait().ok());
+  const auto actual = read_buffer<float, count>(storage);
+  for (std::size_t index = 0; index < count; ++index) {
+    const float expected = unary_reference(UnaryKind::kSoftplus, values[index]);
+    if (std::isnan(expected))
+      EXPECT_TRUE(std::isnan(actual[index]));
+    else if (std::isinf(expected))
+      EXPECT_EQ(actual[index], expected);
+    else
+      EXPECT_NEAR(actual[index], expected,
+                  std::abs(expected) * 5.0e-6F + 1.0e-43F)
+          << "input=" << values[index];
+  }
+  EXPECT_FALSE(std::signbit(actual[254]));
+
+  // A separate padded input exercises the scalar stride route, including
+  // values for which expf(x) would overflow or 1+expf(x) would round to one.
+  const std::array<float, 8> padded{-100.0F, -999.0F, 100.0F, -999.0F,
+                                   -40.0F, -999.0F, 0.0F, -999.0F};
+  Buffer strided_storage = make_buffer(padded);
+  const TensorDesc strided =
+      TensorDesc::strided_bytes(DataType::kFloat32,
+                                std::array<std::int64_t, 1>{4},
+                                std::array<std::int64_t, 1>{8})
+          .value();
+  auto strided_operation =
+      hyle::compute::prepare(context, Unary{UnaryKind::kSoftplus}, strided)
+          .value();
+  auto strided_invocation = strided_operation.create_invocation().value();
+  Buffer output_storage = make_buffer(std::array<float, 4>{});
+  const auto input =
+      ConstTensorView::create(strided, strided_storage.view()).value();
+  const auto output_description =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 1>{4})
+          .value();
+  const auto output =
+      TensorView::create(output_description, output_storage.view()).value();
+  ASSERT_TRUE(strided_invocation.submit(queue, input, output)->wait().ok());
+  const auto strided_actual = read_buffer<float, 4>(output_storage);
+  for (std::size_t index = 0; index < strided_actual.size(); ++index) {
+    const float expected = unary_reference(UnaryKind::kSoftplus, padded[index * 2]);
+    EXPECT_NEAR(strided_actual[index], expected,
+                std::abs(expected) * 5.0e-6F + 1.0e-43F);
+  }
 }
 
 TEST(NativeElementwise, MaterializesUnalignedStridedUnary) {
