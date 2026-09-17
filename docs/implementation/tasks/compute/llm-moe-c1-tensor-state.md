@@ -17,7 +17,7 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03 和 M01–M03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03 和 N01–N04 进入 AUDITED；其余五个 owner
   保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
@@ -545,5 +545,30 @@ Gather→mixed-F32 RMSNorm→residual；正交域为任意 axis、I64/scalar/多
   [统计](../../../../evidence/correctness/compute-llm-moe-c1/m-implementation-loc.json)。selector 的
   109 项 skipped reasons 已保留；当前仅完成 configure 与上述三个 factor。完整 C1 权重片段、
   公开头/三交付增量、WSL/macOS 与等责 P1 尚未运行，矩阵保持 UNPROVEN。Scatter/Scan 仍待实施。
+
+### C1-N：CUDA 有序 Scatter（AUDITED）
+
+baseline `5c27e6ea`，owner `/root` / `compute_provider_cuda`。F02.2/F02.4/F19 的实际消费是
+token 状态写回、permutation 和重复目标的累加。共同 schema 与 Native `indexing.cc` 已固定
+逻辑行主序：assign 最后项覆盖，add 每一步 F32 求值后舍入到 storage；精确 input0 alias 可选，
+checked 坏索引在任何 output 写入前报告。此合同不能换成无序 atomicAdd。
+
+已读固定 ggml `456172ec` 的 `src/ggml-cuda/set-rows.cu`：普通路径是每元素独立直接写入，
+适合唯一目标，却不提供本轮重复 assign/add 的顺序和 checked 失败合同。另一具名来源为本机
+CUDA 13.3 的 `cccl/cub/device/device_radix_sort.cuh`：SDK 明确提供 stable SortPairs 和显式
+临时存储。`BORROW` CUB 稳定排序；`OWN` byte-stride 适配、全索引检查和每目标有序更新，
+不重新实现排序。排序只处理 indices/ordinal，不排序或展开整份 updates/状态。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| N01 | CUDA Scatter proposal/prepare；assign plain1/2/4/8字节原始位，add F32/F16/BF16；I32/I64索引、任意axis/rank8/odd与zero stride、dense output | 非空output/updates/indices计数≤INT32_MAX，空output无payload/launch；仅同描述input0精确alias，其他重叠拒绝；空indices只保留source；checked坏值所有output不变、failed槽退役/fresh恢复 |
+| N02 | 单索引冷绑定无排序路径，多索引CUB stable SortPairs＋按目标分组有序更新 | 单索引零workspace：checked验证后一次source→output/更新kernel；多索引先pack/验证，再SDK排序，再必要source复制和每组更新。每个目标单writer，add逐次F32并storage舍入、assign取最后ordinal；O(output+updates+SDK索引排序)，不扫描output×indices，不用axis大小的索引表；精确alias跳过整状态复制 |
+| N03 | 显式caller workspace与每invocation固定的SDK排序程序 | workspace为四个I32索引/ordinal数组加SDK查询的scratch，256B对齐、checked size；冷create_invocation捕获并实例化排序，不读payload。普通Direct launch该制品；外层Graph capture用原生child graph和capture依赖接入，热执行不再调用CUB的选择/准备。两槽独立workspace/graph，opaque CUDA graph内存如实unknown；接纳后失败保留槽/图到真实完成，冷OOM回滚 |
+| N04 | 独立顺序舍入oracle、默认Direct/Graph状态消费、生命周期/文档 | scalar/多维索引、首末/重复/全偏斜、0/1/17/128/129及跨CTA长索引、真实128/129/2048宽度、F16/BF16舍入反例、特殊值、strides/alias；Scatter→Gather与norm/residual消费、两captured槽/变更输入/保留旧状态、prepare不执行、无热metadata分配；排序scratch不足/错resource、OOM/close/abandon。完整权重片段/三交付/其它环境/等责P1随C1固定bundle |
+
+多索引 native graph 的冷建图及 runtime 私有内存不是零成本；SDK sort 的内部 dispatch 数量保持
+unknown，不用一次 graph launch 冒充一次 kernel。checked 的状态 reset/回报/merge 按 L 卡计费。
+同合同性能对照必须包含顺序、舍入、检查及结果寿命；当前没有性能胜出结论。只改 CUDA owner
+及直接 consumer/source list/指南；Scan、共同 API、通用 Graph/backend 与治理工具不在 N 授权内。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
