@@ -23,7 +23,7 @@ import tempfile
 from typing import Iterable, Sequence
 
 
-NATIVE_LANGUAGES = ("C++", "C/C++ Header", "C", "CUDA", "Objective-C++")
+NATIVE_LANGUAGES = ("C++", "C/C++ Header", "C", "CUDA", "Objective-C++", "GLSL")
 BUILD_PACKAGE_LANGUAGES = (
     "CMake",
     "Python",
@@ -46,6 +46,7 @@ NATIVE_SUFFIXES = {
     ".hpp",
     ".hxx",
     ".mm",
+    ".comp",
 }
 
 # Some closure units do not match the ordinary

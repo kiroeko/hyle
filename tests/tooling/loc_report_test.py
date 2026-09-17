@@ -199,6 +199,18 @@ def main() -> None:
     if actual[0] == 0 or actual[1] != 1 or selected != actual:
         raise AssertionError(f"Objective-C++ implementation is silently omitted: {selected} != {actual}")
 
+    shader = "src/compute_route_vulkan/shaders/tensor.comp"
+    shader_files = (shader, "tests/compute_route_vulkan/affine.comp")
+    owners, chosen = reporter.registry_state_scope(
+        "AUDITED", shader_files,
+        {"modules": [{"module": "compute_route_vulkan", "state": "AUDITED"}]}, graph)
+    if owners != ["compute_route_vulkan"] or chosen != [shader]:
+        raise AssertionError(f"GLSL owner selection lost source or included tests: {owners}, {chosen}")
+    actual = reporter.cloc_measure(cloc, root, [shader], None)
+    selected = reporter.cloc_measure(cloc, root, [shader], reporter.NATIVE_LANGUAGES)
+    if actual[0] == 0 or actual[1] != 1 or selected != actual:
+        raise AssertionError(f"GLSL implementation is silently omitted: {selected} != {actual}")
+
 
 if __name__ == "__main__":
     main()
