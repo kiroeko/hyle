@@ -489,4 +489,17 @@ Scan 的异步算法错误回报不属于 K，也不以 unchecked 或 host paylo
   [统计](../../../../evidence/correctness/compute-llm-moe-c1/k-implementation-loc.json)。完整 C1 权重片段、公开头/
   三交付增量、其他环境及等责 P1 尚未运行，矩阵保持 UNPROVEN。
 
-当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
+### C1-L 实施事实：CUDA 异步算法错误依赖
+
+[独立依赖卡](llm-moe-c1-cuda-device-status.md)已实现 prefix 错误字、完成边界解释、跨 Queue
+保活与 first-error 合并、捕获独立状态，未修改共同 API 或其它路线。最终候选 `21ff9fe0` 的 W1
+backend/provider/default Direct/Graph 共 **79 case PASS**（新增机制10项）；
+[原始尝试与失败记录](../../../../evidence/correctness/compute-llm-moe-c1/l-windows-focused.json)。
+一个冷期扩池/外部 capture 顺序缺陷已在两轮产品纠正预算内解决；并发测试移除 SDK 明确禁止的
+host callback 对未来独立 GPU 工作的等待，保留原错误字、提前观察/丢弃与40次池重用的确定性验证。
+这只是实际 checked Gather/Scatter/Scan 的基础机制，三者仍未接入。后续在本 owner 卡继续固定
+有限算子 FIX；完整 C1 权重片段、三交付/公开头增量、其它环境与 P1 没有新的 PASS。
+统一 LOC 为 Compute+Graph **40,733行 / 154文件**，不含测试；
+[统计](../../../../evidence/correctness/compute-llm-moe-c1/l-implementation-loc.json)。
+
+当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

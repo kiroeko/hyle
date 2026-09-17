@@ -77,5 +77,40 @@
   回调或 Sched/Mem。kernel 与状态/依赖的实现细节可在此有限集合内定向验证；如需跨越这些 owner
   或改变上述成本/完成合同，退回此卡重新定界。
 
-本次只固定 L01–L04；没有设备错误机制或 checked CUDA 索引的 PASS。原生状态的测试 kernel
-只验证此基础机制，不能代替后续实际 Gather/Scatter/Scan 或整条路线验收。
+上述是实施前独立提交固定的 L01–L04。原生状态的测试 kernel 只验证此基础机制，不能代替
+后续实际 Gather/Scatter/Scan 或整条路线验收。
+
+## 实施与局部验证（2026-09-18）
+
+- `43f970e0` 实现私有状态 bridge、完成池 device/pinned 状态、真实 event 后解释、跨 Queue
+  native wait/first-error merge 和 captured artifact 独立状态。`2ccefb9c` 补齐私有 bridge 所需
+  include，并让 queue teardown 在所属 primary context 内释放 native 存储；`d0df089c` 在冷期
+  扩池前拒绝 active stream capture，避免 `cudaMalloc` 先破坏外部捕获。产品纠正两轮已用完。
+- 纯 prefix 不发状态命令；每16个 completion 的 EventBlock 冷申请64字节 device、64字节 pinned
+  host 存储，另有16个 EventSlot 与32个 StatusReference 的 allocator metadata。driver 分配粒度、
+  event、加载代码和 graph 存储不公开，不能将这些数值当作完整物理占用。引用池冷容量为 completion
+  capacity 的两倍，耗尽时明确 ResourceExhausted；`reserve_completions` 冷扩池，成功提交不增长。
+  含状态的 capture 独立申请一个状态字并记录 reset；未使用状态的 capture 在冷期释放该字。
+- merge kernel 在 context 创建时用本机 SDK 冷加载/绑定，防止 first-use loading 被人为 host
+  gate 阻塞；若该 GPU 不在编译架构覆盖内，只拒绝需要此 kernel 的能力，不冒充其它原生 provider
+  不可用。多个 captured artifact 与普通 checked 工作合并到实际 prefix；checked dependency
+  在实际提交时导入，捕获录制期拒绝绑定一次性的外部 Completion。
+- 最终不可变测试候选 `21ff9fe06292d52eb4e3a359c5567d9cf4305867`：W1 Release/WERROR
+  的 backend26、native late-failure1、cuBLAS5、Marlin5、HYLE CUDA28、默认 Direct4、Graph10，
+  共 **79 case PASS**，其中新状态机制10项。[六次原始尝试/命令/失败与最终日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/l-windows-focused.json)。
+- 实际覆盖 GPU index/overflow 判定、pending→error、first error、fresh run 恢复、未知码和已知
+  terminal error；两捕获槽变更输入、capture abort/重用拒绝、多 artifact/普通命令混合、关闭后
+  保活；跨 Queue 源提前观察/丢弃与40次成功 prefix 重用后保留原设备错误字；OOM、引用预算耗尽
+  后保留已接纳工作、无热 metadata 分配。纯原生 capture 仍只有原 kernel node，没有状态命令。
+- 一次失败来自既有 external-capture 回归，已按上面的第二轮产品纠正修复；两次后续失败来自
+  新测试让 destination host callback 等待 source 的未来工作。安装 Toolkit13.3 的
+  `cuda_runtime_api.h` / `cudaLaunchHostFunc` 明确禁止 callback 同步依赖未被要求先执行的工作。
+  测试先用5秒有界 gate 定位到 `wait fresh source`，最终改为 source gate 只覆盖依赖接纳，随后
+  释放，再检查源状态字在 Completion 提前观察/丢弃和池重用后不变；不要求独立 streams 同时前进。
+  阻塞的测试进程已终止，失败原样保留；未放宽产品完成或错误合同，没有增加性能采样。
+- 统一 LOC self-check：Compute+Graph **40,733行 / 154文件**，不含 tests/vendor；
+  [完整实现边界统计](../../../../evidence/correctness/compute-llm-moe-c1/l-implementation-loc.json)。
+
+当前只取得 W1 本机制及直接消费者的局部正确性。实际 checked Gather/Scatter/Scan、完整 C1 权重
+片段、公开头/source/static/shared 增量、WSL/macOS 和等责 P1 尚未运行。本 owner 保持 AUDITED，
+整包/矩阵保持未证明；后续算子先按主卡固定有限 FIX，不以此测试 kernel 代签产品算子。

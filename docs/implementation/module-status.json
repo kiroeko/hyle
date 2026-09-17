@@ -404,7 +404,7 @@
       "module": "compute_backend_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-cuda-device-status.md",
-      "summary": "LLM/MoE C1-L AUDITED：L01–L04 固定 CUDA prefix 设备错误字、真实完成/跨 Queue 传播、原生 capture 状态与原生 merge；仅本轮定向机制，尚未实现或验收。"
+      "summary": "LLM/MoE C1-L AUDITED：CUDA prefix 设备错误、跨 Queue 保活/传播和独立 capture 状态已实现；W1 机制及直接消费者79 case通过。实际checked算子、三交付/公开头增量、其它环境与P1仍待C1整包。"
     },
     {
       "module": "compute_provider_native",
