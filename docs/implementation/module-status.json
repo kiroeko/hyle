@@ -466,7 +466,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E/G/H/I/J/K AUDITED：门控、tensor、norm、归约、TopK 和 Concat 已实现；W1 provider/default Direct/Graph 共42 case通过；checked索引/Scan与C1完整验收待完成。"
+      "summary": "LLM/MoE C1-E/G/H/I/J/K/M AUDITED：门控、tensor、norm、归约、TopK和Concat已实现；M01–M03固定真实checked Gather与L状态机制的接线，尚未实施。Scatter/Scan和C1完整验收待完成。"
     },
     {
       "module": "compute_route_cuda",

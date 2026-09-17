@@ -17,7 +17,7 @@
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03 和 K01–K03 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03 和 M01–M03 进入 AUDITED；其余五个 owner
   保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
@@ -501,5 +501,27 @@ host callback 对未来独立 GPU 工作的等待，保留原错误字、提前�
 有限算子 FIX；完整 C1 权重片段、三交付/公开头增量、其它环境与 P1 没有新的 PASS。
 统一 LOC 为 Compute+Graph **40,733行 / 154文件**，不含测试；
 [统计](../../../../evidence/correctness/compute-llm-moe-c1/l-implementation-loc.json)。
+
+### C1-M：CUDA checked Gather（AUDITED）
+
+baseline `59190011`，当前 owner `/root` / `compute_provider_cuda`。F02.1/2 与 F19 的真实输入是
+本地 BF16 embedding table、每次变化的 token IDs，以及 routing/state 的重新索引。主路径为
+Gather→mixed-F32 RMSNorm→residual；正交域为任意 axis、I64/scalar/多维 indices 与 byte strides。
+现有共同 schema 与 Native 数学合同已满足，C1-L 提供设备异步错误来源；本次不重开共同层/backend。
+
+已读本地固定 ggml `456172ec733a135778adcd32d00e576a58232e45` 的
+`src/ggml-cuda/getrows.cu`：普通同类型读取按连续后缀、可用16-byte向量搬运；其直接设备索引、
+四维/I32与可选类型转换不满足本轮任意axis/rank8/I64/逐位保留/可恢复checked错误合同。
+`BORROW` 连续行搬运的成本结构，`OWN` 薄的描述适配和checked前置验证；不复制其runtime/量化路径。
+
+| FIX | 固定范围 | P0 / 必需验证 |
+|---|---|---|
+| M01 | HYLE CUDA Gather cold proposal/prepare/program，plain1/2/4/8字节同类型输出、I32/I64 indices、rank≤8任意axis、dense输出 | 输出与所有输入无重叠；indices可为rank0或多维、source/indices可odd或zero byte stride；非空output/indices≤INT32_MAX，source索引/offset保留64位，不按表总元素数无故截断；空output不取指针/launch，非空output的空source axis为静态OutOfRange |
+| M02 | 真实GPU全索引验证后Gather，复用L01–L03 | checked先一次O(indices·rank)验证kernel，再一次O(output·rank)读取；坏值atomic first-error且所有output不变，无payload回传/host同步/device assertion。unchecked仅调用方保证索引合法时省验证/状态命令。连续source后缀可整除16字节时冷绑定16-byte搬运单位，非对齐基址在同kernel内按byte安全读取；其余按原标量位宽，无数据转换。shape/dtype/kernel冷绑定，零caller workspace/槽私有状态；reset/4B回报/capture merge另外按L卡如实计费 |
+| M03 | 普通Direct/default Graph、独立位级oracle、失败和资源验证/文档 | BF16/F16/F32及1/8字节payload、I32/I64负值/等于extent/巨大值、scalar/多维/任意axis/rank8/odd/zero strides/empty、宽度128/129/2048等尾块、16-byte非对齐地址；prepare不消费输入、alias拒绝、checked坏索引输出不变、failed槽退役和fresh槽恢复；两captured槽/多次变更索引/保留旧结果、混合norm/residual、OOM/accepted owner/close/abandon、无热metadata分配；完整C1真实权重/三交付/其它环境/等责P1仍随固定bundle |
+
+只扩当前CUDA owner/source list与直接consumer测试/指南。checked比较对象必须承担同样的索引验证、
+失败回报、同步和结果寿命，不能用unchecked裸getrows给它排名；当前没有性能胜出结论。Scatter
+重复更新的顺序/半精度舍入和Scan全部prefix溢出另行固定有限FIX，不把Gather机制代签二者。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
