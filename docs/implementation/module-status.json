@@ -494,13 +494,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P AUDITED：P01–P05 固定 MLX typed 张量/门控/归一化、F16/BF16 与 mixed-F32 参数、自然元数据准备及整段 Graph 接线；尚未实施，完整 C1 验收待完成。"
+      "summary": "LLM/MoE C1-P AUDITED：MLX typed 张量/门控/mixed-F32 norm 与普通 Direct/Graph 已实现；修正编译 Select 的 BF16 位模式，Air/Mini 各22 case及两个头检查通过。剩余归约/索引/Scan、完整C1权重/三交付/P1待完成，矩阵仍未证明。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P AUDITED：P01–P05 固定 MLX typed 张量/门控/归一化、F16/BF16 与 mixed-F32 参数、自然元数据准备及整段 Graph 接线；尚未实施，完整 C1 验收待完成。"
+      "summary": "LLM/MoE C1-P AUDITED：MLX typed 张量/门控/mixed-F32 norm 与普通 Direct/Graph 已实现；修正编译 Select 的 BF16 位模式，Air/Mini 各22 case及两个头检查通过。剩余归约/索引/Scan、完整C1权重/三交付/P1待完成，矩阵仍未证明。"
     },
     {
       "module": "compute_route_vulkan",

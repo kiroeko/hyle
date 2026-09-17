@@ -665,4 +665,31 @@ embedding/norm/gate/residual 和 FP32 gate 参数必须沿普通 typed Direct/Gr
 checked Gather/Scatter/Scan；它们的数值/异步错误合同继续在 C1 后续有限 FIX 内处理，不继承 P。
 本次不启动 P1，不改 MLX pin、公共治理、Mem/Sched 或原生执行状态机。
 
+### C1-P 实施事实
+
+- `dfba32e9` 接通 typed InputSpec 准备、MLX 张量/门控/mixed-F32 norm 与共享 Graph lower；
+  原生编译成功，新增测试诊断先因 Dtype 非 enum、后因局部变量遮蔽 helper 编译失败。
+  `8627bb80` 修正测试诊断，两台 Mac 各 21 case 与两个公开头检查通过；这些失败没有 runtime PASS。
+- 在固定 MLX 的 `mlx/backend/common/compiled.h` 发现浮点常量打印把 NaN 统一写为 `NAN`，
+  据此补入原始位 Fill→Select 编译片段反例。`1708fd54` 在 Air 实测 BF16 `0xffc3` 变成
+  `0x7fc0`，plain Fill 与 F32/F16 变体通过；不能只凭源码认定该打印函数是唯一内部原因。
+  `c4a0db38` 将浮点 Select 通过同宽整数 view/原生 where 保留位模式，再 view 回原 dtype。
+  仍由 MLX 执行完整 region；没有自写 host payload 路径或修改依赖，一次产品纠正、未放宽容差。
+- 最终 `c4a0db38` 在 Air `Mac16,12` 与 Mini `Mac16,10` 的 Release/WERROR 下，各完成
+  Direct **15**、Graph **7**，共 **22 case PASS**，以及两个独立公开头检查。Mini 只签
+  correctness/portability。Air 使用 Windows Git bundle，Mini 使用整树 archive 与 SHA-256；
+  两份均为可丢弃验证副本，build2/CTest1、真实 Metal GPU，无依赖下载。
+  [全部尝试、命令、日志哈希与 selector](../../../../evidence/correctness/compute-llm-moe-c1/p-apple-focused.json)。
+- 独立 raw-bit/layout 与 FP64/存储舍入 oracle 覆盖五类存储、rank0–8、空/尾块、真实 native
+  转置、广播与 View、五输入 Concat、浮点 Cast/13 Unary/6 Binary/三 gate、mixed norm。
+  NaN/Inf/负零、原始 scalar payload、metadata-only prepare 和精度/参数拒绝均通过。
+  Graph 的 F16/BF16 norm→gate→residual→Select 与 slice→Concat 实际运行 rows0/1/17/23/129、
+  width129/2048；两 invocation、三次变输入、保留旧结果、输入不变和 close，以及既有 OOM/
+  取消/late failure/排空回归通过。同程序 Direct 逐位对照之外另有独立数值 oracle。
+- 统一 LOC self-check：Compute+Graph 实现 **42,747 行 / 168 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/p-implementation-loc.json)。Windows/Air
+  selector 分别保留 112/110 项 skipped reasons；本子集实际执行两台 Mac configure、两个 factor
+  与两个头检查。完整 C1 真实权重、三交付/其他环境与等责 P1 尚未运行；Apple 剩余归约/索引/
+  Scan、Vulkan 及整包验收继续按有限 FIX 推进，矩阵仍 UNPROVEN，不签四路线共同完成。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
