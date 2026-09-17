@@ -206,6 +206,10 @@ Status prepare_elementwise(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,
                            NativePlan &plan) noexcept;
+Status prepare_half_gated(Operation operation,
+                          std::span<const TensorDesc> inputs,
+                          std::span<const TensorDesc> outputs,
+                          NativePlan &plan) noexcept;
 Status prepare_reduction(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,

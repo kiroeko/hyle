@@ -1,12 +1,15 @@
 #include "native_plan.h"
+#include "numeric.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/math/scalar.h"
@@ -72,6 +75,61 @@ float reduce_dense(ReductionKind kind, const float *input,
   return std::numeric_limits<float>::quiet_NaN();
 }
 
+template <class Value>
+void reduce_narrow(const NativePlan &plan, const TensorDesc &description,
+                   const std::byte *input, Value *output) noexcept {
+  const std::size_t count = plan.parameters[2];
+  const auto dimensions = description.dimensions();
+  const auto strides = description.byte_strides();
+  std::array<float, 128> tile;
+  for (std::size_t result = 0; result < plan.parameters[1]; ++result) {
+    float accumulator = reduction_identity(plan.reduction_kind);
+    if (plan.reduction_route != ReductionRoute::kGeneral) {
+      for (std::size_t begin = 0; begin < count; begin += tile.size()) {
+        const std::size_t size = (std::min)(tile.size(), count - begin);
+        numeric::load_tile<Value>(input, result * count + begin, tile.data(),
+                                  size);
+        accumulate(plan.reduction_kind,
+                   reduce_dense(plan.reduction_kind, tile.data(), size),
+                   accumulator);
+      }
+    } else {
+      // Decode the unreduced coordinates once per output. Every input is
+      // visited once overall; no full-input scan for each output tile.
+      std::size_t remaining = result;
+      std::size_t base = 0;
+      for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
+        const std::size_t axis = dimensions.size() - 1 - reverse;
+        if ((plan.reduction_axes_mask & (std::uint8_t{1} << axis)) != 0)
+          continue;
+        const auto extent = static_cast<std::size_t>(dimensions[axis]);
+        base += (remaining % extent) * static_cast<std::size_t>(strides[axis]);
+        remaining /= extent;
+      }
+      for (std::size_t reduced = 0; reduced < count; ++reduced) {
+        remaining = reduced;
+        std::size_t offset = base;
+        for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
+          const std::size_t axis = dimensions.size() - 1 - reverse;
+          if ((plan.reduction_axes_mask & (std::uint8_t{1} << axis)) == 0)
+            continue;
+          const auto extent = static_cast<std::size_t>(dimensions[axis]);
+          offset +=
+              (remaining % extent) * static_cast<std::size_t>(strides[axis]);
+          remaining /= extent;
+        }
+        accumulate(plan.reduction_kind, numeric::load<Value>(input + offset),
+                   accumulator);
+      }
+    }
+    if (plan.reduction_kind == ReductionKind::kMean)
+      accumulator = count == 0 ? std::numeric_limits<float>::quiet_NaN()
+                               : accumulator / static_cast<float>(count);
+    output[result] = numeric::encode<Value>(accumulator);
+  }
+}
+
+template <class Value>
 detail::EnqueueResult
 submit_reduction(const NativePlan &plan,
                  std::span<const ConstTensorView> inputs,
@@ -80,7 +138,6 @@ submit_reduction(const NativePlan &plan,
     return completed(Status::Internal("native reduction plan is invalid"));
   const std::size_t input_elements = plan.parameters[0];
   const std::size_t output_elements = plan.parameters[1];
-  const std::size_t reduced_elements = plan.parameters[2];
   if (output_elements == 0)
     return completed(Status::Ok());
 
@@ -114,7 +171,7 @@ submit_reduction(const NativePlan &plan,
     input_mapping.close().IgnoreError();
     return completed(std::move(writable).error());
   }
-  auto *output_data = reinterpret_cast<float *>(writable->data());
+  auto *output_data = reinterpret_cast<Value *>(writable->data());
   if (!aligned_for_storage(output_data,
                            outputs[0].description().required_alignment()) ||
       (input_elements != 0 &&
@@ -126,48 +183,53 @@ submit_reduction(const NativePlan &plan,
         "CPU reduction mapping does not satisfy tensor alignment"));
   }
 
-  std::fill_n(output_data, output_elements,
-              reduction_identity(plan.reduction_kind));
-  const auto *dense_input = reinterpret_cast<const float *>(input_data);
-  if (plan.reduction_route == ReductionRoute::kAllDense) {
-    output_data[0] =
-        reduce_dense(plan.reduction_kind, dense_input, input_elements);
-  } else if (plan.reduction_route == ReductionRoute::kLastAxisDense) {
-    for (std::size_t row = 0; row < output_elements; ++row) {
-      const float *row_input =
-          dense_input == nullptr ? nullptr
-                                 : dense_input + row * reduced_elements;
-      output_data[row] =
-          reduce_dense(plan.reduction_kind, row_input, reduced_elements);
-    }
+  if constexpr (!std::is_same_v<Value, float>) {
+    reduce_narrow(plan, inputs[0].description(), input_data, output_data);
   } else {
-    const TensorDesc &input_description = inputs[0].description();
-    const auto dimensions = input_description.dimensions();
-    const auto strides = input_description.byte_strides();
-    for (std::size_t linear = 0; linear < input_elements; ++linear) {
-      std::size_t remaining = linear;
-      std::size_t input_offset = 0;
-      std::size_t output_index = 0;
-      std::size_t output_stride = 1;
-      for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
-        const std::size_t axis = dimensions.size() - 1 - reverse;
-        const std::size_t extent = static_cast<std::size_t>(dimensions[axis]);
-        const std::size_t coordinate = remaining % extent;
-        remaining /= extent;
-        input_offset += coordinate * static_cast<std::size_t>(strides[axis]);
-        if ((plan.reduction_axes_mask & (std::uint8_t{1} << axis)) == 0) {
-          output_index += coordinate * output_stride;
-          output_stride *= extent;
-        }
+    const std::size_t reduced_elements = plan.parameters[2];
+    std::fill_n(output_data, output_elements,
+                reduction_identity(plan.reduction_kind));
+    const auto *dense_input = reinterpret_cast<const float *>(input_data);
+    if (plan.reduction_route == ReductionRoute::kAllDense) {
+      output_data[0] =
+          reduce_dense(plan.reduction_kind, dense_input, input_elements);
+    } else if (plan.reduction_route == ReductionRoute::kLastAxisDense) {
+      for (std::size_t row = 0; row < output_elements; ++row) {
+        const float *row_input = dense_input == nullptr
+                                     ? nullptr
+                                     : dense_input + row * reduced_elements;
+        output_data[row] =
+            reduce_dense(plan.reduction_kind, row_input, reduced_elements);
       }
-      float value = 0.0F;
-      std::memcpy(&value, input_data + input_offset, sizeof(value));
-      accumulate(plan.reduction_kind, value, output_data[output_index]);
+    } else {
+      const TensorDesc &input_description = inputs[0].description();
+      const auto dimensions = input_description.dimensions();
+      const auto strides = input_description.byte_strides();
+      for (std::size_t linear = 0; linear < input_elements; ++linear) {
+        std::size_t remaining = linear;
+        std::size_t input_offset = 0;
+        std::size_t output_index = 0;
+        std::size_t output_stride = 1;
+        for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
+          const std::size_t axis = dimensions.size() - 1 - reverse;
+          const std::size_t extent = static_cast<std::size_t>(dimensions[axis]);
+          const std::size_t coordinate = remaining % extent;
+          remaining /= extent;
+          input_offset += coordinate * static_cast<std::size_t>(strides[axis]);
+          if ((plan.reduction_axes_mask & (std::uint8_t{1} << axis)) == 0) {
+            output_index += coordinate * output_stride;
+            output_stride *= extent;
+          }
+        }
+        float value = 0.0F;
+        std::memcpy(&value, input_data + input_offset, sizeof(value));
+        accumulate(plan.reduction_kind, value, output_data[output_index]);
+      }
     }
-  }
 
-  if (plan.reduction_kind == ReductionKind::kMean)
-    finish_mean(output_data, output_elements, reduced_elements);
+    if (plan.reduction_kind == ReductionKind::kMean)
+      finish_mean(output_data, output_elements, reduced_elements);
+  }
 
   Status terminal = Status::Ok();
   if (!output_storage.resource().properties().has(
@@ -209,11 +271,13 @@ Status prepare_reduction(Operation operation,
                          NativePlan &plan) noexcept {
   if (inputs.size() != 1 || outputs.size() != 1)
     return Status::Internal("native Reduce arity is invalid");
-  if (inputs[0].data_type() != DataType::kFloat32 ||
-      outputs[0].data_type() != DataType::kFloat32 || !inputs[0].is_plain() ||
+  const DataType type = inputs[0].data_type();
+  if ((type != DataType::kFloat32 && type != DataType::kFloat16 &&
+       type != DataType::kBFloat16) ||
+      outputs[0].data_type() != type || !inputs[0].is_plain() ||
       !outputs[0].is_plain() || !outputs[0].is_dense()) {
-    return Status::Unimplemented(
-        "native Reduce currently requires plain float32 and dense output");
+    return Status::Unimplemented("native Reduce requires plain "
+                                 "float32/float16/bfloat16 and dense output");
   }
   const Reduce *reduce = operation.get_if<Reduce>();
   if (reduce == nullptr)
@@ -222,6 +286,11 @@ Status prepare_reduction(Operation operation,
       reduce->accumulation_type != DataType::kFloat32) {
     return Status::Unimplemented(
         "native Reduce currently supports float32 accumulation");
+  }
+  if (type != DataType::kFloat32 &&
+      reduce->accumulation_type != DataType::kFloat32) {
+    return Status::Unimplemented(
+        "native half Reduce requires explicit float32 accumulation");
   }
 
   auto input_elements = inputs[0].element_count();
@@ -260,7 +329,10 @@ Status prepare_reduction(Operation operation,
   plan.reduction_kind = reduce->kind;
   plan.reduction_route = route;
   plan.reduction_axes_mask = axes;
-  plan.submit_route = &submit_reduction;
+  plan.submit_route =
+      type == DataType::kFloat16    ? &submit_reduction<simd::float16_t>
+      : type == DataType::kBFloat16 ? &submit_reduction<simd::bfloat16_t>
+                                    : &submit_reduction<float>;
   return Status::Ok();
 }
 

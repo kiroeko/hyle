@@ -104,15 +104,15 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 单目计算/激活 | `Unary` | f32/f16/bf16 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU/Softplus；dense 复用 SIMD，半精度和 Softplus 使用固定大小栈上分块，plain stride 可 materialize |
 | 双目计算 | `Binary` | f32/f16/bf16 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
 | 条件选择 | `Select` | 可广播 Bool condition；对任意 plain 1/2/4/8-byte scalar branch 原样选择 bits |
-| reduction | `Reduce` | f32 Sum/Mean/Min/Max；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
+| reduction | `Reduce` | f32/f16/bf16 Sum/Mean/Min/Max，半精度显式 F32 accumulation；任意 axis 集、负 axis、keep-dim 与普通 byte stride；dense 常用路线复用 SIMD |
 | normalization | `RmsNorm` / `LayerNorm` | dense f32/f16/bf16 `[..., hidden]`，F32 accumulation；RMSNorm 可选 weight；LayerNorm 可选 scale/bias；半精度参数也可用 F32；允许精确 input/output in-place |
 | matrix multiply | `MatMul` | f32 `[...,M,K] * [...,K,N]` 与 NumPy-style batch broadcast；两端 batch 都可广播，B 的末两维可 row-major 或物理 `[...,N,K]` 的转置 view |
-| gated activation | `GatedActivation` | dense f32 packed `[...,2*d]` 或 separate gate/value；SiLU、exact GELU、GELU-tanh 三种模式均产生 `[...,d]` |
-| 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 当前为 f32，并可精确原地更新 input0 |
+| gated activation | `GatedActivation` | dense f32/f16/bf16 packed `[...,2*d]` 或 separate gate/value；SiLU、exact GELU、GELU-tanh 三种模式均产生 `[...,d]`；半精度在 F32 activation 与乘法完成后一次舍入 |
+| 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 支持 f32/f16/bf16，并可精确原地更新 input0 |
 | 张量拼接 | `Concat` | 同 dtype/rank 的 variadic plain inputs，沿显式 axis 产生 dense output；dense 输入按连续后缀块复制 |
 | 旋转位置编码 | `RoPE` | dense/strided f32 data、i32/i64 positions、显式 frequency tensor；支持 interleaved/half-split 与未旋转 tail，dense route 冷选择 fat kernel |
-| 概率归一化 | `Softmax` | f32 任意 axis、scale、LogSoftmax，以及可广播 Bool/additive mask；允许精确 input/output in-place；无有效值的 row 产生 NaN |
-| 候选筛选 | `TopK` | f32 任意 axis，largest/smallest、sorted/stable 语义，返回 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
+| 概率归一化 | `Softmax` | f32/f16/bf16 任意 axis、scale、LogSoftmax，以及可广播 Bool/同类型 additive mask；F32 accumulation，半精度使用显式 F32 行工作区；允许精确 input/output in-place；无有效值的 row 产生 NaN |
+| 候选筛选 | `TopK` | f32/f16/bf16 任意 axis，largest/smallest、sorted/stable 语义，返回同类型 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
 | 注意力 | `ScaledDotProductAttention` | f32 rank-4 BSHD/BHSD，Q/K depth 与 V/output depth 可不同；可选 bottom-right causal、Bool/additive 广播 mask，分块 online softmax 与显式 caller-owned workspace |
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
 | 可准备、可进入 Graph 的用户 kernel | `make_custom_provider` + `make_custom_kernel` | owning typed factory；shared HYLE Queue，逐 Invocation 状态；见下文完整例子 |
@@ -233,7 +233,8 @@ kernel arguments 及其 resource owner 都必须活到 Completion 真正终态�
 `Gather`/`Scatter` 默认使用 `IndexBoundsPolicy::kChecked`，会在写 output 前先验证全部 indices，因此越界失败
 不会留下部分索引写入。`kUnchecked` 只适合调用方已由上游验证 indices 的热路径；越界值违反前置条件，
 不能把它当作另一种裁剪或环绕语义。Scatter 对重复 index 按 updates 的逻辑行主序处理：assign 后项覆盖
-前项，add 依次累加。需要并发原子 scatter 的算法应选择具备该明确合同的 provider，不能把本 CPU reference
+前项，add 依次累加。F16/BF16 的每次加法在 F32 求值后立即舍入回 storage，不是先将全部重复更新求和再舍入。
+需要并发原子 scatter 的算法应选择具备该明确合同的 provider，不能把本 CPU reference
 路线误当原子操作。
 
 ## View、Copy、Fill 与 Cast
@@ -303,8 +304,9 @@ NaN 选择另一侧数值，并保留 IEEE signed-zero 规则；它们不是由�
 
 ## Reduction 与 LayerNorm
 
-`Reduce` 的 typed `prepare()` 根据 axis 和 `keep_dimensions` 推导 dense output。当前 Native route 支持 f32
-Sum/Mean/Minimum/Maximum；任意普通 byte-strided input 都按逻辑坐标读取，dense reduce-all 和最后一轴
+`Reduce` 的 typed `prepare()` 根据 axis 和 `keep_dimensions` 推导 dense output。当前 Native route 支持
+f32/f16/bf16 Sum/Mean/Minimum/Maximum；半精度必须显式设置 `accumulation_type = DataType::kFloat32`，
+在 F32 累加并仅在最终输出时舍入。任意普通 byte-strided input 都按逻辑坐标读取，dense reduce-all 和最后一轴
 四种 operation 都走已有 SIMD reduction。空集合约定为 Sum=0、Mean=NaN、Minimum=+infinity、Maximum=-infinity；
 Min/Max 遇到任一 NaN 会传播 NaN。Reduce 不允许 output alias input。
 
@@ -317,11 +319,17 @@ Gemma 的 `1+gamma` 应通过普通 Binary/常量明确组成。
 ```cpp
 auto reduced = prepare(context,
                        Reduce{.kind = ReductionKind::kMean,
-                              .axes = Axes::all()},
+                              .axes = Axes::all(),
+                              .accumulation_type = DataType::kFloat32},
                        input_desc);
 auto normalized = prepare(context, LayerNorm{.epsilon = 1.0e-5F},
                           input_desc, scale_desc, bias_desc);
 ```
+
+Native 半精度 `Softmax`/`TopK` 的 workspace 按一行 F32 临时值复用；TopK 另有候选索引空间。
+调用 `workspace_requirement()` 取得大小/对齐，并在 `create_invocation(workspace)` 时绑定；Graph
+按同一要求管理每个 invocation 的独立工作区。空 output 的需求为零。数据和 mask 内容可在完成后更新，
+重复执行不重新准备或重新选择 Provider。
 
 ## 普通、block 与 opaque storage
 

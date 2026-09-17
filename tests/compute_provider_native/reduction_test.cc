@@ -7,8 +7,10 @@
 #include <cstring>
 #include <limits>
 #include <span>
+#include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -237,6 +239,143 @@ TEST(NativeReduction, RejectsUnsupportedStorageAndAccumulation) {
                              f32);
   ASSERT_FALSE(accumulation.has_value());
   EXPECT_TRUE(accumulation.error().IsUnimplemented());
+}
+
+template <class Value>
+void expect_half_reduction(bool general, bool padded, bool last_axis) {
+  constexpr std::size_t width = 129;
+  const std::size_t groups = general ? 3 : 1;
+  std::vector<Value> source(2 * groups * width);
+  for (std::size_t index = 0; index < source.size(); ++index)
+    source[index] = half_test::encode<Value>(
+        (index % width == 0 ? 1.0 : 1.0 / 4096) *
+        static_cast<double>(1 + (index / width) % groups) *
+        static_cast<double>(1 + index / (width * groups)));
+  const auto type = half_test::data_type<Value>();
+  const std::array<std::int64_t, 3> shape{2, static_cast<std::int64_t>(groups),
+                                          width};
+  const std::size_t step = padded ? 3 : sizeof(Value);
+  std::vector<std::byte> physical((source.size() - 1) * step + sizeof(Value));
+  for (std::size_t index = 0; index < source.size(); ++index)
+    std::memcpy(physical.data() + index * step, &source[index], sizeof(Value));
+  const auto input_desc =
+      TensorDesc::strided_bytes(
+          type, shape,
+          std::array<std::int64_t, 3>{
+              static_cast<std::int64_t>(groups * width * step),
+              static_cast<std::int64_t>(width * step),
+              static_cast<std::int64_t>(step)})
+          .value();
+  Buffer input = half_test::buffer<std::byte>(physical);
+  const auto input_view =
+      ConstTensorView::create(input_desc, input.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const auto kind : {ReductionKind::kSum, ReductionKind::kMean,
+                          ReductionKind::kMinimum, ReductionKind::kMaximum}) {
+    const Axes axes =
+        last_axis ? Axes::from(std::array<std::int32_t, 1>{-1}).value()
+        : general ? Axes::from(std::array<std::int32_t, 2>{0, 2}).value()
+                  : Axes::all();
+    auto prepared =
+        hyle::compute::prepare(context,
+                               Reduce{.kind = kind,
+                                      .axes = axes,
+                                      .accumulation_type = DataType::kFloat32},
+                               input_desc)
+            .value();
+    const auto output_desc = prepared.output_description().value();
+    std::vector<Value> empty(last_axis ? groups * 2 : groups);
+    Buffer output = half_test::buffer<Value>(empty);
+    const auto output_view =
+        TensorView::create(output_desc, output.view()).value();
+    auto invocation = prepared.create_invocation().value();
+    ASSERT_TRUE(invocation.submit(queue, input_view, output_view)->wait().ok());
+    const auto actual = half_test::read<Value>(output);
+    for (std::size_t index = 0; index < actual.size(); ++index) {
+      const double factor = static_cast<double>(index % groups + 1);
+      const double row_factor =
+          last_axis ? static_cast<double>(index / groups + 1) : 3.0;
+      const double expected =
+          kind == ReductionKind::kSum ? 1.03125 * row_factor * factor
+          : kind == ReductionKind::kMean
+              ? 1.03125 * row_factor * factor / (last_axis ? width : 2 * width)
+          : kind == ReductionKind::kMinimum
+              ? (last_axis ? row_factor : 1.0) * factor / 4096
+              : (last_axis ? row_factor : 2.0) * factor;
+      EXPECT_EQ(actual[index].bits, half_test::encode<Value>(expected).bits);
+    }
+  }
+}
+
+TEST(NativeReduction, HalfAccumulatesInFloat32AcrossDenseAndStridedAxes) {
+  for (const bool general : {false, true})
+    for (const bool padded : {false, true})
+      for (const bool last : {false, true}) {
+        expect_half_reduction<hyle::simd::float16_t>(general, padded, last);
+        expect_half_reduction<hyle::simd::bfloat16_t>(general, padded, last);
+      }
+}
+
+template <class Value> void expect_half_reduction_edges() {
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const bool empty : {false, true}) {
+    const auto desc =
+        TensorDesc::dense(half_test::data_type<Value>(),
+                          std::array<std::int64_t, 2>{2, empty ? 0 : 2})
+            .value();
+    std::vector<Value> source;
+    if (!empty)
+      source = {
+          half_test::encode<Value>(std::numeric_limits<double>::quiet_NaN()),
+          half_test::encode<Value>(1.0),
+          half_test::encode<Value>(-std::numeric_limits<double>::infinity()),
+          half_test::encode<Value>(std::numeric_limits<double>::infinity())};
+    Buffer input = half_test::buffer<Value>(source);
+    const auto input_view = ConstTensorView::create(desc, input.view()).value();
+    for (const auto kind : {ReductionKind::kSum, ReductionKind::kMean,
+                            ReductionKind::kMinimum, ReductionKind::kMaximum}) {
+      auto prepared =
+          hyle::compute::prepare(
+              context,
+              Reduce{.kind = kind,
+                     .axes =
+                         Axes::from(std::array<std::int32_t, 1>{-1}).value(),
+                     .accumulation_type = DataType::kFloat32},
+              desc)
+              .value();
+      std::vector<Value> zero(2);
+      Buffer output = half_test::buffer<Value>(zero);
+      const auto target =
+          TensorView::create(prepared.output_description().value(),
+                             output.view())
+              .value();
+      auto invocation = prepared.create_invocation().value();
+      ASSERT_TRUE(invocation.submit(queue, input_view, target)->wait().ok());
+      const auto actual = half_test::read<Value>(output);
+      const double identity = kind == ReductionKind::kSum ? 0.0
+                              : kind == ReductionKind::kMean
+                                  ? std::numeric_limits<double>::quiet_NaN()
+                              : kind == ReductionKind::kMinimum
+                                  ? std::numeric_limits<double>::infinity()
+                                  : -std::numeric_limits<double>::infinity();
+      half_test::expect_near(actual[0],
+                             empty ? identity
+                                   : std::numeric_limits<double>::quiet_NaN());
+      const double special = kind == ReductionKind::kMinimum
+                                 ? -std::numeric_limits<double>::infinity()
+                             : kind == ReductionKind::kMaximum
+                                 ? std::numeric_limits<double>::infinity()
+                                 : std::numeric_limits<double>::quiet_NaN();
+      half_test::expect_near(actual[1], empty ? identity : special);
+    }
+  }
+}
+
+TEST(NativeReduction, HalfPreservesEmptyAndNonFiniteRules) {
+  expect_half_reduction_edges<hyle::simd::float16_t>();
+  expect_half_reduction_edges<hyle::simd::bfloat16_t>();
 }
 
 } // namespace

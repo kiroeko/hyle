@@ -1,4 +1,5 @@
 #include "native_plan.h"
+#include "numeric.h"
 
 #include <algorithm>
 #include <array>
@@ -8,6 +9,7 @@
 #include <cstring>
 #include <limits>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "../compute/rope_kernels.h"
@@ -289,11 +291,13 @@ submit_rope(const NativePlan &plan, std::span<const ConstTensorView> inputs,
   return completed(std::move(terminal));
 }
 
+template <class Value = float>
 float masked_softmax_value(const NativePlan &plan, const std::byte *input,
                            const TensorDesc &input_desc, const std::byte *mask,
                            const TensorDesc *mask_desc,
                            std::size_t logical) noexcept {
-  float value = load_f32(input, logical_byte_offset(input_desc, logical));
+  float value =
+      numeric::load<Value>(input + logical_byte_offset(input_desc, logical));
   value *= plan.scalar;
   if (plan.mask_kind == MaskKind::kNone)
     return value;
@@ -303,7 +307,7 @@ float masked_softmax_value(const NativePlan &plan, const std::byte *input,
     return mask[mask_offset] == std::byte{0}
                ? -std::numeric_limits<float>::infinity()
                : value;
-  return value + load_f32(mask, mask_offset);
+  return value + numeric::load<Value>(mask + mask_offset);
 }
 
 void invalid_softmax_row(std::byte *output, std::size_t outer,
@@ -317,9 +321,10 @@ void invalid_softmax_row(std::byte *output, std::size_t outer,
   }
 }
 
-detail::EnqueueResult
-submit_softmax(const NativePlan &plan, std::span<const ConstTensorView> inputs,
-               std::span<const TensorView> outputs) noexcept {
+template <class Value>
+detail::EnqueueResult submit_softmax_impl(
+    const NativePlan &plan, std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs, mem::BufferView workspace) noexcept {
   if ((inputs.size() != 1 && inputs.size() != 2) || outputs.size() != 1)
     return completed(Status::Internal("native Softmax plan is invalid"));
   const TensorDesc &input_desc = inputs[0].description();
@@ -401,88 +406,141 @@ submit_softmax(const NativePlan &plan, std::span<const ConstTensorView> inputs,
   const std::size_t outer = product(dimensions, 0, plan.axis);
   const std::size_t inner =
       product(dimensions, plan.axis + 1, dimensions.size());
-  const bool contiguous = input_desc.is_dense() && output_desc.is_dense() &&
-                          plan.axis + 1 == dimensions.size();
-  if (contiguous) {
-    for (std::size_t row = 0; row < outer; ++row) {
-      const std::size_t base = row * axis_extent;
-      auto *destination = reinterpret_cast<float *>(output) + base;
-      const auto *source = reinterpret_cast<const float *>(input) + base;
-      if (mask_desc == nullptr && plan.scalar == 1.0F) {
-        if (plan.softmax_kind == SoftmaxKind::kSoftmax)
-          simd::softmax_f32(source, destination, axis_extent);
-        else
-          simd::log_softmax_f32(source, destination, axis_extent);
-        continue;
-      }
-      for (std::size_t lane = 0; lane < axis_extent; ++lane) {
-        destination[lane] = masked_softmax_value(plan, input, input_desc, mask,
-                                                 mask_desc, base + lane);
-      }
-      if (plan.softmax_kind == SoftmaxKind::kSoftmax)
-        simd::softmax_f32(destination, axis_extent);
-      else
-        simd::log_softmax_f32(destination, axis_extent);
+  Status terminal = Status::Ok();
+  if constexpr (!std::is_same_v<Value, float>) {
+    auto scratch_result = workspace.map_host(mem::HostAccess::kWrite);
+    if (!scratch_result) {
+      output_mapping.close().IgnoreError();
+      mask_mapping.close().IgnoreError();
+      input_mapping.close().IgnoreError();
+      return completed(std::move(scratch_result).error());
     }
-  } else {
+    mem::HostMapping scratch_mapping = std::move(*scratch_result);
+    auto scratch_bytes = scratch_mapping.writable_bytes();
+    if (!scratch_bytes ||
+        !aligned_for_storage(scratch_bytes->data(), alignof(float))) {
+      scratch_mapping.close().IgnoreError();
+      output_mapping.close().IgnoreError();
+      mask_mapping.close().IgnoreError();
+      input_mapping.close().IgnoreError();
+      return completed(Status::FailedPrecondition(
+          "CPU Softmax workspace mapping is invalid"));
+    }
+    auto *row_scratch = reinterpret_cast<float *>(scratch_bytes->data());
     for (std::size_t row = 0; row < outer; ++row) {
       for (std::size_t inner_index = 0; inner_index < inner; ++inner_index) {
-        float maximum = -std::numeric_limits<float>::infinity();
-        bool valid = false;
-        for (std::size_t lane = 0; lane < axis_extent; ++lane) {
-          const std::size_t logical =
-              (row * axis_extent + lane) * inner + inner_index;
-          const float value = masked_softmax_value(plan, input, input_desc,
-                                                   mask, mask_desc, logical);
-          if (std::isnan(value) ||
-              value == std::numeric_limits<float>::infinity()) {
-            valid = false;
-            maximum = std::numeric_limits<float>::quiet_NaN();
-            break;
-          }
-          if (std::isfinite(value)) {
-            maximum = (std::max)(maximum, value);
-            valid = true;
+        if (input_desc.is_dense() && inner == 1 && mask_desc == nullptr &&
+            plan.scalar == 1.0F) {
+          numeric::load_tile<Value>(input, row * axis_extent, row_scratch,
+                                    axis_extent);
+        } else {
+          for (std::size_t lane = 0; lane < axis_extent; ++lane) {
+            const std::size_t logical =
+                (row * axis_extent + lane) * inner + inner_index;
+            row_scratch[lane] = masked_softmax_value<Value>(
+                plan, input, input_desc, mask, mask_desc, logical);
           }
         }
-        if (!valid) {
-          invalid_softmax_row(output, row, inner_index, axis_extent, inner);
+        if (plan.softmax_kind == SoftmaxKind::kSoftmax)
+          simd::softmax_f32(row_scratch, axis_extent);
+        else
+          simd::log_softmax_f32(row_scratch, axis_extent);
+        if (inner == 1) {
+          numeric::store_tile<Value>(row_scratch, output, row * axis_extent,
+                                     axis_extent);
+        } else {
+          for (std::size_t lane = 0; lane < axis_extent; ++lane) {
+            const std::size_t logical =
+                (row * axis_extent + lane) * inner + inner_index;
+            numeric::store<Value>(output + logical * sizeof(Value),
+                                  row_scratch[lane]);
+          }
+        }
+      }
+    }
+    preserve_first_error(terminal, scratch_mapping.close());
+  } else {
+    const bool contiguous = input_desc.is_dense() && output_desc.is_dense() &&
+                            plan.axis + 1 == dimensions.size();
+    if (contiguous) {
+      for (std::size_t row = 0; row < outer; ++row) {
+        const std::size_t base = row * axis_extent;
+        auto *destination = reinterpret_cast<float *>(output) + base;
+        const auto *source = reinterpret_cast<const float *>(input) + base;
+        if (mask_desc == nullptr && plan.scalar == 1.0F) {
+          if (plan.softmax_kind == SoftmaxKind::kSoftmax)
+            simd::softmax_f32(source, destination, axis_extent);
+          else
+            simd::log_softmax_f32(source, destination, axis_extent);
           continue;
         }
-        double sum = 0.0;
         for (std::size_t lane = 0; lane < axis_extent; ++lane) {
-          const std::size_t logical =
-              (row * axis_extent + lane) * inner + inner_index;
-          const float value = masked_softmax_value(plan, input, input_desc,
-                                                   mask, mask_desc, logical);
-          const float exponential = std::exp(value - maximum);
-          sum += static_cast<double>(exponential);
-          store_f32(output, logical * sizeof(float),
-                    plan.softmax_kind == SoftmaxKind::kSoftmax ? exponential
-                                                               : value);
+          destination[lane] = masked_softmax_value(
+              plan, input, input_desc, mask, mask_desc, base + lane);
         }
-        if (plan.softmax_kind == SoftmaxKind::kSoftmax) {
-          const float inverse = static_cast<float>(1.0 / sum);
+        if (plan.softmax_kind == SoftmaxKind::kSoftmax)
+          simd::softmax_f32(destination, axis_extent);
+        else
+          simd::log_softmax_f32(destination, axis_extent);
+      }
+    } else {
+      for (std::size_t row = 0; row < outer; ++row) {
+        for (std::size_t inner_index = 0; inner_index < inner; ++inner_index) {
+          float maximum = -std::numeric_limits<float>::infinity();
+          bool valid = false;
           for (std::size_t lane = 0; lane < axis_extent; ++lane) {
             const std::size_t logical =
                 (row * axis_extent + lane) * inner + inner_index;
-            store_f32(output, logical * sizeof(float),
-                      load_f32(output, logical * sizeof(float)) * inverse);
+            const float value = masked_softmax_value(plan, input, input_desc,
+                                                     mask, mask_desc, logical);
+            if (std::isnan(value) ||
+                value == std::numeric_limits<float>::infinity()) {
+              valid = false;
+              maximum = std::numeric_limits<float>::quiet_NaN();
+              break;
+            }
+            if (std::isfinite(value)) {
+              maximum = (std::max)(maximum, value);
+              valid = true;
+            }
           }
-        } else {
-          const float shift = maximum + static_cast<float>(std::log(sum));
+          if (!valid) {
+            invalid_softmax_row(output, row, inner_index, axis_extent, inner);
+            continue;
+          }
+          double sum = 0.0;
           for (std::size_t lane = 0; lane < axis_extent; ++lane) {
             const std::size_t logical =
                 (row * axis_extent + lane) * inner + inner_index;
+            const float value = masked_softmax_value(plan, input, input_desc,
+                                                     mask, mask_desc, logical);
+            const float exponential = std::exp(value - maximum);
+            sum += static_cast<double>(exponential);
             store_f32(output, logical * sizeof(float),
-                      load_f32(output, logical * sizeof(float)) - shift);
+                      plan.softmax_kind == SoftmaxKind::kSoftmax ? exponential
+                                                                 : value);
+          }
+          if (plan.softmax_kind == SoftmaxKind::kSoftmax) {
+            const float inverse = static_cast<float>(1.0 / sum);
+            for (std::size_t lane = 0; lane < axis_extent; ++lane) {
+              const std::size_t logical =
+                  (row * axis_extent + lane) * inner + inner_index;
+              store_f32(output, logical * sizeof(float),
+                        load_f32(output, logical * sizeof(float)) * inverse);
+            }
+          } else {
+            const float shift = maximum + static_cast<float>(std::log(sum));
+            for (std::size_t lane = 0; lane < axis_extent; ++lane) {
+              const std::size_t logical =
+                  (row * axis_extent + lane) * inner + inner_index;
+              store_f32(output, logical * sizeof(float),
+                        load_f32(output, logical * sizeof(float)) - shift);
+            }
           }
         }
       }
     }
   }
-
-  Status terminal = Status::Ok();
   if (!output_storage.resource().properties().has(
           mem::MemoryProperty::kHostDeviceCoherent)) {
     preserve_first_error(terminal, output_mapping.flush());
@@ -491,6 +549,12 @@ submit_softmax(const NativePlan &plan, std::span<const ConstTensorView> inputs,
   preserve_first_error(terminal, mask_mapping.close());
   preserve_first_error(terminal, input_mapping.close());
   return completed(std::move(terminal));
+}
+
+detail::EnqueueResult
+submit_softmax(const NativePlan &plan, std::span<const ConstTensorView> inputs,
+               std::span<const TensorView> outputs) noexcept {
+  return submit_softmax_impl<float>(plan, inputs, outputs, {});
 }
 
 struct BetterScore final {
@@ -551,6 +615,7 @@ void select_top_k(const float *scores, std::size_t count,
     std::sort_heap(result, result + selected, better);
 }
 
+template <class Value>
 detail::EnqueueResult submit_top_k(const NativePlan &plan,
                                    std::span<const ConstTensorView> inputs,
                                    std::span<const TensorView> outputs,
@@ -634,18 +699,23 @@ detail::EnqueueResult submit_top_k(const NativePlan &plan,
   const std::size_t outer = product(dimensions, 0, plan.axis);
   const std::size_t inner =
       product(dimensions, plan.axis + 1, dimensions.size());
-  const bool direct = input_desc.is_dense() && inner == 1;
+  const bool direct =
+      std::is_same_v<Value, float> && input_desc.is_dense() && inner == 1;
   for (std::size_t row = 0; row < outer; ++row) {
     for (std::size_t inner_index = 0; inner_index < inner; ++inner_index) {
       const float *scores = nullptr;
       if (direct) {
         scores = reinterpret_cast<const float *>(input) + row * axis_extent;
+      } else if (input_desc.is_dense() && inner == 1) {
+        numeric::load_tile<Value>(input, row * axis_extent, row_scratch,
+                                  axis_extent);
+        scores = row_scratch;
       } else {
         for (std::size_t lane = 0; lane < axis_extent; ++lane) {
           const std::size_t logical =
               (row * axis_extent + lane) * inner + inner_index;
-          row_scratch[lane] =
-              load_f32(input, logical_byte_offset(input_desc, logical));
+          row_scratch[lane] = numeric::load<Value>(
+              input + logical_byte_offset(input_desc, logical));
         }
         scores = row_scratch;
       }
@@ -654,8 +724,8 @@ detail::EnqueueResult submit_top_k(const NativePlan &plan,
       for (std::size_t selected = 0; selected < plan.count; ++selected) {
         const std::size_t output_logical =
             (row * plan.count + selected) * inner + inner_index;
-        store_f32(values, output_logical * sizeof(float),
-                  selection[selected].score);
+        numeric::store<Value>(values + output_logical * sizeof(Value),
+                              selection[selected].score);
         const std::int32_t index =
             static_cast<std::int32_t>(selection[selected].index);
         std::memcpy(indices + output_logical * sizeof(index), &index,
@@ -738,28 +808,28 @@ Status prepare_transformer(Operation operation,
   case OperationKind::kSoftmax: {
     if ((inputs.size() != 1 && inputs.size() != 2) || outputs.size() != 1)
       return Status::Internal("native Softmax arity is invalid");
-    Status status = require_plain_f32(
-        inputs[0], "native Softmax currently requires plain float32 input");
-    if (!status.ok())
-      return status;
-    status = require_plain_f32(
-        outputs[0], "native Softmax currently requires float32 output");
-    if (!status.ok() || !outputs[0].is_dense())
-      return status.ok() ? Status::Unimplemented(
-                               "native Softmax requires a dense output tensor")
-                         : status;
+    const DataType type = inputs[0].data_type();
+    if ((type != DataType::kFloat32 && type != DataType::kFloat16 &&
+         type != DataType::kBFloat16) ||
+        !inputs[0].is_plain() || outputs[0].data_type() != type ||
+        !outputs[0].is_plain() || !outputs[0].is_dense())
+      return Status::Unimplemented("native Softmax requires plain "
+                                   "float32/float16/bfloat16 and dense output");
     const Softmax *softmax = operation.get_if<Softmax>();
     if (softmax->accumulation_type != DataType::kUnknown &&
         softmax->accumulation_type != DataType::kFloat32) {
       return Status::Unimplemented(
           "native Softmax currently supports float32 accumulation");
     }
+    if (type != DataType::kFloat32 &&
+        softmax->accumulation_type != DataType::kFloat32)
+      return Status::Unimplemented(
+          "native half Softmax requires float32 accumulation");
     if (softmax->mask != MaskKind::kNone) {
-      if (!inputs[1].is_plain() ||
-          (softmax->mask == MaskKind::kAdditive &&
-           inputs[1].data_type() != DataType::kFloat32)) {
+      if (!inputs[1].is_plain() || (softmax->mask == MaskKind::kAdditive &&
+                                    inputs[1].data_type() != type)) {
         return Status::Unimplemented(
-            "native Softmax requires plain Bool or float32 masks");
+            "native Softmax requires plain Bool or matching floating masks");
       }
     }
     auto axis = normalized_axis(softmax->axis, inputs[0].rank());
@@ -771,23 +841,39 @@ Status prepare_transformer(Operation operation,
     plan.mask_kind = softmax->mask;
     if (inputs[0] == outputs[0])
       plan.alias_input_mask = 1;
-    plan.submit_route = &submit_softmax;
+    if (type == DataType::kFloat32) {
+      plan.submit_route = &submit_softmax;
+    } else {
+      const auto extent =
+          math::try_integer_cast<std::size_t>(inputs[0].dimensions()[*axis]);
+      if (!extent)
+        return Status::OutOfRange("native Softmax row exceeds size_t");
+      HYLE_ASSIGN_OR_RETURN(const auto output_count,
+                            outputs[0].element_count());
+      const auto scratch =
+          math::try_multiply(output_count == 0 ? 0 : *extent, sizeof(float));
+      if (!scratch)
+        return Status::OutOfRange("native Softmax row workspace overflows");
+      plan.workspace = {.size = *scratch, .alignment = alignof(float)};
+      plan.workspace_submit_route =
+          type == DataType::kFloat16 ? &submit_softmax_impl<simd::float16_t>
+                                     : &submit_softmax_impl<simd::bfloat16_t>;
+    }
     return Status::Ok();
   }
   case OperationKind::kTopK: {
     if (inputs.size() != 1 || outputs.size() != 2)
       return Status::Internal("native TopK arity is invalid");
-    Status status = require_plain_f32(
-        inputs[0], "native TopK currently requires plain float32 input");
-    if (!status.ok())
-      return status;
-    status = require_plain_f32(
-        outputs[0], "native TopK currently requires float32 value output");
-    if (!status.ok() || !outputs[0].is_dense() ||
+    const DataType type = inputs[0].data_type();
+    if ((type != DataType::kFloat32 && type != DataType::kFloat16 &&
+         type != DataType::kBFloat16) ||
+        !inputs[0].is_plain() || outputs[0].data_type() != type ||
+        !outputs[0].is_plain() || !outputs[0].is_dense() ||
         outputs[1].data_type() != DataType::kInt32 || !outputs[1].is_plain() ||
         !outputs[1].is_dense()) {
       return Status::Unimplemented(
-          "native TopK requires dense float32 values and i32 indices");
+          "native TopK requires plain float32/float16/bfloat16 and dense "
+          "values/i32 indices");
     }
     const TopK *top_k = operation.get_if<TopK>();
     auto axis = normalized_axis(top_k->axis, inputs[0].rank());
@@ -806,7 +892,7 @@ Status prepare_transformer(Operation operation,
     const std::size_t inner =
         product(inputs[0].dimensions(), *axis + 1, inputs[0].rank());
     std::size_t scratch = 0;
-    if (!inputs[0].is_dense() || inner != 1) {
+    if (type != DataType::kFloat32 || !inputs[0].is_dense() || inner != 1) {
       auto scratch_bytes = math::try_multiply(axis_extent, sizeof(float));
       if (!scratch_bytes)
         return Status::OutOfRange("native TopK row workspace overflows");
@@ -820,11 +906,15 @@ Status prepare_transformer(Operation operation,
     plan.largest = top_k->largest;
     plan.sorted = top_k->sorted;
     plan.stable = top_k->stable;
+    HYLE_ASSIGN_OR_RETURN(const auto output_count, outputs[0].element_count());
     plan.workspace = WorkspaceRequirement{
-        .size = *workspace,
+        .size = output_count == 0 ? 0 : *workspace,
         .alignment = alignof(simd::ScoredIndexF32),
     };
-    plan.workspace_submit_route = &submit_top_k;
+    plan.workspace_submit_route =
+        type == DataType::kFloat16    ? &submit_top_k<simd::float16_t>
+        : type == DataType::kBFloat16 ? &submit_top_k<simd::bfloat16_t>
+                                      : &submit_top_k<float>;
     return Status::Ok();
   }
   default:

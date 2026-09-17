@@ -800,6 +800,9 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kRmsNorm: {
+    if (operation.get_if<RmsNorm>()->accumulation_type != DataType::kFloat32)
+      return Status::Unimplemented(
+          "native RMSNorm supports float32 accumulation");
     if (inputs[0].data_type() == DataType::kFloat16 ||
         inputs[0].data_type() == DataType::kBFloat16) {
       Status status =
@@ -892,6 +895,14 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kGatedActivation: {
+    if (inputs[0].data_type() == DataType::kFloat16 ||
+        inputs[0].data_type() == DataType::kBFloat16) {
+      Status status =
+          internal::prepare_half_gated(operation, inputs, outputs, plan);
+      if (!status.ok())
+        return status;
+      break;
+    }
     const GatedActivation *gated = operation.get_if<GatedActivation>();
     if (gated == nullptr)
       return Status::Internal("native gated descriptor is missing");

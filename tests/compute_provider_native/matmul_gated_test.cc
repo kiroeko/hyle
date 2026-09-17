@@ -6,11 +6,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <numbers>
 #include <span>
 #include <utility>
 #include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -456,6 +458,86 @@ TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
       separate_invocation.submit(queue, gate_view, value_view, gate_alias);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
+}
+
+template <class Value> void expect_half_gated(std::size_t hidden) {
+  constexpr std::size_t rows = 2;
+  const auto type = half_test::data_type<Value>();
+  const auto desc =
+      TensorDesc::dense(
+          type,
+          std::array<std::int64_t, 2>{rows, static_cast<std::int64_t>(hidden)})
+          .value();
+  const auto packed_desc =
+      TensorDesc::dense(type,
+                        std::array<std::int64_t, 2>{
+                            rows, static_cast<std::int64_t>(hidden * 2)})
+          .value();
+  std::vector<Value> gate(rows * hidden), value(rows * hidden),
+      packed(2 * rows * hidden);
+  for (std::size_t index = 0; index < gate.size(); ++index) {
+    gate[index] = half_test::encode<Value>(
+        static_cast<double>(static_cast<int>(index % 65) - 32) / 8);
+    value[index] = half_test::encode<Value>(
+        static_cast<double>(static_cast<int>(index % 31) - 15) / 8);
+    packed[(index / hidden) * 2 * hidden + index % hidden] = gate[index];
+    packed[(index / hidden) * 2 * hidden + hidden + index % hidden] =
+        value[index];
+  }
+  Buffer gate_buffer = half_test::buffer<Value>(gate);
+  Buffer value_buffer = half_test::buffer<Value>(value);
+  Buffer packed_buffer = half_test::buffer<Value>(packed);
+  Buffer output_buffer = half_test::buffer<Value>(gate);
+  const auto gate_view =
+      ConstTensorView::create(desc, gate_buffer.view()).value();
+  const auto value_view =
+      ConstTensorView::create(desc, value_buffer.view()).value();
+  const auto packed_view =
+      ConstTensorView::create(packed_desc, packed_buffer.view()).value();
+  const auto output_view =
+      TensorView::create(desc, output_buffer.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const auto kind :
+       {GatedActivationKind::kSilu, GatedActivationKind::kGelu,
+        GatedActivationKind::kGeluTanh}) {
+    for (const bool is_packed : {false, true}) {
+      const GatedActivation operation{
+          .activation = kind,
+          .inputs = is_packed ? GatedInputKind::kPackedHalves
+                              : GatedInputKind::kSeparate};
+      auto prepared =
+          is_packed ? hyle::compute::prepare(context, operation, packed_desc)
+                    : hyle::compute::prepare(context, operation, desc, desc);
+      ASSERT_TRUE(prepared.has_value());
+      auto invocation = prepared->create_invocation().value();
+      auto completion =
+          is_packed
+              ? invocation.submit(queue, packed_view, output_view)
+              : invocation.submit(queue, gate_view, value_view, output_view);
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual = half_test::read<Value>(output_buffer);
+      for (std::size_t index = 0; index < gate.size(); ++index) {
+        const double x = half_test::decode(gate[index]);
+        const double y = half_test::decode(value[index]);
+        const double activation =
+            kind == GatedActivationKind::kSilu ? x / (1 + std::exp(-x))
+            : kind == GatedActivationKind::kGelu
+                ? 0.5 * x * (1 + std::erf(x / std::numbers::sqrt2))
+                : 0.5 * x *
+                      (1 + std::tanh(std::sqrt(2 / std::numbers::pi) *
+                                     (x + 0.044715 * x * x * x)));
+        half_test::expect_near(actual[index], activation * y);
+      }
+    }
+  }
+}
+
+TEST(NativeGatedActivation, HalfStoragePreservesPackedAndSeparateSemantics) {
+  for (const std::size_t hidden : {0, 1, 127, 128, 129, 2048}) {
+    expect_half_gated<hyle::simd::float16_t>(hidden);
+    expect_half_gated<hyle::simd::bfloat16_t>(hidden);
+  }
 }
 
 } // namespace

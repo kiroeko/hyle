@@ -6,6 +6,7 @@
 #include <span>
 
 #include "../compute/native_context_fixture.h"
+#include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -179,6 +180,65 @@ TEST(NativeIndexing, ConcatenatesVariadicDenseInputsAlongMiddleAxis) {
   ASSERT_TRUE(invocation.submit(queue, inputs, outputs[0])->wait().ok());
   EXPECT_EQ((read_buffer<std::int16_t, expected.size()>(output_storage)),
             expected);
+}
+
+template <class Value> void expect_half_scatter() {
+  const auto type = half_test::data_type<Value>();
+  std::array<Value, 8> source{};
+  source.fill(half_test::encode<Value>(1.0));
+  constexpr bool bf16 = std::is_same_v<Value, hyle::simd::bfloat16_t>;
+  const double half_ulp = bf16 ? 1.0 / 256 : 1.0 / 2048;
+  const std::array updates{
+      half_test::encode<Value>(half_ulp), half_test::encode<Value>(half_ulp),
+      half_test::encode<Value>(half_ulp), half_test::encode<Value>(4.0)};
+  std::array<std::int32_t, 4> indices{2, 2, 2, 0};
+  const auto desc =
+      TensorDesc::dense(type, std::array<std::int64_t, 1>{8}).value();
+  const auto update_desc =
+      TensorDesc::dense(type, std::array<std::int64_t, 1>{4}).value();
+  const auto index_desc =
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{4})
+          .value();
+  Buffer storage = make_buffer(source);
+  Buffer update_storage = make_buffer(updates);
+  Buffer index_storage = make_buffer(indices);
+  const auto output = TensorView::create(desc, storage.view()).value();
+  const auto update_view =
+      ConstTensorView::create(update_desc, update_storage.view()).value();
+  const auto index_view =
+      ConstTensorView::create(index_desc, index_storage.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  auto prepared =
+      hyle::compute::prepare(context, Scatter{.kind = ScatterKind::kAdd}, desc,
+                             index_desc, update_desc)
+          .value();
+  auto invocation = prepared.create_invocation().value();
+  ASSERT_TRUE(
+      invocation
+          .submit(queue, output.as_const(), index_view, update_view, output)
+          ->wait()
+          .ok());
+  const auto actual = half_test::read<Value>(storage);
+  for (std::size_t index = 0; index < actual.size(); ++index)
+    EXPECT_EQ(actual[index].bits,
+              half_test::encode<Value>(index == 0 ? 5.0 : 1.0).bits);
+
+  indices.back() = 8;
+  ASSERT_TRUE(
+      index_storage.view().write(std::as_bytes(std::span(indices))).ok());
+  auto failed = invocation.submit(queue, output.as_const(), index_view,
+                                  update_view, output);
+  ASSERT_TRUE(failed.has_value());
+  EXPECT_TRUE(failed->wait().IsOutOfRange());
+  const auto unchanged = half_test::read<Value>(storage);
+  for (std::size_t index = 0; index < actual.size(); ++index)
+    EXPECT_EQ(unchanged[index].bits, actual[index].bits);
+}
+
+TEST(NativeIndexing, HalfScatterUsesOrderedRoundingAndChecksBeforeWriting) {
+  expect_half_scatter<hyle::simd::float16_t>();
+  expect_half_scatter<hyle::simd::bfloat16_t>();
 }
 
 } // namespace

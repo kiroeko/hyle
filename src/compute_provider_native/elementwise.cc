@@ -200,6 +200,25 @@ void binary_scalar(const std::byte *first, const std::byte *second,
                                               numeric::load<Value>(second)));
 }
 
+template <GatedActivationKind Kind, class Value>
+void gated_narrow_linear(const void *first, const void *second, const void *,
+                         void *output, std::size_t count) noexcept {
+  std::array<float, 128> gate;
+  std::array<float, 128> value;
+  for (std::size_t begin = 0; begin < count; begin += gate.size()) {
+    const std::size_t size = (std::min)(gate.size(), count - begin);
+    numeric::load_tile<Value>(first, begin, gate.data(), size);
+    numeric::load_tile<Value>(second, begin, value.data(), size);
+    if constexpr (Kind == GatedActivationKind::kSilu)
+      simd::swiglu_f32_batch(gate.data(), value.data(), gate.data(), size);
+    else if constexpr (Kind == GatedActivationKind::kGelu)
+      simd::geglu_f32_batch(gate.data(), value.data(), gate.data(), size);
+    else
+      simd::geglu_tanh_f32_batch(gate.data(), value.data(), gate.data(), size);
+    numeric::store_tile<Value>(gate.data(), output, begin, size);
+  }
+}
+
 template <std::size_t ElementSize>
 void select_linear(const void *first, const void *second, const void *third,
                    void *output, std::size_t count) noexcept {
@@ -248,16 +267,43 @@ void close_ignoring_errors(std::array<mem::HostMapping, 3> &mappings,
     mapping.close().IgnoreError();
 }
 
+struct GatedEpisode final {
+  const NativePlan *plan = nullptr;
+  const std::byte *first = nullptr;
+  const std::byte *second = nullptr;
+  std::byte *output = nullptr;
+};
+
+void run_gated_range(void *context, std::size_t, std::size_t begin,
+                     std::size_t end) noexcept {
+  const auto &episode = *static_cast<const GatedEpisode *>(context);
+  const NativePlan &plan = *episode.plan;
+  const std::size_t hidden = plan.parameters[1];
+  const std::size_t element_size = plan.parameters[2];
+  for (std::size_t row = begin; row < end; ++row) {
+    const std::byte *gate =
+        episode.first + row * plan.row_first_stride * element_size;
+    const std::byte *value = episode.second != nullptr
+                                 ? episode.second + row * hidden * element_size
+                                 : gate + hidden * element_size;
+    plan.linear_elementwise_route(gate, value, nullptr,
+                                  episode.output + row * hidden * element_size,
+                                  hidden);
+  }
+}
+
+template <bool Gated = false>
 detail::EnqueueResult
 submit_elementwise(const NativePlan &plan,
                    std::span<const ConstTensorView> inputs,
                    std::span<const TensorView> outputs) noexcept {
   if (inputs.empty() || inputs.size() > 3 || outputs.size() != 1 ||
       plan.linear_elementwise_route == nullptr ||
-      plan.scalar_elementwise_route == nullptr) {
+      (!Gated && plan.scalar_elementwise_route == nullptr)) {
     return completed(Status::Internal("native elementwise plan is invalid"));
   }
-  const std::size_t elements = plan.parameters[0];
+  const std::size_t elements =
+      plan.parameters[0] * (Gated ? plan.parameters[1] : std::size_t{1});
   if (elements == 0)
     return completed(Status::Ok());
 
@@ -363,35 +409,43 @@ submit_elementwise(const NativePlan &plan,
         "CPU elementwise mapping does not satisfy tensor alignment"));
   }
 
-  const std::size_t linear_chunk = plan.parameters[1];
-  if (linear_chunk != 0) {
-    const auto output_dimensions = outputs[0].description().dimensions();
-    for (std::size_t base = 0; base < elements; base += linear_chunk) {
-      std::array<const std::byte *, 3> logical{};
-      for (std::size_t index = 0; index < inputs.size(); ++index) {
-        logical[index] = source_data[index] + logical_broadcast_byte_offset(
-                                                  inputs[index].description(),
-                                                  output_dimensions, base);
-      }
-      plan.linear_elementwise_route(
-          logical[0], inputs.size() > 1 ? logical[1] : nullptr,
-          inputs.size() > 2 ? logical[2] : nullptr,
-          output_data + base * plan.parameters[2], linear_chunk);
-    }
+  if constexpr (Gated) {
+    GatedEpisode episode{.plan = &plan,
+                         .first = source_data[0],
+                         .second = inputs.size() > 1 ? source_data[1] : nullptr,
+                         .output = output_data};
+    parallel_for_ranges(plan, plan.parameters[0], &run_gated_range, &episode);
   } else {
-    const auto output_dimensions = outputs[0].description().dimensions();
-    const std::size_t output_element_size = plan.parameters[2];
-    for (std::size_t linear = 0; linear < elements; ++linear) {
-      std::array<const std::byte *, 3> logical{};
-      for (std::size_t index = 0; index < inputs.size(); ++index) {
-        logical[index] = source_data[index] + logical_broadcast_byte_offset(
-                                                  inputs[index].description(),
-                                                  output_dimensions, linear);
+    const std::size_t linear_chunk = plan.parameters[1];
+    if (linear_chunk != 0) {
+      const auto output_dimensions = outputs[0].description().dimensions();
+      for (std::size_t base = 0; base < elements; base += linear_chunk) {
+        std::array<const std::byte *, 3> logical{};
+        for (std::size_t index = 0; index < inputs.size(); ++index) {
+          logical[index] = source_data[index] + logical_broadcast_byte_offset(
+                                                    inputs[index].description(),
+                                                    output_dimensions, base);
+        }
+        plan.linear_elementwise_route(
+            logical[0], inputs.size() > 1 ? logical[1] : nullptr,
+            inputs.size() > 2 ? logical[2] : nullptr,
+            output_data + base * plan.parameters[2], linear_chunk);
       }
-      plan.scalar_elementwise_route(logical[0],
-                                    inputs.size() > 1 ? logical[1] : nullptr,
-                                    inputs.size() > 2 ? logical[2] : nullptr,
-                                    output_data + linear * output_element_size);
+    } else {
+      const auto output_dimensions = outputs[0].description().dimensions();
+      const std::size_t output_element_size = plan.parameters[2];
+      for (std::size_t linear = 0; linear < elements; ++linear) {
+        std::array<const std::byte *, 3> logical{};
+        for (std::size_t index = 0; index < inputs.size(); ++index) {
+          logical[index] = source_data[index] + logical_broadcast_byte_offset(
+                                                    inputs[index].description(),
+                                                    output_dimensions, linear);
+        }
+        plan.scalar_elementwise_route(
+            logical[0], inputs.size() > 1 ? logical[1] : nullptr,
+            inputs.size() > 2 ? logical[2] : nullptr,
+            output_data + linear * output_element_size);
+      }
     }
   }
 
@@ -655,7 +709,76 @@ Status prepare_elementwise(Operation operation,
       }
     }
   }
-  plan.submit_route = &submit_elementwise;
+  plan.submit_route = &submit_elementwise<>;
+  return Status::Ok();
+}
+
+Status prepare_half_gated(Operation operation,
+                          std::span<const TensorDesc> inputs,
+                          std::span<const TensorDesc> outputs,
+                          NativePlan &plan) noexcept {
+  const GatedActivation *gated = operation.get_if<GatedActivation>();
+  if (gated == nullptr || outputs.size() != 1 || inputs.empty() ||
+      inputs.size() != (gated->inputs == GatedInputKind::kSeparate ? 2U : 1U) ||
+      outputs[0].rank() == 0)
+    return Status::Internal("native half gated activation arity is invalid");
+  const DataType type = inputs[0].data_type();
+  if (type != DataType::kFloat16 && type != DataType::kBFloat16)
+    return Status::Unimplemented(
+        "native half gated activation requires float16/bfloat16");
+  for (const TensorDesc &input : inputs)
+    if (!input.is_plain() || !input.is_dense())
+      return Status::Unimplemented(
+          "native gated activation requires dense plain input");
+  if (!outputs[0].is_plain() || !outputs[0].is_dense())
+    return Status::Unimplemented(
+        "native gated activation requires dense plain output");
+  const auto dimensions = outputs[0].dimensions();
+  std::size_t rows = 1;
+  for (std::size_t axis = 0; axis + 1 < dimensions.size(); ++axis) {
+    const auto extent = math::try_integer_cast<std::size_t>(dimensions[axis]);
+    if (!extent)
+      return Status::OutOfRange("gated row extent exceeds size_t");
+    const auto next = math::try_multiply(rows, *extent);
+    if (!next)
+      return Status::OutOfRange("gated row count exceeds size_t");
+    rows = *next;
+  }
+  const auto width =
+      math::try_integer_cast<std::size_t>(inputs[0].dimensions().back());
+  const auto hidden = math::try_integer_cast<std::size_t>(dimensions.back());
+  if (!width || !hidden)
+    return Status::OutOfRange("gated hidden width exceeds size_t");
+  plan.parameters = {rows, *hidden, data_type_size(type)};
+  plan.row_first_stride = *width;
+  plan.row_output_stride = *hidden;
+  switch (gated->activation) {
+  case GatedActivationKind::kSilu:
+    plan.linear_elementwise_route =
+        type == DataType::kFloat16
+            ? &gated_narrow_linear<GatedActivationKind::kSilu, simd::float16_t>
+            : &gated_narrow_linear<GatedActivationKind::kSilu,
+                                   simd::bfloat16_t>;
+    break;
+  case GatedActivationKind::kGelu:
+    plan.linear_elementwise_route =
+        type == DataType::kFloat16
+            ? &gated_narrow_linear<GatedActivationKind::kGelu, simd::float16_t>
+            : &gated_narrow_linear<GatedActivationKind::kGelu,
+                                   simd::bfloat16_t>;
+    break;
+  case GatedActivationKind::kGeluTanh:
+    plan.linear_elementwise_route =
+        type == DataType::kFloat16
+            ? &gated_narrow_linear<GatedActivationKind::kGeluTanh,
+                                   simd::float16_t>
+            : &gated_narrow_linear<GatedActivationKind::kGeluTanh,
+                                   simd::bfloat16_t>;
+    break;
+  }
+  if (plan.linear_elementwise_route == nullptr)
+    return Status::InvalidArgument("native gated activation mode is invalid");
+  plan.submit_route = &submit_elementwise<true>;
   return Status::Ok();
 }
 

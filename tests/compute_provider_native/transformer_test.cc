@@ -1,13 +1,17 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <limits>
 #include <span>
+#include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -876,6 +880,288 @@ TEST(NativeTransformer, SdpaRejectsUnsupportedStorageAndAccumulation) {
       f32_inputs, f32_outputs, hyle::mem::system_resource());
   ASSERT_FALSE(accumulation.has_value());
   EXPECT_TRUE(accumulation.error().IsUnimplemented());
+}
+
+template <class Value>
+void expect_half_softmax(bool strided, MaskKind mask_kind) {
+  constexpr std::size_t width = 129;
+  const std::size_t inner = strided ? 3 : 1;
+  const std::size_t count = 2 * width * inner;
+  const auto type = half_test::data_type<Value>();
+  const std::size_t step = strided ? 3 : sizeof(Value);
+  const std::array<std::int64_t, 3> shape{2, width,
+                                          static_cast<std::int64_t>(inner)};
+  const auto input_desc =
+      TensorDesc::strided_bytes(
+          type, shape,
+          std::array<std::int64_t, 3>{
+              static_cast<std::int64_t>(width * inner * step),
+              static_cast<std::int64_t>(inner * step),
+              static_cast<std::int64_t>(step)})
+          .value();
+  std::vector<Value> source(count);
+  std::vector<std::byte> physical((count - 1) * step + sizeof(Value));
+  for (std::size_t index = 0; index < count; ++index) {
+    source[index] = half_test::encode<Value>(
+        static_cast<double>(static_cast<int>(index % 67) - 33) / 8);
+    std::memcpy(physical.data() + index * step, &source[index], sizeof(Value));
+  }
+  std::vector<Value> additive(width);
+  std::vector<std::uint8_t> boolean(width);
+  for (std::size_t lane = 0; lane < width; ++lane) {
+    boolean[lane] = lane % 7 != 0 ? 1 : 0;
+    additive[lane] = half_test::encode<Value>(
+        boolean[lane] != 0 ? -static_cast<double>(lane % 3) / 8
+                           : -std::numeric_limits<double>::infinity());
+  }
+  const auto mask_desc =
+      TensorDesc::dense(mask_kind == MaskKind::kBoolean ? DataType::kBool
+                                                        : type,
+                        std::array<std::int64_t, 3>{1, width, 1})
+          .value();
+  Buffer input = half_test::buffer<std::byte>(physical);
+  Buffer mask = mask_kind == MaskKind::kBoolean
+                    ? half_test::buffer<std::uint8_t>(boolean)
+                    : half_test::buffer<Value>(additive);
+  Buffer output = half_test::buffer<Value>(source);
+  const auto input_view =
+      ConstTensorView::create(input_desc, input.view()).value();
+  const auto mask_view =
+      ConstTensorView::create(mask_desc, mask.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const auto kind : {SoftmaxKind::kSoftmax, SoftmaxKind::kLogSoftmax}) {
+    const float scale = mask_kind == MaskKind::kNone ? 1.0F : 0.75F;
+    const Softmax operation{
+        .axis = 1, .scale = scale, .kind = kind, .mask = mask_kind};
+    auto prepared =
+        mask_kind == MaskKind::kNone
+            ? hyle::compute::prepare(context, operation, input_desc)
+            : hyle::compute::prepare(context, operation, input_desc, mask_desc);
+    ASSERT_TRUE(prepared.has_value());
+    const auto output_view =
+        TensorView::create(prepared->output_description().value(),
+                           output.view())
+            .value();
+    const auto requirement = prepared->workspace_requirement();
+    EXPECT_EQ(requirement.size, width * sizeof(float));
+    EXPECT_FALSE(prepared->create_invocation().has_value());
+    Buffer scratch = Buffer::create(hyle::mem::system_resource(),
+                                    requirement.size, requirement.alignment)
+                         .value();
+    auto invocation = prepared->create_invocation(scratch.view()).value();
+    const auto run = [&](const TensorView &target) {
+      return mask_kind == MaskKind::kNone
+                 ? invocation.submit(queue, input_view, target)
+                 : invocation.submit(queue, input_view, mask_view, target);
+    };
+    ASSERT_TRUE(run(output_view)->wait().ok());
+    const auto actual = half_test::read<Value>(output);
+    for (std::size_t row = 0; row < 2; ++row) {
+      for (std::size_t column = 0; column < inner; ++column) {
+        std::array<double, width> logits{};
+        for (std::size_t lane = 0; lane < width; ++lane) {
+          logits[lane] =
+              half_test::decode(source[(row * width + lane) * inner + column]) *
+              scale;
+          if (mask_kind == MaskKind::kBoolean && boolean[lane] == 0)
+            logits[lane] = -std::numeric_limits<double>::infinity();
+          if (mask_kind == MaskKind::kAdditive)
+            logits[lane] += half_test::decode(additive[lane]);
+        }
+        const double maximum = *std::max_element(logits.begin(), logits.end());
+        double sum = 0;
+        for (const double value : logits)
+          sum += std::exp(value - maximum);
+        for (std::size_t lane = 0; lane < width; ++lane) {
+          const double expected = kind == SoftmaxKind::kSoftmax
+                                      ? std::exp(logits[lane] - maximum) / sum
+                                      : logits[lane] - maximum - std::log(sum);
+          half_test::expect_near(actual[(row * width + lane) * inner + column],
+                                 expected);
+        }
+      }
+    }
+    if (!strided) {
+      const auto alias = TensorView::create(input_desc, input.view()).value();
+      ASSERT_TRUE(run(alias)->wait().ok());
+      const auto alias_values = half_test::read<Value>(input);
+      for (std::size_t index = 0; index < count; ++index)
+        EXPECT_EQ(alias_values[index].bits, actual[index].bits);
+      ASSERT_TRUE(input.view().write(physical).ok());
+    }
+    if (mask_kind != MaskKind::kNone) {
+      const std::vector<std::uint8_t> no_boolean(width, 0);
+      const std::vector<Value> no_additive(
+          width,
+          half_test::encode<Value>(-std::numeric_limits<double>::infinity()));
+      ASSERT_TRUE(mask.view()
+                      .write(mask_kind == MaskKind::kBoolean
+                                 ? std::as_bytes(std::span(no_boolean))
+                                 : std::as_bytes(std::span(no_additive)))
+                      .ok());
+      Buffer second_scratch =
+          Buffer::create(hyle::mem::system_resource(), requirement.size,
+                         requirement.alignment)
+              .value();
+      auto second_invocation =
+          prepared->create_invocation(second_scratch.view()).value();
+      Buffer second_output = half_test::buffer<Value>(source);
+      const auto target =
+          TensorView::create(prepared->output_description().value(),
+                             second_output.view())
+              .value();
+      ASSERT_TRUE(
+          second_invocation.submit(queue, input_view, mask_view, target)
+              ->wait()
+              .ok());
+      for (const auto value : half_test::read<Value>(second_output))
+        EXPECT_TRUE(std::isnan(half_test::decode(value)));
+      const auto retained = half_test::read<Value>(output);
+      for (std::size_t index = 0; index < count; ++index)
+        EXPECT_EQ(retained[index].bits, actual[index].bits);
+      ASSERT_TRUE(mask.view()
+                      .write(mask_kind == MaskKind::kBoolean
+                                 ? std::as_bytes(std::span(boolean))
+                                 : std::as_bytes(std::span(additive)))
+                      .ok());
+    }
+  }
+}
+
+TEST(NativeTransformer, HalfSoftmaxUsesDeclaredWorkspaceAndMaskSemantics) {
+  for (const bool strided : {false, true})
+    for (const auto mask :
+         {MaskKind::kNone, MaskKind::kBoolean, MaskKind::kAdditive}) {
+      expect_half_softmax<hyle::simd::float16_t>(strided, mask);
+      expect_half_softmax<hyle::simd::bfloat16_t>(strided, mask);
+    }
+}
+
+template <class Value> void expect_half_top_k(std::size_t inner) {
+  constexpr std::size_t width = 17;
+  const auto type = half_test::data_type<Value>();
+  const auto desc =
+      TensorDesc::dense(
+          type, std::array<std::int64_t, 3>{2, width,
+                                            static_cast<std::int64_t>(inner)})
+          .value();
+  std::vector<Value> values(2 * width * inner);
+  for (std::size_t index = 0; index < values.size(); ++index)
+    values[index] = half_test::encode<Value>(static_cast<double>(index % 7));
+  values[7] =
+      half_test::encode<Value>(std::numeric_limits<double>::quiet_NaN());
+  Buffer input = half_test::buffer<Value>(values);
+  const auto input_view = ConstTensorView::create(desc, input.view()).value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const std::size_t k : {5, 17})
+    for (const bool largest : {false, true})
+      for (const bool sorted : {false, true}) {
+        auto prepared = hyle::compute::prepare(context,
+                                               TopK{.count = k,
+                                                    .axis = 1,
+                                                    .largest = largest,
+                                                    .sorted = sorted},
+                                               desc)
+                            .value();
+        std::vector<Value> zero_values(2 * k * inner);
+        std::vector<std::int32_t> zero_indices(2 * k * inner);
+        Buffer output = half_test::buffer<Value>(zero_values);
+        Buffer indices = half_test::buffer<std::int32_t>(zero_indices);
+        const auto output_view =
+            TensorView::create(prepared.output_description(0).value(),
+                               output.view())
+                .value();
+        const auto index_view =
+            TensorView::create(prepared.output_description(1).value(),
+                               indices.view())
+                .value();
+        const auto requirement = prepared.workspace_requirement();
+        EXPECT_GE(requirement.size, width * sizeof(float));
+        EXPECT_FALSE(prepared.create_invocation().has_value());
+        Buffer scratch = Buffer::create(hyle::mem::system_resource(),
+                                        requirement.size, requirement.alignment)
+                             .value();
+        auto invocation = prepared.create_invocation(scratch.view()).value();
+        ASSERT_TRUE(
+            invocation.submit(queue, input_view, output_view, index_view)
+                ->wait()
+                .ok());
+        const auto actual_values = half_test::read<Value>(output);
+        const auto actual_indices = half_test::read<std::int32_t>(indices);
+        for (std::size_t row = 0; row < 2; ++row)
+          for (std::size_t column = 0; column < inner; ++column) {
+            const auto score = [&](std::int32_t index) {
+              return half_test::decode(
+                  values[(row * width + static_cast<std::size_t>(index)) *
+                             inner +
+                         column]);
+            };
+            const auto better = [&](std::int32_t left, std::int32_t right) {
+              const double a = score(left), b = score(right);
+              if (std::isnan(a) != std::isnan(b))
+                return !std::isnan(a);
+              if (!std::isnan(a) && a != b)
+                return largest ? a > b : a < b;
+              return left < right;
+            };
+            std::vector<std::int32_t> reference(width), actual(k);
+            for (std::size_t lane = 0; lane < width; ++lane)
+              reference[lane] = static_cast<std::int32_t>(lane);
+            std::sort(reference.begin(), reference.end(), better);
+            reference.resize(k);
+            for (std::size_t lane = 0; lane < k; ++lane) {
+              const std::size_t offset = (row * k + lane) * inner + column;
+              actual[lane] = actual_indices[offset];
+              ASSERT_GE(actual[lane], 0);
+              ASSERT_LT(actual[lane], static_cast<std::int32_t>(width));
+              half_test::expect_near(actual_values[offset],
+                                     score(actual[lane]));
+            }
+            if (!sorted)
+              std::sort(actual.begin(), actual.end(), better);
+            EXPECT_EQ(actual, reference);
+          }
+      }
+}
+
+TEST(NativeTransformer, HalfTopKKeepsStableTiesAndNativeRowWorkspace) {
+  for (const std::size_t inner : {1, 3}) {
+    expect_half_top_k<hyle::simd::float16_t>(inner);
+    expect_half_top_k<hyle::simd::bfloat16_t>(inner);
+  }
+}
+
+template <class Value> void expect_half_empty_transformer() {
+  const auto desc = TensorDesc::dense(half_test::data_type<Value>(),
+                                      std::array<std::int64_t, 2>{0, 129})
+                        .value();
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  Buffer empty = Buffer::create(hyle::mem::system_resource(), 0).value();
+  const auto input = ConstTensorView::create(desc, empty.view()).value();
+  auto softmax = hyle::compute::prepare(context, Softmax{}, desc).value();
+  EXPECT_EQ(softmax.workspace_requirement().size, 0U);
+  auto invocation = softmax.create_invocation().value();
+  const auto output = TensorView::create(desc, empty.view()).value();
+  ASSERT_TRUE(invocation.submit(queue, input, output)->wait().ok());
+  auto top_k = hyle::compute::prepare(context, TopK{.count = 5}, desc).value();
+  EXPECT_EQ(top_k.workspace_requirement().size, 0U);
+  auto top_invocation = top_k.create_invocation().value();
+  const auto values =
+      TensorView::create(top_k.output_description(0).value(), empty.view())
+          .value();
+  const auto indices =
+      TensorView::create(top_k.output_description(1).value(), empty.view())
+          .value();
+  ASSERT_TRUE(
+      top_invocation.submit(queue, input, values, indices)->wait().ok());
+}
+
+TEST(NativeTransformer, EmptyHalfWorkloadRequiresNoWorkspace) {
+  expect_half_empty_transformer<hyle::simd::float16_t>();
+  expect_half_empty_transformer<hyle::simd::bfloat16_t>();
 }
 
 } // namespace

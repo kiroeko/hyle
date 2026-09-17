@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cmath>
 #include <span>
 #include <vector>
 
+#include "../compute_provider_native/half_test_support.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/mem/stats.h"
 
@@ -72,6 +74,218 @@ TEST(CpuDefaultGraph, NonModelGraphReplaysAndReclaimsItsOwners) {
     EXPECT_TRUE(closed.error().IsFailedPrecondition());
   }
   EXPECT_TRUE(stats.balanced());
+}
+
+template <class Value> void expect_half_state_graph() {
+  constexpr std::size_t hidden = 2048, vocabulary = 7, tokens = 2, slots = 4;
+  const auto type = half_test::data_type<Value>();
+  const auto table_desc =
+      compute::TensorDesc::dense(
+          type, std::array<std::int64_t, 2>{vocabulary, hidden})
+          .value();
+  const auto state_desc = compute::TensorDesc::dense(
+                              type, std::array<std::int64_t, 2>{slots, hidden})
+                              .value();
+  const auto token_desc = compute::TensorDesc::dense(
+                              type, std::array<std::int64_t, 2>{tokens, hidden})
+                              .value();
+  const auto index_desc =
+      compute::TensorDesc::dense(compute::DataType::kInt32,
+                                 std::array<std::int64_t, 1>{tokens})
+          .value();
+  const auto scale_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 1>{hidden})
+          .value();
+  std::vector<Value> table(vocabulary * hidden);
+  std::vector<float> scale(hidden);
+  for (std::size_t i = 0; i < table.size(); ++i)
+    table[i] = half_test::encode<Value>((static_cast<int>(i % 37) - 18) / 32.0);
+  for (std::size_t i = 0; i < hidden; ++i)
+    scale[i] = 1.0F + static_cast<float>(static_cast<int>(i % 13) - 6) / 32.0F;
+  auto table_buffer = half_test::buffer<Value>(table);
+  auto scale_buffer = half_test::buffer<float>(scale);
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto context =
+        graph::cpu::create_context({.metadata_allocator = stats.get()}).value();
+    auto queue = context.create_queue().value();
+    auto builder = graph::GraphBuilder::create().value();
+    const auto table_id = builder.constant(table_desc).value();
+    const auto scale_id = builder.constant(scale_desc).value();
+    const auto token_ids = builder.input(index_desc).value();
+    const auto positions = builder.input(index_desc).value();
+    const auto old_state = builder.input(state_desc).value();
+    const auto embedded =
+        builder.add(compute::Gather{}, table_id, token_ids).value();
+    const auto normalized =
+        builder.add(compute::RmsNorm{.epsilon = 1e-6F}, embedded, scale_id)
+            .value();
+    const auto gated =
+        builder
+            .add(
+                compute::GatedActivation{
+                    .inputs = compute::GatedInputKind::kSeparate},
+                normalized, embedded)
+            .value();
+    const auto residual =
+        builder.add(compute::Binary{compute::BinaryKind::kAdd}, embedded, gated)
+            .value();
+    const auto state =
+        builder
+            .add(compute::Scatter{.kind = compute::ScatterKind::kAdd},
+                 old_state, positions, residual)
+            .value();
+    const auto probabilities =
+        builder.add(compute::Softmax{}, residual).value();
+    ASSERT_TRUE(builder.publish(state).ok());
+    ASSERT_TRUE(builder.publish(probabilities).ok());
+    auto logical = std::move(builder).finish().value();
+    const std::array constants{
+        graph::ConstantBinding{table_id, compute::ConstTensorView::create(
+                                             table_desc, table_buffer.view())
+                                             .value()},
+        graph::ConstantBinding{scale_id, compute::ConstTensorView::create(
+                                             scale_desc, scale_buffer.view())
+                                             .value()}};
+    auto result = graph::compile(logical, context, {.constants = constants});
+    ASSERT_TRUE(result.has_value()) << result.error().message();
+    auto compiled = std::move(*result);
+    const auto allocate = [](const compute::TensorDesc &desc) {
+      return hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                       desc.required_bytes().value(), 64)
+          .value();
+    };
+    std::array invocations{compiled.executable.create_invocation().value(),
+                           compiled.executable.create_invocation().value()};
+    std::array token_buffers{allocate(index_desc), allocate(index_desc)};
+    std::array position_buffers{allocate(index_desc), allocate(index_desc)};
+    std::array states{allocate(state_desc), allocate(state_desc)};
+    std::array outputs{allocate(state_desc), allocate(state_desc)};
+    std::array probability_buffers{allocate(token_desc), allocate(token_desc)};
+    const std::array queues{graph::QueueBinding{
+        .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+    for (std::size_t run = 0; run < invocations.size(); ++run) {
+      auto &invocation = invocations[run];
+      ASSERT_TRUE(
+          invocation
+              .bind(token_ids, compute::ConstTensorView::create(
+                                   index_desc, token_buffers[run].view())
+                                   .value())
+              .ok());
+      ASSERT_TRUE(
+          invocation
+              .bind(positions, compute::ConstTensorView::create(
+                                   index_desc, position_buffers[run].view())
+                                   .value())
+              .ok());
+      ASSERT_TRUE(invocation
+                      .bind(old_state, compute::ConstTensorView::create(
+                                           state_desc, states[run].view())
+                                           .value())
+                      .ok());
+      ASSERT_TRUE(invocation
+                      .bind(state, compute::TensorView::create(
+                                       state_desc, outputs[run].view())
+                                       .value())
+                      .ok());
+      ASSERT_TRUE(invocation
+                      .bind(probabilities,
+                            compute::TensorView::create(
+                                token_desc, probability_buffers[run].view())
+                                .value())
+                      .ok());
+      ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    }
+    const auto before = stats.snapshot();
+    std::array<std::vector<Value>, 2> retained;
+    for (std::size_t step = 0; step < 3; ++step) {
+      for (std::size_t run = 0; run < invocations.size(); ++run) {
+        SCOPED_TRACE(step);
+        SCOPED_TRACE(run);
+        const std::array indices{
+            static_cast<std::int32_t>((step + run) % vocabulary),
+            static_cast<std::int32_t>((step + run + 3) % vocabulary)};
+        const std::array destinations{
+            static_cast<std::int32_t>((step + run) % slots),
+            static_cast<std::int32_t>((step + run + 2) % slots)};
+        std::vector<Value> initial(slots * hidden,
+                                   half_test::encode<Value>((run + 1) / 8.0));
+        ASSERT_TRUE(
+            states[run].view().write(std::as_bytes(std::span(initial))).ok());
+        ASSERT_TRUE(token_buffers[run]
+                        .view()
+                        .write(std::as_bytes(std::span(indices)))
+                        .ok());
+        ASSERT_TRUE(position_buffers[run]
+                        .view()
+                        .write(std::as_bytes(std::span(destinations)))
+                        .ok());
+        auto done = invocations[run].submit(queue);
+        ASSERT_TRUE(done.has_value()) << done.error().message();
+        ASSERT_TRUE(done->wait().ok());
+        const auto actual = half_test::read<Value>(outputs[run]);
+        const auto probability =
+            half_test::read<Value>(probability_buffers[run]);
+        auto expected = initial;
+        for (std::size_t token = 0; token < tokens; ++token) {
+          const auto base = static_cast<std::size_t>(indices[token]) * hidden;
+          double sum = 0;
+          for (std::size_t col = 0; col < hidden; ++col) {
+            const double value = half_test::decode(table[base + col]);
+            sum += value * value;
+          }
+          const double inverse = 1.0 / std::sqrt(sum / hidden + 1e-6);
+          std::vector<double> row(hidden);
+          double denominator = 0;
+          for (std::size_t col = 0; col < hidden; ++col) {
+            const double value = half_test::decode(table[base + col]);
+            const double norm = half_test::decode(
+                half_test::encode<Value>(value * inverse * scale[col]));
+            const double gate = half_test::decode(half_test::encode<Value>(
+                norm / (1.0 + std::exp(-norm)) * value));
+            row[col] =
+                half_test::decode(half_test::encode<Value>(value + gate));
+            const auto destination =
+                static_cast<std::size_t>(destinations[token]) * hidden + col;
+            expected[destination] = half_test::encode<Value>(
+                half_test::decode(initial[destination]) + row[col]);
+            denominator += std::exp(row[col]);
+          }
+          for (std::size_t col = 0; col < hidden; ++col)
+            half_test::expect_near(probability[token * hidden + col],
+                                   std::exp(row[col]) / denominator);
+        }
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          half_test::expect_near(actual[i], half_test::decode(expected[i]));
+        const auto unchanged = half_test::read<Value>(states[run]);
+        for (std::size_t i = 0; i < unchanged.size(); ++i)
+          EXPECT_EQ(unchanged[i].bits, initial[i].bits);
+        retained[run] = actual;
+        const auto other = 1 - run;
+        if (!retained[other].empty()) {
+          const auto previous = half_test::read<Value>(outputs[other]);
+          for (std::size_t i = 0; i < previous.size(); ++i)
+            EXPECT_EQ(previous[i].bits, retained[other][i].bits);
+        }
+      }
+    }
+    EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+    EXPECT_EQ(stats.snapshot().reallocs, before.reallocs);
+    ASSERT_TRUE(context.close().ok());
+    for (auto &invocation : invocations) {
+      auto closed = invocation.submit(queue);
+      ASSERT_FALSE(closed.has_value());
+      EXPECT_TRUE(closed.error().IsFailedPrecondition());
+    }
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(CpuDefaultGraph, HalfTensorFragmentHasIndependentReplayState) {
+  expect_half_state_graph<hyle::simd::float16_t>();
+  expect_half_state_graph<hyle::simd::bfloat16_t>();
 }
 
 } // namespace

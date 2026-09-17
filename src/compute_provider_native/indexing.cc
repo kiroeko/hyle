@@ -1,4 +1,5 @@
 #include "native_plan.h"
+#include "numeric.h"
 
 #include <array>
 #include <cstddef>
@@ -274,9 +275,9 @@ submit_gather(const NativePlan &plan,
   return completed(std::move(terminal));
 }
 
+template <class Value>
 detail::EnqueueResult
-submit_scatter(const NativePlan &plan,
-               std::span<const ConstTensorView> inputs,
+submit_scatter(const NativePlan &plan, std::span<const ConstTensorView> inputs,
                std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 3 || outputs.size() != 1)
     return completed(Status::Internal("native Scatter plan is invalid"));
@@ -412,12 +413,9 @@ submit_scatter(const NativePlan &plan,
       std::memcpy(output + output_offset, updates + update_offset,
                   element_size);
     } else {
-      float destination = 0.0F;
-      float addition = 0.0F;
-      std::memcpy(&destination, output + output_offset, sizeof(destination));
-      std::memcpy(&addition, updates + update_offset, sizeof(addition));
-      destination += addition;
-      std::memcpy(output + output_offset, &destination, sizeof(destination));
+      const float destination = numeric::load<Value>(output + output_offset);
+      const float addition = numeric::load<Value>(updates + update_offset);
+      numeric::store<Value>(output + output_offset, destination + addition);
     }
   }
 
@@ -583,10 +581,11 @@ Status prepare_indexing(Operation operation,
                        "native Scatter requires a dense output tensor")
                  : status;
     const Scatter *scatter = operation.get_if<Scatter>();
-    if (scatter->kind == ScatterKind::kAdd &&
-        inputs[0].data_type() != DataType::kFloat32) {
+    const DataType type = inputs[0].data_type();
+    if (scatter->kind == ScatterKind::kAdd && type != DataType::kFloat32 &&
+        type != DataType::kFloat16 && type != DataType::kBFloat16) {
       return Status::Unimplemented(
-          "native Scatter add currently supports float32 tensors");
+          "native Scatter add supports float32/float16/bfloat16 tensors");
     }
     auto axis = normalized_axis(scatter->axis, inputs[0].rank());
     if (!axis)
@@ -596,7 +595,10 @@ Status prepare_indexing(Operation operation,
     plan.scatter_kind = scatter->kind;
     if (inputs[0] == outputs[0])
       plan.alias_input_mask = 1;
-    plan.submit_route = &submit_scatter;
+    plan.submit_route =
+        type == DataType::kFloat16    ? &submit_scatter<simd::float16_t>
+        : type == DataType::kBFloat16 ? &submit_scatter<simd::bfloat16_t>
+                                      : &submit_scatter<float>;
     return Status::Ok();
   }
   case OperationKind::kConcat: {

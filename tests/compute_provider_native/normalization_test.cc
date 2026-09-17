@@ -321,6 +321,11 @@ TEST(NativeLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
       context, LayerNorm{.accumulation_type = DataType::kFloat64}, f32);
   ASSERT_FALSE(accumulation.has_value());
   EXPECT_TRUE(accumulation.error().IsUnimplemented());
+  const auto rms_accumulation = hyle::compute::prepare(
+      context, hyle::compute::RmsNorm{.accumulation_type = DataType::kFloat64},
+      f32);
+  ASSERT_FALSE(rms_accumulation.has_value());
+  EXPECT_TRUE(rms_accumulation.error().IsUnimplemented());
 }
 
 TEST(NativeLayerNorm, PinsExecutorAndUsesOneBoundedSynchronousFanOut) {
