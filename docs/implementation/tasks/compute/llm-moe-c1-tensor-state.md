@@ -617,4 +617,24 @@ expert/chunk 的短行、任意轴/byte stride 与整数全量失败原子性，
 I32 两次完整读取与L状态reset/回报/merge如实计费；不拿unchecked模加或浮点单遍给它排名。
 本子集只改 CUDA owner/source list 与直接 consumer/指南；无共同层、backend 或公共仪器修改。
 
+### C1-O 实施事实
+
+- `ac8fb8a0` 完成 SDK 块扫描、I32 全前缀检查与普通 Direct/Graph 消费；W1 Release/WERROR 的
+  provider 40、默认 Direct 4、Graph 16 共 **60 case PASS**。本候选首次编译/运行通过，无产品
+  纠正或数值容差调整；[原始命令、日志与哈希](../../../../evidence/correctness/compute-llm-moe-c1/o-windows-focused.json)。
+- I32/F32 的 inclusive/exclusive 由独立 I64/FP64 前缀核对，覆盖 0/1/17/63/64/127/128/129/
+  255/256/257/1023/1024/1025/8193/65537、中轴/负 axis/rank8、odd/zero byte stride、精确
+  原位与输出保护区；非二进制 F32、NaN/±Inf 通过。整数后行正负溢出、临时溢出后总和恢复、
+  仅最后 exclusive 总和溢出均保持所有 output 不变；failed 槽退役、fresh 槽恢复，huge-empty
+  跳过 payload、部分 alias 接纳前拒绝与超出已声明计数域的准备诊断通过。
+- 默认 counts→exclusive Scan→BF16 Gather 和 F32 Softplus→broadcast scale→time-axis Scan
+  实际运行 experts1/17/128/257、tokens1/17/23/128/129；两原生 captured 槽、三次变化输入、
+  保留另一槽旧结果，普通 Direct 同程序与独立 host 公式均通过。热重放没有新增 HYLE metadata
+  分配；capture prepare 不执行坏输入，pending 整数错误在程序/槽释放、close/abandon 后保活
+  至终态，F32 已接纳程序保活与逐点 cold metadata OOM 回滚通过。
+- 统一 LOC self-check：Compute+Graph 实现 **42,390 行 / 166 文件**，不含 tests/vendor；
+  [统计](../../../../evidence/correctness/compute-llm-moe-c1/o-implementation-loc.json)。selector 保留
+  109 项 skipped reasons；本子集只运行 configure 与上述三个 factor。完整 C1 真实权重片段、
+  公开头/三交付增量、WSL/macOS 与等责 P1 尚未运行，矩阵仍 UNPROVEN，不签四路线共同完成。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

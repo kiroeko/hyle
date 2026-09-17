@@ -1,0 +1,135 @@
+{
+  "kind": "C1-O Windows focused checked CUDA Scan correctness",
+  "candidate": "ac8fb8a0538325382aa5de4fbde14f51f6c0d897",
+  "tree": "fcba9f3f03953e08bbc0586d8f23d691a4eb90ea",
+  "verdict": "PASS",
+  "attempts": [
+    {
+      "candidate": "ac8fb8a0538325382aa5de4fbde14f51f6c0d897",
+      "tree": "fcba9f3f03953e08bbc0586d8f23d691a4eb90ea",
+      "kind": "C1-O checked CUDA Scan focused correctness; not full selector or P1",
+      "build": "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+      "reused_dependency_build_from": "782c575e458f8437746df7df60a680552abf7717",
+      "context": {
+        "toolchain": {
+          "id": "msvc-19.50.35728.0-x64",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728.0",
+          "stdlib": {
+            "id": "msvc-stl-145-202508"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+          "role": "engineering"
+        }
+      },
+      "commands": [
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_CUDA=ON",
+            "-DHYLE_COMPUTE_ONEDNN=ON",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DCMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+          ],
+          "exit_code": 0,
+          "seconds": 11.640999999828637,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\o-scan-configure.log",
+          "sha256": "22b6b789c94e02bf762005c5d3c213e72b9a7ca40176e593fc79959ce8be4475"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_compute_provider_cuda_tests",
+            "hyle_compute_route_cuda_tests",
+            "hyle_graph_route_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          "exit_code": 0,
+          "seconds": 12.311999999918044,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\o-scan-build.log",
+          "sha256": "3a165ab7c87ccb781228042e2beb123a07e9b4cca7a35b1df030664f686c514d"
+        },
+        {
+          "label": "test",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\hyle-scratch\\c1v\\af19845a7a94873f4447\\build-c54f4d8e79b964c77dbd",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "--timeout",
+            "60",
+            "--verbose",
+            "-L",
+            "^(compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+            "-LE",
+            "headers"
+          ],
+          "exit_code": 0,
+          "seconds": 5.875,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\o-scan-test.log",
+          "sha256": "1f0efe4d264bca23d9560a245a72212c9d8064d31d8759d299f4b0affc684cd5"
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "attempt_notes": "The immutable candidate configured, compiled and passed all 60 focused cases on the first run. No product correction or tolerance change was needed.",
+  "test_cases": {
+    "compute_provider_cuda": 40,
+    "compute_route_cuda": 4,
+    "graph_route_cuda": 16,
+    "total": 60
+  },
+  "last_test_log": {
+    "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\o-scan-last-test.log",
+    "sha256": "bc44f043ae43f1c90d36884a35e38941662a37daf876a33a74665f1b60e15c76"
+  },
+  "coverage": [
+    "Inclusive/exclusive I32 and F32 prefixes use independent I64/FP64 oracles. Widths0/1/17/63/64/127/128/129/255/256/257/1023/1024/1025/8193/65537, middle and negative axes, rank8, odd/zero byte strides, exact dense alias and output guards pass. Nonbinary finite values and NaN/+Inf/-Inf cover SDK exclusive-prefix semantics.",
+    "Integer overflow in a later row leaves all input/output unchanged, including exact source alias. Positive/negative transient overflow followed by a representable total, and overflow only in the final exclusive total, are rejected. Failed invocations retire; fresh invocations recover. Huge empty domains skip payload; partial overlap rejects before acceptance; nonempty counts exceeding INT32_MAX decline in preparation.",
+    "Default Direct and Graph execute expert counts->exclusive Scan->BF16 Gather plus F32 Softplus->broadcast scale->time-axis Scan, with experts1/17/128/257 and tokens1/17/23/128/129. Two native captured slots, three changed input steps, retained other-lane outputs, same-program Direct results and independent host integer/float oracles pass. Warm replay performs no additional HYLE metadata allocation.",
+    "Cold prepare/capture does not execute invalid payload. Integer failures preserve output and recover in fresh slots; accepted pending errors retain released programs/invocations through context close and abandoned Completion. Cold metadata OOM rolls back and the accepted F32 program remains valid after close."
+  ],
+  "not_run": [
+    "Full C1 weighted consumer bundle",
+    "Incremental public-header/source/installed-static/installed-shared gates for C through O",
+    "WSL/macOS C1 validation",
+    "P1 and final default-rule qualification"
+  ],
+  "selector_plan": "C:\\hyle-scratch\\llm-moe-c1-20260917\\o-ac8fb8a0-plan.json"
+}
