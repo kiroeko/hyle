@@ -1,0 +1,766 @@
+{
+  "schema_version": 1,
+  "document_kind": "planning_requirement_sources_not_product_status",
+  "observed_on": "2026-09-17",
+  "baseline": "39f22b29fd88d6eb57ce6ab3ed9c619933d30778",
+  "plan": "llm-moe-coverage-completion-plan.md",
+  "routes": [
+    "cpu",
+    "cuda",
+    "apple_mlx_metal",
+    "vulkan"
+  ],
+  "notes": [
+    "Requirement mappings are family-level; C0 must freeze exact numerical/domain/branch cases.",
+    "Configuration summaries omit fields and summarize layer lists; immutable config URL and SHA-256 are authoritative inputs.",
+    "Large-model full-checkpoint inference is not required on current hardware.",
+    "No weights downloaded and no reference or HYLE model executions performed in this planning task.",
+    "Source inspection does not qualify an oracle, shipping provider, dependency upgrade, or performance result."
+  ],
+  "models": [
+    {
+      "id": "qwen38_27b",
+      "repository": "Qwen/Qwen3.8-27B",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/Qwen/Qwen3.8-27B/resolve/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0/config.json",
+      "config_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen3.8-27B/blob/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0/README.md",
+      "architectures": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "declared_tensor_parameter_count": 27781427952,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F14",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "qwen3_5_text",
+        "dtype": "bfloat16",
+        "hidden_size": 5120,
+        "intermediate_size": 17408,
+        "num_hidden_layers": 64,
+        "num_attention_heads": 24,
+        "num_key_value_heads": 4,
+        "head_dim": 256,
+        "vocab_size": 248320,
+        "linear_conv_kernel_dim": 4,
+        "linear_num_key_heads": 16,
+        "linear_num_value_heads": 48,
+        "linear_key_head_dim": 128,
+        "linear_value_head_dim": 128,
+        "mamba_ssm_dtype": "float32",
+        "hidden_act": "silu",
+        "output_gate_type": "swish",
+        "attn_output_gate": true,
+        "mtp_num_hidden_layers": 1,
+        "layer_types_counts": {
+          "linear_attention": 48,
+          "full_attention": 16
+        }
+      },
+      "quantization_configuration_summary": null,
+      "execution_evidence": "NOT_RUN",
+      "reference_qualification_issue": "Q38_OUTPUT_GATE"
+    },
+    {
+      "id": "qwen38_24t",
+      "repository": "Qwen/Qwen3.8-2.4T-A95B",
+      "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/resolve/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/config.json",
+      "config_sha256": "4e3819548967e319ab435d044a3a331dbe3b078590ce822e9d74b79430533987",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/blob/207bd685a7e3696cfaff12ded7c6a7ea0f88c996/README.md",
+      "architectures": [
+        "Qwen3_5MoeForCausalLM"
+      ],
+      "declared_tensor_parameter_count": 2446182725504,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F12",
+        "F13",
+        "F14",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "qwen3_5_moe_text",
+        "dtype": "bfloat16",
+        "hidden_size": 8192,
+        "num_hidden_layers": 92,
+        "num_attention_heads": 64,
+        "num_key_value_heads": 4,
+        "head_dim": 256,
+        "vocab_size": 248320,
+        "linear_conv_kernel_dim": 4,
+        "linear_num_key_heads": 16,
+        "linear_num_value_heads": 128,
+        "linear_key_head_dim": 128,
+        "linear_value_head_dim": 128,
+        "mamba_ssm_dtype": "float32",
+        "num_experts": 512,
+        "num_experts_per_tok": 10,
+        "moe_intermediate_size": 2048,
+        "shared_expert_intermediate_size": 2048,
+        "hidden_act": "silu",
+        "output_gate_type": "swish",
+        "attn_output_gate": true,
+        "mtp_num_hidden_layers": 1,
+        "layer_types_counts": {
+          "linear_attention": 69,
+          "full_attention": 23
+        }
+      },
+      "quantization_configuration_summary": null,
+      "execution_evidence": "NOT_RUN",
+      "reference_qualification_issue": "Q38_OUTPUT_GATE"
+    },
+    {
+      "id": "kimi_k3",
+      "repository": "moonshotai/Kimi-K3",
+      "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/moonshotai/Kimi-K3/resolve/f831ab66814297da540d832a5235f8e904f29d06/config.json",
+      "config_sha256": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+      "model_card_url": "https://huggingface.co/moonshotai/Kimi-K3/blob/f831ab66814297da540d832a5235f8e904f29d06/README.md",
+      "architectures": [
+        "KimiK3ForConditionalGeneration"
+      ],
+      "declared_tensor_parameter_count": 2779931837184,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F09",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F18",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "kimi_linear",
+        "dtype": "bfloat16",
+        "hidden_size": 7168,
+        "intermediate_size": 33792,
+        "num_hidden_layers": 93,
+        "num_attention_heads": 96,
+        "num_key_value_heads": 96,
+        "vocab_size": 163840,
+        "linear_attn_config": {
+          "full_attn_layers": 24,
+          "gate_lower_bound": -5.0,
+          "head_dim": 128,
+          "kda_layers": 69,
+          "num_heads": 96,
+          "short_conv_kernel_size": 4,
+          "use_full_rank_gate": true
+        },
+        "num_experts": 896,
+        "num_experts_per_token": 16,
+        "num_shared_experts": 2,
+        "routed_expert_hidden_size": 3584,
+        "moe_intermediate_size": 3072,
+        "hidden_act": "situ",
+        "activation_situ_beta": 4.0,
+        "activation_situ_linear_beta": 25.0,
+        "attn_res_block_size": 12,
+        "latent_moe_use_norm": true,
+        "q_lora_rank": 1536,
+        "kv_lora_rank": 512,
+        "qk_nope_head_dim": 128,
+        "qk_rope_head_dim": 64,
+        "v_head_dim": 128,
+        "mla_use_nope": true,
+        "mla_use_output_gate": true,
+        "num_nextn_predict_layers": 0
+      },
+      "quantization_configuration_summary": {
+        "format": "mxfp4-pack-quantized",
+        "global_compression_ratio": null,
+        "kv_cache_scheme": null,
+        "quant_method": "compressed-tensors",
+        "quantization_status": "compressed",
+        "config_groups": {
+          "group_0": {
+            "format": "mxfp4-pack-quantized",
+            "input_activations": null,
+            "output_activations": null,
+            "targets": [
+              "Linear"
+            ],
+            "weights": {
+              "actorder": null,
+              "block_structure": null,
+              "dynamic": false,
+              "group_size": 32,
+              "num_bits": 4,
+              "observer": "minmax",
+              "observer_kwargs": {},
+              "scale_dtype": "torch.uint8",
+              "strategy": "group",
+              "symmetric": true,
+              "type": "float",
+              "zp_dtype": null
+            }
+          }
+        },
+        "ignore_count": 6
+      },
+      "execution_evidence": "NOT_RUN",
+      "reference_qualification_issue": "K3_ACTIVATION_QUANTIZATION"
+    },
+    {
+      "id": "deepseek_v4_pro",
+      "repository": "deepseek-ai/DeepSeek-V4-Pro",
+      "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/resolve/b5968e9190ef611bbf34a7229255be88a0e937c1/config.json",
+      "config_sha256": "5fe4568daee51c208cb8a79538eaeda090ae011ade1dee2c386aa95f569c810e",
+      "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/b5968e9190ef611bbf34a7229255be88a0e937c1/README.md",
+      "architectures": [
+        "DeepseekV4ForCausalLM"
+      ],
+      "declared_tensor_parameter_count": 1598839674782,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F08",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "deepseek_v4",
+        "torch_dtype": "bfloat16",
+        "hidden_size": 7168,
+        "num_hidden_layers": 61,
+        "num_attention_heads": 128,
+        "num_key_value_heads": 1,
+        "head_dim": 512,
+        "vocab_size": 129280,
+        "num_experts_per_tok": 6,
+        "n_routed_experts": 384,
+        "n_shared_experts": 1,
+        "moe_intermediate_size": 3072,
+        "hidden_act": "silu",
+        "q_lora_rank": 1536,
+        "qk_rope_head_dim": 64,
+        "index_topk": 1024,
+        "index_head_dim": 128,
+        "index_n_heads": 64,
+        "sliding_window": 128,
+        "hc_mult": 4,
+        "hc_eps": 1e-06,
+        "hc_sinkhorn_iters": 20,
+        "num_hash_layers": 3,
+        "scoring_func": "sqrtsoftplus",
+        "swiglu_limit": 10.0,
+        "num_nextn_predict_layers": 1,
+        "compress_ratios_counts": {
+          "128": 31,
+          "4": 30,
+          "0": 1
+        }
+      },
+      "quantization_configuration_summary": {
+        "activation_scheme": "dynamic",
+        "fmt": "e4m3",
+        "quant_method": "fp8",
+        "scale_fmt": "ue8m0",
+        "weight_block_size": [
+          128,
+          128
+        ]
+      },
+      "execution_evidence": "NOT_RUN"
+    },
+    {
+      "id": "deepseek_v4_flash",
+      "repository": "deepseek-ai/DeepSeek-V4-Flash",
+      "revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/config.json",
+      "config_sha256": "b628e63398a645abc711d92207f8737dd8140f7a4ef1e0a5b3616019e0ddd818",
+      "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/60d8d70770c6776ff598c94bb586a859a38244f1/README.md",
+      "architectures": [
+        "DeepseekV4ForCausalLM"
+      ],
+      "declared_tensor_parameter_count": 290944616402,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F08",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "deepseek_v4",
+        "torch_dtype": "bfloat16",
+        "hidden_size": 4096,
+        "num_hidden_layers": 43,
+        "num_attention_heads": 64,
+        "num_key_value_heads": 1,
+        "head_dim": 512,
+        "vocab_size": 129280,
+        "num_experts_per_tok": 6,
+        "n_routed_experts": 256,
+        "n_shared_experts": 1,
+        "moe_intermediate_size": 2048,
+        "hidden_act": "silu",
+        "q_lora_rank": 1024,
+        "qk_rope_head_dim": 64,
+        "index_topk": 512,
+        "index_head_dim": 128,
+        "index_n_heads": 64,
+        "sliding_window": 128,
+        "hc_mult": 4,
+        "hc_eps": 1e-06,
+        "hc_sinkhorn_iters": 20,
+        "num_hash_layers": 3,
+        "scoring_func": "sqrtsoftplus",
+        "swiglu_limit": 10.0,
+        "num_nextn_predict_layers": 1,
+        "compress_ratios_counts": {
+          "0": 3,
+          "4": 21,
+          "128": 20
+        }
+      },
+      "quantization_configuration_summary": {
+        "activation_scheme": "dynamic",
+        "fmt": "e4m3",
+        "quant_method": "fp8",
+        "scale_fmt": "ue8m0",
+        "weight_block_size": [
+          128,
+          128
+        ]
+      },
+      "execution_evidence": "NOT_RUN"
+    },
+    {
+      "id": "glm53",
+      "repository": "zai-org/GLM-5.3",
+      "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/zai-org/GLM-5.3/resolve/aca966e4e02791568aa6a4ced368624b3d897f42/config.json",
+      "config_sha256": "3ac72612095574542f7fff847ada8e59d9199dd8af44bdf625d7e02615572e69",
+      "model_card_url": "https://huggingface.co/zai-org/GLM-5.3/blob/aca966e4e02791568aa6a4ced368624b3d897f42/README.md",
+      "architectures": [
+        "GlmMoeDsaForCausalLM"
+      ],
+      "declared_tensor_parameter_count": 753329940480,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F08",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F18",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "glm_moe_dsa",
+        "dtype": "bfloat16",
+        "hidden_size": 6144,
+        "intermediate_size": 12288,
+        "num_hidden_layers": 78,
+        "num_attention_heads": 64,
+        "num_key_value_heads": 64,
+        "head_dim": 192,
+        "vocab_size": 154880,
+        "num_experts_per_tok": 8,
+        "n_routed_experts": 256,
+        "n_shared_experts": 1,
+        "moe_intermediate_size": 2048,
+        "hidden_act": "silu",
+        "q_lora_rank": 2048,
+        "kv_lora_rank": 512,
+        "qk_nope_head_dim": 192,
+        "qk_rope_head_dim": 64,
+        "v_head_dim": 256,
+        "index_topk": 2048,
+        "index_head_dim": 128,
+        "index_n_heads": 32,
+        "index_topk_freq": 4,
+        "index_skip_topk_offset": 3,
+        "scoring_func": "sigmoid",
+        "num_nextn_predict_layers": 1,
+        "indexer_types_counts": {
+          "full": 21,
+          "shared": 57
+        }
+      },
+      "quantization_configuration_summary": {
+        "activation_scheme": "dynamic",
+        "fmt": "e4m3",
+        "quant_method": "fp8",
+        "weight_block_size": [
+          128,
+          128
+        ],
+        "modules_to_not_convert_count": 541
+      },
+      "execution_evidence": "NOT_RUN"
+    },
+    {
+      "id": "glm53_flash",
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "role": "coverage_requirement",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/config.json",
+      "config_sha256": "bb8f01c42cb92a52ca72e65afb4d5bd8d11aef083cd210e8de25dfb904f23e9f",
+      "model_card_url": "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/README.md",
+      "architectures": [
+        "Glm5NextForConditionalGeneration"
+      ],
+      "declared_tensor_parameter_count": 321323031390,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F09",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F18",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "glm5_next_text",
+        "dtype": "bfloat16",
+        "hidden_size": 4096,
+        "intermediate_size": 12288,
+        "num_hidden_layers": 45,
+        "num_attention_heads": 64,
+        "num_key_value_heads": 64,
+        "head_dim": 0,
+        "vocab_size": 154880,
+        "linear_attn_config": {
+          "num_heads": 64,
+          "gate_lower_bound": -5.0,
+          "head_dim": 128,
+          "short_conv_kernel_size": 4,
+          "kda_layers": 34,
+          "full_attn_layers": 11
+        },
+        "num_experts_per_tok": 8,
+        "n_routed_experts": 288,
+        "n_shared_experts": 1,
+        "moe_intermediate_size": 2048,
+        "hidden_act": "silu",
+        "q_lora_rank": 1536,
+        "kv_lora_rank": 512,
+        "qk_nope_head_dim": 256,
+        "qk_rope_head_dim": 0,
+        "v_head_dim": 256,
+        "mla_use_nope": true,
+        "index_topk": 2048,
+        "index_head_dim": 128,
+        "index_n_heads": 32,
+        "index_kpool": 4,
+        "index_kpool_always_select_tail": true,
+        "hc_mult": 4,
+        "hc_eps": 1e-06,
+        "hc_sinkhorn_iters": 20,
+        "scoring_func": "sigmoid",
+        "swiglu_limit": 10.0,
+        "num_nextn_predict_layers": 1,
+        "layer_types_counts": {
+          "linear_attention": 34,
+          "deepseek_sparse_attention": 11
+        },
+        "indexer_types_counts": {
+          "full": 45
+        }
+      },
+      "quantization_configuration_summary": {
+        "activation_scheme": "dynamic",
+        "fmt": "e4m3",
+        "quant_method": "fp8",
+        "weight_block_size": [
+          128,
+          128
+        ],
+        "modules_to_not_convert_count": 1509
+      },
+      "execution_evidence": "NOT_RUN"
+    },
+    {
+      "id": "qwen35_08b",
+      "repository": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "role": "local_end_to_end_fast",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/Qwen/Qwen3.5-0.8B/resolve/2fc06364715b967f1860aea9cf38778875588b17/config.json",
+      "config_sha256": "b90b86f35c8e6925ef74ee04d0e758f0a845c83a42089ad82bbaa948de9b4204",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen3.5-0.8B/blob/2fc06364715b967f1860aea9cf38778875588b17/README.md",
+      "architectures": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "declared_tensor_parameter_count": 873438784,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "qwen3_5_text",
+        "dtype": "bfloat16",
+        "hidden_size": 1024,
+        "intermediate_size": 3584,
+        "num_hidden_layers": 24,
+        "num_attention_heads": 8,
+        "num_key_value_heads": 2,
+        "head_dim": 256,
+        "vocab_size": 248320,
+        "linear_conv_kernel_dim": 4,
+        "linear_num_key_heads": 16,
+        "linear_num_value_heads": 16,
+        "linear_key_head_dim": 128,
+        "linear_value_head_dim": 128,
+        "mamba_ssm_dtype": "float32",
+        "hidden_act": "silu",
+        "attn_output_gate": true,
+        "mtp_num_hidden_layers": 1,
+        "layer_types_counts": {
+          "linear_attention": 18,
+          "full_attention": 6
+        }
+      },
+      "quantization_configuration_summary": null,
+      "execution_evidence": "NOT_RUN"
+    },
+    {
+      "id": "qwen35_2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "role": "local_end_to_end_primary",
+      "scope": "language_backbone_and_local_moe_only",
+      "config_url": "https://huggingface.co/Qwen/Qwen3.5-2B/resolve/15852e8c16360a2fea060d615a32b45270f8a8fc/config.json",
+      "config_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+      "model_card_url": "https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md",
+      "architectures": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "declared_tensor_parameter_count": 2274069824,
+      "requirement_families": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F05",
+        "F07",
+        "F08",
+        "F09",
+        "F10",
+        "F19"
+      ],
+      "text_configuration_summary": {
+        "model_type": "qwen3_5_text",
+        "dtype": "bfloat16",
+        "hidden_size": 2048,
+        "intermediate_size": 6144,
+        "num_hidden_layers": 24,
+        "num_attention_heads": 8,
+        "num_key_value_heads": 2,
+        "head_dim": 256,
+        "vocab_size": 248320,
+        "linear_conv_kernel_dim": 4,
+        "linear_num_key_heads": 16,
+        "linear_num_value_heads": 16,
+        "linear_key_head_dim": 128,
+        "linear_value_head_dim": 128,
+        "mamba_ssm_dtype": "float32",
+        "hidden_act": "silu",
+        "attn_output_gate": true,
+        "mtp_num_hidden_layers": 1,
+        "layer_types_counts": {
+          "linear_attention": 18,
+          "full_attention": 6
+        }
+      },
+      "quantization_configuration_summary": null,
+      "execution_evidence": "NOT_RUN"
+    }
+  ],
+  "implementation_sources": [
+    {
+      "id": "transformers_qwen_dense",
+      "url": "https://github.com/huggingface/transformers/blob/c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad/src/transformers/models/qwen3_5/modeling_qwen3_5.py",
+      "sha256": "7788020ca357c6c8fb6e750fd847dd80ac77625902213b47f4949c8085344a58",
+      "anchors": [
+        "Qwen3_5Attention",
+        "torch_chunk_gated_delta_rule",
+        "torch_recurrent_gated_delta_rule",
+        "causal_conv1d_update"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "transformers_qwen_moe",
+      "url": "https://github.com/huggingface/transformers/blob/c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad/src/transformers/models/qwen3_5_moe/modeling_qwen3_5_moe.py",
+      "sha256": "9623e434a81c618c23cdac8b1940c13c902ce25faaeafb0ece0838b88b572b90",
+      "anchors": [
+        "Qwen3_5MoeAttention",
+        "Qwen3_5MoeSparseMoeBlock"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "transformers_glm_dsa",
+      "url": "https://github.com/huggingface/transformers/blob/c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad/src/transformers/models/glm_moe_dsa/modeling_glm_moe_dsa.py",
+      "sha256": "cb70613b964fc957e3ffe2cead4c3907b526a6964c4f73522fd86a1fff1d659c",
+      "anchors": [
+        "GlmMoeDsaIndexer",
+        "GlmMoeDsaAttention",
+        "GlmMoeDsaTopkRouter"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "transformers_glm_flash",
+      "url": "https://github.com/huggingface/transformers/blob/c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad/src/transformers/models/glm5_next/modeling_glm5_next.py",
+      "sha256": "aa4d589a3386d8b63ed9cd9b4c1d80de058b932e3e21514e0b06f6b9c40b6b64",
+      "anchors": [
+        "Glm5NextTextHyperConnection",
+        "recurrent_kimi_delta_attention",
+        "Glm5NextTextIndexer"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "kimi_language",
+      "url": "https://huggingface.co/moonshotai/Kimi-K3/blob/f831ab66814297da540d832a5235f8e904f29d06/modeling_kimi_linear.py",
+      "sha256": "9e3564c70ac21854ce5a090cc946c5dc76b70d1050ef50840449181a20fff44a",
+      "anchors": [
+        "SituAndMul",
+        "KimiDeltaAttention",
+        "KimiSparseMoeBlock",
+        "_apply_attn_res"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "deepseek_pro_reference",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/b5968e9190ef611bbf34a7229255be88a0e937c1/inference/model.py",
+      "sha256": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71",
+      "anchors": [
+        "Compressor",
+        "Indexer",
+        "Gate",
+        "Block",
+        "MTPBlock"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "deepseek_flash_reference",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/60d8d70770c6776ff598c94bb586a859a38244f1/inference/model.py",
+      "sha256": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71",
+      "anchors": [
+        "Compressor",
+        "Indexer",
+        "Gate",
+        "Block",
+        "MTPBlock"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    },
+    {
+      "id": "deepseek_numeric_kernels",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/b5968e9190ef611bbf34a7229255be88a0e937c1/inference/kernel.py",
+      "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+      "anchors": [
+        "act_quant",
+        "fp4_act_quant",
+        "fp4_gemm",
+        "hc_split_sinkhorn"
+      ],
+      "qualification": "SOURCE_INSPECTED_NOT_EXECUTED"
+    }
+  ],
+  "reference_qualification_findings": [
+    {
+      "id": "Q38_OUTPUT_GATE",
+      "state": "UNRESOLVED",
+      "finding": "Qwen3.8 configs declare swish output_gate_type; inspected Transformers attention uses torch.sigmoid without consulting that field.",
+      "resolution_package": "C0"
+    },
+    {
+      "id": "K3_ACTIVATION_QUANTIZATION",
+      "state": "UNRESOLVED",
+      "finding": "Model card states MXFP8 activations while compressed-tensors config has null input_activations; bind reference/deployment numerical contracts explicitly.",
+      "resolution_package": "C0"
+    },
+    {
+      "id": "MTP_BRANCH_BINDING",
+      "state": "UNRESOLVED",
+      "finding": "Bind configured additional heads to actual weights and forward paths; generic model next-token output does not prove MTP execution.",
+      "resolution_package": "C0"
+    }
+  ]
+}

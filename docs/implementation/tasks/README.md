@@ -47,8 +47,10 @@
 
 Compute/Graph 研究与追溯：
 
-- [四路线基础重构执行计划](compute/four-route-foundation-refactor.md)：用户批准的七个有限工作包；首包
-  [路线选择与交付隔离](build/compute-route-isolation-v1.md)已 SCOPED，产品状态仍以 registry 为准。
+- [LLM/MoE 能力补齐计划](compute/llm-moe-coverage-completion-plan.md)：七个具名大模型的计算需求、
+  两个小模型的本地完整旅程与四路线共同覆盖门；本次是计划，未启动新的产品轮或 goal。
+- [四路线基础重构执行计划](compute/four-route-foundation-refactor.md)：七包已完成；
+  [验收索引](compute/four-route-foundation-acceptance.md)列明实际证据与资格限制，产品状态仍以 registry 为准。
 - [六项架构复核](compute/six-point-architecture-review.md)：本轮路线隔离、Apple/多 Provider 接入、
   渐进路由、有限实验与文档清理的已完成研究；不自动恢复旧 goal。
 - [历史决策与证据索引](compute/compute-graph-route-unification-audit.md)：不再保存第二份百分比/执行队列。
