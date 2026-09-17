@@ -392,21 +392,26 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   EXPECT_FALSE(lane.in_flight());
 }
 
-void pending_completion_retains_program(compute::Provider selected) {
+void pending_completion_retains_program(compute::Provider selected,
+                                        bool unary = false) {
   auto owner = context(selected);
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   auto queue = owner.create_queue().value();
-  Tensor input(matrix(compute::DataType::kFloat32, 1, 512), resource.ref());
+  Tensor input(matrix(compute::DataType::kFloat32, 1, unary ? 256 : 512),
+               resource.ref());
   Tensor output(matrix(compute::DataType::kFloat32, 1, 256), resource.ref());
-  std::vector<float> values(512, 1.0F);
+  std::vector<float> values(unary ? 256 : 512, 1.0F);
   ASSERT_TRUE(
       input.storage.view().write(std::as_bytes(std::span(values))).ok());
   const std::array inputs{input.view.as_const()};
   const std::array outputs{output.view};
   auto prepared =
-      compute::prepare(owner, compute::Operation(compute::GatedActivation{}),
-                       inputs, outputs)
+      compute::prepare(
+          owner,
+          unary ? compute::Operation(compute::Unary{compute::UnaryKind::kSilu})
+                : compute::Operation(compute::GatedActivation{}),
+          inputs, outputs)
           .value();
   auto lane = prepared.create_invocation().value();
   auto warm = lane.submit(queue, inputs, outputs).value();
@@ -485,7 +490,8 @@ struct MetadataAllocator final {
   }
 };
 
-void metadata_failures_rollback(compute::Provider selected) {
+void metadata_failures_rollback(compute::Provider selected,
+                                bool unary = false) {
   MetadataAllocator allocator;
   {
     const std::array providers{selected};
@@ -496,14 +502,17 @@ void metadata_failures_rollback(compute::Provider selected) {
             .value();
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
-    Tensor input(matrix(compute::DataType::kFloat32, 1, 512), resource.ref());
+    Tensor input(matrix(compute::DataType::kFloat32, 1, unary ? 256 : 512),
+                 resource.ref());
     Tensor output(matrix(compute::DataType::kFloat32, 1, 256), resource.ref());
     const std::array inputs{input.view.as_const()};
     const std::array outputs{output.view};
     const auto prepare = [&] {
-      return compute::prepare(owner,
-                              compute::Operation(compute::GatedActivation{}),
-                              inputs, outputs);
+      return compute::prepare(
+          owner,
+          unary ? compute::Operation(compute::Unary{compute::UnaryKind::kSilu})
+                : compute::Operation(compute::GatedActivation{}),
+          inputs, outputs);
     };
     const auto begin = allocator.attempts;
     {
@@ -541,7 +550,7 @@ void metadata_failures_rollback(compute::Provider selected) {
     auto lane = prepared.create_invocation().value();
     auto queue = owner.create_queue().value();
     ASSERT_TRUE(queue.reserve_completions(1).ok());
-    std::vector<float> values(512, 1.0F);
+    std::vector<float> values(unary ? 256 : 512, 1.0F);
     ASSERT_TRUE(
         input.storage.view().write(std::as_bytes(std::span(values))).ok());
     const auto replay_begin = allocator.attempts;
@@ -558,11 +567,13 @@ void metadata_failures_rollback(compute::Provider selected) {
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
   pending_completion_retains_program(compute::cuda_native::provider());
   pending_completion_retains_program(compute::cuda_native::sglang_provider());
+  pending_completion_retains_program(compute::cuda_native::provider(), true);
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
   metadata_failures_rollback(compute::cuda_native::provider());
   metadata_failures_rollback(compute::cuda_native::sglang_provider());
+  metadata_failures_rollback(compute::cuda_native::provider(), true);
 }
 
 } // namespace

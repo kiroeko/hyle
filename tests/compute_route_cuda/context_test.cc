@@ -120,7 +120,7 @@ TEST(CudaDefaultCompute, RejectsInvalidDeviceAndUnsupportedOperations) {
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   auto unsupported = compute::prepare(
       owner, compute::Unary{compute::UnaryKind::kNeg},
-      matrix(compute::DataType::kFloat32, 1, 128), resource.ref());
+      matrix(compute::DataType::kFloat64, 1, 128), resource.ref());
   ASSERT_FALSE(unsupported.has_value());
   EXPECT_TRUE(unsupported.error().IsUnimplemented());
   ASSERT_TRUE(owner.close().ok());

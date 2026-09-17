@@ -9,6 +9,7 @@
 #include "native_context.h"
 #include "native_kernel.h"
 #include "provider_internal.h"
+#include "tensor_provider.h"
 
 namespace hyle::compute::cuda_native {
 namespace {
@@ -105,6 +106,10 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
   if (proposal == nullptr)
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
+  if constexpr (!Sglang) {
+    if (request.operation.kind() != OperationKind::kGatedActivation)
+      return tensor::propose(request, inputs, outputs, proposal);
+  }
   if (!request.shape.exact())
     return Status::Unimplemented(
         "CUDA gated activation requires an exact shape");
@@ -216,6 +221,10 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
+  if constexpr (!Sglang) {
+    if (request.route == tensor::kRoute && request.shape.exact())
+      return tensor::prepare(state, request, allocator, output);
+  }
   if (request.route != (Sglang ? 2U : 1U) || !request.shape.exact())
     return ProviderPrepareOutcome::error(Status::InvalidArgument(
         "CUDA kernel exact prepare request is invalid"));
@@ -281,7 +290,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-gated" : "v2-gated"},
+                 .version = Sglang ? "06992c92-precise-gated" : "v3-tensor"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

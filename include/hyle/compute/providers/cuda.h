@@ -18,7 +18,16 @@ inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
 inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
                                               0x53474c4143540001ULL};
 
-// Expert composition factory for HYLE's native CUDA gated activation fragment.
+// Expert composition factory for HYLE's native CUDA tensor/gated primitives.
+// Plain View uses the schema's exact storage alias without launching a kernel.
+// Copy/Fill/Select preserve 1/2/4/8-byte scalar storage; Cast and Unary/Binary
+// support FP32/FP16/BF16. Numeric tensor output is dense; rank <= 8, rank-zero
+// broadcasting and arbitrary nonnegative byte strides are supported. Integer
+// and FP8 arithmetic/Cast are not implemented. Elementwise arithmetic allows
+// only exact input/output aliases with identical descriptions; Copy/Cast do not
+// overlap. These primitives require no native workspace or per-slot state.
+//
+// Gated activation:
 // Supports SiLU/GELU/GELU-tanh, dense FP16/BF16/FP32 separate inputs or [...,
 // gate | value] packed halves. Arithmetic is FP32 with one final conversion to
 // the output type. Exact shapes are prepared once; output element count <=

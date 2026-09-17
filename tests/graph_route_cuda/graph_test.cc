@@ -310,7 +310,7 @@ TEST(CudaDefaultGraph, RejectsMissingResourcesAndUnsupportedOperations) {
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   auto builder = graph::GraphBuilder::create().value();
   const auto input =
-      builder.input(matrix(compute::DataType::kFloat32, 1, 128)).value();
+      builder.input(matrix(compute::DataType::kFloat64, 1, 128)).value();
   const auto output =
       builder.add(compute::Unary{compute::UnaryKind::kNeg}, input).value();
   ASSERT_TRUE(builder.publish(output).ok());
