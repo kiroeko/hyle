@@ -73,3 +73,14 @@ benchmark 路径规范化、文档/状态/证据，包含校正后的路线导�
 target 已生成并校验完整源码包，SHA256
 `22d4cce9a4f9c9f912b62877c8bc2a13a6d17f08a96d40c5499a3dbb5e3c5fa6`。
 生成包不等于消费验收：最终两系统 source/static/shared、中央 selector 及收口仍须完成。
+
+## P0 继承与制品身份
+
+[逐路径 Git 身份](../../../../evidence/correctness/vulkan-r6-product-delivery/p0-unchanged.json)
+确认 baseline `a1329dd2` 到候选 `8e45b104`，十三既有 owner 的全部源码目录及 Compute/Graph
+公开头目录共十五棵 tree 完全相同。本卡改变公开 roots/交付，不改变它们的 C++、算法或布局；
+CPU/CUDA/Apple 原测量候选、限定域与 CPU 用户例外继续按 baseline 继承。
+
+另对 `8e45b104`、Windows 测量 `3894b72e`、Apple 测量 `a41d43d5` 与最终源码快照 `20a029ad`
+核对顶层 CMake、cmake/include/src/third_party/scripts/samples 七项 shipping 输入身份，全部相同。
+不同的是 benchmark、文档、状态和证据；这不把尚未执行的最终三交付或 selected gates 写成 PASS。

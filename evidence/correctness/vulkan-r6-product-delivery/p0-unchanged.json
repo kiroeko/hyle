@@ -1,0 +1,135 @@
+{
+  "baseline": "a1329dd2bbed2cf2b4e334345273b6c970052702",
+  "product_candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+  "verdict": "PASS",
+  "scope": "P0: thirteen inherited owners have identical source/header trees; measured and final source snapshots have identical shipping inputs. Does not certify pending runtime or delivery gates.",
+  "inherited_modules": [
+    "compute",
+    "graph",
+    "compute_provider_onednn",
+    "graph_provider_onednn",
+    "compute_backend_cpu",
+    "compute_backend_cuda",
+    "compute_provider_native",
+    "compute_route_cpu",
+    "graph_route_cpu",
+    "compute_route_cuda",
+    "graph_route_cuda",
+    "compute_route_apple",
+    "graph_route_apple"
+  ],
+  "trees": {
+    "include/hyle/compute": {
+      "baseline_tree": "e9f96d05fc516339c7c86fba46daa95aacc4cef8",
+      "candidate_tree": "e9f96d05fc516339c7c86fba46daa95aacc4cef8"
+    },
+    "include/hyle/graph": {
+      "baseline_tree": "930a2918482542cf5e7c2dbeb2a0fff5b183dffd",
+      "candidate_tree": "930a2918482542cf5e7c2dbeb2a0fff5b183dffd"
+    },
+    "src/compute": {
+      "baseline_tree": "dfb259ba2990d18c143229c404b85352aeac2e90",
+      "candidate_tree": "dfb259ba2990d18c143229c404b85352aeac2e90"
+    },
+    "src/graph": {
+      "baseline_tree": "8a073b413ed004bd9bb0c32654c9f00a0574492b",
+      "candidate_tree": "8a073b413ed004bd9bb0c32654c9f00a0574492b"
+    },
+    "src/compute_provider_onednn": {
+      "baseline_tree": "732a43e5e391c815abade75916d1c0fc169f1eec",
+      "candidate_tree": "732a43e5e391c815abade75916d1c0fc169f1eec"
+    },
+    "src/graph_provider_onednn": {
+      "baseline_tree": "2d8d4d6988b1915e4261426d33ca52c925a525bc",
+      "candidate_tree": "2d8d4d6988b1915e4261426d33ca52c925a525bc"
+    },
+    "src/compute_backend_cpu": {
+      "baseline_tree": "68175779ac7434005d9560dcf4a3fe7ca55777a6",
+      "candidate_tree": "68175779ac7434005d9560dcf4a3fe7ca55777a6"
+    },
+    "src/compute_backend_cuda": {
+      "baseline_tree": "5f3beecd1951ae86dea9678dcceb316f91957eb4",
+      "candidate_tree": "5f3beecd1951ae86dea9678dcceb316f91957eb4"
+    },
+    "src/compute_provider_native": {
+      "baseline_tree": "c8430547a64b84eb75b492c79ad8dbeb3a9ca18b",
+      "candidate_tree": "c8430547a64b84eb75b492c79ad8dbeb3a9ca18b"
+    },
+    "src/compute_route_cpu": {
+      "baseline_tree": "df76bcf06f86b699a186ff2e5c649a216f5c7701",
+      "candidate_tree": "df76bcf06f86b699a186ff2e5c649a216f5c7701"
+    },
+    "src/graph_route_cpu": {
+      "baseline_tree": "8bc1c78c097cd79c96aff6bf948ac0c361fb4832",
+      "candidate_tree": "8bc1c78c097cd79c96aff6bf948ac0c361fb4832"
+    },
+    "src/compute_route_cuda": {
+      "baseline_tree": "bf151c22b220bf15ec0571553475741b6b60058e",
+      "candidate_tree": "bf151c22b220bf15ec0571553475741b6b60058e"
+    },
+    "src/graph_route_cuda": {
+      "baseline_tree": "affc15fa8a018aad4b935b93c3adb3b7a2aa43a8",
+      "candidate_tree": "affc15fa8a018aad4b935b93c3adb3b7a2aa43a8"
+    },
+    "src/compute_route_apple": {
+      "baseline_tree": "48e3ad70903e247096ba1b567f4e371ccfe204be",
+      "candidate_tree": "48e3ad70903e247096ba1b567f4e371ccfe204be"
+    },
+    "src/graph_route_apple": {
+      "baseline_tree": "1034568bc9eba9333c2c1540a95e290fe8e3489b",
+      "candidate_tree": "1034568bc9eba9333c2c1540a95e290fe8e3489b"
+    }
+  },
+  "snapshots": {
+    "product": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
+    "windows_measurement": "3894b72e3b4fbbda9457e2c31730e48bd0d43c49",
+    "apple_measurement": "a41d43d531365a1fb8617d60113b37924e9a9864",
+    "complete_source": "20a029aded4bc00c9fc80a182bd3051853e7c99e"
+  },
+  "shipping_input_identity": {
+    "CMakeLists.txt": {
+      "product": "c9b7f46d67f7d5ad56ec3f13ad20af1a1dc3ae12",
+      "windows_measurement": "c9b7f46d67f7d5ad56ec3f13ad20af1a1dc3ae12",
+      "apple_measurement": "c9b7f46d67f7d5ad56ec3f13ad20af1a1dc3ae12",
+      "complete_source": "c9b7f46d67f7d5ad56ec3f13ad20af1a1dc3ae12"
+    },
+    "cmake": {
+      "product": "d57968cc6ae25a075315eb5c31d3e58664f6f736",
+      "windows_measurement": "d57968cc6ae25a075315eb5c31d3e58664f6f736",
+      "apple_measurement": "d57968cc6ae25a075315eb5c31d3e58664f6f736",
+      "complete_source": "d57968cc6ae25a075315eb5c31d3e58664f6f736"
+    },
+    "include": {
+      "product": "180ec90ca7b2991238ac4d8cf85097ceaed24da8",
+      "windows_measurement": "180ec90ca7b2991238ac4d8cf85097ceaed24da8",
+      "apple_measurement": "180ec90ca7b2991238ac4d8cf85097ceaed24da8",
+      "complete_source": "180ec90ca7b2991238ac4d8cf85097ceaed24da8"
+    },
+    "src": {
+      "product": "1204f927bff63c2aafdf9be3fc72cd37ebebf7a9",
+      "windows_measurement": "1204f927bff63c2aafdf9be3fc72cd37ebebf7a9",
+      "apple_measurement": "1204f927bff63c2aafdf9be3fc72cd37ebebf7a9",
+      "complete_source": "1204f927bff63c2aafdf9be3fc72cd37ebebf7a9"
+    },
+    "third_party": {
+      "product": "2f25165f5b9a9ebaa26c54c51c373ec636acb788",
+      "windows_measurement": "2f25165f5b9a9ebaa26c54c51c373ec636acb788",
+      "apple_measurement": "2f25165f5b9a9ebaa26c54c51c373ec636acb788",
+      "complete_source": "2f25165f5b9a9ebaa26c54c51c373ec636acb788"
+    },
+    "scripts": {
+      "product": "5be62884c242a9fd593d095b880f1dccd9a00bcb",
+      "windows_measurement": "5be62884c242a9fd593d095b880f1dccd9a00bcb",
+      "apple_measurement": "5be62884c242a9fd593d095b880f1dccd9a00bcb",
+      "complete_source": "5be62884c242a9fd593d095b880f1dccd9a00bcb"
+    },
+    "samples": {
+      "product": "e7ddec29bf5b07c0de4b51e515d0ddeb7e0212f7",
+      "windows_measurement": "e7ddec29bf5b07c0de4b51e515d0ddeb7e0212f7",
+      "apple_measurement": "e7ddec29bf5b07c0de4b51e515d0ddeb7e0212f7",
+      "complete_source": "e7ddec29bf5b07c0de4b51e515d0ddeb7e0212f7"
+    }
+  },
+  "inherited_performance": "Original CPU/CUDA/Apple measured candidates, qualification limits and CPU user exception remain unchanged. No new P1 is justified by facade roots or documentation alone.",
+  "limits": "Benchmark, docs, state and evidence differ and are intentionally not asserted identical; final ordinary source/static/shared and broad selected gates remain separate obligations."
+}
