@@ -253,8 +253,18 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     }
     if (operation.kind() == OperationKind::kCopy)
       return std::vector{mx::copy(inputs[0], stream)};
-    if (operation.kind() == OperationKind::kSelect)
-      return std::vector{mx::where(inputs[0], inputs[1], inputs[2], stream)};
+    if (operation.kind() == OperationKind::kSelect) {
+      if (!floating(type))
+        return std::vector{mx::where(inputs[0], inputs[1], inputs[2], stream)};
+      // Selection is storage-exact. A compiled floating selection can
+      // canonicalize BF16 NaNs; same-width native views keep payload/sign bits
+      // out of floating constant conversion without introducing arithmetic.
+      const auto bits = type == mx::float32 ? mx::uint32 : mx::uint16;
+      return std::vector{
+          mx::view(mx::where(inputs[0], mx::view(inputs[1], bits, stream),
+                             mx::view(inputs[2], bits, stream), stream),
+                   type, stream)};
+    }
     if (const auto *concat = operation.get_if<Concat>())
       return std::vector{
           mx::concatenate(std::vector<mx::array>(inputs.begin(), inputs.end()),
