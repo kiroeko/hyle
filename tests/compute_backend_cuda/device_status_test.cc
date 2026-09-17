@@ -208,15 +208,20 @@ TEST(CudaDeviceStatus,
      ImportsRetainSourceWordsAfterEarlyObservationAndSlotReuse) {
   Fixture fixture;
   for (const bool abandon : {false, true}) {
-    // Stage both inputs before the artificial gate. A synchronous pageable
-    // host transfer is not part of the cross-queue status-retention contract.
+    // Stage both inputs cold. Gate the source only until the dependency has
+    // been admitted; CUDA host callbacks must not wait on unrelated future
+    // GPU work. Keep the destination unobserved while the source pool churns.
     ASSERT_TRUE(fixture.write(std::array{-1, 4, 5, 1, 4, 5}).ok());
-    auto source = fixture.submit(fixture.first, 3).value();
     Gate gate;
-    Release release{gate, cuda::stream(fixture.second).value()};
-    ASSERT_EQ(cudaLaunchHostFunc(cuda::stream(fixture.second).value(),
+    Release release{gate, cuda::stream(fixture.first).value()};
+    ASSERT_EQ(cudaLaunchHostFunc(cuda::stream(fixture.first).value(),
                                  &Gate::wait, &gate),
               cudaSuccess);
+    auto source = fixture.submit(fixture.first, 3).value();
+    auto *source_slot = static_cast<cuda::detail::EventSlot *>(
+        compute::detail::CompletionAccess::dependency(source).state);
+    ASSERT_NE(source_slot, nullptr);
+    EXPECT_EQ(source.poll().value(), compute::CompletionPoll::kPending);
     auto sequence = QueueSequence::begin(fixture.second).value();
     gate.phase.store("import source status", std::memory_order_release);
     auto waited = sequence.enqueue_wait(source);
@@ -227,20 +232,34 @@ TEST(CudaDeviceStatus,
     auto destination = sequence.finish().value();
     EXPECT_EQ(destination.poll().value(), compute::CompletionPoll::kPending);
     gate.phase.store("observe or abandon source", std::memory_order_release);
-    if (abandon)
+    if (abandon) {
       source = {};
-    else
+      gate.release();
+    } else {
+      gate.release();
       EXPECT_TRUE(source.wait().IsOutOfRange());
-    gate.phase.store("drain source queue", std::memory_order_release);
+    }
     ASSERT_TRUE(fixture.first.drain().ok());
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (source_slot->references.load(std::memory_order_acquire) > 1 &&
+           std::chrono::steady_clock::now() < deadline)
+      std::this_thread::yield();
+    ASSERT_EQ(source_slot->references.load(std::memory_order_acquire), 1U);
     for (int repeat = 0; repeat < 40; ++repeat) {
-      gate.phase.store("submit fresh source", std::memory_order_release);
       auto fresh = fixture.submit(fixture.first, 3, false, 3).value();
-      gate.phase.store("wait fresh source", std::memory_order_release);
       ASSERT_TRUE(fresh.wait().ok());
     }
+    // The destination may already have completed on the GPU. Inspecting the
+    // retained device word also catches premature reuse even in that ordering.
+    unsigned retained_error = 0;
+    ASSERT_EQ(cudaMemcpy(&retained_error, source_slot->device_status,
+                         sizeof(retained_error), cudaMemcpyDeviceToHost),
+              cudaSuccess);
+    EXPECT_EQ(retained_error,
+              static_cast<unsigned>(
+                  cuda::detail::DeviceStatusCode::kIndexOutOfRange));
     ASSERT_TRUE(fixture.context.is_open());
-    gate.release();
     EXPECT_TRUE(destination.wait().IsOutOfRange());
   }
 }
