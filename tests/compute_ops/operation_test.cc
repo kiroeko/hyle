@@ -138,8 +138,8 @@ TEST(OperationScan, ChecksAxisAndInputDomainWithoutPayload) {
     std::array<TensorDesc, 1> outputs{};
     for (const auto axis : {-4, 3})
       EXPECT_TRUE(infer_output_descriptions(Operation(Scan{.axis = axis}),
-                                            std::array{input}, outputs)
-                      .IsInvalidArgument());
+                                             std::array{input}, outputs)
+                      .IsOutOfRange());
     EXPECT_TRUE(infer_output_descriptions(Operation(Scan{}),
                                           std::array{tensor(type)}, outputs)
                     .IsInvalidArgument());

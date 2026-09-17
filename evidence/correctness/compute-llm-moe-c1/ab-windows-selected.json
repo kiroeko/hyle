@@ -1,0 +1,765 @@
+{
+  "schema_version": 1,
+  "scope": "C1-A/B Windows selector: Softplus, Native half arithmetic and mixed normalization",
+  "candidate_commit": "782c575e458f8437746df7df60a680552abf7717",
+  "candidate_tree": "3e633b80db055b02090db66e61f294fe9f2abd91",
+  "baseline_commit": "ffef1a5f42ad89ca9b73da6e09cbc2571ecd08c3",
+  "verdict": "PASS",
+  "context": {
+    "toolchain": {
+      "id": "msvc-19.50.35728.0-x64",
+      "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "compiler_id": "MSVC",
+      "compiler_version": "19.50.35728.0",
+      "stdlib": {
+        "id": "msvc-stl-145-202508"
+      },
+      "flags": {
+        "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+      }
+    },
+    "machine_profile": {
+      "id": "W1-WIN",
+      "profile_hash": "3177f281cf08029d343fb024326dc8636e47d17e32ff025ae2091c735c372ecf",
+      "role": "engineering"
+    }
+  },
+  "raw_report": {
+    "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-result.json",
+    "sha256": "bdca834c597e414954f3ce268e1d5bd43bbb8fce79b76bd763f650621874c7ed"
+  },
+  "selected_gates": [
+    {
+      "gate": "docs",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\03e1e5cf2930ff757a89445e2ba86e532d6ba1d3b9567a4bdb40103e22e9c82d.json",
+      "receipt_sha256": "afb02b10cf6af249b9e3fb36d7f4ab80b47542f90d1c311a04037bbc04c5e161",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\03e1e5cf2930ff757a89445e2ba86e532d6ba1d3b9567a4bdb40103e22e9c82d-0.log",
+          "sha256": "7366b8e375677c2991d39ae755fbc2a43159c7a02fbd9b3af673604cd81e2213"
+        }
+      ]
+    },
+    {
+      "gate": "closure",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\9416f529a2ff870ee72f8ed9518d2997a2374b7c7249d8f44f74e71cb16fe103.json",
+      "receipt_sha256": "a266c68571e2dc2d8b203593ccf4d4587146b496dc47066700a3a6e619c2596d",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\9416f529a2ff870ee72f8ed9518d2997a2374b7c7249d8f44f74e71cb16fe103-0.log",
+          "sha256": "24d30e6d76fec588355331431ff02805ba0bdabc6e93d37bcbd23cdd70e5cd11"
+        }
+      ]
+    },
+    {
+      "gate": "configure",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\67e0bc7697804e4d9011849d2516542b19d0f4c89b37dabb0b64e50b680bdbb6.json",
+      "receipt_sha256": "0be808983dc3358158d0a7df0ef3e5084bcb26821f64b88aa7ea6d9755cfea38",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\67e0bc7697804e4d9011849d2516542b19d0f4c89b37dabb0b64e50b680bdbb6-0.log",
+          "sha256": "aebac66461a808c713f2bfbfd2ed1c1d25d31ae8b48b8a99ddbf9a4873e47859"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\da2de889a3f9e124da13b72a11f784c3a867e8411cf36bb9fa7e306f091187e2.json",
+      "receipt_sha256": "ae38adb2e2bbf1365ffae607e39634df5ec047ae8cb75a7656a8c110627eded1",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\da2de889a3f9e124da13b72a11f784c3a867e8411cf36bb9fa7e306f091187e2-0.log",
+          "sha256": "808739541802b1d6200cdb8215bd00ef36f968f9b6c92f71be1a5434770aaa60"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\da2de889a3f9e124da13b72a11f784c3a867e8411cf36bb9fa7e306f091187e2-1.log",
+          "sha256": "cf6769500255a6d3661e00d4ca6c7e8716c38db172a9bd28a6862b7245eb4ab1"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_backend_cpu",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\bd476fcb10bedd12e593b1b182d172c11a69f3446d45899c669f2d86907c83d9.json",
+      "receipt_sha256": "9a86f75ac08f371be3054e4a220cbd9df4f44f8448e94e6e4a630eebadc7f921",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\bd476fcb10bedd12e593b1b182d172c11a69f3446d45899c669f2d86907c83d9-0.log",
+          "sha256": "5fe60d298a9c1232fa144429be36407021db0a49cb5dd4df4cbd22f741b9be9b"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\bd476fcb10bedd12e593b1b182d172c11a69f3446d45899c669f2d86907c83d9-1.log",
+          "sha256": "e03d698a9403eb8ff6f728edeb389b0dc3216ea00f1f9aecfde24486fe6e0d47"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_backend_cuda",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\4e39074309ad53c2faf9346f5e7324109106b2c2dc79ecb5b92bc1c3bb9b007e.json",
+      "receipt_sha256": "043ba018d8b27b86ef6405180fbce942b2e9c4ff64adffe5c76f025bd281bdac",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\4e39074309ad53c2faf9346f5e7324109106b2c2dc79ecb5b92bc1c3bb9b007e-0.log",
+          "sha256": "186d3503dc3dab40782392d98ddb6fb61cc7c926993eedf51db7d9d5dee3d62e"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\4e39074309ad53c2faf9346f5e7324109106b2c2dc79ecb5b92bc1c3bb9b007e-1.log",
+          "sha256": "364c36634e0afaa7a0dd80b9ebc9cce263eb98d189b0809dd031b9481e89fd2e"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_ops",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\6f4854bec97053514c951a0f9e9f9b2ca63adf492c5afd5f6f3f1a611a9e1eb8.json",
+      "receipt_sha256": "585cc8b2dfcc54239b774966b5c272d8bbd9a1a519ea50b7bfd4a8cbbfefac87",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\6f4854bec97053514c951a0f9e9f9b2ca63adf492c5afd5f6f3f1a611a9e1eb8-0.log",
+          "sha256": "c82d1c4207be5d70ce84d2442dbd0d0a09ddf6062b3d227dee4e5d462867fd90"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\6f4854bec97053514c951a0f9e9f9b2ca63adf492c5afd5f6f3f1a611a9e1eb8-1.log",
+          "sha256": "099cb3643155e6f82c6e0b302ca639bdc364ccbcda0db8b32f17630d399e09d6"
+        }
+      ]
+    },
+    {
+      "gate": "headers:compute_ops",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\28f7814f10cccf7a30b2deed5e4fb3b0e32e797f7678fb3b67e146009038625a.json",
+      "receipt_sha256": "52acbf54f9451e06b01b9afd90f61e30a624e3cf08445880dea7c5b6e7c68d68",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\28f7814f10cccf7a30b2deed5e4fb3b0e32e797f7678fb3b67e146009038625a-0.log",
+          "sha256": "54b9fca51f379f026b52d260c78ad0987be8486584e900d97d37c41365a24d9f"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_provider_cublas",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\042197bae69879072d143fca9f4844ea7182b85ad554562066c0320a3d19fab4.json",
+      "receipt_sha256": "249df70ac5c0fbb4f8dd7ec2b758420323528f616e00d33d062db3087e844575",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\042197bae69879072d143fca9f4844ea7182b85ad554562066c0320a3d19fab4-0.log",
+          "sha256": "ba2e93cb30cc4c52d485fe607b8a4b28101cd1eb2da1b4d030c821ed48d0eb86"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\042197bae69879072d143fca9f4844ea7182b85ad554562066c0320a3d19fab4-1.log",
+          "sha256": "75cb17183f035513d58c5d991948c2cf9da843b6e52864dc829e3b8dbc4e930e"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_provider_cuda",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\f3c4be59fd2b5a68680b7b2613a1dad42c443cae13d9c60df23568a0a41b0a0f.json",
+      "receipt_sha256": "585ba91c7c815f2124c5b134d4bfb32da78d81872b59d2edf8865105c4cebfe0",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\f3c4be59fd2b5a68680b7b2613a1dad42c443cae13d9c60df23568a0a41b0a0f-0.log",
+          "sha256": "6f817a0723befb05916750ab0108177a36bfe88795e31d847e09355b7dbce78e"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\f3c4be59fd2b5a68680b7b2613a1dad42c443cae13d9c60df23568a0a41b0a0f-1.log",
+          "sha256": "dee8af790d23ba3ffa3be1ddd86e269476551b0cc52e2fcd65fe0b3fb60e245d"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_provider_marlin",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\0456fd328482e3624c751a976e96339bd42cf9868a4bd4445d8ba84aaf7c005c.json",
+      "receipt_sha256": "e094b93725e882b2969cb3de1dc1d85aa8f15081b52be8ed649a077403153922",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\0456fd328482e3624c751a976e96339bd42cf9868a4bd4445d8ba84aaf7c005c-0.log",
+          "sha256": "f4f5449030d237f8bd62737d68022ff16271487d22dd72520cccebc90b5fef39"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\0456fd328482e3624c751a976e96339bd42cf9868a4bd4445d8ba84aaf7c005c-1.log",
+          "sha256": "3c39625a7d552d9f7a216568873b3e57561efcf8f929ef3d85efc0ec97824e4f"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_provider_native",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\b5e21c07b1c94879cbfff651386716a9a346936a95230cedeca864239524f749.json",
+      "receipt_sha256": "ebd4c404ed9deb5169b435fb9ce1dbd112f187fd501916e589650548cc57421e",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\b5e21c07b1c94879cbfff651386716a9a346936a95230cedeca864239524f749-0.log",
+          "sha256": "87006256a8de0aef8c81d58fed9cdcf74f881820a4939de3de92d939237db508"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\b5e21c07b1c94879cbfff651386716a9a346936a95230cedeca864239524f749-1.log",
+          "sha256": "710040579090f569ee28dc653432ad4a95f0aa51e1e8d6cda95fa771d7bdc4c1"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_provider_onednn",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\070ae259dbe8ba38fb6cebbe0472aa15e46fcfb3f8c9e3b4ff7e90815e02a338.json",
+      "receipt_sha256": "aee51fa696996ee2c0e31fba80eac544bb2d106b59d612d74aefb14e82f5e2e5",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\070ae259dbe8ba38fb6cebbe0472aa15e46fcfb3f8c9e3b4ff7e90815e02a338-0.log",
+          "sha256": "26fc28114fec14391c0c84e679e3851d306bc01f0ae50678e0c806510d0498b0"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\070ae259dbe8ba38fb6cebbe0472aa15e46fcfb3f8c9e3b4ff7e90815e02a338-1.log",
+          "sha256": "34af735b5a004137ab44241d7913ad86921eaee8f4af71ad9d7fd75fbeaa6d17"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_route_cpu",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\78eb21625c4745332e6ecfef0dbc783c2c81693f6f494a4f6a4801c1fd537bd1.json",
+      "receipt_sha256": "07f00dc00bdf60ad91030309f190e20a39f5466908d6a2a742fa7615ab4c4fe2",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\78eb21625c4745332e6ecfef0dbc783c2c81693f6f494a4f6a4801c1fd537bd1-0.log",
+          "sha256": "445a1f46ed95626f276cd449a52c9c22c858a088ecc4dd6ca2b090cb676b2376"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\78eb21625c4745332e6ecfef0dbc783c2c81693f6f494a4f6a4801c1fd537bd1-1.log",
+          "sha256": "b60123dd87beaec52cbfadc64b1767a469fe7c96948b58db14e9cbfd35122958"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_route_cuda",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\94775a990b6ca29bce817f896d38297419f0cdf26850655d472f9d41a3e85b78.json",
+      "receipt_sha256": "d82cc9bf25b1b6a1aba0832739a734ef09e23e89a3fba0fba2c0a77ef7c6ef52",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\94775a990b6ca29bce817f896d38297419f0cdf26850655d472f9d41a3e85b78-0.log",
+          "sha256": "859f6cd06523ef052e6491dd9fb38006bd1002ac258918b63626210fddbca668"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\94775a990b6ca29bce817f896d38297419f0cdf26850655d472f9d41a3e85b78-1.log",
+          "sha256": "a78c427b221ed378ae84321efa582c058752eab846fbbbdf0ec636949fd43054"
+        }
+      ]
+    },
+    {
+      "gate": "factor:compute_route_vulkan",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\57bb517c7df3c78212ba366691e8fdc1dbd685c2379e9516a26c02e38bd0b0c0.json",
+      "receipt_sha256": "6fcb7536270f15b080c37698b2262e9b32730da17f13f60307122c69ae1a511d",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\57bb517c7df3c78212ba366691e8fdc1dbd685c2379e9516a26c02e38bd0b0c0-0.log",
+          "sha256": "5ef96ac6a01d2956b8c77e315b4d87e549c73797619a47b432aa736dc40239ab"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\57bb517c7df3c78212ba366691e8fdc1dbd685c2379e9516a26c02e38bd0b0c0-1.log",
+          "sha256": "cf1d26d8db98e1a1b4f4db219c4a710365288e5fe88c9248177b6d2e7b1b244a"
+        }
+      ]
+    },
+    {
+      "gate": "factor:graph",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\438af949e36e93b912167ee8f8456f23f12e295ca066ddc1ce249d607ae6c0cb.json",
+      "receipt_sha256": "72b59a415a7e1aa1ce2152d757c1b23f2695dfc29fa21f29d0b4cf3ea5d759c0",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\438af949e36e93b912167ee8f8456f23f12e295ca066ddc1ce249d607ae6c0cb-0.log",
+          "sha256": "781a68775b5d4f1c0b4a075861fa071e5cb9ae592a95d5c4e6e08b95867c0855"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\438af949e36e93b912167ee8f8456f23f12e295ca066ddc1ce249d607ae6c0cb-1.log",
+          "sha256": "0ffa65dcf10bb7467dd56f7c4d9daf2065d5a54f61d78d0978021b7ef3026187"
+        }
+      ]
+    },
+    {
+      "gate": "factor:graph_provider_onednn",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\cd15679ed221580c3fcae65e2aad37d04ef1f75d3794c64ef8a69becfb7957d1.json",
+      "receipt_sha256": "040ab382b81a0256e06b566069329762a4172754752e99c15fe8048d64731105",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\cd15679ed221580c3fcae65e2aad37d04ef1f75d3794c64ef8a69becfb7957d1-0.log",
+          "sha256": "3cc3fc9511afbab4ceda0e5b737c1a5fafa0bd3c94ec17d9ec83dccf51fce54d"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\cd15679ed221580c3fcae65e2aad37d04ef1f75d3794c64ef8a69becfb7957d1-1.log",
+          "sha256": "e9733bc3eef93efeac508f81d5bbc818a0149e312fc96fe8bc9bc87c2c82e8ca"
+        }
+      ]
+    },
+    {
+      "gate": "factor:graph_route_cpu",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\82740bbaa06c81cab6ac7704ad2febe10fd3ece498725a99d6b49b9f2781adb1.json",
+      "receipt_sha256": "2446c4fb53206f379a27646043d0cdb6241846ede2ce9eeb2c6776a660173a3d",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\82740bbaa06c81cab6ac7704ad2febe10fd3ece498725a99d6b49b9f2781adb1-0.log",
+          "sha256": "1fc39d89d360fa7631b254f091b33c62c22bddfa80215d145d34db209430c701"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\82740bbaa06c81cab6ac7704ad2febe10fd3ece498725a99d6b49b9f2781adb1-1.log",
+          "sha256": "091c891099b4ab5433dd6ad9b38c8c91b449bdb9a77f660c45737c1f97db1a72"
+        }
+      ]
+    },
+    {
+      "gate": "factor:graph_route_cuda",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\e5e0c5fb7fd3ee24d1292acf9519ee3942da04c9bbcad3fa0f22f18a24a11ed0.json",
+      "receipt_sha256": "001bb9c58b63f7dc0e5a28535b3c5a7b5ada4c59427227195289663abd613908",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\e5e0c5fb7fd3ee24d1292acf9519ee3942da04c9bbcad3fa0f22f18a24a11ed0-0.log",
+          "sha256": "3dd9b0e2ba10f58182ebe27f5a348d2934ae81d8fdb4245f1c71505baf2a3a15"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\e5e0c5fb7fd3ee24d1292acf9519ee3942da04c9bbcad3fa0f22f18a24a11ed0-1.log",
+          "sha256": "5cc56e015b08e23d45c0ed66aaa2f4b27be1937f75732db4d30380984fe5657a"
+        }
+      ]
+    },
+    {
+      "gate": "factor:graph_route_vulkan",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\2beeea7b516041b11ffd6c3444b29cb6e5433f46b09f4475c24088c66c738b38.json",
+      "receipt_sha256": "4b151bec1eb2d4fc459c89c5de28bf0a52672777a3781504d209a6d55d0c605a",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\2beeea7b516041b11ffd6c3444b29cb6e5433f46b09f4475c24088c66c738b38-0.log",
+          "sha256": "25f8aa71b28ef2ad6d2e0192134d18333b17f1b8418ee2c8eb63fe4c3d81e600"
+        },
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\2beeea7b516041b11ffd6c3444b29cb6e5433f46b09f4475c24088c66c738b38-1.log",
+          "sha256": "6c31216a23fe4031804852ce0b276a85cec9c700e2663e76ac2c88641866830d"
+        }
+      ]
+    },
+    {
+      "gate": "delivery:compute",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\61631d90d9e50bd7203929e4ab357cf10b23df331a359600f2e78b1b7796a3f6.json",
+      "receipt_sha256": "89dcf8fdd6d752ae4c678601e204ba4fc49a6daa2967d66ec2405017d331f0a7",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\61631d90d9e50bd7203929e4ab357cf10b23df331a359600f2e78b1b7796a3f6-0.log",
+          "sha256": "9789075fc09dcedd8bfa5563fe308140798c255a0ccbc2ca51696e4c07b6530e"
+        }
+      ]
+    },
+    {
+      "gate": "delivery:graph",
+      "verdict": "PASS",
+      "receipt": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\de79aaa9a181618cbb652d047bcc18c2fffa032b599a576b8399d4e87c3ecad6.json",
+      "receipt_sha256": "8f2c5938016bafc287836facb263bb7fb8259a1470edec6fa4b58944763f7594",
+      "logs": [
+        {
+          "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\selected-receipts\\de79aaa9a181618cbb652d047bcc18c2fffa032b599a576b8399d4e87c3ecad6-0.log",
+          "sha256": "471aa3a152b40a68f850a78339834fe07f22d36eaf35ebd03c92c6815fb42d79"
+        }
+      ]
+    }
+  ],
+  "skipped_gates": [
+    {
+      "id": "headers:compute",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_provider_cublas",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_provider_cuda",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:compute_provider_ggml",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_provider_marlin",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:compute_route_apple",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected"
+    },
+    {
+      "id": "headers:compute_route_apple",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_route_cpu",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_route_cuda",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_route_vulkan",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:container",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:container",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:container_concurrent",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:container_concurrent",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:container_intrusive",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:container_intrusive",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:container_queue",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:container_queue",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:container_text",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:container_text",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:core",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:core",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:error",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:error",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:graph",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:graph_route_apple",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected"
+    },
+    {
+      "id": "headers:graph_route_apple",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:graph_route_cpu",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:graph_route_cuda",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:graph_route_vulkan",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_core",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_core",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_http",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_http",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_http2",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_http2",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_tls",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_tls",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_transfer",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_transfer",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_watch",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_watch",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:io_websocket",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:io_websocket",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:math",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:math",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:mem",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:mem",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:mem_vm",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:mem_vm",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:obs",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:obs",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:platform",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:platform",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:platform_fs",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:platform_fs",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:platform_thread",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:platform_thread",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:process",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:process",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:sched",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:sched",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:simd",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:simd",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:time",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:time",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:timer_queue",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:timer_queue",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:util_core",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:util_core",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "factor:util_runtime",
+      "reason": "outside the change and its required consumer boundary"
+    },
+    {
+      "id": "headers:util_runtime",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "component-contract",
+      "reason": "no global component/package seam change"
+    },
+    {
+      "id": "delivery:container",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:core",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:error",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:io",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:math",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:mem",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:obs",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:platform",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:process",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:sched",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:simd",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:time",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "delivery:util",
+      "reason": "no delivery boundary change for this product"
+    },
+    {
+      "id": "p1",
+      "reason": "no explicit frozen P1 card; sampling is never automatic"
+    }
+  ],
+  "limitations": [
+    "Windows only; does not sign other environments",
+    "Does not cover later C1-C/D/E commits",
+    "No P1; no complete C1 or full-model verdict"
+  ]
+}

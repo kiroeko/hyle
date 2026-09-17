@@ -155,8 +155,13 @@ invocation 与参数保留；已有 F32 回归和 selector 对应门。C1-A 与 
 - `782c575e`：Native F16/BF16 Unary/Binary、RMSNorm/LayerNorm 和 F32 norm 参数；W1 相同
   工具链两个 suite 共 127 case 实际通过。独立半精度 oracle 用数学解码和相邻可表示值搜索，未复用
   产品 conversion；覆盖 0/1/127/128/129/257、2048 hidden、混合参数、两 invocation 与旧结果保留。
-- 原始 build/test 日志位于 `C:\hyle-scratch\llm-moe-c1-20260917`。公开面/消费者/交付 selected
-  gates 正在独立、只读的 Windows `782c575e` worktree 执行；未完成的门未签 PASS。
+- 原始 build/test 日志位于 `C:\hyle-scratch\llm-moe-c1-20260917`。Windows `782c575e` 的 23 个
+  selected gates 全部实际 PASS，包括受影响 correctness/header/直接消费者、Compute 与 Graph 各自
+  source/installed-static/installed-shared；[完整门清单及原始日志哈希](../../../../evidence/correctness/compute-llm-moe-c1/ab-windows-selected.json)
+  保留 95 个 skipped reasons。该证据只覆盖 A/B 与 W1，不覆盖后续 C/D/E 或其他环境。
+- C1-C `06d28274`、D `f626fb48`、E `3997c621` 已形成有限实现；`3997c621` 的 owning factors
+  与普通 CPU/CUDA Direct/Graph consumer 正在串行验证。验证副本只在 A/B 全部门结束后前移，复用
+  未改变的依赖 object，产品源码仍由 Windows canonical 提交提供；未运行 gate 未签 PASS。
 - 无 P1；无 C1 整包、整模型或 GPU 新覆盖 verdict。矩阵仍 UNPROVEN。
 - registry 摘要曾仍写 C1-A 限定，现已同步 A/B/C。实际有限 FIX 分别已在 `ffef1a5f`、
   `885f5f3d`、`9181710f` 独立卡提交后才写各自产品；owner 持续 AUDITED，没有状态跳级。

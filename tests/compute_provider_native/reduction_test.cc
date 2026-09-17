@@ -474,7 +474,6 @@ TEST(NativeScan, IntegerOverflowInLaterRowPreservesEveryOutput) {
         hyle::compute::prepare(
             context, hyle::compute::Scan{.exclusive = exclusive}, desc)
             .value();
-    auto invocation = prepared.create_invocation().value();
     for (const bool negative : {false, true}) {
       const std::array<std::int32_t, 6> data{
           1, 2, 3, negative ? INT32_MIN : INT32_MAX, 0, negative ? -1 : 1};
@@ -483,6 +482,7 @@ TEST(NativeScan, IntegerOverflowInLaterRowPreservesEveryOutput) {
       auto output = make_buffer(sentinel);
       const auto source = ConstTensorView::create(desc, input.view()).value();
       for (const bool alias : {false, true}) {
+        auto invocation = prepared.create_invocation().value();
         auto done = invocation.submit(
             queue, source,
             TensorView::create(desc, alias ? input.view() : output.view())
@@ -491,6 +491,10 @@ TEST(NativeScan, IntegerOverflowInLaterRowPreservesEveryOutput) {
         EXPECT_TRUE(done->wait().IsOutOfRange());
         EXPECT_EQ((read_buffer<std::int32_t, 6>(input)), data);
         EXPECT_EQ((read_buffer<std::int32_t, 6>(output)), sentinel);
+        auto failed_slot = invocation.submit(
+            queue, source, TensorView::create(desc, output.view()).value());
+        ASSERT_FALSE(failed_slot.has_value());
+        EXPECT_TRUE(failed_slot.error().IsFailedPrecondition());
       }
     }
   }
