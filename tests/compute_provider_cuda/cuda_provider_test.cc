@@ -394,19 +394,34 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   EXPECT_FALSE(lane.in_flight());
 }
 
-void append_gather_index(compute::Operation operation,
-                         mem::MemoryResourceRef resource,
-                         std::vector<compute::TensorDesc> &descriptions,
-                         std::vector<compute::ConstTensorView> &inputs,
-                         std::optional<Tensor> &indices) {
-  if (operation.kind() != compute::OperationKind::kGather)
+void append_index_operands(compute::Operation operation,
+                           mem::MemoryResourceRef resource,
+                           std::vector<compute::TensorDesc> &descriptions,
+                           std::vector<compute::ConstTensorView> &inputs,
+                           std::optional<Tensor> &indices,
+                           std::optional<Tensor> &updates) {
+  const bool scatter = operation.kind() == compute::OperationKind::kScatter;
+  if (operation.kind() != compute::OperationKind::kGather && !scatter)
     return;
-  indices.emplace(matrix(compute::DataType::kInt32, 1, 1), resource);
-  const std::array<std::int32_t, 1> zero{0};
+  indices.emplace(
+      scatter ? compute::TensorDesc::dense(compute::DataType::kInt32,
+                                           std::array<std::int64_t, 1>{2})
+                    .value()
+              : matrix(compute::DataType::kInt32, 1, 1),
+      resource);
+  const std::vector<std::int32_t> zero(scatter ? 2 : 1, 0);
   EXPECT_TRUE(
       indices->storage.view().write(std::as_bytes(std::span(zero))).ok());
   descriptions.push_back(indices->view.description());
   inputs.push_back(indices->view.as_const());
+  if (scatter) {
+    updates.emplace(matrix(compute::DataType::kFloat32, 2, 256), resource);
+    const std::vector<float> ones(512, 1.0F);
+    EXPECT_TRUE(
+        updates->storage.view().write(std::as_bytes(std::span(ones))).ok());
+    descriptions.push_back(updates->view.description());
+    inputs.push_back(updates->view.as_const());
+  }
 }
 
 void pending_completion_retains_program(
@@ -428,9 +443,9 @@ void pending_completion_retains_program(
       operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
   std::vector input_desc(arity, input.view.description());
   std::vector inputs(arity, input.view.as_const());
-  std::optional<Tensor> gather_indices;
-  append_gather_index(operation, resource.ref(), input_desc, inputs,
-                      gather_indices);
+  std::optional<Tensor> gather_indices, scatter_updates;
+  append_index_operands(operation, resource.ref(), input_desc, inputs,
+                        gather_indices, scatter_updates);
   const auto descriptions =
       std::span(output_desc)
           .first(compute::operation_traits(operation).outputs);
@@ -450,7 +465,11 @@ void pending_completion_retains_program(
   ASSERT_TRUE(
       input.storage.view().write(std::as_bytes(std::span(values))).ok());
   auto prepared = compute::prepare(owner, operation, inputs, outputs).value();
-  auto lane = prepared.create_invocation().value();
+  mem::Buffer scratch;
+  if (const auto need = prepared.workspace_requirement(); need.size != 0)
+    scratch =
+        mem::Buffer::create(resource.ref(), need.size, need.alignment).value();
+  auto lane = prepared.create_invocation(scratch.view()).value();
   auto warm = lane.submit(queue, inputs, outputs).value();
   ASSERT_TRUE(warm.wait().ok());
   struct Gate final {
@@ -489,6 +508,7 @@ void pending_completion_retains_program(
   const double expected =
       operation.kind() == compute::OperationKind::kTopK ||
               operation.kind() == compute::OperationKind::kGather ||
+              operation.kind() == compute::OperationKind::kScatter ||
               operation.kind() == compute::OperationKind::kConcat
           ? 1
       : operation.kind() == compute::OperationKind::kReduce    ? 256
@@ -573,9 +593,9 @@ void metadata_failures_rollback(
         operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
     std::vector input_desc(arity, input.view.description());
     std::vector inputs(arity, input.view.as_const());
-    std::optional<Tensor> gather_indices;
-    append_gather_index(operation, resource.ref(), input_desc, inputs,
-                        gather_indices);
+    std::optional<Tensor> gather_indices, scatter_updates;
+    append_index_operands(operation, resource.ref(), input_desc, inputs,
+                          gather_indices, scatter_updates);
     const auto descriptions =
         std::span(output_desc)
             .first(compute::operation_traits(operation).outputs);
@@ -609,9 +629,13 @@ void metadata_failures_rollback(
     }
     allocator.fail_at = SIZE_MAX;
     auto prepared = prepare().value();
+    mem::Buffer scratch;
+    if (const auto need = prepared.workspace_requirement(); need.size != 0)
+      scratch = mem::Buffer::create(resource.ref(), need.size, need.alignment)
+                    .value();
     const auto lane_begin = allocator.attempts;
     {
-      auto lane = prepared.create_invocation().value();
+      auto lane = prepared.create_invocation(scratch.view()).value();
     }
     const auto lane_allocations = allocator.attempts - lane_begin;
     const auto lane_retained = allocator.live;
@@ -619,13 +643,13 @@ void metadata_failures_rollback(
     ASSERT_LT(lane_allocations, 32u);
     for (std::size_t offset = 0; offset < lane_allocations; ++offset) {
       allocator.fail_at = allocator.attempts + offset;
-      auto lane = prepared.create_invocation();
+      auto lane = prepared.create_invocation(scratch.view());
       ASSERT_FALSE(lane.has_value());
       EXPECT_TRUE(lane.error().IsResourceExhausted());
       EXPECT_EQ(allocator.live, lane_retained);
     }
     allocator.fail_at = SIZE_MAX;
-    auto lane = prepared.create_invocation().value();
+    auto lane = prepared.create_invocation(scratch.view()).value();
     auto queue = owner.create_queue().value();
     ASSERT_TRUE(queue.reserve_completions(1).ok());
     std::vector<float> values(
@@ -646,6 +670,8 @@ void metadata_failures_rollback(
 }
 
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
+  pending_completion_retains_program(compute::cuda_native::provider(),
+                                     compute::Operation(compute::Scatter{}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Gather{}));
   pending_completion_retains_program(compute::cuda_native::provider());
@@ -669,6 +695,8 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
+  metadata_failures_rollback(compute::cuda_native::provider(),
+                             compute::Operation(compute::Scatter{}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Gather{}));
   metadata_failures_rollback(compute::cuda_native::provider());

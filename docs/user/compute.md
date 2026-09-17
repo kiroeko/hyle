@@ -116,7 +116,16 @@ Gather 支持 plain1/2/4/8字节 source、I32/I64 indices、任意axis/byte stri
 source/indices/output 不能重叠；非空 output/indices 元素数≤INT32_MAX，source 轴与地址计算保留64位。
 连续后缀按16字节块或原标量宽度搬运，非16字节对齐的合法输入仍可执行；无 caller workspace 或
 槽私有状态。checked prefix 的状态 reset/4字节回报，以及原生 capture 的状态合并仍有实际成本。
-整数/FP8 Cast 与算术、Scatter/Scan 等
+CUDA `Scatter` 的 assign 保留1/2/4/8字节storage原始位，add支持F32/F16/BF16；重复目标按updates
+逻辑行主序处理，半精度每次加法在F32求值后舍入。支持I32/I64、任意axis/byte stride、dense输出，
+仅允许同描述input0精确原位更新；非空output/updates/indices各≤INT32_MAX。checked坏索引使整个
+Scatter输出保持原值，通过Completion报告；失败槽退役后可建新槽恢复。
+空indices只保留source，单索引无需workspace；多索引由CUB stable SortPairs对索引/ordinal分组，
+显式caller workspace包含四个I32数组和SDK scratch。每个invocation在冷期固定并上传独立排序图，
+普通Direct复用它，外层CUDA Graph接入原生child graph；执行期不重新调用排序准备。原位更新省去
+整状态复制，opaque CUDA graph私有内存如实报告unknown，不能当成零内存。完整成本包括索引检查、
+排序、必要source复制、逐目标有序更新与完成回报，不等同于无序atomic scatter。
+整数/FP8 Cast 与算术、Scan 等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 

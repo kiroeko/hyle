@@ -8,7 +8,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     cuda_provider.cc native_kernel.cu sglang_kernel.cu
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
     reduction_provider.cc reduction_kernel.cu topk_provider.cc topk_kernel.cu
-    concat_provider.cc concat_kernel.cu gather_provider.cc gather_kernel.cu)
+    concat_provider.cc concat_kernel.cu gather_provider.cc gather_kernel.cu
+    scatter_provider.cc scatter_kernel.cu)
   set_target_properties(hyle_compute_provider_cuda PROPERTIES
     CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
   target_include_directories(hyle_compute_provider_cuda PRIVATE
@@ -31,7 +32,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   if(MSVC)
     # SDK collectives include CCCL headers, which require the conforming
     # preprocessor in nvcc's MSVC host preprocessing phase.
-    set_property(SOURCE norm_kernel.cu reduction_kernel.cu topk_kernel.cu APPEND PROPERTY
+    set_property(SOURCE norm_kernel.cu reduction_kernel.cu topk_kernel.cu scatter_kernel.cu APPEND PROPERTY
       COMPILE_OPTIONS -Xcompiler=/Zc:preprocessor)
     target_compile_options(hyle_compute_provider_cuda PRIVATE
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
