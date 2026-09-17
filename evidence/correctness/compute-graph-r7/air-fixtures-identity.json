@@ -1,0 +1,87 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "verdict": "PASS",
+  "host": {
+    "system": "Darwin",
+    "node": "Kiros-MacBook-Air.local",
+    "release": "27.0.0",
+    "version": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132",
+    "machine": "arm64"
+  },
+  "peers": {
+    "ggml": {
+      "path": "/Users/kiro/hyle-verify/r6-vulkan-20260917/peer-ggml-456172ec",
+      "commit": "456172ec733a135778adcd32d00e576a58232e45",
+      "dirty": false
+    }
+  },
+  "scope": "Retained primary and placement fixtures build; real primary route correctness; six retired target names and retired CPU/Sched source-row names absent. Sched, when present, is built only.",
+  "built_executables": 8,
+  "correctness_executables": 4,
+  "p1_samples": 0,
+  "cold_telemetry": "Existing aggregate cold-prepare timestamps in fixture logs do not produce execution samples or P1 verdicts.",
+  "harness_correction": "The first Air attempt tried to change a public-product build to developer-factor roots and was correctly rejected by HyleComponents before compilation. The corrected harness uses a fresh dedicated build; prior failures are preserved, completed deliveries are not rerun.",
+  "original_identity_sha256": "77c9489d817b3dd2740ef0cb8fb01b82a7695ed62a87d9a10acff2b33c420373",
+  "archive": {
+    "path": "air-fixtures-raw.zip",
+    "sha256": "1eef1282d99afb3c0aad6a3c1a35949efceedbc12e74a26cadc22bf62a59cd7b",
+    "entries": [
+      {
+        "path": "preserved-first-attempt/fixture-checks/configure.log",
+        "sha256": "584ab9a40fa0f79375e85e124166ddf9273296e235c4fff6d414e6cfe9947d6d"
+      },
+      {
+        "path": "preserved-first-attempt/fixture-checks/identity.json",
+        "sha256": "bacf2103e9f85f61de11fa32ccc7d25d4d6d0e6b20078b6ab6994000c6fced8e"
+      },
+      {
+        "path": "preserved-first-attempt/r7-fixture-checks.py",
+        "sha256": "a9429c23f236307668cbc7c5c88f301a0ab90059ac0c63c4e0058861ef7ac1fd"
+      },
+      {
+        "path": "r7-fixture-checks.py",
+        "sha256": "6b35ea6e1061ed05a313b811ff5b57197e2aec41a0e00a1ebbb8a6b3fc5041ac"
+      },
+      {
+        "path": "raw/CMakeCache.txt",
+        "sha256": "191f58dd35b1e8910f58943bea6b17adc2c8a26b22fabc221e4590a2d6b236b7"
+      },
+      {
+        "path": "raw/build.log",
+        "sha256": "ad510ceba21edc0fd43e2c9c8266eed13b830ea721411d47776d3812ee1763c2"
+      },
+      {
+        "path": "raw/compile_commands.json",
+        "sha256": "202beec02c3744579689be258c2c5dfc30724196d6c4e0ef4ac2af57d7ac1a32"
+      },
+      {
+        "path": "raw/configure.log",
+        "sha256": "22644563032a6f0744c7fd6a77a5166d1a8dfce4ada8a8fc2189b0284dd93ea8"
+      },
+      {
+        "path": "raw/hyle_compute_route_apple_bench-oracle.log",
+        "sha256": "dfa53bbebf0fb8b1c163fc5464e0b2d116eb26b5e0a02420d3f6cc272df4ccf2"
+      },
+      {
+        "path": "raw/hyle_compute_route_vulkan_bench-oracle.log",
+        "sha256": "90a5b102f1b437ba33ba0ec721ecf077185b407d8d44cdf5e2877f751dcf2ad5"
+      },
+      {
+        "path": "raw/hyle_graph_route_apple_bench-oracle.log",
+        "sha256": "20768eb039a9b593cc411f288d8ea863818b957a0551ff8a977df1ddab1360ae"
+      },
+      {
+        "path": "raw/hyle_graph_route_vulkan_bench-oracle.log",
+        "sha256": "7e39327e9f57b044242dd956f72d8c0b25acdda523fd0230b425bf09150e4418"
+      },
+      {
+        "path": "raw/identity.json",
+        "sha256": "77c9489d817b3dd2740ef0cb8fb01b82a7695ed62a87d9a10acff2b33c420373"
+      },
+      {
+        "path": "raw/target-inventory.log",
+        "sha256": "ff4f1143ce8edd385e10b3a655be197a99e5b84306c39ee9bcabbfe94af4d17d"
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 # R7 验收证据（进行中）
 
 当前不可变候选为 `87ae583407cbb5ed13108c3837b020e6e343a3ca`。R7 仍在验收，不能由本页已完成的
-P0 / configure 项代替剩余跨平台、sanitizer、TRACE OFF/ON 三交付及 fixture 检查。
+项目代替剩余 Windows/WSL TRACE OFF/ON 三交付与 Windows fixture 检查。
 
 ## 已完成的结构与配置检查
 
@@ -31,7 +31,8 @@ TRACE ON 的 profiler 成本不属于 OFF 性能证据。原 TSan 不记作本�
 
 ## 待完成
 
-Windows broad selector 与 Mac host sanitizer 已完成下述覆盖。TRACE OFF/ON 三交付与 F5 fixture
+Windows broad selector、Mac host sanitizer、Mac 三交付与 F5 fixture 已完成下述覆盖。Windows/WSL
+TRACE OFF/ON 三交付与 Windows F5 fixture
 检查继续按 [R7 当前卡](../../../docs/implementation/tasks/compute/four-route-foundation-final-review.md)
 执行；未执行项保持待验，六个 owner 尚未 CLOSED。
 
@@ -66,3 +67,19 @@ Vulkan 的借入常量去重、owned/borrowed 字节边界及 quota 回收也有
 
 范围限 HYLE host C++；MLX vendor、loader/driver 与 GPU 指令没有因此获得 sanitizer 资格。
 未重新运行 TSan，也没有新增 P1；TRACE ON 和三交付仍由独立后续门裁决。
+
+## Mac OFF/ON 三交付与 fixture 完成
+
+[交付身份](air-delivery-identity.json)和[原始归档](air-delivery-raw.zip)记录同一完整 source ZIP 上的
+TRACE OFF/ON 两种配置，每种均实际运行 source、迁移后的 static SDK、迁移后的 shared SDK 的
+Compute/Graph 消费者，共十二条消费旅程。SDK 消费时原 source/build 已隐藏；真实 compiler 定义、
+linkage、报告与完整 FFN/custom 结果均检查。OFF 没有 Tracy client，ON 的 static/shared 各只有一个
+实际 client 制品。
+
+[fixture 身份](air-fixtures-identity.json)和[原始归档](air-fixtures-raw.zip)记录八个 primary/placement
+程序构建、四个 Apple/Vulkan Direct/Graph 的数值 oracle 及退役入口负检查。没有运行 nanobench
+执行采样；保留的 cold prepare 日志不承担新的性能裁决。
+
+第一轮 fixture 配置把 public-product build 改成 developer-factor roots，被现有互斥门正确拒绝，
+未进入编译。验证脚本改为独立的 fresh maintenance build 后通过；失败脚本、配置日志和 BLOCKED
+记录与修正后的 PASS 均保存。没有修改公共构建门，也没有重跑已经通过的 Mac 交付。

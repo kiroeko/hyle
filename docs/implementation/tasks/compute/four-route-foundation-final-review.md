@@ -147,3 +147,15 @@ Vulkan borrowed/owned 统计和 quota 回收、Generic Graph 逐分配点回滚�
 
 只签 HYLE host C++，不签 vendor/driver/GPU 插桩；TSan 保持源码限定继承。Mac 的 TRACE OFF 源码
 普通消费者已通过，其余 OFF/ON 静态/动态及 Windows/WSL 交付和 F5 fixture 门按已启动的串行任务执行。
+
+### Mac OFF/ON 三交付与 F5 完成
+
+[Mac 交付](../../../../evidence/correctness/compute-graph-r7/air-delivery-identity.json)已完成 TRACE OFF/ON
+各三种交付 × Compute/Graph，共十二条真实消费旅程；同一源码 ZIP、SDK relocation、隐藏原 producer、
+单一 Tracy client、普通 FFN/custom 与报告均通过。
+[F5 fixture](../../../../evidence/correctness/compute-graph-r7/air-fixtures-identity.json)完成八个程序构建、
+四个 Apple/Vulkan 数值 oracle 与退役入口负检查，0 次新增 P1。
+
+fixture 首次因验证脚本混用 product/developer build 入口在配置期被拒绝，原失败保留；改用独立构建
+目录后通过。产品候选与公共工具不变。剩余仅 Windows/WSL OFF/ON 三交付、Windows F5 fixture、终局
+证据与账本绑定，继续按既定低并行串行任务执行。

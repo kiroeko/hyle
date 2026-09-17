@@ -1,0 +1,306 @@
+{
+  "candidate": "87ae583407cbb5ed13108c3837b020e6e343a3ca",
+  "verdict": "PASS",
+  "host": {
+    "system": "Darwin",
+    "node": "Kiros-MacBook-Air.local",
+    "release": "27.0.0",
+    "version": "Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132",
+    "machine": "arm64"
+  },
+  "source_archive_sha256": "4e542af0692906a37fb8bf9048771e06dfe4e578051eb2261057d01f0b0220db",
+  "scope": "CPU Native + Apple MLX/Metal + Vulkan/MoltenVK",
+  "deliveries": "TRACE OFF and ON; complete source, relocated static SDK and relocated shared SDK; real ordinary Compute/Graph consumers",
+  "consumer_journeys": 12,
+  "ctest_commands": 10,
+  "producers_hidden_during_sdk_consumption": true,
+  "tracy_contract": "OFF absent, ON one static client archive or one actual shared client DSO, with actual compiler definitions and runtime linkage recorded",
+  "performance": "No P1 samples; TRACE ON does not inherit OFF performance qualification",
+  "original_identity_sha256": "1f792c8de00945720b3ae86d2a8168626342c0da1dd7c6fb3f26f3fc42b7d766",
+  "archive": {
+    "path": "air-delivery-raw.zip",
+    "sha256": "e71fdecb0c19a37694d910c83d7adfb0960b3ea910dad014bdfb470e48750a29",
+    "entries": [
+      {
+        "path": "r7-delivery.py",
+        "sha256": "46c2d3de3b2324fefc6005cdd36392655e83648c2516e23b7e47d1130d467f6f"
+      },
+      {
+        "path": "raw/identity.json",
+        "sha256": "1f792c8de00945720b3ae86d2a8168626342c0da1dd7c6fb3f26f3fc42b7d766"
+      },
+      {
+        "path": "raw/off-shared-CMakeCache.txt",
+        "sha256": "0c2c863c52e148c9671324b5672f5eeed654c95b050e30e49e4b0123b3e18823"
+      },
+      {
+        "path": "raw/off-shared-build.log",
+        "sha256": "4092bdb0157038fafc1ac81aa3b462c50fbfa88d25b9e99f3dcb0d1a5197747e"
+      },
+      {
+        "path": "raw/off-shared-compile_commands.json",
+        "sha256": "c472b3fd23b22cee7a80ad15299d577789f6ca39a887111b9442c8fe8f9667d5"
+      },
+      {
+        "path": "raw/off-shared-compute-LastTest.log",
+        "sha256": "182b9efca0080b8b5639dfd6b86c8d17d497438ab6c03b12901d4c923bb7cea7"
+      },
+      {
+        "path": "raw/off-shared-compute-build.log",
+        "sha256": "ef4352d66ac557ae13e35e608d75b0b024a15f028d9fb82b7cd625f7dea198da"
+      },
+      {
+        "path": "raw/off-shared-compute-configure.log",
+        "sha256": "6d82054c1d10602683de2ca9e1b77a99815150341930e03054b3b3f848b555b8"
+      },
+      {
+        "path": "raw/off-shared-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "2e7afe09854f29df313245afec979d1ebe69f24206b2519a726c635535264acd"
+      },
+      {
+        "path": "raw/off-shared-compute-test.log",
+        "sha256": "7a290458d828fce2d5a9352a60d9d89cadf4cf6272f7982939d19e7e461a459b"
+      },
+      {
+        "path": "raw/off-shared-configure.log",
+        "sha256": "37710bb8016c56631150a836076073be33534d827681db658709ab3f40cbdb43"
+      },
+      {
+        "path": "raw/off-shared-graph-LastTest.log",
+        "sha256": "8188d582bf15f9b33372b269f10d0a7c3115eca3f034758676659cd306a15587"
+      },
+      {
+        "path": "raw/off-shared-graph-build.log",
+        "sha256": "9b4783eae5aabb81e62b3044a399e6db0f99eb2addb2545def203b9f265d4f44"
+      },
+      {
+        "path": "raw/off-shared-graph-configure.log",
+        "sha256": "c03f0b73a4fb9c0058cf44a4a82e598653210f6b2b35be67ff1d37d8b1ebe605"
+      },
+      {
+        "path": "raw/off-shared-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "9a8e38632577671eafc14699a6073f42506fc4d10030550fd846a72cd42c4550"
+      },
+      {
+        "path": "raw/off-shared-graph-test.log",
+        "sha256": "3f7644144c1e20c5ee67fd2a3307a5abfe5492a319adc231ed8574afdb27fe4a"
+      },
+      {
+        "path": "raw/off-shared-install.log",
+        "sha256": "415665640b2828e0ccc6a6c054bd29b553165e4e2b38c7d897d0a8ccb533addf"
+      },
+      {
+        "path": "raw/off-source-LastTest.log",
+        "sha256": "c5b463ec3c93beb2e1c93269229637706ec78464b7a89b4f6045c790d9b2e8a0"
+      },
+      {
+        "path": "raw/off-source-build.log",
+        "sha256": "288fc4e178081a319ed1ed3231601f4cfec1ca8ea80ed55b2d896013d76cd160"
+      },
+      {
+        "path": "raw/off-source-configure.log",
+        "sha256": "43497440b858136148188d4b026c41ee87291144a3fbc23f7c197989415adb47"
+      },
+      {
+        "path": "raw/off-source-r7_source_compute-linkage.log",
+        "sha256": "34e5d6a4192e27987fc0d9cf3dde60edcd57edf7b742cfd0f623a79d8d91347c"
+      },
+      {
+        "path": "raw/off-source-r7_source_graph-linkage.log",
+        "sha256": "240465b466ab2e06ac923cf90791b24d7e6615eae10ba22031b9e30ed61c2c8c"
+      },
+      {
+        "path": "raw/off-source-test.log",
+        "sha256": "6b84da437cbec5f7ebeb365ad4fafdc5a804680e9690575b84f7dc4ef974070b"
+      },
+      {
+        "path": "raw/off-static-CMakeCache.txt",
+        "sha256": "79d121054c9b5e9c38bf12c2a10ed2310fd8925085a35d1ee83ccfb489e79848"
+      },
+      {
+        "path": "raw/off-static-compile_commands.json",
+        "sha256": "ad66fc5094bf6b5bfec765a26c48c83df75c568d3604bce49da76cc1184458ec"
+      },
+      {
+        "path": "raw/off-static-compute-LastTest.log",
+        "sha256": "ecf248ffe11780e68870537821d3366098a6b405ec903a6f68f9a2f137ab777c"
+      },
+      {
+        "path": "raw/off-static-compute-build.log",
+        "sha256": "8d95c75288ee1389a6c2f77d388cd8d2be5b1f600ed436bc0305a5fc1885b309"
+      },
+      {
+        "path": "raw/off-static-compute-configure.log",
+        "sha256": "49d9bab1926e7e3fcefe06b6f9e79a074e4c27a3433a702d607c53586a810fb3"
+      },
+      {
+        "path": "raw/off-static-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "11f42eeb0bc7cd29d5556bcfab0c341badf61554f09dfeb277bcd7dbca84e030"
+      },
+      {
+        "path": "raw/off-static-compute-test.log",
+        "sha256": "bc9e54934b2fdbf47720194304f7d0235dd66b3a8409fb6fa39895d506e64990"
+      },
+      {
+        "path": "raw/off-static-graph-LastTest.log",
+        "sha256": "28fb64a9443783e987b9992f9d009622058806dfa0e009d8849df432ea663d3a"
+      },
+      {
+        "path": "raw/off-static-graph-build.log",
+        "sha256": "3348f3811b295ea28456ff0a0cd26dd39ded2aa880aff0a368d06072404324a0"
+      },
+      {
+        "path": "raw/off-static-graph-configure.log",
+        "sha256": "a752f78f1fc0f81ab025df59234c066e1efcdadba2a42e2144cf6de62c02647f"
+      },
+      {
+        "path": "raw/off-static-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "3d27c6a31fbd2e2741eedb619ad23dc6f6c614e89077d9c192d26b649f9df9a8"
+      },
+      {
+        "path": "raw/off-static-graph-test.log",
+        "sha256": "e31b32924380f7fe95dfeb854eedd0898341fcb256c652d4e494a81245a3713f"
+      },
+      {
+        "path": "raw/off-static-install.log",
+        "sha256": "5cecf3112353fe6670566ec1f1b4a440d928d325033eaf81e1f7b53342755f3c"
+      },
+      {
+        "path": "raw/on-shared-CMakeCache.txt",
+        "sha256": "dca5f8c11a355ef45a79ca1ee9abe23b17c64a5f2a2ad78ec57c2e7ab290dcd7"
+      },
+      {
+        "path": "raw/on-shared-build.log",
+        "sha256": "7cbb59deb5b4325f76581cf3cad948ebc35db8b01f4b5ecc4428f8db72406122"
+      },
+      {
+        "path": "raw/on-shared-compile_commands.json",
+        "sha256": "a41c80089381c4b40f5a76eb7c2b05e539cd73c3d342557dcacbfc6b75475433"
+      },
+      {
+        "path": "raw/on-shared-compute-LastTest.log",
+        "sha256": "ccb46ca283c9de519a8d2934d8d64062decd4d4108fd1fd792d1e079d89dd461"
+      },
+      {
+        "path": "raw/on-shared-compute-build.log",
+        "sha256": "ea691cbb0802a8bf79fb773be238264a85aa567b0103797e5dbbcb4bcce56477"
+      },
+      {
+        "path": "raw/on-shared-compute-configure.log",
+        "sha256": "869ad51d02d8ac79cf4ab90c0de324ab96d7c621b542fff7f39e9adfbcbd3b1f"
+      },
+      {
+        "path": "raw/on-shared-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "d0d464f7395a5508f19a7e019c15fa122159dc70c2cd2b7051d58f0d79825f85"
+      },
+      {
+        "path": "raw/on-shared-compute-test.log",
+        "sha256": "ba4f362efc93de6bebb20011d58661c165e18fba387b032412a94c54ee2e386c"
+      },
+      {
+        "path": "raw/on-shared-configure.log",
+        "sha256": "27b0274a937937583d8943e5089d4c45256a45b1d59a922aef9fc4f32b12071f"
+      },
+      {
+        "path": "raw/on-shared-graph-LastTest.log",
+        "sha256": "87e72fe6b6e8dd42e1331fe3407e1ef94280ec86289b6595b710ecf598bc119c"
+      },
+      {
+        "path": "raw/on-shared-graph-build.log",
+        "sha256": "18263ac5de961e76317fa6a2438d39891249300f40972c41aceb39254c43c1e3"
+      },
+      {
+        "path": "raw/on-shared-graph-configure.log",
+        "sha256": "566c930db95930f3231190e0108242dd47f52f9f8ff47cccf5e33963b5fb9746"
+      },
+      {
+        "path": "raw/on-shared-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "e78dec797440a2a4e8837ed51d5672b3c28984ede8e21402cd5a86515446d231"
+      },
+      {
+        "path": "raw/on-shared-graph-test.log",
+        "sha256": "fa4ac0d45406ffe18d43f4b17862be29b7874d9e90b864e137afa17b9e656b5b"
+      },
+      {
+        "path": "raw/on-shared-install.log",
+        "sha256": "0daee32146292aba55d4f8dc4192b4b5cc81027b4ac903869622248c473a8a10"
+      },
+      {
+        "path": "raw/on-source-LastTest.log",
+        "sha256": "e9833c8e91b612853a2333f42093716e1d6e7ec8e15afc6ebb0f8942d2f8c26b"
+      },
+      {
+        "path": "raw/on-source-build.log",
+        "sha256": "8e83bbae3da9a8432ad6f02adc1df26c054624a9de405e93ecd9272b9c403ebd"
+      },
+      {
+        "path": "raw/on-source-configure.log",
+        "sha256": "80cc600e2002c2214e70a90cfa496ebb2f62feea2dcc1de58954a0e6105d4574"
+      },
+      {
+        "path": "raw/on-source-r7_source_compute-linkage.log",
+        "sha256": "34e5d6a4192e27987fc0d9cf3dde60edcd57edf7b742cfd0f623a79d8d91347c"
+      },
+      {
+        "path": "raw/on-source-r7_source_graph-linkage.log",
+        "sha256": "240465b466ab2e06ac923cf90791b24d7e6615eae10ba22031b9e30ed61c2c8c"
+      },
+      {
+        "path": "raw/on-source-test.log",
+        "sha256": "432544fd5f1573dd94f1e6247340006295c60f902ab901d3ffead55f6f1cad64"
+      },
+      {
+        "path": "raw/on-static-CMakeCache.txt",
+        "sha256": "cde3c2a5b18660b07f110330e941b66b710e862b0ec40db9e5f83d911c1027f3"
+      },
+      {
+        "path": "raw/on-static-compile_commands.json",
+        "sha256": "13116ee9d6116e50aebd9c1f39cd7679adb2761dc10a603497ecfc41a7ea665d"
+      },
+      {
+        "path": "raw/on-static-compute-LastTest.log",
+        "sha256": "ebf1a7b9343d0d40e26ace2b6787a881e2b43bfa2dfb82847b58f1e609bc1f31"
+      },
+      {
+        "path": "raw/on-static-compute-build.log",
+        "sha256": "7baf0a5f692ad66e56156983f73125866471466faa9d16cca99e8774bae3f9c9"
+      },
+      {
+        "path": "raw/on-static-compute-configure.log",
+        "sha256": "2ff1e7f5102efa1012a4c65ad524a71cd4b0ec570e877c8f69521dd3dcba34df"
+      },
+      {
+        "path": "raw/on-static-compute-hyle_package_compute_cpp-linkage.log",
+        "sha256": "e7e5c978b24de4b6871e4f9853cef9e24b19c55fa60068f18e22de3d1e2624dd"
+      },
+      {
+        "path": "raw/on-static-compute-test.log",
+        "sha256": "843a700bdb31aa32de3b6b0192cc1866f26b9f33e04b733aeaea43e31e461e30"
+      },
+      {
+        "path": "raw/on-static-graph-LastTest.log",
+        "sha256": "6f0aa11032ad665fc12191764698cb8884e7088d976b32ddc0ccbb0deb6d06b7"
+      },
+      {
+        "path": "raw/on-static-graph-build.log",
+        "sha256": "d4a3f911e86d650f5be9a3f62a4c571f8d491e32c37aea4bc575047a50534b3d"
+      },
+      {
+        "path": "raw/on-static-graph-configure.log",
+        "sha256": "f143643c46f869f5c45f9ae6126041176257f82f2cadc29943b1486da1c052fe"
+      },
+      {
+        "path": "raw/on-static-graph-hyle_package_graph_cpp-linkage.log",
+        "sha256": "9d88afa0b6cb8a0daed93591b584696dfab663d5ee2fc4f5eb9c688e1eb8018e"
+      },
+      {
+        "path": "raw/on-static-graph-test.log",
+        "sha256": "8c55233b93de017ebf09842159bc3fd7a9ef4feeaa94240c63b4373d74fe0866"
+      },
+      {
+        "path": "raw/on-static-install.log",
+        "sha256": "5ab1a4b097183935b2382ad33561d5ca601b2370255270c1343343968bb0b210"
+      }
+    ]
+  }
+}
