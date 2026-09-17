@@ -471,7 +471,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E/G AUDITED：BF16 三门控、基本 tensor/View/转换/算术/掩码已实施；W1 provider 13、默认 Direct 4、Graph 6 case 通过，含 capture/独立结果/失败清理。norm/index 等与 C1 完整交付/P1 待完成。"
+      "summary": "LLM/MoE C1-E/G/H AUDITED：三门控与基本 tensor 已实现，W1 provider/default Direct/Graph 共23 case 通过；H01–H03 固定 mixed-F32 参数的 CUDA RMS/LayerNorm 与 SDK reduction；其余归约/索引及 C1 完整验收待完成。"
     },
     {
       "module": "compute_route_cuda",

@@ -15,7 +15,7 @@
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、backend、Mem/Sched 本包没有已证缺陷，不自动重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
-  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03 和 G01–G04 进入 AUDITED；其余五个 owner
+  对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04 和 H01–H03 进入 AUDITED；其余五个 owner
   保持 SCOPED。AUDITED 只授权具名固定子集，不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -313,5 +313,30 @@ CUDA accepted-prefix/late-failure 与 Vulkan 直接消费者；[原始命令及�
   由 CUDA driver 管理，不写成零 resident cost。完整 P1/三交付/其他环境与真实权重片段仍待 C1。
 - 下一有限审计为 CUDA norms/reduction/index 及各自 native 失败边界，不把当前 pointwise 证据
   扩张为 F01–F04 或 C1 整包完成。
+
+### C1-H：CUDA RMSNorm 与 LayerNorm（AUDITED）
+
+baseline `326cd5f4`，owner `/root` / `compute_provider_cuda`。F04.1/F04.2 及本地 Qwen 权重要求
+BF16 activation 与 F32 learned scale，Gemma 的 `1+gamma` 已能由 G 的 Binary 构成；FP16 量化激活
+需要相同接口。已核对固定 SGLang `kernels/jit/csrc/elementwise/rmsnorm.cuh` 的同 dtype weight
+约束和 ggml `src/ggml-cuda/norm.cu` 的 F32 路径；它们都按行并行归约，不能直接签 mixed F32 参数。
+ggml 的 LayerNorm 使用 E[x²]-E[x]²，在大均值小方差域不满足本卡稳定数值验收。
+
+本子集 `BORROW` 已依赖 CUDA Toolkit 13.3 SDK 的 Cooperative Groups tile reduction 与 CUDA
+浮点转换，`OWN` 薄的 norm 公式和 descriptor/resource 接线；不复制 SDK 源码、不增加供应商 runtime。
+具体已读 SDK `cooperative_groups/details/reduce.h` 的 multi-warp tile collective：由 SDK 管理
+归约的线程间同步与片上 scratch；不再自写 warp/shuffle 归约。精度、带宽和最终生命周期的完整 peer
+比较仍属于 C1 bundle，不将当前承载决定或 correctness 冒充最快规则验收。
+
+| FIX | 固定实施范围 | 数值 / P0 / 适用验收 |
+|---|---|---|
+| H01 | 既有 RmsNorm/LayerNorm 在 HYLE CUDA provider 的 cold proposal/prepare 与原生程序 | plain dense F32/F16/BF16，最后一轴，输出同输入；scale/bias 各自允许同输入 dtype 或 F32（遵守共同 schema）；仅 F32 accumulation；exact shape/output count≤INT32_MAX；zero output 不取 device pointer或launch；不改变共同 API/backend/default factory |
+| H02 | SDK 256-thread tile 按行归约，FP32 affine 后一次 RNE | RMS 两遍读输入；LayerNorm 先 FP32 mean，再归约 (x-mean)²，三遍读输入；无整张量 FP32 展开、host payload copy、workspace 或 invocation 私有状态，每个非空 norm 一次 native launch；只有 input0 精确别名可原位，参数/部分重叠拒绝；dtype/kernel 准备绑定，capture/completion 保持 |
+| H03 | 普通 Direct/Graph、独立数值与生命周期/文档 | widths0/1/127/128/129/2048/5120/6144/7168，FP64 两遍 oracle、half 位级转换、F32 参数不能先被窄化、零 epsilon/常量行/NaN/Inf、大均值小方差；两 slots/变更输入/保留结果、原生 capture、metadata OOM 回滚/accepted owner 保留/close；局部 correctness 后，完整三交付/P1 随固定 C1 bundle |
+
+本次不接入整套 SGLang tensor/TVM，也不拆其已有 fused 门控。非连续 norm 显式使用普通 Copy
+materialize，转换成本计入实际消费者；不声称新 norm 覆盖任意 layout。其余 Reduce/L2、Softmax、
+TopK、Concat、checked index/Scan 仍待各自有限审计。有限实现与必要测试只改当前 CUDA owner 及
+直接 consumer 测试/指南，公共治理和性能仪器不动；没有本轮适用 P1 verdict。
 
 当前无 C1 candidate 或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
