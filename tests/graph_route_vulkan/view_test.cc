@@ -157,7 +157,11 @@ TEST(VulkanGraph, ConstantViewsShareColdWeightPackingAndDropUnusedRoots) {
     const auto w = builder.constant(weights.description()).value();
     const auto matrix =
         builder
-            .add(c::View::reshape(std::array<std::int64_t, 2>{k, n}).value(), w)
+            .add(c::View::reshape(
+                     c::TensorShape::create(std::array<std::int64_t, 2>{k, n})
+                         .value())
+                     .value(),
+                 w)
             .value();
     const auto same_matrix =
         builder.add(c::View::slice(0, 0, k).value(), matrix).value();
