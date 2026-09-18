@@ -572,7 +572,7 @@ Air/Mini 正准备同一候选；已有 Mac 环境缺少 ggml 原厂构建所需
 
 ### Y17–Y19：Mac 严格编译的夹具修正
 
-同产品候选在 Air 的首次配置通过，原版 shader 与 HYLE 产品源码编译通过；Provider 测试
+同产品候选在 Air 的首次配置通过，原版 shader 与 ggml Provider 产品源码编译通过；Provider 测试
 `region_test.cc` 的五处 Vulkan 结构体部分初始化被 Clang 的
 `-Werror=missing-field-initializers` 拒绝，尚未开始 GPU 测试。修正只将夹具改为完整零初始化
 后设置 `sType`，所有字段值与断言保持不变，不关闭警告、不改产品或性能合同。
@@ -580,3 +580,16 @@ Air/Mini 正准备同一候选；已有 Mac 环境缺少 ggml 原厂构建所需
 `4c309c6e` 产品及其已有 W1 事实不变，不因此重跑 Windows Direct/Graph 或启动 P1。
 该夹具修正已通过 W1 strict static 的19个 Provider 用例及源码/MASM 两项检查，零 skip、
 无 validation 诊断；selected configure、docs、closure 同时通过，116项无关门跳过。
+
+夹具修正 `132e7497` 继续 Air 编译后，进一步发现 route 冷期 origin-copy 的 `PlanStep`
+聚合初始化遗漏显式 trailing fields，同样触发严格 Clang 警告；首次构建尚未编译到此 TU，
+不将早期 Provider 编译通过误写成全部路线通过。
+
+**实现前有限纠正 Y19-P（AUDITED）**：owner `compute_route_vulkan` / `/root`，baseline
+`132e7497`。仅补齐这一个 `PlanStep` 的原有默认值：空 custom、groups={1,1,1}、空
+push_constants；不改公开类型、算法、原生指令、资源和热路径。这是本批第一次产品编译可移植性
+纠正，预算仍至多两轮。按 selector 验证 route/Graph，随后同不可变候选继续 Air/Mini；无新 P1。
+
+Y19-P 的 W1 strict static selected configure、40个 Direct 与17个 Graph 用例通过，零 skip、
+无 validation 诊断；未改 Provider 产品，复用其已通过事实。此处仅补原有默认初始化，不新增
+算子或性能优选结论。两次 Mac 初次编译失败均保留，不将未运行的运行时验证记为通过。
