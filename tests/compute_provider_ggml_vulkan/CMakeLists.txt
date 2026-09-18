@@ -15,7 +15,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     COMMAND "${HYLE_VULKAN_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/source_contract_test.py")
   set_tests_properties(hyle_ggml_vulkan_source_contract_test PROPERTIES
     LABELS "compute_provider_ggml_vulkan")
-  if(MSVC)
+  if(MSVC AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
     FetchContent_GetProperties(ggml_vulkan_runtime SOURCE_DIR _locked_ggml_source)
     add_test(NAME hyle_ggml_vulkan_masm_composition_test
       COMMAND "${CMAKE_COMMAND}"
