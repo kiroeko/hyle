@@ -24,6 +24,9 @@ publish fully initialized devices, roll back partial buffer/backend creation,
 account device memory through optional HYLE reservations, and permit an owned
 native-buffer/queue bridge. The host retains its terminate handler and supplies
 loader function pointers. The bridge implementation remains private HYLE code.
+Device creation also enables `VK_KHR_portability_subset` when the physical
+device advertises it, as required by Vulkan VUID 04451. This uses the existing
+extension enumeration; devices without that extension do not request it.
 These changes do not certify asynchronous partial-submission failure handling
 or the ordinary Direct/Graph adapter; those have separate remaining acceptance.
 The CPU ggml provider remains governed by its separate blocked record.

@@ -622,3 +622,9 @@ CMake owner 和 package 描述投影。不存在设备扩展枚举、重复 disp
 的设备仍可执行；Mini 沿已声明的 correctness/portability，不代签 validation 或 Formal 性能。
 原完整三交付和其余 C1 MUST 保持未验收；selector 选出的构建/package 门按实际影响执行，
 未变无关门按身份复用。只增加冷期枚举结果匹配，热路径不变，不单独再开 P1。
+
+初次 Mac 失败及此前编译修正已[完整归档](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-macos-portability/README.md)，
+统一 Compute+Graph LOC 为46,990行/193文件，自检PASS。Y20 已实现条件扩展启用与完整补丁身份；
+W1 strict static 的19 Provider、40 Direct、17 Graph 与源码/MASM 两项检查通过，无 VUID。
+shared、修正后的 Air/Mini 与本次 lock/package 改动选出的其余适用门仍待完成；不从首次通过
+或旧 broad 验收自动推导当前 package PASS。

@@ -292,9 +292,13 @@
         {
           "before": "    ggml_vk_graph_cleanup(ctx);\n\n    ggml_vk_destroy_buffer(ctx->prealloc_x);",
           "after": "    ggml_vk_graph_cleanup(ctx, !ctx->hyle_retired_failure);\n\n    ggml_vk_destroy_buffer(ctx->prealloc_x);"
+        },
+        {
+          "before": "        std::vector<const char *> device_extensions;",
+          "after": "        std::vector<const char *> device_extensions;\n        // HYLE: required for every device advertising Vulkan portability.\n        for (const auto &extension : ext_props) {\n            if (strcmp(extension.extensionName, \"VK_KHR_portability_subset\") == 0) {\n                device_extensions.push_back(\"VK_KHR_portability_subset\");\n                break;\n            }\n        }"
         }
       ],
-      "after_sha256": "649e0ff92ec362f95f39f2d668f6646bb12891b3b01f6d559bc69466ab581081"
+      "after_sha256": "67aa68c51d1989b6af49e94e676debdbb963a8d49487a614eb1e02872d8bd993"
     },
     {
       "path": "src/ggml.cpp",

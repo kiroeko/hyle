@@ -1,0 +1,453 @@
+{
+  "candidate": "ceace753781426e82f6e2f1d4ee50eb2aaed9dde",
+  "tree": "322daf9f1d009e264b44f7717c459b60c7f9ceec",
+  "product_candidate": "69b3414b182998005b2c23c8444131b45338d3df",
+  "machine": {
+    "model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "glslc": "shaderc v2026.4 unknown hash, 2026-09-11\nspirv-tools v2026.4 v2022.4-1347-gef96ed76\nglslang 11.1.0-1566-ge1b562a8\n\nTarget: SPIR-V 1.0\n",
+    "glslc_sha256": "219d44f4ebddc8ca8e9497804dfa965d30ec0c50abd5c1cd949efe0a12754f6b"
+  },
+  "scope": "Y17-Y19 first macOS build and runtime validation, before the separately audited Y20 fix",
+  "verdict": "FAIL",
+  "reason": "76 numerical/lifecycle cases passed; 87 mandatory portability-subset device-creation validation errors",
+  "verifications": [
+    {
+      "suite": "compute_provider_ggml_vulkan",
+      "cases": 19,
+      "assertions": "PASS",
+      "runtime_skips": 0,
+      "validation": "FAIL",
+      "vuids": {
+        "VUID-VkDeviceCreateInfo-pProperties-04451": 19
+      }
+    },
+    {
+      "suite": "compute_route_vulkan",
+      "cases": 40,
+      "assertions": "PASS",
+      "runtime_skips": 0,
+      "validation": "FAIL",
+      "vuids": {
+        "VUID-VkDeviceCreateInfo-pProperties-04451": 44
+      }
+    },
+    {
+      "suite": "graph_route_vulkan",
+      "cases": 17,
+      "assertions": "PASS",
+      "runtime_skips": 0,
+      "validation": "FAIL",
+      "vuids": {
+        "VUID-VkDeviceCreateInfo-pProperties-04451": 24
+      }
+    }
+  ],
+  "raw_receipt_note": "The final driver exits 1 at the validation-log postcondition. Its original RUNNING field is preserved, not interpreted as PASS.",
+  "build_corrections": [
+    {
+      "commit": "132e7497f7c3ae90f49fdb4853cff24f1b5baa87",
+      "scope": "Five Vk struct initializations in a test fixture"
+    },
+    {
+      "commit": "69b3414b182998005b2c23c8444131b45338d3df",
+      "scope": "Explicit existing defaults in one cold PlanStep"
+    },
+    {
+      "commit": "ceace753781426e82f6e2f1d4ee50eb2aaed9dde",
+      "scope": "Remaining lifecycle fixture initializations and vendor-include unused-function diagnostic boundary"
+    }
+  ],
+  "windows_revalidation": [
+    {
+      "scope": "first test fixture correction",
+      "provider_cases": 19,
+      "source_and_masm_ctests": 2,
+      "verdict": "PASS"
+    },
+    {
+      "scope": "one product PlanStep correction",
+      "direct_cases": 40,
+      "graph_cases": 17,
+      "verdict": "PASS"
+    },
+    {
+      "scope": "remaining test fixture correction",
+      "provider_cases": 19,
+      "direct_cases": 40,
+      "source_and_masm_ctests": 2,
+      "verdict": "PASS"
+    }
+  ],
+  "mini_status": "Tools prepared and verified; no product configure/build/runtime run yet for this candidate",
+  "outstanding": [
+    "Y20 corrected candidate validation",
+    "remaining C1 provider bindings",
+    "real weights",
+    "three C++ deliveries",
+    "qualified performance and fixed rules"
+  ],
+  "loc": {
+    "implementation_lines": 46990,
+    "files": 193,
+    "self_check": "pass"
+  },
+  "archive": {
+    "path": "raw-bundle.zip",
+    "bytes": 163096,
+    "sha256": "8b7e2cc34b0c903b0e161ec7d8229897c6d2b19a4bcc2acd63b6cf99f0b197fa"
+  },
+  "files": [
+    {
+      "path": "air-bootstrap-failure.txt",
+      "bytes": 405,
+      "sha256": "c0e702f9c4f3423551f383219effe1f06874d2c15c3fe35dcc8e3b51d8187732"
+    },
+    {
+      "path": "air-final-run.log",
+      "bytes": 812,
+      "sha256": "062626692d9bea29b7f171bfc78b51a8452646b0f0809a1349d952871138af36"
+    },
+    {
+      "path": "air-final/CMakeCache.txt",
+      "bytes": 31944,
+      "sha256": "001f55ad35807f85a3e097261267bd094d24ec17277d97c4844c610961ffef5c"
+    },
+    {
+      "path": "air-final/artifacts.json",
+      "bytes": 797,
+      "sha256": "b781ffbbf4a2b4717f1cd4124a0d48dc17a1855c8e22f85e5a41bc0a8a05b489"
+    },
+    {
+      "path": "air-final/build.log",
+      "bytes": 768,
+      "sha256": "38b109c2fadaf9952519f48c5130190c98cb0eda9f1c0f66905aaa52a7a6c1bd"
+    },
+    {
+      "path": "air-final/compute_provider_ggml_vulkan.json",
+      "bytes": 9301,
+      "sha256": "c64710a8d3b2f76aabf9057fb0b43673778844ade99d1ae95515f3a5ff3df4f6"
+    },
+    {
+      "path": "air-final/compute_provider_ggml_vulkan.log",
+      "bytes": 15420,
+      "sha256": "d726d5ae5660b4a08a0f674e4181e1639a1872563ddf8d99c992800e034ca556"
+    },
+    {
+      "path": "air-final/compute_route_vulkan.json",
+      "bytes": 18893,
+      "sha256": "b36d6b9bbd070bafe8bcd66d9257250711aa6382ca625e7163b41b9eb6effc4b"
+    },
+    {
+      "path": "air-final/compute_route_vulkan.log",
+      "bytes": 33138,
+      "sha256": "cbe3f17a2af8ad944935cef2b76e8d2c8f49ecd5ccd5e5474d8e6323f754c179"
+    },
+    {
+      "path": "air-final/configure.log",
+      "bytes": 1447,
+      "sha256": "7558ce7c4e50ddc30df7d79661f2dc27187c80b04a34f43670d451d270859c9c"
+    },
+    {
+      "path": "air-final/ctest.xml",
+      "bytes": 753,
+      "sha256": "09d86be0c936e3bbadd4ad6d98198b5a525158cea1adf630c81c7d646a4da8f1"
+    },
+    {
+      "path": "air-final/graph_route_vulkan.json",
+      "bytes": 7435,
+      "sha256": "2645ee8eaf3f5a56971d4be3c7b85adce587017a3be439bc3ff1759ba0d0cb27"
+    },
+    {
+      "path": "air-final/graph_route_vulkan.log",
+      "bytes": 17168,
+      "sha256": "3017d08da072355a8adb5129dbfc96d9a6bb7174d052dad3a6f2d30a55c45dab"
+    },
+    {
+      "path": "air-final/result.json",
+      "bytes": 6483,
+      "sha256": "ae7a0567d1da1dd29e99b31c423f315c7a453cb510f0954e65ecfbaab0ca5367"
+    },
+    {
+      "path": "air-final/source-contract.log",
+      "bytes": 367,
+      "sha256": "5c88796e641952bb0d3e0be23ebc89a77d9e37614fd8ae920cf5e7f2744d6587"
+    },
+    {
+      "path": "air-fixture-run.log",
+      "bytes": 3795,
+      "sha256": "54176ef847a794a1fa6d7401dac2c6be55c7e3a7e8ebfa62428fb7adee5931b6"
+    },
+    {
+      "path": "air-fixture/build.log",
+      "bytes": 3411,
+      "sha256": "8966e2a4526cdda41a40c0cd77d49f387659c6e5fa8d049998c8d0057d7d8cfb"
+    },
+    {
+      "path": "air-fixture/configure.log",
+      "bytes": 1447,
+      "sha256": "e6c3e690153329ce017b40b9d1c4a476d560cc46f3a250bea436c1b3981acf2d"
+    },
+    {
+      "path": "air-fixture/result.json",
+      "bytes": 3918,
+      "sha256": "4887f258e65ab934bb68ef91c92dfd30fc236c9d9c7e6f38cc19ce26cc0a8261"
+    },
+    {
+      "path": "air-initial/build.log",
+      "bytes": 36314,
+      "sha256": "0b1a218347e48af1f1f4912be7b051329b2a8170b691d53cda5b1cee4422c9ec"
+    },
+    {
+      "path": "air-initial/configure.log",
+      "bytes": 1646,
+      "sha256": "019fd4c363d8589acabb61342cd66eb34d5716173ff6c3597ae5dc7f02e53a66"
+    },
+    {
+      "path": "air-initial/result.json",
+      "bytes": 3817,
+      "sha256": "9e3854f4d583e61afb054aa9c5f68cac61b25a8ebdac3c66fc5e26e204a4032f"
+    },
+    {
+      "path": "air-portability-run.log",
+      "bytes": 3975,
+      "sha256": "5143d8cd7bef190eb12ee785fa8f171c6e645b6128cafd9c795a5e08c23661ac"
+    },
+    {
+      "path": "air-portability/build-remaining.log",
+      "bytes": 11002,
+      "sha256": "3f2b928d5e228c7fe4c74d6d24e3aa3dc13192cd24751515d073fa8cf044bfc8"
+    },
+    {
+      "path": "air-portability/build.log",
+      "bytes": 3605,
+      "sha256": "fdcc7f5a90d7878fd87517cc358421f226cf4cfc60238842f707cb8fce33e146"
+    },
+    {
+      "path": "air-portability/configure.log",
+      "bytes": 1447,
+      "sha256": "b0f52d7ebd4399997f9651f263698418af20c72995c319fd87c27eeeaeb1bc5e"
+    },
+    {
+      "path": "air-portability/result.json",
+      "bytes": 3991,
+      "sha256": "ed9a2804cd05ede69b5df228689f62de724e23f9bf1ed93bb0d50664d56faf0b"
+    },
+    {
+      "path": "air-run.log",
+      "bytes": 9315,
+      "sha256": "2d3db92f44f99f303177cecf630fc0b87e939af2e605169de0b9a9aa3379e810"
+    },
+    {
+      "path": "air-shaderc-cached-install.log",
+      "bytes": 816,
+      "sha256": "81a1813945605da069da4a072bb0a786055af769528ea6d3fffeadfa1ca32fc5"
+    },
+    {
+      "path": "air-shaderc-install.log",
+      "bytes": 463,
+      "sha256": "8a73d209eb3161b18c77cd294289f18288594a86a149a79e7e6cbf584f36b018"
+    },
+    {
+      "path": "fetch-mini-shaderc.py",
+      "bytes": 1536,
+      "sha256": "5125e91b88c8485fea6535f055207238313b9a4a1479749bbc38295f64fab560"
+    },
+    {
+      "path": "fetch-shaderc.py",
+      "bytes": 1537,
+      "sha256": "13dbfe0df92b8015f723f0ae4e76cbc84d20fb9099c3b90f448fe11a2010fe54"
+    },
+    {
+      "path": "fixture-selector.json",
+      "bytes": 680709,
+      "sha256": "8c5143c66fb86527e76592b077bc69003c1db095c5550a45da24d2438c3df112"
+    },
+    {
+      "path": "fixture-w1-run.ps1",
+      "bytes": 3724,
+      "sha256": "2eaa095459ffabb128f50508be97d273c73ae0462d4cf469e5818d28a2545860"
+    },
+    {
+      "path": "fixture-w1/static-build.log",
+      "bytes": 798,
+      "sha256": "5d1a34a9803f7db20b05e5dd8b01df87f23ba4ebaff095a72e9ccda44c72a94a"
+    },
+    {
+      "path": "fixture-w1/static-compute_provider_ggml_vulkan.json",
+      "bytes": 9080,
+      "sha256": "db394b339e77b86df0d4ecf069458a5c9c1e896739b15db58111037e4a1347be"
+    },
+    {
+      "path": "fixture-w1/static-compute_provider_ggml_vulkan.log",
+      "bytes": 4589,
+      "sha256": "389321b57bd5d77a1fb8755b5514786c251fd81b8984e7599b6fd8f282d8c5ec"
+    },
+    {
+      "path": "fixture-w1/static-configure.log",
+      "bytes": 1224,
+      "sha256": "4d831892c62bce9ab935e131afe680fbc1a9be23d66c1ce6164cbf87032a452a"
+    },
+    {
+      "path": "fixture-w1/static-ctest.xml",
+      "bytes": 2185,
+      "sha256": "ce0c05f810e0b55911da4160333466dfd9f7cf40054a9d9475351b0ade58f4b0"
+    },
+    {
+      "path": "fixture-w1/static-test.log",
+      "bytes": 465,
+      "sha256": "13dc5cd12495817611433e6e3928dc987ccf6c989020c134dae83e2eb8def307"
+    },
+    {
+      "path": "fixture2-selector.json",
+      "bytes": 681059,
+      "sha256": "4baf4b76833b8688ad30667eaf94d2dd77eabc7a89951b7e57a52d3602cdfd75"
+    },
+    {
+      "path": "fixture2-w1-run.ps1",
+      "bytes": 3802,
+      "sha256": "591ac01029c940992f4b85d14d802654c60420c93307693d921ea6020dd2e932"
+    },
+    {
+      "path": "fixture2-w1/static-build.log",
+      "bytes": 1267,
+      "sha256": "494b7f3948466b8bb2390cee7fed4e7c56f89adc43aaeafa58c892b41cf2698a"
+    },
+    {
+      "path": "fixture2-w1/static-compute_provider_ggml_vulkan.json",
+      "bytes": 9081,
+      "sha256": "219e10fab595a240a8af49699cf66af83881b66eabe6b4d30701671d37dd46bc"
+    },
+    {
+      "path": "fixture2-w1/static-compute_provider_ggml_vulkan.log",
+      "bytes": 4589,
+      "sha256": "76ad4b2506d3db559a74a6d6eeb9b98c743107ad474735574cfef1c190c7ab42"
+    },
+    {
+      "path": "fixture2-w1/static-compute_route_vulkan.json",
+      "bytes": 18410,
+      "sha256": "58f77ff8930d32efe663ba028fd61db3f057a6fb1424b4870805c5be58efa309"
+    },
+    {
+      "path": "fixture2-w1/static-compute_route_vulkan.log",
+      "bytes": 8004,
+      "sha256": "214bd8b732f5632f200576b13128a48810a3a401fc8d5113e5ae64fa328af9db"
+    },
+    {
+      "path": "fixture2-w1/static-configure.log",
+      "bytes": 1333,
+      "sha256": "2970b21f4d979a029c3a2b087a8f32c58aff07d625a94aa251804e3bad436eca"
+    },
+    {
+      "path": "fixture2-w1/static-ctest.xml",
+      "bytes": 2185,
+      "sha256": "c29fdb36e504cae48d222ab8d0f0f3135aa56cc2ee98d6f83d94e297f97c1a4f"
+    },
+    {
+      "path": "fixture2-w1/static-test.log",
+      "bytes": 465,
+      "sha256": "d178f3ed927dbdf0ad9e327dd9fe7dfed33b33e0e2c4289a901a0c4c5677e39b"
+    },
+    {
+      "path": "loc-current.json",
+      "bytes": 3634,
+      "sha256": "b982ad914ddb949840997053063088033008ff27892b2db2017ac71d0353bd38"
+    },
+    {
+      "path": "mini-shaderc-transfer.json",
+      "bytes": 427,
+      "sha256": "182826c04020f6ee46a0b5c8d86aba750ca53958d92d7276815cc189d5a54558"
+    },
+    {
+      "path": "mini-tools.json",
+      "bytes": 1689,
+      "sha256": "9cacd51c4b39f16befa730bde84ad638e52b823b2782974def72232356e4d945"
+    },
+    {
+      "path": "portability-selector.json",
+      "bytes": 680854,
+      "sha256": "91846ea64740f4b36f5d63abbfb8561fe99f23dd3a56047d32550c93cbd5352d"
+    },
+    {
+      "path": "portability-w1-run.ps1",
+      "bytes": 3440,
+      "sha256": "66067489df6449e4586e8e39baf4406961b5290ace41e239d6a02c47a3bd03e0"
+    },
+    {
+      "path": "portability-w1/static-build.log",
+      "bytes": 880,
+      "sha256": "5000a07da16652ca44dd037ec1daf1205316e81619caf75c546a8e4fd4b69ba0"
+    },
+    {
+      "path": "portability-w1/static-compute_route_vulkan.json",
+      "bytes": 18415,
+      "sha256": "f3358883973351a9206fd826c68373df372f700cfc192e74bb3c8ee2a5c1381b"
+    },
+    {
+      "path": "portability-w1/static-compute_route_vulkan.log",
+      "bytes": 8001,
+      "sha256": "0340579d6daf851794078609e031634dde5688b270c75bd8c5f2d79cc161057e"
+    },
+    {
+      "path": "portability-w1/static-configure.log",
+      "bytes": 1433,
+      "sha256": "b9de86b81dd119fea53de5e783dee77d3de45964b658f7ea88a5173c785de090"
+    },
+    {
+      "path": "portability-w1/static-graph_route_vulkan.json",
+      "bytes": 7202,
+      "sha256": "98fe70dd0278cc6f49675b6c95376b5950af9c6cc56c7bbc0023dec9b6325c51"
+    },
+    {
+      "path": "portability-w1/static-graph_route_vulkan.log",
+      "bytes": 3435,
+      "sha256": "afdfb705cc24aa4872e3a3cab6657b6fbeb67a102e01c2019750e26e88ce8fb6"
+    },
+    {
+      "path": "prepare-mini-tools.py",
+      "bytes": 1781,
+      "sha256": "e8e316d0d72ccf4fef2f31cb086ed51135c30da06b51c8e7d14ee7f91dc8757c"
+    },
+    {
+      "path": "record-mac-portability.py",
+      "bytes": 5091,
+      "sha256": "db4680b105aa681e543c4fa4fed370e519d5bab93a2d2a028d8c20058c511b76"
+    },
+    {
+      "path": "run-air-final.py",
+      "bytes": 7439,
+      "sha256": "786c0973f1290e5800343cc8eda160daeef415eab6fad5fd2a3a50e0786acb9c"
+    },
+    {
+      "path": "run-air-fixture.py",
+      "bytes": 7216,
+      "sha256": "d8576cf128c4640d52ffa9f526246216a2b3bbe3e75186e12601b141bf78bf91"
+    },
+    {
+      "path": "run-air-initial.py",
+      "bytes": 6570,
+      "sha256": "b6239c60a526a9db2f5890f9378fe1fb4d5417db60becff3014bda0c62690528"
+    },
+    {
+      "path": "run-air-portability.py",
+      "bytes": 7425,
+      "sha256": "7c91dc15260bee07f761bf909d0430d23c2b61c81200516ec7980d115e3b1e22"
+    },
+    {
+      "path": "run-air.py",
+      "bytes": 6845,
+      "sha256": "c9c33e08f18f7c72b38b9c080c88e08e0781494212c861d5f0ee844e731f2b52"
+    },
+    {
+      "path": "shaderc-transfer.json",
+      "bytes": 433,
+      "sha256": "0b0fff974990ae70df898f1e373caf0fdb9e19f2ba83bc0aa5338944a439e8a4"
+    },
+    {
+      "path": "spirv-headers-sdk.json",
+      "bytes": 14659,
+      "sha256": "ec86c8ce149afdf173f4fed1203fd3af03b2512f36311389226b6bfe5d95cb96"
+    }
+  ]
+}
