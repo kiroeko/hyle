@@ -353,10 +353,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA04-F1 融合边界修复候选冻结：W1 static/shared、WSL GCC14 及 Graph 三交付通过；接下来仅执行已声明的固定候选完整性能比较，默认优选规则与 Native 重复域取舍仍未签署，不代签 C1。",
-      "candidate": "ae270af9ceb948b09601b26f32454eb28d32dff3"
+      "summary": "C1-AA04-F1 正确性与 Graph 三交付通过，性能资格因末次同实现对照异常 BLOCKED；AA-Q1 定向处理控制问题。默认规则及 Native 取舍未签署，原定第二轮纠正预算未使用，不代签 C1。",
+      "candidate": "ae270af9ceb948b09601b26f32454eb28d32dff3",
+      "blocked_from": "CANDIDATE",
+      "blocker": "F1 采样后 workload A/A 在256个比值中有一个同实现 LayerNorm 比值1.21435，资格 FAIL、工程性能 INCONCLUSIVE；公共控制及 source/artifact/host 身份通过，有限四进程诊断未定位原因。",
+      "blocker_owner": "/root；模块专属 normalization_preflight 验证任务 AA-Q1",
+      "resume_condition": "AA-Q1 在有限预算内形成受审、可验证的资格恢复方案；主卡按 BLOCKED→SCOPED→AUDITED 重新绑定剩余 AA04，再冻结候选验证。不得丢弃失败、沿用诊断数据签胜出或原样追加完整重跑。"
     },
     {
       "module": "compute_provider_ggml",
@@ -370,10 +374,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA04-F1 融合边界修复候选冻结：W1 static/shared、WSL GCC14 及 Graph 三交付通过；接下来仅执行已声明的固定候选完整性能比较，默认优选规则与 Native 重复域取舍仍未签署，不代签 C1。",
-      "candidate": "ae270af9ceb948b09601b26f32454eb28d32dff3"
+      "summary": "C1-AA04-F1 正确性与 Graph 三交付通过，性能资格因末次同实现对照异常 BLOCKED；AA-Q1 定向处理控制问题。默认规则及 Native 取舍未签署，原定第二轮纠正预算未使用，不代签 C1。",
+      "candidate": "ae270af9ceb948b09601b26f32454eb28d32dff3",
+      "blocked_from": "CANDIDATE",
+      "blocker": "F1 采样后 workload A/A 在256个比值中有一个同实现 LayerNorm 比值1.21435，资格 FAIL、工程性能 INCONCLUSIVE；公共控制及 source/artifact/host 身份通过，有限四进程诊断未定位原因。",
+      "blocker_owner": "/root；模块专属 normalization_preflight 验证任务 AA-Q1",
+      "resume_condition": "AA-Q1 在有限预算内形成受审、可验证的资格恢复方案；主卡按 BLOCKED→SCOPED→AUDITED 重新绑定剩余 AA04，再冻结候选验证。不得丢弃失败、沿用诊断数据签胜出或原样追加完整重跑。"
     },
     {
       "module": "compute_ops",

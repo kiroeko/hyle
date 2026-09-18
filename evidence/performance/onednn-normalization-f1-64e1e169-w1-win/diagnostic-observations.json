@@ -1,0 +1,210 @@
+[
+  {
+    "id": "direct-rms-1x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.3116893696206022,
+      0.3172478282003123
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 1.500078485707141,
+      "peer": 0.47149481660836745
+    }
+  },
+  {
+    "id": "graph-rms-1x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.22026682323577063,
+      0.22570966469256037
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 3.8612698648690498,
+      "peer": 0.8568453704981285
+    }
+  },
+  {
+    "id": "direct-rms-17x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      1.2861756030761198,
+      1.3570851393799384
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 4.070785874500334,
+      "peer": 5.351319802207524
+    }
+  },
+  {
+    "id": "graph-rms-17x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.4376687434278876,
+      0.4429584210056954
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 22.094123461411854,
+      "peer": 9.682203271301166
+    }
+  },
+  {
+    "id": "direct-rms-128x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      1.45021557145541,
+      1.5899062885984723
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 26.4196132213295,
+      "peer": 40.263806503686595
+    }
+  },
+  {
+    "id": "graph-rms-128x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.5093741097711518,
+      0.5154086909323681
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 192.80568755757452,
+      "peer": 98.36288797053183
+    }
+  },
+  {
+    "id": "direct-rms-17x257",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.4262079216557117,
+      0.46760227777904134
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 1.7357889539652893,
+      "peer": 0.7946985214379495
+    }
+  },
+  {
+    "id": "graph-rms-17x257",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.3397017218982548,
+      0.3554715102522142
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 4.518648764804679,
+      "peer": 1.5753014738863254
+    }
+  },
+  {
+    "id": "direct-layer-1x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.3512031411239748,
+      0.37020946264322374
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 1.8620570871377324,
+      "peer": 0.6676581302932474
+    }
+  },
+  {
+    "id": "graph-layer-1x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.2476236439555448,
+      0.2524007415012072
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 4.291412996470209,
+      "peer": 1.0699624134931807
+    }
+  },
+  {
+    "id": "direct-layer-17x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      1.5293390145220578,
+      1.5822700873929956
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 5.283381645148064,
+      "peer": 8.180264485249989
+    }
+  },
+  {
+    "id": "graph-layer-17x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.5384619409555603,
+      0.54477204360693
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 23.077432658157356,
+      "peer": 12.537475943248019
+    }
+  },
+  {
+    "id": "direct-layer-128x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      1.7795116833621425,
+      1.8974810234010844
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 34.466917457522385,
+      "peer": 62.7467128615766
+    }
+  },
+  {
+    "id": "graph-layer-128x2048",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.6086765897598211,
+      0.6164707136887684
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 202.37478603408238,
+      "peer": 123.47523150743812
+    }
+  },
+  {
+    "id": "direct-layer-17x257",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.6108302535564074,
+      0.6370828585698092
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 2.1490354298315797,
+      "peer": 1.3595213436548388
+    }
+  },
+  {
+    "id": "graph-layer-17x257",
+    "qualification": "DIAGNOSTIC",
+    "direction": "UNSIGNED",
+    "observed_stratum_median_ratio_range": [
+      0.4453209920516353,
+      0.4692517357134742
+    ],
+    "descriptive_median_microseconds": {
+      "candidate": 4.632382531201351,
+      "peer": 2.108139295614962
+    }
+  }
+]

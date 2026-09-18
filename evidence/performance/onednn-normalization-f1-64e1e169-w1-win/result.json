@@ -1,0 +1,170 @@
+{
+  "candidate": "64e1e1690f2ced52e16cfc7d373ca68e6c37be01",
+  "product_fix": "ae270af9ceb948b09601b26f32454eb28d32dff3",
+  "qualification_gate": "FAIL",
+  "engineering_performance": "INCONCLUSIVE",
+  "pre_sampling_workload_aa": "PASS as recorded in manifest; final validator log replaces the initial command log",
+  "post_sampling_workload_aa": "FAIL",
+  "aa_observations": 256,
+  "gross_outliers": [
+    {
+      "route": "selected",
+      "variant": "primary",
+      "order": "peer-first",
+      "allocation": "peer-first",
+      "workload": "direct-layer-1x2048",
+      "ratio": 1.2143537630778471
+    }
+  ],
+  "fixed_factor_median_failures": [],
+  "common_controls": {
+    "aa": "PASS",
+    "delta5": "PASS",
+    "delta10": "PASS",
+    "timer-floor": "PASS",
+    "placement": "PASS"
+  },
+  "product_children": 120,
+  "control_children": 30,
+  "samples_per_stratum": 15,
+  "bounded_diagnostic": {
+    "qualification": "DIAGNOSTIC",
+    "candidate": "64e1e1690f2ced52e16cfc7d373ca68e6c37be01",
+    "purpose": "Four fixed primary oneDNN/oneDNN strata after the final LayerNorm A/A outlier; no retries, no A/B, no P1 qualification or replacement of the failed receipt",
+    "child_policy": {
+      "environment": "windows",
+      "affinity_mask": "0x4",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-child-launcher"
+    },
+    "sampling_mutex": {
+      "schema": "hyle-perf-sampling-mutex-v1",
+      "mutex_key": "W1",
+      "physical_host_id": "W1",
+      "profile_id": "W1-WIN",
+      "environment": "windows",
+      "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+      "pid": 34116,
+      "acquired_at_utc": "2026-09-18T16:07:00.128395+00:00",
+      "owner_token_sha256": "abed8ad3a00c4b14a339589b9849ff3a357824ba597b8a80e44f483f2c2b5787",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only"
+    },
+    "binary_sha256": "f597b2b709cb8b927eb8e82f93b05e373cd9ceb94a80a1896e685d950e450b51",
+    "results": [
+      {
+        "order": "candidate-first",
+        "allocation": "candidate-first",
+        "ratios": {
+          "direct-rms-1x2048": 1.0098587271125412,
+          "graph-rms-1x2048": 0.9994422838688745,
+          "direct-rms-17x2048": 1.0295099134219092,
+          "graph-rms-17x2048": 0.9847456369840067,
+          "direct-rms-128x2048": 1.0296671485805595,
+          "graph-rms-128x2048": 1.004034483343159,
+          "direct-rms-17x257": 1.006984878925846,
+          "graph-rms-17x257": 0.9756934499064691,
+          "direct-layer-1x2048": 1.0073140924901012,
+          "graph-layer-1x2048": 0.992111424326412,
+          "direct-layer-17x2048": 0.9984737905020588,
+          "graph-layer-17x2048": 1.0031277753658303,
+          "direct-layer-128x2048": 1.0215223700747613,
+          "graph-layer-128x2048": 1.0019732896805458,
+          "direct-layer-17x257": 0.9956259296796397,
+          "graph-layer-17x257": 0.9906600691493551
+        },
+        "log": "candidate-first-candidate-first.log",
+        "sha256": "b03bfa575144d443a8f0d0a506273efc85234b8703c7998e1993f32b7fae006f"
+      },
+      {
+        "order": "candidate-first",
+        "allocation": "peer-first",
+        "ratios": {
+          "direct-rms-1x2048": 0.9691960937100372,
+          "graph-rms-1x2048": 0.994847960955674,
+          "direct-rms-17x2048": 0.987568855260432,
+          "graph-rms-17x2048": 1.0035422136512522,
+          "direct-rms-128x2048": 1.0324990700970216,
+          "graph-rms-128x2048": 0.9986765418479,
+          "direct-rms-17x257": 1.043084289992697,
+          "graph-rms-17x257": 1.0059720190701433,
+          "direct-layer-1x2048": 0.9964573522329845,
+          "graph-layer-1x2048": 1.0125718472652219,
+          "direct-layer-17x2048": 1.0218307650094904,
+          "graph-layer-17x2048": 0.9807614345155431,
+          "direct-layer-128x2048": 0.9829938685845662,
+          "graph-layer-128x2048": 1.0075304674710484,
+          "direct-layer-17x257": 0.9822565021208817,
+          "graph-layer-17x257": 0.9978345754638213
+        },
+        "log": "candidate-first-peer-first.log",
+        "sha256": "29dce95227e15096873ce2b208dfaed5651cf1951c84b442096374795698a594"
+      },
+      {
+        "order": "peer-first",
+        "allocation": "candidate-first",
+        "ratios": {
+          "direct-rms-1x2048": 0.9484688070622672,
+          "graph-rms-1x2048": 1.0050802545688584,
+          "direct-rms-17x2048": 0.9979275725025143,
+          "graph-rms-17x2048": 1.0080942252741787,
+          "direct-rms-128x2048": 0.9297724991296765,
+          "graph-rms-128x2048": 1.0030761237850152,
+          "direct-rms-17x257": 1.001070856289998,
+          "graph-rms-17x257": 0.9996913241354957,
+          "direct-layer-1x2048": 0.9500265176104683,
+          "graph-layer-1x2048": 0.9820801597407202,
+          "direct-layer-17x2048": 1.0073577459690979,
+          "graph-layer-17x2048": 1.0491884755240972,
+          "direct-layer-128x2048": 1.0336209914056955,
+          "graph-layer-128x2048": 1.00096672859045,
+          "direct-layer-17x257": 1.0019315023530544,
+          "graph-layer-17x257": 1.0384860670790577
+        },
+        "log": "peer-first-candidate-first.log",
+        "sha256": "070a0a26a6fb6dc98033c7b966f750a7fe376af88f4895d3afe3e9a7e87b3cd6"
+      },
+      {
+        "order": "peer-first",
+        "allocation": "peer-first",
+        "ratios": {
+          "direct-rms-1x2048": 0.9672513052583143,
+          "graph-rms-1x2048": 1.0192204027201677,
+          "direct-rms-17x2048": 1.0428090292137373,
+          "graph-rms-17x2048": 1.0264577709053722,
+          "direct-rms-128x2048": 0.932475533839706,
+          "graph-rms-128x2048": 1.0064562078030364,
+          "direct-rms-17x257": 0.9683584716936187,
+          "graph-rms-17x257": 0.9501159285212427,
+          "direct-layer-1x2048": 1.0148416816987504,
+          "graph-layer-1x2048": 0.993126451866831,
+          "direct-layer-17x2048": 1.0092378834400806,
+          "graph-layer-17x2048": 1.0133874115346664,
+          "direct-layer-128x2048": 1.0031078928016994,
+          "graph-layer-128x2048": 1.0213761650625988,
+          "direct-layer-17x257": 0.9953503118819503,
+          "graph-layer-17x257": 0.9967725652173874
+        },
+        "log": "peer-first-peer-first.log",
+        "sha256": "27f9639211132f4165522356603ee9d7c6bb597c06db8d082d0588689ab2a454"
+      }
+    ],
+    "binary_unchanged": true
+  },
+  "diagnostic_interpretation": "The four fixed same-artifact oneDNN/oneDNN cells do not reproduce the 21% deviation. This neither identifies an OS/JIT/allocation cause nor replaces the failed qualification.",
+  "unchanged_full_retries_available": 0,
+  "default_rules": "UNSIGNED",
+  "native_removal": "NONE",
+  "remaining": "Bounded separate workload-AA qualification task, then remaining AA04 default rules; no additional unchanged full run",
+  "limitations": "No performance winner or SIMD/Sched defect is inferred from this unqualified sample. Correctness and three deliveries are separately PASS.",
+  "old_build_cleanup": {
+    "reason": "Rotate the single fixed P1 build after preserving original immutable artifacts and evidence",
+    "archive": "original-p1-artifacts.zip",
+    "logical_bytes": 1594416830.0,
+    "removed": "C:\\hyle-scratch\\active-cpu\\p1"
+  }
+}

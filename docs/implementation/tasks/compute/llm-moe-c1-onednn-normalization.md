@@ -311,3 +311,23 @@ scalar/vector、单行/批量、full Add/Mul、公开中间值、两个独立运
 旧 P1 build 的实际制品先按原 manifest 哈希归档核验，再清空同一个固定目录供 fresh 候选构建；
 原始 raw/manifest/裁决保留，旧绝对构建路径的时点验证不能冒充永久可复验。第一轮只测固定 F1，
 不原样追加计时；如结果授权默认规则修改，先依法退回 AUDITED，并按第二轮有限预算实施。
+
+### AA04-F1：性能资格未通过，定向隔离控制问题
+
+干净运行 HEAD 为 `64e1e169`。
+[完整记录](../../../../evidence/performance/onednn-normalization-f1-64e1e169-w1-win/README.md)
+保留120个产品进程、30个公共控制进程、全部 raw/manifest/contract 及唯一四进程限定诊断。
+采样前 A/A 通过；采样后 workload A/A 的256个比值中，一个 oneDNN/oneDNN 的 Direct LayerNorm
+1×2048 为1.21435，触发原 gross guard。全部固定因素中位数仍在5%带内，五项公共控制 PASS，
+source/artifact/host 身份未变；最终资格 **FAIL**，工程性能 **INCONCLUSIVE**。
+
+限定四进程诊断未复现21%差异，不覆盖失败、不签新赢家，也不据此修改 SIMD/Sched。
+deep verify 为 DIAGNOSTIC / EXACT / paths_verified；未新增完整重跑或升级n=31。
+F1 正确性及三交付 PASS 保留；本次样本不能签修复后的默认规则或 Native 删除。
+统一脚本在 `64e1e169` 为46,955实现行/193文件，自检 PASS。
+
+两个 oneDNN owner 从 CANDIDATE 进入 **BLOCKED**，只隔离该资格问题。
+具名 owner、两条调查路径、30分钟预算、FIX 准入及停止/恢复合同见
+[AA-Q1 资格恢复卡](llm-moe-c1-normalization-aa-qualification.md)。公共性能核心没有修改；
+原定第二轮性能纠正预算尚未使用，不以资格异常增加无界优化或采样额度。
+CPU 路线 owner、其它 Provider 的状态不变；本记录不把全局 C1–C7 goal 标成已完成或全局阻塞。
