@@ -389,6 +389,60 @@
           }
         ]
       }
+    },
+    {
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "version": "ggml-snapshot-456172ec733a",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/456172ec733a135778adcd32d00e576a58232e45",
+        "sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34"
+      },
+      "name": "ggml_vulkan_runtime",
+      "class": "fetchcontent",
+      "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "dependency",
+            "path": "LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ggml_vulkan_runtime_patches",
+      "class": "in_tree",
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "version": "ggml-snapshot-456172ec733a",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/456172ec733a135778adcd32d00e576a58232e45",
+        "sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34"
+      },
+      "vendored": {
+        "path": "third_party/ggml_vulkan_runtime",
+        "tree_sha256": "fe386f379aa98787027e911dbb5f1d3107c2ef35887956e43072c18110fe545f"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_vulkan_runtime/LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
+            "sha256": "807876f2b45f1ac49c68837cf5eec8ff8c03ac3ba04563ae42c7ff6d9fbc8d1a"
+          }
+        ]
+      }
     }
   ]
 }

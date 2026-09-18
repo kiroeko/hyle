@@ -9,8 +9,12 @@ HYLE 在准备期绑定 ggml 或 HYLE shader，Graph 冷期规划资源，重复
 
 ## 构建与运行条件
 
-源码构建需要 C++23、Python 3、glslangValidator/glslang；Vulkan-Headers 从中央锁取得。
-二进制 SDK 已嵌入 SPIR-V，不需要 glslang 或运行时 shader 文件。用户系统必须提供可用的
+源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、
+开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
+Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
+当前 C1 接入阶段的静态 SDK 仍传播原厂 `Vulkan` 开发 package 要求，受管执行与最终 loader
+边界尚待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md) 验收。
+二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
 Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算成功。
 
 ```sh

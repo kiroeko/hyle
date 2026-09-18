@@ -420,7 +420,7 @@ else()
   set(HYLE_COMPUTE_APPLE_ENABLED OFF)
 endif()
 
-if(HYLE_BUILD_COMPUTE_ROUTE_VULKAN)
+if(HYLE_BUILD_COMPUTE_ROUTE_VULKAN OR HYLE_BUILD_COMPUTE_PROVIDER_GGML_VULKAN)
   include(HyleVulkanDependencies)
   hyle_configure_vulkan_dependencies()
 else()

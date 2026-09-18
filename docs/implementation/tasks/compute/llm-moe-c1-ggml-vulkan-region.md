@@ -86,3 +86,8 @@ metadata owner；不等待整个 runtime 桥接完成才开始产品代码。Y2 
 同一 factor/package registry；公开 route 对象不因本批改变。通用 build/selector/性能核心不改。
 原有宽组件选择门继续保留待执行；本批实际执行对应 factor、OFF、补丁身份、static/shared 配置
 构建和内部真实 GPU correctness。完整 provider 三交付/其他平台/运行失败验收未运行即未通过。
+
+实现接入还需登记新 factor 的 selector 声明（owner 路径、Vulkan feature、适用平台），并使项目
+原有 Vulkan 依赖入口接受直接选择该 factor；只是声明接线，不改 selector 核心。54项 selector
+回归首跑有一条把 `compute_provider_ggml_vulkan` 的前缀误认成 dormant CPU identity；实际选择
+列表没有 CPU ggml。仅将该测试断言改为解析完整 factor ID，53项原通过、该项修正后单独通过。

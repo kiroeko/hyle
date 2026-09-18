@@ -472,7 +472,11 @@ class ImpactTest(unittest.TestCase):
         self.assertNotIn(name, plan["selected_factors"])
         self.assertIn("factor:compute", self.selected(plan))
         self.assertIn("audit-only", self.row(plan, "factor:" + name)["reason"])
-        self.assertNotIn(name, " ".join(self.row(plan, "configure")["commands"][0]))
+        configure_args = self.row(plan, "configure")["commands"][0]
+        configured_factors = next(arg.split("=", 1)[1].split(",")
+                                  for arg in configure_args
+                                  if arg.startswith("-DHYLE_DEV_FACTORS="))
+        self.assertNotIn(name, configured_factors)
 
         graph = selector.project_graph(selector.Snapshot(self.root, "HEAD"))
         for path, contents in (
