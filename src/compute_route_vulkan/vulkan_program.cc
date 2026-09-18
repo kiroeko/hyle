@@ -218,8 +218,30 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       program->input_descriptions.push_back(plan.values[input].description);
     for (const auto output : plan.outputs)
       program->output_descriptions.push_back(plan.values[output].description);
+    std::vector<std::size_t> last_uses(plan.values.size(), 0);
+    for (std::size_t index = 0; index < plan.steps.size(); ++index)
+      for (const auto input : plan.steps[index].inputs)
+        last_uses[input] = index;
     std::vector<std::pair<std::uint32_t, std::uint32_t>> packs;
-    for (const auto &step : plan.steps) {
+    for (std::size_t index = 0; index < plan.steps.size();) {
+      const auto &step = plan.steps[index];
+      if (managed_operation(*program, step)) {
+        auto end = index;
+        bool anchor = false;
+        while (end < plan.steps.size() &&
+               managed_operation(*program, plan.steps[end])) {
+          anchor = anchor || plan.steps[end].operation.get_if<RmsNorm>() ||
+                   plan.steps[end].operation.get_if<GatedActivation>();
+          ++end;
+        }
+        if (anchor) {
+          HYLE_RETURN_IF_ERROR(
+              lower_region(*program, plan, index, end, last_uses));
+          index = end;
+          continue;
+        }
+      }
+      ++index;
       if (const auto *view = step.operation.get_if<View>()) {
         HYLE_ASSIGN_OR_RETURN(
             auto offset, compute::detail::view_alias_offset(
@@ -262,7 +284,11 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       return std::unexpected(status);
     if (facts != nullptr) {
       PlanFacts snapshot;
-      snapshot.native_dispatch_count = program->dispatches.size();
+      for (const auto &dispatch : program->dispatches)
+        if (dispatch.region)
+          ++snapshot.managed_region_count;
+        else
+          ++snapshot.native_dispatch_count;
       snapshot.invocation_storage_block_bytes.reserve(
           program->block_bytes.size());
       for (const auto bytes : program->block_bytes) {
@@ -392,9 +418,6 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
       invocation->results->tensors.push_back(
           detail::Access::tensor(state_->values[output].description,
                                  invocation->run->retained_buffers[output]));
-    for (const auto output : state_->outputs)
-      invocation->output_owner_counts.push_back(
-          invocation->run->retained_buffers[output].use_count());
     invocation->old_inputs.resize(state_->inputs.size());
     status = detail::record(invocation->run, state_->values, state_->dispatches,
                             &invocation->dynamic_bindings);
@@ -409,6 +432,26 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
       binding.input_port =
           static_cast<std::uint32_t>(position - state_->inputs.begin());
     }
+    for (std::size_t index = 0; index < invocation->run->stages.size();
+         ++index) {
+      const auto &stage = invocation->run->stages[index];
+      if (!stage.managed)
+        continue;
+      for (std::size_t port = 0; port < stage.values.size(); ++port) {
+        const auto value = stage.values[port];
+        const auto position =
+            std::ranges::find(state_->inputs, state_->aliases[value].root);
+        if (position != state_->inputs.end())
+          invocation->region_inputs.push_back(
+              {index, port, value,
+               static_cast<std::uint32_t>(position - state_->inputs.begin())});
+      }
+    }
+    // Native children and imported managed ports also retain boundary owners.
+    // Capture the idle baseline only after the entire execution slot exists.
+    for (const auto output : state_->outputs)
+      invocation->output_owner_counts.push_back(
+          invocation->run->retained_buffers[output].use_count());
     invocation->bound = state_->inputs.empty();
     return detail::Access::invocation(std::move(invocation));
   } catch (const std::bad_alloc &) {
@@ -436,6 +479,8 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
       return Status::FailedPrecondition("Vulkan context is closed");
     if (!runtime.failure.ok())
       return runtime.failure;
+    if (!run.submission_failure.ok())
+      return run.submission_failure;
     if (run.pending || run.observers != 0 || run.retiring ||
         run.completion_owner)
       return Status::FailedPrecondition("Vulkan input slot is still in use");
@@ -459,6 +504,32 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
               state_->program->values[binding.value].description,
               binding.byte_origin, alias.byte_offset));
     }
+    for (const auto &binding : state_->region_inputs) {
+      const auto &buffer = detail::Access::buffer(inputs[binding.input_port]);
+      const auto offset = state_->program->aliases[binding.value].byte_offset;
+      if (offset > buffer->bytes || buffer->offset > SIZE_MAX - offset)
+        return Status::InvalidArgument("Vulkan managed input view range");
+    }
+    for (const auto &binding : state_->region_inputs) {
+      const auto &buffer = detail::Access::buffer(inputs[binding.input_port]);
+      const auto offset = state_->program->aliases[binding.value].byte_offset;
+      run.stages[binding.stage].bindings[binding.port] = {
+          buffer->handle, static_cast<std::size_t>(buffer->offset + offset),
+          static_cast<std::size_t>(buffer->bytes - offset), buffer};
+    }
+    Status region_status;
+    for (const auto &stage : run.stages) {
+      if (stage.managed) {
+        region_status = stage.managed->validate(stage.bindings);
+        if (!region_status.ok())
+          break;
+      }
+    }
+    // Prospective metadata never retains a rejected input. Native imports
+    // still point at the previous input set until the commit below succeeds.
+    detail::refresh_region_bindings(run);
+    if (!region_status.ok())
+      return region_status;
     state_->bound = false;
     for (std::size_t index = 0; index < inputs.size(); ++index) {
       auto &buffer = run.retained_buffers[state_->program->inputs[index]];
@@ -478,7 +549,9 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
       runtime.device->fn.UpdateDescriptorSets(runtime.device->native.device, 1,
                                               &binding.write, 0, nullptr);
     }
-    if (detail::origins_changed(run, state_->program->dispatches))
+    if (!run.stages.empty())
+      status = detail::bind_regions(run);
+    else if (detail::origins_changed(run, state_->program->dispatches))
       status = detail::encode_commands(run, state_->program->dispatches);
     state_->bound = status.ok();
   }

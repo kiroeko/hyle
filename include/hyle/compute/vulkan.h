@@ -274,9 +274,10 @@ private:
   std::shared_ptr<detail::ProgramState> state_;
 };
 
-// Thread-compatible slot. bind only changes idle native descriptors and
-// retains input owners. submit performs no DAG walk, shader compilation,
-// resource allocation, command recording, timing or implementation selection.
+// Thread-compatible slot. bind updates idle native bindings and retains input
+// owners. submit performs no HYLE planning, shader compilation, timing or
+// implementation selection. Managed providers may encode their fixed graph
+// and manage private runtime resources when executing it.
 class Invocation final {
 public:
   Invocation() noexcept = default;

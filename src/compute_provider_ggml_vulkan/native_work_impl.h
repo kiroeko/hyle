@@ -13,6 +13,10 @@ struct Work {
   bool needs_drain = false;
 };
 
+VkFence work_fence(const Work *work) noexcept {
+  return work ? static_cast<VkFence>(work->fence) : VK_NULL_HANDLE;
+}
+
 namespace {
 WorkReport report(const Work &work) noexcept {
   return {work.failure, work.pending, work.runtime->device_lost.load()};
@@ -33,9 +37,10 @@ VkResult drain_queue(const std::shared_ptr<vk_queue_handle> &handle) {
 bool drain(Work &work) {
   auto device = work.runtime->instance.devices[0];
   const auto compute = device->compute_queue->handle;
-  const auto transfer = device->transfer_queue &&
-      device->transfer_queue->handle != compute
-      ? device->transfer_queue->handle : nullptr;
+  const auto transfer =
+      device->transfer_queue && device->transfer_queue->handle != compute
+          ? device->transfer_queue->handle
+          : nullptr;
   // Only the exceptional path drains queues. A failed observation never
   // licenses freeing the accepted prefix or resetting its command buffers.
   for (const auto &handle : {compute, transfer}) {
@@ -62,8 +67,8 @@ void retire(Work &work) noexcept {
   ctx->compute_ctx.reset();
   ctx->transfer_ctx.reset();
   ctx->submit_pending = false;
-  ctx->hyle_retired_failure = work.failure.error != Error::None ||
-                             work.runtime->device_lost.load();
+  ctx->hyle_retired_failure =
+      work.failure.error != Error::None || work.runtime->device_lost.load();
   try {
     if (!ctx->hyle_retired_failure && ctx->almost_ready_fence_pending)
       ctx->device->device.resetFences({ctx->almost_ready_fence});
@@ -115,11 +120,13 @@ WorkReport submit_work(Work *work, ggml_cgraph *graph) noexcept {
     if (!ctx->compute_ctx.expired() || !ctx->transfer_ctx.expired())
       return {{Error::InvalidState}};
     const bool attach_to_last = ctx->device->support_async &&
-        !ctx->device->serialize_submissions && !vk_perf_logger_enabled;
+                                !ctx->device->serialize_submissions &&
+                                !vk_perf_logger_enabled;
     ctx->hyle_completion_fence = attach_to_last ? work->fence : vk::Fence{};
     ctx->hyle_completion_submitted = false;
     work->pending = true; // Conservatively retained before any fallible submit.
-    if (ggml_backend_vk_graph_compute(work->backend, graph) != GGML_STATUS_SUCCESS) {
+    if (ggml_backend_vk_graph_compute(work->backend, graph) !=
+        GGML_STATUS_SUCCESS) {
       remember(*work, {Error::Internal});
       work->needs_drain = true;
     } else if (!ctx->hyle_completion_submitted) {
@@ -154,12 +161,13 @@ WorkReport observe_work(Work *work, bool wait) noexcept {
       if (wait && drain(*work))
         retire(*work);
     } else {
-      const auto device = static_cast<VkDevice>(work->runtime->instance.devices[0]->device);
+      const auto device =
+          static_cast<VkDevice>(work->runtime->instance.devices[0]->device);
       const auto fence = static_cast<VkFence>(work->fence);
       const auto &api = work->runtime->instance.dispatcher;
-      const auto result = wait
-          ? api.vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX)
-          : api.vkGetFenceStatus(device, fence);
+      const auto result =
+          wait ? api.vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX)
+               : api.vkGetFenceStatus(device, fence);
       if (result == VK_SUCCESS) {
         retire(*work);
       } else if (result == VK_ERROR_DEVICE_LOST) {

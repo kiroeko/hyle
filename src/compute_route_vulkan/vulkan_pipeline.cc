@@ -259,6 +259,10 @@ Status record(const std::shared_ptr<Run> &run,
       run->retained_buffers.size() != values.size() ||
       run->descriptor_pool != VK_NULL_HANDLE)
     return Status::InvalidArgument("invalid Vulkan recording recipe");
+  if (std::ranges::any_of(dispatches, [](const auto &dispatch) {
+        return dispatch.region != nullptr;
+      }))
+    return record_regions(run, values, dispatches, dynamic_bindings);
   try {
     std::uint64_t descriptors = 0;
     for (const auto &dispatch : dispatches) {

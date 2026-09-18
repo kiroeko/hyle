@@ -3,9 +3,9 @@
 #include <functional>
 #include <memory>
 
+#include "hyle/mem/quota_allocator.h"
 #include "metadata_arena.h"
 #include "native_bridge.h"
-#include "hyle/mem/quota_allocator.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
 class NativeWork;
@@ -30,6 +30,7 @@ public:
     Scope(const Scope &) = delete;
     Scope &operator=(const Scope &) = delete;
     HYLE_GGML_VULKAN_INTERNAL_API ~Scope();
+
   private:
     friend class NativeDevice;
     explicit Scope(void *previous) noexcept : previous_(previous) {}
@@ -41,6 +42,8 @@ public:
   create(NativeOptions options = {}) noexcept;
   explicit operator bool() const noexcept { return state_ != nullptr; }
   HYLE_GGML_VULKAN_INTERNAL_API const bridge::Native &native() const noexcept;
+  // Propagate a device-loss result observed through the route's own PFNs.
+  HYLE_GGML_VULKAN_INTERNAL_API void note_device_lost() const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Scope activate() const noexcept;
   // Private region builders own returned ggml handles and free them under a
   // Scope before releasing this device. Y3 adds the asynchronous slot owner.
@@ -54,19 +57,27 @@ public:
          bool address_capable = false) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API VkBuffer
   buffer_handle(ggml_backend_buffer *) const noexcept;
+  // Cold descriptor-only port wrapper. No VkBuffer exists until bind_buffer;
+  // a typed Region rejects submission until all its ports are bound.
+  HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
+  binding_buffer(std::size_t) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API void
+  bind_buffer(ggml_backend_buffer *, VkBuffer, std::size_t,
+              std::shared_ptr<const void>) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Status
   with_queue(const std::function<Status(VkQueue)> &) const noexcept;
   // Region/batch admission without constructing a std::function. The callback
   // runs synchronously under the same locks as the upstream submit path.
-  HYLE_GGML_VULKAN_INTERNAL_API Status
-  with_queue(VkResult (*)(void *, VkQueue), void *) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status with_queue(VkResult (*)(void *, VkQueue),
+                                                  void *) const noexcept;
 
 private:
   friend class NativeGraph;
-  HYLE_GGML_VULKAN_INTERNAL_API Status allocate_graph(
-      ggml_cgraph *, bool owns_imports, bridge::Storage **,
-      std::size_t *bytes) const noexcept;
-  HYLE_GGML_VULKAN_INTERNAL_API void free_graph(bridge::Storage *) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Status
+  allocate_graph(ggml_cgraph *, bool owns_imports, bridge::Storage **,
+                 std::size_t *bytes) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API void
+  free_graph(bridge::Storage *) const noexcept;
   struct State;
   std::shared_ptr<State> state_;
 };
@@ -93,6 +104,9 @@ public:
   submit(ggml_cgraph *, std::shared_ptr<const void> resource_lease) noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState poll() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API WorkState wait() noexcept;
+  // Borrowed through the Work lifetime. A parent route may wait without its
+  // admission lock, then call poll/retire under that lock. Never reset/free it.
+  HYLE_GGML_VULKAN_INTERNAL_API VkFence fence() const noexcept;
 
 private:
   friend class NativeDevice;

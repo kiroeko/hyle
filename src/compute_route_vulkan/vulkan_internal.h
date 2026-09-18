@@ -6,9 +6,10 @@
 #include <mutex>
 #include <vector>
 
+#include "../compute_provider_ggml_vulkan/native_device.h"
+#include "../compute_provider_ggml_vulkan/region.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/vulkan.h"
-#include "../compute_provider_ggml_vulkan/native_device.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace cd = hyle::compute::detail;
@@ -107,6 +108,15 @@ struct Buffer final {
 };
 
 struct Run;
+struct NativeEncoding;
+struct RunStage final {
+  std::shared_ptr<Run> native;
+  std::shared_ptr<NativeEncoding> encoding;
+  std::unique_ptr<ggml_vulkan::detail::Region> managed;
+  std::vector<std::uint32_t>
+      values; // Compact local port/value -> parent value.
+  std::vector<ggml_vulkan::detail::RegionBinding> bindings;
+};
 struct Runtime final {
   std::shared_ptr<Device> device;
   std::mutex mutex;
@@ -130,12 +140,17 @@ struct Run final {
   VkCommandBuffer command = VK_NULL_HANDLE;
   VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
   VkFence fence = VK_NULL_HANDLE;
+  VkFence completion_fence =
+      VK_NULL_HANDLE;           // Borrowed last actual batch fence.
+  std::vector<RunStage> stages; // Empty for the original single native batch.
   Run *next = nullptr;
   Run **previous = nullptr;
   cd::CompletionLifetime abandoned;
   Status hint;
   Status observation_error;
   Status terminal;
+  Status submission_failure;
+  bool needs_drain = false;
   bool pending = false;
   bool cancelled = false;
   bool retiring = false;

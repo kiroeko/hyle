@@ -1,0 +1,110 @@
+#include <gtest/gtest.h>
+
+#include "../compute_route_vulkan/gate_norm_test_support.h"
+#include "hyle/graph/vulkan.h"
+
+namespace {
+using namespace vulkan_gate_norm_test;
+namespace g = hyle::graph;
+namespace gv = g::vulkan;
+
+TEST(VulkanGraph, ManagedNormFusionPreservesPublishedForksAndNativeBoundaries) {
+  auto context = vulkan_test::context().value();
+  constexpr int width = 2048;
+  v::Tensor surviving;
+  std::vector<double> surviving_values;
+  for (int rows : {1, 17, 128}) {
+    for (bool native_prefix : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << rows << ':' << native_prefix);
+      const auto desc = dense(c::DataType::kFloat32, {rows, width});
+      const auto parameter = dense(c::DataType::kFloat32, {width});
+      auto builder = g::GraphBuilder::create().value();
+      const auto x = builder.input(desc).value();
+      const auto skip = builder.input(desc).value();
+      const auto scale = builder.constant(parameter).value();
+      const auto input =
+          native_prefix ? builder.add(c::Unary{c::UnaryKind::kNeg}, x).value()
+                        : x;
+      const auto rms = builder.add(c::RmsNorm{}, input).value();
+      const auto scaled =
+          builder.add(c::Binary{c::BinaryKind::kMultiply}, rms, scale).value();
+      const auto activated =
+          builder.add(c::Unary{c::UnaryKind::kSilu}, scaled).value();
+      const auto added =
+          builder.add(c::Binary{c::BinaryKind::kAdd}, activated, skip).value();
+      const auto fork =
+          builder.add(c::Binary{c::BinaryKind::kMultiply}, rms, rms).value();
+      const auto output =
+          builder.add(c::Unary{c::UnaryKind::kNeg}, added).value();
+      ASSERT_TRUE(builder.publish(rms).ok());
+      ASSERT_TRUE(builder.publish(activated).ok());
+      ASSERT_TRUE(builder.publish(fork).ok());
+      ASSERT_TRUE(builder.publish(output).ok());
+      auto graph = std::move(builder).finish().value();
+      std::vector<double> weight(width);
+      for (int i = 0; i < width; ++i)
+        weight[i] = 1 + (i % 7 - 3) * 0.0625;
+      std::array constants{make(context, parameter, weight)};
+      gv::CompileReport report;
+      auto program =
+          gv::compile(context, graph, constants, {.report = &report});
+      ASSERT_TRUE(program) << program.error().message();
+      EXPECT_EQ(report.managed_region_count, 1U);
+      EXPECT_EQ(report.native_dispatch_count,
+                3U); // Native or copy prefix, skip copy, suffix.
+      EXPECT_FALSE(report.opaque_storage_bytes);
+      graph = {};
+      constants = {};
+      auto first = program->create_invocation().value();
+      auto second = program->create_invocation().value();
+      v::Tensor retained;
+      std::vector<double> saved;
+      for (int phase = 0; phase < 3; ++phase) {
+        std::vector<double> data(static_cast<std::size_t>(rows) * width),
+            bypass(data.size());
+        for (std::size_t i = 0; i < data.size(); ++i) {
+          data[i] = (static_cast<int>((i + phase * 7) % 61) - 30) * 0.125;
+          bypass[i] = (static_cast<int>((i + phase) % 17) - 8) * 0.0625;
+        }
+        const auto activation = make(context, desc, data);
+        const auto residual = make(context, desc, bypass);
+        if (native_prefix)
+          for (auto &value : data)
+            value = -value;
+        const auto normalized = norm(data, width, false, 1e-5F);
+        std::vector<double> silu(data.size()), squared(data.size()),
+            expected(data.size());
+        for (std::size_t i = 0; i < data.size(); ++i) {
+          silu[i] = activate(c::GatedActivationKind::kSilu,
+                             normalized[i] * weight[i % width]);
+          squared[i] = normalized[i] * normalized[i];
+          expected[i] = -(silu[i] + bypass[i]);
+        }
+        auto &slot = phase == 0 ? first : second;
+        ASSERT_TRUE(slot.bind(activation, residual).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        expect(context, result->get()->tensors()[0], normalized);
+        expect(context, result->get()->tensors()[1], silu);
+        expect(context, result->get()->tensors()[2], squared);
+        expect(context, result->get()->tensors()[3], expected);
+        if (phase == 0) {
+          retained = result->get()->tensors()[3];
+          saved = expected;
+        } else {
+          expect(context, retained, saved);
+        }
+      }
+      first = {};
+      second = {};
+      *program = {};
+      expect(context, retained, saved);
+      surviving = retained;
+      surviving_values = std::move(saved);
+    }
+  }
+  EXPECT_TRUE(context.close().ok());
+  expect(context, surviving, surviving_values);
+}
+} // namespace

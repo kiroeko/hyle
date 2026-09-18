@@ -39,6 +39,7 @@ struct Plan final {
 // counts from the final native plan, with no native or tensor handles.
 struct PlanFacts final {
   std::size_t native_dispatch_count = 0;
+  std::size_t managed_region_count = 0;
   std::vector<std::size_t> invocation_storage_block_bytes;
   std::size_t retained_constant_owner_count = 0;
   std::size_t retained_constant_capacity_bytes = 0;

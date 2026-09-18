@@ -23,10 +23,15 @@ struct Pipeline final {
 
 struct Dispatch final {
   std::shared_ptr<Pipeline> pipeline;
+  std::shared_ptr<const ggml_vulkan::detail::RegionRecipe> region;
   std::vector<std::uint32_t> values;
   std::vector<std::byte> push;
   std::array<std::uint32_t, 3> groups{1, 1, 1};
   bool tensor_byte_origins = false;
+};
+
+struct NativeEncoding final {
+  std::vector<Dispatch> dispatches;
 };
 
 struct ValueAlias final {
@@ -63,10 +68,17 @@ struct DescriptorBinding final {
 };
 
 struct InvocationState final {
+  struct RegionInput final {
+    std::size_t stage = 0;
+    std::size_t port = 0;
+    std::uint32_t value = 0;
+    std::uint32_t input_port = 0;
+  };
   std::shared_ptr<ProgramState> program;
   std::shared_ptr<Run> run;
   std::shared_ptr<ResultValues> results;
   std::vector<DescriptorBinding> dynamic_bindings;
+  std::vector<RegionInput> region_inputs;
   std::vector<std::shared_ptr<Buffer>> old_inputs;
   std::vector<long> output_owner_counts;
   cd::ResultSlot<Results> slot;
@@ -98,5 +110,14 @@ bool origins_changed(const Run &run,
 Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;
+bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
+Status lower_region(ProgramState &, const Plan &, std::size_t first,
+                    std::size_t end,
+                    std::span<const std::size_t> last_uses) noexcept;
+Status record_regions(const std::shared_ptr<Run> &, std::span<const PlanValue>,
+                      std::span<const Dispatch>,
+                      std::vector<DescriptorBinding> *) noexcept;
+Status bind_regions(Run &) noexcept;
+void refresh_region_bindings(Run &) noexcept;
 
 } // namespace hyle::compute::vulkan::detail

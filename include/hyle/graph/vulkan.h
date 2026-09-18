@@ -53,9 +53,10 @@ struct CompileReport final {
   std::vector<compute::TensorDesc> outputs;
   std::vector<CompileNodeReport> nodes; // Live nodes in original ordinal order.
   std::size_t native_dispatch_count = 0;
-  // Actual planned logical capacities for one owning Invocation, including
-  // outputs and reusable scratch. Native allocation alignment and driver
-  // objects are additional; separate slots never share these mutable blocks.
+  std::size_t managed_region_count = 0;
+  // HYLE-planned boundary/output and native scratch capacities for one slot.
+  // Provider-private storage, native alignment and driver objects are
+  // additional; separate slots never share these mutable blocks.
   std::vector<std::size_t> invocation_storage_block_bytes;
   // Deduplicated by HYLE Buffer owner after cold packing and unused-owner
   // removal, not by logical value. Borrowed owners may alias external memory.
@@ -63,7 +64,8 @@ struct CompileReport final {
   std::size_t retained_constant_capacity_bytes = 0;
   std::size_t owned_constant_allocation_bytes = 0;
   bool has_borrowed_constants = false;
-  std::optional<std::size_t> opaque_storage_bytes; // Driver/pipelines: unknown.
+  std::optional<std::size_t>
+      opaque_storage_bytes; // Provider/driver: unknown at compile.
   std::string implementation_policy;
   std::string numerical_policy;
   std::string boundary_policy;
@@ -82,8 +84,9 @@ struct CompileOptions final {
 // Constants are ready immutable tensors in Graph constant order; inputs bind
 // in Graph input order and generated outputs follow published order. The Graph
 // may be destroyed after this call. Each Invocation owns independent commands,
-// descriptors, fence, outputs and liveness-planned scratch; replay has no DAG
-// traversal, shader compilation or implementation search.
+// descriptors, completion, outputs and liveness-planned scratch. HYLE replay
+// performs no planning, shader compilation or implementation search; managed
+// providers retain their own graph encoding and private resource management.
 //
 // Built-ins share the Compute route's qualified dtype/shape domains. Custom
 // schemas require the cold native lowering above. Symbolic/effect/control-edge

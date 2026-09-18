@@ -60,6 +60,7 @@ create_run(const std::shared_ptr<Runtime> &runtime) noexcept {
                            "vkCreateFence");
     if (!status.ok())
       return std::unexpected(status);
+    run->completion_fence = run->fence;
     return run;
   } catch (const std::bad_alloc &) {
     return std::unexpected(
@@ -83,6 +84,63 @@ bool is_terminal(VkResult result) noexcept {
   return result == VK_SUCCESS || result == VK_ERROR_DEVICE_LOST;
 }
 
+bool device_lost(const Status &status) noexcept {
+  return status.native_error() ==
+         NativeError{NativeErrorDomain::Vulkan, VK_ERROR_DEVICE_LOST};
+}
+
+Status drain_native(Device &device) noexcept {
+  return device.provider.with_queue(
+      [](void *opaque, VkQueue queue) -> VkResult {
+        return static_cast<Device *>(opaque)->fn.QueueWaitIdle(queue);
+      },
+      &device);
+}
+
+VkResult drain_result(const Status &status) noexcept {
+  return status.ok()           ? VK_SUCCESS
+         : device_lost(status) ? VK_ERROR_DEVICE_LOST
+                               : VK_NOT_READY;
+}
+
+// Called under Runtime::mutex after the parent native completion proof, or
+// while explicitly draining a partially accepted sequence. No child joins
+// the global pending list, and no per-kernel completion marker is submitted.
+bool retire_regions(Run &run, bool drain) noexcept {
+  bool retired = true;
+  for (auto &stage : run.stages) {
+    if (!stage.managed)
+      continue;
+    const auto state = drain ? stage.managed->wait() : stage.managed->poll();
+    if (!state.status.ok() && run.observation_error.ok())
+      run.observation_error = state.status;
+    if (state.device_lost)
+      run.runtime->failure =
+          native_status(VK_ERROR_DEVICE_LOST, "Vulkan managed work lost");
+    retired = retired && !state.pending;
+  }
+  return retired;
+}
+
+Status submit_native(const Device &device, VkCommandBuffer command,
+                     VkFence fence) noexcept {
+  VkSubmitInfo info{};
+  info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  info.commandBufferCount = 1;
+  info.pCommandBuffers = &command;
+  struct Submission {
+    PFN_vkQueueSubmit submit;
+    const VkSubmitInfo *info;
+    VkFence fence;
+  } submission{device.fn.QueueSubmit, &info, fence};
+  return device.provider.with_queue(
+      [](void *opaque, VkQueue queue) -> VkResult {
+        const auto &call = *static_cast<const Submission *>(opaque);
+        return call.submit(queue, 1, call.info, call.fence);
+      },
+      &submission);
+}
+
 Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
                                bool wait) noexcept {
   auto &runtime = *run->runtime;
@@ -97,18 +155,28 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
   // Native fence waits do not hold the queue host mutex. A second producer
   // may submit its independent slot while this thread waits. observers prevents
   // fence reset/reuse until every concurrent observer has left the old run.
-  VkResult result;
-  if (wait) {
+  VkResult result = VK_NOT_READY;
+  if (run->needs_drain) {
+    if (device_lost(runtime.failure)) {
+      result = VK_ERROR_DEVICE_LOST;
+    } else if (wait) {
+      const auto drained = drain_native(device);
+      result = drain_result(drained);
+      if (!drained.ok() && run->observation_error.ok())
+        run->observation_error = drained;
+    }
+  } else if (wait) {
     lock.unlock();
-    result =
-        device.fn.WaitForFences(device.native.device, 1, &run->fence, VK_TRUE,
-                                (std::numeric_limits<std::uint64_t>::max)());
+    result = device.fn.WaitForFences(
+        device.native.device, 1, &run->completion_fence, VK_TRUE,
+        (std::numeric_limits<std::uint64_t>::max)());
     lock.lock();
   } else {
     // A nonblocking poll and its retirement bookkeeping form one host critical
     // section. An independent collector must not leave a transient observer
     // behind after the owning wait returns and the caller rebinds its slot.
-    result = device.fn.GetFenceStatus(device.native.device, run->fence);
+    result =
+        device.fn.GetFenceStatus(device.native.device, run->completion_fence);
   }
   Status observation;
   if (!is_terminal(result) && result != VK_NOT_READY && result != VK_TIMEOUT) {
@@ -117,14 +185,8 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     if (wait) {
       // Only the exceptional path uses queue-wide drain. Preserve the original
       // diagnosis, even if an independent native observation proves completion.
-      const auto drained = device.provider.with_queue(
-          [](void *opaque, VkQueue queue) -> VkResult {
-            return static_cast<Device *>(opaque)->fn.QueueWaitIdle(queue);
-          }, &device);
-      result = drained.ok() ? VK_SUCCESS
-          : drained.native_error() == NativeError{NativeErrorDomain::Vulkan,
-                                                 VK_ERROR_DEVICE_LOST}
-              ? VK_ERROR_DEVICE_LOST : VK_NOT_READY;
+      result = drain_result(drain_native(device));
+      run->needs_drain = !run->stages.empty();
     }
   }
   std::shared_ptr<Run> retired;
@@ -136,16 +198,33 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     --run->observers;
     if (!observation.ok() && run->observation_error.ok())
       run->observation_error = observation;
+    if (run->pending && result == VK_ERROR_DEVICE_LOST) {
+      runtime.failure = native_status(result, "Vulkan submitted work lost");
+      device.provider.note_device_lost();
+    }
+    if (run->pending && is_terminal(result) &&
+        !retire_regions(*run, wait && run->needs_drain)) {
+      // A provider observation/drain error still owns its accepted work.
+      // The final parent fence alone does not authorize destroying that slot.
+      run->needs_drain = true;
+      result = VK_NOT_READY;
+    }
     if (run->pending && is_terminal(result)) {
-      if (result == VK_ERROR_DEVICE_LOST) {
-        runtime.failure = native_status(result, "Vulkan submitted work lost");
+      if (!run->submission_failure.ok()) {
+        run->terminal = run->submission_failure;
+      } else if (device_lost(runtime.failure) && run->stages.empty()) {
         run->terminal = runtime.failure;
       } else if (!run->observation_error.ok()) {
         run->terminal = run->observation_error;
+      } else if (device_lost(runtime.failure)) {
+        run->terminal = runtime.failure;
       } else if (run->cancelled) {
         run->terminal = Status::Cancelled(
             "Vulkan result cancelled after native retirement");
       }
+      if (!run->stages.empty() && !run->observation_error.ok() &&
+          run->submission_failure.ok())
+        run->submission_failure = run->observation_error;
       run->pending = false;
       *run->previous = run->next;
       if (run->next != nullptr)
@@ -250,39 +329,62 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
         Status::FailedPrecondition("Vulkan context is closed"));
   if (!runtime.failure.ok())
     return std::unexpected(runtime.failure);
+  if (!run->submission_failure.ok())
+    return std::unexpected(run->submission_failure);
   if (run->pending || run->completion_owner || run->observers != 0 ||
       run->retiring)
     return std::unexpected(
         Status::FailedPrecondition("Vulkan slot is still retained"));
-  auto status =
-      native_status(device.fn.ResetFences(device.native.device, 1, &run->fence),
-                    "vkResetFences");
-  if (!status.ok())
-    return std::unexpected(status);
-  VkSubmitInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  info.commandBufferCount = 1;
-  info.pCommandBuffers = &run->command;
-  struct Submission {
-    PFN_vkQueueSubmit submit;
-    const VkSubmitInfo *info;
-    VkFence fence;
-  } submission{device.fn.QueueSubmit, &info, run->fence};
-  status = device.provider.with_queue(
-      [](void *opaque, VkQueue queue) -> VkResult {
-        const auto &call = *static_cast<const Submission *>(opaque);
-        return call.submit(queue, 1, call.info, call.fence);
-      }, &submission);
-  if (!status.ok()) {
-    // A failed native submit has not accepted our unsignaled fence. In
-    // particular OOM must not manufacture pending work that will never signal.
-    if (status.native_error() == NativeError{NativeErrorDomain::Vulkan,
-                                            VK_ERROR_DEVICE_LOST})
-      runtime.failure = status;
+  Status status;
+  if (run->completion_fence == run->fence) {
+    status = native_status(
+        device.fn.ResetFences(device.native.device, 1, &run->fence),
+        "vkResetFences");
+    if (!status.ok()) {
+      if (device_lost(status)) {
+        runtime.failure = status;
+        device.provider.note_device_lost();
+      }
+      return std::unexpected(status);
+    }
+  }
+  run->needs_drain = false;
+  bool accepted = false;
+  if (run->stages.empty()) {
+    status = submit_native(device, run->command, run->fence);
+    accepted = status.ok();
+  } else {
+    for (std::size_t index = 0; index < run->stages.size(); ++index) {
+      auto &stage = run->stages[index];
+      if (stage.managed) {
+        const auto submitted = stage.managed->submit();
+        status = submitted.status;
+        accepted = accepted || submitted.pending;
+        if (submitted.device_lost)
+          runtime.failure =
+              native_status(VK_ERROR_DEVICE_LOST, "Vulkan managed submit lost");
+      } else {
+        status = submit_native(
+            device, stage.native->command,
+            index + 1 == run->stages.size() ? run->fence : VK_NULL_HANDLE);
+        accepted = accepted || status.ok();
+      }
+      if (!status.ok()) {
+        run->submission_failure = status;
+        run->needs_drain = accepted;
+        break;
+      }
+    }
+  }
+  if (device_lost(status))
+    runtime.failure = status;
+  if (!accepted) {
+    // A lone rejected native submit owns no pending work and remains
+    // retryable. A failed managed/composed slot keeps its failure instead.
     return std::unexpected(status);
   }
   run->terminal = Status::Ok();
-  run->observation_error = Status::Ok();
+  run->observation_error = run->submission_failure;
   run->hint = Status::Ok();
   run->cancelled = false;
   run->pending = true;

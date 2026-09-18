@@ -15,7 +15,8 @@ Status failure(bridge::Failure error) noexcept {
   case bridge::Error::InvalidArgument:
     return Status::InvalidArgument("ggml Vulkan resident region");
   case bridge::Error::InvalidState:
-    return Status::FailedPrecondition("ggml Vulkan region slot is busy or failed");
+    return Status::FailedPrecondition(
+        "ggml Vulkan region slot is busy or failed");
   case bridge::Error::OutOfRange:
     return Status::OutOfRange("ggml Vulkan physical device index");
   case bridge::Error::Exhausted:
@@ -46,10 +47,12 @@ Status failure(bridge::Failure error) noexcept {
 }
 
 bool reserve(void *owner, std::size_t bytes, void **token) noexcept {
-  auto charge = static_cast<mem::QuotaAllocator *>(owner)->try_reserve_bytes(bytes);
+  auto charge =
+      static_cast<mem::QuotaAllocator *>(owner)->try_reserve_bytes(bytes);
   if (!charge)
     return false;
-  *token = new (std::nothrow) mem::QuotaAllocator::Reservation(std::move(*charge));
+  *token =
+      new (std::nothrow) mem::QuotaAllocator::Reservation(std::move(*charge));
   return *token != nullptr;
 }
 void release(void *token) noexcept {
@@ -76,15 +79,22 @@ struct NativeDevice::State final {
 Result<NativeDevice> NativeDevice::create(NativeOptions options) noexcept {
   try {
     auto state = std::make_shared<State>();
-    HYLE_ASSIGN_OR_RETURN(state->loader, platform::DynLib::open(
-        options.loader_path ? options.loader_path : default_loader()));
-    HYLE_ASSIGN_OR_RETURN(auto get, state->loader.symbol_as<PFN_vkGetInstanceProcAddr>(
-        "vkGetInstanceProcAddr"));
-    bridge::Options configuration{get, options.device_index,
-        options.allow_software, options.validation, options.quota,
-        options.quota ? reserve : nullptr, options.quota ? release : nullptr};
-    HYLE_RETURN_IF_ERROR(failure(bridge::create(
-        configuration, &state->runtime, &state->native)));
+    HYLE_ASSIGN_OR_RETURN(state->loader,
+                          platform::DynLib::open(options.loader_path
+                                                     ? options.loader_path
+                                                     : default_loader()));
+    HYLE_ASSIGN_OR_RETURN(auto get,
+                          state->loader.symbol_as<PFN_vkGetInstanceProcAddr>(
+                              "vkGetInstanceProcAddr"));
+    bridge::Options configuration{get,
+                                  options.device_index,
+                                  options.allow_software,
+                                  options.validation,
+                                  options.quota,
+                                  options.quota ? reserve : nullptr,
+                                  options.quota ? release : nullptr};
+    HYLE_RETURN_IF_ERROR(failure(
+        bridge::create(configuration, &state->runtime, &state->native)));
     NativeDevice result;
     result.state_ = std::move(state);
     return result;
@@ -97,6 +107,10 @@ const bridge::Native &NativeDevice::native() const noexcept {
   static const bridge::Native empty;
   return state_ ? state_->native : empty;
 }
+void NativeDevice::note_device_lost() const noexcept {
+  if (state_)
+    bridge::note_device_lost(state_->runtime);
+}
 NativeDevice::Scope NativeDevice::activate() const noexcept {
   return Scope(bridge::enter(state_ ? state_->runtime : nullptr));
 }
@@ -106,7 +120,8 @@ Result<ggml_backend *> NativeDevice::create_backend() const noexcept {
   if (!state_)
     return std::unexpected(Status::InvalidArgument("empty ggml Vulkan device"));
   ggml_backend *result = nullptr;
-  HYLE_RETURN_IF_ERROR(failure(bridge::create_backend(state_->runtime, &result)));
+  HYLE_RETURN_IF_ERROR(
+      failure(bridge::create_backend(state_->runtime, &result)));
   return result;
 }
 Result<NativeWork> NativeDevice::create_work() const noexcept {
@@ -114,28 +129,31 @@ Result<NativeWork> NativeDevice::create_work() const noexcept {
     return std::unexpected(Status::InvalidArgument("empty ggml Vulkan device"));
   NativeWork result;
   result.device_ = *this;
-  HYLE_RETURN_IF_ERROR(failure(bridge::create_work(state_->runtime, &result.work_)));
+  HYLE_RETURN_IF_ERROR(
+      failure(bridge::create_work(state_->runtime, &result.work_)));
   return result;
 }
-Status NativeDevice::allocate_graph(
-    ggml_cgraph *graph, bool owns_imports, bridge::Storage **storage,
-    std::size_t *bytes) const noexcept {
+Status NativeDevice::allocate_graph(ggml_cgraph *graph, bool owns_imports,
+                                    bridge::Storage **storage,
+                                    std::size_t *bytes) const noexcept {
   if (!state_)
     return Status::InvalidArgument("empty ggml Vulkan graph device");
-  return failure(bridge::create_storage(
-      state_->runtime, graph, owns_imports, storage, bytes));
+  return failure(bridge::create_storage(state_->runtime, graph, owns_imports,
+                                        storage, bytes));
 }
 void NativeDevice::free_graph(bridge::Storage *storage) const noexcept {
   bridge::destroy_storage(storage);
 }
-Result<ggml_backend_buffer *> NativeDevice::borrow(
-    VkBuffer handle, std::size_t bytes,
-    std::shared_ptr<const void> owner, bool address_capable) const noexcept {
+Result<ggml_backend_buffer *>
+NativeDevice::borrow(VkBuffer handle, std::size_t bytes,
+                     std::shared_ptr<const void> owner,
+                     bool address_capable) const noexcept {
   if (!state_ || !handle || !bytes || !owner)
     return std::unexpected(Status::InvalidArgument("ggml Vulkan buffer owner"));
   ggml_backend_buffer *result = nullptr;
-  HYLE_RETURN_IF_ERROR(failure(bridge::borrow_buffer(
-      state_->runtime, handle, bytes, std::move(owner), address_capable, &result)));
+  HYLE_RETURN_IF_ERROR(failure(
+      bridge::borrow_buffer(state_->runtime, handle, bytes, std::move(owner),
+                            address_capable, &result)));
   return result;
 }
 Result<ggml_backend_buffer *>
@@ -143,11 +161,29 @@ NativeDevice::allocate_buffer(std::size_t bytes) const noexcept {
   if (!state_ || !bytes)
     return std::unexpected(Status::InvalidArgument("ggml Vulkan buffer size"));
   ggml_backend_buffer *result = nullptr;
-  HYLE_RETURN_IF_ERROR(failure(bridge::allocate_buffer(state_->runtime, bytes, &result)));
+  HYLE_RETURN_IF_ERROR(
+      failure(bridge::allocate_buffer(state_->runtime, bytes, &result)));
   return result;
 }
-VkBuffer NativeDevice::buffer_handle(ggml_backend_buffer *buffer) const noexcept {
+VkBuffer
+NativeDevice::buffer_handle(ggml_backend_buffer *buffer) const noexcept {
   return state_ ? bridge::buffer_handle(buffer) : VK_NULL_HANDLE;
+}
+
+Result<ggml_backend_buffer *>
+NativeDevice::binding_buffer(std::size_t bytes) const noexcept {
+  if (!state_ || !bytes)
+    return std::unexpected(
+        Status::InvalidArgument("ggml Vulkan port capacity"));
+  ggml_backend_buffer *result = nullptr;
+  HYLE_RETURN_IF_ERROR(
+      failure(bridge::binding_buffer(state_->runtime, bytes, state_, &result)));
+  return result;
+}
+void NativeDevice::bind_buffer(
+    ggml_backend_buffer *buffer, VkBuffer handle, std::size_t bytes,
+    std::shared_ptr<const void> owner) const noexcept {
+  bridge::bind_buffer(buffer, handle, bytes, owner ? std::move(owner) : state_);
 }
 
 Status NativeDevice::with_queue(VkResult (*function)(void *, VkQueue),
@@ -165,27 +201,32 @@ Status NativeDevice::with_queue(
     const std::function<Status(VkQueue)> &function;
     Status result;
   } call{function, Status::Ok()};
-  const auto result = bridge::with_queue(state_->runtime,
+  const auto result = bridge::with_queue(
+      state_->runtime,
       [](void *opaque, VkQueue queue) -> VkResult {
         auto &call = *static_cast<Call *>(opaque);
         try {
           call.result = call.function(queue);
         } catch (const std::bad_alloc &) {
-          call.result = Status::ResourceExhausted("Vulkan native queue callback");
+          call.result =
+              Status::ResourceExhausted("Vulkan native queue callback");
         } catch (const std::exception &error) {
           call.result = Status::Internal(error.what());
         } catch (...) {
           call.result = Status::Unknown("Vulkan native queue callback threw");
         }
         return VK_SUCCESS;
-      }, &call);
+      },
+      &call);
   HYLE_RETURN_IF_ERROR(failure(result));
   return call.result;
 }
 
 NativeWork::NativeWork(NativeWork &&other) noexcept
-    : device_(std::move(other.device_)), work_(std::exchange(other.work_, nullptr)),
-      lease_(std::move(other.lease_)), pending_(std::exchange(other.pending_, false)) {}
+    : device_(std::move(other.device_)),
+      work_(std::exchange(other.work_, nullptr)),
+      lease_(std::move(other.lease_)),
+      pending_(std::exchange(other.pending_, false)) {}
 NativeWork &NativeWork::operator=(NativeWork &&other) noexcept {
   if (this != &other) {
     reset();
@@ -205,10 +246,12 @@ void NativeWork::reset() noexcept {
   pending_ = false;
   device_ = {};
 }
-WorkState NativeWork::submit(
-    ggml_cgraph *graph, std::shared_ptr<const void> resource_lease) noexcept {
+WorkState
+NativeWork::submit(ggml_cgraph *graph,
+                   std::shared_ptr<const void> resource_lease) noexcept {
   if (!work_ || !graph || !resource_lease)
-    return {Status::InvalidArgument("ggml Vulkan graph resource lease"), pending_};
+    return {Status::InvalidArgument("ggml Vulkan graph resource lease"),
+            pending_};
   if (pending_)
     return {Status::FailedPrecondition("ggml Vulkan region is pending"), true};
   lease_ = std::move(resource_lease);
@@ -229,4 +272,5 @@ WorkState NativeWork::observe(bool wait) noexcept {
 }
 WorkState NativeWork::poll() noexcept { return observe(false); }
 WorkState NativeWork::wait() noexcept { return observe(true); }
+VkFence NativeWork::fence() const noexcept { return bridge::work_fence(work_); }
 } // namespace hyle::compute::ggml_vulkan::detail

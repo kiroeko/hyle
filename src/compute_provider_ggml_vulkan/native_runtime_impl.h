@@ -84,8 +84,10 @@ Failure create(const Options &options, Runtime **result,
       throw vk::InitializationFailedError("incomplete Vulkan loader");
     ggml_vk_instance_init();
     auto device = ggml_vk_get_device(0);
-    *native = {runtime->instance.instance, device->physical_device,
-               device->device, device->compute_queue->handle->queue,
+    *native = {runtime->instance.instance,
+               device->physical_device,
+               device->device,
+               device->compute_queue->handle->queue,
                device->compute_queue->queue_family_index,
                runtime->instance.loader_version,
                device->buffer_device_address,
@@ -98,6 +100,10 @@ Failure create(const Options &options, Runtime **result,
     destroy(runtime);
     return error;
   }
+}
+
+void note_device_lost(Runtime *runtime) noexcept {
+  runtime->device_lost.store(true);
 }
 
 Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue),
@@ -124,7 +130,7 @@ ggml_backend_buffer *borrow(VkBuffer handle, std::size_t bytes,
                             std::shared_ptr<const void> owner,
                             bool address_capable) {
   auto device = ggml_vk_get_device(0);
-  if (!handle || !bytes || !owner)
+  if (!bytes || !owner)
     throw std::invalid_argument("ggml Vulkan borrowed buffer");
   auto buffer = std::make_shared<vk_buffer_struct>();
   buffer->device = device;
@@ -134,15 +140,39 @@ ggml_backend_buffer *borrow(VkBuffer handle, std::size_t bytes,
   // Device support does not imply that an external buffer was created with
   // the address usage and memory allocation flags. Descriptor-only imports
   // need no address; a BDA operation must qualify its buffers explicitly.
-  if (address_capable && device->buffer_device_address)
-    buffer->bda_addr = device->device.getBufferAddress(
-        vk::BufferDeviceAddressInfo{handle});
+  if (handle && address_capable && device->buffer_device_address)
+    buffer->bda_addr =
+        device->device.getBufferAddress(vk::BufferDeviceAddressInfo{handle});
   auto context = std::make_unique<ggml_backend_vk_buffer_context>(
       device, std::move(buffer), device->name);
   auto *result = ggml_backend_buffer_init(&device->buffer_type,
-      ggml_backend_vk_buffer_interface, context.get(), bytes);
+                                          ggml_backend_vk_buffer_interface,
+                                          context.get(), bytes);
   context.release();
   return result;
+}
+
+Failure binding_buffer(Runtime *runtime, std::size_t bytes,
+                       std::shared_ptr<const void> owner,
+                       ggml_backend_buffer **result) noexcept {
+  *result = nullptr;
+  try {
+    Active active(runtime);
+    *result = borrow(VK_NULL_HANDLE, bytes, std::move(owner), false);
+    return {};
+  } catch (...) {
+    return current_failure();
+  }
+}
+void bind_buffer(ggml_backend_buffer *buffer, VkBuffer handle,
+                 std::size_t bytes,
+                 std::shared_ptr<const void> owner) noexcept {
+  auto &native = static_cast<ggml_backend_vk_buffer_context *>(buffer->context)
+                     ->dev_buffer;
+  native->buffer = handle;
+  native->size = bytes;
+  native->external_owner = std::move(owner);
+  buffer->size = bytes;
 }
 
 VkBuffer buffer_handle(ggml_backend_buffer *buffer) noexcept {
@@ -163,10 +193,11 @@ Failure create_backend(Runtime *runtime, ggml_backend **result) noexcept {
   }
 }
 Failure borrow_buffer(Runtime *runtime, VkBuffer handle, std::size_t bytes,
-                      std::shared_ptr<const void> owner,
-                      bool address_capable,
+                      std::shared_ptr<const void> owner, bool address_capable,
                       ggml_backend_buffer **result) noexcept {
   *result = nullptr;
+  if (!handle)
+    return {Error::InvalidArgument};
   try {
     Active active(runtime);
     *result = borrow(handle, bytes, std::move(owner), address_capable);
@@ -180,7 +211,8 @@ Failure allocate_buffer(Runtime *runtime, std::size_t bytes,
   *result = nullptr;
   try {
     Active active(runtime);
-    *result = ggml_backend_buft_alloc_buffer(ggml_backend_vk_buffer_type(0), bytes);
+    *result =
+        ggml_backend_buft_alloc_buffer(ggml_backend_vk_buffer_type(0), bytes);
     return *result ? Failure{} : Failure{Error::Exhausted};
   } catch (...) {
     return current_failure();
@@ -188,5 +220,5 @@ Failure allocate_buffer(Runtime *runtime, std::size_t bytes,
 }
 } // namespace hyle::compute::ggml_vulkan::bridge
 
-#include "native_work_impl.h"
 #include "native_storage_impl.h"
+#include "native_work_impl.h"

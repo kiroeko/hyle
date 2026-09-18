@@ -65,7 +65,8 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
     EXPECT_EQ(report.nodes[3].traits.precision,
               c::PrecisionPolicy::kAccumulateInDeclaredType);
     EXPECT_EQ(report.nodes[3].traits.accumulation_type, c::DataType::kFloat32);
-    EXPECT_EQ(report.native_dispatch_count, 4U);
+    EXPECT_EQ(report.native_dispatch_count, 3U);
+    EXPECT_EQ(report.managed_region_count, 1U);
     EXPECT_EQ(report.retained_constant_owner_count, 3U);
     EXPECT_GT(report.retained_constant_capacity_bytes, 0U);
     EXPECT_GE(report.owned_constant_allocation_bytes,
@@ -240,8 +241,7 @@ TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
             .add(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}, a,
                  b)
             .value();
-    const auto out =
-        builder.add(c::Operation::custom(Affine{}), gate).value();
+    const auto out = builder.add(c::Operation::custom(Affine{}), gate).value();
     ASSERT_TRUE(builder.publish(out).ok());
     auto graph = std::move(builder).finish().value();
     auto kernel = t::affine(*context);
@@ -249,10 +249,11 @@ TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
     const std::array constants{*borrowed, *borrowed};
     auto program = gv::compile(
         *context, graph, constants,
-        {.custom = [&, payload](const auto &, const auto &, auto,
-                                const auto &) -> hyle::Result<gv::CustomDispatch> {
+        {.custom = [&, payload](const auto &, const auto &, auto, const auto &)
+             -> hyle::Result<gv::CustomDispatch> {
            return gv::CustomDispatch{
-               *kernel, {1, 1, 1},
+               *kernel,
+               {1, 1, 1},
                t::count_push(static_cast<std::uint32_t>(*payload - 3))};
          },
          .report = &report});

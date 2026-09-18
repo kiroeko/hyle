@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <barrier>
+#include <chrono>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -10,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "fixture.h"
+#include "hyle/compute/detail/vulkan_plan.h"
 #include "vulkan_internal.h"
 
 namespace {
@@ -27,6 +29,9 @@ struct NativeBoundary final {
   d::DeviceFunctions original;
   VkPhysicalDeviceMemoryProperties original_memory;
   std::atomic<int> waits{0}, resets{0};
+  std::atomic<bool> hold_wait{false}, waiting{false}, release_wait{false},
+      wait_timed_out{false};
+  int submissions = 0, fail_submit_on = 0;
   int flushes = 0, invalidations = 0;
   bool fail_submit = false, fail_poll = false, fail_wait = false,
        fail_idle = false;
@@ -56,7 +61,8 @@ struct NativeBoundary final {
                                                      std::uint32_t count,
                                                      const VkSubmitInfo *info,
                                                      VkFence fence) {
-    if (std::exchange(active->fail_submit, false))
+    if (++active->submissions == active->fail_submit_on ||
+        std::exchange(active->fail_submit, false))
       return VK_ERROR_OUT_OF_HOST_MEMORY;
     return active->original.QueueSubmit(queue, count, info, fence);
   }
@@ -72,6 +78,16 @@ struct NativeBoundary final {
                                                     VkBool32 all,
                                                     std::uint64_t timeout) {
     ++active->waits;
+    if (active->hold_wait.exchange(false)) {
+      active->waiting.store(true);
+      const auto deadline =
+          std::chrono::steady_clock::now() + std::chrono::seconds(3);
+      while (!active->release_wait.load() &&
+             std::chrono::steady_clock::now() < deadline)
+        std::this_thread::yield();
+      active->wait_timed_out.store(!active->release_wait.load());
+      active->waiting.store(false);
+    }
     if (std::exchange(active->fail_wait, false))
       return VK_ERROR_OUT_OF_HOST_MEMORY;
     return active->original.WaitForFences(device, count, fences, all, timeout);
@@ -364,6 +380,116 @@ TEST(VulkanLifetime, IndependentThreadsReplayWhileContextCollects) {
   EXPECT_EQ(failures.load(), 0);
   EXPECT_TRUE(context->close().ok());
   EXPECT_EQ(d::Access::runtime(*context)->pending, nullptr);
+}
+
+TEST(VulkanLifetime, ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain) {
+  for (bool abandon : {false, true}) {
+    SCOPED_TRACE(abandon);
+    auto context = t::context().value();
+    const auto description = t::dense({17, 2048});
+    auto input = t::upload(context, description, t::data(17 * 2048, 1)).value();
+    std::weak_ptr<const void> owner = input.native_owner();
+    d::Plan plan;
+    plan.values.assign(4, {description, {}});
+    plan.inputs = {0};
+    plan.outputs = {3};
+    plan.steps = {{c::Unary{c::UnaryKind::kNeg}, {0}, 1},
+                  {c::RmsNorm{}, {1}, 2},
+                  {c::Unary{c::UnaryKind::kNeg}, {2}, 3}};
+    d::PlanFacts facts;
+    auto program = d::prepare_plan(context, plan, &facts).value();
+    ASSERT_EQ(facts.native_dispatch_count, 2U);
+    ASSERT_EQ(facts.managed_region_count, 1U);
+    auto slot = program.create_invocation().value();
+    ASSERT_TRUE(slot.bind(input).ok());
+    NativeBoundary boundary(context);
+    // Provider submits use their original PFNs. This rejects only the HYLE
+    // suffix after the real HYLE prefix and real managed region were accepted.
+    boundary.fail_submit_on = 2;
+    auto work = slot.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    ASSERT_EQ(boundary.submissions, 2);
+    ASSERT_NE(d::Access::runtime(context)->pending, nullptr);
+    auto observed = work->poll();
+    ASSERT_TRUE(observed);
+    EXPECT_EQ(*observed, c::CompletionPoll::kPending);
+    EXPECT_EQ(boundary.waits.load(), 0);
+    if (abandon) {
+      work = c::OwnedResult<v::Results>{};
+      slot = {};
+      program = {};
+      input = {};
+      EXPECT_FALSE(owner.expired());
+      EXPECT_EQ(boundary.waits.load(), 0);
+      boundary.fail_idle = true;
+      EXPECT_TRUE(context.close().IsResourceExhausted());
+      EXPECT_NE(d::Access::runtime(context)->pending, nullptr);
+      EXPECT_FALSE(owner.expired());
+      EXPECT_TRUE(
+          context.close().IsResourceExhausted()); // Original submit diagnosis.
+      EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
+      EXPECT_TRUE(owner.expired());
+    } else {
+      auto failed = work->wait();
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+      EXPECT_FALSE(work->result());
+      EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
+      work = c::OwnedResult<v::Results>{};
+      EXPECT_TRUE(slot.bind(input).IsResourceExhausted());
+      auto retry = slot.submit();
+      ASSERT_FALSE(retry);
+      EXPECT_TRUE(retry.error().IsResourceExhausted());
+    }
+    EXPECT_TRUE(context.close().ok());
+  }
+}
+
+TEST(VulkanLifetime,
+     ManagedWaitAllowsIndependentProducerAndCancelledSlotReuse) {
+  auto context = t::context().value();
+  const auto description = t::dense({17, 2048});
+  auto input = t::upload(context, description, t::data(17 * 2048, 3)).value();
+  auto program = v::prepare(context, c::RmsNorm{}, description).value();
+  auto first = program.create_invocation().value();
+  auto second = program.create_invocation().value();
+  ASSERT_TRUE(first.bind(input).ok());
+  ASSERT_TRUE(second.bind(input).ok());
+  NativeBoundary boundary(context);
+  {
+    auto work = first.submit().value();
+    boundary.hold_wait.store(true);
+    std::atomic<bool> succeeded{false};
+    std::thread waiter([&] { succeeded.store(work.wait().has_value()); });
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(3);
+    while (!boundary.waiting.load() &&
+           std::chrono::steady_clock::now() < deadline)
+      std::this_thread::yield();
+    EXPECT_TRUE(boundary.waiting.load());
+    auto independent = second.submit();
+    EXPECT_TRUE(
+        boundary.waiting.load()); // Submit completed during the held wait.
+    boundary.release_wait.store(true);
+    waiter.join();
+    EXPECT_FALSE(boundary.wait_timed_out.load());
+    EXPECT_TRUE(succeeded.load());
+    ASSERT_TRUE(independent) << independent.error().message();
+    ASSERT_TRUE(independent->wait());
+  }
+  {
+    auto cancelled = first.submit().value();
+    EXPECT_TRUE(cancelled.request_cancel().ok());
+    auto result = cancelled.wait();
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsCancelled());
+  }
+  {
+    auto replay = first.submit();
+    ASSERT_TRUE(replay) << replay.error().message();
+    ASSERT_TRUE(replay->wait());
+  }
+  EXPECT_TRUE(context.close().ok());
 }
 
 } // namespace

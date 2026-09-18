@@ -1,7 +1,8 @@
 # Vulkan：Direct Compute 与 Graph
 
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
-HYLE 在准备期绑定 ggml 或 HYLE shader，Graph 冷期规划资源，重复执行复用录制好的命令。
+HYLE 在准备期绑定 ggml region 或 HYLE shader，Graph 冷期规划边界资源；原生片段复用录制命令，
+ggml 片段复用其图和存储，但仍执行原厂编码及内部资源管理。
 普通用户只选路线，不排序 Provider 或提供 timing profile。既有 F32 基础支持域已完成 Windows RTX 4070
 与 Air M4/MoltenVK 的真实计算、资源寿命、三交付和
 [有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
@@ -13,8 +14,8 @@ HYLE 在准备期绑定 ggml 或 HYLE shader，Graph 冷期规划资源，重复
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
-当前 C1 接入只验证了私有资源桥和静态/共享内部计算，受管执行、普通入口与更新后的完整交付
-仍待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md) 验收。
+当前 C1 正接入普通 Direct/Graph 的受管片段；本轮完整交付与性能资格仍待
+[C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md) 验收。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
 Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算成功。
 
@@ -102,14 +103,17 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
-归一化对非空输入使用一次 dispatch 和固定 shared memory，不分配额外 device scratch。
+HYLE 原生归一化对非空输入使用一次 dispatch 和固定 shared memory，不分配额外 device scratch。
 RMSNorm 两遍读取输入，LayerNorm 三遍并使用中心化方差；半精度奇数宽度时一个 workgroup
 处理相邻两行，避免两个组写同一 word。合法 stride/View、空域、rank≤8 均沿张量合同。
 例如 `vk::prepare(context, c::RmsNorm{}, input_description, scale_tensor)` 捕获 scale，随后只绑定输入。
 
-门控准备期能证明原生对齐的 dense F32 SiLU（rank≤4、设备支持512-lane）复用 ggml GLU 调度，
-并使用 HYLE 的稳定 activation 边界；未知动态起点和其他类型/布局使用 U32 tensor shader。
-这些条件在准备期绑定；bind/submit 不选择 Provider。新门控/归一化的 P1 仍待完整 C1 候选验证。
+正尺寸 dense F32、rank1–4 的 RMSNorm（F32 累加，可选同类型 scale）和分离式 SiLU gate
+默认绑定原版 ggml region。连续的兼容 SiLU、Add/Multiply 一起交付，保留原厂内部融合与存储；
+二元广播至少一侧须具有完整输出形状。published 和跨片段使用的结果仍可独立读取。
+准备期无法证明端口起点四字节对齐时，固定加入现有 Copy 适配；这包含描述相同但 View
+起点可能改变的动态输入。已知对齐常量和计算结果直接导入，适配内存与复制属于真实成本。
+其他已支持的类型/布局继续使用原生实现。bind/submit 不选择 Provider；本批规则尚待等责 P1。
 
 Concat 接受任意正数量的同类型输入、正负 axis、rank1..8 和合法 stride/View，按输入顺序拼接，
 保留原始存储位并生成独立 dense 结果。例如 `vk::prepare(context, c::Concat{-1}, left_desc,
@@ -146,7 +150,8 @@ broadcast_to 只创建描述与共享 owner，保留原生 buffer，并在 `nati
 
 typed tensor 输入可使用不满足 descriptor 对齐的 View：HYLE 对齐 descriptor 起点，并以固定
 push 参数传递字节余数。更换 buffer 但余数相同的 bind 只更新 descriptor；余数变化时，空闲槽
-会复用已有 pipeline、descriptor sets 和 buffer 重录命令。submit 始终使用已录制程序。
+会复用已有 pipeline、descriptor sets 和 buffer 重录原生片段命令。托管片段沿固定边界绑定端口，
+由原厂编码执行；HYLE 不重新进行图规划或 Provider 搜索。
 重录失败时 bind 返回错误，成功重新绑定前不能提交；被导出的别名结果或 native owner 会阻止该
 槽改写别名 metadata，释放后可复用。需要同时保留旧结果时使用独立 invocation。
 
@@ -167,7 +172,8 @@ HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
 
 constants 按 Graph 常量顺序，bind 按输入顺序，结果按 publish 顺序。编译后可以销毁原 Graph 和
 常量句柄；Program 保有自己的原生 owner。Graph 冷期删除 dead pure nodes、规划中间 buffer
-生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。重放不遍历原 DAG。
+生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。HYLE 重放不遍历
+原语义 DAG；托管 region 的原厂执行器仍会访问其已准备的图。
 当前只接受固定 shape、pure、单输出 node（含 View）；符号、资源效果、control edge、其它必须别名节点和直接
 publish 输入/常量会明确拒绝。
 
@@ -196,13 +202,17 @@ Kernel 的 storage bindings 按输入顺序再接输出，使用一个 set 和�
   访问原生 queue 使用 `with_queue`，回调必须在返回前完成自己提交的外部工作。
 - Completion 析构不隐式等待。丢弃结果后 Context 继续保有已接纳工作，collect、后续提交和 close
   推进回收。取消不能抢占 GPU，也不能提前释放输入、命令或 fence。
-- 提交 OOM 不等待未接纳的 fence；观察失败不等于 GPU 已停止。未确认终态的资源继续保留，
+- 单次原生提交在未接纳时失败可重试。组合程序已有片段被接纳后，后续失败仍返回持有前缀
+  的 Completion；poll 不阻塞，wait/close 异常排空，保留首次失败且不发布成功结果。失败的
+  托管/组合槽不复用。观察失败不等于 GPU 已停止。未确认终态的资源继续保留，
   close/collect 可重试；设备丢失返回 DataLoss，失败不发布成功结果。
 - close 停止接纳并 drain；Context 析构有相同成本。原生结果可长于 Context 句柄，成功结果关闭
-  后仍可下载。可选 quota 只计实际 VkDeviceMemory（含 staging），不含 driver/pipeline 私有内存，
+  后仍可下载。可选 quota 计 HYLE 分配的 VkDeviceMemory（含 staging、适配和边界 scratch）；
+  ggml 内部资源及 driver/pipeline 私有内存不在该配额中，
   quota 本身须活过所有依赖资源。
-- 冷期承担 packing、pipeline、内存规划与命令录制。热期是 idle descriptor 更新、一次 native
-  submit、实际 fence 完成与结果管理；不分配 GPU 资源、重新录制或运行时计时选优。
+- 冷期承担 packing、pipeline、边界内存规划、原生命令录制及每槽 ggml 图/存储。热期按固定
+  片段次序提交同一 queue，等待最后实际 batch 的 fence；正常等待不阻止其他槽的 producer。
+  原厂 region 的编码/私有分配仍有成本，不承诺整个 submit 零分配或只执行一次 QueueSubmit。
 
 `context.environment()` 保存型号、vendor/device/driver ID、driver/API/loader 版本、subgroup、
 shared memory、header/compiler 和 shader pin。默认规则在冷期匹配，执行不重新探测。未资格化
@@ -228,8 +238,10 @@ if (!program) {
 每次 compile 先 reset；报告自身内存不足也会拒绝编译。默认不传报告，执行期不构造诊断信息。
 同一个 report 不能被并发编译写入。
 
-`native_dispatch_count` 是最终原生 dispatch 数；`invocation_storage_block_bytes` 给出每个槽
-规划的输出及可复用 scratch 容量，实际分配还可能有对齐成本。常量容量按 HYLE buffer owner 去重，
+`native_dispatch_count` 是最终 HYLE 原生 dispatch 数（含必要适配），`managed_region_count`
+单独计原厂 region；它们不能互相代替 kernel 数。`invocation_storage_block_bytes` 给出每个槽
+规划的边界输出及 HYLE 可复用 scratch 容量，实际分配还可能有对齐成本。原厂内部容量和
+driver/pipeline 分配保持 unknown。常量容量按 HYLE buffer owner 去重，
 `owned_constant_allocation_bytes` 只计已知 owned VkDeviceMemory；`has_borrowed_constants` 标明
 外借 owner，其外部物理别名和分配大小未知。`opaque_storage_bytes` 保持 unknown，不把 driver/
 pipeline 私有分配计成零。

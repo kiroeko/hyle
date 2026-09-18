@@ -33,7 +33,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed ggml F32 and HYLE typed tensor shaders plus cold custom "
+          "Fixed managed ggml dense F32 norm/gate regions and native tensor "
+          "shaders plus cold custom "
           "SPIR-V; "
           "device feature/limit matching, no runtime timing or provider search";
       report->numerical_policy =
@@ -45,9 +46,9 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
           "explicit compute visibility barriers; no host output copy; "
           "imported buffers require a completed visibility handoff";
       report->concurrency_policy =
-          "Each Invocation owns commands, descriptors, fence and mutable "
-          "storage blocks; admission is serialized on the Context native "
-          "queue; "
+          "Each Invocation owns native commands, managed work and mutable "
+          "storage; admission and provider retirement are serialized on the "
+          "Context while normal fence waits permit independent producers; "
           "retained results keep their slot until released";
     }
     cv::detail::Plan plan;
@@ -155,6 +156,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       for (const auto output : plan.outputs)
         report->outputs.push_back(plan.values[output].description);
       report->native_dispatch_count = facts.native_dispatch_count;
+      report->managed_region_count = facts.managed_region_count;
       report->invocation_storage_block_bytes =
           std::move(facts.invocation_storage_block_bytes);
       report->retained_constant_owner_count =

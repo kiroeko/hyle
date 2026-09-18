@@ -459,7 +459,7 @@ _hyle_declare_component(graph_route_apple
 # Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
 _hyle_declare_component(compute_route_vulkan
   TRACE
-  PRIVATE_DEPS platform time compute_provider_ggml_vulkan
+  PRIVATE_DEPS time compute_provider_ggml_vulkan
   PUBLIC_DEPS core compute compute_ops error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/detail/vulkan_plan.h)
 _hyle_declare_component(graph_route_vulkan
@@ -470,7 +470,7 @@ _hyle_declare_component(graph_route_vulkan
 # The Vulkan implementation factor owns ggml's runtime and private adapters.
 # No dependency on the route or Graph: both retain their own public semantics.
 _hyle_declare_component(compute_provider_ggml_vulkan
-  PRIVATE_DEPS core error mem platform)
+  PRIVATE_DEPS core compute_ops error mem platform)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
