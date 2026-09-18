@@ -239,3 +239,11 @@ Provider ID 和 region 数；两侧均使用自然 submit/wait，完整 norm→M
 验证入口已实现，API/算法停止变化；接下来进入 CANDIDATE 性能门。AA04 的条件规则和重复域
 取舍尚未签署，任何因此产生的产品修改先依法回到 AUDITED。本节不签 C1 全包、四路线完整
 覆盖或算子淘汰；没有运行过的 A/A/P1 仍不写 PASS。
+
+### CANDIDATE 冻结
+
+本轮候选固定为 `4895df0bd70669c138a5ce3cb1a4d0a00b7349cb`，两个 oneDNN owner 从 AUDITED
+进入 CANDIDATE。产品 norm/post-op 实现相对 `2c9338e1` 未变；当前候选同时包含已迁移 consumer、
+完整验证记录和冻结的 P1 程序/合同。随后 registry/status 说明提交不改变产品候选，统一仪器
+仍记录实际干净运行 HEAD。原 C1 的其他 owner 状态不变；默认规则变更或实现删除必须退回
+AUDITED 后按具名证据施工，不以候选状态跳过比较。

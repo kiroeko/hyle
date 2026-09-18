@@ -353,9 +353,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA AUDITED：Direct oneDNN norm及F32 Graph post-ops已接入；W1 static/shared与WSL各166例及executor通过，外部分配失败恢复通过。本机vendor半精度不支持、Native回落已验；完整三交付/公平P1/默认优选及冗余删除未验收。"
+      "candidate": "4895df0bd70669c138a5ce3cb1a4d0a00b7349cb",
+      "summary": "C1-AA CANDIDATE：成熟 norm/post-ops 的 API 与算法冻结；W1/WSL 局部正确性、失败处理、本批 CPU Compute/Graph 三交付及112项 selected 检查已通过。接下来执行固定 P1；条件优选与重复域取舍未签署，本机 vendor 半精度不支持的边界保留，不代签 C1 整包。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +370,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA AUDITED：Direct oneDNN norm及F32 Graph post-ops已接入；W1 static/shared与WSL各166例及executor通过，外部分配失败恢复通过。本机vendor半精度不支持、Native回落已验；完整三交付/公平P1/默认优选及冗余删除未验收。"
+      "candidate": "4895df0bd70669c138a5ce3cb1a4d0a00b7349cb",
+      "summary": "C1-AA CANDIDATE：成熟 norm/post-ops 的 API 与算法冻结；W1/WSL 局部正确性、失败处理、本批 CPU Compute/Graph 三交付及112项 selected 检查已通过。接下来执行固定 P1；条件优选与重复域取舍未签署，本机 vendor 半精度不支持的边界保留，不代签 C1 整包。"
     },
     {
       "module": "compute_ops",
