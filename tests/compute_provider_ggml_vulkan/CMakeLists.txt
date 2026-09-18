@@ -28,6 +28,8 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
         "-DHYLE_PARENT_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
         "-DHYLE_PARENT_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         "-DHYLE_PARENT_GLSLC=${Vulkan_GLSLC_EXECUTABLE}"
+        "-DHYLE_PARENT_VULKAN_INCLUDE=${Vulkan_INCLUDE_DIR}"
+        "-DHYLE_PARENT_VULKAN_LIBRARY=${Vulkan_LIBRARY}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/masm_composition_test.cmake")
     set_tests_properties(hyle_ggml_vulkan_masm_composition_test PROPERTIES
       LABELS "compute_provider_ggml_vulkan" TIMEOUT 180)
