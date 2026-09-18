@@ -184,10 +184,12 @@ TEST(VulkanReduction, NonfiniteRowsTinyLogTailBroadcastAndRejection) {
                                      mask_values(flags)));
       }
     }
-    const auto tiny_desc = dense(type, {2, 5});
-    const auto tiny = make(context, tiny_desc,
-                           std::array{0.0, -16.0, -17.0, -18.0, -19.0, 1.0, 1.0,
-                                      1.0, -15.0, -16.0});
+    const auto tiny_desc = dense(type, {4, 5});
+    const auto tiny =
+        make(context, tiny_desc,
+             std::array{0.0,  -16.0, -17.0,  -18.0, -19.0,   1.0,  1.0,
+                        1.0,  -15.0, -16.0,  0.0,   -4.1875, -inf, -inf,
+                        -inf, 0.0,   -4.125, -inf,  -inf,    -inf});
     const c::Softmax logarithm{.kind = c::SoftmaxKind::kLogSoftmax};
     auto log = execute(context, c::Operation(logarithm), std::array{tiny});
     ASSERT_TRUE(log) << log.error().message();
@@ -195,10 +197,13 @@ TEST(VulkanReduction, NonfiniteRowsTinyLogTailBroadcastAndRejection) {
         probability_reference(values(context, tiny), tiny_desc, logarithm);
     expect(context, *log, expected);
     const auto observed = values(context, *log);
-    EXPECT_LT(observed[0], 0.0);
-    EXPECT_NEAR(observed[0], rounded(expected[0], type),
-                std::abs(rounded(expected[0], type)) *
-                    (type == c::DataType::kFloat32 ? 6e-6 : 0.008));
+    // The latter two rows straddle the log1p polynomial/native boundary.
+    for (const auto index : {0u, 10u, 15u}) {
+      EXPECT_LT(observed[index], 0.0);
+      EXPECT_NEAR(observed[index], rounded(expected[index], type),
+                  std::abs(rounded(expected[index], type)) *
+                      (type == c::DataType::kFloat32 ? 6e-6 : 0.008));
+    }
     const auto one = make(context, dense(type, {1}), std::array<double, 1>{2});
     const auto broadcast =
         one.view(c::View::broadcast_to(

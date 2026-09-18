@@ -305,15 +305,26 @@ vec2 soft_rows(uint row, uint column) {
         ? soft_value(row + 1, column) : negative_infinity());
 }
 float log_one_plus(float tail) {
-    // Restore the small addition error; at sum==1 the first-order result is
-    // already correctly rounded. Tail is nonnegative and finite here.
+    // Avoid native log near one. The omitted term is at most tail^6 / 6;
+    // precise also preserves the cancellation in the compensated branch.
+    if (tail < 0.015625) {
+        precise float result = tail * (1.0 + tail * (-0.5 + tail *
+            (1.0 / 3.0 + tail * (-0.25 + tail * 0.2))));
+        return result;
+    }
     precise float sum = 1.0 + tail;
-    return sum == 1.0 ? tail : log(sum) * (tail / (sum - 1.0));
+    precise float delta = sum - 1.0;
+    precise float result = log(sum) * (tail / delta);
+    return result;
 }
 float normalized_value(float value, float maximum, float normalizer, bool exponential) {
     if (isnan(maximum) || isinf(maximum)) return quiet_nan();
-    return mode == 1 ? (value - maximum) - normalizer
-                    : (exponential ? value : exp(value - maximum)) * normalizer;
+    if (mode == 1) {
+        precise float shifted = value - maximum;
+        precise float result = shifted - normalizer;
+        return result;
+    }
+    return (exponential ? value : exp(value - maximum)) * normalizer;
 }
 void output_from_statistics() {
     uint group = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
