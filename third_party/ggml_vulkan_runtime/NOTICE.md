@@ -13,6 +13,11 @@ invalid external alignment or padding overflow; disable nested shader/compiler
 parallelism; and accept the owner's pinned build identity instead of probing a
 parent application's Git repository. They do not change operator algorithms.
 
-Native Vulkan initialization, queue/ownership bridging and partial-submission
-failure handling are not yet admitted by these patches. The CPU ggml provider
-remains governed by its separate blocked record.
+The native embedding edits isolate Vulkan instance/dispatcher/registry state,
+publish fully initialized devices, roll back partial buffer/backend creation,
+account device memory through optional HYLE reservations, and permit an owned
+native-buffer/queue bridge. The host retains its terminate handler and supplies
+loader function pointers. The bridge implementation remains private HYLE code.
+These changes do not certify asynchronous partial-submission failure handling
+or the ordinary Direct/Graph adapter; those have separate remaining acceptance.
+The CPU ggml provider remains governed by its separate blocked record.

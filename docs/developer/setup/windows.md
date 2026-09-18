@@ -151,7 +151,8 @@ IO 的 TLS/HTTP2 和 trace 默认 OFF，并只在 owner 闭包中声明。
 第三方 owner 应用 CMake 的
 [`EP_PREFIX` / `BINARY_DIR`](https://cmake.org/cmake/help/latest/module/ExternalProject.html#directory-options)
 控制子构建层级。ggml Vulkan 的 host shader 工具已放到当前 build 的
-`HYLE_DEP_BUILD_DIR/ggml-vulkan-host`，避免继承整串 vendor 子目录；不写共享源码 cache。
+`HYLE_DEP_BUILD_DIR/gvk-<patch-id>`，避免继承整串 vendor 子目录；短补丁身份隔离不同 source
+对应的 CMake cache，不写共享源码 cache。
 [`CMAKE_OBJECT_PATH_MAX`](https://cmake.org/cmake/help/latest/variable/CMAKE_OBJECT_PATH_MAX.html)
 是生成工具的路径预算，CMake 会尝试哈希缩短对象名；调大它不会解除编译器的限制，过长的父目录
 也无法靠缩短文件名解决。无需为这一问题反复修改系统长路径开关。

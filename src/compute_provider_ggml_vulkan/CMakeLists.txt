@@ -35,7 +35,9 @@ message(STATUS "${_patch_output}")
 # probes past MSVC's path limit when HYLE is embedded in another project.
 # This directory property is inherited only by this owner's vendor subtree.
 include(ExternalProject)
-set_property(DIRECTORY PROPERTY EP_PREFIX "${HYLE_DEP_BUILD_DIR}/ggml-vulkan-host")
+string(SUBSTRING "${HYLE_DEP_GGML_VULKAN_RUNTIME_PATCHES_VENDORED_TREE_SHA256}" 0 16
+  _host_source_id)
+set_property(DIRECTORY PROPERTY EP_PREFIX "${HYLE_DEP_BUILD_DIR}/gvk-${_host_source_id}")
 
 block()
   set(CMAKE_CXX_STANDARD 17)
@@ -68,6 +70,12 @@ foreach(_target IN ITEMS ggml ggml-base ggml-vulkan)
   set_target_properties(${_target} PROPERTIES
     EXPORT_NAME "_ggml_vulkan_${_target}"
     POSITION_INDEPENDENT_CODE ON)
+  if(MSVC)
+    # Upstream's C-linkage C++ functions can propagate native allocation
+    # exceptions to our private, noexcept adapter. /EHc would suppress unwind
+    # cleanup at those calls; this setting stays inside the vendor targets.
+    target_compile_options(${_target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/EHsc->")
+  endif()
 endforeach()
 # Static SDKs retain the implementation targets, without exposing ggml's C
 # headers as a second HYLE user API. HYLE owns all installed public headers.
@@ -75,14 +83,19 @@ set_property(TARGET ggml PROPERTY PUBLIC_HEADER "")
 # Keep the portable HYLE header version at the same locked SDK revision used
 # by the native route; the vendor's SDK also provides SPIR-V compiler headers.
 target_link_libraries(ggml-vulkan PRIVATE "$<BUILD_INTERFACE:Vulkan-Headers>")
+target_include_directories(ggml-vulkan BEFORE PRIVATE
+  "$<TARGET_PROPERTY:Vulkan-Headers,INTERFACE_INCLUDE_DIRECTORIES>")
+target_include_directories(ggml-vulkan PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(ggml-base PRIVATE GGML_HYLE_EMBEDDED=1)
 
-hyle_add_module(compute_provider_ggml_vulkan SOURCES metadata_arena.cc)
-target_link_libraries(hyle_compute_provider_ggml_vulkan PRIVATE ggml)
+hyle_add_module(compute_provider_ggml_vulkan SOURCES metadata_arena.cc native_device.cc)
+target_link_libraries(hyle_compute_provider_ggml_vulkan PRIVATE ggml
+  "$<BUILD_INTERFACE:Vulkan-Headers>")
 set(HYLE_GGML_VULKAN_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
 hyle_register_package_dependency(
   NAME ggml_vulkan_runtime OWNER compute_provider_ggml_vulkan FEATURES compute_vulkan
   STATIC_EXPORT_TARGETS ggml ggml-base ggml-vulkan
-  STATIC_FIND_DEPENDENCIES Threads Vulkan
+  STATIC_FIND_DEPENDENCIES Threads
   LOCKED_DEPENDENCIES ggml_vulkan_runtime ggml_vulkan_runtime_patches
   RUNTIME_FILE_SPECS
     "${ggml_vulkan_runtime_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-runtime-LICENSE"

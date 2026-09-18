@@ -1,5 +1,7 @@
 #include "metadata_arena.h"
+#include "native_device.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <memory>
@@ -9,7 +11,6 @@
 
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
-#include "ggml-vulkan.h"
 #include "ggml.h"
 
 #if defined(_WIN32)
@@ -18,6 +19,75 @@
 
 namespace {
 using hyle::compute::ggml_vulkan::detail::MetadataArena;
+using hyle::compute::ggml_vulkan::detail::NativeDevice;
+
+// A native producer uses the exported device and the same upstream queue lock.
+// Its write is made visible before the original ggml region consumes the buffer.
+hyle::Status native_fill(const NativeDevice &owner, VkBuffer buffer,
+                          VkDeviceSize bytes) {
+  const auto &native = owner.native();
+  const auto get = reinterpret_cast<PFN_vkGetDeviceProcAddr>(
+      native.get_instance_proc_addr(native.instance, "vkGetDeviceProcAddr"));
+#define LOAD(name) const auto name = reinterpret_cast<PFN_vk##name>( \
+    get(native.device, "vk" #name)); \
+    if (!name) return hyle::Status::Unavailable("native fixture PFN " #name)
+  LOAD(CreateCommandPool);
+  LOAD(DestroyCommandPool);
+  LOAD(AllocateCommandBuffers);
+  LOAD(BeginCommandBuffer);
+  LOAD(CmdFillBuffer);
+  LOAD(CmdPipelineBarrier);
+  LOAD(EndCommandBuffer);
+  LOAD(QueueSubmit);
+  LOAD(QueueWaitIdle);
+#undef LOAD
+  const auto check = [](VkResult result) {
+    return result == VK_SUCCESS ? hyle::Status::Ok() :
+        hyle::Status::FromNative(hyle::StatusCode::Unknown,
+            {hyle::NativeErrorDomain::Vulkan, result}, "native producer fixture");
+  };
+  VkCommandPoolCreateInfo pool_info{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  pool_info.queueFamilyIndex = native.queue_family;
+  VkCommandPool pool = VK_NULL_HANDLE;
+  HYLE_RETURN_IF_ERROR(check(CreateCommandPool(native.device, &pool_info, nullptr, &pool)));
+  VkCommandBufferAllocateInfo allocation{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  allocation.commandPool = pool;
+  allocation.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocation.commandBufferCount = 1;
+  VkCommandBuffer command = VK_NULL_HANDLE;
+  auto status = check(AllocateCommandBuffers(native.device, &allocation, &command));
+  if (!status.ok()) {
+    DestroyCommandPool(native.device, pool, nullptr);
+    return status;
+  }
+  VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  status = check(BeginCommandBuffer(command, &begin));
+  if (status.ok()) {
+    CmdFillBuffer(command, buffer, 0, bytes, 0x3f000000u); // 0.5f
+    VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    CmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+    status = check(EndCommandBuffer(command));
+  }
+  bool accepted = false;
+  if (status.ok()) {
+    status = owner.with_queue([&](VkQueue queue) -> hyle::Status {
+      VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+      submit.commandBufferCount = 1;
+      submit.pCommandBuffers = &command;
+      HYLE_RETURN_IF_ERROR(check(QueueSubmit(queue, 1, &submit, VK_NULL_HANDLE)));
+      accepted = true;
+      return check(QueueWaitIdle(queue));
+    });
+  }
+  // An unexpected observation error fails this fixture and keeps pending
+  // commands alive. Ordinary pending/terminal handling is the separate Y3 work.
+  if (status.ok() || !accepted)
+    DestroyCommandPool(native.device, pool, nullptr);
+  return status;
+}
 
 // Internal admission: the CMake-owned complete upstream GPU implementation,
 // independent scalar arithmetic, and the HYLE metadata owner. This is not an
@@ -27,8 +97,13 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
   SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
                SEM_NOOPENFILEERRORBOX);
 #endif
+  auto device = NativeDevice::create();
+  ASSERT_TRUE(device);
+  auto active = device->activate();
+  auto backend_result = device->create_backend();
+  ASSERT_TRUE(backend_result);
   std::unique_ptr<ggml_backend, decltype(&ggml_backend_free)> backend(
-      ggml_backend_vk_init(0), &ggml_backend_free);
+      *backend_result, &ggml_backend_free);
   ASSERT_NE(backend, nullptr);
   constexpr std::size_t width = 2048;
   constexpr float epsilon = 1e-6f;
@@ -52,9 +127,22 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
     ggml_build_forward_expand(graph, result);
     for (auto *tensor : {norm, scaled, gate, result})
       ASSERT_TRUE(ggml_backend_supports_op(backend.get(), tensor));
+    auto input_allocation = device->allocate_buffer(width * rows * sizeof(float));
+    ASSERT_TRUE(input_allocation);
+    std::shared_ptr<ggml_backend_buffer> input_owner(*input_allocation,
+                                                   ggml_backend_buffer_free);
+    const auto native_input = device->buffer_handle(input_owner.get());
+    ASSERT_NE(native_input, VK_NULL_HANDLE);
+    auto imported = device->borrow(native_input, width * rows * sizeof(float), input_owner);
+    ASSERT_TRUE(imported);
     std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
-        storage(ggml_backend_alloc_ctx_tensors(context, backend.get()),
-                &ggml_backend_buffer_free);
+        borrowed(*imported, ggml_backend_buffer_free);
+    ASSERT_EQ(ggml_backend_tensor_alloc(borrowed.get(), input,
+        ggml_backend_buffer_get_base(borrowed.get())), GGML_STATUS_SUCCESS);
+    auto storage_result = device->allocate_context(context);
+    ASSERT_TRUE(storage_result);
+    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
+        storage(*storage_result, &ggml_backend_buffer_free);
     ASSERT_NE(storage, nullptr);
     std::vector<float> x(width * rows), w(width), actual(width * rows);
     for (std::size_t i = 0; i < width; ++i)
@@ -66,7 +154,12 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
         x[i] = static_cast<float>(
                    static_cast<int>((i * 13 + iteration * 17) % 193) - 96) /
                37.0f;
-      ggml_backend_tensor_set(input, x.data(), 0, x.size() * sizeof(float));
+      if (iteration == 1) {
+        std::fill(x.begin(), x.end(), 0.5f);
+        ASSERT_TRUE(native_fill(*device, native_input, x.size() * sizeof(float)).ok());
+      } else {
+        ggml_backend_tensor_set(input, x.data(), 0, x.size() * sizeof(float));
+      }
       ASSERT_EQ(ggml_backend_graph_compute(backend.get(), graph),
                 GGML_STATUS_SUCCESS);
       ggml_backend_tensor_get(result, actual.data(), 0,
@@ -87,6 +180,8 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
         }
       }
     }
+    borrowed.reset();
+    ASSERT_TRUE(native_fill(*device, native_input, x.size() * sizeof(float)).ok());
   }
 }
 } // namespace

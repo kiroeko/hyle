@@ -470,7 +470,7 @@ _hyle_declare_component(graph_route_vulkan
 # The Vulkan implementation factor owns ggml's runtime and private adapters.
 # No dependency on the route or Graph: both retain their own public semantics.
 _hyle_declare_component(compute_provider_ggml_vulkan
-  PRIVATE_DEPS core error mem)
+  PRIVATE_DEPS core error mem platform)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

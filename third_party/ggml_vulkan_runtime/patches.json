@@ -34,7 +34,7 @@
     {
       "path": "src/ggml-vulkan/CMakeLists.txt",
       "before_sha256": "27bddb1d21b1d10528be5335b13b5a501cf6e7b56e16f3b5b0643d5b90703736",
-      "after_sha256": "3331ccc12812bcd503ed8a89d4f53a349c76be18938edac88cd2f434b89091ad",
+      "after_sha256": "db8781a89f4611d25bc782544c9692ab94051333153fc0b8e0f723655c525a65",
       "edits": [
         {
           "before": "    add_definitions(/MP)",
@@ -43,6 +43,10 @@
         {
           "before": "        BUILD_COMMAND ${CMAKE_COMMAND} --build . --config $<CONFIG>",
           "after": "        BUILD_COMMAND ${CMAKE_COMMAND} --build . --config $<CONFIG> --parallel 1"
+        },
+        {
+          "before": "    target_link_libraries(ggml-vulkan PRIVATE Vulkan::Vulkan)",
+          "after": "    target_link_libraries(ggml-vulkan PRIVATE \"$<BUILD_INTERFACE:SPIRV-Headers::SPIRV-Headers>\")"
         }
       ]
     },
@@ -56,6 +60,232 @@
           "after": "if(GIT_EXE AND NOT GGML_BUILD_COMMIT)\n    # Get current git commit hash"
         }
       ]
+    },
+    {
+      "path": "src/ggml-vulkan/ggml-vulkan.cpp",
+      "before_sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+      "edits": [
+        {
+          "before": "#include \"ggml-vulkan.h\"",
+          "after": "#include \"ggml-vulkan.h\"\n#include \"native_bridge.h\""
+        },
+        {
+          "before": "    vk_device device;\n};\n\nstruct vk_queue;",
+          "after": "    vk_device_ref device;\n};\n\nstruct vk_queue;"
+        },
+        {
+          "before": "    ggml_backend_buffer_type buffer_type;",
+          "after": "    ggml_backend_buffer_type buffer_type{};\n    bool hyle_storage_update_after_bind = false;"
+        },
+        {
+          "before": "        VK_LOG_DEBUG(\"destroy device \" << name);",
+          "after": "        VK_LOG_DEBUG(\"destroy device \" << name);\n        delete static_cast<ggml_backend_vk_buffer_type_context *>(buffer_type.context);\n        if (!device) return;"
+        },
+        {
+          "before": "struct vk_buffer_struct {\n    vk::Buffer buffer = VK_NULL_HANDLE;\n    vk::DeviceMemory device_memory = VK_NULL_HANDLE;\n    vk::MemoryPropertyFlags memory_property_flags;\n    void * ptr;\n    size_t size = 0;\n    vk::DeviceAddress bda_addr {};\n\n    vk_device device;\n\n    ~vk_buffer_struct() {\n        if (size == 0) {\n            return;\n        }\n        VK_LOG_DEBUG(\"~vk_buffer_struct(\" << buffer << \", \" << size << \")\");\n\n        device->device.freeMemory(device_memory);\n        device->device.destroyBuffer(buffer);\n    }\n};\n",
+          "after": "struct vk_buffer_struct {\n    vk::Buffer buffer = VK_NULL_HANDLE;\n    vk::DeviceMemory device_memory = VK_NULL_HANDLE;\n    vk::MemoryPropertyFlags memory_property_flags;\n    void * ptr = nullptr;\n    size_t size = 0;\n    vk::DeviceAddress bda_addr {};\n    vk_device device;\n    std::shared_ptr<const void> external_owner;\n    hyle::compute::ggml_vulkan::bridge::Charge charge;\n    bool imported_host = false;\n\n    ~vk_buffer_struct() {\n        if (!device || external_owner) return;\n        if (ptr && !imported_host && device_memory)\n            device->device.unmapMemory(device_memory);\n        device->device.destroyBuffer(buffer);\n        device->device.freeMemory(device_memory);\n        // charge retires after the actual memory has been freed.\n    }\n};\n"
+        },
+        {
+          "before": "struct vk_instance_t {\n    vk::Instance instance;",
+          "after": "struct vk_instance_t {\n    hyle::compute::ggml_vulkan::bridge::Options options;\n    DispatchLoaderDynamic dispatcher;\n    bool initialized = false;\n    uint32_t loader_version = 0;\n    std::vector<ggml_backend_dev_t> registry_devices;\n    bool registry_initialized = false;\n    std::mutex registry_mutex;\n    vk::Instance instance;"
+        },
+        {
+          "before": "static bool vk_instance_initialized = false;\nstatic vk_instance_t vk_instance;",
+          "after": "static thread_local vk_instance_t * hyle_vk_active_instance = nullptr;\nstatic vk_instance_t & hyle_vk_instance() {\n    GGML_ASSERT(hyle_vk_active_instance);\n    return *hyle_vk_active_instance;\n}\n#define vk_instance (hyle_vk_instance())\n#define vk_instance_initialized (vk_instance.initialized)"
+        },
+        {
+          "before": "        vk_instance.devices[idx] = device;\n",
+          "after": ""
+        },
+        {
+          "before": "        device->device = device->physical_device.createDevice(device_create_info);",
+          "after": "        device->hyle_storage_update_after_bind = vk12_features.descriptorBindingStorageBufferUpdateAfterBind;\n        device->device = device->physical_device.createDevice(device_create_info);"
+        },
+        {
+          "before": "        return device;\n    }\n\n    return vk_instance.devices[idx];",
+          "after": "        vk_instance.devices[idx] = device; // Publish only the fully initialized owner.\n        return device;\n    }\n\n    return vk_instance.devices[idx];"
+        },
+        {
+          "before": "static DispatchLoaderDynamic ggml_vk_default_dispatcher_instance;\nDispatchLoaderDynamic & ggml_vk_default_dispatcher() {\n    return ggml_vk_default_dispatcher_instance;\n}",
+          "after": "DispatchLoaderDynamic & ggml_vk_default_dispatcher() {\n    return vk_instance.dispatcher;\n}"
+        },
+        {
+          "before": "    ggml_vk_default_dispatcher_instance.init(vkGetInstanceProcAddr);",
+          "after": "    // The HYLE owner supplies its loader before entering this scope."
+        },
+        {
+          "before": "    vk::ApplicationInfo app_info{ \"ggml-vulkan\", 1, nullptr, 0, api_version };",
+          "after": "    vk_instance.loader_version = api_version;\n    vk::ApplicationInfo app_info{ \"ggml-vulkan\", 1, nullptr, 0, api_version };"
+        },
+        {
+          "before": "    const bool layer_settings = ggml_vk_instance_layer_settings_available();",
+          "after": "    const bool layer_settings = vk_instance.options.validation && ggml_vk_instance_layer_settings_available();"
+        },
+        {
+          "before": "    if (layer_settings) {\n        layers.push_back(\"VK_LAYER_KHRONOS_validation\");\n    }",
+          "after": "    if (vk_instance.options.validation) {\n        const auto available = vk::enumerateInstanceLayerProperties();\n        const auto found = std::any_of(available.begin(), available.end(), [](const auto & layer) {\n            return strcmp(layer.layerName, \"VK_LAYER_KHRONOS_validation\") == 0;\n        });\n        if (!found) throw vk::LayerNotPresentError(\"VK_LAYER_KHRONOS_validation\");\n        layers.push_back(\"VK_LAYER_KHRONOS_validation\");\n    }"
+        },
+        {
+          "before": "    vk::InstanceCreateInfo instance_create_info(vk::InstanceCreateFlags{}, &app_info, layers, extensions, &layer_setting_info);",
+          "after": "    vk::InstanceCreateInfo instance_create_info(vk::InstanceCreateFlags{}, &app_info, layers, extensions, layer_settings ? &layer_setting_info : nullptr);"
+        },
+        {
+          "before": "    vk_perf_logger_enabled = getenv(\"GGML_VK_PERF_LOGGER\") != nullptr;\n    vk_perf_logger_concurrent = getenv(\"GGML_VK_PERF_LOGGER_CONCURRENT\") != nullptr;\n    vk_enable_sync_logger = getenv(\"GGML_VK_SYNC_LOGGER\") != nullptr;\n    vk_memory_logger_enabled = getenv(\"GGML_VK_MEMORY_LOGGER\") != nullptr;\n    const char* GGML_VK_PIPELINE_STATS = getenv(\"GGML_VK_PIPELINE_STATS\");\n    if (GGML_VK_PIPELINE_STATS != nullptr) {\n        vk_pipeline_stats_filter = GGML_VK_PIPELINE_STATS;\n    }\n    const char* GGML_VK_PERF_LOGGER_FREQUENCY = getenv(\"GGML_VK_PERF_LOGGER_FREQUENCY\");\n\n    if (GGML_VK_PERF_LOGGER_FREQUENCY != nullptr) {\n        vk_perf_logger_frequency = std::stoul(GGML_VK_PERF_LOGGER_FREQUENCY);\n    }\n",
+          "after": "    static std::once_flag diagnostics_once;\n    std::call_once(diagnostics_once, [] {\n    vk_perf_logger_enabled = getenv(\"GGML_VK_PERF_LOGGER\") != nullptr;\n    vk_perf_logger_concurrent = getenv(\"GGML_VK_PERF_LOGGER_CONCURRENT\") != nullptr;\n    vk_enable_sync_logger = getenv(\"GGML_VK_SYNC_LOGGER\") != nullptr;\n    vk_memory_logger_enabled = getenv(\"GGML_VK_MEMORY_LOGGER\") != nullptr;\n    const char* GGML_VK_PIPELINE_STATS = getenv(\"GGML_VK_PIPELINE_STATS\");\n    if (GGML_VK_PIPELINE_STATS != nullptr) {\n        vk_pipeline_stats_filter = GGML_VK_PIPELINE_STATS;\n    }\n    const char* GGML_VK_PERF_LOGGER_FREQUENCY = getenv(\"GGML_VK_PERF_LOGGER_FREQUENCY\");\n\n    if (GGML_VK_PERF_LOGGER_FREQUENCY != nullptr) {\n        vk_perf_logger_frequency = std::stoul(GGML_VK_PERF_LOGGER_FREQUENCY);\n    }\n\n    });\n"
+        },
+        {
+          "before": "    // Emulate behavior of CUDA_VISIBLE_DEVICES for Vulkan",
+          "after": "    // HYLE selects by the original physical-device index, not a vendor environment list.\n    {\n        const auto requested = vk_instance.options.device_index;\n        if (requested != UINT32_MAX && requested >= devices.size())\n            throw std::out_of_range(\"Vulkan physical device index\");\n        int best_score = -1;\n        size_t selected = 0;\n        for (size_t i = 0; i < devices.size(); ++i) {\n            if (requested != UINT32_MAX && requested != i) continue;\n            const auto properties = devices[i].getProperties();\n            if (!vk_instance.options.allow_software && properties.deviceType == vk::PhysicalDeviceType::eCpu) continue;\n            if (properties.apiVersion < VK_API_VERSION_1_2 || !ggml_vk_device_is_supported(devices[i])) continue;\n            const auto queues = devices[i].getQueueFamilyProperties();\n            if (std::none_of(queues.begin(), queues.end(), [](const auto & q) {\n                return q.queueCount && bool(q.queueFlags & vk::QueueFlagBits::eCompute);\n            })) continue;\n            const int score = properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 4 :\n                              properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu ? 2 : 0;\n            if (score > best_score) { best_score = score; selected = i; }\n        }\n        if (best_score < 0) throw vk::FeatureNotPresentError(\"no qualified Vulkan device\");\n        vk_instance.device_indices.push_back(selected);\n        const auto extensions = devices[selected].enumerateDeviceExtensionProperties();\n        vk_instance.device_supports_membudget.push_back(std::any_of(extensions.begin(), extensions.end(), [](const auto & ext) {\n            return strcmp(ext.extensionName, \"VK_EXT_memory_budget\") == 0;\n        }));\n        return;\n    }\n    // The private HYLE build uses the explicit owner selection above.\n    // Emulate behavior of CUDA_VISIBLE_DEVICES for Vulkan"
+        },
+        {
+          "before": "    static std::vector<ggml_backend_dev_t> devices;\n\n    static bool initialized = false;",
+          "after": "    auto & devices = vk_instance.registry_devices;\n    auto & initialized = vk_instance.registry_initialized;"
+        },
+        {
+          "before": "        static std::mutex mutex;\n        std::lock_guard<std::mutex> lock(mutex);",
+          "after": "        std::lock_guard<std::mutex> lock(vk_instance.registry_mutex);"
+        },
+        {
+          "before": "                ggml_backend_vk_device_context * ctx = new ggml_backend_vk_device_context;",
+          "after": "                auto ctx = std::make_unique<ggml_backend_vk_device_context>();"
+        },
+        {
+          "before": "                devices.push_back(new ggml_backend_device {\n                    /* .iface   = */ ggml_backend_vk_device_i,\n                    /* .reg     = */ reg,\n                    /* .context = */ ctx,\n                });",
+          "after": "                auto entry = std::make_unique<ggml_backend_device>(ggml_backend_device {\n                    ggml_backend_vk_device_i, reg, ctx.get(),\n                });\n                devices.push_back(entry.get());\n                ctx.release();\n                entry.release();"
+        },
+        {
+          "before": "    devices[device].getProperties(&props);",
+          "after": "    devices[vk_instance.device_indices[device]].getProperties(&props);"
+        },
+        {
+          "before": "    vk_buffer buf = std::make_shared<vk_buffer_struct>();\n\n    if (size == 0)",
+          "after": "    vk_buffer buf = std::make_shared<vk_buffer_struct>();\n    buf->device = device;\n    buf->size = size;\n    buf->imported_host = import_ptr != nullptr;\n\n    if (size == 0)"
+        },
+        {
+          "before": "    vk::MemoryRequirements mem_req = device->device.getBufferMemoryRequirements(buf->buffer);",
+          "after": "    vk::MemoryRequirements mem_req = device->device.getBufferMemoryRequirements(buf->buffer);\n    buf->charge.reserve(vk_instance.options, import_ptr ? size : mem_req.size);"
+        },
+        {
+          "before": "GGML_LOG_WARN(\"ggml_vulkan: Failed getMemoryHostPointerPropertiesEXT (%s)\\n\", e.what());\n            device->device.destroyBuffer(buf->buffer);",
+          "after": "GGML_LOG_WARN(\"ggml_vulkan: Failed getMemoryHostPointerPropertiesEXT (%s)\\n\", e.what());"
+        },
+        {
+          "before": "            GGML_LOG_WARN(\"ggml_vulkan: Memory type for host allocation not found\\n\");\n            device->device.destroyBuffer(buf->buffer);",
+          "after": "            GGML_LOG_WARN(\"ggml_vulkan: Memory type for host allocation not found\\n\");"
+        },
+        {
+          "before": "                        device->device.destroyBuffer(buf->buffer);\n                        throw e;",
+          "after": "                        throw;"
+        },
+        {
+          "before": "    if (!buf->device_memory) {\n        device->device.destroyBuffer(buf->buffer);",
+          "after": "    if (!buf->device_memory) {"
+        },
+        {
+          "before": "    if (buf->device != nullptr) {\n        buf->device->memory_logger->log_deallocation(buf);",
+          "after": "    if (buf->device != nullptr && !buf->external_owner) {\n        buf->device->memory_logger->log_deallocation(buf);"
+        },
+        {
+          "before": "        dev_buffer = ggml_vk_create_buffer_device(ctx->device, size);",
+          "after": "        auto device = ctx->device.lock();\n        dev_buffer = ggml_vk_create_buffer_device(device, size);"
+        },
+        {
+          "before": "    ggml_backend_vk_buffer_context * bufctx = new ggml_backend_vk_buffer_context(ctx->device, std::move(dev_buffer), ctx->name);\n\n    return ggml_backend_buffer_init(buft, ggml_backend_vk_buffer_interface, bufctx, size);",
+          "after": "    auto bufctx = std::make_unique<ggml_backend_vk_buffer_context>(ctx->device.lock(), std::move(dev_buffer), ctx->name);\n    auto result = ggml_backend_buffer_init(buft, ggml_backend_vk_buffer_interface, bufctx.get(), size);\n    bufctx.release();\n    return result;"
+        },
+        {
+          "before": "    return ctx->device->properties.limits.minStorageBufferOffsetAlignment;",
+          "after": "    return ctx->device.lock()->properties.limits.minStorageBufferOffsetAlignment;"
+        },
+        {
+          "before": "    return ctx->device->suballocation_block_size;",
+          "after": "    return ctx->device.lock()->suballocation_block_size;"
+        },
+        {
+          "before": "    return buft_ctx->device->idx == ctx->device;",
+          "after": "    auto device = buft_ctx->device.lock();\n    return device && device == ggml_vk_get_device(ctx->device);"
+        },
+        {
+          "before": "ggml_backend_t ggml_backend_vk_init(size_t dev_num) {\n    VK_LOG_DEBUG(\"ggml_backend_vk_init(\" << dev_num << \")\");\n\n    ggml_backend_vk_context * ctx = new ggml_backend_vk_context;\n    ggml_vk_init(ctx, dev_num);\n\n    ggml_backend_t vk_backend = new ggml_backend {\n        /* .guid    = */ ggml_backend_vk_guid(),\n        /* .iface   = */ ggml_backend_vk_interface,\n        /* .device  = */ ggml_backend_reg_dev_get(ggml_backend_vk_reg(), dev_num),\n        /* .context = */ ctx,\n    };\n\n    if (!ctx->device->support_async) {\n        vk_backend->iface.get_tensor_async = nullptr;\n    }\n\n    return vk_backend;\n}\n",
+          "after": "ggml_backend_t ggml_backend_vk_init(size_t dev_num) {\n    auto ctx = std::make_unique<ggml_backend_vk_context>();\n    try {\n        ggml_vk_init(ctx.get(), dev_num);\n        auto * backend = new ggml_backend {\n            ggml_backend_vk_guid(), ggml_backend_vk_interface,\n            ggml_backend_reg_dev_get(ggml_backend_vk_reg(), dev_num), ctx.get(),\n        };\n        if (!ctx->device->support_async) backend->iface.get_tensor_async = nullptr;\n        ctx.release();\n        return backend;\n    } catch (...) {\n        if (ctx->device) {\n            auto & device = ctx->device->device;\n            device.destroyFence(ctx->fence);\n            device.destroyFence(ctx->almost_ready_fence);\n            device.destroyCommandPool(ctx->compute_cmd_pool.pool);\n            device.destroyCommandPool(ctx->transfer_cmd_pool.pool);\n            device.destroySemaphore(ctx->transfer_semaphore.s);\n        }\n        throw;\n    }\n}\n"
+        },
+        {
+          "before": "    } catch (const vk::SystemError& e) {\n        return nullptr;\n    }\n\n    auto bufctx",
+          "after": "    } catch (const vk::OutOfDeviceMemoryError &) {\n        return nullptr;\n    } catch (const vk::OutOfHostMemoryError &) {\n        return nullptr;\n    }\n\n    auto bufctx"
+        },
+        {
+          "before": "        vkGetPhysicalDeviceFeatures2(device->physical_device, &device_features2);",
+          "after": "        VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceFeatures2(device->physical_device, &device_features2);"
+        },
+        {
+          "before": "                (PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR)vkGetInstanceProcAddr(vk_instance.instance, \"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR\");",
+          "after": "                (PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR\");"
+        },
+        {
+          "before": "                vkGetDeviceProcAddr(device->device, \"vkGetDeviceFaultInfoEXT\");",
+          "after": "                VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr(device->device, \"vkGetDeviceFaultInfoEXT\");"
+        },
+        {
+          "before": "    vkGetPhysicalDeviceFeatures2(physical_device, &device_features2);",
+          "after": "    VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceFeatures2(physical_device, &device_features2);"
+        },
+        {
+          "before": "        vk_instance.pfn_vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT) vkGetInstanceProcAddr(vk_instance.instance, \"vkSetDebugUtilsObjectNameEXT\");",
+          "after": "        vk_instance.pfn_vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT) VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkSetDebugUtilsObjectNameEXT\");"
+        },
+        {
+          "before": "        vk_instance.pfn_vkQueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT) vkGetInstanceProcAddr(vk_instance.instance, \"vkQueueBeginDebugUtilsLabelEXT\");",
+          "after": "        vk_instance.pfn_vkQueueBeginDebugUtilsLabelEXT = (PFN_vkQueueBeginDebugUtilsLabelEXT) VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkQueueBeginDebugUtilsLabelEXT\");"
+        },
+        {
+          "before": "        vk_instance.pfn_vkQueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT) vkGetInstanceProcAddr(vk_instance.instance, \"vkQueueEndDebugUtilsLabelEXT\");",
+          "after": "        vk_instance.pfn_vkQueueEndDebugUtilsLabelEXT = (PFN_vkQueueEndDebugUtilsLabelEXT) VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkQueueEndDebugUtilsLabelEXT\");"
+        },
+        {
+          "before": "        vk_instance.pfn_vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT) vkGetInstanceProcAddr(vk_instance.instance, \"vkCmdBeginDebugUtilsLabelEXT\");",
+          "after": "        vk_instance.pfn_vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT) VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkCmdBeginDebugUtilsLabelEXT\");"
+        },
+        {
+          "before": "        vk_instance.pfn_vkCmdEndDebugUtilsLabelEXT =   (PFN_vkCmdEndDebugUtilsLabelEXT) vkGetInstanceProcAddr(vk_instance.instance, \"vkCmdEndDebugUtilsLabelEXT\");",
+          "after": "        vk_instance.pfn_vkCmdEndDebugUtilsLabelEXT =   (PFN_vkCmdEndDebugUtilsLabelEXT) VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkCmdEndDebugUtilsLabelEXT\");"
+        },
+        {
+          "before": "        vk_instance.pfn_vkCmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT) vkGetInstanceProcAddr(vk_instance.instance, \"vkCmdInsertDebugUtilsLabelEXT\");",
+          "after": "        vk_instance.pfn_vkCmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT) VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(vk_instance.instance, \"vkCmdInsertDebugUtilsLabelEXT\");"
+        },
+        {
+          "before": "    vkCmdCopyBuffer(subctx->s->buffer->buf, (VkBuffer)staging->buffer, (VkBuffer)dst->buffer, 1, &buf_copy);",
+          "after": "    VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdCopyBuffer(subctx->s->buffer->buf, (VkBuffer)staging->buffer, (VkBuffer)dst->buffer, 1, &buf_copy);"
+        },
+        {
+          "before": "    vkCmdCopyBuffer(ctx->s->buffer->buf, (VkBuffer)src->buffer, (VkBuffer)dst->buffer, 1, &bc);",
+          "after": "    VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdCopyBuffer(ctx->s->buffer->buf, (VkBuffer)src->buffer, (VkBuffer)dst->buffer, 1, &bc);"
+        },
+        {
+          "before": "    vkGetPhysicalDeviceFeatures2(vkdev, &device_features2);",
+          "after": "    VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceFeatures2(vkdev, &device_features2);"
+        },
+        {
+          "before": "GGML_BACKEND_DL_IMPL(ggml_backend_vk_reg)",
+          "after": "GGML_BACKEND_DL_IMPL(ggml_backend_vk_reg)\n\n#include \"native_runtime_impl.h\""
+        }
+      ],
+      "after_sha256": "ed2fb9f588500b422b1a25552223aa6b9581fb48ef71c43bdcf055751c1339db"
+    },
+    {
+      "path": "src/ggml.cpp",
+      "before_sha256": "64e6b5c8d716ae8697e45481a7153540be01f721be2dc7e753aa47b36a69c753",
+      "edits": [
+        {
+          "before": "static std::terminate_handler previous_terminate_handler;",
+          "after": "#if !defined(GGML_HYLE_EMBEDDED)\nstatic std::terminate_handler previous_terminate_handler;"
+        },
+        {
+          "before": "}();",
+          "after": "}();\n#endif // GGML_HYLE_EMBEDDED: the host owns its terminate handler."
+        }
+      ],
+      "after_sha256": "630bc93ec4f90d83bdd34e5fe8e87227f125763db850b0c546b8ab3cf78353e0"
     }
   ]
 }
