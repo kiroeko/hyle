@@ -263,7 +263,8 @@ TEST(VulkanTensor, ScalarEmptyTailRankEightBroadcastAndColdRefusal) {
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsUnimplemented());
   const auto half = dense(c::DataType::kFloat16, {2, 4});
-  EXPECT_FALSE(v::prepare(context, c::GatedActivation{}, half));
+  EXPECT_FALSE(v::prepare(context, c::GatedActivation{},
+                          dense(c::DataType::kFloat64, {2, 4})));
   EXPECT_FALSE(v::prepare(context, c::MatMul{}, half, half));
   EXPECT_FALSE(v::prepare(context, c::Binary{}, half,
                           dense(c::DataType::kFloat16, {3})));
