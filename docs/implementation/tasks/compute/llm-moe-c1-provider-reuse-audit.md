@@ -32,6 +32,37 @@ shader，并对照 HYLE `region.cc`、`vulkan_program.cc` 和原需求矩阵，�
 后续默认规则仅接受通过本包数值、checked、失败/资源与三交付资格的候选；省检查得到的性能
 结果不参与优选。任何已有缺陷按反例/影响域定向修复，有限预算与 CLOSED/BLOCKED 协议照常。
 
+### CPU oneDNN：已存在的能力与接入责任
+
+本次补充只读取产品锁定的 oneDNN `3.13.2 / 71094df451909e95ceeefc8f64c275cdcbbcdff5`，
+没有用本地 peer 工作树的更新 HEAD 替换依赖。`HyleComputeDependencies.cmake` 当前设置
+`BUILD_GRAPH=OFF`、`CPU_RUNTIME=SEQ`、`ENABLE_PRIMITIVE=MATMUL`；`graph_provider_onednn`
+当前是 HYLE 组织的 BRGEMM gated MLP。因此下列上游能力多数尚未通过 HYLE 普通入口接通。
+
+| 已登记 C1 需求 | 锁定源的成熟实现 | 接入时必须核对 |
+|---|---|---|
+| F01 转换/布局 | primitive reorder，以及 Graph Reorder/TypeCast | 共同 dtype、RNE、byte stride/起点、空域与额外 materialize 成本；上游声明不代签全部 HYLE layout |
+| F03 算术/激活 | `dnnl_types.h` 的 eltwise/binary，包括 soft_relu、logistic、swish；Graph 支持相应 op 和 post-op partition | 特殊值、广播、半精度中间值/最终舍入、alias；不只比较理想有限值输入 |
+| F04 RMSNorm/LayerNorm | `dnnl_rms_norm` flag、`dnnl_layer_normalization_forward_primitive_desc_create[_v2]`；Graph 的 RMSNorm/LayerNorm pattern | epsilon、scale/bias 类型与稳定方差；Graph RMSNorm pattern 目前是 rank2–5、最后归一化轴，rank1 等先查无复制 shape 适配 |
+| F04 归约/概率 | reduction 与 softmax/logsoftmax primitives；Graph 有 ReduceSum/Mean/Min/Max 等 | 任意轴、keep-dim、空集合、NaN、Boolean/additive mask 和 scale 的实际组合及成本 |
+
+资源/执行已查到可用接口：`dnnl_graph_compiled_partition_execute_v2` 接 caller scratchpad，
+并能查询 scratchpad logical tensor；`dnnl_threadpool_iface` 的同步 parallel_for/in_parallel/
+concurrency 可对接现有 `ParallelExecutorRef`，不要求另造线程池。Graph host allocator 回调
+没有 userdata，不能擅自假设它已提供每 context 的 HYLE allocator 归属。
+
+原版 Graph 也有必须计费的具体成本：`src/graph/interface/partition.cpp::execute_v2` 每次建立
+input/output vector；`kernels/layer_norm.cpp::execute_impl` 使用线程局部 execution-args cache
+和 scratchpad shared owner。caller scratchpad 不等于完全无私有分配；C API 签名也不等于内部
+C++ 分配不会抛异常。接入前需要定界 OOM 回收、两个 invocation、线程切换/重入、原生 cache
+生命周期与首用/重复执行成本，再在原版 Graph partition 和 primitive/post-ops 两条具名候选
+中选择。此处没有据此裁决弃用 oneDNN 或改写其算法。
+
+CPU 默认工厂目前注册 oneDNN 后再注册 Native；扩大 Provider 的 `propose` 域就会影响普通
+默认选择。后续接入必须同时冻结资格和条件规则，不能把“新分支能编译”当成已验证的赢家。
+真实精度遗漏已经单独进入 [C1-Z 修复](llm-moe-c1-cpu-matmul-precision.md)，不等待性能比较才
+处理，也不借此重开所有算子。以上来源核对不新增覆盖 PASS；下一产品批次仍须有限 AUDITED FIX。
+
 ## 范围与裁决
 
 - 当前 owner `/root`，产品 baseline `6be8e6a7aa2ca898b8e6e89d4dd10679d1f40476`；本页是
