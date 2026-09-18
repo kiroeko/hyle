@@ -1,0 +1,512 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "owner": "/root",
+  "registry_state": "AUDITED",
+  "scope": "C1-Y Y12 ordinary Vulkan Context adopts the provider native device, shared queue admission, and qualified borrowed-buffer addresses",
+  "audit_revision": "72aac688",
+  "product_revision": "c1a8b6ff6bd62ed779bdd8b7509d78e78a3b3ad1",
+  "product_tree": "d1384e7ec318ea0a7e21ae47fc8189f6e1953d1b",
+  "snapshot_qualification": "The final WERROR=ON static/shared builds and tests bind c1a8b6ff. It contains the exact implementation from 01b545f0, plus fixture-only Windows environment and vendor-C compiler-policy corrections. Preliminary WERROR=OFF runs are retained but do not sign the selected strict compile gate. Subsequent receipt/registry changes need no rebuild or P1.",
+  "upstream": {
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+    "patch_tree_sha256": "4d425b5efe991c61baba411a47c8d4ce3e3fdcb57c1ed3170a341cf968ca1122",
+    "operator_algorithms_changed": false,
+    "original_checkout_status": "clean",
+    "old_cpu_provider_blocker_changed": false
+  },
+  "implementation": [
+    "Ordinary Context owns the existing private NativeDevice. Loader/instance/device creation and destruction no longer have a duplicated route implementation. Native handles, selected queue and enabled storage-update-after-bind facts come from that owner; route PFNs are loaded once.",
+    "HYLE native submission, exceptional queue drain and expert callbacks use the upstream device-submit then queue-handle locks. Normal admission uses a private raw callback/state overload, without constructing std::function or allocating a hot dispatch node. Native device loss observed in this queue seam poisons the provider runtime.",
+    "Borrowed buffers request an address only when their caller explicitly proves address usage/allocation eligibility. Ordinary public storage/transfer buffers remain valid descriptor-based resident inputs.",
+    "Existing route Buffer/Run/Completion ownership, actual memory quota, cancellation/close and retained results remain in use; no new global pending queue or per-kernel vtable was introduced."
+  ],
+  "build": {
+    "machine": "W1-WIN",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compiler": "MSVC 19.50.35728.0",
+    "generator": "Ninja",
+    "configuration": "Release",
+    "parallel": 2,
+    "shader_parallel": 1,
+    "vulkan_sdk": "1.4.357.0 portable extraction",
+    "runtime_environment": "PATH unset, required DLLs beside EXE, system vulkan-1.dll, Khronos validation requested and explicit validation instance exercised",
+    "system_changes": "none; no UAC, installer, power, registry or firewall changes",
+    "werror": true,
+    "instrumentation": false,
+    "driver": "610.62"
+  },
+  "validation": [
+    {
+      "name": "W1 static compute_provider_ggml_vulkan",
+      "verdict": "PASS",
+      "cases": 19,
+      "skips": 0,
+      "log": "y4-device-strict-compute_provider_ggml_vulkan-static.log",
+      "structured_results": "y4-device-strict-compute_provider_ggml_vulkan-static.json"
+    },
+    {
+      "name": "W1 static compute_route_vulkan",
+      "verdict": "PASS",
+      "cases": 34,
+      "skips": 0,
+      "log": "y4-device-strict-compute_route_vulkan-static.log",
+      "structured_results": "y4-device-strict-compute_route_vulkan-static.json"
+    },
+    {
+      "name": "W1 static graph_route_vulkan",
+      "verdict": "PASS",
+      "cases": 14,
+      "skips": 0,
+      "log": "y4-device-strict-graph_route_vulkan-static.log",
+      "structured_results": "y4-device-strict-graph_route_vulkan-static.json"
+    },
+    {
+      "name": "W1 static two public headers and source patch contract",
+      "verdict": "PASS",
+      "ctest_programs": 3,
+      "source_contract_cases": 5,
+      "log": "y4-device-strict-headers-source-static.log"
+    },
+    {
+      "name": "W1 shared compute_provider_ggml_vulkan",
+      "verdict": "PASS",
+      "cases": 19,
+      "skips": 0,
+      "log": "y4-device-strict-compute_provider_ggml_vulkan-shared.log",
+      "structured_results": "y4-device-strict-compute_provider_ggml_vulkan-shared.json"
+    },
+    {
+      "name": "W1 shared compute_route_vulkan",
+      "verdict": "PASS",
+      "cases": 34,
+      "skips": 0,
+      "log": "y4-device-strict-compute_route_vulkan-shared.log",
+      "structured_results": "y4-device-strict-compute_route_vulkan-shared.json"
+    },
+    {
+      "name": "W1 shared graph_route_vulkan",
+      "verdict": "PASS",
+      "cases": 13,
+      "skips": 0,
+      "log": "y4-device-strict-graph_route_vulkan-shared.log",
+      "structured_results": "y4-device-strict-graph_route_vulkan-shared.json"
+    },
+    {
+      "name": "W1 shared two public headers and source patch contract",
+      "verdict": "PASS",
+      "ctest_programs": 3,
+      "source_contract_cases": 5,
+      "log": "y4-device-strict-headers-source-shared.log"
+    },
+    {
+      "name": "Docs and closure",
+      "verdict": "PASS",
+      "previous_registry_revision": "94b40163",
+      "logs": [
+        "y4-device-docs-product.log",
+        "y4-device-closure-product.log"
+      ]
+    }
+  ],
+  "correctness_contract": {
+    "ordinary_bridge": "An ordinary HYLE Neg Program produces a 17x2048 tensor. The exact same instance/device/queue imports this storage into an actual upstream RMSNorm region with epsilon 1e-6. Ordinary HYLE download verifies independent double arithmetic at 6e-6*(1+abs(expected)); a borrowed result retains native graph storage after releasing NativeGraph and after Context.close, then quota returns to zero.",
+    "bridge_qualification": "The middle region is invoked through the private NativeGraph/NativeWork seam. This proves actual same-device resource interoperability, not ordinary managed Program/Graph coverage.",
+    "existing_behavior": "All existing Vulkan Compute/Graph tests ran on the newly shared device owner, including tensor dtype/layout domains, liveness/views, changing inputs and two slots, result ownership, native OOM/observation/drain, cancellation/close and concurrent producers.",
+    "expert_failure": "A throwing expert callback becomes Internal; the shared queue lock is released and subsequent native access/upload/download succeed.",
+    "static_shared_difference": "The existing Graph MetadataAllocationFailureResetsReportAndLeaksNoDeviceStorage test is compiled only for HYLE_STATIC and no Tracy; its executable-local allocation interceptor cannot qualify a DLL allocation site. Shared runs 13 Graph cases, static 14; neither run skips a compiled test.",
+    "shared_boundary": "Ordinary Context/Program/Graph and private NativeDevice/NativeGraph/NativeWork exercise HYLE DLLs in shared mode. Existing private PFN failure cases use the vendor copy linked into the test executable; the C host OOM fixture includes the identical patched allocator source with test-local allocator/symbol renaming.",
+    "validation": "All final logs have no VUID or validation error; explicit validation enabled, required HYLE DLLs staged beside EXEs, runtime PATH unset.",
+    "weights": "Generated numeric fixtures; actual checkpoint-weight acceptance remains Y4."
+  },
+  "retained_failure": [
+    "The inherited developer build caches initially had WERROR=OFF. Their passing results were not promoted to the selector strict compile gate; final validation explicitly enables WERROR.",
+    "MSVC deprecated getenv use in two existing private fixture paths was replaced with owned Windows CRT reads before the strict build.",
+    "The first strict build rejected the test-only included vendor C source: missing UTF-8 on that C translation unit and its unchanged, deliberately masked FP16 conversion. The source gets /utf-8; warning 4244 is scoped only around the original vendor include. All HYLE warnings remain errors; vendor algorithms and source authentication are unchanged."
+  ],
+  "p0": {
+    "cold_cost": "One existing upstream native runtime per ordinary Context; route duplicates of loader/instance/device creation are removed. Environment/PFN discovery is cold. This introduces full upstream device preparation into ordinary Context; no cold-start speedup is claimed.",
+    "execution_cost": "Native submit acquires the original upstream queue locks using a stack callback/state record. No std::function construction, provider search, timing, additional pending container or kernel dispatch layer. Existing native command recording/rebinding remains unchanged.",
+    "p1": "NOT_RUN: full C1-Y managed Direct/Graph, ordinary lifecycle integration and the qualified final candidate remain incomplete."
+  },
+  "remaining": [
+    "Y4 cold semantic lowering, fixed default rules, stable input bindings and native/managed region composition through ordinary Direct/Graph/Recorder.",
+    "Integrate partial managed submissions and native completion into the existing route pending Run, with correct device failure, cancellation/close, observers and retained results.",
+    "Actual checkpoint weights; Air/Mini; updated full source/static/shared SDK consumers, relocation/offline and outstanding broad component/package gates.",
+    "Equal-responsibility C1 P1; no complete requirement row or route-cell PASS is added by Y12."
+  ],
+  "selector": {
+    "plan": "y4-device-product-selector.json",
+    "verdict": "READY",
+    "qualification": "The selected owner/direct-consumer factor builds/tests and maintenance gates are covered by the final explicit commands and logs. This is not a fabricated selector-run receipt. 114 skipped reasons are retained; the older broad package gates still await complete Y4."
+  },
+  "aggregate": "INCONCLUSIVE: C1-Y remains active and incomplete; no external blocker",
+  "implementation_loc": "ggml-vulkan-y4-device-implementation-loc.json",
+  "raw_archive": {
+    "path": "ggml-vulkan-y4-device-raw.zip",
+    "bytes": 69812,
+    "sha256": "925f21ba35ff913b1dca9985b1eb5b8e2c05e2a19b2abb03476a0cb36ec24330",
+    "files": [
+      {
+        "path": "y4-device-configure-static.log",
+        "bytes": 1458,
+        "sha256": "bb945c3b71d55fd7f82b89fe368d240ff752350216e003f244f82128510c8b94"
+      },
+      {
+        "path": "y4-device-build-static.log",
+        "bytes": 11086,
+        "sha256": "8738edc906cfda673863aa5b33b54e8fa5f12cfd1c8a62a708bd6d81ffef436a"
+      },
+      {
+        "path": "y4-device-immutable-build-static.log",
+        "bytes": 835,
+        "sha256": "83ec32357ff231a60f20d1a08f559b9a1c729d37f8d0ab594195adfd967081ba"
+      },
+      {
+        "path": "y4-device-headers-source-static.log",
+        "bytes": 842,
+        "sha256": "dba04b12f4cd6b69d9c37b3300e12cb2ce970893611903b064ef5541449e9403"
+      },
+      {
+        "path": "y4-device-compute_provider_ggml_vulkan-static.log",
+        "bytes": 4601,
+        "sha256": "92f9a70c9c3f15cfcc6b9a7ab9f72e8cfc3ad68a04082c981ab21b0efd915aa1"
+      },
+      {
+        "path": "y4-device-compute_provider_ggml_vulkan-static.json",
+        "bytes": 9080,
+        "sha256": "23e64b0dbf202839644b1b3269141940823eadd60ff738659358f842be7691d7"
+      },
+      {
+        "path": "y4-device-compute_route_vulkan-static.log",
+        "bytes": 6887,
+        "sha256": "ade0171e6a56d9ab8fe72e0881c64f5cb042746cd34cee821ca4391a22537642"
+      },
+      {
+        "path": "y4-device-compute_route_vulkan-static.json",
+        "bytes": 15756,
+        "sha256": "0f4704d1a397b0f3e4dd63ba81ab05051e6a2f5496d4371e3888544cafcb0ddf"
+      },
+      {
+        "path": "y4-device-graph_route_vulkan-static.log",
+        "bytes": 2925,
+        "sha256": "f9025607c36dd75ab9ed0ee2c9f675106f628c82b8849c489392997a7955df63"
+      },
+      {
+        "path": "y4-device-graph_route_vulkan-static.json",
+        "bytes": 5984,
+        "sha256": "f9061796a4f4b23a325898566ab5ac8c6982443b32ae2976345185ae262b6269"
+      },
+      {
+        "path": "y4-device-strict-configure-static.log",
+        "bytes": 1458,
+        "sha256": "53f6aa7f7e458684fda38f7fb5878b75fba9a9e1dd1bd63222eb468b6bdba78d"
+      },
+      {
+        "path": "y4-device-strict-build-static.log",
+        "bytes": 1192,
+        "sha256": "0c5e5da398b8ad3230f26f20ffa892569762d817fae8fd0eed073b45dd4b2a43"
+      },
+      {
+        "path": "y4-device-strict-immutable-build-static.log",
+        "bytes": 835,
+        "sha256": "83ec32357ff231a60f20d1a08f559b9a1c729d37f8d0ab594195adfd967081ba"
+      },
+      {
+        "path": "y4-device-strict-headers-source-static.log",
+        "bytes": 842,
+        "sha256": "1fc525519622be5e292ab83ee054405fdceaaf1380290c965c8f92b647fc18e3"
+      },
+      {
+        "path": "y4-device-strict-compute_provider_ggml_vulkan-static.log",
+        "bytes": 4602,
+        "sha256": "4511fa19f860a2fc53c1cf38d37f344cc3809dfbb5982c5093f56eb0e31411e8"
+      },
+      {
+        "path": "y4-device-strict-compute_provider_ggml_vulkan-static.json",
+        "bytes": 9082,
+        "sha256": "4b28022419c3f69604ef57e0bcd38304897f4b2fd82cd7009b08f95973353918"
+      },
+      {
+        "path": "y4-device-strict-compute_route_vulkan-static.log",
+        "bytes": 6876,
+        "sha256": "d87d6af4f1278fd08fbf57ef99ef7011e3c513fb38b87c68a8cb7446fc318bb1"
+      },
+      {
+        "path": "y4-device-strict-compute_route_vulkan-static.json",
+        "bytes": 15754,
+        "sha256": "f350386fbe7f74e3e5f0fd327e3852944e01828edcb33670ca998f1468c3f1dc"
+      },
+      {
+        "path": "y4-device-strict-graph_route_vulkan-static.log",
+        "bytes": 2923,
+        "sha256": "e393f177663900a58cc5a3f260402e9ebe1c1d3a3fbd22b8b35c26cd6a56dd99"
+      },
+      {
+        "path": "y4-device-strict-graph_route_vulkan-static.json",
+        "bytes": 5986,
+        "sha256": "4902f71a63b463434df2a5d26e9b2e4c52b498b479445b9cd906025687698cc2"
+      },
+      {
+        "path": "y4-device-configure-shared.log",
+        "bytes": 1459,
+        "sha256": "95bb21bb5dfe930d9e3cf1459657eac07a5f00d03bd0263a9495e0d516460381"
+      },
+      {
+        "path": "y4-device-build-shared.log",
+        "bytes": 11086,
+        "sha256": "e76b6684fbe0103da9896b4e490c01d0df19502bf909096d2cc0a2f8aa5a0e74"
+      },
+      {
+        "path": "y4-device-immutable-build-shared.log",
+        "bytes": 835,
+        "sha256": "a8949d0a5c48c1062b8151fe13be7ac39f1957673b597ce7d4548699f601cb5b"
+      },
+      {
+        "path": "y4-device-headers-source-shared.log",
+        "bytes": 842,
+        "sha256": "57cdc22275c51a4c6dbabba5923c6c8925a8d86076ca951b42e0ac77e3ab39e1"
+      },
+      {
+        "path": "y4-device-compute_provider_ggml_vulkan-shared.log",
+        "bytes": 4601,
+        "sha256": "b8642a2df9a95f212202064962d05106e4f705a3107c10abee731e26445d0bc4"
+      },
+      {
+        "path": "y4-device-compute_provider_ggml_vulkan-shared.json",
+        "bytes": 9077,
+        "sha256": "740af887543989cb756a70e5ada25985de5fc71829fcc1a0215bfa8407b0cdb0"
+      },
+      {
+        "path": "y4-device-compute_route_vulkan-shared.log",
+        "bytes": 6876,
+        "sha256": "4d03067504241d53a2968e9cb9924582a50855b46f4ef2bea471106654f9701d"
+      },
+      {
+        "path": "y4-device-compute_route_vulkan-shared.json",
+        "bytes": 15754,
+        "sha256": "d1c402c8adaeacefa341fd2e2f9e0bbd0be08f3354da61890ad7b2daa674c94c"
+      },
+      {
+        "path": "y4-device-graph_route_vulkan-shared.log",
+        "bytes": 2741,
+        "sha256": "afa5be57946a4084accb88b2636ea6b03221423c8431483dafbe4bc7a9a30c0a"
+      },
+      {
+        "path": "y4-device-graph_route_vulkan-shared.json",
+        "bytes": 5584,
+        "sha256": "e3a9bccd1810af1a059a8c4fed457aed7c2380496bbc87f63120d78e09625c6f"
+      },
+      {
+        "path": "y4-device-strict-configure-shared.log",
+        "bytes": 1458,
+        "sha256": "13b7353304d008f073002e78f7dcf407b94986154752a1d8d710ab5a836d649b"
+      },
+      {
+        "path": "y4-device-strict-build-shared.log",
+        "bytes": 10204,
+        "sha256": "1feb45ff848cb9acde6159c91053be0e7c284bf099b63ea322204007e4f1b362"
+      },
+      {
+        "path": "y4-device-strict-immutable-build-shared.log",
+        "bytes": 835,
+        "sha256": "a8949d0a5c48c1062b8151fe13be7ac39f1957673b597ce7d4548699f601cb5b"
+      },
+      {
+        "path": "y4-device-strict-headers-source-shared.log",
+        "bytes": 842,
+        "sha256": "7574ff259daffee1528a247b24815730c0362ddf216dff59cc40c993f894d675"
+      },
+      {
+        "path": "y4-device-strict-compute_provider_ggml_vulkan-shared.log",
+        "bytes": 4601,
+        "sha256": "2e16bfda0c1f047f9bb34ac280ad388038df45f75987190d0b31d10a548300ba"
+      },
+      {
+        "path": "y4-device-strict-compute_provider_ggml_vulkan-shared.json",
+        "bytes": 9079,
+        "sha256": "a0f0581eb44d4b615a812ee698038c2b463318efb39f1a7a1c45695c2b9e46bd"
+      },
+      {
+        "path": "y4-device-strict-compute_route_vulkan-shared.log",
+        "bytes": 6875,
+        "sha256": "99afef6edef72f7eb27a2da851da7c926290078035921b8f833b5f578efeea14"
+      },
+      {
+        "path": "y4-device-strict-compute_route_vulkan-shared.json",
+        "bytes": 15754,
+        "sha256": "533c866ac2ac03c6cdbae3b0c6c886b3ff84e3659bef798eeac8bd53dfc58e94"
+      },
+      {
+        "path": "y4-device-strict-graph_route_vulkan-shared.log",
+        "bytes": 2741,
+        "sha256": "c7b64eb8bccdde28c2ebbec901cb907604bb3a730135021a906f0c93e80430c2"
+      },
+      {
+        "path": "y4-device-strict-graph_route_vulkan-shared.json",
+        "bytes": 5584,
+        "sha256": "458b57c26b4264a1a973c06023a48a37714d6dc0150e899a2b8e9c883a68b81b"
+      },
+      {
+        "path": "y4-device-strict-build-static-c-fixture-failure.log",
+        "bytes": 12228,
+        "sha256": "987100837cbe0e2c150402d43945ec9a72fa05af3f97fb803bf35af4bf90cb21"
+      },
+      {
+        "path": "y4-device-docs-product.log",
+        "bytes": 80,
+        "sha256": "66fb3c88da74b28409753b774ecb7eb7d6bb40e6c9d1f06a47215bc09ac15943"
+      },
+      {
+        "path": "y4-device-closure-product.log",
+        "bytes": 57,
+        "sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2"
+      },
+      {
+        "path": "y4-device-build.ps1",
+        "bytes": 1596,
+        "sha256": "d7c0cf7646e09affecff608058197a46741539389db988de88ac5e0921451706"
+      },
+      {
+        "path": "y4-device-test.ps1",
+        "bytes": 1573,
+        "sha256": "b863fe5a4da337e3589dd14b5d8520807df370285b443d682ca26f81869d2ab2"
+      },
+      {
+        "path": "y4-device-strict-build.ps1",
+        "bytes": 1641,
+        "sha256": "bc3c1b37c4639a47bca42607f8089debd6098f05004097e0650f2de50e01d56b"
+      },
+      {
+        "path": "y4-device-strict-test.ps1",
+        "bytes": 1622,
+        "sha256": "542853b66757194346c9055a2510ae762322f0c35380e318644170aa068b1f14"
+      },
+      {
+        "path": "y4-device-product-selector.json",
+        "bytes": 194018,
+        "sha256": "fde7a966b6c262c0624028f99764a2f0d8266d4515fe4caac0f04c319c181087"
+      },
+      {
+        "path": "y4-device-product-selector.log",
+        "bytes": 150,
+        "sha256": "4979568864660d76ca5967fb3cf66c916a2fd48fc1c6efa115f3ce5066f7a894"
+      }
+    ]
+  },
+  "components": [
+    "compute_provider_ggml_vulkan",
+    "compute_route_vulkan"
+  ],
+  "implementation_revision": "01b545f09823149cb994275d5bfa2a70100044e4",
+  "fixture_revisions": [
+    "733bd607",
+    "c1a8b6ff"
+  ],
+  "artifacts": [
+    {
+      "mode": "static",
+      "path": "hyle_compute_provider_ggml_vulkan_test.exe",
+      "bytes": 44162560,
+      "sha256": "93ab23665c4876d747bfae2919f84f9e8a80d05477fc6825f0544463ea9fafde"
+    },
+    {
+      "mode": "static",
+      "path": "hyle_compute_route_vulkan_test.exe",
+      "bytes": 44869632,
+      "sha256": "f424b84cdc76a463adce6f57c794f89ad9bce0a86eb5e2600ed2b1db160c56ad"
+    },
+    {
+      "mode": "static",
+      "path": "hyle_graph_route_vulkan_test.exe",
+      "bytes": 44733952,
+      "sha256": "beb3e1c3c81c584c5354a7adf059dba88ac2148a9b56f26b6220add2eb7bc845"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_compute_provider_ggml_vulkan_test.exe",
+      "bytes": 44030464,
+      "sha256": "9433081cc34ce3e70aab1460a7b2fed787cad051420ad7e871eb216890cea5f2"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_compute_route_vulkan_test.exe",
+      "bytes": 1056256,
+      "sha256": "61c66d539c5261469192242b2dec68d720a57d04bb3ad897d4fd61875cd48847"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_graph_route_vulkan_test.exe",
+      "bytes": 596992,
+      "sha256": "795368789ddd795c485948ebf336ae39aa20155faad6f193839934270614f054"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_compute.dll",
+      "bytes": 166400,
+      "sha256": "818e07567a4a1f20850eaed05dcf865475fb268eef930b0acd3b7b9d8f36103b"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_compute_ops.dll",
+      "bytes": 61440,
+      "sha256": "d6990e51cbeafc0a8a0761c6520ff08e3daef1a455d4f932f44cc01c4c8de988"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_compute_provider_ggml_vulkan.dll",
+      "bytes": 43591680,
+      "sha256": "381df95f3f36c73645e521735135b5c9b272267d83d67fb86bd1e0950744781e"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_compute_route_vulkan.dll",
+      "bytes": 450048,
+      "sha256": "efcb3aa18ae4095113bcaa91b480ad24a3f5d6222d5a33ced069898da76a54ee"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_container.dll",
+      "bytes": 41472,
+      "sha256": "23f0de7cee081a58462f3f6ce3a3df48772fea7a0bcad28728ca7de1d866dc09"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_error.dll",
+      "bytes": 28160,
+      "sha256": "8459bb4cdf71b8fb7c876ce9e4377acbfd8a3c5efcce283ce00ddbab45195e94"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_graph.dll",
+      "bytes": 500224,
+      "sha256": "239cbc1d69b5d8bc3cda26340195ae43a3968f58cab3b2a991d3f66f4ebe9107"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_graph_route_vulkan.dll",
+      "bytes": 46080,
+      "sha256": "92ef176c20b59fb21c828a7645ccccc19f610e1d3eeae16f52bf49ef6ccb1d78"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_mem.dll",
+      "bytes": 230912,
+      "sha256": "a3749bb24aa3fd015af00c25ad49a6e4f37f79487bc14952d9774c49a0b0c444"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_platform.dll",
+      "bytes": 85504,
+      "sha256": "66230932c34a520c4569e23b8fb807fc3c319b53fdc724a6cde895a2b9ef7c6c"
+    },
+    {
+      "mode": "shared",
+      "path": "hyle_time.dll",
+      "bytes": 20992,
+      "sha256": "6183087e82acdbe142a51bef6b81376800ddc68cb7bad37f49eb37343447d233"
+    }
+  ],
+  "implementation_loc_qualification": "Canonical script on immutable implementation 01b545f0, 23 unchanged explicit paths, 45277 lines / 188 files, self-check pass. Git diff confirms no implementation-path change between that commit and the final test candidate c1a8b6ff; fixture-only edits do not change implementation LOC."
+}

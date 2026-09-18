@@ -506,7 +506,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y12 AUDITED：baseline94b40163固定普通Context采用ggml Vulkan唯一native device/queue、共锁及删除重复初始化；现有Direct/Graph行为须复验。managed region默认规则/Program/Completion后续接线，完整C1真实权重/三交付/P1未验收。"
+      "summary": "LLM/MoE C1-Y12 AUDITED：01b545f0已统一普通Context与ggml的native device/queue并删除重复初始化；c1a8b6ff严格W1 static/shared各34 Direct、14/13 Graph及头检查通过，同设备实际互通验证通过。managed Program/Completion与规则、完整C1权重/三交付/P1未验收。"
     },
     {
       "module": "graph_route_vulkan",
@@ -517,7 +517,7 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y AUDITED：Y3冷图/完成私有机制已实现，static/shared各19例通过；Y12新增普通Context共用device/queue及borrow地址资格。managed Direct/Graph规则与公开完成接线、跨平台/完整三交付/P1未验收。",
+      "summary": "LLM/MoE C1-Y AUDITED：Y12与普通Context共用device/queue，借入地址资格显式；c1a8b6ff在W1严格static/shared各19 Provider及普通route消费者通过。managed Direct/Graph语义/完成接线、跨平台/完整三交付/P1未验收。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

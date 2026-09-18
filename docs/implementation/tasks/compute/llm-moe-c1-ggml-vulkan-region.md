@@ -328,3 +328,41 @@ owner `/root`，baseline `94b40163`。本批同时绑定 `compute_provider_ggml_
 pending Run/Completion。shared 编码与清理的互斥、正常 wait 不锁住独立 producer 也须在该批
 固定后实施；不能继承单次 QueueSubmit 失败即未接纳的假设。本批不宣称新覆盖、不运行 P1。
 跨平台与完整三交付随稳定 Y4 候选，当前局部纠正最多两轮；不修改公共治理或性能工具。
+
+## Y12 实现与验证记录（2026-09-18）
+
+实现 `01b545f0`，最终验证候选 `c1a8b6ff`（随后两个提交仅修测试夹具），审计 `72aac688`。
+普通 Context 已持有 Provider 的唯一 instance/device/queue，读取实际启用的 descriptor feature；
+route 原来的 loader/设备创建与销毁代码删除。HYLE 提交、异常 drain 和 expert 回调进入原版
+队列锁；正常提交采用栈上 callback/state，无额外 std::function 构造或逐 kernel 虚调用。
+借入 Buffer 只有在调用方明确证明地址资格时才查询 BDA，普通 storage/transfer Buffer 可用。
+
+[结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y4-device.json)与
+[原始日志](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y4-device-raw.zip)
+包含不可变代码/夹具身份、命令、artifact hashes、初始结果和一次严格编译失败。
+
+| 最终 W1 验证（WERROR=ON、instrumentation=OFF） | 结果与边界 |
+|---|---|
+| static | 19 Provider + 34 Direct + 14 Graph 通过；两个公开头与5例源补丁合同通过 |
+| shared | 19 Provider + 34 Direct + 13 Graph 通过；两个公开头与5例源补丁合同通过。少的一项是既有仅静态编译的 executable-local host allocation 注入；没有跳过已编译用例 |
+| 同设备实际计算 | 普通 Neg Program → 私有原版 RMSNorm → 普通下载，17×2048、独立 double oracle，误差门 `6e-6*(1+abs(expected))`；instance/device/queue 逐个相同，旧图释放与 Context.close 后保留结果仍可读取，最终 quota 归零 |
+| 生命周期与失败 | 原有域/视图/重绑/双槽/并发 producer/取消/关闭/原生 OOM/观察与排空用例全部在新设备 owner 上运行；expert callback 抛异常后诊断保留且队列锁释放 |
+| 环境与维护 | 两模式 DLL 邻置、运行时 PATH unset、validation 开启，无 VUID/validation error；docs、closure（previous-ref `94b40163`）通过，上游 checkout clean |
+
+初始缓存为 WERROR=OFF，初始通过不代签严格编译。测试中的 Windows getenv 改成持有 CRT
+返回值；严格编译首次发现测试专用 C 包含单元的 UTF-8 与原版 FP16 隐式窄化告警。仅该 C
+文件增加 `/utf-8`，仅原版源码 include 范围抑制具名4244；产品及 HYLE 自写部分仍 WERROR，
+原始第三方源码与算法不变。后续严格构建/测试均通过，没有改变数值或失败门限。
+
+P0：Context 冷期现在承担完整原版 native runtime 的准备成本，不宣称启动更快；原生提交多进入
+原版队列锁，但没有新增热期分配、搜索或 timing。普通 Program 仍使用已录制的 HYLE/shader
+路径；中间的 ggml region 测试证明资源互通，**不代签 managed Direct/Graph**。
+
+统一脚本沿同23路径统计 **45,277行 / 188个实现文件**，比上一实现减少163行，self-check通过；
+[统计](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y4-device-implementation-loc.json)
+绑定 `01b545f0`，其到 `c1a8b6ff` 的实现路径 diff 为空。测试/bench/vendor 不计入。
+
+当前保持 `AUDITED` / `INCONCLUSIVE`，64行/256格不增加 PASS。下一步是 ordinary Program 的
+managed region：有限数学/shape 规则、冷构图与重绑、原生片段组合、部分提交和完成接入原有
+pending Run。真实权重、Air/Mini、完整三交付、原 broad package 门和等责 P1 仍未完成；没有
+新的外部 blocker，不重复本批验证。此次文档/状态更新不触发重建或 P1。
