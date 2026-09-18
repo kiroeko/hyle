@@ -2,6 +2,7 @@
 
 #include "../compute_route_vulkan/topk_test_support.h"
 #include "hyle/graph/vulkan.h"
+#include "../../src/compute_route_vulkan/vulkan_internal.h"
 
 namespace {
 using namespace vulkan_topk_test;
