@@ -284,3 +284,30 @@ Add(full) 均选择 `simple:any`，norm 或 norm→Mul(vector) 均为 `jit:uni`�
 本项占第一轮，第二轮未使用。达到预算仍无法裁决按原停止规则处理。
 
 统一脚本对 `e33b6fea` 为46,941实现行/193文件，自检 PASS；代码行数不是完成度。
+
+### AA04-F1：实现、交付完成与第二候选冻结
+
+产品修复固定为 `ae270af9ceb948b09601b26f32454eb28d32dff3`：冷匹配保留优化 norm→scalar/vector
+前缀，批量 full-shape Add/Mul 沿原 Graph 节点组合；精确准备拒绝已识别的通用融合制品。
+运行路径没有新增查询、搜索或字段；公开 API、SIMD、自有 norm 和 vendor 算法均未变化。
+
+[本轮正确性与交付证据](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-f1/README.md)
+记录 W1 static/shared、WSL GCC14 static 各7项 CTest：58个 gtest case 加独立 executor consumer，
+以及 Graph source、relocated shared/static SDK 的原有完整检查。新增回归覆盖 RMS/Layer、
+scalar/vector、单行/批量、full Add/Mul、公开中间值、两个独立运行槽与资源关闭。
+静态首次构建被新测试局部变量遮蔽的 WERROR 拒绝，改名后只恢复受影响 Graph 组；原始失败与
+未变产品/构建/公开头的复用依据一并保留。当前机器不支持的 vendor F16/BF16 ISA 域仍不冒称数值通过。
+
+普通三交付消费者实际验证 oneDNN 两节点前缀和 Native 残差节点，不能以全 Native 替代。
+核验后删除85,063,680字节的 WSL 传输包；保留一个固定的当前交付构建区，用于未完成默认规则的
+后续增量验证，不再为同一批次堆积新目录。统一脚本为46,955实现行/193文件，自检 PASS。
+
+两个 owner 进入 CANDIDATE，冻结的是本轮 F1 产品修复；条件默认规则与 Native 域取舍仍未签署。
+接下来仅运行已声明第一轮纠正的完整同合同 P1：原16个 workload、8个顺序/分配/placement 分层、
+阈值、n=15/31停止策略及统一仪器不变。性能合同只更新6个批量 Graph 项的 owner 描述，使其明确
+包含优化前缀、Native 尾节点、每步状态与 Graph backing 的全部成本；未更换输入、语义或对照。
+修复版性能在本次冻结时仍未运行，不预称胜出；原始4胜12负与失败记录保持。
+
+旧 P1 build 的实际制品先按原 manifest 哈希归档核验，再清空同一个固定目录供 fresh 候选构建；
+原始 raw/manifest/裁决保留，旧绝对构建路径的时点验证不能冒充永久可复验。第一轮只测固定 F1，
+不原样追加计时；如结果授权默认规则修改，先依法退回 AUDITED，并按第二轮有限预算实施。

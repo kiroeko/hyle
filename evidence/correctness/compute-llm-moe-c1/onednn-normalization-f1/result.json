@@ -1,0 +1,66 @@
+{
+  "implementation_commit": "ae270af9ceb948b09601b26f32454eb28d32dff3",
+  "implementation_tree": "236c4af641e8deef09832b12e24f6337d7fc80b7",
+  "scope": "AA04-F1 optimized normalization fusion boundary; no default speed rule signed",
+  "validation": {
+    "W1_static": {
+      "ctest": 7,
+      "gtest_cases": 58,
+      "independent_executor_consumer": 1,
+      "gate": "PASS",
+      "first_attempt": "new test local variable shadow rejected by WERROR; corrected name and resumed only Graph tests",
+      "reuse": "other three factor groups ran on the identical product/build/header tree; only Graph test and guide differed",
+      "first_tree": "57bee5b30b5a08a6c5a98f254192bb28e9d2fe4c",
+      "resumed_tree": "236c4af641e8deef09832b12e24f6337d7fc80b7"
+    },
+    "W1_shared": {
+      "ctest": 7,
+      "gtest_cases": 58,
+      "independent_executor_consumer": 1,
+      "gate": "PASS"
+    },
+    "WSL_GCC14_static": {
+      "ctest": 7,
+      "gtest_cases": 58,
+      "independent_executor_consumer": 1,
+      "gate": "PASS",
+      "input": {
+        "head": "40a55333c0ca71082f1e3c26b42139dbbe9d9d7c",
+        "diff_sha256": "102e82594452f28a88ded33a2ad5f8aff2504711672ae681ba8536d8989a54f8",
+        "archive": "C:\\hyle-scratch\\active-cpu\\candidate.tar",
+        "archive_bytes": 85063680,
+        "archive_sha256": "57a8b37a5ad02a4b9034118bb9705e850c9fb036b7d4b951ca8f699e68154388",
+        "worktree_overlays": {
+          "bench/graph_provider_onednn/normalization_p1_bench.cc": "b111fa8e0d48b77e97353f4899009b5ddbc20e75f25711a8f576bb14a9f640b7",
+          "docs/user/compute.md": "92abb4249110ee9a70c04238bc560fa01e1fee94ed11bdae4f2ad93e4109a61d",
+          "samples/package/graph/cpp/cpu_normalization.h": "643363c598463cff0c978072cbc814c5b885857af4e3a2c91728258fa2940331",
+          "src/compute_provider_onednn/normalization_internal.cc": "0b254337837f0308df5872193b043bcb2574011e2f14b16e4db47f701ce1361c",
+          "tests/graph_route_cpu/graph_test.cc": "26cc59d08740799ca11c07ebb70585fd1634bc2c33bf056b1975a60cc3a7003f"
+        }
+      }
+    },
+    "Graph_delivery": {
+      "source": "PASS",
+      "installed_shared": "PASS",
+      "installed_static": "PASS",
+      "dlls": "adjacent to executables; PATH unset; error popups disabled",
+      "original_dependency_license_export_relocation_checks": "executed by original selected smoke"
+    }
+  },
+  "product_change": "cold matching keeps the optimized norm/scalar/vector prefix before a full multirow Add/Mul; exact prepare declines simple:any/ref:any fused artifacts",
+  "unchanged": "public API, native normalization algorithms, oneDNN algorithms, runtime checks/completion and SIMD product",
+  "remaining": [
+    "AA04 conditional default preference rules",
+    "corrected immutable-candidate P1",
+    "Native domain retention/removal decision",
+    "C1 other providers and real-weight/route acceptance"
+  ],
+  "performance": "NOT_RUN for the corrected implementation; original qualified losses remain recorded",
+  "source_transfer_cleanup": {
+    "path": "C:\\hyle-scratch\\active-cpu\\candidate.tar",
+    "logical_bytes": 85063680,
+    "reason": "WSL validation finished; exact received archive verified",
+    "sha256": "57a8b37a5ad02a4b9034118bb9705e850c9fb036b7d4b951ca8f699e68154388"
+  },
+  "build_retention": "one fixed delivery workspace retained while AA04 default rules are still active; reuse vendor builds for subsequent affected validation, clean when this batch is terminal"
+}

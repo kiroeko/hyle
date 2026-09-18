@@ -1,0 +1,22 @@
+{
+  "delivery-artifacts.json": {
+    "bytes": 175935,
+    "sha256": "c3e494c5ee314bcedc5bcaac29471b0a598e50c476632470c6d3cad5deedd0b7"
+  },
+  "loc.json": {
+    "bytes": 3489,
+    "sha256": "620c85e5b62ed40b1ad6bb9a79dfe3a1a7b1ea940f2c7808fc27e55b58044d51"
+  },
+  "raw-bundle.zip": {
+    "bytes": 254660,
+    "sha256": "793cb44a2040b31eb1ed0b06ca91446d6aa386731f96a24dbb7f4005791a9dea"
+  },
+  "README.md": {
+    "bytes": 2207,
+    "sha256": "c2fb90bd63d4dd6de9199366b9b426b14189e6e13b27bd8ef22dbf3c32d5a738"
+  },
+  "result.json": {
+    "bytes": 3460,
+    "sha256": "02abfce8db08550e94cd2485f41f65a46beef2a2a9f7070da6849ed6451d0976"
+  }
+}

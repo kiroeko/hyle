@@ -394,7 +394,7 @@
         "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
       },
       "ownership_topology": {
-        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "candidate": "Retained HYLE Context/Queue and Graph invocation; one optimized oneDNN norm/vector-Mul region followed by Native full-shape Add, independent per-step invocation state and reused Graph backing; caller-owned dense input/output, with all vendor replay allocations and cleanup charged",
         "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
         "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
       },
@@ -542,7 +542,7 @@
         "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
       },
       "ownership_topology": {
-        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "candidate": "Retained HYLE Context/Queue and Graph invocation; one optimized oneDNN norm/vector-Mul region followed by Native full-shape Add, independent per-step invocation state and reused Graph backing; caller-owned dense input/output, with all vendor replay allocations and cleanup charged",
         "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
         "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
       },
@@ -690,7 +690,7 @@
         "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
       },
       "ownership_topology": {
-        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "candidate": "Retained HYLE Context/Queue and Graph invocation; one optimized oneDNN norm/vector-Mul region followed by Native full-shape Add, independent per-step invocation state and reused Graph backing; caller-owned dense input/output, with all vendor replay allocations and cleanup charged",
         "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
         "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
       },
@@ -986,7 +986,7 @@
         "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
       },
       "ownership_topology": {
-        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "candidate": "Retained HYLE Context/Queue and Graph invocation; one optimized oneDNN norm/vector-Mul region followed by Native full-shape Add, independent per-step invocation state and reused Graph backing; caller-owned dense input/output, with all vendor replay allocations and cleanup charged",
         "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
         "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
       },
@@ -1134,7 +1134,7 @@
         "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
       },
       "ownership_topology": {
-        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "candidate": "Retained HYLE Context/Queue and Graph invocation; one optimized oneDNN norm/vector-Mul region followed by Native full-shape Add, independent per-step invocation state and reused Graph backing; caller-owned dense input/output, with all vendor replay allocations and cleanup charged",
         "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
         "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
       },
@@ -1282,7 +1282,7 @@
         "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
       },
       "ownership_topology": {
-        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "candidate": "Retained HYLE Context/Queue and Graph invocation; one optimized oneDNN norm/vector-Mul region followed by Native full-shape Add, independent per-step invocation state and reused Graph backing; caller-owned dense input/output, with all vendor replay allocations and cleanup charged",
         "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
         "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
       },
