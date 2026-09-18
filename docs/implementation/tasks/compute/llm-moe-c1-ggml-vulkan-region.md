@@ -520,3 +520,35 @@ optional-absent factor 仍存在，但整个测试 fragment 被 ENABLED 条件�
 两次夹具 SDK 路径遗漏、OFF 注册失败和隔离 cache 缺归档均保留原日志；后者只复用本机已有
 锁定包补齐，没有修改公共合同检查器。此处完成 Y16 的组合/隔离修复及原 broad 门，不代签
 Y4 尚未完成的 GPU-on 三交付、Air/Mini、真实权重片段或性能资格，owner 继续 AUDITED。
+
+## Y17–Y19：成熟逐元素族批量绑定（重新定界并 AUDITED）
+
+2026-09-19，baseline `dff6a509`，owner `/root`；产品仅属于
+`compute_provider_ggml_vulkan`、`compute_route_vulkan`，Graph 是普通入口和直接消费者。
+这是既定 F03/F04、缩放/残差/门控及通用数值链的成熟 Provider 接入，沿用 Y1–Y16 的设备、
+资源、失败、完成和交付边界。当前 registry 的 AUDITED 重新限定为下表，不沿用旧自写算子队列。
+
+固定 clean ggml `456172ec` 的 `ggml-vulkan.cpp` supports_op、`unary.comp` 和 `ggml.c`
+已核对：Abs/Neg/Exp/Tanh/Sigmoid、Sub/Div/Repeat 均有实际 Vulkan 实现；Sub/Div 只允许
+右侧向左侧广播，不能沿用 Add/Mul 的换序。当前 HYLE `region.cc` 仅绑定 SiLU/Add/Mul，
+`vulkan_program.cc` 又要求 RMSNorm/门控 anchor，故只扩 enum 映射无法接通普通 Direct。
+这里不宣称 vendor 所有 dtype/算子合格，先沿当前 F32 dense rank≤4 域完成一个有限族。
+
+| FIX | 固定实施范围 | 验收与成本 |
+|---|---|---|
+| Y17 | 私有 typed recipe 批量映射 Abs/Neg/Exp/Tanh/Sigmoid 到原版 `ggml_unary`；保留已有 SiLU，不增加 HYLE kernel。scalar 映为 ggml 单元素 tensor，HYLE 描述符仍为 rank0 | 独立 double oracle；dense rank0/1/2/4、尾宽、±0/NaN/Inf、变化输入；F16/BF16、任意 stride、rank>4/空域继续已有 native 路径，不宣称 vendor 已覆盖 |
+| Y18 | Sub/Div 保持输入顺序；至少一侧为完整输出 shape。仅左侧需要广播时调用原版 Repeat，再 Sub/Div；Add/Mul 继续合法交换 | scalar/vector 在左和右、非交换结果、普通 Direct 和 Graph；Repeat 的一个真实中间 tensor/dispatch 与 gallocr 存储全部保留并计费，不能隐去或写成零成本。两侧都需扩展的域仍走已有 native |
+| Y19 | 普通 Vulkan 冷编译按已资格化的语义域接纳连续 managed span，不再需要 norm/gate anchor；保留 published/fork/不支持节点边界、origin adapter、每槽资源与自然完成 | 强校验真实 managed region，独立槽/rebind/旧结果、固定 Recorder、原生前后缀和失败/drain；以仍属 native 的 ReLU 迁移原边界故障夹具，不能删除此风险或让夹具失效 |
+
+本批只固定接入/语义选择，不预称性能最优；同一 Provider 的算法/融合、资源及完成封装复用。
+P0 为原有 managed 编码、边界 copy，加上具名的可选 Repeat；无运行期搜索/计时、新执行器、
+热 metadata、公共 API、依赖或构建变更。所有未支持语义由当前 native 实现承载，比较前不删它们。
+Log/Sqrt/Rsqrt、ReLU/GELU/Softplus、LayerNorm 和半精度 vendor 域各有数值/布局资格需求，
+不借这一族顺手接入或重写原厂算法。
+
+预声明：先 Windows strict static/shared 的三个 selected factors（含实际 GPU、现有 OOM/关闭/
+失败和源码合同），DLL邻置、PATH unset、validation layer，构建 parallel2且重型验证串行；
+随后 Air/Mini 同候选、真实本地权重片段、source/static/shared consumer 和整包适用 P1 沿主卡
+完成。未变公开头和 build/package 输入按身份复用，不额外全库重建。算法/默认规则稳定后才
+冻结性能候选，完整边界成本比较决定最终偏好与自有实现取舍。纠正最多两轮；具体原厂数值
+不合格时记录该域并重新定界，不放宽 oracle，不把接入测试算作 C1 整包或性能 PASS。

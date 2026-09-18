@@ -506,7 +506,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y13–Y15 AUDITED：a7ebf205已接普通managed Direct/Recorder、固定规则与对齐适配、独立槽重绑、原生片段和pending完成/失败；W1严格static/shared各38 Direct及公开头通过，含byte1 View、取消/旧结果、部分接纳失败与wait期间独立producer。跨平台、真实权重、完整三交付/整包覆盖与P1未验收。"
+      "summary": "LLM/MoE C1-Y17–Y19 AUDITED：按 dff6a509 重新定界成熟逐元素族的普通冷 managed span 接入，保留原资源/完成/失败；有限 FIX 在 C1-Y。此前 Y13–Y16 局部事实保留，本批实现、跨平台、真实权重、三交付与性能尚未验收。"
     },
     {
       "module": "graph_route_vulkan",
@@ -517,7 +517,7 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y13–Y15 AUDITED：a7ebf205的私有typed region保留原版fusion/gallocr与每槽完成资源，普通Direct/Graph已接；两处精确SiLU负无穷补丁保留有限域公式。W1严格static/shared各19 Provider、38 Direct、16/15 Graph及头/源码合同通过；跨平台、真实权重、完整三交付/整包覆盖与P1未验收。",
+      "summary": "LLM/MoE C1-Y17–Y19 AUDITED：按 dff6a509 重新定界原版 ggml 五 unary 与 Sub/Div/Repeat 的有限 F32 语义映射；复用既有 native device、region、每槽资源和完成。此前事实保留，本批实现、跨平台、真实权重、三交付与性能尚未验收。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

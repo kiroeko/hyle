@@ -1203,3 +1203,11 @@ Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留
 无skip或VUID，首轮数值失败经一次有限纠正通过。完整事实与未运行项见
 [C1-Y普通入口记录](llm-moe-c1-ggml-vulkan-region.md#y13y15-普通入口的-w1-局部验证)。
 跨平台、真实权重、完整三交付与P1仍待完成；本卡保持AUDITED，不签整包或共同矩阵完成。
+
+### C1-Y 成熟逐元素族绑定（AUDITED）
+
+2026-09-19，baseline `dff6a509`，owner `/root`：`compute_route_vulkan` 按
+[C1-Y 的 Y17–Y19](llm-moe-c1-ggml-vulkan-region.md) 重新定界普通入口的冷 managed span
+选择；Provider 同批映射原版五个 unary 与 Sub/Div/Repeat。公开 API/执行资源不变；Graph 作为
+直接消费者保留 published/fork、native 边界与失败生命周期验证。未审性能不预称默认赢家，
+未完成跨平台、三交付、真实权重或整包覆盖不写 PASS。旧 CPU ggml 与 oneDNN 的 BLOCKED 均保持。
