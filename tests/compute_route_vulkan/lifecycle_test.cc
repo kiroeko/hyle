@@ -393,9 +393,9 @@ TEST(VulkanLifetime, ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain) {
     plan.values.assign(4, {description, {}});
     plan.inputs = {0};
     plan.outputs = {3};
-    plan.steps = {{c::Unary{c::UnaryKind::kNeg}, {0}, 1},
-                  {c::RmsNorm{}, {1}, 2},
-                  {c::Unary{c::UnaryKind::kNeg}, {2}, 3}};
+    plan.steps = {{c::Operation(c::Unary{c::UnaryKind::kNeg}), {0}, 1},
+                  {c::Operation(c::RmsNorm{}), {1}, 2},
+                  {c::Operation(c::Unary{c::UnaryKind::kNeg}), {2}, 3}};
     d::PlanFacts facts;
     auto program = d::prepare_plan(context, plan, &facts).value();
     ASSERT_EQ(facts.native_dispatch_count, 2U);

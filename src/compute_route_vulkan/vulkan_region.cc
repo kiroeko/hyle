@@ -95,7 +95,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       const auto adapted = static_cast<std::uint32_t>(program.values.size());
       program.values.push_back({program.values[value].description, {}});
       program.aliases.push_back({adapted, 0});
-      HYLE_RETURN_IF_ERROR(lower_tensor(program, {Copy{}, {value}, adapted}));
+      HYLE_RETURN_IF_ERROR(
+          lower_tensor(program, {Operation(Copy{}), {value}, adapted}));
       dispatch.values.push_back(adapted);
     }
     for (const auto output : recipe->outputs)
