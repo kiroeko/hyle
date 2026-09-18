@@ -818,7 +818,7 @@ W1 shared 与 Air/Mini 对应 route/Graph 验证，Windows/Air 的 source/static
 Y23-P2 的 `a50b2ef4` 修正了根起点遗漏，W1 strict 编译通过，但新增 Direct 回归执行失败：
 原版 `ggml_vk_tensor_subbuffer` 触发 `allow_misalign || misalign_bytes == 0`。Graph 回归未运行，
 不能写通过；[失败记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-descriptor-failure.json)
-保留候选、二进制和日志。Y21–Y24 原定两輪纠正预算已用尽，本节按具体新反例重新定界，
+保留候选、二进制和日志。Y21–Y24 原定两轮纠正预算已用尽，本节按具体新反例重新定界，
 不继续沿旧预算试错，不扩大到其他算子或 Provider 算法。
 
 baseline `a50b2ef405662e12af8c701555c8bfad0601fedd`，owner `/root`，产品 owner 仍仅
@@ -836,3 +836,30 @@ root=1、alias=alignment−1 的重新对齐组合，同时保留4字节但未�
 本次源码调查仅上述两个具名函数、最多30分钟，产品修正最多一轮；如仍失败即记录具体
 blocker/裁决，不再在本节追加尝试。验收范围沿 Y23-P2 的两 route factors、适用平台和
 三交付；已有 managed/原版排序验证只按未变身份保留，不签 C1 整包或性能。
+
+### Y25 实现与适用平台/实际交付结果
+
+产品 `7f4a3fb6`、测试/交付快照 `5f4df55b` 已完成根与别名起点相加、逐输入原厂对齐需求的
+冷适配。只向直接被 TopK 消费的输入施加设备 descriptor 对齐，其他原有偏移感知核不增加
+Copy；Graph 的root=1、alias=alignment−1恢复零复制。没有新的算子算法、公开API或热期决策。
+
+[完整定向证据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-origin-correction/README.md)：
+W1 static 51 Direct+20 Graph、shared 51+19，Air/Mini static各51+20，共283项通过；
+Windows/Air同一source archive的源码、relocated static/shared各6个普通消费者通过，新增
+rank8捕获起点1/4/7、值/索引双输出保持原始位，并保留既有混合FFN及应用SPIR-V消费。
+两个新增回归另有先行定向运行，不重复计入283。首次Graph夹具缺少私有声明及include路径的
+编译失败保留；补齐测试include后产品不再变化。
+
+Y25最终selector选两个route factors与compute/graph交付；Windows按两factor重新配置/构建
+后的两个EXE hash与已通过测试完全一致，因此复用对应结果，未重复运行。原新lock选出的
+96个native门及1个组件合同仍保留`5b220601`身份；15个通用交付门正在固定Windows验证副本
+`C:\hyle-scratch\active-vk\v`的`5f4df55b`快照上串行执行，不签112门聚合PASS，也不反向
+覆盖canonical产品。实际Vulkan三交付不替代这些通用门。
+
+W1 DLL邻置/PATH unset、W1/Air无VUID/同步错误，没有P1。归档逐文件hash核对后清理两平台
+producer和展开源码，释放1,933,074,359逻辑字节；SDK、consumer及共享依赖保留。统一LOC
+为47,202行/193实现文件（不含测试、bench、第三方），自检通过。
+
+三个owner保持C1 AUDITED；本组修复和上述适用验证停止重复运行。通用交付、checked索引/
+Scatter/Scan、完整C1真实权重片段、默认性能优选和淘汰仍待完成；CPU oneDNN资格BLOCKED
+不变，64行/256格共同矩阵尚未签收。

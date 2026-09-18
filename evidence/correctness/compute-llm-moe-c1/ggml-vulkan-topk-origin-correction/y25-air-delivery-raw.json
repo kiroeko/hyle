@@ -1,0 +1,18 @@
+{
+  "snapshot": "5f4df55b287b9c895048bf05ab350ff49c96fd6c",
+  "product_candidate": "7f4a3fb647f17ab984a3faaad36d8d66d08834f9",
+  "platform": "Air Mac16,12",
+  "status": "PASS",
+  "archive": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y25-air-delivery-raw.zip",
+  "sha256": "c32d5b8b7a36937d5860c56f6b0ea2beef7d0731c7eaa212a0c5aac43991eae5",
+  "files": 81,
+  "bytes": 125658,
+  "source_archive_sha256": "47a11fe7255548e58757cd524dce51520b858073fc113a78a2f8420957fdc4c1",
+  "journeys": [
+    "source Direct + Graph",
+    "relocated installed static Direct + Graph",
+    "relocated installed shared Direct + Graph"
+  ],
+  "executable_count": 6,
+  "limitations": "F32 managed TopK values/indices including captured rank8 byte origins 1/4/7 and mixed native/ggml FFN + application SPIR-V; generated inputs, no full C1/model/performance verdict"
+}

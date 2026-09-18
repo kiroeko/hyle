@@ -506,18 +506,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y25 AUDITED：高秩常量根起点遗漏已修，但新增反例暴露 Argsort 设备 descriptor 对齐约束；原两轮纠正预算已用尽，依具名反例重新定界一次排序输入冷适配修正。旧局部通过保留身份，未完成交付与 C1 整包不代签；CPU 性能阻塞不变。"
+      "summary": "LLM/MoE C1-Y25 AUDITED：已修复TopK捕获根/别名起点与排序核设备对齐；W1 static/shared、Air/Mini两个route共283项及Windows/Air实际TopK三交付通过。15项通用交付在固定验证副本执行；checked索引/Scan与C1完整权重、性能优选及淘汰未完成。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y21–Y24 AUDITED：已实现TopK多输出lowering、逐输出发布/下游消费与资源寿命；一次产品纠正及测试构造修正后W1 static定向13例通过，shared/Air/Mini/TopK三交付与当前所选门待验。既有managed片段交付事实保留；完整C1、性能及取舍未验收。"
+      "summary": "LLM/MoE C1-Y21–Y25 AUDITED：TopK双输出、逐输出寿命和高秩常量View组合已通过W1 static/shared、Air/Mini与Windows/Air实际三交付；根/别名设备对齐反例已修。15项通用交付待终局，完整C1权重/索引状态/性能及淘汰仍未验收。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y21–Y24 AUDITED：已实现原版Argsort比较语义适配、GetRows值/索引双输出及资源组合；一次产品纠正及测试构造修正后W1 static定向13例通过，shared/Air/Mini/TopK三交付与当前所选门待验。既有managed片段交付事实保留；完整C1、性能及取舍未验收。",
+      "summary": "LLM/MoE C1-Y21–Y25 AUDITED：原版Argsort/GetRows双输出已接普通Direct/Graph，HYLE路线适配修复常量起点和设备对齐；跨平台与Windows/Air实际TopK三交付通过，原厂算法资格证据按未变源码保留。15项通用交付及C1整体覆盖/性能/淘汰未完成。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

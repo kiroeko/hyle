@@ -149,8 +149,10 @@ TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score
 准备期绑定原版 ggml Argsort 与 GetRows 组合；仅适配比较语义，保留原厂排序网络、调度和临时
 存储。非连续或非末轴输入经必要的 View/Copy 整理，两个结果恢复原逻辑轴并各有独立存储。
 这是完整 bitonic 排序，成本为 O(rows × padded_width × log²(padded_width))；全排序索引、
-长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。目前通过 Windows static 定向
-正确性；其他适用环境、三交付与性能资格仍待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)
+长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。dense View 仍可有非对齐字节
+起点；准备时按排序核的设备对齐要求固定必要复制，计入根起点与累计别名偏移。
+目前通过 Windows static/shared 与 Air/Mini 正确性，以及 Windows/Air 三种 C++ 交付；
+完整 C1 与性能资格仍待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)
 验收，尚不称为性能优选。
 
 ## 零拷贝 View

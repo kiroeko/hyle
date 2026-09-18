@@ -1,0 +1,18 @@
+{
+  "snapshot": "5f4df55b287b9c895048bf05ab350ff49c96fd6c",
+  "product_candidate": "7f4a3fb647f17ab984a3faaad36d8d66d08834f9",
+  "platform": "Windows",
+  "status": "PASS",
+  "archive": ".scratch\\validation\\vulkan-topk\\origin-correction\\windows-delivery-raw.zip",
+  "sha256": "a5cffc7e363d3610f201b8e5447b7258073738133a152c1a4a5af3a57e9a6bc7",
+  "files": 82,
+  "bytes": 131428,
+  "source_archive_sha256": "47a11fe7255548e58757cd524dce51520b858073fc113a78a2f8420957fdc4c1",
+  "journeys": [
+    "source Direct + Graph",
+    "relocated installed static Direct + Graph",
+    "relocated installed shared Direct + Graph"
+  ],
+  "executable_count": 6,
+  "limitations": "F32 managed TopK values/indices including captured rank8 byte origins 1/4/7 and mixed native/ggml FFN + application SPIR-V; generated inputs, no full C1/model/performance verdict"
+}
