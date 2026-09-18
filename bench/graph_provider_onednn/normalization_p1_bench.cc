@@ -266,10 +266,14 @@ public:
             logical, context_,
             {.constants = std::span(constants).first(problem.rms ? 2U : 3U)}),
         "compile Graph");
+    const auto first = take(compiled.report.step(0), "inspect Graph prefix");
+    const bool split_residual = vendor && problem.rows > 1;
     if (compiled.report.region_count() != (vendor ? 1U : 0U) ||
-        compiled.report.provider().id != (vendor
-                                              ? graph::onednn::kProviderId
-                                              : compute::native::kProviderId))
+        compiled.report.step_count() != (vendor ? (split_residual ? 2U : 1U) : 3U) ||
+        first.node_count != (vendor ? (split_residual ? 2U : 3U) : 1U) ||
+        first.provider.id != (vendor ? graph::onednn::kProviderId
+                                     : compute::native::kProviderId) ||
+        compiled.report.mixed_providers() != split_residual)
       fail("unexpected Graph provider or fusion");
     invocation_ = take(compiled.executable.create_invocation(),
                        "create Graph invocation");

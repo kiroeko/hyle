@@ -572,7 +572,10 @@ oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]
 accumulation，可选 scale/bias；scale 和 bias 同时存在时需同类型。F16/BF16 原生执行受
 oneDNN 的 CPU ISA 要求限制，不满足时由普通 CPU context 选择现有 Native 实现，不隐式转换
 整个 tensor。F32 norm 后的最多4个 Add/Mul 可在普通 Graph 中绑定原生 post-ops，支持 scalar、
-末轴向量和完整同形状操作数；中间输出被发布或分叉时保留边界。半精度跨节点链保留中间舍入。
+末轴向量及单行的完整同形状操作数。批量完整同形状 Add/Mul 保留为后续节点，使此前的归一化/
+广播前缀继续使用优化内核；冷准备拒绝已识别的通用慢速融合实现。中间输出被发布或分叉时
+保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收
+状态见模块 registry 和对应任务记录。
 
 归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
 其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed

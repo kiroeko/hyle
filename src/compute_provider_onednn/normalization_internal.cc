@@ -8,6 +8,7 @@
 #include <functional>
 #include <limits>
 #include <new>
+#include <string_view>
 #include <utility>
 
 #include "oneapi/dnnl/dnnl.h"
@@ -427,6 +428,12 @@ Status validate_normalization(const NormRequest &request,
         (!scalar && !vector && rhs != input))
       return Status::Unimplemented("oneDNN norm post-op requires scalar, row "
                                    "or full-shape float32 operand");
+    // The pinned optimized norm supports scalar/last-axis broadcast. A full
+    // multirow operand silently selects simple:any and generic per-element
+    // post-ops. Keep the optimized prefix; Graph owns the remaining operation.
+    if (!scalar && !vector && matrix_shape(input)[0] > 1)
+      return Status::Unimplemented(
+          "oneDNN optimized norm post-ops exclude full multirow operands");
   }
   return Status::Ok();
 }
@@ -500,6 +507,16 @@ prepare_normalization(const NormRequest &request, ParallelExecutorRef executor,
                                 : dnnl_f32,
         rms != nullptr ? rms->epsilon : layer->epsilon, flags,
         temporary.attributes));
+    if (!request.post_ops.empty()) {
+      const char *implementation = nullptr;
+      check(dnnl_primitive_desc_query(plan->descriptor, dnnl_query_impl_info_str,
+                                      0, &implementation));
+      if (implementation == nullptr)
+        throw VendorFailure{dnnl_runtime_error};
+      const std::string_view name(implementation);
+      if (name == "simple:any" || name == "ref:any")
+        throw VendorFailure{dnnl_unimplemented};
+    }
     check(dnnl_primitive_create(&plan->primitive, plan->descriptor));
     const auto scratch = dnnl_primitive_desc_query_md(
         plan->descriptor, dnnl_query_scratchpad_md, 0);

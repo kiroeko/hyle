@@ -7,6 +7,7 @@
 
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/graph/cpu.h"
+#include "hyle/graph/providers/onednn.h"
 #include "hyle/mem/stats.h"
 
 namespace {
@@ -14,16 +15,18 @@ namespace compute = hyle::compute;
 namespace graph = hyle::graph;
 
 #if defined(HYLE_GRAPH_ONEDNN)
-TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
-  constexpr std::int64_t rows = 17, width = 31;
+void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
+                             bool multiply_residual) {
+  constexpr std::int64_t width = 31;
   const auto description =
       compute::TensorDesc::dense(compute::DataType::kFloat32,
                                  std::array{rows, width})
           .value();
   const auto row_description =
-      compute::TensorDesc::dense(compute::DataType::kFloat32, std::array{width})
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 1>{scalar ? 1 : width})
           .value();
-  std::vector<float> values(rows * width), scales(width);
+  std::vector<float> values(rows * width), scales(scalar ? 1 : width);
   for (std::size_t index = 0; index < values.size(); ++index)
     values[index] =
         static_cast<float>(static_cast<int>(index % 29) - 14) / 16.F;
@@ -40,17 +43,24 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
       auto builder = graph::GraphBuilder::create().value();
       const auto input = builder.input(description).value();
       const auto scale = builder.input(row_description).value();
-      const auto normalized = builder.add(compute::RmsNorm{}, input).value();
+      const auto normalized =
+          builder.add(rms ? compute::Operation(compute::RmsNorm{})
+                          : compute::Operation(compute::LayerNorm{}),
+                      input)
+              .value();
       const auto weighted =
           builder
               .add(compute::Binary{compute::BinaryKind::kMultiply}, scale,
                    normalized)
               .value();
-      // The original input is also a post-op operand: one logical boundary
-      // must map to both native argument positions without duplicate maps.
+      // A full multirow operand belongs after the optimized region. Single
+      // rows can retain the whole chain in the original vendor kernel.
       const auto residual =
           builder
-              .add(compute::Binary{compute::BinaryKind::kAdd}, weighted, input)
+              .add(compute::Binary{multiply_residual
+                                      ? compute::BinaryKind::kMultiply
+                                      : compute::BinaryKind::kAdd},
+                   weighted, input)
               .value();
       if (published) {
         ASSERT_TRUE(builder.publish(normalized).ok());
@@ -60,6 +70,14 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
       auto compiled = graph::compile(logical, context);
       ASSERT_TRUE(compiled) << compiled.error().message();
       EXPECT_EQ(compiled->report.region_count(), published ? 0U : 1U);
+      if (!published) {
+        ASSERT_EQ(compiled->report.step_count(), rows == 1 ? 1U : 2U);
+        auto prefix = compiled->report.step(0);
+        ASSERT_TRUE(prefix);
+        EXPECT_EQ(prefix->provider.id, graph::onednn::kProviderId);
+        EXPECT_EQ(prefix->node_count, rows == 1 ? 3U : 2U);
+        EXPECT_EQ(compiled->report.mixed_providers(), rows != 1);
+      }
       auto source = half_test::buffer<float>(values);
       auto weights = half_test::buffer<float>(scales);
       const auto source_view =
@@ -114,18 +132,26 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
                         .read(std::as_writable_bytes(std::span(actual)))
                         .ok());
         for (std::int64_t row = 0; row < rows; ++row) {
+          double mean = 0;
+          if (!rms) {
+            for (std::int64_t col = 0; col < width; ++col)
+              mean += current[static_cast<std::size_t>(row * width + col)];
+            mean /= width;
+          }
           double squares = 0;
           for (std::int64_t col = 0; col < width; ++col) {
             const double value =
-                current[static_cast<std::size_t>(row * width + col)];
+                current[static_cast<std::size_t>(row * width + col)] - mean;
             squares += value * value;
           }
           for (std::int64_t col = 0; col < width; ++col) {
             const auto index = static_cast<std::size_t>(row * width + col);
-            const double expected = current[index] /
-                                        std::sqrt(squares / width + 1.e-5) *
-                                        scales[static_cast<std::size_t>(col)] +
-                                    current[index];
+            const double weighted_value =
+                (current[index] - mean) / std::sqrt(squares / width + 1.e-5) *
+                scales[scalar ? 0 : static_cast<std::size_t>(col)];
+            const double expected = multiply_residual
+                                        ? weighted_value * current[index]
+                                        : weighted_value + current[index];
             EXPECT_NEAR(actual[index], expected, 4.e-5) << index;
           }
         }
@@ -144,6 +170,14 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
     }
     EXPECT_TRUE(stats.balanced());
   }
+}
+
+TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
+  for (const std::int64_t rows : {1, 17})
+    for (const bool rms : {false, true})
+      for (const bool scalar : {false, true})
+        for (const bool multiply_residual : {false, true})
+          check_norm_post_op_graph(rows, rms, scalar, multiply_residual);
 }
 #endif
 

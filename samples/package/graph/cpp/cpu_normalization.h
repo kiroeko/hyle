@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hyle/compute/backends/cpu.h>
+#include <hyle/compute/providers/native.h>
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/executable.h>
 #include <hyle/graph/providers/onednn.h>
@@ -64,17 +65,22 @@ inline hyle::Status run() {
   for (bool qualify_region : {false, true}) {
     c::Context context;
     if (qualify_region) {
+      const std::array providers{g::onednn::provider(), c::native::provider()};
       HYLE_ASSIGN_OR_RETURN(
-          context, c::Context::create(c::cpu::device(), g::onednn::provider()));
+          context, c::Context::create(c::cpu::device(), {.providers = providers}));
     } else {
       HYLE_ASSIGN_OR_RETURN(context, g::cpu::create_context());
     }
     HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
     HYLE_ASSIGN_OR_RETURN(auto compiled, g::compile(logical, context));
-    if (qualify_region &&
-        (compiled.report.region_count() != 1 ||
-         compiled.report.provider().id != g::onednn::kProviderId))
-      return hyle::Status::Internal("installed normalization region is absent");
+    if (qualify_region) {
+      HYLE_ASSIGN_OR_RETURN(auto prefix, compiled.report.step(0));
+      if (compiled.report.region_count() != 1 ||
+          compiled.report.step_count() != 2 || prefix.node_count != 2 ||
+          prefix.provider.id != g::onednn::kProviderId ||
+          !compiled.report.mixed_providers())
+        return hyle::Status::Internal("installed normalization prefix is absent");
+    }
     HYLE_ASSIGN_OR_RETURN(auto invocation,
                           compiled.executable.create_invocation());
     HYLE_RETURN_IF_ERROR(invocation.bind(input, input_view));
