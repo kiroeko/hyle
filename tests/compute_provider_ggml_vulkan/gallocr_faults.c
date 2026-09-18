@@ -55,10 +55,17 @@ static void fault_free(void * pointer) {
 // The original FP16 codec returns masked 16-bit fields through a uint32_t
 // expression. Keep that vendor implementation byte-identical in this fixture.
 #pragma warning(disable : 4244)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+// This allocator-only TU also receives unused helpers from upstream's private
+// header. Keep its exact source; the suppression covers only the vendor include.
+#pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 #include "ggml-alloc.c"
 #if defined(_MSC_VER)
 #pragma warning(pop)
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
 #endif
 
 void hyle_test_hash_set_free(struct ggml_hash_set * set) {

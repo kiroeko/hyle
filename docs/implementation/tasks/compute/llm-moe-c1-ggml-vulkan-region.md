@@ -593,3 +593,9 @@ push_constants；不改公开类型、算法、原生指令、资源和热路径
 Y19-P 的 W1 strict static selected configure、40个 Direct 与17个 Graph 用例通过，零 skip、
 无 validation 诊断；未改 Provider 产品，复用其已通过事实。此处仅补原有默认初始化，不新增
 算子或性能优选结论。两次 Mac 初次编译失败均保留，不将未运行的运行时验证记为通过。
+
+`69b3414b` 已通过 Air 全部产品 TU；用 `ninja -k 0` 完成其余测试 TU 的一次编译核对，避免
+逐个遇错停止。余下仅有两处夹具类型问题：生命周期测试的三个 `PlanStep` 也需补同样默认值；
+原版 allocator-only C 夹具引入的私有头含未使用 helper，沿既有 MSVC 的 vendor include 诊断边界，
+仅在该 include 内抑制 GCC/Clang 的 unused-function，不改原厂文件、自有代码警告、算法或断言。
+这些为测试专用可移植性修正；不增加产品纠正轮数，不跑 P1。
