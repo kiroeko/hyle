@@ -8,7 +8,7 @@
 
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/vulkan.h"
-#include "hyle/platform/dynlib.h"
+#include "../compute_provider_ggml_vulkan/native_device.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace cd = hyle::compute::detail;
@@ -16,19 +16,12 @@ namespace cd = hyle::compute::detail;
 // Native PFNs are resolved once for the exact instance/device. There are no
 // process-global Vulkan entry points and no per-dispatch provider lookup.
 #define HYLE_VULKAN_INSTANCE_FUNCTIONS(X)                                      \
-  X(DestroyInstance)                                                           \
-  X(EnumeratePhysicalDevices)                                                  \
   X(GetPhysicalDeviceProperties2)                                              \
-  X(GetPhysicalDeviceFeatures2)                                                \
   X(GetPhysicalDeviceMemoryProperties)                                         \
-  X(GetPhysicalDeviceQueueFamilyProperties)                                    \
   X(EnumerateDeviceExtensionProperties)                                        \
-  X(CreateDevice)                                                              \
   X(GetDeviceProcAddr)
 
 #define HYLE_VULKAN_DEVICE_FUNCTIONS(X)                                        \
-  X(DestroyDevice)                                                             \
-  X(GetDeviceQueue)                                                            \
   X(CreateBuffer)                                                              \
   X(DestroyBuffer)                                                             \
   X(GetBufferMemoryRequirements)                                               \
@@ -82,7 +75,9 @@ struct DeviceFunctions final {
 };
 
 struct Device final {
-  platform::DynLib loader;
+  // One native owner for HYLE commands and complete managed ggml regions.
+  // It outlives every Buffer/Run and owns loader, instance, device and queues.
+  ggml_vulkan::detail::NativeDevice provider;
   InstanceFunctions instance_fn;
   DeviceFunctions fn;
   NativeDevice native;
@@ -93,7 +88,6 @@ struct Device final {
   std::atomic<std::uint64_t> descriptors_in_pools{0};
   Environment environment;
   mem::QuotaAllocator *quota = nullptr;
-  ~Device();
 };
 
 struct Buffer final {

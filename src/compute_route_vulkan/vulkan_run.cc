@@ -117,7 +117,14 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     if (wait) {
       // Only the exceptional path uses queue-wide drain. Preserve the original
       // diagnosis, even if an independent native observation proves completion.
-      result = device.fn.QueueWaitIdle(device.queue);
+      const auto drained = device.provider.with_queue(
+          [](void *opaque, VkQueue queue) -> VkResult {
+            return static_cast<Device *>(opaque)->fn.QueueWaitIdle(queue);
+          }, &device);
+      result = drained.ok() ? VK_SUCCESS
+          : drained.native_error() == NativeError{NativeErrorDomain::Vulkan,
+                                                 VK_ERROR_DEVICE_LOST}
+              ? VK_ERROR_DEVICE_LOST : VK_NOT_READY;
     }
   }
   std::shared_ptr<Run> retired;
@@ -256,12 +263,21 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
   info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   info.commandBufferCount = 1;
   info.pCommandBuffers = &run->command;
-  const auto result = device.fn.QueueSubmit(device.queue, 1, &info, run->fence);
-  if (result != VK_SUCCESS) {
+  struct Submission {
+    PFN_vkQueueSubmit submit;
+    const VkSubmitInfo *info;
+    VkFence fence;
+  } submission{device.fn.QueueSubmit, &info, run->fence};
+  status = device.provider.with_queue(
+      [](void *opaque, VkQueue queue) -> VkResult {
+        const auto &call = *static_cast<const Submission *>(opaque);
+        return call.submit(queue, 1, call.info, call.fence);
+      }, &submission);
+  if (!status.ok()) {
     // A failed native submit has not accepted our unsignaled fence. In
     // particular OOM must not manufacture pending work that will never signal.
-    status = native_status(result, "vkQueueSubmit");
-    if (result == VK_ERROR_DEVICE_LOST)
+    if (status.native_error() == NativeError{NativeErrorDomain::Vulkan,
+                                            VK_ERROR_DEVICE_LOST})
       runtime.failure = status;
     return std::unexpected(status);
   }

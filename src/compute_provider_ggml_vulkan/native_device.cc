@@ -1,5 +1,6 @@
 #include "native_device.h"
 
+#include <exception>
 #include <new>
 #include <utility>
 
@@ -129,12 +130,12 @@ void NativeDevice::free_graph(bridge::Storage *storage) const noexcept {
 }
 Result<ggml_backend_buffer *> NativeDevice::borrow(
     VkBuffer handle, std::size_t bytes,
-    std::shared_ptr<const void> owner) const noexcept {
+    std::shared_ptr<const void> owner, bool address_capable) const noexcept {
   if (!state_ || !handle || !bytes || !owner)
     return std::unexpected(Status::InvalidArgument("ggml Vulkan buffer owner"));
   ggml_backend_buffer *result = nullptr;
   HYLE_RETURN_IF_ERROR(failure(bridge::borrow_buffer(
-      state_->runtime, handle, bytes, std::move(owner), &result)));
+      state_->runtime, handle, bytes, std::move(owner), address_capable, &result)));
   return result;
 }
 Result<ggml_backend_buffer *>
@@ -149,6 +150,13 @@ VkBuffer NativeDevice::buffer_handle(ggml_backend_buffer *buffer) const noexcept
   return state_ ? bridge::buffer_handle(buffer) : VK_NULL_HANDLE;
 }
 
+Status NativeDevice::with_queue(VkResult (*function)(void *, VkQueue),
+                                void *state) const noexcept {
+  if (!state_ || !function)
+    return Status::InvalidArgument("ggml Vulkan native queue callback");
+  return failure(bridge::with_queue(state_->runtime, function, state));
+}
+
 Status NativeDevice::with_queue(
     const std::function<Status(VkQueue)> &function) const noexcept {
   if (!state_ || !function)
@@ -160,7 +168,15 @@ Status NativeDevice::with_queue(
   const auto result = bridge::with_queue(state_->runtime,
       [](void *opaque, VkQueue queue) -> VkResult {
         auto &call = *static_cast<Call *>(opaque);
-        call.result = call.function(queue);
+        try {
+          call.result = call.function(queue);
+        } catch (const std::bad_alloc &) {
+          call.result = Status::ResourceExhausted("Vulkan native queue callback");
+        } catch (const std::exception &error) {
+          call.result = Status::Internal(error.what());
+        } catch (...) {
+          call.result = Status::Unknown("Vulkan native queue callback threw");
+        }
         return VK_SUCCESS;
       }, &call);
   HYLE_RETURN_IF_ERROR(failure(result));

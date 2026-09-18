@@ -112,6 +112,8 @@ Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue),
       device_guard = std::unique_lock<std::mutex>(*handle->device_submit_mutex);
     std::lock_guard<vk_queue_handle> queue_guard(*handle);
     const auto result = function(state, handle->queue);
+    if (result == VK_ERROR_DEVICE_LOST)
+      runtime->device_lost.store(true);
     return result == VK_SUCCESS ? Failure{} : Failure{Error::Native, result};
   } catch (...) {
     return current_failure();
@@ -119,7 +121,8 @@ Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue),
 }
 
 ggml_backend_buffer *borrow(VkBuffer handle, std::size_t bytes,
-                            std::shared_ptr<const void> owner) {
+                            std::shared_ptr<const void> owner,
+                            bool address_capable) {
   auto device = ggml_vk_get_device(0);
   if (!handle || !bytes || !owner)
     throw std::invalid_argument("ggml Vulkan borrowed buffer");
@@ -128,7 +131,10 @@ ggml_backend_buffer *borrow(VkBuffer handle, std::size_t bytes,
   buffer->external_owner = std::move(owner);
   buffer->buffer = handle;
   buffer->size = bytes;
-  if (device->buffer_device_address)
+  // Device support does not imply that an external buffer was created with
+  // the address usage and memory allocation flags. Descriptor-only imports
+  // need no address; a BDA operation must qualify its buffers explicitly.
+  if (address_capable && device->buffer_device_address)
     buffer->bda_addr = device->device.getBufferAddress(
         vk::BufferDeviceAddressInfo{handle});
   auto context = std::make_unique<ggml_backend_vk_buffer_context>(
@@ -158,11 +164,12 @@ Failure create_backend(Runtime *runtime, ggml_backend **result) noexcept {
 }
 Failure borrow_buffer(Runtime *runtime, VkBuffer handle, std::size_t bytes,
                       std::shared_ptr<const void> owner,
+                      bool address_capable,
                       ggml_backend_buffer **result) noexcept {
   *result = nullptr;
   try {
     Active active(runtime);
-    *result = borrow(handle, bytes, std::move(owner));
+    *result = borrow(handle, bytes, std::move(owner), address_capable);
     return {};
   } catch (...) {
     return current_failure();

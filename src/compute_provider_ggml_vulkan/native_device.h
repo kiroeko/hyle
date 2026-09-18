@@ -50,11 +50,16 @@ public:
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
   allocate_buffer(std::size_t) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
-  borrow(VkBuffer, std::size_t, std::shared_ptr<const void>) const noexcept;
+  borrow(VkBuffer, std::size_t, std::shared_ptr<const void>,
+         bool address_capable = false) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API VkBuffer
   buffer_handle(ggml_backend_buffer *) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Status
   with_queue(const std::function<Status(VkQueue)> &) const noexcept;
+  // Region/batch admission without constructing a std::function. The callback
+  // runs synchronously under the same locks as the upstream submit path.
+  HYLE_GGML_VULKAN_INTERNAL_API Status
+  with_queue(VkResult (*)(void *, VkQueue), void *) const noexcept;
 
 private:
   friend class NativeGraph;

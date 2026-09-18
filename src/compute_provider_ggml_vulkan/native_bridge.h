@@ -77,9 +77,10 @@ Failure with_queue(Runtime *, VkResult (*)(void *, VkQueue), void *) noexcept;
 Failure create_backend(Runtime *, ggml_backend **) noexcept;
 Failure allocate_buffer(Runtime *, std::size_t, ggml_backend_buffer **) noexcept;
 Failure borrow_buffer(Runtime *, VkBuffer, std::size_t,
-                      std::shared_ptr<const void>, ggml_backend_buffer **) noexcept;
+                      std::shared_ptr<const void>, bool address_capable,
+                      ggml_backend_buffer **) noexcept;
 ggml_backend_buffer *borrow(VkBuffer, std::size_t,
-                            std::shared_ptr<const void>);
+                            std::shared_ptr<const void>, bool address_capable);
 VkBuffer buffer_handle(ggml_backend_buffer *) noexcept;
 Failure create_work(Runtime *, Work **) noexcept;
 // Last-resort blocking retirement. Ordinary route abandonment retains Work in
