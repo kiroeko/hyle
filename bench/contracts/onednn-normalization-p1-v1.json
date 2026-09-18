@@ -1411,11 +1411,12 @@
       },
       "profiles": {
         "W1-WIN": {
-          "generator": "Visual Studio 18 2026",
-          "architecture": "x64",
+          "generator": "Ninja",
           "compiler_id": "MSVC",
           "compiler_version_prefix": "19.50",
-          "cache": {}
+          "cache": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc"
+          }
         }
       },
       "executables": [

@@ -208,3 +208,34 @@ DLL邻置、PATH unset、禁弹窗设置不变；没有重跑已完成的 Comput
 及 Native 重复域取舍仍待完成；未运行 A/A 或正式采样，也未删除未裁决的自有算子。性能合同静态
 校验已通过，Native 对照固定到 `2c9338e1` 的干净验证 checkout，当前 Native 产品子树身份一致。
 `0faf698c` 的 Compute+Graph 实现仍为46,941行/193文件，不含测试、benchmark 或第三方源码。
+
+### AA04：扩展验证完成，进入不可变候选比较
+
+本次 selector 从 `9c9ef3be` 选中的112项检查已全部有实际通过记录：`904b1fce` 的96项基础/
+逐头检查，`98d3331e` 的组件合同及13个剩余产品的39条源码/shared/static 交付旅程，另复用
+前述 Compute/Graph 各三交付。后继仅改文档和 Vulkan OFF 测试注册；该注册修正的4项 selected
+检查单独通过，不重复96项。两份 CPU 交付证据逐项核对原 cache 的 Vulkan OFF、未变的 OFF
+分支，以及 CPU 产品、全局 CMake、依赖和对应 consumer 字节，未用新提交号无条件继承旧结果。
+
+[选中检查与复用依据](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-selected-validation.json)、
+[基础/组件原始记录](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-selected-base-raw.zip)和
+[剩余交付记录](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-selected-deliveries.json)
+绑定实际 candidate、命令、退出码、日志和安装产物身份。组件合同中的隔离 cache 先因缺少
+Highway 归档被离线策略拒绝；复制本机已有锁定归档后原合同通过，未改检查器或下载新版本。
+39条交付全部使用邻置 DLL、PATH unset 和禁弹窗设置；header-only 产品仍只验证其真实头与
+package consumer，不虚构 producer binary。核对归档后删除39个重复 build 目录，共401,814,419
+logical bytes；保留 relocated SDK、独立 consumer 和共享源码缓存。统一 LOC 仍为46,941行/
+193文件，见[本候选统计](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-selected-loc.json)。
+
+P1 首次计时前将合同的 W1 generator 固定为已完成正确性构建的 Ninja，编译器仍是同一
+MSVC19.50 x64、Release、portable ISA、LTO OFF，CXX flags 与该构建一致。锁定 oneDNN 的
+`cmake/platform.cmake` 会加入 `/MP`；Ninja 的每命令单 TU 配合 parallel2，避免项目内多文件
+编译绕过低并行约定。该变更发生于任何 A/A/采样之前，不改 workload、数学/完成合同、阈值、
+样本、顺序或统计核心。使用短固定 fresh build 目录，并由原统一仪器执行原预检和采样。
+
+比较前另沿 benchmark 的两个 Route 复核：Direct 强校验实际 Provider ID，Graph 强校验实际
+Provider ID 和 region 数；两侧均使用自然 submit/wait，完整 norm→Mul→Add 与成熟融合片段
+同责比较，冷准备/JIT 均在稳态外，运行分配/映射关闭/完成全部计费。AA01–AA03 与 AA04 的
+验证入口已实现，API/算法停止变化；接下来进入 CANDIDATE 性能门。AA04 的条件规则和重复域
+取舍尚未签署，任何因此产生的产品修改先依法回到 AUDITED。本节不签 C1 全包、四路线完整
+覆盖或算子淘汰；没有运行过的 A/A/P1 仍不写 PASS。

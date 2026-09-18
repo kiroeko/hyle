@@ -1,0 +1,507 @@
+{
+  "schema": "hyle.c1-selected-validation/v1",
+  "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f",
+  "baseline": "9c9ef3bed0267de6d3189eff27fb6e70c89cee7f",
+  "selected_gate_count": 112,
+  "status": "PASS",
+  "execution": "Manual selected commands, serial heavy gates and parallel2; exact command/exit/log identities retained. No public selector cache receipts were created.",
+  "covered": {
+    "docs": {
+      "group": "registration",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "closure": {
+      "group": "registration",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "configure": {
+      "group": "registration",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "factor:compute_provider_ggml_vulkan": {
+      "group": "registration",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "factor:compute": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_backend_cpu": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_backend_cpu": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_backend_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_backend_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_ops": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_ops": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_provider_cublas": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_provider_cublas": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_provider_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_provider_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_provider_marlin": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_provider_marlin": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_provider_native": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_provider_native": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_provider_onednn": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_provider_onednn": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_route_apple": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_route_cpu": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_route_cpu": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_route_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_route_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:compute_route_vulkan": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:compute_route_vulkan": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:container": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:container": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:container_concurrent": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:container_concurrent": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:container_intrusive": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:container_intrusive": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:container_queue": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:container_queue": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:container_text": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:container_text": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:core": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:core": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:error": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:error": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:graph": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:graph": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:graph_provider_onednn": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:graph_provider_onednn": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:graph_route_apple": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:graph_route_cpu": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:graph_route_cpu": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:graph_route_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:graph_route_cuda": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:graph_route_vulkan": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:graph_route_vulkan": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_core": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_http": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:io_http": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_http2": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:io_http2": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_tls": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:io_tls": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_transfer": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:io_transfer": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_watch": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:io_watch": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:io_websocket": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:io_websocket": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:math": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:math": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:mem": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:mem": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:mem_reclaim": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:mem_reclaim": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:mem_vm": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:mem_vm": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:obs": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:obs": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:platform": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:platform": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:platform_fs": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:platform_fs": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:platform_thread": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:platform_thread": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:process": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:process": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:sched": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:sched": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:simd": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:time": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:time": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:timer_queue": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:timer_queue": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:util_core": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:util_core": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "factor:util_runtime": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "headers:util_runtime": {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2"
+    },
+    "component-contract": {
+      "group": "contract",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:container": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:core": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:error": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:io": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:math": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:mem": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:obs": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:platform": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:process": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:sched": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:simd": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:time": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:util": {
+      "group": "delivery",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f"
+    },
+    "delivery:compute": {
+      "group": "previous actual CPU three-delivery record",
+      "candidate": "58543f8c08dc3f8d22efeaf3620f3e74eaa33091"
+    },
+    "delivery:graph": {
+      "group": "previous actual CPU three-delivery record",
+      "candidate": "0faf698c28457a87716b086b52dfcbea7ae57341"
+    }
+  },
+  "reuse": [
+    {
+      "component": "compute",
+      "candidate": "58543f8c08dc3f8d22efeaf3620f3e74eaa33091",
+      "source_record": "onednn-normalization-compute-delivery.json",
+      "changed_product_inputs": [
+        "src/compute_provider_ggml_vulkan/CMakeLists.txt"
+      ],
+      "unchanged_off_branch": true,
+      "cache_flags": {
+        "source-build": [
+          "HYLE_COMPUTE_VULKAN:STRING=OFF"
+        ],
+        "shared-sdk-build": [
+          "HYLE_COMPUTE_VULKAN:STRING=OFF"
+        ],
+        "static-sdk-build": [
+          "HYLE_COMPUTE_VULKAN:STRING=OFF"
+        ]
+      },
+      "basis": "Only the enabled Vulkan vendor block changed; all three retained CPU delivery caches have Vulkan OFF, and its early-return branch is unchanged. CPU implementation, global CMake, dependencies and this consumer are byte-identical."
+    },
+    {
+      "component": "graph",
+      "candidate": "0faf698c28457a87716b086b52dfcbea7ae57341",
+      "source_record": "onednn-normalization-graph-delivery.json",
+      "changed_product_inputs": [
+        "src/compute_provider_ggml_vulkan/CMakeLists.txt"
+      ],
+      "unchanged_off_branch": true,
+      "cache_flags": {
+        "source-build": [
+          "HYLE_COMPUTE_VULKAN:STRING=OFF"
+        ],
+        "shared-sdk-build": [
+          "HYLE_COMPUTE_VULKAN:STRING=OFF"
+        ],
+        "static-sdk-build": [
+          "HYLE_COMPUTE_VULKAN:STRING=OFF"
+        ]
+      },
+      "basis": "Only the enabled Vulkan vendor block changed; all three retained CPU delivery caches have Vulkan OFF, and its early-return branch is unchanged. CPU implementation, global CMake, dependencies and this consumer are byte-identical."
+    }
+  ],
+  "base_record": "onednn-normalization-selected-base.json",
+  "delivery_record": "onednn-normalization-selected-deliveries.json",
+  "cleanup_record": "onednn-normalization-selected-cleanup.json",
+  "loc_record": "onednn-normalization-selected-loc.json",
+  "limitations": "Only the declared selected validation set. GPU-on SDK deliveries, other outstanding C1 route/model acceptance, P1, final default rules and redundant implementation removal are not signed here."
+}

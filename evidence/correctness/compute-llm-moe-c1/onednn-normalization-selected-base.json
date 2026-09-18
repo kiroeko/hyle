@@ -1,0 +1,29 @@
+{
+  "schema": "hyle.c1-selected-base-gates/v1",
+  "groups": [
+    {
+      "group": "native",
+      "candidate": "904b1fce9989002080123dcadf9089256dbe51c2",
+      "gates": 96,
+      "status": "PASS"
+    },
+    {
+      "group": "registration",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f",
+      "gates": 4,
+      "status": "PASS"
+    },
+    {
+      "group": "contract",
+      "candidate": "98d3331e5e11162d6297b4eda0d38124286bbb7f",
+      "gates": 1,
+      "status": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "archive": "onednn-normalization-selected-base-raw.zip",
+  "archive_sha256": "942809aa1fcb0357e620b78c880ee5d1518395d298900dc20ac744de4f8883db",
+  "archive_bytes": 2150088,
+  "retained_files": 501,
+  "limitations": "Base/configuration/header/component gates only; the thirteen remaining package gates and earlier CPU Compute/Graph deliveries have separate retained receipts. No P1, default rule or removal verdict."
+}

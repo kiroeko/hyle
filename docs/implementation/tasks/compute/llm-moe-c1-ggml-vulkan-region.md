@@ -513,3 +513,10 @@ optional-absent factor 仍存在，但整个测试 fragment 被 ENABLED 条件�
 合同测试移到条件外，并使用现有 module test aggregate helper；GPU 执行测试仍只在路线启用
 时注册。不改产品、依赖选择、公共治理或性能合同，不扩产品纠正预算。修正后只运行 selector
 选中的受影响检查和未完成的原组件/交付门，已通过的无关基础门不重跑。
+
+`98d3331e` 修正后4项 selected 检查及原 component-contract 实际通过；Vulkan OFF 的源码合同
+测试无需 SDK，CPU-only + tests ON 不再因缺少模块测试目标失败。原 broad selector 的112项
+检查已具备通过记录，详见[同批验证与复用依据](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-selected-validation.json)。
+两次夹具 SDK 路径遗漏、OFF 注册失败和隔离 cache 缺归档均保留原日志；后者只复用本机已有
+锁定包补齐，没有修改公共合同检查器。此处完成 Y16 的组合/隔离修复及原 broad 门，不代签
+Y4 尚未完成的 GPU-on 三交付、Air/Mini、真实权重片段或性能资格，owner 继续 AUDITED。
