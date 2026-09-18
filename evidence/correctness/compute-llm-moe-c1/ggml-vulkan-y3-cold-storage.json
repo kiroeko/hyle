@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "owner": "/root",
+  "component": "compute_provider_ggml_vulkan",
+  "registry_state": "AUDITED",
+  "scope": "C1-Y Y10-Y11 private cold graph/gallocr storage ownership and recoverable planning failures",
+  "audit_revision": "a9b01593",
+  "product_revision": "f61ae0f9f1d5054fba0c4cc9ace1cc2fafa7e843",
+  "product_tree": "ad8fe1a873ad3b918538c52672169268e7cb9ff4",
+  "snapshot_qualification": "Final static/shared 19-case tests use this exact product source and seven-file patch set. Static first-success and final incremental logs plus complete shared rebuild are retained. Later receipt/registry/LOC changes do not trigger builds or P1.",
+  "upstream": {
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+    "patch_tree_sha256": "4d425b5efe991c61baba411a47c8d4ce3e3fdcb57c1ed3170a341cf968ca1122",
+    "operator_algorithms_changed": false,
+    "original_checkout_status": "clean",
+    "old_cpu_provider_blocker_changed": false
+  },
+  "implementation": [
+    "NativeGraph owns the metadata arena, gallocr storage, imported-resource lease and NativeDevice; one graph per execution slot is retained by NativeWork until native retirement.",
+    "Cold handoff checks positive tensor sizes, original upstream op capability, explicit output flags, native buffer ownership and actual same-device identity. The semantic builder still owns legal topology, metadata capacity and mathematical shape contracts.",
+    "Gallocr retains original liveness, best-fit and in-place planning. Metadata allocation/null, chunk/capacity and alignment-overflow failures return through reserve with partial construction cleanup instead of abort.",
+    "Each graph owns a private copy of the native buffer-type descriptor. Only allocation catches exceptions before returning through C buffer cleanup, preserving native errors; other upstream callbacks and device identity remain unchanged.",
+    "All prior private region tests now use gallocr storage. The unsafe admission-only allocate_context bridge and NativeDevice method have been removed."
+  ],
+  "build": {
+    "machine": "W1-WIN",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compiler": "MSVC 19.50.35728.0",
+    "generator": "Ninja",
+    "configuration": "Release",
+    "parallel": 2,
+    "shader_parallel": 1,
+    "vulkan_sdk": "1.4.357.0 portable extraction",
+    "runtime_environment": "PATH unset, required DLLs beside EXE, system vulkan-1.dll, Khronos validation requested and explicit validation instance exercised",
+    "system_changes": "none; no UAC, installer, power, registry or firewall changes"
+  },
+  "validation": [
+    {
+      "name": "W1 static private provider",
+      "verdict": "PASS",
+      "cases": 19,
+      "skips": 0,
+      "log": "y3-storage-test-static.log",
+      "structured_results": "y3-storage-test-static.json"
+    },
+    {
+      "name": "W1 shared private provider",
+      "verdict": "PASS",
+      "cases": 19,
+      "skips": 0,
+      "log": "y3-storage-test-shared.log",
+      "structured_results": "y3-storage-test-shared.json"
+    },
+    {
+      "name": "Source patch contract",
+      "verdict": "PASS",
+      "cases": 5,
+      "log": "y3-storage-source-contract.log"
+    },
+    {
+      "name": "Docs and closure",
+      "verdict": "PASS",
+      "previous_registry_revision": "fbd07798",
+      "logs": [
+        "y3-storage-docs-product.log",
+        "y3-storage-closure-product.log"
+      ]
+    }
+  ],
+  "correctness_contract": {
+    "region": "Original F32 norm/scale/SiLU/residual with width 2048 and rows 1/17/128, changing inputs and independent double oracle; two independent repeated asynchronous slots. Existing real native producer/import path now uses NativeGraph.",
+    "liveness": "256-add graph with 2048-wide tensors uses less than one quarter of one full allocation per node, computes all outputs as 64.5, retains graph/storage through pending work and readback, then returns quota to zero.",
+    "host_failure": "The exact patched ggml-alloc.c is compiled in a test-only renamed translation unit with local malloc/calloc/free injection. Every one of 12 reached host allocation sites fails independently, returns failure and retires all counted host allocations; a final normal allocation succeeds.",
+    "fragmentation": "300 repeat outputs with retained interleaved small leaves exhaust the upstream 256-entry free-block table; reserve returns false without abort and metadata counts return to zero.",
+    "native_partial_failure": "Upstream process-local chunk-size setting is temporarily 8192 and restored. A real native first allocation succeeds; subsequent allocation and memory-type retries return OOM. All partially created native buffers/memory retire, and the original Vulkan error remains available.",
+    "imports": "Missing import owner and foreign-device buffers are rejected; accepted imports retain their owner until graph destruction. NativeGraph destroys imported owners under its native scope.",
+    "validation": "Both final logs have no VUID and no skipped tests, including the explicit validation instance. No actual device-loss injection or public route cancel/close validation is claimed.",
+    "shared_test_boundary": "Normal NativeGraph/NativeWork cases exercise the HYLE DLL. PFN tests use the private vendor copy linked into the test executable; C host OOM injection uses the identical patched source with test-local allocation functions. No mock provider supplies successful computation.",
+    "weights": "Generated numeric fixtures only; actual checkpoint-weight acceptance remains Y4."
+  },
+  "retained_failure": [
+    "Initial compile compared an upstream weak device reference to a strong owner; locking the weak reference fixes identity comparison.",
+    "First 18-case run had 17 passes and one test expecting generic Exhausted while the adapter correctly preserved Native/VK_ERROR_OUT_OF_DEVICE_MEMORY. The assertion was corrected to require that native diagnosis. Partial native cleanup checks already passed."
+  ],
+  "p0": {
+    "cold_cost": "One graph owner/control block, existing HYLE metadata arena, upstream gallocr metadata and native chunks per slot. Failure checks do not replace the upstream planning algorithm. Private buffer-type copy only changes the allocation callback.",
+    "execution_cost": "No gallocr call in submit/poll/wait. The same planned storage and graph are reused. Original upstream graph encoding/private execution allocations remain; no allocation-free replay claim.",
+    "p1": "NOT_RUN: ordinary C1-Y Direct/Graph and the final qualified candidate remain incomplete."
+  },
+  "remaining": [
+    "Y4 semantic lowering must compute metadata capacity from the validated Plan and set its input/output flags; raw ggml types remain private.",
+    "Ordinary Direct/Graph, fixed default rules, native fragment composition and actual checkpoint weights.",
+    "Public cancel/close/retained results and device-loss propagation through the existing route pending owner.",
+    "Air/Mini and updated full source/static/shared consumers, relocation/offline and remaining broad selector gates.",
+    "Equal-responsibility C1 P1; no complete requirement row or route-cell PASS from this private slice."
+  ],
+  "selector": {
+    "plan": "y3-storage-product-selector.json",
+    "verdict": "READY",
+    "qualification": "Broad component/package gates remain pending the complete C1-Y candidate as declared by the card; not all selected gates were executed in this slice."
+  },
+  "aggregate": "INCONCLUSIVE: C1-Y remains active and incomplete; no external blocker",
+  "implementation_loc": "ggml-vulkan-y3-storage-implementation-loc.json",
+  "raw_archive": {
+    "path": "ggml-vulkan-y3-cold-storage-raw.zip",
+    "bytes": 42328,
+    "sha256": "4df41ef82bea71ce82a2bb2c5b1d3332a001850f36354c84d9b2594fd2a616e3",
+    "files": [
+      {
+        "path": "y3-storage-build-static-weak-reference-failure.log",
+        "bytes": 49131,
+        "sha256": "fed30a1910b486b4e04c6854148995638d644ea1970ed025cfb5ff080494766a"
+      },
+      {
+        "path": "y3-storage-build-static-first-success.log",
+        "bytes": 27610,
+        "sha256": "b810baf7d50c61d6f73c3592d437ef9d0b95d9c02b8034bbb0da2693f352edd3"
+      },
+      {
+        "path": "y3-storage-test-static-native-status-expectation.log",
+        "bytes": 4870,
+        "sha256": "de4be4b03153ace0811900159478a19ffe21dc8815bcf6a18fe9693136d534bf"
+      },
+      {
+        "path": "y3-storage-test-static-native-status-expectation.json",
+        "bytes": 9106,
+        "sha256": "e342eec118619b1337f12e6bac1a890574abdc44a0230770c82834d9cb17efd6"
+      },
+      {
+        "path": "y3-storage-configure-static.log",
+        "bytes": 1186,
+        "sha256": "cf1d8c3a219890776128ecd3b713a0910e5ccfaf788d017073c94906ee1961a2"
+      },
+      {
+        "path": "y3-storage-build-static.log",
+        "bytes": 3724,
+        "sha256": "e6a0a0b0510d245544754606e995c1438ef02adf7436de0622eb365010a96df7"
+      },
+      {
+        "path": "y3-storage-configure-shared.log",
+        "bytes": 1186,
+        "sha256": "d7cd25ea7bb9a23eef11438d23e2e766d4ff47cb57ce9db4b30cb080e9ca0cba"
+      },
+      {
+        "path": "y3-storage-build-shared.log",
+        "bytes": 47913,
+        "sha256": "c45623c1a9a6e29f55a7f71ddce03a16b7ef64c1b68a73cacb86f7243b48c093"
+      },
+      {
+        "path": "y3-storage-test-static.log",
+        "bytes": 4601,
+        "sha256": "bdda891dc90013c93a6793dca2a577efe08feb38dcfd7c463e32cc577ee8b425"
+      },
+      {
+        "path": "y3-storage-test-static.json",
+        "bytes": 9081,
+        "sha256": "f97f5a832d00e9e4d4a48f554cbcd631da94a5f0f77cd689e9baec074045e1a9"
+      },
+      {
+        "path": "y3-storage-test-shared.log",
+        "bytes": 4601,
+        "sha256": "88aab61608ace01390c5b6327c0ac2a523e24c05af4b92bdb37dbca3376ff3bd"
+      },
+      {
+        "path": "y3-storage-test-shared.json",
+        "bytes": 9081,
+        "sha256": "1e35f37f867ae2450fa796a59408be22855620aa822b6337bc9f3226cb273547"
+      },
+      {
+        "path": "y3-storage-source-contract.log",
+        "bytes": 292,
+        "sha256": "90866a9e40dfb6ecb5ad0e38cd10e0931fee8dc2bdf2e86c2b7a0bbab7dfde8c"
+      },
+      {
+        "path": "y3-storage-docs-product.log",
+        "bytes": 80,
+        "sha256": "df8089937269938f83600181c456a55622e96bd07a20f6eec0c735df06c7dd50"
+      },
+      {
+        "path": "y3-storage-closure-product.log",
+        "bytes": 57,
+        "sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2"
+      },
+      {
+        "path": "y3-storage-build-static.ps1",
+        "bytes": 1376,
+        "sha256": "ed080215c69758d0dfd19fe1db65ce8ef921e0490700bce6d84cfe7a0c5d44d6"
+      },
+      {
+        "path": "y3-storage-build-shared.ps1",
+        "bytes": 1377,
+        "sha256": "20f6a1d04dc013153ba74942ff4b53edffa0817482242ab2a55092d28a932a90"
+      },
+      {
+        "path": "y3-storage-test.ps1",
+        "bytes": 658,
+        "sha256": "671861d3fb66212a09cc1c33aeb41fd51a7a841a06624d09b4a48c020fb95388"
+      },
+      {
+        "path": "y3-storage-product-selector.json",
+        "bytes": 200446,
+        "sha256": "3debec73ec256a242a6b6f1212abf1857f3bf45704f85b59d2beb606a3041510"
+      },
+      {
+        "path": "y3-storage-product-selector.log",
+        "bytes": 2260,
+        "sha256": "15ca2135df52a5e7512622603bc40acad22a90bb89d61a03459c95541e0e0660"
+      }
+    ]
+  }
+}

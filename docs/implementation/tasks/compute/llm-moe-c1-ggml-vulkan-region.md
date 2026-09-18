@@ -276,3 +276,37 @@ metadata 的空指针/abort 路径、free-block 容量耗尽的 abort、部分�
 `allocate_context` 按迁移实际消费清理，未迁移用法不获得最终 OOM 资格。零尺寸/不支持域由上层
 固定规则选择其他合格实现或明确拒绝；本批不据此缩减 C1 MUST。实现纠正最多两轮，不启动 P1，
 公开取消/关闭、完整三交付和其他机器仍按 Y4 验收。
+
+## Y3 冷图与存储实现记录（2026-09-18）
+
+产品 `f61ae0f9f1d5054fba0c4cc9ace1cc2fafa7e843`，审计 `a9b01593`。Y10–Y11 已实现：
+NativeGraph 整体保留 arena、gallocr、外部资源与 device，每槽冷期规划/分配一次，由 NativeWork
+保活至原生完成。保留原版 liveness/in-place/块选择，定向补齐空指针、部分初始化、容量与对齐
+溢出的失败返回；私有 buffer-type 副本只包装 allocation 的不抛异常边界，让 C 层正常回收。
+所有已有私有 region 测试已迁移，旧 `allocate_context` bridge/方法删除，不保留双分配入口。
+
+[结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y3-cold-storage.json)与
+[原始日志](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y3-cold-storage-raw.zip)
+绑定产品 tree、七文件补丁、命令、失败修正和未运行项。
+
+| 实际验证 | 结果与边界 |
+|---|---|
+| W1 static/shared 私有 factor | 各19例通过、无跳过；同源 norm/gate/residual、双槽重复执行、原生 producer、完成/失败用例全部使用新存储；DLL 邻置、PATH unset，最终无 VUID |
+| 内存复用与寿命 | 2048宽256次 add 的计划存储小于逐节点分配的1/4，实际结果64.5；pending、保留图和 readback 期间资源存活，释放后 quota 归零 |
+| Host OOM | 同一补丁 C 源的私有测试副本逐个拒绝12个实际分配点，每次返回失败并清空记录中的 host allocation；最后正常分配仍通过。产品没有测试 failpoint |
+| 规划容量 | 300个 repeat 输出与交错保留小叶子使原厂256项 free-block 表耗尽；返回失败且回收，没有 abort，不改写原规划算法 |
+| GPU 部分分配 | 进程内暂设原厂 chunk-size 为8192并恢复，首块实际分配，后续分配及 memory-type 重试持续返回 OOM；buffer/memory 最终归零，保留原生 Vulkan 错误 |
+| 借入资源 | 缺少强 owner、跨设备 buffer 明确拒绝；同设备借入持有至图销毁，完整执行仍由真实 Vulkan 完成 |
+| 构建/维护 | 5例补丁合同、docs、closure 通过，上游 checkout clean。保留 weak reference 比较的编译修正，以及首轮17通过/1断言错误；后者将通用 OOM 预期纠正为实际保留的原生 OOM |
+
+P0：每槽冷期拥有一组原版 metadata/chunks，执行不再调用 gallocr；没有新增逐 kernel 分发。
+原版 graph 编码和内部执行分配仍计费，不宣称零分配 replay。私有 capability 检查不代替 Y4
+语义 lowering 的数学/shape、arena 容量和 input/output flags 合同；原厂有限规划容量仍有限。
+
+统一 LOC 沿同23路径对不可变产品统计 **45,440行 / 188个实现文件**，净增加161行，self-check
+通过，不含 tests/bench/vendor/CMake/Python；
+[原始统计](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y3-storage-implementation-loc.json)。
+
+当前仍 `AUDITED` / `INCONCLUSIVE`，64行/256格不增加 PASS。后续进入 Y4 普通 Direct/Graph、
+默认规则、同设备片段组合与公开取消/关闭/结果保留接线；实际权重、Air/Mini、更新后三交付、
+broad selector 门及等责 P1 仍未完成。没有新的外部阻塞，不重复本批验证来代替普通入口接线。
