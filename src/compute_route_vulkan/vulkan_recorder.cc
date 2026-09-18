@@ -69,9 +69,9 @@ Status Recorder::append(const Program &program, std::span<const Tensor> inputs,
             state_->runtime->device)
       return Status::InvalidArgument(
           "Vulkan recorder output description or device");
-    const auto value = prepared->outputs[index];
-    const auto alias = prepared->aliases[value];
-    if (alias.root != value) {
+    const auto output_value = prepared->outputs[index];
+    const auto alias = prepared->aliases[output_value];
+    if (alias.root != output_value) {
       const auto port = std::ranges::find(prepared->inputs, alias.root);
       const Tensor *root = port != prepared->inputs.end()
                                ? &inputs[static_cast<std::size_t>(

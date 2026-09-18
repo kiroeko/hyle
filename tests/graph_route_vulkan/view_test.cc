@@ -72,6 +72,76 @@ TEST(VulkanGraph,
   }
 }
 
+TEST(VulkanGraph, InputAliasChainsRebindOddOriginsAndKeepOldInputStorage) {
+  auto context = vulkan_test::context().value();
+  const auto parent_desc =
+      c::TensorDesc::strided_bytes(c::DataType::kFloat16,
+                                   std::array<std::int64_t, 2>{3, 5},
+                                   std::array<std::int64_t, 2>{15, 2})
+          .value();
+  const auto input_desc =
+      c::TensorDesc::strided_bytes(c::DataType::kFloat16,
+                                   std::array<std::int64_t, 2>{2, 5},
+                                   std::array<std::int64_t, 2>{15, 2})
+          .value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto x = builder.input(input_desc).value();
+  const auto sliced =
+      builder.add(c::View::slice(1, 1, 2, 2).value(), x).value();
+  const auto transposed =
+      builder
+          .add(c::View::permute(std::array<std::int32_t, 2>{1, 0}).value(),
+               sliced)
+          .value();
+  const auto copied = builder.add(c::Copy{}, transposed).value();
+  const auto negative =
+      builder.add(c::Unary{c::UnaryKind::kNeg}, copied).value();
+  ASSERT_TRUE(builder.publish(transposed).ok());
+  ASSERT_TRUE(builder.publish(negative).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  auto program = gv::compile(context, graph, {}, {.report = &report}).value();
+  EXPECT_EQ(report.native_dispatch_count, 2U);
+  EXPECT_EQ(report.invocation_storage_block_bytes.size(), 2U);
+  auto first = program.create_invocation().value(),
+       second = program.create_invocation().value();
+  graph = {};
+  v::Tensor retained;
+  std::vector<std::uint64_t> saved;
+  for (int phase = 0; phase < 3; ++phase) {
+    std::vector<double> data(15);
+    for (int i = 0; i < 15; ++i)
+      data[i] = i + phase * 16;
+    auto parent = make(context, parent_desc, data);
+    const int start = phase % 2;
+    auto input = parent.view(c::View::slice(0, start, 2).value()).value();
+    auto &slot = phase == 0 ? first : second;
+    ASSERT_TRUE(slot.bind(input).ok());
+    auto work = slot.submit().value();
+    auto result = work.wait().value();
+    const auto &view = result.get()->tensors()[0];
+    EXPECT_EQ(view.native_buffer(), parent.native_buffer());
+    EXPECT_EQ(view.native_offset(), static_cast<std::uint64_t>(15 * start + 2));
+    std::array<double, 4> expected{
+        data[5 * start + 1], data[5 * (start + 1) + 1], data[5 * start + 3],
+        data[5 * (start + 1) + 3]};
+    expect(context, view, expected, true);
+    for (auto &value : expected)
+      value = -value;
+    expect(context, result.get()->tensors()[1], expected, true);
+    if (phase == 0) {
+      retained = view;
+      saved = bits(context, retained);
+    } else
+      EXPECT_EQ(bits(context, retained), saved);
+  }
+  first = {};
+  second = {};
+  program = {};
+  EXPECT_TRUE(context.close().ok());
+  EXPECT_EQ(bits(context, retained), saved);
+}
+
 TEST(VulkanGraph, ConstantViewsNeedNoDeviceStorageAndRetainOriginalOwners) {
   auto context = vulkan_test::context().value();
   const auto desc = dense(c::DataType::kInt64, {17});
