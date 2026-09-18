@@ -6,7 +6,7 @@
   [C1 活动卡](llm-moe-c1-tensor-state.md)追加有限 FIX，不重开 CPU/Graph route 或 SIMD。
 - baseline：`55830705d95150ecfd71a4d49798c07457dc379c`。
 - trigger：共同 `MatMul` schema 接受数值累加类型；oneDNN Direct `select_route` 与 Native
-  `make_plan` 的 MatMul 分支却没有匹配 `accumulation_type`，实际实现只使用 F32。
+  `build_plan` 的 MatMul 分支却没有匹配 `accumulation_type`，实际实现只使用 F32。
   同样的 F32 `[16,5] * [5,4]` 描述配 `MatMul{DataType::kFloat64}` 因而可能被错误接纳。
   oneDNN Graph、cuBLASLt、Apple 与 Vulkan 的 MatMul 已拒绝非 F32 累加，不能靠下游掩盖 CPU
   普通入口的缺陷。先用回归重现接纳错误，再修准入；尚不声称已运行数值反例。
@@ -41,7 +41,7 @@ SCOPED 登记提交为 `17674262`。下列审计与有限 FIX 提交后才实施
 
 2026-09-18，owner `/root`。共同 `validate_accumulation` 允许 Unknown 或数值类型，
 `OperationPreparationAccess` 只核对 schema/资源，不代表具体 Provider 实现支持该精度。
-oneDNN 的提案与准备共用 `select_route`；Native 两条路径共用 `make_plan`。本轮在各自共享
+oneDNN 的提案与准备共用 `select_route`；Native 两条路径共用 `build_plan`。本轮在各自共享
 入口修复，避免只挡公开 `prepare` 而让 Graph 冷提案或精确准备旁路。
 
 | FIX | 允许改动与验收 | 当前裁决 |
@@ -59,3 +59,21 @@ oneDNN 的提案与准备共用 `select_route`；Native 两条路径共用 `make
 没有同合同热路径变化，不跑 P1；⑤ 不增加 C/FFI；⑥ 私有 C++ 两处判断，无头/CMake/package
 变化，原三交付形状证据复用，static/shared 对新实现重跑；⑦ 默认 CPU/专家入口都有回归，
 用户 guide 明确有限 F32 域。测试先在未修产品上确认失败，再以同一测试验证修复。
+
+## Candidate
+
+- 审计提交：`06499f6a`；回归提交：`4d6cf12fd3263baaa0697eefc43dad7b6a7af274`。
+  未修产品上 Native、oneDNN、默认 Compute context、默认 Graph context 四个定向用例均因
+  错误接纳 F64 请求失败，确认缺陷可复现；这不是浮点容差或性能 fixture 的推断。
+- 产品候选：`e191351522340dd997cfc925abe3a69d47746d14`。两个共享冷准入函数共增加6行；
+  成功 F32 的算法、Provider 阈值、执行/资源代码、布局和构建边界不变。回归同时保存有效
+  F32 提案的 resource requirements，避免失败查询清空输出槽影响精确准备测试。
+- W1 MSVC 19.50 Release/WERROR/shipping layout static/shared 各8个定向 CTest目标通过：
+  154个单测及独立 CPU executor 消费样例；包括既有 F32 数值/重放、组合和 Graph region。
+  DLL 邻置、PATH unset；CPU 编译固定 parallel2，动态构建复用未变 oneDNN 对象。
+- 初次 CTest runner 的 regex 缺少 `hyle_` 前缀，选中0项；该次不计 PASS。修正为真实目标名、
+  加 `--no-tests=error` 后才取得上述8项结果；没有修改测试语义或门限。
+- WSL/GCC14 使用 Windows 候选 Git archive 的验证副本，当前构建/验收未完成，不能签跨环境
+  完成。最终原始日志、身份和终局将在本卡补录；没有启动 P1 或重跑无变化的 package 门。
+- 同一23路径的统一 LOC（含 GLSL、不含 tests/bench/vendor）为 **46,085行 / 191个实现文件**，
+  self-check PASS。相比上一产品候选仅增加6行资格检查，不计为 C1 新算子覆盖。

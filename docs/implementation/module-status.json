@@ -353,9 +353,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-cpu-matmul-precision.md",
-      "summary": "C1-Z AUDITED：Z01 固定 oneDNN MatMul 仅接纳 F32 累加，在提案/精确准备共享入口拒绝其他精度；Z02 由 Native C1 承担同一 fallback 缺陷。仅冷资格修复与回归。"
+      "candidate": "e191351522340dd997cfc925abe3a69d47746d14",
+      "summary": "C1-Z CANDIDATE：oneDNN 与 Native 的 MatMul 精度准入遗漏已修复；W1 static/shared 各8个目标通过，WSL 定向验收尚未完成。只改冷检查，热路径/依赖/API 不变。"
     },
     {
       "module": "compute_provider_ggml",
