@@ -201,3 +201,26 @@ self-check通过，包含 GLSL，不含 tests/bench/vendor/CMake/Python。
 context helper 有未检查的 realloc 及 C unwind 清理限制，Y3 必须由受管 region owner 定向解决；
 当前仅用于内部 admission 的 `allocate_context` 不能直接继承为最终 OOM 合同。Y4 的普通入口/规则、
 真实权重、Air/Mini、完整三交付和 broad selector 门仍待完成；没有新的外部阻塞。
+
+## Y3 完成边界首批有限 FIX（AUDITED，2026-09-18）
+
+owner `/root`，baseline `efe2c9c4`。固定源码的 `ggml_vk_compute_forward` 会在一个 region 内
+提交多个 batch；`submit_pending` 不等同于整个 region 成功，后续编码/分配/submit 仍可失败。
+`ggml_backend_vk_synchronize` 会提交尚未提交的 transfer/compute context，不能用于失败后盲目清理。
+已有 route 的单次 submit 失败处理不覆盖此形状。此次先实现独立可验证的 native 完成边界：
+
+| FIX | 冻结责任 | 验证 |
+|---|---|---|
+| Y08 | 每个私有 NativeWork 持有 backend、完成 fence 和 NativeDevice。正常 async region 的最后一个上游 compute batch 直接携带该 fence，保留原版融合/分批，不额外提交每 kernel callback；原版强制串行/诊断分支保留，必要时只在 region 尾部追加完成 marker。submit 结果分别报告 failure 与仍可能 pending，不把错误当成资源可释放 | 真实多 batch GPU region、重复执行、双独立 work；真实 PFN 在已接纳首批后使后续 submit 失败，保留原始错误且不继续提交残余编码 |
+| Y09 | 私有边界观察 fence；只有完成或 device loss 才可退役。异常时按实际 upstream queue 锁排空 compute/transfer；观察/排空 OOM 仍 pending，保留全部 owner。清理先丢弃未提交 context，再在已证明 quiescent 后回收原版 graph 资源，失败 slot 禁止重用。NativeWork submit 接受强资源 lease，普通 route 后续用已有 pending Run 持有它；此处不再建第二个全局 pending 队列 | 延后故障恢复前 owner 不释放、恢复后恰好释放；正常 poll 不强制 queue idle；失败 slot 拒绝复用；析构的最后防线可阻塞 drain，普通异步丢弃由 Y4 既有 pending owner 保活 |
+
+仅修改本 factor 的私有 C++ seam、锁定 vendor 完成边界与对应测试；不改算子算法、公共 Completion、
+route API 或公共性能工具。NativeWork 单对象 host 操作 thread-compatible；同 NativeDevice 的
+准备/编码由 route 既有 admission 锁串行，多个 slot 的 GPU 工作可同时 pending。正常路径保留
+上游资源与编码成本，新增一次 region 完成 fence/lease；不启动 P1。
+
+Y3 冷期图/存储 owner 仍必须完成：源码检查还确认 gallocr 的多个 metadata 分配有 abort/unchecked
+路径。后批须保留成熟 liveness/in-place 规划并定向使其失败可回收，不直接沿用不安全 helper、
+不把每个中间张量永久单独分配作为最终方案。本批不代签该分配合同、公开 cancel/close/保留结果，
+后者随 Y3 slot 与 Y4 原有 Run/Results 接线验收。W1 static/shared 适用 correctness 先行，纠正预算
+两轮，完整路线/三交付/Air/Mini/P1 仍沿本卡执行。
