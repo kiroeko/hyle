@@ -135,3 +135,24 @@ P0：arena 一次分配、context 一次小对象分配，move 不分配，先�
 再实现 Y3 受管运行/完成、Y4 普通入口与规则。当前 static SDK 仍有临时 Vulkan 开发 package
 依赖；其他平台、完整失败/并发/结果寿命、真实权重、source archive、广组件 selector 门及 P1
 尚未完成，聚合验收 `INCONCLUSIVE`，64行/256格不增加 PASS。
+
+## Y2 原生资源接入有限 FIX（AUDITED，2026-09-18）
+
+owner `/root`，baseline `e7e88c62`。有界源码审计已结束：固定 pin 的 dispatcher/instance 与
+registry 是进程全局；device 在完整初始化前发布；buffer 在 map/bind 后才记录 owner，失败可漏
+native handle；buffer-type context 强持有自身 device；`ggml.cpp` 静态初始化改写宿主 terminate
+handler。这些是嵌入基础库的具体接入缺陷，不授权重写算子或增加新算子。
+
+| FIX | 冻结实现责任 | 验证 |
+|---|---|---|
+| Y05 | 私有 NativeDevice 持有 loader 与独立 upstream instance/device/registry；保留上游 feature/专用 pipeline 决策，按原 physical-device index、软件设备 opt-in 和 validation 选项创建。每次 adapter 边界用栈上 scope 选择对应 Vulkan-Hpp dispatcher，退出恢复线程局部指针；固定 pin 未创建后台 host worker，不让 scope 跨异步 host 回调。设备完成初始化后才发布 | 两个独立 device/loader owner、无效设备/loader 错误、跨线程使用与构造失败回滚；普通用户无新增 Provider 排序/API。后续 route 持有该 owner 并使用同一 native device |
+| Y06 | 原版 buffer 的 create/allocate/map/bind 逐步纳入 RAII，实际 VkDeviceMemory 大小通过可选 HYLE QuotaAllocator reservation 计费，失败返还；buffer-type 反向引用改 weak 以消除环。窄 borrow/export 保留 native owner；外部 queue 使用与上游相同的 device-submit→queue 锁顺序 | 配额拒绝/返还、部分初始化故障、同设备 native producer 与原版 region、原 buffer 比 wrapper 活得更久；不以这些用例代签部分 GPU 工作接纳后的 Y3 终态 |
+| Y07 | 私有 C++ backend/buffer owner 对 upstream 异常在 adapter 边界转换成 Status；同步内部 region 用于验证资源桥，不承诺未来普通执行同步。取消 vendor 的静态 terminate handler 接管；CMake owner PRIVATE 增加 platform，采用已加载 PFN，去掉 vendor Vulkan loader 静态链接及静态 SDK 的临时 find_dependency(Vulkan) | 迁移既有独立公式 region 到真实私有桥接，确认宿主 handler 不变；W1 对应 factor correctness、DLL 邻置、source/static/shared 的更新声明检查。完整三交付及 Air/Mini 随 Y4 稳定候选完成 |
+
+`KEEP` 所有原版算子/融合/设备能力分支；`FIX` 仅上述运行宿主与失败边界；`DEFER` Y3 的 pending
+owner、部分接纳失败 drain、cancel/close/旧结果及 Y4 普通入口规则，仍是本卡必做。新的私有声明
+只在本 factor，ggml C 类型不进入安装 SDK，route/Graph 依赖方向不变；本批不改其公开行为。
+loader/instance/device 冷期创建；scope 不分配、不加全局执行锁，whole-region 只进入一次 adapter；
+quota opt-in 才增加 reservation token，仍需在完整 P0/P1 计入。新增过程性故障测试可包装真实
+Vulkan PFN 返回指定错误，正常正确性必须运行真实 GPU，不能用 mock provider 代替。
+实现最多两轮纠正，先 W1 适用 correctness，不启动 P1 或重复已完成的长路径调查。
