@@ -1,0 +1,20 @@
+{
+  "schema": "hyle.ggml-vulkan-masm-audit/v1",
+  "baseline": "6957f964b8d7dd6471098aa5d651b7fedd08a21b",
+  "owner": "compute_provider_ggml_vulkan",
+  "environment": "Windows11 x64 MSVC19.50 CMake4.4.0 Ninja",
+  "trigger": "Selected all-factor configuration fails CMAKE_ASM_COMPILE_OBJECT after ggml project enables generic ASM.",
+  "source": "Locked ggml456172ec CMakeLists.txt line3: project(ggml C CXX ASM); generic ASM claims .asm globally after parent enables ASM_MASM.",
+  "reproducer": {
+    "without_scoped_extensions": "Expected configure failure; parent fcontext source classified ASM",
+    "with_scoped_extensions": "Configure and actual fcontext MASM object/static library build PASS; source classified ASM_MASM"
+  },
+  "frozen_fix": "Within existing provider CMake block on MSVC, restrict generic ASM extension list to s and S before adding the locked vendor subdirectory.",
+  "validation_required": [
+    "Real provider with parent MASM source composition regression",
+    "Original selected full-factor configuration and applicable selected gates"
+  ],
+  "scope": "Mechanism reproduction only; no operator, runtime, delivery or P1 acceptance. No product code changed yet.",
+  "raw_archive": "ggml-vulkan-masm-audit-raw.zip",
+  "raw_sha256": "55c7ee7e437413fd1d874a4959e3d02ba1c6211250fa2d0dc20b8e03e61a8572"
+}

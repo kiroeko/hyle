@@ -472,3 +472,28 @@ P0：冷期创建 typed recipe、每槽原版 graph/gallocr 和固定边界 copy
 核对 C1 操作分派与当前映射，区分已绑定、待绑定、需适配和确实不支持，固定下一组有限 FIX；
 随后对该组完成 Air/Mini 等适用验证，复用本次未改变的事实，不重复研究已有执行边界。
 本次证据/状态修改不触发产品重建或 P1。
+
+## Y16：Windows MASM 与原厂 ASM 组合（重新定界并 AUDITED）
+
+owner `/root`，baseline `6957f964`。C1-AA 的原 selector 全因子配置复现
+`CMAKE_ASM_COMPILE_OBJECT` 缺失：Sched 已启用 `ASM_MASM`，之后固定 ggml 的
+`project("ggml" C CXX ASM)` 注册通用 ASM，把父项目的 `.asm` 文件重新归入 ASM。
+通用 ASM 的编译规则只存在于 vendor 子目录，故父目标生成失败。这是成熟 Provider 的 CMake
+组合污染，不是 Sched 算法或汇编内容缺陷；修复归当前 AUDITED 的 Provider owner。
+
+[具名最小复现](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-masm-audit.json)
+和[原始脚本/日志](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-masm-audit-raw.zip)
+已在同一 W1 工具链验证：原形状报告父 fcontext 文件 LANGUAGE=ASM 并生成失败；仅在 vendor
+block 限定通用 ASM 后缀为 `.s/.S`，则保留 LANGUAGE=ASM_MASM，实际 fcontext 汇编及静态库构建通过。
+这是实现前的机制证据，不代签真实 Provider 组合或任一计算/性能验收。
+
+有限 FIX **Y16**：仅在本 factor 的现有 vendor block、MSVC 分支设置
+`CMAKE_ASM_SOURCE_FILE_EXTENSIONS` 为 `s;S`，然后仍使用原厂 `add_subdirectory`。
+增加真实父工程 MASM target 与 HYLE Vulkan source embedding 同时存在的配置/编译回归；
+原 full-factor selector 配置必须恢复，并完成已选门。保留当前 ggml pin、九处源码补丁和全部
+运行语义；不修改 Sched、公共构建/selector 或性能仪器，不重写 vendor 源文件列表。
+
+这属于 Y1 构建隔离/组合边界的第二次有界产品纠正，预算不增加；只裁决这一个可复现反例。
+适用验证为 Windows 实际组合回归、selected factor/直接消费者/header/交付及原 broad 门。
+MSVC 以外分支不改变，已有未变的运行时/跨平台证据按身份保留；该配置修复不单独启动 P1。
+当前仅冻结修复，尚未修改产品代码或签修复后 PASS；C1-Y 的其他未完成项保持不变。
