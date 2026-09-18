@@ -48,11 +48,13 @@ hyle::Status native_fill(const NativeDevice &owner, VkBuffer buffer,
         hyle::Status::FromNative(hyle::StatusCode::Unknown,
             {hyle::NativeErrorDomain::Vulkan, result}, "native producer fixture");
   };
-  VkCommandPoolCreateInfo pool_info{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  VkCommandPoolCreateInfo pool_info{};
+  pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   pool_info.queueFamilyIndex = native.queue_family;
   VkCommandPool pool = VK_NULL_HANDLE;
   HYLE_RETURN_IF_ERROR(check(CreateCommandPool(native.device, &pool_info, nullptr, &pool)));
-  VkCommandBufferAllocateInfo allocation{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  VkCommandBufferAllocateInfo allocation{};
+  allocation.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocation.commandPool = pool;
   allocation.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocation.commandBufferCount = 1;
@@ -62,11 +64,13 @@ hyle::Status native_fill(const NativeDevice &owner, VkBuffer buffer,
     DestroyCommandPool(native.device, pool, nullptr);
     return status;
   }
-  VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  VkCommandBufferBeginInfo begin{};
+  begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   status = check(BeginCommandBuffer(command, &begin));
   if (status.ok()) {
     CmdFillBuffer(command, buffer, 0, bytes, 0x3f000000u); // 0.5f
-    VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    VkMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     CmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -76,7 +80,8 @@ hyle::Status native_fill(const NativeDevice &owner, VkBuffer buffer,
   bool accepted = false;
   if (status.ok()) {
     status = owner.with_queue([&](VkQueue queue) -> hyle::Status {
-      VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+      VkSubmitInfo submit{};
+      submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
       submit.commandBufferCount = 1;
       submit.pCommandBuffers = &command;
       HYLE_RETURN_IF_ERROR(check(QueueSubmit(queue, 1, &submit, VK_NULL_HANDLE)));

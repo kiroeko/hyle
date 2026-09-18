@@ -569,3 +569,14 @@ static-only 全局分配失败夹具；原混合片段接纳后失败/drain 用�
 三个 owner 仍按当前有限卡 AUDITED；本次不签 C1-Y/C1 完成、默认性能优选或自有实现淘汰。
 Air/Mini 正准备同一候选；已有 Mac 环境缺少 ggml 原厂构建所需 glslc，工具准备只发生在验证机，
 不修改产品构建/依赖锁或降低交付要求。真实模型片段、完整三交付和 P1 等剩余项保持未验收。
+
+### Y17–Y19：Mac 严格编译的夹具修正
+
+同产品候选在 Air 的首次配置通过，原版 shader 与 HYLE 产品源码编译通过；Provider 测试
+`region_test.cc` 的五处 Vulkan 结构体部分初始化被 Clang 的
+`-Werror=missing-field-initializers` 拒绝，尚未开始 GPU 测试。修正只将夹具改为完整零初始化
+后设置 `sType`，所有字段值与断言保持不变，不关闭警告、不改产品或性能合同。
+原失败日志保留；按 selector 验证受影响 Provider 测试，再以完整源码同步至两台 Mac 继续未完成门。
+`4c309c6e` 产品及其已有 W1 事实不变，不因此重跑 Windows Direct/Graph 或启动 P1。
+该夹具修正已通过 W1 strict static 的19个 Provider 用例及源码/MASM 两项检查，零 skip、
+无 validation 诊断；selected configure、docs、closure 同时通过，116项无关门跳过。
