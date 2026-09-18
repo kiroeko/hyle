@@ -25,6 +25,46 @@ using hyle::Result;
 using hyle::Status;
 using hyle::mem::Buffer;
 
+TEST(NativeMatMul, RejectsUnsupportedAccumulationAtBothColdStages) {
+  auto context = test::native_context().value();
+  const auto matrix = [](std::int64_t rows, std::int64_t columns) {
+    return TensorDesc::dense(DataType::kFloat32, std::array{rows, columns})
+        .value();
+  };
+  const std::array inputs{matrix(16, 5), matrix(5, 4)};
+  const std::array outputs{matrix(16, 4)};
+  std::array<ResourceBindingRequirement, 2> input_requirements{};
+  std::array<ResourceBindingRequirement, 1> output_requirements{};
+  const auto proposal = OperationPreparationAccess::propose(
+      context, 0, Operation(MatMul{}), inputs, outputs, input_requirements,
+      output_requirements);
+  ASSERT_TRUE(proposal.has_value()) << proposal.error().message();
+  const std::array resources{hyle::mem::system_resource(),
+                             hyle::mem::system_resource()};
+  for (const auto type :
+       {DataType::kFloat64, DataType::kFloat16, DataType::kBFloat16,
+        DataType::kInt32, DataType::kUnknown}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const Operation operation(MatMul{type});
+    auto rejected = OperationPreparationAccess::propose(
+        context, 0, operation, inputs, outputs, input_requirements,
+        output_requirements);
+    ASSERT_FALSE(rejected.has_value());
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+    auto direct =
+        prepare(context, MatMul{type}, inputs[0], inputs[1], outputs[0]);
+    ASSERT_FALSE(direct.has_value());
+    EXPECT_TRUE(direct.error().IsUnimplemented());
+    auto exact = OperationPreparationAccess::prepare_candidate(
+        context, *proposal, operation, inputs, outputs, input_requirements,
+        output_requirements, {resources, std::span(resources).first(1)});
+    ASSERT_TRUE(exact.has_value()) << exact.error().message();
+    EXPECT_FALSE(exact->succeeded());
+    EXPECT_EQ(exact->decline, ProviderPrepareDecline::kUnsupported);
+    EXPECT_TRUE(exact->reason.IsUnimplemented());
+  }
+}
+
 struct RmsDomain final {
   std::array<ShapeDimension, 3> dimensions{};
   std::array<ShapeGuard, 1> guards{

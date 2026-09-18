@@ -62,6 +62,33 @@ TEST(CpuDefaultContext, ColdFailureReleasesPartialProviderAssembly) {
   EXPECT_TRUE(stats.balanced());
 }
 
+TEST(CpuDefaultContext, MatMulNeverFallsBackToLowerAccumulationPrecision) {
+  auto context = create_context().value();
+  for (const std::int64_t rows : {1, 16}) {
+    for (const bool transposed : {false, true}) {
+      SCOPED_TRACE(rows);
+      SCOPED_TRACE(transposed);
+      const auto left = matrix(rows, 5);
+      const auto right =
+          transposed ? matrix(4, 5).transposed().value() : matrix(5, 4);
+      auto result = prepare(context, MatMul{DataType::kFloat64}, left, right);
+      ASSERT_FALSE(result.has_value());
+      EXPECT_TRUE(result.error().IsUnimplemented());
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+      auto builder = hyle::graph::GraphBuilder::create().value();
+      const auto a = builder.input(left).value();
+      const auto b = builder.input(right).value();
+      const auto output = builder.add(MatMul{DataType::kFloat64}, a, b).value();
+      ASSERT_TRUE(builder.publish(output).ok());
+      auto logical = std::move(builder).finish().value();
+      auto compiled = hyle::graph::compile(logical, context);
+      ASSERT_FALSE(compiled.has_value());
+      EXPECT_TRUE(compiled.error().IsUnimplemented());
+#endif
+    }
+  }
+}
+
 TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
   constexpr std::int64_t inner = 129, columns = 65;
   for (const std::int64_t rows : {1, 15, 16, 17}) {
