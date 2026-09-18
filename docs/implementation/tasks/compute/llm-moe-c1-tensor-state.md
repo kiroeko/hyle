@@ -12,7 +12,7 @@
 - 当前施工 owner：`compute_ops`（schema/shape）、`compute`（普通查询/准备事实）、`graph`
   （必要共同 shape/effect 边界）、`compute_provider_native`、`compute_provider_cuda`、
   `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`；新增直接依赖
-  `compute_backend_cuda` 只按下述 C1-L 卡施工。
+  `compute_backend_cuda` 只按下述 C1-L 卡施工，`compute_provider_ggml_vulkan` 按 C1-Y 独立卡施工。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
   oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
@@ -31,6 +31,53 @@
 - 调查预算：每个具体未决机制最多 60 分钟/两个具名来源；本包产品纠正最多两轮。超出时按具体
   反例重新定界或记录 blocker，不反复推翻四路线架构。
 
+## 当前施工裁决：先 Provider 覆盖，再按缺口补实现
+
+2026-09-18，owner `/root`，本次重新定界 baseline `6695fba0`。用户指出实际推进仍偏向自写，
+而非先让成熟 Provider 承载需求后比较选优；源码复核支持这一纠正。此前 A–X 已实现并局部验证
+的事实保留，但其按算子扩域的顺序不再作为后续施工队列；下文初始方向表也不再授权继续自写。
+本节与上位计划的 Provider 顺序共同约束后续有限 FIX，未改变的证据按身份复用。
+
+当前接入事实是：CPU oneDNN 仍主要为 BRGEMM，ggml-CPU 仍 BLOCKED；CUDA 有 cuBLAS/Marlin/
+SGLang 的具名窄域，C1 多项仍为自有 kernel/CUB 组件；Apple 已有较广的 MLX typed/region 接线；
+Vulkan `a7ebf205` 刚完成 norm/gate 等首组 managed 普通入口的 W1 static/shared 局部验证。
+这些事实不等于各 Provider 的全部 C1 能力已经绑定，细目见
+[Provider 承载复核](llm-moe-c1-provider-reuse-audit.md#当前接入覆盖与后续施工纠正2026-09-18)。
+
+### 现在按此顺序施工
+
+1. **按原矩阵核对四路线的实际承载。** 对 C1 的 F01–F04/F19，分别注明上游现成实现、HYLE
+   已绑定域、待绑定域、需要的语义/资源适配，以及确实缺失的域。以真实模型片段成组处理，
+   不以 Provider 名称、target 数量或一个示例证明全面支持。调查仍受60分钟/两个来源预算限制。
+2. **优先补实际接入。** 从 oneDNN/ggml、CUDA 已登记库、MLX、ggml-Vulkan 选具名成熟实现，
+   将其完整算子或 region 接普通 Direct/Graph 与固定规则；复用现有执行/资源机制，第三方由
+   CMake 的既有锁、feature、target、资源和 package 合同描述。新增依赖和 CLOSED owner 必须
+   先完成自身 scope/audit，原 ggml-CPU blocker 不自动解除。
+3. **先资格化，再比速度。** 本包数值、checked/alias、失败与资源/状态合同、实际输入片段和
+   三交付适用门先完成。检查式入口、不同精度、不同完成点或不同输出责任不能混排。已有实现
+   的具体缺陷插入该 owner 的有限 FIX；纯配置/静态事实在准备期检查，动态事实保留必要检查。
+4. **用完整成本裁决路由。** API/算法固定后执行原预声明 C1 P1 bundle，计入适配/转换/同步/
+   首次准备/驻留/融合损失。可按硬件/驱动/toolkit/shape/dtype 条件分别胜出；执行不搜索或计时。
+   没有充分资格或结果 INCONCLUSIVE 时如实记录，不把未证明路径命名为默认优选。
+5. **补缺与清理。** 只有成熟候选确实缺少所需实现，或 HYLE 有可验证完整优势，才固定自有
+   算法 FIX；接口差异优先用受审适配解决。HYLE 已有路径也参与公平比较，完整替代后按域迁移
+   和删除无价值重复代码；原支持能力与 SIMD 保留。最后回填原矩阵和本包三交付/性能证据。
+
+### 必要检查与已有缺陷
+
+普通入口必须符合已准入合同：shape/dtype、容量与字节起点/对齐、合法 alias、整数溢出与索引
+边界、数值特殊值、OOM/部分接纳、错误传播、关闭/取消/完成前保活。只检查本轮实际接入和被
+替代的调用链；没有具体新事实不重开下层 CLOSED 模块。明确请求的 unchecked 专家域单独
+绑定合同，不能偷换普通默认域或与 checked 路径按不同责任比较。
+
+每个发现记录“反例 → 影响域 → owner → 有限 FIX → 回归/资格门”。不合格实现先从该域的候选
+集合排除；已有合格路径可继续使用，没有时明确失败并记录待修复。性能预算不是保留缺陷的
+豁免，正确性修复也不授权顺手扩算子。确认安全且不可变的元数据/权重资格可缓存，不能以
+调用者一般会传对为由省略会随输入变化的必需检查。
+
+本次先纠正施工顺序和事实表达；下一产品子集仍须在当前 owner 卡中提交有限 AUDITED FIX。
+不把这次文档更新、已有测试数量或接入覆盖调查计为新能力完成。
+
 ## 已完成的源码审计输入
 
 当前承载选择按 [C1 Provider 复核](llm-moe-c1-provider-reuse-audit.md)纠正执行顺序：先接成熟
@@ -46,11 +93,13 @@
 用户明确排除 SIMD：其通用用途超出推理，本轮不删除/裁剪 SIMD 模块和公共能力；Compute/Graph
 重复算子迁移不得连带删除这层基础设施或非推理消费者。
 
-当前下一项为 [C1-Y ggml Vulkan managed region 接入](llm-moe-c1-ggml-vulkan-region.md)。W1 完整
-上游计算与窄 native bridge 探针已通过；按新 owner 协议固定产品接入，CMake 同时负责简明的
-第三方声明和三交付。探针不增加产品覆盖，原 T–X 的授权不外推到新 runtime。
+当前 [C1-Y](llm-moe-c1-ggml-vulkan-region.md) 已推进到普通 managed 入口的 W1 局部验证。
+下一步按上节先完成四路线现成能力与实际绑定的回映，固定接入/适配批次；不继续沿初始
+Native/CUDA/Vulkan 自写扩域表逐项施工。当前原生程序和已验证算子作为可复用资产与比较候选。
 
-| owner | 当前事实 / 源码 | C1 缺口与承载方向 |
+以下表格记录 C1 初始 baseline 的审计输入，**不是当前产品状态或继续自写的施工指令**。
+
+| owner | 初始 baseline 事实 / 源码 | 当时记录的缺口与方向 |
 |---|---|---|
 | compute_ops | `operation.h` Unary 止于 SiLU；已有 View/Cast/Reduce/RmsNorm/LayerNorm/Gather/Scatter/TopK；operation.cc 完成共同 shape 检查 | softplus 与必要 scan 的 typed schema；保留既有数学/alias 语义，明确半精度舍入 |
 | compute | operation.cc 已有 cold propose → prepare 与明确 decline/error；普通入口不能只查 schema 推断硬件可用 | 普通 capability query 与准备拒绝复用同一资格判断；不执行 payload，不变热路径 |
@@ -60,19 +109,18 @@
 | Vulkan | vulkan_operations.cc 的录制/packing/liveness 已完成；vulkan_lowering.cc 只接 pure fixed 图 | 扩 SPIR-V tensor/index/norm 与真实 visibility/state 边界；有界原生程序，不引入通用逐 kernel executor |
 | Graph | 通用 Graph 已有 derived shape、资源 effects、alias、独立 invocation；两条原生 lowering 较窄 | 在路线本身落实所需 shape/参数/state；不因 native 不同复制一套逻辑模型图 |
 
-审计继续只核对本表直接源码、已登记 peers 与 C0 固定输入。新依赖引入须同时有 pin/license/三交付。
-CPU 通过成熟 SIMD/oneDNN 及受审局部算法；CUDA 优先具名成熟 kernel；Apple 优先 MLX 组合；
-Vulkan 优先受审 ggml shaders。各自细节在 AUDITED 时固定，不能把方向表当成已经接线。
+后续审计以当前施工裁决、实际源码、已登记 peers 与 C0 输入为准。新依赖同时绑定
+pin/license/三交付；上表的“扩 shader/Native”不再自动成为下一 FIX。
 
 ## 有限 FIX 草案（尚不授权产品实施）
 
 | ID | 允许改动 | 必需验收 |
 |---|---|---|
 | C1-01 | 共同 softplus/scan 语义、必要数值/索引/alias 域及普通能力查询 | 真实请求同准备资格一致；invalid/overflow/unsupported 清楚；新增公共面回映需求 |
-| C1-02 | Native F16/BF16 tensor/index/norm 与现有 F32 能力复用 | BF16 真实输入、尾块/stride、特殊值、重复索引、独立状态；无全权重浮点常驻 |
-| C1-03 | CUDA 同一组能力和默认规则，保留 native stream/capture | 实际 GPU kernel、同精度 reference、准备失败与接纳后 drain；无 host payload fallback |
+| C1-02 | CPU 成熟 Provider 的 C1 实际覆盖、普通接入与有限适配；Native 作为已有比较/补缺候选 | BF16 真实输入、尾块/stride、特殊值、重复索引、独立状态；同合同资格及完整成本，不因已有 Native 代码先判自写 |
+| C1-03 | CUDA 成熟算子/融合程序的覆盖接入和条件规则，复用 stream/capture | 实际 GPU 成熟实现、同精度 reference、checked/准备失败与接纳后 drain；CUB 构件与完整 Provider 分别记录 |
 | C1-04 | Apple MLX typed 普通入口、原生图 lowerings 与状态结果 | 同 runtime GPU region、旧结果保活、两个状态、所需 dtype/shape；无用户 custom adapter |
-| C1-05 | Vulkan 同能力的原生 pipeline/录制与数据参数 | 真 SPIR-V 算法、同步/alias/scratch、重复执行与失败；无 empty target/copy 代签 |
+| C1-05 | Vulkan ggml managed region 的现成能力映射、语义/状态适配与固定规则 | 普通 Direct/Graph 默认路由、同步/alias/scratch、重复执行与失败；上游已有但未绑定单列，不直接改为自写 shader |
 | C1-06 | 受影响 Graph shape/parameter/effect/查询与 C++ consumer/指南 | Direct 和 Graph 结果/状态一致；编译不改输入；稳定程序按输入位置/索引重放 |
 | C1-07 | 本包逐路线 source/static/shared、正确性、P0/P1、红队与结果回映 | C1 MUST 所有格有实际 receipt，普通用户无需选 Provider；不留到 C7 首次验证 |
 

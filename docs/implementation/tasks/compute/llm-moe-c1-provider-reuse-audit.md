@@ -1,5 +1,37 @@
 # C1：成熟 Provider 承载复核
 
+## 当前接入覆盖与后续施工纠正（2026-09-18）
+
+owner `/root`，当前核对 baseline `6695fba0`。用户指出“Provider 接入后应有对应普通路由”，并
+要求修正偏向逐项自写的任务卡；同时明确已有缺陷、为性能省略必要检查的问题也必须处理。
+[C1 活动卡](llm-moe-c1-tensor-state.md)已据此重排施工顺序，下文较早来源调查仍是证据，
+其中“下一项”等历史安排不覆盖该当前裁决。
+
+| 路线 | 当前普通接入的具体事实 | 下一步的接入责任 |
+|---|---|---|
+| CPU | `cpu_context.cc` 注册 oneDNN 与 Native；oneDNN 是现有 BRGEMM 窄域，C1 大量操作由 Native 实现；ggml-CPU 仍 BLOCKED | 核对并接入 oneDNN/ggml 的所需 C1 现成能力，再与已有 Native 比较；不能把 oneDNN 注册等同完整算子集已绑定 |
+| CUDA | `cuda_context.cc` 注册 cuBLAS、Marlin、SGLang 与 HYLE CUDA；当前 SGLang 是 activation 源子集，C1 多项为自有 kernel/CUB 构件 | 按片段核对已登记 CUDA 成熟库的实际覆盖、硬件/版本与 C++ 交付后成组接入；库名不代签完整 norm/index/region |
+| Apple | MLX typed lowerings/region 已承载较多 C1 操作，checked 状态与有序 Scatter 含 HYLE Metal 适配 | 复用当前 MLX 接线，核对未覆盖域与必要检查；比较完整调用链，不为与其他路线对称而重写 |
+| Vulkan | `a7ebf205` 的 ggml managed RMSNorm/SiLU gate/Add/Mul 片段进入普通 Direct/Graph/Recorder；W1 static/shared 通过，其他适用验收待做 | 将 ggml 已有 C1 能力回映到 typed region；补未绑定及具名适配，沿现有设备/存储/完成通道实施 |
+
+本次有界读取固定 ggml `456172ec` 的 `ggml.c`、`ggml-vulkan.cpp::supports_op`/执行分派与对应
+shader，并对照 HYLE `region.cc`、`vulkan_program.cc` 和原需求矩阵，得到下列具体区分：
+
+| C1 需求 | 上游现成实现与当前差异 | 分类 |
+|---|---|---|
+| F03 算术与稳定变换 | Vulkan 有 Sub/Div、Abs/Neg/Exp/Log/Sqrt/Tanh/Sigmoid/Softplus；当前 typed region 仅接 SiLU/Add/Mul 等首组，并要求 norm/gate anchor | **待绑定/资格化**，不是缺算子；广播顺序和非有限值按共同合同核对 |
+| F04 归约/Softmax | 有 SumRows/Mean/Softmax；接口以行维度和限定 mask 为主，共同接口还包含任意轴、Boolean mask、LogSoftmax、空集合等域 | **待绑定及适配**；区分可直接交付的完整片段与具体额外域，不笼统自写全部归约 |
+| F04 LayerNorm | 有 Norm；当前 `norm.comp` 用 E[x²]−E[x]²，`group_norm.comp` 有两遍中心化算法 | **数值/布局资格待核对**；大均值小方差须通过原门，再决定组合/适配，不能仅凭名字接入或预判不可复用 |
+| F04 TopK | 有 TopK/Argsort，原版 TopK 返回 I32 索引；HYLE 要值+索引和已约定的 stable/NaN 策略，当前 Vulkan Plan 仅支持单输出 | **两输出/排序语义接入缺口**；保留成熟选择算法，定界胶合与必要修正 |
+| F02 Gather/Scatter | 有 GetRows/SetRows/GetRowsBack；类型/轴和输入要求不同，普通 HYLE 默认 checked，失败不得越界或破坏输出 | **索引/状态/失败适配**；上游有算子不能替普通入口免除检查，也不能把这些接口差异等同缺整个算子 |
+| F02 Scan | 有 F32 inclusive Cumsum 及设备 subgroup 条件；本包 counts/offsets 还要求 I32 exclusive、checked overflow | **具名数值档位缺口**；未核对另一成熟候选或受审上游适配前不裁决自写完整 Scan |
+| F01 View/Copy/Cast/Concat | 上游有 View/Repeat/Copy/Concat 等；HYLE 已有原生 View owner、byte-stride 与不同 dtype/空域 | **按域复用/映射**；零复制 View 的所有权仍由 HYLE 管理，额外 materialize 和舍入必须计费/验证 |
+
+该表没有把“待绑定”写成 PASS，也不增加第二份覆盖 registry。下一批产品 FIX 必须依据这些
+具体差异回到实际 owner 的卡固定；此前候选只达到局部验证的资源/状态事实可复用。
+后续默认规则仅接受通过本包数值、checked、失败/资源与三交付资格的候选；省检查得到的性能
+结果不参与优选。任何已有缺陷按反例/影响域定向修复，有限预算与 CLOSED/BLOCKED 协议照常。
+
 ## 范围与裁决
 
 - 当前 owner `/root`，产品 baseline `6be8e6a7aa2ca898b8e6e89d4dd10679d1f40476`；本页是
