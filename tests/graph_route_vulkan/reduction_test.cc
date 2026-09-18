@@ -45,7 +45,8 @@ TEST(VulkanGraph, HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots) {
     auto program =
         gv::compile(context, graph, std::array{epsilon}, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 8U);
+    EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 5U);
+    EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 3U);
     EXPECT_EQ(report.retained_constant_owner_count, rows == 0 ? 0U : 1U);
     graph = {};
     auto first = program->create_invocation().value(),

@@ -14,13 +14,31 @@ bool tensor_domain(const TensorDesc &description) noexcept {
   return description.valid() && description.is_plain() &&
          description.is_dense() &&
          description.data_type() == DataType::kFloat32 &&
-         description.rank() > 0 && description.rank() <= GGML_MAX_DIMS &&
+         description.rank() <= GGML_MAX_DIMS &&
          description.element_count() && *description.element_count() > 0 &&
          *description.element_count() <= INT32_MAX;
 }
 bool same_shape(const TensorDesc &a, const TensorDesc &b) noexcept {
   return a.rank() == b.rank() &&
          std::ranges::equal(a.dimensions(), b.dimensions());
+}
+ggml_unary_op unary_operation(UnaryKind kind) noexcept {
+  switch (kind) {
+  case UnaryKind::kAbs:
+    return GGML_UNARY_OP_ABS;
+  case UnaryKind::kNeg:
+    return GGML_UNARY_OP_NEG;
+  case UnaryKind::kExp:
+    return GGML_UNARY_OP_EXP;
+  case UnaryKind::kTanh:
+    return GGML_UNARY_OP_TANH;
+  case UnaryKind::kSigmoid:
+    return GGML_UNARY_OP_SIGMOID;
+  case UnaryKind::kSilu:
+    return GGML_UNARY_OP_SILU;
+  default:
+    return GGML_UNARY_OP_COUNT;
+  }
 }
 struct Imports final {
   NativeDevice device;
@@ -41,11 +59,13 @@ bool region_supports(const Operation &operation,
   if (const auto *norm = operation.get_if<RmsNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *unary = operation.get_if<Unary>())
-    return unary->kind == UnaryKind::kSilu;
+    return unary_operation(unary->kind) != GGML_UNARY_OP_COUNT;
   if (const auto *binary = operation.get_if<Binary>())
     return inputs.size() == 2 &&
            (binary->kind == BinaryKind::kAdd ||
-            binary->kind == BinaryKind::kMultiply) &&
+            binary->kind == BinaryKind::kSubtract ||
+            binary->kind == BinaryKind::kMultiply ||
+            binary->kind == BinaryKind::kDivide) &&
            (same_shape(inputs[0], output) || same_shape(inputs[1], output));
   if (const auto *gate = operation.get_if<GatedActivation>())
     return gate->activation == GatedActivationKind::kSilu &&
@@ -129,7 +149,8 @@ Result<Region> Region::create(NativeDevice device,
       const auto dimensions = recipe.values[input].dimensions();
       std::ranges::reverse_copy(dimensions, shape);
       tensors[input] = ggml_new_tensor(
-          context, GGML_TYPE_F32, static_cast<int>(dimensions.size()), shape);
+          context, GGML_TYPE_F32,
+          (std::max)(1, static_cast<int>(dimensions.size())), shape);
       ggml_set_input(tensors[input]);
       state.ports.push_back(tensors[input]);
     }
@@ -140,18 +161,39 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)
           output = ggml_mul(context, output, tensors[node.inputs[1]]);
-      } else if (node.operation.get_if<Unary>()) {
-        output = ggml_silu(context, left);
+      } else if (const auto *unary = node.operation.get_if<Unary>()) {
+        output = ggml_unary(context, left, unary_operation(unary->kind));
       } else if (node.operation.get_if<GatedActivation>()) {
         output = ggml_swiglu_split(context, left, tensors[node.inputs[1]]);
       } else {
         auto *right = tensors[node.inputs[1]];
+        const auto kind = node.operation.get_if<Binary>()->kind;
         if (!same_shape(recipe.values[node.inputs[0]],
-                        recipe.values[node.output]))
-          std::swap(left, right);
-        output = node.operation.get_if<Binary>()->kind == BinaryKind::kAdd
-                     ? ggml_add(context, left, right)
-                     : ggml_mul(context, left, right);
+                        recipe.values[node.output])) {
+          if (kind == BinaryKind::kAdd || kind == BinaryKind::kMultiply)
+            std::swap(left, right);
+          else
+            // ggml broadcasts only RHS. Preserve noncommutative order by
+            // materializing LHS in the vendor graph and allocator.
+            left = ggml_repeat(context, left, right);
+        }
+        switch (kind) {
+        case BinaryKind::kAdd:
+          output = ggml_add(context, left, right);
+          break;
+        case BinaryKind::kSubtract:
+          output = ggml_sub(context, left, right);
+          break;
+        case BinaryKind::kMultiply:
+          output = ggml_mul(context, left, right);
+          break;
+        case BinaryKind::kDivide:
+          output = ggml_div(context, left, right);
+          break;
+        default:
+          return std::unexpected(
+              Status::Internal("ggml Vulkan unqualified binary recipe"));
+        }
       }
       tensors[node.output] = output;
     }

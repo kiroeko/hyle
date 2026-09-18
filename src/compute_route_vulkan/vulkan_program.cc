@@ -227,19 +227,13 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       const auto &step = plan.steps[index];
       if (managed_operation(*program, step)) {
         auto end = index;
-        bool anchor = false;
         while (end < plan.steps.size() &&
-               managed_operation(*program, plan.steps[end])) {
-          anchor = anchor || plan.steps[end].operation.get_if<RmsNorm>() ||
-                   plan.steps[end].operation.get_if<GatedActivation>();
+               managed_operation(*program, plan.steps[end]))
           ++end;
-        }
-        if (anchor) {
-          HYLE_RETURN_IF_ERROR(
-              lower_region(*program, plan, index, end, last_uses));
-          index = end;
-          continue;
-        }
+        HYLE_RETURN_IF_ERROR(
+            lower_region(*program, plan, index, end, last_uses));
+        index = end;
+        continue;
       }
       ++index;
       if (const auto *view = step.operation.get_if<View>()) {

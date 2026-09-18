@@ -126,4 +126,121 @@ TEST(VulkanManaged, ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters) {
     EXPECT_EQ(bytes(context, parent), payload);
   }
 }
+
+TEST(VulkanManaged, PointwiseFamilyUsesRealProviderWithoutNormAnchor) {
+  auto context = vulkan_test::context().value();
+  const std::array kinds{c::UnaryKind::kAbs, c::UnaryKind::kNeg,
+                         c::UnaryKind::kExp, c::UnaryKind::kTanh,
+                         c::UnaryKind::kSigmoid, c::UnaryKind::kSilu};
+  const std::array descriptions{
+      dense(c::DataType::kFloat32, {}),
+      dense(c::DataType::kFloat32, {129}),
+      dense(c::DataType::kFloat32, {17, 257}),
+      dense(c::DataType::kFloat32, {2, 1, 3, 43})};
+  const std::array<double, 12> edges{-0.0, NAN, -INFINITY, INFINITY,
+                                     0.0, -90, 90, -1e-7, 1e-7, -1, 1, 3};
+  for (auto kind : kinds) {
+    for (const auto &desc : descriptions) {
+      SCOPED_TRACE(::testing::Message()
+                   << static_cast<int>(kind) << '/' << desc.rank());
+      auto program = v::prepare(context, c::Unary{kind}, desc).value();
+      const auto &plan = d::Access::program(program);
+      ASSERT_EQ(plan->dispatches.size(), 2U);
+      ASSERT_TRUE(plan->dispatches.back().region);
+      auto first = program.create_invocation().value();
+      auto second = program.create_invocation().value();
+      v::Tensor retained;
+      std::vector<double> saved;
+      for (std::size_t phase = 0; phase < 4; ++phase) {
+        std::vector<double> data(*desc.element_count());
+        for (std::size_t i = 0; i < data.size(); ++i)
+          data[i] = i < edges.size()
+                        ? edges[(i + phase) % edges.size()]
+                        : (static_cast<int>((i + phase * 7) % 41) - 20) * 0.125;
+        auto input = make(context, desc, data);
+        const auto original = bits(context, input);
+        std::vector<double> expected;
+        for (double value : data)
+          expected.push_back(vulkan_tensor_test::unary(kind, value));
+        auto &slot = phase == 0 ? first : second;
+        ASSERT_TRUE(slot.bind(input).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait().value();
+        const bool exact = kind == c::UnaryKind::kAbs || kind == c::UnaryKind::kNeg;
+        expect(context, result.get()->tensors()[0], expected, exact);
+        EXPECT_EQ(bits(context, input), original);
+        if (phase == 0) {
+          retained = result.get()->tensors()[0];
+          saved = expected;
+        } else {
+          expect(context, retained, saved, exact);
+        }
+      }
+    }
+  }
+}
+
+TEST(VulkanManaged, SubtractDividePreserveBothBroadcastOrdersAndScalar) {
+  auto context = vulkan_test::context().value();
+  constexpr std::size_t rows = 17, width = 129;
+  const auto full = dense(c::DataType::kFloat32, {rows, width});
+  const std::array parameters{dense(c::DataType::kFloat32, {}),
+                              dense(c::DataType::kFloat32, {width}),
+                              dense(c::DataType::kFloat32, {rows, 1})};
+  for (auto kind : {c::BinaryKind::kSubtract, c::BinaryKind::kDivide}) {
+    for (const auto &parameter : parameters) {
+      for (bool small_first : {false, true}) {
+        SCOPED_TRACE(::testing::Message()
+                     << static_cast<int>(kind) << '/' << parameter.rank() << '/'
+                     << small_first);
+        std::vector<double> data(rows * width), small(*parameter.element_count());
+        for (std::size_t i = 0; i < data.size(); ++i)
+          data[i] = 0.25 + (i % 19) * 0.125;
+        for (std::size_t i = 0; i < small.size(); ++i)
+          small[i] = 2.0 + (i % 7) * 0.25;
+        if (small.size() > 4) {
+          small[0] = 0.0;
+          small[1] = -0.0;
+          small[2] = INFINITY;
+          small[3] = NAN;
+        }
+        const auto input = make(context, full, data);
+        const auto broadcast = make(context, parameter, small);
+        const std::array arguments = small_first ? std::array{broadcast, input}
+                                                : std::array{input, broadcast};
+        auto program = v::prepare(context, c::Binary{kind},
+                                  arguments[0].description(),
+                                  arguments[1].description()).value();
+        ASSERT_TRUE(d::Access::program(program)->dispatches.back().region);
+        auto slot = program.create_invocation().value();
+        ASSERT_TRUE(slot.bind(arguments).ok());
+        std::vector<double> expected(data.size());
+        for (std::size_t i = 0; i < data.size(); ++i) {
+          const auto index = parameter.rank() == 0 ? 0
+                             : parameter.rank() == 1 ? i % width : i / width;
+          const double left = small_first ? small[index] : data[i];
+          const double right = small_first ? data[i] : small[index];
+          expected[i] = kind == c::BinaryKind::kSubtract ? left - right
+                                                       : left / right;
+        }
+        {
+          auto work = slot.submit().value();
+          auto result = work.wait().value();
+          expect(context, result.get()->tensors()[0], expected);
+        }
+        const auto output = context.allocate(full).value();
+        auto recorder = v::Recorder::create(context).value();
+        ASSERT_TRUE(recorder.append(program, arguments, std::array{output}).ok());
+        auto recorded = recorder.finish().value();
+        for (int repeat = 0; repeat < 2; ++repeat) {
+          auto completion = recorded.submit().value();
+          ASSERT_TRUE(completion.wait().ok());
+          expect(context, output, expected);
+        }
+        expect(context, input, data, true);
+        expect(context, broadcast, small, true);
+      }
+    }
+  }
+}
 } // namespace

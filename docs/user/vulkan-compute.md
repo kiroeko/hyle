@@ -109,8 +109,11 @@ RMSNorm 两遍读取输入，LayerNorm 三遍并使用中心化方差；半精�
 例如 `vk::prepare(context, c::RmsNorm{}, input_description, scale_tensor)` 捕获 scale，随后只绑定输入。
 
 正尺寸 dense F32、rank1–4 的 RMSNorm（F32 累加，可选同类型 scale）和分离式 SiLU gate
-默认绑定原版 ggml region。连续的兼容 SiLU、Add/Multiply 一起交付，保留原厂内部融合与存储；
-二元广播至少一侧须具有完整输出形状。published 和跨片段使用的结果仍可独立读取。
+默认绑定原版 ggml region。Abs/Neg/Exp/Tanh/Sigmoid/SiLU 和 Add/Subtract/Multiply/Divide
+在正尺寸 dense F32、rank0–4 域也通过同一普通入口绑定；scalar 使用单元素原厂存储。
+连续兼容操作一起交付，保留原厂内部融合与存储，不要求片段含归一化或门控。
+二元广播至少一侧须具有完整输出形状；减除法左侧广播时保留一个原版 Repeat 中间结果，
+该分配和执行计入成本。published 和跨片段使用的结果仍可独立读取。
 准备期无法证明端口起点四字节对齐时，固定加入现有 Copy 适配；这包含描述相同但 View
 起点可能改变的动态输入。已知对齐常量和计算结果直接导入，适配内存与复制属于真实成本。
 其他已支持的类型/布局继续使用原生实现。bind/submit 不选择 Provider；本批规则尚待等责 P1。
