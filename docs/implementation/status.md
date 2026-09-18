@@ -62,7 +62,7 @@
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y19 AUDITED：4c309c6e普通 Direct/Recorder 可绑定无 norm/gate anchor 的成熟逐元素族，沿原资源/完成/失败；W1 static/shared各40 Direct通过。跨平台、真实权重、完整三交付和性能/取舍未验收。 |
 | graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y19 AUDITED：4c309c6e普通 Graph接无 norm/gate anchor 的原版逐元素 region，保留 published/fork、scalar非交换广播、双槽和原生失败边界；W1 static/shared各17/16 Graph通过。跨平台、真实权重、完整三交付和性能/取舍未验收。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y17–Y19 AUDITED：4c309c6e接原版五 unary 与 Sub/Div/Repeat，含 F32 scalar/有序广播；W1 static/shared各19 Provider、40 Direct、17/16 Graph及两项源码/组合检查首轮通过。跨平台、真实权重、完整三交付和性能/取舍未验收。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y20 AUDITED：逐元素接线已通过 W1 static/shared；Air ceace753 的19 Provider/40 Direct/17 Graph数值与生命周期通过，但设备创建缺 portability_subset，validation FAIL。限定精确补丁纠正，跨平台/真实权重/三交付/性能未验收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

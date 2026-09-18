@@ -517,7 +517,7 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y17–Y19 AUDITED：4c309c6e接原版五 unary 与 Sub/Div/Repeat，含 F32 scalar/有序广播；W1 static/shared各19 Provider、40 Direct、17/16 Graph及两项源码/组合检查首轮通过。跨平台、真实权重、完整三交付和性能/取舍未验收。",
+      "summary": "LLM/MoE C1-Y20 AUDITED：逐元素接线已通过 W1 static/shared；Air ceace753 的19 Provider/40 Direct/17 Graph数值与生命周期通过，但设备创建缺 portability_subset，validation FAIL。限定精确补丁纠正，跨平台/真实权重/三交付/性能未验收。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

@@ -599,3 +599,26 @@ Y19-P 的 W1 strict static selected configure、40个 Direct 与17个 Graph 用�
 原版 allocator-only C 夹具引入的私有头含未使用 helper，沿既有 MSVC 的 vendor include 诊断边界，
 仅在该 include 内抑制 GCC/Clang 的 unused-function，不改原厂文件、自有代码警告、算法或断言。
 这些为测试专用可移植性修正；不增加产品纠正轮数，不跑 P1。
+
+## Y20：MoltenVK 必需设备扩展（重新定界并 AUDITED）
+
+owner `compute_provider_ggml_vulkan` / `/root`，baseline `ceace753`。Air 严格编译、19 Provider、
+40 Direct、17 Graph 和源码合同均执行通过，零 runtime skip；但日志在87次实际设备创建中
+重复出现唯一一类 `VUID-VkDeviceCreateInfo-pProperties-04451`，因此 validation gate 为 FAIL，
+不能把数值用例通过写成路线验收通过。初次驱动在末尾检查中退出1，原始 receipt 的 RUNNING
+不能覆盖这个实际失败事实；保留日志并另记最终裁决，不重跑未改变候选求 PASS。
+
+固定原版 `ggml-vulkan.cpp` 已枚举 `ext_props`，但设备扩展列表遗漏 `VK_KHR_portability_subset`。
+[Vulkan 设备创建合同](https://docs.vulkan.org/refpages/latest/refpages/source/VkDeviceCreateInfo.html)
+要求设备宣告该扩展时启用它；instance 的 portability_enumeration 已正确处理，不能代替设备扩展。
+
+有限 FIX **Y20**：仅在既有 build-local 精确补丁内，从已取得的 device extension 列表匹配该名称，
+存在时加入创建列表，不存在时不请求；不依赖 Apple 宏，不改变 feature、shader、region、队列或
+执行期规则。原始 ggml cache/pin 保持不变；更新补丁结果/树/NOTICE 哈希，仍由同一 Provider
+CMake owner 和 package 描述投影。不存在设备扩展枚举、重复 dispatcher 或新 runtime。
+
+这是本批第二次产品纠正，继续沿至多两轮预算。预声明为 W1 strict static/shared 与 Air/Mini
+同候选的实际 Provider/Direct/Graph、源合同；Air validation 必须零 VUID，W1 验证没有此扩展
+的设备仍可执行；Mini 沿已声明的 correctness/portability，不代签 validation 或 Formal 性能。
+原完整三交付和其余 C1 MUST 保持未验收；selector 选出的构建/package 门按实际影响执行，
+未变无关门按身份复用。只增加冷期枚举结果匹配，热路径不变，不单独再开 P1。
