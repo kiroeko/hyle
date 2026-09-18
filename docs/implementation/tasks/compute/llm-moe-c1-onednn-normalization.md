@@ -96,5 +96,42 @@ guide记录精度、已验证域和借用executor寿命。
   最初测试无条件期待 oneDNN identity 被证伪，现记录 ISA_UNSUPPORTED、数值 UNPROVEN；
   默认工厂正确回落 Native，现有半精度 state Graph 独立数值回归通过。没有删检查、添加整张量
   转换或把这部分写成 oneDNN 数值 PASS；对应 ISA 原生资格仍待有设备时验证。
-- shared、WSL、完整 package/selector 扩展门及公平 P1 尚待完成，owner 保持 AUDITED。
+- W1 static/shared 均通过8个 CTest（166个 gtest case，另有独立 executor consumer）；
+  static 分配检查通过2例，逐个注入18个 vendor warm-new 失败点，旧 BRGEMM 热路径仍无 new。
+  WSL、完整 package/selector 扩展门及公平 P1 尚待完成，owner 保持 AUDITED。
   AA04 的默认优选/Native冗余删除尚未裁决；本节不是 C1 或本轮 CLOSED。
+
+## AA04 对比前置合同：先比较，再裁决重复实现
+
+本批产品快照 `2c9338e1c3a01d793aeda6aef1c4898709b8fe47`。此节在新增 norm benchmark 前冻结，
+不借已有 MatMul/FFN 的 P1 代签。双方分别通过相同 HYLE Direct 或完整 Graph 公共入口，
+仅冷准备时显式固定 oneDNN/Native，以测量研发期的候选实现；最终普通用户仍只选择 CPU 路线。
+
+源码预审：`compute_provider_native/native_provider.cc::run_rms_norm/submit_float`、
+`compute_provider_native/normalization.cc::run_layer_norm_range/submit_normalization` 与
+`compute_provider_onednn/normalization_internal.cc::execute/submit` 均在 CPU 计算、映射关闭、
+flush 和 Status 可见后同步返回 accepted terminal；共同 OperationInvocation/Completion 负责相同
+绑定/在途检查及失败退休。Graph 两侧均使用 compile→create_invocation→bind→prepare_replay→
+submit→wait；一个原生融合 region 对完整 Native 节点链，不能拿 Graph 对裸函数。
+没有提交后尚未计费的设备工作、callback 或延迟释放。生命周期/错误/完成合同因此为 SAME_CONTRACT。
+
+| 成本 | oneDNN 候选 | Native 对照 | 计费 |
+|---|---|---|---|
+| 冷准备/析构 | engine/primitive/JIT、每槽 stream/handles/scratch | 已有 SIMD route 与计划/槽 | 均在稳态外，报告保有资源；不重复 JIT |
+| Direct 每次执行 | 公共检查、map/rebind、原版 norm、vendor execution-args new/free（已测18次）、close、completion | 同一公共检查、map、SIMD norm、close、completion，无 vendor metadata 分配 | 全部计入 |
+| Graph 每次执行 | 固定 replay、一个 norm+Mul+Add post-op region，vendor 分配同样计费 | 固定 replay、三个完整节点与必要中间存储读写 | 全部计入；两侧都到 wait 终态 |
+| 线程与数据 | 默认串行，无私有 pool；同一份只读输入，独立输出/workspace | 相同，Native 不隐式增加 worker | 一颗已登记 P 核；不外推并发性能 |
+| 数学与格式 | F32 输入/参数/输出、F32 归约、epsilon=1e-5 | 相同；RMS/LayerNorm 都调用已有 SIMD 能力 | 无 dtype 转换；分别独立 FP64 oracle |
+
+vendor metadata 已归因为成熟 primitive C API 的固定成本，不能用裸 ukernel 或跳过检查掩盖；
+融合和向量化收益是否抵消它尚未知，允许有界完整成本比较。Native 当前 F32 norm 本身主要是 SIMD
+包装，不能因 oneDNN 在某一 shape 胜出就删除 SIMD 或仍供半精度/无分配档位使用的机制。
+
+冻结 workload：RMSNorm+scale、LayerNorm+scale+bias 各自的 Direct 和 norm→Mul(vector)→Add(input)
+完整 Graph；真实本地 hidden2048，rows1/17/128，对应 decode/短prefill/prefill；一个不规则
+批量数值 holdout 为 rows17/width257。BF16/F16 vendor 本机不支持，不纳入这次性能胜负。
+双方相同输入、64-byte alignment 和资源，先独立 oracle 后计时；warm submit 内无搜索或计时选库。
+先同 workload A/A（两侧都用同一个真实实现），再 A/B 与 B/A，独立交换分配顺序。
+使用既有 nanobench compare 和统一仪器；placement 只加少量冷 section 位移，不采用全函数 padding。
+预声明 material/NI margin5%，样本15，只有既定统计停止规则要求时升31；两轮具名纠正预算不增加。
+未通过 preflight 不启动完整样本；未验证域不写默认赢家，P1 后按完整适用域裁决保留/替换/删除。
