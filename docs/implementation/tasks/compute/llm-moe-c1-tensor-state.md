@@ -18,7 +18,7 @@
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
-  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04、V01–V04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04、V01–V04、W01–W03 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -997,5 +997,32 @@ Concat/reduce/Softmax/TopK/index/Scan 仍是后续必须实现的机制，不由
   不修改 selector。当前 docs/closure 正常执行，完整 C1 后续仍需实际交付验收。
 - 仍未完成 Concat/reduce/Softmax/TopK/index/Scan 和整包实际权重、三交付/其他适用环境及等责
   P1；只签 V01–V04 局部事实，两个 owner 保持 AUDITED，C1 整包尚未签收。
+
+### C1-W：Vulkan 变参 Concat 与字边界所有权（AUDITED）
+
+baseline `7f9848f6`；owner `/root` / `compute_route_vulkan`、`graph_route_vulkan`。F01 的
+slice/split/reassemble 与状态窗口 append 要求任意合法参数数量和六 storage 的精确拼接。
+共同 schema 已处理 rank、正负 axis、非 axis 维、同 dtype 和溢出；本批不加公共 API。
+
+研究限于固定 ggml `456172ec` 的 `concat.comp`/`generic_binary_head.glsl` 与既有 C1-K：
+成熟方案一次读/写本片段，按 byte stride 寻址。Vulkan 现有 pipeline 有三个输入 bindings，
+U32 storage 能跨平台支持六 storage。采用最多三个输入一组的预编译 recipe，不依赖可选
+descriptor indexing，不扫描整个输出来寻找本组，也不做逐次增长的中间拼接。
+空组跳过；其他组使用已有 compute read/write barrier。只有拼接接缝的共享 word 需保留先前组
+已写 bits；未来组位置归零，避免额外 memset 和读取未初始化的逻辑结果。
+
+| FIX | 固定实施范围 | P0 / 适用验证 |
+|---|---|---|
+| W01 | 变参 Concat 冷 lower/普通 Direct/Graph，六 storage、rank1..8、合法轴/stride/View | 每最多三个输入一组，常见双输入一次 dispatch；组内固定三个边界，输出 dense/new owner。复用 tensor byte origins、类型/维度/stride specialization，可提取本 owner 的共同准备辅助函数；所有地址/前缀和组数准备期固定 |
+| W02 | 原生输出 word 所有权、分组片段写入、边界保留 | 每组只枚举自己的片段，O(elements·rank + groups·outer)；outer 行共享 word 时只由最早相交行写一次，覆盖该 word 中本组全部行的字节。保留已完成组的 bits，其余清零；不同组依赖已有 barrier，不增设备 scratch、host payload 或热期搜索。Uint32 模运算的轴前缀抵消须保证所选输入的最终地址位于已验证 span |
+| W03 | 位级独立拼接 oracle、默认入口/资源/边界、指南 | 1/2/3/4/5/9输入，六 storage 原始位，首/中/末与负轴、0/1/tail、rank8、odd/zero stride、非零 View、重复输入、整组/全体为空与huge-empty；半精度/Bool跨行共享字、固定 Recorder邻区、输入输出alias拒绝、两槽/变输入/旧结果/close、现有OOM/drain回归。W1/Air/Mini两factors和公开头；真实权重/整包三交付/适用环境与P1仍随完整C1候选 |
+
+源码 P0 先在固定范围枚举 **86,976** 个布局：arity1..5、轴长0..3、outer/inner各1/2/3/7、
+标量字节1/2/4/8，验证组内每word唯一writer、触及word集合准确、前组bits保留和最终逻辑字节。
+记录 `C:\hyle-scratch\llm-moe-c1-20260917\w-concat-word-ownership.json`；该枚举只证明本算法
+的边界分工，不是 GPU 运行证据，不算路线/需求矩阵完成。真实 shader 和资源验证仍须运行。
+
+仅改本 owner shader/冷 lower/编译清单和直接消费者；不改公共构建、selector、统计工具、
+第三方 pin 或通用 Graph。Reduce/Softmax/TopK/index/Scan 仍为后续必需机制，不由本批代签。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
