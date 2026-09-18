@@ -1025,4 +1025,25 @@ descriptor indexing，不扫描整个输出来寻找本组，也不做逐次增�
 仅改本 owner shader/冷 lower/编译清单和直接消费者；不改公共构建、selector、统计工具、
 第三方 pin 或通用 Graph。Reduce/Softmax/TopK/index/Scan 仍为后续必需机制，不由本批代签。
 
+#### C1-W 实现与局部验证事实
+
+- `4449b77a` 实现六 storage 的变参 Concat：每最多三个输入准备为一次原生 dispatch，空组跳过，
+  各组只写最终输出片段；组内共享 word 单 writer，组间通过既有 barrier 保留先前字节。
+  不增加中间设备缓冲、memset、每组完整输出扫描或执行期 Provider 搜索。
+- 同一不可变候选在 Windows RTX 4070、Air `Mac16,12`、Mini `Mac16,10` 各首轮通过
+  **27 Direct + 12 Graph = 39** 用例及两个公开头检查；未因运行结果修改产品、测试或容差。
+  W1/Air validation-layer 日志无 VUID/同步错误；Mini 仅 correctness/portability。
+- 独立逐行拼接参考验证六 storage 原始位、1/2/3/4/5/9 输入、正负轴、奇数字节 stride、rank8
+  广播、重复输入、整组/全体为空和 huge-empty。固定 Recorder 验证外部输出邻区及输入输出
+  alias 拒绝；普通 Graph 将五个真实 View 重排后拼接，仅两个 dispatch、一个结果存储块。
+  1/129/2048 宽度、奇数 native origin、两槽、变绑定、旧结果及 close 后读取均通过。
+- [局部结果](../../../../evidence/correctness/compute-llm-moe-c1/w-vulkan-focused.json)及
+  [原始日志](../../../../evidence/correctness/compute-llm-moe-c1/w-vulkan-focused-raw.zip)
+  绑定三机候选、命令/SHA、前置 P0 枚举和 selector skipped reasons。
+  [统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/w-implementation-loc.json)
+  为 **44,139 行 / 178 实现文件**，含 GLSL，不含测试/bench/第三方，self-check PASS。
+- 本批只签 W01–W03 局部事实；Reduce/Softmax/LogSoftmax/TopK、checked indexing/Scatter/Scan，
+  以及完整 C1 真实权重、三交付/其他适用环境和等责 P1 仍待实施或验收。两个 owner 保持 AUDITED，
+  64 行/256 格共同矩阵仍未签收，不把本批算作 C1 整包完成。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

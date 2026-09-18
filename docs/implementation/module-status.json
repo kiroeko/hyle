@@ -506,13 +506,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-W AUDITED：W01–W03 已固定变参 Concat、六 storage 字边界所有权和普通 Direct/Graph 验证，产品待实施。T/U/V 局部三机35例及头检查已覆盖；完整 C1 后续机制、真实权重/三交付和 P1 尚未签收。"
+      "summary": "LLM/MoE C1-W AUDITED：W01–W03 已实现六 storage 变参 Concat、原生分组片段/字边界所有权及普通 Direct/Graph；W1/Air/Mini 各39例和2个头检查首轮通过。完整 C1 归约/索引等后续机制、真实权重/三交付和 P1 尚未签收。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-W AUDITED：W01–W03 已固定变参 Concat、六 storage 字边界所有权和普通 Direct/Graph 验证，产品待实施。T/U/V 局部三机35例及头检查已覆盖；完整 C1 后续机制、真实权重/三交付和 P1 尚未签收。"
+      "summary": "LLM/MoE C1-W AUDITED：W01–W03 已实现六 storage 变参 Concat、原生分组片段/字边界所有权及普通 Direct/Graph；W1/Air/Mini 各39例和2个头检查首轮通过。完整 C1 归约/索引等后续机制、真实权重/三交付和 P1 尚未签收。"
     }
   ]
 }

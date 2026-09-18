@@ -60,8 +60,8 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-W AUDITED：W01–W03 已固定变参 Concat、六 storage 字边界所有权和普通 Direct/Graph 验证，产品待实施。T/U/V 局部三机35例及头检查已覆盖；完整 C1 后续机制、真实权重/三交付和 P1 尚未签收。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-W AUDITED：W01–W03 已固定变参 Concat、六 storage 字边界所有权和普通 Direct/Graph 验证，产品待实施。T/U/V 局部三机35例及头检查已覆盖；完整 C1 后续机制、真实权重/三交付和 P1 尚未签收。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-W AUDITED：W01–W03 已实现六 storage 变参 Concat、原生分组片段/字边界所有权及普通 Direct/Graph；W1/Air/Mini 各39例和2个头检查首轮通过。完整 C1 归约/索引等后续机制、真实权重/三交付和 P1 尚未签收。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-W AUDITED：W01–W03 已实现六 storage 变参 Concat、原生分组片段/字边界所有权及普通 Direct/Graph；W1/Air/Mini 各39例和2个头检查首轮通过。完整 C1 归约/索引等后续机制、真实权重/三交付和 P1 尚未签收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
