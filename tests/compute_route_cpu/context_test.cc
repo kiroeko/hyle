@@ -75,8 +75,9 @@ TEST(CpuDefaultContext, MatureNormalizationBindsThroughOrdinaryFactory) {
     auto vendor_context =
         Context::create(cpu::device(), onednn::provider()).value();
     auto vendor = prepare(vendor_context, RmsNorm{}, description);
-    if (type == DataType::kFloat32)
+    if (type == DataType::kFloat32) {
       ASSERT_TRUE(vendor) << vendor.error().message();
+    }
     if (vendor) {
       EXPECT_EQ(prepared->provider().id, onednn::kProviderId);
       EXPECT_EQ(prepared->runtime_properties().replay_class,

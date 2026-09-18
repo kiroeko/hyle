@@ -1,0 +1,1609 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "onednn-normalization-p1-v1",
+  "module": "graph_provider_onednn",
+  "claim": "C1-AA complete same-contract F32 serial Direct/Graph normalization comparison of mature oneDNN against existing Native. Each workload independently informs development-time routing; a losing candidate is not a default winner.",
+  "candidate": {
+    "target": "hyle_graph_provider_onednn",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "graph_provider_onednn",
+    "entrypoint": "include/hyle/graph/providers/onednn.h"
+  },
+  "peers": [
+    {
+      "id": "native",
+      "revision": "2c9338e1c3a01d793aeda6aef1c4898709b8fe47",
+      "configuration": {
+        "role": "HYLE Native implementation from the same unchanged product source subtree",
+        "source_tree": "c4f2bddfe2ba2d5208f567c09f9e778efc6c8db7",
+        "threads": "caller-thread serial",
+        "semantics": "Same F32 input, parameters, output, epsilon, checks, completion and ownership. Both arms validate the independent FP64 oracle."
+      }
+    },
+    {
+      "id": "onednn",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "configuration": {
+        "role": "locked mature dependency used by candidate, not an unchecked leaf-call peer",
+        "version": "v3.13.2",
+        "runtime": "THREADPOOL borrowed serial; build-local cleanup overlay is candidate-owned",
+        "algorithm": "original normalization primitive with optional binary post-ops"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "direct-rms-1x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "local-qwen35-2b/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 2048,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct rms normalization episode of 1x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [1,2048], F32 parameters and accumulation, epsilon 1e-5, scale only; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 1,
+          "width": 2048,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct rms f32 R=1 W=2048",
+        "peer": "HYLE Native direct rms f32 R=1 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-rms-1x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "local-qwen35-2b/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 2048,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph rms normalization episode of 1x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [1,2048], F32 parameters and accumulation, epsilon 1e-5, scale only; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 1,
+          "width": 2048,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph rms f32 R=1 W=2048",
+        "peer": "HYLE Native graph rms f32 R=1 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-rms-17x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "local-qwen35-2b/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 34816,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct rms normalization episode of 17x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [17,2048], F32 parameters and accumulation, epsilon 1e-5, scale only; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 2048,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct rms f32 R=17 W=2048",
+        "peer": "HYLE Native direct rms f32 R=17 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-rms-17x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "local-qwen35-2b/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 34816,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph rms normalization episode of 17x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [17,2048], F32 parameters and accumulation, epsilon 1e-5, scale only; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 2048,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph rms f32 R=17 W=2048",
+        "peer": "HYLE Native graph rms f32 R=17 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-rms-128x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "local-qwen35-2b/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 262144,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct rms normalization episode of 128x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [128,2048], F32 parameters and accumulation, epsilon 1e-5, scale only; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 128,
+          "width": 2048,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct rms f32 R=128 W=2048",
+        "peer": "HYLE Native direct rms f32 R=128 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-rms-128x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "local-qwen35-2b/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 262144,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph rms normalization episode of 128x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [128,2048], F32 parameters and accumulation, epsilon 1e-5, scale only; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 128,
+          "width": 2048,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph rms f32 R=128 W=2048",
+        "peer": "HYLE Native graph rms f32 R=128 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-rms-17x257",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4369,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct rms normalization episode of 17x257",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [17,257], F32 parameters and accumulation, epsilon 1e-5, scale only; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 257,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct rms f32 R=17 W=257",
+        "peer": "HYLE Native direct rms f32 R=17 W=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-rms-17x257",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4369,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph rms normalization episode of 17x257",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis rms normalization of F32 [17,257], F32 parameters and accumulation, epsilon 1e-5, scale only; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 257,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph rms f32 R=17 W=257",
+        "peer": "HYLE Native graph rms f32 R=17 W=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-layer-1x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 2048,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct layer normalization episode of 1x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [1,2048], F32 parameters and accumulation, epsilon 1e-5, scale and bias; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 1,
+          "width": 2048,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct layer f32 R=1 W=2048",
+        "peer": "HYLE Native direct layer f32 R=1 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-layer-1x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 2048,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph layer normalization episode of 1x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [1,2048], F32 parameters and accumulation, epsilon 1e-5, scale and bias; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 1,
+          "width": 2048,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph layer f32 R=1 W=2048",
+        "peer": "HYLE Native graph layer f32 R=1 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-layer-17x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 34816,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct layer normalization episode of 17x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [17,2048], F32 parameters and accumulation, epsilon 1e-5, scale and bias; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 2048,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct layer f32 R=17 W=2048",
+        "peer": "HYLE Native direct layer f32 R=17 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-layer-17x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 34816,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph layer normalization episode of 17x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [17,2048], F32 parameters and accumulation, epsilon 1e-5, scale and bias; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 2048,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph layer f32 R=17 W=2048",
+        "peer": "HYLE Native graph layer f32 R=17 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-layer-128x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 262144,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct layer normalization episode of 128x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [128,2048], F32 parameters and accumulation, epsilon 1e-5, scale and bias; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 128,
+          "width": 2048,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct layer f32 R=128 W=2048",
+        "peer": "HYLE Native direct layer f32 R=128 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-layer-128x2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 262144,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph layer normalization episode of 128x2048",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [128,2048], F32 parameters and accumulation, epsilon 1e-5, scale and bias; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 128,
+          "width": 2048,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph layer f32 R=128 W=2048",
+        "peer": "HYLE Native graph layer f32 R=128 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "direct-layer-17x257",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/direct",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4369,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete direct layer normalization episode of 17x257",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [17,257], F32 parameters and accumulation, epsilon 1e-5, scale and bias; one direct result",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 257,
+          "operations_per_callback": 1
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN direct layer f32 R=17 W=257",
+        "peer": "HYLE Native direct layer f32 R=17 W=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "graph-layer-17x257",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "batch-numerical/normalization/graph",
+      "provenance": {
+        "path": "bench/graph_provider_onednn/normalization_shapes_v1.json",
+        "sha256": "d1fab1cc6898ae3b789e239a7d9e7c39de6511d5ef069028518f1d82fa5142ad"
+      },
+      "ownership_topology": {
+        "candidate": "Retained HYLE Context/Queue and one immutable oneDNN plan, one invocation, caller-owned dense input/output and workspace; all vendor replay allocations and cleanup are charged",
+        "peer": "Same HYLE owners with Native plan and one invocation; Graph owns the complete three-node chain and its reused intermediate storage",
+        "equivalence": "Shared immutable input with identical values, separate outputs and workspace, 64-byte alignment, serial synchronous return through the same public submit/wait boundary; cold creation order crossed independently from timed execution order"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4369,
+        "unit": "normalized element",
+        "budget": 5,
+        "denominator": "one complete graph layer normalization episode of 17x257",
+        "derivation": "A normalization at the registered decode/prefill or batched numerical boundary; 5% applies to this complete fragment, with no model-wide speedup claim"
+      },
+      "semantic_contract": "Last-axis layer normalization of F32 [17,257], F32 parameters and accumulation, epsilon 1e-5, scale and bias; then vector Mul and full-shape residual Add, final output only",
+      "comparability": "COMPARABLE",
+      "peer_id": "native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "deterministic bounded signed F32 values; independent FP64 oracle before timing",
+        "scale": {
+          "rows": 17,
+          "width": 257,
+          "operations_per_callback": 3
+        }
+      },
+      "setup": "Both arms create/JIT/allocate/bind/prepare_replay/warm and verify outside measurement; no per-run provider search",
+      "charged_phases": [
+        "public validation and admission",
+        "all normalization and optional post-op or node-chain work",
+        "maps/flush/close and vendor temporary metadata",
+        "terminal completion wait and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE oneDNN graph layer f32 R=17 W=257",
+        "peer": "HYLE Native graph layer f32 R=17 W=257"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "normalization-workload-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows"
+    ],
+    "certification_platforms": [
+      "windows"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "OFF",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPUTE_ONEDNN": "ON",
+          "HYLE_DEV_FACTORS": "compute_provider_native;compute_provider_onednn;graph_provider_onednn;compute_backend_cpu",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "onednn": "FETCHCONTENT_SOURCE_DIR_ONEDNN",
+          "native": "HYLE_CPU_NATIVE_SOURCE_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "normalization-primary",
+          "target": "hyle_onednn_normalization_bench",
+          "stem": "hyle_onednn_normalization_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_NORMALIZATION_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "direct-rms-1x2048",
+              "title": "normalization direct rms f32 R=1 W=2048"
+            },
+            {
+              "id": "graph-rms-1x2048",
+              "title": "normalization graph rms f32 R=1 W=2048"
+            },
+            {
+              "id": "direct-rms-17x2048",
+              "title": "normalization direct rms f32 R=17 W=2048"
+            },
+            {
+              "id": "graph-rms-17x2048",
+              "title": "normalization graph rms f32 R=17 W=2048"
+            },
+            {
+              "id": "direct-rms-128x2048",
+              "title": "normalization direct rms f32 R=128 W=2048"
+            },
+            {
+              "id": "graph-rms-128x2048",
+              "title": "normalization graph rms f32 R=128 W=2048"
+            },
+            {
+              "id": "direct-rms-17x257",
+              "title": "normalization direct rms f32 R=17 W=257"
+            },
+            {
+              "id": "graph-rms-17x257",
+              "title": "normalization graph rms f32 R=17 W=257"
+            },
+            {
+              "id": "direct-layer-1x2048",
+              "title": "normalization direct layer f32 R=1 W=2048"
+            },
+            {
+              "id": "graph-layer-1x2048",
+              "title": "normalization graph layer f32 R=1 W=2048"
+            },
+            {
+              "id": "direct-layer-17x2048",
+              "title": "normalization direct layer f32 R=17 W=2048"
+            },
+            {
+              "id": "graph-layer-17x2048",
+              "title": "normalization graph layer f32 R=17 W=2048"
+            },
+            {
+              "id": "direct-layer-128x2048",
+              "title": "normalization direct layer f32 R=128 W=2048"
+            },
+            {
+              "id": "graph-layer-128x2048",
+              "title": "normalization graph layer f32 R=128 W=2048"
+            },
+            {
+              "id": "direct-layer-17x257",
+              "title": "normalization direct layer f32 R=17 W=257"
+            },
+            {
+              "id": "graph-layer-17x257",
+              "title": "normalization graph layer f32 R=17 W=257"
+            }
+          ]
+        },
+        {
+          "id": "normalization-placement",
+          "target": "hyle_onednn_normalization_bench_placement",
+          "stem": "hyle_onednn_normalization_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_NORMALIZATION_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "direct-rms-1x2048",
+              "title": "normalization direct rms f32 R=1 W=2048"
+            },
+            {
+              "id": "graph-rms-1x2048",
+              "title": "normalization graph rms f32 R=1 W=2048"
+            },
+            {
+              "id": "direct-rms-17x2048",
+              "title": "normalization direct rms f32 R=17 W=2048"
+            },
+            {
+              "id": "graph-rms-17x2048",
+              "title": "normalization graph rms f32 R=17 W=2048"
+            },
+            {
+              "id": "direct-rms-128x2048",
+              "title": "normalization direct rms f32 R=128 W=2048"
+            },
+            {
+              "id": "graph-rms-128x2048",
+              "title": "normalization graph rms f32 R=128 W=2048"
+            },
+            {
+              "id": "direct-rms-17x257",
+              "title": "normalization direct rms f32 R=17 W=257"
+            },
+            {
+              "id": "graph-rms-17x257",
+              "title": "normalization graph rms f32 R=17 W=257"
+            },
+            {
+              "id": "direct-layer-1x2048",
+              "title": "normalization direct layer f32 R=1 W=2048"
+            },
+            {
+              "id": "graph-layer-1x2048",
+              "title": "normalization graph layer f32 R=1 W=2048"
+            },
+            {
+              "id": "direct-layer-17x2048",
+              "title": "normalization direct layer f32 R=17 W=2048"
+            },
+            {
+              "id": "graph-layer-17x2048",
+              "title": "normalization graph layer f32 R=17 W=2048"
+            },
+            {
+              "id": "direct-layer-128x2048",
+              "title": "normalization direct layer f32 R=128 W=2048"
+            },
+            {
+              "id": "graph-layer-128x2048",
+              "title": "normalization graph layer f32 R=128 W=2048"
+            },
+            {
+              "id": "direct-layer-17x257",
+              "title": "normalization direct layer f32 R=17 W=257"
+            },
+            {
+              "id": "graph-layer-17x257",
+              "title": "normalization graph layer f32 R=17 W=257"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "normalization-workload-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "bench/graph_provider_onednn/normalization_preflight.py",
+            "--build",
+            "{build}"
+          ]
+        }
+      ]
+    }
+  }
+}

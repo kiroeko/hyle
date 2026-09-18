@@ -98,8 +98,17 @@ guide记录精度、已验证域和借用executor寿命。
   转换或把这部分写成 oneDNN 数值 PASS；对应 ISA 原生资格仍待有设备时验证。
 - W1 static/shared 均通过8个 CTest（166个 gtest case，另有独立 executor consumer）；
   static 分配检查通过2例，逐个注入18个 vendor warm-new 失败点，旧 BRGEMM 热路径仍无 new。
-  WSL、完整 package/selector 扩展门及公平 P1 尚待完成，owner 保持 AUDITED。
+  WSL GCC14 static 同样通过8个 CTest/166个 gtest case及独立 executor consumer，分配检查2例通过；
+  其 vendor warm-new 为13次，逐点注入均回报失败并退休坏槽。GCC 的断言宏 dangling-else 只通过
+  测试外层显式花括号修正，未改产品代码；W1 对受影响测试增量6个 CTest再次通过。
+  完整 package/selector 扩展门及公平 P1 尚待完成，owner 保持 AUDITED。
   AA04 的默认优选/Native冗余删除尚未裁决；本节不是 C1 或本轮 CLOSED。
+
+产品仍绑定 `2c9338e1`；[结构化局部证据](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-local.json)、
+[原始日志和命令](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-local-raw.zip)、
+[统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-loc.json)记录上述边界。
+Compute+Graph 全部实现为46,941行/193文件，不含测试和 benchmark；本批验证准备不增加产品 LOC。
+已核对 WSL 归档 receipt 后删除79,892,480-byte传输 tar；两个环境继续使用固定源/构建目录。
 
 ## AA04 对比前置合同：先比较，再裁决重复实现
 
@@ -135,3 +144,14 @@ vendor metadata 已归因为成熟 primitive C API 的固定成本，不能用�
 使用既有 nanobench compare 和统一仪器；placement 只加少量冷 section 位移，不采用全函数 padding。
 预声明 material/NI margin5%，样本15，只有既定统计停止规则要求时升31；两轮具名纠正预算不增加。
 未通过 preflight 不启动完整样本；未验证域不写默认赢家，P1 后按完整适用域裁决保留/替换/删除。
+
+### 对比程序准备事实
+
+[固定合同](../../../../bench/contracts/onednn-normalization-p1-v1.json)及
+[消费形状来源](../../../../bench/graph_provider_onednn/normalization_shapes_v1.json)已登记。
+W1 Release/WERROR 的 primary/placement 两份程序已编译，16个 workload 的双方完整路径都通过
+独立 FP64 oracle（`HYLE_BENCH_VERIFY_ONLY=1`，没有计时）。placement 仅增加48-byte `.text`，
+link map 证实 Graph submit 等产品函数地址移动32 bytes；没有修改热函数 flags 或全函数 padding。
+数值程序使用确定性输入，尚不是本地真实权重 replay；LayerNorm属于正交数值 consumer，
+不宣称本地 Qwen 使用 LayerNorm。workload A/A、统一仪器采样和默认规则裁决仍未运行。
+按本卡先完成交付前置，再对冻结候选执行 P1；不得把程序已存在计作性能验收或 Native 已淘汰。

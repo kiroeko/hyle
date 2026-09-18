@@ -355,7 +355,7 @@
       "module": "compute_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA AUDITED：冻结 AA01–AA04，借用 oneDNN normalization primitive/post-ops 与 HYLE executor；实施 Direct 多精度归一化及 F32 Graph 原生融合，正确性/生命周期/三交付/完整成本优选未验收，不计覆盖 PASS。"
+      "summary": "C1-AA AUDITED：Direct oneDNN norm及F32 Graph post-ops已接入；W1 static/shared与WSL各166例及executor通过，外部分配失败恢复通过。本机vendor半精度不支持、Native回落已验；完整三交付/公平P1/默认优选及冗余删除未验收。"
     },
     {
       "module": "compute_provider_ggml",
@@ -371,7 +371,7 @@
       "module": "graph_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA AUDITED：冻结 AA01–AA04，借用 oneDNN normalization primitive/post-ops 与 HYLE executor；实施 Direct 多精度归一化及 F32 Graph 原生融合，正确性/生命周期/三交付/完整成本优选未验收，不计覆盖 PASS。"
+      "summary": "C1-AA AUDITED：Direct oneDNN norm及F32 Graph post-ops已接入；W1 static/shared与WSL各166例及executor通过，外部分配失败恢复通过。本机vendor半精度不支持、Native回落已验；完整三交付/公平P1/默认优选及冗余删除未验收。"
     },
     {
       "module": "compute_ops",

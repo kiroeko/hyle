@@ -52,8 +52,9 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
           builder
               .add(compute::Binary{compute::BinaryKind::kAdd}, weighted, input)
               .value();
-      if (published)
+      if (published) {
         ASSERT_TRUE(builder.publish(normalized).ok());
+      }
       ASSERT_TRUE(builder.publish(residual).ok());
       auto logical = std::move(builder).finish().value();
       auto compiled = graph::compile(logical, context);
@@ -90,13 +91,14 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
                                             description, outputs[run].view())
                                             .value())
                         .ok());
-        if (published)
+        if (published) {
           ASSERT_TRUE(invocation
                           .bind(normalized,
                                 compute::TensorView::create(description,
                                                             intermediate.view())
                                     .value())
                           .ok());
+        }
         std::vector<float> current = values;
         if (run != 0)
           for (auto &value : current)

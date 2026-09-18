@@ -1,0 +1,40 @@
+{
+  "schema": "hyle.normalization-consumer-shapes/v1",
+  "classification": "named-product-journey",
+  "primary": {
+    "model": "local Qwen3.5-2B",
+    "artifact_identity_sha256": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "config_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+    "width": 2048,
+    "rows": [
+      1,
+      17,
+      128
+    ],
+    "source": "docs/implementation/tasks/compute/qwen35-2b-local-input.json"
+  },
+  "orthogonal": {
+    "consumer": "batched numerical normalization",
+    "rows": 17,
+    "width": 257,
+    "classification": "PROVISIONAL_ARCHETYPE",
+    "role": "irregular-width holdout; no model-wide claim"
+  },
+  "operations": [
+    "RMSNorm with scale",
+    "LayerNorm with scale and bias"
+  ],
+  "journeys": [
+    "complete Direct submit/wait",
+    "complete Graph norm -> Mul(vector) -> Add(input) submit/wait"
+  ],
+  "limits": "F32 serial mechanism/route qualification only; deterministic tensors, not real weight replay or a model inference claim. LayerNorm is the orthogonal numerical consumer, not an assertion that Qwen uses LayerNorm.",
+  "native_product_commit": "2c9338e1c3a01d793aeda6aef1c4898709b8fe47",
+  "native_source_tree": "c4f2bddfe2ba2d5208f567c09f9e778efc6c8db7",
+  "mature_dependency": {
+    "version": "oneDNN v3.13.2",
+    "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+    "execution": "original normalization primitive/post-ops; one audited runtime cleanup overlay, no mathematical kernel patch"
+  },
+  "completion_contract": "Both arms use HYLE buffers, Context, Queue, Invocation, Status and Completion; mapping, checking, vendor execution-args allocation/free, intermediate memory traffic and terminal wait are charged. Preparation/JIT and final plan teardown are cold on both sides."
+}

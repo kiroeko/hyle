@@ -1,0 +1,124 @@
+{
+  "schema": "hyle.onednn-normalization-local-correctness/v1",
+  "baseline": "4a7685523d139a54aab9043bdf3d5b767a2bed20",
+  "product_candidate": "2c9338e1c3a01d793aeda6aef1c4898709b8fe47",
+  "product_tree": "b2645b11589664fbb916695be4c7d5ff76e64cc2",
+  "source_of_truth": "Windows canonical; WSL archive plus explicit assertion-brace-only test patches",
+  "wsl_base_archive_sha256": "82083b55f8b0d70de07c74df689c9f9623c899a6ad10d64ab59acba5ad175c1a",
+  "wsl_test_patches": {
+    "purpose": "GCC14 -Wdangling-else on assertion macros; only add explicit braces, no test logic/product change",
+    "files_sha256": {
+      "tests/compute_provider_onednn/normalization_test.cc": "dd14dfd9ebdc64628ae8172ca38e3f92439e7f5cb668e62f5c068398fea19a2f",
+      "tests/compute_route_cpu/context_test.cc": "c9db43e639d512a9bf76bad51803be3340f4f960006c3a9c9cc8656b7d6fac5f",
+      "tests/graph_route_cpu/graph_test.cc": "4f177cd11d6f997b2388c4f4b840d99acaad96df4370a8c5124f59bad707ed4c"
+    }
+  },
+  "toolchains": {
+    "Windows": "MSVC 19.50.35728 / toolset 14.50.35717",
+    "WSL": "Ubuntu24.04 / GCC14.2.0"
+  },
+  "configuration": "Release/WERROR/shipping layout, trace/sanitizer OFF; parallel2 and serial heavy verification",
+  "windows_execution": "HYLE/CRT DLLs next to EXEs; PATH unset; SetErrorMode; no UAC/install/power changes",
+  "onednn": {
+    "version": "3.13.2",
+    "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+    "runtime": "THREADPOOL borrowed executor",
+    "primitives": [
+      "MATMUL",
+      "LAYER_NORMALIZATION"
+    ],
+    "runtime_overlay": "src/compute_provider_onednn/runtime_overlay.cmake; exact-source-hash guarded, no math patch"
+  },
+  "results": [
+    {
+      "environment": "static",
+      "gate": "PASS",
+      "ctest_targets": 8,
+      "gtest_cases": 166,
+      "additional_consumer": "cpu_executor",
+      "skipped": 0
+    },
+    {
+      "environment": "shared",
+      "gate": "PASS",
+      "ctest_targets": 8,
+      "gtest_cases": 166,
+      "additional_consumer": "cpu_executor",
+      "skipped": 0
+    },
+    {
+      "environment": "wsl",
+      "gate": "PASS",
+      "ctest_targets": 8,
+      "gtest_cases": 166,
+      "additional_consumer": "cpu_executor",
+      "skipped": 0
+    },
+    {
+      "environment": "static",
+      "suite": "foreign allocation and failure retirement",
+      "gate": "PASS",
+      "tests": 2,
+      "vendor_warm_global_new_failpoints": 18,
+      "old_brgemm_six_shape_zero_new": "PASS"
+    },
+    {
+      "environment": "wsl",
+      "suite": "foreign allocation and failure retirement",
+      "gate": "PASS",
+      "tests": 2,
+      "vendor_warm_global_new_failpoints": 13,
+      "old_brgemm_six_shape_zero_new": "PASS"
+    },
+    {
+      "environment": "Windows static incremental after test-only braces",
+      "gate": "PASS",
+      "ctest_targets": 6,
+      "gtest_cases": 38,
+      "additional_consumer": "cpu_executor"
+    }
+  ],
+  "half_precision_vendor": {
+    "F16": "ISA_UNSUPPORTED_NUMERICS_UNPROVEN",
+    "BF16": "ISA_UNSUPPORTED_NUMERICS_UNPROVEN",
+    "ordinary_route": "Native fallback verified; this is not oneDNN half numeric PASS"
+  },
+  "covered": "independent double oracle, norm/params/irregular shape/special values/centered variance/alias, shared-plan separate invocations/rebind/concurrency/nested executor, HYLE OOM cleanup and vendor new failures, ordinary Direct/Graph fused and observable-boundary paths",
+  "uncompleted": [
+    "full selected package/component/header gates",
+    "source/static/shared installed/offline/relocation journeys",
+    "fair qualified P1",
+    "default winner rules",
+    "Native duplicate-domain removal",
+    "whole C1 and model coverage"
+  ],
+  "aggregate_acceptance": "INCONCLUSIVE",
+  "owner_state": "AUDITED",
+  "module_implementation_loc": 46941,
+  "benchmark_preparation": {
+    "schema": "hyle.normalization-benchmark-preparation/v1",
+    "build": "Windows MSVC19.50 Release/WERROR static",
+    "verification": "HYLE_BENCH_VERIFY_ONLY=1; 16 workloads, both complete routes checked against FP64 oracle",
+    "timings_run": false,
+    "artifacts_sha256": {
+      "bin\\hyle_onednn_normalization_bench.exe": "f4c6232cc116fbd2f4b7966b1e43a36fb375dd4222428e7f57aefebbaa9c47ce",
+      "bin\\hyle_onednn_normalization_bench_placement.exe": "bf0908d7c52dbd3aafd47d0277c3cea4c86dea8c48a8f3f6d7f1e84b189047d3"
+    },
+    "source_sha256": "f53c1b25e68ab1a3c2731d844abb3f271c8086ea22b2cb309fea1e8310a58e1a",
+    "text_bytes": {
+      "primary": 15449895,
+      "placement": 15449943
+    },
+    "graph_submit_address": {
+      "primary": "0x140d51340",
+      "placement": "0x140d51360"
+    },
+    "qualifications_not_run": [
+      "workload A/A",
+      "uniform instrument controls/product sampling",
+      "default rules"
+    ]
+  },
+  "disk_cleanup": "Deleted only identity-verified 79,892,480-byte transfer archive after WSL tests; retained fixed source/build caches",
+  "raw_sha256": "a8f3d7ca806eab04e9568393f339b6d104375216df8e096eb4859accab2243e8"
+}
