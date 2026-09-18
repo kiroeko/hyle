@@ -174,8 +174,9 @@ template <class T> bool native_half_available() {
             .value();
     auto result = prepare(context, RmsNorm{}, description);
     supported = result.has_value();
-    if (!supported)
+    if (!supported) {
       EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+    }
   }
   EXPECT_TRUE(stats.balanced());
   testing::Test::RecordProperty(
