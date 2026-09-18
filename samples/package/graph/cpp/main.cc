@@ -18,6 +18,7 @@
 
 #if defined(HYLE_GRAPH_ONEDNN)
 #include <hyle/graph/providers/onednn.h>
+#include "cpu_normalization.h"
 #endif
 
 #include <array>
@@ -94,8 +95,7 @@ int main() {
       compiled->report.node(0)->kind !=
           hyle::compute::OperationKind::kRmsNorm ||
       compiled->report.workspace_bytes() == 0 ||
-      compiled->report.copy_bytes() != 0 ||
-      compiled->report.mixed_providers()) {
+      compiled->report.copy_bytes() != 0) {
     return 9;
   }
 
@@ -140,6 +140,8 @@ int main() {
     return 13;
 
 #if defined(HYLE_GRAPH_ONEDNN)
+  if (!sample_cpu_normalization::run().ok())
+    return 29;
   constexpr std::array<std::int64_t, 2> region_activation_shape{16, 4};
   constexpr std::array<std::int64_t, 2> region_weight_shape{4, 8};
   constexpr std::array<std::int64_t, 2> region_down_shape{8, 4};

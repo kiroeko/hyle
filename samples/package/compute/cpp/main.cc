@@ -57,7 +57,13 @@ int main() {
   auto prepared = prepare(*context, RmsNorm{}, *description);
   if (!queue || !prepared)
     return 4;
-  auto invocation = prepared->create_invocation();
+  const auto norm_workspace_requirement = prepared->workspace_requirement();
+  auto norm_workspace = hyle::mem::Buffer::create(
+      hyle::mem::system_resource(), norm_workspace_requirement.size,
+      norm_workspace_requirement.alignment);
+  if (!norm_workspace)
+    return 5;
+  auto invocation = prepared->create_invocation(norm_workspace->view());
   if (!invocation)
     return 5;
   auto completion = invocation->submit(*queue, *input_view, *output_view);

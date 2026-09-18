@@ -155,3 +155,12 @@ link map 证实 Graph submit 等产品函数地址移动32 bytes；没有修改�
 数值程序使用确定性输入，尚不是本地真实权重 replay；LayerNorm属于正交数值 consumer，
 不宣称本地 Qwen 使用 LayerNorm。workload A/A、统一仪器采样和默认规则裁决仍未运行。
 按本卡先完成交付前置，再对冻结候选执行 P1；不得把程序已存在计作性能验收或 Native 已淘汰。
+
+### AA04 交付 consumer 迁移
+
+普通 Compute 样例的 RMSNorm 原先直接创建无 workspace 的 invocation；现在按所选 artifact 的
+workspace requirement 分配并传入。Graph 样例原先拒绝 mixed providers，这与已授权的同 CPU
+Provider 组合冲突，移除该旧实现假设，保留图结构、资源、执行和结果检查。新增普通工厂及显式成熟
+region 两次独立消费：RMSNorm→Mul(vector)→Add(input)，两个变化输入的固定 replay、独立 double
+oracle；后者保证 installed SDK 确实交付并执行原生融合，即使后续默认优选规则选择别的合法实现。
+该改动只在现有 AA04 的样例/验收范围，不改产品 API 或调度检查。
