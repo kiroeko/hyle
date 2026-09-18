@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "scope": "bounded integration admission probe; no HYLE product, default-selection, P1 or four-route acceptance claim",
+  "canonical_baseline": "d23a3dbf1c58a1e0a7675e8cc94e4b6626b4e578",
+  "owner": "/root",
+  "upstream": {
+    "repository": "https://github.com/ggml-org/ggml",
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "clean_checkout": true,
+    "license": "MIT",
+    "sources": [
+      {
+        "path": "src/ggml.c",
+        "sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+        "bytes": 259806
+      },
+      {
+        "path": "src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+        "bytes": 1057933
+      },
+      {
+        "path": "include/ggml-vulkan.h",
+        "sha256": "7eae5dad2cc7bb4d3eca828539f441816d5fd59fdc7b224d49aa229fc7b7248c",
+        "bytes": 952
+      },
+      {
+        "path": "src/ggml-vulkan/CMakeLists.txt",
+        "sha256": "27bddb1d21b1d10528be5335b13b5a501cf6e7b56e16f3b5b0643d5b90703736",
+        "bytes": 10280
+      },
+      {
+        "path": "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+        "sha256": "e2066c68067c91fa72a8c6420a0a6a4f6072ba6aec6b9ee303e2706517ed843c",
+        "bytes": 81470
+      }
+    ]
+  },
+  "build": {
+    "host": "W1-WIN",
+    "type": "Release static",
+    "cmake_parallel": 2,
+    "nested_shader_workers": 1,
+    "cpu_backend": false,
+    "runtime_backend": "Vulkan0",
+    "sdk": "1.4.357.0",
+    "sdk_sha256": "81f474711e9042f4cd22b31b2f7a8870db2e428b21586fb43dd80150be97310d",
+    "preparation": "portable extraction from existing verified installer archive; installer not executed; no registry, driver, UAC, firewall or power changes",
+    "tool_location": "C:\\hyle-scratch\\ggml-vulkan-region-20260918\\sdk",
+    "other_source_changes": [
+      "disabled nested MSVC /MP",
+      "reduced shader-generator concurrency from 16 to 1"
+    ]
+  },
+  "workload": {
+    "graph": [
+      "RMSNorm epsilon=1e-6",
+      "broadcast weight multiply",
+      "SiLU",
+      "residual add"
+    ],
+    "dtype": "F32",
+    "width": 2048,
+    "rows": [
+      1,
+      17,
+      128
+    ],
+    "repeats_each": 3,
+    "oracle": "independent scalar double formula",
+    "tolerance": "absolute_error <= 6e-6 * (1 + abs(expected))",
+    "max_absolute_errors": [
+      5.13534583e-07,
+      6.81436111e-07,
+      7.32252335e-07
+    ],
+    "source": "local 2B hidden width and C1 normal token counts; generated data, not checkpoint weights"
+  },
+  "observations": [
+    {
+      "probe": "unmodified upstream operator/runtime execution",
+      "verdict": "PASS",
+      "log": "run-unmodified.log",
+      "covers": "persistent graph/context/tensors; three changed inputs per shape; independent output oracle"
+    },
+    {
+      "probe": "bounded native device/buffer bridge",
+      "verdict": "PASS",
+      "log": "run.log",
+      "covers": "export exact VkDevice/VkQueue/VkBuffer; import native storage; one iteration written with native Vulkan commands; same-device region execution; original buffer survives wrapper release; no operator algorithm edits"
+    },
+    {
+      "probe": "same bridge with Khronos validation requested",
+      "verdict": "PASS",
+      "log": "run-bridge-validation.log",
+      "environment": {
+        "VK_LAYER_PATH": "C:/hyle-scratch/r6-vulkan-20260917/tools/validation-1.4.357.0",
+        "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation"
+      },
+      "observed_vuid_messages": 0
+    }
+  ],
+  "decision": "admit a separately owned, version-pinned ggml Vulkan managed-region adapter and narrow source bridge; do not replace the operators with new HYLE shaders because the public native seam is absent",
+  "unproven": [
+    "HYLE ordinary Direct/Graph integration",
+    "fallible ggml context creation",
+    "partial-initialization rollback and accepted-prefix failure",
+    "cross-context queue concurrency and global initialization",
+    "asynchronous result/close/drain ownership",
+    "private allocation accounting",
+    "Apple/MoltenVK",
+    "source/static/shared SDK delivery",
+    "default performance rules and P1",
+    "BF16/F16 and complete C1 coverage"
+  ],
+  "native_cost": "upstream graph_compute traverses/fuses/encodes per execution; this is a managed program, not allocation-free recorded replay; source body and pool cleanup inspected",
+  "archive": {
+    "path": "evidence/correctness/compute-llm-moe-c1/ggml-vulkan-region-admission-raw.zip",
+    "sha256": "31432085a0bc8afbb6f4d8b3320680aa53ee0d5669fb639d589a8e792efe1aea",
+    "bytes": 15000,
+    "file_count": 13
+  },
+  "raw_files": [
+    {
+      "path": "prepare.py",
+      "sha256": "3f37865b58e228a998633415ea382e7c2a2a32b45b9d71e8bc36f3d34a7a20fb",
+      "bytes": 2630
+    },
+    {
+      "path": "bridge-patch.py",
+      "sha256": "e6b685afad72c4ecb8f23bb349f9675dc241c406486837d6d2a2f264431a285c",
+      "bytes": 7329
+    },
+    {
+      "path": "build.ps1",
+      "sha256": "eb0dff29fef11057958afc37dc486e05b80e1822739833349b53975b27c70739",
+      "bytes": 939
+    },
+    {
+      "path": "configure.log",
+      "sha256": "ec9bdd5afbaf0c87aec9f59cc9b38e145a85ab823b29fc65bca77958207fc8ae",
+      "bytes": 785
+    },
+    {
+      "path": "build-unmodified.log",
+      "sha256": "426e9968844c3be336869f2c493d34411aa2c55b25edc2fedad1a3a8d7ce7f1b",
+      "bytes": 28838
+    },
+    {
+      "path": "build.log",
+      "sha256": "8a8ee427ef66f174dc39bd513fa2eb5869a7a34f19bb62d62e4444a65be02ddd",
+      "bytes": 1754
+    },
+    {
+      "path": "run-unmodified.log",
+      "sha256": "9dbd8b250f43b6538fbdf3c7b2d448c6a09c826d7ee30d99d9d2a948cb2bc706",
+      "bytes": 429
+    },
+    {
+      "path": "run.log",
+      "sha256": "47229205292a6cf69a85798cd01238c5dcef904e8803635454c763eeb0fc8dbd",
+      "bytes": 540
+    },
+    {
+      "path": "run-bridge-validation.log",
+      "sha256": "47229205292a6cf69a85798cd01238c5dcef904e8803635454c763eeb0fc8dbd",
+      "bytes": 540
+    },
+    {
+      "path": "probe/CMakeLists.txt",
+      "sha256": "56568845b73722b911dfd9c071ffec906399bde8d48d8a78808e624d76d28110",
+      "bytes": 684
+    },
+    {
+      "path": "probe/probe.cpp",
+      "sha256": "8c03d3da47a2977bca207bc27e6eeffefc4c51156281aa3ad569981f1867fd34",
+      "bytes": 6911
+    },
+    {
+      "path": "ggml/include/hyle-vk-probe.h",
+      "sha256": "78e7018e998bccbda9f984806ac410b7af0509086ff0c76872d398049447b5ac",
+      "bytes": 541
+    },
+    {
+      "path": "native-bridge.patch",
+      "sha256": "ca1c0de333efa67aae66921eb473c5f0af24a323ce3560a48abc27e0a0f32d4e",
+      "bytes": 3271
+    }
+  ]
+}

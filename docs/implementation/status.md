@@ -62,6 +62,7 @@
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 |
 | graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 |
+| compute_provider_ggml_vulkan | QUEUED | — | — | LLM/MoE C1-Y：登记 ggml Vulkan managed region 与窄源码桥的独立 owner；W1 计算/原生 buffer 接入探针已通过，但产品 runtime、失败/并发、普通 Direct/Graph 与三交付尚未实施，不计覆盖。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

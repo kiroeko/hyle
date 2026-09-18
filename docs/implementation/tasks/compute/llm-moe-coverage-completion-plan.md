@@ -265,6 +265,10 @@ C3 的小模型验收随此前能力新增/修改按 selector 重放受影响路
 - **SIMD 明确保留。** 用户指出 SIMD 还服务于推理之外的通用消费，本轮 Provider 替换不得
   删除或裁剪 SIMD 模块、公共能力或其非推理消费者；不能用某个推理片段输赢推导 SIMD 无用。
   退场规则只针对 Compute/Graph 中被合格 Provider 完整替代且无独立收益/需求的重复算子路径。
+- 用户同时要求 CMake 主导的 build system 能简明描述第三方接入。每个 Provider 的 route/feature、
+  锁定源码/补丁、vendor options、targets、运行资源和许可证在 owner 处集中描述；复用现有 lock/
+  cache/package registry 投影三交付与关闭路线隔离。带补丁依赖使用可重复的 build-local 源码，
+  不修改共享原始缓存。随真实接入验证并定向简化，不能另造独立下载/打包脚本作为正常产品路径。
 - C0 给 `compute_ops` 分配共同语义，`compute` 分配必要 Direct/result/格式合同，`graph` 分配
   图语义/资源 effects；不是先扩一个万能执行器。旧 API 无兼容要求，按需求迁移真实消费者。
 - CPU：`compute_provider_native`、必要的 `compute_provider_onednn` /

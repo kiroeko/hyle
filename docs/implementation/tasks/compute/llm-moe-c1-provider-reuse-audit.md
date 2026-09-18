@@ -89,7 +89,7 @@ C2–C6 包逐项完成，不从模型可推理或源码存在直接写成四路
 
 | 路线 | 优先的库/实现 | 可以承担的工作与当前接入事实 |
 |---|---|---|
-| CPU | [oneDNN](https://github.com/uxlfoundation/oneDNN)、ggml-CPU | oneDNN 已有 primitive/Graph 接入，扩展前按具体 consumer 定界；ggml 的量化与模型计算片段先解决具名 runtime 边界，不能把旧 blocker 变成永久自写理由 |
+| CPU | [oneDNN](https://github.com/uxlfoundation/oneDNN)、ggml-CPU | 当前实际使用 oneDNN BRGEMM，并由 HYLE Graph region 组合；`ONEDNN_BUILD_GRAPH=OFF`、primitive 限 MATMUL，不能记为完整 oneDNN Graph API/算子集已接入。按真实缺口扩展成熟库承载；ggml 先解决具名 runtime 边界 |
 | CUDA | 现有 cuBLASLt、Marlin、SGLang；新增优先核对 [cuDNN Graph](https://docs.nvidia.com/deeplearning/cudnn/latest/developer/graph-api.html)、[FlashInfer](https://github.com/flashinfer-ai/flashinfer) | 已有矩阵/低比特与部分门控接入；cuDNN 提供融合 Attention 图；FlashInfer 有 Attention、MLA、MoE、norm/RoPE/门控等，逐项核对硬件和 C++ 入口，不把 Python 包安装当产品交付 |
 | CUDA 定向补充 | [CUTLASS/CuTe C++](https://github.com/NVIDIA/cutlass)、ggml-CUDA；[FlashAttention](https://github.com/Dao-AILab/flash-attention) | 优先使用已实现的 GEMM/Grouped GEMM/Attention 核或融合程序。调用 CUTLASS 已有 kernel 与仅用其组件自写算法分别记录；FlashAttention 的 Windows/C++ 交付仍须验证 |
 | Apple | [MLX](https://github.com/ml-explore/mlx)、ggml-Metal；必要时 [MPSGraph](https://developer.apple.com/documentation/metalperformanceshadersgraph) | MLX 已有 C++ typed/compiled region 路径，优先扩复用范围；ggml-Metal 提供成熟模型片段；MPSGraph 是原生图框架候选，跨 runtime 资源与同步成本需具体核对 |
@@ -131,3 +131,28 @@ C2–C6 包逐项完成，不从模型可推理或源码存在直接写成四路
 当前第一项仍是 ggml-Vulkan 的真实 C1 region 接入。上述顺序不要求先把候选池中所有库都链接
 才能开始验证；每个库解决具名覆盖或收益需求，重叠能力择优。尚未接入/验证的库不签 PASS，
 尚未比较的 HYLE 算子不预判胜负。本次记录没有新增产品 FIX、重跑 P1 或删除产品代码。
+
+### Vulkan region 接入试验裁决（2026-09-18）
+
+在产品 baseline `d23a3dbf` 完成上述第一条候选路径的有界试验，
+[原始记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-region-admission.json)
+包含命令/代码/日志归档、上游文件身份和未证明项。产品源码没有变化。
+
+- 固定 ggml `456172ec` 的完整 Vulkan runtime 在 W1 RTX4070 实际完成 F32 RMSNorm → 权重缩放 →
+  SiLU → 残差；宽2048、行数1/17/128，各三次变化输入，独立 double 公式核对通过。
+- 原版 API 没有 native import/export；在验证副本加入窄设备/缓冲桥即可继续执行同一原版 region：
+  导出 VkDevice/VkQueue/VkBuffer，借用同设备 buffer，一次输入由原生 Vulkan 命令写入；借用
+  包装销毁后原 owner 的 buffer 继续有效。Khronos validation 请求开启后同样通过，日志无 VUID。
+  算子算法未改；没有把简单 fill/copy 当作 region 的计算验收。
+- 采用 **ggml Vulkan managed region + 受审窄源码桥** 进入产品接入定界，当前不转向自写 shader。
+  架构本就允许 provider managed encoding；上游逐次遍历/融合/录制的成本要诚实计入，不能用现有
+  HYLE recorded-only 实现反证成熟 region 不该接入，也不宣称原版 graph 是零分配 command replay。
+- 仍须解决：可恢复 context OOM、部分初始化回滚、共享设备初始化/queue 并发、接纳部分工作后的
+  失败与完成、私有分配计费，以及普通 HYLE Direct/Graph 与三交付。原 CPU `compute_provider_ggml`
+  的 BLOCKED 不解除；新 Vulkan owner 独立承担这些具名接入责任。
+- CMake 试验使用原厂 targets，关闭 CPU/backend tests/examples，parallel2、shader 内部单并行；
+  复用已下载 SDK 的便携提取，没有执行 installer/UAC。产品接入须转为现有锁与包机制下的集中
+  声明，验证副本脚本不会作为普通用户的构建入口。
+
+本次只签接入路线可行性的局部事实，不签 HYLE 产品覆盖、完整生命周期、Apple/MoltenVK、三交付
+或性能胜出。后续有限范围见 [ggml Vulkan 接入卡](llm-moe-c1-ggml-vulkan-region.md)。

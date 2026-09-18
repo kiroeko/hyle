@@ -74,6 +74,17 @@ cache、benchmark peer checkout 和编译产物是三类目录，不能混用。
 依赖升级必须由 owner module 的真实影响触发：先改锁和许可证投影，再验证直接消费者、三交付和适用
 性能。更新 vendor 不是“只改构建”；它会触发 owning factor 进入合法审计状态。
 
+Compute Provider 接入由 CMake 主导，每个库在 owning factor 的一个接入位置描述所属路线/feature、
+锁定依赖名、必要 vendor options、生成/链接 targets、公开与私有 usage requirements、运行资源和
+许可证投影。源码获取复用 dependency lock/cache，交付复用 package registry；source/static/shared
+从同一份 target/资源描述导出。厂家自己的构建 target 优先复用，不为接一个库复制其全部源文件清单。
+普通消费者继续只选择 HYLE 产品与路线，不手配第三方库、内部 target 或 Provider 排名。
+
+确需窄源码补丁时，原始 source cache 保持不可变；接入声明绑定上游身份、补丁身份和可重复生成的
+build-local 源码，不静默修改缓存或依赖 checkout。关闭路线时不得获取该 Provider 或探测其 SDK；
+缺少必需工具时在配置期给出具名诊断。新接入若暴露公共构建机制缺陷，依具体反例单独定界修复，
+以普通库和实际带补丁库检验描述是否简明，不借此重写构建/治理系统。
+
 CUDA Toolkit 等系统 SDK 不属于 FetchContent 源码资源：由用户按平台安装，HYLE 只在所选 backend/
 Provider 需要时发现并检查版本/targets，不代管安装器。backend 可用不等于它的全部算子 Provider 可用；
 新增 Provider 的 SDK link、runtime staging、许可与三交付在该 factor 的基础接入卡验收，不留到完整

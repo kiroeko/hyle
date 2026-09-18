@@ -467,6 +467,10 @@ _hyle_declare_component(graph_route_vulkan
   PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
   SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
 
+# Backend-qualified identity for the selected ggml Vulkan integration path.
+# No target or product capability is claimed before its closure round.
+_hyle_declare_component(compute_provider_ggml_vulkan QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

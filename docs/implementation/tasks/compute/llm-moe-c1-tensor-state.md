@@ -46,6 +46,10 @@
 用户明确排除 SIMD：其通用用途超出推理，本轮不删除/裁剪 SIMD 模块和公共能力；Compute/Graph
 重复算子迁移不得连带删除这层基础设施或非推理消费者。
 
+当前下一项为 [C1-Y ggml Vulkan managed region 接入](llm-moe-c1-ggml-vulkan-region.md)。W1 完整
+上游计算与窄 native bridge 探针已通过；按新 owner 协议固定产品接入，CMake 同时负责简明的
+第三方声明和三交付。探针不增加产品覆盖，原 T–X 的授权不外推到新 runtime。
+
 | owner | 当前事实 / 源码 | C1 缺口与承载方向 |
 |---|---|---|
 | compute_ops | `operation.h` Unary 止于 SiLU；已有 View/Cast/Reduce/RmsNorm/LayerNorm/Gather/Scatter/TopK；operation.cc 完成共同 shape 检查 | softplus 与必要 scan 的 typed schema；保留既有数学/alias 语义，明确半精度舍入 |

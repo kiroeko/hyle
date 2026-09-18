@@ -513,6 +513,11 @@
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
       "summary": "LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。"
+    },
+    {
+      "module": "compute_provider_ggml_vulkan",
+      "state": "QUEUED",
+      "summary": "LLM/MoE C1-Y：登记 ggml Vulkan managed region 与窄源码桥的独立 owner；W1 计算/原生 buffer 接入探针已通过，但产品 runtime、失败/并发、普通 Direct/Graph 与三交付尚未实施，不计覆盖。"
     }
   ]
 }
