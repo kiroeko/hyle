@@ -36,6 +36,8 @@ def main():
         ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
         ('normalization', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_NORMALIZATION='1'), {1}),
+        ('concat', str((args.tensor_source / 'tensor.comp').resolve()),
+         dict(HYLE_TENSOR_CONCAT='1'), {1}),
     ]
     header = ['#pragma once', '#include <cstdint>', '#include <span>',
               'namespace hyle::compute::vulkan::detail::shaders {']

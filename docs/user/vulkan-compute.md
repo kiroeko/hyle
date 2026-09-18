@@ -34,7 +34,7 @@ macOS 使用已安装的 loader/MoltenVK。若 loader 不在动态库搜索路�
 `loader_path` 指定其绝对路径；驱动发现仍遵守该 loader 的配置。验证副本使用进程级
 `DYLD_LIBRARY_PATH=/opt/homebrew/opt/vulkan-loader/lib`，不改全局系统配置。
 
-基线需要 Vulkan 1.2、所用 shader 的 workgroup/内存限制；平坦转换和门控要求 512-lane
+基线需要 Vulkan 1.2、所用 shader 的 workgroup/内存限制；既有 F32 布局转换和 ggml 门控片段要求 512-lane
 workgroup。可重新绑定输入的普通 Invocation 还需要设备真实支持
 `descriptorBindingStorageBufferUpdateAfterBind`。缺条件明确报错；固定 caller buffers 的
 Recorder 不强制采用可重绑定 descriptor。默认拒绝软件 device，不做 CPU 模型 fallback。
@@ -76,7 +76,7 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
   MatMul 保持已有设备/shape 性能资格。
 - F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
-- Copy/Fill/Select 支持 F32/F16/BF16/I32/I64/Bool 原始存储，Select 使用 Bool mask；
+- Copy/Fill/Select/Concat 支持 F32/F16/BF16/I32/I64/Bool 原始存储，Select 使用 Bool mask；
   浮点 Cast、13 种 Unary（包括稳定 Softplus）和六种广播 Binary 支持 F32/F16/BF16。
   浮点在 F32 求值后舍入至输出存储；整数和 Bool 只承诺本批存储操作，不承诺整数算术。
 - 张量操作支持 scalar、空域、rank≤8、合法 byte stride/广播输入与 dense output。
@@ -103,6 +103,14 @@ RMSNorm 两遍读取输入，LayerNorm 三遍并使用中心化方差；半精�
 门控准备期能证明原生对齐的 dense F32 SiLU（rank≤4、设备支持512-lane）复用 ggml GLU 调度，
 并使用 HYLE 的稳定 activation 边界；未知动态起点和其他类型/布局使用 U32 tensor shader。
 这些条件在准备期绑定；bind/submit 不选择 Provider。新门控/归一化的 P1 仍待完整 C1 候选验证。
+
+Concat 接受任意正数量的同类型输入、正负 axis、rank1..8 和合法 stride/View，按输入顺序拼接，
+保留原始存储位并生成独立 dense 结果。例如 `vk::prepare(context, c::Concat{-1}, left_desc,
+right_desc)` 准备两个变化输入；参数数量运行期确定时，使用 `Operation` 和 `span<const Argument>`。
+每最多三个输入冷期绑定为一次原生 dispatch，空组跳过；每组只写自己的输出片段，通过既有
+barrier 保留组间共享 word 的先前字节。无逐次增长的中间张量、额外 device scratch 或 memset；
+空输出无 dispatch，仍有合法结果 owner。Graph 的 slice→Concat 使用相同规则，不 materialize
+输入 View。输入读取、字节寻址、边界 word 与组间 barrier 都属于实际执行成本。
 
 ## 零拷贝 View
 
