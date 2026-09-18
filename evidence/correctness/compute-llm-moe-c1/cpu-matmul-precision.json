@@ -1,0 +1,905 @@
+{
+  "schema": "hyle.cpu-matmul-precision-correctness.v1",
+  "baseline": "55830705d95150ecfd71a4d49798c07457dc379c",
+  "candidate": "e191351522340dd997cfc925abe3a69d47746d14",
+  "candidate_tree": "cf9062bcec3aaaff7fd1e76ac6038f92b19448bf",
+  "source_of_truth": "Windows canonical checkout; WSL archive is validation-only",
+  "reproducer": {
+    "commit": "4d6cf12fd3263baaa0697eefc43dad7b6a7af274",
+    "results": [
+      {
+        "target": "compute_provider_native",
+        "tests": 1,
+        "failures": 1,
+        "reason": "F64 accumulation was incorrectly admitted"
+      },
+      {
+        "target": "compute_provider_onednn",
+        "tests": 1,
+        "failures": 1,
+        "reason": "F64 accumulation was incorrectly admitted"
+      },
+      {
+        "target": "compute_route_cpu",
+        "tests": 1,
+        "failures": 1,
+        "reason": "F64 accumulation was incorrectly admitted"
+      },
+      {
+        "target": "graph_route_cpu",
+        "tests": 1,
+        "failures": 1,
+        "reason": "F64 accumulation was incorrectly admitted"
+      }
+    ]
+  },
+  "fix": {
+    "owners": [
+      "compute_provider_onednn",
+      "compute_provider_native"
+    ],
+    "finite_fixes": [
+      "C1-Z01",
+      "C1-Z02"
+    ],
+    "implementation_lines_added": 6,
+    "supported_accumulation": "explicit Float32",
+    "rejected_accumulations_tested": [
+      "Float64",
+      "Float16",
+      "BFloat16",
+      "Int32",
+      "Unknown"
+    ],
+    "covered_stages": [
+      "proposal",
+      "direct prepare",
+      "exact prepare after Float32 proposal",
+      "default CPU Compute context",
+      "default CPU Graph compile"
+    ],
+    "unchanged": [
+      "public API/layout",
+      "Float32 arithmetic",
+      "hot execution/resource path",
+      "default shape thresholds",
+      "vendor pin",
+      "CMake/package seams"
+    ]
+  },
+  "toolchains": {
+    "Windows": "MSVC 19.50.35728 / VS toolset 14.50.35717",
+    "WSL": "Ubuntu 24.04 / GCC 14.2.0"
+  },
+  "configuration": "Release, WERROR, shipping layout, trace/sanitizers OFF, parallel 2, heavy validation serial",
+  "windows_execution": "HYLE/CRT DLLs adjacent to executables; PATH unset; no UAC/installer/power changes",
+  "onednn": {
+    "version": "3.13.2",
+    "commit": "71094df451909e95ceeefc8f64c275cdcbbcdff5"
+  },
+  "results": [
+    {
+      "environment": "static",
+      "verdict": "PASS",
+      "ctest_targets": 8,
+      "gtest_cases": 154,
+      "additional_consumer": "cpu_executor",
+      "suites": [
+        {
+          "target": "hyle_compute_provider_onednn_test",
+          "gtest_cases": 13,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_onednn_composition_test",
+          "gtest_cases": 1,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_onednn_graph_test",
+          "gtest_cases": 1,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_provider_onednn_test",
+          "gtest_cases": 20,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_native_test",
+          "gtest_cases": 108,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_route_cpu_test",
+          "gtest_cases": 4,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_route_cpu_test",
+          "gtest_cases": 7,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_route_cpu_cpu_executor_test",
+          "gtest_cases": null,
+          "verdict": "PASS"
+        }
+      ]
+    },
+    {
+      "environment": "shared",
+      "verdict": "PASS",
+      "ctest_targets": 8,
+      "gtest_cases": 154,
+      "additional_consumer": "cpu_executor",
+      "suites": [
+        {
+          "target": "hyle_compute_provider_onednn_test",
+          "gtest_cases": 13,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_onednn_composition_test",
+          "gtest_cases": 1,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_onednn_graph_test",
+          "gtest_cases": 1,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_provider_onednn_test",
+          "gtest_cases": 20,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_native_test",
+          "gtest_cases": 108,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_route_cpu_test",
+          "gtest_cases": 4,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_route_cpu_test",
+          "gtest_cases": 7,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_route_cpu_cpu_executor_test",
+          "gtest_cases": null,
+          "verdict": "PASS"
+        }
+      ]
+    },
+    {
+      "environment": "wsl",
+      "verdict": "PASS",
+      "ctest_targets": 8,
+      "gtest_cases": 154,
+      "additional_consumer": "cpu_executor",
+      "suites": [
+        {
+          "target": "hyle_compute_provider_onednn_test",
+          "gtest_cases": 13,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_onednn_composition_test",
+          "gtest_cases": 1,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_onednn_graph_test",
+          "gtest_cases": 1,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_provider_onednn_test",
+          "gtest_cases": 20,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_provider_native_test",
+          "gtest_cases": 108,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_compute_route_cpu_test",
+          "gtest_cases": 4,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_route_cpu_test",
+          "gtest_cases": 7,
+          "verdict": "PASS"
+        },
+        {
+          "target": "hyle_graph_route_cpu_cpu_executor_test",
+          "gtest_cases": null,
+          "verdict": "PASS"
+        }
+      ]
+    }
+  ],
+  "selector": {
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_native",
+      "factor:compute_provider_onednn",
+      "factor:compute_route_cpu",
+      "factor:graph_provider_onednn",
+      "factor:graph_route_cpu"
+    ],
+    "skipped": [
+      {
+        "id": "factor:compute",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_backend_cpu",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_backend_cpu",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_backend_cuda",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_backend_cuda",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_ops",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_ops",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_provider_cublas",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_provider_cublas",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_provider_cuda",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_provider_cuda",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_provider_ggml",
+        "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+      },
+      {
+        "id": "headers:compute_provider_ggml",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_provider_ggml_vulkan",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_provider_ggml_vulkan",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_provider_marlin",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_provider_marlin",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "headers:compute_provider_native",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "headers:compute_provider_onednn",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_route_apple",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_route_apple",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "headers:compute_route_cpu",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_route_cuda",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_route_cuda",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_route_vulkan",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:compute_route_vulkan",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:container",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:container",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:container_concurrent",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:container_concurrent",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:container_intrusive",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:container_intrusive",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:container_queue",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:container_queue",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:container_text",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:container_text",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:core",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:core",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:error",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:error",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:graph",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:graph",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "headers:graph_provider_onednn",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:graph_route_apple",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:graph_route_apple",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "headers:graph_route_cpu",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:graph_route_cuda",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:graph_route_cuda",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:graph_route_vulkan",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:graph_route_vulkan",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_core",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_core",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_http",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_http",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_http2",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_http2",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_tls",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_tls",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_transfer",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_transfer",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_watch",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_watch",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:io_websocket",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:io_websocket",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:math",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:math",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:mem",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:mem",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:mem_reclaim",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:mem_reclaim",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:mem_vm",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:mem_vm",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:obs",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:obs",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:platform",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:platform",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:platform_fs",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:platform_fs",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:platform_thread",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:platform_thread",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:process",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:process",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:sched",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:sched",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:simd",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:simd",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:time",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:time",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:timer_queue",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:timer_queue",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:util_core",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:util_core",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:util_runtime",
+        "reason": "outside the change and its required consumer boundary"
+      },
+      {
+        "id": "headers:util_runtime",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "component-contract",
+        "reason": "no global component/package seam change"
+      },
+      {
+        "id": "delivery:compute",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:container",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:core",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:error",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:graph",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:io",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:math",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:mem",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:obs",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:platform",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:process",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:sched",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:simd",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:time",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "delivery:util",
+        "reason": "no delivery boundary change for this product"
+      },
+      {
+        "id": "p1",
+        "reason": "no explicit frozen P1 card; sampling is never automatic"
+      }
+    ],
+    "execution": "Declared equivalent commands in raw scripts/CTest logs; no synthetic selector receipts"
+  },
+  "fixture_corrections": [
+    "First CTest regex selected zero tests; excluded from PASS. Corrected names and --no-tests=error before final runs.",
+    "The task-local WSL script was extended while its build action was running; after all 621 build steps completed, the old shell file offset produced an EOF parse error. Final script bash -n passed; a direct identical cmake build returned 0 with no work; the final test action then passed. No product or assertion changed."
+  ],
+  "performance": {
+    "tier": "P0",
+    "verdict": "PASS",
+    "reason": "Only two cold enum guards. No hot invocation, algorithm, allocation, copy, synchronization or object layout change.",
+    "p1": "NOT_RUN; not applicable to this cold semantic repair"
+  },
+  "delivery": {
+    "new": "Windows static/shared source builds and actual Direct/Graph consumer tests",
+    "inherited": "Unchanged source/static/shared package shape from R6 terminal; no header/ABI/CMake/package change",
+    "not_run": "Full package relocation/offline and macOS; no affected package seam, oneDNN x64 has no ARM Mac qualification in this repair"
+  },
+  "limits": [
+    "No new Float64 implementation",
+    "No new C1 operator coverage or full C1 closure",
+    "Broader Native platform/model/performance qualification remains on the active C1 card"
+  ],
+  "loc": {
+    "implementation": 46085,
+    "files": 191,
+    "self_check": "PASS",
+    "paths": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute",
+      "src/compute_backend_cpu",
+      "src/compute_backend_cuda",
+      "src/compute_ops",
+      "src/compute_provider_cublas",
+      "src/compute_provider_cuda",
+      "src/compute_provider_ggml",
+      "src/compute_provider_marlin",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn",
+      "src/compute_route_apple",
+      "src/compute_route_cpu",
+      "src/compute_route_cuda",
+      "src/graph",
+      "src/graph_provider_onednn",
+      "src/graph_route_apple",
+      "src/graph_route_cpu",
+      "src/graph_route_cuda",
+      "src/compute_route_vulkan",
+      "src/graph_route_vulkan",
+      "src/compute_provider_ggml_vulkan"
+    ]
+  },
+  "raw": {
+    "path": "cpu-matmul-precision-raw.zip",
+    "bytes": 106819,
+    "sha256": "a13a41333d428745010cac19278624e8ee5d590aa1f8d62c0c0f5889b5e7fdac",
+    "files": {
+      "validation/cpu-precision/loc.json": {
+        "bytes": 3634,
+        "sha256": "2b03de5be93eea82d1eb815fc970fc8d90acd57ddba9abe04385206c02212555"
+      },
+      "validation/cpu-precision/red-build.log": {
+        "bytes": 78295,
+        "sha256": "bc359a04d862092dae7f1bd998054b669f2cfa162c2fc3e8ca10d2ae7ccfe085"
+      },
+      "validation/cpu-precision/red-compute_provider_native.json": {
+        "bytes": 1194,
+        "sha256": "16ef7a250b21a919f1e4b947065d09dcdaaff0b9718a34c24febcf2932b9aaab"
+      },
+      "validation/cpu-precision/red-compute_provider_native.log": {
+        "bytes": 1112,
+        "sha256": "5a457d10c59b47de18519af29b54c5892926e9130299efaa95dfad20875063c8"
+      },
+      "validation/cpu-precision/red-compute_provider_onednn.json": {
+        "bytes": 1210,
+        "sha256": "80eed6b69168f4d265005b88d0790b7907c31d14ea59fd97733cb7220e8ee56e"
+      },
+      "validation/cpu-precision/red-compute_provider_onednn.log": {
+        "bytes": 1144,
+        "sha256": "a7e6303ee52a3b96f50c25e83538a84d7739c92a1031518d54eec1d8f5d4200e"
+      },
+      "validation/cpu-precision/red-compute_route_cpu.json": {
+        "bytes": 1251,
+        "sha256": "409ac8a89fe573cc987e554930165e4bfd5740b22f9a2266f0e19aa3d57cbcc3"
+      },
+      "validation/cpu-precision/red-compute_route_cpu.log": {
+        "bytes": 1195,
+        "sha256": "1c5478ac984213c215367e1918fc47b47ac6b30fb91ea86d40145839d4ca2387"
+      },
+      "validation/cpu-precision/red-configure.log": {
+        "bytes": 4765,
+        "sha256": "9c27ecf53097296f8a7ad49f42658b0a45b3fd37ecf9e3f6c64900a71b3f1ffc"
+      },
+      "validation/cpu-precision/red-graph_route_cpu.json": {
+        "bytes": 1251,
+        "sha256": "409ac8a89fe573cc987e554930165e4bfd5740b22f9a2266f0e19aa3d57cbcc3"
+      },
+      "validation/cpu-precision/red-graph_route_cpu.log": {
+        "bytes": 1195,
+        "sha256": "1c5478ac984213c215367e1918fc47b47ac6b30fb91ea86d40145839d4ca2387"
+      },
+      "validation/cpu-precision/shared-artifacts.json": {
+        "bytes": 2966,
+        "sha256": "5a6871c77ffe09788a7dff171db58955961728f012290954183b88f030a382f4"
+      },
+      "validation/cpu-precision/shared-build.log": {
+        "bytes": 19438,
+        "sha256": "ba31cc4503fdb8353970a886e6873bbea4f8ae9622fd6272a8083eb7e11a6cd3"
+      },
+      "validation/cpu-precision/shared-CMakeCache.txt": {
+        "bytes": 45884,
+        "sha256": "02963a8d00c23986dfe634f55c5ed33a66b6ae7a09fbcacbd77cb942fba6ee26"
+      },
+      "validation/cpu-precision/shared-configure.log": {
+        "bytes": 2932,
+        "sha256": "6bd0cbde8df3b5029e8b4af5913be41aa5dd25ec776232c100deaed35bb04f25"
+      },
+      "validation/cpu-precision/shared-ctest.xml": {
+        "bytes": 10046,
+        "sha256": "7d56835d64b1a2387f0403476be04e095d8b166a14c93e96ebb3195e0d8169ed"
+      },
+      "validation/cpu-precision/shared-LastTest.log": {
+        "bytes": 36188,
+        "sha256": "a4a020f10a8c98aa7a253f6d9e615c84500d23f86a7978f7413c72894c64d224"
+      },
+      "validation/cpu-precision/shared-test.log": {
+        "bytes": 1504,
+        "sha256": "2ee860c738c989c3195a6913c03d3c833f855dd3d65c57755b71ff5ef77a3a3d"
+      },
+      "validation/cpu-precision/static-artifacts.json": {
+        "bytes": 3176,
+        "sha256": "08239e273733bc91676fa5116bc61cb783d1aefcc675bd960c7009855a5536bd"
+      },
+      "validation/cpu-precision/static-build.log": {
+        "bytes": 1382,
+        "sha256": "41fdeaaa7126601eeecd3037f8b72d53065c9e09480f516641a46f215e64e215"
+      },
+      "validation/cpu-precision/static-CMakeCache.txt": {
+        "bytes": 45883,
+        "sha256": "e5976d25e38b50d39f5ba98f2aee7580e741cbb894828b62b5ed807a3199040c"
+      },
+      "validation/cpu-precision/static-configure.log": {
+        "bytes": 4765,
+        "sha256": "9c27ecf53097296f8a7ad49f42658b0a45b3fd37ecf9e3f6c64900a71b3f1ffc"
+      },
+      "validation/cpu-precision/static-ctest.xml": {
+        "bytes": 10045,
+        "sha256": "bc511e6e43653c4f4a917dbb93e27965b88adab2b4e218fe5e986c90c4b5552b"
+      },
+      "validation/cpu-precision/static-empty-selection.log": {
+        "bytes": 72,
+        "sha256": "6ee5b1ed7ff5e666889a8661eb93cb4b2fb823ccb9566b1e24bc692ca7caaec6"
+      },
+      "validation/cpu-precision/static-LastTest.log": {
+        "bytes": 36188,
+        "sha256": "f415ca3568d6139ee35f781298676bf60d70ef59667eaed717d336648ccf7c1f"
+      },
+      "validation/cpu-precision/static-test.log": {
+        "bytes": 1504,
+        "sha256": "4cd5d6ac5d0881b140abb39b52136fbafb987da55e8796720cd2d51e168553d8"
+      },
+      "validation/cpu-precision/wsl-artifacts.sha256": {
+        "bytes": 694,
+        "sha256": "74d18b761cc97a662a76a6f70f5566a2e801e627c26b61b7c618c8eec42544ea"
+      },
+      "validation/cpu-precision/wsl-build-final-status.log": {
+        "bytes": 65,
+        "sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b"
+      },
+      "validation/cpu-precision/wsl-build.log": {
+        "bytes": 70869,
+        "sha256": "fc39e8e8ba6bc568ddcc267cdad479e5f2b912a3adf43ba26fd570bd4110a403"
+      },
+      "validation/cpu-precision/wsl-CMakeCache.txt": {
+        "bytes": 43357,
+        "sha256": "3f1c2fa6b52ba60e29d5fb0aed20215c12ba7a6d3456524f9782cf951d5f6f0e"
+      },
+      "validation/cpu-precision/wsl-configure.log": {
+        "bytes": 3505,
+        "sha256": "2f729124c989f9639cc76cb286a0d70b544db27bb7a6cbb169b312b53e8b0384"
+      },
+      "validation/cpu-precision/wsl-ctest.xml": {
+        "bytes": 9873,
+        "sha256": "da9b1914917762544ad913a87e8c3a8ee03d27acba4d25013b466370f4b43bb3"
+      },
+      "validation/cpu-precision/wsl-LastTest.log": {
+        "bytes": 35474,
+        "sha256": "b8f14153f5c8d70ad24e675df7c372f013f99ce80fc632766b4e456cb398d5ad"
+      },
+      "validation/cpu-precision/wsl-source-archive.sha256": {
+        "bytes": 111,
+        "sha256": "7ae19b041949c88adb691d326fc751e437838eed8b5378d1098a3f909e4f5934"
+      },
+      "validation/cpu-precision/wsl-test.log": {
+        "bytes": 1574,
+        "sha256": "691c7813ce82152cb9f976968285ea93935604b54ba6c20057b01ac80a9553df"
+      },
+      "validation/cpu-precision-run.ps1": {
+        "bytes": 3800,
+        "sha256": "a8e0da68ab174583d023041c5fcf8e72f19a195566ee9dac0ae05327719a4f6d"
+      },
+      "validation/cpu-precision-wsl.sh": {
+        "bytes": 2278,
+        "sha256": "24da68e257a0405171e919b7c53a1da77cc763bf4f543992facad2653518f4e6"
+      },
+      "validation/cpu-matmul-candidate-plan.json": {
+        "bytes": 193080,
+        "sha256": "31e531b237241b5052f872b2034c67539415947cc40bdf5d723b2c7beadc68e9"
+      },
+      "cleanup/cpu-transfer-removal.json": {
+        "bytes": 169,
+        "sha256": "42d7b0c9fb643f007c2eb4806c460aacaf0fe69da6d34247de362ae556bef376"
+      }
+    }
+  }
+}

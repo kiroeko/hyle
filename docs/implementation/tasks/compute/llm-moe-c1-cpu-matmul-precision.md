@@ -73,7 +73,47 @@ oneDNN 的提案与准备共用 `select_route`；Native 两条路径共用 `buil
   DLL 邻置、PATH unset；CPU 编译固定 parallel2，动态构建复用未变 oneDNN 对象。
 - 初次 CTest runner 的 regex 缺少 `hyle_` 前缀，选中0项；该次不计 PASS。修正为真实目标名、
   加 `--no-tests=error` 后才取得上述8项结果；没有修改测试语义或门限。
-- WSL/GCC14 使用 Windows 候选 Git archive 的验证副本，当前构建/验收未完成，不能签跨环境
-  完成。最终原始日志、身份和终局将在本卡补录；没有启动 P1 或重跑无变化的 package 门。
+- WSL/GCC14 使用 Windows 候选 Git archive 的验证副本；进入 CANDIDATE 时尚未验收，
+  此后完成下列终验。没有启动 P1 或重跑无变化的 package 门。
 - 同一23路径的统一 LOC（含 GLSL、不含 tests/bench/vendor）为 **46,085行 / 191个实现文件**，
   self-check PASS。相比上一产品候选仅增加6行资格检查，不计为 C1 新算子覆盖。
+
+## 终验与裁决（2026-09-18）
+
+[结构化证据](../../../../evidence/correctness/compute-llm-moe-c1/cpu-matmul-precision.json)、
+[原始日志/命令/身份](../../../../evidence/correctness/compute-llm-moe-c1/cpu-matmul-precision-raw.zip)和
+[统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/cpu-matmul-precision-loc.json)绑定同一
+产品候选 `e1913515`；其后的提交只改文档/状态/证据，没有因此重建或计时。
+
+| 环境 | 实际结果 |
+|---|---|
+| W1 MSVC static | 8/8 CTest目标；154个单测 + CPU executor consumer；零 skip |
+| W1 MSVC shared | 同上；DLL 邻置、PATH unset |
+| WSL GCC14 static | 同上；Windows Git archive 只作验证副本，归档 SHA 已记录 |
+
+每套154例为 Native108、oneDNN13、组合1、oneDNN普通Graph1、Graph region20、默认CPU4、
+默认Graph7。既有数值/重复执行/资源回归仍通过；这不代签 C1 全矩阵、真实 checkpoint 片段或 P1。
+selector 选择两个 owner 与 CPU/Graph oneDNN/Graph CPU 三个真实一跳消费者，上表覆盖全部
+所选 factor correctness。headers/package/P1 的 skipped reasons 保留在原始计划与证据中。
+
+WSL 首次完整编译621步已结束后，任务临时脚本因运行期间追加日志收集代码而在旧文件偏移
+报 EOF；最终脚本语法检查通过，同一直接 build 返回0且 `no work to do`，随后测试全部通过。
+这属于本轮 wrapper 纠正，没有修改产品或测试断言，也没有重跑重型构建。
+
+| Gate | 证据与适用范围 | Verdict |
+|---|---|---|
+| scope | Z01–Z02 完成；明确不新增 F64 算法，不扩 C2/全库检查 | PASS |
+| architecture | 资格检查归实际 Provider 的共享冷函数；共同 schema 仍可表达合法但未实现的精度 | PASS |
+| correctness | 未修候选四个回归入口失败；修复后三环境全部目标通过，精确准备与默认 Graph 不旁路 | PASS |
+| delivery | W1 static/shared 实际源码构建与普通 C++ Direct/Graph；公开头/ABI/CMake/package seam 未变，继承前轮三交付形状/安装证据，不冒充本轮跑过 relocation/offline | PASS |
+| usability_docs | 普通调用保留默认 F32；其他类型明确 Unimplemented；用户 guide 已说明 fallback 不降精度 | PASS |
+| red_team | 独立复核候选差分：共同 inference 只校验描述，两个 Provider 都在提案/精确准备共享入口拒绝；F32 计算、阈值、SIMD/资源/执行函数无改动；没有仅挡一个公开入口 | PASS |
+| engineering_performance | P0：两次各自独立的冷 enum 判断，热路径与对象成本不变；P1 不适用本定向语义修复 | PASS |
+
+oneDNN 本定向轮 **CLOSED**；Native 继续归 C1 的 AUDITED，不把这6行修复当成整个 Native/C1
+关闭。后续 oneDNN 更广算子/region 接入依据新 consumer 范围另行 scope/audit，不从本卡取得授权。
+剩余 C1 平台/真实权重/完整三交付和等责性能仍在主卡；没有外部 blocker 阻碍本次修复。
+reopen trigger：可复现精度/资格/失败回归，新增已准入累加类型或依赖升级改变该域，或公开合同变化。
+
+磁盘：Windows static/shared 复用一个构建目录；WSL 只保留固定验证副本/构建，已校验并删除
+79,667,200字节传输归档；本轮 Temp `hyle-*` 检查为0项。不复制模型、不安装工具或改变系统性能模式。

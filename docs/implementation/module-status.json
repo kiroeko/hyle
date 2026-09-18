@@ -353,10 +353,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-cpu-matmul-precision.md",
       "candidate": "e191351522340dd997cfc925abe3a69d47746d14",
-      "summary": "C1-Z CANDIDATE：oneDNN 与 Native 的 MatMul 精度准入遗漏已修复；W1 static/shared 各8个目标通过，WSL 定向验收尚未完成。只改冷检查，热路径/依赖/API 不变。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/llm-moe-c1-cpu-matmul-precision.md"
+      },
+      "summary": "C1-Z CLOSED：MatMul 在提案/精确准备共享入口拒绝非 F32 累加；W1 static/shared、WSL 各8个目标（154单测及CPU executor）通过。仅6行冷资格检查，API/算法/热路径/交付边界不变；更广 oneDNN 接入仍待新轮。"
     },
     {
       "module": "compute_provider_ggml",
@@ -406,7 +410,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B/C/D AUDITED：半精度 tensor/norm/reduce/gate/index/softmax/top-k 及 checked Scan 已实施；W1 Native 106 case 与默认 CPU Graph 片段通过。其他环境、真实权重片段及 C1 bundle 待验收。"
+      "summary": "LLM/MoE C1-A/B/C/D/Z AUDITED：半精度 tensor/norm/reduce/gate/index/softmax/top-k、checked Scan 及 MatMul 精度准入修复已实施；W1 static/shared 与 WSL Native 各108例及默认CPU Graph通过。其余平台、真实权重片段和C1完整性能/交付仍待验收。"
     },
     {
       "module": "compute_sched",

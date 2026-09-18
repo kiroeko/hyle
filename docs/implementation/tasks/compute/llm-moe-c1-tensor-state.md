@@ -82,6 +82,8 @@ Vulkan `a7ebf205` 刚完成 norm/gate 等首组 managed 普通入口的 W1 stati
 2026-09-18 的 [C1-Z](llm-moe-c1-cpu-matmul-precision.md) 冻结 Native 的新增 Z02：MatMul
 准入遗漏显式累加类型，必须在共享冷计划函数拒绝非 F32 域，避免 oneDNN 拒绝后静默 fallback。
 只修资格并添加普通 Direct/Graph 工厂回归，已有 F32/SIMD 算法不动，不借此扩 C2 或重开路由 owner。
+该定向修复的 `e1913515` 已通过 W1 static/shared 与 WSL：每套 Native108例、全部8个目标通过；
+完整结果见 C1-Z 终局。Native 仍保持本包 AUDITED，真实权重、其余平台和本包性能资格未由此代签。
 
 ## 已完成的源码审计输入
 
