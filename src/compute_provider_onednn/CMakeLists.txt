@@ -1,7 +1,14 @@
 if(HYLE_COMPUTE_ONEDNN_ENABLED)
   hyle_add_module(compute_provider_onednn SOURCES
     brgemm_internal.cc
+    normalization_internal.cc
     onednn_provider.cc)
+  if(MSVC)
+    # oneDNN's C entry points contain C++ allocation. /EHsc otherwise assumes
+    # extern-C calls cannot throw and can omit this adapter's catch/unwind.
+    set_property(SOURCE normalization_internal.cc APPEND PROPERTY
+      COMPILE_OPTIONS /EHsc-)
+  endif()
   target_include_directories(hyle_compute_provider_onednn PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute")
   target_link_libraries(hyle_compute_provider_onednn PRIVATE dnnl)

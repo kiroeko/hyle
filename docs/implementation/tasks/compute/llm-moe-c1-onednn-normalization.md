@@ -53,6 +53,16 @@ AA01 的具体失败证据：该 pin 的 `primitive_iface.cpp::dnnl_primitive_ex
 才调用 after_exec_hook；`cpu_stream.hpp` 直接清空当前 pool，没有恢复嵌套调用前的 pool。
 有限修正为构建目录中的单文件 overlay：用栈上 scope guard 保证正常/异常退出都执行 hook 并恢复
 旧 pool。固定源 SHA/精确锚点失败即停止，原缓存/checkout不改动；不改算法或另建 patch 框架。
+嵌套回归进一步证实 `utils.cpp::activate_threadpool` 在已有 active pool 时不会替换它；scope
+进入时必须先保存并清空旧 pool，再执行原 before hook，退出时恢复。否则内层串行 norm 错用
+外层 executor，回归得到 `operation invocation already has work in flight`；这是一行受审修正，
+没有放宽重入/在途检查。
+
+AA02 的外部分配注入在 MSVC `/EHsc` 下复现进程退出（code3）。该模式假定 extern-C 不抛异常，
+不满足 oneDNN C 入口内部 C++ 分配的实际语义，见 [MSVC 异常模式合同](https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170)。
+仅本 adapter translation unit 使用 `/EHsc-`，保留同步 C++ 异常展开和捕获；不捕获 SEH、不修改
+全局编译合同。注入回归逐个失败 vendor 热路径 new，要求 accepted ResourceExhausted、失败槽
+退休、其他槽仍可执行；不是从 C API 名称推断不抛。
 
 | FIX | 冻结实现与验收 |
 |---|---|
@@ -73,3 +83,18 @@ AA01 的具体失败证据：该 pin 的 `primitive_iface.cpp::dnnl_primitive_ex
 不重造 Sched；④线性归一化、原生融合，记录 vendor 每次metadata成本并做同合同P1；⑤无C/FFI
 产品；⑥私有头无vendor类型泄露，source/static/shared与依赖隔离门适用；⑦普通入口不要求选库，
 guide记录精度、已验证域和借用executor寿命。
+
+## 首批实现与局部验证
+
+- AA01–AA03 已接入普通 CPU Direct/Graph，原版 norm primitive 与 post-ops 没有改数学算法。
+  热路径因 vendor execution-args 分配如实为 **Managed**；prepared-only 不接纳，BRGEMM 仍为 Prepared。
+- W1 MSVC 首轮 F32 RMSNorm/LayerNorm、参数/alias、2048及不规则宽度、FP64 oracle、特殊值/
+  中心化方差、借用 executor/两个共享 artifact invocation、普通 Graph 融合/可观测边界通过。
+  HYLE metadata OOM 逐分配点回收及 vendor warm-new OOM 转终态、坏槽退休/新槽恢复已有回归。
+- 本机13900K的 oneDNN F16/BF16 原生 norm 不支持；固定源 `cpu/platform.cpp:112` 和
+  `jit_uni_layer_normalization` 要求 AVX512 或 AVX2-VNNI2 等相应资格，不能以 F16C 等同替代。
+  最初测试无条件期待 oneDNN identity 被证伪，现记录 ISA_UNSUPPORTED、数值 UNPROVEN；
+  默认工厂正确回落 Native，现有半精度 state Graph 独立数值回归通过。没有删检查、添加整张量
+  转换或把这部分写成 oneDNN 数值 PASS；对应 ISA 原生资格仍待有设备时验证。
+- shared、WSL、完整 package/selector 扩展门及公平 P1 尚待完成，owner 保持 AUDITED。
+  AA04 的默认优选/Native冗余删除尚未裁决；本节不是 C1 或本轮 CLOSED。

@@ -27,10 +27,14 @@
 namespace allocation_probe {
 std::atomic<bool> enabled{false};
 std::atomic<std::size_t> count{0};
+std::atomic<std::size_t> fail_at{0};
 
-void note() noexcept {
-  if (enabled.load(std::memory_order_relaxed))
-    count.fetch_add(1, std::memory_order_relaxed);
+void note() {
+  if (enabled.load(std::memory_order_relaxed)) {
+    const auto attempt = count.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (attempt == fail_at.load(std::memory_order_relaxed))
+      throw std::bad_alloc();
+  }
 }
 
 void *allocate(std::size_t size) {
@@ -232,6 +236,67 @@ TEST(OneDnnAllocation, WarmSubmitHasNoGlobalNewAcrossInferenceShapes) {
     EXPECT_EQ(allocation_probe::count.load(std::memory_order_relaxed), 0U)
         << "shape=" << shape.rows << 'x' << shape.inner << 'x' << shape.columns;
   }
+}
+
+TEST(OneDnnAllocation, NormalizationForeignOomIsTerminalAndOtherSlotsRecover) {
+  using namespace hyle::compute;
+  const auto description = matrix(17, 2048);
+  auto context = Context::create(cpu::device(), onednn::provider()).value();
+  auto queue = context.create_queue().value();
+  auto prepared = prepare(context, RmsNorm{}, description).value();
+  const auto need = prepared.workspace_requirement();
+  hyle::mem::Buffer scratch;
+  if (need.size != 0)
+    scratch = hyle::mem::Buffer::create(hyle::mem::system_resource(), need.size,
+                                        need.alignment)
+                  .value();
+  auto source = hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                          17 * 2048 * sizeof(float), 64)
+                    .value();
+  auto destination =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), source.size(), 64)
+          .value();
+  ASSERT_TRUE(source.view().fill(std::byte{0}).ok());
+  const auto input =
+      ConstTensorView::create(description, source.view()).value();
+  const auto output =
+      TensorView::create(description, destination.view()).value();
+  std::size_t allocations = 0;
+  {
+    auto invocation = prepared.create_invocation(scratch.view()).value();
+    ASSERT_TRUE(invocation.submit(queue, input, output)->wait().ok());
+    allocation_probe::count = 0;
+    allocation_probe::enabled = true;
+    auto completion = invocation.submit(queue, input, output);
+    const bool completed = completion && completion->wait().ok();
+    allocation_probe::enabled = false;
+    allocations = allocation_probe::count.load();
+    ASSERT_TRUE(completed);
+    EXPECT_EQ(prepared.runtime_properties().replay_class,
+              ProviderReplayClass::kManaged);
+    EXPECT_GT(allocations, 0U);
+  }
+  for (std::size_t allocation = 1; allocation <= allocations; ++allocation) {
+    SCOPED_TRACE(allocation);
+    auto invocation = prepared.create_invocation(scratch.view()).value();
+    allocation_probe::count = 0;
+    allocation_probe::fail_at = allocation;
+    allocation_probe::enabled = true;
+    auto completion = invocation.submit(queue, input, output);
+    hyle::Status terminal =
+        completion ? completion->wait() : hyle::Status(completion.error());
+    allocation_probe::enabled = false;
+    allocation_probe::fail_at = 0;
+    ASSERT_TRUE(completion.has_value());
+    EXPECT_TRUE(terminal.IsResourceExhausted()) << terminal.message();
+    // An accepted failed invocation is retired. It may not silently replay
+    // the operation; independent slots of the same prepared plan still work.
+    EXPECT_FALSE(invocation.submit(queue, input, output));
+    auto recovered = prepared.create_invocation(scratch.view()).value();
+    ASSERT_TRUE(recovered.submit(queue, input, output)->wait().ok());
+  }
+  testing::Test::RecordProperty("normalization_warm_global_new_count",
+                                static_cast<int>(allocations));
 }
 
 } // namespace

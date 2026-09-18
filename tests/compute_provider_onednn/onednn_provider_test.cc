@@ -627,4 +627,56 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
   EXPECT_EQ(probe.allocations.load(), probe.deallocations.load());
 }
 
+TEST(OneDnnProvider, NormalizationPartialOwnersRollbackOnMetadataOom) {
+  AllocatorProbe probe;
+  {
+    const std::array providers{hyle::compute::onednn::provider()};
+    auto context = Context::create(hyle::compute::cpu::device(),
+                                   {.metadata_allocator = allocator(probe),
+                                    .providers = providers})
+                       .value();
+    const auto description = matrix(17, 31);
+    // Exercise every HYLE allocation in preparation, including common owners
+    // allocated after the vendor primitive has already been compiled.
+    const auto before = probe.attempts.load();
+    {
+      auto result = hyle::compute::prepare(context, hyle::compute::RmsNorm{},
+                                           description);
+      ASSERT_TRUE(result) << result.error().message();
+    }
+    const auto attempts = probe.attempts.load() - before;
+    for (std::size_t index = 1; index <= attempts; ++index) {
+      probe.fail_at_attempt = probe.attempts.load() + index;
+      auto refused = hyle::compute::prepare(context, hyle::compute::RmsNorm{},
+                                            description);
+      probe.fail_at_attempt = 0;
+      ASSERT_FALSE(refused) << index;
+      EXPECT_TRUE(refused.error().IsResourceExhausted()) << index;
+    }
+    auto prepared =
+        hyle::compute::prepare(context, hyle::compute::RmsNorm{}, description)
+            .value();
+    const auto need = prepared.workspace_requirement();
+    Buffer scratch;
+    if (need.size != 0)
+      scratch = Buffer::create(hyle::mem::system_resource(), need.size,
+                               need.alignment)
+                    .value();
+    const auto invocation_before = probe.attempts.load();
+    {
+      auto result = prepared.create_invocation(scratch.view());
+      ASSERT_TRUE(result);
+    }
+    const auto invocation_attempts = probe.attempts.load() - invocation_before;
+    for (std::size_t index = 1; index <= invocation_attempts; ++index) {
+      probe.fail_at_attempt = probe.attempts.load() + index;
+      auto refused = prepared.create_invocation(scratch.view());
+      probe.fail_at_attempt = 0;
+      ASSERT_FALSE(refused) << index;
+      EXPECT_TRUE(refused.error().IsResourceExhausted()) << index;
+    }
+  }
+  EXPECT_EQ(probe.allocations.load(), probe.deallocations.load());
+}
+
 } // namespace

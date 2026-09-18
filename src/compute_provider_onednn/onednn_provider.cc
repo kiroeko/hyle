@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "brgemm_internal.h"
+#include "normalization_internal.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::onednn {
@@ -336,8 +337,14 @@ Status propose(
         "oneDNN proposal requirement counts do not match bindings");
   }
   OneDnnRoute route{};
+  const bool normalization = operation.kind() == OperationKind::kRmsNorm ||
+                             operation.kind() == OperationKind::kLayerNorm;
   Status status =
-      select_route(context_value, operation, inputs, outputs, route);
+      normalization && context_value != nullptr && outputs.size() == 1
+          ? internal::validate_normalization(
+                {operation, inputs, outputs[0], inputs.size(), {}},
+                static_cast<OneDnnContext *>(context_value)->executor)
+          : select_route(context_value, operation, inputs, outputs, route);
   if (!status.ok())
     return status;
   for (std::size_t index = 0; index < inputs.size(); ++index)
@@ -345,8 +352,8 @@ Status propose(
   for (std::size_t index = 0; index < outputs.size(); ++index)
     output_requirements[index] = host_requirement(outputs[index]);
   *proposal = detail::ProviderOperationProposal{
-      .route = 1,
-      .runtime = kRuntimeProperties,
+      .route = normalization ? 2U : 1U,
+      .runtime = normalization ? internal::kNormRuntime : kRuntimeProperties,
       .workspace_resource =
           detail::ResourceBindingRequirement{
               .required_properties = mem::MemoryProperty::kHostAccessible,
@@ -361,7 +368,7 @@ Status propose(
               .synchronization_count = 0,
               .dispatch_count = 1,
           },
-      .profile_key = ProviderRouteKey{1},
+      .profile_key = ProviderRouteKey{normalization ? 2U : 1U},
   };
   return Status::Ok();
 }
@@ -376,9 +383,22 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   *prepared_output = {};
   if (request.input_resources.size() != request.inputs.size() ||
       request.output_resources.size() != request.outputs.size() ||
-      request.route != 1) {
+      (request.route != 1 && request.route != 2)) {
     return ProviderPrepareOutcome::error(
         Status::InvalidArgument("oneDNN exact prepare request is invalid"));
+  }
+  if (request.route == 2) {
+    if (context_value == nullptr || request.outputs.size() != 1)
+      return ProviderPrepareOutcome::error(
+          Status::InvalidArgument("oneDNN normalization request is invalid"));
+    return internal::prepare_normalization(
+        {request.operation,
+         request.inputs,
+         request.outputs[0],
+         request.inputs.size(),
+         {}},
+        static_cast<OneDnnContext *>(context_value)->executor, allocator,
+        prepared_output);
   }
   OneDnnRoute route{};
   Status status = select_route(context_value, request.operation,

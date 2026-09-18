@@ -561,12 +561,24 @@ return done->wait();                  // terminal failure
 
 ## CPU 默认规则与显式实现约束
 
-当前 oneDNN provider 只接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
+oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
-物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K 权重会诚实回落到 HYLE-native SIMD route。RMSNorm、
+物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K 权重会回落到 HYLE-native SIMD route。
 全部 GatedActivation、batched/零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
 executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-native kernel；传入真实并行 executor
 时，oneDNN 可以把 N 维拆成互不重叠的连续 tile。
+
+oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]`，显式 F32
+accumulation，可选 scale/bias；scale 和 bias 同时存在时需同类型。F16/BF16 原生执行受
+oneDNN 的 CPU ISA 要求限制，不满足时由普通 CPU context 选择现有 Native 实现，不隐式转换
+整个 tensor。F32 norm 后的最多4个 Add/Mul 可在普通 Graph 中绑定原生 post-ops，支持 scalar、
+末轴向量和完整同形状操作数；中间输出被发布或分叉时保留边界。半精度跨节点链保留中间舍入。
+
+归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
+其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed
+路线。每个 invocation 独立拥有 native stream/argument handles 和 caller scratchpad，可并发运行；
+支持精确 input0/output 原地重叠。接受后的执行失败退休当前 invocation，需创建新槽，不能重放
+到另一个 Provider。既有 BRGEMM 的 prepared replay 合同保持不变。
 
 ```cpp
 #include <hyle/compute/providers/onednn.h>

@@ -62,6 +62,36 @@ TEST(CpuDefaultContext, ColdFailureReleasesPartialProviderAssembly) {
   EXPECT_TRUE(stats.balanced());
 }
 
+#if defined(HYLE_COMPUTE_ONEDNN)
+TEST(CpuDefaultContext, MatureNormalizationBindsThroughOrdinaryFactory) {
+  auto context = create_context().value();
+  for (const auto type :
+       {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16}) {
+    const auto description =
+        TensorDesc::dense(type, std::array<std::int64_t, 3>{2, 17, 2048})
+            .value();
+    auto prepared = prepare(context, RmsNorm{}, description);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto vendor_context =
+        Context::create(cpu::device(), onednn::provider()).value();
+    auto vendor = prepare(vendor_context, RmsNorm{}, description);
+    if (type == DataType::kFloat32)
+      ASSERT_TRUE(vendor) << vendor.error().message();
+    if (vendor) {
+      EXPECT_EQ(prepared->provider().id, onednn::kProviderId);
+      EXPECT_EQ(prepared->runtime_properties().replay_class,
+                ProviderReplayClass::kManaged);
+    } else {
+      ASSERT_TRUE(vendor.error().IsUnimplemented());
+      EXPECT_EQ(prepared->provider().id, native::kProviderId);
+      EXPECT_EQ(prepared->runtime_properties().replay_class,
+                ProviderReplayClass::kPrepared);
+    }
+    EXPECT_FALSE(prepared->runtime_properties().uses_private_threads);
+  }
+}
+#endif
+
 TEST(CpuDefaultContext, MatMulNeverFallsBackToLowerAccumulationPrecision) {
   auto context = create_context().value();
   for (const std::int64_t rows : {1, 16}) {

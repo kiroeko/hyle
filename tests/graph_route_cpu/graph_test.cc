@@ -13,6 +13,138 @@ namespace {
 namespace compute = hyle::compute;
 namespace graph = hyle::graph;
 
+#if defined(HYLE_GRAPH_ONEDNN)
+TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
+  constexpr std::int64_t rows = 17, width = 31;
+  const auto description =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array{rows, width})
+          .value();
+  const auto row_description =
+      compute::TensorDesc::dense(compute::DataType::kFloat32, std::array{width})
+          .value();
+  std::vector<float> values(rows * width), scales(width);
+  for (std::size_t index = 0; index < values.size(); ++index)
+    values[index] =
+        static_cast<float>(static_cast<int>(index % 29) - 14) / 16.F;
+  for (std::size_t index = 0; index < scales.size(); ++index)
+    scales[index] = 0.5F + static_cast<float>(index % 3) / 8.F;
+  for (const bool published : {false, true}) {
+    auto stats =
+        hyle::mem::StatsAllocator::create(hyle::mem::system_allocator())
+            .value();
+    {
+      auto context =
+          graph::cpu::create_context({.metadata_allocator = stats.get()})
+              .value();
+      auto builder = graph::GraphBuilder::create().value();
+      const auto input = builder.input(description).value();
+      const auto scale = builder.input(row_description).value();
+      const auto normalized = builder.add(compute::RmsNorm{}, input).value();
+      const auto weighted =
+          builder
+              .add(compute::Binary{compute::BinaryKind::kMultiply}, scale,
+                   normalized)
+              .value();
+      // The original input is also a post-op operand: one logical boundary
+      // must map to both native argument positions without duplicate maps.
+      const auto residual =
+          builder
+              .add(compute::Binary{compute::BinaryKind::kAdd}, weighted, input)
+              .value();
+      if (published)
+        ASSERT_TRUE(builder.publish(normalized).ok());
+      ASSERT_TRUE(builder.publish(residual).ok());
+      auto logical = std::move(builder).finish().value();
+      auto compiled = graph::compile(logical, context);
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->report.region_count(), published ? 0U : 1U);
+      auto source = half_test::buffer<float>(values);
+      auto weights = half_test::buffer<float>(scales);
+      const auto source_view =
+          compute::ConstTensorView::create(description, source.view()).value();
+      const auto scale_view =
+          compute::ConstTensorView::create(row_description, weights.view())
+              .value();
+      std::array<hyle::mem::Buffer, 2> outputs{
+          hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                    values.size() * sizeof(float), 64)
+              .value(),
+          hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                    values.size() * sizeof(float), 64)
+              .value()};
+      auto intermediate =
+          hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                    values.size() * sizeof(float), 64)
+              .value();
+      auto queue = context.create_queue().value();
+      std::array invocations{compiled->executable.create_invocation().value(),
+                             compiled->executable.create_invocation().value()};
+      std::vector<float> first;
+      for (std::size_t run = 0; run < 2; ++run) {
+        auto &invocation = invocations[run];
+        ASSERT_TRUE(invocation.bind(input, source_view).ok());
+        ASSERT_TRUE(invocation.bind(scale, scale_view).ok());
+        ASSERT_TRUE(invocation
+                        .bind(residual, compute::TensorView::create(
+                                            description, outputs[run].view())
+                                            .value())
+                        .ok());
+        if (published)
+          ASSERT_TRUE(invocation
+                          .bind(normalized,
+                                compute::TensorView::create(description,
+                                                            intermediate.view())
+                                    .value())
+                          .ok());
+        std::vector<float> current = values;
+        if (run != 0)
+          for (auto &value : current)
+            value += 0.25F;
+        ASSERT_TRUE(
+            source.view().write(std::as_bytes(std::span(current))).ok());
+        auto submitted = invocation.submit(queue);
+        ASSERT_TRUE(submitted) << submitted.error().message();
+        ASSERT_TRUE(submitted->wait().ok());
+        std::vector<float> actual(values.size());
+        ASSERT_TRUE(outputs[run]
+                        .view()
+                        .read(std::as_writable_bytes(std::span(actual)))
+                        .ok());
+        for (std::int64_t row = 0; row < rows; ++row) {
+          double squares = 0;
+          for (std::int64_t col = 0; col < width; ++col) {
+            const double value =
+                current[static_cast<std::size_t>(row * width + col)];
+            squares += value * value;
+          }
+          for (std::int64_t col = 0; col < width; ++col) {
+            const auto index = static_cast<std::size_t>(row * width + col);
+            const double expected = current[index] /
+                                        std::sqrt(squares / width + 1.e-5) *
+                                        scales[static_cast<std::size_t>(col)] +
+                                    current[index];
+            EXPECT_NEAR(actual[index], expected, 4.e-5) << index;
+          }
+        }
+        if (run == 0)
+          first = actual;
+        else {
+          ASSERT_TRUE(outputs[0]
+                          .view()
+                          .read(std::as_writable_bytes(std::span(actual)))
+                          .ok());
+          EXPECT_EQ(first, actual);
+        }
+      }
+      ASSERT_TRUE(context.close().ok());
+      EXPECT_FALSE(invocations[0].submit(queue));
+    }
+    EXPECT_TRUE(stats.balanced());
+  }
+}
+#endif
+
 TEST(CpuDefaultGraph, NonModelGraphReplaysAndReclaimsItsOwners) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
