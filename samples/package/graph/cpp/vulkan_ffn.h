@@ -77,7 +77,8 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
       report.opaque_storage_bytes)
     return std::unexpected(
         hyle::Status::Internal("incomplete Vulkan compilation report"));
-  // Native/managed resources and constants survive this local Graph and tensors.
+  // Native/managed resources and constants survive this local Graph and
+  // tensors.
   return program;
 }
 
@@ -87,15 +88,14 @@ inline hyle::Status topk(const v::Context &context) {
   HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto input, builder.input(desc));
   HYLE_ASSIGN_OR_RETURN(auto positive,
-                       builder.add(c::Unary{c::UnaryKind::kAbs}, input));
+                        builder.add(c::Unary{c::UnaryKind::kAbs}, input));
   HYLE_ASSIGN_OR_RETURN(
-      auto node,
-      builder.add_node(c::Operation(c::TopK{.count = t::selected}),
-                       std::array{positive}));
+      auto node, builder.add_node(c::Operation(c::TopK{.count = t::selected}),
+                                  std::array{positive}));
   HYLE_ASSIGN_OR_RETURN(auto values, builder.result(node, 0));
   HYLE_ASSIGN_OR_RETURN(auto indices, builder.result(node, 1));
   HYLE_ASSIGN_OR_RETURN(auto negative,
-                       builder.add(c::Unary{c::UnaryKind::kNeg}, values));
+                        builder.add(c::Unary{c::UnaryKind::kNeg}, values));
   HYLE_ASSIGN_OR_RETURN(auto copied_indices, builder.add(c::Copy{}, indices));
   HYLE_RETURN_IF_ERROR(builder.publish(negative));
   HYLE_RETURN_IF_ERROR(builder.publish(copied_indices));
@@ -105,14 +105,39 @@ inline hyle::Status topk(const v::Context &context) {
   graph = {};
   for (int phase = 0; phase < 3; ++phase) {
     auto host = t::scores(phase);
-    HYLE_ASSIGN_OR_RETURN(
-        auto tensor, context.upload(desc, std::as_bytes(std::span(host))));
+    HYLE_ASSIGN_OR_RETURN(auto tensor,
+                          context.upload(desc, std::as_bytes(std::span(host))));
     HYLE_RETURN_IF_ERROR(slot.bind(tensor));
     HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
     HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
     for (auto &value : host)
       value = std::abs(value);
-    HYLE_RETURN_IF_ERROR(t::check(context, result->tensors(), host, true, true));
+    HYLE_RETURN_IF_ERROR(
+        t::check(context, result->tensors(), host, true, true));
+  }
+  const auto host = t::scores(1);
+  for (std::int64_t origin : {1, 4, 7}) {
+    HYLE_ASSIGN_OR_RETURN(auto tensor,
+                          t::captured_scores(context, host, origin));
+    HYLE_ASSIGN_OR_RETURN(auto constants, g::GraphBuilder::create());
+    HYLE_ASSIGN_OR_RETURN(auto source,
+                          constants.constant(tensor.description()));
+    HYLE_ASSIGN_OR_RETURN(
+        auto chosen,
+        constants.add_node(c::Operation(c::TopK{.count = t::selected}),
+                           std::array{source}));
+    for (std::uint32_t port = 0; port < 2; ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto output, constants.result(chosen, port));
+      HYLE_RETURN_IF_ERROR(constants.publish(output));
+    }
+    HYLE_ASSIGN_OR_RETURN(auto constant_graph, std::move(constants).finish());
+    HYLE_ASSIGN_OR_RETURN(
+        auto fixed, gv::compile(context, constant_graph, std::array{tensor}));
+    HYLE_ASSIGN_OR_RETURN(auto fixed_slot, fixed.create_invocation());
+    HYLE_RETURN_IF_ERROR(fixed_slot.bind(std::span<const v::Tensor>{}));
+    HYLE_ASSIGN_OR_RETURN(auto work, fixed_slot.submit());
+    HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+    HYLE_RETURN_IF_ERROR(t::check(context, result->tensors(), host, true));
   }
   return hyle::Status::Ok();
 }

@@ -7,6 +7,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <initializer_list>
 #include <numeric>
 #include <span>
@@ -73,6 +74,26 @@ inline hyle::Status check(const v::Context &context,
   return hyle::Status::Ok();
 }
 
+// A dense logical view can still begin at an unaligned native byte address.
+inline hyle::Result<v::Tensor> captured_scores(const v::Context &context,
+                                               std::span<const float> input,
+                                               std::int64_t origin) {
+  HYLE_ASSIGN_OR_RETURN(
+      auto storage_desc,
+      c::TensorDesc::strided_bytes(
+          c::DataType::kFloat32,
+          std::array<std::int64_t, 8>{rows, 1, 1, 1, 1, 1, 1, experts * 4 + 8},
+          std::array<std::int64_t, 8>{experts * 4, experts * 4, experts * 4,
+                                      experts * 4, experts * 4, experts * 4,
+                                      experts * 4, 1}));
+  HYLE_ASSIGN_OR_RETURN(auto capacity, storage_desc.required_bytes());
+  std::vector<std::byte> host(capacity, std::byte{0x5a});
+  std::memcpy(host.data() + origin, input.data(), input.size_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto storage, context.upload(storage_desc, host));
+  HYLE_ASSIGN_OR_RETURN(auto view, c::View::slice(7, origin, experts, 4));
+  return storage.view(view);
+}
+
 inline hyle::Status direct(const v::Context &context) {
   HYLE_ASSIGN_OR_RETURN(auto desc, description());
   for (bool largest : {false, true}) {
@@ -90,6 +111,17 @@ inline hyle::Status direct(const v::Context &context) {
       HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
       HYLE_RETURN_IF_ERROR(check(context, result->tensors(), host, largest));
     }
+  }
+  const auto host = scores(1);
+  for (std::int64_t origin : {1, 4, 7}) {
+    HYLE_ASSIGN_OR_RETURN(auto input, captured_scores(context, host, origin));
+    HYLE_ASSIGN_OR_RETURN(
+        auto program, v::prepare(context, c::TopK{.count = selected}, input));
+    HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
+    HYLE_RETURN_IF_ERROR(slot.bind(std::span<const v::Tensor>{}));
+    HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+    HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+    HYLE_RETURN_IF_ERROR(check(context, result->tensors(), host, true));
   }
   return hyle::Status::Ok();
 }
