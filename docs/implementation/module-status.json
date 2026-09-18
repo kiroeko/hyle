@@ -516,8 +516,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "QUEUED",
-      "summary": "LLM/MoE C1-Y：登记 ggml Vulkan managed region 与窄源码桥的独立 owner；W1 计算/原生 buffer 接入探针已通过，但产品 runtime、失败/并发、普通 Direct/Graph 与三交付尚未实施，不计覆盖。"
+      "state": "SCOPED",
+      "summary": "LLM/MoE C1-Y SCOPED：采用已通过 W1 原版计算/窄 native bridge 探针的 ggml Vulkan managed region；仅定界 CMake 锁定补丁/三交付、OOM/native owner、受管完成与普通 Direct/Graph 接入，有限 FIX 尚未 AUDITED，不签产品覆盖。",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]
 }

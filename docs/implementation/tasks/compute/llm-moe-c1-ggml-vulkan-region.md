@@ -4,7 +4,7 @@
 
 - component / owner：`compute_provider_ggml_vulkan` / `/root`；原 CPU `compute_provider_ggml`
   的 BLOCKED 和恢复条件保留，本 identity 不承载 CPU/CUDA/Metal runtime。
-- baseline：`d23a3dbf`；上位 [C1](llm-moe-c1-tensor-state.md) 与
+- baseline：`d23a3dbf1c58a1e0a7675e8cc94e4b6626b4e578`；上位 [C1](llm-moe-c1-tensor-state.md) 与
   [唯一计划](llm-moe-coverage-completion-plan.md)。当前阶段以 registry 为准。
 - trigger：用户要求先接成熟实现、核对缺口后才补 HYLE 算法；固定 ggml 的 Vulkan 算子/融合
   已能承担真实 C1 计算，但公开 API 缺同 VkDevice buffer bridge，context OOM 仍会 abort。
@@ -41,9 +41,9 @@
 | Y3 | 受管 region 的输入/状态/完成 | 冷构图/资格/绑定与 provider 原生运行分开；每槽 metadata/临时资源、pending owner、接纳部分工作后排空、取消/关闭；普通结果寿命与原生片段组合；热期不做跨 Provider 搜索/计时 |
 | Y4 | 普通 Direct/Graph 及三交付 | 用户仍只选 Vulkan；首个完整 C1 region 的具名语义域/默认规则，保留 provider 融合；实际替代路径验证后再比较存量 HYLE 实现，不由实验探针签产品支持 |
 
-这是 SCOPED 前的具名待审清单，不是 AUDITED FIX。新 identity 先登记 QUEUED，再进入 SCOPED；
-固定 API、failure、owner、常态成本与 CMake 描述后才能授权产品代码。现有 C1 T–X 的 AUDITED
-不覆盖新 runtime 或新的公开资源合同。
+这是 SCOPED 的具名待审清单，不是 AUDITED FIX。新 identity 已在 `2f65bad3` 登记 QUEUED，
+当前进入 SCOPED，CMake 暂保留不可构建 identity。固定 API、failure、owner、常态成本与 CMake
+描述后才能授权产品代码。现有 C1 T–X 的 AUDITED 不覆盖新 runtime 或新的公开资源合同。
 
 ## 当前证据与未完成
 
