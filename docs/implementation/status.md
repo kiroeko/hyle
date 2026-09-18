@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 C1-Y首批仅新增PRIVATE ggml Vulkan factor构建依赖；不以T–X授权runtime/API修改。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y12 AUDITED：baseline94b40163固定普通Context采用ggml Vulkan唯一native device/queue、共锁及删除重复初始化；现有Direct/Graph行为须复验。managed region默认规则/Program/Completion后续接线，完整C1真实权重/三交付/P1未验收。 |
 | graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y AUDITED：Y3产品f61ae0f9已实现冷图/gallocr存储owner及可恢复分配，原版liveness/in-place保留，旧allocate_context清理；与native完成保活连通，W1 static/shared各19例、5例补丁合同通过。Y4普通Direct/Graph、默认规则/公开生命周期、跨平台/完整三交付/P1仍未验收。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y AUDITED：Y3冷图/完成私有机制已实现，static/shared各19例通过；Y12新增普通Context共用device/queue及borrow地址资格。managed Direct/Graph规则与公开完成接线、跨平台/完整三交付/P1未验收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

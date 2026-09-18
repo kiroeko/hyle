@@ -1122,3 +1122,11 @@ X 首轮候选 `94252bf7` 的产品与 SPIR-V 编译通过，测试的 Bool 参�
 仅在中央 component 图增加 PRIVATE `compute_provider_ggml_vulkan` 边，由 Vulkan 路线开关
 控制其第三方构建。实际 FIX/风险/验证见 [C1-Y](llm-moe-c1-ggml-vulkan-region.md) Y01–Y04。
 Graph owner/公开 route API/执行器本批不变；设备/队列/完成桥接定界后再施工，不借 T–X 授权。
+
+### C1-Y 普通 Context 设备归属（AUDITED）
+
+2026-09-18，baseline `94b40163`，owner `/root`：`compute_route_vulkan` 新增有限 Y12，实际
+FIX/反例/成本与适用验证见 [C1-Y 的 Y4](llm-moe-c1-ggml-vulkan-region.md#y4-同设备普通入口前置-fixaudited2026-09-18)。
+普通 Context 采用 Provider 的唯一 native device，原生队列访问共锁，删除重复设备初始化。
+保留当前公开 API、资源/状态/完成行为；managed Program/Graph lowering 与完成接线不由本批
+代签。Graph 是必须复验的直接消费者，尚未新增产品改动。

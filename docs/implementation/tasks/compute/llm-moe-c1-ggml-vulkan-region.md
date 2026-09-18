@@ -310,3 +310,21 @@ P0：每槽冷期拥有一组原版 metadata/chunks，执行不再调用 gallocr
 当前仍 `AUDITED` / `INCONCLUSIVE`，64行/256格不增加 PASS。后续进入 Y4 普通 Direct/Graph、
 默认规则、同设备片段组合与公开取消/关闭/结果保留接线；实际权重、Air/Mini、更新后三交付、
 broad selector 门及等责 P1 仍未完成。没有新的外部阻塞，不重复本批验证来代替普通入口接线。
+
+## Y4 同设备普通入口前置 FIX（AUDITED，2026-09-18）
+
+owner `/root`，baseline `94b40163`。本批同时绑定 `compute_provider_ggml_vulkan` 与
+`compute_route_vulkan`；Graph 是既有普通入口的直接消费者，不修改其语义。检查实际源码确认：
+现有 Context 自建第二套 instance/device，不能直接消费 Y2/Y3 的资源；原 route 队列锁也不覆盖
+原版 compute/transfer 的 queue handle。另一具体反例是 borrow 无条件查询 BDA，而公开
+`borrow_ready` 只要求 storage/transfer buffer，没有承诺地址 usage/allocation flags。
+
+| FIX | 产品改动与成本 | 适用验证 |
+|---|---|---|
+| Y12 | 普通 Context 持有既有 NativeDevice，取其准确 instance/device/queue、已启用 descriptor feature 和 loader 身份；删除 route 重复创建/销毁 loader/instance/device 的实现。HYLE PFN 一次绑定，原 Buffer/Run/Completion/配额 owner 保留。原生 submit、异常 drain 与 expert queue 回调进入同一 upstream device-submit→queue 锁；热 submit 使用无分配的私有函数指针/状态回调，不新增逐 kernel vtable。borrow 仅在调用方明确知道 buffer 具有 BDA 资格时取地址，否则保留 descriptor 路径 | W1 static/shared 的 Provider、全部现有 Vulkan Compute/Graph 及两个公开头；同一实际 VkDevice 资源往返、普通 route producer→原版 norm→普通下载；独立 Context、配额、设备失败/部分分配、既有并发/取消/关闭/保留结果。Khronos validation、DLL 邻置、无 PATH 依赖 |
+
+同设备导入测试只证明资源互通，不能代签普通 Program 的 managed region。Y4 后续仍必须接入
+冷语义 lowering/固定规则、输入重绑、原生/managed 片段组合，以及部分 region 接纳后的既有
+pending Run/Completion。shared 编码与清理的互斥、正常 wait 不锁住独立 producer 也须在该批
+固定后实施；不能继承单次 QueueSubmit 失败即未接纳的假设。本批不宣称新覆盖、不运行 P1。
+跨平台与完整三交付随稳定 Y4 候选，当前局部纠正最多两轮；不修改公共治理或性能工具。
