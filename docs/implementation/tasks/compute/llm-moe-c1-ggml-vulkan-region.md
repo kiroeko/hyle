@@ -162,3 +162,42 @@ SPIRV-Headers；补丁哈希改变会改变 build-local source 路径，host sha
 短补丁身份，避免复用旧 CMake source cache。registry 的 ctx/device 在入 vector 前也用 RAII，
 与 device/buffer 部分初始化回滚同属 Y05。依据为真实编译失败日志和对应 `new`→`push_back`
 异常路径，不增加算子、公共构建框架或验证仪器范围。
+
+## Y2 实现与验证记录（2026-09-18）
+
+产品提交 `da0322199baca85c71ae8cfcb4d5c39e7fa719db`，审计为 `3caa1103` / `5c7db84e`。
+Y05–Y07 的私有 native owner 已落地：独立 loader/instance/device/registry、栈上 dispatcher scope、
+完整初始化后发布、buffer RAII/实际内存配额、弱反向引用、原生 borrow/export 与共享 queue 锁。
+原版算子/融合不变，私有边界转换创建异常，宿主保留 terminate handler。
+
+MSVC vendor C++ 目标局部使用 `/EHsc-`：原厂 C linkage 的 C++ 函数可能传播分配异常，不能使用
+`/EHc` 的不抛异常假设省掉回收；不改变 HYLE 用户编译选项。移除 loader 链接后显式保留 build-only
+SPIRV-Headers，静态 SDK 导出不再查找 `Vulkan` 开发 package。短 host prefix 加入补丁身份，
+避免升级 build-local source 后命中旧 CMake source cache。
+
+[结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y2-native-resources.json)与
+[原始日志包](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y2-native-resources-raw.zip)
+绑定产品 tree、补丁哈希、命令和限制，保留首次编译失败与设备 identity 反例。
+
+| 实际执行 | 结果与边界 |
+|---|---|
+| W1 static/shared 私有 factor | 各9例通过、无跳过：3例 metadata、1例真实原版 GPU region、5例原生资源/错误/隔离；PATH unset、所需 DLL 邻置 |
+| native 正确性/寿命 | 宽2048、行1/17/128、各3次输入与独立 double oracle；每形状一次由同 VkDevice 的原生 producer 写入；borrow 退役后原 buffer 仍可使用；配额拒绝/返还、双实例跨线程与嵌套 scope |
+| 真 PFN 故障 | device 首个 fence、backend 第二个 fence、已分配 buffer 的 bind 失败均回滚；相应 native device/fence/buffer/memory 计数归零。不代签 GPU 部分提交后的 drain |
+| 设备 identity 回归 | 新断言在原索引比较下复现8通过/1失败：独立 owner 的本地编号都为0；改为实际 owner 比较后 static/shared 均拒绝外来 buffer type |
+| validation | 显式 validation 实例测试实际运行，要求并启用已安装 layer；全套环境也请求 Khronos layer，最终日志无 VUID。只覆盖本批已执行路径 |
+| 构建补丁/导出 | 5例源码合同通过；static SDK configure/export 检查通过，find dependency 只有 Threads，未泄漏 Vulkan loader / SPIRV-Headers target。没有据此声称更新后的 SDK 已安装/消费 |
+
+P0：loader/device 与 metadata 在冷期创建；scope 只保存/恢复 TLS 指针，不分配。quota opt-in 才有
+每个 native allocation 的 reservation token；原版 graph 每次遍历/融合/编码与转换、同步仍须在
+完整比较中计费。本批未运行 P1。构建最多2并行、shader 子进程串行，未改系统或启动安装程序。
+
+统一 LOC 脚本对该不可变提交沿同23路径统计 **44,995行 / 184个实现文件**，比 Y1 增加436行；
+self-check通过，包含 GLSL，不含 tests/bench/vendor/CMake/Python。
+[原始统计](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y2-implementation-loc.json)。
+
+当前仍为 `AUDITED`，聚合验收 `INCONCLUSIVE`，64行/256格不增加 PASS。Y3 先固定冷构图/分配与
+每槽 owner、pending、部分接纳失败 drain、关闭/取消/保留结果。已发现 `ggml-alloc.c` 的多 buffer
+context helper 有未检查的 realloc 及 C unwind 清理限制，Y3 必须由受管 region owner 定向解决；
+当前仅用于内部 admission 的 `allocate_context` 不能直接继承为最终 OOM 合同。Y4 的普通入口/规则、
+真实权重、Air/Mini、完整三交付和 broad selector 门仍待完成；没有新的外部阻塞。

@@ -517,7 +517,7 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y AUDITED：首批97705740构建/metadata和W1内部GPU验证已落地；Y05–Y07固定独立loader/device/registry、原生buffer配额/失败回滚、同队列桥和宿主错误边界。普通Direct/Graph、受管完成、跨平台/完整三交付/P1仍未验收。",
+      "summary": "LLM/MoE C1-Y AUDITED：Y2产品da032219已实现独立native owner、buffer配额/失败回滚及同队列桥；W1 static/shared各9例和5例补丁合同通过，静态导出声明移除Vulkan开发包依赖。Y3受管完成/分配及Y4普通Direct/Graph、跨平台/完整三交付/P1仍未验收。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

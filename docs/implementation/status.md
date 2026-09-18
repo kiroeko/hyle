@@ -62,7 +62,7 @@
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 C1-Y首批仅新增PRIVATE ggml Vulkan factor构建依赖；不以T–X授权runtime/API修改。 |
 | graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y AUDITED：首批97705740构建/metadata和W1内部GPU验证已落地；Y05–Y07固定独立loader/device/registry、原生buffer配额/失败回滚、同队列桥和宿主错误边界。普通Direct/Graph、受管完成、跨平台/完整三交付/P1仍未验收。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y AUDITED：Y2产品da032219已实现独立native owner、buffer配额/失败回滚及同队列桥；W1 static/shared各9例和5例补丁合同通过，静态导出声明移除Vulkan开发包依赖。Y3受管完成/分配及Y4普通Direct/Graph、跨平台/完整三交付/P1仍未验收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

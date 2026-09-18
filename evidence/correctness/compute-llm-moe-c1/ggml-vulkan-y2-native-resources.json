@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "owner": "/root",
+  "component": "compute_provider_ggml_vulkan",
+  "registry_state": "AUDITED",
+  "scope": "C1-Y Y05-Y07 private native resource ownership; not ordinary Direct/Graph or asynchronous managed-region acceptance",
+  "audit_revisions": [
+    "3caa1103",
+    "5c7db84e"
+  ],
+  "product_revision": "da0322199baca85c71ae8cfcb4d5c39e7fa719db",
+  "product_tree": "bc04d9c949f0a19cda8a62cda02f26ccbb301b4e",
+  "snapshot_qualification": "Final static/shared builds and 9-case runs used the C++ files, tests, CMake declarations and six-file vendor patch set committed at this revision. Dependency lock whitespace was minimized without changing its parsed data. Subsequent records and LOC do not trigger rebuilds or P1.",
+  "upstream": {
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+    "patch_tree_sha256": "af20b6f961343c1ea5166f2a94fe32482b0a3da458535568f879fd48ebca9baf",
+    "operator_algorithms_changed": false,
+    "cpu_backend_enabled": false,
+    "original_checkout_status": "clean",
+    "old_cpu_provider_blocker_changed": false,
+    "source_input": "authenticated archive extraction supplied through existing FetchContent source override; no upstream/cache edits"
+  },
+  "implementation": [
+    "Per-owner platform DynLib, Vulkan-Hpp dispatcher, instance, device and registry; stack-only scoped TLS restoration; device publication only after complete initialization.",
+    "Physical-device selection uses original index, hardware/software eligibility and upstream capability branches. Buffer compatibility compares actual device owner, not repeated local index zero.",
+    "RAII owns each native buffer before create/allocate/map/bind can fail; optional quota charges VkDeviceMemory allocation size; weak buffer-type backreference removes self cycle.",
+    "Native buffer borrow retains external owner without double native free or quota charge; native queue callback shares upstream device-submit then queue locks.",
+    "Private adapter catches C++/Vulkan creation failures and maps Status. Vendor C++ targets use MSVC /EHsc- so C-linkage calls preserve exception unwinding; public consumer flags are unchanged.",
+    "Host terminate handler takeover is disabled by private vendor definition. Runtime imports loader PFNs instead of linking Vulkan loader. SPIRV-Headers remains a build-only dependency.",
+    "Versioned short EP_PREFIX isolates source cache identity while keeping the shader host tool below the failed nested-path shape."
+  ],
+  "build": {
+    "machine": "W1-WIN",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compiler": "MSVC 19.50.35728.0",
+    "generator": "Ninja",
+    "configuration": "Release",
+    "parallel": 2,
+    "shader_parallel": 1,
+    "vulkan_sdk": "1.4.357.0 portable extraction; installer not executed",
+    "runtime_environment": "PATH unset; required HYLE DLLs beside EXE; system vulkan-1.dll",
+    "system_changes": "none: no UAC, registry, power, firewall or driver changes"
+  },
+  "validation": [
+    {
+      "name": "W1 static private provider native resources and GPU region",
+      "verdict": "PASS",
+      "cases": 9,
+      "log": "test-static.log",
+      "structured_results": "test-static.json"
+    },
+    {
+      "name": "W1 shared private provider native resources and GPU region",
+      "verdict": "PASS",
+      "cases": 9,
+      "log": "test-shared.log",
+      "structured_results": "test-shared.json"
+    },
+    {
+      "name": "Source identity/unchanged timestamps/tamper rejection",
+      "verdict": "PASS",
+      "cases": 5,
+      "log": "source-contract.log"
+    },
+    {
+      "name": "Static SDK dependency export projection",
+      "verdict": "PASS",
+      "phase": "configure/export only",
+      "log": "configure-projection.log",
+      "receipt": "package-projection.json",
+      "qualification": "find dependency list contains Threads; no Vulkan::Vulkan or SPIRV-Headers target escapes. No updated installed SDK consumer was run in this slice."
+    },
+    {
+      "name": "Documentation and module closure checks",
+      "verdict": "PASS",
+      "logs": [
+        "docs-product.log",
+        "closure-product.log"
+      ],
+      "previous_registry_revision": "e7e88c62"
+    }
+  ],
+  "correctness_contract": {
+    "region": "Original upstream F32 RMSNorm -> broadcast scale -> SiLU -> residual, width 2048, rows 1/17/128, three varying inputs per shape; independent double oracle abs(error) <= 6e-6*(1+abs(expected)).",
+    "native_interop": "One input per shape comes from a real native VkBuffer producer using the same device/queue; borrowed wrapper retirement leaves original allocation usable.",
+    "failures": "Invalid loader/index, quota rejection/retirement, device first-fence failure, backend second-fence failure, buffer bind failure after real allocation; real PFN interception counts all corresponding live handles back to zero.",
+    "isolation": "Two real independent instances/devices, cross-thread use, nested scope restoration, own-buffer acceptance and foreign-owner rejection.",
+    "validation": "Khronos layer requested globally; explicit options.validation test requires/enables the installed layer and ran without skip. No VUID in final logs. Not a certificate for unexercised future regions.",
+    "weights": "Generated numeric fixture using local 2B width; no actual checkpoint-weight acceptance in this slice."
+  },
+  "retained_failures": [
+    "Removing Vulkan loader linkage exposed a build-only SPIR-V header dependency: explicit BUILD_INTERFACE SPIRV-Headers correction.",
+    "Patch source identity changed but host CMake cache still pointed at old source: short versioned EP_PREFIX correction.",
+    "Initial C++ integration had one weak_ptr access omission, MSVC extern-C unwinding warning and test lambda return deduction error; corrected before final runs.",
+    "Added device-owner compatibility assertion reproduced 8 pass / 1 failure on index-only matching; actual-owner comparison passed the final 9-case static and shared runs."
+  ],
+  "p0": {
+    "cold_cost": "One loader/instance/device owner plus upstream resources; optional quota reservation token per native allocation. Native scopes only save/restore TLS pointers without allocation.",
+    "execution_cost": "Original upstream graph still traverses/fuses/encodes each execution; no allocation-free recorded replay claim. Full region encoding, conversion and synchronization remain future comparison costs.",
+    "p1": "NOT_RUN: ordinary managed C1 candidate is not frozen."
+  },
+  "remaining": [
+    "Y3 cold region allocation/slot ownership, async accepted-prefix failure drain, device-loss observation, cancel/close and retained results.",
+    "Upstream ggml-alloc.c multi-buffer context helper has unchecked realloc and C unwind cleanup limits; Y3 must own/qualify region allocation, not inherit this test-only helper as a final OOM contract.",
+    "Y4 ordinary Direct/Graph, fixed qualified default rules, true HYLE/native fragment composition and actual checkpoint weights.",
+    "Air/Mini and updated full source/static/shared, relocation/offline and broad selector gates.",
+    "Qualified equal-responsibility C1 P1; 64 requirements / 256 route cells gain no PASS from this private slice."
+  ],
+  "aggregate": "INCONCLUSIVE: C1-Y remains active and incomplete",
+  "implementation_loc": "ggml-vulkan-y2-implementation-loc.json",
+  "raw_archive": {
+    "path": "ggml-vulkan-y2-native-resources-raw.zip",
+    "bytes": 61491,
+    "sha256": "857da322976f4c6be374ba0b199977b98927798d4db7faa4db8aa9b9398f27db",
+    "files": [
+      {
+        "path": "build-shared.log",
+        "bytes": 48931,
+        "sha256": "d071bf887bb3c26db7c78f77f277365b479fb3727ff2bf1ce99ef476bf4c5695"
+      },
+      {
+        "path": "build-static-cache-identity-failure.log",
+        "bytes": 2093,
+        "sha256": "1358e80ca02d0f38fb25d8730c2bbbac4a07722fe2ceab81c089507d008c10f3"
+      },
+      {
+        "path": "build-static-fixture-compile.log",
+        "bytes": 48408,
+        "sha256": "ee5e58f0c447f83f8cba6f26104609e5f2a279c8f16362f737029ca2d5785e4a"
+      },
+      {
+        "path": "build-static-initial-failure.log",
+        "bytes": 19461,
+        "sha256": "638bc58c1b625f8beaac06275796a445277bc95dae49e40bca363e726b3280eb"
+      },
+      {
+        "path": "build-static-weak-owner-failure.log",
+        "bytes": 22135,
+        "sha256": "ec92431ec8ea2d8585bf0e156cbd4d007df301df7611e298095f2eb72df80398"
+      },
+      {
+        "path": "build-static.log",
+        "bytes": 46530,
+        "sha256": "fc9b3e0ec6c09cfc87f1b5e139cc77478d2aec9f4e2933031ba7d5aa5a9ced55"
+      },
+      {
+        "path": "closure-product.log",
+        "bytes": 57,
+        "sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2"
+      },
+      {
+        "path": "configure-projection.log",
+        "bytes": 3478,
+        "sha256": "856e3388bdbee47772af3af9378e7cc38b3b4495a572708ac9860b1940de6722"
+      },
+      {
+        "path": "configure-projection.ps1",
+        "bytes": 1018,
+        "sha256": "ba1b0539c0dcfcbd705b0337258ae80bcaa8976b23a60a50b6e8a8a7bdc9f420"
+      },
+      {
+        "path": "configure-shared.log",
+        "bytes": 2841,
+        "sha256": "4e0d2f3e1d3e9e6b2bcdd7a2726d0e1b4cc18a4d612881a3ec00d42e77c759ca"
+      },
+      {
+        "path": "configure-static.log",
+        "bytes": 1186,
+        "sha256": "194946dd19669e406058d4b4ad3ad9761a77f9592a3500d8036a3a5b09ed7aa2"
+      },
+      {
+        "path": "docs-product.log",
+        "bytes": 80,
+        "sha256": "4bf3d697ac6074155c0ba808b6b44a2734a1d609d1ab6069a6f43b1bb8121fc3"
+      },
+      {
+        "path": "package-projection.json",
+        "bytes": 502,
+        "sha256": "e5c652ee97b452b7344e0f04e54b19a16d19abb3d0caed7ff33c1733044f710b"
+      },
+      {
+        "path": "projection/HyleConfig.cmake",
+        "bytes": 3099,
+        "sha256": "e7217324de51381ea8df64e119933e81ee20cdf4ed3d2ed0ea82708388a0a82e"
+      },
+      {
+        "path": "projection/HyleTargets-release.cmake",
+        "bytes": 9094,
+        "sha256": "2d59d9d3f19817f02fe940294853f424ab0af6d04fcc326246f6b6398f633578"
+      },
+      {
+        "path": "projection/HyleTargets.cmake",
+        "bytes": 15121,
+        "sha256": "c10b3021701d63a6ee66bc54aa1a90128af42934e9871abd295332c08e1d8430"
+      },
+      {
+        "path": "run-test.ps1",
+        "bytes": 625,
+        "sha256": "09dccf8b87b8ad05ac38f056812d91a7e8c19bbbb69e58301473dc8ec1e9d3e0"
+      },
+      {
+        "path": "source-contract.log",
+        "bytes": 292,
+        "sha256": "8c3939d0303954c8f1f2a5cbaab9fa4abe31981a57b7ef33189ea6da781aa537"
+      },
+      {
+        "path": "test-shared.json",
+        "bytes": 4469,
+        "sha256": "927a0a8870c9b0a0c633550933a1bdcbdd31e04ba4ad0916154da87f1bfdcfff"
+      },
+      {
+        "path": "test-shared.log",
+        "bytes": 2239,
+        "sha256": "93112473185a12b5c21c0f73d51971ab1ac12b6b1f1bedbc61705dac3ffd6c15"
+      },
+      {
+        "path": "test-static-device-identity-failure.json",
+        "bytes": 4776,
+        "sha256": "1c6db8410a017320c53f64b7877b8bb2aa598e4296e6f41c1301f8320c2245b1"
+      },
+      {
+        "path": "test-static-device-identity-failure.log",
+        "bytes": 2550,
+        "sha256": "44c70dca7234ae67dfb4584f0be4fbb7cfd2d2fb1e8ee5cd04a34ed06eb748b7"
+      },
+      {
+        "path": "test-static-initial-pass.json",
+        "bytes": 4467,
+        "sha256": "add472d97fdf1aaedb75b52a8ce96647386010632f9fc439d742c9a5b80c73fe"
+      },
+      {
+        "path": "test-static-initial-pass.log",
+        "bytes": 2239,
+        "sha256": "39ddff8e262781eb5ce50dbb3446d42092f6fdcadb9827b1ccd4a9e12776c25e"
+      },
+      {
+        "path": "test-static.json",
+        "bytes": 4469,
+        "sha256": "44ac221975c12f20f1b3e4b21aad30a447a7421bc5ae3b27d4f18726fb0e9e25"
+      },
+      {
+        "path": "test-static.log",
+        "bytes": 2239,
+        "sha256": "4c22b778d819da09f1e7c65fe5829372c7e65a709faacac310d50459ac72ae35"
+      },
+      {
+        "path": "upstream-status.txt",
+        "bytes": 27,
+        "sha256": "2e5ffb0a664890f092c943071df723c8387708977333ec042d0750d9ce522444"
+      },
+      {
+        "path": "validation-plan.json",
+        "bytes": 199235,
+        "sha256": "00d1c2475fb05d559126391f49ed884799be35b62f4fac2c391f7a733f254f48"
+      },
+      {
+        "path": "y2-build-shared.ps1",
+        "bytes": 1333,
+        "sha256": "91b02ddd8abc983ee7ec696fff1c7cde3724eb1b87447f8cbe414fb4c4262324"
+      },
+      {
+        "path": "y2-build-static.ps1",
+        "bytes": 1333,
+        "sha256": "a701bde75256bf00b50b7456eb82a3c288dbc9532ed3bf8eca3ea0fbc3fc1275"
+      },
+      {
+        "path": "y2-create-patches.py",
+        "bytes": 16179,
+        "sha256": "fb10f5b71c436b943ce88949202e6881978bf413d59b8e8403436d48ba662c26"
+      }
+    ]
+  }
+}
