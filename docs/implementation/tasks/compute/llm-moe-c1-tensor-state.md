@@ -18,7 +18,7 @@
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
-  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04、V01–V04、W01–W03 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04、V01–V04、W01–W03、X01–X04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -1045,5 +1045,29 @@ descriptor indexing，不扫描整个输出来寻找本组，也不做逐次增�
 - 本批只签 W01–W03 局部事实；Reduce/Softmax/LogSoftmax/TopK、checked indexing/Scatter/Scan，
   以及完整 C1 真实权重、三交付/其他适用环境和等责 P1 仍待实施或验收。两个 owner 保持 AUDITED，
   64 行/256 格共同矩阵仍未签收，不把本批算作 C1 整包完成。
+
+### C1-X：Vulkan 归约与 masked Softmax（AUDITED）
+
+baseline `5eab611a`；owner `/root` / `compute_route_vulkan`、`graph_route_vulkan`。F04 的 Qwen
+head128 L2、masked attention 概率和 router 归一化要求 Reduce/Softmax/LogSoftmax；沿共同 schema，
+不增加模型策略或公共 API。本批重新定界上述 owner 的算法子集，T/U/V/W 的既有事实不代签 X。
+
+有界源码核对固定 ggml `456172ec` 的 Vulkan `sum_rows.comp` / `soft_max.comp` 和已资格化 C1-I
+数值合同：复用行内 F32 shared reduction、max→exp→sum 和行缓存的成熟方案。ggml 的四维寻址、
+typed narrow storage、附带 sinks/ALiBi 及尾部半精度中间舍入不能替代当前 rank8/byte-stride 与
+最终一次舍入合同。`BORROW` 原生 workgroup/shared/barrier 和上述归约结构；`OWN` 薄的 U32
+存储、任意轴、mask/NaN/±0、LogSoftmax 与 word 所有权适配，不引入另一个 tensor runtime。
+
+| FIX | 固定实施范围 | P0 / 必需验证 |
+|---|---|---|
+| X01 | Reduce Sum/Mean/Min/Max，F32/F16/BF16，任意合法 axes/keepdim/stride/View | F32 累加，half 显式声明；空集合分别0/NaN/+Inf/-Inf，NaN传播，Min/Max保留混合±0优先级。每组128线程，half成对输出归约后一次写word；一次dispatch、固定shared、零device scratch，O(N·rank)。rank0/空输出/huge-empty不能误读输入或截断有效维度 |
+| X02 | Softmax/LogSoftmax，三浮点、任意axis、有限scale、广播Bool/同类型additive mask | F32求值/最终一次RNE；Bool false先屏蔽坏输入，未屏蔽NaN/+Inf、全-Inf行全NaN。LogSoftmax排除一个最大项后求tail，再用非负域补偿log1p，保留接近1的概率和大共同偏置；两次shared collective。width≤2048且设备shared容量足够时缓存F32行，其他域三遍读；每组最多两行，cache最多16KiB加2KiB归约数据，不展开整张F32张量 |
+| X03 | 半精度任意轴的输出word所有权、普通Direct/Graph及原生资源 | F32、inner=1或half inner为偶数时一次dispatch；half inner>1且为奇数时先写每数学行8B的max/normalizer，再一次逐word输出。固定scratch参与既有liveness/容量/quota/barrier，超设备容量冷拒绝；不使用竞态窄写、额外memset或逐元素原子。布局/cache/dispatch规则准备期固定，执行不搜索/计时 |
+| X04 | 独立FP64/位级参考、普通组合、生命周期、指南及三机定向验证 | 三dtype/四Reduce，任意/多/负axis与keepdim、rank0/8、odd/zero stride/View、空identity/输出；Softmax两模式/三mask、0/1/127/129/2048/2049/8193/32769、inner1/2/3、近1概率/ties/大偏置/NaN/Inf。borrow邻区/alias拒绝；BF16→F32平方和→epsilon→rsqrt→L2及masked概率，独立槽/变输入/旧结果/close、原生计数/已有OOM/drain。W1/Air/Mini两factors和公开头；真实权重/整包三交付/适用环境/P1仍随完整C1候选 |
+
+只改当前 Vulkan owner 的私有 lower/shader/编译清单和直接消费者，不改共同语义、Graph运行时、
+第三方pin、公共构建/selector/性能工具。TopK的多输出、checked indexing/Scatter/Scan依旧是
+后续必需机制，不由本批代签。当前不跑P1；缓存、半精度特殊布局的额外读/dispatch/scratch均记为
+真实成本，不将未比较的方案称为性能胜出。产品纠正最多两轮，按具体反例处理，不改数值门限。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
