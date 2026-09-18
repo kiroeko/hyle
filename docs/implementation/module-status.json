@@ -353,10 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "candidate": "4895df0bd70669c138a5ce3cb1a4d0a00b7349cb",
-      "summary": "C1-AA CANDIDATE：成熟 norm/post-ops 的 API 与算法冻结；W1/WSL 局部正确性、失败处理、本批 CPU Compute/Graph 三交付及112项 selected 检查已通过。接下来执行固定 P1；条件优选与重复域取舍未签署，本机 vendor 半精度不支持的边界保留，不代签 C1 整包。"
+      "summary": "C1-AA 第一轮有限纠正 AA04-F1：合格 P1 为4项胜、12项负；批量 full-shape post-op 已实证退到 oneDNN simple:any，修正优化融合边界并迁移真实 Graph consumer。普通默认规则及 Native 重复域取舍未签署，不代签 C1 整包。"
     },
     {
       "module": "compute_provider_ggml",
@@ -370,10 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "candidate": "4895df0bd70669c138a5ce3cb1a4d0a00b7349cb",
-      "summary": "C1-AA CANDIDATE：成熟 norm/post-ops 的 API 与算法冻结；W1/WSL 局部正确性、失败处理、本批 CPU Compute/Graph 三交付及112项 selected 检查已通过。接下来执行固定 P1；条件优选与重复域取舍未签署，本机 vendor 半精度不支持的边界保留，不代签 C1 整包。"
+      "summary": "C1-AA 第一轮有限纠正 AA04-F1：合格 P1 为4项胜、12项负；批量 full-shape post-op 已实证退到 oneDNN simple:any，修正优化融合边界并迁移真实 Graph consumer。普通默认规则及 Native 重复域取舍未签署，不代签 C1 整包。"
     },
     {
       "module": "compute_ops",

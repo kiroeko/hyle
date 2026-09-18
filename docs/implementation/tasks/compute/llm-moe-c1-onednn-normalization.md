@@ -247,3 +247,40 @@ Provider ID 和 region 数；两侧均使用自然 submit/wait，完整 norm→M
 完整验证记录和冻结的 P1 程序/合同。随后 registry/status 说明提交不改变产品候选，统一仪器
 仍记录实际干净运行 HEAD。原 C1 的其他 owner 状态不变；默认规则变更或实现删除必须退回
 AUDITED 后按具名证据施工，不以候选状态跳过比较。
+
+### AA04：合格 P1 结果与第一轮有限纠正
+
+干净运行 HEAD 为 `e33b6fea4b80d4b82adb6a267dc52ba2ad7a73f9`。
+[完整性能记录](../../../../evidence/performance/onednn-normalization-p1-e33b6fea-w1-win/README.md)
+保留16项全部分层、原始日志和仪器裁决：资格 PASS，性能 FAIL；4项批量 Direct 胜出，
+4项小规模/不规则 Direct 和8项 Graph 落后。一次 n=15 已可裁决，没有升级31或原样追加计时。
+双方均走相同公开 Direct 或 Graph submit/wait；Graph 是原版融合片段对相同 Native 三节点链，
+不是 Graph 对裸 kernel。初始 CRLF 配置失败、首次 A/A 失败（零产品样本）与已声明的一次相同
+重试全部保留；该重试已经结束且额度用尽。原 deep verify 为 QUALIFIED / EXACT / paths_verified。
+
+有限源码调查得到具体产品反例：锁定 oneDNN 的 `jit_uni_layer_normalization.cpp:61` 只接纳
+scalar/最后轴广播，批量 full-shape binary post-op 不在优化内核支持集合。
+对实际链接库执行64个**只查询冷 descriptor、无执行/计时**的用例，批量 norm→Mul(vector)→
+Add(full) 均选择 `simple:any`，norm 或 norm→Mul(vector) 均为 `jit:uni`；改成等价3D描述符
+仍相同。`simple_layer_normalization.cpp` 在每个元素调用通用 `ref_post_ops`，与合格样本中
+约百倍退化的成本结构一致。最初怀疑的 `ref:any` 由实际 `simple:any` 身份纠正。
+这是消费者残差链被过度融合的准入缺陷，不是要求重写成熟归一化算法。
+
+两个 owner 依协议从 CANDIDATE 退回 **AUDITED**；第一轮具名纠正仅为 **AA04-F1：优化融合边界**：
+
+- 冷匹配在导致该退化的批量 full-shape Add/Mul 前停止，保留此前合格的 norm 与 scalar/vector
+  post-op 前缀，余下节点沿已有 Graph 组合；单行及可观测/分叉边界保持正确。
+- 精确准备查询 vendor 实际实现身份，拒绝已识别的 `simple:any` / `ref:any` 融合制品，返回
+  既有 unsupported decline；不吞 OOM/执行错误，不在热路径查询、搜索或改选。
+- 迁移普通 Graph 回归和三交付 consumer，证明优化前缀与后续节点的数值、状态、重复执行和资源
+  责任；加入单行、批量、scalar/vector/full-shape 与 Layer/RMS 边界的有限回归。显式成熟样例
+  仍强校验真实 region，不能用全 Native 假通过。
+- API、底层 SIMD、oneDNN 算法、公共构建/性能仪器不改。默认小规模选择和 Native 重复域取舍
+  仍属 AA04 待裁决项，不把此修复预称为 Graph 胜出，也不套用 Direct 胜项代签 Graph。
+
+验证仅运行本改动 selector 与已声明的 W1 static/shared、WSL GCC14、相关 Graph 三交付；原有
+未受影响的基础/头/交付事实按身份复用。所有形状、阈值和统计门保持，完整 Graph 的 P1 须等
+本轮 API/规则稳定、correctness/交付完成后再冻结候选启动；不边改边计时。两轮性能纠正预算中
+本项占第一轮，第二轮未使用。达到预算仍无法裁决按原停止规则处理。
+
+统一脚本对 `e33b6fea` 为46,941实现行/193文件，自检 PASS；代码行数不是完成度。

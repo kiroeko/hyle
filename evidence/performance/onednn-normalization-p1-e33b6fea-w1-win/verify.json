@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "1a276f2dec2b6b66da6097459a4c0d8e833bc81277e8ddf6d99404cb1ed2ae86",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-runs\\onednn-normalization-p1\\manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

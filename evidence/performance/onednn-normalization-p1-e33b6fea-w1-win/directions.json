@@ -1,0 +1,290 @@
+[
+  {
+    "id": "direct-rms-1x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.3053246570023938,
+      0.31249485617577616
+    ],
+    "stratum_ci_envelope": [
+      0.2952442993563017,
+      0.3194766646069107
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 1.4978973786332492,
+      "peer": 0.4632763572323183
+    }
+  },
+  {
+    "id": "graph-rms-1x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.21929187865208027,
+      0.22488890048632357
+    ],
+    "stratum_ci_envelope": [
+      0.2126685336529327,
+      0.2280895277457499
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 3.85874441156029,
+      "peer": 0.8564287973597402
+    }
+  },
+  {
+    "id": "direct-rms-17x2048",
+    "exact_verdict": "WIN",
+    "noninferiority_gate": "PASS",
+    "strict_direction": "WIN",
+    "stratum_median_ratio_range": [
+      1.2994011309215312,
+      1.3479735723046329
+    ],
+    "stratum_ci_envelope": [
+      1.287348858409119,
+      1.378290035180542
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 4.037702489218183,
+      "peer": 5.336727681841401
+    }
+  },
+  {
+    "id": "graph-rms-17x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.00644679876102073,
+      0.006683313297407441
+    ],
+    "stratum_ci_envelope": [
+      0.0063411502076093805,
+      0.00694871381933344
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 1977.1261980578133,
+      "peer": 13.085000236750506
+    }
+  },
+  {
+    "id": "direct-rms-128x2048",
+    "exact_verdict": "WIN",
+    "noninferiority_gate": "PASS",
+    "strict_direction": "WIN",
+    "stratum_median_ratio_range": [
+      1.5724653765885044,
+      1.591340223522627
+    ],
+    "stratum_ci_envelope": [
+      1.5539791812963775,
+      1.6375301400924744
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 25.229796210831495,
+      "peer": 39.91356116569247
+    }
+  },
+  {
+    "id": "graph-rms-128x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.009558536529365844,
+      0.010325281652045062
+    ],
+    "stratum_ci_envelope": [
+      0.008964767236709427,
+      0.011870349056153435
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 14913.14966833004,
+      "peer": 148.42491599757352
+    }
+  },
+  {
+    "id": "direct-rms-17x257",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.4524543893012907,
+      0.47607194931167807
+    ],
+    "stratum_ci_envelope": [
+      0.43022833759812396,
+      0.4810071696438855
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 1.709993720907515,
+      "peer": 0.7975806743849827
+    }
+  },
+  {
+    "id": "graph-rms-17x257",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.0077098825169254126,
+      0.008111045327609229
+    ],
+    "stratum_ci_envelope": [
+      0.00759874583094966,
+      0.008254423215664898
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 250.06220298276244,
+      "peer": 1.9750000053624999
+    }
+  },
+  {
+    "id": "direct-layer-1x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.3471199782788696,
+      0.3576812384330147
+    ],
+    "stratum_ci_envelope": [
+      0.33578641552776767,
+      0.36966227296176973
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 1.869359283212825,
+      "peer": 0.6602925970891401
+    }
+  },
+  {
+    "id": "graph-layer-1x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.24869036490470967,
+      0.2577579994613965
+    ],
+    "stratum_ci_envelope": [
+      0.2444114000372801,
+      0.26297330618752024
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 4.232212024119793,
+      "peer": 1.0653447354630465
+    }
+  },
+  {
+    "id": "direct-layer-17x2048",
+    "exact_verdict": "WIN",
+    "noninferiority_gate": "PASS",
+    "strict_direction": "WIN",
+    "stratum_median_ratio_range": [
+      1.527232289126033,
+      1.5586121991068809
+    ],
+    "stratum_ci_envelope": [
+      1.4964448538298956,
+      1.5840827063980614
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 5.262226964661121,
+      "peer": 8.126280453375154
+    }
+  },
+  {
+    "id": "graph-layer-17x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.008350880895621185,
+      0.008576284870152974
+    ],
+    "stratum_ci_envelope": [
+      0.00806890736417751,
+      0.008820460636508463
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 2008.3550798111726,
+      "peer": 16.892856549159205
+    }
+  },
+  {
+    "id": "direct-layer-128x2048",
+    "exact_verdict": "WIN",
+    "noninferiority_gate": "PASS",
+    "strict_direction": "WIN",
+    "stratum_median_ratio_range": [
+      1.8774516548099247,
+      1.9096174920419557
+    ],
+    "stratum_ci_envelope": [
+      1.8415221671206548,
+      1.944048243759594
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 32.877095471361045,
+      "peer": 62.376358367989745
+    }
+  },
+  {
+    "id": "graph-layer-128x2048",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.011449868988281481,
+      0.012291313904790682
+    ],
+    "stratum_ci_envelope": [
+      0.01063735221784349,
+      0.013463429708494196
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 15057.981732520906,
+      "peer": 177.05003301465638
+    }
+  },
+  {
+    "id": "direct-layer-17x257",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.6194614583195306,
+      0.6364847061319545
+    ],
+    "stratum_ci_envelope": [
+      0.5951087366397062,
+      0.6426939681508467
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 2.149959633147973,
+      "peer": 1.345560754274198
+    }
+  },
+  {
+    "id": "graph-layer-17x257",
+    "exact_verdict": "LOSE",
+    "noninferiority_gate": "FAIL",
+    "strict_direction": "LOSS",
+    "stratum_median_ratio_range": [
+      0.010051431913167702,
+      0.010643922471914717
+    ],
+    "stratum_ci_envelope": [
+      0.009714496309130724,
+      0.010860912450591911
+    ],
+    "median_of_stratum_median_microseconds": {
+      "candidate": 253.81805866936514,
+      "peer": 2.6460605880538624
+    }
+  }
+]

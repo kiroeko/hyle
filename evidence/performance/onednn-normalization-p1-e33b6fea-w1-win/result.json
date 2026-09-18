@@ -1,0 +1,42 @@
+{
+  "candidate": "e33b6fea4b80d4b82adb6a267dc52ba2ad7a73f9",
+  "contract": "onednn-normalization-p1-v1",
+  "machine": "W1-WIN",
+  "qualification_gate": "PASS",
+  "performance_gate": "FAIL",
+  "workloads": 16,
+  "wins": 4,
+  "losses": 12,
+  "sample_stages": [
+    15
+  ],
+  "placement_variants": 2,
+  "execution_orders": 2,
+  "allocation_orders": 2,
+  "caller_cpu": 2,
+  "product_children": 120,
+  "initial_failures_retained": [
+    "CRLF-byte-identity configure failure",
+    "workload A/A failure before product samples"
+  ],
+  "additional_preflight_retries_available": 0,
+  "implementation_probe": {
+    "mode": "cold primitive descriptor query only; no execution or timing",
+    "cases": 64,
+    "result": "all matched declared implementation identities",
+    "finding": "multirow full-shape binary post-op falls from jit:uni to simple:any; vector-only stays jit:uni; metadata-only 3D reshape does not avoid it",
+    "source_mechanism": "JIT supported broadcast set excludes full-shape/no_broadcast; simple:any executes ref_post_ops per element",
+    "artifacts": {
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-peers\\onednn-v3.13.2\\src\\cpu\\x64\\jit_uni_layer_normalization.cpp": "396c337699f708cfc3371e6a4773b83de1b4669bfedab02610a55094fc568862",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\perf-peers\\onednn-v3.13.2\\src\\cpu\\simple_layer_normalization.cpp": "8aa7c1900a607fde86ffd518a258202528af41f4f920268a62d76245d0e908f5",
+      "C:\\hyle-scratch\\active-cpu\\p1\\bin\\dnnl.lib": "95cd02b5af775a8d25267e7af140be18e260d0ddb1c20f468ed4bdba591bebee",
+      "C:\\hyle-scratch\\active-cpu\\norm-diag\\norm-impl-probe.exe": "4c0499f544f8cacfd1ddac3929ea17b681aa04b5a82d8f3626f435e54391de42"
+    }
+  },
+  "limits": [
+    "F32 serial only; vendor F16/BF16 unsupported on this CPU",
+    "shape replay with independent oracle, not real-weight replay",
+    "candidate comparison; default preference rules remain unsigned",
+    "artifact verification depends on preserved local paths; raw provenance is archived"
+  ]
+}
