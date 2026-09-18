@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y20 AUDITED：3c39428e Direct/Recorder局部正确性通过；351ec13d同产品的W1/Air managed FFN三交付及112项所选门通过，static/shared真实2B归一化通过。其source/其余真实片段、剩余能力映射和性能/取舍未验收。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y20 AUDITED：3c39428e普通managed Graph局部正确性通过；351ec13d同产品的W1/Air FFN三交付及112项所选门通过，static/shared真实2B归一化通过。其source/其余真实片段、剩余能力映射和性能/取舍未验收。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y17–Y20 AUDITED：3c39428e成熟逐元素/MoltenVK修复局部正确性通过；351ec13d同产品的W1/Air managed FFN三交付及112项所选门通过，static/shared真实2B归一化通过。其source/其余真实片段、剩余映射和性能/取舍未验收。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y21–Y24 AUDITED：d27c14a3定界冷计划双输出SSA、布局/资源适配与普通TopK/Recorder；尚未实现/验证。既有Y17–Y20局部正确性、W1/Air managed三交付/112所选门及真实归一化事实保留；其余C1与性能/取舍未验收。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y21–Y24 AUDITED：d27c14a3定界TopK多输出lowering、逐输出发布/下游消费与资源寿命；尚未实现/验证。既有Y17–Y20局部正确性、W1/Air managed三交付/112所选门及真实归一化事实保留；其余C1与性能/取舍未验收。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y21–Y24 AUDITED：d27c14a3定界原版Argsort比较语义适配、GetRows值/索引双输出及资源组合；尚未实现/验证。既有Y17–Y20局部正确性、W1/Air managed三交付/112所选门及真实归一化事实保留；其余C1与性能/取舍未验收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

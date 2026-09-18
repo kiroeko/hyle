@@ -111,6 +111,11 @@ Vulkan `a7ebf205` 刚完成 norm/gate 等首组 managed 普通入口的 W1 stati
 TopK/index/Scan 等能力映射和性能优选尚未完成，不能据此签 C1 全部能力。下一步仍按上节
 固定成熟实现的接入/适配批次，不延续初始自写队列；已有程序保留为比较与补缺候选。
 
+2026-09-19，baseline `d27c14a3`，Vulkan 三个当前 owner 对 [C1-Y 的 Y21–Y24](llm-moe-c1-ggml-vulkan-region.md)
+重新定界并 AUDITED：冷计划/Graph 多输出 SSA，原版 ggml Argsort 比较语义适配与 GetRows
+组合，普通 TopK 值/索引双输出及生命周期、三交付。只覆盖 F04.6 的 F32/I32 已准入消费域，
+不新建自有排序算法、共享执行器或公共 API，不重开其他 owner；产品实施和验收尚未完成。
+
 以下表格记录 C1 初始 baseline 的审计输入，**不是当前产品状态或继续自写的施工指令**。
 
 | owner | 初始 baseline 事实 / 源码 | 当时记录的缺口与方向 |

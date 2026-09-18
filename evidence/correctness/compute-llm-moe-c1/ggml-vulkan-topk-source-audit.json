@@ -1,0 +1,90 @@
+{
+  "kind": "bounded source audit; not product correctness or implementation authorization",
+  "recorded_utc": "2026-09-18T18:56:18.360117+00:00",
+  "product_snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+  "peer_pin": "456172ec733a135778adcd32d00e576a58232e45",
+  "peer_worktree": "clean",
+  "peer_source_sha256": {
+    "include/ggml.h": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6",
+    "src/ggml.c": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+    "src/ggml-backend.cpp": "a39c4fe81b043c7e8616ebe57afb75d727c692fe3b26c3e9bc2ddde3c6991041",
+    "src/ggml-vulkan/ggml-vulkan.cpp": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+    "src/ggml-vulkan/vulkan-shaders/argsort.comp": "ff2f28f8ef90e80e1d31764ae8017157af75d492fd70f12ab2c32d6fab52c689",
+    "src/ggml-vulkan/vulkan-shaders/argsort_large.comp": "4d76e002de6ecf38f5932b256af68e3bbf573451fdd87f044217610f610e2c85",
+    "src/ggml-vulkan/vulkan-shaders/get_rows.comp": "25184262ac64ecfed8d478accffd1a09cf5d673cbfd6d7c75cc20d6971e8226d",
+    "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp": "e2066c68067c91fa72a8c6420a0a6a4f6072ba6aec6b9ee303e2706517ed843c"
+  },
+  "product_source_sha256": {
+    "include/hyle/compute/detail/vulkan_plan.h": "4ad4b88c44d1abd285b6be4428f74491c00b54590e844761aeecca4ea66cec51",
+    "include/hyle/compute/vulkan.h": "7a6e5c2b912f080a51726c57b0ed1a61c2a141167363c0873a3bfbaf1fca1784",
+    "src/compute_ops/operation.cc": "90bb6c8f4fc15c2326ec583c854af9a58f24eecd2d57a6813a11740510639261",
+    "src/compute_route_vulkan/vulkan_program.cc": "353fd7ae439de1365881f788888f43bb1d2301914f0b4a3975e90f591f99e7d2",
+    "src/compute_route_vulkan/vulkan_region.cc": "605ee89cb09b0f2afd13dad7c003f33ec358ca2070bc3f7b212530a5f52e4dbe",
+    "src/compute_provider_ggml_vulkan/region.h": "0d2921b92f054b0c22a69180f08ea5080c685ffaf5650c01e19f6f5c46af71b3",
+    "src/compute_provider_ggml_vulkan/region.cc": "081726fdad2d1598fe126f3e7a622f22a001d6e06c1ca4a26f05521c1cae3fb1",
+    "src/graph_route_vulkan/vulkan_lowering.cc": "9cc8ca32179f1f35fa684c3caf979344da23de3d45e8f188a865bd2959f4883b"
+  },
+  "requirement": {
+    "id": "F04.6",
+    "family": "F04",
+    "first_package": "C1",
+    "title": "top-k values and indices",
+    "models": [
+      "qwen38_24t",
+      "kimi_k3",
+      "deepseek_v4_pro",
+      "deepseek_v4_flash",
+      "glm53",
+      "glm53_flash"
+    ],
+    "profiles": [
+      "F32",
+      "I32"
+    ],
+    "domain": "k=1/configured/E; stable tie order; NaN policy explicit; tail and empty rejected domain",
+    "ordinary_entry": "TopK",
+    "oracle": "stable scalar ordering; separate value and selection arrays",
+    "case_ids": {
+      "direct": "F04.6.direct",
+      "graph": "F04.6.graph",
+      "resource": "F04.6.resource",
+      "delivery": "F04.6.delivery",
+      "performance_bundle": "C1.F04"
+    },
+    "route_coverage": {
+      "cpu": {
+        "state": "UNPROVEN",
+        "evidence": []
+      },
+      "cuda": {
+        "state": "UNPROVEN",
+        "evidence": []
+      },
+      "apple_mlx_metal": {
+        "state": "UNPROVEN",
+        "evidence": []
+      },
+      "vulkan": {
+        "state": "UNPROVEN",
+        "evidence": []
+      }
+    }
+  },
+  "facts": [
+    "Public Vulkan Program/Results/Recorder already express multiple output tensors; private PlanStep/RegionNode and their validation still accept only one output.",
+    "Original ggml_top_k explicitly does not promise output order; ggml_argsort_top_k uses a separate full-sort path.",
+    "Both original argsort shaders compare only floating values and reverse ascending results for DESC. Two equal values therefore give [1,0] for DESC rather than stable [0,1]; this is a source-derived counterexample, not a GPU run.",
+    "Both argsort implementations use a bitonic network: retain topology, barriers, dispatch and scratch ownership while adapting the comparison semantics.",
+    "GET_ROWS has an original I32 shader with uint input, temporary and output, enabling raw 32-bit payload gathering without arithmetic conversion.",
+    "ggml_backend_tensor_alloc explicitly asserts view_src == NULL. Published index/value views need an actual allocation-compatible materialization or an explicitly correct owner binding; a view cannot simply be imported as a fresh independent tensor.",
+    "A TopK graph needs more metadata nodes than the existing three-per-operation formula. The finite fix must account for actual reshape/view/cont/sort/gather nodes and overflow before native metadata construction."
+  ],
+  "cost": "Full sort O(rows * padded_width * log^2(width)); full index storage, long-row ivec2 scratch, raw-value gather, any layout and published-view copies must be counted.",
+  "next_action": "Finish and archive the live immutable delivery queue, publish finite Y21-Y24 to current owner cards, then implement and qualify. Source investigation stops here.",
+  "not_run": [
+    "GPU TopK",
+    "TopK differential tests",
+    "TopK three-delivery consumers",
+    "performance"
+  ]
+}

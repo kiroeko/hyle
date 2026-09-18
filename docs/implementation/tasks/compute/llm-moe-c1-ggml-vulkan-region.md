@@ -18,7 +18,7 @@
   `compute_route_vulkan` 拥有自然 Direct 对象、结果与该 native device 的接入；
   `graph_route_vulkan` 保留 DAG/边界划分与普通编译入口。后两 owner 的新增 FIX 定界后才实施。
   HYLE 语义图不交给 ggml scheduler，provider 内部融合/临时资源管理予以保留。
-- 非目标：更改 ggml 算子算法、引入 CPU 模型 fallback、GGUF/模型加载、四 backend 共用 executor、
+- 非目标：除当前 Y22 具名比较语义适配外更改 ggml 算子算法、引入 CPU 模型 fallback、GGUF/模型加载、四 backend 共用 executor、
   一次接完整算子目录、清理 SIMD、重写公共治理或性能仪器。
 - 依赖方向：Vulkan route 消费 backend-qualified implementation factor，后者不得反向依赖
   route 或 Graph；私有 native bridge/region 描述不公开 ggml C 类型。精确 API/依赖/交付 target
@@ -682,3 +682,62 @@ BF16 embedding 和第一层 RMS 参数、1/17/128行、独立 double oracle、�
 按原 recipe 恢复或找到保留副本后才供 C3/C6 消费；不因此撤销历史收据或重新下载原模型。
 三个 owner 保持 AUDITED，完整 C1-Y/C1 仍 INCONCLUSIVE；剩余能力映射、四路线本包资格、
 默认性能优选与替代实现淘汰待完成，CPU oneDNN 性能资格 BLOCKED 不变。
+
+## Y21–Y24：TopK 双输出成熟实现接入（重新定界并 AUDITED）
+
+2026-09-19，baseline `d27c14a387f17d62c43c2eb09c3148c5fa5a6374`，owner `/root`。
+`compute_route_vulkan` 拥有 Y21 的冷计划/SSA/原生适配，`graph_route_vulkan` 拥有多输出
+lowering/发布接线，`compute_provider_ggml_vulkan` 拥有 Y22–Y23 的成熟算法语义与资源组合；
+三者共同完成 Y24 普通消费者。公开 Program/Results/Recorder 和自有 SIMD 不扩改。
+既有交付队列已全部结束且归档，产品源码与已完成的有限调查身份相符。
+[已登记源码审计](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-source-audit.json)
+只作实施依据，不作产品正确性或性能证据。本次不重开调查，不续写其他自有算子队列。
+
+### 具名需求与来源
+
+- 冻结矩阵 F04.6：router F32 score → values + I32 indices，k=1/配置值/E，E=256/288/384/512/896；
+  同分稳定、NaN 最后、largest/smallest、±0 同分；两个输出的资源和完成合同与普通入口一致。
+- 沿既有 schema 的任意合法轴、rank1–8、byte stride/broadcast 与空非选择域，不把成熟库
+  rank4/连续最后轴接口差异直接写成 HYLE MUST 缺席。F04.6 明列 F32/I32，消费方为浮点
+  router score 和整数 indices；本批固定 F32 values + I32 indices。半精度 TopK 不是本行
+  已冻结消费档位，当前明确拒绝且不宣称四路半精度 TopK 完成；已存在的其他路线能力保留。
+- ggml pin `456172ec733a135778adcd32d00e576a58232e45`。`ggml_top_k` 明确不保证顺序；
+  `argsort.comp`/`argsort_large.comp` 已有完整小/长行 bitonic 排序拓扑，但仅比较浮点值并
+  在 DESC 反转输出，不能直接满足稳定同分和两方向 NaN-last。
+- `ggml_get_rows` 已有 F32/I32 等 storage 路径；其 I32 shader 使用 uint load/store，可用于
+  原始 F32 位载荷收集。reshape/view/必要 cont 在 Provider 内保留，发布 view 必须核对
+  ggml 外部 buffer 分配约束；不能把有 view_src 的 tensor 当独立存储导入。
+- HYLE 公共 Program/Results/Recorder 已表达多输出；缺口在冷 PlanStep、RegionNode、SSA、
+  published/liveness 和普通 prepare/Graph lowering，毋须新的公开执行器或热期分派。
+
+### 固定有限 FIX
+
+1. **Y21 冷期多输出接线**：PlanStep/RegionNode 使用输出 ID 集合，实际 arity 推导、逐输出类型
+   和 SSA 校验、完整 input 拓扑、重复/越界输出拒绝，逐输出 last-use/published/资源规划。
+   Custom callback 保持已有单输出合同，明确拒绝其他 arity。已有单输出消费者完整迁移。
+2. **Y22 成熟排序语义适配**：保持固定 ggml 两个 argsort shader 的排序网络、dispatch、barrier
+   与 scratch 管理，仅把比较关系改成原始 F32 ordered key + 原始索引；合并 ±0、NaN-last、
+   有效元素在 padding 前。按 order 构造键并统一顺序写回，不能在 DESC 再反转稳定 ties。
+   更新既有精确 build-local patch 身份/NOTICE；原 pin/cache 不变。该范围明确重新定界原
+   C1-Y“不更改 ggml 算子算法”约束，只允许所列比较语义修正，不能借机自写完整 TopK。
+3. **Y23 Provider 双输出组合**：原版 argsort → 前 k index view/必要 materialization → 原版
+   GET_ROWS 取原始位 values，保留 Provider graph/gallocr/Work。按实际节点数预估 metadata
+   capacity，完整溢出/OOM 回滚。正常 dense last-axis region 保留上下游组合；其他布局复用
+   已有 View/Copy 整理，原始位保留、还原输出逻辑轴，所有真实 copy/scratch 如实计费。
+   长行由原版设备特征选择；必须验证两台适用 Vulkan 设备的实际准入，不静默 CPU fallback。
+4. **Y24 普通消费者与资源验证**：独立 stable scalar oracle + values 位比较；实际 E/k、尾宽、
+   k=1/k=E、两方向、flags、全相等/全 NaN/NaN payload/±0/±Inf/subnormal、多轴、strides、
+   空域和拒绝域。Direct/Graph/Recorder 双输出，分别只发布一个输出、下游复用、两个槽、
+   三轮变化输入、旧结果保留、原 Graph 销毁、关闭/失败/OOM 和现有 mixed-region 回归。
+
+### 成本与验收边界
+
+- 原版 bitonic 完整排序 O(rows * padded_width * log²(width))，不是 O(N) selection；输出
+  indices 全排序存储、长行 ivec2 scratch、必要 view materialization 和输出收集全部计费。
+  k=1 的复杂度明确保留，不在未比较时宣称 SOTA 或默认赢家。
+- 新逻辑主要发生在准备期；热期仍为同一 native region 执行、绑定和原有完成通道。
+- Windows strict static/shared、Air/Mini 实际 GPU、独立 oracle/生命周期和源合同；Windows/Air
+  三交付的普通 TopK/图消费必须同批落实，不拖到 C7。新 lock 的 selected gates 遵守现有
+  selector，未变且身份匹配的门复用；不修改公共仪器，不为文档运行 P1。
+- 调查仅锁定 ggml Argsort/GetRows 两条现成路径，最多60分钟；之后进入有限实现，至多两轮
+  纠正。遇真实数值/布局/资源反例精确记录；不不断切换 peer/扩大研究。
