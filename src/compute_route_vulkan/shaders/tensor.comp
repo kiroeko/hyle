@@ -67,6 +67,15 @@ layout(constant_id = 50) const uint concat_shift_c = 0;
 layout(constant_id = 51) const uint concat_word_slots = 1;
 layout(constant_id = 52) const uint concat_work = 1;
 #endif
+#ifdef HYLE_TENSOR_REDUCTION
+layout(constant_id = 42) const uint reduction_width = 1;
+layout(constant_id = 43) const uint reduction_rows = 1;
+layout(constant_id = 44) const uint reduction_inner = 1;
+layout(constant_id = 45) const uint reduction_axes = 0;
+layout(constant_id = 46) const uint reduction_mask = 0;
+layout(constant_id = 47) const uint cache_columns = 1;
+layout(constant_id = 48) const uint cache_enabled = 0;
+#endif
 void address_axis(inout uint remaining, inout uvec3 offsets, uint dimension, uvec3 stride) {
     offsets += (remaining % dimension) * stride;
     remaining /= dimension;
@@ -203,7 +212,217 @@ uint evaluate(uint index, uint half_word) {
     }
     return encode(value, type_d);
 }
-#ifdef HYLE_TENSOR_CONCAT
+#ifdef HYLE_TENSOR_REDUCTION
+shared vec2 reduction_values[128];
+shared uvec2 reduction_indices[128];
+shared vec2 row_cache[cache_columns];
+float quiet_nan() { return uintBitsToFloat(0x7fc00000u); }
+float negative_infinity() { return uintBitsToFloat(0xff800000u); }
+float extremum(float a, float b, bool maximum) {
+    if (isnan(a)) return a;
+    if (isnan(b)) return b;
+    if (a == 0 && b == 0)
+        return uintBitsToFloat(maximum ? floatBitsToUint(a) & floatBitsToUint(b)
+                                     : floatBitsToUint(a) | floatBitsToUint(b));
+    return maximum ? max(a, b) : min(a, b);
+}
+vec2 collective(vec2 partial, uint kind) {
+    uint lane = gl_LocalInvocationID.x;
+    reduction_values[lane] = partial;
+    barrier();
+    for (uint step = 64; step != 0; step >>= 1) {
+        if (lane < step)
+            for (uint part = 0; part < 2; ++part)
+                reduction_values[lane][part] = kind <= 1
+                    ? reduction_values[lane][part] + reduction_values[lane + step][part]
+                    : extremum(reduction_values[lane][part], reduction_values[lane + step][part], kind == 3);
+        barrier();
+    }
+    vec2 result = reduction_values[0];
+    barrier();
+    return result;
+}
+void select_maximum(inout float value, inout uint index, float other, uint other_index) {
+    if ((!isnan(value) && isnan(other)) ||
+        (!isnan(value) && !isnan(other) &&
+         (other > value || (other == value && other_index < index)))) {
+        value = other;
+        index = other_index;
+    }
+}
+void maximum_rows(inout vec2 values, inout uvec2 indices) {
+    uint lane = gl_LocalInvocationID.x;
+    reduction_values[lane] = values;
+    reduction_indices[lane] = indices;
+    barrier();
+    for (uint step = 64; step != 0; step >>= 1) {
+        if (lane < step)
+            for (uint part = 0; part < 2; ++part)
+                select_maximum(reduction_values[lane][part], reduction_indices[lane][part],
+                    reduction_values[lane + step][part], reduction_indices[lane + step][part]);
+        barrier();
+    }
+    values = reduction_values[0];
+    indices = reduction_indices[0];
+    barrier();
+}
+void reduce_axis(inout uint row, inout uint column, inout uint offset,
+                 uint dimension, uint stride, uint bit) {
+    uint coordinate;
+    if ((reduction_axes & bit) != 0) {
+        coordinate = column % dimension;
+        column /= dimension;
+    } else {
+        coordinate = row % dimension;
+        row /= dimension;
+    }
+    offset += coordinate * stride;
+}
+float reduced_value(uint row, uint column) {
+    uint offset = origin.a;
+    reduce_axis(row, column, offset, dim7, sa7, 128u);
+    reduce_axis(row, column, offset, dim6, sa6, 64u);
+    reduce_axis(row, column, offset, dim5, sa5, 32u);
+    reduce_axis(row, column, offset, dim4, sa4, 16u);
+    reduce_axis(row, column, offset, dim3, sa3, 8u);
+    reduce_axis(row, column, offset, dim2, sa2, 4u);
+    reduce_axis(row, column, offset, dim1, sa1, 2u);
+    reduce_axis(row, column, offset, dim0, sa0, 1u);
+    return decode(load_bytes(0, offset, width(type_a)), type_a);
+}
+uint soft_index(uint row, uint column) {
+    return (row / reduction_inner * reduction_width + column) * reduction_inner + row % reduction_inner;
+}
+float soft_value(uint row, uint column) {
+    uvec3 offsets = tensor_address(soft_index(row, column));
+    if (reduction_mask == 2 && load_bytes(1, offsets.y, 1) == 0)
+        return negative_infinity();
+    precise float scaled = decode(load_bytes(0, offsets.x, width(type_a)), type_a) * uintBitsToFloat(fill_lo);
+    return reduction_mask == 1 ? scaled + decode(load_bytes(1, offsets.y, width(type_b)), type_b) : scaled;
+}
+vec2 soft_rows(uint row, uint column) {
+    return vec2(soft_value(row, column), rows_per_group == 2 && row + 1 < reduction_rows
+        ? soft_value(row + 1, column) : negative_infinity());
+}
+float log_one_plus(float tail) {
+    // Restore the small addition error; at sum==1 the first-order result is
+    // already correctly rounded. Tail is nonnegative and finite here.
+    precise float sum = 1.0 + tail;
+    return sum == 1.0 ? tail : log(sum) * (tail / (sum - 1.0));
+}
+float normalized_value(float value, float maximum, float normalizer, bool exponential) {
+    if (isnan(maximum) || isinf(maximum)) return quiet_nan();
+    return mode == 1 ? (value - maximum) - normalizer
+                    : (exponential ? value : exp(value - maximum)) * normalizer;
+}
+void output_from_statistics() {
+    uint group = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
+    uint word_index = group * 128u + gl_LocalInvocationID.x;
+    uint lanes = 4u / width(type_d);
+    if (word_index >= (count + lanes - 1u) / lanes) return;
+    uint output_word = 0;
+    for (uint part = 0; part < lanes; ++part) {
+        uint index = word_index * lanes + part;
+        if (index >= count) continue;
+        uint row = index / (reduction_width * reduction_inner) * reduction_inner + index % reduction_inner;
+        uint column = (index / reduction_inner) % reduction_width;
+        // This internal scratch has an aligned root, never a caller View.
+        float maximum = uintBitsToFloat(c[row * 2u]);
+        float normalizer = uintBitsToFloat(c[row * 2u + 1u]);
+        float value = normalized_value(soft_value(row, column), maximum, normalizer, false);
+        output_word |= encode(value, type_d) << (part * width(type_d) * 8u);
+    }
+    d[word_index] = output_word;
+}
+void main() {
+    if (operation == 13) {
+        output_from_statistics();
+        return;
+    }
+    uint group = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
+    uint first_row = group * rows_per_group;
+    if (first_row >= reduction_rows) return;
+    uint lane = gl_LocalInvocationID.x;
+    if (operation == 10) {
+        float identity = mode == 2 ? -negative_infinity() : mode == 3 ? negative_infinity() : 0.0;
+        vec2 partial = vec2(identity);
+        for (uint column = lane; column < reduction_width; column += 128)
+            for (uint part = 0; part < rows_per_group; ++part) {
+                if (first_row + part >= reduction_rows) continue;
+                float value = reduced_value(first_row + part, column);
+                partial[part] = mode <= 1 ? partial[part] + value : extremum(partial[part], value, mode == 3);
+            }
+        vec2 result = collective(partial, mode);
+        if (mode == 1) result = reduction_width == 0 ? vec2(quiet_nan()) : result / float(reduction_width);
+        if (lane == 0) {
+            uint output_word = encode(result.x, type_d);
+            if (rows_per_group == 2 && first_row + 1 < reduction_rows)
+                output_word |= encode(result.y, type_d) << 16u;
+            d[first_row / rows_per_group] = output_word;
+        }
+        return;
+    }
+    vec2 maximum = vec2(negative_infinity());
+    uvec2 selected = uvec2(0xffffffffu);
+    for (uint column = lane; column < reduction_width; column += 128) {
+        vec2 values = soft_rows(first_row, column);
+        if (cache_enabled != 0) row_cache[column] = values;
+        for (uint part = 0; part < rows_per_group; ++part)
+            select_maximum(maximum[part], selected[part], values[part], column);
+    }
+    maximum_rows(maximum, selected);
+    vec2 partial = vec2(0.0);
+    for (uint column = lane; column < reduction_width; column += 128) {
+        vec2 values = cache_enabled != 0 ? row_cache[column] : soft_rows(first_row, column);
+        vec2 exponential = exp(values - maximum);
+        for (uint part = 0; part < rows_per_group; ++part)
+            if (mode == 0 || column != selected[part]) partial[part] += exponential[part];
+        if (cache_enabled != 0 && mode == 0) row_cache[column] = exponential;
+    }
+    vec2 total = collective(partial, 0);
+    vec2 normalizer;
+    for (uint part = 0; part < 2; ++part)
+        normalizer[part] = isnan(maximum[part]) || isinf(maximum[part]) ? quiet_nan()
+            : mode == 1 ? log_one_plus(total[part]) : 1.0 / total[part];
+    if (operation == 12) {
+        if (lane == 0)
+            for (uint part = 0; part < rows_per_group; ++part)
+                if (first_row + part < reduction_rows) {
+                    d[(first_row + part) * 2u] = floatBitsToUint(maximum[part]);
+                    d[(first_row + part) * 2u + 1u] = floatBitsToUint(normalizer[part]);
+                }
+        return;
+    }
+    bool exponential = cache_enabled != 0 && mode == 0;
+    if (reduction_inner == 1) {
+        uint lanes = 4u / width(type_d);
+        uint end = min(count, (first_row + rows_per_group) * reduction_width);
+        for (uint word_index = first_row * reduction_width / lanes + lane;
+             word_index < (end + lanes - 1u) / lanes; word_index += 128) {
+            uint output_word = 0;
+            for (uint part = 0; part < lanes; ++part) {
+                uint index = word_index * lanes + part;
+                if (index >= end) continue;
+                uint row = index / reduction_width - first_row, column = index % reduction_width;
+                float value = cache_enabled != 0 ? row_cache[column][row] : soft_value(first_row + row, column);
+                output_word |= encode(normalized_value(value, maximum[row], normalizer[row], exponential), type_d)
+                    << (part * width(type_d) * 8u);
+            }
+            d[word_index] = output_word;
+        }
+    } else {
+        // F32 owns individual words. Half rows are paired only when inner is
+        // even, so both halves of each scattered word stay in this workgroup.
+        for (uint column = lane; column < reduction_width; column += 128) {
+            vec2 values = cache_enabled != 0 ? row_cache[column] : soft_rows(first_row, column);
+            uint output_word = encode(normalized_value(values.x, maximum.x, normalizer.x, exponential), type_d);
+            if (rows_per_group == 2)
+                output_word |= encode(normalized_value(values.y, maximum.y, normalizer.y, exponential), type_d) << 16u;
+            d[soft_index(first_row, column) / rows_per_group] = output_word;
+        }
+    }
+}
+#elif defined(HYLE_TENSOR_CONCAT)
 uint concat_value(uint index, uint half_word, uint coordinate) {
     uint port = coordinate < concat_end_a ? 0u : coordinate < concat_end_b ? 1u : 2u;
     uint prefix = port == 0 ? concat_shift_a : port == 1 ? concat_shift_b : concat_shift_c;

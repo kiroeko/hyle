@@ -76,6 +76,8 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
   MatMul 保持已有设备/shape 性能资格。
 - F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
+- 同三浮点类型的 Reduce Sum/Mean/Min/Max（任意合法轴集合/keepdim）和 Softmax/LogSoftmax
+  （任意轴、有限 scale、广播 Bool/同类型 additive mask），以 F32 累加；半精度必须显式声明。
 - Copy/Fill/Select/Concat 支持 F32/F16/BF16/I32/I64/Bool 原始存储，Select 使用 Bool mask；
   浮点 Cast、13 种 Unary（包括稳定 Softplus）和六种广播 Binary 支持 F32/F16/BF16。
   浮点在 F32 求值后舍入至输出存储；整数和 Bool 只承诺本批存储操作，不承诺整数算术。
@@ -111,6 +113,19 @@ right_desc)` 准备两个变化输入；参数数量运行期确定时，使用 
 barrier 保留组间共享 word 的先前字节。无逐次增长的中间张量、额外 device scratch 或 memset；
 空输出无 dispatch，仍有合法结果 owner。Graph 的 slice→Concat 使用相同规则，不 materialize
 输入 View。输入读取、字节寻址、边界 word 与组间 barrier 都属于实际执行成本。
+
+Reduce 的空集合分别产生0/NaN/+Inf/-Inf，空输出无 dispatch；Min/Max 传播 NaN，并区分 ±0。
+Softmax 的 Bool false 屏蔽对应输入；未屏蔽 NaN/+Inf 或全 -Inf 的行产生全 NaN。
+LogSoftmax 保留接近1的概率对应的小负值，并避免大共同偏置抵消。
+例如 `vk::prepare(context, c::Reduce{.axes = c::Axes::from(std::array{-1}).value(),
+.keep_dimensions = true, .accumulation_type = c::DataType::kFloat32}, description)`
+为每行产生保留末维的归约结果。
+
+Reduce 一次 dispatch，无额外 device scratch。Softmax 将不超过2048列且满足设备 shared 容量的
+行缓存为 F32，缓存最多16KiB加2KiB归约数据；更长行三遍读取。F32、轴后元素数为1或半精度
+轴后元素数为偶数时一次 dispatch；半精度轴后元素数为大于1的奇数时，以每行8B统计量和第二次
+逐word输出防止交叉写入。该临时存储计入 Graph 容量和 quota，按寿命复用；超设备范围准备失败。
+所有选择在准备期固定。新归约域的完整三交付与等责 P1 仍待 C1 整包验收。
 
 ## 零拷贝 View
 

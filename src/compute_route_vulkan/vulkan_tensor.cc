@@ -84,6 +84,118 @@ append_tensor_dispatch(ProgramState &program, Dispatch dispatch,
   return Status::Ok();
 }
 
+Status lower_reduction(ProgramState &program, const PlanStep &step) {
+  static_assert(static_cast<unsigned>(ReductionKind::kMaximum) == 3);
+  static_assert(static_cast<unsigned>(SoftmaxKind::kLogSoftmax) == 1);
+  static_assert(static_cast<unsigned>(MaskKind::kBoolean) == 2);
+  // Copy descriptions: an internal row-statistics value can grow values.
+  const auto input = program.values[step.inputs[0]].description;
+  const auto output = program.values[step.output].description;
+  const auto *reduce = step.operation.get_if<Reduce>();
+  const auto *softmax = step.operation.get_if<Softmax>();
+  const auto type = *tensor_storage_type(input.data_type());
+  const auto accumulation =
+      reduce ? reduce->accumulation_type : softmax->accumulation_type;
+  if (type > 2 || output.data_type() != input.data_type() ||
+      (accumulation != DataType::kFloat32 &&
+       accumulation != DataType::kUnknown) ||
+      (type != 0 && accumulation != DataType::kFloat32))
+    return Status::Unimplemented("Vulkan reduction requires F32/F16/BF16 with "
+                                 "F32 accumulation, explicit for half");
+  if (softmax && step.inputs.size() == 2 &&
+      program.values[step.inputs[1]].description.data_type() !=
+          (softmax->mask == MaskKind::kBoolean ? DataType::kBool
+                                               : input.data_type()))
+    return Status::Unimplemented(
+        "Vulkan Softmax requires Bool or same-type additive mask");
+  const auto count = *output.element_count();
+  if (count == 0)
+    return Status::Ok();
+  const auto input_count = *input.element_count();
+  std::array<SpecializationConstant, 49> specialization{};
+  Dispatch dispatch;
+  HYLE_RETURN_IF_ERROR(tensor_layout(program, step.inputs, step.output,
+                                     specialization, dispatch));
+  specialization[0].value = reduce ? 10u : 11u;
+  specialization[5].value = reduce ? static_cast<std::uint32_t>(reduce->kind)
+                                   : static_cast<std::uint32_t>(softmax->kind);
+  const auto rows_per_group = type == 0 ? 1u : 2u;
+  specialization[9].value = rows_per_group;
+  std::uint64_t width = 0, rows = count, inner = 1;
+  if (reduce) {
+    width = input_count / count;
+    if (reduce->axes.is_all())
+      specialization[45].value = ((1u << input.rank()) - 1)
+                                 << (8 - input.rank());
+    else
+      for (auto requested : reduce->axes.values()) {
+        const auto axis = requested < 0
+                              ? requested + static_cast<int>(input.rank())
+                              : requested;
+        specialization[45].value |= 1u << (8 - input.rank() + axis);
+      }
+    // Reduce addresses input coordinates, while count still names the output.
+    // Empty inputs only write identities and need no narrowed shape metadata.
+    for (std::size_t axis = 0; axis < 8; ++axis)
+      specialization[10 + axis].value =
+          input_count == 0 || axis < 8 - input.rank()
+              ? 1u
+              : static_cast<std::uint32_t>(
+                    input.dimensions()[axis - (8 - input.rank())]);
+  } else {
+    const auto requested = softmax->axis;
+    const auto axis = static_cast<std::size_t>(
+        requested < 0 ? requested + static_cast<int>(input.rank()) : requested);
+    width = static_cast<std::uint64_t>(input.dimensions()[axis]);
+    rows = count / width;
+    for (std::size_t dim = axis + 1; dim < input.rank(); ++dim)
+      inner *= static_cast<std::uint64_t>(input.dimensions()[dim]);
+    specialization[7].value = std::bit_cast<std::uint32_t>(softmax->scale);
+    specialization[46].value = static_cast<std::uint32_t>(softmax->mask);
+  }
+  specialization[42].value = static_cast<std::uint32_t>(width);
+  specialization[43].value = static_cast<std::uint32_t>(rows);
+  specialization[44].value = static_cast<std::uint32_t>(inner);
+  const auto &limits = program.runtime->device->properties.limits;
+  const bool cached = softmax && width <= 2048 &&
+                      width * 8 + 2048 <= limits.maxComputeSharedMemorySize;
+  specialization[47].value = cached ? static_cast<std::uint32_t>(width) : 1u;
+  specialization[48].value = cached ? 1u : 0u;
+  const auto groups =
+      static_cast<std::uint32_t>((rows + rows_per_group - 1) / rows_per_group);
+  if (softmax && type != 0 && inner > 1 && inner % 2 != 0) {
+    // Odd inner strides pair output halves from different mathematical rows.
+    // Store only row statistics, then assign one writer per final output word.
+    if (rows > limits.maxStorageBufferRange / 8)
+      return Status::Unimplemented(
+          "Vulkan Softmax row statistics exceed device range");
+    HYLE_ASSIGN_OR_RETURN(
+        auto statistics_desc,
+        TensorDesc::dense(
+            DataType::kFloat32,
+            std::array<std::int64_t, 2>{static_cast<std::int64_t>(rows), 2}));
+    const auto statistics_id =
+        static_cast<std::uint32_t>(program.values.size());
+    program.values.push_back({statistics_desc, {}});
+    auto statistics_dispatch = dispatch;
+    statistics_dispatch.values[3] = statistics_id;
+    specialization[0].value = 12;
+    HYLE_RETURN_IF_ERROR(
+        append_tensor_dispatch(program, std::move(statistics_dispatch),
+                               shaders::reduction(), specialization, groups));
+    dispatch.values[2] = statistics_id;
+    specialization[0].value = 13;
+    specialization[47].value = 1;
+    specialization[48].value = 0;
+    const auto words = (*output.required_bytes() + 3) / 4;
+    return append_tensor_dispatch(
+        program, std::move(dispatch), shaders::reduction(), specialization,
+        static_cast<std::uint32_t>((words + 127) / 128));
+  }
+  return append_tensor_dispatch(program, std::move(dispatch),
+                                shaders::reduction(), specialization, groups);
+}
+
 Status lower_concat(ProgramState &program, const PlanStep &step) {
   const auto &output = program.values[step.output].description;
   const auto elements = *output.element_count();
@@ -159,6 +271,9 @@ Status lower_concat(ProgramState &program, const PlanStep &step) {
 } // namespace
 
 Status lower_tensor(ProgramState &program, const PlanStep &step) {
+  if (step.operation.kind() == OperationKind::kReduce ||
+      step.operation.kind() == OperationKind::kSoftmax)
+    return lower_reduction(program, step);
   if (step.operation.kind() == OperationKind::kConcat)
     return lower_concat(program, step);
   std::uint32_t operation = 0, mode = 0;
