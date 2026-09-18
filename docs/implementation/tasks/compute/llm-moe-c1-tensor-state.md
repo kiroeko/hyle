@@ -1,5 +1,8 @@
 # C1：四路线基本张量与状态边界
 
+当前 CPU 成熟归一化/融合接入见 [C1-AA](llm-moe-c1-onednn-normalization.md)；
+oneDNN 两个 owner 的具体状态以 registry 为准。
+
 ## Closure card
 
 - round / current owner：LLM/MoE C1，`/root`。

@@ -353,14 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-cpu-matmul-precision.md",
-      "candidate": "e191351522340dd997cfc925abe3a69d47746d14",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/llm-moe-c1-cpu-matmul-precision.md"
-      },
-      "summary": "C1-Z CLOSED：MatMul 在提案/精确准备共享入口拒绝非 F32 累加；W1 static/shared、WSL 各8个目标（154单测及CPU executor）通过。仅6行冷资格检查，API/算法/热路径/交付边界不变；更广 oneDNN 接入仍待新轮。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
+      "summary": "C1-AA SCOPED：依据真实 C1 norm/scale/residual consumer 定向接入锁定 oneDNN 的成熟归一化及原生 post-ops；待审计冻结 AA01–AA04，尚未修改产品或新增覆盖 PASS。"
     },
     {
       "module": "compute_provider_ggml",
@@ -374,14 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
+      "summary": "C1-AA SCOPED：依据真实 C1 norm/scale/residual consumer 定向接入锁定 oneDNN 的成熟归一化及原生 post-ops；待审计冻结 AA01–AA04，尚未修改产品或新增覆盖 PASS。"
     },
     {
       "module": "compute_ops",
