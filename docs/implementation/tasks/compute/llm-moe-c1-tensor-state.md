@@ -1115,3 +1115,10 @@ X 首轮候选 `94252bf7` 的产品与 SPIR-V 编译通过，测试的 Bool 参�
 - X 是自有 shader 的局部正确性事实，不是新 ggml Provider 接入或优选胜出。接下来按
   [成熟 Provider 复核](llm-moe-c1-provider-reuse-audit.md)处理现成计算链的接入边界，不直接新增
   自写 TopK/index/Scan。完整 C1 的实际权重、三交付、其他适用环境及 P1 尚未完成，owner 保持 AUDITED。
+
+### C1-Y 首批依赖接入（AUDITED）
+
+2026-09-18，baseline `ba5f0363`，`/root` 重新定界 `compute_route_vulkan` 的有限产品改动：
+仅在中央 component 图增加 PRIVATE `compute_provider_ggml_vulkan` 边，由 Vulkan 路线开关
+控制其第三方构建。实际 FIX/风险/验证见 [C1-Y](llm-moe-c1-ggml-vulkan-region.md) Y01–Y04。
+Graph owner/公开 route API/执行器本批不变；设备/队列/完成桥接定界后再施工，不借 T–X 授权。

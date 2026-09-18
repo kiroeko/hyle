@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 C1-Y首批仅新增PRIVATE ggml Vulkan factor构建依赖；不以T–X授权runtime/API修改。 |
 | graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 |
-| compute_provider_ggml_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y SCOPED：采用已通过 W1 原版计算/窄 native bridge 探针的 ggml Vulkan managed region；仅定界 CMake 锁定补丁/三交付、OOM/native owner、受管完成与普通 Direct/Graph 接入，有限 FIX 尚未 AUDITED，不签产品覆盖。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y 首批 AUDITED：有限 Y01–Y04 固定源码/窄补丁/CMake与三交付声明、可恢复 metadata arena 和原版 GPU region 接入验证；原生队列/配额/受管完成/普通入口仍待后批，不签产品覆盖。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

@@ -506,7 +506,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。"
+      "summary": "LLM/MoE C1-X AUDITED：Reduce/Softmax/LogSoftmax 已实现，6be8e6a7 在 W1/Air/Mini 各46例及两个头检查通过；保留原始失败和一次数值纠正。后续先按成熟 Provider 承载复核解决接入，不延续默认自写队列；完整 C1 权重/三交付/P1 未签收。 C1-Y首批仅新增PRIVATE ggml Vulkan factor构建依赖；不以T–X授权runtime/API修改。"
     },
     {
       "module": "graph_route_vulkan",
@@ -516,8 +516,8 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
-      "summary": "LLM/MoE C1-Y SCOPED：采用已通过 W1 原版计算/窄 native bridge 探针的 ggml Vulkan managed region；仅定界 CMake 锁定补丁/三交付、OOM/native owner、受管完成与普通 Direct/Graph 接入，有限 FIX 尚未 AUDITED，不签产品覆盖。",
+      "state": "AUDITED",
+      "summary": "LLM/MoE C1-Y 首批 AUDITED：有限 Y01–Y04 固定源码/窄补丁/CMake与三交付声明、可恢复 metadata arena 和原版 GPU region 接入验证；原生队列/配额/受管完成/普通入口仍待后批，不签产品覆盖。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]
