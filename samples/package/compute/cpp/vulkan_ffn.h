@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "vulkan_affine.h"
+#include "vulkan_topk.h"
 
 namespace sample_vulkan_direct {
 namespace c = hyle::compute;
@@ -186,6 +187,7 @@ inline hyle::Status recorded_ffn(const v::Context &context,
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
   HYLE_RETURN_IF_ERROR(ordinary(context));
+  HYLE_RETURN_IF_ERROR(sample_vulkan_topk::direct(context));
   const Weights weights;
   for (int rows : {1, 16})
     HYLE_RETURN_IF_ERROR(recorded_ffn(context, weights, rows));

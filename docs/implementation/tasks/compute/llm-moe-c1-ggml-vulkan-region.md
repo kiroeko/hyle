@@ -777,3 +777,9 @@ Windows DLL 放在 EXE 旁、运行时 PATH unset、validation layer 无 VUID/�
 当前统一脚本为 **47,189 行 / 193 实现文件**，不含测试/bench/第三方，自检通过。三个 owner
 继续 AUDITED；shared、Air/Mini、TopK 三交付、新候选所选门及整包性能/淘汰仍未完成。
 CPU oneDNN 性能资格 BLOCKED 不变，不把先前 managed 片段的三交付代签给新 TopK。
+
+Y24 的交付样例现已加入实际 TopK：Direct 重绑定三组输入并对两方向 values/indices 作稳定
+排序位级参考；Graph 执行 Abs → TopK，values 经 Neg、indices 经 Copy 后独立发布。复用
+既有 compute/graph C++ package 消费者，不新增公共工具或执行接口；样例的三交付待实际运行。
+同时纠正 Graph Vulkan 公开头“拒绝全部多输出”的过时注释；删除整行注释后代码逐行相同，
+不为该注释重跑构建或性能。产品语义候选仍为 `5c1e27a8`。

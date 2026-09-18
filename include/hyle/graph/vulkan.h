@@ -90,9 +90,9 @@ struct CompileOptions final {
 //
 // Built-ins share the Compute route's qualified dtype/shape domains. Custom
 // schemas require the cold native lowering above. Symbolic/effect/control-edge
-// graphs, unsupported alias schemas, multi-output nodes and input/constant-only
-// published outputs are rejected explicitly. Native buffer readiness is a
-// caller contract.
+// graphs, unsupported alias schemas and input/constant-only published outputs
+// are rejected explicitly. Typed TopK has two outputs; custom nodes require one.
+// Native buffer readiness is a caller contract.
 HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::Program>
 compile(const compute::vulkan::Context &context, const Graph &graph,
         std::span<const compute::vulkan::Tensor> constants = {},

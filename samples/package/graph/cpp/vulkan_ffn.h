@@ -81,8 +81,45 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
   return program;
 }
 
+inline hyle::Status topk(const v::Context &context) {
+  namespace t = sample_vulkan_topk;
+  HYLE_ASSIGN_OR_RETURN(auto desc, t::description());
+  HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
+  HYLE_ASSIGN_OR_RETURN(auto input, builder.input(desc));
+  HYLE_ASSIGN_OR_RETURN(auto positive,
+                       builder.add(c::Unary{c::UnaryKind::kAbs}, input));
+  HYLE_ASSIGN_OR_RETURN(
+      auto node,
+      builder.add_node(c::Operation(c::TopK{.count = t::selected}),
+                       std::array{positive}));
+  HYLE_ASSIGN_OR_RETURN(auto values, builder.result(node, 0));
+  HYLE_ASSIGN_OR_RETURN(auto indices, builder.result(node, 1));
+  HYLE_ASSIGN_OR_RETURN(auto negative,
+                       builder.add(c::Unary{c::UnaryKind::kNeg}, values));
+  HYLE_ASSIGN_OR_RETURN(auto copied_indices, builder.add(c::Copy{}, indices));
+  HYLE_RETURN_IF_ERROR(builder.publish(negative));
+  HYLE_RETURN_IF_ERROR(builder.publish(copied_indices));
+  HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+  HYLE_ASSIGN_OR_RETURN(auto program, gv::compile(context, graph));
+  HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
+  graph = {};
+  for (int phase = 0; phase < 3; ++phase) {
+    auto host = t::scores(phase);
+    HYLE_ASSIGN_OR_RETURN(
+        auto tensor, context.upload(desc, std::as_bytes(std::span(host))));
+    HYLE_RETURN_IF_ERROR(slot.bind(tensor));
+    HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+    HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+    for (auto &value : host)
+      value = std::abs(value);
+    HYLE_RETURN_IF_ERROR(t::check(context, result->tensors(), host, true, true));
+  }
+  return hyle::Status::Ok();
+}
+
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  HYLE_RETURN_IF_ERROR(topk(context));
   const s::Weights weights;
   for (int rows : {1, 16}) {
     HYLE_ASSIGN_OR_RETURN(auto program, prepare(context, weights, rows));
