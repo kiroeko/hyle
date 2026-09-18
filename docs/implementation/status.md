@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y19 AUDITED：4c309c6e普通 Direct/Recorder 可绑定无 norm/gate anchor 的成熟逐元素族，沿原资源/完成/失败；W1 static/shared各40 Direct通过。跨平台、真实权重、完整三交付和性能/取舍未验收。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y19 AUDITED：4c309c6e普通 Graph接无 norm/gate anchor 的原版逐元素 region，保留 published/fork、scalar非交换广播、双槽和原生失败边界；W1 static/shared各17/16 Graph通过。跨平台、真实权重、完整三交付和性能/取舍未验收。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y20 AUDITED：逐元素接线已通过 W1 static/shared；Air ceace753 的19 Provider/40 Direct/17 Graph数值与生命周期通过，但设备创建缺 portability_subset，validation FAIL。限定精确补丁纠正，跨平台/真实权重/三交付/性能未验收。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y20 AUDITED：3c39428e普通 Direct/Recorder 的成熟逐元素 managed 路径、资源与失败边界，W1 static/shared、Air、Mini各40 Direct通过。真实权重、完整三交付、新lock广门和性能/取舍未验收。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y17–Y20 AUDITED：3c39428e普通 Graph 的无 norm anchor region、published/fork/独立槽等局部验证通过：W1 static/shared 17/16、Air/Mini各17。真实权重、完整三交付、新lock广门和性能/取舍未验收。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y17–Y20 AUDITED：3c39428e成熟逐元素接线与 MoltenVK 必需扩展修复，W1 static/shared、Air、Mini focused correctness通过，Air零VUID。真实权重、完整三交付、新lock广门和性能/取舍未验收。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

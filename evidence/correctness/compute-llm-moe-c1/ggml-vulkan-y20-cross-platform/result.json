@@ -1,0 +1,650 @@
+{
+  "candidate": "3c39428e3fdf1911b284f7632d891f663ad82f31",
+  "tree": "43ae3b6ff6cd064fb928d5978f36edbca1278c99",
+  "scope": "Y17-Y20 focused native provider/direct/graph portability and lifecycle validation",
+  "focused_correctness": "PASS",
+  "closure": "INCONCLUSIVE",
+  "regression": "Air previously emitted 87 VUID 04451 messages; same real suites now emit zero validation diagnostics",
+  "verifications": [
+    {
+      "environment": "static",
+      "suite": "compute_provider_ggml_vulkan",
+      "cases": 19,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "static",
+      "suite": "compute_route_vulkan",
+      "cases": 40,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "static",
+      "suite": "graph_route_vulkan",
+      "cases": 17,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "static",
+      "ctest_entries": 2,
+      "verdict": "PASS"
+    },
+    {
+      "environment": "shared",
+      "suite": "compute_provider_ggml_vulkan",
+      "cases": 19,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "shared",
+      "suite": "compute_route_vulkan",
+      "cases": 40,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "shared",
+      "suite": "graph_route_vulkan",
+      "cases": 16,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "shared",
+      "ctest_entries": 2,
+      "verdict": "PASS"
+    },
+    {
+      "environment": "air-y20",
+      "suite": "compute_provider_ggml_vulkan",
+      "cases": 19,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "air-y20",
+      "suite": "compute_route_vulkan",
+      "cases": 40,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "air-y20",
+      "suite": "graph_route_vulkan",
+      "cases": 17,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "PASS"
+    },
+    {
+      "environment": "air-y20",
+      "ctest_entries": 1,
+      "verdict": "PASS"
+    },
+    {
+      "environment": "mini-y20",
+      "suite": "compute_provider_ggml_vulkan",
+      "cases": 18,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "not installed; dedicated case covered by W1 and Air"
+    },
+    {
+      "environment": "mini-y20",
+      "suite": "compute_route_vulkan",
+      "cases": 40,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "not installed; dedicated case covered by W1 and Air"
+    },
+    {
+      "environment": "mini-y20",
+      "suite": "graph_route_vulkan",
+      "cases": 17,
+      "runtime_skips": 0,
+      "correctness": "PASS",
+      "validation": "not installed; dedicated case covered by W1 and Air"
+    },
+    {
+      "environment": "mini-y20",
+      "ctest_entries": 1,
+      "verdict": "PASS"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+      "bytes": 44165120,
+      "sha256": "e0d25ccad966fb68d76a5f78d2e3ef59a23d8636f8008ffb9a74cb461f542475"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+      "bytes": 45004800,
+      "sha256": "6dd680d057fae1727b6456ee8663285faa2ff4574d1386e3781c2acac5f25429"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_vulkan_test.exe",
+      "bytes": 44851200,
+      "sha256": "dbd632a0c6eb3519778a5b16e14e21c4de63a4191ba4016b394cd3522f6c75d3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\concrt140.dll",
+      "bytes": 321696,
+      "sha256": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\msvcp140.dll",
+      "bytes": 553552,
+      "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\msvcp140_1.dll",
+      "bytes": 35488,
+      "sha256": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\msvcp140_2.dll",
+      "bytes": 278608,
+      "sha256": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\msvcp140_atomic_wait.dll",
+      "bytes": 48800,
+      "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\msvcp140_codecvt_ids.dll",
+      "bytes": 31392,
+      "sha256": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\vccorlib140.dll",
+      "bytes": 350880,
+      "sha256": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\vcruntime140.dll",
+      "bytes": 123472,
+      "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\vcruntime140_1.dll",
+      "bytes": 47264,
+      "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\bin\\vcruntime140_threads.dll",
+      "bytes": 37456,
+      "sha256": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+      "bytes": 44032512,
+      "sha256": "9bc57c7583cb9422f504affb77473d6d7740f5eb99cb098f890a2f5a279c9df0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_route_vulkan_test.exe",
+      "bytes": 1143296,
+      "sha256": "8f049f3f50d3a56e8439774398f086a691809f1ea73fe3715aa40d10d86b9b00"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_graph_route_vulkan_test.exe",
+      "bytes": 638464,
+      "sha256": "1cf8275e1962b9973b40098b5ef4930d40262d5ad918b2ee3cb4ee4fca4e5bcb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\concrt140.dll",
+      "bytes": 321696,
+      "sha256": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute.dll",
+      "bytes": 166400,
+      "sha256": "1fdcf84d3a0038bbe5ce31c9d44f824dea89ddb34cd1cefc0841611e143602ed"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_ops.dll",
+      "bytes": 61440,
+      "sha256": "53777e0dea6b9267b5c26dbee4d0d5fdc9145f40e3b629a3a3cbe7b817138c12"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_provider_ggml_vulkan.dll",
+      "bytes": 43615232,
+      "sha256": "90aa89314aac6abf729e20b99db8134efb61ec3b424809de5320afed40f84933"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_route_vulkan.dll",
+      "bytes": 485888,
+      "sha256": "41318559c716ae74186ec9e327bf28e299cc7a59c4122d6c2890132ad6c5230a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_container.dll",
+      "bytes": 41472,
+      "sha256": "f88949413c6e521a576cea6eb06315f5e243854e52e08db811d2bf3a4419b5f0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_error.dll",
+      "bytes": 28160,
+      "sha256": "0e518dac6063e08b7e082ad6b25d8a1c9dfe0755d368d67483b5574c0238e260"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_graph.dll",
+      "bytes": 500224,
+      "sha256": "00dc8563d19c487ac36e67459521c1b427015385f0bcbe2fe33151dd611c54e8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_graph_route_vulkan.dll",
+      "bytes": 46080,
+      "sha256": "70a7ed5d9bc044fa813aac648003a3aab29aed30e1f8ebd4878dd72c3dc95a11"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_mem.dll",
+      "bytes": 230912,
+      "sha256": "db1447a51e5d4a3bd9ccda0b12ad119d887787565234e42b0acf9ee8a26d901f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_platform.dll",
+      "bytes": 85504,
+      "sha256": "7c910825cf77835bb7ebd4c137c3fd2cb7c4b75f1f374be6d3aef1f21002025a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_time.dll",
+      "bytes": 20992,
+      "sha256": "94b976e92ac654cef36d1611ef70b0c172a982751c3495ca31f8f6b21abeb2cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\msvcp140.dll",
+      "bytes": 553552,
+      "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\msvcp140_1.dll",
+      "bytes": 35488,
+      "sha256": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\msvcp140_2.dll",
+      "bytes": 278608,
+      "sha256": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\msvcp140_atomic_wait.dll",
+      "bytes": 48800,
+      "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\msvcp140_codecvt_ids.dll",
+      "bytes": 31392,
+      "sha256": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\vccorlib140.dll",
+      "bytes": 350880,
+      "sha256": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\vcruntime140.dll",
+      "bytes": 123472,
+      "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\vcruntime140_1.dll",
+      "bytes": 47264,
+      "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\bin\\vcruntime140_threads.dll",
+      "bytes": 37456,
+      "sha256": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b"
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_provider_ggml_vulkan_test",
+      "sha256": "3666aec1d7d0d636a2cc8f8469959c53473c5a9be53ca020a6278d1e30a3d140",
+      "tests": 19
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_route_vulkan_test",
+      "sha256": "064e027be76ce8b0247e379e5bd76cf62e1a93c408a6840debe389c505e656aa",
+      "tests": 40
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_graph_route_vulkan_test",
+      "sha256": "d960068adfd88f1531d7829fb04c5df3057c6eb81c7fc7e1894f2d8f4dd9fb13",
+      "tests": 17
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_provider_ggml_vulkan_test",
+      "sha256": "017a1e8869224e2ae4c4d0a7e36297fc697022278748aa96a8f1cd0cf97064bd",
+      "tests": 18
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_route_vulkan_test",
+      "sha256": "6d3681c42709ce628f98709241498dc99b31bfcbb1b4832a8c7424317475b048",
+      "tests": 40
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_graph_route_vulkan_test",
+      "sha256": "290744786627da2d59b2dcfa4869e4ed250c9b55a8a373a1ba74080cbc436d04",
+      "tests": 17
+    }
+  ],
+  "mini_exclusion": {
+    "case": "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance",
+    "reason": "validation layer absent; actual explicit validation executed on W1 and Air"
+  },
+  "shared_exclusion": "Existing static-only global-new allocation failure fixture is not compiled in shared Graph tests",
+  "windows_dll_policy": "HYLE and CRT DLLs adjacent to EXE; PATH unset; popup error mode; no UAC or power changes",
+  "concurrency": "All heavy builds and runtime checks serial by environment; compile parallelism 2",
+  "remaining_applicable_gates": {
+    "selected_global_package": "BLOCKED / not yet run on this candidate",
+    "real_weight_fragments": "BLOCKED / not yet run",
+    "full_three_cpp_deliveries": "BLOCKED / not yet run",
+    "qualified_performance_and_rules": "BLOCKED / not yet run"
+  },
+  "selector": {
+    "selected": 112,
+    "skipped": 8,
+    "note": "Focused checks above are not the complete 112 selected global gates; no earlier broad verdict is inherited"
+  },
+  "loc": {
+    "report": "../ggml-vulkan-macos-portability/loc.json",
+    "counted_commit": "ceace753781426e82f6e2f1d4ee50eb2aaed9dde",
+    "implementation_paths_identical_at_candidate": true,
+    "lines": 46990,
+    "files": 193,
+    "self_check": "pass"
+  },
+  "cleanup": {
+    "bytes_removed": 131352040,
+    "all_verified": true
+  },
+  "archive": {
+    "path": "raw-bundle.zip",
+    "bytes": 127128,
+    "sha256": "4fd1769fd1b23abdab6345012032f4764e33a4744735adbc62eaea31614b3f37"
+  },
+  "files": [
+    {
+      "path": "air-y20-run.log",
+      "bytes": 486,
+      "sha256": "a293f58c39f09b08d5c6419211affb0b362a5e7c57e33c5f1e467c111ef89665"
+    },
+    {
+      "path": "air-y20/build.log",
+      "bytes": 34986,
+      "sha256": "d5d0c36dcf996fca374717853b4fb7307cf37df47b2d2f2ccc50eb7361dd4ca0"
+    },
+    {
+      "path": "air-y20/compute_provider_ggml_vulkan.json",
+      "bytes": 9301,
+      "sha256": "412c6b9406d64750719f4ecfac0283d7ea60c1c1b6297ea7349b93e65dbbb0e2"
+    },
+    {
+      "path": "air-y20/compute_provider_ggml_vulkan.log",
+      "bytes": 4512,
+      "sha256": "1f4c3f97261d7fa17f8f6db058361bde89722749dfbcbaee48186e0c08a82385"
+    },
+    {
+      "path": "air-y20/compute_route_vulkan.json",
+      "bytes": 18897,
+      "sha256": "0e0c74bf4b43f2eca1b85c8e44e853bb4a1500671ac3c87e2d0489c5b148b169"
+    },
+    {
+      "path": "air-y20/compute_route_vulkan.log",
+      "bytes": 7880,
+      "sha256": "f7922bdf63adc61900bca14f32ed62c2b4c475855244174342d29416610c8b36"
+    },
+    {
+      "path": "air-y20/configure.log",
+      "bytes": 1447,
+      "sha256": "8f9d6a8789ad94d9429219633684ec7ae0eab182bf97c2485f64ce21119ebe11"
+    },
+    {
+      "path": "air-y20/ctest.xml",
+      "bytes": 753,
+      "sha256": "f600b5867cad6bc8c68889a477b2fce1f7a97ae64b001250af4af80026425d90"
+    },
+    {
+      "path": "air-y20/graph_route_vulkan.json",
+      "bytes": 7436,
+      "sha256": "569d444bf268c9dd5234912a4babb2ad5b852cd28cf458912077545bcc799021"
+    },
+    {
+      "path": "air-y20/graph_route_vulkan.log",
+      "bytes": 3391,
+      "sha256": "8524f124822dcb14010d2679d1f927e4b219d03c789143653c3fd8199852abca"
+    },
+    {
+      "path": "air-y20/result.json",
+      "bytes": 7213,
+      "sha256": "2c3aad97c7dfe3e8f79f1935d0f657118ec78a96d54fb29d16abb47c1145c91b"
+    },
+    {
+      "path": "air-y20/source-contract.log",
+      "bytes": 367,
+      "sha256": "04945d8b5310cd10ff5f611a765e168f1b27cf44d0c4a3b6d21f004e834050c7"
+    },
+    {
+      "path": "archive-cleanup.json",
+      "bytes": 991,
+      "sha256": "69bdb49ac4f2e6f75a10b66409af6ae879e15bb514b01280424423967df86f60"
+    },
+    {
+      "path": "cleanup-redundant-source-archives.ps1",
+      "bytes": 1802,
+      "sha256": "f265a97602211fa746ea3e3a9faf20f171cca2914061ffc142e5809b4029f721"
+    },
+    {
+      "path": "mini-y20-run.log",
+      "bytes": 168,
+      "sha256": "1adb1f385bb8843652f292572c96fb4518ebe603a8e947b22019b567346c599f"
+    },
+    {
+      "path": "mini-y20/build.log",
+      "bytes": 43622,
+      "sha256": "6687cc6ca8495b259569419b2053c746d84e60ddb75f23b2d4baabdd5cc99600"
+    },
+    {
+      "path": "mini-y20/compute_provider_ggml_vulkan.json",
+      "bytes": 8891,
+      "sha256": "04c337daa006f824b930cd93a2ee2c7bc3ee33b8f19ec80bd1fbf3c98d2792c4"
+    },
+    {
+      "path": "mini-y20/compute_provider_ggml_vulkan.log",
+      "bytes": 4453,
+      "sha256": "733616c245b58b2c36e29bc1cb0c415b458051c343a7e831a16bcbc8ef4a2aa0"
+    },
+    {
+      "path": "mini-y20/compute_route_vulkan.json",
+      "bytes": 18894,
+      "sha256": "6c3c6d6afb8db1937ef2d3cd5b09efbcd7f880e9f7126d4bce564de59fa55828"
+    },
+    {
+      "path": "mini-y20/compute_route_vulkan.log",
+      "bytes": 7864,
+      "sha256": "836bf470efed86ee8030257c23aaf48a522c05e3960039e715b6caac66507774"
+    },
+    {
+      "path": "mini-y20/configure.log",
+      "bytes": 2846,
+      "sha256": "68e53a1dcd49312e6ae49b518bfb3e461c25bcbf3887fc537aa0673638f87f97"
+    },
+    {
+      "path": "mini-y20/ctest.xml",
+      "bytes": 753,
+      "sha256": "0fa0380fba883c663e881a9a252234bf4964a5f85f6a4b36208d0966c6da4cd6"
+    },
+    {
+      "path": "mini-y20/graph_route_vulkan.json",
+      "bytes": 7437,
+      "sha256": "7763a757816000fd4b85cf5d0e2b0202097ef9ce501d08d6326a53b5aaca2c6c"
+    },
+    {
+      "path": "mini-y20/graph_route_vulkan.log",
+      "bytes": 3390,
+      "sha256": "d0cc570c553af1290e996e8fcf2a77bd9ead41efe1cde9fe387019a4b0ef0473"
+    },
+    {
+      "path": "mini-y20/result.json",
+      "bytes": 9779,
+      "sha256": "0b154348c1df0dad5706ad436c6665b3733cf81d279768f369a8bfce7fb7678c"
+    },
+    {
+      "path": "mini-y20/source-contract.log",
+      "bytes": 351,
+      "sha256": "8c9b432407c6c0ba269b8b15db760d88c13157eb4b71a3a4fe9a69d29bef2811"
+    },
+    {
+      "path": "record-y20.py",
+      "bytes": 6313,
+      "sha256": "483f4da69a7f297cbf02385eb0e7ddbdfb94b9f5fe226e445ab5fee246457b13"
+    },
+    {
+      "path": "run-air-y20.py",
+      "bytes": 7557,
+      "sha256": "fad7a12971f4998bc5d008e2e4fe0084f46b970f46187eb9d52b6ca27338d3ed"
+    },
+    {
+      "path": "run-mini-y20.py",
+      "bytes": 7607,
+      "sha256": "c8bde85d1e5648c915cf1d3a32076cbba0c5f2d1622a723226991061bb542bc2"
+    },
+    {
+      "path": "y20-candidate.json",
+      "bytes": 238,
+      "sha256": "3d0e028190e076c17f2400830fcb6fc90ea745495a3d2fab5f9a8ad159fb028d"
+    },
+    {
+      "path": "y20-immutable-selector.json",
+      "bytes": 687048,
+      "sha256": "56f85a65627e31f5fda041ea4ac63981eadcebef4a290134362401be8e93f7b8"
+    },
+    {
+      "path": "y20-w1-run.ps1",
+      "bytes": 3868,
+      "sha256": "87d7f77bab494608b397495a045f1a0f9b33953fa5b7be9d4d70cf43d0e37c2a"
+    },
+    {
+      "path": "y20-w1/shared-CMakeCache.txt",
+      "bytes": 34293,
+      "sha256": "b8ac9902641ad32b17920d2f4b11095d1e6a2c9da93a4a408d3bd545f4b8f1b2"
+    },
+    {
+      "path": "y20-w1/shared-build.log",
+      "bytes": 48643,
+      "sha256": "df0ac1504cf3cee0a744dd8a1172e38ea7a4c0b08c4760ee8e57444172cedfb5"
+    },
+    {
+      "path": "y20-w1/shared-compute_provider_ggml_vulkan.json",
+      "bytes": 9082,
+      "sha256": "f58ce6a492d6dab3e191c10cf9bade55aea32f2445d82578265cc78f03b72b2a"
+    },
+    {
+      "path": "y20-w1/shared-compute_provider_ggml_vulkan.log",
+      "bytes": 4589,
+      "sha256": "98d75d133a9b3fbc1f8a55ce044b0e4110a683f08a3ec65dcd78368845bacabb"
+    },
+    {
+      "path": "y20-w1/shared-compute_route_vulkan.json",
+      "bytes": 18419,
+      "sha256": "c6435faad8801595bf27cebce19a6bf710e29e62445227cb415f891994309476"
+    },
+    {
+      "path": "y20-w1/shared-compute_route_vulkan.log",
+      "bytes": 8004,
+      "sha256": "b000dd574439386528a1ae4c6e3f5deae3632bb6e52968469c8e1c1409abb94b"
+    },
+    {
+      "path": "y20-w1/shared-configure.log",
+      "bytes": 1462,
+      "sha256": "eefb9336ae8f269e364d9e89e6b3737037ffe21afb5fd2f71832ab1081abaa70"
+    },
+    {
+      "path": "y20-w1/shared-ctest.xml",
+      "bytes": 2185,
+      "sha256": "8773ec1d54f081ea396973489659fd7ee3ef16fc8d9050b3c802fabc3ecccf57"
+    },
+    {
+      "path": "y20-w1/shared-graph_route_vulkan.json",
+      "bytes": 6802,
+      "sha256": "a04f522158a9351ab723dba514af78999697343d3fb870db2ce72e48d416323a"
+    },
+    {
+      "path": "y20-w1/shared-graph_route_vulkan.log",
+      "bytes": 3252,
+      "sha256": "71c5d768dbc1bc12c596bd2a237547108ef4bfa5d05774f707244fffcf6c4786"
+    },
+    {
+      "path": "y20-w1/shared-test.log",
+      "bytes": 465,
+      "sha256": "a2709c7cec4c85dd6b6c2cb6df0304c1e207ef83a638484f877c29d3968d673b"
+    },
+    {
+      "path": "y20-w1/static-CMakeCache.txt",
+      "bytes": 77255,
+      "sha256": "02bfe77f089c477b7bf6961f873e7e1ad164a2283dc8ab7508e52365e997ca9a"
+    },
+    {
+      "path": "y20-w1/static-build.log",
+      "bytes": 48524,
+      "sha256": "4c0d56bc49da9002a7912bb347bfadf891b4b601ba31942c37162b4c3065120e"
+    },
+    {
+      "path": "y20-w1/static-compute_provider_ggml_vulkan.json",
+      "bytes": 9081,
+      "sha256": "9b3e5d2b7cd04d480bbf3357559ec0693a2575055ed174da7def2a0c40be349d"
+    },
+    {
+      "path": "y20-w1/static-compute_provider_ggml_vulkan.log",
+      "bytes": 4589,
+      "sha256": "9b0fa4c4b423090a91d769aecfb4f45ba76a1b79d486cdde8fed8b88bf1707f2"
+    },
+    {
+      "path": "y20-w1/static-compute_route_vulkan.json",
+      "bytes": 18418,
+      "sha256": "0a108a3894c87a17d9f14c1134e5ae06598d0b94ba803fe4126c06e54b79accc"
+    },
+    {
+      "path": "y20-w1/static-compute_route_vulkan.log",
+      "bytes": 8006,
+      "sha256": "1240c7ccdbc230fe978f7ebe75e5b58c1e9823f841a8bb9dcf38a901f2ab39a6"
+    },
+    {
+      "path": "y20-w1/static-configure.log",
+      "bytes": 1462,
+      "sha256": "8f8e7e24d28666406e5e3212e8d08e514255011462e10e67a3615e37661f2ea0"
+    },
+    {
+      "path": "y20-w1/static-ctest.xml",
+      "bytes": 2185,
+      "sha256": "96ed418efbad9cef97c2ee6db81523683c9ccd7fca10b4faf50e2631cfe5f6ee"
+    },
+    {
+      "path": "y20-w1/static-graph_route_vulkan.json",
+      "bytes": 7205,
+      "sha256": "da598840d0619412aad2b4aa7f94f5d059a85b832e6fa035a7bba3b944787d0f"
+    },
+    {
+      "path": "y20-w1/static-graph_route_vulkan.log",
+      "bytes": 3434,
+      "sha256": "ec1649ba9c4ff21c9e114a7cb29da7522f0d7f403533950af89b7fcaa1247ee3"
+    },
+    {
+      "path": "y20-w1/static-test.log",
+      "bytes": 465,
+      "sha256": "fda135e37cee2b84824e72f440b2119db499df228e736e2db1ec5af54c732486"
+    }
+  ]
+}

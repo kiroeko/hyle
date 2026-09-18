@@ -628,3 +628,20 @@ CMake owner 和 package 描述投影。不存在设备扩展枚举、重复 disp
 W1 strict static 的19 Provider、40 Direct、17 Graph 与源码/MASM 两项检查通过，无 VUID。
 shared、修正后的 Air/Mini 与本次 lock/package 改动选出的其余适用门仍待完成；不从首次通过
 或旧 broad 验收自动推导当前 package PASS。
+
+### Y20 同候选跨平台局部结果
+
+`3c39428e` 已完成本批 W1 static/shared、Air 与 Mini 的实际 Provider/Direct/Graph：分别为
+19/40/17、19/40/16、19/40/17、18/40/17用例，全部通过。W1 各两个源合同/MASM CTest，
+两台 Mac 各一个源合同 CTest 通过；W1/Air 无 VUID，Air 原87次设备创建错误归零。
+Mini 无 validation layer，其唯一专用实例检查由 W1/Air 覆盖；命令预先排除该项，其他实际
+用例零 runtime skip。shared Graph 继续少一个已有 static-only 分配故障夹具。
+
+[同候选证据与明确限制](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y20-cross-platform/README.md)
+保存所有原始命令、日志、二进制哈希、工具身份和 selector。两个 Mac 验证副本未回写产品；
+重型验证串行、parallel2，Windows DLL 邻置/PATH unset。没有再次运行 P1。
+
+Y17–Y20 的这批 correctness 可停止重复运行；三个 owner 仍 AUDITED，完整 C1-Y/C1 为
+INCONCLUSIVE。新 lock/package 的其余 selected 门、真实权重、完整三交付、默认优选规则与
+性能/淘汰仍未完成，CPU oneDNN 的既有性能资格 BLOCKED 不变。统一实现LOC仍46,990行/
+193文件，已核对计数路径字节未变；清理四份过期源码包回收约125MiB，不把清理或证据算新能力。
