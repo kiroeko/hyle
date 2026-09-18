@@ -496,4 +496,20 @@ block 限定通用 ASM 后缀为 `.s/.S`，则保留 LANGUAGE=ASM_MASM，实际 
 这属于 Y1 构建隔离/组合边界的第二次有界产品纠正，预算不增加；只裁决这一个可复现反例。
 适用验证为 Windows 实际组合回归、selected factor/直接消费者/header/交付及原 broad 门。
 MSVC 以外分支不改变，已有未变的运行时/跨平台证据按身份保留；该配置修复不单独启动 P1。
-当前仅冻结修复，尚未修改产品代码或签修复后 PASS；C1-Y 的其他未完成项保持不变。
+实现前本节只冻结修复；后续实施和验证事实如下，C1-Y 的其他未完成项保持不变。
+
+### Y16 实施与隔离验证推进
+
+产品修复 `472f1fe0` 保留父工程 MASM 语言归属；真实组合回归在 `904b1fce` 完成。
+该候选已通过 full-factor configure、Provider 三项 CTest（真实 GPU、源码合同、父 MASM
+组合）及本次 selector 的96项基础回归/逐头门。回归夹具先后漏传 portable Vulkan SDK 的
+include/library 与 SPIR-V package 路径，补齐后实际通过；保留初次失败，不把它们归为计算缺陷。
+这些结果不代签剩余组件合同、三交付或性能；原始结果暂存本轮 `.scratch/validation/onednn-aa`，
+后续按同批记录归档。
+
+候选 `27a67023` 的 component-contract 随后复现另一项**测试注册遗漏**：Vulkan OFF 时私有
+optional-absent factor 仍存在，但整个测试 fragment 被 ENABLED 条件跳过，没有测试聚合目标，
+因此 CPU-only + tests ON 配置被现有检查器拒绝。有限修正仅将既有、无需 SDK 的 Python 源码
+合同测试移到条件外，并使用现有 module test aggregate helper；GPU 执行测试仍只在路线启用
+时注册。不改产品、依赖选择、公共治理或性能合同，不扩产品纠正预算。修正后只运行 selector
+选中的受影响检查和未完成的原组件/交付门，已通过的无关基础门不重跑。

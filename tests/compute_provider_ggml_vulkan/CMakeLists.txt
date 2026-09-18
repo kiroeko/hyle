@@ -1,3 +1,11 @@
+# Source preparation has an SDK-independent contract even when this optional
+# provider is absent. Keep that test and its module aggregate in CPU-only builds.
+hyle_ensure_module_test_target(compute_provider_ggml_vulkan)
+add_test(NAME hyle_ggml_vulkan_source_contract_test
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/source_contract_test.py")
+set_tests_properties(hyle_ggml_vulkan_source_contract_test PROPERTIES
+  LABELS "compute_provider_ggml_vulkan")
+
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   hyle_add_test(compute_provider_ggml_vulkan SOURCES metadata_test.cc region_test.cc native_test.cc work_test.cc storage_test.cc gallocr_faults.c)
   if(MSVC)
@@ -11,10 +19,6 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   target_link_libraries(hyle_compute_provider_ggml_vulkan_test PRIVATE
     ggml Vulkan-Headers hyle_mem hyle_error hyle_platform)
   hyle_stage_runtime_dependencies(hyle_compute_provider_ggml_vulkan_test)
-  add_test(NAME hyle_ggml_vulkan_source_contract_test
-    COMMAND "${HYLE_VULKAN_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/source_contract_test.py")
-  set_tests_properties(hyle_ggml_vulkan_source_contract_test PROPERTIES
-    LABELS "compute_provider_ggml_vulkan")
   if(MSVC AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
     FetchContent_GetProperties(ggml_vulkan_runtime SOURCE_DIR _locked_ggml_source)
     add_test(NAME hyle_ggml_vulkan_masm_composition_test
