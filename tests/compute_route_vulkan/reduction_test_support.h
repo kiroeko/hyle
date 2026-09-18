@@ -7,6 +7,14 @@
 namespace vulkan_reduction_test {
 using namespace vulkan_tensor_test;
 
+inline std::vector<double> mask_values(std::span<const std::uint64_t> flags) {
+  std::vector<double> result;
+  result.reserve(flags.size());
+  for (auto flag : flags)
+    result.push_back(flag != 0 ? 1.0 : 0.0);
+  return result;
+}
+
 inline std::vector<double> pattern(std::size_t count, int phase = 0) {
   std::vector<double> result(count);
   for (std::size_t i = 0; i < count; ++i)

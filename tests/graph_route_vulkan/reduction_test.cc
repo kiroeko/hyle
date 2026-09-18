@@ -75,9 +75,7 @@ TEST(VulkanGraph, HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots) {
       }
       expect(context, result.get()->tensors()[0], l2);
       expect(context, result.get()->tensors()[1],
-             probability_reference(
-                 data, desc, operation,
-                 std::vector<double>(flags.begin(), flags.end())));
+             probability_reference(data, desc, operation, mask_values(flags)));
       auto direct = execute(context, c::Operation(operation),
                             std::array{input, native_mask});
       ASSERT_TRUE(direct) << direct.error().message();
@@ -140,14 +138,10 @@ TEST(VulkanGraph,
     ASSERT_TRUE(slot.bind(input, native_mask).ok());
     auto work = slot.submit().value();
     auto result = work.wait().value();
-    expect(
-        context, result.get()->tensors()[0],
-        probability_reference(data, desc, softmax,
-                              std::vector<double>(flags.begin(), flags.end())));
-    expect(
-        context, result.get()->tensors()[1],
-        probability_reference(data, desc, logsoftmax,
-                              std::vector<double>(flags.begin(), flags.end())));
+    expect(context, result.get()->tensors()[0],
+           probability_reference(data, desc, softmax, mask_values(flags)));
+    expect(context, result.get()->tensors()[1],
+           probability_reference(data, desc, logsoftmax, mask_values(flags)));
     for (std::size_t i = 0; i < 2; ++i)
       if (phase == 0) {
         retained[i] = result.get()->tensors()[i];

@@ -180,9 +180,8 @@ TEST(VulkanReduction, NonfiniteRowsTinyLogTailBroadcastAndRejection) {
             execute(context, c::Operation(operation), std::array{input, mask});
         ASSERT_TRUE(result) << result.error().message();
         expect(context, *result,
-               probability_reference(
-                   values(context, input), desc, operation,
-                   std::vector<double>(flags.begin(), flags.end())));
+               probability_reference(values(context, input), desc, operation,
+                                     mask_values(flags)));
       }
     }
     const auto tiny_desc = dense(type, {2, 5});
