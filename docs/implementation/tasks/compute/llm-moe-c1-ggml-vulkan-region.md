@@ -812,3 +812,27 @@ W1 shared 与 Air/Mini 对应 route/Graph 验证，Windows/Air 的 source/static
 不重跑未变 shader 的独立算法资格，不启动 P1。已通过的旧候选局部结果保留其原身份；
 新反例使本域尚不能签收。旧候选96个 native 门和1个组件合同门已完成，15个通用交付门在
 首门途中明确中止，不能写112项通过；修复候选按实际影响接续未完成门，不丢弃它们。
+
+### Y25：排序输入的设备 descriptor 对齐（重新定界并 AUDITED）
+
+Y23-P2 的 `a50b2ef4` 修正了根起点遗漏，W1 strict 编译通过，但新增 Direct 回归执行失败：
+原版 `ggml_vk_tensor_subbuffer` 触发 `allow_misalign || misalign_bytes == 0`。Graph 回归未运行，
+不能写通过；[失败记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-descriptor-failure.json)
+保留候选、二进制和日志。Y21–Y24 原定两輪纠正预算已用尽，本节按具体新反例重新定界，
+不继续沿旧预算试错，不扩大到其他算子或 Provider 算法。
+
+baseline `a50b2ef405662e12af8c701555c8bfad0601fedd`，owner `/root`，产品 owner 仍仅
+`compute_route_vulkan`。固定 ggml 的 `ggml_vk_argsort` 14322–14323行调用不允许偏移的
+`ggml_vk_tensor_subbuffer`；后者8300–8304行要求 `minStorageBufferOffsetAlignment`。
+已接逐元素/norm 的偏移感知 shader 可以接受四字节起点，因此不能把所有 region 输入统一
+升级对齐、给无关已合格域增加 Copy。Provider 公共准入不是本次新增 API。
+
+有限 FIX：在冷 region 的已有逐值分析中标记直接被 TopK 消费的输入，仅这些输入要求
+max(4, minStorageBufferOffsetAlignment)，其他输入继续四字节；根起点和累计别名偏移分别
+取余再合并。中间结果由 ggml allocator 自行对齐。新增标记只在准备栈帧中的临时向量存在，
+不增加常态 Program/Invocation 字段、热期搜索或第三方补丁。回归增加设备对齐起点与
+root=1、alias=alignment−1 的重新对齐组合，同时保留4字节但未满足设备对齐的反例。
+
+本次源码调查仅上述两个具名函数、最多30分钟，产品修正最多一轮；如仍失败即记录具体
+blocker/裁决，不再在本节追加尝试。验收范围沿 Y23-P2 的两 route factors、适用平台和
+三交付；已有 managed/原版排序验证只按未变身份保留，不签 C1 整包或性能。

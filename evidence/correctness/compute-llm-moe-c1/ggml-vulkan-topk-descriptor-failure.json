@@ -1,0 +1,26 @@
+{
+  "candidate": "a50b2ef405662e12af8c701555c8bfad0601fedd",
+  "linkage": "static",
+  "phase": "focus",
+  "scope": "Y23-P2 root constant byte origin correction; no P1",
+  "cmake_cache_sha256": "0cf55a3c935d692c372a3a8814aee7bd023c276ec92fb26f3e5b0482c78a358b",
+  "status": "FAIL",
+  "commands": [
+    {
+      "factor": "compute_route_vulkan",
+      "command": [
+        "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+        "--gtest_filter=VulkanTopK.CapturedDenseRankEightRetainsItsByteOrigin",
+        "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-topk\\origin-correction\\w1\\static-focus\\compute_route_vulkan\\result.json"
+      ],
+      "exit_code": 3,
+      "seconds": 0.35899999970570207,
+      "log_sha256": "f80ba04e7d97360ff6c791fb8714da1c1913259fc873f02fcaf71aba31783f5e",
+      "executable_sha256": "2facb2c42bc8fe44448d3688a312e002f7265aae61d4bee158a9b4a476602171",
+      "path_unset": true
+    }
+  ],
+  "failure": "Command '['C:\\\\hyle-scratch\\\\active-vk\\\\static\\\\bin\\\\hyle_compute_route_vulkan_test.exe', '--gtest_filter=VulkanTopK.CapturedDenseRankEightRetainsItsByteOrigin', '--gtest_output=json:C:\\\\public\\\\project-hyle\\\\hyle\\\\.scratch\\\\validation\\\\vulkan-topk\\\\origin-correction\\\\w1\\\\static-focus\\\\compute_route_vulkan\\\\result.json']' returned non-zero exit status 3.",
+  "log_file": "ggml-vulkan-topk-descriptor-failure.log",
+  "log_sha256": "f80ba04e7d97360ff6c791fb8714da1c1913259fc873f02fcaf71aba31783f5e"
+}

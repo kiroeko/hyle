@@ -116,6 +116,11 @@ TopK/index/Scan 等能力映射和性能优选尚未完成，不能据此签 C1 
 组合，普通 TopK 值/索引双输出及生命周期、三交付。只覆盖 F04.6 的 F32/I32 已准入消费域，
 不新建自有排序算法、共享执行器或公共 API，不重开其他 owner；产品实施和验收尚未完成。
 
+2026-09-19，`a50b2ef4` 的新增高秩常量反例暴露原版 Argsort 的设备 descriptor 对齐约束。
+原Y21–Y24两轮纠正预算已用尽，`compute_route_vulkan` 仅对 [C1-Y 的 Y25](llm-moe-c1-ggml-vulkan-region.md)
+重新定界并 AUDITED：准备时区分排序输入与已有偏移感知算子的对齐要求，最多一次具名修正。
+其余 owner、能力范围与 CPU 性能 blocker 不变，不延续为新的自写算子队列。
+
 以下表格记录 C1 初始 baseline 的审计输入，**不是当前产品状态或继续自写的施工指令**。
 
 | owner | 初始 baseline 事实 / 源码 | 当时记录的缺口与方向 |
