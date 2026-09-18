@@ -224,3 +224,37 @@ Y3 冷期图/存储 owner 仍必须完成：源码检查还确认 gallocr 的多
 不把每个中间张量永久单独分配作为最终方案。本批不代签该分配合同、公开 cancel/close/保留结果，
 后者随 Y3 slot 与 Y4 原有 Run/Results 接线验收。W1 static/shared 适用 correctness 先行，纠正预算
 两轮，完整路线/三交付/Air/Mini/P1 仍沿本卡执行。
+
+## Y3 私有完成边界实现记录（2026-09-18）
+
+产品提交 `0ab77bcbeefc7af43f821e941c39fa9e38e36c81`，审计 `e0b4b144`。Y08–Y09 已实现：
+每槽 NativeWork 保留原版 backend、完成 fence、device/loader 与图/存储强 lease；正常异步路径
+直接在原版最后一个 batch 上携带 fence。错误与 pending 分开报告，观察或 drain OOM 不释放
+仍可能在执行的资源；已证明完成后丢弃未提交 context 并清理，保留首次错误、禁止失败槽复用。
+普通 route 的 pending owner、Direct/Graph 与冷分配接口尚未接线，不能据此签完整 Y3/Y4。
+
+[结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y3-native-completion.json)与
+[原始日志](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y3-native-completion-raw.zip)
+绑定产品 tree、补丁身份、实际命令和未运行项。
+
+| 本批实际验证 | 结果及边界 |
+|---|---|
+| W1 static/shared 私有 factor | 各13例通过、无跳过，DLL 邻置、PATH unset；显式 validation 实例运行，两份最终日志均无 VUID |
+| 独立槽/lease | 2048宽 norm→scale→SiLU→residual，两个槽各三次变化输入、独立 double oracle；先上传全部输入再接纳两个执行，避免第二次同步上传掩盖并发；重复 submit 拒绝，move/析构在 lease 释放前等待退役 |
+| 部分接纳失败 | 256次 add region 的第二次 submit 被真实 PFN 包装返回 OOM，首批已实际提交；drain OOM 期间 native buffer/memory 保持，恢复后不提交残余编码，首次错误保留、失败槽拒绝复用，最终原生计数归零 |
+| 观察失败 | 实际 SiLU region 后注入 fence 观察 OOM 和 drain OOM；poll 不排空队列，资源保持，恢复后退役且不重复提交 |
+| 正常完成结构 | 两份结果均记录 `region_empty_submits=0`，正常 submit 未调用 queue idle；这是 W1 结构验证，不是 P1，也不代签原厂强制串行/诊断分支 |
+| 构建/维护 | 5例补丁合同、docs、closure 通过；首次 MSVC 三处 `vk::Fence = {}` 歧义改为显式 null，保留失败日志。上游 checkout 仍 clean |
+
+P0：每槽冷期增加一个完成 fence；每次 region 保留强 lease、栈上 TLS scope、pending/error 状态与
+device-loss 原子观察。保留原版遍历/融合/编码及分配成本；正常 poll 不强制 queue drain，异常
+wait 与析构最后防线可以阻塞。未运行 P1；没有改写算子算法或新增公共执行器。
+
+统一 LOC 对本次不可变提交沿同23路径统计 **45,279行 / 185个实现文件**，较 Y2 增加284行，
+self-check通过，不含测试、bench、vendor、CMake/Python；
+[原始统计](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y3-implementation-loc.json)。
+
+本卡保持 `AUDITED`，聚合 `INCONCLUSIVE`，64行/256格不增加 PASS。下一有限动作是 Y3 冷期
+graph/storage owner 与 gallocr 的可恢复失败，必须保留成熟 liveness/in-place 规划。公开取消/
+关闭/旧结果、device-loss 传播、Y4 默认入口/规则、真实权重、Air/Mini、完整三交付和 broad
+selector 门仍未完成；没有用户决策阻塞，不因本次记录修改重建或重跑 P1。

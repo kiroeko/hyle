@@ -517,7 +517,7 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y AUDITED：Y2产品da032219已实现独立native owner、buffer配额/失败回滚及同队列桥；W1 static/shared各9例和5例补丁合同通过，静态导出声明移除Vulkan开发包依赖。Y3受管完成/分配及Y4普通Direct/Graph、跨平台/完整三交付/P1仍未验收。",
+      "summary": "LLM/MoE C1-Y AUDITED：Y3产品0ab77bcb已实现每槽native完成fence、强lease与部分接纳/观察失败后的保活和drain；W1 static/shared各13例、5例补丁合同通过。Y3冷分配及Y4普通Direct/Graph、公开关闭/取消、跨平台/完整三交付/P1仍未验收。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

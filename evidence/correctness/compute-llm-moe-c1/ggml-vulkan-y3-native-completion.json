@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "owner": "/root",
+  "component": "compute_provider_ggml_vulkan",
+  "registry_state": "AUDITED",
+  "scope": "C1-Y Y08-Y09 private native region completion and accepted-prefix failure ownership",
+  "audit_revision": "e0b4b144",
+  "product_revision": "0ab77bcbeefc7af43f821e941c39fa9e38e36c81",
+  "product_tree": "e67fdab5647de3efb4efc2d2ccca988dc6f9d8ec",
+  "snapshot_qualification": "Final static/shared builds and 13-case tests use this product source, patch set and tests. The final static build is incremental after the upload-order test correction; shared log contains the full rebuild. No product file changed between these runs and this commit. Receipt/registry/LOC edits do not trigger a rebuild or P1.",
+  "upstream": {
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+    "patch_tree_sha256": "eede21268007cd1e8c2b5ebb02d2525030c895351c7b28b7dbe3ed0576a16d5a",
+    "operator_algorithms_changed": false,
+    "original_checkout_status": "clean",
+    "old_cpu_provider_blocker_changed": false
+  },
+  "implementation": [
+    "Move-only NativeWork retains a backend, native completion fence, device/loader and strong graph/buffer/input lease through retirement.",
+    "The normal asynchronous path attaches completion to the original final compute batch. Original fusion and batching remain intact. Serial/diagnostic paths may append one region marker.",
+    "Failure and pending ownership are distinct. After a failed partial submit, poll does not block; wait drains actual upstream queues under their native locks. Observation/drain OOM retains owners.",
+    "Quiescence or device loss permits cleanup; unsubmitted contexts are discarded before backend teardown. The first error is preserved and failed slots are not reused. Destruction is a last-resort blocking drain.",
+    "Existing public route pending ownership, Direct/Graph lowering and cold graph/storage planning are unchanged in this slice."
+  ],
+  "build": {
+    "machine": "W1-WIN",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compiler": "MSVC 19.50.35728.0",
+    "generator": "Ninja",
+    "configuration": "Release",
+    "parallel": 2,
+    "shader_parallel": 1,
+    "vulkan_sdk": "1.4.357.0 portable extraction",
+    "runtime_environment": "PATH unset, required DLLs beside EXE, system vulkan-1.dll, Khronos validation requested and explicit validation instance exercised",
+    "system_changes": "none; no UAC, installer, power, registry or firewall changes"
+  },
+  "validation": [
+    {
+      "name": "W1 static private provider",
+      "verdict": "PASS",
+      "cases": 13,
+      "skips": 0,
+      "log": "y3-test-static.log",
+      "structured_results": "y3-test-static.json"
+    },
+    {
+      "name": "W1 shared private provider",
+      "verdict": "PASS",
+      "cases": 13,
+      "skips": 0,
+      "log": "y3-test-shared.log",
+      "structured_results": "y3-test-shared.json"
+    },
+    {
+      "name": "Source patch contract",
+      "verdict": "PASS",
+      "cases": 5,
+      "log": "y3-source-contract.log"
+    },
+    {
+      "name": "Docs and closure",
+      "verdict": "PASS",
+      "logs": [
+        "y3-docs-product.log",
+        "y3-closure-product.log"
+      ],
+      "previous_registry_revision": "efe2c9c4"
+    }
+  ],
+  "correctness_contract": {
+    "region": "Upstream F32 RMSNorm -> scale -> SiLU -> residual; existing rows 1/17/128 plus two independent 2048-wide asynchronous slots, each replayed with three varying inputs; independent double oracle tolerance 6e-6*(1+abs(expected)).",
+    "slot_lifetime": "Both inputs are uploaded before either slot is submitted. Strong leases remain until wait proves completion; duplicate submit is rejected. Moving and destroying a pending owner drains before its last graph lease disappears.",
+    "partial_acceptance": "Real Vulkan PFN wrappers reject the second submit of a 256-add region after an actual accepted prefix. Failed drain keeps buffers/memory live. Successful drain preserves the first error, submits no residual encoding, rejects reuse, and all tracked native handles return to zero.",
+    "observation_failure": "A real SiLU submission is followed by an injected fence-observation OOM and a separate queue-drain OOM. Poll remains nonblocking, owners remain live, later successful drain retires without resubmission.",
+    "normal_completion_cost_observation": "Both W1 result files record region_empty_submits=0; normal region submit makes no queue-idle call. This is a structural assertion, not P1.",
+    "validation": "No VUID in either final log; explicit validation instance ran without skip. Device-loss injection and serial/diagnostic fallback are not exercised in this slice.",
+    "shared_test_boundary": "NativeDevice/NativeWork ordinary and lease tests call the shared HYLE implementation. PFN fault tests use the same private vendor source linked into the test executable; they do not inject PFNs through the installed public DLL API.",
+    "weights": "Generated numeric fixture only; no actual checkpoint weights in this slice."
+  },
+  "retained_failure": "Initial MSVC compile rejected three ambiguous vk::Fence assignments from {}. Explicit nullptr fixed the handle reset; failure log retained. No algorithm correction or performance rerun.",
+  "p0": {
+    "cold_cost": "One backend and one additional completion fence per work slot; existing backend command/descriptor resources are retained across successful uses.",
+    "execution_cost": "One strong lease per region, stack TLS scope, pending/error bookkeeping and device-loss atomic loads. Original graph traversal/fusion/encoding and private allocations remain included. Native graph resources are recycled only after quiescence.",
+    "failure_cost": "Exceptional queue drain and final-destructor retry may block; normal poll never drains. Public abandonment must use the route pending owner during Y4 integration.",
+    "p1": "NOT_RUN: complete managed provider ordinary-path candidate is not frozen."
+  },
+  "remaining": [
+    "Y3 cold region metadata/storage planner and recoverable gallocr/context allocation, preserving upstream liveness and in-place reuse.",
+    "Y4 ordinary Direct/Graph, fixed default rules, native fragment composition and actual checkpoint weights.",
+    "Public cancel/close/retained results and device-loss propagation through existing route pending owner.",
+    "Air/Mini, updated full source/static/shared consumers, relocation/offline and remaining broad selector gates.",
+    "Equal-responsibility C1 P1; no complete requirement row or route-cell PASS added by this private slice."
+  ],
+  "selector": {
+    "plan": "y3-product-selector.json",
+    "verdict": "READY",
+    "qualification": "Selected broad component/package gates remain pending the complete C1-Y product candidate as declared by the card. This receipt does not claim the full selector plan was executed."
+  },
+  "aggregate": "INCONCLUSIVE: C1-Y remains active and incomplete; no external blocker",
+  "implementation_loc": "ggml-vulkan-y3-implementation-loc.json",
+  "raw_archive": {
+    "path": "ggml-vulkan-y3-native-completion-raw.zip",
+    "bytes": 33237,
+    "sha256": "f25673da92ae7c1a11071f25ace586c48bb08984409b2466163faac496e27d5d",
+    "files": [
+      {
+        "path": "y3-build-static-handle-assignment-failure.log",
+        "bytes": 27509,
+        "sha256": "a2c525cd40a083cab0297028d23797292f9ba242e64452018dc72fac62525485"
+      },
+      {
+        "path": "y3-configure-static.log",
+        "bytes": 1186,
+        "sha256": "e8e37a9317e2eba90009b56bc6ce48aaadbff79a1334a82978284a1a5f87dceb"
+      },
+      {
+        "path": "y3-build-static.log",
+        "bytes": 784,
+        "sha256": "d5b5723b66ea3ad6b745d8d27440ddf2986f4c6d9acaa3d821c7717656dad833"
+      },
+      {
+        "path": "y3-configure-shared.log",
+        "bytes": 1186,
+        "sha256": "34a4f55573f9352685145159ade9b088e27f08e6b6286aff3e0d88594f70c916"
+      },
+      {
+        "path": "y3-build-shared.log",
+        "bytes": 46667,
+        "sha256": "05ce727c543979ff56983712399b9284444d39c7b3cefbcbd49c9d81a30f3a06"
+      },
+      {
+        "path": "y3-test-static.log",
+        "bytes": 3042,
+        "sha256": "5d82acefd541b5c0b14c8585d2abb9ff25340ff50526eb7560e8c00a43857a0d"
+      },
+      {
+        "path": "y3-test-static.json",
+        "bytes": 6372,
+        "sha256": "5ac392acc92b74db81f1263bb85cd77508acbb4557df2d03d85e5e1b4944b7e2"
+      },
+      {
+        "path": "y3-test-shared.log",
+        "bytes": 3040,
+        "sha256": "eb15d12ec942b896928d1118ce5b357bb130f22e5f26d52da834ae6019af3f1f"
+      },
+      {
+        "path": "y3-test-shared.json",
+        "bytes": 6372,
+        "sha256": "98a1a066bfaf965362e918c54a9f86bc749ee40a6719d020863e7294defe640c"
+      },
+      {
+        "path": "y3-source-contract.log",
+        "bytes": 292,
+        "sha256": "369028776882efce585cf24b4b4bf41d36b8bc77361bacaf7f144cc7c2c267c8"
+      },
+      {
+        "path": "y3-docs-product.log",
+        "bytes": 80,
+        "sha256": "3677e1bcc07a226022b1f85e57e4ff7a8cef0ef06265394079ffe4e793ea8c71"
+      },
+      {
+        "path": "y3-closure-product.log",
+        "bytes": 57,
+        "sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2"
+      },
+      {
+        "path": "y3-build-static.ps1",
+        "bytes": 1344,
+        "sha256": "7c3ee88f0fc3640c19b0beb4446067feafa6e73d46ce1b144dced76ddbcea941"
+      },
+      {
+        "path": "y3-build-shared.ps1",
+        "bytes": 1345,
+        "sha256": "8375cda1baf61463bed97d14d5f4a61565bb1f9e9ec0912c62ed804e69dcfe8e"
+      },
+      {
+        "path": "y3-test.ps1",
+        "bytes": 634,
+        "sha256": "eb29ad15e628abac11f9abd476fbc3bf4ee2463ffb5af9de36123190399cdb0b"
+      },
+      {
+        "path": "y3-product-selector.json",
+        "bytes": 198180,
+        "sha256": "7754ecd158bfb93f6ecf992c53572989b1ff2edd113b28188fb8bc3b2f218d75"
+      },
+      {
+        "path": "y3-product-selector.log",
+        "bytes": 2260,
+        "sha256": "15ca2135df52a5e7512622603bc40acad22a90bb89d61a03459c95541e0e0660"
+      }
+    ]
+  }
+}
