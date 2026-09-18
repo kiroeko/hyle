@@ -552,3 +552,20 @@ Log/Sqrt/Rsqrt、ReLU/GELU/Softplus、LayerNorm 和半精度 vendor 域各有数
 完成。未变公开头和 build/package 输入按身份复用，不额外全库重建。算法/默认规则稳定后才
 冻结性能候选，完整边界成本比较决定最终偏好与自有实现取舍。纠正最多两轮；具体原厂数值
 不合格时记录该域并重新定界，不放宽 oracle，不把接入测试算作 C1 整包或性能 PASS。
+
+### Y17–Y19：W1 实现与局部验证
+
+`4c309c6e` 实现上述七个原版算子映射、scalar 及有序广播，普通 Direct/Graph 无需 norm/gate
+anchor 即可绑定。Provider/执行/资源封装复用，未新增 shader 或原厂算法补丁。
+[W1结果](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-pointwise-w1/README.md)
+保存同一干净候选的 strict static/shared：各19 Provider、40 Direct，17/16 Graph，以及各两个
+源码/真实 MASM 组合 CTest，首轮全部通过、零 skip、无 VUID/同步诊断。shared 少一个既有
+static-only 全局分配失败夹具；原混合片段接纳后失败/drain 用仍属 native 的 ReLU 保留风险覆盖。
+
+新增独立公式覆盖 rank0/1/2/4、特殊值、两侧 scalar/vector/column 广播、不可交换结果、Recorder，
+以及无 norm anchor 的完整 Graph、公开中间值、独立槽/变输入/旧结果。统一 LOC 为46,989行/
+193实现文件，不含测试/bench/vendor，自检PASS，本批产品净增34行。
+
+三个 owner 仍按当前有限卡 AUDITED；本次不签 C1-Y/C1 完成、默认性能优选或自有实现淘汰。
+Air/Mini 正准备同一候选；已有 Mac 环境缺少 ggml 原厂构建所需 glslc，工具准备只发生在验证机，
+不修改产品构建/依赖锁或降低交付要求。真实模型片段、完整三交付和 P1 等剩余项保持未验收。
