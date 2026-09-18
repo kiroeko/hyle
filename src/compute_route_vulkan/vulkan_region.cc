@@ -86,12 +86,15 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     for (const auto input : recipe->inputs) {
       const auto value = ids[input];
       const auto alias = program.aliases[value];
-      const auto &constant = program.values[value].constant;
-      const bool aligned =
-          constant ? constant.native_offset() % sizeof(float) == 0
-                   : std::ranges::find(program.inputs, alias.root) ==
-                             program.inputs.end() &&
-                         alias.byte_offset % sizeof(float) == 0;
+      const auto &constant = program.values[alias.root].constant;
+      // Private layout aliases retain the root's storage, not a separate
+      // constant Tensor. Include both origins, without overflowing their sum.
+      const auto origin_remainder =
+          (constant ? constant.native_offset() % sizeof(float) : 0) +
+          alias.byte_offset % sizeof(float);
+      const bool aligned = std::ranges::find(program.inputs, alias.root) ==
+                               program.inputs.end() &&
+                           origin_remainder % sizeof(float) == 0;
       if (aligned) {
         dispatch.values.push_back(value);
         continue;

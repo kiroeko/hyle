@@ -185,6 +185,60 @@ TEST(VulkanTopK, RebindingByteOriginsRefreshesFrozenProviderViews) {
   EXPECT_EQ(bytes(context, *owner), guarded);
 }
 
+TEST(VulkanTopK, CapturedDenseRankEightRetainsItsByteOrigin) {
+  auto context = vulkan_test::context().value();
+  const auto desc = dense(c::DataType::kFloat32, {2, 1, 1, 1, 1, 1, 1, 129});
+  const auto storage_desc =
+      c::TensorDesc::strided_bytes(
+          c::DataType::kFloat32,
+          std::array<std::int64_t, 8>{2, 1, 1, 1, 1, 1, 1, 129 * 4 + 8},
+          std::array<std::int64_t, 8>{516, 516, 516, 516, 516, 516, 516, 1})
+          .value();
+  for (std::size_t origin : {0U, 1U, 2U, 3U, 4U, 7U}) {
+    SCOPED_TRACE(origin);
+    const auto raw = pattern(*desc.element_count(), static_cast<int>(origin));
+    auto host =
+        std::vector<std::byte>(*storage_desc.required_bytes(), std::byte{0x5a});
+    const auto values = payload(desc, raw);
+    std::ranges::copy(values, host.begin() + origin);
+    const auto storage = context.upload(storage_desc, host).value();
+    const auto input =
+        storage
+            .view(c::View::slice(7, static_cast<std::int64_t>(origin), 129, 4)
+                      .value())
+            .value();
+    ASSERT_EQ(input.description(), desc);
+    ASSERT_TRUE(input.description().is_dense());
+    ASSERT_EQ(input.native_offset(), origin);
+    for (bool largest : {false, true}) {
+      const c::TopK operation{.count = 8, .largest = largest};
+      auto program = v::prepare(context, operation, input);
+      ASSERT_TRUE(program) << program.error().message();
+      const auto &dispatches = v::detail::Access::program(*program)->dispatches;
+      EXPECT_EQ(std::ranges::count_if(dispatches,
+                                      [](const auto &dispatch) {
+                                        return static_cast<bool>(
+                                            dispatch.region);
+                                      }),
+                1);
+      EXPECT_EQ(std::ranges::count_if(
+                    dispatches,
+                    [](const auto &dispatch) { return !dispatch.region; }),
+                origin % 4 == 0 ? 0 : 1);
+      auto slot = program->create_invocation();
+      ASSERT_TRUE(slot) << slot.error().message();
+      ASSERT_TRUE(slot->bind(std::span<const v::Tensor>{}).ok());
+      auto work = slot->submit();
+      ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait();
+      ASSERT_TRUE(result) << result.error().message();
+      expect_pair(context, result->get()->tensors(),
+                  reference(desc, raw, operation));
+    }
+    EXPECT_EQ(bytes(context, storage), host);
+  }
+}
+
 TEST(VulkanTopK, EqualRowsNanPayloadsAndSignedZerosSurviveTailPadding) {
   auto context = vulkan_test::context().value();
   const auto desc = dense(c::DataType::kFloat32, {3, 129});
