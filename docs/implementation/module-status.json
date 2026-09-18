@@ -353,9 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-cpu-matmul-precision.md",
-      "summary": "C1-Z SCOPED：MatMul 冷准入遗漏累加精度匹配，定向核对 oneDNN Direct 与 Native fallback；仅精度资格与回归，不扩矩阵算法或 C2。"
+      "summary": "C1-Z AUDITED：Z01 固定 oneDNN MatMul 仅接纳 F32 累加，在提案/精确准备共享入口拒绝其他精度；Z02 由 Native C1 承担同一 fallback 缺陷。仅冷资格修复与回归。"
     },
     {
       "module": "compute_provider_ggml",

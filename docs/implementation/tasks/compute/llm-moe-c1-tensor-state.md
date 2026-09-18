@@ -14,7 +14,8 @@
   `compute_route_apple` / `graph_route_apple`、`compute_route_vulkan` / `graph_route_vulkan`；新增直接依赖
   `compute_backend_cuda` 只按下述 C1-L 卡施工，`compute_provider_ggml_vulkan` 按 C1-Y 独立卡施工。
   `compute_route_cpu/cuda` 和 `graph_route_cpu/cuda` 默认工厂先复用；只有具体代码缺陷才定向纳入。
-  oneDNN、cuBLASLt、Marlin、Mem/Sched 本包没有已证缺陷，不自动重开。CUDA backend 只因 checked
+  oneDNN 后续仅因具名累加精度准入遗漏进入 [C1-Z 定向修复](llm-moe-c1-cpu-matmul-precision.md)；
+  cuBLASLt、Marlin、Mem/Sched 没有已证缺陷，不自动重开。CUDA backend 只因 checked
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
@@ -77,6 +78,10 @@ Vulkan `a7ebf205` 刚完成 norm/gate 等首组 managed 普通入口的 W1 stati
 
 本次先纠正施工顺序和事实表达；下一产品子集仍须在当前 owner 卡中提交有限 AUDITED FIX。
 不把这次文档更新、已有测试数量或接入覆盖调查计为新能力完成。
+
+2026-09-18 的 [C1-Z](llm-moe-c1-cpu-matmul-precision.md) 冻结 Native 的新增 Z02：MatMul
+准入遗漏显式累加类型，必须在共享冷计划函数拒绝非 F32 域，避免 oneDNN 拒绝后静默 fallback。
+只修资格并添加普通 Direct/Graph 工厂回归，已有 F32/SIMD 算法不动，不借此扩 C2 或重开路由 owner。
 
 ## 已完成的源码审计输入
 

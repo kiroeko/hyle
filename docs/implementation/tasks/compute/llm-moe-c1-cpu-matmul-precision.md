@@ -35,4 +35,27 @@
 | Z01 | oneDNN Direct 冷提案/准备没有匹配 MatMul 累加类型 | 共享准入函数拒绝本实现不支持的精度；保留 F32、shape/resource 和失败语义 |
 | Z02 | Native fallback 存在同一遗漏 | 在 Native 自己的 MatMul 计划资格处检查；不能由 oneDNN 拒绝后静默降级 |
 
-本卡进入 SCOPED 只授权审计。产品实现前提交 AUDITED 的有限 FIX、API/成本冻结及回归门。
+SCOPED 登记提交为 `17674262`。下列审计与有限 FIX 提交后才实施产品修改。
+
+## AUDITED：有限 FIX 与冻结决定
+
+2026-09-18，owner `/root`。共同 `validate_accumulation` 允许 Unknown 或数值类型，
+`OperationPreparationAccess` 只核对 schema/资源，不代表具体 Provider 实现支持该精度。
+oneDNN 的提案与准备共用 `select_route`；Native 两条路径共用 `make_plan`。本轮在各自共享
+入口修复，避免只挡公开 `prepare` 而让 Graph 冷提案或精确准备旁路。
+
+| FIX | 允许改动与验收 | 当前裁决 |
+|---|---|---|
+| Z01 | oneDNN `select_route` 只接纳显式 F32 accumulation；F64/F16/BF16/I32/Unknown 返回 Unimplemented。测试提案、普通 prepare 和复用 F32 提案但改变精度的精确 prepare 均拒绝 | FIX；第三方 BRGEMM 原样 BORROW |
+| Z02 | Native MatMul 的共享计划入口执行同一资格判断；普通 CPU 默认工厂不能在 oneDNN 拒绝后落到不合格 Native。回归覆盖解码/预填充及转置权重域，既有 F32 数值测试必须继续通过 | FIX；既有 SIMD/计算实现 KEEP |
+
+未知累加类型没有被这两个 Provider 声明为可自由选精度的域；默认 `MatMul{}` 已明确 F32。
+普通 C++ API、布局、资源所有权、运行状态和错误类型不变：合法但未实现的语义返回
+`Unimplemented`，非法描述仍由共同 schema 拒绝。只增加冷 enum 判断，不增加 payload 检查、
+热路径分支、分配、锁、拷贝、同步或常驻字段；F32 计算与既有路由形状阈值保持原实现。
+
+七问裁决：① oneDNN 3.13.2 pin/许可证/升级边界不变；② 具名显式精度请求不再静默降级，
+不承诺新增 F64 实现；③ 复用共同 schema/准备与既有 SIMD，不复制基础设施；④ P0 冷检查，
+没有同合同热路径变化，不跑 P1；⑤ 不增加 C/FFI；⑥ 私有 C++ 两处判断，无头/CMake/package
+变化，原三交付形状证据复用，static/shared 对新实现重跑；⑦ 默认 CPU/专家入口都有回归，
+用户 guide 明确有限 F32 域。测试先在未修产品上确认失败，再以同一测试验证修复。
