@@ -11,6 +11,10 @@ Status failure(bridge::Failure error) noexcept {
   switch (error.error) {
   case bridge::Error::None:
     return Status::Ok();
+  case bridge::Error::InvalidArgument:
+    return Status::InvalidArgument("ggml Vulkan resident region");
+  case bridge::Error::InvalidState:
+    return Status::FailedPrecondition("ggml Vulkan region slot is busy or failed");
   case bridge::Error::OutOfRange:
     return Status::OutOfRange("ggml Vulkan physical device index");
   case bridge::Error::Exhausted:
@@ -102,6 +106,14 @@ Result<ggml_backend *> NativeDevice::create_backend() const noexcept {
   HYLE_RETURN_IF_ERROR(failure(bridge::create_backend(state_->runtime, &result)));
   return result;
 }
+Result<NativeWork> NativeDevice::create_work() const noexcept {
+  if (!state_)
+    return std::unexpected(Status::InvalidArgument("empty ggml Vulkan device"));
+  NativeWork result;
+  result.device_ = *this;
+  HYLE_RETURN_IF_ERROR(failure(bridge::create_work(state_->runtime, &result.work_)));
+  return result;
+}
 Result<ggml_backend_buffer *> NativeDevice::borrow(
     VkBuffer handle, std::size_t bytes,
     std::shared_ptr<const void> owner) const noexcept {
@@ -149,4 +161,51 @@ Status NativeDevice::with_queue(
   HYLE_RETURN_IF_ERROR(failure(result));
   return call.result;
 }
+
+NativeWork::NativeWork(NativeWork &&other) noexcept
+    : device_(std::move(other.device_)), work_(std::exchange(other.work_, nullptr)),
+      lease_(std::move(other.lease_)), pending_(std::exchange(other.pending_, false)) {}
+NativeWork &NativeWork::operator=(NativeWork &&other) noexcept {
+  if (this != &other) {
+    reset();
+    device_ = std::move(other.device_);
+    work_ = std::exchange(other.work_, nullptr);
+    lease_ = std::move(other.lease_);
+    pending_ = std::exchange(other.pending_, false);
+  }
+  return *this;
+}
+NativeWork::~NativeWork() { reset(); }
+void NativeWork::reset() noexcept {
+  // The bridge proves retirement before freeing backend commands; the lease
+  // and loader remain alive through its exceptional blocking drain.
+  bridge::destroy_work(std::exchange(work_, nullptr));
+  lease_.reset();
+  pending_ = false;
+  device_ = {};
+}
+WorkState NativeWork::submit(
+    ggml_cgraph *graph, std::shared_ptr<const void> resource_lease) noexcept {
+  if (!work_ || !graph || !resource_lease)
+    return {Status::InvalidArgument("ggml Vulkan graph resource lease"), pending_};
+  if (pending_)
+    return {Status::FailedPrecondition("ggml Vulkan region is pending"), true};
+  lease_ = std::move(resource_lease);
+  const auto result = bridge::submit_work(work_, graph);
+  pending_ = result.pending;
+  if (!pending_)
+    lease_.reset();
+  return {failure(result.failure), result.pending, result.device_lost};
+}
+WorkState NativeWork::observe(bool wait) noexcept {
+  if (!work_)
+    return {Status::InvalidArgument("empty ggml Vulkan region slot")};
+  const auto result = bridge::observe_work(work_, wait);
+  pending_ = result.pending;
+  if (!pending_)
+    lease_.reset();
+  return {failure(result.failure), result.pending, result.device_lost};
+}
+WorkState NativeWork::poll() noexcept { return observe(false); }
+WorkState NativeWork::wait() noexcept { return observe(true); }
 } // namespace hyle::compute::ggml_vulkan::detail

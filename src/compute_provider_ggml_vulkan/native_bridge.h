@@ -11,9 +11,11 @@
 struct ggml_backend_buffer;
 struct ggml_backend;
 struct ggml_context;
+struct ggml_cgraph;
 
 namespace hyle::compute::ggml_vulkan::bridge {
 struct Runtime;
+struct Work;
 struct Options {
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
   std::uint32_t device_index = UINT32_MAX;
@@ -34,10 +36,20 @@ struct Native {
   bool storage_update_after_bind = false;
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
 };
-enum class Error { None, OutOfRange, Exhausted, Unavailable, Native, Internal };
+enum class Error {
+  None, InvalidArgument, InvalidState, OutOfRange, Exhausted, Unavailable,
+  Native, Internal
+};
 struct Failure {
   Error error = Error::None;
   VkResult native = VK_SUCCESS;
+};
+// Failure does not imply quiescence. A pending report retains every resource
+// even when its status already records an encoding/submission/observation error.
+struct WorkReport {
+  Failure failure;
+  bool pending = false;
+  bool device_lost = false;
 };
 
 struct Charge {
@@ -69,4 +81,10 @@ Failure borrow_buffer(Runtime *, VkBuffer, std::size_t,
 ggml_backend_buffer *borrow(VkBuffer, std::size_t,
                             std::shared_ptr<const void>);
 VkBuffer buffer_handle(ggml_backend_buffer *) noexcept;
+Failure create_work(Runtime *, Work **) noexcept;
+// Last-resort blocking retirement. Ordinary route abandonment retains Work in
+// its existing pending owner instead of reaching this destructor while busy.
+void destroy_work(Work *) noexcept;
+WorkReport submit_work(Work *, ggml_cgraph *) noexcept;
+WorkReport observe_work(Work *, bool wait) noexcept;
 } // namespace hyle::compute::ggml_vulkan::bridge

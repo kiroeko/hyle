@@ -268,9 +268,33 @@
         {
           "before": "GGML_BACKEND_DL_IMPL(ggml_backend_vk_reg)",
           "after": "GGML_BACKEND_DL_IMPL(ggml_backend_vk_reg)\n\n#include \"native_runtime_impl.h\""
+        },
+        {
+          "before": "    vk::Fence fence, almost_ready_fence;",
+          "after": "    vk::Fence fence, almost_ready_fence;\n    vk::Fence hyle_completion_fence;\n    bool hyle_completion_submitted = false;\n    bool hyle_retired_failure = false;"
+        },
+        {
+          "before": "        if (ctx->device->serialize_submissions) {\n            ggml_vk_submit(subctx, ctx->fence);",
+          "after": "        if (ctx->hyle_completion_fence && tensor_idx == subctx->exit_tensor_idx) {\n            ggml_vk_submit(subctx, ctx->hyle_completion_fence);\n            ctx->hyle_completion_submitted = true;\n        } else if (ctx->device->serialize_submissions) {\n            ggml_vk_submit(subctx, ctx->fence);"
+        },
+        {
+          "before": "static void ggml_vk_graph_cleanup(ggml_backend_vk_context * ctx) {",
+          "after": "static void ggml_vk_graph_cleanup(ggml_backend_vk_context * ctx, bool reset_native = true) {"
+        },
+        {
+          "before": "    ggml_vk_command_pool_cleanup(ctx->device, ctx->compute_cmd_pool);\n    if (ctx->device->async_use_transfer_queue) {\n        ggml_vk_command_pool_cleanup(ctx->device, ctx->transfer_cmd_pool);\n    }",
+          "after": "    if (reset_native) {\n        ggml_vk_command_pool_cleanup(ctx->device, ctx->compute_cmd_pool);\n        if (ctx->device->async_use_transfer_queue) {\n            ggml_vk_command_pool_cleanup(ctx->device, ctx->transfer_cmd_pool);\n        }\n    }"
+        },
+        {
+          "before": "    for (auto& event : ctx->gc.events) {\n        ctx->device->device.resetEvent(event);\n    }",
+          "after": "    if (reset_native) {\n        for (auto& event : ctx->gc.events) {\n            ctx->device->device.resetEvent(event);\n        }\n    }"
+        },
+        {
+          "before": "    ggml_vk_graph_cleanup(ctx);\n\n    ggml_vk_destroy_buffer(ctx->prealloc_x);",
+          "after": "    ggml_vk_graph_cleanup(ctx, !ctx->hyle_retired_failure);\n\n    ggml_vk_destroy_buffer(ctx->prealloc_x);"
         }
       ],
-      "after_sha256": "ed2fb9f588500b422b1a25552223aa6b9581fb48ef71c43bdcf055751c1339db"
+      "after_sha256": "649e0ff92ec362f95f39f2d668f6646bb12891b3b01f6d559bc69466ab581081"
     },
     {
       "path": "src/ggml.cpp",

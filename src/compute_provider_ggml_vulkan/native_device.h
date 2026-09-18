@@ -8,6 +8,7 @@
 #include "hyle/mem/quota_allocator.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
+class NativeWork;
 
 struct NativeOptions final {
   const char *loader_path = nullptr;
@@ -45,6 +46,7 @@ public:
   // Scope before releasing this device. Y3 adds the asynchronous slot owner.
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend *>
   create_backend() const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API Result<NativeWork> create_work() const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
   allocate_context(ggml_context *) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
@@ -59,6 +61,39 @@ public:
 private:
   struct State;
   std::shared_ptr<State> state_;
+};
+
+struct WorkState final {
+  Status status;
+  bool pending = false;
+  bool device_lost = false;
+};
+
+// Private region execution slot. Host calls on one slot are thread-compatible;
+// shared-device encoding uses the route admission lock. The graph is validated
+// cold and all its tensors are resident on this device. A submit lease owns its
+// graph metadata, buffers and bound inputs until native retirement is proved.
+class NativeWork final {
+public:
+  NativeWork() noexcept = default;
+  NativeWork(const NativeWork &) = delete;
+  NativeWork &operator=(const NativeWork &) = delete;
+  HYLE_GGML_VULKAN_INTERNAL_API NativeWork(NativeWork &&) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API NativeWork &operator=(NativeWork &&) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API ~NativeWork();
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState
+  submit(ggml_cgraph *, std::shared_ptr<const void> resource_lease) noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState poll() noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API WorkState wait() noexcept;
+
+private:
+  friend class NativeDevice;
+  WorkState observe(bool wait) noexcept;
+  void reset() noexcept;
+  NativeDevice device_;
+  bridge::Work *work_ = nullptr;
+  std::shared_ptr<const void> lease_;
+  bool pending_ = false;
 };
 
 } // namespace hyle::compute::ggml_vulkan::detail

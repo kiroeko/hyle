@@ -6,6 +6,7 @@
 #include <exception>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include <gtest/gtest.h>
 #include "ggml-backend.h"
@@ -140,9 +141,17 @@ struct Faults {
   PFN_vkAllocateMemory allocate_memory = nullptr;
   PFN_vkFreeMemory free_memory = nullptr;
   PFN_vkBindBufferMemory bind_buffer = nullptr;
+  PFN_vkQueueSubmit queue_submit = nullptr;
+  PFN_vkQueueWaitIdle queue_wait_idle = nullptr;
+  PFN_vkGetFenceStatus get_fence_status = nullptr;
   int devices = 0, fences = 0, buffers = 0, memories = 0;
   int fence_calls = 0, fail_fence = 0;
+  int submit_calls = 0, accepted_submits = 0, fail_submit = 0;
+  int fenced_submits = 0, empty_submits = 0;
+  int idle_calls = 0;
   bool fail_bind = false;
+  bool fail_idle = false;
+  bool fail_observation = false;
 };
 Faults *faults = nullptr;
 
@@ -201,6 +210,30 @@ VKAPI_ATTR VkResult VKAPI_CALL bind_buffer(VkDevice device, VkBuffer buffer,
   if (faults->fail_bind) return VK_ERROR_OUT_OF_DEVICE_MEMORY;
   return faults->bind_buffer(device, buffer, memory, offset);
 }
+VKAPI_ATTR VkResult VKAPI_CALL queue_submit(VkQueue queue, uint32_t count,
+    const VkSubmitInfo *submits, VkFence fence) {
+  if (++faults->submit_calls == faults->fail_submit)
+    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+  const auto result = faults->queue_submit(queue, count, submits, fence);
+  if (result == VK_SUCCESS) {
+    ++faults->accepted_submits;
+    if (fence) ++faults->fenced_submits;
+    bool empty = true;
+    for (uint32_t i = 0; i < count; ++i)
+      empty = empty && submits[i].commandBufferCount == 0;
+    if (empty) ++faults->empty_submits;
+  }
+  return result;
+}
+VKAPI_ATTR VkResult VKAPI_CALL queue_wait_idle(VkQueue queue) {
+  ++faults->idle_calls;
+  if (faults->fail_idle) return VK_ERROR_OUT_OF_HOST_MEMORY;
+  return faults->queue_wait_idle(queue);
+}
+VKAPI_ATTR VkResult VKAPI_CALL get_fence_status(VkDevice device, VkFence fence) {
+  if (faults->fail_observation) return VK_ERROR_OUT_OF_HOST_MEMORY;
+  return faults->get_fence_status(device, fence);
+}
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get(VkInstance instance,
                                             const char *name) {
   auto original = faults->get(instance, name);
@@ -219,6 +252,9 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get(VkInstance instance,
   INTERCEPT(vkAllocateMemory, allocate_memory)
   INTERCEPT(vkFreeMemory, free_memory)
   INTERCEPT(vkBindBufferMemory, bind_buffer)
+  INTERCEPT(vkQueueSubmit, queue_submit)
+  INTERCEPT(vkQueueWaitIdle, queue_wait_idle)
+  INTERCEPT(vkGetFenceStatus, get_fence_status)
 #undef INTERCEPT
   return original;
 }
@@ -269,5 +305,170 @@ TEST_F(GgmlVulkanNative, RealNativeCreationFailuresRollBackHandles) {
   owner.reset();
   EXPECT_EQ(state.devices, 0);
   EXPECT_EQ(state.fences, 0);
+}
+
+TEST_F(GgmlVulkanNative, PartialRegionSubmitRetainsResourcesUntilDrainIsProved) {
+#if defined(_WIN32)
+  const char *name = "vulkan-1.dll";
+#elif defined(__APPLE__)
+  const char *name = "libvulkan.1.dylib";
+#else
+  const char *name = "libvulkan.so.1";
+#endif
+  auto loader = hyle::platform::DynLib::open(name);
+  ASSERT_TRUE(loader);
+  auto lookup = loader->symbol_as<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+  ASSERT_TRUE(lookup);
+  Faults state;
+  state.get = *lookup;
+  faults = &state;
+  struct Reset { ~Reset() { faults = nullptr; } } reset;
+  bridge::Options options;
+  options.get_instance_proc_addr = get;
+  bridge::Runtime *runtime = nullptr;
+  bridge::Native native;
+  ASSERT_EQ(bridge::create(options, &runtime, &native).error, bridge::Error::None);
+  std::unique_ptr<bridge::Runtime, decltype(&bridge::destroy)> owner(runtime, bridge::destroy);
+  {
+    struct Scope {
+      void *previous;
+      ~Scope() { bridge::leave(previous); }
+    } scope{bridge::enter(runtime)};
+    constexpr int nodes = 256;
+    auto arena = hyle::compute::ggml_vulkan::detail::MetadataArena::create(
+        (nodes + 8) * ggml_tensor_overhead() + ggml_graph_overhead_custom(nodes + 8, false),
+        hyle::mem::system_allocator());
+    ASSERT_TRUE(arena);
+    auto *context = arena->get();
+    auto *input = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
+    auto *weight = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
+    auto *output = input;
+    for (int i = 0; i < nodes; ++i) output = ggml_add(context, output, weight);
+    auto *graph = ggml_new_graph_custom(context, nodes + 8, false);
+    ggml_build_forward_expand(graph, output);
+    ggml_backend_buffer *buffer = nullptr;
+    ASSERT_EQ(bridge::allocate_context(runtime, context, &buffer).error, bridge::Error::None);
+    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
+        storage(buffer, ggml_backend_buffer_free);
+    const std::vector<float> values(2048, 0.25f);
+    ggml_backend_tensor_set(input, values.data(), 0, values.size() * sizeof(float));
+    ggml_backend_tensor_set(weight, values.data(), 0, values.size() * sizeof(float));
+    bridge::Work *work = nullptr;
+    ASSERT_EQ(bridge::create_work(runtime, &work).error, bridge::Error::None);
+    std::unique_ptr<bridge::Work, decltype(&bridge::destroy_work)> execution(work, bridge::destroy_work);
+
+    const auto accepted_before = state.accepted_submits;
+    state.fail_submit = state.submit_calls + 2;
+    const auto submitted = bridge::submit_work(work, graph);
+    ASSERT_EQ(submitted.failure.native, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+    EXPECT_TRUE(submitted.pending);
+    EXPECT_GT(state.accepted_submits, accepted_before); // a real accepted prefix
+    const auto submissions_after_failure = state.submit_calls;
+    const auto buffers_while_pending = state.buffers;
+    const auto memories_while_pending = state.memories;
+    state.fail_idle = true;
+    auto observed = bridge::observe_work(work, false);
+    EXPECT_TRUE(observed.pending);
+    EXPECT_EQ(state.idle_calls, 0); // nonblocking poll does not queue-drain
+    observed = bridge::observe_work(work, true);
+    EXPECT_TRUE(observed.pending);
+    EXPECT_EQ(observed.failure.native, VK_ERROR_OUT_OF_DEVICE_MEMORY); // first diagnosis
+    EXPECT_GT(state.idle_calls, 0);
+    EXPECT_EQ(state.buffers, buffers_while_pending);
+    EXPECT_EQ(state.memories, memories_while_pending);
+    state.fail_idle = false;
+    observed = bridge::observe_work(work, true);
+    EXPECT_FALSE(observed.pending);
+    EXPECT_EQ(observed.failure.native, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+    EXPECT_EQ(state.submit_calls, submissions_after_failure); // never submit residual encoding
+    EXPECT_FALSE(bridge::submit_work(work, graph).pending);
+    EXPECT_EQ(state.submit_calls, submissions_after_failure);
+  }
+  owner.reset();
+  EXPECT_EQ(state.devices, 0);
+  EXPECT_EQ(state.fences, 0);
+  EXPECT_EQ(state.buffers, 0);
+  EXPECT_EQ(state.memories, 0);
+}
+TEST_F(GgmlVulkanNative, FenceObservationFailureKeepsTheAcceptedRegionPending) {
+#if defined(_WIN32)
+  const char *name = "vulkan-1.dll";
+#elif defined(__APPLE__)
+  const char *name = "libvulkan.1.dylib";
+#else
+  const char *name = "libvulkan.so.1";
+#endif
+  auto loader = hyle::platform::DynLib::open(name);
+  ASSERT_TRUE(loader);
+  auto lookup = loader->symbol_as<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+  ASSERT_TRUE(lookup);
+  Faults state;
+  state.get = *lookup;
+  faults = &state;
+  struct Reset { ~Reset() { faults = nullptr; } } reset;
+  bridge::Options options;
+  options.get_instance_proc_addr = get;
+  bridge::Runtime *runtime = nullptr;
+  bridge::Native native;
+  ASSERT_EQ(bridge::create(options, &runtime, &native).error, bridge::Error::None);
+  std::unique_ptr<bridge::Runtime, decltype(&bridge::destroy)> owner(runtime, bridge::destroy);
+  {
+    struct Scope {
+      void *previous;
+      ~Scope() { bridge::leave(previous); }
+    } scope{bridge::enter(runtime)};
+    auto arena = hyle::compute::ggml_vulkan::detail::MetadataArena::create(
+        8 * ggml_tensor_overhead() + ggml_graph_overhead_custom(8, false),
+        hyle::mem::system_allocator());
+    ASSERT_TRUE(arena);
+    auto *context = arena->get();
+    auto *input = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
+    auto *output = ggml_silu(context, input);
+    auto *graph = ggml_new_graph_custom(context, 8, false);
+    ggml_build_forward_expand(graph, output);
+    ggml_backend_buffer *buffer = nullptr;
+    ASSERT_EQ(bridge::allocate_context(runtime, context, &buffer).error, bridge::Error::None);
+    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
+        storage(buffer, ggml_backend_buffer_free);
+    const std::vector<float> values(2048, 0.25f);
+    ggml_backend_tensor_set(input, values.data(), 0, values.size() * sizeof(float));
+    bridge::Work *work = nullptr;
+    ASSERT_EQ(bridge::create_work(runtime, &work).error, bridge::Error::None);
+    std::unique_ptr<bridge::Work, decltype(&bridge::destroy_work)> execution(work, bridge::destroy_work);
+
+    const auto fences_before = state.fenced_submits;
+    const auto markers_before = state.empty_submits;
+    const auto idle_before = state.idle_calls;
+    const auto submitted = bridge::submit_work(work, graph);
+    ASSERT_EQ(submitted.failure.error, bridge::Error::None);
+    ASSERT_TRUE(submitted.pending);
+    EXPECT_GT(state.fenced_submits, fences_before);
+    RecordProperty("region_empty_submits", state.empty_submits - markers_before);
+    EXPECT_EQ(state.idle_calls, idle_before);
+    const auto submitted_count = state.submit_calls;
+    const auto buffers_before = state.buffers;
+    const auto memories_before = state.memories;
+    state.fail_observation = true;
+    auto observed = bridge::observe_work(work, false);
+    EXPECT_TRUE(observed.pending);
+    EXPECT_EQ(observed.failure.native, VK_ERROR_OUT_OF_HOST_MEMORY);
+    EXPECT_EQ(state.idle_calls, idle_before);
+    state.fail_observation = false;
+    state.fail_idle = true;
+    observed = bridge::observe_work(work, true);
+    EXPECT_TRUE(observed.pending);
+    EXPECT_EQ(state.buffers, buffers_before);
+    EXPECT_EQ(state.memories, memories_before);
+    state.fail_idle = false;
+    observed = bridge::observe_work(work, true);
+    EXPECT_FALSE(observed.pending);
+    EXPECT_EQ(observed.failure.native, VK_ERROR_OUT_OF_HOST_MEMORY);
+    EXPECT_EQ(state.submit_calls, submitted_count);
+  }
+  owner.reset();
+  EXPECT_EQ(state.devices, 0);
+  EXPECT_EQ(state.fences, 0);
+  EXPECT_EQ(state.buffers, 0);
+  EXPECT_EQ(state.memories, 0);
 }
 } // namespace

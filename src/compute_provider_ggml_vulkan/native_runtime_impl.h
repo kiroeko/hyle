@@ -1,9 +1,11 @@
 // Included once, after the locked upstream implementation. This seam borrows
 // upstream types/algorithms while giving each HYLE owner isolated native state.
 #include "ggml-alloc.h"
+#include <atomic>
 namespace hyle::compute::ggml_vulkan::bridge {
 struct Runtime {
   vk_instance_t instance;
+  std::atomic<bool> device_lost{false};
 };
 
 void *enter(Runtime *runtime) noexcept {
@@ -190,3 +192,5 @@ Failure allocate_buffer(Runtime *runtime, std::size_t bytes,
   }
 }
 } // namespace hyle::compute::ggml_vulkan::bridge
+
+#include "native_work_impl.h"
