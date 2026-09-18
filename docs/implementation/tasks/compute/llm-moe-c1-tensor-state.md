@@ -18,7 +18,7 @@
   操作缺少异步算法状态进入 [C1-L 定向依赖卡](llm-moe-c1-cuda-device-status.md)，其余 backend 不重开。
 - 状态：`compute_ops` / `compute_provider_native` 已完成下述 C1-A/B/C/D 的 AUDITED；`compute` 仅
   对 D01 的 typed prepare 和 F01–F02 的普通准备诊断进入 AUDITED；`compute_provider_cuda` 对 E01–E03、G01–G04、H01–H03、I01–I03、J01–J03、K01–K03、M01–M03、N01–N04 和 O01–O03 进入 AUDITED；Apple 两个 owner 对下述 P01–P05、Q01–Q04、R01–R04、S01–S03
-  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
+  进入 AUDITED；Vulkan 两个 owner 对下述 T01–T04、U01–U04、V01–V04 进入 AUDITED，`graph` 保持 SCOPED。CUDA backend 仅对 C1-L 的 L01–L04 进入 AUDITED。AUDITED 只授权具名固定子集，
   不授权本卡其他尚未裁决的草案。
 - 主 consumer：本地 2B 的 embedding → Gemma RMS → gated 逐元素 → residual → index/state
   输入输出，两独立 invocation 与旧结果保留；实际 BF16 输入，不把 F32 smoke 当作通过。
@@ -946,5 +946,29 @@ View 的 descriptor prefix、别名保活和必要重录是显式成本，不签
   为 **43,833 行 / 177 实现文件**，包含 GLSL，不含测试/bench/第三方，self-check PASS。
 - 上述只签 U01–U04 局部事实；Concat/gates/norm/reduce/Softmax/TopK/index/Scan、真实模型权重
   消费、完整 C1 三交付/其它适用环境及等责 P1 仍待实现和验收，两个 owner 保持 AUDITED。
+
+### C1-V：Vulkan 门控与混合参数归一化（AUDITED）
+
+baseline `4a79e0b3`；owner `/root` / `compute_route_vulkan`、`graph_route_vulkan`。真实消费仍为
+C0 固定 Qwen 的 BF16 hidden、F32 learned norm scale、Gemma `1+gamma`、三类 gate 与 residual；
+不扩 GEMM、模型专用 schema 或通用执行器。当前 gate 仅 dense F32 SiLU，norm 尚未接线。
+
+有界研究使用既有 Native/CUDA 的共同语义及 ggml 固定 `456172ec` 的 `rms_norm.comp`、
+`norm.comp`、`swiglu.comp`/`glu_main.glsl`。ggml 的行内并行 sum/barrier 可复用；其直接半精度
+storage 扩展和四维寻址不能覆盖本路线已承诺的无可选窄存储、rank8/奇数字节布局。
+`norm.comp` 使用 E[x²]−E[x]²，不能替代本包已有中心化方差；`swiglu.comp` 的
+`a/(1+exp(-a))` 在 a=−Inf 时产生 NaN，而共同 gate 边界要求 activation 为 +0。
+因此保留成熟 F32 GLU 调度/寻址，采用薄的稳定 activation 适配；新域复用 HYLE U32 storage。
+
+| FIX | 固定实施范围 | P0 / 适用验证 |
+|---|---|---|
+| V01 | 三种 GatedActivation，packed-halves/separate，F32/F16/BF16；自然 Direct/Graph | 新域复用 tensor specialization/byte origins/逐输出 word 唯一 writer；F32 求值后只舍入最终乘积。rank1..8、合法非负/零/奇数 byte stride、empty/tail、NaN/Inf；无中间整张量展开或 host payload |
+| V02 | RMSNorm/LayerNorm，最后维归一化，F32 累加，输入类型或 F32 的独立 scale/bias | 128-lane 行内 shared reduction，LayerNorm 先均值再中心化平方；RMS 两遍、LayerNorm 三遍输入。每个 workgroup 一行，半精度奇数 hidden 时同组两行以保证 word 唯一 writer；一次 dispatch，固定小 shared storage，无额外 device scratch；epsilon 与精度拒绝沿共同合同 |
+| V03 | 保留有资格的成熟 F32 SiLU 接线与固定规则、公开指南 | dense/rank≤4/512-lane 能力且输入原生对齐在准备期可证明时仍用 ggml GLU shell，薄适配稳定 sigmoid 和特殊值；其余用 V01。普通动态输入的未知起点不假设对齐，不在 bind/submit 搜索。shader 编译只改本 owner 的 build_shaders.py 清单，不改 pin、公共构建或统计核心 |
+| V04 | 独立数学/舍入、默认入口、Graph 资源生命周期及回归 | 三 dtype/三 gate/两输入形式；norm 无参数/scale/scale+bias、各 mixed dtype、0/1/127/128/129/257/2048 hidden、单/双/奇数行、rank8、广播/奇数 stride/View offset、零 epsilon/常量行/NaN/Inf/大均值小方差。固定 Recorder 邻字保护，两个槽/变化输入/旧结果/共享常量/close，W1/Air/Mini 两 factors 与公开头；三交付、真实权重与等责 P1 仍随完整 C1 固定 bundle |
+
+承载为 `BORROW` ggml GLU shell/既有 tensor 原生录制与 `OWN` 共同数值、位存储和行末写入接线。
+不签性能胜出；必要 native pipeline、shared reduction、输入读取和输出舍入均计为真实成本。
+Concat/reduce/Softmax/TopK/index/Scan 仍是后续必须实现的机制，不由本批代签。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

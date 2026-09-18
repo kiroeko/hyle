@@ -506,13 +506,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-U AUDITED：U01–U04 已实现零拷贝 View、别名 liveness/保活、原生重绑定及常量视图冷 packing 复用；W1/Air/Mini 各30例及2个头检查通过。完整 C1 的 Concat/gates/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。"
+      "summary": "LLM/MoE C1-V AUDITED：V01–V04 已固定三类门控、混合参数 RMS/LayerNorm 与原生 word 写入/既有 GLU 接线，产品待实施。T/U 局部 W1/Air/Mini 各30例及2个头检查已通过；完整 C1 其余机制、真实权重/三交付和 P1 尚未签收。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-U AUDITED：U01–U04 已实现零拷贝 View、别名 liveness/保活、原生重绑定及常量视图冷 packing 复用；W1/Air/Mini 各30例及2个头检查通过。完整 C1 的 Concat/gates/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。"
+      "summary": "LLM/MoE C1-V AUDITED：V01–V04 已固定三类门控、混合参数 RMS/LayerNorm 与原生 word 写入/既有 GLU 接线，产品待实施。T/U 局部 W1/Air/Mini 各30例及2个头检查已通过；完整 C1 其余机制、真实权重/三交付和 P1 尚未签收。"
     }
   ]
 }
