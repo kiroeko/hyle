@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <exception>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -22,6 +23,22 @@ namespace {
 namespace bridge = hyle::compute::ggml_vulkan::bridge;
 using hyle::compute::ggml_vulkan::detail::NativeDevice;
 using hyle::compute::ggml_vulkan::detail::NativeOptions;
+
+std::optional<std::string> environment(const char *name) {
+#if defined(_WIN32)
+  char *value = nullptr;
+  std::size_t bytes = 0;
+  const auto error = _dupenv_s(&value, &bytes, name);
+  std::unique_ptr<char, decltype(&std::free)> owner(value, &std::free);
+  if (error != 0 || !value)
+    return std::nullopt;
+#else
+  const auto *value = std::getenv(name);
+  if (!value)
+    return std::nullopt;
+#endif
+  return std::string(value);
+}
 
 class GgmlVulkanNative : public testing::Test {
   void SetUp() override {
@@ -44,7 +61,7 @@ TEST_F(GgmlVulkanNative, RejectsInvalidLoaderAndPhysicalIndex) {
 }
 
 TEST_F(GgmlVulkanNative, ExplicitValidationUsesItsOwnInstance) {
-  if (!std::getenv("HYLE_TEST_VULKAN_VALIDATE"))
+  if (!environment("HYLE_TEST_VULKAN_VALIDATE"))
     GTEST_SKIP() << "requires the declared validation-layer environment";
   NativeOptions options;
   options.validation = true;
@@ -493,8 +510,8 @@ TEST_F(GgmlVulkanNative, ColdStoragePartialDeviceAllocationRollsBack) {
     std::string previous;
     bool existed = false;
     ChunkLimit() {
-      if (const char *value = std::getenv("GGML_VK_SUBALLOCATION_BLOCK_SIZE")) {
-        previous = value;
+      if (const auto value = environment("GGML_VK_SUBALLOCATION_BLOCK_SIZE")) {
+        previous = *value;
         existed = true;
       }
 #if defined(_WIN32)
