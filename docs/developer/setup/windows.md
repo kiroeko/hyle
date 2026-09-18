@@ -140,6 +140,22 @@ IO 的 TLS/HTTP2 和 trace 默认 OFF，并只在 owner 闭包中声明。
 - 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`。
 - MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。
 
+### 长路径与第三方子构建
+
+`LongPathsEnabled=1` 只放宽主动支持长路径的应用；编译器、链接器和构建子工具仍各有边界，见
+[Windows 长路径条件](https://learn.microsoft.com/zh-cn/windows/win32/fileio/maximum-file-path-limitation)。
+若 CMake 已提示 object 目录过长，随后 compiler probe 在生成文件时失败，先检查生成物的完整路径。
+不要只量源码路径，也不要把所有 `C1083` 都归因为长路径。
+
+优先使用会话独占的短 binary root，例如 `C:\hyle-scratch\vk-y1`；源码工作区不必搬迁。
+第三方 owner 应用 CMake 的
+[`EP_PREFIX` / `BINARY_DIR`](https://cmake.org/cmake/help/latest/module/ExternalProject.html#directory-options)
+控制子构建层级。ggml Vulkan 的 host shader 工具已放到当前 build 的
+`HYLE_DEP_BUILD_DIR/ggml-vulkan-host`，避免继承整串 vendor 子目录；不写共享源码 cache。
+[`CMAKE_OBJECT_PATH_MAX`](https://cmake.org/cmake/help/latest/variable/CMAKE_OBJECT_PATH_MAX.html)
+是生成工具的路径预算，CMake 会尝试哈希缩短对象名；调大它不会解除编译器的限制，过长的父目录
+也无法靠缩短文件名解决。无需为这一问题反复修改系统长路径开关。
+
 ## 五、测试
 
 ```bat

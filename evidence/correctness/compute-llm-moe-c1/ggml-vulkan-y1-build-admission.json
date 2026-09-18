@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "scope": "C1-Y first bounded Y01-Y04 product slice: locked build, private metadata ownership and real upstream GPU region; not managed HYLE Direct/Graph provider acceptance",
+  "owner": "/root",
+  "component": "compute_provider_ggml_vulkan",
+  "audit_revision": "ea560521",
+  "product_revision": "977057403fd1c7023b0c12d2996886b4aa582452",
+  "product_tree": "dc86d95525d812f10cfe7e924305a121669f8e57",
+  "registry_state": "AUDITED",
+  "snapshot_qualification": "Tests and delivery builds ran while assembling this product commit. Internal static/shared tests preceded the final EP_PREFIX build-layout correction and private vendor PUBLIC_HEADER cleanup; their C++ implementation, tests and four-file vendor patch set are unchanged at this commit. The complete source-embedding build and its two consumers ran with the final CMake layout. No claim that every check was rerun after every CMake-only adjustment.",
+  "upstream": {
+    "repository": "https://github.com/ggml-org/ggml",
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+    "archive_sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34",
+    "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+    "patch_tree_sha256": "fe386f379aa98787027e911dbb5f1d3107c2ef35887956e43072c18110fe545f",
+    "source_input": "authenticated clean Git archive extraction supplied by FETCHCONTENT_SOURCE_DIR_GGML_VULKAN_RUNTIME; original upstream checkout still clean",
+    "download_qualification": "default new archive cache population not exercised in this slice; archive identity comes from the previously authenticated exact upstream pin",
+    "operator_algorithm_changes": false,
+    "cpu_backend_enabled": false,
+    "old_cpu_provider_blocker_changed": false
+  },
+  "build": {
+    "host": "W1-WIN",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compiler": "MSVC 19.50.35728.0",
+    "generator": "Ninja",
+    "configuration": "Release",
+    "vulkan_sdk": "1.4.357.0 portable extraction; installer not executed",
+    "parallel": 2,
+    "nested_shader_parallel": 1,
+    "system_changes": "none: no UAC, registry, power, firewall or driver changes",
+    "shared_dlls": "required HYLE DLLs beside the test/consumer executable; shared test and all ordinary consumers executed with PATH unset",
+    "static_package_limit": "provisional find_dependency(Vulkan) development package requirement remains; final managed loader/native device ownership is Y2 work"
+  },
+  "p0": {
+    "metadata": "one caller-allocator-owned aligned arena plus one small upstream context; no tensor payload allocated by ggml_init; move transfers ownership; destruction frees context before arena",
+    "build_patches": "exact input/output file hashes; private build-local source copy; immutable cache; unchanged reconfigure does not rewrite files",
+    "execution": "upstream graph traverses/fuses/encodes per execution; native encoding, temporary resources and synchronization remain actual future comparison costs",
+    "performance_gate": "NOT_RUN: complete C1 ordinary provider candidate and equal-responsibility comparison are not ready"
+  },
+  "validation": [
+    {
+      "name": "static private factor metadata and real upstream Vulkan region",
+      "verdict": "PASS",
+      "tests": 4,
+      "log": "y1-run-static.log"
+    },
+    {
+      "name": "shared private factor metadata and real upstream Vulkan region, PATH unset",
+      "verdict": "PASS",
+      "tests": 4,
+      "log": "y1-run-shared.log"
+    },
+    {
+      "name": "build-local source identity, unchanged timestamps and tamper rejection",
+      "verdict": "PASS",
+      "tests": 5,
+      "command": "python tests/compute_provider_ggml_vulkan/source_contract_test.py",
+      "log": "y1-source-contract.log"
+    },
+    {
+      "name": "exact dormant CPU identity selector regression",
+      "verdict": "PASS",
+      "tests": 1,
+      "command": "python tests/tooling/validation_selector_test.py ImpactTest.test_global_change_skips_only_dormant_audit_identity",
+      "log": "y1-selector-regression.log",
+      "qualification": "Initial full run: 53 passed, one substring assertion failed on the new Vulkan identity. Only that assertion was fixed and rerun. This receipt does not claim a subsequent full 54-test run."
+    },
+    {
+      "name": "Vulkan OFF ignores invalid shader/source overrides and disabled SDK lookup",
+      "verdict": "PASS",
+      "phase": "configure only",
+      "log": "y1-configure-off.log"
+    },
+    {
+      "name": "static and shared compute+graph product build/install",
+      "verdict": "PASS",
+      "scripts": [
+        "y1-package-static.ps1",
+        "y1-package-shared.ps1"
+      ]
+    },
+    {
+      "name": "relocated static and shared ordinary Compute and Graph consumers",
+      "verdict": "PASS",
+      "consumer_runs": 4,
+      "script": "y1-consumers.ps1",
+      "qualification": "Existing native Vulkan ordinary path; does not execute a new HYLE-managed ggml program."
+    },
+    {
+      "name": "source add_subdirectory ordinary Compute and Graph consumers with final short host-tool layout",
+      "verdict": "PASS",
+      "consumer_runs": 2,
+      "script": "y1-source.ps1",
+      "qualification": "Canonical HYLE checkout embedded into an external CMake consumer; authenticated ggml and Vulkan-Headers overrides with FETCHCONTENT_FULLY_DISCONNECTED=ON. Not an unpacked HYLE source-archive qualification."
+    }
+  ],
+  "region_fixture": {
+    "operations": [
+      "RMSNorm epsilon=1e-6",
+      "broadcast learned-scale fixture",
+      "SiLU",
+      "residual add"
+    ],
+    "dtype": "F32",
+    "width": 2048,
+    "rows": [
+      1,
+      17,
+      128
+    ],
+    "changed_inputs_per_shape": 3,
+    "oracle": "independent double formula; abs(error) <= 6e-6 * (1 + abs(expected))",
+    "data": "generated fixture using local 2B hidden width; not actual checkpoint weights",
+    "provider": "complete upstream Vulkan backend; no CPU backend fallback",
+    "validation_layer": "VK_LAYER_PATH and VK_INSTANCE_LAYERS requested Khronos validation; no VUID observed in retained logs. Layer activation itself was not independently certified."
+  },
+  "resolved_path_failure": {
+    "long_paths_enabled": 1,
+    "failed_log": "y1-source-build-path-failure.log",
+    "observed_error": "MSVC C1083 Cannot open compiler generated file: empty filename / Invalid argument in the nested CMake compiler probe",
+    "object_directory_characters": 243,
+    "cmake_object_path_budget": 250,
+    "old_host_build_directory": "C:/hyle-scratch/ggml-vulkan-region-20260918/source-build/hyle/src/compute_provider_ggml_vulkan/vendor/src/ggml-vulkan/vulkan-shaders-gen-prefix/src/vulkan-shaders-gen-build",
+    "old_host_build_characters": 172,
+    "new_host_build_directory": "C:/hyle-scratch/ggml-vulkan-region-20260918/source-build/hyle/_deps/ggml-vulkan-host/src/vulkan-shaders-gen-build",
+    "new_host_build_characters": 113,
+    "characters_removed": 59,
+    "fix": "owner-local standard ExternalProject EP_PREFIX under the existing build-local HYLE_DEP_BUILD_DIR; no registry change, compiler limit override or source-workspace move",
+    "verification": "final full source build and both ordinary consumers passed",
+    "attribution_limit": "Generated object/debug paths exhaust toolchain path allowance; the exact internal MSVC API or manifest behavior was not isolated.",
+    "engineering_references": [
+      "https://learn.microsoft.com/zh-cn/windows/win32/fileio/maximum-file-path-limitation",
+      "https://cmake.org/cmake/help/latest/module/ExternalProject.html#directory-options",
+      "https://cmake.org/cmake/help/latest/variable/CMAKE_OBJECT_PATH_MAX.html",
+      "https://github.com/chromiumembedded/cef/blob/master/docs/master_build_quick_start.md",
+      "https://reviews.llvm.org/D154130"
+    ]
+  },
+  "unexecuted_applicable_acceptance": [
+    "Y2 native device/queue/loader ownership, shared locks, quota and partial initialization rollback",
+    "Y3 managed invocation slots, accepted-prefix failure, cancellation/close/drain and retained results",
+    "Y4 ordinary HYLE ggml Direct/Graph binding, conditional default rule and native fragment composition",
+    "new provider on Air/Mini MoltenVK and other required portability environments",
+    "actual checkpoint-weight fixtures, full C1 coverage and quantized model journey",
+    "full source-archive/offline delivery and final static loader contract",
+    "broad component/package/header gates retained from the selector",
+    "stable equal-responsibility P1"
+  ],
+  "aggregate_gate": "INCONCLUSIVE: first product slice only; no CLOSED or four-route coverage promotion",
+  "coverage": {
+    "new_formal_requirement_passes": 0,
+    "new_formal_route_cell_passes": 0
+  },
+  "implementation_loc": {
+    "path": "evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y1-implementation-loc.json",
+    "code": 44559,
+    "files": 180,
+    "paths": 23,
+    "self_check": "pass",
+    "excludes": "tests, bench, vendor, CMake, Python and documentation; same native implementation language policy as previous receipt"
+  },
+  "archive": {
+    "path": "evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y1-build-admission-raw.zip",
+    "sha256": "dc9d1df93469502daa5b7552bbd627e66990076b1b6406a69adcd80fd13918ee",
+    "bytes": 69757,
+    "files": [
+      {
+        "path": "y1-build-shared.log",
+        "sha256": "1dd7fafaaac0f3ec833e809a630abc869de085e28005a3411a0a11607aa0b544",
+        "bytes": 42128
+      },
+      {
+        "path": "y1-build-shared.ps1",
+        "sha256": "74e163337e1d9e0748a4d92bfe7adad87c88f011de4ee35a6365db2b04548f95",
+        "bytes": 1395
+      },
+      {
+        "path": "y1-build-static.log",
+        "sha256": "517b810f2e6b8665063733614ca97a6d7c73556175c38101a53e1df50c333dc1",
+        "bytes": 41785
+      },
+      {
+        "path": "y1-build.ps1",
+        "sha256": "50ad040865bfa1f340a6162e48ddd6cca2cfa7a5d006653de57efc1e8c2dd7b8",
+        "bytes": 1394
+      },
+      {
+        "path": "y1-configure-off.log",
+        "sha256": "2aa685fa26fadf717a4fcec3e33be6c16a22b34f197849daaeb62f7882eb8483",
+        "bytes": 1846
+      },
+      {
+        "path": "y1-configure-shared.log",
+        "sha256": "ff696b070608be7426d5d83d71dc84e3bca503f6c3686e39891f5769a7dd3940",
+        "bytes": 3111
+      },
+      {
+        "path": "y1-configure-static.log",
+        "sha256": "d2298dc4377dded4d2cb6824d0e52b49d45c8dd2a8569a393dfcb80c55e1f9ca",
+        "bytes": 2204
+      },
+      {
+        "path": "y1-consumer-shared-compute-build.log",
+        "sha256": "5cf942754722968ec4b1b1d7c8b09f3dc58b31e18f8655a69076b4325117b2ce",
+        "bytes": 415
+      },
+      {
+        "path": "y1-consumer-shared-compute-configure.log",
+        "sha256": "aeeab37b45d067c875e5f616a5eda8ef87c905cc82a682968c864785ff87dd7e",
+        "bytes": 524
+      },
+      {
+        "path": "y1-consumer-shared-compute-run.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "y1-consumer-shared-graph-build.log",
+        "sha256": "f35fa061a2ef7f42cd9186196e4dda9b07ac6a373bb143da693d7b877322293f",
+        "bytes": 405
+      },
+      {
+        "path": "y1-consumer-shared-graph-configure.log",
+        "sha256": "2d4b60c999bd2e934cc6181a485c6dfd28dd96546a7b0e1f82053a3da77a3a1e",
+        "bytes": 522
+      },
+      {
+        "path": "y1-consumer-shared-graph-run.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "y1-consumer-static-compute-build.log",
+        "sha256": "4f17de4f3ad3fa5498c0bdcf1ed91962bcba60741383947459a7450cfa7b421a",
+        "bytes": 415
+      },
+      {
+        "path": "y1-consumer-static-compute-configure.log",
+        "sha256": "ee5a32078796df043a8894c68eaf9308055fa8a9d8f6e8af5c71fe5e8d65a51b",
+        "bytes": 989
+      },
+      {
+        "path": "y1-consumer-static-compute-run.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "y1-consumer-static-graph-build.log",
+        "sha256": "f5eb99385dbee38659b35c8cda98759bfccfea27ce52620f41f55718ec85841a",
+        "bytes": 405
+      },
+      {
+        "path": "y1-consumer-static-graph-configure.log",
+        "sha256": "7637140739b7817a2ca6a8e4be8d37b490a54420a7e26dc122a3c28cf16b5f93",
+        "bytes": 987
+      },
+      {
+        "path": "y1-consumer-static-graph-run.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "y1-consumers.ps1",
+        "sha256": "fd88dc4f1ba443195979fe1119650ec11e3f4a605ed9e03572b80069dc34c263",
+        "bytes": 1807
+      },
+      {
+        "path": "y1-install-shared.log",
+        "sha256": "14247a876b1484a3b5ebb4b5304eded1876e9255b9f10c5d960f3bf2c55d6c26",
+        "bytes": 24008
+      },
+      {
+        "path": "y1-install-static.log",
+        "sha256": "dd7f0d797abbd35e34a00f2b147ddb688243c6bddf2f69b14d3985a1058424df",
+        "bytes": 23182
+      },
+      {
+        "path": "y1-package-build-shared.log",
+        "sha256": "358ce6b4a3cd1d0c98e4c3383c6b022dbd2805c4122a4bd8380162d997e10836",
+        "bytes": 5646
+      },
+      {
+        "path": "y1-package-build-static.log",
+        "sha256": "aefe3857e1d8bd55ce3d5fe9bc70e99e37dff86059f5b9856a6a35511eb7744e",
+        "bytes": 5646
+      },
+      {
+        "path": "y1-package-configure-shared.log",
+        "sha256": "72b6223047720ac0198f7fd0471e4f0b738d6805b93ee169881d32ce00e43e07",
+        "bytes": 2039
+      },
+      {
+        "path": "y1-package-configure-static.log",
+        "sha256": "311684bb745e26ad86d7f5a1462b68bb8a034d0ab7c1876dfff3e8cf65742877",
+        "bytes": 2336
+      },
+      {
+        "path": "y1-package-shared.ps1",
+        "sha256": "9995368c5ae10c0e62b1871f638d4d403fed821acdf5841a3325b1309c8217fd",
+        "bytes": 1570
+      },
+      {
+        "path": "y1-package-static.ps1",
+        "sha256": "3395190a0c6643344f06976450ec3807d914fcf9afc735d70842c86b466f2cca",
+        "bytes": 1569
+      },
+      {
+        "path": "y1-run-shared.log",
+        "sha256": "1d12e1a1f207f7813a2287564e82c57a50d3105677bde72785f838068df9d91c",
+        "bytes": 1459
+      },
+      {
+        "path": "y1-run-static.log",
+        "sha256": "108d0342edf875a6b47e2fb7f673526c0362863da2894859972c17face824f61",
+        "bytes": 1459
+      },
+      {
+        "path": "y1-selector-regression.log",
+        "sha256": "c143bed2a8a1f79daf96fc273b709c2d00f95eead619756d827982f058bcd93c",
+        "bytes": 103
+      },
+      {
+        "path": "y1-source-build-path-failure.log",
+        "sha256": "822b6e575bc97949d196ad9caf2247cdfb4f2ecbe535e84767105dc87afbc818",
+        "bytes": 6822
+      },
+      {
+        "path": "y1-source-build.log",
+        "sha256": "2afc9e80bfd6cf11478a776d72aef073e7cb6364fbb55097fb581b6e0f33ce19",
+        "bytes": 44130
+      },
+      {
+        "path": "y1-source-compute-run.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "y1-source-configure.log",
+        "sha256": "3fad38687519253aaf4819981142617402df2e8ad5f0ec4f25e31fec44decea6",
+        "bytes": 2040
+      },
+      {
+        "path": "y1-source-contract.log",
+        "sha256": "7a082e3e618c1d4086804bbc23c2e773764025bb0b21b64ed145b5ba99c5e057",
+        "bytes": 292
+      },
+      {
+        "path": "y1-source-graph-run.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "y1-source.ps1",
+        "sha256": "d8bb18d55d5f9b25aca742e41ad95f6eae93a8353fbee9608cfe09d5e94768c1",
+        "bytes": 1496
+      },
+      {
+        "path": "source-consumer/CMakeLists.txt",
+        "sha256": "5248161a213b5ce65e6dd57d0031c077a2fff0c18f6230cb8f9ce5956b1b1c2f",
+        "bytes": 810
+      },
+      {
+        "path": "selector/ggml-vulkan-audited.json",
+        "sha256": "98391f8ad0fdf8197820a70eaa62d98c61bb36e720242c9c94d888b677fd05f3",
+        "bytes": 187298
+      },
+      {
+        "path": "selector/ggml-vulkan-y1-product-final.json",
+        "sha256": "37645931233e67469dd1af3be7fa8003912f9d5afe8d2a6d396835d48306f215",
+        "bytes": 201056
+      }
+    ]
+  }
+}

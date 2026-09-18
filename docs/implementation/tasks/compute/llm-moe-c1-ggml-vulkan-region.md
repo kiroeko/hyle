@@ -41,11 +41,11 @@
 | Y3 | 受管 region 的输入/状态/完成 | 冷构图/资格/绑定与 provider 原生运行分开；每槽 metadata/临时资源、pending owner、接纳部分工作后排空、取消/关闭；普通结果寿命与原生片段组合；热期不做跨 Provider 搜索/计时 |
 | Y4 | 普通 Direct/Graph 及三交付 | 用户仍只选 Vulkan；首个完整 C1 region 的具名语义域/默认规则，保留 provider 融合；实际替代路径验证后再比较存量 HYLE 实现，不由实验探针签产品支持 |
 
-这是 SCOPED 的具名待审清单，不是 AUDITED FIX。新 identity 已在 `2f65bad3` 登记 QUEUED，
-当前进入 SCOPED，CMake 暂保留不可构建 identity。固定 API、failure、owner、常态成本与 CMake
-描述后才能授权产品代码。现有 C1 T–X 的 AUDITED 不覆盖新 runtime 或新的公开资源合同。
+上表是进入 SCOPED 时的具名待审清单。新 identity 在 `2f65bad3` 登记 QUEUED，随后进入 SCOPED；
+首批已审计的产品授权见下方 Y01–Y04，其余项仍需固定 API、failure、owner、常态成本后实施。
+现有 C1 T–X 的 AUDITED 不覆盖新 runtime 或新的公开资源合同。
 
-## 当前证据与未完成
+## 接入前证据
 
 W1 的原版计算以及窄 native bridge 验证副本已通过三种形状各三次重放；最大绝对误差约
 `7.33e-7`，scalar oracle 门为 `6e-6 * (1 + |expected|)`。这证明源算法与接入路径可用。
@@ -91,3 +91,47 @@ metadata owner；不等待整个 runtime 桥接完成才开始产品代码。Y2 
 原有 Vulkan 依赖入口接受直接选择该 factor；只是声明接线，不改 selector 核心。54项 selector
 回归首跑有一条把 `compute_provider_ggml_vulkan` 的前缀误认成 dormant CPU identity；实际选择
 列表没有 CPU ggml。仅将该测试断言改为解析完整 factor ID，53项原通过、该项修正后单独通过。
+
+## 首批实现与验证记录（2026-09-18）
+
+产品提交 `977057403fd1c7023b0c12d2996886b4aa582452`，审计提交 `ea560521`。Y01–Y04 已落地：
+中央 lock/cache/package 声明接入原厂 ggml/base/vulkan targets；四文件窄补丁只作用于 build-local
+副本；私有 move-only metadata arena 由 HYLE allocator 保活。ggml context 的 OOM、溢出和
+外部 arena 对齐错误可返回失败。没有修改上游算子算法，旧 CPU ggml BLOCKED 不变。
+
+[结构化记录与原始日志清单](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y1-build-admission.json)
+绑定产品 tree、源与补丁身份、实际命令和限制；
+[原始日志包](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y1-build-admission-raw.zip)
+保留了路径失败及纠正后的完整构建输出。
+
+| W1 实际验证 | 结果与适用边界 |
+|---|---|
+| 私有 factor static/shared | 各4例通过：3例 metadata/失败与寿命、1例原版 Vulkan RMSNorm→scale→SiLU→residual；宽2048，1/17/128行，每形状3次变化输入，独立 double oracle。使用生成数据，不是真实 checkpoint 权重 |
+| 补丁合同 | 5例通过：源/结果身份、未变文件时间戳、篡改/额外文件拒绝；原始 upstream checkout 仍 clean |
+| 路线 OFF | 故意传入无效 shader/source 路径并关闭 Vulkan package 查找，configure 通过且未使用这些变量；这里只签配置隔离 |
+| static/shared 安装与 relocation | 两套 compute+graph 产品均构建安装成功；复制 SDK 后四个普通 Compute/Graph consumer 构建运行通过，PATH unset、DLL 邻置 |
+| 源码嵌入 | 外部工程 add_subdirectory canonical 源码；认证的 ggml/Vulkan-Headers source override 和 FULLY_DISCONNECTED 下构建、两个普通 consumer 通过；不是独立 HYLE source archive 验收 |
+
+安装/源码 consumer 运行的是既有原生 Vulkan 普通路径，不能替代新 ggml managed provider 的
+Direct/Graph 验收。内部 static/shared correctness 先于最终 `EP_PREFIX` 目录修正执行，C++ 与
+四文件补丁内容相同；最后完整 source build 使用修正后的 CMake。没有因说明/状态更新重跑 GPU/P1。
+Khronos validation 由环境请求，日志未见 VUID；未单独证明 layer 激活，不签完整 validation 门。
+
+Windows 源码嵌入曾在 shader host 子项目 compiler probe 失败：object 目录本身243字符，
+CMake 安全预算250，MSVC 报生成文件 `C1083/Invalid argument`，本机 `LongPathsEnabled=1`。
+通过 owner 内标准 `EP_PREFIX` 把 host build 目录从172字符缩至113字符，最终 source build 和
+两个 consumer 通过；无需改系统、搬源码或调大编译器路径预算。工程处理见
+[Windows 长路径说明](../../../developer/setup/windows.md#长路径与第三方子构建)。
+
+P0：arena 一次分配、context 一次小对象分配，move 不分配，先释放 context 再退役 arena；
+不由 arena 分配 tensor payload。源码认证/补丁只在构建期发生。原厂 graph 的每次编码、临时
+资源与同步仍有成本，后续普通入口完整比较必须计入；本批无 P1 结论。
+
+统一 LOC 脚本对上述不可变产品提交沿原22路径加新 provider 路径统计为 **44,559行 / 180个实现文件**，
+较前次增加86行；self-check通过，包含 GLSL，不含测试、bench、vendor、CMake/Python。
+[原始统计](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y1-implementation-loc.json)。
+
+状态保持 `AUDITED`。后续先固定 Y2 的 native device/queue、loader、配额与部分初始化失败 FIX，
+再实现 Y3 受管运行/完成、Y4 普通入口与规则。当前 static SDK 仍有临时 Vulkan 开发 package
+依赖；其他平台、完整失败/并发/结果寿命、真实权重、source archive、广组件 selector 门及 P1
+尚未完成，聚合验收 `INCONCLUSIVE`，64行/256格不增加 PASS。
