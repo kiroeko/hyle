@@ -49,6 +49,11 @@ SCOPED 登记提交为 `98cf0742`。
 所有权，避免引入该 Graph kernel 的线程局部 execution-args cache。并非宣称 primitive 无分配：
 `primitive_iface.cpp` 每次转换 execution args 仍有 vendor metadata 分配，全部计费。
 
+AA01 的具体失败证据：该 pin 的 `primitive_iface.cpp::dnnl_primitive_execute` 在普通路径尾部
+才调用 after_exec_hook；`cpu_stream.hpp` 直接清空当前 pool，没有恢复嵌套调用前的 pool。
+有限修正为构建目录中的单文件 overlay：用栈上 scope guard 保证正常/异常退出都执行 hook 并恢复
+旧 pool。固定源 SHA/精确锚点失败即停止，原缓存/checkout不改动；不改算法或另建 patch 框架。
+
 | FIX | 冻结实现与验收 |
 |---|---|
 | AA01 | MATMUL 保留，加 LAYERNORM；THREADPOOL 借用既有 ParallelExecutorRef，不创建私有池。冷 primitive 创建保存/恢复 oneDNN 线程局部 concurrency 设置；并发数量可表达性检查，不截断成错误整数 |
