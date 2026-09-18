@@ -38,6 +38,14 @@
 既有能力或算法结构，不能据此记为第三方算子接入。X 的既定验证与记录完成后，下一项先处理
 成熟实现的接入边界；尚未定界的 TopK/index/Scan 不直接延续为自写 shader 队列。
 
+2026-09-18 用户进一步明确：先完成主流 Provider 的实际接入和覆盖核对，再为剩余必要缺口
+安排 HYLE 实现。已完成的 A–X 自有算子按同一标准参加完整等责比较；不胜出且没有可信优化
+机制，或在既定有限纠正预算内仍无优势时，迁移消费者并删除已被成熟实现完整覆盖的重复路径。
+必要未覆盖域和具名硬件/版本/shape 的优势域分别保留。源码与测试投入不构成保留理由；本次
+确认只固定后续裁决规则，不凭未运行的比较立即删掉有效能力。
+用户明确排除 SIMD：其通用用途超出推理，本轮不删除/裁剪 SIMD 模块和公共能力；Compute/Graph
+重复算子迁移不得连带删除这层基础设施或非推理消费者。
+
 | owner | 当前事实 / 源码 | C1 缺口与承载方向 |
 |---|---|---|
 | compute_ops | `operation.h` Unary 止于 SiLU；已有 View/Cast/Reduce/RmsNorm/LayerNorm/Gather/Scatter/TopK；operation.cc 完成共同 shape 检查 | softplus 与必要 scan 的 typed schema；保留既有数学/alias 语义，明确半精度舍入 |
