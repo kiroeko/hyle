@@ -258,3 +258,21 @@ self-check通过，不含测试、bench、vendor、CMake/Python；
 graph/storage owner 与 gallocr 的可恢复失败，必须保留成熟 liveness/in-place 规划。公开取消/
 关闭/旧结果、device-loss 传播、Y4 默认入口/规则、真实权重、Air/Mini、完整三交付和 broad
 selector 门仍未完成；没有用户决策阻塞，不因本次记录修改重建或重跑 P1。
+
+## Y3 冷图与存储有限 FIX（AUDITED，2026-09-18）
+
+owner `/root`，baseline `fbd07798`。固定 `ggml-alloc.c` 的具体缺陷为：new/chunk/hash/node/leaf
+metadata 的空指针/abort 路径、free-block 容量耗尽的 abort、部分初始化回收不完整；C 分配循环
+不能靠外层 C++ catch 回收尚未登记的局部 buffer。上述只影响本私有 Vulkan 源码副本。
+
+| FIX | 冻结责任 | 验证 |
+|---|---|---|
+| Y10 | 保留 gallocr 的拓扑/liveness/in-place 算法，metadata 分配采用检查与局部回滚；容量/溢出失败沿 reserve 的 bool 返回，不用 abort/longjmp。失败 owner 只销毁不复用。每个冷存储 owner 使用同设备 buffer-type 的私有副本，仅把 allocation callback 包成不抛异常的失败边界，使 C 的已有逐 buffer 回收生效；不改变算子或全局 allocator | 同补丁 C 源的测试专用副本定点注入各 host 分配失败，统计回收；真实 native 配额拒绝、已分配部分 GPU chunk 后失败；源合同与 static/shared correctness。产品不添加测试 failpoint |
+| Y11 | 私有 NativeGraph 接收已按容量构建的 metadata arena、ggml graph 和可选外部 buffer 强 owner，冷期核对原版 op capability、正尺寸与同设备存储，再 reserve/allocate；整体拥有 gallocr、arena、imports 和 NativeDevice。每槽独立，执行由已有 NativeWork 保活该 owner；暴露私有存储字节事实用于验证复用。当前上下游公开 C++ API 不变 | 真实 norm/gate/residual 与长链的存储复用、两图独立、重复执行、保留旧图、OOM/拒绝与析构返还；输入/输出按上游 flags 标记；借入资源保活和跨设备拒绝 |
+
+冷分配只发生在 slot 创建，重复执行不重新调用 gallocr；不以永久逐张量分配替代原规划。此 seam
+仍是私有 graph handoff，Y4 的语义 lowering 负责从有限 Plan 计算 metadata 容量、数学/shape
+合同与输入/输出 flags，再接自然入口，不把原始 ggml 类型交给普通用户。已有仅 admission 使用的
+`allocate_context` 按迁移实际消费清理，未迁移用法不获得最终 OOM 资格。零尺寸/不支持域由上层
+固定规则选择其他合格实现或明确拒绝；本批不据此缩减 C1 MUST。实现纠正最多两轮，不启动 P1，
+公开取消/关闭、完整三交付和其他机器仍按 Y4 验收。
