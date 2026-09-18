@@ -218,6 +218,8 @@ packing 与所有权。它供 `QuantizedMatMul` 使用，不能推断普通 `Mat
 不同 Q4 格式、activation 临时量化
 与累加类型不是同一件事。当前
 `MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
+当前 CPU Native 与 oneDNN MatMul 仅实现显式 F32 累加（也是 `MatMul{}` 的默认值）；
+其他累加类型在准备期返回 `Unimplemented`，默认 Direct/Graph 不会通过 fallback 静默降精度。
 
 ### CUDA Provider 接入状态
 

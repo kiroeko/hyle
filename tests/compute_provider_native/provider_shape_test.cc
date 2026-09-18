@@ -46,9 +46,10 @@ TEST(NativeMatMul, RejectsUnsupportedAccumulationAtBothColdStages) {
         DataType::kInt32, DataType::kUnknown}) {
     SCOPED_TRACE(static_cast<int>(type));
     const Operation operation(MatMul{type});
+    auto query_inputs = input_requirements;
+    auto query_outputs = output_requirements;
     auto rejected = OperationPreparationAccess::propose(
-        context, 0, operation, inputs, outputs, input_requirements,
-        output_requirements);
+        context, 0, operation, inputs, outputs, query_inputs, query_outputs);
     ASSERT_FALSE(rejected.has_value());
     EXPECT_TRUE(rejected.error().IsUnimplemented());
     auto direct =

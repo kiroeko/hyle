@@ -844,6 +844,9 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kMatMul: {
+    if (operation.get_if<MatMul>()->accumulation_type != DataType::kFloat32)
+      return Status::Unimplemented(
+          "native MatMul supports float32 accumulation");
     if (inputs.size() != 2 || inputs[0].rank() < 2 || inputs[1].rank() < 2)
       return Status::Internal("native MatMul shape is invalid");
     Status status = validate_logical_f32(inputs[0]);

@@ -269,6 +269,9 @@ Status select_route(void *context_value, Operation operation,
     return Status::Unimplemented(
         "oneDNN provider does not implement this operation");
   }
+  if (operation.get_if<MatMul>()->accumulation_type != DataType::kFloat32)
+    return Status::Unimplemented(
+        "oneDNN MatMul supports float32 accumulation");
   if (!is_row_major_f32_matrix(inputs[0]) ||
       !is_row_major_f32_matrix(inputs[1]) ||
       !is_row_major_f32_matrix(outputs[0])) {
