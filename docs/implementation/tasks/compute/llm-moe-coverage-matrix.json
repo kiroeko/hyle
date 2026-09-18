@@ -1911,7 +1911,7 @@
         "graph_route_cpu",
         "graph_provider_onednn"
       ],
-      "implementation": "reuse HYLE SIMD/Native and qualified oneDNN; bounded new algorithm ports from audited peers; ggml adapter stays BLOCKED",
+      "implementation": "prefer qualified oneDNN/BLAS or mature third-party kernels/regions; retain evidenced HYLE SIMD advantages; new HYLE algorithms only for verified gaps or complete-cost benefits; existing ggml CPU runtime blocker requires its declared dependency repair",
       "rule": "existing fixed CPU eligibility extended only by declared precision/shape and immutable-candidate evidence"
     },
     "cuda": {
@@ -1925,7 +1925,7 @@
         "graph",
         "graph_route_cuda"
       ],
-      "implementation": "cuBLASLt dense, existing Marlin, audited mature CUDA kernels/regions plus necessary HYLE boundary kernels; preserve native streams/capture",
+      "implementation": "prefer cuBLASLt, Marlin and mature CUDA kernels/regions with native streams/capture; adapt boundaries before writing algorithms; HYLE kernels only for verified missing domains or complete-cost benefits",
       "rule": "SM/device/toolkit/driver and format/shape conditions fixed during development; match/bind at prepare"
     },
     "apple_mlx_metal": {
@@ -1935,7 +1935,7 @@
       "graph_owner": [
         "graph_route_apple"
       ],
-      "implementation": "MLX typed lowerings/compiled regions; same-runtime Metal extensions only for measured complete benefits; keep native array owners",
+      "implementation": "prefer MLX typed lowerings/compiled regions or qualified mature Metal regions; keep native array owners; HYLE extensions only for verified missing domains or complete-cost benefits",
       "rule": "MLX/macOS/hardware-qualified region rules; functional state inputs/outputs and native runtime reuse"
     },
     "vulkan": {
@@ -1945,7 +1945,7 @@
       "graph_owner": [
         "graph_route_vulkan"
       ],
-      "implementation": "native SPIR-V pipelines/recorded programs, audited ggml shader ports where admitted; same-device bounded dequant fallback",
+      "implementation": "prefer qualified ggml Vulkan regions or pinned upstream kernels/fused shader programs; resolve native resource/failure boundaries before writing algorithms; HYLE kernels only for verified missing domains or complete-cost benefits; no CPU payload fallback",
       "rule": "device limits/features/vendor-driver qualified shaders and workgroup rules; no CPU payload fallback"
     }
   },

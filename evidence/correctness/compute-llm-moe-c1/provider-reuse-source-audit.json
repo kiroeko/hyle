@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "kind": "bounded_provider_source_audit_not_product_acceptance",
+  "observed_on": "2026-09-18",
+  "product_baseline": "6be8e6a7aa2ca898b8e6e89d4dd10679d1f40476",
+  "scope": "Existing C1 provider provenance, seven model entry points, Qwen3.5 calculation chain and Vulkan integration seam",
+  "sources": [
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/qwen35.cpp",
+      "sha256": "ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/qwen35.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/qwen35moe.cpp",
+      "sha256": "ada74c413bfda274f1ffe8c4c32dbd80e999c777a5888244cc118da832f635a7",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/qwen35moe.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/kimi-k3.cpp",
+      "sha256": "642f45a129e8330cee1a932f56359c00dc9b87c7aec04dc6215a0ccd5b45410a",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/kimi-k3.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/deepseek4.cpp",
+      "sha256": "6bad275618f2b3f6f671fe4e6506c7fcfa06083d4606456222b406792539e943",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/deepseek4.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/glm-dsa.cpp",
+      "sha256": "51eb8e82df5d607eae137c7fbf358410c0f992c4842b8df9d5ca68da7f7ee3f3",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/glm-dsa.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/delta-net-base.cpp",
+      "sha256": "5e3b318953f854b3825dd7cfe4b483ca7935cd5f6680438a3ece4be9b4d5428f",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/delta-net-base.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "conversion/qwen.py",
+      "sha256": "b783f53598e1a65cb0ef7fbe0d0f52da472e2784f63acf13a5aea00f623cfaa6",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/conversion/qwen.py"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "conversion/kimi_k3.py",
+      "sha256": "03a818bbc01e7cf0bdf7a39d228533ed3ddca64891095cbf700df1199dea5f1e",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/conversion/kimi_k3.py"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "conversion/deepseek.py",
+      "sha256": "09ba15cefd9448d13f27eb0b46462d1a845d7576a6b401f0bf81d73e0419d655",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/conversion/deepseek.py"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "conversion/glm.py",
+      "sha256": "cbc38cb64a414079233b8ce10b9eb63c1f4814ab53f06ce578c44969dad7c377",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/conversion/glm.py"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/include/ggml-backend.h",
+      "sha256": "46d84cb998105f871240864fd0f55446939a2fe86c5c281afa63a010fb1f65a2",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/include/ggml-backend.h"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/include/ggml-vulkan.h",
+      "sha256": "7eae5dad2cc7bb4d3eca828539f441816d5fd59fdc7b224d49aa229fc7b7248c",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/include/ggml-vulkan.h"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-cpu/ops.cpp",
+      "sha256": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-cpu/ops.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-cpu/ggml-cpu.c",
+      "sha256": "839197aab9a2fb3c509221699e2810a4c4f3f3043416f55e653c380a46ed74cf",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-cpu/ggml-cpu.c"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-cuda/ggml-cuda.cu",
+      "sha256": "a4b41679c5936d9241b626056f2688974d7df7fe2e38815d5b3f54a7d2a88de8",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-cuda/ggml-cuda.cu"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-metal/ggml-metal-ops.cpp",
+      "sha256": "0e2ac569b4c443d6e94fc342d78a85204b933d82e45d4c19d3be795fc65ca2d3",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-metal/ggml-metal-ops.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+      "sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-vulkan/ggml-vulkan.cpp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-vulkan/vulkan-shaders/topk_argsort.comp",
+      "sha256": "d409049e2477a6359568e86a886e3a0c101cffcfc53df8e39ef92c782c883ad6",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-vulkan/vulkan-shaders/topk_argsort.comp"
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+      "sha256": "e2066c68067c91fa72a8c6420a0a6a4f6072ba6aec6b9ee303e2706517ed843c",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp"
+    },
+    {
+      "repository": "timkhronos/llama.cpp",
+      "revision": "de25343596a2c924ba62d35b126e811be0d38a49",
+      "path": "src/models/glm5-next.cpp",
+      "sha256": "42bbfdada39854d9b6c94cfc764c35c30eadac288771d34776fe17cd92ecde8c",
+      "url": "https://github.com/timkhronos/llama.cpp/blob/de25343596a2c924ba62d35b126e811be0d38a49/src/models/glm5-next.cpp"
+    },
+    {
+      "repository": "timkhronos/llama.cpp",
+      "revision": "de25343596a2c924ba62d35b126e811be0d38a49",
+      "path": "conversion/glm.py",
+      "sha256": "ed3b10019b079985283d40ae2db009da31867f00c81fe851a083d2ff75a73c46",
+      "url": "https://github.com/timkhronos/llama.cpp/blob/de25343596a2c924ba62d35b126e811be0d38a49/conversion/glm.py"
+    },
+    {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-vulkan/ggml-vulkan.cpp",
+      "sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+      "same_file_as_llama_pin": true
+    }
+  ],
+  "model_mappings": [
+    {
+      "model": "qwen38_27b",
+      "repository": "Qwen/Qwen3.8-27B",
+      "hf_architectures": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "converter": "conversion/qwen.py",
+      "model_graph": "src/models/qwen35.cpp",
+      "source_revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "source_status": "existing registered mainline snapshot",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    },
+    {
+      "model": "qwen38_24t",
+      "repository": "Qwen/Qwen3.8-2.4T-A95B",
+      "hf_architectures": [
+        "Qwen3_5MoeForCausalLM"
+      ],
+      "converter": "conversion/qwen.py",
+      "model_graph": "src/models/qwen35moe.cpp",
+      "source_revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "source_status": "existing registered mainline snapshot",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    },
+    {
+      "model": "kimi_k3",
+      "repository": "moonshotai/Kimi-K3",
+      "hf_architectures": [
+        "KimiK3ForConditionalGeneration"
+      ],
+      "converter": "conversion/kimi_k3.py",
+      "model_graph": "src/models/kimi-k3.cpp",
+      "source_revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "source_status": "existing registered mainline snapshot",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    },
+    {
+      "model": "deepseek_v4_pro",
+      "repository": "deepseek-ai/DeepSeek-V4-Pro",
+      "hf_architectures": [
+        "DeepseekV4ForCausalLM"
+      ],
+      "converter": "conversion/deepseek.py",
+      "model_graph": "src/models/deepseek4.cpp",
+      "source_revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "source_status": "existing registered mainline snapshot",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    },
+    {
+      "model": "deepseek_v4_flash",
+      "repository": "deepseek-ai/DeepSeek-V4-Flash",
+      "hf_architectures": [
+        "DeepseekV4ForCausalLM"
+      ],
+      "converter": "conversion/deepseek.py",
+      "model_graph": "src/models/deepseek4.cpp",
+      "source_revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "source_status": "existing registered mainline snapshot",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    },
+    {
+      "model": "glm53",
+      "repository": "zai-org/GLM-5.3",
+      "hf_architectures": [
+        "GlmMoeDsaForCausalLM"
+      ],
+      "converter": "conversion/glm.py",
+      "model_graph": "src/models/glm-dsa.cpp",
+      "source_revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "source_status": "existing registered mainline snapshot",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    },
+    {
+      "model": "glm53_flash",
+      "repository": "zai-org/GLM-5.3-Flash",
+      "hf_architectures": [
+        "Glm5NextForConditionalGeneration"
+      ],
+      "converter": "conversion/glm.py",
+      "model_graph": "src/models/glm5-next.cpp",
+      "source_revision": "de25343596a2c924ba62d35b126e811be0d38a49",
+      "source_status": "existing support branch; not merged or product-admitted",
+      "verdict": "SOURCE_MAPPED_NOT_RUNTIME_VALIDATED"
+    }
+  ],
+  "glm53_flash_source": {
+    "pull_request": "https://github.com/ggml-org/llama.cpp/pull/27773",
+    "state": "open",
+    "merged": false,
+    "head_sha": "de25343596a2c924ba62d35b126e811be0d38a49",
+    "changed_files": 31,
+    "ggml_backend_files_changed": 0,
+    "metadata_sha256": "49365d7035af36e9de7305d9cb34dcedf8c2af7566f742c2d54fcc63b747b8a3",
+    "file_list_sha256": "2cf37764e2179d59bdf56690e8eb1a92ec175923a74ed6e9660fb6e7701fa642"
+  },
+  "decisions": [
+    "Use mature library APIs, complete regions or pinned upstream source before writing algorithms.",
+    "Names, dtype/layout differences and missing registrations in an older pin are not evidence that third-party algorithms are absent.",
+    "SDK primitives or algorithms inspired by upstream are not counted as integrated third-party operators.",
+    "Next implementation requires a bounded region/native-boundary decision in the active C1 card; no new custom kernel is authorized here."
+  ],
+  "not_run": [
+    "Large-model weight downloads or execution",
+    "Per-model four-backend/format/shape qualification",
+    "New ggml runtime integration or dependency upgrade",
+    "Performance comparison or default-rule qualification"
+  ]
+}

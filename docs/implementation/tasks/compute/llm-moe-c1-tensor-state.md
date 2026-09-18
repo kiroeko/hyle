@@ -33,6 +33,11 @@
 
 ## 已完成的源码审计输入
 
+当前承载选择按 [C1 Provider 复核](llm-moe-c1-provider-reuse-audit.md)纠正执行顺序：先接成熟
+实现或完整 region，再补接入与明确缺口。下文历史子集中的 `BORROW` 有时只指 SDK 原语、HYLE
+既有能力或算法结构，不能据此记为第三方算子接入。X 的既定验证与记录完成后，下一项先处理
+成熟实现的接入边界；尚未定界的 TopK/index/Scan 不直接延续为自写 shader 队列。
+
 | owner | 当前事实 / 源码 | C1 缺口与承载方向 |
 |---|---|---|
 | compute_ops | `operation.h` Unary 止于 SiLU；已有 View/Cast/Reduce/RmsNorm/LayerNorm/Gather/Scatter/TopK；operation.cc 完成共同 shape 检查 | softplus 与必要 scan 的 typed schema；保留既有数学/alias 语义，明确半精度舍入 |
@@ -1083,3 +1088,18 @@ X 首轮候选 `94252bf7` 的产品与 SPIR-V 编译通过，测试的 Bool 参�
 现有全部门限；不加F64、额外dispatch/scratch，不改共同公式或其他owner。原始 FAIL 保留。
 
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
+
+#### C1-X 实现与局部验证事实
+
+- `6be8e6a7` 完成上述一次有限产品数值纠正；W1、Air、Mini 各通过 **32 Direct + 14 Graph = 46**
+  用例及两个公开头检查。小 tail 的 F32/BF16、大共同偏置及新增的1/64两侧回归均通过；没有
+  放宽数值门限。首次测试编译失败和随后数值失败保留于
+  [结果及原始日志](../../../../evidence/correctness/compute-llm-moe-c1/x-vulkan-focused.json)。
+- 三浮点归约、任意轴和 mask、缓存边界/长行、非有限值、奇数 View 起点与输出 word 所有权，
+  独立 L2/概率 Graph、双槽/变输入/旧结果/关闭、保护区和原生分配/录制计数实际通过。
+  W1/Air validation layer 无 VUID/同步错误；Mini 仍只签 correctness/portability。
+- [统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/x-implementation-loc.json) self-check PASS：
+  Compute+Graph **44,473 行 / 178 实现文件**，含 GLSL、不含测试/bench/第三方。
+- X 是自有 shader 的局部正确性事实，不是新 ggml Provider 接入或优选胜出。接下来按
+  [成熟 Provider 复核](llm-moe-c1-provider-reuse-audit.md)处理现成计算链的接入边界，不直接新增
+  自写 TopK/index/Scan。完整 C1 的实际权重、三交付、其他适用环境及 P1 尚未完成，owner 保持 AUDITED。
