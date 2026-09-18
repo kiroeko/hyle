@@ -386,3 +386,25 @@ flags，以及现有 HYLE Plan/Recorder/Run。已排除把 HYLE 图整体交给 
 provider 排序、timing profile 或运行期赢家裁决入口。本批不宣称已胜出、不删除未比较算法。
 后续实际权重、Air/Mini、完整三交付/relocation/OFF与原 broad 门仍是 Y4 的适用验收，不移到 C7。
 有限实现纠正最多两轮；不扩建公共治理/性能仪器，文档状态提交不重建或跑 P1。
+
+## 临时产物回收约定（2026-09-18）
+
+用户要求持续控制磁盘占用。Windows 仍为产品真相；本轮复用一套固定 static/shared 构建目录，
+第三方认证源码只放共享 cache，工具与 SDK 独立保存。每个验证批次先归档身份、命令、结果和
+必要失败日志，再清理过期构建、重复源码包与可重建中间产物；不按每个提交无限新增副本。
+不清理未提交源码、本地模型或唯一验收记录。环境被用户清理后只恢复下一项适用验证必需部分，
+不以恢复缓存为由重跑已匹配的历史正确性或 P1。清理本身不计入功能完成度。
+
+### Y13 实现前补充审计：端口起点与共同 schema
+
+owner `/root`，baseline `4848e222`。审查 `TensorDesc::is_dense`、View slice 与原版 F32 descriptor
+寻址发现具体反例：stride1 的合法 F32 输入经 `slice(start=1, step=4)` 可形成 dense 描述而
+实际起点是 byte1。描述本身不能证明动态绑定端口的四字节对齐。Y13 因此在冷期为不能证明
+对齐的 region 输入固定加入既有 HYLE Copy 适配；已知对齐常量和原生计算结果直接导入，
+不在 bind/submit 改选 Provider。适配 buffer 参与既有 liveness/quota，dispatch 和复制均计费。
+补 byte1 起点、改变起点重绑和原输入保留的回归；不得用 bind 拒绝代替支持原有合法 View 域。
+这个首批保守转换的成本需随 C1 等责 P1 验收，不能宣称优选已经胜出。
+
+共同 schema 的 RMSNorm 当前只接受可选 scale；表中 bias 是相邻 Add 的 region 能力，
+不是新增 RMSNorm 参数。实施沿已有 schema，删除不可达的第三参数路径，不改共同操作合同。
+上述为同一 Y13–Y15 的有限接入纠正，不增加算子算法、公共配置或治理工具；预算仍为两轮。
