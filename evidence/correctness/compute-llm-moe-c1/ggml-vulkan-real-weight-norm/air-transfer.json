@@ -1,0 +1,7 @@
+{
+  "source": "Windows-generated actual-weight fixture",
+  "sha256": "a26407cac533b914f2a0686455700dc3cc9b0534c947d6c97ed6e2c6d484e160",
+  "verified_files": 14,
+  "destination": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/norm-input",
+  "hyle_execution": "NOT_RUN"
+}

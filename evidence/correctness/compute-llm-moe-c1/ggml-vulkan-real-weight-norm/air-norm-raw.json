@@ -1,0 +1,10 @@
+{
+  "platform": "darwin",
+  "status": "PASS",
+  "sdk_consumers": 2,
+  "submissions": 36,
+  "archive": "air-norm-raw.zip",
+  "sha256": "0f410c2c6cf86b32c828dc20da6ecaff342c4c3318ef2b4562401ddabf931d0c",
+  "bytes": 26938,
+  "model_tensor_bytes_archived": 0
+}

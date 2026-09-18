@@ -1,0 +1,19 @@
+{
+  "snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+  "removed": [
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/d/bs-hidden",
+      "logical_bytes": 440611649
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/d/bd-hidden",
+      "logical_bytes": 394365786
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/d/complete-source-hidden",
+      "logical_bytes": 82314047
+    }
+  ],
+  "logical_bytes": 917291482,
+  "retained": "Verified evidence already received on Windows, logs, relocated SDKs, installed consumers, original source archive, dependency/model caches"
+}

@@ -1,0 +1,19 @@
+{
+  "candidate": "351ec13d82057402594a96fcc862bcdc96b2d839",
+  "removed": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\d\\bs-hidden",
+      "logical_bytes": 495267318
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\d\\bd-hidden",
+      "logical_bytes": 431961047
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\d\\complete-source-hidden",
+      "logical_bytes": 82314047
+    }
+  ],
+  "logical_bytes": 1009542412,
+  "retained": "Verified evidence, logs, two relocated SDKs, six consumer identities, installed consumers, original source archive and all dependency/model caches"
+}

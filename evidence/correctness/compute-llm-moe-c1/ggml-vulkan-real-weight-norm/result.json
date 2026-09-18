@@ -1,0 +1,66 @@
+{
+  "scope": "C1-Y4 actual Qwen3.5-2B first-layer RMSNorm piece using ordinary Vulkan Direct and managed Graph",
+  "source_snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+  "product_candidate": "3c39428e3fdf1911b284f7632d891f663ad82f31",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "rows": [
+    1,
+    17,
+    128
+  ],
+  "width": 2048,
+  "runs_per_case": 3,
+  "platforms": {
+    "win32": {
+      "platform": "win32",
+      "status": "PASS",
+      "sdk_consumers": 2,
+      "submissions": 36,
+      "archive": "windows-norm-raw.zip",
+      "sha256": "2922795882fceb6bfa316e72edcec0d24c07b1425932eb156355aafdd0d7507e",
+      "bytes": 29724,
+      "model_tensor_bytes_archived": 0
+    },
+    "darwin": {
+      "platform": "darwin",
+      "status": "PASS",
+      "sdk_consumers": 2,
+      "submissions": 36,
+      "archive": "air-norm-raw.zip",
+      "sha256": "0f410c2c6cf86b32c828dc20da6ecaff342c4c3318ef2b4562401ddabf931d0c",
+      "bytes": 26938,
+      "model_tensor_bytes_archived": 0
+    }
+  },
+  "ordinary_sdk_consumers": 4,
+  "submissions": 72,
+  "correctness": "PASS for BF16 inputs, actual parameter and scalar double oracle under the existing C1 BF16 contract",
+  "resources": "PASS for two invocations, changed inputs, old results, destroyed source Graph/Program, unchanged input bytes, quota retirement",
+  "validation": "Windows and Air requested validation in Context; no VUID/Validation Error/SYNC-HAZARD in actual execution logs",
+  "delivery": "Installed relocated static and shared SDKs on Windows and Air; source delivery of this new consumer remains NOT_RUN",
+  "c1_acceptance": "INCONCLUSIVE",
+  "performance": "NOT_RUN",
+  "not_qualified": [
+    "Gather, gate/residual and persistent-state real-weight pieces",
+    "full C1 matrix",
+    "whole-model execution",
+    "source delivery of this exact consumer",
+    "performance preferences"
+  ],
+  "asset_state": "Original 13 files reverified. Exact old Windows B16 reference and Q4/Q8/FP8 derivative paths recorded by C0 are absent; historical receipts are retained, but those binary paths cannot be claimed currently reusable. Recover or regenerate with frozen recipes before C3/C6 consumption.",
+  "archives": {
+    "air-norm-raw.zip": {
+      "sha256": "0f410c2c6cf86b32c828dc20da6ecaff342c4c3318ef2b4562401ddabf931d0c",
+      "bytes": 26938
+    },
+    "controllers.zip": {
+      "sha256": "70cb6faa8e1d1e80503fb3164de3d00ffee84826a5392ba0374f1725e7bab946",
+      "bytes": 13030
+    },
+    "windows-norm-raw.zip": {
+      "sha256": "2922795882fceb6bfa316e72edcec0d24c07b1425932eb156355aafdd0d7507e",
+      "bytes": 29724
+    }
+  },
+  "model_tensor_bytes_in_git": 0
+}

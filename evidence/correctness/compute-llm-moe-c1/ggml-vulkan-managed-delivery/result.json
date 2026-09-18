@@ -1,0 +1,128 @@
+{
+  "scope": "C1-Y4 managed Vulkan delivery and Y20 changed-lock selected validation; not complete C1 acceptance",
+  "source_snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+  "product_candidate": "3c39428e3fdf1911b284f7632d891f663ad82f31",
+  "source_archive_sha256": "c0f003904c322a413aacdf1f77f98c22424e21743888dd1108635c92bd5fc603",
+  "platforms": {
+    "Windows": {
+      "snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+      "product_candidate": "3c39428e3fdf1911b284f7632d891f663ad82f31",
+      "platform": "Windows",
+      "status": "PASS",
+      "archive": ".scratch\\validation\\vulkan-delivery\\windows-raw.zip",
+      "sha256": "a150dd338a9eb375256c77cf91f56e35ff71d00e2c08a482590b39878378102b",
+      "files": 82,
+      "bytes": 130892,
+      "source_archive_sha256": "c0f003904c322a413aacdf1f77f98c22424e21743888dd1108635c92bd5fc603",
+      "journeys": [
+        "source Direct + Graph",
+        "relocated installed static Direct + Graph",
+        "relocated installed shared Direct + Graph"
+      ],
+      "executable_count": 6,
+      "limitations": "F32 mixed native/ggml FFN + application SPIR-V, generated weights; no full C1, model, or performance verdict"
+    },
+    "Air Mac16,12": {
+      "snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+      "product_candidate": "3c39428e3fdf1911b284f7632d891f663ad82f31",
+      "platform": "Air Mac16,12",
+      "status": "PASS",
+      "archive": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/air-delivery-raw.zip",
+      "sha256": "3a7cf4e20e1c72ad4447e341e0841b58e9121938690b17a6d960d9d2baeef2b5",
+      "files": 81,
+      "bytes": 125112,
+      "source_archive_sha256": "c0f003904c322a413aacdf1f77f98c22424e21743888dd1108635c92bd5fc603",
+      "journeys": [
+        "source Direct + Graph",
+        "relocated installed static Direct + Graph",
+        "relocated installed shared Direct + Graph"
+      ],
+      "executable_count": 6,
+      "limitations": "F32 mixed native/ggml FFN + application SPIR-V, generated weights; no full C1, model, or performance verdict"
+    }
+  },
+  "selected_gates": {
+    "native": {
+      "gate_count": 96,
+      "status": "PASS"
+    },
+    "contract": {
+      "gate_count": 1,
+      "status": "PASS"
+    },
+    "delivery": {
+      "gate_count": 15,
+      "status": "PASS"
+    }
+  },
+  "total_selected_pass": 112,
+  "unselected": [
+    {
+      "id": "factor:compute_provider_ggml",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "reason": "no public-header seam change for this factor"
+    },
+    {
+      "id": "headers:compute_provider_ggml_vulkan",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+    },
+    {
+      "id": "factor:compute_route_apple",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected"
+    },
+    {
+      "id": "factor:graph_route_apple",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected"
+    },
+    {
+      "id": "headers:io_core",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+    },
+    {
+      "id": "headers:simd",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+    },
+    {
+      "id": "p1",
+      "reason": "no explicit frozen P1 card; sampling is never automatic"
+    }
+  ],
+  "archives": {
+    "air-delivery-raw.zip": {
+      "sha256": "3a7cf4e20e1c72ad4447e341e0841b58e9121938690b17a6d960d9d2baeef2b5",
+      "bytes": 125112
+    },
+    "remaining-deliveries-raw.zip": {
+      "sha256": "cef67610cb2d40e1478fc8e3b04e3ec87c67baa82b9ddfb3af95da14cb1ddc6d",
+      "bytes": 575156
+    },
+    "selected-gates-raw.zip": {
+      "sha256": "451c7925f7705bceb36f2c29badece06b92519a2fd5163be0a040c87dda4c66d",
+      "bytes": 552419
+    },
+    "windows-raw.zip": {
+      "sha256": "a150dd338a9eb375256c77cf91f56e35ff71d00e2c08a482590b39878378102b",
+      "bytes": 130892
+    }
+  },
+  "loc": {
+    "compute_graph": 46990,
+    "implementation_files": 193,
+    "tests_bench_vendor": "excluded",
+    "measured_commit": "351ec13d82057402594a96fcc862bcdc96b2d839",
+    "measurement": "uniform script run on the immutable source snapshot; self-check PASS"
+  },
+  "verdict": "PASS for the named delivery and selected validation scopes",
+  "c1_acceptance": "INCONCLUSIVE",
+  "uncompleted": [
+    "remaining C1 provider capability bindings including Vulkan checked indexing/Scan/TopK",
+    "local 2B real-weight C1 pieces",
+    "remaining C1 route/platform/delivery qualification",
+    "fixed performance preferences and replaced implementation retirement"
+  ],
+  "cpu_onednn_performance": "BLOCKED unchanged; this run contains no P1",
+  "initial_environment_failure": "The first component-contract run lacked the locked Highway archive in its new isolated disconnected cache. Preserved the failure, copied the already verified existing archive, reran only this gate. No product or public tool change."
+}

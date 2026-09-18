@@ -1,0 +1,292 @@
+{
+  "kind": "actual local-weight C1 norm fixture and scalar oracle; not HYLE execution evidence",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "source_file": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+  "original_verification": {
+    "schema_version": 1,
+    "kind": "local_model_input_receipt_not_compute_evidence",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "directory": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B",
+    "machine": "kiro-workstation",
+    "platform": "win32",
+    "files_verified": 13,
+    "bytes_verified": 4571274023,
+    "verification": "size_and_sha256_every_file",
+    "result": "PASS"
+  },
+  "script_sha256": "a526343df34756ad3b5e656a7408b7fcd72200effcc0b3e16171e578ff3f21d6",
+  "frozen_cases_sha256": "d553e43b163f76e5dcfe013779db2764c17574506e57506fd2adfa0b95d38400",
+  "model_source_sha256": "0e7410f5251e5c324a5628c5340ee3551f7a6a505ce398569fcc3b5f3ac07f7a",
+  "tensor_sources": {
+    "model.language_model.embed_tokens.weight": {
+      "dtype": "BF16",
+      "shape": [
+        248320,
+        2048
+      ],
+      "data_offsets": [
+        10368,
+        1017129088
+      ]
+    },
+    "model.language_model.layers.0.input_layernorm.weight": {
+      "dtype": "BF16",
+      "shape": [
+        2048
+      ],
+      "data_offsets": [
+        1017129088,
+        1017133184
+      ]
+    }
+  },
+  "original_data_base_offset": 76656,
+  "parameter": {
+    "file": "gemma_parameter.bf16",
+    "dtype": "BF16",
+    "shape": [
+      2048
+    ],
+    "bytes": 4096,
+    "sha256": "e3bfb63b03722ec637ed4ea2cc552d68a87e661bbba1e889f721858b34162877"
+  },
+  "scale": {
+    "file": "gemma_scale.f32",
+    "dtype": "F32",
+    "shape": [
+      2048
+    ],
+    "bytes": 8192,
+    "sha256": "4f189e0e0cb573c744e0f3e4683304728ddd51e977bbc2ffbafdc96bb297cce2"
+  },
+  "epsilon_f32": 9.999999974752427e-07,
+  "cases": [
+    {
+      "id": "norm_t1",
+      "fixed_case": "b16_p1_d8",
+      "token_ids": [
+        39
+      ],
+      "input": {
+        "file": "norm_t1.bf16",
+        "dtype": "BF16",
+        "shape": [
+          1,
+          2048
+        ],
+        "bytes": 4096,
+        "sha256": "7a09b653149509b61fd926b3584559d69795738d90d769cad0cf13b3e7a370b8"
+      },
+      "unrounded_oracle": {
+        "file": "norm_t1.f64",
+        "dtype": "F64",
+        "shape": [
+          1,
+          2048
+        ],
+        "bytes": 16384,
+        "sha256": "babccbceff31afe9ec588eccc14b7803b9549047396f01f5e3f92022bb095367"
+      }
+    },
+    {
+      "id": "norm_t17",
+      "fixed_case": "b16_p17_d8",
+      "token_ids": [
+        39,
+        23969,
+        25419,
+        15167,
+        33303,
+        440,
+        11135,
+        10804,
+        321,
+        24207,
+        1528,
+        13,
+        357,
+        2526,
+        3992,
+        1558,
+        31341
+      ],
+      "input": {
+        "file": "norm_t17.bf16",
+        "dtype": "BF16",
+        "shape": [
+          17,
+          2048
+        ],
+        "bytes": 69632,
+        "sha256": "b2f159c6bbbe279e94c863c8a7fa90219e6dc84a458ce21af833d21b9665be97"
+      },
+      "unrounded_oracle": {
+        "file": "norm_t17.f64",
+        "dtype": "F64",
+        "shape": [
+          17,
+          2048
+        ],
+        "bytes": 278528,
+        "sha256": "3140e15d6381d5ae9dfbfba572f98cefa25bcba264062f7d194b874ef639ca3c"
+      }
+    },
+    {
+      "id": "norm_t128",
+      "fixed_case": "b16_p128_d8",
+      "token_ids": [
+        39,
+        23969,
+        25419,
+        15167,
+        33303,
+        440,
+        11135,
+        10804,
+        321,
+        24207,
+        1528,
+        13,
+        357,
+        2526,
+        3992,
+        1558,
+        31341,
+        6326,
+        11,
+        47096,
+        11,
+        5979,
+        44896,
+        11,
+        321,
+        61911,
+        8570,
+        13,
+        8618,
+        5832,
+        1902,
+        12204,
+        279,
+        1788,
+        13866,
+        33625,
+        4954,
+        13,
+        220,
+        39,
+        23969,
+        25419,
+        15167,
+        33303,
+        440,
+        11135,
+        10804,
+        321,
+        24207,
+        1528,
+        13,
+        357,
+        2526,
+        3992,
+        1558,
+        31341,
+        6326,
+        11,
+        47096,
+        11,
+        5979,
+        44896,
+        11,
+        321,
+        61911,
+        8570,
+        13,
+        8618,
+        5832,
+        1902,
+        12204,
+        279,
+        1788,
+        13866,
+        33625,
+        4954,
+        13,
+        220,
+        39,
+        23969,
+        25419,
+        15167,
+        33303,
+        440,
+        11135,
+        10804,
+        321,
+        24207,
+        1528,
+        13,
+        357,
+        2526,
+        3992,
+        1558,
+        31341,
+        6326,
+        11,
+        47096,
+        11,
+        5979,
+        44896,
+        11,
+        321,
+        61911,
+        8570,
+        13,
+        8618,
+        5832,
+        1902,
+        12204,
+        279,
+        1788,
+        13866,
+        33625,
+        4954,
+        13,
+        220,
+        39,
+        23969,
+        25419,
+        15167,
+        33303,
+        440,
+        11135,
+        10804,
+        321,
+        24207,
+        1528
+      ],
+      "input": {
+        "file": "norm_t128.bf16",
+        "dtype": "BF16",
+        "shape": [
+          128,
+          2048
+        ],
+        "bytes": 524288,
+        "sha256": "b5c13728567060f0a4bb2903633e09ac0f76602a0c5b34aa5782166c68ebb1a6"
+      },
+      "unrounded_oracle": {
+        "file": "norm_t128.f64",
+        "dtype": "F64",
+        "shape": [
+          128,
+          2048
+        ],
+        "bytes": 2097152,
+        "sha256": "c174b7fbc48b33f87215f1a09f0e0ca9bb49af1b52591bc89e7ba6c65141e724"
+      }
+    }
+  ],
+  "formula": "x is the exact BF16 embedding for the frozen token IDs; scale=F32(1+BF16(weight)); reference=x*rsqrt(mean(x*x)+epsilon_f32)*scale with scalar double/math.fsum, before output storage rounding.",
+  "consumer_requirements": "Direct BF16 input with explicit F32 accumulation and F32 scale; Graph may express Cast(F32)->RmsNorm(scale)->Cast(BF16). Apply the existing C1 numeric acceptance contract, count every conversion/copy, and retain two independent slots and old results.",
+  "limitations": "Only actual first-layer embedding values and Gemma RMS parameters; no HYLE Gather, gate/residual/state, full C1, model or performance verdict. Original full embedding storage was not duplicated."
+}

@@ -658,3 +658,27 @@ managed region 承载。有限迁移仅将报告断言改为4 native / 1 managed
 Windows 继续 DLL 邻置、PATH unset、非交互错误模式。新 lock 选出的广组件门随后完成，
 不重复已结束的 Y17–Y20 focused correctness，不为样例维护启动 P1。未运行交付仍为未验收，
 该 FFN 的生成权重不代替主卡的本地2B真实权重片段。
+
+### Y4/Y20 交付与所选回归结果
+
+`351ec13d` source snapshot 与 `3c39428e` 产品相同，已完成 Windows/Air 同一独立源码包的
+source、relocated static/shared 普通 Direct/Graph，合计12个 consumer；保留原生 MatMul、
+ggml managed gate 和应用 SPIR-V 的真实混合 FFN、独立 oracle、变化输入及资源寿命断言。
+Y20 新 lock 选出的112个 gate 全部通过：96基础/逐头等、1组件合同、15组件三交付；8个未选
+项保留 selector 理由。[完整交付证据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-managed-delivery/README.md)
+保留首次离线 cache 缺锁定 Highway archive 的失败，补入已有认证归档后只重跑失败门。
+
+重型验证串行、parallel2；Windows DLL 邻置/PATH unset，Air 零 VUID，没有 P1。先核对归档
+再清理 Windows/Air producer 及45个重复组件 build，累计释放约10.63GiB逻辑字节；保留 SDK、
+独立 consumer 和共享缓存。当前统一 Compute+Graph LOC 为46,990行/193文件，自检通过。
+
+随后使用上述已验证 SDK 完成[真实权重归一化片段](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-real-weight-norm/README.md)：
+Windows/Air static/shared 共4个独立 consumer、72次 Direct/Graph 提交通过，实际本地2B
+BF16 embedding 和第一层 RMS 参数、1/17/128行、独立 double oracle、双槽/变输入/旧结果、
+输入不变和配额退役。Graph 严格绑定一个 ggml managed norm；不把 BF16 Direct 的 native
+路径标为 ggml。该新 consumer 的 source delivery、真实 Gather/gate/residual/state 仍未完成。
+
+原模型13文件重新校验通过；C0登记的 Windows reference/量化派生二进制路径已不存在，
+按原 recipe 恢复或找到保留副本后才供 C3/C6 消费；不因此撤销历史收据或重新下载原模型。
+三个 owner 保持 AUDITED，完整 C1-Y/C1 仍 INCONCLUSIVE；剩余能力映射、四路线本包资格、
+默认性能优选与替代实现淘汰待完成，CPU oneDNN 性能资格 BLOCKED 不变。

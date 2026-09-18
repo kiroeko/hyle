@@ -105,9 +105,11 @@ Vulkan `a7ebf205` 刚完成 norm/gate 等首组 managed 普通入口的 W1 stati
 该保留不豁免 Compute/Graph 中基于 SIMD 的算子 Provider；其适配、候选注册和路由同样在
 同合同比较落败、替代覆盖及迁移验证完成后删除，不连带删除底层基础设施或非推理消费者。
 
-当前 [C1-Y](llm-moe-c1-ggml-vulkan-region.md) 已推进到普通 managed 入口的 W1 局部验证。
-下一步按上节先完成四路线现成能力与实际绑定的回映，固定接入/适配批次；不继续沿初始
-Native/CUDA/Vulkan 自写扩域表逐项施工。当前原生程序和已验证算子作为可复用资产与比较候选。
+当前 [C1-Y](llm-moe-c1-ggml-vulkan-region.md) 已完成 `3c39428e` 的 W1 static/shared、Air/Mini
+局部 correctness；`351ec13d` 同产品的 Windows/Air managed FFN 三交付、112项所选门全部通过。
+两平台 static/shared 的真实2B归一化片段也通过；其 source consumer、其余真实权重片段、
+TopK/index/Scan 等能力映射和性能优选尚未完成，不能据此签 C1 全部能力。下一步仍按上节
+固定成熟实现的接入/适配批次，不延续初始自写队列；已有程序保留为比较与补缺候选。
 
 以下表格记录 C1 初始 baseline 的审计输入，**不是当前产品状态或继续自写的施工指令**。
 

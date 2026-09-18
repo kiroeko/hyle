@@ -1,0 +1,10 @@
+{
+  "platform": "win32",
+  "status": "PASS",
+  "sdk_consumers": 2,
+  "submissions": 36,
+  "archive": "windows-norm-raw.zip",
+  "sha256": "2922795882fceb6bfa316e72edcec0d24c07b1425932eb156355aafdd0d7507e",
+  "bytes": 29724,
+  "model_tensor_bytes_archived": 0
+}

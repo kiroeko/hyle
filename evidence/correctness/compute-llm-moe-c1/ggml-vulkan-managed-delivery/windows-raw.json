@@ -1,0 +1,18 @@
+{
+  "snapshot": "351ec13d82057402594a96fcc862bcdc96b2d839",
+  "product_candidate": "3c39428e3fdf1911b284f7632d891f663ad82f31",
+  "platform": "Windows",
+  "status": "PASS",
+  "archive": ".scratch\\validation\\vulkan-delivery\\windows-raw.zip",
+  "sha256": "a150dd338a9eb375256c77cf91f56e35ff71d00e2c08a482590b39878378102b",
+  "files": 82,
+  "bytes": 130892,
+  "source_archive_sha256": "c0f003904c322a413aacdf1f77f98c22424e21743888dd1108635c92bd5fc603",
+  "journeys": [
+    "source Direct + Graph",
+    "relocated installed static Direct + Graph",
+    "relocated installed shared Direct + Graph"
+  ],
+  "executable_count": 6,
+  "limitations": "F32 mixed native/ggml FFN + application SPIR-V, generated weights; no full C1, model, or performance verdict"
+}

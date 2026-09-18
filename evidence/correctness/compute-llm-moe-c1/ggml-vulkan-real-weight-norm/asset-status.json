@@ -1,0 +1,92 @@
+{
+  "kind": "current local asset availability; not HYLE execution evidence",
+  "recorded_utc": "2026-09-18T19:11:24.387430+00:00",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "original_full_verification": {
+    "schema_version": 1,
+    "kind": "local_model_input_receipt_not_compute_evidence",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "directory": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B",
+    "machine": "kiro-workstation",
+    "platform": "win32",
+    "files_verified": 13,
+    "bytes_verified": 4571274023,
+    "verification": "size_and_sha256_every_file",
+    "result": "PASS"
+  },
+  "legacy_c0_paths": [
+    {
+      "profile": "B16-reference",
+      "path": "C:\\hyle-scratch\\llm-moe-c0-20260917\\b16-reference",
+      "exists": false
+    },
+    {
+      "profile": "Q4-S128",
+      "path": "C:\\hyle-cache\\models\\qwen35-2b\\4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155\\Q4-S128\\quantized.safetensors",
+      "exists": false,
+      "expected_bytes": 668305656,
+      "expected_sha256": "48451a3540f3426639a22858d24141b6992999584a24eded928cd64e50bbf8a6"
+    },
+    {
+      "profile": "Q8-B32",
+      "path": "C:\\hyle-cache\\models\\qwen35-2b\\4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155\\Q8-B32\\quantized.safetensors",
+      "exists": false,
+      "expected_bytes": 1377077728,
+      "expected_sha256": "f758fd6bc3d9efde0ef80a1b5d613625dbfc43c470aa37799a6b9cab4e98f9d8"
+    },
+    {
+      "profile": "F8-B128",
+      "path": "C:\\hyle-cache\\models\\qwen35-2b\\4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155\\F8-B128\\quantized.safetensors",
+      "exists": false,
+      "expected_bytes": 1296390752,
+      "expected_sha256": "ef1e2b0791498f918038e5660302ee33265b42e9f1491927d6337427073a495b"
+    }
+  ],
+  "missing_path_conclusion": "Named receipt paths are absent; this does not assert that every possible external copy is absent.",
+  "safetensors_header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+  "data_base_offset": 76656,
+  "c1_tensor_metadata": {
+    "model.language_model.embed_tokens.weight": {
+      "dtype": "BF16",
+      "shape": [
+        248320,
+        2048
+      ],
+      "data_offsets": [
+        10368,
+        1017129088
+      ]
+    },
+    "model.language_model.layers.0.input_layernorm.weight": {
+      "dtype": "BF16",
+      "shape": [
+        2048
+      ],
+      "data_offsets": [
+        1017129088,
+        1017133184
+      ]
+    },
+    "model.language_model.layers.0.post_attention_layernorm.weight": {
+      "dtype": "BF16",
+      "shape": [
+        2048
+      ],
+      "data_offsets": [
+        1134753952,
+        1134758048
+      ]
+    },
+    "model.language_model.layers.0.linear_attn.norm.weight": {
+      "dtype": "F32",
+      "shape": [
+        128
+      ],
+      "data_offsets": [
+        64,
+        576
+      ]
+    }
+  },
+  "next_action": "Use verified original weights for bounded C1 tensor fixtures. Recover or regenerate old derivatives only when their C3/C6 acceptance consumes them, using unchanged frozen recipes and sequential heavy execution. No model download."
+}

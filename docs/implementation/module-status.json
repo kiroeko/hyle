@@ -506,18 +506,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y17–Y20 AUDITED：3c39428e普通 Direct/Recorder 的成熟逐元素 managed 路径、资源与失败边界，W1 static/shared、Air、Mini各40 Direct通过。真实权重、完整三交付、新lock广门和性能/取舍未验收。"
+      "summary": "LLM/MoE C1-Y17–Y20 AUDITED：3c39428e Direct/Recorder局部正确性通过；351ec13d同产品的W1/Air managed FFN三交付及112项所选门通过，static/shared真实2B归一化通过。其source/其余真实片段、剩余能力映射和性能/取舍未验收。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y17–Y20 AUDITED：3c39428e普通 Graph 的无 norm anchor region、published/fork/独立槽等局部验证通过：W1 static/shared 17/16、Air/Mini各17。真实权重、完整三交付、新lock广门和性能/取舍未验收。"
+      "summary": "LLM/MoE C1-Y17–Y20 AUDITED：3c39428e普通managed Graph局部正确性通过；351ec13d同产品的W1/Air FFN三交付及112项所选门通过，static/shared真实2B归一化通过。其source/其余真实片段、剩余能力映射和性能/取舍未验收。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y17–Y20 AUDITED：3c39428e成熟逐元素接线与 MoltenVK 必需扩展修复，W1 static/shared、Air、Mini focused correctness通过，Air零VUID。真实权重、完整三交付、新lock广门和性能/取舍未验收。",
+      "summary": "LLM/MoE C1-Y17–Y20 AUDITED：3c39428e成熟逐元素/MoltenVK修复局部正确性通过；351ec13d同产品的W1/Air managed FFN三交付及112项所选门通过，static/shared真实2B归一化通过。其source/其余真实片段、剩余映射和性能/取舍未验收。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]
