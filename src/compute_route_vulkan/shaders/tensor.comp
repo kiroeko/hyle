@@ -7,6 +7,7 @@ layout(binding = 0) readonly buffer A { uint a[]; };
 layout(binding = 1) readonly buffer B { uint b[]; };
 layout(binding = 2) readonly buffer C { uint c[]; };
 layout(binding = 3) writeonly buffer D { uint d[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; } origin;
 layout(constant_id = 0) const uint operation = 0;
 layout(constant_id = 1) const uint type_a = 0;
 layout(constant_id = 2) const uint type_b = 0;
@@ -153,7 +154,7 @@ float binary(float x, float y) {
 }
 uint evaluate(uint index, uint half_word) {
     if (operation == 1) return half_word == 0 ? fill_lo : fill_hi;
-    uvec3 offsets = uvec3(0);
+    uvec3 offsets = uvec3(origin.a, origin.b, origin.c);
     uint remaining = index;
     address_axis(remaining, offsets, dim7, uvec3(sa7,sb7,sc7));
     address_axis(remaining, offsets, dim6, uvec3(sa6,sb6,sc6));

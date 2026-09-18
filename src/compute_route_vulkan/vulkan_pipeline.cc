@@ -142,6 +142,114 @@ create_pipeline(const std::shared_ptr<Device> &device,
   }
 }
 
+namespace {
+std::uint32_t origin(const Buffer *buffer) noexcept {
+  if (!buffer)
+    return 0;
+  const auto alignment =
+      (std::max)(VkDeviceSize{4}, buffer->device->properties.limits
+                                      .minStorageBufferOffsetAlignment);
+  return static_cast<std::uint32_t>(buffer->offset % alignment);
+}
+std::array<std::uint32_t, 3> origins(const Run &run,
+                                     const Dispatch &dispatch) noexcept {
+  std::array<std::uint32_t, 3> result{};
+  if (dispatch.tensor_byte_origins)
+    for (std::size_t port = 0; port < result.size(); ++port)
+      result[port] = origin(run.retained_buffers[dispatch.values[port]].get());
+  return result;
+}
+} // namespace
+
+Result<VkDescriptorBufferInfo>
+descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
+                  bool byte_origin, VkDeviceSize relative_offset) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  VkDescriptorBufferInfo result{};
+  VkDeviceSize prefix = 0;
+  if (buffer) {
+    const auto alignment =
+        (std::max)(VkDeviceSize{4}, buffer->device->properties.limits
+                                        .minStorageBufferOffsetAlignment);
+    const auto logical = buffer->offset + relative_offset;
+    prefix = logical % alignment;
+    if (prefix != 0 && !byte_origin)
+      return std::unexpected(
+          Status::Unimplemented("Vulkan native fragment requires an aligned "
+                                "range; materialize the View"));
+    result.buffer = buffer->handle;
+    result.offset = logical - prefix;
+    if (buffer->handle != VK_NULL_HANDLE &&
+        (relative_offset > buffer->bytes ||
+         bytes > buffer->bytes - relative_offset))
+      return std::unexpected(
+          Status::InvalidArgument("Vulkan view exceeds its native buffer"));
+  }
+  HYLE_ASSIGN_OR_RETURN(result.range, buffer_capacity(prefix + bytes));
+  if (buffer &&
+      (result.range > buffer->device->properties.limits.maxStorageBufferRange ||
+       (buffer->handle != VK_NULL_HANDLE &&
+        result.range > prefix + buffer->bytes - relative_offset)))
+    return std::unexpected(Status::InvalidArgument(
+        "Vulkan padded descriptor exceeds its native range"));
+  return result;
+}
+
+bool origins_changed(const Run &run,
+                     std::span<const Dispatch> dispatches) noexcept {
+  if (!run.encoding_valid)
+    return true;
+  for (std::size_t index = 0; index < dispatches.size(); ++index)
+    if (origins(run, dispatches[index]) != run.recorded_origins[index])
+      return true;
+  return false;
+}
+
+Status encode_commands(Run &run,
+                       std::span<const Dispatch> dispatches) noexcept {
+  auto &device = *run.runtime->device;
+  run.encoding_valid = false;
+  VkCommandBufferBeginInfo begin{};
+  begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  HYLE_RETURN_IF_ERROR(
+      native_status(device.fn.BeginCommandBuffer(run.command, &begin),
+                    "vkBeginCommandBuffer"));
+  memory_barrier(device, run.command, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                 VK_ACCESS_MEMORY_WRITE_BIT,
+                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+  for (std::size_t index = 0; index < dispatches.size(); ++index) {
+    const auto &dispatch = dispatches[index];
+    const auto offsets = origins(run, dispatch);
+    device.fn.CmdBindPipeline(run.command, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              dispatch.pipeline->handle);
+    device.fn.CmdBindDescriptorSets(run.command, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                    dispatch.pipeline->layout, 0, 1,
+                                    &run.descriptor_sets[index], 0, nullptr);
+    if (!dispatch.push.empty())
+      device.fn.CmdPushConstants(
+          run.command, dispatch.pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT,
+          0, static_cast<std::uint32_t>(dispatch.push.size()),
+          dispatch.tensor_byte_origins
+              ? static_cast<const void *>(offsets.data())
+              : dispatch.push.data());
+    device.fn.CmdDispatch(run.command, dispatch.groups[0], dispatch.groups[1],
+                          dispatch.groups[2]);
+    memory_barrier(device, run.command, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                   VK_ACCESS_SHADER_WRITE_BIT,
+                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                   VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+    run.recorded_origins[index] = offsets;
+  }
+  memory_barrier(device, run.command, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                 VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                 VK_ACCESS_MEMORY_READ_BIT);
+  HYLE_RETURN_IF_ERROR(native_status(device.fn.EndCommandBuffer(run.command),
+                                     "vkEndCommandBuffer"));
+  run.encoding_valid = true;
+  return Status::Ok();
+}
+
 Status record(const std::shared_ptr<Run> &run,
               std::span<const PlanValue> values,
               std::span<const Dispatch> dispatches,
@@ -168,7 +276,9 @@ Status record(const std::shared_ptr<Run> &run,
       for (const auto value : dispatch.values) {
         if (value >= values.size())
           return Status::InvalidArgument("Vulkan dispatch value index");
-        if (!run->retained_buffers[value] && dynamic_bindings == nullptr)
+        if ((!run->retained_buffers[value] ||
+             run->retained_buffers[value]->handle == VK_NULL_HANDLE) &&
+            dynamic_bindings == nullptr)
           return Status::InvalidArgument(
               "Vulkan fixed dispatch has an unbound input");
       }
@@ -211,16 +321,8 @@ Status record(const std::shared_ptr<Run> &run,
       if (!status.ok())
         return status;
     }
-    VkCommandBufferBeginInfo begin{};
-    begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    status = native_status(device.fn.BeginCommandBuffer(run->command, &begin),
-                           "vkBeginCommandBuffer");
-    if (!status.ok())
-      return status;
-    memory_barrier(device, run->command, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                   VK_ACCESS_MEMORY_WRITE_BIT,
-                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                   VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+    run->descriptor_sets.reserve(dispatches.size());
+    run->recorded_origins.resize(dispatches.size());
     for (const auto &dispatch : dispatches) {
       VkDescriptorSetAllocateInfo allocate{};
       allocate.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -233,27 +335,24 @@ Status record(const std::shared_ptr<Run> &run,
                              "vkAllocateDescriptorSets");
       if (!status.ok())
         return status;
+      run->descriptor_sets.push_back(descriptor);
       for (std::uint32_t binding = 0; binding < dispatch.pipeline->bindings;
            ++binding) {
         const auto value = dispatch.values[binding];
-        const auto bytes = values[value].description.required_bytes();
-        if (!bytes || *bytes > device.properties.limits.maxStorageBufferRange)
-          return Status::InvalidArgument("Vulkan descriptor range");
-        HYLE_ASSIGN_OR_RETURN(auto capacity, buffer_capacity(*bytes));
-        if (capacity > device.properties.limits.maxStorageBufferRange)
-          return Status::InvalidArgument("Vulkan padded descriptor range");
         DescriptorBinding entry;
         entry.value = value;
-        entry.buffer.range = capacity;
+        entry.byte_origin = dispatch.tensor_byte_origins && binding < 3;
+        const auto &buffer = run->retained_buffers[value];
+        HYLE_ASSIGN_OR_RETURN(entry.buffer,
+                              descriptor_buffer(buffer.get(),
+                                                values[value].description,
+                                                entry.byte_origin));
         entry.write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         entry.write.dstSet = descriptor;
         entry.write.dstBinding = binding;
         entry.write.descriptorCount = 1;
         entry.write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        const auto &buffer = run->retained_buffers[value];
-        if (buffer) {
-          entry.buffer.buffer = buffer->handle;
-          entry.buffer.offset = buffer->offset;
+        if (buffer && buffer->handle != VK_NULL_HANDLE) {
           entry.write.pBufferInfo = &entry.buffer;
           device.fn.UpdateDescriptorSets(device.native.device, 1, &entry.write,
                                          0, nullptr);
@@ -261,30 +360,8 @@ Status record(const std::shared_ptr<Run> &run,
           dynamic_bindings->push_back(entry);
         }
       }
-      device.fn.CmdBindPipeline(run->command, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                dispatch.pipeline->handle);
-      device.fn.CmdBindDescriptorSets(
-          run->command, VK_PIPELINE_BIND_POINT_COMPUTE,
-          dispatch.pipeline->layout, 0, 1, &descriptor, 0, nullptr);
-      if (!dispatch.push.empty())
-        device.fn.CmdPushConstants(
-            run->command, dispatch.pipeline->layout,
-            VK_SHADER_STAGE_COMPUTE_BIT, 0,
-            static_cast<std::uint32_t>(dispatch.push.size()),
-            dispatch.push.data());
-      device.fn.CmdDispatch(run->command, dispatch.groups[0],
-                            dispatch.groups[1], dispatch.groups[2]);
-      memory_barrier(device, run->command, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                     VK_ACCESS_SHADER_WRITE_BIT,
-                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                     VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
     }
-    memory_barrier(device, run->command, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                   VK_ACCESS_SHADER_WRITE_BIT,
-                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                   VK_ACCESS_MEMORY_READ_BIT);
-    return native_status(device.fn.EndCommandBuffer(run->command),
-                         "vkEndCommandBuffer");
+    return encode_commands(*run, dispatches);
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan command recording metadata");
   }

@@ -1,3 +1,4 @@
+#include "../compute_ops/view_alias.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
 
@@ -25,11 +26,13 @@ Status plan_storage(ProgramState &program) noexcept {
       external[value] =
           external[value] || program.values[value].constant.valid();
     for (std::uint32_t index = 0; index < program.dispatches.size(); ++index)
-      for (const auto value : program.dispatches[index].values) {
+      for (const auto alias : program.dispatches[index].values) {
+        const auto value = program.aliases[alias].root;
         first[value] = (std::min)(first[value], index);
         last[value] = index;
       }
-    for (const auto output : program.outputs) {
+    for (const auto alias : program.outputs) {
+      const auto output = program.aliases[alias].root;
       last[output] = static_cast<std::uint32_t>(program.dispatches.size());
       // An empty computed value still has a valid result owner, even when no
       // payload dispatch needs it. Keep separate published outputs distinct.
@@ -101,6 +104,16 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
                (std::numeric_limits<std::uint32_t>::max)())
         run.retained_buffers[value] = blocks[program.storage_blocks[value]];
     }
+    for (std::size_t value = 0; value < program.values.size(); ++value) {
+      const auto alias = program.aliases[value];
+      if (alias.root == value || program.values[value].constant)
+        continue;
+      auto buffer = std::make_shared<Buffer>();
+      buffer->device = program.runtime->device;
+      bind_view_buffer(*buffer, run.retained_buffers[alias.root],
+                       alias.byte_offset);
+      run.retained_buffers[value] = std::move(buffer);
+    }
     return Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan invocation resources");
@@ -164,7 +177,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     for (const auto &step : plan.steps) {
       const auto traits = operation_traits(step.operation);
       if (traits.effect != EffectKind::kPure ||
-          traits.alias == AliasPolicy::kMustAliasInput0 ||
+          (traits.alias == AliasPolicy::kMustAliasInput0 &&
+           step.operation.kind() != OperationKind::kView) ||
           traits.outputs != 1 || !traits.inputs.accepts(step.inputs.size()) ||
           step.output >= available.size() || available[step.output])
         return std::unexpected(Status::Unimplemented(
@@ -198,15 +212,32 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     program->values = plan.values;
     program->inputs = plan.inputs;
     program->outputs = plan.outputs;
+    for (std::uint32_t index = 0; index < plan.values.size(); ++index)
+      program->aliases.push_back({index, 0});
     for (const auto input : plan.inputs)
       program->input_descriptions.push_back(plan.values[input].description);
     for (const auto output : plan.outputs)
       program->output_descriptions.push_back(plan.values[output].description);
     std::vector<std::pair<std::uint32_t, std::uint32_t>> packs;
     for (const auto &step : plan.steps) {
+      if (const auto *view = step.operation.get_if<View>()) {
+        HYLE_ASSIGN_OR_RETURN(
+            auto offset, compute::detail::view_alias_offset(
+                             *view, program->values[step.inputs[0]].description,
+                             program->values[step.output].description));
+        auto alias = program->aliases[step.inputs[0]];
+        alias.byte_offset +=
+            offset; // Every derived span is contained in its root.
+        program->aliases[step.output] = alias;
+        continue;
+      }
       auto status = lower_operation(*program, step, packs);
       if (!status.ok())
         return std::unexpected(status);
+    }
+    while (program->aliases.size() < program->values.size()) {
+      const auto index = static_cast<std::uint32_t>(program->aliases.size());
+      program->aliases.push_back({index, 0});
     }
     // Packing may replace a dense captured buffer with an immutable native
     // layout. Keep originals through all lowering for deduplication, then drop
@@ -214,7 +245,9 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     std::vector<bool> referenced(program->values.size(), false);
     for (const auto &dispatch : program->dispatches)
       for (const auto value : dispatch.values)
-        referenced[value] = true;
+        referenced[program->aliases[value].root] = true;
+    for (const auto value : program->outputs)
+      referenced[program->aliases[value].root] = true;
     for (std::size_t value = 0; value < program->values.size(); ++value)
       if (!referenced[value])
         program->values[value].constant = {};
@@ -235,8 +268,12 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       }
       std::vector<const Buffer *> constants;
       for (const auto &value : program->values)
-        if (value.constant)
-          constants.push_back(Access::buffer(value.constant).get());
+        if (value.constant) {
+          const auto *root = Access::buffer(value.constant).get();
+          while (root->is_view)
+            root = static_cast<const Buffer *>(root->external_owner.get());
+          constants.push_back(root);
+        }
       std::ranges::sort(constants, std::less<>{});
       const auto duplicate = std::ranges::unique(constants);
       constants.erase(duplicate.begin(), duplicate.end());
@@ -357,6 +394,15 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
                             &invocation->dynamic_bindings);
     if (!status.ok())
       return std::unexpected(status);
+    for (auto &binding : invocation->dynamic_bindings) {
+      const auto root = state_->aliases[binding.value].root;
+      const auto position = std::ranges::find(state_->inputs, root);
+      if (position == state_->inputs.end())
+        return std::unexpected(
+            Status::Internal("Vulkan dynamic alias has no input root"));
+      binding.input_port =
+          static_cast<std::uint32_t>(position - state_->inputs.begin());
+    }
     invocation->bound = state_->inputs.empty();
     return detail::Access::invocation(std::move(invocation));
   } catch (const std::bad_alloc &) {
@@ -377,6 +423,7 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
         detail::Access::buffer(inputs[index])->device != runtime.device)
       return Status::InvalidArgument(
           "Vulkan input description or device mismatch");
+  auto status = Status::Ok();
   {
     std::lock_guard lock(runtime.mutex);
     if (runtime.closed)
@@ -386,26 +433,54 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
     if (run.pending || run.observers != 0 || run.retiring ||
         run.completion_owner)
       return Status::FailedPrecondition("Vulkan input slot is still in use");
+    for (std::size_t index = 0; index < state_->program->outputs.size();
+         ++index) {
+      const auto output = state_->program->outputs[index];
+      if (state_->program->aliases[output].root != output &&
+          run.retained_buffers[output].use_count() !=
+              state_->output_owner_counts[index])
+        return Status::FailedPrecondition(
+            "Vulkan view result is still retained");
+    }
+    // Validate every prospective range before replacing any owner or native
+    // descriptor. Failed metadata binding keeps the previous input set usable.
+    for (auto &binding : state_->dynamic_bindings) {
+      const auto alias = state_->program->aliases[binding.value];
+      HYLE_ASSIGN_OR_RETURN(
+          binding.buffer,
+          detail::descriptor_buffer(
+              detail::Access::buffer(inputs[binding.input_port]).get(),
+              state_->program->values[binding.value].description,
+              binding.byte_origin, alias.byte_offset));
+    }
+    state_->bound = false;
     for (std::size_t index = 0; index < inputs.size(); ++index) {
       auto &buffer = run.retained_buffers[state_->program->inputs[index]];
       state_->old_inputs[index] = std::move(buffer);
       buffer = detail::Access::buffer(inputs[index]);
     }
+    for (std::size_t value = 0; value < state_->program->aliases.size();
+         ++value) {
+      const auto alias = state_->program->aliases[value];
+      if (alias.root != value && !state_->program->values[value].constant)
+        detail::bind_view_buffer(*run.retained_buffers[value],
+                                 run.retained_buffers[alias.root],
+                                 alias.byte_offset);
+    }
     for (auto &binding : state_->dynamic_bindings) {
-      const auto &buffer = run.retained_buffers[binding.value];
-      binding.buffer.buffer = buffer->handle;
-      binding.buffer.offset = buffer->offset;
       binding.write.pBufferInfo = &binding.buffer;
       runtime.device->fn.UpdateDescriptorSets(runtime.device->native.device, 1,
                                               &binding.write, 0, nullptr);
     }
-    state_->bound = true;
+    if (detail::origins_changed(run, state_->program->dispatches))
+      status = detail::encode_commands(run, state_->program->dispatches);
+    state_->bound = status.ok();
   }
   // Release external buffer tokens outside the queue lock; no allocation is
   // needed for this deferred release because the vector was sized cold.
   for (auto &buffer : state_->old_inputs)
     buffer.reset();
-  return Status::Ok();
+  return status;
 }
 
 Result<OwnedResult<Results>> Invocation::submit() noexcept {

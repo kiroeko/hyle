@@ -26,6 +26,12 @@ struct Dispatch final {
   std::vector<std::uint32_t> values;
   std::vector<std::byte> push;
   std::array<std::uint32_t, 3> groups{1, 1, 1};
+  bool tensor_byte_origins = false;
+};
+
+struct ValueAlias final {
+  std::uint32_t root = 0;
+  VkDeviceSize byte_offset = 0;
 };
 
 struct ProgramState final {
@@ -36,6 +42,7 @@ struct ProgramState final {
   std::vector<TensorDesc> input_descriptions;
   std::vector<TensorDesc> output_descriptions;
   std::vector<Dispatch> dispatches;
+  std::vector<ValueAlias> aliases;
   // UINT32_MAX for inputs/constants. Equal indices share storage only when
   // cold liveness proves non-overlap; all published outputs live to program
   // end.
@@ -49,6 +56,8 @@ struct ResultValues final {
 
 struct DescriptorBinding final {
   std::uint32_t value = 0;
+  std::uint32_t input_port = 0;
+  bool byte_origin = false;
   VkDescriptorBufferInfo buffer{};
   VkWriteDescriptorSet write{};
 };
@@ -80,6 +89,12 @@ record(const std::shared_ptr<Run> &run, std::span<const PlanValue> values,
        std::vector<DescriptorBinding> *dynamic_bindings = nullptr) noexcept;
 Status plan_storage(ProgramState &program) noexcept;
 Status allocate_values(const ProgramState &program, Run &run) noexcept;
+Result<VkDescriptorBufferInfo>
+descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
+                  bool byte_origin, VkDeviceSize relative_offset = 0) noexcept;
+Status encode_commands(Run &run, std::span<const Dispatch> dispatches) noexcept;
+bool origins_changed(const Run &run,
+                     std::span<const Dispatch> dispatches) noexcept;
 Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;

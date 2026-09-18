@@ -8,6 +8,7 @@
 #include <new>
 #include <string_view>
 
+#include "../compute_ops/view_alias.h"
 #include "hyle/core/compiler.h"
 
 namespace hyle::compute::vulkan::detail {
@@ -362,6 +363,15 @@ Result<VkDeviceSize> buffer_capacity(VkDeviceSize logical_bytes) noexcept {
   return (std::max)(VkDeviceSize{4}, (logical_bytes + 3) & ~VkDeviceSize{3});
 }
 
+void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
+                      VkDeviceSize byte_offset) noexcept {
+  view.external_owner = root;
+  view.handle = root ? root->handle : VK_NULL_HANDLE;
+  view.offset = (root ? root->offset : 0) + byte_offset;
+  view.bytes = root ? root->bytes - byte_offset : 0;
+  view.is_view = true;
+}
+
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                 bool staging) noexcept {
@@ -484,6 +494,25 @@ VkDeviceSize Tensor::native_offset() const noexcept {
 }
 std::shared_ptr<const void> Tensor::native_owner() const noexcept {
   return buffer_;
+}
+
+Result<Tensor> Tensor::view(const compute::View &operation) const noexcept {
+  if (!buffer_)
+    return std::unexpected(
+        Status::InvalidArgument("invalid Vulkan view input"));
+  HYLE_ASSIGN_OR_RETURN(
+      auto description,
+      infer_single_output(Operation(operation), std::span(&description_, 1)));
+  HYLE_ASSIGN_OR_RETURN(auto offset, compute::detail::view_alias_offset(
+                                         operation, description_, description));
+  try {
+    auto alias = std::make_shared<detail::Buffer>();
+    alias->device = buffer_->device;
+    detail::bind_view_buffer(*alias, buffer_, offset);
+    return Tensor(description, std::move(alias));
+  } catch (const std::bad_alloc &) {
+    return std::unexpected(Status::ResourceExhausted("Vulkan view metadata"));
+  }
 }
 
 Context &Context::operator=(Context &&other) noexcept {

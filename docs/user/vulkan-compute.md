@@ -78,7 +78,7 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
   浮点 Cast、13 种 Unary（包括稳定 Softplus）和六种广播 Binary 支持 F32/F16/BF16。
   浮点在 F32 求值后舍入至输出存储；整数和 Bool 只承诺本批存储操作，不承诺整数算术。
 - 张量操作支持 scalar、空域、rank≤8、合法 byte stride/广播输入与 dense output。
-  输出独立于输入；可选择别名的共同操作在本路线使用独立结果。必须别名的 View 尚待接入。
+  可选择别名的共同操作使用独立结果；View 保留真正的输入别名。
   非空元素数≤INT32_MAX，物理 byte span 和 stride 必须落在设备 buffer range/U32 地址域内。
 
 新张量域使用 U32 storage 和固定 specialization 的原生 SPIR-V，128-lane workgroup；
@@ -93,6 +93,25 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
+## 零拷贝 View
+
+`tensor.view(c::View::slice(axis, start, count, step).value())` 以及 reshape、permute、
+broadcast_to 只创建描述与共享 owner，保留原生 buffer，并在 `native_offset()` 返回实际逻辑起点。
+它们不传输数据、不发起 GPU dispatch；输入仍遵守 ready 和独占修改约定。普通
+`vk::prepare(context, view_operation, description)` 和 Graph 的 View 节点提供相同别名语义。
+发布计算结果的 View 会延长整块原始分配的寿命，不能只按切片大小估算常驻容量。
+
+typed tensor 输入可使用不满足 descriptor 对齐的 View：HYLE 对齐 descriptor 起点，并以固定
+push 参数传递字节余数。更换 buffer 但余数相同的 bind 只更新 descriptor；余数变化时，空闲槽
+会复用已有 pipeline、descriptor sets 和 buffer 重录命令。submit 始终使用已录制程序。
+重录失败时 bind 返回错误，成功重新绑定前不能提交；被导出的别名结果或 native owner 会阻止该
+槽改写别名 metadata，释放后可复用。需要同时保留旧结果时使用独立 invocation。
+
+现有 F32 GEMM/SiLU 与自定义原生 kernel 保留原 descriptor 对齐域，遇到不合格起点需显式
+Copy/materialize；不会静默把 View 本身实现为 copy。固定 Recorder 的 View 输出必须确实指向
+已外部绑定输入的对应范围。普通 typed Recorder 写输出使用独立或 `borrow_ready` 的具名 padded
+buffer，不写入 View slice 的尾字，避免修改相邻数据。
+
 ## Graph 与原生片段
 
 用 GraphBuilder 构造 typed DAG，再调用：
@@ -106,7 +125,7 @@ HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
 constants 按 Graph 常量顺序，bind 按输入顺序，结果按 publish 顺序。编译后可以销毁原 Graph 和
 常量句柄；Program 保有自己的原生 owner。Graph 冷期删除 dead pure nodes、规划中间 buffer
 生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。重放不遍历原 DAG。
-当前只接受固定 shape、pure、单输出 node；符号、资源效果、control edge、必须别名的节点和直接
+当前只接受固定 shape、pure、单输出 node（含 View）；符号、资源效果、control edge、其它必须别名节点和直接
 publish 输入/常量会明确拒绝。
 
 [Direct FFN 样例](../../samples/package/compute/cpp/vulkan_ffn.h)展示 typed prepare 和 Recorder

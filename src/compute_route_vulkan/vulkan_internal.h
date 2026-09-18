@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -107,6 +108,7 @@ struct Buffer final {
   VkDeviceSize allocation_bytes = 0;
   VkMemoryPropertyFlags memory_flags = 0;
   void *mapped = nullptr;
+  bool is_view = false;
   ~Buffer();
 };
 
@@ -127,6 +129,8 @@ struct Run final {
   std::shared_ptr<Run> pending_owner;
   std::shared_ptr<Run> completion_owner;
   std::vector<std::shared_ptr<Buffer>> retained_buffers;
+  std::vector<VkDescriptorSet> descriptor_sets;
+  std::vector<std::array<std::uint32_t, 3>> recorded_origins;
   std::shared_ptr<const void> recording_owner;
   VkCommandPool command_pool = VK_NULL_HANDLE;
   VkCommandBuffer command = VK_NULL_HANDLE;
@@ -141,6 +145,7 @@ struct Run final {
   bool pending = false;
   bool cancelled = false;
   bool retiring = false;
+  bool encoding_valid = false;
   std::uint32_t observers = 0;
   std::uint32_t descriptor_count = 0;
   ~Run();
@@ -184,6 +189,8 @@ struct Access final {
 Status native_status(VkResult result, const char *operation) noexcept;
 // Shader storage is U32-addressable, even for sub-word/empty logical tensors.
 Result<VkDeviceSize> buffer_capacity(VkDeviceSize logical_bytes) noexcept;
+void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
+                      VkDeviceSize byte_offset) noexcept;
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                 bool staging) noexcept;

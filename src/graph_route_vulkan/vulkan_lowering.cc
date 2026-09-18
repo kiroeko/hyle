@@ -100,9 +100,11 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       if (!needed)
         continue;
       if (output_count != 1 ||
-          traits.alias == compute::AliasPolicy::kMustAliasInput0)
-        return std::unexpected(Status::Unimplemented(
-            "Vulkan Graph requires non-aliasing single-output nodes"));
+          (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
+           operation.kind() != compute::OperationKind::kView))
+        return std::unexpected(
+            Status::Unimplemented("Vulkan Graph requires single-output nodes "
+                                  "with supported alias semantics"));
       cv::detail::PlanStep step;
       step.operation = operation;
       HYLE_ASSIGN_OR_RETURN(auto output, graph.result(id, 0));

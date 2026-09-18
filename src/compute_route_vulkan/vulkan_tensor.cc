@@ -113,9 +113,11 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
     }
   }
   HYLE_ASSIGN_OR_RETURN(auto pipeline, create_pipeline(program.runtime->device,
-                                                       {shaders::tensor(), 4, 0,
-                                                        specialization}));
+                                                       {shaders::tensor(), 4,
+                                                        12, specialization}));
   dispatch.pipeline = std::move(pipeline);
+  dispatch.tensor_byte_origins = true;
+  dispatch.push.resize(12);
   const auto words = (*output.required_bytes() + 3) / 4;
   const auto groups = static_cast<std::uint32_t>((words + 127) / 128);
   const auto &limits = program.runtime->device->properties.limits;

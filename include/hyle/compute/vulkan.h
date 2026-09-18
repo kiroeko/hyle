@@ -103,6 +103,10 @@ public:
   // a generated result. A retained token also prevents that slot's overwrite.
   HYLE_COMPUTE_ROUTE_VULKAN_API
   std::shared_ptr<const void> native_owner() const noexcept;
+  // Pure metadata: preserves native storage and retains its owner. Slices may
+  // have an unaligned logical byte origin; typed tensor inputs handle it.
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
+  view(const compute::View &operation) const noexcept;
 
 private:
   friend struct detail::Access;

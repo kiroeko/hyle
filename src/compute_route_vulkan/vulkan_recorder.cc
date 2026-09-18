@@ -69,6 +69,27 @@ Status Recorder::append(const Program &program, std::span<const Tensor> inputs,
             state_->runtime->device)
       return Status::InvalidArgument(
           "Vulkan recorder output description or device");
+    const auto value = prepared->outputs[index];
+    const auto alias = prepared->aliases[value];
+    if (alias.root != value) {
+      const auto port = std::ranges::find(prepared->inputs, alias.root);
+      const Tensor *root = port != prepared->inputs.end()
+                               ? &inputs[static_cast<std::size_t>(
+                                     port - prepared->inputs.begin())]
+                               : &prepared->values[alias.root].constant;
+      if (!*root)
+        return Status::Unimplemented(
+            "Vulkan recorder alias output needs an externally bound root");
+      if (outputs[index].native_buffer() != root->native_buffer() ||
+          outputs[index].native_offset() !=
+              root->native_offset() + alias.byte_offset)
+        return Status::InvalidArgument(
+            "Vulkan recorder View output must alias its input range");
+      continue;
+    }
+    if (detail::Access::buffer(outputs[index])->is_view)
+      return Status::Unimplemented(
+          "Vulkan typed recorded output requires independent padded storage");
     for (const auto &input : inputs)
       if (overlap(outputs[index], input))
         return Status::InvalidArgument("Vulkan typed output aliases an input");

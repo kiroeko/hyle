@@ -35,6 +35,7 @@ create_run(const std::shared_ptr<Runtime> &runtime) noexcept {
     const auto &device = *runtime->device;
     VkCommandPoolCreateInfo pool{};
     pool.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     pool.queueFamilyIndex = device.native.queue_family;
     auto status =
         native_status(device.fn.CreateCommandPool(device.native.device, &pool,
