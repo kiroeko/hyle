@@ -30,9 +30,12 @@ def main():
          {1, 61, 63}),
         ('mv_f32_subgroup', 'mul_mat_vec.comp',
          dict(common, USE_SUBGROUP_ADD_NO_SHMEM='1'), {1, 61, 63}),
-        ('swiglu_f32', 'swiglu.comp', dict(A_TYPE='float', D_TYPE='float'), {1}),
+        ('swiglu_f32', str((args.tensor_source / 'swiglu.comp').resolve()),
+         dict(A_TYPE='float', D_TYPE='float'), {1}),
         ('copy_f32', 'copy.comp', dict(A_TYPE='float', D_TYPE='float', DATA_A_F32='1'), {1}),
         ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
+        ('normalization', str((args.tensor_source / 'tensor.comp').resolve()),
+         dict(HYLE_TENSOR_NORMALIZATION='1'), {1}),
     ]
     header = ['#pragma once', '#include <cstdint>', '#include <span>',
               'namespace hyle::compute::vulkan::detail::shaders {']

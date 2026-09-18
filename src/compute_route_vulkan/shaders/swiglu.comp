@@ -1,0 +1,14 @@
+#version 450
+
+// Keep the pinned ggml GLU dispatch/address shell; adapt only HYLE's stable
+// activation and IEEE boundary semantics. See the vendor NOTICE and license.
+#include "glu_head.glsl"
+
+float op(float a, float b) {
+    if (isnan(a)) return a;
+    if (isinf(a)) return (a < 0 ? 0.0 : a) * b;
+    float e = exp(-abs(a));
+    return (a * (a >= 0 ? 1.0 / (1.0 + e) : e / (1.0 + e))) * b;
+}
+
+#include "glu_main.glsl"

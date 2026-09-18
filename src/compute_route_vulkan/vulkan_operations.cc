@@ -304,6 +304,35 @@ lower_matmul(ProgramState &program, const PlanStep &step,
   return Status::Ok();
 }
 
+bool mature_gate_eligible(const ProgramState &program, const PlanStep &step) {
+  const auto &operation = *step.operation.get_if<GatedActivation>();
+  const auto &output = program.values[step.output].description;
+  if (operation.activation != GatedActivationKind::kSilu ||
+      output.data_type() != DataType::kFloat32 || output.rank() > 4 ||
+      *output.element_count() == 0 ||
+      !check_flat_shader(*program.runtime->device).ok())
+    return false;
+  const auto alignment =
+      (std::max)(VkDeviceSize{4}, program.runtime->device->properties.limits
+                                      .minStorageBufferOffsetAlignment);
+  for (const auto input : step.inputs) {
+    const auto &value = program.values[input];
+    if (!value.description.is_dense())
+      return false;
+    if (value.constant) {
+      if (value.constant.native_offset() % alignment != 0)
+        return false;
+    } else {
+      const auto alias = program.aliases[input];
+      if (std::ranges::find(program.inputs, alias.root) !=
+              program.inputs.end() ||
+          alias.byte_offset % alignment != 0)
+        return false; // Dynamic base origins are not known during preparation.
+    }
+  }
+  return true;
+}
+
 Status lower_gate(ProgramState &program, const PlanStep &step) {
   const auto *operation = step.operation.get_if<GatedActivation>();
   if (operation == nullptr ||
@@ -401,7 +430,8 @@ Status lower_operation(
     }
     if (step.operation.kind() == OperationKind::kMatMul)
       return lower_matmul(program, step, packs);
-    if (step.operation.kind() == OperationKind::kGatedActivation)
+    if (step.operation.kind() == OperationKind::kGatedActivation &&
+        mature_gate_eligible(program, step))
       return lower_gate(program, step);
     return lower_tensor(program, step);
   } catch (const std::bad_alloc &) {

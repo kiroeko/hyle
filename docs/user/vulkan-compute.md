@@ -73,7 +73,9 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 当前 typed 域包括：
 
 - 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
-  F32 SiLU 门控支持 separate/packed-halves。这部分保持已有设备/shape 性能资格。
+  MatMul 保持已有设备/shape 性能资格。
+- F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
+  RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
 - Copy/Fill/Select 支持 F32/F16/BF16/I32/I64/Bool 原始存储，Select 使用 Bool mask；
   浮点 Cast、13 种 Unary（包括稳定 Softplus）和六种广播 Binary 支持 F32/F16/BF16。
   浮点在 F32 求值后舍入至输出存储；整数和 Bool 只承诺本批存储操作，不承诺整数算术。
@@ -93,6 +95,15 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
+归一化对非空输入使用一次 dispatch 和固定 shared memory，不分配额外 device scratch。
+RMSNorm 两遍读取输入，LayerNorm 三遍并使用中心化方差；半精度奇数宽度时一个 workgroup
+处理相邻两行，避免两个组写同一 word。合法 stride/View、空域、rank≤8 均沿张量合同。
+例如 `vk::prepare(context, c::RmsNorm{}, input_description, scale_tensor)` 捕获 scale，随后只绑定输入。
+
+门控准备期能证明原生对齐的 dense F32 SiLU（rank≤4、设备支持512-lane）复用 ggml GLU 调度，
+并使用 HYLE 的稳定 activation 边界；未知动态起点和其他类型/布局使用 U32 tensor shader。
+这些条件在准备期绑定；bind/submit 不选择 Provider。新门控/归一化的 P1 仍待完整 C1 候选验证。
+
 ## 零拷贝 View
 
 `tensor.view(c::View::slice(axis, start, count, step).value())` 以及 reshape、permute、
@@ -111,7 +122,7 @@ push 参数传递字节余数。更换 buffer 但余数相同的 bind 只更新 
 重录失败时 bind 返回错误，成功重新绑定前不能提交；被导出的别名结果或 native owner 会阻止该
 槽改写别名 metadata，释放后可复用。需要同时保留旧结果时使用独立 invocation。
 
-现有 F32 GEMM/SiLU 与自定义原生 kernel 保留原 descriptor 对齐域，遇到不合格起点需显式
+现有 F32 GEMM 与自定义原生 kernel 保留原 descriptor 对齐域，遇到不合格起点需显式
 Copy/materialize；不会静默把 View 本身实现为 copy。固定 Recorder 的 View 输出必须确实指向
 已外部绑定输入的对应范围。普通 typed Recorder 写输出使用独立或 `borrow_ready` 的具名 padded
 buffer，不写入 View slice 的尾字，避免修改相邻数据。

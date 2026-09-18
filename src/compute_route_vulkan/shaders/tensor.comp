@@ -17,7 +17,7 @@ layout(constant_id = 5) const uint mode = 0;
 layout(constant_id = 6) const uint count = 1;
 layout(constant_id = 7) const uint fill_lo = 0;
 layout(constant_id = 8) const uint fill_hi = 0;
-layout(constant_id = 9) const uint reserved = 0;
+layout(constant_id = 9) const uint rows_per_group = 1;
 layout(constant_id = 10) const uint dim0 = 1;
 layout(constant_id = 11) const uint dim1 = 1;
 layout(constant_id = 12) const uint dim2 = 1;
@@ -152,8 +152,7 @@ float binary(float x, float y) {
                                         : floatBitsToUint(x) & floatBitsToUint(y));
     return mode == 4 ? min(x, y) : max(x, y);
 }
-uint evaluate(uint index, uint half_word) {
-    if (operation == 1) return half_word == 0 ? fill_lo : fill_hi;
+uvec3 tensor_address(uint index) {
     uvec3 offsets = uvec3(origin.a, origin.b, origin.c);
     uint remaining = index;
     address_axis(remaining, offsets, dim7, uvec3(sa7,sb7,sc7));
@@ -164,6 +163,11 @@ uint evaluate(uint index, uint half_word) {
     address_axis(remaining, offsets, dim2, uvec3(sa2,sb2,sc2));
     address_axis(remaining, offsets, dim1, uvec3(sa1,sb1,sc1));
     address_axis(remaining, offsets, dim0, uvec3(sa0,sb0,sc0));
+    return offsets;
+}
+uint evaluate(uint index, uint half_word) {
+    if (operation == 1) return half_word == 0 ? fill_lo : fill_hi;
+    uvec3 offsets = tensor_address(index);
     if (operation == 5) {
         bool choice = load_bytes(0, offsets.x, 1) != 0;
         return load_bytes(choice ? 1u : 2u, (choice ? offsets.y : offsets.z) + half_word * 4u,
@@ -174,8 +178,15 @@ uint evaluate(uint index, uint half_word) {
     float value = decode(bits, type_a);
     if (operation == 3) value = unary(value);
     if (operation == 4) value = binary(value, decode(load_bytes(1, offsets.y, width(type_b)), type_b));
+    if (operation == 6) {
+        float other = fill_hi != 0
+            ? decode(load_bytes(0, offsets.x + fill_lo, width(type_a)), type_a)
+            : decode(load_bytes(1, offsets.y, width(type_b)), type_b);
+        value = unary(value) * other;
+    }
     return encode(value, type_d);
 }
+#ifndef HYLE_TENSOR_NORMALIZATION
 void main() {
     uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
     uint size = width(type_d), bytes = count * size;
@@ -192,3 +203,72 @@ void main() {
     }
     d[index] = output_word;
 }
+#else
+// Row-parallel reduction follows the pinned ggml norm family. Centered
+// variance and paired odd-width half rows preserve HYLE's numerical/storage
+// contract without optional narrow shader storage or a separate scratch pass.
+shared vec2 sums[128];
+vec2 row_sum(vec2 partial) {
+    uint lane = gl_LocalInvocationID.x;
+    sums[lane] = partial;
+    barrier();
+    for (uint step = 64; step > 0; step >>= 1) {
+        if (lane < step) sums[lane] += sums[lane + step];
+        barrier();
+    }
+    vec2 result = sums[0];
+    barrier(); // All readers finish before the next reduction overwrites sums.
+    return result;
+}
+float input_value(uint index) {
+    return decode(load_bytes(0, tensor_address(index).x, width(type_a)), type_a);
+}
+vec2 input_rows(uint first_row, uint column) {
+    return vec2(input_value(first_row * dim7 + column),
+        rows_per_group == 2 && (first_row + 1) * dim7 < count
+            ? input_value((first_row + 1) * dim7 + column) : 0.0);
+}
+float norm_inverse(float variance) {
+    if (isnan(variance) || variance < 0) return uintBitsToFloat(0x7fc00000u);
+    if (variance == 0) return uintBitsToFloat(0x7f800000u);
+    return isinf(variance) ? 0.0 : inversesqrt(variance);
+}
+void main() {
+    uint group = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
+    uint first_row = group * rows_per_group;
+    if (first_row >= count / dim7) return; // Uniform across this workgroup.
+    uint lane = gl_LocalInvocationID.x;
+    vec2 mean = vec2(0.0), partial = vec2(0.0);
+    if (operation == 8) {
+        for (uint column = lane; column < dim7; column += 128)
+            partial += input_rows(first_row, column);
+        mean = row_sum(partial) / float(dim7);
+    }
+    partial = vec2(0.0);
+    for (uint column = lane; column < dim7; column += 128) {
+        vec2 centered = input_rows(first_row, column) - mean;
+        partial += centered * centered;
+    }
+    vec2 variance = row_sum(partial) / float(dim7) + uintBitsToFloat(fill_lo);
+    vec2 inverse = vec2(norm_inverse(variance.x), norm_inverse(variance.y));
+    uint lanes = 4u / width(type_d);
+    uint end = min(count, (first_row + rows_per_group) * dim7);
+    // Paired half rows start and end on whole words, except the padded final
+    // word. No other workgroup can touch either half of one output word.
+    for (uint word_index = first_row * dim7 / lanes + lane;
+         word_index < (end + lanes - 1) / lanes; word_index += 128) {
+        uint output_word = 0;
+        for (uint item = 0; item < lanes; ++item) {
+            uint index = word_index * lanes + item;
+            if (index >= end) continue;
+            uint row = index / dim7 - first_row;
+            uvec3 offsets = tensor_address(index);
+            float value = (decode(load_bytes(0, offsets.x, width(type_a)), type_a) - mean[row]) * inverse[row];
+            if (fill_hi >= 2) value *= decode(load_bytes(1, offsets.y, width(type_b)), type_b);
+            if (fill_hi >= 3) value += decode(load_bytes(2, offsets.z, width(type_c)), type_c);
+            output_word |= encode(value, type_d) << (item * width(type_d) * 8u);
+        }
+        d[word_index] = output_word;
+    }
+}
+#endif
