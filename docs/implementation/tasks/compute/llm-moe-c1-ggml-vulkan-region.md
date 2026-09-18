@@ -156,3 +156,9 @@ loader/instance/device 冷期创建；scope 不分配、不加全局执行锁，
 quota opt-in 才增加 reservation token，仍需在完整 P0/P1 计入。新增过程性故障测试可包装真实
 Vulkan PFN 返回指定错误，正常正确性必须运行真实 GPU，不能用 mock provider 代替。
 实现最多两轮纠正，先 W1 适用 correctness，不启动 P1 或重复已完成的长路径调查。
+
+Y2 实施中的具名接入纠正（仍限 Y01/Y05/Y07）：移除 loader 链接后显式声明 build-only
+SPIRV-Headers；补丁哈希改变会改变 build-local source 路径，host shader 子构建 prefix 必须含
+短补丁身份，避免复用旧 CMake source cache。registry 的 ctx/device 在入 vector 前也用 RAII，
+与 device/buffer 部分初始化回滚同属 Y05。依据为真实编译失败日志和对应 `new`→`push_back`
+异常路径，不增加算子、公共构建框架或验证仪器范围。
