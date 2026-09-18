@@ -142,6 +142,71 @@ TEST(VulkanGraph, InputAliasChainsRebindOddOriginsAndKeepOldInputStorage) {
   EXPECT_EQ(bits(context, retained), saved);
 }
 
+TEST(VulkanGraph, ConstantViewsShareColdWeightPackingAndDropUnusedRoots) {
+  auto context = vulkan_test::context().value();
+  constexpr int rows = 3, k = 17, n = 33;
+  const auto host_weights = vulkan_test::data(k * n, 2);
+  for (bool publish_view : {false, true}) {
+    auto weights =
+        vulkan_test::upload(context, vulkan_test::dense({k * n}), host_weights)
+            .value();
+    const std::weak_ptr<const void> original_owner = weights.native_owner();
+    const auto original_buffer = weights.native_buffer();
+    auto builder = g::GraphBuilder::create().value();
+    const auto x = builder.input(vulkan_test::dense({rows, k})).value();
+    const auto w = builder.constant(weights.description()).value();
+    const auto matrix =
+        builder
+            .add(c::View::reshape(std::array<std::int64_t, 2>{k, n}).value(), w)
+            .value();
+    const auto same_matrix =
+        builder.add(c::View::slice(0, 0, k).value(), matrix).value();
+    const auto first = builder.add(c::MatMul{}, x, matrix).value();
+    const auto second = builder.add(c::MatMul{}, x, same_matrix).value();
+    ASSERT_TRUE(builder.publish(first).ok());
+    ASSERT_TRUE(builder.publish(second).ok());
+    if (publish_view)
+      ASSERT_TRUE(builder.publish(same_matrix).ok());
+    auto graph = std::move(builder).finish().value();
+    gv::CompileReport report;
+    auto program =
+        gv::compile(context, graph, std::array{weights}, {.report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(report.native_dispatch_count, 2U); // Only the two matmuls replay.
+    EXPECT_EQ(report.invocation_storage_block_bytes.size(), 2U);
+    EXPECT_EQ(report.retained_constant_owner_count, publish_view ? 2U : 1U);
+    graph = {};
+    weights = {};
+    EXPECT_EQ(original_owner.expired(), !publish_view);
+    auto slot = program->create_invocation().value();
+    for (int phase = 0; phase < 2; ++phase) {
+      const auto host_input = vulkan_test::data(rows * k, phase + 3);
+      const auto input = vulkan_test::upload(
+                             context, vulkan_test::dense({rows, k}), host_input)
+                             .value();
+      ASSERT_TRUE(slot.bind(input).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait().value();
+      const auto expected =
+          vulkan_test::matmul(host_input, host_weights, rows, k, n);
+      for (std::size_t output = 0; output < 2; ++output) {
+        const auto actual =
+            vulkan_test::read(context, result.get()->tensors()[output]).value();
+        ASSERT_EQ(actual.size(), expected.size());
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          EXPECT_NEAR(actual[i], expected[i],
+                      8e-5f + 3e-5f * std::abs(expected[i]));
+      }
+      if (publish_view) {
+        const auto &view = result.get()->tensors()[2];
+        EXPECT_EQ(view.native_buffer(), original_buffer);
+        EXPECT_EQ(view.native_offset(), 0U);
+        EXPECT_EQ(vulkan_test::read(context, view).value(), host_weights);
+      }
+    }
+  }
+}
+
 TEST(VulkanGraph, ConstantViewsNeedNoDeviceStorageAndRetainOriginalOwners) {
   auto context = vulkan_test::context().value();
   const auto desc = dense(c::DataType::kInt64, {17});

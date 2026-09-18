@@ -229,6 +229,12 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         alias.byte_offset +=
             offset; // Every derived span is contained in its root.
         program->aliases[step.output] = alias;
+        if (const auto &source = program->values[step.inputs[0]].constant;
+            source) {
+          // Preserve immutable weights for downstream cold packing and dedup.
+          HYLE_ASSIGN_OR_RETURN(auto constant, source.view(*view));
+          program->values[step.output].constant = std::move(constant);
+        }
         continue;
       }
       auto status = lower_operation(*program, step, packs);
