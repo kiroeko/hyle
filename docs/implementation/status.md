@@ -60,8 +60,8 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-T AUDITED：T01–T04 已实现六 storage、三浮点逐元素/转换与普通 Direct/Graph；W1/Air/Mini 各23例及2个头检查通过，外部缓冲区保护区补测通过。完整 C1 的 View/Concat/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-T AUDITED：T01–T04 已实现六 storage、三浮点逐元素/转换与普通 Direct/Graph；W1/Air/Mini 各23例及2个头检查通过，外部缓冲区保护区补测通过。完整 C1 的 View/Concat/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-U AUDITED：U01–U04 已实现零拷贝 View、别名 liveness/保活、原生重绑定及常量视图冷 packing 复用；W1/Air/Mini 各30例及2个头检查通过。完整 C1 的 Concat/gates/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-U AUDITED：U01–U04 已实现零拷贝 View、别名 liveness/保活、原生重绑定及常量视图冷 packing 复用；W1/Air/Mini 各30例及2个头检查通过。完整 C1 的 Concat/gates/norm/reduce/index 等后续机制、真实权重/三交付和 P1 尚待完成；不签 C1 整包 PASS。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

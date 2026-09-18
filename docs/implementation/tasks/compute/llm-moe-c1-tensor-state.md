@@ -927,4 +927,24 @@ reshape/slice/permute/broadcast 为 MustAlias，不能以 materialize 冒签。�
 本批不改共同 TensorDesc、通用 Graph/Queue、依赖 pin、公共构建或统计仪器，不运行 P1。
 View 的 descriptor prefix、别名保活和必要重录是显式成本，不签零成本执行或性能胜出。
 
+#### C1-U 实现与局部验证事实
+
+- `9532a7b3` 实现零拷贝 View、flatten alias/root liveness、常量和输入别名保活、descriptor
+  对齐余数与原生 idle 重录；`38793bad` 修正 WERROR 局部变量遮蔽并补输入别名链换绑验证。
+- U01 的源码 P0 发现常量 View 丢失不可变资格，导致下游成熟 MatMul 每次执行转置权重。
+  `d2a764d2` 保留该资格和既有冷 packing 去重：两个等价视图共享一份打包，仅两个 MatMul
+  dispatch 重放；只在发布原始视图时保留原始权重。独立数值及真实 owner 释放检查通过。
+- 固定验证候选 `d0f9ca8c` 的 W1、MacBook Air、Mac mini 均通过 **20 Direct + 10 Graph = 30**
+  用例和两个公开头检查；Mini 仅 correctness/portability。首轮 Windows 遮蔽警告和新增测试
+  TensorShape 构造错误均保留 FAIL 记录，后者修正不改产品；运行期未改数值算法或容差。
+- 六 storage 的四类 View、嵌套/广播/rank8/empty/奇数起点、计算根发布寿命、两槽与旧结果、
+  导出 token、close、固定 Recorder 真别名和保护区、原生 Begin/分配计数及重录失败已验证。
+  W1/Air validation layer 无 VUID/同步错误；Mini 复用已校验本地工具包，不冒签 validation layer。
+- [局部结果与原始日志](../../../../evidence/correctness/compute-llm-moe-c1/u-vulkan-focused.json)
+  绑定候选、命令、SHA、失败尝试和 selector 的 skipped reasons。
+  [统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/u-implementation-loc.json)
+  为 **43,833 行 / 177 实现文件**，包含 GLSL，不含测试/bench/第三方，self-check PASS。
+- 上述只签 U01–U04 局部事实；Concat/gates/norm/reduce/Softmax/TopK/index/Scan、真实模型权重
+  消费、完整 C1 三交付/其它适用环境及等责 P1 仍待实现和验收，两个 owner 保持 AUDITED。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

@@ -1,0 +1,1583 @@
+{
+  "kind": "C1-U focused Vulkan zero-copy View and alias ownership; not full C1 acceptance",
+  "product_candidate": "d2a764d26fcb76a8995756a0b716fb3d5a99249e",
+  "product_commits": [
+    "9532a7b391752cad96f18366c9d8ace7a43dae3c",
+    "38793badbe1ccf89a146e59f94fc381b92b20c5f",
+    "d2a764d26fcb76a8995756a0b716fb3d5a99249e"
+  ],
+  "validation_candidate": "d0f9ca8ca4e0c217a029bf0c8a336c17b6caa7bc",
+  "validation_tree": "6d88b4cb1d42ff50b41e32ec50ada1b47b0d4afd",
+  "product_unchanged_since": "d2a764d2 (all Compute/Graph implementation boundaries match the validation candidate)",
+  "verdict": "PASS",
+  "scope": "U01-U04 focused correctness/lifecycle/P0; whole-C1 gates remain unproven",
+  "attempts": [
+    {
+      "candidate": "9532a7b391752cad96f18366c9d8ace7a43dae3c",
+      "tree": "ca383069cddd25946f8e8e164268cce4ca303ea1",
+      "source": "C:\\hyle-scratch\\c1vk\\source",
+      "build": "C:\\hyle-scratch\\c1vk\\build-static",
+      "kind": "C1-U Vulkan View focused factors and headers; full C1 bundle/delivery/P1 pending",
+      "machine": "W1-WIN",
+      "commands": [
+        {
+          "label": "selector",
+          "command": [
+            "python",
+            "scripts/validation-select.py",
+            "plan",
+            "--base",
+            "3ab457fc",
+            "--candidate",
+            "9532a7b391752cad96f18366c9d8ace7a43dae3c",
+            "--context",
+            "C:/hyle-scratch/r6-vulkan-20260917/selected-w1-v2/context.json",
+            "--output",
+            "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\selector.json"
+          ],
+          "exit_code": 0,
+          "seconds": 3.6719999997876585,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\selector.log",
+          "sha256": "dc52cc86519013f1b1dffdcaab8ba6715c63a4b0ead154c4ced499d352da7a09",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\selector.log"
+        },
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\hyle-scratch\\c1vk\\source",
+            "-B",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DHYLE_DEV_FACTORS=compute_route_vulkan;graph_route_vulkan",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_SANITIZER=off",
+            "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/project-hyle/.deps",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+            "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:/hyle-scratch/r6-vulkan-20260917/locked-sources/vulkan_headers/Vulkan-Headers-e3b1eec08173d6b825cd3ac88c885a63b621504a"
+          ],
+          "exit_code": 0,
+          "seconds": 3.969000000040978,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\configure.log",
+          "sha256": "fd774d1fe04eed4e0c08db50b02f144325220dd80bef0404ad7f2cf218992ca1",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\configure.log"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "--parallel",
+            "2",
+            "--target",
+            "hyle_compute_route_vulkan_test",
+            "hyle_graph_route_vulkan_test"
+          ],
+          "exit_code": 2,
+          "seconds": 5.592999999877065,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\build.log",
+          "sha256": "f0763c6c467ecde82ae66aaca109bceb43472e1961a6d9106fbe0728e4d5c9ee",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\build.log"
+        }
+      ],
+      "verdict": "FAIL",
+      "validation_host": "windows",
+      "local_result": {
+        "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\9532a7b3\\result.json",
+        "sha256": "809fb73cfa3f1b8a81b6da3f1cb3dca691f7b15f7ef9bfed2bc3b6988359ee9e"
+      },
+      "failure": "WERROR rejected a shadowed Recorder local name. Renamed the local; no algorithm/tolerance change.",
+      "test_cases": null
+    },
+    {
+      "candidate": "38793badbe1ccf89a146e59f94fc381b92b20c5f",
+      "tree": "e4f0dce7b6854e22fbc0bfdbc7b2564fef1238d8",
+      "source": "C:\\hyle-scratch\\c1vk\\source",
+      "build": "C:\\hyle-scratch\\c1vk\\build-static",
+      "kind": "C1-U Vulkan View focused factors and headers; full C1 bundle/delivery/P1 pending",
+      "machine": "W1-WIN",
+      "commands": [
+        {
+          "label": "selector",
+          "command": [
+            "python",
+            "scripts/validation-select.py",
+            "plan",
+            "--base",
+            "3ab457fc",
+            "--candidate",
+            "38793badbe1ccf89a146e59f94fc381b92b20c5f",
+            "--context",
+            "C:/hyle-scratch/r6-vulkan-20260917/selected-w1-v2/context.json",
+            "--output",
+            "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\selector.json"
+          ],
+          "exit_code": 0,
+          "seconds": 4.0,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\selector.log",
+          "sha256": "dc52cc86519013f1b1dffdcaab8ba6715c63a4b0ead154c4ced499d352da7a09",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\selector.log"
+        },
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\hyle-scratch\\c1vk\\source",
+            "-B",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DHYLE_DEV_FACTORS=compute_route_vulkan;graph_route_vulkan",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_SANITIZER=off",
+            "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/project-hyle/.deps",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+            "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:/hyle-scratch/r6-vulkan-20260917/locked-sources/vulkan_headers/Vulkan-Headers-e3b1eec08173d6b825cd3ac88c885a63b621504a"
+          ],
+          "exit_code": 0,
+          "seconds": 3.75,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\configure.log",
+          "sha256": "97bb5b801664fd750a8d941c4725bd731d7322b035abcccdceaf97c625f84067",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\configure.log"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "--parallel",
+            "2",
+            "--target",
+            "hyle_compute_route_vulkan_test",
+            "hyle_graph_route_vulkan_test"
+          ],
+          "exit_code": 0,
+          "seconds": 10.016000000294298,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\build.log",
+          "sha256": "7bfb4276fcd4796a68a15c2f3e8476032f97891c8f0c278f1611c6c3285a48ed",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\build.log"
+        },
+        {
+          "label": "test",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "--output-on-failure",
+            "--no-tests=error",
+            "--timeout",
+            "300",
+            "--verbose",
+            "-L",
+            "^(compute_route_vulkan|graph_route_vulkan)$"
+          ],
+          "exit_code": 0,
+          "seconds": 7.985000000335276,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\test.log",
+          "sha256": "0281174609255fe0e7aab39bf337dccf852b033729dc6dd375e2d2e1d49cd1d5",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\test.log"
+        }
+      ],
+      "verdict": "PASS",
+      "runtime_staged_executables": [
+        "C:\\hyle-scratch\\c1vk\\build-static\\bin\\hyle_compute_route_vulkan_test.exe",
+        "C:\\hyle-scratch\\c1vk\\build-static\\bin\\hyle_graph_route_vulkan_test.exe"
+      ],
+      "last_test_sha256": "c033c7f45dc0d000ea920e59306a5f452d36831feb7358ac4e4092add8e57ec1",
+      "validation_host": "windows",
+      "local_result": {
+        "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\38793bad\\result.json",
+        "sha256": "6eba11cf523e1a1fb62b442e55d4d39e6a045b03bead0c9e40f631d7508cd306"
+      },
+      "test_cases": {
+        "compute_route_vulkan": 20,
+        "graph_route_vulkan": 9,
+        "separate_header_checks": 2
+      }
+    },
+    {
+      "candidate": "d2a764d26fcb76a8995756a0b716fb3d5a99249e",
+      "tree": "c1af64863c154cdae1567907b34a19e3b27c1478",
+      "source": "C:\\hyle-scratch\\c1vk\\source",
+      "build": "C:\\hyle-scratch\\c1vk\\build-static",
+      "kind": "C1-U Vulkan View focused factors and headers; full C1 bundle/delivery/P1 pending",
+      "machine": "W1-WIN",
+      "commands": [
+        {
+          "label": "selector",
+          "command": [
+            "python",
+            "scripts/validation-select.py",
+            "plan",
+            "--base",
+            "3ab457fc",
+            "--candidate",
+            "d2a764d26fcb76a8995756a0b716fb3d5a99249e",
+            "--context",
+            "C:/hyle-scratch/r6-vulkan-20260917/selected-w1-v2/context.json",
+            "--output",
+            "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\selector.json"
+          ],
+          "exit_code": 0,
+          "seconds": 5.061999999918044,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\selector.log",
+          "sha256": "dc52cc86519013f1b1dffdcaab8ba6715c63a4b0ead154c4ced499d352da7a09",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\selector.log"
+        },
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\hyle-scratch\\c1vk\\source",
+            "-B",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DHYLE_DEV_FACTORS=compute_route_vulkan;graph_route_vulkan",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_SANITIZER=off",
+            "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/project-hyle/.deps",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+            "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:/hyle-scratch/r6-vulkan-20260917/locked-sources/vulkan_headers/Vulkan-Headers-e3b1eec08173d6b825cd3ac88c885a63b621504a"
+          ],
+          "exit_code": 0,
+          "seconds": 3.780999999959022,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\configure.log",
+          "sha256": "97bb5b801664fd750a8d941c4725bd731d7322b035abcccdceaf97c625f84067",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\configure.log"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "--parallel",
+            "2",
+            "--target",
+            "hyle_compute_route_vulkan_test",
+            "hyle_graph_route_vulkan_test"
+          ],
+          "exit_code": 2,
+          "seconds": 2.9840000001713634,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\build.log",
+          "sha256": "3ac82abd5d4539a07d03bbef24de0d7d7a17fc2ccc7ff501f56506871471c465",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\build.log"
+        }
+      ],
+      "verdict": "FAIL",
+      "validation_host": "windows",
+      "local_result": {
+        "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d2a764d2\\result.json",
+        "sha256": "5d7119cbd3a404731e28527ae83659c90c70ba1fe055188b012859d56f906c9e"
+      },
+      "failure": "New constant-View test passed std::array directly to View::reshape, which requires TensorShape. Corrected test construction; product code unchanged.",
+      "test_cases": null
+    },
+    {
+      "candidate": "d0f9ca8ca4e0c217a029bf0c8a336c17b6caa7bc",
+      "tree": "6d88b4cb1d42ff50b41e32ec50ada1b47b0d4afd",
+      "source": "C:\\hyle-scratch\\c1vk\\source",
+      "build": "C:\\hyle-scratch\\c1vk\\build-static",
+      "kind": "C1-U Vulkan View focused factors and headers; full C1 bundle/delivery/P1 pending",
+      "machine": "W1-WIN",
+      "commands": [
+        {
+          "label": "selector",
+          "command": [
+            "python",
+            "scripts/validation-select.py",
+            "plan",
+            "--base",
+            "3ab457fc",
+            "--candidate",
+            "d0f9ca8ca4e0c217a029bf0c8a336c17b6caa7bc",
+            "--context",
+            "C:/hyle-scratch/r6-vulkan-20260917/selected-w1-v2/context.json",
+            "--output",
+            "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\selector.json"
+          ],
+          "exit_code": 0,
+          "seconds": 4.890999999828637,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\selector.log",
+          "sha256": "dc52cc86519013f1b1dffdcaab8ba6715c63a4b0ead154c4ced499d352da7a09",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\selector.log"
+        },
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "C:\\hyle-scratch\\c1vk\\source",
+            "-B",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DHYLE_DEV_FACTORS=compute_route_vulkan;graph_route_vulkan",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_SANITIZER=off",
+            "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/project-hyle/.deps",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+            "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:/hyle-scratch/r6-vulkan-20260917/locked-sources/vulkan_headers/Vulkan-Headers-e3b1eec08173d6b825cd3ac88c885a63b621504a"
+          ],
+          "exit_code": 0,
+          "seconds": 3.9220000002533197,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\configure.log",
+          "sha256": "fd774d1fe04eed4e0c08db50b02f144325220dd80bef0404ad7f2cf218992ca1",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\configure.log"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "--parallel",
+            "2",
+            "--target",
+            "hyle_compute_route_vulkan_test",
+            "hyle_graph_route_vulkan_test"
+          ],
+          "exit_code": 0,
+          "seconds": 2.4529999997466803,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\build.log",
+          "sha256": "ecb0c774e11090fafca9949cb72439c9fec4f26b3a8686c31a326c1bda97db95",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\build.log"
+        },
+        {
+          "label": "test",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "C:\\hyle-scratch\\c1vk\\build-static",
+            "--output-on-failure",
+            "--no-tests=error",
+            "--timeout",
+            "300",
+            "--verbose",
+            "-L",
+            "^(compute_route_vulkan|graph_route_vulkan)$"
+          ],
+          "exit_code": 0,
+          "seconds": 5.67200000025332,
+          "log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\test.log",
+          "sha256": "e7a8b16ed63e1548e105638a81d75bbfd51c3ace36dc4fdf2de8015ca6c2b4ef",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\test.log"
+        }
+      ],
+      "verdict": "PASS",
+      "runtime_staged_executables": [
+        "C:\\hyle-scratch\\c1vk\\build-static\\bin\\hyle_compute_route_vulkan_test.exe",
+        "C:\\hyle-scratch\\c1vk\\build-static\\bin\\hyle_graph_route_vulkan_test.exe"
+      ],
+      "last_test_sha256": "3e51ad439aa8021186b1b441e664566bb929da3eb90cd23e077548e014a18064",
+      "validation_host": "windows",
+      "local_result": {
+        "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\result.json",
+        "sha256": "9b10adb637ee5c0e658f7f17acffa12e168f05a85db068186f4227daa19d8ffc"
+      },
+      "test_cases": {
+        "compute_route_vulkan": 20,
+        "graph_route_vulkan": 10,
+        "separate_header_checks": 2
+      }
+    },
+    {
+      "candidate": "d0f9ca8ca4e0c217a029bf0c8a336c17b6caa7bc",
+      "tree": "6d88b4cb1d42ff50b41e32ec50ada1b47b0d4afd",
+      "kind": "C1-U Vulkan View focused correctness and headers; not full C1 delivery/P1",
+      "source": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source",
+      "build": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+      "bundle_sha256": "f8764bd15f59e56949139c42987f5b9b47f455bf71c358d1b538151e30a27ee8",
+      "machine": {
+        "model": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+      },
+      "commands": [
+        {
+          "label": "configure",
+          "command": [
+            "cmake",
+            "-S",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source",
+            "-B",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DHYLE_DEV_FACTORS=compute_route_vulkan;graph_route_vulkan",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_SANITIZER=off",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+            "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator"
+          ],
+          "exit_code": 0,
+          "seconds": 1.9420030419999998,
+          "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/u-d0f9ca8c/configure.log",
+          "sha256": "61853b4bfaf4c6a666c2d1fc8a1d131f2aca29f08d524eb8ac501851d5f976ee",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-air\\d0f9ca8c\\configure.log"
+        },
+        {
+          "label": "build",
+          "command": [
+            "cmake",
+            "--build",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "--parallel",
+            "2",
+            "--target",
+            "hyle_compute_route_vulkan_test",
+            "hyle_graph_route_vulkan_test"
+          ],
+          "exit_code": 0,
+          "seconds": 18.689709667000002,
+          "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/u-d0f9ca8c/build.log",
+          "sha256": "2d3a7d12d635c2da94b84f27a382ca8dd0f8c111aeaceab0166d0aacfb316f26",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-air\\d0f9ca8c\\build.log"
+        },
+        {
+          "label": "test",
+          "command": [
+            "ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "--output-on-failure",
+            "--no-tests=error",
+            "--timeout",
+            "180",
+            "--verbose",
+            "-L",
+            "^(compute_route_vulkan|graph_route_vulkan)$"
+          ],
+          "exit_code": 0,
+          "seconds": 5.426986500000002,
+          "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/u-d0f9ca8c/test.log",
+          "sha256": "721252722b69d7cdd58dac39a8be4f4541f1b64e9ccee6ba56091e6ac7f45420",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-air\\d0f9ca8c\\test.log"
+        }
+      ],
+      "verdict": "PASS",
+      "last_test_sha256": "02954c05395b3c7b0288dc36bcf34cf68a3172a6ffc6bd092b554b391b098e9f",
+      "validation_host": "air",
+      "local_result": {
+        "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-air\\d0f9ca8c\\result.json",
+        "sha256": "331ecad8188ca86ac8129178a2a09069560ee58b3775ae76cf2c99df898a0c7e"
+      },
+      "test_cases": {
+        "compute_route_vulkan": 20,
+        "graph_route_vulkan": 10,
+        "separate_header_checks": 2
+      }
+    },
+    {
+      "candidate": "d0f9ca8ca4e0c217a029bf0c8a336c17b6caa7bc",
+      "tree": "6d88b4cb1d42ff50b41e32ec50ada1b47b0d4afd",
+      "kind": "C1-U Vulkan View focused correctness and headers; not full C1 delivery/P1",
+      "source": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-d0f9ca8c",
+      "build": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static-d0f9ca8c",
+      "archive_sha256": "0dbf4d487f5d339537db20c905155dba32a4cf711e9f1f87a6eaff07aae6cf5b",
+      "source_kind": "complete canonical git archive",
+      "role": "Mac mini correctness/portability only",
+      "validation_layer": "not installed; validation-layer evidence is from W1 and Air",
+      "tools_archive_sha256": "a34568e2d301473e39469a4c6cbbf2328ec41d100caf02175a98cc06e7c94144",
+      "machine": {
+        "model": "Mac16,10",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+      },
+      "commands": [
+        {
+          "label": "configure",
+          "command": [
+            "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-d0f9ca8c",
+            "-B",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static-d0f9ca8c",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DHYLE_DEV_FACTORS=compute_route_vulkan;graph_route_vulkan",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_STATIC=ON",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_SANITIZER=off",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+            "-DHYLE_VULKAN_GLSLANG=/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/glslang-local",
+            "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/vulkan-headers"
+          ],
+          "exit_code": 0,
+          "seconds": 1.9837208339999999,
+          "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/u-d0f9ca8c/configure.log",
+          "sha256": "66059eae889213c8288333534145f6449f699d0b7d654043322dcdf07a095164",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-mini\\d0f9ca8c\\configure.log"
+        },
+        {
+          "label": "build",
+          "command": [
+            "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static-d0f9ca8c",
+            "--parallel",
+            "2",
+            "--target",
+            "hyle_compute_route_vulkan_test",
+            "hyle_graph_route_vulkan_test"
+          ],
+          "exit_code": 0,
+          "seconds": 17.749192458000003,
+          "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/u-d0f9ca8c/build.log",
+          "sha256": "d866c71cb8b791ea6b161b0cbedc832a53e982bcc397d6804e0fb9c4cdcbfb9b",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-mini\\d0f9ca8c\\build.log"
+        },
+        {
+          "label": "test",
+          "command": [
+            "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static-d0f9ca8c",
+            "--output-on-failure",
+            "--no-tests=error",
+            "--timeout",
+            "180",
+            "--verbose",
+            "-L",
+            "^(compute_route_vulkan|graph_route_vulkan)$"
+          ],
+          "exit_code": 0,
+          "seconds": 4.077301666,
+          "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/u-d0f9ca8c/test.log",
+          "sha256": "99010eae00713bce161c0fb61aedfd150a22b99ec3522ba733083fb8479bee2d",
+          "local_log": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-mini\\d0f9ca8c\\test.log"
+        }
+      ],
+      "verdict": "PASS",
+      "last_test_sha256": "0b28354879c4388d669a10d60565cac75c51d5bbf064d86c25d68965003ae528",
+      "validation_host": "mini",
+      "local_result": {
+        "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-mini\\d0f9ca8c\\result.json",
+        "sha256": "f57f90ab9e92302bb83a072ac8c63441f75f1157af76b2377df41f4a9d2e0830"
+      },
+      "test_cases": {
+        "compute_route_vulkan": 20,
+        "graph_route_vulkan": 10,
+        "separate_header_checks": 2
+      }
+    }
+  ],
+  "qualification": [
+    "Final candidate: 20 Direct + 10 Graph cases and two separate header checks on each host. Two earlier Windows compilation failures are retained. No runtime numeric or tolerance correction.",
+    "W1/Air installed validation layers reported no Validation Error, VUID or SYNC-HAZARD. Mini is correctness/portability only; its verified local MoltenVK/loader/compiler archive has no validation layer.",
+    "Six storage types; four View kinds; nested/rank-eight/empty/odd origins; actual buffer/offset identity; computed-root liveness; input and constant aliases; old outputs/native tokens/two slots/close; true-alias Recorder outputs and neighbor guards.",
+    "Native PFN counters prove equal-origin bind only updates descriptors, changed origins re-record idle commands, and submit reuses resources. Injected Begin failure leaves the slot unbound and retryable.",
+    "Source P0 fixed lost constant-View provenance. Two equivalent weight Views share one cold pack and replay only two MatMuls. Original storage is retained only when its View is published; independent math and owner-release checks passed.",
+    "View performs no payload allocation/copy/dispatch but retains full root capacity. Host metadata, descriptors and changed-origin recording have real costs. No P1 performance claim.",
+    "The mature F32 MatMul/SiLU/custom descriptor-aligned domain is unchanged; unaligned inputs require explicit Copy."
+  ],
+  "selectors": [
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-windows\\d0f9ca8c\\selector.json",
+      "sha256": "c017cd3009b217d51b6d9c23ecae6ab8b90f842a114afe7d096c0b33d60b0f30",
+      "verdict": "READY",
+      "selected": [
+        "docs",
+        "closure",
+        "configure",
+        "factor:compute_route_vulkan",
+        "headers:compute_route_vulkan",
+        "factor:graph_route_vulkan",
+        "delivery:compute",
+        "delivery:graph"
+      ],
+      "skipped_count": 110,
+      "skipped_reasons": [
+        {
+          "id": "factor:compute",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_backend_cpu",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_backend_cpu",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_backend_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_backend_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_ops",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_ops",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_cublas",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_cublas",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_ggml",
+          "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+        },
+        {
+          "id": "headers:compute_provider_ggml",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_marlin",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_marlin",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_native",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_native",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_onednn",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_onednn",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_route_apple",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_route_apple",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_route_cpu",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_route_cpu",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_route_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_route_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_concurrent",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_concurrent",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_intrusive",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_intrusive",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_queue",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_queue",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_text",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_text",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:core",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:core",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:error",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:error",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_provider_onednn",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_provider_onednn",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_route_apple",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_route_apple",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_route_cpu",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_route_cpu",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_route_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_route_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "headers:graph_route_vulkan",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_core",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_core",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_http",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_http",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_http2",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_http2",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_tls",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_tls",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_transfer",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_transfer",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_watch",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_watch",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_websocket",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_websocket",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:math",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:math",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:mem",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:mem",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:mem_reclaim",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:mem_reclaim",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:mem_vm",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:mem_vm",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:obs",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:obs",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:platform",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:platform",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:platform_fs",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:platform_fs",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:platform_thread",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:platform_thread",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:process",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:process",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:sched",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:sched",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:simd",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:simd",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:time",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:time",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:timer_queue",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:timer_queue",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:util_core",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:util_core",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:util_runtime",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:util_runtime",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "component-contract",
+          "reason": "no global component/package seam change"
+        },
+        {
+          "id": "delivery:container",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:core",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:error",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:io",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:math",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:mem",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:obs",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:platform",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:process",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:sched",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:simd",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:time",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:util",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "p1",
+          "reason": "no explicit frozen P1 card; sampling is never automatic"
+        }
+      ],
+      "execution_boundary": "Focused factors/headers only. Selected full-C1 delivery gates and P1 remain pending under the current card."
+    },
+    {
+      "path": "C:\\hyle-scratch\\llm-moe-c1-20260917\\u-air\\d0f9ca8c\\selector.json",
+      "sha256": "d71b93c5554b49351874579f14806202520fa1f7627f3b78768bc60078953ee3",
+      "verdict": "READY",
+      "selected": [
+        "docs",
+        "closure",
+        "configure",
+        "factor:compute_route_vulkan",
+        "headers:compute_route_vulkan",
+        "factor:graph_route_vulkan",
+        "delivery:compute",
+        "delivery:graph"
+      ],
+      "skipped_count": 110,
+      "skipped_reasons": [
+        {
+          "id": "factor:compute",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_backend_cpu",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_backend_cpu",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_backend_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_backend_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_ops",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_ops",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_cublas",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_cublas",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_ggml",
+          "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+        },
+        {
+          "id": "headers:compute_provider_ggml",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_marlin",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_marlin",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_native",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_native",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_provider_onednn",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_provider_onednn",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_route_apple",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_route_apple",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_route_cpu",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_route_cpu",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:compute_route_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:compute_route_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_concurrent",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_concurrent",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_intrusive",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_intrusive",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_queue",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_queue",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:container_text",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:container_text",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:core",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:core",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:error",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:error",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_provider_onednn",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_provider_onednn",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_route_apple",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_route_apple",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_route_cpu",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_route_cpu",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:graph_route_cuda",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:graph_route_cuda",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "headers:graph_route_vulkan",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_core",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_core",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_http",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_http",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_http2",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_http2",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_tls",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_tls",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_transfer",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_transfer",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_watch",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_watch",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:io_websocket",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:io_websocket",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:math",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:math",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:mem",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:mem",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:mem_reclaim",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:mem_reclaim",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:mem_vm",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:mem_vm",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:obs",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:obs",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:platform",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:platform",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:platform_fs",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:platform_fs",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:platform_thread",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:platform_thread",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:process",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:process",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:sched",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:sched",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:simd",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:simd",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:time",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:time",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:timer_queue",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:timer_queue",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:util_core",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:util_core",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "factor:util_runtime",
+          "reason": "outside the change and its required consumer boundary"
+        },
+        {
+          "id": "headers:util_runtime",
+          "reason": "no public-header seam change for this factor"
+        },
+        {
+          "id": "component-contract",
+          "reason": "no global component/package seam change"
+        },
+        {
+          "id": "delivery:container",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:core",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:error",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:io",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:math",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:mem",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:obs",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:platform",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:process",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:sched",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:simd",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:time",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "delivery:util",
+          "reason": "no delivery boundary change for this product"
+        },
+        {
+          "id": "p1",
+          "reason": "no explicit frozen P1 card; sampling is never automatic"
+        }
+      ],
+      "execution_boundary": "Focused factors/headers only. Selected full-C1 delivery gates and P1 remain pending under the current card."
+    }
+  ],
+  "raw_archive": {
+    "path": "evidence/correctness/compute-llm-moe-c1/u-vulkan-focused-raw.zip",
+    "sha256": "37f6b064cea633d8d7500a5f7b6ef8c7e4c95d241989617ba38a23547394ac7a",
+    "entries": 47
+  },
+  "not_run": [
+    "Remaining Vulkan C1 Concat/gates/norm/reduce/Softmax/TopK/index/Scan mechanisms",
+    "Full C1 actual model-weight consumer and 64-row/256-cell acceptance",
+    "Full C1 source/installed-static/installed-shared and remaining applicable environment/sanitizer gates",
+    "P1 and final default-rule qualification"
+  ]
+}

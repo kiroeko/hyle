@@ -101,6 +101,10 @@ broadcast_to 只创建描述与共享 owner，保留原生 buffer，并在 `nati
 `vk::prepare(context, view_operation, description)` 和 Graph 的 View 节点提供相同别名语义。
 发布计算结果的 View 会延长整块原始分配的寿命，不能只按切片大小估算常驻容量。
 
+捕获常量的 View 仍是不可变常量。符合既有 F32 MatMul 域的权重视图在准备期完成布局打包；
+相同 buffer、起点和描述的视图复用同一打包结果。若未发布原始权重的视图且执行不再读取原始
+布局，Program 会释放原始 owner，避免保留两份完整权重。
+
 typed tensor 输入可使用不满足 descriptor 对齐的 View：HYLE 对齐 descriptor 起点，并以固定
 push 参数传递字节余数。更换 buffer 但余数相同的 bind 只更新 descriptor；余数变化时，空闲槽
 会复用已有 pipeline、descriptor sets 和 buffer 重录命令。submit 始终使用已录制程序。
