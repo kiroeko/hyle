@@ -310,6 +310,141 @@
         }
       ],
       "after_sha256": "630bc93ec4f90d83bdd34e5fe8e87227f125763db850b0c546b8ab3cf78353e0"
+    },
+    {
+      "path": "src/ggml-alloc.c",
+      "before_sha256": "213b48d6ef6d6ffef55c438db837116105de72cdae3dd152673035e61508d384",
+      "edits": [
+        {
+          "before": "    int n_chunks;\n\n#ifdef GGML_ALLOCATOR_DEBUG",
+          "after": "    int n_chunks;\n    bool failed; // recoverable cold planning failure\n\n#ifdef GGML_ALLOCATOR_DEBUG"
+        },
+        {
+          "before": "static void ggml_dyn_tallocr_insert_block(struct tallocr_chunk * chunk, size_t offset, size_t size) {\n    GGML_ASSERT(chunk->n_free_blocks < MAX_FREE_BLOCKS && \"out of free blocks\");",
+          "after": "static bool ggml_dyn_tallocr_insert_block(struct tallocr_chunk * chunk, size_t offset, size_t size) {\n    if (chunk->n_free_blocks == MAX_FREE_BLOCKS) {\n        return false;\n    }"
+        },
+        {
+          "before": "    chunk->n_free_blocks++;\n}",
+          "after": "    chunk->n_free_blocks++;\n    return true;\n}"
+        },
+        {
+          "before": "    struct tallocr_chunk * chunk = calloc(1, sizeof(struct tallocr_chunk));",
+          "after": "    struct tallocr_chunk * chunk = calloc(1, sizeof(struct tallocr_chunk));\n    if (chunk == NULL) {\n        return -1;\n    }"
+        },
+        {
+          "before": "static struct buffer_address ggml_dyn_tallocr_alloc(struct ggml_dyn_tallocr * alloc, size_t size, const struct ggml_tensor * tensor) {\n    size = aligned_offset(NULL, size, alloc->alignment);",
+          "after": "static struct buffer_address ggml_dyn_tallocr_alloc(struct ggml_dyn_tallocr * alloc, size_t size, const struct ggml_tensor * tensor) {\n    if (alloc->failed || size > SIZE_MAX - (alloc->alignment - 1)) {\n        alloc->failed = true;\n        return GGML_BUFFER_ADDRESS_INVALID;\n    }\n    size = aligned_offset(NULL, size, alloc->alignment);"
+        },
+        {
+          "before": "        GGML_ABORT(\"graph allocation: failed to reserve memory\");",
+          "after": "        alloc->failed = true;\n        return GGML_BUFFER_ADDRESS_INVALID;"
+        },
+        {
+          "before": "    ggml_dyn_tallocr_insert_block(chunk, addr.offset, size);",
+          "after": "    if (!ggml_dyn_tallocr_insert_block(chunk, addr.offset, size)) {\n        alloc->failed = true;\n    }"
+        },
+        {
+          "before": "    alloc->n_chunks = 0;\n\n#ifdef GGML_ALLOCATOR_DEBUG",
+          "after": "    alloc->n_chunks = 0;\n    alloc->failed = false;\n\n#ifdef GGML_ALLOCATOR_DEBUG"
+        },
+        {
+          "before": "    struct ggml_dyn_tallocr * alloc = (struct ggml_dyn_tallocr *)malloc(sizeof(struct ggml_dyn_tallocr));",
+          "after": "    struct ggml_dyn_tallocr * alloc = (struct ggml_dyn_tallocr *)malloc(sizeof(struct ggml_dyn_tallocr));\n    if (alloc == NULL) {\n        return NULL;\n    }"
+        },
+        {
+          "before": "        /*.n_chunks       = */ 0,",
+          "after": "        /*.n_chunks       = */ 0,\n        /*.failed         = */ false,"
+        },
+        {
+          "before": "static void ggml_dyn_tallocr_free(struct ggml_dyn_tallocr * alloc) {",
+          "after": "static void ggml_dyn_tallocr_free(struct ggml_dyn_tallocr * alloc) {\n    if (alloc == NULL) {\n        return;\n    }"
+        },
+        {
+          "before": "ggml_gallocr_t ggml_gallocr_new_n(ggml_backend_buffer_type_t * bufts, int n_bufs) {\n    ggml_gallocr_t galloc = (ggml_gallocr_t)calloc(1, sizeof(struct ggml_gallocr));\n    GGML_ASSERT(galloc != NULL);",
+          "after": "ggml_gallocr_t ggml_gallocr_new_n(ggml_backend_buffer_type_t * bufts, int n_bufs) {\n    if (bufts == NULL || n_bufs <= 0) {\n        return NULL;\n    }\n    ggml_gallocr_t galloc = (ggml_gallocr_t)calloc(1, sizeof(struct ggml_gallocr));\n    if (galloc == NULL) {\n        return NULL;\n    }\n    galloc->n_buffers = n_bufs; // partial construction is destructible"
+        },
+        {
+          "before": "    GGML_ASSERT(galloc->bufts != NULL);",
+          "after": "    if (galloc->bufts == NULL) {\n        ggml_gallocr_free(galloc);\n        return NULL;\n    }"
+        },
+        {
+          "before": "    GGML_ASSERT(galloc->buffers != NULL);",
+          "after": "    if (galloc->buffers == NULL) {\n        ggml_gallocr_free(galloc);\n        return NULL;\n    }"
+        },
+        {
+          "before": "    GGML_ASSERT(galloc->buf_tallocs != NULL);",
+          "after": "    if (galloc->buf_tallocs == NULL) {\n        ggml_gallocr_free(galloc);\n        return NULL;\n    }"
+        },
+        {
+          "before": "            galloc->buf_tallocs[i] = ggml_dyn_tallocr_new(alignment, max_size);",
+          "after": "            galloc->buf_tallocs[i] = ggml_dyn_tallocr_new(alignment, max_size);\n            if (galloc->buf_tallocs[i] == NULL) {\n                ggml_gallocr_free(galloc);\n                return NULL;\n            }"
+        },
+        {
+          "before": "static void ggml_gallocr_allocate_node(ggml_gallocr_t galloc, struct ggml_tensor * node, int buffer_id) {\n    GGML_ASSERT(buffer_id >= 0);",
+          "after": "static bool ggml_gallocr_allocate_node(ggml_gallocr_t galloc, struct ggml_tensor * node, int buffer_id) {\n    GGML_ASSERT(buffer_id >= 0);\n    if (galloc->buf_tallocs[buffer_id]->failed) {\n        return false;\n    }"
+        },
+        {
+          "before": "                            ggml_gallocr_free_extra_space(galloc, node, view_src);\n                            return;",
+          "after": "                            ggml_gallocr_free_extra_space(galloc, node, view_src);\n                            return true;"
+        },
+        {
+          "before": "                        ggml_gallocr_free_extra_space(galloc, node, parent);\n                        return;",
+          "after": "                        ggml_gallocr_free_extra_space(galloc, node, parent);\n                        return true;"
+        },
+        {
+          "before": "        hn->addr = ggml_dyn_tallocr_alloc(alloc, size, node);\n    }\n}",
+          "after": "        hn->addr = ggml_dyn_tallocr_alloc(alloc, size, node);\n        return hn->addr.chunk >= 0;\n    }\n    return true;\n}"
+        },
+        {
+          "before": "static void ggml_gallocr_alloc_graph_impl(",
+          "after": "static bool ggml_gallocr_alloc_graph_impl("
+        },
+        {
+          "before": "        ggml_gallocr_allocate_node(galloc, leaf, get_node_buffer_id(leaf_buffer_ids, i));",
+          "after": "        if (!ggml_gallocr_allocate_node(galloc, leaf, get_node_buffer_id(leaf_buffer_ids, i))) {\n            return false;\n        }"
+        },
+        {
+          "before": "            ggml_gallocr_allocate_node(galloc, graph->nodes[i], get_node_buffer_id(node_buffer_ids, i));",
+          "after": "            if (!ggml_gallocr_allocate_node(galloc, graph->nodes[i], get_node_buffer_id(node_buffer_ids, i))) {\n                return false;\n            }"
+        },
+        {
+          "before": "                ggml_gallocr_allocate_node(galloc, src, get_node_buffer_id(node_buffer_ids, i));",
+          "after": "                if (!ggml_gallocr_allocate_node(galloc, src, get_node_buffer_id(node_buffer_ids, i))) {\n                    return false;\n                }"
+        },
+        {
+          "before": "            ggml_gallocr_allocate_node(galloc, parent, buffer_id);",
+          "after": "            if (!ggml_gallocr_allocate_node(galloc, parent, buffer_id)) {\n                return false;\n            }"
+        },
+        {
+          "before": "        ggml_gallocr_allocate_node(galloc, node, buffer_id);",
+          "after": "        if (!ggml_gallocr_allocate_node(galloc, node, buffer_id)) {\n            return false;\n        }"
+        },
+        {
+          "before": "    }\n}\n\nstatic bool ggml_gallocr_reserve_n_impl(",
+          "after": "    }\n    return true;\n}\n\nstatic bool ggml_gallocr_reserve_n_impl("
+        },
+        {
+          "before": "    size_t min_hash_size = graph->n_nodes + graph->n_leafs;",
+          "after": "    size_t min_hash_size = (size_t) graph->n_nodes + (size_t) graph->n_leafs;"
+        },
+        {
+          "before": "        ggml_hash_set_free(&galloc->hash_set);\n        galloc->hash_set = ggml_hash_set_new(min_hash_size);\n        GGML_ASSERT(galloc->hash_set.keys != NULL);\n\n        free(galloc->hash_values);\n        galloc->hash_values = malloc(sizeof(struct hash_node) * galloc->hash_set.size);\n        GGML_ASSERT(galloc->hash_values != NULL);",
+          "after": "        struct ggml_hash_set next = {0};\n        next.size = ggml_hash_size(min_hash_size);\n        next.keys = calloc(next.size, sizeof(struct ggml_tensor *));\n        next.used = calloc(ggml_bitset_size(next.size), sizeof(ggml_bitset_t));\n        struct hash_node * values = calloc(next.size, sizeof(struct hash_node));\n        if (next.keys == NULL || next.used == NULL || values == NULL) {\n            free(next.keys);\n            free(next.used);\n            free(values);\n            return false;\n        }\n        ggml_hash_set_free(&galloc->hash_set);\n        free(galloc->hash_values);\n        galloc->hash_set = next;\n        galloc->hash_values = values;"
+        },
+        {
+          "before": "    ggml_gallocr_alloc_graph_impl(galloc, graph, node_buffer_ids, leaf_buffer_ids);",
+          "after": "    if (!ggml_gallocr_alloc_graph_impl(galloc, graph, node_buffer_ids, leaf_buffer_ids)) {\n        return false;\n    }\n    for (int i = 0; i < galloc->n_buffers; i++) {\n        if (galloc->buf_tallocs[i]->failed) {\n            return false;\n        }\n    }"
+        },
+        {
+          "before": "        free(galloc->node_allocs);\n        galloc->node_allocs = calloc(graph->n_nodes, sizeof(struct node_alloc));\n        GGML_ASSERT(galloc->node_allocs != NULL);",
+          "after": "        void * next = calloc(graph->n_nodes, sizeof(struct node_alloc));\n        if (next == NULL) {\n            return false;\n        }\n        free(galloc->node_allocs);\n        galloc->node_allocs = next;"
+        },
+        {
+          "before": "        free(galloc->leaf_allocs);\n        galloc->leaf_allocs = calloc(graph->n_leafs, sizeof(galloc->leaf_allocs[0]));\n        GGML_ASSERT(galloc->leaf_allocs != NULL);",
+          "after": "        void * next = calloc(graph->n_leafs, sizeof(galloc->leaf_allocs[0]));\n        if (next == NULL) {\n            return false;\n        }\n        free(galloc->leaf_allocs);\n        galloc->leaf_allocs = next;"
+        }
+      ],
+      "after_sha256": "fe5e14485d28466f516fd934bde9dab82f8bd1b0ac241b197fae59c5de8f837d"
     }
   ]
 }

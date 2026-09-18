@@ -88,7 +88,7 @@ target_include_directories(ggml-vulkan BEFORE PRIVATE
 target_include_directories(ggml-vulkan PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(ggml-base PRIVATE GGML_HYLE_EMBEDDED=1)
 
-hyle_add_module(compute_provider_ggml_vulkan SOURCES metadata_arena.cc native_device.cc)
+hyle_add_module(compute_provider_ggml_vulkan SOURCES metadata_arena.cc native_device.cc native_graph.cc)
 target_link_libraries(hyle_compute_provider_ggml_vulkan PRIVATE ggml
   "$<BUILD_INTERFACE:Vulkan-Headers>")
 set(HYLE_GGML_VULKAN_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)

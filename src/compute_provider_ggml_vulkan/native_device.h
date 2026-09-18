@@ -48,8 +48,6 @@ public:
   create_backend() const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Result<NativeWork> create_work() const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
-  allocate_context(ggml_context *) const noexcept;
-  HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
   allocate_buffer(std::size_t) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Result<ggml_backend_buffer *>
   borrow(VkBuffer, std::size_t, std::shared_ptr<const void>) const noexcept;
@@ -59,6 +57,11 @@ public:
   with_queue(const std::function<Status(VkQueue)> &) const noexcept;
 
 private:
+  friend class NativeGraph;
+  HYLE_GGML_VULKAN_INTERNAL_API Status allocate_graph(
+      ggml_cgraph *, bool owns_imports, bridge::Storage **,
+      std::size_t *bytes) const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API void free_graph(bridge::Storage *) const noexcept;
   struct State;
   std::shared_ptr<State> state_;
 };

@@ -21,6 +21,8 @@ Status failure(bridge::Failure error) noexcept {
     return Status::ResourceExhausted("ggml Vulkan native resources");
   case bridge::Error::Unavailable:
     return Status::Unavailable("ggml Vulkan device or loader capability");
+  case bridge::Error::Unsupported:
+    return Status::Unimplemented("ggml Vulkan region capability");
   case bridge::Error::Native: {
     auto code = StatusCode::Unknown;
     if (error.native == VK_ERROR_OUT_OF_HOST_MEMORY ||
@@ -114,6 +116,17 @@ Result<NativeWork> NativeDevice::create_work() const noexcept {
   HYLE_RETURN_IF_ERROR(failure(bridge::create_work(state_->runtime, &result.work_)));
   return result;
 }
+Status NativeDevice::allocate_graph(
+    ggml_cgraph *graph, bool owns_imports, bridge::Storage **storage,
+    std::size_t *bytes) const noexcept {
+  if (!state_)
+    return Status::InvalidArgument("empty ggml Vulkan graph device");
+  return failure(bridge::create_storage(
+      state_->runtime, graph, owns_imports, storage, bytes));
+}
+void NativeDevice::free_graph(bridge::Storage *storage) const noexcept {
+  bridge::destroy_storage(storage);
+}
 Result<ggml_backend_buffer *> NativeDevice::borrow(
     VkBuffer handle, std::size_t bytes,
     std::shared_ptr<const void> owner) const noexcept {
@@ -122,14 +135,6 @@ Result<ggml_backend_buffer *> NativeDevice::borrow(
   ggml_backend_buffer *result = nullptr;
   HYLE_RETURN_IF_ERROR(failure(bridge::borrow_buffer(
       state_->runtime, handle, bytes, std::move(owner), &result)));
-  return result;
-}
-Result<ggml_backend_buffer *>
-NativeDevice::allocate_context(ggml_context *context) const noexcept {
-  if (!state_ || !context)
-    return std::unexpected(Status::InvalidArgument("ggml Vulkan tensor context"));
-  ggml_backend_buffer *result = nullptr;
-  HYLE_RETURN_IF_ERROR(failure(bridge::allocate_context(state_->runtime, context, &result)));
   return result;
 }
 Result<ggml_backend_buffer *>

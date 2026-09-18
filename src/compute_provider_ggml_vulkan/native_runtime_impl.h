@@ -168,18 +168,6 @@ Failure borrow_buffer(Runtime *runtime, VkBuffer handle, std::size_t bytes,
     return current_failure();
   }
 }
-Failure allocate_context(Runtime *runtime, ggml_context *context,
-                          ggml_backend_buffer **result) noexcept {
-  *result = nullptr;
-  try {
-    Active active(runtime);
-    *result = ggml_backend_alloc_ctx_tensors_from_buft(
-        context, ggml_backend_vk_buffer_type(0));
-    return *result ? Failure{} : Failure{Error::Exhausted};
-  } catch (...) {
-    return current_failure();
-  }
-}
 Failure allocate_buffer(Runtime *runtime, std::size_t bytes,
                         ggml_backend_buffer **result) noexcept {
   *result = nullptr;
@@ -194,3 +182,4 @@ Failure allocate_buffer(Runtime *runtime, std::size_t bytes,
 } // namespace hyle::compute::ggml_vulkan::bridge
 
 #include "native_work_impl.h"
+#include "native_storage_impl.h"

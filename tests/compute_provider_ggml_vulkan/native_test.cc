@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <exception>
 #include <memory>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -149,6 +150,8 @@ struct Faults {
   int submit_calls = 0, accepted_submits = 0, fail_submit = 0;
   int fenced_submits = 0, empty_submits = 0;
   int idle_calls = 0;
+  int memory_calls = 0, fail_memory = 0;
+  int memory_prefix_at_failure = 0;
   bool fail_bind = false;
   bool fail_idle = false;
   bool fail_observation = false;
@@ -196,6 +199,11 @@ VKAPI_ATTR void VKAPI_CALL destroy_buffer(VkDevice device, VkBuffer buffer,
 VKAPI_ATTR VkResult VKAPI_CALL allocate_memory(VkDevice device,
     const VkMemoryAllocateInfo *info, const VkAllocationCallbacks *allocator,
     VkDeviceMemory *result) {
+  ++faults->memory_calls;
+  if (faults->fail_memory && faults->memory_calls >= faults->fail_memory) {
+    faults->memory_prefix_at_failure = faults->memories;
+    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+  }
   auto status = faults->allocate_memory(device, info, allocator, result);
   if (status == VK_SUCCESS) ++faults->memories;
   return status;
@@ -346,10 +354,15 @@ TEST_F(GgmlVulkanNative, PartialRegionSubmitRetainsResourcesUntilDrainIsProved) 
     for (int i = 0; i < nodes; ++i) output = ggml_add(context, output, weight);
     auto *graph = ggml_new_graph_custom(context, nodes + 8, false);
     ggml_build_forward_expand(graph, output);
-    ggml_backend_buffer *buffer = nullptr;
-    ASSERT_EQ(bridge::allocate_context(runtime, context, &buffer).error, bridge::Error::None);
-    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
-        storage(buffer, ggml_backend_buffer_free);
+    ggml_set_input(input);
+    ggml_set_input(weight);
+    ggml_set_output(output);
+    bridge::Storage *allocated = nullptr;
+    std::size_t storage_bytes = 0;
+    ASSERT_EQ(bridge::create_storage(runtime, graph, false, &allocated, &storage_bytes).error,
+              bridge::Error::None);
+    std::unique_ptr<bridge::Storage, decltype(&bridge::destroy_storage)>
+        storage(allocated, bridge::destroy_storage);
     const std::vector<float> values(2048, 0.25f);
     ggml_backend_tensor_set(input, values.data(), 0, values.size() * sizeof(float));
     ggml_backend_tensor_set(weight, values.data(), 0, values.size() * sizeof(float));
@@ -426,10 +439,14 @@ TEST_F(GgmlVulkanNative, FenceObservationFailureKeepsTheAcceptedRegionPending) {
     auto *output = ggml_silu(context, input);
     auto *graph = ggml_new_graph_custom(context, 8, false);
     ggml_build_forward_expand(graph, output);
-    ggml_backend_buffer *buffer = nullptr;
-    ASSERT_EQ(bridge::allocate_context(runtime, context, &buffer).error, bridge::Error::None);
-    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
-        storage(buffer, ggml_backend_buffer_free);
+    ggml_set_input(input);
+    ggml_set_output(output);
+    bridge::Storage *allocated = nullptr;
+    std::size_t storage_bytes = 0;
+    ASSERT_EQ(bridge::create_storage(runtime, graph, false, &allocated, &storage_bytes).error,
+              bridge::Error::None);
+    std::unique_ptr<bridge::Storage, decltype(&bridge::destroy_storage)>
+        storage(allocated, bridge::destroy_storage);
     const std::vector<float> values(2048, 0.25f);
     ggml_backend_tensor_set(input, values.data(), 0, values.size() * sizeof(float));
     bridge::Work *work = nullptr;
@@ -470,5 +487,79 @@ TEST_F(GgmlVulkanNative, FenceObservationFailureKeepsTheAcceptedRegionPending) {
   EXPECT_EQ(state.fences, 0);
   EXPECT_EQ(state.buffers, 0);
   EXPECT_EQ(state.memories, 0);
+}
+TEST_F(GgmlVulkanNative, ColdStoragePartialDeviceAllocationRollsBack) {
+  struct ChunkLimit {
+    std::string previous;
+    bool existed = false;
+    ChunkLimit() {
+      if (const char *value = std::getenv("GGML_VK_SUBALLOCATION_BLOCK_SIZE")) {
+        previous = value;
+        existed = true;
+      }
+#if defined(_WIN32)
+      _putenv_s("GGML_VK_SUBALLOCATION_BLOCK_SIZE", "8192");
+#else
+      setenv("GGML_VK_SUBALLOCATION_BLOCK_SIZE", "8192", 1);
+#endif
+    }
+    ~ChunkLimit() {
+#if defined(_WIN32)
+      _putenv_s("GGML_VK_SUBALLOCATION_BLOCK_SIZE", previous.c_str());
+#else
+      if (existed) setenv("GGML_VK_SUBALLOCATION_BLOCK_SIZE", previous.c_str(), 1);
+      else unsetenv("GGML_VK_SUBALLOCATION_BLOCK_SIZE");
+#endif
+    }
+  } limit;
+#if defined(_WIN32)
+  const char *name = "vulkan-1.dll";
+#elif defined(__APPLE__)
+  const char *name = "libvulkan.1.dylib";
+#else
+  const char *name = "libvulkan.so.1";
+#endif
+  auto loader = hyle::platform::DynLib::open(name);
+  ASSERT_TRUE(loader);
+  auto lookup = loader->symbol_as<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+  ASSERT_TRUE(lookup);
+  Faults state;
+  state.get = *lookup;
+  faults = &state;
+  struct Reset { ~Reset() { faults = nullptr; } } reset;
+  bridge::Options options;
+  options.get_instance_proc_addr = get;
+  bridge::Runtime *runtime = nullptr;
+  bridge::Native native;
+  ASSERT_EQ(bridge::create(options, &runtime, &native).error, bridge::Error::None);
+  std::unique_ptr<bridge::Runtime, decltype(&bridge::destroy)> owner(runtime, bridge::destroy);
+  auto arena = hyle::compute::ggml_vulkan::detail::MetadataArena::create(
+      8 * ggml_tensor_overhead() + ggml_graph_overhead_custom(8, false),
+      hyle::mem::system_allocator());
+  ASSERT_TRUE(arena);
+  auto *input = ggml_new_tensor_1d(arena->get(), GGML_TYPE_F32, 2048);
+  auto *weight = ggml_new_tensor_1d(arena->get(), GGML_TYPE_F32, 2048);
+  auto *output = ggml_add(arena->get(), input, weight);
+  ggml_set_input(input);
+  ggml_set_input(weight);
+  ggml_set_output(output);
+  auto *graph = ggml_new_graph_custom(arena->get(), 8, false);
+  ggml_build_forward_expand(graph, output);
+  const auto memories_before = state.memory_calls;
+  state.fail_memory = memories_before + 2;
+  bridge::Storage *storage = nullptr;
+  std::size_t bytes = 0;
+  const auto failure = bridge::create_storage(runtime, graph, false, &storage, &bytes);
+  EXPECT_EQ(failure.error, bridge::Error::Native);
+  EXPECT_EQ(failure.native, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+  EXPECT_EQ(storage, nullptr);
+  EXPECT_GE(state.memory_calls, memories_before + 2);
+  EXPECT_GT(state.memory_prefix_at_failure, 0);
+  EXPECT_EQ(state.buffers, 0);
+  EXPECT_EQ(state.memories, 0);
+  bridge::destroy_storage(storage);
+  owner.reset();
+  EXPECT_EQ(state.devices, 0);
+  EXPECT_EQ(state.fences, 0);
 }
 } // namespace

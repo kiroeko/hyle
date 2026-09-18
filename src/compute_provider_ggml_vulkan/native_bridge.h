@@ -16,6 +16,7 @@ struct ggml_cgraph;
 namespace hyle::compute::ggml_vulkan::bridge {
 struct Runtime;
 struct Work;
+struct Storage;
 struct Options {
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
   std::uint32_t device_index = UINT32_MAX;
@@ -37,7 +38,7 @@ struct Native {
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
 };
 enum class Error {
-  None, InvalidArgument, InvalidState, OutOfRange, Exhausted, Unavailable,
+  None, InvalidArgument, InvalidState, OutOfRange, Exhausted, Unavailable, Unsupported,
   Native, Internal
 };
 struct Failure {
@@ -74,7 +75,6 @@ void *enter(Runtime *) noexcept;
 void leave(void *) noexcept;
 Failure with_queue(Runtime *, VkResult (*)(void *, VkQueue), void *) noexcept;
 Failure create_backend(Runtime *, ggml_backend **) noexcept;
-Failure allocate_context(Runtime *, ggml_context *, ggml_backend_buffer **) noexcept;
 Failure allocate_buffer(Runtime *, std::size_t, ggml_backend_buffer **) noexcept;
 Failure borrow_buffer(Runtime *, VkBuffer, std::size_t,
                       std::shared_ptr<const void>, ggml_backend_buffer **) noexcept;
@@ -87,4 +87,7 @@ Failure create_work(Runtime *, Work **) noexcept;
 void destroy_work(Work *) noexcept;
 WorkReport submit_work(Work *, ggml_cgraph *) noexcept;
 WorkReport observe_work(Work *, bool wait) noexcept;
+Failure create_storage(Runtime *, ggml_cgraph *, bool owns_imports,
+                       Storage **, std::size_t *bytes) noexcept;
+void destroy_storage(Storage *) noexcept;
 } // namespace hyle::compute::ggml_vulkan::bridge

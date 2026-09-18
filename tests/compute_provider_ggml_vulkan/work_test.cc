@@ -1,4 +1,5 @@
 #include "native_device.h"
+#include "native_graph.h"
 
 #include <array>
 #include <cmath>
@@ -16,37 +17,37 @@
 namespace {
 using hyle::compute::ggml_vulkan::detail::MetadataArena;
 using hyle::compute::ggml_vulkan::detail::NativeDevice;
+using hyle::compute::ggml_vulkan::detail::NativeGraph;
 
 struct GraphStorage {
   NativeDevice device;
-  MetadataArena arena;
-  ggml_backend_buffer *buffer = nullptr;
+  NativeGraph storage;
   ggml_cgraph *graph = nullptr;
   ggml_tensor *input = nullptr;
   ggml_tensor *weight = nullptr;
   ggml_tensor *output = nullptr;
-  ~GraphStorage() {
-    auto active = device.activate();
-    ggml_backend_buffer_free(buffer);
-  }
 };
 
 hyle::Result<std::shared_ptr<GraphStorage>> make_graph(const NativeDevice &device) {
   auto result = std::make_shared<GraphStorage>();
   result->device = device;
   auto active = device.activate();
-  HYLE_ASSIGN_OR_RETURN(result->arena, MetadataArena::create(
+  HYLE_ASSIGN_OR_RETURN(auto arena, MetadataArena::create(
       24 * ggml_tensor_overhead() + ggml_graph_overhead_custom(24, false),
       hyle::mem::system_allocator()));
-  auto *context = result->arena.get();
+  auto *context = arena.get();
   result->input = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
   result->weight = ggml_new_tensor_1d(context, GGML_TYPE_F32, 2048);
   auto *norm = ggml_rms_norm(context, result->input, 1e-6f);
   auto *scaled = ggml_mul(context, norm, result->weight);
   result->output = ggml_add(context, ggml_silu(context, scaled), result->input);
+  ggml_set_input(result->input);
+  ggml_set_input(result->weight);
+  ggml_set_output(result->output);
   result->graph = ggml_new_graph_custom(context, 24, false);
   ggml_build_forward_expand(result->graph, result->output);
-  HYLE_ASSIGN_OR_RETURN(result->buffer, device.allocate_context(context));
+  HYLE_ASSIGN_OR_RETURN(result->storage,
+      NativeGraph::allocate(device, std::move(arena), result->graph));
   return result;
 }
 

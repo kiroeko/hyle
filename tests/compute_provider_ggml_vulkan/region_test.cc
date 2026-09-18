@@ -1,5 +1,6 @@
 #include "metadata_arena.h"
 #include "native_device.h"
+#include "native_graph.h"
 
 #include <algorithm>
 #include <cmath>
@@ -20,6 +21,7 @@
 namespace {
 using hyle::compute::ggml_vulkan::detail::MetadataArena;
 using hyle::compute::ggml_vulkan::detail::NativeDevice;
+using hyle::compute::ggml_vulkan::detail::NativeGraph;
 
 // A native producer uses the exported device and the same upstream queue lock.
 // Its write is made visible before the original ggml region consumes the buffer.
@@ -135,15 +137,15 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
     ASSERT_NE(native_input, VK_NULL_HANDLE);
     auto imported = device->borrow(native_input, width * rows * sizeof(float), input_owner);
     ASSERT_TRUE(imported);
-    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
-        borrowed(*imported, ggml_backend_buffer_free);
+    std::shared_ptr<ggml_backend_buffer> borrowed(*imported,
+        [device = *device](ggml_backend_buffer *buffer) {
+          auto active = device.activate();
+          ggml_backend_buffer_free(buffer);
+        });
     ASSERT_EQ(ggml_backend_tensor_alloc(borrowed.get(), input,
         ggml_backend_buffer_get_base(borrowed.get())), GGML_STATUS_SUCCESS);
-    auto storage_result = device->allocate_context(context);
-    ASSERT_TRUE(storage_result);
-    std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
-        storage(*storage_result, &ggml_backend_buffer_free);
-    ASSERT_NE(storage, nullptr);
+    auto storage = NativeGraph::allocate(*device, std::move(*arena), graph, borrowed);
+    ASSERT_TRUE(storage);
     std::vector<float> x(width * rows), w(width), actual(width * rows);
     for (std::size_t i = 0; i < width; ++i)
       w[i] = 0.5f + static_cast<float>(i % 19) / 19.0f;
@@ -181,6 +183,7 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
       }
     }
     borrowed.reset();
+    *storage = {};
     ASSERT_TRUE(native_fill(*device, native_input, x.size() * sizeof(float)).ok());
   }
 }
