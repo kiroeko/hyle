@@ -741,3 +741,39 @@ lowering/发布接线，`compute_provider_ggml_vulkan` 拥有 Y22–Y23 的成�
   selector，未变且身份匹配的门复用；不修改公共仪器，不为文档运行 P1。
 - 调查仅锁定 ggml Argsort/GetRows 两条现成路径，最多60分钟；之后进入有限实现，至多两轮
   纠正。遇真实数值/布局/资源反例精确记录；不不断切换 peer/扩大研究。
+
+### Y23-P1：存储重解释必须保留原图依赖
+
+首轮 W1 strict static 编译通过，19 Provider 与两个源码/组合 CTest 通过；Direct 41/50
+通过，9项 TopK/相关失败寿命测试发生主机异常，Graph 在首个新 TopK 用例中止。原失败及
+一次单例构图诊断已保留，未把未结束的 Graph 或任何 TopK 签 PASS。
+
+诊断显示值输出只展开1个节点；锁定源码 `ggml_view_tensor` 只建存储别名，没有设置 op/src
+依赖。因此 raw-score 与 gathered-value 两处重解释把父运算从图中遗漏，后续 allocator 查找
+未登记的 view root 失败。这是 HYLE 适配使用接口错误，不是成熟排序算法或测试 oracle 问题。
+
+本批第一次有限纠正（owner `compute_provider_ggml_vulkan`）：只把这两处同形状别名改为原版
+`ggml_reshape_2d/4d`，保留 op/src 与四字节存储重解释；metadata 节点数不变。删除临时诊断
+输出，先验证失败的 TopK/资源与 Graph 用例，再继续同候选的剩余适用门。不修改 shader、
+数值门、公共治理或性能仪器，剩余纠正预算一轮。
+
+### Y21–Y24 实现与 W1 static 定向结果
+
+冷 Plan/SSA、Provider region 和 Graph 已支持 TopK 两个输出；原版 Argsort/GetRows 组合保留
+成熟执行与存储机制，布局适配沿既有 View/Copy。一次产品纠正后的定向结果为 **10 TopK +
+1 mixed-prefix 失败寿命 + 2 Graph = 13 个用例通过**，不是完整 C1 或跨平台签收。
+
+其中 byte-origin 用例初次误将非对齐 offset 传给 `borrow_ready`，随后又对非 dense slice 使用
+零拷贝 reshape；两者都违反既有接口准入，失败如实保留。最终用合法 Tensor::view 保留非 dense
+描述，并另测满足设备对齐的非零 native offset 捕获输入。只修测试构造，不弱化产品检查，
+不修改数值参考或门限。前10项与最终剩余3项按相同产品源码复用，不重复整个未变测试集合。
+
+独立原始位/稳定排序参考覆盖实际专家宽度与尾宽、1025/4097 长行、任意轴/rank8、NaN payload、
+±0/Inf/subnormal、动态/捕获输入、两个输出、Recorder、OOM、部分接纳后的排空和旧结果保活。
+Windows DLL 放在 EXE 旁、运行时 PATH unset、validation layer 无 VUID/同步错误；未运行 P1。
+原始失败、单例诊断及纠正后的日志绑定于
+[定向记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-w1-focused.json)。
+
+当前统一脚本为 **47,189 行 / 193 实现文件**，不含测试/bench/第三方，自检通过。三个 owner
+继续 AUDITED；shared、Air/Mini、TopK 三交付、新候选所选门及整包性能/淘汰仍未完成。
+CPU oneDNN 性能资格 BLOCKED 不变，不把先前 managed 片段的三交付代签给新 TopK。

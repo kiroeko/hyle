@@ -10,19 +10,22 @@ namespace provider = ggml_vulkan::detail;
 
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
-  if (step.custom || step.inputs.size() > 3)
+  if (step.custom || step.inputs.size() > 3 || step.outputs.size() > 2)
     return false;
   std::array<TensorDesc, 3> inputs;
   for (std::size_t i = 0; i < step.inputs.size(); ++i)
     inputs[i] = program.values[step.inputs[i]].description;
-  const auto &output = program.values[step.output].description;
-  if (!provider::region_supports(
-          step.operation, std::span(inputs).first(step.inputs.size()), output))
+  std::array<TensorDesc, 2> outputs;
+  for (std::size_t i = 0; i < step.outputs.size(); ++i)
+    outputs[i] = program.values[step.outputs[i]].description;
+  if (!provider::region_supports(step.operation,
+                                 std::span(inputs).first(step.inputs.size()),
+                                 std::span(outputs).first(step.outputs.size())))
     return false;
   // Original RMSNorm uses ne1/ne2/ne3 as workgroup counts. Other admitted
   // elementwise kernels split their flattened domain into bounded XYZ tiles.
   if (step.operation.get_if<RmsNorm>()) {
-    const auto dimensions = output.dimensions();
+    const auto dimensions = outputs[0].dimensions();
     for (std::size_t axis = 1; axis < dimensions.size(); ++axis)
       if (static_cast<std::uint64_t>(dimensions[dimensions.size() - axis - 1]) >
           program.runtime->device->properties.limits
@@ -40,7 +43,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     for (auto i = first; i < end; ++i) {
       ids.insert(ids.end(), plan.steps[i].inputs.begin(),
                  plan.steps[i].inputs.end());
-      ids.push_back(plan.steps[i].output);
+      ids.insert(ids.end(), plan.steps[i].outputs.begin(),
+                 plan.steps[i].outputs.end());
     }
     std::ranges::sort(ids);
     const auto duplicate = std::ranges::unique(ids);
@@ -55,14 +59,17 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     std::vector<bool> produced(ids.size(), false);
     for (auto i = first; i < end; ++i) {
       const auto &step = plan.steps[i];
-      provider::RegionNode node{step.operation, {}, local(step.output)};
+      provider::RegionNode node{step.operation, {}, {}};
       for (const auto input : step.inputs)
         node.inputs.push_back(local(input));
+      for (const auto output : step.outputs) {
+        node.outputs.push_back(local(output));
+        produced[local(output)] = true;
+        if (last_uses[output] >= end ||
+            std::ranges::find(plan.outputs, output) != plan.outputs.end())
+          recipe->outputs.push_back(local(output));
+      }
       recipe->nodes.push_back(std::move(node));
-      produced[local(step.output)] = true;
-      if (last_uses[step.output] >= end ||
-          std::ranges::find(plan.outputs, step.output) != plan.outputs.end())
-        recipe->outputs.push_back(local(step.output));
     }
     for (std::uint32_t i = 0; i < ids.size(); ++i)
       if (!produced[i])
@@ -70,7 +77,7 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     // A dead-only region can occur only in a manually supplied private Plan;
     // still keep a concrete output so the original allocator can own its work.
     if (recipe->outputs.empty())
-      recipe->outputs.push_back(local(plan.steps[end - 1].output));
+      recipe->outputs.push_back(local(plan.steps[end - 1].outputs[0]));
     Dispatch dispatch;
     while (program.aliases.size() < program.values.size()) {
       const auto value = static_cast<std::uint32_t>(program.aliases.size());
@@ -95,9 +102,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       const auto adapted = static_cast<std::uint32_t>(program.values.size());
       program.values.push_back({program.values[value].description, {}});
       program.aliases.push_back({adapted, 0});
-      HYLE_RETURN_IF_ERROR(
-          lower_tensor(program, {Operation(Copy{}), {value}, adapted,
-                                 {}, {1, 1, 1}, {}}));
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program, {Operation(Copy{}), {value}, {adapted}, {}, {1, 1, 1}, {}}));
       dispatch.values.push_back(adapted);
     }
     for (const auto output : recipe->outputs)
@@ -107,6 +113,118 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     return Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan region boundary plan");
+  }
+}
+
+Status lower_topk(ProgramState &program, const PlanStep &step) noexcept {
+  try {
+    const auto input = program.values[step.inputs[0]].description;
+    if (input.data_type() != DataType::kFloat32)
+      return Status::Unimplemented("Vulkan TopK requires F32 router scores");
+    if (*input.element_count() == 0)
+      return Status::Ok(); // Distinct empty published owners, no GPU payload.
+    if (*input.element_count() >
+        program.runtime->device->properties.limits.maxStorageBufferRange / 4)
+      return Status::Unimplemented(
+          "Vulkan TopK dense adapter exceeds device limits");
+    auto selection = *step.operation.get_if<TopK>();
+    const auto rank = input.rank();
+    const auto axis = static_cast<std::size_t>(
+        selection.axis < 0 ? selection.axis + static_cast<std::int32_t>(rank)
+                           : selection.axis);
+    const auto width = input.dimensions()[axis];
+    const auto rows = static_cast<std::int64_t>(*input.element_count()) / width;
+    selection.axis = -1;
+    while (program.aliases.size() < program.values.size()) {
+      const auto id = static_cast<std::uint32_t>(program.aliases.size());
+      program.aliases.push_back({id, 0});
+    }
+    const auto append = [&](const TensorDesc &description) {
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    const auto alias = [&](const TensorDesc &description,
+                           std::uint32_t source) {
+      const auto owner = program.aliases[source];
+      const auto id = append(description);
+      program.aliases[id] = owner;
+      return id;
+    };
+    std::array<std::int32_t, kMaxTensorRank> axes{}, inverse{};
+    std::size_t next = 0;
+    for (std::size_t i = 0; i < rank; ++i)
+      if (i != axis)
+        axes[next++] = static_cast<std::int32_t>(i);
+    axes[next] = static_cast<std::int32_t>(axis);
+    for (std::size_t i = 0; i < rank; ++i)
+      inverse[axes[i]] = static_cast<std::int32_t>(i);
+    HYLE_ASSIGN_OR_RETURN(auto permute,
+                          View::permute(std::span(axes).first(rank)));
+    HYLE_ASSIGN_OR_RETURN(
+        auto permuted,
+        infer_single_output(Operation(permute), std::span(&input, 1)));
+    auto source = alias(permuted, step.inputs[0]);
+    if (!permuted.is_dense()) {
+      HYLE_ASSIGN_OR_RETURN(
+          auto dense,
+          TensorDesc::dense(DataType::kFloat32, permuted.dimensions()));
+      const auto packed = append(dense);
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program, {Operation(Copy{}), {source}, {packed}, {}, {1, 1, 1}, {}}));
+      source = packed;
+    }
+    HYLE_ASSIGN_OR_RETURN(
+        auto matrix,
+        TensorDesc::dense(DataType::kFloat32,
+                          std::array<std::int64_t, 2>{rows, width}));
+    const auto matrix_input = alias(matrix, source);
+    std::array<TensorDesc, 2> results;
+    HYLE_RETURN_IF_ERROR(infer_output_descriptions(
+        Operation(selection), std::span(&matrix, 1), results));
+    std::array<std::uint32_t, 2> output_ids{};
+    for (std::size_t port = 0; port < output_ids.size(); ++port)
+      output_ids[port] = axis + 1 == rank
+                             ? alias(results[port], step.outputs[port])
+                             : append(results[port]);
+    Plan local;
+    local.outputs.assign(output_ids.begin(), output_ids.end());
+    local.steps.push_back({Operation(selection),
+                           {matrix_input},
+                           local.outputs,
+                           {},
+                           {1, 1, 1},
+                           {}});
+    std::vector<std::size_t> last_uses(program.values.size(), 0);
+    HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+    if (axis + 1 == rank)
+      return Status::Ok();
+    // Provider rows are the other axes in their original order. Restore the
+    // selected axis with ordinary View/Copy; both materializations are counted.
+    std::array<std::int64_t, kMaxTensorRank> shape{};
+    std::ranges::copy(permuted.dimensions(), shape.begin());
+    shape[rank - 1] = static_cast<std::int64_t>(selection.count);
+    HYLE_ASSIGN_OR_RETURN(auto restore,
+                          View::permute(std::span(inverse).first(rank)));
+    for (std::size_t port = 0; port < output_ids.size(); ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto expanded,
+                            TensorDesc::dense(results[port].data_type(),
+                                              std::span(shape).first(rank)));
+      HYLE_ASSIGN_OR_RETURN(
+          auto reordered,
+          infer_single_output(Operation(restore), std::span(&expanded, 1)));
+      const auto view = alias(reordered, output_ids[port]);
+      HYLE_RETURN_IF_ERROR(lower_tensor(program, {Operation(Copy{}),
+                                                  {view},
+                                                  {step.outputs[port]},
+                                                  {},
+                                                  {1, 1, 1},
+                                                  {}}));
+    }
+    return Status::Ok();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan TopK layout metadata");
   }
 }
 

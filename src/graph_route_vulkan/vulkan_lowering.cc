@@ -33,7 +33,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed managed ggml dense F32 norm/gate regions and native tensor "
+          "Fixed managed ggml dense F32 norm/gate/pointwise/TopK regions and "
+          "native tensor "
           "shaders plus cold custom "
           "SPIR-V; "
           "device feature/limit matching, no runtime timing or provider search";
@@ -100,16 +101,19 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       }
       if (!needed)
         continue;
-      if (output_count != 1 ||
+      if ((operation.kind() == compute::OperationKind::kCustom &&
+           output_count != 1) ||
           (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
            operation.kind() != compute::OperationKind::kView))
         return std::unexpected(
-            Status::Unimplemented("Vulkan Graph requires single-output nodes "
-                                  "with supported alias semantics"));
+            Status::Unimplemented("Vulkan Graph requires supported alias "
+                                  "semantics and single-output custom nodes"));
       cv::detail::PlanStep step;
       step.operation = operation;
-      HYLE_ASSIGN_OR_RETURN(auto output, graph.result(id, 0));
-      step.output = output.ordinal();
+      for (std::size_t port = 0; port < output_count; ++port) {
+        HYLE_ASSIGN_OR_RETURN(auto output, graph.result(id, port));
+        step.outputs.push_back(output.ordinal());
+      }
       HYLE_ASSIGN_OR_RETURN(auto input_count, graph.node_input_count(id));
       for (std::size_t port = 0; port < input_count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(id, port));
@@ -131,8 +135,9 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
         for (const auto input : node->inputs)
           descriptions.push_back(plan.values[input].description);
         HYLE_ASSIGN_OR_RETURN(
-            auto native, options.custom(context, node->operation, descriptions,
-                                        plan.values[node->output].description));
+            auto native,
+            options.custom(context, node->operation, descriptions,
+                           plan.values[node->outputs[0]].description));
         node->custom = std::move(native.kernel);
         node->groups = native.groups;
         node->push_constants = std::move(native.push_constants);

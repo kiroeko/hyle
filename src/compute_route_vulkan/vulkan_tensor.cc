@@ -90,7 +90,7 @@ Status lower_reduction(ProgramState &program, const PlanStep &step) {
   static_assert(static_cast<unsigned>(MaskKind::kBoolean) == 2);
   // Copy descriptions: an internal row-statistics value can grow values.
   const auto input = program.values[step.inputs[0]].description;
-  const auto output = program.values[step.output].description;
+  const auto output = program.values[step.outputs[0]].description;
   const auto *reduce = step.operation.get_if<Reduce>();
   const auto *softmax = step.operation.get_if<Softmax>();
   const auto type = *tensor_storage_type(input.data_type());
@@ -114,7 +114,7 @@ Status lower_reduction(ProgramState &program, const PlanStep &step) {
   const auto input_count = *input.element_count();
   std::array<SpecializationConstant, 49> specialization{};
   Dispatch dispatch;
-  HYLE_RETURN_IF_ERROR(tensor_layout(program, step.inputs, step.output,
+  HYLE_RETURN_IF_ERROR(tensor_layout(program, step.inputs, step.outputs[0],
                                      specialization, dispatch));
   specialization[0].value = reduce ? 10u : 11u;
   specialization[5].value = reduce ? static_cast<std::uint32_t>(reduce->kind)
@@ -197,7 +197,7 @@ Status lower_reduction(ProgramState &program, const PlanStep &step) {
 }
 
 Status lower_concat(ProgramState &program, const PlanStep &step) {
-  const auto &output = program.values[step.output].description;
+  const auto &output = program.values[step.outputs[0]].description;
   const auto elements = *output.element_count();
   if (elements == 0)
     return Status::Ok();
@@ -233,8 +233,8 @@ Status lower_concat(ProgramState &program, const PlanStep &step) {
       continue;
     std::array<SpecializationConstant, 53> specialization{};
     Dispatch dispatch;
-    HYLE_RETURN_IF_ERROR(
-        tensor_layout(program, inputs, step.output, specialization, dispatch));
+    HYLE_RETURN_IF_ERROR(tensor_layout(program, inputs, step.outputs[0],
+                                       specialization, dispatch));
     specialization[0].value = 9;
     specialization[42].value = static_cast<std::uint32_t>(inner);
     specialization[43].value = static_cast<std::uint32_t>(row_elements);
@@ -329,7 +329,7 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
   }
   static_assert(static_cast<unsigned>(UnaryKind::kSoftplus) == 12);
   static_assert(static_cast<unsigned>(BinaryKind::kMaximum) == 5);
-  const auto &output = program.values[step.output].description;
+  const auto &output = program.values[step.outputs[0]].description;
   const auto output_type = tensor_storage_type(output.data_type());
   if (!output_type || !output.is_dense())
     return Status::Unimplemented(
@@ -366,7 +366,7 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
   // pipeline. No layout metadata upload or interpretation is added to replay.
   std::array<SpecializationConstant, 42> specialization{};
   Dispatch dispatch;
-  HYLE_RETURN_IF_ERROR(tensor_layout(program, step.inputs, step.output,
+  HYLE_RETURN_IF_ERROR(tensor_layout(program, step.inputs, step.outputs[0],
                                      specialization, dispatch));
   specialization[0].value = operation;
   specialization[5].value = mode;

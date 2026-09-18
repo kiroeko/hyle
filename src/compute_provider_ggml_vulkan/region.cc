@@ -13,9 +13,10 @@ namespace {
 bool tensor_domain(const TensorDesc &description) noexcept {
   return description.valid() && description.is_plain() &&
          description.is_dense() &&
-         description.data_type() == DataType::kFloat32 &&
-         description.rank() <= GGML_MAX_DIMS &&
-         description.element_count() && *description.element_count() > 0 &&
+         (description.data_type() == DataType::kFloat32 ||
+          description.data_type() == DataType::kInt32) &&
+         description.rank() <= GGML_MAX_DIMS && description.element_count() &&
+         *description.element_count() > 0 &&
          *description.element_count() <= INT32_MAX;
 }
 bool same_shape(const TensorDesc &a, const TensorDesc &b) noexcept {
@@ -53,9 +54,23 @@ struct Imports final {
 
 bool region_supports(const Operation &operation,
                      std::span<const TensorDesc> inputs,
-                     const TensorDesc &output) noexcept {
-  if (!tensor_domain(output) || !std::ranges::all_of(inputs, tensor_domain))
+                     std::span<const TensorDesc> outputs) noexcept {
+  if (!std::ranges::all_of(outputs, tensor_domain) ||
+      !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  if (const auto *topk = operation.get_if<TopK>())
+    return inputs.size() == 1 && outputs.size() == 2 && inputs[0].rank() > 0 &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           outputs[0].data_type() == DataType::kFloat32 &&
+           outputs[1].data_type() == DataType::kInt32 &&
+           (topk->axis == -1 ||
+            topk->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
+  if (outputs.size() != 1 || outputs[0].data_type() != DataType::kFloat32 ||
+      !std::ranges::all_of(inputs, [](const auto &input) {
+        return input.data_type() == DataType::kFloat32;
+      }))
+    return false;
+  const auto &output = outputs[0];
   if (const auto *norm = operation.get_if<RmsNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *unary = operation.get_if<Unary>())
@@ -77,6 +92,7 @@ struct Region::State final {
   NativeDevice device;
   std::shared_ptr<Imports> imports;
   std::vector<ggml_tensor *> ports;
+  std::vector<ggml_tensor *> views;
   NativeGraph graph;
   NativeWork work; // Retires before graph/imports/device.
   bool bound = false;
@@ -87,7 +103,7 @@ Result<Region> Region::create(NativeDevice device,
                               const RegionRecipe &recipe) noexcept {
   if (!device || recipe.nodes.empty() || recipe.outputs.empty() ||
       recipe.values.size() > INT32_MAX / 8 ||
-      recipe.nodes.size() > INT32_MAX / 8)
+      recipe.nodes.size() > INT32_MAX / 16)
     return std::unexpected(
         Status::InvalidArgument("ggml Vulkan region recipe"));
   try {
@@ -100,7 +116,7 @@ Result<Region> Region::create(NativeDevice device,
       available[input] = true;
     }
     for (const auto &node : recipe.nodes) {
-      if (node.output >= available.size() || available[node.output])
+      if (node.outputs.size() != operation_traits(node.operation).outputs)
         return std::unexpected(
             Status::InvalidArgument("ggml Vulkan region SSA"));
       std::vector<TensorDesc> inputs;
@@ -110,20 +126,35 @@ Result<Region> Region::create(NativeDevice device,
               Status::InvalidArgument("ggml Vulkan region topology"));
         inputs.push_back(recipe.values[input]);
       }
-      HYLE_ASSIGN_OR_RETURN(auto inferred,
-                            infer_single_output(node.operation, inputs));
-      if (inferred != recipe.values[node.output] ||
-          !region_supports(node.operation, inputs, inferred))
+      std::vector<TensorDesc> inferred(node.outputs.size());
+      HYLE_RETURN_IF_ERROR(
+          infer_output_descriptions(node.operation, inputs, inferred));
+      if (!region_supports(node.operation, inputs, inferred))
         return std::unexpected(
             Status::Unimplemented("ggml Vulkan region semantic domain"));
-      available[node.output] = true;
+      for (std::size_t port = 0; port < node.outputs.size(); ++port) {
+        const auto output = node.outputs[port];
+        if (output >= available.size() || available[output] ||
+            inferred[port] != recipe.values[output])
+          return std::unexpected(
+              Status::InvalidArgument("ggml Vulkan region output SSA/schema"));
+        available[output] = true;
+      }
     }
-    for (const auto output : recipe.outputs)
+    std::vector<bool> published(recipe.values.size(), false);
+    for (const auto output : recipe.outputs) {
       if (output >= available.size() || !available[output] ||
+          published[output] ||
           std::ranges::find(recipe.inputs, output) != recipe.inputs.end())
         return std::unexpected(
             Status::InvalidArgument("ggml Vulkan region output"));
-    const auto capacity = recipe.inputs.size() + 3 * recipe.nodes.size() + 16;
+      published[output] = true;
+    }
+    // TopK: ten tensor nodes including reshape/view/cont adapters. Other
+    // admitted operations need at most three (broadcast plus binary, or norm).
+    auto capacity = recipe.inputs.size() + 16;
+    for (const auto &node : recipe.nodes)
+      capacity += node.operation.get_if<TopK>() ? 10 : 3;
     const auto graph_bytes = ggml_graph_overhead_custom(capacity, false);
     if (capacity > (SIZE_MAX - graph_bytes) / ggml_tensor_overhead())
       return std::unexpected(
@@ -149,7 +180,9 @@ Result<Region> Region::create(NativeDevice device,
       const auto dimensions = recipe.values[input].dimensions();
       std::ranges::reverse_copy(dimensions, shape);
       tensors[input] = ggml_new_tensor(
-          context, GGML_TYPE_F32,
+          context,
+          recipe.values[input].data_type() == DataType::kInt32 ? GGML_TYPE_I32
+                                                               : GGML_TYPE_F32,
           (std::max)(1, static_cast<int>(dimensions.size())), shape);
       ggml_set_input(tensors[input]);
       state.ports.push_back(tensors[input]);
@@ -157,7 +190,36 @@ Result<Region> Region::create(NativeDevice device,
     for (const auto &node : recipe.nodes) {
       auto *left = tensors[node.inputs[0]];
       ggml_tensor *output = nullptr;
-      if (const auto *norm = node.operation.get_if<RmsNorm>()) {
+      if (const auto *topk = node.operation.get_if<TopK>()) {
+        const auto width = left->ne[0];
+        const auto rows = ggml_nelements(left) / width;
+        const auto count = static_cast<std::int64_t>(topk->count);
+        auto *matrix = ggml_reshape_2d(context, left, width, rows);
+        auto *sorted = ggml_argsort(context, matrix,
+                                    topk->largest ? GGML_SORT_ORDER_DESC
+                                                  : GGML_SORT_ORDER_ASC);
+        auto *selected =
+            ggml_view_2d(context, sorted, count, rows, sorted->nb[1], 0);
+        std::int64_t shape[GGML_MAX_DIMS]{1, 1, 1, 1};
+        std::ranges::reverse_copy(recipe.values[node.outputs[0]].dimensions(),
+                                  shape);
+        auto *indices = ggml_cont_4d(context, selected, shape[0], shape[1],
+                                     shape[2], shape[3]);
+        auto *row_indices = ggml_reshape_2d(context, indices, count, rows);
+        // Reinterpret 32-bit storage, never numerically convert scores to I32.
+        // Original GET_ROWS(I32) uses uint loads/stores, retaining NaN
+        // payloads, signed zeros and subnormals. Contiguous published tensors
+        // own ports.
+        auto *raw = ggml_reshape_2d(context, matrix, width, rows);
+        raw->type = GGML_TYPE_I32;
+        auto *scalars = ggml_reshape_3d(context, raw, 1, width, rows);
+        auto *gathered = ggml_get_rows(context, scalars, row_indices);
+        auto *floats = ggml_reshape_4d(context, gathered, 1, count, rows, 1);
+        floats->type = GGML_TYPE_F32;
+        output = ggml_cont_4d(context, floats, shape[0], shape[1], shape[2],
+                              shape[3]);
+        tensors[node.outputs[1]] = indices;
+      } else if (const auto *norm = node.operation.get_if<RmsNorm>()) {
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)
           output = ggml_mul(context, output, tensors[node.inputs[1]]);
@@ -169,7 +231,7 @@ Result<Region> Region::create(NativeDevice device,
         auto *right = tensors[node.inputs[1]];
         const auto kind = node.operation.get_if<Binary>()->kind;
         if (!same_shape(recipe.values[node.inputs[0]],
-                        recipe.values[node.output])) {
+                        recipe.values[node.outputs[0]])) {
           if (kind == BinaryKind::kAdd || kind == BinaryKind::kMultiply)
             std::swap(left, right);
           else
@@ -195,13 +257,18 @@ Result<Region> Region::create(NativeDevice device,
               Status::Internal("ggml Vulkan unqualified binary recipe"));
         }
       }
-      tensors[node.output] = output;
+      tensors[node.outputs[0]] = output;
     }
     auto *graph = ggml_new_graph_custom(context, capacity, false);
     for (const auto output : recipe.outputs) {
       ggml_set_output(tensors[output]);
       ggml_build_forward_expand(graph, tensors[output]);
       state.ports.push_back(tensors[output]);
+    }
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
+      auto *node = ggml_graph_node(graph, i);
+      if (node->view_src)
+        state.views.push_back(node);
     }
     for (auto *tensor : state.ports) {
       HYLE_ASSIGN_OR_RETURN(auto buffer,
@@ -258,6 +325,10 @@ Status Region::bind(std::span<const RegionBinding> bindings) noexcept {
         reinterpret_cast<std::uintptr_t>(ggml_backend_buffer_get_base(buffer)) +
         port.offset);
   }
+  // ggml flattens view_src to the allocation root. Refresh the already frozen
+  // views after rebinding a port with a different native byte origin.
+  for (auto *view : state_->views)
+    view->data = static_cast<char *>(view->view_src->data) + view->view_offs;
   state_->bound = std::ranges::all_of(
       bindings, [](const auto &port) { return port.handle != VK_NULL_HANDLE; });
   return Status::Ok();

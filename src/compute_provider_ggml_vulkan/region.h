@@ -13,7 +13,7 @@ namespace hyle::compute::ggml_vulkan::detail {
 struct RegionNode final {
   Operation operation;
   std::vector<std::uint32_t> inputs;
-  std::uint32_t output = 0;
+  std::vector<std::uint32_t> outputs;
 };
 struct RegionRecipe final {
   std::vector<TensorDesc> values;
@@ -30,9 +30,9 @@ struct RegionBinding final {
   std::shared_ptr<const void> owner;
 };
 
-HYLE_GGML_VULKAN_INTERNAL_API bool region_supports(const Operation &,
-                                                   std::span<const TensorDesc>,
-                                                   const TensorDesc &) noexcept;
+HYLE_GGML_VULKAN_INTERNAL_API bool
+region_supports(const Operation &, std::span<const TensorDesc>,
+                std::span<const TensorDesc>) noexcept;
 
 // One native graph/work/storage owner per invocation. Its caller serializes
 // host encoding, binding and retirement on the route admission mutex. The

@@ -19,6 +19,13 @@ The gate still multiplies that activation by its other input, preserving
 zero-times-infinity/NaN behavior. Finite formulas, fusion and resource planning
 remain upstream implementations; these are explicit boundary corrections.
 
+The two Argsort shaders retain the upstream bitonic sorting networks, barriers,
+dispatch and scratch management. Their comparison uses original F32 storage
+keys and source indices to provide stable ties, equal signed zeros, NaN-last in
+either order, and valid elements before tail padding. Descending order is
+encoded in that comparison; output reversal is removed to preserve tie order.
+This is an explicit semantic adaptation, not an unmodified upstream algorithm.
+
 The native embedding edits isolate Vulkan instance/dispatcher/registry state,
 publish fully initialized devices, roll back partial buffer/backend creation,
 account device memory through optional HYLE reservations, and permit an owned

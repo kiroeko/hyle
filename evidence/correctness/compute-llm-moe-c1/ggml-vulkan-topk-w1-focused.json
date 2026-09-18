@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "scope": "C1-Y21-Y24 Windows static focused TopK correctness only",
+  "audit_commit": "297971d9a34212fb07c39b705553ff40aac89e4b",
+  "candidate_identity": "working tree product/test byte hashes; candidate freeze follows this receipt",
+  "source_sha256": {
+    "cmake/HyleDependencyLock.json": "abd2257d7d3f1028a15eefc5799316d5e120f4f03d16d3ebc71f5911b2390795",
+    "include/hyle/compute/detail/vulkan_plan.h": "7a19397a78d90ca2100a9ad6855865b5903b0bc37ed7840720525db939eb6c4c",
+    "src/compute_provider_ggml_vulkan/region.cc": "2d3e4802e2672c0085f16c446a93931743dfa230ccf1898b6ef8de3a74680a90",
+    "src/compute_provider_ggml_vulkan/region.h": "7bf9be4d9ba6d48cc60eecbfd17a10758c118db87828f82d2e0e80a427fdbe05",
+    "src/compute_route_vulkan/vulkan_operations.cc": "2cedd5b7191c596f981ba69b348211fd3836cfe58b2e6d2923219e752806f6c6",
+    "src/compute_route_vulkan/vulkan_program.cc": "92ea8bb46144f21521a28f6ff6b8d1cda8824cedc7628328e66ac04af6243627",
+    "src/compute_route_vulkan/vulkan_program_internal.h": "b123b7053d3b66368b1b98777d081eb4214240ed3a72da6f449d8b7d931ecb76",
+    "src/compute_route_vulkan/vulkan_region.cc": "eebc94c60da50566d40b5aa79d938080ab92067a4bc9b7a990cf31d5dbaf1edd",
+    "src/compute_route_vulkan/vulkan_tensor.cc": "514eee09d25286b322081bac0d15ef0d59d6e9be46b015d108c476493a6ca8aa",
+    "src/graph_route_vulkan/vulkan_lowering.cc": "c3575d41351164e4c757f4fead8f0869692fc52dfac89df4f99429bf4ffc1ac2",
+    "tests/compute_route_vulkan/CMakeLists.txt": "156cebd0e92582643aada26ab63059603f0aeaa2805092e59221448f6fc1d648",
+    "tests/compute_route_vulkan/lifecycle_test.cc": "a48a8ca27a212d48f9645b9649f5718516b2624035b1899b17026faec3b3f001",
+    "tests/compute_route_vulkan/topk_test.cc": "7562e447581fd3f7b6925b1111ec2d5c3e13dfd78e20f2e72e41bc10d25c0f6a",
+    "tests/compute_route_vulkan/topk_test_support.h": "78504214f58ee3bdf2c3818d9b569b3f4040c5aab60ad65d8c32404b8e503498",
+    "tests/graph_route_vulkan/CMakeLists.txt": "92570fb1a60b9aad2d64c94bb4e2c3ef1b278ee4e07d01edb3fd7c97c7dae7cf",
+    "tests/graph_route_vulkan/topk_test.cc": "f75b81cf3fc91c0faf566df884e5cb58b173bc2a9b3d64cde0d2b18dff87c7f4",
+    "third_party/ggml_vulkan_runtime/NOTICE.md": "19420915ca7c860190b2a04227696826a2af29324d54e5f27b16a31b075f642c",
+    "third_party/ggml_vulkan_runtime/patches.json": "ff2540b0b8073a12f57f19b7e7a3acd23f37de052d162cac95f886df3602f650"
+  },
+  "focused_correctness": "PASS",
+  "passed_cases": {
+    "VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain": "correction1",
+    "VulkanTopK.FrozenExpertWidthsTailsAndStableRawOutputs": "correction1",
+    "VulkanTopK.AxisLayoutAdaptersPreserveInputHolesAndZeroStride": "correction1",
+    "VulkanTopK.OriginalLargeSortKeepsTheSameStableAndNanPolicy": "correction1",
+    "VulkanTopK.EqualRowsNanPayloadsAndSignedZerosSurviveTailPadding": "correction1",
+    "VulkanTopK.RankEightAndRelaxedOrderUseTheSameOrdinaryEntry": "correction1",
+    "VulkanTopK.RecorderValidatesTwoOutputBindingsAndReplaysChangedInput": "correction1",
+    "VulkanTopK.EmptyDomainAndInvalidPreparationHaveNoPayloadFallback": "correction1",
+    "VulkanTopK.QuotaFailureRollsBackAndFreshInvocationStillWorks": "correction1",
+    "VulkanTopK.ColdMultiOutputSsaRejectsMissingDuplicateAndSelfProducedIds": "correction1",
+    "VulkanTopK.RebindingByteOriginsRefreshesFrozenProviderViews": "fixture-legal-views",
+    "VulkanGraph.TopKBothPortsHaveIndependentLivenessAndOldResultOwners": "fixture-legal-views",
+    "VulkanGraph.TopKComposesWithMaturePointwiseAndPublishesRawIndices": "fixture-legal-views"
+  },
+  "evidence_reuse": "After correction1, only the byte-origin test fixture changed; the other ten passing cases retain identical product behavior. The final run executes that corrected case and the two previously unrun Graph cases.",
+  "failed_attempts_retained": [
+    "first-static-failure",
+    "correction1",
+    "fixture-corrected"
+  ],
+  "correction": "Two ggml_view_tensor storage reinterpretations replaced with real reshape nodes to preserve dependency edges. Test-only correction uses legal strided View and aligned native borrow contracts.",
+  "product_correction_budget": {
+    "used": 1,
+    "remaining": 1
+  },
+  "runtime": {
+    "dlls_adjacent_to_executable": true,
+    "path_unset": true,
+    "set_error_mode": "0x8003",
+    "vulkan_validation": true,
+    "vuid_or_sync_errors_in_passing_logs": false
+  },
+  "local_build": {
+    "configuration": "MSVC Release strict WERROR static; instrumentation/trace off",
+    "parallel": 2,
+    "status": "PASS"
+  },
+  "not_completed": [
+    "Windows shared",
+    "Air and Mini GPU correctness",
+    "TopK source/static/shared consumers on Windows and Air",
+    "current candidate selected validation gates",
+    "C1 performance and implementation retirement"
+  ],
+  "p1": "NOT_RUN",
+  "c1_aggregate": "INCONCLUSIVE",
+  "cpu_onednn_performance_qualification": "BLOCKED unchanged",
+  "loc": {
+    "code": 47189,
+    "files": 193,
+    "self_check": "PASS",
+    "excludes": [
+      "tests",
+      "bench",
+      "third_party"
+    ]
+  },
+  "raw": {
+    "file": "ggml-vulkan-topk-w1-focused-raw.zip",
+    "sha256": "dfe8e9aa928085c898e9196b24ad1d70835aa7f353f70acb565460dd7d78c78e",
+    "bytes": 106820
+  }
+}

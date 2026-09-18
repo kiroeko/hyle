@@ -383,66 +383,92 @@ TEST(VulkanLifetime, IndependentThreadsReplayWhileContextCollects) {
 }
 
 TEST(VulkanLifetime, ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain) {
-  for (bool abandon : {false, true}) {
-    SCOPED_TRACE(abandon);
-    auto context = t::context().value();
-    const auto description = t::dense({17, 2048});
-    auto input = t::upload(context, description, t::data(17 * 2048, 1)).value();
-    std::weak_ptr<const void> owner = input.native_owner();
-    d::Plan plan;
-    plan.values.assign(4, {description, {}});
-    plan.inputs = {0};
-    plan.outputs = {3};
-    plan.steps = {
-        {c::Operation(c::Unary{c::UnaryKind::kRelu}), {0}, 1, {}, {1, 1, 1}, {}},
-        {c::Operation(c::RmsNorm{}), {1}, 2, {}, {1, 1, 1}, {}},
-        {c::Operation(c::Unary{c::UnaryKind::kRelu}), {2}, 3, {}, {1, 1, 1}, {}}};
-    d::PlanFacts facts;
-    auto program = d::prepare_plan(context, plan, &facts).value();
-    ASSERT_EQ(facts.native_dispatch_count, 2U);
-    ASSERT_EQ(facts.managed_region_count, 1U);
-    auto slot = program.create_invocation().value();
-    ASSERT_TRUE(slot.bind(input).ok());
-    NativeBoundary boundary(context);
-    // Provider submits use their original PFNs. This rejects only the HYLE
-    // suffix after the real HYLE prefix and real managed region were accepted.
-    boundary.fail_submit_on = 2;
-    auto work = slot.submit();
-    ASSERT_TRUE(work) << work.error().message();
-    ASSERT_EQ(boundary.submissions, 2);
-    ASSERT_NE(d::Access::runtime(context)->pending, nullptr);
-    auto observed = work->poll();
-    ASSERT_TRUE(observed);
-    EXPECT_EQ(*observed, c::CompletionPoll::kPending);
-    EXPECT_EQ(boundary.waits.load(), 0);
-    if (abandon) {
-      work = c::OwnedResult<v::Results>{};
-      slot = {};
-      program = {};
-      input = {};
-      EXPECT_FALSE(owner.expired());
+  for (bool selection : {false, true}) {
+    SCOPED_TRACE(selection);
+    for (bool abandon : {false, true}) {
+      SCOPED_TRACE(abandon);
+      auto context = t::context().value();
+      const auto description = t::dense({17, selection ? 288 : 2048});
+      auto input = t::upload(context, description,
+                             t::data(*description.element_count(), 1))
+                       .value();
+      std::weak_ptr<const void> owner = input.native_owner();
+      d::Plan plan;
+      plan.values.assign(4, {description, {}});
+      plan.inputs = {0};
+      plan.outputs = {3};
+      plan.steps = {{c::Operation(c::Unary{c::UnaryKind::kRelu}),
+                     {0},
+                     {1},
+                     {},
+                     {1, 1, 1},
+                     {}},
+                    {c::Operation(c::RmsNorm{}), {1}, {2}, {}, {1, 1, 1}, {}},
+                    {c::Operation(c::Unary{c::UnaryKind::kRelu}),
+                     {2},
+                     {3},
+                     {},
+                     {1, 1, 1},
+                     {}}};
+      if (selection) {
+        const auto count =
+            static_cast<std::size_t>(description.dimensions().back());
+        plan.values.push_back(
+            {c::TensorDesc::dense(c::DataType::kInt32, description.dimensions())
+                 .value(),
+             {}});
+        plan.steps[1].operation = c::Operation(c::TopK{.count = count});
+        plan.steps[1].outputs.push_back(4);
+        plan.outputs.push_back(4);
+      }
+      d::PlanFacts facts;
+      auto program = d::prepare_plan(context, plan, &facts).value();
+      ASSERT_EQ(facts.native_dispatch_count, 2U);
+      ASSERT_EQ(facts.managed_region_count, 1U);
+      auto slot = program.create_invocation().value();
+      ASSERT_TRUE(slot.bind(input).ok());
+      NativeBoundary boundary(context);
+      // Provider submits use their original PFNs. This rejects only the HYLE
+      // suffix after the real HYLE prefix and real managed region were
+      // accepted.
+      boundary.fail_submit_on = 2;
+      auto work = slot.submit();
+      ASSERT_TRUE(work) << work.error().message();
+      ASSERT_EQ(boundary.submissions, 2);
+      ASSERT_NE(d::Access::runtime(context)->pending, nullptr);
+      auto observed = work->poll();
+      ASSERT_TRUE(observed);
+      EXPECT_EQ(*observed, c::CompletionPoll::kPending);
       EXPECT_EQ(boundary.waits.load(), 0);
-      boundary.fail_idle = true;
-      EXPECT_TRUE(context.close().IsResourceExhausted());
-      EXPECT_NE(d::Access::runtime(context)->pending, nullptr);
-      EXPECT_FALSE(owner.expired());
-      EXPECT_TRUE(
-          context.close().IsResourceExhausted()); // Original submit diagnosis.
-      EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
-      EXPECT_TRUE(owner.expired());
-    } else {
-      auto failed = work->wait();
-      ASSERT_FALSE(failed);
-      EXPECT_TRUE(failed.error().IsResourceExhausted());
-      EXPECT_FALSE(work->result());
-      EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
-      work = c::OwnedResult<v::Results>{};
-      EXPECT_TRUE(slot.bind(input).IsResourceExhausted());
-      auto retry = slot.submit();
-      ASSERT_FALSE(retry);
-      EXPECT_TRUE(retry.error().IsResourceExhausted());
+      if (abandon) {
+        work = c::OwnedResult<v::Results>{};
+        slot = {};
+        program = {};
+        input = {};
+        EXPECT_FALSE(owner.expired());
+        EXPECT_EQ(boundary.waits.load(), 0);
+        boundary.fail_idle = true;
+        EXPECT_TRUE(context.close().IsResourceExhausted());
+        EXPECT_NE(d::Access::runtime(context)->pending, nullptr);
+        EXPECT_FALSE(owner.expired());
+        EXPECT_TRUE(context.close()
+                        .IsResourceExhausted()); // Original submit diagnosis.
+        EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
+        EXPECT_TRUE(owner.expired());
+      } else {
+        auto failed = work->wait();
+        ASSERT_FALSE(failed);
+        EXPECT_TRUE(failed.error().IsResourceExhausted());
+        EXPECT_FALSE(work->result());
+        EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
+        work = c::OwnedResult<v::Results>{};
+        EXPECT_TRUE(slot.bind(input).IsResourceExhausted());
+        auto retry = slot.submit();
+        ASSERT_FALSE(retry);
+        EXPECT_TRUE(retry.error().IsResourceExhausted());
+      }
+      EXPECT_TRUE(context.close().ok());
     }
-    EXPECT_TRUE(context.close().ok());
   }
 }
 

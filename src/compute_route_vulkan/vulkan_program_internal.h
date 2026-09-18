@@ -111,6 +111,7 @@ Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;
 bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
+Status lower_topk(ProgramState &, const PlanStep &) noexcept;
 Status lower_region(ProgramState &, const Plan &, std::size_t first,
                     std::size_t end,
                     std::span<const std::size_t> last_uses) noexcept;

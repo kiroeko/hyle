@@ -243,7 +243,7 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     const std::array<std::uint32_t, 13> push{k, k, k, n, k * n, k, n,
                                              0, 0, 1, 1, 1,     1};
     dispatch.pipeline = std::move(*pipeline);
-    dispatch.values = {weights, step.inputs[0], step.output, step.inputs[0],
+    dispatch.values = {weights, step.inputs[0], step.outputs[0], step.inputs[0],
                        step.inputs[0]};
     dispatch.push = push_bytes(push);
     const auto groups_x =
@@ -296,7 +296,7 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     const std::array<std::uint32_t, 16> push{
         n, m, k, k, k, n, k * n, k * m, n * m, 0, 1, k, 1, 1, 1, 1};
     dispatch.pipeline = std::move(*pipeline);
-    dispatch.values = {weights, step.inputs[0], step.output};
+    dispatch.values = {weights, step.inputs[0], step.outputs[0]};
     dispatch.push = push_bytes(push);
     dispatch.groups = {(n + tile - 1) / tile, (m + tile - 1) / tile, 1};
   }
@@ -306,7 +306,7 @@ lower_matmul(ProgramState &program, const PlanStep &step,
 
 bool mature_gate_eligible(const ProgramState &program, const PlanStep &step) {
   const auto &operation = *step.operation.get_if<GatedActivation>();
-  const auto &output = program.values[step.output].description;
+  const auto &output = program.values[step.outputs[0]].description;
   if (operation.activation != GatedActivationKind::kSilu ||
       output.data_type() != DataType::kFloat32 || output.rank() > 4 ||
       *output.element_count() == 0 ||
@@ -344,7 +344,7 @@ Status lower_gate(ProgramState &program, const PlanStep &step) {
   auto status = check_flat_shader(*program.runtime->device);
   if (!status.ok())
     return status;
-  const auto &output = program.values[step.output].description;
+  const auto &output = program.values[step.outputs[0]].description;
   const auto &a = program.values[step.inputs[0]].description;
   const auto &b = program.values[step.inputs.back()].description;
   if (a.rank() == 0 || a.rank() > 4 || !a.is_dense() || !b.is_dense() ||
@@ -391,7 +391,7 @@ Status lower_gate(ProgramState &program, const PlanStep &step) {
   push[26] = inner[1];
   Dispatch dispatch;
   dispatch.pipeline = std::move(*pipeline);
-  dispatch.values = {step.inputs[0], step.inputs.back(), step.output};
+  dispatch.values = {step.inputs[0], step.inputs.back(), step.outputs[0]};
   dispatch.push = push_bytes(push);
   dispatch.groups = flat_groups(elements);
   program.dispatches.push_back(std::move(dispatch));
@@ -404,6 +404,10 @@ Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept {
   try {
+    if (step.operation.kind() == OperationKind::kTopK)
+      return lower_topk(program, step);
+    if (step.outputs.size() != 1)
+      return Status::Unimplemented("Vulkan native operation output arity");
     if (step.operation.kind() == OperationKind::kCustom) {
       const auto &pipeline = Access::pipeline(step.custom);
       if (!pipeline)
@@ -422,7 +426,7 @@ Status lower_operation(
       Dispatch dispatch;
       dispatch.pipeline = pipeline;
       dispatch.values = step.inputs;
-      dispatch.values.push_back(step.output);
+      dispatch.values.push_back(step.outputs[0]);
       dispatch.groups = step.groups;
       dispatch.push = step.push_constants;
       program.dispatches.push_back(std::move(dispatch));

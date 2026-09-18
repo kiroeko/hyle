@@ -471,6 +471,44 @@
           "after": "    // Preserve multiplication by b, including 0 * Inf/NaN propagation.\n    const float activation = isinf(a) && a < 0.0f ? 0.0f : a / (1.0f + exp(-a));\n    return activation * b;"
         }
       ]
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/argsort.comp",
+      "before_sha256": "ff2f28f8ef90e80e1d31764ae8017157af75d492fd70f12ab2c32d6fab52c689",
+      "after_sha256": "25fe06a2f60d148c23aa749eff9b9997ff5417be482185aaab7442ba97ae5ac4",
+      "edits": [
+        {
+          "before": "void argsort(bool needs_bounds_check, const uint row) {",
+          "after": "// HYLE TopK ordering: original bitonic network, total comparison only.\n// Raw keys retain subnormals; zeros tie, NaNs follow numbers in both orders.\nuint hyle_ordered_key(int raw) {\n    uint bits = uint(raw);\n    if ((bits & 0x7fffffffu) == 0u) bits = 0u;\n    uint key = (bits & 0x80000000u) != 0u ? ~bits : (bits ^ 0x80000000u);\n    return p.order == ASC ? key : ~key;\n}\n\nbool hyle_after(ivec2 a, ivec2 b, bool a_oob, bool b_oob) {\n    if (a_oob != b_oob) return a_oob;\n    if (a_oob) return a.x > b.x;\n    bool a_nan = (uint(a.y) & 0x7fffffffu) > 0x7f800000u;\n    bool b_nan = (uint(b.y) & 0x7fffffffu) > 0x7f800000u;\n    if (a_nan != b_nan) return a_nan;\n    if (!a_nan) {\n        uint a_key = hyle_ordered_key(a.y);\n        uint b_key = hyle_ordered_key(b.y);\n        if (a_key != b_key) return a_key > b_key;\n    }\n    return a.x > b.x;\n}\n\nvoid argsort(bool needs_bounds_check, const uint row) {"
+        },
+        {
+          "before": "if (idx_0_oob ||\n                    (!idx_1_oob && intBitsToFloat(sh_idx_0.y) > intBitsToFloat(sh_idx_1.y))) {",
+          "after": "if (hyle_after(sh_idx_0, sh_idx_1, idx_0_oob, idx_1_oob)) {"
+        },
+        {
+          "before": "        if (p.order == ASC) {\n            data_d[row_offset + col] = dst_row[col].x;\n        } else {\n            data_d[row_offset + p.ncols - col - 1] = dst_row[col].x;\n        }",
+          "after": "        data_d[row_offset + col] = dst_row[col].x;"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/argsort_large.comp",
+      "before_sha256": "4d76e002de6ecf38f5932b256af68e3bbf573451fdd87f044217610f610e2c85",
+      "after_sha256": "21d4e5a2575a6fda4583a3e79478ebd0d4aad34c90fb4335d68b65624591acef",
+      "edits": [
+        {
+          "before": "void argsort(bool needs_bounds_check, const uint row) {",
+          "after": "// HYLE TopK ordering: original bitonic network, total comparison only.\n// Raw keys retain subnormals; zeros tie, NaNs follow numbers in both orders.\nuint hyle_ordered_key(int raw) {\n    uint bits = uint(raw);\n    if ((bits & 0x7fffffffu) == 0u) bits = 0u;\n    uint key = (bits & 0x80000000u) != 0u ? ~bits : (bits ^ 0x80000000u);\n    return p.order == ASC ? key : ~key;\n}\n\nbool hyle_after(ivec2 a, ivec2 b, bool a_oob, bool b_oob) {\n    if (a_oob != b_oob) return a_oob;\n    if (a_oob) return a.x > b.x;\n    bool a_nan = (uint(a.y) & 0x7fffffffu) > 0x7f800000u;\n    bool b_nan = (uint(b.y) & 0x7fffffffu) > 0x7f800000u;\n    if (a_nan != b_nan) return a_nan;\n    if (!a_nan) {\n        uint a_key = hyle_ordered_key(a.y);\n        uint b_key = hyle_ordered_key(b.y);\n        if (a_key != b_key) return a_key > b_key;\n    }\n    return a.x > b.x;\n}\n\nvoid argsort(bool needs_bounds_check, const uint row) {"
+        },
+        {
+          "before": "if ((idx_0_oob ||\n                    (!idx_1_oob && intBitsToFloat(sh_idx_0.y) > intBitsToFloat(sh_idx_1.y)))) {",
+          "after": "if (hyle_after(sh_idx_0, sh_idx_1, idx_0_oob, idx_1_oob)) {"
+        },
+        {
+          "before": "                if (p.order == ASC) {\n                    data_d[row_offset + c] = tmp_idx[idx_offset + c].x;\n                } else {\n                    data_d[row_offset + p.ncols - c - 1] = tmp_idx[idx_offset + c].x;\n                }",
+          "after": "                data_d[row_offset + c] = tmp_idx[idx_offset + c].x;"
+        }
+      ]
     }
   ]
 }

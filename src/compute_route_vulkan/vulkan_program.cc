@@ -179,10 +179,12 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       if (traits.effect != EffectKind::kPure ||
           (traits.alias == AliasPolicy::kMustAliasInput0 &&
            step.operation.kind() != OperationKind::kView) ||
-          traits.outputs != 1 || !traits.inputs.accepts(step.inputs.size()) ||
-          step.output >= available.size() || available[step.output])
+          traits.outputs == 0 || traits.outputs != step.outputs.size() ||
+          !traits.inputs.accepts(step.inputs.size()) ||
+          (step.operation.kind() == OperationKind::kCustom &&
+           step.outputs.size() != 1))
         return std::unexpected(Status::Unimplemented(
-            "Vulkan requires pure single-output SSA operations"));
+            "Vulkan requires pure SSA operations with supported arity"));
       std::vector<TensorDesc> descriptions;
       descriptions.reserve(step.inputs.size());
       for (const auto input : step.inputs) {
@@ -191,14 +193,18 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
               "Vulkan plan is not topologically ordered"));
         descriptions.push_back(plan.values[input].description);
       }
-      auto inferred = infer_single_output(step.operation, descriptions);
-      if (!inferred)
-        return std::unexpected(std::move(inferred).error());
-      if (*inferred != plan.values[step.output].description)
-        return std::unexpected(Status::InvalidArgument(
-            "Vulkan plan output disagrees with operation schema"));
-      available[step.output] = true;
-      produced[step.output] = true;
+      std::vector<TensorDesc> inferred(step.outputs.size());
+      HYLE_RETURN_IF_ERROR(
+          infer_output_descriptions(step.operation, descriptions, inferred));
+      for (std::size_t port = 0; port < step.outputs.size(); ++port) {
+        const auto output = step.outputs[port];
+        if (output >= available.size() || available[output] ||
+            inferred[port] != plan.values[output].description)
+          return std::unexpected(Status::InvalidArgument(
+              "Vulkan plan output violates SSA or operation schema"));
+        available[output] = true;
+        produced[output] = true;
+      }
     }
     std::vector<bool> published(plan.values.size(), false);
     for (const auto output : plan.outputs) {
@@ -240,16 +246,16 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         HYLE_ASSIGN_OR_RETURN(
             auto offset, compute::detail::view_alias_offset(
                              *view, program->values[step.inputs[0]].description,
-                             program->values[step.output].description));
+                             program->values[step.outputs[0]].description));
         auto alias = program->aliases[step.inputs[0]];
         alias.byte_offset +=
             offset; // Every derived span is contained in its root.
-        program->aliases[step.output] = alias;
+        program->aliases[step.outputs[0]] = alias;
         if (const auto &source = program->values[step.inputs[0]].constant;
             source) {
           // Preserve immutable weights for downstream cold packing and dedup.
           HYLE_ASSIGN_OR_RETURN(auto constant, source.view(*view));
-          program->values[step.output].constant = std::move(constant);
+          program->values[step.outputs[0]].constant = std::move(constant);
         }
         continue;
       }
@@ -337,7 +343,9 @@ namespace hyle::compute::vulkan {
 
 Result<Program> prepare(const Context &context, const Operation &operation,
                         std::span<const Argument> arguments) noexcept {
-  if (arguments.size() > (std::numeric_limits<std::uint32_t>::max)() - 1)
+  const auto output_count = operation_traits(operation).outputs;
+  if (arguments.size() >
+      (std::numeric_limits<std::uint32_t>::max)() - output_count)
     return std::unexpected(
         Status::InvalidArgument("too many Vulkan arguments"));
   try {
@@ -353,12 +361,15 @@ Result<Program> prepare(const Context &context, const Operation &operation,
       step.inputs.push_back(index);
       descriptions.push_back(argument.description());
     }
-    auto output = infer_single_output(operation, descriptions);
-    if (!output)
-      return std::unexpected(std::move(output).error());
-    step.output = static_cast<std::uint32_t>(plan.values.size());
-    plan.values.push_back({*output, {}});
-    plan.outputs.push_back(step.output);
+    std::vector<TensorDesc> outputs(output_count);
+    HYLE_RETURN_IF_ERROR(
+        infer_output_descriptions(operation, descriptions, outputs));
+    for (const auto &output : outputs) {
+      const auto id = static_cast<std::uint32_t>(plan.values.size());
+      plan.values.push_back({output, {}});
+      step.outputs.push_back(id);
+      plan.outputs.push_back(id);
+    }
     plan.steps.push_back(std::move(step));
     return detail::prepare_plan(context, plan);
   } catch (const std::bad_alloc &) {

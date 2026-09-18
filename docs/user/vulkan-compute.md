@@ -84,6 +84,8 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
 - 同三浮点类型的 Reduce Sum/Mean/Min/Max（任意合法轴集合/keepdim）和 Softmax/LogSoftmax
   （任意轴、有限 scale、广播 Bool/同类型 additive mask），以 F32 累加；半精度必须显式声明。
+- F32 TopK 同时返回 F32 values 与 I32 indices，支持 rank1–8、任意合法轴和 stride/View。
+  半精度及整数输入不在当前 TopK 支持域。
 - Copy/Fill/Select/Concat 支持 F32/F16/BF16/I32/I64/Bool 原始存储，Select 使用 Bool mask；
   浮点 Cast、13 种 Unary（包括稳定 Softplus）和六种广播 Binary 支持 F32/F16/BF16。
   浮点在 F32 求值后舍入至输出存储；整数和 Bool 只承诺本批存储操作，不承诺整数算术。
@@ -139,6 +141,18 @@ Reduce 一次 dispatch，无额外 device scratch。Softmax 将不超过2048列�
 逐word输出防止交叉写入。该临时存储计入 Graph 容量和 quota，按寿命复用；超设备范围准备失败。
 所有选择在准备期固定。新归约域的完整三交付与等责 P1 仍待 C1 整包验收。
 
+TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score_description)`；
+完成后 `result->tensors()[0]` 是 values，`result->tensors()[1]` 是对应轴的 I32 indices。
+`largest` 选择最大或最小值，默认稳定排序，同分按原始索引排列，±0 视为同分；两方向均将 NaN
+放在数值之后，values 保留所选输入的原始位。空的非选择维产生空输出；k 必须在所选轴范围内。
+
+准备期绑定原版 ggml Argsort 与 GetRows 组合；仅适配比较语义，保留原厂排序网络、调度和临时
+存储。非连续或非末轴输入经必要的 View/Copy 整理，两个结果恢复原逻辑轴并各有独立存储。
+这是完整 bitonic 排序，成本为 O(rows × padded_width × log²(padded_width))；全排序索引、
+长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。目前通过 Windows static 定向
+正确性；其他适用环境、三交付与性能资格仍待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)
+验收，尚不称为性能优选。
+
 ## 零拷贝 View
 
 `tensor.view(c::View::slice(axis, start, count, step).value())` 以及 reshape、permute、
@@ -177,8 +191,11 @@ constants 按 Graph 常量顺序，bind 按输入顺序，结果按 publish 顺�
 常量句柄；Program 保有自己的原生 owner。Graph 冷期删除 dead pure nodes、规划中间 buffer
 生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。HYLE 重放不遍历
 原语义 DAG；托管 region 的原厂执行器仍会访问其已准备的图。
-当前只接受固定 shape、pure、单输出 node（含 View）；符号、资源效果、control edge、其它必须别名节点和直接
-publish 输入/常量会明确拒绝。
+当前接受固定 shape 的 pure typed node（含 View 与双输出 TopK）；custom node 保持单输出合同。
+符号、资源效果、control edge、其它必须别名节点和直接 publish 输入/常量会明确拒绝。
+TopK 使用 `builder.add_node(c::Operation(c::TopK{.count = 8}), std::array{scores})`，随后
+`builder.result(node, 0)` / `builder.result(node, 1)` 分别取得 values / indices；可独立消费或
+publish 两个端口。Graph 按每个输出的实际消费者和发布状态规划寿命。
 
 [Direct FFN 样例](../../samples/package/compute/cpp/vulkan_ffn.h)展示 typed prepare 和 Recorder
 组合：成熟 gate/up MatMul → SiLU → down → 应用自定义 SPIR-V。Recorder 是固定 caller buffers

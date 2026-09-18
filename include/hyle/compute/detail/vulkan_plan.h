@@ -21,7 +21,7 @@ struct PlanValue final {
 struct PlanStep final {
   Operation operation;
   std::vector<std::uint32_t> inputs;
-  std::uint32_t output = 0;
+  std::vector<std::uint32_t> outputs;
   // Pure custom schemas lower cold to a native pipeline. Bindings are the
   // schema inputs followed by its single output; no callback survives prepare.
   Kernel custom;
