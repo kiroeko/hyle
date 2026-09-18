@@ -50,7 +50,16 @@ static void fault_free(void * pointer) {
 #define ggml_backend_alloc_ctx_tensors hyle_test_alloc_ctx
 
 // The upstream header declares the renamed functions inside this TU.
+#if defined(_MSC_VER)
+#pragma warning(push)
+// The original FP16 codec returns masked 16-bit fields through a uint32_t
+// expression. Keep that vendor implementation byte-identical in this fixture.
+#pragma warning(disable : 4244)
+#endif
 #include "ggml-alloc.c"
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 void hyle_test_hash_set_free(struct ggml_hash_set * set) {
     fault_free(set->used);
