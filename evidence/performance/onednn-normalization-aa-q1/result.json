@@ -1,0 +1,190 @@
+{
+  "schema": "hyle.normalization-aa-q1/v1",
+  "baseline": "c0aa5ae7f18aeb64465e9f1a4d03696d1e1ee5b4",
+  "status": "BLOCKED",
+  "performance": "INCONCLUSIVE",
+  "timed_processes": 0,
+  "untimed_processes": 1,
+  "exit_code": 0,
+  "binary_sha256": "f597b2b709cb8b927eb8e82f93b05e373cd9ceb94a80a1896e685d950e450b51",
+  "artifact_source": {
+    "clean": true,
+    "remote": "git@github.com:axiomates/hyle.git",
+    "revision": "64e1e1690f2ced52e16cfc7d373ca68e6c37be01",
+    "tree": "b94022dd9c4d474d1bef2e07b13aefd1842a5e50"
+  },
+  "pairs": [
+    {
+      "workload": "direct-rms-1x2048",
+      "jit_ids": [
+        0,
+        1
+      ],
+      "bytes_each": 12354,
+      "sha256": "c00fd05c79c20c3f725901f89f5848ab46a646d0c14c9facab8045cf0fc872ec",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-rms-1x2048",
+      "jit_ids": [
+        2,
+        3
+      ],
+      "bytes_each": 59202,
+      "sha256": "b3dcb51e5369d35ae53eda8c1d65027c82f2a8bc4b238d1e008be5f09c1a0070",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-rms-17x2048",
+      "jit_ids": [
+        4,
+        5
+      ],
+      "bytes_each": 12354,
+      "sha256": "c00fd05c79c20c3f725901f89f5848ab46a646d0c14c9facab8045cf0fc872ec",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-rms-17x2048",
+      "jit_ids": [
+        6,
+        7
+      ],
+      "bytes_each": 35650,
+      "sha256": "5a8ec3a521bc4da5147f58171f6b48e690090b01c8aa4c7b0aadfd97857983ee",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-rms-128x2048",
+      "jit_ids": [
+        8,
+        9
+      ],
+      "bytes_each": 12354,
+      "sha256": "c00fd05c79c20c3f725901f89f5848ab46a646d0c14c9facab8045cf0fc872ec",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-rms-128x2048",
+      "jit_ids": [
+        10,
+        11
+      ],
+      "bytes_each": 35650,
+      "sha256": "5a8ec3a521bc4da5147f58171f6b48e690090b01c8aa4c7b0aadfd97857983ee",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-rms-17x257",
+      "jit_ids": [
+        12,
+        13
+      ],
+      "bytes_each": 1891,
+      "sha256": "0264298e78b75eb239b9fcbbb16ae21ac33e0e8ded3253687ea66050e34f5cee",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-rms-17x257",
+      "jit_ids": [
+        14,
+        15
+      ],
+      "bytes_each": 4923,
+      "sha256": "29d628f42f4edd2a0f659a2e55e87c1a69a4ea70cdd153666e66de1e31f881c3",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-layer-1x2048",
+      "jit_ids": [
+        16,
+        17
+      ],
+      "bytes_each": 20905,
+      "sha256": "96d20da6f1f71b7137ab66ff03e16e3246f417b1f999ca2093b959aafc0ff51a",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-layer-1x2048",
+      "jit_ids": [
+        18,
+        19
+      ],
+      "bytes_each": 67753,
+      "sha256": "41d18b8c1a5e03a0ef4565c07970bf4ff5b45f1f3ee54d1d9f50553ddfb1478f",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-layer-17x2048",
+      "jit_ids": [
+        20,
+        21
+      ],
+      "bytes_each": 20905,
+      "sha256": "96d20da6f1f71b7137ab66ff03e16e3246f417b1f999ca2093b959aafc0ff51a",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-layer-17x2048",
+      "jit_ids": [
+        22,
+        23
+      ],
+      "bytes_each": 44201,
+      "sha256": "39821826afa2b9071c41fa05d66673383cd7be8684e2726133c6425fa8ee38e6",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-layer-128x2048",
+      "jit_ids": [
+        24,
+        25
+      ],
+      "bytes_each": 20905,
+      "sha256": "96d20da6f1f71b7137ab66ff03e16e3246f417b1f999ca2093b959aafc0ff51a",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-layer-128x2048",
+      "jit_ids": [
+        26,
+        27
+      ],
+      "bytes_each": 44201,
+      "sha256": "39821826afa2b9071c41fa05d66673383cd7be8684e2726133c6425fa8ee38e6",
+      "identical_bytes": true
+    },
+    {
+      "workload": "direct-layer-17x257",
+      "jit_ids": [
+        28,
+        29
+      ],
+      "bytes_each": 3039,
+      "sha256": "a52da27ae6dfddf56759990882774060446b570170d742785ba04b98f6713563",
+      "identical_bytes": true
+    },
+    {
+      "workload": "graph-layer-17x257",
+      "jit_ids": [
+        30,
+        31
+      ],
+      "bytes_each": 6071,
+      "sha256": "4d6a6523a4c4a603771ed261a96a2a580b171fbf2d62d90ea7f518d52abc8c38",
+      "identical_bytes": true
+    }
+  ],
+  "jit_files": 32,
+  "logical_bytes": 804716,
+  "archive": {
+    "path": "raw-bundle.zip",
+    "bytes": 108148,
+    "sha256": "3e3b238446480d6fbb1a361215986a83a2beb24708f3ce92ac67e5a7be7c09c3"
+  },
+  "pair_mapping": "Sequential measure<DirectRoute>, measure<GraphRoute> over RMS then Layer and the four declared shapes; two freshly constructed routes each generate one kernel. Vendor register_jit_code unique_id is monotonic under a mutex; observed IDs are exactly 0..31.",
+  "conclusion": "All 16 newly observed A/A pairs generated byte-identical kernels. Historical failing code/data addresses and interference are unobserved; no specific cause or performance recovery is proved.",
+  "controls_unchanged": true,
+  "product_edits": false,
+  "validation_code_edits": false
+}
