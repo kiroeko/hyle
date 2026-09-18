@@ -69,7 +69,7 @@ AA02 的外部分配注入在 MSVC `/EHsc` 下复现进程退出（code3）。�
 | AA01 | MATMUL 保留，加 LAYERNORM；THREADPOOL 借用既有 ParallelExecutorRef，不创建私有池。冷 primitive 创建保存/恢复 oneDNN 线程局部 concurrency 设置；并发数量可表达性检查，不截断成错误整数 |
 | AA02 | 私有共享 plan 保存原版 primitive/descriptor/engine；每 invocation 独立 stream、memory handles 和 caller scratchpad，重绑更新 handles。dense 非空末轴归一化，F32 accumulation，F32/F16/BF16 input/output；scale/bias 可以同输入 dtype 或 F32，但二者类型不同的域明确留给合格 Native。冷提案不创建 vendor artifact；准备再次核对精度/shape。精确 input0 alias，其他重叠仍由共同绑定检查拒绝 |
 | AA03 | Graph 识别一个 norm 后最多4个 dense F32 Add/Mul post-ops，保持原版融合；支持 scalar、最后轴向量和全形状 RHS。published/多消费者边界停止扩张，按实际数据流匹配并校验可收缩性。半精度 Direct norm 接入；半精度跨节点链暂不融合，避免少一次中间舍入。既有 BRGEMM gated MLP 不改算法 |
-| AA04 | 独立 oracle、类型/形状/错误域、alias、两槽重绑/旧输出、并发/嵌套 executor、allocator/映射故障与普通 Direct/Graph；三交付及 full-cost P1 签完才冻结默认域并清理被完全替代的自有域。无证据不删除有效 Native/SIMD |
+| AA04 | 独立 oracle、类型/形状/错误域、alias、两槽重绑/旧输出、并发/嵌套 executor、allocator/映射故障与普通 Direct/Graph；三交付及 full-cost P1 签完才冻结默认域并清理被完全替代的自有域。SIMD 基础库保留；基于 SIMD 的 Native 算子适配、候选和路由参与同一比较/淘汰，无证据不删除有效支持域 |
 
 公开 API 不新增。普通 `cpu::create_context` 和 Graph CPU 工厂已有相应 Provider 注册；扩展其
 冷提案/精确准备即可接入。新增路线在 AUDITED 产品候选中待资格验证，不预称优胜。执行只调用
@@ -134,7 +134,9 @@ submit→wait；一个原生融合 region 对完整 Native 节点链，不能拿
 
 vendor metadata 已归因为成熟 primitive C API 的固定成本，不能用裸 ukernel 或跳过检查掩盖；
 融合和向量化收益是否抵消它尚未知，允许有界完整成本比较。Native 当前 F32 norm 本身主要是 SIMD
-包装，不能因 oneDNN 在某一 shape 胜出就删除 SIMD 或仍供半精度/无分配档位使用的机制。
+包装。底层 SIMD 基础库按用户要求保留；该包装及其候选注册、路由没有保留豁免，若同合同
+比较落败且适用域被完整替代，就迁移并删除。单一 shape 胜出不代签半精度/无分配等其他必要
+档位；这些支持域分别核对覆盖，不能因此连带删除底层 SIMD 能力。
 
 冻结 workload：RMSNorm+scale、LayerNorm+scale+bias 各自的 Direct 和 norm→Mul(vector)→Add(input)
 完整 Graph；真实本地 hidden2048，rows1/17/128，对应 decode/短prefill/prefill；一个不规则
