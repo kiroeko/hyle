@@ -1070,4 +1070,16 @@ typed narrow storage、附带 sinks/ALiBi 及尾部半精度中间舍入不能�
 后续必需机制，不由本批代签。当前不跑P1；缓存、半精度特殊布局的额外读/dispatch/scratch均记为
 真实成本，不将未比较的方案称为性能胜出。产品纠正最多两轮，按具体反例处理，不改数值门限。
 
+X 首轮候选 `94252bf7` 的产品与 SPIR-V 编译通过，测试的 Bool 参考范围转换被 MSVC WERROR
+拒绝；`c93c3b9c` 只显式构造参考值。随后 W1 **31 Direct + 14 Graph** 和两个头检查通过，
+唯一失败用例有两个数值反例：大共同偏置 LogSoftmax 输出0而不是−log(4)，以及近1概率的 F32
+结果−1.9361265e−7，相对独立参考−1.7476731e−7超门；BF16同样不合格。
+
+第一轮产品纠正限定为 X02：原 SPIR-V 仅 scale 乘法与 `1+tail` 有 NoContraction，两次最终减法
+和其余补偿没有顺序约束。[GLSL precise 规则](https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.60.html)
+允许显式固定这些运算次序；源码的重排风险与大偏置反例一致，不将其当作测试不公平。
+给 LogSoftmax 的移位、最终减法和补偿加 precise；小 tail `<1/64` 改用五阶交错 log1p 多项式，
+解析截断误差不超过 tail⁶/6，避免该域依赖原生 log(1+tail) 的近1误差。补两侧边界回归，保留
+现有全部门限；不加F64、额外dispatch/scratch，不改共同公式或其他owner。原始 FAIL 保留。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。
