@@ -426,7 +426,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_vulkan_runtime",
-        "tree_sha256": "4d425b5efe991c61baba411a47c8d4ce3e3fdcb57c1ed3170a341cf968ca1122"
+        "tree_sha256": "2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326"
       },
       "license": {
         "expression": "MIT",
@@ -439,7 +439,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
-            "sha256": "27f6270e8fe07d6700c0265ec9a3ceb6222e9a7cb773243c09923b4ad7c1c69a"
+            "sha256": "c8dddac692376e8e4cc8046d8a62e9ad51fd02142be3d19128dfa3c85bc5648f"
           }
         ]
       }

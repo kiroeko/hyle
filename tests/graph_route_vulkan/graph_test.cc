@@ -258,7 +258,8 @@ TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
          },
          .report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    EXPECT_EQ(report.native_dispatch_count, 2U);
+    EXPECT_EQ(report.native_dispatch_count, 1U);
+    EXPECT_EQ(report.managed_region_count, 1U);
     EXPECT_EQ(report.retained_constant_owner_count, 1U); // two aliases
     EXPECT_EQ(report.retained_constant_capacity_bytes, 4U * sizeof(float));
     EXPECT_EQ(report.owned_constant_allocation_bytes, 0U);

@@ -207,8 +207,8 @@ Kernel 的 storage bindings 按输入顺序再接输出，使用一个 set 和�
   托管/组合槽不复用。观察失败不等于 GPU 已停止。未确认终态的资源继续保留，
   close/collect 可重试；设备丢失返回 DataLoss，失败不发布成功结果。
 - close 停止接纳并 drain；Context 析构有相同成本。原生结果可长于 Context 句柄，成功结果关闭
-  后仍可下载。可选 quota 计 HYLE 分配的 VkDeviceMemory（含 staging、适配和边界 scratch）；
-  ggml 内部资源及 driver/pipeline 私有内存不在该配额中，
+  后仍可下载。可选 quota 计 HYLE 和 ggml 显式分配的 VkDeviceMemory（含 staging、适配、边界
+  scratch 和原厂辅助 buffer）；driver/pipeline 私有内存不在该配额中，
   quota 本身须活过所有依赖资源。
 - 冷期承担 packing、pipeline、边界内存规划、原生命令录制及每槽 ggml 图/存储。热期按固定
   片段次序提交同一 queue，等待最后实际 batch 的 fence；正常等待不阻止其他槽的 producer。

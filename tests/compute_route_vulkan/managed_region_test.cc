@@ -16,7 +16,7 @@ TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
   std::vector<double> scale(width);
   for (int i = 0; i < width; ++i)
     scale[i] = 1 + (i % 7 - 3) * 0.0625;
-  const auto weight = make(context, scale_desc, scale);
+  auto weight = make(context, scale_desc, scale);
   for (int rows : {1, 17, 128}) {
     SCOPED_TRACE(rows);
     const auto desc = dense(c::DataType::kFloat32, {rows, width});
@@ -37,7 +37,7 @@ TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
       inputs[phase] = make(context, desc, data);
       expected[phase] = norm(data, width, false, 1e-5F, scale);
     }
-    const auto idle_bytes = quota.used();
+    std::size_t warmed_bytes = 0;
     v::Tensor retained;
     for (std::size_t phase = 0; phase < inputs.size(); ++phase) {
       auto &slot = phase == 0 ? first : second;
@@ -53,7 +53,13 @@ TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
         retained = result->get()->tensors()[0];
       else
         expect(context, retained, expected[0]);
-      EXPECT_EQ(quota.used(), idle_bytes); // HYLE boundary storage is reused.
+      // Original ggml lazily allocates its per-work auxiliary buffers. Only
+      // the third run reuses an already warmed slot; all allocations are
+      // charged.
+      if (phase == 1)
+        warmed_bytes = quota.used();
+      else if (phase > 1)
+        EXPECT_EQ(quota.used(), warmed_bytes);
     }
     EXPECT_FALSE(first.submit());
     retained = {};
@@ -62,6 +68,9 @@ TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
     ASSERT_TRUE(replay->wait());
   }
   EXPECT_TRUE(context.close().ok());
+  weight = {};
+  context = {};
+  EXPECT_EQ(quota.used(), 0U);
 }
 
 TEST(VulkanManaged, ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters) {

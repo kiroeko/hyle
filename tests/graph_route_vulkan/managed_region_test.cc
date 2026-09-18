@@ -107,4 +107,35 @@ TEST(VulkanGraph, ManagedNormFusionPreservesPublishedForksAndNativeBoundaries) {
   EXPECT_TRUE(context.close().ok());
   expect(context, surviving, surviving_values);
 }
+TEST(VulkanGraph, ManagedSiluKeepsTheCommonInfinityAndNanSemantics) {
+  auto context = vulkan_test::context().value();
+  const auto desc = dense(c::DataType::kFloat32, {8});
+  const std::array<double, 8> bias{-INFINITY, INFINITY, NAN, -100,
+                                   -0.0,      0,        5,   -1e30F};
+  const std::array<double, 8> data{1, 2, -3, 4, -5, 6, -7, 8};
+  auto builder = g::GraphBuilder::create().value();
+  const auto x = builder.input(desc).value();
+  const auto b = builder.constant(desc).value();
+  const auto normalized = builder.add(c::RmsNorm{}, x).value();
+  const auto shifted =
+      builder.add(c::Binary{c::BinaryKind::kAdd}, normalized, b).value();
+  const auto y = builder.add(c::Unary{c::UnaryKind::kSilu}, shifted).value();
+  ASSERT_TRUE(builder.publish(y).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array constants{make(context, desc, bias)};
+  gv::CompileReport report;
+  auto program =
+      gv::compile(context, graph, constants, {.report = &report}).value();
+  ASSERT_EQ(report.managed_region_count, 1U);
+  auto slot = program.create_invocation().value();
+  const auto input = make(context, desc, data);
+  ASSERT_TRUE(slot.bind(input).ok());
+  auto work = slot.submit().value();
+  auto result = work.wait().value();
+  auto expected = norm(data, 8, false, 1e-5F);
+  for (std::size_t i = 0; i < expected.size(); ++i)
+    expected[i] =
+        activate(c::GatedActivationKind::kSilu, expected[i] + bias[i]);
+  expect(context, result.get()->tensors()[0], expected);
+}
 } // namespace

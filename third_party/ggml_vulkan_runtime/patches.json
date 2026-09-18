@@ -445,6 +445,28 @@
         }
       ],
       "after_sha256": "fe5e14485d28466f516fd934bde9dab82f8bd1b0ac241b197fae59c5de8f837d"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/unary.comp",
+      "before_sha256": "224257d872b7658a3d9dba118818897511596093a4c5fc9b4ff866cfc7079709",
+      "after_sha256": "0d3a9cf0402eb756c034df55cdbd5098fe6884f9c42368bd8e72cb02b0777b98",
+      "edits": [
+        {
+          "before": "float op_silu(float x) {\n    return x / (1.0f + exp(-x));\n}",
+          "after": "float op_silu(float x) {\n    // HYLE common semantics: SiLU(-Inf) is its +0 limit.\n    return isinf(x) && x < 0.0f ? 0.0f : x / (1.0f + exp(-x));\n}"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/swiglu.comp",
+      "before_sha256": "cd10f81a22d2a1d2435a5d229656a5b187cdaf664b45867da894452586b1943a",
+      "after_sha256": "04b207113ed7bc98e24b4f153c3c880fdc3695c2cc59610714a557211ad912ca",
+      "edits": [
+        {
+          "before": "    return a / (1.0f + exp(-a)) * b;",
+          "after": "    // Preserve multiplication by b, including 0 * Inf/NaN propagation.\n    const float activation = isinf(a) && a < 0.0f ? 0.0f : a / (1.0f + exp(-a));\n    return activation * b;"
+        }
+      ]
     }
   ]
 }

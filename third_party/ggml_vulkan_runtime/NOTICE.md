@@ -11,7 +11,13 @@ and upstream checkout are never modified.
 The changes make `ggml_init` fail without aborting on context/arena allocation,
 invalid external alignment or padding overflow; disable nested shader/compiler
 parallelism; and accept the owner's pinned build identity instead of probing a
-parent application's Git repository. They do not change operator algorithms.
+parent application's Git repository.
+
+The SiLU and separate SwiGLU shaders additionally map negative infinity to the
+activation's positive-zero limit, as required by HYLE's common semantics.
+The gate still multiplies that activation by its other input, preserving
+zero-times-infinity/NaN behavior. Finite formulas, fusion and resource planning
+remain upstream implementations; these are explicit boundary corrections.
 
 The native embedding edits isolate Vulkan instance/dispatcher/registry state,
 publish fully initialized devices, roll back partial buffer/backend creation,

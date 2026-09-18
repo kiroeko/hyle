@@ -422,8 +422,9 @@ W1 static、无 PATH、Khronos validation：Provider 19/19；Direct 36/38；Grap
    activation=+0，门控继续乘原第二输入，保留 0×Inf/NaN 的传播；有限域公式、fusion、
    pipeline/资源组织不改。这是第1轮产品语义纠正，更新 patch/NOTICE 身份并补普通 Graph
    SiLU 非有限回归；不因此删除原厂执行器或另写完整算子。
-2. 配额断言错误：原版 `ggml_vk_preallocate_buffers` 首次为每槽建立四个最小辅助 buffer，
-   本机合计1024B，后续重放复用。配额已经经 native reservation 覆盖原厂 VkDeviceMemory，
+2. 配额断言错误：原版 backend 初始化把 `prealloc_size_add_rms_partials` 固定为1024B，
+   `ggml_vk_preallocate_buffers` 在每槽首次执行分配，后续重放复用。配额已经经 native
+   reservation 覆盖原厂 VkDeviceMemory，
    并非泄漏。测试在两槽各首次执行后记录容量，验证后续重绑/重放不增长，仍检查完整释放；
    文档区分运行时配额与编译报告中的未知 provider 容量，不宣称 submit 零分配。
 3. 旧 report 用例把 managed gate 仍计为一个原生 dispatch；改为1 native +1 managed，
