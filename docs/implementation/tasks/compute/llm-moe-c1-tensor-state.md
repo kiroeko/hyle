@@ -1130,3 +1130,11 @@ FIX/反例/成本与适用验证见 [C1-Y 的 Y4](llm-moe-c1-ggml-vulkan-region.
 普通 Context 采用 Provider 的唯一 native device，原生队列访问共锁，删除重复设备初始化。
 保留当前公开 API、资源/状态/完成行为；managed Program/Graph lowering 与完成接线不由本批
 代签。Graph 是必须复验的直接消费者，尚未新增产品改动。
+
+### C1-Y managed 普通入口（AUDITED）
+
+2026-09-18，baseline `ae39a9e1`，owner `/root`：`compute_route_vulkan` 与
+`graph_route_vulkan` 新增 [C1-Y](llm-moe-c1-ggml-vulkan-region.md) Y13–Y15 的有限 FIX。
+Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留合法 DAG 和片段边界，
+更新真实编译事实。Provider 只新增 PRIVATE compute_ops 语义依赖；三者不形成循环。公开执行
+成本说明随实际原版 region 修正，未验收性能不写胜出；其他 C1 MUST 及整包验收保持不变。

@@ -366,3 +366,23 @@ P0：Context 冷期现在承担完整原版 native runtime 的准备成本，不
 managed region：有限数学/shape 规则、冷构图与重绑、原生片段组合、部分提交和完成接入原有
 pending Run。真实权重、Air/Mini、完整三交付、原 broad package 门和等责 P1 仍未完成；没有
 新的外部 blocker，不重复本批验证。此次文档/状态更新不触发重建或 P1。
+
+## Y4 普通 managed region 有限 FIX（AUDITED，2026-09-18）
+
+owner `/root`，baseline `ae39a9e1`；本批绑定 Provider、Compute route、Graph route。源码依据是
+锁定 ggml 的 op_f32 descriptor 偏移处理、RMS/二元/GLU capability 与融合、gallocr 的 input/output
+flags，以及现有 HYLE Plan/Recorder/Run。已排除把 HYLE 图整体交给 ggml scheduler、预分配每个
+内部 tensor、执行期选 Provider、为每 kernel 建虚调用等方案；规则和 owner 如下固定。
+
+| FIX | 具体实现、边界与成本 | 适用验证 |
+|---|---|---|
+| Y13 | Provider 私有 typed region 接收 HYLE Operation/TensorDesc，PRIVATE 依赖 compute_ops，仍不依赖 route/Graph。准入正尺寸 dense F32、rank1–4：F32 RMSNorm（可选同类型 scale/bias）、SiLU、Add/Multiply（至少一侧为完整输出形状）、分离式 SiLU gate。原版参数、广播、op capability 和设备工作组限制冷期匹配；不引入新算子算法。每槽一次有容量证明的 arena/graph/gallocr，内部 tensor 由原版规划；端口用可重绑的私有 native buffer wrapper，保持真实 owner、offset/capacity，不虚构 VkBuffer。未绑定槽不可提交，重绑不创建 graph/设备资源 | 原版数值 oracle、width2048和1/17/128行、参数广播、非有限/极端输入、odd View offset；配额/冷期失败、变输入与独立槽、内部存储复用。原版 reserve_n_size 仍含 assert，本批不把它当成可恢复预估 API |
+| Y14 | Compute 冷期按最大连续兼容片段分组，仅带 RMSNorm/分离 gate 的组默认选 managed，其周围兼容 SiLU/Add/Mul 一起交付；其余保留已有已准入实现。Graph 仍拥有合法 DAG/死节点/跨片段边界，published 或其他片段使用的值标为 region 输出，避免成熟融合吞掉可见结果。HYLE 只规划边界与自有片段 scratch；Program/Recorder 使用同一 recipe，native 子片段仅保存实际引用值的紧凑映射，避免每片段复制全图状态。CompileReport 分开 native dispatch/managed region，说明 provider 内部容量和执行分配的未知范围 | 普通 Direct norm/gate、普通 Graph norm→scale→SiLU→residual，HYLE native 前后缀及 Recorder 同设备组合；中间 published 输出、分叉、常量与旧结果；原有未选 managed 的空/半精度/stride/LayerNorm 等域保持正确，不从本次有限 region 域删减 C1 MUST |
+| Y15 | 原生 command 片段与 NativeWork 按已固定次序提交同一 queue；一个父 Run 继续使用原有 pending 列表。正常 completion 等待最后实际 batch 的 fence，不增加逐 kernel fence/marker，正常 wait 释放 route mutex；provider 编码和 retire 仍在同一 admission mutex 下。部分接纳后失败返回持有失败 Completion 的 pending owner，poll 不阻塞；wait/close 异常 drain native 及 provider 已接纳前缀，只有真实完成或 device loss 才退役。失败 managed 槽不重用。旧单次原生 submit 未接纳失败仍可重试；取消只抑制结果，丢弃 Completion 不立即等 GPU | 双槽、wait期间独立 producer、poll/close并发、取消/丢弃、保留 Tensor/ResultLease、结束与旧结果读取；真实 native prefix→managed→native suffix 的注入提交失败与 drain，继承 Provider 已证实的内部多批部分接纳/观察失败机制，并核对 route 的错误分支；DLL邻置、validation、严格W1 static/shared及两个公开头 |
+
+公开说明同步修正：HYLE 不在 submit 重新规划或搜索，但成熟 provider 可执行自己的图编码与
+内部资源管理，不能继续承诺所有路径“无 command recording/无 allocation/无任何 DAG walk”。
+优选规则是开发期固定的初始限定域，最终性能资格仍随不可变 C1 候选做等责 P1；普通用户没有
+provider 排序、timing profile 或运行期赢家裁决入口。本批不宣称已胜出、不删除未比较算法。
+后续实际权重、Air/Mini、完整三交付/relocation/OFF与原 broad 门仍是 Y4 的适用验收，不移到 C7。
+有限实现纠正最多两轮；不扩建公共治理/性能仪器，文档状态提交不重建或跑 P1。
