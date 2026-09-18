@@ -187,3 +187,22 @@ Context 的 Result。样例改为两个显式分支后移动赋值，不改 Resu
 
 完整 selector 扩展门、合格性能、默认优选和 Native 重复域清理仍未裁决。以上结果只完成本批
 Windows Compute 交付，不代签 Graph、其他路线、C1 整包或自研算子淘汰。
+
+### AA04：Graph 三交付通过
+
+候选 `0faf698c` 的 Graph 源码嵌入、installed shared/static 独立 C++ consumer 均已实际通过。
+源码消费只增量编译修正后的样例，再实际运行 CTest；共享与静态 SDK 完整执行原有配置、构建、
+安装、依赖/feature/许可证检查、迁移和消费者测试。shared export 检查16个 HYLE库/1201个导出。
+三次消费均运行普通 CPU 工厂和显式 oneDNN 融合 region，使用变化输入及独立 double oracle，
+DLL邻置、PATH unset、禁弹窗设置不变；没有重跑已完成的 Compute 交付。
+
+[Graph 结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-graph-delivery.json)
+及[原始证据](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-graph-delivery-raw.zip)
+保留首次样例编译失败、修复后的实际命令/日志、CMake cache、安装产物哈希和统一 LOC。
+核对证据后删除 Graph 三个重复 build 目录，共4,555,332,249 logical bytes；连同此前 Compute
+共清理9,090,252,472 logical bytes，保留 relocated SDK、消费者和共享源码缓存。
+
+本批 Windows CPU 的 Compute/Graph 三交付至此完成。完整 selector 剩余门、公平 P1、条件优选规则
+及 Native 重复域取舍仍待完成；未运行 A/A 或正式采样，也未删除未裁决的自有算子。性能合同静态
+校验已通过，Native 对照固定到 `2c9338e1` 的干净验证 checkout，当前 Native 产品子树身份一致。
+`0faf698c` 的 Compute+Graph 实现仍为46,941行/193文件，不含测试、benchmark 或第三方源码。
