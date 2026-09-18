@@ -49,7 +49,8 @@ TEST(VulkanGateNorm, ThreeGatesSupportBothLayoutsAndOddByteOrigins) {
               expected[row * width + column] =
                   activate(kind, data[(row + 1) * columns + column]) * other;
             }
-          auto output = execute(context, c::GatedActivation{kind, form}, args);
+          auto output = execute(
+              context, c::Operation(c::GatedActivation{kind, form}), args);
           ASSERT_TRUE(output) << output.error().message();
           expect(context, *output, expected);
         }
@@ -171,7 +172,8 @@ TEST(VulkanGateNorm, SpecialValuesStableVarianceRankEightAndPreciseAffine) {
                             std::array<double, 2>{1.0001F, 1.0001F});
     const auto bias =
         make(context, scale.description(), std::array<double, 2>{1, -1});
-    auto output = execute(context, c::LayerNorm{0}, std::array{x, scale, bias});
+    auto output = execute(context, c::Operation(c::LayerNorm{0}),
+                          std::array{x, scale, bias});
     ASSERT_TRUE(output) << output.error().message();
     const std::array<double, 2> expected{1.0F - 1.0001F, 1.0001F - 1.0F};
     expect(context, *output, expected, true);
@@ -183,7 +185,8 @@ TEST(VulkanGateNorm, SpecialValuesStableVarianceRankEightAndPreciseAffine) {
                          .value())
                      .value())
             .value();
-    auto normalized = execute(context, c::RmsNorm{0}, std::array{broadcast});
+    auto normalized =
+        execute(context, c::Operation(c::RmsNorm{0}), std::array{broadcast});
     ASSERT_TRUE(normalized) << normalized.error().message();
     expect(context, *normalized, std::vector<double>(6 * 129, 1), true);
     auto packed =
@@ -193,7 +196,8 @@ TEST(VulkanGateNorm, SpecialValuesStableVarianceRankEightAndPreciseAffine) {
                          .value())
                      .value())
             .value();
-    auto gated = execute(context, c::GatedActivation{}, std::array{packed});
+    auto gated = execute(context, c::Operation(c::GatedActivation{}),
+                         std::array{packed});
     ASSERT_TRUE(gated) << gated.error().message();
     expect(context, *gated,
            std::vector<double>(6 * 129,

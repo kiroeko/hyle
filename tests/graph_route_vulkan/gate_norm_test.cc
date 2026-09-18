@@ -92,7 +92,7 @@ TEST(VulkanGraph,
       }
       first = {};
       second = {};
-      program = {};
+      *program = {};
       EXPECT_EQ(bits(context, retained), saved);
       surviving = retained;
       surviving_bits = saved;
