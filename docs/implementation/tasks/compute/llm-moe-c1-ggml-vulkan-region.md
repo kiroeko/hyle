@@ -408,3 +408,23 @@ owner `/root`，baseline `4848e222`。审查 `TensorDesc::is_dense`、View slice
 共同 schema 的 RMSNorm 当前只接受可选 scale；表中 bias 是相邻 Add 的 region 能力，
 不是新增 RMSNorm 参数。实施沿已有 schema，删除不可达的第三参数路径，不改共同操作合同。
 上述为同一 Y13–Y15 的有限接入纠正，不增加算子算法、公共配置或治理工具；预算仍为两轮。
+
+### Y13–Y15 首轮候选与定向纠正
+
+产品 `5a96b46c` 首次严格编译因显式 Operation 构造被拒绝，`7ececfc6` 修正构造后编译通过。
+W1 static、无 PATH、Khronos validation：Provider 19/19；Direct 36/38；Graph 14/15；
+两个公开头和五个源码补丁合同通过。新加的部分接纳后失败/close重试、正常wait期间独立producer、
+取消与重用、byte1 dense View/Recorder、2048×1/17/128行的多输出分叉图均通过，无 VUID。
+本批仍未验收，保留原失败日志；下一次只纠正以下具名问题，不放宽数值门。
+
+1. 产品数值反例：原版 `swiglu.comp` 与 `unary.comp::op_silu` 直接求负无穷除以正无穷，
+   得到 NaN，违反已准入的 SiLU(-Inf)=+0。固定增加两处精确 source patch：仅对负无穷选择
+   activation=+0，门控继续乘原第二输入，保留 0×Inf/NaN 的传播；有限域公式、fusion、
+   pipeline/资源组织不改。这是第1轮产品语义纠正，更新 patch/NOTICE 身份并补普通 Graph
+   SiLU 非有限回归；不因此删除原厂执行器或另写完整算子。
+2. 配额断言错误：原版 `ggml_vk_preallocate_buffers` 首次为每槽建立四个最小辅助 buffer，
+   本机合计1024B，后续重放复用。配额已经经 native reservation 覆盖原厂 VkDeviceMemory，
+   并非泄漏。测试在两槽各首次执行后记录容量，验证后续重绑/重放不增长，仍检查完整释放；
+   文档区分运行时配额与编译报告中的未知 provider 容量，不宣称 submit 零分配。
+3. 旧 report 用例把 managed gate 仍计为一个原生 dispatch；改为1 native +1 managed，
+   继续验证报告不保活常量、自定义 payload 或设备。其数值/寿命约束不变。
