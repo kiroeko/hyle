@@ -72,12 +72,12 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
   if (!program)
     return program;
   if (!report.status.ok() || report.nodes.size() != 5 ||
-      report.native_dispatch_count != 5 ||
+      report.native_dispatch_count != 4 || report.managed_region_count != 1 ||
       report.invocation_storage_block_bytes.empty() ||
       report.opaque_storage_bytes)
     return std::unexpected(
         hyle::Status::Internal("incomplete Vulkan compilation report"));
-  // Native pipelines/constants survive this local Graph and its tensors.
+  // Native/managed resources and constants survive this local Graph and tensors.
   return program;
 }
 

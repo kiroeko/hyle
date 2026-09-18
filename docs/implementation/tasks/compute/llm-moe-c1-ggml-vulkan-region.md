@@ -645,3 +645,16 @@ Y17–Y20 的这批 correctness 可停止重复运行；三个 owner 仍 AUDITED
 INCONCLUSIVE。新 lock/package 的其余 selected 门、真实权重、完整三交付、默认优选规则与
 性能/淘汰仍未完成，CPU oneDNN 的既有性能资格 BLOCKED 不变。统一实现LOC仍46,990行/
 193文件，已核对计数路径字节未变；清理四份过期源码包回收约125MiB，不把清理或证据算新能力。
+
+### Y4 交付消费者迁移与剩余验证
+
+baseline `20517db8`，owner `/root`。普通 Graph FFN 样例仍断言五个节点全部为 native dispatch；
+当前两个上投影、下投影和应用 affine 共四个 native dispatch，独立 SiLU 门控已由一个 ggml
+managed region 承载。有限迁移仅将报告断言改为4 native / 1 managed；保留五节点、存储报告、
+独立 double oracle、变化输入、重复运行和原 Graph 销毁后的资源寿命检查，不改产品/API/算法。
+
+预声明沿 Y4 执行同一不可变源码快照的 Windows/Air source archive、installed static/shared
+独立 consumer，迁移 SDK 并隐藏 producer，关闭其他计算路线，离线依赖及许可证/exports 检查；
+Windows 继续 DLL 邻置、PATH unset、非交互错误模式。新 lock 选出的广组件门随后完成，
+不重复已结束的 Y17–Y20 focused correctness，不为样例维护启动 P1。未运行交付仍为未验收，
+该 FFN 的生成权重不代替主卡的本地2B真实权重片段。
