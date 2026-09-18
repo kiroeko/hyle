@@ -783,3 +783,32 @@ Y24 的交付样例现已加入实际 TopK：Direct 重绑定三组输入并对�
 既有 compute/graph C++ package 消费者，不新增公共工具或执行接口；样例的三交付待实际运行。
 同时纠正 Graph Vulkan 公开头“拒绝全部多输出”的过时注释；删除整行注释后代码逐行相同，
 不为该注释重跑构建或性能。产品语义候选仍为 `5c1e27a8`。
+
+### Y23-P2：内部别名必须计入常量根的字节起点（AUDITED）
+
+2026-09-19，baseline `5b22060111e3c4f0ed1a0c20ca80f64e6f984aa6`，owner `/root`，
+产品 owner 仅 `compute_route_vulkan`。已安装 shared SDK 的独立最小 consumer 复现：合法
+rank8、dense、byte-origin=1 的捕获输入在 TopK 准备/建槽时返回
+`ggml Vulkan region native buffer range`。原始输入由 `Tensor::view` 正步长 slice 得到，
+没有非法 borrow 或非 dense reshape。失败与重现源码见
+[原始记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-origin-repro.json)。
+
+源码因果已收敛：`lower_topk` 的私有降秩别名没有独立 `constant`，`lower_region` 只检查
+alias.byte_offset，没有合入 alias.root 常量的 native_offset；`allocate_values` 实际绑定却
+包含两者。原版 ggml 的四字节准入拒绝正确，错误属于 HYLE 冷适配，不能弱化该检查。
+
+本次使用 Y21–Y24 剩余的一轮产品纠正，固定为：
+
+- 对齐证明按真正的常量根 native_offset 与累计 alias.byte_offset 合并；先分别取余再合并，
+  不引入地址求和溢出。动态输入起点仍未知，沿已有 byte-addressed Copy 适配。
+- 已对齐的根/别名继续直接进入 region；不增加公开 API、对象字段、热期检查或新算法，
+  未对齐域只支付原本就应有的一次布局 Copy。第三方 pin、shader 和 provider 实现不改。
+- 定向回归覆盖 rank8 捕获 dense View 的0/1/2/3/4/7起点、值与索引原始位、输入保护区；
+  Graph 常量经过 slice 后的累计偏移，包含原始起点与别名偏移相加后重新对齐，校验不多复制。
+  两个槽、旧结果与普通执行沿既有 TopK/managed 生命周期回归。
+
+先运行 W1 修复反例及 Graph/managed 定向集，再完成 selector 对本次私有实现差异选出的门、
+W1 shared 与 Air/Mini 对应 route/Graph 验证，Windows/Air 的 source/static/shared 普通消费。
+不重跑未变 shader 的独立算法资格，不启动 P1。已通过的旧候选局部结果保留其原身份；
+新反例使本域尚不能签收。旧候选96个 native 门和1个组件合同门已完成，15个通用交付门在
+首门途中明确中止，不能写112项通过；修复候选按实际影响接续未完成门，不丢弃它们。
