@@ -37,4 +37,34 @@
 | AA03 | Graph 未保留原生 norm post-op 融合 | 原有 region 扩展识别 norm→Add/Mul，不吞掉 published/多消费者中间结果，不降低半精度中间舍入要求 |
 | AA04 | 没有该实际路线的资格与默认规则 | 正确性/所有权/交付先通过；固定同合同 full-cost 规则及文档，再裁决 Native 重复域是否可移除 |
 
-本卡当前为 SCOPED。审计及 API/成本冻结提交后才修改产品。
+SCOPED 登记提交为 `98cf0742`。
+
+## AUDITED：机制选择与有限 FIX
+
+选择原版 **normalization primitive + binary post-ops**，不复制其算法。固定源
+`71094df4` 的 `dnnl_layer_normalization_forward_primitive_desc_create_v2` 支持 RMS flag、
+参数类型和原地输出；`jit_uni_layer_normalization` 与 `ref_layer_normalization` 使用中心化方差，
+并直接执行 binary post-ops。原版 Graph 的同类 partition 最终也使用上述 mature kernel。
+本批所需链没有 Graph 特有算子；使用 primitive 能明确每 invocation 的 stream/memory handle
+所有权，避免引入该 Graph kernel 的线程局部 execution-args cache。并非宣称 primitive 无分配：
+`primitive_iface.cpp` 每次转换 execution args 仍有 vendor metadata 分配，全部计费。
+
+| FIX | 冻结实现与验收 |
+|---|---|
+| AA01 | MATMUL 保留，加 LAYERNORM；THREADPOOL 借用既有 ParallelExecutorRef，不创建私有池。冷 primitive 创建保存/恢复 oneDNN 线程局部 concurrency 设置；并发数量可表达性检查，不截断成错误整数 |
+| AA02 | 私有共享 plan 保存原版 primitive/descriptor/engine；每 invocation 独立 stream、memory handles 和 caller scratchpad，重绑更新 handles。dense 非空末轴归一化，F32 accumulation，F32/F16/BF16 input/output；scale/bias 可以同输入 dtype 或 F32，但二者类型不同的域明确留给合格 Native。冷提案不创建 vendor artifact；准备再次核对精度/shape。精确 input0 alias，其他重叠仍由共同绑定检查拒绝 |
+| AA03 | Graph 识别一个 norm 后最多4个 dense F32 Add/Mul post-ops，保持原版融合；支持 scalar、最后轴向量和全形状 RHS。published/多消费者边界停止扩张，按实际数据流匹配并校验可收缩性。半精度 Direct norm 接入；半精度跨节点链暂不融合，避免少一次中间舍入。既有 BRGEMM gated MLP 不改算法 |
+| AA04 | 独立 oracle、类型/形状/错误域、alias、两槽重绑/旧输出、并发/嵌套 executor、allocator/映射故障与普通 Direct/Graph；三交付及 full-cost P1 签完才冻结默认域并清理被完全替代的自有域。无证据不删除有效 Native/SIMD |
+
+公开 API 不新增。普通 `cpu::create_context` 和 Graph CPU 工厂已有相应 Provider 注册；扩展其
+冷提案/精确准备即可接入。新增路线在 AUDITED 产品候选中待资格验证，不预称优胜。执行只调用
+已绑定 primitive，不搜索/计时。编译/运行第三方异常在 adapter 边界转 Status；HYLE allocator
+管理 wrapper，vendor opaque code/metadata 数量未知如实报告 unknown，不宣称受 HYLE quota 全控。
+执行同步结束后返回 accepted terminal；失败不重放到另一 Provider。partial creation 用 RAII 回收；
+两个 invocation 不共享可变 handles/scratch；映射失效、flush/close 保留首个错误。
+
+七问：① oneDNN 3.13.2/Apache-2.0 pin不变，原生算法 BORROW，升级重新资格化；②模型归一化
+和批量数值 consumer 共用普通接口，范围外域明确fallback；③复用 Compute/Graph/Mem和借用executor，
+不重造 Sched；④线性归一化、原生融合，记录 vendor 每次metadata成本并做同合同P1；⑤无C/FFI
+产品；⑥私有头无vendor类型泄露，source/static/shared与依赖隔离门适用；⑦普通入口不要求选库，
+guide记录精度、已验证域和借用executor寿命。

@@ -353,9 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA SCOPED：依据真实 C1 norm/scale/residual consumer 定向接入锁定 oneDNN 的成熟归一化及原生 post-ops；待审计冻结 AA01–AA04，尚未修改产品或新增覆盖 PASS。"
+      "summary": "C1-AA AUDITED：冻结 AA01–AA04，借用 oneDNN normalization primitive/post-ops 与 HYLE executor；实施 Direct 多精度归一化及 F32 Graph 原生融合，正确性/生命周期/三交付/完整成本优选未验收，不计覆盖 PASS。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA SCOPED：依据真实 C1 norm/scale/residual consumer 定向接入锁定 oneDNN 的成熟归一化及原生 post-ops；待审计冻结 AA01–AA04，尚未修改产品或新增覆盖 PASS。"
+      "summary": "C1-AA AUDITED：冻结 AA01–AA04，借用 oneDNN normalization primitive/post-ops 与 HYLE executor；实施 Direct 多精度归一化及 F32 Graph 原生融合，正确性/生命周期/三交付/完整成本优选未验收，不计覆盖 PASS。"
     },
     {
       "module": "compute_ops",
