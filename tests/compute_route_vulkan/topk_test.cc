@@ -187,14 +187,22 @@ TEST(VulkanTopK, RebindingByteOriginsRefreshesFrozenProviderViews) {
 
 TEST(VulkanTopK, CapturedDenseRankEightRetainsItsByteOrigin) {
   auto context = vulkan_test::context().value();
+  const auto alignment =
+      (std::max)(std::size_t{4}, static_cast<std::size_t>(
+                                     v::detail::Access::runtime(context)
+                                         ->device->properties.limits
+                                         .minStorageBufferOffsetAlignment));
   const auto desc = dense(c::DataType::kFloat32, {2, 1, 1, 1, 1, 1, 1, 129});
   const auto storage_desc =
       c::TensorDesc::strided_bytes(
           c::DataType::kFloat32,
-          std::array<std::int64_t, 8>{2, 1, 1, 1, 1, 1, 1, 129 * 4 + 8},
+          std::array<std::int64_t, 8>{
+              2, 1, 1, 1, 1, 1, 1,
+              129 * 4 + static_cast<std::int64_t>(alignment) + 8},
           std::array<std::int64_t, 8>{516, 516, 516, 516, 516, 516, 516, 1})
           .value();
-  for (std::size_t origin : {0U, 1U, 2U, 3U, 4U, 7U}) {
+  for (std::size_t origin :
+       std::array<std::size_t, 7>{0, 1, 2, 3, 4, 7, alignment}) {
     SCOPED_TRACE(origin);
     const auto raw = pattern(*desc.element_count(), static_cast<int>(origin));
     auto host =
@@ -224,7 +232,7 @@ TEST(VulkanTopK, CapturedDenseRankEightRetainsItsByteOrigin) {
       EXPECT_EQ(std::ranges::count_if(
                     dispatches,
                     [](const auto &dispatch) { return !dispatch.region; }),
-                origin % 4 == 0 ? 0 : 1);
+                origin % alignment == 0 ? 0 : 1);
       auto slot = program->create_invocation();
       ASSERT_TRUE(slot) << slot.error().message();
       ASSERT_TRUE(slot->bind(std::span<const v::Tensor>{}).ok());

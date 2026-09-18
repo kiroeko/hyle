@@ -73,15 +73,22 @@ TEST(VulkanGraph, TopKBothPortsHaveIndependentLivenessAndOldResultOwners) {
 }
 TEST(VulkanGraph, TopKCapturedSliceAddsRootAndAliasByteOrigins) {
   auto context = vulkan_test::context().value();
+  const auto alignment =
+      (std::max)(std::int64_t{4}, static_cast<std::int64_t>(
+                                      v::detail::Access::runtime(context)
+                                          ->device->properties.limits
+                                          .minStorageBufferOffsetAlignment));
   const auto desc = dense(c::DataType::kFloat32, {1, 1, 1, 1, 1, 1, 1, 129});
   const auto storage_desc =
       c::TensorDesc::strided_bytes(
           c::DataType::kFloat32,
-          std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 1, 129 * 4 + 8},
+          std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 1,
+                                      129 * 4 + alignment + 8},
           std::array<std::int64_t, 8>{516, 516, 516, 516, 516, 516, 516, 1})
           .value();
   const c::TopK selection{.count = 8};
-  for (std::int64_t alias_offset : {0, 1, 3, 6}) {
+  for (std::int64_t alias_offset :
+       std::array<std::int64_t, 5>{0, 1, 3, alignment - 1, alignment}) {
     SCOPED_TRACE(alias_offset);
     const auto raw =
         pattern(*desc.element_count(), static_cast<int>(alias_offset));
@@ -90,7 +97,8 @@ TEST(VulkanGraph, TopKCapturedSliceAddsRootAndAliasByteOrigins) {
     const auto values = payload(desc, raw);
     std::ranges::copy(values, host.begin() + 1 + alias_offset);
     const auto storage = context.upload(storage_desc, host).value();
-    const auto root = storage.view(c::View::slice(7, 1, 519).value()).value();
+    const auto root =
+        storage.view(c::View::slice(7, 1, 516 + alignment).value()).value();
     ASSERT_EQ(root.native_offset(), 1U);
     auto builder = g::GraphBuilder::create().value();
     const auto x = builder.constant(root.description()).value();
@@ -107,7 +115,7 @@ TEST(VulkanGraph, TopKCapturedSliceAddsRootAndAliasByteOrigins) {
     ASSERT_TRUE(program) << program.error().message();
     EXPECT_EQ(report.managed_region_count, 1U);
     EXPECT_EQ(report.native_dispatch_count,
-              (1 + alias_offset) % 4 == 0 ? 0U : 1U);
+              (1 + alias_offset) % alignment == 0 ? 0U : 1U);
     auto slot = program->create_invocation();
     ASSERT_TRUE(slot) << slot.error().message();
     ASSERT_TRUE(slot->bind(std::span<const v::Tensor>{}).ok());

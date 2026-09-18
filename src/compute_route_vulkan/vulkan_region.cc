@@ -56,15 +56,23 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     auto recipe = std::make_shared<provider::RegionRecipe>();
     for (const auto id : ids)
       recipe->values.push_back(program.values[id].description);
-    std::vector<bool> produced(ids.size(), false);
+    struct ValueUses final {
+      bool produced = false;
+      bool descriptor_aligned = false;
+    };
+    std::vector<ValueUses> uses(ids.size());
     for (auto i = first; i < end; ++i) {
       const auto &step = plan.steps[i];
       provider::RegionNode node{step.operation, {}, {}};
       for (const auto input : step.inputs)
         node.inputs.push_back(local(input));
+      // Original Argsort has no shader-side descriptor offset. Other admitted
+      // operations retain their four-byte, offset-aware input contract.
+      if (step.operation.get_if<TopK>())
+        uses[local(step.inputs[0])].descriptor_aligned = true;
       for (const auto output : step.outputs) {
         node.outputs.push_back(local(output));
-        produced[local(output)] = true;
+        uses[local(output)].produced = true;
         if (last_uses[output] >= end ||
             std::ranges::find(plan.outputs, output) != plan.outputs.end())
           recipe->outputs.push_back(local(output));
@@ -72,7 +80,7 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       recipe->nodes.push_back(std::move(node));
     }
     for (std::uint32_t i = 0; i < ids.size(); ++i)
-      if (!produced[i])
+      if (!uses[i].produced)
         recipe->inputs.push_back(i);
     // A dead-only region can occur only in a manually supplied private Plan;
     // still keep a concrete output so the original allocator can own its work.
@@ -87,14 +95,20 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       const auto value = ids[input];
       const auto alias = program.aliases[value];
       const auto &constant = program.values[alias.root].constant;
+      const auto alignment =
+          uses[input].descriptor_aligned
+              ? (std::max)(VkDeviceSize{sizeof(float)},
+                           program.runtime->device->properties.limits
+                               .minStorageBufferOffsetAlignment)
+              : sizeof(float);
       // Private layout aliases retain the root's storage, not a separate
       // constant Tensor. Include both origins, without overflowing their sum.
       const auto origin_remainder =
-          (constant ? constant.native_offset() % sizeof(float) : 0) +
-          alias.byte_offset % sizeof(float);
+          (constant ? constant.native_offset() % alignment : 0) +
+          alias.byte_offset % alignment;
       const bool aligned = std::ranges::find(program.inputs, alias.root) ==
                                program.inputs.end() &&
-                           origin_remainder % sizeof(float) == 0;
+                           origin_remainder % alignment == 0;
       if (aligned) {
         dispatch.values.push_back(value);
         continue;
