@@ -15,4 +15,21 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     COMMAND "${HYLE_VULKAN_PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/source_contract_test.py")
   set_tests_properties(hyle_ggml_vulkan_source_contract_test PROPERTIES
     LABELS "compute_provider_ggml_vulkan")
+  if(MSVC)
+    FetchContent_GetProperties(ggml_vulkan_runtime SOURCE_DIR _locked_ggml_source)
+    add_test(NAME hyle_ggml_vulkan_masm_composition_test
+      COMMAND "${CMAKE_COMMAND}"
+        "-DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}"
+        "-DHYLE_TEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/masm-composition"
+        "-DHYLE_GGML_SOURCE=${_locked_ggml_source}"
+        "-DHYLE_DEP_SOURCE_CACHE=${HYLE_DEP_SOURCE_CACHE}"
+        "-DHYLE_PARENT_GENERATOR=${CMAKE_GENERATOR}"
+        "-DHYLE_PARENT_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+        "-DHYLE_PARENT_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+        "-DHYLE_PARENT_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DHYLE_PARENT_GLSLC=${Vulkan_GLSLC_EXECUTABLE}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/masm_composition_test.cmake")
+    set_tests_properties(hyle_ggml_vulkan_masm_composition_test PROPERTIES
+      LABELS "compute_provider_ggml_vulkan" TIMEOUT 180)
+  endif()
 endif()

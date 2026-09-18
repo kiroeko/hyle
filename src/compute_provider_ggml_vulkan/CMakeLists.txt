@@ -40,6 +40,11 @@ string(SUBSTRING "${HYLE_DEP_GGML_VULKAN_RUNTIME_PATCHES_VENDORED_TREE_SHA256}" 
 set_property(DIRECTORY PROPERTY EP_PREFIX "${HYLE_DEP_BUILD_DIR}/gvk-${_host_source_id}")
 
 block()
+  if(MSVC)
+    # ggml enables generic ASM even for Vulkan-only builds. Keep its extension
+    # registration from taking .asm files away from the parent's ASM_MASM.
+    set(CMAKE_ASM_SOURCE_FILE_EXTENSIONS s S)
+  endif()
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   set(CMAKE_C_VISIBILITY_PRESET hidden)
