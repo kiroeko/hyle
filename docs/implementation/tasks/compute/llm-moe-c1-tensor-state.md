@@ -1138,3 +1138,8 @@ FIX/反例/成本与适用验证见 [C1-Y 的 Y4](llm-moe-c1-ggml-vulkan-region.
 Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留合法 DAG 和片段边界，
 更新真实编译事实。Provider 只新增 PRIVATE compute_ops 语义依赖；三者不形成循环。公开执行
 成本说明随实际原版 region 修正，未验收性能不写胜出；其他 C1 MUST 及整包验收保持不变。
+
+`a7ebf205` 的 W1 static/shared 已分别通过38 Direct、16/15 Graph及公开头；Provider各19例，
+无skip或VUID，首轮数值失败经一次有限纠正通过。完整事实与未运行项见
+[C1-Y普通入口记录](llm-moe-c1-ggml-vulkan-region.md#y13y15-普通入口的-w1-局部验证)。
+跨平台、真实权重、完整三交付与P1仍待完成；本卡保持AUDITED，不签整包或共同矩阵完成。

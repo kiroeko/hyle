@@ -1,0 +1,404 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-18",
+  "owner": "/root",
+  "components": [
+    "compute_provider_ggml_vulkan",
+    "compute_route_vulkan",
+    "graph_route_vulkan"
+  ],
+  "registry_states": "AUDITED",
+  "scope": "C1-Y Y13-Y15 ordinary managed Direct/Graph, fixed boundaries and native completion composition",
+  "audit_revisions": [
+    "4848e222",
+    "ddb7eb59",
+    "8ca72e6b"
+  ],
+  "product_revision": "a7ebf205047c86a8b0724fbbebac3fa27f4a57b0",
+  "product_tree": "bbdb71536846ec3adb92147f981321bfb4b64ec8",
+  "first_implementation_revision": "5a96b46c",
+  "first_runnable_revision": "7ececfc6",
+  "snapshot_qualification": "All final static/shared runs use the same clean immutable a7ebf205 candidate. Only docs/state/evidence updates follow; these do not authorize another build or P1.",
+  "upstream": {
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "original_checkout_status": "clean",
+    "patch_files": 9,
+    "patch_tree_sha256": "2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326",
+    "algorithm_delta": "Two exact GLSL patches select +0 for negative-infinity SiLU; the finite formula, fused region and original scheduler/storage remain. Gate multiplication still propagates 0*Inf/NaN.",
+    "cpu_provider_blocker_changed": false
+  },
+  "implementation": [
+    "Private typed recipe uses common Operation/TensorDesc and a private compute_ops dependency. One arena/graph/gallocr per invocation retains original fusion and liveness planning.",
+    "Cold fixed rules select consecutive dense positive F32 rank1-4 norm/separate-SiLU-gate regions and adjacent compatible SiLU/Add/Multiply. Published and cross-region outputs stay explicit.",
+    "Dynamic ports whose byte alignment cannot be proved get a frozen existing HYLE Copy adapter. Aligned constants and produced values can import directly. Bind/submit do not search, time or change provider.",
+    "Natural Direct, Graph and fixed Recorder compose native chunks and original ggml regions on the same device/queue. Compact native maps avoid cloning full graph state for every chunk.",
+    "One route pending owner retains all accepted work. Normal wait releases the admission mutex; partial-submit errors retain resources and first error until safe retirement. Failed managed slots are poisoned.",
+    "Report distinguishes native dispatches and managed regions. Runtime quota includes provider VkDeviceMemory, while cold compile reports cannot claim provider internal capacity or allocation-free first execution."
+  ],
+  "build": {
+    "machine": "W1-WIN",
+    "observed": {
+      "candidate_commit": "a7ebf205047c86a8b0724fbbebac3fa27f4a57b0",
+      "candidate_tree": "bbdb71536846ec3adb92147f981321bfb4b64ec8",
+      "workspace_status": [],
+      "computer": "KIRO-WORKSTATIO",
+      "os": {
+        "Caption": "Microsoft Windows 11 专业工作站版",
+        "Version": "10.0.26200",
+        "BuildNumber": "26200"
+      },
+      "cpu": {
+        "Name": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "NumberOfCores": 24,
+        "NumberOfLogicalProcessors": 32
+      },
+      "gpu_driver": [
+        "NVIDIA GeForce RTX 4070, 610.62, 12282 MiB"
+      ],
+      "source": "C:\\public\\project-hyle\\ggml",
+      "source_revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "source_status": [],
+      "configure": "vulkan-managed-run.ps1 -Linkage static/shared -Action Configure",
+      "build": "vulkan-managed-run.ps1 -Linkage static/shared -Action Build",
+      "test": "vulkan-managed-run.ps1 -Linkage static/shared -Action Test"
+    },
+    "compiler": "MSVC 19.50.35728.0",
+    "generator": "Ninja",
+    "configuration": "Release",
+    "werror": true,
+    "parallel": 2,
+    "shader_parallel": 1,
+    "instrumentation": false,
+    "vulkan_sdk": "1.4.357.0 portable extraction",
+    "runtime_environment": "CRT and HYLE runtime DLLs beside EXE; PATH unset; Khronos validation enabled; system Vulkan loader. Process-local error dialogs disabled.",
+    "system_changes": "No installer, UAC, power, registry or firewall changes."
+  },
+  "validation": [
+    {
+      "name": "W1 static-compute_provider_ggml_vulkan",
+      "verdict": "PASS",
+      "cases": 19,
+      "skips": 0,
+      "validation_diagnostic_lines": 0,
+      "structured_results": "static-compute_provider_ggml_vulkan.json",
+      "log": "static-compute_provider_ggml_vulkan.log"
+    },
+    {
+      "name": "W1 static-compute_route_vulkan",
+      "verdict": "PASS",
+      "cases": 38,
+      "skips": 0,
+      "validation_diagnostic_lines": 0,
+      "structured_results": "static-compute_route_vulkan.json",
+      "log": "static-compute_route_vulkan.log"
+    },
+    {
+      "name": "W1 static-graph_route_vulkan",
+      "verdict": "PASS",
+      "cases": 16,
+      "skips": 0,
+      "validation_diagnostic_lines": 0,
+      "structured_results": "static-graph_route_vulkan.json",
+      "log": "static-graph_route_vulkan.log"
+    },
+    {
+      "name": "W1 static public headers and patch contracts",
+      "verdict": "PASS",
+      "headers": 3,
+      "patch_contract_cases": 5,
+      "ctest_entries": 3,
+      "log": "static-ctest-detail.log"
+    },
+    {
+      "name": "W1 shared-compute_provider_ggml_vulkan",
+      "verdict": "PASS",
+      "cases": 19,
+      "skips": 0,
+      "validation_diagnostic_lines": 0,
+      "structured_results": "shared-compute_provider_ggml_vulkan.json",
+      "log": "shared-compute_provider_ggml_vulkan.log"
+    },
+    {
+      "name": "W1 shared-compute_route_vulkan",
+      "verdict": "PASS",
+      "cases": 38,
+      "skips": 0,
+      "validation_diagnostic_lines": 0,
+      "structured_results": "shared-compute_route_vulkan.json",
+      "log": "shared-compute_route_vulkan.log"
+    },
+    {
+      "name": "W1 shared-graph_route_vulkan",
+      "verdict": "PASS",
+      "cases": 15,
+      "skips": 0,
+      "validation_diagnostic_lines": 0,
+      "structured_results": "shared-graph_route_vulkan.json",
+      "log": "shared-graph_route_vulkan.log"
+    },
+    {
+      "name": "W1 shared public headers and patch contracts",
+      "verdict": "PASS",
+      "headers": 3,
+      "patch_contract_cases": 5,
+      "ctest_entries": 3,
+      "log": "shared-ctest-detail.log"
+    }
+  ],
+  "correctness_contract": {
+    "managed_math": "Generated independent-double fixtures: 2048-wide RMSNorm/scale/SiLU/residual, 1/17/128 rows; multiple published forks and native prefixes/suffixes; retained results and two independent rebindable slots.",
+    "numeric_boundary": "Existing Direct gate nonfinite oracle plus ordinary managed Graph negative/positive infinity, NaN and extreme finite SiLU regression pass without relaxed gates.",
+    "views": "Dense F32 at byte1/byte3 origins through legal View slices, changed-origin binding and fixed Recorder; adapters preserve original input storage.",
+    "completion": "Real native prefix and original managed region precede injected rejection of a later native submit; nonblocking poll, failed drain retention, later recovery, original error and failed-slot rejection pass.",
+    "concurrency": "A held native fence wait permits an independent producer to submit; cancellation and slot reuse pass. Existing close/abandon and provider partial multi-batch failure cases pass.",
+    "storage": "Original per-slot 1024-byte add/RMS auxiliary cache is allocated lazily once. Both slots are warmed before steady repeat checks; quota is unchanged on reuse and returns to zero on complete release.",
+    "shared_difference": "Graph metadata global-new fault case is static-only by its existing test boundary; shared has one fewer case. Normal shared Direct/Graph exercise DLLs; private provider fault tests retain their declared identical-source injection boundary.",
+    "weights": "Generated fixtures only; actual local Qwen3.5-2B checkpoint-weight acceptance remains pending."
+  },
+  "retained_failures": [
+    "5a96b46c first compile rejected implicit construction of explicit Operation; 7ececfc6 uses explicit construction in product adapter and lifecycle fixture.",
+    "7ececfc6 static: provider 19/19, Direct 36/38, Graph 14/15. One real SiLU(-Inf) semantic failure; one incorrect cold-versus-warmed quota assertion; one stale native-versus-managed report count.",
+    "a7ebf205 is the first product semantic correction. No numeric threshold was weakened and no provider executor was replaced.",
+    "WORKTREE plan against pre-implementation ae39a9e1 could not attribute already committed owners: WORKTREE authorization inspects HEAD-to-worktree only. HEAD-to-worktree and then full immutable ae39a9e1-to-a7ebf205 plans both pass without selector edits."
+  ],
+  "p0": {
+    "cold": "Typed recipe and bounded metadata, original per-slot graph/storage, fixed boundary copies where alignment is unknown, compact native chunks.",
+    "repeat": "No HYLE planning or winner search at submit. Original ggml can traverse/encode its region and allocate lazy internal cache; these costs and adapter copies remain charged.",
+    "p1": "NOT_RUN: full C1 API/algorithm and remaining capabilities are not frozen. No best-of win or deletion of uncompared algorithms is claimed."
+  },
+  "selector": {
+    "plan": "corrected-candidate-selector.json",
+    "verdict": "READY",
+    "qualification": "Only the declared W1 three-factor slice, headers and source contracts executed here. Broad component/package/delivery gates remain pending the complete C1-Y candidate; the full selected set is not PASS."
+  },
+  "remaining": [
+    "Air/Mini MoltenVK correctness and portability for the current managed entry.",
+    "Actual local Qwen3.5-2B weights and ordinary source/static/shared consumer journeys, relocation and route OFF.",
+    "Remaining C1 TopK/index/scan/state coverage, then complete four-route matrix and broad selector gates.",
+    "Equal-responsibility C1 P1 on a frozen full candidate; C2-C7 remain separate unfinished packages."
+  ],
+  "aggregate": "INCONCLUSIVE: local slice passed; C1-Y and C1 remain AUDITED and incomplete. No external user-decision blocker.",
+  "coverage_credit": "No new fully accepted row/cell in the 64-row, 256-cell common matrix.",
+  "implementation_loc": {
+    "path": "ggml-vulkan-y4-managed-entry-loc.json",
+    "measured_revision": "8ca72e6b0e6b19c98e32c07b59959ee3dbd77a75",
+    "reuse_proof": "git diff --exit-code measured_revision product_revision over the identical 23 module paths returned zero; all implementation blobs are identical."
+  },
+  "raw_archive": {
+    "path": "ggml-vulkan-y4-managed-entry-raw.zip",
+    "bytes": 130095,
+    "sha256": "9a7f55f4fc9af12b8cac4780cb05c7f2e89a7668b6fe56c695defed3b13a1b14",
+    "files": [
+      {
+        "path": "candidate-closure.log",
+        "bytes": 57,
+        "sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2"
+      },
+      {
+        "path": "candidate-context.json",
+        "bytes": 909,
+        "sha256": "f760ab901aeb3b3c5392fb7d8f9abdda3b34facb7f3d0f4911f8a8f337f37e07"
+      },
+      {
+        "path": "candidate-docs.log",
+        "bytes": 80,
+        "sha256": "46ffa2fd42f3fb4a0edf3597d2c34ee9747f3daa5bed1e6569d94ebf5be4b490"
+      },
+      {
+        "path": "corrected-candidate-selector.json",
+        "bytes": 204605,
+        "sha256": "4d97fd51ab45f5f7e0a459a37918f64f06428df513610489f49642a69fdf7099"
+      },
+      {
+        "path": "corrected-worktree-selector.json",
+        "bytes": 196726,
+        "sha256": "f9c05af8cd2472887de174433d0677d39378dc7785b00bda164dfeb095f80fb1"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-build-5a96b46c-fail.log",
+        "bytes": 55405,
+        "sha256": "8e0376e6c8c81f0e460cdb83e8cfd51456e52e4148605f2dd2608721a0633e87"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-build.log",
+        "bytes": 4678,
+        "sha256": "c52c2036a74172f97751f166a100c700d07657f12f7071a9b430027b69696f99"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-compute_provider_ggml_vulkan.json",
+        "bytes": 9082,
+        "sha256": "3d72415a60cf87c32d1e2b7735e41a294fce1a929f68b6ab49a1875c9415cc08"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-compute_provider_ggml_vulkan.log",
+        "bytes": 4589,
+        "sha256": "98f64452ad5852def0660e2e6a7908f52aded57c40a37af270abd1569578ba1a"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-compute_route_vulkan.json",
+        "bytes": 21763,
+        "sha256": "91ff729d594474cf3ec5d18a40132ca1027b3eb62eeadcce778efbc1c5b883c7"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-compute_route_vulkan.log",
+        "bytes": 11086,
+        "sha256": "bfb813de8270841e36b3f2a9a63b14175d60505dddfcc08db05642873d7c361b"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-configure.log",
+        "bytes": 3190,
+        "sha256": "1d2307763faca03a8685fd85ca1d27fbf5b0b6757d7ced761121c1cb940fb1d3"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-ctest.xml",
+        "bytes": 1506,
+        "sha256": "47f3efce9df9f7bb7c01ee9eca2c5e124b0e9841ab76d950fa6eec32dcf464ff"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-graph_route_vulkan.json",
+        "bytes": 6703,
+        "sha256": "498eb7b7af59be1d3df2305498e56939be9da21c5e22e554e44211b47d279d2e"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-graph_route_vulkan.log",
+        "bytes": 3417,
+        "sha256": "52eb21ae0398df37e6780f176862588522088b4ac1e074f84500ccdbf31c3b8e"
+      },
+      {
+        "path": "first-candidate-7ececfc6/static-test.log",
+        "bytes": 846,
+        "sha256": "1ef741c4c7bad503b5e179cf2632a1ec76b3e41abfd66ced936731416c7ddec8"
+      },
+      {
+        "path": "first-candidate-selector.json",
+        "bytes": 203943,
+        "sha256": "1140f6d540aa761467af2393685ef9f1067a520252cb27a40d34630624402902"
+      },
+      {
+        "path": "shared-build.log",
+        "bytes": 57253,
+        "sha256": "a897e543d8c8462b97bdb23a9e4a08047e5e239245ac7b9f653a44bd34e80a3e"
+      },
+      {
+        "path": "shared-compute_provider_ggml_vulkan.json",
+        "bytes": 9080,
+        "sha256": "52f8140381dc9b30c19654173df578c662c16d44e2891c9615967539c39c8224"
+      },
+      {
+        "path": "shared-compute_provider_ggml_vulkan.log",
+        "bytes": 4589,
+        "sha256": "b09b9dde79a78256ad5b091dac61dce7a6fcd0cf66ca095576798b271c611a41"
+      },
+      {
+        "path": "shared-compute_route_vulkan.json",
+        "bytes": 17609,
+        "sha256": "8626d4df14fe1ded245c00252208bb2c1badc099a24621d6af1a421f3181207d"
+      },
+      {
+        "path": "shared-compute_route_vulkan.log",
+        "bytes": 7676,
+        "sha256": "a1a107e46d79f7c6331bb52f22bb7e4737c8d427bf1353c4d7819cb36dcd4cb1"
+      },
+      {
+        "path": "shared-configure.log",
+        "bytes": 3189,
+        "sha256": "12bebc7c3c075317a67462e9e3ad7f6642277bc9b84e54a85a3d1246fe2d5c4a"
+      },
+      {
+        "path": "shared-ctest-detail.log",
+        "bytes": 3769,
+        "sha256": "5493e825642bb2a59a073ebcba5ea3ccce666fffefb65e9e25f64cec86f354cd"
+      },
+      {
+        "path": "shared-ctest.xml",
+        "bytes": 1505,
+        "sha256": "91059dc0f744ec91afe5656d515e64cedde4b865cfadb90f1a835efb4035cfa3"
+      },
+      {
+        "path": "shared-graph_route_vulkan.json",
+        "bytes": 6390,
+        "sha256": "d821fde49711be1ec2f9d7f642f3417112c5b4be51a9616c785a96e3860ba653"
+      },
+      {
+        "path": "shared-graph_route_vulkan.log",
+        "bytes": 3069,
+        "sha256": "326659481cb5b5dff9194887a32081fa3856330ea8001afe908357c651b7144a"
+      },
+      {
+        "path": "shared-test.log",
+        "bytes": 846,
+        "sha256": "ce5b7faf6bf0d5afc814ed0b04188509159a49c857449b1a80eaf435ee55dd6f"
+      },
+      {
+        "path": "static-build-5a96b46c-fail.log",
+        "bytes": 55405,
+        "sha256": "8e0376e6c8c81f0e460cdb83e8cfd51456e52e4148605f2dd2608721a0633e87"
+      },
+      {
+        "path": "static-build.log",
+        "bytes": 48769,
+        "sha256": "bf40eb62a7449fe4af50449d671357e9ee7d0f04359ce24e1d7e07221a13da67"
+      },
+      {
+        "path": "static-compute_provider_ggml_vulkan.json",
+        "bytes": 9081,
+        "sha256": "cf07d47b645b4a66c06ef74797cbcbb357716027659e0441ef7635ddaf74d23b"
+      },
+      {
+        "path": "static-compute_provider_ggml_vulkan.log",
+        "bytes": 4589,
+        "sha256": "e4374985ac730976ef09c280c5d41a882e905de429e2af2ae04274eed10ef576"
+      },
+      {
+        "path": "static-compute_route_vulkan.json",
+        "bytes": 17605,
+        "sha256": "4ada1d4591a9e35e4e2fa5bf80aa275401ab0e705254f1a3118cb06f8ca694ac"
+      },
+      {
+        "path": "static-compute_route_vulkan.log",
+        "bytes": 7674,
+        "sha256": "9751332375d72f36abef8f40655a473c6f43d18d94404c27cc90d87be91ab56d"
+      },
+      {
+        "path": "static-configure.log",
+        "bytes": 1462,
+        "sha256": "8f8e7e24d28666406e5e3212e8d08e514255011462e10e67a3615e37661f2ea0"
+      },
+      {
+        "path": "static-ctest-detail.log",
+        "bytes": 3769,
+        "sha256": "b55869104da52fef36a4ed6db88dec8b4e0f89334c350a0d414c86697bc867e2"
+      },
+      {
+        "path": "static-ctest.xml",
+        "bytes": 1506,
+        "sha256": "10a6813e41e2a5aae6f8d18e47c51bb670638706f730a790ef2d89cbc3751d57"
+      },
+      {
+        "path": "static-graph_route_vulkan.json",
+        "bytes": 6792,
+        "sha256": "45280464a96eeddd800e1cb2826b03a7095877d37ccd15bf08bd634b85fc8f64"
+      },
+      {
+        "path": "static-graph_route_vulkan.log",
+        "bytes": 3252,
+        "sha256": "b6a718ea853c642f8bca68f74d50879371c299c37bbc4b4e6fbb222a29e71dfc"
+      },
+      {
+        "path": "static-test.log",
+        "bytes": 846,
+        "sha256": "54f0598c08eb2113a8bf4aefe4a0da10e3d5e201df85b53f9ea3646d0ccc3d6e"
+      },
+      {
+        "path": "vulkan-managed-run.ps1",
+        "bytes": 3894,
+        "sha256": "44e5c62ad6115fbf8028055e0a767e5f07864e1e9e98f10a430906de0ccd6cfe"
+      },
+      {
+        "path": "worktree-selector-base-mismatch.json",
+        "bytes": 204772,
+        "sha256": "ad28435d1265c109ce4932f690432eb166c91978073df443101f131f0852a5ee"
+      }
+    ]
+  }
+}

@@ -429,3 +429,46 @@ W1 static、无 PATH、Khronos validation：Provider 19/19；Direct 36/38；Grap
    文档区分运行时配额与编译报告中的未知 provider 容量，不宣称 submit 零分配。
 3. 旧 report 用例把 managed gate 仍计为一个原生 dispatch；改为1 native +1 managed，
    继续验证报告不保活常量、自定义 payload 或设备。其数值/寿命约束不变。
+
+### Y13–Y15 普通入口的 W1 局部验证
+
+最终产品 `a7ebf205047c86a8b0724fbbebac3fa27f4a57b0`，tree
+`bbdb71536846ec3adb92147f981321bfb4b64ec8`。原版 managed region 已进入普通 Direct、Graph
+和 Recorder，包含固定的对齐适配、published/跨片段边界、独立槽重绑，以及已有 pending owner
+下的完成与失败处理。[结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y4-managed-entry.json)
+和[原始日志](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y4-managed-entry-raw.zip)
+保留首轮失败、一次语义纠正、最终命令及身份；未放宽数值门。
+
+| 实际验证 | W1 static | W1 shared |
+|---|---|---|
+| 原版 Provider 与私有失败/存储边界 | 19/19 | 19/19 |
+| 普通 Direct、Recorder、生命周期 | 38/38 | 38/38 |
+| 普通 Graph、多输出/分叉与生命周期 | 16/16 | 15/15 |
+| 三个公开头，分属两个 header suite | PASS | PASS |
+| 五个源码补丁合同 | PASS | PASS |
+
+shared 少一个已有的静态 global-new 失败注入用例，不是运行时跳过。所有最终测试无 skip、
+无 VUID/validation/sync-hazard 诊断；DLL 邻置并 unset PATH，严格 Release/WERROR、shipping
+layout，构建 parallel2、重型验证串行。没有运行安装器或修改电源、注册表和防火墙。
+
+新入口已验证2048宽、1/17/128行、多个公开中间输出、原生前后缀、两独立槽与变输入；byte1
+dense View、Recorder、取消/旧结果/关闭亦通过。真实已接纳 native→managed 前缀之后拒绝
+native suffix，保留首次错误与全部 owner；poll 不强制等待，drain 失败后保活，恢复后安全退役。
+正常 wait 期间另一个 producer 可以提交。Provider 的原有多批失败和冷分配用例同时通过。
+
+P0：冷期创建 typed recipe、每槽原版 graph/gallocr 和固定边界 copy；内部保留成熟融合/存储
+规划。submit 不做 HYLE 规划或赢家搜索，但原版编码和每槽首次1024B辅助缓存仍存在，配额已
+计入；两槽预热后的重放不增长，完整释放后配额归零。适配、首次准备和融合损失都须计入后续
+等责比较；本批没有 P1 或性能胜出结论，也不删除尚未比较的自有实现。
+
+[统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-y4-managed-entry-loc.json)
+为 **46,079行 / 191个实现文件**，沿同23路径、含GLSL、不含测试/bench/vendor，self-check PASS。
+统计绑定 `8ca72e6b`；脚本另外核对该23路径到最终候选的所有 blob 完全相同，复用计数。
+
+三个 owner 继续 `AUDITED`，整包 `INCONCLUSIVE`；64行/256格不增加已验收 PASS。Air/Mini、
+真实本地权重片段、完整源码/静态/动态 consumer 与 relocation/OFF、broad selector 门及 C1 P1
+仍未完成。没有外部用户决策阻塞。用户进一步明确：接入应包含现成能力的普通默认路由，
+不能把执行通道或一个示例 region 当作完整 Provider 接入。下一有限动作先按已固定 ggml pin
+核对 C1 操作分派与当前映射，区分已绑定、待绑定、需适配和确实不支持，固定下一组有限 FIX；
+随后对该组完成 Air/Mini 等适用验证，复用本次未改变的事实，不重复研究已有执行边界。
+本次证据/状态修改不触发产品重建或 P1。
