@@ -506,13 +506,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-V AUDITED：V01–V04 已固定三类门控、混合参数 RMS/LayerNorm 与原生 word 写入/既有 GLU 接线，产品待实施。T/U 局部 W1/Air/Mini 各30例及2个头检查已通过；完整 C1 其余机制、真实权重/三交付和 P1 尚未签收。"
+      "summary": "LLM/MoE C1-V AUDITED：V01–V04 已实现三类门控、mixed RMS/LayerNorm、原生单 dispatch/word 写入和既有 GLU 薄适配；W1/Air/Mini 各35例及2个头检查已覆盖（W1 旧拒绝断言定向修正）。完整 C1 其余机制、真实权重/三交付和 P1 尚未签收。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-V AUDITED：V01–V04 已固定三类门控、混合参数 RMS/LayerNorm 与原生 word 写入/既有 GLU 接线，产品待实施。T/U 局部 W1/Air/Mini 各30例及2个头检查已通过；完整 C1 其余机制、真实权重/三交付和 P1 尚未签收。"
+      "summary": "LLM/MoE C1-V AUDITED：V01–V04 已实现三类门控、mixed RMS/LayerNorm、原生单 dispatch/word 写入和既有 GLU 薄适配；W1/Air/Mini 各35例及2个头检查已覆盖（W1 旧拒绝断言定向修正）。完整 C1 其余机制、真实权重/三交付和 P1 尚未签收。"
     }
   ]
 }

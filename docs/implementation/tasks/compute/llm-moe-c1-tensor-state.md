@@ -971,4 +971,31 @@ storage 扩展和四维寻址不能覆盖本路线已承诺的无可选窄存储
 不签性能胜出；必要 native pipeline、shared reduction、输入读取和输出舍入均计为真实成本。
 Concat/reduce/Softmax/TopK/index/Scan 仍是后续必须实现的机制，不由本批代签。
 
+#### C1-V 实现与局部验证事实
+
+- `40f4cbe3` 完成三类门控及两种输入形式、RMSNorm/LayerNorm 的 F32/F16/BF16 与独立 mixed
+  scale/bias。普通 prepare/Graph 共享冷期原生接线；norm 一次 dispatch、固定 shared storage，
+  半精度奇数宽度成对处理行，无额外 device scratch，最终存储只舍入一次。
+- mature F32 SiLU 保留 ggml GLU shell，对齐可由 captured native buffer 或内部计算根证明时
+  冷期采用；HYLE 薄适配稳定 sigmoid/NaN/Inf。其他门控使用已受审 U32 tensor shader。
+  LayerNorm 采用中心化方差；本批不声称新数值适配或 norm 的 P1 已合格。
+- `c62247ba` 只修测试的显式 Operation/Result 值构造。W1 随后 23 Direct、11 Graph 和两个
+  公开头通过，唯一失败是旧测试仍期待拒绝 F16 gate；`82c221fb` 将该拒绝域改为尚不支持的
+  F64，仅该用例重跑通过，其余证据按不变产品/测试复用。两次 FAIL 原样保留，不称首轮全绿。
+- Air/Mini 在 `82c221fb` 各一次完整通过 **24 Direct + 11 Graph = 35** 用例及两个公开头；
+  从产品候选开始未改算法/容差。W1/Air 无 validation-layer VUID/同步错误；Mini 仅 portability。
+  空/尾块/奇数字节/偏移/广播/rank8、0/1/127/128/129/257/2048 hidden、所有参数形式、精确
+  F32 affine 相消、特殊值、中心化方差和单/双/奇数行写入邻区均通过。
+- 普通 gate→RMS→residual→LayerNorm 图为四 dispatch/三个复用输出 block，共享 F32 参数、
+  两槽/变输入/旧结果和 close 均通过。[结果与原始日志](../../../../evidence/correctness/compute-llm-moe-c1/v-vulkan-focused.json)
+  绑定候选、工具链、命令/SHA、增量 W1 证据及 selector 的 skipped reasons。
+  [统一 LOC](../../../../evidence/correctness/compute-llm-moe-c1/v-implementation-loc.json)
+  为 **43,990 行 / 178 实现文件**，含 GLSL、不含测试/bench/第三方，self-check PASS。
+- 同步修正 Graph Vulkan 公开头中仍写 F32/SiLU-only 和全面拒绝 alias 的过时整行注释。
+  删除整行注释后前后代码逐行相同，且无行号敏感 token；证明及 blob SHA 已写入上述结果。
+  selector 的保守公共头构建选择如实保留；本次按用户的文档不重建规则跳过，不标为 PASS，
+  不修改 selector。当前 docs/closure 正常执行，完整 C1 后续仍需实际交付验收。
+- 仍未完成 Concat/reduce/Softmax/TopK/index/Scan 和整包实际权重、三交付/其他适用环境及等责
+  P1；只签 V01–V04 局部事实，两个 owner 保持 AUDITED，C1 整包尚未签收。
+
 当前无 C1 整包冻结候选或整包 PASS。旧 CLOSED/BLOCKED 卡不授权本包改动。

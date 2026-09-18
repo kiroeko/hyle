@@ -77,16 +77,17 @@ struct CompileOptions final {
   CompileReport *report = nullptr;
 };
 
-// Fixed pure F32 DAG -> native pipelines and an immutable recording recipe.
+// Fixed pure DAG in admitted Compute domains -> native pipelines and an
+// immutable recording recipe.
 // Constants are ready immutable tensors in Graph constant order; inputs bind
 // in Graph input order and generated outputs follow published order. The Graph
 // may be destroyed after this call. Each Invocation owns independent commands,
 // descriptors, fence, outputs and liveness-planned scratch; replay has no DAG
 // traversal, shader compilation or implementation search.
 //
-// Built-ins admit the Compute route's MatMul and SiLU-gate domains. Custom
+// Built-ins share the Compute route's qualified dtype/shape domains. Custom
 // schemas require the cold native lowering above. Symbolic/effect/control-edge
-// graphs, aliasing schemas, multi-output nodes and input/constant-only
+// graphs, unsupported alias schemas, multi-output nodes and input/constant-only
 // published outputs are rejected explicitly. Native buffer readiness is a
 // caller contract.
 HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::Program>
